@@ -7,7 +7,6 @@
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-  <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#1f2937">
   <style>
     :root {
@@ -41,8 +40,24 @@
       text-align: center;
     }
 
+    .brand-title {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      margin-bottom: 8px;
+    }
+
+    .brand-icon {
+      width: clamp(46px, 7vw, 76px);
+      height: clamp(46px, 7vw, 76px);
+      border-radius: 18px;
+      box-shadow: 0 10px 24px rgba(0,0,0,.22);
+      flex: 0 0 auto;
+    }
+
     header h1 {
-      margin: 0 0 8px;
+      margin: 0;
       font-size: clamp(1.55rem, 4vw, 2.25rem);
     }
 
@@ -284,6 +299,18 @@
     }
 
     @media (max-width: 560px) {
+      .brand-title {
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .brand-icon {
+        width: 58px;
+        height: 58px;
+      }
+    }
+
+    @media (max-width: 560px) {
       body {
         line-height: 1.38;
       }
@@ -434,17 +461,215 @@
       font-weight: 700;
       margin-left: 5px;
     }
+  
+    /* Ajustes finais para mobile: ficam no fim para não afetar o desktop */
+    @media (max-width: 700px) {
+      html, body {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+      }
+
+      header {
+        padding: 18px 10px;
+      }
+
+      .brand-title {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-width: 100%;
+      }
+
+      .brand-icon {
+        width: 62px;
+        height: 62px;
+        border-radius: 16px;
+      }
+
+      header h1 {
+        font-size: clamp(1.25rem, 6vw, 1.75rem);
+        line-height: 1.15;
+        max-width: 100%;
+        overflow-wrap: anywhere;
+      }
+
+      header p {
+        font-size: .92rem;
+        line-height: 1.35;
+        max-width: 92vw;
+      }
+
+      main {
+        width: 100%;
+        max-width: 100%;
+        padding: 10px;
+        padding-left: max(10px, env(safe-area-inset-left));
+        padding-right: max(10px, env(safe-area-inset-right));
+      }
+
+      .grid {
+        grid-template-columns: 1fr !important;
+        gap: 12px;
+      }
+
+      .card {
+        width: 100%;
+        max-width: 100%;
+        padding: 12px;
+        border-radius: 12px;
+        overflow: hidden;
+      }
+
+      h2 {
+        font-size: 1.05rem;
+        line-height: 1.25;
+        overflow-wrap: anywhere;
+      }
+
+      h3 {
+        font-size: .98rem;
+        line-height: 1.25;
+        overflow-wrap: anywhere;
+      }
+
+      label {
+        font-size: .9rem;
+        line-height: 1.2;
+        overflow-wrap: anywhere;
+      }
+
+      .hint {
+        font-size: .86rem;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+      }
+
+      textarea,
+      select,
+      input {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        font-size: 16px;
+      }
+
+      textarea {
+        min-height: 190px;
+      }
+
+      .result {
+        min-height: 190px;
+        max-height: 55vh;
+        overflow: auto;
+      }
+
+      .controls,
+      .controls-3,
+      .symbol-toolbar,
+      .template-row {
+        grid-template-columns: 1fr !important;
+        gap: 8px;
+      }
+
+      .button-row {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+        align-items: stretch;
+      }
+
+      .button-row button,
+      .copy-actions button {
+        width: 100%;
+      }
+
+      .symbols {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
+        gap: 6px;
+        width: 100%;
+      }
+
+      .symbol-btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        min-height: 42px;
+        padding: 7px 4px;
+        border-radius: 9px;
+        font-size: 1rem;
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        text-align: center;
+      }
+
+      .templates {
+        grid-template-columns: 1fr !important;
+      }
+
+      .mini {
+        width: 100%;
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+
+      .preview {
+        overflow-wrap: anywhere;
+      }
+
+      .copy-actions {
+        position: sticky;
+        bottom: 8px;
+        z-index: 5;
+        padding: 8px;
+        margin-left: -4px;
+        margin-right: -4px;
+        border: 1px solid var(--line);
+        box-shadow: 0 8px 24px rgba(0,0,0,.14);
+      }
+
+      .ok,
+      .warn {
+        display: block;
+        width: 100%;
+        text-align: center;
+        margin-top: 4px;
+      }
+    }
+
+    @media (max-width: 390px) {
+      .symbols {
+        grid-template-columns: repeat(auto-fill, minmax(38px, 1fr));
+      }
+
+      .symbol-btn {
+        min-height: 40px;
+        font-size: .95rem;
+      }
+
+      .card {
+        padding: 10px;
+      }
+    }
+
+
   </style>
 </head>
 <body>
   <header>
-    <h1>Conversor para Notas do JW Library</h1>
+    <div class="brand-title">
+      <img src="icon-192.png" alt="" class="brand-icon">
+      <h1>Conversor para Notas do JW Library</h1>
+    </div>
     <p>Digite um texto, escolha um estilo com caracteres especiais, aplique maiúsculas/minúsculas e copie o resultado para colar nas notas do JW Library.</p>
   </header>
 
   <main>
     <section class="card" style="margin-bottom:16px">
-      <h2>Novo tópico: destaque para notas da ESP 2026 <span class="pill">v4.9</span></h2>
+      <h2>Novo tópico: destaque para notas da ESP 2026 <span class="pill">v5.2</span></h2>
       <p class="hint">Este aplicativo não aplica formatação real. Ele troca as letras por caracteres Unicode parecidos com negrito, itálico, círculos, caixas e símbolos, para dar aparência de destaque em campos que aceitam apenas texto.</p>
     </section>
 
@@ -633,10 +858,20 @@
     </section>
 
   <footer>
-    Arquivo local HTML/CSS/JavaScript. Funciona offline depois de baixado. Versão 4.9 com ícone do aplicativo.
+    Arquivo local HTML/CSS/JavaScript. Funciona offline depois de baixado. Versão 5.2 com layout mobile refinado.
   </footer>
 
   <script>
+
+    function enableManifestWhenOnline() {
+      if (location.protocol !== 'http:' && location.protocol !== 'https:') return;
+
+      const link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = 'manifest.webmanifest';
+      document.head.appendChild(link);
+    }
+
     const input = document.getElementById('inputText');
     const styleSelect = document.getElementById('styleSelect');
     const decorationSelect = document.getElementById('decorationSelect');
@@ -2023,6 +2258,8 @@
     decorationSelect.addEventListener('change', updateResult);
     caseSelect.addEventListener('change', updateResult);
     targetSelect.addEventListener('change', updateResult);
+
+    enableManifestWhenOnline();
 
     populate();
     targetSelect.value = 'selection';
