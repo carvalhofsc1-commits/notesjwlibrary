@@ -1,0 +1,118 @@
+{
+  "app": "Conversor para Notas do JW Library",
+  "version": 3,
+  "exportedAt": "2026-06-10T01:22:57.129Z",
+  "templates": [
+    {
+      "id": "tpl-question",
+      "name": "Pergunta",
+      "content": "❓ 𝐏𝐄𝐑𝐆𝐔𝐍𝐓𝐀 👉 "
+    },
+    {
+      "id": "tpl-video",
+      "name": "Vídeo",
+      "content": "▶️▶️ 𝙑𝙄𝘿𝙀𝙊 ⏩⏩ "
+    },
+    {
+      "id": "tpl-instructor",
+      "name": "Instrutor",
+      "content": "⚠️ 🅸🅽🆂🆃🆁🆄🆃🅾🆁 👉 "
+    },
+    {
+      "id": "tpl-topic",
+      "name": "Novo tópico",
+      "content": "🟦 NOVO TÓPICO ➜ "
+    },
+    {
+      "id": "tpl-designacao",
+      "name": "Designação",
+      "content": "🟧🟧🟧 DESIGNAÇÃO 🟧🟧🟧"
+    },
+    {
+      "id": "tpl-line",
+      "name": "Linha divisória",
+      "content": "▇▇▇▇▇▇▇▇▇▇"
+    },
+    {
+      "id": "tpl-quote",
+      "name": "Citação",
+      "content": "❝  ❞"
+    },
+    {
+      "id": "tpl-star",
+      "name": "Estrelas",
+      "content": "★  ★"
+    },
+    {
+      "id": "tpl-application",
+      "name": "Aplicação",
+      "content": "✅ Aplicação: "
+    },
+    {
+      "id": "tpl-mainpoint",
+      "name": "Ponto principal",
+      "content": "➤ Ponto principal: "
+    },
+    {
+      "id": "tpl-custom-1780941059938-361",
+      "name": "01 - DESTAQUE",
+      "content": "⚠️⚠️  ⫸⫸⫸⫸ {texto} ⫷⫷⫷⫷"
+    },
+    {
+      "id": "tpl-custom-1780941361690-461",
+      "name": "02 - APLICAÇÃO",
+      "content": "✅✅✅ {texto} ✦✦✦"
+    }
+  ],
+  "customSymbols": [],
+  "customSymbolCategories": {},
+  "favoriteSymbols": [
+    "▶",
+    "⫸",
+    "⫷",
+    "❓",
+    "✅",
+    "⚠️",
+    "▶️",
+    "⏩",
+    "➤",
+    "➜",
+    "➽",
+    "➡",
+    "⬅",
+    "👉",
+    "☛",
+    "☚",
+    "💡",
+    "🔎",
+    "📌",
+    "✍🏻",
+    "👍🏻",
+    "👎🏻",
+    "😀",
+    "★",
+    "☆",
+    "✦",
+    "✧",
+    "✎",
+    "✓",
+    "✔",
+    "✕",
+    "✗",
+    "✘",
+    "🟦",
+    "🟧",
+    "🟪",
+    "🟥",
+    "■",
+    "▣",
+    "◆",
+    "▲",
+    "●",
+    "○",
+    "▇",
+    "▬",
+    "❝",
+    "❞"
+  ]
+}

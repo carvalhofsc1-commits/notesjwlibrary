@@ -1,0 +1,2030 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Conversor para Notas do JW Library</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #d1d5db;
+      --accent: #2563eb;
+      --accent-dark: #1d4ed8;
+      --soft: #eef2ff;
+      --danger: #dc2626;
+      --danger-dark: #b91c1c;
+      --success: #047857;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1f2937, #374151);
+      color: white;
+      padding: 28px 16px;
+      text-align: center;
+    }
+
+    header h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.55rem, 4vw, 2.25rem);
+    }
+
+    header p {
+      margin: 0 auto;
+      max-width: 820px;
+      color: #e5e7eb;
+    }
+
+    main {
+      width: min(1680px, 100%);
+      margin: 0 auto;
+      padding: 22px clamp(18px, 3vw, 48px);
+      padding-left: max(clamp(18px, 3vw, 48px), env(safe-area-inset-left));
+      padding-right: max(clamp(18px, 3vw, 48px), env(safe-area-inset-right));
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(560px, 1fr) minmax(560px, 1fr);
+      gap: 22px;
+      align-items: start;
+    }
+
+    @media (max-width: 860px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 8px 22px rgba(0,0,0,.05);
+    }
+
+    .card h2, .card h3 {
+      margin: 0 0 10px;
+    }
+
+    .card h2 { font-size: 1.1rem; }
+    .card h3 { font-size: 1rem; }
+
+    label {
+      display: block;
+      font-weight: 650;
+      margin: 12px 0 6px;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+
+    textarea, select, input {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 11px;
+      font: inherit;
+      font-size: 16px;
+      background: white;
+      color: var(--text);
+    }
+
+    select {
+      text-overflow: ellipsis;
+    }
+
+    textarea {
+      min-height: clamp(240px, 34vh, 360px);
+      resize: vertical;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .controls-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 10px;
+      align-items: end;
+    }
+
+    .controls-3 > div,
+    .controls > div {
+      min-width: 0;
+    }
+
+
+    @media (max-width: 720px) {
+      .symbol-toolbar {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .controls, .controls-3 { grid-template-columns: 1fr; }
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: .92rem;
+      margin: 8px 0 0;
+    }
+
+    .preview {
+      padding: 10px 12px;
+      background: var(--soft);
+      border: 1px dashed #a5b4fc;
+      border-radius: 10px;
+      min-height: 46px;
+      word-break: break-word;
+    }
+
+    .result {
+      min-height: 520px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px;
+      background: #fafafa;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 11px 13px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      background: var(--accent);
+      color: white;
+    }
+
+    button:hover { background: var(--accent-dark); }
+
+    button.secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    button.secondary:hover { background: #d1d5db; }
+
+    button.danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    button.danger:hover { background: var(--danger-dark); }
+
+    .button-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+      align-items: center;
+    }
+
+    .symbols {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .symbol-btn {
+      background: #f3f4f6;
+      color: #111827;
+      border: 1px solid #d1d5db;
+      padding: 8px 10px;
+      border-radius: 10px;
+      min-width: 38px;
+    }
+
+    .symbol-btn:hover { background: #e5e7eb; }
+
+    .templates {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    @media (max-width: 620px) {
+      .templates { grid-template-columns: 1fr; }
+    }
+
+    .mini {
+      font-size: .92rem;
+      padding: 9px;
+      text-align: left;
+    }
+
+    .template-editor {
+      margin-top: 14px;
+      border-top: 1px solid var(--line);
+      padding-top: 14px;
+    }
+
+    .template-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: end;
+    }
+
+    @media (max-width: 620px) {
+      .template-row { grid-template-columns: 1fr; }
+    }
+
+    .copy-actions {
+      background: var(--card);
+      border-radius: 12px;
+    }
+
+    @media (max-width: 860px) {
+      header {
+        padding: 22px 14px;
+      }
+
+      main {
+        padding: 12px;
+        padding-left: max(12px, env(safe-area-inset-left));
+        padding-right: max(12px, env(safe-area-inset-right));
+      }
+
+      .card {
+        padding: 14px;
+        border-radius: 12px;
+      }
+
+      .result {
+        min-height: 170px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      body {
+        line-height: 1.38;
+      }
+
+      header h1 {
+        font-size: 1.42rem;
+      }
+
+      header p {
+        font-size: .95rem;
+      }
+
+      .card {
+        padding: 12px;
+      }
+
+      textarea {
+        min-height: 155px;
+      }
+
+      button {
+        width: 100%;
+        min-height: 44px;
+      }
+
+      .symbol-btn {
+        width: auto;
+        flex: 1 1 42px;
+        min-width: 42px;
+        padding: 9px 8px;
+      }
+
+      .button-row {
+        gap: 8px;
+      }
+
+      .copy-actions {
+        position: sticky;
+        bottom: 8px;
+        z-index: 5;
+        padding: 8px;
+        margin-left: -8px;
+        margin-right: -8px;
+        border: 1px solid var(--line);
+        box-shadow: 0 8px 24px rgba(0,0,0,.14);
+      }
+
+      .ok, .warn {
+        display: block;
+        margin: 6px 0 0;
+        width: 100%;
+        text-align: center;
+      }
+    }
+
+
+    @media (min-width: 1280px) {
+      textarea {
+        min-height: 320px;
+      }
+
+      .result {
+        min-height: 620px;
+      }
+
+      .controls-3 {
+        grid-template-columns: repeat(4, minmax(180px, 1fr));
+      }
+    }
+
+    @media (min-width: 1500px) {
+      main {
+        width: min(1760px, 100%);
+      }
+
+      .grid {
+        grid-template-columns: minmax(650px, 1fr) minmax(650px, 1fr);
+      }
+    }
+
+    @media (min-width: 861px) and (max-width: 1100px) {
+      main {
+        max-width: 980px;
+      }
+
+      .controls-3 {
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      }
+    }
+
+    @media (hover: none) and (pointer: coarse) {
+      button, select, input, textarea {
+        min-height: 44px;
+      }
+    }
+
+
+
+    .symbol-toolbar {
+      display: grid;
+      grid-template-columns: minmax(180px, 260px) minmax(220px, 1fr);
+      gap: 12px;
+      align-items: end;
+      margin-top: 8px;
+    }
+
+    .symbol-btn.favorite {
+      border-color: var(--accent);
+      background: var(--soft);
+    }
+
+    .symbols.collapsed {
+      max-height: 190px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .symbol-btn {
+      user-select: none;
+    }
+
+    footer {
+      color: var(--muted);
+      text-align: center;
+      padding: 18px;
+      font-size: .9rem;
+    }
+
+    .ok {
+      color: var(--success);
+      font-weight: 700;
+      margin-left: 8px;
+    }
+
+    .warn {
+      color: #92400e;
+      font-weight: 700;
+      margin-left: 8px;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #ecfeff;
+      color: #155e75;
+      font-size: .82rem;
+      font-weight: 700;
+      margin-left: 5px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Conversor para Notas do JW Library</h1>
+    <p>Digite um texto, escolha um estilo com caracteres especiais, aplique maiúsculas/minúsculas e copie o resultado para colar nas notas do JW Library.</p>
+  </header>
+
+  <main>
+    <section class="card" style="margin-bottom:16px">
+      <h2>Novo tópico: destaque para notas da ESP 2026 <span class="pill">v4.8</span></h2>
+      <p class="hint">Este aplicativo não aplica formatação real. Ele troca as letras por caracteres Unicode parecidos com negrito, itálico, círculos, caixas e símbolos, para dar aparência de destaque em campos que aceitam apenas texto.</p>
+    </section>
+
+    <div class="grid">
+      <section class="card">
+        <h2>1. Texto original</h2>
+        <textarea id="inputText" placeholder="Digite aqui o texto que deseja converter..."></textarea>
+
+        <div class="controls-3">
+          <div>
+            <label for="targetSelect">Aplicar formatação em</label>
+            <select id="targetSelect">
+              <option value="all">Texto inteiro</option>
+              <option value="selection" selected>Apenas trecho selecionado</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="caseSelect">Maiúsculas/minúsculas</label>
+            <select id="caseSelect">
+              <option value="normal">Normal</option>
+              <option value="upper">TUDO MAIÚSCULO</option>
+              <option value="title">Só as Iniciais Maiúsculas</option>
+              <option value="lower">tudo minúsculo</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="styleSelect">Tipo de caractere</label>
+            <select id="styleSelect"></select>
+          </div>
+
+          <div>
+            <label for="decorationSelect">Destaque</label>
+            <select id="decorationSelect">
+              <option value="none">Sem destaque</option>
+              <option value="question">❓ PERGUNTA 👉 texto</option>
+              <option value="video">▶️▶️ VÍDEO ⏩⏩ texto</option>
+              <option value="instructor">⚠️ INSTRUTOR 👉 texto</option>
+              <option value="arrow">➤ texto</option>
+              <option value="check">✅ texto</option>
+              <option value="star">★ texto ★</option>
+              <option value="quote">❝ texto ❞</option>
+              <option value="line">▇▇▇ texto ▇▇▇</option>
+              <option value="topic">🟦 NOVO TÓPICO ➜ texto</option>
+            </select>
+          </div>
+        </div>
+
+        <label>Exemplo do estilo escolhido</label>
+        <div id="preview" class="preview"></div>
+
+        <div class="button-row">
+          <button id="quickBoldBtn" class="secondary" type="button">𝐍 Negrito</button>
+          <button id="quickItalicBtn" class="secondary" type="button">𝑰 Itálico</button>
+          <button id="quickBoldItalicBtn" class="secondary" type="button">𝑵𝑰 Negrito itálico</button>
+          <button id="removeFormattingBtn" class="secondary" type="button">Remover formatação</button>
+        </div>
+
+        <p id="selectionInfo" class="hint">Para formatar várias partes: selecione um trecho, escolha “Apenas trecho selecionado”, clique em “Converter” e depois em “Salvar formatação aplicada”. Repita com outro trecho.</p>
+
+        <div class="button-row">
+          <button id="convertBtn">Converter</button>
+          <button id="savePreviewBtn" class="secondary" type="button">Salvar formatação aplicada</button>
+          <button id="applySelectionBtn" class="secondary" type="button">Aplicar estilo na seleção</button>
+          <button id="clearBtn" class="secondary">Limpar</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>2. Resultado para copiar</h2>
+        <div id="result" class="result"></div>
+        <div class="button-row copy-actions">
+          <button id="copyBtn">Copiar resultado</button>
+          <button id="selectBtn" class="secondary">Selecionar texto</button>
+          <span id="copyStatus" class="ok"></span>
+        </div>
+        <p class="hint">Dica: quando usar “Apenas trecho selecionado”, a visualização mostra como o texto ficará. Para manter essa formatação e aplicar outra em outro trecho, clique em “Salvar formatação aplicada”.</p>
+      </section>
+    </div>
+
+    <section class="card" style="margin-top:16px">
+      <h2>3. Caracteres, ícones e emoticons</h2>
+      <p class="hint">Clique para inserir no campo ativo. Os favoritos ficam no topo. Dê dois cliques em um favorito para tirar do topo; dê dois cliques em um item de baixo para mandar para os favoritos.</p>
+
+      <div class="symbol-toolbar">
+        <div>
+          <label for="symbolCategorySelect">Categoria</label>
+          <select id="symbolCategorySelect"></select>
+        </div>
+        <div>
+          <label for="customSymbolCategory">Categoria dos novos caracteres</label>
+          <input id="customSymbolCategory" type="text" placeholder="Ex.: Meus símbolos">
+        </div>
+      </div>
+
+      <h3>Favoritos no topo</h3>
+      <div id="symbols" class="symbols"></div>
+
+      <div class="button-row">
+        <button id="resetFavoriteSymbolsBtn" class="secondary" type="button">Restaurar favoritos padrão</button>
+        <span id="symbolsStatus" class="ok"></span>
+      </div>
+
+      <h3>Caracteres da categoria</h3>
+      <div id="moreSymbols" class="symbols"></div>
+
+      <div class="template-editor">
+        <h3>Adicionar novos caracteres</h3>
+        <p class="hint">Cole abaixo novos caracteres, ícones ou emoticons. Eles entrarão na categoria escolhida acima e ficarão salvos neste navegador.</p>
+        <textarea id="customSymbolsText" style="min-height:90px" placeholder="Cole aqui novos caracteres, separados por espaço ou linha..."></textarea>
+        <div class="button-row">
+          <button id="saveCustomSymbolsBtn" type="button">Adicionar caracteres</button>
+          <button id="clearCustomSymbolsBtn" class="secondary" type="button">Limpar caracteres personalizados</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" style="margin-top:16px">
+      <h2>4. Modelos prontos e personalizados</h2>
+      <p class="hint">Clique num modelo pronto para adicioná-lo ao campo “Texto do modelo” e usá-lo como base para criar outro. Para editar um modelo existente, selecione-o na lista “Modelo para editar”. Para aplicar um modelo ao texto original, use o campo “Destaque”.</p>
+      <div id="templates" class="templates"></div>
+
+      <div class="template-editor">
+        <h3>Criar ou alterar modelo</h3>
+
+        <label for="templateSelect">Modelo para editar</label>
+        <div class="template-row">
+          <select id="templateSelect"></select>
+          <button id="newTemplateBtn" class="secondary" type="button">Novo modelo</button>
+        </div>
+
+        <div class="controls">
+          <div>
+            <label for="templateName">Nome do modelo</label>
+            <input id="templateName" type="text" placeholder="Ex.: Pergunta com destaque">
+          </div>
+          <div>
+            <label for="templateContent">Texto do modelo</label>
+            <input id="templateContent" type="text" placeholder="Ex.: ➜ {texto} ⬅">
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button id="insertTextMarkerBtn" class="secondary" type="button">Inserir {texto}</button>
+          <button id="saveTemplateBtn" type="button">Salvar modelo</button>
+          <button id="deleteTemplateBtn" class="danger" type="button">Excluir modelo</button>
+          <button id="resetTemplatesBtn" class="secondary" type="button">Restaurar modelos padrão</button>
+          <span id="templateStatus" class="ok"></span>
+        </div>
+
+        <div class="template-editor">
+          <h3>Exportar ou importar modelos</h3>
+          <p class="hint">Use esta área para fazer backup dos seus modelos ou enviar seus modelos para outro usuário.</p>
+
+          <div class="button-row">
+            <button id="exportTemplatesBtn" type="button">Exportar modelos</button>
+            <button id="importTemplatesBtn" class="secondary" type="button">Importar modelos</button>
+            <input id="importTemplatesFile" type="file" accept=".json,.txt,application/json,text/plain" style="display:none">
+            <button id="copyBackupBtn" class="secondary" type="button">Copiar backup em texto</button>
+            <span id="backupStatus" class="ok"></span>
+          </div>
+
+          <label for="backupText">Backup em texto</label>
+          <textarea id="backupText" style="min-height:120px" placeholder="Ao exportar ou copiar, o backup aparecerá aqui. Você também pode colar aqui um backup recebido e clicar em Importar modelos."></textarea>
+        </div>
+
+        <p class="hint">Dica para modelos: use <strong>{texto}</strong> para marcar onde o texto selecionado deve entrar. Exemplo: <strong>➜ {texto} ⬅</strong>. Se o modelo não tiver {texto}, ele será colocado antes do texto.</p>
+        <p class="hint">Os modelos ficam salvos no navegador usando armazenamento local, mas também podem ser exportados para um arquivo .json e importados em outro navegador ou aparelho.</p>
+      </div>
+    </section>
+  </main>
+
+    <section class="card" style="margin-top:16px">
+      <h2>5. Padrões online do administrador</h2>
+      <p class="hint">Use esta área quando o app estiver publicado na Vercel junto com o arquivo <strong>defaults.json</strong>. Assim o usuário pode puxar os padrões mais recentes sem apagar tudo sem querer.</p>
+
+      <div class="button-row">
+        <button id="checkOnlineDefaultsBtn" type="button">Buscar padrões online</button>
+        <button id="mergeOnlineDefaultsBtn" class="secondary" type="button">Somar padrões online aos meus</button>
+        <button id="replaceOnlineDefaultsBtn" class="danger" type="button">Substituir pelos padrões online</button>
+        <span id="onlineDefaultsStatus" class="ok"></span>
+      </div>
+
+      <p id="onlineDefaultsVersion" class="hint">Versão online: ainda não carregada.</p>
+    </section>
+
+  <footer>
+    Arquivo local HTML/CSS/JavaScript. Funciona offline depois de baixado. Versão 4.8 com destaques ordenados.
+  </footer>
+
+  <script>
+    const input = document.getElementById('inputText');
+    const styleSelect = document.getElementById('styleSelect');
+    const decorationSelect = document.getElementById('decorationSelect');
+    const caseSelect = document.getElementById('caseSelect');
+    const targetSelect = document.getElementById('targetSelect');
+    const selectionInfo = document.getElementById('selectionInfo');
+    const preview = document.getElementById('preview');
+    const result = document.getElementById('result');
+    const copyStatus = document.getElementById('copyStatus');
+    const templateStatus = document.getElementById('templateStatus');
+
+    const templateSelect = document.getElementById('templateSelect');
+    const templateName = document.getElementById('templateName');
+    const templateContent = document.getElementById('templateContent');
+    const backupText = document.getElementById('backupText');
+    const backupStatus = document.getElementById('backupStatus');
+    const importTemplatesFile = document.getElementById('importTemplatesFile');
+    const moreSymbols = document.getElementById('moreSymbols');
+    const symbolCategorySelect = document.getElementById('symbolCategorySelect');
+    const customSymbolCategory = document.getElementById('customSymbolCategory');
+    const customSymbolsText = document.getElementById('customSymbolsText');
+    const symbolsStatus = document.getElementById('symbolsStatus');
+    const onlineDefaultsStatus = document.getElementById('onlineDefaultsStatus');
+    const onlineDefaultsVersion = document.getElementById('onlineDefaultsVersion');
+
+    const STORAGE_KEY = 'jwLibraryNoteConverterTemplatesV2';
+    const SYMBOLS_STORAGE_KEY = 'jwLibraryNoteConverterCustomSymbolsV1';
+    const FAVORITE_SYMBOLS_STORAGE_KEY = 'jwLibraryNoteConverterFavoriteSymbolsV1';
+    const CUSTOM_SYMBOL_CATEGORIES_STORAGE_KEY = 'jwLibraryNoteConverterCustomSymbolCategoriesV1';
+
+    const explicitMaps = {
+      script: {
+        A:'𝓐',B:'𝓑',C:'𝓒',D:'𝓓',E:'𝓔',F:'𝓕',G:'𝓖',H:'𝓗',I:'𝓘',J:'𝓙',K:'𝓚',L:'𝓛',M:'𝓜',N:'𝓝',O:'𝓞',P:'𝓟',Q:'𝓠',R:'𝓡',S:'𝓢',T:'𝓣',U:'𝓤',V:'𝓥',W:'𝓦',X:'𝓧',Y:'𝓨',Z:'𝓩',
+        a:'𝓪',b:'𝓫',c:'𝓬',d:'𝓭',e:'𝓮',f:'𝓯',g:'𝓰',h:'𝓱',i:'𝓲',j:'𝓳',k:'𝓴',l:'𝓵',m:'𝓶',n:'𝓷',o:'𝓸',p:'𝓹',q:'𝓺',r:'𝓻',s:'𝓼',t:'𝓽',u:'𝓾',v:'𝓿',w:'𝔀',x:'𝔁',y:'𝔂',z:'𝔃'
+      },
+      circled: {
+        A:'Ⓐ',B:'Ⓑ',C:'Ⓒ',D:'Ⓓ',E:'Ⓔ',F:'Ⓕ',G:'Ⓖ',H:'Ⓗ',I:'Ⓘ',J:'Ⓙ',K:'Ⓚ',L:'Ⓛ',M:'Ⓜ',N:'Ⓝ',O:'Ⓞ',P:'Ⓟ',Q:'Ⓠ',R:'Ⓡ',S:'Ⓢ',T:'Ⓣ',U:'Ⓤ',V:'Ⓥ',W:'Ⓦ',X:'Ⓧ',Y:'Ⓨ',Z:'Ⓩ',
+        a:'ⓐ',b:'ⓑ',c:'ⓒ',d:'ⓓ',e:'ⓔ',f:'ⓕ',g:'ⓖ',h:'ⓗ',i:'ⓘ',j:'ⓙ',k:'ⓚ',l:'ⓛ',m:'ⓜ',n:'ⓝ',o:'ⓞ',p:'ⓟ',q:'ⓠ',r:'ⓡ',s:'ⓢ',t:'ⓣ',u:'ⓤ',v:'ⓥ',w:'ⓦ',x:'ⓧ',y:'ⓨ',z:'ⓩ',
+        0:'⓪',1:'①',2:'②',3:'③',4:'④',5:'⑤',6:'⑥',7:'⑦',8:'⑧',9:'⑨'
+      },
+      blackCircled: {
+        0:'⓿',1:'❶',2:'❷',3:'❸',4:'❹',5:'❺',6:'❻',7:'❼',8:'❽',9:'❾'
+      },
+      squaredDark: {
+        A:'🅰',B:'🅱',C:'🅲',D:'🅳',E:'🅴',F:'🅵',G:'🅶',H:'🅷',I:'🅸',J:'🅹',K:'🅺',L:'🅻',M:'🅼',N:'🅽',O:'🅾',P:'🅿',Q:'🆀',R:'🆁',S:'🆂',T:'🆃',U:'🆄',V:'🆅',W:'🆆',X:'🆇',Y:'🆈',Z:'🆉'
+      },
+      squaredLight: {
+        A:'🄰',B:'🄱',C:'🄲',D:'🄳',E:'🄴',F:'🄵',G:'🄶',H:'🄷',I:'🄸',J:'🄹',K:'🄺',L:'🄻',M:'🄼',N:'🄽',O:'🄾',P:'🄿',Q:'🅀',R:'🅁',S:'🅂',T:'🅃',U:'🅄',V:'🅅',W:'🅆',X:'🅇',Y:'🅈',Z:'🅉'
+      }
+    };
+
+    const styles = [
+      { id:'normal', name:'Normal', example:'Pergunta 123' },
+      { id:'bold', name:'Negrito Unicode — 𝐏𝐞𝐫𝐠𝐮𝐧𝐭𝐚', upper:0x1D400, lower:0x1D41A, digit:0x1D7CE },
+      { id:'italic', name:'Itálico Unicode — 𝑃𝑒𝑟𝑔𝑢𝑛𝑡𝑎', upper:0x1D434, lower:0x1D44E },
+      { id:'boldItalic', name:'Negrito itálico — 𝑷𝒆𝒓𝒈𝒖𝒏𝒕𝒂', upper:0x1D468, lower:0x1D482 },
+      { id:'sansBold', name:'Sem serifa negrito — 𝗣𝗲𝗿𝗴𝘂𝗻𝘁𝗮', upper:0x1D5D4, lower:0x1D5EE, digit:0x1D7EC },
+      { id:'sansItalic', name:'Sem serifa itálico — 𝘗𝘦𝘳𝘨𝘶𝘯𝘵𝘢', upper:0x1D608, lower:0x1D622 },
+      { id:'sansBoldItalic', name:'Sem serifa negrito itálico — 𝙋𝙚𝙧𝙜𝙪𝙣𝙩𝙖', upper:0x1D63C, lower:0x1D656 },
+      { id:'mono', name:'Monoespaçado — 𝙿𝚎𝚛𝚐𝚞𝚗𝚝𝚊', upper:0x1D670, lower:0x1D68A, digit:0x1D7F6 },
+      { id:'script', name:'Letra bonita/script — 𝓟𝓮𝓻𝓰𝓾𝓷𝓽𝓪', explicit:'script' },
+      { id:'circled', name:'Letras circuladas — Ⓟⓔⓡⓖⓤⓝⓣⓐ', explicit:'circled' },
+      { id:'squaredDark', name:'Letras em caixa escura — 🅿🅴🆁🅶🆄🅽🆃🅰', explicit:'squaredDark', uppercaseOnly:true },
+      { id:'squaredLight', name:'Letras em caixa clara — 🄿🄴🅁🄶🅄🄽🅃🄰', explicit:'squaredLight', uppercaseOnly:true },
+      { id:'blackCircledNumbers', name:'Números pretos — ❶❷❸', explicit:'blackCircled' }
+    ];
+
+    const defaultFavoriteSymbols = [
+      '❓','✅','⚠️','▶️','⏩','➤','➜','➽','➡','⬅','👉','☛','☚','💡','🔎','📌',
+      '✍🏻','👍🏻','👎🏻','😀','★','☆','✦','✧','✎','✓','✔','✕','✗','✘','🟦','🟧','🟪','🟥',
+      '■','□','▣','◆','▲','●','○','▇','▬','❝','❞'
+    ];
+
+    const symbolCategories = [
+      { id: 'setas', name: 'Setas e indicadores', text: `➤ ➜ ➽ ➡ ⬅ 👉 ☛ ☚ ☜ ☝ ☞ ☟ 👆 👇 👈 ↛ ↝ ↠ ⇝ ↣ ↦ ↬ ⇀ ⇁ ⇉ ⇏ ⇒ ⇛ ⇢ ⇥ ⇨ ⇰ ⇴ ⇶ ⇸ ⇻ ⇾ ➔ ➙ ➛ ➝ ➞ ➟ ➢ ➣ ➥ ➦ ➧ ➨ ➩ ➪ ➫ ➬ ➭ ➮ ➯ ➱ ➲ ➳ ➵ ➺ ➻ ➼ ➾ ➠ ⫸ ⫷ ▶` },
+      { id: 'marcadores', name: 'Marcadores e avisos', text: `❓ ✅ ⚠️ ⚠ ⛔ 🚫 ❌ ❗️ ❕ ❔ ‼️ ⁉️ 💯 🔅 🔆 🔱 ⚜ 〽️ 🚸 🔰 ♻️ ❇️ ✳️ ❎ 💠 🌀 ➿ ✔ ✓ ☑️ 🔘 ✖ ✕ ✗ ✘ ╳` },
+      { id: 'linhas', name: 'Linhas, blocos e formas', text: `■ □ ▢ ▣ ▤ ▥ ▦ ▧ ▨ ▩ ◆ ▲ △ ▷ ▼ ▽ ◇ ◈ ◉ ◊ ○ ◌ ◍ ◎ ● ◐ ◑ ◒ ◓ ◧ ◨ ◩ ◪ ▂ ▃ ▄ ▅ ▆ ▇ █ ▉ ▊ ▋ ▌ ▍ ▎ ▏ ▬ ▭ ▁ ▇▇▇▇▇▇▇▇▇▇ ▀▄▀▄▀▄▀▄⎐⎏▀▄▀▄▀▄▀▄ ▬▭▬▭▬▭▬▭▬▭▬▭▬▭▬` },
+      { id: 'numeros', name: 'Números especiais', text: `⓿ ❶ ❷ ❸ ❹ ❺ ❻ ❼ ❽ ❾ ❿ ⓫ ⓬ ⓭ ⓮ ⓯ ⓰ ⓱ ⓲ ⓳ ⓴ ⓵ ⓶ ⓷ ⓸ ⓹ ⓺ ⓻ ⓼ ⓽ ⓾ ➀ ➁ ➂ ➃ ➄ ➅ ➆ ➇ ➈ ➉ ➊ ➋ ➌ ➍ ➎ ➏ ➐ ➑ ➒ ➓ 🔟 🔢` },
+      { id: 'letras', name: 'Letras decorativas', text: `🅰 🅱 🅲 🅳 🅴 🅵 🅶 🅷 🅸 🅹 🅺 🅻 🅼 🅽 🅾 🅿 🆀 🆁 🆂 🆃 🆄 🆅 🆆 🆇 🆈 🆉 🅸🅽🆂🆃🆁🆄🆃🅾🆁 𝘼 𝘽 𝘾 𝘿 𝙀 𝙁 𝙂 𝙃 𝙄 𝙅 𝙆 𝙇 𝙈 𝙉 𝙊 𝙋 𝙌 𝙍 𝙎 𝙏 𝙐 𝙑 𝙒 𝙓 𝙔 𝙕 𝙖 𝙗 𝙘 𝙙 𝙚 𝙛 𝙜 𝙝 𝙞 𝙟 𝙠 𝙡 𝙢 𝙣 𝙤 𝙥 𝙦 𝙧 𝙨 𝙩 𝙪 𝙫 𝙬 𝙭 𝙮 𝙯 𝐀 𝐁 𝐂 𝐃 𝐄 𝐅 𝐆 𝐇 𝐈 𝐉 𝐊 𝐋 𝐌 𝐍 𝐎 𝐏 𝐐 𝐑 𝐒 𝐓 𝐔 𝐕 𝐖 𝐗 𝐘 𝐙 𝓐 𝓑 𝓒 𝓓 𝓔 𝓕 𝓖 𝓗 𝓘 𝓙 𝓚 𝓛 𝓜 𝓝 𝓞 𝓟 𝓠 𝓡 𝓢 𝓣 𝓤 𝓥 𝓦 𝓧 𝓨 𝓩 𝓪 𝓫 𝓬 𝓭 𝓮 𝓯 𝓰 𝓱 𝓲 𝓳 𝓴 𝓵 𝓶 𝓷 𝓸 𝓹 𝓺 𝓻 𝓼 𝓽 𝓾 𝓿 𝔀 𝔁 𝔂 𝔃 Ⓐ Ⓑ Ⓒ Ⓓ Ⓔ Ⓕ Ⓖ Ⓗ Ⓘ Ⓙ Ⓚ Ⓛ Ⓜ Ⓝ Ⓞ Ⓟ Ⓠ Ⓡ Ⓢ Ⓣ Ⓤ Ⓥ Ⓦ Ⓧ Ⓨ Ⓩ 🄰 🄱 🄲 🄳 🄴 🄵 🄶 🄷 🄸 🄹 🄺 🄻 🄼 🄽 🄾 🄿 🅀 🅁 🅂 🅃 🅄 🅅 🅆 🅇 🅈 🅉` },
+      { id: 'modelos', name: 'Sequências prontas', text: `❓𝐏𝐄𝐑𝐆𝐔𝐍𝐓𝐀 👉 ▶️▶️ 𝙑𝙄𝘿𝙀𝙊 ⏩⏩ ⚠️ 🅸🅽🆂🆃🆁🆄🆃🅾🆁 👉 ▶️▶️▶️▶️▶️▶️ ❓➽➽➽➽ 🟪❓𝐏𝐄𝐑𝐆𝐔𝐍𝐓𝐀 👉 🟧🟧🟧🟧🟧🟧🟧🟧🟧 DESIGNAÇÃO 3 🟧🟧🟧🟧🟧🟧🟧🟧🟧` },
+      { id: 'emoji', name: 'Emojis e símbolos gerais', text: `✍🏻 👎🏻 👍🏻 😀 🤔 💡 🔎 🔍 📌 ✏ 🔦 🎮 💣 🔑 🔧 🔨 ⚒ ⛏ 🔭 🎉 🎊 🔥 🎆 🎇 🎈 🚀 📦 🎁 ⚰ ⚱ ⌛ ⏳ 🔮 ⛓ 📢 📣 🔔 🔱 🏆 🔶 🔷 🌹 💎 ❤️ 💛 💙 💜 💔 💕 💞 💓 💗 💖 💘 💝 💟 🔴 🟠 🟡 🟢 🔵 🟣 🟤 ⚫ ⚪ 🟦 🟫 🟩 🟧 🟪 🟥 🟨 ⬛️ ⬜️ 😀 😬 😁 😂 😃 😄 😅 😆 😇 😉 😊 😋 😌 😍 😘 😗 😙 😚 😜 😝 😛 😎 😏 😶 😐 😑 😒 😳 😞 😟 😠 😡 😔 😕 😣 😖 😫 😩 😤 😮 😱 😨 😰 😯 😦 😧 😢 😥 😪 😓 😭 😵 😲 😷 😴 💤 😈 👿 👹 👺 💀 👻 👽 🙌 👏 👋 👍 👊 ✊ ✌️ 👌 ✋ 💪 🙏 ☝️ 👆 👇 👈 👉 🖖 👀 👤` },
+      { id: 'simbolos', name: 'Símbolos diversos', text: `🔯 ⛎ ♈️ ♉️ ♊️ ♋️ ♌️ ♍️ ♎️ ♏️ ♐️ ♑️ ♒️ ♓️ 🆔 🈳 🈹 📴 📳 🈶 🈚️ 🈸 🈺 🈷️ ✴️ 🆚 🉑 💮 🉐 ㊙️ ㊗️ 🈴 🈵 🈲 🅰️ 🅱️ 🆎 🆑 🅾️ 🆘 📛 💢 ♨️ 🚷 🚯 🚳 🚱 🔞 📵 🈯️ 💹 🌐 Ⓜ️ 🏧 🈂️ 🛂 🛃 🛄 🛅 ♿️ 🚭 🚾 🅿️ 🚰 🚹 🚺 🚼 🚻 🚮 🎦 📶 🈁 🆖 🆗 🆙 🆒 🆕 🆓 ▶️ ⏩ ⏪ 🔀 🔁 🔂 ◀️ 🔼 🔽 ⏫ ⏬ ➡️ ⬅️ ⬆️ ⬇️ ↗️ ↘️ ↙️ ↖️ ↕️ ↔️ 🔄 ↪️ ↩️ ⤴️ ⤵️ ℹ️ 🔤 🔡 🔠 🔣 🎵 🎶 〰️ ➰ 🔃 ➕ ➖ ➗ ✖️ 💲 💱 ©️ ®️ ™️ 🔚 🔙 🔛 🔝 🔜` }
+    ];
+
+    let favoriteSymbols = [];
+    let customSymbolCategories = {};
+
+
+
+    const defaultTemplates = [
+      { id:'tpl-question', name:'Pergunta', content:'❓ 𝐏𝐄𝐑𝐆𝐔𝐍𝐓𝐀 👉 ' },
+      { id:'tpl-video', name:'Vídeo', content:'▶️▶️ 𝙑𝙄𝘿𝙀𝙊 ⏩⏩ ' },
+      { id:'tpl-instructor', name:'Instrutor', content:'⚠️ 🅸🅽🆂🆃🆁🆄🆃🅾🆁 👉 ' },
+      { id:'tpl-topic', name:'Novo tópico', content:'🟦 NOVO TÓPICO ➜ ' },
+      { id:'tpl-designacao', name:'Designação', content:'🟧🟧🟧 DESIGNAÇÃO 🟧🟧🟧' },
+      { id:'tpl-line', name:'Linha divisória', content:'▇▇▇▇▇▇▇▇▇▇' },
+      { id:'tpl-quote', name:'Citação', content:'❝  ❞' },
+      { id:'tpl-star', name:'Estrelas', content:'★  ★' },
+      { id:'tpl-application', name:'Aplicação', content:'✅ Aplicação: ' },
+      { id:'tpl-mainpoint', name:'Ponto principal', content:'➤ Ponto principal: ' }
+    ];
+
+    let templates = [];
+
+
+    let lastFocusedTextField = input;
+
+    function rememberFocusedField(event) {
+      const el = event.target;
+      if (el === input || el === templateContent || el === backupText || el === customSymbolsText) {
+        lastFocusedTextField = el;
+      }
+    }
+
+    function getActiveInsertTarget() {
+      const active = document.activeElement;
+      if (active === templateContent || active === backupText || active === input) return active;
+      return lastFocusedTextField || input;
+    }
+
+    function insertTextAtCursor(target, text) {
+      if (!target) target = input;
+
+      const start = typeof target.selectionStart === 'number' ? target.selectionStart : target.value.length;
+      const end = typeof target.selectionEnd === 'number' ? target.selectionEnd : target.value.length;
+      const before = target.value.slice(0, start);
+      const after = target.value.slice(end);
+      const spacer = before && !before.endsWith('\n') && target === input ? '' : '';
+
+      target.value = before + spacer + text + after;
+      const pos = before.length + spacer.length + text.length;
+      target.focus();
+      target.setSelectionRange(pos, pos);
+
+      if (target === input) updateResult();
+      if (target === templateContent) templateStatus.textContent = '';
+      if (target === backupText) backupStatus.textContent = '';
+    }
+
+    function newId() {
+      return 'tpl-custom-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+    }
+
+    function normalizeForMap(ch) {
+      const accents = {
+        'Á':'A','À':'A','Â':'A','Ã':'A','Ä':'A','É':'E','Ê':'E','È':'E','Í':'I','Ì':'I','Î':'I','Ó':'O','Ô':'O','Õ':'O','Ò':'O','Ú':'U','Ù':'U','Û':'U','Ç':'C',
+        'á':'a','à':'a','â':'a','ã':'a','ä':'a','é':'e','ê':'e','è':'e','í':'i','ì':'i','î':'i','ó':'o','ô':'o','õ':'o','ò':'o','ú':'u','ù':'u','û':'u','ç':'c'
+      };
+      return accents[ch] || ch;
+    }
+
+    function toTitleCase(text) {
+      return text.toLocaleLowerCase('pt-BR').replace(/(^|[\s\-–—/([{“"'])\p{L}/gu, match => match.toLocaleUpperCase('pt-BR'));
+    }
+
+    function applyCase(text) {
+      const mode = caseSelect.value;
+      if (mode === 'upper') return text.toLocaleUpperCase('pt-BR');
+      if (mode === 'lower') return text.toLocaleLowerCase('pt-BR');
+      if (mode === 'title') return toTitleCase(text);
+      return text;
+    }
+
+    function convertChar(ch, style) {
+      if (style.id === 'normal') return ch;
+
+      let base = normalizeForMap(ch);
+      if (style.uppercaseOnly) base = base.toUpperCase();
+
+      if (style.explicit) {
+        const map = explicitMaps[style.explicit] || {};
+        return map[base] || ch;
+      }
+
+      const code = base.codePointAt(0);
+      if (code >= 65 && code <= 90 && style.upper) return String.fromCodePoint(style.upper + code - 65);
+      if (code >= 97 && code <= 122 && style.lower) return String.fromCodePoint(style.lower + code - 97);
+      if (code >= 48 && code <= 57 && style.digit) return String.fromCodePoint(style.digit + code - 48);
+      return ch;
+    }
+
+
+    let reverseUnicodeMap = null;
+
+    function buildReverseUnicodeMap() {
+      const map = new Map();
+
+      styles.forEach(style => {
+        if (style.id === 'normal') return;
+
+        if (style.explicit) {
+          const explicit = explicitMaps[style.explicit] || {};
+          Object.entries(explicit).forEach(([plain, fancy]) => map.set(fancy, plain));
+        }
+
+        if (style.upper) {
+          for (let i = 0; i < 26; i++) map.set(String.fromCodePoint(style.upper + i), String.fromCharCode(65 + i));
+        }
+        if (style.lower) {
+          for (let i = 0; i < 26; i++) map.set(String.fromCodePoint(style.lower + i), String.fromCharCode(97 + i));
+        }
+        if (style.digit) {
+          for (let i = 0; i < 10; i++) map.set(String.fromCodePoint(style.digit + i), String.fromCharCode(48 + i));
+        }
+      });
+
+      // Variações comuns que aparecem em alguns aparelhos/sistemas.
+      '⓵⓶⓷⓸⓹⓺⓻⓼⓽⓾'.split('').forEach((ch, i) => map.set(ch, String(i + 1)));
+      '➀➁➂➃➄➅➆➇➈➉'.split('').forEach((ch, i) => map.set(ch, String(i + 1)));
+      '➊➋➌➍➎➏➐➑➒➓'.split('').forEach((ch, i) => map.set(ch, String(i + 1)));
+
+      return map;
+    }
+
+    function removeUnicodeFormatting(text) {
+      if (!reverseUnicodeMap) reverseUnicodeMap = buildReverseUnicodeMap();
+      return [...text].map(ch => reverseUnicodeMap.get(ch) || ch).join('');
+    }
+
+    function escapeRegExp(text) {
+      return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function stripTemplateDecoration(line) {
+      let cleaned = line;
+
+      templates.forEach(tpl => {
+        const content = tpl.content || '';
+        if (!content) return;
+
+        if (content.includes('{texto}')) {
+          const parts = content.split('{texto}');
+          const prefix = parts[0] || '';
+          const suffix = parts.slice(1).join('{texto}') || '';
+
+          if (prefix && cleaned.startsWith(prefix)) cleaned = cleaned.slice(prefix.length);
+          if (suffix && cleaned.endsWith(suffix)) cleaned = cleaned.slice(0, -suffix.length);
+        } else if (cleaned.startsWith(content)) {
+          cleaned = cleaned.slice(content.length);
+        }
+      });
+
+      return cleaned;
+    }
+
+    function removeLineDecoration(line) {
+      let cleaned = removeUnicodeFormatting(line);
+
+      cleaned = stripTemplateDecoration(cleaned);
+
+      const rules = [
+        [/^❓\s*(.*?)\s*👉$/u, '$1'],
+        [/^▶️▶️\s*(.*?)\s*⏩⏩$/u, '$1'],
+        [/^⚠️\s*(.*?)\s*👉$/u, '$1'],
+        [/^➤\s*(.*?)$/u, '$1'],
+        [/^✅\s*(.*?)$/u, '$1'],
+        [/^★\s*(.*?)\s*★$/u, '$1'],
+        [/^❝\s*(.*?)\s*❞$/u, '$1'],
+        [/^▇▇▇\s*(.*?)\s*▇▇▇$/u, '$1'],
+        [/^🟦 NOVO TÓPICO ➜\s*(.*?)$/u, '$1']
+      ];
+
+      rules.forEach(([regex, replacement]) => {
+        cleaned = cleaned.replace(regex, replacement);
+      });
+
+      return cleaned;
+    }
+
+    function removeFormattingFromText(text) {
+      return String(text || '').split('\n').map(removeLineDecoration).join('\n');
+    }
+
+    function convertText(text) {
+      const style = styles.find(s => s.id === styleSelect.value) || styles[0];
+      const plainText = removeFormattingFromText(text);
+      const cased = applyCase(plainText);
+      return [...cased].map(ch => convertChar(ch, style)).join('');
+    }
+
+
+    function renderDecorationSelect() {
+      const currentValue = decorationSelect.value || 'none';
+
+      const builtIns = [
+        { value: 'none', label: 'Sem destaque' },
+        { value: 'question', label: '❓ PERGUNTA 👉 texto' },
+        { value: 'video', label: '▶️▶️ VÍDEO ⏩⏩ texto' },
+        { value: 'instructor', label: '⚠️ INSTRUTOR 👉 texto' },
+        { value: 'arrow', label: '➤ texto' },
+        { value: 'check', label: '✅ texto' },
+        { value: 'star', label: '★ texto ★' },
+        { value: 'quote', label: '❝ texto ❞' },
+        { value: 'line', label: '▇▇▇ texto ▇▇▇' },
+        { value: 'topic', label: '🟦 NOVO TÓPICO ➜ texto' }
+      ];
+
+      decorationSelect.innerHTML = '';
+
+      builtIns.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.value;
+        opt.textContent = item.label;
+        decorationSelect.appendChild(opt);
+      });
+
+      if (templates.length) {
+        const group = document.createElement('optgroup');
+        group.label = 'Modelos prontos e personalizados';
+        const sortedTemplates = templates.slice().sort((a, b) => {
+          const nameA = String(a.name || 'Modelo');
+          const nameB = String(b.name || 'Modelo');
+
+          const numA = nameA.match(/^\s*\d+/);
+          const numB = nameB.match(/^\s*\d+/);
+
+          if (numA && numB) {
+            const diff = Number(numA[0]) - Number(numB[0]);
+            if (diff !== 0) return diff;
+          }
+
+          if (numA && !numB) return -1;
+          if (!numA && numB) return 1;
+
+          return nameA.localeCompare(nameB, 'pt-BR', { numeric: true, sensitivity: 'base' });
+        });
+
+        sortedTemplates.forEach(tpl => {
+          const opt = document.createElement('option');
+          opt.value = 'template:' + tpl.id;
+          opt.textContent = (tpl.name || 'Modelo') + ' — ' + tpl.content;
+          group.appendChild(opt);
+        });
+        decorationSelect.appendChild(group);
+      }
+
+      if ([...decorationSelect.options].some(opt => opt.value === currentValue)) {
+        decorationSelect.value = currentValue;
+      } else {
+        decorationSelect.value = 'none';
+      }
+    }
+
+    function applyDecoration(text) {
+      const d = decorationSelect.value;
+      if (!text.trim()) return text;
+
+      const templateId = d.startsWith('template:') ? d.slice('template:'.length) : '';
+      const selectedTemplate = templateId ? templates.find(t => t.id === templateId) : null;
+
+      const lines = text.split('\n');
+      return lines.map(line => {
+        if (!line.trim()) return line;
+        if (d === 'none') return line;
+        if (selectedTemplate) {
+          if (selectedTemplate.content.includes('{texto}')) {
+            return selectedTemplate.content.split('{texto}').join(line);
+          }
+          return selectedTemplate.content + line;
+        }
+        if (d === 'question') return '❓ ' + line + ' 👉';
+        if (d === 'video') return '▶️▶️ ' + line + ' ⏩⏩';
+        if (d === 'instructor') return '⚠️ ' + line + ' 👉';
+        if (d === 'arrow') return '➤ ' + line;
+        if (d === 'check') return '✅ ' + line;
+        if (d === 'star') return '★ ' + line + ' ★';
+        if (d === 'quote') return '❝ ' + line + ' ❞';
+        if (d === 'line') return '▇▇▇ ' + line + ' ▇▇▇';
+        if (d === 'topic') return '🟦 NOVO TÓPICO ➜ ' + line;
+        return line;
+      }).join('\n');
+    }
+
+    function updatePreview() {
+      const sample = 'Pergunta 123';
+      const style = styles.find(s => s.id === styleSelect.value) || styles[0];
+      const cased = applyCase(sample);
+      const converted = [...cased].map(ch => convertChar(ch, style)).join('');
+      preview.textContent = applyDecoration(converted);
+    }
+
+    function getSelectionRange() {
+      const start = input.selectionStart || 0;
+      const end = input.selectionEnd || 0;
+      return { start, end, selected: input.value.slice(start, end) };
+    }
+
+    let lastSelectionPreview = null;
+
+    function getConvertedSelectionData() {
+      const { start, end, selected } = getSelectionRange();
+      if (start === end || !selected) return null;
+
+      const before = input.value.slice(0, start);
+      const after = input.value.slice(end);
+      const convertedSelection = applyDecoration(convertText(selected));
+      const fullText = before + convertedSelection + after;
+
+      return {
+        start,
+        end,
+        selected,
+        before,
+        after,
+        convertedSelection,
+        fullText,
+        newStart: before.length,
+        newEnd: before.length + convertedSelection.length
+      };
+    }
+
+    function convertSelectionKeepingRest() {
+      const data = getConvertedSelectionData();
+      if (!data) {
+        lastSelectionPreview = null;
+        return input.value;
+      }
+
+      lastSelectionPreview = data;
+      return data.fullText;
+    }
+
+    function updateSelectionInfo() {
+      const { start, end, selected } = getSelectionRange();
+      if (start !== end && selected) {
+        selectionInfo.textContent = 'Trecho selecionado: ' + selected.length + ' caractere(s). Clique em “Salvar formatação aplicada” para fixar essa formatação antes de escolher outro trecho.';
+      } else if (targetSelect.value === 'selection') {
+        selectionInfo.textContent = 'Selecione um trecho no campo “Texto original” para formatar apenas essa parte.';
+      } else {
+        selectionInfo.textContent = 'Para formatar várias partes: selecione um trecho, escolha “Apenas trecho selecionado”, clique em “Converter” e depois em “Salvar formatação aplicada”.';
+      }
+    }
+
+    function updateResult() {
+      if (targetSelect.value === 'selection') {
+        result.textContent = convertSelectionKeepingRest();
+      } else {
+        lastSelectionPreview = null;
+        const converted = convertText(input.value);
+        result.textContent = applyDecoration(converted);
+      }
+      copyStatus.textContent = '';
+      updateSelectionInfo();
+      updatePreview();
+    }
+
+
+
+    function removeFormattingFromSelection() {
+      const data = getSelectionRange();
+      const previousScrollTop = input.scrollTop;
+      const previousScrollLeft = input.scrollLeft;
+
+      if (data.start === data.end || !data.selected) {
+        alert('Selecione primeiro o trecho que deseja limpar.');
+        input.focus();
+        return;
+      }
+
+      const cleaned = removeFormattingFromText(data.selected);
+      input.value = input.value.slice(0, data.start) + cleaned + input.value.slice(data.end);
+
+      const newPos = data.start + cleaned.length;
+      input.focus();
+      input.scrollTop = previousScrollTop;
+      input.scrollLeft = previousScrollLeft;
+      input.setSelectionRange(newPos, newPos);
+
+      lastSelectionPreview = null;
+      updateResult();
+      input.scrollTop = previousScrollTop;
+      input.scrollLeft = previousScrollLeft;
+      selectionInfo.textContent = 'Formatação removida do trecho selecionado.';
+    }
+
+    function quickFormat(styleId) {
+      const previousStyle = styleSelect.value;
+      const previousTarget = targetSelect.value;
+
+      styleSelect.value = styleId;
+      targetSelect.value = 'selection';
+
+      const data = getConvertedSelectionData();
+      if (!data) {
+        targetSelect.value = previousTarget;
+        styleSelect.value = styleId;
+        updateResult();
+        alert('Selecione primeiro um trecho do texto original.');
+        input.focus();
+        return;
+      }
+
+      const previousScrollTop = input.scrollTop;
+      const previousScrollLeft = input.scrollLeft;
+
+      input.value = data.fullText;
+      input.focus();
+      input.scrollTop = previousScrollTop;
+      input.scrollLeft = previousScrollLeft;
+      input.setSelectionRange(data.newEnd, data.newEnd);
+
+      lastSelectionPreview = null;
+      targetSelect.value = 'selection';
+      updateResult();
+      input.scrollTop = previousScrollTop;
+      input.scrollLeft = previousScrollLeft;
+      selectionInfo.textContent = 'Formatação rápida aplicada e salva. A seleção foi desfeita para evitar duplicação.';
+    }
+
+    function commitSelectionFormatting() {
+      let data = lastSelectionPreview;
+      const previousScrollTop = input.scrollTop;
+      const previousScrollLeft = input.scrollLeft;
+      const cursorPos = typeof input.selectionEnd === 'number' ? input.selectionEnd : input.value.length;
+
+      if (targetSelect.value === 'selection') {
+        if (!data) data = getConvertedSelectionData();
+
+        if (!data) {
+          // Quando o usuário apenas editou manualmente o texto original, não há trecho selecionado para salvar.
+          // Nesse caso, apenas mantém o texto como está, atualiza a visualização e não mostra alerta.
+          input.focus();
+          input.scrollTop = previousScrollTop;
+          input.scrollLeft = previousScrollLeft;
+          input.setSelectionRange(cursorPos, cursorPos);
+          lastSelectionPreview = null;
+          updateResult();
+          input.scrollTop = previousScrollTop;
+          input.scrollLeft = previousScrollLeft;
+          selectionInfo.textContent = 'Alteração manual mantida. Para aplicar um destaque, selecione um trecho do texto.';
+          return;
+        }
+
+        input.value = data.fullText;
+        input.focus();
+
+        // Mantém a posição visual do texto e desfaz a seleção para não duplicar sem querer.
+        input.scrollTop = previousScrollTop;
+        input.scrollLeft = previousScrollLeft;
+        input.setSelectionRange(data.newEnd, data.newEnd);
+
+        lastSelectionPreview = null;
+        targetSelect.value = 'selection';
+        updateResult();
+        input.scrollTop = previousScrollTop;
+        input.scrollLeft = previousScrollLeft;
+        selectionInfo.textContent = 'Formatação salva nesse trecho. A seleção foi desfeita; agora você pode selecionar outro trecho.';
+        return;
+      }
+
+      if (!result.textContent.trim()) return;
+      const ok = confirm('Você está em “Texto inteiro”. Salvar a visualização vai substituir todo o texto original pelo texto formatado. Deseja continuar?');
+      if (!ok) return;
+
+      input.value = result.textContent;
+      input.focus();
+      input.scrollTop = previousScrollTop;
+      input.scrollLeft = previousScrollLeft;
+      input.setSelectionRange(0, 0);
+      updateResult();
+      input.scrollTop = previousScrollTop;
+      input.scrollLeft = previousScrollLeft;
+      selectionInfo.textContent = 'Texto inteiro formatado e salvo no campo original.';
+    }
+
+    function applyStyleToSelectionInInput() {
+      const data = getConvertedSelectionData();
+      const previousScrollTop = input.scrollTop;
+      const previousScrollLeft = input.scrollLeft;
+
+      if (!data) {
+        alert('Selecione primeiro um trecho do texto original.');
+        input.focus();
+        return;
+      }
+
+      input.value = data.fullText;
+      input.focus();
+      input.scrollTop = previousScrollTop;
+      input.scrollLeft = previousScrollLeft;
+      input.setSelectionRange(data.newEnd, data.newEnd);
+      targetSelect.value = 'selection';
+      lastSelectionPreview = null;
+      updateResult();
+      input.scrollTop = previousScrollTop;
+      input.scrollLeft = previousScrollLeft;
+      selectionInfo.textContent = 'Formatação aplicada e salva nesse trecho. A seleção foi desfeita para evitar duplicação.';
+    }
+
+    function saveTemplatesToStorage() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(templates));
+    }
+
+    function loadTemplates() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        templates = saved ? JSON.parse(saved) : structuredClone(defaultTemplates);
+        if (!Array.isArray(templates) || !templates.length) templates = structuredClone(defaultTemplates);
+      } catch (e) {
+        templates = structuredClone(defaultTemplates);
+      }
+    }
+
+    function renderTemplates() {
+      const templatesBox = document.getElementById('templates');
+      templatesBox.innerHTML = '';
+
+      templates.forEach(tpl => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'secondary mini';
+        btn.textContent = tpl.content;
+        btn.title = tpl.name + ' — clique para usar como base no campo “Texto do modelo”';
+        btn.addEventListener('click', () => {
+          const prefix = templateContent.value && !templateContent.value.endsWith(' ') ? ' ' : '';
+          insertTextAtCursor(templateContent, prefix + tpl.content);
+          templateStatus.className = 'ok';
+          templateStatus.textContent = 'Modelo adicionado ao campo de edição.';
+        });
+        templatesBox.appendChild(btn);
+      });
+
+      renderTemplateSelect();
+      renderDecorationSelect();
+    }
+
+    function renderTemplateSelect(selectedId) {
+      templateSelect.innerHTML = '';
+      templates.forEach(tpl => {
+        const opt = document.createElement('option');
+        opt.value = tpl.id;
+        opt.textContent = tpl.name + ' — ' + tpl.content;
+        templateSelect.appendChild(opt);
+      });
+
+      if (selectedId && templates.some(t => t.id === selectedId)) {
+        templateSelect.value = selectedId;
+      }
+
+      loadSelectedTemplateIntoEditor();
+    }
+
+    function loadSelectedTemplateIntoEditor() {
+      const tpl = templates.find(t => t.id === templateSelect.value);
+      if (!tpl) {
+        templateName.value = '';
+        templateContent.value = '';
+        return;
+      }
+      templateName.value = tpl.name || '';
+      templateContent.value = tpl.content || '';
+      templateStatus.textContent = '';
+    }
+
+
+    function uniqueTokensFromText(text) {
+      const tokens = [];
+      const seen = new Set();
+      const parts = String(text || '').split(/\s+/).filter(Boolean);
+      parts.forEach(part => {
+        if (!seen.has(part)) {
+          seen.add(part);
+          tokens.push(part);
+        }
+      });
+      return tokens;
+    }
+
+    function getBaseCategorySymbols(categoryId) {
+      const cat = symbolCategories.find(c => c.id === categoryId);
+      return cat ? uniqueTokensFromText(cat.text) : [];
+    }
+
+    function getCustomCategorySymbols(categoryId) {
+      return Array.isArray(customSymbolCategories[categoryId]) ? customSymbolCategories[categoryId] : [];
+    }
+
+    function getAllCategorySymbols(categoryId) {
+      const seen = new Set();
+      const combined = [];
+      [...getBaseCategorySymbols(categoryId), ...getCustomCategorySymbols(categoryId)].forEach(sym => {
+        if (!seen.has(sym)) {
+          seen.add(sym);
+          combined.push(sym);
+        }
+      });
+      return combined;
+    }
+
+    function getAllSymbols() {
+      const all = [];
+      const seen = new Set();
+      symbolCategories.forEach(cat => {
+        getAllCategorySymbols(cat.id).forEach(sym => {
+          if (!seen.has(sym)) {
+            seen.add(sym);
+            all.push(sym);
+          }
+        });
+      });
+      Object.values(customSymbolCategories).flat().forEach(sym => {
+        if (!seen.has(sym)) {
+          seen.add(sym);
+          all.push(sym);
+        }
+      });
+      favoriteSymbols.forEach(sym => {
+        if (!seen.has(sym)) {
+          seen.add(sym);
+          all.push(sym);
+        }
+      });
+      return all;
+    }
+
+    function loadCustomSymbols() {
+      try {
+        const savedCustom = localStorage.getItem(CUSTOM_SYMBOL_CATEGORIES_STORAGE_KEY);
+        const savedOld = localStorage.getItem(SYMBOLS_STORAGE_KEY);
+        customSymbolCategories = savedCustom ? JSON.parse(savedCustom) : {};
+        if (!customSymbolCategories || typeof customSymbolCategories !== 'object' || Array.isArray(customSymbolCategories)) {
+          customSymbolCategories = {};
+        }
+        const oldSymbols = savedOld ? JSON.parse(savedOld) : [];
+        if (Array.isArray(oldSymbols) && oldSymbols.length && !customSymbolCategories['personalizados']) {
+          customSymbolCategories['personalizados'] = uniqueTokensFromText(oldSymbols.join(' '));
+        }
+      } catch (e) {
+        customSymbolCategories = {};
+      }
+
+      try {
+        const savedFavorites = localStorage.getItem(FAVORITE_SYMBOLS_STORAGE_KEY);
+        favoriteSymbols = savedFavorites ? JSON.parse(savedFavorites) : defaultFavoriteSymbols.slice();
+        if (!Array.isArray(favoriteSymbols) || !favoriteSymbols.length) favoriteSymbols = defaultFavoriteSymbols.slice();
+      } catch (e) {
+        favoriteSymbols = defaultFavoriteSymbols.slice();
+      }
+    }
+
+    function saveCustomSymbols() {
+      localStorage.setItem(CUSTOM_SYMBOL_CATEGORIES_STORAGE_KEY, JSON.stringify(customSymbolCategories));
+      localStorage.setItem(SYMBOLS_STORAGE_KEY, JSON.stringify(Object.values(customSymbolCategories).flat()));
+    }
+
+    function saveFavoriteSymbols() {
+      localStorage.setItem(FAVORITE_SYMBOLS_STORAGE_KEY, JSON.stringify(favoriteSymbols));
+    }
+
+    function renderSymbolCategories() {
+      const current = symbolCategorySelect.value || 'setas';
+      symbolCategorySelect.innerHTML = '';
+
+      symbolCategories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat.id;
+        opt.textContent = cat.name;
+        symbolCategorySelect.appendChild(opt);
+      });
+
+      Object.keys(customSymbolCategories).forEach(id => {
+        if (symbolCategories.some(cat => cat.id === id)) return;
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = 'Personalizada: ' + id;
+        symbolCategorySelect.appendChild(opt);
+      });
+
+      if ([...symbolCategorySelect.options].some(opt => opt.value === current)) {
+        symbolCategorySelect.value = current;
+      } else {
+        symbolCategorySelect.value = 'setas';
+      }
+    }
+
+    function slugCategoryName(name) {
+      return String(name || '')
+        .trim()
+        .toLocaleLowerCase('pt-BR')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '') || 'personalizados';
+    }
+
+    function getCustomTargetCategoryId() {
+      const typed = customSymbolCategory.value.trim();
+      if (typed) return slugCategoryName(typed);
+      return symbolCategorySelect.value || 'personalizados';
+    }
+
+    function getCustomTargetCategoryName() {
+      const typed = customSymbolCategory.value.trim();
+      if (typed) return typed;
+      const opt = symbolCategorySelect.options[symbolCategorySelect.selectedIndex];
+      return opt ? opt.textContent.replace(/^Personalizada:\s*/, '') : 'Personalizados';
+    }
+
+    function makeSymbolButton(sym, place) {
+      const btn = document.createElement('button');
+      let clickTimer = null;
+
+      btn.type = 'button';
+      btn.className = 'symbol-btn' + (place === 'favorite' ? ' favorite' : '');
+      btn.textContent = sym;
+      btn.title = place === 'favorite'
+        ? 'Clique para inserir. Dois cliques para tirar dos favoritos.'
+        : 'Clique para inserir. Dois cliques para mandar para os favoritos.';
+
+      btn.addEventListener('click', (event) => {
+        event.preventDefault();
+
+        // Espera um instante para saber se será clique simples ou duplo.
+        // Assim, no clique duplo, o caractere não é inserido no texto.
+        if (clickTimer) {
+          clearTimeout(clickTimer);
+          clickTimer = null;
+          return;
+        }
+
+        clickTimer = setTimeout(() => {
+          const target = getActiveInsertTarget();
+          insertTextAtCursor(target, sym);
+          clickTimer = null;
+        }, 220);
+      });
+
+      btn.addEventListener('dblclick', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (clickTimer) {
+          clearTimeout(clickTimer);
+          clickTimer = null;
+        }
+
+        if (place === 'favorite') {
+          removeFavoriteSymbol(sym);
+        } else {
+          addFavoriteSymbol(sym);
+        }
+      });
+
+      return btn;
+    }
+
+    function addFavoriteSymbol(sym) {
+      if (!favoriteSymbols.includes(sym)) {
+        favoriteSymbols.unshift(sym);
+        saveFavoriteSymbols();
+        renderSymbols();
+        symbolsStatus.className = 'ok';
+        symbolsStatus.textContent = 'Adicionado aos favoritos.';
+      } else {
+        symbolsStatus.className = 'warn';
+        symbolsStatus.textContent = 'Esse caractere já está nos favoritos.';
+      }
+    }
+
+    function removeFavoriteSymbol(sym) {
+      favoriteSymbols = favoriteSymbols.filter(item => item !== sym);
+      saveFavoriteSymbols();
+      renderSymbols();
+      symbolsStatus.className = 'ok';
+      symbolsStatus.textContent = 'Removido dos favoritos.';
+    }
+
+    function resetFavoriteSymbols() {
+      favoriteSymbols = defaultFavoriteSymbols.slice();
+      saveFavoriteSymbols();
+      renderSymbols();
+      symbolsStatus.className = 'ok';
+      symbolsStatus.textContent = 'Favoritos restaurados.';
+    }
+
+    function renderSymbols() {
+      renderSymbolCategories();
+
+      const symbolsBox = document.getElementById('symbols');
+      symbolsBox.innerHTML = '';
+      favoriteSymbols.forEach(sym => symbolsBox.appendChild(makeSymbolButton(sym, 'favorite')));
+
+      moreSymbols.innerHTML = '';
+      const currentCategory = symbolCategorySelect.value || 'setas';
+      const favoriteSet = new Set(favoriteSymbols);
+      getAllCategorySymbols(currentCategory).forEach(sym => {
+        if (!favoriteSet.has(sym)) moreSymbols.appendChild(makeSymbolButton(sym, 'category'));
+      });
+
+      if (!moreSymbols.children.length) {
+        const note = document.createElement('p');
+        note.className = 'hint';
+        note.textContent = 'Todos os caracteres desta categoria já estão nos favoritos, ou a categoria está vazia.';
+        moreSymbols.appendChild(note);
+      }
+    }
+
+    function addCustomSymbols() {
+      const newSymbols = uniqueTokensFromText(customSymbolsText.value);
+      if (!newSymbols.length) {
+        symbolsStatus.className = 'warn';
+        symbolsStatus.textContent = 'Cole pelo menos um caractere.';
+        return;
+      }
+
+      const categoryId = getCustomTargetCategoryId();
+      const categoryName = getCustomTargetCategoryName();
+
+      if (!customSymbolCategories[categoryId]) customSymbolCategories[categoryId] = [];
+      const existing = new Set(getAllSymbols());
+      let added = 0;
+
+      newSymbols.forEach(sym => {
+        if (!existing.has(sym)) {
+          customSymbolCategories[categoryId].push(sym);
+          existing.add(sym);
+          added++;
+        }
+      });
+
+      saveCustomSymbols();
+      customSymbolsText.value = '';
+      customSymbolCategory.value = '';
+      renderSymbols();
+      symbolCategorySelect.value = categoryId;
+      renderSymbols();
+      symbolsStatus.className = added ? 'ok' : 'warn';
+      symbolsStatus.textContent = added ? added + ' caractere(s) adicionado(s) em ' + categoryName + '.' : 'Esses caracteres já estavam na lista.';
+    }
+
+    function clearCustomSymbols() {
+      const ok = confirm('Limpar todos os caracteres personalizados salvos neste navegador?');
+      if (!ok) return;
+      customSymbolCategories = {};
+      saveCustomSymbols();
+      renderSymbols();
+      symbolsStatus.className = 'ok';
+      symbolsStatus.textContent = 'Caracteres personalizados limpos.';
+    }
+
+    function populate() {
+      styles.forEach(style => {
+        const opt = document.createElement('option');
+        opt.value = style.id;
+        opt.textContent = style.name;
+        styleSelect.appendChild(opt);
+      });
+      styleSelect.value = 'normal';
+
+      loadCustomSymbols();
+      renderSymbols();
+
+      loadTemplates();
+      renderTemplates();
+    }
+
+    async function copyResult() {
+      const text = result.textContent;
+      if (!text) return;
+      try {
+        await navigator.clipboard.writeText(text);
+        copyStatus.textContent = 'Copiado!';
+      } catch (e) {
+        const range = document.createRange();
+        range.selectNodeContents(result);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        copyStatus.textContent = 'Selecione e copie manualmente.';
+      }
+    }
+
+    function selectResult() {
+      const range = document.createRange();
+      range.selectNodeContents(result);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+
+
+    function insertTextMarker() {
+      insertTextAtCursor(templateContent, '{texto}');
+      templateStatus.className = 'ok';
+      templateStatus.textContent = 'Marcador {texto} inserido. Ele será substituído pelo texto selecionado.';
+    }
+
+    function newTemplate() {
+      const tpl = {
+        id: newId(),
+        name: 'Novo modelo',
+        content: '➤ '
+      };
+      templates.push(tpl);
+      saveTemplatesToStorage();
+      renderTemplates();
+      templateSelect.value = tpl.id;
+      loadSelectedTemplateIntoEditor();
+      templateName.focus();
+      templateStatus.textContent = 'Novo modelo criado.';
+    }
+
+    function saveTemplate() {
+      const name = templateName.value.trim() || 'Modelo sem nome';
+      const content = templateContent.value;
+      if (!content.trim()) {
+        templateStatus.className = 'warn';
+        templateStatus.textContent = 'Digite o texto do modelo.';
+        return;
+      }
+
+      let tpl = templates.find(t => t.id === templateSelect.value);
+      if (!tpl) {
+        tpl = { id: newId(), name, content };
+        templates.push(tpl);
+      } else {
+        tpl.name = name;
+        tpl.content = content;
+      }
+
+      saveTemplatesToStorage();
+      renderTemplates();
+      templateSelect.value = tpl.id;
+      loadSelectedTemplateIntoEditor();
+      templateStatus.className = 'ok';
+      templateStatus.textContent = 'Modelo salvo!';
+    }
+
+    function deleteTemplate() {
+      const id = templateSelect.value;
+      if (!id) return;
+      const tpl = templates.find(t => t.id === id);
+      if (!tpl) return;
+      const ok = confirm('Excluir o modelo "' + tpl.name + '"?');
+      if (!ok) return;
+
+      templates = templates.filter(t => t.id !== id);
+      if (!templates.length) templates = structuredClone(defaultTemplates);
+      saveTemplatesToStorage();
+      renderTemplates();
+      templateStatus.className = 'ok';
+      templateStatus.textContent = 'Modelo excluído.';
+    }
+
+    function resetTemplates() {
+      const ok = confirm('Restaurar os modelos padrão? Isso apaga os modelos personalizados salvos neste navegador.');
+      if (!ok) return;
+      templates = structuredClone(defaultTemplates);
+      saveTemplatesToStorage();
+      renderTemplates();
+      templateStatus.className = 'ok';
+      templateStatus.textContent = 'Modelos padrão restaurados.';
+    }
+
+
+    let cachedOnlineDefaults = null;
+
+    async function fetchOnlineDefaults() {
+      onlineDefaultsStatus.className = 'ok';
+      onlineDefaultsStatus.textContent = 'Buscando...';
+
+      const response = await fetch('defaults.json?ts=' + Date.now(), { cache: 'no-store' });
+      if (!response.ok) throw new Error('Não foi possível carregar defaults.json.');
+
+      const data = await response.json();
+      if (!data || !Array.isArray(data.templates)) throw new Error('defaults.json inválido.');
+
+      cachedOnlineDefaults = data;
+      onlineDefaultsVersion.textContent = 'Versão online: ' + (data.version || 'sem versão informada');
+      onlineDefaultsStatus.className = 'ok';
+      onlineDefaultsStatus.textContent = 'Padrões online carregados.';
+      return data;
+    }
+
+    function normalizeDefaultsObject(data) {
+      return {
+        templates: validateTemplates(Array.isArray(data.templates) ? data.templates : []),
+        favoriteSymbols: Array.isArray(data.favoriteSymbols) ? uniqueTokensFromText(data.favoriteSymbols.join(' ')) : [],
+        customSymbolCategories: data.customSymbolCategories && typeof data.customSymbolCategories === 'object' && !Array.isArray(data.customSymbolCategories)
+          ? data.customSymbolCategories
+          : {}
+      };
+    }
+
+    function mergeTemplates(importedTemplates) {
+      const byContent = new Set(templates.map(t => t.content));
+      const byId = new Set(templates.map(t => t.id));
+      let added = 0;
+
+      importedTemplates.forEach(t => {
+        if (byContent.has(t.content)) return;
+        if (byId.has(t.id)) t.id = newId();
+        templates.push(t);
+        byContent.add(t.content);
+        byId.add(t.id);
+        added++;
+      });
+
+      return added;
+    }
+
+    function mergeSymbolCategories(importedCategories) {
+      let added = 0;
+      Object.entries(importedCategories || {}).forEach(([categoryId, values]) => {
+        const list = Array.isArray(values) ? values : uniqueTokensFromText(String(values || ''));
+        if (!customSymbolCategories[categoryId]) customSymbolCategories[categoryId] = [];
+        const existing = new Set(customSymbolCategories[categoryId]);
+        list.forEach(sym => {
+          if (!existing.has(sym)) {
+            customSymbolCategories[categoryId].push(sym);
+            existing.add(sym);
+            added++;
+          }
+        });
+      });
+      return added;
+    }
+
+    function mergeFavoriteSymbols(importedFavorites) {
+      let added = 0;
+      importedFavorites.forEach(sym => {
+        if (!favoriteSymbols.includes(sym)) {
+          favoriteSymbols.push(sym);
+          added++;
+        }
+      });
+      return added;
+    }
+
+    async function ensureOnlineDefaultsLoaded() {
+      if (cachedOnlineDefaults) return cachedOnlineDefaults;
+      return await fetchOnlineDefaults();
+    }
+
+    async function checkOnlineDefaults() {
+      try {
+        const data = await fetchOnlineDefaults();
+        const normalized = normalizeDefaultsObject(data);
+        onlineDefaultsStatus.className = 'ok';
+        onlineDefaultsStatus.textContent = normalized.templates.length + ' modelo(s) online encontrados.';
+      } catch (e) {
+        onlineDefaultsStatus.className = 'warn';
+        onlineDefaultsStatus.textContent = 'Não consegui carregar defaults.json.';
+      }
+    }
+
+    async function mergeOnlineDefaults() {
+      try {
+        const data = normalizeDefaultsObject(await ensureOnlineDefaultsLoaded());
+
+        const addedTemplates = mergeTemplates(data.templates);
+        const addedSymbols = mergeSymbolCategories(data.customSymbolCategories);
+        const addedFavorites = mergeFavoriteSymbols(data.favoriteSymbols);
+
+        saveTemplatesToStorage();
+        saveCustomSymbols();
+        saveFavoriteSymbols();
+        renderTemplates();
+        renderSymbols();
+        updateResult();
+
+        onlineDefaultsStatus.className = 'ok';
+        onlineDefaultsStatus.textContent = 'Somado: ' + addedTemplates + ' modelo(s), ' + addedSymbols + ' caractere(s), ' + addedFavorites + ' favorito(s).';
+      } catch (e) {
+        onlineDefaultsStatus.className = 'warn';
+        onlineDefaultsStatus.textContent = 'Não consegui somar os padrões online.';
+      }
+    }
+
+    async function replaceOnlineDefaults() {
+      try {
+        const ok = confirm('Isso vai substituir modelos, categorias personalizadas e favoritos pelos padrões online. Deseja continuar?');
+        if (!ok) return;
+
+        const data = normalizeDefaultsObject(await ensureOnlineDefaultsLoaded());
+
+        templates = data.templates;
+        customSymbolCategories = data.customSymbolCategories;
+        favoriteSymbols = data.favoriteSymbols.length ? data.favoriteSymbols : defaultFavoriteSymbols.slice();
+
+        saveTemplatesToStorage();
+        saveCustomSymbols();
+        saveFavoriteSymbols();
+        renderTemplates();
+        renderSymbols();
+        updateResult();
+
+        onlineDefaultsStatus.className = 'ok';
+        onlineDefaultsStatus.textContent = 'Padrões online aplicados.';
+      } catch (e) {
+        onlineDefaultsStatus.className = 'warn';
+        onlineDefaultsStatus.textContent = 'Não consegui substituir pelos padrões online.';
+      }
+    }
+
+    function buildBackupObject() {
+      return {
+        app: 'Conversor para Notas do JW Library',
+        version: 3,
+        exportedAt: new Date().toISOString(),
+        templates: templates,
+        customSymbols: Object.values(customSymbolCategories).flat(),
+        customSymbolCategories: customSymbolCategories,
+        favoriteSymbols: favoriteSymbols
+      };
+    }
+
+    function exportTemplates() {
+      const data = JSON.stringify(buildBackupObject(), null, 2);
+      backupText.value = data;
+
+      const blob = new Blob([data], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const date = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = 'modelos-jw-library-' + date + '.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      backupStatus.className = 'ok';
+      backupStatus.textContent = 'Arquivo exportado!';
+    }
+
+    function parseBackupText(text) {
+      const parsed = JSON.parse(text);
+      if (Array.isArray(parsed)) return parsed;
+      if (parsed && Array.isArray(parsed.templates)) return parsed.templates;
+      throw new Error('Formato inválido.');
+    }
+
+    function validateTemplates(list) {
+      return list
+        .filter(item => item && typeof item.content === 'string')
+        .map(item => ({
+          id: typeof item.id === 'string' && item.id ? item.id : newId(),
+          name: typeof item.name === 'string' && item.name.trim() ? item.name.trim() : 'Modelo importado',
+          content: item.content
+        }));
+    }
+
+
+    function parsedBackupHasCustomSymbols(text) {
+      try {
+        const parsed = JSON.parse(text);
+        return parsed && (Array.isArray(parsed.customSymbols) || parsed.customSymbolCategories || Array.isArray(parsed.favoriteSymbols));
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function importSymbolsFromBackup(text) {
+      try {
+        const parsed = JSON.parse(text);
+        if (!parsed) return;
+
+        if (parsed.customSymbolCategories && typeof parsed.customSymbolCategories === 'object' && !Array.isArray(parsed.customSymbolCategories)) {
+          customSymbolCategories = parsed.customSymbolCategories;
+        } else if (Array.isArray(parsed.customSymbols)) {
+          customSymbolCategories = { personalizados: uniqueTokensFromText(parsed.customSymbols.join(' ')) };
+        }
+
+        if (Array.isArray(parsed.favoriteSymbols) && parsed.favoriteSymbols.length) {
+          favoriteSymbols = uniqueTokensFromText(parsed.favoriteSymbols.join(' '));
+          saveFavoriteSymbols();
+        }
+
+        saveCustomSymbols();
+        renderSymbols();
+      } catch (e) {
+        // Se os símbolos falharem, mantém os modelos importados mesmo assim.
+      }
+    }
+
+    function importTemplatesFromText(text) {
+      try {
+        const imported = validateTemplates(parseBackupText(text));
+        if (!imported.length) throw new Error('Nenhum modelo encontrado.');
+
+        const mode = confirm('Clique em OK para SUBSTITUIR todos os modelos atuais.\nClique em Cancelar para SOMAR os modelos importados aos atuais.');
+
+        if (mode) {
+          templates = imported;
+        } else {
+          const existingIds = new Set(templates.map(t => t.id));
+          imported.forEach(t => {
+            if (existingIds.has(t.id)) t.id = newId();
+            templates.push(t);
+          });
+        }
+
+        if (parsedBackupHasCustomSymbols(text)) {
+          importSymbolsFromBackup(text);
+        }
+
+        saveTemplatesToStorage();
+        renderTemplates();
+        backupStatus.className = 'ok';
+        backupStatus.textContent = 'Modelos importados!';
+      } catch (e) {
+        backupStatus.className = 'warn';
+        backupStatus.textContent = 'Backup inválido.';
+      }
+    }
+
+    async function copyBackup() {
+      const data = backupText.value.trim() || JSON.stringify(buildBackupObject(), null, 2);
+      backupText.value = data;
+      try {
+        await navigator.clipboard.writeText(data);
+        backupStatus.className = 'ok';
+        backupStatus.textContent = 'Backup copiado!';
+      } catch (e) {
+        backupText.focus();
+        backupText.select();
+        backupStatus.className = 'warn';
+        backupStatus.textContent = 'Selecione e copie manualmente.';
+      }
+    }
+
+    function chooseImportFile() {
+      if (backupText.value.trim()) {
+        importTemplatesFromText(backupText.value.trim());
+      } else {
+        importTemplatesFile.click();
+      }
+    }
+
+    function handleImportFile(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        backupText.value = String(reader.result || '');
+        importTemplatesFromText(backupText.value);
+      };
+      reader.readAsText(file, 'utf-8');
+      event.target.value = '';
+    }
+
+
+    document.getElementById('convertBtn').addEventListener('click', updateResult);
+    document.getElementById('quickBoldBtn').addEventListener('click', () => quickFormat('bold'));
+    document.getElementById('quickItalicBtn').addEventListener('click', () => quickFormat('italic'));
+    document.getElementById('quickBoldItalicBtn').addEventListener('click', () => quickFormat('boldItalic'));
+    document.getElementById('removeFormattingBtn').addEventListener('click', removeFormattingFromSelection);
+    document.getElementById('savePreviewBtn').addEventListener('click', commitSelectionFormatting);
+    document.getElementById('applySelectionBtn').addEventListener('click', applyStyleToSelectionInInput);
+    document.getElementById('clearBtn').addEventListener('click', () => { input.value = ''; updateResult(); input.focus(); });
+    document.getElementById('copyBtn').addEventListener('click', copyResult);
+    document.getElementById('selectBtn').addEventListener('click', selectResult);
+
+    document.getElementById('newTemplateBtn').addEventListener('click', newTemplate);
+    document.getElementById('insertTextMarkerBtn').addEventListener('click', insertTextMarker);
+    document.getElementById('saveTemplateBtn').addEventListener('click', saveTemplate);
+    document.getElementById('deleteTemplateBtn').addEventListener('click', deleteTemplate);
+    document.getElementById('resetTemplatesBtn').addEventListener('click', resetTemplates);
+    symbolCategorySelect.addEventListener('change', renderSymbols);
+    document.getElementById('resetFavoriteSymbolsBtn').addEventListener('click', resetFavoriteSymbols);
+    document.getElementById('saveCustomSymbolsBtn').addEventListener('click', addCustomSymbols);
+    document.getElementById('clearCustomSymbolsBtn').addEventListener('click', clearCustomSymbols);
+    document.getElementById('checkOnlineDefaultsBtn').addEventListener('click', checkOnlineDefaults);
+    document.getElementById('mergeOnlineDefaultsBtn').addEventListener('click', mergeOnlineDefaults);
+    document.getElementById('replaceOnlineDefaultsBtn').addEventListener('click', replaceOnlineDefaults);
+    document.getElementById('exportTemplatesBtn').addEventListener('click', exportTemplates);
+    document.getElementById('importTemplatesBtn').addEventListener('click', chooseImportFile);
+    document.getElementById('copyBackupBtn').addEventListener('click', copyBackup);
+    importTemplatesFile.addEventListener('change', handleImportFile);
+    templateSelect.addEventListener('change', loadSelectedTemplateIntoEditor);
+
+    input.addEventListener('focus', rememberFocusedField);
+    templateContent.addEventListener('focus', rememberFocusedField);
+    backupText.addEventListener('focus', rememberFocusedField);
+    customSymbolsText.addEventListener('focus', rememberFocusedField);
+
+    input.addEventListener('input', updateResult);
+    input.addEventListener('select', updateResult);
+    input.addEventListener('keyup', updateSelectionInfo);
+    input.addEventListener('mouseup', updateResult);
+    input.addEventListener('touchend', () => setTimeout(updateResult, 80));
+    styleSelect.addEventListener('change', updateResult);
+    decorationSelect.addEventListener('change', updateResult);
+    caseSelect.addEventListener('change', updateResult);
+    targetSelect.addEventListener('change', updateResult);
+
+    populate();
+    targetSelect.value = 'selection';
+    caseSelect.value = 'normal';
+    styleSelect.value = 'normal';
+    decorationSelect.value = 'none';
+    updateResult();
+  </script>
+</body>
+</html>
