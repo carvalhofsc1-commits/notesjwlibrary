@@ -669,7 +669,7 @@
 
   <main>
     <section class="card" style="margin-bottom:16px">
-      <h2>Novo tópico: destaque para notas da ESP 2026 <span class="pill">v5.2</span></h2>
+      <h2>Novo tópico: destaque para notas da ESP 2026 <span class="pill">v5.3</span></h2>
       <p class="hint">Este aplicativo não aplica formatação real. Ele troca as letras por caracteres Unicode parecidos com negrito, itálico, círculos, caixas e símbolos, para dar aparência de destaque em campos que aceitam apenas texto.</p>
     </section>
 
@@ -684,6 +684,7 @@
             <select id="targetSelect">
               <option value="all">Texto inteiro</option>
               <option value="selection" selected>Apenas trecho selecionado</option>
+              <option value="cursorHighlight">Inserir destaque no cursor</option>
             </select>
           </div>
 
@@ -729,7 +730,7 @@
           <button id="removeFormattingBtn" class="secondary" type="button">Remover formatação</button>
         </div>
 
-        <p id="selectionInfo" class="hint">Para formatar várias partes: selecione um trecho, escolha “Apenas trecho selecionado”, clique em “Converter” e depois em “Salvar formatação aplicada”. Repita com outro trecho.</p>
+        <p id="selectionInfo" class="hint">Para formatar várias partes, selecione um trecho e salve a formatação. Para inserir um destaque pronto, escolha “Inserir destaque no cursor”, selecione o destaque e salve.</p>
 
         <div class="button-row">
           <button id="convertBtn">Converter</button>
@@ -858,7 +859,7 @@
     </section>
 
   <footer>
-    Arquivo local HTML/CSS/JavaScript. Funciona offline depois de baixado. Versão 5.2 com layout mobile refinado.
+    Arquivo local HTML/CSS/JavaScript. Funciona offline depois de baixado. Versão 5.3 com inserção de destaque no cursor.
   </footer>
 
   <script>
@@ -1261,6 +1262,58 @@
 
     let lastSelectionPreview = null;
 
+
+    function getHighlightSnippet() {
+      const d = decorationSelect.value;
+
+      if (d === 'none') return '';
+
+      if (d.startsWith('template:')) {
+        const templateId = d.slice('template:'.length);
+        const selectedTemplate = templates.find(t => t.id === templateId);
+        if (!selectedTemplate) return '';
+
+        return selectedTemplate.content
+          .split('{texto}').join('')
+          .replace(/\s{2,}/g, ' ')
+          .trim();
+      }
+
+      if (d === 'question') return '❓ PERGUNTA 👉';
+      if (d === 'video') return '▶️▶️ VÍDEO ⏩⏩';
+      if (d === 'instructor') return '⚠️ INSTRUTOR 👉';
+      if (d === 'arrow') return '➤';
+      if (d === 'check') return '✅';
+      if (d === 'star') return '★  ★';
+      if (d === 'quote') return '❝  ❞';
+      if (d === 'line') return '▇▇▇▇▇▇▇▇▇▇';
+      if (d === 'topic') return '🟦 NOVO TÓPICO ➜';
+
+      return '';
+    }
+
+    function getCursorHighlightData() {
+      const snippet = getHighlightSnippet();
+      if (!snippet) return null;
+
+      const start = input.selectionStart || 0;
+      const end = input.selectionEnd || start;
+      const before = input.value.slice(0, start);
+      const after = input.value.slice(end);
+
+      const needsBeforeBreak = before && !before.endsWith('\n');
+      const needsAfterBreak = after && !after.startsWith('\n');
+      const insertText = (needsBeforeBreak ? '\n' : '') + snippet + (needsAfterBreak ? '\n' : '');
+
+      return {
+        start,
+        end,
+        snippet,
+        fullText: before + insertText + after,
+        newPos: before.length + insertText.length
+      };
+    }
+
     function getConvertedSelectionData() {
       const { start, end, selected } = getSelectionRange();
       if (start === end || !selected) return null;
@@ -1296,6 +1349,12 @@
 
     function updateSelectionInfo() {
       const { start, end, selected } = getSelectionRange();
+
+      if (targetSelect.value === 'cursorHighlight') {
+        selectionInfo.textContent = 'Coloque o cursor no ponto desejado, escolha um item em “Destaque” e clique em “Salvar formatação aplicada” para inserir.';
+        return;
+      }
+
       if (start !== end && selected) {
         selectionInfo.textContent = 'Trecho selecionado: ' + selected.length + ' caractere(s). Clique em “Salvar formatação aplicada” para fixar essa formatação antes de escolher outro trecho.';
       } else if (targetSelect.value === 'selection') {
@@ -1308,6 +1367,10 @@
     function updateResult() {
       if (targetSelect.value === 'selection') {
         result.textContent = convertSelectionKeepingRest();
+      } else if (targetSelect.value === 'cursorHighlight') {
+        lastSelectionPreview = null;
+        const data = getCursorHighlightData();
+        result.textContent = data ? data.fullText : input.value;
       } else {
         lastSelectionPreview = null;
         const converted = convertText(input.value);
@@ -1386,6 +1449,26 @@
       const previousScrollTop = input.scrollTop;
       const previousScrollLeft = input.scrollLeft;
       const cursorPos = typeof input.selectionEnd === 'number' ? input.selectionEnd : input.value.length;
+
+      if (targetSelect.value === 'cursorHighlight') {
+        const highlightData = getCursorHighlightData();
+        if (!highlightData) {
+          alert('Escolha primeiro uma opção em “Destaque” para inserir no cursor.');
+          input.focus();
+          return;
+        }
+
+        input.value = highlightData.fullText;
+        input.focus();
+        input.scrollTop = previousScrollTop;
+        input.scrollLeft = previousScrollLeft;
+        input.setSelectionRange(highlightData.newPos, highlightData.newPos);
+        updateResult();
+        input.scrollTop = previousScrollTop;
+        input.scrollLeft = previousScrollLeft;
+        selectionInfo.textContent = 'Destaque inserido no ponto do cursor.';
+        return;
+      }
 
       if (targetSelect.value === 'selection') {
         if (!data) data = getConvertedSelectionData();
