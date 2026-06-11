@@ -669,7 +669,7 @@
 
   <main>
     <section class="card" style="margin-bottom:16px">
-      <h2>Novo tópico: destaque para notas da ESP 2026 <span class="pill">v5.3</span></h2>
+      <h2>Novo tópico: destaque para notas da ESP 2026 <span class="pill">v5.6</span></h2>
       <p class="hint">Este aplicativo não aplica formatação real. Ele troca as letras por caracteres Unicode parecidos com negrito, itálico, círculos, caixas e símbolos, para dar aparência de destaque em campos que aceitam apenas texto.</p>
     </section>
 
@@ -850,6 +850,7 @@
 
       <div class="button-row">
         <button id="checkOnlineDefaultsBtn" type="button">Buscar padrões online</button>
+        <button id="openDefaultsJsonBtn" class="secondary" type="button">Abrir defaults.json</button>
         <button id="mergeOnlineDefaultsBtn" class="secondary" type="button">Somar padrões online aos meus</button>
         <button id="replaceOnlineDefaultsBtn" class="danger" type="button">Substituir pelos padrões online</button>
         <span id="onlineDefaultsStatus" class="ok"></span>
@@ -859,7 +860,7 @@
     </section>
 
   <footer>
-    Arquivo local HTML/CSS/JavaScript. Funciona offline depois de baixado. Versão 5.3 com inserção de destaque no cursor.
+    Arquivo local HTML/CSS/JavaScript. Funciona offline depois de baixado. Versão 5.6 com correção do itálico Unicode.
   </footer>
 
   <script>
@@ -902,6 +903,7 @@
     const SYMBOLS_STORAGE_KEY = 'jwLibraryNoteConverterCustomSymbolsV1';
     const FAVORITE_SYMBOLS_STORAGE_KEY = 'jwLibraryNoteConverterFavoriteSymbolsV1';
     const CUSTOM_SYMBOL_CATEGORIES_STORAGE_KEY = 'jwLibraryNoteConverterCustomSymbolCategoriesV1';
+    const ONLINE_DEFAULTS_VERSION_STORAGE_KEY = 'jwLibraryNoteConverterOnlineDefaultsVersionV1';
 
     const explicitMaps = {
       script: {
@@ -925,7 +927,7 @@
     };
 
     const styles = [
-      { id:'normal', name:'Normal', example:'Pergunta 123' },
+      { id:'normal', name:'Normal', example:'Texto de exemplo 123' },
       { id:'bold', name:'Negrito Unicode — 𝐏𝐞𝐫𝐠𝐮𝐧𝐭𝐚', upper:0x1D400, lower:0x1D41A, digit:0x1D7CE },
       { id:'italic', name:'Itálico Unicode — 𝑃𝑒𝑟𝑔𝑢𝑛𝑡𝑎', upper:0x1D434, lower:0x1D44E },
       { id:'boldItalic', name:'Negrito itálico — 𝑷𝒆𝒓𝒈𝒖𝒏𝒕𝒂', upper:0x1D468, lower:0x1D482 },
@@ -1036,6 +1038,12 @@
       return text;
     }
 
+    const specialMathChars = {
+      italic: {
+        h: 'ℎ'
+      }
+    };
+
     function convertChar(ch, style) {
       if (style.id === 'normal') return ch;
 
@@ -1046,6 +1054,9 @@
         const map = explicitMaps[style.explicit] || {};
         return map[base] || ch;
       }
+
+      const special = specialMathChars[style.id] || {};
+      if (special[base]) return special[base];
 
       const code = base.codePointAt(0);
       if (code >= 65 && code <= 90 && style.upper) return String.fromCodePoint(style.upper + code - 65);
@@ -1077,6 +1088,9 @@
         if (style.digit) {
           for (let i = 0; i < 10; i++) map.set(String.fromCodePoint(style.digit + i), String.fromCharCode(48 + i));
         }
+
+        const special = specialMathChars[style.id] || {};
+        Object.entries(special).forEach(([plain, fancy]) => map.set(fancy, plain));
       });
 
       // Variações comuns que aparecem em alguns aparelhos/sistemas.
@@ -1247,7 +1261,7 @@
     }
 
     function updatePreview() {
-      const sample = 'Pergunta 123';
+      const sample = 'Texto de exemplo 123';
       const style = styles.find(s => s.id === styleSelect.value) || styles[0];
       const cased = applyCase(sample);
       const converted = [...cased].map(ch => convertChar(ch, style)).join('');
@@ -2014,19 +2028,55 @@
 
     async function fetchOnlineDefaults() {
       onlineDefaultsStatus.className = 'ok';
-      onlineDefaultsStatus.textContent = 'Buscando...';
+      onlineDefaultsStatus.textContent = 'Buscando defaults.json...';
 
-      const response = await fetch('defaults.json?ts=' + Date.now(), { cache: 'no-store' });
-      if (!response.ok) throw new Error('Não foi possível carregar defaults.json.');
+      const candidates = [
+        new URL('defaults.json', location.href).href,
+        location.origin + '/defaults.json'
+      ];
 
-      const data = await response.json();
-      if (!data || !Array.isArray(data.templates)) throw new Error('defaults.json inválido.');
+      let lastError = '';
 
-      cachedOnlineDefaults = data;
-      onlineDefaultsVersion.textContent = 'Versão online: ' + (data.version || 'sem versão informada');
-      onlineDefaultsStatus.className = 'ok';
-      onlineDefaultsStatus.textContent = 'Padrões online carregados.';
-      return data;
+      for (const url of [...new Set(candidates)]) {
+        try {
+          const response = await fetch(url + (url.includes('?') ? '&' : '?') + 'ts=' + Date.now(), { cache: 'no-store' });
+
+          if (!response.ok) {
+            lastError = 'HTTP ' + response.status + ' ao buscar ' + url;
+            continue;
+          }
+
+          const text = await response.text();
+          let data;
+
+          try {
+            data = JSON.parse(text);
+          } catch (e) {
+            lastError = 'O arquivo defaults.json foi encontrado, mas não é um JSON válido.';
+            continue;
+          }
+
+          if (!data || !Array.isArray(data.templates)) {
+            lastError = 'O defaults.json abriu, mas não tem a lista "templates".';
+            continue;
+          }
+
+          cachedOnlineDefaults = data;
+          onlineDefaultsVersion.textContent = 'Versão online: ' + (data.version || 'sem versão informada') + ' — ' + url;
+          onlineDefaultsStatus.className = 'ok';
+          onlineDefaultsStatus.textContent = 'Padrões online carregados. Agora escolha Somar ou Substituir.';
+          return data;
+        } catch (e) {
+          lastError = e && e.message ? e.message : 'Falha desconhecida ao buscar defaults.json.';
+        }
+      }
+
+      throw new Error(lastError || 'Não foi possível carregar defaults.json.');
+    }
+
+    function openDefaultsJson() {
+      const url = location.origin + '/defaults.json';
+      window.open(url, '_blank');
     }
 
     function normalizeDefaultsObject(data) {
@@ -2084,6 +2134,69 @@
       return added;
     }
 
+
+    function hasLocalUserData() {
+      return Boolean(
+        localStorage.getItem(STORAGE_KEY) ||
+        localStorage.getItem(CUSTOM_SYMBOL_CATEGORIES_STORAGE_KEY) ||
+        localStorage.getItem(FAVORITE_SYMBOLS_STORAGE_KEY)
+      );
+    }
+
+    function applyOnlineDefaultsData(data, mode) {
+      const normalized = normalizeDefaultsObject(data);
+
+      if (mode === 'replace') {
+        templates = normalized.templates;
+        customSymbolCategories = normalized.customSymbolCategories;
+        favoriteSymbols = normalized.favoriteSymbols.length ? normalized.favoriteSymbols : defaultFavoriteSymbols.slice();
+      } else {
+        mergeTemplates(normalized.templates);
+        mergeSymbolCategories(normalized.customSymbolCategories);
+        mergeFavoriteSymbols(normalized.favoriteSymbols);
+      }
+
+      saveTemplatesToStorage();
+      saveCustomSymbols();
+      saveFavoriteSymbols();
+
+      if (data.version) {
+        localStorage.setItem(ONLINE_DEFAULTS_VERSION_STORAGE_KEY, data.version);
+      }
+
+      renderTemplates();
+      renderSymbols();
+      updateResult();
+    }
+
+    async function autoCheckOnlineDefaultsOnStart() {
+      if (location.protocol !== 'http:' && location.protocol !== 'https:') return;
+
+      try {
+        const data = await fetchOnlineDefaults();
+        const onlineVersion = data.version || '';
+        const lastAppliedVersion = localStorage.getItem(ONLINE_DEFAULTS_VERSION_STORAGE_KEY) || '';
+
+        if (!hasLocalUserData()) {
+          applyOnlineDefaultsData(data, 'replace');
+          onlineDefaultsStatus.className = 'ok';
+          onlineDefaultsStatus.textContent = 'Padrões online aplicados automaticamente para este primeiro acesso.';
+          return;
+        }
+
+        if (onlineVersion && onlineVersion !== lastAppliedVersion) {
+          onlineDefaultsStatus.className = 'warn';
+          onlineDefaultsStatus.textContent = 'Há padrões online mais recentes. Use Somar ou Substituir.';
+        } else {
+          onlineDefaultsStatus.className = 'ok';
+          onlineDefaultsStatus.textContent = 'Padrões online verificados.';
+        }
+      } catch (e) {
+        onlineDefaultsStatus.className = 'warn';
+        onlineDefaultsStatus.textContent = 'Não consegui verificar defaults.json automaticamente: ' + (e && e.message ? e.message : 'erro desconhecido');
+      }
+    }
+
     async function ensureOnlineDefaultsLoaded() {
       if (cachedOnlineDefaults) return cachedOnlineDefaults;
       return await fetchOnlineDefaults();
@@ -2097,13 +2210,14 @@
         onlineDefaultsStatus.textContent = normalized.templates.length + ' modelo(s) online encontrados.';
       } catch (e) {
         onlineDefaultsStatus.className = 'warn';
-        onlineDefaultsStatus.textContent = 'Não consegui carregar defaults.json.';
+        onlineDefaultsStatus.textContent = 'Não consegui carregar defaults.json: ' + (e && e.message ? e.message : 'erro desconhecido');
       }
     }
 
     async function mergeOnlineDefaults() {
       try {
-        const data = normalizeDefaultsObject(await ensureOnlineDefaultsLoaded());
+        const rawData = await ensureOnlineDefaultsLoaded();
+        const data = normalizeDefaultsObject(rawData);
 
         const addedTemplates = mergeTemplates(data.templates);
         const addedSymbols = mergeSymbolCategories(data.customSymbolCategories);
@@ -2112,6 +2226,11 @@
         saveTemplatesToStorage();
         saveCustomSymbols();
         saveFavoriteSymbols();
+
+        if (rawData.version) {
+          localStorage.setItem(ONLINE_DEFAULTS_VERSION_STORAGE_KEY, rawData.version);
+        }
+
         renderTemplates();
         renderSymbols();
         updateResult();
@@ -2120,7 +2239,7 @@
         onlineDefaultsStatus.textContent = 'Somado: ' + addedTemplates + ' modelo(s), ' + addedSymbols + ' caractere(s), ' + addedFavorites + ' favorito(s).';
       } catch (e) {
         onlineDefaultsStatus.className = 'warn';
-        onlineDefaultsStatus.textContent = 'Não consegui somar os padrões online.';
+        onlineDefaultsStatus.textContent = 'Não consegui somar os padrões online: ' + (e && e.message ? e.message : 'erro desconhecido');
       }
     }
 
@@ -2129,24 +2248,14 @@
         const ok = confirm('Isso vai substituir modelos, categorias personalizadas e favoritos pelos padrões online. Deseja continuar?');
         if (!ok) return;
 
-        const data = normalizeDefaultsObject(await ensureOnlineDefaultsLoaded());
-
-        templates = data.templates;
-        customSymbolCategories = data.customSymbolCategories;
-        favoriteSymbols = data.favoriteSymbols.length ? data.favoriteSymbols : defaultFavoriteSymbols.slice();
-
-        saveTemplatesToStorage();
-        saveCustomSymbols();
-        saveFavoriteSymbols();
-        renderTemplates();
-        renderSymbols();
-        updateResult();
+        const rawData = await ensureOnlineDefaultsLoaded();
+        applyOnlineDefaultsData(rawData, 'replace');
 
         onlineDefaultsStatus.className = 'ok';
         onlineDefaultsStatus.textContent = 'Padrões online aplicados.';
       } catch (e) {
         onlineDefaultsStatus.className = 'warn';
-        onlineDefaultsStatus.textContent = 'Não consegui substituir pelos padrões online.';
+        onlineDefaultsStatus.textContent = 'Não consegui substituir pelos padrões online: ' + (e && e.message ? e.message : 'erro desconhecido');
       }
     }
 
@@ -2319,6 +2428,7 @@
     document.getElementById('saveCustomSymbolsBtn').addEventListener('click', addCustomSymbols);
     document.getElementById('clearCustomSymbolsBtn').addEventListener('click', clearCustomSymbols);
     document.getElementById('checkOnlineDefaultsBtn').addEventListener('click', checkOnlineDefaults);
+    document.getElementById('openDefaultsJsonBtn').addEventListener('click', openDefaultsJson);
     document.getElementById('mergeOnlineDefaultsBtn').addEventListener('click', mergeOnlineDefaults);
     document.getElementById('replaceOnlineDefaultsBtn').addEventListener('click', replaceOnlineDefaults);
     document.getElementById('exportTemplatesBtn').addEventListener('click', exportTemplates);
@@ -2350,6 +2460,7 @@
     styleSelect.value = 'normal';
     decorationSelect.value = 'none';
     updateResult();
+    autoCheckOnlineDefaultsOnStart();
   </script>
 </body>
 </html>

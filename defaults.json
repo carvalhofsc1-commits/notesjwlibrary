@@ -1,7 +1,7 @@
 {
   "app": "Conversor para Notas do JW Library",
   "version": 3,
-  "exportedAt": "2026-06-10T20:24:18.292Z",
+  "exportedAt": "2026-06-10T01:22:57.129Z",
   "templates": [
     {
       "id": "tpl-question",
@@ -54,15 +54,22 @@
       "content": "➤ Ponto principal: "
     },
     {
-      "id": "tpl-custom-1781122426316-414",
-      "name": "03 - ILUSTRAÇÃO",
-      "content": "🟧 ⫸⫸💡💡💡𝐈𝐋𝐔𝐒𝐓𝐑𝐀𝐂𝐀𝐎💡💡💡⫸⫸"
+      "id": "tpl-custom-1780941059938-361",
+      "name": "01 - DESTAQUE",
+      "content": "⚠️⚠️  ⫸⫸⫸⫸ {texto} ⫷⫷⫷⫷"
+    },
+    {
+      "id": "tpl-custom-1780941361690-461",
+      "name": "02 - APLICAÇÃO",
+      "content": "✅✅✅ {texto} ✦✦✦"
     }
   ],
   "customSymbols": [],
   "customSymbolCategories": {},
   "favoriteSymbols": [
+    "▶",
     "⫸",
+    "⫷",
     "❓",
     "✅",
     "⚠️",
@@ -98,7 +105,6 @@
     "🟪",
     "🟥",
     "■",
-    "□",
     "▣",
     "◆",
     "▲",
