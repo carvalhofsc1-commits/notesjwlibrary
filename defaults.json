@@ -1,7 +1,7 @@
 {
   "app": "Conversor para Notas do JW Library",
   "version": 3,
-  "exportedAt": "2026-06-10T01:22:57.129Z",
+  "exportedAt": "2026-06-14T23:55:59.363Z",
   "templates": [
     {
       "id": "tpl-question",
@@ -10,8 +10,8 @@
     },
     {
       "id": "tpl-video",
-      "name": "Vídeo",
-      "content": "▶️▶️ 𝙑𝙄𝘿𝙀𝙊 ⏩⏩ "
+      "name": "Vídeo 1",
+      "content": "🔴🔴🔴▶️▶️ 𝙑𝙄𝘿𝙀𝙊 ⏩⏩ 🔴🔴🔴"
     },
     {
       "id": "tpl-instructor",
@@ -62,14 +62,50 @@
       "id": "tpl-custom-1780941361690-461",
       "name": "02 - APLICAÇÃO",
       "content": "✅✅✅ {texto} ✦✦✦"
+    },
+    {
+      "id": "tpl-custom-1781479743030-9",
+      "name": "IMAGEM 2",
+      "content": "⫸⫸⫸⫸ 🟢🟡🔵🔴🟠 𝐈𝐌𝐀𝐆𝐄𝐌 🟢🟡🔵🔴🟠⫷⫷⫷⫷"
+    },
+    {
+      "id": "tpl-custom-1781481226671-898",
+      "name": "IMAGEM 1",
+      "content": "🟢🟡🔵🔴🟠 𝐈𝐌𝐀𝐆𝐄𝐌 🟢🟡🔵🔴🟠"
+    },
+    {
+      "id": "tpl-custom-1781481321231-90",
+      "name": "Vídeo 2",
+      "content": "▶️▶️ 𝙑𝙄𝘿𝙀𝙊 ⏩⏩ "
     }
   ],
   "customSymbols": [],
   "customSymbolCategories": {},
   "favoriteSymbols": [
-    "▶",
-    "⫸",
+    "✖️",
+    "👈",
     "⫷",
+    "⫸",
+    "❌",
+    "╳",
+    "🎁",
+    "🔷",
+    "🔶",
+    "💎",
+    "⬜️",
+    "⬛️",
+    "🟨",
+    "🟩",
+    "🟫",
+    "🟠",
+    "🟢",
+    "⚪",
+    "⚫",
+    "🟣",
+    "🟤",
+    "🔵",
+    "🟡",
+    "🔴",
     "❓",
     "✅",
     "⚠️",
@@ -81,8 +117,6 @@
     "➡",
     "⬅",
     "👉",
-    "☛",
-    "☚",
     "💡",
     "🔎",
     "📌",
@@ -105,8 +139,6 @@
     "🟪",
     "🟥",
     "■",
-    "▣",
-    "◆",
     "▲",
     "●",
     "○",

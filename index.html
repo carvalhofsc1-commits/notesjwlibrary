@@ -656,6 +656,129 @@
     }
 
 
+
+    .card:nth-of-type(1) {
+      background: linear-gradient(180deg, #ffffff 0%, #eef6ff 100%);
+      border-color: #bfdbfe;
+    }
+
+    .card:nth-of-type(2) {
+      background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%);
+      border-color: #bbf7d0;
+    }
+
+    .card:nth-of-type(3) {
+      background: linear-gradient(180deg, #ffffff 0%, #faf5ff 100%);
+      border-color: #e9d5ff;
+    }
+
+    .card:nth-of-type(4) {
+      background: linear-gradient(180deg, #ffffff 0%, #fff7ed 100%);
+      border-color: #fed7aa;
+    }
+
+    .card:nth-of-type(5) {
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      border-color: #cbd5e1;
+    }
+
+    .card:nth-of-type(6) {
+      background: linear-gradient(180deg, #ffffff 0%, #f0fdfa 100%);
+      border-color: #99f6e4;
+    }
+
+    .hidden-select {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
+    }
+
+    .option-buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .option-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-height: 44px;
+      border: 2px solid transparent;
+      border-radius: 14px;
+      box-shadow: 0 5px 14px rgba(15,23,42,.08);
+      transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+      line-height: 1.15;
+      font-weight: 750;
+    }
+
+    .option-btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(.97);
+      box-shadow: 0 8px 18px rgba(15,23,42,.12);
+    }
+
+    .option-btn.active {
+      outline: 3px solid rgba(31, 41, 55, .18);
+      border-color: rgba(255,255,255,.90);
+      box-shadow: 0 0 0 3px rgba(37,99,235,.16), 0 8px 20px rgba(15,23,42,.14);
+    }
+
+    .btn-blue { background: #dbeafe; color: #1e3a8a; }
+    .btn-green { background: #dcfce7; color: #14532d; }
+    .btn-purple { background: #f3e8ff; color: #581c87; }
+    .btn-slate { background: #e2e8f0; color: #0f172a; }
+    .btn-orange { background: #ffedd5; color: #7c2d12; }
+    .btn-sky { background: #e0f2fe; color: #075985; }
+    .btn-teal { background: #ccfbf1; color: #134e4a; }
+
+    .action-row {
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-action {
+      min-width: 48px;
+      min-height: 46px;
+      padding: 10px 13px;
+      font-size: 1.25rem;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 14px;
+    }
+
+    .icon-action.apply {
+      min-width: 56px;
+      background: #dbeafe;
+      color: #1e3a8a;
+    }
+
+    .icon-action.save {
+      background: #dcfce7;
+      color: #14532d;
+    }
+
+    .icon-action.clear {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+
+    .action-label {
+      font-size: .9rem;
+      color: var(--muted);
+      margin-left: 2px;
+    }
+
   </style>
 </head>
 <body>
@@ -664,12 +787,12 @@
       <img src="icon-192.png" alt="" class="brand-icon">
       <h1>Conversor para Notas do JW Library</h1>
     </div>
-    <p>Digite um texto, escolha um estilo com caracteres especiais, aplique maiúsculas/minúsculas e copie o resultado para colar nas notas do JW Library.</p>
+    <p>Digite um texto, escolha as opções, clique em Aplicar e copie o resultado para colar nas notas do JW Library.</p>
   </header>
 
   <main>
     <section class="card" style="margin-bottom:16px">
-      <h2>Novo tópico: destaque para notas da ESP 2026 <span class="pill">v5.6</span></h2>
+      <h2>Novo tópico: destaque para notas da ESP 2026 <span class="pill">v5.7</span></h2>
       <p class="hint">Este aplicativo não aplica formatação real. Ele troca as letras por caracteres Unicode parecidos com negrito, itálico, círculos, caixas e símbolos, para dar aparência de destaque em campos que aceitam apenas texto.</p>
     </section>
 
@@ -678,26 +801,37 @@
         <h2>1. Texto original</h2>
         <textarea id="inputText" placeholder="Digite aqui o texto que deseja converter..."></textarea>
 
+        <div>
+          <label>Aplicar formatação em</label>
+          <select id="targetSelect" class="hidden-select" aria-hidden="true" tabindex="-1">
+            <option value="all">Texto inteiro</option>
+            <option value="selection" selected>Apenas trecho selecionado</option>
+            <option value="cursorHighlight">Inserir destaque no cursor</option>
+          </select>
+          <div class="option-buttons" role="group" aria-label="Aplicar formatação em">
+            <button type="button" class="option-btn btn-blue" data-select="targetSelect" data-value="all">📄 Texto inteiro</button>
+            <button type="button" class="option-btn btn-green" data-select="targetSelect" data-value="selection">✂️ Trecho selecionado</button>
+            <button type="button" class="option-btn btn-purple" data-select="targetSelect" data-value="cursorHighlight">📍 Destaque no cursor</button>
+          </div>
+        </div>
+
+        <div>
+          <label>Maiúsculas/minúsculas</label>
+          <select id="caseSelect" class="hidden-select" aria-hidden="true" tabindex="-1">
+            <option value="normal">Normal</option>
+            <option value="upper">TUDO MAIÚSCULO</option>
+            <option value="title">Só as Iniciais Maiúsculas</option>
+            <option value="lower">tudo minúsculo</option>
+          </select>
+          <div class="option-buttons" role="group" aria-label="Maiúsculas/minúsculas">
+            <button type="button" class="option-btn btn-slate" data-select="caseSelect" data-value="normal">🔤 Normal</button>
+            <button type="button" class="option-btn btn-orange" data-select="caseSelect" data-value="upper">🔠 MAIÚSCULAS</button>
+            <button type="button" class="option-btn btn-sky" data-select="caseSelect" data-value="title">✨ Iniciais</button>
+            <button type="button" class="option-btn btn-teal" data-select="caseSelect" data-value="lower">🔡 minúsculas</button>
+          </div>
+        </div>
+
         <div class="controls-3">
-          <div>
-            <label for="targetSelect">Aplicar formatação em</label>
-            <select id="targetSelect">
-              <option value="all">Texto inteiro</option>
-              <option value="selection" selected>Apenas trecho selecionado</option>
-              <option value="cursorHighlight">Inserir destaque no cursor</option>
-            </select>
-          </div>
-
-          <div>
-            <label for="caseSelect">Maiúsculas/minúsculas</label>
-            <select id="caseSelect">
-              <option value="normal">Normal</option>
-              <option value="upper">TUDO MAIÚSCULO</option>
-              <option value="title">Só as Iniciais Maiúsculas</option>
-              <option value="lower">tudo minúsculo</option>
-            </select>
-          </div>
-
           <div>
             <label for="styleSelect">Tipo de caractere</label>
             <select id="styleSelect"></select>
@@ -732,11 +866,11 @@
 
         <p id="selectionInfo" class="hint">Para formatar várias partes, selecione um trecho e salve a formatação. Para inserir um destaque pronto, escolha “Inserir destaque no cursor”, selecione o destaque e salve.</p>
 
-        <div class="button-row">
-          <button id="convertBtn">Converter</button>
-          <button id="savePreviewBtn" class="secondary" type="button">Salvar formatação aplicada</button>
-          <button id="applySelectionBtn" class="secondary" type="button">Aplicar estilo na seleção</button>
-          <button id="clearBtn" class="secondary">Limpar</button>
+        <div class="button-row action-row">
+          <button id="convertBtn" class="icon-action apply" type="button" title="Aplicar e mostrar no resultado" aria-label="Aplicar e mostrar no resultado">▶️</button>
+          <button id="savePreviewBtn" class="icon-action save" type="button" title="Salvar no texto original" aria-label="Salvar no texto original">💾</button>
+          <button id="clearBtn" class="icon-action clear" type="button" title="Limpar" aria-label="Limpar">🧹</button>
+          <span class="action-label">Aplicar • Salvar • Limpar</span>
         </div>
       </section>
 
@@ -748,12 +882,49 @@
           <button id="selectBtn" class="secondary">Selecionar texto</button>
           <span id="copyStatus" class="ok"></span>
         </div>
-        <p class="hint">Dica: quando usar “Apenas trecho selecionado”, a visualização mostra como o texto ficará. Para manter essa formatação e aplicar outra em outro trecho, clique em “Salvar formatação aplicada”.</p>
+        <p class="hint">Dica: escolha as opções e clique em ▶️ Aplicar para gerar o resultado. Depois use 💾 para salvar a formatação no texto original.</p>
       </section>
     </div>
 
     <section class="card" style="margin-top:16px">
-      <h2>3. Caracteres, ícones e emoticons</h2>
+      <h2>3. Modelos prontos e personalizados</h2>
+      <p class="hint">Clique num modelo pronto para adicioná-lo ao campo “Texto do modelo” e usá-lo como base para criar outro. Para editar um modelo existente, selecione-o na lista “Modelo para editar”. Para aplicar um modelo ao texto original, use o campo “Destaque”.</p>
+      <div id="templates" class="templates"></div>
+
+      <div class="template-editor">
+        <h3>Criar ou alterar modelo</h3>
+
+        <label for="templateSelect">Modelo para editar</label>
+        <div class="template-row">
+          <select id="templateSelect"></select>
+          <button id="newTemplateBtn" class="secondary" type="button">Novo modelo</button>
+        </div>
+
+        <div class="controls">
+          <div>
+            <label for="templateName">Nome do modelo</label>
+            <input id="templateName" type="text" placeholder="Ex.: Pergunta com destaque">
+          </div>
+          <div>
+            <label for="templateContent">Texto do modelo</label>
+            <input id="templateContent" type="text" placeholder="Ex.: ➜ {texto} ⬅">
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button id="insertTextMarkerBtn" class="secondary" type="button">Inserir {texto}</button>
+          <button id="saveTemplateBtn" type="button">Salvar modelo</button>
+          <button id="deleteTemplateBtn" class="danger" type="button">Excluir modelo</button>
+          <button id="resetTemplatesBtn" class="secondary" type="button">Restaurar modelos padrão</button>
+          <span id="templateStatus" class="ok"></span>
+        </div>
+
+        <p class="hint">Dica para modelos: use <strong>{texto}</strong> para marcar onde o texto selecionado deve entrar. Exemplo: <strong>➜ {texto} ⬅</strong>. Se o modelo não tiver {texto}, ele será colocado antes do texto.</p>
+        <p class="hint">Os modelos ficam salvos no navegador usando armazenamento local, mas também podem ser exportados para um arquivo .json e importados em outro navegador ou aparelho.</p>
+      </div>
+    </section>
+    <section class="card" style="margin-top:16px">
+      <h2>4. Caracteres, ícones e emoticons</h2>
       <p class="hint">Clique para inserir no campo ativo. Os favoritos ficam no topo. Dê dois cliques em um favorito para tirar do topo; dê dois cliques em um item de baixo para mandar para os favoritos.</p>
 
       <div class="symbol-toolbar">
@@ -789,59 +960,6 @@
       </div>
     </section>
 
-    <section class="card" style="margin-top:16px">
-      <h2>4. Modelos prontos e personalizados</h2>
-      <p class="hint">Clique num modelo pronto para adicioná-lo ao campo “Texto do modelo” e usá-lo como base para criar outro. Para editar um modelo existente, selecione-o na lista “Modelo para editar”. Para aplicar um modelo ao texto original, use o campo “Destaque”.</p>
-      <div id="templates" class="templates"></div>
-
-      <div class="template-editor">
-        <h3>Criar ou alterar modelo</h3>
-
-        <label for="templateSelect">Modelo para editar</label>
-        <div class="template-row">
-          <select id="templateSelect"></select>
-          <button id="newTemplateBtn" class="secondary" type="button">Novo modelo</button>
-        </div>
-
-        <div class="controls">
-          <div>
-            <label for="templateName">Nome do modelo</label>
-            <input id="templateName" type="text" placeholder="Ex.: Pergunta com destaque">
-          </div>
-          <div>
-            <label for="templateContent">Texto do modelo</label>
-            <input id="templateContent" type="text" placeholder="Ex.: ➜ {texto} ⬅">
-          </div>
-        </div>
-
-        <div class="button-row">
-          <button id="insertTextMarkerBtn" class="secondary" type="button">Inserir {texto}</button>
-          <button id="saveTemplateBtn" type="button">Salvar modelo</button>
-          <button id="deleteTemplateBtn" class="danger" type="button">Excluir modelo</button>
-          <button id="resetTemplatesBtn" class="secondary" type="button">Restaurar modelos padrão</button>
-          <span id="templateStatus" class="ok"></span>
-        </div>
-
-        <div class="template-editor">
-          <h3>Exportar ou importar modelos</h3>
-          <p class="hint">Use esta área para fazer backup dos seus modelos ou enviar seus modelos para outro usuário.</p>
-
-          <div class="button-row">
-            <button id="exportTemplatesBtn" type="button">Exportar modelos</button>
-            <button id="importTemplatesBtn" class="secondary" type="button">Importar modelos</button>
-            <input id="importTemplatesFile" type="file" accept=".json,.txt,application/json,text/plain" style="display:none">
-            <button id="copyBackupBtn" class="secondary" type="button">Copiar backup em texto</button>
-            <span id="backupStatus" class="ok"></span>
-          </div>
-
-          <label for="backupText">Backup em texto</label>
-          <textarea id="backupText" style="min-height:120px" placeholder="Ao exportar ou copiar, o backup aparecerá aqui. Você também pode colar aqui um backup recebido e clicar em Importar modelos."></textarea>
-        </div>
-
-        <p class="hint">Dica para modelos: use <strong>{texto}</strong> para marcar onde o texto selecionado deve entrar. Exemplo: <strong>➜ {texto} ⬅</strong>. Se o modelo não tiver {texto}, ele será colocado antes do texto.</p>
-        <p class="hint">Os modelos ficam salvos no navegador usando armazenamento local, mas também podem ser exportados para um arquivo .json e importados em outro navegador ou aparelho.</p>
-      </div>
-    </section>
   </main>
 
     <section class="card" style="margin-top:16px">
@@ -857,6 +975,22 @@
       </div>
 
       <p id="onlineDefaultsVersion" class="hint">Versão online: ainda não carregada.</p>
+    </section>
+
+    <section class="card" style="margin-top:16px">
+      <h2>6. Exportar ou importar modelos</h2>
+      <p class="hint">Use esta área para fazer backup dos seus modelos ou enviar seus modelos para outro usuário.</p>
+
+      <div class="button-row">
+        <button id="exportTemplatesBtn" type="button">Exportar modelos</button>
+        <button id="importTemplatesBtn" class="secondary" type="button">Importar modelos</button>
+        <input id="importTemplatesFile" type="file" accept=".json,.txt,application/json,text/plain" style="display:none">
+        <button id="copyBackupBtn" class="secondary" type="button">Copiar backup em texto</button>
+        <span id="backupStatus" class="ok"></span>
+      </div>
+
+      <label for="backupText">Backup em texto</label>
+      <textarea id="backupText" style="min-height:120px" placeholder="Ao exportar ou copiar, o backup aparecerá aqui. Você também pode colar aqui um backup recebido e clicar em Importar modelos."></textarea>
     </section>
 
   <footer>
@@ -899,11 +1033,11 @@
     const onlineDefaultsStatus = document.getElementById('onlineDefaultsStatus');
     const onlineDefaultsVersion = document.getElementById('onlineDefaultsVersion');
 
-    const STORAGE_KEY = 'jwLibraryNoteConverterTemplatesV2';
-    const SYMBOLS_STORAGE_KEY = 'jwLibraryNoteConverterCustomSymbolsV1';
-    const FAVORITE_SYMBOLS_STORAGE_KEY = 'jwLibraryNoteConverterFavoriteSymbolsV1';
-    const CUSTOM_SYMBOL_CATEGORIES_STORAGE_KEY = 'jwLibraryNoteConverterCustomSymbolCategoriesV1';
-    const ONLINE_DEFAULTS_VERSION_STORAGE_KEY = 'jwLibraryNoteConverterOnlineDefaultsVersionV1';
+    const STORAGE_KEY = 'jwLibraryNoteAplicarTemplatesV2';
+    const SYMBOLS_STORAGE_KEY = 'jwLibraryNoteAplicarCustomSymbolsV1';
+    const FAVORITE_SYMBOLS_STORAGE_KEY = 'jwLibraryNoteAplicarFavoriteSymbolsV1';
+    const CUSTOM_SYMBOL_CATEGORIES_STORAGE_KEY = 'jwLibraryNoteAplicarCustomSymbolCategoriesV1';
+    const ONLINE_DEFAULTS_VERSION_STORAGE_KEY = 'jwLibraryNoteAplicarOnlineDefaultsVersionV1';
 
     const explicitMaps = {
       script: {
@@ -1365,17 +1499,31 @@
       const { start, end, selected } = getSelectionRange();
 
       if (targetSelect.value === 'cursorHighlight') {
-        selectionInfo.textContent = 'Coloque o cursor no ponto desejado, escolha um item em “Destaque” e clique em “Salvar formatação aplicada” para inserir.';
+        selectionInfo.textContent = 'Coloque o cursor no ponto desejado, escolha um item em “Destaque”, clique em ▶️ Aplicar para visualizar e depois em 💾 para inserir.';
         return;
       }
 
       if (start !== end && selected) {
-        selectionInfo.textContent = 'Trecho selecionado: ' + selected.length + ' caractere(s). Clique em “Salvar formatação aplicada” para fixar essa formatação antes de escolher outro trecho.';
+        selectionInfo.textContent = 'Trecho selecionado: ' + selected.length + ' caractere(s). Clique em ▶️ Aplicar para visualizar e depois em 💾 para salvar.';
       } else if (targetSelect.value === 'selection') {
         selectionInfo.textContent = 'Selecione um trecho no campo “Texto original” para formatar apenas essa parte.';
       } else {
-        selectionInfo.textContent = 'Para formatar várias partes: selecione um trecho, escolha “Apenas trecho selecionado”, clique em “Converter” e depois em “Salvar formatação aplicada”.';
+        selectionInfo.textContent = 'Para gerar o resultado, escolha as opções e clique em ▶️ Aplicar. Depois use 💾 para salvar no texto original, se desejar.';
       }
+    }
+
+    function syncOptionButtons() {
+      document.querySelectorAll('.option-btn[data-select]').forEach(btn => {
+        const select = document.getElementById(btn.dataset.select);
+        btn.classList.toggle('active', !!select && select.value === btn.dataset.value);
+      });
+    }
+
+    function refreshUiWithoutApplying() {
+      copyStatus.textContent = '';
+      updateSelectionInfo();
+      updatePreview();
+      syncOptionButtons();
     }
 
     function updateResult() {
@@ -1393,6 +1541,7 @@
       copyStatus.textContent = '';
       updateSelectionInfo();
       updatePreview();
+      syncOptionButtons();
     }
 
 
@@ -2413,8 +2562,7 @@
     document.getElementById('quickBoldItalicBtn').addEventListener('click', () => quickFormat('boldItalic'));
     document.getElementById('removeFormattingBtn').addEventListener('click', removeFormattingFromSelection);
     document.getElementById('savePreviewBtn').addEventListener('click', commitSelectionFormatting);
-    document.getElementById('applySelectionBtn').addEventListener('click', applyStyleToSelectionInInput);
-    document.getElementById('clearBtn').addEventListener('click', () => { input.value = ''; updateResult(); input.focus(); });
+    document.getElementById('clearBtn').addEventListener('click', () => { input.value = ''; result.textContent = ''; lastSelectionPreview = null; refreshUiWithoutApplying(); input.focus(); });
     document.getElementById('copyBtn').addEventListener('click', copyResult);
     document.getElementById('selectBtn').addEventListener('click', selectResult);
 
@@ -2442,15 +2590,40 @@
     backupText.addEventListener('focus', rememberFocusedField);
     customSymbolsText.addEventListener('focus', rememberFocusedField);
 
-    input.addEventListener('input', updateResult);
-    input.addEventListener('select', updateResult);
-    input.addEventListener('keyup', updateSelectionInfo);
-    input.addEventListener('mouseup', updateResult);
-    input.addEventListener('touchend', () => setTimeout(updateResult, 80));
-    styleSelect.addEventListener('change', updateResult);
-    decorationSelect.addEventListener('change', updateResult);
-    caseSelect.addEventListener('change', updateResult);
-    targetSelect.addEventListener('change', updateResult);
+    document.querySelectorAll('.option-btn[data-select]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const select = document.getElementById(btn.dataset.select);
+        if (!select) return;
+        select.value = btn.dataset.value;
+        lastSelectionPreview = null;
+        refreshUiWithoutApplying();
+      });
+    });
+
+    input.addEventListener('input', () => {
+      lastSelectionPreview = null;
+      refreshUiWithoutApplying();
+    });
+    input.addEventListener('select', refreshUiWithoutApplying);
+    input.addEventListener('keyup', refreshUiWithoutApplying);
+    input.addEventListener('mouseup', refreshUiWithoutApplying);
+    input.addEventListener('touchend', () => setTimeout(refreshUiWithoutApplying, 80));
+    styleSelect.addEventListener('change', () => {
+      lastSelectionPreview = null;
+      refreshUiWithoutApplying();
+    });
+    decorationSelect.addEventListener('change', () => {
+      lastSelectionPreview = null;
+      refreshUiWithoutApplying();
+    });
+    caseSelect.addEventListener('change', () => {
+      lastSelectionPreview = null;
+      refreshUiWithoutApplying();
+    });
+    targetSelect.addEventListener('change', () => {
+      lastSelectionPreview = null;
+      refreshUiWithoutApplying();
+    });
 
     enableManifestWhenOnline();
 
@@ -2459,7 +2632,8 @@
     caseSelect.value = 'normal';
     styleSelect.value = 'normal';
     decorationSelect.value = 'none';
-    updateResult();
+    result.textContent = '';
+    refreshUiWithoutApplying();
     autoCheckOnlineDefaultsOnStart();
   </script>
 </body>
