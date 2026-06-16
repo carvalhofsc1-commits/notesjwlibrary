@@ -1001,6 +1001,99 @@
       }
     }
 
+
+    .style-full-row {
+      width: 100%;
+      max-width: 100%;
+    }
+
+    .style-full-row select {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+
+    .case-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      width: 100%;
+    }
+
+    .case-buttons .option-btn {
+      width: 100%;
+      min-height: 42px;
+    }
+
+    .option-btn:hover,
+    .option-btn:focus-visible,
+    .icon-action:hover,
+    .icon-action:focus-visible {
+      filter: none !important;
+      background-color: #f8fafc !important;
+      box-shadow: 0 0 0 3px rgba(148, 163, 184, .22), 0 8px 18px rgba(15, 23, 42, .08) !important;
+      transform: translateY(-1px);
+    }
+
+    .main-actions {
+      display: grid !important;
+      grid-template-columns: repeat(auto-fit, minmax(86px, 1fr));
+      gap: 8px !important;
+      width: 100%;
+      overflow: visible !important;
+      align-items: stretch;
+      margin-top: 10px;
+      margin-bottom: 14px;
+    }
+
+    .main-actions .action-item {
+      min-width: 0 !important;
+      width: 100%;
+      gap: 5px;
+      font-size: .78rem;
+    }
+
+    .main-actions .icon-action,
+    .main-actions .icon-action.apply,
+    .main-actions .icon-action.quick {
+      width: 100%;
+      min-width: 0 !important;
+      min-height: 44px;
+      padding: 9px 10px;
+      font-size: 1.1rem;
+      border-radius: 13px;
+    }
+
+    @media (max-width: 560px) {
+      .main-actions {
+        grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+        gap: 6px !important;
+      }
+
+      .case-buttons {
+        grid-template-columns: 1fr;
+      }
+    }
+
+
+    @media (min-width: 861px) {
+      .grid {
+        align-items: stretch !important;
+      }
+
+      .grid > .card {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      #result {
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+    }
+
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -1066,38 +1159,30 @@
 
   <main>
     <section class="card" style="margin-bottom:16px">
-      <h2>Novo tópico: destaque para notas da ESP 2026 <span class="pill">v7.3</span></h2>
+      <h2>Formatar notas da JW Library <span class="pill">v7.5</span></h2>
       <p class="hint">Este aplicativo não aplica formatação real. Ele troca as letras por caracteres Unicode parecidos com negrito, itálico, círculos, caixas e símbolos, para dar aparência de destaque em campos que aceitam apenas texto.</p>
     </section>
 
     <div class="grid">
       <section class="card">
         <h2>1. Texto original</h2>
-        <textarea id="inputText" placeholder="Digite aqui o texto que deseja converter..."></textarea>
+        <textarea id="inputText" placeholder="Digite aqui o texto que deseja formatar"></textarea>
 
         <div class="button-row action-row main-actions">
-          <div class="action-item">
-            <button id="convertBtn" class="icon-action apply" type="button" title="Aplicar e mostrar no resultado" aria-label="Aplicar e mostrar no resultado">▶️</button>
-            <span>Aplicar</span>
-          </div>
-          <div class="action-item">
-            <button id="savePreviewBtn" class="icon-action save" type="button" title="Salvar no texto original" aria-label="Salvar no texto original">💾</button>
-            <span>Salvar</span>
-          </div>
           <div class="action-item">
             <button id="clearBtn" class="icon-action clear" type="button" title="Limpar" aria-label="Limpar">🧹</button>
             <span>Limpar</span>
           </div>
           <div class="action-item">
-            <button id="quickBoldBtn" class="icon-action quick" type="button" title="Aplicar negrito no trecho selecionado" aria-label="Aplicar negrito no trecho selecionado">𝐍</button>
+            <button id="quickBoldBtn" class="icon-action quick" type="button" title="Aplicar negrito ao trecho selecionado" aria-label="Aplicar negrito ao trecho selecionado">𝐍</button>
             <span>Negrito</span>
           </div>
           <div class="action-item">
-            <button id="quickItalicBtn" class="icon-action quick" type="button" title="Aplicar itálico no trecho selecionado" aria-label="Aplicar itálico no trecho selecionado">𝑰</button>
+            <button id="quickItalicBtn" class="icon-action quick" type="button" title="Aplicar itálico ao trecho selecionado" aria-label="Aplicar itálico ao trecho selecionado">𝑰</button>
             <span>Itálico</span>
           </div>
           <div class="action-item">
-            <button id="quickBoldItalicBtn" class="icon-action quick" type="button" title="Aplicar negrito itálico no trecho selecionado" aria-label="Aplicar negrito itálico no trecho selecionado">𝑵𝑰</button>
+            <button id="quickBoldItalicBtn" class="icon-action quick" type="button" title="Aplicar negrito itálico ao trecho selecionado" aria-label="Aplicar negrito itálico ao trecho selecionado">𝑵𝑰</button>
             <span>N+I</span>
           </div>
           <div class="action-item">
@@ -1122,7 +1207,6 @@
             <option value="lower">tudo minúsculo</option>
           </select>
           <div class="option-buttons case-buttons" role="group" aria-label="Maiúsculas/minúsculas">
-            <button type="button" class="option-btn btn-slate" data-case="normal">🔤 Normal</button>
             <button type="button" class="option-btn btn-orange" data-case="upper">🔠 MAIÚSCULAS</button>
             <button type="button" class="option-btn btn-sky" data-case="title">✨ Iniciais</button>
             <button type="button" class="option-btn btn-teal" data-case="lower">🔡 minúsculas</button>
@@ -1146,33 +1230,19 @@
           <p class="hint">Selecione várias linhas ou parágrafos e escolha um modelo de lista. Cada quebra de linha vira um item.</p>
         </div>
 
-        <div class="controls-3 style-decoration-row">
-          <div>
-            <label for="styleSelect">Tipo de caractere</label>
-            <select id="styleSelect"></select>
-          </div>
-
-          <div>
-            <label for="decorationSelect">Destaque</label>
-            <select id="decorationSelect">
-              <option value="none">Sem destaque</option>
-              <option value="question">❓ PERGUNTA 👉 texto</option>
-              <option value="video">▶️▶️ VÍDEO ⏩⏩ texto</option>
-              <option value="instructor">⚠️ INSTRUTOR 👉 texto</option>
-              <option value="arrow">➤ texto</option>
-              <option value="check">✅ texto</option>
-              <option value="star">★ texto ★</option>
-              <option value="quote">❝ texto ❞</option>
-              <option value="line">▇▇▇ texto ▇▇▇</option>
-              <option value="topic">🟦 NOVO TÓPICO ➜ texto</option>
-            </select>
-          </div>
+        <div class="style-full-row">
+          <label for="styleSelect">Tipo de caractere</label>
+          <select id="styleSelect"></select>
         </div>
+
+        <select id="decorationSelect" class="hidden-select" aria-hidden="true" tabindex="-1">
+          <option value="none">Sem destaque</option>
+        </select>
 
         <label>Exemplo do estilo escolhido</label>
         <div id="preview" class="preview"></div>
 
-        <p id="selectionInfo" class="hint">Para formatar várias partes, selecione um trecho e salve a formatação. Se houver seleção, a formatação será aplicada ao trecho. Se não houver seleção, o destaque será inserido no ponto do cursor.</p>
+        <p id="selectionInfo" class="hint">Selecione um trecho e clique na formatação desejada. A alteração é aplicada e salva automaticamente, mantendo a seleção ativa para outra formatação.</p>
 
 
       </section>
@@ -1185,7 +1255,7 @@
           <button id="selectBtn" class="secondary">Selecionar texto</button>
           <span id="copyStatus" class="ok"></span>
         </div>
-        <p class="hint">Dica: escolha as opções e clique em ▶️ Aplicar para gerar o resultado. Depois use 💾 para salvar a formatação no texto original.</p>
+        <p class="hint">Dica: as formatações são aplicadas diretamente no texto original. Use este campo apenas para copiar ou selecionar o resultado atual.</p>
       </section>
     </div>
 
@@ -1310,7 +1380,7 @@
   </div>
 
   <footer>
-    Arquivo local HTML/CSS/JavaScript. Funciona offline depois de baixado. Versão 7.3 com maiúsculas/minúsculas funcionando sobre texto já formatado.
+    Arquivo local HTML/CSS/JavaScript. Funciona offline depois de baixado. Versão 7.5 com cards de texto e resultado alinhados no desktop.
   </footer>
 
   <script>
@@ -1517,15 +1587,17 @@
       const { start, end, selected } = getSelectionRange();
       if (start === end || !selected) {
         if (showMessage) selectionInfo.textContent = 'Selecione um trecho no texto original e clique em uma opção de maiúsculas/minúsculas.';
+        input.focus();
         return false;
       }
 
       const converted = applyCasePreservingUnicodeStyle(selected, mode);
-      replaceInputRange(start, end, converted, true);
       caseSelect.value = 'normal';
 
-      if (showMessage) selectionInfo.textContent = 'Opção aplicada apenas neste momento ao texto selecionado.';
-      return true;
+      return replaceSelectionWith(
+        converted,
+        showMessage ? 'Opção aplicada ao texto selecionado. A seleção foi mantida.' : ''
+      );
     }
 
     const listNumberSets = {
@@ -1701,6 +1773,77 @@
 
       const style = styles.find(s => s.id === styleId) || styles[0];
       return [...cased].map(ch => convertChar(ch, style)).join('');
+    }
+
+    function getSelectedStyleId() {
+      return styleSelect.value || 'normal';
+    }
+
+    function getSelectedStyleFamily() {
+      const id = getSelectedStyleId();
+      if (id === 'sansBold' || id === 'sansItalic' || id === 'sansBoldItalic') return 'sans';
+      return 'math';
+    }
+
+    function resolveQuickStyleId(kind) {
+      const family = getSelectedStyleFamily();
+
+      if (family === 'sans') {
+        if (kind === 'bold') return 'sansBold';
+        if (kind === 'italic') return 'sansItalic';
+        if (kind === 'boldItalic') return 'sansBoldItalic';
+      }
+
+      if (kind === 'bold') return 'bold';
+      if (kind === 'italic') return 'italic';
+      if (kind === 'boldItalic') return 'boldItalic';
+      return getSelectedStyleId();
+    }
+
+    function convertTextWithStyle(text, styleId) {
+      const style = styles.find(s => s.id === styleId) || styles[0];
+      const plainText = removeFormattingFromText(text);
+      return [...plainText].map(ch => convertChar(ch, style)).join('');
+    }
+
+    function replaceSelectionWith(replacement, message = '') {
+      const { start, end, selected } = getSelectionRange();
+      const previousScrollTop = input.scrollTop;
+      const previousScrollLeft = input.scrollLeft;
+
+      if (start === end || !selected) {
+        selectionInfo.textContent = 'Selecione um trecho para aplicar essa formatação.';
+        input.focus();
+        return false;
+      }
+
+      input.value = input.value.slice(0, start) + replacement + input.value.slice(end);
+      const newEnd = start + replacement.length;
+
+      input.focus();
+      input.scrollTop = previousScrollTop;
+      input.scrollLeft = previousScrollLeft;
+      input.setSelectionRange(start, newEnd);
+      lastInputSelection = { start, end: newEnd };
+      lastFocusedTextField = input;
+      lastSelectionPreview = null;
+      updateResult();
+      input.scrollTop = previousScrollTop;
+      input.scrollLeft = previousScrollLeft;
+
+      if (message) selectionInfo.textContent = message;
+      return true;
+    }
+
+    function applySelectedStyleToSelection(showMessage = true) {
+      const { start, end, selected } = getSelectionRange();
+      if (start === end || !selected) {
+        refreshUiWithoutApplying();
+        return false;
+      }
+
+      const converted = convertTextWithStyle(selected, getSelectedStyleId());
+      return replaceSelectionWith(converted, showMessage ? 'Tipo de caractere aplicado ao trecho selecionado.' : '');
     }
 
     function escapeRegExp(text) {
@@ -2050,9 +2193,9 @@
       const { start, end, selected } = getSelectionRange();
 
       if (start !== end && selected) {
-        selectionInfo.textContent = 'Trecho selecionado: ' + selected.length + ' caractere(s). Clique em ▶️ Aplicar para visualizar e depois em 💾 para salvar.';
+        selectionInfo.textContent = 'Trecho selecionado: ' + selected.length + ' caractere(s). Clique numa opção para aplicar e salvar automaticamente.';
       } else {
-        selectionInfo.textContent = 'Sem seleção: o destaque será inserido no ponto do cursor. Para mudar letras, selecione primeiro um trecho.';
+        selectionInfo.textContent = 'Selecione um trecho para aplicar formatação. Modelos prontos podem ser inseridos no ponto do cursor.';
       }
     }
 
@@ -2071,18 +2214,8 @@
     }
 
     function updateResult() {
-      const data = getConvertedSelectionData();
-
-      if (data) {
-        result.textContent = data.fullText;
-      } else if (decorationSelect.value !== 'none') {
-        lastSelectionPreview = null;
-        const highlightData = getCursorHighlightData();
-        result.textContent = highlightData ? highlightData.fullText : input.value;
-      } else {
-        lastSelectionPreview = null;
-        result.textContent = input.value;
-      }
+      lastSelectionPreview = null;
+      result.textContent = input.value;
 
       copyStatus.textContent = '';
       updateSelectionInfo();
@@ -2106,46 +2239,33 @@
       const cleaned = removeFormattingFromText(data.selected);
       input.value = input.value.slice(0, data.start) + cleaned + input.value.slice(data.end);
 
-      const newPos = data.start + cleaned.length;
+      const newEnd = data.start + cleaned.length;
       input.focus();
       input.scrollTop = previousScrollTop;
       input.scrollLeft = previousScrollLeft;
-      input.setSelectionRange(newPos, newPos);
+      input.setSelectionRange(data.start, newEnd);
+      lastInputSelection = { start: data.start, end: newEnd };
 
       lastSelectionPreview = null;
       updateResult();
       input.scrollTop = previousScrollTop;
       input.scrollLeft = previousScrollLeft;
-      selectionInfo.textContent = 'Formatação removida do trecho selecionado.';
+      selectionInfo.textContent = 'Formatação removida do trecho selecionado. A seleção foi mantida.';
     }
 
-    function quickFormat(styleId) {
-      const previousStyle = styleSelect.value;
-      styleSelect.value = styleId;
+    function quickFormat(kind) {
+      const { start, end, selected } = getSelectionRange();
 
-      const data = getConvertedSelectionData();
-      if (!data) {
-        styleSelect.value = styleId;
-        updateResult();
-        alert('Selecione primeiro um trecho do texto original.');
+      if (start === end || !selected) {
+        selectionInfo.textContent = 'Selecione primeiro um trecho do texto original.';
         input.focus();
         return;
       }
 
-      const previousScrollTop = input.scrollTop;
-      const previousScrollLeft = input.scrollLeft;
+      const styleId = resolveQuickStyleId(kind);
+      const converted = convertTextWithStyle(selected, styleId);
 
-      input.value = data.fullText;
-      input.focus();
-      input.scrollTop = previousScrollTop;
-      input.scrollLeft = previousScrollLeft;
-      input.setSelectionRange(data.newEnd, data.newEnd);
-
-      lastSelectionPreview = null;
-      updateResult();
-      input.scrollTop = previousScrollTop;
-      input.scrollLeft = previousScrollLeft;
-      selectionInfo.textContent = 'Formatação rápida aplicada e salva. A seleção foi desfeita para evitar duplicação.';
+      replaceSelectionWith(converted, 'Formatação aplicada ao trecho selecionado. A seleção foi mantida para nova formatação.');
     }
 
     function commitSelectionFormatting() {
@@ -3216,13 +3336,17 @@
     }
 
 
-    document.getElementById('convertBtn').addEventListener('click', updateResult);
     document.getElementById('quickBoldBtn').addEventListener('click', () => quickFormat('bold'));
     document.getElementById('quickItalicBtn').addEventListener('click', () => quickFormat('italic'));
     document.getElementById('quickBoldItalicBtn').addEventListener('click', () => quickFormat('boldItalic'));
     document.getElementById('removeFormattingBtn').addEventListener('click', removeFormattingFromSelection);
-    document.getElementById('savePreviewBtn').addEventListener('click', commitSelectionFormatting);
     document.getElementById('clearBtn').addEventListener('click', () => { input.value = ''; result.textContent = ''; lastSelectionPreview = null; refreshUiWithoutApplying(); input.focus(); });
+    ['quickBoldBtn','quickItalicBtn','quickBoldItalicBtn','removeFormattingBtn'].forEach(id => {
+      const btn = document.getElementById(id);
+      btn.addEventListener('mousedown', event => event.preventDefault());
+      btn.addEventListener('pointerdown', event => event.preventDefault());
+    });
+
     document.getElementById('copyBtn').addEventListener('click', copyResult);
     document.getElementById('selectBtn').addEventListener('click', selectResult);
 
@@ -3304,11 +3428,7 @@
     }, 80));
     styleSelect.addEventListener('change', () => {
       lastSelectionPreview = null;
-      refreshUiWithoutApplying();
-    });
-    decorationSelect.addEventListener('change', () => {
-      lastSelectionPreview = null;
-      if (applyCurrentDecorationToInput()) return;
+      applySelectedStyleToSelection(false);
       refreshUiWithoutApplying();
     });
 
