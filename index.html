@@ -1146,6 +1146,38 @@
       font-size: .85rem;
     }
 
+
+    .editor-layout {
+      display: grid;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .editor-text-pane,
+    .editor-controls-pane {
+      min-width: 0;
+    }
+
+    @media (min-width: 980px) {
+      .editor-layout {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      }
+
+      #inputText {
+        min-height: clamp(420px, 58vh, 620px);
+      }
+
+      .editor-controls-pane {
+        align-self: start;
+      }
+    }
+
+    @media (max-width: 979px) {
+      .editor-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -1211,14 +1243,19 @@
 
   <main>
     <section class="card" style="margin-bottom:16px">
-      <h2>Formatar notas da JW Library <span class="pill">v7.9</span></h2>
+      <h2>Formatar notas da JW Library <span class="pill">v8.0</span></h2>
       <p class="hint">Este aplicativo não aplica formatação real. Ele troca as letras por caracteres Unicode parecidos com negrito, itálico, círculos, caixas e símbolos, para dar aparência de destaque em campos que aceitam apenas texto.</p>
     </section>
 
     <div class="single-grid">
       <section class="card">
         <h2>1. Texto original</h2>
-        <textarea id="inputText" placeholder="Digite aqui o texto que deseja formatar"></textarea>
+        <div class="editor-layout">
+          <div class="editor-text-pane">
+            <textarea id="inputText" placeholder="Digite aqui o texto que deseja formatar"></textarea>
+          </div>
+
+          <div class="editor-controls-pane">
 
         <div class="button-row action-row main-actions">
           <div class="action-item">
@@ -1309,13 +1346,15 @@
 
         <p id="selectionInfo" class="hint">Selecione um trecho e clique na formatação desejada. A alteração é aplicada e salva automaticamente, mantendo a seleção ativa para outra formatação.</p>
 
+          </div>
+        </div>
 
       </section>
 
     </div>
 
     <section class="card" style="margin-top:16px">
-      <h2>3. Modelos prontos e personalizados</h2>
+      <h2>2. Modelos prontos e personalizados</h2>
       <p class="hint">Clique num modelo pronto para inserir no campo ativo. Se o cursor estiver no texto original, o modelo será inserido ali. Se houver texto selecionado e o modelo tiver {texto}, ele será aplicado ao trecho selecionado; se não tiver {texto}, será inserido antes do trecho.</p>
       <div id="templates" class="templates"></div>
 
@@ -1352,7 +1391,7 @@
       </div>
     </section>
     <section class="card" style="margin-top:16px">
-      <h2>4. Caracteres, ícones e emoticons</h2>
+      <h2>3. Caracteres, ícones e emoticons</h2>
       <p class="hint">Clique para inserir no campo ativo. Os favoritos ficam no topo. Dê dois cliques em um favorito para tirar do topo; dê dois cliques em um item de baixo para mandar para os favoritos.</p>
 
       <div class="symbol-toolbar">
@@ -1391,7 +1430,7 @@
   </main>
 
     <section class="card" style="margin-top:16px">
-      <h2>5. Padrões online do administrador</h2>
+      <h2>4. Padrões online do administrador</h2>
       <p class="hint">Use esta área quando o app estiver publicado na Vercel junto com o arquivo <strong>defaults.json</strong>. Assim o usuário pode puxar os padrões mais recentes sem apagar tudo sem querer.</p>
 
       <div class="button-row">
@@ -1406,7 +1445,7 @@
     </section>
 
     <section class="card" style="margin-top:16px">
-      <h2>6. Exportar ou importar modelos</h2>
+      <h2>5. Exportar ou importar modelos</h2>
       <p class="hint">Use esta área para fazer backup dos seus modelos ou enviar seus modelos para outro usuário.</p>
 
       <div class="button-row">
@@ -1435,7 +1474,7 @@
   </div>
 
   <footer>
-    Arquivo local HTML/CSS/JavaScript. Funciona offline depois de baixado. Versão 7.9 com símbolos de lista inseridos no cursor quando não há seleção.
+    Arquivo local HTML/CSS/JavaScript. Funciona offline depois de baixado. Versão 8.0 com texto original e ferramentas lado a lado no desktop.
   </footer>
 
   <script>
