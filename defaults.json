@@ -1,7 +1,7 @@
 {
   "app": "Conversor para Notas do JW Library",
   "version": 3,
-  "exportedAt": "2026-06-14T23:55:59.363Z",
+  "exportedAt": "2026-06-17T03:35:52.542Z",
   "templates": [
     {
       "id": "tpl-question",
@@ -77,11 +77,32 @@
       "id": "tpl-custom-1781481321231-90",
       "name": "Vídeo 2",
       "content": "▶️▶️ 𝙑𝙄𝘿𝙀𝙊 ⏩⏩ "
+    },
+    {
+      "id": "tpl-custom-1781486692295-876",
+      "name": "DEMONSTRAÇÃO ALUNOS",
+      "content": "👉👉👉🟧🟧🟧 𝑫𝑬𝑺𝑰𝑮𝑵𝑨𝑪𝑨𝑶/𝑫𝑬𝑴𝑶𝑵𝑺𝑻𝑹𝑨𝑪𝑨𝑶 🟧🟧🟧👈👈👈"
+    },
+    {
+      "id": "tpl-custom-1781666892239-621",
+      "name": "DESTAQUE 01",
+      "content": "🟨🟩🟫🟪🟧🟥🟦"
+    },
+    {
+      "id": "tpl-custom-1781666968330-852",
+      "name": "DESTAQUE 02",
+      "content": "🟠🟢🟣🟡🟤🔵⚪🔴"
+    },
+    {
+      "id": "tpl-custom-1781667012061-341",
+      "name": "DESTAQUE 03",
+      "content": "💎💎💎💎💎"
     }
   ],
   "customSymbols": [],
   "customSymbolCategories": {},
   "favoriteSymbols": [
+    "💎",
     "✖️",
     "👈",
     "⫷",
@@ -91,7 +112,6 @@
     "🎁",
     "🔷",
     "🔶",
-    "💎",
     "⬜️",
     "⬛️",
     "🟨",

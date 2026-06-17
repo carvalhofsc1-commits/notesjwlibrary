@@ -1094,6 +1094,34 @@
       }
     }
 
+
+    .template-card-name {
+      display: block;
+      font-size: .72rem;
+      line-height: 1.15;
+      color: var(--muted);
+      font-weight: 700;
+      margin-bottom: 4px;
+      opacity: .9;
+    }
+
+    .template-card-content {
+      display: block;
+      font-size: .94rem;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+
+
+    .list-buttons .option-btn[data-list$="Diamond"],
+    .list-buttons .option-btn[data-list="smallBlueDiamond"],
+    .list-buttons .option-btn[data-list="smallOrangeDiamond"],
+    .list-buttons .option-btn[data-list="diamondDot"],
+    .list-buttons .option-btn[data-list="gemDiamond"] {
+      font-size: 1.1rem;
+      justify-content: center;
+    }
+
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -1159,7 +1187,7 @@
 
   <main>
     <section class="card" style="margin-bottom:16px">
-      <h2>Formatar notas da JW Library <span class="pill">v7.5</span></h2>
+      <h2>Formatar notas da JW Library <span class="pill">v7.7</span></h2>
       <p class="hint">Este aplicativo não aplica formatação real. Ele troca as letras por caracteres Unicode parecidos com negrito, itálico, círculos, caixas e símbolos, para dar aparência de destaque em campos que aceitam apenas texto.</p>
     </section>
 
@@ -1216,8 +1244,12 @@
         <div>
           <label>Inserir lista no texto selecionado</label>
           <div class="option-buttons list-buttons" role="group" aria-label="Inserir lista">
-            <button type="button" class="option-btn btn-blue" data-list="blueDiamond">🔷 Diamante</button>
-            <button type="button" class="option-btn btn-purple" data-list="gemDiamond">💎 Diamante</button>
+            <button type="button" class="option-btn btn-blue" data-list="blueDiamond">🔷</button>
+            <button type="button" class="option-btn btn-orange" data-list="orangeDiamond">🔶</button>
+            <button type="button" class="option-btn btn-sky" data-list="smallBlueDiamond">🔹</button>
+            <button type="button" class="option-btn btn-orange" data-list="smallOrangeDiamond">🔸</button>
+            <button type="button" class="option-btn btn-teal" data-list="diamondDot">💠</button>
+            <button type="button" class="option-btn btn-purple" data-list="gemDiamond">💎</button>
             <button type="button" class="option-btn btn-slate" data-list="bullet">• Ponto</button>
             <button type="button" class="option-btn btn-purple" data-list="arrow">➤ Seta</button>
             <button type="button" class="option-btn btn-green" data-list="check">✅ Check</button>
@@ -1380,7 +1412,7 @@
   </div>
 
   <footer>
-    Arquivo local HTML/CSS/JavaScript. Funciona offline depois de baixado. Versão 7.5 com cards de texto e resultado alinhados no desktop.
+    Arquivo local HTML/CSS/JavaScript. Funciona offline depois de baixado. Versão 7.7 com botões de diamantes exibindo apenas os símbolos.
   </footer>
 
   <script>
@@ -1469,14 +1501,14 @@
 
     const defaultFavoriteSymbols = [
       '❓','✅','⚠️','▶️','⏩','➤','➜','➽','➡','⬅','👉','☛','☚','💡','🔎','📌',
-      '✍🏻','👍🏻','👎🏻','😀','★','☆','✦','✧','✎','✓','✔','✕','✗','✘','🟦','🟧','🟪','🟥',
+      '✍🏻','👍🏻','👎🏻','😀','★','☆','✦','✧','✎','✓','✔','✕','✗','✘','🔷','🔶','🔹','🔸','💠','💎','♦️','🟦','🟧','🟪','🟥',
       '■','□','▣','◆','▲','●','○','▇','▬','❝','❞'
     ];
 
     const symbolCategories = [
       { id: 'setas', name: 'Setas e indicadores', text: `➤ ➜ ➽ ➡ ⬅ 👉 ☛ ☚ ☜ ☝ ☞ ☟ 👆 👇 👈 ↛ ↝ ↠ ⇝ ↣ ↦ ↬ ⇀ ⇁ ⇉ ⇏ ⇒ ⇛ ⇢ ⇥ ⇨ ⇰ ⇴ ⇶ ⇸ ⇻ ⇾ ➔ ➙ ➛ ➝ ➞ ➟ ➢ ➣ ➥ ➦ ➧ ➨ ➩ ➪ ➫ ➬ ➭ ➮ ➯ ➱ ➲ ➳ ➵ ➺ ➻ ➼ ➾ ➠ ⫸ ⫷ ▶` },
       { id: 'marcadores', name: 'Marcadores e avisos', text: `❓ ✅ ⚠️ ⚠ ⛔ 🚫 ❌ ❗️ ❕ ❔ ‼️ ⁉️ 💯 🔅 🔆 🔱 ⚜ 〽️ 🚸 🔰 ♻️ ❇️ ✳️ ❎ 💠 🌀 ➿ ✔ ✓ ☑️ 🔘 ✖ ✕ ✗ ✘ ╳` },
-      { id: 'linhas', name: 'Linhas, blocos e formas', text: `■ □ ▢ ▣ ▤ ▥ ▦ ▧ ▨ ▩ ◆ ▲ △ ▷ ▼ ▽ ◇ ◈ ◉ ◊ ○ ◌ ◍ ◎ ● ◐ ◑ ◒ ◓ ◧ ◨ ◩ ◪ ▂ ▃ ▄ ▅ ▆ ▇ █ ▉ ▊ ▋ ▌ ▍ ▎ ▏ ▬ ▭ ▁ ▇▇▇▇▇▇▇▇▇▇ ▀▄▀▄▀▄▀▄⎐⎏▀▄▀▄▀▄▀▄ ▬▭▬▭▬▭▬▭▬▭▬▭▬▭▬` },
+      { id: 'linhas', name: 'Linhas, blocos e formas', text: `🔷 🔶 🔹 🔸 💠 💎 ♦️ ◇ ◆ ◈ ■ □ ▢ ▣ ▤ ▥ ▦ ▧ ▨ ▩ ◆ ▲ △ ▷ ▼ ▽ ◇ ◈ ◉ ◊ ○ ◌ ◍ ◎ ● ◐ ◑ ◒ ◓ ◧ ◨ ◩ ◪ ▂ ▃ ▄ ▅ ▆ ▇ █ ▉ ▊ ▋ ▌ ▍ ▎ ▏ ▬ ▭ ▁ ▇▇▇▇▇▇▇▇▇▇ ▀▄▀▄▀▄▀▄⎐⎏▀▄▀▄▀▄▀▄ ▬▭▬▭▬▭▬▭▬▭▬▭▬▭▬` },
       { id: 'numeros', name: 'Números especiais', text: `⓿ ❶ ❷ ❸ ❹ ❺ ❻ ❼ ❽ ❾ ❿ ⓫ ⓬ ⓭ ⓮ ⓯ ⓰ ⓱ ⓲ ⓳ ⓴ ⓵ ⓶ ⓷ ⓸ ⓹ ⓺ ⓻ ⓼ ⓽ ⓾ ➀ ➁ ➂ ➃ ➄ ➅ ➆ ➇ ➈ ➉ ➊ ➋ ➌ ➍ ➎ ➏ ➐ ➑ ➒ ➓ 🔟 🔢` },
       { id: 'letras', name: 'Letras decorativas', text: `🅰 🅱 🅲 🅳 🅴 🅵 🅶 🅷 🅸 🅹 🅺 🅻 🅼 🅽 🅾 🅿 🆀 🆁 🆂 🆃 🆄 🆅 🆆 🆇 🆈 🆉 🅸🅽🆂🆃🆁🆄🆃🅾🆁 𝘼 𝘽 𝘾 𝘿 𝙀 𝙁 𝙂 𝙃 𝙄 𝙅 𝙆 𝙇 𝙈 𝙉 𝙊 𝙋 𝙌 𝙍 𝙎 𝙏 𝙐 𝙑 𝙒 𝙓 𝙔 𝙕 𝙖 𝙗 𝙘 𝙙 𝙚 𝙛 𝙜 𝙝 𝙞 𝙟 𝙠 𝙡 𝙢 𝙣 𝙤 𝙥 𝙦 𝙧 𝙨 𝙩 𝙪 𝙫 𝙬 𝙭 𝙮 𝙯 𝐀 𝐁 𝐂 𝐃 𝐄 𝐅 𝐆 𝐇 𝐈 𝐉 𝐊 𝐋 𝐌 𝐍 𝐎 𝐏 𝐐 𝐑 𝐒 𝐓 𝐔 𝐕 𝐖 𝐗 𝐘 𝐙 𝓐 𝓑 𝓒 𝓓 𝓔 𝓕 𝓖 𝓗 𝓘 𝓙 𝓚 𝓛 𝓜 𝓝 𝓞 𝓟 𝓠 𝓡 𝓢 𝓣 𝓤 𝓥 𝓦 𝓧 𝓨 𝓩 𝓪 𝓫 𝓬 𝓭 𝓮 𝓯 𝓰 𝓱 𝓲 𝓳 𝓴 𝓵 𝓶 𝓷 𝓸 𝓹 𝓺 𝓻 𝓼 𝓽 𝓾 𝓿 𝔀 𝔁 𝔂 𝔃 Ⓐ Ⓑ Ⓒ Ⓓ Ⓔ Ⓕ Ⓖ Ⓗ Ⓘ Ⓙ Ⓚ Ⓛ Ⓜ Ⓝ Ⓞ Ⓟ Ⓠ Ⓡ Ⓢ Ⓣ Ⓤ Ⓥ Ⓦ Ⓧ Ⓨ Ⓩ 🄰 🄱 🄲 🄳 🄴 🄵 🄶 🄷 🄸 🄹 🄺 🄻 🄼 🄽 🄾 🄿 🅀 🅁 🅂 🅃 🅄 🅅 🅆 🅇 🅈 🅉` },
       { id: 'modelos', name: 'Sequências prontas', text: `❓𝐏𝐄𝐑𝐆𝐔𝐍𝐓𝐀 👉 ▶️▶️ 𝙑𝙄𝘿𝙀𝙊 ⏩⏩ ⚠️ 🅸🅽🆂🆃🆁🆄🆃🅾🆁 👉 ▶️▶️▶️▶️▶️▶️ ❓➽➽➽➽ 🟪❓𝐏𝐄𝐑𝐆𝐔𝐍𝐓𝐀 👉 🟧🟧🟧🟧🟧🟧🟧🟧🟧 DESIGNAÇÃO 3 🟧🟧🟧🟧🟧🟧🟧🟧🟧` },
@@ -1608,6 +1640,10 @@
     function getListPrefix(model, index) {
       const n = index + 1;
       if (model === 'blueDiamond') return '🔷 ';
+      if (model === 'orangeDiamond') return '🔶 ';
+      if (model === 'smallBlueDiamond') return '🔹 ';
+      if (model === 'smallOrangeDiamond') return '🔸 ';
+      if (model === 'diamondDot') return '💠 ';
       if (model === 'gemDiamond') return '💎 ';
       if (model === 'bullet') return '• ';
       if (model === 'arrow') return '➤ ';
@@ -2405,17 +2441,27 @@
       }
     }
 
+    function getTemplatesSortedByName() {
+      return templates.slice().sort((a, b) => {
+        const nameA = String(a.name || 'Modelo');
+        const nameB = String(b.name || 'Modelo');
+        return nameA.localeCompare(nameB, 'pt-BR', { numeric: true, sensitivity: 'base' });
+      });
+    }
+
     function renderTemplates() {
       const templatesBox = document.getElementById('templates');
       templatesBox.innerHTML = '';
 
-      templates.forEach(tpl => {
+      getTemplatesSortedByName().forEach(tpl => {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'secondary mini';
-        btn.textContent = tpl.content;
+        btn.className = 'secondary mini template-card-btn';
+        btn.innerHTML = '<span class="template-card-name"></span><span class="template-card-content"></span>';
+        btn.querySelector('.template-card-name').textContent = tpl.name || 'Modelo';
+        btn.querySelector('.template-card-content').textContent = tpl.content;
         btn.addEventListener('mousedown', event => event.preventDefault());
-        btn.title = tpl.name + ' — clique para inserir no texto original ou usar no campo ativo';
+        btn.title = (tpl.name || 'Modelo') + ' — clique para inserir no texto original ou usar no campo ativo';
         btn.addEventListener('click', () => {
           const target = getActiveInsertTarget();
 
@@ -2440,10 +2486,10 @@
 
     function renderTemplateSelect(selectedId) {
       templateSelect.innerHTML = '';
-      templates.forEach(tpl => {
+      getTemplatesSortedByName().forEach(tpl => {
         const opt = document.createElement('option');
         opt.value = tpl.id;
-        opt.textContent = tpl.name + ' — ' + tpl.content;
+        opt.textContent = (tpl.name || 'Modelo') + ' — ' + tpl.content;
         templateSelect.appendChild(opt);
       });
 
