@@ -1122,6 +1122,30 @@
       justify-content: center;
     }
 
+
+    .single-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 22px;
+    }
+
+    .icon-action.copy {
+      background: #dcfce7;
+      color: #14532d;
+    }
+
+    .icon-action.select {
+      background: #e0f2fe;
+      color: #075985;
+    }
+
+    .main-copy-status {
+      display: inline-block;
+      min-height: 1.2em;
+      margin-top: 2px;
+      font-size: .85rem;
+    }
+
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -1187,11 +1211,11 @@
 
   <main>
     <section class="card" style="margin-bottom:16px">
-      <h2>Formatar notas da JW Library <span class="pill">v7.7</span></h2>
+      <h2>Formatar notas da JW Library <span class="pill">v7.8</span></h2>
       <p class="hint">Este aplicativo não aplica formatação real. Ele troca as letras por caracteres Unicode parecidos com negrito, itálico, círculos, caixas e símbolos, para dar aparência de destaque em campos que aceitam apenas texto.</p>
     </section>
 
-    <div class="grid">
+    <div class="single-grid">
       <section class="card">
         <h2>1. Texto original</h2>
         <textarea id="inputText" placeholder="Digite aqui o texto que deseja formatar"></textarea>
@@ -1217,7 +1241,16 @@
             <button id="removeFormattingBtn" class="icon-action quick remove" type="button" title="Remover formatação do trecho selecionado" aria-label="Remover formatação do trecho selecionado">⌫</button>
             <span>Remover</span>
           </div>
+          <div class="action-item">
+            <button id="copyBtn" class="icon-action copy" type="button" title="Copiar texto original" aria-label="Copiar texto original">📋</button>
+            <span>Copiar</span>
+          </div>
+          <div class="action-item">
+            <button id="selectBtn" class="icon-action select" type="button" title="Selecionar texto original" aria-label="Selecionar texto original">🔎</button>
+            <span>Selecionar</span>
+          </div>
         </div>
+        <span id="copyStatus" class="ok main-copy-status"></span>
 
         <select id="targetSelect" class="hidden-select" aria-hidden="true" tabindex="-1">
           <option value="auto" selected>Automático</option>
@@ -1279,16 +1312,6 @@
 
       </section>
 
-      <section class="card">
-        <h2>2. Resultado para copiar</h2>
-        <div id="result" class="result"></div>
-        <div class="button-row copy-actions">
-          <button id="copyBtn">Copiar resultado</button>
-          <button id="selectBtn" class="secondary">Selecionar texto</button>
-          <span id="copyStatus" class="ok"></span>
-        </div>
-        <p class="hint">Dica: as formatações são aplicadas diretamente no texto original. Use este campo apenas para copiar ou selecionar o resultado atual.</p>
-      </section>
     </div>
 
     <section class="card" style="margin-top:16px">
@@ -1412,7 +1435,7 @@
   </div>
 
   <footer>
-    Arquivo local HTML/CSS/JavaScript. Funciona offline depois de baixado. Versão 7.7 com botões de diamantes exibindo apenas os símbolos.
+    Arquivo local HTML/CSS/JavaScript. Funciona offline depois de baixado. Versão 7.8 sem campo Resultado; copiar e selecionar ficam junto do texto original.
   </footer>
 
   <script>
@@ -2149,7 +2172,7 @@
       if (selectedTemplate) {
         applyTemplateToInput(selectedTemplate);
         decorationSelect.value = 'none';
-        result.textContent = input.value;
+        if (result) result.textContent = input.value;
         refreshUiWithoutApplying();
         selectionInfo.textContent = hasSelection
           ? 'Destaque aplicado ao texto selecionado.'
@@ -2184,7 +2207,7 @@
       lastFocusedTextField = input;
       lastSelectionPreview = null;
       decorationSelect.value = 'none';
-      result.textContent = input.value;
+      if (result) result.textContent = input.value;
       refreshUiWithoutApplying();
       selectionInfo.textContent = hasSelection
         ? 'Destaque aplicado ao texto selecionado.'
@@ -2251,7 +2274,7 @@
 
     function updateResult() {
       lastSelectionPreview = null;
-      result.textContent = input.value;
+      if (result) result.textContent = input.value;
 
       copyStatus.textContent = '';
       updateSelectionInfo();
@@ -2429,7 +2452,7 @@
       lastFocusedTextField = input;
       lastSelectionPreview = null;
       decorationSelect.value = 'none';
-      result.textContent = input.value;
+      if (result) result.textContent = input.value;
       refreshUiWithoutApplying();
 
       if (hasSelection && hasMarker) {
@@ -2815,27 +2838,24 @@
     }
 
     async function copyResult() {
-      const text = result.textContent;
+      const text = input.value;
       if (!text) return;
       try {
         await navigator.clipboard.writeText(text);
-        copyStatus.textContent = 'Copiado!';
+        copyStatus.textContent = 'Texto copiado!';
       } catch (e) {
-        const range = document.createRange();
-        range.selectNodeContents(result);
-        const sel = window.getSelection();
-        sel.removeAllRanges();
-        sel.addRange(range);
-        copyStatus.textContent = 'Selecione e copie manualmente.';
+        input.focus();
+        input.select();
+        copyStatus.textContent = 'Texto selecionado. Copie manualmente.';
       }
     }
 
     function selectResult() {
-      const range = document.createRange();
-      range.selectNodeContents(result);
-      const sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
+      input.focus();
+      input.select();
+      lastFocusedTextField = input;
+      rememberInputSelection();
+      copyStatus.textContent = 'Texto selecionado.';
     }
 
 
@@ -3386,8 +3406,8 @@
     document.getElementById('quickItalicBtn').addEventListener('click', () => quickFormat('italic'));
     document.getElementById('quickBoldItalicBtn').addEventListener('click', () => quickFormat('boldItalic'));
     document.getElementById('removeFormattingBtn').addEventListener('click', removeFormattingFromSelection);
-    document.getElementById('clearBtn').addEventListener('click', () => { input.value = ''; result.textContent = ''; lastSelectionPreview = null; refreshUiWithoutApplying(); input.focus(); });
-    ['quickBoldBtn','quickItalicBtn','quickBoldItalicBtn','removeFormattingBtn'].forEach(id => {
+    document.getElementById('clearBtn').addEventListener('click', () => { input.value = ''; if (result) result.textContent = ''; lastSelectionPreview = null; refreshUiWithoutApplying(); input.focus(); });
+    ['quickBoldBtn','quickItalicBtn','quickBoldItalicBtn','removeFormattingBtn','copyBtn','selectBtn'].forEach(id => {
       const btn = document.getElementById(id);
       btn.addEventListener('mousedown', event => event.preventDefault());
       btn.addEventListener('pointerdown', event => event.preventDefault());
