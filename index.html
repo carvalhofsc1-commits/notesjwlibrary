@@ -1211,7 +1211,7 @@
 
   <main>
     <section class="card" style="margin-bottom:16px">
-      <h2>Formatar notas da JW Library <span class="pill">v7.8</span></h2>
+      <h2>Formatar notas da JW Library <span class="pill">v7.9</span></h2>
       <p class="hint">Este aplicativo não aplica formatação real. Ele troca as letras por caracteres Unicode parecidos com negrito, itálico, círculos, caixas e símbolos, para dar aparência de destaque em campos que aceitam apenas texto.</p>
     </section>
 
@@ -1292,7 +1292,7 @@
             <button type="button" class="option-btn btn-teal" data-list="circled">① Círculo</button>
             <button type="button" class="option-btn btn-slate" data-list="blackCircle">❶ Preto</button>
           </div>
-          <p class="hint">Selecione várias linhas ou parágrafos e escolha um modelo de lista. Cada quebra de linha vira um item.</p>
+          <p class="hint">Selecione várias linhas ou parágrafos para transformar em lista. Sem seleção, o app insere apenas o símbolo no cursor.</p>
         </div>
 
         <div class="style-full-row">
@@ -1435,7 +1435,7 @@
   </div>
 
   <footer>
-    Arquivo local HTML/CSS/JavaScript. Funciona offline depois de baixado. Versão 7.8 sem campo Resultado; copiar e selecionar ficam junto do texto original.
+    Arquivo local HTML/CSS/JavaScript. Funciona offline depois de baixado. Versão 7.9 com símbolos de lista inseridos no cursor quando não há seleção.
   </footer>
 
   <script>
@@ -1683,9 +1683,10 @@
       const { start, end, selected } = getSelectionRange();
 
       if (start === end || !selected.trim()) {
-        selectionInfo.textContent = 'Selecione as linhas ou parágrafos que deseja transformar em lista.';
-        input.focus();
-        return false;
+        const symbol = getListPrefix(model, 0).trim();
+        replaceInputRange(start, end, symbol, false);
+        selectionInfo.textContent = 'Símbolo inserido no ponto do cursor.';
+        return true;
       }
 
       let itemIndex = 0;
