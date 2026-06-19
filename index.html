@@ -1178,6 +1178,12 @@
       }
     }
 
+
+    .icon-action.indent {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -1243,7 +1249,7 @@
 
   <main>
     <section class="card" style="margin-bottom:16px">
-      <h2>Formatar notas da JW Library <span class="pill">v8.0</span></h2>
+      <h2>Formatar notas da JW Library <span class="pill">v8.4</span></h2>
       <p class="hint">Este aplicativo não aplica formatação real. Ele troca as letras por caracteres Unicode parecidos com negrito, itálico, círculos, caixas e símbolos, para dar aparência de destaque em campos que aceitam apenas texto.</p>
     </section>
 
@@ -1277,6 +1283,10 @@
           <div class="action-item">
             <button id="removeFormattingBtn" class="icon-action quick remove" type="button" title="Remover formatação do trecho selecionado" aria-label="Remover formatação do trecho selecionado">⌫</button>
             <span>Remover</span>
+          </div>
+          <div class="action-item">
+            <button id="indentBtn" class="icon-action indent" type="button" title="Criar recuo no trecho selecionado ou no cursor" aria-label="Criar recuo no trecho selecionado ou no cursor">⇥</button>
+            <span>Recuo</span>
           </div>
           <div class="action-item">
             <button id="copyBtn" class="icon-action copy" type="button" title="Copiar texto original" aria-label="Copiar texto original">📋</button>
@@ -1328,6 +1338,11 @@
             <button type="button" class="option-btn btn-sky" data-list="numberParen">1) Número</button>
             <button type="button" class="option-btn btn-teal" data-list="circled">① Círculo</button>
             <button type="button" class="option-btn btn-slate" data-list="blackCircle">❶ Preto</button>
+            <button type="button" class="option-btn btn-blue" data-list="keycapNumber">1️⃣ Número azul</button>
+            <button type="button" class="option-btn btn-blue" data-list="squareBlue">🟦 Quadrado</button>
+            <button type="button" class="option-btn btn-purple" data-list="squareAlternate">🟦🟧 Quadrado alternado</button>
+            <button type="button" class="option-btn btn-sky" data-list="circleBlue">🔵 Círculo</button>
+            <button type="button" class="option-btn btn-purple" data-list="circleAlternate">🔵🟣 Círculo alternado</button>
           </div>
           <p class="hint">Selecione várias linhas ou parágrafos para transformar em lista. Sem seleção, o app insere apenas o símbolo no cursor.</p>
         </div>
@@ -1344,7 +1359,7 @@
         <label>Exemplo do estilo escolhido</label>
         <div id="preview" class="preview"></div>
 
-        <p id="selectionInfo" class="hint">Selecione um trecho e clique na formatação desejada. A alteração é aplicada e salva automaticamente, mantendo a seleção ativa para outra formatação.</p>
+        <p id="selectionInfo" class="hint">Selecione um trecho e clique na formatação desejada. Use ⇥ Recuo ou a tecla Tab para aumentar o recuo do parágrafo. Repita para mais níveis; Shift+Tab reduz o recuo.</p>
 
           </div>
         </div>
@@ -1474,7 +1489,7 @@
   </div>
 
   <footer>
-    Arquivo local HTML/CSS/JavaScript. Funciona offline depois de baixado. Versão 8.0 com texto original e ferramentas lado a lado no desktop.
+    Arquivo local HTML/CSS/JavaScript. Funciona offline depois de baixado. Versão 8.4 com múltiplos níveis de recuo no parágrafo.
   </footer>
 
   <script>
@@ -1569,13 +1584,16 @@
 
     const symbolCategories = [
       { id: 'setas', name: 'Setas e indicadores', text: `➤ ➜ ➽ ➡ ⬅ 👉 ☛ ☚ ☜ ☝ ☞ ☟ 👆 👇 👈 ↛ ↝ ↠ ⇝ ↣ ↦ ↬ ⇀ ⇁ ⇉ ⇏ ⇒ ⇛ ⇢ ⇥ ⇨ ⇰ ⇴ ⇶ ⇸ ⇻ ⇾ ➔ ➙ ➛ ➝ ➞ ➟ ➢ ➣ ➥ ➦ ➧ ➨ ➩ ➪ ➫ ➬ ➭ ➮ ➯ ➱ ➲ ➳ ➵ ➺ ➻ ➼ ➾ ➠ ⫸ ⫷ ▶` },
-      { id: 'marcadores', name: 'Marcadores e avisos', text: `❓ ✅ ⚠️ ⚠ ⛔ 🚫 ❌ ❗️ ❕ ❔ ‼️ ⁉️ 💯 🔅 🔆 🔱 ⚜ 〽️ 🚸 🔰 ♻️ ❇️ ✳️ ❎ 💠 🌀 ➿ ✔ ✓ ☑️ 🔘 ✖ ✕ ✗ ✘ ╳` },
-      { id: 'linhas', name: 'Linhas, blocos e formas', text: `🔷 🔶 🔹 🔸 💠 💎 ♦️ ◇ ◆ ◈ ■ □ ▢ ▣ ▤ ▥ ▦ ▧ ▨ ▩ ◆ ▲ △ ▷ ▼ ▽ ◇ ◈ ◉ ◊ ○ ◌ ◍ ◎ ● ◐ ◑ ◒ ◓ ◧ ◨ ◩ ◪ ▂ ▃ ▄ ▅ ▆ ▇ █ ▉ ▊ ▋ ▌ ▍ ▎ ▏ ▬ ▭ ▁ ▇▇▇▇▇▇▇▇▇▇ ▀▄▀▄▀▄▀▄⎐⎏▀▄▀▄▀▄▀▄ ▬▭▬▭▬▭▬▭▬▭▬▭▬▭▬` },
-      { id: 'numeros', name: 'Números especiais', text: `⓿ ❶ ❷ ❸ ❹ ❺ ❻ ❼ ❽ ❾ ❿ ⓫ ⓬ ⓭ ⓮ ⓯ ⓰ ⓱ ⓲ ⓳ ⓴ ⓵ ⓶ ⓷ ⓸ ⓹ ⓺ ⓻ ⓼ ⓽ ⓾ ➀ ➁ ➂ ➃ ➄ ➅ ➆ ➇ ➈ ➉ ➊ ➋ ➌ ➍ ➎ ➏ ➐ ➑ ➒ ➓ 🔟 🔢` },
+      { id: 'marcadores', name: 'Marcadores e avisos', text: `❓ ✅ ⚠️ ⚠ ⛔ 🚫 ❌ ❗️ ❕ ❔ ‼️ ⁉️ 💯 🔅 🔆 🔱 ⚜ 〽️ 🚸 🔰 ♻️ ❇️ ✳️ ❎ 💠 🌀 ➿ ✔ ✓ ☑️ 🔘 ✖ ✕ ✗ ✘ ╳ 🎯 📌 💡 🔎 🔍 🆘 📛 💢` },
+      { id: 'formas-coloridas', name: 'Formas coloridas', text: `🔷 🔶 🔹 🔸 💠 💎 ♦️ 🔴 🟠 🟡 🟢 🔵 🟣 🟤 ⚫ ⚪ 🟥 🟧 🟨 🟩 🟦 🟪 🟫 ⬛️ ⬜️ ◇ ◆ ◈ ■ □ ▢ ▣ ▤ ▥ ▦ ▧ ▨ ▩ ▲ △ ▷ ▼ ▽ ◉ ◊ ○ ◌ ◍ ◎ ● ◐ ◑ ◒ ◓ ◧ ◨ ◩ ◪` },
+      { id: 'linhas', name: 'Linhas e divisores', text: `▂ ▃ ▄ ▅ ▆ ▇ █ ▉ ▊ ▋ ▌ ▍ ▎ ▏ ▬ ▭ ▁ ▇▇▇▇▇▇▇▇▇▇ ▀▄▀▄▀▄▀▄⎐⎏▀▄▀▄▀▄▀▄ ▬▭▬▭▬▭▬▭▬▭▬▭▬▭▬ ━━━━━ ───── ═════` },
+      { id: 'numeros', name: 'Números especiais', text: `0️⃣ 1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣ 6️⃣ 7️⃣ 8️⃣ 9️⃣ 🔟 ⓿ ❶ ❷ ❸ ❹ ❺ ❻ ❼ ❽ ❾ ❿ ⓫ ⓬ ⓭ ⓮ ⓯ ⓰ ⓱ ⓲ ⓳ ⓴ ⓵ ⓶ ⓷ ⓸ ⓹ ⓺ ⓻ ⓼ ⓽ ⓾ ➀ ➁ ➂ ➃ ➄ ➅ ➆ ➇ ➈ ➉ ➊ ➋ ➌ ➍ ➎ ➏ ➐ ➑ ➒ ➓ 🔢 #️⃣ *️⃣` },
       { id: 'letras', name: 'Letras decorativas', text: `🅰 🅱 🅲 🅳 🅴 🅵 🅶 🅷 🅸 🅹 🅺 🅻 🅼 🅽 🅾 🅿 🆀 🆁 🆂 🆃 🆄 🆅 🆆 🆇 🆈 🆉 🅸🅽🆂🆃🆁🆄🆃🅾🆁 𝘼 𝘽 𝘾 𝘿 𝙀 𝙁 𝙂 𝙃 𝙄 𝙅 𝙆 𝙇 𝙈 𝙉 𝙊 𝙋 𝙌 𝙍 𝙎 𝙏 𝙐 𝙑 𝙒 𝙓 𝙔 𝙕 𝙖 𝙗 𝙘 𝙙 𝙚 𝙛 𝙜 𝙝 𝙞 𝙟 𝙠 𝙡 𝙢 𝙣 𝙤 𝙥 𝙦 𝙧 𝙨 𝙩 𝙪 𝙫 𝙬 𝙭 𝙮 𝙯 𝐀 𝐁 𝐂 𝐃 𝐄 𝐅 𝐆 𝐇 𝐈 𝐉 𝐊 𝐋 𝐌 𝐍 𝐎 𝐏 𝐐 𝐑 𝐒 𝐓 𝐔 𝐕 𝐖 𝐗 𝐘 𝐙 𝓐 𝓑 𝓒 𝓓 𝓔 𝓕 𝓖 𝓗 𝓘 𝓙 𝓚 𝓛 𝓜 𝓝 𝓞 𝓟 𝓠 𝓡 𝓢 𝓣 𝓤 𝓥 𝓦 𝓧 𝓨 𝓩 𝓪 𝓫 𝓬 𝓭 𝓮 𝓯 𝓰 𝓱 𝓲 𝓳 𝓴 𝓵 𝓶 𝓷 𝓸 𝓹 𝓺 𝓻 𝓼 𝓽 𝓾 𝓿 𝔀 𝔁 𝔂 𝔃 Ⓐ Ⓑ Ⓒ Ⓓ Ⓔ Ⓕ Ⓖ Ⓗ Ⓘ Ⓙ Ⓚ Ⓛ Ⓜ Ⓝ Ⓞ Ⓟ Ⓠ Ⓡ Ⓢ Ⓣ Ⓤ Ⓥ Ⓦ Ⓧ Ⓨ Ⓩ 🄰 🄱 🄲 🄳 🄴 🄵 🄶 🄷 🄸 🄹 🄺 🄻 🄼 🄽 🄾 🄿 🅀 🅁 🅂 🅃 🅄 🅅 🅆 🅇 🅈 🅉` },
       { id: 'modelos', name: 'Sequências prontas', text: `❓𝐏𝐄𝐑𝐆𝐔𝐍𝐓𝐀 👉 ▶️▶️ 𝙑𝙄𝘿𝙀𝙊 ⏩⏩ ⚠️ 🅸🅽🆂🆃🆁🆄🆃🅾🆁 👉 ▶️▶️▶️▶️▶️▶️ ❓➽➽➽➽ 🟪❓𝐏𝐄𝐑𝐆𝐔𝐍𝐓𝐀 👉 🟧🟧🟧🟧🟧🟧🟧🟧🟧 DESIGNAÇÃO 3 🟧🟧🟧🟧🟧🟧🟧🟧🟧` },
-      { id: 'emoji', name: 'Emojis e símbolos gerais', text: `✍🏻 👎🏻 👍🏻 😀 🤔 💡 🔎 🔍 📌 ✏ 🔦 🎮 💣 🔑 🔧 🔨 ⚒ ⛏ 🔭 🎉 🎊 🔥 🎆 🎇 🎈 🚀 📦 🎁 ⚰ ⚱ ⌛ ⏳ 🔮 ⛓ 📢 📣 🔔 🔱 🏆 🔶 🔷 🌹 💎 ❤️ 💛 💙 💜 💔 💕 💞 💓 💗 💖 💘 💝 💟 🔴 🟠 🟡 🟢 🔵 🟣 🟤 ⚫ ⚪ 🟦 🟫 🟩 🟧 🟪 🟥 🟨 ⬛️ ⬜️ 😀 😬 😁 😂 😃 😄 😅 😆 😇 😉 😊 😋 😌 😍 😘 😗 😙 😚 😜 😝 😛 😎 😏 😶 😐 😑 😒 😳 😞 😟 😠 😡 😔 😕 😣 😖 😫 😩 😤 😮 😱 😨 😰 😯 😦 😧 😢 😥 😪 😓 😭 😵 😲 😷 😴 💤 😈 👿 👹 👺 💀 👻 👽 🙌 👏 👋 👍 👊 ✊ ✌️ 👌 ✋ 💪 🙏 ☝️ 👆 👇 👈 👉 🖖 👀 👤` },
-      { id: 'simbolos', name: 'Símbolos diversos', text: `🔯 ⛎ ♈️ ♉️ ♊️ ♋️ ♌️ ♍️ ♎️ ♏️ ♐️ ♑️ ♒️ ♓️ 🆔 🈳 🈹 📴 📳 🈶 🈚️ 🈸 🈺 🈷️ ✴️ 🆚 🉑 💮 🉐 ㊙️ ㊗️ 🈴 🈵 🈲 🅰️ 🅱️ 🆎 🆑 🅾️ 🆘 📛 💢 ♨️ 🚷 🚯 🚳 🚱 🔞 📵 🈯️ 💹 🌐 Ⓜ️ 🏧 🈂️ 🛂 🛃 🛄 🛅 ♿️ 🚭 🚾 🅿️ 🚰 🚹 🚺 🚼 🚻 🚮 🎦 📶 🈁 🆖 🆗 🆙 🆒 🆕 🆓 ▶️ ⏩ ⏪ 🔀 🔁 🔂 ◀️ 🔼 🔽 ⏫ ⏬ ➡️ ⬅️ ⬆️ ⬇️ ↗️ ↘️ ↙️ ↖️ ↕️ ↔️ 🔄 ↪️ ↩️ ⤴️ ⤵️ ℹ️ 🔤 🔡 🔠 🔣 🎵 🎶 〰️ ➰ 🔃 ➕ ➖ ➗ ✖️ 💲 💱 ©️ ®️ ™️ 🔚 🔙 🔛 🔝 🔜` }
+      { id: 'objetos', name: 'Objetos, ferramentas e ações', text: `✍🏻 ✏ 🔦 🎮 💣 🔑 🔧 🔨 ⚒ ⛏ 🔭 🚒 🧯 🛒 🖨️ 📋 🪧 🪴 ☕ 🧺 📦 🎁 ⚰ ⚱ ⌛ ⏳ 🔮 ⛓ 📢 📣 🔔 🧴 💉 🩹 💄 🍫 🚬 🎯 🖼️ 🪙 💲 💱` },
+      { id: 'natureza', name: 'Natureza e cores', text: `🌸 🌺 🌹 🌷 🌼 🌻 💧 💦 🔥 🎆 🎇 🎈 🚀 🪐 ⭐ ✨ 🌟 ☀️ 🌙 🌈` },
+      { id: 'emocoes', name: 'Emojis e expressões', text: `😀 😬 😁 😂 😃 😄 😅 😆 😇 😉 😊 😋 😌 😍 😘 😗 😙 😚 😜 😝 😛 😎 😏 😶 😐 😑 😒 😳 😞 😟 😠 😡 😔 😕 😣 😖 😫 😩 😤 😮 😱 😨 😰 😯 😦 😧 😢 😥 😪 😓 😭 😵 😲 😷 😴 💤 🤔 😈 👿 👹 👺 💀 👻 👽 🙌 👏 👋 👍 👎 👊 ✊ ✌️ 👌 ✋ 💪 🙏 ☝️ 👆 👇 👈 👉 🖖 👀 👂 👤 ❤️ 💛 💙 💜 💔 💕 💞 💓 💗 💖 💘 💝 💟` },
+      { id: 'sinais-sistema', name: 'Sinais e símbolos de sistema', text: `🔯 ⛎ ♈️ ♉️ ♊️ ♋️ ♌️ ♍️ ♎️ ♏️ ♐️ ♑️ ♒️ ♓️ 🆔 🈳 🈹 📴 📳 🈶 🈚️ 🈸 🈺 🈷️ ✴️ 🆚 🉑 💮 🉐 ㊙️ ㊗️ 🈴 🈵 🈲 🅰️ 🅱️ 🆎 🆑 🅾️ 🆗 🆒 🆕 🆓 🆙 ▶️ ⏩ ⏪ 🔀 🔁 🔂 ◀️ 🔼 🔽 ⏫ ⏬ ↗️ ↘️ ↙️ ↖️ ↕️ ↔️ 🔄 ↪️ ↩️ ⤴️ ⤵️ ℹ️ 🔤 🔡 🔠 🔣 🎵 🎶 〰️ ➰ 🔃 ➕ ➖ ➗ ✖️ ©️ ®️ ™️ 🔚 🔙 🔛 🔝 🔜 = ∞ ❗ $` }
     ];
 
     let favoriteSymbols = [];
@@ -1696,7 +1714,10 @@
 
     const listNumberSets = {
       circled: ['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩','⑪','⑫','⑬','⑭','⑮','⑯','⑰','⑱','⑲','⑳'],
-      blackCircle: ['❶','❷','❸','❹','❺','❻','❼','❽','❾','❿','⓫','⓬','⓭','⓮','⓯','⓰','⓱','⓲','⓳','⓴']
+      blackCircle: ['❶','❷','❸','❹','❺','❻','❼','❽','❾','❿','⓫','⓬','⓭','⓮','⓯','⓰','⓱','⓲','⓳','⓴'],
+      keycap: ['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟','1️⃣1️⃣','1️⃣2️⃣','1️⃣3️⃣','1️⃣4️⃣','1️⃣5️⃣','1️⃣6️⃣','1️⃣7️⃣','1️⃣8️⃣','1️⃣9️⃣','2️⃣0️⃣'],
+      squareAlternate: ['🟦','🟧','🟩','🟪','🟥','🟨'],
+      circleAlternate: ['🔵','🟣','🟢','🟠','🔴','🟡']
     };
 
     function getListPrefix(model, index) {
@@ -1715,6 +1736,11 @@
       if (model === 'numberParen') return n + ') ';
       if (model === 'circled') return (listNumberSets.circled[index] || n + '.') + ' ';
       if (model === 'blackCircle') return (listNumberSets.blackCircle[index] || n + '.') + ' ';
+      if (model === 'keycapNumber') return (listNumberSets.keycap[index] || n + '️⃣') + ' ';
+      if (model === 'squareBlue') return '🟦 ';
+      if (model === 'squareAlternate') return listNumberSets.squareAlternate[index % listNumberSets.squareAlternate.length] + ' ';
+      if (model === 'circleBlue') return '🔵 ';
+      if (model === 'circleAlternate') return listNumberSets.circleAlternate[index % listNumberSets.circleAlternate.length] + ' ';
       return '• ';
     }
 
@@ -2323,6 +2349,148 @@
     }
 
 
+
+    function getTextareaContentWidth() {
+      const style = window.getComputedStyle(input);
+      const paddingLeft = parseFloat(style.paddingLeft) || 0;
+      const paddingRight = parseFloat(style.paddingRight) || 0;
+      return Math.max(120, input.clientWidth - paddingLeft - paddingRight - 24);
+    }
+
+    let textMeasureContext = null;
+
+    function getTextMeasureContext() {
+      if (!textMeasureContext) {
+        const canvas = document.createElement('canvas');
+        textMeasureContext = canvas.getContext('2d');
+      }
+
+      const style = window.getComputedStyle(input);
+      textMeasureContext.font = [
+        style.fontStyle,
+        style.fontVariant,
+        style.fontWeight,
+        style.fontSize,
+        style.fontFamily
+      ].join(' ');
+
+      return textMeasureContext;
+    }
+
+    function measureInputText(text) {
+      return getTextMeasureContext().measureText(text).width;
+    }
+
+    function wrapLineWithIndent(line, indent) {
+      if (!line.trim()) return line;
+
+      const maxWidth = getTextareaContentWidth();
+      const existingIndent = (line.match(/^\s*/) || [''])[0];
+      const content = line.slice(existingIndent.length);
+      const newIndent = existingIndent + indent;
+      const words = content.split(/(\s+)/);
+      const wrapped = [];
+      let current = '';
+
+      words.forEach(part => {
+        if (!part) return;
+
+        const tentative = current + part;
+        const visual = newIndent + tentative.trimStart();
+
+        if (current && measureInputText(visual) > maxWidth) {
+          wrapped.push(newIndent + current.trimEnd());
+          current = part.trimStart();
+        } else {
+          current = tentative;
+        }
+      });
+
+      if (current || !wrapped.length) wrapped.push(newIndent + current.trimEnd());
+      return wrapped.join('\n');
+    }
+
+    function removeIndentFromLine(line, indent) {
+      if (line.startsWith(indent)) return line.slice(indent.length);
+      if (line.startsWith('\t')) return line.slice(1);
+      if (line.startsWith('    ')) return line.slice(4);
+      if (line.startsWith('  ')) return line.slice(2);
+      if (line.startsWith(' ')) return line.slice(1);
+      return line;
+    }
+
+    function applyIndentToSelection(direction = 1) {
+      const indent = '    ';
+      const start = typeof input.selectionStart === 'number' ? input.selectionStart : 0;
+      const end = typeof input.selectionEnd === 'number' ? input.selectionEnd : start;
+      const previousScrollTop = input.scrollTop;
+      const previousScrollLeft = input.scrollLeft;
+
+      if (start === end) {
+        if (direction < 0) {
+          const lineStart = input.value.lastIndexOf('\n', Math.max(0, start - 1)) + 1;
+          let lineEnd = input.value.indexOf('\n', start);
+          if (lineEnd === -1) lineEnd = input.value.length;
+
+          const line = input.value.slice(lineStart, lineEnd);
+          const changedLine = removeIndentFromLine(line, indent);
+
+          if (changedLine !== line) {
+            input.value = input.value.slice(0, lineStart) + changedLine + input.value.slice(lineEnd);
+            const removed = line.length - changedLine.length;
+            const newPos = Math.max(lineStart, start - removed);
+            input.focus();
+            input.setSelectionRange(newPos, newPos);
+            lastInputSelection = { start: newPos, end: newPos };
+            updateResult();
+            selectionInfo.textContent = 'Recuo removido da linha atual.';
+          } else {
+            input.focus();
+            selectionInfo.textContent = 'Esta linha não tem recuo para remover.';
+          }
+          return true;
+        }
+
+        replaceInputRange(start, end, indent, false);
+        selectionInfo.textContent = 'Recuo inserido no ponto do cursor.';
+        return true;
+      }
+
+      const lineStart = input.value.lastIndexOf('\n', Math.max(0, start - 1)) + 1;
+      let lineEnd = input.value.indexOf('\n', end);
+      if (lineEnd === -1) lineEnd = input.value.length;
+
+      const before = input.value.slice(0, lineStart);
+      const block = input.value.slice(lineStart, lineEnd);
+      const after = input.value.slice(lineEnd);
+
+      const lines = block.split('\n');
+      const changedLines = lines.map(line => {
+        if (direction < 0) return removeIndentFromLine(line, indent);
+        return wrapLineWithIndent(line, indent);
+      });
+
+      const changedBlock = changedLines.join('\n');
+      input.value = before + changedBlock + after;
+
+      const newStart = lineStart;
+      const newEnd = lineStart + changedBlock.length;
+
+      input.focus();
+      input.scrollTop = previousScrollTop;
+      input.scrollLeft = previousScrollLeft;
+      input.setSelectionRange(newStart, newEnd);
+      lastInputSelection = { start: newStart, end: newEnd };
+      lastFocusedTextField = input;
+      lastSelectionPreview = null;
+      updateResult();
+      input.scrollTop = previousScrollTop;
+      input.scrollLeft = previousScrollLeft;
+      selectionInfo.textContent = direction < 0
+        ? 'Recuo removido das linhas selecionadas. A seleção foi mantida.'
+        : 'Recuo aumentado no parágrafo inteiro. Repita para mais níveis; Shift+Tab reduz.';
+      return true;
+    }
 
     function removeFormattingFromSelection() {
       const data = getSelectionRange();
@@ -3446,8 +3614,9 @@
     document.getElementById('quickItalicBtn').addEventListener('click', () => quickFormat('italic'));
     document.getElementById('quickBoldItalicBtn').addEventListener('click', () => quickFormat('boldItalic'));
     document.getElementById('removeFormattingBtn').addEventListener('click', removeFormattingFromSelection);
+    document.getElementById('indentBtn').addEventListener('click', () => applyIndentToSelection(1));
     document.getElementById('clearBtn').addEventListener('click', () => { input.value = ''; if (result) result.textContent = ''; lastSelectionPreview = null; refreshUiWithoutApplying(); input.focus(); });
-    ['quickBoldBtn','quickItalicBtn','quickBoldItalicBtn','removeFormattingBtn','copyBtn','selectBtn'].forEach(id => {
+    ['quickBoldBtn','quickItalicBtn','quickBoldItalicBtn','removeFormattingBtn','indentBtn','copyBtn','selectBtn'].forEach(id => {
       const btn = document.getElementById(id);
       btn.addEventListener('mousedown', event => event.preventDefault());
       btn.addEventListener('pointerdown', event => event.preventDefault());
@@ -3476,6 +3645,12 @@
     templateSelect.addEventListener('change', loadSelectedTemplateIntoEditor);
 
     input.addEventListener('focus', event => { rememberFocusedField(event); rememberInputSelection(); });
+    input.addEventListener('keydown', event => {
+      if (event.key === 'Tab') {
+        event.preventDefault();
+        applyIndentToSelection(event.shiftKey ? -1 : 1);
+      }
+    });
     templateContent.addEventListener('focus', rememberFocusedField);
     backupText.addEventListener('focus', rememberFocusedField);
     customSymbolsText.addEventListener('focus', rememberFocusedField);
