@@ -173,6 +173,8 @@
       border-radius: 10px;
       min-height: 46px;
       word-break: break-word;
+      white-space: pre-wrap;
+      line-height: 1.65;
     }
 
     .result {
@@ -1150,7 +1152,7 @@
     .editor-layout {
       display: grid;
       gap: 18px;
-      align-items: start;
+      align-items: stretch;
     }
 
     .editor-text-pane,
@@ -1163,12 +1165,18 @@
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       }
 
+      .editor-text-pane {
+        display: flex;
+        align-self: stretch;
+      }
+
       #inputText {
+        height: 100%;
         min-height: clamp(420px, 58vh, 620px);
       }
 
       .editor-controls-pane {
-        align-self: start;
+        align-self: stretch;
       }
     }
 
@@ -1236,6 +1244,65 @@
       }
     }
 
+
+    .manager-launch-row {
+      display: flex;
+      justify-content: center;
+      padding: 18px 16px 4px;
+    }
+
+    .manager-launch-row button {
+      min-width: min(360px, 100%);
+      min-height: 48px;
+      border-radius: 16px;
+    }
+
+    .modal-card.manager-card {
+      width: min(960px, 96vw);
+      max-height: 88vh;
+      overflow: auto;
+    }
+
+    .modal-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .modal-title-row h2 {
+      margin: 0;
+    }
+
+    .modal-close-btn {
+      width: auto;
+      min-width: 44px;
+      min-height: 40px;
+      padding: 8px 12px;
+      border-radius: 12px;
+    }
+
+    .manager-section {
+      border-top: 1px solid var(--line);
+      margin-top: 18px;
+      padding-top: 16px;
+    }
+
+    .category-chip {
+      display: inline-block;
+      font-size: .76rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .template-toolbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
   </style>
 </head>
 <body>
@@ -1249,7 +1316,7 @@
 
   <main>
     <section class="card" style="margin-bottom:16px">
-      <h2>Formatar notas da JW Library <span class="pill">v8.4</span></h2>
+      <h2>Formatar notas da JW Library <span class="pill">v8.9</span></h2>
       <p class="hint">Este aplicativo não aplica formatação real. Ele troca as letras por caracteres Unicode parecidos com negrito, itálico, círculos, caixas e símbolos, para dar aparência de destaque em campos que aceitam apenas texto.</p>
     </section>
 
@@ -1372,6 +1439,14 @@
     <section class="card" style="margin-top:16px">
       <h2>2. Modelos prontos e personalizados</h2>
       <p class="hint">Clique num modelo pronto para inserir no campo ativo. Se o cursor estiver no texto original, o modelo será inserido ali. Se houver texto selecionado e o modelo tiver {texto}, ele será aplicado ao trecho selecionado; se não tiver {texto}, será inserido antes do trecho.</p>
+
+      <div class="template-toolbar">
+        <div>
+          <label for="templateCategoryFilter">Filtrar modelos por categoria</label>
+          <select id="templateCategoryFilter"></select>
+        </div>
+      </div>
+
       <div id="templates" class="templates"></div>
 
       <div class="template-editor">
@@ -1383,7 +1458,7 @@
           <button id="newTemplateBtn" class="secondary" type="button">Novo modelo</button>
         </div>
 
-        <div class="controls">
+        <div class="controls-3">
           <div>
             <label for="templateName">Nome do modelo</label>
             <input id="templateName" type="text" placeholder="Ex.: Pergunta com destaque">
@@ -1391,6 +1466,20 @@
           <div>
             <label for="templateContent">Texto do modelo</label>
             <input id="templateContent" type="text" placeholder="Ex.: ➜ {texto} ⬅">
+          </div>
+          <div>
+            <label for="templateCategorySelect">Categoria do modelo</label>
+            <select id="templateCategorySelect"></select>
+          </div>
+        </div>
+
+        <div class="controls">
+          <div>
+            <label for="newTemplateCategoryName">Nova categoria de modelos</label>
+            <input id="newTemplateCategoryName" type="text" placeholder="Ex.: Revisão, Joias, Perguntas">
+          </div>
+          <div style="align-self:end">
+            <button id="addTemplateCategoryBtn" class="secondary" type="button">Criar categoria</button>
           </div>
         </div>
 
@@ -1402,8 +1491,8 @@
           <span id="templateStatus" class="ok"></span>
         </div>
 
+        <p class="hint">Categoria oficial padrão: <strong>Destaques</strong>. Você também pode criar suas próprias categorias e mudar qualquer modelo de categoria.</p>
         <p class="hint">Dica para modelos: use <strong>{texto}</strong> para marcar onde o texto selecionado deve entrar. Exemplo: <strong>➜ {texto} ⬅</strong>. Se o modelo não tiver {texto}, ele será colocado antes do texto.</p>
-        <p class="hint">Os modelos ficam salvos no navegador usando armazenamento local, mas também podem ser exportados para um arquivo .json e importados em outro navegador ou aparelho.</p>
       </div>
     </section>
     <section class="card" style="margin-top:16px">
@@ -1445,42 +1534,57 @@
 
   </main>
 
-    <section class="card" style="margin-top:16px">
-      <h2>4. Padrões online do administrador</h2>
-      <p class="hint">Use esta área quando o app estiver publicado na Vercel junto com o arquivo <strong>defaults.json</strong>. Assim o usuário pode puxar os padrões mais recentes sem apagar tudo sem querer.</p>
+  <div class="manager-launch-row">
+    <button id="openModelManagerBtn" type="button">⚙️ Gerenciamento de modelos</button>
+  </div>
 
-      <div class="button-row">
-        <button id="checkOnlineDefaultsBtn" type="button">Buscar padrões online</button>
-        <button id="openDefaultsJsonBtn" class="secondary" type="button">Abrir defaults.json</button>
-        <button id="mergeOnlineDefaultsBtn" class="secondary" type="button">Somar padrões online aos meus</button>
-        <button id="replaceOnlineDefaultsBtn" class="danger" type="button">Substituir pelos padrões online</button>
-        <span id="onlineDefaultsStatus" class="ok"></span>
+  <div id="modelManagerOverlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modelManagerTitle">
+    <div class="modal-card manager-card">
+      <div class="modal-title-row">
+        <h2 id="modelManagerTitle">Gerenciamento de modelos</h2>
+        <button id="closeModelManagerBtn" class="secondary modal-close-btn" type="button">✖️ Fechar</button>
       </div>
 
-      <p id="onlineDefaultsVersion" class="hint">Versão online: ainda não carregada.</p>
-    </section>
+      <p class="hint">Use esta área para restaurar padrões, exportar ou importar um único arquivo JSON com modelos, categorias de modelos, caracteres personalizados e favoritos.</p>
 
-    <section class="card" style="margin-top:16px">
-      <h2>5. Exportar ou importar modelos</h2>
-      <p class="hint">Use esta área para fazer backup dos seus modelos ou enviar seus modelos para outro usuário.</p>
+      <div class="manager-section">
+        <h3>Arquivo padrão JSON</h3>
+        <p class="hint">Use esta área para carregar o arquivo <strong>defaults.json</strong> que acompanha o app. Você pode somar os padrões aos seus dados atuais ou substituir pelos padrões do arquivo.</p>
 
-      <div class="button-row">
-        <button id="exportTemplatesBtn" type="button">Exportar modelos</button>
-        <button id="importTemplatesBtn" class="secondary" type="button">Importar modelos</button>
-        <input id="importTemplatesFile" type="file" accept=".json,.txt,application/json,text/plain" style="display:none">
-        <button id="copyBackupBtn" class="secondary" type="button">Copiar backup em texto</button>
-        <span id="backupStatus" class="ok"></span>
+        <div class="button-row">
+          <button id="checkOnlineDefaultsBtn" type="button">Buscar arquivo padrão JSON</button>
+          <button id="openDefaultsJsonBtn" class="secondary" type="button">Abrir defaults.json</button>
+          <button id="mergeOnlineDefaultsBtn" class="secondary" type="button">Somar padrões aos meus</button>
+          <button id="replaceOnlineDefaultsBtn" class="danger" type="button">Substituir pelos padrões</button>
+          <span id="onlineDefaultsStatus" class="ok"></span>
+        </div>
+
+        <p id="onlineDefaultsVersion" class="hint">Arquivo padrão: ainda não carregado.</p>
       </div>
 
-      <label for="backupText">Backup em texto</label>
-      <textarea id="backupText" style="min-height:120px" placeholder="Ao exportar ou copiar, o backup aparecerá aqui. Você também pode colar aqui um backup recebido e clicar em Importar modelos."></textarea>
-    </section>
+      <div class="manager-section">
+        <h3>Exportar ou importar arquivo JSON</h3>
+        <p class="hint">O arquivo exportado reúne modelos, categorias de modelos, caracteres personalizados, categorias de caracteres e favoritos.</p>
+
+        <div class="button-row">
+          <button id="exportTemplatesBtn" type="button">Exportar JSON completo</button>
+          <button id="importTemplatesBtn" class="secondary" type="button">Importar JSON completo</button>
+          <input id="importTemplatesFile" type="file" accept=".json,.txt,application/json,text/plain" style="display:none">
+          <button id="copyBackupBtn" class="secondary" type="button">Copiar JSON em texto</button>
+          <span id="backupStatus" class="ok"></span>
+        </div>
+
+        <label for="backupText">Arquivo JSON em texto</label>
+        <textarea id="backupText" style="min-height:160px" placeholder="Ao exportar ou copiar, o JSON aparecerá aqui. Você também pode colar aqui um JSON recebido e clicar em Importar JSON completo."></textarea>
+      </div>
+    </div>
+  </div>
 
 
   <div id="importChoiceOverlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="importChoiceTitle">
     <div class="modal-card">
-      <h2 id="importChoiceTitle">Como deseja importar os modelos?</h2>
-      <p id="importChoiceText">Escolha se deseja combinar com os modelos atuais, substituir tudo ou cancelar a importação.</p>
+      <h2 id="importChoiceTitle">Como deseja importar o arquivo JSON?</h2>
+      <p id="importChoiceText">Escolha se deseja combinar com os dados atuais, substituir tudo ou cancelar a importação.</p>
       <div class="modal-actions">
         <button id="combineImportChoice" type="button" class="btn-green">🔄 Combinar</button>
         <button id="replaceImportChoice" type="button" class="btn-orange">♻️ Substituir</button>
@@ -1490,7 +1594,7 @@
   </div>
 
   <footer>
-    Arquivo local HTML/CSS/JavaScript. Funciona offline depois de baixado. Versão 8.6 com múltiplos níveis de recuo no parágrafo.
+    Arquivo local HTML/CSS/JavaScript. Funciona offline depois de baixado. Versão 8.9 com gerenciamento unificado em JSON.
   </footer>
 
   <script>
@@ -1517,6 +1621,13 @@
     const templateStatus = document.getElementById('templateStatus');
 
     const templateSelect = document.getElementById('templateSelect');
+    const templateCategoryFilter = document.getElementById('templateCategoryFilter');
+    const templateCategorySelect = document.getElementById('templateCategorySelect');
+    const newTemplateCategoryName = document.getElementById('newTemplateCategoryName');
+    const addTemplateCategoryBtn = document.getElementById('addTemplateCategoryBtn');
+    const modelManagerOverlay = document.getElementById('modelManagerOverlay');
+    const openModelManagerBtn = document.getElementById('openModelManagerBtn');
+    const closeModelManagerBtn = document.getElementById('closeModelManagerBtn');
     const templateName = document.getElementById('templateName');
     const templateContent = document.getElementById('templateContent');
     const backupText = document.getElementById('backupText');
@@ -1540,6 +1651,8 @@
     const FAVORITE_SYMBOLS_STORAGE_KEY = 'jwLibraryNoteAplicarFavoriteSymbolsV1';
     const CUSTOM_SYMBOL_CATEGORIES_STORAGE_KEY = 'jwLibraryNoteAplicarCustomSymbolCategoriesV1';
     const ONLINE_DEFAULTS_VERSION_STORAGE_KEY = 'jwLibraryNoteAplicarOnlineDefaultsVersionV1';
+    const TEMPLATE_CATEGORIES_STORAGE_KEY = 'jwLibraryNoteAplicarTemplateCategoriesV1';
+    const DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
 
     const explicitMaps = {
       script: {
@@ -1621,27 +1734,54 @@
       blackCircledNumbers: '123'
     };
 
+    const defaultFavoriteSymbols = [
+      '❓','✅','⚠️','▶️','⏩','➤','➜','➽','➡','⬅','👉','☛','☚','💡','🔎','📌',
+      '✍🏻','👍🏻','👎🏻','😀','★','☆','✦','✧','✎','✓','✔','✕','✗','✘','🔷','🔶','🔹','🔸','💠','💎','♦️','🟦','🟧','🟪','🟥',
+      '■','□','▣','◆','▲','●','○','▇','▬','❝','❞'
+    ];
+
+    const symbolCategories = [
+      { id: 'setas', name: 'Setas e indicadores', text: `➤ ➜ ➽ ➡ ⬅ 👉 ☛ ☚ ☜ ☝ ☞ ☟ 👆 👇 👈 ↛ ↝ ↠ ⇝ ↣ ↦ ↬ ⇀ ⇁ ⇉ ⇏ ⇒ ⇛ ⇢ ⇥ ⇨ ⇰ ⇴ ⇶ ⇸ ⇻ ⇾ ➔ ➙ ➛ ➝ ➞ ➟ ➢ ➣ ➥ ➦ ➧ ➨ ➩ ➪ ➫ ➬ ➭ ➮ ➯ ➱ ➲ ➳ ➵ ➺ ➻ ➼ ➾ ➠ ⫸ ⫷ ▶` },
+      { id: 'marcadores', name: 'Marcadores e avisos', text: `❓ ✅ ⚠️ ⚠ ⛔ 🚫 ❌ ❗️ ❕ ❔ ‼️ ⁉️ 💯 🔅 🔆 🔱 ⚜ 〽️ 🚸 🔰 ♻️ ❇️ ✳️ ❎ 💠 🌀 ➿ ✔ ✓ ☑️ 🔘 ✖ ✕ ✗ ✘ ╳ 🎯 📌 💡 🔎 🔍 🆘 📛 💢` },
+      { id: 'formas-coloridas', name: 'Formas coloridas', text: `🔷 🔶 🔹 🔸 💠 💎 ♦️ 🔴 🟠 🟡 🟢 🔵 🟣 🟤 ⚫ ⚪ 🟥 🟧 🟨 🟩 🟦 🟪 🟫 ⬛️ ⬜️ ◇ ◆ ◈ ■ □ ▢ ▣ ▤ ▥ ▦ ▧ ▨ ▩ ▲ △ ▷ ▼ ▽ ◉ ◊ ○ ◌ ◍ ◎ ● ◐ ◑ ◒ ◓ ◧ ◨ ◩ ◪` },
+      { id: 'linhas', name: 'Linhas e divisores', text: `▂ ▃ ▄ ▅ ▆ ▇ █ ▉ ▊ ▋ ▌ ▍ ▎ ▏ ▬ ▭ ▁ ▇▇▇▇▇▇▇▇▇▇ ▀▄▀▄▀▄▀▄⎐⎏▀▄▀▄▀▄▀▄ ▬▭▬▭▬▭▬▭▬▭▬▭▬▭▬ ━━━━━ ───── ═════` },
+      { id: 'numeros', name: 'Números especiais', text: `0️⃣ 1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣ 6️⃣ 7️⃣ 8️⃣ 9️⃣ 🔟 ⓿ ❶ ❷ ❸ ❹ ❺ ❻ ❼ ❽ ❾ ❿ ⓫ ⓬ ⓭ ⓮ ⓯ ⓰ ⓱ ⓲ ⓳ ⓴ ⓵ ⓶ ⓷ ⓸ ⓹ ⓺ ⓻ ⓼ ⓽ ⓾ ➀ ➁ ➂ ➃ ➄ ➅ ➆ ➇ ➈ ➉ ➊ ➋ ➌ ➍ ➎ ➏ ➐ ➑ ➒ ➓ 🔢 #️⃣ *️⃣` },
+      { id: 'letras', name: 'Letras decorativas', text: `🅰 🅱 🅲 🅳 🅴 🅵 🅶 🅷 🅸 🅹 🅺 🅻 🅼 🅽 🅾 🅿 🆀 🆁 🆂 🆃 🆄 🆅 🆆 🆇 🆈 🆉 🅸🅽🆂🆃🆁🆄🆃🅾🆁 𝘼 𝘽 𝘾 𝘿 𝙀 𝙁 𝙂 𝙃 𝙄 𝙅 𝙆 𝙇 𝙈 𝙉 𝙊 𝙋 𝙌 𝙍 𝙎 𝙏 𝙐 𝙑 𝙒 𝙓 𝙔 𝙕 𝙖 𝙗 𝙘 𝙙 𝙚 𝙛 𝙜 𝙝 𝙞 𝙟 𝙠 𝙡 𝙢 𝙣 𝙤 𝙥 𝙦 𝙧 𝙨 𝙩 𝙪 𝙫 𝙬 𝙭 𝙮 𝙯 𝐀 𝐁 𝐂 𝐃 𝐄 𝐅 𝐆 𝐇 𝐈 𝐉 𝐊 𝐋 𝐌 𝐍 𝐎 𝐏 𝐐 𝐑 𝐒 𝐓 𝐔 𝐕 𝐖 𝐗 𝐘 𝐙 𝓐 𝓑 𝓒 𝓓 𝓔 𝓕 𝓖 𝓗 𝓘 𝓙 𝓚 𝓛 𝓜 𝓝 𝓞 𝓟 𝓠 𝓡 𝓢 𝓣 𝓤 𝓥 𝓦 𝓧 𝓨 𝓩 𝓪 𝓫 𝓬 𝓭 𝓮 𝓯 𝓰 𝓱 𝓲 𝓳 𝓴 𝓵 𝓶 𝓷 𝓸 𝓹 𝓺 𝓻 𝓼 𝓽 𝓾 𝓿 𝔀 𝔁 𝔂 𝔃 Ⓐ Ⓑ Ⓒ Ⓓ Ⓔ Ⓕ Ⓖ Ⓗ Ⓘ Ⓙ Ⓚ Ⓛ Ⓜ Ⓝ Ⓞ Ⓟ Ⓠ Ⓡ Ⓢ Ⓣ Ⓤ Ⓥ Ⓦ Ⓧ Ⓨ Ⓩ 🄰 🄱 🄲 🄳 🄴 🄵 🄶 🄷 🄸 🄹 🄺 🄻 🄼 🄽 🄾 🄿 🅀 🅁 🅂 🅃 🅄 🅅 🅆 🅇 🅈 🅉` },
+      { id: 'modelos', name: 'Sequências prontas', text: `❓𝐏𝐄𝐑𝐆𝐔𝐍𝐓𝐀 👉 ▶️▶️ 𝙑𝙄𝘿𝙀𝙊 ⏩⏩ ⚠️ 🅸🅽🆂🆃🆁🆄🆃🅾🆁 👉 ▶️▶️▶️▶️▶️▶️ ❓➽➽➽➽ 🟪❓𝐏𝐄𝐑𝐆𝐔𝐍𝐓𝐀 👉 🟧🟧🟧🟧🟧🟧🟧🟧🟧 DESIGNAÇÃO 3 🟧🟧🟧🟧🟧🟧🟧🟧🟧` },
+      { id: 'objetos', name: 'Objetos, ferramentas e ações', text: `✍🏻 ✏ 🔦 🎮 💣 🔑 🔧 🔨 ⚒ ⛏ 🔭 🚒 🧯 🛒 🖨️ 📋 🪧 🪴 ☕ 🧺 📦 🎁 ⚰ ⚱ ⌛ ⏳ 🔮 ⛓ 📢 📣 🔔 🧴 💉 🩹 💄 🍫 🚬 🎯 🖼️ 🪙 💲 💱` },
+      { id: 'natureza', name: 'Natureza e cores', text: `🌸 🌺 🌹 🌷 🌼 🌻 💧 💦 🔥 🎆 🎇 🎈 🚀 🪐 ⭐ ✨ 🌟 ☀️ 🌙 🌈` },
+      { id: 'emocoes', name: 'Emojis e expressões', text: `😀 😬 😁 😂 😃 😄 😅 😆 😇 😉 😊 😋 😌 😍 😘 😗 😙 😚 😜 😝 😛 😎 😏 😶 😐 😑 😒 😳 😞 😟 😠 😡 😔 😕 😣 😖 😫 😩 😤 😮 😱 😨 😰 😯 😦 😧 😢 😥 😪 😓 😭 😵 😲 😷 😴 💤 🤔 😈 👿 👹 👺 💀 👻 👽 🙌 👏 👋 👍 👎 👊 ✊ ✌️ 👌 ✋ 💪 🙏 ☝️ 👆 👇 👈 👉 🖖 👀 👂 👤 ❤️ 💛 💙 💜 💔 💕 💞 💓 💗 💖 💘 💝 💟` },
+      { id: 'sinais-sistema', name: 'Sinais e símbolos de sistema', text: `🔯 ⛎ ♈️ ♉️ ♊️ ♋️ ♌️ ♍️ ♎️ ♏️ ♐️ ♑️ ♒️ ♓️ 🆔 🈳 🈹 📴 📳 🈶 🈚️ 🈸 🈺 🈷️ ✴️ 🆚 🉑 💮 🉐 ㊙️ ㊗️ 🈴 🈵 🈲 🅰️ 🅱️ 🆎 🆑 🅾️ 🆗 🆒 🆕 🆓 🆙 ▶️ ⏩ ⏪ 🔀 🔁 🔂 ◀️ 🔼 🔽 ⏫ ⏬ ↗️ ↘️ ↙️ ↖️ ↕️ ↔️ 🔄 ↪️ ↩️ ⤴️ ⤵️ ℹ️ 🔤 🔡 🔠 🔣 🎵 🎶 〰️ ➰ 🔃 ➕ ➖ ➗ ✖️ ©️ ®️ ™️ 🔚 🔙 🔛 🔝 🔜 = ∞ ❗ $` }
+    ];
+
+    let favoriteSymbols = [];
+    let customSymbolCategories = {};
+
+
+
+    
     const defaultTemplates = [
-      { id:'tpl-question', name:'Pergunta', content:'❓ 𝐏𝐄𝐑𝐆𝐔𝐍𝐓𝐀 👉 ' },
-      { id:'tpl-video', name:'Vídeo', content:'▶️▶️ 𝙑𝙄𝘿𝙀𝙊 ⏩⏩ ' },
-      { id:'tpl-instructor', name:'Instrutor', content:'⚠️ 🅸🅽🆂🆃🆁🆄🆃🅾🆁 👉 ' },
-      { id:'tpl-topic', name:'Novo tópico', content:'🟦 NOVO TÓPICO ➜ ' },
-      { id:'tpl-designacao', name:'Designação', content:'🟧🟧🟧 DESIGNAÇÃO 🟧🟧🟧' },
-      { id:'tpl-line', name:'Linha divisória', content:'▇▇▇▇▇▇▇▇▇▇' },
-      { id:'tpl-quote', name:'Citação', content:'❝  ❞' },
-      { id:'tpl-star', name:'Estrelas', content:'★  ★' },
-      { id:'tpl-application', name:'Aplicação', content:'✅ Aplicação: ' },
-      { id:'tpl-mainpoint', name:'Ponto principal', content:'➤ Ponto principal: ' }
+      { id:'tpl-question', name:'Pergunta', category: DEFAULT_TEMPLATE_CATEGORY, content:'❓ 𝐏𝐄𝐑𝐆𝐔𝐍𝐓𝐀 👉 ' },
+      { id:'tpl-video', name:'Vídeo', category: DEFAULT_TEMPLATE_CATEGORY, content:'▶️▶️ 𝙑𝙄𝘿𝙀𝙊 ⏩⏩ ' },
+      { id:'tpl-instructor', name:'Instrutor', category: DEFAULT_TEMPLATE_CATEGORY, content:'⚠️ 🅸🅽🆂🆃🆁🆄🆃🅾🆁 👉 ' },
+      { id:'tpl-topic', name:'Novo tópico', category: DEFAULT_TEMPLATE_CATEGORY, content:'🟦 NOVO TÓPICO ➜ ' },
+      { id:'tpl-designacao', name:'Designação', category: DEFAULT_TEMPLATE_CATEGORY, content:'🟧🟧🟧 DESIGNAÇÃO 🟧🟧🟧' },
+      { id:'tpl-line', name:'Linha divisória', category: DEFAULT_TEMPLATE_CATEGORY, content:'▇▇▇▇▇▇▇▇▇▇' },
+      { id:'tpl-quote', name:'Citação', category: DEFAULT_TEMPLATE_CATEGORY, content:'❝  ❞' },
+      { id:'tpl-star', name:'Estrelas', category: DEFAULT_TEMPLATE_CATEGORY, content:'★  ★' },
+      { id:'tpl-application', name:'Aplicação', category: DEFAULT_TEMPLATE_CATEGORY, content:'✅ Aplicação: ' },
+      { id:'tpl-mainpoint', name:'Ponto principal', category: DEFAULT_TEMPLATE_CATEGORY, content:'➤ Ponto principal: ' }
     ];
 
     let templates = [];
+    let templateCategories = [DEFAULT_TEMPLATE_CATEGORY];
 
 
     let lastFocusedTextField = input;
 
     function rememberFocusedField(event) {
       const el = event.target;
-      if (el === input || el === templateContent || el === backupText || el === customSymbolsText) {
+      if (el === input || el === templateContent || el === backupText || el === customSymbolsText || el === newTemplateCategoryName) {
         lastFocusedTextField = el;
       }
     }
@@ -2130,33 +2270,21 @@
       });
 
       if (templates.length) {
-        const group = document.createElement('optgroup');
-        group.label = 'Modelos prontos e personalizados';
-        const sortedTemplates = templates.slice().sort((a, b) => {
-          const nameA = String(a.name || 'Modelo');
-          const nameB = String(b.name || 'Modelo');
+        getTemplateCategoryNames().forEach(categoryName => {
+          const list = getTemplatesSortedByName().filter(t => cleanTemplateCategoryName(t.category) === categoryName);
+          if (!list.length) return;
 
-          const numA = nameA.match(/^\s*\d+/);
-          const numB = nameB.match(/^\s*\d+/);
+          const group = document.createElement('optgroup');
+          group.label = 'Modelos — ' + categoryName;
 
-          if (numA && numB) {
-            const diff = Number(numA[0]) - Number(numB[0]);
-            if (diff !== 0) return diff;
-          }
-
-          if (numA && !numB) return -1;
-          if (!numA && numB) return 1;
-
-          return nameA.localeCompare(nameB, 'pt-BR', { numeric: true, sensitivity: 'base' });
+          list.forEach(tpl => {
+            const opt = document.createElement('option');
+            opt.value = 'template:' + tpl.id;
+            opt.textContent = (tpl.name || 'Modelo') + ' — ' + tpl.content;
+            group.appendChild(opt);
+          });
+          decorationSelect.appendChild(group);
         });
-
-        sortedTemplates.forEach(tpl => {
-          const opt = document.createElement('option');
-          opt.value = 'template:' + tpl.id;
-          opt.textContent = (tpl.name || 'Modelo') + ' — ' + tpl.content;
-          group.appendChild(opt);
-        });
-        decorationSelect.appendChild(group);
       }
 
       if ([...decorationSelect.options].some(opt => opt.value === currentValue)) {
@@ -2199,8 +2327,28 @@
     function updatePreview() {
       const style = getStyleById(styleSelect.value);
       const sample = sampleByStyle[style.id] || 'Texto de exemplo 123';
-      const converted = [...sample].map(ch => convertChar(ch, style)).join('');
-      preview.textContent = applyDecoration(converted);
+      const variants = style && style.variants ? style.variants : {};
+      const previewLines = [];
+
+      const normalText = [...sample].map(ch => convertChar(ch, style)).join('');
+      previewLines.push('Normal: ' + normalText);
+
+      if (variants.bold) {
+        const boldStyle = getStyleById(variants.bold);
+        previewLines.push('Negrito: ' + [...sample].map(ch => convertChar(ch, boldStyle)).join(''));
+      }
+
+      if (variants.italic) {
+        const italicStyle = getStyleById(variants.italic);
+        previewLines.push('Itálico: ' + [...sample].map(ch => convertChar(ch, italicStyle)).join(''));
+      }
+
+      if (variants.boldItalic) {
+        const boldItalicStyle = getStyleById(variants.boldItalic);
+        previewLines.push('N+I: ' + [...sample].map(ch => convertChar(ch, boldItalicStyle)).join(''));
+      }
+
+      preview.textContent = applyDecoration(previewLines.join('\n'));
       updateQuickButtonsAvailability();
     }
 
@@ -2689,11 +2837,118 @@
       selectionInfo.textContent = 'Formatação aplicada e salva nesse trecho. A seleção foi desfeita para evitar duplicação.';
     }
 
-    function saveTemplatesToStorage() {
+    
+    function cleanTemplateCategoryName(name) {
+      const value = String(name || '').trim();
+      return value || DEFAULT_TEMPLATE_CATEGORY;
+    }
+
+    function uniqueTemplateCategories(list) {
+      const seen = new Set();
+      const result = [];
+
+      [DEFAULT_TEMPLATE_CATEGORY, ...(Array.isArray(list) ? list : [])].forEach(name => {
+        const clean = cleanTemplateCategoryName(name);
+        const key = clean.toLocaleLowerCase('pt-BR');
+        if (!seen.has(key)) {
+          seen.add(key);
+          result.push(clean);
+        }
+      });
+
+      return result;
+    }
+
+    function ensureTemplateCategoriesFromTemplates() {
+      templateCategories = uniqueTemplateCategories([
+        ...templateCategories,
+        ...templates.map(t => cleanTemplateCategoryName(t.category))
+      ]);
+    }
+
+    function saveTemplateCategoriesToStorage() {
+      localStorage.setItem(TEMPLATE_CATEGORIES_STORAGE_KEY, JSON.stringify(uniqueTemplateCategories(templateCategories)));
+    }
+
+    function loadTemplateCategories() {
+      try {
+        const saved = localStorage.getItem(TEMPLATE_CATEGORIES_STORAGE_KEY);
+        templateCategories = saved ? JSON.parse(saved) : [DEFAULT_TEMPLATE_CATEGORY];
+        templateCategories = uniqueTemplateCategories(templateCategories);
+      } catch (e) {
+        templateCategories = [DEFAULT_TEMPLATE_CATEGORY];
+      }
+    }
+
+    function normalizeTemplateItem(item) {
+      return {
+        id: typeof item.id === 'string' && item.id ? item.id : newId(),
+        name: typeof item.name === 'string' && item.name.trim() ? item.name.trim() : 'Modelo importado',
+        category: cleanTemplateCategoryName(item.category),
+        content: typeof item.content === 'string' ? item.content : ''
+      };
+    }
+
+    function getTemplateCategoryNames() {
+      ensureTemplateCategoriesFromTemplates();
+      return templateCategories.slice();
+    }
+
+    function renderTemplateCategoryControls(selectedCategory) {
+      const categories = getTemplateCategoryNames();
+      const selected = cleanTemplateCategoryName(selectedCategory || (templateCategorySelect && templateCategorySelect.value) || DEFAULT_TEMPLATE_CATEGORY);
+
+      [templateCategorySelect, templateCategoryFilter].forEach(select => {
+        if (!select) return;
+        const previous = select === templateCategoryFilter ? (select.value || 'all') : selected;
+        select.innerHTML = '';
+
+        if (select === templateCategoryFilter) {
+          const allOpt = document.createElement('option');
+          allOpt.value = 'all';
+          allOpt.textContent = 'Todas as categorias';
+          select.appendChild(allOpt);
+        }
+
+        categories.forEach(name => {
+          const opt = document.createElement('option');
+          opt.value = name;
+          opt.textContent = name;
+          select.appendChild(opt);
+        });
+
+        if ([...select.options].some(opt => opt.value === previous)) {
+          select.value = previous;
+        } else if (select === templateCategoryFilter) {
+          select.value = 'all';
+        } else {
+          select.value = DEFAULT_TEMPLATE_CATEGORY;
+        }
+      });
+    }
+
+    function addTemplateCategory() {
+      const name = cleanTemplateCategoryName(newTemplateCategoryName.value);
+      if (!name) return;
+
+      templateCategories = uniqueTemplateCategories([...templateCategories, name]);
+      saveTemplateCategoriesToStorage();
+      renderTemplateCategoryControls(name);
+      if (templateCategorySelect) templateCategorySelect.value = name;
+      newTemplateCategoryName.value = '';
+      templateStatus.className = 'ok';
+      templateStatus.textContent = 'Categoria criada: ' + name + '.';
+    }
+
+function saveTemplatesToStorage() {
+      templates = validateTemplates(templates);
+      ensureTemplateCategoriesFromTemplates();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(templates));
+      saveTemplateCategoriesToStorage();
     }
 
     function loadTemplates() {
+      loadTemplateCategories();
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
         templates = saved ? JSON.parse(saved) : structuredClone(defaultTemplates);
@@ -2701,6 +2956,9 @@
       } catch (e) {
         templates = structuredClone(defaultTemplates);
       }
+
+      templates = validateTemplates(templates);
+      ensureTemplateCategoriesFromTemplates();
     }
 
     function applyTemplateToInput(tpl) {
@@ -2754,23 +3012,47 @@
 
     function getTemplatesSortedByName() {
       return templates.slice().sort((a, b) => {
+        const catA = cleanTemplateCategoryName(a.category);
+        const catB = cleanTemplateCategoryName(b.category);
+        const catCmp = catA.localeCompare(catB, 'pt-BR', { numeric: true, sensitivity: 'base' });
+        if (catCmp !== 0) return catCmp;
+
         const nameA = String(a.name || 'Modelo');
         const nameB = String(b.name || 'Modelo');
         return nameA.localeCompare(nameB, 'pt-BR', { numeric: true, sensitivity: 'base' });
       });
     }
 
+    function getTemplatesForCurrentFilter() {
+      const filter = templateCategoryFilter ? templateCategoryFilter.value : 'all';
+      const all = getTemplatesSortedByName();
+      if (!filter || filter === 'all') return all;
+      return all.filter(t => cleanTemplateCategoryName(t.category) === filter);
+    }
+
     function renderTemplates() {
       const templatesBox = document.getElementById('templates');
       templatesBox.innerHTML = '';
 
-      getTemplatesSortedByName().forEach(tpl => {
+      renderTemplateCategoryControls();
+
+      const visibleTemplates = getTemplatesForCurrentFilter();
+
+      if (!visibleTemplates.length) {
+        const empty = document.createElement('p');
+        empty.className = 'hint';
+        empty.textContent = 'Nenhum modelo nesta categoria.';
+        templatesBox.appendChild(empty);
+      }
+
+      visibleTemplates.forEach(tpl => {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'secondary mini template-card-btn';
-        btn.innerHTML = '<span class="template-card-name"></span><span class="template-card-content"></span>';
+        btn.innerHTML = '<span class="template-card-name"></span><span class="template-card-content"></span><span class="category-chip"></span>';
         btn.querySelector('.template-card-name').textContent = tpl.name || 'Modelo';
         btn.querySelector('.template-card-content').textContent = tpl.content;
+        btn.querySelector('.category-chip').textContent = cleanTemplateCategoryName(tpl.category);
         btn.addEventListener('mousedown', event => event.preventDefault());
         btn.title = (tpl.name || 'Modelo') + ' — clique para inserir no texto original ou usar no campo ativo';
         btn.addEventListener('click', () => {
@@ -2796,16 +3078,17 @@
     }
 
     function renderTemplateSelect(selectedId) {
+      const currentId = selectedId || templateSelect.value;
       templateSelect.innerHTML = '';
       getTemplatesSortedByName().forEach(tpl => {
         const opt = document.createElement('option');
         opt.value = tpl.id;
-        opt.textContent = (tpl.name || 'Modelo') + ' — ' + tpl.content;
+        opt.textContent = '[' + cleanTemplateCategoryName(tpl.category) + '] ' + (tpl.name || 'Modelo') + ' — ' + tpl.content;
         templateSelect.appendChild(opt);
       });
 
-      if (selectedId && templates.some(t => t.id === selectedId)) {
-        templateSelect.value = selectedId;
+      if (currentId && templates.some(t => t.id === currentId)) {
+        templateSelect.value = currentId;
       }
 
       loadSelectedTemplateIntoEditor();
@@ -2816,10 +3099,13 @@
       if (!tpl) {
         templateName.value = '';
         templateContent.value = '';
+        if (templateCategorySelect) templateCategorySelect.value = DEFAULT_TEMPLATE_CATEGORY;
         return;
       }
       templateName.value = tpl.name || '';
       templateContent.value = tpl.content || '';
+      renderTemplateCategoryControls(tpl.category);
+      if (templateCategorySelect) templateCategorySelect.value = cleanTemplateCategoryName(tpl.category);
       templateStatus.textContent = '';
     }
 
@@ -3155,35 +3441,44 @@
     }
 
     function newTemplate() {
+      const category = cleanTemplateCategoryName(templateCategorySelect.value || templateCategoryFilter.value || DEFAULT_TEMPLATE_CATEGORY);
       const tpl = {
         id: newId(),
         name: 'Novo modelo',
+        category,
         content: '➤ '
       };
       templates.push(tpl);
+      templateCategories = uniqueTemplateCategories([...templateCategories, category]);
       saveTemplatesToStorage();
       renderTemplates();
       templateSelect.value = tpl.id;
       loadSelectedTemplateIntoEditor();
       templateName.focus();
+      templateStatus.className = 'ok';
       templateStatus.textContent = 'Novo modelo criado.';
     }
 
     function saveTemplate() {
       const name = templateName.value.trim() || 'Modelo sem nome';
       const content = templateContent.value;
+      const category = cleanTemplateCategoryName(templateCategorySelect.value || DEFAULT_TEMPLATE_CATEGORY);
+
       if (!content.trim()) {
         templateStatus.className = 'warn';
         templateStatus.textContent = 'Digite o texto do modelo.';
         return;
       }
 
+      templateCategories = uniqueTemplateCategories([...templateCategories, category]);
+
       let tpl = templates.find(t => t.id === templateSelect.value);
       if (!tpl) {
-        tpl = { id: newId(), name, content };
+        tpl = { id: newId(), name, category, content };
         templates.push(tpl);
       } else {
         tpl.name = name;
+        tpl.category = category;
         tpl.content = content;
       }
 
@@ -3205,6 +3500,7 @@
 
       templates = templates.filter(t => t.id !== id);
       if (!templates.length) templates = structuredClone(defaultTemplates);
+      templates = validateTemplates(templates);
       saveTemplatesToStorage();
       renderTemplates();
       templateStatus.className = 'ok';
@@ -3214,7 +3510,8 @@
     function resetTemplates() {
       const ok = confirm('Restaurar os modelos padrão? Isso apaga os modelos personalizados salvos neste navegador.');
       if (!ok) return;
-      templates = structuredClone(defaultTemplates);
+      templates = validateTemplates(structuredClone(defaultTemplates));
+      templateCategories = [DEFAULT_TEMPLATE_CATEGORY];
       saveTemplatesToStorage();
       renderTemplates();
       templateStatus.className = 'ok';
@@ -3226,7 +3523,7 @@
 
     async function fetchOnlineDefaults() {
       onlineDefaultsStatus.className = 'ok';
-      onlineDefaultsStatus.textContent = 'Buscando defaults.json...';
+      onlineDefaultsStatus.textContent = 'Buscando arquivo padrão JSON...';
 
       const candidates = [
         new URL('defaults.json', location.href).href,
@@ -3250,46 +3547,62 @@
           try {
             data = JSON.parse(text);
           } catch (e) {
-            lastError = 'O arquivo defaults.json foi encontrado, mas não é um JSON válido.';
+            lastError = 'O arquivo JSON foi encontrado, mas não é válido.';
             continue;
           }
 
-          if (!data || !Array.isArray(data.templates)) {
-            lastError = 'O defaults.json abriu, mas não tem a lista "templates".';
+          const normalized = normalizeDefaultsObject(data);
+          if (!normalized.templates.length && !Object.keys(normalized.customSymbolCategories).length) {
+            lastError = 'O arquivo JSON abriu, mas não tem modelos nem caracteres personalizados.';
             continue;
           }
 
           cachedOnlineDefaults = data;
-          onlineDefaultsVersion.textContent = 'Versão online: ' + (data.version || 'sem versão informada') + ' — ' + url;
+          onlineDefaultsVersion.textContent = 'Arquivo padrão: ' + (data.version || 'sem versão informada');
           onlineDefaultsStatus.className = 'ok';
-          onlineDefaultsStatus.textContent = 'Padrões online carregados. Agora escolha Somar ou Substituir.';
+          onlineDefaultsStatus.textContent = 'Arquivo padrão carregado. Agora escolha Somar ou Substituir.';
           return data;
         } catch (e) {
-          lastError = e && e.message ? e.message : 'Falha desconhecida ao buscar defaults.json.';
+          lastError = e && e.message ? e.message : 'Falha desconhecida ao buscar o arquivo JSON.';
         }
       }
 
-      throw new Error(lastError || 'Não foi possível carregar defaults.json.');
+      throw new Error(lastError || 'Não foi possível carregar o arquivo JSON.');
     }
 
     function openDefaultsJson() {
-      const url = location.origin + '/defaults.json';
+      const url = new URL('defaults.json', location.href).href;
       window.open(url, '_blank');
     }
 
     function normalizeDefaultsObject(data) {
+      const parsed = data || {};
+      const normalizedTemplates = validateTemplates(Array.isArray(parsed.templates) ? parsed.templates : (Array.isArray(parsed) ? parsed : []));
+      const categoryList = Array.isArray(parsed.templateCategories) ? parsed.templateCategories : [];
+
       return {
-        templates: validateTemplates(Array.isArray(data.templates) ? data.templates : []),
-        favoriteSymbols: Array.isArray(data.favoriteSymbols) ? uniqueTokensFromText(data.favoriteSymbols.join(' ')) : [],
-        customSymbolCategories: data.customSymbolCategories && typeof data.customSymbolCategories === 'object' && !Array.isArray(data.customSymbolCategories)
-          ? data.customSymbolCategories
-          : {}
+        templates: normalizedTemplates,
+        templateCategories: uniqueTemplateCategories([...categoryList, ...normalizedTemplates.map(t => t.category)]),
+        favoriteSymbols: Array.isArray(parsed.favoriteSymbols) ? uniqueTokensFromText(parsed.favoriteSymbols.join(' ')) : [],
+        customSymbolCategories: parsed.customSymbolCategories && typeof parsed.customSymbolCategories === 'object' && !Array.isArray(parsed.customSymbolCategories)
+          ? parsed.customSymbolCategories
+          : (Array.isArray(parsed.customSymbols) ? { personalizados: uniqueTokensFromText(parsed.customSymbols.join(' ')) } : {})
       };
     }
 
     function mergeTemplates(importedTemplates) {
       const stats = mergeImportedTemplates(importedTemplates);
       return stats.added;
+    }
+
+    function mergeTemplateCategories(importedCategories) {
+      const before = new Set(templateCategories.map(c => c.toLocaleLowerCase('pt-BR')));
+      templateCategories = uniqueTemplateCategories([...templateCategories, ...(importedCategories || [])]);
+      let added = 0;
+      templateCategories.forEach(c => {
+        if (!before.has(c.toLocaleLowerCase('pt-BR'))) added++;
+      });
+      return added;
     }
 
     function mergeSymbolCategories(importedCategories) {
@@ -3324,6 +3637,7 @@
     function hasLocalUserData() {
       return Boolean(
         localStorage.getItem(STORAGE_KEY) ||
+        localStorage.getItem(TEMPLATE_CATEGORIES_STORAGE_KEY) ||
         localStorage.getItem(CUSTOM_SYMBOL_CATEGORIES_STORAGE_KEY) ||
         localStorage.getItem(FAVORITE_SYMBOLS_STORAGE_KEY)
       );
@@ -3334,9 +3648,11 @@
 
       if (mode === 'replace') {
         templates = normalized.templates;
+        templateCategories = normalized.templateCategories;
         customSymbolCategories = normalized.customSymbolCategories;
         favoriteSymbols = normalized.favoriteSymbols.length ? normalized.favoriteSymbols : defaultFavoriteSymbols.slice();
       } else {
+        mergeTemplateCategories(normalized.templateCategories);
         mergeTemplates(normalized.templates);
         mergeSymbolCategories(normalized.customSymbolCategories);
         mergeFavoriteSymbols(normalized.favoriteSymbols);
@@ -3360,26 +3676,26 @@
 
       try {
         const data = await fetchOnlineDefaults();
-        const onlineVersion = data.version || '';
+        const fileVersion = data.version || '';
         const lastAppliedVersion = localStorage.getItem(ONLINE_DEFAULTS_VERSION_STORAGE_KEY) || '';
 
         if (!hasLocalUserData()) {
           applyOnlineDefaultsData(data, 'replace');
           onlineDefaultsStatus.className = 'ok';
-          onlineDefaultsStatus.textContent = 'Padrões online aplicados automaticamente para este primeiro acesso.';
+          onlineDefaultsStatus.textContent = 'Arquivo padrão aplicado automaticamente para este primeiro acesso.';
           return;
         }
 
-        if (onlineVersion && onlineVersion !== lastAppliedVersion) {
+        if (fileVersion && fileVersion !== lastAppliedVersion) {
           onlineDefaultsStatus.className = 'warn';
-          onlineDefaultsStatus.textContent = 'Há padrões online mais recentes. Use Somar ou Substituir.';
+          onlineDefaultsStatus.textContent = 'Há um arquivo padrão mais recente. Use Somar ou Substituir.';
         } else {
           onlineDefaultsStatus.className = 'ok';
-          onlineDefaultsStatus.textContent = 'Padrões online verificados.';
+          onlineDefaultsStatus.textContent = 'Arquivo padrão verificado.';
         }
       } catch (e) {
         onlineDefaultsStatus.className = 'warn';
-        onlineDefaultsStatus.textContent = 'Não consegui verificar defaults.json automaticamente: ' + (e && e.message ? e.message : 'erro desconhecido');
+        onlineDefaultsStatus.textContent = 'Não consegui verificar o arquivo padrão automaticamente: ' + (e && e.message ? e.message : 'erro desconhecido');
       }
     }
 
@@ -3393,10 +3709,10 @@
         const data = await fetchOnlineDefaults();
         const normalized = normalizeDefaultsObject(data);
         onlineDefaultsStatus.className = 'ok';
-        onlineDefaultsStatus.textContent = normalized.templates.length + ' modelo(s) online encontrados.';
+        onlineDefaultsStatus.textContent = normalized.templates.length + ' modelo(s), ' + Object.values(normalized.customSymbolCategories).flat().length + ' caractere(s) e ' + normalized.favoriteSymbols.length + ' favorito(s) encontrados.';
       } catch (e) {
         onlineDefaultsStatus.className = 'warn';
-        onlineDefaultsStatus.textContent = 'Não consegui carregar defaults.json: ' + (e && e.message ? e.message : 'erro desconhecido');
+        onlineDefaultsStatus.textContent = 'Não consegui carregar o arquivo JSON: ' + (e && e.message ? e.message : 'erro desconhecido');
       }
     }
 
@@ -3405,6 +3721,7 @@
         const rawData = await ensureOnlineDefaultsLoaded();
         const data = normalizeDefaultsObject(rawData);
 
+        const addedCategories = mergeTemplateCategories(data.templateCategories);
         const addedTemplates = mergeTemplates(data.templates);
         const addedSymbols = mergeSymbolCategories(data.customSymbolCategories);
         const addedFavorites = mergeFavoriteSymbols(data.favoriteSymbols);
@@ -3422,35 +3739,39 @@
         updateResult();
 
         onlineDefaultsStatus.className = 'ok';
-        onlineDefaultsStatus.textContent = 'Somado: ' + addedTemplates + ' modelo(s), ' + addedSymbols + ' caractere(s), ' + addedFavorites + ' favorito(s).';
+        onlineDefaultsStatus.textContent = 'Somado: ' + addedTemplates + ' modelo(s), ' + addedCategories + ' categoria(s), ' + addedSymbols + ' caractere(s), ' + addedFavorites + ' favorito(s).';
       } catch (e) {
         onlineDefaultsStatus.className = 'warn';
-        onlineDefaultsStatus.textContent = 'Não consegui somar os padrões online: ' + (e && e.message ? e.message : 'erro desconhecido');
+        onlineDefaultsStatus.textContent = 'Não consegui somar os padrões: ' + (e && e.message ? e.message : 'erro desconhecido');
       }
     }
 
     async function replaceOnlineDefaults() {
       try {
-        const ok = confirm('Isso vai substituir modelos, categorias personalizadas e favoritos pelos padrões online. Deseja continuar?');
+        const ok = confirm('Isso vai substituir modelos, categorias de modelos, caracteres personalizados e favoritos pelos dados do arquivo padrão. Deseja continuar?');
         if (!ok) return;
 
         const rawData = await ensureOnlineDefaultsLoaded();
         applyOnlineDefaultsData(rawData, 'replace');
 
         onlineDefaultsStatus.className = 'ok';
-        onlineDefaultsStatus.textContent = 'Padrões online aplicados.';
+        onlineDefaultsStatus.textContent = 'Arquivo padrão aplicado.';
       } catch (e) {
         onlineDefaultsStatus.className = 'warn';
-        onlineDefaultsStatus.textContent = 'Não consegui substituir pelos padrões online: ' + (e && e.message ? e.message : 'erro desconhecido');
+        onlineDefaultsStatus.textContent = 'Não consegui substituir pelos padrões: ' + (e && e.message ? e.message : 'erro desconhecido');
       }
     }
 
     function buildBackupObject() {
+      templates = validateTemplates(templates);
+      ensureTemplateCategoriesFromTemplates();
+
       return {
         app: 'Conversor para Notas do JW Library',
-        version: 3,
+        version: 4,
         exportedAt: new Date().toISOString(),
         templates: templates,
+        templateCategories: templateCategories,
         customSymbols: Object.values(customSymbolCategories).flat(),
         customSymbolCategories: customSymbolCategories,
         favoriteSymbols: favoriteSymbols
@@ -3466,31 +3787,26 @@
       const a = document.createElement('a');
       const date = new Date().toISOString().slice(0, 10);
       a.href = url;
-      a.download = 'modelos-jw-library-' + date + '.json';
+      a.download = 'gerenciamento-modelos-jw-library-' + date + '.json';
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
 
       backupStatus.className = 'ok';
-      backupStatus.textContent = 'Arquivo exportado!';
+      backupStatus.textContent = 'Arquivo JSON completo exportado!';
     }
 
     function parseBackupText(text) {
       const parsed = JSON.parse(text);
-      if (Array.isArray(parsed)) return parsed;
-      if (parsed && Array.isArray(parsed.templates)) return parsed.templates;
-      throw new Error('Formato inválido.');
+      return normalizeDefaultsObject(parsed);
     }
 
     function validateTemplates(list) {
-      return list
+      return (Array.isArray(list) ? list : [])
         .filter(item => item && typeof item.content === 'string')
-        .map(item => ({
-          id: typeof item.id === 'string' && item.id ? item.id : newId(),
-          name: typeof item.name === 'string' && item.name.trim() ? item.name.trim() : 'Modelo importado',
-          content: item.content
-        }));
+        .map(normalizeTemplateItem)
+        .filter(item => item.content.trim());
     }
 
     function templateContentKey(content) {
@@ -3509,7 +3825,7 @@
         const key = templateContentKey(item.content);
         if (!key || usedContent.has(key)) return;
 
-        const template = { ...item };
+        const template = normalizeTemplateItem(item);
         if (!template.id || usedIds.has(template.id)) template.id = newId();
 
         usedContent.add(key);
@@ -3533,7 +3849,7 @@
           return;
         }
 
-        const template = { ...item };
+        const template = normalizeTemplateItem(item);
         if (!template.id || byId.has(template.id)) template.id = newId();
 
         templates.push(template);
@@ -3546,79 +3862,13 @@
     }
 
 
-    function parsedBackupHasCustomSymbols(text) {
-      try {
-        const parsed = JSON.parse(text);
-        return parsed && (Array.isArray(parsed.customSymbols) || parsed.customSymbolCategories || Array.isArray(parsed.favoriteSymbols));
-      } catch (e) {
-        return false;
-      }
-    }
-
-    function importSymbolsFromBackup(text) {
-      try {
-        const parsed = JSON.parse(text);
-        if (!parsed) return;
-
-        if (parsed.customSymbolCategories && typeof parsed.customSymbolCategories === 'object' && !Array.isArray(parsed.customSymbolCategories)) {
-          customSymbolCategories = parsed.customSymbolCategories;
-        } else if (Array.isArray(parsed.customSymbols)) {
-          customSymbolCategories = { personalizados: uniqueTokensFromText(parsed.customSymbols.join(' ')) };
-        }
-
-        if (Array.isArray(parsed.favoriteSymbols) && parsed.favoriteSymbols.length) {
-          favoriteSymbols = uniqueTokensFromText(parsed.favoriteSymbols.join(' '));
-          saveFavoriteSymbols();
-        }
-
-        saveCustomSymbols();
-        renderSymbols();
-      } catch (e) {
-        // Se os símbolos falharem, mantém os modelos importados mesmo assim.
-      }
-    }
-
-    function askImportMode(count) {
-      return new Promise(resolve => {
-        let settled = false;
-
-        function finish(value) {
-          if (settled) return;
-          settled = true;
-          importChoiceOverlay.classList.remove('open');
-          combineImportChoice.removeEventListener('click', onCombine);
-          replaceImportChoice.removeEventListener('click', onReplace);
-          cancelImportChoice.removeEventListener('click', onCancel);
-          importChoiceOverlay.removeEventListener('click', onOverlay);
-          document.removeEventListener('keydown', onKey);
-          resolve(value);
-        }
-
-        function onCombine() { finish('merge'); }
-        function onReplace() { finish('replace'); }
-        function onCancel() { finish(null); }
-        function onOverlay(event) {
-          if (event.target === importChoiceOverlay) finish(null);
-        }
-        function onKey(event) {
-          if (event.key === 'Escape') finish(null);
-        }
-
-        importChoiceText.textContent = 'Foram encontrados ' + count + ' modelos no backup. Escolha se deseja combinar apenas os modelos inéditos, substituir todos os modelos atuais ou cancelar.';
-        combineImportChoice.addEventListener('click', onCombine);
-        replaceImportChoice.addEventListener('click', onReplace);
-        cancelImportChoice.addEventListener('click', onCancel);
-        importChoiceOverlay.addEventListener('click', onOverlay);
-        document.addEventListener('keydown', onKey);
-        importChoiceOverlay.classList.add('open');
-        combineImportChoice.focus();
-      });
-    }
-
     async function importTemplatesFromText(text) {
       try {
-        const imported = validateTemplates(parseBackupText(text));
-        if (!imported.length) throw new Error('Nenhum modelo encontrado.');
+        const importedData = parseBackupText(text);
+        const imported = importedData.templates;
+        if (!imported.length && !Object.keys(importedData.customSymbolCategories).length && !importedData.favoriteSymbols.length) {
+          throw new Error('Nenhum dado encontrado.');
+        }
 
         const mode = await askImportMode(imported.length);
 
@@ -3632,26 +3882,31 @@
 
         if (mode === 'replace') {
           templates = makeImportedTemplatesUnique(imported);
-          message = templates.length + ' modelos importados. Os modelos anteriores foram substituídos.';
+          templateCategories = importedData.templateCategories;
+          customSymbolCategories = importedData.customSymbolCategories;
+          favoriteSymbols = importedData.favoriteSymbols.length ? importedData.favoriteSymbols : defaultFavoriteSymbols.slice();
+          message = templates.length + ' modelo(s), ' + Object.values(customSymbolCategories).flat().length + ' caractere(s) e ' + favoriteSymbols.length + ' favorito(s) importados. Os dados anteriores foram substituídos.';
         } else {
+          const addedCategories = mergeTemplateCategories(importedData.templateCategories);
           const stats = mergeImportedTemplates(imported);
-          message = stats.added + ' modelos inéditos adicionados.';
-          if (stats.skipped) message += ' ' + stats.skipped + ' duplicados ignorados.';
-        }
-
-        if (parsedBackupHasCustomSymbols(text)) {
-          importSymbolsFromBackup(text);
+          const addedSymbols = mergeSymbolCategories(importedData.customSymbolCategories);
+          const addedFavorites = mergeFavoriteSymbols(importedData.favoriteSymbols);
+          message = stats.added + ' modelo(s), ' + addedCategories + ' categoria(s), ' + addedSymbols + ' caractere(s) e ' + addedFavorites + ' favorito(s) adicionados.';
+          if (stats.skipped) message += ' ' + stats.skipped + ' modelo(s) duplicado(s) ignorado(s).';
         }
 
         saveTemplatesToStorage();
+        saveCustomSymbols();
+        saveFavoriteSymbols();
         renderTemplates();
         renderDecorationSelect();
+        renderSymbols();
         refreshUiWithoutApplying();
         backupStatus.className = 'ok';
         backupStatus.textContent = message;
       } catch (e) {
         backupStatus.className = 'warn';
-        backupStatus.textContent = 'Backup inválido.';
+        backupStatus.textContent = 'Arquivo JSON inválido.';
       }
     }
 
@@ -3711,6 +3966,11 @@
     document.getElementById('saveTemplateBtn').addEventListener('click', saveTemplate);
     document.getElementById('deleteTemplateBtn').addEventListener('click', deleteTemplate);
     document.getElementById('resetTemplatesBtn').addEventListener('click', resetTemplates);
+    addTemplateCategoryBtn.addEventListener('click', addTemplateCategory);
+    templateCategoryFilter.addEventListener('change', renderTemplates);
+    openModelManagerBtn.addEventListener('click', () => modelManagerOverlay.classList.add('open'));
+    closeModelManagerBtn.addEventListener('click', () => modelManagerOverlay.classList.remove('open'));
+    modelManagerOverlay.addEventListener('click', event => { if (event.target === modelManagerOverlay) modelManagerOverlay.classList.remove('open'); });
     symbolCategorySelect.addEventListener('change', renderSymbols);
     document.getElementById('resetFavoriteSymbolsBtn').addEventListener('click', resetFavoriteSymbols);
     document.getElementById('saveCustomSymbolsBtn').addEventListener('click', addCustomSymbols);
@@ -3735,6 +3995,7 @@
     templateContent.addEventListener('focus', rememberFocusedField);
     backupText.addEventListener('focus', rememberFocusedField);
     customSymbolsText.addEventListener('focus', rememberFocusedField);
+    newTemplateCategoryName.addEventListener('focus', rememberFocusedField);
 
     document.querySelectorAll('.option-btn[data-select]').forEach(btn => {
       btn.addEventListener('mousedown', event => event.preventDefault());
@@ -3801,7 +4062,7 @@
     caseSelect.value = 'normal';
     styleSelect.value = 'serif';
     decorationSelect.value = 'none';
-    result.textContent = '';
+    if (result) result.textContent = '';
     refreshUiWithoutApplying();
     autoCheckOnlineDefaultsOnStart();
   </script>
