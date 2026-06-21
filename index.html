@@ -1350,6 +1350,7 @@
         <div class="style-full-row">
           <label for="styleSelect">Tipo de caractere</label>
           <select id="styleSelect"></select>
+          <p id="styleOptionInfo" class="hint"></p>
         </div>
 
         <select id="decorationSelect" class="hidden-select" aria-hidden="true" tabindex="-1">
@@ -1489,7 +1490,7 @@
   </div>
 
   <footer>
-    Arquivo local HTML/CSS/JavaScript. Funciona offline depois de baixado. Versão 8.4 com múltiplos níveis de recuo no parágrafo.
+    Arquivo local HTML/CSS/JavaScript. Funciona offline depois de baixado. Versão 8.6 com múltiplos níveis de recuo no parágrafo.
   </footer>
 
   <script>
@@ -1505,6 +1506,7 @@
 
     const input = document.getElementById('inputText');
     const styleSelect = document.getElementById('styleSelect');
+    const styleOptionInfo = document.getElementById('styleOptionInfo');
     const decorationSelect = document.getElementById('decorationSelect');
     const caseSelect = document.getElementById('caseSelect');
     const targetSelect = document.getElementById('targetSelect');
@@ -1541,8 +1543,21 @@
 
     const explicitMaps = {
       script: {
+        A:'𝒜',B:'ℬ',C:'𝒞',D:'𝒟',E:'ℰ',F:'ℱ',G:'𝒢',H:'ℋ',I:'ℐ',J:'𝒥',K:'𝒦',L:'ℒ',M:'ℳ',N:'𝒩',O:'𝒪',P:'𝒫',Q:'𝒬',R:'ℛ',S:'𝒮',T:'𝒯',U:'𝒰',V:'𝒱',W:'𝒲',X:'𝒳',Y:'𝒴',Z:'𝒵',
+        a:'𝒶',b:'𝒷',c:'𝒸',d:'𝒹',e:'ℯ',f:'𝒻',g:'ℊ',h:'𝒽',i:'𝒾',j:'𝒿',k:'𝓀',l:'𝓁',m:'𝓂',n:'𝓃',o:'ℴ',p:'𝓅',q:'𝓆',r:'𝓇',s:'𝓈',t:'𝓉',u:'𝓊',v:'𝓋',w:'𝓌',x:'𝓍',y:'𝓎',z:'𝓏'
+      },
+      boldScript: {
         A:'𝓐',B:'𝓑',C:'𝓒',D:'𝓓',E:'𝓔',F:'𝓕',G:'𝓖',H:'𝓗',I:'𝓘',J:'𝓙',K:'𝓚',L:'𝓛',M:'𝓜',N:'𝓝',O:'𝓞',P:'𝓟',Q:'𝓠',R:'𝓡',S:'𝓢',T:'𝓣',U:'𝓤',V:'𝓥',W:'𝓦',X:'𝓧',Y:'𝓨',Z:'𝓩',
         a:'𝓪',b:'𝓫',c:'𝓬',d:'𝓭',e:'𝓮',f:'𝓯',g:'𝓰',h:'𝓱',i:'𝓲',j:'𝓳',k:'𝓴',l:'𝓵',m:'𝓶',n:'𝓷',o:'𝓸',p:'𝓹',q:'𝓺',r:'𝓻',s:'𝓼',t:'𝓽',u:'𝓾',v:'𝓿',w:'𝔀',x:'𝔁',y:'𝔂',z:'𝔃'
+      },
+      fraktur: {
+        A:'𝔄',B:'𝔅',C:'ℭ',D:'𝔇',E:'𝔈',F:'𝔉',G:'𝔊',H:'ℌ',I:'ℑ',J:'𝔍',K:'𝔎',L:'𝔏',M:'𝔐',N:'𝔑',O:'𝔒',P:'𝔓',Q:'𝔔',R:'ℜ',S:'𝔖',T:'𝔗',U:'𝔘',V:'𝔙',W:'𝔚',X:'𝔛',Y:'𝔜',Z:'ℨ',
+        a:'𝔞',b:'𝔟',c:'𝔠',d:'𝔡',e:'𝔢',f:'𝔣',g:'𝔤',h:'𝔥',i:'𝔦',j:'𝔧',k:'𝔨',l:'𝔩',m:'𝔪',n:'𝔫',o:'𝔬',p:'𝔭',q:'𝔮',r:'𝔯',s:'𝔰',t:'𝔱',u:'𝔲',v:'𝔳',w:'𝔴',x:'𝔵',y:'𝔶',z:'𝔷'
+      },
+      doubleStruck: {
+        A:'𝔸',B:'𝔹',C:'ℂ',D:'𝔻',E:'𝔼',F:'𝔽',G:'𝔾',H:'ℍ',I:'𝕀',J:'𝕁',K:'𝕂',L:'𝕃',M:'𝕄',N:'ℕ',O:'𝕆',P:'ℙ',Q:'ℚ',R:'ℝ',S:'𝕊',T:'𝕋',U:'𝕌',V:'𝕍',W:'𝕎',X:'𝕏',Y:'𝕐',Z:'ℤ',
+        a:'𝕒',b:'𝕓',c:'𝕔',d:'𝕕',e:'𝕖',f:'𝕗',g:'𝕘',h:'𝕙',i:'𝕚',j:'𝕛',k:'𝕜',l:'𝕝',m:'𝕞',n:'𝕟',o:'𝕠',p:'𝕡',q:'𝕢',r:'𝕣',s:'𝕤',t:'𝕥',u:'𝕦',v:'𝕧',w:'𝕨',x:'𝕩',y:'𝕪',z:'𝕫',
+        0:'𝟘',1:'𝟙',2:'𝟚',3:'𝟛',4:'𝟜',5:'𝟝',6:'𝟞',7:'𝟟',8:'𝟠',9:'𝟡'
       },
       circled: {
         A:'Ⓐ',B:'Ⓑ',C:'Ⓒ',D:'Ⓓ',E:'Ⓔ',F:'Ⓕ',G:'Ⓖ',H:'Ⓗ',I:'Ⓘ',J:'Ⓙ',K:'Ⓚ',L:'Ⓛ',M:'Ⓜ',N:'Ⓝ',O:'Ⓞ',P:'Ⓟ',Q:'Ⓠ',R:'Ⓡ',S:'Ⓢ',T:'Ⓣ',U:'Ⓤ',V:'Ⓥ',W:'Ⓦ',X:'Ⓧ',Y:'Ⓨ',Z:'Ⓩ',
@@ -1552,54 +1567,59 @@
       blackCircled: {
         0:'⓿',1:'❶',2:'❷',3:'❸',4:'❹',5:'❺',6:'❻',7:'❼',8:'❽',9:'❾'
       },
+      negativeCircled: {
+        A:'🅐',B:'🅑',C:'🅒',D:'🅓',E:'🅔',F:'🅕',G:'🅖',H:'🅗',I:'🅘',J:'🅙',K:'🅚',L:'🅛',M:'🅜',N:'🅝',O:'🅞',P:'🅟',Q:'🅠',R:'🅡',S:'🅢',T:'🅣',U:'🅤',V:'🅥',W:'🅦',X:'🅧',Y:'🅨',Z:'🅩'
+      },
       squaredDark: {
         A:'🅰',B:'🅱',C:'🅲',D:'🅳',E:'🅴',F:'🅵',G:'🅶',H:'🅷',I:'🅸',J:'🅹',K:'🅺',L:'🅻',M:'🅼',N:'🅽',O:'🅾',P:'🅿',Q:'🆀',R:'🆁',S:'🆂',T:'🆃',U:'🆄',V:'🆅',W:'🆆',X:'🆇',Y:'🆈',Z:'🆉'
       },
       squaredLight: {
         A:'🄰',B:'🄱',C:'🄲',D:'🄳',E:'🄴',F:'🄵',G:'🄶',H:'🄷',I:'🄸',J:'🄹',K:'🄺',L:'🄻',M:'🄼',N:'🄽',O:'🄾',P:'🄿',Q:'🅀',R:'🅁',S:'🅂',T:'🅃',U:'🅄',V:'🅅',W:'🅆',X:'🅇',Y:'🅈',Z:'🅉'
+      },
+      fullwidth: {
+        A:'Ａ',B:'Ｂ',C:'Ｃ',D:'Ｄ',E:'Ｅ',F:'Ｆ',G:'Ｇ',H:'Ｈ',I:'Ｉ',J:'Ｊ',K:'Ｋ',L:'Ｌ',M:'Ｍ',N:'Ｎ',O:'Ｏ',P:'Ｐ',Q:'Ｑ',R:'Ｒ',S:'Ｓ',T:'Ｔ',U:'Ｕ',V:'Ｖ',W:'Ｗ',X:'Ｘ',Y:'Ｙ',Z:'Ｚ',
+        a:'ａ',b:'ｂ',c:'ｃ',d:'ｄ',e:'ｅ',f:'ｆ',g:'ｇ',h:'ｈ',i:'ｉ',j:'ｊ',k:'ｋ',l:'ｌ',m:'ｍ',n:'ｎ',o:'ｏ',p:'ｐ',q:'ｑ',r:'ｒ',s:'ｓ',t:'ｔ',u:'ｕ',v:'ｖ',w:'ｗ',x:'ｘ',y:'ｙ',z:'ｚ',
+        0:'０',1:'１',2:'２',3:'３',4:'４',5:'５',6:'６',7:'７',8:'８',9:'９'
       }
     };
 
     const styles = [
-      { id:'normal', name:'Normal', example:'Texto de exemplo 123' },
-      { id:'bold', name:'Negrito Unicode — 𝐏𝐞𝐫𝐠𝐮𝐧𝐭𝐚', upper:0x1D400, lower:0x1D41A, digit:0x1D7CE },
-      { id:'italic', name:'Itálico Unicode — 𝑃𝑒𝑟𝑔𝑢𝑛𝑡𝑎', upper:0x1D434, lower:0x1D44E },
-      { id:'boldItalic', name:'Negrito itálico — 𝑷𝒆𝒓𝒈𝒖𝒏𝒕𝒂', upper:0x1D468, lower:0x1D482 },
-      { id:'sansBold', name:'Sem serifa negrito — 𝗣𝗲𝗿𝗴𝘂𝗻𝘁𝗮', upper:0x1D5D4, lower:0x1D5EE, digit:0x1D7EC },
-      { id:'sansItalic', name:'Sem serifa itálico — 𝘗𝘦𝘳𝘨𝘶𝘯𝘵𝘢', upper:0x1D608, lower:0x1D622 },
-      { id:'sansBoldItalic', name:'Sem serifa negrito itálico — 𝙋𝙚𝙧𝙜𝙪𝙣𝙩𝙖', upper:0x1D63C, lower:0x1D656 },
-      { id:'mono', name:'Monoespaçado — 𝙿𝚎𝚛𝚐𝚞𝚗𝚝𝚊', upper:0x1D670, lower:0x1D68A, digit:0x1D7F6 },
-      { id:'script', name:'Letra bonita/script — 𝓟𝓮𝓻𝓰𝓾𝓷𝓽𝓪', explicit:'script' },
-      { id:'circled', name:'Letras circuladas — Ⓟⓔⓡⓖⓤⓝⓣⓐ', explicit:'circled' },
-      { id:'squaredDark', name:'Letras em caixa escura — 🅿🅴🆁🅶🆄🅽🆃🅰', explicit:'squaredDark', uppercaseOnly:true },
-      { id:'squaredLight', name:'Letras em caixa clara — 🄿🄴🅁🄶🅄🄽🅃🄰', explicit:'squaredLight', uppercaseOnly:true },
-      { id:'blackCircledNumbers', name:'Números pretos — ❶❷❸', explicit:'blackCircled' }
+      { id:'serif', name:'Serif matemático', selectLabel:'Serif matemático — normal, negrito, itálico, N+I', variants:{ bold:'bold', italic:'italic', boldItalic:'boldItalic' } },
+      { id:'bold', name:'Serif matemático negrito', hidden:true, upper:0x1D400, lower:0x1D41A, digit:0x1D7CE },
+      { id:'italic', name:'Serif matemático itálico', hidden:true, upper:0x1D434, lower:0x1D44E },
+      { id:'boldItalic', name:'Serif matemático negrito itálico', hidden:true, upper:0x1D468, lower:0x1D482 },
+      { id:'script', name:'Script', selectLabel:'Script — normal, negrito', explicit:'script', variants:{ bold:'boldScript' } },
+      { id:'boldScript', name:'Script negrito', hidden:true, explicit:'boldScript' },
+      { id:'fraktur', name:'Fraktur/gótico', selectLabel:'Fraktur/gótico — normal, negrito', explicit:'fraktur', variants:{ bold:'boldFraktur' } },
+      { id:'boldFraktur', name:'Fraktur/gótico negrito', hidden:true, upper:0x1D56C, lower:0x1D586 },
+      { id:'doubleStruck', name:'Letra dupla', selectLabel:'Letra dupla — normal', explicit:'doubleStruck' },
+      { id:'sans', name:'Sem serifa', selectLabel:'Sem serifa — normal, negrito, itálico, N+I', upper:0x1D5A0, lower:0x1D5BA, digit:0x1D7E2, variants:{ bold:'sansBold', italic:'sansItalic', boldItalic:'sansBoldItalic' } },
+      { id:'sansBold', name:'Sem serifa negrito', hidden:true, upper:0x1D5D4, lower:0x1D5EE, digit:0x1D7EC },
+      { id:'sansItalic', name:'Sem serifa itálico', hidden:true, upper:0x1D608, lower:0x1D622 },
+      { id:'sansBoldItalic', name:'Sem serifa negrito itálico', hidden:true, upper:0x1D63C, lower:0x1D656 },
+      { id:'mono', name:'Monoespaçado', selectLabel:'Monoespaçado — normal', upper:0x1D670, lower:0x1D68A, digit:0x1D7F6 },
+      { id:'circled', name:'Letras circuladas', selectLabel:'Letras circuladas — normal', explicit:'circled' },
+      { id:'negativeCircled', name:'Circuladas negativas', selectLabel:'Circuladas negativas — normal', explicit:'negativeCircled', uppercaseOnly:true },
+      { id:'squaredDark', name:'Letras em caixa escura', selectLabel:'Letras em caixa escura — normal', explicit:'squaredDark', uppercaseOnly:true },
+      { id:'squaredLight', name:'Letras em caixa clara', selectLabel:'Letras em caixa clara — normal', explicit:'squaredLight', uppercaseOnly:true },
+      { id:'fullwidth', name:'Largura cheia', selectLabel:'Largura cheia — normal', explicit:'fullwidth' },
+      { id:'blackCircledNumbers', name:'Números pretos', selectLabel:'Números pretos — normal', explicit:'blackCircled' }
     ];
 
-    const defaultFavoriteSymbols = [
-      '❓','✅','⚠️','▶️','⏩','➤','➜','➽','➡','⬅','👉','☛','☚','💡','🔎','📌',
-      '✍🏻','👍🏻','👎🏻','😀','★','☆','✦','✧','✎','✓','✔','✕','✗','✘','🔷','🔶','🔹','🔸','💠','💎','♦️','🟦','🟧','🟪','🟥',
-      '■','□','▣','◆','▲','●','○','▇','▬','❝','❞'
-    ];
-
-    const symbolCategories = [
-      { id: 'setas', name: 'Setas e indicadores', text: `➤ ➜ ➽ ➡ ⬅ 👉 ☛ ☚ ☜ ☝ ☞ ☟ 👆 👇 👈 ↛ ↝ ↠ ⇝ ↣ ↦ ↬ ⇀ ⇁ ⇉ ⇏ ⇒ ⇛ ⇢ ⇥ ⇨ ⇰ ⇴ ⇶ ⇸ ⇻ ⇾ ➔ ➙ ➛ ➝ ➞ ➟ ➢ ➣ ➥ ➦ ➧ ➨ ➩ ➪ ➫ ➬ ➭ ➮ ➯ ➱ ➲ ➳ ➵ ➺ ➻ ➼ ➾ ➠ ⫸ ⫷ ▶` },
-      { id: 'marcadores', name: 'Marcadores e avisos', text: `❓ ✅ ⚠️ ⚠ ⛔ 🚫 ❌ ❗️ ❕ ❔ ‼️ ⁉️ 💯 🔅 🔆 🔱 ⚜ 〽️ 🚸 🔰 ♻️ ❇️ ✳️ ❎ 💠 🌀 ➿ ✔ ✓ ☑️ 🔘 ✖ ✕ ✗ ✘ ╳ 🎯 📌 💡 🔎 🔍 🆘 📛 💢` },
-      { id: 'formas-coloridas', name: 'Formas coloridas', text: `🔷 🔶 🔹 🔸 💠 💎 ♦️ 🔴 🟠 🟡 🟢 🔵 🟣 🟤 ⚫ ⚪ 🟥 🟧 🟨 🟩 🟦 🟪 🟫 ⬛️ ⬜️ ◇ ◆ ◈ ■ □ ▢ ▣ ▤ ▥ ▦ ▧ ▨ ▩ ▲ △ ▷ ▼ ▽ ◉ ◊ ○ ◌ ◍ ◎ ● ◐ ◑ ◒ ◓ ◧ ◨ ◩ ◪` },
-      { id: 'linhas', name: 'Linhas e divisores', text: `▂ ▃ ▄ ▅ ▆ ▇ █ ▉ ▊ ▋ ▌ ▍ ▎ ▏ ▬ ▭ ▁ ▇▇▇▇▇▇▇▇▇▇ ▀▄▀▄▀▄▀▄⎐⎏▀▄▀▄▀▄▀▄ ▬▭▬▭▬▭▬▭▬▭▬▭▬▭▬ ━━━━━ ───── ═════` },
-      { id: 'numeros', name: 'Números especiais', text: `0️⃣ 1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣ 6️⃣ 7️⃣ 8️⃣ 9️⃣ 🔟 ⓿ ❶ ❷ ❸ ❹ ❺ ❻ ❼ ❽ ❾ ❿ ⓫ ⓬ ⓭ ⓮ ⓯ ⓰ ⓱ ⓲ ⓳ ⓴ ⓵ ⓶ ⓷ ⓸ ⓹ ⓺ ⓻ ⓼ ⓽ ⓾ ➀ ➁ ➂ ➃ ➄ ➅ ➆ ➇ ➈ ➉ ➊ ➋ ➌ ➍ ➎ ➏ ➐ ➑ ➒ ➓ 🔢 #️⃣ *️⃣` },
-      { id: 'letras', name: 'Letras decorativas', text: `🅰 🅱 🅲 🅳 🅴 🅵 🅶 🅷 🅸 🅹 🅺 🅻 🅼 🅽 🅾 🅿 🆀 🆁 🆂 🆃 🆄 🆅 🆆 🆇 🆈 🆉 🅸🅽🆂🆃🆁🆄🆃🅾🆁 𝘼 𝘽 𝘾 𝘿 𝙀 𝙁 𝙂 𝙃 𝙄 𝙅 𝙆 𝙇 𝙈 𝙉 𝙊 𝙋 𝙌 𝙍 𝙎 𝙏 𝙐 𝙑 𝙒 𝙓 𝙔 𝙕 𝙖 𝙗 𝙘 𝙙 𝙚 𝙛 𝙜 𝙝 𝙞 𝙟 𝙠 𝙡 𝙢 𝙣 𝙤 𝙥 𝙦 𝙧 𝙨 𝙩 𝙪 𝙫 𝙬 𝙭 𝙮 𝙯 𝐀 𝐁 𝐂 𝐃 𝐄 𝐅 𝐆 𝐇 𝐈 𝐉 𝐊 𝐋 𝐌 𝐍 𝐎 𝐏 𝐐 𝐑 𝐒 𝐓 𝐔 𝐕 𝐖 𝐗 𝐘 𝐙 𝓐 𝓑 𝓒 𝓓 𝓔 𝓕 𝓖 𝓗 𝓘 𝓙 𝓚 𝓛 𝓜 𝓝 𝓞 𝓟 𝓠 𝓡 𝓢 𝓣 𝓤 𝓥 𝓦 𝓧 𝓨 𝓩 𝓪 𝓫 𝓬 𝓭 𝓮 𝓯 𝓰 𝓱 𝓲 𝓳 𝓴 𝓵 𝓶 𝓷 𝓸 𝓹 𝓺 𝓻 𝓼 𝓽 𝓾 𝓿 𝔀 𝔁 𝔂 𝔃 Ⓐ Ⓑ Ⓒ Ⓓ Ⓔ Ⓕ Ⓖ Ⓗ Ⓘ Ⓙ Ⓚ Ⓛ Ⓜ Ⓝ Ⓞ Ⓟ Ⓠ Ⓡ Ⓢ Ⓣ Ⓤ Ⓥ Ⓦ Ⓧ Ⓨ Ⓩ 🄰 🄱 🄲 🄳 🄴 🄵 🄶 🄷 🄸 🄹 🄺 🄻 🄼 🄽 🄾 🄿 🅀 🅁 🅂 🅃 🅄 🅅 🅆 🅇 🅈 🅉` },
-      { id: 'modelos', name: 'Sequências prontas', text: `❓𝐏𝐄𝐑𝐆𝐔𝐍𝐓𝐀 👉 ▶️▶️ 𝙑𝙄𝘿𝙀𝙊 ⏩⏩ ⚠️ 🅸🅽🆂🆃🆁🆄🆃🅾🆁 👉 ▶️▶️▶️▶️▶️▶️ ❓➽➽➽➽ 🟪❓𝐏𝐄𝐑𝐆𝐔𝐍𝐓𝐀 👉 🟧🟧🟧🟧🟧🟧🟧🟧🟧 DESIGNAÇÃO 3 🟧🟧🟧🟧🟧🟧🟧🟧🟧` },
-      { id: 'objetos', name: 'Objetos, ferramentas e ações', text: `✍🏻 ✏ 🔦 🎮 💣 🔑 🔧 🔨 ⚒ ⛏ 🔭 🚒 🧯 🛒 🖨️ 📋 🪧 🪴 ☕ 🧺 📦 🎁 ⚰ ⚱ ⌛ ⏳ 🔮 ⛓ 📢 📣 🔔 🧴 💉 🩹 💄 🍫 🚬 🎯 🖼️ 🪙 💲 💱` },
-      { id: 'natureza', name: 'Natureza e cores', text: `🌸 🌺 🌹 🌷 🌼 🌻 💧 💦 🔥 🎆 🎇 🎈 🚀 🪐 ⭐ ✨ 🌟 ☀️ 🌙 🌈` },
-      { id: 'emocoes', name: 'Emojis e expressões', text: `😀 😬 😁 😂 😃 😄 😅 😆 😇 😉 😊 😋 😌 😍 😘 😗 😙 😚 😜 😝 😛 😎 😏 😶 😐 😑 😒 😳 😞 😟 😠 😡 😔 😕 😣 😖 😫 😩 😤 😮 😱 😨 😰 😯 😦 😧 😢 😥 😪 😓 😭 😵 😲 😷 😴 💤 🤔 😈 👿 👹 👺 💀 👻 👽 🙌 👏 👋 👍 👎 👊 ✊ ✌️ 👌 ✋ 💪 🙏 ☝️ 👆 👇 👈 👉 🖖 👀 👂 👤 ❤️ 💛 💙 💜 💔 💕 💞 💓 💗 💖 💘 💝 💟` },
-      { id: 'sinais-sistema', name: 'Sinais e símbolos de sistema', text: `🔯 ⛎ ♈️ ♉️ ♊️ ♋️ ♌️ ♍️ ♎️ ♏️ ♐️ ♑️ ♒️ ♓️ 🆔 🈳 🈹 📴 📳 🈶 🈚️ 🈸 🈺 🈷️ ✴️ 🆚 🉑 💮 🉐 ㊙️ ㊗️ 🈴 🈵 🈲 🅰️ 🅱️ 🆎 🆑 🅾️ 🆗 🆒 🆕 🆓 🆙 ▶️ ⏩ ⏪ 🔀 🔁 🔂 ◀️ 🔼 🔽 ⏫ ⏬ ↗️ ↘️ ↙️ ↖️ ↕️ ↔️ 🔄 ↪️ ↩️ ⤴️ ⤵️ ℹ️ 🔤 🔡 🔠 🔣 🎵 🎶 〰️ ➰ 🔃 ➕ ➖ ➗ ✖️ ©️ ®️ ™️ 🔚 🔙 🔛 🔝 🔜 = ∞ ❗ $` }
-    ];
-
-    let favoriteSymbols = [];
-    let customSymbolCategories = {};
-
-
+    const sampleByStyle = {
+      serif: 'Texto de exemplo 123',
+      script: 'Texto de exemplo',
+      fraktur: 'Texto de exemplo',
+      doubleStruck: 'Texto de exemplo 123',
+      sans: 'Texto de exemplo 123',
+      mono: 'Texto de exemplo 123',
+      circled: 'Texto de exemplo 123',
+      negativeCircled: 'TEXTO',
+      squaredDark: 'TEXTO',
+      squaredLight: 'TEXTO',
+      fullwidth: 'Texto de exemplo 123',
+      blackCircledNumbers: '123'
+    };
 
     const defaultTemplates = [
       { id:'tpl-question', name:'Pergunta', content:'❓ 𝐏𝐄𝐑𝐆𝐔𝐍𝐓𝐀 👉 ' },
@@ -1904,25 +1924,77 @@
       return styleSelect.value || 'normal';
     }
 
-    function getSelectedStyleFamily() {
-      const id = getSelectedStyleId();
-      if (id === 'sansBold' || id === 'sansItalic' || id === 'sansBoldItalic') return 'sans';
-      return 'math';
+    function getStyleById(id) {
+      return styles.find(s => s.id === id) || styles[0];
+    }
+
+    function getSelectedFont() {
+      return getStyleById(getSelectedStyleId());
+    }
+
+    function getFontOptionParts(style) {
+      const variants = style && style.variants ? style.variants : {};
+      const parts = ['normal'];
+      if (variants.bold) parts.push('negrito');
+      if (variants.italic) parts.push('itálico');
+      if (variants.boldItalic) parts.push('negrito itálico');
+      return parts;
+    }
+
+    function describeFontOptions(style) {
+      return 'Opções disponíveis: ' + getFontOptionParts(style).join(', ') + '.';
+    }
+
+    const fontSelectNames = {
+      serif: 'Serif matemático',
+      script: 'Script',
+      fraktur: 'Fraktur',
+      doubleStruck: 'Double Struck',
+      sans: 'Sem serifa',
+      mono: 'Monoespaçado',
+      circled: 'Letras circuladas',
+      negativeCircled: 'CIRCULADAS NEGATIVAS',
+      squaredDark: 'CAIXA ESCURA',
+      squaredLight: 'CAIXA CLARA',
+      fullwidth: 'Largura cheia',
+      blackCircledNumbers: 'Números pretos'
+    };
+
+    function makeStyleSelectLabel(style) {
+      const baseName = fontSelectNames[style.id] || style.name || style.id;
+      const styledName = [...baseName].map(ch => convertChar(ch, style)).join('');
+      return styledName + ' — ' + getFontOptionParts(style).join(', ');
     }
 
     function resolveQuickStyleId(kind) {
-      const family = getSelectedStyleFamily();
+      const style = getSelectedFont();
+      const variants = style && style.variants ? style.variants : {};
+      return variants[kind] || '';
+    }
 
-      if (family === 'sans') {
-        if (kind === 'bold') return 'sansBold';
-        if (kind === 'italic') return 'sansItalic';
-        if (kind === 'boldItalic') return 'sansBoldItalic';
+    function updateQuickButtonsAvailability() {
+      const style = getSelectedFont();
+      const variants = style && style.variants ? style.variants : {};
+      const buttons = {
+        bold: document.getElementById('quickBoldBtn'),
+        italic: document.getElementById('quickItalicBtn'),
+        boldItalic: document.getElementById('quickBoldItalicBtn')
+      };
+
+      Object.entries(buttons).forEach(([kind, btn]) => {
+        if (!btn) return;
+        const enabled = !!variants[kind];
+        btn.disabled = !enabled;
+        btn.classList.toggle('disabled', !enabled);
+        btn.title = enabled
+          ? 'Aplicar ' + (kind === 'bold' ? 'negrito' : kind === 'italic' ? 'itálico' : 'negrito itálico') + ' nesta fonte'
+          : 'Esta fonte não tem essa opção.';
+        btn.setAttribute('aria-disabled', String(!enabled));
+      });
+
+      if (styleOptionInfo) {
+        styleOptionInfo.textContent = describeFontOptions(style);
       }
-
-      if (kind === 'bold') return 'bold';
-      if (kind === 'italic') return 'italic';
-      if (kind === 'boldItalic') return 'boldItalic';
-      return getSelectedStyleId();
     }
 
     function convertTextWithStyle(text, styleId) {
@@ -2125,10 +2197,11 @@
     }
 
     function updatePreview() {
-      const sample = 'Texto de exemplo 123';
-      const style = styles.find(s => s.id === styleSelect.value) || styles[0];
+      const style = getStyleById(styleSelect.value);
+      const sample = sampleByStyle[style.id] || 'Texto de exemplo 123';
       const converted = [...sample].map(ch => convertChar(ch, style)).join('');
       preview.textContent = applyDecoration(converted);
+      updateQuickButtonsAvailability();
     }
 
     let lastInputSelection = { start: 0, end: 0 };
@@ -2329,6 +2402,7 @@
         const select = document.getElementById(btn.dataset.select);
         btn.classList.toggle('active', !!select && select.value === btn.dataset.value);
       });
+      updateQuickButtonsAvailability();
     }
 
     function refreshUiWithoutApplying() {
@@ -2530,6 +2604,12 @@
       }
 
       const styleId = resolveQuickStyleId(kind);
+      if (!styleId) {
+        selectionInfo.textContent = 'A fonte escolhida não tem essa opção. Escolha uma fonte com negrito, itálico ou N+I.';
+        input.focus();
+        return;
+      }
+
       const converted = convertTextWithStyle(selected, styleId);
 
       replaceSelectionWith(converted, 'Formatação aplicada ao trecho selecionado. A seleção foi mantida para nova formatação.');
@@ -3030,13 +3110,14 @@
     }
 
     function populate() {
-      styles.forEach(style => {
+      styles.filter(style => !style.hidden).forEach(style => {
         const opt = document.createElement('option');
         opt.value = style.id;
-        opt.textContent = style.name;
+        opt.textContent = makeStyleSelectLabel(style);
+        opt.title = (style.name || style.id) + ' — ' + describeFontOptions(style);
         styleSelect.appendChild(opt);
       });
-      styleSelect.value = 'normal';
+      styleSelect.value = 'serif';
 
       loadCustomSymbols();
       renderSymbols();
@@ -3718,7 +3799,7 @@
     populate();
     targetSelect.value = 'auto';
     caseSelect.value = 'normal';
-    styleSelect.value = 'normal';
+    styleSelect.value = 'serif';
     decorationSelect.value = 'none';
     result.textContent = '';
     refreshUiWithoutApplying();
