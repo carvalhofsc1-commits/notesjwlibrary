@@ -1316,7 +1316,7 @@
 
   <main>
     <section class="card" style="margin-bottom:16px">
-      <h2>Formatar notas da JW Library <span class="pill">v8.9</span></h2>
+      <h2>Formatar notas da JW Library <span class="pill">v9.3</span></h2>
       <p class="hint">Este aplicativo não aplica formatação real. Ele troca as letras por caracteres Unicode parecidos com negrito, itálico, círculos, caixas e símbolos, para dar aparência de destaque em campos que aceitam apenas texto.</p>
     </section>
 
@@ -1499,17 +1499,6 @@
       <h2>3. Caracteres, ícones e emoticons</h2>
       <p class="hint">Clique para inserir no campo ativo. Os favoritos ficam no topo. Dê dois cliques em um favorito para tirar do topo; dê dois cliques em um item de baixo para mandar para os favoritos.</p>
 
-      <div class="symbol-toolbar">
-        <div>
-          <label for="symbolCategorySelect">Categoria</label>
-          <select id="symbolCategorySelect"></select>
-        </div>
-        <div>
-          <label for="customSymbolCategory">Categoria dos novos caracteres</label>
-          <input id="customSymbolCategory" type="text" placeholder="Ex.: Meus símbolos">
-        </div>
-      </div>
-
       <h3>Favoritos no topo</h3>
       <div id="symbols" class="symbols"></div>
 
@@ -1518,13 +1507,22 @@
         <span id="symbolsStatus" class="ok"></span>
       </div>
 
+      <div class="symbol-toolbar" style="margin-top:16px">
+        <div>
+          <label for="symbolCategorySelect">Categoria</label>
+          <select id="symbolCategorySelect"></select>
+        </div>
+      </div>
+
       <h3>Caracteres da categoria</h3>
       <div id="moreSymbols" class="symbols"></div>
 
       <div class="template-editor">
         <h3>Adicionar novos caracteres</h3>
-        <p class="hint">Cole abaixo novos caracteres, ícones ou emoticons. Eles entrarão na categoria escolhida acima e ficarão salvos neste navegador.</p>
-        <textarea id="customSymbolsText" style="min-height:90px" placeholder="Cole aqui novos caracteres, separados por espaço ou linha..."></textarea>
+        <p class="hint">Cole abaixo novos caracteres, ícones ou emoticons. Eles entrarão na categoria escolhida abaixo e ficarão salvos neste navegador.</p>
+        <label for="customSymbolCategory">Categoria dos novos caracteres</label>
+        <input id="customSymbolCategory" type="text" placeholder="Ex.: Meus símbolos">
+        <textarea id="customSymbolsText" style="min-height:90px; margin-top:10px" placeholder="Cole aqui novos caracteres, separados por espaço ou linha..."></textarea>
         <div class="button-row">
           <button id="saveCustomSymbolsBtn" type="button">Adicionar caracteres</button>
           <button id="clearCustomSymbolsBtn" class="secondary" type="button">Limpar caracteres personalizados</button>
@@ -1594,7 +1592,7 @@
   </div>
 
   <footer>
-    Arquivo local HTML/CSS/JavaScript. Funciona offline depois de baixado. Versão 8.9 com gerenciamento unificado em JSON.
+    Arquivo local HTML/CSS/JavaScript. Funciona offline depois de baixado. Versão 9.3 com correção da janela de importação do JSON completo.
   </footer>
 
   <script>
@@ -1653,6 +1651,29 @@
     const ONLINE_DEFAULTS_VERSION_STORAGE_KEY = 'jwLibraryNoteAplicarOnlineDefaultsVersionV1';
     const TEMPLATE_CATEGORIES_STORAGE_KEY = 'jwLibraryNoteAplicarTemplateCategoriesV1';
     const DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
+
+    const defaultFavoriteSymbols = [
+      '❓','✅','⚠️','▶️','⏩','➤','➜','➽','➡','⬅','👉','☛','☚','💡','🔎','📌',
+      '✍🏻','👍🏻','👎🏻','😀','★','☆','✦','✧','✎','✓','✔','✕','✗','✘','🔷','🔶','🔹','🔸','💠','💎','♦️','🟦','🟧','🟪','🟥',
+      '■','□','▣','◆','▲','●','○','▇','▬','❝','❞'
+    ];
+
+    const symbolCategories = [
+      { id: 'setas', name: 'Setas e indicadores', text: `➤ ➜ ➽ ➡ ⬅ 👉 ☛ ☚ ☜ ☝ ☞ ☟ 👆 👇 👈 ↛ ↝ ↠ ⇝ ↣ ↦ ↬ ⇀ ⇁ ⇉ ⇏ ⇒ ⇛ ⇢ ⇥ ⇨ ⇰ ⇴ ⇶ ⇸ ⇻ ⇾ ➔ ➙ ➛ ➝ ➞ ➟ ➢ ➣ ➥ ➦ ➧ ➨ ➩ ➪ ➫ ➬ ➭ ➮ ➯ ➱ ➲ ➳ ➵ ➺ ➻ ➼ ➾ ➠ ⫸ ⫷ ▶` },
+      { id: 'marcadores', name: 'Marcadores e avisos', text: `❓ ✅ ⚠️ ⚠ ⛔ 🚫 ❌ ❗️ ❕ ❔ ‼️ ⁉️ 💯 🔅 🔆 🔱 ⚜ 〽️ 🚸 🔰 ♻️ ❇️ ✳️ ❎ 💠 🌀 ➿ ✔ ✓ ☑️ 🔘 ✖ ✕ ✗ ✘ ╳ 🎯 📌 💡 🔎 🔍 🆘 📛 💢` },
+      { id: 'formas-coloridas', name: 'Formas coloridas', text: `🔷 🔶 🔹 🔸 💠 💎 ♦️ 🔴 🟠 🟡 🟢 🔵 🟣 🟤 ⚫ ⚪ 🟥 🟧 🟨 🟩 🟦 🟪 🟫 ⬛️ ⬜️ ◇ ◆ ◈ ■ □ ▢ ▣ ▤ ▥ ▦ ▧ ▨ ▩ ▲ △ ▷ ▼ ▽ ◉ ◊ ○ ◌ ◍ ◎ ● ◐ ◑ ◒ ◓ ◧ ◨ ◩ ◪` },
+      { id: 'linhas', name: 'Linhas e divisores', text: `▂ ▃ ▄ ▅ ▆ ▇ █ ▉ ▊ ▋ ▌ ▍ ▎ ▏ ▬ ▭ ▁ ▇▇▇▇▇▇▇▇▇▇ ▀▄▀▄▀▄▀▄⎐⎏▀▄▀▄▀▄▀▄ ▬▭▬▭▬▭▬▭▬▭▬▭▬▭▬ ━━━━━ ───── ═════` },
+      { id: 'numeros', name: 'Números especiais', text: `0️⃣ 1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣ 6️⃣ 7️⃣ 8️⃣ 9️⃣ 🔟 ⓿ ❶ ❷ ❸ ❹ ❺ ❻ ❼ ❽ ❾ ❿ ⓫ ⓬ ⓭ ⓮ ⓯ ⓰ ⓱ ⓲ ⓳ ⓴ ⓵ ⓶ ⓷ ⓸ ⓹ ⓺ ⓻ ⓼ ⓽ ⓾ ➀ ➁ ➂ ➃ ➄ ➅ ➆ ➇ ➈ ➉ ➊ ➋ ➌ ➍ ➎ ➏ ➐ ➑ ➒ ➓ 🔢 #️⃣ *️⃣` },
+      { id: 'letras', name: 'Letras decorativas', text: `🅰 🅱 🅲 🅳 🅴 🅵 🅶 🅷 🅸 🅹 🅺 🅻 🅼 🅽 🅾 🅿 🆀 🆁 🆂 🆃 🆄 🆅 🆆 🆇 🆈 🆉 🅸🅽🆂🆃🆁🆄🆃🅾🆁 𝘼 𝘽 𝘾 𝘿 𝙀 𝙁 𝙂 𝙃 𝙄 𝙅 𝙆 𝙇 𝙈 𝙉 𝙊 𝙋 𝙌 𝙍 𝙎 𝙏 𝙐 𝙑 𝙒 𝙓 𝙔 𝙕 𝙖 𝙗 𝙘 𝙙 𝙚 𝙛 𝙜 𝙝 𝙞 𝙟 𝙠 𝙡 𝙢 𝙣 𝙤 𝙥 𝙦 𝙧 𝙨 𝙩 𝙪 𝙫 𝙬 𝙭 𝙮 𝙯 𝐀 𝐁 𝐂 𝐃 𝐄 𝐅 𝐆 𝐇 𝐈 𝐉 𝐊 𝐋 𝐌 𝐍 𝐎 𝐏 𝐐 𝐑 𝐒 𝐓 𝐔 𝐕 𝐖 𝐗 𝐘 𝐙 𝓐 𝓑 𝓒 𝓓 𝓔 𝓕 𝓖 𝓗 𝓘 𝓙 𝓚 𝓛 𝓜 𝓝 𝓞 𝓟 𝓠 𝓡 𝓢 𝓣 𝓤 𝓥 𝓦 𝓧 𝓨 𝓩 𝓪 𝓫 𝓬 𝓭 𝓮 𝓯 𝓰 𝓱 𝓲 𝓳 𝓴 𝓵 𝓶 𝓷 𝓸 𝓹 𝓺 𝓻 𝓼 𝓽 𝓾 𝓿 𝔀 𝔁 𝔂 𝔃 Ⓐ Ⓑ Ⓒ Ⓓ Ⓔ Ⓕ Ⓖ Ⓗ Ⓘ Ⓙ Ⓚ Ⓛ Ⓜ Ⓝ Ⓞ Ⓟ Ⓠ Ⓡ Ⓢ Ⓣ Ⓤ Ⓥ Ⓦ Ⓧ Ⓨ Ⓩ 🄰 🄱 🄲 🄳 🄴 🄵 🄶 🄷 🄸 🄹 🄺 🄻 🄼 🄽 🄾 🄿 🅀 🅁 🅂 🅃 🅄 🅅 🅆 🅇 🅈 🅉` },
+      { id: 'modelos', name: 'Sequências prontas', text: `❓𝐏𝐄𝐑𝐆𝐔𝐍𝐓𝐀 👉 ▶️▶️ 𝙑𝙄𝘿𝙀𝙊 ⏩⏩ ⚠️ 🅸🅽🆂🆃🆁🆄🆃🅾🆁 👉 ▶️▶️▶️▶️▶️▶️ ❓➽➽➽➽ 🟪❓𝐏𝐄𝐑𝐆𝐔𝐍𝐓𝐀 👉 🟧🟧🟧🟧🟧🟧🟧🟧🟧 DESIGNAÇÃO 3 🟧🟧🟧🟧🟧🟧🟧🟧🟧` },
+      { id: 'objetos', name: 'Objetos, ferramentas e ações', text: `✍🏻 ✏ 🔦 🎮 💣 🔑 🔧 🔨 ⚒ ⛏ 🔭 🚒 🧯 🛒 🖨️ 📋 🪧 🪴 ☕ 🧺 📦 🎁 ⚰ ⚱ ⌛ ⏳ 🔮 ⛓ 📢 📣 🔔 🧴 💉 🩹 💄 🍫 🚬 🎯 🖼️ 🪙 💲 💱` },
+      { id: 'natureza', name: 'Natureza e cores', text: `🌸 🌺 🌹 🌷 🌼 🌻 💧 💦 🔥 🎆 🎇 🎈 🚀 🪐 ⭐ ✨ 🌟 ☀️ 🌙 🌈` },
+      { id: 'emocoes', name: 'Emojis e expressões', text: `😀 😬 😁 😂 😃 😄 😅 😆 😇 😉 😊 😋 😌 😍 😘 😗 😙 😚 😜 😝 😛 😎 😏 😶 😐 😑 😒 😳 😞 😟 😠 😡 😔 😕 😣 😖 😫 😩 😤 😮 😱 😨 😰 😯 😦 😧 😢 😥 😪 😓 😭 😵 😲 😷 😴 💤 🤔 😈 👿 👹 👺 💀 👻 👽 🙌 👏 👋 👍 👎 👊 ✊ ✌️ 👌 ✋ 💪 🙏 ☝️ 👆 👇 👈 👉 🖖 👀 👂 👤 ❤️ 💛 💙 💜 💔 💕 💞 💓 💗 💖 💘 💝 💟` },
+      { id: 'sinais-sistema', name: 'Sinais e símbolos de sistema', text: `🔯 ⛎ ♈️ ♉️ ♊️ ♋️ ♌️ ♍️ ♎️ ♏️ ♐️ ♑️ ♒️ ♓️ 🆔 🈳 🈹 📴 📳 🈶 🈚️ 🈸 🈺 🈷️ ✴️ 🆚 🉑 💮 🉐 ㊙️ ㊗️ 🈴 🈵 🈲 🅰️ 🅱️ 🆎 🆑 🅾️ 🆗 🆒 🆕 🆓 🆙 ▶️ ⏩ ⏪ 🔀 🔁 🔂 ◀️ 🔼 🔽 ⏫ ⏬ ↗️ ↘️ ↙️ ↖️ ↕️ ↔️ 🔄 ↪️ ↩️ ⤴️ ⤵️ ℹ️ 🔤 🔡 🔠 🔣 🎵 🎶 〰️ ➰ 🔃 ➕ ➖ ➗ ✖️ ©️ ®️ ™️ 🔚 🔙 🔛 🔝 🔜 = ∞ ❗ $` }
+    ];
+
+    let favoriteSymbols = [];
+    let customSymbolCategories = {};
 
     const explicitMaps = {
       script: {
@@ -1734,32 +1755,6 @@
       blackCircledNumbers: '123'
     };
 
-    const defaultFavoriteSymbols = [
-      '❓','✅','⚠️','▶️','⏩','➤','➜','➽','➡','⬅','👉','☛','☚','💡','🔎','📌',
-      '✍🏻','👍🏻','👎🏻','😀','★','☆','✦','✧','✎','✓','✔','✕','✗','✘','🔷','🔶','🔹','🔸','💠','💎','♦️','🟦','🟧','🟪','🟥',
-      '■','□','▣','◆','▲','●','○','▇','▬','❝','❞'
-    ];
-
-    const symbolCategories = [
-      { id: 'setas', name: 'Setas e indicadores', text: `➤ ➜ ➽ ➡ ⬅ 👉 ☛ ☚ ☜ ☝ ☞ ☟ 👆 👇 👈 ↛ ↝ ↠ ⇝ ↣ ↦ ↬ ⇀ ⇁ ⇉ ⇏ ⇒ ⇛ ⇢ ⇥ ⇨ ⇰ ⇴ ⇶ ⇸ ⇻ ⇾ ➔ ➙ ➛ ➝ ➞ ➟ ➢ ➣ ➥ ➦ ➧ ➨ ➩ ➪ ➫ ➬ ➭ ➮ ➯ ➱ ➲ ➳ ➵ ➺ ➻ ➼ ➾ ➠ ⫸ ⫷ ▶` },
-      { id: 'marcadores', name: 'Marcadores e avisos', text: `❓ ✅ ⚠️ ⚠ ⛔ 🚫 ❌ ❗️ ❕ ❔ ‼️ ⁉️ 💯 🔅 🔆 🔱 ⚜ 〽️ 🚸 🔰 ♻️ ❇️ ✳️ ❎ 💠 🌀 ➿ ✔ ✓ ☑️ 🔘 ✖ ✕ ✗ ✘ ╳ 🎯 📌 💡 🔎 🔍 🆘 📛 💢` },
-      { id: 'formas-coloridas', name: 'Formas coloridas', text: `🔷 🔶 🔹 🔸 💠 💎 ♦️ 🔴 🟠 🟡 🟢 🔵 🟣 🟤 ⚫ ⚪ 🟥 🟧 🟨 🟩 🟦 🟪 🟫 ⬛️ ⬜️ ◇ ◆ ◈ ■ □ ▢ ▣ ▤ ▥ ▦ ▧ ▨ ▩ ▲ △ ▷ ▼ ▽ ◉ ◊ ○ ◌ ◍ ◎ ● ◐ ◑ ◒ ◓ ◧ ◨ ◩ ◪` },
-      { id: 'linhas', name: 'Linhas e divisores', text: `▂ ▃ ▄ ▅ ▆ ▇ █ ▉ ▊ ▋ ▌ ▍ ▎ ▏ ▬ ▭ ▁ ▇▇▇▇▇▇▇▇▇▇ ▀▄▀▄▀▄▀▄⎐⎏▀▄▀▄▀▄▀▄ ▬▭▬▭▬▭▬▭▬▭▬▭▬▭▬ ━━━━━ ───── ═════` },
-      { id: 'numeros', name: 'Números especiais', text: `0️⃣ 1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣ 6️⃣ 7️⃣ 8️⃣ 9️⃣ 🔟 ⓿ ❶ ❷ ❸ ❹ ❺ ❻ ❼ ❽ ❾ ❿ ⓫ ⓬ ⓭ ⓮ ⓯ ⓰ ⓱ ⓲ ⓳ ⓴ ⓵ ⓶ ⓷ ⓸ ⓹ ⓺ ⓻ ⓼ ⓽ ⓾ ➀ ➁ ➂ ➃ ➄ ➅ ➆ ➇ ➈ ➉ ➊ ➋ ➌ ➍ ➎ ➏ ➐ ➑ ➒ ➓ 🔢 #️⃣ *️⃣` },
-      { id: 'letras', name: 'Letras decorativas', text: `🅰 🅱 🅲 🅳 🅴 🅵 🅶 🅷 🅸 🅹 🅺 🅻 🅼 🅽 🅾 🅿 🆀 🆁 🆂 🆃 🆄 🆅 🆆 🆇 🆈 🆉 🅸🅽🆂🆃🆁🆄🆃🅾🆁 𝘼 𝘽 𝘾 𝘿 𝙀 𝙁 𝙂 𝙃 𝙄 𝙅 𝙆 𝙇 𝙈 𝙉 𝙊 𝙋 𝙌 𝙍 𝙎 𝙏 𝙐 𝙑 𝙒 𝙓 𝙔 𝙕 𝙖 𝙗 𝙘 𝙙 𝙚 𝙛 𝙜 𝙝 𝙞 𝙟 𝙠 𝙡 𝙢 𝙣 𝙤 𝙥 𝙦 𝙧 𝙨 𝙩 𝙪 𝙫 𝙬 𝙭 𝙮 𝙯 𝐀 𝐁 𝐂 𝐃 𝐄 𝐅 𝐆 𝐇 𝐈 𝐉 𝐊 𝐋 𝐌 𝐍 𝐎 𝐏 𝐐 𝐑 𝐒 𝐓 𝐔 𝐕 𝐖 𝐗 𝐘 𝐙 𝓐 𝓑 𝓒 𝓓 𝓔 𝓕 𝓖 𝓗 𝓘 𝓙 𝓚 𝓛 𝓜 𝓝 𝓞 𝓟 𝓠 𝓡 𝓢 𝓣 𝓤 𝓥 𝓦 𝓧 𝓨 𝓩 𝓪 𝓫 𝓬 𝓭 𝓮 𝓯 𝓰 𝓱 𝓲 𝓳 𝓴 𝓵 𝓶 𝓷 𝓸 𝓹 𝓺 𝓻 𝓼 𝓽 𝓾 𝓿 𝔀 𝔁 𝔂 𝔃 Ⓐ Ⓑ Ⓒ Ⓓ Ⓔ Ⓕ Ⓖ Ⓗ Ⓘ Ⓙ Ⓚ Ⓛ Ⓜ Ⓝ Ⓞ Ⓟ Ⓠ Ⓡ Ⓢ Ⓣ Ⓤ Ⓥ Ⓦ Ⓧ Ⓨ Ⓩ 🄰 🄱 🄲 🄳 🄴 🄵 🄶 🄷 🄸 🄹 🄺 🄻 🄼 🄽 🄾 🄿 🅀 🅁 🅂 🅃 🅄 🅅 🅆 🅇 🅈 🅉` },
-      { id: 'modelos', name: 'Sequências prontas', text: `❓𝐏𝐄𝐑𝐆𝐔𝐍𝐓𝐀 👉 ▶️▶️ 𝙑𝙄𝘿𝙀𝙊 ⏩⏩ ⚠️ 🅸🅽🆂🆃🆁🆄🆃🅾🆁 👉 ▶️▶️▶️▶️▶️▶️ ❓➽➽➽➽ 🟪❓𝐏𝐄𝐑𝐆𝐔𝐍𝐓𝐀 👉 🟧🟧🟧🟧🟧🟧🟧🟧🟧 DESIGNAÇÃO 3 🟧🟧🟧🟧🟧🟧🟧🟧🟧` },
-      { id: 'objetos', name: 'Objetos, ferramentas e ações', text: `✍🏻 ✏ 🔦 🎮 💣 🔑 🔧 🔨 ⚒ ⛏ 🔭 🚒 🧯 🛒 🖨️ 📋 🪧 🪴 ☕ 🧺 📦 🎁 ⚰ ⚱ ⌛ ⏳ 🔮 ⛓ 📢 📣 🔔 🧴 💉 🩹 💄 🍫 🚬 🎯 🖼️ 🪙 💲 💱` },
-      { id: 'natureza', name: 'Natureza e cores', text: `🌸 🌺 🌹 🌷 🌼 🌻 💧 💦 🔥 🎆 🎇 🎈 🚀 🪐 ⭐ ✨ 🌟 ☀️ 🌙 🌈` },
-      { id: 'emocoes', name: 'Emojis e expressões', text: `😀 😬 😁 😂 😃 😄 😅 😆 😇 😉 😊 😋 😌 😍 😘 😗 😙 😚 😜 😝 😛 😎 😏 😶 😐 😑 😒 😳 😞 😟 😠 😡 😔 😕 😣 😖 😫 😩 😤 😮 😱 😨 😰 😯 😦 😧 😢 😥 😪 😓 😭 😵 😲 😷 😴 💤 🤔 😈 👿 👹 👺 💀 👻 👽 🙌 👏 👋 👍 👎 👊 ✊ ✌️ 👌 ✋ 💪 🙏 ☝️ 👆 👇 👈 👉 🖖 👀 👂 👤 ❤️ 💛 💙 💜 💔 💕 💞 💓 💗 💖 💘 💝 💟` },
-      { id: 'sinais-sistema', name: 'Sinais e símbolos de sistema', text: `🔯 ⛎ ♈️ ♉️ ♊️ ♋️ ♌️ ♍️ ♎️ ♏️ ♐️ ♑️ ♒️ ♓️ 🆔 🈳 🈹 📴 📳 🈶 🈚️ 🈸 🈺 🈷️ ✴️ 🆚 🉑 💮 🉐 ㊙️ ㊗️ 🈴 🈵 🈲 🅰️ 🅱️ 🆎 🆑 🅾️ 🆗 🆒 🆕 🆓 🆙 ▶️ ⏩ ⏪ 🔀 🔁 🔂 ◀️ 🔼 🔽 ⏫ ⏬ ↗️ ↘️ ↙️ ↖️ ↕️ ↔️ 🔄 ↪️ ↩️ ⤴️ ⤵️ ℹ️ 🔤 🔡 🔠 🔣 🎵 🎶 〰️ ➰ 🔃 ➕ ➖ ➗ ✖️ ©️ ®️ ™️ 🔚 🔙 🔛 🔝 🔜 = ∞ ❗ $` }
-    ];
-
-    let favoriteSymbols = [];
-    let customSymbolCategories = {};
-
-
-
-    
     const defaultTemplates = [
       { id:'tpl-question', name:'Pergunta', category: DEFAULT_TEMPLATE_CATEGORY, content:'❓ 𝐏𝐄𝐑𝐆𝐔𝐍𝐓𝐀 👉 ' },
       { id:'tpl-video', name:'Vídeo', category: DEFAULT_TEMPLATE_CATEGORY, content:'▶️▶️ 𝙑𝙄𝘿𝙀𝙊 ⏩⏩ ' },
@@ -3798,7 +3793,7 @@ function saveTemplatesToStorage() {
     }
 
     function parseBackupText(text) {
-      const parsed = JSON.parse(text);
+      const parsed = JSON.parse(String(text || '').trim());
       return normalizeDefaultsObject(parsed);
     }
 
@@ -3862,7 +3857,47 @@ function saveTemplatesToStorage() {
     }
 
 
-    async function importTemplatesFromText(text) {
+    
+    function askImportMode(count) {
+      return new Promise(resolve => {
+        let settled = false;
+
+        function finish(value) {
+          if (settled) return;
+          settled = true;
+          importChoiceOverlay.classList.remove('open');
+          combineImportChoice.removeEventListener('click', onCombine);
+          replaceImportChoice.removeEventListener('click', onReplace);
+          cancelImportChoice.removeEventListener('click', onCancel);
+          importChoiceOverlay.removeEventListener('click', onOverlay);
+          document.removeEventListener('keydown', onKey);
+          resolve(value);
+        }
+
+        function onCombine() { finish('merge'); }
+        function onReplace() { finish('replace'); }
+        function onCancel() { finish(null); }
+        function onOverlay(event) {
+          if (event.target === importChoiceOverlay) finish(null);
+        }
+        function onKey(event) {
+          if (event.key === 'Escape') finish(null);
+        }
+
+        const templateCount = Number(count || 0);
+        importChoiceText.textContent = 'O arquivo JSON contém ' + templateCount + ' modelo(s), além de categorias, caracteres e favoritos quando disponíveis. Escolha se deseja combinar com os dados atuais, substituir tudo ou cancelar.';
+
+        combineImportChoice.addEventListener('click', onCombine);
+        replaceImportChoice.addEventListener('click', onReplace);
+        cancelImportChoice.addEventListener('click', onCancel);
+        importChoiceOverlay.addEventListener('click', onOverlay);
+        document.addEventListener('keydown', onKey);
+        importChoiceOverlay.classList.add('open');
+      });
+    }
+
+
+async function importTemplatesFromText(text) {
       try {
         const importedData = parseBackupText(text);
         const imported = importedData.templates;
@@ -3905,8 +3940,9 @@ function saveTemplatesToStorage() {
         backupStatus.className = 'ok';
         backupStatus.textContent = message;
       } catch (e) {
+        console.error(e);
         backupStatus.className = 'warn';
-        backupStatus.textContent = 'Arquivo JSON inválido.';
+        backupStatus.textContent = 'Arquivo JSON inválido: ' + (e && e.message ? e.message : 'erro desconhecido');
       }
     }
 
