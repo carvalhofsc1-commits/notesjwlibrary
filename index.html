@@ -7,20 +7,58 @@
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <meta name="description" content="Conversor que troca letras por caracteres Unicode parecidos com negrito, itálico e símbolos, para destacar notas do JW Library.">
   <meta name="theme-color" content="#1f2937">
   <style>
     :root {
+      color-scheme: light dark;
       --bg: #f6f7f9;
       --card: #ffffff;
+      --card-tint: #ffffff;
       --text: #1f2937;
       --muted: #6b7280;
       --line: #d1d5db;
       --accent: #2563eb;
       --accent-dark: #1d4ed8;
       --soft: #eef2ff;
+      --soft-line: #a5b4fc;
       --danger: #dc2626;
       --danger-dark: #b91c1c;
       --success: #047857;
+      --warning: #92400e;
+      --field: #ffffff;
+      --neutral: #e5e7eb;
+      --neutral-dark: #d1d5db;
+      --neutral-text: #111827;
+      --shadow: rgba(0, 0, 0, .05);
+      --header-from: #1f2937;
+      --header-to: #374151;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f172a;
+        --card: #1e293b;
+        --card-tint: #1e293b;
+        --text: #e2e8f0;
+        --muted: #94a3b8;
+        --line: #334155;
+        --accent: #3b82f6;
+        --accent-dark: #2563eb;
+        --soft: #1e3a5f;
+        --soft-line: #3b82f6;
+        --danger: #ef4444;
+        --danger-dark: #dc2626;
+        --success: #34d399;
+        --warning: #fbbf24;
+        --field: #0f172a;
+        --neutral: #334155;
+        --neutral-dark: #475569;
+        --neutral-text: #e2e8f0;
+        --shadow: rgba(0, 0, 0, .4);
+        --header-from: #0b1220;
+        --header-to: #1e293b;
+      }
     }
 
     * { box-sizing: border-box; }
@@ -31,11 +69,14 @@
       background: var(--bg);
       color: var(--text);
       line-height: 1.45;
+      overflow-wrap: break-word;
     }
 
+    /* ---------- Cabeçalho ---------- */
+
     header {
-      background: linear-gradient(135deg, #1f2937, #374151);
-      color: white;
+      background: linear-gradient(135deg, var(--header-from), var(--header-to));
+      color: #f8fafc;
       padding: 28px 16px;
       text-align: center;
     }
@@ -46,19 +87,22 @@
       justify-content: center;
       gap: 14px;
       margin-bottom: 8px;
+      max-width: 100%;
     }
 
     .brand-icon {
       width: clamp(46px, 7vw, 76px);
-      height: clamp(46px, 7vw, 76px);
+      height: auto;
+      aspect-ratio: 1;
       border-radius: 18px;
-      box-shadow: 0 10px 24px rgba(0,0,0,.22);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, .22);
       flex: 0 0 auto;
     }
 
     header h1 {
       margin: 0;
-      font-size: clamp(1.55rem, 4vw, 2.25rem);
+      font-size: clamp(1.25rem, 4vw, 2.25rem);
+      line-height: 1.15;
     }
 
     header p {
@@ -67,49 +111,78 @@
       color: #e5e7eb;
     }
 
+    /* ---------- Estrutura ---------- */
+
     main {
       width: min(1680px, 100%);
       margin: 0 auto;
-      padding: 22px clamp(18px, 3vw, 48px);
-      padding-left: max(clamp(18px, 3vw, 48px), env(safe-area-inset-left));
-      padding-right: max(clamp(18px, 3vw, 48px), env(safe-area-inset-right));
+      padding: 22px clamp(12px, 3vw, 48px);
+      padding-left: max(clamp(12px, 3vw, 48px), env(safe-area-inset-left));
+      padding-right: max(clamp(12px, 3vw, 48px), env(safe-area-inset-right));
     }
 
-    .grid {
+    .single-grid {
       display: grid;
-      grid-template-columns: minmax(560px, 1fr) minmax(560px, 1fr);
+      grid-template-columns: 1fr;
       gap: 22px;
-      align-items: start;
-    }
-
-    @media (max-width: 860px) {
-      .grid { grid-template-columns: 1fr; }
     }
 
     .card {
-      background: var(--card);
+      background: var(--card-tint);
       border: 1px solid var(--line);
       border-radius: 14px;
       padding: 16px;
-      box-shadow: 0 8px 22px rgba(0,0,0,.05);
+      box-shadow: 0 8px 22px var(--shadow);
+      max-width: 100%;
     }
 
-    .card h2, .card h3 {
-      margin: 0 0 10px;
+    /* Cada cartão tem um matiz próprio, como nas versões anteriores. No tema escuro
+       o degradê sai de cena e o fundo neutro assume, para o contraste não sofrer. */
+    @media (prefers-color-scheme: light) {
+      .card:nth-of-type(1) { background: linear-gradient(180deg, #ffffff 0%, #eef6ff 100%); border-color: #bfdbfe; }
+      .card:nth-of-type(2) { background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%); border-color: #bbf7d0; }
+      .card:nth-of-type(3) { background: linear-gradient(180deg, #ffffff 0%, #faf5ff 100%); border-color: #e9d5ff; }
+      .card:nth-of-type(4) { background: linear-gradient(180deg, #ffffff 0%, #fff7ed 100%); border-color: #fed7aa; }
+      .card:nth-of-type(5) { background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%); border-color: #cbd5e1; }
+      .card:nth-of-type(6) { background: linear-gradient(180deg, #ffffff 0%, #f0fdfa 100%); border-color: #99f6e4; }
     }
+
+    .card h2,
+    .card h3 { margin: 0 0 10px; }
 
     .card h2 { font-size: 1.1rem; }
     .card h3 { font-size: 1rem; }
 
-    label {
+    .editor-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .editor-text-pane,
+    .editor-controls-pane { min-width: 0; }
+
+    footer {
+      color: var(--muted);
+      text-align: center;
+      padding: 18px;
+      font-size: .9rem;
+    }
+
+    /* ---------- Campos ---------- */
+
+    label,
+    .field-label {
       display: block;
       font-weight: 650;
       margin: 12px 0 6px;
       line-height: 1.2;
-      overflow-wrap: anywhere;
     }
 
-    textarea, select, input {
+    textarea,
+    select,
+    input {
       width: 100%;
       max-width: 100%;
       min-width: 0;
@@ -118,74 +191,51 @@
       padding: 11px;
       font: inherit;
       font-size: 16px;
-      background: white;
+      background: var(--field);
       color: var(--text);
     }
 
-    select {
-      text-overflow: ellipsis;
-    }
+    select { text-overflow: ellipsis; padding-right: 34px; }
 
     textarea {
-      min-height: clamp(240px, 34vh, 360px);
+      min-height: clamp(190px, 34vh, 360px);
       resize: vertical;
-    }
-
-    .controls {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .controls-3 {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-      gap: 10px;
-      align-items: end;
-    }
-
-    .controls-3 > div,
-    .controls > div {
-      min-width: 0;
-    }
-
-
-    @media (max-width: 720px) {
-      .symbol-toolbar {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    @media (max-width: 720px) {
-      .controls, .controls-3 { grid-template-columns: 1fr; }
     }
 
     .hint {
       color: var(--muted);
       font-size: .92rem;
       margin: 8px 0 0;
+      line-height: 1.35;
     }
 
     .preview {
       padding: 10px 12px;
       background: var(--soft);
-      border: 1px dashed #a5b4fc;
+      border: 1px dashed var(--soft-line);
       border-radius: 10px;
       min-height: 46px;
-      word-break: break-word;
       white-space: pre-wrap;
       line-height: 1.65;
     }
 
-    .result {
-      min-height: 520px;
-      white-space: pre-wrap;
-      word-break: break-word;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      padding: 12px;
-      background: #fafafa;
+    .controls,
+    .controls-3,
+    .symbol-toolbar,
+    .template-row,
+    .template-toolbar,
+    .style-full-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      min-width: 0;
     }
+
+    .controls > div,
+    .controls-3 > div,
+    .symbol-toolbar > div { min-width: 0; }
+
+    /* ---------- Botões ---------- */
 
     button {
       border: 0;
@@ -195,23 +245,32 @@
       font-weight: 700;
       cursor: pointer;
       background: var(--accent);
-      color: white;
+      color: #ffffff;
+      min-height: 44px;
     }
 
     button:hover { background: var(--accent-dark); }
 
+    button:focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    button:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
     button.secondary {
-      background: #e5e7eb;
-      color: #111827;
+      background: var(--neutral);
+      color: var(--neutral-text);
     }
 
-    button.secondary:hover { background: #d1d5db; }
+    button.secondary:hover { background: var(--neutral-dark); }
 
-    button.danger {
-      background: var(--danger);
-      color: white;
-    }
-
+    button.danger { background: var(--danger); color: #ffffff; }
     button.danger:hover { background: var(--danger-dark); }
 
     .button-row {
@@ -220,485 +279,6 @@
       flex-wrap: wrap;
       margin-top: 12px;
       align-items: center;
-    }
-
-    .symbols {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 8px;
-    }
-
-    .symbol-btn {
-      background: #f3f4f6;
-      color: #111827;
-      border: 1px solid #d1d5db;
-      padding: 8px 10px;
-      border-radius: 10px;
-      min-width: 38px;
-    }
-
-    .symbol-btn:hover { background: #e5e7eb; }
-
-    .templates {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
-      gap: 8px;
-      margin-top: 8px;
-    }
-
-    @media (max-width: 620px) {
-      .templates { grid-template-columns: 1fr; }
-    }
-
-    .mini {
-      font-size: .92rem;
-      padding: 9px;
-      text-align: left;
-    }
-
-    .template-editor {
-      margin-top: 14px;
-      border-top: 1px solid var(--line);
-      padding-top: 14px;
-    }
-
-    .template-row {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 8px;
-      align-items: end;
-    }
-
-    @media (max-width: 620px) {
-      .template-row { grid-template-columns: 1fr; }
-    }
-
-    .copy-actions {
-      background: var(--card);
-      border-radius: 12px;
-    }
-
-    @media (max-width: 860px) {
-      header {
-        padding: 22px 14px;
-      }
-
-      main {
-        padding: 12px;
-        padding-left: max(12px, env(safe-area-inset-left));
-        padding-right: max(12px, env(safe-area-inset-right));
-      }
-
-      .card {
-        padding: 14px;
-        border-radius: 12px;
-      }
-
-      .result {
-        min-height: 170px;
-      }
-    }
-
-    @media (max-width: 560px) {
-      .brand-title {
-        flex-direction: column;
-        gap: 8px;
-      }
-
-      .brand-icon {
-        width: 58px;
-        height: 58px;
-      }
-    }
-
-    @media (max-width: 560px) {
-      body {
-        line-height: 1.38;
-      }
-
-      header h1 {
-        font-size: 1.42rem;
-      }
-
-      header p {
-        font-size: .95rem;
-      }
-
-      .card {
-        padding: 12px;
-      }
-
-      textarea {
-        min-height: 155px;
-      }
-
-      button {
-        width: 100%;
-        min-height: 44px;
-      }
-
-      .symbol-btn {
-        width: auto;
-        flex: 1 1 42px;
-        min-width: 42px;
-        padding: 9px 8px;
-      }
-
-      .button-row {
-        gap: 8px;
-      }
-
-      .copy-actions {
-        position: sticky;
-        bottom: 8px;
-        z-index: 5;
-        padding: 8px;
-        margin-left: -8px;
-        margin-right: -8px;
-        border: 1px solid var(--line);
-        box-shadow: 0 8px 24px rgba(0,0,0,.14);
-      }
-
-      .ok, .warn {
-        display: block;
-        margin: 6px 0 0;
-        width: 100%;
-        text-align: center;
-      }
-    }
-
-
-    @media (min-width: 1280px) {
-      textarea {
-        min-height: 320px;
-      }
-
-      .result {
-        min-height: 620px;
-      }
-
-      .controls-3 {
-        grid-template-columns: repeat(4, minmax(180px, 1fr));
-      }
-    }
-
-    @media (min-width: 1500px) {
-      main {
-        width: min(1760px, 100%);
-      }
-
-      .grid {
-        grid-template-columns: minmax(650px, 1fr) minmax(650px, 1fr);
-      }
-    }
-
-    @media (min-width: 861px) and (max-width: 1100px) {
-      main {
-        max-width: 980px;
-      }
-
-      .controls-3 {
-        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-      }
-    }
-
-    @media (hover: none) and (pointer: coarse) {
-      button, select, input, textarea {
-        min-height: 44px;
-      }
-    }
-
-
-
-    .symbol-toolbar {
-      display: grid;
-      grid-template-columns: minmax(180px, 260px) minmax(220px, 1fr);
-      gap: 12px;
-      align-items: end;
-      margin-top: 8px;
-    }
-
-    .symbol-btn.favorite {
-      border-color: var(--accent);
-      background: var(--soft);
-    }
-
-    .symbols.collapsed {
-      max-height: 190px;
-      overflow: hidden;
-      position: relative;
-    }
-
-    .symbol-btn {
-      user-select: none;
-    }
-
-    footer {
-      color: var(--muted);
-      text-align: center;
-      padding: 18px;
-      font-size: .9rem;
-    }
-
-    .ok {
-      color: var(--success);
-      font-weight: 700;
-      margin-left: 8px;
-    }
-
-    .warn {
-      color: #92400e;
-      font-weight: 700;
-      margin-left: 8px;
-    }
-
-    .pill {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 999px;
-      background: #ecfeff;
-      color: #155e75;
-      font-size: .82rem;
-      font-weight: 700;
-      margin-left: 5px;
-    }
-  
-    /* Ajustes finais para mobile: ficam no fim para não afetar o desktop */
-    @media (max-width: 700px) {
-      html, body {
-        width: 100%;
-        max-width: 100%;
-        overflow-x: hidden;
-      }
-
-      header {
-        padding: 18px 10px;
-      }
-
-      .brand-title {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        max-width: 100%;
-      }
-
-      .brand-icon {
-        width: 62px;
-        height: 62px;
-        border-radius: 16px;
-      }
-
-      header h1 {
-        font-size: clamp(1.25rem, 6vw, 1.75rem);
-        line-height: 1.15;
-        max-width: 100%;
-        overflow-wrap: anywhere;
-      }
-
-      header p {
-        font-size: .92rem;
-        line-height: 1.35;
-        max-width: 92vw;
-      }
-
-      main {
-        width: 100%;
-        max-width: 100%;
-        padding: 10px;
-        padding-left: max(10px, env(safe-area-inset-left));
-        padding-right: max(10px, env(safe-area-inset-right));
-      }
-
-      .grid {
-        grid-template-columns: 1fr !important;
-        gap: 12px;
-      }
-
-      .card {
-        width: 100%;
-        max-width: 100%;
-        padding: 12px;
-        border-radius: 12px;
-        overflow: hidden;
-      }
-
-      h2 {
-        font-size: 1.05rem;
-        line-height: 1.25;
-        overflow-wrap: anywhere;
-      }
-
-      h3 {
-        font-size: .98rem;
-        line-height: 1.25;
-        overflow-wrap: anywhere;
-      }
-
-      label {
-        font-size: .9rem;
-        line-height: 1.2;
-        overflow-wrap: anywhere;
-      }
-
-      .hint {
-        font-size: .86rem;
-        line-height: 1.35;
-        overflow-wrap: anywhere;
-      }
-
-      textarea,
-      select,
-      input {
-        width: 100%;
-        max-width: 100%;
-        min-width: 0;
-        font-size: 16px;
-      }
-
-      textarea {
-        min-height: 190px;
-      }
-
-      .result {
-        min-height: 190px;
-        max-height: 55vh;
-        overflow: auto;
-      }
-
-      .controls,
-      .controls-3,
-      .symbol-toolbar,
-      .template-row {
-        grid-template-columns: 1fr !important;
-        gap: 8px;
-      }
-
-      .button-row {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 8px;
-        align-items: stretch;
-      }
-
-      .button-row button,
-      .copy-actions button {
-        width: 100%;
-      }
-
-      .symbols {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
-        gap: 6px;
-        width: 100%;
-      }
-
-      .symbol-btn {
-        width: 100% !important;
-        min-width: 0 !important;
-        min-height: 42px;
-        padding: 7px 4px;
-        border-radius: 9px;
-        font-size: 1rem;
-        line-height: 1;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-        text-align: center;
-      }
-
-      .templates {
-        grid-template-columns: 1fr !important;
-      }
-
-      .mini {
-        width: 100%;
-        white-space: normal;
-        overflow-wrap: anywhere;
-      }
-
-      .preview {
-        overflow-wrap: anywhere;
-      }
-
-      .copy-actions {
-        position: sticky;
-        bottom: 8px;
-        z-index: 5;
-        padding: 8px;
-        margin-left: -4px;
-        margin-right: -4px;
-        border: 1px solid var(--line);
-        box-shadow: 0 8px 24px rgba(0,0,0,.14);
-      }
-
-      .ok,
-      .warn {
-        display: block;
-        width: 100%;
-        text-align: center;
-        margin-top: 4px;
-      }
-    }
-
-    @media (max-width: 390px) {
-      .symbols {
-        grid-template-columns: repeat(auto-fill, minmax(38px, 1fr));
-      }
-
-      .symbol-btn {
-        min-height: 40px;
-        font-size: .95rem;
-      }
-
-      .card {
-        padding: 10px;
-      }
-    }
-
-
-
-    .card:nth-of-type(1) {
-      background: linear-gradient(180deg, #ffffff 0%, #eef6ff 100%);
-      border-color: #bfdbfe;
-    }
-
-    .card:nth-of-type(2) {
-      background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%);
-      border-color: #bbf7d0;
-    }
-
-    .card:nth-of-type(3) {
-      background: linear-gradient(180deg, #ffffff 0%, #faf5ff 100%);
-      border-color: #e9d5ff;
-    }
-
-    .card:nth-of-type(4) {
-      background: linear-gradient(180deg, #ffffff 0%, #fff7ed 100%);
-      border-color: #fed7aa;
-    }
-
-    .card:nth-of-type(5) {
-      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-      border-color: #cbd5e1;
-    }
-
-    .card:nth-of-type(6) {
-      background: linear-gradient(180deg, #ffffff 0%, #f0fdfa 100%);
-      border-color: #99f6e4;
-    }
-
-    .hidden-select {
-      position: absolute !important;
-      width: 1px !important;
-      height: 1px !important;
-      padding: 0 !important;
-      margin: -1px !important;
-      overflow: hidden !important;
-      clip: rect(0, 0, 0, 0) !important;
-      white-space: nowrap !important;
-      border: 0 !important;
     }
 
     .option-buttons {
@@ -714,99 +294,55 @@
       justify-content: center;
       gap: 7px;
       min-height: 44px;
+      width: 100%;
       border: 2px solid transparent;
       border-radius: 14px;
-      box-shadow: 0 5px 14px rgba(15,23,42,.08);
-      transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+      box-shadow: 0 5px 14px var(--shadow);
+      transition: transform .12s ease, box-shadow .12s ease;
       line-height: 1.15;
       font-weight: 750;
     }
 
-    .option-btn:hover {
+    .option-btn:hover:not(:disabled),
+    .option-btn:focus-visible {
       transform: translateY(-1px);
-      filter: brightness(.97);
-      box-shadow: 0 8px 18px rgba(15,23,42,.12);
+      box-shadow: 0 0 0 3px rgba(148, 163, 184, .28), 0 8px 18px var(--shadow);
     }
 
-    .option-btn.active {
-      outline: 3px solid rgba(31, 41, 55, .18);
-      border-color: rgba(255,255,255,.90);
-      box-shadow: 0 0 0 3px rgba(37,99,235,.16), 0 8px 20px rgba(15,23,42,.14);
-    }
+    .list-buttons { grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); }
+    .list-buttons .option-btn { min-height: 42px; padding: 9px 10px; font-size: 1.05rem; }
 
-    .btn-blue { background: #dbeafe; color: #1e3a8a; }
-    .btn-green { background: #dcfce7; color: #14532d; }
+    .case-buttons { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+
+    /* Paleta dos botões de opção. No tema escuro o fundo claro vira um véu translúcido
+       sobre o cartão, para o texto continuar legível sem trocar cada cor à mão. */
+    .btn-blue   { background: #dbeafe; color: #1e3a8a; }
+    .btn-green  { background: #dcfce7; color: #14532d; }
     .btn-purple { background: #f3e8ff; color: #581c87; }
-    .btn-slate { background: #e2e8f0; color: #0f172a; }
+    .btn-slate  { background: #e2e8f0; color: #0f172a; }
     .btn-orange { background: #ffedd5; color: #7c2d12; }
-    .btn-sky { background: #e0f2fe; color: #075985; }
-    .btn-teal { background: #ccfbf1; color: #134e4a; }
+    .btn-sky    { background: #e0f2fe; color: #075985; }
+    .btn-teal   { background: #ccfbf1; color: #134e4a; }
 
-    .action-row {
-      align-items: center;
-      gap: 8px;
+    @media (prefers-color-scheme: dark) {
+      .btn-blue   { background: #1e3a8a; color: #dbeafe; }
+      .btn-green  { background: #14532d; color: #dcfce7; }
+      .btn-purple { background: #581c87; color: #f3e8ff; }
+      .btn-slate  { background: #334155; color: #e2e8f0; }
+      .btn-orange { background: #7c2d12; color: #ffedd5; }
+      .btn-sky    { background: #075985; color: #e0f2fe; }
+      .btn-teal   { background: #134e4a; color: #ccfbf1; }
     }
 
-    .icon-action {
-      min-width: 48px;
-      min-height: 46px;
-      padding: 10px 13px;
-      font-size: 1.25rem;
-      line-height: 1;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 14px;
-    }
-
-    .icon-action.apply {
-      min-width: 56px;
-      background: #dbeafe;
-      color: #1e3a8a;
-    }
-
-    .icon-action.save {
-      background: #dcfce7;
-      color: #14532d;
-    }
-
-    .icon-action.clear {
-      background: #e2e8f0;
-      color: #0f172a;
-    }
-
-    .action-label {
-      font-size: .9rem;
-      color: var(--muted);
-      margin-left: 2px;
-    }
-
-
-
-
-    .list-buttons {
-      grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
-    }
-
-    .list-buttons .option-btn {
-      min-height: 40px;
-      padding: 9px 10px;
-    }
-
-    .style-decoration-row {
-      grid-template-columns: minmax(240px, .95fr) minmax(300px, 1.35fr);
-      align-items: end;
-    }
-
-    .style-decoration-row select {
-      width: 100%;
-      min-width: 0;
-    }
+    /* ---------- Barra de ações principal ---------- */
 
     .main-actions {
-      justify-content: center;
-      margin-top: 10px;
-      margin-bottom: 14px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(86px, 1fr));
+      gap: 8px;
+      width: 100%;
+      align-items: stretch;
+      margin: 10px 0 14px;
     }
 
     .action-item {
@@ -815,330 +351,46 @@
       align-items: center;
       justify-content: center;
       gap: 5px;
-      min-width: 76px;
+      min-width: 0;
+      width: 100%;
       color: var(--muted);
-      font-size: .82rem;
+      font-size: .78rem;
       font-weight: 700;
+      text-align: center;
     }
 
-    .action-item .icon-action {
-      margin: 0;
-    }
-
-    @media (max-width: 720px) {
-      .style-decoration-row {
-        grid-template-columns: 1fr;
-      }
-
-      .main-actions {
-        justify-content: space-evenly;
-      }
-    }
-
-
-    .main-actions {
-      flex-wrap: nowrap;
-      justify-content: center;
-      gap: 12px;
-      overflow-x: auto;
-      padding-bottom: 4px;
-      scrollbar-width: thin;
-    }
-
-    .main-actions .action-item {
-      flex: 0 0 auto;
-    }
-
-    .icon-action.quick {
-      background: #ede9fe;
-      color: #4c1d95;
-      min-width: 48px;
-    }
-
-    .icon-action.quick.remove {
-      background: #fee2e2;
-      color: #7f1d1d;
-    }
-
-    @media (max-width: 720px) {
-      .main-actions {
-        justify-content: flex-start;
-      }
-    }
-
-
-    .main-actions {
-      gap: 3px !important;
-      column-gap: 3px !important;
-      row-gap: 2px !important;
-      margin-top: 8px;
-      margin-bottom: 10px;
-    }
-
-    .main-actions .action-item {
-      min-width: 50px;
-      gap: 3px;
-      font-size: .72rem;
-    }
-
-    .main-actions .icon-action {
-      min-width: 38px;
-      min-height: 36px;
-      padding: 7px 8px;
-      border-radius: 11px;
-      font-size: 1rem;
-    }
-
-    .main-actions .icon-action.apply {
-      min-width: 38px;
-    }
-
-    .main-actions .icon-action.quick {
-      min-width: 38px;
-    }
-
-
-    .style-decoration-row {
+    .icon-action {
       width: 100%;
-      overflow: hidden;
-    }
-
-    .style-decoration-row > div {
-      min-width: 0;
-      width: 100%;
-      max-width: 100%;
-    }
-
-    .style-decoration-row select,
-    #styleSelect,
-    #decorationSelect {
-      width: 100%;
-      max-width: 100%;
-      min-width: 0;
-      box-sizing: border-box;
-    }
-
-    @media (max-width: 980px) {
-      .style-decoration-row {
-        grid-template-columns: 1fr !important;
-      }
-    }
-
-
-    .style-decoration-row {
-      grid-template-columns: minmax(0, .95fr) minmax(0, 1.35fr) !important;
-      width: 100%;
-      max-width: 100%;
-      overflow: visible !important;
-      gap: 8px;
-    }
-
-    .style-decoration-row > div {
-      min-width: 0 !important;
-      max-width: 100% !important;
-    }
-
-    .style-decoration-row select,
-    #styleSelect,
-    #decorationSelect {
-      display: block;
-      width: 100% !important;
-      max-width: 100% !important;
-      min-width: 0 !important;
-      box-sizing: border-box !important;
-      padding-right: 34px;
-    }
-
-    @media (max-width: 520px) {
-      .style-decoration-row {
-        grid-template-columns: 1fr !important;
-      }
-    }
-
-
-    .main-actions {
-      display: grid !important;
-      grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
-      gap: 8px !important;
-      width: 100%;
-      overflow: visible !important;
-      align-items: stretch;
-      margin-top: 10px;
-      margin-bottom: 14px;
-    }
-
-    .main-actions .action-item {
-      min-width: 0 !important;
-      width: 100%;
-      gap: 5px;
-      font-size: .78rem;
-    }
-
-    .main-actions .icon-action,
-    .main-actions .icon-action.apply,
-    .main-actions .icon-action.quick {
-      width: 100%;
-      min-width: 0 !important;
-      min-height: 42px;
-      padding: 9px 10px;
-      font-size: 1.08rem;
-      border-radius: 13px;
-    }
-
-    @media (max-width: 520px) {
-      .main-actions {
-        grid-template-columns: repeat(auto-fit, minmax(58px, 1fr));
-        gap: 5px !important;
-      }
-
-      .main-actions .action-item {
-        font-size: .7rem;
-      }
-
-      .main-actions .icon-action,
-      .main-actions .icon-action.apply,
-      .main-actions .icon-action.quick {
-        min-height: 38px;
-        padding: 7px 6px;
-      }
-    }
-
-
-    .style-full-row {
-      width: 100%;
-      max-width: 100%;
-    }
-
-    .style-full-row select {
-      width: 100%;
-      max-width: 100%;
-      min-width: 0;
-      box-sizing: border-box;
-    }
-
-    .case-buttons {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 8px;
-      width: 100%;
-    }
-
-    .case-buttons .option-btn {
-      width: 100%;
-      min-height: 42px;
-    }
-
-    .option-btn:hover,
-    .option-btn:focus-visible,
-    .icon-action:hover,
-    .icon-action:focus-visible {
-      filter: none !important;
-      background-color: #f8fafc !important;
-      box-shadow: 0 0 0 3px rgba(148, 163, 184, .22), 0 8px 18px rgba(15, 23, 42, .08) !important;
-      transform: translateY(-1px);
-    }
-
-    .main-actions {
-      display: grid !important;
-      grid-template-columns: repeat(auto-fit, minmax(86px, 1fr));
-      gap: 8px !important;
-      width: 100%;
-      overflow: visible !important;
-      align-items: stretch;
-      margin-top: 10px;
-      margin-bottom: 14px;
-    }
-
-    .main-actions .action-item {
-      min-width: 0 !important;
-      width: 100%;
-      gap: 5px;
-      font-size: .78rem;
-    }
-
-    .main-actions .icon-action,
-    .main-actions .icon-action.apply,
-    .main-actions .icon-action.quick {
-      width: 100%;
-      min-width: 0 !important;
       min-height: 44px;
       padding: 9px 10px;
       font-size: 1.1rem;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       border-radius: 13px;
     }
 
-    @media (max-width: 560px) {
-      .main-actions {
-        grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
-        gap: 6px !important;
-      }
+    .icon-action.clear  { background: #e2e8f0; color: #0f172a; }
+    .icon-action.quick  { background: #ede9fe; color: #4c1d95; }
+    .icon-action.quick.remove { background: #fee2e2; color: #7f1d1d; }
+    .icon-action.indent { background: #fef3c7; color: #92400e; }
+    .icon-action.copy   { background: #dcfce7; color: #14532d; }
+    .icon-action.select { background: #e0f2fe; color: #075985; }
 
-      .case-buttons {
-        grid-template-columns: 1fr;
-      }
+    @media (prefers-color-scheme: dark) {
+      .icon-action.clear  { background: #334155; color: #e2e8f0; }
+      .icon-action.quick  { background: #4c1d95; color: #ede9fe; }
+      .icon-action.quick.remove { background: #7f1d1d; color: #fee2e2; }
+      .icon-action.indent { background: #92400e; color: #fef3c7; }
+      .icon-action.copy   { background: #14532d; color: #dcfce7; }
+      .icon-action.select { background: #075985; color: #e0f2fe; }
     }
 
-
-    @media (min-width: 861px) {
-      .grid {
-        align-items: stretch !important;
-      }
-
-      .grid > .card {
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-      }
-
-      #result {
-        flex: 1 1 auto;
-        min-height: 0;
-      }
-    }
-
-
-    .template-card-name {
-      display: block;
-      font-size: .72rem;
-      line-height: 1.15;
-      color: var(--muted);
-      font-weight: 700;
-      margin-bottom: 4px;
-      opacity: .9;
-    }
-
-    .template-card-content {
-      display: block;
-      font-size: .94rem;
-      line-height: 1.25;
-      overflow-wrap: anywhere;
-    }
-
-
-    .list-buttons .option-btn[data-list$="Diamond"],
-    .list-buttons .option-btn[data-list="smallBlueDiamond"],
-    .list-buttons .option-btn[data-list="smallOrangeDiamond"],
-    .list-buttons .option-btn[data-list="diamondDot"],
-    .list-buttons .option-btn[data-list="gemDiamond"] {
-      font-size: 1.1rem;
-      justify-content: center;
-    }
-
-
-    .single-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 22px;
-    }
-
-    .icon-action.copy {
-      background: #dcfce7;
-      color: #14532d;
-    }
-
-    .icon-action.select {
-      background: #e0f2fe;
-      color: #075985;
+    .icon-action:hover:not(:disabled),
+    .icon-action:focus-visible {
+      transform: translateY(-1px);
+      box-shadow: 0 0 0 3px rgba(148, 163, 184, .28), 0 8px 18px var(--shadow);
     }
 
     .main-copy-status {
@@ -1148,102 +400,124 @@
       font-size: .85rem;
     }
 
+    /* ---------- Modelos ---------- */
 
-    .editor-layout {
+    .templates {
       display: grid;
-      gap: 18px;
-      align-items: stretch;
+      grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
+      gap: 8px;
+      margin-top: 8px;
     }
 
-    .editor-text-pane,
-    .editor-controls-pane {
+    .mini {
+      font-size: .92rem;
+      padding: 9px;
+      text-align: left;
+      width: 100%;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .template-card-name {
+      display: block;
+      font-size: .72rem;
+      line-height: 1.15;
+      color: var(--muted);
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .template-card-content {
+      display: block;
+      font-size: .94rem;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+
+    .category-chip {
+      display: inline-block;
+      font-size: .76rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .template-editor {
+      margin-top: 14px;
+      border-top: 1px solid var(--line);
+      padding-top: 14px;
+    }
+
+    /* ---------- Caracteres ---------- */
+
+    .symbols {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
+      gap: 6px;
+      margin-top: 8px;
+      width: 100%;
+    }
+
+    .symbol-item {
+      position: relative;
+      display: block;
       min-width: 0;
     }
 
-    @media (min-width: 980px) {
-      .editor-layout {
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      }
-
-      .editor-text-pane {
-        display: flex;
-        align-self: stretch;
-      }
-
-      #inputText {
-        height: 100%;
-        min-height: clamp(420px, 58vh, 620px);
-      }
-
-      .editor-controls-pane {
-        align-self: stretch;
-      }
-    }
-
-    @media (max-width: 979px) {
-      .editor-layout {
-        grid-template-columns: 1fr;
-      }
-    }
-
-
-    .icon-action.indent {
-      background: #fef3c7;
-      color: #92400e;
-    }
-
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(15, 23, 42, .46);
-      display: none;
+    .symbol-btn {
+      width: 100%;
+      min-height: 44px;
+      padding: 7px 4px;
+      background: var(--neutral);
+      color: var(--neutral-text);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      font-size: 1rem;
+      line-height: 1;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 18px;
-      z-index: 9999;
+      overflow: hidden;
+      user-select: none;
     }
 
-    .modal-overlay.open {
-      display: flex;
+    .symbol-btn:hover { background: var(--neutral-dark); }
+
+    .symbol-btn.favorite {
+      border-color: var(--accent);
+      background: var(--soft);
     }
 
-    .modal-card {
-      width: min(520px, 100%);
-      background: #ffffff;
-      border-radius: 22px;
-      padding: 22px;
-      border: 1px solid #e5e7eb;
-      box-shadow: 0 24px 80px rgba(15, 23, 42, .28);
-    }
-
-    .modal-card h2 {
-      margin-top: 0;
-      font-size: 1.25rem;
-    }
-
-    .modal-card p {
+    /* Alvo próprio para (des)favoritar: duplo-toque não é confiável em tela sensível. */
+    .symbol-star {
+      position: absolute;
+      top: -3px;
+      right: -3px;
+      min-height: 0;
+      width: 18px;
+      height: 18px;
+      padding: 0;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
       color: var(--muted);
-      margin: 8px 0 0;
+      opacity: .5;
+      font-size: .7rem;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .modal-actions {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      margin-top: 18px;
+    .symbol-star:hover,
+    .symbol-star:focus-visible {
+      opacity: 1;
+      background: var(--card);
+      color: var(--text);
     }
 
-    .modal-actions button {
-      min-height: 46px;
-      border-radius: 14px;
-    }
+    .symbol-star.on { color: #d97706; opacity: .85; }
 
-    @media (max-width: 620px) {
-      .modal-actions {
-        grid-template-columns: 1fr;
-      }
-    }
-
+    /* ---------- Modais ---------- */
 
     .manager-launch-row {
       display: flex;
@@ -1257,11 +531,36 @@
       border-radius: 16px;
     }
 
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, .46);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 9999;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal-card {
+      width: min(520px, 100%);
+      background: var(--card);
+      border-radius: 22px;
+      padding: 22px;
+      border: 1px solid var(--line);
+      box-shadow: 0 24px 80px rgba(15, 23, 42, .28);
+    }
+
     .modal-card.manager-card {
       width: min(960px, 96vw);
       max-height: 88vh;
       overflow: auto;
     }
+
+    .modal-card h2 { margin-top: 0; font-size: 1.25rem; }
+    .modal-card p { color: var(--muted); margin: 8px 0 0; }
 
     .modal-title-row {
       display: flex;
@@ -1271,16 +570,25 @@
       margin-bottom: 10px;
     }
 
-    .modal-title-row h2 {
-      margin: 0;
-    }
+    .modal-title-row h2 { margin: 0; }
 
     .modal-close-btn {
       width: auto;
       min-width: 44px;
-      min-height: 40px;
       padding: 8px 12px;
       border-radius: 12px;
+    }
+
+    .modal-actions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .modal-actions button {
+      min-height: 46px;
+      border-radius: 14px;
     }
 
     .manager-section {
@@ -1289,26 +597,177 @@
       padding-top: 16px;
     }
 
-    .category-chip {
+    /* ---------- Estados ---------- */
+
+    .ok {
+      color: var(--success);
+      font-weight: 700;
+      margin-left: 8px;
+    }
+
+    .warn {
+      color: var(--warning);
+      font-weight: 700;
+      margin-left: 8px;
+    }
+
+    .pill {
       display: inline-block;
-      font-size: .76rem;
-      color: var(--muted);
-      margin-top: 4px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--soft);
+      color: var(--accent-dark);
+      font-size: .82rem;
+      font-weight: 700;
+      margin-left: 5px;
     }
 
-    .template-toolbar {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      gap: 10px;
-      margin-bottom: 12px;
+    /* Aviso de versão nova. Nunca recarrega sozinho: isso apagaria a nota
+       que o usuário está escrevendo. */
+    .update-bar {
+      position: fixed;
+      left: 50%;
+      bottom: 12px;
+      transform: translateX(-50%);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      max-width: min(520px, calc(100vw - 24px));
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--card);
+      color: var(--text);
+      box-shadow: 0 12px 32px var(--shadow);
+      font-size: .92rem;
+      font-weight: 650;
     }
 
+    .update-bar span {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .update-bar button {
+      min-height: 38px;
+      padding: 8px 14px;
+      border-radius: 10px;
+      flex: 0 0 auto;
+    }
+
+    @media (max-width: 560px) {
+      .update-bar {
+        left: 8px;
+        right: 8px;
+        transform: none;
+        max-width: none;
+        gap: 8px;
+        font-size: .86rem;
+      }
+
+      .update-bar button { padding: 8px 12px; }
+    }
+
+    /* ---------- Telas pequenas ---------- */
+
+    @media (max-width: 560px) {
+      body { line-height: 1.38; }
+
+      header { padding: 18px 10px; }
+
+      .brand-title { flex-direction: column; gap: 8px; }
+      .brand-icon { width: 58px; }
+
+      .card { padding: 12px; border-radius: 12px; }
+
+      .option-buttons,
+      .case-buttons,
+      .templates { grid-template-columns: 1fr; }
+
+      /* Marcadores de lista são curtos: cabem lado a lado mesmo num celular
+         estreito, e empilhá-los deixaria o cartão longo demais para rolar. */
+      .list-buttons { grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); }
+
+      .symbols { grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); }
+
+      /* :not(.main-actions) porque a barra de ações principal já define as
+         próprias colunas — sem isso, esta regra a achataria numa coluna só. */
+      .button-row:not(.main-actions) {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .button-row:not(.main-actions) button { width: 100%; }
+
+      .main-actions { grid-template-columns: repeat(auto-fit, minmax(68px, 1fr)); gap: 6px; }
+      .action-item { font-size: .7rem; }
+
+      .ok,
+      .warn {
+        display: block;
+        width: 100%;
+        margin: 6px 0 0;
+        text-align: center;
+      }
+    }
+
+    /* ---------- Telas médias e grandes ---------- */
+
+    @media (min-width: 561px) {
+      .controls,
+      .template-row,
+      .symbol-toolbar { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+
+      .controls-3 { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); align-items: end; }
+
+      .template-row { grid-template-columns: 1fr auto; align-items: end; }
+
+      .modal-actions { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    @media (min-width: 980px) {
+      .editor-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+
+      .editor-text-pane {
+        display: flex;
+        align-self: stretch;
+      }
+
+      #inputText {
+        height: 100%;
+        min-height: clamp(420px, 58vh, 620px);
+      }
+
+      .editor-controls-pane { align-self: stretch; }
+    }
+
+    @media (min-width: 1280px) {
+      .controls-3 { grid-template-columns: repeat(4, minmax(180px, 1fr)); }
+    }
+
+    /* Em telas sensíveis ao toque, alvos menores que 44px são difíceis de acertar. */
+    @media (hover: none) and (pointer: coarse) {
+      button,
+      select,
+      input,
+      textarea { min-height: 44px; }
+
+      /* No toque o alvo precisa ser maior, mesmo com o ícone pequeno. */
+      .symbol-star { min-height: 0; width: 24px; height: 24px; font-size: .8rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; }
+      .option-btn:hover,
+      .icon-action:hover { transform: none; }
+    }
   </style>
 </head>
 <body>
   <header>
     <div class="brand-title">
-      <img src="icon-192.png" alt="" class="brand-icon">
+      <img src="icon-192.png" alt="" class="brand-icon" width="192" height="192" decoding="async">
       <h1>Conversor para Notas do JW Library</h1>
     </div>
     <p>Digite um texto, escolha as opções, clique em Aplicar e copie o resultado para colar nas notas do JW Library.</p>
@@ -1316,7 +775,7 @@
 
   <main>
     <section class="card" style="margin-bottom:16px">
-      <h2>Formatar notas da JW Library <span class="pill">v9.3</span></h2>
+      <h2>Formatar notas da JW Library <span class="pill" id="appVersionPill"></span></h2>
       <p class="hint">Este aplicativo não aplica formatação real. Ele troca as letras por caracteres Unicode parecidos com negrito, itálico, círculos, caixas e símbolos, para dar aparência de destaque em campos que aceitam apenas texto.</p>
     </section>
 
@@ -1364,24 +823,11 @@
             <span>Selecionar</span>
           </div>
         </div>
-        <span id="copyStatus" class="ok main-copy-status"></span>
-
-        <select id="targetSelect" class="hidden-select" aria-hidden="true" tabindex="-1">
-          <option value="auto" selected>Automático</option>
-          <option value="selection">Trecho selecionado</option>
-          <option value="cursorHighlight">Cursor</option>
-          <option value="all">Texto inteiro</option>
-        </select>
+        <span id="copyStatus" class="ok main-copy-status" role="status" aria-live="polite"></span>
 
         <div>
-          <label>Maiúsculas/minúsculas</label>
-          <select id="caseSelect" class="hidden-select" aria-hidden="true" tabindex="-1">
-            <option value="normal">Normal</option>
-            <option value="upper">TUDO MAIÚSCULO</option>
-            <option value="title">Só as Iniciais Maiúsculas</option>
-            <option value="lower">tudo minúsculo</option>
-          </select>
-          <div class="option-buttons case-buttons" role="group" aria-label="Maiúsculas/minúsculas">
+          <p class="field-label" id="caseLabel">Maiúsculas/minúsculas</p>
+          <div class="option-buttons case-buttons" role="group" aria-labelledby="caseLabel">
             <button type="button" class="option-btn btn-orange" data-case="upper">🔠 MAIÚSCULAS</button>
             <button type="button" class="option-btn btn-sky" data-case="title">✨ Iniciais</button>
             <button type="button" class="option-btn btn-teal" data-case="lower">🔡 minúsculas</button>
@@ -1389,14 +835,14 @@
         </div>
 
         <div>
-          <label>Inserir lista no texto selecionado</label>
-          <div class="option-buttons list-buttons" role="group" aria-label="Inserir lista">
-            <button type="button" class="option-btn btn-blue" data-list="blueDiamond">🔷</button>
-            <button type="button" class="option-btn btn-orange" data-list="orangeDiamond">🔶</button>
-            <button type="button" class="option-btn btn-sky" data-list="smallBlueDiamond">🔹</button>
-            <button type="button" class="option-btn btn-orange" data-list="smallOrangeDiamond">🔸</button>
-            <button type="button" class="option-btn btn-teal" data-list="diamondDot">💠</button>
-            <button type="button" class="option-btn btn-purple" data-list="gemDiamond">💎</button>
+          <p class="field-label" id="listLabel">Inserir lista no texto selecionado</p>
+          <div class="option-buttons list-buttons" role="group" aria-labelledby="listLabel">
+            <button type="button" class="option-btn btn-blue" data-list="blueDiamond" aria-label="Lista com Losango azul" title="Lista com Losango azul">🔷</button>
+            <button type="button" class="option-btn btn-orange" data-list="orangeDiamond" aria-label="Lista com Losango laranja" title="Lista com Losango laranja">🔶</button>
+            <button type="button" class="option-btn btn-sky" data-list="smallBlueDiamond" aria-label="Lista com Losango azul pequeno" title="Lista com Losango azul pequeno">🔹</button>
+            <button type="button" class="option-btn btn-orange" data-list="smallOrangeDiamond" aria-label="Lista com Losango laranja pequeno" title="Lista com Losango laranja pequeno">🔸</button>
+            <button type="button" class="option-btn btn-teal" data-list="diamondDot" aria-label="Lista com Losango com ponto" title="Lista com Losango com ponto">💠</button>
+            <button type="button" class="option-btn btn-purple" data-list="gemDiamond" aria-label="Lista com Diamante" title="Lista com Diamante">💎</button>
             <button type="button" class="option-btn btn-slate" data-list="bullet">• Ponto</button>
             <button type="button" class="option-btn btn-purple" data-list="arrow">➤ Seta</button>
             <button type="button" class="option-btn btn-green" data-list="check">✅ Check</button>
@@ -1420,14 +866,10 @@
           <p id="styleOptionInfo" class="hint"></p>
         </div>
 
-        <select id="decorationSelect" class="hidden-select" aria-hidden="true" tabindex="-1">
-          <option value="none">Sem destaque</option>
-        </select>
-
-        <label>Exemplo do estilo escolhido</label>
+        <p class="field-label">Exemplo do estilo escolhido</p>
         <div id="preview" class="preview"></div>
 
-        <p id="selectionInfo" class="hint">Selecione um trecho e clique na formatação desejada. Use ⇥ Recuo ou a tecla Tab para aumentar o recuo do parágrafo. Repita para mais níveis; Shift+Tab reduz o recuo.</p>
+        <p id="selectionInfo" class="hint" role="status" aria-live="polite">Selecione um trecho e clique na formatação desejada. Use ⇥ Recuo ou a tecla Tab para aumentar o recuo do parágrafo. Repita para mais níveis; Shift+Tab reduz o recuo.</p>
 
           </div>
         </div>
@@ -1488,7 +930,7 @@
           <button id="saveTemplateBtn" type="button">Salvar modelo</button>
           <button id="deleteTemplateBtn" class="danger" type="button">Excluir modelo</button>
           <button id="resetTemplatesBtn" class="secondary" type="button">Restaurar modelos padrão</button>
-          <span id="templateStatus" class="ok"></span>
+          <span id="templateStatus" class="ok" role="status" aria-live="polite"></span>
         </div>
 
         <p class="hint">Categoria oficial padrão: <strong>Destaques</strong>. Você também pode criar suas próprias categorias e mudar qualquer modelo de categoria.</p>
@@ -1504,7 +946,7 @@
 
       <div class="button-row">
         <button id="resetFavoriteSymbolsBtn" class="secondary" type="button">Restaurar favoritos padrão</button>
-        <span id="symbolsStatus" class="ok"></span>
+        <span id="symbolsStatus" class="ok" role="status" aria-live="polite"></span>
       </div>
 
       <div class="symbol-toolbar" style="margin-top:16px">
@@ -1554,7 +996,7 @@
           <button id="openDefaultsJsonBtn" class="secondary" type="button">Abrir defaults.json</button>
           <button id="mergeOnlineDefaultsBtn" class="secondary" type="button">Somar padrões aos meus</button>
           <button id="replaceOnlineDefaultsBtn" class="danger" type="button">Substituir pelos padrões</button>
-          <span id="onlineDefaultsStatus" class="ok"></span>
+          <span id="onlineDefaultsStatus" class="ok" role="status" aria-live="polite"></span>
         </div>
 
         <p id="onlineDefaultsVersion" class="hint">Arquivo padrão: ainda não carregado.</p>
@@ -1569,7 +1011,7 @@
           <button id="importTemplatesBtn" class="secondary" type="button">Importar JSON completo</button>
           <input id="importTemplatesFile" type="file" accept=".json,.txt,application/json,text/plain" style="display:none">
           <button id="copyBackupBtn" class="secondary" type="button">Copiar JSON em texto</button>
-          <span id="backupStatus" class="ok"></span>
+          <span id="backupStatus" class="ok" role="status" aria-live="polite"></span>
         </div>
 
         <label for="backupText">Arquivo JSON em texto</label>
@@ -1591,14 +1033,27 @@
     </div>
   </div>
 
+  <noscript>
+    <p style="padding:16px;text-align:center">Este conversor precisa de JavaScript ativado para funcionar.</p>
+  </noscript>
+
   <footer>
-    Arquivo local HTML/CSS/JavaScript. Funciona offline depois de baixado. Versão 9.3 com correção da janela de importação do JSON completo.
+    Arquivo HTML/CSS/JavaScript. Instalado ou aberto no navegador, funciona offline
+    depois do primeiro acesso; baixado como arquivo, funciona direto do aparelho.
+    Versão <span id="appVersionFooter"></span>.
   </footer>
 
   <script>
 
+    // O app também circula como arquivo HTML avulso, aberto direto do disco. Em file://
+    // não há manifest nem service worker que funcionem, então os dois só entram em cena
+    // quando a página vem de um servidor.
+    function servidoPelaWeb() {
+      return location.protocol === 'http:' || location.protocol === 'https:';
+    }
+
     function enableManifestWhenOnline() {
-      if (location.protocol !== 'http:' && location.protocol !== 'https:') return;
+      if (!servidoPelaWeb()) return;
 
       const link = document.createElement('link');
       link.rel = 'manifest';
@@ -1606,15 +1061,55 @@
       document.head.appendChild(link);
     }
 
+    function mostrarAvisoDeAtualizacao() {
+      if (document.getElementById('updateBar')) return;
+
+      const barra = document.createElement('div');
+      barra.id = 'updateBar';
+      barra.className = 'update-bar';
+      barra.setAttribute('role', 'status');
+
+      const texto = document.createElement('span');
+      texto.textContent = 'Nova versão disponível.';
+
+      const botao = document.createElement('button');
+      botao.type = 'button';
+      botao.textContent = 'Recarregar';
+      botao.addEventListener('click', () => location.reload());
+
+      barra.appendChild(texto);
+      barra.appendChild(botao);
+      document.body.appendChild(barra);
+    }
+
+    function registerServiceWorker() {
+      if (!servidoPelaWeb() || !('serviceWorker' in navigator)) return;
+
+      // A versão vai na query para o worker montar o nome da cache com ela — e para que
+      // mudar APP_VERSION baste para o navegador enxergar um worker novo.
+      navigator.serviceWorker.register('sw.js?v=' + APP_VERSION).then(registro => {
+        registro.addEventListener('updatefound', () => {
+          const novo = registro.installing;
+          if (!novo) return;
+
+          novo.addEventListener('statechange', () => {
+            // controller preenchido significa que já havia um worker no comando:
+            // este é um segundo acesso vendo uma versão nova, não a instalação inicial.
+            if (novo.state === 'installed' && navigator.serviceWorker.controller) {
+              mostrarAvisoDeAtualizacao();
+            }
+          });
+        });
+      }).catch(e => {
+        console.warn('Não foi possível registrar o service worker.', e);
+      });
+    }
+
     const input = document.getElementById('inputText');
     const styleSelect = document.getElementById('styleSelect');
     const styleOptionInfo = document.getElementById('styleOptionInfo');
-    const decorationSelect = document.getElementById('decorationSelect');
-    const caseSelect = document.getElementById('caseSelect');
-    const targetSelect = document.getElementById('targetSelect');
     const selectionInfo = document.getElementById('selectionInfo');
     const preview = document.getElementById('preview');
-    const result = document.getElementById('result');
     const copyStatus = document.getElementById('copyStatus');
     const templateStatus = document.getElementById('templateStatus');
 
@@ -1651,6 +1146,34 @@
     const ONLINE_DEFAULTS_VERSION_STORAGE_KEY = 'jwLibraryNoteAplicarOnlineDefaultsVersionV1';
     const TEMPLATE_CATEGORIES_STORAGE_KEY = 'jwLibraryNoteAplicarTemplateCategoriesV1';
     const DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
+    const APP_VERSION = '9.5';
+
+    // Grava no localStorage sem derrubar a ação em curso quando o navegador
+    // recusa a escrita (aba anônima, cota cheia, armazenamento bloqueado).
+    function safeSetItem(key, value) {
+      try {
+        localStorage.setItem(key, value);
+        return true;
+      } catch (e) {
+        console.warn('Não foi possível salvar em ' + key, e);
+        storageBlocked = true;
+        return false;
+      }
+    }
+
+    let storageBlocked = false;
+
+    function warnIfStorageBlocked(statusEl) {
+      if (!storageBlocked || !statusEl) return;
+      statusEl.className = 'warn';
+      statusEl.textContent = 'Atenção: este navegador não deixou salvar os dados. As mudanças valem só até fechar a página.';
+      storageBlocked = false;
+    }
+
+    function cloneData(value) {
+      if (typeof structuredClone === 'function') return structuredClone(value);
+      return JSON.parse(JSON.stringify(value));
+    }
 
     const defaultFavoriteSymbols = [
       '❓','✅','⚠️','▶️','⏩','➤','➜','➽','➡','⬅','👉','☛','☚','💡','🔎','📌',
@@ -1787,21 +1310,67 @@
       return lastFocusedTextField || input;
     }
 
+    // Escreve num campo de texto preservando o histórico de "desfazer" do navegador.
+    // Atribuir direto a .value apaga a pilha do Ctrl+Z; execCommand('insertText') a mantém.
+    function writeToField(field, start, end, text, selectStart, selectEnd) {
+      const scrollTop = field.scrollTop;
+      const scrollLeft = field.scrollLeft;
+      const expected = field.value.slice(0, start) + text + field.value.slice(end);
+      let wrote = false;
+
+      field.focus();
+      field.setSelectionRange(start, end);
+
+      if (text || start !== end) {
+        try {
+          wrote = text
+            ? document.execCommand('insertText', false, text)
+            : document.execCommand('delete');
+        } catch (e) {
+          wrote = false;
+        }
+      }
+
+      if (field.value !== expected) field.value = expected;
+
+      const finalEnd = typeof selectEnd === 'number' ? selectEnd : start + text.length;
+      const finalStart = typeof selectStart === 'number' ? selectStart : finalEnd;
+
+      field.setSelectionRange(finalStart, finalEnd);
+      field.scrollTop = scrollTop;
+      field.scrollLeft = scrollLeft;
+
+      return { start: finalStart, end: finalEnd };
+    }
+
+    // Troca um trecho do texto original e mantém a interface em dia.
+    // options.select = true mantém o resultado selecionado (para encadear formatações).
+    function setInputRange(start, end, text, options) {
+      const opts = options || {};
+      const newEnd = start + text.length;
+      const range = writeToField(input, start, end, text, opts.select ? start : newEnd, newEnd);
+
+      lastInputSelection = { start: range.start, end: range.end };
+      lastFocusedTextField = input;
+      updateUi();
+
+      if (opts.message) selectionInfo.textContent = opts.message;
+      return range;
+    }
+
     function insertTextAtCursor(target, text) {
       if (!target) target = input;
 
       const start = typeof target.selectionStart === 'number' ? target.selectionStart : target.value.length;
       const end = typeof target.selectionEnd === 'number' ? target.selectionEnd : target.value.length;
-      const before = target.value.slice(0, start);
-      const after = target.value.slice(end);
-      const spacer = before && !before.endsWith('\n') && target === input ? '' : '';
 
-      target.value = before + spacer + text + after;
-      const pos = before.length + spacer.length + text.length;
-      target.focus();
-      target.setSelectionRange(pos, pos);
+      if (target === input) {
+        setInputRange(start, end, text);
+        return;
+      }
 
-      if (target === input) updateResult();
+      writeToField(target, start, end, text);
+
       if (target === templateContent) templateStatus.textContent = '';
       if (target === backupText) backupStatus.textContent = '';
     }
@@ -1819,7 +1388,14 @@
     }
 
     function toTitleCase(text) {
-      return text.toLocaleLowerCase('pt-BR').replace(/(^|[\s\-–—/([{“"'])\p{L}/gu, match => match.toLocaleUpperCase('pt-BR'));
+      return String(text).split(/(\s+)/).map(word => {
+        // Siglas já escritas em maiúsculas ficam como estão: "JW" não vira "Jw".
+        const letters = word.replace(/\P{L}/gu, '');
+        if (letters.length > 1 && letters === letters.toLocaleUpperCase('pt-BR')) return word;
+        return word
+          .toLocaleLowerCase('pt-BR')
+          .replace(/(^|[\-–—/([{“"'])\p{L}/gu, match => match.toLocaleUpperCase('pt-BR'));
+      }).join('');
     }
 
     function applyCase(text, mode = 'normal') {
@@ -1827,27 +1403,6 @@
       if (mode === 'lower') return text.toLocaleLowerCase('pt-BR');
       if (mode === 'title') return toTitleCase(text);
       return text;
-    }
-
-    function replaceInputRange(start, end, replacement, selectReplacement = true) {
-      const before = input.value.slice(0, start);
-      const after = input.value.slice(end);
-      input.value = before + replacement + after;
-
-      const newStart = before.length;
-      const newEnd = before.length + replacement.length;
-
-      input.focus();
-      input.setSelectionRange(selectReplacement ? newStart : newEnd, newEnd);
-      lastInputSelection = {
-        start: selectReplacement ? newStart : newEnd,
-        end: newEnd
-      };
-      lastFocusedTextField = input;
-      lastSelectionPreview = null;
-      refreshUiWithoutApplying();
-
-      return { newStart, newEnd };
     }
 
     function applyCaseToSelection(mode = 'normal', showMessage = true) {
@@ -1859,7 +1414,6 @@
       }
 
       const converted = applyCasePreservingUnicodeStyle(selected, mode);
-      caseSelect.value = 'normal';
 
       return replaceSelectionWith(
         converted,
@@ -1899,13 +1453,46 @@
       return '• ';
     }
 
+    // Marcadores que o próprio app insere. Servem para trocar de lista sem empilhar
+    // prefixos: aplicar "1." duas vezes deve continuar dando "1. texto", não "1. 1. texto".
+    const listSymbolPrefixes = [
+      '🔷', '🔶', '🔹', '🔸', '💠', '💎', '•', '➤', '✅', '✔', '🟦', '🔵',
+      ...listNumberSets.squareAlternate,
+      ...listNumberSets.circleAlternate,
+      ...listNumberSets.circled,
+      ...listNumberSets.blackCircle,
+      ...listNumberSets.keycap
+    ];
+
+    const listPrefixPattern = new RegExp(
+      '^(?:' +
+        listSymbolPrefixes
+          .slice()
+          .sort((a, b) => b.length - a.length)
+          .map(escapeRegExp)
+          .join('|') +
+        '|\\d+[.)]' +
+      ')[ \\t]*'
+    );
+
+    function stripListPrefix(content) {
+      let cleaned = content;
+      let previous;
+
+      do {
+        previous = cleaned;
+        cleaned = cleaned.replace(listPrefixPattern, '');
+      } while (cleaned !== previous);
+
+      return cleaned;
+    }
+
     function applyListToSelection(model) {
       const { start, end, selected } = getSelectionRange();
 
       if (start === end || !selected.trim()) {
         const symbol = getListPrefix(model, 0).trim();
-        replaceInputRange(start, end, symbol, false);
-        selectionInfo.textContent = 'Símbolo inserido no ponto do cursor.';
+        setInputRange(start, end, symbol, { message: 'Símbolo inserido no ponto do cursor.' });
         return true;
       }
 
@@ -1914,13 +1501,15 @@
       const formatted = lines.map(line => {
         if (!line.trim()) return line;
         const leading = line.match(/^\s*/)[0];
-        const content = line.slice(leading.length);
+        const content = stripListPrefix(line.slice(leading.length));
         const prefix = getListPrefix(model, itemIndex++);
         return leading + prefix + content;
       }).join('\n');
 
-      replaceInputRange(start, end, formatted, true);
-      selectionInfo.textContent = itemIndex + ' item(ns) formatado(s) como lista.';
+      setInputRange(start, end, formatted, {
+        select: true,
+        message: itemIndex + ' item(ns) formatado(s) como lista.'
+      });
       return true;
     }
 
@@ -2120,7 +1709,6 @@
         if (!btn) return;
         const enabled = !!variants[kind];
         btn.disabled = !enabled;
-        btn.classList.toggle('disabled', !enabled);
         btn.title = enabled
           ? 'Aplicar ' + (kind === 'bold' ? 'negrito' : kind === 'italic' ? 'itálico' : 'negrito itálico') + ' nesta fonte'
           : 'Esta fonte não tem essa opção.';
@@ -2132,16 +1720,17 @@
       }
     }
 
+    // Troca só o alfabeto do texto: desestiliza as letras Unicode e reestiliza na fonte
+    // escolhida. Não mexe em emojis nem em marcadores de modelo — apagá-los é tarefa
+    // exclusiva do botão "Remover" (removeFormattingFromSelection).
     function convertTextWithStyle(text, styleId) {
       const style = styles.find(s => s.id === styleId) || styles[0];
-      const plainText = removeFormattingFromText(text);
+      const plainText = removeUnicodeFormatting(text);
       return [...plainText].map(ch => convertChar(ch, style)).join('');
     }
 
     function replaceSelectionWith(replacement, message = '') {
       const { start, end, selected } = getSelectionRange();
-      const previousScrollTop = input.scrollTop;
-      const previousScrollLeft = input.scrollLeft;
 
       if (start === end || !selected) {
         selectionInfo.textContent = 'Selecione um trecho para aplicar essa formatação.';
@@ -2149,28 +1738,14 @@
         return false;
       }
 
-      input.value = input.value.slice(0, start) + replacement + input.value.slice(end);
-      const newEnd = start + replacement.length;
-
-      input.focus();
-      input.scrollTop = previousScrollTop;
-      input.scrollLeft = previousScrollLeft;
-      input.setSelectionRange(start, newEnd);
-      lastInputSelection = { start, end: newEnd };
-      lastFocusedTextField = input;
-      lastSelectionPreview = null;
-      updateResult();
-      input.scrollTop = previousScrollTop;
-      input.scrollLeft = previousScrollLeft;
-
-      if (message) selectionInfo.textContent = message;
+      setInputRange(start, end, replacement, { select: true, message });
       return true;
     }
 
     function applySelectedStyleToSelection(showMessage = true) {
       const { start, end, selected } = getSelectionRange();
       if (start === end || !selected) {
-        refreshUiWithoutApplying();
+        updateUi();
         return false;
       }
 
@@ -2232,93 +1807,6 @@
       return String(text || '').split('\n').map(removeLineDecoration).join('\n');
     }
 
-    function convertText(text) {
-      const style = styles.find(s => s.id === styleSelect.value) || styles[0];
-      const plainText = removeFormattingFromText(text);
-      return [...plainText].map(ch => convertChar(ch, style)).join('');
-    }
-
-
-    function renderDecorationSelect() {
-      const currentValue = decorationSelect.value || 'none';
-
-      const builtIns = [
-        { value: 'none', label: 'Sem destaque' },
-        { value: 'question', label: '❓ PERGUNTA 👉 texto' },
-        { value: 'video', label: '▶️▶️ VÍDEO ⏩⏩ texto' },
-        { value: 'instructor', label: '⚠️ INSTRUTOR 👉 texto' },
-        { value: 'arrow', label: '➤ texto' },
-        { value: 'check', label: '✅ texto' },
-        { value: 'star', label: '★ texto ★' },
-        { value: 'quote', label: '❝ texto ❞' },
-        { value: 'line', label: '▇▇▇ texto ▇▇▇' },
-        { value: 'topic', label: '🟦 NOVO TÓPICO ➜ texto' }
-      ];
-
-      decorationSelect.innerHTML = '';
-
-      builtIns.forEach(item => {
-        const opt = document.createElement('option');
-        opt.value = item.value;
-        opt.textContent = item.label;
-        decorationSelect.appendChild(opt);
-      });
-
-      if (templates.length) {
-        getTemplateCategoryNames().forEach(categoryName => {
-          const list = getTemplatesSortedByName().filter(t => cleanTemplateCategoryName(t.category) === categoryName);
-          if (!list.length) return;
-
-          const group = document.createElement('optgroup');
-          group.label = 'Modelos — ' + categoryName;
-
-          list.forEach(tpl => {
-            const opt = document.createElement('option');
-            opt.value = 'template:' + tpl.id;
-            opt.textContent = (tpl.name || 'Modelo') + ' — ' + tpl.content;
-            group.appendChild(opt);
-          });
-          decorationSelect.appendChild(group);
-        });
-      }
-
-      if ([...decorationSelect.options].some(opt => opt.value === currentValue)) {
-        decorationSelect.value = currentValue;
-      } else {
-        decorationSelect.value = 'none';
-      }
-    }
-
-    function applyDecoration(text) {
-      const d = decorationSelect.value;
-      if (!text.trim()) return text;
-
-      const templateId = d.startsWith('template:') ? d.slice('template:'.length) : '';
-      const selectedTemplate = templateId ? templates.find(t => t.id === templateId) : null;
-
-      const lines = text.split('\n');
-      return lines.map(line => {
-        if (!line.trim()) return line;
-        if (d === 'none') return line;
-        if (selectedTemplate) {
-          if (selectedTemplate.content.includes('{texto}')) {
-            return selectedTemplate.content.split('{texto}').join(line);
-          }
-          return selectedTemplate.content + line;
-        }
-        if (d === 'question') return '❓ ' + line + ' 👉';
-        if (d === 'video') return '▶️▶️ ' + line + ' ⏩⏩';
-        if (d === 'instructor') return '⚠️ ' + line + ' 👉';
-        if (d === 'arrow') return '➤ ' + line;
-        if (d === 'check') return '✅ ' + line;
-        if (d === 'star') return '★ ' + line + ' ★';
-        if (d === 'quote') return '❝ ' + line + ' ❞';
-        if (d === 'line') return '▇▇▇ ' + line + ' ▇▇▇';
-        if (d === 'topic') return '🟦 NOVO TÓPICO ➜ ' + line;
-        return line;
-      }).join('\n');
-    }
-
     function updatePreview() {
       const style = getStyleById(styleSelect.value);
       const sample = sampleByStyle[style.id] || 'Texto de exemplo 123';
@@ -2343,7 +1831,7 @@
         previewLines.push('N+I: ' + [...sample].map(ch => convertChar(ch, boldItalicStyle)).join(''));
       }
 
-      preview.textContent = applyDecoration(previewLines.join('\n'));
+      preview.textContent = previewLines.join('\n');
       updateQuickButtonsAvailability();
     }
 
@@ -2379,157 +1867,6 @@
       return { start, end, selected: input.value.slice(start, end) };
     }
 
-    let lastSelectionPreview = null;
-
-
-    function getHighlightSnippet() {
-      const d = decorationSelect.value;
-
-      if (d === 'none') return '';
-
-      if (d.startsWith('template:')) {
-        const templateId = d.slice('template:'.length);
-        const selectedTemplate = templates.find(t => t.id === templateId);
-        if (!selectedTemplate) return '';
-
-        return selectedTemplate.content
-          .split('{texto}').join('')
-          .replace(/\s{2,}/g, ' ')
-          .trim();
-      }
-
-      if (d === 'question') return '❓ PERGUNTA 👉';
-      if (d === 'video') return '▶️▶️ VÍDEO ⏩⏩';
-      if (d === 'instructor') return '⚠️ INSTRUTOR 👉';
-      if (d === 'arrow') return '➤';
-      if (d === 'check') return '✅';
-      if (d === 'star') return '★  ★';
-      if (d === 'quote') return '❝  ❞';
-      if (d === 'line') return '▇▇▇▇▇▇▇▇▇▇';
-      if (d === 'topic') return '🟦 NOVO TÓPICO ➜';
-
-      return '';
-    }
-
-    function getCursorHighlightData() {
-      const snippet = getHighlightSnippet();
-      if (!snippet) return null;
-
-      const start = input.selectionStart || 0;
-      const end = input.selectionEnd || start;
-      const before = input.value.slice(0, start);
-      const after = input.value.slice(end);
-
-      const needsBeforeSpace = before && !/\s$/.test(before);
-      const needsAfterSpace = after && !/^\s/.test(after);
-      const insertText = (needsBeforeSpace ? ' ' : '') + snippet + (needsAfterSpace ? ' ' : '');
-
-      return {
-        start,
-        end,
-        snippet,
-        fullText: before + insertText + after,
-        newPos: before.length + insertText.length
-      };
-    }
-
-    function applyCurrentDecorationToInput() {
-      const d = decorationSelect.value;
-      if (d === 'none') return false;
-
-      const active = document.activeElement;
-      const inputIsTarget = active === input || lastFocusedTextField === input;
-      if (!inputIsTarget) return false;
-
-      const start = typeof input.selectionStart === 'number' ? input.selectionStart : input.value.length;
-      const end = typeof input.selectionEnd === 'number' ? input.selectionEnd : start;
-      const before = input.value.slice(0, start);
-      const selected = input.value.slice(start, end);
-      const after = input.value.slice(end);
-      const hasSelection = start !== end && selected.length > 0;
-
-      const templateId = d.startsWith('template:') ? d.slice('template:'.length) : '';
-      const selectedTemplate = templateId ? templates.find(t => t.id === templateId) : null;
-
-      if (selectedTemplate) {
-        applyTemplateToInput(selectedTemplate);
-        decorationSelect.value = 'none';
-        if (result) result.textContent = input.value;
-        refreshUiWithoutApplying();
-        selectionInfo.textContent = hasSelection
-          ? 'Destaque aplicado ao texto selecionado.'
-          : 'Destaque inserido no cursor.';
-        return true;
-      }
-
-      let insertText = '';
-      let newStart = start;
-      let newEnd = start;
-
-      if (hasSelection) {
-        insertText = applyDecoration(selected);
-        input.value = before + insertText + after;
-        newStart = before.length;
-        newEnd = before.length + insertText.length;
-      } else {
-        const snippet = getHighlightSnippet();
-        if (!snippet) return false;
-
-        const needsBeforeSpace = before && !/\s$/.test(before);
-        const needsAfterSpace = after && !/^\s/.test(after);
-        insertText = (needsBeforeSpace ? ' ' : '') + snippet + (needsAfterSpace ? ' ' : '');
-        input.value = before + insertText + after;
-        newStart = before.length + insertText.length;
-        newEnd = newStart;
-      }
-
-      input.focus();
-      input.setSelectionRange(newStart, newEnd);
-      lastInputSelection = { start: newStart, end: newEnd };
-      lastFocusedTextField = input;
-      lastSelectionPreview = null;
-      decorationSelect.value = 'none';
-      if (result) result.textContent = input.value;
-      refreshUiWithoutApplying();
-      selectionInfo.textContent = hasSelection
-        ? 'Destaque aplicado ao texto selecionado.'
-        : 'Destaque inserido no cursor.';
-      return true;
-    }
-
-    function getConvertedSelectionData() {
-      const { start, end, selected } = getSelectionRange();
-      if (start === end || !selected) return null;
-
-      const before = input.value.slice(0, start);
-      const after = input.value.slice(end);
-      const convertedSelection = applyDecoration(convertText(selected));
-      const fullText = before + convertedSelection + after;
-
-      return {
-        start,
-        end,
-        selected,
-        before,
-        after,
-        convertedSelection,
-        fullText,
-        newStart: before.length,
-        newEnd: before.length + convertedSelection.length
-      };
-    }
-
-    function convertSelectionKeepingRest() {
-      const data = getConvertedSelectionData();
-      if (!data) {
-        lastSelectionPreview = null;
-        return input.value;
-      }
-
-      lastSelectionPreview = data;
-      return data.fullText;
-    }
-
     function updateSelectionInfo() {
       const { start, end, selected } = getSelectionRange();
 
@@ -2540,92 +1877,25 @@
       }
     }
 
-    function syncOptionButtons() {
-      document.querySelectorAll('.option-btn[data-select]').forEach(btn => {
-        const select = document.getElementById(btn.dataset.select);
-        btn.classList.toggle('active', !!select && select.value === btn.dataset.value);
-      });
-      updateQuickButtonsAvailability();
-    }
+    let uiRefreshHandle = 0;
 
-    function refreshUiWithoutApplying() {
+    function updateUi() {
       copyStatus.textContent = '';
       updateSelectionInfo();
       updatePreview();
-      syncOptionButtons();
     }
 
-    function updateResult() {
-      lastSelectionPreview = null;
-      if (result) result.textContent = input.value;
-
-      copyStatus.textContent = '';
-      updateSelectionInfo();
-      updatePreview();
-      syncOptionButtons();
-    }
-
-
-
-    function getTextareaContentWidth() {
-      const style = window.getComputedStyle(input);
-      const paddingLeft = parseFloat(style.paddingLeft) || 0;
-      const paddingRight = parseFloat(style.paddingRight) || 0;
-      return Math.max(120, input.clientWidth - paddingLeft - paddingRight - 24);
-    }
-
-    let textMeasureContext = null;
-
-    function getTextMeasureContext() {
-      if (!textMeasureContext) {
-        const canvas = document.createElement('canvas');
-        textMeasureContext = canvas.getContext('2d');
-      }
-
-      const style = window.getComputedStyle(input);
-      textMeasureContext.font = [
-        style.fontStyle,
-        style.fontVariant,
-        style.fontWeight,
-        style.fontSize,
-        style.fontFamily
-      ].join(' ');
-
-      return textMeasureContext;
-    }
-
-    function measureInputText(text) {
-      return getTextMeasureContext().measureText(text).width;
-    }
-
-    function wrapLineWithIndent(line, indent) {
-      if (!line.trim()) return line;
-
-      const maxWidth = getTextareaContentWidth();
-      const existingIndent = (line.match(/^\s*/) || [''])[0];
-      const content = line.slice(existingIndent.length);
-      const newIndent = existingIndent + indent;
-      const words = content.split(/(\s+)/);
-      const wrapped = [];
-      let current = '';
-
-      words.forEach(part => {
-        if (!part) return;
-
-        const tentative = current + part;
-        const visual = newIndent + tentative.trimStart();
-
-        if (current && measureInputText(visual) > maxWidth) {
-          wrapped.push(newIndent + current.trimEnd());
-          current = part.trimStart();
-        } else {
-          current = tentative;
-        }
+    // Digitar dispara input/keyup/mouseup em sequência; agrupa tudo num quadro só
+    // para não remontar o preview a cada tecla em notas longas.
+    function scheduleUiRefresh() {
+      if (uiRefreshHandle) return;
+      uiRefreshHandle = requestAnimationFrame(() => {
+        uiRefreshHandle = 0;
+        updateUi();
       });
-
-      if (current || !wrapped.length) wrapped.push(newIndent + current.trimEnd());
-      return wrapped.join('\n');
     }
+
+
 
     function removeIndentFromLine(line, indent) {
       if (line.startsWith(indent)) return line.slice(indent.length);
@@ -2640,101 +1910,64 @@
       const indent = '    ';
       const start = typeof input.selectionStart === 'number' ? input.selectionStart : 0;
       const end = typeof input.selectionEnd === 'number' ? input.selectionEnd : start;
-      const previousScrollTop = input.scrollTop;
-      const previousScrollLeft = input.scrollLeft;
 
-      if (start === end) {
-        if (direction < 0) {
-          const lineStart = input.value.lastIndexOf('\n', Math.max(0, start - 1)) + 1;
-          let lineEnd = input.value.indexOf('\n', start);
-          if (lineEnd === -1) lineEnd = input.value.length;
-
-          const line = input.value.slice(lineStart, lineEnd);
-          const changedLine = removeIndentFromLine(line, indent);
-
-          if (changedLine !== line) {
-            input.value = input.value.slice(0, lineStart) + changedLine + input.value.slice(lineEnd);
-            const removed = line.length - changedLine.length;
-            const newPos = Math.max(lineStart, start - removed);
-            input.focus();
-            input.setSelectionRange(newPos, newPos);
-            lastInputSelection = { start: newPos, end: newPos };
-            updateResult();
-            selectionInfo.textContent = 'Recuo removido da linha atual.';
-          } else {
-            input.focus();
-            selectionInfo.textContent = 'Esta linha não tem recuo para remover.';
-          }
-          return true;
-        }
-
-        replaceInputRange(start, end, indent, false);
-        selectionInfo.textContent = 'Recuo inserido no ponto do cursor.';
+      // Sem seleção e aumentando: apenas insere o recuo onde o cursor está.
+      if (start === end && direction > 0) {
+        setInputRange(start, end, indent, { message: 'Recuo inserido no ponto do cursor.' });
         return true;
       }
 
+      // Recua o bloco inteiro de linhas tocado pela seleção, como faz qualquer editor.
+      // O recuo é só um prefixo na linha: Shift+Tab desfaz exatamente o que Tab fez.
       const lineStart = input.value.lastIndexOf('\n', Math.max(0, start - 1)) + 1;
       let lineEnd = input.value.indexOf('\n', end);
       if (lineEnd === -1) lineEnd = input.value.length;
 
-      const before = input.value.slice(0, lineStart);
       const block = input.value.slice(lineStart, lineEnd);
-      const after = input.value.slice(lineEnd);
-
-      const lines = block.split('\n');
-      const changedLines = lines.map(line => {
+      const changedBlock = block.split('\n').map(line => {
         if (direction < 0) return removeIndentFromLine(line, indent);
-        return wrapLineWithIndent(line, indent);
+        return line.trim() ? indent + line : line;
+      }).join('\n');
+
+      if (changedBlock === block) {
+        input.focus();
+        selectionInfo.textContent = 'Não há recuo para remover aqui.';
+        return true;
+      }
+
+      const hadSelection = start !== end;
+
+      setInputRange(lineStart, lineEnd, changedBlock, {
+        select: hadSelection,
+        message: direction < 0
+          ? 'Recuo removido. A seleção foi mantida.'
+          : 'Recuo aumentado. Repita para mais níveis; Shift+Tab reduz.'
       });
 
-      const changedBlock = changedLines.join('\n');
-      input.value = before + changedBlock + after;
+      if (!hadSelection) {
+        // Mantém o cursor onde estava, deslocado pelo que entrou ou saiu da linha.
+        const delta = changedBlock.length - block.length;
+        const pos = Math.max(lineStart, start + delta);
+        input.setSelectionRange(pos, pos);
+        lastInputSelection = { start: pos, end: pos };
+      }
 
-      const newStart = lineStart;
-      const newEnd = lineStart + changedBlock.length;
-
-      input.focus();
-      input.scrollTop = previousScrollTop;
-      input.scrollLeft = previousScrollLeft;
-      input.setSelectionRange(newStart, newEnd);
-      lastInputSelection = { start: newStart, end: newEnd };
-      lastFocusedTextField = input;
-      lastSelectionPreview = null;
-      updateResult();
-      input.scrollTop = previousScrollTop;
-      input.scrollLeft = previousScrollLeft;
-      selectionInfo.textContent = direction < 0
-        ? 'Recuo removido das linhas selecionadas. A seleção foi mantida.'
-        : 'Recuo aumentado no parágrafo inteiro. Repita para mais níveis; Shift+Tab reduz.';
       return true;
     }
 
     function removeFormattingFromSelection() {
-      const data = getSelectionRange();
-      const previousScrollTop = input.scrollTop;
-      const previousScrollLeft = input.scrollLeft;
+      const { start, end, selected } = getSelectionRange();
 
-      if (data.start === data.end || !data.selected) {
-        alert('Selecione primeiro o trecho que deseja limpar.');
+      if (start === end || !selected) {
+        selectionInfo.textContent = 'Selecione primeiro o trecho que deseja limpar.';
         input.focus();
         return;
       }
 
-      const cleaned = removeFormattingFromText(data.selected);
-      input.value = input.value.slice(0, data.start) + cleaned + input.value.slice(data.end);
-
-      const newEnd = data.start + cleaned.length;
-      input.focus();
-      input.scrollTop = previousScrollTop;
-      input.scrollLeft = previousScrollLeft;
-      input.setSelectionRange(data.start, newEnd);
-      lastInputSelection = { start: data.start, end: newEnd };
-
-      lastSelectionPreview = null;
-      updateResult();
-      input.scrollTop = previousScrollTop;
-      input.scrollLeft = previousScrollLeft;
-      selectionInfo.textContent = 'Formatação removida do trecho selecionado. A seleção foi mantida.';
+      setInputRange(start, end, removeFormattingFromText(selected), {
+        select: true,
+        message: 'Formatação removida do trecho selecionado. A seleção foi mantida.'
+      });
     }
 
     function quickFormat(kind) {
@@ -2758,81 +1991,6 @@
       replaceSelectionWith(converted, 'Formatação aplicada ao trecho selecionado. A seleção foi mantida para nova formatação.');
     }
 
-    function commitSelectionFormatting() {
-      let data = lastSelectionPreview;
-      const previousScrollTop = input.scrollTop;
-      const previousScrollLeft = input.scrollLeft;
-      const cursorPos = typeof input.selectionEnd === 'number' ? input.selectionEnd : input.value.length;
-
-      if (!data) data = getConvertedSelectionData();
-
-      if (data) {
-        input.value = data.fullText;
-        input.focus();
-
-        input.scrollTop = previousScrollTop;
-        input.scrollLeft = previousScrollLeft;
-        input.setSelectionRange(data.newEnd, data.newEnd);
-
-        lastSelectionPreview = null;
-        updateResult();
-        input.scrollTop = previousScrollTop;
-        input.scrollLeft = previousScrollLeft;
-        selectionInfo.textContent = 'Formatação salva nesse trecho. Agora você pode selecionar outro trecho ou posicionar o cursor.';
-        return;
-      }
-
-      const highlightData = getCursorHighlightData();
-      if (highlightData) {
-        input.value = highlightData.fullText;
-        input.focus();
-        input.scrollTop = previousScrollTop;
-        input.scrollLeft = previousScrollLeft;
-        input.setSelectionRange(highlightData.newPos, highlightData.newPos);
-        lastSelectionPreview = null;
-        updateResult();
-        input.scrollTop = previousScrollTop;
-        input.scrollLeft = previousScrollLeft;
-        selectionInfo.textContent = 'Destaque inserido no ponto do cursor.';
-        return;
-      }
-
-      input.focus();
-      input.scrollTop = previousScrollTop;
-      input.scrollLeft = previousScrollLeft;
-      input.setSelectionRange(cursorPos, cursorPos);
-      lastSelectionPreview = null;
-      updateResult();
-      input.scrollTop = previousScrollTop;
-      input.scrollLeft = previousScrollLeft;
-      selectionInfo.textContent = 'Nenhuma formatação aplicada. Selecione um trecho ou escolha um destaque para inserir no cursor.';
-    }
-
-    function applyStyleToSelectionInInput() {
-      const data = getConvertedSelectionData();
-      const previousScrollTop = input.scrollTop;
-      const previousScrollLeft = input.scrollLeft;
-
-      if (!data) {
-        alert('Selecione primeiro um trecho do texto original.');
-        input.focus();
-        return;
-      }
-
-      input.value = data.fullText;
-      input.focus();
-      input.scrollTop = previousScrollTop;
-      input.scrollLeft = previousScrollLeft;
-      input.setSelectionRange(data.newEnd, data.newEnd);
-      targetSelect.value = 'auto';
-      lastSelectionPreview = null;
-      updateResult();
-      input.scrollTop = previousScrollTop;
-      input.scrollLeft = previousScrollLeft;
-      selectionInfo.textContent = 'Formatação aplicada e salva nesse trecho. A seleção foi desfeita para evitar duplicação.';
-    }
-
-    
     function cleanTemplateCategoryName(name) {
       const value = String(name || '').trim();
       return value || DEFAULT_TEMPLATE_CATEGORY;
@@ -2862,7 +2020,7 @@
     }
 
     function saveTemplateCategoriesToStorage() {
-      localStorage.setItem(TEMPLATE_CATEGORIES_STORAGE_KEY, JSON.stringify(uniqueTemplateCategories(templateCategories)));
+      safeSetItem(TEMPLATE_CATEGORIES_STORAGE_KEY, JSON.stringify(uniqueTemplateCategories(templateCategories)));
     }
 
     function loadTemplateCategories() {
@@ -2938,7 +2096,7 @@
 function saveTemplatesToStorage() {
       templates = validateTemplates(templates);
       ensureTemplateCategoriesFromTemplates();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(templates));
+      safeSetItem(STORAGE_KEY, JSON.stringify(templates));
       saveTemplateCategoriesToStorage();
     }
 
@@ -2946,10 +2104,10 @@ function saveTemplatesToStorage() {
       loadTemplateCategories();
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
-        templates = saved ? JSON.parse(saved) : structuredClone(defaultTemplates);
-        if (!Array.isArray(templates) || !templates.length) templates = structuredClone(defaultTemplates);
+        templates = saved ? JSON.parse(saved) : cloneData(defaultTemplates);
+        if (!Array.isArray(templates) || !templates.length) templates = cloneData(defaultTemplates);
       } catch (e) {
-        templates = structuredClone(defaultTemplates);
+        templates = cloneData(defaultTemplates);
       }
 
       templates = validateTemplates(templates);
@@ -2960,49 +2118,27 @@ function saveTemplatesToStorage() {
       const content = String(tpl.content || '');
       const start = typeof input.selectionStart === 'number' ? input.selectionStart : input.value.length;
       const end = typeof input.selectionEnd === 'number' ? input.selectionEnd : start;
-      const before = input.value.slice(0, start);
       const selected = input.value.slice(start, end);
-      const after = input.value.slice(end);
       const hasSelection = start !== end && selected.length > 0;
       const hasMarker = content.includes('{texto}');
 
-      let insertText = '';
-      let newStart = start;
-      let newEnd = start;
+      let insertText;
+      let message;
+      let keepSelected = false;
 
       if (hasSelection && hasMarker) {
         insertText = content.split('{texto}').join(selected);
-        input.value = before + insertText + after;
-        newStart = before.length;
-        newEnd = before.length + insertText.length;
+        keepSelected = true;
+        message = 'Modelo aplicado ao texto selecionado.';
       } else if (hasSelection) {
-        insertText = content;
-        input.value = before + insertText + selected + after;
-        newStart = before.length + insertText.length;
-        newEnd = newStart + selected.length;
+        insertText = content + selected;
+        message = 'Modelo inserido antes do texto selecionado.';
       } else {
         insertText = hasMarker ? content.split('{texto}').join('') : content;
-        input.value = before + insertText + after;
-        newStart = before.length + insertText.length;
-        newEnd = newStart;
+        message = 'Modelo inserido no cursor.';
       }
 
-      input.focus();
-      input.setSelectionRange(newStart, newEnd);
-      lastInputSelection = { start: newStart, end: newEnd };
-      lastFocusedTextField = input;
-      lastSelectionPreview = null;
-      decorationSelect.value = 'none';
-      if (result) result.textContent = input.value;
-      refreshUiWithoutApplying();
-
-      if (hasSelection && hasMarker) {
-        selectionInfo.textContent = 'Modelo aplicado ao texto selecionado.';
-      } else if (hasSelection) {
-        selectionInfo.textContent = 'Modelo inserido antes do texto selecionado.';
-      } else {
-        selectionInfo.textContent = 'Modelo inserido no cursor.';
-      }
+      setInputRange(start, end, insertText, { select: keepSelected, message });
     }
 
     function getTemplatesSortedByName() {
@@ -3069,7 +2205,6 @@ function saveTemplatesToStorage() {
       });
 
       renderTemplateSelect();
-      renderDecorationSelect();
     }
 
     function renderTemplateSelect(selectedId) {
@@ -3123,8 +2258,47 @@ function saveTemplatesToStorage() {
       return cat ? uniqueTokensFromText(cat.text) : [];
     }
 
+    // Categorias personalizadas são guardadas como { id: { name, symbols } }.
+    // Versões antigas do app — e o defaults.json publicado — usam { id: [símbolos] };
+    // normalizeSymbolCategories() aceita os dois formatos e sempre devolve o novo.
+    function prettifyCategoryId(id) {
+      const text = String(id || '').replace(/[-_]+/g, ' ').trim();
+      return text ? text.charAt(0).toLocaleUpperCase('pt-BR') + text.slice(1) : 'Personalizados';
+    }
+
+    function normalizeSymbolCategories(raw) {
+      const result = {};
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return result;
+
+      Object.entries(raw).forEach(([id, value]) => {
+        const isNewShape = value && !Array.isArray(value) && typeof value === 'object';
+        const rawSymbols = isNewShape ? value.symbols : value;
+        const list = Array.isArray(rawSymbols) ? rawSymbols : uniqueTokensFromText(String(rawSymbols || ''));
+        const symbols = uniqueTokensFromText(list.join(' '));
+        if (!symbols.length) return;
+
+        const name = isNewShape && value.name ? String(value.name).trim() : '';
+        result[id] = { name: name || prettifyCategoryId(id), symbols };
+      });
+
+      return result;
+    }
+
     function getCustomCategorySymbols(categoryId) {
-      return Array.isArray(customSymbolCategories[categoryId]) ? customSymbolCategories[categoryId] : [];
+      const entry = customSymbolCategories[categoryId];
+      return entry && Array.isArray(entry.symbols) ? entry.symbols : [];
+    }
+
+    function getCustomCategoryName(categoryId) {
+      const entry = customSymbolCategories[categoryId];
+      return (entry && entry.name) || prettifyCategoryId(categoryId);
+    }
+
+    function getAllCustomSymbols() {
+      return Object.keys(customSymbolCategories).reduce(
+        (all, id) => all.concat(getCustomCategorySymbols(id)),
+        []
+      );
     }
 
     function getAllCategorySymbols(categoryId) {
@@ -3150,7 +2324,7 @@ function saveTemplatesToStorage() {
           }
         });
       });
-      Object.values(customSymbolCategories).flat().forEach(sym => {
+      getAllCustomSymbols().forEach(sym => {
         if (!seen.has(sym)) {
           seen.add(sym);
           all.push(sym);
@@ -3169,13 +2343,14 @@ function saveTemplatesToStorage() {
       try {
         const savedCustom = localStorage.getItem(CUSTOM_SYMBOL_CATEGORIES_STORAGE_KEY);
         const savedOld = localStorage.getItem(SYMBOLS_STORAGE_KEY);
-        customSymbolCategories = savedCustom ? JSON.parse(savedCustom) : {};
-        if (!customSymbolCategories || typeof customSymbolCategories !== 'object' || Array.isArray(customSymbolCategories)) {
-          customSymbolCategories = {};
-        }
+        customSymbolCategories = normalizeSymbolCategories(savedCustom ? JSON.parse(savedCustom) : {});
+
         const oldSymbols = savedOld ? JSON.parse(savedOld) : [];
         if (Array.isArray(oldSymbols) && oldSymbols.length && !customSymbolCategories['personalizados']) {
-          customSymbolCategories['personalizados'] = uniqueTokensFromText(oldSymbols.join(' '));
+          customSymbolCategories['personalizados'] = {
+            name: 'Personalizados',
+            symbols: uniqueTokensFromText(oldSymbols.join(' '))
+          };
         }
       } catch (e) {
         customSymbolCategories = {};
@@ -3191,12 +2366,14 @@ function saveTemplatesToStorage() {
     }
 
     function saveCustomSymbols() {
-      localStorage.setItem(CUSTOM_SYMBOL_CATEGORIES_STORAGE_KEY, JSON.stringify(customSymbolCategories));
-      localStorage.setItem(SYMBOLS_STORAGE_KEY, JSON.stringify(Object.values(customSymbolCategories).flat()));
+      safeSetItem(CUSTOM_SYMBOL_CATEGORIES_STORAGE_KEY, JSON.stringify(customSymbolCategories));
+      // Mantido para que uma versão antiga do app instalada no mesmo navegador
+      // ainda enxergue os caracteres personalizados.
+      safeSetItem(SYMBOLS_STORAGE_KEY, JSON.stringify(getAllCustomSymbols()));
     }
 
     function saveFavoriteSymbols() {
-      localStorage.setItem(FAVORITE_SYMBOLS_STORAGE_KEY, JSON.stringify(favoriteSymbols));
+      safeSetItem(FAVORITE_SYMBOLS_STORAGE_KEY, JSON.stringify(favoriteSymbols));
     }
 
     function renderSymbolCategories() {
@@ -3214,7 +2391,7 @@ function saveTemplatesToStorage() {
         if (symbolCategories.some(cat => cat.id === id)) return;
         const opt = document.createElement('option');
         opt.value = id;
-        opt.textContent = 'Personalizada: ' + id;
+        opt.textContent = 'Personalizada: ' + getCustomCategoryName(id);
         symbolCategorySelect.appendChild(opt);
       });
 
@@ -3249,51 +2426,37 @@ function saveTemplatesToStorage() {
     }
 
     function makeSymbolButton(sym, place) {
+      const isFavorite = place === 'favorite';
+      const wrap = document.createElement('span');
+      wrap.className = 'symbol-item';
+
       const btn = document.createElement('button');
-      let clickTimer = null;
-
       btn.type = 'button';
-      btn.className = 'symbol-btn' + (place === 'favorite' ? ' favorite' : '');
+      btn.className = 'symbol-btn' + (isFavorite ? ' favorite' : '');
       btn.textContent = sym;
-      btn.title = place === 'favorite'
-        ? 'Clique para inserir. Dois cliques para tirar dos favoritos.'
-        : 'Clique para inserir. Dois cliques para mandar para os favoritos.';
+      btn.title = 'Clique para inserir ' + sym + ' no campo ativo.';
+      btn.setAttribute('aria-label', 'Inserir ' + sym);
+      btn.addEventListener('mousedown', event => event.preventDefault());
+      // Inserção direta: sem espera de clique duplo, o toque no celular responde na hora.
+      btn.addEventListener('click', () => insertTextAtCursor(getActiveInsertTarget(), sym));
 
-      btn.addEventListener('click', (event) => {
-        event.preventDefault();
-
-        // Espera um instante para saber se será clique simples ou duplo.
-        // Assim, no clique duplo, o caractere não é inserido no texto.
-        if (clickTimer) {
-          clearTimeout(clickTimer);
-          clickTimer = null;
-          return;
-        }
-
-        clickTimer = setTimeout(() => {
-          const target = getActiveInsertTarget();
-          insertTextAtCursor(target, sym);
-          clickTimer = null;
-        }, 220);
-      });
-
-      btn.addEventListener('dblclick', (event) => {
-        event.preventDefault();
+      // Favoritar fica num alvo próprio, porque duplo-toque não é confiável em tela sensível.
+      const star = document.createElement('button');
+      star.type = 'button';
+      star.className = 'symbol-star' + (isFavorite ? ' on' : '');
+      star.textContent = isFavorite ? '★' : '☆';
+      star.title = isFavorite ? 'Tirar dos favoritos' : 'Mandar para os favoritos';
+      star.setAttribute('aria-label', (isFavorite ? 'Tirar ' : 'Mandar ') + sym + (isFavorite ? ' dos favoritos' : ' para os favoritos'));
+      star.addEventListener('mousedown', event => event.preventDefault());
+      star.addEventListener('click', event => {
         event.stopPropagation();
-
-        if (clickTimer) {
-          clearTimeout(clickTimer);
-          clickTimer = null;
-        }
-
-        if (place === 'favorite') {
-          removeFavoriteSymbol(sym);
-        } else {
-          addFavoriteSymbol(sym);
-        }
+        if (isFavorite) removeFavoriteSymbol(sym);
+        else addFavoriteSymbol(sym);
       });
 
-      return btn;
+      wrap.appendChild(btn);
+      wrap.appendChild(star);
+      return wrap;
     }
 
     function addFavoriteSymbol(sym) {
@@ -3303,6 +2466,7 @@ function saveTemplatesToStorage() {
         renderSymbols();
         symbolsStatus.className = 'ok';
         symbolsStatus.textContent = 'Adicionado aos favoritos.';
+        warnIfStorageBlocked(symbolsStatus);
       } else {
         symbolsStatus.className = 'warn';
         symbolsStatus.textContent = 'Esse caractere já está nos favoritos.';
@@ -3358,13 +2522,18 @@ function saveTemplatesToStorage() {
       const categoryId = getCustomTargetCategoryId();
       const categoryName = getCustomTargetCategoryName();
 
-      if (!customSymbolCategories[categoryId]) customSymbolCategories[categoryId] = [];
+      if (!customSymbolCategories[categoryId]) {
+        customSymbolCategories[categoryId] = { name: categoryName, symbols: [] };
+      } else if (customSymbolCategory.value.trim()) {
+        customSymbolCategories[categoryId].name = categoryName;
+      }
+
       const existing = new Set(getAllSymbols());
       let added = 0;
 
       newSymbols.forEach(sym => {
         if (!existing.has(sym)) {
-          customSymbolCategories[categoryId].push(sym);
+          customSymbolCategories[categoryId].symbols.push(sym);
           existing.add(sym);
           added++;
         }
@@ -3376,6 +2545,7 @@ function saveTemplatesToStorage() {
       renderSymbols();
       symbolCategorySelect.value = categoryId;
       renderSymbols();
+      warnIfStorageBlocked(symbolsStatus);
       symbolsStatus.className = added ? 'ok' : 'warn';
       symbolsStatus.textContent = added ? added + ' caractere(s) adicionado(s) em ' + categoryName + '.' : 'Esses caracteres já estavam na lista.';
     }
@@ -3483,6 +2653,7 @@ function saveTemplatesToStorage() {
       loadSelectedTemplateIntoEditor();
       templateStatus.className = 'ok';
       templateStatus.textContent = 'Modelo salvo!';
+      warnIfStorageBlocked(templateStatus);
     }
 
     function deleteTemplate() {
@@ -3494,7 +2665,7 @@ function saveTemplatesToStorage() {
       if (!ok) return;
 
       templates = templates.filter(t => t.id !== id);
-      if (!templates.length) templates = structuredClone(defaultTemplates);
+      if (!templates.length) templates = cloneData(defaultTemplates);
       templates = validateTemplates(templates);
       saveTemplatesToStorage();
       renderTemplates();
@@ -3505,7 +2676,7 @@ function saveTemplatesToStorage() {
     function resetTemplates() {
       const ok = confirm('Restaurar os modelos padrão? Isso apaga os modelos personalizados salvos neste navegador.');
       if (!ok) return;
-      templates = validateTemplates(structuredClone(defaultTemplates));
+      templates = validateTemplates(cloneData(defaultTemplates));
       templateCategories = [DEFAULT_TEMPLATE_CATEGORY];
       saveTemplatesToStorage();
       renderTemplates();
@@ -3529,7 +2700,9 @@ function saveTemplatesToStorage() {
 
       for (const url of [...new Set(candidates)]) {
         try {
-          const response = await fetch(url + (url.includes('?') ? '&' : '?') + 'ts=' + Date.now(), { cache: 'no-store' });
+          // Sem 'no-store' + cache-busting: o navegador revalida com ETag e só
+          // baixa de novo quando o arquivo muda de verdade.
+          const response = await fetch(url, { cache: 'no-cache' });
 
           if (!response.ok) {
             lastError = 'HTTP ' + response.status + ' ao buscar ' + url;
@@ -3567,7 +2740,7 @@ function saveTemplatesToStorage() {
 
     function openDefaultsJson() {
       const url = new URL('defaults.json', location.href).href;
-      window.open(url, '_blank');
+      window.open(url, '_blank', 'noopener');
     }
 
     function normalizeDefaultsObject(data) {
@@ -3579,9 +2752,11 @@ function saveTemplatesToStorage() {
         templates: normalizedTemplates,
         templateCategories: uniqueTemplateCategories([...categoryList, ...normalizedTemplates.map(t => t.category)]),
         favoriteSymbols: Array.isArray(parsed.favoriteSymbols) ? uniqueTokensFromText(parsed.favoriteSymbols.join(' ')) : [],
-        customSymbolCategories: parsed.customSymbolCategories && typeof parsed.customSymbolCategories === 'object' && !Array.isArray(parsed.customSymbolCategories)
-          ? parsed.customSymbolCategories
-          : (Array.isArray(parsed.customSymbols) ? { personalizados: uniqueTokensFromText(parsed.customSymbols.join(' ')) } : {})
+        customSymbolCategories: normalizeSymbolCategories(
+          parsed.customSymbolCategories && typeof parsed.customSymbolCategories === 'object' && !Array.isArray(parsed.customSymbolCategories)
+            ? parsed.customSymbolCategories
+            : (Array.isArray(parsed.customSymbols) ? { personalizados: parsed.customSymbols } : {})
+        )
       };
     }
 
@@ -3602,18 +2777,24 @@ function saveTemplatesToStorage() {
 
     function mergeSymbolCategories(importedCategories) {
       let added = 0;
-      Object.entries(importedCategories || {}).forEach(([categoryId, values]) => {
-        const list = Array.isArray(values) ? values : uniqueTokensFromText(String(values || ''));
-        if (!customSymbolCategories[categoryId]) customSymbolCategories[categoryId] = [];
-        const existing = new Set(customSymbolCategories[categoryId]);
-        list.forEach(sym => {
+
+      Object.entries(normalizeSymbolCategories(importedCategories)).forEach(([categoryId, category]) => {
+        if (!customSymbolCategories[categoryId]) {
+          customSymbolCategories[categoryId] = { name: category.name, symbols: [] };
+        }
+
+        const target = customSymbolCategories[categoryId];
+        const existing = new Set(target.symbols);
+
+        category.symbols.forEach(sym => {
           if (!existing.has(sym)) {
-            customSymbolCategories[categoryId].push(sym);
+            target.symbols.push(sym);
             existing.add(sym);
             added++;
           }
         });
       });
+
       return added;
     }
 
@@ -3658,12 +2839,12 @@ function saveTemplatesToStorage() {
       saveFavoriteSymbols();
 
       if (data.version) {
-        localStorage.setItem(ONLINE_DEFAULTS_VERSION_STORAGE_KEY, data.version);
+        safeSetItem(ONLINE_DEFAULTS_VERSION_STORAGE_KEY, String(data.version));
       }
 
       renderTemplates();
       renderSymbols();
-      updateResult();
+      updateUi();
     }
 
     async function autoCheckOnlineDefaultsOnStart() {
@@ -3671,8 +2852,10 @@ function saveTemplatesToStorage() {
 
       try {
         const data = await fetchOnlineDefaults();
-        const fileVersion = data.version || '';
-        const lastAppliedVersion = localStorage.getItem(ONLINE_DEFAULTS_VERSION_STORAGE_KEY) || '';
+        // O JSON traz a versão como número e o localStorage devolve texto:
+        // sem normalizar, 4 !== '4' e o app acusaria novidade a cada abertura.
+        const fileVersion = String(data.version || '');
+        const lastAppliedVersion = String(localStorage.getItem(ONLINE_DEFAULTS_VERSION_STORAGE_KEY) || '');
 
         if (!hasLocalUserData()) {
           applyOnlineDefaultsData(data, 'replace');
@@ -3701,10 +2884,10 @@ function saveTemplatesToStorage() {
 
     async function checkOnlineDefaults() {
       try {
-        const data = await fetchOnlineDefaults();
+        const data = await ensureOnlineDefaultsLoaded();
         const normalized = normalizeDefaultsObject(data);
         onlineDefaultsStatus.className = 'ok';
-        onlineDefaultsStatus.textContent = normalized.templates.length + ' modelo(s), ' + Object.values(normalized.customSymbolCategories).flat().length + ' caractere(s) e ' + normalized.favoriteSymbols.length + ' favorito(s) encontrados.';
+        onlineDefaultsStatus.textContent = normalized.templates.length + ' modelo(s), ' + Object.keys(normalized.customSymbolCategories).reduce((n, id) => n + normalized.customSymbolCategories[id].symbols.length, 0) + ' caractere(s) e ' + normalized.favoriteSymbols.length + ' favorito(s) encontrados.';
       } catch (e) {
         onlineDefaultsStatus.className = 'warn';
         onlineDefaultsStatus.textContent = 'Não consegui carregar o arquivo JSON: ' + (e && e.message ? e.message : 'erro desconhecido');
@@ -3726,12 +2909,12 @@ function saveTemplatesToStorage() {
         saveFavoriteSymbols();
 
         if (rawData.version) {
-          localStorage.setItem(ONLINE_DEFAULTS_VERSION_STORAGE_KEY, rawData.version);
+          safeSetItem(ONLINE_DEFAULTS_VERSION_STORAGE_KEY, String(rawData.version));
         }
 
         renderTemplates();
         renderSymbols();
-        updateResult();
+        updateUi();
 
         onlineDefaultsStatus.className = 'ok';
         onlineDefaultsStatus.textContent = 'Somado: ' + addedTemplates + ' modelo(s), ' + addedCategories + ' categoria(s), ' + addedSymbols + ' caractere(s), ' + addedFavorites + ' favorito(s).';
@@ -3767,7 +2950,7 @@ function saveTemplatesToStorage() {
         exportedAt: new Date().toISOString(),
         templates: templates,
         templateCategories: templateCategories,
-        customSymbols: Object.values(customSymbolCategories).flat(),
+        customSymbols: getAllCustomSymbols(),
         customSymbolCategories: customSymbolCategories,
         favoriteSymbols: favoriteSymbols
       };
@@ -3786,7 +2969,7 @@ function saveTemplatesToStorage() {
       document.body.appendChild(a);
       a.click();
       a.remove();
-      URL.revokeObjectURL(url);
+      setTimeout(() => URL.revokeObjectURL(url), 0);
 
       backupStatus.className = 'ok';
       backupStatus.textContent = 'Arquivo JSON completo exportado!';
@@ -3920,7 +3103,7 @@ async function importTemplatesFromText(text) {
           templateCategories = importedData.templateCategories;
           customSymbolCategories = importedData.customSymbolCategories;
           favoriteSymbols = importedData.favoriteSymbols.length ? importedData.favoriteSymbols : defaultFavoriteSymbols.slice();
-          message = templates.length + ' modelo(s), ' + Object.values(customSymbolCategories).flat().length + ' caractere(s) e ' + favoriteSymbols.length + ' favorito(s) importados. Os dados anteriores foram substituídos.';
+          message = templates.length + ' modelo(s), ' + getAllCustomSymbols().length + ' caractere(s) e ' + favoriteSymbols.length + ' favorito(s) importados. Os dados anteriores foram substituídos.';
         } else {
           const addedCategories = mergeTemplateCategories(importedData.templateCategories);
           const stats = mergeImportedTemplates(imported);
@@ -3934,11 +3117,11 @@ async function importTemplatesFromText(text) {
         saveCustomSymbols();
         saveFavoriteSymbols();
         renderTemplates();
-        renderDecorationSelect();
         renderSymbols();
-        refreshUiWithoutApplying();
+        updateUi();
         backupStatus.className = 'ok';
         backupStatus.textContent = message;
+        warnIfStorageBlocked(backupStatus);
       } catch (e) {
         console.error(e);
         backupStatus.className = 'warn';
@@ -3987,7 +3170,11 @@ async function importTemplatesFromText(text) {
     document.getElementById('quickBoldItalicBtn').addEventListener('click', () => quickFormat('boldItalic'));
     document.getElementById('removeFormattingBtn').addEventListener('click', removeFormattingFromSelection);
     document.getElementById('indentBtn').addEventListener('click', () => applyIndentToSelection(1));
-    document.getElementById('clearBtn').addEventListener('click', () => { input.value = ''; if (result) result.textContent = ''; lastSelectionPreview = null; refreshUiWithoutApplying(); input.focus(); });
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      // Passa pelo setInputRange para que o Ctrl+Z também traga o texto apagado de volta.
+      setInputRange(0, input.value.length, '', { message: 'Texto apagado. Use Ctrl+Z para desfazer.' });
+      input.focus();
+    });
     ['quickBoldBtn','quickItalicBtn','quickBoldItalicBtn','removeFormattingBtn','indentBtn','copyBtn','selectBtn'].forEach(id => {
       const btn = document.getElementById(id);
       btn.addEventListener('mousedown', event => event.preventDefault());
@@ -4004,9 +3191,33 @@ async function importTemplatesFromText(text) {
     document.getElementById('resetTemplatesBtn').addEventListener('click', resetTemplates);
     addTemplateCategoryBtn.addEventListener('click', addTemplateCategory);
     templateCategoryFilter.addEventListener('change', renderTemplates);
-    openModelManagerBtn.addEventListener('click', () => modelManagerOverlay.classList.add('open'));
-    closeModelManagerBtn.addEventListener('click', () => modelManagerOverlay.classList.remove('open'));
-    modelManagerOverlay.addEventListener('click', event => { if (event.target === modelManagerOverlay) modelManagerOverlay.classList.remove('open'); });
+
+    // Gerenciador de modelos: devolve o foco a quem abriu e fecha com Esc,
+    // seguindo o mesmo padrão que askImportMode() já usa.
+    let modelManagerOpener = null;
+
+    function openModelManager() {
+      modelManagerOpener = document.activeElement;
+      modelManagerOverlay.classList.add('open');
+      closeModelManagerBtn.focus();
+    }
+
+    function closeModelManager() {
+      if (!modelManagerOverlay.classList.contains('open')) return;
+      modelManagerOverlay.classList.remove('open');
+      if (modelManagerOpener && typeof modelManagerOpener.focus === 'function') modelManagerOpener.focus();
+      modelManagerOpener = null;
+    }
+
+    openModelManagerBtn.addEventListener('click', openModelManager);
+    closeModelManagerBtn.addEventListener('click', closeModelManager);
+    modelManagerOverlay.addEventListener('click', event => {
+      if (event.target === modelManagerOverlay) closeModelManager();
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') closeModelManager();
+    });
+
     symbolCategorySelect.addEventListener('change', renderSymbols);
     document.getElementById('resetFavoriteSymbolsBtn').addEventListener('click', resetFavoriteSymbols);
     document.getElementById('saveCustomSymbolsBtn').addEventListener('click', addCustomSymbols);
@@ -4033,25 +3244,6 @@ async function importTemplatesFromText(text) {
     customSymbolsText.addEventListener('focus', rememberFocusedField);
     newTemplateCategoryName.addEventListener('focus', rememberFocusedField);
 
-    document.querySelectorAll('.option-btn[data-select]').forEach(btn => {
-      btn.addEventListener('mousedown', event => event.preventDefault());
-      btn.addEventListener('pointerdown', event => event.preventDefault());
-      btn.addEventListener('click', () => {
-        const select = document.getElementById(btn.dataset.select);
-        if (!select) return;
-        select.value = btn.dataset.value;
-        lastSelectionPreview = null;
-
-        if (select === caseSelect) {
-          syncOptionButtons();
-          applyCaseToSelection(true);
-          return;
-        }
-
-        refreshUiWithoutApplying();
-      });
-    });
-
     document.querySelectorAll('.option-btn[data-case]').forEach(btn => {
       btn.addEventListener('mousedown', event => event.preventDefault());
       btn.addEventListener('pointerdown', event => event.preventDefault());
@@ -4064,42 +3256,31 @@ async function importTemplatesFromText(text) {
       btn.addEventListener('click', () => applyListToSelection(btn.dataset.list));
     });
 
-    input.addEventListener('input', () => {
-      lastSelectionPreview = null;
-      rememberInputSelection();
-      refreshUiWithoutApplying();
-    });
-    input.addEventListener('select', () => {
-      rememberInputSelection();
-      refreshUiWithoutApplying();
-    });
-    input.addEventListener('keyup', () => {
-      rememberInputSelection();
-      refreshUiWithoutApplying();
-    });
-    input.addEventListener('mouseup', () => {
-      rememberInputSelection();
-      refreshUiWithoutApplying();
+    ['input', 'select', 'keyup', 'mouseup'].forEach(evt => {
+      input.addEventListener(evt, () => {
+        rememberInputSelection();
+        scheduleUiRefresh();
+      });
     });
     input.addEventListener('touchend', () => setTimeout(() => {
       rememberInputSelection();
-      refreshUiWithoutApplying();
+      scheduleUiRefresh();
     }, 80));
+
     styleSelect.addEventListener('change', () => {
-      lastSelectionPreview = null;
       applySelectedStyleToSelection(false);
-      refreshUiWithoutApplying();
+      updateUi();
     });
 
     enableManifestWhenOnline();
+    registerServiceWorker();
+
+    document.getElementById('appVersionPill').textContent = 'v' + APP_VERSION;
+    document.getElementById('appVersionFooter').textContent = APP_VERSION;
 
     populate();
-    targetSelect.value = 'auto';
-    caseSelect.value = 'normal';
     styleSelect.value = 'serif';
-    decorationSelect.value = 'none';
-    if (result) result.textContent = '';
-    refreshUiWithoutApplying();
+    updateUi();
     autoCheckOnlineDefaultsOnStart();
   </script>
 </body>
