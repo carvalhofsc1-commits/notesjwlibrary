@@ -622,6 +622,53 @@
       margin-left: 5px;
     }
 
+    /* Aviso de versão nova. Nunca recarrega sozinho: isso apagaria a nota
+       que o usuário está escrevendo. */
+    .update-bar {
+      position: fixed;
+      left: 50%;
+      bottom: 12px;
+      transform: translateX(-50%);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      max-width: min(520px, calc(100vw - 24px));
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--card);
+      color: var(--text);
+      box-shadow: 0 12px 32px var(--shadow);
+      font-size: .92rem;
+      font-weight: 650;
+    }
+
+    .update-bar span {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .update-bar button {
+      min-height: 38px;
+      padding: 8px 14px;
+      border-radius: 10px;
+      flex: 0 0 auto;
+    }
+
+    @media (max-width: 560px) {
+      .update-bar {
+        left: 8px;
+        right: 8px;
+        transform: none;
+        max-width: none;
+        gap: 8px;
+        font-size: .86rem;
+      }
+
+      .update-bar button { padding: 8px 12px; }
+    }
+
     /* ---------- Telas pequenas ---------- */
 
     @media (max-width: 560px) {
@@ -991,19 +1038,71 @@
   </noscript>
 
   <footer>
-    Arquivo local HTML/CSS/JavaScript. Funciona offline depois de baixado.
+    Arquivo HTML/CSS/JavaScript. Instalado ou aberto no navegador, funciona offline
+    depois do primeiro acesso; baixado como arquivo, funciona direto do aparelho.
     Versão <span id="appVersionFooter"></span>.
   </footer>
 
   <script>
 
+    // O app também circula como arquivo HTML avulso, aberto direto do disco. Em file://
+    // não há manifest nem service worker que funcionem, então os dois só entram em cena
+    // quando a página vem de um servidor.
+    function servidoPelaWeb() {
+      return location.protocol === 'http:' || location.protocol === 'https:';
+    }
+
     function enableManifestWhenOnline() {
-      if (location.protocol !== 'http:' && location.protocol !== 'https:') return;
+      if (!servidoPelaWeb()) return;
 
       const link = document.createElement('link');
       link.rel = 'manifest';
       link.href = 'manifest.webmanifest';
       document.head.appendChild(link);
+    }
+
+    function mostrarAvisoDeAtualizacao() {
+      if (document.getElementById('updateBar')) return;
+
+      const barra = document.createElement('div');
+      barra.id = 'updateBar';
+      barra.className = 'update-bar';
+      barra.setAttribute('role', 'status');
+
+      const texto = document.createElement('span');
+      texto.textContent = 'Nova versão disponível.';
+
+      const botao = document.createElement('button');
+      botao.type = 'button';
+      botao.textContent = 'Recarregar';
+      botao.addEventListener('click', () => location.reload());
+
+      barra.appendChild(texto);
+      barra.appendChild(botao);
+      document.body.appendChild(barra);
+    }
+
+    function registerServiceWorker() {
+      if (!servidoPelaWeb() || !('serviceWorker' in navigator)) return;
+
+      // A versão vai na query para o worker montar o nome da cache com ela — e para que
+      // mudar APP_VERSION baste para o navegador enxergar um worker novo.
+      navigator.serviceWorker.register('sw.js?v=' + APP_VERSION).then(registro => {
+        registro.addEventListener('updatefound', () => {
+          const novo = registro.installing;
+          if (!novo) return;
+
+          novo.addEventListener('statechange', () => {
+            // controller preenchido significa que já havia um worker no comando:
+            // este é um segundo acesso vendo uma versão nova, não a instalação inicial.
+            if (novo.state === 'installed' && navigator.serviceWorker.controller) {
+              mostrarAvisoDeAtualizacao();
+            }
+          });
+        });
+      }).catch(e => {
+        console.warn('Não foi possível registrar o service worker.', e);
+      });
     }
 
     const input = document.getElementById('inputText');
@@ -1047,7 +1146,7 @@
     const ONLINE_DEFAULTS_VERSION_STORAGE_KEY = 'jwLibraryNoteAplicarOnlineDefaultsVersionV1';
     const TEMPLATE_CATEGORIES_STORAGE_KEY = 'jwLibraryNoteAplicarTemplateCategoriesV1';
     const DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
-    const APP_VERSION = '9.4';
+    const APP_VERSION = '9.5';
 
     // Grava no localStorage sem derrubar a ação em curso quando o navegador
     // recusa a escrita (aba anônima, cota cheia, armazenamento bloqueado).
@@ -3174,6 +3273,7 @@ async function importTemplatesFromText(text) {
     });
 
     enableManifestWhenOnline();
+    registerServiceWorker();
 
     document.getElementById('appVersionPill').textContent = 'v' + APP_VERSION;
     document.getElementById('appVersionFooter').textContent = APP_VERSION;
