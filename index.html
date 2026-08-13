@@ -198,7 +198,7 @@
     select { text-overflow: ellipsis; padding-right: 34px; }
 
     textarea {
-      min-height: clamp(190px, 34vh, 360px);
+      min-height: clamp(240px, 45vh, 500px);
       resize: vertical;
     }
 
@@ -3262,6 +3262,17 @@ async function importTemplatesFromText(text) {
         scheduleUiRefresh();
       });
     });
+
+    // No iPhone/Safari não existe alcinha para arrastar e redimensionar o
+    // textarea manualmente, então o campo cresce sozinho conforme o texto
+    // aumenta (a altura mínima do CSS continua valendo como piso).
+    function autoGrowInputText() {
+      input.style.height = 'auto';
+      input.style.height = input.scrollHeight + 'px';
+    }
+    input.addEventListener('input', autoGrowInputText);
+    window.addEventListener('load', autoGrowInputText);
+    window.addEventListener('resize', autoGrowInputText);
     input.addEventListener('touchend', () => setTimeout(() => {
       rememberInputSelection();
       scheduleUiRefresh();
