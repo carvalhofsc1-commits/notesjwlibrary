@@ -1151,7 +1151,7 @@
             <span id="templateStatus" class="ok" role="status" aria-live="polite"></span>
           </div>
 
-          <p class="hint">Categoria oficial padrão: <strong>DESTAQUES</strong>. Você também pode criar suas próprias categorias em "Gerenciar categorias de modelos", abaixo.</p>
+          <p class="hint">Categoria oficial padrão: <strong>REUNIÕES</strong>. Você também pode criar suas próprias categorias em "Gerenciar categorias de modelos", abaixo.</p>
           <p class="hint">Dica para modelos: use <strong>{texto}</strong> para marcar onde o texto selecionado deve entrar. Exemplo: <strong>➜ {texto} ⬅</strong>. Se o modelo não tiver {texto}, ele será colocado antes do texto.</p>
         </div>
       </details>
@@ -1184,7 +1184,7 @@
             </div>
           </div>
 
-          <p class="hint">"Renomear" e "Excluir categoria" agem sobre a categoria escolhida em <strong>Categoria existente</strong>, acima. A categoria <strong>DESTAQUES</strong> não pode ser renomeada nem excluída. Se a categoria tiver modelos, ao excluir você escolhe se eles são movidos para <strong>DESTAQUES</strong> ou excluídos junto.</p>
+          <p class="hint">"Renomear" e "Excluir categoria" agem sobre a categoria escolhida em <strong>Categoria existente</strong>, acima. A categoria <strong>REUNIÕES</strong> não pode ser renomeada nem excluída. Se a categoria tiver modelos, ao excluir você escolhe se eles são movidos para <strong>REUNIÕES</strong> ou excluídos junto.</p>
         </div>
       </details>
 
@@ -1478,8 +1478,9 @@
     const CUSTOM_SYMBOL_CATEGORIES_STORAGE_KEY = 'jwLibraryNoteAplicarCustomSymbolCategoriesV1';
     const ONLINE_DEFAULTS_VERSION_STORAGE_KEY = 'jwLibraryNoteAplicarOnlineDefaultsVersionV1';
     const TEMPLATE_CATEGORIES_STORAGE_KEY = 'jwLibraryNoteAplicarTemplateCategoriesV1';
-    const DEFAULT_TEMPLATE_CATEGORY = 'DESTAQUES';
+    const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
+    const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
     const APP_VERSION = '9.5';
 
     // Grava no localStorage sem derrubar a ação em curso quando o navegador
@@ -2356,7 +2357,7 @@
 
     function cleanTemplateCategoryName(name) {
       const value = String(name || '').trim();
-      if (value === LEGACY_DEFAULT_TEMPLATE_CATEGORY) return DEFAULT_TEMPLATE_CATEGORY;
+      if (value === LEGACY_DEFAULT_TEMPLATE_CATEGORY) return DESTAQUES_CATEGORY_NAME;
       return value || DEFAULT_TEMPLATE_CATEGORY;
     }
 
