@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sobre — JwNotes</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <meta name="description" content="Sobre o JwNotes — conversor que troca letras por caracteres Unicode parecidos com negrito, itálico e símbolos, para destacar notas do JW Library.">
+  <meta name="theme-color" content="#e7ecf6">
+  <script>
+    // Aplica o tema salvo antes do corpo renderizar, para não piscar o tema errado.
+    try {
+      var temaSalvo = localStorage.getItem('jwLibraryNoteAplicarThemeV1');
+      if (temaSalvo === 'dark' || temaSalvo === 'light') {
+        document.documentElement.setAttribute('data-theme', temaSalvo);
+      }
+    } catch (e) {}
+  </script>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #e7ecf6;
+      --card: #ffffff;
+      --card-tint: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #d1d5db;
+      --accent: #2563eb;
+      --accent-dark: #1d4ed8;
+      --soft: #eef2ff;
+      --shadow: rgba(0, 0, 0, .05);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #0f172a;
+        --card: #1e293b;
+        --card-tint: #1e293b;
+        --text: #e2e8f0;
+        --muted: #94a3b8;
+        --line: #334155;
+        --accent: #3b82f6;
+        --accent-dark: #2563eb;
+        --soft: #1e3a5f;
+        --shadow: rgba(0, 0, 0, .4);
+      }
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --card-tint: #1e293b;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --line: #334155;
+      --accent: #3b82f6;
+      --accent-dark: #2563eb;
+      --soft: #1e3a5f;
+      --shadow: rgba(0, 0, 0, .4);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      overflow-wrap: break-word;
+    }
+
+    main {
+      width: min(640px, 100%);
+      margin: 0 auto;
+      padding: 28px clamp(16px, 4vw, 32px) 40px;
+      text-align: center;
+    }
+
+    .back-link {
+      display: inline-block;
+      color: var(--muted);
+      font-size: .92rem;
+      text-decoration: none;
+      margin-top: 28px;
+    }
+
+    .back-link:hover { color: var(--text); text-decoration: underline; }
+
+    .about-logo {
+      width: clamp(128px, 40vw, 210px);
+      height: auto;
+      filter: drop-shadow(0 6px 16px var(--shadow));
+    }
+
+    .about-name {
+      margin: 14px 0 0;
+      font-size: clamp(1.8rem, 7vw, 2.4rem);
+      font-weight: 800;
+    }
+
+    .pill {
+      display: inline-block;
+      margin: 10px 0 0;
+      padding: 4px 14px;
+      border-radius: 999px;
+      background: var(--soft);
+      color: var(--accent-dark);
+      font-size: .88rem;
+      font-weight: 700;
+    }
+
+    .about-text {
+      margin: 20px auto 0;
+      max-width: 520px;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    .card {
+      background: var(--card-tint);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px 16px;
+      margin-top: 24px;
+      max-width: 320px;
+      margin-left: auto;
+      margin-right: auto;
+      box-shadow: 0 8px 22px var(--shadow);
+    }
+
+    .card h2 {
+      margin: 0 0 12px;
+      font-size: .95rem;
+    }
+
+    .dev-logo-wrap {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 10px 16px;
+    }
+
+    .dev-logo {
+      width: min(180px, 100%);
+      height: auto;
+      display: block;
+    }
+
+    .dev-name {
+      margin: 10px 0 2px;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .dev-contacts {
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      color: var(--muted);
+      font-size: .88rem;
+    }
+
+    .dev-contacts a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .dev-contacts a:hover { color: var(--accent-dark); }
+
+    .wa-icon { flex: 0 0 auto; }
+  </style>
+</head>
+<body>
+  <main>
+    <img src="icon-header.png" alt="" class="about-logo" width="512" height="512" decoding="async">
+    <h1 class="about-name">JwNotes</h1>
+    <span class="pill">v9.5</span>
+
+    <p class="about-text">Este aplicativo não aplica formatação real. Ele troca as letras por caracteres Unicode parecidos com negrito, itálico, círculos, caixas e símbolos, para dar aparência de destaque em campos que aceitam apenas texto.</p>
+
+    <section class="card">
+      <h2>Desenvolvido por Carvalho Apps</h2>
+      <div class="dev-logo-wrap">
+        <img src="logo-cavalhoapps.png" alt="Carvalho Apps" class="dev-logo">
+      </div>
+      <p class="dev-name">Fernando S. Carvalho</p>
+      <div class="dev-contacts">
+        <a href="https://wa.me/5564981808090">
+          <svg class="wa-icon" width="18" height="18" viewBox="0 0 448 512" aria-hidden="true"><path fill="#25D366" d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/></svg>
+          (64) 98180-8090
+        </a>
+        <a href="mailto:carvalhofsc1@gmail.com">✉️ carvalhofsc1@gmail.com</a>
+      </div>
+    </section>
+
+    <a class="back-link" href="index.html">← Voltar</a>
+  </main>
+</body>
+</html>

@@ -3,16 +3,25 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Conversor para Notas do JW Library</title>
+  <title>Formatação de notas para o JW Library</title>
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <meta name="description" content="Conversor que troca letras por caracteres Unicode parecidos com negrito, itálico e símbolos, para destacar notas do JW Library.">
-  <meta name="theme-color" content="#1f2937">
+  <meta name="theme-color" content="#e7ecf6">
+  <script>
+    // Aplica o tema salvo antes do corpo renderizar, para não piscar o tema errado.
+    try {
+      var temaSalvo = localStorage.getItem('jwLibraryNoteAplicarThemeV1');
+      if (temaSalvo === 'dark' || temaSalvo === 'light') {
+        document.documentElement.setAttribute('data-theme', temaSalvo);
+      }
+    } catch (e) {}
+  </script>
   <style>
     :root {
       color-scheme: light dark;
-      --bg: #f6f7f9;
+      --bg: #e7ecf6;
       --card: #ffffff;
       --card-tint: #ffffff;
       --text: #1f2937;
@@ -31,12 +40,19 @@
       --neutral-dark: #d1d5db;
       --neutral-text: #111827;
       --shadow: rgba(0, 0, 0, .05);
-      --header-from: #1f2937;
-      --header-to: #374151;
+
+      /* Matizes dos cartões de seção — no escuro ficam mais discretos, mas mantêm a cor. */
+      --tint1-bg: linear-gradient(180deg, #dbeafe 0%, #bfdbfe 100%); --tint1-border: #93c5fd;
+      --tint2-bg: linear-gradient(180deg, #dcfce7 0%, #bbf7d0 100%); --tint2-border: #86efac;
+      --tint3-bg: linear-gradient(180deg, #f3e8ff 0%, #e9d5ff 100%); --tint3-border: #d8b4fe;
+      --tint4-bg: linear-gradient(180deg, #ffedd5 0%, #fed7aa 100%); --tint4-border: #fdba74;
+      --tint5-bg: linear-gradient(180deg, #e2e8f0 0%, #cbd5e1 100%); --tint5-border: #94a3b8;
+      --tint6-bg: linear-gradient(180deg, #ccfbf1 0%, #99f6e4 100%); --tint6-border: #5eead4;
     }
 
+    /* Escuro pelo sistema, a menos que o usuário force o tema claro no seletor. */
     @media (prefers-color-scheme: dark) {
-      :root {
+      :root:not([data-theme="light"]) {
         --bg: #0f172a;
         --card: #1e293b;
         --card-tint: #1e293b;
@@ -56,9 +72,42 @@
         --neutral-dark: #475569;
         --neutral-text: #e2e8f0;
         --shadow: rgba(0, 0, 0, .4);
-        --header-from: #0b1220;
-        --header-to: #1e293b;
+        --tint1-bg: linear-gradient(180deg, #1e293b 0%, #1e3a5f 100%); --tint1-border: #3b82f6;
+        --tint2-bg: linear-gradient(180deg, #1e293b 0%, #14532d 100%); --tint2-border: #22c55e;
+        --tint3-bg: linear-gradient(180deg, #1e293b 0%, #4c1d95 100%); --tint3-border: #a78bfa;
+        --tint4-bg: linear-gradient(180deg, #1e293b 0%, #7c2d12 100%); --tint4-border: #fb923c;
+        --tint5-bg: linear-gradient(180deg, #1e293b 0%, #334155 100%); --tint5-border: #94a3b8;
+        --tint6-bg: linear-gradient(180deg, #1e293b 0%, #134e4a 100%); --tint6-border: #2dd4bf;
       }
+    }
+
+    /* Escuro forçado pelo usuário, mesmo com o sistema no claro. */
+    :root[data-theme="dark"] {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --card-tint: #1e293b;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --line: #334155;
+      --accent: #3b82f6;
+      --accent-dark: #2563eb;
+      --soft: #1e3a5f;
+      --soft-line: #3b82f6;
+      --danger: #ef4444;
+      --danger-dark: #dc2626;
+      --success: #34d399;
+      --warning: #fbbf24;
+      --field: #0f172a;
+      --neutral: #334155;
+      --neutral-dark: #475569;
+      --neutral-text: #e2e8f0;
+      --shadow: rgba(0, 0, 0, .4);
+      --tint1-bg: linear-gradient(180deg, #1e293b 0%, #1e3a5f 100%); --tint1-border: #3b82f6;
+      --tint2-bg: linear-gradient(180deg, #1e293b 0%, #14532d 100%); --tint2-border: #22c55e;
+      --tint3-bg: linear-gradient(180deg, #1e293b 0%, #4c1d95 100%); --tint3-border: #a78bfa;
+      --tint4-bg: linear-gradient(180deg, #1e293b 0%, #7c2d12 100%); --tint4-border: #fb923c;
+      --tint5-bg: linear-gradient(180deg, #1e293b 0%, #334155 100%); --tint5-border: #94a3b8;
+      --tint6-bg: linear-gradient(180deg, #1e293b 0%, #134e4a 100%); --tint6-border: #2dd4bf;
     }
 
     * { box-sizing: border-box; }
@@ -75,9 +124,9 @@
     /* ---------- Cabeçalho ---------- */
 
     header {
-      background: linear-gradient(135deg, var(--header-from), var(--header-to));
-      color: #f8fafc;
-      padding: 28px 16px;
+      background: transparent;
+      color: var(--text);
+      padding: 16px 16px 12px;
       text-align: center;
     }
 
@@ -85,31 +134,88 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 14px;
-      margin-bottom: 8px;
+      gap: 10px;
+      margin-bottom: 4px;
       max-width: 100%;
     }
 
     .brand-icon {
-      width: clamp(46px, 7vw, 76px);
+      width: clamp(68px, 13vw, 96px);
       height: auto;
       aspect-ratio: 1;
-      border-radius: 18px;
-      box-shadow: 0 10px 24px rgba(0, 0, 0, .22);
       flex: 0 0 auto;
+      filter: drop-shadow(0 4px 10px var(--shadow));
     }
 
     header h1 {
       margin: 0;
-      font-size: clamp(1.25rem, 4vw, 2.25rem);
-      line-height: 1.15;
+      font-size: clamp(1.9rem, 6.5vw, 2.75rem);
+      line-height: 1.1;
+    }
+
+    .brand-subtitle {
+      margin: 6px 0 0;
+      font-weight: 650;
+      font-size: clamp(.95rem, 2.6vw, 1.15rem);
+      color: var(--text);
     }
 
     header p {
-      margin: 0 auto;
+      margin: 6px auto 0;
       max-width: 820px;
-      color: #e5e7eb;
+      color: var(--muted);
+      font-size: .92rem;
     }
+
+    .theme-switch-row {
+      display: flex;
+      justify-content: center;
+      padding: 4px 16px 18px;
+    }
+
+    .theme-switch {
+      display: flex;
+      width: min(480px, 100%);
+      gap: 4px;
+      padding: 4px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      box-shadow: 0 2px 8px var(--shadow);
+    }
+
+    .theme-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 650;
+      font-size: .85rem;
+      padding: 10px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+
+    .theme-btn:hover { color: var(--text); }
+
+    .theme-btn.active {
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    .about-link-row {
+      display: flex;
+      justify-content: center;
+      padding: 4px 16px 24px;
+    }
+
+    .about-link {
+      color: var(--muted);
+      font-size: .9rem;
+      text-decoration: underline;
+    }
+
+    .about-link:hover { color: var(--text); }
 
     /* ---------- Estrutura ---------- */
 
@@ -136,22 +242,79 @@
       max-width: 100%;
     }
 
-    /* Cada cartão tem um matiz próprio, como nas versões anteriores. No tema escuro
-       o degradê sai de cena e o fundo neutro assume, para o contraste não sofrer. */
-    @media (prefers-color-scheme: light) {
-      .card:nth-of-type(1) { background: linear-gradient(180deg, #ffffff 0%, #eef6ff 100%); border-color: #bfdbfe; }
-      .card:nth-of-type(2) { background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%); border-color: #bbf7d0; }
-      .card:nth-of-type(3) { background: linear-gradient(180deg, #ffffff 0%, #faf5ff 100%); border-color: #e9d5ff; }
-      .card:nth-of-type(4) { background: linear-gradient(180deg, #ffffff 0%, #fff7ed 100%); border-color: #fed7aa; }
-      .card:nth-of-type(5) { background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%); border-color: #cbd5e1; }
-      .card:nth-of-type(6) { background: linear-gradient(180deg, #ffffff 0%, #f0fdfa 100%); border-color: #99f6e4; }
-    }
+    /* Cada cartão tem um matiz próprio. No tema escuro os tokens --tintN-bg/border
+       (ver :root) viram neutros, para o contraste não sofrer. */
+    .card:nth-of-type(1) { background: var(--tint1-bg); border-color: var(--tint1-border); }
+    .card:nth-of-type(2) { background: var(--tint2-bg); border-color: var(--tint2-border); }
+    .card:nth-of-type(3) { background: var(--tint3-bg); border-color: var(--tint3-border); }
+    .card:nth-of-type(4) { background: var(--tint4-bg); border-color: var(--tint4-border); }
+    .card:nth-of-type(5) { background: var(--tint5-bg); border-color: var(--tint5-border); }
+    .card:nth-of-type(6) { background: var(--tint6-bg); border-color: var(--tint6-border); }
+
+    /* As seções 2 e 3 viraram <details> (accordion) e saíram da contagem de
+       nth-of-type("section"), então recebem a cor certa por classe explícita. */
+    .card.tint-2 { background: var(--tint2-bg); border-color: var(--tint2-border); }
+    .card.tint-3 { background: var(--tint3-bg); border-color: var(--tint3-border); }
+    .card.tint-4 { background: var(--tint4-bg); border-color: var(--tint4-border); }
 
     .card h2,
     .card h3 { margin: 0 0 10px; }
 
     .card h2 { font-size: 1.1rem; }
     .card h3 { font-size: 1rem; }
+
+    /* ---------- Seções recolhíveis (accordion) ---------- */
+
+    .section-accordion > summary,
+    details.subsection > summary {
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .section-accordion > summary::-webkit-details-marker,
+    details.subsection > summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .section-accordion > summary::after,
+    details.subsection > summary::after {
+      content: '▸';
+      color: var(--muted);
+      font-size: 1.05rem;
+      flex: 0 0 auto;
+      transition: transform .15s ease;
+    }
+
+    .section-accordion[open] > summary::after,
+    details.subsection[open] > summary::after {
+      transform: rotate(90deg);
+    }
+
+    .section-accordion > summary h2 { margin: 0; }
+    .section-accordion-body { margin-top: 14px; }
+
+    details.subsection {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      margin: 12px 0 0;
+      background: var(--card);
+    }
+
+    details.subsection > summary {
+      padding: 12px 14px;
+      font-weight: 650;
+      margin: 0;
+    }
+
+    details.subsection > summary:hover { background: var(--soft); }
+    details.subsection .subsection-body { padding: 12px 14px 14px; }
+
+    details.subsection.subsection-editor { background: var(--tint1-bg); border-color: var(--tint1-border); }
+    details.subsection.subsection-categories { background: var(--tint4-bg); border-color: var(--tint4-border); }
 
     .editor-layout {
       display: grid;
@@ -162,13 +325,6 @@
 
     .editor-text-pane,
     .editor-controls-pane { min-width: 0; }
-
-    footer {
-      color: var(--muted);
-      text-align: center;
-      padding: 18px;
-      font-size: .9rem;
-    }
 
     /* ---------- Campos ---------- */
 
@@ -266,6 +422,7 @@
     button.secondary {
       background: var(--neutral);
       color: var(--neutral-text);
+      border: 2px solid var(--muted);
     }
 
     button.secondary:hover { background: var(--neutral-dark); }
@@ -325,14 +482,22 @@
     .btn-teal   { background: #ccfbf1; color: #134e4a; }
 
     @media (prefers-color-scheme: dark) {
-      .btn-blue   { background: #1e3a8a; color: #dbeafe; }
-      .btn-green  { background: #14532d; color: #dcfce7; }
-      .btn-purple { background: #581c87; color: #f3e8ff; }
-      .btn-slate  { background: #334155; color: #e2e8f0; }
-      .btn-orange { background: #7c2d12; color: #ffedd5; }
-      .btn-sky    { background: #075985; color: #e0f2fe; }
-      .btn-teal   { background: #134e4a; color: #ccfbf1; }
+      :root:not([data-theme="light"]) .btn-blue   { background: #1e3a8a; color: #dbeafe; }
+      :root:not([data-theme="light"]) .btn-green  { background: #14532d; color: #dcfce7; }
+      :root:not([data-theme="light"]) .btn-purple { background: #581c87; color: #f3e8ff; }
+      :root:not([data-theme="light"]) .btn-slate  { background: #334155; color: #e2e8f0; }
+      :root:not([data-theme="light"]) .btn-orange { background: #7c2d12; color: #ffedd5; }
+      :root:not([data-theme="light"]) .btn-sky    { background: #075985; color: #e0f2fe; }
+      :root:not([data-theme="light"]) .btn-teal   { background: #134e4a; color: #ccfbf1; }
     }
+
+    :root[data-theme="dark"] .btn-blue   { background: #1e3a8a; color: #dbeafe; }
+    :root[data-theme="dark"] .btn-green  { background: #14532d; color: #dcfce7; }
+    :root[data-theme="dark"] .btn-purple { background: #581c87; color: #f3e8ff; }
+    :root[data-theme="dark"] .btn-slate  { background: #334155; color: #e2e8f0; }
+    :root[data-theme="dark"] .btn-orange { background: #7c2d12; color: #ffedd5; }
+    :root[data-theme="dark"] .btn-sky    { background: #075985; color: #e0f2fe; }
+    :root[data-theme="dark"] .btn-teal   { background: #134e4a; color: #ccfbf1; }
 
     /* ---------- Barra de ações principal ---------- */
 
@@ -369,23 +534,31 @@
       align-items: center;
       justify-content: center;
       border-radius: 13px;
+      border: 2px solid transparent;
     }
 
-    .icon-action.clear  { background: #e2e8f0; color: #0f172a; }
-    .icon-action.quick  { background: #ede9fe; color: #4c1d95; }
-    .icon-action.quick.remove { background: #fee2e2; color: #7f1d1d; }
-    .icon-action.indent { background: #fef3c7; color: #92400e; }
-    .icon-action.copy   { background: #dcfce7; color: #14532d; }
-    .icon-action.select { background: #e0f2fe; color: #075985; }
+    .icon-action.clear  { background: #e2e8f0; color: #0f172a; border-color: #94a3b8; }
+    .icon-action.quick  { background: #ede9fe; color: #4c1d95; border-color: #a78bfa; }
+    .icon-action.quick.remove { background: #fee2e2; color: #7f1d1d; border-color: #f87171; }
+    .icon-action.indent { background: #fef3c7; color: #92400e; border-color: #fbbf24; }
+    .icon-action.copy   { background: #dcfce7; color: #14532d; border-color: #4ade80; }
+    .icon-action.select { background: #e0f2fe; color: #075985; border-color: #38bdf8; }
 
     @media (prefers-color-scheme: dark) {
-      .icon-action.clear  { background: #334155; color: #e2e8f0; }
-      .icon-action.quick  { background: #4c1d95; color: #ede9fe; }
-      .icon-action.quick.remove { background: #7f1d1d; color: #fee2e2; }
-      .icon-action.indent { background: #92400e; color: #fef3c7; }
-      .icon-action.copy   { background: #14532d; color: #dcfce7; }
-      .icon-action.select { background: #075985; color: #e0f2fe; }
+      :root:not([data-theme="light"]) .icon-action.clear  { background: #334155; color: #e2e8f0; border-color: #64748b; }
+      :root:not([data-theme="light"]) .icon-action.quick  { background: #4c1d95; color: #ede9fe; border-color: #8b5cf6; }
+      :root:not([data-theme="light"]) .icon-action.quick.remove { background: #7f1d1d; color: #fee2e2; border-color: #ef4444; }
+      :root:not([data-theme="light"]) .icon-action.indent { background: #92400e; color: #fef3c7; border-color: #f59e0b; }
+      :root:not([data-theme="light"]) .icon-action.copy   { background: #14532d; color: #dcfce7; border-color: #22c55e; }
+      :root:not([data-theme="light"]) .icon-action.select { background: #075985; color: #e0f2fe; border-color: #0ea5e9; }
     }
+
+    :root[data-theme="dark"] .icon-action.clear  { background: #334155; color: #e2e8f0; border-color: #64748b; }
+    :root[data-theme="dark"] .icon-action.quick  { background: #4c1d95; color: #ede9fe; border-color: #8b5cf6; }
+    :root[data-theme="dark"] .icon-action.quick.remove { background: #7f1d1d; color: #fee2e2; border-color: #ef4444; }
+    :root[data-theme="dark"] .icon-action.indent { background: #92400e; color: #fef3c7; border-color: #f59e0b; }
+    :root[data-theme="dark"] .icon-action.copy   { background: #14532d; color: #dcfce7; border-color: #22c55e; }
+    :root[data-theme="dark"] .icon-action.select { background: #075985; color: #e0f2fe; border-color: #0ea5e9; }
 
     .icon-action:hover:not(:disabled),
     .icon-action:focus-visible {
@@ -418,6 +591,12 @@
       overflow-wrap: anywhere;
     }
 
+    .template-card-btn {
+      border: 2px solid var(--muted);
+    }
+
+    .template-card-btn:hover { border-color: var(--accent); }
+
     .template-card-name {
       display: block;
       font-size: .72rem;
@@ -440,6 +619,35 @@
       color: var(--muted);
       margin-top: 4px;
     }
+
+    .checkbox-list {
+      display: flex;
+      flex-direction: column;
+      margin-top: 8px;
+      border: 2px solid var(--muted);
+      border-radius: 10px;
+      max-height: 185px;
+      overflow-y: auto;
+      background: var(--card);
+    }
+
+    .checkbox-pill {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 4px 12px;
+      min-height: 0;
+      line-height: 1.2;
+      font-size: .85rem;
+      font-weight: 650;
+      cursor: pointer;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .checkbox-pill:last-child { border-bottom: none; }
+    .checkbox-pill:hover { background: var(--soft); }
+
+    .checkbox-pill input { margin: 0; width: 14px; height: 14px; flex: 0 0 auto; accent-color: var(--accent); }
 
     .template-editor {
       margin-top: 14px;
@@ -674,10 +882,7 @@
     @media (max-width: 560px) {
       body { line-height: 1.38; }
 
-      header { padding: 18px 10px; }
-
-      .brand-title { flex-direction: column; gap: 8px; }
-      .brand-icon { width: 58px; }
+      header { padding: 12px 10px 10px; }
 
       .card { padding: 12px; border-radius: 12px; }
 
@@ -767,18 +972,14 @@
 <body>
   <header>
     <div class="brand-title">
-      <img src="icon-192.png" alt="" class="brand-icon" width="192" height="192" decoding="async">
-      <h1>Conversor para Notas do JW Library</h1>
+      <img src="icon-header.png" alt="" class="brand-icon" width="512" height="512" decoding="async">
+      <h1>JwNotes</h1>
     </div>
-    <p>Digite um texto, escolha as opções, clique em Aplicar e copie o resultado para colar nas notas do JW Library.</p>
+    <p class="brand-subtitle">Formatação de notas para o JW Library</p>
+    <p>Digite ou cole um texto, escolha as opções, clique em Aplicar e copie o resultado para colar nas notas do JW Library.</p>
   </header>
 
   <main>
-    <section class="card" style="margin-bottom:16px">
-      <h2>Formatar notas da JW Library <span class="pill" id="appVersionPill"></span></h2>
-      <p class="hint">Este aplicativo não aplica formatação real. Ele troca as letras por caracteres Unicode parecidos com negrito, itálico, círculos, caixas e símbolos, para dar aparência de destaque em campos que aceitam apenas texto.</p>
-    </section>
-
     <div class="single-grid">
       <section class="card">
         <h2>1. Texto original</h2>
@@ -825,49 +1026,44 @@
         </div>
         <span id="copyStatus" class="ok main-copy-status" role="status" aria-live="polite"></span>
 
-        <div>
-          <p class="field-label" id="caseLabel">Maiúsculas/minúsculas</p>
-          <div class="option-buttons case-buttons" role="group" aria-labelledby="caseLabel">
-            <button type="button" class="option-btn btn-orange" data-case="upper">🔠 MAIÚSCULAS</button>
-            <button type="button" class="option-btn btn-sky" data-case="title">✨ Iniciais</button>
-            <button type="button" class="option-btn btn-teal" data-case="lower">🔡 minúsculas</button>
+        <details class="subsection">
+          <summary id="caseLabel">Maiúsculas/minúsculas</summary>
+          <div class="subsection-body">
+            <div class="option-buttons case-buttons" role="group" aria-labelledby="caseLabel">
+              <button type="button" class="option-btn btn-orange" data-case="upper">🔠 MAIÚSCULAS</button>
+              <button type="button" class="option-btn btn-sky" data-case="title">✨ Iniciais</button>
+              <button type="button" class="option-btn btn-teal" data-case="lower">🔡 minúsculas</button>
+            </div>
           </div>
-        </div>
+        </details>
 
-        <div>
-          <p class="field-label" id="listLabel">Inserir lista no texto selecionado</p>
-          <div class="option-buttons list-buttons" role="group" aria-labelledby="listLabel">
-            <button type="button" class="option-btn btn-blue" data-list="blueDiamond" aria-label="Lista com Losango azul" title="Lista com Losango azul">🔷</button>
-            <button type="button" class="option-btn btn-orange" data-list="orangeDiamond" aria-label="Lista com Losango laranja" title="Lista com Losango laranja">🔶</button>
-            <button type="button" class="option-btn btn-sky" data-list="smallBlueDiamond" aria-label="Lista com Losango azul pequeno" title="Lista com Losango azul pequeno">🔹</button>
-            <button type="button" class="option-btn btn-orange" data-list="smallOrangeDiamond" aria-label="Lista com Losango laranja pequeno" title="Lista com Losango laranja pequeno">🔸</button>
-            <button type="button" class="option-btn btn-teal" data-list="diamondDot" aria-label="Lista com Losango com ponto" title="Lista com Losango com ponto">💠</button>
-            <button type="button" class="option-btn btn-purple" data-list="gemDiamond" aria-label="Lista com Diamante" title="Lista com Diamante">💎</button>
-            <button type="button" class="option-btn btn-slate" data-list="bullet">• Ponto</button>
-            <button type="button" class="option-btn btn-purple" data-list="arrow">➤ Seta</button>
-            <button type="button" class="option-btn btn-green" data-list="check">✅ Check</button>
-            <button type="button" class="option-btn btn-green" data-list="simpleCheck">✔ Check</button>
-            <button type="button" class="option-btn btn-orange" data-list="numberDot">1. Número</button>
-            <button type="button" class="option-btn btn-sky" data-list="numberParen">1) Número</button>
-            <button type="button" class="option-btn btn-teal" data-list="circled">① Círculo</button>
-            <button type="button" class="option-btn btn-slate" data-list="blackCircle">❶ Preto</button>
-            <button type="button" class="option-btn btn-blue" data-list="keycapNumber">1️⃣ Número azul</button>
-            <button type="button" class="option-btn btn-blue" data-list="squareBlue">🟦 Quadrado</button>
-            <button type="button" class="option-btn btn-purple" data-list="squareAlternate">🟦🟧 Quadrado alternado</button>
-            <button type="button" class="option-btn btn-sky" data-list="circleBlue">🔵 Círculo</button>
-            <button type="button" class="option-btn btn-purple" data-list="circleAlternate">🔵🟣 Círculo alternado</button>
+        <details class="subsection">
+          <summary id="listLabel">Inserir marcadores e numeradores de lista no texto selecionado</summary>
+          <div class="subsection-body">
+            <div class="option-buttons list-buttons" role="group" aria-labelledby="listLabel">
+              <button type="button" class="option-btn btn-blue" data-list="blueDiamond" aria-label="Lista com Losango azul" title="Lista com Losango azul">🔷</button>
+              <button type="button" class="option-btn btn-orange" data-list="orangeDiamond" aria-label="Lista com Losango laranja" title="Lista com Losango laranja">🔶</button>
+              <button type="button" class="option-btn btn-sky" data-list="smallBlueDiamond" aria-label="Lista com Losango azul pequeno" title="Lista com Losango azul pequeno">🔹</button>
+              <button type="button" class="option-btn btn-orange" data-list="smallOrangeDiamond" aria-label="Lista com Losango laranja pequeno" title="Lista com Losango laranja pequeno">🔸</button>
+              <button type="button" class="option-btn btn-teal" data-list="diamondDot" aria-label="Lista com Losango com ponto" title="Lista com Losango com ponto">💠</button>
+              <button type="button" class="option-btn btn-purple" data-list="gemDiamond" aria-label="Lista com Diamante" title="Lista com Diamante">💎</button>
+              <button type="button" class="option-btn btn-slate" data-list="bullet">• Ponto</button>
+              <button type="button" class="option-btn btn-purple" data-list="arrow">➤ Seta</button>
+              <button type="button" class="option-btn btn-green" data-list="check">✅ Check</button>
+              <button type="button" class="option-btn btn-green" data-list="simpleCheck">✔ Check</button>
+              <button type="button" class="option-btn btn-orange" data-list="numberDot">1. Número</button>
+              <button type="button" class="option-btn btn-sky" data-list="numberParen">1) Número</button>
+              <button type="button" class="option-btn btn-teal" data-list="circled">① Círculo</button>
+              <button type="button" class="option-btn btn-slate" data-list="blackCircle">❶ Preto</button>
+              <button type="button" class="option-btn btn-blue" data-list="keycapNumber">1️⃣ Número azul</button>
+              <button type="button" class="option-btn btn-blue" data-list="squareBlue">🟦 Quadrado</button>
+              <button type="button" class="option-btn btn-purple" data-list="squareAlternate">🟦🟧 Quadrado alternado</button>
+              <button type="button" class="option-btn btn-sky" data-list="circleBlue">🔵 Círculo</button>
+              <button type="button" class="option-btn btn-purple" data-list="circleAlternate">🔵🟣 Círculo alternado</button>
+            </div>
+            <p class="hint">Selecione várias linhas ou parágrafos para transformar em lista. Sem seleção, o app insere apenas o símbolo no cursor.</p>
           </div>
-          <p class="hint">Selecione várias linhas ou parágrafos para transformar em lista. Sem seleção, o app insere apenas o símbolo no cursor.</p>
-        </div>
-
-        <div class="style-full-row">
-          <label for="styleSelect">Tipo de caractere</label>
-          <select id="styleSelect"></select>
-          <p id="styleOptionInfo" class="hint"></p>
-        </div>
-
-        <p class="field-label">Exemplo do estilo escolhido</p>
-        <div id="preview" class="preview"></div>
+        </details>
 
         <p id="selectionInfo" class="hint" role="status" aria-live="polite">Selecione um trecho e clique na formatação desejada. Use ⇥ Recuo ou a tecla Tab para aumentar o recuo do parágrafo. Repita para mais níveis; Shift+Tab reduz o recuo.</p>
 
@@ -878,8 +1074,27 @@
 
     </div>
 
-    <section class="card" style="margin-top:16px">
-      <h2>2. Modelos prontos e personalizados</h2>
+    <details class="card tint-2 section-accordion" style="margin-top:16px">
+      <summary><h2>2. Tipo de fonte/caractere</h2></summary>
+      <div class="section-accordion-body">
+        <div class="style-full-row">
+          <label for="styleSelect">Tipo de caractere</label>
+          <select id="styleSelect"></select>
+          <p id="styleOptionInfo" class="hint"></p>
+        </div>
+
+        <p class="field-label">Exemplo do estilo escolhido</p>
+        <div id="preview" class="preview"></div>
+
+        <div class="button-row">
+          <button id="applyStyleBtn" type="button">Aplicar fonte ao trecho selecionado</button>
+        </div>
+      </div>
+    </details>
+
+    <details class="card tint-3 section-accordion" style="margin-top:16px">
+      <summary><h2>3. Modelos prontos e personalizados</h2></summary>
+      <div class="section-accordion-body">
       <p class="hint">Clique num modelo pronto para inserir no campo ativo. Se o cursor estiver no texto original, o modelo será inserido ali. Se houver texto selecionado e o modelo tiver {texto}, ele será aplicado ao trecho selecionado; se não tiver {texto}, será inserido antes do trecho.</p>
 
       <div class="template-toolbar">
@@ -891,54 +1106,85 @@
 
       <div id="templates" class="templates"></div>
 
-      <div class="template-editor">
-        <h3>Criar ou alterar modelo</h3>
+      <details class="subsection subsection-editor" id="editorSubsection">
+        <summary>Criar ou alterar modelo</summary>
+        <div class="subsection-body">
+          <label for="templateSelect">Modelo para editar</label>
+          <div class="template-row">
+            <select id="templateSelect"></select>
+            <button id="newTemplateBtn" class="secondary" type="button">Novo modelo</button>
+          </div>
 
-        <label for="templateSelect">Modelo para editar</label>
-        <div class="template-row">
-          <select id="templateSelect"></select>
-          <button id="newTemplateBtn" class="secondary" type="button">Novo modelo</button>
-        </div>
+          <div class="controls-3">
+            <div>
+              <label for="templateName">Nome do modelo</label>
+              <input id="templateName" type="text" placeholder="Ex.: Pergunta com destaque">
+            </div>
+            <div>
+              <label for="templateContent">Texto do modelo</label>
+              <input id="templateContent" type="text" placeholder="Ex.: ➜ {texto} ⬅">
+            </div>
+            <div>
+              <label for="templateCategorySelect">Categoria do modelo</label>
+              <select id="templateCategorySelect"></select>
+            </div>
+          </div>
 
-        <div class="controls-3">
           <div>
-            <label for="templateName">Nome do modelo</label>
-            <input id="templateName" type="text" placeholder="Ex.: Pergunta com destaque">
+            <p class="field-label" id="extraCategoriesLabel">Também mostrar este modelo em (opcional)</p>
+            <div id="templateExtraCategories" class="checkbox-list" role="group" aria-labelledby="extraCategoriesLabel"></div>
+            <p class="hint">Marque outras categorias para este modelo aparecer nelas também, além da categoria principal escolhida acima.</p>
           </div>
-          <div>
-            <label for="templateContent">Texto do modelo</label>
-            <input id="templateContent" type="text" placeholder="Ex.: ➜ {texto} ⬅">
-          </div>
-          <div>
-            <label for="templateCategorySelect">Categoria do modelo</label>
-            <select id="templateCategorySelect"></select>
-          </div>
-        </div>
 
-        <div class="controls">
-          <div>
-            <label for="newTemplateCategoryName">Nova categoria de modelos</label>
-            <input id="newTemplateCategoryName" type="text" placeholder="Ex.: Revisão, Joias, Perguntas">
+          <div class="button-row">
+            <button id="insertTextMarkerBtn" class="secondary" type="button">Inserir {texto}</button>
+            <button id="saveTemplateBtn" type="button">Salvar modelo</button>
+            <button id="deleteTemplateBtn" class="danger" type="button">Excluir modelo</button>
+            <button id="resetTemplatesBtn" class="secondary" type="button">Restaurar modelos padrão</button>
+            <span id="templateStatus" class="ok" role="status" aria-live="polite"></span>
           </div>
-          <div style="align-self:end">
-            <button id="addTemplateCategoryBtn" class="secondary" type="button">Criar categoria</button>
+
+          <p class="hint">Categoria oficial padrão: <strong>DESTAQUES</strong>. Você também pode criar suas próprias categorias em "Gerenciar categorias de modelos", abaixo.</p>
+          <p class="hint">Dica para modelos: use <strong>{texto}</strong> para marcar onde o texto selecionado deve entrar. Exemplo: <strong>➜ {texto} ⬅</strong>. Se o modelo não tiver {texto}, ele será colocado antes do texto.</p>
+        </div>
+      </details>
+
+      <details class="subsection subsection-categories" id="categoriesSubsection">
+        <summary>Gerenciar categorias de modelos</summary>
+        <div class="subsection-body">
+          <div class="controls">
+            <div>
+              <label for="newTemplateCategoryName">Nova categoria de modelos</label>
+              <input id="newTemplateCategoryName" type="text" placeholder="Ex.: Revisão, Joias, Perguntas">
+            </div>
+            <div style="align-self:end">
+              <button id="addTemplateCategoryBtn" class="secondary" type="button">Criar categoria</button>
+            </div>
           </div>
-        </div>
 
-        <div class="button-row">
-          <button id="insertTextMarkerBtn" class="secondary" type="button">Inserir {texto}</button>
-          <button id="saveTemplateBtn" type="button">Salvar modelo</button>
-          <button id="deleteTemplateBtn" class="danger" type="button">Excluir modelo</button>
-          <button id="resetTemplatesBtn" class="secondary" type="button">Restaurar modelos padrão</button>
-          <span id="templateStatus" class="ok" role="status" aria-live="polite"></span>
-        </div>
+          <div class="controls-3">
+            <div>
+              <label for="categoryManageSelect">Categoria existente</label>
+              <select id="categoryManageSelect"></select>
+            </div>
+            <div>
+              <label for="categoryRenameName">Novo nome da categoria</label>
+              <input id="categoryRenameName" type="text" placeholder="Ex.: Novo nome">
+            </div>
+            <div style="align-self:end; display:flex; gap:10px">
+              <button id="renameTemplateCategoryBtn" class="secondary" type="button">Renomear</button>
+              <button id="deleteTemplateCategoryBtn" class="danger" type="button">Excluir categoria "<span id="deleteTemplateCategoryName"></span>"</button>
+            </div>
+          </div>
 
-        <p class="hint">Categoria oficial padrão: <strong>Destaques</strong>. Você também pode criar suas próprias categorias e mudar qualquer modelo de categoria.</p>
-        <p class="hint">Dica para modelos: use <strong>{texto}</strong> para marcar onde o texto selecionado deve entrar. Exemplo: <strong>➜ {texto} ⬅</strong>. Se o modelo não tiver {texto}, ele será colocado antes do texto.</p>
+          <p class="hint">"Renomear" e "Excluir categoria" agem sobre a categoria escolhida em <strong>Categoria existente</strong>, acima. A categoria <strong>DESTAQUES</strong> não pode ser renomeada nem excluída. Se a categoria tiver modelos, ao excluir você escolhe se eles são movidos para <strong>DESTAQUES</strong> ou excluídos junto.</p>
+        </div>
+      </details>
       </div>
-    </section>
-    <section class="card" style="margin-top:16px">
-      <h2>3. Caracteres, ícones e emoticons</h2>
+    </details>
+    <details class="card tint-4 section-accordion" style="margin-top:16px">
+      <summary><h2>4. Caracteres, ícones e emoticons</h2></summary>
+      <div class="section-accordion-body">
       <p class="hint">Clique para inserir no campo ativo. Os favoritos ficam no topo. Dê dois cliques em um favorito para tirar do topo; dê dois cliques em um item de baixo para mandar para os favoritos.</p>
 
       <h3>Favoritos no topo</h3>
@@ -970,7 +1216,8 @@
           <button id="clearCustomSymbolsBtn" class="secondary" type="button">Limpar caracteres personalizados</button>
         </div>
       </div>
-    </section>
+      </div>
+    </details>
 
   </main>
 
@@ -1033,17 +1280,79 @@
     </div>
   </div>
 
+  <div id="confirmOverlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="modal-card">
+      <h2 id="confirmTitle">Confirmar</h2>
+      <p id="confirmText">Tem certeza?</p>
+      <div class="modal-actions">
+        <button id="confirmOkChoice" type="button" class="btn-orange">🗑️ Confirmar</button>
+        <button id="cancelConfirmChoice" type="button" class="btn-slate">✖️ Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="categoryDeleteOverlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="categoryDeleteTitle">
+    <div class="modal-card">
+      <h2 id="categoryDeleteTitle">Excluir categoria</h2>
+      <p id="categoryDeleteText">Escolha o que fazer com os modelos desta categoria.</p>
+      <div class="modal-actions">
+        <button id="keepTemplatesChoice" type="button" class="btn-green">🔄 Mover modelos e excluir categoria</button>
+        <button id="deleteTemplatesChoice" type="button" class="btn-orange">🗑️ Excluir categoria e os modelos</button>
+        <button id="cancelCategoryDeleteChoice" type="button" class="btn-slate">✖️ Cancelar</button>
+      </div>
+    </div>
+  </div>
+
   <noscript>
     <p style="padding:16px;text-align:center">Este conversor precisa de JavaScript ativado para funcionar.</p>
   </noscript>
 
-  <footer>
-    Arquivo HTML/CSS/JavaScript. Instalado ou aberto no navegador, funciona offline
-    depois do primeiro acesso; baixado como arquivo, funciona direto do aparelho.
-    Versão <span id="appVersionFooter"></span>.
-  </footer>
+  <div class="theme-switch-row">
+    <div class="theme-switch" role="group" aria-label="Tema do aplicativo">
+      <button type="button" class="theme-btn" data-theme-choice="auto">Auto</button>
+      <button type="button" class="theme-btn" data-theme-choice="light">☀️ Claro</button>
+      <button type="button" class="theme-btn" data-theme-choice="dark">🌙 Escuro</button>
+    </div>
+  </div>
+
+  <div class="about-link-row">
+    <a class="about-link" href="sobre.html">ℹ️ Sobre o app</a>
+  </div>
 
   <script>
+
+    // ---------- Tema (Auto / Claro / Escuro) ----------
+
+    const THEME_STORAGE_KEY = 'jwLibraryNoteAplicarThemeV1';
+
+    function aplicarTema(escolha) {
+      if (escolha === 'dark' || escolha === 'light') {
+        document.documentElement.setAttribute('data-theme', escolha);
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+      }
+      document.querySelectorAll('.theme-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.themeChoice === escolha);
+      });
+    }
+
+    function initThemeSwitch() {
+      let salvo = 'auto';
+      try {
+        salvo = localStorage.getItem(THEME_STORAGE_KEY) || 'auto';
+      } catch (e) {}
+      aplicarTema(salvo);
+
+      document.querySelectorAll('.theme-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const escolha = btn.dataset.themeChoice;
+          aplicarTema(escolha);
+          try { localStorage.setItem(THEME_STORAGE_KEY, escolha); } catch (e) {}
+        });
+      });
+    }
+
+    initThemeSwitch();
 
     // O app também circula como arquivo HTML avulso, aberto direto do disco. Em file://
     // não há manifest nem service worker que funcionem, então os dois só entram em cena
@@ -1118,11 +1427,26 @@
     const templateCategorySelect = document.getElementById('templateCategorySelect');
     const newTemplateCategoryName = document.getElementById('newTemplateCategoryName');
     const addTemplateCategoryBtn = document.getElementById('addTemplateCategoryBtn');
+    const deleteTemplateCategoryBtn = document.getElementById('deleteTemplateCategoryBtn');
+    const deleteTemplateCategoryName = document.getElementById('deleteTemplateCategoryName');
+    const categoryManageSelect = document.getElementById('categoryManageSelect');
+    const categoryRenameName = document.getElementById('categoryRenameName');
+    const renameTemplateCategoryBtn = document.getElementById('renameTemplateCategoryBtn');
+    const confirmOverlay = document.getElementById('confirmOverlay');
+    const confirmText = document.getElementById('confirmText');
+    const confirmOkChoice = document.getElementById('confirmOkChoice');
+    const cancelConfirmChoice = document.getElementById('cancelConfirmChoice');
+    const categoryDeleteOverlay = document.getElementById('categoryDeleteOverlay');
+    const categoryDeleteText = document.getElementById('categoryDeleteText');
+    const keepTemplatesChoice = document.getElementById('keepTemplatesChoice');
+    const deleteTemplatesChoice = document.getElementById('deleteTemplatesChoice');
+    const cancelCategoryDeleteChoice = document.getElementById('cancelCategoryDeleteChoice');
     const modelManagerOverlay = document.getElementById('modelManagerOverlay');
     const openModelManagerBtn = document.getElementById('openModelManagerBtn');
     const closeModelManagerBtn = document.getElementById('closeModelManagerBtn');
     const templateName = document.getElementById('templateName');
     const templateContent = document.getElementById('templateContent');
+    const templateExtraCategories = document.getElementById('templateExtraCategories');
     const backupText = document.getElementById('backupText');
     const backupStatus = document.getElementById('backupStatus');
     const importTemplatesFile = document.getElementById('importTemplatesFile');
@@ -1145,7 +1469,8 @@
     const CUSTOM_SYMBOL_CATEGORIES_STORAGE_KEY = 'jwLibraryNoteAplicarCustomSymbolCategoriesV1';
     const ONLINE_DEFAULTS_VERSION_STORAGE_KEY = 'jwLibraryNoteAplicarOnlineDefaultsVersionV1';
     const TEMPLATE_CATEGORIES_STORAGE_KEY = 'jwLibraryNoteAplicarTemplateCategoriesV1';
-    const DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
+    const DEFAULT_TEMPLATE_CATEGORY = 'DESTAQUES';
+    const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const APP_VERSION = '9.5';
 
     // Grava no localStorage sem derrubar a ação em curso quando o navegador
@@ -1288,7 +1613,36 @@
       { id:'tpl-quote', name:'Citação', category: DEFAULT_TEMPLATE_CATEGORY, content:'❝  ❞' },
       { id:'tpl-star', name:'Estrelas', category: DEFAULT_TEMPLATE_CATEGORY, content:'★  ★' },
       { id:'tpl-application', name:'Aplicação', category: DEFAULT_TEMPLATE_CATEGORY, content:'✅ Aplicação: ' },
-      { id:'tpl-mainpoint', name:'Ponto principal', category: DEFAULT_TEMPLATE_CATEGORY, content:'➤ Ponto principal: ' }
+      { id:'tpl-mainpoint', name:'Ponto principal', category: DEFAULT_TEMPLATE_CATEGORY, content:'➤ Ponto principal: ' },
+
+      { id:'tpl-reun-comentario', name:'Comentário', category:'Reuniões Congregacionais', content:'🗣️ COMENTÁRIO ➜ {texto}' },
+      { id:'tpl-reun-leitura', name:'Leitura da Bíblia', category:'Reuniões Congregacionais', content:'📖 LEITURA DA BÍBLIA ➜ {texto}' },
+      { id:'tpl-reun-pergunta', name:'Pergunta do parágrafo', category:'Reuniões Congregacionais', content:'❓ PERGUNTA ➜ {texto}' },
+      { id:'tpl-reun-ideia', name:'Ideia principal', category:'Reuniões Congregacionais', content:'🎯 IDEIA PRINCIPAL ➜ {texto}' },
+      { id:'tpl-reun-video', name:'Vídeo', category:'Reuniões Congregacionais', content:'🎥 VÍDEO ➜ {texto}' },
+      { id:'tpl-reun-demonstracao', name:'Demonstração', category:'Reuniões Congregacionais', content:'👥 DEMONSTRAÇÃO ➜ {texto}' },
+      { id:'tpl-reun-anuncios', name:'Anúncios', category:'Reuniões Congregacionais', content:'📢 ANÚNCIOS ➜ {texto}' },
+      { id:'tpl-reun-oracao', name:'Oração', category:'Reuniões Congregacionais', content:'🙏 ORAÇÃO' },
+      { id:'tpl-reun-cantico', name:'Cântico', category:'Reuniões Congregacionais', content:'🎶 CÂNTICO Nº {texto}' },
+      { id:'tpl-reun-designacao', name:'Designação com tempo', category:'Reuniões Congregacionais', content:'⏱️ DESIGNAÇÃO ({texto} min)' },
+
+      { id:'tpl-esp-tarefa', name:'Tarefa', category:'Escola de Pioneiros', content:'📝 TAREFA ➜ {texto}' },
+      { id:'tpl-esp-objetivo', name:'Objetivo da aula', category:'Escola de Pioneiros', content:'🎯 OBJETIVO DA AULA ➜ {texto}' },
+      { id:'tpl-esp-textobase', name:'Texto-base', category:'Escola de Pioneiros', content:'📖 TEXTO-BASE ➜ {texto}' },
+      { id:'tpl-esp-pontopratico', name:'Ponto prático', category:'Escola de Pioneiros', content:'💡 PONTO PRÁTICO ➜ {texto}' },
+      { id:'tpl-esp-discurso', name:'Discurso do aluno', category:'Escola de Pioneiros', content:'🗣️ DISCURSO ➜ {texto}' },
+      { id:'tpl-esp-meta', name:'Meta pessoal', category:'Escola de Pioneiros', content:'✅ META ➜ {texto}' },
+      { id:'tpl-esp-lembrar', name:'Ponto a lembrar', category:'Escola de Pioneiros', content:'📌 LEMBRAR ➜ {texto}' },
+      { id:'tpl-esp-experiencia', name:'Experiência no campo', category:'Escola de Pioneiros', content:'🤝 EXPERIÊNCIA NO CAMPO ➜ {texto}' },
+
+      { id:'tpl-cong-discurso', name:'Discurso público', category:'Congressos e Assembleias', content:'🎤 DISCURSO ➜ {texto}' },
+      { id:'tpl-cong-video', name:'Vídeo do programa', category:'Congressos e Assembleias', content:'🎬 VÍDEO ➜ {texto}' },
+      { id:'tpl-cong-drama', name:'Drama', category:'Congressos e Assembleias', content:'🎭 DRAMA ➜ {texto}' },
+      { id:'tpl-cong-batismo', name:'Batismo', category:'Congressos e Assembleias', content:'💧 BATISMO ➜ {texto}' },
+      { id:'tpl-cong-resumo', name:'Resumo do programa', category:'Congressos e Assembleias', content:'📊 RESUMO ➜ {texto}' },
+      { id:'tpl-cong-parte', name:'Parte do programa', category:'Congressos e Assembleias', content:'🗓️ PARTE ➜ {texto}' },
+      { id:'tpl-cong-destaque', name:'Destaque especial', category:'Congressos e Assembleias', content:'🌟 DESTAQUE ➜ {texto}' },
+      { id:'tpl-cong-experiencia', name:'Experiência', category:'Congressos e Assembleias', content:'❤️ EXPERIÊNCIA ➜ {texto}' }
     ];
 
     let templates = [];
@@ -1299,7 +1653,7 @@
 
     function rememberFocusedField(event) {
       const el = event.target;
-      if (el === input || el === templateContent || el === backupText || el === customSymbolsText || el === newTemplateCategoryName) {
+      if (el === input || el === templateContent || el === backupText || el === customSymbolsText || el === newTemplateCategoryName || el === categoryRenameName) {
         lastFocusedTextField = el;
       }
     }
@@ -1993,6 +2347,7 @@
 
     function cleanTemplateCategoryName(name) {
       const value = String(name || '').trim();
+      if (value === LEGACY_DEFAULT_TEMPLATE_CATEGORY) return DEFAULT_TEMPLATE_CATEGORY;
       return value || DEFAULT_TEMPLATE_CATEGORY;
     }
 
@@ -2012,10 +2367,30 @@
       return result;
     }
 
+    function getTemplateCategoryList(tpl) {
+      const primary = cleanTemplateCategoryName(tpl && tpl.category);
+      const extras = Array.isArray(tpl && tpl.extraCategories) ? tpl.extraCategories.map(cleanTemplateCategoryName) : [];
+      const seen = new Set();
+      const result = [];
+      [primary, ...extras].forEach(name => {
+        const key = name.toLocaleLowerCase('pt-BR');
+        if (!seen.has(key)) {
+          seen.add(key);
+          result.push(name);
+        }
+      });
+      return result;
+    }
+
+    function templateHasCategory(tpl, name) {
+      const key = cleanTemplateCategoryName(name).toLocaleLowerCase('pt-BR');
+      return getTemplateCategoryList(tpl).some(c => c.toLocaleLowerCase('pt-BR') === key);
+    }
+
     function ensureTemplateCategoriesFromTemplates() {
       templateCategories = uniqueTemplateCategories([
         ...templateCategories,
-        ...templates.map(t => cleanTemplateCategoryName(t.category))
+        ...templates.flatMap(getTemplateCategoryList)
       ]);
     }
 
@@ -2034,10 +2409,23 @@
     }
 
     function normalizeTemplateItem(item) {
+      const category = cleanTemplateCategoryName(item.category);
+      const categoryKey = category.toLocaleLowerCase('pt-BR');
+      const extraSeen = new Set();
+      const extraCategories = [];
+      (Array.isArray(item.extraCategories) ? item.extraCategories : []).forEach(raw => {
+        const clean = cleanTemplateCategoryName(raw);
+        const key = clean.toLocaleLowerCase('pt-BR');
+        if (key === categoryKey || extraSeen.has(key)) return;
+        extraSeen.add(key);
+        extraCategories.push(clean);
+      });
+
       return {
         id: typeof item.id === 'string' && item.id ? item.id : newId(),
         name: typeof item.name === 'string' && item.name.trim() ? item.name.trim() : 'Modelo importado',
-        category: cleanTemplateCategoryName(item.category),
+        category,
+        extraCategories,
         content: typeof item.content === 'string' ? item.content : ''
       };
     }
@@ -2051,9 +2439,9 @@
       const categories = getTemplateCategoryNames();
       const selected = cleanTemplateCategoryName(selectedCategory || (templateCategorySelect && templateCategorySelect.value) || DEFAULT_TEMPLATE_CATEGORY);
 
-      [templateCategorySelect, templateCategoryFilter].forEach(select => {
+      [templateCategorySelect, templateCategoryFilter, categoryManageSelect].forEach(select => {
         if (!select) return;
-        const previous = select === templateCategoryFilter ? (select.value || 'all') : selected;
+        const previous = select === templateCategoryFilter ? (select.value || 'all') : (select === categoryManageSelect ? (select.value || selected) : selected);
         select.innerHTML = '';
 
         if (select === templateCategoryFilter) {
@@ -2078,6 +2466,17 @@
           select.value = DEFAULT_TEMPLATE_CATEGORY;
         }
       });
+
+      updateDeleteTemplateCategoryButton();
+    }
+
+    function updateDeleteTemplateCategoryButton() {
+      if (!deleteTemplateCategoryBtn || !categoryManageSelect) return;
+      const current = cleanTemplateCategoryName(categoryManageSelect.value);
+      if (deleteTemplateCategoryName) deleteTemplateCategoryName.textContent = current;
+      const isDefault = current === DEFAULT_TEMPLATE_CATEGORY;
+      deleteTemplateCategoryBtn.disabled = isDefault;
+      if (renameTemplateCategoryBtn) renameTemplateCategoryBtn.disabled = isDefault;
     }
 
     function addTemplateCategory() {
@@ -2088,9 +2487,203 @@
       saveTemplateCategoriesToStorage();
       renderTemplateCategoryControls(name);
       if (templateCategorySelect) templateCategorySelect.value = name;
+      if (categoryManageSelect) categoryManageSelect.value = name;
+      updateDeleteTemplateCategoryButton();
       newTemplateCategoryName.value = '';
       templateStatus.className = 'ok';
       templateStatus.textContent = 'Categoria criada: ' + name + '.';
+    }
+
+    function renameTemplateCategory() {
+      const oldName = cleanTemplateCategoryName(categoryManageSelect.value);
+      const typedName = categoryRenameName.value.trim();
+
+      if (oldName === DEFAULT_TEMPLATE_CATEGORY) {
+        templateStatus.className = 'warn';
+        templateStatus.textContent = 'A categoria "' + DEFAULT_TEMPLATE_CATEGORY + '" não pode ser renomeada.';
+        return;
+      }
+      if (!typedName) {
+        templateStatus.className = 'warn';
+        templateStatus.textContent = 'Digite o novo nome da categoria.';
+        return;
+      }
+
+      const newName = cleanTemplateCategoryName(typedName);
+      const oldKey = oldName.toLocaleLowerCase('pt-BR');
+      const newKey = newName.toLocaleLowerCase('pt-BR');
+
+      if (oldKey === newKey) {
+        templateStatus.className = 'warn';
+        templateStatus.textContent = 'O novo nome é igual ao atual.';
+        return;
+      }
+      if (templateCategories.some(c => c.toLocaleLowerCase('pt-BR') === newKey)) {
+        templateStatus.className = 'warn';
+        templateStatus.textContent = 'Já existe uma categoria chamada "' + newName + '".';
+        return;
+      }
+
+      templates = templates.map(t => {
+        const isPrimary = cleanTemplateCategoryName(t.category) === oldName;
+        const extras = Array.isArray(t.extraCategories) ? t.extraCategories : [];
+        const hadExtra = extras.some(c => cleanTemplateCategoryName(c).toLocaleLowerCase('pt-BR') === oldKey);
+        if (!isPrimary && !hadExtra) return t;
+
+        return {
+          ...t,
+          category: isPrimary ? newName : t.category,
+          extraCategories: hadExtra
+            ? extras.map(c => cleanTemplateCategoryName(c).toLocaleLowerCase('pt-BR') === oldKey ? newName : c)
+            : extras
+        };
+      });
+      saveTemplatesToStorage();
+
+      templateCategories = uniqueTemplateCategories(
+        templateCategories.filter(c => c.toLocaleLowerCase('pt-BR') !== oldKey).concat(newName)
+      );
+      saveTemplateCategoriesToStorage();
+
+      categoryRenameName.value = '';
+      renderTemplateCategoryControls(newName);
+      if (categoryManageSelect) categoryManageSelect.value = newName;
+      renderTemplates();
+
+      templateStatus.className = 'ok';
+      templateStatus.textContent = 'Categoria "' + oldName + '" renomeada para "' + newName + '".';
+    }
+
+    // Confirmação própria do app, em vez de confirm() nativo — alguns navegadores/extensões
+    // bloqueiam diálogos nativos repetidos e o confirm() passa a retornar false sem avisar.
+    function askConfirm(message, title) {
+      return new Promise(resolve => {
+        let settled = false;
+
+        function finish(value) {
+          if (settled) return;
+          settled = true;
+          confirmOverlay.classList.remove('open');
+          confirmOkChoice.removeEventListener('click', onOk);
+          cancelConfirmChoice.removeEventListener('click', onCancel);
+          confirmOverlay.removeEventListener('click', onOverlay);
+          document.removeEventListener('keydown', onKey);
+          resolve(value);
+        }
+
+        function onOk() { finish(true); }
+        function onCancel() { finish(false); }
+        function onOverlay(event) {
+          if (event.target === confirmOverlay) finish(false);
+        }
+        function onKey(event) {
+          if (event.key === 'Escape') finish(false);
+        }
+
+        document.getElementById('confirmTitle').textContent = title || 'Confirmar';
+        confirmText.textContent = message;
+
+        confirmOkChoice.addEventListener('click', onOk);
+        cancelConfirmChoice.addEventListener('click', onCancel);
+        confirmOverlay.addEventListener('click', onOverlay);
+        document.addEventListener('keydown', onKey);
+        confirmOverlay.classList.add('open');
+      });
+    }
+
+    function askCategoryDeleteMode(name, count) {
+      return new Promise(resolve => {
+        let settled = false;
+
+        function finish(value) {
+          if (settled) return;
+          settled = true;
+          categoryDeleteOverlay.classList.remove('open');
+          keepTemplatesChoice.removeEventListener('click', onKeep);
+          deleteTemplatesChoice.removeEventListener('click', onDeleteAll);
+          cancelCategoryDeleteChoice.removeEventListener('click', onCancel);
+          categoryDeleteOverlay.removeEventListener('click', onOverlay);
+          document.removeEventListener('keydown', onKey);
+          resolve(value);
+        }
+
+        function onKeep() { finish('move'); }
+        function onDeleteAll() { finish('delete'); }
+        function onCancel() { finish(null); }
+        function onOverlay(event) {
+          if (event.target === categoryDeleteOverlay) finish(null);
+        }
+        function onKey(event) {
+          if (event.key === 'Escape') finish(null);
+        }
+
+        categoryDeleteText.textContent = 'A categoria "' + name + '" tem ' + count + ' modelo(s). O que deseja fazer com ' +
+          (count === 1 ? 'ele' : 'eles') + ' ao excluir a categoria?';
+
+        keepTemplatesChoice.addEventListener('click', onKeep);
+        deleteTemplatesChoice.addEventListener('click', onDeleteAll);
+        cancelCategoryDeleteChoice.addEventListener('click', onCancel);
+        categoryDeleteOverlay.addEventListener('click', onOverlay);
+        document.addEventListener('keydown', onKey);
+        categoryDeleteOverlay.classList.add('open');
+      });
+    }
+
+    async function deleteTemplateCategory() {
+      const name = cleanTemplateCategoryName(categoryManageSelect.value);
+
+      if (name === DEFAULT_TEMPLATE_CATEGORY) {
+        templateStatus.className = 'warn';
+        templateStatus.textContent = 'A categoria "' + DEFAULT_TEMPLATE_CATEGORY + '" não pode ser excluída.';
+        return;
+      }
+
+      const templatesNaCategoria = templates.filter(t => cleanTemplateCategoryName(t.category) === name).length;
+      let mode = null;
+
+      if (templatesNaCategoria) {
+        mode = await askCategoryDeleteMode(name, templatesNaCategoria);
+        if (!mode) return;
+      } else {
+        const ok = confirm('Excluir a categoria "' + name + '"?');
+        if (!ok) return;
+        mode = 'empty';
+      }
+
+      if (mode === 'move') {
+        templates = templates.map(t => cleanTemplateCategoryName(t.category) === name
+          ? { ...t, category: DEFAULT_TEMPLATE_CATEGORY }
+          : t);
+      } else if (mode === 'delete') {
+        templates = templates.filter(t => cleanTemplateCategoryName(t.category) !== name);
+        if (!templates.length) templates = cloneData(defaultTemplates);
+        templates = validateTemplates(templates);
+      }
+
+      // A categoria deixa de existir: tira ela de qualquer modelo que só a tinha
+      // como categoria extra (o modelo em si não é afetado, só perde essa marcação).
+      const nameKey = name.toLocaleLowerCase('pt-BR');
+      templates = templates.map(t => {
+        const extras = Array.isArray(t.extraCategories) ? t.extraCategories : [];
+        if (!extras.some(c => cleanTemplateCategoryName(c).toLocaleLowerCase('pt-BR') === nameKey)) return t;
+        return { ...t, extraCategories: extras.filter(c => cleanTemplateCategoryName(c).toLocaleLowerCase('pt-BR') !== nameKey) };
+      });
+      saveTemplatesToStorage();
+
+      templateCategories = uniqueTemplateCategories(
+        templateCategories.filter(c => c.toLocaleLowerCase('pt-BR') !== name.toLocaleLowerCase('pt-BR'))
+      );
+      saveTemplateCategoriesToStorage();
+
+      renderTemplateCategoryControls(DEFAULT_TEMPLATE_CATEGORY);
+      renderTemplates();
+
+      templateStatus.className = 'ok';
+      templateStatus.textContent = mode === 'delete'
+        ? 'Categoria "' + name + '" e ' + templatesNaCategoria + ' modelo(s) excluídos.'
+        : mode === 'move'
+          ? 'Categoria "' + name + '" excluída e ' + templatesNaCategoria + ' modelo(s) movido(s) para "' + DEFAULT_TEMPLATE_CATEGORY + '".'
+          : 'Categoria "' + name + '" excluída.';
     }
 
 function saveTemplatesToStorage() {
@@ -2158,7 +2751,7 @@ function saveTemplatesToStorage() {
       const filter = templateCategoryFilter ? templateCategoryFilter.value : 'all';
       const all = getTemplatesSortedByName();
       if (!filter || filter === 'all') return all;
-      return all.filter(t => cleanTemplateCategoryName(t.category) === filter);
+      return all.filter(t => templateHasCategory(t, filter));
     }
 
     function renderTemplates() {
@@ -2183,23 +2776,31 @@ function saveTemplatesToStorage() {
         btn.innerHTML = '<span class="template-card-name"></span><span class="template-card-content"></span><span class="category-chip"></span>';
         btn.querySelector('.template-card-name').textContent = tpl.name || 'Modelo';
         btn.querySelector('.template-card-content').textContent = tpl.content;
-        btn.querySelector('.category-chip').textContent = cleanTemplateCategoryName(tpl.category);
+        btn.querySelector('.category-chip').textContent = getTemplateCategoryList(tpl).join(' • ');
         btn.addEventListener('mousedown', event => event.preventDefault());
-        btn.title = (tpl.name || 'Modelo') + ' — clique para inserir no texto original ou usar no campo ativo';
+        btn.title = (tpl.name || 'Modelo') + ' — clique para inserir no texto original, ou carregar para edição se o texto original não estiver em uso';
         btn.addEventListener('click', () => {
-          const target = getActiveInsertTarget();
-
-          if (target === input) {
+          if (document.activeElement === input) {
             applyTemplateToInput(tpl);
             templateStatus.className = 'ok';
             templateStatus.textContent = 'Modelo inserido no texto original.';
             return;
           }
 
-          const prefix = target.value && !target.value.endsWith(' ') ? ' ' : '';
-          insertTextAtCursor(target, prefix + tpl.content);
+          const editorSubsection = document.getElementById('editorSubsection');
+          const categoriesSubsection = document.getElementById('categoriesSubsection');
+          if (editorSubsection) editorSubsection.open = true;
+          if (categoriesSubsection) categoriesSubsection.open = true;
+
+          templateSelect.value = tpl.id;
+          loadSelectedTemplateIntoEditor();
+          if (categoryManageSelect) {
+            categoryManageSelect.value = cleanTemplateCategoryName(tpl.category);
+            updateDeleteTemplateCategoryButton();
+          }
+
           templateStatus.className = 'ok';
-          templateStatus.textContent = target === templateContent ? 'Modelo adicionado ao campo de edição.' : 'Modelo inserido no campo ativo.';
+          templateStatus.textContent = 'Modelo carregado para edição.';
         });
         templatesBox.appendChild(btn);
       });
@@ -2213,7 +2814,7 @@ function saveTemplatesToStorage() {
       getTemplatesSortedByName().forEach(tpl => {
         const opt = document.createElement('option');
         opt.value = tpl.id;
-        opt.textContent = '[' + cleanTemplateCategoryName(tpl.category) + '] ' + (tpl.name || 'Modelo') + ' — ' + tpl.content;
+        opt.textContent = '[' + getTemplateCategoryList(tpl).join(' • ') + '] ' + (tpl.name || 'Modelo') + ' — ' + tpl.content;
         templateSelect.appendChild(opt);
       });
 
@@ -2224,18 +2825,48 @@ function saveTemplatesToStorage() {
       loadSelectedTemplateIntoEditor();
     }
 
+    function renderExtraCategoryCheckboxes(extraCategories) {
+      if (!templateExtraCategories) return;
+      const primary = cleanTemplateCategoryName(templateCategorySelect ? templateCategorySelect.value : DEFAULT_TEMPLATE_CATEGORY);
+      const primaryKey = primary.toLocaleLowerCase('pt-BR');
+      const checked = new Set((extraCategories || []).map(c => cleanTemplateCategoryName(c).toLocaleLowerCase('pt-BR')));
+
+      templateExtraCategories.innerHTML = '';
+      getTemplateCategoryNames()
+        .filter(name => name.toLocaleLowerCase('pt-BR') !== primaryKey)
+        .forEach(name => {
+          const key = name.toLocaleLowerCase('pt-BR');
+          const label = document.createElement('label');
+          label.className = 'checkbox-pill';
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.value = name;
+          checkbox.checked = checked.has(key);
+          label.appendChild(checkbox);
+          label.appendChild(document.createTextNode(name));
+          templateExtraCategories.appendChild(label);
+        });
+    }
+
+    function getCheckedExtraCategories() {
+      if (!templateExtraCategories) return [];
+      return Array.from(templateExtraCategories.querySelectorAll('input:checked')).map(cb => cb.value);
+    }
+
     function loadSelectedTemplateIntoEditor() {
       const tpl = templates.find(t => t.id === templateSelect.value);
       if (!tpl) {
         templateName.value = '';
         templateContent.value = '';
         if (templateCategorySelect) templateCategorySelect.value = DEFAULT_TEMPLATE_CATEGORY;
+        renderExtraCategoryCheckboxes([]);
         return;
       }
       templateName.value = tpl.name || '';
       templateContent.value = tpl.content || '';
       renderTemplateCategoryControls(tpl.category);
       if (templateCategorySelect) templateCategorySelect.value = cleanTemplateCategoryName(tpl.category);
+      renderExtraCategoryCheckboxes(tpl.extraCategories);
       templateStatus.textContent = '';
     }
 
@@ -2628,6 +3259,7 @@ function saveTemplatesToStorage() {
       const name = templateName.value.trim() || 'Modelo sem nome';
       const content = templateContent.value;
       const category = cleanTemplateCategoryName(templateCategorySelect.value || DEFAULT_TEMPLATE_CATEGORY);
+      const extraCategories = getCheckedExtraCategories();
 
       if (!content.trim()) {
         templateStatus.className = 'warn';
@@ -2635,33 +3267,42 @@ function saveTemplatesToStorage() {
         return;
       }
 
-      templateCategories = uniqueTemplateCategories([...templateCategories, category]);
+      templateCategories = uniqueTemplateCategories([...templateCategories, category, ...extraCategories]);
 
       let tpl = templates.find(t => t.id === templateSelect.value);
       if (!tpl) {
-        tpl = { id: newId(), name, category, content };
+        tpl = { id: newId(), name, category, extraCategories, content };
         templates.push(tpl);
       } else {
         tpl.name = name;
         tpl.category = category;
+        tpl.extraCategories = extraCategories;
         tpl.content = content;
       }
 
       saveTemplatesToStorage();
       renderTemplates();
-      templateSelect.value = tpl.id;
+      templateSelect.value = '';
       loadSelectedTemplateIntoEditor();
       templateStatus.className = 'ok';
-      templateStatus.textContent = 'Modelo salvo!';
+      templateStatus.textContent = 'Modelo salvo! Os campos foram limpos para um novo modelo.';
       warnIfStorageBlocked(templateStatus);
     }
 
-    function deleteTemplate() {
+    async function deleteTemplate() {
       const id = templateSelect.value;
-      if (!id) return;
+      if (!id) {
+        templateStatus.className = 'warn';
+        templateStatus.textContent = 'Selecione um modelo em "Modelo para editar" antes de excluir.';
+        return;
+      }
       const tpl = templates.find(t => t.id === id);
-      if (!tpl) return;
-      const ok = confirm('Excluir o modelo "' + tpl.name + '"?');
+      if (!tpl) {
+        templateStatus.className = 'warn';
+        templateStatus.textContent = 'Selecione um modelo em "Modelo para editar" antes de excluir.';
+        return;
+      }
+      const ok = await askConfirm('Excluir o modelo "' + tpl.name + '"?', 'Excluir modelo');
       if (!ok) return;
 
       templates = templates.filter(t => t.id !== id);
@@ -2669,8 +3310,10 @@ function saveTemplatesToStorage() {
       templates = validateTemplates(templates);
       saveTemplatesToStorage();
       renderTemplates();
+      templateSelect.value = '';
+      loadSelectedTemplateIntoEditor();
       templateStatus.className = 'ok';
-      templateStatus.textContent = 'Modelo excluído.';
+      templateStatus.textContent = 'Modelo excluído. Os campos foram limpos.';
     }
 
     function resetTemplates() {
@@ -2945,7 +3588,7 @@ function saveTemplatesToStorage() {
       ensureTemplateCategoriesFromTemplates();
 
       return {
-        app: 'Conversor para Notas do JW Library',
+        app: 'Formatação de notas para o JW Library',
         version: 4,
         exportedAt: new Date().toISOString(),
         templates: templates,
@@ -3185,11 +3828,15 @@ async function importTemplatesFromText(text) {
     document.getElementById('selectBtn').addEventListener('click', selectResult);
 
     document.getElementById('newTemplateBtn').addEventListener('click', newTemplate);
+    templateCategorySelect.addEventListener('change', () => renderExtraCategoryCheckboxes(getCheckedExtraCategories()));
     document.getElementById('insertTextMarkerBtn').addEventListener('click', insertTextMarker);
     document.getElementById('saveTemplateBtn').addEventListener('click', saveTemplate);
     document.getElementById('deleteTemplateBtn').addEventListener('click', deleteTemplate);
     document.getElementById('resetTemplatesBtn').addEventListener('click', resetTemplates);
     addTemplateCategoryBtn.addEventListener('click', addTemplateCategory);
+    deleteTemplateCategoryBtn.addEventListener('click', deleteTemplateCategory);
+    renameTemplateCategoryBtn.addEventListener('click', renameTemplateCategory);
+    categoryManageSelect.addEventListener('change', updateDeleteTemplateCategoryButton);
     templateCategoryFilter.addEventListener('change', renderTemplates);
 
     // Gerenciador de modelos: devolve o foco a quem abriu e fecha com Esc,
@@ -3243,6 +3890,7 @@ async function importTemplatesFromText(text) {
     backupText.addEventListener('focus', rememberFocusedField);
     customSymbolsText.addEventListener('focus', rememberFocusedField);
     newTemplateCategoryName.addEventListener('focus', rememberFocusedField);
+    categoryRenameName.addEventListener('focus', rememberFocusedField);
 
     document.querySelectorAll('.option-btn[data-case]').forEach(btn => {
       btn.addEventListener('mousedown', event => event.preventDefault());
@@ -3279,15 +3927,14 @@ async function importTemplatesFromText(text) {
     }, 80));
 
     styleSelect.addEventListener('change', () => {
-      applySelectedStyleToSelection(false);
       updateUi();
+    });
+    document.getElementById('applyStyleBtn').addEventListener('click', () => {
+      applySelectedStyleToSelection(true);
     });
 
     enableManifestWhenOnline();
     registerServiceWorker();
-
-    document.getElementById('appVersionPill').textContent = 'v' + APP_VERSION;
-    document.getElementById('appVersionFooter').textContent = APP_VERSION;
 
     populate();
     styleSelect.value = 'serif';

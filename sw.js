@@ -1,5 +1,5 @@
 /*
-  Service worker do Conversor para Notas do JW Library.
+  Service worker do app Formatação de notas para o JW Library.
 
   A versão vem da query do próprio registro (sw.js?v=9.5), escrita pelo index.html a
   partir de APP_VERSION. Assim a versão mora num lugar só: mudar APP_VERSION troca a URL
