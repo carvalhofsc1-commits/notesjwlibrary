@@ -1,7 +1,7 @@
 {
   "app": "Formatação de notas para o JW Library",
   "version": 4,
-  "exportedAt": "2026-09-03T20:51:55.621Z",
+  "exportedAt": "2026-09-03T21:07:48.264Z",
   "templates": [
     {
       "id": "tpl-question",
@@ -205,6 +205,13 @@
       "category": "DESTAQUES",
       "extraCategories": [],
       "content": "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "id": "tpl-custom-1788469453272-22",
+      "name": "Resposta",
+      "category": "REUNIÕES",
+      "extraCategories": [],
+      "content": "❓❓ 𝑹𝑬𝑺𝑷𝑶𝑺𝑻𝑨 👉 "
     }
   ],
   "templateCategories": [
