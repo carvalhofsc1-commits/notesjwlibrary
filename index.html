@@ -3493,6 +3493,9 @@ function saveTemplatesToStorage() {
     async function autoCheckOnlineDefaultsOnStart() {
       if (location.protocol !== 'http:' && location.protocol !== 'https:') return;
 
+      // Só verifica e avisa — nunca aplica nada sozinho. Aplicar é sempre escolha
+      // do usuário, pelos botões "Somar" ou "Substituir" (evita perder dados
+      // do usuário sem aviso quando o navegador/origem parece "vazio").
       try {
         const data = await fetchOnlineDefaults();
         // O JSON traz a versão como número e o localStorage devolve texto:
@@ -3501,9 +3504,8 @@ function saveTemplatesToStorage() {
         const lastAppliedVersion = String(localStorage.getItem(ONLINE_DEFAULTS_VERSION_STORAGE_KEY) || '');
 
         if (!hasLocalUserData()) {
-          applyOnlineDefaultsData(data, 'replace');
           onlineDefaultsStatus.className = 'ok';
-          onlineDefaultsStatus.textContent = 'Arquivo padrão aplicado automaticamente para este primeiro acesso.';
+          onlineDefaultsStatus.textContent = 'Arquivo padrão disponível. Use "Somar padrões aos meus" se quiser aplicá-lo.';
           return;
         }
 
