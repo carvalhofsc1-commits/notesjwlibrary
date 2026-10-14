@@ -1,0 +1,13 @@
+{
+  "name": "jwnotes",
+  "version": "1.0.0",
+  "private": true,
+  "description": "JwNotes - formatação de notas para o JW Library (PWA estático + função serverless de sugestões com IA)",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.133.0",
+    "zod": "^4.6.0"
+  }
+}
