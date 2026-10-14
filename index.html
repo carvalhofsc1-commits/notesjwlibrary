@@ -292,12 +292,24 @@
 
     .ai-box { margin-bottom: 14px; }
 
-    .ai-main-btn {
-      display: block;
-      width: 100%;
-      font-size: 1.05rem;
-      min-height: 52px;
+    /* Dois botões de largura igual, inclusive no celular. */
+    .ai-main-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
     }
+
+    .ai-main-btn {
+      width: 100%;
+      min-width: 0;
+      min-height: 56px;
+      padding: 10px 8px;
+      font-size: .98rem;
+      line-height: 1.2;
+    }
+
+    .ai-main-btn-alt { background: var(--accent-dark); }
+    .ai-main-btn-alt:hover { background: var(--accent); }
 
     .ai-hint { margin: 8px 0 0; font-size: .82rem; }
 
@@ -1181,7 +1193,10 @@
           <div class="editor-controls-pane">
 
         <div class="ai-box">
-          <button id="aiSuggestBtn" class="ai-main-btn" type="button">✨ Sugerir formatação com IA</button>
+          <div class="ai-main-row">
+            <button id="aiSuggestBtn" class="ai-main-btn" type="button">✨ Sugerir formatação com IA</button>
+            <button id="aiSuggestSummaryBtn" class="ai-main-btn ai-main-btn-alt" type="button">✨ Sugerir formatação + resumo do texto</button>
+          </div>
           <div id="aiProgress" class="ai-progress" role="progressbar" aria-label="A IA está trabalhando" aria-hidden="true"></div>
           <label for="aiAdjustText" class="ai-guidance-label">Orientação para a IA (opcional)</label>
           <input autocomplete="off" id="aiAdjustText" type="text" maxlength="300" placeholder="Ex.: formate só as perguntas; sem emojis; resumo bem curto">
@@ -1289,7 +1304,7 @@
     <details class="card tint-6 section-accordion" id="aiSection" style="margin-top:16px">
       <summary><h2>✨ Formatação com IA</h2></summary>
       <div class="section-accordion-body">
-        <p class="hint">Escolha como a IA deve formatar e use o botão <strong>✨ Sugerir formatação com IA</strong> (acima dos botões de formatação) ou o botão abaixo. As opções ficam salvas neste navegador. Ao pedir sugestões, o texto e seus modelos são enviados à IA (Claude, da Anthropic): não use com dados pessoais ou sigilosos.</p>
+        <p class="hint">Escolha como a IA deve formatar e use os botões <strong>✨ Sugerir formatação com IA</strong> e <strong>✨ Sugerir formatação + resumo do texto</strong> (acima dos botões de formatação) ou o botão abaixo. As opções ficam salvas neste navegador. Ao pedir sugestões, o texto e seus modelos são enviados à IA (Claude, da Anthropic): não use com dados pessoais ou sigilosos.</p>
 
         <div class="ai-options" role="group" aria-label="Opções de formatação da IA">
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="usarModelos"> Usar meus modelos prontos</label>
@@ -1299,7 +1314,6 @@
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="maiusculas"> Usar LETRAS MAIÚSCULAS nos destaques</label>
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="emoji"> Ilustrar com emoji no início da frase (a IA escolhe qualquer emoji pelo assunto)</label>
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citacoesBiblicas"> Formatar citações bíblicas: texto em itálico e livro, capítulo e versículo em negrito</label>
-          <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="resumo"> Criar um resumo do texto, com as próprias palavras, para comentário</label>
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="perguntasRespostas"> Dar atenção a perguntas e respostas</label>
         </div>
 
@@ -4260,6 +4274,7 @@ async function importTemplatesFromText(text) {
     // As sugestões nunca alteram o texto sozinhas: cada uma precisa de "Aplicar".
     const aiSuggestBtn = document.getElementById('aiSuggestBtn');
     const aiSuggestBtn2 = document.getElementById('aiSuggestBtn2');
+    const aiSuggestSummaryBtn = document.getElementById('aiSuggestSummaryBtn');
     const aiSentinelaBtn = document.getElementById('aiSentinelaBtn');
     const aiApplyAllBtn = document.getElementById('aiApplyAllBtn');
     const aiDismissAllBtn = document.getElementById('aiDismissAllBtn');
@@ -4291,6 +4306,7 @@ async function importTemplatesFromText(text) {
 
     let aiSuggestions = [];   // sugestões exibidas (já resolvidas contra os modelos locais)
     let aiResumo = null;      // { texto, done, kind } quando a IA devolve um resumo ('resumo') ou respostas da Sentinela ('sentinela')
+    let aiLastWithSummary = false; // o último pedido de formatação incluiu resumo? (Outra sugestão/Melhorar repetem a escolha)
     let aiLastKind = 'format'; // último pedido feito: 'format' ou 'sentinela' (define o que "Outra sugestão/Melhorar" refazem)
     let aiSentinelaRaw = [];  // itens crus das respostas da Sentinela, reenviados ao refinar
     let aiRaw = [];           // resposta crua da IA, reenviada ao pedir "outra" ou "melhorar"
@@ -4328,7 +4344,7 @@ async function importTemplatesFromText(text) {
     let aiLoadingTimer = null;
 
     function setAiLoading(on, button) {
-      const all = [aiSuggestBtn, aiSuggestBtn2, aiSentinelaBtn, aiAnotherBtn, aiImproveBtn];
+      const all = [aiSuggestBtn, aiSuggestSummaryBtn, aiSuggestBtn2, aiSentinelaBtn, aiAnotherBtn, aiImproveBtn];
 
       if (!on) {
         clearInterval(aiLoadingTimer);
@@ -4608,9 +4624,10 @@ async function importTemplatesFromText(text) {
     }
 
     // mode: undefined = primeira sugestão; 'nova' = alternativa diferente; 'melhorar' = refinar a anterior.
-    async function requestAiSuggestions(mode, scrollToResults) {
+    async function requestAiSuggestions(mode, scrollToResults, withSummary) {
       if (aiBusy) return;
       aiLastKind = 'format';
+      if (!mode) aiLastWithSummary = !!withSummary;
 
       if (mode) {
         if (!(await confirmAiRestore())) return;
@@ -4649,7 +4666,9 @@ async function importTemplatesFromText(text) {
         conteudo: String(t.content || '').slice(0, 200)
       }));
 
-      const payload = { linhas: lines, modelos, opcoes: readAiOptions() };
+      const options = readAiOptions();
+      options.resumo = aiLastWithSummary;
+      const payload = { linhas: lines, modelos, opcoes: options };
       payload.ajuste = aiAdjustText.value.trim().slice(0, 300);
       if (mode && (aiRaw.length || previousSummary)) {
         payload.modo = mode;
@@ -4657,7 +4676,7 @@ async function importTemplatesFromText(text) {
       }
 
       aiBusy = true;
-      setAiLoading(true, mode === 'nova' ? aiAnotherBtn : mode === 'melhorar' ? aiImproveBtn : scrollToResults ? aiSuggestBtn2 : aiSuggestBtn);
+      setAiLoading(true, mode === 'nova' ? aiAnotherBtn : mode === 'melhorar' ? aiImproveBtn : scrollToResults ? aiSuggestBtn2 : aiLastWithSummary ? aiSuggestSummaryBtn : aiSuggestBtn);
 
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 60000);
@@ -4825,6 +4844,7 @@ async function importTemplatesFromText(text) {
     }
 
     aiSuggestBtn.addEventListener('click', () => requestAiSuggestions());
+    aiSuggestSummaryBtn.addEventListener('click', () => requestAiSuggestions(undefined, false, true));
     aiSentinelaBtn.addEventListener('click', () => requestSentinelaAnswers());
     aiSuggestBtn2.addEventListener('click', () => requestAiSuggestions(undefined, true));
     const refineAi = mode => (aiLastKind === 'sentinela' ? requestSentinelaAnswers(mode) : requestAiSuggestions(mode));
