@@ -4700,15 +4700,13 @@ async function importTemplatesFromText(text) {
       return content + (/\s$/.test(content) ? '' : ' ') + text;
     }
 
+    // Só as respostas (sem repetir a pergunta), cada uma com o modelo "Resposta" do usuário.
     function buildSentinelaText(items) {
-      const questionTpl = aiTemplateByName('pergunta');
       const answerTpl = aiTemplateByName('resposta');
 
       return items.map(item => {
         const number = item.paragrafos ? item.paragrafos + '. ' : '';
-        const refs = item.referencias ? ' — ' + item.referencias : '';
-        return aiLabelWith(questionTpl, '❓ PERGUNTA 👉 ', number + item.pergunta) + '\n' +
-          aiLabelWith(answerTpl, '✅ RESPOSTA 👉 ', item.resposta + refs);
+        return aiLabelWith(answerTpl, '✅ RESPOSTA 👉 ', number + item.resposta);
       }).join('\n\n');
     }
 

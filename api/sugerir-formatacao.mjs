@@ -223,9 +223,7 @@ const SaidaSentinela = z.object({
   itens: z.array(
     z.object({
       paragrafos: z.string(),
-      pergunta: z.string(),
       resposta: z.string(),
-      referencias: z.string().nullable(),
     })
   ),
 });
@@ -234,11 +232,10 @@ const SISTEMA_SENTINELA = `Você ajuda um estudante a preparar comentários para
 
 Para CADA pergunta do estudo, devolva um item com:
 - paragrafos: número(s) do(s) parágrafo(s) a que a pergunta se refere (ex.: "3" ou "1, 2"); string vazia se não der para saber.
-- pergunta: o texto da pergunta como está no original, sem o rótulo "Sua resposta" e sem o número do parágrafo. Mantenha a referência bíblica entre parênteses, se houver, e as partes A) e B).
-- resposta: a resposta à pergunta com as suas PRÓPRIAS PALAVRAS (parafraseie; não copie frases do parágrafo), em português simples e natural, pronta para ser dita como comentário na reunião, no tamanho pedido. Se a pergunta tiver partes A) e B), responda cada parte, identificada pela letra.
-- referencias: os textos bíblicos citados nos parágrafos que sustentam a resposta (ex.: "Isa. 2:4; João 18:36"), copiando as abreviações como estão; null se não houver.
+- resposta: um texto curto que resume os PONTOS PRINCIPAIS do(s) parágrafo(s) respondendo à pergunta, com as suas PRÓPRIAS PALAVRAS (parafraseie; não copie frases do parágrafo), em português simples e natural, pronto para ser dito como comentário na reunião, no tamanho pedido. Se a pergunta tiver partes A) e B), responda cada parte, identificada pela letra.
 
 Regras:
+- NÃO repita a pergunta e NÃO liste referências bíblicas no fim da resposta. Só mencione um texto bíblico (ex.: "como mostra Efésios 6:12") se ele fizer parte natural da resposta; caso contrário, não cite nenhum.
 - Use somente o conteúdo do texto colado. Não invente fatos nem versículos e não cite texto bíblico por extenso.
 - Não adicione aspas.
 - Ignore o que não for pergunta do estudo (títulos, legendas, quadros). Se não houver nenhuma pergunta, devolva a lista vazia.
@@ -298,11 +295,9 @@ async function responderSentinela(res, { linhas, opcoes, modo, ajuste, anteriore
       .slice(0, 40)
       .map((i) => ({
         paragrafos: limpar(i.paragrafos, 20),
-        pergunta: limpar(i.pergunta, 500),
         resposta: limpar(i.resposta, 1500),
-        referencias: limpar(i.referencias, 200) || null,
       }))
-      .filter((i) => i.pergunta && i.resposta);
+      .filter((i) => i.resposta);
 
     return res.status(200).json({ itens });
   } catch (e) {
