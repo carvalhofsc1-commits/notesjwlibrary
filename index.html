@@ -303,6 +303,37 @@
 
     .ai-guidance-label { margin: 12px 0 6px; font-size: .88rem; }
 
+    /* ---------- Aviso de versão nova ---------- */
+
+    .update-banner {
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+      z-index: 2000;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 12px 14px;
+      border: 2px solid var(--accent);
+      border-radius: 14px;
+      background: var(--card);
+      color: var(--text);
+      box-shadow: 0 10px 30px var(--shadow);
+    }
+
+    .update-banner p {
+      flex: 1 1 220px;
+      margin: 0;
+      font-size: .95rem;
+      font-weight: 650;
+    }
+
+    .update-banner-actions { display: flex; gap: 8px; }
+
     .ai-sentinela-btn {
       display: block;
       width: 100%;
@@ -4835,6 +4866,91 @@ async function importTemplatesFromText(text) {
     aiInstruction.addEventListener('change', saveAiOptions);
     loadAiOptions();
 
+    // ---------- Aviso de versão nova ----------
+    // Um app instalado pode ficar com a página antiga na memória. Aqui o app compara o CSS e o JS que
+    // está rodando com os do servidor e, se mudaram, oferece atualizar (o texto digitado é preservado).
+    const UPDATE_SIGNATURE = (() => {
+      const style = document.getElementsByTagName('style')[0];
+      return (style ? style.textContent : '') + '\u0000' + (document.currentScript ? document.currentScript.textContent : '');
+    })();
+    const UPDATE_TEXT_KEY = 'jwLibraryNoteAplicarTextoAntesDeAtualizar';
+    const UPDATE_CHECK_MS = 10 * 60 * 1000;
+    let updateBanner = null;
+    let updateDismissed = false;
+
+    async function fetchLatestSignature() {
+      const response = await fetch(new URL('index.html', location.href).href, { cache: 'no-store' });
+      if (!response.ok) return null;
+
+      const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+      const inlineScripts = Array.from(doc.scripts).filter(script => !script.src);
+      const mainScript = inlineScripts[inlineScripts.length - 1];
+      if (!mainScript) return null;
+
+      const style = doc.getElementsByTagName('style')[0];
+      return (style ? style.textContent : '') + '\u0000' + mainScript.textContent;
+    }
+
+    function applyUpdate() {
+      try {
+        if (input.value) sessionStorage.setItem(UPDATE_TEXT_KEY, input.value);
+      } catch (e) { /* sem sessionStorage: o texto não é preservado */ }
+      location.reload();
+    }
+
+    function showUpdateBanner() {
+      if (updateBanner) return;
+
+      updateBanner = document.createElement('div');
+      updateBanner.className = 'update-banner';
+      updateBanner.setAttribute('role', 'status');
+      updateBanner.setAttribute('aria-live', 'polite');
+
+      const message = document.createElement('p');
+      message.textContent = '✨ Há uma versão nova do JwNotes. Atualize para usar as novidades. Seu texto será mantido.';
+
+      const actions = document.createElement('div');
+      actions.className = 'update-banner-actions';
+
+      const updateBtn = document.createElement('button');
+      updateBtn.type = 'button';
+      updateBtn.textContent = 'Atualizar agora';
+      updateBtn.addEventListener('click', applyUpdate);
+
+      const laterBtn = document.createElement('button');
+      laterBtn.type = 'button';
+      laterBtn.className = 'secondary';
+      laterBtn.textContent = 'Depois';
+      laterBtn.addEventListener('click', () => {
+        updateDismissed = true;
+        updateBanner.remove();
+        updateBanner = null;
+      });
+
+      actions.append(updateBtn, laterBtn);
+      updateBanner.append(message, actions);
+      document.body.appendChild(updateBanner);
+    }
+
+    async function checkForNewVersion() {
+      if (updateBanner || updateDismissed || !navigator.onLine) return;
+      try {
+        const latest = await fetchLatestSignature();
+        if (latest && latest !== UPDATE_SIGNATURE) showUpdateBanner();
+      } catch (e) { /* sem rede ou servidor indisponível: tenta de novo depois */ }
+    }
+
+    window.addEventListener('load', () => setTimeout(checkForNewVersion, 4000));
+    window.addEventListener('online', checkForNewVersion);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible') return;
+      updateDismissed = false;
+      checkForNewVersion();
+    });
+    setInterval(() => {
+      if (document.visibilityState === 'visible') checkForNewVersion();
+    }, UPDATE_CHECK_MS);
+
     enableManifestWhenOnline();
     registerServiceWorker();
 
@@ -4842,6 +4958,18 @@ async function importTemplatesFromText(text) {
     styleSelect.value = 'serif';
     updateUi();
     autoCheckOnlineDefaultsOnStart();
+
+    // Depois de "Atualizar agora", devolve ao campo o texto que estava digitado.
+    try {
+      const textBeforeUpdate = sessionStorage.getItem(UPDATE_TEXT_KEY);
+      if (textBeforeUpdate) {
+        sessionStorage.removeItem(UPDATE_TEXT_KEY);
+        input.value = textBeforeUpdate;
+        autoGrowInputText();
+        updateUi();
+        selectionInfo.textContent = 'App atualizado. Seu texto foi mantido.';
+      }
+    } catch (e) { /* sem sessionStorage */ }
   </script>
 </body>
 </html>
