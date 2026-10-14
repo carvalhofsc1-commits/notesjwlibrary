@@ -308,8 +308,9 @@
       line-height: 1.2;
     }
 
-    .ai-main-btn-alt { background: var(--accent-dark); }
-    .ai-main-btn-alt:hover { background: var(--accent); }
+    /* Cada botão da IA tem a sua cor: azul = formatação, verde = formatação + resumo, roxo = Sentinela. */
+    .ai-main-btn-alt { background: #047857; color: #ffffff; }
+    .ai-main-btn-alt:hover { background: #065f46; }
 
     .ai-hint { margin: 8px 0 0; font-size: .82rem; }
 
@@ -351,7 +352,11 @@
       width: 100%;
       margin-top: 10px;
       min-height: 48px;
+      background: #7e22ce;
+      color: #ffffff;
     }
+
+    .ai-sentinela-btn:hover { background: #6b21a8; }
 
     /* ---------- Indicador de espera da IA ---------- */
 
@@ -1200,7 +1205,7 @@
           <div id="aiProgress" class="ai-progress" role="progressbar" aria-label="A IA está trabalhando" aria-hidden="true"></div>
           <label for="aiAdjustText" class="ai-guidance-label">Orientação para a IA (opcional)</label>
           <input autocomplete="off" id="aiAdjustText" type="text" maxlength="300" placeholder="Ex.: formate só as perguntas; sem emojis; resumo bem curto">
-          <button id="aiSentinelaBtn" class="secondary ai-sentinela-btn" type="button">📖 Respostas Estudo A Sentinela</button>
+          <button id="aiSentinelaBtn" class="ai-sentinela-btn" type="button">📖 Respostas Estudo A Sentinela</button>
           <p class="hint ai-hint">Ao usar, o texto e seus modelos são enviados à IA (Claude, da Anthropic). Não use com dados pessoais ou sigilosos. Nada muda até você clicar em Aplicar.</p>
           <span id="aiStatus" class="ok" role="status" aria-live="polite"></span>
           <div class="ai-actions-all">
