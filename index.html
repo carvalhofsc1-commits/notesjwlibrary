@@ -301,6 +301,8 @@
 
     .ai-hint { margin: 8px 0 0; font-size: .82rem; }
 
+    .ai-guidance-label { margin: 12px 0 6px; font-size: .88rem; }
+
     .ai-box #aiStatus { display: block; margin: 8px 0 0; }
 
     .ai-actions-all { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
@@ -1078,6 +1080,8 @@
 
         <div class="ai-box">
           <button id="aiSuggestBtn" class="ai-main-btn" type="button">✨ Sugerir formatação com IA</button>
+          <label for="aiAdjustText" class="ai-guidance-label">Orientação para a IA (opcional)</label>
+          <input autocomplete="off" id="aiAdjustText" type="text" maxlength="300" placeholder="Ex.: formate só as perguntas; sem emojis; resumo bem curto">
           <p class="hint ai-hint">Ao usar, o texto e seus modelos são enviados à IA (Claude, da Anthropic). Não use com dados pessoais ou sigilosos. Nada muda até você clicar em Aplicar.</p>
           <span id="aiStatus" class="ok" role="status" aria-live="polite"></span>
           <div class="ai-actions-all">
@@ -1086,8 +1090,6 @@
           </div>
           <div id="aiResults" class="ai-list"></div>
           <div id="aiRefineBox" class="ai-refine" hidden>
-            <label for="aiAdjustText">Ajuste para a próxima sugestão (opcional)</label>
-            <input autocomplete="off" id="aiAdjustText" type="text" maxlength="300" placeholder="Ex.: menos emojis, destacar só as perguntas">
             <div class="ai-actions-all">
               <button id="aiAnotherBtn" class="secondary" type="button">🔄 Outra sugestão</button>
               <button id="aiImproveBtn" class="secondary" type="button">🛠️ Melhorar esta</button>
@@ -1214,7 +1216,7 @@
           <option value="muitas">Muitas (formatar bastante)</option>
         </select>
 
-        <label for="aiInstruction">Instruções extras (opcional)</label>
+        <label for="aiInstruction">Instruções fixas, valem para todo pedido (opcional)</label>
         <input autocomplete="off" id="aiInstruction" type="text" maxlength="300" placeholder="Ex.: texto da Escola Pioneiros, estilo discreto">
 
         <div class="button-row">
@@ -4472,10 +4474,10 @@ async function importTemplatesFromText(text) {
       }));
 
       const payload = { linhas: lines, modelos, opcoes: readAiOptions() };
+      payload.ajuste = aiAdjustText.value.trim().slice(0, 300);
       if (mode && (aiRaw.length || previousSummary)) {
         payload.modo = mode;
         payload.anteriores = { resumo: previousSummary ? previousSummary.texto : null, sugestoes: aiRaw };
-        payload.ajuste = aiAdjustText.value.trim().slice(0, 300);
       }
 
       aiBusy = true;
@@ -4548,7 +4550,9 @@ async function importTemplatesFromText(text) {
     aiAnotherBtn.addEventListener('click', () => requestAiSuggestions('nova'));
     aiImproveBtn.addEventListener('click', () => requestAiSuggestions('melhorar'));
     aiAdjustText.addEventListener('keydown', e => {
-      if (e.key === 'Enter') { e.preventDefault(); requestAiSuggestions('melhorar'); }
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      requestAiSuggestions(aiRaw.length || aiResumo ? 'melhorar' : undefined);
     });
 
     aiApplyAllBtn.addEventListener('click', () => {

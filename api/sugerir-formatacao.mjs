@@ -51,6 +51,8 @@ Receberá as PREFERÊNCIAS do usuário, a lista de modelos disponíveis (id, nom
 Além das sugestões por linha, existe o campo resumo (fora da lista): quando a preferência de resumo estiver ativa, escreva um resumo do texto COMPLETO com as PRÓPRIAS PALAVRAS (parafraseie; não copie frases), em português simples e natural, pronto para ser dito como um comentário, no tamanho pedido. Use só o conteúdo do texto, sem inventar fatos. Se a preferência estiver inativa, resumo é null.
 
 Regras:
+- NÃO adicione aspas, ❝ ❞ nem outros sinais ao texto, e não inclua aspas nos trechos dos destaques. Só trate de aspas se o usuário pedir.
+- Se houver ORIENTAÇÃO ESPECÍFICA do usuário para este pedido, siga-a (sempre dentro das preferências ativas).
 - No máximo uma entrada por linha, apenas para linhas que realmente se beneficiam; ignore o resto.
 - Respeite a quantidade pedida (poucas, moderada ou muitas sugestões).
 - Os trechos devem existir exatamente na linha. Não reescreva, traduza nem corrija o texto.
@@ -188,6 +190,15 @@ function descreverPreferencias(o) {
   return linhas.join("\n");
 }
 
+const ASPAS = "\"“”„«»‘’❛❜❝❞";
+const TEM_ASPAS = new RegExp(`[${ASPAS}]`);
+const ASPAS_NAS_PONTAS = new RegExp(`^[\\s${ASPAS}']+|[\\s${ASPAS}']+$`, "g");
+
+// Tira aspas e espaços das pontas do trecho, para que as aspas nunca recebam negrito/itálico.
+function limparTrecho(trecho) {
+  return typeof trecho === "string" ? trecho.replace(ASPAS_NAS_PONTAS, "") : "";
+}
+
 const REGEX_EMOJI = /\p{Extended_Pictographic}/u;
 
 function limparEmoji(valor) {
@@ -226,7 +237,10 @@ export default async function handler(req, res) {
   }
 
   const { linhas, modelos, opcoes, modo, ajuste, anteriores } = entrada;
-  const idsValidos = new Set(modelos.map((m) => m.id));
+  // Modelos que acrescentam aspas (ex.: ❝{texto}❞) só entram se o usuário pedir aspas.
+  const permiteAspas = /aspas/i.test(`${opcoes.instrucao} ${ajuste}`);
+  const modelosUsaveis = permiteAspas ? modelos : modelos.filter((m) => !TEM_ASPAS.test(m.conteudo));
+  const idsValidos = new Set(modelosUsaveis.map((m) => m.id));
   const estilosPermitidos = new Set([
     ...(opcoes.negrito ? ["negrito"] : []),
     ...(opcoes.italico ? ["italico"] : []),
@@ -236,9 +250,10 @@ export default async function handler(req, res) {
   let mensagem =
     "PREFERÊNCIAS DO USUÁRIO:\n" +
     descreverPreferencias(opcoes) +
+    (ajuste ? `\n\nORIENTAÇÃO ESPECÍFICA DO USUÁRIO PARA ESTE PEDIDO: ${ajuste}` : "") +
     "\n\nMODELOS DISPONÍVEIS:\n" +
-    (modelos.length
-      ? modelos.map((m) => `- id=${m.id} | nome=${m.nome} | conteúdo=${m.conteudo}`).join("\n")
+    (modelosUsaveis.length
+      ? modelosUsaveis.map((m) => `- id=${m.id} | nome=${m.nome} | conteúdo=${m.conteudo}`).join("\n")
       : "(nenhum)") +
     "\n\nLINHAS DO TEXTO:\n" +
     linhas.map((l, i) => `[${i}] ${l}`).join("\n");
@@ -249,8 +264,7 @@ export default async function handler(req, res) {
       anteriores +
       (modo === "nova"
         ? "\n\nPEDIDO: proponha uma alternativa DIFERENTE das sugestões anteriores (outros modelos, trechos ou emojis)."
-        : "\n\nPEDIDO: melhore as sugestões anteriores, mantendo o que estava bom.") +
-      (ajuste ? `\nAjuste pedido pelo usuário: ${ajuste}` : "");
+        : "\n\nPEDIDO: melhore as sugestões anteriores, mantendo o que estava bom, seguindo a orientação específica acima (se houver).");
   }
 
   try {
@@ -280,12 +294,13 @@ export default async function handler(req, res) {
 
       const destaques = [];
       for (const d of s.destaques.slice(0, MAX_DESTAQUES)) {
-        if (!d.trecho || !linha.includes(d.trecho)) continue;
+        const trecho = limparTrecho(d.trecho);
+        if (!trecho || !linha.includes(trecho)) continue;
 
         if (d.tipo === "citacao_texto" || d.tipo === "citacao_referencia") {
           if (!opcoes.citacoesBiblicas) continue;
           destaques.push({
-            trecho: d.trecho,
+            trecho,
             tipo: d.tipo,
             estilo: d.tipo === "citacao_texto" ? "italico" : "negrito",
             maiusculas: false,
@@ -296,7 +311,7 @@ export default async function handler(req, res) {
         const estilo = d.estilo && estilosPermitidos.has(d.estilo) ? d.estilo : null;
         const maiusculas = opcoes.maiusculas && d.maiusculas === true;
         if (!estilo && !maiusculas) continue;
-        destaques.push({ trecho: d.trecho, tipo: "geral", estilo, maiusculas });
+        destaques.push({ trecho, tipo: "geral", estilo, maiusculas });
       }
 
       if (!modeloId && !emoji && !destaques.length) continue;
