@@ -1193,8 +1193,16 @@
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="maiusculas"> Usar LETRAS MAIÚSCULAS nos destaques</label>
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="emoji"> Ilustrar com emoji no início da frase (a IA escolhe qualquer emoji pelo assunto)</label>
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citacoesBiblicas"> Formatar citações bíblicas: texto em itálico e livro, capítulo e versículo em negrito</label>
+          <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="resumo"> Criar um resumo do texto, com as próprias palavras, para comentário</label>
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="perguntasRespostas"> Dar atenção a perguntas e respostas</label>
         </div>
+
+        <label for="aiSummarySize">Tamanho do resumo (se a opção de resumo estiver marcada)</label>
+        <select autocomplete="off" id="aiSummarySize">
+          <option value="curto">Curto (1 a 2 frases)</option>
+          <option value="medio">Médio (3 a 4 frases)</option>
+          <option value="detalhado">Detalhado (um parágrafo)</option>
+        </select>
 
         <label for="aiCategory">Categoria de modelos usada pela IA</label>
         <select autocomplete="off" id="aiCategory"></select>
@@ -4157,6 +4165,7 @@ async function importTemplatesFromText(text) {
     const aiResults = document.getElementById('aiResults');
     const aiIntensity = document.getElementById('aiIntensity');
     const aiCategory = document.getElementById('aiCategory');
+    const aiSummarySize = document.getElementById('aiSummarySize');
     const aiSection = document.getElementById('aiSection');
     const aiInstruction = document.getElementById('aiInstruction');
     const aiOptionInputs = Array.from(document.querySelectorAll('[data-ai-opt]'));
@@ -4167,10 +4176,11 @@ async function importTemplatesFromText(text) {
     const AI_STYLE_KIND = { negrito: 'bold', italico: 'italic', negrito_italico: 'boldItalic' };
     const AI_DEFAULT_OPTIONS = {
       usarModelos: true, negrito: true, italico: false, negritoItalico: false, maiusculas: false,
-      emoji: false, citacoesBiblicas: false, perguntasRespostas: false, intensidade: 'moderada', instrucao: '', categoria: 'all'
+      emoji: false, citacoesBiblicas: false, resumo: false, perguntasRespostas: false, intensidade: 'moderada', instrucao: '', categoria: 'all', resumoTamanho: 'medio'
     };
 
     let aiSuggestions = [];   // sugestões exibidas (já resolvidas contra os modelos locais)
+    let aiResumo = null;      // { texto, done } quando a IA devolve um resumo
     let aiRaw = [];           // resposta crua da IA, reenviada ao pedir "outra" ou "melhorar"
     let aiBaseText = '';      // texto antes de qualquer sugestão ser aplicada (para desfazer)
     let aiAppliedAny = false;
@@ -4206,6 +4216,7 @@ async function importTemplatesFromText(text) {
       try { saved = JSON.parse(localStorage.getItem(AI_OPTIONS_KEY) || '{}') || {}; } catch (e) { saved = {}; }
       const options = Object.assign({}, AI_DEFAULT_OPTIONS, saved);
       renderAiCategoryOptions(String(options.categoria || 'all'));
+      aiSummarySize.value = ['curto', 'medio', 'detalhado'].includes(options.resumoTamanho) ? options.resumoTamanho : 'medio';
       aiOptionInputs.forEach(el => { el.checked = !!options[el.dataset.aiOpt]; });
       aiIntensity.value = ['poucas', 'moderada', 'muitas'].includes(options.intensidade) ? options.intensidade : 'moderada';
       aiInstruction.value = String(options.instrucao || '').slice(0, 300);
@@ -4216,6 +4227,7 @@ async function importTemplatesFromText(text) {
       aiOptionInputs.forEach(el => { options[el.dataset.aiOpt] = el.checked; });
       options.intensidade = aiIntensity.value;
       options.categoria = aiCategory.value || 'all';
+      options.resumoTamanho = aiSummarySize.value;
       options.instrucao = aiInstruction.value.trim().slice(0, 300);
       return options;
     }
@@ -4271,11 +4283,75 @@ async function importTemplatesFromText(text) {
       aiApplyAllBtn.hidden = pending.length < 2;
       aiDismissAllBtn.hidden = pending.length < 1;
       aiUndoBtn.hidden = !aiAppliedAny;
-      aiRefineBox.hidden = !aiRaw.length && !aiAppliedAny;
+      aiRefineBox.hidden = !aiRaw.length && !aiResumo && !aiAppliedAny;
+    }
+
+    // Rótulo que identifica o resumo no texto, no mesmo estilo dos modelos prontos.
+    function aiSummaryLine() {
+      const styleId = aiStyleIdFor('negrito');
+      const label = styleId ? convertTextWithStyle('RESUMO', styleId) : 'RESUMO';
+      return '📝 ' + label + ' ➜ ' + aiResumo.texto;
+    }
+
+    function insertAiSummary(where) {
+      const line = aiSummaryLine();
+      const current = input.value.replace(/\s+$/, '');
+      const text = where === 'start'
+        ? line + (current ? '\n\n' + input.value : '')
+        : (current ? current + '\n\n' : '') + line;
+      setInputRange(0, input.value.length, text, { message: 'Resumo inserido.' });
+      autoGrowInputText();
+      aiResumo.done = true;
+      aiAppliedAny = true;
+    }
+
+    function renderAiSummaryItem() {
+      if (!aiResumo || aiResumo.done) return;
+
+      const item = document.createElement('div');
+      item.className = 'ai-item';
+
+      const reason = document.createElement('p');
+      reason.className = 'ai-item-reason';
+      reason.textContent = 'Resumo do texto, com palavras próprias, para comentário';
+
+      const after = document.createElement('p');
+      after.className = 'ai-item-after';
+      after.textContent = aiSummaryLine();
+
+      const actions = document.createElement('div');
+      actions.className = 'ai-item-actions';
+
+      const makeBtn = (label, secondary, onClick) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = label;
+        if (secondary) btn.className = 'secondary';
+        btn.addEventListener('click', onClick);
+        return btn;
+      };
+
+      actions.append(
+        makeBtn('Inserir no fim', false, () => { insertAiSummary('end'); renderAiSuggestions(); }),
+        makeBtn('Inserir no início', true, () => { insertAiSummary('start'); renderAiSuggestions(); }),
+        makeBtn('Copiar', true, async () => {
+          try {
+            await navigator.clipboard.writeText(aiSummaryLine());
+            setAiStatus('Resumo copiado.', false);
+          } catch (e) {
+            setAiStatus('Não foi possível copiar. Use "Inserir no fim" e copie do texto.', true);
+          }
+        }),
+        makeBtn('Ignorar', true, () => { aiResumo.done = true; renderAiSuggestions(); })
+      );
+
+      item.append(reason, after, actions);
+      aiResults.appendChild(item);
     }
 
     function renderAiSuggestions() {
       aiResults.textContent = '';
+      renderAiSummaryItem();
 
       aiSuggestions.filter(s => !s.done).forEach(s => {
         const item = document.createElement('div');
@@ -4363,6 +4439,7 @@ async function importTemplatesFromText(text) {
         if (aiAppliedAny) restoreAiBaseText();
       } else {
         aiRaw = [];
+        aiResumo = null;
         aiAppliedAny = false;
       }
 
@@ -4371,6 +4448,8 @@ async function importTemplatesFromText(text) {
 
       aiResults.textContent = '';
       aiSuggestions = [];
+      const previousSummary = aiResumo;
+      aiResumo = null;
       updateAiControls();
 
       if (!lines.length) return setAiStatus('Digite ou cole um texto no campo "Texto original" primeiro.', true);
@@ -4393,9 +4472,9 @@ async function importTemplatesFromText(text) {
       }));
 
       const payload = { linhas: lines, modelos, opcoes: readAiOptions() };
-      if (mode && aiRaw.length) {
+      if (mode && (aiRaw.length || previousSummary)) {
         payload.modo = mode;
-        payload.anteriores = aiRaw;
+        payload.anteriores = { resumo: previousSummary ? previousSummary.texto : null, sugestoes: aiRaw };
         payload.ajuste = aiAdjustText.value.trim().slice(0, 300);
       }
 
@@ -4428,6 +4507,7 @@ async function importTemplatesFromText(text) {
         }
 
         aiRaw = Array.isArray(data.sugestoes) ? data.sugestoes : [];
+        aiResumo = data.resumo ? { texto: String(data.resumo), done: false } : null;
         const byId = new Map(getTemplatesSortedByName().map(t => [t.id, t]));
         aiSuggestions = aiRaw.map(s => {
           const original = lines[s.linha];
@@ -4446,9 +4526,10 @@ async function importTemplatesFromText(text) {
 
         renderAiSuggestions();
         aiRefineBox.hidden = false;
+        const found = aiSuggestions.length + (aiResumo ? 1 : 0);
         setAiStatus(
-          aiSuggestions.length
-            ? aiSuggestions.length + (aiSuggestions.length === 1 ? ' sugestão.' : ' sugestões.')
+          found
+            ? found + (found === 1 ? ' sugestão.' : ' sugestões.')
             : 'A IA não encontrou nada para destacar com essas opções.',
           false
         );
@@ -4478,6 +4559,7 @@ async function importTemplatesFromText(text) {
 
     aiDismissAllBtn.addEventListener('click', () => {
       aiSuggestions.forEach(s => { s.done = true; });
+      if (aiResumo) aiResumo.done = true;
       renderAiSuggestions();
       setAiStatus('Sugestões descartadas.', false);
     });
@@ -4486,6 +4568,7 @@ async function importTemplatesFromText(text) {
       if (!(await confirmAiRestore())) return;
       if (aiAppliedAny) restoreAiBaseText();
       aiSuggestions.forEach(s => { s.done = false; });
+      if (aiResumo) aiResumo.done = false;
       renderAiSuggestions();
       setAiStatus('Aplicações desfeitas. As sugestões voltaram à lista.', false);
     });
@@ -4493,6 +4576,7 @@ async function importTemplatesFromText(text) {
     aiOptionInputs.forEach(el => el.addEventListener('change', saveAiOptions));
     aiIntensity.addEventListener('change', saveAiOptions);
     aiCategory.addEventListener('change', saveAiOptions);
+    aiSummarySize.addEventListener('change', saveAiOptions);
     aiSection.addEventListener('toggle', () => { if (aiSection.open) renderAiCategoryOptions(); });
     aiInstruction.addEventListener('change', saveAiOptions);
     loadAiOptions();

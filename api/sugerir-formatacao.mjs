@@ -17,6 +17,7 @@ const ESTILOS = ["negrito", "italico", "negrito_italico"];
 const TIPOS = ["geral", "citacao_texto", "citacao_referencia"];
 
 const Saida = z.object({
+  resumo: z.string().nullable(),
   sugestoes: z.array(
     z.object({
       linha: z.number().int(),
@@ -46,6 +47,8 @@ Receberá as PREFERÊNCIAS do usuário, a lista de modelos disponíveis (id, nom
   - maiusculas: true para escrever o trecho em MAIÚSCULAS.
   Só use estilos e maiúsculas que as preferências permitirem. Lista vazia se não houver destaque.
 - motivo: uma frase curta em português explicando a sugestão.
+
+Além das sugestões por linha, existe o campo resumo (fora da lista): quando a preferência de resumo estiver ativa, escreva um resumo do texto COMPLETO com as PRÓPRIAS PALAVRAS (parafraseie; não copie frases), em português simples e natural, pronto para ser dito como um comentário, no tamanho pedido. Use só o conteúdo do texto, sem inventar fatos. Se a preferência estiver inativa, resumo é null.
 
 Regras:
 - No máximo uma entrada por linha, apenas para linhas que realmente se beneficiam; ignore o resto.
@@ -90,6 +93,13 @@ function erro(res, status, mensagem) {
 }
 
 const INTENSIDADES = ["poucas", "moderada", "muitas"];
+const TAMANHOS_RESUMO = ["curto", "medio", "detalhado"];
+const DESCRICAO_TAMANHO = {
+  curto: "curto (1 a 2 frases, cerca de 30 palavras)",
+  medio: "médio (3 a 4 frases, cerca de 70 palavras)",
+  detalhado: "detalhado (um parágrafo de 5 a 7 frases, cerca de 120 palavras)",
+};
+const MAX_RESUMO = 1200;
 
 function textoLivre(valor) {
   return typeof valor === "string" ? valor.replace(/\s+/g, " ").trim().slice(0, MAX_TEXTO_LIVRE) : "";
@@ -105,6 +115,8 @@ function validarOpcoes(opcoes) {
     maiusculas: o.maiusculas === true,
     emoji: o.emoji === true,
     citacoesBiblicas: o.citacoesBiblicas === true,
+    resumo: o.resumo === true,
+    resumoTamanho: TAMANHOS_RESUMO.includes(o.resumoTamanho) ? o.resumoTamanho : "medio",
     perguntasRespostas: o.perguntasRespostas === true,
     intensidade: INTENSIDADES.includes(o.intensidade) ? o.intensidade : "moderada",
     instrucao: textoLivre(o.instrucao),
@@ -133,7 +145,8 @@ function validarEntrada(body) {
   }
 
   const modo = body.modo === "nova" || body.modo === "melhorar" ? body.modo : null;
-  const anteriores = modo && Array.isArray(body.anteriores) ? JSON.stringify(body.anteriores.slice(0, MAX_LINHAS)).slice(0, 6000) : "";
+  const anteriores =
+    modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(body.anteriores).slice(0, 8000) : "";
 
   return {
     linhas,
@@ -158,6 +171,11 @@ function descreverPreferencias(o) {
     `- Emoji ilustrativo no início da frase: ${o.emoji ? "SIM, sugira emojis que ilustrem o assunto de cada linha destacada" : "NÃO use (emoji sempre null)"}.`,
     `- Quantidade de sugestões: ${o.intensidade}.`,
   ];
+  linhas.push(
+    o.resumo
+      ? `- Resumo: ATIVO, tamanho ${DESCRICAO_TAMANHO[o.resumoTamanho]}. Preencha o campo resumo.`
+      : "- Resumo: INATIVO (resumo sempre null)."
+  );
   if (o.citacoesBiblicas) {
     linhas.push(
       '- Citações bíblicas: ATIVO. Identifique citações de textos bíblicos; marque o texto citado como tipo "citacao_texto" e a referência (livro, capítulo e versículos) como tipo "citacao_referencia". O servidor aplicará itálico ao texto e negrito à referência.'
@@ -293,7 +311,12 @@ export default async function handler(req, res) {
       });
     }
 
-    return res.status(200).json({ sugestoes });
+    const resumo =
+      opcoes.resumo && typeof resposta.parsed_output.resumo === "string"
+        ? resposta.parsed_output.resumo.replace(/\s+/g, " ").trim().slice(0, MAX_RESUMO) || null
+        : null;
+
+    return res.status(200).json({ resumo, sugestoes });
   } catch (e) {
     if (e instanceof Anthropic.RateLimitError) {
       return erro(res, 429, "Limite de uso da IA atingido. Tente novamente mais tarde.");
