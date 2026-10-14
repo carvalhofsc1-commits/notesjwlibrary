@@ -303,6 +303,13 @@
 
     .ai-guidance-label { margin: 12px 0 6px; font-size: .88rem; }
 
+    .ai-sentinela-btn {
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+      min-height: 48px;
+    }
+
     /* ---------- Indicador de espera da IA ---------- */
 
     .ai-spinner {
@@ -1147,6 +1154,7 @@
           <div id="aiProgress" class="ai-progress" role="progressbar" aria-label="A IA está trabalhando" aria-hidden="true"></div>
           <label for="aiAdjustText" class="ai-guidance-label">Orientação para a IA (opcional)</label>
           <input autocomplete="off" id="aiAdjustText" type="text" maxlength="300" placeholder="Ex.: formate só as perguntas; sem emojis; resumo bem curto">
+          <button id="aiSentinelaBtn" class="secondary ai-sentinela-btn" type="button">📖 Respostas Estudo A Sentinela</button>
           <p class="hint ai-hint">Ao usar, o texto e seus modelos são enviados à IA (Claude, da Anthropic). Não use com dados pessoais ou sigilosos. Nada muda até você clicar em Aplicar.</p>
           <span id="aiStatus" class="ok" role="status" aria-live="polite"></span>
           <div class="ai-actions-all">
@@ -1264,7 +1272,7 @@
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="perguntasRespostas"> Dar atenção a perguntas e respostas</label>
         </div>
 
-        <label for="aiSummarySize">Tamanho do resumo (se a opção de resumo estiver marcada)</label>
+        <label for="aiSummarySize">Tamanho do resumo e das respostas da Sentinela</label>
         <select autocomplete="off" id="aiSummarySize">
           <option value="curto">Curto (1 a 2 frases)</option>
           <option value="medio">Médio (3 a 4 frases)</option>
@@ -4221,6 +4229,7 @@ async function importTemplatesFromText(text) {
     // As sugestões nunca alteram o texto sozinhas: cada uma precisa de "Aplicar".
     const aiSuggestBtn = document.getElementById('aiSuggestBtn');
     const aiSuggestBtn2 = document.getElementById('aiSuggestBtn2');
+    const aiSentinelaBtn = document.getElementById('aiSentinelaBtn');
     const aiApplyAllBtn = document.getElementById('aiApplyAllBtn');
     const aiDismissAllBtn = document.getElementById('aiDismissAllBtn');
     const aiAnotherBtn = document.getElementById('aiAnotherBtn');
@@ -4241,6 +4250,8 @@ async function importTemplatesFromText(text) {
     const AI_OPTIONS_KEY = 'jwLibraryNoteAplicarAiOptionsV1';
     const AI_MAX_CHARS = 4000;
     const AI_MAX_LINES = 80;
+    const AI_SENTINELA_MAX_CHARS = 12000;
+    const AI_SENTINELA_MAX_LINES = 200;
     const AI_STYLE_KIND = { negrito: 'bold', italico: 'italic', negrito_italico: 'boldItalic' };
     const AI_DEFAULT_OPTIONS = {
       usarModelos: true, negrito: true, italico: false, negritoItalico: false, maiusculas: false,
@@ -4248,7 +4259,9 @@ async function importTemplatesFromText(text) {
     };
 
     let aiSuggestions = [];   // sugestões exibidas (já resolvidas contra os modelos locais)
-    let aiResumo = null;      // { texto, done } quando a IA devolve um resumo
+    let aiResumo = null;      // { texto, done, kind } quando a IA devolve um resumo ('resumo') ou respostas da Sentinela ('sentinela')
+    let aiLastKind = 'format'; // último pedido feito: 'format' ou 'sentinela' (define o que "Outra sugestão/Melhorar" refazem)
+    let aiSentinelaRaw = [];  // itens crus das respostas da Sentinela, reenviados ao refinar
     let aiRaw = [];           // resposta crua da IA, reenviada ao pedir "outra" ou "melhorar"
     let aiBaseText = '';      // texto antes de qualquer sugestão ser aplicada (para desfazer)
     let aiAppliedAny = false;
@@ -4284,7 +4297,7 @@ async function importTemplatesFromText(text) {
     let aiLoadingTimer = null;
 
     function setAiLoading(on, button) {
-      const all = [aiSuggestBtn, aiSuggestBtn2, aiAnotherBtn, aiImproveBtn];
+      const all = [aiSuggestBtn, aiSuggestBtn2, aiSentinelaBtn, aiAnotherBtn, aiImproveBtn];
 
       if (!on) {
         clearInterval(aiLoadingTimer);
@@ -4413,6 +4426,7 @@ async function importTemplatesFromText(text) {
 
     // Rótulo que identifica o resumo no texto, no mesmo estilo dos modelos prontos.
     function aiSummaryLine() {
+      if (aiResumo.kind === 'sentinela') return aiResumo.texto;
       const styleId = aiStyleIdFor('negrito');
       const label = styleId ? convertTextWithStyle('RESUMO', styleId) : 'RESUMO';
       return '📝 ' + label + ' ➜ ' + aiResumo.texto;
@@ -4421,10 +4435,12 @@ async function importTemplatesFromText(text) {
     function insertAiSummary(where) {
       const line = aiSummaryLine();
       const current = input.value.replace(/\s+$/, '');
-      const text = where === 'start'
-        ? line + (current ? '\n\n' + input.value : '')
-        : (current ? current + '\n\n' : '') + line;
-      setInputRange(0, input.value.length, text, { message: 'Resumo inserido.' });
+      const text = where === 'replace'
+        ? line
+        : where === 'start'
+          ? line + (current ? '\n\n' + input.value : '')
+          : (current ? current + '\n\n' : '') + line;
+      setInputRange(0, input.value.length, text, { message: aiResumo.kind === 'sentinela' ? 'Respostas inseridas.' : 'Resumo inserido.' });
       autoGrowInputText();
       aiResumo.done = true;
       aiAppliedAny = true;
@@ -4438,7 +4454,9 @@ async function importTemplatesFromText(text) {
 
       const reason = document.createElement('p');
       reason.className = 'ai-item-reason';
-      reason.textContent = 'Resumo do texto, com palavras próprias, para comentário';
+      reason.textContent = aiResumo.kind === 'sentinela'
+        ? 'Respostas do estudo, com palavras próprias, para comentar'
+        : 'Resumo do texto, com palavras próprias, para comentário';
 
       const after = document.createElement('p');
       after.className = 'ai-item-after';
@@ -4459,10 +4477,13 @@ async function importTemplatesFromText(text) {
       actions.append(
         makeBtn('Inserir no fim', false, () => { insertAiSummary('end'); renderAiSuggestions(); }),
         makeBtn('Inserir no início', true, () => { insertAiSummary('start'); renderAiSuggestions(); }),
+        ...(aiResumo.kind === 'sentinela'
+          ? [makeBtn('Substituir texto', true, () => { insertAiSummary('replace'); renderAiSuggestions(); })]
+          : []),
         makeBtn('Copiar', true, async () => {
           try {
             await navigator.clipboard.writeText(aiSummaryLine());
-            setAiStatus('Resumo copiado.', false);
+            setAiStatus(aiResumo.kind === 'sentinela' ? 'Respostas copiadas.' : 'Resumo copiado.', false);
           } catch (e) {
             setAiStatus('Não foi possível copiar. Use "Inserir no fim" e copie do texto.', true);
           }
@@ -4558,6 +4579,7 @@ async function importTemplatesFromText(text) {
     // mode: undefined = primeira sugestão; 'nova' = alternativa diferente; 'melhorar' = refinar a anterior.
     async function requestAiSuggestions(mode, scrollToResults) {
       if (aiBusy) return;
+      aiLastKind = 'format';
 
       if (mode) {
         if (!(await confirmAiRestore())) return;
@@ -4631,7 +4653,7 @@ async function importTemplatesFromText(text) {
         }
 
         aiRaw = Array.isArray(data.sugestoes) ? data.sugestoes : [];
-        aiResumo = data.resumo ? { texto: String(data.resumo), done: false } : null;
+        aiResumo = data.resumo ? { texto: String(data.resumo), done: false, kind: 'resumo' } : null;
         const byId = new Map(getTemplatesSortedByName().map(t => [t.id, t]));
         aiSuggestions = aiRaw.map(s => {
           const original = lines[s.linha];
@@ -4667,14 +4689,122 @@ async function importTemplatesFromText(text) {
       }
     }
 
+    function aiTemplateByName(name) {
+      return getTemplatesSortedByName().find(t => String(t.name || '').trim().toLowerCase() === name) || null;
+    }
+
+    // Aplica o modelo do usuário (ex.: "Pergunta", "Resposta") ou um rótulo padrão se ele não existir.
+    function aiLabelWith(tpl, fallback, text) {
+      const content = tpl ? String(tpl.content || '') : fallback;
+      if (content.includes('{texto}')) return content.split('{texto}').join(text);
+      return content + (/\s$/.test(content) ? '' : ' ') + text;
+    }
+
+    function buildSentinelaText(items) {
+      const questionTpl = aiTemplateByName('pergunta');
+      const answerTpl = aiTemplateByName('resposta');
+
+      return items.map(item => {
+        const number = item.paragrafos ? item.paragrafos + '. ' : '';
+        const refs = item.referencias ? ' — ' + item.referencias : '';
+        return aiLabelWith(questionTpl, '❓ PERGUNTA 👉 ', number + item.pergunta) + '\n' +
+          aiLabelWith(answerTpl, '✅ RESPOSTA 👉 ', item.resposta + refs);
+      }).join('\n\n');
+    }
+
+    // mode: undefined = primeira vez; 'nova' = respostas diferentes; 'melhorar' = refinar as anteriores.
+    async function requestSentinelaAnswers(mode) {
+      if (aiBusy) return;
+      aiLastKind = 'sentinela';
+
+      if (mode) {
+        if (!(await confirmAiRestore())) return;
+        if (aiAppliedAny) restoreAiBaseText();
+      } else {
+        aiSentinelaRaw = [];
+        aiAppliedAny = false;
+      }
+
+      const lines = input.value.split('\n').filter(l => l.trim());
+      const totalChars = lines.reduce((sum, l) => sum + l.length, 0);
+
+      aiResults.textContent = '';
+      aiSuggestions = [];
+      aiRaw = [];
+      const hadPrevious = !!aiResumo && aiSentinelaRaw.length > 0;
+      aiResumo = null;
+      updateAiControls();
+
+      if (!lines.length) return setAiStatus('Cole no campo "Texto original" os parágrafos e perguntas do estudo.', true);
+      if (totalChars > AI_SENTINELA_MAX_CHARS || lines.length > AI_SENTINELA_MAX_LINES) {
+        return setAiStatus('Texto grande demais (máximo ' + AI_SENTINELA_MAX_CHARS + ' caracteres e ' + AI_SENTINELA_MAX_LINES + ' linhas). Cole menos parágrafos por vez.', true);
+      }
+      if (!navigator.onLine) return setAiStatus('Sem conexão com a internet.', true);
+
+      if (!aiAppliedAny) aiBaseText = input.value;
+      saveAiOptions();
+
+      const payload = { tarefa: 'sentinela', linhas: lines, modelos: [], opcoes: readAiOptions(), ajuste: aiAdjustText.value.trim().slice(0, 300) };
+      if (mode && hadPrevious) {
+        payload.modo = mode;
+        payload.anteriores = { itens: aiSentinelaRaw };
+      }
+
+      aiBusy = true;
+      setAiLoading(true, mode === 'nova' ? aiAnotherBtn : mode === 'melhorar' ? aiImproveBtn : aiSentinelaBtn);
+
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 75000);
+
+      try {
+        const response = await fetch(AI_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
+
+        let data = null;
+        try { data = await response.json(); } catch (e) { /* resposta sem JSON */ }
+
+        if (!response.ok || !data) {
+          const unavailable = response.status === 404 || response.status === 501;
+          return setAiStatus(
+            unavailable
+              ? 'A IA só funciona no site publicado (notesjwlibrary.vercel.app).'
+              : (data && data.erro) || 'Não foi possível obter as respostas agora.',
+            true
+          );
+        }
+
+        aiSentinelaRaw = Array.isArray(data.itens) ? data.itens : [];
+        if (!aiSentinelaRaw.length) {
+          return setAiStatus('Não encontrei perguntas do estudo no texto. Cole os parágrafos junto com as perguntas.', true);
+        }
+
+        aiResumo = { texto: buildSentinelaText(aiSentinelaRaw), done: false, kind: 'sentinela' };
+        renderAiSuggestions();
+        aiRefineBox.hidden = false;
+        setAiStatus(aiSentinelaRaw.length + (aiSentinelaRaw.length === 1 ? ' resposta pronta.' : ' respostas prontas.'), false);
+      } catch (e) {
+        setAiStatus(e && e.name === 'AbortError' ? 'A IA demorou demais. Tente com menos parágrafos.' : 'Falha de conexão ao consultar a IA.', true);
+      } finally {
+        clearTimeout(timer);
+        aiBusy = false;
+        setAiLoading(false);
+      }
+    }
+
     aiSuggestBtn.addEventListener('click', () => requestAiSuggestions());
+    aiSentinelaBtn.addEventListener('click', () => requestSentinelaAnswers());
     aiSuggestBtn2.addEventListener('click', () => requestAiSuggestions(undefined, true));
-    aiAnotherBtn.addEventListener('click', () => requestAiSuggestions('nova'));
-    aiImproveBtn.addEventListener('click', () => requestAiSuggestions('melhorar'));
+    const refineAi = mode => (aiLastKind === 'sentinela' ? requestSentinelaAnswers(mode) : requestAiSuggestions(mode));
+    aiAnotherBtn.addEventListener('click', () => refineAi('nova'));
+    aiImproveBtn.addEventListener('click', () => refineAi('melhorar'));
     aiAdjustText.addEventListener('keydown', e => {
       if (e.key !== 'Enter') return;
       e.preventDefault();
-      requestAiSuggestions(aiRaw.length || aiResumo ? 'melhorar' : undefined);
+      refineAi(aiRaw.length || aiResumo ? 'melhorar' : undefined);
     });
 
     aiApplyAllBtn.addEventListener('click', () => {
