@@ -1087,7 +1087,7 @@
           <div id="aiResults" class="ai-list"></div>
           <div id="aiRefineBox" class="ai-refine" hidden>
             <label for="aiAdjustText">Ajuste para a próxima sugestão (opcional)</label>
-            <input id="aiAdjustText" type="text" maxlength="300" placeholder="Ex.: menos emojis, destacar só as perguntas">
+            <input autocomplete="off" id="aiAdjustText" type="text" maxlength="300" placeholder="Ex.: menos emojis, destacar só as perguntas">
             <div class="ai-actions-all">
               <button id="aiAnotherBtn" class="secondary" type="button">🔄 Outra sugestão</button>
               <button id="aiImproveBtn" class="secondary" type="button">🛠️ Melhorar esta</button>
@@ -1186,25 +1186,28 @@
         <p class="hint">Escolha como a IA deve formatar e use o botão <strong>✨ Sugerir formatação com IA</strong> (acima dos botões de formatação) ou o botão abaixo. As opções ficam salvas neste navegador. Ao pedir sugestões, o texto e seus modelos são enviados à IA (Claude, da Anthropic): não use com dados pessoais ou sigilosos.</p>
 
         <div class="ai-options" role="group" aria-label="Opções de formatação da IA">
-          <label class="ai-check"><input type="checkbox" data-ai-opt="usarModelos"> Usar meus modelos prontos</label>
-          <label class="ai-check"><input type="checkbox" data-ai-opt="negrito"> Usar negrito</label>
-          <label class="ai-check"><input type="checkbox" data-ai-opt="italico"> Usar itálico</label>
-          <label class="ai-check"><input type="checkbox" data-ai-opt="negritoItalico"> Usar negrito + itálico</label>
-          <label class="ai-check"><input type="checkbox" data-ai-opt="maiusculas"> Usar LETRAS MAIÚSCULAS nos destaques</label>
-          <label class="ai-check"><input type="checkbox" data-ai-opt="emoji"> Ilustrar com emoji no início da frase (a IA escolhe qualquer emoji pelo assunto)</label>
-          <label class="ai-check"><input type="checkbox" data-ai-opt="versiculos"> Dar atenção a versículos e referências bíblicas</label>
-          <label class="ai-check"><input type="checkbox" data-ai-opt="perguntasRespostas"> Dar atenção a perguntas e respostas</label>
+          <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="usarModelos"> Usar meus modelos prontos</label>
+          <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="negrito"> Usar negrito</label>
+          <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="italico"> Usar itálico</label>
+          <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="negritoItalico"> Usar negrito + itálico</label>
+          <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="maiusculas"> Usar LETRAS MAIÚSCULAS nos destaques</label>
+          <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="emoji"> Ilustrar com emoji no início da frase (a IA escolhe qualquer emoji pelo assunto)</label>
+          <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citacoesBiblicas"> Formatar citações bíblicas: texto em itálico e livro, capítulo e versículo em negrito</label>
+          <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="perguntasRespostas"> Dar atenção a perguntas e respostas</label>
         </div>
 
+        <label for="aiCategory">Categoria de modelos usada pela IA</label>
+        <select autocomplete="off" id="aiCategory"></select>
+
         <label for="aiIntensity">Quantidade de sugestões</label>
-        <select id="aiIntensity">
+        <select autocomplete="off" id="aiIntensity">
           <option value="poucas">Poucas (só o essencial)</option>
           <option value="moderada">Moderada</option>
           <option value="muitas">Muitas (formatar bastante)</option>
         </select>
 
         <label for="aiInstruction">Instruções extras (opcional)</label>
-        <input id="aiInstruction" type="text" maxlength="300" placeholder="Ex.: texto da Escola Pioneiros, estilo discreto">
+        <input autocomplete="off" id="aiInstruction" type="text" maxlength="300" placeholder="Ex.: texto da Escola Pioneiros, estilo discreto">
 
         <div class="button-row">
           <button id="aiSuggestBtn2" type="button">✨ Sugerir formatação</button>
@@ -4153,6 +4156,8 @@ async function importTemplatesFromText(text) {
     const aiStatus = document.getElementById('aiStatus');
     const aiResults = document.getElementById('aiResults');
     const aiIntensity = document.getElementById('aiIntensity');
+    const aiCategory = document.getElementById('aiCategory');
+    const aiSection = document.getElementById('aiSection');
     const aiInstruction = document.getElementById('aiInstruction');
     const aiOptionInputs = Array.from(document.querySelectorAll('[data-ai-opt]'));
     const AI_ENDPOINT = '/api/sugerir-formatacao';
@@ -4162,7 +4167,7 @@ async function importTemplatesFromText(text) {
     const AI_STYLE_KIND = { negrito: 'bold', italico: 'italic', negrito_italico: 'boldItalic' };
     const AI_DEFAULT_OPTIONS = {
       usarModelos: true, negrito: true, italico: false, negritoItalico: false, maiusculas: false,
-      emoji: false, versiculos: false, perguntasRespostas: false, intensidade: 'moderada', instrucao: ''
+      emoji: false, citacoesBiblicas: false, perguntasRespostas: false, intensidade: 'moderada', instrucao: '', categoria: 'all'
     };
 
     let aiSuggestions = [];   // sugestões exibidas (já resolvidas contra os modelos locais)
@@ -4176,10 +4181,31 @@ async function importTemplatesFromText(text) {
       aiStatus.className = isWarning ? 'warn' : 'ok';
     }
 
+    // Lista "Todas" + as categorias de modelos atuais, mantendo a escolha salva (ou voltando a "Todas" se ela sumiu).
+    function renderAiCategoryOptions(selected) {
+      const wanted = selected !== undefined ? selected : aiCategory.value || 'all';
+      aiCategory.textContent = '';
+
+      const all = document.createElement('option');
+      all.value = 'all';
+      all.textContent = 'Todas as categorias';
+      aiCategory.appendChild(all);
+
+      templateCategories.forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        aiCategory.appendChild(option);
+      });
+
+      aiCategory.value = Array.from(aiCategory.options).some(o => o.value === wanted) ? wanted : 'all';
+    }
+
     function loadAiOptions() {
       let saved = {};
       try { saved = JSON.parse(localStorage.getItem(AI_OPTIONS_KEY) || '{}') || {}; } catch (e) { saved = {}; }
       const options = Object.assign({}, AI_DEFAULT_OPTIONS, saved);
+      renderAiCategoryOptions(String(options.categoria || 'all'));
       aiOptionInputs.forEach(el => { el.checked = !!options[el.dataset.aiOpt]; });
       aiIntensity.value = ['poucas', 'moderada', 'muitas'].includes(options.intensidade) ? options.intensidade : 'moderada';
       aiInstruction.value = String(options.instrucao || '').slice(0, 300);
@@ -4189,6 +4215,7 @@ async function importTemplatesFromText(text) {
       const options = {};
       aiOptionInputs.forEach(el => { options[el.dataset.aiOpt] = el.checked; });
       options.intensidade = aiIntensity.value;
+      options.categoria = aiCategory.value || 'all';
       options.instrucao = aiInstruction.value.trim().slice(0, 300);
       return options;
     }
@@ -4355,7 +4382,11 @@ async function importTemplatesFromText(text) {
       if (!aiAppliedAny) aiBaseText = input.value;
       saveAiOptions();
 
-      const modelos = getTemplatesSortedByName().slice(0, 60).map(t => ({
+      renderAiCategoryOptions();
+      const category = aiCategory.value;
+      const modelos = getTemplatesSortedByName()
+        .filter(t => category === 'all' || templateHasCategory(t, category))
+        .slice(0, 60).map(t => ({
         id: t.id,
         nome: t.name || 'Modelo',
         conteudo: String(t.content || '').slice(0, 200)
@@ -4461,6 +4492,8 @@ async function importTemplatesFromText(text) {
 
     aiOptionInputs.forEach(el => el.addEventListener('change', saveAiOptions));
     aiIntensity.addEventListener('change', saveAiOptions);
+    aiCategory.addEventListener('change', saveAiOptions);
+    aiSection.addEventListener('toggle', () => { if (aiSection.open) renderAiCategoryOptions(); });
     aiInstruction.addEventListener('change', saveAiOptions);
     loadAiOptions();
 

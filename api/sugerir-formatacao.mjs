@@ -14,6 +14,7 @@ const MAX_DESTAQUES = 5;
 const LIMITE_POR_HORA = 30;
 
 const ESTILOS = ["negrito", "italico", "negrito_italico"];
+const TIPOS = ["geral", "citacao_texto", "citacao_referencia"];
 
 const Saida = z.object({
   sugestoes: z.array(
@@ -24,6 +25,7 @@ const Saida = z.object({
       destaques: z.array(
         z.object({
           trecho: z.string(),
+          tipo: z.enum(TIPOS),
           estilo: z.enum(ESTILOS).nullable(),
           maiusculas: z.boolean(),
         })
@@ -38,7 +40,11 @@ const SISTEMA = `Você ajuda a formatar anotações de estudo bíblico (reuniõe
 Receberá as PREFERÊNCIAS do usuário, a lista de modelos disponíveis (id, nome, conteúdo) e as linhas do texto (numeradas a partir de 0). Para cada linha que merece destaque, sugira:
 - modeloId: o id de UM modelo da lista que combina com a linha (ex.: pergunta, resposta, aplicação, texto bíblico, vídeo, destaque), ou null. Nunca invente ids.
 - emoji: quando permitido, 1 a 3 emojis que ilustrem o assunto da linha (ex.: cachos de uva → 🍇; oração → 🙏; viagem → ✈️). Pode usar QUALQUER emoji Unicode, mesmo que não seja comum. Caso contrário, null.
-- destaques: lista (até ${MAX_DESTAQUES}) de trechos copiados LITERALMENTE da linha, cada um com estilo (negrito, italico, negrito_italico ou null) e maiusculas (true para escrever o trecho em MAIÚSCULAS). Só use estilos e maiúsculas que as preferências permitirem. Lista vazia se não houver destaque.
+- destaques: lista (até ${MAX_DESTAQUES}) de trechos copiados LITERALMENTE da linha. Cada um tem:
+  - tipo: "geral" para destaque comum; "citacao_texto" para o TEXTO de uma citação bíblica (as palavras citadas, sem as aspas); "citacao_referencia" para a referência (livro, capítulo e versículos, ex.: João 3:16, sem parênteses). Use os tipos de citação só se a preferência de citações bíblicas estiver ativa.
+  - estilo: negrito, italico, negrito_italico ou null (para citações o servidor define o estilo; use null).
+  - maiusculas: true para escrever o trecho em MAIÚSCULAS.
+  Só use estilos e maiúsculas que as preferências permitirem. Lista vazia se não houver destaque.
 - motivo: uma frase curta em português explicando a sugestão.
 
 Regras:
@@ -98,7 +104,7 @@ function validarOpcoes(opcoes) {
     negritoItalico: o.negritoItalico === true,
     maiusculas: o.maiusculas === true,
     emoji: o.emoji === true,
-    versiculos: o.versiculos === true,
+    citacoesBiblicas: o.citacoesBiblicas === true,
     perguntasRespostas: o.perguntasRespostas === true,
     intensidade: INTENSIDADES.includes(o.intensidade) ? o.intensidade : "moderada",
     instrucao: textoLivre(o.instrucao),
@@ -152,7 +158,13 @@ function descreverPreferencias(o) {
     `- Emoji ilustrativo no início da frase: ${o.emoji ? "SIM, sugira emojis que ilustrem o assunto de cada linha destacada" : "NÃO use (emoji sempre null)"}.`,
     `- Quantidade de sugestões: ${o.intensidade}.`,
   ];
-  if (o.versiculos) linhas.push("- Dê atenção especial a versículos e referências bíblicas (ex.: Mateus 6:33).");
+  if (o.citacoesBiblicas) {
+    linhas.push(
+      '- Citações bíblicas: ATIVO. Identifique citações de textos bíblicos; marque o texto citado como tipo "citacao_texto" e a referência (livro, capítulo e versículos) como tipo "citacao_referencia". O servidor aplicará itálico ao texto e negrito à referência.'
+    );
+  } else {
+    linhas.push('- Citações bíblicas: INATIVO (use apenas o tipo "geral").');
+  }
   if (o.perguntasRespostas) linhas.push("- Dê atenção especial a perguntas e respostas.");
   if (o.instrucao) linhas.push(`- Instruções extras do usuário: ${o.instrucao}`);
   return linhas.join("\n");
@@ -251,10 +263,22 @@ export default async function handler(req, res) {
       const destaques = [];
       for (const d of s.destaques.slice(0, MAX_DESTAQUES)) {
         if (!d.trecho || !linha.includes(d.trecho)) continue;
+
+        if (d.tipo === "citacao_texto" || d.tipo === "citacao_referencia") {
+          if (!opcoes.citacoesBiblicas) continue;
+          destaques.push({
+            trecho: d.trecho,
+            tipo: d.tipo,
+            estilo: d.tipo === "citacao_texto" ? "italico" : "negrito",
+            maiusculas: false,
+          });
+          continue;
+        }
+
         const estilo = d.estilo && estilosPermitidos.has(d.estilo) ? d.estilo : null;
         const maiusculas = opcoes.maiusculas && d.maiusculas === true;
         if (!estilo && !maiusculas) continue;
-        destaques.push({ trecho: d.trecho, estilo, maiusculas });
+        destaques.push({ trecho: d.trecho, tipo: "geral", estilo, maiusculas });
       }
 
       if (!modeloId && !emoji && !destaques.length) continue;
