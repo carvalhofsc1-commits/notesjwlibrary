@@ -303,6 +303,70 @@
 
     .ai-guidance-label { margin: 12px 0 6px; font-size: .88rem; }
 
+    /* ---------- Indicador de espera da IA ---------- */
+
+    .ai-spinner {
+      display: inline-block;
+      width: 1.05em;
+      height: 1.05em;
+      margin-right: .55em;
+      border: .17em solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      vertical-align: -.16em;
+      animation: ai-spin .8s linear infinite;
+    }
+
+    @keyframes ai-spin { to { transform: rotate(360deg); } }
+
+    button.is-loading { cursor: progress; opacity: 1; }
+
+    /* Reserva o espaço da barra para o layout não pular quando a IA começa a trabalhar. */
+    .ai-progress {
+      position: relative;
+      height: 5px;
+      margin-top: 8px;
+      border-radius: 999px;
+      background: var(--line);
+      overflow: hidden;
+      visibility: hidden;
+    }
+
+    .ai-progress.on { visibility: visible; }
+
+    .ai-progress::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 35%;
+      border-radius: inherit;
+      background: var(--accent);
+      animation: ai-slide 1.2s ease-in-out infinite;
+    }
+
+    @keyframes ai-slide {
+      0% { left: -35%; }
+      100% { left: 100%; }
+    }
+
+    .ai-skeleton {
+      height: 78px;
+      border: 2px solid var(--line);
+      border-radius: 12px;
+      background: linear-gradient(90deg, var(--card) 25%, var(--soft) 50%, var(--card) 75%);
+      background-size: 200% 100%;
+      animation: ai-shimmer 1.4s linear infinite;
+    }
+
+    @keyframes ai-shimmer { to { background-position: -200% 0; } }
+
+    @media (prefers-reduced-motion: reduce) {
+      .ai-spinner { animation-duration: 2s; }
+      .ai-progress::after,
+      .ai-skeleton { animation-duration: 3.5s; }
+    }
+
     .ai-box #aiStatus { display: block; margin: 8px 0 0; }
 
     .ai-actions-all { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
@@ -1080,6 +1144,7 @@
 
         <div class="ai-box">
           <button id="aiSuggestBtn" class="ai-main-btn" type="button">✨ Sugerir formatação com IA</button>
+          <div id="aiProgress" class="ai-progress" role="progressbar" aria-label="A IA está trabalhando" aria-hidden="true"></div>
           <label for="aiAdjustText" class="ai-guidance-label">Orientação para a IA (opcional)</label>
           <input autocomplete="off" id="aiAdjustText" type="text" maxlength="300" placeholder="Ex.: formate só as perguntas; sem emojis; resumo bem curto">
           <p class="hint ai-hint">Ao usar, o texto e seus modelos são enviados à IA (Claude, da Anthropic). Não use com dados pessoais ou sigilosos. Nada muda até você clicar em Aplicar.</p>
@@ -4165,6 +4230,7 @@ async function importTemplatesFromText(text) {
     const aiAdjustText = document.getElementById('aiAdjustText');
     const aiStatus = document.getElementById('aiStatus');
     const aiResults = document.getElementById('aiResults');
+    const aiProgress = document.getElementById('aiProgress');
     const aiIntensity = document.getElementById('aiIntensity');
     const aiCategory = document.getElementById('aiCategory');
     const aiSummarySize = document.getElementById('aiSummarySize');
@@ -4211,6 +4277,63 @@ async function importTemplatesFromText(text) {
       });
 
       aiCategory.value = Array.from(aiCategory.options).some(o => o.value === wanted) ? wanted : 'all';
+    }
+
+    // Mostra que a IA está trabalhando: botão com ícone girando, barra de progresso,
+    // cartões "fantasma" no lugar das sugestões e contador de segundos no status.
+    let aiLoadingTimer = null;
+
+    function setAiLoading(on, button) {
+      const all = [aiSuggestBtn, aiSuggestBtn2, aiAnotherBtn, aiImproveBtn];
+
+      if (!on) {
+        clearInterval(aiLoadingTimer);
+        aiLoadingTimer = null;
+        all.forEach(b => {
+          b.disabled = false;
+          b.classList.remove('is-loading');
+          b.removeAttribute('aria-busy');
+          if (b.dataset.label) {
+            b.textContent = b.dataset.label;
+            delete b.dataset.label;
+          }
+        });
+        aiProgress.classList.remove('on');
+        aiResults.removeAttribute('aria-busy');
+        aiResults.querySelectorAll('.ai-skeleton').forEach(el => el.remove());
+        return;
+      }
+
+      all.forEach(b => { b.disabled = true; });
+      button.dataset.label = button.textContent;
+      button.classList.add('is-loading');
+      button.setAttribute('aria-busy', 'true');
+      const spinner = document.createElement('span');
+      spinner.className = 'ai-spinner';
+      spinner.setAttribute('aria-hidden', 'true');
+      button.textContent = '';
+      button.append(spinner, 'Consultando a IA…');
+
+      aiProgress.classList.add('on');
+      aiResults.setAttribute('aria-busy', 'true');
+      for (let i = 0; i < 2; i++) {
+        const ghost = document.createElement('div');
+        ghost.className = 'ai-skeleton';
+        aiResults.appendChild(ghost);
+      }
+
+      const startedAt = Date.now();
+      const tick = () => {
+        const seconds = Math.floor((Date.now() - startedAt) / 1000);
+        setAiStatus(
+          seconds < 12
+            ? 'A IA está trabalhando… ' + seconds + ' s'
+            : 'Ainda trabalhando… ' + seconds + ' s (textos longos demoram mais). Aguarde.',
+          false
+        );
+      };
+      tick();
+      aiLoadingTimer = setInterval(tick, 1000);
     }
 
     function loadAiOptions() {
@@ -4481,8 +4604,7 @@ async function importTemplatesFromText(text) {
       }
 
       aiBusy = true;
-      [aiSuggestBtn, aiSuggestBtn2, aiAnotherBtn, aiImproveBtn].forEach(b => { b.disabled = true; });
-      setAiStatus('Consultando a IA…', false);
+      setAiLoading(true, mode === 'nova' ? aiAnotherBtn : mode === 'melhorar' ? aiImproveBtn : scrollToResults ? aiSuggestBtn2 : aiSuggestBtn);
 
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 60000);
@@ -4541,7 +4663,7 @@ async function importTemplatesFromText(text) {
       } finally {
         clearTimeout(timer);
         aiBusy = false;
-        [aiSuggestBtn, aiSuggestBtn2, aiAnotherBtn, aiImproveBtn].forEach(b => { b.disabled = false; });
+        setAiLoading(false);
       }
     }
 
