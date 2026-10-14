@@ -120,6 +120,35 @@
       line-height: 1.6;
     }
 
+    .notice {
+      background: var(--card-tint);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      margin: 24px auto 0;
+      max-width: 520px;
+      text-align: left;
+      box-shadow: 0 8px 22px var(--shadow);
+    }
+
+    .notice h2 {
+      margin: 0 0 10px;
+      font-size: .95rem;
+      text-align: center;
+    }
+
+    .notice ul {
+      margin: 0;
+      padding-left: 1.2em;
+      color: var(--muted);
+      font-size: .92rem;
+      line-height: 1.5;
+    }
+
+    .notice li + li { margin-top: 8px; }
+
+    .notice strong { color: var(--text); }
+
     .card {
       background: var(--card-tint);
       border: 1px solid var(--line);
@@ -189,6 +218,17 @@
     <span class="pill">v9.5</span>
 
     <p class="about-text">Este aplicativo não aplica formatação real. Ele troca as letras por caracteres Unicode parecidos com negrito, itálico, círculos, caixas e símbolos, para dar aparência de destaque em campos que aceitam apenas texto.</p>
+
+    <section class="notice">
+      <h2>⚠️ Limitações do uso de caracteres Unicode</h2>
+      <ul>
+        <li><strong>Acentos e cedilha se perdem.</strong> Os caracteres de negrito, itálico e outros estilos não existem com acento, então <em>á, ã, â, é, ê, í, ó, õ, ú, ü, ç</em> viram a letra simples (por exemplo, “Jeová” fica “𝐉𝐞𝐨𝐯𝐚”).</li>
+        <li><strong>Não dá para voltar ao original.</strong> O botão Remover devolve letras comuns, mas sem os acentos que já foram perdidos. Guarde uma cópia do texto original antes de formatar.</li>
+        <li><strong>Algumas fontes são incompletas.</strong> Em estilos como Script ou Fraktur, letras e números que não têm versão estilizada continuam normais.</li>
+        <li><strong>O texto deixa de ser “texto comum”.</strong> Buscas, corretor ortográfico e leitores de tela podem não reconhecer as palavras formatadas, e alguns aparelhos ou aplicativos podem mostrar quadradinhos se não tiverem suporte aos caracteres.</li>
+        <li><strong>Pontuação, espaços e emojis</strong> não são alterados.</li>
+      </ul>
+    </section>
 
     <section class="card">
       <h2>Desenvolvido por Carvalho Apps</h2>
