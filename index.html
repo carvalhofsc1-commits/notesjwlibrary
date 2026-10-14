@@ -262,6 +262,34 @@
 
     /* ---------- Sugestões de formatação (IA) ---------- */
 
+    .ai-options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .ai-check {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin: 0;
+      padding: 8px 10px;
+      border: 2px solid var(--muted);
+      border-radius: 10px;
+      background: var(--card);
+      font-size: .88rem;
+      font-weight: 650;
+      line-height: 1.25;
+      cursor: pointer;
+    }
+
+    .ai-check:hover { background: var(--soft); }
+
+    .ai-check input { margin: 2px 0 0; width: 16px; height: 16px; flex: 0 0 auto; accent-color: var(--accent); }
+
+    .ai-refine { margin-top: 14px; }
+
     .ai-box { margin-bottom: 14px; }
 
     .ai-main-btn {
@@ -1057,6 +1085,15 @@
             <button id="aiDismissAllBtn" class="secondary" type="button" hidden>Descartar todas</button>
           </div>
           <div id="aiResults" class="ai-list"></div>
+          <div id="aiRefineBox" class="ai-refine" hidden>
+            <label for="aiAdjustText">Ajuste para a próxima sugestão (opcional)</label>
+            <input id="aiAdjustText" type="text" maxlength="300" placeholder="Ex.: menos emojis, destacar só as perguntas">
+            <div class="ai-actions-all">
+              <button id="aiAnotherBtn" class="secondary" type="button">🔄 Outra sugestão</button>
+              <button id="aiImproveBtn" class="secondary" type="button">🛠️ Melhorar esta</button>
+              <button id="aiUndoBtn" class="secondary" type="button" hidden>↩ Desfazer aplicadas</button>
+            </div>
+          </div>
         </div>
 
         <div class="button-row action-row main-actions">
@@ -1142,6 +1179,38 @@
       </section>
 
     </div>
+
+    <details class="card tint-6 section-accordion" id="aiSection" style="margin-top:16px">
+      <summary><h2>✨ Formatação com IA</h2></summary>
+      <div class="section-accordion-body">
+        <p class="hint">Escolha como a IA deve formatar e use o botão <strong>✨ Sugerir formatação com IA</strong> (acima dos botões de formatação) ou o botão abaixo. As opções ficam salvas neste navegador. Ao pedir sugestões, o texto e seus modelos são enviados à IA (Claude, da Anthropic): não use com dados pessoais ou sigilosos.</p>
+
+        <div class="ai-options" role="group" aria-label="Opções de formatação da IA">
+          <label class="ai-check"><input type="checkbox" data-ai-opt="usarModelos"> Usar meus modelos prontos</label>
+          <label class="ai-check"><input type="checkbox" data-ai-opt="negrito"> Usar negrito</label>
+          <label class="ai-check"><input type="checkbox" data-ai-opt="italico"> Usar itálico</label>
+          <label class="ai-check"><input type="checkbox" data-ai-opt="negritoItalico"> Usar negrito + itálico</label>
+          <label class="ai-check"><input type="checkbox" data-ai-opt="maiusculas"> Usar LETRAS MAIÚSCULAS nos destaques</label>
+          <label class="ai-check"><input type="checkbox" data-ai-opt="emoji"> Ilustrar com emoji no início da frase (a IA escolhe qualquer emoji pelo assunto)</label>
+          <label class="ai-check"><input type="checkbox" data-ai-opt="versiculos"> Dar atenção a versículos e referências bíblicas</label>
+          <label class="ai-check"><input type="checkbox" data-ai-opt="perguntasRespostas"> Dar atenção a perguntas e respostas</label>
+        </div>
+
+        <label for="aiIntensity">Quantidade de sugestões</label>
+        <select id="aiIntensity">
+          <option value="poucas">Poucas (só o essencial)</option>
+          <option value="moderada">Moderada</option>
+          <option value="muitas">Muitas (formatar bastante)</option>
+        </select>
+
+        <label for="aiInstruction">Instruções extras (opcional)</label>
+        <input id="aiInstruction" type="text" maxlength="300" placeholder="Ex.: texto da Escola Pioneiros, estilo discreto">
+
+        <div class="button-row">
+          <button id="aiSuggestBtn2" type="button">✨ Sugerir formatação</button>
+        </div>
+      </div>
+    </details>
 
     <details class="card tint-2 section-accordion" style="margin-top:16px">
       <summary><h2>2. Tipo de fonte/caractere</h2></summary>
@@ -4073,19 +4142,59 @@ async function importTemplatesFromText(text) {
     // O texto vai para a função serverless /api/sugerir-formatacao (a chave da IA fica só no servidor).
     // As sugestões nunca alteram o texto sozinhas: cada uma precisa de "Aplicar".
     const aiSuggestBtn = document.getElementById('aiSuggestBtn');
+    const aiSuggestBtn2 = document.getElementById('aiSuggestBtn2');
     const aiApplyAllBtn = document.getElementById('aiApplyAllBtn');
     const aiDismissAllBtn = document.getElementById('aiDismissAllBtn');
+    const aiAnotherBtn = document.getElementById('aiAnotherBtn');
+    const aiImproveBtn = document.getElementById('aiImproveBtn');
+    const aiUndoBtn = document.getElementById('aiUndoBtn');
+    const aiRefineBox = document.getElementById('aiRefineBox');
+    const aiAdjustText = document.getElementById('aiAdjustText');
     const aiStatus = document.getElementById('aiStatus');
     const aiResults = document.getElementById('aiResults');
+    const aiIntensity = document.getElementById('aiIntensity');
+    const aiInstruction = document.getElementById('aiInstruction');
+    const aiOptionInputs = Array.from(document.querySelectorAll('[data-ai-opt]'));
     const AI_ENDPOINT = '/api/sugerir-formatacao';
+    const AI_OPTIONS_KEY = 'jwLibraryNoteAplicarAiOptionsV1';
     const AI_MAX_CHARS = 4000;
     const AI_MAX_LINES = 80;
     const AI_STYLE_KIND = { negrito: 'bold', italico: 'italic', negrito_italico: 'boldItalic' };
-    let aiSuggestions = [];
+    const AI_DEFAULT_OPTIONS = {
+      usarModelos: true, negrito: true, italico: false, negritoItalico: false, maiusculas: false,
+      emoji: false, versiculos: false, perguntasRespostas: false, intensidade: 'moderada', instrucao: ''
+    };
+
+    let aiSuggestions = [];   // sugestões exibidas (já resolvidas contra os modelos locais)
+    let aiRaw = [];           // resposta crua da IA, reenviada ao pedir "outra" ou "melhorar"
+    let aiBaseText = '';      // texto antes de qualquer sugestão ser aplicada (para desfazer)
+    let aiAppliedAny = false;
+    let aiBusy = false;
 
     function setAiStatus(message, isWarning) {
       aiStatus.textContent = message;
       aiStatus.className = isWarning ? 'warn' : 'ok';
+    }
+
+    function loadAiOptions() {
+      let saved = {};
+      try { saved = JSON.parse(localStorage.getItem(AI_OPTIONS_KEY) || '{}') || {}; } catch (e) { saved = {}; }
+      const options = Object.assign({}, AI_DEFAULT_OPTIONS, saved);
+      aiOptionInputs.forEach(el => { el.checked = !!options[el.dataset.aiOpt]; });
+      aiIntensity.value = ['poucas', 'moderada', 'muitas'].includes(options.intensidade) ? options.intensidade : 'moderada';
+      aiInstruction.value = String(options.instrucao || '').slice(0, 300);
+    }
+
+    function readAiOptions() {
+      const options = {};
+      aiOptionInputs.forEach(el => { options[el.dataset.aiOpt] = el.checked; });
+      options.intensidade = aiIntensity.value;
+      options.instrucao = aiInstruction.value.trim().slice(0, 300);
+      return options;
+    }
+
+    function saveAiOptions() {
+      safeSetItem(AI_OPTIONS_KEY, JSON.stringify(readAiOptions()));
     }
 
     function aiStyleIdFor(estilo) {
@@ -4097,16 +4206,30 @@ async function importTemplatesFromText(text) {
       return (fallback.variants && fallback.variants[kind]) || '';
     }
 
+    // Monta a linha final: destaques (negrito/itálico/maiúsculas) → emoji no início → modelo.
     function aiBuildLine(original, suggestion) {
-      let line = original;
+      const spans = [];
+      (suggestion.destaques || []).forEach(d => {
+        const idx = d.trecho ? original.indexOf(d.trecho) : -1;
+        if (idx < 0) return;
+        const styleId = d.estilo ? aiStyleIdFor(d.estilo) : '';
+        if (!styleId && !d.maiusculas) return;
+        let text = d.maiusculas ? d.trecho.toUpperCase() : d.trecho;
+        if (styleId) text = convertTextWithStyle(text, styleId);
+        spans.push({ start: idx, end: idx + d.trecho.length, text });
+      });
 
-      if (suggestion.trecho && suggestion.estilo && line.includes(suggestion.trecho)) {
-        const styleId = aiStyleIdFor(suggestion.estilo);
-        if (styleId) {
-          const styled = convertTextWithStyle(suggestion.trecho, styleId);
-          line = line.replace(suggestion.trecho, () => styled);
-        }
-      }
+      spans.sort((a, b) => a.start - b.start);
+      let line = '';
+      let pos = 0;
+      spans.forEach(span => {
+        if (span.start < pos) return; // trechos sobrepostos: mantém o primeiro
+        line += original.slice(pos, span.start) + span.text;
+        pos = span.end;
+      });
+      line += original.slice(pos);
+
+      if (suggestion.emoji) line = suggestion.emoji + ' ' + line;
 
       if (suggestion.modelo) {
         const content = String(suggestion.modelo.content || '');
@@ -4116,13 +4239,18 @@ async function importTemplatesFromText(text) {
       return line;
     }
 
-    function renderAiSuggestions() {
-      aiResults.textContent = '';
+    function updateAiControls() {
       const pending = aiSuggestions.filter(s => !s.done);
       aiApplyAllBtn.hidden = pending.length < 2;
       aiDismissAllBtn.hidden = pending.length < 1;
+      aiUndoBtn.hidden = !aiAppliedAny;
+      aiRefineBox.hidden = !aiRaw.length && !aiAppliedAny;
+    }
 
-      pending.forEach(s => {
+    function renderAiSuggestions() {
+      aiResults.textContent = '';
+
+      aiSuggestions.filter(s => !s.done).forEach(s => {
         const item = document.createElement('div');
         item.className = 'ai-item';
 
@@ -4162,6 +4290,8 @@ async function importTemplatesFromText(text) {
         item.append(reason, before, after, actions);
         aiResults.appendChild(item);
       });
+
+      updateAiControls();
     }
 
     // Procura no texto atual a primeira linha idêntica à original; se o usuário já mexeu nela, não aplica.
@@ -4173,6 +4303,7 @@ async function importTemplatesFromText(text) {
           setInputRange(offset, offset + parts[i].length, s.novo, { message: 'Sugestão aplicada.' });
           autoGrowInputText();
           s.done = true;
+          aiAppliedAny = true;
           return true;
         }
         offset += parts[i].length + 1;
@@ -4182,14 +4313,38 @@ async function importTemplatesFromText(text) {
       return false;
     }
 
-    async function requestAiSuggestions() {
+    function restoreAiBaseText() {
+      setInputRange(0, input.value.length, aiBaseText, { message: 'Texto anterior às sugestões restaurado.' });
+      autoGrowInputText();
+      aiAppliedAny = false;
+    }
+
+    async function confirmAiRestore() {
+      if (!aiAppliedAny || input.value === aiBaseText) return true;
+      return askConfirm(
+        'O texto volta ao estado de antes de aplicar as sugestões. Edições feitas depois de aplicar serão perdidas. Continuar?',
+        'Voltar ao texto anterior'
+      );
+    }
+
+    // mode: undefined = primeira sugestão; 'nova' = alternativa diferente; 'melhorar' = refinar a anterior.
+    async function requestAiSuggestions(mode, scrollToResults) {
+      if (aiBusy) return;
+
+      if (mode) {
+        if (!(await confirmAiRestore())) return;
+        if (aiAppliedAny) restoreAiBaseText();
+      } else {
+        aiRaw = [];
+        aiAppliedAny = false;
+      }
+
       const lines = input.value.split('\n').filter(l => l.trim());
       const totalChars = lines.reduce((sum, l) => sum + l.length, 0);
 
       aiResults.textContent = '';
       aiSuggestions = [];
-      aiApplyAllBtn.hidden = true;
-      aiDismissAllBtn.hidden = true;
+      updateAiControls();
 
       if (!lines.length) return setAiStatus('Digite ou cole um texto no campo "Texto original" primeiro.', true);
       if (totalChars > AI_MAX_CHARS || lines.length > AI_MAX_LINES) {
@@ -4197,13 +4352,24 @@ async function importTemplatesFromText(text) {
       }
       if (!navigator.onLine) return setAiStatus('Sem conexão com a internet.', true);
 
+      if (!aiAppliedAny) aiBaseText = input.value;
+      saveAiOptions();
+
       const modelos = getTemplatesSortedByName().slice(0, 60).map(t => ({
         id: t.id,
         nome: t.name || 'Modelo',
         conteudo: String(t.content || '').slice(0, 200)
       }));
 
-      aiSuggestBtn.disabled = true;
+      const payload = { linhas: lines, modelos, opcoes: readAiOptions() };
+      if (mode && aiRaw.length) {
+        payload.modo = mode;
+        payload.anteriores = aiRaw;
+        payload.ajuste = aiAdjustText.value.trim().slice(0, 300);
+      }
+
+      aiBusy = true;
+      [aiSuggestBtn, aiSuggestBtn2, aiAnotherBtn, aiImproveBtn].forEach(b => { b.disabled = true; });
       setAiStatus('Consultando a IA…', false);
 
       const controller = new AbortController();
@@ -4213,7 +4379,7 @@ async function importTemplatesFromText(text) {
         const response = await fetch(AI_ENDPOINT, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ linhas: lines, modelos }),
+          body: JSON.stringify(payload),
           signal: controller.signal
         });
 
@@ -4230,15 +4396,16 @@ async function importTemplatesFromText(text) {
           );
         }
 
-        const byId = new Map(templates.map(t => [t.id, t]));
-        aiSuggestions = (data.sugestoes || []).map(s => {
+        aiRaw = Array.isArray(data.sugestoes) ? data.sugestoes : [];
+        const byId = new Map(getTemplatesSortedByName().map(t => [t.id, t]));
+        aiSuggestions = aiRaw.map(s => {
           const original = lines[s.linha];
           if (typeof original !== 'string') return null;
           const suggestion = {
             original,
             modelo: s.modeloId ? byId.get(s.modeloId) || null : null,
-            estilo: s.estilo || null,
-            trecho: s.trecho || null,
+            emoji: s.emoji || '',
+            destaques: Array.isArray(s.destaques) ? s.destaques : [],
             motivo: String(s.motivo || 'Sugestão da IA'),
             done: false
           };
@@ -4247,21 +4414,31 @@ async function importTemplatesFromText(text) {
         }).filter(Boolean);
 
         renderAiSuggestions();
+        aiRefineBox.hidden = false;
         setAiStatus(
           aiSuggestions.length
             ? aiSuggestions.length + (aiSuggestions.length === 1 ? ' sugestão.' : ' sugestões.')
-            : 'A IA não encontrou nada para destacar neste texto.',
+            : 'A IA não encontrou nada para destacar com essas opções.',
           false
         );
+        if (scrollToResults) aiStatus.scrollIntoView({ behavior: 'smooth', block: 'center' });
       } catch (e) {
         setAiStatus(e && e.name === 'AbortError' ? 'A IA demorou demais. Tente novamente.' : 'Falha de conexão ao consultar a IA.', true);
       } finally {
         clearTimeout(timer);
-        aiSuggestBtn.disabled = false;
+        aiBusy = false;
+        [aiSuggestBtn, aiSuggestBtn2, aiAnotherBtn, aiImproveBtn].forEach(b => { b.disabled = false; });
       }
     }
 
-    aiSuggestBtn.addEventListener('click', requestAiSuggestions);
+    aiSuggestBtn.addEventListener('click', () => requestAiSuggestions());
+    aiSuggestBtn2.addEventListener('click', () => requestAiSuggestions(undefined, true));
+    aiAnotherBtn.addEventListener('click', () => requestAiSuggestions('nova'));
+    aiImproveBtn.addEventListener('click', () => requestAiSuggestions('melhorar'));
+    aiAdjustText.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); requestAiSuggestions('melhorar'); }
+    });
+
     aiApplyAllBtn.addEventListener('click', () => {
       const results = aiSuggestions.filter(s => !s.done).map(applyAiSuggestion);
       renderAiSuggestions();
@@ -4273,6 +4450,19 @@ async function importTemplatesFromText(text) {
       renderAiSuggestions();
       setAiStatus('Sugestões descartadas.', false);
     });
+
+    aiUndoBtn.addEventListener('click', async () => {
+      if (!(await confirmAiRestore())) return;
+      if (aiAppliedAny) restoreAiBaseText();
+      aiSuggestions.forEach(s => { s.done = false; });
+      renderAiSuggestions();
+      setAiStatus('Aplicações desfeitas. As sugestões voltaram à lista.', false);
+    });
+
+    aiOptionInputs.forEach(el => el.addEventListener('change', saveAiOptions));
+    aiIntensity.addEventListener('change', saveAiOptions);
+    aiInstruction.addEventListener('change', saveAiOptions);
+    loadAiOptions();
 
     enableManifestWhenOnline();
     registerServiceWorker();
