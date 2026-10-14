@@ -262,6 +262,21 @@
 
     /* ---------- Sugestões de formatação (IA) ---------- */
 
+    .ai-box { margin-bottom: 14px; }
+
+    .ai-main-btn {
+      display: block;
+      width: 100%;
+      font-size: 1.05rem;
+      min-height: 52px;
+    }
+
+    .ai-hint { margin: 8px 0 0; font-size: .82rem; }
+
+    .ai-box #aiStatus { display: block; margin: 8px 0 0; }
+
+    .ai-actions-all { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+
     .ai-list {
       display: flex;
       flex-direction: column;
@@ -1033,6 +1048,17 @@
 
           <div class="editor-controls-pane">
 
+        <div class="ai-box">
+          <button id="aiSuggestBtn" class="ai-main-btn" type="button">✨ Sugerir formatação com IA</button>
+          <p class="hint ai-hint">Ao usar, o texto e seus modelos são enviados à IA (Claude, da Anthropic). Não use com dados pessoais ou sigilosos. Nada muda até você clicar em Aplicar.</p>
+          <span id="aiStatus" class="ok" role="status" aria-live="polite"></span>
+          <div class="ai-actions-all">
+            <button id="aiApplyAllBtn" type="button" hidden>Aplicar todas</button>
+            <button id="aiDismissAllBtn" class="secondary" type="button" hidden>Descartar todas</button>
+          </div>
+          <div id="aiResults" class="ai-list"></div>
+        </div>
+
         <div class="button-row action-row main-actions">
           <div class="action-item">
             <button id="clearBtn" class="icon-action clear" type="button" title="Limpar" aria-label="Limpar">🧹</button>
@@ -1116,21 +1142,6 @@
       </section>
 
     </div>
-
-    <details class="card tint-6 section-accordion" style="margin-top:16px">
-      <summary><h2>✨ Sugerir formatação com IA</h2></summary>
-      <div class="section-accordion-body">
-        <p class="hint">A IA lê as linhas do texto original e sugere modelos e destaques (negrito/itálico). Nada é alterado até você clicar em <strong>Aplicar</strong>. Ao pedir sugestões, o texto original e os nomes e conteúdos dos seus modelos são enviados a um serviço de IA (Claude, da Anthropic). Não use com informações pessoais ou sigilosas.</p>
-
-        <div class="button-row">
-          <button id="aiSuggestBtn" type="button">✨ Sugerir formatação</button>
-          <button id="aiApplyAllBtn" class="secondary" type="button" hidden>Aplicar todas</button>
-          <span id="aiStatus" class="ok" role="status" aria-live="polite"></span>
-        </div>
-
-        <div id="aiResults" class="ai-list"></div>
-      </div>
-    </details>
 
     <details class="card tint-2 section-accordion" style="margin-top:16px">
       <summary><h2>2. Tipo de fonte/caractere</h2></summary>
@@ -4063,6 +4074,7 @@ async function importTemplatesFromText(text) {
     // As sugestões nunca alteram o texto sozinhas: cada uma precisa de "Aplicar".
     const aiSuggestBtn = document.getElementById('aiSuggestBtn');
     const aiApplyAllBtn = document.getElementById('aiApplyAllBtn');
+    const aiDismissAllBtn = document.getElementById('aiDismissAllBtn');
     const aiStatus = document.getElementById('aiStatus');
     const aiResults = document.getElementById('aiResults');
     const AI_ENDPOINT = '/api/sugerir-formatacao';
@@ -4108,6 +4120,7 @@ async function importTemplatesFromText(text) {
       aiResults.textContent = '';
       const pending = aiSuggestions.filter(s => !s.done);
       aiApplyAllBtn.hidden = pending.length < 2;
+      aiDismissAllBtn.hidden = pending.length < 1;
 
       pending.forEach(s => {
         const item = document.createElement('div');
@@ -4176,6 +4189,7 @@ async function importTemplatesFromText(text) {
       aiResults.textContent = '';
       aiSuggestions = [];
       aiApplyAllBtn.hidden = true;
+      aiDismissAllBtn.hidden = true;
 
       if (!lines.length) return setAiStatus('Digite ou cole um texto no campo "Texto original" primeiro.', true);
       if (totalChars > AI_MAX_CHARS || lines.length > AI_MAX_LINES) {
@@ -4252,6 +4266,12 @@ async function importTemplatesFromText(text) {
       const results = aiSuggestions.filter(s => !s.done).map(applyAiSuggestion);
       renderAiSuggestions();
       if (results.every(Boolean)) setAiStatus('Sugestões aplicadas.', false);
+    });
+
+    aiDismissAllBtn.addEventListener('click', () => {
+      aiSuggestions.forEach(s => { s.done = true; });
+      renderAiSuggestions();
+      setAiStatus('Sugestões descartadas.', false);
     });
 
     enableManifestWhenOnline();
