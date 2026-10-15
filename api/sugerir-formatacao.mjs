@@ -411,7 +411,7 @@ const SISTEMA_ESTUDO = `Você ajuda um estudante a preparar comentários para o 
 Passos:
 1. Use a ferramenta web_fetch para ler a página desse endereço (no máximo 2 leituras). Se o endereço for uma página de reuniões da semana, encontre nela o link do artigo de estudo de A Sentinela e leia esse artigo.
 2. Se não conseguir ler o artigo, devolva "erro" com uma frase explicando e "itens" vazio.
-3. Para CADA pergunta dos parágrafos pedidos ("todos" = todos os parágrafos do artigo), devolva um item com:
+3. Siga o ESCOPO indicado na mensagem: responda apenas às perguntas dos parágrafos pedidos ("todos" = todos os parágrafos do artigo que têm pergunta). Para CADA uma delas, devolva um item com:
    - paragrafos: número(s) do(s) parágrafo(s) a que a pergunta se refere (ex.: "3" ou "1, 2").
    - resposta: um texto curto que resume os PONTOS PRINCIPAIS do(s) parágrafo(s) respondendo à pergunta, com as suas PRÓPRIAS PALAVRAS (parafraseie; não copie frases do parágrafo), em português simples e natural, pronto para ser dito como comentário, no tamanho pedido. Se a pergunta tiver partes A) e B), responda cada parte, identificada pela letra.
 
@@ -467,6 +467,22 @@ function extrairJson(texto) {
   }
 }
 
+// "1, 2" -> {1, 2}; "3-5" -> {3, 4, 5}; "1 e 2" -> {1, 2}. Serve para conferir se a IA respondeu só aos
+// parágrafos pedidos (ela às vezes entende "8" como "até o 8" e responde aos anteriores também).
+function numerosDosParagrafos(texto) {
+  const numeros = new Set();
+  for (const parte of String(texto || "").replace(/\s+e\s+/gi, ",").split(",")) {
+    const faixa = parte.match(/(\d+)\s*[-–]\s*(\d+)/);
+    if (faixa) {
+      for (let n = Number(faixa[1]); n <= Number(faixa[2]) && n < 200; n++) numeros.add(n);
+    } else {
+      const unico = parte.match(/\d+/);
+      if (unico) numeros.add(Number(unico[0]));
+    }
+  }
+  return numeros;
+}
+
 async function responderEstudo(res, body) {
   if (!process.env.CODIGO_ESTUDO) return erro(res, 500, "A leitura do estudo ainda não está configurada no servidor.");
   if (!codigoValido(body.codigo)) return erro(res, 403, "Código de acesso inválido.");
@@ -477,6 +493,8 @@ async function responderEstudo(res, body) {
   const paragrafos = /^(todos|[\d\s,\-–]{1,40})$/i.test(String(body.paragrafos || "").trim())
     ? String(body.paragrafos).trim()
     : "todos";
+  const alvoBruto = /^todos$/i.test(paragrafos) ? null : numerosDosParagrafos(paragrafos);
+  const alvo = alvoBruto && alvoBruto.size ? alvoBruto : null; // null = todos os parágrafos
   const opcoes = validarOpcoes(body.opcoes);
   const ajuste = textoLivre(body.ajuste);
   const modo = body.modo === "nova" || body.modo === "melhorar" ? body.modo : null;
@@ -485,7 +503,9 @@ async function responderEstudo(res, body) {
 
   let mensagem =
     `ENDEREÇO: ${url}\n` +
-    `PARÁGRAFOS PEDIDOS: ${paragrafos}\n` +
+    (alvo
+      ? `ESCOPO: responda SOMENTE às perguntas do(s) parágrafo(s) de número ${[...alvo].join(", ")} do artigo. São números de parágrafos (por exemplo, "8" é o parágrafo 8, e não "oito parágrafos"). NÃO responda a nenhum outro parágrafo, nem aos anteriores.\n`
+      : "ESCOPO: todos os parágrafos do artigo que têm pergunta.\n") +
     `PREFERÊNCIAS:\n- Tamanho de cada resposta: ${DESCRICAO_RESPOSTA[opcoes.resumoTamanho]}.\n` +
     descreverFormatacaoResposta(opcoes) +
     (opcoes.instrucao ? `\n- Instruções fixas do usuário: ${opcoes.instrucao}` : "") +
@@ -531,7 +551,7 @@ async function responderEstudo(res, body) {
 
     const limpar = (valor, max) => (typeof valor === "string" ? valor.replace(/\s+/g, " ").trim().slice(0, max) : "");
     const permitidos = estilosDe(opcoes);
-    const itens = dados.data.itens
+    const itensTodos = dados.data.itens
       .slice(0, 40)
       .map((i) => {
         const texto = limpar(i.resposta, 1500);
@@ -544,9 +564,21 @@ async function responderEstudo(res, body) {
       })
       .filter((i) => i.resposta);
 
+    // Mesmo que a IA responda a mais, só ficam os parágrafos pedidos.
+    const itens = alvo
+      ? itensTodos.filter((i) => {
+          const rotulos = numerosDosParagrafos(i.paragrafos);
+          return rotulos.size ? [...rotulos].some((n) => alvo.has(n)) : itensTodos.length === 1;
+        })
+      : itensTodos;
+
     return res.status(200).json({
       titulo: limpar(dados.data.titulo, 200) || null,
-      erro: itens.length ? null : limpar(dados.data.erro, 300) || "Não consegui ler o artigo ou encontrar as perguntas.",
+      erro: itens.length
+        ? null
+        : itensTodos.length
+          ? "A IA não respondeu ao(s) parágrafo(s) pedido(s). Tente de novo ou recarregue a numeração dos parágrafos."
+          : limpar(dados.data.erro, 300) || "Não consegui ler o artigo ou encontrar as perguntas.",
       url,
       itens,
     });
