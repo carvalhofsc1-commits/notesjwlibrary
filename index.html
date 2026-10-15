@@ -362,13 +362,30 @@
 
     .ai-study { margin-top: 10px; }
 
-    .ai-study-fields {
-      display: grid;
-      grid-template-columns: 1.6fr 1fr;
-      gap: 10px;
+    .ai-study-load {
+      display: block;
+      width: 100%;
+      min-height: 44px;
     }
 
-    .ai-study-fields label { margin: 0 0 4px; font-size: .82rem; }
+    .ai-study-picker {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .ai-study-picker .ai-week-nav { min-height: 44px; }
+
+    .ai-study-input { flex: 1 1 auto; min-width: 0; }
+
+    .ai-study-input label { margin: 0 0 4px; font-size: .82rem; }
+
+    .ai-study-input input { text-align: center; font-weight: 700; }
+
+    #aiStudyInfo { margin: 6px 0 0; text-align: center; }
+
+    #aiStudyArticleBox label { margin: 8px 0 4px; font-size: .82rem; }
 
     .ai-study-btn {
       display: block;
@@ -1276,15 +1293,19 @@
             <button id="aiWeekNext" class="secondary ai-week-nav" type="button" aria-label="Próxima semana">▶</button>
           </div>
           <div class="ai-study">
-            <div class="ai-study-fields">
-              <div>
-                <label for="aiStudyArticle">Número ou link do artigo</label>
-                <input autocomplete="off" id="aiStudyArticle" type="text" inputmode="url" placeholder="Ex.: 2026521 (vazio = a IA acha pela semana)">
-              </div>
-              <div>
+            <button id="aiStudyLoadBtn" class="secondary ai-study-load" type="button">📋 Carregar parágrafos do estudo</button>
+            <div class="ai-study-picker">
+              <button id="aiParaPrev" class="secondary ai-week-nav" type="button" aria-label="Parágrafos anteriores">◀</button>
+              <div class="ai-study-input">
                 <label for="aiStudyParagraphs">Parágrafos</label>
                 <input autocomplete="off" id="aiStudyParagraphs" type="text" value="todos" placeholder="todos, 3 ou 1-4, 6">
               </div>
+              <button id="aiParaNext" class="secondary ai-week-nav" type="button" aria-label="Próximos parágrafos">▶</button>
+            </div>
+            <p id="aiStudyInfo" class="hint ai-hint"></p>
+            <div id="aiStudyArticleBox" hidden>
+              <label for="aiStudyArticle">Não achei o artigo sozinho. Cole o número ou o link dele:</label>
+              <input autocomplete="off" id="aiStudyArticle" type="text" inputmode="url" placeholder="Ex.: 2026521">
             </div>
             <button id="aiStudyBtn" class="ai-study-btn" type="button">🌐 A IA lê o estudo da semana e responde</button>
           </div>
@@ -4434,7 +4455,7 @@ async function importTemplatesFromText(text) {
     let aiLoadingTimer = null;
 
     function setAiLoading(on, button) {
-      const all = [aiSuggestBtn, aiSuggestSummaryBtn, aiSuggestBtn2, aiSentinelaBtn, aiStudyBtn, aiAnotherBtn, aiImproveBtn];
+      const all = [aiSuggestBtn, aiSuggestSummaryBtn, aiSuggestBtn2, aiSentinelaBtn, aiStudyBtn, aiStudyLoadBtn, aiAnotherBtn, aiImproveBtn];
 
       if (!on) {
         clearInterval(aiLoadingTimer);
@@ -4936,12 +4957,178 @@ async function importTemplatesFromText(text) {
     aiSuggestBtn.addEventListener('click', () => requestAiSuggestions());
     aiSuggestSummaryBtn.addEventListener('click', () => requestAiSuggestions(undefined, false, true));
     const AI_STUDY_CODE_KEY = 'jwLibraryNoteAplicarStudyCodeV1';
+    const AI_STUDY_CACHE_KEY = 'jwLibraryNoteAplicarStudyListV1';
     const aiStudyBtn = document.getElementById('aiStudyBtn');
-    const aiStudyArticle = document.getElementById('aiStudyArticle');
+    const aiStudyLoadBtn = document.getElementById('aiStudyLoadBtn');
     const aiStudyParagraphs = document.getElementById('aiStudyParagraphs');
+    const aiStudyInfo = document.getElementById('aiStudyInfo');
+    const aiStudyArticle = document.getElementById('aiStudyArticle');
+    const aiStudyArticleBox = document.getElementById('aiStudyArticleBox');
+    const aiParaPrev = document.getElementById('aiParaPrev');
+    const aiParaNext = document.getElementById('aiParaNext');
     const aiStudyCode = document.getElementById('aiStudyCode');
+    let aiStudy = null; // { artigo, titulo, grupos } da semana mostrada; a lista vem da IA e fica guardada neste aparelho
     try { aiStudyCode.value = localStorage.getItem(AI_STUDY_CODE_KEY) || ''; } catch (e) { /* sem localStorage */ }
     aiStudyCode.addEventListener('change', () => safeSetItem(AI_STUDY_CODE_KEY, aiStudyCode.value.trim()));
+
+    function studyWeekKey() { return aiWeekYear + '-' + aiWeekNumber; }
+
+    function readStudyCache() {
+      try { return JSON.parse(localStorage.getItem(AI_STUDY_CACHE_KEY) || '{}') || {}; } catch (e) { return {}; }
+    }
+
+    function saveStudyCache(entry) {
+      const cache = readStudyCache();
+      cache[studyWeekKey()] = entry;
+      const keys = Object.keys(cache).sort();
+      while (keys.length > 10) delete cache[keys.shift()];
+      safeSetItem(AI_STUDY_CACHE_KEY, JSON.stringify(cache));
+    }
+
+    // Opções navegáveis: os grupos de parágrafos que a IA listou (os que compartilham pergunta vêm juntos) + "todos".
+    function studyOptions() { return aiStudy ? aiStudy.grupos.concat(['todos']) : []; }
+
+    // Posição atual na lista: pelo texto exato, ou pelo grupo que contém o primeiro número digitado (-1 = fora da lista).
+    function currentStudyIndex() {
+      const options = studyOptions();
+      if (!options.length) return -1;
+      const text = aiStudyParagraphs.value.trim().toLowerCase();
+      const exact = options.findIndex(option => option.toLowerCase() === text);
+      if (exact >= 0) return exact;
+      const number = Number((text.match(/\d+/) || [])[0]);
+      if (!number) return -1;
+      return options.findIndex(option => option !== 'todos' && studyNumbers(option).includes(number));
+    }
+
+    // "1, 2" -> [1, 2]; "3-5" -> [3, 4, 5]
+    function studyNumbers(label) {
+      const numbers = [];
+      String(label).split(',').forEach(part => {
+        const range = part.match(/(\d+)\s*-\s*(\d+)/);
+        if (range) {
+          for (let n = Number(range[1]); n <= Number(range[2]) && n < 200; n++) numbers.push(n);
+        } else if (/\d+/.test(part)) {
+          numbers.push(Number(part.match(/\d+/)[0]));
+        }
+      });
+      return numbers;
+    }
+
+    function updateStudyPicker() {
+      const options = studyOptions();
+      const index = currentStudyIndex();
+      aiParaPrev.disabled = !options.length || index <= 0;
+      aiParaNext.disabled = !options.length || index >= options.length - 1;
+      aiStudyLoadBtn.textContent = aiStudy ? '↻ Recarregar parágrafos do estudo' : '📋 Carregar parágrafos do estudo';
+      aiStudyInfo.textContent = aiStudy
+        ? (aiStudy.titulo ? aiStudy.titulo + ' · ' : '') + (index >= 0 ? 'opção ' + (index + 1) + ' de ' + options.length : 'texto livre')
+        : 'Toque em "Carregar parágrafos" para a IA listar os parágrafos do estudo, ou digite os números.';
+    }
+
+    function stepStudy(delta) {
+      const options = studyOptions();
+      if (!options.length) return;
+      const next = Math.min(options.length - 1, Math.max(0, currentStudyIndex() + delta));
+      aiStudyParagraphs.value = options[next];
+      updateStudyPicker();
+    }
+
+    // Ao digitar só um número, mostra o grupo a que ele pertence (ex.: 2 -> "1, 2").
+    function normalizeStudyInput() {
+      const options = studyOptions();
+      const text = aiStudyParagraphs.value.trim();
+      if (options.length && /^\d+$/.test(text)) {
+        const index = currentStudyIndex();
+        if (index >= 0) aiStudyParagraphs.value = options[index];
+      }
+      updateStudyPicker();
+    }
+
+    // Chamado ao trocar de semana: usa a lista guardada dessa semana, se existir.
+    function refreshStudyPicker() {
+      const cached = readStudyCache()[studyWeekKey()];
+      aiStudy = cached && Array.isArray(cached.grupos) && cached.grupos.length ? cached : null;
+      aiStudyParagraphs.value = aiStudy ? aiStudy.grupos[0] : 'todos';
+      aiStudyArticle.value = '';
+      aiStudyArticleBox.hidden = true;
+      updateStudyPicker();
+    }
+
+    // Faz a chamada ao servidor das tarefas de estudo (lista e respostas). Devolve { ok, data, unavailable }.
+    async function postStudy(payload, timeoutMs) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const response = await fetch(AI_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
+        let data = null;
+        try { data = await response.json(); } catch (e) { /* resposta sem JSON */ }
+        return { ok: response.ok && !!data, data, unavailable: response.status === 404 || response.status === 501 };
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    function studyAccessError() {
+      const code = aiStudyCode.value.trim();
+      if (!code) return 'Informe o código de acesso no card "✨ Formatação com IA" (campo "Código de acesso para a IA ler o estudo da semana").';
+      if (!navigator.onLine) return 'Sem conexão com a internet.';
+      return '';
+    }
+
+    function studyArticleId() {
+      return (aiStudy && aiStudy.artigo) || aiStudyArticle.value.trim();
+    }
+
+    function studyFailureMessage(result, fallback) {
+      if (result.unavailable) return 'A IA só funciona no site publicado (notesjwlibrary.vercel.app).';
+      return (result.data && result.data.erro) || fallback;
+    }
+
+    // A IA lê o artigo da semana e devolve os grupos de parágrafos para navegar com as setas.
+    async function requestStudyList() {
+      if (aiBusy) return;
+      const accessError = studyAccessError();
+      if (accessError) return setAiStatus(accessError, true);
+
+      aiBusy = true;
+      setAiLoading(true, aiStudyLoadBtn);
+
+      try {
+        const code = aiStudyCode.value.trim();
+        safeSetItem(AI_STUDY_CODE_KEY, code);
+        const result = await postStudy({
+          tarefa: 'estudo-lista',
+          codigo: code,
+          artigo: aiStudyArticle.value.trim(),
+          ano: aiWeekYear,
+          semana: aiWeekNumber
+        }, 110000);
+
+        const groups = result.ok && Array.isArray(result.data.grupos) ? result.data.grupos : [];
+        if (!groups.length) {
+          aiStudyArticleBox.hidden = false;
+          return setAiStatus(studyFailureMessage(result, 'Não consegui listar os parágrafos.') + ' Se precisar, informe o número ou o link do artigo.', true);
+        }
+
+        aiStudy = { artigo: result.data.artigo || '', titulo: result.data.titulo || '', grupos: groups };
+        saveStudyCache(aiStudy);
+        aiStudyArticleBox.hidden = true;
+        aiStudyParagraphs.value = groups[0];
+        updateStudyPicker();
+        setAiStatus(groups.length + (groups.length === 1 ? ' grupo de parágrafos carregado.' : ' grupos de parágrafos carregados.'), false);
+      } catch (e) {
+        setAiStatus(e && e.name === 'AbortError' ? 'A IA demorou demais. Tente de novo.' : 'Falha de conexão ao consultar a IA.', true);
+      } finally {
+        aiBusy = false;
+        setAiLoading(false);
+        updateStudyPicker(); // o botão volta ao texto salvo; reaplica o rótulo certo
+      }
+    }
 
     // mode: undefined = primeira vez; 'nova' = respostas diferentes; 'melhorar' = refinar as anteriores.
     // A IA lê o artigo no wol.jw.org (ferramenta web fetch, só nesse domínio) e devolve só as respostas.
@@ -4949,11 +5136,8 @@ async function importTemplatesFromText(text) {
       if (aiBusy) return;
       aiLastKind = 'estudo';
 
-      const code = aiStudyCode.value.trim();
-      if (!code) {
-        return setAiStatus('Informe o código de acesso no card "✨ Formatação com IA" (campo "Código de acesso para a IA ler o estudo da semana").', true);
-      }
-      if (!navigator.onLine) return setAiStatus('Sem conexão com a internet.', true);
+      const accessError = studyAccessError();
+      if (accessError) return setAiStatus(accessError, true);
 
       if (mode) {
         if (!(await confirmAiRestore())) return;
@@ -4972,12 +5156,13 @@ async function importTemplatesFromText(text) {
 
       if (!aiAppliedAny) aiBaseText = input.value;
       saveAiOptions();
-      safeSetItem(AI_STUDY_CODE_KEY, code);
 
+      const code = aiStudyCode.value.trim();
+      safeSetItem(AI_STUDY_CODE_KEY, code);
       const payload = {
         tarefa: 'estudo',
         codigo: code,
-        artigo: aiStudyArticle.value.trim(),
+        artigo: studyArticleId(),
         ano: aiWeekYear,
         semana: aiWeekNumber,
         paragrafos: aiStudyParagraphs.value.trim() || 'todos',
@@ -4992,49 +5177,36 @@ async function importTemplatesFromText(text) {
       aiBusy = true;
       setAiLoading(true, mode === 'nova' ? aiAnotherBtn : mode === 'melhorar' ? aiImproveBtn : aiStudyBtn);
 
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 110000);
-
       try {
-        const response = await fetch(AI_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          signal: controller.signal
-        });
+        const result = await postStudy(payload, 110000);
 
-        let data = null;
-        try { data = await response.json(); } catch (e) { /* resposta sem JSON */ }
+        if (!result.ok) return setAiStatus(studyFailureMessage(result, 'Não foi possível ler o estudo agora.'), true);
 
-        if (!response.ok || !data) {
-          const unavailable = response.status === 404 || response.status === 501;
-          return setAiStatus(
-            unavailable
-              ? 'A IA só funciona no site publicado (notesjwlibrary.vercel.app).'
-              : (data && data.erro) || 'Não foi possível ler o estudo agora.',
-            true
-          );
-        }
-
-        aiSentinelaRaw = Array.isArray(data.itens) ? data.itens : [];
+        aiSentinelaRaw = Array.isArray(result.data.itens) ? result.data.itens : [];
         if (!aiSentinelaRaw.length) {
-          return setAiStatus((data.erro || 'Não encontrei perguntas nesse artigo.') + ' Se for o caso, informe o número ou o link do artigo.', true);
+          aiStudyArticleBox.hidden = false;
+          return setAiStatus((result.data.erro || 'Não encontrei perguntas nesse artigo.') + ' Se for o caso, informe o número ou o link do artigo.', true);
         }
 
-        aiResumo = { texto: buildSentinelaText(aiSentinelaRaw), done: false, kind: 'sentinela', fonte: data.titulo || '' };
+        aiResumo = { texto: buildSentinelaText(aiSentinelaRaw), done: false, kind: 'sentinela', fonte: result.data.titulo || '' };
         renderAiSuggestions();
         aiRefineBox.hidden = false;
         setAiStatus(aiSentinelaRaw.length + (aiSentinelaRaw.length === 1 ? ' resposta pronta.' : ' respostas prontas.'), false);
       } catch (e) {
         setAiStatus(e && e.name === 'AbortError' ? 'A IA demorou demais. Tente com menos parágrafos.' : 'Falha de conexão ao consultar a IA.', true);
       } finally {
-        clearTimeout(timer);
         aiBusy = false;
         setAiLoading(false);
       }
     }
 
     aiStudyBtn.addEventListener('click', () => requestStudyAnswers());
+    aiStudyLoadBtn.addEventListener('click', () => requestStudyList());
+    aiParaPrev.addEventListener('click', () => stepStudy(-1));
+    aiParaNext.addEventListener('click', () => stepStudy(1));
+    aiStudyParagraphs.addEventListener('change', normalizeStudyInput);
+    aiStudyParagraphs.addEventListener('input', updateStudyPicker);
+    updateStudyPicker();
     aiSentinelaBtn.addEventListener('click', () => requestSentinelaAnswers());
     aiSuggestBtn2.addEventListener('click', () => requestAiSuggestions(undefined, true));
     const refineAi = mode => (
@@ -5119,12 +5291,13 @@ async function importTemplatesFromText(text) {
       aiWeekTitle.textContent = '📅 Estudo ' + (names[aiWeekOffset] || 'da semana') + ' ↗';
     }
 
-    document.getElementById('aiWeekPrev').addEventListener('click', () => { aiWeekOffset -= 1; renderAiWeek(); });
-    document.getElementById('aiWeekNext').addEventListener('click', () => { aiWeekOffset += 1; renderAiWeek(); });
+    document.getElementById('aiWeekPrev').addEventListener('click', () => { aiWeekOffset -= 1; renderAiWeek(); refreshStudyPicker(); });
+    document.getElementById('aiWeekNext').addEventListener('click', () => { aiWeekOffset += 1; renderAiWeek(); refreshStudyPicker(); });
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') renderAiWeek();
     });
     renderAiWeek();
+    refreshStudyPicker();
 
     // ---------- Aviso de versão nova ----------
     // Um app instalado pode ficar com a página antiga na memória. Aqui o app compara o CSS e o JS que
