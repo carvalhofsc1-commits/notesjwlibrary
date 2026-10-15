@@ -292,6 +292,9 @@
 
     .ai-check input { margin: 2px 0 0; width: 16px; height: 16px; flex: 0 0 auto; accent-color: var(--accent); }
 
+    /* Caixas "Consultar textos citados" e "Consultar o Perspicaz", logo abaixo dos botões de responder. */
+    .ai-sources { display: grid; gap: 6px; margin-top: 8px; }
+
     .ai-refine { margin-top: 14px; }
 
     /* Botões de copiar as respostas do estudo: ficam sobre o campo de texto, logo abaixo de cada resposta. */
@@ -1601,6 +1604,10 @@
         <section class="sent-option sent-option-1">
           <h3>Opção 1: Cole a pergunta e o texto do parágrafo no campo de texto</h3>
           <button id="aiSentinelaBtn" class="ai-sentinela-btn" type="button">📖 Responder resumidamente a pergunta do parágrafo colado</button>
+          <div class="ai-sources">
+            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Consultar textos citados (Bíblia)</label>
+            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarPerspicaz"> 📚 Consultar o Perspicaz</label>
+          </div>
           <span id="aiSentinelaStatus" class="ok" role="status" aria-live="polite"></span>
         </section>
 
@@ -1631,6 +1638,10 @@
               <input autocomplete="off" id="aiStudyArticle" type="text" inputmode="url" placeholder="Ex.: 2026521">
             </div>
             <button id="aiStudyBtn" class="ai-study-btn" type="button">🌐 IA - Responder resumidamente a pergunta do parágrafo selecionado</button>
+            <div class="ai-sources">
+              <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Consultar textos citados (Bíblia)</label>
+              <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarPerspicaz"> 📚 Consultar o Perspicaz</label>
+            </div>
             <span id="aiStudyAnswerStatus" class="ok" role="status" aria-live="polite"></span>
           </div>
 
@@ -1644,7 +1655,7 @@
         <input autocomplete="off" id="aiAdjustText2" type="text" maxlength="300" placeholder="Ex.: respostas bem curtas; tom simples">
 
         <div id="sentinelaOutputSlot"></div>
-        <p class="hint ai-hint">As respostas seguem as opções de "⚙️ Configurações gerais do app → Configurar formatação com IA". O texto colado ou o artigo lido vai à IA (Claude, da Anthropic): não use com dados pessoais ou sigilosos. Nada muda até você clicar em Aplicar.</p>
+        <p class="hint ai-hint">As respostas seguem as opções de "⚙️ Configurações gerais do app → Configurar formatação com IA". O texto colado ou o artigo lido vai à IA (Claude, da Anthropic): não use com dados pessoais ou sigilosos. Com "Consultar textos citados" marcado, a IA lê no arquivo da Bíblia os textos mais relevantes e escreve o versículo e a aplicação abaixo da resposta; com "Consultar o Perspicaz" marcado, ela pode acrescentar uma explicação adicional identificada pelo volume e pelo verbete. As duas consultas deixam a resposta mais lenta e exigem o código de acesso. Nada muda até você clicar em Aplicar.</p>
           </div>
         </details>
 
@@ -4663,7 +4674,8 @@ async function importTemplatesFromText(text) {
     const AI_STYLE_KIND = { negrito: 'bold', italico: 'italic', negrito_italico: 'boldItalic' };
     const AI_DEFAULT_OPTIONS = {
       usarModelos: true, negrito: true, italico: false, negritoItalico: false, maiusculas: false,
-      emoji: false, citacoesBiblicas: false, resumo: false, intensidade: 'moderada', instrucao: '', categoria: 'all', resumoTamanho: 'medio'
+      emoji: false, citacoesBiblicas: false, resumo: false, intensidade: 'moderada', instrucao: '', categoria: 'all', resumoTamanho: 'medio',
+      consultarBiblia: false, consultarPerspicaz: false
     };
 
     let aiSuggestions = [];   // sugestões exibidas (já resolvidas contra os modelos locais)
@@ -4816,6 +4828,21 @@ async function importTemplatesFromText(text) {
 
     function saveAiOptions() {
       safeSetItem(AI_OPTIONS_KEY, JSON.stringify(readAiOptions()));
+    }
+
+    // As caixas de consulta existem na Opção 1 e na Opção 2 e valem para as duas: marcar uma marca a outra.
+    ['consultarBiblia', 'consultarPerspicaz'].forEach(name => {
+      const boxes = aiOptionInputs.filter(el => el.dataset.aiOpt === name);
+      boxes.forEach(box => box.addEventListener('change', () => {
+        boxes.forEach(other => { other.checked = box.checked; });
+        saveAiOptions();
+      }));
+    });
+
+    // Consultar a Bíblia ou o Perspicaz leva mais tempo (a IA abre os arquivos) e exige o código de acesso.
+    function aiUsesSources() {
+      const options = readAiOptions();
+      return !!(options.consultarBiblia || options.consultarPerspicaz);
     }
 
     function aiStyleIdFor(estilo) {
@@ -5282,8 +5309,38 @@ async function importTemplatesFromText(text) {
           destaques: Array.isArray(item.destaques) ? item.destaques : [],
           emoji: item.emoji || ''
         });
-        return { paragrafos: item.paragrafos || '', texto: aiLabelWith(answerTpl, '✅ RESPOSTA 👉 ', number + body) };
+        const answer = aiLabelWith(answerTpl, '✅ RESPOSTA 👉 ', number + body);
+        const extras = buildSourceBlocks(item);
+        return { paragrafos: item.paragrafos || '', texto: extras ? answer + '\n\n' + extras : answer };
       });
+    }
+
+    // Consultas às fontes de uma resposta, abaixo dela (uma linha em branco antes):
+    //   📖 Efésios 6:12 ➜ “texto do versículo, em itálico”
+    //   💡 como o texto se aplica ao parágrafo
+    //   📚 Estudo Perspicaz, vol. 1, verbete “ADOÇÃO” ➜ explicação adicional
+    // O versículo vem do arquivo da Bíblia e vai inteiro, entre aspas; a explicação do Perspicaz é sempre identificada
+    // pelo volume e pelo verbete.
+    function buildSourceBlocks(item) {
+      const styled = (kind, text) => {
+        const styleId = aiStyleIdFor(kind);
+        return styleId ? convertTextWithStyle(text, styleId) : text;
+      };
+      const blocks = [];
+
+      (Array.isArray(item.textos) ? item.textos : []).forEach(t => {
+        if (!t || !t.referencia || !t.texto) return;
+        blocks.push(
+          '📖 ' + styled('negrito', t.referencia) + ' ➜ “' + styled('italico', t.texto) + '”' +
+          (t.aplicacao ? '\n💡 ' + t.aplicacao : '')
+        );
+      });
+
+      const p = item.perspicaz;
+      if (p && p.verbete && p.explicacao) {
+        blocks.push('📚 ' + styled('negrito', 'Estudo Perspicaz, vol. ' + p.volume + ', verbete “' + p.verbete + '”') + ' ➜ ' + p.explicacao);
+      }
+      return blocks.join('\n\n');
     }
 
     function buildSentinelaText(items) {
@@ -5321,10 +5378,18 @@ async function importTemplatesFromText(text) {
       }
       if (!navigator.onLine) return setAiStatus('Sem conexão com a internet.', true);
 
+      const useSources = aiUsesSources();
+      if (useSources) {
+        const accessError = studyAccessError();
+        if (accessError) return setAiStatus(accessError, true);
+        safeSetItem(AI_STUDY_CODE_KEY, aiStudyCode.value.trim());
+      }
+
       if (!aiAppliedAny) aiBaseText = input.value;
       saveAiOptions();
 
       const payload = { tarefa: 'sentinela', linhas: lines, modelos: [], opcoes: readAiOptions(), ajuste: aiAdjustText.value.trim().slice(0, 300) };
+      if (useSources) payload.codigo = aiStudyCode.value.trim();
       if (mode && hadPrevious) {
         payload.modo = mode;
         payload.anteriores = { itens: aiSentinelaRaw };
@@ -5334,7 +5399,7 @@ async function importTemplatesFromText(text) {
       setAiLoading(true, mode === 'nova' ? aiAnotherBtn : mode === 'melhorar' ? aiImproveBtn : aiSentinelaBtn);
 
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 75000);
+      const timer = setTimeout(() => controller.abort(), useSources ? 125000 : 75000);
 
       try {
         const response = await fetch(AI_ENDPOINT, {
@@ -5637,7 +5702,7 @@ async function importTemplatesFromText(text) {
       setAiLoading(true, mode === 'nova' ? aiAnotherBtn : mode === 'melhorar' ? aiImproveBtn : aiStudyBtn);
 
       try {
-        const result = await postStudy(payload, 110000);
+        const result = await postStudy(payload, aiUsesSources() ? 125000 : 110000);
 
         if (!result.ok) return setAiStatus(studyFailureMessage(result, 'Não foi possível ler o estudo agora.'), true);
 
