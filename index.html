@@ -368,7 +368,30 @@
       background: var(--card);
     }
 
-    .sentinela-box h3 { margin: 0 0 4px; font-size: 1rem; }
+    .sentinela-box > summary {
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .sentinela-box > summary::-webkit-details-marker { display: none; }
+
+    .sentinela-box > summary::after {
+      content: '▸';
+      color: var(--muted);
+      font-size: 1.05rem;
+      flex: 0 0 auto;
+      transition: transform .15s ease;
+    }
+
+    .sentinela-box[open] > summary::after { transform: rotate(90deg); }
+
+    .sentinela-box h3 { margin: 0; font-size: 1rem; }
+
+    .sentinela-body { margin-top: 4px; }
 
     .sentinela-label {
       margin: 12px 0 0;
@@ -1351,8 +1374,9 @@
           <div id="aiProgress" class="ai-progress" role="progressbar" aria-label="A IA está trabalhando" aria-hidden="true"></div>
           <label for="aiAdjustText" class="ai-guidance-label">Orientação para a IA (opcional)</label>
           <input autocomplete="off" id="aiAdjustText" type="text" maxlength="300" placeholder="Ex.: formate só as perguntas; sem emojis; resumo bem curto">
-          <section class="sentinela-box" aria-labelledby="sentinelaTitle">
-            <h3 id="sentinelaTitle">📖 Estudo de A Sentinela</h3>
+          <details class="sentinela-box" id="sentinelaBox">
+            <summary><h3>📖 Estudo de A Sentinela</h3></summary>
+            <div class="sentinela-body">
 
             <p class="sentinela-label">Opção 1 · Colei os parágrafos e as perguntas no campo de texto</p>
             <button id="aiSentinelaBtn" class="ai-sentinela-btn" type="button">📖 Respostas Estudo A Sentinela</button>
@@ -1388,7 +1412,8 @@
               <summary>🔑 Código de acesso (só para ler o estudo)</summary>
               <input autocomplete="off" id="aiStudyCode" type="password" maxlength="100" placeholder="Digite o código uma vez; ele fica salvo neste aparelho">
             </details>
-          </section>
+            </div>
+          </details>
           <p class="hint ai-hint">Ao usar, o texto e seus modelos são enviados à IA (Claude, da Anthropic). Não use com dados pessoais ou sigilosos. Nada muda até você clicar em Aplicar.</p>
           <span id="aiStatus" class="ok" role="status" aria-live="polite"></span>
           <div class="ai-actions-all">
@@ -5059,6 +5084,10 @@ async function importTemplatesFromText(text) {
     const aiParaPrev = document.getElementById('aiParaPrev');
     const aiParaNext = document.getElementById('aiParaNext');
     const aiStudyCode = document.getElementById('aiStudyCode');
+    const SENTINELA_BOX_KEY = 'jwLibraryNoteAplicarSentinelaBoxV1';
+    const sentinelaBox = document.getElementById('sentinelaBox');
+    try { sentinelaBox.open = localStorage.getItem(SENTINELA_BOX_KEY) === '1'; } catch (e) { /* sem localStorage: fica recolhido */ }
+    sentinelaBox.addEventListener('toggle', () => safeSetItem(SENTINELA_BOX_KEY, sentinelaBox.open ? '1' : '0'));
     let aiStudy = null; // { artigo, titulo, grupos } da semana mostrada; a lista vem da IA e fica guardada neste aparelho
     try { aiStudyCode.value = localStorage.getItem(AI_STUDY_CODE_KEY) || ''; } catch (e) { /* sem localStorage */ }
     aiStudyCode.addEventListener('change', () => safeSetItem(AI_STUDY_CODE_KEY, aiStudyCode.value.trim()));
@@ -5170,6 +5199,7 @@ async function importTemplatesFromText(text) {
       if (!code) {
         const codeBox = document.getElementById('aiStudyCodeBox');
         if (codeBox) codeBox.open = true;
+        sentinelaBox.open = true;
         return 'Informe o código de acesso no campo 🔑 do quadro "📖 Estudo de A Sentinela".';
       }
       if (!navigator.onLine) return 'Sem conexão com a internet.';
