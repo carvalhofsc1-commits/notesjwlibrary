@@ -28,6 +28,7 @@
       --muted: #6b7280;
       --line: #d1d5db;
       --accent: #2563eb;
+      --brand: #5b3fb5; /* violeta do logotipo, escurecido para dar contraste no fundo claro */
       --accent-dark: #1d4ed8;
       --soft: #eef2ff;
       --soft-line: #a5b4fc;
@@ -60,6 +61,7 @@
         --muted: #94a3b8;
         --line: #334155;
         --accent: #3b82f6;
+        --brand: #b7a8f0; /* violeta do logotipo, claro para o fundo escuro */
         --accent-dark: #2563eb;
         --soft: #1e3a5f;
         --soft-line: #3b82f6;
@@ -90,6 +92,7 @@
       --muted: #94a3b8;
       --line: #334155;
       --accent: #3b82f6;
+      --brand: #b7a8f0; /* violeta do logotipo, claro para o fundo escuro */
       --accent-dark: #2563eb;
       --soft: #1e3a5f;
       --soft-line: #3b82f6;
@@ -149,6 +152,7 @@
 
     header h1 {
       margin: 0;
+      color: var(--brand);
       font-size: clamp(1.9rem, 6.5vw, 2.75rem);
       line-height: 1.1;
     }
@@ -358,49 +362,33 @@
 
     .ai-sentinela-btn:hover { background: #6b21a8; }
 
-    /* ---------- Quadro único de A Sentinela ---------- */
+    /* ---------- Card de A Sentinela ---------- */
 
-    .sentinela-box {
+    .card.sentinela-card {
+      background: var(--card);
+      background: color-mix(in srgb, #a855f7 10%, var(--card));
+      border: 2px solid #a855f7;
+    }
+
+    /* Cada opção num recipiente próprio, com a cor do seu botão no alto. */
+    .sent-option {
       margin-top: 14px;
       padding: 12px;
-      border: 2px solid #a855f7;
-      border-radius: 14px;
+      border: 2px solid var(--muted);
+      border-radius: 12px;
       background: var(--card);
     }
 
-    .sentinela-box > summary {
-      cursor: pointer;
-      list-style: none;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
+    .sent-option-1 { border-top: 6px solid #7e22ce; }
+    .sent-option-2 { border-top: 6px solid #c2410c; }
+
+    .sent-option h3 {
+      margin: 0 0 4px;
+      font-size: .92rem;
+      line-height: 1.3;
     }
 
-    .sentinela-box > summary::-webkit-details-marker { display: none; }
-
-    .sentinela-box > summary::after {
-      content: '▸';
-      color: var(--muted);
-      font-size: 1.05rem;
-      flex: 0 0 auto;
-      transition: transform .15s ease;
-    }
-
-    .sentinela-box[open] > summary::after { transform: rotate(90deg); }
-
-    .sentinela-box h3 { margin: 0; font-size: 1rem; }
-
-    .sentinela-body { margin-top: 4px; }
-
-    .sentinela-label {
-      margin: 12px 0 0;
-      font-size: .82rem;
-      font-weight: 700;
-      color: var(--muted);
-    }
-
-    .sentinela-box .ai-sentinela-btn { margin-top: 6px; }
+    .sent-option .ai-sentinela-btn { margin-top: 8px; }
 
     .sentinela-code { margin-top: 14px; }
 
@@ -411,6 +399,8 @@
     }
 
     .sentinela-code input { margin-top: 8px; }
+
+    #sentinelaOutputSlot { margin-top: 6px; }
 
     /* ---------- IA lê o estudo da semana ---------- */
 
@@ -554,7 +544,9 @@
       .ai-skeleton { animation-duration: 3.5s; }
     }
 
-    .ai-box #aiStatus { display: block; margin: 8px 0 0; }
+    #aiOutput #aiStatus { display: block; margin: 8px 0 0; }
+
+    #aiStudyStatus { display: block; margin: 6px 0 0; text-align: center; }
 
     .ai-actions-all { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 
@@ -1388,47 +1380,9 @@
           <div id="aiProgress" class="ai-progress" role="progressbar" aria-label="A IA está trabalhando" aria-hidden="true"></div>
           <label for="aiAdjustText" class="ai-guidance-label">Orientação para a IA (opcional)</label>
           <input autocomplete="off" id="aiAdjustText" type="text" maxlength="300" placeholder="Ex.: formate só as perguntas; sem emojis; resumo bem curto">
-          <details class="sentinela-box" id="sentinelaBox">
-            <summary><h3>📖 Estudo de A Sentinela</h3></summary>
-            <div class="sentinela-body">
-
-            <p class="sentinela-label">Opção 1 · Colei os parágrafos e as perguntas no campo de texto</p>
-            <button id="aiSentinelaBtn" class="ai-sentinela-btn" type="button">📖 Respostas Estudo A Sentinela</button>
-
-            <p class="sentinela-label">Opção 2 · A IA lê o estudo da semana</p>
-            <div class="ai-week">
-            <button id="aiWeekPrev" class="secondary ai-week-nav" type="button" aria-label="Semana anterior">◀</button>
-            <a id="aiWeekLink" class="ai-week-link" href="https://wol.jw.org/pt/wol/meetings/r5/lp-t/" target="_blank" rel="noopener noreferrer">
-              <span id="aiWeekTitle">📅 Estudo desta semana</span>
-              <span id="aiWeekRange" class="ai-week-range"></span>
-            </a>
-            <button id="aiWeekNext" class="secondary ai-week-nav" type="button" aria-label="Próxima semana">▶</button>
-          </div>
-          <div class="ai-study">
-            <button id="aiStudyLoadBtn" class="secondary ai-study-load" type="button">📋 Carregar parágrafos do estudo</button>
-            <div class="ai-study-picker">
-              <button id="aiParaPrev" class="secondary ai-week-nav" type="button" aria-label="Parágrafos anteriores">◀</button>
-              <div class="ai-study-input">
-                <label for="aiStudyParagraphs">Parágrafos</label>
-                <input autocomplete="off" id="aiStudyParagraphs" type="text" value="todos" placeholder="todos, 3 ou 1-4, 6">
-              </div>
-              <button id="aiParaNext" class="secondary ai-week-nav" type="button" aria-label="Próximos parágrafos">▶</button>
-            </div>
-            <p id="aiStudyInfo" class="hint ai-hint"></p>
-            <div id="aiStudyArticleBox" hidden>
-              <label for="aiStudyArticle">Não achei o artigo sozinho. Cole o número ou o link dele:</label>
-              <input autocomplete="off" id="aiStudyArticle" type="text" inputmode="url" placeholder="Ex.: 2026521">
-            </div>
-            <button id="aiStudyBtn" class="ai-study-btn" type="button">🌐 A IA lê o estudo da semana e responde</button>
-          </div>
-
-            <details id="aiStudyCodeBox" class="sentinela-code">
-              <summary>🔑 Código de acesso (só para ler o estudo)</summary>
-              <input autocomplete="off" id="aiStudyCode" type="password" maxlength="100" placeholder="Digite o código uma vez; ele fica salvo neste aparelho">
-            </details>
-            </div>
-          </details>
           <p class="hint ai-hint">Ao usar, o texto e seus modelos são enviados à IA (Claude, da Anthropic). Não use com dados pessoais ou sigilosos. Nada muda até você clicar em Aplicar.</p>
+          <div id="aiOutputHome">
+          <div id="aiOutput">
           <span id="aiStatus" class="ok" role="status" aria-live="polite"></span>
           <div class="ai-actions-all">
             <button id="aiApplyAllBtn" type="button" hidden>Aplicar todas</button>
@@ -1441,6 +1395,8 @@
               <button id="aiImproveBtn" class="secondary" type="button">🛠️ Melhorar esta</button>
               <button id="aiUndoBtn" class="secondary" type="button" hidden>↩ Desfazer aplicadas</button>
             </div>
+          </div>
+          </div>
           </div>
         </div>
 
@@ -1528,6 +1484,58 @@
 
     </div>
 
+    <details class="card sentinela-card section-accordion" id="sentinelaBox" style="margin-top:16px">
+      <summary><h2>📖 Estudo de A Sentinela</h2></summary>
+      <div class="section-accordion-body">
+
+        <section class="sent-option sent-option-1">
+          <h3>Opção 1 · Cole a pergunta e o texto do parágrafo no campo de texto</h3>
+          <button id="aiSentinelaBtn" class="ai-sentinela-btn" type="button">📖 Responder a pergunta do parágrafo colado</button>
+        </section>
+
+        <section class="sent-option sent-option-2">
+          <h3>Opção 2 · A IA lê o estudo da semana</h3>
+          <div class="ai-week">
+            <button id="aiWeekPrev" class="secondary ai-week-nav" type="button" aria-label="Semana anterior">◀</button>
+            <a id="aiWeekLink" class="ai-week-link" href="https://wol.jw.org/pt/wol/meetings/r5/lp-t/" target="_blank" rel="noopener noreferrer">
+              <span id="aiWeekTitle">📅 Estudo desta semana</span>
+              <span id="aiWeekRange" class="ai-week-range"></span>
+            </a>
+            <button id="aiWeekNext" class="secondary ai-week-nav" type="button" aria-label="Próxima semana">▶</button>
+          </div>
+          <div class="ai-study">
+            <button id="aiStudyLoadBtn" class="secondary ai-study-load" type="button">📋 Carregar numeração dos parágrafos do estudo</button>
+            <div class="ai-study-picker">
+              <button id="aiParaPrev" class="secondary ai-week-nav" type="button" aria-label="Parágrafos anteriores">◀</button>
+              <div class="ai-study-input">
+                <label for="aiStudyParagraphs">Parágrafos</label>
+                <input autocomplete="off" id="aiStudyParagraphs" type="text" value="todos" placeholder="todos, 3 ou 1-4, 6">
+              </div>
+              <button id="aiParaNext" class="secondary ai-week-nav" type="button" aria-label="Próximos parágrafos">▶</button>
+            </div>
+            <p id="aiStudyInfo" class="hint ai-hint"></p>
+            <span id="aiStudyStatus" class="ok" role="status" aria-live="polite"></span>
+            <div id="aiStudyArticleBox" hidden>
+              <label for="aiStudyArticle">Não achei o artigo sozinho. Cole o número ou o link dele:</label>
+              <input autocomplete="off" id="aiStudyArticle" type="text" inputmode="url" placeholder="Ex.: 2026521">
+            </div>
+            <button id="aiStudyBtn" class="ai-study-btn" type="button">🌐 IA - Responder a pergunta do parágrafo selecionado</button>
+          </div>
+        </section>
+
+        <label for="aiAdjustText2" class="ai-guidance-label">Orientação para a IA (opcional)</label>
+        <input autocomplete="off" id="aiAdjustText2" type="text" maxlength="300" placeholder="Ex.: respostas bem curtas; tom simples">
+
+        <details id="aiStudyCodeBox" class="sentinela-code">
+          <summary>🔑 Código de acesso (só para ler o estudo)</summary>
+          <input autocomplete="off" id="aiStudyCode" type="password" maxlength="100" placeholder="Digite o código uma vez; ele fica salvo neste aparelho">
+        </details>
+
+        <p class="hint ai-hint">As respostas seguem as opções do card "Configurar formatação com IA". O texto colado ou o artigo lido vai à IA (Claude, da Anthropic): não use com dados pessoais ou sigilosos. Nada muda até você clicar em Aplicar.</p>
+        <div id="sentinelaOutputSlot"></div>
+      </div>
+    </details>
+
     <details class="card tint-6 section-accordion" id="aiSection" style="margin-top:16px">
       <summary><h2>✨ Configurar formatação com IA</h2></summary>
       <div class="section-accordion-body">
@@ -1543,7 +1551,7 @@
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citacoesBiblicas"> Formatar citações bíblicas: texto em itálico e livro, capítulo e versículo em negrito</label>
         </div>
 
-        <label for="aiSummarySize">Tamanho do resumo e das respostas da Sentinela</label>
+        <label for="aiSummarySize">Tamanho do resumo e das respostas dos parágrafos</label>
         <select autocomplete="off" id="aiSummarySize">
           <option value="curto">Curto (1 a 2 frases)</option>
           <option value="medio">Médio (3 a 4 frases)</option>
@@ -4548,6 +4556,17 @@ async function importTemplatesFromText(text) {
     let aiSuggestions = [];   // sugestões exibidas (já resolvidas contra os modelos locais)
     let aiResumo = null;      // { texto, done, kind } quando a IA devolve um resumo ('resumo') ou respostas da Sentinela ('sentinela')
     let aiLastWithSummary = false; // o último pedido de formatação incluiu resumo? (Outra sugestão/Melhorar repetem a escolha)
+    const aiOutput = document.getElementById('aiOutput');
+    const aiOutputHome = document.getElementById('aiOutputHome');
+    const sentinelaOutputSlot = document.getElementById('sentinelaOutputSlot');
+    const aiAdjustText2 = document.getElementById('aiAdjustText2');
+
+    // Status, resultados e botões de aplicar/refinar aparecem junto ao botão que o usuário acabou de usar:
+    // na área do texto para a formatação e no card da Sentinela para as respostas do estudo.
+    function placeAiOutput(slot) {
+      if (slot && aiOutput.parentElement !== slot) slot.appendChild(aiOutput);
+    }
+
     let aiLastKind = 'format'; // último pedido feito: 'format' ou 'sentinela' (define o que "Outra sugestão/Melhorar" refazem)
     let aiSentinelaRaw = [];  // itens crus das respostas da Sentinela, reenviados ao refinar
     let aiRaw = [];           // resposta crua da IA, reenviada ao pedir "outra" ou "melhorar"
@@ -4868,6 +4887,7 @@ async function importTemplatesFromText(text) {
     async function requestAiSuggestions(mode, scrollToResults, withSummary) {
       if (aiBusy) return;
       aiLastKind = 'format';
+      placeAiOutput(aiOutputHome);
       if (!mode) aiLastWithSummary = !!withSummary;
 
       if (mode) {
@@ -5010,6 +5030,7 @@ async function importTemplatesFromText(text) {
     async function requestSentinelaAnswers(mode) {
       if (aiBusy) return;
       aiLastKind = 'sentinela';
+      placeAiOutput(sentinelaOutputSlot);
 
       if (mode) {
         if (!(await confirmAiRestore())) return;
@@ -5110,6 +5131,14 @@ async function importTemplatesFromText(text) {
     try { aiStudyCode.value = localStorage.getItem(AI_STUDY_CODE_KEY) || ''; } catch (e) { /* sem localStorage */ }
     aiStudyCode.addEventListener('change', () => safeSetItem(AI_STUDY_CODE_KEY, aiStudyCode.value.trim()));
 
+    const aiStudyStatus = document.getElementById('aiStudyStatus');
+
+    // Mensagem do carregamento da lista de parágrafos, mostrada no próprio card da Sentinela.
+    function setStudyStatus(message, isWarning) {
+      aiStudyStatus.textContent = message;
+      aiStudyStatus.className = isWarning ? 'warn' : 'ok';
+    }
+
     function studyWeekKey() { return aiWeekYear + '-' + aiWeekNumber; }
 
     function readStudyCache() {
@@ -5158,10 +5187,10 @@ async function importTemplatesFromText(text) {
       const index = currentStudyIndex();
       aiParaPrev.disabled = !options.length || index <= 0;
       aiParaNext.disabled = !options.length || index >= options.length - 1;
-      aiStudyLoadBtn.textContent = aiStudy ? '↻ Recarregar parágrafos do estudo' : '📋 Carregar parágrafos do estudo';
+      aiStudyLoadBtn.textContent = aiStudy ? '↻ Recarregar numeração dos parágrafos do estudo' : '📋 Carregar numeração dos parágrafos do estudo';
       aiStudyInfo.textContent = aiStudy
         ? (aiStudy.titulo ? aiStudy.titulo + ' · ' : '') + (index >= 0 ? 'opção ' + (index + 1) + ' de ' + options.length : 'texto livre')
-        : 'Toque em "Carregar parágrafos" para a IA listar os parágrafos do estudo, ou digite os números.';
+        : 'Toque em "Carregar numeração" para a IA listar os parágrafos do estudo, ou digite os números.';
     }
 
     function stepStudy(delta) {
@@ -5218,7 +5247,7 @@ async function importTemplatesFromText(text) {
         const codeBox = document.getElementById('aiStudyCodeBox');
         if (codeBox) codeBox.open = true;
         sentinelaBox.open = true;
-        return 'Informe o código de acesso no campo 🔑 do quadro "📖 Estudo de A Sentinela".';
+        return 'Informe o código de acesso no campo 🔑 do card "📖 Estudo de A Sentinela".';
       }
       if (!navigator.onLine) return 'Sem conexão com a internet.';
       return '';
@@ -5237,9 +5266,10 @@ async function importTemplatesFromText(text) {
     async function requestStudyList() {
       if (aiBusy) return;
       const accessError = studyAccessError();
-      if (accessError) return setAiStatus(accessError, true);
+      if (accessError) return setStudyStatus(accessError, true);
 
       aiBusy = true;
+      setStudyStatus('', false);
       setAiLoading(true, aiStudyLoadBtn);
 
       try {
@@ -5256,7 +5286,7 @@ async function importTemplatesFromText(text) {
         const groups = result.ok && Array.isArray(result.data.grupos) ? result.data.grupos : [];
         if (!groups.length) {
           aiStudyArticleBox.hidden = false;
-          return setAiStatus(studyFailureMessage(result, 'Não consegui listar os parágrafos.') + ' Se precisar, informe o número ou o link do artigo.', true);
+          return setStudyStatus(studyFailureMessage(result, 'Não consegui listar os parágrafos.') + ' Se precisar, informe o número ou o link do artigo.', true);
         }
 
         aiStudy = { artigo: result.data.artigo || '', titulo: result.data.titulo || '', grupos: groups };
@@ -5264,9 +5294,9 @@ async function importTemplatesFromText(text) {
         aiStudyArticleBox.hidden = true;
         aiStudyParagraphs.value = groups[0];
         updateStudyPicker();
-        setAiStatus(groups.length + (groups.length === 1 ? ' grupo de parágrafos carregado.' : ' grupos de parágrafos carregados.'), false);
+        setStudyStatus(groups.length + (groups.length === 1 ? ' grupo de parágrafos carregado.' : ' grupos de parágrafos carregados.'), false);
       } catch (e) {
-        setAiStatus(e && e.name === 'AbortError' ? 'A IA demorou demais. Tente de novo.' : 'Falha de conexão ao consultar a IA.', true);
+        setStudyStatus(e && e.name === 'AbortError' ? 'A IA demorou demais. Tente de novo.' : 'Falha de conexão ao consultar a IA.', true);
       } finally {
         aiBusy = false;
         setAiLoading(false);
@@ -5279,6 +5309,7 @@ async function importTemplatesFromText(text) {
     async function requestStudyAnswers(mode) {
       if (aiBusy) return;
       aiLastKind = 'estudo';
+      placeAiOutput(sentinelaOutputSlot);
 
       const accessError = studyAccessError();
       if (accessError) return setAiStatus(accessError, true);
@@ -5360,6 +5391,14 @@ async function importTemplatesFromText(text) {
     );
     aiAnotherBtn.addEventListener('click', () => refineAi('nova'));
     aiImproveBtn.addEventListener('click', () => refineAi('melhorar'));
+    // O campo de orientação existe nos dois lugares (texto e card da Sentinela) e os dois mostram o mesmo valor.
+    aiAdjustText.addEventListener('input', () => { aiAdjustText2.value = aiAdjustText.value; });
+    aiAdjustText2.addEventListener('input', () => { aiAdjustText.value = aiAdjustText2.value; });
+    aiAdjustText2.addEventListener('keydown', e => {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      if (aiResumo && aiLastKind !== 'format') refineAi('melhorar'); // só refina respostas já geradas
+    });
     aiAdjustText.addEventListener('keydown', e => {
       if (e.key !== 'Enter') return;
       e.preventDefault();
