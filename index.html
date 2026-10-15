@@ -294,6 +294,13 @@
 
     .ai-refine { margin-top: 14px; }
 
+    .ai-copy-btn {
+      display: block;
+      width: 100%;
+      min-height: 48px;
+      margin-top: 8px;
+    }
+
     /* Outra sugestão / Melhorar esta: dois botões de largura igual, como os de formatar com IA.
        Desfazer, quando aparece, ocupa a linha de baixo inteira. */
     .ai-refine-row {
@@ -4624,6 +4631,7 @@ async function importTemplatesFromText(text) {
     let aiRaw = [];           // resposta crua da IA, reenviada ao pedir "outra" ou "melhorar"
     let aiBaseText = '';      // texto antes de qualquer sugestão ser aplicada (para desfazer)
     let aiAppliedAny = false;
+    let aiAppliedSnapshot = null; // texto logo depois de colar as respostas do estudo: refazer não precisa perguntar se ele não foi editado
     let aiBusy = false;
 
     function setAiStatus(message, isWarning) {
@@ -4805,7 +4813,56 @@ async function importTemplatesFromText(text) {
       aiAppliedAny = true;
     }
 
+    // Respostas do estudo lidas direto do site: já vão para o campo de texto (sem pedir confirmação) e cada
+    // parágrafo ou grupo de parágrafos ganha um cartão com o seu próprio botão de copiar.
+    function appendToMainText(text) {
+      const current = input.value.replace(/\s+$/, '');
+      setInputRange(0, input.value.length, (current ? current + '\n\n' : '') + text, { message: 'Resposta colada no campo de texto.' });
+      autoGrowInputText();
+      aiAppliedAny = true;
+      aiAppliedSnapshot = input.value;
+    }
+
+    function renderAiStudyCards() {
+      const intro = document.createElement('p');
+      intro.className = 'ai-item-reason';
+      intro.textContent = 'Respostas do estudo, com palavras próprias' + (aiResumo.fonte ? ' — Fonte: ' + aiResumo.fonte + ' (wol.jw.org)' : '') +
+        '. Já estão coladas no campo de texto; use Copiar para levar cada uma.';
+      aiResults.appendChild(intro);
+
+      aiResumo.partes.forEach(part => {
+        const item = document.createElement('div');
+        item.className = 'ai-item';
+
+        const label = document.createElement('p');
+        label.className = 'ai-item-reason';
+        label.textContent = part.paragrafos ? 'Parágrafo(s) ' + part.paragrafos : 'Resposta';
+
+        const body = document.createElement('p');
+        body.className = 'ai-item-after';
+        body.textContent = part.texto;
+
+        const copyBtn = document.createElement('button');
+        copyBtn.type = 'button';
+        copyBtn.className = 'ai-copy-btn';
+        copyBtn.textContent = '📋 Copiar';
+        copyBtn.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(part.texto);
+            copyBtn.textContent = '✓ Copiado';
+          } catch (e) {
+            copyBtn.textContent = 'Não foi possível copiar';
+          }
+          setTimeout(() => { copyBtn.textContent = '📋 Copiar'; }, 1800);
+        });
+
+        item.append(label, body, copyBtn);
+        aiResults.appendChild(item);
+      });
+    }
+
     function renderAiSummaryItem() {
+      if (aiResumo && aiResumo.kind === 'estudo') return renderAiStudyCards();
       if (!aiResumo || aiResumo.done) return;
 
       const item = document.createElement('div');
@@ -4925,10 +4982,11 @@ async function importTemplatesFromText(text) {
       setInputRange(0, input.value.length, aiBaseText, { message: 'Texto anterior às sugestões restaurado.' });
       autoGrowInputText();
       aiAppliedAny = false;
+      aiAppliedSnapshot = null;
     }
 
     async function confirmAiRestore() {
-      if (!aiAppliedAny || input.value === aiBaseText) return true;
+      if (!aiAppliedAny || input.value === aiBaseText || input.value === aiAppliedSnapshot) return true;
       return askConfirm(
         'O texto volta ao estado de antes de aplicar as sugestões. Edições feitas depois de aplicar serão perdidas. Continuar?',
         'Voltar ao texto anterior'
@@ -5065,7 +5123,7 @@ async function importTemplatesFromText(text) {
 
     // Só as respostas (sem repetir a pergunta), cada uma com o modelo "Resposta" do usuário e já formatada
     // (negrito, itálico, maiúsculas, emoji) conforme as opções da IA. Sem "Usar meus modelos", usa um rótulo simples.
-    function buildSentinelaText(items) {
+    function buildSentinelaParts(items) {
       const answerTpl = readAiOptions().usarModelos ? aiTemplateByName('resposta') : null;
 
       return items.map(item => {
@@ -5074,8 +5132,12 @@ async function importTemplatesFromText(text) {
           destaques: Array.isArray(item.destaques) ? item.destaques : [],
           emoji: item.emoji || ''
         });
-        return aiLabelWith(answerTpl, '✅ RESPOSTA 👉 ', number + body);
-      }).join('\n\n');
+        return { paragrafos: item.paragrafos || '', texto: aiLabelWith(answerTpl, '✅ RESPOSTA 👉 ', number + body) };
+      });
+    }
+
+    function buildSentinelaText(items) {
+      return buildSentinelaParts(items).map(part => part.texto).join('\n\n');
     }
 
     // mode: undefined = primeira vez; 'nova' = respostas diferentes; 'melhorar' = refinar as anteriores.
@@ -5415,10 +5477,12 @@ async function importTemplatesFromText(text) {
           return setAiStatus((result.data.erro || 'Não encontrei perguntas nesse artigo.') + ' Se for o caso, informe o número ou o link do artigo.', true);
         }
 
-        aiResumo = { texto: buildSentinelaText(aiSentinelaRaw), done: false, kind: 'sentinela', fonte: result.data.titulo || '' };
+        const parts = buildSentinelaParts(aiSentinelaRaw);
+        aiResumo = { texto: parts.map(part => part.texto).join('\n\n'), partes: parts, done: false, kind: 'estudo', fonte: result.data.titulo || '' };
+        appendToMainText(aiResumo.texto);
         renderAiSuggestions();
         aiRefineBox.hidden = false;
-        setAiStatus(aiSentinelaRaw.length + (aiSentinelaRaw.length === 1 ? ' resposta pronta.' : ' respostas prontas.'), false);
+        setAiStatus(parts.length + (parts.length === 1 ? ' resposta colada no campo de texto.' : ' respostas coladas no campo de texto.'), false);
       } catch (e) {
         setAiStatus(e && e.name === 'AbortError' ? 'A IA demorou demais. Tente com menos parágrafos.' : 'Falha de conexão ao consultar a IA.', true);
       } finally {
