@@ -358,6 +358,29 @@
 
     .ai-sentinela-btn:hover { background: #6b21a8; }
 
+    /* ---------- IA lê o estudo da semana ---------- */
+
+    .ai-study { margin-top: 10px; }
+
+    .ai-study-fields {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 10px;
+    }
+
+    .ai-study-fields label { margin: 0 0 4px; font-size: .82rem; }
+
+    .ai-study-btn {
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+      min-height: 48px;
+      background: #c2410c;
+      color: #ffffff;
+    }
+
+    .ai-study-btn:hover { background: #9a3412; }
+
     /* ---------- Atalho para o estudo da semana (wol.jw.org) ---------- */
 
     .ai-week {
@@ -1252,6 +1275,19 @@
             </a>
             <button id="aiWeekNext" class="secondary ai-week-nav" type="button" aria-label="Próxima semana">▶</button>
           </div>
+          <div class="ai-study">
+            <div class="ai-study-fields">
+              <div>
+                <label for="aiStudyArticle">Número ou link do artigo</label>
+                <input autocomplete="off" id="aiStudyArticle" type="text" inputmode="url" placeholder="Ex.: 2026521 (vazio = a IA acha pela semana)">
+              </div>
+              <div>
+                <label for="aiStudyParagraphs">Parágrafos</label>
+                <input autocomplete="off" id="aiStudyParagraphs" type="text" value="todos" placeholder="todos, 3 ou 1-4, 6">
+              </div>
+            </div>
+            <button id="aiStudyBtn" class="ai-study-btn" type="button">🌐 A IA lê o estudo da semana e responde</button>
+          </div>
           <p class="hint ai-hint">Ao usar, o texto e seus modelos são enviados à IA (Claude, da Anthropic). Não use com dados pessoais ou sigilosos. Nada muda até você clicar em Aplicar.</p>
           <span id="aiStatus" class="ok" role="status" aria-live="polite"></span>
           <div class="ai-actions-all">
@@ -1387,6 +1423,9 @@
 
         <label for="aiInstruction">Instruções fixas, valem para todo pedido (opcional)</label>
         <input autocomplete="off" id="aiInstruction" type="text" maxlength="300" placeholder="Ex.: texto da Escola Pioneiros, estilo discreto">
+
+        <label for="aiStudyCode">Código de acesso para a IA ler o estudo da semana</label>
+        <input autocomplete="off" id="aiStudyCode" type="password" maxlength="100" placeholder="Só para quem recebeu o código">
 
         <div class="button-row">
           <button id="aiSuggestBtn2" type="button">✨ Sugerir formatação</button>
@@ -4395,7 +4434,7 @@ async function importTemplatesFromText(text) {
     let aiLoadingTimer = null;
 
     function setAiLoading(on, button) {
-      const all = [aiSuggestBtn, aiSuggestSummaryBtn, aiSuggestBtn2, aiSentinelaBtn, aiAnotherBtn, aiImproveBtn];
+      const all = [aiSuggestBtn, aiSuggestSummaryBtn, aiSuggestBtn2, aiSentinelaBtn, aiStudyBtn, aiAnotherBtn, aiImproveBtn];
 
       if (!on) {
         clearInterval(aiLoadingTimer);
@@ -4553,7 +4592,7 @@ async function importTemplatesFromText(text) {
       const reason = document.createElement('p');
       reason.className = 'ai-item-reason';
       reason.textContent = aiResumo.kind === 'sentinela'
-        ? 'Respostas do estudo, com palavras próprias, para comentar'
+        ? 'Respostas do estudo, com palavras próprias, para comentar' + (aiResumo.fonte ? ' — Fonte: ' + aiResumo.fonte + ' (wol.jw.org)' : '')
         : 'Resumo do texto, com palavras próprias, para comentário';
 
       const after = document.createElement('p');
@@ -4896,9 +4935,113 @@ async function importTemplatesFromText(text) {
 
     aiSuggestBtn.addEventListener('click', () => requestAiSuggestions());
     aiSuggestSummaryBtn.addEventListener('click', () => requestAiSuggestions(undefined, false, true));
+    const AI_STUDY_CODE_KEY = 'jwLibraryNoteAplicarStudyCodeV1';
+    const aiStudyBtn = document.getElementById('aiStudyBtn');
+    const aiStudyArticle = document.getElementById('aiStudyArticle');
+    const aiStudyParagraphs = document.getElementById('aiStudyParagraphs');
+    const aiStudyCode = document.getElementById('aiStudyCode');
+    try { aiStudyCode.value = localStorage.getItem(AI_STUDY_CODE_KEY) || ''; } catch (e) { /* sem localStorage */ }
+    aiStudyCode.addEventListener('change', () => safeSetItem(AI_STUDY_CODE_KEY, aiStudyCode.value.trim()));
+
+    // mode: undefined = primeira vez; 'nova' = respostas diferentes; 'melhorar' = refinar as anteriores.
+    // A IA lê o artigo no wol.jw.org (ferramenta web fetch, só nesse domínio) e devolve só as respostas.
+    async function requestStudyAnswers(mode) {
+      if (aiBusy) return;
+      aiLastKind = 'estudo';
+
+      const code = aiStudyCode.value.trim();
+      if (!code) {
+        return setAiStatus('Informe o código de acesso no card "✨ Formatação com IA" (campo "Código de acesso para a IA ler o estudo da semana").', true);
+      }
+      if (!navigator.onLine) return setAiStatus('Sem conexão com a internet.', true);
+
+      if (mode) {
+        if (!(await confirmAiRestore())) return;
+        if (aiAppliedAny) restoreAiBaseText();
+      } else {
+        aiSentinelaRaw = [];
+        aiAppliedAny = false;
+      }
+
+      aiResults.textContent = '';
+      aiSuggestions = [];
+      aiRaw = [];
+      const previousAnswers = mode && aiResumo && aiSentinelaRaw.length ? aiSentinelaRaw : null;
+      aiResumo = null;
+      updateAiControls();
+
+      if (!aiAppliedAny) aiBaseText = input.value;
+      saveAiOptions();
+      safeSetItem(AI_STUDY_CODE_KEY, code);
+
+      const payload = {
+        tarefa: 'estudo',
+        codigo: code,
+        artigo: aiStudyArticle.value.trim(),
+        ano: aiWeekYear,
+        semana: aiWeekNumber,
+        paragrafos: aiStudyParagraphs.value.trim() || 'todos',
+        opcoes: readAiOptions(),
+        ajuste: aiAdjustText.value.trim().slice(0, 300)
+      };
+      if (previousAnswers) {
+        payload.modo = mode;
+        payload.anteriores = { itens: previousAnswers };
+      }
+
+      aiBusy = true;
+      setAiLoading(true, mode === 'nova' ? aiAnotherBtn : mode === 'melhorar' ? aiImproveBtn : aiStudyBtn);
+
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 110000);
+
+      try {
+        const response = await fetch(AI_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
+
+        let data = null;
+        try { data = await response.json(); } catch (e) { /* resposta sem JSON */ }
+
+        if (!response.ok || !data) {
+          const unavailable = response.status === 404 || response.status === 501;
+          return setAiStatus(
+            unavailable
+              ? 'A IA só funciona no site publicado (notesjwlibrary.vercel.app).'
+              : (data && data.erro) || 'Não foi possível ler o estudo agora.',
+            true
+          );
+        }
+
+        aiSentinelaRaw = Array.isArray(data.itens) ? data.itens : [];
+        if (!aiSentinelaRaw.length) {
+          return setAiStatus((data.erro || 'Não encontrei perguntas nesse artigo.') + ' Se for o caso, informe o número ou o link do artigo.', true);
+        }
+
+        aiResumo = { texto: buildSentinelaText(aiSentinelaRaw), done: false, kind: 'sentinela', fonte: data.titulo || '' };
+        renderAiSuggestions();
+        aiRefineBox.hidden = false;
+        setAiStatus(aiSentinelaRaw.length + (aiSentinelaRaw.length === 1 ? ' resposta pronta.' : ' respostas prontas.'), false);
+      } catch (e) {
+        setAiStatus(e && e.name === 'AbortError' ? 'A IA demorou demais. Tente com menos parágrafos.' : 'Falha de conexão ao consultar a IA.', true);
+      } finally {
+        clearTimeout(timer);
+        aiBusy = false;
+        setAiLoading(false);
+      }
+    }
+
+    aiStudyBtn.addEventListener('click', () => requestStudyAnswers());
     aiSentinelaBtn.addEventListener('click', () => requestSentinelaAnswers());
     aiSuggestBtn2.addEventListener('click', () => requestAiSuggestions(undefined, true));
-    const refineAi = mode => (aiLastKind === 'sentinela' ? requestSentinelaAnswers(mode) : requestAiSuggestions(mode));
+    const refineAi = mode => (
+      aiLastKind === 'estudo' ? requestStudyAnswers(mode)
+        : aiLastKind === 'sentinela' ? requestSentinelaAnswers(mode)
+          : requestAiSuggestions(mode)
+    );
     aiAnotherBtn.addEventListener('click', () => refineAi('nova'));
     aiImproveBtn.addEventListener('click', () => refineAi('melhorar'));
     aiAdjustText.addEventListener('keydown', e => {
@@ -4944,6 +5087,8 @@ async function importTemplatesFromText(text) {
     const aiWeekTitle = document.getElementById('aiWeekTitle');
     const aiWeekRange = document.getElementById('aiWeekRange');
     let aiWeekOffset = 0;
+    let aiWeekYear = 0;
+    let aiWeekNumber = 0;
 
     function isoYearWeek(date) {
       const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -4961,6 +5106,8 @@ async function importTemplatesFromText(text) {
       sunday.setDate(monday.getDate() + 6);
 
       const [year, week] = isoYearWeek(monday);
+      aiWeekYear = year;
+      aiWeekNumber = week;
       aiWeekLink.href = 'https://wol.jw.org/pt/wol/meetings/r5/lp-t/' + year + '/' + week;
 
       const month = date => date.toLocaleDateString('pt-BR', { month: 'long' });
