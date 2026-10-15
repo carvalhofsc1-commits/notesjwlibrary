@@ -387,11 +387,18 @@
 
     /* ---------- Card de A Sentinela ---------- */
 
-    .card.sentinela-card {
+    details.subsection.sentinela-subsection {
       background: var(--card);
       background: color-mix(in srgb, #a855f7 10%, var(--card));
       border: 2px solid #a855f7;
     }
+
+    /* Cores das seções recolhíveis (as mesmas dos antigos cards numerados). */
+    details.subsection.sub-tint-2 { background: var(--tint2-bg); border-color: var(--tint2-border); }
+    details.subsection.sub-tint-3 { background: var(--tint3-bg); border-color: var(--tint3-border); }
+    details.subsection.sub-tint-4 { background: var(--tint4-bg); border-color: var(--tint4-border); }
+    details.subsection.sub-tint-5 { background: var(--tint5-bg); border-color: var(--tint5-border); }
+    details.subsection.sub-tint-6 { background: var(--tint6-bg); border-color: var(--tint6-border); }
 
     /* Cada opção num recipiente próprio, com a cor do seu botão no alto. */
     .sent-option {
@@ -1318,8 +1325,6 @@
 
       .editor-controls-pane > .main-copy-status { order: -1; }
 
-      .editor-controls-pane > .ai-subsection { order: 1; }
-
       .main-copy-status:empty { display: none; }
 
       /* Sem Limpar e Copiar (que foram para o topo) sobram 6 botões: 3 + 3. */
@@ -1414,37 +1419,6 @@
 
           <div class="editor-controls-pane">
 
-        <details class="subsection ai-subsection" id="aiBoxDetails">
-          <summary id="aiBoxLabel">✨ Sugerir formatação com IA</summary>
-          <div class="subsection-body ai-box">
-          <div class="ai-main-row">
-            <button id="aiSuggestBtn" class="ai-main-btn" type="button">✨ Sugerir formatação com IA</button>
-            <button id="aiSuggestSummaryBtn" class="ai-main-btn ai-main-btn-alt" type="button">✨ Sugerir formatação + resumo do texto</button>
-          </div>
-          <div id="aiProgress" class="ai-progress" role="progressbar" aria-label="A IA está trabalhando" aria-hidden="true"></div>
-          <label for="aiAdjustText" class="ai-guidance-label">Orientação para a IA (opcional)</label>
-          <input autocomplete="off" id="aiAdjustText" type="text" maxlength="300" placeholder="Ex.: formate só as perguntas; sem emojis; resumo bem curto">
-          <p class="hint ai-hint">Ao usar, o texto e seus modelos são enviados à IA (Claude, da Anthropic). Não use com dados pessoais ou sigilosos. Nada muda até você clicar em Aplicar.</p>
-          <div id="aiOutputHome">
-          <div id="aiOutput">
-          <span id="aiStatus" class="ok" role="status" aria-live="polite"></span>
-          <div class="ai-actions-all">
-            <button id="aiApplyAllBtn" type="button" hidden>Aplicar todas</button>
-            <button id="aiDismissAllBtn" class="secondary" type="button" hidden>Descartar todas</button>
-          </div>
-          <div id="aiResults" class="ai-list"></div>
-          <div id="aiRefineBox" class="ai-refine" hidden>
-            <div class="ai-refine-row">
-              <button id="aiAnotherBtn" class="secondary" type="button">🔄 Outra sugestão</button>
-              <button id="aiImproveBtn" class="secondary" type="button">🛠️ Melhorar esta</button>
-              <button id="aiUndoBtn" class="secondary" type="button" hidden>↩ Desfazer aplicadas</button>
-            </div>
-          </div>
-          </div>
-          </div>
-          </div>
-        </details>
-
         <div class="button-row action-row main-actions">
           <div class="action-item desktop-only">
             <button id="clearBtn" class="icon-action clear" type="button" title="Limpar" aria-label="Limpar">🧹</button>
@@ -1520,18 +1494,54 @@
           </div>
         </details>
 
-        <p id="selectionInfo" class="hint" role="status" aria-live="polite">Selecione um trecho e clique na formatação desejada. Use ⇥ Recuo ou a tecla Tab para aumentar o recuo do parágrafo. Repita para mais níveis; Shift+Tab reduz o recuo.</p>
+        <details class="subsection sub-tint-3" id="templatesBox">
+          <summary>Modelos prontos e personalizados</summary>
+          <div class="subsection-body">
+      <p class="hint">Clique num modelo pronto para inserir no campo ativo. Se o cursor estiver no texto original, o modelo será inserido ali. Se houver texto selecionado e o modelo tiver {texto}, ele será aplicado ao trecho selecionado; se não tiver {texto}, será inserido antes do trecho.</p>
 
-          </div>
+      <div class="template-toolbar">
+        <div>
+          <label for="templateCategoryFilter">Filtrar modelos por categoria</label>
+          <select id="templateCategoryFilter"></select>
         </div>
+      </div>
 
-      </section>
-
-    </div>
-
-    <details class="card sentinela-card section-accordion" id="sentinelaBox" style="margin-top:16px">
-      <summary><h2>📖 Opções para estudo de A Sentinela</h2></summary>
-      <div class="section-accordion-body">
+      <div id="templates" class="templates"></div>
+          </div>
+        </details>
+        <details class="subsection ai-subsection" id="aiBoxDetails">
+          <summary id="aiBoxLabel">✨ Sugerir formatação com IA</summary>
+          <div class="subsection-body ai-box">
+          <div class="ai-main-row">
+            <button id="aiSuggestBtn" class="ai-main-btn" type="button">✨ Sugerir formatação com IA</button>
+            <button id="aiSuggestSummaryBtn" class="ai-main-btn ai-main-btn-alt" type="button">✨ Sugerir formatação + resumo do texto</button>
+          </div>
+          <div id="aiProgress" class="ai-progress" role="progressbar" aria-label="A IA está trabalhando" aria-hidden="true"></div>
+          <label for="aiAdjustText" class="ai-guidance-label">Orientação para a IA (opcional)</label>
+          <input autocomplete="off" id="aiAdjustText" type="text" maxlength="300" placeholder="Ex.: formate só as perguntas; sem emojis; resumo bem curto">
+          <p class="hint ai-hint">Ao usar, o texto e seus modelos são enviados à IA (Claude, da Anthropic). Não use com dados pessoais ou sigilosos. Nada muda até você clicar em Aplicar.</p>
+          <div id="aiOutputHome">
+          <div id="aiOutput">
+          <span id="aiStatus" class="ok" role="status" aria-live="polite"></span>
+          <div class="ai-actions-all">
+            <button id="aiApplyAllBtn" type="button" hidden>Aplicar todas</button>
+            <button id="aiDismissAllBtn" class="secondary" type="button" hidden>Descartar todas</button>
+          </div>
+          <div id="aiResults" class="ai-list"></div>
+          <div id="aiRefineBox" class="ai-refine" hidden>
+            <div class="ai-refine-row">
+              <button id="aiAnotherBtn" class="secondary" type="button">🔄 Outra sugestão</button>
+              <button id="aiImproveBtn" class="secondary" type="button">🛠️ Melhorar esta</button>
+              <button id="aiUndoBtn" class="secondary" type="button" hidden>↩ Desfazer aplicadas</button>
+            </div>
+          </div>
+          </div>
+          </div>
+          </div>
+        </details>
+        <details class="subsection sentinela-subsection" id="sentinelaBox">
+          <summary>📖 Opções para estudo de A Sentinela</summary>
+          <div class="subsection-body">
 
         <section class="sent-option sent-option-1">
           <h3>Opção 1 · Cole a pergunta e o texto do parágrafo no campo de texto</h3>
@@ -1576,15 +1586,27 @@
           <input autocomplete="off" id="aiStudyCode" type="password" maxlength="100" placeholder="Digite o código uma vez; ele fica salvo neste aparelho">
         </details>
 
-        <p class="hint ai-hint">As respostas seguem as opções do card "Configurar formatação com IA". O texto colado ou o artigo lido vai à IA (Claude, da Anthropic): não use com dados pessoais ou sigilosos. Nada muda até você clicar em Aplicar.</p>
+        <p class="hint ai-hint">As respostas seguem as opções de "⚙️ Configurações gerais do app → Configurar formatação com IA". O texto colado ou o artigo lido vai à IA (Claude, da Anthropic): não use com dados pessoais ou sigilosos. Nada muda até você clicar em Aplicar.</p>
         <div id="sentinelaOutputSlot"></div>
-      </div>
-    </details>
+          </div>
+        </details>
 
-    <details class="card tint-6 section-accordion" id="aiSection" style="margin-top:16px">
-      <summary><h2>✨ Configurar formatação com IA</h2></summary>
+        <p id="selectionInfo" class="hint" role="status" aria-live="polite">Selecione um trecho e clique na formatação desejada. Use ⇥ Recuo ou a tecla Tab para aumentar o recuo do parágrafo. Repita para mais níveis; Shift+Tab reduz o recuo.</p>
+
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+
+    <details class="card tint-4 section-accordion" id="settingsCard" style="margin-top:16px">
+      <summary><h2>⚙️ Configurações gerais do app</h2></summary>
       <div class="section-accordion-body">
-        <p class="hint">Escolha como a IA deve formatar e use os botões <strong>✨ Sugerir formatação com IA</strong> e <strong>✨ Sugerir formatação + resumo do texto</strong> (acima dos botões de formatação) ou o botão abaixo. As opções ficam salvas neste navegador. Ao pedir sugestões, o texto e seus modelos são enviados à IA (Claude, da Anthropic): não use com dados pessoais ou sigilosos.</p>
+        <details class="subsection sub-tint-6" id="aiSection">
+          <summary>✨ Configurar formatação com IA</summary>
+          <div class="subsection-body">
+        <p class="hint">Escolha como a IA deve formatar e use os botões do bloco <strong>✨ Sugerir formatação com IA</strong> (na área do texto) ou o botão abaixo. As opções ficam salvas neste navegador. Ao pedir sugestões, o texto e seus modelos são enviados à IA (Claude, da Anthropic): não use com dados pessoais ou sigilosos.</p>
 
         <div class="ai-options" role="group" aria-label="Opções de formatação da IA">
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="usarModelos"> Usar meus modelos prontos</label>
@@ -1619,12 +1641,11 @@
         <div class="button-row">
           <button id="aiSuggestBtn2" type="button">✨ Sugerir formatação</button>
         </div>
-      </div>
-    </details>
-
-    <details class="card tint-2 section-accordion" style="margin-top:16px">
-      <summary><h2>2. Tipos de fontes/caracteres</h2></summary>
-      <div class="section-accordion-body">
+          </div>
+        </details>
+        <details class="subsection sub-tint-2">
+          <summary>Tipos de fontes/caracteres</summary>
+          <div class="subsection-body">
         <div class="style-full-row">
           <label for="styleSelect">Tipo de caractere</label>
           <select id="styleSelect"></select>
@@ -1637,28 +1658,11 @@
         <div class="button-row">
           <button id="applyStyleBtn" type="button">Aplicar fonte ao trecho selecionado</button>
         </div>
-      </div>
-    </details>
-
-    <details class="card tint-3 section-accordion" style="margin-top:16px">
-      <summary><h2>3. Modelos prontos e personalizados</h2></summary>
-      <div class="section-accordion-body">
-      <p class="hint">Clique num modelo pronto para inserir no campo ativo. Se o cursor estiver no texto original, o modelo será inserido ali. Se houver texto selecionado e o modelo tiver {texto}, ele será aplicado ao trecho selecionado; se não tiver {texto}, será inserido antes do trecho.</p>
-
-      <div class="template-toolbar">
-        <div>
-          <label for="templateCategoryFilter">Filtrar modelos por categoria</label>
-          <select id="templateCategoryFilter"></select>
-        </div>
-      </div>
-
-      <div id="templates" class="templates"></div>
-      </div>
-    </details>
-
-    <details class="card tint-5 section-accordion" style="margin-top:16px">
-      <summary><h2>4. Gerenciar modelos e categorias</h2></summary>
-      <div class="section-accordion-body">
+          </div>
+        </details>
+        <details class="subsection sub-tint-5">
+          <summary>Gerenciar modelos e categorias</summary>
+          <div class="subsection-body">
 
       <details class="subsection subsection-editor" id="editorSubsection">
         <summary>Criar ou alterar modelo</summary>
@@ -1739,12 +1743,11 @@
         <button id="openModelManagerBtn" type="button">⚙️ Gerenciamento avançado</button>
       </div>
 
-      </div>
-    </details>
-
-    <details class="card tint-4 section-accordion" style="margin-top:16px">
-      <summary><h2>5. Caracteres, ícones e emoticons</h2></summary>
-      <div class="section-accordion-body">
+          </div>
+        </details>
+        <details class="subsection sub-tint-4">
+          <summary>Caracteres, ícones e emoticons</summary>
+          <div class="subsection-body">
       <p class="hint">Clique para inserir no campo ativo. Os favoritos ficam no topo. Dê dois cliques em um favorito para tirar do topo; dê dois cliques em um item de baixo para mandar para os favoritos.</p>
 
       <h3>Favoritos no topo</h3>
@@ -1776,6 +1779,8 @@
           <button id="clearCustomSymbolsBtn" class="secondary" type="button">Limpar caracteres personalizados</button>
         </div>
       </div>
+          </div>
+        </details>
       </div>
     </details>
 
@@ -3339,8 +3344,10 @@ function saveTemplatesToStorage() {
 
           const editorSubsection = document.getElementById('editorSubsection');
           const categoriesSubsection = document.getElementById('categoriesSubsection');
-          const parentSection = editorSubsection && editorSubsection.closest('details.section-accordion');
-          if (parentSection) parentSection.open = true;
+          // Abre toda a cadeia de seções até o editor (ele fica dentro de "Configurações gerais do app").
+          if (editorSubsection) {
+            for (let box = editorSubsection.parentElement.closest('details'); box; box = box.parentElement.closest('details')) box.open = true;
+          }
           if (editorSubsection) editorSubsection.open = true;
           if (categoriesSubsection) categoriesSubsection.open = true;
 
@@ -5297,7 +5304,7 @@ async function importTemplatesFromText(text) {
         const codeBox = document.getElementById('aiStudyCodeBox');
         if (codeBox) codeBox.open = true;
         sentinelaBox.open = true;
-        return 'Informe o código de acesso no campo 🔑 do card "📖 Estudo de A Sentinela".';
+        return 'Informe o código de acesso no campo 🔑 do bloco "📖 Opções para estudo de A Sentinela".';
       }
       if (!navigator.onLine) return 'Sem conexão com a internet.';
       return '';
