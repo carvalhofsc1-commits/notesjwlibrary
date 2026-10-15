@@ -1620,7 +1620,7 @@
               <button id="aiParaPrev" class="secondary ai-week-nav" type="button" aria-label="Parágrafos anteriores">◀</button>
               <div class="ai-study-input">
                 <label for="aiStudyParagraphs">Parágrafos</label>
-                <input autocomplete="off" id="aiStudyParagraphs" type="text" value="todos" placeholder="todos, 3 ou 1-4, 6">
+                <input autocomplete="off" id="aiStudyParagraphs" type="text" value="todos" placeholder="todos, 3, 1-4 ou recapitulação">
               </div>
               <button id="aiParaNext" class="secondary ai-week-nav" type="button" aria-label="Próximos parágrafos">▶</button>
             </div>
@@ -5271,7 +5271,7 @@ async function importTemplatesFromText(text) {
       const answerTpl = readAiOptions().usarModelos ? aiTemplateByName('resposta') : null;
 
       return items.map(item => {
-        const number = item.paragrafos ? item.paragrafos + '. ' : '';
+        const number = item.paragrafos ? item.paragrafos + '. ' : '';  // "3. " ou, na recapitulação, "Recap. 1. "
         const body = aiBuildLine(item.resposta, {
           destaques: Array.isArray(item.destaques) ? item.destaques : [],
           emoji: item.emoji || ''
@@ -5413,18 +5413,35 @@ async function importTemplatesFromText(text) {
     }
 
     // Opções navegáveis: os grupos de parágrafos que a IA listou (os que compartilham pergunta vêm juntos) + "todos".
-    function studyOptions() { return aiStudy ? aiStudy.grupos.concat(['todos']) : []; }
+    const STUDY_RECAP_LABEL = 'Recapitulação';
+
+    // Opções navegáveis: grupos de parágrafos, "Recapitulação" (o quadro "Qual é a sua resposta?" no fim do
+    // artigo, quando existe) e "todos" (só os parágrafos).
+    function studyOptions() {
+      if (!aiStudy) return [];
+      return aiStudy.grupos.concat(aiStudy.recapitulacao === false ? [] : [STUDY_RECAP_LABEL], ['todos']);
+    }
+
+    // Sem acento e em minúsculas, para "recapitulação", "Recapitulacao" e "RECAP" valerem o mesmo.
+    function plainStudyText(text) {
+      return String(text).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+    }
+
+    function isRecapText(text) {
+      return /^(perguntas de )?recap/.test(plainStudyText(text));
+    }
 
     // Posição atual na lista: pelo texto exato, ou pelo grupo que contém o primeiro número digitado (-1 = fora da lista).
     function currentStudyIndex() {
       const options = studyOptions();
       if (!options.length) return -1;
-      const text = aiStudyParagraphs.value.trim().toLowerCase();
-      const exact = options.findIndex(option => option.toLowerCase() === text);
+      const text = plainStudyText(aiStudyParagraphs.value);
+      const exact = options.findIndex(option => plainStudyText(option) === text);
       if (exact >= 0) return exact;
+      if (isRecapText(text)) return options.findIndex(option => plainStudyText(option) === 'recapitulacao');
       const number = Number((text.match(/\d+/) || [])[0]);
       if (!number) return -1;
-      return options.findIndex(option => option !== 'todos' && studyNumbers(option).includes(number));
+      return options.findIndex(option => studyNumbers(option).includes(number));
     }
 
     // "1, 2" -> [1, 2]; "3-5" -> [3, 4, 5]
@@ -5464,7 +5481,7 @@ async function importTemplatesFromText(text) {
     function normalizeStudyInput() {
       const options = studyOptions();
       const text = aiStudyParagraphs.value.trim();
-      if (options.length && /^\d+$/.test(text)) {
+      if (options.length && (/^\d+$/.test(text) || isRecapText(text))) {
         const index = currentStudyIndex();
         if (index >= 0) aiStudyParagraphs.value = options[index];
       }
@@ -5549,7 +5566,7 @@ async function importTemplatesFromText(text) {
           return setStudyStatus(studyFailureMessage(result, 'Não consegui listar os parágrafos.') + ' Se precisar, informe o número ou o link do artigo.', true);
         }
 
-        aiStudy = { artigo: result.data.artigo || '', titulo: result.data.titulo || '', grupos: groups };
+        aiStudy = { artigo: result.data.artigo || '', titulo: result.data.titulo || '', grupos: groups, recapitulacao: result.data.recapitulacao !== false };
         saveStudyCache(aiStudy);
         aiStudyArticleBox.hidden = true;
         aiStudyParagraphs.value = groups[0];
