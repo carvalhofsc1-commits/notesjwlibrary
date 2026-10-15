@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Formatação de notas para o JW Library</title>
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -19,6 +19,8 @@
     } catch (e) {}
   </script>
   <style>
+    /* Sem zoom por toque duplo: tocar rápido nas setas (◀ ▶) não deve ampliar a tela no iPhone. */
+    html, body, button, input, select, textarea, label, summary, a { touch-action: manipulation; }
     :root {
       color-scheme: light dark;
       --bg: #e7ecf6;
@@ -2132,6 +2134,8 @@
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
     const APP_VERSION = '2.0';
+    // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
+    document.addEventListener('gesturestart', event => event.preventDefault());
 
     // Grava no localStorage sem derrubar a ação em curso quando o navegador
     // recusa a escrita (aba anônima, cota cheia, armazenamento bloqueado).
