@@ -358,6 +358,37 @@
 
     .ai-sentinela-btn:hover { background: #6b21a8; }
 
+    /* ---------- Quadro único de A Sentinela ---------- */
+
+    .sentinela-box {
+      margin-top: 14px;
+      padding: 12px;
+      border: 2px solid #a855f7;
+      border-radius: 14px;
+      background: var(--card);
+    }
+
+    .sentinela-box h3 { margin: 0 0 4px; font-size: 1rem; }
+
+    .sentinela-label {
+      margin: 12px 0 0;
+      font-size: .82rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .sentinela-box .ai-sentinela-btn { margin-top: 6px; }
+
+    .sentinela-code { margin-top: 14px; }
+
+    .sentinela-code summary {
+      cursor: pointer;
+      font-size: .88rem;
+      font-weight: 700;
+    }
+
+    .sentinela-code input { margin-top: 8px; }
+
     /* ---------- IA lê o estudo da semana ---------- */
 
     .ai-study { margin-top: 10px; }
@@ -1162,10 +1193,41 @@
       .update-bar button { padding: 8px 12px; }
     }
 
+    /* ---------- Limpar/Copiar no topo do texto (só celular) ---------- */
+
+    .top-text-actions { display: none; }
+
+    .top-text-btn {
+      min-height: 40px;
+      padding: 6px 9px;
+      font-size: .8rem;
+      white-space: nowrap;
+      background: var(--neutral);
+      color: var(--neutral-text);
+      border: 2px solid var(--muted);
+    }
+
+    .top-text-btn:hover { background: var(--neutral-dark); }
+
     /* ---------- Telas pequenas ---------- */
 
     @media (max-width: 560px) {
       body { line-height: 1.38; }
+
+      .card-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .card-title-row h2 { margin: 0; }
+
+      .top-text-actions { display: flex; gap: 4px; flex: 0 0 auto; }
+
+      /* Limpar e Copiar passam para o topo; a barra de baixo fica sem eles. */
+      .desktop-only { display: none; }
 
       header { padding: 12px 10px 10px; }
 
@@ -1267,7 +1329,13 @@
   <main>
     <div class="single-grid">
       <section class="card">
-        <h2>1. Texto original</h2>
+        <div class="card-title-row">
+          <h2>1. Texto original</h2>
+          <div class="top-text-actions" role="group" aria-label="Limpar e copiar o texto">
+            <button id="clearTopBtn" class="top-text-btn" type="button" title="Limpar o texto">🧹 Limpar</button>
+            <button id="copyTopBtn" class="top-text-btn" type="button" title="Copiar o texto">📋 Copiar</button>
+          </div>
+        </div>
         <div class="editor-layout">
           <div class="editor-text-pane">
             <textarea id="inputText" placeholder="Digite aqui o texto que deseja formatar"></textarea>
@@ -1283,8 +1351,14 @@
           <div id="aiProgress" class="ai-progress" role="progressbar" aria-label="A IA está trabalhando" aria-hidden="true"></div>
           <label for="aiAdjustText" class="ai-guidance-label">Orientação para a IA (opcional)</label>
           <input autocomplete="off" id="aiAdjustText" type="text" maxlength="300" placeholder="Ex.: formate só as perguntas; sem emojis; resumo bem curto">
-          <button id="aiSentinelaBtn" class="ai-sentinela-btn" type="button">📖 Respostas Estudo A Sentinela</button>
-          <div class="ai-week">
+          <section class="sentinela-box" aria-labelledby="sentinelaTitle">
+            <h3 id="sentinelaTitle">📖 Estudo de A Sentinela</h3>
+
+            <p class="sentinela-label">Opção 1 · Colei os parágrafos e as perguntas no campo de texto</p>
+            <button id="aiSentinelaBtn" class="ai-sentinela-btn" type="button">📖 Respostas Estudo A Sentinela</button>
+
+            <p class="sentinela-label">Opção 2 · A IA lê o estudo da semana</p>
+            <div class="ai-week">
             <button id="aiWeekPrev" class="secondary ai-week-nav" type="button" aria-label="Semana anterior">◀</button>
             <a id="aiWeekLink" class="ai-week-link" href="https://wol.jw.org/pt/wol/meetings/r5/lp-t/" target="_blank" rel="noopener noreferrer">
               <span id="aiWeekTitle">📅 Estudo desta semana</span>
@@ -1309,6 +1383,12 @@
             </div>
             <button id="aiStudyBtn" class="ai-study-btn" type="button">🌐 A IA lê o estudo da semana e responde</button>
           </div>
+
+            <details id="aiStudyCodeBox" class="sentinela-code">
+              <summary>🔑 Código de acesso (só para ler o estudo)</summary>
+              <input autocomplete="off" id="aiStudyCode" type="password" maxlength="100" placeholder="Digite o código uma vez; ele fica salvo neste aparelho">
+            </details>
+          </section>
           <p class="hint ai-hint">Ao usar, o texto e seus modelos são enviados à IA (Claude, da Anthropic). Não use com dados pessoais ou sigilosos. Nada muda até você clicar em Aplicar.</p>
           <span id="aiStatus" class="ok" role="status" aria-live="polite"></span>
           <div class="ai-actions-all">
@@ -1326,7 +1406,7 @@
         </div>
 
         <div class="button-row action-row main-actions">
-          <div class="action-item">
+          <div class="action-item desktop-only">
             <button id="clearBtn" class="icon-action clear" type="button" title="Limpar" aria-label="Limpar">🧹</button>
             <span>Limpar</span>
           </div>
@@ -1350,7 +1430,7 @@
             <button id="indentBtn" class="icon-action indent" type="button" title="Criar recuo no trecho selecionado ou no cursor" aria-label="Criar recuo no trecho selecionado ou no cursor">⇥</button>
             <span>Recuo</span>
           </div>
-          <div class="action-item">
+          <div class="action-item desktop-only">
             <button id="copyBtn" class="icon-action copy" type="button" title="Copiar texto original" aria-label="Copiar texto original">📋</button>
             <span>Copiar</span>
           </div>
@@ -1444,9 +1524,6 @@
 
         <label for="aiInstruction">Instruções fixas, valem para todo pedido (opcional)</label>
         <input autocomplete="off" id="aiInstruction" type="text" maxlength="300" placeholder="Ex.: texto da Escola Pioneiros, estilo discreto">
-
-        <label for="aiStudyCode">Código de acesso para a IA ler o estudo da semana</label>
-        <input autocomplete="off" id="aiStudyCode" type="password" maxlength="100" placeholder="Só para quem recebeu o código">
 
         <div class="button-row">
           <button id="aiSuggestBtn2" type="button">✨ Sugerir formatação</button>
@@ -3592,16 +3669,19 @@ function saveTemplatesToStorage() {
       renderTemplates();
     }
 
+    // Devolve true se copiou, false se só selecionou o texto e null se não havia texto.
     async function copyResult() {
       const text = input.value;
-      if (!text) return;
+      if (!text) return null;
       try {
         await navigator.clipboard.writeText(text);
         copyStatus.textContent = 'Texto copiado!';
+        return true;
       } catch (e) {
         input.focus();
         input.select();
         copyStatus.textContent = 'Texto selecionado. Copie manualmente.';
+        return false;
       }
     }
 
@@ -4259,6 +4339,18 @@ async function importTemplatesFromText(text) {
     });
 
     document.getElementById('copyBtn').addEventListener('click', copyResult);
+
+    // Botões do topo (só aparecem no celular): repassam para os originais e confirmam no próprio botão,
+    // já que a mensagem de "copiado" fica lá embaixo, fora da vista.
+    const copyTopBtn = document.getElementById('copyTopBtn');
+    const copyTopLabel = copyTopBtn.textContent;
+    document.getElementById('clearTopBtn').addEventListener('click', () => document.getElementById('clearBtn').click());
+    copyTopBtn.addEventListener('click', async () => {
+      const result = await copyResult();
+      if (result === null) return;
+      copyTopBtn.textContent = result ? '✓ Copiado' : '✓ Selecionado';
+      setTimeout(() => { copyTopBtn.textContent = copyTopLabel; }, 1800);
+    });
     document.getElementById('selectBtn').addEventListener('click', selectResult);
 
     document.getElementById('newTemplateBtn').addEventListener('click', newTemplate);
@@ -5075,7 +5167,11 @@ async function importTemplatesFromText(text) {
 
     function studyAccessError() {
       const code = aiStudyCode.value.trim();
-      if (!code) return 'Informe o código de acesso no card "✨ Formatação com IA" (campo "Código de acesso para a IA ler o estudo da semana").';
+      if (!code) {
+        const codeBox = document.getElementById('aiStudyCodeBox');
+        if (codeBox) codeBox.open = true;
+        return 'Informe o código de acesso no campo 🔑 do quadro "📖 Estudo de A Sentinela".';
+      }
       if (!navigator.onLine) return 'Sem conexão com a internet.';
       return '';
     }
