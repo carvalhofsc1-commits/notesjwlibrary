@@ -1,7 +1,7 @@
 /*
   Service worker do app Formatação de notas para o JW Library.
 
-  A versão vem da query do próprio registro (sw.js?v=9.5), escrita pelo index.html a
+  A versão vem da query do próprio registro (sw.js?v=2.0), escrita pelo index.html a
   partir de APP_VERSION. Assim a versão mora num lugar só: mudar APP_VERSION troca a URL
   do worker — o que já dispara a atualização — e o nome da cache junto.
 */
