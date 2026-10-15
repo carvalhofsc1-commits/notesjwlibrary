@@ -468,6 +468,14 @@
 
     #sentinelaOutputSlot { margin-top: 6px; }
 
+    /* Mensagens de cada opção (ex.: "4 respostas coladas no campo de texto"), logo abaixo dos botões dela. */
+    .sent-option .ok,
+    .sent-option .warn {
+      display: block;
+      margin: 8px 0 0;
+      text-align: center;
+    }
+
     /* ---------- IA lê o estudo da semana ---------- */
 
     .ai-study { margin-top: 10px; }
@@ -1585,6 +1593,7 @@
         <section class="sent-option sent-option-1">
           <h3>Opção 1 · Cole a pergunta e o texto do parágrafo no campo de texto</h3>
           <button id="aiSentinelaBtn" class="ai-sentinela-btn" type="button">📖 Responder resumidamente a pergunta do parágrafo colado</button>
+          <span id="aiSentinelaStatus" class="ok" role="status" aria-live="polite"></span>
         </section>
 
         <section class="sent-option sent-option-2">
@@ -1614,19 +1623,20 @@
               <input autocomplete="off" id="aiStudyArticle" type="text" inputmode="url" placeholder="Ex.: 2026521">
             </div>
             <button id="aiStudyBtn" class="ai-study-btn" type="button">🌐 IA - Responder resumidamente a pergunta do parágrafo selecionado</button>
+            <span id="aiStudyAnswerStatus" class="ok" role="status" aria-live="polite"></span>
           </div>
+
+          <details id="aiStudyCodeBox" class="sentinela-code">
+            <summary>🔑 Código de acesso (só para ler o estudo)</summary>
+            <input autocomplete="off" id="aiStudyCode" type="password" maxlength="100" placeholder="Digite o código uma vez; ele fica salvo neste aparelho">
+          </details>
         </section>
 
         <label for="aiAdjustText2" class="ai-guidance-label">Orientação para a IA (opcional)</label>
         <input autocomplete="off" id="aiAdjustText2" type="text" maxlength="300" placeholder="Ex.: respostas bem curtas; tom simples">
 
-        <details id="aiStudyCodeBox" class="sentinela-code">
-          <summary>🔑 Código de acesso (só para ler o estudo)</summary>
-          <input autocomplete="off" id="aiStudyCode" type="password" maxlength="100" placeholder="Digite o código uma vez; ele fica salvo neste aparelho">
-        </details>
-
-        <p class="hint ai-hint">As respostas seguem as opções de "⚙️ Configurações gerais do app → Configurar formatação com IA". O texto colado ou o artigo lido vai à IA (Claude, da Anthropic): não use com dados pessoais ou sigilosos. Nada muda até você clicar em Aplicar.</p>
         <div id="sentinelaOutputSlot"></div>
+        <p class="hint ai-hint">As respostas seguem as opções de "⚙️ Configurações gerais do app → Configurar formatação com IA". O texto colado ou o artigo lido vai à IA (Claude, da Anthropic): não use com dados pessoais ou sigilosos. Nada muda até você clicar em Aplicar.</p>
           </div>
         </details>
 
@@ -4623,6 +4633,8 @@ async function importTemplatesFromText(text) {
     const aiRefineBox = document.getElementById('aiRefineBox');
     const aiAdjustText = document.getElementById('aiAdjustText');
     const aiStatus = document.getElementById('aiStatus');
+    const aiSentinelaStatus = document.getElementById('aiSentinelaStatus');
+    const aiStudyAnswerStatus = document.getElementById('aiStudyAnswerStatus');
     const aiResults = document.getElementById('aiResults');
     const aiProgress = document.getElementById('aiProgress');
     const aiIntensity = document.getElementById('aiIntensity');
@@ -4669,9 +4681,23 @@ async function importTemplatesFromText(text) {
     let aiAppliedSnapshot = null; // texto logo depois de colar as respostas do estudo: refazer não precisa perguntar se ele não foi editado
     let aiBusy = false;
 
+    // A mensagem aparece junto ao botão que o usuário usou: na área da IA (formatação), na Opção 1 ou na Opção 2.
+    let aiStatusKind = 'format'; // 'format' | 'sentinela' | 'estudo' | 'lista'
+
+    function aiStatusElement() {
+      return aiStatusKind === 'sentinela' ? aiSentinelaStatus
+        : aiStatusKind === 'estudo' ? aiStudyAnswerStatus
+          : aiStatusKind === 'lista' ? aiStudyStatus
+            : aiStatus;
+    }
+
     function setAiStatus(message, isWarning) {
-      aiStatus.textContent = message;
-      aiStatus.className = isWarning ? 'warn' : 'ok';
+      const target = aiStatusElement();
+      [aiStatus, aiSentinelaStatus, aiStudyAnswerStatus, aiStudyStatus].forEach(el => {
+        if (el !== target) el.textContent = '';
+      });
+      target.textContent = message;
+      target.className = isWarning ? 'warn' : 'ok';
     }
 
     // Lista "Todas" + as categorias de modelos atuais, mantendo a escolha salva (ou voltando a "Todas" se ela sumiu).
@@ -5104,6 +5130,7 @@ async function importTemplatesFromText(text) {
     async function requestAiSuggestions(mode, withSummary) {
       if (aiBusy) return;
       aiLastKind = 'format';
+      aiStatusKind = 'format';
       placeAiOutput(aiOutputHome);
       aiBoxDetails.open = true; // o resultado aparece aqui dentro, então o bloco precisa estar aberto
       if (!mode) aiLastWithSummary = !!withSummary;
@@ -5251,6 +5278,7 @@ async function importTemplatesFromText(text) {
     async function requestSentinelaAnswers(mode) {
       if (aiBusy) return;
       aiLastKind = 'sentinela';
+      aiStatusKind = 'sentinela';
       placeAiOutput(sentinelaOutputSlot);
 
       if (mode) {
@@ -5356,8 +5384,8 @@ async function importTemplatesFromText(text) {
 
     // Mensagem do carregamento da lista de parágrafos, mostrada no próprio card da Sentinela.
     function setStudyStatus(message, isWarning) {
-      aiStudyStatus.textContent = message;
-      aiStudyStatus.className = isWarning ? 'warn' : 'ok';
+      aiStatusKind = 'lista';
+      setAiStatus(message, isWarning);
     }
 
     function studyWeekKey() { return aiWeekYear + '-' + aiWeekNumber; }
@@ -5468,7 +5496,7 @@ async function importTemplatesFromText(text) {
         const codeBox = document.getElementById('aiStudyCodeBox');
         if (codeBox) codeBox.open = true;
         sentinelaBox.open = true;
-        return 'Informe o código de acesso no campo 🔑 do bloco "📖 Opções para estudo de A Sentinela".';
+        return 'Informe o código de acesso no campo 🔑 no fim da Opção 2.';
       }
       if (!navigator.onLine) return 'Sem conexão com a internet.';
       return '';
@@ -5486,6 +5514,7 @@ async function importTemplatesFromText(text) {
     // A IA lê o artigo da semana e devolve os grupos de parágrafos para navegar com as setas.
     async function requestStudyList() {
       if (aiBusy) return;
+      aiStatusKind = 'lista';
       const accessError = studyAccessError();
       if (accessError) return setStudyStatus(accessError, true);
 
@@ -5530,6 +5559,7 @@ async function importTemplatesFromText(text) {
     async function requestStudyAnswers(mode) {
       if (aiBusy) return;
       aiLastKind = 'estudo';
+      aiStatusKind = 'estudo';
       placeAiOutput(sentinelaOutputSlot);
 
       const accessError = studyAccessError();
@@ -5585,7 +5615,7 @@ async function importTemplatesFromText(text) {
         }
 
         const parts = buildSentinelaParts(aiSentinelaRaw);
-        aiResumo = { texto: parts.map(part => part.texto).join('\n\n'), partes: parts, done: false, kind: 'estudo', fonte: result.data.titulo || '' };
+        aiResumo = { texto: parts.map(part => part.texto).join('\n\n\n'), partes: parts, done: false, kind: 'estudo', fonte: result.data.titulo || '' };
         appendToMainText(aiResumo.texto);
         renderAiSuggestions();
         aiRefineBox.hidden = false;
