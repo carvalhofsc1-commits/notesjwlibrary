@@ -315,6 +315,10 @@
 
     .ai-box { margin-bottom: 14px; }
 
+    details.subsection.ai-subsection { background: var(--tint6-bg); border-color: var(--tint6-border); }
+
+    .ai-subsection .ai-box { margin-bottom: 0; }
+
     /* Dois botões de largura igual, inclusive no celular. */
     .ai-main-row {
       display: grid;
@@ -1391,7 +1395,9 @@
 
           <div class="editor-controls-pane">
 
-        <div class="ai-box">
+        <details class="subsection ai-subsection" id="aiBoxDetails">
+          <summary id="aiBoxLabel">✨ Sugerir formatação com IA</summary>
+          <div class="subsection-body ai-box">
           <div class="ai-main-row">
             <button id="aiSuggestBtn" class="ai-main-btn" type="button">✨ Sugerir formatação com IA</button>
             <button id="aiSuggestSummaryBtn" class="ai-main-btn ai-main-btn-alt" type="button">✨ Sugerir formatação + resumo do texto</button>
@@ -1417,7 +1423,8 @@
           </div>
           </div>
           </div>
-        </div>
+          </div>
+        </details>
 
         <div class="button-row action-row main-actions">
           <div class="action-item desktop-only">
@@ -4579,6 +4586,10 @@ async function importTemplatesFromText(text) {
     const aiOutputHome = document.getElementById('aiOutputHome');
     const sentinelaOutputSlot = document.getElementById('sentinelaOutputSlot');
     const aiAdjustText2 = document.getElementById('aiAdjustText2');
+    const aiBoxDetails = document.getElementById('aiBoxDetails');
+    const AI_BOX_KEY = 'jwLibraryNoteAplicarAiBoxV1';
+    try { aiBoxDetails.open = localStorage.getItem(AI_BOX_KEY) === '1'; } catch (e) { /* sem localStorage: fica recolhido */ }
+    aiBoxDetails.addEventListener('toggle', () => safeSetItem(AI_BOX_KEY, aiBoxDetails.open ? '1' : '0'));
 
     // Status, resultados e botões de aplicar/refinar aparecem junto ao botão que o usuário acabou de usar:
     // na área do texto para a formatação e no card da Sentinela para as respostas do estudo.
@@ -4907,6 +4918,7 @@ async function importTemplatesFromText(text) {
       if (aiBusy) return;
       aiLastKind = 'format';
       placeAiOutput(aiOutputHome);
+      aiBoxDetails.open = true; // o resultado aparece aqui dentro, então o bloco precisa estar aberto
       if (!mode) aiLastWithSummary = !!withSummary;
 
       if (mode) {
