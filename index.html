@@ -1304,16 +1304,21 @@
 
       .button-row:not(.main-actions) button { width: 100%; }
 
-      /* No celular, os botões de formatação vêm logo abaixo do campo de texto, antes da área da IA.
-         O painel vira uma coluna para a ordem visual mudar sem mexer na ordem do HTML (a tela larga
-         continua com o texto de um lado e os controles do outro). */
+      /* No celular a ordem, de cima para baixo, é: campo de texto, texto explicativo, botões de formatação,
+         Maiúsculas/minúsculas, listas e, por último, a formatação com IA. O painel vira uma coluna para a
+         ordem visual mudar sem mexer na ordem do HTML (a tela larga continua com o texto de um lado e os
+         controles do outro). */
       .editor-layout { gap: 10px; }
 
       .editor-controls-pane { display: flex; flex-direction: column; }
 
+      .editor-controls-pane > #selectionInfo { order: -3; margin: 0 0 8px; }
+
       .editor-controls-pane > .main-actions { order: -2; margin: 0 0 10px; }
 
       .editor-controls-pane > .main-copy-status { order: -1; }
+
+      .editor-controls-pane > .ai-subsection { order: 1; }
 
       .main-copy-status:empty { display: none; }
 
@@ -1525,7 +1530,7 @@
     </div>
 
     <details class="card sentinela-card section-accordion" id="sentinelaBox" style="margin-top:16px">
-      <summary><h2>📖 Estudo de A Sentinela</h2></summary>
+      <summary><h2>📖 Opções para estudo de A Sentinela</h2></summary>
       <div class="section-accordion-body">
 
         <section class="sent-option sent-option-1">
@@ -1534,7 +1539,7 @@
         </section>
 
         <section class="sent-option sent-option-2">
-          <h3>Opção 2 · A IA lê o estudo da semana</h3>
+          <h3>Opção 2 · A IA lê direto na biblioteca on-line (wol.jw.org) o estudo da semana</h3>
           <div class="ai-week">
             <button id="aiWeekPrev" class="secondary ai-week-nav" type="button" aria-label="Semana anterior">◀</button>
             <a id="aiWeekLink" class="ai-week-link" href="https://wol.jw.org/pt/wol/meetings/r5/lp-t/" target="_blank" rel="noopener noreferrer">
@@ -1618,7 +1623,7 @@
     </details>
 
     <details class="card tint-2 section-accordion" style="margin-top:16px">
-      <summary><h2>2. Tipo de fonte/caractere</h2></summary>
+      <summary><h2>2. Tipos de fontes/caracteres</h2></summary>
       <div class="section-accordion-body">
         <div class="style-full-row">
           <label for="styleSelect">Tipo de caractere</label>
