@@ -122,7 +122,6 @@ function validarOpcoes(opcoes) {
     citacoesBiblicas: o.citacoesBiblicas === true,
     resumo: o.resumo === true,
     resumoTamanho: TAMANHOS_RESUMO.includes(o.resumoTamanho) ? o.resumoTamanho : "medio",
-    perguntasRespostas: o.perguntasRespostas === true,
     intensidade: INTENSIDADES.includes(o.intensidade) ? o.intensidade : "moderada",
     instrucao: textoLivre(o.instrucao),
   };
@@ -193,7 +192,6 @@ function descreverPreferencias(o) {
   } else {
     linhas.push('- Citações bíblicas: INATIVO (use apenas o tipo "geral").');
   }
-  if (o.perguntasRespostas) linhas.push("- Dê atenção especial a perguntas e respostas.");
   if (o.instrucao) linhas.push(`- Instruções extras do usuário: ${o.instrucao}`);
   return linhas.join("\n");
 }

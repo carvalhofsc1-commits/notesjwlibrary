@@ -1541,7 +1541,6 @@
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="maiusculas"> Usar LETRAS MAIÚSCULAS nos destaques</label>
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="emoji"> Ilustrar com emoji no início da frase (a IA escolhe qualquer emoji pelo assunto)</label>
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citacoesBiblicas"> Formatar citações bíblicas: texto em itálico e livro, capítulo e versículo em negrito</label>
-          <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="perguntasRespostas"> Dar atenção a perguntas e respostas</label>
         </div>
 
         <label for="aiSummarySize">Tamanho do resumo e das respostas da Sentinela</label>
@@ -4543,7 +4542,7 @@ async function importTemplatesFromText(text) {
     const AI_STYLE_KIND = { negrito: 'bold', italico: 'italic', negrito_italico: 'boldItalic' };
     const AI_DEFAULT_OPTIONS = {
       usarModelos: true, negrito: true, italico: false, negritoItalico: false, maiusculas: false,
-      emoji: false, citacoesBiblicas: false, resumo: false, perguntasRespostas: false, intensidade: 'moderada', instrucao: '', categoria: 'all', resumoTamanho: 'medio'
+      emoji: false, citacoesBiblicas: false, resumo: false, intensidade: 'moderada', instrucao: '', categoria: 'all', resumoTamanho: 'medio'
     };
 
     let aiSuggestions = [];   // sugestões exibidas (já resolvidas contra os modelos locais)
