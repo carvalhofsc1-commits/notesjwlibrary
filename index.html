@@ -1606,7 +1606,7 @@
         <details class="subsection sub-tint-6" id="aiSection">
           <summary>✨ Configurar formatação com IA</summary>
           <div class="subsection-body">
-        <p class="hint">Escolha como a IA deve formatar e use os botões do bloco <strong>✨ Sugerir formatação com IA</strong> (na área do texto) ou o botão abaixo. As opções ficam salvas neste navegador. Ao pedir sugestões, o texto e seus modelos são enviados à IA (Claude, da Anthropic): não use com dados pessoais ou sigilosos.</p>
+        <p class="hint">Escolha como a IA deve formatar e use os botões do bloco <strong>✨ Sugerir formatação com IA</strong> (na área do texto). As opções ficam salvas neste navegador. Ao pedir sugestões, o texto e seus modelos são enviados à IA (Claude, da Anthropic): não use com dados pessoais ou sigilosos.</p>
 
         <div class="ai-options" role="group" aria-label="Opções de formatação da IA">
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="usarModelos"> Usar meus modelos prontos</label>
@@ -1638,9 +1638,6 @@
         <label for="aiInstruction">Instruções fixas, valem para todo pedido (opcional)</label>
         <input autocomplete="off" id="aiInstruction" type="text" maxlength="300" placeholder="Ex.: texto da Escola Pioneiros, estilo discreto">
 
-        <div class="button-row">
-          <button id="aiSuggestBtn2" type="button">✨ Sugerir formatação</button>
-        </div>
           </div>
         </details>
         <details class="subsection sub-tint-2">
@@ -4574,7 +4571,6 @@ async function importTemplatesFromText(text) {
     // O texto vai para a função serverless /api/sugerir-formatacao (a chave da IA fica só no servidor).
     // As sugestões nunca alteram o texto sozinhas: cada uma precisa de "Aplicar".
     const aiSuggestBtn = document.getElementById('aiSuggestBtn');
-    const aiSuggestBtn2 = document.getElementById('aiSuggestBtn2');
     const aiSuggestSummaryBtn = document.getElementById('aiSuggestSummaryBtn');
     const aiSentinelaBtn = document.getElementById('aiSentinelaBtn');
     const aiApplyAllBtn = document.getElementById('aiApplyAllBtn');
@@ -4660,7 +4656,7 @@ async function importTemplatesFromText(text) {
     let aiLoadingTimer = null;
 
     function setAiLoading(on, button) {
-      const all = [aiSuggestBtn, aiSuggestSummaryBtn, aiSuggestBtn2, aiSentinelaBtn, aiStudyBtn, aiStudyLoadBtn, aiAnotherBtn, aiImproveBtn];
+      const all = [aiSuggestBtn, aiSuggestSummaryBtn, aiSentinelaBtn, aiStudyBtn, aiStudyLoadBtn, aiAnotherBtn, aiImproveBtn];
 
       if (!on) {
         clearInterval(aiLoadingTimer);
@@ -4940,7 +4936,7 @@ async function importTemplatesFromText(text) {
     }
 
     // mode: undefined = primeira sugestão; 'nova' = alternativa diferente; 'melhorar' = refinar a anterior.
-    async function requestAiSuggestions(mode, scrollToResults, withSummary) {
+    async function requestAiSuggestions(mode, withSummary) {
       if (aiBusy) return;
       aiLastKind = 'format';
       placeAiOutput(aiOutputHome);
@@ -4994,7 +4990,7 @@ async function importTemplatesFromText(text) {
       }
 
       aiBusy = true;
-      setAiLoading(true, mode === 'nova' ? aiAnotherBtn : mode === 'melhorar' ? aiImproveBtn : scrollToResults ? aiSuggestBtn2 : aiLastWithSummary ? aiSuggestSummaryBtn : aiSuggestBtn);
+      setAiLoading(true, mode === 'nova' ? aiAnotherBtn : mode === 'melhorar' ? aiImproveBtn : aiLastWithSummary ? aiSuggestSummaryBtn : aiSuggestBtn);
 
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 60000);
@@ -5047,7 +5043,6 @@ async function importTemplatesFromText(text) {
             : 'A IA não encontrou nada para destacar com essas opções.',
           false
         );
-        if (scrollToResults) aiStatus.scrollIntoView({ behavior: 'smooth', block: 'center' });
       } catch (e) {
         setAiStatus(e && e.name === 'AbortError' ? 'A IA demorou demais. Tente novamente.' : 'Falha de conexão ao consultar a IA.', true);
       } finally {
@@ -5168,7 +5163,7 @@ async function importTemplatesFromText(text) {
     }
 
     aiSuggestBtn.addEventListener('click', () => requestAiSuggestions());
-    aiSuggestSummaryBtn.addEventListener('click', () => requestAiSuggestions(undefined, false, true));
+    aiSuggestSummaryBtn.addEventListener('click', () => requestAiSuggestions(undefined, true));
     const AI_STUDY_CODE_KEY = 'jwLibraryNoteAplicarStudyCodeV1';
     const AI_STUDY_CACHE_KEY = 'jwLibraryNoteAplicarStudyListV1';
     const aiStudyBtn = document.getElementById('aiStudyBtn');
@@ -5440,7 +5435,6 @@ async function importTemplatesFromText(text) {
     aiStudyParagraphs.addEventListener('input', updateStudyPicker);
     updateStudyPicker();
     aiSentinelaBtn.addEventListener('click', () => requestSentinelaAnswers());
-    aiSuggestBtn2.addEventListener('click', () => requestAiSuggestions(undefined, true));
     const refineAi = mode => (
       aiLastKind === 'estudo' ? requestStudyAnswers(mode)
         : aiLastKind === 'sentinela' ? requestSentinelaAnswers(mode)
