@@ -5334,10 +5334,10 @@ async function importTemplatesFromText(text) {
     }
 
     // Consultas às fontes de uma resposta, abaixo dela (uma linha em branco antes):
-    //   📖 Efésios 6:12 ➜ “texto do versículo, em itálico”
+    //   📖 Efésios 6:12 ➜ “texto do versículo, na fonte normal”
     //   💡 como o texto se aplica ao parágrafo
     //   📚 Estudo Perspicaz, vol. 1, verbete “ADOÇÃO” ➜ explicação adicional
-    // O versículo vem do arquivo da Bíblia e vai inteiro, entre aspas; a explicação do Perspicaz é sempre identificada
+    // O versículo vem do arquivo da Bíblia e vai inteiro, entre aspas e sem estilo (preserva acentos e sinais); a explicação do Perspicaz é sempre identificada
     // pelo volume e pelo verbete.
     function buildSourceBlocks(item) {
       const styled = (kind, text) => {
@@ -5349,7 +5349,7 @@ async function importTemplatesFromText(text) {
       (Array.isArray(item.textos) ? item.textos : []).forEach(t => {
         if (!t || !t.referencia || !t.texto) return;
         blocks.push(
-          '📖 ' + styled('negrito', t.referencia) + ' ➜ “' + styled('italico', t.texto) + '”' +
+          '📖 ' + styled('negrito', t.referencia) + ' ➜ “' + t.texto + '”' +
           (t.aplicacao ? '\n💡 ' + t.aplicacao : '')
         );
       });
