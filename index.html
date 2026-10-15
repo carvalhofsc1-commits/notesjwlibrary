@@ -1574,6 +1574,11 @@
             <button id="aiSuggestBtn" class="ai-main-btn" type="button">✨ Sugerir formatação com IA</button>
             <button id="aiSuggestSummaryBtn" class="ai-main-btn ai-main-btn-alt" type="button">✨ Sugerir formatação + resumo do texto</button>
           </div>
+          <div class="ai-sources">
+            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Consultar textos citados (Bíblia)</label>
+            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarPerspicaz"> 📚 Consultar o Perspicaz</label>
+            <p class="hint ai-hint">As consultas valem para o botão com resumo.</p>
+          </div>
           <div id="aiProgress" class="ai-progress" role="progressbar" aria-label="A IA está trabalhando" aria-hidden="true"></div>
           <label for="aiAdjustText" class="ai-guidance-label">Orientação para a IA (opcional)</label>
           <input autocomplete="off" id="aiAdjustText" type="text" maxlength="300" placeholder="Ex.: formate só as perguntas; sem emojis; resumo bem curto">
@@ -1655,7 +1660,7 @@
         <input autocomplete="off" id="aiAdjustText2" type="text" maxlength="300" placeholder="Ex.: respostas bem curtas; tom simples">
 
         <div id="sentinelaOutputSlot"></div>
-        <p class="hint ai-hint">As respostas seguem as opções de "⚙️ Configurações gerais do app → Configurar formatação com IA". O texto colado ou o artigo lido vai à IA (Claude, da Anthropic): não use com dados pessoais ou sigilosos. Com "Consultar textos citados" marcado, a IA lê no arquivo da Bíblia os textos mais relevantes e escreve o versículo e a aplicação abaixo da resposta; com "Consultar o Perspicaz" marcado, ela pode acrescentar uma explicação adicional identificada pelo volume e pelo verbete. As duas consultas deixam a resposta mais lenta e exigem o código de acesso. Nada muda até você clicar em Aplicar.</p>
+        <p class="hint ai-hint">As respostas seguem as opções de "⚙️ Configurações gerais do app → Configurar formatação com IA". O texto colado ou o artigo lido vai à IA (Claude, da Anthropic): não use com dados pessoais ou sigilosos.</p>
           </div>
         </details>
 
@@ -4901,7 +4906,8 @@ async function importTemplatesFromText(text) {
       if (aiResumo.kind === 'sentinela') return aiResumo.texto;
       const styleId = aiStyleIdFor('negrito');
       const label = styleId ? convertTextWithStyle('RESUMO', styleId) : 'RESUMO';
-      return '📝 ' + label + ' ➜ ' + aiResumo.texto;
+      const extras = buildSourceBlocks({ textos: aiResumo.textos, perspicaz: aiResumo.perspicaz });
+      return '📝 ' + label + ' ➜ ' + aiResumo.texto + (extras ? '\n\n' + extras : '');
     }
 
     function insertAiSummary(where) {
@@ -5221,14 +5227,14 @@ async function importTemplatesFromText(text) {
       payload.ajuste = aiAdjustText.value.trim().slice(0, 300);
       if (mode && (aiRaw.length || previousSummary)) {
         payload.modo = mode;
-        payload.anteriores = { resumo: previousSummary ? previousSummary.texto : null, sugestoes: aiRaw };
+        payload.anteriores = { resumo: previousSummary ? previousSummary.texto : null, textos: previousSummary ? previousSummary.textos : null, perspicaz: previousSummary ? previousSummary.perspicaz : null, sugestoes: aiRaw };
       }
 
       aiBusy = true;
       setAiLoading(true, mode === 'nova' ? aiAnotherBtn : mode === 'melhorar' ? aiImproveBtn : aiLastWithSummary ? aiSuggestSummaryBtn : aiSuggestBtn);
 
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 60000);
+      const timer = setTimeout(() => controller.abort(), aiLastWithSummary && aiUsesSources() ? 125000 : 60000);
 
       try {
         const response = await fetch(AI_ENDPOINT, {
@@ -5252,7 +5258,7 @@ async function importTemplatesFromText(text) {
         }
 
         aiRaw = Array.isArray(data.sugestoes) ? data.sugestoes : [];
-        aiResumo = data.resumo ? { texto: String(data.resumo), done: false, kind: 'resumo' } : null;
+        aiResumo = data.resumo ? { texto: String(data.resumo), done: false, kind: 'resumo', textos: Array.isArray(data.textos) ? data.textos : [], perspicaz: data.perspicaz || null } : null;
         const byId = new Map(getTemplatesSortedByName().map(t => [t.id, t]));
         aiSuggestions = aiRaw.map(s => {
           const original = lines[s.linha];
@@ -5378,18 +5384,10 @@ async function importTemplatesFromText(text) {
       }
       if (!navigator.onLine) return setAiStatus('Sem conexão com a internet.', true);
 
-      const useSources = aiUsesSources();
-      if (useSources) {
-        const accessError = studyAccessError();
-        if (accessError) return setAiStatus(accessError, true);
-        safeSetItem(AI_STUDY_CODE_KEY, aiStudyCode.value.trim());
-      }
-
       if (!aiAppliedAny) aiBaseText = input.value;
       saveAiOptions();
 
       const payload = { tarefa: 'sentinela', linhas: lines, modelos: [], opcoes: readAiOptions(), ajuste: aiAdjustText.value.trim().slice(0, 300) };
-      if (useSources) payload.codigo = aiStudyCode.value.trim();
       if (mode && hadPrevious) {
         payload.modo = mode;
         payload.anteriores = { itens: aiSentinelaRaw };
@@ -5399,7 +5397,7 @@ async function importTemplatesFromText(text) {
       setAiLoading(true, mode === 'nova' ? aiAnotherBtn : mode === 'melhorar' ? aiImproveBtn : aiSentinelaBtn);
 
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), useSources ? 125000 : 75000);
+      const timer = setTimeout(() => controller.abort(), 125000); // com consulta à Bíblia/Perspicaz a IA abre arquivos e demora mais
 
       try {
         const response = await fetch(AI_ENDPOINT, {
@@ -5702,7 +5700,7 @@ async function importTemplatesFromText(text) {
       setAiLoading(true, mode === 'nova' ? aiAnotherBtn : mode === 'melhorar' ? aiImproveBtn : aiStudyBtn);
 
       try {
-        const result = await postStudy(payload, aiUsesSources() ? 125000 : 110000);
+        const result = await postStudy(payload, 125000);
 
         if (!result.ok) return setAiStatus(studyFailureMessage(result, 'Não foi possível ler o estudo agora.'), true);
 
