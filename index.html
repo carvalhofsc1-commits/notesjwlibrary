@@ -4978,13 +4978,18 @@ async function importTemplatesFromText(text) {
       return content + (/\s$/.test(content) ? '' : ' ') + text;
     }
 
-    // Só as respostas (sem repetir a pergunta), cada uma com o modelo "Resposta" do usuário.
+    // Só as respostas (sem repetir a pergunta), cada uma com o modelo "Resposta" do usuário e já formatada
+    // (negrito, itálico, maiúsculas, emoji) conforme as opções da IA. Sem "Usar meus modelos", usa um rótulo simples.
     function buildSentinelaText(items) {
-      const answerTpl = aiTemplateByName('resposta');
+      const answerTpl = readAiOptions().usarModelos ? aiTemplateByName('resposta') : null;
 
       return items.map(item => {
         const number = item.paragrafos ? item.paragrafos + '. ' : '';
-        return aiLabelWith(answerTpl, '✅ RESPOSTA 👉 ', number + item.resposta);
+        const body = aiBuildLine(item.resposta, {
+          destaques: Array.isArray(item.destaques) ? item.destaques : [],
+          emoji: item.emoji || ''
+        });
+        return aiLabelWith(answerTpl, '✅ RESPOSTA 👉 ', number + body);
       }).join('\n\n');
     }
 
