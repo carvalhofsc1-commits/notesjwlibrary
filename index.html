@@ -1275,7 +1275,21 @@
 
       .button-row:not(.main-actions) button { width: 100%; }
 
-      .main-actions { grid-template-columns: repeat(auto-fit, minmax(68px, 1fr)); gap: 6px; }
+      /* No celular, os botões de formatação vêm logo abaixo do campo de texto, antes da área da IA.
+         O painel vira uma coluna para a ordem visual mudar sem mexer na ordem do HTML (a tela larga
+         continua com o texto de um lado e os controles do outro). */
+      .editor-layout { gap: 10px; }
+
+      .editor-controls-pane { display: flex; flex-direction: column; }
+
+      .editor-controls-pane > .main-actions { order: -2; margin: 0 0 10px; }
+
+      .editor-controls-pane > .main-copy-status { order: -1; }
+
+      .main-copy-status:empty { display: none; }
+
+      /* Sem Limpar e Copiar (que foram para o topo) sobram 6 botões: 3 + 3. */
+      .main-actions { grid-template-columns: repeat(3, 1fr); gap: 6px; }
       .action-item { font-size: .7rem; }
 
       .ok,
