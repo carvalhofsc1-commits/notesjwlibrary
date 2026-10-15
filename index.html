@@ -43,12 +43,12 @@
       --shadow: rgba(0, 0, 0, .05);
 
       /* Matizes dos cartões de seção — no escuro ficam mais discretos, mas mantêm a cor. */
-      --tint1-bg: linear-gradient(180deg, #dbeafe 0%, #bfdbfe 100%); --tint1-border: #93c5fd;
-      --tint2-bg: linear-gradient(180deg, #dcfce7 0%, #bbf7d0 100%); --tint2-border: #86efac;
-      --tint3-bg: linear-gradient(180deg, #f3e8ff 0%, #e9d5ff 100%); --tint3-border: #d8b4fe;
-      --tint4-bg: linear-gradient(180deg, #ffedd5 0%, #fed7aa 100%); --tint4-border: #fdba74;
-      --tint5-bg: linear-gradient(180deg, #e2e8f0 0%, #cbd5e1 100%); --tint5-border: #94a3b8;
-      --tint6-bg: linear-gradient(180deg, #ccfbf1 0%, #99f6e4 100%); --tint6-border: #5eead4;
+      --tint1-bg: linear-gradient(180deg, #dbeafe 0%, #bfdbfe 100%); --tint1-border: #3b82f6;
+      --tint2-bg: linear-gradient(180deg, #dcfce7 0%, #bbf7d0 100%); --tint2-border: #22c55e;
+      --tint3-bg: linear-gradient(180deg, #f3e8ff 0%, #e9d5ff 100%); --tint3-border: #a855f7;
+      --tint4-bg: linear-gradient(180deg, #ffedd5 0%, #fed7aa 100%); --tint4-border: #fb923c;
+      --tint5-bg: linear-gradient(180deg, #e2e8f0 0%, #cbd5e1 100%); --tint5-border: #64748b;
+      --tint6-bg: linear-gradient(180deg, #ccfbf1 0%, #99f6e4 100%); --tint6-border: #14b8a6;
     }
 
     /* Escuro pelo sistema, a menos que o usuário force o tema claro no seletor. */
@@ -240,7 +240,7 @@
 
     .card {
       background: var(--card-tint);
-      border: 1px solid var(--line);
+      border: 2px solid var(--line);
       border-radius: 14px;
       padding: 16px;
       box-shadow: 0 8px 22px var(--shadow);
@@ -717,7 +717,7 @@
     .section-accordion-body { margin-top: 14px; }
 
     details.subsection {
-      border: 1px solid var(--line);
+      border: 2px solid var(--muted);
       border-radius: 10px;
       margin: 12px 0 0;
       background: var(--card);
@@ -775,6 +775,12 @@
     textarea {
       min-height: clamp(240px, 45vh, 500px);
       resize: vertical;
+    }
+
+    /* Campo de texto principal com a mesma moldura forte dos cards. */
+    #inputText {
+      border-width: 2px;
+      border-color: var(--tint1-border);
     }
 
     .hint {
@@ -4600,7 +4606,9 @@ async function importTemplatesFromText(text) {
     // aumenta (a altura mínima do CSS continua valendo como piso).
     function autoGrowInputText() {
       input.style.height = 'auto';
-      input.style.height = input.scrollHeight + 'px';
+      // scrollHeight não conta a moldura; sem somá-la sobra uma rolagem interna de poucos pixels.
+      const frame = input.offsetHeight - input.clientHeight;
+      input.style.height = (input.scrollHeight + frame) + 'px';
     }
     input.addEventListener('input', autoGrowInputText);
     input.addEventListener('scroll', () => scheduleAnswerButtons());
