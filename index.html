@@ -5733,7 +5733,7 @@ async function importTemplatesFromText(text) {
         : monday.getDate() + ' de ' + month(monday) + ' a ' + sunday.getDate() + ' de ' + month(sunday);
 
       const names = { '-1': 'da semana passada', '0': 'desta semana', '1': 'da próxima semana' };
-      aiWeekTitle.textContent = '📅 Estudo ' + (names[aiWeekOffset] || 'da semana') + ' ↗';
+      aiWeekTitle.textContent = '📅 Estudo ' + (names[aiWeekOffset] || 'da semana');
     }
 
     document.getElementById('aiWeekPrev').addEventListener('click', () => { aiWeekOffset -= 1; renderAiWeek(); refreshStudyPicker(); });
