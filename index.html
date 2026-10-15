@@ -4483,6 +4483,7 @@ async function importTemplatesFromText(text) {
     document.getElementById('clearBtn').addEventListener('click', () => {
       // Passa pelo setInputRange para que o Ctrl+Z também traga o texto apagado de volta.
       setInputRange(0, input.value.length, '', { message: 'Texto apagado. Use Ctrl+Z para desfazer.' });
+      clearAiMessages();
       input.focus();
     });
     ['quickBoldBtn','quickItalicBtn','quickBoldItalicBtn','removeFormattingBtn','indentBtn','copyBtn','selectBtn'].forEach(id => {
@@ -4690,6 +4691,11 @@ async function importTemplatesFromText(text) {
     let aiAppliedAny = false;
     let aiAppliedSnapshot = null; // texto logo depois de colar as respostas do estudo: refazer não precisa perguntar se ele não foi editado
     let aiBusy = false;
+
+    // Limpar o texto também apaga as mensagens informativas da IA (ex.: "3 grupos de parágrafos carregados.").
+    function clearAiMessages() {
+      [aiStatus, aiSentinelaStatus, aiStudyAnswerStatus, aiStudyStatus].forEach(el => { el.textContent = ''; });
+    }
 
     // A mensagem aparece junto ao botão que o usuário usou: na área da IA (formatação), na Opção 1 ou na Opção 2.
     let aiStatusKind = 'format'; // 'format' | 'sentinela' | 'estudo' | 'lista'
