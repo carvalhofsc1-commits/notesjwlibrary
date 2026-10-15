@@ -294,28 +294,41 @@
 
     .ai-refine { margin-top: 14px; }
 
-    /* Botões de copiar as respostas do estudo, logo abaixo do campo de texto. */
-    .study-answers-bar { margin-top: 10px; }
+    /* Botões de copiar as respostas do estudo: ficam sobre o campo de texto, logo abaixo de cada resposta. */
+    .editor-text-pane { position: relative; }
 
-    .study-answers-title {
-      margin: 0 0 6px;
-      font-size: .82rem;
-      font-weight: 700;
-      color: var(--muted);
+    .answer-copy-layer {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 0;
+      z-index: 2;
+      pointer-events: none;
     }
 
-    .study-answers-buttons {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 8px;
+    .answer-copy-btn {
+      position: absolute;
+      pointer-events: auto;
+      min-height: 0;
+      padding: 0 10px;
+      border-radius: 8px;
+      font-size: .74rem;
+      line-height: 1;
+      white-space: nowrap;
     }
 
-    .study-copy-btn {
-      min-height: 44px;
-      padding: 8px 10px;
-      font-size: .88rem;
-      line-height: 1.2;
+    /* Aumenta a área de toque sem aumentar o botão (a linha em branco é estreita). */
+    .answer-copy-btn::after {
+      content: "";
+      position: absolute;
+      inset: -9px -6px;
     }
+
+    .answer-copy-btn[hidden] { display: none; }
+
+    /* Espaço extra no fim do campo para o botão da última resposta. */
+    textarea.has-answer-buttons { padding-bottom: 44px; }
 
     /* Outra sugestão / Melhorar esta: dois botões de largura igual, como os de formatar com IA.
        Desfazer, quando aparece, ocupa a linha de baixo inteira. */
@@ -1440,10 +1453,7 @@
         <div class="editor-layout">
           <div class="editor-text-pane">
             <textarea id="inputText" placeholder="Digite aqui o texto que deseja formatar"></textarea>
-            <div id="studyAnswersBar" class="study-answers-bar" hidden>
-              <p class="study-answers-title">📋 Copiar uma resposta do estudo:</p>
-              <div id="studyAnswersButtons" class="study-answers-buttons"></div>
-            </div>
+            <div id="answerCopyLayer" class="answer-copy-layer"></div>
           </div>
 
           <div class="editor-controls-pane">
@@ -2820,6 +2830,7 @@
       copyStatus.textContent = '';
       updateSelectionInfo();
       updatePreview();
+      scheduleAnswerButtons();
     }
 
     // Digitar dispara input/keyup/mouseup em sequência; agrupa tudo num quadro só
@@ -4582,6 +4593,8 @@ async function importTemplatesFromText(text) {
       input.style.height = input.scrollHeight + 'px';
     }
     input.addEventListener('input', autoGrowInputText);
+    input.addEventListener('scroll', () => scheduleAnswerButtons());
+    window.addEventListener('resize', () => scheduleAnswerButtons());
     window.addEventListener('load', autoGrowInputText);
     window.addEventListener('resize', autoGrowInputText);
     input.addEventListener('touchend', () => setTimeout(() => {
@@ -4637,8 +4650,6 @@ async function importTemplatesFromText(text) {
     const aiOutputHome = document.getElementById('aiOutputHome');
     const sentinelaOutputSlot = document.getElementById('sentinelaOutputSlot');
     const aiAdjustText2 = document.getElementById('aiAdjustText2');
-    const studyAnswersBar = document.getElementById('studyAnswersBar');
-    const studyAnswersButtons = document.getElementById('studyAnswersButtons');
     const aiBoxDetails = document.getElementById('aiBoxDetails');
     const AI_BOX_KEY = 'jwLibraryNoteAplicarAiBoxV1';
     try { aiBoxDetails.open = localStorage.getItem(AI_BOX_KEY) === '1'; } catch (e) { /* sem localStorage: fica recolhido */ }
@@ -4813,7 +4824,7 @@ async function importTemplatesFromText(text) {
       aiDismissAllBtn.hidden = pending.length < 1;
       aiUndoBtn.hidden = !aiAppliedAny;
       aiRefineBox.hidden = !aiRaw.length && !aiResumo && !aiAppliedAny;
-      studyAnswersBar.hidden = !(aiResumo && aiResumo.kind === 'estudo' && aiResumo.partes && aiResumo.partes.length);
+      if (!(aiResumo && aiResumo.kind === 'estudo')) clearAnswerCopyButtons();
     }
 
     // Rótulo que identifica o resumo no texto, no mesmo estilo dos modelos prontos.
@@ -4848,21 +4859,98 @@ async function importTemplatesFromText(text) {
       aiAppliedSnapshot = input.value;
     }
 
-    // Um botão Copiar por parágrafo (ou grupo), logo abaixo do campo de texto, onde as respostas já foram coladas.
+    // Botões Copiar dentro do próprio campo de texto, logo abaixo de cada resposta do estudo. Um <textarea>
+    // não aceita botões entre as linhas, então eles ficam numa camada por cima do campo. A posição vem de um
+    // espelho invisível com o mesmo texto, fonte e largura; as respostas são localizadas no texto atual, e um
+    // botão some sozinho se a resposta foi apagada ou editada (inclusive ao clicar em Limpar).
+    const answerCopyLayer = document.getElementById('answerCopyLayer');
+    let answerCopyButtons = []; // { btn, part }
+    let answerCopyFrame = 0;
+    let answerMirror = null;
+
+    function clearAnswerCopyButtons() {
+      answerCopyButtons = [];
+      answerCopyLayer.textContent = '';
+      input.classList.remove('has-answer-buttons');
+    }
+
+    function scheduleAnswerButtons() {
+      if (answerCopyFrame || !answerCopyButtons.length) return;
+      answerCopyFrame = requestAnimationFrame(() => {
+        answerCopyFrame = 0;
+        positionAnswerButtons();
+      });
+    }
+
+    function answerMirrorFor(textarea, style) {
+      if (!answerMirror) {
+        answerMirror = document.createElement('div');
+        answerMirror.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(answerMirror);
+      }
+      ['fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'letterSpacing', 'lineHeight', 'wordSpacing',
+        'textIndent', 'tabSize', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft'
+      ].forEach(prop => { answerMirror.style[prop] = style[prop]; });
+      Object.assign(answerMirror.style, {
+        position: 'absolute', visibility: 'hidden', left: '-9999px', top: '0', boxSizing: 'border-box',
+        whiteSpace: 'pre-wrap', overflowWrap: 'break-word', border: '0', height: 'auto',
+        width: textarea.clientWidth + 'px'
+      });
+      return answerMirror;
+    }
+
+    function positionAnswerButtons() {
+      const text = input.value;
+      let from = 0;
+      const located = answerCopyButtons.map(entry => {
+        const at = text.indexOf(entry.part.texto, from);
+        if (at < 0) return { entry, end: -1 };
+        from = at + entry.part.texto.length;
+        return { entry, end: from };
+      });
+
+      const active = located.some(item => item.end >= 0);
+      const wasActive = input.classList.contains('has-answer-buttons');
+      input.classList.toggle('has-answer-buttons', active);
+      if (wasActive !== active) autoGrowInputText(); // o espaço extra do último botão entra na altura do campo
+      const style = getComputedStyle(input);
+      const mirror = answerMirrorFor(input, style);
+      const lineHeight = parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.25;
+      const btnHeight = Math.max(18, Math.min(24, lineHeight - 2));
+      const left = input.offsetLeft + (parseFloat(style.borderLeftWidth) || 0) + (parseFloat(style.paddingLeft) || 0);
+      const borderTop = input.offsetTop + (parseFloat(style.borderTopWidth) || 0);
+
+      located.forEach(({ entry, end }) => {
+        if (end < 0) { entry.btn.hidden = true; return; }
+
+        mirror.textContent = text.slice(0, end);
+        const marker = document.createElement('span');
+        marker.textContent = '​';
+        mirror.appendChild(marker);
+
+        // Última linha da resposta + 1 linha (a linha em branco que separa as respostas) centralizada.
+        const top = marker.offsetTop + lineHeight + (lineHeight - btnHeight) / 2 - input.scrollTop;
+        const visible = top >= 0 && top + btnHeight <= input.clientHeight;
+        entry.btn.hidden = !visible;
+        entry.btn.style.height = btnHeight + 'px';
+        entry.btn.style.left = left + 'px';
+        entry.btn.style.top = (borderTop + top) + 'px';
+      });
+    }
+
     function renderAiStudyCards() {
-      studyAnswersButtons.textContent = '';
+      clearAnswerCopyButtons();
 
       aiResumo.partes.forEach((part, index) => {
-        const base = part.paragrafos
-          ? (/[,\-–]/.test(part.paragrafos) ? 'Parágrafos ' : 'Parágrafo ') + part.paragrafos
-          : 'Resposta ' + (index + 1);
-        const label = '📋 ' + base;
+        const label = part.paragrafos ? '📋 Copiar ' + part.paragrafos : '📋 Copiar ' + (index + 1);
 
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'secondary study-copy-btn';
+        btn.className = 'answer-copy-btn';
         btn.textContent = label;
         btn.title = 'Copiar só esta resposta';
+        // Mantém o foco e a seleção no campo de texto ao tocar no botão.
+        btn.addEventListener('mousedown', event => event.preventDefault());
         btn.addEventListener('click', async () => {
           try {
             await navigator.clipboard.writeText(part.texto);
@@ -4872,8 +4960,12 @@ async function importTemplatesFromText(text) {
           }
           setTimeout(() => { btn.textContent = label; }, 1800);
         });
-        studyAnswersButtons.appendChild(btn);
+
+        answerCopyLayer.appendChild(btn);
+        answerCopyButtons.push({ btn, part });
       });
+
+      scheduleAnswerButtons();
     }
 
     function renderAiSummaryItem() {
