@@ -294,11 +294,27 @@
 
     .ai-refine { margin-top: 14px; }
 
-    .ai-copy-btn {
-      display: block;
-      width: 100%;
-      min-height: 48px;
-      margin-top: 8px;
+    /* Botões de copiar as respostas do estudo, logo abaixo do campo de texto. */
+    .study-answers-bar { margin-top: 10px; }
+
+    .study-answers-title {
+      margin: 0 0 6px;
+      font-size: .82rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .study-answers-buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 8px;
+    }
+
+    .study-copy-btn {
+      min-height: 44px;
+      padding: 8px 10px;
+      font-size: .88rem;
+      line-height: 1.2;
     }
 
     /* Outra sugestão / Melhorar esta: dois botões de largura igual, como os de formatar com IA.
@@ -1366,11 +1382,13 @@
 
       .editor-text-pane {
         display: flex;
+        flex-direction: column;
         align-self: stretch;
       }
 
       #inputText {
-        height: 100%;
+        flex: 1 1 auto;
+        height: auto;
         min-height: clamp(420px, 58vh, 620px);
       }
 
@@ -1422,6 +1440,10 @@
         <div class="editor-layout">
           <div class="editor-text-pane">
             <textarea id="inputText" placeholder="Digite aqui o texto que deseja formatar"></textarea>
+            <div id="studyAnswersBar" class="study-answers-bar" hidden>
+              <p class="study-answers-title">📋 Copiar uma resposta do estudo:</p>
+              <div id="studyAnswersButtons" class="study-answers-buttons"></div>
+            </div>
           </div>
 
           <div class="editor-controls-pane">
@@ -4615,6 +4637,8 @@ async function importTemplatesFromText(text) {
     const aiOutputHome = document.getElementById('aiOutputHome');
     const sentinelaOutputSlot = document.getElementById('sentinelaOutputSlot');
     const aiAdjustText2 = document.getElementById('aiAdjustText2');
+    const studyAnswersBar = document.getElementById('studyAnswersBar');
+    const studyAnswersButtons = document.getElementById('studyAnswersButtons');
     const aiBoxDetails = document.getElementById('aiBoxDetails');
     const AI_BOX_KEY = 'jwLibraryNoteAplicarAiBoxV1';
     try { aiBoxDetails.open = localStorage.getItem(AI_BOX_KEY) === '1'; } catch (e) { /* sem localStorage: fica recolhido */ }
@@ -4789,6 +4813,7 @@ async function importTemplatesFromText(text) {
       aiDismissAllBtn.hidden = pending.length < 1;
       aiUndoBtn.hidden = !aiAppliedAny;
       aiRefineBox.hidden = !aiRaw.length && !aiResumo && !aiAppliedAny;
+      studyAnswersBar.hidden = !(aiResumo && aiResumo.kind === 'estudo' && aiResumo.partes && aiResumo.partes.length);
     }
 
     // Rótulo que identifica o resumo no texto, no mesmo estilo dos modelos prontos.
@@ -4814,7 +4839,7 @@ async function importTemplatesFromText(text) {
     }
 
     // Respostas do estudo lidas direto do site: já vão para o campo de texto (sem pedir confirmação) e cada
-    // parágrafo ou grupo de parágrafos ganha um cartão com o seu próprio botão de copiar.
+    // parágrafo ou grupo de parágrafos ganha um botão Copiar logo abaixo do campo de texto.
     function appendToMainText(text) {
       const current = input.value.replace(/\s+$/, '');
       setInputRange(0, input.value.length, (current ? current + '\n\n' : '') + text, { message: 'Resposta colada no campo de texto.' });
@@ -4823,41 +4848,31 @@ async function importTemplatesFromText(text) {
       aiAppliedSnapshot = input.value;
     }
 
+    // Um botão Copiar por parágrafo (ou grupo), logo abaixo do campo de texto, onde as respostas já foram coladas.
     function renderAiStudyCards() {
-      const intro = document.createElement('p');
-      intro.className = 'ai-item-reason';
-      intro.textContent = 'Respostas do estudo, com palavras próprias' + (aiResumo.fonte ? ' — Fonte: ' + aiResumo.fonte + ' (wol.jw.org)' : '') +
-        '. Já estão coladas no campo de texto; use Copiar para levar cada uma.';
-      aiResults.appendChild(intro);
+      studyAnswersButtons.textContent = '';
 
-      aiResumo.partes.forEach(part => {
-        const item = document.createElement('div');
-        item.className = 'ai-item';
+      aiResumo.partes.forEach((part, index) => {
+        const base = part.paragrafos
+          ? (/[,\-–]/.test(part.paragrafos) ? 'Parágrafos ' : 'Parágrafo ') + part.paragrafos
+          : 'Resposta ' + (index + 1);
+        const label = '📋 ' + base;
 
-        const label = document.createElement('p');
-        label.className = 'ai-item-reason';
-        label.textContent = part.paragrafos ? 'Parágrafo(s) ' + part.paragrafos : 'Resposta';
-
-        const body = document.createElement('p');
-        body.className = 'ai-item-after';
-        body.textContent = part.texto;
-
-        const copyBtn = document.createElement('button');
-        copyBtn.type = 'button';
-        copyBtn.className = 'ai-copy-btn';
-        copyBtn.textContent = '📋 Copiar';
-        copyBtn.addEventListener('click', async () => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'secondary study-copy-btn';
+        btn.textContent = label;
+        btn.title = 'Copiar só esta resposta';
+        btn.addEventListener('click', async () => {
           try {
             await navigator.clipboard.writeText(part.texto);
-            copyBtn.textContent = '✓ Copiado';
+            btn.textContent = '✓ Copiado';
           } catch (e) {
-            copyBtn.textContent = 'Não foi possível copiar';
+            btn.textContent = 'Não foi possível copiar';
           }
-          setTimeout(() => { copyBtn.textContent = '📋 Copiar'; }, 1800);
+          setTimeout(() => { btn.textContent = label; }, 1800);
         });
-
-        item.append(label, body, copyBtn);
-        aiResults.appendChild(item);
+        studyAnswersButtons.appendChild(btn);
       });
     }
 
