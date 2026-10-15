@@ -51,7 +51,7 @@ Receberá as PREFERÊNCIAS do usuário, a lista de modelos disponíveis (id, nom
   Só use estilos e maiúsculas que as preferências permitirem. Lista vazia se não houver destaque.
 - motivo: uma frase curta em português explicando a sugestão.
 
-Além das sugestões por linha, existe o campo resumo (fora da lista): quando a preferência de resumo estiver ativa, escreva um resumo do texto COMPLETO com as PRÓPRIAS PALAVRAS (parafraseie; não copie frases), em português simples e natural, pronto para ser dito como um comentário, no tamanho pedido. Use só o conteúdo do texto, sem inventar fatos. Se a preferência estiver inativa, resumo é null.
+Além das sugestões por linha, existe o campo resumo (fora da lista): quando a preferência de resumo estiver ativa, escreva um resumo do texto COMPLETO com as PRÓPRIAS PALAVRAS (parafraseie; não copie frases), em português simples e natural, pronto para ser dito como um comentário, no tamanho pedido. Use só o conteúdo do texto, sem inventar fatos. O resumo é texto puro: sem Markdown (nada de * ou **). Se a preferência estiver inativa, resumo é null.
 
 Regras:
 - NÃO adicione aspas, ❝ ❞ nem outros sinais ao texto, e não inclua aspas nos trechos dos destaques. Só trate de aspas se o usuário pedir.
@@ -202,7 +202,21 @@ const ASPAS_NAS_PONTAS = new RegExp(`^[\\s${ASPAS}']+|[\\s${ASPAS}']+$`, "g");
 
 // Tira aspas e espaços das pontas do trecho, para que as aspas nunca recebam negrito/itálico.
 function limparTrecho(trecho) {
-  return typeof trecho === "string" ? trecho.replace(ASPAS_NAS_PONTAS, "") : "";
+  return typeof trecho === "string" ? trecho.replace(/[*`]+/g, "").replace(ASPAS_NAS_PONTAS, "") : "";
+}
+
+// Texto escrito pela IA (respostas e resumo): sem Markdown (* e `) e sem emojis no começo. As vezes ela escreve
+// **negrito** ou repete o emoji dentro do texto, e como a formatação vem dos campos emoji/destaques, isso
+// apareceria como asteriscos e emoji duplicado.
+function limparTextoGerado(valor, max) {
+  const texto = typeof valor === "string" ? valor : "";
+  return texto
+    .replace(/[*`]+/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^(?:\p{Extended_Pictographic}[\uFE0F\u200D\p{Emoji_Modifier}\s]*)+/u, "")
+    .trim()
+    .slice(0, max);
 }
 
 const REGEX_EMOJI = /\p{Extended_Pictographic}/u;
@@ -274,7 +288,8 @@ function descreverFormatacaoResposta(o) {
 const REGRAS_FORMATACAO_RESPOSTA = `
 Formatação: cada item também tem:
 - emoji: quando permitido nas preferências, 1 a 3 emojis que ilustrem o assunto da resposta (qualquer emoji Unicode); caso contrário, null.
-- destaques: lista (até 5) de trechos copiados LITERALMENTE da resposta que você escreveu (palavras-chave, nomes e expressões centrais), cada um com tipo ("geral" ou "citacao_referencia"), estilo (negrito, italico, negrito_italico ou null) e maiusculas (true ou false), sempre dentro do que as preferências permitem. Lista vazia se não houver destaque. Não inclua aspas nos trechos.`;
+- destaques: lista (até 5) de trechos copiados LITERALMENTE da resposta que você escreveu (palavras-chave, nomes e expressões centrais), cada um com tipo ("geral" ou "citacao_referencia"), estilo (negrito, italico, negrito_italico ou null) e maiusculas (true ou false), sempre dentro do que as preferências permitem. Lista vazia se não houver destaque. Não inclua aspas nos trechos.
+- O texto de "resposta" é TEXTO PURO: sem Markdown (nada de * ou **), sem emoji no começo e sem aspas. Negrito, itálico, maiúsculas e emoji vão SOMENTE nos campos emoji e destaques.`;
 
 const SaidaSentinela = z.object({
   itens: z.array(
@@ -363,7 +378,7 @@ async function responderSentinela(res, { linhas, opcoes, modo, ajuste, anteriore
     const itens = resposta.parsed_output.itens
       .slice(0, 40)
       .map((i) => {
-        const texto = limpar(i.resposta, 1500);
+        const texto = limparTextoGerado(i.resposta, 1500);
         return {
           paragrafos: limpar(i.paragrafos, 20),
           resposta: texto,
@@ -557,7 +572,7 @@ async function responderEstudo(res, body) {
     const itensTodos = dados.data.itens
       .slice(0, 40)
       .map((i) => {
-        const texto = limpar(i.resposta, 1500);
+        const texto = limparTextoGerado(i.resposta, 1500);
         return {
           paragrafos: limpar(i.paragrafos, 20),
           resposta: texto,
@@ -818,7 +833,7 @@ export default async function handler(req, res) {
 
     const resumo =
       opcoes.resumo && typeof resposta.parsed_output.resumo === "string"
-        ? resposta.parsed_output.resumo.replace(/\s+/g, " ").trim().slice(0, MAX_RESUMO) || null
+        ? limparTextoGerado(resposta.parsed_output.resumo, MAX_RESUMO) || null
         : null;
 
     return res.status(200).json({ resumo, sugestoes });
