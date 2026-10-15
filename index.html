@@ -358,6 +358,44 @@
 
     .ai-sentinela-btn:hover { background: #6b21a8; }
 
+    /* ---------- Atalho para o estudo da semana (wol.jw.org) ---------- */
+
+    .ai-week {
+      display: flex;
+      align-items: stretch;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .ai-week-nav {
+      flex: 0 0 48px;
+      padding: 0;
+      min-height: 48px;
+    }
+
+    .ai-week-link {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 6px 10px;
+      border: 2px solid var(--muted);
+      border-radius: 10px;
+      background: var(--card);
+      color: var(--text);
+      font-weight: 700;
+      font-size: .92rem;
+      line-height: 1.25;
+      text-align: center;
+      text-decoration: none;
+    }
+
+    .ai-week-link:hover { border-color: var(--accent); }
+
+    .ai-week-range { font-size: .78rem; font-weight: 600; color: var(--muted); }
+
     /* ---------- Indicador de espera da IA ---------- */
 
     .ai-spinner {
@@ -1206,6 +1244,14 @@
           <label for="aiAdjustText" class="ai-guidance-label">Orientação para a IA (opcional)</label>
           <input autocomplete="off" id="aiAdjustText" type="text" maxlength="300" placeholder="Ex.: formate só as perguntas; sem emojis; resumo bem curto">
           <button id="aiSentinelaBtn" class="ai-sentinela-btn" type="button">📖 Respostas Estudo A Sentinela</button>
+          <div class="ai-week">
+            <button id="aiWeekPrev" class="secondary ai-week-nav" type="button" aria-label="Semana anterior">◀</button>
+            <a id="aiWeekLink" class="ai-week-link" href="https://wol.jw.org/pt/wol/meetings/r5/lp-t/" target="_blank" rel="noopener noreferrer">
+              <span id="aiWeekTitle">📅 Estudo desta semana</span>
+              <span id="aiWeekRange" class="ai-week-range"></span>
+            </a>
+            <button id="aiWeekNext" class="secondary ai-week-nav" type="button" aria-label="Próxima semana">▶</button>
+          </div>
           <p class="hint ai-hint">Ao usar, o texto e seus modelos são enviados à IA (Claude, da Anthropic). Não use com dados pessoais ou sigilosos. Nada muda até você clicar em Aplicar.</p>
           <span id="aiStatus" class="ok" role="status" aria-live="polite"></span>
           <div class="ai-actions-all">
@@ -4890,6 +4936,48 @@ async function importTemplatesFromText(text) {
     aiSection.addEventListener('toggle', () => { if (aiSection.open) renderAiCategoryOptions(); });
     aiInstruction.addEventListener('change', saveAiOptions);
     loadAiOptions();
+
+    // ---------- Atalho para o estudo de A Sentinela da semana ----------
+    // O link aponta para a página de reuniões do wol.jw.org daquela semana (ano ISO + número da semana),
+    // que lista o artigo de estudo. Nada é lido do site: o app só monta o endereço pela data.
+    const aiWeekLink = document.getElementById('aiWeekLink');
+    const aiWeekTitle = document.getElementById('aiWeekTitle');
+    const aiWeekRange = document.getElementById('aiWeekRange');
+    let aiWeekOffset = 0;
+
+    function isoYearWeek(date) {
+      const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+      d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+      const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+      return [d.getUTCFullYear(), Math.ceil(((d - yearStart) / 86400000 + 1) / 7)];
+    }
+
+    function renderAiWeek() {
+      const today = new Date();
+      today.setHours(12, 0, 0, 0);
+      const monday = new Date(today);
+      monday.setDate(today.getDate() - ((today.getDay() + 6) % 7) + aiWeekOffset * 7);
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+
+      const [year, week] = isoYearWeek(monday);
+      aiWeekLink.href = 'https://wol.jw.org/pt/wol/meetings/r5/lp-t/' + year + '/' + week;
+
+      const month = date => date.toLocaleDateString('pt-BR', { month: 'long' });
+      aiWeekRange.textContent = monday.getMonth() === sunday.getMonth()
+        ? monday.getDate() + ' a ' + sunday.getDate() + ' de ' + month(sunday)
+        : monday.getDate() + ' de ' + month(monday) + ' a ' + sunday.getDate() + ' de ' + month(sunday);
+
+      const names = { '-1': 'da semana passada', '0': 'desta semana', '1': 'da próxima semana' };
+      aiWeekTitle.textContent = '📅 Estudo ' + (names[aiWeekOffset] || 'da semana') + ' ↗';
+    }
+
+    document.getElementById('aiWeekPrev').addEventListener('click', () => { aiWeekOffset -= 1; renderAiWeek(); });
+    document.getElementById('aiWeekNext').addEventListener('click', () => { aiWeekOffset += 1; renderAiWeek(); });
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') renderAiWeek();
+    });
+    renderAiWeek();
 
     // ---------- Aviso de versão nova ----------
     // Um app instalado pode ficar com a página antiga na memória. Aqui o app compara o CSS e o JS que
