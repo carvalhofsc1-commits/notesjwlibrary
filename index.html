@@ -294,6 +294,25 @@
 
     .ai-refine { margin-top: 14px; }
 
+    /* Outra sugestão / Melhorar esta: dois botões de largura igual, como os de formatar com IA.
+       Desfazer, quando aparece, ocupa a linha de baixo inteira. */
+    .ai-refine-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .ai-refine-row button {
+      width: 100%;
+      min-width: 0;
+      min-height: 56px;
+      padding: 10px 8px;
+      font-size: .98rem;
+      line-height: 1.2;
+    }
+
+    .ai-refine-row #aiUndoBtn { grid-column: 1 / -1; min-height: 48px; }
+
     .ai-box { margin-bottom: 14px; }
 
     /* Dois botões de largura igual, inclusive no celular. */
@@ -1390,7 +1409,7 @@
           </div>
           <div id="aiResults" class="ai-list"></div>
           <div id="aiRefineBox" class="ai-refine" hidden>
-            <div class="ai-actions-all">
+            <div class="ai-refine-row">
               <button id="aiAnotherBtn" class="secondary" type="button">🔄 Outra sugestão</button>
               <button id="aiImproveBtn" class="secondary" type="button">🛠️ Melhorar esta</button>
               <button id="aiUndoBtn" class="secondary" type="button" hidden>↩ Desfazer aplicadas</button>
