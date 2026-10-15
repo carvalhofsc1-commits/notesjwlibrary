@@ -4794,10 +4794,14 @@ async function importTemplatesFromText(text) {
 
       aiProgress.classList.add('on');
       aiResults.setAttribute('aria-busy', 'true');
-      for (let i = 0; i < 2; i++) {
-        const ghost = document.createElement('div');
-        ghost.className = 'ai-skeleton';
-        aiResults.appendChild(ghost);
+      // Os cartões fantasma anunciam sugestões que aparecerão na lista; as respostas do estudo vão direto para o
+      // campo de texto, então nelas não há lista para preencher.
+      if (aiStatusKind === 'format') {
+        for (let i = 0; i < 2; i++) {
+          const ghost = document.createElement('div');
+          ghost.className = 'ai-skeleton';
+          aiResults.appendChild(ghost);
+        }
       }
 
       const startedAt = Date.now();
@@ -4896,7 +4900,17 @@ async function importTemplatesFromText(text) {
       return line;
     }
 
+    // No estudo o botão refaz uma resposta; na formatação, uma sugestão. Durante o carregamento o texto do botão é o
+    // do indicador de progresso, então só troca quando a IA não está ocupada.
+    function updateRefineLabels() {
+      if (aiBusy) return;
+      const study = aiLastKind !== 'format';
+      aiAnotherBtn.textContent = study ? '🔄 Outra resposta' : '🔄 Outra sugestão';
+      aiImproveBtn.textContent = study ? '🛠️ Melhorar esta resposta' : '🛠️ Melhorar esta';
+    }
+
     function updateAiControls() {
+      updateRefineLabels();
       const pending = aiSuggestions.filter(s => !s.done);
       aiApplyAllBtn.hidden = pending.length < 2;
       aiDismissAllBtn.hidden = pending.length < 1;
