@@ -1119,17 +1119,10 @@
 
     /* ---------- Modais ---------- */
 
-    .manager-launch-row {
-      display: flex;
-      justify-content: center;
-      padding: 18px 16px 4px;
-    }
-
-    .manager-launch-row button {
-      min-width: min(360px, 100%);
-      min-height: 48px;
-      border-radius: 16px;
-    }
+    /* Botões das configurações padrão: um embaixo do outro, na largura toda. */
+    .defaults-actions { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 12px; }
+    .defaults-actions button, #adminDefaultsActions button, #adminDefaultsLogin button { width: 100%; min-height: 48px; }
+    #defaultsSection .sentinela-code { margin-top: 16px; }
 
     .modal-overlay {
       position: fixed;
@@ -1541,7 +1534,7 @@
     <div class="single-grid">
       <section class="card">
         <div class="card-title-row">
-          <h2>1. Texto original</h2>
+          <h2>📝 1. Texto original</h2>
           <div class="top-text-actions" role="group" aria-label="Limpar e copiar o texto">
             <button id="clearTopBtn" class="top-text-btn" type="button" title="Limpar o texto">🧹 Limpar</button>
             <button id="copyTopBtn" class="top-text-btn" type="button" title="Copiar o texto">📋 Copiar</button>
@@ -1592,7 +1585,7 @@
         <span id="copyStatus" class="ok main-copy-status" role="status" aria-live="polite"></span>
 
         <details class="subsection">
-          <summary id="caseLabel">Maiúsculas/minúsculas</summary>
+          <summary id="caseLabel">🔠 Maiúsculas/minúsculas</summary>
           <div class="subsection-body">
             <div class="option-buttons case-buttons" role="group" aria-labelledby="caseLabel">
               <button type="button" class="option-btn btn-orange" data-case="upper">🔠 MAIÚSCULAS</button>
@@ -1603,7 +1596,7 @@
         </details>
 
         <details class="subsection">
-          <summary id="listLabel">Inserir marcadores e numeradores de lista no texto selecionado</summary>
+          <summary id="listLabel">📋 Inserir marcadores e numeradores de lista no texto selecionado</summary>
           <div class="subsection-body">
             <div class="option-buttons list-buttons" role="group" aria-labelledby="listLabel">
               <button type="button" class="option-btn btn-blue" data-list="blueDiamond" aria-label="Lista com Losango azul" title="Lista com Losango azul">🔷</button>
@@ -1631,7 +1624,7 @@
         </details>
 
         <details class="subsection sub-tint-3" id="templatesBox">
-          <summary>Modelos prontos e personalizados</summary>
+          <summary>🧩 Modelos prontos e personalizados</summary>
           <div class="subsection-body">
       <p class="hint">Clique num modelo pronto para inserir no campo ativo. Se o cursor estiver no texto original, o modelo será inserido ali. Se houver texto selecionado e o modelo tiver {texto}, ele será aplicado ao trecho selecionado; se não tiver {texto}, será inserido antes do trecho.</p>
 
@@ -1793,7 +1786,7 @@
           </div>
         </details>
         <details class="subsection sub-tint-2">
-          <summary>Tipos de fontes/caracteres</summary>
+          <summary>🔤 Tipos de fontes/caracteres</summary>
           <div class="subsection-body">
         <div class="style-full-row">
           <label for="styleSelect">Tipo de caractere</label>
@@ -1805,21 +1798,21 @@
         <div id="preview" class="preview"></div>
 
         <div class="button-row">
-          <button id="applyStyleBtn" type="button">Aplicar fonte ao trecho selecionado</button>
+          <button id="applyStyleBtn" type="button">🖋️ Aplicar fonte ao trecho selecionado</button>
         </div>
           </div>
         </details>
         <details class="subsection sub-tint-5">
-          <summary>Gerenciar modelos e categorias</summary>
+          <summary>🗂️ Gerenciar modelos e categorias</summary>
           <div class="subsection-body">
 
       <details class="subsection subsection-editor" id="editorSubsection">
-        <summary>Criar ou alterar modelo</summary>
+        <summary>✏️ Criar ou alterar modelo</summary>
         <div class="subsection-body">
           <label for="templateSelect">Modelo para editar</label>
           <div class="template-row">
             <select id="templateSelect"></select>
-            <button id="newTemplateBtn" class="secondary" type="button">Novo modelo</button>
+            <button id="newTemplateBtn" class="secondary" type="button">➕ Novo modelo</button>
           </div>
 
           <div class="controls-3">
@@ -1844,10 +1837,10 @@
           </div>
 
           <div class="button-row">
-            <button id="insertTextMarkerBtn" class="secondary" type="button">Inserir {texto}</button>
-            <button id="saveTemplateBtn" type="button">Salvar modelo</button>
-            <button id="deleteTemplateBtn" class="danger" type="button">Excluir modelo</button>
-            <button id="resetTemplatesBtn" class="secondary" type="button">Restaurar modelos padrão</button>
+            <button id="insertTextMarkerBtn" class="secondary" type="button">📌 Inserir {texto}</button>
+            <button id="saveTemplateBtn" type="button">💾 Salvar modelo</button>
+            <button id="deleteTemplateBtn" class="danger" type="button">🗑️ Excluir modelo</button>
+            <button id="resetTemplatesBtn" class="secondary" type="button">🔄 Restaurar modelos padrão</button>
             <span id="templateStatus" class="ok" role="status" aria-live="polite"></span>
           </div>
 
@@ -1857,7 +1850,7 @@
       </details>
 
       <details class="subsection subsection-categories" id="categoriesSubsection">
-        <summary>Gerenciar categorias de modelos</summary>
+        <summary>📁 Gerenciar categorias de modelos</summary>
         <div class="subsection-body">
           <div class="controls">
             <div>
@@ -1865,7 +1858,7 @@
               <input id="newTemplateCategoryName" type="text" placeholder="Ex.: Revisão, Joias, Perguntas">
             </div>
             <div style="align-self:end">
-              <button id="addTemplateCategoryBtn" class="secondary" type="button">Criar categoria</button>
+              <button id="addTemplateCategoryBtn" class="secondary" type="button">➕ Criar categoria</button>
             </div>
           </div>
 
@@ -1879,8 +1872,8 @@
               <input id="categoryRenameName" type="text" placeholder="Ex.: Novo nome">
             </div>
             <div style="align-self:end; display:flex; gap:10px">
-              <button id="renameTemplateCategoryBtn" class="secondary" type="button">Renomear</button>
-              <button id="deleteTemplateCategoryBtn" class="danger" type="button">Excluir categoria "<span id="deleteTemplateCategoryName"></span>"</button>
+              <button id="renameTemplateCategoryBtn" class="secondary" type="button">✏️ Renomear</button>
+              <button id="deleteTemplateCategoryBtn" class="danger" type="button">🗑️ Excluir categoria "<span id="deleteTemplateCategoryName"></span>"</button>
             </div>
           </div>
 
@@ -1888,22 +1881,18 @@
         </div>
       </details>
 
-      <div class="manager-launch-row">
-        <button id="openModelManagerBtn" type="button">⚙️ Gerenciamento avançado</button>
-      </div>
-
           </div>
         </details>
         <details class="subsection sub-tint-4">
-          <summary>Caracteres, ícones e emoticons</summary>
+          <summary>😀 Caracteres, ícones e emoticons</summary>
           <div class="subsection-body">
       <p class="hint">Clique para inserir no campo ativo. Os favoritos ficam no topo. Dê dois cliques em um favorito para tirar do topo; dê dois cliques em um item de baixo para mandar para os favoritos.</p>
 
-      <h3>Favoritos no topo</h3>
+      <h3>⭐ Favoritos no topo</h3>
       <div id="symbols" class="symbols"></div>
 
       <div class="button-row">
-        <button id="resetFavoriteSymbolsBtn" class="secondary" type="button">Restaurar favoritos padrão</button>
+        <button id="resetFavoriteSymbolsBtn" class="secondary" type="button">🔄 Restaurar favoritos padrão</button>
         <span id="symbolsStatus" class="ok" role="status" aria-live="polite"></span>
       </div>
 
@@ -1914,92 +1903,55 @@
         </div>
       </div>
 
-      <h3>Caracteres da categoria</h3>
+      <h3>🔣 Caracteres da categoria</h3>
       <div id="moreSymbols" class="symbols"></div>
 
       <div class="template-editor">
-        <h3>Adicionar novos caracteres</h3>
+        <h3>➕ Adicionar novos caracteres</h3>
         <p class="hint">Cole abaixo novos caracteres, ícones ou emoticons. Eles entrarão na categoria escolhida abaixo e ficarão salvos neste navegador.</p>
         <label for="customSymbolCategory">Categoria dos novos caracteres</label>
         <input id="customSymbolCategory" type="text" placeholder="Ex.: Meus símbolos">
         <textarea id="customSymbolsText" style="min-height:90px; margin-top:10px" placeholder="Cole aqui novos caracteres, separados por espaço ou linha..."></textarea>
         <div class="button-row">
-          <button id="saveCustomSymbolsBtn" type="button">Adicionar caracteres</button>
-          <button id="clearCustomSymbolsBtn" class="secondary" type="button">Limpar caracteres personalizados</button>
+          <button id="saveCustomSymbolsBtn" type="button">➕ Adicionar caracteres</button>
+          <button id="clearCustomSymbolsBtn" class="secondary" type="button">🧹 Limpar caracteres personalizados</button>
         </div>
       </div>
+          </div>
+        </details>
+        <details class="subsection sub-tint-3" id="defaultsSection">
+          <summary>📦 Configurações padrão do app</summary>
+          <div class="subsection-body">
+            <p class="hint">As configurações padrão reúnem os modelos, as categorias, os caracteres, os favoritos e as opções da IA que o administrador definiu para todos os usuários. Enquanto você não alterar nenhum desses itens, o app já usa as configurações padrão sozinho e acompanha as mudanças do administrador. Depois de alterar, as suas ficam guardadas neste aparelho e você pode voltar às padrão com <strong>Aplicar</strong>.</p>
+            <p id="defaultsInfo" class="hint">Verificando as configurações padrão…</p>
+
+            <div class="defaults-actions">
+              <button id="applyDefaultsBtn" class="danger" type="button">📥 Aplicar configurações padrão</button>
+              <button id="mergeDefaultsBtn" class="secondary" type="button">🔀 Mesclar configurações padrão com as minhas</button>
+            </div>
+            <p class="hint"><strong>Aplicar</strong> troca as suas configurações pelas padrão. <strong>Mesclar</strong> só acrescenta o que você ainda não tem.</p>
+            <span id="defaultsStatus" class="ok" role="status" aria-live="polite"></span>
+
+            <details id="adminDefaultsBox" class="sentinela-code">
+              <summary>🔐 Administrador</summary>
+              <div id="adminDefaultsLogin">
+                <p class="hint">Digite o código de administrador para poder salvar as suas configurações como padrão de todos os usuários.</p>
+                <input id="adminDefaultsCode" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="100" placeholder="Código de administrador" autocomplete="off">
+                <p id="adminDefaultsError" class="hint" style="color:var(--danger); min-height:1.3em"></p>
+                <button id="adminDefaultsLoginBtn" type="button">🔓 Entrar</button>
+              </div>
+              <div id="adminDefaultsActions" hidden>
+                <p class="hint">Você está como administrador. <strong>Salvar configurações padrão</strong> grava as configurações deste aparelho (modelos, categorias, caracteres, favoritos e opções da IA) como o padrão de todos os usuários.</p>
+                <button id="saveDefaultsBtn" class="danger" type="button">🔐 Salvar configurações padrão</button>
+                <span id="saveDefaultsStatus" class="ok" role="status" aria-live="polite"></span>
+              </div>
+            </details>
           </div>
         </details>
       </div>
     </details>
 
   </main>
-
-  <div id="modelManagerOverlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modelManagerTitle">
-    <div class="modal-card manager-card">
-      <div class="modal-title-row">
-        <h2 id="modelManagerTitle">Gerenciamento de modelos</h2>
-        <button id="closeModelManagerBtn" class="secondary modal-close-btn" type="button">✖️ Fechar</button>
-      </div>
-
-      <p class="hint">Use esta área para restaurar padrões, exportar ou importar um único arquivo JSON com modelos, categorias de modelos, caracteres personalizados e favoritos.</p>
-
-      <div class="manager-section">
-        <h3>Arquivo padrão JSON</h3>
-        <p class="hint">Use esta área para carregar o arquivo <strong>defaults.json</strong> que acompanha o app. Você pode somar os padrões aos seus dados atuais ou substituir pelos padrões do arquivo.</p>
-
-        <div class="button-row">
-          <button id="checkOnlineDefaultsBtn" type="button">Buscar arquivo padrão JSON</button>
-          <button id="openDefaultsJsonBtn" class="secondary" type="button">Abrir defaults.json</button>
-          <button id="mergeOnlineDefaultsBtn" class="secondary" type="button">Somar padrões aos meus</button>
-          <button id="replaceOnlineDefaultsBtn" class="danger" type="button">Substituir pelos padrões</button>
-          <span id="onlineDefaultsStatus" class="ok" role="status" aria-live="polite"></span>
-        </div>
-
-        <p id="onlineDefaultsVersion" class="hint">Arquivo padrão: ainda não carregado.</p>
-      </div>
-
-      <div class="manager-section">
-        <h3>Exportar ou importar arquivo JSON</h3>
-        <p class="hint">O arquivo exportado reúne modelos, categorias de modelos, caracteres personalizados, categorias de caracteres, favoritos e as opções do app.</p>
-
-        <div class="button-row">
-          <button id="exportTemplatesBtn" type="button">Exportar JSON completo</button>
-          <button id="importTemplatesBtn" class="secondary" type="button">Importar JSON completo</button>
-          <input id="importTemplatesFile" type="file" accept=".json,.txt,application/json,text/plain" style="display:none">
-          <button id="copyBackupBtn" class="secondary" type="button">Copiar JSON em texto</button>
-          <span id="backupStatus" class="ok" role="status" aria-live="polite"></span>
-        </div>
-
-        <label for="backupText">Arquivo JSON em texto</label>
-        <textarea id="backupText" style="min-height:160px" placeholder="Ao exportar ou copiar, o JSON aparecerá aqui. Você também pode colar aqui um JSON recebido e clicar em Importar JSON completo."></textarea>
-      </div>
-
-      <div class="manager-section">
-        <h3>Definir como padrão do app</h3>
-        <p class="hint">Área restrita ao administrador. Publica o JSON atual como o padrão do app para todos os usuários, sem precisar publicar um arquivo novo. Leva modelos, categorias, caracteres, favoritos <strong>e as opções do app</strong>: as caixas e seleções de "Configurar formatação com IA" e o tipo de caractere escolhido. Marque, desmarque e escolha as opções como quer que fiquem e só então publique. Quem ainda não personalizou suas opções passa a usar as novas ao abrir o app; "Substituir pelos padrões" também troca as opções de quem já personalizou. Pede o código de administrador.</p>
-        <div class="button-row">
-          <button id="setJsonAsDefaultBtn" class="danger" type="button">🔐 Publicar JSON como padrão</button>
-          <span id="publishDefaultStatus" class="ok" role="status" aria-live="polite"></span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div id="adminPasswordOverlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="adminPasswordTitle">
-    <div class="modal-card">
-      <h2 id="adminPasswordTitle">Área do administrador</h2>
-      <p class="hint">Digite o código de administrador para publicar o JSON atual como o novo padrão do app, para todos os usuários.</p>
-      <label for="adminPasswordInput">Código de administrador</label>
-      <input id="adminPasswordInput" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="100" placeholder="Código de administrador" autocomplete="off">
-      <p id="adminPasswordError" class="hint" style="color:var(--danger); min-height:1.3em"></p>
-      <div class="modal-actions">
-        <button id="adminPasswordConfirm" type="button" class="btn-green">🔓 Publicar</button>
-        <button id="adminPasswordCancel" type="button" class="btn-slate">✖️ Cancelar</button>
-      </div>
-    </div>
-  </div>
-
 
   <main id="promptsScreen" aria-labelledby="promptsTitle">
     <div class="single-grid">
@@ -2041,18 +1993,6 @@
       </section>
     </div>
   </main>
-
-  <div id="importChoiceOverlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="importChoiceTitle">
-    <div class="modal-card">
-      <h2 id="importChoiceTitle">Como deseja importar o arquivo JSON?</h2>
-      <p id="importChoiceText">Escolha se deseja combinar com os dados atuais, substituir tudo ou cancelar a importação.</p>
-      <div class="modal-actions">
-        <button id="combineImportChoice" type="button" class="btn-green">🔄 Combinar</button>
-        <button id="replaceImportChoice" type="button" class="btn-orange">♻️ Substituir</button>
-        <button id="cancelImportChoice" type="button" class="btn-slate">✖️ Cancelar</button>
-      </div>
-    </div>
-  </div>
 
   <div id="confirmOverlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
     <div class="modal-card">
@@ -2206,12 +2146,6 @@
     const categoryManageSelect = document.getElementById('categoryManageSelect');
     const categoryRenameName = document.getElementById('categoryRenameName');
     const renameTemplateCategoryBtn = document.getElementById('renameTemplateCategoryBtn');
-    const setJsonAsDefaultBtn = document.getElementById('setJsonAsDefaultBtn');
-    const adminPasswordOverlay = document.getElementById('adminPasswordOverlay');
-    const adminPasswordInput = document.getElementById('adminPasswordInput');
-    const adminPasswordError = document.getElementById('adminPasswordError');
-    const adminPasswordConfirm = document.getElementById('adminPasswordConfirm');
-    const adminPasswordCancel = document.getElementById('adminPasswordCancel');
     const confirmOverlay = document.getElementById('confirmOverlay');
     const confirmText = document.getElementById('confirmText');
     const confirmOkChoice = document.getElementById('confirmOkChoice');
@@ -2221,16 +2155,9 @@
     const keepTemplatesChoice = document.getElementById('keepTemplatesChoice');
     const deleteTemplatesChoice = document.getElementById('deleteTemplatesChoice');
     const cancelCategoryDeleteChoice = document.getElementById('cancelCategoryDeleteChoice');
-    const modelManagerOverlay = document.getElementById('modelManagerOverlay');
-    const openModelManagerBtn = document.getElementById('openModelManagerBtn');
-    const closeModelManagerBtn = document.getElementById('closeModelManagerBtn');
     const templateName = document.getElementById('templateName');
     const templateContent = document.getElementById('templateContent');
     const templateExtraCategories = document.getElementById('templateExtraCategories');
-    const backupText = document.getElementById('backupText');
-    const backupStatus = document.getElementById('backupStatus');
-    const importTemplatesFile = document.getElementById('importTemplatesFile');
-    const importChoiceOverlay = document.getElementById('importChoiceOverlay');
     const importChoiceText = document.getElementById('importChoiceText');
     const combineImportChoice = document.getElementById('combineImportChoice');
     const replaceImportChoice = document.getElementById('replaceImportChoice');
@@ -2240,8 +2167,6 @@
     const customSymbolCategory = document.getElementById('customSymbolCategory');
     const customSymbolsText = document.getElementById('customSymbolsText');
     const symbolsStatus = document.getElementById('symbolsStatus');
-    const onlineDefaultsStatus = document.getElementById('onlineDefaultsStatus');
-    const onlineDefaultsVersion = document.getElementById('onlineDefaultsVersion');
 
     const STORAGE_KEY = 'jwLibraryNoteAplicarTemplatesV2';
     const SYMBOLS_STORAGE_KEY = 'jwLibraryNoteAplicarCustomSymbolsV1';
@@ -2403,14 +2328,14 @@
 
     function rememberFocusedField(event) {
       const el = event.target;
-      if (el === input || el === templateContent || el === backupText || el === customSymbolsText || el === newTemplateCategoryName || el === categoryRenameName) {
+      if (el === input || el === templateContent || el === customSymbolsText || el === newTemplateCategoryName || el === categoryRenameName) {
         lastFocusedTextField = el;
       }
     }
 
     function getActiveInsertTarget() {
       const active = document.activeElement;
-      if (active === templateContent || active === backupText || active === input) return active;
+      if (active === templateContent || active === input) return active;
       return lastFocusedTextField || input;
     }
 
@@ -2476,7 +2401,6 @@
       writeToField(target, start, end, text);
 
       if (target === templateContent) templateStatus.textContent = '';
-      if (target === backupText) backupStatus.textContent = '';
     }
 
     function newId() {
@@ -3955,9 +3879,9 @@ function saveTemplatesToStorage() {
       styleSelect.value = 'serif';
 
       loadCustomSymbols();
-      renderSymbols();
-
       loadTemplates();
+      followCachedDefaults(); // quem nunca mexeu já abre com as configurações padrão do administrador
+      renderSymbols();
       renderTemplates();
     }
 
@@ -4086,79 +4010,7 @@ function saveTemplatesToStorage() {
 
     let cachedOnlineDefaults = null;
 
-    async function fetchOnlineDefaults() {
-      onlineDefaultsStatus.className = 'ok';
-      onlineDefaultsStatus.textContent = 'Buscando arquivo padrão JSON...';
 
-      // Primeiro o padrão publicado pelo administrador (guardado no servidor); sem ele, o arquivo defaults.json.
-      try {
-        const published = await postConfig({ acao: 'padrao-ler' });
-        const publishedData = published.ok ? published.data.dados : null;
-        if (publishedData) {
-          const normalizedPublished = normalizeDefaultsObject(publishedData);
-          if (normalizedPublished.templates.length || Object.keys(normalizedPublished.customSymbolCategories).length) {
-            cachedOnlineDefaults = publishedData;
-            const when = publishedData.exportedAt ? new Date(publishedData.exportedAt) : null;
-            onlineDefaultsVersion.textContent = 'Arquivo padrão: publicado pelo administrador' +
-              (when && !isNaN(when) ? ' em ' + when.toLocaleDateString('pt-BR') : '') + '.';
-            onlineDefaultsStatus.className = 'ok';
-            onlineDefaultsStatus.textContent = 'Arquivo padrão carregado. Agora escolha Somar ou Substituir.';
-            return publishedData;
-          }
-        }
-      } catch (e) { /* sem servidor ou sem padrão publicado: usa o defaults.json */ }
-
-      const candidates = [
-        new URL('defaults.json', location.href).href,
-        location.origin + '/defaults.json'
-      ];
-
-      let lastError = '';
-
-      for (const url of [...new Set(candidates)]) {
-        try {
-          // Sem 'no-store' + cache-busting: o navegador revalida com ETag e só
-          // baixa de novo quando o arquivo muda de verdade.
-          const response = await fetch(url, { cache: 'no-cache' });
-
-          if (!response.ok) {
-            lastError = 'HTTP ' + response.status + ' ao buscar ' + url;
-            continue;
-          }
-
-          const text = await response.text();
-          let data;
-
-          try {
-            data = JSON.parse(text);
-          } catch (e) {
-            lastError = 'O arquivo JSON foi encontrado, mas não é válido.';
-            continue;
-          }
-
-          const normalized = normalizeDefaultsObject(data);
-          if (!normalized.templates.length && !Object.keys(normalized.customSymbolCategories).length) {
-            lastError = 'O arquivo JSON abriu, mas não tem modelos nem caracteres personalizados.';
-            continue;
-          }
-
-          cachedOnlineDefaults = data;
-          onlineDefaultsVersion.textContent = 'Arquivo padrão: ' + (data.version || 'sem versão informada');
-          onlineDefaultsStatus.className = 'ok';
-          onlineDefaultsStatus.textContent = 'Arquivo padrão carregado. Agora escolha Somar ou Substituir.';
-          return data;
-        } catch (e) {
-          lastError = e && e.message ? e.message : 'Falha desconhecida ao buscar o arquivo JSON.';
-        }
-      }
-
-      throw new Error(lastError || 'Não foi possível carregar o arquivo JSON.');
-    }
-
-    function openDefaultsJson() {
-      const url = new URL('defaults.json', location.href).href;
-      window.open(url, '_blank', 'noopener');
-    }
 
     function normalizeDefaultsObject(data) {
       const parsed = data || {};
@@ -4265,102 +4117,10 @@ function saveTemplatesToStorage() {
       updateUi();
     }
 
-    async function autoCheckOnlineDefaultsOnStart() {
-      if (location.protocol !== 'http:' && location.protocol !== 'https:') return;
 
-      // Só verifica e avisa — nunca aplica nada sozinho. Aplicar é sempre escolha
-      // do usuário, pelos botões "Somar" ou "Substituir" (evita perder dados
-      // do usuário sem aviso quando o navegador/origem parece "vazio").
-      try {
-        const data = await fetchOnlineDefaults();
-        applyPreferences(data.preferencias, false);
-        // O JSON traz a versão como número e o localStorage devolve texto:
-        // sem normalizar, 4 !== '4' e o app acusaria novidade a cada abertura.
-        const fileVersion = String(data.version || '');
-        const lastAppliedVersion = String(localStorage.getItem(ONLINE_DEFAULTS_VERSION_STORAGE_KEY) || '');
 
-        if (!hasLocalUserData()) {
-          onlineDefaultsStatus.className = 'ok';
-          onlineDefaultsStatus.textContent = 'Arquivo padrão disponível. Use "Somar padrões aos meus" se quiser aplicá-lo.';
-          return;
-        }
 
-        if (fileVersion && fileVersion !== lastAppliedVersion) {
-          onlineDefaultsStatus.className = 'warn';
-          onlineDefaultsStatus.textContent = 'Há um arquivo padrão mais recente. Use Somar ou Substituir.';
-        } else {
-          onlineDefaultsStatus.className = 'ok';
-          onlineDefaultsStatus.textContent = 'Arquivo padrão verificado.';
-        }
-      } catch (e) {
-        onlineDefaultsStatus.className = 'warn';
-        onlineDefaultsStatus.textContent = 'Não consegui verificar o arquivo padrão automaticamente: ' + (e && e.message ? e.message : 'erro desconhecido');
-      }
-    }
 
-    async function ensureOnlineDefaultsLoaded() {
-      if (cachedOnlineDefaults) return cachedOnlineDefaults;
-      return await fetchOnlineDefaults();
-    }
-
-    async function checkOnlineDefaults() {
-      try {
-        cachedOnlineDefaults = null; // o botão "Buscar" sempre consulta de novo, para pegar um padrão recém-publicado
-        const data = await ensureOnlineDefaultsLoaded();
-        const normalized = normalizeDefaultsObject(data);
-        onlineDefaultsStatus.className = 'ok';
-        onlineDefaultsStatus.textContent = normalized.templates.length + ' modelo(s), ' + Object.keys(normalized.customSymbolCategories).reduce((n, id) => n + normalized.customSymbolCategories[id].symbols.length, 0) + ' caractere(s) e ' + normalized.favoriteSymbols.length + ' favorito(s) encontrados.';
-      } catch (e) {
-        onlineDefaultsStatus.className = 'warn';
-        onlineDefaultsStatus.textContent = 'Não consegui carregar o arquivo JSON: ' + (e && e.message ? e.message : 'erro desconhecido');
-      }
-    }
-
-    async function mergeOnlineDefaults() {
-      try {
-        const rawData = await ensureOnlineDefaultsLoaded();
-        const data = normalizeDefaultsObject(rawData);
-
-        const addedCategories = mergeTemplateCategories(data.templateCategories);
-        const addedTemplates = mergeTemplates(data.templates);
-        const addedSymbols = mergeSymbolCategories(data.customSymbolCategories);
-        const addedFavorites = mergeFavoriteSymbols(data.favoriteSymbols);
-
-        saveTemplatesToStorage();
-        saveCustomSymbols();
-        saveFavoriteSymbols();
-
-        if (rawData.version) {
-          safeSetItem(ONLINE_DEFAULTS_VERSION_STORAGE_KEY, String(rawData.version));
-        }
-
-        renderTemplates();
-        renderSymbols();
-        updateUi();
-
-        onlineDefaultsStatus.className = 'ok';
-        onlineDefaultsStatus.textContent = 'Somado: ' + addedTemplates + ' modelo(s), ' + addedCategories + ' categoria(s), ' + addedSymbols + ' caractere(s), ' + addedFavorites + ' favorito(s).';
-      } catch (e) {
-        onlineDefaultsStatus.className = 'warn';
-        onlineDefaultsStatus.textContent = 'Não consegui somar os padrões: ' + (e && e.message ? e.message : 'erro desconhecido');
-      }
-    }
-
-    async function replaceOnlineDefaults() {
-      try {
-        const ok = confirm('Isso vai substituir modelos, categorias de modelos, caracteres personalizados e favoritos pelos dados do arquivo padrão. Deseja continuar?');
-        if (!ok) return;
-
-        const rawData = await ensureOnlineDefaultsLoaded();
-        applyOnlineDefaultsData(rawData, 'replace');
-
-        onlineDefaultsStatus.className = 'ok';
-        onlineDefaultsStatus.textContent = 'Arquivo padrão aplicado.';
-      } catch (e) {
-        onlineDefaultsStatus.className = 'warn';
-        onlineDefaultsStatus.textContent = 'Não consegui substituir pelos padrões: ' + (e && e.message ? e.message : 'erro desconhecido');
-      }
-    }
 
     function buildBackupObject() {
       templates = validateTemplates(templates);
@@ -4434,76 +4194,10 @@ function saveTemplatesToStorage() {
       }
     }
 
-    function exportTemplates() {
-      const data = JSON.stringify(buildBackupObject(), null, 2);
-      backupText.value = data;
 
-      const blob = new Blob([data], { type: 'application/json;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      const date = new Date().toISOString().slice(0, 10);
-      a.href = url;
-      a.download = 'gerenciamento-modelos-jw-library-' + date + '.json';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 0);
 
-      backupStatus.className = 'ok';
-      backupStatus.textContent = 'Arquivo JSON completo exportado!';
-    }
 
-    function openAdminPasswordPrompt() {
-      adminPasswordInput.value = '';
-      adminPasswordError.textContent = '';
-      adminPasswordOverlay.classList.add('open');
-      adminPasswordInput.focus();
-    }
 
-    function closeAdminPasswordPrompt() {
-      adminPasswordOverlay.classList.remove('open');
-    }
-
-    // Publica o JSON atual como padrão do app para todos os usuários: o servidor confere o código de administrador
-    // (variável CODIGO_ADMIN) e guarda o JSON no Edge Config. Nada de senha no código-fonte.
-    async function confirmAdminPassword() {
-      const code = adminPasswordInput.value.trim();
-      if (!code) {
-        adminPasswordError.textContent = 'Digite o código de administrador.';
-        adminPasswordInput.focus();
-        return;
-      }
-
-      adminPasswordConfirm.disabled = true;
-      adminPasswordError.textContent = 'Publicando...';
-      const published = buildBackupObject();
-      published.version = Number(new Date().toISOString().replace(/\D/g, '').slice(0, 12)); // AAAAMMDDhhmm
-      const result = await postConfig({ acao: 'padrao-publicar', codigo: code, dados: published });
-      adminPasswordConfirm.disabled = false;
-
-      if (result.ok) {
-        closeAdminPasswordPrompt();
-        cachedOnlineDefaults = null;
-        const doneMessage = '✅ Padrão publicado com sucesso para todos os usuários (' + (result.data.modelos || 0) + ' modelos e as opções do app). "Buscar arquivo padrão JSON" já entrega esta versão.';
-        backupStatus.className = 'ok';
-        backupStatus.textContent = doneMessage;
-        const publishStatus = document.getElementById('publishDefaultStatus');
-        publishStatus.className = 'ok';
-        publishStatus.textContent = doneMessage;
-        return;
-      }
-
-      adminPasswordError.textContent = result.status === 403 || result.status === 429
-        ? configErrorMessage(result, 'Código incorreto.')
-        : configErrorMessage(result, 'Não foi possível publicar agora.');
-      adminPasswordInput.value = '';
-      adminPasswordInput.focus();
-    }
-
-    function parseBackupText(text) {
-      const parsed = JSON.parse(String(text || '').trim());
-      return normalizeDefaultsObject(parsed);
-    }
 
     function validateTemplates(list) {
       return (Array.isArray(list) ? list : [])
@@ -4566,128 +4260,11 @@ function saveTemplatesToStorage() {
 
 
     
-    function askImportMode(count) {
-      return new Promise(resolve => {
-        let settled = false;
-
-        function finish(value) {
-          if (settled) return;
-          settled = true;
-          importChoiceOverlay.classList.remove('open');
-          combineImportChoice.removeEventListener('click', onCombine);
-          replaceImportChoice.removeEventListener('click', onReplace);
-          cancelImportChoice.removeEventListener('click', onCancel);
-          importChoiceOverlay.removeEventListener('click', onOverlay);
-          document.removeEventListener('keydown', onKey);
-          resolve(value);
-        }
-
-        function onCombine() { finish('merge'); }
-        function onReplace() { finish('replace'); }
-        function onCancel() { finish(null); }
-        function onOverlay(event) {
-          if (event.target === importChoiceOverlay) finish(null);
-        }
-        function onKey(event) {
-          if (event.key === 'Escape') finish(null);
-        }
-
-        const templateCount = Number(count || 0);
-        importChoiceText.textContent = 'O arquivo JSON contém ' + templateCount + ' modelo(s), além de categorias, caracteres e favoritos quando disponíveis. Escolha se deseja combinar com os dados atuais, substituir tudo ou cancelar.';
-
-        combineImportChoice.addEventListener('click', onCombine);
-        replaceImportChoice.addEventListener('click', onReplace);
-        cancelImportChoice.addEventListener('click', onCancel);
-        importChoiceOverlay.addEventListener('click', onOverlay);
-        document.addEventListener('keydown', onKey);
-        importChoiceOverlay.classList.add('open');
-      });
-    }
 
 
-async function importTemplatesFromText(text) {
-      try {
-        const importedData = parseBackupText(text);
-        const imported = importedData.templates;
-        if (!imported.length && !Object.keys(importedData.customSymbolCategories).length && !importedData.favoriteSymbols.length) {
-          throw new Error('Nenhum dado encontrado.');
-        }
 
-        const mode = await askImportMode(imported.length);
 
-        if (!mode) {
-          backupStatus.className = 'warn';
-          backupStatus.textContent = 'Importação cancelada.';
-          return;
-        }
 
-        let message = '';
-
-        if (mode === 'replace') {
-          templates = makeImportedTemplatesUnique(imported);
-          templateCategories = importedData.templateCategories;
-          customSymbolCategories = importedData.customSymbolCategories;
-          favoriteSymbols = importedData.favoriteSymbols.length ? importedData.favoriteSymbols : defaultFavoriteSymbols.slice();
-          message = templates.length + ' modelo(s), ' + getAllCustomSymbols().length + ' caractere(s) e ' + favoriteSymbols.length + ' favorito(s) importados. Os dados anteriores foram substituídos.';
-        } else {
-          const addedCategories = mergeTemplateCategories(importedData.templateCategories);
-          const stats = mergeImportedTemplates(imported);
-          const addedSymbols = mergeSymbolCategories(importedData.customSymbolCategories);
-          const addedFavorites = mergeFavoriteSymbols(importedData.favoriteSymbols);
-          message = stats.added + ' modelo(s), ' + addedCategories + ' categoria(s), ' + addedSymbols + ' caractere(s) e ' + addedFavorites + ' favorito(s) adicionados.';
-          if (stats.skipped) message += ' ' + stats.skipped + ' modelo(s) duplicado(s) ignorado(s).';
-        }
-
-        saveTemplatesToStorage();
-        saveCustomSymbols();
-        saveFavoriteSymbols();
-        renderTemplates();
-        renderSymbols();
-        updateUi();
-        backupStatus.className = 'ok';
-        backupStatus.textContent = message;
-        warnIfStorageBlocked(backupStatus);
-      } catch (e) {
-        console.error(e);
-        backupStatus.className = 'warn';
-        backupStatus.textContent = 'Arquivo JSON inválido: ' + (e && e.message ? e.message : 'erro desconhecido');
-      }
-    }
-
-    async function copyBackup() {
-      const data = backupText.value.trim() || JSON.stringify(buildBackupObject(), null, 2);
-      backupText.value = data;
-      try {
-        await navigator.clipboard.writeText(data);
-        backupStatus.className = 'ok';
-        backupStatus.textContent = 'Backup copiado!';
-      } catch (e) {
-        backupText.focus();
-        backupText.select();
-        backupStatus.className = 'warn';
-        backupStatus.textContent = 'Selecione e copie manualmente.';
-      }
-    }
-
-    function chooseImportFile() {
-      if (backupText.value.trim()) {
-        importTemplatesFromText(backupText.value.trim());
-      } else {
-        importTemplatesFile.click();
-      }
-    }
-
-    function handleImportFile(event) {
-      const file = event.target.files && event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        backupText.value = String(reader.result || '');
-        importTemplatesFromText(backupText.value);
-      };
-      reader.readAsText(file, 'utf-8');
-      event.target.value = '';
-    }
 
 
     document.getElementById('quickBoldBtn').addEventListener('click', () => quickFormat('bold'));
@@ -4733,32 +4310,6 @@ async function importTemplatesFromText(text) {
     renameTemplateCategoryBtn.addEventListener('click', renameTemplateCategory);
     categoryManageSelect.addEventListener('change', updateDeleteTemplateCategoryButton);
     templateCategoryFilter.addEventListener('change', renderTemplates);
-
-    // Gerenciador de modelos: devolve o foco a quem abriu e fecha com Esc,
-    // seguindo o mesmo padrão que askImportMode() já usa.
-    let modelManagerOpener = null;
-
-    function openModelManager() {
-      modelManagerOpener = document.activeElement;
-      modelManagerOverlay.classList.add('open');
-      closeModelManagerBtn.focus();
-    }
-
-    function closeModelManager() {
-      if (!modelManagerOverlay.classList.contains('open')) return;
-      modelManagerOverlay.classList.remove('open');
-      if (modelManagerOpener && typeof modelManagerOpener.focus === 'function') modelManagerOpener.focus();
-      modelManagerOpener = null;
-    }
-
-    openModelManagerBtn.addEventListener('click', openModelManager);
-    closeModelManagerBtn.addEventListener('click', closeModelManager);
-    modelManagerOverlay.addEventListener('click', event => {
-      if (event.target === modelManagerOverlay) closeModelManager();
-    });
-    document.addEventListener('keydown', event => {
-      if (event.key === 'Escape') closeModelManager();
-    });
 
     // ---------- Administrador: chamadas ao servidor e página de prompts da IA ----------
     const CONFIG_ENDPOINT = '/api/config';
@@ -5216,28 +4767,281 @@ async function importTemplatesFromText(text) {
       if (event.key === 'Escape' && promptsIsOpen && !confirmOverlay.classList.contains('open')) closePrompts();
     });
 
+    // ---------- Configurações padrão (valem para todos os usuários) ----------
+    // O administrador salva as configurações deste aparelho como padrão (guardadas no Global Config da Vercel, via
+    // /api/config). Cada usuário as aplica ou mescla com as suas. Sem arquivos para importar ou exportar.
+    const defaultsInfo = document.getElementById('defaultsInfo');
+    const defaultsStatus = document.getElementById('defaultsStatus');
+    const adminDefaultsCode = document.getElementById('adminDefaultsCode');
+    const adminDefaultsError = document.getElementById('adminDefaultsError');
+    const adminDefaultsLogin = document.getElementById('adminDefaultsLogin');
+    const adminDefaultsActions = document.getElementById('adminDefaultsActions');
+    const saveDefaultsStatus = document.getElementById('saveDefaultsStatus');
+    let defaultsAdminCode = ''; // só na memória: some ao fechar ou recarregar o app
+    let defaultsOrigin = 'original';
+
+    // Quem nunca alterou modelos, categorias, caracteres ou favoritos acompanha as configurações padrão do administrador:
+    // elas entram só na memória (nada é gravado no aparelho) e, por isso, mudam junto quando o administrador salva uma
+    // versão nova. Cada grupo é independente: alterou os favoritos? Os modelos continuam acompanhando o padrão. Assim
+    // que o usuário altera um grupo, o app grava o que está na tela e ele passa a ter o seu.
+    const PUBLISHED_DEFAULTS_CACHE_KEY = 'jwLibraryNoteAplicarPublishedDefaultsV1';
+
+    function storageHasKey(key) {
+      try { return localStorage.getItem(key) !== null; } catch (e) { return true; } // sem acesso ao armazenamento: não mexe em nada
+    }
+
+    // Devolve true se algum grupo passou a usar o padrão.
+    function followDefaults(rawData) {
+      const data = normalizeDefaultsObject(rawData);
+      let changed = false;
+
+      if (!storageHasKey(STORAGE_KEY) && !storageHasKey(TEMPLATE_CATEGORIES_STORAGE_KEY) && data.templates.length) {
+        templates = data.templates;
+        templateCategories = data.templateCategories;
+        changed = true;
+      }
+      if (!storageHasKey(CUSTOM_SYMBOL_CATEGORIES_STORAGE_KEY) && !storageHasKey(SYMBOLS_STORAGE_KEY) && Object.keys(data.customSymbolCategories).length) {
+        customSymbolCategories = data.customSymbolCategories;
+        changed = true;
+      }
+      if (!storageHasKey(FAVORITE_SYMBOLS_STORAGE_KEY) && data.favoriteSymbols.length) {
+        favoriteSymbols = data.favoriteSymbols;
+        changed = true;
+      }
+      return changed;
+    }
+
+    // Guarda uma cópia das configurações padrão do administrador para o app já abrir com elas, mesmo sem internet.
+    function savePublishedDefaultsCache(rawData) {
+      safeSetItem(PUBLISHED_DEFAULTS_CACHE_KEY, JSON.stringify(rawData));
+    }
+
+    function followCachedDefaults() {
+      try {
+        const cached = JSON.parse(localStorage.getItem(PUBLISHED_DEFAULTS_CACHE_KEY) || 'null');
+        if (cached && typeof cached === 'object') followDefaults(cached);
+      } catch (e) { /* cópia ilegível: o app usa os modelos que já tem */ }
+    }
+
+    function setDefaultsStatus(message, isWarning) {
+      defaultsStatus.className = isWarning ? 'warn' : 'ok';
+      defaultsStatus.textContent = message;
+    }
+
+    function describeDefaults(data) {
+      if (defaultsOrigin !== 'admin') return 'Configurações padrão: as originais do app.';
+      const when = data && data.exportedAt ? new Date(data.exportedAt) : null;
+      const date = when && !isNaN(when)
+        ? ' em ' + when.toLocaleDateString('pt-BR') + ' às ' + when.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        : '';
+      return 'Configurações padrão: definidas pelo administrador' + date + '.';
+    }
+
+    // Primeiro as configurações salvas pelo administrador (no servidor); sem elas, as originais que acompanham o app.
+    async function fetchOnlineDefaults() {
+      try {
+        const published = await postConfig({ acao: 'padrao-ler' });
+        const publishedData = published.ok ? published.data.dados : null;
+        if (publishedData) {
+          const normalizedPublished = normalizeDefaultsObject(publishedData);
+          if (normalizedPublished.templates.length || Object.keys(normalizedPublished.customSymbolCategories).length) {
+            cachedOnlineDefaults = publishedData;
+            defaultsOrigin = 'admin';
+            return publishedData;
+          }
+        }
+      } catch (e) { /* sem servidor ou sem configurações salvas: usa as originais */ }
+
+      const candidates = [new URL('defaults.json', location.href).href, location.origin + '/defaults.json'];
+      let lastError = '';
+
+      for (const url of [...new Set(candidates)]) {
+        try {
+          // O navegador revalida com ETag e só baixa de novo quando o arquivo muda de verdade.
+          const response = await fetch(url, { cache: 'no-cache' });
+          if (!response.ok) {
+            lastError = 'HTTP ' + response.status;
+            continue;
+          }
+
+          let data;
+          try {
+            data = JSON.parse(await response.text());
+          } catch (e) {
+            lastError = 'as configurações padrão originais não são válidas.';
+            continue;
+          }
+
+          const normalized = normalizeDefaultsObject(data);
+          if (!normalized.templates.length && !Object.keys(normalized.customSymbolCategories).length) {
+            lastError = 'as configurações padrão originais estão vazias.';
+            continue;
+          }
+
+          cachedOnlineDefaults = data;
+          defaultsOrigin = 'original';
+          return data;
+        } catch (e) {
+          lastError = e && e.message ? e.message : 'falha desconhecida.';
+        }
+      }
+
+      throw new Error(lastError || 'Não foi possível carregar as configurações padrão.');
+    }
+
+    // Ao abrir o app: quem nunca escolheu opções da IA ou o tipo de caractere já acompanha o padrão, e o app avisa se há
+    // configurações padrão mais novas. Modelos, categorias, caracteres e favoritos só mudam por escolha do usuário.
+    async function autoCheckOnlineDefaultsOnStart() {
+      if (location.protocol !== 'http:' && location.protocol !== 'https:') return;
+
+      try {
+        const data = await fetchOnlineDefaults();
+        applyPreferences(data.preferencias, false);
+        defaultsInfo.textContent = describeDefaults(data);
+
+        // Configurações do administrador: quem nunca mexeu em modelos, caracteres ou favoritos já passa a usá-las.
+        if (defaultsOrigin === 'admin') {
+          savePublishedDefaultsCache(data);
+          if (followDefaults(data)) {
+            renderTemplates();
+            renderSymbols();
+            updateUi();
+          }
+        }
+
+        // O JSON traz a versão como número e o localStorage devolve texto: sem normalizar, 4 !== '4'.
+        const latestVersion = String(data.version || '');
+        const lastAppliedVersion = String(localStorage.getItem(ONLINE_DEFAULTS_VERSION_STORAGE_KEY) || '');
+        if (hasLocalUserData() && latestVersion && latestVersion !== lastAppliedVersion) {
+          setDefaultsStatus('Há configurações padrão mais recentes. Use "Aplicar" ou "Mesclar".', true);
+        }
+      } catch (e) {
+        defaultsInfo.textContent = 'Não consegui verificar as configurações padrão agora.';
+      }
+    }
+
+    // Aplicar: troca tudo pelas configurações padrão. Mesclar: só acrescenta o que o usuário ainda não tem.
+    async function useDefaults(mode) {
+      try {
+        if (mode === 'replace') {
+          const ok = await askConfirm(
+            'Isso troca os seus modelos, categorias, caracteres, favoritos e as opções da IA pelas configurações padrão. Deseja continuar?',
+            'Aplicar configurações padrão'
+          );
+          if (!ok) return;
+        }
+
+        cachedOnlineDefaults = null; // sempre a versão mais recente
+        const rawData = await fetchOnlineDefaults();
+        defaultsInfo.textContent = describeDefaults(rawData);
+
+        if (mode === 'replace') {
+          applyOnlineDefaultsData(rawData, 'replace');
+          setDefaultsStatus('✅ Configurações padrão aplicadas.', false);
+          return;
+        }
+
+        const data = normalizeDefaultsObject(rawData);
+        const addedCategories = mergeTemplateCategories(data.templateCategories);
+        const addedTemplates = mergeTemplates(data.templates);
+        const addedSymbols = mergeSymbolCategories(data.customSymbolCategories);
+        const addedFavorites = mergeFavoriteSymbols(data.favoriteSymbols);
+
+        saveTemplatesToStorage();
+        saveCustomSymbols();
+        saveFavoriteSymbols();
+        applyPreferences(rawData.preferencias, false);
+        if (rawData.version) safeSetItem(ONLINE_DEFAULTS_VERSION_STORAGE_KEY, String(rawData.version));
+
+        renderTemplates();
+        renderSymbols();
+        updateUi();
+
+        setDefaultsStatus(
+          '✅ Configurações padrão mescladas com as suas: ' + addedTemplates + ' modelo(s), ' + addedCategories + ' categoria(s), ' +
+          addedSymbols + ' caractere(s) e ' + addedFavorites + ' favorito(s) acrescentados.',
+          false
+        );
+      } catch (e) {
+        setDefaultsStatus('Não consegui carregar as configurações padrão: ' + (e && e.message ? e.message : 'erro desconhecido'), true);
+      }
+    }
+
+    async function adminDefaultsEnter() {
+      const code = adminDefaultsCode.value.trim();
+      if (!code) {
+        adminDefaultsError.textContent = 'Digite o código de administrador.';
+        adminDefaultsCode.focus();
+        return;
+      }
+
+      adminDefaultsError.textContent = 'Entrando...';
+      const result = await postConfig({ acao: 'admin-entrar', codigo: code });
+      if (!result.ok) {
+        adminDefaultsError.textContent = configErrorMessage(result, 'Não foi possível entrar agora.');
+        adminDefaultsCode.value = '';
+        adminDefaultsCode.focus();
+        return;
+      }
+
+      defaultsAdminCode = code;
+      adminDefaultsCode.value = '';
+      adminDefaultsError.textContent = '';
+      adminDefaultsLogin.hidden = true;
+      adminDefaultsActions.hidden = false;
+      saveDefaultsStatus.textContent = '';
+      if (result.data.armazenamento && !result.data.armazenamento.escrita) {
+        saveDefaultsStatus.className = 'warn';
+        saveDefaultsStatus.textContent = 'O armazenamento do servidor ainda não permite salvar.';
+      }
+    }
+
+    async function saveDefaults() {
+      if (!defaultsAdminCode) return;
+      const ok = await askConfirm(
+        'As configurações deste aparelho (modelos, categorias, caracteres, favoritos e opções da IA) passam a ser o padrão de todos os usuários. Deseja continuar?',
+        'Salvar configurações padrão'
+      );
+      if (!ok) return;
+
+      saveDefaultsBtn.disabled = true;
+      saveDefaultsStatus.className = 'ok';
+      saveDefaultsStatus.textContent = 'Salvando...';
+      const toSave = buildBackupObject();
+      toSave.version = Number(new Date().toISOString().replace(/\D/g, '').slice(0, 12)); // AAAAMMDDhhmm
+      const result = await postConfig({ acao: 'padrao-publicar', codigo: defaultsAdminCode, dados: toSave });
+      saveDefaultsBtn.disabled = false;
+
+      if (!result.ok) {
+        saveDefaultsStatus.className = 'warn';
+        saveDefaultsStatus.textContent = configErrorMessage(result, 'Não foi possível salvar agora.');
+        if (result.status === 403) {
+          defaultsAdminCode = '';
+          adminDefaultsActions.hidden = true;
+          adminDefaultsLogin.hidden = false;
+        }
+        return;
+      }
+
+      cachedOnlineDefaults = null;
+      saveDefaultsStatus.className = 'ok';
+      saveDefaultsStatus.textContent = '✅ Configurações padrão salvas para todos os usuários (' + (result.data.modelos || 0) + ' modelos, além de categorias, caracteres, favoritos e opções da IA).';
+      defaultsInfo.textContent = 'Configurações padrão: definidas pelo administrador agora há pouco.';
+    }
+
+    const saveDefaultsBtn = document.getElementById('saveDefaultsBtn');
+    document.getElementById('applyDefaultsBtn').addEventListener('click', () => useDefaults('replace'));
+    document.getElementById('mergeDefaultsBtn').addEventListener('click', () => useDefaults('merge'));
+    document.getElementById('adminDefaultsLoginBtn').addEventListener('click', adminDefaultsEnter);
+    saveDefaultsBtn.addEventListener('click', saveDefaults);
+    adminDefaultsCode.addEventListener('keydown', event => {
+      if (event.key === 'Enter') { event.preventDefault(); adminDefaultsEnter(); }
+    });
+
     symbolCategorySelect.addEventListener('change', renderSymbols);
     document.getElementById('resetFavoriteSymbolsBtn').addEventListener('click', resetFavoriteSymbols);
     document.getElementById('saveCustomSymbolsBtn').addEventListener('click', addCustomSymbols);
     document.getElementById('clearCustomSymbolsBtn').addEventListener('click', clearCustomSymbols);
-    document.getElementById('checkOnlineDefaultsBtn').addEventListener('click', checkOnlineDefaults);
-    document.getElementById('openDefaultsJsonBtn').addEventListener('click', openDefaultsJson);
-    document.getElementById('mergeOnlineDefaultsBtn').addEventListener('click', mergeOnlineDefaults);
-    document.getElementById('replaceOnlineDefaultsBtn').addEventListener('click', replaceOnlineDefaults);
-    document.getElementById('exportTemplatesBtn').addEventListener('click', exportTemplates);
-    setJsonAsDefaultBtn.addEventListener('click', openAdminPasswordPrompt);
-    adminPasswordConfirm.addEventListener('click', confirmAdminPassword);
-    adminPasswordCancel.addEventListener('click', closeAdminPasswordPrompt);
-    adminPasswordOverlay.addEventListener('click', event => {
-      if (event.target === adminPasswordOverlay) closeAdminPasswordPrompt();
-    });
-    adminPasswordInput.addEventListener('keydown', event => {
-      if (event.key === 'Enter') { event.preventDefault(); confirmAdminPassword(); }
-      if (event.key === 'Escape') { event.preventDefault(); closeAdminPasswordPrompt(); }
-    });
-    document.getElementById('importTemplatesBtn').addEventListener('click', chooseImportFile);
-    document.getElementById('copyBackupBtn').addEventListener('click', copyBackup);
-    importTemplatesFile.addEventListener('change', handleImportFile);
     templateSelect.addEventListener('change', loadSelectedTemplateIntoEditor);
 
     input.addEventListener('focus', event => { rememberFocusedField(event); rememberInputSelection(); });
@@ -5248,7 +5052,6 @@ async function importTemplatesFromText(text) {
       }
     });
     templateContent.addEventListener('focus', rememberFocusedField);
-    backupText.addEventListener('focus', rememberFocusedField);
     customSymbolsText.addEventListener('focus', rememberFocusedField);
     newTemplateCategoryName.addEventListener('focus', rememberFocusedField);
     categoryRenameName.addEventListener('focus', rememberFocusedField);
