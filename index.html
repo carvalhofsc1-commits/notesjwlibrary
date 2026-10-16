@@ -5425,15 +5425,8 @@ async function importTemplatesFromText(text) {
 
       aiProgress.classList.add('on');
       aiResults.setAttribute('aria-busy', 'true');
-      // Os cartões fantasma anunciam sugestões que aparecerão na lista; as respostas do estudo vão direto para o
-      // campo de texto, então nelas não há lista para preencher.
-      if (aiStatusKind === 'format') {
-        for (let i = 0; i < 2; i++) {
-          const ghost = document.createElement('div');
-          ghost.className = 'ai-skeleton';
-          aiResults.appendChild(ghost);
-        }
-      }
+      // Sem cartões fantasma enquanto a IA trabalha: o botão com "Consultando a IA…", a barra de progresso e o
+      // contador de segundos já mostram que o pedido está em andamento.
 
       const startedAt = Date.now();
       const tick = () => {
