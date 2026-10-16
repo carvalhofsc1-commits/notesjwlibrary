@@ -887,6 +887,9 @@
     button.danger { background: var(--danger); color: #ffffff; }
     button.danger:hover { background: var(--danger-dark); }
 
+    /* "Criar categoria" ocupa toda a largura do seu bloco. */
+    #addTemplateCategoryBtn { width: 100%; }
+
     .button-row {
       display: flex;
       gap: 10px;
@@ -1115,6 +1118,11 @@
     }
 
     /* ---------- Caracteres ---------- */
+
+    /* Busca de caracteres pelo nome */
+    .symbol-search { margin-top: 10px; }
+    .symbol-search label { margin-bottom: 4px; }
+    .symbol-search .hint { margin: 6px 0 0; }
 
     .symbols {
       display: grid;
@@ -1969,6 +1977,13 @@
           <div class="subsection-body">
       <p class="hint">Clique para inserir no campo ativo. Os favoritos ficam no topo. Toque na estrelinha no canto de um caractere para mandá-lo para os favoritos (☆) ou tirá-lo do topo (★).</p>
 
+      <div class="symbol-search">
+        <label for="symbolSearch">🔍 Buscar caractere pelo nome</label>
+        <input id="symbolSearch" type="search" autocomplete="off" autocapitalize="none" spellcheck="false" enterkeyhint="search" placeholder="Ex.: coração, sorriso, bandeira, seta">
+        <p id="symbolSearchInfo" class="hint" role="status" aria-live="polite"></p>
+        <div id="symbolSearchResults" class="symbols"></div>
+      </div>
+
       <h3>⭐ Favoritos no topo</h3>
       <div id="symbols" class="symbols"></div>
 
@@ -2245,6 +2260,11 @@
     const cancelImportChoice = document.getElementById('cancelImportChoice');
     const moreSymbols = document.getElementById('moreSymbols');
     const symbolCategorySelect = document.getElementById('symbolCategorySelect');
+    const symbolSearch = document.getElementById('symbolSearch');
+    const symbolSearchInfo = document.getElementById('symbolSearchInfo');
+    const symbolSearchResults = document.getElementById('symbolSearchResults');
+    let emojiKeywords = null;        // { emoji sem FE0F e sem tom de pele: "nome e palavras-chave sem acento" }
+    let emojiKeywordsPromise = null;
     const customSymbolCategory = document.getElementById('customSymbolCategory');
     const customSymbolsText = document.getElementById('customSymbolsText');
     const symbolsStatus = document.getElementById('symbolsStatus');
@@ -3978,7 +3998,109 @@ function saveTemplatesToStorage() {
         note.textContent = 'Todos os caracteres desta categoria já estão nos favoritos, ou a categoria está vazia.';
         moreSymbols.appendChild(note);
       }
+
+      if (symbolSearch.value.trim() && emojiKeywords) renderSymbolSearch();
     }
+
+    // ---------- Busca de caracteres pelo nome ----------
+    // Os nomes e as palavras-chave em português (do CLDR do Unicode) ficam em emoji-busca.json e só são baixados na
+    // primeira busca. Os caracteres sem nome (setas, letras, linhas...) são achados pelo nome da categoria.
+    function normalizeSearchText(text) {
+      return String(text || '').toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function symbolSearchKey(sym) {
+      return sym.replace(/\uFE0F/g, '').replace(/[\u{1F3FB}-\u{1F3FF}]/gu, '');
+    }
+
+    function loadEmojiKeywords() {
+      if (emojiKeywords) return Promise.resolve(emojiKeywords);
+      if (!emojiKeywordsPromise) {
+        emojiKeywordsPromise = fetch('emoji-busca.json')
+          .then(response => {
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            return response.json();
+          })
+          .then(data => { emojiKeywords = data; return data; })
+          .catch(error => { emojiKeywordsPromise = null; throw error; });
+      }
+      return emojiKeywordsPromise;
+    }
+
+    const SYMBOL_SEARCH_LIMIT = 400;
+
+    function findSymbolsByName(query) {
+      const words = normalizeSearchText(query).split(/\s+/).filter(Boolean);
+      if (!words.length) return [];
+
+      const found = new Set();
+      // Palavra no início de alguma palavra do texto; vale também o singular ("corações" acha "coração") e sinônimos comuns.
+      const synonyms = { carinha: 'rosto', carinhas: 'rosto', cara: 'rosto', caras: 'rosto', face: 'rosto', faces: 'rosto', emoji: '', emojis: '' };
+      const hasWord = (text, word) => {
+        const options = [word];
+        if (word.length > 3 && word.endsWith('s')) options.push(word.slice(0, -1));
+        if (word.length > 4 && word.endsWith('oes')) options.push(word.slice(0, -3) + 'ao');
+        if (synonyms[word] !== undefined) options.push(synonyms[word]);
+        return options.some(option => option === '' || (' ' + text).includes(' ' + option));
+      };
+
+      // Nome da categoria (ex.: "setas", "bandeiras"): traz todos os caracteres dela.
+      const allCategories = symbolCategories.map(cat => ({ id: cat.id, name: cat.name }))
+        .concat(Object.keys(customSymbolCategories).map(id => ({ id, name: getCustomCategoryName(id) })));
+      allCategories.forEach(cat => {
+        const name = normalizeSearchText(cat.name).replace(/[^a-z0-9]+/g, ' ');
+        if (words.every(word => hasWord(name, word))) getAllCategorySymbols(cat.id).forEach(sym => found.add(sym));
+      });
+
+      getAllSymbols().forEach(sym => {
+        const keywords = emojiKeywords && emojiKeywords[symbolSearchKey(sym)];
+        if (keywords && words.every(word => hasWord(keywords, word))) found.add(sym);
+      });
+
+      return [...found];
+    }
+
+    function renderSymbolSearch() {
+      const query = symbolSearch.value.trim();
+      symbolSearchResults.innerHTML = '';
+      if (!query) { symbolSearchInfo.textContent = ''; return; }
+
+      const results = findSymbolsByName(query);
+      if (!results.length) {
+        symbolSearchInfo.textContent = 'Nenhum caractere encontrado para "' + query + '". Tente outra palavra (ex.: coração, sorriso, bandeira).';
+        return;
+      }
+
+      const favoriteSet = new Set(favoriteSymbols);
+      results.slice(0, SYMBOL_SEARCH_LIMIT).forEach(sym => {
+        symbolSearchResults.appendChild(makeSymbolButton(sym, favoriteSet.has(sym) ? 'favorite' : 'category'));
+      });
+      symbolSearchInfo.textContent = results.length > SYMBOL_SEARCH_LIMIT
+        ? 'Mostrando ' + SYMBOL_SEARCH_LIMIT + ' de ' + results.length + ' caracteres. Digite mais letras para refinar.'
+        : results.length + (results.length === 1 ? ' caractere encontrado.' : ' caracteres encontrados.');
+    }
+
+    let symbolSearchTimer = null;
+    symbolSearch.addEventListener('input', () => {
+      clearTimeout(symbolSearchTimer);
+      symbolSearchTimer = setTimeout(async () => {
+        if (!symbolSearch.value.trim()) return renderSymbolSearch();
+        if (!emojiKeywords) {
+          symbolSearchInfo.textContent = 'Carregando os nomes dos caracteres...';
+          try {
+            await loadEmojiKeywords();
+          } catch (e) {
+            // Sem a lista de nomes, ainda dá para achar pelo nome da categoria.
+            symbolSearchInfo.textContent = 'Não foi possível carregar os nomes dos emojis (sem conexão?). A busca só acha pelo nome da categoria.';
+            symbolSearchResults.innerHTML = '';
+            const only = findSymbolsByName(symbolSearch.value);
+            only.slice(0, SYMBOL_SEARCH_LIMIT).forEach(sym => symbolSearchResults.appendChild(makeSymbolButton(sym, favoriteSymbols.includes(sym) ? 'favorite' : 'category')));
+            return;
+          }
+        }
+        renderSymbolSearch();
+      }, 180);
+    });
 
     function addCustomSymbols() {
       const newSymbols = uniqueTokensFromText(customSymbolsText.value);

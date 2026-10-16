@@ -97,7 +97,7 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  if (url.pathname.endsWith('defaults.json')) {
+  if (url.pathname.endsWith('defaults.json') || url.pathname.endsWith('emoji-busca.json')) {
     event.respondWith(redePrimeiro(request));
     return;
   }
