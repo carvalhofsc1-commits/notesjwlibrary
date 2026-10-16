@@ -1,7 +1,7 @@
 // Configurações editáveis pelo administrador: prompts da IA (tom e regras) e modelos padrão do app.
 // Tudo o que muda dados exige o CODIGO_ADMIN, conferido aqui no servidor. A leitura dos modelos padrão é pública.
 import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
-import { escritaDisponivel, leituraDisponivel, lerItem, gravarItem } from "./_armazem.mjs";
+import { diagnosticar, escritaDisponivel, leituraDisponivel, lerItem, gravarItem } from "./_armazem.mjs";
 import { PARTES, TRAVADOS, validarAlteracoes } from "./_prompts.mjs";
 import { esquecerCache, gravarAlteracoes, lerAlteracoes, lerAnterior } from "./_promptsArmazenados.mjs";
 
@@ -153,6 +153,9 @@ export default async function handler(req, res) {
   } catch (e) {
     esquecerCache();
     console.error("Erro em /api/config:", e && e.message);
-    return erro(res, 502, "Não foi possível concluir agora: " + (e && e.message ? e.message : "erro desconhecido"));
+    const motivo = e && e.message ? e.message : "erro desconhecido";
+    // Recusa da Vercel ao gravar: junta um resumo do que o token enxerga (sem segredos) para facilitar o conserto.
+    const diagnostico = /recusou/.test(motivo) ? " Diagnóstico: " + (await diagnosticar().catch(() => "indisponível")) + "." : "";
+    return erro(res, 502, "Não foi possível concluir agora: " + motivo + diagnostico);
   }
 }

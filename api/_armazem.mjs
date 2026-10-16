@@ -93,3 +93,50 @@ export async function gravarItem(chave, valor) {
   }
   throw new Error(`A Vercel recusou a gravação (${falhas.join(" | ")}).`);
 }
+
+// Resumo, sem segredos, do que o token de escrita enxerga: dono, escopos, função na equipe e se vê o armazenamento.
+// Serve para entender uma recusa de permissão ao gravar; só é mostrado ao administrador, na mensagem de erro.
+export async function diagnosticar() {
+  const token = process.env.VERCEL_API_TOKEN;
+  const id = idDoArmazenamento();
+  const equipe = process.env.VERCEL_TEAM_ID;
+  if (!token) return "sem VERCEL_API_TOKEN";
+
+  const consulta = equipe ? `?teamId=${encodeURIComponent(equipe)}` : "";
+  const partes = [];
+  const pedir = async (rotulo, url) => {
+    try {
+      const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (!r.ok) {
+        partes.push(`${rotulo} ${r.status}`);
+        return null;
+      }
+      return await r.json();
+    } catch (e) {
+      partes.push(`${rotulo} falhou`);
+      return null;
+    }
+  };
+
+  const info = await pedir("token", "https://api.vercel.com/v5/user/tokens/current");
+  if (info) {
+    const t = info.token || info;
+    const escopos = Array.isArray(t.scopes) ? t.scopes.map((e) => `${e.type}:${e.teamId || e.origin || "?"}`).join(",") : "?";
+    partes.push(`escopos=[${escopos}]`);
+  }
+  const eu = await pedir("usuario", "https://api.vercel.com/v2/user");
+  if (eu && eu.user) partes.push(`usuario=${eu.user.username}`);
+
+  if (equipe) {
+    const t = await pedir("equipe", `https://api.vercel.com/v2/teams/${encodeURIComponent(equipe)}`);
+    if (t) partes.push(`funcao=${(t.membership && t.membership.role) || "?"}`);
+  }
+
+  if (id) {
+    const loja = await pedir("armazenamento", `https://api.vercel.com/v1/edge-config/${id}${consulta}`);
+    if (loja) partes.push(`armazenamento visivel (dono=${loja.ownerId || "?"})`);
+    const itens = await pedir("itens", `https://api.vercel.com/v1/edge-config/${id}/items${consulta}`);
+    if (itens) partes.push(`itens=${Array.isArray(itens) ? itens.length : "?"}`);
+  }
+  return partes.join("; ");
+}
