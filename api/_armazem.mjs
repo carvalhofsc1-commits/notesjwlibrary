@@ -70,9 +70,9 @@ export async function gravarItem(chave, valor) {
     });
 
   // A operação "upsert" respondeu "item não encontrado" para chaves novas; então atualiza e, se o item ainda não
-  // existir, cria. A Vercel também renomeou Edge Config para Global Config: tenta o caminho novo e, se ele não
-  // existir, o antigo.
-  let ultimo = "";
+  // existir, cria. A Vercel também renomeou Edge Config para Global Config e os dois caminhos da API convivem:
+  // tenta um e, se ele recusar por qualquer motivo, o outro, e só então desiste (contando o que cada um respondeu).
+  const falhas = [];
   for (const caminho of ["global-config", "edge-config"]) {
     let operacao = "update";
     let resposta = await enviar(caminho, operacao);
@@ -89,8 +89,7 @@ export async function gravarItem(chave, valor) {
       }
     }
 
-    ultimo = `${caminho}/${operacao} -> ${resposta.status}: ${(await resposta.text()).slice(0, 200)}`;
-    if (resposta.status !== 404) break;
+    falhas.push(`${caminho}/${operacao} -> ${resposta.status}: ${(await resposta.text()).slice(0, 160)}`);
   }
-  throw new Error(`A Vercel recusou a gravação (${ultimo}).`);
+  throw new Error(`A Vercel recusou a gravação (${falhas.join(" | ")}).`);
 }
