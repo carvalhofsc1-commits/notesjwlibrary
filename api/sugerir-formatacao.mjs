@@ -4,7 +4,6 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
 import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
-import { MAX_TEXTOS_POR_RESPOSTA } from "./_prompts.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
 
 const MODEL = process.env.CLAUDE_MODEL || "claude-haiku-5-5";
@@ -335,10 +334,10 @@ function foiLido(lido, texto) {
   return chave.length >= 3 && (lido.corrido.includes(chave) || lido.bruto.includes(chave));
 }
 
-function sanearTextos(textos, lido, usarBiblia) {
+function sanearTextos(textos, lido, usarBiblia, maxTextos) {
   if (!usarBiblia || !Array.isArray(textos)) return [];
   const resultado = [];
-  for (const t of textos.slice(0, MAX_TEXTOS_POR_RESPOSTA)) {
+  for (const t of textos.slice(0, maxTextos)) {
     if (!t || typeof t !== "object") continue;
     const referencia = limparTextoGerado(t.referencia, 60);
     const bruto = limparTrecho(t.texto).replace(/^\d{1,3}\s+/, "").replace(/\s+/g, " ");
@@ -365,14 +364,14 @@ function limparLinha(valor, max) {
 }
 
 // Um item de resposta pronto para o navegador: texto limpo, destaques conferidos e, se pedidos, versículos e Perspicaz.
-function montarItem(i, opcoes, permitidos, lido, fontes) {
+function montarItem(i, opcoes, permitidos, lido, fontes, maxTextos) {
   const texto = limparTextoGerado(i.resposta, 1500);
   return {
     paragrafos: limparLinha(i.paragrafos, 20),
     resposta: texto,
     emoji: opcoes.emoji ? limparEmoji(i.emoji) : null,
     destaques: sanearDestaques(i.destaques, texto, opcoes, permitidos),
-    textos: sanearTextos(i.textos, lido, !!(fontes && fontes.biblia)),
+    textos: sanearTextos(i.textos, lido, !!(fontes && fontes.biblia), maxTextos),
     perspicaz: sanearPerspicaz(i.perspicaz, lido, !!(fontes && fontes.perspicaz)),
     referencias: (Array.isArray(i.referencias) ? i.referencias : []).map((r) => limparLinha(r, 60)).filter(Boolean).slice(0, 3),
   };
@@ -417,7 +416,7 @@ async function completarComTextos(itens, P) {
     const lido = textoLido(blocos);
     for (const r of dados.data.itens) {
       const item = alvo[r.indice];
-      if (item) item.textos = sanearTextos(r.textos, lido, true);
+      if (item) item.textos = sanearTextos(r.textos, lido, true, P.limites.maxTextos);
     }
   } catch (e) {
     console.error("Não foi possível acrescentar os textos bíblicos:", e?.status, e?.message);
@@ -578,7 +577,7 @@ async function responderSentinela(res, { linhas, opcoes, modo, ajuste, anteriore
       const lido = textoLido(blocos);
       const itens = dados.data.itens
         .slice(0, 40)
-        .map((i) => montarItem(i, opcoes, permitidos, lido, fontes))
+        .map((i) => montarItem(i, opcoes, permitidos, lido, fontes, P.limites.maxTextos))
         .filter((i) => i.resposta);
       return res.status(200).json({ itens: await finalizarItens(itens, fontes, P) });
     }
@@ -598,7 +597,7 @@ async function responderSentinela(res, { linhas, opcoes, modo, ajuste, anteriore
 
     const itens = resposta.parsed_output.itens
       .slice(0, 40)
-      .map((i) => montarItem(i, opcoes, permitidos, { bruto: "", corrido: "" }, null))
+      .map((i) => montarItem(i, opcoes, permitidos, { bruto: "", corrido: "" }, null, P.limites.maxTextos))
       .filter((i) => i.resposta);
 
     return res.status(200).json({ itens: await finalizarItens(itens, null, P) });
@@ -749,7 +748,7 @@ async function responderEstudo(res, body, P) {
     const lido = textoLido(blocos);
     const itensTodos = dados.data.itens
       .slice(0, 40)
-      .map((i) => montarItem(i, opcoes, permitidos, lido, fontes))
+      .map((i) => montarItem(i, opcoes, permitidos, lido, fontes, P.limites.maxTextos))
       .filter((i) => i.resposta);
 
     // Recapitulação: as perguntas do quadro vêm numeradas 1, 2, 3...; o rótulo "Recap. N" não se confunde com parágrafos.
@@ -1024,7 +1023,7 @@ export default async function handler(req, res) {
       opcoes.resumo && typeof saida.resumo === "string" ? limparTextoGerado(saida.resumo, MAX_RESUMO) || null : null;
 
     // Versículos e Perspicaz acompanham o resumo; sem resumo não há onde mostrá-los.
-    const textos = resumo && fontes ? sanearTextos(saida.textos, lido, fontes.biblia) : [];
+    const textos = resumo && fontes ? sanearTextos(saida.textos, lido, fontes.biblia, P.limites.maxTextos) : [];
     const perspicaz = resumo && fontes ? sanearPerspicaz(saida.perspicaz, lido, fontes.perspicaz) : null;
 
     return res.status(200).json({ resumo, sugestoes, textos, perspicaz });

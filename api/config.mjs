@@ -2,8 +2,8 @@
 // Tudo o que muda dados exige o CODIGO_ADMIN, conferido aqui no servidor. A leitura dos modelos padrão é pública.
 import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { diagnosticar, escritaDisponivel, leituraDisponivel, lerItem, gravarItem } from "./_armazem.mjs";
-import { PARTES, TRAVADOS, validarAlteracoes } from "./_prompts.mjs";
-import { esquecerCache, gravarAlteracoes, lerAlteracoes, lerAnterior } from "./_promptsArmazenados.mjs";
+import { LIMITES, PARTES, aplicarLimites, travadosDe, validarAlteracoes, validarLimites } from "./_prompts.mjs";
+import { esquecerCache, gravarAlteracoes, gravarLimites, lerAlteracoes, lerAnterior, lerLimites } from "./_promptsArmazenados.mjs";
 
 const CHAVE_PADRAO = "padrao_modelos";
 const MAX_BYTES_PADRAO = 200_000;
@@ -34,7 +34,17 @@ function descreverArmazenamento() {
 async function estadoDosPrompts() {
   const alteracoes = await lerAlteracoes();
   const anterior = await lerAnterior();
+  const limites = aplicarLimites(await lerLimites());
   return {
+    limites: LIMITES.map((l) => ({
+      id: l.id,
+      titulo: l.titulo,
+      descricao: l.descricao,
+      padrao: l.padrao,
+      min: l.min,
+      max: l.max,
+      valor: limites[l.id],
+    })),
     partes: PARTES.map((p) => ({
       id: p.id,
       titulo: p.titulo,
@@ -43,7 +53,7 @@ async function estadoDosPrompts() {
       valor: typeof alteracoes[p.id] === "string" ? alteracoes[p.id] : p.padrao,
       personalizado: typeof alteracoes[p.id] === "string" && alteracoes[p.id] !== p.padrao,
     })),
-    travados: TRAVADOS.map((t) => ({ id: t.id, titulo: t.titulo, texto: t.texto })),
+    travados: travadosDe(limites).map((t) => ({ id: t.id, titulo: t.titulo, texto: t.texto })),
     armazenamento: descreverArmazenamento(),
     temAnterior: Object.keys(anterior).length > 0,
   };
@@ -113,12 +123,23 @@ export default async function handler(req, res) {
 
     if (acao === "prompts-salvar") {
       if (!exigirEscrita(res)) return;
-      const checagem = validarAlteracoes(corpo.alteracoes);
+      const checagem = validarAlteracoes(corpo.alteracoes || {});
       if (!checagem.ok) return erro(res, 400, checagem.erro);
+      const checagemLimites = validarLimites(corpo.limites);
+      if (!checagemLimites.ok) return erro(res, 400, checagemLimites.erro);
 
-      const atuais = await lerAlteracoes();
-      const novas = soDiferencas({ ...atuais, ...checagem.valores });
-      await gravarAlteracoes(novas, atuais);
+      if (Object.keys(checagem.valores).length) {
+        const atuais = await lerAlteracoes();
+        const novas = soDiferencas({ ...atuais, ...checagem.valores });
+        await gravarAlteracoes(novas, atuais);
+      }
+      if (Object.keys(checagemLimites.valores).length) {
+        // Só guarda o que difere do padrão.
+        const juntos = { ...(await lerLimites()), ...checagemLimites.valores };
+        const diferencas = {};
+        for (const l of LIMITES) if (juntos[l.id] !== undefined && Number(juntos[l.id]) !== l.padrao) diferencas[l.id] = Number(juntos[l.id]);
+        await gravarLimites(diferencas);
+      }
       return res.status(200).json(await estadoDosPrompts());
     }
 

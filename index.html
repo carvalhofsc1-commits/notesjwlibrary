@@ -2026,8 +2026,9 @@
       </div>
 
       <div id="promptsEditor" hidden>
-        <p class="hint">Aqui você edita o <strong>tom e as regras</strong> da IA. O formato técnico da resposta (campos e JSON) e a forma de ler os arquivos da Bíblia e do Perspicaz ficam travados, só para leitura, no fim da página. Ao salvar, a mudança vale para todos os usuários em poucos segundos. "Restaurar padrão" volta ao texto original do app.</p>
+        <p class="hint">Aqui você edita o <strong>tom e as regras</strong> da IA. O formato técnico da resposta (campos e JSON) e a forma de ler os arquivos da Bíblia e do Perspicaz ficam travados, só para leitura, no fim da página. Ao salvar, a mudança vale para todos os usuários em poucos segundos. "Restaurar padrão" volta ao texto original do app. Nos textos, <strong>{{max_textos}}</strong> é trocado pelo limite de textos bíblicos definido logo abaixo.</p>
         <p id="promptsStatus" class="ok" role="status" aria-live="polite"></p>
+        <div id="promptsLimits"></div>
         <div id="promptsList"></div>
         <div class="manager-section prompt-locked">
           <h3>Parte técnica (somente leitura)</h3>
@@ -4839,7 +4840,7 @@ async function importTemplatesFromText(text) {
     }
 
     function confirmDiscardPrompts() {
-      if (!Object.keys(promptsPendingChanges()).length) return Promise.resolve(true);
+      if (!promptsHasPending()) return Promise.resolve(true);
       return askConfirm('Há alterações que ainda não foram salvas. Voltar mesmo assim?', 'Voltar sem salvar');
     }
 
@@ -4850,11 +4851,29 @@ async function importTemplatesFromText(text) {
       promptsCode = '';
       promptsState = null;
       promptsList.textContent = '';
+      document.getElementById('promptsLimits').textContent = '';
       promptsLocked.textContent = '';
       promptsCodeInput.value = '';
       window.scrollTo(0, promptsScrollY);
       if (promptsOpener && typeof promptsOpener.focus === 'function') promptsOpener.focus({ preventScroll: true });
       promptsOpener = null;
+    }
+
+    // Limites numéricos mudados na tela e ainda não salvos: { id: número }.
+    function promptsPendingLimits() {
+      const changes = {};
+      if (!promptsState || !Array.isArray(promptsState.limites)) return changes;
+      promptsState.limites.forEach(limit => {
+        const field = document.querySelector('input[data-limit-id="' + limit.id + '"]');
+        if (!field) return;
+        const value = Number(field.value);
+        if (field.value.trim() !== '' && value !== limit.valor) changes[limit.id] = value;
+      });
+      return changes;
+    }
+
+    function promptsHasPending() {
+      return Object.keys(promptsPendingChanges()).length > 0 || Object.keys(promptsPendingLimits()).length > 0;
     }
 
     async function closePrompts() {
@@ -4866,7 +4885,7 @@ async function importTemplatesFromText(text) {
 
     window.addEventListener('popstate', async () => {
       if (!promptsIsOpen) return;
-      if (!Object.keys(promptsPendingChanges()).length) {
+      if (!promptsHasPending()) {
         showMainScreen();
         return;
       }
@@ -4886,9 +4905,54 @@ async function importTemplatesFromText(text) {
       bottom.textContent = message;
     }
 
+    function renderLimits(state) {
+      const holder = document.getElementById('promptsLimits');
+      holder.textContent = '';
+
+      (state.limites || []).forEach(limit => {
+        const box = document.createElement('div');
+        box.className = 'prompt-item';
+
+        const title = document.createElement('h3');
+        title.textContent = limit.titulo;
+
+        const description = document.createElement('p');
+        description.className = 'hint';
+        description.textContent = limit.descricao;
+
+        const field = document.createElement('input');
+        field.type = 'number';
+        field.inputMode = 'numeric';
+        field.min = String(limit.min);
+        field.max = String(limit.max);
+        field.step = '1';
+        field.value = String(limit.valor);
+        field.dataset.limitId = limit.id;
+        field.setAttribute('aria-label', limit.titulo);
+
+        const info = document.createElement('span');
+        info.className = 'prompt-count';
+        info.textContent = 'De ' + limit.min + ' a ' + limit.max + '. Padrão do app: ' + limit.padrao + '.';
+
+        const defaultBtn = document.createElement('button');
+        defaultBtn.type = 'button';
+        defaultBtn.className = 'secondary';
+        defaultBtn.textContent = 'Usar o padrão (' + limit.padrao + ')';
+        defaultBtn.addEventListener('click', () => { field.value = String(limit.padrao); });
+
+        const actions = document.createElement('div');
+        actions.className = 'prompt-item-actions';
+        actions.append(info, defaultBtn);
+
+        box.append(title, description, field, actions);
+        holder.appendChild(box);
+      });
+    }
+
     function renderPrompts(state) {
       promptsState = state;
       promptsList.textContent = '';
+      renderLimits(state);
 
       state.partes.forEach(part => {
         const box = document.createElement('div');
@@ -5001,11 +5065,12 @@ async function importTemplatesFromText(text) {
 
     async function savePrompts() {
       const changes = promptsPendingChanges();
-      if (!Object.keys(changes).length) {
+      const limits = promptsPendingLimits();
+      if (!Object.keys(changes).length && !Object.keys(limits).length) {
         setPromptsStatus('Nada foi alterado.', false);
         return;
       }
-      await sendPromptsAction({ acao: 'prompts-salvar', alteracoes: changes }, '✅ Alterações salvas com sucesso! Valem para todos os usuários em poucos segundos.');
+      await sendPromptsAction({ acao: 'prompts-salvar', alteracoes: changes, limites: limits }, '✅ Alterações salvas com sucesso! Valem para todos os usuários em poucos segundos.');
     }
 
     async function restorePrompt(part) {
