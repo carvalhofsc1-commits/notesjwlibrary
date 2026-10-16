@@ -297,6 +297,19 @@
     /* Caixas "Consultar textos citados" e "Consultar o Perspicaz", logo abaixo dos botões de responder. */
     .ai-sources { display: grid; gap: 6px; margin-top: 8px; }
 
+    /* O marcador herdava o preenchimento e a borda dos campos de texto (11 px), o que o deixava enorme e o texto
+       desalinhado no alto da caixa. Aqui o marcador tem tamanho próprio e o texto fica centralizado nele. */
+    .ai-sources .ai-check { align-items: center; gap: 10px; padding: 5px 10px; line-height: 1.2; }
+    .ai-sources .ai-check input {
+      flex: 0 0 18px;
+      width: 18px;
+      height: 18px;
+      min-height: 0;
+      margin: 0;
+      padding: 0;
+      border: 0;
+    }
+
     .ai-refine { margin-top: 14px; }
 
     /* Botões de copiar as respostas do estudo: ficam sobre o campo de texto, logo abaixo de cada resposta. */
@@ -450,8 +463,8 @@
       background: var(--card);
     }
 
-    .sent-option-1 { border-top: 6px solid #7e22ce; }
-    .sent-option-2 { border-top: 6px solid #c2410c; }
+    .sent-option-paste { border-top: 6px solid #7e22ce; }
+    .sent-option-site { border-top: 6px solid #c2410c; }
 
     .sent-option h3 {
       margin: 0 0 4px;
@@ -1720,18 +1733,8 @@
           <summary>📖 Opções para estudo de A Sentinela</summary>
           <div class="subsection-body">
 
-        <section class="sent-option sent-option-1">
-          <h3>Opção 1: Cole a pergunta e o texto do parágrafo no campo de texto</h3>
-          <button id="aiSentinelaBtn" class="ai-sentinela-btn" type="button">📖 Responder resumidamente a pergunta do parágrafo colado</button>
-          <div class="ai-sources">
-            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Consultar textos citados (Bíblia)</label>
-            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarPerspicaz"> 📚 Consultar o Perspicaz</label>
-          </div>
-          <span id="aiSentinelaStatus" class="ok" role="status" aria-live="polite"></span>
-        </section>
-
-        <section class="sent-option sent-option-2">
-          <h3>Opção 2: A IA lê direto na biblioteca on-line (wol.jw.org) o estudo da semana</h3>
+        <section class="sent-option sent-option-site">
+          <h3>Opção 1: A IA lê direto na biblioteca on-line (wol.jw.org) o estudo da semana</h3>
           <div class="ai-week">
             <button id="aiWeekPrev" class="secondary ai-week-nav" type="button" aria-label="Semana anterior">◀</button>
             <a id="aiWeekLink" class="ai-week-link" href="https://wol.jw.org/pt/wol/meetings/r5/lp-t/" target="_blank" rel="noopener noreferrer">
@@ -1768,6 +1771,16 @@
             <summary>🔑 Para esta opção é obrigatório o código de acesso.</summary>
             <input autocomplete="off" id="aiStudyCode" type="password" maxlength="100" placeholder="Digite o código uma vez; ele fica salvo neste aparelho">
           </details>
+        </section>
+
+        <section class="sent-option sent-option-paste">
+          <h3>Opção 2: Cole a pergunta e o texto do parágrafo no campo de texto</h3>
+          <button id="aiSentinelaBtn" class="ai-sentinela-btn" type="button">📖 Responder resumidamente a pergunta do parágrafo colado</button>
+          <div class="ai-sources">
+            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Consultar textos citados (Bíblia)</label>
+            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarPerspicaz"> 📚 Consultar o Perspicaz</label>
+          </div>
+          <span id="aiSentinelaStatus" class="ok" role="status" aria-live="polite"></span>
         </section>
 
         <label for="aiAdjustText2" class="ai-guidance-label">Orientação para a IA (opcional)</label>
@@ -5336,7 +5349,7 @@ async function importTemplatesFromText(text) {
       [aiStatus, aiSentinelaStatus, aiStudyAnswerStatus, aiStudyStatus].forEach(el => { el.textContent = ''; });
     }
 
-    // A mensagem aparece junto ao botão que o usuário usou: na área da IA (formatação), na Opção 1 ou na Opção 2.
+    // A mensagem aparece junto ao botão que o usuário usou: na área da IA (formatação), na Opção 1 (site) ou na Opção 2 (texto colado).
     let aiStatusKind = 'format'; // 'format' | 'sentinela' | 'estudo' | 'lista'
 
     function aiStatusElement() {
@@ -5468,7 +5481,7 @@ async function importTemplatesFromText(text) {
       }));
     });
 
-    // As caixas de consulta existem na Opção 1 e na Opção 2 e valem para as duas: marcar uma marca a outra.
+    // As caixas de consulta existem nas duas opções do estudo e valem para as duas: marcar uma marca a outra.
     ['consultarBiblia', 'consultarPerspicaz'].forEach(name => {
       const boxes = aiOptionInputs.filter(el => el.dataset.aiOpt === name);
       boxes.forEach(box => box.addEventListener('change', () => {
@@ -5567,7 +5580,7 @@ async function importTemplatesFromText(text) {
       aiAppliedAny = true;
     }
 
-    // Substitui todo o campo de texto pelas respostas (Opção 1 do estudo: elas tomam o lugar do texto colado).
+    // Substitui todo o campo de texto pelas respostas (Opção 2 do estudo: elas tomam o lugar do texto colado).
     function replaceMainText(text) {
       setInputRange(0, input.value.length, text, { message: 'Resposta colada no campo de texto.' });
       autoGrowInputText();
@@ -6076,7 +6089,7 @@ async function importTemplatesFromText(text) {
           return setAiStatus('Não encontrei perguntas do estudo no texto. Cole os parágrafos junto com as perguntas.', true);
         }
 
-        // As respostas substituem o texto colado no campo de texto (como na Opção 2), cada uma com seu botão Copiar.
+        // As respostas substituem o texto colado no campo de texto (como na Opção 1), cada uma com seu botão Copiar.
         // "Outra resposta" e "Melhorar" restauram o texto colado, refazem e substituem de novo; "Desfazer" devolve o texto colado.
         const parts = buildSentinelaParts(aiSentinelaRaw);
         aiResumo = { texto: parts.map(part => part.texto).join('\n\n\n'), partes: parts, done: false, kind: 'estudo' };
@@ -6247,7 +6260,7 @@ async function importTemplatesFromText(text) {
         const codeBox = document.getElementById('aiStudyCodeBox');
         if (codeBox) codeBox.open = true;
         sentinelaBox.open = true;
-        return 'Informe o código de acesso no campo 🔑 no fim da Opção 2.';
+        return 'Informe o código de acesso no campo 🔑 no fim da Opção 1.';
       }
       if (!navigator.onLine) return 'Sem conexão com a internet.';
       return '';
