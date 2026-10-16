@@ -741,13 +741,22 @@
       background: var(--card);
     }
 
+    /* O cabeçalho (summary) é um retângulo dentro de uma caixa de cantos arredondados: sem raio próprio, o fundo
+       dele aparecia sobre os cantos e parecia "cortá-los". O raio interno é o da caixa menos a borda (10 - 2). */
     details.subsection > summary {
       padding: 12px 14px;
       font-weight: 650;
       margin: 0;
+      border-radius: 8px;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    details.subsection > summary:hover { background: var(--soft); }
+    details.subsection[open] > summary { border-radius: 8px 8px 0 0; }
+
+    /* No celular o :hover "gruda" depois do toque e deixava o cabeçalho com o fundo marcado; só vale com mouse. */
+    @media (hover: hover) {
+      details.subsection > summary:hover { background: var(--soft); }
+    }
     details.subsection .subsection-body { padding: 12px 14px 14px; }
 
     details.subsection.subsection-editor { background: var(--tint1-bg); border-color: var(--tint1-border); }
