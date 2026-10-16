@@ -1399,17 +1399,19 @@
     @media (max-width: 560px) {
       body { line-height: 1.38; }
 
+      /* Título numa linha só e, logo abaixo, os três botões dividindo a largura do card. */
       .card-title-row {
         display: flex;
-        align-items: center;
-        justify-content: space-between;
+        flex-direction: column;
+        align-items: stretch;
         gap: 8px;
         margin-bottom: 10px;
       }
 
       .card-title-row h2 { margin: 0; }
 
-      .top-text-actions { display: flex; gap: 4px; flex: 0 0 auto; }
+      .top-text-actions { display: flex; gap: 6px; }
+      .top-text-actions .top-text-btn { flex: 1 1 0; min-width: 0; }
 
       /* Limpar e Copiar passam para o topo; a barra de baixo fica sem eles. */
       .desktop-only { display: none; }
@@ -1535,7 +1537,8 @@
       <section class="card">
         <div class="card-title-row">
           <h2>📝 1. Texto original</h2>
-          <div class="top-text-actions" role="group" aria-label="Limpar e copiar o texto">
+          <div class="top-text-actions" role="group" aria-label="Desfazer, limpar e copiar o texto">
+            <button id="undoTopBtn" class="top-text-btn" type="button" title="Desfazer a última alteração no texto" disabled>↩️ Desfazer</button>
             <button id="clearTopBtn" class="top-text-btn" type="button" title="Limpar o texto">🧹 Limpar</button>
             <button id="copyTopBtn" class="top-text-btn" type="button" title="Copiar o texto">📋 Copiar</button>
           </div>
@@ -1549,6 +1552,10 @@
           <div class="editor-controls-pane">
 
         <div class="button-row action-row main-actions">
+          <div class="action-item desktop-only">
+            <button id="undoBtn" class="icon-action clear" type="button" title="Desfazer a última alteração no texto" aria-label="Desfazer a última alteração no texto" disabled>↩️</button>
+            <span>Desfazer</span>
+          </div>
           <div class="action-item desktop-only">
             <button id="clearBtn" class="icon-action clear" type="button" title="Limpar" aria-label="Limpar">🧹</button>
             <span>Limpar</span>
@@ -1661,6 +1668,7 @@
             <div class="ai-refine-row">
               <button id="aiAnotherBtn" class="secondary" type="button">🔄 Outra sugestão</button>
               <button id="aiImproveBtn" class="secondary" type="button">🛠️ Melhorar esta</button>
+              <button id="aiUndoBtn" class="secondary" type="button" title="Volta o texto ao que era antes de aplicar a formatação da IA">↩️ Desfazer formatação</button>
             </div>
           </div>
           </div>
@@ -2372,12 +2380,56 @@
       return { start: finalStart, end: finalEnd };
     }
 
+    // ---------- Desfazer ----------
+    // Cada alteração feita pelo app (formatar, inserir, limpar, aplicar a IA...) guarda o texto de antes; digitar guarda
+    // um ponto a cada pausa. "Desfazer" volta um passo. As sugestões da IA contam como um passo só.
+    const undoStack = [];
+    const UNDO_LIMIT = 40;
+    const undoButtons = [document.getElementById('undoBtn'), document.getElementById('undoTopBtn')];
+    let undoSuspended = false; // dentro de um lote só o primeiro passo é guardado
+    let undoWriting = false;   // o app está escrevendo no campo (o evento "input" não é digitação)
+    let undoTypingAt = 0;
+
+    function updateUndoButtons() {
+      undoButtons.forEach(btn => { btn.disabled = !undoStack.length; });
+    }
+
+    function pushUndo(value) {
+      if (undoStack.length && undoStack[undoStack.length - 1] === value) return;
+      undoStack.push(value);
+      if (undoStack.length > UNDO_LIMIT) undoStack.shift();
+      updateUndoButtons();
+    }
+
+    function runUndoBatch(fn) {
+      pushUndo(input.value);
+      undoSuspended = true;
+      try { return fn(); } finally { undoSuspended = false; }
+    }
+
+    function undoLastChange() {
+      while (undoStack.length && undoStack[undoStack.length - 1] === input.value) undoStack.pop();
+      updateUndoButtons();
+      if (!undoStack.length) {
+        selectionInfo.textContent = 'Não há nada para desfazer.';
+        return;
+      }
+      const previous = undoStack.pop();
+      undoSuspended = true;
+      try { setInputRange(0, input.value.length, previous, { message: '↩️ Alteração desfeita.' }); } finally { undoSuspended = false; }
+      autoGrowInputText();
+      updateUndoButtons();
+    }
+
     // Troca um trecho do texto original e mantém a interface em dia.
     // options.select = true mantém o resultado selecionado (para encadear formatações).
     function setInputRange(start, end, text, options) {
       const opts = options || {};
       const newEnd = start + text.length;
-      const range = writeToField(input, start, end, text, opts.select ? start : newEnd, newEnd);
+      if (!undoSuspended) pushUndo(input.value);
+      undoWriting = true;
+      let range;
+      try { range = writeToField(input, start, end, text, opts.select ? start : newEnd, newEnd); } finally { undoWriting = false; }
 
       lastInputSelection = { start: range.start, end: range.end };
       lastFocusedTextField = input;
@@ -4274,11 +4326,11 @@ function saveTemplatesToStorage() {
     document.getElementById('indentBtn').addEventListener('click', () => applyIndentToSelection(1));
     document.getElementById('clearBtn').addEventListener('click', () => {
       // Passa pelo setInputRange para que o Ctrl+Z também traga o texto apagado de volta.
-      setInputRange(0, input.value.length, '', { message: 'Texto apagado. Use Ctrl+Z para desfazer.' });
+      setInputRange(0, input.value.length, '', { message: 'Texto apagado. Use Desfazer para voltar.' });
       clearAiMessages();
       input.focus();
     });
-    ['quickBoldBtn','quickItalicBtn','quickBoldItalicBtn','removeFormattingBtn','indentBtn','copyBtn','selectBtn'].forEach(id => {
+    ['undoBtn','quickBoldBtn','quickItalicBtn','quickBoldItalicBtn','removeFormattingBtn','indentBtn','copyBtn','selectBtn'].forEach(id => {
       const btn = document.getElementById(id);
       btn.addEventListener('mousedown', event => event.preventDefault());
       btn.addEventListener('pointerdown', event => event.preventDefault());
@@ -4290,6 +4342,8 @@ function saveTemplatesToStorage() {
     // já que a mensagem de "copiado" fica lá embaixo, fora da vista.
     const copyTopBtn = document.getElementById('copyTopBtn');
     const copyTopLabel = copyTopBtn.textContent;
+    document.getElementById('undoBtn').addEventListener('click', undoLastChange);
+    document.getElementById('undoTopBtn').addEventListener('click', undoLastChange);
     document.getElementById('clearTopBtn').addEventListener('click', () => document.getElementById('clearBtn').click());
     copyTopBtn.addEventListener('click', async () => {
       const result = await copyResult();
@@ -5085,6 +5139,13 @@ function saveTemplatesToStorage() {
       input.style.height = (input.scrollHeight + frame) + 'px';
     }
     input.addEventListener('input', autoGrowInputText);
+    // Digitação: guarda o texto de antes quando começa uma sequência (pausa de mais de 1 s), não a cada letra.
+    input.addEventListener('beforeinput', event => {
+      if (undoWriting || /^history/.test(event.inputType || '')) return;
+      const now = Date.now();
+      if (now - undoTypingAt > 1000) pushUndo(input.value);
+      undoTypingAt = now;
+    });
     input.addEventListener('scroll', () => scheduleAnswerButtons());
     window.addEventListener('resize', () => scheduleAnswerButtons());
     window.addEventListener('load', autoGrowInputText);
@@ -5109,6 +5170,7 @@ function saveTemplatesToStorage() {
     const aiSuggestBtn = document.getElementById('aiSuggestBtn');
     const aiSentinelaBtn = document.getElementById('aiSentinelaBtn');
     const aiAnotherBtn = document.getElementById('aiAnotherBtn');
+    const aiUndoBtn = document.getElementById('aiUndoBtn');
     const aiImproveBtn = document.getElementById('aiImproveBtn');
     const aiRefineBox = document.getElementById('aiRefineBox');
     const aiAdjustText = document.getElementById('aiAdjustText');
@@ -5388,6 +5450,7 @@ function saveTemplatesToStorage() {
     function updateAiControls() {
       updateRefineLabels();
       aiRefineBox.hidden = !aiRaw.length && !aiResumo && !aiAppliedAny;
+      aiUndoBtn.hidden = !aiAppliedAny;
       if (!(aiResumo && aiResumo.kind === 'estudo')) clearAnswerCopyButtons();
     }
 
@@ -5717,8 +5780,10 @@ function saveTemplatesToStorage() {
         // As sugestões entram direto no campo de texto: cada linha formatada no lugar da original e o resumo no fim.
         // Se não gostar, o usuário pede outra sugestão, pede para melhorar ou desfaz (volta ao texto de antes).
         let appliedCount = 0;
-        aiSuggestions.forEach(suggestion => { if (applyAiSuggestion(suggestion)) appliedCount++; });
-        if (aiResumo) { insertAiSummary('end'); appliedCount++; }
+        runUndoBatch(() => {
+          aiSuggestions.forEach(suggestion => { if (applyAiSuggestion(suggestion)) appliedCount++; });
+          if (aiResumo) { insertAiSummary('end'); appliedCount++; }
+        });
         aiAppliedSnapshot = input.value;
 
         renderAiSuggestions();
@@ -6190,6 +6255,13 @@ function saveTemplatesToStorage() {
         : aiLastKind === 'sentinela' ? requestSentinelaAnswers(mode)
           : requestAiSuggestions(mode)
     );
+    aiUndoBtn.addEventListener('click', async () => {
+      if (aiBusy || !aiAppliedAny) return;
+      if (!(await confirmAiRestore())) return;
+      restoreAiBaseText();
+      updateAiControls();
+      setAiStatus('↩️ Formatação desfeita: o texto voltou ao que era antes da IA.', false);
+    });
     aiAnotherBtn.addEventListener('click', () => refineAi('nova'));
     aiImproveBtn.addEventListener('click', () => refineAi('melhorar'));
     // O campo de orientação existe nos dois lugares (texto e card da Sentinela) e os dois mostram o mesmo valor.
