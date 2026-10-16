@@ -1367,6 +1367,10 @@
     .prompt-locked summary { cursor: pointer; font-weight: 700; margin-top: 10px; }
 
     /* Botões do fim da tela: sem faixa de fundo própria, para acompanharem a cor do card. */
+    /* Exportar tudo para ler com calma (colar no Word, por exemplo): dois botões, cada um na largura toda. */
+    .prompts-export-row { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 12px; }
+    .prompts-export-row button { width: 100%; min-height: 46px; }
+
     .prompts-status-bottom { margin: 10px 0 0; text-align: center; }
     .prompts-status-bottom.warn { margin: 10px 0 0; }
 
@@ -2099,6 +2103,10 @@
       <div id="promptsEditor" hidden>
         <p class="hint">Aqui você edita o <strong>tom e as regras</strong> da IA. O formato técnico da resposta (campos e JSON) e a forma de ler os arquivos da Bíblia e do Perspicaz ficam travados, só para leitura, no fim da página. Ao salvar, a mudança vale para todos os usuários em poucos segundos. "Restaurar padrão" volta ao texto original do app. Nos textos, <strong>{{max_textos}}</strong> e <strong>{{max_destaques}}</strong> são trocados pelos limites definidos logo abaixo.</p>
         <p id="promptsStatus" class="ok" role="status" aria-live="polite"></p>
+        <div class="prompts-export-row">
+          <button id="promptsCopyAllBtn" class="secondary" type="button">📋 Copiar todos os prompts</button>
+          <button id="promptsDownloadBtn" class="secondary" type="button">💾 Baixar todos em arquivo de texto (.txt)</button>
+        </div>
         <div id="promptsLimits"></div>
         <div id="promptsList"></div>
         <div class="manager-section prompt-locked">
@@ -5203,6 +5211,80 @@ async function importTemplatesFromText(text) {
       await sendPromptsAction({ acao: 'prompts-desfazer' }, '✅ Versão anterior restaurada para todos os usuários.');
     }
 
+    // Todo o conteúdo da tela num texto só, na ordem em que aparece: limites, prompts editáveis (como estão na tela,
+    // inclusive alterações ainda não salvas) e a parte técnica. Serve para ler com calma ou colar no Word.
+    function buildPromptsExport() {
+      if (!promptsState) return '';
+      const line = '='.repeat(60);
+      const thin = '-'.repeat(60);
+      const out = [];
+      const pending = promptsHasPending();
+
+      out.push('PROMPTS DA IA - JwNotes');
+      out.push('Exportado em ' + new Date().toLocaleString('pt-BR') + (pending ? ' (inclui alterações ainda não salvas)' : ''));
+      out.push('');
+
+      const limits = promptsState.limites || [];
+      if (limits.length) {
+        out.push(line, 'LIMITES (NÚMEROS)', line, '');
+        limits.forEach(limit => {
+          const field = document.querySelector('input[data-limit-id="' + limit.id + '"]');
+          const value = field && field.value.trim() !== '' ? field.value.trim() : String(limit.valor);
+          out.push('* ' + limit.titulo + ': ' + value + ' (padrão ' + limit.padrao + '; faixa de ' + limit.min + ' a ' + limit.max + ')');
+          out.push('  ' + limit.descricao);
+        });
+        out.push('');
+      }
+
+      out.push(line, 'PROMPTS (TOM E REGRAS)', line);
+      promptsState.partes.forEach((part, index) => {
+        const area = document.querySelector('textarea[data-prompt-id="' + part.id + '"]');
+        const text = area ? area.value : part.valor;
+        const edited = text.trim() !== part.padrao.trim();
+        out.push('', (index + 1) + '. ' + part.titulo + (edited ? '  [personalizado]' : '  [padrão do app]'), thin);
+        if (part.descricao) out.push('Para que serve: ' + part.descricao, '');
+        out.push(text.trim());
+      });
+
+      const locked = promptsState.travados || [];
+      if (locked.length) {
+        out.push('', '', line, 'PARTE TÉCNICA (SOMENTE LEITURA, NÃO EDITÁVEL)', line);
+        locked.forEach((item, index) => {
+          out.push('', (index + 1) + '. ' + item.titulo, thin, item.texto.trim());
+        });
+      }
+      return out.join('\n') + '\n';
+    }
+
+    async function copyAllPrompts() {
+      const text = buildPromptsExport();
+      if (!text) return;
+      try {
+        await navigator.clipboard.writeText(text);
+        setPromptsStatus('✅ Todos os prompts copiados. É só colar (Ctrl+V) no Word ou em outro documento.', false);
+      } catch (e) {
+        setPromptsStatus('Não foi possível copiar. Use o botão de baixar o arquivo de texto.', true);
+      }
+    }
+
+    function downloadAllPrompts() {
+      const text = buildPromptsExport();
+      if (!text) return;
+      // O BOM no início faz o Word e o Bloco de Notas lerem os acentos corretamente; as quebras de linha viram as do Windows.
+      const blob = new Blob(['\ufeff' + text.replace(/\n/g, '\r\n')], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'prompts-ia-jwnotes-' + new Date().toISOString().slice(0, 10) + '.txt';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setPromptsStatus('✅ Arquivo de texto gerado com todos os prompts.', false);
+    }
+
+    document.getElementById('promptsCopyAllBtn').addEventListener('click', copyAllPrompts);
+    document.getElementById('promptsDownloadBtn').addEventListener('click', downloadAllPrompts);
     document.getElementById('openPromptsBtn').addEventListener('click', openPrompts);
     document.getElementById('closePromptsBtn').addEventListener('click', closePrompts);
     document.getElementById('promptsLoginBtn').addEventListener('click', loginPrompts);
