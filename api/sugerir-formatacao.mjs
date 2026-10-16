@@ -162,11 +162,11 @@ function descreverPreferencias(o) {
   if (o.negritoItalico) estilos.push("negrito_italico");
 
   const linhas = [
-    `- Modelos: ${o.usarModelos ? "pode usar os modelos da lista" : "NÃO use modelos (modeloId sempre null)"}.`,
-    `- Estilos permitidos nos destaques: ${estilos.length ? estilos.join(", ") : "nenhum (estilo sempre null)"}.`,
-    `- Letras maiúsculas nos destaques: ${o.maiusculas ? "permitidas" : "NÃO use (maiusculas sempre false)"}.`,
-    `- Emoji ilustrativo no início da frase: ${o.emoji ? "SIM, sugira emojis que ilustrem o assunto de cada linha destacada" : "NÃO use (emoji sempre null)"}.`,
-    `- Quantidade de sugestões: ${o.intensidade}.`,
+    `- Modelos: ${o.usarModelos ? "pode usar os modelos da lista" : "NÃO use modelos (modeloId sempre null), a menos que a orientação do usuário peça"}.`,
+    `- Estilos permitidos nos destaques: ${estilos.length ? estilos.join(", ") : "nenhum (estilo sempre null, a menos que a orientação do usuário peça)"}.`,
+    `- Letras maiúsculas nos destaques: ${o.maiusculas ? "permitidas" : "NÃO use (maiusculas sempre false), a menos que a orientação do usuário peça"}.`,
+    `- Emoji ilustrativo no início da frase: ${o.emoji ? "SIM, sugira emojis que ilustrem o assunto de cada linha destacada" : "NÃO use (emoji sempre null), a menos que a orientação do usuário peça"}.`,
+    `- Quantidade de sugestões: ${o.intensidade} (a orientação do usuário pode mudar isso).`,
   ];
   linhas.push(
     o.resumo
@@ -183,16 +183,33 @@ function descreverPreferencias(o) {
   linhas.push(
     o.usarListas
       ? `- Listas: ATIVO. Quando várias linhas formarem uma enumeração (passos, pontos, exemplos, itens), organize-as como lista preenchendo "lista" em CADA uma delas: {"modelo": um dos modelos de lista do app, "grupo": número da lista}. Linhas da mesma lista têm o mesmo grupo e o mesmo modelo; listas diferentes, grupos diferentes. Escolha o modelo que combina com o conteúdo: numerados (numberDot, numberParen, circled, blackCircle, keycapNumber) para passos ou sequência com ordem; os de símbolo para itens sem ordem. Prefira o mesmo modelo nas listas parecidas do texto. Modelos disponíveis: ${CATALOGO_LISTAS}. Só marque linhas que realmente são itens de enumeração; nas demais "lista" é null. Linhas de lista normalmente não precisam de modelo de texto nem de emoji. O app coloca os marcadores e os números; você não os escreve.`
-      : '- Listas: INATIVO (lista sempre null).'
+      : '- Listas: INATIVO (lista sempre null), a menos que a ORIENTAÇÃO DO USUÁRIO peça lista, marcadores ou numeração.'
   );
   linhas.push(
     o.separarIdeias
-      ? '- Espaçamento: ATIVO. Separe as ideias com linhas em branco para o texto ficar arejado, mesmo que o original seja um só parágrafo: (1) em "quebras" liste, para cada linha, os trechos (copiados LITERALMENTE da linha) onde começa uma NOVA ideia, e o app insere uma linha em branco antes de cada um (não inclua o começo da linha; só quebras no meio, entre frases completas); (2) em "espacoAntes" informe true na linha que começa uma nova ideia em relação à linha anterior, e o app insere uma linha em branco antes dela (nunca na primeira linha). Não quebre no meio de uma frase nem separe uma ideia de seus exemplos ou explicações. O app coloca as linhas em branco; você não as escreve.'
-      : '- Espaçamento: INATIVO ("quebras" sempre [] e "espacoAntes" sempre false).'
+      ? '- Espaçamento: ATIVO. Separe as ideias com linhas em branco para o texto ficar arejado, mesmo que o original seja um só parágrafo: (1) em "quebras" liste, para cada linha, os trechos (copiados LITERALMENTE da linha) onde começa uma NOVA ideia, e o app insere uma linha em branco antes de cada um (não inclua o começo da linha; só quebras no meio, entre frases completas); (2) em "espacoAntes" informe true na linha que começa uma nova ideia em relação à linha anterior, e o app insere uma linha em branco antes dela (nunca na primeira linha). Não quebre no meio de uma frase nem separe uma ideia de seus exemplos ou explicações (a menos que a ORIENTAÇÃO DO USUÁRIO peça outro critério, por exemplo uma linha em branco entre cada frase: então liste em "quebras" o início de TODAS as frases, menos a primeira da linha). O app coloca as linhas em branco; você não as escreve.'
+      : '- Espaçamento: INATIVO ("quebras" sempre [] e "espacoAntes" sempre false), a menos que a ORIENTAÇÃO DO USUÁRIO peça linhas em branco ou separação entre frases, ideias ou trechos: nesse caso use "quebras" (início de cada frase ou trecho, menos o primeiro da linha) e "espacoAntes" conforme ela pedir. Para separar frases, "quebras" deve trazer o início LITERAL de cada frase seguinte da linha.'
   );
-  if (o.instrucao) linhas.push(`- Instruções extras do usuário: ${o.instrucao}`);
   return linhas.join("\n");
 }
+
+// Orientação do usuário (campo "Orientação para a IA" do pedido e instruções fixas das configurações). Vai no INÍCIO da
+// mensagem, com prioridade total sobre as preferências (inclusive as opções desmarcadas). Em branco: nada é enviado.
+function blocoOrientacao(opcoes, ajuste) {
+  const itens = [];
+  if (ajuste) itens.push(`Orientação para este pedido: ${ajuste}`);
+  if (opcoes.instrucao) itens.push(`Instruções fixas: ${opcoes.instrucao}`);
+  if (!itens.length) return "";
+  return (
+    "ORIENTAÇÃO DO USUÁRIO (PRIORIDADE TOTAL: cumpra à risca, em todas as linhas ou respostas, acima de qualquer preferência, " +
+    'regra de estilo ou opção marcada como INATIVO / "NÃO use" abaixo; confira o resultado contra ela antes de responder):\n' +
+    itens.map((i) => `- ${i}`).join("\n") +
+    "\n\n"
+  );
+}
+
+const LEMBRETE_ORIENTACAO =
+  "\n\nLEMBRETE FINAL: cumpra a ORIENTAÇÃO DO USUÁRIO que abre esta mensagem; ela vale mais que as preferências.";
 
 const ASPAS = "\"“”„«»‘’❛❜❝❞";
 const TEM_ASPAS = new RegExp(`[${ASPAS}]`);
@@ -273,7 +290,7 @@ function descreverFormatacaoResposta(o, maxDestaques) {
 
   const quantidade = o.intensidade === "poucas" ? "poucos (1 a 2)" : o.intensidade === "muitas" ? `vários (até ${maxDestaques})` : "alguns (2 a 3)";
   return [
-    `- Estilos permitidos nos destaques: ${estilos.length ? estilos.join(", ") : "nenhum (estilo sempre null)"}.`,
+    `- Estilos permitidos nos destaques: ${estilos.length ? estilos.join(", ") : "nenhum (estilo sempre null, a menos que a orientação do usuário peça)"}.`,
     `- Letras maiúsculas nos destaques: ${o.maiusculas ? "permitidas" : "NÃO use (maiusculas sempre false)"}.`,
     `- Emoji ilustrativo no início da resposta: ${o.emoji ? "SIM, 1 a 3 emojis que ilustrem o assunto da resposta" : "NÃO use (emoji sempre null)"}.`,
     `- Quantidade de destaques por resposta: ${quantidade}.`,
@@ -405,7 +422,7 @@ function sanearLista(lista) {
 // literalmente na linha, fora do começo dela, sem repetir e em número razoável.
 function sanearQuebras(quebras, linha) {
   const resultado = [];
-  for (const q of (Array.isArray(quebras) ? quebras : []).slice(0, 12)) {
+  for (const q of (Array.isArray(quebras) ? quebras : []).slice(0, 60)) {
     const trecho = typeof q === "string" ? q.trim() : "";
     if (trecho.length < 2 || !linha.includes(trecho) || linha.trim().startsWith(trecho) || resultado.includes(trecho)) continue;
     resultado.push(trecho);
@@ -594,13 +611,13 @@ async function responderSentinela(res, { linhas, opcoes, modo, ajuste, anteriore
   if (fontes && fontes.erro) return erro(res, 500, fontes.erro);
 
   let mensagem =
+    blocoOrientacao(opcoes, ajuste) +
     "PREFERÊNCIAS:\n" +
     `- Tamanho de cada resposta: ${DESCRICAO_RESPOSTA[opcoes.resumoTamanho]}.\n` +
     descreverFormatacaoResposta(opcoes, P.limites.maxDestaques) +
-    (opcoes.instrucao ? `\n- Instruções fixas do usuário: ${opcoes.instrucao}` : "") +
-    (ajuste ? `\n\nORIENTAÇÃO ESPECÍFICA DO USUÁRIO PARA ESTE PEDIDO: ${ajuste}` : "") +
     "\n\nTEXTO COLADO:\n" +
-    linhas.join("\n");
+    linhas.join("\n") +
+    (ajuste || opcoes.instrucao ? LEMBRETE_ORIENTACAO : "");
 
   if (modo && anteriores) {
     mensagem +=
@@ -751,6 +768,7 @@ async function responderEstudo(res, body, P) {
     modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(body.anteriores).slice(0, 8000) : "";
 
   let mensagem =
+    blocoOrientacao(opcoes, ajuste) +
     `ENDEREÇO: ${url}\n` +
     (alvo
       ? `ESCOPO: responda SOMENTE às perguntas do(s) parágrafo(s) de número ${[...alvo].join(", ")} do artigo. São números de parágrafos (por exemplo, "8" é o parágrafo 8, e não "oito parágrafos"). NÃO responda a nenhum outro parágrafo, nem aos anteriores.\n`
@@ -759,8 +777,7 @@ async function responderEstudo(res, body, P) {
         : "ESCOPO: todos os parágrafos do artigo que têm pergunta (sem o quadro de recapitulação).\n") +
     `PREFERÊNCIAS:\n- Tamanho de cada resposta: ${DESCRICAO_RESPOSTA[opcoes.resumoTamanho]}.\n` +
     descreverFormatacaoResposta(opcoes, P.limites.maxDestaques) +
-    (opcoes.instrucao ? `\n- Instruções fixas do usuário: ${opcoes.instrucao}` : "") +
-    (ajuste ? `\n\nORIENTAÇÃO ESPECÍFICA DO USUÁRIO PARA ESTE PEDIDO: ${ajuste}` : "");
+    (ajuste || opcoes.instrucao ? LEMBRETE_ORIENTACAO : "");
 
   if (modo && anteriores) {
     mensagem +=
@@ -984,22 +1001,29 @@ export default async function handler(req, res) {
   const permiteAspas = /aspas/i.test(`${opcoes.instrucao} ${ajuste}`);
   const modelosUsaveis = permiteAspas ? modelos : modelos.filter((m) => !TEM_ASPAS.test(m.conteudo));
   const idsValidos = new Set(modelosUsaveis.map((m) => m.id));
+  // Com orientação do usuário (campo do pedido ou instruções fixas) ela manda: o que ela pedir vale mesmo com a opção
+  // desmarcada (a IA só usa um recurso desmarcado se a orientação pedir). Sem orientação, valem só as opções marcadas.
+  const livre = Boolean(ajuste || opcoes.instrucao);
+  const efetivas = livre
+    ? { ...opcoes, usarModelos: true, emoji: true, negrito: true, italico: true, negritoItalico: true, maiusculas: true, usarListas: true, separarIdeias: true }
+    : opcoes;
   const estilosPermitidos = new Set([
-    ...(opcoes.negrito ? ["negrito"] : []),
-    ...(opcoes.italico ? ["italico"] : []),
-    ...(opcoes.negritoItalico ? ["negrito_italico"] : []),
+    ...(efetivas.negrito ? ["negrito"] : []),
+    ...(efetivas.italico ? ["italico"] : []),
+    ...(efetivas.negritoItalico ? ["negrito_italico"] : []),
   ]);
 
   let mensagem =
+    blocoOrientacao(opcoes, ajuste) +
     "PREFERÊNCIAS DO USUÁRIO:\n" +
     descreverPreferencias(opcoes) +
-    (ajuste ? `\n\nORIENTAÇÃO ESPECÍFICA DO USUÁRIO PARA ESTE PEDIDO: ${ajuste}` : "") +
     "\n\nMODELOS DISPONÍVEIS:\n" +
     (modelosUsaveis.length
       ? modelosUsaveis.map((m) => `- id=${m.id} | nome=${m.nome} | conteúdo=${m.conteudo}`).join("\n")
       : "(nenhum)") +
     "\n\nLINHAS DO TEXTO:\n" +
-    linhas.map((l, i) => `[${i}] ${l}`).join("\n");
+    linhas.map((l, i) => `[${i}] ${l}`).join("\n") +
+    (ajuste || opcoes.instrucao ? LEMBRETE_ORIENTACAO : "");
 
   if (modo && anteriores) {
     mensagem +=
@@ -1060,18 +1084,18 @@ export default async function handler(req, res) {
       if (s.linha < 0 || s.linha >= linhas.length || vistas.has(s.linha)) continue;
 
       const linha = linhas[s.linha];
-      const modeloId = opcoes.usarModelos && s.modeloId && idsValidos.has(s.modeloId) ? s.modeloId : null;
-      const emoji = opcoes.emoji ? limparEmoji(s.emoji) : null;
+      const modeloId = efetivas.usarModelos && s.modeloId && idsValidos.has(s.modeloId) ? s.modeloId : null;
+      const emoji = efetivas.emoji ? limparEmoji(s.emoji) : null;
 
-      const destaques = sanearDestaques(s.destaques, linha, opcoes, estilosPermitidos, P.limites.maxDestaques);
+      const destaques = sanearDestaques(s.destaques, linha, efetivas, estilosPermitidos, P.limites.maxDestaques);
 
-      let lista = opcoes.usarListas ? sanearLista(s.lista) : null;
+      let lista = efetivas.usarListas ? sanearLista(s.lista) : null;
       if (lista) {
         if (!modeloDoGrupo.has(lista.grupo)) modeloDoGrupo.set(lista.grupo, lista.modelo);
         lista = { modelo: modeloDoGrupo.get(lista.grupo), grupo: lista.grupo };
       }
-      const quebras = opcoes.separarIdeias ? sanearQuebras(s.quebras, linha) : [];
-      const espacoAntes = opcoes.separarIdeias && s.espacoAntes === true && s.linha > 0;
+      const quebras = efetivas.separarIdeias ? sanearQuebras(s.quebras, linha) : [];
+      const espacoAntes = efetivas.separarIdeias && s.espacoAntes === true && s.linha > 0;
 
       if (!modeloId && !emoji && !destaques.length && !lista && !quebras.length && !espacoAntes) continue;
 
