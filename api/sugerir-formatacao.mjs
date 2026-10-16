@@ -282,7 +282,7 @@ function sanearDestaques(destaques, texto, opcoes, estilosPermitidos, maxDestaqu
 }
 
 // Preferências de formatação enviadas à IA quando ela escreve respostas do estudo.
-function descreverFormatacaoResposta(o, maxDestaques) {
+function descreverFormatacaoResposta(o, maxDestaques, sep) {
   const estilos = [];
   if (o.negrito) estilos.push("negrito");
   if (o.italico) estilos.push("italico");
@@ -294,6 +294,9 @@ function descreverFormatacaoResposta(o, maxDestaques) {
     `- Letras maiúsculas nos destaques: ${o.maiusculas ? "permitidas" : "NÃO use (maiusculas sempre false)"}.`,
     `- Emoji ilustrativo no início da resposta: ${o.emoji ? "SIM, 1 a 3 emojis que ilustrem o assunto da resposta" : "NÃO use (emoji sempre null)"}.`,
     `- Quantidade de destaques por resposta: ${quantidade}.`,
+    sep
+      ? `- Espaçamento: ATIVO. Em cada item preencha "quebras" com os trechos (copiados LITERALMENTE do campo "resposta") onde começa cada nova ${sep === "frases" ? "frase" : "ideia"}, menos o começo da resposta; o app coloca uma linha em branco antes de cada um. Não quebre no meio de uma frase.`
+      : '- Espaçamento: INATIVO ("quebras" sempre []).',
     o.citacoesBiblicas
       ? '- Citações bíblicas: se a resposta mencionar um texto bíblico (ex.: Efésios 6:12), marque a referência como tipo "citacao_referencia"; use o tipo "geral" nos demais destaques.'
       : '- Use apenas o tipo "geral" nos destaques.',
@@ -430,16 +433,53 @@ function sanearQuebras(quebras, linha) {
   return resultado;
 }
 
+// Como separar com linhas em branco: "frases" (uma linha em branco entre cada frase), "ideias" (entre as ideias) ou null.
+// Vale a opção "Separar as ideias com linhas em branco" e também o que o usuário pedir na orientação ou nas instruções fixas.
+function modoSeparacao(opcoes, ajuste) {
+  const pedido = `${ajuste || ""} ${opcoes.instrucao || ""}`;
+  const pedeFrases =
+    /(separ\w*|quebr\w*|linhas?\s+em\s+branco|espa[çc]\w*)[^.;\n]{0,40}\bfrases?\b|\bfrases?\b[^.;\n]{0,40}(linhas?\s+em\s+branco|separad\w*|quebr\w*)/i;
+  if (pedeFrases.test(pedido)) return "frases";
+  if (opcoes.separarIdeias || /linhas?\s+em\s+branco|separ\w*\s+(as\s+|os\s+)?(ideias|par[áa]grafos|trechos)/i.test(pedido)) return "ideias";
+  return null;
+}
+
+const ABREVIACOES = new Set(["sr", "sra", "srta", "dr", "dra", "cap", "caps", "vs", "ex", "etc", "pág", "págs", "nº", "v", "vv", "cf", "obs"]);
+
+// Início de cada frase do texto, menos a primeira (o app coloca uma linha em branco antes de cada um). Cada trecho é
+// copiado do próprio texto e só vale se for localizado exatamente nesse ponto.
+function inicioDeFrases(texto) {
+  const resultado = [];
+  const re = /([.!?…]+["”’)»]*)\s+(?=["“‘(¿¡]?[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ])/gu;
+  let m;
+  while ((m = re.exec(texto)) && resultado.length < 60) {
+    const palavra = (texto.slice(0, m.index).match(/(\p{L}+)$/u) || [])[1] || "";
+    if (m[1] === "." && ABREVIACOES.has(palavra.toLowerCase())) continue;
+    const inicio = re.lastIndex;
+    for (const tamanho of [60, 120, 240]) {
+      const peca = texto.slice(inicio, inicio + tamanho).trim();
+      if (peca.length >= 2 && texto.indexOf(peca) === inicio) {
+        resultado.push(peca);
+        break;
+      }
+    }
+  }
+  return resultado;
+}
+
 function limparLinha(valor, max) {
   return typeof valor === "string" ? valor.replace(/\s+/g, " ").trim().slice(0, max) : "";
 }
 
 // Um item de resposta pronto para o navegador: texto limpo, destaques conferidos e, se pedidos, versículos e Perspicaz.
-function montarItem(i, opcoes, permitidos, lido, fontes, L) {
+function montarItem(i, opcoes, permitidos, lido, fontes, L, sep) {
   const texto = limparTextoGerado(i.resposta, L.maxCharsResposta);
+  // Linhas em branco dentro da resposta: frase a frase (calculado aqui, sem depender da IA) ou entre ideias (a IA indica).
+  const quebras = sep === "frases" ? inicioDeFrases(texto) : sep ? sanearQuebras(i.quebras, texto) : [];
   return {
     paragrafos: limparLinha(i.paragrafos, 20),
     resposta: texto,
+    quebras,
     emoji: opcoes.emoji ? limparEmoji(i.emoji) : null,
     destaques: sanearDestaques(i.destaques, texto, opcoes, permitidos, L.maxDestaques),
     textos: sanearTextos(i.textos, lido, !!(fontes && fontes.biblia), L.maxTextos),
@@ -558,6 +598,7 @@ const SaidaResumoFontes = z.object({
 const ItemResposta = z.object({
   paragrafos: z.string(),
   resposta: z.string(),
+  quebras: z.array(z.string()).optional().catch([]),
   emoji: z.string().nullable().optional(),
   destaques: z.array(Destaque).optional(),
   referencias: z.array(z.string()).optional().catch([]),
@@ -570,6 +611,7 @@ const SaidaSentinela = z.object({
     z.object({
       paragrafos: z.string(),
       resposta: z.string(),
+      quebras: z.array(z.string()),
       emoji: z.string().nullable(),
       destaques: z.array(
         z.object({
@@ -604,6 +646,7 @@ function tratarErro(e, res) {
 }
 
 async function responderSentinela(res, { linhas, opcoes, modo, ajuste, anteriores }, P) {
+  const sep = modoSeparacao(opcoes, ajuste);
   // A consulta às fontes não exige o código de acesso (o código vale só para a leitura do wol.jw.org). Sem caixa
   // marcada nenhum arquivo é carregado: a resposta sai como sempre e, só se a pergunta citar texto bíblico, um segundo
   // passo busca os versículos (finalizarItens).
@@ -614,7 +657,7 @@ async function responderSentinela(res, { linhas, opcoes, modo, ajuste, anteriore
     blocoOrientacao(opcoes, ajuste) +
     "PREFERÊNCIAS:\n" +
     `- Tamanho de cada resposta: ${DESCRICAO_RESPOSTA[opcoes.resumoTamanho]}.\n` +
-    descreverFormatacaoResposta(opcoes, P.limites.maxDestaques) +
+    descreverFormatacaoResposta(opcoes, P.limites.maxDestaques, sep) +
     "\n\nTEXTO COLADO:\n" +
     linhas.join("\n") +
     (ajuste || opcoes.instrucao ? LEMBRETE_ORIENTACAO : "");
@@ -651,7 +694,7 @@ async function responderSentinela(res, { linhas, opcoes, modo, ajuste, anteriore
       const lido = textoLido(blocos);
       const itens = dados.data.itens
         .slice(0, P.limites.maxRespostas)
-        .map((i) => montarItem(i, opcoes, permitidos, lido, fontes, P.limites))
+        .map((i) => montarItem(i, opcoes, permitidos, lido, fontes, P.limites, sep))
         .filter((i) => i.resposta);
       return res.status(200).json({ itens: await finalizarItens(itens, fontes, P) });
     }
@@ -671,7 +714,7 @@ async function responderSentinela(res, { linhas, opcoes, modo, ajuste, anteriore
 
     const itens = resposta.parsed_output.itens
       .slice(0, P.limites.maxRespostas)
-      .map((i) => montarItem(i, opcoes, permitidos, { bruto: "", corrido: "" }, null, P.limites))
+      .map((i) => montarItem(i, opcoes, permitidos, { bruto: "", corrido: "" }, null, P.limites, sep))
       .filter((i) => i.resposta);
 
     return res.status(200).json({ itens: await finalizarItens(itens, null, P) });
@@ -763,6 +806,7 @@ async function responderEstudo(res, body, P) {
   const fontes = prepararFontes(opcoes, P);
   if (fontes && fontes.erro) return erro(res, 500, fontes.erro);
   const ajuste = textoLivre(body.ajuste);
+  const sep = modoSeparacao(opcoes, ajuste);
   const modo = body.modo === "nova" || body.modo === "melhorar" ? body.modo : null;
   const anteriores =
     modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(body.anteriores).slice(0, 8000) : "";
@@ -776,7 +820,7 @@ async function responderEstudo(res, body, P) {
         ? 'ESCOPO: a RECAPITULAÇÃO. Responda SOMENTE às perguntas do quadro de recapitulação no fim do artigo (o quadro "Qual é a sua resposta?"), numeradas na ordem em que aparecem (1, 2, 3...). NÃO responda às perguntas dos parágrafos.\n'
         : "ESCOPO: todos os parágrafos do artigo que têm pergunta (sem o quadro de recapitulação).\n") +
     `PREFERÊNCIAS:\n- Tamanho de cada resposta: ${DESCRICAO_RESPOSTA[opcoes.resumoTamanho]}.\n` +
-    descreverFormatacaoResposta(opcoes, P.limites.maxDestaques) +
+    descreverFormatacaoResposta(opcoes, P.limites.maxDestaques, sep) +
     (ajuste || opcoes.instrucao ? LEMBRETE_ORIENTACAO : "");
 
   if (modo && anteriores) {
@@ -822,7 +866,7 @@ async function responderEstudo(res, body, P) {
     const lido = textoLido(blocos);
     const itensTodos = dados.data.itens
       .slice(0, P.limites.maxRespostas)
-      .map((i) => montarItem(i, opcoes, permitidos, lido, fontes, P.limites))
+      .map((i) => montarItem(i, opcoes, permitidos, lido, fontes, P.limites, sep))
       .filter((i) => i.resposta);
 
     // Recapitulação: as perguntas do quadro vêm numeradas 1, 2, 3...; o rótulo "Recap. N" não se confunde com parágrafos.
@@ -1110,6 +1154,20 @@ export default async function handler(req, res) {
         espacoAntes,
         motivo: String(s.motivo || "").slice(0, 200),
       });
+    }
+
+    // Frase a frase: o servidor calcula as quebras de todas as linhas (a IA costuma separar só por ideia ou esquecer linhas).
+    if (modoSeparacao(opcoes, ajuste) === "frases") {
+      linhas.forEach((linha, indice) => {
+        const quebras = inicioDeFrases(linha);
+        if (!quebras.length) return;
+        const existente = sugestoes.find((x) => x.linha === indice);
+        if (existente) existente.quebras = quebras;
+        else {
+          sugestoes.push({ linha: indice, modeloId: null, emoji: null, destaques: [], lista: null, quebras, espacoAntes: false, motivo: "Frases separadas por linha em branco" });
+        }
+      });
+      sugestoes.sort((a, b) => a.linha - b.linha);
     }
 
     const resumo =

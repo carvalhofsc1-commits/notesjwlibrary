@@ -289,10 +289,10 @@ const FORMATO_CAMPOS_RESUMO = `O objeto JSON principal tem, além de "resumo" e 
 
 const FORMATO_JSON_RESUMO = `Responda SOMENTE com um objeto JSON, sem texto fora dele: {"resumo": "...", "sugestoes": [{"linha": 0, "modeloId": null, "emoji": null, "destaques": [{"trecho": "...", "tipo": "geral", "estilo": "negrito", "maiusculas": false}], "lista": null, "quebras": [], "espacoAntes": false, "motivo": "..."}], "textos": [{"referencia": "...", "texto": "...", "aplicacao": "..."}], "perspicaz": null}`;
 
-const FORMATO_JSON_SENTINELA = `Responda SOMENTE com um objeto JSON, sem texto fora dele: {"itens": [{"paragrafos": "3", "resposta": "...", "emoji": null, "destaques": [{"trecho": "...", "tipo": "geral", "estilo": "negrito", "maiusculas": false}], "referencias": [], "textos": [], "perspicaz": null}]}`;
+const FORMATO_JSON_SENTINELA = `Responda SOMENTE com um objeto JSON, sem texto fora dele: {"itens": [{"paragrafos": "3", "resposta": "...", "quebras": [], "emoji": null, "destaques": [{"trecho": "...", "tipo": "geral", "estilo": "negrito", "maiusculas": false}], "referencias": [], "textos": [], "perspicaz": null}]}`;
 
 const FORMATO_ESTUDO = `Responda SOMENTE com um objeto JSON, sem texto fora dele, neste formato:
-{"titulo": "<título do artigo lido ou null>", "erro": null ou "<motivo>", "itens": [{"paragrafos": "3", "resposta": "...", "emoji": null, "destaques": [{"trecho": "...", "tipo": "geral", "estilo": "negrito", "maiusculas": false}], "referencias": []}]}`;
+{"titulo": "<título do artigo lido ou null>", "erro": null ou "<motivo>", "itens": [{"paragrafos": "3", "resposta": "...", "quebras": [], "emoji": null, "destaques": [{"trecho": "...", "tipo": "geral", "estilo": "negrito", "maiusculas": false}], "referencias": []}]}`;
 
 // Regra travada: a orientação que o usuário digita no pedido ("Orientação para a IA") e as instruções fixas das
 // configurações valem mais que qualquer outra regra de estilo, tom ou preferência, inclusive as opções desmarcadas.

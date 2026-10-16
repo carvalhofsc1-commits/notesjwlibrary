@@ -5932,7 +5932,8 @@ function saveTemplatesToStorage() {
         const number = item.paragrafos ? item.paragrafos + '. ' : '';  // "3. " ou, na recapitulação, "Recap. 1. "
         const body = aiBuildLine(item.resposta, {
           destaques: Array.isArray(item.destaques) ? item.destaques : [],
-          emoji: item.emoji || ''
+          emoji: item.emoji || '',
+          quebras: Array.isArray(item.quebras) ? item.quebras : []
         });
         const answer = aiLabelWith(answerTpl, '✅ RESPOSTA 👉 ', number + body);
         const extras = buildSourceBlocks(item);
