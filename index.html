@@ -348,8 +348,7 @@
     /* Espaço extra no fim do campo para o botão da última resposta. */
     textarea.has-answer-buttons { padding-bottom: 44px; }
 
-    /* Outra sugestão / Melhorar esta: dois botões de largura igual, como os de formatar com IA.
-       Desfazer, quando aparece, ocupa a linha de baixo inteira. */
+    /* Outra sugestão / Melhorar esta: dois botões de largura igual, como os de formatar com IA. */
     .ai-refine-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -365,7 +364,6 @@
       line-height: 1.2;
     }
 
-    .ai-refine-row #aiUndoBtn { grid-column: 1 / -1; min-height: 48px; }
 
     .ai-box { margin-bottom: 14px; }
 
@@ -381,19 +379,6 @@
       gap: 10px;
     }
 
-    /* O botão com resumo e as consultas (Bíblia e Perspicaz) ficam juntos num recipiente, o que deixa claro que as
-       consultas só valem para esse botão. */
-    .ai-summary-box {
-      margin-top: 10px;
-      padding: 10px;
-      border: 2px solid #047857;
-      border-radius: 12px;
-      background: var(--card);
-      background: color-mix(in srgb, #047857 12%, var(--card));
-    }
-
-    .ai-summary-box .ai-sources { margin-top: 10px; }
-
     .ai-main-btn {
       width: 100%;
       min-width: 0;
@@ -403,9 +388,7 @@
       line-height: 1.2;
     }
 
-    /* Cada botão da IA tem a sua cor: azul = formatação, verde = formatação + resumo, roxo = Sentinela. */
-    .ai-main-btn-alt { background: #047857; color: #ffffff; }
-    .ai-main-btn-alt:hover { background: #065f46; }
+    /* Cada botão da IA tem a sua cor: azul = formatação, roxo = Sentinela (texto colado), laranja = Sentinela (site). */
 
     .ai-hint { margin: 8px 0 0; font-size: .82rem; }
 
@@ -633,79 +616,20 @@
       100% { left: 100%; }
     }
 
-    .ai-skeleton {
-      height: 78px;
-      border: 2px solid var(--line);
-      border-radius: 12px;
-      background: linear-gradient(90deg, var(--card) 25%, var(--soft) 50%, var(--card) 75%);
-      background-size: 200% 100%;
-      animation: ai-shimmer 1.4s linear infinite;
-    }
-
-    @keyframes ai-shimmer { to { background-position: -200% 0; } }
-
     @media (prefers-reduced-motion: reduce) {
       .ai-spinner { animation-duration: 2s; }
-      .ai-progress::after,
-      .ai-skeleton { animation-duration: 3.5s; }
+      .ai-progress::after { animation-duration: 3.5s; }
     }
 
     #aiOutput #aiStatus { display: block; margin: 8px 0 0; }
 
     #aiStudyStatus { display: block; margin: 6px 0 0; text-align: center; }
 
-    /* Aplicar todas / Descartar todas: um só botão ocupa a largura inteira; os dois dividem meio a meio. */
-    .ai-actions-all {
-      display: grid;
-      grid-auto-flow: column;
-      grid-auto-columns: minmax(0, 1fr);
-      gap: 10px;
-      margin-top: 8px;
-    }
-
-    .ai-actions-all button {
-      width: 100%;
-      min-height: 52px;
-      padding: 10px 8px;
-      line-height: 1.2;
-    }
-
     .ai-list {
       display: flex;
       flex-direction: column;
       gap: 10px;
       margin-top: 12px;
-    }
-
-    .ai-item {
-      border: 2px solid var(--muted);
-      border-radius: 12px;
-      padding: 10px 12px;
-      background: var(--card);
-    }
-
-    .ai-item-reason {
-      margin: 0 0 6px;
-      font-size: .8rem;
-      color: var(--muted);
-      font-weight: 700;
-    }
-
-    .ai-item-before,
-    .ai-item-after {
-      margin: 0 0 4px;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-      font-size: .94rem;
-    }
-
-    .ai-item-before { color: var(--muted); text-decoration: line-through; }
-
-    .ai-item-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 8px;
     }
 
     .card h2,
@@ -1727,30 +1651,23 @@
           <div class="ai-main-row">
             <button id="aiSuggestBtn" class="ai-main-btn" type="button">✨ Sugerir formatação com IA</button>
           </div>
-          <div class="ai-summary-box">
-            <button id="aiSuggestSummaryBtn" class="ai-main-btn ai-main-btn-alt" type="button">✨ Sugerir formatação + resumo do texto</button>
-            <div class="ai-sources">
-              <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Consultar textos citados (Bíblia)</label>
-              <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarPerspicaz"> 📚 Consultar o Perspicaz</label>
-            </div>
+          <div class="ai-sources">
+            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="resumo"> 📝 Incluir resumo do texto</label>
+            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Consultar textos citados (Bíblia)</label>
+            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarPerspicaz"> 📚 Consultar o Perspicaz</label>
           </div>
           <div id="aiProgress" class="ai-progress" role="progressbar" aria-label="A IA está trabalhando" aria-hidden="true"></div>
           <label for="aiAdjustText" class="ai-guidance-label">Orientação para a IA (opcional)</label>
           <input autocomplete="off" id="aiAdjustText" type="text" maxlength="300" placeholder="Ex.: formate só as perguntas; sem emojis; resumo bem curto">
-          <p class="hint ai-hint">Ao usar, o texto e seus modelos são enviados à IA (Claude, da Anthropic). Não use com dados pessoais ou sigilosos. As sugestões entram direto no campo de texto; se não gostar, use Outra sugestão, Melhorar esta ou Desfazer aplicadas.</p>
+          <p class="hint ai-hint">Ao usar, o texto e seus modelos são enviados à IA (Claude, da Anthropic). Não use com dados pessoais ou sigilosos. As sugestões entram direto no campo de texto; se não gostar, use Outra sugestão ou Melhorar esta.</p>
           <div id="aiOutputHome">
           <div id="aiOutput">
           <span id="aiStatus" class="ok" role="status" aria-live="polite"></span>
-          <div class="ai-actions-all">
-            <button id="aiApplyAllBtn" type="button" hidden>Aplicar todas</button>
-            <button id="aiDismissAllBtn" class="secondary" type="button" hidden>Descartar todas</button>
-          </div>
           <div id="aiResults" class="ai-list"></div>
           <div id="aiRefineBox" class="ai-refine" hidden>
             <div class="ai-refine-row">
               <button id="aiAnotherBtn" class="secondary" type="button">🔄 Outra sugestão</button>
               <button id="aiImproveBtn" class="secondary" type="button">🛠️ Melhorar esta</button>
-              <button id="aiUndoBtn" class="secondary" type="button" hidden>↩ Desfazer aplicadas</button>
             </div>
           </div>
           </div>
@@ -5385,13 +5302,9 @@ async function importTemplatesFromText(text) {
     // O texto vai para a função serverless /api/sugerir-formatacao (a chave da IA fica só no servidor).
     // As sugestões nunca alteram o texto sozinhas: cada uma precisa de "Aplicar".
     const aiSuggestBtn = document.getElementById('aiSuggestBtn');
-    const aiSuggestSummaryBtn = document.getElementById('aiSuggestSummaryBtn');
     const aiSentinelaBtn = document.getElementById('aiSentinelaBtn');
-    const aiApplyAllBtn = document.getElementById('aiApplyAllBtn');
-    const aiDismissAllBtn = document.getElementById('aiDismissAllBtn');
     const aiAnotherBtn = document.getElementById('aiAnotherBtn');
     const aiImproveBtn = document.getElementById('aiImproveBtn');
-    const aiUndoBtn = document.getElementById('aiUndoBtn');
     const aiRefineBox = document.getElementById('aiRefineBox');
     const aiAdjustText = document.getElementById('aiAdjustText');
     const aiStatus = document.getElementById('aiStatus');
@@ -5426,7 +5339,6 @@ async function importTemplatesFromText(text) {
 
     let aiSuggestions = [];   // sugestões exibidas (já resolvidas contra os modelos locais)
     let aiResumo = null;      // { texto, done, kind } quando a IA devolve um resumo ('resumo') ou respostas da Sentinela ('sentinela')
-    let aiLastWithSummary = false; // o último pedido de formatação incluiu resumo? (Outra sugestão/Melhorar repetem a escolha)
     const aiOutput = document.getElementById('aiOutput');
     const aiOutputHome = document.getElementById('aiOutputHome');
     const sentinelaOutputSlot = document.getElementById('sentinelaOutputSlot');
@@ -5499,7 +5411,7 @@ async function importTemplatesFromText(text) {
     let aiLoadingTimer = null;
 
     function setAiLoading(on, button) {
-      const all = [aiSuggestBtn, aiSuggestSummaryBtn, aiSentinelaBtn, aiStudyBtn, aiStudyLoadBtn, aiAnotherBtn, aiImproveBtn];
+      const all = [aiSuggestBtn, aiSentinelaBtn, aiStudyBtn, aiStudyLoadBtn, aiAnotherBtn, aiImproveBtn];
 
       if (!on) {
         clearInterval(aiLoadingTimer);
@@ -5515,7 +5427,6 @@ async function importTemplatesFromText(text) {
         });
         aiProgress.classList.remove('on');
         aiResults.removeAttribute('aria-busy');
-        aiResults.querySelectorAll('.ai-skeleton').forEach(el => el.remove());
         return;
       }
 
@@ -5648,10 +5559,6 @@ async function importTemplatesFromText(text) {
 
     function updateAiControls() {
       updateRefineLabels();
-      const pending = aiSuggestions.filter(s => !s.done);
-      aiApplyAllBtn.hidden = pending.length < 2;
-      aiDismissAllBtn.hidden = pending.length < 1;
-      aiUndoBtn.hidden = !aiAppliedAny;
       aiRefineBox.hidden = !aiRaw.length && !aiResumo && !aiAppliedAny;
       if (!(aiResumo && aiResumo.kind === 'estudo')) clearAnswerCopyButtons();
     }
@@ -5662,7 +5569,10 @@ async function importTemplatesFromText(text) {
       const styleId = aiStyleIdFor('negrito');
       const label = styleId ? convertTextWithStyle('RESUMO', styleId) : 'RESUMO';
       const extras = buildSourceBlocks({ textos: aiResumo.textos, perspicaz: aiResumo.perspicaz });
-      return '📝 ' + label + ' ➜ ' + aiResumo.texto + (extras ? '\n\n' + extras : '');
+      const parts = [];
+      if (aiResumo.texto) parts.push('📝 ' + label + ' ➜ ' + aiResumo.texto);
+      if (extras) parts.push(extras);
+      return parts.join('\n\n');
     }
 
     function insertAiSummary(where) {
@@ -5806,101 +5716,10 @@ async function importTemplatesFromText(text) {
       scheduleAnswerButtons();
     }
 
-    function renderAiSummaryItem() {
-      if (aiResumo && aiResumo.kind === 'estudo') return renderAiStudyCards();
-      if (!aiResumo || aiResumo.done) return;
-
-      const item = document.createElement('div');
-      item.className = 'ai-item';
-
-      const reason = document.createElement('p');
-      reason.className = 'ai-item-reason';
-      reason.textContent = aiResumo.kind === 'sentinela'
-        ? 'Respostas do estudo, com palavras próprias, para comentar' + (aiResumo.fonte ? ' — Fonte: ' + aiResumo.fonte + ' (wol.jw.org)' : '')
-        : 'Resumo do texto, com palavras próprias, para comentário';
-
-      const after = document.createElement('p');
-      after.className = 'ai-item-after';
-      after.textContent = aiSummaryLine();
-
-      const actions = document.createElement('div');
-      actions.className = 'ai-item-actions';
-
-      const makeBtn = (label, secondary, onClick) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.textContent = label;
-        if (secondary) btn.className = 'secondary';
-        btn.addEventListener('click', onClick);
-        return btn;
-      };
-
-      actions.append(
-        makeBtn('Inserir no fim', false, () => { insertAiSummary('end'); renderAiSuggestions(); }),
-        makeBtn('Inserir no início', true, () => { insertAiSummary('start'); renderAiSuggestions(); }),
-        ...(aiResumo.kind === 'sentinela'
-          ? [makeBtn('Substituir texto', true, () => { insertAiSummary('replace'); renderAiSuggestions(); })]
-          : []),
-        makeBtn('Copiar', true, async () => {
-          try {
-            await navigator.clipboard.writeText(aiSummaryLine());
-            setAiStatus(aiResumo.kind === 'sentinela' ? 'Respostas copiadas.' : 'Resumo copiado.', false);
-          } catch (e) {
-            setAiStatus('Não foi possível copiar. Use "Inserir no fim" e copie do texto.', true);
-          }
-        }),
-        makeBtn('Ignorar', true, () => { aiResumo.done = true; renderAiSuggestions(); })
-      );
-
-      item.append(reason, after, actions);
-      aiResults.appendChild(item);
-    }
-
+    // Tudo o que a IA devolve entra direto no campo de texto; só as respostas do estudo ganham botões Copiar.
     function renderAiSuggestions() {
       aiResults.textContent = '';
-      renderAiSummaryItem();
-
-      aiSuggestions.filter(s => !s.done).forEach(s => {
-        const item = document.createElement('div');
-        item.className = 'ai-item';
-
-        const reason = document.createElement('p');
-        reason.className = 'ai-item-reason';
-        reason.textContent = s.motivo + (s.modelo ? ' — modelo: ' + (s.modelo.name || 'Modelo') : '');
-
-        const before = document.createElement('p');
-        before.className = 'ai-item-before';
-        before.textContent = s.original;
-
-        const after = document.createElement('p');
-        after.className = 'ai-item-after';
-        after.textContent = s.novo;
-
-        const actions = document.createElement('div');
-        actions.className = 'ai-item-actions';
-
-        const applyBtn = document.createElement('button');
-        applyBtn.type = 'button';
-        applyBtn.textContent = 'Aplicar';
-        applyBtn.addEventListener('click', () => {
-          applyAiSuggestion(s);
-          renderAiSuggestions();
-        });
-
-        const ignoreBtn = document.createElement('button');
-        ignoreBtn.type = 'button';
-        ignoreBtn.className = 'secondary';
-        ignoreBtn.textContent = 'Ignorar';
-        ignoreBtn.addEventListener('click', () => {
-          s.done = true;
-          renderAiSuggestions();
-        });
-
-        actions.append(applyBtn, ignoreBtn);
-        item.append(reason, before, after, actions);
-        aiResults.appendChild(item);
-      });
-
+      if (aiResumo && aiResumo.kind === 'estudo') renderAiStudyCards();
       updateAiControls();
     }
 
@@ -5939,13 +5758,12 @@ async function importTemplatesFromText(text) {
     }
 
     // mode: undefined = primeira sugestão; 'nova' = alternativa diferente; 'melhorar' = refinar a anterior.
-    async function requestAiSuggestions(mode, withSummary) {
+    async function requestAiSuggestions(mode) {
       if (aiBusy) return;
       aiLastKind = 'format';
       aiStatusKind = 'format';
       placeAiOutput(aiOutputHome);
       aiBoxDetails.open = true; // o resultado aparece aqui dentro, então o bloco precisa estar aberto
-      if (!mode) aiLastWithSummary = !!withSummary;
 
       if (mode) {
         if (!(await confirmAiRestore())) return;
@@ -5984,20 +5802,19 @@ async function importTemplatesFromText(text) {
         conteudo: String(t.content || '').slice(0, 200)
       }));
 
-      const options = readAiOptions();
-      options.resumo = aiLastWithSummary;
+      const options = readAiOptions(); // inclui "Incluir resumo do texto" e as consultas, como estão marcados agora
       const payload = { linhas: lines, modelos, opcoes: options };
       payload.ajuste = aiAdjustText.value.trim().slice(0, 300);
       if (mode && (aiRaw.length || previousSummary)) {
         payload.modo = mode;
-        payload.anteriores = { resumo: previousSummary ? previousSummary.texto : null, textos: previousSummary ? previousSummary.textos : null, perspicaz: previousSummary ? previousSummary.perspicaz : null, sugestoes: aiRaw };
+        payload.anteriores = { resumo: previousSummary ? (previousSummary.texto || null) : null, textos: previousSummary ? previousSummary.textos : null, perspicaz: previousSummary ? previousSummary.perspicaz : null, sugestoes: aiRaw };
       }
 
       aiBusy = true;
-      setAiLoading(true, mode === 'nova' ? aiAnotherBtn : mode === 'melhorar' ? aiImproveBtn : aiLastWithSummary ? aiSuggestSummaryBtn : aiSuggestBtn);
+      setAiLoading(true, mode === 'nova' ? aiAnotherBtn : mode === 'melhorar' ? aiImproveBtn : aiSuggestBtn);
 
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), aiLastWithSummary && aiUsesSources() ? 125000 : 60000);
+      const timer = setTimeout(() => controller.abort(), aiUsesSources() ? 125000 : 60000);
 
       try {
         const response = await fetch(AI_ENDPOINT, {
@@ -6021,7 +5838,11 @@ async function importTemplatesFromText(text) {
         }
 
         aiRaw = Array.isArray(data.sugestoes) ? data.sugestoes : [];
-        aiResumo = data.resumo ? { texto: String(data.resumo), done: false, kind: 'resumo', textos: Array.isArray(data.textos) ? data.textos : [], perspicaz: data.perspicaz || null } : null;
+        const extraTexts = Array.isArray(data.textos) ? data.textos : [];
+        // O resumo, os versículos e o Perspicaz são independentes: basta um deles para haver algo a inserir no fim do texto.
+        aiResumo = (data.resumo || extraTexts.length || data.perspicaz)
+          ? { texto: data.resumo ? String(data.resumo) : '', done: false, kind: 'resumo', textos: extraTexts, perspicaz: data.perspicaz || null }
+          : null;
         const byId = new Map(getTemplatesSortedByName().map(t => [t.id, t]));
         aiSuggestions = aiRaw.map(s => {
           const original = lines[s.linha];
@@ -6195,7 +6016,7 @@ async function importTemplatesFromText(text) {
         }
 
         // As respostas substituem o texto colado no campo de texto (como na Opção 1), cada uma com seu botão Copiar.
-        // "Outra resposta" e "Melhorar" restauram o texto colado, refazem e substituem de novo; "Desfazer" devolve o texto colado.
+        // "Outra resposta" e "Melhorar" restauram o texto colado, refazem e substituem de novo.
         const parts = buildSentinelaParts(aiSentinelaRaw);
         aiResumo = { texto: parts.map(part => part.texto).join('\n\n\n'), partes: parts, done: false, kind: 'estudo' };
         replaceMainText(aiResumo.texto);
@@ -6212,7 +6033,6 @@ async function importTemplatesFromText(text) {
     }
 
     aiSuggestBtn.addEventListener('click', () => requestAiSuggestions());
-    aiSuggestSummaryBtn.addEventListener('click', () => requestAiSuggestions(undefined, true));
     const AI_STUDY_CODE_KEY = 'jwLibraryNoteAplicarStudyCodeV1';
     const AI_STUDY_CACHE_KEY = 'jwLibraryNoteAplicarStudyListV1';
     const aiStudyBtn = document.getElementById('aiStudyBtn');
@@ -6529,29 +6349,6 @@ async function importTemplatesFromText(text) {
       if (e.key !== 'Enter') return;
       e.preventDefault();
       refineAi(aiRaw.length || aiResumo ? 'melhorar' : undefined);
-    });
-
-    aiApplyAllBtn.addEventListener('click', () => {
-      const results = aiSuggestions.filter(s => !s.done).map(applyAiSuggestion);
-      renderAiSuggestions();
-      if (results.every(Boolean)) setAiStatus('Sugestões aplicadas.', false);
-    });
-
-    aiDismissAllBtn.addEventListener('click', () => {
-      aiSuggestions.forEach(s => { s.done = true; });
-      if (aiResumo) aiResumo.done = true;
-      renderAiSuggestions();
-      setAiStatus('Sugestões descartadas.', false);
-    });
-
-    aiUndoBtn.addEventListener('click', async () => {
-      if (!(await confirmAiRestore())) return;
-      if (aiAppliedAny) restoreAiBaseText();
-      // Não há mais lista de sugestões para reaparecer: desfazer devolve o texto de antes e pronto.
-      aiSuggestions.forEach(s => { s.done = true; });
-      if (aiResumo && aiResumo.kind === 'resumo') aiResumo.done = true;
-      renderAiSuggestions();
-      setAiStatus('Texto anterior restaurado.', false);
     });
 
     aiOptionInputs.forEach(el => el.addEventListener('change', saveAiOptions));

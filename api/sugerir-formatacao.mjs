@@ -950,7 +950,7 @@ export default async function handler(req, res) {
 
   // Com resumo, as caixas "Consultar textos citados" e "Consultar o Perspicaz" valem para o resumo; a IA usa então
   // a execução de código e a resposta vem como JSON em texto (em vez da saída estruturada).
-  const fontes = opcoes.resumo ? prepararFontes(opcoes, P, true) : null;
+  const fontes = prepararFontes(opcoes, P, true);
   if (fontes && fontes.erro) return erro(res, 500, fontes.erro);
 
   try {
@@ -1017,9 +1017,10 @@ export default async function handler(req, res) {
     const resumo =
       opcoes.resumo && typeof saida.resumo === "string" ? limparTextoGerado(saida.resumo, P.limites.maxCharsResumo) || null : null;
 
-    // Versículos e Perspicaz acompanham o resumo; sem resumo não há onde mostrá-los.
-    const textos = resumo && fontes ? sanearTextos(saida.textos, lido, fontes.biblia, P.limites.maxTextos) : [];
-    const perspicaz = resumo && fontes ? sanearPerspicaz(saida.perspicaz, lido, fontes.perspicaz) : null;
+    // Resumo, versículos e Perspicaz são independentes: cada um aparece só se foi pedido (e, no caso dos dois últimos,
+    // só se o texto realmente apareceu na leitura dos arquivos).
+    const textos = fontes ? sanearTextos(saida.textos, lido, fontes.biblia, P.limites.maxTextos) : [];
+    const perspicaz = fontes ? sanearPerspicaz(saida.perspicaz, lido, fontes.perspicaz) : null;
 
     return res.status(200).json({ resumo, sugestoes, textos, perspicaz });
   } catch (e) {
