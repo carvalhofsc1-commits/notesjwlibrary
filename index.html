@@ -1237,6 +1237,71 @@
       padding-top: 16px;
     }
 
+    /* ---------- Página de prompts da IA (administrador) ---------- */
+
+    .ai-admin-row { margin-top: 16px; }
+    .ai-admin-row button { display: block; width: 100%; min-height: 48px; }
+
+    .prompt-item {
+      border: 2px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      margin-top: 14px;
+    }
+
+    .prompt-item h3 { margin: 0; font-size: 1rem; }
+
+    .prompt-badge {
+      display: inline-block;
+      margin-left: 8px;
+      padding: 1px 8px;
+      border-radius: 999px;
+      font-size: .74rem;
+      font-weight: 700;
+      background: var(--soft);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+
+    .prompt-item textarea {
+      min-height: 190px;
+      font-size: .9rem;
+      line-height: 1.4;
+    }
+
+    .prompt-item-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .prompt-count { color: var(--muted); font-size: .82rem; }
+
+    .prompt-locked pre {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      margin: 8px 0 0;
+      padding: 10px;
+      border-radius: 10px;
+      background: var(--soft);
+      color: var(--muted);
+      font-size: .8rem;
+      line-height: 1.4;
+    }
+
+    .prompt-locked summary { cursor: pointer; font-weight: 700; margin-top: 10px; }
+
+    .prompts-sticky {
+      position: sticky;
+      bottom: -22px;
+      margin: 18px -22px -22px;
+      padding: 12px 22px;
+      background: var(--card);
+      border-top: 1px solid var(--line);
+    }
+
     /* ---------- Estados ---------- */
 
     .ok {
@@ -1713,6 +1778,11 @@
         <label for="aiInstruction">Instruções fixas, valem para todo pedido (opcional)</label>
         <input autocomplete="off" id="aiInstruction" type="text" maxlength="300" placeholder="Ex.: texto da Escola Pioneiros, estilo discreto">
 
+        <div class="ai-admin-row">
+          <button id="openPromptsBtn" class="secondary" type="button">🛠️ Visualizar e editar prompts</button>
+          <p class="hint">Área do administrador: mostra os textos que orientam a IA e permite editar o tom e as regras para todos os usuários.</p>
+        </div>
+
           </div>
         </details>
         <details class="subsection sub-tint-2">
@@ -1884,7 +1954,7 @@
 
       <div class="manager-section">
         <h3>Exportar ou importar arquivo JSON</h3>
-        <p class="hint">O arquivo exportado reúne modelos, categorias de modelos, caracteres personalizados, categorias de caracteres e favoritos.</p>
+        <p class="hint">O arquivo exportado reúne modelos, categorias de modelos, caracteres personalizados, categorias de caracteres, favoritos e as opções do app.</p>
 
         <div class="button-row">
           <button id="exportTemplatesBtn" type="button">Exportar JSON completo</button>
@@ -1900,9 +1970,9 @@
 
       <div class="manager-section">
         <h3>Definir como padrão do app</h3>
-        <p class="hint">Área restrita ao administrador. Exporta o JSON atual (modelos, categorias, caracteres e favoritos) já pronto para virar o arquivo padrão de novas instalações. Pede uma senha antes de continuar.</p>
+        <p class="hint">Área restrita ao administrador. Publica o JSON atual como o padrão do app para todos os usuários, sem precisar publicar um arquivo novo. Leva modelos, categorias, caracteres, favoritos <strong>e as opções do app</strong>: as caixas e seleções de "Configurar formatação com IA" e o tipo de caractere escolhido. Marque, desmarque e escolha as opções como quer que fiquem e só então publique. Quem ainda não personalizou suas opções passa a usar as novas ao abrir o app; "Substituir pelos padrões" também troca as opções de quem já personalizou. Pede o código de administrador.</p>
         <div class="button-row">
-          <button id="setJsonAsDefaultBtn" class="danger" type="button">🔐 Definir JSON como padrão</button>
+          <button id="setJsonAsDefaultBtn" class="danger" type="button">🔐 Publicar JSON como padrão</button>
         </div>
       </div>
     </div>
@@ -1911,17 +1981,50 @@
   <div id="adminPasswordOverlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="adminPasswordTitle">
     <div class="modal-card">
       <h2 id="adminPasswordTitle">Área do administrador</h2>
-      <p class="hint">Digite a senha numérica de 8 dígitos do administrador para exportar o JSON atual como novo padrão do app.</p>
-      <label for="adminPasswordInput">Senha (8 dígitos numéricos)</label>
-      <input id="adminPasswordInput" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="••••••••" autocomplete="off">
+      <p class="hint">Digite o código de administrador para publicar o JSON atual como o novo padrão do app, para todos os usuários.</p>
+      <label for="adminPasswordInput">Código de administrador</label>
+      <input id="adminPasswordInput" type="password" maxlength="100" placeholder="Código de administrador" autocomplete="off">
       <p id="adminPasswordError" class="hint" style="color:var(--danger); min-height:1.3em"></p>
       <div class="modal-actions">
-        <button id="adminPasswordConfirm" type="button" class="btn-green">🔓 Confirmar</button>
+        <button id="adminPasswordConfirm" type="button" class="btn-green">🔓 Publicar</button>
         <button id="adminPasswordCancel" type="button" class="btn-slate">✖️ Cancelar</button>
       </div>
     </div>
   </div>
 
+
+  <div id="promptsOverlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="promptsTitle">
+    <div class="modal-card manager-card prompts-card">
+      <div class="modal-title-row">
+        <h2 id="promptsTitle">🛠️ Prompts da IA</h2>
+        <button id="closePromptsBtn" class="secondary modal-close-btn" type="button">✖️ Fechar</button>
+      </div>
+
+      <div id="promptsLogin">
+        <p class="hint">Área restrita ao administrador. Digite o código de administrador para ver e editar os textos que orientam a IA para todos os usuários.</p>
+        <label for="promptsCodeInput">Código de administrador</label>
+        <input id="promptsCodeInput" type="password" maxlength="100" placeholder="Código de administrador" autocomplete="off">
+        <p id="promptsLoginError" class="hint" style="color:var(--danger); min-height:1.3em"></p>
+        <div class="button-row">
+          <button id="promptsLoginBtn" type="button">🔓 Entrar</button>
+        </div>
+      </div>
+
+      <div id="promptsEditor" hidden>
+        <p class="hint">Aqui você edita o <strong>tom e as regras</strong> da IA. O formato técnico da resposta (campos e JSON) e a forma de ler os arquivos da Bíblia e do Perspicaz ficam travados, só para leitura, no fim da página. Ao salvar, a mudança vale para todos os usuários em poucos segundos. "Restaurar padrão" volta ao texto original do app.</p>
+        <p id="promptsStatus" class="ok" role="status" aria-live="polite"></p>
+        <div id="promptsList"></div>
+        <div class="manager-section prompt-locked">
+          <h3>Parte técnica (somente leitura)</h3>
+          <div id="promptsLocked"></div>
+        </div>
+        <div class="button-row prompts-sticky">
+          <button id="promptsSaveBtn" type="button">💾 Salvar alterações</button>
+          <button id="promptsUndoBtn" class="secondary" type="button">↩ Voltar à versão anterior</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <div id="importChoiceOverlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="importChoiceTitle">
     <div class="modal-card">
@@ -3971,6 +4074,24 @@ function saveTemplatesToStorage() {
       onlineDefaultsStatus.className = 'ok';
       onlineDefaultsStatus.textContent = 'Buscando arquivo padrão JSON...';
 
+      // Primeiro o padrão publicado pelo administrador (guardado no servidor); sem ele, o arquivo defaults.json.
+      try {
+        const published = await postConfig({ acao: 'padrao-ler' });
+        const publishedData = published.ok ? published.data.dados : null;
+        if (publishedData) {
+          const normalizedPublished = normalizeDefaultsObject(publishedData);
+          if (normalizedPublished.templates.length || Object.keys(normalizedPublished.customSymbolCategories).length) {
+            cachedOnlineDefaults = publishedData;
+            const when = publishedData.exportedAt ? new Date(publishedData.exportedAt) : null;
+            onlineDefaultsVersion.textContent = 'Arquivo padrão: publicado pelo administrador' +
+              (when && !isNaN(when) ? ' em ' + when.toLocaleDateString('pt-BR') : '') + '.';
+            onlineDefaultsStatus.className = 'ok';
+            onlineDefaultsStatus.textContent = 'Arquivo padrão carregado. Agora escolha Somar ou Substituir.';
+            return publishedData;
+          }
+        }
+      } catch (e) { /* sem servidor ou sem padrão publicado: usa o defaults.json */ }
+
       const candidates = [
         new URL('defaults.json', location.href).href,
         location.origin + '/defaults.json'
@@ -4117,6 +4238,7 @@ function saveTemplatesToStorage() {
       saveTemplatesToStorage();
       saveCustomSymbols();
       saveFavoriteSymbols();
+      applyPreferences(data.preferencias, mode === 'replace');
 
       if (data.version) {
         safeSetItem(ONLINE_DEFAULTS_VERSION_STORAGE_KEY, String(data.version));
@@ -4135,6 +4257,7 @@ function saveTemplatesToStorage() {
       // do usuário sem aviso quando o navegador/origem parece "vazio").
       try {
         const data = await fetchOnlineDefaults();
+        applyPreferences(data.preferencias, false);
         // O JSON traz a versão como número e o localStorage devolve texto:
         // sem normalizar, 4 !== '4' e o app acusaria novidade a cada abertura.
         const fileVersion = String(data.version || '');
@@ -4166,6 +4289,7 @@ function saveTemplatesToStorage() {
 
     async function checkOnlineDefaults() {
       try {
+        cachedOnlineDefaults = null; // o botão "Buscar" sempre consulta de novo, para pegar um padrão recém-publicado
         const data = await ensureOnlineDefaultsLoaded();
         const normalized = normalizeDefaultsObject(data);
         onlineDefaultsStatus.className = 'ok';
@@ -4234,8 +4358,64 @@ function saveTemplatesToStorage() {
         templateCategories: templateCategories,
         customSymbols: getAllCustomSymbols(),
         customSymbolCategories: customSymbolCategories,
-        favoriteSymbols: favoriteSymbols
+        favoriteSymbols: favoriteSymbols,
+        preferencias: collectPreferences()
       };
+    }
+
+    // Opções e seleções do app que podem virar padrão: tudo o que está em "Configurar formatação com IA"
+    // (caixas, tamanho do resumo, intensidade, categoria, instruções fixas) e o tipo de caractere escolhido.
+    // Tema claro/escuro, código de acesso e estado das seções ficam de fora: são pessoais.
+    function collectPreferences() {
+      return { ia: readAiOptions(), fonte: styleSelect.value };
+    }
+
+    // Aceita só chaves conhecidas, com o tipo certo (o JSON padrão vem do servidor e pode ter qualquer coisa).
+    function sanitizePreferences(raw) {
+      const result = { ia: null, fonte: '' };
+      if (!raw || typeof raw !== 'object') return result;
+
+      if (raw.ia && typeof raw.ia === 'object') {
+        const ia = {};
+        Object.keys(AI_DEFAULT_OPTIONS).forEach(key => {
+          const model = AI_DEFAULT_OPTIONS[key];
+          const value = raw.ia[key];
+          if (typeof model === 'boolean' && typeof value === 'boolean') ia[key] = value;
+          else if (typeof model === 'string' && typeof value === 'string') ia[key] = value.slice(0, 300);
+        });
+        result.ia = ia;
+      }
+
+      if (typeof raw.fonte === 'string' && Array.from(styleSelect.options).some(option => option.value === raw.fonte)) {
+        result.fonte = raw.fonte;
+      }
+      return result;
+    }
+
+    // overwrite = true: o padrão sobrescreve as escolhas do usuário ("Substituir pelos padrões").
+    // overwrite = false: só vale para quem ainda não escolheu nada (abertura do app e "Somar padrões aos meus").
+    function applyPreferences(raw, overwrite) {
+      const prefs = sanitizePreferences(raw);
+
+      if (prefs.ia) {
+        let hasSaved = false;
+        try { hasSaved = localStorage.getItem(AI_OPTIONS_KEY) !== null; } catch (e) { /* sem localStorage */ }
+
+        if (overwrite) {
+          safeSetItem(AI_OPTIONS_KEY, JSON.stringify(Object.assign({}, AI_DEFAULT_OPTIONS, prefs.ia)));
+          aiPublishedDefaults = {};
+          loadAiOptions();
+        } else if (!hasSaved && !aiOptionsTouched) {
+          // Não grava: quem nunca personalizou acompanha o padrão, mesmo quando o administrador o mudar.
+          aiPublishedDefaults = prefs.ia;
+          loadAiOptions();
+        }
+      }
+
+      if (prefs.fonte && (overwrite || !fontTouched) && styleSelect.value !== prefs.fonte) {
+        styleSelect.value = prefs.fonte;
+        updateUi();
+      }
     }
 
     function exportTemplates() {
@@ -4257,12 +4437,6 @@ function saveTemplatesToStorage() {
       backupStatus.textContent = 'Arquivo JSON completo exportado!';
     }
 
-    // Senha simples para desencorajar cliques acidentais nesta ação. Como o app é
-    // um arquivo estático (sem servidor próprio), isso NÃO é segurança de verdade —
-    // qualquer pessoa com acesso ao código-fonte consegue ver a senha. Serve só
-    // para evitar que alguém exporte o "padrão" sem querer.
-    const ADMIN_PASSWORD = '57847548';
-
     function openAdminPasswordPrompt() {
       adminPasswordInput.value = '';
       adminPasswordError.textContent = '';
@@ -4274,33 +4448,34 @@ function saveTemplatesToStorage() {
       adminPasswordOverlay.classList.remove('open');
     }
 
-    function exportJsonAsDefault() {
-      const data = JSON.stringify(buildBackupObject(), null, 2);
-      backupText.value = data;
-
-      const blob = new Blob([data], { type: 'application/json;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      const date = new Date().toISOString().slice(0, 10);
-      a.href = url;
-      a.download = 'defaults-jw-library-' + date + '.json';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 0);
-
-      backupStatus.className = 'ok';
-      backupStatus.textContent = 'JSON exportado. Este app não tem servidor próprio — envie o arquivo para o desenvolvedor aplicar como padrão de novas instalações.';
-    }
-
-    function confirmAdminPassword() {
-      const value = adminPasswordInput.value.trim();
-      if (value === ADMIN_PASSWORD) {
-        closeAdminPasswordPrompt();
-        exportJsonAsDefault();
+    // Publica o JSON atual como padrão do app para todos os usuários: o servidor confere o código de administrador
+    // (variável CODIGO_ADMIN) e guarda o JSON no Edge Config. Nada de senha no código-fonte.
+    async function confirmAdminPassword() {
+      const code = adminPasswordInput.value.trim();
+      if (!code) {
+        adminPasswordError.textContent = 'Digite o código de administrador.';
+        adminPasswordInput.focus();
         return;
       }
-      adminPasswordError.textContent = 'Senha incorreta. Tente novamente.';
+
+      adminPasswordConfirm.disabled = true;
+      adminPasswordError.textContent = 'Publicando...';
+      const published = buildBackupObject();
+      published.version = Number(new Date().toISOString().replace(/\D/g, '').slice(0, 12)); // AAAAMMDDhhmm
+      const result = await postConfig({ acao: 'padrao-publicar', codigo: code, dados: published });
+      adminPasswordConfirm.disabled = false;
+
+      if (result.ok) {
+        closeAdminPasswordPrompt();
+        cachedOnlineDefaults = null;
+        backupStatus.className = 'ok';
+        backupStatus.textContent = 'Padrão publicado para todos os usuários (' + (result.data.modelos || 0) + ' modelos). "Buscar arquivo padrão JSON" já entrega esta versão.';
+        return;
+      }
+
+      adminPasswordError.textContent = result.status === 403 || result.status === 429
+        ? configErrorMessage(result, 'Código incorreto.')
+        : configErrorMessage(result, 'Não foi possível publicar agora.');
       adminPasswordInput.value = '';
       adminPasswordInput.focus();
     }
@@ -4565,6 +4740,242 @@ async function importTemplatesFromText(text) {
       if (event.key === 'Escape') closeModelManager();
     });
 
+    // ---------- Administrador: chamadas ao servidor e página de prompts da IA ----------
+    const CONFIG_ENDPOINT = '/api/config';
+
+    // Devolve { ok, status, data, unavailable, error }. O código de administrador é conferido no servidor.
+    async function postConfig(payload) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 25000);
+      try {
+        const response = await fetch(CONFIG_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
+        let data = null;
+        try { data = await response.json(); } catch (e) { /* resposta sem JSON */ }
+        return { ok: response.ok && !!data, status: response.status, data, unavailable: response.status === 404 || response.status === 501 };
+      } catch (e) {
+        return { ok: false, status: 0, data: null, error: e && e.name === 'AbortError' ? 'timeout' : 'rede' };
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    function configErrorMessage(result, fallback) {
+      if (result.unavailable) return 'Esta função só existe no site publicado (notesjwlibrary.vercel.app).';
+      if (result.error === 'timeout') return 'O servidor demorou demais. Tente de novo.';
+      if (result.error === 'rede') return 'Falha de conexão com o servidor.';
+      return (result.data && result.data.erro) || fallback;
+    }
+
+    const promptsOverlay = document.getElementById('promptsOverlay');
+    const promptsLogin = document.getElementById('promptsLogin');
+    const promptsEditor = document.getElementById('promptsEditor');
+    const promptsCodeInput = document.getElementById('promptsCodeInput');
+    const promptsLoginError = document.getElementById('promptsLoginError');
+    const promptsStatus = document.getElementById('promptsStatus');
+    const promptsList = document.getElementById('promptsList');
+    const promptsLocked = document.getElementById('promptsLocked');
+    const promptsSaveBtn = document.getElementById('promptsSaveBtn');
+    const promptsUndoBtn = document.getElementById('promptsUndoBtn');
+    let promptsOpener = null;
+    let promptsState = null;   // última resposta do servidor
+    let promptsCode = '';      // só na memória, enquanto a página estiver aberta
+
+    function openPrompts() {
+      promptsOpener = document.activeElement;
+      promptsCode = '';
+      promptsState = null;
+      promptsCodeInput.value = '';
+      promptsLoginError.textContent = '';
+      promptsStatus.textContent = '';
+      promptsLogin.hidden = false;
+      promptsEditor.hidden = true;
+      promptsOverlay.classList.add('open');
+      promptsCodeInput.focus();
+    }
+
+    // Textos que o administrador mudou na tela e ainda não salvou: { id: texto }.
+    function promptsPendingChanges() {
+      const changes = {};
+      if (!promptsState) return changes;
+      promptsList.querySelectorAll('textarea[data-prompt-id]').forEach(area => {
+        const part = promptsState.partes.find(p => p.id === area.dataset.promptId);
+        if (part && area.value.trim() !== part.valor.trim()) changes[part.id] = area.value;
+      });
+      return changes;
+    }
+
+    async function closePrompts() {
+      if (!promptsOverlay.classList.contains('open')) return;
+      if (Object.keys(promptsPendingChanges()).length) {
+        const ok = await askConfirm('Há alterações que ainda não foram salvas. Fechar mesmo assim?', 'Fechar sem salvar');
+        if (!ok) return;
+      }
+      promptsOverlay.classList.remove('open');
+      promptsCode = '';
+      promptsState = null;
+      promptsList.textContent = '';
+      promptsLocked.textContent = '';
+      promptsCodeInput.value = '';
+      if (promptsOpener && typeof promptsOpener.focus === 'function') promptsOpener.focus();
+      promptsOpener = null;
+    }
+
+    function setPromptsStatus(message, isError) {
+      promptsStatus.className = isError ? 'warn' : 'ok';
+      promptsStatus.textContent = message;
+    }
+
+    function renderPrompts(state) {
+      promptsState = state;
+      promptsList.textContent = '';
+
+      state.partes.forEach(part => {
+        const box = document.createElement('div');
+        box.className = 'prompt-item';
+
+        const title = document.createElement('h3');
+        title.textContent = part.titulo;
+        if (part.personalizado) {
+          const badge = document.createElement('span');
+          badge.className = 'prompt-badge';
+          badge.textContent = 'personalizado';
+          title.appendChild(badge);
+        }
+
+        const description = document.createElement('p');
+        description.className = 'hint';
+        description.textContent = part.descricao;
+
+        const area = document.createElement('textarea');
+        area.dataset.promptId = part.id;
+        area.value = part.valor;
+        area.spellcheck = false;
+        area.setAttribute('aria-label', part.titulo);
+
+        const actions = document.createElement('div');
+        actions.className = 'prompt-item-actions';
+
+        const count = document.createElement('span');
+        count.className = 'prompt-count';
+        const updateCount = () => { count.textContent = area.value.length + ' caracteres'; };
+        area.addEventListener('input', updateCount);
+        updateCount();
+
+        const restoreBtn = document.createElement('button');
+        restoreBtn.type = 'button';
+        restoreBtn.className = 'secondary';
+        restoreBtn.textContent = 'Restaurar padrão';
+        restoreBtn.disabled = !part.personalizado;
+        restoreBtn.addEventListener('click', () => restorePrompt(part));
+
+        const resetViewBtn = document.createElement('button');
+        resetViewBtn.type = 'button';
+        resetViewBtn.className = 'secondary';
+        resetViewBtn.textContent = 'Descartar edição';
+        resetViewBtn.addEventListener('click', () => { area.value = part.valor; updateCount(); });
+
+        actions.append(count, resetViewBtn, restoreBtn);
+        box.append(title, description, area, actions);
+        promptsList.appendChild(box);
+      });
+
+      promptsLocked.textContent = '';
+      state.travados.forEach(item => {
+        const details = document.createElement('details');
+        const summary = document.createElement('summary');
+        summary.textContent = item.titulo;
+        const pre = document.createElement('pre');
+        pre.textContent = item.texto;
+        details.append(summary, pre);
+        promptsLocked.appendChild(details);
+      });
+
+      promptsUndoBtn.disabled = !state.temAnterior;
+      promptsSaveBtn.disabled = !state.armazenamento.escrita;
+      if (!state.armazenamento.escrita) {
+        setPromptsStatus('O armazenamento (Global Config) ainda não está configurado para gravar no servidor: dá para ler, mas não salvar.', true);
+      }
+    }
+
+    async function loginPrompts() {
+      const code = promptsCodeInput.value.trim();
+      if (!code) {
+        promptsLoginError.textContent = 'Digite o código de administrador.';
+        return;
+      }
+      promptsLoginError.textContent = 'Entrando...';
+      const result = await postConfig({ acao: 'prompts-ler', codigo: code });
+      if (!result.ok) {
+        promptsLoginError.textContent = configErrorMessage(result, 'Não foi possível entrar agora.');
+        promptsCodeInput.value = '';
+        promptsCodeInput.focus();
+        return;
+      }
+      promptsCode = code;
+      promptsCodeInput.value = '';
+      promptsLoginError.textContent = '';
+      promptsLogin.hidden = true;
+      promptsEditor.hidden = false;
+      setPromptsStatus('', false);
+      renderPrompts(result.data);
+    }
+
+    async function sendPromptsAction(payload, successMessage) {
+      promptsSaveBtn.disabled = true;
+      promptsUndoBtn.disabled = true;
+      setPromptsStatus('Enviando...', false);
+      const result = await postConfig(Object.assign({ codigo: promptsCode }, payload));
+      if (!result.ok) {
+        setPromptsStatus(configErrorMessage(result, 'Não foi possível concluir agora.'), true);
+        if (promptsState) {
+          promptsSaveBtn.disabled = !promptsState.armazenamento.escrita;
+          promptsUndoBtn.disabled = !promptsState.temAnterior;
+        }
+        return false;
+      }
+      renderPrompts(result.data);
+      setPromptsStatus(successMessage, false);
+      return true;
+    }
+
+    async function savePrompts() {
+      const changes = promptsPendingChanges();
+      if (!Object.keys(changes).length) {
+        setPromptsStatus('Nada foi alterado.', false);
+        return;
+      }
+      await sendPromptsAction({ acao: 'prompts-salvar', alteracoes: changes }, 'Prompts salvos. Valem para todos os usuários em poucos segundos.');
+    }
+
+    async function restorePrompt(part) {
+      const ok = await askConfirm('Restaurar o texto padrão de "' + part.titulo + '" para todos os usuários? A edição atual será substituída.', 'Restaurar padrão');
+      if (!ok) return;
+      await sendPromptsAction({ acao: 'prompts-restaurar', id: part.id }, 'Texto padrão restaurado.');
+    }
+
+    async function undoPrompts() {
+      const ok = await askConfirm('Voltar todos os prompts à versão anterior à última alteração salva?', 'Voltar à versão anterior');
+      if (!ok) return;
+      await sendPromptsAction({ acao: 'prompts-desfazer' }, 'Versão anterior restaurada.');
+    }
+
+    document.getElementById('openPromptsBtn').addEventListener('click', openPrompts);
+    document.getElementById('closePromptsBtn').addEventListener('click', closePrompts);
+    document.getElementById('promptsLoginBtn').addEventListener('click', loginPrompts);
+    promptsSaveBtn.addEventListener('click', savePrompts);
+    promptsUndoBtn.addEventListener('click', undoPrompts);
+    promptsCodeInput.addEventListener('keydown', event => {
+      if (event.key === 'Enter') { event.preventDefault(); loginPrompts(); }
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && promptsOverlay.classList.contains('open') && !confirmOverlay.classList.contains('open')) closePrompts();
+    });
+
     symbolCategorySelect.addEventListener('change', renderSymbols);
     document.getElementById('resetFavoriteSymbolsBtn').addEventListener('click', resetFavoriteSymbols);
     document.getElementById('saveCustomSymbolsBtn').addEventListener('click', addCustomSymbols);
@@ -4579,9 +4990,6 @@ async function importTemplatesFromText(text) {
     adminPasswordCancel.addEventListener('click', closeAdminPasswordPrompt);
     adminPasswordOverlay.addEventListener('click', event => {
       if (event.target === adminPasswordOverlay) closeAdminPasswordPrompt();
-    });
-    adminPasswordInput.addEventListener('input', () => {
-      adminPasswordInput.value = adminPasswordInput.value.replace(/\D/g, '').slice(0, 8);
     });
     adminPasswordInput.addEventListener('keydown', event => {
       if (event.key === 'Enter') { event.preventDefault(); confirmAdminPassword(); }
@@ -4643,7 +5051,9 @@ async function importTemplatesFromText(text) {
       scheduleUiRefresh();
     }, 80));
 
-    styleSelect.addEventListener('change', () => {
+    let fontTouched = false; // o usuário já escolheu um tipo de caractere nesta sessão
+    styleSelect.addEventListener('change', event => {
+      if (event.isTrusted) fontTouched = true;
       updateUi();
     });
     document.getElementById('applyStyleBtn').addEventListener('click', () => {
@@ -4686,6 +5096,11 @@ async function importTemplatesFromText(text) {
       emoji: false, citacoesBiblicas: false, resumo: false, intensidade: 'moderada', instrucao: '', categoria: 'all', resumoTamanho: 'medio',
       consultarBiblia: false, consultarPerspicaz: false
     };
+
+    // Opções padrão publicadas pelo administrador (valem para quem nunca salvou as suas) e se o usuário já mexeu nelas
+    // nesta sessão (nesse caso o padrão que chega depois não as sobrescreve).
+    let aiPublishedDefaults = {};
+    let aiOptionsTouched = false;
 
     let aiSuggestions = [];   // sugestões exibidas (já resolvidas contra os modelos locais)
     let aiResumo = null;      // { texto, done, kind } quando a IA devolve um resumo ('resumo') ou respostas da Sentinela ('sentinela')
@@ -4821,7 +5236,7 @@ async function importTemplatesFromText(text) {
     function loadAiOptions() {
       let saved = {};
       try { saved = JSON.parse(localStorage.getItem(AI_OPTIONS_KEY) || '{}') || {}; } catch (e) { saved = {}; }
-      const options = Object.assign({}, AI_DEFAULT_OPTIONS, saved);
+      const options = Object.assign({}, AI_DEFAULT_OPTIONS, aiPublishedDefaults, saved);
       renderAiCategoryOptions(String(options.categoria || 'all'));
       aiSummarySize.value = ['curto', 'medio', 'detalhado'].includes(options.resumoTamanho) ? options.resumoTamanho : 'medio';
       aiOptionInputs.forEach(el => { el.checked = !!options[el.dataset.aiOpt]; });
@@ -4842,6 +5257,13 @@ async function importTemplatesFromText(text) {
     function saveAiOptions() {
       safeSetItem(AI_OPTIONS_KEY, JSON.stringify(readAiOptions()));
     }
+
+    // Só mudanças feitas pelo usuário (isTrusted) contam como "já mexeu".
+    [...aiOptionInputs, aiSummarySize, aiIntensity, aiCategory, aiInstruction].forEach(control => {
+      ['change', 'input'].forEach(type => control.addEventListener(type, event => {
+        if (event.isTrusted) aiOptionsTouched = true;
+      }));
+    });
 
     // As caixas de consulta existem na Opção 1 e na Opção 2 e valem para as duas: marcar uma marca a outra.
     ['consultarBiblia', 'consultarPerspicaz'].forEach(name => {
