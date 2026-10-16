@@ -1280,6 +1280,20 @@
 
     .prompt-item-actions button { width: 100%; min-height: 46px; }
 
+    /* Campo numérico dos limites: botões − e + grandes (como as setas dos parágrafos) no lugar das setinhas nativas. */
+    .limit-picker { align-items: stretch; margin-top: 4px; }
+    .limit-picker .ai-study-input { margin: 0; }
+    .limit-picker input[type="number"] {
+      min-height: 48px;
+      text-align: center;
+      font-weight: 700;
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+    .limit-picker input[type="number"]::-webkit-inner-spin-button,
+    .limit-picker input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .limit-picker .ai-week-nav { font-size: 1.4rem; font-weight: 700; }
+
     /* Caixa dos limites: o botão de ação é um só e ocupa a largura toda. */
     #promptsLimits .prompt-item-actions { grid-template-columns: 1fr; }
 
@@ -4956,7 +4970,33 @@ async function importTemplatesFromText(text) {
         const hint = document.createElement('p');
         hint.className = 'hint';
         hint.textContent = limit.descricao + ' (De ' + limit.min + ' a ' + limit.max + '. Padrão do app: ' + limit.padrao + '.)';
-        box.append(label, field, hint);
+
+        // Passo de cada toque: 1 nas faixas curtas, maior nas longas (ex.: 1000 em 1000 caracteres).
+        const range = limit.max - limit.min;
+        const stepBy = range <= 20 ? 1 : range <= 100 ? 5 : range <= 1000 ? 10 : range <= 5000 ? 100 : range <= 20000 ? 500 : 1000;
+        const nudge = direction => {
+          const current = Number(field.value);
+          const base = Number.isFinite(current) ? current : limit.padrao;
+          const next = direction > 0 ? (Math.floor(base / stepBy) + 1) * stepBy : (Math.ceil(base / stepBy) - 1) * stepBy;
+          field.value = String(Math.min(limit.max, Math.max(limit.min, next)));
+        };
+        const makeStepBtn = (text, label, direction) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'secondary ai-week-nav';
+          btn.textContent = text;
+          btn.setAttribute('aria-label', label + ' ' + limit.titulo);
+          btn.addEventListener('click', () => nudge(direction));
+          return btn;
+        };
+        const inputWrap = document.createElement('div');
+        inputWrap.className = 'ai-study-input';
+        inputWrap.appendChild(field);
+        const row = document.createElement('div');
+        row.className = 'ai-study-picker limit-picker';
+        row.append(makeStepBtn('−', 'Diminuir', -1), inputWrap, makeStepBtn('+', 'Aumentar', 1));
+
+        box.append(label, row, hint);
         fields.push({ field, limit });
       });
 
