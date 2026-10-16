@@ -1993,7 +1993,7 @@
       <h2 id="adminPasswordTitle">Área do administrador</h2>
       <p class="hint">Digite o código de administrador para publicar o JSON atual como o novo padrão do app, para todos os usuários.</p>
       <label for="adminPasswordInput">Código de administrador</label>
-      <input id="adminPasswordInput" type="password" maxlength="100" placeholder="Código de administrador" autocomplete="off">
+      <input id="adminPasswordInput" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="100" placeholder="Código de administrador" autocomplete="off">
       <p id="adminPasswordError" class="hint" style="color:var(--danger); min-height:1.3em"></p>
       <div class="modal-actions">
         <button id="adminPasswordConfirm" type="button" class="btn-green">🔓 Publicar</button>
@@ -2014,7 +2014,7 @@
       <div id="promptsLogin">
         <p class="hint">Área restrita ao administrador. Digite o código de administrador para ver e editar os textos que orientam a IA para todos os usuários.</p>
         <label for="promptsCodeInput">Código de administrador</label>
-        <input id="promptsCodeInput" type="password" maxlength="100" placeholder="Código de administrador" autocomplete="off">
+        <input id="promptsCodeInput" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="100" placeholder="Código de administrador" autocomplete="off">
         <p id="promptsLoginError" class="hint" style="color:var(--danger); min-height:1.3em"></p>
         <div class="button-row">
           <button id="promptsLoginBtn" type="button">🔓 Entrar</button>
