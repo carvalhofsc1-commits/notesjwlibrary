@@ -310,6 +310,28 @@
       border: 0;
     }
 
+    /* Caixas de marcar claras (no tema escuro o padrão do navegador ficava preto): fundo branco, borda cinza-azulada e,
+       quando marcada, azul com o visto branco. */
+    .ai-check input[type="checkbox"],
+    .ai-sources .ai-check input[type="checkbox"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background-color: #ffffff;
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: 14px 14px;
+      border: 2px solid #94a3b8;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .ai-check input[type="checkbox"]:checked,
+    .ai-sources .ai-check input[type="checkbox"]:checked {
+      background-color: var(--accent);
+      border-color: var(--accent-dark);
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3 8.5l3.2 3.2L13 4.8' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    }
+
     .ai-refine { margin-top: 14px; }
 
     /* Botões de copiar as respostas do estudo: ficam sobre o campo de texto, logo abaixo de cada resposta. */
@@ -354,6 +376,16 @@
       grid-template-columns: 1fr 1fr;
       gap: 10px;
     }
+
+    /* "Desfazer formatação" ocupa a linha inteira, abaixo dos dois botões. */
+    .ai-refine-row #aiUndoBtn {
+      grid-column: 1 / -1;
+      background: #fecdd3;
+      color: #881337;
+      border-color: #fb7185;
+    }
+
+    .ai-refine-row #aiUndoBtn:hover { background: #fda4af; }
 
     .ai-refine-row button {
       width: 100%;
@@ -579,6 +611,14 @@
 
     .sent-option-site .ai-week-nav:hover:not(:disabled),
     .sent-option-site .ai-study-load:hover:not(:disabled) { background: #fcd96a; }
+
+    /* Campos da Opção 1 (estudo da semana e parágrafos): fundo azul-celeste para se distinguirem do cartão. */
+    .sent-option-site .ai-week-link,
+    .sent-option-site .ai-study-input input {
+      background: #e0f2fe;
+      background: color-mix(in srgb, #38bdf8 24%, var(--card));
+      border-color: #38bdf8;
+    }
 
     /* ---------- Indicador de espera da IA ---------- */
 
@@ -1422,7 +1462,12 @@
       .card-title-row h2 { margin: 0; }
 
       .top-text-actions { display: flex; gap: 6px; }
+      .top-text-actions { align-items: stretch; }
       .top-text-actions .top-text-btn { flex: 1 1 0; min-width: 0; }
+      /* Limpar e Copiar maiores, com ícone grande; Desfazer é só o ícone, menor, na ponta direita. */
+      .top-text-actions .top-big-btn { min-height: 48px; font-size: .95rem; }
+      .top-text-actions .top-icon { font-size: 1.5rem; line-height: 1; margin-right: 4px; }
+      .top-text-actions .top-undo-btn { flex: 0 0 48px; min-height: 48px; padding: 2px; font-size: 1.3rem; }
 
       /* Limpar e Copiar passam para o topo; a barra de baixo fica sem eles. */
       .desktop-only { display: none; }
@@ -1549,9 +1594,9 @@
         <div class="card-title-row">
           <h2>📝 1. Texto original</h2>
           <div class="top-text-actions" role="group" aria-label="Desfazer, limpar e copiar o texto">
-            <button id="undoTopBtn" class="top-text-btn" type="button" title="Desfazer a última alteração no texto" disabled>↩️ Desfazer</button>
-            <button id="clearTopBtn" class="top-text-btn" type="button" title="Limpar o texto">🧹 Limpar</button>
-            <button id="copyTopBtn" class="top-text-btn" type="button" title="Copiar o texto">📋 Copiar</button>
+            <button id="clearTopBtn" class="top-text-btn top-big-btn" type="button" title="Limpar o texto"><span class="top-icon">🗑️</span> Limpar</button>
+            <button id="copyTopBtn" class="top-text-btn top-big-btn" type="button" title="Copiar o texto"><span class="top-icon">📋</span> Copiar</button>
+            <button id="undoTopBtn" class="top-text-btn top-undo-btn" type="button" title="Desfazer a última alteração no texto" aria-label="Desfazer a última alteração no texto" disabled>↩️</button>
           </div>
         </div>
         <div class="editor-layout">
@@ -4388,7 +4433,7 @@ function saveTemplatesToStorage() {
     // Botões do topo (só aparecem no celular): repassam para os originais e confirmam no próprio botão,
     // já que a mensagem de "copiado" fica lá embaixo, fora da vista.
     const copyTopBtn = document.getElementById('copyTopBtn');
-    const copyTopLabel = copyTopBtn.textContent;
+    const copyTopLabel = copyTopBtn.innerHTML;
     document.getElementById('undoBtn').addEventListener('click', undoLastChange);
     document.getElementById('undoTopBtn').addEventListener('click', undoLastChange);
     document.getElementById('clearTopBtn').addEventListener('click', () => document.getElementById('clearBtn').click());
@@ -4396,7 +4441,7 @@ function saveTemplatesToStorage() {
       const result = await copyResult();
       if (result === null) return;
       copyTopBtn.textContent = result ? '✓ Copiado' : '✓ Selecionado';
-      setTimeout(() => { copyTopBtn.textContent = copyTopLabel; }, 1800);
+      setTimeout(() => { copyTopBtn.innerHTML = copyTopLabel; }, 1800);
     });
     document.getElementById('selectBtn').addEventListener('click', selectResult);
 
