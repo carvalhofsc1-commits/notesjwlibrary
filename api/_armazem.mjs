@@ -61,18 +61,35 @@ export async function gravarItem(chave, valor) {
 
   const equipe = process.env.VERCEL_TEAM_ID;
   const consulta = equipe ? `?teamId=${encodeURIComponent(equipe)}` : "";
-  const corpo = JSON.stringify({ items: [{ operation: "upsert", key: chave, value: valor }] });
 
-  // A Vercel renomeou Edge Config para Global Config; tenta o caminho novo e, se ele não existir, o antigo.
-  let ultimo = null;
-  for (const caminho of ["global-config", "edge-config"]) {
-    const resposta = await fetch(`https://api.vercel.com/v1/${caminho}/${id}/items${consulta}`, {
+  const enviar = (caminho, operacao) =>
+    fetch(`https://api.vercel.com/v1/${caminho}/${id}/items${consulta}`, {
       method: "PATCH",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: corpo,
+      body: JSON.stringify({ items: [{ operation: operacao, key: chave, value: valor }] }),
     });
+
+  // A operação "upsert" respondeu "item não encontrado" para chaves novas; então atualiza e, se o item ainda não
+  // existir, cria. A Vercel também renomeou Edge Config para Global Config: tenta o caminho novo e, se ele não
+  // existir, o antigo.
+  let ultimo = "";
+  for (const caminho of ["global-config", "edge-config"]) {
+    let operacao = "update";
+    let resposta = await enviar(caminho, operacao);
     if (resposta.ok) return;
-    ultimo = `${resposta.status}: ${(await resposta.text()).slice(0, 200)}`;
+
+    if (resposta.status === 404) {
+      operacao = "create";
+      resposta = await enviar(caminho, operacao);
+      if (resposta.ok) return;
+      if (resposta.status === 409) {
+        operacao = "update";
+        resposta = await enviar(caminho, operacao);
+        if (resposta.ok) return;
+      }
+    }
+
+    ultimo = `${caminho}/${operacao} -> ${resposta.status}: ${(await resposta.text()).slice(0, 200)}`;
     if (resposta.status !== 404) break;
   }
   throw new Error(`A Vercel recusou a gravação (${ultimo}).`);
