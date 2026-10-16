@@ -599,10 +599,15 @@
 
     .ai-week-link:hover { border-color: var(--accent); }
 
+    /* Só aparece depois de mexer nas setas: leva de volta para a semana de hoje. */
+    .ai-week-today { width: 100%; min-height: 40px; margin-top: 8px; font-size: .9rem; }
+    .ai-week-today[hidden] { display: none; }
+
     .ai-week-range { font-size: .78rem; font-weight: 600; color: var(--muted); }
 
     /* Opção 1 do estudo: setas e "Carregar numeração" em amarelo vivo, para se destacarem do fundo do cartão. */
     .sent-option-site .ai-week-nav,
+    .sent-option-site .ai-week-today,
     .sent-option-site .ai-study-load {
       background: #fde68a;
       color: #422006;
@@ -610,6 +615,7 @@
     }
 
     .sent-option-site .ai-week-nav:hover:not(:disabled),
+    .sent-option-site .ai-week-today:hover:not(:disabled),
     .sent-option-site .ai-study-load:hover:not(:disabled) { background: #fcd96a; }
 
     /* Campos da Opção 1 (estudo da semana e parágrafos): fundo azul-celeste para se distinguirem do cartão. */
@@ -1745,6 +1751,7 @@
             </a>
             <button id="aiWeekNext" class="secondary ai-week-nav" type="button" aria-label="Próxima semana">▶</button>
           </div>
+          <button id="aiWeekTodayBtn" class="secondary ai-week-today" type="button" hidden>↩️ Voltar para a semana atual</button>
           <div class="ai-study">
             <button id="aiStudyLoadBtn" class="secondary ai-study-load" type="button">📋 Carregar numeração dos parágrafos do estudo</button>
             <div class="ai-study-picker">
@@ -6415,7 +6422,11 @@ function saveTemplatesToStorage() {
 
       const names = { '-1': 'da semana passada', '0': 'desta semana', '1': 'da próxima semana' };
       aiWeekTitle.textContent = '📅 Estudo ' + (names[aiWeekOffset] || 'da semana');
+      aiWeekTodayBtn.hidden = aiWeekOffset === 0;
     }
+
+    const aiWeekTodayBtn = document.getElementById('aiWeekTodayBtn');
+    aiWeekTodayBtn.addEventListener('click', () => { aiWeekOffset = 0; renderAiWeek(); refreshStudyPicker(); });
 
     document.getElementById('aiWeekPrev').addEventListener('click', () => { aiWeekOffset -= 1; renderAiWeek(); refreshStudyPicker(); });
     document.getElementById('aiWeekNext').addEventListener('click', () => { aiWeekOffset += 1; renderAiWeek(); refreshStudyPicker(); });
