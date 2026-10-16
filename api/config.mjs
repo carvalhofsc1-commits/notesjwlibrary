@@ -2,7 +2,7 @@
 // Tudo o que muda dados exige o CODIGO_ADMIN, conferido aqui no servidor. A leitura dos modelos padrão é pública.
 import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { diagnosticar, escritaDisponivel, leituraDisponivel, lerItem, gravarItem } from "./_armazem.mjs";
-import { LIMITES, PARTES, aplicarLimites, travadosDe, validarAlteracoes, validarLimites } from "./_prompts.mjs";
+import { LIMITES, PARTES, aplicarLimites, limitesPublicos, travadosDe, validarAlteracoes, validarLimites } from "./_prompts.mjs";
 import { esquecerCache, gravarAlteracoes, gravarLimites, lerAlteracoes, lerAnterior, lerLimites } from "./_promptsArmazenados.mjs";
 
 const CHAVE_PADRAO = "padrao_modelos";
@@ -101,6 +101,11 @@ export default async function handler(req, res) {
       const dados = await lerItem(CHAVE_PADRAO);
       const valido = dados && typeof dados === "object" && Array.isArray(dados.templates) ? dados : null;
       return res.status(200).json({ dados: valido });
+    }
+
+    // Pública: os limites de tamanho que o navegador usa para avisar antes de enviar um texto grande demais.
+    if (acao === "limites-ler") {
+      return res.status(200).json({ limites: limitesPublicos(aplicarLimites(await lerLimites())) });
     }
 
     // Daqui em diante, só o administrador.

@@ -1280,6 +1280,9 @@
 
     .prompt-item-actions button { width: 100%; min-height: 46px; }
 
+    /* Caixa dos limites: o botão de ação é um só e ocupa a largura toda. */
+    #promptsLimits .prompt-item-actions { grid-template-columns: 1fr; }
+
     .prompt-count { grid-column: 1 / -1; color: var(--muted); font-size: .82rem; }
 
     .prompt-locked pre {
@@ -2026,7 +2029,7 @@
       </div>
 
       <div id="promptsEditor" hidden>
-        <p class="hint">Aqui você edita o <strong>tom e as regras</strong> da IA. O formato técnico da resposta (campos e JSON) e a forma de ler os arquivos da Bíblia e do Perspicaz ficam travados, só para leitura, no fim da página. Ao salvar, a mudança vale para todos os usuários em poucos segundos. "Restaurar padrão" volta ao texto original do app. Nos textos, <strong>{{max_textos}}</strong> é trocado pelo limite de textos bíblicos definido logo abaixo.</p>
+        <p class="hint">Aqui você edita o <strong>tom e as regras</strong> da IA. O formato técnico da resposta (campos e JSON) e a forma de ler os arquivos da Bíblia e do Perspicaz ficam travados, só para leitura, no fim da página. Ao salvar, a mudança vale para todos os usuários em poucos segundos. "Restaurar padrão" volta ao texto original do app. Nos textos, <strong>{{max_textos}}</strong> e <strong>{{max_destaques}}</strong> são trocados pelos limites definidos logo abaixo.</p>
         <p id="promptsStatus" class="ok" role="status" aria-live="polite"></p>
         <div id="promptsLimits"></div>
         <div id="promptsList"></div>
@@ -4793,6 +4796,20 @@ async function importTemplatesFromText(text) {
       return (result.data && result.data.erro) || fallback;
     }
 
+    // Busca no servidor os limites de tamanho configurados pelo administrador (sem eles, valem os padrões acima).
+    async function loadPublicLimits() {
+      try {
+        const result = await postConfig({ acao: 'limites-ler' });
+        const limits = result.ok && result.data ? result.data.limites : null;
+        if (!limits) return;
+        const pick = (value, current) => (Number.isInteger(value) && value > 0 ? value : current);
+        AI_MAX_CHARS = pick(limits.maxCharsFormatacao, AI_MAX_CHARS);
+        AI_MAX_LINES = pick(limits.maxLinhasFormatacao, AI_MAX_LINES);
+        AI_SENTINELA_MAX_CHARS = pick(limits.maxCharsSentinela, AI_SENTINELA_MAX_CHARS);
+        AI_SENTINELA_MAX_LINES = pick(limits.maxLinhasSentinela, AI_SENTINELA_MAX_LINES);
+      } catch (e) { /* sem servidor: ficam os padrões */ }
+    }
+
     const promptsScreen = document.getElementById('promptsScreen');
     const promptsLogin = document.getElementById('promptsLogin');
     const promptsEditor = document.getElementById('promptsEditor');
@@ -4905,21 +4922,27 @@ async function importTemplatesFromText(text) {
       bottom.textContent = message;
     }
 
+    // Todos os limites numéricos numa caixa só: um campo por limite, com a faixa aceita e o padrão do app.
     function renderLimits(state) {
       const holder = document.getElementById('promptsLimits');
       holder.textContent = '';
+      const limits = state.limites || [];
+      if (!limits.length) return;
 
-      (state.limites || []).forEach(limit => {
-        const box = document.createElement('div');
-        box.className = 'prompt-item';
+      const box = document.createElement('div');
+      box.className = 'prompt-item';
 
-        const title = document.createElement('h3');
-        title.textContent = limit.titulo;
+      const title = document.createElement('h3');
+      title.textContent = 'Limites (números)';
+      const intro = document.createElement('p');
+      intro.className = 'hint';
+      intro.textContent = 'Valem para todos os usuários. Nos prompts, {{max_textos}} e {{max_destaques}} são trocados pelos números abaixo.';
+      box.append(title, intro);
 
-        const description = document.createElement('p');
-        description.className = 'hint';
-        description.textContent = limit.descricao;
-
+      const fields = [];
+      limits.forEach(limit => {
+        const label = document.createElement('label');
+        label.textContent = limit.titulo;
         const field = document.createElement('input');
         field.type = 'number';
         field.inputMode = 'numeric';
@@ -4928,25 +4951,26 @@ async function importTemplatesFromText(text) {
         field.step = '1';
         field.value = String(limit.valor);
         field.dataset.limitId = limit.id;
-        field.setAttribute('aria-label', limit.titulo);
-
-        const info = document.createElement('span');
-        info.className = 'prompt-count';
-        info.textContent = 'De ' + limit.min + ' a ' + limit.max + '. Padrão do app: ' + limit.padrao + '.';
-
-        const defaultBtn = document.createElement('button');
-        defaultBtn.type = 'button';
-        defaultBtn.className = 'secondary';
-        defaultBtn.textContent = 'Usar o padrão (' + limit.padrao + ')';
-        defaultBtn.addEventListener('click', () => { field.value = String(limit.padrao); });
-
-        const actions = document.createElement('div');
-        actions.className = 'prompt-item-actions';
-        actions.append(info, defaultBtn);
-
-        box.append(title, description, field, actions);
-        holder.appendChild(box);
+        label.htmlFor = 'limit-' + limit.id;
+        field.id = 'limit-' + limit.id;
+        const hint = document.createElement('p');
+        hint.className = 'hint';
+        hint.textContent = limit.descricao + ' (De ' + limit.min + ' a ' + limit.max + '. Padrão do app: ' + limit.padrao + '.)';
+        box.append(label, field, hint);
+        fields.push({ field, limit });
       });
+
+      const defaultsBtn = document.createElement('button');
+      defaultsBtn.type = 'button';
+      defaultsBtn.className = 'secondary';
+      defaultsBtn.textContent = 'Usar o padrão em todos os limites';
+      defaultsBtn.addEventListener('click', () => { fields.forEach(item => { item.field.value = String(item.limit.padrao); }); });
+      const actions = document.createElement('div');
+      actions.className = 'prompt-item-actions';
+      actions.appendChild(defaultsBtn);
+      box.appendChild(actions);
+
+      holder.appendChild(box);
     }
 
     function renderPrompts(state) {
@@ -5207,10 +5231,11 @@ async function importTemplatesFromText(text) {
     const aiOptionInputs = Array.from(document.querySelectorAll('[data-ai-opt]'));
     const AI_ENDPOINT = '/api/sugerir-formatacao';
     const AI_OPTIONS_KEY = 'jwLibraryNoteAplicarAiOptionsV1';
-    const AI_MAX_CHARS = 4000;
-    const AI_MAX_LINES = 80;
-    const AI_SENTINELA_MAX_CHARS = 12000;
-    const AI_SENTINELA_MAX_LINES = 200;
+    // Limites de tamanho do texto enviado à IA: valem estes até o servidor informar os configurados pelo administrador.
+    let AI_MAX_CHARS = 4000;
+    let AI_MAX_LINES = 80;
+    let AI_SENTINELA_MAX_CHARS = 12000;
+    let AI_SENTINELA_MAX_LINES = 200;
     const AI_STYLE_KIND = { negrito: 'bold', italico: 'italic', negrito_italico: 'boldItalic' };
     const AI_DEFAULT_OPTIONS = {
       usarModelos: true, negrito: true, italico: false, negritoItalico: false, maiusculas: false,
@@ -6500,6 +6525,7 @@ async function importTemplatesFromText(text) {
     styleSelect.value = 'serif';
     updateUi();
     autoCheckOnlineDefaultsOnStart();
+    loadPublicLimits();
 
     // Depois de "Atualizar agora", devolve ao campo o texto que estava digitado.
     try {

@@ -8,15 +8,11 @@ import { carregarPrompts } from "./_promptsArmazenados.mjs";
 
 const MODEL = process.env.CLAUDE_MODEL || "claude-haiku-5-5";
 // Os textos dos prompts moram em _prompts.mjs (o administrador edita o tom e as regras pelo app).
-const MAX_CHARS = 4000;
-const MAX_LINHAS = 80;
-const MAX_CHARS_SENTINELA = 12000;
-const MAX_LINHAS_SENTINELA = 200;
+// Os limites de tamanho e de quantidade (textos, destaques, respostas, pedidos por hora...) são configuráveis pelo
+// administrador e chegam por P.limites (ver LIMITES em _prompts.mjs).
 const MAX_MODELOS = 60;
 const MAX_CHARS_MODELO = 200;
 const MAX_TEXTO_LIVRE = 300;
-const MAX_DESTAQUES = 5;
-const LIMITE_POR_HORA = 30;
 
 const ESTILOS = ["negrito", "italico", "negrito_italico"];
 const TIPOS = ["geral", "citacao_texto", "citacao_referencia"];
@@ -44,11 +40,11 @@ const Saida = z.object({
 // Limite simples por IP, em memória (vale por instância; a proteção real de custo é o limite de gastos do Console).
 const acessos = new Map();
 
-function excedeuLimite(ip) {
+function excedeuLimite(ip, limitePorHora) {
   const agora = Date.now();
   const janela = 60 * 60 * 1000;
   const lista = (acessos.get(ip) || []).filter((t) => agora - t < janela);
-  if (lista.length >= LIMITE_POR_HORA) {
+  if (lista.length >= limitePorHora) {
     acessos.set(ip, lista);
     return true;
   }
@@ -65,7 +61,6 @@ const DESCRICAO_TAMANHO = {
   medio: "médio (3 a 4 frases, cerca de 70 palavras)",
   detalhado: "detalhado (um parágrafo de 5 a 7 frases, cerca de 120 palavras)",
 };
-const MAX_RESUMO = 1200;
 
 function textoLivre(valor) {
   return typeof valor === "string" ? valor.replace(/\s+/g, " ").trim().slice(0, MAX_TEXTO_LIVRE) : "";
@@ -90,12 +85,12 @@ function validarOpcoes(opcoes) {
   };
 }
 
-function validarEntrada(body) {
+function validarEntrada(body, L) {
   if (!body || typeof body !== "object") return null;
 
   const tarefa = body.tarefa === "sentinela" ? "sentinela" : "formatar";
-  const maxChars = tarefa === "sentinela" ? MAX_CHARS_SENTINELA : MAX_CHARS;
-  const maxLinhas = tarefa === "sentinela" ? MAX_LINHAS_SENTINELA : MAX_LINHAS;
+  const maxChars = tarefa === "sentinela" ? L.maxCharsSentinela : L.maxCharsFormatacao;
+  const maxLinhas = tarefa === "sentinela" ? L.maxLinhasSentinela : L.maxLinhasFormatacao;
 
   const { linhas, modelos } = body;
   if (!Array.isArray(linhas) || !Array.isArray(modelos)) return null;
@@ -204,9 +199,9 @@ function estilosDe(opcoes) {
   ]);
 }
 
-function sanearDestaques(destaques, texto, opcoes, estilosPermitidos) {
+function sanearDestaques(destaques, texto, opcoes, estilosPermitidos, maxDestaques) {
   const resultado = [];
-  for (const d of (Array.isArray(destaques) ? destaques : []).slice(0, MAX_DESTAQUES)) {
+  for (const d of (Array.isArray(destaques) ? destaques : []).slice(0, maxDestaques)) {
     const trecho = limparTrecho(d && d.trecho);
     if (!trecho || !texto.includes(trecho)) continue;
 
@@ -230,13 +225,13 @@ function sanearDestaques(destaques, texto, opcoes, estilosPermitidos) {
 }
 
 // Preferências de formatação enviadas à IA quando ela escreve respostas do estudo.
-function descreverFormatacaoResposta(o) {
+function descreverFormatacaoResposta(o, maxDestaques) {
   const estilos = [];
   if (o.negrito) estilos.push("negrito");
   if (o.italico) estilos.push("italico");
   if (o.negritoItalico) estilos.push("negrito_italico");
 
-  const quantidade = o.intensidade === "poucas" ? "poucos (1 a 2)" : o.intensidade === "muitas" ? "vários (até 5)" : "alguns (2 a 3)";
+  const quantidade = o.intensidade === "poucas" ? "poucos (1 a 2)" : o.intensidade === "muitas" ? `vários (até ${maxDestaques})` : "alguns (2 a 3)";
   return [
     `- Estilos permitidos nos destaques: ${estilos.length ? estilos.join(", ") : "nenhum (estilo sempre null)"}.`,
     `- Letras maiúsculas nos destaques: ${o.maiusculas ? "permitidas" : "NÃO use (maiusculas sempre false)"}.`,
@@ -364,14 +359,14 @@ function limparLinha(valor, max) {
 }
 
 // Um item de resposta pronto para o navegador: texto limpo, destaques conferidos e, se pedidos, versículos e Perspicaz.
-function montarItem(i, opcoes, permitidos, lido, fontes, maxTextos) {
-  const texto = limparTextoGerado(i.resposta, 1500);
+function montarItem(i, opcoes, permitidos, lido, fontes, L) {
+  const texto = limparTextoGerado(i.resposta, L.maxCharsResposta);
   return {
     paragrafos: limparLinha(i.paragrafos, 20),
     resposta: texto,
     emoji: opcoes.emoji ? limparEmoji(i.emoji) : null,
-    destaques: sanearDestaques(i.destaques, texto, opcoes, permitidos),
-    textos: sanearTextos(i.textos, lido, !!(fontes && fontes.biblia), maxTextos),
+    destaques: sanearDestaques(i.destaques, texto, opcoes, permitidos, L.maxDestaques),
+    textos: sanearTextos(i.textos, lido, !!(fontes && fontes.biblia), L.maxTextos),
     perspicaz: sanearPerspicaz(i.perspicaz, lido, !!(fontes && fontes.perspicaz)),
     referencias: (Array.isArray(i.referencias) ? i.referencias : []).map((r) => limparLinha(r, 60)).filter(Boolean).slice(0, 3),
   };
@@ -539,7 +534,7 @@ async function responderSentinela(res, { linhas, opcoes, modo, ajuste, anteriore
   let mensagem =
     "PREFERÊNCIAS:\n" +
     `- Tamanho de cada resposta: ${DESCRICAO_RESPOSTA[opcoes.resumoTamanho]}.\n` +
-    descreverFormatacaoResposta(opcoes) +
+    descreverFormatacaoResposta(opcoes, P.limites.maxDestaques) +
     (opcoes.instrucao ? `\n- Instruções fixas do usuário: ${opcoes.instrucao}` : "") +
     (ajuste ? `\n\nORIENTAÇÃO ESPECÍFICA DO USUÁRIO PARA ESTE PEDIDO: ${ajuste}` : "") +
     "\n\nTEXTO COLADO:\n" +
@@ -576,8 +571,8 @@ async function responderSentinela(res, { linhas, opcoes, modo, ajuste, anteriore
 
       const lido = textoLido(blocos);
       const itens = dados.data.itens
-        .slice(0, 40)
-        .map((i) => montarItem(i, opcoes, permitidos, lido, fontes, P.limites.maxTextos))
+        .slice(0, P.limites.maxRespostas)
+        .map((i) => montarItem(i, opcoes, permitidos, lido, fontes, P.limites))
         .filter((i) => i.resposta);
       return res.status(200).json({ itens: await finalizarItens(itens, fontes, P) });
     }
@@ -596,8 +591,8 @@ async function responderSentinela(res, { linhas, opcoes, modo, ajuste, anteriore
     }
 
     const itens = resposta.parsed_output.itens
-      .slice(0, 40)
-      .map((i) => montarItem(i, opcoes, permitidos, { bruto: "", corrido: "" }, null, P.limites.maxTextos))
+      .slice(0, P.limites.maxRespostas)
+      .map((i) => montarItem(i, opcoes, permitidos, { bruto: "", corrido: "" }, null, P.limites))
       .filter((i) => i.resposta);
 
     return res.status(200).json({ itens: await finalizarItens(itens, null, P) });
@@ -701,7 +696,7 @@ async function responderEstudo(res, body, P) {
         ? 'ESCOPO: a RECAPITULAÇÃO. Responda SOMENTE às perguntas do quadro de recapitulação no fim do artigo (o quadro "Qual é a sua resposta?"), numeradas na ordem em que aparecem (1, 2, 3...). NÃO responda às perguntas dos parágrafos.\n'
         : "ESCOPO: todos os parágrafos do artigo que têm pergunta (sem o quadro de recapitulação).\n") +
     `PREFERÊNCIAS:\n- Tamanho de cada resposta: ${DESCRICAO_RESPOSTA[opcoes.resumoTamanho]}.\n` +
-    descreverFormatacaoResposta(opcoes) +
+    descreverFormatacaoResposta(opcoes, P.limites.maxDestaques) +
     (opcoes.instrucao ? `\n- Instruções fixas do usuário: ${opcoes.instrucao}` : "") +
     (ajuste ? `\n\nORIENTAÇÃO ESPECÍFICA DO USUÁRIO PARA ESTE PEDIDO: ${ajuste}` : "");
 
@@ -747,8 +742,8 @@ async function responderEstudo(res, body, P) {
     const permitidos = estilosDe(opcoes);
     const lido = textoLido(blocos);
     const itensTodos = dados.data.itens
-      .slice(0, 40)
-      .map((i) => montarItem(i, opcoes, permitidos, lido, fontes, P.limites.maxTextos))
+      .slice(0, P.limites.maxRespostas)
+      .map((i) => montarItem(i, opcoes, permitidos, lido, fontes, P.limites))
       .filter((i) => i.resposta);
 
     // Recapitulação: as perguntas do quadro vêm numeradas 1, 2, 3...; o rótulo "Recap. N" não se confunde com parágrafos.
@@ -899,24 +894,24 @@ export default async function handler(req, res) {
     return erro(res, 500, "Recurso de IA ainda não configurado no servidor.");
   }
 
+  // Prompts e limites atuais (padrão do código + edições do administrador, guardadas no Global Config).
+  const P = await carregarPrompts();
+
   const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "desconhecido";
-  if (excedeuLimite(ip)) {
+  if (excedeuLimite(ip, P.limites.limitePorHora)) {
     return erro(res, 429, "Muitas solicitações. Tente novamente em alguns minutos.");
   }
-
-  // Prompts atuais (padrão do código + edições do administrador, guardadas no Global Config).
-  const P = await carregarPrompts();
 
   if (req.body && req.body.tarefa === "estudo") return responderEstudo(res, req.body, P);
   if (req.body && req.body.tarefa === "estudo-lista") return listarParagrafos(res, req.body, P);
 
-  const entrada = validarEntrada(req.body);
+  const entrada = validarEntrada(req.body, P.limites);
   if (!entrada) {
     const sentinela = req.body && req.body.tarefa === "sentinela";
     return erro(
       res,
       400,
-      `Texto inválido ou grande demais (máximo ${sentinela ? MAX_CHARS_SENTINELA : MAX_CHARS} caracteres e ${sentinela ? MAX_LINHAS_SENTINELA : MAX_LINHAS} linhas).`
+      `Texto inválido ou grande demais (máximo ${sentinela ? P.limites.maxCharsSentinela : P.limites.maxCharsFormatacao} caracteres e ${sentinela ? P.limites.maxLinhasSentinela : P.limites.maxLinhasFormatacao} linhas).`
     );
   }
 
@@ -1005,7 +1000,7 @@ export default async function handler(req, res) {
       const modeloId = opcoes.usarModelos && s.modeloId && idsValidos.has(s.modeloId) ? s.modeloId : null;
       const emoji = opcoes.emoji ? limparEmoji(s.emoji) : null;
 
-      const destaques = sanearDestaques(s.destaques, linha, opcoes, estilosPermitidos);
+      const destaques = sanearDestaques(s.destaques, linha, opcoes, estilosPermitidos, P.limites.maxDestaques);
 
       if (!modeloId && !emoji && !destaques.length) continue;
 
@@ -1020,7 +1015,7 @@ export default async function handler(req, res) {
     }
 
     const resumo =
-      opcoes.resumo && typeof saida.resumo === "string" ? limparTextoGerado(saida.resumo, MAX_RESUMO) || null : null;
+      opcoes.resumo && typeof saida.resumo === "string" ? limparTextoGerado(saida.resumo, P.limites.maxCharsResumo) || null : null;
 
     // Versículos e Perspicaz acompanham o resumo; sem resumo não há onde mostrá-los.
     const textos = resumo && fontes ? sanearTextos(saida.textos, lido, fontes.biblia, P.limites.maxTextos) : [];
