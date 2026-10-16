@@ -69,27 +69,32 @@ export async function gravarItem(chave, valor) {
       body: JSON.stringify({ items: [{ operation: operacao, key: chave, value: valor }] }),
     });
 
-  // A operação "upsert" respondeu "item não encontrado" para chaves novas; então atualiza e, se o item ainda não
-  // existir, cria. A Vercel também renomeou Edge Config para Global Config e os dois caminhos da API convivem:
-  // tenta um e, se ele recusar por qualquer motivo, o outro, e só então desiste (contando o que cada um respondeu).
+  // A operação "upsert" não serve para chaves novas, e "update" num item que não existe responde 404 ou 400
+  // ("Can not update non-existing..."): então atualiza e, se o item não existir, cria (e, se alguém criou ao mesmo
+  // tempo, atualiza de novo). A Vercel também renomeou Edge Config para Global Config e os dois caminhos da API
+  // convivem: tenta um e, se ele recusar, o outro, e só então desiste (contando o que cada um respondeu).
   const falhas = [];
   for (const caminho of ["global-config", "edge-config"]) {
     let operacao = "update";
     let resposta = await enviar(caminho, operacao);
     if (resposta.ok) return;
 
-    if (resposta.status === 404) {
+    let texto = await resposta.text();
+    if (resposta.status === 404 || (resposta.status === 400 && /non-existing|not found|does not exist/i.test(texto))) {
       operacao = "create";
       resposta = await enviar(caminho, operacao);
       if (resposta.ok) return;
-      if (resposta.status === 409) {
+
+      texto = await resposta.text();
+      if (resposta.status === 409 || (resposta.status === 400 && /already exists|exists/i.test(texto))) {
         operacao = "update";
         resposta = await enviar(caminho, operacao);
         if (resposta.ok) return;
+        texto = await resposta.text();
       }
     }
 
-    falhas.push(`${caminho}/${operacao} -> ${resposta.status}: ${(await resposta.text()).slice(0, 160)}`);
+    falhas.push(`${caminho}/${operacao} -> ${resposta.status}: ${texto.slice(0, 160)}`);
   }
   throw new Error(`A Vercel recusou a gravação (${falhas.join(" | ")}).`);
 }

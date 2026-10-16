@@ -1297,6 +1297,9 @@
     .prompt-locked summary { cursor: pointer; font-weight: 700; margin-top: 10px; }
 
     /* Botões do fim da tela: sem faixa de fundo própria, para acompanharem a cor do card. */
+    .prompts-status-bottom { margin: 10px 0 0; text-align: center; }
+    .prompts-status-bottom.warn { margin: 10px 0 0; }
+
     .prompts-sticky {
       margin-top: 18px;
       padding: 0;
@@ -1983,6 +1986,7 @@
         <p class="hint">Área restrita ao administrador. Publica o JSON atual como o padrão do app para todos os usuários, sem precisar publicar um arquivo novo. Leva modelos, categorias, caracteres, favoritos <strong>e as opções do app</strong>: as caixas e seleções de "Configurar formatação com IA" e o tipo de caractere escolhido. Marque, desmarque e escolha as opções como quer que fiquem e só então publique. Quem ainda não personalizou suas opções passa a usar as novas ao abrir o app; "Substituir pelos padrões" também troca as opções de quem já personalizou. Pede o código de administrador.</p>
         <div class="button-row">
           <button id="setJsonAsDefaultBtn" class="danger" type="button">🔐 Publicar JSON como padrão</button>
+          <span id="publishDefaultStatus" class="ok" role="status" aria-live="polite"></span>
         </div>
       </div>
     </div>
@@ -2033,6 +2037,7 @@
           <button id="promptsSaveBtn" type="button">💾 Salvar alterações</button>
           <button id="promptsUndoBtn" class="secondary" type="button">↩ Voltar à versão anterior</button>
         </div>
+        <p id="promptsStatusBottom" class="ok prompts-status-bottom" role="status" aria-live="polite"></p>
       </div>
       </section>
     </div>
@@ -4480,8 +4485,12 @@ function saveTemplatesToStorage() {
       if (result.ok) {
         closeAdminPasswordPrompt();
         cachedOnlineDefaults = null;
+        const doneMessage = '✅ Padrão publicado com sucesso para todos os usuários (' + (result.data.modelos || 0) + ' modelos e as opções do app). "Buscar arquivo padrão JSON" já entrega esta versão.';
         backupStatus.className = 'ok';
-        backupStatus.textContent = 'Padrão publicado para todos os usuários (' + (result.data.modelos || 0) + ' modelos). "Buscar arquivo padrão JSON" já entrega esta versão.';
+        backupStatus.textContent = doneMessage;
+        const publishStatus = document.getElementById('publishDefaultStatus');
+        publishStatus.className = 'ok';
+        publishStatus.textContent = doneMessage;
         return;
       }
 
@@ -4868,9 +4877,13 @@ async function importTemplatesFromText(text) {
       }
     });
 
+    // A mensagem aparece no alto da página e também logo abaixo dos botões de salvar, onde o olhar está ao clicar.
     function setPromptsStatus(message, isError) {
+      const bottom = document.getElementById('promptsStatusBottom');
       promptsStatus.className = isError ? 'warn' : 'ok';
       promptsStatus.textContent = message;
+      bottom.className = (isError ? 'warn' : 'ok') + ' prompts-status-bottom';
+      bottom.textContent = message;
     }
 
     function renderPrompts(state) {
@@ -4992,19 +5005,19 @@ async function importTemplatesFromText(text) {
         setPromptsStatus('Nada foi alterado.', false);
         return;
       }
-      await sendPromptsAction({ acao: 'prompts-salvar', alteracoes: changes }, 'Prompts salvos. Valem para todos os usuários em poucos segundos.');
+      await sendPromptsAction({ acao: 'prompts-salvar', alteracoes: changes }, '✅ Alterações salvas com sucesso! Valem para todos os usuários em poucos segundos.');
     }
 
     async function restorePrompt(part) {
       const ok = await askConfirm('Restaurar o texto padrão de "' + part.titulo + '" para todos os usuários? A edição atual será substituída.', 'Restaurar padrão');
       if (!ok) return;
-      await sendPromptsAction({ acao: 'prompts-restaurar', id: part.id }, 'Texto padrão restaurado.');
+      await sendPromptsAction({ acao: 'prompts-restaurar', id: part.id }, '✅ Texto padrão restaurado para todos os usuários.');
     }
 
     async function undoPrompts() {
       const ok = await askConfirm('Voltar todos os prompts à versão anterior à última alteração salva?', 'Voltar à versão anterior');
       if (!ok) return;
-      await sendPromptsAction({ acao: 'prompts-desfazer' }, 'Versão anterior restaurada.');
+      await sendPromptsAction({ acao: 'prompts-desfazer' }, '✅ Versão anterior restaurada para todos os usuários.');
     }
 
     document.getElementById('openPromptsBtn').addEventListener('click', openPrompts);
