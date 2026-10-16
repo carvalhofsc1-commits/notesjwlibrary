@@ -1264,20 +1264,23 @@
     }
 
     .prompt-item textarea {
-      min-height: 190px;
+      min-height: 340px;
       font-size: .9rem;
       line-height: 1.4;
+      resize: vertical;
     }
 
+    /* Contador numa linha e, abaixo, os dois botões lado a lado, cada um com metade da largura. */
     .prompt-item-actions {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: 10px;
       margin-top: 8px;
     }
 
-    .prompt-count { color: var(--muted); font-size: .82rem; }
+    .prompt-item-actions button { width: 100%; min-height: 46px; }
+
+    .prompt-count { grid-column: 1 / -1; color: var(--muted); font-size: .82rem; }
 
     .prompt-locked pre {
       white-space: pre-wrap;
@@ -1293,14 +1296,21 @@
 
     .prompt-locked summary { cursor: pointer; font-weight: 700; margin-top: 10px; }
 
+    /* Botões do fim da tela: sem faixa de fundo própria, para acompanharem a cor do card. */
     .prompts-sticky {
-      position: sticky;
-      bottom: -22px;
-      margin: 18px -22px -22px;
-      padding: 12px 22px;
-      background: var(--card);
-      border-top: 1px solid var(--line);
+      margin-top: 18px;
+      padding: 0;
+      background: transparent;
     }
+
+    /* A página de prompts é uma tela do app, não uma janela por cima: ao abri-la o resto da página sai do caminho
+       (as janelas de confirmação continuam disponíveis) e, ao voltar, tudo reaparece como estava. */
+    #promptsScreen { display: none; }
+    body.view-prompts #promptsScreen { display: block; }
+    body.view-prompts > header,
+    body.view-prompts > main:not(#promptsScreen),
+    body.view-prompts > .theme-switch-row,
+    body.view-prompts > .about-link-row { display: none; }
 
     /* ---------- Estados ---------- */
 
@@ -1993,11 +2003,12 @@
   </div>
 
 
-  <div id="promptsOverlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="promptsTitle">
-    <div class="modal-card manager-card prompts-card">
+  <main id="promptsScreen" aria-labelledby="promptsTitle">
+    <div class="single-grid">
+      <section class="card prompts-card">
       <div class="modal-title-row">
         <h2 id="promptsTitle">🛠️ Prompts da IA</h2>
-        <button id="closePromptsBtn" class="secondary modal-close-btn" type="button">✖️ Fechar</button>
+        <button id="closePromptsBtn" class="secondary modal-close-btn" type="button">← Voltar ao app</button>
       </div>
 
       <div id="promptsLogin">
@@ -2023,8 +2034,9 @@
           <button id="promptsUndoBtn" class="secondary" type="button">↩ Voltar à versão anterior</button>
         </div>
       </div>
+      </section>
     </div>
-  </div>
+  </main>
 
   <div id="importChoiceOverlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="importChoiceTitle">
     <div class="modal-card">
@@ -4771,7 +4783,7 @@ async function importTemplatesFromText(text) {
       return (result.data && result.data.erro) || fallback;
     }
 
-    const promptsOverlay = document.getElementById('promptsOverlay');
+    const promptsScreen = document.getElementById('promptsScreen');
     const promptsLogin = document.getElementById('promptsLogin');
     const promptsEditor = document.getElementById('promptsEditor');
     const promptsCodeInput = document.getElementById('promptsCodeInput');
@@ -4785,8 +4797,12 @@ async function importTemplatesFromText(text) {
     let promptsState = null;   // última resposta do servidor
     let promptsCode = '';      // só na memória, enquanto a página estiver aberta
 
+    let promptsIsOpen = false;
+    let promptsScrollY = 0;
+
     function openPrompts() {
       promptsOpener = document.activeElement;
+      promptsScrollY = window.scrollY;
       promptsCode = '';
       promptsState = null;
       promptsCodeInput.value = '';
@@ -4794,7 +4810,11 @@ async function importTemplatesFromText(text) {
       promptsStatus.textContent = '';
       promptsLogin.hidden = false;
       promptsEditor.hidden = true;
-      promptsOverlay.classList.add('open');
+      promptsIsOpen = true;
+      document.body.classList.add('view-prompts');
+      // O botão Voltar do navegador (e o gesto de voltar do iPhone) também fecha a tela.
+      history.pushState({ prompts: true }, '');
+      window.scrollTo(0, 0);
       promptsCodeInput.focus();
     }
 
@@ -4809,21 +4829,44 @@ async function importTemplatesFromText(text) {
       return changes;
     }
 
-    async function closePrompts() {
-      if (!promptsOverlay.classList.contains('open')) return;
-      if (Object.keys(promptsPendingChanges()).length) {
-        const ok = await askConfirm('Há alterações que ainda não foram salvas. Fechar mesmo assim?', 'Fechar sem salvar');
-        if (!ok) return;
-      }
-      promptsOverlay.classList.remove('open');
+    function confirmDiscardPrompts() {
+      if (!Object.keys(promptsPendingChanges()).length) return Promise.resolve(true);
+      return askConfirm('Há alterações que ainda não foram salvas. Voltar mesmo assim?', 'Voltar sem salvar');
+    }
+
+    // Volta à tela principal exatamente onde o usuário estava (texto digitado, seções abertas e rolagem).
+    function showMainScreen() {
+      promptsIsOpen = false;
+      document.body.classList.remove('view-prompts');
       promptsCode = '';
       promptsState = null;
       promptsList.textContent = '';
       promptsLocked.textContent = '';
       promptsCodeInput.value = '';
-      if (promptsOpener && typeof promptsOpener.focus === 'function') promptsOpener.focus();
+      window.scrollTo(0, promptsScrollY);
+      if (promptsOpener && typeof promptsOpener.focus === 'function') promptsOpener.focus({ preventScroll: true });
       promptsOpener = null;
     }
+
+    async function closePrompts() {
+      if (!promptsIsOpen) return;
+      if (!(await confirmDiscardPrompts())) return;
+      showMainScreen();
+      if (history.state && history.state.prompts) history.back(); // desfaz a entrada criada ao abrir
+    }
+
+    window.addEventListener('popstate', async () => {
+      if (!promptsIsOpen) return;
+      if (!Object.keys(promptsPendingChanges()).length) {
+        showMainScreen();
+        return;
+      }
+      history.pushState({ prompts: true }, ''); // continua na tela enquanto o usuário decide
+      if (await confirmDiscardPrompts()) {
+        showMainScreen();
+        history.back();
+      }
+    });
 
     function setPromptsStatus(message, isError) {
       promptsStatus.className = isError ? 'warn' : 'ok';
@@ -4973,7 +5016,7 @@ async function importTemplatesFromText(text) {
       if (event.key === 'Enter') { event.preventDefault(); loginPrompts(); }
     });
     document.addEventListener('keydown', event => {
-      if (event.key === 'Escape' && promptsOverlay.classList.contains('open') && !confirmOverlay.classList.contains('open')) closePrompts();
+      if (event.key === 'Escape' && promptsIsOpen && !confirmOverlay.classList.contains('open')) closePrompts();
     });
 
     symbolCategorySelect.addEventListener('change', renderSymbols);
