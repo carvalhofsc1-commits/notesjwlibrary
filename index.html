@@ -1709,7 +1709,7 @@
           <div id="aiProgress" class="ai-progress" role="progressbar" aria-label="A IA está trabalhando" aria-hidden="true"></div>
           <label for="aiAdjustText" class="ai-guidance-label">Orientação para a IA (opcional)</label>
           <input autocomplete="off" id="aiAdjustText" type="text" maxlength="300" placeholder="Ex.: formate só as perguntas; sem emojis; resumo bem curto">
-          <p class="hint ai-hint">Ao usar, o texto e seus modelos são enviados à IA (Claude, da Anthropic). Não use com dados pessoais ou sigilosos. Nada muda até você clicar em Aplicar.</p>
+          <p class="hint ai-hint">Ao usar, o texto e seus modelos são enviados à IA (Claude, da Anthropic). Não use com dados pessoais ou sigilosos. As sugestões entram direto no campo de texto; se não gostar, use Outra sugestão, Melhorar esta ou Desfazer aplicadas.</p>
           <div id="aiOutputHome">
           <div id="aiOutput">
           <span id="aiStatus" class="ok" role="status" aria-live="polite"></span>
@@ -5932,12 +5932,18 @@ async function importTemplatesFromText(text) {
           return suggestion.novo !== original ? suggestion : null;
         }).filter(Boolean);
 
+        // As sugestões entram direto no campo de texto: cada linha formatada no lugar da original e o resumo no fim.
+        // Se não gostar, o usuário pede outra sugestão, pede para melhorar ou desfaz (volta ao texto de antes).
+        let appliedCount = 0;
+        aiSuggestions.forEach(suggestion => { if (applyAiSuggestion(suggestion)) appliedCount++; });
+        if (aiResumo) { insertAiSummary('end'); appliedCount++; }
+        aiAppliedSnapshot = input.value;
+
         renderAiSuggestions();
         aiRefineBox.hidden = false;
-        const found = aiSuggestions.length + (aiResumo ? 1 : 0);
         setAiStatus(
-          found
-            ? found + (found === 1 ? ' sugestão.' : ' sugestões.')
+          appliedCount
+            ? appliedCount + (appliedCount === 1 ? ' sugestão aplicada no campo de texto.' : ' sugestões aplicadas no campo de texto.')
             : 'A IA não encontrou nada para destacar com essas opções.',
           false
         );
@@ -6435,10 +6441,11 @@ async function importTemplatesFromText(text) {
     aiUndoBtn.addEventListener('click', async () => {
       if (!(await confirmAiRestore())) return;
       if (aiAppliedAny) restoreAiBaseText();
-      aiSuggestions.forEach(s => { s.done = false; });
-      if (aiResumo) aiResumo.done = false;
+      // Não há mais lista de sugestões para reaparecer: desfazer devolve o texto de antes e pronto.
+      aiSuggestions.forEach(s => { s.done = true; });
+      if (aiResumo && aiResumo.kind === 'resumo') aiResumo.done = true;
       renderAiSuggestions();
-      setAiStatus('Aplicações desfeitas. As sugestões voltaram à lista.', false);
+      setAiStatus('Texto anterior restaurado.', false);
     });
 
     aiOptionInputs.forEach(el => el.addEventListener('change', saveAiOptions));
