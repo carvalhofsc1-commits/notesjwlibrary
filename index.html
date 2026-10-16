@@ -374,11 +374,25 @@
     .ai-subsection .ai-box { margin-bottom: 0; }
 
     /* Dois botões de largura igual, inclusive no celular. */
+    /* Os dois botões da IA ficam um embaixo do outro, cada um na largura toda. */
     .ai-main-row {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr;
       gap: 10px;
     }
+
+    /* O botão com resumo e as consultas (Bíblia e Perspicaz) ficam juntos num recipiente, o que deixa claro que as
+       consultas só valem para esse botão. */
+    .ai-summary-box {
+      margin-top: 10px;
+      padding: 10px;
+      border: 2px solid #047857;
+      border-radius: 12px;
+      background: var(--card);
+      background: color-mix(in srgb, #047857 12%, var(--card));
+    }
+
+    .ai-summary-box .ai-sources { margin-top: 10px; }
 
     .ai-main-btn {
       width: 100%;
@@ -1708,12 +1722,13 @@
           <div class="subsection-body ai-box">
           <div class="ai-main-row">
             <button id="aiSuggestBtn" class="ai-main-btn" type="button">✨ Sugerir formatação com IA</button>
-            <button id="aiSuggestSummaryBtn" class="ai-main-btn ai-main-btn-alt" type="button">✨ Sugerir formatação + resumo do texto</button>
           </div>
-          <div class="ai-sources">
-            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Consultar textos citados (Bíblia)</label>
-            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarPerspicaz"> 📚 Consultar o Perspicaz</label>
-            <p class="hint ai-hint">As consultas valem somente para o botão com resumo.</p>
+          <div class="ai-summary-box">
+            <button id="aiSuggestSummaryBtn" class="ai-main-btn ai-main-btn-alt" type="button">✨ Sugerir formatação + resumo do texto</button>
+            <div class="ai-sources">
+              <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Consultar textos citados (Bíblia)</label>
+              <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarPerspicaz"> 📚 Consultar o Perspicaz</label>
+            </div>
           </div>
           <div id="aiProgress" class="ai-progress" role="progressbar" aria-label="A IA está trabalhando" aria-hidden="true"></div>
           <label for="aiAdjustText" class="ai-guidance-label">Orientação para a IA (opcional)</label>
