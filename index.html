@@ -1761,6 +1761,8 @@
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="maiusculas"> Usar LETRAS MAIÚSCULAS nos destaques</label>
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="emoji"> Ilustrar com emoji no início da frase (a IA escolhe qualquer emoji pelo assunto)</label>
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citacoesBiblicas"> Formatar citações bíblicas: texto em itálico e livro, capítulo e versículo em negrito</label>
+          <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="usarListas"> Usar os modelos de marcadores e numeradores de lista do app sempre que possível, para organizar melhor o texto</label>
+          <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="separarIdeias"> Separar as ideias com linhas em branco, mesmo que o original seja um só parágrafo</label>
         </div>
 
         <label for="aiSummarySize">Tamanho do resumo e das respostas dos parágrafos</label>
@@ -5328,7 +5330,7 @@ async function importTemplatesFromText(text) {
     const AI_STYLE_KIND = { negrito: 'bold', italico: 'italic', negrito_italico: 'boldItalic' };
     const AI_DEFAULT_OPTIONS = {
       usarModelos: true, negrito: true, italico: false, negritoItalico: false, maiusculas: false,
-      emoji: false, citacoesBiblicas: false, resumo: false, intensidade: 'moderada', instrucao: '', categoria: 'all', resumoTamanho: 'medio',
+      emoji: false, citacoesBiblicas: false, usarListas: false, separarIdeias: false, resumo: false, intensidade: 'moderada', instrucao: '', categoria: 'all', resumoTamanho: 'medio',
       consultarBiblia: false, consultarPerspicaz: false
     };
 
@@ -5515,8 +5517,28 @@ async function importTemplatesFromText(text) {
       return (fallback.variants && fallback.variants[kind]) || '';
     }
 
-    // Monta a linha final: destaques (negrito/itálico/maiúsculas) → emoji no início → modelo.
-    function aiBuildLine(original, suggestion) {
+    // Linhas em branco entre as ideias de um mesmo parágrafo: antes de cada trecho indicado pela IA, o espaço em branco
+    // vira uma linha vazia. Trechos que não existem na linha, ou que estão no começo dela, são ignorados.
+    function aiApplyBreaks(text, breaks) {
+      if (!Array.isArray(breaks) || !breaks.length) return text;
+      const positions = [];
+      breaks.forEach(piece => {
+        const index = typeof piece === 'string' && piece ? text.indexOf(piece) : -1;
+        if (index > 0 && !positions.includes(index)) positions.push(index);
+      });
+      positions.sort((a, b) => a - b);
+      let result = '';
+      let last = 0;
+      positions.forEach(index => {
+        result += text.slice(last, index).replace(/\s+$/, '') + '\n\n';
+        last = index;
+      });
+      return result + text.slice(last);
+    }
+
+    // Monta a linha final: quebras de ideia → destaques (negrito/itálico/maiúsculas) → emoji no início → modelo.
+    function aiBuildLine(originalLine, suggestion) {
+      const original = aiApplyBreaks(originalLine, suggestion.quebras);
       const spans = [];
       (suggestion.destaques || []).forEach(d => {
         const idx = d.trecho ? original.indexOf(d.trecho) : -1;
@@ -5543,6 +5565,9 @@ async function importTemplatesFromText(text) {
       if (suggestion.modelo) {
         const content = String(suggestion.modelo.content || '');
         line = content.includes('{texto}') ? content.split('{texto}').join(line) : content + line;
+      } else if (suggestion.prefixoLista) {
+        // Item de lista: marcador ou número na frente da linha (linhas com modelo já têm o seu próprio rótulo).
+        line = suggestion.prefixoLista + line;
       }
 
       return line;
@@ -5729,7 +5754,9 @@ async function importTemplatesFromText(text) {
       let offset = 0;
       for (let i = 0; i < parts.length; i++) {
         if (parts[i] === s.original) {
-          setInputRange(offset, offset + parts[i].length, s.novo, { message: 'Sugestão aplicada.' });
+          // "Espaço antes": uma linha em branco separa esta ideia da anterior (se já não houver uma).
+          const blankBefore = s.espacoAntes && i > 0 && parts[i - 1].trim() !== '';
+          setInputRange(offset, offset + parts[i].length, (blankBefore ? '\n' : '') + s.novo, { message: 'Sugestão aplicada.' });
           autoGrowInputText();
           s.done = true;
           aiAppliedAny = true;
@@ -5755,6 +5782,27 @@ async function importTemplatesFromText(text) {
         'O texto volta ao estado de antes de aplicar as sugestões. Edições feitas depois de aplicar serão perdidas. Continuar?',
         'Voltar ao texto anterior'
       );
+    }
+
+    // Marcadores e números das listas que a IA organizou: { linha -> prefixo }. A IA escolhe, entre os modelos de lista do
+    // app (🔷, •, ➤, ✅, 1., ①, 1️⃣ ...), o de cada lista e o grupo de cada linha; aqui o app escreve o marcador e numera
+    // cada grupo na ordem do texto. Uma lista usa um modelo só (o do primeiro item). Linhas que já começam com marcador
+    // ou número ficam como estão.
+    function buildListPrefixes(raw, lines) {
+      const prefixes = new Map();
+      const counters = new Map();
+      const modelOfGroup = new Map();
+      raw
+        .filter(item => item && item.lista && typeof lines[item.linha] === 'string' && !listPrefixPattern.test(lines[item.linha]))
+        .sort((a, b) => a.linha - b.linha)
+        .forEach(item => {
+          const group = item.lista.grupo;
+          if (!modelOfGroup.has(group)) modelOfGroup.set(group, item.lista.modelo);
+          const index = counters.get(group) || 0;
+          counters.set(group, index + 1);
+          prefixes.set(item.linha, getListPrefix(modelOfGroup.get(group), index));
+        });
+      return prefixes;
     }
 
     // mode: undefined = primeira sugestão; 'nova' = alternativa diferente; 'melhorar' = refinar a anterior.
@@ -5844,6 +5892,7 @@ async function importTemplatesFromText(text) {
           ? { texto: data.resumo ? String(data.resumo) : '', done: false, kind: 'resumo', textos: extraTexts, perspicaz: data.perspicaz || null }
           : null;
         const byId = new Map(getTemplatesSortedByName().map(t => [t.id, t]));
+        const listPrefixes = buildListPrefixes(aiRaw, lines);
         aiSuggestions = aiRaw.map(s => {
           const original = lines[s.linha];
           if (typeof original !== 'string') return null;
@@ -5852,11 +5901,14 @@ async function importTemplatesFromText(text) {
             modelo: s.modeloId ? byId.get(s.modeloId) || null : null,
             emoji: s.emoji || '',
             destaques: Array.isArray(s.destaques) ? s.destaques : [],
+            prefixoLista: listPrefixes.get(s.linha) || '',
+            quebras: Array.isArray(s.quebras) ? s.quebras : [],
+            espacoAntes: s.espacoAntes === true,
             motivo: String(s.motivo || 'Sugestão da IA'),
             done: false
           };
           suggestion.novo = aiBuildLine(original, suggestion);
-          return suggestion.novo !== original ? suggestion : null;
+          return suggestion.novo !== original || suggestion.espacoAntes ? suggestion : null;
         }).filter(Boolean);
 
         // As sugestões entram direto no campo de texto: cada linha formatada no lugar da original e o resumo no fim.

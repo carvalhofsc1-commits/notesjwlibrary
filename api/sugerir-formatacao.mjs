@@ -16,6 +16,31 @@ const MAX_TEXTO_LIVRE = 300;
 
 const ESTILOS = ["negrito", "italico", "negrito_italico"];
 const TIPOS = ["geral", "citacao_texto", "citacao_referencia"];
+// Os modelos de lista que o app já tem (seção "Inserir marcadores e numeradores de lista"). A IA escolhe um deles para
+// cada lista; quem escreve os marcadores e os números é o app.
+const MODELOS_LISTA = [
+  "blueDiamond",
+  "orangeDiamond",
+  "smallBlueDiamond",
+  "smallOrangeDiamond",
+  "diamondDot",
+  "gemDiamond",
+  "bullet",
+  "arrow",
+  "check",
+  "simpleCheck",
+  "numberDot",
+  "numberParen",
+  "circled",
+  "blackCircle",
+  "keycapNumber",
+  "squareBlue",
+  "squareAlternate",
+  "circleBlue",
+  "circleAlternate",
+];
+
+const CATALOGO_LISTAS = `blueDiamond (🔷 losango azul), orangeDiamond (🔶 losango laranja), smallBlueDiamond (🔹 losango azul pequeno), smallOrangeDiamond (🔸 losango laranja pequeno), diamondDot (💠 losango com ponto), gemDiamond (💎 diamante, para itens de destaque), bullet (• ponto, o mais simples), arrow (➤ seta, para itens que levam a uma conclusão ou ação), check (✅ para itens cumpridos, vantagens ou confirmações), simpleCheck (✔ o mesmo, mais discreto), numberDot (1. 2. 3., o padrão para passos ou sequência), numberParen (1) 2) 3)), circled (① ② ③), blackCircle (❶ ❷ ❸), keycapNumber (1️⃣ 2️⃣ 3️⃣, numeração em destaque), squareBlue (🟦 quadrado azul), squareAlternate (🟦🟧🟩 quadrados que alternam de cor), circleBlue (🔵 círculo azul), circleAlternate (🔵🟣🟢 círculos que alternam de cor)`;
 
 const Saida = z.object({
   resumo: z.string().nullable(),
@@ -32,6 +57,9 @@ const Saida = z.object({
           maiusculas: z.boolean(),
         })
       ),
+      lista: z.object({ modelo: z.enum(MODELOS_LISTA), grupo: z.number().int() }).nullable(),
+      quebras: z.array(z.string()),
+      espacoAntes: z.boolean(),
       motivo: z.string(),
     })
   ),
@@ -76,6 +104,8 @@ function validarOpcoes(opcoes) {
     maiusculas: o.maiusculas === true,
     emoji: o.emoji === true,
     citacoesBiblicas: o.citacoesBiblicas === true,
+    usarListas: o.usarListas === true,
+    separarIdeias: o.separarIdeias === true,
     resumo: o.resumo === true,
     resumoTamanho: TAMANHOS_RESUMO.includes(o.resumoTamanho) ? o.resumoTamanho : "medio",
     consultarBiblia: o.consultarBiblia === true,
@@ -150,6 +180,16 @@ function descreverPreferencias(o) {
   } else {
     linhas.push('- Citações bíblicas: INATIVO (use apenas o tipo "geral").');
   }
+  linhas.push(
+    o.usarListas
+      ? `- Listas: ATIVO. Quando várias linhas formarem uma enumeração (passos, pontos, exemplos, itens), organize-as como lista preenchendo "lista" em CADA uma delas: {"modelo": um dos modelos de lista do app, "grupo": número da lista}. Linhas da mesma lista têm o mesmo grupo e o mesmo modelo; listas diferentes, grupos diferentes. Escolha o modelo que combina com o conteúdo: numerados (numberDot, numberParen, circled, blackCircle, keycapNumber) para passos ou sequência com ordem; os de símbolo para itens sem ordem. Prefira o mesmo modelo nas listas parecidas do texto. Modelos disponíveis: ${CATALOGO_LISTAS}. Só marque linhas que realmente são itens de enumeração; nas demais "lista" é null. Linhas de lista normalmente não precisam de modelo de texto nem de emoji. O app coloca os marcadores e os números; você não os escreve.`
+      : '- Listas: INATIVO (lista sempre null).'
+  );
+  linhas.push(
+    o.separarIdeias
+      ? '- Espaçamento: ATIVO. Separe as ideias com linhas em branco para o texto ficar arejado, mesmo que o original seja um só parágrafo: (1) em "quebras" liste, para cada linha, os trechos (copiados LITERALMENTE da linha) onde começa uma NOVA ideia, e o app insere uma linha em branco antes de cada um (não inclua o começo da linha; só quebras no meio, entre frases completas); (2) em "espacoAntes" informe true na linha que começa uma nova ideia em relação à linha anterior, e o app insere uma linha em branco antes dela (nunca na primeira linha). Não quebre no meio de uma frase nem separe uma ideia de seus exemplos ou explicações. O app coloca as linhas em branco; você não as escreve.'
+      : '- Espaçamento: INATIVO ("quebras" sempre [] e "espacoAntes" sempre false).'
+  );
   if (o.instrucao) linhas.push(`- Instruções extras do usuário: ${o.instrucao}`);
   return linhas.join("\n");
 }
@@ -354,6 +394,25 @@ function sanearPerspicaz(p, lido, usarPerspicaz) {
   return { volume, verbete, explicacao };
 }
 
+// Lista pedida pela IA para uma linha: o modelo de lista do app e o número do grupo; quem escreve os marcadores é o app.
+function sanearLista(lista) {
+  if (!lista || typeof lista !== "object" || !MODELOS_LISTA.includes(lista.modelo)) return null;
+  const grupo = Number(lista.grupo);
+  return Number.isInteger(grupo) && grupo >= 0 && grupo <= 999 ? { modelo: lista.modelo, grupo } : null;
+}
+
+// Trechos da linha onde começa uma nova ideia (o app põe uma linha em branco antes de cada um): só valem os que existem
+// literalmente na linha, fora do começo dela, sem repetir e em número razoável.
+function sanearQuebras(quebras, linha) {
+  const resultado = [];
+  for (const q of (Array.isArray(quebras) ? quebras : []).slice(0, 12)) {
+    const trecho = typeof q === "string" ? q.trim() : "";
+    if (trecho.length < 2 || !linha.includes(trecho) || linha.trim().startsWith(trecho) || resultado.includes(trecho)) continue;
+    resultado.push(trecho);
+  }
+  return resultado;
+}
+
 function limparLinha(valor, max) {
   return typeof valor === "string" ? valor.replace(/\s+/g, " ").trim().slice(0, max) : "";
 }
@@ -467,6 +526,9 @@ const SaidaResumoFontes = z.object({
         modeloId: z.string().nullable().optional(),
         emoji: z.string().nullable().optional(),
         destaques: z.array(Destaque).optional(),
+        lista: z.object({ modelo: z.enum(MODELOS_LISTA), grupo: z.coerce.number().int() }).nullable().optional().catch(null),
+        quebras: z.array(z.string()).optional().catch([]),
+        espacoAntes: z.boolean().optional().catch(false),
         motivo: z.string().nullable().optional(),
       })
     )
@@ -992,6 +1054,7 @@ export default async function handler(req, res) {
     // A IA recebe as preferências por texto, mas o servidor também as impõe: o que o usuário
     // desmarcou é descartado aqui, mesmo que o modelo tenha sugerido.
     const vistas = new Set();
+    const modeloDoGrupo = new Map();
     const sugestoes = [];
     for (const s of saida.sugestoes) {
       if (s.linha < 0 || s.linha >= linhas.length || vistas.has(s.linha)) continue;
@@ -1002,7 +1065,15 @@ export default async function handler(req, res) {
 
       const destaques = sanearDestaques(s.destaques, linha, opcoes, estilosPermitidos, P.limites.maxDestaques);
 
-      if (!modeloId && !emoji && !destaques.length) continue;
+      let lista = opcoes.usarListas ? sanearLista(s.lista) : null;
+      if (lista) {
+        if (!modeloDoGrupo.has(lista.grupo)) modeloDoGrupo.set(lista.grupo, lista.modelo);
+        lista = { modelo: modeloDoGrupo.get(lista.grupo), grupo: lista.grupo };
+      }
+      const quebras = opcoes.separarIdeias ? sanearQuebras(s.quebras, linha) : [];
+      const espacoAntes = opcoes.separarIdeias && s.espacoAntes === true && s.linha > 0;
+
+      if (!modeloId && !emoji && !destaques.length && !lista && !quebras.length && !espacoAntes) continue;
 
       vistas.add(s.linha);
       sugestoes.push({
@@ -1010,6 +1081,9 @@ export default async function handler(req, res) {
         modeloId,
         emoji,
         destaques,
+        lista,
+        quebras,
+        espacoAntes,
         motivo: String(s.motivo || "").slice(0, 200),
       });
     }
