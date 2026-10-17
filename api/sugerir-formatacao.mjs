@@ -8,6 +8,13 @@ import { carregarPrompts } from "./_promptsArmazenados.mjs";
 import { buscarVerbete, buscarVersiculos, fontesConfiguradas, precarregarFontes } from "./_fontes.mjs";
 
 const MODEL = process.env.CLAUDE_MODEL || "claude-haiku-5-5";
+// Esforço da IA. Os modelos novos (Haiku 5.5 incluído) pensam antes de responder, e o padrão do Haiku 5.5 é "medium";
+// com prompts longos isso deixava cada pedido 2 a 3 vezes mais lento. "low" deixa a IA pensar pouco ou nada nas tarefas
+// simples (formatar, escrever a aplicação), que é o caso deste app. CLAUDE_EFFORT na Vercel muda o nível sem novo código.
+const ESFORCO = ["low", "medium", "high"].includes(process.env.CLAUDE_EFFORT) ? process.env.CLAUDE_EFFORT : "low";
+// Modelos antigos (Haiku 4.5, Sonnet 4.5...) não aceitam "effort": nesses casos ele não é enviado.
+const ACEITA_ESFORCO = !/haiku-4|sonnet-4-5|-3-/.test(MODEL);
+const comEsforco = (config) => (ACEITA_ESFORCO ? { ...config, effort: ESFORCO } : config);
 // Os textos dos prompts moram em _prompts.mjs (o administrador edita o tom e as regras pelo app).
 // Os limites de tamanho e de quantidade (textos, destaques, respostas, pedidos por hora...) são configuráveis pelo
 // administrador e chegam por P.limites (ver LIMITES em _prompts.mjs).
@@ -65,7 +72,6 @@ const Saida = z.object({
       lista: z.object({ modelo: z.enum(MODELOS_LISTA), grupo: z.number().int() }).nullable(),
       quebras: z.array(z.string()),
       espacoAntes: z.boolean(),
-      motivo: z.string(),
     })
   ),
   textosRelevantes: z.array(z.string()),
@@ -409,7 +415,7 @@ async function completarFontes(itens, opcoes, P, orientacao) {
       max_tokens: 4000,
       system: P.sistemaAplicacao,
       messages: [{ role: "user", content: (orientacao || "") + "ITENS (JSON):\n" + JSON.stringify(lista) }],
-      output_config: { format: zodOutputFormat(SaidaAplicacao) },
+      output_config: comEsforco({ format: zodOutputFormat(SaidaAplicacao) }),
     });
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) return;
 
@@ -520,7 +526,14 @@ async function conversar(client, { system, mensagens, tools, maxTokens, voltas }
   let resposta;
   const blocos = [];
   for (let volta = 0; volta < voltas; volta++) {
-    resposta = await client.messages.create({ model: MODEL, max_tokens: maxTokens, system, messages: mensagens, tools });
+    resposta = await client.messages.create({
+      model: MODEL,
+      max_tokens: maxTokens,
+      system,
+      messages: mensagens,
+      tools,
+      ...(ACEITA_ESFORCO ? { output_config: { effort: ESFORCO } } : {}),
+    });
     blocos.push(...resposta.content);
     if (resposta.stop_reason !== "pause_turn") break;
     mensagens = [...mensagens, { role: "assistant", content: resposta.content }];
@@ -621,7 +634,7 @@ async function responderSentinela(res, { linhas, opcoes, modo, ajuste, anteriore
       max_tokens: 6000,
       system: P.sistemaSentinela,
       messages: [{ role: "user", content: mensagem }],
-      output_config: { format: zodOutputFormat(SaidaSentinela) },
+      output_config: comEsforco({ format: zodOutputFormat(SaidaSentinela) }),
     });
 
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
@@ -870,6 +883,7 @@ async function listarParagrafos(res, body, P) {
         system: P.sistemaLista,
         messages: mensagens,
         tools,
+        ...(ACEITA_ESFORCO ? { output_config: { effort: ESFORCO } } : {}),
       });
       if (resposta.stop_reason !== "pause_turn") break;
       mensagens = [...mensagens, { role: "assistant", content: resposta.content }];
@@ -1000,7 +1014,7 @@ export default async function handler(req, res) {
       max_tokens: opcoes.intensidade === "muitas" ? 10000 : 6000,
       system: P.sistemaFormatacao,
       messages: [{ role: "user", content: mensagem }],
-      output_config: { format: zodOutputFormat(Saida) },
+      output_config: comEsforco({ format: zodOutputFormat(Saida) }),
     });
 
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
@@ -1041,7 +1055,7 @@ export default async function handler(req, res) {
         lista,
         quebras,
         espacoAntes,
-        motivo: String(s.motivo || "").slice(0, 200),
+        motivo: "",
       });
     }
 
