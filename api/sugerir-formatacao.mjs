@@ -15,6 +15,11 @@ const ESFORCO = ["low", "medium", "high"].includes(process.env.CLAUDE_EFFORT) ? 
 // Modelos antigos (Haiku 4.5, Sonnet 4.5...) não aceitam "effort": nesses casos ele não é enviado.
 const ACEITA_ESFORCO = !/haiku-4|sonnet-4-5|-3-/.test(MODEL);
 const comEsforco = (config) => (ACEITA_ESFORCO ? { ...config, effort: ESFORCO } : config);
+// Nas tarefas mecânicas (formatar linhas, escrever a aplicação de um versículo) o raciocínio interno só atrasa: no Haiku 5.5
+// ele é desligado (aceito com esforço low, medium ou high). Opus 5.5 e Sonnet 5.5 recusam "disabled", então lá nada muda.
+// CLAUDE_RACIOCINIO=on na Vercel volta a deixar a IA pensar também nessas tarefas.
+const semRaciocinio =
+  /haiku-5/.test(MODEL) && process.env.CLAUDE_RACIOCINIO !== "on" ? { thinking: { type: "disabled" } } : {};
 // Os textos dos prompts moram em _prompts.mjs (o administrador edita o tom e as regras pelo app).
 // Os limites de tamanho e de quantidade (textos, destaques, respostas, pedidos por hora...) são configuráveis pelo
 // administrador e chegam por P.limites (ver LIMITES em _prompts.mjs).
@@ -414,6 +419,7 @@ async function completarFontes(itens, opcoes, P, orientacao) {
       model: MODEL,
       max_tokens: 4000,
       system: P.sistemaAplicacao,
+      ...semRaciocinio,
       messages: [{ role: "user", content: (orientacao || "") + "ITENS (JSON):\n" + JSON.stringify(lista) }],
       output_config: comEsforco({ format: zodOutputFormat(SaidaAplicacao) }),
     });
@@ -1013,6 +1019,7 @@ export default async function handler(req, res) {
       model: MODEL,
       max_tokens: opcoes.intensidade === "muitas" ? 10000 : 6000,
       system: P.sistemaFormatacao,
+      ...semRaciocinio,
       messages: [{ role: "user", content: mensagem }],
       output_config: comEsforco({ format: zodOutputFormat(Saida) }),
     });
