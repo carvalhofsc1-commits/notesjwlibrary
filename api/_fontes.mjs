@@ -32,7 +32,8 @@ function baixar(caminho) {
         const { readFile } = await import("node:fs/promises");
         return await readFile(`${process.env.FONTES_DIR}/${caminho.split("/").pop()}`, "utf8");
       }
-      const resultado = await get(caminho, { access: "private" });
+      // Token explícito: a leitura não depende do OIDC (que muda de identidade se o projeto for renomeado na Vercel).
+      const resultado = await get(caminho, { access: "private", token: process.env.BLOB_READ_WRITE_TOKEN });
       if (!resultado || resultado.statusCode !== 200) throw new Error(`Arquivo de consulta não encontrado: ${caminho}`);
       return await new Response(resultado.stream).text();
     })();

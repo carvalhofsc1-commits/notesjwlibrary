@@ -5,11 +5,13 @@ export function origemPermitida(origin) {
   if (!origin) return false;
   try {
     const { hostname } = new URL(origin);
+    // Nome antigo do projeto (notesjwlibrary) e o novo (notestyle), com os endereços de prévia de cada um.
     return (
       hostname === "notesjwlibrary.vercel.app" ||
+      hostname === "notestyle.vercel.app" ||
       hostname === "localhost" ||
       hostname === "127.0.0.1" ||
-      /^notesjwlibrary-[a-z0-9-]+\.vercel\.app$/.test(hostname)
+      /^(notesjwlibrary|notestyle)-[a-z0-9-]+\.vercel\.app$/.test(hostname)
     );
   } catch {
     return false;
