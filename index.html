@@ -2973,10 +2973,14 @@
       return styledName + ' — ' + getFontOptionParts(style).join(', ');
     }
 
+    // Negrito, itálico e N+I usam a variação da fonte escolhida em "Tipos de fontes/caracteres"; se ela não tiver essa
+    // variação (ex.: Letra dupla, Circuladas), usam o Serif matemático. Assim os três botões funcionam sempre.
     function resolveQuickStyleId(kind) {
       const style = getSelectedFont();
       const variants = style && style.variants ? style.variants : {};
-      return variants[kind] || '';
+      if (variants[kind]) return variants[kind];
+      const serif = getStyleById('serif');
+      return (serif.variants && serif.variants[kind]) || '';
     }
 
     function updateQuickButtonsAvailability() {
@@ -2990,12 +2994,12 @@
 
       Object.entries(buttons).forEach(([kind, btn]) => {
         if (!btn) return;
-        const enabled = !!variants[kind];
-        btn.disabled = !enabled;
-        btn.title = enabled
-          ? 'Aplicar ' + (kind === 'bold' ? 'negrito' : kind === 'italic' ? 'itálico' : 'negrito itálico') + ' nesta fonte'
-          : 'Esta fonte não tem essa opção.';
-        btn.setAttribute('aria-disabled', String(!enabled));
+        const nome = kind === 'bold' ? 'negrito' : kind === 'italic' ? 'itálico' : 'negrito itálico';
+        btn.disabled = false;
+        btn.removeAttribute('aria-disabled');
+        btn.title = variants[kind]
+          ? 'Aplicar ' + nome + ' nesta fonte'
+          : 'Aplicar ' + nome + ' (a fonte escolhida não tem essa variação: usa o Serif matemático)';
       });
 
       if (styleOptionInfo) {
