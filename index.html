@@ -1042,6 +1042,7 @@
     .icon-action.indent { font-size: 1.9rem; font-weight: 700; padding-top: 4px; padding-bottom: 4px; }
     .icon-action.copy   { background: #dcfce7; color: #14532d; border-color: #4ade80; }
     .icon-action.select { background: #e0f2fe; color: #075985; border-color: #38bdf8; }
+    .icon-action.font   { background: #ccfbf1; color: #134e4a; border-color: #2dd4bf; font-size: 1.3rem; }
 
     @media (prefers-color-scheme: dark) {
       :root:not([data-theme="light"]) .icon-action.clear  { background: #334155; color: #e2e8f0; border-color: #64748b; }
@@ -1050,6 +1051,7 @@
       :root:not([data-theme="light"]) .icon-action.indent { background: #92400e; color: #fef3c7; border-color: #f59e0b; }
       :root:not([data-theme="light"]) .icon-action.copy   { background: #14532d; color: #dcfce7; border-color: #22c55e; }
       :root:not([data-theme="light"]) .icon-action.select { background: #075985; color: #e0f2fe; border-color: #0ea5e9; }
+      :root:not([data-theme="light"]) .icon-action.font   { background: #134e4a; color: #ccfbf1; border-color: #14b8a6; }
     }
 
     :root[data-theme="dark"] .icon-action.clear  { background: #334155; color: #e2e8f0; border-color: #64748b; }
@@ -1058,6 +1060,7 @@
     :root[data-theme="dark"] .icon-action.indent { background: #92400e; color: #fef3c7; border-color: #f59e0b; }
     :root[data-theme="dark"] .icon-action.copy   { background: #14532d; color: #dcfce7; border-color: #22c55e; }
     :root[data-theme="dark"] .icon-action.select { background: #075985; color: #e0f2fe; border-color: #0ea5e9; }
+    :root[data-theme="dark"] .icon-action.font   { background: #134e4a; color: #ccfbf1; border-color: #14b8a6; }
 
     .icon-action:hover:not(:disabled),
     .icon-action:focus-visible {
@@ -1572,7 +1575,7 @@
 
       .main-copy-status:empty { display: none; }
 
-      /* Sem Limpar e Copiar (que foram para o topo) sobram 6 botões: 3 + 3. */
+      /* Sem Desfazer, Limpar e Copiar (que foram para o topo) sobram 9 botões: 3 + 3 + 3 (a terceira fileira são as fontes). */
       .main-actions { grid-template-columns: repeat(3, 1fr); gap: 6px; }
       .action-item { font-size: .7rem; }
 
@@ -1705,6 +1708,18 @@
           <div class="action-item">
             <button id="selectBtn" class="icon-action select" type="button" title="Selecionar texto original" aria-label="Selecionar texto original">🔎</button>
             <span>Selecionar</span>
+          </div>
+          <div class="action-item">
+            <button id="quickDoubleStruckBtn" class="icon-action font" type="button" title="Aplicar a fonte Double Struck (letra dupla) ao trecho selecionado" aria-label="Aplicar a fonte Double Struck ao trecho selecionado">𝔻</button>
+            <span>Dupla</span>
+          </div>
+          <div class="action-item">
+            <button id="quickScriptBtn" class="icon-action font" type="button" title="Aplicar a fonte Script ao trecho selecionado" aria-label="Aplicar a fonte Script ao trecho selecionado">𝒮</button>
+            <span>Script</span>
+          </div>
+          <div class="action-item">
+            <button id="quickSquaredDarkBtn" class="icon-action font" type="button" title="Aplicar a fonte Caixa escura ao trecho selecionado (letras maiúsculas)" aria-label="Aplicar a fonte Caixa escura ao trecho selecionado">🅲</button>
+            <span>Caixa escura</span>
           </div>
         </div>
         <span id="copyStatus" class="ok main-copy-status" role="status" aria-live="polite"></span>
@@ -3246,6 +3261,18 @@
       replaceSelectionWith(converted, 'Formatação aplicada ao trecho selecionado. A seleção foi mantida para nova formatação.');
     }
 
+    // Botões da terceira fileira: aplicam direto uma fonte (Double Struck, Script, Caixa escura) ao trecho selecionado,
+    // sem precisar escolher em "Tipos de fontes/caracteres".
+    function quickFont(styleId, fontName) {
+      const { start, end, selected } = getSelectionRange();
+      if (start === end || !selected) {
+        selectionInfo.textContent = 'Selecione primeiro um trecho do texto original.';
+        input.focus();
+        return;
+      }
+      replaceSelectionWith(convertTextWithStyle(selected, styleId), 'Fonte ' + fontName + ' aplicada ao trecho selecionado. A seleção foi mantida para nova formatação.');
+    }
+
     function cleanTemplateCategoryName(name) {
       const value = String(name || '').trim();
       if (value === LEGACY_DEFAULT_TEMPLATE_CATEGORY) return DESTAQUES_CATEGORY_NAME;
@@ -4598,6 +4625,9 @@ function saveTemplatesToStorage() {
     document.getElementById('quickBoldBtn').addEventListener('click', () => quickFormat('bold'));
     document.getElementById('quickItalicBtn').addEventListener('click', () => quickFormat('italic'));
     document.getElementById('quickBoldItalicBtn').addEventListener('click', () => quickFormat('boldItalic'));
+    document.getElementById('quickDoubleStruckBtn').addEventListener('click', () => quickFont('doubleStruck', 'Double Struck'));
+    document.getElementById('quickScriptBtn').addEventListener('click', () => quickFont('script', 'Script'));
+    document.getElementById('quickSquaredDarkBtn').addEventListener('click', () => quickFont('squaredDark', 'Caixa escura'));
     document.getElementById('removeFormattingBtn').addEventListener('click', removeFormattingFromSelection);
     document.getElementById('indentBtn').addEventListener('click', () => applyIndentToSelection(1));
     document.getElementById('clearBtn').addEventListener('click', () => {
@@ -4606,7 +4636,7 @@ function saveTemplatesToStorage() {
       clearAiMessages();
       input.focus();
     });
-    ['undoBtn','quickBoldBtn','quickItalicBtn','quickBoldItalicBtn','removeFormattingBtn','indentBtn','copyBtn','selectBtn'].forEach(id => {
+    ['undoBtn','quickBoldBtn','quickItalicBtn','quickBoldItalicBtn','quickDoubleStruckBtn','quickScriptBtn','quickSquaredDarkBtn','removeFormattingBtn','indentBtn','copyBtn','selectBtn'].forEach(id => {
       const btn = document.getElementById(id);
       btn.addEventListener('mousedown', event => event.preventDefault());
       btn.addEventListener('pointerdown', event => event.preventDefault());
