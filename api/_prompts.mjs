@@ -255,6 +255,9 @@ Regras:
 
 // ---------- Partes travadas (contrato técnico, só leitura) ----------
 
+// Regra travada pedida pelo usuário: os textos citados na pergunta valem acima das opções marcadas.
+const REGRA_TEXTOS_PERGUNTA = `TEXTOS BÍBLICOS CITADOS NA PERGUNTA (regra fixa, acima das opções de textos bíblicos marcadas pelo usuário): todo texto bíblico citado diretamente na PERGUNTA, no meio dela ou entre parênteses no fim (ex.: "Contra quem temos que lutar? (Efésios 6:11, 12)"), deve SEMPRE ser mencionado de forma natural na "resposta" (ex.: "conforme Efésios 6:11, 12") e colocado em "referencias"; o app transcreve e explica cada um logo depois da resposta. Isso vale mesmo quando o usuário escolheu só citar, não citar ou não transcrever: essas escolhas valem apenas para os demais textos, citados só no parágrafo.`;
+
 const FONTES_REFERENCIAS = `COMO INDICAR AS FONTES
 Você NÃO transcreve versículos nem verbetes: o servidor busca o texto exato na Bíblia (Tradução do Novo Mundo) e no Estudo Perspicaz das Escrituras, e uma etapa seguinte escreve a aplicação.
 - Referências bíblicas ("referencias" e "textosRelevantes"): escreva o nome COMPLETO do livro como na Bíblia (${LIVROS_BIBLIA}), o capítulo e os versículos, ex.: "Efésios 6:11, 12", "Mateus 24:14; 28:19, 20", "1 Coríntios 13:4-7". Converta abreviações (Efé., Sal., 1 Cor.).
@@ -283,6 +286,7 @@ export function travadosDe(limites) {
   { id: "prioridade_orientacao", titulo: "Prioridade da orientação do usuário (campo Orientação para a IA)", texto: PRIORIDADE_ORIENTACAO },
   { id: "formato_estudo", titulo: "Formato JSON das respostas do estudo (Opção 1)", texto: FORMATO_ESTUDO },
   { id: "formato_lista", titulo: "Formato JSON da numeração dos parágrafos", texto: FORMATO_LISTA },
+  { id: "textos_pergunta", titulo: "Textos bíblicos citados na pergunta (sempre citados, transcritos e explicados)", texto: REGRA_TEXTOS_PERGUNTA },
   { id: "fontes_referencias", titulo: "Como a IA indica os textos bíblicos e os verbetes (o servidor busca o texto exato)", texto: FONTES_REFERENCIAS },
   { id: "fontes_aplicacao", titulo: "Etapa curta: aplicação dos versículos e explicação do Perspicaz", texto: SISTEMA_APLICACAO + "\n\n" + FORMATO_APLICACAO },
   ];
@@ -327,8 +331,8 @@ export function montarPrompts(overrides, limitesArmazenados) {
 
   return {
     sistemaFormatacao: texto("formatacao") + "\n\n" + PRIORIDADE_ORIENTACAO,
-    sistemaSentinela: texto("sentinela") + "\n\n" + blocosResposta + "\n\n" + PRIORIDADE_ORIENTACAO,
-    sistemaEstudo: texto("estudo") + "\n\n" + blocosResposta + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_ESTUDO,
+    sistemaSentinela: texto("sentinela") + "\n\n" + blocosResposta + "\n\n" + REGRA_TEXTOS_PERGUNTA + "\n\n" + PRIORIDADE_ORIENTACAO,
+    sistemaEstudo: texto("estudo") + "\n\n" + blocosResposta + "\n\n" + REGRA_TEXTOS_PERGUNTA + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_ESTUDO,
     sistemaLista: texto("lista") + "\n\n" + FORMATO_LISTA,
     sistemaAplicacao: SISTEMA_APLICACAO + "\n\n" + texto("voz") + "\n\n" + texto("perspicaz_uso") + "\n\n" + PRIORIDADE_ORIENTACAO,
     limites,

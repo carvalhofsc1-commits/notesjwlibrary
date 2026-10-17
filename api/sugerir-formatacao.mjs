@@ -373,15 +373,15 @@ function descreverFontes(opcoes, P, paraTexto) {
   if (opcoes.explicarTextos) {
     linhaBiblia = paraTexto
       ? '- Textos bíblicos: EXPLICAR E APLICAR. Não mencione referências bíblicas no resumo e não transcreva versículos. Em "textosRelevantes" indique 1 ou 2 textos citados no texto, os mais relevantes. O app mostra, depois do resumo (ou no fim do texto), a referência com uma explicação e uma aplicação.'
-      : '- Textos bíblicos: EXPLICAR E APLICAR (vale mais que a regra de mencionar na resposta as referências da pergunta). NÃO mencione nenhuma referência bíblica dentro da "resposta", nem as citadas na pergunta, e não transcreva versículos. Em "textosRelevantes" indique 1 ou 2 textos para explicar (primeiro os citados na pergunta; depois o mais relevante citado no parágrafo). O app mostra, depois da resposta, a referência com uma explicação e uma aplicação.';
+      : '- Textos bíblicos: EXPLICAR E APLICAR. NÃO mencione na "resposta" os textos citados só no parágrafo e não transcreva versículos. Em "textosRelevantes" indique 1 ou 2 textos citados no parágrafo, os mais relevantes (sem repetir os da pergunta); o app mostra, depois da resposta, a referência com uma explicação e uma aplicação. Os textos citados na própria PERGUNTA são exceção: mencione-os SEMPRE de forma natural na "resposta" e coloque-os em "referencias" (o app transcreve e explica cada um logo depois da resposta).';
   } else if (opcoes.transcreverSemCitar) {
     linhaBiblia = paraTexto
       ? '- Textos bíblicos: TRANSCREVER SEM CITAR. Não mencione referências bíblicas no resumo. Em "textosRelevantes" indique os textos citados no texto que merecem ser transcritos (os mais relevantes; no máximo ' + P.limites.maxTextos + '). O app transcreve cada um depois do resumo (ou no fim do texto), com uma explicação e uma aplicação.'
-      : '- Textos bíblicos: TRANSCREVER SEM CITAR (vale mais que a regra de mencionar na resposta as referências da pergunta). NÃO mencione nenhuma referência bíblica dentro da "resposta", nem as citadas na pergunta, e não transcreva versículos nela. Em "textosRelevantes" indique, além dos citados na pergunta, os textos citados no parágrafo que forem relevantes para a resposta (no máximo ' + P.limites.maxTextos + '). O app transcreve cada um depois da resposta, com uma explicação e uma aplicação.';
+      : '- Textos bíblicos: TRANSCREVER SEM CITAR. NÃO mencione na "resposta" os textos citados só no parágrafo e não transcreva versículos nela. Em "textosRelevantes" indique os textos citados no parágrafo que forem relevantes para a resposta (no máximo ' + P.limites.maxTextos + '); o app transcreve cada um depois da resposta, com uma explicação e uma aplicação. Os textos citados na própria PERGUNTA são exceção: mencione-os SEMPRE de forma natural na "resposta" e coloque-os em "referencias" (o app transcreve e explica cada um logo depois da resposta).';
   } else if (opcoes.citarTextos) {
     linhaBiblia = paraTexto
       ? '- Textos bíblicos: SÓ CITAR. Se houver resumo, mencione nele, de forma natural (ex.: "como mostra Efésios 6:12"), 1 ou 2 referências bíblicas relevantes citadas no texto, sem transcrever o versículo. "textosRelevantes" sempre []; nenhum texto será transcrito.'
-      : '- Textos bíblicos: SÓ CITAR. Mencione na "resposta", de forma natural (ex.: "como mostra Efésios 6:12"), 1 ou 2 referências bíblicas relevantes, de preferência as citadas na pergunta ou no parágrafo, sem transcrever o versículo. "textosRelevantes" sempre []; nenhum texto será transcrito.';
+      : '- Textos bíblicos: SÓ CITAR. Mencione na "resposta", de forma natural (ex.: "como mostra Efésios 6:12"), 1 ou 2 referências bíblicas relevantes citadas no parágrafo, sem transcrever o versículo. "textosRelevantes" sempre []. Os textos citados na própria PERGUNTA são exceção: mencione-os SEMPRE de forma natural na "resposta" e coloque-os em "referencias" (o app transcreve e explica cada um logo depois da resposta).';
   } else {
     linhaBiblia = opcoes.consultarBiblia
       ? "- Consulta à Bíblia: ATIVA.\n" + (paraTexto ? P.instrucoes.bibliaResumo : P.instrucoes.bibliaRelevantes)
@@ -407,45 +407,58 @@ const SaidaAplicacao = z.object({
 });
 
 // Completa cada item com os versículos (texto exato do arquivo) e o verbete do Perspicaz. Item: { contexto, referencias
-// (da pergunta, sempre), relevantes (só com a consulta à Bíblia marcada), verbetes (só com o Perspicaz marcado) }.
+// (textos citados na própria pergunta), relevantes (outros textos indicados pela IA), verbetes (Perspicaz) }.
 // Grava item.textos = [{ referencia, texto, aplicacao }] e item.perspicaz = { volume, verbete, explicacao } | null.
+//
+// REGRA FIXA (pedido do usuário): todo texto bíblico citado na PERGUNTA, no meio dela ou entre parênteses no fim, é
+// sempre mencionado na resposta (a IA faz isso) e sempre transcrito e explicado logo depois dela, seja qual for a opção
+// marcada. As opções valem só para os demais textos:
+//   transcrever (com ou sem citar na resposta): os relevantes também são transcritos e explicados;
+//   só citar: os demais ficam só mencionados na resposta (nada além dos da pergunta é transcrito);
+//   explicar e aplicar: os demais (até 2) entram só com a referência e a explicação, sem o versículo.
 // Se algo falhar, os itens seguem sem as fontes (a resposta já está pronta).
 async function completarFontes(itens, opcoes, P, orientacao) {
   for (const item of itens) {
     item.textos = [];
     item.perspicaz = null;
   }
-  // "Só citar": a referência fica dentro da resposta e nenhum texto é transcrito.
   const modo = opcoes.explicarTextos ? "explicar" : opcoes.citarTextos ? "citar" : "transcrever";
-  if (modo === "citar" && !opcoes.consultarPerspicaz) return;
-  const pedidos = itens.map((i) => ({
-    refs:
-      modo === "citar"
-        ? []
-        : modo === "explicar"
-          ? [...new Set([...(i.referencias || []), ...(i.relevantes || [])])].slice(0, 2)
-          : [...new Set([...(i.referencias || []), ...(opcoes.consultarBiblia || opcoes.transcreverSemCitar ? i.relevantes || [] : [])])],
-    verbetes: opcoes.consultarPerspicaz ? i.verbetes || [] : [],
-  }));
-  if (!fontesConfiguradas() || !pedidos.some((p) => p.refs.length || p.verbetes.length)) return;
+  const transcreveOutros = opcoes.consultarBiblia || opcoes.transcreverSemCitar;
+  const pedidos = itens.map((i) => {
+    const daPergunta = [...new Set(i.referencias || [])];
+    const outros = [...new Set(i.relevantes || [])].filter((r) => !daPergunta.includes(r));
+    return {
+      daPergunta,
+      outros: modo === "explicar" ? outros.slice(0, 2) : modo === "transcrever" && transcreveOutros ? outros : [],
+      verbetes: opcoes.consultarPerspicaz ? i.verbetes || [] : [],
+    };
+  });
+  if (!fontesConfiguradas() || !pedidos.some((p) => p.daPergunta.length || p.outros.length || p.verbetes.length)) return;
 
   try {
     const achados = await Promise.all(
-      pedidos.map(async (p) => ({
-        textos: await buscarVersiculos(p.refs, P.limites.maxTextos),
-        verbete: p.verbetes.length ? await buscarVerbete(p.verbetes) : null,
-      }))
+      pedidos.map(async (p) => {
+        const daPergunta = await buscarVersiculos(p.daPergunta, 6); // os da pergunta entram sempre (até 6)
+        const vistos = new Set(daPergunta.map((t) => t.referencia));
+        const outros = (await buscarVersiculos(p.outros, P.limites.maxTextos)).filter((t) => !vistos.has(t.referencia));
+        return {
+          // semTexto: só a referência e a explicação (opção "explicar e aplicar", nunca para os da pergunta)
+          textos: [...daPergunta.map((t) => ({ ...t, semTexto: false })), ...outros.map((t) => ({ ...t, semTexto: modo === "explicar" }))],
+          verbete: p.verbetes.length ? await buscarVerbete(p.verbetes) : null,
+        };
+      })
     );
     const lista = [];
     achados.forEach((a, indice) => {
-      // Ao transcrever, o versículo já entra (texto exato); ao explicar, só entra se a IA escrever a explicação.
-      if (modo === "transcrever") itens[indice].textos = a.textos.map((t) => ({ ...t, aplicacao: "" }));
+      // Os versículos transcritos já entram (texto exato); a explicação chega na etapa seguinte. Os "só explicar" só
+      // entram se a explicação vier.
+      itens[indice].textos = a.textos.filter((t) => !t.semTexto).map(({ semTexto, ...t }) => ({ ...t, aplicacao: "" }));
       if (!a.textos.length && !a.verbete) return;
       lista.push({
         indice,
         contexto: String(itens[indice].contexto || "").slice(0, 3000),
         explicar: true,
-        textos: a.textos,
+        textos: a.textos.map(({ semTexto, ...t }) => t),
         ...(a.verbete ? { verbete: { titulo: a.verbete.verbete, volume: a.verbete.volume, trecho: a.verbete.trecho } } : {}),
       });
     });
@@ -468,21 +481,14 @@ async function completarFontes(itens, opcoes, P, orientacao) {
       if (!item || !achado) continue;
       const aplicacaoDe = (t, pos) =>
         r.aplicacoes.find((x) => chaveDeBusca(x.referencia) === chaveDeBusca(t.referencia)) || r.aplicacoes[pos];
-      if (modo === "explicar") {
-        // Só a referência e a explicação (o versículo não vai para o texto).
-        item.textos = achado.textos
-          .map((t, pos) => {
-            const ap = aplicacaoDe(t, pos);
-            const explicacao = ap ? limparTextoGerado(ap.aplicacao, 700) : "";
-            return explicacao ? { referencia: t.referencia, texto: "", aplicacao: explicacao } : null;
-          })
-          .filter(Boolean);
-      } else {
-        item.textos.forEach((t, pos) => {
+      item.textos = achado.textos
+        .map((t, pos) => {
           const ap = aplicacaoDe(t, pos);
-          if (ap) t.aplicacao = limparTextoGerado(ap.aplicacao, 700);
-        });
-      }
+          const explicacao = ap ? limparTextoGerado(ap.aplicacao, 700) : "";
+          if (t.semTexto) return explicacao ? { referencia: t.referencia, texto: "", aplicacao: explicacao } : null;
+          return { referencia: t.referencia, texto: t.texto, aplicacao: explicacao };
+        })
+        .filter(Boolean);
       const explicacao = achado.verbete && r.explicacao ? limparTextoGerado(r.explicacao, 700) : "";
       if (explicacao) item.perspicaz = { volume: achado.verbete.volume, verbete: achado.verbete.verbete, explicacao };
     }
