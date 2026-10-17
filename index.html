@@ -1831,6 +1831,8 @@
             <button id="aiStudyBtn" class="ai-study-btn" type="button">🌐 IA - Responder resumidamente a pergunta do parágrafo selecionado</button>
             <div class="ai-sources">
               <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Consultar textos citados (Bíblia)</label>
+              <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citarTextos"> 🔖 Só citar 1 ou 2 textos na resposta, sem transcrever</label>
+              <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="explicarTextos"> 💬 Explicar e aplicar os textos, sem transcrever nem citar na resposta</label>
             </div>
             <span id="aiStudyAnswerStatus" class="ok" role="status" aria-live="polite"></span>
           </div>
@@ -1846,6 +1848,8 @@
           <button id="aiSentinelaBtn" class="ai-sentinela-btn" type="button">📖 Responder resumidamente a pergunta do parágrafo colado</button>
           <div class="ai-sources">
             <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Consultar textos citados (Bíblia)</label>
+            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citarTextos"> 🔖 Só citar 1 ou 2 textos na resposta, sem transcrever</label>
+            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="explicarTextos"> 💬 Explicar e aplicar os textos, sem transcrever nem citar na resposta</label>
           </div>
           <span id="aiSentinelaStatus" class="ok" role="status" aria-live="polite"></span>
         </section>
@@ -5453,7 +5457,7 @@ function saveTemplatesToStorage() {
     const AI_DEFAULT_OPTIONS = {
       usarModelos: true, negrito: true, italico: false, negritoItalico: false, maiusculas: false, variarFontes: false,
       emoji: false, citacoesBiblicas: false, usarListas: false, separarIdeias: false, resumo: false, intensidade: 'moderada', instrucao: '', categoria: 'all', resumoTamanho: 'medio',
-      consultarBiblia: false
+      consultarBiblia: false, citarTextos: false, explicarTextos: false
     };
 
     // Opções padrão publicadas pelo administrador (valem para quem nunca salvou as suas) e se o usuário já mexeu nelas
@@ -5634,18 +5638,26 @@ function saveTemplatesToStorage() {
       }));
     });
 
-    // As caixas de consulta existem nas duas opções do estudo e valem para as duas: marcar uma marca a outra.
-    ['consultarBiblia'].forEach(name => {
+    // As caixas dos textos bíblicos existem em mais de uma área e valem para todas: marcar uma marca as iguais. As três
+    // formas de usar os textos (transcrever, só citar, explicar e aplicar) não se combinam: marcar uma desmarca as outras.
+    const AI_BIBLE_MODES = ['consultarBiblia', 'citarTextos', 'explicarTextos'];
+    AI_BIBLE_MODES.forEach(name => {
       const boxes = aiOptionInputs.filter(el => el.dataset.aiOpt === name);
       boxes.forEach(box => box.addEventListener('change', () => {
         boxes.forEach(other => { other.checked = box.checked; });
+        if (box.checked) {
+          aiOptionInputs
+            .filter(el => AI_BIBLE_MODES.includes(el.dataset.aiOpt) && el.dataset.aiOpt !== name)
+            .forEach(el => { el.checked = false; });
+        }
         saveAiOptions();
       }));
     });
 
-    // Consultar a Bíblia leva um pouco mais de tempo (o servidor busca os versículos e a IA escreve a aplicação).
+    // Usar os textos bíblicos leva um pouco mais de tempo (o servidor busca os versículos e a IA escreve a aplicação).
     function aiUsesSources() {
-      return !!readAiOptions().consultarBiblia;
+      const options = readAiOptions();
+      return !!(options.consultarBiblia || options.explicarTextos);
     }
 
     function aiStyleIdFor(estilo) {
@@ -6125,7 +6137,12 @@ function saveTemplatesToStorage() {
       const blocks = [];
 
       (Array.isArray(item.textos) ? item.textos : []).forEach(t => {
-        if (!t || !t.referencia || !t.texto) return;
+        if (!t || !t.referencia) return;
+        // "Explicar e aplicar": só a referência e a explicação, sem transcrever o versículo.
+        if (!t.texto) {
+          if (t.aplicacao) blocks.push('📖 ' + styled('negrito', t.referencia) + ' ➜ ' + t.aplicacao);
+          return;
+        }
         blocks.push(
           '📖 ' + styled('negrito', t.referencia) + ' ➜ “' + t.texto + '”' +
           (t.aplicacao ? '\n\n💡 ' + t.aplicacao : '')

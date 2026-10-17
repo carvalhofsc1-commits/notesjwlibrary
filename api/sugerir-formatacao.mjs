@@ -127,7 +127,11 @@ function validarOpcoes(opcoes) {
     separarIdeias: o.separarIdeias === true,
     resumo: o.resumo === true,
     resumoTamanho: TAMANHOS_RESUMO.includes(o.resumoTamanho) ? o.resumoTamanho : "medio",
-    consultarBiblia: o.consultarBiblia === true,
+    // Três formas de usar os textos bíblicos nas respostas, uma por vez: explicar e aplicar (sem transcrever nem citar
+    // na resposta) > só citar 1 ou 2 na resposta (sem transcrever) > transcrever os relevantes (consultarBiblia).
+    explicarTextos: o.explicarTextos === true,
+    citarTextos: o.citarTextos === true && o.explicarTextos !== true,
+    consultarBiblia: o.consultarBiblia === true && o.citarTextos !== true && o.explicarTextos !== true,
     // A consulta ao Perspicaz está desligada por enquanto (a opção saiu da tela); o código e os arquivos continuam prontos
     // para quando ela voltar: basta trocar para `o.consultarPerspicaz === true` e recolocar a caixa na tela.
     consultarPerspicaz: false,
@@ -358,10 +362,16 @@ function consultaPedida(opcoes) {
 
 // Linhas das preferências sobre as fontes. paraTexto = "Sugerir formatação" (as referências valem para o texto todo).
 function descreverFontes(opcoes, P, paraTexto) {
+  const linhaBiblia =
+    !paraTexto && opcoes.explicarTextos
+      ? '- Textos bíblicos: EXPLICAR E APLICAR (vale mais que a regra de mencionar na resposta as referências da pergunta). NÃO mencione nenhuma referência bíblica dentro da "resposta", nem as citadas na pergunta, e não transcreva versículos. Em "textosRelevantes" indique 1 ou 2 textos para explicar (primeiro os citados na pergunta; depois o mais relevante citado no parágrafo). O app mostra, depois da resposta, a referência com uma explicação e uma aplicação.'
+      : !paraTexto && opcoes.citarTextos
+        ? '- Textos bíblicos: SÓ CITAR. Mencione na "resposta", de forma natural (ex.: "como mostra Efésios 6:12"), 1 ou 2 referências bíblicas relevantes, de preferência as citadas na pergunta ou no parágrafo, sem transcrever o versículo. "textosRelevantes" sempre []; nenhum texto será transcrito.'
+        : opcoes.consultarBiblia
+          ? "- Consulta à Bíblia: ATIVA.\n" + (paraTexto ? P.instrucoes.bibliaResumo : P.instrucoes.bibliaRelevantes)
+          : '- Consulta à Bíblia: INATIVA ("textosRelevantes" sempre []).';
   const linhas = [
-    opcoes.consultarBiblia
-      ? "- Consulta à Bíblia: ATIVA.\n" + (paraTexto ? P.instrucoes.bibliaResumo : P.instrucoes.bibliaRelevantes)
-      : '- Consulta à Bíblia: INATIVA ("textosRelevantes" sempre []).',
+    linhaBiblia,
     opcoes.consultarPerspicaz
       ? `- Consulta ao Estudo Perspicaz: ATIVA. ${P.instrucoes.perspicazUso} Indique o verbete em "verbetes" (lista vazia se nenhum acrescentar algo útil).`
       : '- Consulta ao Estudo Perspicaz: INATIVA ("verbetes" sempre []).',
@@ -388,8 +398,16 @@ async function completarFontes(itens, opcoes, P, orientacao) {
     item.textos = [];
     item.perspicaz = null;
   }
+  // "Só citar": a referência fica dentro da resposta e nenhum texto é transcrito.
+  const modo = opcoes.explicarTextos ? "explicar" : opcoes.citarTextos ? "citar" : "transcrever";
+  if (modo === "citar" && !opcoes.consultarPerspicaz) return;
   const pedidos = itens.map((i) => ({
-    refs: [...new Set([...(i.referencias || []), ...(opcoes.consultarBiblia ? i.relevantes || [] : [])])],
+    refs:
+      modo === "citar"
+        ? []
+        : modo === "explicar"
+          ? [...new Set([...(i.referencias || []), ...(i.relevantes || [])])].slice(0, 2)
+          : [...new Set([...(i.referencias || []), ...(opcoes.consultarBiblia ? i.relevantes || [] : [])])],
     verbetes: opcoes.consultarPerspicaz ? i.verbetes || [] : [],
   }));
   if (!fontesConfiguradas() || !pedidos.some((p) => p.refs.length || p.verbetes.length)) return;
@@ -403,11 +421,13 @@ async function completarFontes(itens, opcoes, P, orientacao) {
     );
     const lista = [];
     achados.forEach((a, indice) => {
-      itens[indice].textos = a.textos.map((t) => ({ ...t, aplicacao: "" }));
+      // Ao transcrever, o versículo já entra (texto exato); ao explicar, só entra se a IA escrever a explicação.
+      if (modo === "transcrever") itens[indice].textos = a.textos.map((t) => ({ ...t, aplicacao: "" }));
       if (!a.textos.length && !a.verbete) return;
       lista.push({
         indice,
         contexto: String(itens[indice].contexto || "").slice(0, 3000),
+        ...(modo === "explicar" ? { explicar: true } : {}),
         textos: a.textos,
         ...(a.verbete ? { verbete: { titulo: a.verbete.verbete, volume: a.verbete.volume, trecho: a.verbete.trecho } } : {}),
       });
@@ -429,10 +449,23 @@ async function completarFontes(itens, opcoes, P, orientacao) {
       const item = itens[r.indice];
       const achado = achados[r.indice];
       if (!item || !achado) continue;
-      item.textos.forEach((t, pos) => {
-        const ap = r.aplicacoes.find((x) => chaveDeBusca(x.referencia) === chaveDeBusca(t.referencia)) || r.aplicacoes[pos];
-        if (ap) t.aplicacao = limparTextoGerado(ap.aplicacao, 500);
-      });
+      const aplicacaoDe = (t, pos) =>
+        r.aplicacoes.find((x) => chaveDeBusca(x.referencia) === chaveDeBusca(t.referencia)) || r.aplicacoes[pos];
+      if (modo === "explicar") {
+        // Só a referência e a explicação (o versículo não vai para o texto).
+        item.textos = achado.textos
+          .map((t, pos) => {
+            const ap = aplicacaoDe(t, pos);
+            const explicacao = ap ? limparTextoGerado(ap.aplicacao, 700) : "";
+            return explicacao ? { referencia: t.referencia, texto: "", aplicacao: explicacao } : null;
+          })
+          .filter(Boolean);
+      } else {
+        item.textos.forEach((t, pos) => {
+          const ap = aplicacaoDe(t, pos);
+          if (ap) t.aplicacao = limparTextoGerado(ap.aplicacao, 500);
+        });
+      }
       const explicacao = achado.verbete && r.explicacao ? limparTextoGerado(r.explicacao, 700) : "";
       if (explicacao) item.perspicaz = { volume: achado.verbete.volume, verbete: achado.verbete.verbete, explicacao };
     }
