@@ -112,7 +112,9 @@ function validarOpcoes(opcoes) {
     resumo: o.resumo === true,
     resumoTamanho: TAMANHOS_RESUMO.includes(o.resumoTamanho) ? o.resumoTamanho : "medio",
     consultarBiblia: o.consultarBiblia === true,
-    consultarPerspicaz: o.consultarPerspicaz === true,
+    // A consulta ao Perspicaz está desligada por enquanto (a opção saiu da tela); o código e os arquivos continuam prontos
+    // para quando ela voltar: basta trocar para `o.consultarPerspicaz === true` e recolocar a caixa na tela.
+    consultarPerspicaz: false,
     intensidade: INTENSIDADES.includes(o.intensidade) ? o.intensidade : "moderada",
     instrucao: textoLivre(o.instrucao),
   };

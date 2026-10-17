@@ -294,7 +294,7 @@
 
     .ai-check input { margin: 2px 0 0; width: 16px; height: 16px; flex: 0 0 auto; accent-color: var(--accent); }
 
-    /* Caixas "Consultar textos citados" e "Consultar o Perspicaz", logo abaixo dos botões de responder. */
+    /* Caixa "Consultar textos citados", logo abaixo dos botões de responder. */
     .ai-sources { display: grid; gap: 6px; margin-top: 8px; }
 
     /* O marcador herdava o preenchimento e a borda dos campos de texto (11 px), o que o deixava enorme e o texto
@@ -1751,7 +1751,6 @@
           <div class="ai-sources">
             <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="resumo"> 📝 Incluir resumo do texto</label>
             <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Consultar textos citados (Bíblia)</label>
-            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarPerspicaz"> 📚 Consultar o Perspicaz</label>
           </div>
           <div id="aiProgress" class="ai-progress" role="progressbar" aria-label="A IA está trabalhando" aria-hidden="true"></div>
           <label for="aiAdjustText" class="ai-guidance-label">Orientação para a IA (opcional)</label>
@@ -1806,7 +1805,6 @@
             <button id="aiStudyBtn" class="ai-study-btn" type="button">🌐 IA - Responder resumidamente a pergunta do parágrafo selecionado</button>
             <div class="ai-sources">
               <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Consultar textos citados (Bíblia)</label>
-              <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarPerspicaz"> 📚 Consultar o Perspicaz</label>
             </div>
             <span id="aiStudyAnswerStatus" class="ok" role="status" aria-live="polite"></span>
           </div>
@@ -1822,7 +1820,6 @@
           <button id="aiSentinelaBtn" class="ai-sentinela-btn" type="button">📖 Responder resumidamente a pergunta do parágrafo colado</button>
           <div class="ai-sources">
             <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Consultar textos citados (Bíblia)</label>
-            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarPerspicaz"> 📚 Consultar o Perspicaz</label>
           </div>
           <span id="aiSentinelaStatus" class="ok" role="status" aria-live="polite"></span>
         </section>
@@ -5427,7 +5424,7 @@ function saveTemplatesToStorage() {
     const AI_DEFAULT_OPTIONS = {
       usarModelos: true, negrito: true, italico: false, negritoItalico: false, maiusculas: false,
       emoji: false, citacoesBiblicas: false, usarListas: false, separarIdeias: false, resumo: false, intensidade: 'moderada', instrucao: '', categoria: 'all', resumoTamanho: 'medio',
-      consultarBiblia: false, consultarPerspicaz: false
+      consultarBiblia: false
     };
 
     // Opções padrão publicadas pelo administrador (valem para quem nunca salvou as suas) e se o usuário já mexeu nelas
@@ -5590,7 +5587,7 @@ function saveTemplatesToStorage() {
     });
 
     // As caixas de consulta existem nas duas opções do estudo e valem para as duas: marcar uma marca a outra.
-    ['consultarBiblia', 'consultarPerspicaz'].forEach(name => {
+    ['consultarBiblia'].forEach(name => {
       const boxes = aiOptionInputs.filter(el => el.dataset.aiOpt === name);
       boxes.forEach(box => box.addEventListener('change', () => {
         boxes.forEach(other => { other.checked = box.checked; });
@@ -5598,10 +5595,9 @@ function saveTemplatesToStorage() {
       }));
     });
 
-    // Consultar a Bíblia ou o Perspicaz leva mais tempo (a IA abre os arquivos) e exige o código de acesso.
+    // Consultar a Bíblia leva um pouco mais de tempo (o servidor busca os versículos e a IA escreve a aplicação).
     function aiUsesSources() {
-      const options = readAiOptions();
-      return !!(options.consultarBiblia || options.consultarPerspicaz);
+      return !!readAiOptions().consultarBiblia;
     }
 
     function aiStyleIdFor(estilo) {
