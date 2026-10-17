@@ -16,6 +16,9 @@ const MAX_CHARS_MODELO = 200;
 const MAX_TEXTO_LIVRE = 300;
 
 const ESTILOS = ["negrito", "italico", "negrito_italico"];
+// Tipos de fonte (alfabetos Unicode do app) que a IA pode escolher para um destaque, além do negrito/itálico da fonte
+// principal. Só os legíveis em palavras e frases curtas.
+const FONTES = ["script", "fraktur", "doubleStruck", "sans", "mono", "circled", "fullwidth"];
 const TIPOS = ["geral", "citacao_texto", "citacao_referencia"];
 // Os modelos de lista que o app já tem (seção "Inserir marcadores e numeradores de lista"). A IA escolhe um deles para
 // cada lista; quem escreve os marcadores e os números é o app.
@@ -56,6 +59,7 @@ const Saida = z.object({
           tipo: z.enum(TIPOS),
           estilo: z.enum(ESTILOS).nullable(),
           maiusculas: z.boolean(),
+          fonte: z.enum(FONTES).nullable(),
         })
       ),
       lista: z.object({ modelo: z.enum(MODELOS_LISTA), grupo: z.number().int() }).nullable(),
@@ -105,6 +109,7 @@ function validarOpcoes(opcoes) {
     italico: o.italico === true,
     negritoItalico: o.negritoItalico === true,
     maiusculas: o.maiusculas === true,
+    variarFontes: o.variarFontes === true,
     emoji: o.emoji === true,
     citacoesBiblicas: o.citacoesBiblicas === true,
     usarListas: o.usarListas === true,
@@ -160,6 +165,20 @@ function validarEntrada(body, L) {
   };
 }
 
+const CATALOGO_FONTES =
+  "script (cursiva elegante, para frases de destaque e títulos), fraktur (gótico, para títulos solenes ou citações), doubleStruck (letra dupla, para termos importantes), sans (sem serifa, para trechos de apoio), mono (monoespaçado, para números, datas e termos técnicos), circled (letras circuladas, só para palavras curtas), fullwidth (largura cheia, para uma palavra de impacto)";
+
+// O que cada nível de "Quantidade de sugestões" significa. "Muitas" é para formatar bastante de verdade: o usuário pode
+// reduzir depois escolhendo "moderada" ou "poucas".
+const DESCRICAO_INTENSIDADE = {
+  poucas:
+    "POUCAS: só as linhas mais importantes (cerca de 1 a cada 4 ou 5), com 1 a 2 destaques e o mínimo de recursos (por exemplo, só um modelo ou só negrito). Deixe o resto sem formatação.",
+  moderada:
+    "MODERADA: cerca de metade das linhas, cada uma com 2 a 3 destaques e alguns recursos (modelo, emoji ou maiúsculas, o que combinar). Listas só quando houver enumeração clara.",
+  muitas:
+    'MUITAS: formatar BASTANTE, de verdade. Sugira para QUASE TODAS as linhas com conteúdo e use QUASE TODOS os recursos ativos, combinando vários em cada linha, até o limite de destaques por linha: modelo adequado à linha, emoji, vários destaques com estilos variados (negrito, itálico e negrito itálico alternados), PALAVRAS-CHAVE EM MAIÚSCULAS em muitas linhas (se permitido), tipos de fonte diferentes nos destaques (se ativo), citações bíblicas formatadas (se ativo) e listas numeradas ou com marcadores SEMPRE que duas ou mais linhas, ou itens separados por vírgula ou ponto e vírgula, formarem uma enumeração (se ativo). Não economize: o usuário pode escolher "moderada" ou "poucas" se achar demais; isto vale mais que a regra de sugerir só linhas que "realmente se beneficiam".',
+};
+
 function descreverPreferencias(o) {
   const estilos = [];
   if (o.negrito) estilos.push("negrito");
@@ -171,7 +190,10 @@ function descreverPreferencias(o) {
     `- Estilos permitidos nos destaques: ${estilos.length ? estilos.join(", ") : "nenhum (estilo sempre null, a menos que a orientação do usuário peça)"}.`,
     `- Letras maiúsculas nos destaques: ${o.maiusculas ? "permitidas" : "NÃO use (maiusculas sempre false), a menos que a orientação do usuário peça"}.`,
     `- Emoji ilustrativo no início da frase: ${o.emoji ? "SIM, sugira emojis que ilustrem o assunto de cada linha destacada" : "NÃO use (emoji sempre null), a menos que a orientação do usuário peça"}.`,
-    `- Quantidade de sugestões: ${o.intensidade} (a orientação do usuário pode mudar isso).`,
+    `- Quantidade de sugestões: ${DESCRICAO_INTENSIDADE[o.intensidade]} (a orientação do usuário pode mudar isso).`,
+    o.variarFontes
+      ? `- Tipos de fonte nos destaques: ATIVO. Em "fonte" de cada destaque escolha uma fonte decorativa para dar variedade visual: ${CATALOGO_FONTES}. Varie as fontes entre os destaques e as linhas (não use a mesma em todos); combine com "estilo" (negrito, itálico) quando a fonte tiver essa variação; null para manter a fonte principal.`
+      : '- Tipos de fonte nos destaques: INATIVO ("fonte" sempre null), a menos que a orientação do usuário peça outra fonte.',
   ];
   linhas.push(
     o.resumo
@@ -187,7 +209,7 @@ function descreverPreferencias(o) {
   }
   linhas.push(
     o.usarListas
-      ? `- Listas: ATIVO. Quando várias linhas formarem uma enumeração (passos, pontos, exemplos, itens), organize-as como lista preenchendo "lista" em CADA uma delas: {"modelo": um dos modelos de lista do app, "grupo": número da lista}. Linhas da mesma lista têm o mesmo grupo e o mesmo modelo; listas diferentes, grupos diferentes. Escolha o modelo que combina com o conteúdo: numerados (numberDot, numberParen, circled, blackCircle, keycapNumber) para passos ou sequência com ordem; os de símbolo para itens sem ordem. Prefira o mesmo modelo nas listas parecidas do texto. Modelos disponíveis: ${CATALOGO_LISTAS}. Só marque linhas que realmente são itens de enumeração; nas demais "lista" é null. Linhas de lista normalmente não precisam de modelo de texto nem de emoji. O app coloca os marcadores e os números; você não os escreve.`
+      ? `- Listas: ATIVO. Quando várias linhas formarem uma enumeração (passos, pontos, exemplos, itens), organize-as como lista preenchendo "lista" em CADA uma delas: {"modelo": um dos modelos de lista do app, "grupo": número da lista}. Linhas da mesma lista têm o mesmo grupo e o mesmo modelo; listas diferentes, grupos diferentes. Escolha o modelo que combina com o conteúdo: numerados (numberDot, numberParen, circled, blackCircle, keycapNumber) para passos ou sequência com ordem; os de símbolo para itens sem ordem. Prefira o mesmo modelo nas listas parecidas do texto. Com a quantidade "muitas", procure listas ativamente: linhas seguidas que tratem de itens do mesmo tipo, sequências de passos, perguntas e respostas e itens separados por vírgula ou ponto e vírgula dentro de uma linha longa (nesse caso separe-os em "quebras" e liste cada um). Modelos disponíveis: ${CATALOGO_LISTAS}. Só marque linhas que realmente são itens de enumeração; nas demais "lista" é null. Linhas de lista normalmente não precisam de modelo de texto nem de emoji. O app coloca os marcadores e os números; você não os escreve.`
       : '- Listas: INATIVO (lista sempre null), a menos que a ORIENTAÇÃO DO USUÁRIO peça lista, marcadores ou numeração.'
   );
   linhas.push(
@@ -274,14 +296,16 @@ function sanearDestaques(destaques, texto, opcoes, estilosPermitidos, maxDestaqu
         tipo: d.tipo,
         estilo: d.tipo === "citacao_texto" ? "italico" : "negrito",
         maiusculas: false,
+        fonte: null,
       });
       continue;
     }
 
     const estilo = d.estilo && estilosPermitidos.has(d.estilo) ? d.estilo : null;
     const maiusculas = opcoes.maiusculas && d.maiusculas === true;
-    if (!estilo && !maiusculas) continue;
-    resultado.push({ trecho, tipo: "geral", estilo, maiusculas });
+    const fonte = opcoes.variarFontes && FONTES.includes(d.fonte) ? d.fonte : null;
+    if (!estilo && !maiusculas && !fonte) continue;
+    resultado.push({ trecho, tipo: "geral", estilo, maiusculas, fonte });
   }
   return resultado;
 }
@@ -509,6 +533,7 @@ const Destaque = z.object({
   tipo: z.enum(TIPOS).catch("geral"),
   estilo: z.enum(ESTILOS).nullable().optional(),
   maiusculas: z.boolean().optional(),
+  fonte: z.enum(FONTES).nullable().optional().catch(null),
 });
 
 // Item de resposta lido de JSON em texto (leitura do site); os campos extras são tolerantes.
@@ -969,10 +994,10 @@ export default async function handler(req, res) {
   precarregarFontes({ biblia: opcoes.consultarBiblia, perspicaz: opcoes.consultarPerspicaz });
 
   try {
-    const client = new Anthropic({ maxRetries: 1, timeout: 45_000 });
+    const client = new Anthropic({ maxRetries: 1, timeout: 60_000 });
     const resposta = await client.messages.parse({
       model: MODEL,
-      max_tokens: 4000,
+      max_tokens: opcoes.intensidade === "muitas" ? 10000 : 6000,
       system: P.sistemaFormatacao,
       messages: [{ role: "user", content: mensagem }],
       output_config: { format: zodOutputFormat(Saida) },
