@@ -294,7 +294,7 @@
 
     .ai-check input { margin: 2px 0 0; width: 16px; height: 16px; flex: 0 0 auto; accent-color: var(--accent); }
 
-    /* Caixa "Consultar textos citados", logo abaixo dos botões de responder. */
+    /* Caixas dos textos bíblicos, logo abaixo dos botões de responder. */
     .ai-sources { display: grid; gap: 6px; margin-top: 8px; }
 
     /* O marcador herdava o preenchimento e a borda dos campos de texto (11 px), o que o deixava enorme e o texto
@@ -435,6 +435,7 @@
     .ai-hint { margin: 8px 0 0; font-size: .82rem; }
 
     .ai-guidance-label { margin: 12px 0 6px; font-size: .88rem; }
+    p.ai-guidance-label { font-weight: 650; }
 
     /* ---------- Aviso de versão nova ---------- */
 
@@ -1776,7 +1777,9 @@
           </div>
           <div class="ai-sources">
             <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="resumo"> 📝 Incluir resumo do texto</label>
-            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Consultar textos citados (Bíblia)</label>
+            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Consultar textos bíblicos citados, explicar, aplicar, transcrever e citar na resposta</label>
+            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citarTextos"> 🔖 Só citar 1 ou 2 textos no resumo, sem transcrever</label>
+            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="explicarTextos"> 💬 Explicar e aplicar os textos, sem transcrever nem citar no resumo</label>
           </div>
           <div id="aiProgress" class="ai-progress" role="progressbar" aria-label="A IA está trabalhando" aria-hidden="true"></div>
           <label for="aiAdjustText" class="ai-guidance-label">Orientação para a IA (opcional)</label>
@@ -1829,11 +1832,6 @@
               <input autocomplete="off" id="aiStudyArticle" type="text" inputmode="url" placeholder="Ex.: 2026521">
             </div>
             <button id="aiStudyBtn" class="ai-study-btn" type="button">🌐 IA - Responder resumidamente a pergunta do parágrafo selecionado</button>
-            <div class="ai-sources">
-              <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Consultar textos citados (Bíblia)</label>
-              <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citarTextos"> 🔖 Só citar 1 ou 2 textos na resposta, sem transcrever</label>
-              <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="explicarTextos"> 💬 Explicar e aplicar os textos, sem transcrever nem citar na resposta</label>
-            </div>
             <span id="aiStudyAnswerStatus" class="ok" role="status" aria-live="polite"></span>
           </div>
 
@@ -1846,13 +1844,15 @@
         <section class="sent-option sent-option-paste">
           <h3>Opção 2: Cole a pergunta e o texto do parágrafo no campo de texto</h3>
           <button id="aiSentinelaBtn" class="ai-sentinela-btn" type="button">📖 Responder resumidamente a pergunta do parágrafo colado</button>
-          <div class="ai-sources">
-            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Consultar textos citados (Bíblia)</label>
-            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citarTextos"> 🔖 Só citar 1 ou 2 textos na resposta, sem transcrever</label>
-            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="explicarTextos"> 💬 Explicar e aplicar os textos, sem transcrever nem citar na resposta</label>
-          </div>
           <span id="aiSentinelaStatus" class="ok" role="status" aria-live="polite"></span>
         </section>
+
+        <p class="ai-guidance-label">Textos bíblicos nas respostas (opções 1 e 2)</p>
+        <div class="ai-sources">
+          <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Consultar textos bíblicos citados, explicar, aplicar, transcrever e citar na resposta</label>
+          <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citarTextos"> 🔖 Só citar 1 ou 2 textos na resposta, sem transcrever</label>
+          <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="explicarTextos"> 💬 Explicar e aplicar os textos, sem transcrever nem citar na resposta</label>
+        </div>
 
         <label for="aiAdjustText2" class="ai-guidance-label">Orientação para a IA (opcional)</label>
         <input autocomplete="off" id="aiAdjustText2" type="text" maxlength="300" placeholder="Ex.: respostas bem curtas; tom simples">

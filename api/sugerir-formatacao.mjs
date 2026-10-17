@@ -357,19 +357,26 @@ function chaveDeBusca(texto) {
 }
 
 function consultaPedida(opcoes) {
-  return Boolean(opcoes.consultarBiblia || opcoes.consultarPerspicaz);
+  return Boolean(opcoes.consultarBiblia || opcoes.citarTextos || opcoes.explicarTextos || opcoes.consultarPerspicaz);
 }
 
 // Linhas das preferências sobre as fontes. paraTexto = "Sugerir formatação" (as referências valem para o texto todo).
 function descreverFontes(opcoes, P, paraTexto) {
-  const linhaBiblia =
-    !paraTexto && opcoes.explicarTextos
-      ? '- Textos bíblicos: EXPLICAR E APLICAR (vale mais que a regra de mencionar na resposta as referências da pergunta). NÃO mencione nenhuma referência bíblica dentro da "resposta", nem as citadas na pergunta, e não transcreva versículos. Em "textosRelevantes" indique 1 ou 2 textos para explicar (primeiro os citados na pergunta; depois o mais relevante citado no parágrafo). O app mostra, depois da resposta, a referência com uma explicação e uma aplicação.'
-      : !paraTexto && opcoes.citarTextos
-        ? '- Textos bíblicos: SÓ CITAR. Mencione na "resposta", de forma natural (ex.: "como mostra Efésios 6:12"), 1 ou 2 referências bíblicas relevantes, de preferência as citadas na pergunta ou no parágrafo, sem transcrever o versículo. "textosRelevantes" sempre []; nenhum texto será transcrito.'
-        : opcoes.consultarBiblia
-          ? "- Consulta à Bíblia: ATIVA.\n" + (paraTexto ? P.instrucoes.bibliaResumo : P.instrucoes.bibliaRelevantes)
-          : '- Consulta à Bíblia: INATIVA ("textosRelevantes" sempre []).';
+  // Uma forma de usar os textos por vez; paraTexto = formatação (vale para o resumo), senão respostas do estudo.
+  let linhaBiblia;
+  if (opcoes.explicarTextos) {
+    linhaBiblia = paraTexto
+      ? '- Textos bíblicos: EXPLICAR E APLICAR. Não mencione referências bíblicas no resumo e não transcreva versículos. Em "textosRelevantes" indique 1 ou 2 textos citados no texto, os mais relevantes. O app mostra, depois do resumo (ou no fim do texto), a referência com uma explicação e uma aplicação.'
+      : '- Textos bíblicos: EXPLICAR E APLICAR (vale mais que a regra de mencionar na resposta as referências da pergunta). NÃO mencione nenhuma referência bíblica dentro da "resposta", nem as citadas na pergunta, e não transcreva versículos. Em "textosRelevantes" indique 1 ou 2 textos para explicar (primeiro os citados na pergunta; depois o mais relevante citado no parágrafo). O app mostra, depois da resposta, a referência com uma explicação e uma aplicação.';
+  } else if (opcoes.citarTextos) {
+    linhaBiblia = paraTexto
+      ? '- Textos bíblicos: SÓ CITAR. Se houver resumo, mencione nele, de forma natural (ex.: "como mostra Efésios 6:12"), 1 ou 2 referências bíblicas relevantes citadas no texto, sem transcrever o versículo. "textosRelevantes" sempre []; nenhum texto será transcrito.'
+      : '- Textos bíblicos: SÓ CITAR. Mencione na "resposta", de forma natural (ex.: "como mostra Efésios 6:12"), 1 ou 2 referências bíblicas relevantes, de preferência as citadas na pergunta ou no parágrafo, sem transcrever o versículo. "textosRelevantes" sempre []; nenhum texto será transcrito.';
+  } else {
+    linhaBiblia = opcoes.consultarBiblia
+      ? "- Consulta à Bíblia: ATIVA.\n" + (paraTexto ? P.instrucoes.bibliaResumo : P.instrucoes.bibliaRelevantes)
+      : '- Consulta à Bíblia: INATIVA ("textosRelevantes" sempre []).';
+  }
   const linhas = [
     linhaBiblia,
     opcoes.consultarPerspicaz
@@ -1042,7 +1049,7 @@ export default async function handler(req, res) {
         : "\n\nPEDIDO: melhore as sugestões anteriores, mantendo o que estava bom, seguindo a orientação específica acima (se houver).");
   }
 
-  // As caixas "Consultar textos citados" e "Consultar o Perspicaz" valem para o texto (e para o resumo, quando houver).
+  // As caixas dos textos bíblicos (transcrever, só citar, explicar e aplicar) valem para o texto e para o resumo.
   if (consultaPedida(opcoes) && !fontesConfiguradas()) return erro(res, 500, "A consulta às fontes ainda não está configurada no servidor.");
   precarregarFontes({ biblia: opcoes.consultarBiblia, perspicaz: opcoes.consultarPerspicaz });
 
