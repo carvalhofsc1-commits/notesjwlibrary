@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.133.0",
+    "@vercel/blob": "^2.8.2",
     "zod": "^4.6.0"
   }
 }

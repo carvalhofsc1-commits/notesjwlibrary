@@ -5,6 +5,7 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
 import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
+import { buscarVerbete, buscarVersiculos, fontesConfiguradas, precarregarFontes } from "./_fontes.mjs";
 
 const MODEL = process.env.CLAUDE_MODEL || "claude-haiku-5-5";
 // Os textos dos prompts moram em _prompts.mjs (o administrador edita o tom e as regras pelo app).
@@ -63,6 +64,8 @@ const Saida = z.object({
       motivo: z.string(),
     })
   ),
+  textosRelevantes: z.array(z.string()),
+  verbetes: z.array(z.string()),
 });
 
 // Limite simples por IP, em memória (vale por instância; a proteção real de custo é o limite de gastos do Console).
@@ -304,115 +307,104 @@ function descreverFormatacaoResposta(o, maxDestaques, sep) {
 }
 
 // ---------- Fontes de consulta: Bíblia e Estudo Perspicaz ----------
-// Os arquivos de texto (biblia.txt, perspicaz_v1.txt, perspicaz_v2.txt) ficam na Files API da Anthropic, no mesmo
-// workspace da chave. Só os identificadores (file_id) ficam aqui, em variáveis de ambiente: o navegador nunca
-// informa nem recebe um file_id. Para ler os arquivos a IA usa a ferramenta de execução de código (grep no arquivo).
-// O servidor só aceita um versículo ou um verbete se o texto realmente apareceu na saída dessa ferramenta.
-
-const ID_ARQUIVO = /^file_[A-Za-z0-9_-]{8,100}$/;
-const MAX_CHARS_VERSICULO = 1200;
-
-function idDoArquivo(variavel) {
-  const valor = String(process.env[variavel] || "").trim();
-  return ID_ARQUIVO.test(valor) ? valor : null;
-}
-
-// Só carrega arquivos quando o usuário marcou a consulta (Bíblia e/ou Perspicaz). Sem caixa marcada nada é carregado
-// aqui: os textos citados na própria pergunta são tratados num segundo passo, só se a pergunta tiver referência
-// (completarComTextos). paraResumo = "Sugerir formatação + resumo". P = prompts (_prompts.mjs, com as edições do admin).
-// Devolve null (sem consulta nenhuma), { erro } (pediu, mas o servidor não está configurado) ou as peças do pedido.
-function prepararFontes(opcoes, P, paraResumo = false) {
-  const biblia = idDoArquivo("ARQUIVO_BIBLIA_ID");
-  const volume1 = idDoArquivo("ARQUIVO_PERSPICAZ_V1_ID");
-  const volume2 = idDoArquivo("ARQUIVO_PERSPICAZ_V2_ID");
-  if (opcoes.consultarBiblia && !biblia) return { erro: "A consulta à Bíblia ainda não está configurada no servidor." };
-  if (opcoes.consultarPerspicaz && !(volume1 && volume2)) return { erro: "A consulta ao Perspicaz ainda não está configurada no servidor." };
-
-  const usarBiblia = !!biblia && opcoes.consultarBiblia;
-  const usarPerspicaz = opcoes.consultarPerspicaz;
-  if (!usarBiblia && !usarPerspicaz) return null;
-
-  const arquivos = [];
-  const instrucoes = [P.instrucoes.ferramenta];
-  if (usarBiblia) {
-    arquivos.push({ rotulo: "Bíblia (um versículo por linha)", id: biblia });
-    instrucoes.push(P.instrucoes.biblia);
-    if (paraResumo) instrucoes.push(P.instrucoes.bibliaResumo);
-    else {
-      instrucoes.push(P.instrucoes.bibliaPergunta);
-      if (opcoes.consultarBiblia) instrucoes.push(P.instrucoes.bibliaRelevantes);
-    }
-  }
-  if (opcoes.consultarPerspicaz) {
-    arquivos.push({ rotulo: "Estudo Perspicaz, volume 1", id: volume1 }, { rotulo: "Estudo Perspicaz, volume 2", id: volume2 });
-    instrucoes.push(P.instrucoes.perspicaz);
-  }
-  instrucoes.push(paraResumo ? P.instrucoes.camposResumo : P.instrucoes.camposFontes);
-
-  return {
-    biblia: usarBiblia,
-    perspicaz: usarPerspicaz,
-    sistema: "\n\n" + instrucoes.join("\n\n"),
-    mensagem: "\n\nARQUIVOS ENVIADOS AO AMBIENTE DE CÓDIGO:\n" + arquivos.map((a) => `- ${a.rotulo} (file_id ${a.id})`).join("\n"),
-    blocos: arquivos.map((a) => ({ type: "container_upload", file_id: a.id })),
-    ferramentas: [{ type: "code_execution_20260521", name: "code_execution" }],
-  };
-}
-
-// Junta o que as execuções de código imprimiram: é a única prova de que a IA leu o arquivo.
-function saidaDasFerramentas(blocos) {
-  const partes = [];
-  for (const b of blocos) {
-    if (typeof b.type === "string" && b.type.endsWith("_tool_result") && b.content && typeof b.content.stdout === "string") {
-      partes.push(b.content.stdout);
-    }
-  }
-  return partes.join("\n");
-}
+// A IA só indica as referências bíblicas e os verbetes; o servidor busca o texto exato nos arquivos (_fontes.mjs, Vercel
+// Blob privado) e uma chamada curta à IA, sem ferramentas, escreve a aplicação de cada versículo e a explicação do
+// verbete. Nada é escrito de memória: o versículo vem sempre do arquivo.
 
 function chaveDeBusca(texto) {
-  return String(texto).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  return String(texto).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
 
-// Em "Efésios 6:10 texto\nEfésios 6:11 texto", tira as referências do começo das linhas, para um trecho de vários
-// versículos continuar sendo encontrado como texto corrido (também com o prefixo "123:" do grep -n).
-const PREFIXO_VERSICULO = /^\s*(?:\d+[:-])?\s*(?:[1-3]\s)?[^\d\n]{2,30}?\s\d{1,3}:\d{1,3}\s+/;
-
-function textoLido(blocos) {
-  const saida = saidaDasFerramentas(blocos);
-  const semReferencias = saida.split("\n").map((l) => l.replace(PREFIXO_VERSICULO, "")).join(" ");
-  return { bruto: chaveDeBusca(saida), corrido: chaveDeBusca(semReferencias) };
+function consultaPedida(opcoes) {
+  return Boolean(opcoes.consultarBiblia || opcoes.consultarPerspicaz);
 }
 
-function foiLido(lido, texto) {
-  const chave = chaveDeBusca(texto);
-  return chave.length >= 3 && (lido.corrido.includes(chave) || lido.bruto.includes(chave));
+// Linhas das preferências sobre as fontes. paraTexto = "Sugerir formatação" (as referências valem para o texto todo).
+function descreverFontes(opcoes, P, paraTexto) {
+  const linhas = [
+    opcoes.consultarBiblia
+      ? "- Consulta à Bíblia: ATIVA.\n" + (paraTexto ? P.instrucoes.bibliaResumo : P.instrucoes.bibliaRelevantes)
+      : '- Consulta à Bíblia: INATIVA ("textosRelevantes" sempre []).',
+    opcoes.consultarPerspicaz
+      ? `- Consulta ao Estudo Perspicaz: ATIVA. ${P.instrucoes.perspicazUso} Indique o verbete em "verbetes" (lista vazia se nenhum acrescentar algo útil).`
+      : '- Consulta ao Estudo Perspicaz: INATIVA ("verbetes" sempre []).',
+  ];
+  return "\n" + linhas.join("\n") + "\n\n" + P.instrucoes.referencias;
 }
 
-function sanearTextos(textos, lido, usarBiblia, maxTextos) {
-  if (!usarBiblia || !Array.isArray(textos)) return [];
-  const resultado = [];
-  for (const t of textos.slice(0, maxTextos)) {
-    if (!t || typeof t !== "object") continue;
-    const referencia = limparTextoGerado(t.referencia, 60);
-    const bruto = limparTrecho(t.texto).replace(/^\d{1,3}\s+/, "").replace(/\s+/g, " ");
-    const aplicacao = limparTextoGerado(t.aplicacao, 500);
-    if (!referencia || !bruto || bruto.length > MAX_CHARS_VERSICULO || !aplicacao) continue;
-    // Só entra o versículo que apareceu na saída do arquivo; nada de citação de memória.
-    if (bruto.length < 8 || !foiLido(lido, bruto)) continue;
-    resultado.push({ referencia, texto: bruto, aplicacao });
+const SaidaAplicacao = z.object({
+  itens: z.array(
+    z.object({
+      indice: z.number().int(),
+      aplicacoes: z.array(z.object({ referencia: z.string(), aplicacao: z.string() })),
+      explicacao: z.string().nullable(),
+    })
+  ),
+});
+
+// Completa cada item com os versículos (texto exato do arquivo) e o verbete do Perspicaz. Item: { contexto, referencias
+// (da pergunta, sempre), relevantes (só com a consulta à Bíblia marcada), verbetes (só com o Perspicaz marcado) }.
+// Grava item.textos = [{ referencia, texto, aplicacao }] e item.perspicaz = { volume, verbete, explicacao } | null.
+// Se algo falhar, os itens seguem sem as fontes (a resposta já está pronta).
+async function completarFontes(itens, opcoes, P, orientacao) {
+  for (const item of itens) {
+    item.textos = [];
+    item.perspicaz = null;
   }
-  return resultado;
+  const pedidos = itens.map((i) => ({
+    refs: [...new Set([...(i.referencias || []), ...(opcoes.consultarBiblia ? i.relevantes || [] : [])])],
+    verbetes: opcoes.consultarPerspicaz ? i.verbetes || [] : [],
+  }));
+  if (!fontesConfiguradas() || !pedidos.some((p) => p.refs.length || p.verbetes.length)) return;
+
+  try {
+    const achados = await Promise.all(
+      pedidos.map(async (p) => ({
+        textos: await buscarVersiculos(p.refs, P.limites.maxTextos),
+        verbete: p.verbetes.length ? await buscarVerbete(p.verbetes) : null,
+      }))
+    );
+    const lista = [];
+    achados.forEach((a, indice) => {
+      itens[indice].textos = a.textos.map((t) => ({ ...t, aplicacao: "" }));
+      if (!a.textos.length && !a.verbete) return;
+      lista.push({
+        indice,
+        contexto: String(itens[indice].contexto || "").slice(0, 3000),
+        textos: a.textos,
+        ...(a.verbete ? { verbete: { titulo: a.verbete.verbete, volume: a.verbete.volume, trecho: a.verbete.trecho } } : {}),
+      });
+    });
+    if (!lista.length) return;
+
+    const client = new Anthropic({ maxRetries: 1, timeout: 40_000 });
+    const resposta = await client.messages.parse({
+      model: MODEL,
+      max_tokens: 4000,
+      system: P.sistemaAplicacao,
+      messages: [{ role: "user", content: (orientacao || "") + "ITENS (JSON):\n" + JSON.stringify(lista) }],
+      output_config: { format: zodOutputFormat(SaidaAplicacao) },
+    });
+    if (resposta.stop_reason === "refusal" || !resposta.parsed_output) return;
+
+    for (const r of resposta.parsed_output.itens) {
+      const item = itens[r.indice];
+      const achado = achados[r.indice];
+      if (!item || !achado) continue;
+      item.textos.forEach((t, pos) => {
+        const ap = r.aplicacoes.find((x) => chaveDeBusca(x.referencia) === chaveDeBusca(t.referencia)) || r.aplicacoes[pos];
+        if (ap) t.aplicacao = limparTextoGerado(ap.aplicacao, 500);
+      });
+      const explicacao = achado.verbete && r.explicacao ? limparTextoGerado(r.explicacao, 700) : "";
+      if (explicacao) item.perspicaz = { volume: achado.verbete.volume, verbete: achado.verbete.verbete, explicacao };
+    }
+  } catch (e) {
+    console.error("Não foi possível completar com as fontes:", e?.status, e?.message);
+  }
 }
 
-function sanearPerspicaz(p, lido, usarPerspicaz) {
-  if (!usarPerspicaz || !p || typeof p !== "object") return null;
-  const volume = Number(p.volume) === 1 ? 1 : Number(p.volume) === 2 ? 2 : 0;
-  const verbete = limparTextoGerado(String(p.verbete || "").replace(/=+/g, ""), 80);
-  const explicacao = limparTextoGerado(p.explicacao, 700);
-  if (!volume || !verbete || !explicacao || !foiLido(lido, verbete)) return null;
-  return { volume, verbete, explicacao };
-}
+const listaDeTextos = (valor, max) =>
+  (Array.isArray(valor) ? valor : []).map((r) => limparLinha(r, 80)).filter(Boolean).slice(0, max);
 
 // Lista pedida pela IA para uma linha: o modelo de lista do app e o número do grupo; quem escreve os marcadores é o app.
 function sanearLista(lista) {
@@ -471,8 +463,9 @@ function limparLinha(valor, max) {
   return typeof valor === "string" ? valor.replace(/\s+/g, " ").trim().slice(0, max) : "";
 }
 
-// Um item de resposta pronto para o navegador: texto limpo, destaques conferidos e, se pedidos, versículos e Perspicaz.
-function montarItem(i, opcoes, permitidos, lido, fontes, L, sep) {
+// Um item de resposta pronto para o navegador: texto limpo e destaques conferidos. As fontes entram depois
+// (finalizarItens); os campos internos (contexto, referencias, relevantes, verbetes) não vão para o navegador.
+function montarItem(i, opcoes, permitidos, L, sep) {
   const texto = limparTextoGerado(i.resposta, L.maxCharsResposta);
   // Linhas em branco dentro da resposta: frase a frase (calculado aqui, sem depender da IA) ou entre ideias (a IA indica).
   const quebras = sep === "frases" ? inicioDeFrases(texto) : sep ? sanearQuebras(i.quebras, texto) : [];
@@ -482,81 +475,27 @@ function montarItem(i, opcoes, permitidos, lido, fontes, L, sep) {
     quebras,
     emoji: opcoes.emoji ? limparEmoji(i.emoji) : null,
     destaques: sanearDestaques(i.destaques, texto, opcoes, permitidos, L.maxDestaques),
-    textos: sanearTextos(i.textos, lido, !!(fontes && fontes.biblia), L.maxTextos),
-    perspicaz: sanearPerspicaz(i.perspicaz, lido, !!(fontes && fontes.perspicaz)),
-    referencias: (Array.isArray(i.referencias) ? i.referencias : []).map((r) => limparLinha(r, 60)).filter(Boolean).slice(0, 3),
+    contexto: texto,
+    referencias: listaDeTextos(i.referencias, 3),
+    relevantes: listaDeTextos(i.textosRelevantes, L.maxTextos),
+    verbetes: listaDeTextos(i.verbetes, 2),
   };
 }
 
-// Segundo passo, só quando precisa: a IA já respondeu (sem arquivo nenhum) e indicou que a pergunta cita texto bíblico.
-// Então, e só então, o arquivo da Bíblia é carregado para transcrever esses versículos e aplicá-los à resposta.
-// Se esse passo falhar, a resposta já pronta segue sem os versículos.
-async function completarComTextos(itens, P) {
-  const biblia = idDoArquivo("ARQUIVO_BIBLIA_ID");
-  const alvo = biblia ? itens.filter((i) => i.referencias.length) : [];
-  if (!alvo.length) return;
-
-  try {
-    const client = new Anthropic({ maxRetries: 0, timeout: 50_000 });
-    const lista = alvo.map((i, indice) => ({ indice, paragrafos: i.paragrafos, resposta: i.resposta, referencias: i.referencias }));
-    const { resposta, blocos } = await conversar(client, {
-      system: P.sistemaComplemento,
-      mensagens: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: "ITENS (JSON):\n" + JSON.stringify(lista) + `\n\nARQUIVO ENVIADO AO AMBIENTE DE CÓDIGO:\n- Bíblia (um versículo por linha) (file_id ${biblia})`,
-            },
-            { type: "container_upload", file_id: biblia },
-          ],
-        },
-      ],
-      tools: [{ type: "code_execution_20260521", name: "code_execution" }],
-      maxTokens: 4000,
-      voltas: 4,
-    });
-    if (resposta.stop_reason === "refusal") return;
-
-    const texto = resposta.content.filter((b) => b.type === "text").map((b) => b.text).join("");
-    const SaidaComplemento = z.object({ itens: z.array(z.object({ indice: z.coerce.number().int(), textos: TextosSchema })) });
-    const dados = SaidaComplemento.safeParse(extrairJson(texto));
-    if (!dados.success) return;
-
-    const lido = textoLido(blocos);
-    for (const r of dados.data.itens) {
-      const item = alvo[r.indice];
-      if (item) item.textos = sanearTextos(r.textos, lido, true, P.limites.maxTextos);
-    }
-  } catch (e) {
-    console.error("Não foi possível acrescentar os textos bíblicos:", e?.status, e?.message);
-  }
+// Fecha os itens antes de enviá-los ao navegador: busca as fontes e tira os campos internos.
+async function finalizarItens(itens, opcoes, P, orientacao) {
+  await completarFontes(itens, opcoes, P, orientacao);
+  return itens.map(({ contexto, referencias, relevantes, verbetes, ...resto }) => resto);
 }
 
-// Fecha os itens antes de enviá-los ao navegador: completa os versículos se faltarem e tira o campo interno.
-async function finalizarItens(itens, fontes, P) {
-  if (!(fontes && fontes.biblia)) await completarComTextos(itens, P);
-  return itens.map(({ referencias, ...resto }) => resto);
-}
-
-// Conversa com a IA tratando pause_turn (turno longo pausado pela API) e reaproveitando o mesmo container, onde os
-// arquivos já foram carregados. Devolve a última resposta e todos os blocos de todos os turnos.
+// Conversa com a IA tratando pause_turn (turno longo pausado pela API, ex.: durante a leitura do site).
+// Devolve a última resposta e todos os blocos de todos os turnos.
 async function conversar(client, { system, mensagens, tools, maxTokens, voltas }) {
   let resposta;
-  let container = null;
   const blocos = [];
   for (let volta = 0; volta < voltas; volta++) {
-    resposta = await client.messages.create({
-      model: MODEL,
-      max_tokens: maxTokens,
-      system,
-      messages: mensagens,
-      tools,
-      ...(container ? { container } : {}),
-    });
+    resposta = await client.messages.create({ model: MODEL, max_tokens: maxTokens, system, messages: mensagens, tools });
     blocos.push(...resposta.content);
-    if (resposta.container && resposta.container.id) container = resposta.container.id;
     if (resposta.stop_reason !== "pause_turn") break;
     mensagens = [...mensagens, { role: "assistant", content: resposta.content }];
   }
@@ -570,31 +509,7 @@ const Destaque = z.object({
   maiusculas: z.boolean().optional(),
 });
 
-const TextosSchema = z.array(z.object({ referencia: z.string(), texto: z.string(), aplicacao: z.string() })).nullable().optional().catch(null);
-const PerspicazSchema = z.object({ volume: z.coerce.number(), verbete: z.string(), explicacao: z.string() }).nullable().optional().catch(null);
-
-// Resposta de "Sugerir formatação + resumo" quando a IA usa a execução de código (JSON em texto, campos tolerantes).
-const SaidaResumoFontes = z.object({
-  resumo: z.string().nullable().optional(),
-  sugestoes: z
-    .array(
-      z.object({
-        linha: z.coerce.number().int(),
-        modeloId: z.string().nullable().optional(),
-        emoji: z.string().nullable().optional(),
-        destaques: z.array(Destaque).optional(),
-        lista: z.object({ modelo: z.enum(MODELOS_LISTA), grupo: z.coerce.number().int() }).nullable().optional().catch(null),
-        quebras: z.array(z.string()).optional().catch([]),
-        espacoAntes: z.boolean().optional().catch(false),
-        motivo: z.string().nullable().optional(),
-      })
-    )
-    .optional(),
-  textos: TextosSchema,
-  perspicaz: PerspicazSchema,
-});
-
-// Item de resposta lido de JSON em texto (leitura do site e consulta às fontes); os campos extras são tolerantes.
+// Item de resposta lido de JSON em texto (leitura do site); os campos extras são tolerantes.
 const ItemResposta = z.object({
   paragrafos: z.string(),
   resposta: z.string(),
@@ -602,8 +517,8 @@ const ItemResposta = z.object({
   emoji: z.string().nullable().optional(),
   destaques: z.array(Destaque).optional(),
   referencias: z.array(z.string()).optional().catch([]),
-  textos: TextosSchema,
-  perspicaz: PerspicazSchema,
+  textosRelevantes: z.array(z.string()).optional().catch([]),
+  verbetes: z.array(z.string()).optional().catch([]),
 });
 
 const SaidaSentinela = z.object({
@@ -622,11 +537,11 @@ const SaidaSentinela = z.object({
         })
       ),
       referencias: z.array(z.string()),
+      textosRelevantes: z.array(z.string()),
+      verbetes: z.array(z.string()),
     })
   ),
 });
-
-const SaidaSentinelaFontes = z.object({ itens: z.array(ItemResposta) });
 
 const DESCRICAO_RESPOSTA = {
   curto: "curta (1 a 2 frases)",
@@ -647,17 +562,17 @@ function tratarErro(e, res) {
 
 async function responderSentinela(res, { linhas, opcoes, modo, ajuste, anteriores }, P) {
   const sep = modoSeparacao(opcoes, ajuste);
-  // A consulta às fontes não exige o código de acesso (o código vale só para a leitura do wol.jw.org). Sem caixa
-  // marcada nenhum arquivo é carregado: a resposta sai como sempre e, só se a pergunta citar texto bíblico, um segundo
-  // passo busca os versículos (finalizarItens).
-  const fontes = prepararFontes(opcoes, P);
-  if (fontes && fontes.erro) return erro(res, 500, fontes.erro);
+  // A consulta às fontes não exige o código de acesso (o código vale só para a leitura do wol.jw.org).
+  if (consultaPedida(opcoes) && !fontesConfiguradas()) return erro(res, 500, "A consulta às fontes ainda não está configurada no servidor.");
+  // Os versículos citados na pergunta são sempre transcritos: a Bíblia começa a carregar enquanto a IA escreve.
+  precarregarFontes({ biblia: true, perspicaz: opcoes.consultarPerspicaz });
 
   let mensagem =
     blocoOrientacao(opcoes, ajuste) +
     "PREFERÊNCIAS:\n" +
     `- Tamanho de cada resposta: ${DESCRICAO_RESPOSTA[opcoes.resumoTamanho]}.\n` +
     descreverFormatacaoResposta(opcoes, P.limites.maxDestaques, sep) +
+    descreverFontes(opcoes, P, false) +
     "\n\nTEXTO COLADO:\n" +
     linhas.join("\n") +
     (ajuste || opcoes.instrucao ? LEMBRETE_ORIENTACAO : "");
@@ -673,32 +588,6 @@ async function responderSentinela(res, { linhas, opcoes, modo, ajuste, anteriore
 
   try {
     const permitidos = estilosDe(opcoes);
-
-    // Com consulta às fontes: a IA usa a execução de código, então a resposta vem como JSON em texto.
-    if (fontes) {
-      const client = new Anthropic({ maxRetries: 1, timeout: 100_000 });
-      const { resposta, blocos } = await conversar(client, {
-        system: P.sistemaSentinela + fontes.sistema + "\n\n" + P.formatoJsonSentinela,
-        mensagens: [{ role: "user", content: [{ type: "text", text: mensagem + fontes.mensagem }, ...fontes.blocos] }],
-        tools: fontes.ferramentas,
-        maxTokens: 8000,
-        voltas: 5,
-      });
-
-      if (resposta.stop_reason === "refusal") return erro(res, 502, "A IA não conseguiu gerar as respostas para este texto.");
-
-      const texto = resposta.content.filter((b) => b.type === "text").map((b) => b.text).join("");
-      const dados = SaidaSentinelaFontes.safeParse(extrairJson(texto));
-      if (!dados.success) return erro(res, 502, "A IA não devolveu as respostas no formato esperado. Tente novamente.");
-
-      const lido = textoLido(blocos);
-      const itens = dados.data.itens
-        .slice(0, P.limites.maxRespostas)
-        .map((i) => montarItem(i, opcoes, permitidos, lido, fontes, P.limites, sep))
-        .filter((i) => i.resposta);
-      return res.status(200).json({ itens: await finalizarItens(itens, fontes, P) });
-    }
-
     const client = new Anthropic({ maxRetries: 1, timeout: 55_000 });
     const resposta = await client.messages.parse({
       model: MODEL,
@@ -714,10 +603,10 @@ async function responderSentinela(res, { linhas, opcoes, modo, ajuste, anteriore
 
     const itens = resposta.parsed_output.itens
       .slice(0, P.limites.maxRespostas)
-      .map((i) => montarItem(i, opcoes, permitidos, { bruto: "", corrido: "" }, null, P.limites, sep))
+      .map((i) => montarItem(i, opcoes, permitidos, P.limites, sep))
       .filter((i) => i.resposta);
 
-    return res.status(200).json({ itens: await finalizarItens(itens, null, P) });
+    return res.status(200).json({ itens: await finalizarItens(itens, opcoes, P, blocoOrientacao(opcoes, ajuste)) });
   } catch (e) {
     return tratarErro(e, res);
   }
@@ -803,8 +692,8 @@ async function responderEstudo(res, body, P) {
   const alvoBruto = recapitulacao || /^todos$/i.test(paragrafos) ? null : numerosDosParagrafos(paragrafos);
   const alvo = alvoBruto && alvoBruto.size ? alvoBruto : null; // null = todos os parágrafos
   const opcoes = validarOpcoes(body.opcoes);
-  const fontes = prepararFontes(opcoes, P);
-  if (fontes && fontes.erro) return erro(res, 500, fontes.erro);
+  if (consultaPedida(opcoes) && !fontesConfiguradas()) return erro(res, 500, "A consulta às fontes ainda não está configurada no servidor.");
+  precarregarFontes({ biblia: true, perspicaz: opcoes.consultarPerspicaz });
   const ajuste = textoLivre(body.ajuste);
   const sep = modoSeparacao(opcoes, ajuste);
   const modo = body.modo === "nova" || body.modo === "melhorar" ? body.modo : null;
@@ -821,6 +710,7 @@ async function responderEstudo(res, body, P) {
         : "ESCOPO: todos os parágrafos do artigo que têm pergunta (sem o quadro de recapitulação).\n") +
     `PREFERÊNCIAS:\n- Tamanho de cada resposta: ${DESCRICAO_RESPOSTA[opcoes.resumoTamanho]}.\n` +
     descreverFormatacaoResposta(opcoes, P.limites.maxDestaques, sep) +
+    descreverFontes(opcoes, P, false) +
     (ajuste || opcoes.instrucao ? LEMBRETE_ORIENTACAO : "");
 
   if (modo && anteriores) {
@@ -833,23 +723,17 @@ async function responderEstudo(res, body, P) {
   }
 
   try {
-    const client = new Anthropic({ maxRetries: 1, timeout: fontes ? 100_000 : 90_000 });
+    const client = new Anthropic({ maxRetries: 1, timeout: 90_000 });
     const tools = [
       { type: "web_fetch_20250910", name: "web_fetch", max_uses: 3, allowed_domains: ["wol.jw.org"], max_content_tokens: 60000 },
-      ...(fontes ? fontes.ferramentas : []),
     ];
 
-    const { resposta, blocos } = await conversar(client, {
-      system: P.sistemaEstudo + (fontes ? fontes.sistema : ""),
-      mensagens: [
-        {
-          role: "user",
-          content: fontes ? [{ type: "text", text: mensagem + fontes.mensagem }, ...fontes.blocos] : mensagem,
-        },
-      ],
+    const { resposta } = await conversar(client, {
+      system: P.sistemaEstudo,
+      mensagens: [{ role: "user", content: mensagem }],
       tools,
-      maxTokens: fontes ? 8000 : 6000,
-      voltas: fontes ? 6 : 3,
+      maxTokens: 7000,
+      voltas: 3,
     });
 
     if (resposta.stop_reason === "refusal") return erro(res, 502, "A IA não conseguiu responder a este pedido.");
@@ -863,10 +747,9 @@ async function responderEstudo(res, body, P) {
 
     const limpar = limparLinha;
     const permitidos = estilosDe(opcoes);
-    const lido = textoLido(blocos);
     const itensTodos = dados.data.itens
       .slice(0, P.limites.maxRespostas)
-      .map((i) => montarItem(i, opcoes, permitidos, lido, fontes, P.limites, sep))
+      .map((i) => montarItem(i, opcoes, permitidos, P.limites, sep))
       .filter((i) => i.resposta);
 
     // Recapitulação: as perguntas do quadro vêm numeradas 1, 2, 3...; o rótulo "Recap. N" não se confunde com parágrafos.
@@ -884,7 +767,7 @@ async function responderEstudo(res, body, P) {
         })
       : itensTodos;
 
-    const itensFinais = await finalizarItens(itens, fontes, P);
+    const itensFinais = await finalizarItens(itens, opcoes, P, blocoOrientacao(opcoes, ajuste));
 
     return res.status(200).json({
       titulo: limpar(dados.data.titulo, 200) || null,
@@ -1061,6 +944,7 @@ export default async function handler(req, res) {
     blocoOrientacao(opcoes, ajuste) +
     "PREFERÊNCIAS DO USUÁRIO:\n" +
     descreverPreferencias(opcoes) +
+    (consultaPedida(opcoes) ? descreverFontes(opcoes, P, true) : "") +
     "\n\nMODELOS DISPONÍVEIS:\n" +
     (modelosUsaveis.length
       ? modelosUsaveis.map((m) => `- id=${m.id} | nome=${m.nome} | conteúdo=${m.conteudo}`).join("\n")
@@ -1078,46 +962,24 @@ export default async function handler(req, res) {
         : "\n\nPEDIDO: melhore as sugestões anteriores, mantendo o que estava bom, seguindo a orientação específica acima (se houver).");
   }
 
-  // Com resumo, as caixas "Consultar textos citados" e "Consultar o Perspicaz" valem para o resumo; a IA usa então
-  // a execução de código e a resposta vem como JSON em texto (em vez da saída estruturada).
-  const fontes = prepararFontes(opcoes, P, true);
-  if (fontes && fontes.erro) return erro(res, 500, fontes.erro);
+  // As caixas "Consultar textos citados" e "Consultar o Perspicaz" valem para o texto (e para o resumo, quando houver).
+  if (consultaPedida(opcoes) && !fontesConfiguradas()) return erro(res, 500, "A consulta às fontes ainda não está configurada no servidor.");
+  precarregarFontes({ biblia: opcoes.consultarBiblia, perspicaz: opcoes.consultarPerspicaz });
 
   try {
-    let saida;
-    let lido = null;
+    const client = new Anthropic({ maxRetries: 1, timeout: 45_000 });
+    const resposta = await client.messages.parse({
+      model: MODEL,
+      max_tokens: 4000,
+      system: P.sistemaFormatacao,
+      messages: [{ role: "user", content: mensagem }],
+      output_config: { format: zodOutputFormat(Saida) },
+    });
 
-    if (fontes) {
-      const client = new Anthropic({ maxRetries: 1, timeout: 100_000 });
-      const { resposta, blocos } = await conversar(client, {
-        system: P.sistemaFormatacao + fontes.sistema + "\n\n" + P.formatoJsonResumo,
-        mensagens: [{ role: "user", content: [{ type: "text", text: mensagem + fontes.mensagem }, ...fontes.blocos] }],
-        tools: fontes.ferramentas,
-        maxTokens: 8000,
-        voltas: 5,
-      });
-      if (resposta.stop_reason === "refusal") return erro(res, 502, "A IA não conseguiu gerar sugestões para este texto.");
-
-      const texto = resposta.content.filter((b) => b.type === "text").map((b) => b.text).join("");
-      const dados = SaidaResumoFontes.safeParse(extrairJson(texto));
-      if (!dados.success) return erro(res, 502, "A IA não devolveu as sugestões no formato esperado. Tente novamente.");
-      saida = { ...dados.data, sugestoes: dados.data.sugestoes || [] };
-      lido = textoLido(blocos);
-    } else {
-      const client = new Anthropic({ maxRetries: 1, timeout: 45_000 });
-      const resposta = await client.messages.parse({
-        model: MODEL,
-        max_tokens: 4000,
-        system: P.sistemaFormatacao,
-        messages: [{ role: "user", content: mensagem }],
-        output_config: { format: zodOutputFormat(Saida) },
-      });
-
-      if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
-        return erro(res, 502, "A IA não conseguiu gerar sugestões para este texto.");
-      }
-      saida = resposta.parsed_output;
+    if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
+      return erro(res, 502, "A IA não conseguiu gerar sugestões para este texto.");
     }
+    const saida = resposta.parsed_output;
 
     // A IA recebe as preferências por texto, mas o servidor também as impõe: o que o usuário
     // desmarcou é descartado aqui, mesmo que o modelo tenha sugerido.
@@ -1173,10 +1035,17 @@ export default async function handler(req, res) {
     const resumo =
       opcoes.resumo && typeof saida.resumo === "string" ? limparTextoGerado(saida.resumo, P.limites.maxCharsResumo) || null : null;
 
-    // Resumo, versículos e Perspicaz são independentes: cada um aparece só se foi pedido (e, no caso dos dois últimos,
-    // só se o texto realmente apareceu na leitura dos arquivos).
-    const textos = fontes ? sanearTextos(saida.textos, lido, fontes.biblia, P.limites.maxTextos) : [];
-    const perspicaz = fontes ? sanearPerspicaz(saida.perspicaz, lido, fontes.perspicaz) : null;
+    // Resumo, versículos e Perspicaz são independentes: cada um aparece só se foi pedido. O versículo vem do arquivo da
+    // Bíblia; a aplicação (e a explicação do Perspicaz) é escrita para o resumo, ou para o texto quando não há resumo.
+    const fonte = {
+      contexto: resumo || linhas.join("\n"),
+      referencias: [],
+      relevantes: listaDeTextos(saida.textosRelevantes, P.limites.maxTextos),
+      verbetes: listaDeTextos(saida.verbetes, 2),
+    };
+    if (consultaPedida(opcoes)) await completarFontes([fonte], opcoes, P, blocoOrientacao(opcoes, ajuste));
+    const textos = fonte.textos || [];
+    const perspicaz = fonte.perspicaz || null;
 
     return res.status(200).json({ resumo, sugestoes, textos, perspicaz });
   } catch (e) {
