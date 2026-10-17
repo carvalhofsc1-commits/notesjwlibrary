@@ -1082,6 +1082,40 @@
     .icon-action.indent { font-size: 1.9rem; font-weight: 700; padding-top: 4px; padding-bottom: 4px; }
     .icon-action.copy   { background: #dcfce7; color: #14532d; border-color: #4ade80; }
     .icon-action.select { background: #e0f2fe; color: #075985; border-color: #38bdf8; }
+    /* Faixa de favoritos logo abaixo dos botões de formatação: uma linha só, sem rolagem. A grade cria quantas colunas
+       couberem; os favoritos que não cabem vão para linhas seguintes, que ficam escondidas. */
+    .quick-emojis { margin: 0 0 12px; }
+    .quick-emoji-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
+      grid-template-rows: 42px;
+      grid-auto-rows: 42px;
+      gap: 6px;
+      height: 42px;
+      overflow: hidden;
+    }
+    .quick-emoji-list button {
+      min-width: 0;
+      height: 42px;
+      padding: 0;
+      font-size: 1.3rem;
+      line-height: 1;
+      border-radius: 10px;
+      border: 2px solid var(--line);
+      background: var(--card);
+      color: var(--text);
+      box-shadow: none;
+      touch-action: pan-y;           /* o arraste para o lado fica com a faixa; rolar a página continua funcionando */
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;   /* sem o menu do iPhone ao segurar */
+    }
+    .quick-emoji-list button.dragging {
+      border-color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 18%, var(--card));
+      transform: scale(1.12);
+    }
+
     .icon-action.font   { background: #ccfbf1; color: #134e4a; border-color: #2dd4bf; font-size: 1.3rem; }
 
     @media (prefers-color-scheme: dark) {
@@ -1611,6 +1645,8 @@
 
       .editor-controls-pane > .main-actions { order: -2; margin: 0 0 10px; }
 
+      .editor-controls-pane > .quick-emojis { order: -2; }
+
       .editor-controls-pane > .main-copy-status { order: -1; }
 
       .main-copy-status:empty { display: none; }
@@ -1762,6 +1798,9 @@
             <button id="quickSquaredDarkBtn" class="icon-action font" type="button" title="Aplicar a fonte Caixa escura ao trecho selecionado (letras maiúsculas)" aria-label="Aplicar a fonte Caixa escura ao trecho selecionado">🅲🅰🅸🆇🅰</button>
             <span>Fonte Cx. Esc.</span>
           </div>
+        </div>
+        <div class="quick-emojis" role="group" aria-label="Emojis e caracteres favoritos (toque para inserir; segure e arraste para mudar a ordem)">
+          <div id="quickEmojiList" class="quick-emoji-list"></div>
         </div>
         <span id="copyStatus" class="ok main-copy-status" role="status" aria-live="polite"></span>
 
@@ -2077,7 +2116,7 @@
         <details class="subsection sub-tint-4">
           <summary>😀 Caracteres, ícones e emoticons</summary>
           <div class="subsection-body">
-      <p class="hint">Clique para inserir no campo ativo. Os favoritos ficam no topo. Toque na estrelinha no canto de um caractere para mandá-lo para os favoritos (☆) ou tirá-lo do topo (★).</p>
+      <p class="hint">Clique para inserir no campo ativo. Os favoritos ficam no topo e na faixa abaixo dos botões de formatação (lá, segure e arraste um emoji para mudar a ordem; um favorito novo entra no 1º lugar). Toque na estrelinha no canto de um caractere para mandá-lo para os favoritos (☆) ou tirá-lo do topo (★).</p>
 
       <div class="symbol-search">
         <label for="symbolSearch">🔍 Buscar caractere pelo nome</label>
@@ -2365,6 +2404,7 @@
     const symbolSearch = document.getElementById('symbolSearch');
     const symbolSearchInfo = document.getElementById('symbolSearchInfo');
     const symbolSearchResults = document.getElementById('symbolSearchResults');
+    const quickEmojiList = document.getElementById('quickEmojiList');
     let emojiKeywords = null;        // { emoji sem FE0F e sem tom de pele: "nome e palavras-chave sem acento" }
     let emojiKeywordsPromise = null;
     const customSymbolCategory = document.getElementById('customSymbolCategory');
@@ -4119,6 +4159,105 @@ function saveTemplatesToStorage() {
       }
 
       if (symbolSearch.value.trim() && emojiKeywords) renderSymbolSearch();
+      renderQuickEmojis();
+    }
+
+    // Faixa de favoritos abaixo dos botões de formatação: os mesmos favoritos de "Caracteres, ícones e emoticons"
+    // (a estrelinha ☆ põe um caractere no 1º lugar; a ★ tira), que entram nas configurações padrão do administrador.
+    // Tocar insere no cursor. Segurar (no celular) ou arrastar com o mouse muda a ordem; a nova ordem é salva.
+    let quickEmojiJustDragged = false;
+
+    function renderQuickEmojis() {
+      quickEmojiList.innerHTML = '';
+      favoriteSymbols.forEach(sym => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = sym;
+        btn.dataset.sym = sym;
+        btn.title = 'Inserir ' + sym + ' (segure e arraste para mudar a ordem)';
+        btn.setAttribute('aria-label', 'Inserir ' + sym);
+        btn.addEventListener('mousedown', event => event.preventDefault()); // mantém o cursor no campo de texto
+        btn.addEventListener('click', () => {
+          if (quickEmojiJustDragged) return; // terminou um arraste: não insere
+          insertTextAtCursor(getActiveInsertTarget(), sym);
+        });
+        setupQuickEmojiDrag(btn);
+        quickEmojiList.appendChild(btn);
+      });
+    }
+
+    function setupQuickEmojiDrag(btn) {
+      let startX = 0;
+      let startY = 0;
+      let timer = null;
+      let dragging = false;
+      let pointerId = null;
+
+      const startDrag = () => {
+        dragging = true;
+        btn.classList.add('dragging');
+        try { btn.setPointerCapture(pointerId); } catch (e) { /* sem captura: segue pelos eventos normais */ }
+        if (navigator.vibrate) navigator.vibrate(15);
+      };
+
+      btn.addEventListener('pointerdown', event => {
+        if (event.button > 0) return;
+        startX = event.clientX;
+        startY = event.clientY;
+        pointerId = event.pointerId;
+        dragging = false;
+        clearTimeout(timer);
+        // No toque é preciso segurar um instante (para não atrapalhar o toque normal); com o mouse basta arrastar.
+        if (event.pointerType !== 'mouse') timer = setTimeout(startDrag, 350);
+      });
+
+      btn.addEventListener('pointermove', event => {
+        if (pointerId === null) return;
+        const dx = event.clientX - startX;
+        const dy = event.clientY - startY;
+        if (!dragging) {
+          if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+            clearTimeout(timer);
+            if (event.pointerType === 'mouse' && Math.abs(dx) > Math.abs(dy)) startDrag();
+            else pointerId = null; // mexeu antes de segurar: é rolagem ou toque comum
+          }
+          if (!dragging) return;
+        }
+        event.preventDefault();
+        // Coloca o botão antes do primeiro vizinho visível cujo centro fica à direita do dedo.
+        const visible = [...quickEmojiList.children].filter(b => b !== btn && b.offsetTop === btn.offsetTop);
+        const next = visible.find(b => {
+          const r = b.getBoundingClientRect();
+          return event.clientX < r.left + r.width / 2;
+        });
+        if (next) {
+          if (btn.nextSibling !== next) quickEmojiList.insertBefore(btn, next);
+        } else {
+          const last = visible[visible.length - 1];
+          if (last && last.nextSibling !== btn) quickEmojiList.insertBefore(btn, last.nextSibling);
+        }
+      });
+
+      const finish = () => {
+        clearTimeout(timer);
+        pointerId = null;
+        if (!dragging) return;
+        dragging = false;
+        btn.classList.remove('dragging');
+        quickEmojiJustDragged = true;
+        setTimeout(() => { quickEmojiJustDragged = false; }, 50);
+        const order = [...quickEmojiList.children].map(b => b.dataset.sym);
+        if (order.join('\u0000') !== favoriteSymbols.join('\u0000')) {
+          favoriteSymbols = order;
+          saveFavoriteSymbols();
+          renderSymbols();
+          symbolsStatus.className = 'ok';
+          symbolsStatus.textContent = 'Ordem dos favoritos salva.';
+        }
+      };
+      btn.addEventListener('pointerup', finish);
+      btn.addEventListener('pointercancel', finish);
+      btn.addEventListener('contextmenu', event => event.preventDefault()); // segurar não abre o menu do sistema
     }
 
     // ---------- Busca de caracteres pelo nome ----------
