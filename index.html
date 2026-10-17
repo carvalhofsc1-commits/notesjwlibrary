@@ -683,6 +683,31 @@
       100% { left: 100%; }
     }
 
+    /* Faixa fixa no topo da tela enquanto a IA trabalha: aparece em qualquer ponto da página, mesmo longe do botão. */
+    .ai-floating {
+      position: fixed;
+      top: calc(env(safe-area-inset-top, 0px) + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      gap: 2px;
+      max-width: calc(100vw - 24px);
+      padding: 9px 16px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #ffffff;
+      font-size: .9rem;
+      font-weight: 700;
+      line-height: 1.2;
+      box-shadow: 0 6px 20px rgba(15, 23, 42, .35);
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    .ai-floating.on { display: flex; }
+
     @media (prefers-reduced-motion: reduce) {
       .ai-spinner { animation-duration: 2s; }
       .ai-progress::after { animation-duration: 3.5s; }
@@ -1603,6 +1628,7 @@
   </style>
 </head>
 <body>
+  <div id="aiFloating" class="ai-floating" role="status" aria-live="polite"></div>
   <header>
     <div class="brand-title">
       <img src="icon-header.png" alt="" class="brand-icon" width="512" height="512" decoding="async">
@@ -2482,7 +2508,8 @@
       const expected = field.value.slice(0, start) + text + field.value.slice(end);
       let wrote = false;
 
-      field.focus();
+      // preventScroll: ao aplicar o resultado da IA a tela fica onde o usuário está, em vez de pular até o campo de texto.
+      field.focus({ preventScroll: true });
       field.setSelectionRange(start, end);
 
       if (text || start !== end) {
@@ -5507,6 +5534,22 @@ function saveTemplatesToStorage() {
     // cartões "fantasma" no lugar das sugestões e contador de segundos no status.
     let aiLoadingTimer = null;
 
+    // Faixa no topo da tela com o "A IA está pensando… N s", sempre à vista (o indicador do botão fica fora da tela
+    // quando a página rola).
+    const aiFloating = document.getElementById('aiFloating');
+    function showAiFloating(seconds) {
+      if (!aiFloating.classList.contains('on')) {
+        const spinner = document.createElement('span');
+        spinner.className = 'ai-spinner';
+        spinner.setAttribute('aria-hidden', 'true');
+        const label = document.createElement('span');
+        label.id = 'aiFloatingText';
+        aiFloating.replaceChildren(spinner, label);
+        aiFloating.classList.add('on');
+      }
+      document.getElementById('aiFloatingText').textContent = 'A IA está pensando… ' + seconds + ' s';
+    }
+
     function setAiLoading(on, button) {
       const all = [aiSuggestBtn, aiSentinelaBtn, aiStudyBtn, aiStudyLoadBtn, aiAnotherBtn, aiImproveBtn];
 
@@ -5524,6 +5567,8 @@ function saveTemplatesToStorage() {
         });
         aiProgress.classList.remove('on');
         aiResults.removeAttribute('aria-busy');
+        aiFloating.classList.remove('on');
+        aiFloating.textContent = '';
         return;
       }
 
@@ -5545,6 +5590,7 @@ function saveTemplatesToStorage() {
       const startedAt = Date.now();
       const tick = () => {
         const seconds = Math.floor((Date.now() - startedAt) / 1000);
+        showAiFloating(seconds);
         setAiStatus(
           seconds < 12
             ? 'A IA está trabalhando… ' + seconds + ' s'
