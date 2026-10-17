@@ -6,6 +6,10 @@ import { LIMITES, PARTES, aplicarLimites, limitesPublicos, travadosDe, validarAl
 import { esquecerCache, gravarAlteracoes, gravarLimites, lerAlteracoes, lerAnterior, lerLimites } from "./_promptsArmazenados.mjs";
 
 const CHAVE_PADRAO = "padrao_modelos";
+// Anotação do administrador (ex.: o código de uso dos recursos de IA, para não esquecer). Só é lida e gravada com o
+// CODIGO_ADMIN; não vale como senha de nada: o código que funciona de verdade é o da variável CODIGO_ESTUDO na Vercel.
+const CHAVE_ANOTACAO = "anotacao_admin";
+const MAX_CHARS_ANOTACAO = 500;
 const MAX_BYTES_PADRAO = 200_000;
 const MAX_MODELOS_PADRAO = 500;
 
@@ -56,7 +60,13 @@ async function estadoDosPrompts() {
     travados: travadosDe(limites).map((t) => ({ id: t.id, titulo: t.titulo, texto: t.texto })),
     armazenamento: descreverArmazenamento(),
     temAnterior: Object.keys(anterior).length > 0,
+    anotacao: await lerAnotacao(),
   };
+}
+
+async function lerAnotacao() {
+  const valor = await lerItem(CHAVE_ANOTACAO);
+  return typeof valor === "string" ? valor : "";
 }
 
 // Só guarda o que difere do padrão.
@@ -165,6 +175,13 @@ export default async function handler(req, res) {
       const atuais = await lerAlteracoes();
       await gravarAlteracoes(anterior, atuais);
       return res.status(200).json(await estadoDosPrompts());
+    }
+
+    if (acao === "anotacao-salvar") {
+      if (!exigirEscrita(res)) return;
+      const texto = typeof corpo.anotacao === "string" ? corpo.anotacao.trim().slice(0, MAX_CHARS_ANOTACAO) : "";
+      await gravarItem(CHAVE_ANOTACAO, texto);
+      return res.status(200).json({ ok: true, anotacao: texto });
     }
 
     if (acao === "padrao-publicar") {

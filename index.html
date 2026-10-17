@@ -1435,6 +1435,10 @@
     .prompt-tint-4 { background: var(--card); background: color-mix(in srgb, #a855f7 11%, var(--card)); border-color: color-mix(in srgb, #a855f7 45%, var(--line)); }
     .prompt-tint-5 { background: var(--card); background: color-mix(in srgb, #14b8a6 11%, var(--card)); border-color: color-mix(in srgb, #14b8a6 45%, var(--line)); }
     .prompt-tint-6 { background: var(--card); background: color-mix(in srgb, #f43f5e 10%, var(--card)); border-color: color-mix(in srgb, #f43f5e 45%, var(--line)); }
+    .prompt-tint-codigo { background: var(--card); background: color-mix(in srgb, #10b981 14%, var(--card)); border-color: color-mix(in srgb, #10b981 50%, var(--line)); }
+    .admin-code-row { display: flex; gap: 8px; align-items: stretch; margin-top: 8px; }
+    .admin-code-row input { flex: 1 1 auto; min-width: 0; font-family: ui-monospace, Consolas, monospace; letter-spacing: .04em; }
+    .admin-code-row button { flex: 0 0 auto; }
     .prompt-tint-limits { background: var(--card); background: color-mix(in srgb, #eab308 14%, var(--card)); border-color: color-mix(in srgb, #eab308 50%, var(--line)); }
 
     #promptsScreen .prompt-locked {
@@ -2260,6 +2264,18 @@
       </div>
 
       <div id="promptsEditor" hidden>
+        <div class="prompt-item prompt-tint-codigo">
+          <h3>🔑 Código de uso dos recursos de IA</h3>
+          <p class="hint">Anotação só sua, para não esquecer o código. O código que vale de verdade é o da variável <strong>CODIGO_ESTUDO</strong> na Vercel: se trocar lá, atualize aqui também.</p>
+          <div class="admin-code-row">
+            <input id="adminCodeNote" type="text" maxlength="500" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Anote aqui o código de uso">
+            <button id="adminCodeCopyBtn" class="secondary" type="button">📋 Copiar</button>
+          </div>
+          <div class="button-row">
+            <button id="adminCodeSaveBtn" type="button">💾 Salvar anotação</button>
+            <span id="adminCodeStatus" class="ok" role="status" aria-live="polite"></span>
+          </div>
+        </div>
         <p class="hint">Aqui você edita o <strong>tom e as regras</strong> da IA. O formato técnico da resposta (campos e JSON) e a forma de indicar os textos da Bíblia e os verbetes do Perspicaz ficam travados, só para leitura, no fim da página. Ao salvar, a mudança vale para todos os usuários em poucos segundos. "Restaurar padrão" volta ao texto original do app. Nos textos, <strong>{{max_textos}}</strong> e <strong>{{max_destaques}}</strong> são trocados pelos limites definidos logo abaixo.</p>
         <p id="promptsStatus" class="ok" role="status" aria-live="polite"></p>
         <div class="prompts-export-row">
@@ -5018,6 +5034,9 @@ function saveTemplatesToStorage() {
       promptsCode = '';
       promptsState = null;
       promptsCodeInput.value = '';
+      adminCodeNote.value = '';
+      delete adminCodeNote.dataset.loaded;
+      adminCodeStatus.textContent = '';
       promptsLoginError.textContent = '';
       promptsStatus.textContent = '';
       promptsLogin.hidden = false;
@@ -5187,6 +5206,11 @@ function saveTemplatesToStorage() {
     function renderPrompts(state) {
       promptsState = state;
       promptsList.textContent = '';
+      // A anotação do código só é preenchida ao entrar; depois quem manda é o que o administrador digitou.
+      if (!adminCodeNote.dataset.loaded) {
+        adminCodeNote.value = typeof state.anotacao === 'string' ? state.anotacao : '';
+        adminCodeNote.dataset.loaded = '1';
+      }
       renderLimits(state);
 
       state.partes.forEach((part, index) => {
@@ -5364,6 +5388,37 @@ function saveTemplatesToStorage() {
       }
       return out.join('\n') + '\n';
     }
+
+    // ---------- Anotação do código de uso (só o administrador vê) ----------
+    const adminCodeNote = document.getElementById('adminCodeNote');
+    const adminCodeStatus = document.getElementById('adminCodeStatus');
+
+    function setAdminCodeStatus(message, isWarning) {
+      adminCodeStatus.className = isWarning ? 'warn' : 'ok';
+      adminCodeStatus.textContent = message;
+    }
+
+    document.getElementById('adminCodeCopyBtn').addEventListener('click', async () => {
+      const text = adminCodeNote.value.trim();
+      if (!text) return setAdminCodeStatus('O campo está vazio.', true);
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (e) {
+        adminCodeNote.focus();
+        adminCodeNote.select();
+        try { document.execCommand('copy'); } catch (e2) { return setAdminCodeStatus('Não foi possível copiar. Selecione e copie manualmente.', true); }
+      }
+      setAdminCodeStatus('✅ Código copiado.', false);
+    });
+
+    document.getElementById('adminCodeSaveBtn').addEventListener('click', async () => {
+      setAdminCodeStatus('Salvando...', false);
+      const result = await postConfig({ acao: 'anotacao-salvar', codigo: promptsCode, anotacao: adminCodeNote.value });
+      if (!result.ok) return setAdminCodeStatus(configErrorMessage(result, 'Não foi possível salvar agora.'), true);
+      adminCodeNote.value = result.data.anotacao || '';
+      if (promptsState) promptsState.anotacao = adminCodeNote.value;
+      setAdminCodeStatus('✅ Anotação salva.', false);
+    });
 
     async function copyAllPrompts() {
       const text = buildPromptsExport();
