@@ -792,6 +792,15 @@
     }
     details.subsection .subsection-body { padding: 12px 14px 14px; }
 
+    /* Grupos recolhíveis ("Outras opções de formatação" e "Opções de formatação com IA"): uma caixa por fora das
+       seções, com o título um pouco maior. */
+    details.subsection.group-box { background: var(--card); border-width: 2px; }
+    details.subsection.group-box.group-tools { border-color: #64748b; }
+    details.subsection.group-box.group-ai { border-color: #0d9488; }
+    details.subsection.group-box > summary { font-size: 1.02rem; font-weight: 750; padding: 14px; }
+    .group-box-body { padding: 0 12px 12px; }
+    .group-box-body > details.subsection:first-child { margin-top: 0; }
+
     details.subsection.subsection-editor { background: var(--tint1-bg); border-color: var(--tint1-border); }
     details.subsection.subsection-categories { background: var(--tint4-bg); border-color: var(--tint4-border); }
 
@@ -1700,162 +1709,172 @@
         </div>
         <span id="copyStatus" class="ok main-copy-status" role="status" aria-live="polite"></span>
 
-        <details class="subsection">
-          <summary id="caseLabel">🔠 Maiúsculas/minúsculas</summary>
-          <div class="subsection-body">
-            <div class="option-buttons case-buttons" role="group" aria-labelledby="caseLabel">
-              <button type="button" class="option-btn btn-orange" data-case="upper">🔠 MAIÚSCULAS</button>
-              <button type="button" class="option-btn btn-sky" data-case="title">✨ Iniciais</button>
-              <button type="button" class="option-btn btn-teal" data-case="lower">🔡 minúsculas</button>
-            </div>
-          </div>
-        </details>
-        <details class="subsection sub-tint-2">
-          <summary>🔤 Tipos de fontes/caracteres possíveis</summary>
-          <div class="subsection-body">
-        <div class="style-full-row">
-          <label for="styleSelect">Tipo de caractere</label>
-          <select id="styleSelect"></select>
-          <p id="styleOptionInfo" class="hint"></p>
-        </div>
-
-        <p class="field-label">Exemplo do estilo escolhido</p>
-        <div id="preview" class="preview"></div>
-
-        <div class="button-row">
-          <button id="applyStyleBtn" type="button">🖋️ Aplicar fonte ao trecho selecionado</button>
-        </div>
-          </div>
-        </details>
-
-        <details class="subsection">
-          <summary id="listLabel">📋 Inserir marcadores e numeradores de lista no texto selecionado</summary>
-          <div class="subsection-body">
-            <div class="option-buttons list-buttons" role="group" aria-labelledby="listLabel">
-              <button type="button" class="option-btn btn-blue" data-list="blueDiamond" aria-label="Lista com Losango azul" title="Lista com Losango azul">🔷</button>
-              <button type="button" class="option-btn btn-orange" data-list="orangeDiamond" aria-label="Lista com Losango laranja" title="Lista com Losango laranja">🔶</button>
-              <button type="button" class="option-btn btn-sky" data-list="smallBlueDiamond" aria-label="Lista com Losango azul pequeno" title="Lista com Losango azul pequeno">🔹</button>
-              <button type="button" class="option-btn btn-orange" data-list="smallOrangeDiamond" aria-label="Lista com Losango laranja pequeno" title="Lista com Losango laranja pequeno">🔸</button>
-              <button type="button" class="option-btn btn-teal" data-list="diamondDot" aria-label="Lista com Losango com ponto" title="Lista com Losango com ponto">💠</button>
-              <button type="button" class="option-btn btn-purple" data-list="gemDiamond" aria-label="Lista com Diamante" title="Lista com Diamante">💎</button>
-              <button type="button" class="option-btn btn-slate" data-list="bullet">• Ponto</button>
-              <button type="button" class="option-btn btn-purple" data-list="arrow">➤ Seta</button>
-              <button type="button" class="option-btn btn-green" data-list="check">✅ Check</button>
-              <button type="button" class="option-btn btn-green" data-list="simpleCheck">✔ Check</button>
-              <button type="button" class="option-btn btn-orange" data-list="numberDot">1. Número</button>
-              <button type="button" class="option-btn btn-sky" data-list="numberParen">1) Número</button>
-              <button type="button" class="option-btn btn-teal" data-list="circled">① Círculo</button>
-              <button type="button" class="option-btn btn-slate" data-list="blackCircle">❶ Preto</button>
-              <button type="button" class="option-btn btn-blue" data-list="keycapNumber">1️⃣ Número azul</button>
-              <button type="button" class="option-btn btn-blue" data-list="squareBlue">🟦 Quadrado</button>
-              <button type="button" class="option-btn btn-purple" data-list="squareAlternate">🟦🟧 Quadrado alternado</button>
-              <button type="button" class="option-btn btn-sky" data-list="circleBlue">🔵 Círculo</button>
-              <button type="button" class="option-btn btn-purple" data-list="circleAlternate">🔵🟣 Círculo alternado</button>
-            </div>
-            <p class="hint">Selecione várias linhas ou parágrafos para transformar em lista. Sem seleção, o app insere apenas o símbolo no cursor.</p>
-          </div>
-        </details>
-
-        <details class="subsection sub-tint-3" id="templatesBox">
-          <summary>🧩 Modelos prontos e personalizados</summary>
-          <div class="subsection-body">
-      <p class="hint">Clique num modelo pronto para inserir no campo ativo. Se o cursor estiver no texto original, o modelo será inserido ali. Se houver texto selecionado e o modelo tiver {texto}, ele será aplicado ao trecho selecionado; se não tiver {texto}, será inserido antes do trecho.</p>
-
-      <div class="template-toolbar">
-        <div>
-          <label for="templateCategoryFilter">Filtrar modelos por categoria</label>
-          <select id="templateCategoryFilter"></select>
-        </div>
-      </div>
-
-      <div id="templates" class="templates"></div>
-          </div>
-        </details>
-        <details class="subsection ai-subsection" id="aiBoxDetails">
-          <summary id="aiBoxLabel">✨ Sugerir formatação com IA</summary>
-          <div class="subsection-body ai-box">
-          <div class="ai-main-row">
-            <button id="aiSuggestBtn" class="ai-main-btn" type="button">✨ Sugerir formatação com IA do texto colado</button>
-            <button id="aiSentinelaBtn" class="ai-main-btn ai-sentinela-btn" type="button">📖 Responder resumidamente a pergunta do texto colado</button>
-          </div>
-          <div class="ai-sources">
-            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="resumo"> 📝 Incluir resumo do texto</label>
-            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Consultar textos bíblicos citados, explicar, aplicar, transcrever e citar na resposta</label>
-            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citarTextos"> 🔖 Só citar 1 ou 2 textos na resposta ou no resumo, sem transcrever</label>
-            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="explicarTextos"> 💬 Explicar e aplicar os textos, sem transcrever nem citar na resposta ou no resumo</label>
-          </div>
-          <div id="aiProgress" class="ai-progress" role="progressbar" aria-label="A IA está trabalhando" aria-hidden="true"></div>
-          <label for="aiAdjustText" class="ai-guidance-label">Orientação para a IA (opcional)</label>
-          <input autocomplete="off" id="aiAdjustText" type="text" maxlength="300" placeholder="Ex.: formate só as perguntas; sem emojis; resumo bem curto">
-          <p class="hint ai-hint">Ao usar, o texto e seus modelos são enviados à IA (Claude, da Anthropic). Não use com dados pessoais ou sigilosos. As sugestões entram direto no campo de texto; se não gostar, use Outra sugestão ou Melhorar esta.</p>
-          <div id="aiOutputHome">
-          <div id="aiOutput">
-          <span id="aiStatus" class="ok" role="status" aria-live="polite"></span>
-          <div id="aiResults" class="ai-list"></div>
-          <div id="aiRefineBox" class="ai-refine" hidden>
-            <div class="ai-refine-row">
-              <button id="aiAnotherBtn" class="secondary" type="button">🔄 Outra sugestão</button>
-              <button id="aiImproveBtn" class="secondary" type="button">🛠️ Melhorar esta</button>
-              <button id="aiUndoBtn" class="secondary" type="button" title="Volta o texto ao que era antes de aplicar a formatação da IA">↩️ Desfazer formatação</button>
-            </div>
-          </div>
-          </div>
-          </div>
-          </div>
-        </details>
-        <details class="subsection sentinela-subsection" id="sentinelaBox">
-          <summary>📖 Opções para estudo de A Sentinela</summary>
-          <div class="subsection-body">
-
-        <section class="sent-option sent-option-site">
-          <h3>A IA lê direto na biblioteca on-line (wol.jw.org) o estudo da semana</h3>
-          <div class="ai-week">
-            <button id="aiWeekPrev" class="secondary ai-week-nav" type="button" aria-label="Semana anterior">◀</button>
-            <a id="aiWeekLink" class="ai-week-link" href="https://wol.jw.org/pt/wol/meetings/r5/lp-t/" target="_blank" rel="noopener noreferrer">
-              <span id="aiWeekTitle">📅 Estudo desta semana</span>
-              <span id="aiWeekRange" class="ai-week-range"></span>
-            </a>
-            <button id="aiWeekNext" class="secondary ai-week-nav" type="button" aria-label="Próxima semana">▶</button>
-          </div>
-          <button id="aiWeekTodayBtn" class="secondary ai-week-today" type="button" hidden>↩️ Voltar para a semana atual</button>
-          <div class="ai-study">
-            <button id="aiStudyLoadBtn" class="secondary ai-study-load" type="button">📋 Carregar numeração dos parágrafos do estudo</button>
-            <div class="ai-study-picker">
-              <button id="aiParaPrev" class="secondary ai-week-nav" type="button" aria-label="Parágrafos anteriores">◀</button>
-              <div class="ai-study-input">
-                <label for="aiStudyParagraphs">Parágrafos</label>
-                <input autocomplete="off" id="aiStudyParagraphs" type="text" value="todos" placeholder="todos, 3, 1-4 ou recapitulação">
+        <details class="subsection group-box group-tools" id="outrasOpcoesBox">
+          <summary>🛠️ Outras opções de formatação</summary>
+          <div class="group-box-body">
+            <details class="subsection">
+              <summary id="caseLabel">🔠 Maiúsculas/minúsculas</summary>
+              <div class="subsection-body">
+                <div class="option-buttons case-buttons" role="group" aria-labelledby="caseLabel">
+                  <button type="button" class="option-btn btn-orange" data-case="upper">🔠 MAIÚSCULAS</button>
+                  <button type="button" class="option-btn btn-sky" data-case="title">✨ Iniciais</button>
+                  <button type="button" class="option-btn btn-teal" data-case="lower">🔡 minúsculas</button>
+                </div>
               </div>
-              <button id="aiParaNext" class="secondary ai-week-nav" type="button" aria-label="Próximos parágrafos">▶</button>
+            </details>
+            <details class="subsection sub-tint-2">
+              <summary>🔤 Tipos de fontes/caracteres possíveis</summary>
+              <div class="subsection-body">
+            <div class="style-full-row">
+              <label for="styleSelect">Tipo de caractere</label>
+              <select id="styleSelect"></select>
+              <p id="styleOptionInfo" class="hint"></p>
             </div>
-            <p id="aiStudyInfo" class="hint ai-hint"></p>
-            <span id="aiStudyStatus" class="ok" role="status" aria-live="polite"></span>
-            <div id="aiStudyArticleBox" hidden>
-              <label for="aiStudyArticle">Não achei o artigo sozinho. Cole o número ou o link dele:</label>
-              <input autocomplete="off" id="aiStudyArticle" type="text" inputmode="url" placeholder="Ex.: 2026521">
+
+            <p class="field-label">Exemplo do estilo escolhido</p>
+            <div id="preview" class="preview"></div>
+
+            <div class="button-row">
+              <button id="applyStyleBtn" type="button">🖋️ Aplicar fonte ao trecho selecionado</button>
             </div>
-            <button id="aiStudyBtn" class="ai-study-btn" type="button">🌐 IA - Responder resumidamente a pergunta do parágrafo selecionado</button>
-            <span id="aiStudyAnswerStatus" class="ok" role="status" aria-live="polite"></span>
+              </div>
+            </details>
+
+            <details class="subsection">
+              <summary id="listLabel">📋 Inserir marcadores e numeradores de lista no texto selecionado</summary>
+              <div class="subsection-body">
+                <div class="option-buttons list-buttons" role="group" aria-labelledby="listLabel">
+                  <button type="button" class="option-btn btn-blue" data-list="blueDiamond" aria-label="Lista com Losango azul" title="Lista com Losango azul">🔷</button>
+                  <button type="button" class="option-btn btn-orange" data-list="orangeDiamond" aria-label="Lista com Losango laranja" title="Lista com Losango laranja">🔶</button>
+                  <button type="button" class="option-btn btn-sky" data-list="smallBlueDiamond" aria-label="Lista com Losango azul pequeno" title="Lista com Losango azul pequeno">🔹</button>
+                  <button type="button" class="option-btn btn-orange" data-list="smallOrangeDiamond" aria-label="Lista com Losango laranja pequeno" title="Lista com Losango laranja pequeno">🔸</button>
+                  <button type="button" class="option-btn btn-teal" data-list="diamondDot" aria-label="Lista com Losango com ponto" title="Lista com Losango com ponto">💠</button>
+                  <button type="button" class="option-btn btn-purple" data-list="gemDiamond" aria-label="Lista com Diamante" title="Lista com Diamante">💎</button>
+                  <button type="button" class="option-btn btn-slate" data-list="bullet">• Ponto</button>
+                  <button type="button" class="option-btn btn-purple" data-list="arrow">➤ Seta</button>
+                  <button type="button" class="option-btn btn-green" data-list="check">✅ Check</button>
+                  <button type="button" class="option-btn btn-green" data-list="simpleCheck">✔ Check</button>
+                  <button type="button" class="option-btn btn-orange" data-list="numberDot">1. Número</button>
+                  <button type="button" class="option-btn btn-sky" data-list="numberParen">1) Número</button>
+                  <button type="button" class="option-btn btn-teal" data-list="circled">① Círculo</button>
+                  <button type="button" class="option-btn btn-slate" data-list="blackCircle">❶ Preto</button>
+                  <button type="button" class="option-btn btn-blue" data-list="keycapNumber">1️⃣ Número azul</button>
+                  <button type="button" class="option-btn btn-blue" data-list="squareBlue">🟦 Quadrado</button>
+                  <button type="button" class="option-btn btn-purple" data-list="squareAlternate">🟦🟧 Quadrado alternado</button>
+                  <button type="button" class="option-btn btn-sky" data-list="circleBlue">🔵 Círculo</button>
+                  <button type="button" class="option-btn btn-purple" data-list="circleAlternate">🔵🟣 Círculo alternado</button>
+                </div>
+                <p class="hint">Selecione várias linhas ou parágrafos para transformar em lista. Sem seleção, o app insere apenas o símbolo no cursor.</p>
+              </div>
+            </details>
+
+            <details class="subsection sub-tint-3" id="templatesBox">
+              <summary>🧩 Modelos prontos e personalizados</summary>
+              <div class="subsection-body">
+          <p class="hint">Clique num modelo pronto para inserir no campo ativo. Se o cursor estiver no texto original, o modelo será inserido ali. Se houver texto selecionado e o modelo tiver {texto}, ele será aplicado ao trecho selecionado; se não tiver {texto}, será inserido antes do trecho.</p>
+
+          <div class="template-toolbar">
+            <div>
+              <label for="templateCategoryFilter">Filtrar modelos por categoria</label>
+              <select id="templateCategoryFilter"></select>
+            </div>
           </div>
 
-          <details id="aiStudyCodeBox" class="sentinela-code">
-            <summary>🔑 Para esta opção é obrigatório o código de acesso.</summary>
-            <input autocomplete="off" id="aiStudyCode" type="password" maxlength="100" placeholder="Digite o código uma vez; ele fica salvo neste aparelho">
-          </details>
-        </section>
+          <div id="templates" class="templates"></div>
+              </div>
+            </details>
+          </div>
+        </details>
+        <details class="subsection group-box group-ai" id="opcoesIaBox">
+          <summary>🤖 Opções de formatação com IA</summary>
+          <div class="group-box-body">
+            <details class="subsection ai-subsection" id="aiBoxDetails">
+              <summary id="aiBoxLabel">✨ Sugerir formatação com IA</summary>
+              <div class="subsection-body ai-box">
+              <div class="ai-main-row">
+                <button id="aiSuggestBtn" class="ai-main-btn" type="button">✨ Sugerir formatação com IA do texto colado</button>
+                <button id="aiSentinelaBtn" class="ai-main-btn ai-sentinela-btn" type="button">📖 Responder resumidamente a pergunta do texto colado</button>
+              </div>
+              <div class="ai-sources">
+                <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="resumo"> 📝 Incluir resumo do texto</label>
+                <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Consultar textos bíblicos citados, explicar, aplicar, transcrever e citar na resposta</label>
+                <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citarTextos"> 🔖 Só citar 1 ou 2 textos na resposta ou no resumo, sem transcrever</label>
+                <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="explicarTextos"> 💬 Explicar e aplicar os textos, sem transcrever nem citar na resposta ou no resumo</label>
+              </div>
+              <div id="aiProgress" class="ai-progress" role="progressbar" aria-label="A IA está trabalhando" aria-hidden="true"></div>
+              <label for="aiAdjustText" class="ai-guidance-label">Orientação para a IA (opcional)</label>
+              <input autocomplete="off" id="aiAdjustText" type="text" maxlength="300" placeholder="Ex.: formate só as perguntas; sem emojis; resumo bem curto">
+              <p class="hint ai-hint">Ao usar, o texto e seus modelos são enviados à IA (Claude, da Anthropic). Não use com dados pessoais ou sigilosos. As sugestões entram direto no campo de texto; se não gostar, use Outra sugestão ou Melhorar esta.</p>
+              <div id="aiOutputHome">
+              <div id="aiOutput">
+              <span id="aiStatus" class="ok" role="status" aria-live="polite"></span>
+              <div id="aiResults" class="ai-list"></div>
+              <div id="aiRefineBox" class="ai-refine" hidden>
+                <div class="ai-refine-row">
+                  <button id="aiAnotherBtn" class="secondary" type="button">🔄 Outra sugestão</button>
+                  <button id="aiImproveBtn" class="secondary" type="button">🛠️ Melhorar esta</button>
+                  <button id="aiUndoBtn" class="secondary" type="button" title="Volta o texto ao que era antes de aplicar a formatação da IA">↩️ Desfazer formatação</button>
+                </div>
+              </div>
+              </div>
+              </div>
+              </div>
+            </details>
+            <details class="subsection sentinela-subsection" id="sentinelaBox">
+              <summary>📖 Opções para estudo de A Sentinela</summary>
+              <div class="subsection-body">
 
-        <p class="ai-guidance-label">Textos bíblicos nas respostas</p>
-        <div class="ai-sources">
-          <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Consultar textos bíblicos citados, explicar, aplicar, transcrever e citar na resposta</label>
-          <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citarTextos"> 🔖 Só citar 1 ou 2 textos na resposta, sem transcrever</label>
-          <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="explicarTextos"> 💬 Explicar e aplicar os textos, sem transcrever nem citar na resposta</label>
-        </div>
+            <section class="sent-option sent-option-site">
+              <h3>A IA lê direto na biblioteca on-line (wol.jw.org) o estudo da semana</h3>
+              <div class="ai-week">
+                <button id="aiWeekPrev" class="secondary ai-week-nav" type="button" aria-label="Semana anterior">◀</button>
+                <a id="aiWeekLink" class="ai-week-link" href="https://wol.jw.org/pt/wol/meetings/r5/lp-t/" target="_blank" rel="noopener noreferrer">
+                  <span id="aiWeekTitle">📅 Estudo desta semana</span>
+                  <span id="aiWeekRange" class="ai-week-range"></span>
+                </a>
+                <button id="aiWeekNext" class="secondary ai-week-nav" type="button" aria-label="Próxima semana">▶</button>
+              </div>
+              <button id="aiWeekTodayBtn" class="secondary ai-week-today" type="button" hidden>↩️ Voltar para a semana atual</button>
+              <div class="ai-study">
+                <button id="aiStudyLoadBtn" class="secondary ai-study-load" type="button">📋 Carregar numeração dos parágrafos do estudo</button>
+                <div class="ai-study-picker">
+                  <button id="aiParaPrev" class="secondary ai-week-nav" type="button" aria-label="Parágrafos anteriores">◀</button>
+                  <div class="ai-study-input">
+                    <label for="aiStudyParagraphs">Parágrafos</label>
+                    <input autocomplete="off" id="aiStudyParagraphs" type="text" value="todos" placeholder="todos, 3, 1-4 ou recapitulação">
+                  </div>
+                  <button id="aiParaNext" class="secondary ai-week-nav" type="button" aria-label="Próximos parágrafos">▶</button>
+                </div>
+                <p id="aiStudyInfo" class="hint ai-hint"></p>
+                <span id="aiStudyStatus" class="ok" role="status" aria-live="polite"></span>
+                <div id="aiStudyArticleBox" hidden>
+                  <label for="aiStudyArticle">Não achei o artigo sozinho. Cole o número ou o link dele:</label>
+                  <input autocomplete="off" id="aiStudyArticle" type="text" inputmode="url" placeholder="Ex.: 2026521">
+                </div>
+                <button id="aiStudyBtn" class="ai-study-btn" type="button">🌐 IA - Responder resumidamente a pergunta do parágrafo selecionado</button>
+                <span id="aiStudyAnswerStatus" class="ok" role="status" aria-live="polite"></span>
+              </div>
 
-        <label for="aiAdjustText2" class="ai-guidance-label">Orientação para a IA (opcional)</label>
-        <input autocomplete="off" id="aiAdjustText2" type="text" maxlength="300" placeholder="Ex.: respostas bem curtas; tom simples">
+              <details id="aiStudyCodeBox" class="sentinela-code">
+                <summary>🔑 Para esta opção é obrigatório o código de acesso.</summary>
+                <input autocomplete="off" id="aiStudyCode" type="password" maxlength="100" placeholder="Digite o código uma vez; ele fica salvo neste aparelho">
+              </details>
+            </section>
 
-        <div id="sentinelaOutputSlot"></div>
-        <p class="hint ai-hint">As respostas seguem as opções de "⚙️ Configurações gerais do app → Configurar formatação com IA". O artigo lido vai à IA (Claude, da Anthropic): não use com dados pessoais ou sigilosos.</p>
+            <p class="ai-guidance-label">Textos bíblicos nas respostas</p>
+            <div class="ai-sources">
+              <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Consultar textos bíblicos citados, explicar, aplicar, transcrever e citar na resposta</label>
+              <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citarTextos"> 🔖 Só citar 1 ou 2 textos na resposta, sem transcrever</label>
+              <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="explicarTextos"> 💬 Explicar e aplicar os textos, sem transcrever nem citar na resposta</label>
+            </div>
+
+            <label for="aiAdjustText2" class="ai-guidance-label">Orientação para a IA (opcional)</label>
+            <input autocomplete="off" id="aiAdjustText2" type="text" maxlength="300" placeholder="Ex.: respostas bem curtas; tom simples">
+
+            <div id="sentinelaOutputSlot"></div>
+            <p class="hint ai-hint">As respostas seguem as opções de "⚙️ Configurações gerais do app → Configurar formatação com IA". O artigo lido vai à IA (Claude, da Anthropic): não use com dados pessoais ou sigilosos.</p>
+              </div>
+            </details>
           </div>
         </details>
 
@@ -5467,6 +5486,19 @@ function saveTemplatesToStorage() {
     const aiOutputHome = document.getElementById('aiOutputHome');
     const sentinelaOutputSlot = document.getElementById('sentinelaOutputSlot');
     const aiAdjustText2 = document.getElementById('aiAdjustText2');
+    // Abre a seção e todas as seções que a contêm (ex.: o grupo "Opções de formatação com IA").
+    function openWithAncestors(details) {
+      for (let box = details; box; box = box.parentElement && box.parentElement.closest('details')) box.open = true;
+    }
+
+    // Os dois grupos recolhíveis lembram se estavam abertos.
+    ['outrasOpcoesBox', 'opcoesIaBox'].forEach(id => {
+      const group = document.getElementById(id);
+      const key = 'jwLibraryNoteAplicarGroup_' + id;
+      try { group.open = localStorage.getItem(key) === '1'; } catch (e) { /* sem localStorage: fica recolhido */ }
+      group.addEventListener('toggle', () => safeSetItem(key, group.open ? '1' : '0'));
+    });
+
     const aiBoxDetails = document.getElementById('aiBoxDetails');
     const AI_BOX_KEY = 'jwLibraryNoteAplicarAiBoxV1';
     try { aiBoxDetails.open = localStorage.getItem(AI_BOX_KEY) === '1'; } catch (e) { /* sem localStorage: fica recolhido */ }
@@ -5964,7 +5996,7 @@ function saveTemplatesToStorage() {
       aiLastKind = 'format';
       aiStatusKind = 'format';
       placeAiOutput(aiOutputHome);
-      aiBoxDetails.open = true; // o resultado aparece aqui dentro, então o bloco precisa estar aberto
+      openWithAncestors(aiBoxDetails); // o resultado aparece aqui dentro, então o bloco (e o grupo) precisa estar aberto
 
       if (mode) {
         if (!(await confirmAiRestore())) return;
@@ -6397,7 +6429,7 @@ function saveTemplatesToStorage() {
       if (!code) {
         const codeBox = document.getElementById('aiStudyCodeBox');
         if (codeBox) codeBox.open = true;
-        sentinelaBox.open = true;
+        openWithAncestors(sentinelaBox);
         return 'Informe o código de acesso no campo 🔑 no fim do card de A Sentinela.';
       }
       if (!navigator.onLine) return 'Sem conexão com a internet.';
