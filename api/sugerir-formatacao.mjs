@@ -30,7 +30,8 @@ const MAX_TEXTO_LIVRE = 300;
 const ESTILOS = ["negrito", "italico", "negrito_italico"];
 // Tipos de fonte (alfabetos Unicode do app) que a IA pode escolher para um destaque, além do negrito/itálico da fonte
 // principal. Só os legíveis em palavras e frases curtas.
-const FONTES = ["script", "fraktur", "doubleStruck", "sans", "mono", "circled", "fullwidth"];
+// O gótico (fraktur) ficou de fora a pedido do usuário.
+const FONTES = ["script", "doubleStruck", "sans", "mono", "circled", "fullwidth"];
 const TIPOS = ["geral", "citacao_texto", "citacao_referencia"];
 // Os modelos de lista que o app já tem (seção "Inserir marcadores e numeradores de lista"). A IA escolhe um deles para
 // cada lista; quem escreve os marcadores e os números é o app.
@@ -181,7 +182,7 @@ function validarEntrada(body, L) {
 }
 
 const CATALOGO_FONTES =
-  "script (cursiva elegante, para frases de destaque e títulos), fraktur (gótico, para títulos solenes ou citações), doubleStruck (letra dupla, para termos importantes), sans (sem serifa, para trechos de apoio), mono (monoespaçado, para números, datas e termos técnicos), circled (letras circuladas, só para palavras curtas), fullwidth (largura cheia, para uma palavra de impacto)";
+  "script (cursiva elegante, para frases de destaque e títulos), doubleStruck (letra dupla, para termos importantes), sans (sem serifa, para trechos de apoio), mono (monoespaçado, para números, datas e termos técnicos), circled (letras circuladas, só para palavras curtas), fullwidth (largura cheia, para uma palavra de impacto)";
 
 // O que cada nível de "Quantidade de sugestões" significa. "Muitas" é para formatar bastante de verdade: o usuário pode
 // reduzir depois escolhendo "moderada" ou "poucas".

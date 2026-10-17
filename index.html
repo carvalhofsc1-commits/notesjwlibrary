@@ -479,6 +479,9 @@
 
     .ai-sentinela-btn:hover { background: #6b21a8; }
 
+    /* Na área "Sugerir formatação com IA" o botão da Sentinela segue o tamanho do botão de formatação. */
+    .ai-main-row .ai-sentinela-btn { margin-top: 0; min-height: 56px; }
+
     /* ---------- Card de A Sentinela ---------- */
 
     details.subsection.sentinela-subsection {
@@ -503,7 +506,6 @@
       background: var(--card);
     }
 
-    .sent-option-paste { border-top: 6px solid #7e22ce; }
     .sent-option-site { border-top: 6px solid #c2410c; }
 
     .sent-option h3 {
@@ -616,7 +618,7 @@
 
     .ai-week-range { font-size: .78rem; font-weight: 600; color: var(--muted); }
 
-    /* Opção 1 do estudo: setas e "Carregar numeração" em amarelo vivo, para se destacarem do fundo do cartão. */
+    /* Leitura do estudo no site: setas e "Carregar numeração" em amarelo vivo, para se destacarem do fundo do cartão. */
     .sent-option-site .ai-week-nav,
     .sent-option-site .ai-week-today,
     .sent-option-site .ai-study-load {
@@ -629,7 +631,7 @@
     .sent-option-site .ai-week-today:hover:not(:disabled),
     .sent-option-site .ai-study-load:hover:not(:disabled) { background: #fcd96a; }
 
-    /* Campos da Opção 1 (estudo da semana e parágrafos): fundo azul-celeste para se distinguirem do cartão. */
+    /* Campos da leitura do estudo no site (estudo da semana e parágrafos): fundo azul-celeste para se distinguirem do cartão. */
     .sent-option-site .ai-week-link,
     .sent-option-site .ai-study-input input {
       background: #e0f2fe;
@@ -1773,13 +1775,14 @@
           <summary id="aiBoxLabel">✨ Sugerir formatação com IA</summary>
           <div class="subsection-body ai-box">
           <div class="ai-main-row">
-            <button id="aiSuggestBtn" class="ai-main-btn" type="button">✨ Sugerir formatação com IA</button>
+            <button id="aiSuggestBtn" class="ai-main-btn" type="button">✨ Sugerir formatação com IA do texto colado</button>
+            <button id="aiSentinelaBtn" class="ai-main-btn ai-sentinela-btn" type="button">📖 Responder resumidamente a pergunta do texto colado</button>
           </div>
           <div class="ai-sources">
             <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="resumo"> 📝 Incluir resumo do texto</label>
             <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Consultar textos bíblicos citados, explicar, aplicar, transcrever e citar na resposta</label>
-            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citarTextos"> 🔖 Só citar 1 ou 2 textos no resumo, sem transcrever</label>
-            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="explicarTextos"> 💬 Explicar e aplicar os textos, sem transcrever nem citar no resumo</label>
+            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citarTextos"> 🔖 Só citar 1 ou 2 textos na resposta ou no resumo, sem transcrever</label>
+            <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="explicarTextos"> 💬 Explicar e aplicar os textos, sem transcrever nem citar na resposta ou no resumo</label>
           </div>
           <div id="aiProgress" class="ai-progress" role="progressbar" aria-label="A IA está trabalhando" aria-hidden="true"></div>
           <label for="aiAdjustText" class="ai-guidance-label">Orientação para a IA (opcional)</label>
@@ -1805,7 +1808,7 @@
           <div class="subsection-body">
 
         <section class="sent-option sent-option-site">
-          <h3>Opção 1: A IA lê direto na biblioteca on-line (wol.jw.org) o estudo da semana</h3>
+          <h3>A IA lê direto na biblioteca on-line (wol.jw.org) o estudo da semana</h3>
           <div class="ai-week">
             <button id="aiWeekPrev" class="secondary ai-week-nav" type="button" aria-label="Semana anterior">◀</button>
             <a id="aiWeekLink" class="ai-week-link" href="https://wol.jw.org/pt/wol/meetings/r5/lp-t/" target="_blank" rel="noopener noreferrer">
@@ -1841,13 +1844,7 @@
           </details>
         </section>
 
-        <section class="sent-option sent-option-paste">
-          <h3>Opção 2: Cole a pergunta e o texto do parágrafo no campo de texto</h3>
-          <button id="aiSentinelaBtn" class="ai-sentinela-btn" type="button">📖 Responder resumidamente a pergunta do parágrafo colado</button>
-          <span id="aiSentinelaStatus" class="ok" role="status" aria-live="polite"></span>
-        </section>
-
-        <p class="ai-guidance-label">Textos bíblicos nas respostas (opções 1 e 2)</p>
+        <p class="ai-guidance-label">Textos bíblicos nas respostas</p>
         <div class="ai-sources">
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Consultar textos bíblicos citados, explicar, aplicar, transcrever e citar na resposta</label>
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citarTextos"> 🔖 Só citar 1 ou 2 textos na resposta, sem transcrever</label>
@@ -1858,7 +1855,7 @@
         <input autocomplete="off" id="aiAdjustText2" type="text" maxlength="300" placeholder="Ex.: respostas bem curtas; tom simples">
 
         <div id="sentinelaOutputSlot"></div>
-        <p class="hint ai-hint">As respostas seguem as opções de "⚙️ Configurações gerais do app → Configurar formatação com IA". O texto colado ou o artigo lido vai à IA (Claude, da Anthropic): não use com dados pessoais ou sigilosos.</p>
+        <p class="hint ai-hint">As respostas seguem as opções de "⚙️ Configurações gerais do app → Configurar formatação com IA". O artigo lido vai à IA (Claude, da Anthropic): não use com dados pessoais ou sigilosos.</p>
           </div>
         </details>
 
@@ -1885,7 +1882,7 @@
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="italico"> Usar itálico</label>
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="negritoItalico"> Usar negrito + itálico</label>
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="maiusculas"> Usar LETRAS MAIÚSCULAS nos destaques</label>
-          <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="variarFontes"> Variar o tipo de fonte nos destaques (script, gótico, letra dupla, sem serifa, monoespaçado...)</label>
+          <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="variarFontes"> Variar o tipo de fonte nos destaques (script, letra dupla, sem serifa, monoespaçado...)</label>
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="emoji"> Ilustrar com emoji no início da frase (a IA escolhe qualquer emoji pelo assunto)</label>
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citacoesBiblicas"> Formatar citações bíblicas: texto em itálico e livro, capítulo e versículo em negrito</label>
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="usarListas"> Usar os modelos de marcadores e numeradores de lista do app sempre que possível, para organizar melhor o texto</label>
@@ -5435,7 +5432,6 @@ function saveTemplatesToStorage() {
     const aiRefineBox = document.getElementById('aiRefineBox');
     const aiAdjustText = document.getElementById('aiAdjustText');
     const aiStatus = document.getElementById('aiStatus');
-    const aiSentinelaStatus = document.getElementById('aiSentinelaStatus');
     const aiStudyAnswerStatus = document.getElementById('aiStudyAnswerStatus');
     const aiResults = document.getElementById('aiResults');
     const aiProgress = document.getElementById('aiProgress');
@@ -5453,7 +5449,7 @@ function saveTemplatesToStorage() {
     let AI_SENTINELA_MAX_CHARS = 12000;
     let AI_SENTINELA_MAX_LINES = 200;
     const AI_STYLE_KIND = { negrito: 'bold', italico: 'italic', negrito_italico: 'boldItalic' };
-    const AI_FONTS = ['script', 'fraktur', 'doubleStruck', 'sans', 'mono', 'circled', 'fullwidth'];
+    const AI_FONTS = ['script', 'doubleStruck', 'sans', 'mono', 'circled', 'fullwidth'];
     const AI_DEFAULT_OPTIONS = {
       usarModelos: true, negrito: true, italico: false, negritoItalico: false, maiusculas: false, variarFontes: false,
       emoji: false, citacoesBiblicas: false, usarListas: false, separarIdeias: false, resumo: false, intensidade: 'moderada', instrucao: '', categoria: 'all', resumoTamanho: 'medio',
@@ -5492,22 +5488,22 @@ function saveTemplatesToStorage() {
 
     // Limpar o texto também apaga as mensagens informativas da IA (ex.: "3 grupos de parágrafos carregados.").
     function clearAiMessages() {
-      [aiStatus, aiSentinelaStatus, aiStudyAnswerStatus, aiStudyStatus].forEach(el => { el.textContent = ''; });
+      [aiStatus, aiStudyAnswerStatus, aiStudyStatus].forEach(el => { el.textContent = ''; });
     }
 
-    // A mensagem aparece junto ao botão que o usuário usou: na área da IA (formatação), na Opção 1 (site) ou na Opção 2 (texto colado).
+    // A mensagem aparece junto ao botão que o usuário usou: na área da IA (formatação e respostas do texto colado) ou no
+    // card da Sentinela (leitura do site).
     let aiStatusKind = 'format'; // 'format' | 'sentinela' | 'estudo' | 'lista'
 
     function aiStatusElement() {
-      return aiStatusKind === 'sentinela' ? aiSentinelaStatus
-        : aiStatusKind === 'estudo' ? aiStudyAnswerStatus
+      return aiStatusKind === 'estudo' ? aiStudyAnswerStatus
           : aiStatusKind === 'lista' ? aiStudyStatus
             : aiStatus;
     }
 
     function setAiStatus(message, isWarning) {
       const target = aiStatusElement();
-      [aiStatus, aiSentinelaStatus, aiStudyAnswerStatus, aiStudyStatus].forEach(el => {
+      [aiStatus, aiStudyAnswerStatus, aiStudyStatus].forEach(el => {
         if (el !== target) el.textContent = '';
       });
       target.textContent = message;
@@ -5771,7 +5767,7 @@ function saveTemplatesToStorage() {
       aiAppliedAny = true;
     }
 
-    // Substitui todo o campo de texto pelas respostas (Opção 2 do estudo: elas tomam o lugar do texto colado).
+    // Substitui todo o campo de texto pelas respostas (respostas do texto colado: elas tomam o lugar dele).
     function replaceMainText(text) {
       setInputRange(0, input.value.length, text, { message: '✅ Resposta finalizada e colada no campo de texto.' });
       autoGrowInputText();
@@ -6165,7 +6161,7 @@ function saveTemplatesToStorage() {
       if (aiBusy) return;
       aiLastKind = 'sentinela';
       aiStatusKind = 'sentinela';
-      placeAiOutput(sentinelaOutputSlot);
+      placeAiOutput(aiOutputHome);
 
       if (mode) {
         if (!(await confirmAiRestore())) return;
@@ -6232,7 +6228,7 @@ function saveTemplatesToStorage() {
           return setAiStatus('Não encontrei perguntas do estudo no texto. Cole os parágrafos junto com as perguntas.', true);
         }
 
-        // As respostas substituem o texto colado no campo de texto (como na Opção 1), cada uma com seu botão Copiar.
+        // As respostas substituem o texto colado no campo de texto (como na leitura do site), cada uma com seu botão Copiar.
         // "Outra resposta" e "Melhorar" restauram o texto colado, refazem e substituem de novo.
         const parts = buildSentinelaParts(aiSentinelaRaw);
         aiResumo = { texto: parts.map(part => part.texto).join('\n\n\n'), partes: parts, done: false, kind: 'estudo' };
@@ -6402,7 +6398,7 @@ function saveTemplatesToStorage() {
         const codeBox = document.getElementById('aiStudyCodeBox');
         if (codeBox) codeBox.open = true;
         sentinelaBox.open = true;
-        return 'Informe o código de acesso no campo 🔑 no fim da Opção 1.';
+        return 'Informe o código de acesso no campo 🔑 no fim do card de A Sentinela.';
       }
       if (!navigator.onLine) return 'Sem conexão com a internet.';
       return '';
