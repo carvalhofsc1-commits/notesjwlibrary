@@ -795,8 +795,17 @@
     /* Grupos recolhíveis ("Outras opções de formatação" e "Opções de formatação com IA"): uma caixa por fora das
        seções, com o título um pouco maior. */
     details.subsection.group-box { background: var(--card); border-width: 2px; }
-    details.subsection.group-box.group-tools { border-color: #64748b; }
-    details.subsection.group-box.group-ai { border-color: #0d9488; }
+    /* Fundo colorido suave (misturado com a cor do card, para funcionar no tema claro e no escuro). */
+    details.subsection.group-box.group-tools {
+      border-color: #6366f1;
+      background: #e0e7ff;
+      background: color-mix(in srgb, #6366f1 16%, var(--card));
+    }
+    details.subsection.group-box.group-ai {
+      border-color: #0d9488;
+      background: #ccfbf1;
+      background: color-mix(in srgb, #14b8a6 18%, var(--card));
+    }
     details.subsection.group-box > summary { font-size: 1.02rem; font-weight: 750; padding: 14px; }
     .group-box-body { padding: 0 12px 12px; }
     .group-box-body > details.subsection:first-child { margin-top: 0; }
