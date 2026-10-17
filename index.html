@@ -691,6 +691,32 @@
       100% { left: 100%; }
     }
 
+    /* "Puxe para atualizar" no app instalado (no navegador comum o próprio navegador já faz isso). */
+    .pull-refresh {
+      position: fixed;
+      top: calc(env(safe-area-inset-top, 0px) + 6px);
+      left: 50%;
+      z-index: 2100;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: var(--card);
+      color: var(--text);
+      border: 2px solid var(--accent);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, .25);
+      font-size: .88rem;
+      font-weight: 700;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-50%, -60px);
+    }
+
+    .pull-refresh-arrow { display: inline-block; font-size: 1.1rem; transition: transform .15s ease; }
+    .pull-refresh.ready .pull-refresh-arrow { transform: rotate(180deg); }
+
     /* Faixa fixa no topo da tela enquanto a IA trabalha: aparece em qualquer ponto da página, mesmo longe do botão. */
     .ai-floating {
       position: fixed;
@@ -1658,6 +1684,7 @@
 </head>
 <body>
   <div id="aiFloating" class="ai-floating" role="status" aria-live="polite"></div>
+  <div id="pullRefresh" class="pull-refresh" aria-hidden="true"><span class="pull-refresh-arrow">↓</span><span id="pullRefreshText">Puxe para atualizar</span></div>
   <header>
     <div class="brand-title">
       <img src="icon-header.png?v=3" alt="" class="brand-icon" width="512" height="512" decoding="async">
@@ -6803,6 +6830,64 @@ function saveTemplatesToStorage() {
     updateUi();
     autoCheckOnlineDefaultsOnStart();
     loadPublicLimits();
+
+    // ---------- Puxar a tela para baixo para atualizar ----------
+    // No navegador comum o gesto já existe. No app instalado na tela inicial (iPhone e Android) ele não existe, então o
+    // app faz o seu: no topo da página, puxar para baixo e soltar recarrega o app mantendo o texto digitado (como em
+    // "Atualizar agora"). Não vale começando dentro de um campo de texto nem enquanto a IA está trabalhando.
+    (function setupPullToRefresh() {
+      const installed = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+      if (!installed || !('ontouchstart' in window)) return;
+
+      const box = document.getElementById('pullRefresh');
+      const label = document.getElementById('pullRefreshText');
+      const THRESHOLD = 90;
+      let startY = null;
+      let distance = 0;
+
+      const reset = () => {
+        startY = null;
+        distance = 0;
+        box.classList.remove('ready');
+        box.style.transition = 'opacity .2s ease, transform .2s ease';
+        box.style.opacity = '0';
+        box.style.transform = 'translate(-50%, -60px)';
+      };
+
+      window.addEventListener('touchstart', event => {
+        if (event.touches.length !== 1 || window.scrollY > 0 || aiBusy) return;
+        if (event.target.closest('textarea, input, select, [contenteditable="true"]')) return;
+        startY = event.touches[0].clientY;
+        distance = 0;
+      }, { passive: true });
+
+      window.addEventListener('touchmove', event => {
+        if (startY === null) return;
+        if (window.scrollY > 0) return reset();
+        distance = Math.max(0, event.touches[0].clientY - startY);
+        if (distance < 12) return;
+        const ready = distance >= THRESHOLD;
+        box.classList.toggle('ready', ready);
+        label.textContent = ready ? 'Solte para atualizar' : 'Puxe para atualizar';
+        box.style.transition = 'none';
+        box.style.opacity = String(Math.min(1, distance / THRESHOLD));
+        box.style.transform = 'translate(-50%, ' + Math.min(0, distance * 0.6 - 60) + 'px)';
+      }, { passive: true });
+
+      window.addEventListener('touchend', () => {
+        if (startY === null) return;
+        if (distance >= THRESHOLD && !aiBusy) {
+          label.textContent = 'Atualizando…';
+          box.style.opacity = '1';
+          box.style.transform = 'translate(-50%, 0)';
+          applyUpdate(); // guarda o texto digitado e recarrega
+          return;
+        }
+        reset();
+      }, { passive: true });
+
+      window.addEventListener('touchcancel', reset, { passive: true });
+    })();
 
     // Depois de "Atualizar agora", devolve ao campo o texto que estava digitado.
     try {
