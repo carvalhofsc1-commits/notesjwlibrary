@@ -1853,7 +1853,8 @@
               </div>
               <div class="ai-sources">
                 <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="resumo"> 📝 Incluir resumo do texto</label>
-                <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Consultar textos bíblicos citados, explicar, aplicar, transcrever e citar na resposta</label>
+                <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Transcrever o texto, citar na resposta, explicar e aplicar</label>
+                <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="transcreverSemCitar"> 📜 Transcrever o texto sem citar na resposta ou no resumo, explicar e aplicar</label>
                 <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citarTextos"> 🔖 Só citar 1 ou 2 textos na resposta ou no resumo, sem transcrever</label>
                 <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="explicarTextos"> 💬 Explicar e aplicar os textos, sem transcrever nem citar na resposta ou no resumo</label>
               </div>
@@ -1919,7 +1920,8 @@
 
             <p class="ai-guidance-label">Textos bíblicos nas respostas</p>
             <div class="ai-sources">
-              <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Consultar textos bíblicos citados, explicar, aplicar, transcrever e citar na resposta</label>
+              <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Transcrever o texto, citar na resposta, explicar e aplicar</label>
+              <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="transcreverSemCitar"> 📜 Transcrever o texto sem citar na resposta, explicar e aplicar</label>
               <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citarTextos"> 🔖 Só citar 1 ou 2 textos na resposta, sem transcrever</label>
               <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="explicarTextos"> 💬 Explicar e aplicar os textos, sem transcrever nem citar na resposta</label>
             </div>
@@ -5547,7 +5549,7 @@ function saveTemplatesToStorage() {
     const AI_DEFAULT_OPTIONS = {
       usarModelos: true, negrito: true, italico: false, negritoItalico: false, maiusculas: false, variarFontes: false,
       emoji: false, citacoesBiblicas: false, usarListas: false, separarIdeias: false, resumo: false, intensidade: 'moderada', instrucao: '', categoria: 'all', resumoTamanho: 'medio',
-      consultarBiblia: false, citarTextos: false, explicarTextos: false
+      consultarBiblia: false, transcreverSemCitar: false, citarTextos: false, explicarTextos: false
     };
 
     // Opções padrão publicadas pelo administrador (valem para quem nunca salvou as suas) e se o usuário já mexeu nelas
@@ -5741,9 +5743,10 @@ function saveTemplatesToStorage() {
       }));
     });
 
-    // As caixas dos textos bíblicos existem em mais de uma área e valem para todas: marcar uma marca as iguais. As três
-    // formas de usar os textos (transcrever, só citar, explicar e aplicar) não se combinam: marcar uma desmarca as outras.
-    const AI_BIBLE_MODES = ['consultarBiblia', 'citarTextos', 'explicarTextos'];
+    // As caixas dos textos bíblicos existem em mais de uma área e valem para todas: marcar uma marca as iguais. As quatro
+    // formas de usar os textos (transcrever e citar, transcrever sem citar, só citar, explicar e aplicar) não se combinam:
+    // marcar uma desmarca as outras.
+    const AI_BIBLE_MODES = ['consultarBiblia', 'transcreverSemCitar', 'citarTextos', 'explicarTextos'];
     AI_BIBLE_MODES.forEach(name => {
       const boxes = aiOptionInputs.filter(el => el.dataset.aiOpt === name);
       boxes.forEach(box => box.addEventListener('change', () => {
@@ -5760,7 +5763,7 @@ function saveTemplatesToStorage() {
     // Usar os textos bíblicos leva um pouco mais de tempo (o servidor busca os versículos e a IA escreve a aplicação).
     function aiUsesSources() {
       const options = readAiOptions();
-      return !!(options.consultarBiblia || options.explicarTextos);
+      return !!(options.consultarBiblia || options.transcreverSemCitar || options.explicarTextos);
     }
 
     function aiStyleIdFor(estilo) {

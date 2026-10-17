@@ -128,11 +128,14 @@ function validarOpcoes(opcoes) {
     separarIdeias: o.separarIdeias === true,
     resumo: o.resumo === true,
     resumoTamanho: TAMANHOS_RESUMO.includes(o.resumoTamanho) ? o.resumoTamanho : "medio",
-    // Três formas de usar os textos bíblicos nas respostas, uma por vez: explicar e aplicar (sem transcrever nem citar
-    // na resposta) > só citar 1 ou 2 na resposta (sem transcrever) > transcrever os relevantes (consultarBiblia).
+    // Quatro formas de usar os textos bíblicos nas respostas, uma por vez: explicar e aplicar (sem transcrever nem citar
+    // na resposta) > transcrever sem citar na resposta > só citar 1 ou 2 na resposta (sem transcrever) > transcrever e
+    // citar na resposta (consultarBiblia).
     explicarTextos: o.explicarTextos === true,
-    citarTextos: o.citarTextos === true && o.explicarTextos !== true,
-    consultarBiblia: o.consultarBiblia === true && o.citarTextos !== true && o.explicarTextos !== true,
+    transcreverSemCitar: o.transcreverSemCitar === true && o.explicarTextos !== true,
+    citarTextos: o.citarTextos === true && o.explicarTextos !== true && o.transcreverSemCitar !== true,
+    consultarBiblia:
+      o.consultarBiblia === true && o.citarTextos !== true && o.explicarTextos !== true && o.transcreverSemCitar !== true,
     // A consulta ao Perspicaz está desligada por enquanto (a opção saiu da tela); o código e os arquivos continuam prontos
     // para quando ela voltar: basta trocar para `o.consultarPerspicaz === true` e recolocar a caixa na tela.
     consultarPerspicaz: false,
@@ -358,7 +361,9 @@ function chaveDeBusca(texto) {
 }
 
 function consultaPedida(opcoes) {
-  return Boolean(opcoes.consultarBiblia || opcoes.citarTextos || opcoes.explicarTextos || opcoes.consultarPerspicaz);
+  return Boolean(
+    opcoes.consultarBiblia || opcoes.transcreverSemCitar || opcoes.citarTextos || opcoes.explicarTextos || opcoes.consultarPerspicaz
+  );
 }
 
 // Linhas das preferências sobre as fontes. paraTexto = "Sugerir formatação" (as referências valem para o texto todo).
@@ -369,6 +374,10 @@ function descreverFontes(opcoes, P, paraTexto) {
     linhaBiblia = paraTexto
       ? '- Textos bíblicos: EXPLICAR E APLICAR. Não mencione referências bíblicas no resumo e não transcreva versículos. Em "textosRelevantes" indique 1 ou 2 textos citados no texto, os mais relevantes. O app mostra, depois do resumo (ou no fim do texto), a referência com uma explicação e uma aplicação.'
       : '- Textos bíblicos: EXPLICAR E APLICAR (vale mais que a regra de mencionar na resposta as referências da pergunta). NÃO mencione nenhuma referência bíblica dentro da "resposta", nem as citadas na pergunta, e não transcreva versículos. Em "textosRelevantes" indique 1 ou 2 textos para explicar (primeiro os citados na pergunta; depois o mais relevante citado no parágrafo). O app mostra, depois da resposta, a referência com uma explicação e uma aplicação.';
+  } else if (opcoes.transcreverSemCitar) {
+    linhaBiblia = paraTexto
+      ? '- Textos bíblicos: TRANSCREVER SEM CITAR. Não mencione referências bíblicas no resumo. Em "textosRelevantes" indique os textos citados no texto que merecem ser transcritos (os mais relevantes; no máximo ' + P.limites.maxTextos + '). O app transcreve cada um depois do resumo (ou no fim do texto), com uma explicação e uma aplicação.'
+      : '- Textos bíblicos: TRANSCREVER SEM CITAR (vale mais que a regra de mencionar na resposta as referências da pergunta). NÃO mencione nenhuma referência bíblica dentro da "resposta", nem as citadas na pergunta, e não transcreva versículos nela. Em "textosRelevantes" indique, além dos citados na pergunta, os textos citados no parágrafo que forem relevantes para a resposta (no máximo ' + P.limites.maxTextos + '). O app transcreve cada um depois da resposta, com uma explicação e uma aplicação.';
   } else if (opcoes.citarTextos) {
     linhaBiblia = paraTexto
       ? '- Textos bíblicos: SÓ CITAR. Se houver resumo, mencione nele, de forma natural (ex.: "como mostra Efésios 6:12"), 1 ou 2 referências bíblicas relevantes citadas no texto, sem transcrever o versículo. "textosRelevantes" sempre []; nenhum texto será transcrito.'
@@ -415,7 +424,7 @@ async function completarFontes(itens, opcoes, P, orientacao) {
         ? []
         : modo === "explicar"
           ? [...new Set([...(i.referencias || []), ...(i.relevantes || [])])].slice(0, 2)
-          : [...new Set([...(i.referencias || []), ...(opcoes.consultarBiblia ? i.relevantes || [] : [])])],
+          : [...new Set([...(i.referencias || []), ...(opcoes.consultarBiblia || opcoes.transcreverSemCitar ? i.relevantes || [] : [])])],
     verbetes: opcoes.consultarPerspicaz ? i.verbetes || [] : [],
   }));
   if (!fontesConfiguradas() || !pedidos.some((p) => p.refs.length || p.verbetes.length)) return;
@@ -435,7 +444,7 @@ async function completarFontes(itens, opcoes, P, orientacao) {
       lista.push({
         indice,
         contexto: String(itens[indice].contexto || "").slice(0, 3000),
-        ...(modo === "explicar" ? { explicar: true } : {}),
+        explicar: true,
         textos: a.textos,
         ...(a.verbete ? { verbete: { titulo: a.verbete.verbete, volume: a.verbete.volume, trecho: a.verbete.trecho } } : {}),
       });
@@ -471,7 +480,7 @@ async function completarFontes(itens, opcoes, P, orientacao) {
       } else {
         item.textos.forEach((t, pos) => {
           const ap = aplicacaoDe(t, pos);
-          if (ap) t.aplicacao = limparTextoGerado(ap.aplicacao, 500);
+          if (ap) t.aplicacao = limparTextoGerado(ap.aplicacao, 700);
         });
       }
       const explicacao = achado.verbete && r.explicacao ? limparTextoGerado(r.explicacao, 700) : "";
