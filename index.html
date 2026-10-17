@@ -3,11 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Formatação de notas para o JW Library</title>
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-  <meta name="description" content="Conversor que troca letras por caracteres Unicode parecidos com negrito, itálico e símbolos, para destacar notas do JW Library.">
+  <title>NoteStyle — formatação de notas</title>
+  <meta name="apple-mobile-web-app-title" content="NoteStyle">
+  <meta name="application-name" content="NoteStyle">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
+  <meta name="description" content="Conversor que troca letras por caracteres Unicode parecidos com negrito, itálico e símbolos, para destacar notas em qualquer aplicativo.">
   <meta name="theme-color" content="#e7ecf6">
   <script>
     // Aplica o tema salvo antes do corpo renderizar, para não piscar o tema errado.
@@ -152,12 +154,15 @@
       filter: drop-shadow(0 4px 10px var(--shadow));
     }
 
+    /* Nome em duas cores, como no logotipo: "Note" na cor do texto e "Style" em violeta. */
     header h1 {
       margin: 0;
-      color: var(--brand);
+      color: var(--text);
       font-size: clamp(1.9rem, 6.5vw, 2.75rem);
       line-height: 1.1;
     }
+
+    .brand-accent { color: var(--brand); }
 
     .brand-subtitle {
       margin: 6px auto 0;
@@ -1655,11 +1660,11 @@
   <div id="aiFloating" class="ai-floating" role="status" aria-live="polite"></div>
   <header>
     <div class="brand-title">
-      <img src="icon-header.png" alt="" class="brand-icon" width="512" height="512" decoding="async">
-      <h1>JwNotes</h1>
+      <img src="icon-header.png?v=3" alt="" class="brand-icon" width="512" height="512" decoding="async">
+      <h1>Note<span class="brand-accent">Style</span></h1>
     </div>
-    <p class="brand-subtitle">Formatação de notas para o JW Library</p>
-    <p>Digite ou cole um texto, escolha as opções, clique em Aplicar e copie o resultado para colar nas notas do JW Library.</p>
+    <p class="brand-subtitle">Formatação de notas de texto para caracteres Unicode</p>
+    <p>Digite ou cole um texto, escolha as opções, clique em Aplicar e copie o resultado para o aplicativo de destino.</p>
   </header>
 
   <main>
@@ -1845,7 +1850,7 @@
               </div>
             </details>
             <details class="subsection sentinela-subsection" id="sentinelaBox">
-              <summary>📖 Opções para estudo de A Sentinela</summary>
+              <summary>📖 Opções para as reuniões semanais</summary>
               <div class="subsection-body">
 
             <section class="sent-option sent-option-site">
@@ -2346,7 +2351,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '2.0';
+    const APP_VERSION = '3.0'; // 3.0: novo nome (NoteStyle) e novos ícones; a versão nova faz o app buscar os ícones de novo
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 
@@ -4491,7 +4496,7 @@ function saveTemplatesToStorage() {
       ensureTemplateCategoriesFromTemplates();
 
       return {
-        app: 'Formatação de notas para o JW Library',
+        app: 'NoteStyle',
         version: 4,
         exportedAt: new Date().toISOString(),
         templates: templates,
@@ -5059,7 +5064,7 @@ function saveTemplatesToStorage() {
       const out = [];
       const pending = promptsHasPending();
 
-      out.push('PROMPTS DA IA - JwNotes');
+      out.push('PROMPTS DA IA - NoteStyle');
       out.push('Exportado em ' + new Date().toLocaleString('pt-BR') + (pending ? ' (inclui alterações ainda não salvas)' : ''));
       out.push('');
 
@@ -5114,7 +5119,7 @@ function saveTemplatesToStorage() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'prompts-ia-jwnotes-' + new Date().toISOString().slice(0, 10) + '.txt';
+      link.download = 'prompts-ia-notestyle-' + new Date().toISOString().slice(0, 10) + '.txt';
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -6742,7 +6747,7 @@ function saveTemplatesToStorage() {
       updateBanner.setAttribute('aria-live', 'polite');
 
       const message = document.createElement('p');
-      message.textContent = '✨ Há uma versão nova do JwNotes. Atualize para usar as novidades. Seu texto será mantido.';
+      message.textContent = '✨ Há uma versão nova do NoteStyle. Atualize para usar as novidades. Seu texto será mantido.';
 
       const actions = document.createElement('div');
       actions.className = 'update-banner-actions';

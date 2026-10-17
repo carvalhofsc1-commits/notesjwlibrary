@@ -16,9 +16,11 @@ const PRECACHE = [
   './',
   'index.html',
   'manifest.webmanifest',
-  'icon-192.png',
-  'favicon-32.png',
-  'apple-touch-icon.png'
+  // Os ícones vão com ?v=3 (o mesmo endereço usado no HTML e no manifesto) para trocar os antigos guardados.
+  'icon-192.png?v=3',
+  'favicon-32.png?v=3',
+  'apple-touch-icon.png?v=3',
+  'icon-header.png?v=3'
 ];
 
 self.addEventListener('install', event => {

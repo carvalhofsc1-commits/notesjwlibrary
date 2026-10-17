@@ -1,8 +1,8 @@
 {
-  "name": "jwnotes",
+  "name": "notestyle",
   "version": "1.0.0",
   "private": true,
-  "description": "JwNotes - formatação de notas para o JW Library (PWA estático + função serverless de sugestões com IA)",
+  "description": "NoteStyle - formatação de notas (PWA estático + função serverless de sugestões com IA)",
   "engines": {
     "node": ">=22"
   },

@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Sobre — JwNotes</title>
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-  <meta name="description" content="Sobre o JwNotes — conversor que troca letras por caracteres Unicode parecidos com negrito, itálico e símbolos, para destacar notas do JW Library.">
+  <title>Sobre — NoteStyle</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
+  <meta name="description" content="Sobre o NoteStyle — conversor que troca letras por caracteres Unicode parecidos com negrito, itálico e símbolos, para destacar notas em qualquer aplicativo.">
   <meta name="theme-color" content="#e7ecf6">
   <script>
     // Aplica o tema salvo antes do corpo renderizar, para não piscar o tema errado.
@@ -100,10 +100,12 @@
 
     .about-name {
       margin: 14px 0 0;
-      color: var(--brand);
+      color: var(--text);
       font-size: clamp(1.8rem, 7vw, 2.4rem);
       font-weight: 800;
     }
+
+    .brand-accent { color: var(--brand); }
 
     .pill {
       display: inline-block;
@@ -217,9 +219,9 @@
 </head>
 <body>
   <main>
-    <img src="icon-header.png" alt="" class="about-logo" width="512" height="512" decoding="async">
-    <h1 class="about-name">JwNotes</h1>
-    <span class="pill">v2.0</span>
+    <img src="icon-header.png?v=3" alt="" class="about-logo" width="512" height="512" decoding="async">
+    <h1 class="about-name">Note<span class="brand-accent">Style</span></h1>
+    <span class="pill">v3.0</span>
 
     <p class="about-text">Este aplicativo não aplica formatação real. Ele troca as letras por caracteres Unicode parecidos com negrito, itálico, círculos, caixas e símbolos, para dar aparência de destaque em campos que aceitam apenas texto.</p>
 
