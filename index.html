@@ -6061,7 +6061,7 @@ function saveTemplatesToStorage() {
 
     // Consultas às fontes de uma resposta, abaixo dela (uma linha em branco antes):
     //   📖 Efésios 6:12 ➜ “texto do versículo, na fonte normal”
-    //   💡 como o texto se aplica ao parágrafo
+    //   💡 como o texto se aplica ao parágrafo (uma linha em branco entre o versículo e a aplicação)
     //   📚 Estudo Perspicaz, vol. 1, verbete “ADOÇÃO” ➜ explicação adicional
     // O versículo vem do arquivo da Bíblia e vai inteiro, entre aspas e sem estilo (preserva acentos e sinais); a explicação do Perspicaz é sempre identificada
     // pelo volume e pelo verbete.
@@ -6076,7 +6076,7 @@ function saveTemplatesToStorage() {
         if (!t || !t.referencia || !t.texto) return;
         blocks.push(
           '📖 ' + styled('negrito', t.referencia) + ' ➜ “' + t.texto + '”' +
-          (t.aplicacao ? '\n💡 ' + t.aplicacao : '')
+          (t.aplicacao ? '\n\n💡 ' + t.aplicacao : '')
         );
       });
 
