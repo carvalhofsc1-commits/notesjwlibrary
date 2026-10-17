@@ -1082,39 +1082,74 @@
     .icon-action.indent { font-size: 1.9rem; font-weight: 700; padding-top: 4px; padding-bottom: 4px; }
     .icon-action.copy   { background: #dcfce7; color: #14532d; border-color: #4ade80; }
     .icon-action.select { background: #e0f2fe; color: #075985; border-color: #38bdf8; }
-    /* Faixa de favoritos logo abaixo dos botões de formatação: uma linha só, sem rolagem. A grade cria quantas colunas
-       couberem; os favoritos que não cabem vão para linhas seguintes, que ficam escondidas. */
-    .quick-emojis { margin: 0 0 12px; }
-    .quick-emoji-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
-      grid-template-rows: 42px;
-      grid-auto-rows: 42px;
-      gap: 6px;
-      height: 42px;
-      overflow: hidden;
+    /* Faixa rápida logo abaixo dos botões de formatação: até 16 emojis numa moldura. No celular aparecem 8 e a faixa
+       rola para o lado com o dedo (sem barra de rolagem); no computador cabem os 16. */
+    .quick-emojis {
+      margin: 0 0 12px;
+      padding: 6px;
+      border: 2px solid #8b5cf6;
+      border-radius: 12px;
+      background: #f5f3ff;
+      background: color-mix(in srgb, #8b5cf6 10%, var(--card));
     }
+    .quick-emoji-list {
+      --cols: 8;
+      --gap: 4px;
+      --min: 34px;
+      display: flex;
+      gap: var(--gap);
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      scroll-snap-type: x proximity;
+    }
+    .quick-emoji-list::-webkit-scrollbar { display: none; }
     .quick-emoji-list button {
-      min-width: 0;
-      height: 42px;
+      flex: 0 0 max(var(--min), calc((100% - (var(--cols) - 1) * var(--gap)) / var(--cols)));
+      height: 40px;
       padding: 0;
-      font-size: 1.3rem;
+      font-size: 1.25rem;
       line-height: 1;
+      border-radius: 9px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: var(--text);
+      box-shadow: none;
+      scroll-snap-align: start;
+    }
+    @media (min-width: 561px) { .quick-emoji-list { --cols: 12; } }
+    @media (min-width: 980px) {
+      .quick-emoji-list { --cols: 16; --gap: 3px; --min: 28px; }
+      .quick-emoji-list button { height: 36px; font-size: 1.05rem; }
+    }
+
+    /* Editor da faixa rápida (em "Caracteres, ícones e emoticons") */
+    .quickbar-editor { margin: 4px 0 18px; }
+    .quickbar-slots {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .quickbar-slots button {
+      height: 42px;
+      min-width: 0;
+      padding: 0;
+      font-size: 1.25rem;
       border-radius: 10px;
       border: 2px solid var(--line);
       background: var(--card);
       color: var(--text);
       box-shadow: none;
-      touch-action: pan-y;           /* o arraste para o lado fica com a faixa; rolar a página continua funcionando */
-      user-select: none;
-      -webkit-user-select: none;
-      -webkit-touch-callout: none;   /* sem o menu do iPhone ao segurar */
     }
-    .quick-emoji-list button.dragging {
-      border-color: var(--accent);
-      background: color-mix(in srgb, var(--accent) 18%, var(--card));
-      transform: scale(1.12);
-    }
+    .quickbar-slots button.empty { border-style: dashed; color: var(--muted); font-size: .85rem; }
+    .quickbar-slots button.selected { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 18%, var(--card)); }
+    .quickbar-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+    .quickbar-actions[hidden] { display: none; }
+    .quickbar-actions button { flex: 1 1 0; min-width: 90px; }
+    /* Modo "escolher para a faixa": os caracteres da lista ganham contorno tracejado, porque o toque vai para a faixa. */
+    .quickbar-picking .symbol-btn { outline: 2px dashed var(--accent); outline-offset: -3px; }
 
     .icon-action.font   { background: #ccfbf1; color: #134e4a; border-color: #2dd4bf; font-size: 1.3rem; }
 
@@ -1799,7 +1834,7 @@
             <span>Fonte Cx. Esc.</span>
           </div>
         </div>
-        <div class="quick-emojis" role="group" aria-label="Emojis e caracteres favoritos (toque para inserir; segure e arraste para mudar a ordem)">
+        <div class="quick-emojis" role="group" aria-label="Faixa rápida de emojis (toque para inserir)">
           <div id="quickEmojiList" class="quick-emoji-list"></div>
         </div>
         <span id="copyStatus" class="ok main-copy-status" role="status" aria-live="polite"></span>
@@ -2116,13 +2151,29 @@
         <details class="subsection sub-tint-4">
           <summary>😀 Caracteres, ícones e emoticons</summary>
           <div class="subsection-body">
-      <p class="hint">Clique para inserir no campo ativo. Os favoritos ficam no topo e na faixa abaixo dos botões de formatação (lá, segure e arraste um emoji para mudar a ordem; um favorito novo entra no 1º lugar). Toque na estrelinha no canto de um caractere para mandá-lo para os favoritos (☆) ou tirá-lo do topo (★).</p>
+      <p class="hint">Clique para inserir no campo ativo. Os favoritos ficam no topo. Toque na estrelinha no canto de um caractere para mandá-lo para os favoritos (☆) ou tirá-lo do topo (★).</p>
 
       <div class="symbol-search">
         <label for="symbolSearch">🔍 Buscar caractere pelo nome</label>
         <input id="symbolSearch" type="search" autocomplete="off" autocapitalize="none" spellcheck="false" enterkeyhint="search" placeholder="Ex.: coração, sorriso, bandeira, seta">
         <p id="symbolSearchInfo" class="hint" role="status" aria-live="polite"></p>
         <div id="symbolSearchResults" class="symbols"></div>
+      </div>
+
+      <div class="quickbar-editor">
+        <h3>⚡ Faixa rápida da tela principal (até 16)</h3>
+        <p class="hint">Estes emojis aparecem na faixa logo abaixo dos botões de formatação. Toque num deles aqui para mudar de posição ou tirar.</p>
+        <div id="quickBarEditor" class="quickbar-slots"></div>
+        <div id="quickBarActions" class="quickbar-actions" hidden>
+          <button id="quickBarLeft" class="secondary" type="button">◀ Mover</button>
+          <button id="quickBarRight" class="secondary" type="button">Mover ▶</button>
+          <button id="quickBarRemove" class="secondary" type="button">✕ Tirar</button>
+        </div>
+        <div class="button-row">
+          <button id="quickBarPickBtn" type="button">➕ Escolher para a faixa</button>
+          <button id="quickBarResetBtn" class="secondary" type="button">🔄 Restaurar sugestão</button>
+        </div>
+        <p id="quickBarStatus" class="hint" role="status" aria-live="polite"></p>
       </div>
 
       <h3>⭐ Favoritos no topo</h3>
@@ -2414,6 +2465,7 @@
     const STORAGE_KEY = 'jwLibraryNoteAplicarTemplatesV2';
     const SYMBOLS_STORAGE_KEY = 'jwLibraryNoteAplicarCustomSymbolsV1';
     const FAVORITE_SYMBOLS_STORAGE_KEY = 'jwLibraryNoteAplicarFavoriteSymbolsV1';
+    const QUICKBAR_STORAGE_KEY = 'jwLibraryNoteAplicarQuickBarV1';
     const CUSTOM_SYMBOL_CATEGORIES_STORAGE_KEY = 'jwLibraryNoteAplicarCustomSymbolCategoriesV1';
     const ONLINE_DEFAULTS_VERSION_STORAGE_KEY = 'jwLibraryNoteAplicarOnlineDefaultsVersionV1';
     const TEMPLATE_CATEGORIES_STORAGE_KEY = 'jwLibraryNoteAplicarTemplateCategoriesV1';
@@ -2508,6 +2560,13 @@
     ];
 
     let favoriteSymbols = [];
+
+    // Faixa rápida da tela principal: lista própria (separada dos favoritos), até 16 emojis.
+    const QUICKBAR_MAX = 16;
+    const defaultQuickBar = ['❓', '✅', '⚠️', '👉', '💡', '📌', '🔎', '✍️', '🙏', '❤️', '👍', '😀', '⭐', '🔷', '▶️', '📖'];
+    let quickBarSymbols = defaultQuickBar.slice();
+    let quickBarSelected = -1;   // posição escolhida no editor (para mover ou tirar)
+    let quickBarPicking = false; // modo "escolher para a faixa": tocar num caractere o põe na faixa
     let customSymbolCategories = {};
 
     const explicitMaps = {
@@ -4086,7 +4145,10 @@ function saveTemplatesToStorage() {
       btn.setAttribute('aria-label', 'Inserir ' + sym);
       btn.addEventListener('mousedown', event => event.preventDefault());
       // Inserção direta: sem espera de clique duplo, o toque no celular responde na hora.
-      btn.addEventListener('click', () => insertTextAtCursor(getActiveInsertTarget(), sym));
+      btn.addEventListener('click', () => {
+        if (quickBarPicking) return addToQuickBar(sym);
+        insertTextAtCursor(getActiveInsertTarget(), sym);
+      });
 
       // Favoritar fica num alvo próprio, porque duplo-toque não é confiável em tela sensível.
       const star = document.createElement('button');
@@ -4162,103 +4224,128 @@ function saveTemplatesToStorage() {
       renderQuickEmojis();
     }
 
-    // Faixa de favoritos abaixo dos botões de formatação: os mesmos favoritos de "Caracteres, ícones e emoticons"
-    // (a estrelinha ☆ põe um caractere no 1º lugar; a ★ tira), que entram nas configurações padrão do administrador.
-    // Tocar insere no cursor. Segurar (no celular) ou arrastar com o mouse muda a ordem; a nova ordem é salva.
-    let quickEmojiJustDragged = false;
+    // ---------- Faixa rápida (tela principal) e o seu editor (em "Caracteres, ícones e emoticons") ----------
+    function cleanQuickBar(list) {
+      return uniqueTokensFromText((Array.isArray(list) ? list : []).join(' ')).slice(0, QUICKBAR_MAX);
+    }
+
+    function loadQuickBar() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(QUICKBAR_STORAGE_KEY) || 'null');
+        if (Array.isArray(saved)) quickBarSymbols = cleanQuickBar(saved);
+      } catch (e) { /* lista ilegível: fica a sugestão */ }
+    }
+
+    function saveQuickBar() {
+      safeSetItem(QUICKBAR_STORAGE_KEY, JSON.stringify(quickBarSymbols));
+    }
+
+    // Mesclar: acrescenta os que faltam, até completar os 16.
+    function mergeQuickBar(list) {
+      cleanQuickBar(list).forEach(sym => {
+        if (quickBarSymbols.length < QUICKBAR_MAX && !quickBarSymbols.includes(sym)) quickBarSymbols.push(sym);
+      });
+    }
+
+    function setQuickBarStatus(message) {
+      document.getElementById('quickBarStatus').textContent = message;
+    }
 
     function renderQuickEmojis() {
       quickEmojiList.innerHTML = '';
-      favoriteSymbols.forEach(sym => {
+      quickBarSymbols.forEach(sym => {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.textContent = sym;
-        btn.dataset.sym = sym;
-        btn.title = 'Inserir ' + sym + ' (segure e arraste para mudar a ordem)';
+        btn.title = 'Inserir ' + sym;
         btn.setAttribute('aria-label', 'Inserir ' + sym);
         btn.addEventListener('mousedown', event => event.preventDefault()); // mantém o cursor no campo de texto
-        btn.addEventListener('click', () => {
-          if (quickEmojiJustDragged) return; // terminou um arraste: não insere
-          insertTextAtCursor(getActiveInsertTarget(), sym);
-        });
-        setupQuickEmojiDrag(btn);
+        btn.addEventListener('click', () => insertTextAtCursor(getActiveInsertTarget(), sym));
         quickEmojiList.appendChild(btn);
       });
+      renderQuickBarEditor();
     }
 
-    function setupQuickEmojiDrag(btn) {
-      let startX = 0;
-      let startY = 0;
-      let timer = null;
-      let dragging = false;
-      let pointerId = null;
-
-      const startDrag = () => {
-        dragging = true;
-        btn.classList.add('dragging');
-        try { btn.setPointerCapture(pointerId); } catch (e) { /* sem captura: segue pelos eventos normais */ }
-        if (navigator.vibrate) navigator.vibrate(15);
-      };
-
-      btn.addEventListener('pointerdown', event => {
-        if (event.button > 0) return;
-        startX = event.clientX;
-        startY = event.clientY;
-        pointerId = event.pointerId;
-        dragging = false;
-        clearTimeout(timer);
-        // No toque é preciso segurar um instante (para não atrapalhar o toque normal); com o mouse basta arrastar.
-        if (event.pointerType !== 'mouse') timer = setTimeout(startDrag, 350);
-      });
-
-      btn.addEventListener('pointermove', event => {
-        if (pointerId === null) return;
-        const dx = event.clientX - startX;
-        const dy = event.clientY - startY;
-        if (!dragging) {
-          if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
-            clearTimeout(timer);
-            if (event.pointerType === 'mouse' && Math.abs(dx) > Math.abs(dy)) startDrag();
-            else pointerId = null; // mexeu antes de segurar: é rolagem ou toque comum
-          }
-          if (!dragging) return;
-        }
-        event.preventDefault();
-        // Coloca o botão antes do primeiro vizinho visível cujo centro fica à direita do dedo.
-        const visible = [...quickEmojiList.children].filter(b => b !== btn && b.offsetTop === btn.offsetTop);
-        const next = visible.find(b => {
-          const r = b.getBoundingClientRect();
-          return event.clientX < r.left + r.width / 2;
-        });
-        if (next) {
-          if (btn.nextSibling !== next) quickEmojiList.insertBefore(btn, next);
+    function renderQuickBarEditor() {
+      const editor = document.getElementById('quickBarEditor');
+      editor.innerHTML = '';
+      for (let pos = 0; pos < QUICKBAR_MAX; pos++) {
+        const sym = quickBarSymbols[pos];
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        if (sym) {
+          btn.textContent = sym;
+          btn.title = 'Posição ' + (pos + 1) + ': toque para mover ou tirar';
+          btn.setAttribute('aria-label', sym + ', posição ' + (pos + 1));
+          btn.classList.toggle('selected', pos === quickBarSelected);
+          btn.addEventListener('click', () => {
+            quickBarSelected = quickBarSelected === pos ? -1 : pos;
+            renderQuickBarEditor();
+            setQuickBarStatus(quickBarSelected >= 0 ? 'Use ◀ Mover, Mover ▶ ou ✕ Tirar.' : '');
+          });
         } else {
-          const last = visible[visible.length - 1];
-          if (last && last.nextSibling !== btn) quickEmojiList.insertBefore(btn, last.nextSibling);
+          btn.className = 'empty';
+          btn.textContent = String(pos + 1);
+          btn.title = 'Espaço livre: use "➕ Escolher para a faixa"';
+          btn.setAttribute('aria-label', 'Espaço livre ' + (pos + 1));
+          btn.addEventListener('click', () => setQuickBarStatus('Espaço livre: toque em "➕ Escolher para a faixa" e depois num caractere da lista.'));
         }
-      });
-
-      const finish = () => {
-        clearTimeout(timer);
-        pointerId = null;
-        if (!dragging) return;
-        dragging = false;
-        btn.classList.remove('dragging');
-        quickEmojiJustDragged = true;
-        setTimeout(() => { quickEmojiJustDragged = false; }, 50);
-        const order = [...quickEmojiList.children].map(b => b.dataset.sym);
-        if (order.join('\u0000') !== favoriteSymbols.join('\u0000')) {
-          favoriteSymbols = order;
-          saveFavoriteSymbols();
-          renderSymbols();
-          symbolsStatus.className = 'ok';
-          symbolsStatus.textContent = 'Ordem dos favoritos salva.';
-        }
-      };
-      btn.addEventListener('pointerup', finish);
-      btn.addEventListener('pointercancel', finish);
-      btn.addEventListener('contextmenu', event => event.preventDefault()); // segurar não abre o menu do sistema
+        editor.appendChild(btn);
+      }
+      const actions = document.getElementById('quickBarActions');
+      actions.hidden = quickBarSelected < 0;
+      document.getElementById('quickBarLeft').disabled = quickBarSelected <= 0;
+      document.getElementById('quickBarRight').disabled = quickBarSelected < 0 || quickBarSelected >= quickBarSymbols.length - 1;
     }
+
+    function moveQuickBar(step) {
+      const from = quickBarSelected;
+      const to = from + step;
+      if (from < 0 || to < 0 || to >= quickBarSymbols.length) return;
+      [quickBarSymbols[from], quickBarSymbols[to]] = [quickBarSymbols[to], quickBarSymbols[from]];
+      quickBarSelected = to;
+      saveQuickBar();
+      renderQuickEmojis();
+      setQuickBarStatus('Posição salva.');
+    }
+
+    function addToQuickBar(sym) {
+      if (quickBarSymbols.includes(sym)) return setQuickBarStatus(sym + ' já está na faixa.');
+      if (quickBarSymbols.length >= QUICKBAR_MAX) return setQuickBarStatus('A faixa já tem 16 emojis. Tire um antes de pôr outro.');
+      quickBarSymbols.push(sym);
+      saveQuickBar();
+      renderQuickEmojis();
+      const free = QUICKBAR_MAX - quickBarSymbols.length;
+      setQuickBarStatus(sym + ' entrou na faixa' + (free ? ' (sobram ' + free + ' espaço' + (free > 1 ? 's' : '') + ').' : '. A faixa está completa.'));
+    }
+
+    function setQuickBarPicking(on) {
+      quickBarPicking = on;
+      document.getElementById('quickBarPickBtn').textContent = on ? '✅ Concluir escolha' : '➕ Escolher para a faixa';
+      document.getElementById('symbols').closest('.subsection-body').classList.toggle('quickbar-picking', on);
+      setQuickBarStatus(on
+        ? 'Toque nos caracteres abaixo (nos favoritos, na busca ou nas categorias) para pôr na faixa. Toque em "✅ Concluir escolha" para voltar a inserir no texto.'
+        : '');
+    }
+
+    document.getElementById('quickBarLeft').addEventListener('click', () => moveQuickBar(-1));
+    document.getElementById('quickBarRight').addEventListener('click', () => moveQuickBar(1));
+    document.getElementById('quickBarRemove').addEventListener('click', () => {
+      if (quickBarSelected < 0) return;
+      const [removed] = quickBarSymbols.splice(quickBarSelected, 1);
+      quickBarSelected = -1;
+      saveQuickBar();
+      renderQuickEmojis();
+      setQuickBarStatus(removed + ' saiu da faixa.');
+    });
+    document.getElementById('quickBarPickBtn').addEventListener('click', () => setQuickBarPicking(!quickBarPicking));
+    document.getElementById('quickBarResetBtn').addEventListener('click', () => {
+      quickBarSymbols = defaultQuickBar.slice();
+      quickBarSelected = -1;
+      saveQuickBar();
+      renderQuickEmojis();
+      setQuickBarStatus('Faixa restaurada com a sugestão do app.');
+    });
 
     // ---------- Busca de caracteres pelo nome ----------
     // Os nomes e as palavras-chave em português (do CLDR do Unicode) ficam em emoji-busca.json e só são baixados na
@@ -4420,6 +4507,7 @@ function saveTemplatesToStorage() {
       styleSelect.value = 'serif';
 
       loadCustomSymbols();
+      loadQuickBar();
       loadTemplates();
       followCachedDefaults(); // quem nunca mexeu já abre com as configurações padrão do administrador
       renderSymbols();
@@ -4562,6 +4650,7 @@ function saveTemplatesToStorage() {
         templates: normalizedTemplates,
         templateCategories: uniqueTemplateCategories([...categoryList, ...normalizedTemplates.map(t => t.category)]),
         favoriteSymbols: Array.isArray(parsed.favoriteSymbols) ? uniqueTokensFromText(parsed.favoriteSymbols.join(' ')) : [],
+        quickBar: Array.isArray(parsed.quickBar) ? cleanQuickBar(parsed.quickBar) : [],
         customSymbolCategories: normalizeSymbolCategories(
           parsed.customSymbolCategories && typeof parsed.customSymbolCategories === 'object' && !Array.isArray(parsed.customSymbolCategories)
             ? parsed.customSymbolCategories
@@ -4637,16 +4726,19 @@ function saveTemplatesToStorage() {
         templateCategories = normalized.templateCategories;
         customSymbolCategories = normalized.customSymbolCategories;
         favoriteSymbols = normalized.favoriteSymbols.length ? normalized.favoriteSymbols : defaultFavoriteSymbols.slice();
+        quickBarSymbols = normalized.quickBar.length ? normalized.quickBar : defaultQuickBar.slice();
       } else {
         mergeTemplateCategories(normalized.templateCategories);
         mergeTemplates(normalized.templates);
         mergeSymbolCategories(normalized.customSymbolCategories);
         mergeFavoriteSymbols(normalized.favoriteSymbols);
+        mergeQuickBar(normalized.quickBar);
       }
 
       saveTemplatesToStorage();
       saveCustomSymbols();
       saveFavoriteSymbols();
+      saveQuickBar();
       applyPreferences(data.preferencias, mode === 'replace');
 
       if (data.version) {
@@ -4676,6 +4768,7 @@ function saveTemplatesToStorage() {
         customSymbols: getAllCustomSymbols(),
         customSymbolCategories: customSymbolCategories,
         favoriteSymbols: favoriteSymbols,
+        quickBar: quickBarSymbols,
         preferencias: collectPreferences()
       };
     }
@@ -5354,6 +5447,10 @@ function saveTemplatesToStorage() {
         favoriteSymbols = data.favoriteSymbols;
         changed = true;
       }
+      if (!storageHasKey(QUICKBAR_STORAGE_KEY) && data.quickBar.length) {
+        quickBarSymbols = data.quickBar;
+        changed = true;
+      }
       return changed;
     }
 
@@ -5492,10 +5589,12 @@ function saveTemplatesToStorage() {
         const addedTemplates = mergeTemplates(data.templates);
         const addedSymbols = mergeSymbolCategories(data.customSymbolCategories);
         const addedFavorites = mergeFavoriteSymbols(data.favoriteSymbols);
+        mergeQuickBar(data.quickBar);
 
         saveTemplatesToStorage();
         saveCustomSymbols();
         saveFavoriteSymbols();
+        saveQuickBar();
         applyPreferences(rawData.preferencias, false);
         if (rawData.version) safeSetItem(ONLINE_DEFAULTS_VERSION_STORAGE_KEY, String(rawData.version));
 
