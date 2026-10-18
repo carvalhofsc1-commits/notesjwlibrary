@@ -1189,6 +1189,70 @@
     :root[data-theme="dark"] .icon-action.select { background: #075985; color: #e0f2fe; border-color: #0ea5e9; }
     :root[data-theme="dark"] .icon-action.font   { background: #134e4a; color: #ccfbf1; border-color: #14b8a6; }
 
+    /* Botão "Fonte CX": o CX do meio aplica a caixa; os dois quadradinhos escolhem se ela sai branca (esquerda) ou
+       preta (direita). Tem o mesmo tamanho dos outros botões da fileira. */
+    .icon-action.caixa { padding: 0; gap: 0; overflow: hidden; }
+    .icon-action.caixa button {
+      min-height: 0;
+      height: 100%;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: inherit;
+      box-shadow: none;
+      transform: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .icon-action.caixa button:hover:not(:disabled) { background: rgba(255, 255, 255, .14); }
+    .icon-action.caixa button:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+    .icon-action.caixa .caixa-main { flex: 1 1 auto; min-width: 0; gap: 3px; }
+    /* O rótulo: C em caixa preta e X em caixa branca, em qualquer tema (a caixa sai branca ou preta conforme o marcado). */
+    .icon-action.caixa .cx {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 5px;
+      border: 2px solid #0f172a;
+      font-size: .85rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .icon-action.caixa .cx.c { background: #0f172a; border-color: #e2e8f0; color: #ffffff; }
+    .icon-action.caixa .cx.x { background: #ffffff; color: #0f172a; }
+    .icon-action.caixa .caixa-cor { flex: 0 0 28px; align-self: stretch; }
+    .icon-action.caixa .caixa-cor i {
+      position: relative;
+      display: block;
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      border: 2px solid currentColor;
+      opacity: .6;
+    }
+    .icon-action.caixa .caixa-cor.white i { background: #ffffff; border-color: #0f172a; }
+    .icon-action.caixa .caixa-cor.black i { background: #0f172a; border-color: #e2e8f0; }
+    .icon-action.caixa .caixa-cor[aria-pressed="true"] { background: rgba(255, 255, 255, .22); }
+    .icon-action.caixa .caixa-cor[aria-pressed="true"] i { opacity: 1; box-shadow: 0 0 0 2px #14b8a6; }
+    /* Visto dentro do quadradinho marcado. */
+    .icon-action.caixa .caixa-cor[aria-pressed="true"] i::after {
+      content: "";
+      position: absolute;
+      left: 3px;
+      top: 0;
+      width: 4px;
+      height: 8px;
+      border: solid;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+    .icon-action.caixa .caixa-cor.white[aria-pressed="true"] i::after { border-color: #0f172a; }
+    .icon-action.caixa .caixa-cor.black[aria-pressed="true"] i::after { border-color: #ffffff; }
+
     .icon-action:hover:not(:disabled),
     .icon-action:focus-visible {
       transform: translateY(-1px);
@@ -1854,8 +1918,12 @@
             <span>Fonte Script</span>
           </div>
           <div class="action-item">
-            <button id="quickSquaredDarkBtn" class="icon-action font" type="button" title="Aplicar a fonte Caixa escura ao trecho selecionado (letras maiúsculas)" aria-label="Aplicar a fonte Caixa escura ao trecho selecionado">🅲🅰🅸🆇🅰</button>
-            <span>Fonte Cx. Esc.</span>
+            <div class="icon-action font caixa" role="group" aria-label="Fonte CX: caixa branca ou caixa preta">
+              <button id="quickCaixaWhiteBtn" class="caixa-cor white" type="button" aria-pressed="true" title="Caixa branca" aria-label="Caixa branca"><i></i></button>
+              <button id="quickCaixaBtn" class="caixa-main" type="button" title="Aplicar a fonte Caixa branca ao trecho selecionado (letras maiúsculas)" aria-label="Aplicar a fonte Caixa branca ao trecho selecionado"><span class="cx c" aria-hidden="true">C</span><span class="cx x" aria-hidden="true">X</span></button>
+              <button id="quickCaixaBlackBtn" class="caixa-cor black" type="button" aria-pressed="false" title="Caixa preta" aria-label="Caixa preta"><i></i></button>
+            </div>
+            <span>Fonte CX</span>
           </div>
         </div>
         <div class="quick-emojis" role="group" aria-label="Faixa rápida de emojis (toque para inserir)">
@@ -2511,7 +2579,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '3.3'; // 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
+    const APP_VERSION = '3.4'; // 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 
@@ -5001,7 +5069,25 @@ function saveTemplatesToStorage() {
     document.getElementById('quickBoldItalicBtn').addEventListener('click', () => quickFormat('boldItalic'));
     document.getElementById('quickDoubleStruckBtn').addEventListener('click', () => quickFont('doubleStruck', 'Double Struck'));
     document.getElementById('quickScriptBtn').addEventListener('click', () => quickFont('script', 'Script'));
-    document.getElementById('quickSquaredDarkBtn').addEventListener('click', () => quickFont('squaredDark', 'Caixa escura'));
+    // Fonte CX: o botão do meio aplica a caixa na cor marcada (branca por padrão); a cor fica guardada neste aparelho.
+    const CAIXA_COLOR_KEY = 'jwLibraryNoteAplicarCaixaV1';
+    const caixaButtons = { white: document.getElementById('quickCaixaWhiteBtn'), black: document.getElementById('quickCaixaBlackBtn') };
+    const caixaMainBtn = document.getElementById('quickCaixaBtn');
+    let caixaColor = 'white';
+    try { if (localStorage.getItem(CAIXA_COLOR_KEY) === 'black') caixaColor = 'black'; } catch (e) { /* sem localStorage: fica a branca */ }
+
+    function setCaixaColor(color, save) {
+      caixaColor = color === 'black' ? 'black' : 'white';
+      Object.keys(caixaButtons).forEach(key => caixaButtons[key].setAttribute('aria-pressed', key === caixaColor ? 'true' : 'false'));
+      const name = caixaColor === 'black' ? 'Caixa preta' : 'Caixa branca';
+      caixaMainBtn.title = 'Aplicar a fonte ' + name + ' ao trecho selecionado (letras maiúsculas)';
+      caixaMainBtn.setAttribute('aria-label', 'Aplicar a fonte ' + name + ' ao trecho selecionado');
+      if (save) safeSetItem(CAIXA_COLOR_KEY, caixaColor);
+    }
+
+    Object.keys(caixaButtons).forEach(key => caixaButtons[key].addEventListener('click', () => setCaixaColor(key, true)));
+    caixaMainBtn.addEventListener('click', () => (caixaColor === 'black' ? quickFont('squaredDark', 'Caixa preta') : quickFont('squaredLight', 'Caixa branca')));
+    setCaixaColor(caixaColor, false);
     document.getElementById('removeFormattingBtn').addEventListener('click', removeFormattingFromSelection);
     document.getElementById('indentBtn').addEventListener('click', () => applyIndentToSelection(1));
     document.getElementById('clearBtn').addEventListener('click', () => {
@@ -5010,7 +5096,7 @@ function saveTemplatesToStorage() {
       clearAiMessages();
       input.focus();
     });
-    ['undoBtn','quickBoldBtn','quickItalicBtn','quickBoldItalicBtn','quickDoubleStruckBtn','quickScriptBtn','quickSquaredDarkBtn','removeFormattingBtn','indentBtn','copyBtn','selectBtn'].forEach(id => {
+    ['undoBtn','quickBoldBtn','quickItalicBtn','quickBoldItalicBtn','quickDoubleStruckBtn','quickScriptBtn','quickCaixaWhiteBtn','quickCaixaBtn','quickCaixaBlackBtn','removeFormattingBtn','indentBtn','copyBtn','selectBtn'].forEach(id => {
       const btn = document.getElementById(id);
       btn.addEventListener('mousedown', event => event.preventDefault());
       btn.addEventListener('pointerdown', event => event.preventDefault());
