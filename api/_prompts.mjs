@@ -49,10 +49,20 @@ export const LIMITES = [
   {
     id: "maxRespostas",
     titulo: "Máximo de respostas por pedido do estudo",
-    descricao: "Quantas perguntas do estudo a IA pode responder de uma vez, por exemplo ao pedir \"todos\" os parágrafos.",
+    descricao: "Quantas perguntas do estudo a IA pode responder de uma vez (por exemplo, num texto colado com muitas perguntas).",
     padrao: 40,
     min: 1,
     max: 80,
+  },
+  {
+    id: "maxParagrafosEstudo",
+    titulo: "Máximo de parágrafos do estudo por consulta (leitura no wol.jw.org)",
+    descricao:
+      "Quantos parágrafos do estudo de A Sentinela podem ser pedidos de uma vez. Se pedirem mais, o app avisa o máximo e não envia o pedido (o servidor também recusa). A recapitulação não conta.",
+    padrao: 5,
+    min: 1,
+    max: 30,
+    publico: true,
   },
   {
     id: "limitePorHora",
@@ -151,7 +161,7 @@ export const PARTES = [
 Passos:
 1. Use a ferramenta web_fetch para ler a página desse endereço (no máximo 2 leituras). Se o endereço for uma página de reuniões da semana, encontre nela o link do artigo de estudo de A Sentinela e leia esse artigo.
 2. Se não conseguir ler o artigo, devolva "erro" com uma frase explicando e "itens" vazio.
-3. Siga o ESCOPO indicado na mensagem: responda apenas às perguntas dos parágrafos pedidos ("todos" = todos os parágrafos do artigo que têm pergunta, sem a recapitulação). Se o ESCOPO for a RECAPITULAÇÃO, responda às perguntas do quadro de recapitulação no fim do artigo (o quadro "Qual é a sua resposta?"), numeradas na ordem em que aparecem (1, 2, 3...), com base em todo o artigo, e NÃO responda às perguntas dos parágrafos. Para CADA pergunta, devolva um item com:
+3. Siga o ESCOPO indicado na mensagem: responda apenas às perguntas dos parágrafos pedidos. Se o ESCOPO for a RECAPITULAÇÃO, responda às perguntas do quadro de recapitulação no fim do artigo (o quadro "Qual é a sua resposta?"), numeradas na ordem em que aparecem (1, 2, 3...), com base em todo o artigo, e NÃO responda às perguntas dos parágrafos. Para CADA pergunta, devolva um item com:
    - paragrafos: número(s) do(s) parágrafo(s) a que a pergunta se refere (ex.: "3" ou "1, 2"). Na recapitulação, só o número da pergunta no quadro (1, 2, 3...).
    - resposta: um texto curto que resume os PONTOS PRINCIPAIS do(s) parágrafo(s) respondendo à pergunta, com as suas PRÓPRIAS PALAVRAS (parafraseie; não copie frases do parágrafo), em português simples e natural, pronto para ser dito como comentário, no tamanho pedido. Se a pergunta tiver partes A) e B), responda cada parte, identificada pela letra.
 

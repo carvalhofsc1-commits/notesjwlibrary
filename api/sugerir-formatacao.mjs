@@ -808,9 +808,12 @@ async function responderEstudo(res, body, P) {
   const pedido = String(body.paragrafos || "").trim();
   // "recapitulação", "Recapitulacao", "perguntas de recapitulação" ou só "recap": o quadro final do artigo.
   const recapitulacao = /^(perguntas de )?recap/.test(pedido.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase());
-  const paragrafos = recapitulacao ? "recapitulacao" : /^(todos|[\d\s,\-–]{1,120})$/i.test(pedido) ? pedido : "todos";
-  const alvoBruto = recapitulacao || /^todos$/i.test(paragrafos) ? null : numerosDosParagrafos(paragrafos);
-  const alvo = alvoBruto && alvoBruto.size ? alvoBruto : null; // null = todos os parágrafos
+  // Não existe mais "todos": é preciso dizer os parágrafos (até o máximo configurado) ou pedir a recapitulação.
+  const alvo = recapitulacao || !/^[\d\s,\-–]{1,120}$/.test(pedido) ? null : numerosDosParagrafos(pedido);
+  if (!recapitulacao && !(alvo && alvo.size)) return erro(res, 400, "Informe os parágrafos (ex.: 3, 1-4 ou recapitulação).");
+  const maxParagrafos = P.limites.maxParagrafosEstudo;
+  if (alvo && alvo.size > maxParagrafos)
+    return erro(res, 400, `O máximo permitido é de ${maxParagrafos} ${maxParagrafos === 1 ? "parágrafo" : "parágrafos"} por consulta. Peça menos parágrafos de cada vez.`);
   const opcoes = validarOpcoes(body.opcoes);
   if (consultaPedida(opcoes) && !fontesConfiguradas()) return erro(res, 500, "A consulta às fontes ainda não está configurada no servidor.");
   precarregarFontes({ biblia: true, perspicaz: opcoes.consultarPerspicaz });
@@ -836,9 +839,7 @@ async function responderEstudo(res, body, P) {
     `ENDEREÇO: ${url}\n` +
     (alvo
       ? escopoDosParagrafos([...alvo])
-      : recapitulacao
-        ? 'ESCOPO: a RECAPITULAÇÃO. Responda SOMENTE às perguntas do quadro de recapitulação no fim do artigo (o quadro "Qual é a sua resposta?"), numeradas na ordem em que aparecem (1, 2, 3...). NÃO responda às perguntas dos parágrafos.\n'
-        : "ESCOPO: todos os parágrafos do artigo que têm pergunta (sem o quadro de recapitulação).\n") +
+      : 'ESCOPO: a RECAPITULAÇÃO. Responda SOMENTE às perguntas do quadro de recapitulação no fim do artigo (o quadro "Qual é a sua resposta?"), numeradas na ordem em que aparecem (1, 2, 3...). NÃO responda às perguntas dos parágrafos.\n') +
     `PREFERÊNCIAS:\n- Tamanho de cada resposta: ${DESCRICAO_RESPOSTA[opcoes.resumoTamanho]}.\n` +
     descreverFormatacaoResposta(opcoes, P.limites.maxDestaques, sep) +
     descreverFontes(opcoes, P, false) +
@@ -916,7 +917,7 @@ async function responderEstudo(res, body, P) {
     // Faltou algum parágrafo pedido (a IA pulou ou a resposta foi cortada)? Pede de novo só os que faltaram.
     const cobertos = new Set(itens.flatMap((i) => [...numerosDosParagrafos(i.paragrafos)]));
     const faltando = alvo && !recapitulacao && !modo ? [...alvo].filter((n) => !cobertos.has(n)) : [];
-    console.log("Estudo:", JSON.stringify({ pedidos: alvo ? [...alvo] : "todos", recebidos: itens.map((i) => i.paragrafos), faltando, parada: resposta.stop_reason }));
+    console.log("Estudo:", JSON.stringify({ pedidos: alvo ? [...alvo] : "recapitulacao", recebidos: itens.map((i) => i.paragrafos), faltando, parada: resposta.stop_reason }));
     if (faltando.length && itens.length) {
       try {
         const segunda = await consultar(

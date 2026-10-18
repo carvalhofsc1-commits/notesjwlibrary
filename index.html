@@ -1416,6 +1416,8 @@
       border-radius: 14px;
     }
 
+    .modal-overlay.alert-only .modal-actions { grid-template-columns: 1fr; }
+
     .manager-section {
       border-top: 1px solid var(--line);
       margin-top: 18px;
@@ -1986,7 +1988,7 @@
                   <button id="aiParaPrev" class="secondary ai-week-nav" type="button" aria-label="Parágrafos anteriores">◀</button>
                   <div class="ai-study-input">
                     <label for="aiStudyParagraphs">Parágrafos</label>
-                    <input autocomplete="off" id="aiStudyParagraphs" type="text" value="todos" placeholder="todos, 3, 1-4 ou recapitulação">
+                    <input autocomplete="off" id="aiStudyParagraphs" type="text" value="1" placeholder="Ex.: 3, 1-4 ou recapitulação">
                   </div>
                   <button id="aiParaNext" class="secondary ai-week-nav" type="button" aria-label="Próximos parágrafos">▶</button>
                 </div>
@@ -3689,6 +3691,21 @@
       });
     }
 
+    // Aviso próprio do app, só com o botão OK (usa o mesmo quadro da confirmação).
+    async function showAlert(message, title) {
+      const okLabel = confirmOkChoice.textContent;
+      confirmOverlay.classList.add('alert-only');
+      cancelConfirmChoice.hidden = true;
+      confirmOkChoice.textContent = 'OK';
+      try {
+        await askConfirm(message, title);
+      } finally {
+        confirmOverlay.classList.remove('alert-only');
+        cancelConfirmChoice.hidden = false;
+        confirmOkChoice.textContent = okLabel;
+      }
+    }
+
     function askCategoryDeleteMode(name, count) {
       return new Promise(resolve => {
         let settled = false;
@@ -5018,6 +5035,7 @@ function saveTemplatesToStorage() {
         AI_MAX_LINES = pick(limits.maxLinhasFormatacao, AI_MAX_LINES);
         AI_SENTINELA_MAX_CHARS = pick(limits.maxCharsSentinela, AI_SENTINELA_MAX_CHARS);
         AI_SENTINELA_MAX_LINES = pick(limits.maxLinhasSentinela, AI_SENTINELA_MAX_LINES);
+        AI_STUDY_MAX_PARAGRAPHS = pick(limits.maxParagrafosEstudo, AI_STUDY_MAX_PARAGRAPHS);
       } catch (e) { /* sem servidor: ficam os padrões */ }
     }
 
@@ -5846,6 +5864,7 @@ function saveTemplatesToStorage() {
     let AI_MAX_LINES = 80;
     let AI_SENTINELA_MAX_CHARS = 12000;
     let AI_SENTINELA_MAX_LINES = 200;
+    let AI_STUDY_MAX_PARAGRAPHS = 5; // parágrafos do estudo por consulta (o administrador muda na tela dos prompts)
     const AI_STYLE_KIND = { negrito: 'bold', italico: 'italic', negrito_italico: 'boldItalic' };
     const AI_FONTS = ['script', 'doubleStruck', 'sans', 'mono', 'circled', 'fullwidth'];
     const AI_DEFAULT_OPTIONS = {
@@ -6697,14 +6716,13 @@ function saveTemplatesToStorage() {
       safeSetItem(AI_STUDY_CACHE_KEY, JSON.stringify(cache));
     }
 
-    // Opções navegáveis: os grupos de parágrafos que a IA listou (os que compartilham pergunta vêm juntos) + "todos".
     const STUDY_RECAP_LABEL = 'Recapitulação';
 
-    // Opções navegáveis: grupos de parágrafos, "Recapitulação" (o quadro "Qual é a sua resposta?" no fim do
-    // artigo, quando existe) e "todos" (só os parágrafos).
+    // Opções navegáveis: os grupos de parágrafos que a IA listou (os que compartilham pergunta vêm juntos) e
+    // "Recapitulação" (o quadro "Qual é a sua resposta?" no fim do artigo, quando existe).
     function studyOptions() {
       if (!aiStudy) return [];
-      return aiStudy.grupos.concat(aiStudy.recapitulacao === false ? [] : [STUDY_RECAP_LABEL], ['todos']);
+      return aiStudy.grupos.concat(aiStudy.recapitulacao === false ? [] : [STUDY_RECAP_LABEL]);
     }
 
     // Sem acento e em minúsculas, para "recapitulação", "Recapitulacao" e "RECAP" valerem o mesmo.
@@ -6779,7 +6797,7 @@ function saveTemplatesToStorage() {
     function refreshStudyPicker() {
       const cached = readStudyCache()[studyWeekKey()];
       aiStudy = cached && Array.isArray(cached.grupos) && cached.grupos.length ? cached : null;
-      aiStudyParagraphs.value = aiStudy ? aiStudy.grupos[0] : 'todos';
+      aiStudyParagraphs.value = aiStudy ? aiStudy.grupos[0] : '1';
       aiStudyArticle.value = '';
       aiStudyArticleBox.hidden = true;
       updateStudyPicker();
@@ -6876,6 +6894,19 @@ function saveTemplatesToStorage() {
       aiStatusKind = 'estudo';
       placeAiOutput(sentinelaOutputSlot);
 
+      const requested = aiStudyParagraphs.value.trim();
+      if (!isRecapText(requested)) {
+        const count = new Set(studyNumbers(requested)).size;
+        if (!count) return setAiStatus('Informe os parágrafos (ex.: 3, 1-4 ou recapitulação).', true);
+        if (count > AI_STUDY_MAX_PARAGRAPHS) {
+          const max = AI_STUDY_MAX_PARAGRAPHS + (AI_STUDY_MAX_PARAGRAPHS === 1 ? ' parágrafo' : ' parágrafos');
+          const message = 'Você pediu ' + count + ' parágrafos, mas o máximo permitido é de ' + max + ' por consulta. Peça menos parágrafos de cada vez.';
+          setAiStatus(message, true);
+          showAlert(message, '⚠️ Parágrafos demais');
+          return;
+        }
+      }
+
       const accessError = studyAccessError();
       if (accessError) return setAiStatus(accessError, true);
 
@@ -6910,7 +6941,7 @@ function saveTemplatesToStorage() {
         artigo: studyArticleId(),
         ano: aiWeekYear,
         semana: aiWeekNumber,
-        paragrafos: aiStudyParagraphs.value.trim() || 'todos',
+        paragrafos: requested,
         opcoes: readAiOptions()
       };
       if (previousAnswers) {
