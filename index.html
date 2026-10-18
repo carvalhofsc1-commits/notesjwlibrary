@@ -636,6 +636,14 @@
     .sent-option-site .ai-week-today:hover:not(:disabled),
     .sent-option-site .ai-study-load:hover:not(:disabled) { background: #fcd96a; }
 
+    /* Controles da leitura do estudo mais finos: setas, "Estudo desta semana", "Carregar numeração" e parágrafos. */
+    .sent-option-site .ai-week-nav { flex-basis: 42px; min-height: 38px; }
+    .sent-option-site .ai-week-link { min-height: 38px; padding: 3px 8px; font-size: .86rem; line-height: 1.15; }
+    .sent-option-site .ai-week-range { font-size: .72rem; }
+    .sent-option-site .ai-study-load { min-height: 36px; padding: 6px 10px; font-size: .88rem; line-height: 1.2; }
+    .sent-option-site .ai-study-picker .ai-week-nav { min-height: 38px; }
+    .sent-option-site .ai-study-input input { height: 38px; min-height: 0; padding-top: 0; padding-bottom: 0; }
+
     /* Campos da leitura do estudo no site (estudo da semana e parágrafos): fundo azul-celeste para se distinguirem do cartão. */
     .sent-option-site .ai-week-link,
     .sent-option-site .ai-study-input input {
@@ -1971,7 +1979,7 @@
               </div>
               <button id="aiWeekTodayBtn" class="secondary ai-week-today" type="button" hidden>↩️ Voltar para a semana atual</button>
               <div class="ai-study">
-                <button id="aiStudyLoadBtn" class="secondary ai-study-load" type="button">📋 Carregar numeração dos parágrafos do estudo</button>
+                <button id="aiStudyLoadBtn" class="secondary ai-study-load" type="button">📋 Carregar os parágrafos</button>
                 <div class="ai-study-picker">
                   <button id="aiParaPrev" class="secondary ai-week-nav" type="button" aria-label="Parágrafos anteriores">◀</button>
                   <div class="ai-study-input">
@@ -6741,10 +6749,10 @@ function saveTemplatesToStorage() {
       const index = currentStudyIndex();
       aiParaPrev.disabled = !options.length || index <= 0;
       aiParaNext.disabled = !options.length || index >= options.length - 1;
-      aiStudyLoadBtn.textContent = aiStudy ? '↻ Recarregar numeração dos parágrafos do estudo' : '📋 Carregar numeração dos parágrafos do estudo';
+      aiStudyLoadBtn.textContent = aiStudy ? '↻ Recarregar os parágrafos' : '📋 Carregar os parágrafos';
       aiStudyInfo.textContent = aiStudy
         ? (aiStudy.titulo ? aiStudy.titulo + ' · ' : '') + (index >= 0 ? 'opção ' + (index + 1) + ' de ' + options.length : 'texto livre')
-        : 'Toque em "Carregar numeração" para a IA listar os parágrafos do estudo, ou digite os números.';
+        : 'Toque em "Carregar os parágrafos" para a IA listar os parágrafos do estudo, ou digite os números.';
     }
 
     function stepStudy(delta) {
@@ -7017,8 +7025,9 @@ function saveTemplatesToStorage() {
         ? monday.getDate() + ' a ' + sunday.getDate() + ' de ' + month(sunday)
         : monday.getDate() + ' de ' + month(monday) + ' a ' + sunday.getDate() + ' de ' + month(sunday);
 
-      const names = { '-1': 'da semana passada', '0': 'desta semana', '1': 'da próxima semana' };
-      aiWeekTitle.textContent = '📅 Estudo ' + (names[aiWeekOffset] || 'da semana');
+      // Textos curtos para caber numa linha entre as setas (a data vem logo abaixo).
+      const names = { '-1': 'Semana passada', '0': 'Esta semana', '1': 'Próxima semana' };
+      aiWeekTitle.textContent = '📅 ' + (names[aiWeekOffset] || 'Semana do estudo');
       aiWeekTodayBtn.hidden = aiWeekOffset === 0;
     }
 
