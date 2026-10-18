@@ -34,7 +34,8 @@ const ESTILOS = ["negrito", "italico", "negrito_italico"];
 // Tipos de fonte (alfabetos Unicode do app) que a IA pode escolher para um destaque, além do negrito/itálico da fonte
 // principal. Só os legíveis em palavras e frases curtas.
 // O gótico (fraktur) ficou de fora a pedido do usuário.
-const FONTES = ["script", "doubleStruck", "sans", "mono", "circled", "fullwidth"];
+// Regra fixa do usuário: só estas três. Script, largura cheia, letras circuladas, gótico e monoespaçado ficam de fora.
+const FONTES = ["doubleStruck", "sans", "squaredDark"];
 const TIPOS = ["geral", "citacao_texto", "citacao_referencia"];
 // Os modelos de lista que o app já tem (seção "Inserir marcadores e numeradores de lista"). A IA escolhe um deles para
 // cada lista; quem escreve os marcadores e os números é o app.
@@ -188,7 +189,7 @@ function validarEntrada(body, L) {
 }
 
 const CATALOGO_FONTES =
-  "script (cursiva elegante, para frases de destaque e títulos), doubleStruck (letra dupla, para termos importantes), sans (sem serifa, para trechos de apoio), mono (monoespaçado, para números, datas e termos técnicos), circled (letras circuladas, só para palavras curtas), fullwidth (largura cheia, para uma palavra de impacto)";
+  "doubleStruck (letra dupla, só para algo MUITO importante), sans (sem serifa, para trechos de apoio; combina com negrito e itálico), squaredDark (caixa escura, só maiúsculas, só para UMA palavra curta e muito importante, no máximo duas)";
 
 // O que cada nível de "Quantidade de sugestões" significa. "Muitas" é para formatar bastante de verdade: o usuário pode
 // reduzir depois escolhendo "moderada" ou "poucas".
@@ -214,7 +215,7 @@ function descreverPreferencias(o) {
     `- Emoji ilustrativo no início da frase: ${o.emoji ? "SIM, sugira emojis que ilustrem o assunto de cada linha destacada" : "NÃO use (emoji sempre null), a menos que a orientação do usuário peça"}.`,
     `- Quantidade de sugestões: ${DESCRICAO_INTENSIDADE[o.intensidade]} (a orientação do usuário pode mudar isso).`,
     o.variarFontes
-      ? `- Tipos de fonte nos destaques: ATIVO. Em "fonte" de cada destaque escolha uma fonte decorativa para dar variedade visual: ${CATALOGO_FONTES}. Varie as fontes entre os destaques e as linhas (não use a mesma em todos); combine com "estilo" (negrito, itálico) quando a fonte tiver essa variação; null para manter a fonte principal.`
+      ? `- Tipos de fonte nos destaques: ATIVO. Em "fonte" de cada destaque você pode escolher UMA destas fontes decorativas (nenhuma outra existe): ${CATALOGO_FONTES}. O negrito e o itálico na fonte principal ou em sem serifa podem ser usados à vontade; a letra dupla e a caixa escura são raras, só para algo muito importante (caixa escura: uma palavra, no máximo duas). Combine com "estilo" (negrito, itálico) quando a fonte tiver essa variação; null para manter a fonte principal.`
       : '- Tipos de fonte nos destaques: INATIVO ("fonte" sempre null), a menos que a orientação do usuário peça outra fonte.',
   ];
   linhas.push(
@@ -325,7 +326,9 @@ function sanearDestaques(destaques, texto, opcoes, estilosPermitidos, maxDestaqu
 
     const estilo = d.estilo && estilosPermitidos.has(d.estilo) ? d.estilo : null;
     const maiusculas = opcoes.maiusculas && d.maiusculas === true;
-    const fonte = opcoes.variarFontes && FONTES.includes(d.fonte) ? d.fonte : null;
+    let fonte = opcoes.variarFontes && FONTES.includes(d.fonte) ? d.fonte : null;
+    // Regra fixa: a caixa escura é só para UMA palavra, duas no máximo (o trecho continua com os demais recursos).
+    if (fonte === "squaredDark" && trecho.split(/\s+/).filter(Boolean).length > 2) fonte = null;
     if (!estilo && !maiusculas && !fonte) continue;
     resultado.push({ trecho, tipo: "geral", estilo, maiusculas, fonte });
   }

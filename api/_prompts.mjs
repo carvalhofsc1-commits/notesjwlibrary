@@ -249,7 +249,7 @@ Receberá as PREFERÊNCIAS do usuário, a lista de modelos disponíveis (id, nom
   - tipo: "geral" para destaque comum; "citacao_texto" para o TEXTO de uma citação bíblica (as palavras citadas, sem as aspas); "citacao_referencia" para a referência (livro, capítulo e versículos, ex.: João 3:16, sem parênteses). Use os tipos de citação só se a preferência de citações bíblicas estiver ativa.
   - estilo: negrito, italico, negrito_italico ou null (para citações o servidor define o estilo; use null).
   - maiusculas: true para escrever o trecho em MAIÚSCULAS.
-  - fonte: um tipo de fonte decorativo (script, doubleStruck, sans, mono, circled, fullwidth) quando as preferências ativarem os tipos de fonte; senão null.
+  - fonte: um tipo de fonte decorativo (doubleStruck, sans ou squaredDark) quando as preferências ativarem os tipos de fonte; senão null.
   Só use estilos, fontes e maiúsculas que as preferências permitirem. Lista vazia se não houver destaque.
 
 Além das sugestões por linha, existe o campo resumo (fora da lista): quando a preferência de resumo estiver ativa, escreva um resumo do texto COMPLETO com as PRÓPRIAS PALAVRAS (parafraseie; não copie frases), em português simples e natural, pronto para ser dito como um comentário, no tamanho pedido. Use só o conteúdo do texto, sem inventar fatos. O resumo é texto puro: sem Markdown (nada de * ou **). Se a preferência estiver inativa, resumo é null.
@@ -288,7 +288,8 @@ const FORMATO_ESTUDO = `Responda SOMENTE com um objeto JSON, sem texto fora dele
 // também as confere (modelos de pergunta e posição dos parênteses), mas a IA deve segui-las desde o começo.
 const REGRAS_FIXAS_FORMATACAO = `REGRAS FIXAS DA FORMATAÇÃO (valem sempre):
 1. Pergunta só é pergunta de verdade. Só escolha um modelo cujo nome ou conteúdo indique PERGUNTA (ou ❓) para uma linha que realmente pergunta, isto é, que interroga (normalmente termina em "?"). Citação bíblica, afirmação, explicação ou texto corrido NUNCA é pergunta: para uma citação bíblica use o modelo de texto bíblico, se houver; se não houver, nenhum modelo. Vale para todos os modelos: o modelo tem que combinar com o que a linha realmente é (resposta só em resposta, aplicação só em aplicação, vídeo só em vídeo, e assim por diante).
-2. Texto entre parênteses fica no final da frase anterior. Um trecho entre parênteses (referência bíblica ou de publicação, como "(Gên. 3:1-5; Jó 2:4)" ou "(w24.05 pág. 18)") pertence à frase que vem ANTES dele e fica no FINAL dela, nunca no começo da frase seguinte. Em "quebras", nunca comece um trecho com "(" nem separe o parêntese da frase anterior: a quebra vem DEPOIS do parêntese, antes da frase seguinte. Exemplo: em "...é mentira. (Gên. 3:1-5) Quando pregamos..." a quebra é em "Quando pregamos...", e nunca em "(Gên. 3:1-5)...".`;
+2. Texto entre parênteses fica no final da frase anterior. Um trecho entre parênteses (referência bíblica ou de publicação, como "(Gên. 3:1-5; Jó 2:4)" ou "(w24.05 pág. 18)") pertence à frase que vem ANTES dele e fica no FINAL dela, nunca no começo da frase seguinte. Em "quebras", nunca comece um trecho com "(" nem separe o parêntese da frase anterior: a quebra vem DEPOIS do parêntese, antes da frase seguinte. Exemplo: em "...é mentira. (Gên. 3:1-5) Quando pregamos..." a quebra é em "Quando pregamos...", e nunca em "(Gên. 3:1-5)...".
+3. Fontes decorativas (quando as preferências ativarem os tipos de fonte): só existem três, letra dupla (doubleStruck), sem serifa (sans) e caixa escura (squaredDark). NUNCA use script, largura cheia, letras circuladas, gótico (fraktur) nem monoespaçado. A fonte normal com negrito e itálico (serifada ou sem serifa) pode ser usada à vontade. A letra dupla e a caixa escura são raras: só para algo MUITO importante. A caixa escura vai só em UMA palavra curta, duas no máximo (por exemplo, uma citação simplesinha ou o nome de algo central), nunca numa frase.`;
 
 // Regra travada: a orientação que o usuário digita no pedido ("Orientação para a IA") e as instruções fixas das
 // configurações valem mais que qualquer outra regra de estilo, tom ou preferência, inclusive as opções desmarcadas.
@@ -299,7 +300,7 @@ const FORMATO_LISTA = `Responda SOMENTE com um objeto JSON, sem texto fora dele,
 
 export function travadosDe(limites) {
   return [
-  { id: "regras_fixas_formatacao", titulo: "Regras fixas da formatação (pergunta só em pergunta; parênteses no fim da frase anterior)", texto: REGRAS_FIXAS_FORMATACAO },
+  { id: "regras_fixas_formatacao", titulo: "Regras fixas da formatação (pergunta só em pergunta; parênteses no fim da frase anterior; fontes permitidas)", texto: REGRAS_FIXAS_FORMATACAO },
   { id: "prioridade_orientacao", titulo: "Prioridade da orientação do usuário (campo Orientação para a IA)", texto: PRIORIDADE_ORIENTACAO },
   { id: "formato_estudo", titulo: "Formato JSON das respostas do estudo (Opção 1)", texto: FORMATO_ESTUDO },
   { id: "formato_lista", titulo: "Formato JSON da numeração dos parágrafos", texto: FORMATO_LISTA },

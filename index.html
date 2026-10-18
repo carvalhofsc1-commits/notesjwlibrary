@@ -2049,7 +2049,7 @@
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="italico"> Usar itálico</label>
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="negritoItalico"> Usar negrito + itálico</label>
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="maiusculas"> Usar LETRAS MAIÚSCULAS nos destaques</label>
-          <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="variarFontes"> Variar o tipo de fonte nos destaques (script, letra dupla, sem serifa, monoespaçado...)</label>
+          <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="variarFontes"> Variar o tipo de fonte nos destaques (letra dupla, sem serifa e caixa escura)</label>
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="emoji"> Ilustrar com emoji no início da frase (a IA escolhe qualquer emoji pelo assunto)</label>
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citacoesBiblicas"> Formatar citações bíblicas: texto em itálico e livro, capítulo e versículo em negrito</label>
           <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="usarListas"> Usar os modelos de marcadores e numeradores de lista do app sempre que possível, para organizar melhor o texto</label>
@@ -2500,7 +2500,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '3.1'; // 3.1: estudo lido direto no wol.jw.org, limite de parágrafos e telas de IA mais enxutas (3.0: novo nome e ícones)
+    const APP_VERSION = '3.2'; // 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 
@@ -5866,7 +5866,7 @@ function saveTemplatesToStorage() {
     let AI_SENTINELA_MAX_LINES = 200;
     let AI_STUDY_MAX_PARAGRAPHS = 5; // parágrafos do estudo por consulta (o administrador muda na tela dos prompts)
     const AI_STYLE_KIND = { negrito: 'bold', italico: 'italic', negrito_italico: 'boldItalic' };
-    const AI_FONTS = ['script', 'doubleStruck', 'sans', 'mono', 'circled', 'fullwidth'];
+    const AI_FONTS = ['doubleStruck', 'sans', 'squaredDark']; // as únicas fontes decorativas que a IA pode usar
     const AI_DEFAULT_OPTIONS = {
       usarModelos: true, negrito: true, italico: false, negritoItalico: false, maiusculas: false, variarFontes: false,
       emoji: false, citacoesBiblicas: false, usarListas: false, separarIdeias: false, resumo: false, intensidade: 'moderada', instrucao: '', categoria: 'all', resumoTamanho: 'medio',
@@ -6121,7 +6121,7 @@ function saveTemplatesToStorage() {
       (suggestion.destaques || []).forEach(d => {
         const idx = d.trecho ? original.indexOf(d.trecho) : -1;
         if (idx < 0) return;
-        // Tipo de fonte escolhido pela IA (script, gótico, letra dupla...): combina com negrito/itálico quando a fonte tem
+        // Tipo de fonte escolhido pela IA (letra dupla, sem serifa ou caixa escura): combina com negrito/itálico quando a fonte tem
         // essa variação; sem fonte, vale a fonte principal escolhida no app.
         const font = AI_FONTS.includes(d.fonte) ? getStyleById(d.fonte) : null;
         const kind = d.estilo ? AI_STYLE_KIND[d.estilo] : '';
