@@ -15,9 +15,10 @@ const ESFORCO = ["low", "medium", "high"].includes(process.env.CLAUDE_EFFORT) ? 
 // Modelos antigos (Haiku 4.5, Sonnet 4.5...) não aceitam "effort": nesses casos ele não é enviado.
 const ACEITA_ESFORCO = !/haiku-4|sonnet-4-5|-3-/.test(MODEL);
 const comEsforco = (config) => (ACEITA_ESFORCO ? { ...config, effort: ESFORCO } : config);
-// Nas tarefas mecânicas (formatar linhas, escrever a aplicação de um versículo) o raciocínio interno só atrasa: no Haiku 5.5
-// ele é desligado (aceito com esforço low, medium ou high). Opus 5.5 e Sonnet 5.5 recusam "disabled", então lá nada muda.
-// CLAUDE_RACIOCINIO=on na Vercel volta a deixar a IA pensar também nessas tarefas.
+// O raciocínio interno só atrasa as tarefas deste app (formatar linhas, escrever a aplicação, responder às perguntas
+// do estudo): no estudo lido no site ele chegava a gastar milhares de tokens por parágrafo (20 a 30 s para uma resposta
+// curta). No Haiku 5.5 ele é desligado (aceito com esforço low, medium ou high). Opus 5.5 e Sonnet 5.5 recusam
+// "disabled", então lá nada muda. CLAUDE_RACIOCINIO=on na Vercel volta a deixar a IA pensar.
 const semRaciocinio =
   /haiku-5/.test(MODEL) && process.env.CLAUDE_RACIOCINIO !== "on" ? { thinking: { type: "disabled" } } : {};
 // Os textos dos prompts moram em _prompts.mjs (o administrador edita o tom e as regras pelo app).
@@ -587,20 +588,30 @@ async function finalizarItens(itens, opcoes, P, orientacao) {
 async function conversar(client, { system, mensagens, tools, maxTokens, voltas }) {
   let resposta;
   const blocos = [];
+  const inicio = Date.now();
+  const uso = { voltas: 0, entrada: 0, saida: 0 };
   for (let volta = 0; volta < voltas; volta++) {
     resposta = await client.messages.create({
       model: MODEL,
       max_tokens: maxTokens,
       system,
+      ...semRaciocinio,
       messages: mensagens,
       tools,
       ...(ACEITA_ESFORCO ? { output_config: { effort: ESFORCO } } : {}),
     });
+    uso.voltas++;
+    uso.entrada += resposta.usage?.input_tokens || 0;
+    uso.saida += resposta.usage?.output_tokens || 0;
     blocos.push(...resposta.content);
     if (resposta.stop_reason !== "pause_turn") break;
     mensagens = [...mensagens, { role: "assistant", content: resposta.content }];
   }
-  return { resposta, blocos };
+  // Para o registro: quanto tempo levou, quantos tokens e quais páginas a IA leu (diagnóstico de lentidão).
+  uso.segundos = Math.round((Date.now() - inicio) / 100) / 10;
+  uso.leituras = blocos.filter((b) => b.type === "server_tool_use").map((b) => String(b.input?.url || "?").replace(/^https?:\/\/wol\.jw\.org/, ""));
+  uso.pensou = blocos.some((b) => b.type === "thinking" || b.type === "redacted_thinking");
+  return { resposta, blocos, uso };
 }
 
 const Destaque = z.object({
@@ -695,6 +706,7 @@ async function responderSentinela(res, { linhas, opcoes, modo, ajuste, anteriore
       model: MODEL,
       max_tokens: 6000,
       system: P.sistemaSentinela,
+      ...semRaciocinio,
       messages: [{ role: "user", content: mensagem }],
       output_config: comEsforco({ format: zodOutputFormat(SaidaSentinela) }),
     });
@@ -860,22 +872,23 @@ async function responderEstudo(res, body, P) {
   ];
   // Uma leitura do artigo com a mensagem dada; devolve a resposta da IA, o texto e o JSON conferido.
   const consultar = async (conteudo) => {
-    const { resposta } = await conversar(client, {
+    const { resposta, uso } = await conversar(client, {
       system: P.sistemaEstudo,
       mensagens: [{ role: "user", content: conteudo }],
       tools,
-      maxTokens: 16000, // o raciocínio interno também conta aqui: com vários parágrafos 7000 cortava a resposta
+      maxTokens: 16000, // folga para muitos parágrafos (e para o raciocínio, se for religado com CLAUDE_RACIOCINIO=on)
       voltas: 5,
     });
     const texto = resposta.content
       .filter((bloco) => bloco.type === "text")
       .map((bloco) => bloco.text)
       .join("");
-    return { resposta, texto, dados: SaidaEstudo.safeParse(extrairJson(texto)) };
+    return { resposta, uso, texto, dados: SaidaEstudo.safeParse(extrairJson(texto)) };
   };
 
+  const inicioPedido = Date.now();
   try {
-    const { resposta, texto, dados } = await consultar(mensagem);
+    const { resposta, uso, texto, dados } = await consultar(mensagem);
 
     if (resposta.stop_reason === "refusal") return erro(res, 502, "A IA não conseguiu responder a este pedido.");
     if (!dados.success || (!dados.data.itens.some(Boolean) && !dados.data.erro)) {
@@ -917,7 +930,7 @@ async function responderEstudo(res, body, P) {
     // Faltou algum parágrafo pedido (a IA pulou ou a resposta foi cortada)? Pede de novo só os que faltaram.
     const cobertos = new Set(itens.flatMap((i) => [...numerosDosParagrafos(i.paragrafos)]));
     const faltando = alvo && !recapitulacao && !modo ? [...alvo].filter((n) => !cobertos.has(n)) : [];
-    console.log("Estudo:", JSON.stringify({ pedidos: alvo ? [...alvo] : "recapitulacao", recebidos: itens.map((i) => i.paragrafos), faltando, parada: resposta.stop_reason }));
+    console.log("Estudo:", JSON.stringify({ pedidos: alvo ? [...alvo] : "recapitulacao", recebidos: itens.map((i) => i.paragrafos), faltando, parada: resposta.stop_reason, ...uso }));
     if (faltando.length && itens.length) {
       try {
         const segunda = await consultar(
@@ -936,14 +949,16 @@ async function responderEstudo(res, body, P) {
           itens.push(...extras);
           const primeiro = (i) => Math.min(...numerosDosParagrafos(i.paragrafos), 999);
           itens.sort((a, b) => primeiro(a) - primeiro(b));
-          console.log("Estudo (complemento):", JSON.stringify({ faltando, recebidos: extras.map((i) => i.paragrafos) }));
+          console.log("Estudo (complemento):", JSON.stringify({ faltando, recebidos: extras.map((i) => i.paragrafos), ...segunda.uso }));
         }
       } catch (e) {
         console.error("Estudo: complemento falhou", e?.status, e?.message);
       }
     }
 
+    const inicioFontes = Date.now();
     const itensFinais = await finalizarItens(itens, opcoes, P, blocoOrientacao(opcoes, ajuste));
+    console.log("Estudo (tempo):", JSON.stringify({ fontes: Math.round((Date.now() - inicioFontes) / 100) / 10, total: Math.round((Date.now() - inicioPedido) / 100) / 10 }));
 
     return res.status(200).json({
       titulo: limpar(dados.data.titulo, 200) || null,
@@ -1017,6 +1032,7 @@ async function listarParagrafos(res, body, P) {
         model: MODEL,
         max_tokens: 1500,
         system: P.sistemaLista,
+        ...semRaciocinio,
         messages: mensagens,
         tools,
         ...(ACEITA_ESFORCO ? { output_config: { effort: ESFORCO } } : {}),
