@@ -6914,7 +6914,7 @@ function saveTemplatesToStorage() {
       setAiLoading(true, mode === 'nova' ? aiAnotherBtn : mode === 'melhorar' ? aiImproveBtn : aiStudyBtn);
 
       try {
-        const result = await postStudy(payload, 125000);
+        const result = await postStudy(payload, 170000);
 
         if (!result.ok) return setAiStatus(studyFailureMessage(result, 'Não foi possível ler o estudo agora.'), true);
 

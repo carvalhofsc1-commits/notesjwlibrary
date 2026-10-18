@@ -604,20 +604,20 @@ async function conversar(client, { system, mensagens, tools, maxTokens, voltas }
 }
 
 const Destaque = z.object({
-  trecho: z.string(),
+  trecho: z.coerce.string().catch(""),
   tipo: z.enum(TIPOS).catch("geral"),
-  estilo: z.enum(ESTILOS).nullable().optional(),
-  maiusculas: z.boolean().optional(),
+  estilo: z.enum(ESTILOS).nullable().optional().catch(null),
+  maiusculas: z.boolean().optional().catch(false),
   fonte: z.enum(FONTES).nullable().optional().catch(null),
 });
 
 // Item de resposta lido de JSON em texto (leitura do site); os campos extras são tolerantes.
 const ItemResposta = z.object({
-  paragrafos: z.string(),
-  resposta: z.string(),
+  paragrafos: z.coerce.string(),
+  resposta: z.coerce.string(),
   quebras: z.array(z.string()).optional().catch([]),
-  emoji: z.string().nullable().optional(),
-  destaques: z.array(Destaque).optional(),
+  emoji: z.string().nullable().optional().catch(null),
+  destaques: z.array(Destaque).optional().catch([]),
   referencias: z.array(z.string()).optional().catch([]),
   textosRelevantes: z.array(z.string()).optional().catch([]),
   verbetes: z.array(z.string()).optional().catch([]),
@@ -719,10 +719,11 @@ async function responderSentinela(res, { linhas, opcoes, modo, ajuste, anteriore
 // de quem tem o código de acesso. O texto do artigo não é guardado nem devolvido ao navegador: só as
 // respostas, com palavras próprias, e o título do artigo lido.
 
+// Um item com defeito vira null e é descartado (as outras respostas continuam valendo).
 const SaidaEstudo = z.object({
-  titulo: z.string().nullable().optional(),
-  erro: z.string().nullable().optional(),
-  itens: z.array(ItemResposta),
+  titulo: z.string().nullable().optional().catch(null),
+  erro: z.string().nullable().optional().catch(null),
+  itens: z.array(ItemResposta.nullable().catch(null)).catch([]),
 });
 
 function codigoValido(informado) {
@@ -760,8 +761,25 @@ function extrairJson(texto) {
   try {
     return JSON.parse(texto.slice(inicio, fim + 1));
   } catch {
-    return null;
+    return salvarJsonCortado(texto.slice(inicio));
   }
+}
+
+// Quando a resposta da IA é cortada no meio da lista "itens", fecha a lista depois do último item completo.
+function salvarJsonCortado(texto) {
+  const lista = texto.indexOf('"itens"');
+  if (lista < 0) return null;
+  let fim = texto.length;
+  for (let tentativas = 0; tentativas < 60; tentativas++) {
+    fim = texto.lastIndexOf("}", fim - 1);
+    if (fim <= lista) return null;
+    try {
+      return JSON.parse(texto.slice(0, fim + 1) + "]}");
+    } catch {
+      /* tenta o "}" anterior */
+    }
+  }
+  return null;
 }
 
 // "1, 2" -> {1, 2}; "3-5" -> {3, 4, 5}; "1 e 2" -> {1, 2}. Serve para conferir se a IA respondeu só aos
@@ -834,8 +852,8 @@ async function responderEstudo(res, body, P) {
       system: P.sistemaEstudo,
       mensagens: [{ role: "user", content: mensagem }],
       tools,
-      maxTokens: 7000,
-      voltas: 3,
+      maxTokens: 16000, // o raciocínio interno também conta aqui: com vários parágrafos 7000 cortava a resposta
+      voltas: 5,
     });
 
     if (resposta.stop_reason === "refusal") return erro(res, 502, "A IA não conseguiu responder a este pedido.");
@@ -845,7 +863,17 @@ async function responderEstudo(res, body, P) {
       .map((bloco) => bloco.text)
       .join("");
     const dados = SaidaEstudo.safeParse(extrairJson(texto));
-    if (!dados.success) return erro(res, 502, "A IA não devolveu as respostas no formato esperado. Tente novamente.");
+    if (!dados.success || (!dados.data.itens.some(Boolean) && !dados.data.erro)) {
+      console.error("Estudo: formato inesperado", JSON.stringify({ parada: resposta.stop_reason, tamanho: texto.length, inicio: texto.slice(0, 200), fim: texto.slice(-200) }));
+      return erro(
+        res,
+        502,
+        resposta.stop_reason === "max_tokens"
+          ? "A resposta ficou longa demais. Tente pedir menos parágrafos de cada vez."
+          : "A IA não devolveu as respostas no formato esperado. Tente novamente."
+      );
+    }
+    dados.data.itens = dados.data.itens.filter(Boolean);
 
     const limpar = limparLinha;
     const permitidos = estilosDe(opcoes);
