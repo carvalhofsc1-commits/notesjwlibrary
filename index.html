@@ -439,8 +439,6 @@
 
     .ai-hint { margin: 8px 0 0; font-size: .82rem; }
 
-    .ai-guidance-label { margin: 12px 0 6px; font-size: .88rem; }
-    p.ai-guidance-label { font-weight: 650; }
 
     /* ---------- Aviso de versão nova ---------- */
 
@@ -511,7 +509,8 @@
       background: var(--card);
     }
 
-    .sent-option-site { border-top: 6px solid #c2410c; }
+    /* A leitura do site é a única opção do card: sem a caixa em volta (borda, fundo e faixa colorida no alto). */
+    .sent-option.sent-option-site { margin-top: 8px; padding: 0; border: 0; border-radius: 0; background: transparent; }
 
     .sent-option h3 {
       margin: 0 0 4px;
@@ -566,7 +565,31 @@
 
     .ai-study-input input { text-align: center; font-weight: 700; }
 
+    /* Grupos de parágrafos para marcar tocando (um ou vários), sem digitar no campo. */
+    .ai-para-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 8px; }
+    .ai-para-chips[hidden] { display: none; }
+    .ai-para-chip,
+    .ai-para-chip:hover {
+      flex: 0 0 auto;
+      min-width: 44px;
+      min-height: 34px;
+      padding: 4px 11px;
+      border: 1px solid #38bdf8;
+      border-radius: 999px;
+      background: #e0f2fe;
+      background: color-mix(in srgb, #38bdf8 24%, var(--card));
+      color: var(--text);
+      font-size: .86rem;
+      line-height: 1.1;
+    }
+    .ai-para-chip.on,
+    .ai-para-chip.on:hover { background: #0284c7; border-color: #0284c7; color: #ffffff; }
+    @media (hover: hover) {
+      .ai-para-chip:not(.on):hover { border-color: #0284c7; background: color-mix(in srgb, #38bdf8 40%, var(--card)); }
+    }
+
     #aiStudyInfo { margin: 6px 0 0; text-align: center; }
+    #aiStudyInfo:empty { display: none; }
 
     #aiStudyArticleBox label { margin: 8px 0 4px; font-size: .82rem; }
 
@@ -1937,17 +1960,19 @@
                 <button id="aiSuggestBtn" class="ai-main-btn" type="button">✨ Sugerir formatação com IA de todo o texto original</button>
                 <button id="aiSentinelaBtn" class="ai-main-btn ai-sentinela-btn" type="button">📖 Responder resumidamente a pergunta do texto colado</button>
               </div>
-              <div class="ai-sources">
-                <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="resumo"> 📝 Incluir resumo do texto</label>
-                <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Transcrever o texto, citar na resposta, explicar e aplicar</label>
-                <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="transcreverSemCitar"> 📜 Transcrever o texto sem citar na resposta ou no resumo, explicar e aplicar</label>
-                <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citarTextos"> 🔖 Só citar 1 ou 2 textos na resposta ou no resumo, sem transcrever</label>
-                <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="explicarTextos"> 💬 Explicar e aplicar os textos, sem transcrever nem citar na resposta ou no resumo</label>
-              </div>
+              <details class="subsection sub-tint-2 textos-biblicos-box" id="resumoTextosBox">
+                <summary>📝 Resumo e textos bíblicos</summary>
+                <div class="subsection-body">
+                  <div class="ai-sources">
+                    <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="resumo"> 📝 Incluir resumo do texto</label>
+                    <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Transcrever o texto, citar na resposta, explicar e aplicar</label>
+                    <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="transcreverSemCitar"> 📜 Transcrever o texto sem citar na resposta ou no resumo, explicar e aplicar</label>
+                    <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citarTextos"> 🔖 Só citar 1 ou 2 textos na resposta ou no resumo, sem transcrever</label>
+                    <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="explicarTextos"> 💬 Explicar e aplicar os textos, sem transcrever nem citar na resposta ou no resumo</label>
+                  </div>
+                </div>
+              </details>
               <div id="aiProgress" class="ai-progress" role="progressbar" aria-label="A IA está trabalhando" aria-hidden="true"></div>
-              <label for="aiAdjustText" class="ai-guidance-label">Orientação para a IA (opcional)</label>
-              <input autocomplete="off" id="aiAdjustText" type="text" maxlength="300" placeholder="Ex.: formate só as perguntas; sem emojis; resumo bem curto">
-              <p class="hint ai-hint">Ao usar, o texto e seus modelos são enviados à IA (Claude, da Anthropic). Não use com dados pessoais ou sigilosos. As sugestões entram direto no campo de texto; se não gostar, use Outra sugestão ou Melhorar esta.</p>
               <div id="aiOutputHome">
               <div id="aiOutput">
               <span id="aiStatus" class="ok" role="status" aria-live="polite"></span>
@@ -1988,6 +2013,7 @@
                   </div>
                   <button id="aiParaNext" class="secondary ai-week-nav" type="button" aria-label="Próximos parágrafos">▶</button>
                 </div>
+                <div id="aiParaChips" class="ai-para-chips" role="group" aria-label="Marcar parágrafos" hidden></div>
                 <p id="aiStudyInfo" class="hint ai-hint"></p>
                 <span id="aiStudyStatus" class="ok" role="status" aria-live="polite"></span>
                 <div id="aiStudyArticleBox" hidden>
@@ -1997,26 +2023,26 @@
                 <button id="aiStudyBtn" class="ai-study-btn" type="button">🌐 IA - Responder resumidamente a pergunta do parágrafo selecionado</button>
                 <span id="aiStudyAnswerStatus" class="ok" role="status" aria-live="polite"></span>
               </div>
-
-              <details id="aiStudyCodeBox" class="sentinela-code">
-                <summary>🔑 Para esta opção é obrigatório o código de acesso.</summary>
-                <input autocomplete="off" id="aiStudyCode" type="password" maxlength="100" placeholder="Digite o código uma vez; ele fica salvo neste aparelho">
-              </details>
             </section>
 
-            <p class="ai-guidance-label">Textos bíblicos nas respostas</p>
-            <div class="ai-sources">
-              <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Transcrever o texto, citar na resposta, explicar e aplicar</label>
-              <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="transcreverSemCitar"> 📜 Transcrever o texto sem citar na resposta, explicar e aplicar</label>
-              <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citarTextos"> 🔖 Só citar 1 ou 2 textos na resposta, sem transcrever</label>
-              <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="explicarTextos"> 💬 Explicar e aplicar os textos, sem transcrever nem citar na resposta</label>
-            </div>
-
-            <label for="aiAdjustText2" class="ai-guidance-label">Orientação para a IA (opcional)</label>
-            <input autocomplete="off" id="aiAdjustText2" type="text" maxlength="300" placeholder="Ex.: respostas bem curtas; tom simples">
+            <details class="subsection sub-tint-2 textos-biblicos-box" id="textosBiblicosBox">
+              <summary>📖 Textos bíblicos nas respostas</summary>
+              <div class="subsection-body">
+                <div class="ai-sources">
+                  <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Transcrever o texto, citar na resposta, explicar e aplicar</label>
+                  <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="transcreverSemCitar"> 📜 Transcrever o texto sem citar na resposta, explicar e aplicar</label>
+                  <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citarTextos"> 🔖 Só citar 1 ou 2 textos na resposta, sem transcrever</label>
+                  <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="explicarTextos"> 💬 Explicar e aplicar os textos, sem transcrever nem citar na resposta</label>
+                </div>
+              </div>
+            </details>
 
             <div id="sentinelaOutputSlot"></div>
-            <p class="hint ai-hint">As respostas seguem as opções de "⚙️ Configurações gerais do app → Configurar formatação com IA". O artigo lido vai à IA (Claude, da Anthropic): não use com dados pessoais ou sigilosos.</p>
+
+            <details id="aiStudyCodeBox" class="sentinela-code">
+              <summary>🔑 Para esta opção é obrigatório o código de acesso.</summary>
+              <input autocomplete="off" id="aiStudyCode" type="password" maxlength="100" placeholder="Digite o código uma vez; ele fica salvo neste aparelho">
+            </details>
               </div>
             </details>
           </div>
@@ -5827,7 +5853,6 @@ function saveTemplatesToStorage() {
     const aiUndoBtn = document.getElementById('aiUndoBtn');
     const aiImproveBtn = document.getElementById('aiImproveBtn');
     const aiRefineBox = document.getElementById('aiRefineBox');
-    const aiAdjustText = document.getElementById('aiAdjustText');
     const aiStatus = document.getElementById('aiStatus');
     const aiStudyAnswerStatus = document.getElementById('aiStudyAnswerStatus');
     const aiResults = document.getElementById('aiResults');
@@ -5863,14 +5888,13 @@ function saveTemplatesToStorage() {
     const aiOutput = document.getElementById('aiOutput');
     const aiOutputHome = document.getElementById('aiOutputHome');
     const sentinelaOutputSlot = document.getElementById('sentinelaOutputSlot');
-    const aiAdjustText2 = document.getElementById('aiAdjustText2');
     // Abre a seção e todas as seções que a contêm (ex.: o grupo "Opções de formatação com IA").
     function openWithAncestors(details) {
       for (let box = details; box; box = box.parentElement && box.parentElement.closest('details')) box.open = true;
     }
 
-    // Os dois grupos recolhíveis lembram se estavam abertos.
-    ['outrasOpcoesBox', 'opcoesIaBox'].forEach(id => {
+    // Os grupos recolhíveis (e os cards de resumo/textos bíblicos) lembram se estavam abertos.
+    ['outrasOpcoesBox', 'opcoesIaBox', 'textosBiblicosBox', 'resumoTextosBox'].forEach(id => {
       const group = document.getElementById(id);
       const key = 'jwLibraryNoteAplicarGroup_' + id;
       try { group.open = localStorage.getItem(key) === '1'; } catch (e) { /* sem localStorage: fica recolhido */ }
@@ -6416,7 +6440,6 @@ function saveTemplatesToStorage() {
 
       const options = readAiOptions(); // inclui "Incluir resumo do texto" e as consultas, como estão marcados agora
       const payload = { linhas: lines, modelos, opcoes: options };
-      payload.ajuste = aiAdjustText.value.trim().slice(0, 300);
       if (mode && (aiRaw.length || previousSummary)) {
         payload.modo = mode;
         payload.anteriores = { resumo: previousSummary ? (previousSummary.texto || null) : null, textos: previousSummary ? previousSummary.textos : null, perspicaz: previousSummary ? previousSummary.perspicaz : null, sugestoes: aiRaw };
@@ -6601,7 +6624,7 @@ function saveTemplatesToStorage() {
       if (!aiAppliedAny) aiBaseText = input.value;
       saveAiOptions();
 
-      const payload = { tarefa: 'sentinela', linhas: lines, modelos: [], opcoes: readAiOptions(), ajuste: aiAdjustText.value.trim().slice(0, 300) };
+      const payload = { tarefa: 'sentinela', linhas: lines, modelos: [], opcoes: readAiOptions() };
       if (mode && hadPrevious) {
         payload.modo = mode;
         payload.anteriores = { itens: aiSentinelaRaw };
@@ -6667,6 +6690,8 @@ function saveTemplatesToStorage() {
     const aiStudyArticleBox = document.getElementById('aiStudyArticleBox');
     const aiParaPrev = document.getElementById('aiParaPrev');
     const aiParaNext = document.getElementById('aiParaNext');
+    const aiParaChips = document.getElementById('aiParaChips');
+    let aiParaChipsFor = null; // a lista (aiStudy) para a qual os botões dos grupos foram montados
     const aiStudyCode = document.getElementById('aiStudyCode');
     const SENTINELA_BOX_KEY = 'jwLibraryNoteAplicarSentinelaBoxV1';
     const sentinelaBox = document.getElementById('sentinelaBox');
@@ -6744,15 +6769,84 @@ function saveTemplatesToStorage() {
       return numbers;
     }
 
+    // [1, 2, 3, 5] -> "1-3, 5" (o servidor aceita faixas; assim o pedido fica curto mesmo com muitos parágrafos)
+    function compactStudyNumbers(numbers) {
+      const sorted = [...new Set(numbers)].sort((a, b) => a - b);
+      const parts = [];
+      for (let i = 0; i < sorted.length; i++) {
+        let end = i;
+        while (end + 1 < sorted.length && sorted[end + 1] === sorted[end] + 1) end++;
+        parts.push(end > i ? sorted[i] + '-' + sorted[end] : String(sorted[i]));
+        i = end;
+      }
+      return parts.join(', ');
+    }
+
+    // Grupos marcados pelo que está no campo (os que têm algum dos números). "todos" e "Recapitulação" não marcam grupos.
+    function selectedStudyGroups() {
+      if (!aiStudy) return [];
+      const text = plainStudyText(aiStudyParagraphs.value);
+      if (!text || text === 'todos' || isRecapText(text)) return [];
+      const numbers = new Set(studyNumbers(aiStudyParagraphs.value));
+      return aiStudy.grupos.filter(group => studyNumbers(group).some(n => numbers.has(n)));
+    }
+
+    // Um botão por opção da lista; tocar num grupo marca ou desmarca (dá para marcar vários).
+    function renderStudyChips() {
+      aiParaChipsFor = aiStudy;
+      aiParaChips.textContent = '';
+      aiParaChips.hidden = !aiStudy;
+      studyOptions().forEach(option => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'ai-para-chip';
+        chip.textContent = option === 'todos' ? 'Todos' : option;
+        chip.dataset.option = option;
+        chip.addEventListener('click', () => toggleStudyChip(option));
+        aiParaChips.appendChild(chip);
+      });
+    }
+
+    function syncStudyChips() {
+      const text = plainStudyText(aiStudyParagraphs.value);
+      const groups = selectedStudyGroups();
+      aiParaChips.querySelectorAll('.ai-para-chip').forEach(chip => {
+        const option = chip.dataset.option;
+        const on = option === 'todos' ? (!text || text === 'todos')
+          : option === STUDY_RECAP_LABEL ? isRecapText(text)
+          : groups.includes(option);
+        chip.classList.toggle('on', on);
+        chip.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+    }
+
+    // "Todos" e "Recapitulação" valem sozinhos; os grupos se somam. Sem nenhum grupo marcado, volta a "todos".
+    function toggleStudyChip(option) {
+      if (option === 'todos' || option === STUDY_RECAP_LABEL) {
+        aiStudyParagraphs.value = option;
+      } else {
+        const groups = selectedStudyGroups();
+        const next = groups.includes(option) ? groups.filter(group => group !== option) : groups.concat(option);
+        aiStudyParagraphs.value = !next.length ? 'todos'
+          : next.length === 1 ? next[0]
+          : compactStudyNumbers(next.flatMap(studyNumbers));
+      }
+      updateStudyPicker();
+    }
+
     function updateStudyPicker() {
       const options = studyOptions();
       const index = currentStudyIndex();
+      const marked = selectedStudyGroups().length;
       aiParaPrev.disabled = !options.length || index <= 0;
       aiParaNext.disabled = !options.length || index >= options.length - 1;
       aiStudyLoadBtn.textContent = aiStudy ? '↻ Recarregar os parágrafos' : '📋 Carregar os parágrafos';
       aiStudyInfo.textContent = aiStudy
-        ? (aiStudy.titulo ? aiStudy.titulo + ' · ' : '') + (index >= 0 ? 'opção ' + (index + 1) + ' de ' + options.length : 'texto livre')
-        : 'Toque em "Carregar os parágrafos" para a IA listar os parágrafos do estudo, ou digite os números.';
+        ? (aiStudy.titulo ? aiStudy.titulo + ' · ' : '') +
+          (marked > 1 ? marked + ' grupos marcados' : index >= 0 ? 'opção ' + (index + 1) + ' de ' + options.length : 'texto livre')
+        : '';
+      if (aiParaChipsFor !== aiStudy) renderStudyChips();
+      syncStudyChips();
     }
 
     function stepStudy(delta) {
@@ -6910,8 +7004,7 @@ function saveTemplatesToStorage() {
         ano: aiWeekYear,
         semana: aiWeekNumber,
         paragrafos: aiStudyParagraphs.value.trim() || 'todos',
-        opcoes: readAiOptions(),
-        ajuste: aiAdjustText.value.trim().slice(0, 300)
+        opcoes: readAiOptions()
       };
       if (previousAnswers) {
         payload.modo = mode;
@@ -6968,19 +7061,6 @@ function saveTemplatesToStorage() {
     });
     aiAnotherBtn.addEventListener('click', () => refineAi('nova'));
     aiImproveBtn.addEventListener('click', () => refineAi('melhorar'));
-    // O campo de orientação existe nos dois lugares (texto e card da Sentinela) e os dois mostram o mesmo valor.
-    aiAdjustText.addEventListener('input', () => { aiAdjustText2.value = aiAdjustText.value; });
-    aiAdjustText2.addEventListener('input', () => { aiAdjustText.value = aiAdjustText2.value; });
-    aiAdjustText2.addEventListener('keydown', e => {
-      if (e.key !== 'Enter') return;
-      e.preventDefault();
-      if (aiResumo && aiLastKind !== 'format') refineAi('melhorar'); // só refina respostas já geradas
-    });
-    aiAdjustText.addEventListener('keydown', e => {
-      if (e.key !== 'Enter') return;
-      e.preventDefault();
-      refineAi(aiRaw.length || aiResumo ? 'melhorar' : undefined);
-    });
 
     aiOptionInputs.forEach(el => el.addEventListener('change', saveAiOptions));
     aiIntensity.addEventListener('change', saveAiOptions);

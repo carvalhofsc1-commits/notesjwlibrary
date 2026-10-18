@@ -808,7 +808,7 @@ async function responderEstudo(res, body, P) {
   const pedido = String(body.paragrafos || "").trim();
   // "recapitulação", "Recapitulacao", "perguntas de recapitulação" ou só "recap": o quadro final do artigo.
   const recapitulacao = /^(perguntas de )?recap/.test(pedido.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase());
-  const paragrafos = recapitulacao ? "recapitulacao" : /^(todos|[\d\s,\-–]{1,40})$/i.test(pedido) ? pedido : "todos";
+  const paragrafos = recapitulacao ? "recapitulacao" : /^(todos|[\d\s,\-–]{1,120})$/i.test(pedido) ? pedido : "todos";
   const alvoBruto = recapitulacao || /^todos$/i.test(paragrafos) ? null : numerosDosParagrafos(paragrafos);
   const alvo = alvoBruto && alvoBruto.size ? alvoBruto : null; // null = todos os parágrafos
   const opcoes = validarOpcoes(body.opcoes);
