@@ -6749,8 +6749,9 @@ function saveTemplatesToStorage() {
       aiParaPrev.disabled = !options.length || index <= 0;
       aiParaNext.disabled = !options.length || index >= options.length - 1;
       aiStudyLoadBtn.textContent = aiStudy ? '↻ Recarregar os parágrafos' : '📋 Carregar os parágrafos';
+      const exact = options.some(option => plainStudyText(option) === plainStudyText(aiStudyParagraphs.value));
       aiStudyInfo.textContent = aiStudy
-        ? (aiStudy.titulo ? aiStudy.titulo + ' · ' : '') + (index >= 0 ? 'opção ' + (index + 1) + ' de ' + options.length : 'texto livre')
+        ? (aiStudy.titulo ? aiStudy.titulo + ' · ' : '') + (exact ? 'opção ' + (index + 1) + ' de ' + options.length : 'texto livre')
         : '';
     }
 
@@ -6762,11 +6763,12 @@ function saveTemplatesToStorage() {
       updateStudyPicker();
     }
 
-    // Ao digitar só um número, mostra o grupo a que ele pertence (ex.: 2 -> "1, 2").
+    // Ao digitar "recap", mostra "Recapitulação". Os números ficam como foram digitados (ex.: só o 4, mesmo que
+    // as setas mostrem "4, 5"); as setas continuam andando a partir do grupo desse número.
     function normalizeStudyInput() {
       const options = studyOptions();
       const text = aiStudyParagraphs.value.trim();
-      if (options.length && (/^\d+$/.test(text) || isRecapText(text))) {
+      if (options.length && isRecapText(text)) {
         const index = currentStudyIndex();
         if (index >= 0) aiStudyParagraphs.value = options[index];
       }
