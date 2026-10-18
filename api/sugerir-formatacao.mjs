@@ -820,11 +820,22 @@ async function responderEstudo(res, body, P) {
   const anteriores =
     modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(body.anteriores).slice(0, 8000) : "";
 
+  const escopoDosParagrafos = (numeros) =>
+    `ESCOPO: responda SOMENTE às perguntas do(s) parágrafo(s) de número ${numeros.join(", ")} do artigo. São números de parágrafos (por exemplo, "8" é o parágrafo 8, e não "oito parágrafos"). Responda a TODOS eles, sem pular nenhum: quando dois ou mais parágrafos compartilham a mesma pergunta, faça um item só com os números de todos (ex.: "4, 5"). NÃO responda a nenhum outro parágrafo, nem aos anteriores.\n`;
+  const montarMensagem = (escopo) =>
+    blocoOrientacao(opcoes, ajuste) +
+    `ENDEREÇO: ${url}\n` +
+    escopo +
+    `PREFERÊNCIAS:\n- Tamanho de cada resposta: ${DESCRICAO_RESPOSTA[opcoes.resumoTamanho]}.\n` +
+    descreverFormatacaoResposta(opcoes, P.limites.maxDestaques, sep) +
+    descreverFontes(opcoes, P, false) +
+    (ajuste || opcoes.instrucao ? LEMBRETE_ORIENTACAO : "");
+
   let mensagem =
     blocoOrientacao(opcoes, ajuste) +
     `ENDEREÇO: ${url}\n` +
     (alvo
-      ? `ESCOPO: responda SOMENTE às perguntas do(s) parágrafo(s) de número ${[...alvo].join(", ")} do artigo. São números de parágrafos (por exemplo, "8" é o parágrafo 8, e não "oito parágrafos"). NÃO responda a nenhum outro parágrafo, nem aos anteriores.\n`
+      ? escopoDosParagrafos([...alvo])
       : recapitulacao
         ? 'ESCOPO: a RECAPITULAÇÃO. Responda SOMENTE às perguntas do quadro de recapitulação no fim do artigo (o quadro "Qual é a sua resposta?"), numeradas na ordem em que aparecem (1, 2, 3...). NÃO responda às perguntas dos parágrafos.\n'
         : "ESCOPO: todos os parágrafos do artigo que têm pergunta (sem o quadro de recapitulação).\n") +
@@ -842,27 +853,30 @@ async function responderEstudo(res, body, P) {
         : "\n\nPEDIDO: melhore as respostas anteriores, mantendo o que estava bom, seguindo a orientação específica acima (se houver).");
   }
 
-  try {
-    const client = new Anthropic({ maxRetries: 1, timeout: 90_000 });
-    const tools = [
-      { type: "web_fetch_20250910", name: "web_fetch", max_uses: 3, allowed_domains: ["wol.jw.org"], max_content_tokens: 60000 },
-    ];
-
+  const client = new Anthropic({ maxRetries: 1, timeout: 90_000 });
+  const tools = [
+    { type: "web_fetch_20250910", name: "web_fetch", max_uses: 3, allowed_domains: ["wol.jw.org"], max_content_tokens: 60000 },
+  ];
+  // Uma leitura do artigo com a mensagem dada; devolve a resposta da IA, o texto e o JSON conferido.
+  const consultar = async (conteudo) => {
     const { resposta } = await conversar(client, {
       system: P.sistemaEstudo,
-      mensagens: [{ role: "user", content: mensagem }],
+      mensagens: [{ role: "user", content: conteudo }],
       tools,
       maxTokens: 16000, // o raciocínio interno também conta aqui: com vários parágrafos 7000 cortava a resposta
       voltas: 5,
     });
-
-    if (resposta.stop_reason === "refusal") return erro(res, 502, "A IA não conseguiu responder a este pedido.");
-
     const texto = resposta.content
       .filter((bloco) => bloco.type === "text")
       .map((bloco) => bloco.text)
       .join("");
-    const dados = SaidaEstudo.safeParse(extrairJson(texto));
+    return { resposta, texto, dados: SaidaEstudo.safeParse(extrairJson(texto)) };
+  };
+
+  try {
+    const { resposta, texto, dados } = await consultar(mensagem);
+
+    if (resposta.stop_reason === "refusal") return erro(res, 502, "A IA não conseguiu responder a este pedido.");
     if (!dados.success || (!dados.data.itens.some(Boolean) && !dados.data.erro)) {
       console.error("Estudo: formato inesperado", JSON.stringify({ parada: resposta.stop_reason, tamanho: texto.length, inicio: texto.slice(0, 200), fim: texto.slice(-200) }));
       return erro(
@@ -890,12 +904,43 @@ async function responderEstudo(res, body, P) {
     }
 
     // Mesmo que a IA responda a mais, só ficam os parágrafos pedidos.
-    const itens = alvo
-      ? itensTodos.filter((i) => {
-          const rotulos = numerosDosParagrafos(i.paragrafos);
-          return rotulos.size ? [...rotulos].some((n) => alvo.has(n)) : itensTodos.length === 1;
-        })
-      : itensTodos;
+    const doEscopo = (lista) =>
+      alvo
+        ? lista.filter((i) => {
+            const rotulos = numerosDosParagrafos(i.paragrafos);
+            return rotulos.size ? [...rotulos].some((n) => alvo.has(n)) : lista.length === 1;
+          })
+        : lista;
+    const itens = doEscopo(itensTodos);
+
+    // Faltou algum parágrafo pedido (a IA pulou ou a resposta foi cortada)? Pede de novo só os que faltaram.
+    const cobertos = new Set(itens.flatMap((i) => [...numerosDosParagrafos(i.paragrafos)]));
+    const faltando = alvo && !recapitulacao && !modo ? [...alvo].filter((n) => !cobertos.has(n)) : [];
+    console.log("Estudo:", JSON.stringify({ pedidos: alvo ? [...alvo] : "todos", recebidos: itens.map((i) => i.paragrafos), faltando, parada: resposta.stop_reason }));
+    if (faltando.length && itens.length) {
+      try {
+        const segunda = await consultar(
+          montarMensagem(
+            escopoDosParagrafos(faltando) +
+              `Já foram respondidos os parágrafos ${[...cobertos].join(", ")}: não os repita. Se um parágrafo pedido compartilha a pergunta com um deles, devolva "itens" vazio.\n`
+          )
+        );
+        if (segunda.dados.success) {
+          const extras = doEscopo(
+            segunda.dados.data.itens
+              .filter(Boolean)
+              .map((i) => montarItem(i, opcoes, permitidos, P.limites, sep))
+              .filter((i) => i.resposta && ![...numerosDosParagrafos(i.paragrafos)].every((n) => cobertos.has(n)))
+          );
+          itens.push(...extras);
+          const primeiro = (i) => Math.min(...numerosDosParagrafos(i.paragrafos), 999);
+          itens.sort((a, b) => primeiro(a) - primeiro(b));
+          console.log("Estudo (complemento):", JSON.stringify({ faltando, recebidos: extras.map((i) => i.paragrafos) }));
+        }
+      } catch (e) {
+        console.error("Estudo: complemento falhou", e?.status, e?.message);
+      }
+    }
 
     const itensFinais = await finalizarItens(itens, opcoes, P, blocoOrientacao(opcoes, ajuste));
 
