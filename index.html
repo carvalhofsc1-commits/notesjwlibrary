@@ -1126,6 +1126,16 @@
       box-shadow: none;
       scroll-snap-align: start;
     }
+    /* Letras em emoji que ficam fixas no fim da faixa, depois dos emojis do usuário (separadas por uma linha fina). */
+    .quick-emoji-sep {
+      flex: 0 0 3px;
+      align-self: stretch;
+      margin: 3px 2px;
+      border-radius: 2px;
+      background: #8b5cf6;
+      background: color-mix(in srgb, #8b5cf6 55%, transparent);
+    }
+    .quick-emoji-list button.letter { background: color-mix(in srgb, #8b5cf6 8%, var(--card)); }
     @media (min-width: 561px) { .quick-emoji-list { --cols: 12; } }
     @media (min-width: 980px) {
       .quick-emoji-list { --cols: 16; --gap: 3px; --min: 28px; }
@@ -2179,6 +2189,7 @@
       <div class="quickbar-editor">
         <h3>⚡ Faixa rápida da tela principal (até 16)</h3>
         <p class="hint">Estes emojis aparecem na faixa logo abaixo dos botões de formatação. Toque num deles aqui para mudar de posição ou tirar.</p>
+        <p class="hint">Depois deles, a faixa traz sempre, fixas, as letras em emoji 🅰️ 🅱️ 🅾️ 🅿️ Ⓜ️ ℹ️ 🆎 🆑 ❌ ⭕ (deslize a faixa para o lado para ver).</p>
         <div id="quickBarEditor" class="quickbar-slots"></div>
         <div id="quickBarActions" class="quickbar-actions" hidden>
           <button id="quickBarLeft" class="secondary" type="button">◀ Mover</button>
@@ -2500,7 +2511,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '3.2'; // 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
+    const APP_VERSION = '3.3'; // 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 
@@ -2591,6 +2602,20 @@
 
     // Faixa rápida da tela principal: lista própria (separada dos favoritos), até 16 emojis.
     const QUICKBAR_MAX = 16;
+    // Letras em emoji, fixas no fim da faixa para todos (não contam nos 16 e não são editáveis): A, B, O, P, M, I, AB, CL, X e O.
+    // Com o seletor de emoji (U+FE0F) o A, o B, o O, o P, o M e o I aparecem coloridos em qualquer aparelho.
+    const QUICKBAR_LETTERS = [
+      { sym: '\u{1F170}\uFE0F', name: 'letra A' },
+      { sym: '\u{1F171}\uFE0F', name: 'letra B' },
+      { sym: '\u{1F17E}\uFE0F', name: 'letra O' },
+      { sym: '\u{1F17F}\uFE0F', name: 'letra P' },
+      { sym: '\u24C2\uFE0F', name: 'letra M' },
+      { sym: '\u2139\uFE0F', name: 'letra i' },
+      { sym: '\u{1F18E}', name: 'letras AB' },
+      { sym: '\u{1F191}', name: 'letras CL' },
+      { sym: '\u274C', name: 'letra X' },
+      { sym: '\u2B55', name: 'letra O (círculo)' }
+    ];
     const defaultQuickBar = ['❓', '✅', '⚠️', '👉', '💡', '📌', '🔎', '✍️', '🙏', '❤️', '👍', '😀', '⭐', '🔷', '▶️', '📖'];
     let quickBarSymbols = defaultQuickBar.slice();
     let quickBarSelected = -1;   // posição escolhida no editor (para mover ou tirar)
@@ -4306,8 +4331,35 @@ function saveTemplatesToStorage() {
         btn.addEventListener('click', () => insertTextAtCursor(getActiveInsertTarget(), sym));
         quickEmojiList.appendChild(btn);
       });
+
+      // Depois dos emojis do usuário, as letras fixas (rolando a faixa para o lado).
+      const separator = document.createElement('span');
+      separator.className = 'quick-emoji-sep';
+      separator.setAttribute('aria-hidden', 'true');
+      quickEmojiList.appendChild(separator);
+      QUICKBAR_LETTERS.forEach(letter => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'letter';
+        btn.textContent = letter.sym;
+        btn.title = 'Inserir ' + letter.sym + ' (' + letter.name + ')';
+        btn.setAttribute('aria-label', 'Inserir ' + letter.name + ' em emoji');
+        btn.addEventListener('mousedown', event => event.preventDefault());
+        btn.addEventListener('click', () => insertTextAtCursor(getActiveInsertTarget(), letter.sym));
+        quickEmojiList.appendChild(btn);
+      });
       renderQuickBarEditor();
     }
+
+    // Com o mouse, a roda também rola a faixa para o lado (só enquanto ainda há para onde rolar; nas pontas a página rola).
+    quickEmojiList.addEventListener('wheel', event => {
+      if (Math.abs(event.deltaX) >= Math.abs(event.deltaY)) return;
+      const max = quickEmojiList.scrollWidth - quickEmojiList.clientWidth;
+      const left = quickEmojiList.scrollLeft;
+      if (max <= 0 || (event.deltaY < 0 && left <= 0) || (event.deltaY > 0 && left >= max - 1)) return;
+      event.preventDefault();
+      quickEmojiList.scrollLeft = Math.max(0, Math.min(max, left + event.deltaY));
+    }, { passive: false });
 
     function renderQuickBarEditor() {
       const editor = document.getElementById('quickBarEditor');
