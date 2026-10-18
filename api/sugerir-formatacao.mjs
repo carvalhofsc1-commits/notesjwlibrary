@@ -515,7 +515,14 @@ function sanearLista(lista) {
 function sanearQuebras(quebras, linha) {
   const resultado = [];
   for (const q of (Array.isArray(quebras) ? quebras : []).slice(0, 60)) {
-    const trecho = typeof q === "string" ? q.trim() : "";
+    let trecho = typeof q === "string" ? q.trim() : "";
+    // Regra fixa: o texto entre parênteses fica no fim da frase anterior; se a IA quebrou antes dele, a quebra passa
+    // para depois do parêntese (ou some, se nada novo começa ali).
+    if (trecho.startsWith("(") && linha.includes(trecho)) {
+      const abre = linha.indexOf(trecho);
+      const fecha = fimDoParentese(linha, abre);
+      trecho = fecha >= 0 ? pecaDepoisDe(linha, fecha + 1) : trecho;
+    }
     if (trecho.length < 2 || !linha.includes(trecho) || linha.trim().startsWith(trecho) || resultado.includes(trecho)) continue;
     resultado.push(trecho);
   }
@@ -545,15 +552,49 @@ function inicioDeFrases(texto) {
     const palavra = (texto.slice(0, m.index).match(/(\p{L}+)$/u) || [])[1] || "";
     if (m[1] === "." && ABREVIACOES.has(palavra.toLowerCase())) continue;
     const inicio = re.lastIndex;
-    for (const tamanho of [60, 120, 240]) {
-      const peca = texto.slice(inicio, inicio + tamanho).trim();
-      if (peca.length >= 2 && texto.indexOf(peca) === inicio) {
-        resultado.push(peca);
-        break;
-      }
+    // Regra fixa: texto entre parênteses fica no fim da frase anterior. Em vez de quebrar antes dele, a quebra vem
+    // depois do parêntese (se uma nova frase começar ali) e a busca continua a partir daí.
+    const fecha = fimDoParentese(texto, inicio);
+    if (fecha >= 0) {
+      re.lastIndex = fecha + 1;
+      const peca = pecaDepoisDe(texto, fecha + 1);
+      if (peca) resultado.push(peca);
+      continue;
     }
+    const peca = pecaEm(texto, inicio);
+    if (peca) resultado.push(peca);
   }
   return resultado;
+}
+
+// Trecho do texto que começa exatamente em "inicio" (o app localiza a quebra pelo trecho, então ele precisa ser único
+// nessa posição); "" se não der para identificar.
+function pecaEm(texto, inicio) {
+  for (const tamanho of [60, 120, 240]) {
+    const peca = texto.slice(inicio, inicio + tamanho).trim();
+    if (peca.length >= 2 && texto.indexOf(peca) === inicio) return peca;
+  }
+  return "";
+}
+
+// Posição do ")" que fecha o parêntese aberto em "abre" (-1 se não houver um parêntese curto ali).
+function fimDoParentese(texto, abre) {
+  if (texto[abre] !== "(") return -1;
+  const fecha = texto.indexOf(")", abre);
+  return fecha > abre && fecha - abre <= 250 ? fecha : -1;
+}
+
+// Início da frase que vem depois de um parêntese (a partir de "desde", logo depois do ")"): só vale se houver um espaço
+// e uma nova frase (letra maiúscula); "" se o parêntese termina a linha, é seguido de pontuação ou de texto que continua.
+function pecaDepoisDe(texto, desde) {
+  const espacos = texto.slice(desde).match(/^\s+/);
+  if (!espacos) return "";
+  const inicio = desde + espacos[0].length;
+  return /^["“‘¿¡]?[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ]/u.test(texto.slice(inicio, inicio + 2)) ? pecaEm(texto, inicio) : "";
+}
+
+function ehModeloDePergunta(modelo) {
+  return Boolean(modelo) && /perguntas?|[❓❔]/iu.test(`${modelo.nome} ${modelo.conteudo}`);
 }
 
 function limparLinha(valor, max) {
@@ -1222,6 +1263,7 @@ export default async function handler(req, res) {
   // Com orientação do usuário (campo do pedido ou instruções fixas) ela manda: o que ela pedir vale mesmo com a opção
   // desmarcada (a IA só usa um recurso desmarcado se a orientação pedir). Sem orientação, valem só as opções marcadas.
   const livre = Boolean(ajuste || opcoes.instrucao);
+  const falaDePerguntas = /pergunta/i.test(`${ajuste} ${opcoes.instrucao}`);
   const efetivas = livre
     ? { ...opcoes, usarModelos: true, emoji: true, negrito: true, italico: true, negritoItalico: true, maiusculas: true, usarListas: true, separarIdeias: true }
     : opcoes;
@@ -1282,7 +1324,10 @@ export default async function handler(req, res) {
       if (s.linha < 0 || s.linha >= linhas.length || vistas.has(s.linha)) continue;
 
       const linha = linhas[s.linha];
-      const modeloId = efetivas.usarModelos && s.modeloId && idsValidos.has(s.modeloId) ? s.modeloId : null;
+      let modeloId = efetivas.usarModelos && s.modeloId && idsValidos.has(s.modeloId) ? s.modeloId : null;
+      // Regra fixa: modelo de PERGUNTA só em linha que pergunta (tem "?"); uma citação bíblica, por exemplo, não é pergunta.
+      // Só vale outra coisa se o próprio usuário falar de perguntas na orientação.
+      if (modeloId && !falaDePerguntas && ehModeloDePergunta(modelosUsaveis.find((m) => m.id === modeloId)) && !linha.includes("?")) modeloId = null;
       const emoji = efetivas.emoji ? limparEmoji(s.emoji) : null;
 
       const destaques = sanearDestaques(s.destaques, linha, efetivas, estilosPermitidos, P.limites.maxDestaques);
