@@ -6,6 +6,7 @@ import { z } from "zod";
 import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
 import { buscarVerbete, buscarVersiculos, fontesConfiguradas, precarregarFontes } from "./_fontes.mjs";
+import { lerEstudoDireto, textoDaRecapitulacao, textoDosGrupos } from "./_wol.mjs";
 
 const MODEL = process.env.CLAUDE_MODEL || "claude-haiku-5-5";
 // Esforço da IA. Os modelos novos (Haiku 5.5 incluído) pensam antes de responder, e o padrão do Haiku 5.5 é "medium";
@@ -15,10 +16,11 @@ const ESFORCO = ["low", "medium", "high"].includes(process.env.CLAUDE_EFFORT) ? 
 // Modelos antigos (Haiku 4.5, Sonnet 4.5...) não aceitam "effort": nesses casos ele não é enviado.
 const ACEITA_ESFORCO = !/haiku-4|sonnet-4-5|-3-/.test(MODEL);
 const comEsforco = (config) => (ACEITA_ESFORCO ? { ...config, effort: ESFORCO } : config);
-// O raciocínio interno só atrasa as tarefas deste app (formatar linhas, escrever a aplicação, responder às perguntas
-// do estudo): no estudo lido no site ele chegava a gastar milhares de tokens por parágrafo (20 a 30 s para uma resposta
-// curta). No Haiku 5.5 ele é desligado (aceito com esforço low, medium ou high). Opus 5.5 e Sonnet 5.5 recusam
-// "disabled", então lá nada muda. CLAUDE_RACIOCINIO=on na Vercel volta a deixar a IA pensar.
+// Nas tarefas mecânicas (formatar linhas, escrever a aplicação de um versículo, listar os parágrafos) o raciocínio
+// interno só atrasa: no Haiku 5.5 ele é desligado (aceito com esforço low, medium ou high). Opus 5.5 e Sonnet 5.5 recusam
+// "disabled", então lá nada muda. CLAUDE_RACIOCINIO=on na Vercel volta a deixar a IA pensar também nessas tarefas.
+// Nas RESPOSTAS do estudo ele fica ligado: sem ele as respostas saíam incoerentes. Para não demorar, a IA recebe só as
+// perguntas e os parágrafos pedidos (lidos pelo servidor no wol.jw.org), e não o artigo inteiro.
 const semRaciocinio =
   /haiku-5/.test(MODEL) && process.env.CLAUDE_RACIOCINIO !== "on" ? { thinking: { type: "disabled" } } : {};
 // Os textos dos prompts moram em _prompts.mjs (o administrador edita o tom e as regras pelo app).
@@ -595,7 +597,6 @@ async function conversar(client, { system, mensagens, tools, maxTokens, voltas }
       model: MODEL,
       max_tokens: maxTokens,
       system,
-      ...semRaciocinio,
       messages: mensagens,
       tools,
       ...(ACEITA_ESFORCO ? { output_config: { effort: ESFORCO } } : {}),
@@ -673,21 +674,19 @@ function tratarErro(e, res) {
   return erro(res, 502, "Não foi possível obter sugestões agora. Tente novamente.");
 }
 
-async function responderSentinela(res, { linhas, opcoes, modo, ajuste, anteriores }, P) {
-  const sep = modoSeparacao(opcoes, ajuste);
-  // A consulta às fontes não exige o código de acesso (o código vale só para a leitura do wol.jw.org).
-  if (consultaPedida(opcoes) && !fontesConfiguradas()) return erro(res, 500, "A consulta às fontes ainda não está configurada no servidor.");
-  // Os versículos citados na pergunta são sempre transcritos: a Bíblia começa a carregar enquanto a IA escreve.
-  precarregarFontes({ biblia: true, perspicaz: opcoes.consultarPerspicaz });
-
+// Escreve as respostas do estudo a partir de um texto com as perguntas e os parágrafos: o colado pelo usuário
+// (Opção 2) ou o lido pelo servidor no wol.jw.org (Opção 1). A IA pensa antes de responder (o texto é curto).
+// Devolve { itens, uso } ou null se a IA não conseguiu gerar as respostas.
+async function escreverRespostas({ rotulo, texto, escopo, opcoes, modo, ajuste, anteriores, sep, P }) {
   let mensagem =
     blocoOrientacao(opcoes, ajuste) +
     "PREFERÊNCIAS:\n" +
     `- Tamanho de cada resposta: ${DESCRICAO_RESPOSTA[opcoes.resumoTamanho]}.\n` +
     descreverFormatacaoResposta(opcoes, P.limites.maxDestaques, sep) +
     descreverFontes(opcoes, P, false) +
-    "\n\nTEXTO COLADO:\n" +
-    linhas.join("\n") +
+    (escopo ? `\n\n${escopo}` : "") +
+    `\n\n${rotulo}:\n` +
+    texto +
     (ajuste || opcoes.instrucao ? LEMBRETE_ORIENTACAO : "");
 
   if (modo && anteriores) {
@@ -699,36 +698,107 @@ async function responderSentinela(res, { linhas, opcoes, modo, ajuste, anteriore
         : "\n\nPEDIDO: melhore as respostas anteriores, mantendo o que estava bom, seguindo a orientação específica acima (se houver).");
   }
 
+  const permitidos = estilosDe(opcoes);
+  const client = new Anthropic({ maxRetries: 1, timeout: 90_000 });
+  const inicio = Date.now();
+  const resposta = await client.messages.parse({
+    model: MODEL,
+    max_tokens: 12000, // o raciocínio também conta aqui
+    system: P.sistemaSentinela,
+    messages: [{ role: "user", content: mensagem }],
+    output_config: comEsforco({ format: zodOutputFormat(SaidaSentinela) }),
+  });
+  const uso = {
+    segundosIa: Math.round((Date.now() - inicio) / 100) / 10,
+    entrada: resposta.usage?.input_tokens || 0,
+    saida: resposta.usage?.output_tokens || 0,
+    pensamento: resposta.usage?.output_tokens_details?.thinking_tokens ?? null,
+    parada: resposta.stop_reason,
+  };
+  if (resposta.stop_reason === "refusal" || !resposta.parsed_output) return { itens: null, uso };
+
+  const itens = resposta.parsed_output.itens
+    .slice(0, P.limites.maxRespostas)
+    .map((i) => montarItem(i, opcoes, permitidos, P.limites, sep))
+    .filter((i) => i.resposta);
+  return { itens, uso };
+}
+
+async function responderSentinela(res, { linhas, opcoes, modo, ajuste, anteriores }, P) {
+  const sep = modoSeparacao(opcoes, ajuste);
+  // A consulta às fontes não exige o código de acesso (o código vale só para a leitura do wol.jw.org).
+  if (consultaPedida(opcoes) && !fontesConfiguradas()) return erro(res, 500, "A consulta às fontes ainda não está configurada no servidor.");
+  // Os versículos citados na pergunta são sempre transcritos: a Bíblia começa a carregar enquanto a IA escreve.
+  precarregarFontes({ biblia: true, perspicaz: opcoes.consultarPerspicaz });
+
   try {
-    const permitidos = estilosDe(opcoes);
-    const client = new Anthropic({ maxRetries: 1, timeout: 55_000 });
-    const resposta = await client.messages.parse({
-      model: MODEL,
-      max_tokens: 6000,
-      system: P.sistemaSentinela,
-      ...semRaciocinio,
-      messages: [{ role: "user", content: mensagem }],
-      output_config: comEsforco({ format: zodOutputFormat(SaidaSentinela) }),
-    });
-
-    if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
-      return erro(res, 502, "A IA não conseguiu gerar as respostas para este texto.");
-    }
-
-    const itens = resposta.parsed_output.itens
-      .slice(0, P.limites.maxRespostas)
-      .map((i) => montarItem(i, opcoes, permitidos, P.limites, sep))
-      .filter((i) => i.resposta);
-
+    const { itens, uso } = await escreverRespostas({ rotulo: "TEXTO COLADO", texto: linhas.join("\n"), opcoes, modo, ajuste, anteriores, sep, P });
+    console.log("Texto colado:", JSON.stringify(uso));
+    if (!itens) return erro(res, 502, "A IA não conseguiu gerar as respostas para este texto.");
     return res.status(200).json({ itens: await finalizarItens(itens, opcoes, P, blocoOrientacao(opcoes, ajuste)) });
   } catch (e) {
     return tratarErro(e, res);
   }
 }
 
-// ---------- Estudo da semana: a IA lê o artigo no wol.jw.org ----------
-// A leitura é feita pela ferramenta web_fetch da própria Anthropic, só no domínio wol.jw.org, a cada clique
-// de quem tem o código de acesso. O texto do artigo não é guardado nem devolvido ao navegador: só as
+// Estudo lido pelo servidor no wol.jw.org: a IA recebe só as perguntas e os parágrafos pedidos (ou, na recapitulação,
+// o artigo inteiro sem as perguntas dos parágrafos e as perguntas do quadro final).
+async function responderEstudoLido(res, { lido, alvo, recapitulacao, opcoes, ajuste, sep, modo, anteriores, P, inicioPedido }) {
+  const leitura = Math.round((Date.now() - inicioPedido) / 100) / 10;
+  let texto;
+  let escopo = "";
+  if (recapitulacao) {
+    if (!lido.recapitulacao.length) return erro(res, 400, "Não encontrei o quadro de recapitulação neste artigo.");
+    texto = textoDaRecapitulacao(lido);
+    escopo =
+      "ESCOPO: responda SOMENTE às PERGUNTAS DE RECAPITULAÇÃO que estão no fim do texto, um item para cada uma, com base em todo o artigo. Em paragrafos, ponha só o número da pergunta (1, 2, 3...). O artigo vem sem as perguntas dos parágrafos: não crie itens para os parágrafos.";
+  } else {
+    const grupos = lido.grupos.filter((g) => g.numeros.some((n) => alvo.has(n)));
+    if (!grupos.length) {
+      const ultimo = Math.max(...lido.grupos.flatMap((g) => g.numeros));
+      return erro(res, 400, `Não encontrei esse(s) parágrafo(s) no artigo "${lido.titulo}": ele vai do parágrafo 1 ao ${ultimo}.`);
+    }
+    texto = textoDosGrupos(grupos);
+  }
+
+  try {
+    const { itens: gerados, uso } = await escreverRespostas({ rotulo: "TEXTO DO ESTUDO", texto, escopo, opcoes, modo, ajuste, anteriores, sep, P });
+    if (!gerados) return erro(res, 502, "A IA não conseguiu gerar as respostas para este estudo.");
+
+    // Recapitulação: as perguntas do quadro vêm numeradas 1, 2, 3...; o rótulo "Recap. N" não se confunde com parágrafos.
+    if (recapitulacao) {
+      gerados.forEach((i, pos) => {
+        i.paragrafos = "Recap. " + ((i.paragrafos.match(/\d+/) || [String(pos + 1)])[0]);
+      });
+    }
+    // Mesmo que a IA responda a mais, só ficam os parágrafos pedidos.
+    const itens = alvo
+      ? gerados.filter((i) => {
+          const rotulos = numerosDosParagrafos(i.paragrafos);
+          return rotulos.size ? [...rotulos].some((n) => alvo.has(n)) : gerados.length === 1;
+        })
+      : gerados;
+    console.log("Estudo (lido no site):", JSON.stringify({ pedidos: alvo ? [...alvo] : "recapitulacao", recebidos: itens.map((i) => i.paragrafos), caracteres: texto.length, leitura, ...uso }));
+
+    const inicioFontes = Date.now();
+    const itensFinais = await finalizarItens(itens, opcoes, P, blocoOrientacao(opcoes, ajuste));
+    console.log("Estudo (tempo):", JSON.stringify({ fontes: Math.round((Date.now() - inicioFontes) / 100) / 10, total: Math.round((Date.now() - inicioPedido) / 100) / 10 }));
+
+    return res.status(200).json({
+      titulo: lido.titulo || null,
+      erro: itens.length ? null : "A IA não respondeu ao(s) parágrafo(s) pedido(s). Tente de novo.",
+      url: lido.url,
+      itens: itensFinais,
+    });
+  } catch (e) {
+    return tratarErro(e, res);
+  }
+}
+
+// ---------- Estudo da semana: leitura do artigo no wol.jw.org ----------
+// A cada clique de quem tem o código de acesso, o servidor lê o artigo direto no wol.jw.org (api/_wol.mjs) e manda à
+// IA só as perguntas e os parágrafos pedidos. Se essa leitura falhar, a IA lê o site com a ferramenta web_fetch da
+// Anthropic (só no domínio wol.jw.org), como antes. O texto do artigo não é gravado nem devolvido ao navegador: só as
 // respostas, com palavras próprias, e o título do artigo lido.
 
 // Um item com defeito vira null e é descartado (as outras respostas continuam valendo).
@@ -835,6 +905,16 @@ async function responderEstudo(res, body, P) {
   const anteriores =
     modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(body.anteriores).slice(0, 8000) : "";
 
+  // Primeiro o servidor tenta ler o artigo direto no wol.jw.org (rápido); se não der, a IA lê o site com web_fetch.
+  const inicioPedido = Date.now();
+  let lido = null;
+  try {
+    lido = await lerEstudoDireto(url);
+  } catch (e) {
+    console.error("Estudo: leitura direta falhou", e?.name, e?.message);
+  }
+  if (lido) return responderEstudoLido(res, { lido, alvo, recapitulacao, opcoes, ajuste, sep, modo, anteriores, P, inicioPedido });
+
   const escopoDosParagrafos = (numeros) =>
     `ESCOPO: responda SOMENTE às perguntas do(s) parágrafo(s) de número ${numeros.join(", ")} do artigo. São números de parágrafos (por exemplo, "8" é o parágrafo 8, e não "oito parágrafos"). Responda a TODOS eles, sem pular nenhum: quando dois ou mais parágrafos compartilham a mesma pergunta, faça um item só com os números de todos (ex.: "4, 5"). NÃO responda a nenhum outro parágrafo, nem aos anteriores.\n`;
   const montarMensagem = (escopo) =>
@@ -886,7 +966,6 @@ async function responderEstudo(res, body, P) {
     return { resposta, uso, texto, dados: SaidaEstudo.safeParse(extrairJson(texto)) };
   };
 
-  const inicioPedido = Date.now();
   try {
     const { resposta, uso, texto, dados } = await consultar(mensagem);
 
@@ -930,7 +1009,7 @@ async function responderEstudo(res, body, P) {
     // Faltou algum parágrafo pedido (a IA pulou ou a resposta foi cortada)? Pede de novo só os que faltaram.
     const cobertos = new Set(itens.flatMap((i) => [...numerosDosParagrafos(i.paragrafos)]));
     const faltando = alvo && !recapitulacao && !modo ? [...alvo].filter((n) => !cobertos.has(n)) : [];
-    console.log("Estudo:", JSON.stringify({ pedidos: alvo ? [...alvo] : "recapitulacao", recebidos: itens.map((i) => i.paragrafos), faltando, parada: resposta.stop_reason, ...uso }));
+    console.log("Estudo (a IA leu o site):", JSON.stringify({ pedidos: alvo ? [...alvo] : "recapitulacao", recebidos: itens.map((i) => i.paragrafos), faltando, parada: resposta.stop_reason, ...uso }));
     if (faltando.length && itens.length) {
       try {
         const segunda = await consultar(
@@ -1018,6 +1097,25 @@ async function listarParagrafos(res, body, P) {
 
   const url = urlDoEstudo(body);
   if (!url) return erro(res, 400, "Número ou link do artigo inválido. Use o número de 7 dígitos (ex.: 2026521) ou o link do wol.jw.org.");
+
+  // Lida direto no site, a lista é exata e sai sem chamar a IA.
+  const inicio = Date.now();
+  try {
+    const lido = await lerEstudoDireto(url);
+    if (lido) {
+      console.log("Estudo-lista (lido no site):", JSON.stringify({ grupos: lido.grupos.length, recapitulacao: lido.recapitulacao.length, segundos: Math.round((Date.now() - inicio) / 100) / 10 }));
+      return res.status(200).json({
+        titulo: lido.titulo || null,
+        artigo: lido.id,
+        url: lido.url,
+        grupos: lido.grupos.map((g) => g.rotulo).slice(0, 40),
+        recapitulacao: lido.recapitulacao.length > 0,
+        erro: null,
+      });
+    }
+  } catch (e) {
+    console.error("Estudo-lista: leitura direta falhou", e?.name, e?.message);
+  }
 
   try {
     const client = new Anthropic({ maxRetries: 1, timeout: 90_000 });
