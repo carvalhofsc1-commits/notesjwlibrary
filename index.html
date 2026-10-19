@@ -1697,16 +1697,35 @@
     .backup-open-row { margin-top: 10px; }
     .backup-open-row button { width: 100%; min-height: 50px; }
     .backup-summary { margin: 12px 0 0; font-size: .86rem; color: var(--muted); }
-    .backup-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
-    .backup-tabs button,
-    .backup-tabs button:hover { min-height: 42px; border: 2px solid var(--line); background: var(--card); color: var(--text); }
-    .backup-tabs button[aria-pressed="true"],
-    .backup-tabs button[aria-pressed="true"]:hover {
-      border-color: var(--accent);
-      background: color-mix(in srgb, var(--accent) 14%, var(--card));
-      color: var(--accent);
+    .backup-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+    .backup-controls label { margin: 8px 0 4px; font-size: .82rem; }
+    .backup-search { margin-top: 10px; }
+    .backup-search[hidden] { display: none; }
+    /* Árvore no estilo do JWLManager: cada nível abre o seguinte; a quantidade fica à direita. */
+    .backup-tree { margin-top: 4px; }
+    .bk-node { margin: 0; }
+    .bk-node > summary,
+    .bk-leaf {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 4px;
+      border-bottom: 1px solid var(--line);
+      font-weight: 650;
+      line-height: 1.25;
     }
-    .backup-filters { display: grid; gap: 8px; margin-top: 10px; }
+    .bk-node > summary { cursor: pointer; list-style: none; }
+    .bk-node > summary::-webkit-details-marker { display: none; }
+    .bk-node > summary::before { content: "▸"; flex: 0 0 auto; color: var(--muted); transition: transform .15s; }
+    .bk-node[open] > summary::before { transform: rotate(90deg); }
+    .bk-leaf { padding-left: 22px; font-weight: 600; }
+    .bk-name { flex: 1 1 auto; min-width: 0; }
+    .bk-leaf > span:first-child { flex: 1 1 auto; min-width: 0; }
+    .bk-count { flex: 0 0 auto; min-width: 34px; text-align: right; color: var(--muted); font-size: .85rem; font-variant-numeric: tabular-nums; }
+    .bk-children { padding-left: 14px; border-left: 2px solid var(--line); margin-left: 6px; }
+    .bk-children .backup-list { margin: 8px 0; }
+    .bk-more { width: 100%; margin: 4px 0 10px; }
+    .bk-more[hidden] { display: none; }
     .backup-list { display: grid; gap: 10px; margin-top: 6px; }
     .backup-item { padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); cursor: pointer; }
     .backup-item-head { display: flex; align-items: center; gap: 8px; font-weight: 700; line-height: 1.3; }
@@ -1723,7 +1742,6 @@
       overflow: hidden;
     }
     .backup-item.aberto .backup-item-body { display: block; -webkit-line-clamp: unset; overflow: visible; }
-    #backupMoreBtn { width: 100%; margin-top: 10px; }
 
     /* Tela Reuniões: um card para cada parte; as que ainda não existem aparecem como "em breve". */
     .reunioes-group { margin-top: 6px; }
@@ -2496,17 +2514,19 @@
       <span id="backupStatus" class="ok" role="status" aria-live="polite"></span>
       <div id="backupView" hidden>
         <p id="backupSummary" class="backup-summary"></p>
-        <div class="backup-tabs" role="group" aria-label="O que mostrar">
-          <button id="backupTabNotes" type="button" data-backup-tab="notas" aria-pressed="true">📝 Notas</button>
-          <button id="backupTabAnswers" type="button" data-backup-tab="respostas" aria-pressed="false">✍️ Respostas</button>
+        <div class="backup-controls">
+          <div>
+            <label for="backupCategory">Categoria</label>
+            <select id="backupCategory"></select>
+          </div>
+          <div>
+            <label for="backupGrouping">Agrupar por</label>
+            <select id="backupGrouping"></select>
+          </div>
         </div>
-        <div class="backup-filters">
-          <input id="backupSearch" type="search" autocomplete="off" placeholder="Buscar no título, no texto ou nas etiquetas">
-          <select id="backupPub" aria-label="Publicação"></select>
-        </div>
+        <input id="backupSearch" class="backup-search" type="search" autocomplete="off" placeholder="Buscar no título, no texto ou nas etiquetas">
         <p id="backupCount" class="hint"></p>
-        <div id="backupList" class="backup-list"></div>
-        <button id="backupMoreBtn" class="secondary" type="button" hidden>Mostrar mais</button>
+        <div id="backupTree" class="backup-tree"></div>
       </div>
     </section>
 
@@ -2650,20 +2670,19 @@
       showScreen(APP_SCREENS.includes(fromHash) ? fromHash : saved, { keepScroll: true });
     })();
 
-    // ---------- Backup do JW Library (Fase 1: só leitura) ----------
+    // ---------- Backup do JW Library (leitura) ----------
     // O arquivo .jwlibrary é um ZIP com o manifest.json e o banco userData.db (SQLite). Tudo é lido neste aparelho, com
-    // JSZip e sql.js, que só são baixados quando se abre um backup; nada é enviado ao servidor.
+    // JSZip e sql.js, que só são baixados quando se abre um backup; nada é enviado ao servidor. A organização (categorias,
+    // agrupamentos em árvore e nomes das publicações em jw-publicacoes.json) segue a do JWLManager (licença MIT).
     const BACKUP_LIBS = {
       jszip: 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
       sqljs: 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js',
       wasm: 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.wasm'
     };
     const BACKUP_PAGE = 50;
+    const BACKUP_AUTO_OPEN = 60; // com a busca, até este número de resultados a árvore já vem aberta
     const BACKUP_COLORS = ['#9ca3af', '#facc15', '#4ade80', '#60a5fa', '#f87171', '#fb923c', '#c084fc'];
-    const BACKUP_PUBS = {
-      w: 'A Sentinela', wp: 'A Sentinela (edição pública)', g: 'Despertai!', mwb: 'Apostila Vida e Ministério',
-      nwtsty: 'Bíblia', nwt: 'Bíblia', lff: 'Seja Feliz para Sempre!'
-    };
+    const BACKUP_COLOR_NAMES = ['Cinza', 'Amarelo', 'Verde', 'Azul', 'Vermelho', 'Laranja', 'Roxo'];
     const BACKUP_MONTHS = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
     const BIBLE_BOOKS = ['Gênesis', 'Êxodo', 'Levítico', 'Números', 'Deuteronômio', 'Josué', 'Juízes', 'Rute', '1 Samuel', '2 Samuel',
       '1 Reis', '2 Reis', '1 Crônicas', '2 Crônicas', 'Esdras', 'Neemias', 'Ester', 'Jó', 'Salmos', 'Provérbios', 'Eclesiastes',
@@ -2673,10 +2692,33 @@
       '2 Tessalonicenses', '1 Timóteo', '2 Timóteo', 'Tito', 'Filêmon', 'Hebreus', 'Tiago', '1 Pedro', '2 Pedro', '1 João', '2 João',
       '3 João', 'Judas', 'Apocalipse'];
 
+    // Categorias e agrupamentos (como no JWLManager). Cada agrupamento é uma lista de níveis da árvore.
+    const BACKUP_CATEGORIES = [
+      { id: 'notas', label: '📝 Notas', groupings: ['tipo', 'titulo', 'idioma', 'ano', 'etiqueta', 'cor', 'duplicadas'], text: true },
+      { id: 'grifos', label: '🖍️ Grifos', groupings: ['tipo', 'titulo', 'idioma', 'ano', 'cor'], text: false },
+      { id: 'favoritos', label: '⭐ Favoritos', groupings: ['tipo', 'titulo', 'idioma', 'ano'], text: false },
+      { id: 'marcadores', label: '🔖 Marcadores', groupings: ['tipo', 'titulo', 'idioma', 'ano'], text: true },
+      { id: 'respostas', label: '✍️ Respostas (quadros)', groupings: ['tipo', 'titulo', 'ano'], text: true },
+      { id: 'listas', label: '▶️ Listas de reprodução', groupings: ['titulo'], text: true }
+    ];
+    const BACKUP_GROUPINGS = {
+      tipo: { label: 'Tipo', levels: ['type', 'title', 'detail1', 'detail2'] },
+      titulo: { label: 'Título', levels: ['title', 'detail1', 'detail2'] },
+      idioma: { label: 'Idioma', levels: ['lang', 'title', 'detail1', 'detail2'] },
+      ano: { label: 'Ano', levels: ['year', 'title', 'detail1'] },
+      etiqueta: { label: 'Etiqueta', levels: ['tags', 'title', 'detail1'] },
+      cor: { label: 'Cor', levels: ['color', 'title', 'detail1'] },
+      duplicadas: { label: 'Duplicadas', levels: ['title', 'detail1', 'detail2'] }
+    };
+    // Símbolos com o ano no fim ("yb17") viram publicação + ano, menos estes, em que os números fazem parte do símbolo.
+    const BACKUP_CODE_KEEP = new Set(['bi', 'br', 'brg', 'kn', 'ks', 'pt', 'tp']);
+
     let backupLibsPromise = null;
-    let backupState = null; // { zip, db, manifest, fileName, notes, answers }
-    let backupTab = 'notas';
-    let backupShown = BACKUP_PAGE;
+    let backupPubsPromise = null;
+    let backupPubs = null;  // { tipos, publicacoes, idiomas } de jw-publicacoes.json (null = mostra os símbolos)
+    let backupState = null; // { zip, db, manifest, fileName, data: { notas: [...], grifos: [...], ... } }
+    let backupCategory = 'notas';
+    const backupGroupingByCategory = {};
 
     function loadScriptOnce(src) {
       return new Promise((resolve, reject) => {
@@ -2699,6 +2741,17 @@
           .catch(e => { backupLibsPromise = null; throw e; });
       }
       return backupLibsPromise;
+    }
+
+    // Nomes das publicações; sem eles o app continua e mostra os símbolos (ex.: "pt14").
+    function loadBackupPubs() {
+      if (!backupPubsPromise) {
+        backupPubsPromise = fetch('jw-publicacoes.json')
+          .then(r => (r.ok ? r.json() : null))
+          .catch(() => null)
+          .then(data => { backupPubs = data; if (!data) backupPubsPromise = null; return data; });
+      }
+      return backupPubsPromise;
     }
 
     function setBackupStatus(message, isWarning) {
@@ -2729,47 +2782,143 @@
       return m ? m[3] + '/' + m[2] + '/' + m[1] : '';
     }
 
-    // Onde está a nota: publicação (para o filtro), lugar dentro dela e o texto que aparece no cartão.
-    function backupPlace(row, titleByDoc) {
-      if (row.LocationId === null || row.LocationId === undefined) return { pub: 'Notas avulsas', where: '' };
-      if (row.BookNumber) {
-        const book = BIBLE_BOOKS[row.BookNumber - 1] || ('Livro ' + row.BookNumber);
-        const verse = row.BlockType === 2 && row.BlockIdentifier ? ':' + row.BlockIdentifier : '';
-        return { pub: 'Bíblia', where: book + (row.ChapterNumber ? ' ' + row.ChapterNumber + verse : '') };
+    function backupPlain(text) {
+      return String(text || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    }
+
+    // Um valor de nível da árvore: o texto que aparece, a chave para ordenar e se a ordem é do maior para o menor
+    // (anos e edições: o mais novo primeiro).
+    function backupLevel(label, key, newestFirst) {
+      return { label: String(label), key: key === undefined ? null : key, desc: Boolean(newestFirst) };
+    }
+
+    function backupProcessCode(code, issue) {
+      if (code === 'ws' && !issue) code = 'ws-'; // livro "Segurança mundial" tem o mesmo símbolo da Sentinela fácil de ler
+      if (!code) return { code: '', year: '' };
+      if (/^jwb-\d+$/.test(code)) return { code: 'jwb-', year: '' };
+      const m = code.match(/^(.*?[^\d-])(\d{2})$/);
+      if (m && !BACKUP_CODE_KEEP.has(m[1])) return { code: m[1], year: (Number(m[2]) >= 50 ? '19' : '20') + m[2] };
+      return { code, year: '' };
+    }
+
+    // Tipo, título, idioma, ano e detalhes (edição, livro da Bíblia, capítulo, artigo) de um item ligado a um local.
+    function backupDescribe(r, titleByDoc) {
+      if (r.LocationId === null || r.LocationId === undefined) {
+        const year = String(r.LastModified || '').slice(0, 4);
+        return {
+          type: backupLevel('Notas avulsas'), title: backupLevel('Notas avulsas'), lang: backupLevel('Sem idioma'),
+          year: backupLevel(year || 'Sem ano', Number(year) || 0, true), detail1: null, detail2: null, where: ''
+        };
       }
-      const name = BACKUP_PUBS[row.KeySymbol] || row.KeySymbol || 'Publicação';
-      const issue = backupIssueLabel(row.IssueTagNumber);
-      const title = row.LocTitle || titleByDoc.get(row.KeySymbol + '|' + row.IssueTagNumber + '|' + row.DocumentId) || '';
-      return { pub: name + (issue ? ' — ' + issue : ''), where: title };
+      const { code, year: codeYear } = backupProcessCode(r.KeySymbol, r.IssueTagNumber);
+      const pub = backupPubs && backupPubs.publicacoes ? backupPubs.publicacoes[code] : null;
+      const typeName = pub ? (backupPubs.tipos[String(pub[3])] || 'Outros') : (r.BookNumber ? 'Bíblias' : 'Outros');
+      const titleName = pub ? pub[0] : (code || 'Outros');
+      const issue = String(r.IssueTagNumber || '');
+      const hasIssue = /^\d{8}$/.test(issue) && Number(issue) > 19000000;
+      const year = codeYear || (hasIssue ? issue.slice(0, 4) : '') || (pub && pub[2] ? String(pub[2]) : '');
+      const langName = r.MepsLanguage === null || r.MepsLanguage === undefined
+        ? 'Sem idioma'
+        : (backupPubs && backupPubs.idiomas && backupPubs.idiomas[String(r.MepsLanguage)]) || 'Idioma ' + r.MepsLanguage;
+      const docTitle = r.LocTitle || (titleByDoc && titleByDoc.get(r.KeySymbol + '|' + r.IssueTagNumber + '|' + r.DocumentId)) || '';
+      let detail1 = null;
+      let detail2 = null;
+      let where = docTitle;
+      if (r.BookNumber) {
+        const book = BIBLE_BOOKS[r.BookNumber - 1] || 'Livro ' + r.BookNumber;
+        detail1 = backupLevel(book, r.BookNumber);
+        if (r.ChapterNumber) detail2 = backupLevel('Capítulo ' + r.ChapterNumber, r.ChapterNumber);
+        where = book + (r.ChapterNumber ? ' ' + r.ChapterNumber + (r.BlockType === 2 && r.BlockIdentifier ? ':' + r.BlockIdentifier : '') : '');
+      } else if (hasIssue) {
+        detail1 = backupLevel(backupIssueLabel(issue), Number(issue), true);
+        if (docTitle) detail2 = backupLevel(docTitle, r.DocumentId || 0);
+      } else if (docTitle) {
+        detail1 = backupLevel(docTitle, r.DocumentId || 0);
+      }
+      return {
+        type: backupLevel(typeName), title: backupLevel(titleName), lang: backupLevel(langName),
+        year: backupLevel(year || 'Sem ano', Number(year) || 0, true), detail1, detail2, where
+      };
+    }
+
+    // Notas repetidas no mesmo lugar: mesmo título, mesmo texto, ou vazias (como no JWLManager).
+    function backupDuplicateIds(rows) {
+      const groups = new Map();
+      const add = (key, id) => { if (!groups.has(key)) groups.set(key, []); groups.get(key).push(id); };
+      rows.forEach(r => {
+        if (r.LocationId === null || r.LocationId === undefined) return;
+        const place = r.LocationId + '|' + r.BlockIdentifier + '|' + r.BlockType;
+        if (r.Title) add('t|' + place + '|' + r.Title, r.NoteId);
+        if (r.Content) add('c|' + place + '|' + r.Content, r.NoteId);
+        if (!r.Title && !r.Content) add('v|' + place, r.NoteId);
+      });
+      const ids = new Set();
+      groups.forEach(list => { if (list.length > 1) list.forEach(id => ids.add(id)); });
+      return ids;
     }
 
     function readBackupData(db) {
       const titleByDoc = new Map(backupRows(db, "SELECT KeySymbol, IssueTagNumber, DocumentId, Title FROM Location WHERE Title IS NOT NULL AND Title != '' AND DocumentId IS NOT NULL")
         .map(r => [r.KeySymbol + '|' + r.IssueTagNumber + '|' + r.DocumentId, r.Title]));
-      const notes = backupRows(db, `
-        SELECT n.NoteId, n.Title, n.Content, n.LastModified, n.BlockType, n.BlockIdentifier, n.LocationId,
-               l.KeySymbol, l.IssueTagNumber, l.DocumentId, l.BookNumber, l.ChapterNumber, l.Title AS LocTitle, u.ColorIndex,
-               (SELECT group_concat(t.Name, ', ') FROM TagMap tm JOIN Tag t ON t.TagId = tm.TagId WHERE tm.NoteId = n.NoteId) AS Tags
+      const loc = 'l.KeySymbol, l.MepsLanguage, l.IssueTagNumber, l.DocumentId, l.BookNumber, l.ChapterNumber, l.Title AS LocTitle';
+
+      const noteRows = backupRows(db, `
+        SELECT n.NoteId, n.Title, n.Content, n.LastModified, n.BlockType, n.BlockIdentifier, n.LocationId, ${loc}, u.ColorIndex,
+               (SELECT group_concat(Name, ' | ') FROM (SELECT t.Name FROM TagMap tm JOIN Tag t ON t.TagId = tm.TagId
+                 WHERE tm.NoteId = n.NoteId ORDER BY t.Name)) AS Tags
         FROM Note n LEFT JOIN Location l ON l.LocationId = n.LocationId LEFT JOIN UserMark u ON u.UserMarkId = n.UserMarkId
-        ORDER BY n.LastModified DESC, n.NoteId DESC`).map(r => ({
-          kind: 'nota', title: r.Title || '', content: r.Content || '', date: backupDate(r.LastModified), color: r.ColorIndex || 0,
-          tags: r.Tags || '', ...backupPlace(r, titleByDoc)
+        ORDER BY n.LastModified DESC, n.NoteId DESC`);
+      const duplicates = backupDuplicateIds(noteRows);
+      const notas = noteRows.map(r => {
+        const color = r.ColorIndex || 0;
+        return {
+          id: r.NoteId, heading: r.Title || '', text: r.Content || '', date: backupDate(r.LastModified), colorIndex: color,
+          tagsText: r.Tags || '', duplicate: duplicates.has(r.NoteId), ...backupDescribe(r, titleByDoc),
+          color: backupLevel(BACKUP_COLOR_NAMES[color] || 'Cinza', color), tags: backupLevel(r.Tags || 'Sem etiqueta')
+        };
+      });
+
+      const grifos = backupRows(db, `
+        SELECT b.BlockRangeId, u.ColorIndex, u.LocationId, ${loc}
+        FROM UserMark u JOIN Location l ON l.LocationId = u.LocationId JOIN BlockRange b ON b.UserMarkId = u.UserMarkId`).map(r => {
+          const color = r.ColorIndex || 0;
+          return { id: r.BlockRangeId, colorIndex: color, ...backupDescribe(r, titleByDoc), color: backupLevel(BACKUP_COLOR_NAMES[color] || 'Cinza', color) };
+        });
+
+      const favoritos = backupRows(db, `
+        SELECT tm.TagMapId, tm.LocationId, ${loc}
+        FROM TagMap tm JOIN Location l ON l.LocationId = tm.LocationId
+        WHERE tm.NoteId IS NULL AND tm.PlaylistItemId IS NULL ORDER BY tm.Position`).map(r => ({ id: r.TagMapId, ...backupDescribe(r, titleByDoc) }));
+
+      const marcadores = backupRows(db, `
+        SELECT b.BookmarkId, b.Title AS BTitle, b.Snippet, b.LocationId, ${loc}
+        FROM Bookmark b JOIN Location l ON l.LocationId = b.LocationId ORDER BY b.Slot`).map(r => ({
+          id: r.BookmarkId, heading: r.BTitle || '', text: r.Snippet || '', ...backupDescribe(r, titleByDoc)
         }));
-      const answers = backupRows(db, `
-        SELECT i.TextTag, i.Value, i.LocationId, l.KeySymbol, l.IssueTagNumber, l.DocumentId, l.BookNumber, l.ChapterNumber,
-               l.Title AS LocTitle
+
+      const respostas = backupRows(db, `
+        SELECT i.TextTag, i.Value, i.LocationId, ${loc}
         FROM InputField i JOIN Location l ON l.LocationId = i.LocationId
         ORDER BY l.IssueTagNumber DESC, l.DocumentId DESC, CAST(substr(i.TextTag, 3) AS INTEGER)`).map(r => ({
-          kind: 'resposta', title: 'Sua resposta', content: r.Value || '', date: '', color: 0, tags: '', ...backupPlace(r, titleByDoc)
+          id: r.LocationId + '|' + r.TextTag, heading: 'Sua resposta', text: r.Value || '', ...backupDescribe(r, titleByDoc)
         }));
-      return { notes, answers };
+
+      const listas = backupRows(db, `
+        SELECT p.PlaylistItemId, p.Label, t.Name AS Playlist
+        FROM PlaylistItem p JOIN TagMap tm ON tm.PlaylistItemId = p.PlaylistItemId JOIN Tag t ON t.TagId = tm.TagId
+        WHERE t.Type = 2 ORDER BY t.Name, tm.Position`).map(r => ({
+          id: r.PlaylistItemId, heading: r.Label || '(sem nome)', text: '', type: backupLevel('Listas'),
+          title: backupLevel(r.Playlist || 'Lista'), detail1: null, detail2: null, where: ''
+        }));
+
+      return { notas, grifos, favoritos, marcadores, respostas, listas };
     }
 
     async function openBackupFile(file) {
       if (!file) return;
       setBackupStatus('Abrindo ' + file.name + '…', false);
       try {
-        const { JSZip, SQL } = await loadBackupLibs();
+        const [{ JSZip, SQL }] = await Promise.all([loadBackupLibs(), loadBackupPubs()]);
         let zip;
         try {
           zip = await JSZip.loadAsync(await file.arrayBuffer());
@@ -2786,20 +2935,19 @@
         const db = new SQL.Database(await dbFile.async('uint8array'));
         const data = readBackupData(db);
         if (backupState && backupState.db) backupState.db.close();
-        backupState = { zip, db, manifest, fileName: file.name, ...data };
-        backupShown = BACKUP_PAGE;
-        renderBackupView(true);
+        backupState = { zip, db, manifest, fileName: file.name, data };
+        renderBackupView();
         setBackupStatus('', false);
       } catch (e) {
         setBackupStatus('Não consegui abrir o backup: ' + (e && e.message ? e.message : 'arquivo inválido.'), true);
       }
     }
 
-    function backupPlain(text) {
-      return String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    function backupCategoryInfo() {
+      return BACKUP_CATEGORIES.find(c => c.id === backupCategory) || BACKUP_CATEGORIES[0];
     }
 
-    function renderBackupView(rebuildFilter) {
+    function renderBackupView() {
       const view = document.getElementById('backupView');
       if (!backupState) { view.hidden = true; return; }
       view.hidden = false;
@@ -2811,66 +2959,188 @@
         info.deviceName,
         'formato ' + (info.schemaVersion || '?')
       ].filter(Boolean).join(' · ');
-      document.getElementById('backupTabNotes').textContent = '📝 Notas (' + backupState.notes.length + ')';
-      document.getElementById('backupTabAnswers').textContent = '✍️ Respostas (' + backupState.answers.length + ')';
-      document.querySelectorAll('[data-backup-tab]').forEach(btn => btn.setAttribute('aria-pressed', btn.dataset.backupTab === backupTab ? 'true' : 'false'));
 
-      const items = backupTab === 'notas' ? backupState.notes : backupState.answers;
-      const pubSelect = document.getElementById('backupPub');
-      if (rebuildFilter) {
-        const counts = new Map();
-        items.forEach(item => counts.set(item.pub, (counts.get(item.pub) || 0) + 1));
-        const chosen = pubSelect.value;
-        pubSelect.textContent = '';
-        const all = document.createElement('option');
-        all.value = '';
-        all.textContent = 'Todas as publicações (' + items.length + ')';
-        pubSelect.appendChild(all);
-        [...counts.keys()].sort((a, b) => a.localeCompare(b, 'pt-BR')).forEach(pub => {
-          const option = document.createElement('option');
-          option.value = pub;
-          option.textContent = pub + ' (' + counts.get(pub) + ')';
-          pubSelect.appendChild(option);
-        });
-        pubSelect.value = counts.has(chosen) ? chosen : '';
-      }
-
-      const search = backupPlain(document.getElementById('backupSearch').value.trim());
-      const pub = pubSelect.value;
-      const filtered = items.filter(item =>
-        (!pub || item.pub === pub) &&
-        (!search || backupPlain(item.title + ' ' + item.content + ' ' + item.tags + ' ' + item.where).includes(search)));
-
-      const list = document.getElementById('backupList');
-      list.textContent = '';
-      filtered.slice(0, backupShown).forEach(item => list.appendChild(backupItemCard(item)));
-      document.getElementById('backupCount').textContent = filtered.length
-        ? 'Mostrando ' + Math.min(backupShown, filtered.length) + ' de ' + filtered.length + '.'
-        : 'Nada encontrado.';
-      const more = document.getElementById('backupMoreBtn');
-      more.hidden = filtered.length <= backupShown;
+      const categorySelect = document.getElementById('backupCategory');
+      categorySelect.textContent = '';
+      BACKUP_CATEGORIES.forEach(c => {
+        const option = document.createElement('option');
+        option.value = c.id;
+        option.textContent = c.label + ' (' + backupState.data[c.id].length.toLocaleString('pt-BR') + ')';
+        categorySelect.appendChild(option);
+      });
+      categorySelect.value = backupCategory;
+      renderBackupGroupingOptions();
+      renderBackupTree();
     }
 
-    function backupItemCard(item) {
+    function renderBackupGroupingOptions() {
+      const category = backupCategoryInfo();
+      const select = document.getElementById('backupGrouping');
+      select.textContent = '';
+      category.groupings.forEach(id => {
+        const option = document.createElement('option');
+        option.value = id;
+        option.textContent = BACKUP_GROUPINGS[id].label;
+        select.appendChild(option);
+      });
+      select.value = backupGroupingByCategory[category.id] || category.groupings[0];
+      select.disabled = category.groupings.length < 2;
+      document.getElementById('backupSearch').hidden = !category.text;
+    }
+
+    function backupFilteredItems() {
+      const category = backupCategoryInfo();
+      let items = backupState.data[category.id];
+      if (document.getElementById('backupGrouping').value === 'duplicadas') items = items.filter(i => i.duplicate);
+      const search = category.text ? backupPlain(document.getElementById('backupSearch').value.trim()) : '';
+      if (search) {
+        items = items.filter(i => backupPlain([i.heading, i.text, i.tagsText, i.where, i.title && i.title.label].join(' ')).includes(search));
+      }
+      return { items, search };
+    }
+
+    function backupBuildTree(items, levels) {
+      const root = { children: new Map(), items: [], count: 0 };
+      items.forEach(item => {
+        let node = root;
+        root.count++;
+        for (const level of levels) {
+          const value = item[level];
+          if (!value) break;
+          let child = node.children.get(value.label);
+          if (!child) {
+            child = { label: value.label, key: value.key, desc: value.desc, level, children: new Map(), items: [], count: 0 };
+            node.children.set(value.label, child);
+          }
+          child.count++;
+          node = child;
+        }
+        node.items.push(item);
+      });
+      return root;
+    }
+
+    // Anos e edições do mais novo para o mais antigo; livros da Bíblia, capítulos e artigos em ordem; o resto pela
+    // quantidade (como no JWLManager).
+    function backupSortedChildren(node) {
+      const list = [...node.children.values()];
+      if (!list.length) return list;
+      const level = list[0].level;
+      const numeric = list.every(c => typeof c.key === 'number');
+      if (numeric && list.some(c => c.desc)) return list.sort((a, b) => (b.key || 0) - (a.key || 0));
+      if (numeric && level !== 'type' && level !== 'title' && level !== 'lang' && level !== 'tags') return list.sort((a, b) => a.key - b.key);
+      return list.sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, 'pt-BR'));
+    }
+
+    function renderBackupTree() {
+      const category = backupCategoryInfo();
+      const grouping = document.getElementById('backupGrouping').value;
+      backupGroupingByCategory[category.id] = grouping;
+      const { items, search } = backupFilteredItems();
+      const total = backupState.data[category.id].length;
+      const tree = backupBuildTree(items, BACKUP_GROUPINGS[grouping].levels);
+      const holder = document.getElementById('backupTree');
+      holder.textContent = '';
+      const autoOpen = Boolean(search) && items.length <= BACKUP_AUTO_OPEN;
+      backupRenderChildren(tree, holder, category, autoOpen);
+      if (tree.items.length) backupRenderItems(tree.items, holder, category);
+      document.getElementById('backupCount').textContent = !items.length
+        ? (search ? 'Nada encontrado.' : 'Nenhum item nesta categoria.')
+        : (search || grouping === 'duplicadas' ? items.length.toLocaleString('pt-BR') + ' de ' : '') + total.toLocaleString('pt-BR') +
+          (total === 1 ? ' item.' : ' itens.');
+    }
+
+    // Os ramos só são montados quando abertos (há backups com dezenas de milhares de grifos).
+    function backupRenderChildren(node, holder, category, autoOpen) {
+      backupSortedChildren(node).forEach(child => {
+        const isLeaf = !child.children.size;
+        if (isLeaf && !category.text) {
+          const row = document.createElement('div');
+          row.className = 'bk-leaf';
+          const name = document.createElement('span');
+          name.textContent = child.label;
+          const count = document.createElement('span');
+          count.className = 'bk-count';
+          count.textContent = child.count.toLocaleString('pt-BR');
+          row.append(name, count);
+          holder.appendChild(row);
+          return;
+        }
+        const details = document.createElement('details');
+        details.className = 'bk-node';
+        const summary = document.createElement('summary');
+        const name = document.createElement('span');
+        name.className = 'bk-name';
+        name.textContent = child.label;
+        const count = document.createElement('span');
+        count.className = 'bk-count';
+        count.textContent = child.count.toLocaleString('pt-BR');
+        summary.append(name, count);
+        const body = document.createElement('div');
+        body.className = 'bk-children';
+        details.append(summary, body);
+        let built = false;
+        const build = () => {
+          if (built) return;
+          built = true;
+          backupRenderChildren(child, body, category, autoOpen);
+          if (child.items.length && category.text) backupRenderItems(child.items, body, category);
+        };
+        details.addEventListener('toggle', () => { if (details.open) build(); });
+        if (autoOpen) { details.open = true; build(); }
+        holder.appendChild(details);
+      });
+    }
+
+    function backupRenderItems(items, holder, category) {
+      const list = document.createElement('div');
+      list.className = 'backup-list';
+      holder.appendChild(list);
+      let shown = 0;
+      const more = document.createElement('button');
+      more.type = 'button';
+      more.className = 'secondary bk-more';
+      const showMore = () => {
+        items.slice(shown, shown + BACKUP_PAGE).forEach(item => list.appendChild(backupItemCard(item, category)));
+        shown = Math.min(items.length, shown + BACKUP_PAGE);
+        more.hidden = shown >= items.length;
+        more.textContent = 'Mostrar mais (' + (items.length - shown) + ')';
+      };
+      more.addEventListener('click', showMore);
+      holder.appendChild(more);
+      showMore();
+    }
+
+    function backupItemCard(item, category) {
       const card = document.createElement('article');
       card.className = 'backup-item';
       const head = document.createElement('div');
       head.className = 'backup-item-head';
-      const dot = document.createElement('span');
-      dot.className = 'backup-dot';
-      dot.style.setProperty('--cor', BACKUP_COLORS[item.color] || BACKUP_COLORS[0]);
+      if (category.id === 'notas') {
+        const dot = document.createElement('span');
+        dot.className = 'backup-dot';
+        dot.style.setProperty('--cor', BACKUP_COLORS[item.colorIndex] || BACKUP_COLORS[0]);
+        head.appendChild(dot);
+      }
       const title = document.createElement('span');
-      if (item.title) title.textContent = item.title;
+      if (item.heading) title.textContent = item.heading;
       else { title.textContent = '(sem título)'; title.className = 'sem-titulo'; }
-      head.append(dot, title);
-      const meta = document.createElement('div');
-      meta.className = 'backup-item-meta';
-      meta.textContent = [item.pub, item.where, item.date, item.tags && '🏷️ ' + item.tags].filter(Boolean).join(' · ');
-      const body = document.createElement('div');
-      body.className = 'backup-item-body';
-      body.textContent = item.content;
-      card.append(head, meta, body);
-      card.addEventListener('click', () => card.classList.toggle('aberto'));
+      head.appendChild(title);
+      card.appendChild(head);
+      const meta = [item.where, item.date, item.tagsText && '🏷️ ' + item.tagsText].filter(Boolean).join(' · ');
+      if (meta) {
+        const metaEl = document.createElement('div');
+        metaEl.className = 'backup-item-meta';
+        metaEl.textContent = meta;
+        card.appendChild(metaEl);
+      }
+      if (item.text) {
+        const body = document.createElement('div');
+        body.className = 'backup-item-body';
+        body.textContent = item.text;
+        card.appendChild(body);
+        card.addEventListener('click', () => card.classList.toggle('aberto'));
+      }
       return card;
     }
 
@@ -2879,15 +3149,14 @@
       openBackupFile(event.target.files && event.target.files[0]);
       event.target.value = ''; // permite abrir o mesmo arquivo de novo
     });
-    document.querySelectorAll('[data-backup-tab]').forEach(btn => btn.addEventListener('click', () => {
-      backupTab = btn.dataset.backupTab;
-      backupShown = BACKUP_PAGE;
+    document.getElementById('backupCategory').addEventListener('change', event => {
+      backupCategory = event.target.value;
       document.getElementById('backupSearch').value = '';
-      renderBackupView(true);
-    }));
-    document.getElementById('backupSearch').addEventListener('input', () => { backupShown = BACKUP_PAGE; renderBackupView(false); });
-    document.getElementById('backupPub').addEventListener('change', () => { backupShown = BACKUP_PAGE; renderBackupView(false); });
-    document.getElementById('backupMoreBtn').addEventListener('click', () => { backupShown += BACKUP_PAGE; renderBackupView(false); });
+      renderBackupGroupingOptions();
+      renderBackupTree();
+    });
+    document.getElementById('backupGrouping').addEventListener('change', () => renderBackupTree());
+    document.getElementById('backupSearch').addEventListener('input', () => renderBackupTree());
 
     // ---------- Tema (Auto / Claro / Escuro) ----------
 
@@ -3038,7 +3307,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '4.1'; // 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
+    const APP_VERSION = '4.2'; // 4.2: backup organizado como no JWLManager (categorias e agrupamentos); 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 
