@@ -1618,7 +1618,104 @@
     body.view-prompts > header,
     body.view-prompts > main:not(#promptsScreen),
     body.view-prompts > .theme-switch-row,
-    body.view-prompts > .about-link-row { display: none; }
+    body.view-prompts > .about-link-row,
+    body.view-prompts > .app-nav { display: none; }
+
+    /* ---------- Telas: Formatar, Reuniões, Backup e Ajustes ----------
+       É um app só: cada bloco diz em que tela aparece (screen-...). Formatar e Reuniões dividem o cartão do campo de
+       texto (screen-editor); dentro dele, as opções de formatação e as das reuniões se alternam. */
+    body[data-screen="formatar"] :is(.screen-reunioes, .screen-backup, .screen-ajustes),
+    body[data-screen="reunioes"] :is(.screen-formatar, .screen-backup, .screen-ajustes),
+    body[data-screen="backup"] :is(.screen-editor, .screen-formatar, .screen-reunioes, .screen-ajustes),
+    body[data-screen="ajustes"] :is(.screen-editor, .screen-formatar, .screen-reunioes, .screen-backup) { display: none !important; }
+
+    /* Barra das telas: embaixo no celular (como nos apps), no alto no computador. */
+    .app-nav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 1500;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      padding: 6px max(8px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left));
+      background: var(--card);
+      border-top: 1px solid var(--line);
+      box-shadow: 0 -6px 18px var(--shadow);
+    }
+    .app-nav button,
+    .app-nav button:hover {
+      min-height: 52px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      padding: 4px 2px;
+      border: 0;
+      border-radius: 12px;
+      background: transparent;
+      color: var(--muted);
+      font-size: .74rem;
+      font-weight: 700;
+      line-height: 1.1;
+      box-shadow: none;
+      transform: none;
+    }
+    .app-nav .nav-icon { font-size: 1.35rem; line-height: 1; }
+    .app-nav button[aria-current="page"],
+    .app-nav button[aria-current="page"]:hover {
+      background: var(--soft);
+      background: color-mix(in srgb, var(--accent) 16%, var(--card));
+      color: var(--accent);
+    }
+    body { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
+    .update-banner,
+    .update-bar { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
+    @media (min-width: 980px) {
+      .app-nav {
+        position: sticky;
+        top: 8px;
+        bottom: auto;
+        max-width: 720px;
+        margin: 4px auto 0;
+        padding: 6px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        box-shadow: 0 6px 18px var(--shadow);
+      }
+      .app-nav button,
+      .app-nav button:hover { min-height: 44px; flex-direction: row; gap: 8px; font-size: .9rem; }
+      .app-nav .nav-icon { font-size: 1.15rem; }
+      body { padding-bottom: 0; }
+      .update-banner,
+      .update-bar { bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+    }
+
+    /* Tela Reuniões: um card para cada parte; as que ainda não existem aparecem como "em breve". */
+    .reunioes-group { margin-top: 6px; }
+    .reunioes-title { margin: 4px 0 2px; font-size: 1.12rem; }
+    .em-breve {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 12px 0 0;
+      padding: 12px 14px;
+      border: 2px dashed var(--muted);
+      border-radius: 10px;
+      color: var(--muted);
+      font-weight: 650;
+    }
+    .em-breve-badge {
+      flex: 0 0 auto;
+      padding: 2px 9px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: .72rem;
+      font-weight: 700;
+    }
 
     /* ---------- Estados ---------- */
 
@@ -1843,7 +1940,7 @@
     }
   </style>
 </head>
-<body>
+<body data-screen="formatar">
   <div id="aiFloating" class="ai-floating" role="status" aria-live="polite"></div>
   <div id="pullRefresh" class="pull-refresh" aria-hidden="true"><span class="pull-refresh-arrow">↓</span><span id="pullRefreshText">Puxe para atualizar</span></div>
   <header>
@@ -1852,12 +1949,19 @@
       <h1>Note<span class="brand-accent">Style</span></h1>
     </div>
     <p class="brand-subtitle">Formatação de notas de texto para caracteres Unicode</p>
-    <p>Digite ou cole um texto, escolha as opções, clique em Aplicar e copie o resultado para o aplicativo de destino.</p>
+    <p class="screen-formatar">Digite ou cole um texto, escolha as opções, clique em Aplicar e copie o resultado para o aplicativo de destino.</p>
   </header>
+
+  <nav id="appNav" class="app-nav" aria-label="Telas do app">
+    <button type="button" data-screen-target="formatar"><span class="nav-icon" aria-hidden="true">✍️</span><span>Formatar</span></button>
+    <button type="button" data-screen-target="reunioes"><span class="nav-icon" aria-hidden="true">📅</span><span>Reuniões</span></button>
+    <button type="button" data-screen-target="backup"><span class="nav-icon" aria-hidden="true">📦</span><span>Backup</span></button>
+    <button type="button" data-screen-target="ajustes"><span class="nav-icon" aria-hidden="true">⚙️</span><span>Ajustes</span></button>
+  </nav>
 
   <main>
     <div class="single-grid">
-      <section class="card">
+      <section class="card screen-editor">
         <div class="card-title-row">
           <h2>📝 1. Texto original</h2>
           <div class="top-text-actions" role="group" aria-label="Desfazer, limpar e copiar o texto">
@@ -1933,7 +2037,7 @@
         </div>
         <span id="copyStatus" class="ok main-copy-status" role="status" aria-live="polite"></span>
 
-        <details class="subsection group-box group-tools" id="outrasOpcoesBox">
+        <details class="subsection group-box group-tools screen-formatar" id="outrasOpcoesBox">
           <summary>🛠️ Outras opções de formatação</summary>
           <div class="group-box-body">
             <details class="subsection">
@@ -2009,7 +2113,7 @@
             </details>
           </div>
         </details>
-        <details class="subsection group-box group-ai" id="opcoesIaBox">
+        <details class="subsection group-box group-ai screen-formatar" id="opcoesIaBox">
           <summary>🤖 Opções de formatação com IA</summary>
           <div class="group-box-body">
             <details class="subsection ai-subsection" id="aiBoxDetails">
@@ -2017,7 +2121,6 @@
               <div class="subsection-body ai-box">
               <div class="ai-main-row">
                 <button id="aiSuggestBtn" class="ai-main-btn" type="button">✨ Sugerir formatação com IA de todo o texto original</button>
-                <button id="aiSentinelaBtn" class="ai-main-btn ai-sentinela-btn" type="button">📖 Responder resumidamente a pergunta do texto colado</button>
               </div>
               <details class="subsection sub-tint-2 textos-biblicos-box" id="resumoTextosBox">
                 <summary>📝 Resumo e textos bíblicos</summary>
@@ -2047,8 +2150,13 @@
               </div>
               </div>
             </details>
+          </div>
+        </details>
+
+        <div id="reunioesGroup" class="reunioes-group screen-reunioes">
+          <h2 class="reunioes-title">📅 Preparação para as reuniões</h2>
             <details class="subsection sentinela-subsection" id="sentinelaBox">
-              <summary>📖 Opções para as reuniões semanais</summary>
+              <summary>📖 Estudo de A Sentinela</summary>
               <div class="subsection-body">
 
             <section class="sent-option sent-option-site">
@@ -2084,6 +2192,11 @@
               </div>
             </section>
 
+            <section class="sent-option sent-option-colado">
+              <h3>Ou a partir do texto colado no campo de texto</h3>
+              <button id="aiSentinelaBtn" class="ai-main-btn ai-sentinela-btn" type="button">📖 Responder resumidamente a pergunta do texto colado</button>
+            </section>
+
             <details class="subsection sub-tint-2 textos-biblicos-box" id="textosBiblicosBox">
               <summary>📖 Textos bíblicos nas respostas</summary>
               <div class="subsection-body">
@@ -2106,8 +2219,10 @@
             </details>
               </div>
             </details>
-          </div>
-        </details>
+            <div class="em-breve" aria-disabled="true"><span>💎 Joias Espirituais</span><span class="em-breve-badge">em breve</span></div>
+            <div class="em-breve" aria-disabled="true"><span>📚 Estudo Bíblico de Congregação</span><span class="em-breve-badge">em breve</span></div>
+            <div class="em-breve" aria-disabled="true"><span>🎤 Esboços para discursos</span><span class="em-breve-badge">em breve</span></div>
+        </div>
 
         <p id="selectionInfo" class="hint" role="status" aria-live="polite">Selecione um trecho e clique na formatação desejada. Use ⇥ Recuo ou a tecla Tab para aumentar o recuo do parágrafo. Repita para mais níveis; Shift+Tab reduz o recuo.</p>
 
@@ -2118,7 +2233,7 @@
 
     </div>
 
-    <details class="card tint-4 section-accordion" id="settingsCard" style="margin-top:16px">
+    <details class="card tint-4 section-accordion screen-ajustes" id="settingsCard" style="margin-top:16px">
       <summary><h2>⚙️ Configurações gerais do app</h2></summary>
       <div class="section-accordion-body">
         <details class="subsection sub-tint-6" id="aiSection">
@@ -2339,6 +2454,11 @@
       </div>
     </details>
 
+    <section id="backupCard" class="card screen-backup">
+      <h2>📦 Backup do JW Library</h2>
+      <p class="hint">Em breve: abrir o backup do JW Library para ver e editar as notas.</p>
+    </section>
+
   </main>
 
   <main id="promptsScreen" aria-labelledby="promptsTitle">
@@ -2421,7 +2541,7 @@
     <p style="padding:16px;text-align:center">Este conversor precisa de JavaScript ativado para funcionar.</p>
   </noscript>
 
-  <div class="theme-switch-row">
+  <div class="theme-switch-row screen-ajustes">
     <div class="theme-switch" role="group" aria-label="Tema do aplicativo">
       <button type="button" class="theme-btn" data-theme-choice="auto">Auto</button>
       <button type="button" class="theme-btn" data-theme-choice="light">☀️ Claro</button>
@@ -2429,11 +2549,55 @@
     </div>
   </div>
 
-  <div class="about-link-row">
+  <div class="about-link-row screen-ajustes">
     <a class="about-link" href="sobre.html">ℹ️ Sobre o app</a>
   </div>
 
   <script>
+
+    // ---------- Telas: Formatar, Reuniões, Backup e Ajustes ----------
+    // É um app só: a tela escolhida (guardada neste aparelho e no endereço, ex.: #reunioes) mostra os blocos dela e
+    // esconde os outros. Formatar e Reuniões dividem o mesmo campo de texto.
+    const SCREEN_STORAGE_KEY = 'jwLibraryNoteAplicarScreenV1';
+    const APP_SCREENS = ['formatar', 'reunioes', 'backup', 'ajustes'];
+
+    function currentScreen() {
+      return document.body.dataset.screen || 'formatar';
+    }
+
+    function showScreen(name, options) {
+      const screen = APP_SCREENS.includes(name) ? name : 'formatar';
+      const changed = screen !== currentScreen();
+      document.body.dataset.screen = screen;
+      document.querySelectorAll('#appNav [data-screen-target]').forEach(btn => {
+        if (btn.dataset.screenTarget === screen) btn.setAttribute('aria-current', 'page');
+        else btn.removeAttribute('aria-current');
+      });
+      if (screen === 'ajustes') document.getElementById('settingsCard').open = true;
+      try { localStorage.setItem(SCREEN_STORAGE_KEY, screen); } catch (e) { /* sem localStorage: só não lembra a tela */ }
+      if (location.hash !== '#' + screen) history.replaceState(null, '', '#' + screen);
+      if (changed && !(options && options.keepScroll)) window.scrollTo(0, 0);
+    }
+
+    // Em que tela fica um elemento (para o app abrir a tela certa quando precisa mostrar algo que está em outra).
+    function screenOf(element) {
+      const holder = element && element.closest('.screen-formatar, .screen-reunioes, .screen-backup, .screen-ajustes');
+      return holder ? APP_SCREENS.find(name => holder.classList.contains('screen-' + name)) || null : null;
+    }
+
+    document.querySelectorAll('#appNav [data-screen-target]').forEach(btn => {
+      btn.addEventListener('click', () => showScreen(btn.dataset.screenTarget));
+    });
+    window.addEventListener('hashchange', () => {
+      const name = location.hash.slice(1);
+      if (APP_SCREENS.includes(name)) showScreen(name, { keepScroll: true });
+    });
+    (() => {
+      const fromHash = location.hash.slice(1);
+      let saved = '';
+      try { saved = localStorage.getItem(SCREEN_STORAGE_KEY) || ''; } catch (e) { /* sem localStorage: abre em Formatar */ }
+      showScreen(APP_SCREENS.includes(fromHash) ? fromHash : saved, { keepScroll: true });
+    })();
 
     // ---------- Tema (Auto / Claro / Escuro) ----------
 
@@ -2584,7 +2748,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '3.7'; // 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
+    const APP_VERSION = '4.0'; // 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 
@@ -4002,12 +4166,14 @@ function saveTemplatesToStorage() {
 
           const editorSubsection = document.getElementById('editorSubsection');
           const categoriesSubsection = document.getElementById('categoriesSubsection');
-          // Abre toda a cadeia de seções até o editor (ele fica dentro de "Configurações gerais do app").
+          // Abre toda a cadeia de seções até o editor (ele fica em Ajustes, dentro de "Configurações gerais do app").
+          showScreen('ajustes', { keepScroll: true });
           if (editorSubsection) {
             for (let box = editorSubsection.parentElement.closest('details'); box; box = box.parentElement.closest('details')) box.open = true;
           }
           if (editorSubsection) editorSubsection.open = true;
           if (categoriesSubsection) categoriesSubsection.open = true;
+          if (editorSubsection) editorSubsection.scrollIntoView({ block: 'start' });
 
           templateSelect.value = tpl.id;
           loadSelectedTemplateIntoEditor();
@@ -6028,6 +6194,8 @@ function saveTemplatesToStorage() {
     const sentinelaOutputSlot = document.getElementById('sentinelaOutputSlot');
     // Abre a seção e todas as seções que a contêm (ex.: o grupo "Opções de formatação com IA").
     function openWithAncestors(details) {
+      const screen = screenOf(details);
+      if (screen && screen !== currentScreen()) showScreen(screen, { keepScroll: true });
       for (let box = details; box; box = box.parentElement && box.parentElement.closest('details')) box.open = true;
     }
 
@@ -6733,7 +6901,7 @@ function saveTemplatesToStorage() {
       if (aiBusy) return;
       aiLastKind = 'sentinela';
       aiStatusKind = 'sentinela';
-      placeAiOutput(aiOutputHome);
+      placeAiOutput(sentinelaOutputSlot);
 
       if (mode) {
         if (!(await confirmAiRestore())) return;
