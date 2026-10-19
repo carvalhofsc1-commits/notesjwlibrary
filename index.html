@@ -1696,6 +1696,10 @@
     /* Tela Backup: abrir o .jwlibrary e ver as notas e as respostas dos quadros "Sua resposta" (só leitura). */
     .backup-open-row { margin-top: 10px; }
     .backup-open-row button { width: 100%; min-height: 50px; }
+    .backup-open-row .bk-row > button { min-height: 44px; }
+    .backup-export { margin-top: 10px; }
+    .backup-export > span { font-size: .86rem; font-weight: 650; }
+    .backup-export .bk-row { margin-top: 6px; }
     .backup-summary { margin: 12px 0 0; font-size: .86rem; color: var(--muted); }
     .backup-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
     .backup-controls label { margin: 8px 0 4px; font-size: .82rem; }
@@ -2536,11 +2540,22 @@
       <div class="backup-open-row">
         <button id="backupOpenBtn" type="button">📂 Abrir backup (.jwlibrary)</button>
         <input id="backupFile" type="file" hidden>
+        <div class="bk-row">
+          <button id="backupNewBtn" class="secondary" type="button">🆕 Criar backup vazio</button>
+          <button id="backupCloseBtn" class="secondary" type="button" hidden>✖️ Fechar backup</button>
+        </div>
       </div>
       <p class="hint">O arquivo é lido só neste aparelho: nada é enviado para a internet.</p>
       <span id="backupStatus" class="ok" role="status" aria-live="polite"></span>
       <div id="backupView" hidden>
         <p id="backupSummary" class="backup-summary"></p>
+        <div class="backup-export">
+          <span>📤 Exportar notas:</span>
+          <div class="bk-row">
+            <button id="backupExportXlsxBtn" class="secondary" type="button">📊 Planilha (.xlsx)</button>
+            <button id="backupExportCsvBtn" class="secondary" type="button">📄 CSV</button>
+          </div>
+        </div>
         <div id="backupSaveBox" class="backup-save" hidden>
           <p id="backupSaveInfo"></p>
           <button id="backupGenerateBtn" type="button">💾 Gerar backup modificado</button>
@@ -2626,7 +2641,7 @@
   <div id="confirmOverlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
     <div class="modal-card">
       <h2 id="confirmTitle">Confirmar</h2>
-      <p id="confirmText">Tem certeza?</p>
+      <p id="confirmText" style="white-space: pre-line;">Tem certeza?</p>
       <div class="modal-actions">
         <button id="confirmOkChoice" type="button" class="btn-orange">✅ Confirmar</button>
         <button id="cancelConfirmChoice" type="button" class="btn-slate">✖️ Cancelar</button>
@@ -2988,12 +3003,13 @@
 
     function renderBackupView(keepOpen) {
       const view = document.getElementById('backupView');
-      if (!backupState) { view.hidden = true; return; }
+      document.getElementById('backupCloseBtn').hidden = !backupState;
+      document.getElementById('backupOpenBtn').textContent = backupState ? '📂 Abrir outro backup' : '📂 Abrir backup (.jwlibrary)';
+      if (!backupState) { view.hidden = true; renderBackupSaveBox(); return; }
       view.hidden = false;
       const info = backupState.manifest.userDataBackup || {};
-      document.getElementById('backupOpenBtn').textContent = '📂 Abrir outro backup';
       document.getElementById('backupSummary').textContent = [
-        backupState.fileName,
+        backupState.isNew ? '🆕 Backup novo' : backupState.fileName,
         backupDate(info.lastModifiedDate) && 'feito em ' + backupDate(info.lastModifiedDate),
         info.deviceName,
         'formato ' + (info.schemaVersion || '?')
@@ -3422,11 +3438,14 @@
       if (!backupState) { box.hidden = true; return; }
       const changes = backupState.changes || 0;
       const generated = backupState.generated;
-      box.hidden = !changes && !generated;
+      box.hidden = !changes && !generated && !backupState.isNew;
       document.getElementById('backupSaveInfo').textContent = generated
         ? '✅ Arquivo pronto: ' + generated.fileName
+        : !changes ? 'Backup novo, ainda não gravado em arquivo.'
         : changes + (changes === 1 ? ' alteração ainda não gravada em arquivo.' : ' alterações ainda não gravadas em arquivo.');
-      document.getElementById('backupGenerateBtn').hidden = Boolean(generated);
+      const generateBtn = document.getElementById('backupGenerateBtn');
+      generateBtn.hidden = Boolean(generated);
+      generateBtn.textContent = backupState.isNew ? '💾 Gerar o arquivo do backup novo' : '💾 Gerar backup modificado';
       document.getElementById('backupFileActions').hidden = !generated;
       const shareBtn = document.getElementById('backupShareBtn');
       shareBtn.hidden = !(generated && navigator.canShare && navigator.canShare({ files: [new File([''], 'teste.jwlibrary')] }));
@@ -3514,6 +3533,239 @@
         event.returnValue = '';
       }
     });
+
+    // ---------- Backup do JW Library: fechar, backup vazio e exportar notas ----------
+    // O backup vazio (jw-backup-vazio.zip) é o "blank" do JWLManager (licença MIT): banco userData.db sem dados, no
+    // formato 16, e a miniatura padrão. A exportação usa as mesmas colunas do JWLManager, para que a planilha também
+    // possa ser importada nele.
+    const BACKUP_EXPORT_FIELDS = ['CREATED', 'MODIFIED', 'TAGS', 'COLOR', 'RANGE', 'LANG', 'PUB', 'BK', 'CH', 'VS', 'Reference',
+      'ISSUE', 'DOC', 'BLOCK', 'HEADING', 'Link', 'TITLE', 'NOTE'];
+    const BACKUP_EXPORT_NUMBERS = new Set(['COLOR', 'LANG', 'BK', 'CH', 'VS', 'ISSUE', 'DOC', 'BLOCK']);
+
+    async function backupClose() {
+      if (!backupState) return;
+      if (backupState.changes &&
+        !(await askConfirm('As alterações deste backup ainda não foram gravadas em arquivo e serão perdidas. Fechar mesmo assim?', 'Fechar backup'))) return;
+      if (backupState.db) backupState.db.close();
+      backupState = null;
+      document.getElementById('backupSearch').value = '';
+      document.getElementById('backupNewNoteSlot').textContent = '';
+      document.getElementById('backupTree').textContent = '';
+      renderBackupView();
+      setBackupStatus('Backup fechado. O arquivo original continua como estava.', false);
+    }
+
+    async function backupCreateNew() {
+      if (backupState && backupState.changes &&
+        !(await askConfirm('As alterações do backup aberto ainda não foram gravadas em arquivo e serão perdidas. Continuar?', 'Criar backup vazio'))) return;
+      if (!(await askConfirm('Será criado um backup novo, sem nenhuma nota, grifo ou favorito, para você montar do zero.\n\n' +
+        'Atenção: restaurar um backup no JW Library substitui TODOS os dados do aparelho pelos dados do backup.', 'Criar backup vazio'))) return;
+      setBackupStatus('Criando o backup vazio…', false);
+      try {
+        const [{ JSZip, SQL }] = await Promise.all([loadBackupLibs(), loadBackupPubs()]);
+        const response = await fetch('jw-backup-vazio.zip');
+        if (!response.ok) throw new Error('não encontrei o modelo do backup vazio.');
+        const zip = await JSZip.loadAsync(await response.arrayBuffer());
+        const db = new SQL.Database(await zip.file('userData.db').async('uint8array'));
+        const stamp = backupNow();
+        const manifest = {
+          name: 'NoteStyle', creationDate: stamp, version: 1, type: 0,
+          userDataBackup: { lastModifiedDate: stamp, deviceName: 'NoteStyle', databaseName: 'userData.db', hash: '', schemaVersion: 16 }
+        };
+        const data = readBackupData(db);
+        if (backupState && backupState.db) backupState.db.close();
+        backupState = { zip, db, manifest, fileName: 'Backup_novo.jwlibrary', data, changes: 0, generated: null, isNew: true };
+        backupCategory = 'notas';
+        document.getElementById('backupSearch').value = '';
+        document.getElementById('backupNewNoteSlot').textContent = '';
+        renderBackupView();
+        setBackupStatus('✅ Backup vazio criado. Use "➕ Nova nota avulsa" para escrever notas e depois gere o arquivo.', false);
+      } catch (e) {
+        setBackupStatus('Não consegui criar o backup: ' + (e && e.message ? e.message : 'erro desconhecido.'), true);
+      }
+    }
+
+    // As notas do backup aberto (com as alterações ainda não gravadas), uma linha por nota, como no JWLManager.
+    function backupExportRows(db) {
+      const symbols = (backupPubs && backupPubs.simbolos) || { 5: 'T' };
+      const rows = backupRows(db, `
+        SELECT n.BlockType, n.Title, n.Content, n.BlockIdentifier, n.LastModified, n.Created,
+               l.MepsLanguage, l.BookNumber, l.ChapterNumber, l.DocumentId, l.IssueTagNumber, l.KeySymbol, l.Title AS LocTitle, u.ColorIndex,
+               (SELECT group_concat(Name, ' | ') FROM (SELECT t.Name FROM TagMap tm JOIN Tag t ON t.TagId = tm.TagId
+                 WHERE tm.NoteId = n.NoteId ORDER BY t.Name)) AS Tags,
+               (SELECT group_concat(Faixa, ';') FROM (SELECT Identifier || ':' || StartToken || '-' || EndToken AS Faixa FROM BlockRange
+                 WHERE UserMarkId = n.UserMarkId ORDER BY Identifier, StartToken)) AS Ranges
+        FROM Note n LEFT JOIN Location l ON l.LocationId = n.LocationId LEFT JOIN UserMark u ON u.UserMarkId = n.UserMarkId
+        ORDER BY n.BlockType, n.LastModified DESC, n.NoteId DESC`);
+      const valid = text => text.includes('-') && text.length >= 10;
+      return rows.map(r => {
+        let created = String(r.Created || '').slice(0, 19);
+        let modified = String(r.LastModified || '').slice(0, 19);
+        if (!valid(created)) created = backupNow().slice(0, 19);
+        else if (!created.includes('T')) created = created.slice(0, 10) + 'T00:00:00';
+        if (!valid(modified)) modified = created;
+        else if (!modified.includes('T')) modified = modified.slice(0, 10) + 'T00:00:00';
+        const item = {
+          CREATED: created, MODIFIED: modified, TAGS: r.Tags || '', COLOR: r.ColorIndex || 0, RANGE: r.Ranges || '',
+          LANG: r.MepsLanguage, PUB: r.KeySymbol || '', BK: r.BookNumber, CH: r.ChapterNumber, VS: r.BlockIdentifier, Reference: '',
+          ISSUE: r.IssueTagNumber > 10000000 ? r.IssueTagNumber : null, DOC: r.DocumentId, BLOCK: r.BlockIdentifier,
+          HEADING: r.LocTitle || '', Link: '', TITLE: r.Title || '', NOTE: String(r.Content || '').trim()
+        };
+        const symbol = symbols[String(item.LANG)];
+        if (r.BlockType === 0 && !(item.BK || item.DOC)) { // nota avulsa
+          item.BLOCK = null;
+          item.VS = null;
+        } else if (item.BK) { // nota na Bíblia: o bloco é o versículo
+          let verse = '000';
+          if (item.VS !== null && item.VS !== undefined) {
+            verse = String(item.VS).padStart(3, '0');
+            item.BLOCK = null;
+          }
+          item.Reference = String(item.BK).padStart(2, '0') + String(item.CH || 0).padStart(3, '0') + verse;
+          if (symbol) item.Link = 'https://www.jw.org/finder?wtlocale=' + symbol + '&pub=' + item.PUB + '&bible=' + item.Reference;
+          if (!item.HEADING) item.HEADING = (BIBLE_BOOKS[item.BK - 1] || 'Livro ' + item.BK) + ' ' + (item.CH || '');
+          else if (item.VS !== null && item.VS !== undefined && !item.HEADING.includes(':')) item.HEADING += ':' + item.VS;
+        } else { // nota numa publicação
+          item.VS = null;
+          if (symbol && item.DOC !== null && item.DOC !== undefined) {
+            item.Link = 'https://www.jw.org/finder?wtlocale=' + symbol + '&docid=' + item.DOC + (item.BLOCK ? '&par=' + item.BLOCK : '');
+          }
+        }
+        return item;
+      });
+    }
+
+    function backupExportName(extension) {
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      return 'Notas_JW_Library_' + now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + '.' + extension;
+    }
+
+    function backupSaveBlob(blob, fileName) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    }
+
+    // CSV para o Excel em português: separador ";", UTF-8 com BOM (acentos certos) e quebras de linha dentro de aspas.
+    function backupCsv(items) {
+      const cell = value => {
+        if (value === null || value === undefined) return '';
+        const text = String(value).replace(/\r\n?/g, '\n');
+        return /[;"\n]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
+      };
+      const lines = [BACKUP_EXPORT_FIELDS.join(';')].concat(items.map(item => BACKUP_EXPORT_FIELDS.map(f => cell(item[f])).join(';')));
+      return new Blob(['﻿' + lines.join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' });
+    }
+
+    function backupXml(text) {
+      return String(text)
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F￾￿]/g, '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function backupColumnName(index) {
+      let name = '';
+      for (let n = index + 1; n > 0; n = Math.floor((n - 1) / 26)) name = String.fromCharCode(65 + (n - 1) % 26) + name;
+      return name;
+    }
+
+    // Planilha .xlsx montada à mão (é só um ZIP com alguns XML): cabeçalho em negrito, filtro e primeira linha fixa.
+    async function backupXlsx(items, title, comment) {
+      const strings = [];
+      const stringIndex = new Map();
+      const shared = text => {
+        const value = String(text).replace(/\r\n?/g, '\n').slice(0, 32767); // limite de uma célula do Excel
+        if (!stringIndex.has(value)) { stringIndex.set(value, strings.length); strings.push(value); }
+        return stringIndex.get(value);
+      };
+      const last = backupColumnName(BACKUP_EXPORT_FIELDS.length - 1);
+      const header = '<row r="1">' + BACKUP_EXPORT_FIELDS.map((f, i) => '<c r="' + backupColumnName(i) + '1" t="s" s="1"><v>' + shared(f) + '</v></c>').join('') + '</row>';
+      const body = items.map((item, rowIndex) => {
+        const r = rowIndex + 2;
+        const cells = BACKUP_EXPORT_FIELDS.map((f, i) => {
+          const value = item[f];
+          if (value === null || value === undefined || value === '') return '';
+          const ref = backupColumnName(i) + r;
+          if (BACKUP_EXPORT_NUMBERS.has(f) && Number.isFinite(Number(value))) return '<c r="' + ref + '"><v>' + Number(value) + '</v></c>';
+          return '<c r="' + ref + '" t="s"><v>' + shared(value) + '</v></c>';
+        }).join('');
+        return '<row r="' + r + '">' + cells + '</row>';
+      }).join('');
+      const widths = BACKUP_EXPORT_FIELDS.map((f, i) => {
+        const width = i < 3 ? 20 : f === 'TITLE' ? 30 : f === 'NOTE' ? 60 : f === 'Link' ? 24 : 12;
+        return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + width + '" customWidth="1"/>';
+      }).join('');
+      const rowsEnd = items.length + 1;
+      const ns = 'xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"';
+      const rel = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+      const xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
+      const zip = new window.JSZip();
+      const add = (name, content) => zip.file(name, content, { createFolders: false }); // sem entradas de pasta, como o Excel
+      add('[Content_Types].xml', xml + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' +
+        '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+        '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' +
+        '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
+        '<Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>' +
+        '<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>' +
+        '<Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>');
+      add('_rels/.rels', xml + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="' + rel + '/officeDocument" Target="xl/workbook.xml"/>' +
+        '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>' +
+        '<Relationship Id="rId3" Type="' + rel + '/extended-properties" Target="docProps/app.xml"/></Relationships>');
+      add('docProps/core.xml', xml + '<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" ' +
+        'xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">' +
+        '<dc:title>' + backupXml(title) + '</dc:title><dc:description>' + backupXml(comment) + '</dc:description><dc:creator>NoteStyle</dc:creator>' +
+        '<dcterms:created xsi:type="dcterms:W3CDTF">' + backupNow() + '</dcterms:created></cp:coreProperties>');
+      add('docProps/app.xml', xml + '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>NoteStyle</Application></Properties>');
+      add('xl/_rels/workbook.xml.rels', xml + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="' + rel + '/worksheet" Target="worksheets/sheet1.xml"/>' +
+        '<Relationship Id="rId2" Type="' + rel + '/styles" Target="styles.xml"/>' +
+        '<Relationship Id="rId3" Type="' + rel + '/sharedStrings" Target="sharedStrings.xml"/></Relationships>');
+      add('xl/workbook.xml', xml + '<workbook ' + ns + ' xmlns:r="' + rel + '"><sheets><sheet name="NoteStyle" sheetId="1" r:id="rId1"/></sheets>' +
+        '<definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="0" hidden="1">NoteStyle!$A$1:$' + last + '$' + rowsEnd + '</definedName></definedNames></workbook>');
+      add('xl/styles.xml', xml + '<styleSheet ' + ns + '><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font>' +
+        '<font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill>' +
+        '<fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>' +
+        '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+        '<cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs>' +
+        '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>');
+      add('xl/worksheets/sheet1.xml', xml + '<worksheet ' + ns + ' xmlns:r="' + rel + '"><dimension ref="A1:' + last + rowsEnd + '"/>' +
+        '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>' +
+        '<sheetFormatPr defaultRowHeight="15"/><cols>' + widths + '</cols><sheetData>' + header + body + '</sheetData>' +
+        '<autoFilter ref="A1:' + last + rowsEnd + '"/></worksheet>');
+      add('xl/sharedStrings.xml', xml + '<sst ' + ns + ' count="' + strings.length + '" uniqueCount="' + strings.length + '">' +
+        strings.map(s => '<si><t xml:space="preserve">' + backupXml(s) + '</t></si>').join('') + '</sst>');
+      return zip.generateAsync({ type: 'blob', compression: 'DEFLATE', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    }
+
+    async function backupExport(format) {
+      if (!backupState) return;
+      const items = backupExportRows(backupState.db);
+      if (!items.length) return setBackupStatus('Este backup não tem notas para exportar.', true);
+      try {
+        const fileName = backupExportName(format);
+        const comment = 'Exportado de ' + backupState.fileName + ' pelo NoteStyle em ' + new Date().toLocaleString('pt-BR');
+        // "{NOTES=}" no título é o que o JWLManager procura para reconhecer uma planilha de notas.
+        const blob = format === 'csv' ? backupCsv(items) : await backupXlsx(items, '{NOTES=}', comment);
+        backupSaveBlob(blob, fileName);
+        setBackupStatus('✅ ' + items.length.toLocaleString('pt-BR') + (items.length === 1 ? ' nota exportada' : ' notas exportadas') + ' em ' + fileName + '.', false);
+      } catch (e) {
+        setBackupStatus('Não consegui exportar: ' + (e && e.message ? e.message : 'erro desconhecido.'), true);
+      }
+    }
+
+    document.getElementById('backupNewBtn').addEventListener('click', backupCreateNew);
+    document.getElementById('backupCloseBtn').addEventListener('click', backupClose);
+    document.getElementById('backupExportXlsxBtn').addEventListener('click', () => backupExport('xlsx'));
+    document.getElementById('backupExportCsvBtn').addEventListener('click', () => backupExport('csv'));
 
     // ---------- Tema (Auto / Claro / Escuro) ----------
 
@@ -3664,7 +3916,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '4.3'; // 4.3: edição do backup (notas, respostas, nota avulsa, gerar arquivo); 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
+    const APP_VERSION = '4.4'; // 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 
