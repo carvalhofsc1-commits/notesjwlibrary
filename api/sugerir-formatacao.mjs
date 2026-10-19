@@ -1113,14 +1113,16 @@ async function responderEstudo(res, body, P) {
 }
 
 // ---------- Perguntas adicionais para o dirigente ----------
-// 1 ou 2 perguntas de aplicação por pergunta impressa (e, com a opção marcada, sobre os textos bíblicos do parágrafo).
+// Três seções por pergunta impressa: 1 ou 2 complementares (pontos do parágrafo que a pergunta impressa não cobre),
+// 1 ou 2 aplicativas (aplicação prática do ponto principal) e, com as opções marcadas, a explicação dos textos bíblicos.
 // O servidor lê o artigo no wol.jw.org e manda à IA só os parágrafos pedidos; ela pensa antes de sugerir (texto curto).
 
 const SaidaPerguntas = z.object({
   itens: z.array(
     z.object({
       paragrafos: z.string(),
-      perguntas: z.array(z.string()),
+      complementares: z.array(z.string()),
+      aplicativas: z.array(z.string()),
       perguntasTextos: z.array(z.object({ referencia: z.string(), pergunta: z.string() })),
       perguntasEntendimento: z.array(z.object({ referencia: z.string(), perguntas: z.array(z.string()) })),
     })
@@ -1163,13 +1165,16 @@ async function sugerirPerguntas(res, body, P) {
   const texto = textoDosGrupos(grupos);
   const mensagem =
     blocoOrientacao(opcoes, ajuste) +
-    "PEDIDO:\n- Perguntas adicionais de aplicação: 1 ou 2 para cada pergunta impressa.\n" +
+    "PEDIDO:\n" +
+    '- Seção 1, perguntas complementares: 1 ou 2 para cada pergunta impressa, em "complementares".\n' +
+    '- Seção 2, perguntas aplicativas: 1 ou 2 para cada pergunta impressa, em "aplicativas".\n' +
+    "- Seção 3, explicação dos textos:\n" +
     (opcoes.perguntasTextos
-      ? "- Perguntas sobre os textos bíblicos: ATIVAS (até 2 por pergunta impressa, em \"perguntasTextos\").\n"
-      : '- Perguntas sobre os textos bíblicos: INATIVAS ("perguntasTextos" sempre []).\n') +
+      ? "  - Perguntas sobre os textos bíblicos: ATIVAS (até 2 por pergunta impressa, em \"perguntasTextos\").\n"
+      : '  - Perguntas sobre os textos bíblicos: INATIVAS ("perguntasTextos" sempre []).\n') +
     (opcoes.perguntasEntendimento
-      ? '- Perguntas de entendimento dos textos bíblicos: ATIVAS (até 2 textos por pergunta impressa, 1 ou 2 perguntas por texto, em "perguntasEntendimento"): perguntas que ajudem a entender e explicar o texto e a ligação dele com a matéria do parágrafo (por que foi citado ali, o que significa, como apoia o ensino), e não aplicação prática na vida.\n'
-      : '- Perguntas de entendimento dos textos bíblicos: INATIVAS ("perguntasEntendimento" sempre []).\n') +
+      ? '  - Perguntas de entendimento dos textos bíblicos: ATIVAS (até 2 textos por pergunta impressa, 1 ou 2 perguntas por texto, em "perguntasEntendimento"): perguntas que ajudem a entender e explicar o texto e a ligação dele com a matéria do parágrafo (por que foi citado ali, o que significa, como apoia o ensino), e não aplicação prática na vida.\n'
+      : '  - Perguntas de entendimento dos textos bíblicos: INATIVAS ("perguntasEntendimento" sempre []).\n') +
     "\nTEXTO DO ESTUDO:\n" +
     texto +
     (ajuste || opcoes.instrucao ? LEMBRETE_ORIENTACAO : "");
@@ -1191,7 +1196,8 @@ async function sugerirPerguntas(res, body, P) {
     const itens = resposta.parsed_output.itens
       .map((i) => ({
         paragrafos: limparLinha(i.paragrafos, 20),
-        perguntas: i.perguntas.map((q) => limparTextoGerado(q, 400)).filter(Boolean).slice(0, 2),
+        complementares: i.complementares.map((q) => limparTextoGerado(q, 400)).filter(Boolean).slice(0, 2),
+        aplicativas: i.aplicativas.map((q) => limparTextoGerado(q, 400)).filter(Boolean).slice(0, 2),
         perguntasTextos: opcoes.perguntasTextos
           ? i.perguntasTextos
               .map((t) => ({ referencia: limparLinha(t.referencia, 80), pergunta: limparTextoGerado(t.pergunta, 400) }))
@@ -1210,7 +1216,7 @@ async function sugerirPerguntas(res, body, P) {
       }))
       .filter(
         (i) =>
-          (i.perguntas.length || i.perguntasTextos.length || i.perguntasEntendimento.length) &&
+          (i.complementares.length || i.aplicativas.length || i.perguntasTextos.length || i.perguntasEntendimento.length) &&
           [...numerosDosParagrafos(i.paragrafos)].some((n) => alvo.has(n))
       )
       .sort((a, b) => primeiro(a) - primeiro(b));

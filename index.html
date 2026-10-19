@@ -3916,7 +3916,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '4.4'; // 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
+    const APP_VERSION = '4.5'; // 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 
@@ -8462,22 +8462,28 @@ function saveTemplatesToStorage() {
       }
     }
 
-    // Perguntas adicionais para o dirigente: 1 ou 2 por pergunta impressa e, com as opções marcadas, sobre os textos
-    // bíblicos do parágrafo (aplicação 📖 e entendimento 🔎). Vão para o fim do campo de texto, sem apagar o que já está nele (por exemplo, as respostas). Uma linha
-    // em branco separa o cabeçalho da primeira pergunta e cada pergunta da seguinte.
+    // Perguntas adicionais para o dirigente, em três seções por pergunta impressa: 1) complementares (pontos do parágrafo
+    // que a pergunta impressa não cobre), 2) aplicativas (aplicação prática do ponto principal) e 3) explicação dos textos
+    // (só com as opções marcadas: aplicação 📖 e entendimento 🔎). Seção sem perguntas não aparece. Vão para o fim do campo
+    // de texto, sem apagar o que já está nele (por exemplo, as respostas). Uma linha em branco separa cada cabeçalho da
+    // primeira pergunta e cada pergunta da seguinte.
     function buildStudyQuestionsText(items) {
       const bold = text => {
         const styleId = aiStyleIdFor('negrito');
         return styleId ? convertTextWithStyle(text, styleId) : text;
       };
+      const list = value => (Array.isArray(value) ? value : []);
       return items.map(item => {
         const lines = ['💬 ' + bold('PERGUNTAS ADICIONAIS') + ' 👉 ' + (item.paragrafos ? item.paragrafos + '.' : '')];
-        (Array.isArray(item.perguntas) ? item.perguntas : []).forEach(q => lines.push('❔ ' + q));
-        (Array.isArray(item.perguntasTextos) ? item.perguntasTextos : []).forEach(t => lines.push('📖 ' + bold(t.referencia) + ' ➜ ' + t.pergunta));
-        // Entendimento do texto em relação à matéria do parágrafo (outra opção): 🔎 para não confundir com as de aplicação.
-        (Array.isArray(item.perguntasEntendimento) ? item.perguntasEntendimento : []).forEach(t => {
-          (Array.isArray(t.perguntas) ? t.perguntas : []).forEach(q => lines.push('🔎 ' + bold(t.referencia) + ' ➜ ' + q));
-        });
+        const section = (title, questions) => {
+          if (questions.length) lines.push(title, ...questions);
+        };
+        section('1️⃣ ' + bold('Perguntas complementares'), list(item.complementares).map(q => '❔ ' + q));
+        section('2️⃣ ' + bold('Perguntas aplicativas'), list(item.aplicativas).map(q => '💡 ' + q));
+        section('3️⃣ ' + bold('Explicação dos textos'), [
+          ...list(item.perguntasTextos).map(t => '📖 ' + bold(t.referencia) + ' ➜ ' + t.pergunta),
+          ...list(item.perguntasEntendimento).flatMap(t => list(t.perguntas).map(q => '🔎 ' + bold(t.referencia) + ' ➜ ' + q))
+        ]);
         return lines.join('\n\n');
       }).join('\n\n');
     }
