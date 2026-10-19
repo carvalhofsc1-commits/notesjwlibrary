@@ -1727,6 +1727,33 @@
     .bk-more { width: 100%; margin: 4px 0 10px; }
     .bk-more[hidden] { display: none; }
     .backup-list { display: grid; gap: 10px; margin-top: 6px; }
+    /* Edição (Fase 2): ações no cartão aberto, formulário, cores e a caixa de gerar o arquivo. */
+    .bk-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .bk-row > button { flex: 1 1 140px; min-height: 40px; padding: 8px 10px; font-size: .88rem; }
+    .bk-row[hidden] { display: none; }
+    .bk-actions { display: none; }
+    .backup-item.aberto .bk-actions { display: flex; }
+    .backup-item.editando .bk-actions,
+    .backup-item.editando.aberto .bk-actions,
+    .backup-item.editando.aberto .backup-item-body { display: none; }
+    .bk-danger,
+    .bk-danger:hover { background: var(--danger); color: #ffffff; }
+    .bk-editor { margin-top: 10px; padding-top: 6px; border-top: 1px dashed var(--line); cursor: default; }
+    .bk-editor label { margin: 8px 0 4px; font-size: .82rem; }
+    .bk-editor .bk-text { min-height: 150px; }
+    .bk-colors { display: flex; flex-wrap: wrap; gap: 8px; }
+    .bk-color,
+    .bk-color:hover { width: 34px; height: 34px; min-height: 0; padding: 0; border-radius: 50%; border: 3px solid transparent; background: var(--cor); }
+    .bk-color[aria-pressed="true"] { border-color: var(--text); box-shadow: 0 0 0 2px var(--card) inset; }
+    .backup-new-note { width: 100%; margin-top: 10px; }
+    .backup-new-note[hidden] { display: none; }
+    #backupNewNoteSlot .bk-editor { padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
+    .backup-save { margin-top: 12px; padding: 12px; border: 2px solid var(--accent); border-radius: 12px; background: color-mix(in srgb, var(--accent) 8%, var(--card)); }
+    .backup-save[hidden] { display: none; }
+    .backup-save p { margin: 0 0 8px; font-weight: 650; }
+    .backup-save .hint { margin: 8px 0 0; font-weight: 400; }
+    #backupGenerateBtn { width: 100%; min-height: 48px; }
+    #backupGenerateBtn[hidden] { display: none; }
     .backup-item { padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); cursor: pointer; }
     .backup-item-head { display: flex; align-items: center; gap: 8px; font-weight: 700; line-height: 1.3; }
     .backup-item-head .sem-titulo { color: var(--muted); font-weight: 600; font-style: italic; }
@@ -2514,6 +2541,15 @@
       <span id="backupStatus" class="ok" role="status" aria-live="polite"></span>
       <div id="backupView" hidden>
         <p id="backupSummary" class="backup-summary"></p>
+        <div id="backupSaveBox" class="backup-save" hidden>
+          <p id="backupSaveInfo"></p>
+          <button id="backupGenerateBtn" type="button">💾 Gerar backup modificado</button>
+          <div id="backupFileActions" class="bk-row" hidden>
+            <button id="backupDownloadBtn" type="button">⬇️ Salvar o arquivo</button>
+            <button id="backupShareBtn" class="secondary" type="button">📤 Compartilhar</button>
+          </div>
+          <p class="hint">Guarde também o backup original: restaurar um backup no JW Library substitui todos os dados do aparelho.</p>
+        </div>
         <div class="backup-controls">
           <div>
             <label for="backupCategory">Categoria</label>
@@ -2525,6 +2561,8 @@
           </div>
         </div>
         <input id="backupSearch" class="backup-search" type="search" autocomplete="off" placeholder="Buscar no título, no texto ou nas etiquetas">
+        <button id="backupNewNoteBtn" class="secondary backup-new-note" type="button">➕ Nova nota avulsa</button>
+        <div id="backupNewNoteSlot"></div>
         <p id="backupCount" class="hint"></p>
         <div id="backupTree" class="backup-tree"></div>
       </div>
@@ -2863,7 +2901,7 @@
       const loc = 'l.KeySymbol, l.MepsLanguage, l.IssueTagNumber, l.DocumentId, l.BookNumber, l.ChapterNumber, l.Title AS LocTitle';
 
       const noteRows = backupRows(db, `
-        SELECT n.NoteId, n.Title, n.Content, n.LastModified, n.BlockType, n.BlockIdentifier, n.LocationId, ${loc}, u.ColorIndex,
+        SELECT n.NoteId, n.UserMarkId, n.Title, n.Content, n.LastModified, n.BlockType, n.BlockIdentifier, n.LocationId, ${loc}, u.ColorIndex,
                (SELECT group_concat(Name, ' | ') FROM (SELECT t.Name FROM TagMap tm JOIN Tag t ON t.TagId = tm.TagId
                  WHERE tm.NoteId = n.NoteId ORDER BY t.Name)) AS Tags
         FROM Note n LEFT JOIN Location l ON l.LocationId = n.LocationId LEFT JOIN UserMark u ON u.UserMarkId = n.UserMarkId
@@ -2872,7 +2910,7 @@
       const notas = noteRows.map(r => {
         const color = r.ColorIndex || 0;
         return {
-          id: r.NoteId, heading: r.Title || '', text: r.Content || '', date: backupDate(r.LastModified), colorIndex: color,
+          id: r.NoteId, locationId: r.LocationId, userMarkId: r.UserMarkId, heading: r.Title || '', text: r.Content || '', date: backupDate(r.LastModified), colorIndex: color,
           tagsText: r.Tags || '', duplicate: duplicates.has(r.NoteId), ...backupDescribe(r, titleByDoc),
           color: backupLevel(BACKUP_COLOR_NAMES[color] || 'Cinza', color), tags: backupLevel(r.Tags || 'Sem etiqueta')
         };
@@ -2900,7 +2938,7 @@
         SELECT i.TextTag, i.Value, i.LocationId, ${loc}
         FROM InputField i JOIN Location l ON l.LocationId = i.LocationId
         ORDER BY l.IssueTagNumber DESC, l.DocumentId DESC, CAST(substr(i.TextTag, 3) AS INTEGER)`).map(r => ({
-          id: r.LocationId + '|' + r.TextTag, heading: 'Sua resposta', text: r.Value || '', ...backupDescribe(r, titleByDoc)
+          id: r.LocationId + '|' + r.TextTag, locationId: r.LocationId, textTag: r.TextTag, heading: 'Sua resposta', text: r.Value || '', ...backupDescribe(r, titleByDoc)
         }));
 
       const listas = backupRows(db, `
@@ -2935,7 +2973,8 @@
         const db = new SQL.Database(await dbFile.async('uint8array'));
         const data = readBackupData(db);
         if (backupState && backupState.db) backupState.db.close();
-        backupState = { zip, db, manifest, fileName: file.name, data };
+        backupState = { zip, db, manifest, fileName: file.name, data, changes: 0, generated: null };
+        document.getElementById('backupNewNoteSlot').textContent = '';
         renderBackupView();
         setBackupStatus('', false);
       } catch (e) {
@@ -2947,7 +2986,7 @@
       return BACKUP_CATEGORIES.find(c => c.id === backupCategory) || BACKUP_CATEGORIES[0];
     }
 
-    function renderBackupView() {
+    function renderBackupView(keepOpen) {
       const view = document.getElementById('backupView');
       if (!backupState) { view.hidden = true; return; }
       view.hidden = false;
@@ -2970,7 +3009,8 @@
       });
       categorySelect.value = backupCategory;
       renderBackupGroupingOptions();
-      renderBackupTree();
+      renderBackupTree(keepOpen);
+      renderBackupSaveBox();
     }
 
     function renderBackupGroupingOptions() {
@@ -2986,6 +3026,8 @@
       select.value = backupGroupingByCategory[category.id] || category.groupings[0];
       select.disabled = category.groupings.length < 2;
       document.getElementById('backupSearch').hidden = !category.text;
+      document.getElementById('backupNewNoteBtn').hidden = category.id !== 'notas';
+      if (category.id !== 'notas') document.getElementById('backupNewNoteSlot').textContent = '';
     }
 
     function backupFilteredItems() {
@@ -3032,7 +3074,7 @@
       return list.sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, 'pt-BR'));
     }
 
-    function renderBackupTree() {
+    function renderBackupTree(keepOpen) {
       const category = backupCategoryInfo();
       const grouping = document.getElementById('backupGrouping').value;
       backupGroupingByCategory[category.id] = grouping;
@@ -3040,10 +3082,16 @@
       const total = backupState.data[category.id].length;
       const tree = backupBuildTree(items, BACKUP_GROUPINGS[grouping].levels);
       const holder = document.getElementById('backupTree');
+      const openPaths = keepOpen ? [...holder.querySelectorAll('details.bk-node[open]')].map(d => d.dataset.path) : [];
       holder.textContent = '';
       const autoOpen = Boolean(search) && items.length <= BACKUP_AUTO_OPEN;
-      backupRenderChildren(tree, holder, category, autoOpen);
+      backupRenderChildren(tree, holder, category, autoOpen, '');
       if (tree.items.length) backupRenderItems(tree.items, holder, category);
+      // Reabre os ramos que estavam abertos, do mais externo para o mais interno (os internos só existem depois).
+      openPaths.sort((a, b) => a.split(BACKUP_PATH_SEP).length - b.split(BACKUP_PATH_SEP).length).forEach(path => {
+        const node = [...holder.querySelectorAll('details.bk-node')].find(d => d.dataset.path === path);
+        if (node && !node.open) { node.open = true; node._build(); }
+      });
       document.getElementById('backupCount').textContent = !items.length
         ? (search ? 'Nada encontrado.' : 'Nenhum item nesta categoria.')
         : (search || grouping === 'duplicadas' ? items.length.toLocaleString('pt-BR') + ' de ' : '') + total.toLocaleString('pt-BR') +
@@ -3051,8 +3099,9 @@
     }
 
     // Os ramos só são montados quando abertos (há backups com dezenas de milhares de grifos).
-    function backupRenderChildren(node, holder, category, autoOpen) {
+    function backupRenderChildren(node, holder, category, autoOpen, parentPath) {
       backupSortedChildren(node).forEach(child => {
+        const path = (parentPath ? parentPath + BACKUP_PATH_SEP : '') + child.label;
         const isLeaf = !child.children.size;
         if (isLeaf && !category.text) {
           const row = document.createElement('div');
@@ -3068,6 +3117,7 @@
         }
         const details = document.createElement('details');
         details.className = 'bk-node';
+        details.dataset.path = path;
         const summary = document.createElement('summary');
         const name = document.createElement('span');
         name.className = 'bk-name';
@@ -3083,9 +3133,10 @@
         const build = () => {
           if (built) return;
           built = true;
-          backupRenderChildren(child, body, category, autoOpen);
+          backupRenderChildren(child, body, category, autoOpen, path);
           if (child.items.length && category.text) backupRenderItems(child.items, body, category);
         };
+        details._build = build;
         details.addEventListener('toggle', () => { if (details.open) build(); });
         if (autoOpen) { details.open = true; build(); }
         holder.appendChild(details);
@@ -3139,12 +3190,34 @@
         body.className = 'backup-item-body';
         body.textContent = item.text;
         card.appendChild(body);
-        card.addEventListener('click', () => card.classList.toggle('aberto'));
       }
+      const editable = category.id === 'notas' || category.id === 'respostas';
+      if (editable) {
+        const actions = document.createElement('div');
+        actions.className = 'bk-row bk-actions';
+        actions.append(
+          backupButton('✏️ Editar', () => {
+            if (card.querySelector('.bk-editor')) return;
+            card.classList.add('aberto', 'editando');
+            backupEditor(card, item, category.id, () => {
+              const form = card.querySelector('.bk-editor');
+              if (form) form.remove();
+              card.classList.remove('editando');
+            });
+          }),
+          backupButton('🗑️ Apagar', () => backupDeleteItem(item, category.id), 'secondary bk-danger')
+        );
+        card.appendChild(actions);
+      }
+      if (item.text || editable) card.addEventListener('click', () => { if (!card.classList.contains('editando')) card.classList.toggle('aberto'); });
       return card;
     }
 
-    document.getElementById('backupOpenBtn').addEventListener('click', () => document.getElementById('backupFile').click());
+    document.getElementById('backupOpenBtn').addEventListener('click', async () => {
+      if (backupState && backupState.changes &&
+        !(await askConfirm('As alterações deste backup ainda não foram gravadas em arquivo e serão perdidas. Abrir outro backup?', 'Abrir outro backup'))) return;
+      document.getElementById('backupFile').click();
+    });
     document.getElementById('backupFile').addEventListener('change', event => {
       openBackupFile(event.target.files && event.target.files[0]);
       event.target.value = ''; // permite abrir o mesmo arquivo de novo
@@ -3157,6 +3230,290 @@
     });
     document.getElementById('backupGrouping').addEventListener('change', () => renderBackupTree());
     document.getElementById('backupSearch').addEventListener('input', () => renderBackupTree());
+
+    // ---------- Backup do JW Library: edição (Fase 2) ----------
+    // As alterações vão direto para o banco aberto na memória (sql.js). "Gerar backup modificado" monta um arquivo NOVO:
+    // banco atualizado, data e "impressão digital" (SHA-256) refeitas no manifest.json e todos os outros arquivos do
+    // backup (fotos, mídias) copiados como estavam. O arquivo original nunca é alterado.
+    const BACKUP_PATH_SEP = '␟';
+
+    function backupNow() {
+      return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+    }
+
+    function backupUuid() {
+      if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0;
+        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+      });
+    }
+
+    function backupLastId(db) {
+      return db.exec('SELECT last_insert_rowid()')[0].values[0][0];
+    }
+
+    function backupMarkChanged() {
+      backupState.changes = (backupState.changes || 0) + 1;
+      backupState.generated = null;
+      renderBackupSaveBox();
+    }
+
+    // Lê de novo o banco e redesenha a árvore com os mesmos ramos abertos.
+    function backupRefresh(message) {
+      backupState.data = readBackupData(backupState.db);
+      renderBackupView(true);
+      setBackupStatus(message || '', false);
+    }
+
+    function backupSaveNote(item, title, text, color) {
+      const db = backupState.db;
+      let userMarkId = item.userMarkId || null;
+      // Nota avulsa não tem cor (como no JW Library). Nas outras, a cor fica na "marca" (UserMark) da nota.
+      if (item.locationId !== null && item.locationId !== undefined) {
+        if (userMarkId) {
+          db.run('UPDATE UserMark SET ColorIndex = ? WHERE UserMarkId = ?', [color, userMarkId]);
+        } else if (color) {
+          db.run('INSERT INTO UserMark (ColorIndex, LocationId, StyleIndex, UserMarkGuid, Version) VALUES (?, ?, 0, ?, 1)', [color, item.locationId, backupUuid()]);
+          userMarkId = backupLastId(db);
+        }
+      }
+      db.run('UPDATE Note SET Title = ?, Content = ?, LastModified = ?, UserMarkId = ? WHERE NoteId = ?', [title, text, backupNow(), userMarkId, item.id]);
+      backupMarkChanged();
+    }
+
+    function backupDeleteNote(item) {
+      const db = backupState.db;
+      db.run('DELETE FROM TagMap WHERE NoteId = ?', [item.id]);
+      db.run('DELETE FROM Note WHERE NoteId = ?', [item.id]);
+      // A marca de cor só sai se não sobrar grifo nem outra nota usando-a.
+      if (item.userMarkId) {
+        db.run('DELETE FROM UserMark WHERE UserMarkId = ? AND NOT EXISTS (SELECT 1 FROM BlockRange WHERE UserMarkId = ?) AND NOT EXISTS (SELECT 1 FROM Note WHERE UserMarkId = ?)',
+          [item.userMarkId, item.userMarkId, item.userMarkId]);
+      }
+      backupMarkChanged();
+    }
+
+    function backupCreateNote(title, text) {
+      const now = backupNow();
+      backupState.db.run('INSERT INTO Note (Guid, UserMarkId, LocationId, Title, Content, LastModified, Created, BlockType, BlockIdentifier) VALUES (?, NULL, NULL, ?, ?, ?, ?, 0, NULL)',
+        [backupUuid(), title, text, now, now]);
+      backupMarkChanged();
+    }
+
+    function backupSaveAnswer(item, text) {
+      backupState.db.run('UPDATE InputField SET Value = ? WHERE LocationId = ? AND TextTag = ?', [text, item.locationId, item.textTag]);
+      backupMarkChanged();
+    }
+
+    function backupDeleteAnswer(item) {
+      backupState.db.run('DELETE FROM InputField WHERE LocationId = ? AND TextTag = ?', [item.locationId, item.textTag]);
+      backupMarkChanged();
+    }
+
+    function backupButton(label, onClick, className) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = className === undefined ? 'secondary' : className;
+      btn.textContent = label;
+      btn.addEventListener('click', event => { event.stopPropagation(); onClick(); });
+      return btn;
+    }
+
+    function backupField(labelText, control) {
+      const wrap = document.createElement('div');
+      const label = document.createElement('label');
+      label.textContent = labelText;
+      wrap.append(label, control);
+      return wrap;
+    }
+
+    // Formulário de edição (ou de nota nova, quando item é null) dentro do cartão.
+    function backupEditor(holder, item, categoryId, onClose) {
+      const form = document.createElement('div');
+      form.className = 'bk-editor';
+      form.addEventListener('click', event => event.stopPropagation());
+      const isNote = categoryId === 'notas';
+      let titleInput = null;
+      if (isNote) {
+        titleInput = document.createElement('input');
+        titleInput.type = 'text';
+        titleInput.autocomplete = 'off';
+        titleInput.value = item ? item.heading : '';
+        form.appendChild(backupField('Título', titleInput));
+      }
+      const textArea = document.createElement('textarea');
+      textArea.className = 'bk-text';
+      textArea.value = item ? item.text : '';
+      form.appendChild(backupField(isNote ? 'Texto da nota' : 'Resposta', textArea));
+
+      let color = item ? item.colorIndex || 0 : 0;
+      if (isNote && item && item.locationId !== null && item.locationId !== undefined) {
+        const colors = document.createElement('div');
+        colors.className = 'bk-colors';
+        colors.setAttribute('role', 'group');
+        colors.setAttribute('aria-label', 'Cor da nota');
+        BACKUP_COLORS.forEach((hex, index) => {
+          const dot = document.createElement('button');
+          dot.type = 'button';
+          dot.className = 'bk-color';
+          dot.style.setProperty('--cor', hex);
+          dot.title = BACKUP_COLOR_NAMES[index];
+          dot.setAttribute('aria-label', BACKUP_COLOR_NAMES[index]);
+          dot.setAttribute('aria-pressed', index === color ? 'true' : 'false');
+          dot.addEventListener('click', () => {
+            color = index;
+            colors.querySelectorAll('.bk-color').forEach((b, i) => b.setAttribute('aria-pressed', i === color ? 'true' : 'false'));
+          });
+          colors.appendChild(dot);
+        });
+        form.appendChild(backupField('Cor', colors));
+      }
+
+      // Ponte com o editor do NoteStyle: formatar o texto no campo principal e trazê-lo de volta para a nota.
+      const bridge = document.createElement('div');
+      bridge.className = 'bk-row';
+      bridge.append(
+        backupButton('➡️ Levar para o campo de texto', async () => {
+          if (input.value.trim() && !(await askConfirm('O texto do campo de texto será trocado pelo desta nota (dá para desfazer). Continuar?', 'Levar para o campo de texto'))) return;
+          setInputRange(0, input.value.length, textArea.value, { message: 'Texto da nota no campo de texto. Formate e depois use "⬅️ Trazer do campo de texto" no Backup.' });
+          autoGrowInputText();
+          showScreen('formatar');
+        }),
+        backupButton('⬅️ Trazer do campo de texto', () => {
+          if (!input.value.trim()) return setBackupStatus('O campo de texto está vazio.', true);
+          textArea.value = input.value;
+          setBackupStatus('Texto trazido do campo de texto. Confira e toque em 💾 Salvar.', false);
+        })
+      );
+      form.appendChild(bridge);
+
+      const actions = document.createElement('div');
+      actions.className = 'bk-row';
+      actions.append(
+        backupButton('💾 Salvar', () => {
+          const title = titleInput ? titleInput.value.trim() : '';
+          const text = textArea.value.replace(/\s+$/, '');
+          if (isNote && !title && !text.trim()) return setBackupStatus('A nota está vazia: escreva um título ou um texto.', true);
+          if (!item) backupCreateNote(title, text);
+          else if (isNote) backupSaveNote(item, title, text, color);
+          else backupSaveAnswer(item, text);
+          onClose();
+          backupRefresh(item ? '✅ Alteração feita. Gere o backup modificado quando terminar.' : '✅ Nota avulsa criada. Gere o backup modificado quando terminar.');
+        }, ''),
+        backupButton('✖️ Cancelar', onClose)
+      );
+      form.appendChild(actions);
+      holder.appendChild(form);
+      (titleInput || textArea).focus();
+      return form;
+    }
+
+    async function backupDeleteItem(item, categoryId) {
+      const what = categoryId === 'notas' ? 'a nota "' + (item.heading || 'sem título') + '"' : 'esta resposta';
+      if (!(await askConfirm('Apagar ' + what + ' do backup? (O arquivo original não muda.)', 'Apagar'))) return;
+      if (categoryId === 'notas') backupDeleteNote(item);
+      else backupDeleteAnswer(item);
+      backupRefresh('🗑️ Apagado. Gere o backup modificado quando terminar.');
+    }
+
+    function renderBackupSaveBox() {
+      const box = document.getElementById('backupSaveBox');
+      if (!backupState) { box.hidden = true; return; }
+      const changes = backupState.changes || 0;
+      const generated = backupState.generated;
+      box.hidden = !changes && !generated;
+      document.getElementById('backupSaveInfo').textContent = generated
+        ? '✅ Arquivo pronto: ' + generated.fileName
+        : changes + (changes === 1 ? ' alteração ainda não gravada em arquivo.' : ' alterações ainda não gravadas em arquivo.');
+      document.getElementById('backupGenerateBtn').hidden = Boolean(generated);
+      document.getElementById('backupFileActions').hidden = !generated;
+      const shareBtn = document.getElementById('backupShareBtn');
+      shareBtn.hidden = !(generated && navigator.canShare && navigator.canShare({ files: [new File([''], 'teste.jwlibrary')] }));
+    }
+
+    // Nome do arquivo novo: o do original + "_NoteStyle_" + data e hora (sem acumular sufixos de edições anteriores).
+    function backupOutputName(original, date) {
+      const base = String(original || 'backup').replace(/\.jwlibrary$/i, '').replace(/_NoteStyle_\d{4}-\d{2}-\d{2}_\d{4}$/, '');
+      const pad = n => String(n).padStart(2, '0');
+      return base + '_NoteStyle_' + date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate()) + '_' + pad(date.getHours()) + pad(date.getMinutes()) + '.jwlibrary';
+    }
+
+    async function backupGenerate() {
+      const st = backupState;
+      if (!st) return;
+      const btn = document.getElementById('backupGenerateBtn');
+      btn.disabled = true;
+      setBackupStatus('Gerando o arquivo…', false);
+      try {
+        const now = new Date();
+        const stamp = now.toISOString().replace(/\.\d{3}Z$/, 'Z');
+        st.db.run('UPDATE LastModified SET LastModified = ?', [stamp]);
+        const bytes = st.db.export();
+        const digest = await crypto.subtle.digest('SHA-256', bytes);
+        const hash = [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('');
+        const manifest = JSON.parse(JSON.stringify(st.manifest));
+        const info = manifest.userDataBackup;
+        // Mesmo formato de data do backup original ("…+00:00" no iPhone, "…Z" em outros).
+        const sameStyle = text => (/\+00:00$/.test(String(text || '')) ? stamp.replace(/Z$/, '+00:00') : stamp);
+        info.lastModifiedDate = sameStyle(info.lastModifiedDate);
+        info.hash = hash;
+        manifest.creationDate = sameStyle(manifest.creationDate);
+        const fileName = backupOutputName(st.fileName, now);
+        manifest.name = fileName;
+        st.zip.file(info.databaseName || 'userData.db', bytes);
+        st.zip.file('manifest.json', JSON.stringify(manifest));
+        const blob = await st.zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+        st.manifest = manifest;
+        st.changes = 0;
+        st.generated = { blob, fileName };
+        renderBackupSaveBox();
+        setBackupStatus('✅ Backup modificado pronto. Salve ou compartilhe o arquivo.', false);
+      } catch (e) {
+        setBackupStatus('Não consegui gerar o arquivo: ' + (e && e.message ? e.message : 'erro desconhecido.'), true);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function backupDownload() {
+      const generated = backupState && backupState.generated;
+      if (!generated) return;
+      const url = URL.createObjectURL(generated.blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = generated.fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    }
+
+    async function backupShare() {
+      const generated = backupState && backupState.generated;
+      if (!generated) return;
+      const file = new File([generated.blob], generated.fileName, { type: 'application/octet-stream' });
+      try {
+        await navigator.share({ files: [file], title: generated.fileName });
+      } catch (e) {
+        if (!e || e.name !== 'AbortError') backupDownload();
+      }
+    }
+
+    document.getElementById('backupGenerateBtn').addEventListener('click', backupGenerate);
+    document.getElementById('backupDownloadBtn').addEventListener('click', backupDownload);
+    document.getElementById('backupShareBtn').addEventListener('click', backupShare);
+    document.getElementById('backupNewNoteBtn').addEventListener('click', () => {
+      const slot = document.getElementById('backupNewNoteSlot');
+      if (slot.firstChild) return;
+      backupEditor(slot, null, 'notas', () => { slot.textContent = ''; });
+    });
+    window.addEventListener('beforeunload', event => {
+      if (backupState && backupState.changes) {
+        event.preventDefault();
+        event.returnValue = '';
+      }
+    });
 
     // ---------- Tema (Auto / Claro / Escuro) ----------
 
@@ -3307,7 +3664,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '4.2'; // 4.2: backup organizado como no JWLManager (categorias e agrupamentos); 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
+    const APP_VERSION = '4.3'; // 4.3: edição do backup (notas, respostas, nota avulsa, gerar arquivo); 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 
