@@ -143,6 +143,8 @@ function validarOpcoes(opcoes) {
     // A consulta ao Perspicaz está desligada por enquanto (a opção saiu da tela); o código e os arquivos continuam prontos
     // para quando ela voltar: basta trocar para `o.consultarPerspicaz === true` e recolocar a caixa na tela.
     consultarPerspicaz: false,
+    // Só para o botão "Sugerir perguntas adicionais": acrescenta perguntas de aplicação sobre os textos bíblicos.
+    perguntasTextos: o.perguntasTextos === true,
     intensidade: INTENSIDADES.includes(o.intensidade) ? o.intensidade : "moderada",
     instrucao: textoLivre(o.instrucao),
   };
@@ -1108,6 +1110,115 @@ async function responderEstudo(res, body, P) {
   }
 }
 
+// ---------- Perguntas adicionais para o dirigente ----------
+// 1 ou 2 perguntas de aplicação por pergunta impressa (e, com a opção marcada, sobre os textos bíblicos do parágrafo).
+// O servidor lê o artigo no wol.jw.org e manda à IA só os parágrafos pedidos; ela pensa antes de sugerir (texto curto).
+
+const SaidaPerguntas = z.object({
+  itens: z.array(
+    z.object({
+      paragrafos: z.string(),
+      perguntas: z.array(z.string()),
+      perguntasTextos: z.array(z.object({ referencia: z.string(), pergunta: z.string() })),
+    })
+  ),
+});
+
+async function sugerirPerguntas(res, body, P) {
+  if (!process.env.CODIGO_ESTUDO) return erro(res, 500, "A leitura do estudo ainda não está configurada no servidor.");
+  if (!codigoValido(body.codigo)) return erro(res, 403, "Código de acesso inválido.");
+
+  const url = urlDoEstudo(body);
+  if (!url) return erro(res, 400, "Número ou link do artigo inválido. Use o número de 7 dígitos (ex.: 2026521) ou o link do wol.jw.org.");
+
+  const pedido = String(body.paragrafos || "").trim();
+  if (/^(perguntas de )?recap/.test(pedido.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase())) {
+    return erro(res, 400, "As perguntas adicionais são para os parágrafos: escolha um ou mais (ex.: 3 ou 1-4).");
+  }
+  const alvo = /^[\d\s,\-–]{1,120}$/.test(pedido) ? numerosDosParagrafos(pedido) : null;
+  if (!alvo || !alvo.size) return erro(res, 400, "Informe os parágrafos (ex.: 3 ou 1-4).");
+  const maxParagrafos = P.limites.maxParagrafosEstudo;
+  if (alvo.size > maxParagrafos)
+    return erro(res, 400, `O máximo permitido é de ${maxParagrafos} ${maxParagrafos === 1 ? "parágrafo" : "parágrafos"} por consulta. Peça menos parágrafos de cada vez.`);
+
+  const opcoes = validarOpcoes(body.opcoes);
+  const ajuste = textoLivre(body.ajuste);
+  const inicio = Date.now();
+  let lido = null;
+  try {
+    lido = await lerEstudoDireto(url);
+  } catch (e) {
+    console.error("Perguntas: leitura direta falhou", e?.name, e?.message);
+  }
+  if (!lido) return erro(res, 502, "Não consegui ler o artigo no wol.jw.org agora. Tente de novo em instantes.");
+
+  const grupos = lido.grupos.filter((g) => g.numeros.some((n) => alvo.has(n)));
+  if (!grupos.length) {
+    const ultimo = Math.max(...lido.grupos.flatMap((g) => g.numeros));
+    return erro(res, 400, `Não encontrei esse(s) parágrafo(s) no artigo "${lido.titulo}": ele vai do parágrafo 1 ao ${ultimo}.`);
+  }
+  const texto = textoDosGrupos(grupos);
+  const mensagem =
+    blocoOrientacao(opcoes, ajuste) +
+    "PEDIDO:\n- Perguntas adicionais de aplicação: 1 ou 2 para cada pergunta impressa.\n" +
+    (opcoes.perguntasTextos
+      ? "- Perguntas sobre os textos bíblicos: ATIVAS (até 2 por pergunta impressa, em \"perguntasTextos\").\n"
+      : '- Perguntas sobre os textos bíblicos: INATIVAS ("perguntasTextos" sempre []).\n') +
+    "\nTEXTO DO ESTUDO:\n" +
+    texto +
+    (ajuste || opcoes.instrucao ? LEMBRETE_ORIENTACAO : "");
+
+  try {
+    const client = new Anthropic({ maxRetries: 1, timeout: 90_000 });
+    const resposta = await client.messages.parse({
+      model: MODEL,
+      max_tokens: 8000, // o raciocínio também conta aqui
+      system: P.sistemaPerguntas,
+      messages: [{ role: "user", content: mensagem }],
+      output_config: comEsforco({ format: zodOutputFormat(SaidaPerguntas) }),
+    });
+    if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
+      return erro(res, 502, "A IA não conseguiu sugerir perguntas para este parágrafo.");
+    }
+
+    const primeiro = (i) => Math.min(...numerosDosParagrafos(i.paragrafos), 999);
+    const itens = resposta.parsed_output.itens
+      .map((i) => ({
+        paragrafos: limparLinha(i.paragrafos, 20),
+        perguntas: i.perguntas.map((q) => limparTextoGerado(q, 400)).filter(Boolean).slice(0, 2),
+        perguntasTextos: opcoes.perguntasTextos
+          ? i.perguntasTextos
+              .map((t) => ({ referencia: limparLinha(t.referencia, 80), pergunta: limparTextoGerado(t.pergunta, 400) }))
+              .filter((t) => t.referencia && t.pergunta)
+              .slice(0, 2)
+          : [],
+      }))
+      .filter((i) => (i.perguntas.length || i.perguntasTextos.length) && [...numerosDosParagrafos(i.paragrafos)].some((n) => alvo.has(n)))
+      .sort((a, b) => primeiro(a) - primeiro(b));
+
+    console.log(
+      "Perguntas adicionais:",
+      JSON.stringify({
+        pedidos: [...alvo],
+        recebidos: itens.map((i) => i.paragrafos),
+        sobreTextos: opcoes.perguntasTextos,
+        segundos: Math.round((Date.now() - inicio) / 100) / 10,
+        entrada: resposta.usage?.input_tokens || 0,
+        saida: resposta.usage?.output_tokens || 0,
+        pensamento: resposta.usage?.output_tokens_details?.thinking_tokens ?? null,
+      })
+    );
+
+    return res.status(200).json({
+      titulo: lido.titulo || null,
+      erro: itens.length ? null : "A IA não sugeriu perguntas para esse(s) parágrafo(s). Tente de novo.",
+      itens,
+    });
+  } catch (e) {
+    return tratarErro(e, res);
+  }
+}
+
 // ---------- Lista de parágrafos do estudo ----------
 // A IA lê o artigo e devolve só os números dos parágrafos, agrupados quando compartilham a mesma pergunta
 // (ex.: "1, 2"). O app usa essa lista para navegar entre os grupos.
@@ -1255,6 +1366,7 @@ export default async function handler(req, res) {
 
   if (req.body && req.body.tarefa === "estudo") return responderEstudo(res, req.body, P);
   if (req.body && req.body.tarefa === "estudo-lista") return listarParagrafos(res, req.body, P);
+  if (req.body && req.body.tarefa === "estudo-perguntas") return sugerirPerguntas(res, req.body, P);
 
   const entrada = validarEntrada(req.body, P.limites);
   if (!entrada) {
