@@ -493,6 +493,17 @@
       border: 2px solid #a855f7;
     }
 
+    /* Card do dirigente: mesmo formato do card da Sentinela, em verde-azulado. */
+    details.subsection.dirigente-subsection {
+      background: var(--card);
+      background: color-mix(in srgb, #14b8a6 10%, var(--card));
+      border: 2px solid #14b8a6;
+    }
+    .dirigente-secoes { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+    .dirigente-secoes-titulo { margin: 0; font-size: .88rem; font-weight: 700; }
+    .dirigente-secoes-sub { margin: 10px 0 0; font-size: .84rem; font-weight: 700; }
+    .reunioes-code { margin-top: 16px; }
+
     /* Cores das seções recolhíveis (as mesmas dos antigos cards numerados). */
     details.subsection.sub-tint-2 { background: var(--tint2-bg); border-color: var(--tint2-border); }
     details.subsection.sub-tint-3 { background: var(--tint3-bg); border-color: var(--tint3-border); }
@@ -2237,20 +2248,20 @@
         <div id="reunioesGroup" class="reunioes-group screen-reunioes">
           <h2 class="reunioes-title">📅 Preparação para as reuniões</h2>
             <details class="subsection sentinela-subsection" id="sentinelaBox">
-              <summary>📖 Estudo de A Sentinela</summary>
+              <summary>📖 Estudo de A Sentinela – Comentários</summary>
               <div class="subsection-body">
 
             <section class="sent-option sent-option-site">
               <h3>A IA lê direto na biblioteca on-line (wol.jw.org) o estudo da semana</h3>
               <div class="ai-week">
-                <button id="aiWeekPrev" class="secondary ai-week-nav" type="button" aria-label="Semana anterior">◀</button>
-                <a id="aiWeekLink" class="ai-week-link" href="https://wol.jw.org/pt/wol/meetings/r5/lp-t/" target="_blank" rel="noopener noreferrer">
-                  <span id="aiWeekTitle">📅 Estudo desta semana</span>
-                  <span id="aiWeekRange" class="ai-week-range"></span>
+                <button id="aiWeekPrev" class="secondary ai-week-nav" type="button" aria-label="Semana anterior" data-week="prev">◀</button>
+                <a id="aiWeekLink" class="ai-week-link" href="https://wol.jw.org/pt/wol/meetings/r5/lp-t/" target="_blank" rel="noopener noreferrer" data-week="link">
+                  <span id="aiWeekTitle" data-week="title">📅 Estudo desta semana</span>
+                  <span id="aiWeekRange" class="ai-week-range" data-week="range"></span>
                 </a>
-                <button id="aiWeekNext" class="secondary ai-week-nav" type="button" aria-label="Próxima semana">▶</button>
+                <button id="aiWeekNext" class="secondary ai-week-nav" type="button" aria-label="Próxima semana" data-week="next">▶</button>
               </div>
-              <button id="aiWeekTodayBtn" class="secondary ai-week-today" type="button" hidden>↩️ Voltar para a semana atual</button>
+              <button id="aiWeekTodayBtn" class="secondary ai-week-today" type="button" data-week="today" hidden>↩️ Voltar para a semana atual</button>
               <div class="ai-study">
                 <button id="aiStudyLoadBtn" class="secondary ai-study-load" type="button">📋 Carregar os parágrafos</button>
                 <div class="ai-study-picker">
@@ -2268,7 +2279,6 @@
                   <input autocomplete="off" id="aiStudyArticle" type="text" inputmode="url" placeholder="Ex.: 2026521">
                 </div>
                 <button id="aiStudyBtn" class="ai-study-btn" type="button">🌐 IA - Responder resumidamente a pergunta do parágrafo selecionado</button>
-                <button id="aiStudyQuestionsBtn" class="ai-study-btn ai-study-questions-btn" type="button">💬 IA - Sugerir perguntas adicionais para o dirigente</button>
                 <span id="aiStudyAnswerStatus" class="ok" role="status" aria-live="polite"></span>
               </div>
             </section>
@@ -2286,23 +2296,70 @@
                   <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="transcreverSemCitar"> 📜 Transcrever o texto sem citar na resposta, explicar e aplicar</label>
                   <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citarTextos"> 🔖 Só citar 1 ou 2 textos na resposta, sem transcrever</label>
                   <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="explicarTextos"> 💬 Explicar e aplicar os textos, sem transcrever nem citar na resposta</label>
-                  <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="perguntasTextos"> ❓ Formular perguntas de aplicação sobre os textos bíblicos (no botão de perguntas adicionais)</label>
-                  <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="perguntasEntendimento"> ❓ Formular perguntas para auxiliar no entendimento, explicação e aplicação do texto na matéria (no botão de perguntas adicionais)</label>
                 </div>
               </div>
             </details>
 
             <div id="sentinelaOutputSlot"></div>
-
-            <details id="aiStudyCodeBox" class="sentinela-code">
-              <summary>🔑 Para esta opção é obrigatório o código de acesso.</summary>
-              <input autocomplete="off" id="aiStudyCode" type="password" maxlength="100" placeholder="Digite o código uma vez; ele fica salvo neste aparelho">
+              </div>
             </details>
+
+            <details class="subsection dirigente-subsection" id="dirigenteBox">
+              <summary>🧑‍🏫 Estudo de A Sentinela – Dirigente</summary>
+              <div class="subsection-body">
+            <section class="sent-option sent-option-site">
+              <h3>Perguntas adicionais para ajudar o dirigente a conduzir o estudo com a congregação</h3>
+              <div class="ai-week">
+                <button class="secondary ai-week-nav" type="button" aria-label="Semana anterior" data-week="prev">◀</button>
+                <a class="ai-week-link" href="https://wol.jw.org/pt/wol/meetings/r5/lp-t/" target="_blank" rel="noopener noreferrer" data-week="link">
+                  <span data-week="title">📅 Estudo desta semana</span>
+                  <span class="ai-week-range" data-week="range"></span>
+                </a>
+                <button class="secondary ai-week-nav" type="button" aria-label="Próxima semana" data-week="next">▶</button>
+              </div>
+              <button class="secondary ai-week-today" type="button" data-week="today" hidden>↩️ Voltar para a semana atual</button>
+              <div class="ai-study">
+                <button id="leaderStudyLoadBtn" class="secondary ai-study-load" type="button">📋 Carregar os parágrafos</button>
+                <div class="ai-study-picker">
+                  <button id="leaderParaPrev" class="secondary ai-week-nav" type="button" aria-label="Parágrafos anteriores">◀</button>
+                  <div class="ai-study-input">
+                    <label for="leaderStudyParagraphs">Parágrafos</label>
+                    <input autocomplete="off" id="leaderStudyParagraphs" type="text" value="1" placeholder="Ex.: 3 ou 1-4">
+                  </div>
+                  <button id="leaderParaNext" class="secondary ai-week-nav" type="button" aria-label="Próximos parágrafos">▶</button>
+                </div>
+                <p id="leaderStudyInfo" class="hint ai-hint"></p>
+                <span id="leaderStudyStatus" class="ok" role="status" aria-live="polite"></span>
+                <div id="leaderStudyArticleBox" hidden>
+                  <label for="leaderStudyArticle">Não achei o artigo sozinho. Cole o número ou o link dele:</label>
+                  <input autocomplete="off" id="leaderStudyArticle" type="text" inputmode="url" placeholder="Ex.: 2026521">
+                </div>
+                <button id="aiStudyQuestionsBtn" class="ai-study-btn ai-study-questions-btn" type="button">💬 IA - Sugerir perguntas adicionais</button>
+                <span id="leaderAnswerStatus" class="ok" role="status" aria-live="polite"></span>
+                <div class="dirigente-secoes" role="group" aria-labelledby="dirigenteSecoesTitulo">
+                  <p id="dirigenteSecoesTitulo" class="dirigente-secoes-titulo">Seções da resposta</p>
+                  <div class="ai-sources">
+                    <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="perguntasComplementares"> 1️⃣ Perguntas complementares: pontos do parágrafo que a pergunta impressa não cobre</label>
+                    <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="perguntasAplicativas"> 2️⃣ Perguntas aplicativas: como aplicar na prática o ponto principal</label>
+                  </div>
+                  <p class="dirigente-secoes-sub">3️⃣ Explicação dos textos</p>
+                  <div class="ai-sources">
+                    <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="perguntasTextos"> 📖 Perguntas de aplicação sobre os textos bíblicos</label>
+                    <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="perguntasEntendimento"> 🔎 Perguntas para entender e explicar o texto em relação à matéria do parágrafo</label>
+                  </div>
+                </div>
+              </div>
+            </section>
               </div>
             </details>
             <div class="em-breve" aria-disabled="true"><span>💎 Joias Espirituais</span><span class="em-breve-badge">em breve</span></div>
             <div class="em-breve" aria-disabled="true"><span>📚 Estudo Bíblico de Congregação</span><span class="em-breve-badge">em breve</span></div>
             <div class="em-breve" aria-disabled="true"><span>🎤 Esboços para discursos</span><span class="em-breve-badge">em breve</span></div>
+
+            <details id="aiStudyCodeBox" class="sentinela-code reunioes-code">
+              <summary>🔑 Código de acesso da IA (obrigatório para ler o estudo no site)</summary>
+              <input autocomplete="off" id="aiStudyCode" type="password" maxlength="100" placeholder="Digite o código uma vez; ele fica salvo neste aparelho">
+            </details>
         </div>
 
         <p id="selectionInfo" class="hint" role="status" aria-live="polite">Selecione um trecho e clique na formatação desejada. Use ⇥ Recuo ou a tecla Tab para aumentar o recuo do parágrafo. Repita para mais níveis; Shift+Tab reduz o recuo.</p>
@@ -3916,7 +3973,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '4.5'; // 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
+    const APP_VERSION = '4.6'; // 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 
@@ -7326,6 +7383,8 @@ function saveTemplatesToStorage() {
     const aiRefineBox = document.getElementById('aiRefineBox');
     const aiStatus = document.getElementById('aiStatus');
     const aiStudyAnswerStatus = document.getElementById('aiStudyAnswerStatus');
+    const leaderAnswerStatus = document.getElementById('leaderAnswerStatus');
+    const leaderStudyStatus = document.getElementById('leaderStudyStatus');
     const aiResults = document.getElementById('aiResults');
     const aiProgress = document.getElementById('aiProgress');
     const aiIntensity = document.getElementById('aiIntensity');
@@ -7347,7 +7406,8 @@ function saveTemplatesToStorage() {
     const AI_DEFAULT_OPTIONS = {
       usarModelos: true, negrito: true, italico: false, negritoItalico: false, maiusculas: false, variarFontes: false,
       emoji: false, citacoesBiblicas: false, usarListas: false, separarIdeias: false, resumo: false, intensidade: 'moderada', instrucao: '', categoria: 'all', resumoTamanho: 'medio',
-      consultarBiblia: false, transcreverSemCitar: false, citarTextos: false, explicarTextos: false, perguntasTextos: false, perguntasEntendimento: false
+      consultarBiblia: false, transcreverSemCitar: false, citarTextos: false, explicarTextos: false, perguntasTextos: false, perguntasEntendimento: false,
+      perguntasComplementares: true, perguntasAplicativas: true
     };
 
     // Opções padrão publicadas pelo administrador (valem para quem nunca salvou as suas) e se o usuário já mexeu nelas
@@ -7396,22 +7456,28 @@ function saveTemplatesToStorage() {
 
     // Limpar o texto também apaga as mensagens informativas da IA (ex.: "3 grupos de parágrafos carregados.").
     function clearAiMessages() {
-      [aiStatus, aiStudyAnswerStatus, aiStudyStatus].forEach(el => { el.textContent = ''; });
+      aiStatusElements().forEach(el => { el.textContent = ''; });
     }
 
-    // A mensagem aparece junto ao botão que o usuário usou: na área da IA (formatação e respostas do texto colado) ou no
-    // card da Sentinela (leitura do site).
-    let aiStatusKind = 'format'; // 'format' | 'sentinela' | 'estudo' | 'lista'
+    // A mensagem aparece junto ao botão que o usuário usou: na área da IA (formatação e respostas do texto colado) ou nos
+    // cards da Sentinela (Comentários e Dirigente).
+    let aiStatusKind = 'format'; // 'format' | 'sentinela' | 'estudo' | 'lista' | 'dirigente'
+    let studyListCard = 'comentarios'; // card do último "Carregar os parágrafos": 'comentarios' ou 'dirigente'
+
+    function aiStatusElements() {
+      return [aiStatus, aiStudyAnswerStatus, aiStudyStatus, leaderAnswerStatus, leaderStudyStatus];
+    }
 
     function aiStatusElement() {
       return aiStatusKind === 'estudo' ? aiStudyAnswerStatus
-          : aiStatusKind === 'lista' ? aiStudyStatus
-            : aiStatus;
+          : aiStatusKind === 'dirigente' ? leaderAnswerStatus
+            : aiStatusKind === 'lista' ? (studyListCard === 'dirigente' ? leaderStudyStatus : aiStudyStatus)
+              : aiStatus;
     }
 
     function setAiStatus(message, isWarning) {
       const target = aiStatusElement();
-      [aiStatus, aiStudyAnswerStatus, aiStudyStatus].forEach(el => {
+      aiStatusElements().forEach(el => {
         if (el !== target) el.textContent = '';
       });
       target.textContent = message;
@@ -7459,7 +7525,7 @@ function saveTemplatesToStorage() {
     }
 
     function setAiLoading(on, button) {
-      const all = [aiSuggestBtn, aiSentinelaBtn, aiStudyBtn, aiStudyQuestionsBtn, aiStudyLoadBtn, aiAnotherBtn, aiImproveBtn];
+      const all = [aiSuggestBtn, aiSentinelaBtn, aiStudyBtn, aiStudyQuestionsBtn, aiStudyLoadBtn, leaderStudyLoadBtn, aiAnotherBtn, aiImproveBtn];
 
       if (!on) {
         clearInterval(aiLoadingTimer);
@@ -8166,17 +8232,25 @@ function saveTemplatesToStorage() {
     const aiParaPrev = document.getElementById('aiParaPrev');
     const aiParaNext = document.getElementById('aiParaNext');
     const aiStudyCode = document.getElementById('aiStudyCode');
+    const leaderStudyLoadBtn = document.getElementById('leaderStudyLoadBtn');
+    const leaderParagraphs = document.getElementById('leaderStudyParagraphs');
+    const leaderStudyArticle = document.getElementById('leaderStudyArticle');
+    const leaderStudyArticleBox = document.getElementById('leaderStudyArticleBox');
     const SENTINELA_BOX_KEY = 'jwLibraryNoteAplicarSentinelaBoxV1';
     const sentinelaBox = document.getElementById('sentinelaBox');
     try { sentinelaBox.open = localStorage.getItem(SENTINELA_BOX_KEY) === '1'; } catch (e) { /* sem localStorage: fica recolhido */ }
     sentinelaBox.addEventListener('toggle', () => safeSetItem(SENTINELA_BOX_KEY, sentinelaBox.open ? '1' : '0'));
+    const DIRIGENTE_BOX_KEY = 'jwLibraryNoteAplicarDirigenteBoxV1';
+    const dirigenteBox = document.getElementById('dirigenteBox');
+    try { dirigenteBox.open = localStorage.getItem(DIRIGENTE_BOX_KEY) === '1'; } catch (e) { /* sem localStorage: fica recolhido */ }
+    dirigenteBox.addEventListener('toggle', () => safeSetItem(DIRIGENTE_BOX_KEY, dirigenteBox.open ? '1' : '0'));
     let aiStudy = null; // { artigo, titulo, grupos } da semana mostrada; a lista vem da IA e fica guardada neste aparelho
     try { aiStudyCode.value = localStorage.getItem(AI_STUDY_CODE_KEY) || ''; } catch (e) { /* sem localStorage */ }
     aiStudyCode.addEventListener('change', () => safeSetItem(AI_STUDY_CODE_KEY, aiStudyCode.value.trim()));
 
     const aiStudyStatus = document.getElementById('aiStudyStatus');
 
-    // Mensagem do carregamento da lista de parágrafos, mostrada no próprio card da Sentinela.
+    // Mensagem do carregamento da lista de parágrafos, mostrada no card em que ele foi pedido (studyListCard).
     function setStudyStatus(message, isWarning) {
       aiStatusKind = 'lista';
       setAiStatus(message, isWarning);
@@ -8198,11 +8272,19 @@ function saveTemplatesToStorage() {
 
     const STUDY_RECAP_LABEL = 'Recapitulação';
 
+    // Cada card da Sentinela tem o seu campo de parágrafos (com setas); a semana e a lista carregada são as mesmas.
+    // O do dirigente não tem a recapitulação (as perguntas adicionais são só para os parágrafos).
+    const studyPickers = [
+      { card: 'comentarios', input: aiStudyParagraphs, prev: aiParaPrev, next: aiParaNext, info: aiStudyInfo, load: aiStudyLoadBtn, recap: true },
+      { card: 'dirigente', input: leaderParagraphs, prev: document.getElementById('leaderParaPrev'), next: document.getElementById('leaderParaNext'),
+        info: document.getElementById('leaderStudyInfo'), load: leaderStudyLoadBtn, recap: false }
+    ];
+
     // Opções navegáveis: os grupos de parágrafos que a IA listou (os que compartilham pergunta vêm juntos) e
     // "Recapitulação" (o quadro "Qual é a sua resposta?" no fim do artigo, quando existe).
-    function studyOptions() {
+    function studyOptions(picker) {
       if (!aiStudy) return [];
-      return aiStudy.grupos.concat(aiStudy.recapitulacao === false ? [] : [STUDY_RECAP_LABEL]);
+      return aiStudy.grupos.concat(aiStudy.recapitulacao === false || !picker.recap ? [] : [STUDY_RECAP_LABEL]);
     }
 
     // Sem acento e em minúsculas, para "recapitulação", "Recapitulacao" e "RECAP" valerem o mesmo.
@@ -8215,10 +8297,10 @@ function saveTemplatesToStorage() {
     }
 
     // Posição atual na lista: pelo texto exato, ou pelo grupo que contém o primeiro número digitado (-1 = fora da lista).
-    function currentStudyIndex() {
-      const options = studyOptions();
+    function currentStudyIndex(picker) {
+      const options = studyOptions(picker);
       if (!options.length) return -1;
-      const text = plainStudyText(aiStudyParagraphs.value);
+      const text = plainStudyText(picker.input.value);
       const exact = options.findIndex(option => plainStudyText(option) === text);
       if (exact >= 0) return exact;
       if (isRecapText(text)) return options.findIndex(option => plainStudyText(option) === 'recapitulacao');
@@ -8242,44 +8324,57 @@ function saveTemplatesToStorage() {
     }
 
     function updateStudyPicker() {
-      const options = studyOptions();
-      const index = currentStudyIndex();
-      aiParaPrev.disabled = !options.length || index <= 0;
-      aiParaNext.disabled = !options.length || index >= options.length - 1;
-      aiStudyLoadBtn.textContent = aiStudy ? '↻ Recarregar os parágrafos' : '📋 Carregar os parágrafos';
-      const exact = options.some(option => plainStudyText(option) === plainStudyText(aiStudyParagraphs.value));
-      aiStudyInfo.textContent = aiStudy
-        ? (aiStudy.titulo ? aiStudy.titulo + ' · ' : '') + (exact ? 'opção ' + (index + 1) + ' de ' + options.length : 'texto livre')
-        : '';
+      studyPickers.forEach(picker => {
+        const options = studyOptions(picker);
+        const index = currentStudyIndex(picker);
+        picker.prev.disabled = !options.length || index <= 0;
+        picker.next.disabled = !options.length || index >= options.length - 1;
+        // Durante o carregamento o botão mostra "Consultando a IA…": o rótulo volta no fim (setAiLoading).
+        if (!picker.load.dataset.label) picker.load.textContent = aiStudy ? '↻ Recarregar os parágrafos' : '📋 Carregar os parágrafos';
+        const exact = options.some(option => plainStudyText(option) === plainStudyText(picker.input.value));
+        picker.info.textContent = aiStudy
+          ? (aiStudy.titulo ? aiStudy.titulo + ' · ' : '') + (exact ? 'opção ' + (index + 1) + ' de ' + options.length : 'texto livre')
+          : '';
+      });
     }
 
-    function stepStudy(delta) {
-      const options = studyOptions();
+    function stepStudy(picker, delta) {
+      const options = studyOptions(picker);
       if (!options.length) return;
-      const next = Math.min(options.length - 1, Math.max(0, currentStudyIndex() + delta));
-      aiStudyParagraphs.value = options[next];
+      const next = Math.min(options.length - 1, Math.max(0, currentStudyIndex(picker) + delta));
+      picker.input.value = options[next];
       updateStudyPicker();
     }
 
     // Ao digitar "recap", mostra "Recapitulação". Os números ficam como foram digitados (ex.: só o 4, mesmo que
     // as setas mostrem "4, 5"); as setas continuam andando a partir do grupo desse número.
-    function normalizeStudyInput() {
-      const options = studyOptions();
-      const text = aiStudyParagraphs.value.trim();
+    function normalizeStudyInput(picker) {
+      const options = studyOptions(picker);
+      const text = picker.input.value.trim();
       if (options.length && isRecapText(text)) {
-        const index = currentStudyIndex();
-        if (index >= 0) aiStudyParagraphs.value = options[index];
+        const index = currentStudyIndex(picker);
+        if (index >= 0) picker.input.value = options[index];
       }
       updateStudyPicker();
     }
+
+    // O número ou link do artigo (quando o app não acha o artigo sozinho) vale para os dois cards.
+    function showStudyArticleBox(show) {
+      aiStudyArticleBox.hidden = !show;
+      leaderStudyArticleBox.hidden = !show;
+    }
+    [aiStudyArticle, leaderStudyArticle].forEach((field, i, both) => field.addEventListener('input', () => {
+      both.forEach(other => { if (other !== field) other.value = field.value; });
+    }));
 
     // Chamado ao trocar de semana: usa a lista guardada dessa semana, se existir.
     function refreshStudyPicker() {
       const cached = readStudyCache()[studyWeekKey()];
       aiStudy = cached && Array.isArray(cached.grupos) && cached.grupos.length ? cached : null;
-      aiStudyParagraphs.value = aiStudy ? aiStudy.grupos[0] : '1';
+      studyPickers.forEach(picker => { picker.input.value = aiStudy ? aiStudy.grupos[0] : '1'; });
       aiStudyArticle.value = '';
-      aiStudyArticleBox.hidden = true;
+      leaderStudyArticle.value = '';
+      showStudyArticleBox(false);
       updateStudyPicker();
     }
 
@@ -8306,9 +8401,9 @@ function saveTemplatesToStorage() {
       const code = aiStudyCode.value.trim();
       if (!code) {
         const codeBox = document.getElementById('aiStudyCodeBox');
-        if (codeBox) codeBox.open = true;
-        openWithAncestors(sentinelaBox);
-        return 'Informe o código de acesso no campo 🔑 no fim do card de A Sentinela.';
+        openWithAncestors(codeBox);
+        codeBox.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        return 'Informe o código de acesso no campo 🔑 no fim da tela Reuniões.';
       }
       if (!navigator.onLine) return 'Sem conexão com a internet.';
       return '';
@@ -8338,15 +8433,16 @@ function saveTemplatesToStorage() {
     }
 
     // A IA lê o artigo da semana e devolve os grupos de parágrafos para navegar com as setas.
-    async function requestStudyList() {
+    async function requestStudyList(picker) {
       if (aiBusy) return;
       aiStatusKind = 'lista';
+      studyListCard = picker.card;
       const accessError = studyAccessError();
       if (accessError) return setStudyStatus(accessError, true);
 
       aiBusy = true;
       setStudyStatus('', false);
-      setAiLoading(true, aiStudyLoadBtn);
+      setAiLoading(true, picker.load);
 
       try {
         const code = aiStudyCode.value.trim();
@@ -8361,14 +8457,14 @@ function saveTemplatesToStorage() {
 
         const groups = result.ok && Array.isArray(result.data.grupos) ? result.data.grupos : [];
         if (!groups.length) {
-          aiStudyArticleBox.hidden = false;
+          showStudyArticleBox(true);
           return setStudyStatus(studyFailureMessage(result, 'Não consegui listar os parágrafos.') + ' Se precisar, informe o número ou o link do artigo.', true);
         }
 
         aiStudy = { artigo: result.data.artigo || '', titulo: result.data.titulo || '', grupos: groups, recapitulacao: result.data.recapitulacao !== false };
         saveStudyCache(aiStudy);
-        aiStudyArticleBox.hidden = true;
-        aiStudyParagraphs.value = groups[0];
+        showStudyArticleBox(false);
+        studyPickers.forEach(p => { p.input.value = groups[0]; });
         updateStudyPicker();
         setStudyStatus(groups.length + (groups.length === 1 ? ' grupo de parágrafos carregado.' : ' grupos de parágrafos carregados.'), false);
       } catch (e) {
@@ -8444,7 +8540,7 @@ function saveTemplatesToStorage() {
 
         aiSentinelaRaw = Array.isArray(result.data.itens) ? result.data.itens : [];
         if (!aiSentinelaRaw.length) {
-          aiStudyArticleBox.hidden = false;
+          showStudyArticleBox(true);
           return setAiStatus((result.data.erro || 'Não encontrei perguntas nesse artigo.') + ' Se for o caso, informe o número ou o link do artigo.', true);
         }
 
@@ -8490,10 +8586,14 @@ function saveTemplatesToStorage() {
 
     async function requestStudyQuestions() {
       if (aiBusy) return;
-      aiStatusKind = 'estudo';
-      const requested = aiStudyParagraphs.value.trim();
+      aiStatusKind = 'dirigente';
+      const requested = leaderParagraphs.value.trim();
       const paragraphError = studyParagraphsError(requested, false);
       if (paragraphError) return setAiStatus(paragraphError, true);
+      const sections = readAiOptions();
+      if (!sections.perguntasComplementares && !sections.perguntasAplicativas && !sections.perguntasTextos && !sections.perguntasEntendimento) {
+        return setAiStatus('Marque pelo menos uma seção das perguntas.', true);
+      }
       const accessError = studyAccessError();
       if (accessError) return setAiStatus(accessError, true);
 
@@ -8530,11 +8630,13 @@ function saveTemplatesToStorage() {
 
     aiStudyBtn.addEventListener('click', () => requestStudyAnswers());
     aiStudyQuestionsBtn.addEventListener('click', () => requestStudyQuestions());
-    aiStudyLoadBtn.addEventListener('click', () => requestStudyList());
-    aiParaPrev.addEventListener('click', () => stepStudy(-1));
-    aiParaNext.addEventListener('click', () => stepStudy(1));
-    aiStudyParagraphs.addEventListener('change', normalizeStudyInput);
-    aiStudyParagraphs.addEventListener('input', updateStudyPicker);
+    studyPickers.forEach(picker => {
+      picker.load.addEventListener('click', () => requestStudyList(picker));
+      picker.prev.addEventListener('click', () => stepStudy(picker, -1));
+      picker.next.addEventListener('click', () => stepStudy(picker, 1));
+      picker.input.addEventListener('change', () => normalizeStudyInput(picker));
+      picker.input.addEventListener('input', updateStudyPicker);
+    });
     updateStudyPicker();
     aiSentinelaBtn.addEventListener('click', () => requestSentinelaAnswers());
     const refineAi = mode => (
@@ -8563,9 +8665,8 @@ function saveTemplatesToStorage() {
     // ---------- Atalho para o estudo de A Sentinela da semana ----------
     // O link aponta para a página de reuniões do wol.jw.org daquela semana (ano ISO + número da semana),
     // que lista o artigo de estudo. Nada é lido do site: o app só monta o endereço pela data.
-    const aiWeekLink = document.getElementById('aiWeekLink');
-    const aiWeekTitle = document.getElementById('aiWeekTitle');
-    const aiWeekRange = document.getElementById('aiWeekRange');
+    // A semana aparece nos dois cards da Sentinela (Comentários e Dirigente) e é uma só: mudar num muda o outro.
+    const weekParts = name => document.querySelectorAll('[data-week="' + name + '"]');
     let aiWeekOffset = 0;
     let aiWeekYear = 0;
     let aiWeekNumber = 0;
@@ -8588,24 +8689,24 @@ function saveTemplatesToStorage() {
       const [year, week] = isoYearWeek(monday);
       aiWeekYear = year;
       aiWeekNumber = week;
-      aiWeekLink.href = 'https://wol.jw.org/pt/wol/meetings/r5/lp-t/' + year + '/' + week;
+      weekParts('link').forEach(link => { link.href = 'https://wol.jw.org/pt/wol/meetings/r5/lp-t/' + year + '/' + week; });
 
       const month = date => date.toLocaleDateString('pt-BR', { month: 'long' });
-      aiWeekRange.textContent = monday.getMonth() === sunday.getMonth()
+      const range = monday.getMonth() === sunday.getMonth()
         ? monday.getDate() + ' a ' + sunday.getDate() + ' de ' + month(sunday)
         : monday.getDate() + ' de ' + month(monday) + ' a ' + sunday.getDate() + ' de ' + month(sunday);
+      weekParts('range').forEach(el => { el.textContent = range; });
 
       // Textos curtos para caber numa linha entre as setas (a data vem logo abaixo).
       const names = { '-1': 'Semana passada', '0': 'Esta semana', '1': 'Próxima semana' };
-      aiWeekTitle.textContent = '📅 ' + (names[aiWeekOffset] || 'Semana do estudo');
-      aiWeekTodayBtn.hidden = aiWeekOffset === 0;
+      weekParts('title').forEach(el => { el.textContent = '📅 ' + (names[aiWeekOffset] || 'Semana do estudo'); });
+      weekParts('today').forEach(btn => { btn.hidden = aiWeekOffset === 0; });
     }
 
-    const aiWeekTodayBtn = document.getElementById('aiWeekTodayBtn');
-    aiWeekTodayBtn.addEventListener('click', () => { aiWeekOffset = 0; renderAiWeek(); refreshStudyPicker(); });
-
-    document.getElementById('aiWeekPrev').addEventListener('click', () => { aiWeekOffset -= 1; renderAiWeek(); refreshStudyPicker(); });
-    document.getElementById('aiWeekNext').addEventListener('click', () => { aiWeekOffset += 1; renderAiWeek(); refreshStudyPicker(); });
+    const changeWeek = offset => { aiWeekOffset = offset; renderAiWeek(); refreshStudyPicker(); };
+    weekParts('today').forEach(btn => btn.addEventListener('click', () => changeWeek(0)));
+    weekParts('prev').forEach(btn => btn.addEventListener('click', () => changeWeek(aiWeekOffset - 1)));
+    weekParts('next').forEach(btn => btn.addEventListener('click', () => changeWeek(aiWeekOffset + 1)));
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') renderAiWeek();
     });

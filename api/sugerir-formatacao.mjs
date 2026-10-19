@@ -147,6 +147,9 @@ function validarOpcoes(opcoes) {
     perguntasTextos: o.perguntasTextos === true,
     // Também só para esse botão: perguntas de entendimento e explicação dos textos em relação à matéria do parágrafo.
     perguntasEntendimento: o.perguntasEntendimento === true,
+    // Seções 1 (complementares) e 2 (aplicativas) das perguntas adicionais: ligadas, a não ser que venham desmarcadas.
+    perguntasComplementares: o.perguntasComplementares !== false,
+    perguntasAplicativas: o.perguntasAplicativas !== false,
     intensidade: INTENSIDADES.includes(o.intensidade) ? o.intensidade : "moderada",
     instrucao: textoLivre(o.instrucao),
   };
@@ -1147,6 +1150,8 @@ async function sugerirPerguntas(res, body, P) {
     return erro(res, 400, `O máximo permitido é de ${maxParagrafos} ${maxParagrafos === 1 ? "parágrafo" : "parágrafos"} por consulta. Peça menos parágrafos de cada vez.`);
 
   const opcoes = validarOpcoes(body.opcoes);
+  if (!opcoes.perguntasComplementares && !opcoes.perguntasAplicativas && !opcoes.perguntasTextos && !opcoes.perguntasEntendimento)
+    return erro(res, 400, "Marque pelo menos uma seção das perguntas.");
   const ajuste = textoLivre(body.ajuste);
   const inicio = Date.now();
   let lido = null;
@@ -1166,8 +1171,12 @@ async function sugerirPerguntas(res, body, P) {
   const mensagem =
     blocoOrientacao(opcoes, ajuste) +
     "PEDIDO:\n" +
-    '- Seção 1, perguntas complementares: 1 ou 2 para cada pergunta impressa, em "complementares".\n' +
-    '- Seção 2, perguntas aplicativas: 1 ou 2 para cada pergunta impressa, em "aplicativas".\n' +
+    (opcoes.perguntasComplementares
+      ? '- Seção 1, perguntas complementares: ATIVA (1 ou 2 para cada pergunta impressa, em "complementares").\n'
+      : '- Seção 1, perguntas complementares: INATIVA ("complementares" sempre []).\n') +
+    (opcoes.perguntasAplicativas
+      ? '- Seção 2, perguntas aplicativas: ATIVA (1 ou 2 para cada pergunta impressa, em "aplicativas").\n'
+      : '- Seção 2, perguntas aplicativas: INATIVA ("aplicativas" sempre []).\n') +
     "- Seção 3, explicação dos textos:\n" +
     (opcoes.perguntasTextos
       ? "  - Perguntas sobre os textos bíblicos: ATIVAS (até 2 por pergunta impressa, em \"perguntasTextos\").\n"
@@ -1196,8 +1205,10 @@ async function sugerirPerguntas(res, body, P) {
     const itens = resposta.parsed_output.itens
       .map((i) => ({
         paragrafos: limparLinha(i.paragrafos, 20),
-        complementares: i.complementares.map((q) => limparTextoGerado(q, 400)).filter(Boolean).slice(0, 2),
-        aplicativas: i.aplicativas.map((q) => limparTextoGerado(q, 400)).filter(Boolean).slice(0, 2),
+        complementares: opcoes.perguntasComplementares
+          ? i.complementares.map((q) => limparTextoGerado(q, 400)).filter(Boolean).slice(0, 2)
+          : [],
+        aplicativas: opcoes.perguntasAplicativas ? i.aplicativas.map((q) => limparTextoGerado(q, 400)).filter(Boolean).slice(0, 2) : [],
         perguntasTextos: opcoes.perguntasTextos
           ? i.perguntasTextos
               .map((t) => ({ referencia: limparLinha(t.referencia, 80), pergunta: limparTextoGerado(t.pergunta, 400) }))
@@ -1226,6 +1237,8 @@ async function sugerirPerguntas(res, body, P) {
       JSON.stringify({
         pedidos: [...alvo],
         recebidos: itens.map((i) => i.paragrafos),
+        complementares: opcoes.perguntasComplementares,
+        aplicativas: opcoes.perguntasAplicativas,
         sobreTextos: opcoes.perguntasTextos,
         entendimento: opcoes.perguntasEntendimento,
         segundos: Math.round((Date.now() - inicio) / 100) / 10,
