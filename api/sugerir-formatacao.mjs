@@ -145,6 +145,8 @@ function validarOpcoes(opcoes) {
     consultarPerspicaz: false,
     // Só para o botão "Sugerir perguntas adicionais": acrescenta perguntas de aplicação sobre os textos bíblicos.
     perguntasTextos: o.perguntasTextos === true,
+    // Também só para esse botão: perguntas de entendimento e explicação dos textos em relação à matéria do parágrafo.
+    perguntasEntendimento: o.perguntasEntendimento === true,
     intensidade: INTENSIDADES.includes(o.intensidade) ? o.intensidade : "moderada",
     instrucao: textoLivre(o.instrucao),
   };
@@ -1120,6 +1122,7 @@ const SaidaPerguntas = z.object({
       paragrafos: z.string(),
       perguntas: z.array(z.string()),
       perguntasTextos: z.array(z.object({ referencia: z.string(), pergunta: z.string() })),
+      perguntasEntendimento: z.array(z.object({ referencia: z.string(), perguntas: z.array(z.string()) })),
     })
   ),
 });
@@ -1164,6 +1167,9 @@ async function sugerirPerguntas(res, body, P) {
     (opcoes.perguntasTextos
       ? "- Perguntas sobre os textos bíblicos: ATIVAS (até 2 por pergunta impressa, em \"perguntasTextos\").\n"
       : '- Perguntas sobre os textos bíblicos: INATIVAS ("perguntasTextos" sempre []).\n') +
+    (opcoes.perguntasEntendimento
+      ? '- Perguntas de entendimento dos textos bíblicos: ATIVAS (até 2 textos por pergunta impressa, 1 ou 2 perguntas por texto, em "perguntasEntendimento"): perguntas que ajudem a entender e explicar o texto e a ligação dele com a matéria do parágrafo (por que foi citado ali, o que significa, como apoia o ensino), e não aplicação prática na vida.\n'
+      : '- Perguntas de entendimento dos textos bíblicos: INATIVAS ("perguntasEntendimento" sempre []).\n') +
     "\nTEXTO DO ESTUDO:\n" +
     texto +
     (ajuste || opcoes.instrucao ? LEMBRETE_ORIENTACAO : "");
@@ -1192,8 +1198,21 @@ async function sugerirPerguntas(res, body, P) {
               .filter((t) => t.referencia && t.pergunta)
               .slice(0, 2)
           : [],
+        perguntasEntendimento: opcoes.perguntasEntendimento
+          ? i.perguntasEntendimento
+              .map((t) => ({
+                referencia: limparLinha(t.referencia, 80),
+                perguntas: t.perguntas.map((q) => limparTextoGerado(q, 400)).filter(Boolean).slice(0, 2),
+              }))
+              .filter((t) => t.referencia && t.perguntas.length)
+              .slice(0, 2)
+          : [],
       }))
-      .filter((i) => (i.perguntas.length || i.perguntasTextos.length) && [...numerosDosParagrafos(i.paragrafos)].some((n) => alvo.has(n)))
+      .filter(
+        (i) =>
+          (i.perguntas.length || i.perguntasTextos.length || i.perguntasEntendimento.length) &&
+          [...numerosDosParagrafos(i.paragrafos)].some((n) => alvo.has(n))
+      )
       .sort((a, b) => primeiro(a) - primeiro(b));
 
     console.log(
@@ -1202,6 +1221,7 @@ async function sugerirPerguntas(res, body, P) {
         pedidos: [...alvo],
         recebidos: itens.map((i) => i.paragrafos),
         sobreTextos: opcoes.perguntasTextos,
+        entendimento: opcoes.perguntasEntendimento,
         segundos: Math.round((Date.now() - inicio) / 100) / 10,
         entrada: resposta.usage?.input_tokens || 0,
         saida: resposta.usage?.output_tokens || 0,

@@ -2093,6 +2093,7 @@
                   <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citarTextos"> 🔖 Só citar 1 ou 2 textos na resposta, sem transcrever</label>
                   <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="explicarTextos"> 💬 Explicar e aplicar os textos, sem transcrever nem citar na resposta</label>
                   <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="perguntasTextos"> ❓ Formular perguntas de aplicação sobre os textos bíblicos (no botão de perguntas adicionais)</label>
+                  <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="perguntasEntendimento"> ❓ Formular perguntas para auxiliar no entendimento, explicação e aplicação do texto na matéria (no botão de perguntas adicionais)</label>
                 </div>
               </div>
             </details>
@@ -2583,7 +2584,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '3.6'; // 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
+    const APP_VERSION = '3.7'; // 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 
@@ -6012,7 +6013,7 @@ function saveTemplatesToStorage() {
     const AI_DEFAULT_OPTIONS = {
       usarModelos: true, negrito: true, italico: false, negritoItalico: false, maiusculas: false, variarFontes: false,
       emoji: false, citacoesBiblicas: false, usarListas: false, separarIdeias: false, resumo: false, intensidade: 'moderada', instrucao: '', categoria: 'all', resumoTamanho: 'medio',
-      consultarBiblia: false, transcreverSemCitar: false, citarTextos: false, explicarTextos: false, perguntasTextos: false
+      consultarBiblia: false, transcreverSemCitar: false, citarTextos: false, explicarTextos: false, perguntasTextos: false, perguntasEntendimento: false
     };
 
     // Opções padrão publicadas pelo administrador (valem para quem nunca salvou as suas) e se o usuário já mexeu nelas
@@ -7125,8 +7126,8 @@ function saveTemplatesToStorage() {
       }
     }
 
-    // Perguntas adicionais para o dirigente: 1 ou 2 por pergunta impressa e, com a opção marcada, sobre os textos bíblicos
-    // do parágrafo. Vão para o fim do campo de texto, sem apagar o que já está nele (por exemplo, as respostas). Uma linha
+    // Perguntas adicionais para o dirigente: 1 ou 2 por pergunta impressa e, com as opções marcadas, sobre os textos
+    // bíblicos do parágrafo (aplicação 📖 e entendimento 🔎). Vão para o fim do campo de texto, sem apagar o que já está nele (por exemplo, as respostas). Uma linha
     // em branco separa o cabeçalho da primeira pergunta e cada pergunta da seguinte.
     function buildStudyQuestionsText(items) {
       const bold = text => {
@@ -7137,6 +7138,10 @@ function saveTemplatesToStorage() {
         const lines = ['💬 ' + bold('PERGUNTAS ADICIONAIS') + ' 👉 ' + (item.paragrafos ? item.paragrafos + '.' : '')];
         (Array.isArray(item.perguntas) ? item.perguntas : []).forEach(q => lines.push('❔ ' + q));
         (Array.isArray(item.perguntasTextos) ? item.perguntasTextos : []).forEach(t => lines.push('📖 ' + bold(t.referencia) + ' ➜ ' + t.pergunta));
+        // Entendimento do texto em relação à matéria do parágrafo (outra opção): 🔎 para não confundir com as de aplicação.
+        (Array.isArray(item.perguntasEntendimento) ? item.perguntasEntendimento : []).forEach(t => {
+          (Array.isArray(t.perguntas) ? t.perguntas : []).forEach(q => lines.push('🔎 ' + bold(t.referencia) + ' ➜ ' + q));
+        });
         return lines.join('\n\n');
       }).join('\n\n');
     }
