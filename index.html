@@ -2583,7 +2583,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '3.5'; // 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
+    const APP_VERSION = '3.6'; // 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 
@@ -7126,7 +7126,8 @@ function saveTemplatesToStorage() {
     }
 
     // Perguntas adicionais para o dirigente: 1 ou 2 por pergunta impressa e, com a opção marcada, sobre os textos bíblicos
-    // do parágrafo. Vão para o fim do campo de texto, sem apagar o que já está nele (por exemplo, as respostas).
+    // do parágrafo. Vão para o fim do campo de texto, sem apagar o que já está nele (por exemplo, as respostas). Uma linha
+    // em branco separa o cabeçalho da primeira pergunta e cada pergunta da seguinte.
     function buildStudyQuestionsText(items) {
       const bold = text => {
         const styleId = aiStyleIdFor('negrito');
@@ -7136,7 +7137,7 @@ function saveTemplatesToStorage() {
         const lines = ['💬 ' + bold('PERGUNTAS ADICIONAIS') + ' 👉 ' + (item.paragrafos ? item.paragrafos + '.' : '')];
         (Array.isArray(item.perguntas) ? item.perguntas : []).forEach(q => lines.push('❔ ' + q));
         (Array.isArray(item.perguntasTextos) ? item.perguntasTextos : []).forEach(t => lines.push('📖 ' + bold(t.referencia) + ' ➜ ' + t.pergunta));
-        return lines.join('\n');
+        return lines.join('\n\n');
       }).join('\n\n');
     }
 
