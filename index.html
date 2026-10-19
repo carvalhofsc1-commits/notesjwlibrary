@@ -1693,6 +1693,38 @@
       .update-bar { bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
     }
 
+    /* Tela Backup: abrir o .jwlibrary e ver as notas e as respostas dos quadros "Sua resposta" (só leitura). */
+    .backup-open-row { margin-top: 10px; }
+    .backup-open-row button { width: 100%; min-height: 50px; }
+    .backup-summary { margin: 12px 0 0; font-size: .86rem; color: var(--muted); }
+    .backup-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+    .backup-tabs button,
+    .backup-tabs button:hover { min-height: 42px; border: 2px solid var(--line); background: var(--card); color: var(--text); }
+    .backup-tabs button[aria-pressed="true"],
+    .backup-tabs button[aria-pressed="true"]:hover {
+      border-color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 14%, var(--card));
+      color: var(--accent);
+    }
+    .backup-filters { display: grid; gap: 8px; margin-top: 10px; }
+    .backup-list { display: grid; gap: 10px; margin-top: 6px; }
+    .backup-item { padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); cursor: pointer; }
+    .backup-item-head { display: flex; align-items: center; gap: 8px; font-weight: 700; line-height: 1.3; }
+    .backup-item-head .sem-titulo { color: var(--muted); font-weight: 600; font-style: italic; }
+    .backup-dot { flex: 0 0 12px; width: 12px; height: 12px; border-radius: 50%; background: var(--cor, #9ca3af); }
+    .backup-item-meta { margin-top: 3px; font-size: .78rem; color: var(--muted); }
+    .backup-item-body {
+      margin-top: 6px;
+      font-size: .9rem;
+      white-space: pre-wrap;
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .backup-item.aberto .backup-item-body { display: block; -webkit-line-clamp: unset; overflow: visible; }
+    #backupMoreBtn { width: 100%; margin-top: 10px; }
+
     /* Tela Reuniões: um card para cada parte; as que ainda não existem aparecem como "em breve". */
     .reunioes-group { margin-top: 6px; }
     .reunioes-title { margin: 4px 0 2px; font-size: 1.12rem; }
@@ -2456,7 +2488,26 @@
 
     <section id="backupCard" class="card screen-backup">
       <h2>📦 Backup do JW Library</h2>
-      <p class="hint">Em breve: abrir o backup do JW Library para ver e editar as notas.</p>
+      <div class="backup-open-row">
+        <button id="backupOpenBtn" type="button">📂 Abrir backup (.jwlibrary)</button>
+        <input id="backupFile" type="file" hidden>
+      </div>
+      <p class="hint">O arquivo é lido só neste aparelho: nada é enviado para a internet.</p>
+      <span id="backupStatus" class="ok" role="status" aria-live="polite"></span>
+      <div id="backupView" hidden>
+        <p id="backupSummary" class="backup-summary"></p>
+        <div class="backup-tabs" role="group" aria-label="O que mostrar">
+          <button id="backupTabNotes" type="button" data-backup-tab="notas" aria-pressed="true">📝 Notas</button>
+          <button id="backupTabAnswers" type="button" data-backup-tab="respostas" aria-pressed="false">✍️ Respostas</button>
+        </div>
+        <div class="backup-filters">
+          <input id="backupSearch" type="search" autocomplete="off" placeholder="Buscar no título, no texto ou nas etiquetas">
+          <select id="backupPub" aria-label="Publicação"></select>
+        </div>
+        <p id="backupCount" class="hint"></p>
+        <div id="backupList" class="backup-list"></div>
+        <button id="backupMoreBtn" class="secondary" type="button" hidden>Mostrar mais</button>
+      </div>
     </section>
 
   </main>
@@ -2598,6 +2649,245 @@
       try { saved = localStorage.getItem(SCREEN_STORAGE_KEY) || ''; } catch (e) { /* sem localStorage: abre em Formatar */ }
       showScreen(APP_SCREENS.includes(fromHash) ? fromHash : saved, { keepScroll: true });
     })();
+
+    // ---------- Backup do JW Library (Fase 1: só leitura) ----------
+    // O arquivo .jwlibrary é um ZIP com o manifest.json e o banco userData.db (SQLite). Tudo é lido neste aparelho, com
+    // JSZip e sql.js, que só são baixados quando se abre um backup; nada é enviado ao servidor.
+    const BACKUP_LIBS = {
+      jszip: 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
+      sqljs: 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js',
+      wasm: 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.wasm'
+    };
+    const BACKUP_PAGE = 50;
+    const BACKUP_COLORS = ['#9ca3af', '#facc15', '#4ade80', '#60a5fa', '#f87171', '#fb923c', '#c084fc'];
+    const BACKUP_PUBS = {
+      w: 'A Sentinela', wp: 'A Sentinela (edição pública)', g: 'Despertai!', mwb: 'Apostila Vida e Ministério',
+      nwtsty: 'Bíblia', nwt: 'Bíblia', lff: 'Seja Feliz para Sempre!'
+    };
+    const BACKUP_MONTHS = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+    const BIBLE_BOOKS = ['Gênesis', 'Êxodo', 'Levítico', 'Números', 'Deuteronômio', 'Josué', 'Juízes', 'Rute', '1 Samuel', '2 Samuel',
+      '1 Reis', '2 Reis', '1 Crônicas', '2 Crônicas', 'Esdras', 'Neemias', 'Ester', 'Jó', 'Salmos', 'Provérbios', 'Eclesiastes',
+      'Cântico de Salomão', 'Isaías', 'Jeremias', 'Lamentações', 'Ezequiel', 'Daniel', 'Oseias', 'Joel', 'Amós', 'Obadias', 'Jonas',
+      'Miqueias', 'Naum', 'Habacuque', 'Sofonias', 'Ageu', 'Zacarias', 'Malaquias', 'Mateus', 'Marcos', 'Lucas', 'João', 'Atos',
+      'Romanos', '1 Coríntios', '2 Coríntios', 'Gálatas', 'Efésios', 'Filipenses', 'Colossenses', '1 Tessalonicenses',
+      '2 Tessalonicenses', '1 Timóteo', '2 Timóteo', 'Tito', 'Filêmon', 'Hebreus', 'Tiago', '1 Pedro', '2 Pedro', '1 João', '2 João',
+      '3 João', 'Judas', 'Apocalipse'];
+
+    let backupLibsPromise = null;
+    let backupState = null; // { zip, db, manifest, fileName, notes, answers }
+    let backupTab = 'notas';
+    let backupShown = BACKUP_PAGE;
+
+    function loadScriptOnce(src) {
+      return new Promise((resolve, reject) => {
+        const existing = document.querySelector('script[src="' + src + '"]');
+        if (existing) return existing.dataset.loaded ? resolve() : existing.addEventListener('load', () => resolve());
+        const script = document.createElement('script');
+        script.src = src;
+        script.async = true;
+        script.onload = () => { script.dataset.loaded = '1'; resolve(); };
+        script.onerror = () => { script.remove(); reject(new Error('sem conexão para carregar o leitor de backup.')); };
+        document.head.appendChild(script);
+      });
+    }
+
+    function loadBackupLibs() {
+      if (!backupLibsPromise) {
+        backupLibsPromise = Promise.all([loadScriptOnce(BACKUP_LIBS.jszip), loadScriptOnce(BACKUP_LIBS.sqljs)])
+          .then(() => window.initSqlJs({ locateFile: () => BACKUP_LIBS.wasm }))
+          .then(SQL => ({ JSZip: window.JSZip, SQL }))
+          .catch(e => { backupLibsPromise = null; throw e; });
+      }
+      return backupLibsPromise;
+    }
+
+    function setBackupStatus(message, isWarning) {
+      const el = document.getElementById('backupStatus');
+      el.className = isWarning ? 'warn' : 'ok';
+      el.textContent = message;
+    }
+
+    // Linhas de uma consulta como objetos { coluna: valor }.
+    function backupRows(db, sql) {
+      const result = db.exec(sql);
+      if (!result.length) return [];
+      const { columns, values } = result[0];
+      return values.map(row => Object.fromEntries(columns.map((c, i) => [c, row[i]])));
+    }
+
+    // 20260800 -> "agosto de 2026"; 20230115 -> "15/01/2023".
+    function backupIssueLabel(issue) {
+      const text = String(issue || '');
+      if (!/^\d{8}$/.test(text) || text === '00000000') return '';
+      const year = text.slice(0, 4), month = Number(text.slice(4, 6)), day = Number(text.slice(6, 8));
+      if (!month || month > 12) return year;
+      return day ? String(day).padStart(2, '0') + '/' + text.slice(4, 6) + '/' + year : BACKUP_MONTHS[month - 1] + ' de ' + year;
+    }
+
+    function backupDate(text) {
+      const m = String(text || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+      return m ? m[3] + '/' + m[2] + '/' + m[1] : '';
+    }
+
+    // Onde está a nota: publicação (para o filtro), lugar dentro dela e o texto que aparece no cartão.
+    function backupPlace(row, titleByDoc) {
+      if (row.LocationId === null || row.LocationId === undefined) return { pub: 'Notas avulsas', where: '' };
+      if (row.BookNumber) {
+        const book = BIBLE_BOOKS[row.BookNumber - 1] || ('Livro ' + row.BookNumber);
+        const verse = row.BlockType === 2 && row.BlockIdentifier ? ':' + row.BlockIdentifier : '';
+        return { pub: 'Bíblia', where: book + (row.ChapterNumber ? ' ' + row.ChapterNumber + verse : '') };
+      }
+      const name = BACKUP_PUBS[row.KeySymbol] || row.KeySymbol || 'Publicação';
+      const issue = backupIssueLabel(row.IssueTagNumber);
+      const title = row.LocTitle || titleByDoc.get(row.KeySymbol + '|' + row.IssueTagNumber + '|' + row.DocumentId) || '';
+      return { pub: name + (issue ? ' — ' + issue : ''), where: title };
+    }
+
+    function readBackupData(db) {
+      const titleByDoc = new Map(backupRows(db, "SELECT KeySymbol, IssueTagNumber, DocumentId, Title FROM Location WHERE Title IS NOT NULL AND Title != '' AND DocumentId IS NOT NULL")
+        .map(r => [r.KeySymbol + '|' + r.IssueTagNumber + '|' + r.DocumentId, r.Title]));
+      const notes = backupRows(db, `
+        SELECT n.NoteId, n.Title, n.Content, n.LastModified, n.BlockType, n.BlockIdentifier, n.LocationId,
+               l.KeySymbol, l.IssueTagNumber, l.DocumentId, l.BookNumber, l.ChapterNumber, l.Title AS LocTitle, u.ColorIndex,
+               (SELECT group_concat(t.Name, ', ') FROM TagMap tm JOIN Tag t ON t.TagId = tm.TagId WHERE tm.NoteId = n.NoteId) AS Tags
+        FROM Note n LEFT JOIN Location l ON l.LocationId = n.LocationId LEFT JOIN UserMark u ON u.UserMarkId = n.UserMarkId
+        ORDER BY n.LastModified DESC, n.NoteId DESC`).map(r => ({
+          kind: 'nota', title: r.Title || '', content: r.Content || '', date: backupDate(r.LastModified), color: r.ColorIndex || 0,
+          tags: r.Tags || '', ...backupPlace(r, titleByDoc)
+        }));
+      const answers = backupRows(db, `
+        SELECT i.TextTag, i.Value, i.LocationId, l.KeySymbol, l.IssueTagNumber, l.DocumentId, l.BookNumber, l.ChapterNumber,
+               l.Title AS LocTitle
+        FROM InputField i JOIN Location l ON l.LocationId = i.LocationId
+        ORDER BY l.IssueTagNumber DESC, l.DocumentId DESC, CAST(substr(i.TextTag, 3) AS INTEGER)`).map(r => ({
+          kind: 'resposta', title: 'Sua resposta', content: r.Value || '', date: '', color: 0, tags: '', ...backupPlace(r, titleByDoc)
+        }));
+      return { notes, answers };
+    }
+
+    async function openBackupFile(file) {
+      if (!file) return;
+      setBackupStatus('Abrindo ' + file.name + '…', false);
+      try {
+        const { JSZip, SQL } = await loadBackupLibs();
+        let zip;
+        try {
+          zip = await JSZip.loadAsync(await file.arrayBuffer());
+        } catch (e) {
+          throw new Error('o arquivo não é um backup .jwlibrary.');
+        }
+        const manifestFile = zip.file('manifest.json');
+        if (!manifestFile) throw new Error('não é um backup do JW Library (falta o manifest.json).');
+        const manifest = JSON.parse(await manifestFile.async('string'));
+        const info = manifest && manifest.userDataBackup;
+        if (!info) throw new Error('não é um backup do JW Library.');
+        const dbFile = zip.file(info.databaseName || 'userData.db');
+        if (!dbFile) throw new Error('o banco de dados não está dentro do arquivo.');
+        const db = new SQL.Database(await dbFile.async('uint8array'));
+        const data = readBackupData(db);
+        if (backupState && backupState.db) backupState.db.close();
+        backupState = { zip, db, manifest, fileName: file.name, ...data };
+        backupShown = BACKUP_PAGE;
+        renderBackupView(true);
+        setBackupStatus('', false);
+      } catch (e) {
+        setBackupStatus('Não consegui abrir o backup: ' + (e && e.message ? e.message : 'arquivo inválido.'), true);
+      }
+    }
+
+    function backupPlain(text) {
+      return String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    }
+
+    function renderBackupView(rebuildFilter) {
+      const view = document.getElementById('backupView');
+      if (!backupState) { view.hidden = true; return; }
+      view.hidden = false;
+      const info = backupState.manifest.userDataBackup || {};
+      document.getElementById('backupOpenBtn').textContent = '📂 Abrir outro backup';
+      document.getElementById('backupSummary').textContent = [
+        backupState.fileName,
+        backupDate(info.lastModifiedDate) && 'feito em ' + backupDate(info.lastModifiedDate),
+        info.deviceName,
+        'formato ' + (info.schemaVersion || '?')
+      ].filter(Boolean).join(' · ');
+      document.getElementById('backupTabNotes').textContent = '📝 Notas (' + backupState.notes.length + ')';
+      document.getElementById('backupTabAnswers').textContent = '✍️ Respostas (' + backupState.answers.length + ')';
+      document.querySelectorAll('[data-backup-tab]').forEach(btn => btn.setAttribute('aria-pressed', btn.dataset.backupTab === backupTab ? 'true' : 'false'));
+
+      const items = backupTab === 'notas' ? backupState.notes : backupState.answers;
+      const pubSelect = document.getElementById('backupPub');
+      if (rebuildFilter) {
+        const counts = new Map();
+        items.forEach(item => counts.set(item.pub, (counts.get(item.pub) || 0) + 1));
+        const chosen = pubSelect.value;
+        pubSelect.textContent = '';
+        const all = document.createElement('option');
+        all.value = '';
+        all.textContent = 'Todas as publicações (' + items.length + ')';
+        pubSelect.appendChild(all);
+        [...counts.keys()].sort((a, b) => a.localeCompare(b, 'pt-BR')).forEach(pub => {
+          const option = document.createElement('option');
+          option.value = pub;
+          option.textContent = pub + ' (' + counts.get(pub) + ')';
+          pubSelect.appendChild(option);
+        });
+        pubSelect.value = counts.has(chosen) ? chosen : '';
+      }
+
+      const search = backupPlain(document.getElementById('backupSearch').value.trim());
+      const pub = pubSelect.value;
+      const filtered = items.filter(item =>
+        (!pub || item.pub === pub) &&
+        (!search || backupPlain(item.title + ' ' + item.content + ' ' + item.tags + ' ' + item.where).includes(search)));
+
+      const list = document.getElementById('backupList');
+      list.textContent = '';
+      filtered.slice(0, backupShown).forEach(item => list.appendChild(backupItemCard(item)));
+      document.getElementById('backupCount').textContent = filtered.length
+        ? 'Mostrando ' + Math.min(backupShown, filtered.length) + ' de ' + filtered.length + '.'
+        : 'Nada encontrado.';
+      const more = document.getElementById('backupMoreBtn');
+      more.hidden = filtered.length <= backupShown;
+    }
+
+    function backupItemCard(item) {
+      const card = document.createElement('article');
+      card.className = 'backup-item';
+      const head = document.createElement('div');
+      head.className = 'backup-item-head';
+      const dot = document.createElement('span');
+      dot.className = 'backup-dot';
+      dot.style.setProperty('--cor', BACKUP_COLORS[item.color] || BACKUP_COLORS[0]);
+      const title = document.createElement('span');
+      if (item.title) title.textContent = item.title;
+      else { title.textContent = '(sem título)'; title.className = 'sem-titulo'; }
+      head.append(dot, title);
+      const meta = document.createElement('div');
+      meta.className = 'backup-item-meta';
+      meta.textContent = [item.pub, item.where, item.date, item.tags && '🏷️ ' + item.tags].filter(Boolean).join(' · ');
+      const body = document.createElement('div');
+      body.className = 'backup-item-body';
+      body.textContent = item.content;
+      card.append(head, meta, body);
+      card.addEventListener('click', () => card.classList.toggle('aberto'));
+      return card;
+    }
+
+    document.getElementById('backupOpenBtn').addEventListener('click', () => document.getElementById('backupFile').click());
+    document.getElementById('backupFile').addEventListener('change', event => {
+      openBackupFile(event.target.files && event.target.files[0]);
+      event.target.value = ''; // permite abrir o mesmo arquivo de novo
+    });
+    document.querySelectorAll('[data-backup-tab]').forEach(btn => btn.addEventListener('click', () => {
+      backupTab = btn.dataset.backupTab;
+      backupShown = BACKUP_PAGE;
+      document.getElementById('backupSearch').value = '';
+      renderBackupView(true);
+    }));
+    document.getElementById('backupSearch').addEventListener('input', () => { backupShown = BACKUP_PAGE; renderBackupView(false); });
+    document.getElementById('backupPub').addEventListener('change', () => { backupShown = BACKUP_PAGE; renderBackupView(false); });
+    document.getElementById('backupMoreBtn').addEventListener('click', () => { backupShown += BACKUP_PAGE; renderBackupView(false); });
 
     // ---------- Tema (Auto / Claro / Escuro) ----------
 
@@ -2748,7 +3038,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '4.0'; // 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
+    const APP_VERSION = '4.1'; // 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 
