@@ -812,7 +812,17 @@ async function responderEstudoLido(res, { lido, alvo, recapitulacao, opcoes, aju
     // Recapitulação: as perguntas do quadro vêm numeradas 1, 2, 3...; o rótulo "Recap. N" não se confunde com parágrafos.
     if (recapitulacao) {
       gerados.forEach((i, pos) => {
-        i.paragrafos = "Recap. " + ((i.paragrafos.match(/\d+/) || [String(pos + 1)])[0]);
+        const numero = (i.paragrafos.match(/\d+/) || [String(pos + 1)])[0];
+        i.paragrafos = "Recap. " + numero;
+        i.referencias = [...new Set([...(lido.referenciasRecapitulacao?.[Number(numero) - 1] || []), ...i.referencias])];
+      });
+    } else {
+      // Regra fixa: os textos citados na pergunta são sempre transcritos. A página marca cada um como link, então eles
+      // entram mesmo que a IA esqueça de indicá-los.
+      gerados.forEach((i) => {
+        const numeros = numerosDosParagrafos(i.paragrafos);
+        const daPergunta = lido.grupos.filter((g) => g.numeros.some((n) => numeros.has(n))).flatMap((g) => g.referencias || []);
+        i.referencias = [...new Set([...daPergunta, ...i.referencias])];
       });
     }
     // Mesmo que a IA responda a mais, só ficam os parágrafos pedidos.

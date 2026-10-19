@@ -129,12 +129,13 @@ const ABREVIACOES_LIVROS = {
 const chaveComAcento = (texto) => String(texto || "").toLowerCase().replace(/[.\s]+/g, "");
 const chaveSemAcento = (texto) => chaveComAcento(texto).normalize("NFD").replace(/[̀-ͯ]/g, "");
 
-let biblia = null; // Promise<{ versiculos: Map, comAcento: Map, semAcento: Map }>
+let biblia = null; // Promise<{ versiculos: Map, capitulos: Map, comAcento: Map, semAcento: Map }>
 
 function carregarBiblia() {
   if (!biblia) {
     biblia = baixar(ARQUIVOS.biblia).then((conteudo) => {
       const versiculos = new Map();
+      const capitulos = new Map(); // livro -> último capítulo (1 = livro de um capítulo só, como Filêmon e Judas)
       const livros = [];
       // O arquivo tem quebras de linha do Windows (\r\n); o "." da expressão não aceita o \r.
       for (const linha of conteudo.split(/\r?\n/)) {
@@ -142,6 +143,7 @@ function carregarBiblia() {
         if (!m) continue;
         if (livros[livros.length - 1] !== m[1]) livros.push(m[1]);
         versiculos.set(`${m[1]}|${Number(m[2])}|${Number(m[3])}`, m[4].trim());
+        capitulos.set(m[1], Math.max(capitulos.get(m[1]) || 0, Number(m[2])));
       }
       const comAcento = new Map();
       const semAcento = new Map();
@@ -154,7 +156,7 @@ function carregarBiblia() {
       for (const [livro, apelidos] of Object.entries(ABREVIACOES_LIVROS)) {
         if (livros.includes(livro)) apelidos.forEach((a) => registrar(a, livro));
       }
-      return { versiculos, comAcento, semAcento };
+      return { versiculos, capitulos, comAcento, semAcento };
     });
     biblia.catch(() => (biblia = null));
   }
@@ -189,11 +191,15 @@ function lerReferencia(referencia, indice) {
   for (const segmento of String(referencia || "").split(";")) {
     // O nome do livro é opcional depois do primeiro trecho ("28:19, 20" continua no mesmo livro).
     const m = segmento.trim().match(/^(?:((?:[1-3]\s*)?\p{L}[^\d:]*?)\s*)?(\d{1,3})\s*:\s*([\d\s,.\-–—]+)$/u);
-    if (!m) continue;
-    if (m[1] && m[1].trim()) livro = acharLivro(m[1], indice);
+    // Livro de um capítulo só, citado como nas publicações, sem o capítulo: "Filêmon 8, 9, 17", "Judas 3", "3 João 4".
+    const s = m ? null : segmento.trim().match(/^(?:((?:[1-3]\s*)?\p{L}[^\d:]*?)\s*)?([\d\s,.\-–—]+)$/u);
+    if (!m && !s) continue;
+    const nome = m ? m[1] : s[1];
+    if (nome && nome.trim()) livro = acharLivro(nome, indice);
     if (!livro) continue;
-    const capitulo = Number(m[2]);
-    const versos = numerosDosVersiculos(m[3]);
+    if (s && indice.capitulos.get(livro) !== 1) continue;
+    const capitulo = m ? Number(m[2]) : 1;
+    const versos = numerosDosVersiculos(m ? m[3] : s[2]);
     const achados = versos.filter((v) => indice.versiculos.has(`${livro}|${capitulo}|${v}`));
     if (!achados.length) continue;
     partes.push({ livro, capitulo, versos: achados });
@@ -217,8 +223,9 @@ function lerReferencia(referencia, indice) {
     }
     return grupos.map(([a, b]) => (a === b ? `${a}` : b === a + 1 ? `${a}, ${b}` : `${a}-${b}`)).join(", ");
   };
+  // Nos livros de um capítulo só, as publicações escrevem só os versículos: "Filêmon 8, 9, 17".
   const escrita = partes
-    .map((p, i) => (i === 0 || p.livro !== partes[i - 1].livro ? `${p.livro} ` : "") + `${p.capitulo}:${versosEscritos(p.versos)}`)
+    .map((p, i) => (i === 0 || p.livro !== partes[i - 1].livro ? `${p.livro} ` : "") + (indice.capitulos.get(p.livro) === 1 ? "" : `${p.capitulo}:`) + versosEscritos(p.versos))
     .join("; ");
   return { referencia: escrita, texto };
 }

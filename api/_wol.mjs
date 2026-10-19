@@ -70,6 +70,33 @@ function numeros(rotulo) {
   return lista;
 }
 
+// Referências bíblicas de um trecho da página: os links de texto bíblico (class="b"). Um link sem o nome do livro
+// continua o anterior: separado por vírgula, entra na mesma referência ("Filêmon 8, 9" + ", 17" -> "Filêmon 8, 9, 17");
+// separado por ponto e vírgula, vira outra do mesmo livro ("Mat. 24:14;" + "28:19, 20" -> "Mat. 28:19, 20").
+function referenciasDe(html) {
+  const lista = [];
+  let livro = "";
+  let fimAnterior = -1;
+  let pontuacaoAnterior = ""; // ";" ou "," que ficou no fim do link anterior ("Isaías 1:18;")
+  for (const m of html.matchAll(/<a\b[^>]*\bclass="b"[^>]*>([\s\S]*?)<\/a>/g)) {
+    // O que separa este link do anterior: a pontuação no fim dele mais o texto entre os dois.
+    const entre = fimAnterior >= 0 ? (pontuacaoAnterior + textoDe(html.slice(fimAnterior, m.index))).replace(/\s+/g, "") : null;
+    fimAnterior = m.index + m[0].length;
+    const bruto = textoDe(m[1]);
+    const texto = bruto.replace(/[;,.\s]+$/, "");
+    pontuacaoAnterior = bruto.slice(texto.length);
+    if (!texto) continue;
+    const comLivro = texto.match(/^((?:[1-3]\s*)?\p{L}[^\d]*?)\s*\d/u);
+    if (comLivro) livro = comLivro[1];
+    else if (lista.length && (entre === "," || entre === "")) {
+      lista[lista.length - 1] += `, ${texto}`;
+      continue;
+    }
+    lista.push(comLivro || !livro ? texto : `${livro} ${texto}`);
+  }
+  return [...new Set(lista)];
+}
+
 // Itens que dependem do título do quadro viram uma pergunta completa (o texto só vai para a IA, então o título
 // fica como está, em maiúsculas): "O QUE VOCÊ APRENDEU COM . . ." + "o apóstolo Paulo?" ou
 // "QUE CONSOLO ENCONTRAMOS NOS SEGUINTES TEXTOS?" + "Isaías 42:16".
@@ -90,6 +117,7 @@ export function analisarArtigo(html) {
   const porPergunta = new Map(); // data-pid da pergunta -> grupo
   const secoes = []; // para a recapitulação: o artigo inteiro, com os subtítulos
   const recapitulacao = [];
+  const referenciasRecapitulacao = []; // alinhada com "recapitulacao": os textos citados em cada pergunta do quadro
   let atual = null;
   let naRecapitulacao = false;
   let tituloRecapitulacao = "";
@@ -114,7 +142,7 @@ export function analisarArtigo(html) {
     if (/\bqu\b/.test(classe)) {
       const texto = textoDe(conteudo);
       const m = texto.match(/^(\d+(?:\s*[,–-]\s*\d+)*)\s*\.\s*([\s\S]*)$/);
-      atual = { rotulo: m ? m[1].replace(/\s*,\s*/g, ", ").replace(/\s*[-–]\s*/g, "-") : "", pergunta: m ? m[2] : texto, numeros: m ? numeros(m[1]) : [], paragrafos: [], legendas: [] };
+      atual = { rotulo: m ? m[1].replace(/\s*,\s*/g, ", ").replace(/\s*[-–]\s*/g, "-") : "", pergunta: m ? m[2] : texto, numeros: m ? numeros(m[1]) : [], paragrafos: [], legendas: [], referencias: referenciasDe(conteudo) };
       grupos.push(atual);
       if (pid) porPergunta.set(pid, atual);
       continue;
@@ -138,13 +166,16 @@ export function analisarArtigo(html) {
     // Parágrafo sem pergunta ligada: no quadro final é pergunta de recapitulação; antes dele, legenda de imagem.
     const texto = textoDe(conteudo);
     if (!texto) continue;
-    if (naRecapitulacao) recapitulacao.push(perguntaDoQuadro(tituloRecapitulacao, texto));
+    if (naRecapitulacao) {
+      recapitulacao.push(perguntaDoQuadro(tituloRecapitulacao, texto));
+      referenciasRecapitulacao.push(referenciasDe(conteudo));
+    }
     else if (atual) atual.legendas.push(texto);
   }
 
   const validos = grupos.filter((g) => g.paragrafos.length && g.numeros.length);
   for (const g of validos) g.rotulo = [...g.numeros].sort((a, b) => a - b).join(", "); // "1, 2", como na lista do app
-  return { titulo, grupos: validos, recapitulacao, secoes };
+  return { titulo, grupos: validos, recapitulacao, referenciasRecapitulacao, secoes };
 }
 
 // Lê o artigo (ou, com a página de reuniões da semana, encontra o artigo nela e o lê). null = não deu para ler.
