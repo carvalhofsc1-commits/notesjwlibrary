@@ -514,6 +514,10 @@ export async function lerJoias(urlReuniao, { timeoutMs = 8000 } = {}) {
 export function textoDasJoias(joias, { pergunta, leitura }) {
   const partes = [`LEITURA DA BÍBLIA DA SEMANA (${joias.semana}): ${joias.leitura}`];
   if (leitura) {
+    // O versículo da pergunta da apostila já tem a resposta própria: as joias devem ser sobre outros versículos.
+    if (joias.pergunta && joias.pergunta.referencias.length) {
+      partes.push(`VERSÍCULO DA PERGUNTA DA APOSTILA (não use nas joias): ${joias.pergunta.referencias.join("; ")}`);
+    }
     for (const c of joias.capitulos) {
       partes.push(`${c.nome.toUpperCase()}:\n${c.versiculos.map((v) => `${v.verso} ${v.texto}`).join("\n")}`);
       if (c.trechos.length) {

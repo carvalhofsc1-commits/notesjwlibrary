@@ -1527,12 +1527,28 @@ async function responderJoias(res, body, P) {
       itemPergunta.referencias = [...new Set([...pergunta.referencias, ...itemPergunta.referencias])];
       if (!itemPergunta.resposta) itemPergunta = null;
     }
-    // No máximo 2 joias por capítulo, na ordem da leitura.
+    // No máximo 2 joias por capítulo, na ordem da leitura, e nenhuma sobre o versículo da pergunta da apostila (ela já
+    // tem a resposta própria). Os capítulos da leitura são de um livro só, então basta comparar capítulo e versículo.
     const chave = (t) => chaveDeBusca(t).replace(/\s+/g, "");
+    const versosDe = (ref) => {
+      const m = String(ref || "").match(/(\d+):([\d,\s–-]+)/);
+      if (!m) return null;
+      const versos = new Set();
+      for (const parte of m[2].split(",")) {
+        const [de, ate] = parte.split(/[–-]/).map((n) => Number(n.trim()));
+        for (let v = de; v <= (ate || de) && v - de < 200; v++) versos.add(v);
+      }
+      return { capitulo: Number(m[1]), versos };
+    };
+    const daPergunta = joias.pergunta ? versosDe(joias.pergunta.referencias[0]) : null;
+    const repetePergunta = (ref) => {
+      const v = versosDe(ref);
+      return Boolean(daPergunta && v && v.capitulo === daPergunta.capitulo && [...v.versos].some((n) => daPergunta.versos.has(n)));
+    };
     const porCapitulo = new Map(joias.capitulos.map((c) => [chave(c.nome), []]));
     for (const j of comLeitura ? saida.joias : []) {
       const lista = porCapitulo.get(chave(j.capitulo)) || [...porCapitulo.values()].find((l, i) => chave(j.referencia).startsWith(chave(joias.capitulos[i].nome)));
-      if (!lista || lista.length >= 2) continue;
+      if (!lista || lista.length >= 2 || repetePergunta(j.referencia)) continue;
       const item = montarItem({ ...j, paragrafos: limparLinha(limparTrecho(j.referencia), 20), referencias: [] }, opcoes, permitidos, P.limites, sep);
       if (item.resposta) lista.push({ ...item, capitulo: joias.capitulos.find((c) => porCapitulo.get(chave(c.nome)) === lista).nome });
     }
