@@ -243,6 +243,143 @@ export async function lerTextoDiario(ano, mes, dia, { timeoutMs = 8000 } = {}) {
   return texto;
 }
 
+// ---------- Estudo Bíblico de Congregação ----------
+// Caminho: página de reuniões da semana -> apostila Vida e Ministério (bloco "pub-mwb") -> item "Estudo bíblico de
+// congregação" no fim dela, com um link /wol/pc/ (ex.: "wcg cap. 13") que redireciona para o capítulo. O número do item
+// muda de semana para semana, então ele é achado pelo nome. No capítulo, o relato vem em parágrafos sem número, depois
+// "Leia o relato na Bíblia" (as referências) e as perguntas em quadros; "Aprenda mais" (leituras extras) fica de fora.
+// Uma pergunta pode citar outra publicação (link /wol/pc/): o servidor busca só o trecho citado e manda junto à IA.
+export const QUADROS_EBC = [
+  { id: "considerar", nome: "Para considerar", curto: "Considerar" },
+  { id: "analise", nome: "Analise mais a fundo", curto: "Analise" },
+  { id: "medite", nome: "Medite no que aprendeu", curto: "Medite" },
+  { id: "quadro", nome: "Pense no quadro completo", curto: "Quadro completo" },
+];
+
+export function analisarCapituloEbc(html) {
+  const inicio = html.search(/<p\b[^>]*class="contextTtl|<h1\b/);
+  const corpo = (inicio >= 0 ? html.slice(inicio) : html)
+    .replace(/<div class="stdPullQuote[\s\S]*?<\/div>/g, "") // frase em destaque (repete uma do relato)
+    .replace(/<div class="gen-field"[\s\S]*?<\/div>/g, "") // campo "Sua resposta" da página
+    .replace(/<figure[\s\S]*?<\/figure>/g, "");
+  const contexto = textoDe((corpo.match(/<p\b[^>]*class="contextTtl[^"]*"[^>]*>([\s\S]*?)<\/p>/) || [])[1] || ""); // "13 JOSUÉ"
+  const titulo = textoDe((corpo.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/) || [])[1] || "");
+  const relato = [];
+  const leia = [];
+  const perguntas = [];
+  let secao = "relato";
+  for (const [, tag, atributos, conteudo] of corpo.matchAll(/<(h2|h3|p)\b([^>]*)>([\s\S]*?)<\/\1>/g)) {
+    if (/contextTtl/.test(atributos)) continue;
+    if (tag !== "p") {
+      const nome = semAcento(textoDe(conteudo)).replace(/[:\s]+$/, "");
+      if (nome.startsWith("aprenda mais")) break;
+      if (nome.startsWith("leia o relato")) secao = "leia";
+      const quadro = QUADROS_EBC.find((q) => nome.startsWith(semAcento(q.nome)));
+      if (quadro) secao = quadro.id;
+      continue;
+    }
+    const texto = textoDe(conteudo);
+    if (!texto) continue;
+    if (secao === "relato") relato.push(texto);
+    else if (secao === "leia") leia.push(...referenciasDe(conteudo));
+    else {
+      const quadro = QUADROS_EBC.find((q) => q.id === secao);
+      const numero = perguntas.filter((p) => p.quadro === quadro.id).length + 1;
+      const citacoes = [...conteudo.matchAll(/<a\b[^>]*href="(\/pt\/wol\/pc\/[^"]+)"[^>]*>([\s\S]*?)<\/a>/g)].map(([, caminho, rotulo]) => ({ caminho, citacao: textoDe(rotulo) }));
+      // Tira o número da lista ("1.") e a letra que liga a pergunta a uma imagem ("A").
+      const pergunta = textoDe(
+        conteudo.replace(/<span class="txtSrcBullet">[\s\S]*?<\/span>/, "").replace(/<span\b[^>]*>\s*<strong>[A-Z]<\/strong>\s*<\/span>/g, "")
+      );
+      perguntas.push({ id: `${quadro.curto} ${numero}`, quadro: quadro.id, nomeQuadro: quadro.nome, numero, pergunta, referencias: referenciasDe(conteudo), citacoes });
+    }
+  }
+  return { contexto, titulo, relato, leia: [...new Set(leia)], perguntas };
+}
+
+// Na página de reuniões, o número da apostila Vida e Ministério da semana (bloco "pub-mwb").
+function idDaApostilaNaReuniao(html) {
+  return (html.match(/class="[^"]*\bpub-mwb\b[^"]*\bdocId-(\d+)/) || [])[1] || null;
+}
+
+// Na apostila, o link do item "Estudo bíblico de congregação" (ex.: { caminho: "/pt/wol/pc/…", rotulo: "wcg cap. 13" }).
+function linkDoEstudoBiblico(html) {
+  const titulo = [...html.matchAll(/<h3\b[^>]*>([\s\S]*?)<\/h3>/g)].find((m) => /estudo biblico de congregacao/.test(semAcento(textoDe(m[1]))));
+  if (!titulo) return null;
+  const link = html.slice(titulo.index, titulo.index + 3000).match(/<a\b[^>]*href="(\/pt\/wol\/pc\/[^"]+)"[^>]*>([\s\S]*?)<\/a>/);
+  return link ? { caminho: link[1], rotulo: textoDe(link[2]) } : null;
+}
+
+// Um link /wol/pc/ responde com um redirecionamento para o artigo; o endereço traz os parágrafos citados no fim
+// ("#h=7:0-8:0" = parágrafos 7 a 8). Devolve { url, de, ate } (de/ate = null se não vier o intervalo).
+async function resolverCitacao(caminho, timeoutMs) {
+  const resposta = await fetch(BASE + caminho, {
+    headers: { "User-Agent": AGENTE, "Accept-Language": "pt-BR,pt;q=0.9" },
+    redirect: "manual",
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+  const destino = resposta.headers.get("location");
+  if (!destino) return null;
+  const url = new URL(destino, BASE);
+  const faixa = url.hash.match(/h=(\d+):\d+-(\d+):\d+/);
+  return { url: url.origin + url.pathname, de: faixa ? Number(faixa[1]) : null, ate: faixa ? Number(faixa[2]) : null };
+}
+
+// O trecho de outra publicação citado numa pergunta: título do artigo e os parágrafos do intervalo (até 3.000 caracteres).
+async function lerTrechoCitado({ caminho, citacao }, timeoutMs) {
+  const destino = await resolverCitacao(caminho, timeoutMs);
+  if (!destino || destino.de === null) return null;
+  const html = await baixar(destino.url, timeoutMs);
+  const titulo = textoDe((html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/) || [])[1] || "");
+  const partes = [];
+  for (const [, , pid, conteudo] of html.matchAll(/<(p|h2|h3)\b[^>]*data-pid="(\d+)"[^>]*>([\s\S]*?)<\/\1>/g)) {
+    const n = Number(pid);
+    if (n >= destino.de && n <= destino.ate) partes.push(textoDe(conteudo));
+  }
+  const texto = partes.filter(Boolean).join("\n").slice(0, 3000);
+  return texto ? { citacao, titulo, texto } : null;
+}
+
+const estudosBiblicos = new Map(); // url da página de reuniões -> { quando, capitulo }
+
+// Lê o capítulo do Estudo Bíblico de Congregação da semana (e os trechos citados nas perguntas). null = não achou.
+export async function lerEstudoBiblico(urlReuniao, { timeoutMs = 8000 } = {}) {
+  const guardado = estudosBiblicos.get(urlReuniao);
+  if (guardado && Date.now() - guardado.quando < VALIDADE_MS) return guardado.capitulo;
+
+  const apostila = idDaApostilaNaReuniao(await baixar(urlReuniao, timeoutMs));
+  if (!apostila) return null;
+  const link = linkDoEstudoBiblico(await baixar(`${BASE}/pt/wol/d/r5/lp-t/${apostila}`, timeoutMs));
+  if (!link) return null;
+  const destino = await resolverCitacao(link.caminho, timeoutMs);
+  if (!destino) return null;
+  const analisado = analisarCapituloEbc(await baixar(destino.url, timeoutMs));
+  if (!analisado.perguntas.length) return null;
+
+  const citacoes = [...new Map(analisado.perguntas.flatMap((p) => p.citacoes).map((c) => [c.caminho, c])).values()].slice(0, 6);
+  const trechos = (await Promise.all(citacoes.map((c) => lerTrechoCitado(c, timeoutMs).catch(() => null)))).filter(Boolean);
+
+  const capitulo = { ...analisado, trechos, materia: link.rotulo, url: destino.url };
+  estudosBiblicos.set(urlReuniao, { quando: Date.now(), capitulo });
+  if (estudosBiblicos.size > 20) estudosBiblicos.delete(estudosBiblicos.keys().next().value);
+  return capitulo;
+}
+
+// Texto do capítulo para a IA: o relato, as referências de "Leia o relato na Bíblia" (com os versículos, se vierem),
+// os trechos das publicações citadas e as perguntas pedidas, cada uma com o identificador entre colchetes.
+export function textoDoCapituloEbc(capitulo, perguntas, versiculos = []) {
+  const partes = [
+    `CAPÍTULO: ${[capitulo.contexto, capitulo.titulo].filter(Boolean).join(": ")}`,
+    `RELATO:\n${capitulo.relato.join("\n")}`,
+    `LEIA O RELATO NA BÍBLIA: ${capitulo.leia.join("; ") || "(nenhuma referência)"}`,
+  ];
+  if (versiculos.length) partes.push(`TEXTO DOS VERSÍCULOS:\n${versiculos.map((v) => `${v.referencia}: ${v.texto}`).join("\n")}`);
+  if (capitulo.trechos.length) {
+    partes.push(`TRECHOS DAS PUBLICAÇÕES CITADAS NAS PERGUNTAS:\n${capitulo.trechos.map((t) => `(${t.citacao}) ${t.titulo ? `"${t.titulo}": ` : ""}${t.texto}`).join("\n\n")}`);
+  }
+  partes.push(`PERGUNTAS (responda a cada uma; em "pergunta", use o identificador entre colchetes):\n${perguntas.map((p) => `[${p.id}] (${p.nomeQuadro}) ${p.pergunta}`).join("\n")}`);
+  return partes.join("\n\n");
+}
+
 // Texto que vai para a IA: só as perguntas pedidas, cada uma com seus parágrafos (e as legendas das imagens).
 export function textoDosGrupos(grupos) {
   return grupos

@@ -8,7 +8,7 @@ import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { lerConfigIa } from "./_iaConfig.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
 import { buscarVerbete, buscarVersiculos, fontesConfiguradas, precarregarFontes } from "./_fontes.mjs";
-import { lerEstudoDireto, lerTextoDiario, textoDaRecapitulacao, textoDosGrupos } from "./_wol.mjs";
+import { QUADROS_EBC, lerEstudoBiblico, lerEstudoDireto, lerTextoDiario, textoDaRecapitulacao, textoDoCapituloEbc, textoDosGrupos } from "./_wol.mjs";
 
 // ---------- Modelo da IA ----------
 // O modelo e o esforço vêm da escolha do administrador na tela de prompts (api/_iaConfig.mjs) e chegam em P.ia em
@@ -1221,6 +1221,179 @@ async function sugerirPerguntas(res, body, P) {
   }
 }
 
+// ---------- Estudo Bíblico de Congregação ----------
+// O servidor lê o capítulo da semana no wol.jw.org (página de reuniões -> apostila Vida e Ministério -> link do item
+// "Estudo bíblico de congregação"), com os trechos das publicações citadas nas perguntas (api/_wol.mjs). A IA responde
+// às perguntas dos quadros marcados no mesmo estilo das respostas do estudo de A Sentinela (tamanho, formatação, textos
+// bíblicos). O texto do capítulo não é devolvido ao navegador: só as respostas, o título e a lista das perguntas.
+
+const SaidaEbc = z.object({
+  itens: z.array(
+    z.object({
+      pergunta: z.string(),
+      resposta: z.string(),
+      quebras: z.array(z.string()),
+      emoji: z.string().nullable(),
+      destaques: z.array(
+        z.object({
+          trecho: z.string(),
+          tipo: z.enum(TIPOS),
+          estilo: z.enum(ESTILOS).nullable(),
+          maiusculas: z.boolean(),
+        })
+      ),
+      referencias: z.array(z.string()),
+      textosRelevantes: z.array(z.string()),
+      verbetes: z.array(z.string()),
+    })
+  ),
+  textosBase: z.array(z.object({ referencia: z.string(), ponto: z.string() })),
+});
+
+// Lê o capítulo da semana pedida; devolve o capítulo ou responde com o erro (e devolve null).
+async function capituloEbc(res, body) {
+  if (!process.env.CODIGO_ESTUDO) {
+    erro(res, 500, "A leitura do estudo ainda não está configurada no servidor.");
+    return null;
+  }
+  if (!codigoValido(body.codigo)) {
+    erro(res, 403, "Código de acesso inválido.");
+    return null;
+  }
+  const url = urlDoEstudo({ ano: body.ano, semana: body.semana });
+  if (!url) {
+    erro(res, 400, "Semana inválida.");
+    return null;
+  }
+  let capitulo = null;
+  try {
+    capitulo = await lerEstudoBiblico(url);
+  } catch (e) {
+    console.error("Estudo bíblico: leitura falhou", e?.name, e?.message);
+    erro(res, 502, "Não consegui ler o Estudo Bíblico de Congregação no wol.jw.org agora. Tente de novo em instantes.");
+    return null;
+  }
+  if (!capitulo) erro(res, 404, "Não encontrei o Estudo Bíblico de Congregação na apostila dessa semana.");
+  return capitulo;
+}
+
+// O que o app mostra ao carregar: a matéria, o título e quantas perguntas há em cada quadro.
+async function lerEbc(res, body) {
+  const capitulo = await capituloEbc(res, body);
+  if (!capitulo) return;
+  return res.status(200).json({
+    materia: capitulo.materia,
+    titulo: [capitulo.contexto, capitulo.titulo].filter(Boolean).join(": "),
+    url: capitulo.url,
+    quadros: QUADROS_EBC.map((q) => ({ id: q.id, nome: q.nome, perguntas: capitulo.perguntas.filter((p) => p.quadro === q.id).length })),
+    trechos: capitulo.trechos.length,
+  });
+}
+
+async function responderEbc(res, body, P) {
+  const quadros = new Set((Array.isArray(body.quadros) ? body.quadros : []).filter((q) => QUADROS_EBC.some((x) => x.id === q)));
+  if (!quadros.size) return erro(res, 400, "Marque pelo menos um quadro de perguntas.");
+  const opcoes = validarOpcoes(body.opcoes);
+  if (consultaPedida(opcoes) && !fontesConfiguradas()) return erro(res, 500, "A consulta às fontes ainda não está configurada no servidor.");
+  // Os versículos de "Leia o relato na Bíblia" e os citados nas perguntas vão junto: a Bíblia começa a carregar já.
+  precarregarFontes({ biblia: true, perspicaz: opcoes.consultarPerspicaz });
+  const ajuste = textoLivre(body.ajuste);
+  const sep = modoSeparacao(opcoes, ajuste);
+  const modo = body.modo === "nova" || body.modo === "melhorar" ? body.modo : null;
+  const anteriores = modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(body.anteriores).slice(0, 12000) : "";
+  const textosBase = body.textosBase === true;
+  const inicioPedido = Date.now();
+
+  const capitulo = await capituloEbc(res, body);
+  if (!capitulo) return;
+  const perguntas = capitulo.perguntas.filter((p) => quadros.has(p.quadro));
+  if (!perguntas.length) return erro(res, 400, "Os quadros marcados não têm perguntas neste capítulo.");
+
+  let versiculos = [];
+  if (fontesConfiguradas()) {
+    try {
+      versiculos = await buscarVersiculos([...capitulo.leia, ...perguntas.flatMap((p) => p.referencias)], 12);
+    } catch (e) {
+      console.error("Estudo bíblico: versículos indisponíveis", e?.message);
+    }
+  }
+
+  let mensagem =
+    blocoOrientacao(opcoes, ajuste, P) +
+    preferenciasDaResposta(opcoes, P, sep) +
+    `\n\nPEDIDO: resumo dos textos-base ${textosBase ? "ATIVO" : "INATIVO"}.\n\n` +
+    textoDoCapituloEbc(capitulo, perguntas, versiculos) +
+    lembreteFinal(opcoes, ajuste, P);
+  if (modo && anteriores) {
+    mensagem += "\n\nRESPOSTAS ANTERIORES (JSON):\n" + anteriores + "\n\n" + P.frases.pedidos[modo === "nova" ? "Respostas: outra sugestão" : "Respostas: melhorar"];
+  }
+
+  try {
+    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 120_000) });
+    const inicio = Date.now();
+    const resposta = await chamarIa(
+      client,
+      P,
+      { max_tokens: 16000 /* o raciocínio também conta aqui */, system: P.sistemaEbc, messages: [{ role: "user", content: mensagem }] },
+      { schema: SaidaEbc }
+    );
+    if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
+      return erro(res, 502, "A IA não conseguiu gerar as respostas para este estudo.");
+    }
+
+    // Só as perguntas pedidas, uma vez cada, na ordem do capítulo. Os textos citados na pergunta entram sempre
+    // (regra fixa), mesmo que a IA esqueça de indicá-los.
+    const permitidos = estilosDe(opcoes);
+    const porId = new Map();
+    for (const i of resposta.parsed_output.itens) {
+      const id = limparLinha(String(i.pergunta).replace(/[[\]]/g, ""), 30);
+      const pergunta = perguntas.find((p) => p.id.toLowerCase() === id.toLowerCase());
+      if (!pergunta || porId.has(pergunta.id)) continue;
+      const item = montarItem({ ...i, paragrafos: pergunta.id }, opcoes, permitidos, P.limites, sep);
+      if (!item.resposta) continue;
+      item.referencias = [...new Set([...pergunta.referencias, ...item.referencias])];
+      porId.set(pergunta.id, item);
+    }
+    const itens = perguntas.map((p) => porId.get(p.id)).filter(Boolean);
+    const base = textosBase
+      ? resposta.parsed_output.textosBase
+          .map((t) => ({ referencia: limparLinha(limparTrecho(t.referencia), 80), ponto: limparTextoGerado(t.ponto, 400) }))
+          .filter((t) => t.referencia && t.ponto)
+          .slice(0, 3)
+      : [];
+
+    console.log(
+      "Estudo bíblico:",
+      JSON.stringify({
+        modelo: P.ia.modelo,
+        materia: capitulo.materia,
+        pedidas: perguntas.map((p) => p.id),
+        respondidas: itens.map((i) => i.paragrafos),
+        textosBase: base.length,
+        trechos: capitulo.trechos.length,
+        versiculos: versiculos.length,
+        segundosIa: Math.round((Date.now() - inicio) / 100) / 10,
+        entrada: resposta.usage?.input_tokens || 0,
+        saida: resposta.usage?.output_tokens || 0,
+        pensamento: resposta.usage?.output_tokens_details?.thinking_tokens ?? null,
+      })
+    );
+
+    const itensFinais = await finalizarItens(itens, opcoes, P, blocoOrientacao(opcoes, ajuste, P));
+    console.log("Estudo bíblico (tempo):", JSON.stringify({ total: Math.round((Date.now() - inicioPedido) / 100) / 10 }));
+    return res.status(200).json({
+      materia: capitulo.materia,
+      titulo: [capitulo.contexto, capitulo.titulo].filter(Boolean).join(": "),
+      url: capitulo.url,
+      erro: itens.length ? null : "A IA não respondeu às perguntas. Tente de novo.",
+      itens: itensFinais,
+      textosBase: base,
+    });
+  } catch (e) {
+    return tratarErro(e, res);
+  }
+}
+
 // ---------- Comentários adicionais sobre o texto diário (tela Início) ----------
 // O servidor lê o texto do dia no wol.jw.org (o mesmo da tela Início, guardado na memória) e a IA sugere aplicações
 // práticas do texto temático e dos pontos principais do comentário, para alguém comentar com as próprias palavras.
@@ -1439,6 +1612,8 @@ export default async function handler(req, res) {
   if (req.body && req.body.tarefa === "estudo-lista") return listarParagrafos(res, req.body, P);
   if (req.body && req.body.tarefa === "estudo-perguntas") return sugerirPerguntas(res, req.body, P);
   if (req.body && req.body.tarefa === "texto-diario-comentarios") return comentariosDoTextoDiario(res, req.body, P);
+  if (req.body && req.body.tarefa === "ebc-ler") return lerEbc(res, req.body);
+  if (req.body && req.body.tarefa === "ebc") return responderEbc(res, req.body, P);
 
   const entrada = validarEntrada(req.body, P.limites);
   if (!entrada) {
