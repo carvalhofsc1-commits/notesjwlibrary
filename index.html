@@ -1932,6 +1932,9 @@
     details.subsection.voz-admin { background: #e0f2fe; background: color-mix(in srgb, #38bdf8 14%, var(--card)); border-color: #38bdf8; }
     .voz-admin label { margin: 10px 0 4px; font-size: .86rem; }
     .voz-admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    /* O rótulo ocupa a sobra de altura: os campos ficam alinhados mesmo quando um rótulo quebra em duas linhas. */
+    .voz-admin-grid > div { display: flex; flex-direction: column; min-width: 0; }
+    .voz-admin-grid > div > label { flex: 1; }
     .voz-admin-subtitulo { margin: 14px 0 4px; font-weight: 700; font-size: .92rem; }
     .voz-admin textarea { min-height: 70px; }
     .voz-consumo { margin-top: 14px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
@@ -4259,6 +4262,9 @@
     const VOZ_ENDPOINT = '/api/voz';
     const VOZ_SPEED_KEY = 'jwLibraryNoteAplicarVozVelocidadeV1';
     const VOZ_MAX_PARTE = 1500;
+    // A voz Gemini leva alguns segundos por frase: a primeira parte é curta para a leitura começar logo, e as seguintes
+    // crescem aos poucos (cada uma fica pronta enquanto a anterior, mais curta, ainda está tocando).
+    const VOZ_PARTES_INICIAIS = [250, 600, 1200];
     const vozBar = document.getElementById('vozBar');
     const vozStatus = document.getElementById('vozStatus');
     const vozPauseBtn = document.getElementById('vozPauseBtn');
@@ -4421,21 +4427,31 @@
         .join('\n');
     }
 
-    // Partes de até VOZ_MAX_PARTE caracteres: por linhas e, se uma linha for longa, por frases.
+    // Partes cortadas entre frases: as primeiras com os tamanhos de VOZ_PARTES_INICIAIS, as outras até VOZ_MAX_PARTE.
     function partesParaVoz(texto) {
       const partes = [];
       let atual = '';
-      const juntar = pedaco => {
-        if (atual && (atual + '\n' + pedaco).length > VOZ_MAX_PARTE) {
+      const limite = () => VOZ_PARTES_INICIAIS[partes.length] || VOZ_MAX_PARTE;
+      const juntar = (pedaco, separador) => {
+        if (atual && (atual + separador + pedaco).length > limite()) {
           partes.push(atual);
           atual = '';
         }
-        atual = atual ? atual + '\n' + pedaco : pedaco;
+        atual = atual ? atual + separador + pedaco : pedaco;
       };
+      // Trecho maior que o limite vai em pedaços menores (orações e, se ainda precisar, palavras); senão, inteiro.
+      const dividir = (trecho, regex) => (trecho.length > limite() && trecho.match(regex)) || [trecho];
       texto.split('\n').forEach(linha => {
-        if (linha.length <= VOZ_MAX_PARTE) return juntar(linha);
-        (linha.match(/[^.!?…]+[.!?…]*\s*/g) || [linha]).forEach(frase => {
-          for (let i = 0; i < frase.length; i += VOZ_MAX_PARTE) juntar(frase.slice(i, i + VOZ_MAX_PARTE).trim());
+        let separador = '\n'; // o começo da linha começa uma linha nova; o resto segue na mesma linha
+        (linha.match(/[^.!?…]+[.!?…]*/g) || [linha]).forEach(frase => {
+          dividir(frase.trim(), /[^,;:]+[,;:]*/g).forEach(oracao => {
+            dividir(oracao.trim(), /\S+/g).forEach(palavra => {
+              for (let i = 0; i < palavra.length; i += VOZ_MAX_PARTE) {
+                juntar(palavra.slice(i, i + VOZ_MAX_PARTE), separador);
+                separador = ' ';
+              }
+            });
+          });
         });
       });
       if (atual) partes.push(atual);
@@ -4974,7 +4990,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '4.8.0'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0; 4.8.0: menu da voz para o administrador (modelo, voz, tom, o que ler e pular), consumo estimado e vozes Gemini com a conta de serviço do Google; 4.7.9: voz reserva (Chirp 3 HD) quando o Gemini é recusado; 4.7.8: botão 🔊 Ouvir (leitura em voz alta com a voz do Google); 4.7.7: Fonte CX com C preto e C branco, cada um ao lado do seu quadradinho; todos os cards começam fechados ao abrir o app; 4.7.6: tela Reuniões em dois cartões (texto e reuniões); 4.7.5: campo de texto volta a crescer depois de levar uma nota do backup; importar notas de outro backup; 4.7.4: card do desenvolvedor na largura do quadro de limitações (Sobre); 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
+    const APP_VERSION = '4.8.1'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0; 4.8.1: voz começa mais rápido (primeiras partes curtas) e campos de preço alinhados; 4.8.0: menu da voz para o administrador (modelo, voz, tom, o que ler e pular), consumo estimado e vozes Gemini com a conta de serviço do Google; 4.7.9: voz reserva (Chirp 3 HD) quando o Gemini é recusado; 4.7.8: botão 🔊 Ouvir (leitura em voz alta com a voz do Google); 4.7.7: Fonte CX com C preto e C branco, cada um ao lado do seu quadradinho; todos os cards começam fechados ao abrir o app; 4.7.6: tela Reuniões em dois cartões (texto e reuniões); 4.7.5: campo de texto volta a crescer depois de levar uma nota do backup; importar notas de outro backup; 4.7.4: card do desenvolvedor na largura do quadro de limitações (Sobre); 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 

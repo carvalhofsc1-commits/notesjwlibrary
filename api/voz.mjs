@@ -79,7 +79,7 @@ async function sintetizar(corpo, token) {
     method: "POST",
     headers: { "Content-Type": "application/json", ...autorizacao },
     body: JSON.stringify(corpo),
-    signal: AbortSignal.timeout(60_000),
+    signal: AbortSignal.timeout(150_000), // a voz Gemini leva cerca de 1 minuto para uma parte de 1.500 caracteres
   });
   let dados = null;
   try {
