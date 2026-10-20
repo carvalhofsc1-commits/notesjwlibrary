@@ -1928,6 +1928,17 @@
 
     .top-text-btn:hover { background: var(--neutral-dark); }
 
+    /* Tocador da leitura em voz alta, logo abaixo do campo de texto. */
+    .voz-bar { margin-top: 8px; padding: 8px 10px; border: 2px solid #38bdf8; border-radius: 12px; background: #e0f2fe; background: color-mix(in srgb, #38bdf8 16%, var(--card)); }
+    .voz-bar[hidden] { display: none; }
+    .voz-status { display: block; font-size: .88rem; font-weight: 650; }
+    .voz-status.warn { color: var(--danger); }
+    .voz-controles { display: flex; gap: 6px; margin-top: 6px; }
+    .voz-controles[hidden] { display: none; }
+    .voz-controles button { flex: 1 1 0; min-height: 40px; padding: 6px 8px; font-size: .88rem; }
+    .voz-controles button[hidden] { display: none; }
+    .voz-controles select { flex: 0 0 auto; width: auto; min-height: 40px; padding: 4px 8px; }
+
     /* ---------- Telas pequenas ---------- */
 
     @media (max-width: 560px) {
@@ -2086,6 +2097,7 @@
           <div class="top-text-actions" role="group" aria-label="Desfazer, limpar e copiar o texto">
             <button id="clearTopBtn" class="top-text-btn top-big-btn" type="button" title="Limpar o texto"><span class="top-icon">🗑️</span> Limpar</button>
             <button id="copyTopBtn" class="top-text-btn top-big-btn" type="button" title="Copiar o texto"><span class="top-icon">📋</span> Copiar</button>
+            <button id="speakTopBtn" class="top-text-btn top-undo-btn" type="button" title="Ouvir o texto em voz alta (com um trecho selecionado, só o trecho)" aria-label="Ouvir o texto em voz alta">🔊</button>
             <button id="undoTopBtn" class="top-text-btn top-undo-btn" type="button" title="Desfazer a última alteração no texto" aria-label="Desfazer a última alteração no texto" disabled>↩️</button>
           </div>
         </div>
@@ -2093,6 +2105,19 @@
           <div class="editor-text-pane">
             <textarea id="inputText" placeholder="Digite aqui o texto que deseja formatar"></textarea>
             <div id="answerCopyLayer" class="answer-copy-layer"></div>
+            <div id="vozBar" class="voz-bar" hidden>
+              <span id="vozStatus" class="voz-status" role="status" aria-live="polite"></span>
+              <div class="voz-controles">
+                <button id="vozPauseBtn" class="secondary" type="button">⏸️ Pausar</button>
+                <button id="vozStopBtn" class="secondary" type="button">⏹️ Parar</button>
+                <select id="vozVelocidade" aria-label="Velocidade da leitura">
+                  <option value="0.85">0,85×</option>
+                  <option value="1" selected>1×</option>
+                  <option value="1.15">1,15×</option>
+                  <option value="1.3">1,3×</option>
+                </select>
+              </div>
+            </div>
           </div>
 
           <div class="editor-controls-pane">
@@ -2134,6 +2159,10 @@
           <div class="action-item desktop-only">
             <button id="copyBtn" class="icon-action copy" type="button" title="Copiar texto original" aria-label="Copiar texto original">📋</button>
             <span>Copiar</span>
+          </div>
+          <div class="action-item desktop-only">
+            <button id="speakBtn" class="icon-action select" type="button" title="Ouvir o texto em voz alta (com um trecho selecionado, só o trecho)" aria-label="Ouvir o texto em voz alta">🔊</button>
+            <span>Ouvir</span>
           </div>
           <div class="action-item">
             <button id="selectBtn" class="icon-action select" type="button" title="Selecionar texto original" aria-label="Selecionar texto original">🔎</button>
@@ -4160,6 +4189,207 @@
       event.target.value = '';
     });
 
+    // ---------- Leitura em voz alta (botão 🔊 Ouvir) ----------
+    // O texto do campo (ou o trecho selecionado) vira letras comuns, sem emojis e símbolos, e vai em partes ao servidor,
+    // que pede o áudio à voz do Google (api/voz.mjs). As partes tocam em sequência; a seguinte já é pedida enquanto a
+    // atual toca. O áudio de cada parte fica guardado nesta sessão: ouvir de novo não gasta créditos.
+    const VOZ_ENDPOINT = '/api/voz';
+    const VOZ_SPEED_KEY = 'jwLibraryNoteAplicarVozVelocidadeV1';
+    const VOZ_MAX_PARTE = 1500;
+    const vozBar = document.getElementById('vozBar');
+    const vozStatus = document.getElementById('vozStatus');
+    const vozPauseBtn = document.getElementById('vozPauseBtn');
+    const vozStopBtn = document.getElementById('vozStopBtn');
+    const vozVelocidade = document.getElementById('vozVelocidade');
+    const vozControles = vozBar.querySelector('.voz-controles');
+    const vozAudio = new Audio();
+    const vozCache = new Map();
+    let vozSessao = 0;
+    let vozFimAtual = null;
+    let vozSilencioUri = '';
+
+    try {
+      const salva = localStorage.getItem(VOZ_SPEED_KEY);
+      if (salva && [...vozVelocidade.options].some(o => o.value === salva)) vozVelocidade.value = salva;
+    } catch (e) { /* sem localStorage: 1× */ }
+
+    // Letras formatadas viram letras comuns; emojis, setas e símbolos decorativos saem (a voz leria o nome deles).
+    function textoParaVoz(texto) {
+      return removeUnicodeFormatting(String(texto || ''))
+        .replace(/\p{Extended_Pictographic}/gu, ' ')
+        .replace(/[\uFE0E\uFE0F\u200D\u20E3]/g, '')
+        .replace(/[\u2190-\u21FF\u2300-\u23FF\u25A0-\u25FF\u2600-\u27BF\u2B00-\u2BFF\u2022\u2023\u2043\u204C\u204D\u2219]/g, ' ')
+        .split('\n')
+        .map(linha => linha.replace(/[ \t]+/g, ' ').trim())
+        .filter(Boolean)
+        .join('\n');
+    }
+
+    // Partes de até VOZ_MAX_PARTE caracteres: por linhas e, se uma linha for longa, por frases.
+    function partesParaVoz(texto) {
+      const partes = [];
+      let atual = '';
+      const juntar = pedaco => {
+        if (atual && (atual + '\n' + pedaco).length > VOZ_MAX_PARTE) {
+          partes.push(atual);
+          atual = '';
+        }
+        atual = atual ? atual + '\n' + pedaco : pedaco;
+      };
+      texto.split('\n').forEach(linha => {
+        if (linha.length <= VOZ_MAX_PARTE) return juntar(linha);
+        (linha.match(/[^.!?…]+[.!?…]*\s*/g) || [linha]).forEach(frase => {
+          for (let i = 0; i < frase.length; i += VOZ_MAX_PARTE) juntar(frase.slice(i, i + VOZ_MAX_PARTE).trim());
+        });
+      });
+      if (atual) partes.push(atual);
+      return partes;
+    }
+
+    // Um instante de silêncio (WAV), tocado dentro do toque no botão: no iPhone isso libera o áudio para as partes que
+    // chegam depois.
+    function vozSilencio() {
+      if (vozSilencioUri) return vozSilencioUri;
+      const amostras = 800;
+      const bytes = new Uint8Array(44 + amostras);
+      const dv = new DataView(bytes.buffer);
+      const escrever = (pos, txt) => [...txt].forEach((c, i) => { bytes[pos + i] = c.charCodeAt(0); });
+      escrever(0, 'RIFF'); dv.setUint32(4, 36 + amostras, true); escrever(8, 'WAVE'); escrever(12, 'fmt ');
+      dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+      dv.setUint32(24, 8000, true); dv.setUint32(28, 8000, true); dv.setUint16(32, 1, true); dv.setUint16(34, 8, true);
+      escrever(36, 'data'); dv.setUint32(40, amostras, true);
+      bytes.fill(128, 44);
+      let bin = '';
+      bytes.forEach(b => { bin += String.fromCharCode(b); });
+      vozSilencioUri = 'data:audio/wav;base64,' + btoa(bin);
+      return vozSilencioUri;
+    }
+
+    function vozMensagem(texto, aviso) {
+      vozBar.hidden = false;
+      vozStatus.textContent = texto;
+      vozStatus.className = 'voz-status' + (aviso ? ' warn' : '');
+    }
+
+    function vozControlesAtivos(lendo) {
+      vozControles.hidden = false;
+      vozPauseBtn.hidden = !lendo;
+      vozPauseBtn.textContent = '⏸️ Pausar';
+      vozStopBtn.textContent = lendo ? '⏹️ Parar' : '✖️ Fechar';
+      vozVelocidade.hidden = !lendo;
+    }
+
+    async function vozBuscar(texto) {
+      if (vozCache.has(texto)) return vozCache.get(texto);
+      const resposta = await fetch(VOZ_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codigo: aiStudyCode.value.trim(), texto })
+      });
+      let dados = null;
+      try { dados = await resposta.json(); } catch (e) { /* resposta sem JSON */ }
+      if (!resposta.ok || !dados || !dados.audio) {
+        throw new Error((dados && dados.erro) || (resposta.status === 404 || resposta.status === 501
+          ? 'A leitura em voz alta só funciona no site publicado.'
+          : 'Não consegui gerar o áudio agora.'));
+      }
+      const uri = 'data:' + (dados.tipo || 'audio/mpeg') + ';base64,' + dados.audio;
+      vozCache.set(texto, uri);
+      return uri;
+    }
+
+    function vozAplicarVelocidade() {
+      const v = Number(vozVelocidade.value) || 1;
+      vozAudio.defaultPlaybackRate = v;
+      vozAudio.playbackRate = v;
+      vozAudio.preservesPitch = true;
+    }
+
+    function vozTocar(uri) {
+      return new Promise((resolve, reject) => {
+        const limpar = () => {
+          vozAudio.removeEventListener('ended', fim);
+          vozAudio.removeEventListener('error', falha);
+          vozFimAtual = null;
+        };
+        const fim = () => { limpar(); resolve(); };
+        const falha = () => { limpar(); reject(new Error('Não consegui tocar o áudio.')); };
+        vozAudio.addEventListener('ended', fim);
+        vozAudio.addEventListener('error', falha);
+        vozFimAtual = fim; // "Parar" encerra a espera
+        vozAudio.src = uri;
+        vozAplicarVelocidade();
+        vozAudio.play().catch(falha);
+      });
+    }
+
+    function vozParar() {
+      vozSessao++;
+      vozAudio.pause();
+      if (vozFimAtual) vozFimAtual();
+      vozBar.hidden = true;
+    }
+
+    async function vozOuvir() {
+      if (vozSessao && !vozBar.hidden && !vozPauseBtn.hidden) vozParar(); // tocar de novo recomeça
+      // Dentro do toque: libera o áudio no iPhone antes de qualquer espera.
+      vozAudio.src = vozSilencio();
+      vozAudio.play().catch(() => {});
+
+      const inicio = input.selectionStart || 0;
+      const fim = input.selectionEnd || 0;
+      const texto = textoParaVoz(fim > inicio ? input.value.slice(inicio, fim) : input.value);
+      if (!texto) {
+        vozMensagem('Não há texto para ouvir.', true);
+        return vozControlesAtivos(false);
+      }
+      const acesso = studyAccessError();
+      if (acesso) {
+        vozMensagem(acesso, true);
+        return vozControlesAtivos(false);
+      }
+
+      const partes = partesParaVoz(texto);
+      const sessao = ++vozSessao;
+      vozControlesAtivos(true);
+      vozMensagem((fim > inicio ? 'Trecho selecionado' : 'Texto') + ': gerando o áudio…', false);
+      try {
+        let proxima = vozBuscar(partes[0]);
+        for (let i = 0; i < partes.length; i++) {
+          const uri = await proxima;
+          if (sessao !== vozSessao) return;
+          proxima = i + 1 < partes.length ? vozBuscar(partes[i + 1]) : null;
+          if (proxima) proxima.catch(() => {}); // o erro aparece quando chegar a vez dela
+          vozMensagem('🔊 Lendo' + (partes.length > 1 ? ' a parte ' + (i + 1) + ' de ' + partes.length : '') + '…', false);
+          await vozTocar(uri);
+          if (sessao !== vozSessao) return;
+        }
+        vozMensagem('✅ Leitura concluída.', false);
+        vozControlesAtivos(false);
+      } catch (e) {
+        if (sessao !== vozSessao) return;
+        vozMensagem(e && e.message ? e.message : 'Não consegui ler o texto.', true);
+        vozControlesAtivos(false);
+      }
+    }
+
+    vozPauseBtn.addEventListener('click', () => {
+      if (vozAudio.paused) {
+        vozAudio.play().catch(() => {});
+        vozPauseBtn.textContent = '⏸️ Pausar';
+      } else {
+        vozAudio.pause();
+        vozPauseBtn.textContent = '▶️ Continuar';
+      }
+    });
+    vozStopBtn.addEventListener('click', vozParar);
+    vozVelocidade.addEventListener('change', () => {
+      vozAplicarVelocidade();
+      safeSetItem(VOZ_SPEED_KEY, vozVelocidade.value);
+    });
+    document.getElementById('speakTopBtn').addEventListener('click', vozOuvir);
+    document.getElementById('speakBtn').addEventListener('click', vozOuvir);
+
     // ---------- Tema (Auto / Claro / Escuro) ----------
 
     const THEME_STORAGE_KEY = 'jwLibraryNoteAplicarThemeV1';
@@ -4309,7 +4539,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '4.7.7'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0; 4.7.7: Fonte CX com C preto e C branco, cada um ao lado do seu quadradinho; todos os cards começam fechados ao abrir o app; 4.7.6: tela Reuniões em dois cartões (texto e reuniões); 4.7.5: campo de texto volta a crescer depois de levar uma nota do backup; importar notas de outro backup; 4.7.4: card do desenvolvedor na largura do quadro de limitações (Sobre); 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
+    const APP_VERSION = '4.7.8'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0; 4.7.8: botão 🔊 Ouvir (leitura em voz alta com a voz do Google); 4.7.7: Fonte CX com C preto e C branco, cada um ao lado do seu quadradinho; todos os cards começam fechados ao abrir o app; 4.7.6: tela Reuniões em dois cartões (texto e reuniões); 4.7.5: campo de texto volta a crescer depois de levar uma nota do backup; importar notas de outro backup; 4.7.4: card do desenvolvedor na largura do quadro de limitações (Sobre); 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 
