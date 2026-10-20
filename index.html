@@ -1747,7 +1747,10 @@
     .td-ia-lista { margin: 0 0 4px; padding-left: 22px; }
     .td-ia-lista li { margin-bottom: 10px; line-height: 1.5; }
     .td-ia-ponto { display: block; font-weight: 800; color: var(--brand); }
-    .td-link { display: block; width: fit-content; margin: 10px auto 0; font-weight: 650; }
+    .td-link, .td-link:visited { display: block; width: fit-content; margin: 10px auto 0; font-weight: 650; color: var(--brand); text-decoration: underline; text-underline-offset: 3px; }
+    .td-acoes-ia { display: grid; grid-template-columns: 1fr 1fr; }
+    .td-card .td-recuperar { width: 100%; margin-top: 8px; }
+    .td-card .td-recuperar[hidden] { display: none; }
     .td-status:empty { display: none; }
     .td-hoje { width: 100%; margin-top: 8px; }
     .td-hoje[hidden] { display: none; }
@@ -2257,12 +2260,14 @@
           </div>
           <div id="tdVozLugar"></div>
           <button id="tdGerarBtn" class="td-gerar" type="button">✨ Gerar comentários adicionais</button>
+          <button id="tdRecuperarBtn" class="secondary td-recuperar" type="button" hidden>📂 Recuperar comentários salvos</button>
           <details id="tdIa" class="td-ia" open hidden>
             <summary class="td-ia-titulo">💬 Comentários adicionais <span id="tdIaQtd" class="td-ia-qtd"></span></summary>
             <p class="hint td-ia-dica">Aplicações práticas do texto temático e do comentário, para você comentar com as suas palavras.</p>
             <ol id="tdIaLista" class="td-ia-lista"></ol>
-            <div class="bk-row td-acoes">
+            <div class="bk-row td-acoes td-acoes-ia">
               <button id="tdIaCopiarBtn" class="secondary" type="button">📋 Copiar</button>
+              <button id="tdIaSalvarBtn" class="secondary" type="button">💾 Salvar</button>
               <button id="tdIaOutrosBtn" class="secondary" type="button">🔄 Gerar outros</button>
               <button id="tdIaLimparBtn" class="secondary" type="button">🗑️ Limpar</button>
             </div>
@@ -5446,7 +5451,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '4.9.3'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0; 4.9.3: o botão 🔊 do campo de texto só aparece (e só funciona no servidor) para o administrador; a leitura em voz alta do texto diário continua para todos; 4.9.2: pesquisas salvas por semana (só as da semana escolhida; o botão apaga as das semanas anteriores); 4.9.1: pesquisas salvas (histórico das respostas da IA das reuniões neste aparelho, para reabrir depois); 4.9.0: joias espirituais com 2 joias por capítulo, sem repetir o versículo da pergunta da apostila; 4.8.9: Joias Espirituais (leitura da semana lida no wol.jw.org com as publicações do Índice das Publicações; até 2 joias por capítulo e a resposta à pergunta da apostila) e, no Estudo Bíblico, textos citados nas perguntas seguindo as opções de textos bíblicos;4.8.8: Estudo Bíblico de Congregação (capítulo da semana lido no wol.jw.org, respostas da IA por quadro, trechos das publicações citadas, resumo opcional dos textos-base) e o contexto "Sobre mim e a congregação" nos prompts; 4.8.7: cada seção da tela de prompts virou um cartão recolhível; 4.8.6: modelo da IA de texto escolhido pelo administrador na tela de prompts (Haiku, Sonnet, Opus ou Fable) e gasto do mês pela Cost API da Anthropic; 4.8.6: a barra da leitura em voz alta fecha sozinha quando a leitura termina; 4.8.5: categorias de Ajustes direto na página (sem o cartão recolhível "Configurações gerais do app"); 4.8.4: Ajustes → Autorização de acessos (código de acesso e senha de administrador informados uma vez e salvos), a IA nunca escreve "culto" (sempre reunião), comentários adicionais recolhíveis e com Limpar, atalhos Comentários e Dirigentes abrem só o grupo deles; 4.8.3: tela Início com o texto diário (do wol.jw.org; um toque abre o comentário, ler em voz alta, levar para o campo de texto e comentários adicionais da IA) e atalhos; 4.8.2: referências bíblicas lidas na forma curta ("Primeira Coríntios treze, quatro a sete"), voz com duas partes à frente (sem pausas, também em 1,15×), pular citações de publicações (w24.09 21 § 6) e referências bíblicas só entre parênteses ou depois de travessão no fim do parágrafo (o texto temático do texto diário é lido); 4.8.1: voz começa mais rápido (primeiras partes curtas) e campos de preço alinhados; 4.8.0: menu da voz para o administrador (modelo, voz, tom, o que ler e pular), consumo estimado e vozes Gemini com a conta de serviço do Google; 4.7.9: voz reserva (Chirp 3 HD) quando o Gemini é recusado; 4.7.8: botão 🔊 Ouvir (leitura em voz alta com a voz do Google); 4.7.7: Fonte CX com C preto e C branco, cada um ao lado do seu quadradinho; todos os cards começam fechados ao abrir o app; 4.7.6: tela Reuniões em dois cartões (texto e reuniões); 4.7.5: campo de texto volta a crescer depois de levar uma nota do backup; importar notas de outro backup; 4.7.4: card do desenvolvedor na largura do quadro de limitações (Sobre); 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
+    const APP_VERSION = '4.9.4'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0; 4.9.4: texto diário com comentários adicionais que podem ser salvos e recuperados no mesmo dia (no dia seguinte são apagados) e link do wol.jw.org legível; 4.9.3: o botão 🔊 do campo de texto só aparece (e só funciona no servidor) para o administrador; a leitura em voz alta do texto diário continua para todos; 4.9.2: pesquisas salvas por semana (só as da semana escolhida; o botão apaga as das semanas anteriores); 4.9.1: pesquisas salvas (histórico das respostas da IA das reuniões neste aparelho, para reabrir depois); 4.9.0: joias espirituais com 2 joias por capítulo, sem repetir o versículo da pergunta da apostila; 4.8.9: Joias Espirituais (leitura da semana lida no wol.jw.org com as publicações do Índice das Publicações; até 2 joias por capítulo e a resposta à pergunta da apostila) e, no Estudo Bíblico, textos citados nas perguntas seguindo as opções de textos bíblicos;4.8.8: Estudo Bíblico de Congregação (capítulo da semana lido no wol.jw.org, respostas da IA por quadro, trechos das publicações citadas, resumo opcional dos textos-base) e o contexto "Sobre mim e a congregação" nos prompts; 4.8.7: cada seção da tela de prompts virou um cartão recolhível; 4.8.6: modelo da IA de texto escolhido pelo administrador na tela de prompts (Haiku, Sonnet, Opus ou Fable) e gasto do mês pela Cost API da Anthropic; 4.8.6: a barra da leitura em voz alta fecha sozinha quando a leitura termina; 4.8.5: categorias de Ajustes direto na página (sem o cartão recolhível "Configurações gerais do app"); 4.8.4: Ajustes → Autorização de acessos (código de acesso e senha de administrador informados uma vez e salvos), a IA nunca escreve "culto" (sempre reunião), comentários adicionais recolhíveis e com Limpar, atalhos Comentários e Dirigentes abrem só o grupo deles; 4.8.3: tela Início com o texto diário (do wol.jw.org; um toque abre o comentário, ler em voz alta, levar para o campo de texto e comentários adicionais da IA) e atalhos; 4.8.2: referências bíblicas lidas na forma curta ("Primeira Coríntios treze, quatro a sete"), voz com duas partes à frente (sem pausas, também em 1,15×), pular citações de publicações (w24.09 21 § 6) e referências bíblicas só entre parênteses ou depois de travessão no fim do parágrafo (o texto temático do texto diário é lido); 4.8.1: voz começa mais rápido (primeiras partes curtas) e campos de preço alinhados; 4.8.0: menu da voz para o administrador (modelo, voz, tom, o que ler e pular), consumo estimado e vozes Gemini com a conta de serviço do Google; 4.7.9: voz reserva (Chirp 3 HD) quando o Gemini é recusado; 4.7.8: botão 🔊 Ouvir (leitura em voz alta com a voz do Google); 4.7.7: Fonte CX com C preto e C branco, cada um ao lado do seu quadradinho; todos os cards começam fechados ao abrir o app; 4.7.6: tela Reuniões em dois cartões (texto e reuniões); 4.7.5: campo de texto volta a crescer depois de levar uma nota do backup; importar notas de outro backup; 4.7.4: card do desenvolvedor na largura do quadro de limitações (Sobre); 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 
@@ -10949,6 +10954,8 @@ function saveTemplatesToStorage() {
       iaCopiarBtn: document.getElementById('tdIaCopiarBtn'),
       iaOutrosBtn: document.getElementById('tdIaOutrosBtn'),
       iaLimparBtn: document.getElementById('tdIaLimparBtn'),
+      iaSalvarBtn: document.getElementById('tdIaSalvarBtn'),
+      recuperarBtn: document.getElementById('tdRecuperarBtn'),
       iaQtd: document.getElementById('tdIaQtd')
     };
     const tdCache = new Map(); // "2026-10-20" -> texto do servidor
@@ -10965,9 +10972,46 @@ function saveTemplatesToStorage() {
     const tdTextoCompleto = t => [t.titulo, t.tema, ...t.comentario, t.fonte].filter(Boolean).join('\n');
     const tdComentariosEmTexto = lista => lista.map(c => '💡 ' + (c.ponto ? c.ponto + '\n' : '') + c.comentario).join('\n\n');
 
+    // Comentários salvos (💾 Salvar): ficam neste aparelho, por dia do texto, e só valem para aquele dia. Quando o dia
+    // passa, são apagados (a limpeza roda ao abrir o app, ao salvar, ao recuperar e ao voltar ao app noutro dia).
+    // Formato: { "2026-10-20": { salvoEm: "2026-10-20T17:05:00.000Z", comentarios: [{ ponto, comentario }] } }
+    const TD_SALVOS_KEY = 'jwLibraryNoteAplicarTextoDiarioComentariosV1';
+
+    function tdSalvosGravar(salvos) {
+      try {
+        if (Object.keys(salvos).length) localStorage.setItem(TD_SALVOS_KEY, JSON.stringify(salvos));
+        else localStorage.removeItem(TD_SALVOS_KEY);
+      } catch (e) { /* sem localStorage ou memória cheia */ }
+    }
+
+    function tdSalvosLer() {
+      let salvos = {};
+      try { salvos = JSON.parse(localStorage.getItem(TD_SALVOS_KEY) || '{}'); } catch (e) { salvos = {}; }
+      if (!salvos || typeof salvos !== 'object' || Array.isArray(salvos)) salvos = {};
+      const hoje = tdChave(tdHoje());
+      let limpou = false;
+      for (const dia of Object.keys(salvos)) {
+        const lista = salvos[dia] && Array.isArray(salvos[dia].comentarios)
+          ? salvos[dia].comentarios.filter(c => c && typeof c.comentario === 'string' && c.comentario.trim()).map(c => ({ ponto: typeof c.ponto === 'string' ? c.ponto : '', comentario: c.comentario }))
+          : [];
+        if (dia < hoje || !lista.length) { delete salvos[dia]; limpou = true; } else salvos[dia] = { salvoEm: salvos[dia].salvoEm, comentarios: lista };
+      }
+      if (limpou) tdSalvosGravar(salvos);
+      return salvos;
+    }
+
+    // "20/10, às 17:05" (quando o salvamento foi feito).
+    function tdQuandoSalvo(salvoEm) {
+      const d = new Date(salvoEm);
+      return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' às ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
+
     // Comentários adicionais da IA do dia mostrado (guardados nesta sessão; voltar ao dia não gasta outro pedido).
     function tdIaMostrar() {
       const lista = (tdTexto && tdIaCache.get(tdTexto.data)) || [];
+      const salvo = tdTexto ? tdSalvosLer()[tdTexto.data] : null;
+      td.recuperarBtn.hidden = !salvo || lista.length > 0;
+      if (salvo) td.recuperarBtn.textContent = '📂 Recuperar comentários salvos (' + salvo.comentarios.length + ')';
       td.iaLista.textContent = '';
       lista.forEach(c => {
         const item = document.createElement('li');
@@ -11095,13 +11139,45 @@ function saveTemplatesToStorage() {
     });
     td.gerarBtn.addEventListener('click', () => tdGerarComentarios(false));
     td.iaOutrosBtn.addEventListener('click', () => tdGerarComentarios(true));
-    // Limpar apaga os comentários deste dia (para ver de novo, é preciso gerar outra vez); para só esconder, basta
-    // tocar no título deles.
+    // Limpar tira os comentários da tela. Se este dia tem comentários salvos, a cópia salva continua (📂 Recuperar); senão, para
+    // vê-los de novo é preciso gerar outra vez. Para só escondê-los, basta tocar no título deles.
     td.iaLimparBtn.addEventListener('click', async () => {
       if (!tdTexto || aiBusy) return;
-      if (!(await askConfirm('Apagar os comentários adicionais deste dia? Para vê-los de novo, será preciso gerar outra vez. Para só escondê-los, toque no título "Comentários adicionais".', 'Limpar os comentários'))) return;
+      const salvo = tdSalvosLer()[tdTexto.data];
+      const aviso = salvo
+        ? 'Tirar os comentários adicionais da tela? A cópia que você salvou continua guardada para recuperar até o fim do dia. Para só escondê-los, toque no título "Comentários adicionais".'
+        : 'Apagar os comentários adicionais deste dia? Para vê-los de novo, será preciso gerar outra vez (ou salve-os antes, com 💾 Salvar). Para só escondê-los, toque no título "Comentários adicionais".';
+      if (!(await askConfirm(aviso, 'Limpar os comentários'))) return;
       tdIaCache.delete(tdTexto.data);
       tdIaMostrar();
+    });
+    // 💾 Salvar guarda neste aparelho os comentários que estão na tela, só para este dia (no dia seguinte são apagados).
+    // Salvar de novo troca o que estava salvo. Dá para gerar outros e, depois, recuperar o conjunto salvo.
+    td.iaSalvarBtn.addEventListener('click', () => {
+      const comentarios = (tdTexto && tdIaCache.get(tdTexto.data)) || [];
+      if (!comentarios.length) return;
+      if (tdTexto.data < tdChave(tdHoje())) {
+        td.iaStatus.textContent = 'Comentários de um dia que já passou não ficam salvos: eles valem só até o fim do próprio dia.';
+        return;
+      }
+      const salvos = tdSalvosLer();
+      salvos[tdTexto.data] = { salvoEm: new Date().toISOString(), comentarios };
+      tdSalvosGravar(salvos);
+      const gravado = tdSalvosLer()[tdTexto.data];
+      td.iaStatus.textContent = gravado
+        ? '💾 Comentários salvos neste aparelho. Valem até o fim deste dia; no dia seguinte são apagados.'
+        : 'Não consegui salvar neste aparelho (sem espaço ou armazenamento bloqueado).';
+    });
+    // 📂 Recuperar põe de volta na tela os comentários salvos deste dia.
+    td.recuperarBtn.addEventListener('click', () => {
+      if (!tdTexto) return;
+      const salvo = tdSalvosLer()[tdTexto.data];
+      if (!salvo) return tdIaMostrar();
+      tdIaCache.set(tdTexto.data, salvo.comentarios);
+      td.ia.open = true;
+      tdIaMostrar();
+      const quando = tdQuandoSalvo(salvo.salvoEm);
+      td.iaStatus.textContent = '📂 Comentários salvos' + (quando ? ' em ' + quando : '') + ' recuperados.';
     });
     td.iaCopiarBtn.addEventListener('click', async () => {
       const comentarios = (tdTexto && tdIaCache.get(tdTexto.data)) || [];
@@ -11122,8 +11198,9 @@ function saveTemplatesToStorage() {
       if (hoje === tdUltimoHoje) return;
       const estavaEmHoje = tdData && tdChave(tdData) === tdUltimoHoje;
       tdUltimoHoje = hoje;
+      tdSalvosLer(); // o dia mudou: os comentários salvos dos dias que passaram são apagados
       if (estavaEmHoje) tdCarregar(tdHoje());
-      else td.hojeBtn.hidden = !tdData || tdChave(tdData) === hoje;
+      else { td.hojeBtn.hidden = !tdData || tdChave(tdData) === hoje; tdIaMostrar(); }
     });
     tdCarregar(tdHoje());
 
