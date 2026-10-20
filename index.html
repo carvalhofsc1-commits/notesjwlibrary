@@ -1214,8 +1214,8 @@
     :root[data-theme="dark"] .icon-action.select { background: #075985; color: #e0f2fe; border-color: #0ea5e9; }
     :root[data-theme="dark"] .icon-action.font   { background: #134e4a; color: #ccfbf1; border-color: #14b8a6; }
 
-    /* Botão "Fonte CX": o CX do meio aplica a caixa; os dois quadradinhos escolhem se ela sai branca (esquerda) ou
-       preta (direita). Tem o mesmo tamanho dos outros botões da fileira. */
+    /* Botão "Fonte CX": os dois C do meio aplicam a caixa; os quadradinhos escolhem se ela sai preta (esquerda, ao lado
+       do C preto) ou branca (direita, ao lado do C branco). Tem o mesmo tamanho dos outros botões da fileira. */
     .icon-action.caixa { padding: 0; gap: 0; overflow: hidden; }
     .icon-action.caixa button {
       min-height: 0;
@@ -1234,7 +1234,7 @@
     .icon-action.caixa button:hover:not(:disabled) { background: rgba(255, 255, 255, .14); }
     .icon-action.caixa button:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
     .icon-action.caixa .caixa-main { flex: 1 1 auto; min-width: 0; gap: 3px; }
-    /* O rótulo: C em caixa preta e X em caixa branca, em qualquer tema (a caixa sai branca ou preta conforme o marcado). */
+    /* O rótulo: C em caixa preta e C em caixa branca, em qualquer tema (a caixa sai branca ou preta conforme o marcado). */
     .icon-action.caixa .cx {
       display: inline-flex;
       align-items: center;
@@ -1247,8 +1247,8 @@
       font-weight: 800;
       line-height: 1;
     }
-    .icon-action.caixa .cx.c { background: #0f172a; border-color: #e2e8f0; color: #ffffff; }
-    .icon-action.caixa .cx.x { background: #ffffff; color: #0f172a; }
+    .icon-action.caixa .cx.preta { background: #0f172a; border-color: #e2e8f0; color: #ffffff; }
+    .icon-action.caixa .cx.branca { background: #ffffff; color: #0f172a; }
     .icon-action.caixa .caixa-cor { flex: 0 0 28px; align-self: stretch; }
     .icon-action.caixa .caixa-cor i {
       position: relative;
@@ -2097,7 +2097,7 @@
 
           <div class="editor-controls-pane">
 
-        <details class="subsection group-box group-main" id="principaisBox" open>
+        <details class="subsection group-box group-main" id="principaisBox">
           <summary>✏️ Opções principais de formatação</summary>
           <div class="group-box-body principais-body">
             <p id="selectionInfo" class="hint" role="status" aria-live="polite">Selecione um trecho e clique na formatação desejada. Use ⇥ Recuo ou a tecla Tab para aumentar o recuo do parágrafo. Repita para mais níveis; Shift+Tab reduz o recuo.</p>
@@ -2149,9 +2149,9 @@
           </div>
           <div class="action-item">
             <div class="icon-action font caixa" role="group" aria-label="Fonte CX: caixa branca ou caixa preta">
-              <button id="quickCaixaWhiteBtn" class="caixa-cor white" type="button" aria-pressed="true" title="Caixa branca" aria-label="Caixa branca"><i></i></button>
-              <button id="quickCaixaBtn" class="caixa-main" type="button" title="Aplicar a fonte Caixa branca ao trecho selecionado (letras maiúsculas)" aria-label="Aplicar a fonte Caixa branca ao trecho selecionado"><span class="cx c" aria-hidden="true">C</span><span class="cx x" aria-hidden="true">X</span></button>
               <button id="quickCaixaBlackBtn" class="caixa-cor black" type="button" aria-pressed="false" title="Caixa preta" aria-label="Caixa preta"><i></i></button>
+              <button id="quickCaixaBtn" class="caixa-main" type="button" title="Aplicar a fonte Caixa branca ao trecho selecionado (letras maiúsculas)" aria-label="Aplicar a fonte Caixa branca ao trecho selecionado"><span class="cx preta" aria-hidden="true">C</span><span class="cx branca" aria-hidden="true">C</span></button>
+              <button id="quickCaixaWhiteBtn" class="caixa-cor white" type="button" aria-pressed="true" title="Caixa branca" aria-label="Caixa branca"><i></i></button>
             </div>
             <span>Fonte CX</span>
           </div>
@@ -2296,9 +2296,9 @@
             <button id="aiWeekTodayBtn" class="secondary ai-week-today" type="button" data-week="today" hidden>↩️ Voltar para a semana atual</button>
           </div>
 
-          <details class="section-accordion reunioes-secao" id="secaoReunioes" open>
+          <details class="section-accordion reunioes-secao" id="secaoReunioes">
             <summary><h2 class="reunioes-title">📅 Preparação para as reuniões</h2></summary>
-          <details class="section-accordion reunioes-grupo" id="grupoComentarios" open>
+          <details class="section-accordion reunioes-grupo" id="grupoComentarios">
             <summary><h3 class="reunioes-subtitle">💬 Preparação de comentários</h3></summary>
             <details class="subsection sentinela-subsection" id="sentinelaBox">
               <summary>📖 Estudo de A Sentinela</summary>
@@ -2352,7 +2352,7 @@
             <div class="em-breve" aria-disabled="true"><span>🌱 Nossa Vida Cristã</span><span class="em-breve-badge">em breve</span></div>
 
           </details>
-          <details class="section-accordion reunioes-grupo" id="grupoDirigir" open>
+          <details class="section-accordion reunioes-grupo" id="grupoDirigir">
             <summary><h3 class="reunioes-subtitle">🧑‍🏫 Preparação para dirigir</h3></summary>
             <details class="subsection dirigente-subsection" id="dirigenteBox">
               <summary>📖 Estudo de A Sentinela</summary>
@@ -2397,7 +2397,7 @@
           </details>
           </details>
 
-          <details class="section-accordion reunioes-secao" id="secaoDiscursos" open>
+          <details class="section-accordion reunioes-secao" id="secaoDiscursos">
             <summary><h2 class="reunioes-title">🎤 Preparação de discursos e esboços</h2></summary>
             <div class="em-breve" aria-disabled="true"><span>📜 Esboços de discursos públicos</span><span class="em-breve-badge">em breve</span></div>
             <div class="em-breve" aria-disabled="true"><span>✨ Tesouros da Palavra de Deus</span><span class="em-breve-badge">em breve</span></div>
@@ -4309,7 +4309,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '4.7.6'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0; 4.7.6: tela Reuniões em dois cartões (texto e reuniões); 4.7.5: campo de texto volta a crescer depois de levar uma nota do backup; importar notas de outro backup; 4.7.4: card do desenvolvedor na largura do quadro de limitações (Sobre); 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
+    const APP_VERSION = '4.7.7'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0; 4.7.7: Fonte CX com C preto e C branco, cada um ao lado do seu quadradinho; todos os cards começam fechados ao abrir o app; 4.7.6: tela Reuniões em dois cartões (texto e reuniões); 4.7.5: campo de texto volta a crescer depois de levar uma nota do backup; importar notas de outro backup; 4.7.4: card do desenvolvedor na largura do quadro de limitações (Sobre); 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 
@@ -7766,24 +7766,13 @@ function saveTemplatesToStorage() {
       for (let box = details; box; box = box.parentElement && box.parentElement.closest('details')) box.open = true;
     }
 
-    // Os grupos recolhíveis (e os cards de resumo/textos bíblicos) lembram se estavam abertos.
-    // "Opções principais de formatação": aberto na primeira vez; depois lembra o que o usuário deixou.
-    (() => {
-      const box = document.getElementById('principaisBox');
-      const key = 'jwLibraryNoteAplicarGroup_principaisBox';
-      try {
-        const saved = localStorage.getItem(key);
-        if (saved !== null) box.open = saved === '1';
-      } catch (e) { /* sem localStorage: fica aberto */ }
-      box.addEventListener('toggle', () => safeSetItem(key, box.open ? '1' : '0'));
-    })();
-
-    ['outrasOpcoesBox', 'opcoesIaBox', 'textosBiblicosBox', 'resumoTextosBox'].forEach(id => {
-      const group = document.getElementById(id);
-      const key = 'jwLibraryNoteAplicarGroup_' + id;
-      try { group.open = localStorage.getItem(key) === '1'; } catch (e) { /* sem localStorage: fica recolhido */ }
-      group.addEventListener('toggle', () => safeSetItem(key, group.open ? '1' : '0'));
-    });
+    // Ao abrir o app, todos os cards recolhíveis começam fechados (pedido do usuário): o app não lembra mais quais
+    // ficaram abertos. Apaga o que versões anteriores guardaram sobre isso.
+    try {
+      ['principaisBox', 'outrasOpcoesBox', 'opcoesIaBox', 'textosBiblicosBox', 'resumoTextosBox', 'secaoReunioes', 'grupoComentarios',
+        'grupoDirigir', 'secaoDiscursos'].forEach(id => localStorage.removeItem('jwLibraryNoteAplicarGroup_' + id));
+      ['jwLibraryNoteAplicarSentinelaBoxV1', 'jwLibraryNoteAplicarDirigenteBoxV1', 'jwLibraryNoteAplicarAiBoxV1'].forEach(key => localStorage.removeItem(key));
+    } catch (e) { /* sem localStorage */ }
 
     // O bloco da IA fica direto dentro do grupo "Opções de formatação com IA" (sem card próprio recolhível).
     const opcoesIaGroup = document.getElementById('opcoesIaBox');
@@ -8584,23 +8573,7 @@ function saveTemplatesToStorage() {
     const leaderParagraphs = document.getElementById('leaderStudyParagraphs');
     const leaderStudyArticle = document.getElementById('leaderStudyArticle');
     const leaderStudyArticleBox = document.getElementById('leaderStudyArticleBox');
-    const SENTINELA_BOX_KEY = 'jwLibraryNoteAplicarSentinelaBoxV1';
     const sentinelaBox = document.getElementById('sentinelaBox');
-    try { sentinelaBox.open = localStorage.getItem(SENTINELA_BOX_KEY) === '1'; } catch (e) { /* sem localStorage: fica recolhido */ }
-    sentinelaBox.addEventListener('toggle', () => safeSetItem(SENTINELA_BOX_KEY, sentinelaBox.open ? '1' : '0'));
-    ['secaoReunioes', 'grupoComentarios', 'grupoDirigir', 'secaoDiscursos'].forEach(id => {
-      const box = document.getElementById(id);
-      const key = 'jwLibraryNoteAplicarGroup_' + id;
-      try {
-        const saved = localStorage.getItem(key);
-        if (saved !== null) box.open = saved === '1';
-      } catch (e) { /* sem localStorage: fica aberto */ }
-      box.addEventListener('toggle', () => safeSetItem(key, box.open ? '1' : '0'));
-    });
-    const DIRIGENTE_BOX_KEY = 'jwLibraryNoteAplicarDirigenteBoxV1';
-    const dirigenteBox = document.getElementById('dirigenteBox');
-    try { dirigenteBox.open = localStorage.getItem(DIRIGENTE_BOX_KEY) === '1'; } catch (e) { /* sem localStorage: fica recolhido */ }
-    dirigenteBox.addEventListener('toggle', () => safeSetItem(DIRIGENTE_BOX_KEY, dirigenteBox.open ? '1' : '0'));
     let aiStudy = null; // { artigo, titulo, grupos } da semana mostrada; a lista vem da IA e fica guardada neste aparelho
     try { aiStudyCode.value = localStorage.getItem(AI_STUDY_CODE_KEY) || ''; } catch (e) { /* sem localStorage */ }
     aiStudyCode.addEventListener('change', () => safeSetItem(AI_STUDY_CODE_KEY, aiStudyCode.value.trim()));
