@@ -8,7 +8,17 @@ import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { lerConfigIa } from "./_iaConfig.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
 import { buscarVerbete, buscarVersiculos, fontesConfiguradas, precarregarFontes } from "./_fontes.mjs";
-import { QUADROS_EBC, lerEstudoBiblico, lerEstudoDireto, lerTextoDiario, textoDaRecapitulacao, textoDoCapituloEbc, textoDosGrupos } from "./_wol.mjs";
+import {
+  QUADROS_EBC,
+  lerEstudoBiblico,
+  lerEstudoDireto,
+  lerJoias,
+  lerTextoDiario,
+  textoDaRecapitulacao,
+  textoDasJoias,
+  textoDoCapituloEbc,
+  textoDosGrupos,
+} from "./_wol.mjs";
 
 // ---------- Modelo da IA ----------
 // O modelo e o esforço vêm da escolha do administrador na tela de prompts (api/_iaConfig.mjs) e chegam em P.ia em
@@ -1242,7 +1252,6 @@ const SaidaEbc = z.object({
           maiusculas: z.boolean(),
         })
       ),
-      referencias: z.array(z.string()),
       textosRelevantes: z.array(z.string()),
       verbetes: z.array(z.string()),
     })
@@ -1341,17 +1350,18 @@ async function responderEbc(res, body, P) {
       return erro(res, 502, "A IA não conseguiu gerar as respostas para este estudo.");
     }
 
-    // Só as perguntas pedidas, uma vez cada, na ordem do capítulo. Os textos citados na pergunta entram sempre
-    // (regra fixa), mesmo que a IA esqueça de indicá-los.
+    // Só as perguntas pedidas, uma vez cada, na ordem do capítulo. Diferente do estudo de A Sentinela, os textos citados
+    // na pergunta não têm regra fixa (pedido do usuário): entram como os demais textos relevantes, que seguem as opções
+    // de textos bíblicos marcadas (transcrever, só citar, explicar ou nenhuma).
     const permitidos = estilosDe(opcoes);
     const porId = new Map();
     for (const i of resposta.parsed_output.itens) {
       const id = limparLinha(String(i.pergunta).replace(/[[\]]/g, ""), 30);
       const pergunta = perguntas.find((p) => p.id.toLowerCase() === id.toLowerCase());
       if (!pergunta || porId.has(pergunta.id)) continue;
-      const item = montarItem({ ...i, paragrafos: pergunta.id }, opcoes, permitidos, P.limites, sep);
+      const relevantes = [...new Set([...pergunta.referencias, ...(i.textosRelevantes || [])])];
+      const item = montarItem({ ...i, paragrafos: pergunta.id, referencias: [], textosRelevantes: relevantes }, opcoes, permitidos, P.limites, sep);
       if (!item.resposta) continue;
-      item.referencias = [...new Set([...pergunta.referencias, ...item.referencias])];
       porId.set(pergunta.id, item);
     }
     const itens = perguntas.map((p) => porId.get(p.id)).filter(Boolean);
@@ -1388,6 +1398,171 @@ async function responderEbc(res, body, P) {
       erro: itens.length ? null : "A IA não respondeu às perguntas. Tente de novo.",
       itens: itensFinais,
       textosBase: base,
+    });
+  } catch (e) {
+    return tratarErro(e, res);
+  }
+}
+
+// ---------- Joias espirituais ----------
+// O servidor lê a leitura da Bíblia da semana (capítulos com os versículos e os trechos das publicações do Índice das
+// Publicações) e a seção "Joias espirituais" da apostila (api/_wol.mjs). A IA escreve até 2 joias por capítulo e a
+// resposta à pergunta da apostila, no estilo das respostas do estudo.
+
+const DestaqueJoia = z.object({ trecho: z.string(), tipo: z.enum(TIPOS), estilo: z.enum(ESTILOS).nullable(), maiusculas: z.boolean() });
+const SaidaJoias = z.object({
+  pergunta: z
+    .object({
+      resposta: z.string(),
+      quebras: z.array(z.string()),
+      emoji: z.string().nullable(),
+      destaques: z.array(DestaqueJoia),
+      referencias: z.array(z.string()),
+      textosRelevantes: z.array(z.string()),
+      verbetes: z.array(z.string()),
+    })
+    .nullable(),
+  joias: z.array(
+    z.object({
+      capitulo: z.string(),
+      referencia: z.string(),
+      resposta: z.string(),
+      quebras: z.array(z.string()),
+      emoji: z.string().nullable(),
+      destaques: z.array(DestaqueJoia),
+      textosRelevantes: z.array(z.string()),
+      verbetes: z.array(z.string()),
+    })
+  ),
+});
+
+async function leituraJoias(res, body) {
+  if (!process.env.CODIGO_ESTUDO) {
+    erro(res, 500, "A leitura do estudo ainda não está configurada no servidor.");
+    return null;
+  }
+  if (!codigoValido(body.codigo)) {
+    erro(res, 403, "Código de acesso inválido.");
+    return null;
+  }
+  const url = urlDoEstudo({ ano: body.ano, semana: body.semana });
+  if (!url) {
+    erro(res, 400, "Semana inválida.");
+    return null;
+  }
+  let joias = null;
+  try {
+    joias = await lerJoias(url);
+  } catch (e) {
+    console.error("Joias: leitura falhou", e?.name, e?.message);
+    erro(res, 502, "Não consegui ler a leitura da Bíblia da semana no wol.jw.org agora. Tente de novo em instantes.");
+    return null;
+  }
+  if (!joias) erro(res, 404, "Não encontrei a leitura da Bíblia na apostila dessa semana.");
+  return joias;
+}
+
+// O que o app mostra ao carregar: a semana, a leitura, os capítulos e a pergunta da apostila.
+async function lerJoiasDaSemana(res, body) {
+  const joias = await leituraJoias(res, body);
+  if (!joias) return;
+  return res.status(200).json({
+    semana: joias.semana,
+    leitura: joias.leitura,
+    capitulos: joias.capitulos.map((c) => c.nome),
+    pergunta: joias.pergunta ? joias.pergunta.texto : null,
+    trechos: joias.capitulos.reduce((n, c) => n + c.trechos.length, 0),
+    url: joias.url,
+  });
+}
+
+async function responderJoias(res, body, P) {
+  const comPergunta = body.pergunta !== false;
+  const comLeitura = body.leitura !== false;
+  if (!comPergunta && !comLeitura) return erro(res, 400, "Marque a pergunta da apostila ou as joias da leitura.");
+  const opcoes = validarOpcoes(body.opcoes);
+  if (consultaPedida(opcoes) && !fontesConfiguradas()) return erro(res, 500, "A consulta às fontes ainda não está configurada no servidor.");
+  precarregarFontes({ biblia: true, perspicaz: opcoes.consultarPerspicaz });
+  const ajuste = textoLivre(body.ajuste);
+  const sep = modoSeparacao(opcoes, ajuste);
+  const modo = body.modo === "nova" || body.modo === "melhorar" ? body.modo : null;
+  const anteriores = modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(body.anteriores).slice(0, 12000) : "";
+  const inicioPedido = Date.now();
+
+  const joias = await leituraJoias(res, body);
+  if (!joias) return;
+  const pergunta = comPergunta && joias.pergunta;
+  if (!pergunta && !comLeitura) return erro(res, 400, "A apostila dessa semana não tem a pergunta das joias espirituais.");
+
+  let mensagem =
+    blocoOrientacao(opcoes, ajuste, P) +
+    preferenciasDaResposta(opcoes, P, sep) +
+    `\n\nPEDIDO: pergunta da apostila ${pergunta ? "ATIVA" : "INATIVA"}; joias da leitura ${comLeitura ? "ATIVAS (no máximo 2 por capítulo)" : "INATIVAS"}.\n\n` +
+    textoDasJoias(joias, { pergunta: Boolean(pergunta), leitura: comLeitura }) +
+    lembreteFinal(opcoes, ajuste, P);
+  if (modo && anteriores) {
+    mensagem += "\n\nRESPOSTAS ANTERIORES (JSON):\n" + anteriores + "\n\n" + P.frases.pedidos[modo === "nova" ? "Respostas: outra sugestão" : "Respostas: melhorar"];
+  }
+
+  try {
+    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 120_000) });
+    const inicio = Date.now();
+    const resposta = await chamarIa(
+      client,
+      P,
+      { max_tokens: 16000 /* o raciocínio também conta aqui */, system: P.sistemaJoias, messages: [{ role: "user", content: mensagem }] },
+      { schema: SaidaJoias }
+    );
+    if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
+      return erro(res, 502, "A IA não conseguiu preparar as joias espirituais desta semana.");
+    }
+
+    const permitidos = estilosDe(opcoes);
+    const saida = resposta.parsed_output;
+    // A pergunta da apostila: o versículo dela entra sempre (regra fixa dos textos citados na pergunta).
+    let itemPergunta = null;
+    if (pergunta && saida.pergunta) {
+      const rotulo = pergunta.referencias[0] || "Pergunta";
+      itemPergunta = montarItem({ ...saida.pergunta, paragrafos: rotulo }, opcoes, permitidos, P.limites, sep);
+      itemPergunta.referencias = [...new Set([...pergunta.referencias, ...itemPergunta.referencias])];
+      if (!itemPergunta.resposta) itemPergunta = null;
+    }
+    // No máximo 2 joias por capítulo, na ordem da leitura.
+    const chave = (t) => chaveDeBusca(t).replace(/\s+/g, "");
+    const porCapitulo = new Map(joias.capitulos.map((c) => [chave(c.nome), []]));
+    for (const j of comLeitura ? saida.joias : []) {
+      const lista = porCapitulo.get(chave(j.capitulo)) || [...porCapitulo.values()].find((l, i) => chave(j.referencia).startsWith(chave(joias.capitulos[i].nome)));
+      if (!lista || lista.length >= 2) continue;
+      const item = montarItem({ ...j, paragrafos: limparLinha(limparTrecho(j.referencia), 20), referencias: [] }, opcoes, permitidos, P.limites, sep);
+      if (item.resposta) lista.push({ ...item, capitulo: joias.capitulos.find((c) => porCapitulo.get(chave(c.nome)) === lista).nome });
+    }
+    const itensJoias = [...porCapitulo.values()].flat();
+
+    console.log(
+      "Joias espirituais:",
+      JSON.stringify({
+        modelo: P.ia.modelo,
+        leitura: joias.leitura,
+        pergunta: Boolean(itemPergunta),
+        joias: itensJoias.map((j) => j.paragrafos),
+        trechos: joias.capitulos.reduce((n, c) => n + c.trechos.length, 0),
+        caracteres: mensagem.length,
+        segundosIa: Math.round((Date.now() - inicio) / 100) / 10,
+        entrada: resposta.usage?.input_tokens || 0,
+        saida: resposta.usage?.output_tokens || 0,
+        pensamento: resposta.usage?.output_tokens_details?.thinking_tokens ?? null,
+      })
+    );
+
+    const finais = await finalizarItens([...(itemPergunta ? [itemPergunta] : []), ...itensJoias], opcoes, P, blocoOrientacao(opcoes, ajuste, P));
+    console.log("Joias espirituais (tempo):", JSON.stringify({ total: Math.round((Date.now() - inicioPedido) / 100) / 10 }));
+    return res.status(200).json({
+      semana: joias.semana,
+      leitura: joias.leitura,
+      url: joias.url,
+      erro: finais.length ? null : "A IA não preparou as joias. Tente de novo.",
+      pergunta: itemPergunta ? finais[0] : null,
+      joias: itemPergunta ? finais.slice(1) : finais,
     });
   } catch (e) {
     return tratarErro(e, res);
@@ -1614,6 +1789,8 @@ export default async function handler(req, res) {
   if (req.body && req.body.tarefa === "texto-diario-comentarios") return comentariosDoTextoDiario(res, req.body, P);
   if (req.body && req.body.tarefa === "ebc-ler") return lerEbc(res, req.body);
   if (req.body && req.body.tarefa === "ebc") return responderEbc(res, req.body, P);
+  if (req.body && req.body.tarefa === "joias-ler") return lerJoiasDaSemana(res, req.body);
+  if (req.body && req.body.tarefa === "joias") return responderJoias(res, req.body, P);
 
   const entrada = validarEntrada(req.body, P.limites);
   if (!entrada) {

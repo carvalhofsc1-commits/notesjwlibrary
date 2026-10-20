@@ -310,7 +310,8 @@ function linkDoEstudoBiblico(html) {
 }
 
 // Um link /wol/pc/ responde com um redirecionamento para o artigo; o endereço traz os parágrafos citados no fim
-// ("#h=7:0-8:0" = parágrafos 7 a 8). Devolve { url, de, ate } (de/ate = null se não vier o intervalo).
+// ("#h=7:0-8:0" = parágrafos 7 a 8). Devolve { url, de, ate, hash } (de/ate = null se não vier o intervalo). Também
+// serve para os links /wol/bc/ de textos bíblicos ("#v=24:45:1-24:46:28").
 async function resolverCitacao(caminho, timeoutMs) {
   const resposta = await fetch(BASE + caminho, {
     headers: { "User-Agent": AGENTE, "Accept-Language": "pt-BR,pt;q=0.9" },
@@ -321,21 +322,23 @@ async function resolverCitacao(caminho, timeoutMs) {
   if (!destino) return null;
   const url = new URL(destino, BASE);
   const faixa = url.hash.match(/h=(\d+):\d+-(\d+):\d+/);
-  return { url: url.origin + url.pathname, de: faixa ? Number(faixa[1]) : null, ate: faixa ? Number(faixa[2]) : null };
+  return { url: url.origin + url.pathname, de: faixa ? Number(faixa[1]) : null, ate: faixa ? Number(faixa[2]) : null, hash: url.hash };
 }
 
-// O trecho de outra publicação citado numa pergunta: título do artigo e os parágrafos do intervalo (até 3.000 caracteres).
-async function lerTrechoCitado({ caminho, citacao }, timeoutMs) {
+// O trecho de outra publicação citado numa pergunta: título do artigo e os parágrafos do intervalo (até maxCaracteres).
+// docs: páginas já baixadas neste pedido (várias citações costumam apontar para o mesmo artigo).
+async function lerTrechoCitado({ caminho, citacao }, timeoutMs, maxCaracteres = 3000, docs = null) {
   const destino = await resolverCitacao(caminho, timeoutMs);
   if (!destino || destino.de === null) return null;
-  const html = await baixar(destino.url, timeoutMs);
+  if (docs && !docs.has(destino.url)) docs.set(destino.url, baixar(destino.url, timeoutMs));
+  const html = await (docs ? docs.get(destino.url) : baixar(destino.url, timeoutMs));
   const titulo = textoDe((html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/) || [])[1] || "");
   const partes = [];
   for (const [, , pid, conteudo] of html.matchAll(/<(p|h2|h3)\b[^>]*data-pid="(\d+)"[^>]*>([\s\S]*?)<\/\1>/g)) {
     const n = Number(pid);
     if (n >= destino.de && n <= destino.ate) partes.push(textoDe(conteudo));
   }
-  const texto = partes.filter(Boolean).join("\n").slice(0, 3000);
+  const texto = partes.filter(Boolean).join("\n").slice(0, maxCaracteres);
   return texto ? { citacao, titulo, texto } : null;
 }
 
@@ -362,6 +365,167 @@ export async function lerEstudoBiblico(urlReuniao, { timeoutMs = 8000 } = {}) {
   estudosBiblicos.set(urlReuniao, { quando: Date.now(), capitulo });
   if (estudosBiblicos.size > 20) estudosBiblicos.delete(estudosBiblicos.keys().next().value);
   return capitulo;
+}
+
+// ---------- Joias espirituais (leitura da Bíblia da semana) ----------
+// No alto da apostila Vida e Ministério vem a leitura da semana (ex.: "JEREMIAS 45-46"), com um link que leva aos
+// capítulos ("#v=24:45:1-24:46:28" = livro 24, do capítulo 45 ao 46). A página de cada capítulo (Bíblia de estudo) traz
+// o texto dos versículos e, para cada versículo, o "Índice das Publicações", com links para as publicações que o
+// explicam: o servidor busca os trechos das mais recentes (no máximo 12 na semana, espalhadas pelos versículos) e
+// manda à IA junto com o capítulo. Na apostila, "Joias espirituais" traz também uma pergunta sobre um versículo, com a
+// publicação que a responde.
+const MAX_TRECHOS_JOIAS = 12;
+
+// Semana ("19-25 DE OUTUBRO") e a leitura da Bíblia ({ rotulo: "JEREMIAS 45-46", caminho do link }).
+function leituraDaApostila(html) {
+  const semana = textoDe((html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/) || [])[1] || "");
+  const depois = html.slice(Math.max(0, html.search(/<h1\b/)));
+  const link = depois.match(/<a\b[^>]*href="(\/pt\/wol\/bc\/[^"]+)"[^>]*>([\s\S]*?)<\/a>/);
+  return { semana, leitura: link ? { caminho: link[1], rotulo: textoDe(link[2]) } : null };
+}
+
+// Seção "Joias espirituais" da apostila: a pergunta sobre um versículo (com as publicações citadas) e a pergunta geral.
+function joiasDaApostila(html) {
+  const titulo = [...html.matchAll(/<h3\b[^>]*>([\s\S]*?)<\/h3>/g)].find((m) => /joias espirituais/.test(semAcento(textoDe(m[1]))));
+  if (!titulo) return { pergunta: null, geral: null };
+  const resto = html.slice(titulo.index + titulo[0].length);
+  const fim = resto.search(/<h[23]\b/);
+  const secao = (fim >= 0 ? resto.slice(0, fim) : resto).replace(/<div class="gen-field"[\s\S]*?<\/div>/g, "");
+  let pergunta = null;
+  let geral = null;
+  for (const [, conteudo] of secao.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/g)) {
+    const texto = textoDe(conteudo);
+    if (!texto) continue;
+    if (!pergunta && /class="b"/.test(conteudo)) {
+      const citacoes = [...conteudo.matchAll(/<a\b[^>]*href="(\/pt\/wol\/pc\/[^"]+)"[^>]*>([\s\S]*?)<\/a>/g)].map(([, caminho, rotulo]) => ({ caminho, citacao: textoDe(rotulo) }));
+      pergunta = { texto, referencias: referenciasDe(conteudo), citacoes };
+    } else if (!geral) geral = texto;
+  }
+  return { pergunta, geral };
+}
+
+// Versículos de um capítulo: "1 texto", "2 texto"… (sem os sinais de referência cruzada "+" e de nota "*").
+function versiculosDoCapitulo(html, livro, capitulo) {
+  const porVerso = new Map();
+  const padrao = new RegExp(`<span id="v${livro}-${capitulo}-(\\d+)-\\d+" class="v">([\\s\\S]*?)</span>`, "g");
+  for (const [, verso, conteudo] of html.matchAll(padrao)) {
+    // O número do versículo (ou do capítulo, no versículo 1) é um link para o Guia de Pesquisa (/wol/dx/).
+    const limpo = conteudo.replace(/<a\b[^>]*href="\/pt\/wol\/dx\/[^"]*"[^>]*>[\s\S]*?<\/a>/, "").replace(/<a\b[^>]*>\s*[+*]\s*<\/a>/g, "");
+    porVerso.set(verso, `${porVerso.get(verso) || ""} ${textoDe(limpo)}`.trim());
+  }
+  return [...porVerso].map(([verso, texto]) => ({ verso: Number(verso), texto }));
+}
+
+// Publicações do "Índice das Publicações" de cada versículo: { verso, rotulo ("w06 15/8 17"), ano, caminho }.
+function publicacoesDoCapitulo(html, livro, capitulo) {
+  const lista = [];
+  const blocos = html.split(`<div class="section" data-key="${livro}-${capitulo}-`).slice(1);
+  for (const bloco of blocos) {
+    const verso = Number((bloco.match(/^(\d+)/) || [])[1]);
+    const indice = bloco.indexOf("ref-dx");
+    if (!verso || indice < 0) continue;
+    const fim = bloco.indexOf("</li>", indice);
+    let simbolo = "";
+    for (const [, caminho, rotuloHtml] of bloco.slice(indice, fim > 0 ? fim : undefined).matchAll(/<a\b[^>]*href="(\/pt\/wol\/pc\/[^"]+)"[^>]*>([\s\S]*?)<\/a>/g)) {
+      let rotulo = textoDe(rotuloHtml).replace(/[;,]\s*$/, "");
+      // "jr 103," + "105" -> "jr 105": a continuação herda o símbolo da publicação anterior.
+      if (/^[\d\s,–-]+$/.test(rotulo) && simbolo) rotulo = `${simbolo} ${rotulo}`;
+      simbolo = (rotulo.match(/^(\S+)/) || [])[1] || simbolo;
+      // Ano: "w25.07" -> 2025, "w06" -> 2006, "w80" -> 1980; sem ano (livros como "jr" ou "it"), 2000.
+      const aa = rotulo.match(/^[a-z]+(\d{2})(?:\.\d{2})?\b/i);
+      const ano = aa ? (Number(aa[1]) > 50 ? 1900 : 2000) + Number(aa[1]) : 2000;
+      lista.push({ verso, rotulo, ano, caminho });
+    }
+  }
+  return lista;
+}
+
+// Escolhe as publicações mais recentes, no máximo 2 por versículo e "max" no capítulo.
+function escolherPublicacoes(lista, max) {
+  const escolhidas = [];
+  const porVerso = new Map();
+  const vistos = new Set();
+  for (const p of [...lista].sort((a, b) => b.ano - a.ano)) {
+    if (escolhidas.length >= max) break;
+    if (vistos.has(p.caminho) || (porVerso.get(p.verso) || 0) >= 2) continue;
+    vistos.add(p.caminho);
+    porVerso.set(p.verso, (porVerso.get(p.verso) || 0) + 1);
+    escolhidas.push(p);
+  }
+  return escolhidas;
+}
+
+const joiasLidas = new Map(); // url da página de reuniões -> { quando, joias }
+
+// Lê a leitura da semana (capítulos com os versículos e os trechos das publicações) e a seção "Joias espirituais".
+export async function lerJoias(urlReuniao, { timeoutMs = 8000 } = {}) {
+  const guardado = joiasLidas.get(urlReuniao);
+  if (guardado && Date.now() - guardado.quando < VALIDADE_MS) return guardado.joias;
+
+  const apostila = idDaApostilaNaReuniao(await baixar(urlReuniao, timeoutMs));
+  if (!apostila) return null;
+  const htmlApostila = await baixar(`${BASE}/pt/wol/d/r5/lp-t/${apostila}`, timeoutMs);
+  const { semana, leitura } = leituraDaApostila(htmlApostila);
+  if (!leitura) return null;
+  const destino = await resolverCitacao(leitura.caminho, timeoutMs);
+  const faixa = destino && destino.hash.match(/v=(\d+):(\d+):\d+-(\d+):(\d+):\d+/);
+  if (!faixa) return null;
+  const [livroIni, capIni, livroFim, capFim] = faixa.slice(1).map(Number);
+  const pedidos = [];
+  if (livroIni === livroFim) for (let c = capIni; c <= capFim && pedidos.length < 6; c++) pedidos.push([livroIni, c]);
+  else pedidos.push([livroIni, capIni], [livroFim, capFim]);
+  const raiz = destino.url.replace(/\/\d+\/\d+$/, "");
+
+  const paginas = await Promise.all(pedidos.map(([livro, c]) => baixar(`${raiz}/${livro}/${c}`, timeoutMs)));
+  const porCapitulo = Math.max(2, Math.min(5, Math.floor(MAX_TRECHOS_JOIAS / pedidos.length)));
+  const docs = new Map();
+  const capitulos = await Promise.all(
+    pedidos.map(async ([livro, c], i) => {
+      const html = paginas[i];
+      const nome = textoDe((html.match(/<title>([^<]*)<\/title>/) || [])[1] || "").split(/\s+—\s+/)[0] || `Capítulo ${c}`;
+      const escolhidas = escolherPublicacoes(publicacoesDoCapitulo(html, livro, c), porCapitulo);
+      const trechos = (
+        await Promise.all(escolhidas.map((p) => lerTrechoCitado({ caminho: p.caminho, citacao: p.rotulo }, timeoutMs, 1500, docs).then((t) => (t ? { ...t, verso: p.verso } : null)).catch(() => null)))
+      ).filter(Boolean);
+      return { nome, livro, capitulo: c, versiculos: versiculosDoCapitulo(html, livro, c), trechos };
+    })
+  );
+
+  const secao = joiasDaApostila(htmlApostila);
+  let trechoPergunta = null;
+  if (secao.pergunta && secao.pergunta.citacoes[0]) {
+    trechoPergunta = await lerTrechoCitado(secao.pergunta.citacoes[0], timeoutMs, 3000, docs).catch(() => null);
+  }
+  const joias = {
+    semana,
+    leitura: leitura.rotulo,
+    capitulos: capitulos.filter((c) => c.versiculos.length),
+    pergunta: secao.pergunta ? { ...secao.pergunta, trecho: trechoPergunta } : null,
+    geral: secao.geral,
+    url: `${BASE}/pt/wol/d/r5/lp-t/${apostila}`,
+  };
+  if (!joias.capitulos.length) return null;
+  joiasLidas.set(urlReuniao, { quando: Date.now(), joias });
+  if (joiasLidas.size > 20) joiasLidas.delete(joiasLidas.keys().next().value);
+  return joias;
+}
+
+// Texto para a IA: a leitura (cada capítulo com os versículos e os trechos das publicações) e a pergunta da apostila.
+export function textoDasJoias(joias, { pergunta, leitura }) {
+  const partes = [`LEITURA DA BÍBLIA DA SEMANA (${joias.semana}): ${joias.leitura}`];
+  if (leitura) {
+    for (const c of joias.capitulos) {
+      partes.push(`${c.nome.toUpperCase()}:\n${c.versiculos.map((v) => `${v.verso} ${v.texto}`).join("\n")}`);
+      if (c.trechos.length) {
+        partes.push(`PUBLICAÇÕES SOBRE ${c.nome.toUpperCase()} (Índice das Publicações):\n${c.trechos.map((t) => `(${t.citacao}, sobre o versículo ${c.capitulo}:${t.verso}) ${t.titulo ? `"${t.titulo}": ` : ""}${t.texto}`).join("\n\n")}`);
+      }
+    }
+  }
+  if (pergunta && joias.pergunta) {
+    partes.push(`PERGUNTA DA APOSTILA: ${joias.pergunta.texto}`);
+    if (joias.pergunta.trecho) partes.push(`TRECHO DA PUBLICAÇÃO CITADA NA PERGUNTA (${joias.pergunta.trecho.citacao}):\n${joias.pergunta.trecho.texto}`);
+  }
+  return partes.join("\n\n");
 }
 
 // Texto do capítulo para a IA: o relato, as referências de "Leia o relato na Bíblia" (com os versículos, se vierem),
