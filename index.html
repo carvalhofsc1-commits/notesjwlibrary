@@ -1787,7 +1787,17 @@
 
     /* Tela Reuniões: um card para cada parte; as que ainda não existem aparecem como "em breve". */
     .reunioes-group { margin-top: 6px; }
-    .reunioes-title { margin: 4px 0 2px; font-size: 1.12rem; }
+    /* Seções (Preparação para as reuniões / de discursos) e grupos (comentários / dirigir) recolhíveis. */
+    .reunioes-secao { margin-top: 14px; padding: 0 10px 12px; border: 2px solid var(--line); border-radius: 12px; }
+    .reunioes-secao:not([open]) { padding-bottom: 0; }
+    .reunioes-secao > summary { padding: 10px 2px; -webkit-tap-highlight-color: transparent; }
+    .reunioes-grupo { margin-top: 8px; }
+    .reunioes-grupo > summary { padding: 8px 2px; border-bottom: 1px dashed var(--line); -webkit-tap-highlight-color: transparent; }
+    .reunioes-group .reunioes-secao > summary .reunioes-title { margin: 0; font-size: 1.1rem; }
+    .reunioes-group .reunioes-grupo > summary .reunioes-subtitle { margin: 0; font-size: .98rem; color: var(--muted); }
+    /* Semana no alto da tela: vale para todas as preparações (cada card usa a mesma). */
+    .reunioes-week { margin: 2px 0 14px; padding: 10px 12px; border: 2px solid var(--line); border-radius: 12px; background: var(--card); }
+    .reunioes-week-label { margin: 0 0 8px; font-size: .84rem; font-weight: 700; color: var(--muted); text-align: center; }
     .em-breve {
       display: flex;
       align-items: center;
@@ -2246,22 +2256,29 @@
         </details>
 
         <div id="reunioesGroup" class="reunioes-group screen-reunioes">
-          <h2 class="reunioes-title">📅 Preparação para as reuniões</h2>
+          <div class="reunioes-week sent-option-site">
+            <p class="reunioes-week-label">Semana das reuniões (vale para tudo abaixo)</p>
+            <div class="ai-week">
+              <button id="aiWeekPrev" class="secondary ai-week-nav" type="button" aria-label="Semana anterior" data-week="prev">◀</button>
+              <a id="aiWeekLink" class="ai-week-link" href="https://wol.jw.org/pt/wol/meetings/r5/lp-t/" target="_blank" rel="noopener noreferrer" data-week="link">
+                <span id="aiWeekTitle" data-week="title">📅 Estudo desta semana</span>
+                <span id="aiWeekRange" class="ai-week-range" data-week="range"></span>
+              </a>
+              <button id="aiWeekNext" class="secondary ai-week-nav" type="button" aria-label="Próxima semana" data-week="next">▶</button>
+            </div>
+            <button id="aiWeekTodayBtn" class="secondary ai-week-today" type="button" data-week="today" hidden>↩️ Voltar para a semana atual</button>
+          </div>
+
+          <details class="section-accordion reunioes-secao" id="secaoReunioes" open>
+            <summary><h2 class="reunioes-title">📅 Preparação para as reuniões</h2></summary>
+          <details class="section-accordion reunioes-grupo" id="grupoComentarios" open>
+            <summary><h3 class="reunioes-subtitle">💬 Preparação de comentários</h3></summary>
             <details class="subsection sentinela-subsection" id="sentinelaBox">
-              <summary>📖 Estudo de A Sentinela – Comentários</summary>
+              <summary>📖 Estudo de A Sentinela</summary>
               <div class="subsection-body">
 
             <section class="sent-option sent-option-site">
               <h3>A IA lê direto na biblioteca on-line (wol.jw.org) o estudo da semana</h3>
-              <div class="ai-week">
-                <button id="aiWeekPrev" class="secondary ai-week-nav" type="button" aria-label="Semana anterior" data-week="prev">◀</button>
-                <a id="aiWeekLink" class="ai-week-link" href="https://wol.jw.org/pt/wol/meetings/r5/lp-t/" target="_blank" rel="noopener noreferrer" data-week="link">
-                  <span id="aiWeekTitle" data-week="title">📅 Estudo desta semana</span>
-                  <span id="aiWeekRange" class="ai-week-range" data-week="range"></span>
-                </a>
-                <button id="aiWeekNext" class="secondary ai-week-nav" type="button" aria-label="Próxima semana" data-week="next">▶</button>
-              </div>
-              <button id="aiWeekTodayBtn" class="secondary ai-week-today" type="button" data-week="today" hidden>↩️ Voltar para a semana atual</button>
               <div class="ai-study">
                 <button id="aiStudyLoadBtn" class="secondary ai-study-load" type="button">📋 Carregar os parágrafos</button>
                 <div class="ai-study-picker">
@@ -2303,21 +2320,18 @@
             <div id="sentinelaOutputSlot"></div>
               </div>
             </details>
+            <div class="em-breve" aria-disabled="true"><span>💎 Joias Espirituais</span><span class="em-breve-badge">em breve</span></div>
+            <div class="em-breve" aria-disabled="true"><span>📚 Estudo Bíblico de Congregação</span><span class="em-breve-badge">em breve</span></div>
+            <div class="em-breve" aria-disabled="true"><span>🌱 Nossa Vida Cristã</span><span class="em-breve-badge">em breve</span></div>
 
+          </details>
+          <details class="section-accordion reunioes-grupo" id="grupoDirigir" open>
+            <summary><h3 class="reunioes-subtitle">🧑‍🏫 Preparação para dirigir</h3></summary>
             <details class="subsection dirigente-subsection" id="dirigenteBox">
-              <summary>🧑‍🏫 Estudo de A Sentinela – Dirigente</summary>
+              <summary>📖 Estudo de A Sentinela</summary>
               <div class="subsection-body">
             <section class="sent-option sent-option-site">
               <h3>Perguntas adicionais para ajudar o dirigente a conduzir o estudo com a congregação</h3>
-              <div class="ai-week">
-                <button class="secondary ai-week-nav" type="button" aria-label="Semana anterior" data-week="prev">◀</button>
-                <a class="ai-week-link" href="https://wol.jw.org/pt/wol/meetings/r5/lp-t/" target="_blank" rel="noopener noreferrer" data-week="link">
-                  <span data-week="title">📅 Estudo desta semana</span>
-                  <span class="ai-week-range" data-week="range"></span>
-                </a>
-                <button class="secondary ai-week-nav" type="button" aria-label="Próxima semana" data-week="next">▶</button>
-              </div>
-              <button class="secondary ai-week-today" type="button" data-week="today" hidden>↩️ Voltar para a semana atual</button>
               <div class="ai-study">
                 <button id="leaderStudyLoadBtn" class="secondary ai-study-load" type="button">📋 Carregar os parágrafos</button>
                 <div class="ai-study-picker">
@@ -2352,9 +2366,16 @@
             </section>
               </div>
             </details>
-            <div class="em-breve" aria-disabled="true"><span>💎 Joias Espirituais</span><span class="em-breve-badge">em breve</span></div>
             <div class="em-breve" aria-disabled="true"><span>📚 Estudo Bíblico de Congregação</span><span class="em-breve-badge">em breve</span></div>
-            <div class="em-breve" aria-disabled="true"><span>🎤 Esboços para discursos</span><span class="em-breve-badge">em breve</span></div>
+          </details>
+          </details>
+
+          <details class="section-accordion reunioes-secao" id="secaoDiscursos" open>
+            <summary><h2 class="reunioes-title">🎤 Preparação de discursos e esboços</h2></summary>
+            <div class="em-breve" aria-disabled="true"><span>📜 Esboços de discursos públicos</span><span class="em-breve-badge">em breve</span></div>
+            <div class="em-breve" aria-disabled="true"><span>✨ Tesouros da Palavra de Deus</span><span class="em-breve-badge">em breve</span></div>
+            <div class="em-breve" aria-disabled="true"><span>📝 Outros esboços (necessidades locais, eventos especiais)</span><span class="em-breve-badge">em breve</span></div>
+          </details>
 
             <details id="aiStudyCodeBox" class="sentinela-code reunioes-code">
               <summary>🔑 Código de acesso da IA (obrigatório para ler o estudo no site)</summary>
@@ -3973,7 +3994,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '4.6'; // 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
+    const APP_VERSION = '4.7'; // 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 
@@ -8240,6 +8261,15 @@ function saveTemplatesToStorage() {
     const sentinelaBox = document.getElementById('sentinelaBox');
     try { sentinelaBox.open = localStorage.getItem(SENTINELA_BOX_KEY) === '1'; } catch (e) { /* sem localStorage: fica recolhido */ }
     sentinelaBox.addEventListener('toggle', () => safeSetItem(SENTINELA_BOX_KEY, sentinelaBox.open ? '1' : '0'));
+    ['secaoReunioes', 'grupoComentarios', 'grupoDirigir', 'secaoDiscursos'].forEach(id => {
+      const box = document.getElementById(id);
+      const key = 'jwLibraryNoteAplicarGroup_' + id;
+      try {
+        const saved = localStorage.getItem(key);
+        if (saved !== null) box.open = saved === '1';
+      } catch (e) { /* sem localStorage: fica aberto */ }
+      box.addEventListener('toggle', () => safeSetItem(key, box.open ? '1' : '0'));
+    });
     const DIRIGENTE_BOX_KEY = 'jwLibraryNoteAplicarDirigenteBoxV1';
     const dirigenteBox = document.getElementById('dirigenteBox');
     try { dirigenteBox.open = localStorage.getItem(DIRIGENTE_BOX_KEY) === '1'; } catch (e) { /* sem localStorage: fica recolhido */ }

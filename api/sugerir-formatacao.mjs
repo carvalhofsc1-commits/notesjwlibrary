@@ -1170,20 +1170,11 @@ async function sugerirPerguntas(res, body, P) {
   const texto = textoDosGrupos(grupos);
   const mensagem =
     blocoOrientacao(opcoes, ajuste) +
-    "PEDIDO:\n" +
-    (opcoes.perguntasComplementares
-      ? '- Seção 1, perguntas complementares: ATIVA (1 ou 2 para cada pergunta impressa, em "complementares").\n'
-      : '- Seção 1, perguntas complementares: INATIVA ("complementares" sempre []).\n') +
-    (opcoes.perguntasAplicativas
-      ? '- Seção 2, perguntas aplicativas: ATIVA (1 ou 2 para cada pergunta impressa, em "aplicativas").\n'
-      : '- Seção 2, perguntas aplicativas: INATIVA ("aplicativas" sempre []).\n') +
-    "- Seção 3, explicação dos textos:\n" +
-    (opcoes.perguntasTextos
-      ? "  - Perguntas sobre os textos bíblicos: ATIVAS (até 2 por pergunta impressa, em \"perguntasTextos\").\n"
-      : '  - Perguntas sobre os textos bíblicos: INATIVAS ("perguntasTextos" sempre []).\n') +
-    (opcoes.perguntasEntendimento
-      ? '  - Perguntas de entendimento dos textos bíblicos: ATIVAS (até 2 textos por pergunta impressa, 1 ou 2 perguntas por texto, em "perguntasEntendimento"): perguntas que ajudem a entender e explicar o texto e a ligação dele com a matéria do parágrafo (por que foi citado ali, o que significa, como apoia o ensino), e não aplicação prática na vida.\n'
-      : '  - Perguntas de entendimento dos textos bíblicos: INATIVAS ("perguntasEntendimento" sempre []).\n') +
+    "PEDIDO (seções ligadas pelo usuário):\n" +
+    `- Seção 1, perguntas complementares ("complementares"): ${opcoes.perguntasComplementares ? "ATIVA" : "INATIVA"}\n` +
+    `- Seção 2, perguntas aplicativas ("aplicativas"): ${opcoes.perguntasAplicativas ? "ATIVA" : "INATIVA"}\n` +
+    `- Seção 3, perguntas sobre os textos bíblicos ("perguntasTextos"): ${opcoes.perguntasTextos ? "ATIVAS" : "INATIVAS"}\n` +
+    `- Seção 3, perguntas de entendimento dos textos bíblicos ("perguntasEntendimento"): ${opcoes.perguntasEntendimento ? "ATIVAS" : "INATIVAS"}\n` +
     "\nTEXTO DO ESTUDO:\n" +
     texto +
     (ajuste || opcoes.instrucao ? LEMBRETE_ORIENTACAO : "");
