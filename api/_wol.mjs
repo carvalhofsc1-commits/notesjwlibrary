@@ -7,7 +7,8 @@
 // volta ao jeito antigo (a IA lê o site com a ferramenta web_fetch).
 //
 // O texto lido fica só na memória do servidor por alguns minutos (para pedir outros parágrafos do mesmo artigo sem
-// baixar de novo); não é gravado nem devolvido ao navegador.
+// baixar de novo); não é gravado nem devolvido ao navegador. A exceção é o texto diário (mais abaixo), que o app mostra
+// na tela Início: ele também fica só na memória (algumas horas) e nunca é gravado.
 
 const BASE = "https://wol.jw.org";
 const AGENTE = "Mozilla/5.0 (compatible; NoteStyle/1.0; +https://notestyle.vercel.app)";
@@ -196,6 +197,50 @@ export async function lerEstudoDireto(url, { timeoutMs = 8000 } = {}) {
   lidos.set(url, { quando: Date.now(), artigo });
   if (lidos.size > 20) lidos.delete(lidos.keys().next().value);
   return artigo;
+}
+
+// ---------- Texto diário (Examine as Escrituras Diariamente) ----------
+// A página do dia (/wol/dt/…/ano/mês/dia) traz o texto diário num bloco "todayItem … pub-es": a data num <h2>, o texto
+// temático em <p class="themeScrp"> e o comentário em <div class="bodyTxt">, que termina com a citação da publicação
+// (um link para /wol/pc/, ex.: "w24.09 21 § 6"). Os outros blocos do dia (apostila, A Sentinela) ficam de fora.
+export function analisarTextoDiario(html) {
+  const inicio = html.search(/class="todayItem\b[^"]*\bpub-es\b/);
+  if (inicio < 0) return null;
+  const fim = html.indexOf('class="todayItem', inicio + 20);
+  const bloco = html.slice(inicio, fim > 0 ? fim : undefined);
+  const titulo = textoDe((bloco.match(/<h2\b[^>]*>([\s\S]*?)<\/h2>/) || [])[1] || "");
+  const temaHtml = (bloco.match(/<p\b[^>]*class="themeScrp"[^>]*>([\s\S]*?)<\/p>/) || [])[1] || "";
+  const tema = textoDe(temaHtml);
+  if (!titulo || !tema) return null;
+  const corpo = (bloco.match(/<div class="bodyTxt">([\s\S]*?)<\/div>/) || [])[1] || "";
+  // A citação pode vir em mais de um link seguido: "w24.04 2 §§ 1," + "3".
+  const citacoes = [];
+  const comentario = [...corpo.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/g)]
+    .map(([, conteudo]) =>
+      textoDe(
+        conteudo.replace(/<a\b[^>]*href="[^"]*\/wol\/pc\/[^"]*"[^>]*>([\s\S]*?)<\/a>/g, (todo, citacao) => {
+          citacoes.push(textoDe(citacao));
+          return "";
+        })
+      )
+    )
+    .filter(Boolean);
+  return { titulo, tema, referencias: referenciasDe(temaHtml), comentario, fonte: citacoes.filter(Boolean).join(" ") };
+}
+
+const textosDiarios = new Map(); // "2026-10-20" -> { quando, texto }
+
+// Texto diário de uma data (ano, mês e dia do calendário de quem lê). null = o wol.jw.org não tem o texto dessa data.
+export async function lerTextoDiario(ano, mes, dia, { timeoutMs = 8000 } = {}) {
+  const chave = `${ano}-${String(mes).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+  const guardado = textosDiarios.get(chave);
+  if (guardado && Date.now() - guardado.quando < 12 * 60 * 60 * 1000) return guardado.texto;
+  const analisado = analisarTextoDiario(await baixar(`${BASE}/pt/wol/dt/r5/lp-t/${ano}/${mes}/${dia}`, timeoutMs));
+  if (!analisado) return null;
+  const texto = { data: chave, ...analisado, url: `${BASE}/pt/wol/h/r5/lp-t/${ano}/${mes}/${dia}` };
+  textosDiarios.set(chave, { quando: Date.now(), texto });
+  if (textosDiarios.size > 30) textosDiarios.delete(textosDiarios.keys().next().value);
+  return texto;
 }
 
 // Texto que vai para a IA: só as perguntas pedidas, cada uma com seus parágrafos (e as legendas das imagens).

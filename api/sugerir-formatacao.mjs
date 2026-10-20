@@ -6,7 +6,7 @@ import { z } from "zod";
 import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
 import { buscarVerbete, buscarVersiculos, fontesConfiguradas, precarregarFontes } from "./_fontes.mjs";
-import { lerEstudoDireto, textoDaRecapitulacao, textoDosGrupos } from "./_wol.mjs";
+import { lerEstudoDireto, lerTextoDiario, textoDaRecapitulacao, textoDosGrupos } from "./_wol.mjs";
 
 const MODEL = process.env.CLAUDE_MODEL || "claude-haiku-5-5";
 // Esforço da IA. Os modelos novos (Haiku 5.5 incluído) pensam antes de responder, e o padrão do Haiku 5.5 é "medium";
@@ -1186,6 +1186,80 @@ async function sugerirPerguntas(res, body, P) {
   }
 }
 
+// ---------- Comentários adicionais sobre o texto diário (tela Início) ----------
+// O servidor lê o texto do dia no wol.jw.org (o mesmo da tela Início, guardado na memória) e a IA sugere aplicações
+// práticas do texto temático e dos pontos principais do comentário, para alguém comentar com as próprias palavras.
+// Ela pensa antes de responder (o texto é curto e a qualidade importa mais que a pressa).
+
+const SaidaTextoDiario = z.object({
+  comentarios: z.array(z.object({ ponto: z.string(), comentario: z.string() })),
+});
+
+async function comentariosDoTextoDiario(res, body, P) {
+  if (!process.env.CODIGO_ESTUDO) return erro(res, 500, "O código de acesso ainda não está configurado no servidor.");
+  if (!codigoValido(body.codigo)) return erro(res, 403, "Código de acesso inválido.");
+  const m = typeof body.data === "string" ? body.data.match(/^(\d{4})-(\d{2})-(\d{2})$/) : null;
+  if (!m) return erro(res, 400, "Data inválida.");
+
+  let texto = null;
+  try {
+    texto = await lerTextoDiario(Number(m[1]), Number(m[2]), Number(m[3]));
+  } catch (e) {
+    console.error("Comentários do texto diário: leitura falhou", e?.name, e?.message);
+    return erro(res, 502, "Não consegui ler o texto diário no wol.jw.org agora. Tente de novo em instantes.");
+  }
+  if (!texto) return erro(res, 404, "O wol.jw.org ainda não tem o texto diário dessa data.");
+
+  const anteriores = (Array.isArray(body.anteriores) ? body.anteriores : [])
+    .map((a) => limparLinha(a, 700))
+    .filter(Boolean)
+    .slice(0, 12);
+  const mensagem =
+    `TEXTO DIÁRIO:\nData: ${texto.titulo}\nTexto temático: ${texto.tema}\nComentário:\n${texto.comentario.join("\n")}` +
+    (anteriores.length
+      ? `\n\nCOMENTÁRIOS JÁ SUGERIDOS (escreva outros, com aplicações diferentes):\n${anteriores.map((a) => `- ${a}`).join("\n")}`
+      : "");
+
+  const inicio = Date.now();
+  try {
+    const client = new Anthropic({ maxRetries: 1, timeout: 90_000 });
+    const resposta = await client.messages.parse({
+      model: MODEL,
+      max_tokens: 6000, // o raciocínio também conta aqui
+      system: P.sistemaTextoDiario,
+      messages: [{ role: "user", content: mensagem }],
+      output_config: comEsforco({ format: zodOutputFormat(SaidaTextoDiario) }),
+    });
+    if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
+      return erro(res, 502, "A IA não conseguiu sugerir comentários para este texto.");
+    }
+    const comentarios = resposta.parsed_output.comentarios
+      .map((c) => ({ ponto: limparLinha(limparTrecho(c.ponto), 120), comentario: limparTextoGerado(c.comentario, 700) }))
+      .filter((c) => c.comentario)
+      .slice(0, 6);
+
+    console.log(
+      "Comentários do texto diário:",
+      JSON.stringify({
+        data: texto.data,
+        comentarios: comentarios.length,
+        outros: anteriores.length > 0,
+        segundos: Math.round((Date.now() - inicio) / 100) / 10,
+        entrada: resposta.usage?.input_tokens || 0,
+        saida: resposta.usage?.output_tokens || 0,
+        pensamento: resposta.usage?.output_tokens_details?.thinking_tokens ?? null,
+      })
+    );
+    return res.status(200).json({
+      data: texto.data,
+      erro: comentarios.length ? null : "A IA não sugeriu comentários. Tente de novo.",
+      comentarios,
+    });
+  } catch (e) {
+    return tratarErro(e, res);
+  }
+}
+
 // ---------- Lista de parágrafos do estudo ----------
 // A IA lê o artigo e devolve só os números dos parágrafos, agrupados quando compartilham a mesma pergunta
 // (ex.: "1, 2"). O app usa essa lista para navegar entre os grupos.
@@ -1334,6 +1408,7 @@ export default async function handler(req, res) {
   if (req.body && req.body.tarefa === "estudo") return responderEstudo(res, req.body, P);
   if (req.body && req.body.tarefa === "estudo-lista") return listarParagrafos(res, req.body, P);
   if (req.body && req.body.tarefa === "estudo-perguntas") return sugerirPerguntas(res, req.body, P);
+  if (req.body && req.body.tarefa === "texto-diario-comentarios") return comentariosDoTextoDiario(res, req.body, P);
 
   const entrada = validarEntrada(req.body, P.limites);
   if (!entrada) {
