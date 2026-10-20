@@ -80,8 +80,10 @@ export default async function handler(req, res) {
     });
   } catch (e) {
     console.error("Voz: o modelo Gemini falhou", e.status, e.message);
-    // Chave recusada, sem permissão ou cota esgotada: a reserva falharia igual.
-    if (![401, 403, 429].includes(e.status)) {
+    // A reserva (Chirp 3 HD) precisa só da Text-to-Speech API; o Gemini também depende da Vertex AI API (Agent
+    // Platform) ligada no projeto. Por isso qualquer falha do Gemini tenta a reserva, menos a cota esgotada.
+    let falha = e;
+    if (e.status !== 429) {
       try {
         usada = VOZ_RESERVA;
         audio = await sintetizar({
@@ -91,13 +93,14 @@ export default async function handler(req, res) {
         });
       } catch (e2) {
         console.error("Voz: a voz reserva também falhou", e2.status, e2.message);
+        falha = e2;
       }
     }
     if (!audio) {
       const mensagem =
-        e.status === 403 || e.status === 401
+        falha.status === 403 || falha.status === 401
           ? "O Google recusou a chave da leitura em voz alta. Confira a chave e se a Cloud Text-to-Speech API está ativa."
-          : e.status === 429
+          : falha.status === 429
             ? "A cota da leitura em voz alta no Google acabou por agora. Tente mais tarde."
             : "Não consegui gerar o áudio agora. Tente de novo.";
       return erro(res, 502, mensagem);
