@@ -358,10 +358,10 @@ export async function lerEstudoBiblico(urlReuniao, { timeoutMs = 8000 } = {}) {
   const analisado = analisarCapituloEbc(await baixar(destino.url, timeoutMs));
   if (!analisado.perguntas.length) return null;
 
-  const citacoes = [...new Map(analisado.perguntas.flatMap((p) => p.citacoes).map((c) => [c.caminho, c])).values()].slice(0, 6);
-  const trechos = (await Promise.all(citacoes.map((c) => lerTrechoCitado(c, timeoutMs).catch(() => null)))).filter(Boolean);
+  const citadas = [...new Map(analisado.perguntas.flatMap((p) => p.citacoes).map((c) => [c.caminho, c])).values()];
+  const trechos = (await Promise.all(citadas.slice(0, 6).map((c) => lerTrechoCitado(c, timeoutMs).catch(() => null)))).filter(Boolean);
 
-  const capitulo = { ...analisado, trechos, materia: link.rotulo, url: destino.url };
+  const capitulo = { ...analisado, trechos, citadas: citadas.length, materia: link.rotulo, url: destino.url };
   estudosBiblicos.set(urlReuniao, { quando: Date.now(), capitulo });
   if (estudosBiblicos.size > 20) estudosBiblicos.delete(estudosBiblicos.keys().next().value);
   return capitulo;

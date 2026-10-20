@@ -505,7 +505,7 @@
     /* Pesquisas salvas (histórico das respostas da IA neste aparelho). */
     .historico-qtd { color: var(--muted); font-size: .85rem; font-weight: 600; }
     .historico-lista { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
-    .historico-lista:empty::after { content: 'Nenhuma pesquisa salva ainda.'; color: var(--muted); font-size: .9rem; }
+    .historico-lista:empty::after { content: 'Nenhuma pesquisa salva desta semana.'; color: var(--muted); font-size: .9rem; }
     .historico-item { padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
     .historico-titulo { font-weight: 750; line-height: 1.35; overflow-wrap: anywhere; }
     .historico-meta { margin: 2px 0 8px; color: var(--muted); font-size: .82rem; }
@@ -2703,9 +2703,9 @@
           <!-- Pesquisas salvas: cada resultado da IA fica guardado neste aparelho e pode ser reaberto depois. -->
           <details class="section-accordion reunioes-secao historico-secao" id="secaoHistorico">
             <summary><h2 class="reunioes-title">🗂️ Pesquisas salvas <span id="historicoQtd" class="historico-qtd"></span></h2></summary>
-            <p class="hint">Cada resultado da IA (A Sentinela, Estudo Bíblico, Joias e perguntas do dirigente) fica guardado neste aparelho, mesmo depois de fechar o app. <strong>Abrir</strong> coloca o texto de volta no campo de texto, com os botões de copiar. Ficam as 60 pesquisas mais recentes.</p>
+            <p class="hint">Cada resultado da IA (A Sentinela, Estudo Bíblico, Joias e perguntas do dirigente) fica guardado neste aparelho, mesmo depois de fechar o app. Aqui aparecem só as pesquisas da <strong>semana escolhida no alto da tela</strong>. <strong>Abrir</strong> coloca o texto de volta no campo de texto, com os botões de copiar. Ficam as 60 pesquisas mais recentes.</p>
             <ul id="historicoLista" class="historico-lista"></ul>
-            <button id="historicoLimparBtn" class="secondary historico-limpar" type="button">🗑️ Apagar todas as pesquisas salvas</button>
+            <button id="historicoLimparBtn" class="secondary historico-limpar" type="button">🗑️ Apagar as pesquisas das semanas anteriores</button>
           </details>
         </div>
       </section>
@@ -5426,7 +5426,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '4.9.1'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0; 4.9.1: pesquisas salvas (histórico das respostas da IA das reuniões neste aparelho, para reabrir depois); 4.9.0: joias espirituais com 2 joias por capítulo, sem repetir o versículo da pergunta da apostila; 4.8.9: Joias Espirituais (leitura da semana lida no wol.jw.org com as publicações do Índice das Publicações; até 2 joias por capítulo e a resposta à pergunta da apostila) e, no Estudo Bíblico, textos citados nas perguntas seguindo as opções de textos bíblicos;4.8.8: Estudo Bíblico de Congregação (capítulo da semana lido no wol.jw.org, respostas da IA por quadro, trechos das publicações citadas, resumo opcional dos textos-base) e o contexto "Sobre mim e a congregação" nos prompts; 4.8.7: cada seção da tela de prompts virou um cartão recolhível; 4.8.6: modelo da IA de texto escolhido pelo administrador na tela de prompts (Haiku, Sonnet, Opus ou Fable) e gasto do mês pela Cost API da Anthropic; 4.8.6: a barra da leitura em voz alta fecha sozinha quando a leitura termina; 4.8.5: categorias de Ajustes direto na página (sem o cartão recolhível "Configurações gerais do app"); 4.8.4: Ajustes → Autorização de acessos (código de acesso e senha de administrador informados uma vez e salvos), a IA nunca escreve "culto" (sempre reunião), comentários adicionais recolhíveis e com Limpar, atalhos Comentários e Dirigentes abrem só o grupo deles; 4.8.3: tela Início com o texto diário (do wol.jw.org; um toque abre o comentário, ler em voz alta, levar para o campo de texto e comentários adicionais da IA) e atalhos; 4.8.2: referências bíblicas lidas na forma curta ("Primeira Coríntios treze, quatro a sete"), voz com duas partes à frente (sem pausas, também em 1,15×), pular citações de publicações (w24.09 21 § 6) e referências bíblicas só entre parênteses ou depois de travessão no fim do parágrafo (o texto temático do texto diário é lido); 4.8.1: voz começa mais rápido (primeiras partes curtas) e campos de preço alinhados; 4.8.0: menu da voz para o administrador (modelo, voz, tom, o que ler e pular), consumo estimado e vozes Gemini com a conta de serviço do Google; 4.7.9: voz reserva (Chirp 3 HD) quando o Gemini é recusado; 4.7.8: botão 🔊 Ouvir (leitura em voz alta com a voz do Google); 4.7.7: Fonte CX com C preto e C branco, cada um ao lado do seu quadradinho; todos os cards começam fechados ao abrir o app; 4.7.6: tela Reuniões em dois cartões (texto e reuniões); 4.7.5: campo de texto volta a crescer depois de levar uma nota do backup; importar notas de outro backup; 4.7.4: card do desenvolvedor na largura do quadro de limitações (Sobre); 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
+    const APP_VERSION = '4.9.2'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0; 4.9.2: pesquisas salvas por semana (só as da semana escolhida; o botão apaga as das semanas anteriores); 4.9.1: pesquisas salvas (histórico das respostas da IA das reuniões neste aparelho, para reabrir depois); 4.9.0: joias espirituais com 2 joias por capítulo, sem repetir o versículo da pergunta da apostila; 4.8.9: Joias Espirituais (leitura da semana lida no wol.jw.org com as publicações do Índice das Publicações; até 2 joias por capítulo e a resposta à pergunta da apostila) e, no Estudo Bíblico, textos citados nas perguntas seguindo as opções de textos bíblicos;4.8.8: Estudo Bíblico de Congregação (capítulo da semana lido no wol.jw.org, respostas da IA por quadro, trechos das publicações citadas, resumo opcional dos textos-base) e o contexto "Sobre mim e a congregação" nos prompts; 4.8.7: cada seção da tela de prompts virou um cartão recolhível; 4.8.6: modelo da IA de texto escolhido pelo administrador na tela de prompts (Haiku, Sonnet, Opus ou Fable) e gasto do mês pela Cost API da Anthropic; 4.8.6: a barra da leitura em voz alta fecha sozinha quando a leitura termina; 4.8.5: categorias de Ajustes direto na página (sem o cartão recolhível "Configurações gerais do app"); 4.8.4: Ajustes → Autorização de acessos (código de acesso e senha de administrador informados uma vez e salvos), a IA nunca escreve "culto" (sempre reunião), comentários adicionais recolhíveis e com Limpar, atalhos Comentários e Dirigentes abrem só o grupo deles; 4.8.3: tela Início com o texto diário (do wol.jw.org; um toque abre o comentário, ler em voz alta, levar para o campo de texto e comentários adicionais da IA) e atalhos; 4.8.2: referências bíblicas lidas na forma curta ("Primeira Coríntios treze, quatro a sete"), voz com duas partes à frente (sem pausas, também em 1,15×), pular citações de publicações (w24.09 21 § 6) e referências bíblicas só entre parênteses ou depois de travessão no fim do parágrafo (o texto temático do texto diário é lido); 4.8.1: voz começa mais rápido (primeiras partes curtas) e campos de preço alinhados; 4.8.0: menu da voz para o administrador (modelo, voz, tom, o que ler e pular), consumo estimado e vozes Gemini com a conta de serviço do Google; 4.7.9: voz reserva (Chirp 3 HD) quando o Gemini é recusado; 4.7.8: botão 🔊 Ouvir (leitura em voz alta com a voz do Google); 4.7.7: Fonte CX com C preto e C branco, cada um ao lado do seu quadradinho; todos os cards começam fechados ao abrir o app; 4.7.6: tela Reuniões em dois cartões (texto e reuniões); 4.7.5: campo de texto volta a crescer depois de levar uma nota do backup; importar notas de outro backup; 4.7.4: card do desenvolvedor na largura do quadro de limitações (Sobre); 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 
@@ -10105,7 +10105,8 @@ function saveTemplatesToStorage() {
         historicoSalvar({
           tipo: 'sentinela',
           titulo: '📖 A Sentinela' + (result.data.titulo ? ' · ' + result.data.titulo : '') + ' · ' + (/^\d/.test(requested) ? 'parágrafos ' + requested : requested),
-          semana: historicoSemana(),
+          ano: payload.ano,
+          numSemana: payload.semana,
           partes: parts
         });
         renderAiSuggestions();
@@ -10180,7 +10181,7 @@ function saveTemplatesToStorage() {
         const perguntasTexto = buildStudyQuestionsText(items);
         setInputRange(0, input.value.length, (current ? current + '\n\n' : '') + perguntasTexto, { message: '✅ Perguntas adicionais colocadas no fim do campo de texto.' });
         autoGrowInputText();
-        historicoSalvar({ tipo: 'dirigente', titulo: '🎤 Perguntas do dirigente · parágrafos ' + requested, semana: historicoSemana(), partes: [{ paragrafos: 'perguntas', texto: perguntasTexto }] });
+        historicoSalvar({ tipo: 'dirigente', titulo: '🎤 Perguntas do dirigente · parágrafos ' + requested, partes: [{ paragrafos: 'perguntas', texto: perguntasTexto }] });
         setAiStatus('✅ Perguntas adicionais colocadas no fim do campo de texto.', false);
       } catch (e) {
         setAiStatus(e && e.name === 'AbortError' ? 'A IA demorou demais. Tente com menos parágrafos.' : 'Falha de conexão ao consultar a IA.', true);
@@ -10343,7 +10344,7 @@ function saveTemplatesToStorage() {
         if (base.length) parts.push(ebcParteTextosBase(base));
         aiResumo = { texto: parts.map(part => part.texto).join('\n\n\n'), partes: parts, done: false, kind: 'estudo', fonte: result.data.titulo || '' };
         appendToMainText(aiResumo.texto);
-        historicoSalvar({ tipo: 'ebc', titulo: '📚 Estudo Bíblico' + (result.data.titulo ? ' · ' + result.data.titulo : ''), semana: historicoSemana(), partes: parts });
+        historicoSalvar({ tipo: 'ebc', titulo: '📚 Estudo Bíblico' + (result.data.titulo ? ' · ' + result.data.titulo : ''), ano: payload.ano, numSemana: payload.semana, partes: parts });
         renderAiSuggestions();
         aiRefineBox.hidden = false;
         setAiStatus('✅ Respostas no campo de texto, cada uma com o botão de copiar.', false);
@@ -10491,7 +10492,7 @@ function saveTemplatesToStorage() {
         const parts = [...(pergunta ? buildSentinelaParts([pergunta]) : []), ...joiasPartes(joias)];
         aiResumo = { texto: parts.map(part => part.texto).join('\n\n\n'), partes: parts, done: false, kind: 'estudo', fonte: result.data.leitura || '' };
         appendToMainText(aiResumo.texto);
-        historicoSalvar({ tipo: 'joias', titulo: '💎 Joias espirituais' + (result.data.leitura ? ' · ' + result.data.leitura : ''), semana: historicoSemana(), partes: parts });
+        historicoSalvar({ tipo: 'joias', titulo: '💎 Joias espirituais' + (result.data.leitura ? ' · ' + result.data.leitura : ''), ano: payload.ano, numSemana: payload.semana, partes: parts });
         renderAiSuggestions();
         aiRefineBox.hidden = false;
         setAiStatus('✅ Joias no campo de texto, cada uma com o botão de copiar.', false);
@@ -10508,7 +10509,8 @@ function saveTemplatesToStorage() {
 
     // ---------- Pesquisas salvas ----------
     // Cada resultado da IA nas reuniões (A Sentinela, texto colado, Estudo Bíblico, Joias e perguntas do dirigente) é
-    // guardado neste aparelho (localStorage), com o título, a semana, a data e as partes com o texto de cada resposta.
+    // guardado neste aparelho (localStorage), com o título, a semana das reuniões (ano e número ISO), a data e as partes
+    // com o texto de cada resposta. A lista mostra só as pesquisas da semana escolhida no alto da tela Reuniões.
     // "Abrir" põe o texto de volta no campo de texto com os botões de copiar. Ficam as 60 mais recentes (e no máximo
     // ~1,5 milhão de caracteres, para não encher a memória do navegador); as mais antigas saem sozinhas.
     const HISTORICO_KEY = 'jwLibraryNoteAplicarHistoricoV1';
@@ -10518,11 +10520,35 @@ function saveTemplatesToStorage() {
     function historicoLer() {
       try {
         const lista = JSON.parse(localStorage.getItem(HISTORICO_KEY) || '[]');
-        return Array.isArray(lista) ? lista : [];
+        return Array.isArray(lista) ? lista.map(historicoComSemana) : [];
       } catch (e) {
         return [];
       }
     }
+
+    // As pesquisas salvas na 4.9.1 guardavam só o texto da semana ("19 a 25 de outubro"): procura, perto do dia em que
+    // foram salvas, a semana com esse texto (sem texto, fica a semana do dia em que foi salva).
+    function historicoComSemana(item) {
+      if (item.ano && item.numSemana) return item;
+      const salvo = new Date(item.data);
+      salvo.setHours(12, 0, 0, 0);
+      const monday = new Date(salvo);
+      monday.setDate(salvo.getDate() - ((salvo.getDay() + 6) % 7));
+      let achada = monday;
+      for (let k = 0; item.semana && k <= 26 && achada === monday; k++) {
+        for (const passo of k ? [-k, k] : [0]) {
+          const tentativa = new Date(monday);
+          tentativa.setDate(monday.getDate() + passo * 7);
+          if (rotuloDaSemana(tentativa) === item.semana) { achada = tentativa; break; }
+        }
+      }
+      const [ano, numSemana] = isoYearWeek(achada);
+      return { ...item, ano, numSemana };
+    }
+
+    // Ano e semana num número só, para comparar (2026, semana 43 → 202643).
+    const historicoChave = item => item.ano * 100 + item.numSemana;
+    const historicoChaveAtual = () => aiWeekYear * 100 + aiWeekNumber;
 
     function historicoGravar(lista) {
       let atual = lista.slice(0, HISTORICO_MAX);
@@ -10546,12 +10572,14 @@ function saveTemplatesToStorage() {
       return semana ? semana.textContent.trim() : '';
     }
 
-    function historicoSalvar({ tipo, titulo, semana, partes }) {
+    // A semana é a do pedido à IA (ano e semana enviados ao servidor) ou, sem ela, a escolhida agora.
+    function historicoSalvar({ tipo, titulo, ano, numSemana, partes }) {
       const item = {
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
         tipo,
         titulo,
-        semana: semana || '',
+        ano: ano || aiWeekYear,
+        numSemana: numSemana || aiWeekNumber,
         data: new Date().toISOString(),
         partes: (partes || []).map(p => ({ paragrafos: p.paragrafos || '', texto: p.texto }))
       };
@@ -10560,7 +10588,10 @@ function saveTemplatesToStorage() {
     }
 
     function historicoRender() {
-      const lista = historicoLer();
+      const todas = historicoLer();
+      const atual = historicoChaveAtual();
+      const lista = todas.filter(item => historicoChave(item) === atual);
+      const anteriores = todas.filter(item => historicoChave(item) < atual).length;
       const ul = document.getElementById('historicoLista');
       ul.textContent = '';
       lista.forEach(item => {
@@ -10574,7 +10605,7 @@ function saveTemplatesToStorage() {
         const data = new Date(item.data);
         const quando = data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' às ' + data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         const respostas = (item.partes || []).length;
-        meta.textContent = [quando, item.semana ? 'semana de ' + item.semana : '', respostas > 1 ? respostas + ' respostas' : ''].filter(Boolean).join(' · ');
+        meta.textContent = 'Salva em ' + quando + (respostas > 1 ? ' · ' + respostas + ' respostas' : '');
         const acoes = document.createElement('div');
         acoes.className = 'historico-acoes';
         const abrir = document.createElement('button');
@@ -10592,7 +10623,9 @@ function saveTemplatesToStorage() {
         ul.appendChild(li);
       });
       document.getElementById('historicoQtd').textContent = lista.length ? '(' + lista.length + ')' : '';
-      document.getElementById('historicoLimparBtn').hidden = !lista.length;
+      const limpar = document.getElementById('historicoLimparBtn');
+      limpar.hidden = !anteriores;
+      limpar.textContent = '🗑️ Apagar as pesquisas das semanas anteriores (' + anteriores + ')';
     }
 
     async function historicoAbrir(id) {
@@ -10621,12 +10654,17 @@ function saveTemplatesToStorage() {
       historicoGravar(historicoLer().filter(i => i.id !== apagar.dataset.historicoApagar));
       historicoRender();
     });
+    // Apaga as pesquisas das semanas antes da escolhida; as dela e as das semanas seguintes continuam salvas.
     document.getElementById('historicoLimparBtn').addEventListener('click', async () => {
-      if (!(await askConfirm('Apagar todas as pesquisas salvas deste aparelho? Não dá para desfazer.', 'Apagar todas'))) return;
-      try { localStorage.removeItem(HISTORICO_KEY); } catch (e) { /* sem localStorage */ }
+      const atual = historicoChaveAtual();
+      const anteriores = historicoLer().filter(item => historicoChave(item) < atual).length;
+      if (!anteriores) return historicoRender();
+      const quantas = anteriores === 1 ? 'a pesquisa salva' : 'as ' + anteriores + ' pesquisas salvas';
+      if (!(await askConfirm('Apagar ' + quantas + ' das semanas anteriores a ' + historicoSemana() + '? As desta semana e das seguintes continuam salvas. Não dá para desfazer.', 'Apagar semanas anteriores'))) return;
+      historicoGravar(historicoLer().filter(item => historicoChave(item) >= atual));
       historicoRender();
     });
-    historicoRender();
+
     aiUndoBtn.addEventListener('click', async () => {
       if (aiBusy || !aiAppliedAny) return;
       if (!(await confirmAiRestore())) return;
@@ -10661,23 +10699,28 @@ function saveTemplatesToStorage() {
       return [d.getUTCFullYear(), Math.ceil(((d - yearStart) / 86400000 + 1) / 7)];
     }
 
+    // "19 a 25 de outubro" ou "26 de outubro a 1 de novembro", a partir da segunda-feira da semana.
+    function rotuloDaSemana(monday) {
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      const month = date => date.toLocaleDateString('pt-BR', { month: 'long' });
+      return monday.getMonth() === sunday.getMonth()
+        ? monday.getDate() + ' a ' + sunday.getDate() + ' de ' + month(sunday)
+        : monday.getDate() + ' de ' + month(monday) + ' a ' + sunday.getDate() + ' de ' + month(sunday);
+    }
+
     function renderAiWeek() {
       const today = new Date();
       today.setHours(12, 0, 0, 0);
       const monday = new Date(today);
       monday.setDate(today.getDate() - ((today.getDay() + 6) % 7) + aiWeekOffset * 7);
-      const sunday = new Date(monday);
-      sunday.setDate(monday.getDate() + 6);
 
       const [year, week] = isoYearWeek(monday);
       aiWeekYear = year;
       aiWeekNumber = week;
       weekParts('link').forEach(link => { link.href = 'https://wol.jw.org/pt/wol/meetings/r5/lp-t/' + year + '/' + week; });
 
-      const month = date => date.toLocaleDateString('pt-BR', { month: 'long' });
-      const range = monday.getMonth() === sunday.getMonth()
-        ? monday.getDate() + ' a ' + sunday.getDate() + ' de ' + month(sunday)
-        : monday.getDate() + ' de ' + month(monday) + ' a ' + sunday.getDate() + ' de ' + month(sunday);
+      const range = rotuloDaSemana(monday);
       weekParts('range').forEach(el => { el.textContent = range; });
 
       // Textos curtos para caber numa linha entre as setas (a data vem logo abaixo).
@@ -10686,15 +10729,16 @@ function saveTemplatesToStorage() {
       weekParts('today').forEach(btn => { btn.hidden = aiWeekOffset === 0; });
     }
 
-    const changeWeek = offset => { aiWeekOffset = offset; renderAiWeek(); refreshStudyPicker(); ebcSemanaMudou(); joiasSemanaMudou(); };
+    const changeWeek = offset => { aiWeekOffset = offset; renderAiWeek(); refreshStudyPicker(); ebcSemanaMudou(); joiasSemanaMudou(); historicoRender(); };
     weekParts('today').forEach(btn => btn.addEventListener('click', () => changeWeek(0)));
     weekParts('prev').forEach(btn => btn.addEventListener('click', () => changeWeek(aiWeekOffset - 1)));
     weekParts('next').forEach(btn => btn.addEventListener('click', () => changeWeek(aiWeekOffset + 1)));
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') renderAiWeek();
+      if (document.visibilityState === 'visible') { renderAiWeek(); historicoRender(); }
     });
     renderAiWeek();
     refreshStudyPicker();
+    historicoRender();
 
     // ---------- Aviso de versão nova ----------
     // Um app instalado pode ficar com a página antiga na memória. Aqui o app compara o CSS e o JS que

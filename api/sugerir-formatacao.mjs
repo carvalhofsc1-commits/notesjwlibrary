@@ -1380,6 +1380,7 @@ async function responderEbc(res, body, P) {
         pedidas: perguntas.map((p) => p.id),
         respondidas: itens.map((i) => i.paragrafos),
         textosBase: base.length,
+        citadas: capitulo.citadas, // publicações citadas nas perguntas; "trechos" = quantas delas o servidor conseguiu ler
         trechos: capitulo.trechos.length,
         versiculos: versiculos.length,
         segundosIa: Math.round((Date.now() - inicio) / 100) / 10,
@@ -1562,6 +1563,8 @@ async function responderJoias(res, body, P) {
         pergunta: Boolean(itemPergunta),
         joias: itensJoias.map((j) => j.paragrafos),
         trechos: joias.capitulos.reduce((n, c) => n + c.trechos.length, 0),
+        // Publicação citada na pergunta da apostila: null = pergunta não pedida ou sem citação; 0 = não consegui ler; senão, caracteres lidos.
+        trechoPergunta: pergunta && pergunta.citacoes.length ? pergunta.trecho?.texto.length || 0 : null,
         caracteres: mensagem.length,
         segundosIa: Math.round((Date.now() - inicio) / 100) / 10,
         entrada: resposta.usage?.input_tokens || 0,
