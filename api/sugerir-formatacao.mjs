@@ -2,27 +2,46 @@
 // A chave da API fica só aqui, na variável de ambiente ANTHROPIC_API_KEY — nunca vai para o navegador.
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
+import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
+import { lerConfigIa } from "./_iaConfig.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
 import { buscarVerbete, buscarVersiculos, fontesConfiguradas, precarregarFontes } from "./_fontes.mjs";
 import { lerEstudoDireto, lerTextoDiario, textoDaRecapitulacao, textoDosGrupos } from "./_wol.mjs";
 
-const MODEL = process.env.CLAUDE_MODEL || "claude-haiku-5-5";
-// Esforço da IA. Os modelos novos (Haiku 5.5 incluído) pensam antes de responder, e o padrão do Haiku 5.5 é "medium";
-// com prompts longos isso deixava cada pedido 2 a 3 vezes mais lento. "low" deixa a IA pensar pouco ou nada nas tarefas
-// simples (formatar, escrever a aplicação), que é o caso deste app. CLAUDE_EFFORT na Vercel muda o nível sem novo código.
-const ESFORCO = ["low", "medium", "high"].includes(process.env.CLAUDE_EFFORT) ? process.env.CLAUDE_EFFORT : "low";
-// Modelos antigos (Haiku 4.5, Sonnet 4.5...) não aceitam "effort": nesses casos ele não é enviado.
-const ACEITA_ESFORCO = !/haiku-4|sonnet-4-5|-3-/.test(MODEL);
-const comEsforco = (config) => (ACEITA_ESFORCO ? { ...config, effort: ESFORCO } : config);
-// Nas tarefas mecânicas (formatar linhas, escrever a aplicação de um versículo, listar os parágrafos) o raciocínio
-// interno só atrasa: no Haiku 5.5 ele é desligado (aceito com esforço low, medium ou high). Opus 5.5 e Sonnet 5.5 recusam
-// "disabled", então lá nada muda. CLAUDE_RACIOCINIO=on na Vercel volta a deixar a IA pensar também nessas tarefas.
-// Nas RESPOSTAS do estudo ele fica ligado: sem ele as respostas saíam incoerentes. Para não demorar, a IA recebe só as
-// perguntas e os parágrafos pedidos (lidos pelo servidor no wol.jw.org), e não o artigo inteiro.
-const semRaciocinio =
-  /haiku-5/.test(MODEL) && process.env.CLAUDE_RACIOCINIO !== "on" ? { thinking: { type: "disabled" } } : {};
+// ---------- Modelo da IA ----------
+// O modelo e o esforço vêm da escolha do administrador na tela de prompts (api/_iaConfig.mjs) e chegam em P.ia em
+// cada pedido. Toda chamada à IA passa por chamarIa, que monta o pedido certo para o modelo escolhido:
+//  - Esforço: quanto a IA pensa antes de responder ("low" é o padrão: rápido e barato). Modelos antigos (Haiku 4.5,
+//    Sonnet 4.5...) não aceitam "effort": nesses casos ele não é enviado.
+//  - semPensar: nas tarefas mecânicas (formatar linhas, escrever a aplicação de um versículo, listar os parágrafos) o
+//    raciocínio interno só atrasa: no Haiku 5.5 ele é desligado (aceito com esforço low, medium ou high). Sonnet 5.5,
+//    Opus 5.5 e Fable 5.1 recusam "disabled", então lá ele continua ligado e o esforço controla a demora.
+//    CLAUDE_RACIOCINIO=on na Vercel deixa o Haiku pensar também nessas tarefas. Nas RESPOSTAS do estudo ele fica ligado:
+//    sem ele as respostas saíam incoerentes.
+//  - Recusa por engano: Sonnet 5.5, Opus 5.5 e Fable 5.1 têm filtros de segurança que às vezes recusam um pedido comum;
+//    nesses modelos o pedido vai com o "fallback" do servidor da Anthropic, que refaz o pedido num modelo vizinho na
+//    mesma chamada (o Haiku 5.5 não tem esse recurso).
+const aceitaEsforco = (modelo) => !/haiku-4|sonnet-4-5|-3-/.test(modelo);
+const temFallback = (modelo) => /^claude-(sonnet-5-5|opus-5-5|fable-5-1)$/.test(modelo);
+
+async function chamarIa(client, P, params, { schema = null, semPensar = false } = {}) {
+  const { modelo, esforco } = P.ia;
+  const fallback = temFallback(modelo);
+  const formato = schema ? (fallback ? betaZodOutputFormat(schema) : zodOutputFormat(schema)) : null;
+  const output_config = { ...(formato ? { format: formato } : {}), ...(aceitaEsforco(modelo) ? { effort: esforco } : {}) };
+  const pensar =
+    semPensar && /haiku-5/.test(modelo) && process.env.CLAUDE_RACIOCINIO !== "on" ? { thinking: { type: "disabled" } } : {};
+  const corpo = { ...params, model: modelo, ...pensar, ...(Object.keys(output_config).length ? { output_config } : {}) };
+  if (!fallback) return schema ? client.messages.parse(corpo) : client.messages.create(corpo);
+  const comFallback = { ...corpo, betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" };
+  return schema ? client.beta.messages.parse(comFallback) : client.beta.messages.create(comFallback);
+}
+
+// Os modelos mais potentes pensam mais e demoram mais: o tempo máximo de espera dobra com eles (até 170 s, para a
+// resposta e a aplicação dos textos caberem nos 300 s da função na Vercel).
+const tempoIa = (P, base) => (/haiku/.test(P.ia.modelo) ? base : Math.min(170_000, base * 2));
 // Os textos dos prompts moram em _prompts.mjs (o administrador edita o tom e as regras pelo app).
 // Os limites de tamanho e de quantidade (textos, destaques, respostas, pedidos por hora...) são configuráveis pelo
 // administrador e chegam por P.limites (ver LIMITES em _prompts.mjs).
@@ -463,15 +482,17 @@ async function completarFontes(itens, opcoes, P, orientacao) {
     });
     if (!lista.length) return;
 
-    const client = new Anthropic({ maxRetries: 1, timeout: 40_000 });
-    const resposta = await client.messages.parse({
-      model: MODEL,
-      max_tokens: 4000,
-      system: P.sistemaAplicacao,
-      ...semRaciocinio,
-      messages: [{ role: "user", content: (orientacao || "") + "ITENS (JSON):\n" + JSON.stringify(lista) }],
-      output_config: comEsforco({ format: zodOutputFormat(SaidaAplicacao) }),
-    });
+    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 40_000) });
+    const resposta = await chamarIa(
+      client,
+      P,
+      {
+        max_tokens: 6000, // folga para o raciocínio dos modelos que não o desligam
+        system: P.sistemaAplicacao,
+        messages: [{ role: "user", content: (orientacao || "") + "ITENS (JSON):\n" + JSON.stringify(lista) }],
+      },
+      { schema: SaidaAplicacao, semPensar: true }
+    );
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) return;
 
     for (const r of resposta.parsed_output.itens) {
@@ -624,20 +645,13 @@ async function finalizarItens(itens, opcoes, P, orientacao) {
 
 // Conversa com a IA tratando pause_turn (turno longo pausado pela API, ex.: durante a leitura do site).
 // Devolve a última resposta e todos os blocos de todos os turnos.
-async function conversar(client, { system, mensagens, tools, maxTokens, voltas }) {
+async function conversar(client, P, { system, mensagens, tools, maxTokens, voltas }) {
   let resposta;
   const blocos = [];
   const inicio = Date.now();
-  const uso = { voltas: 0, entrada: 0, saida: 0 };
+  const uso = { modelo: P.ia.modelo, voltas: 0, entrada: 0, saida: 0 };
   for (let volta = 0; volta < voltas; volta++) {
-    resposta = await client.messages.create({
-      model: MODEL,
-      max_tokens: maxTokens,
-      system,
-      messages: mensagens,
-      tools,
-      ...(ACEITA_ESFORCO ? { output_config: { effort: ESFORCO } } : {}),
-    });
+    resposta = await chamarIa(client, P, { max_tokens: maxTokens, system, messages: mensagens, tools });
     uso.voltas++;
     uso.entrada += resposta.usage?.input_tokens || 0;
     uso.saida += resposta.usage?.output_tokens || 0;
@@ -726,16 +740,16 @@ async function escreverRespostas({ rotulo, texto, escopo, opcoes, modo, ajuste, 
   }
 
   const permitidos = estilosDe(opcoes);
-  const client = new Anthropic({ maxRetries: 1, timeout: 90_000 });
+  const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 90_000) });
   const inicio = Date.now();
-  const resposta = await client.messages.parse({
-    model: MODEL,
-    max_tokens: 12000, // o raciocínio também conta aqui
-    system: P.sistemaSentinela,
-    messages: [{ role: "user", content: mensagem }],
-    output_config: comEsforco({ format: zodOutputFormat(SaidaSentinela) }),
-  });
+  const resposta = await chamarIa(
+    client,
+    P,
+    { max_tokens: 12000 /* o raciocínio também conta aqui */, system: P.sistemaSentinela, messages: [{ role: "user", content: mensagem }] },
+    { schema: SaidaSentinela }
+  );
   const uso = {
+    modelo: P.ia.modelo,
     segundosIa: Math.round((Date.now() - inicio) / 100) / 10,
     entrada: resposta.usage?.input_tokens || 0,
     saida: resposta.usage?.output_tokens || 0,
@@ -965,13 +979,13 @@ async function responderEstudo(res, body, P) {
       P.frases.pedidos[modo === "nova" ? "Respostas: outra sugestão" : "Respostas: melhorar"];
   }
 
-  const client = new Anthropic({ maxRetries: 1, timeout: 90_000 });
+  const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 90_000) });
   const tools = [
     { type: "web_fetch_20250910", name: "web_fetch", max_uses: 3, allowed_domains: ["wol.jw.org"], max_content_tokens: 60000 },
   ];
   // Uma leitura do artigo com a mensagem dada; devolve a resposta da IA, o texto e o JSON conferido.
   const consultar = async (conteudo) => {
-    const { resposta, uso } = await conversar(client, {
+    const { resposta, uso } = await conversar(client, P, {
       system: P.sistemaEstudo,
       mensagens: [{ role: "user", content: conteudo }],
       tools,
@@ -1138,14 +1152,13 @@ async function sugerirPerguntas(res, body, P) {
     lembreteFinal(opcoes, ajuste, P);
 
   try {
-    const client = new Anthropic({ maxRetries: 1, timeout: 90_000 });
-    const resposta = await client.messages.parse({
-      model: MODEL,
-      max_tokens: 8000, // o raciocínio também conta aqui
-      system: P.sistemaPerguntas,
-      messages: [{ role: "user", content: mensagem }],
-      output_config: comEsforco({ format: zodOutputFormat(SaidaPerguntas) }),
-    });
+    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 90_000) });
+    const resposta = await chamarIa(
+      client,
+      P,
+      { max_tokens: 8000 /* o raciocínio também conta aqui */, system: P.sistemaPerguntas, messages: [{ role: "user", content: mensagem }] },
+      { schema: SaidaPerguntas }
+    );
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
       return erro(res, 502, "A IA não conseguiu sugerir perguntas para este parágrafo.");
     }
@@ -1184,6 +1197,7 @@ async function sugerirPerguntas(res, body, P) {
     console.log(
       "Perguntas adicionais:",
       JSON.stringify({
+        modelo: P.ia.modelo,
         pedidos: [...alvo],
         recebidos: itens.map((i) => i.paragrafos),
         complementares: opcoes.perguntasComplementares,
@@ -1243,14 +1257,13 @@ async function comentariosDoTextoDiario(res, body, P) {
 
   const inicio = Date.now();
   try {
-    const client = new Anthropic({ maxRetries: 1, timeout: 90_000 });
-    const resposta = await client.messages.parse({
-      model: MODEL,
-      max_tokens: 6000, // o raciocínio também conta aqui
-      system: P.sistemaTextoDiario,
-      messages: [{ role: "user", content: mensagem }],
-      output_config: comEsforco({ format: zodOutputFormat(SaidaTextoDiario) }),
-    });
+    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 90_000) });
+    const resposta = await chamarIa(
+      client,
+      P,
+      { max_tokens: 6000 /* o raciocínio também conta aqui */, system: P.sistemaTextoDiario, messages: [{ role: "user", content: mensagem }] },
+      { schema: SaidaTextoDiario }
+    );
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
       return erro(res, 502, "A IA não conseguiu sugerir comentários para este texto.");
     }
@@ -1262,6 +1275,7 @@ async function comentariosDoTextoDiario(res, body, P) {
     console.log(
       "Comentários do texto diário:",
       JSON.stringify({
+        modelo: P.ia.modelo,
         data: texto.data,
         comentarios: comentarios.length,
         outros: anteriores.length > 0,
@@ -1345,7 +1359,7 @@ async function listarParagrafos(res, body, P) {
   }
 
   try {
-    const client = new Anthropic({ maxRetries: 1, timeout: 90_000 });
+    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 90_000) });
     const tools = [
       { type: "web_fetch_20250910", name: "web_fetch", max_uses: 3, allowed_domains: ["wol.jw.org"], max_content_tokens: 60000 },
     ];
@@ -1353,15 +1367,8 @@ async function listarParagrafos(res, body, P) {
     let mensagens = [{ role: "user", content: `ENDEREÇO: ${url}` }];
     let resposta;
     for (let volta = 0; volta < 3; volta++) {
-      resposta = await client.messages.create({
-        model: MODEL,
-        max_tokens: 1500,
-        system: P.sistemaLista,
-        ...semRaciocinio,
-        messages: mensagens,
-        tools,
-        ...(ACEITA_ESFORCO ? { output_config: { effort: ESFORCO } } : {}),
-      });
+      // 4000: folga para o raciocínio dos modelos que não o desligam (no Haiku a resposta usa bem menos).
+      resposta = await chamarIa(client, P, { max_tokens: 4000, system: P.sistemaLista, messages: mensagens, tools }, { semPensar: true });
       if (resposta.stop_reason !== "pause_turn") break;
       mensagens = [...mensagens, { role: "assistant", content: resposta.content }];
     }
@@ -1419,7 +1426,9 @@ export default async function handler(req, res) {
   }
 
   // Prompts e limites atuais (padrão do código + edições do administrador, guardadas no Global Config).
-  const P = await carregarPrompts();
+  // Mais o modelo e o esforço da IA escolhidos pelo administrador (P.ia).
+  const [prompts, ia] = await Promise.all([carregarPrompts(), lerConfigIa()]);
+  const P = { ...prompts, ia };
 
   const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "desconhecido";
   if (excedeuLimite(ip, P.limites.limitePorHora)) {
@@ -1487,15 +1496,13 @@ export default async function handler(req, res) {
   precarregarFontes({ biblia: opcoes.consultarBiblia, perspicaz: opcoes.consultarPerspicaz });
 
   try {
-    const client = new Anthropic({ maxRetries: 1, timeout: 60_000 });
-    const resposta = await client.messages.parse({
-      model: MODEL,
-      max_tokens: opcoes.intensidade === "muitas" ? 10000 : 6000,
-      system: P.sistemaFormatacao,
-      ...semRaciocinio,
-      messages: [{ role: "user", content: mensagem }],
-      output_config: comEsforco({ format: zodOutputFormat(Saida) }),
-    });
+    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 60_000) });
+    const resposta = await chamarIa(
+      client,
+      P,
+      { max_tokens: opcoes.intensidade === "muitas" ? 10000 : 6000, system: P.sistemaFormatacao, messages: [{ role: "user", content: mensagem }] },
+      { schema: Saida, semPensar: true }
+    );
 
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
       return erro(res, 502, "A IA não conseguiu gerar sugestões para este texto.");

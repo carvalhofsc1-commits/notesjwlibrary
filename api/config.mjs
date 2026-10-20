@@ -5,6 +5,7 @@ import { diagnosticar, escritaDisponivel, leituraDisponivel, lerItem, gravarItem
 import { LIMITES, PARTES, aplicarLimites, limitesPublicos, travadosDe, validarAlteracoes, validarLimites } from "./_prompts.mjs";
 import { esquecerCache, gravarAlteracoes, gravarLimites, lerAlteracoes, lerAnterior, lerLimites } from "./_promptsArmazenados.mjs";
 import { configPublicaVoz, gravarConfigVoz, lerConfigVoz, opcoesVoz } from "./_vozConfig.mjs";
+import { gravarConfigIa, lerConfigIa, lerCustoIa, opcoesIa } from "./_iaConfig.mjs";
 
 const CHAVE_PADRAO = "padrao_modelos";
 // Anotação do administrador (ex.: o código de uso dos recursos de IA, para não esquecer). Só é lida e gravada com o
@@ -200,6 +201,30 @@ export default async function handler(req, res) {
     if (acao === "voz-salvar") {
       if (!exigirEscrita(res)) return;
       return res.status(200).json({ config: await gravarConfigVoz(corpo.config) });
+    }
+
+    // Modelo e esforço da IA de texto (tela de prompts).
+    if (acao === "ia-ler") {
+      return res.status(200).json({ config: await lerConfigIa(), opcoes: opcoesIa(), armazenamento: descreverArmazenamento() });
+    }
+
+    if (acao === "ia-salvar") {
+      if (!exigirEscrita(res)) return;
+      return res.status(200).json({ config: await gravarConfigIa(corpo.config) });
+    }
+
+    // Gasto do mês com a IA de texto, pela Cost API da Anthropic (precisa de ANTHROPIC_ADMIN_KEY).
+    if (acao === "ia-custo") {
+      try {
+        return res.status(200).json(await lerCustoIa());
+      } catch (e) {
+        console.error("Custo da IA: a Anthropic recusou a consulta", e.status, e.message);
+        const mensagem =
+          e.status === 401 || e.status === 403
+            ? "A Anthropic recusou a chave de administrador (ANTHROPIC_ADMIN_KEY). Confira a chave no Claude Console."
+            : "Não consegui consultar o gasto na Anthropic agora. Tente de novo.";
+        return erro(res, 502, mensagem);
+      }
     }
 
     if (acao === "anotacao-salvar") {

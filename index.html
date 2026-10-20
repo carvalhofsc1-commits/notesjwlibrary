@@ -1546,6 +1546,13 @@
     .prompt-tint-5 { background: var(--card); background: color-mix(in srgb, #14b8a6 11%, var(--card)); border-color: color-mix(in srgb, #14b8a6 45%, var(--line)); }
     .prompt-tint-6 { background: var(--card); background: color-mix(in srgb, #f43f5e 10%, var(--card)); border-color: color-mix(in srgb, #f43f5e 45%, var(--line)); }
     .prompt-tint-codigo { background: var(--card); background: color-mix(in srgb, #10b981 14%, var(--card)); border-color: color-mix(in srgb, #10b981 50%, var(--line)); }
+    .prompt-tint-ia { background: var(--card); background: color-mix(in srgb, #6366f1 13%, var(--card)); border-color: color-mix(in srgb, #6366f1 50%, var(--line)); }
+    .prompt-tint-ia label { display: block; margin: 10px 0 4px; font-weight: 700; font-size: .9rem; }
+    .prompt-tint-ia select { width: 100%; }
+    .ia-custo-titulo { margin-top: 18px; }
+    .ia-custo { font-size: .92rem; line-height: 1.5; }
+    .ia-custo p { margin: 4px 0; }
+    .ia-custo ul { margin: 4px 0 8px; padding-left: 20px; }
     .admin-code-row { display: flex; gap: 8px; align-items: stretch; margin-top: 8px; }
     .admin-code-row input { flex: 1 1 auto; min-width: 0; font-family: ui-monospace, Consolas, monospace; letter-spacing: .04em; }
     .admin-code-row button { flex: 0 0 auto; }
@@ -2982,6 +2989,28 @@
           <div class="button-row">
             <button id="adminCodeSaveBtn" type="button">💾 Salvar anotação</button>
             <span id="adminCodeStatus" class="ok" role="status" aria-live="polite"></span>
+          </div>
+        </div>
+
+        <!-- Modelo da IA de texto e gasto com ela (como no menu da voz). -->
+        <div class="prompt-item prompt-tint-ia">
+          <h3>🤖 Modelo da IA de texto</h3>
+          <p class="hint">Vale para todas as respostas da IA (estudo, perguntas do dirigente, formatação, comentários do texto diário) e para todos os usuários. Os modelos mais potentes escrevem melhor, mas demoram mais e custam mais.</p>
+          <label for="iaModelo">Modelo</label>
+          <select id="iaModelo"></select>
+          <p id="iaModeloPreco" class="hint"></p>
+          <label for="iaEsforco">Esforço (quanto a IA pensa antes de responder)</label>
+          <select id="iaEsforco"></select>
+          <div class="button-row">
+            <button id="iaSalvarBtn" type="button">💾 Salvar modelo</button>
+            <span id="iaStatus" class="ok" role="status" aria-live="polite"></span>
+          </div>
+
+          <h3 class="ia-custo-titulo">💲 Gasto com a IA de texto (Anthropic)</h3>
+          <div id="iaCusto" class="ia-custo"></div>
+          <div class="button-row">
+            <button id="iaCustoBtn" class="secondary" type="button">🔄 Atualizar o gasto</button>
+            <a class="voz-link" href="https://platform.claude.com/cost" target="_blank" rel="noopener noreferrer">💳 Abrir os custos no Claude Console</a>
           </div>
         </div>
         <p class="hint">Aqui você edita o <strong>tom e as regras</strong> da IA. O formato técnico da resposta (campos e JSON) e a forma de indicar os textos da Bíblia e os verbetes do Perspicaz ficam travados, só para leitura, no fim da página. Ao salvar, a mudança vale para todos os usuários em poucos segundos. "Restaurar padrão" volta ao texto original do app. Nos textos, <strong>{{max_textos}}</strong> e <strong>{{max_destaques}}</strong> são trocados pelos limites definidos logo abaixo. Nas partes de frases (opções da formatação, listas, respostas, textos bíblicos e orientação), cada item começa com o nome entre colchetes, como <strong>[Emoji: marcada]</strong>: edite só o texto depois do nome. Item apagado volta ao texto padrão.</p>
@@ -4877,8 +4906,10 @@
           await vozTocar(entrada);
           if (sessao !== vozSessao) return;
         }
+        // Terminou: mostra o aviso por um instante e fecha a barra sozinha (com erro, ela fica aberta para ler a mensagem).
         vozMensagem('✅ Leitura concluída.', false);
         vozControlesAtivos(false);
+        setTimeout(() => { if (sessao === vozSessao) vozBar.hidden = true; }, 1500);
       } catch (e) {
         if (sessao !== vozSessao) return;
         vozMensagem(e && e.message ? e.message : 'Não consegui ler o texto.', true);
@@ -5271,7 +5302,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '4.8.5'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0; 4.8.5: categorias de Ajustes direto na página (sem o cartão recolhível "Configurações gerais do app"); 4.8.4: Ajustes → Autorização de acessos (código de acesso e senha de administrador informados uma vez e salvos), a IA nunca escreve "culto" (sempre reunião), comentários adicionais recolhíveis e com Limpar, atalhos Comentários e Dirigentes abrem só o grupo deles; 4.8.3: tela Início com o texto diário (do wol.jw.org; um toque abre o comentário, ler em voz alta, levar para o campo de texto e comentários adicionais da IA) e atalhos; 4.8.2: referências bíblicas lidas na forma curta ("Primeira Coríntios treze, quatro a sete"), voz com duas partes à frente (sem pausas, também em 1,15×), pular citações de publicações (w24.09 21 § 6) e referências bíblicas só entre parênteses ou depois de travessão no fim do parágrafo (o texto temático do texto diário é lido); 4.8.1: voz começa mais rápido (primeiras partes curtas) e campos de preço alinhados; 4.8.0: menu da voz para o administrador (modelo, voz, tom, o que ler e pular), consumo estimado e vozes Gemini com a conta de serviço do Google; 4.7.9: voz reserva (Chirp 3 HD) quando o Gemini é recusado; 4.7.8: botão 🔊 Ouvir (leitura em voz alta com a voz do Google); 4.7.7: Fonte CX com C preto e C branco, cada um ao lado do seu quadradinho; todos os cards começam fechados ao abrir o app; 4.7.6: tela Reuniões em dois cartões (texto e reuniões); 4.7.5: campo de texto volta a crescer depois de levar uma nota do backup; importar notas de outro backup; 4.7.4: card do desenvolvedor na largura do quadro de limitações (Sobre); 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
+    const APP_VERSION = '4.8.6'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0; 4.8.6: modelo da IA de texto escolhido pelo administrador na tela de prompts (Haiku, Sonnet, Opus ou Fable) e gasto do mês pela Cost API da Anthropic; 4.8.6: a barra da leitura em voz alta fecha sozinha quando a leitura termina; 4.8.5: categorias de Ajustes direto na página (sem o cartão recolhível "Configurações gerais do app"); 4.8.4: Ajustes → Autorização de acessos (código de acesso e senha de administrador informados uma vez e salvos), a IA nunca escreve "culto" (sempre reunião), comentários adicionais recolhíveis e com Limpar, atalhos Comentários e Dirigentes abrem só o grupo deles; 4.8.3: tela Início com o texto diário (do wol.jw.org; um toque abre o comentário, ler em voz alta, levar para o campo de texto e comentários adicionais da IA) e atalhos; 4.8.2: referências bíblicas lidas na forma curta ("Primeira Coríntios treze, quatro a sete"), voz com duas partes à frente (sem pausas, também em 1,15×), pular citações de publicações (w24.09 21 § 6) e referências bíblicas só entre parênteses ou depois de travessão no fim do parágrafo (o texto temático do texto diário é lido); 4.8.1: voz começa mais rápido (primeiras partes curtas) e campos de preço alinhados; 4.8.0: menu da voz para o administrador (modelo, voz, tom, o que ler e pular), consumo estimado e vozes Gemini com a conta de serviço do Google; 4.7.9: voz reserva (Chirp 3 HD) quando o Gemini é recusado; 4.7.8: botão 🔊 Ouvir (leitura em voz alta com a voz do Google); 4.7.7: Fonte CX com C preto e C branco, cada um ao lado do seu quadradinho; todos os cards começam fechados ao abrir o app; 4.7.6: tela Reuniões em dois cartões (texto e reuniões); 4.7.5: campo de texto volta a crescer depois de levar uma nota do backup; importar notas de outro backup; 4.7.4: card do desenvolvedor na largura do quadro de limitações (Sobre); 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 
@@ -8153,6 +8184,7 @@ function saveTemplatesToStorage() {
         return;
       }
       promptsCode = code;
+      iaCarregar();
       promptsLoginError.textContent = '';
       promptsLogin.hidden = true;
       promptsEditor.hidden = false;
@@ -8314,6 +8346,101 @@ function saveTemplatesToStorage() {
     });
     promptsSaveBtn.addEventListener('click', savePrompts);
     promptsUndoBtn.addEventListener('click', undoPrompts);
+
+    // ---------- Modelo da IA de texto e gasto com ela (tela de prompts) ----------
+    // O administrador escolhe o modelo e o esforço da IA para todos (api/_iaConfig.mjs). O gasto do mês vem da Cost API
+    // da Anthropic, quando há uma chave de administrador da Anthropic na Vercel (ANTHROPIC_ADMIN_KEY).
+    const iaModelo = document.getElementById('iaModelo');
+    const iaEsforco = document.getElementById('iaEsforco');
+    const iaModeloPreco = document.getElementById('iaModeloPreco');
+    const iaStatus = document.getElementById('iaStatus');
+    const iaCusto = document.getElementById('iaCusto');
+    let iaOpcoes = null;
+    const iaDolares = valor => 'US$ ' + Number(valor || 0).toFixed(2).replace('.', ',');
+    const iaPreco = valor => String(valor).replace('.', ',');
+
+    function iaMensagem(texto, aviso) {
+      iaStatus.className = aviso ? 'warn' : 'ok';
+      iaStatus.textContent = texto;
+    }
+
+    function iaMostrarPreco() {
+      const modelos = iaOpcoes ? iaOpcoes.modelos : [];
+      const m = modelos.find(x => x.id === iaModelo.value);
+      if (!m) return (iaModeloPreco.textContent = '');
+      const vezes = Math.round(m.saida / modelos[0].saida);
+      iaModeloPreco.textContent = 'Preço: US$ ' + iaPreco(m.entrada) + ' por milhão de tokens lidos e US$ ' + iaPreco(m.saida) + ' por milhão de tokens escritos'
+        + (vezes > 1 ? ' (cerca de ' + vezes + ' vezes o Haiku 5.5).' : ' (o mais barato).');
+    }
+
+    async function iaCarregar() {
+      iaMensagem('Carregando…', false);
+      const r = await postConfig({ acao: 'ia-ler', codigo: promptsCode });
+      if (!r.ok) return iaMensagem(configErrorMessage(r, 'Não foi possível carregar o modelo da IA.'), true);
+      iaOpcoes = r.data.opcoes;
+      [[iaModelo, iaOpcoes.modelos], [iaEsforco, iaOpcoes.esforcos]].forEach(([select, itens]) => {
+        select.textContent = '';
+        itens.forEach(item => {
+          const op = document.createElement('option');
+          op.value = item.id;
+          op.textContent = item.nome;
+          select.appendChild(op);
+        });
+      });
+      iaModelo.value = r.data.config.modelo;
+      iaEsforco.value = r.data.config.esforco;
+      iaMostrarPreco();
+      iaMensagem(r.data.armazenamento && !r.data.armazenamento.escrita ? 'O armazenamento do servidor ainda não permite salvar.' : '', true);
+      iaCarregarCusto();
+    }
+
+    async function iaSalvar() {
+      iaMensagem('Salvando...', false);
+      const r = await postConfig({ acao: 'ia-salvar', codigo: promptsCode, config: { modelo: iaModelo.value, esforco: iaEsforco.value } });
+      if (!r.ok) return iaMensagem(configErrorMessage(r, 'Não foi possível salvar agora.'), true);
+      iaModelo.value = r.data.config.modelo;
+      iaEsforco.value = r.data.config.esforco;
+      iaMensagem('✅ Salvo. O novo modelo vale para todos em poucos segundos.', false);
+    }
+
+    async function iaCarregarCusto() {
+      iaCusto.textContent = 'Consultando o gasto na Anthropic…';
+      const r = await postConfig({ acao: 'ia-custo', codigo: promptsCode });
+      iaCusto.textContent = '';
+      const paragrafo = (texto, classe) => {
+        const p = document.createElement('p');
+        if (classe) p.className = classe;
+        p.textContent = texto;
+        iaCusto.appendChild(p);
+        return p;
+      };
+      if (!r.ok) return paragrafo(configErrorMessage(r, 'Não consegui consultar o gasto agora.'), 'warn');
+      if (!r.data.configurado) {
+        paragrafo('Para ver aqui o gasto real com a IA de texto, crie no Claude Console uma chave de administrador (Settings → Admin keys; o Console pede que a conta seja uma organização) e salve-a na Vercel como variável secreta ANTHROPIC_ADMIN_KEY. Enquanto isso, o gasto aparece no Claude Console, pelo link abaixo.', 'hint');
+        return;
+      }
+      const desde = r.data.desde.split('-').reverse().slice(0, 2).join('/');
+      const resumo = paragrafo('', '');
+      resumo.append('Este mês (desde ' + desde + '): ');
+      const total = document.createElement('strong');
+      total.textContent = iaDolares(r.data.mes);
+      resumo.append(total, ' · Hoje: ' + iaDolares(r.data.hoje));
+      if (r.data.porModelo.length) {
+        const lista = document.createElement('ul');
+        r.data.porModelo.forEach(item => {
+          const li = document.createElement('li');
+          li.textContent = item.modelo + ': ' + iaDolares(item.valor);
+          lista.appendChild(li);
+        });
+        iaCusto.appendChild(lista);
+      }
+      const hora = new Date(r.data.atualizadoEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      paragrafo('Valores da Anthropic, em dólares, consultados às ' + hora + '. Cada uso aparece uns 5 minutos depois.', 'hint');
+    }
+
+    iaModelo.addEventListener('change', iaMostrarPreco);
+    document.getElementById('iaSalvarBtn').addEventListener('click', iaSalvar);
+    document.getElementById('iaCustoBtn').addEventListener('click', iaCarregarCusto);
     document.addEventListener('keydown', event => {
       if (event.key === 'Escape' && promptsIsOpen && !confirmOverlay.classList.contains('open')) closePrompts();
     });
@@ -8695,6 +8822,9 @@ function saveTemplatesToStorage() {
     const aiInstruction = document.getElementById('aiInstruction');
     const aiOptionInputs = Array.from(document.querySelectorAll('[data-ai-opt]'));
     const AI_ENDPOINT = '/api/sugerir-formatacao';
+    // Espera máxima por uma resposta da IA: os modelos mais potentes (escolhidos na tela de prompts) podem levar alguns
+    // minutos; o servidor desiste antes disso (a função da Vercel vai até 300 s).
+    const IA_ESPERA_MS = 290000;
     const AI_OPTIONS_KEY = 'jwLibraryNoteAplicarAiOptionsV1';
     // Limites de tamanho do texto enviado à IA: valem estes até o servidor informar os configurados pelo administrador.
     let AI_MAX_CHARS = 4000;
@@ -9474,7 +9604,7 @@ function saveTemplatesToStorage() {
       setAiLoading(true, mode === 'nova' ? aiAnotherBtn : mode === 'melhorar' ? aiImproveBtn : aiSentinelaBtn);
 
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 125000); // com consulta à Bíblia/Perspicaz a IA abre arquivos e demora mais
+      const timer = setTimeout(() => controller.abort(), IA_ESPERA_MS); // com consulta à Bíblia/Perspicaz a IA abre arquivos e demora mais
 
       try {
         const response = await fetch(AI_ENDPOINT, {
@@ -9738,7 +9868,7 @@ function saveTemplatesToStorage() {
           artigo: aiStudyArticle.value.trim(),
           ano: aiWeekYear,
           semana: aiWeekNumber
-        }, 110000);
+        }, IA_ESPERA_MS);
 
         const groups = result.ok && Array.isArray(result.data.grupos) ? result.data.grupos : [];
         if (!groups.length) {
@@ -9818,7 +9948,7 @@ function saveTemplatesToStorage() {
       setAiLoading(true, mode === 'nova' ? aiAnotherBtn : mode === 'melhorar' ? aiImproveBtn : aiStudyBtn);
 
       try {
-        const result = await postStudy(payload, 170000);
+        const result = await postStudy(payload, IA_ESPERA_MS);
 
         if (!result.ok) return setAiStatus(studyFailureMessage(result, 'Não foi possível ler o estudo agora.'), true);
 
@@ -9894,7 +10024,7 @@ function saveTemplatesToStorage() {
           semana: aiWeekNumber,
           paragrafos: requested,
           opcoes: readAiOptions()
-        }, 120000);
+        }, IA_ESPERA_MS);
         if (!result.ok) return setAiStatus(studyFailureMessage(result, 'Não foi possível sugerir perguntas agora.'), true);
         const items = Array.isArray(result.data.itens) ? result.data.itens : [];
         if (!items.length) return setAiStatus(result.data.erro || 'A IA não sugeriu perguntas para esse parágrafo. Tente de novo.', true);
@@ -10231,7 +10361,7 @@ function saveTemplatesToStorage() {
       setAiLoading(true, outros ? td.iaOutrosBtn : td.gerarBtn);
       td.iaStatus.textContent = '';
       try {
-        const result = await postStudy({ tarefa: 'texto-diario-comentarios', codigo: codigoAcessoSalvo(), data, anteriores }, 120000);
+        const result = await postStudy({ tarefa: 'texto-diario-comentarios', codigo: codigoAcessoSalvo(), data, anteriores }, IA_ESPERA_MS);
         const lista = result.ok && Array.isArray(result.data.comentarios) ? result.data.comentarios : [];
         if (!lista.length) {
           td.iaStatus.textContent = result.ok ? result.data.erro || 'A IA não sugeriu comentários. Tente de novo.' : studyFailureMessage(result, 'Não foi possível gerar os comentários agora.');
