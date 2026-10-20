@@ -1538,6 +1538,15 @@
 
     .prompt-item h3 { margin: 0; font-size: 1rem; }
 
+    /* Cada seção da tela de prompts é um cartão recolhível: um toque no título abre ou fecha (a seta indica). */
+    details.prompt-item > summary { display: flex; align-items: center; gap: 8px; cursor: pointer; list-style: none; -webkit-tap-highlight-color: transparent; }
+    details.prompt-item > summary::-webkit-details-marker { display: none; }
+    details.prompt-item > summary h3 { flex: 1 1 auto; }
+    details.prompt-item > summary::after { content: '▸'; color: var(--muted); font-size: 1.1rem; }
+    details.prompt-item[open] > summary::after { content: '▾'; }
+    details.prompt-item[open] > summary { margin-bottom: 8px; }
+    .prompt-intro { background: var(--card); }
+
     /* Cada seção da página de prompts tem uma cor de fundo suave própria, para uma não se misturar com a outra. */
     .prompt-tint-1 { background: var(--card); background: color-mix(in srgb, #3b82f6 11%, var(--card)); border-color: color-mix(in srgb, #3b82f6 45%, var(--line)); }
     .prompt-tint-2 { background: var(--card); background: color-mix(in srgb, #22c55e 11%, var(--card)); border-color: color-mix(in srgb, #22c55e 45%, var(--line)); }
@@ -1549,7 +1558,6 @@
     .prompt-tint-ia { background: var(--card); background: color-mix(in srgb, #6366f1 13%, var(--card)); border-color: color-mix(in srgb, #6366f1 50%, var(--line)); }
     .prompt-tint-ia label { display: block; margin: 10px 0 4px; font-weight: 700; font-size: .9rem; }
     .prompt-tint-ia select { width: 100%; }
-    .ia-custo-titulo { margin-top: 18px; }
     .ia-custo { font-size: .92rem; line-height: 1.5; }
     .ia-custo p { margin: 4px 0; }
     .ia-custo ul { margin: 4px 0 8px; padding-left: 20px; }
@@ -2979,8 +2987,14 @@
       </div>
 
       <div id="promptsEditor" hidden>
-        <div class="prompt-item prompt-tint-codigo">
-          <h3>🔑 Código de uso dos recursos de IA</h3>
+        <!-- Cada seção desta tela é um cartão recolhível (todos começam fechados). -->
+        <details class="prompt-item prompt-intro">
+          <summary><h3>ℹ️ Como editar os prompts</h3></summary>
+          <p class="hint">Aqui você edita o <strong>tom e as regras</strong> da IA. O formato técnico da resposta (campos e JSON) e a forma de indicar os textos da Bíblia e os verbetes do Perspicaz ficam travados, só para leitura, no fim da página. Ao salvar, a mudança vale para todos os usuários em poucos segundos. "Restaurar padrão" volta ao texto original do app. Nos textos, <strong>{{max_textos}}</strong> e <strong>{{max_destaques}}</strong> são trocados pelos limites do cartão "Limites (números)". Nas partes de frases (opções da formatação, listas, respostas, textos bíblicos e orientação), cada item começa com o nome entre colchetes, como <strong>[Emoji: marcada]</strong>: edite só o texto depois do nome. Item apagado volta ao texto padrão.</p>
+        </details>
+
+        <details class="prompt-item prompt-tint-codigo">
+          <summary><h3>🔑 Código de uso dos recursos de IA</h3></summary>
           <p class="hint">Anotação só sua, para não esquecer o código. O código que vale de verdade é o da variável <strong>CODIGO_ESTUDO</strong> na Vercel: se trocar lá, atualize aqui também.</p>
           <div class="admin-code-row">
             <input id="adminCodeNote" type="text" maxlength="500" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Anote aqui o código de uso">
@@ -2990,11 +3004,11 @@
             <button id="adminCodeSaveBtn" type="button">💾 Salvar anotação</button>
             <span id="adminCodeStatus" class="ok" role="status" aria-live="polite"></span>
           </div>
-        </div>
+        </details>
 
         <!-- Modelo da IA de texto e gasto com ela (como no menu da voz). -->
-        <div class="prompt-item prompt-tint-ia">
-          <h3>🤖 Modelo da IA de texto</h3>
+        <details class="prompt-item prompt-tint-ia">
+          <summary><h3>🤖 Modelo da IA de texto</h3></summary>
           <p class="hint">Vale para todas as respostas da IA (estudo, perguntas do dirigente, formatação, comentários do texto diário) e para todos os usuários. Os modelos mais potentes escrevem melhor, mas demoram mais e custam mais.</p>
           <label for="iaModelo">Modelo</label>
           <select id="iaModelo"></select>
@@ -3005,15 +3019,16 @@
             <button id="iaSalvarBtn" type="button">💾 Salvar modelo</button>
             <span id="iaStatus" class="ok" role="status" aria-live="polite"></span>
           </div>
+        </details>
 
-          <h3 class="ia-custo-titulo">💲 Gasto com a IA de texto (Anthropic)</h3>
+        <details class="prompt-item prompt-tint-ia">
+          <summary><h3>💲 Gasto com a IA de texto (Anthropic)</h3></summary>
           <div id="iaCusto" class="ia-custo"></div>
           <div class="button-row">
             <button id="iaCustoBtn" class="secondary" type="button">🔄 Atualizar o gasto</button>
             <a class="voz-link" href="https://platform.claude.com/cost" target="_blank" rel="noopener noreferrer">💳 Abrir os custos no Claude Console</a>
           </div>
-        </div>
-        <p class="hint">Aqui você edita o <strong>tom e as regras</strong> da IA. O formato técnico da resposta (campos e JSON) e a forma de indicar os textos da Bíblia e os verbetes do Perspicaz ficam travados, só para leitura, no fim da página. Ao salvar, a mudança vale para todos os usuários em poucos segundos. "Restaurar padrão" volta ao texto original do app. Nos textos, <strong>{{max_textos}}</strong> e <strong>{{max_destaques}}</strong> são trocados pelos limites definidos logo abaixo. Nas partes de frases (opções da formatação, listas, respostas, textos bíblicos e orientação), cada item começa com o nome entre colchetes, como <strong>[Emoji: marcada]</strong>: edite só o texto depois do nome. Item apagado volta ao texto padrão.</p>
+        </details>
         <p id="promptsStatus" class="ok" role="status" aria-live="polite"></p>
         <div class="prompts-export-row">
           <button id="promptsCopyAllBtn" class="secondary" type="button">📋 Copiar todos os prompts</button>
@@ -3021,10 +3036,10 @@
         </div>
         <div id="promptsLimits"></div>
         <div id="promptsList"></div>
-        <div class="manager-section prompt-locked">
-          <h3>Parte técnica (somente leitura)</h3>
+        <details class="prompt-item prompt-locked">
+          <summary><h3>🔒 Parte técnica (somente leitura)</h3></summary>
           <div id="promptsLocked"></div>
-        </div>
+        </details>
         <div class="button-row prompts-sticky">
           <button id="promptsSaveBtn" type="button">💾 Salvar alterações</button>
           <button id="promptsUndoBtn" class="secondary" type="button">↩ Voltar à versão anterior</button>
@@ -5302,7 +5317,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '4.8.6'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0; 4.8.6: modelo da IA de texto escolhido pelo administrador na tela de prompts (Haiku, Sonnet, Opus ou Fable) e gasto do mês pela Cost API da Anthropic; 4.8.6: a barra da leitura em voz alta fecha sozinha quando a leitura termina; 4.8.5: categorias de Ajustes direto na página (sem o cartão recolhível "Configurações gerais do app"); 4.8.4: Ajustes → Autorização de acessos (código de acesso e senha de administrador informados uma vez e salvos), a IA nunca escreve "culto" (sempre reunião), comentários adicionais recolhíveis e com Limpar, atalhos Comentários e Dirigentes abrem só o grupo deles; 4.8.3: tela Início com o texto diário (do wol.jw.org; um toque abre o comentário, ler em voz alta, levar para o campo de texto e comentários adicionais da IA) e atalhos; 4.8.2: referências bíblicas lidas na forma curta ("Primeira Coríntios treze, quatro a sete"), voz com duas partes à frente (sem pausas, também em 1,15×), pular citações de publicações (w24.09 21 § 6) e referências bíblicas só entre parênteses ou depois de travessão no fim do parágrafo (o texto temático do texto diário é lido); 4.8.1: voz começa mais rápido (primeiras partes curtas) e campos de preço alinhados; 4.8.0: menu da voz para o administrador (modelo, voz, tom, o que ler e pular), consumo estimado e vozes Gemini com a conta de serviço do Google; 4.7.9: voz reserva (Chirp 3 HD) quando o Gemini é recusado; 4.7.8: botão 🔊 Ouvir (leitura em voz alta com a voz do Google); 4.7.7: Fonte CX com C preto e C branco, cada um ao lado do seu quadradinho; todos os cards começam fechados ao abrir o app; 4.7.6: tela Reuniões em dois cartões (texto e reuniões); 4.7.5: campo de texto volta a crescer depois de levar uma nota do backup; importar notas de outro backup; 4.7.4: card do desenvolvedor na largura do quadro de limitações (Sobre); 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
+    const APP_VERSION = '4.8.7'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0; 4.8.7: cada seção da tela de prompts virou um cartão recolhível; 4.8.6: modelo da IA de texto escolhido pelo administrador na tela de prompts (Haiku, Sonnet, Opus ou Fable) e gasto do mês pela Cost API da Anthropic; 4.8.6: a barra da leitura em voz alta fecha sozinha quando a leitura termina; 4.8.5: categorias de Ajustes direto na página (sem o cartão recolhível "Configurações gerais do app"); 4.8.4: Ajustes → Autorização de acessos (código de acesso e senha de administrador informados uma vez e salvos), a IA nunca escreve "culto" (sempre reunião), comentários adicionais recolhíveis e com Limpar, atalhos Comentários e Dirigentes abrem só o grupo deles; 4.8.3: tela Início com o texto diário (do wol.jw.org; um toque abre o comentário, ler em voz alta, levar para o campo de texto e comentários adicionais da IA) e atalhos; 4.8.2: referências bíblicas lidas na forma curta ("Primeira Coríntios treze, quatro a sete"), voz com duas partes à frente (sem pausas, também em 1,15×), pular citações de publicações (w24.09 21 § 6) e referências bíblicas só entre parênteses ou depois de travessão no fim do parágrafo (o texto temático do texto diário é lido); 4.8.1: voz começa mais rápido (primeiras partes curtas) e campos de preço alinhados; 4.8.0: menu da voz para o administrador (modelo, voz, tom, o que ler e pular), consumo estimado e vozes Gemini com a conta de serviço do Google; 4.7.9: voz reserva (Chirp 3 HD) quando o Gemini é recusado; 4.7.8: botão 🔊 Ouvir (leitura em voz alta com a voz do Google); 4.7.7: Fonte CX com C preto e C branco, cada um ao lado do seu quadradinho; todos os cards começam fechados ao abrir o app; 4.7.6: tela Reuniões em dois cartões (texto e reuniões); 4.7.5: campo de texto volta a crescer depois de levar uma nota do backup; importar notas de outro backup; 4.7.4: card do desenvolvedor na largura do quadro de limitações (Sobre); 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 
@@ -7930,6 +7945,7 @@ function saveTemplatesToStorage() {
       promptsStatus.textContent = '';
       promptsLogin.hidden = false;
       promptsEditor.hidden = true;
+      promptsEditor.querySelectorAll('details').forEach(card => { card.open = false; }); // os cartões começam fechados
       promptsIsOpen = true;
       document.body.classList.add('view-prompts');
       // O botão Voltar do navegador (e o gesto de voltar do iPhone) também fecha a tela.
@@ -8015,21 +8031,31 @@ function saveTemplatesToStorage() {
     }
 
     // Todos os limites numéricos numa caixa só: um campo por limite, com a faixa aceita e o padrão do app.
+    // Cartão recolhível da tela de prompts: título no summary (o resto vai dentro do details).
+    function promptCard(className, titulo, aberto) {
+      const box = document.createElement('details');
+      box.className = 'prompt-item ' + className;
+      box.open = Boolean(aberto);
+      const summary = document.createElement('summary');
+      const title = document.createElement('h3');
+      title.textContent = titulo;
+      summary.appendChild(title);
+      box.appendChild(summary);
+      return { box, title };
+    }
+
     function renderLimits(state) {
       const holder = document.getElementById('promptsLimits');
+      const aberto = Boolean(holder.querySelector('details[open]'));
       holder.textContent = '';
       const limits = state.limites || [];
       if (!limits.length) return;
 
-      const box = document.createElement('div');
-      box.className = 'prompt-item prompt-tint-limits';
-
-      const title = document.createElement('h3');
-      title.textContent = 'Limites (números)';
+      const { box } = promptCard('prompt-tint-limits', '🔢 Limites (números)', aberto);
       const intro = document.createElement('p');
       intro.className = 'hint';
       intro.textContent = 'Valem para todos os usuários. Nos prompts, {{max_textos}} e {{max_destaques}} são trocados pelos números abaixo.';
-      box.append(title, intro);
+      box.append(intro);
 
       const fields = [];
       limits.forEach(limit => {
@@ -8093,6 +8119,8 @@ function saveTemplatesToStorage() {
 
     function renderPrompts(state) {
       promptsState = state;
+      // Ao salvar ou restaurar, a lista é refeita: os cartões que estavam abertos continuam abertos.
+      const abertos = new Set([...promptsList.querySelectorAll('details[open][data-part]')].map(card => card.dataset.part));
       promptsList.textContent = '';
       // A anotação do código só é preenchida ao entrar; depois quem manda é o que o administrador digitou.
       if (!adminCodeNote.dataset.loaded) {
@@ -8102,11 +8130,9 @@ function saveTemplatesToStorage() {
       renderLimits(state);
 
       state.partes.forEach((part, index) => {
-        const box = document.createElement('div');
-        box.className = 'prompt-item prompt-tint-' + ((index % 6) + 1); // as cores se alternam entre as seções
-
-        const title = document.createElement('h3');
-        title.textContent = part.titulo;
+        // As cores se alternam entre as seções.
+        const { box, title } = promptCard('prompt-tint-' + ((index % 6) + 1), part.titulo, abertos.has(part.id));
+        box.dataset.part = part.id;
         if (part.personalizado) {
           const badge = document.createElement('span');
           badge.className = 'prompt-badge';
@@ -8147,7 +8173,7 @@ function saveTemplatesToStorage() {
         resetViewBtn.addEventListener('click', () => { area.value = part.valor; updateCount(); });
 
         actions.append(count, resetViewBtn, restoreBtn);
-        box.append(title, description, area, actions);
+        box.append(description, area, actions);
         promptsList.appendChild(box);
       });
 
