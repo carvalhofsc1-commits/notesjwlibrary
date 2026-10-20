@@ -124,11 +124,21 @@ export default async function handler(req, res) {
       return res.status(200).json({ voz: configPublicaVoz(await lerConfigVoz()) });
     }
 
-    // Daqui em diante, só o administrador.
-    if (!process.env.CODIGO_ADMIN) return erro(res, 503, "O código de administrador ainda não está configurado no servidor.");
-
     const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "desconhecido";
     if (bloqueado(ip)) return erro(res, 429, "Muitas tentativas erradas. Tente novamente mais tarde.");
+
+    // Confere o código de acesso (CODIGO_ESTUDO) quando ele é salvo em Ajustes → Autorização de acessos.
+    if (acao === "codigo-conferir") {
+      if (!process.env.CODIGO_ESTUDO) return erro(res, 503, "O código de acesso ainda não está configurado no servidor.");
+      if (!textosIguais(corpo.codigo, process.env.CODIGO_ESTUDO)) {
+        registrarErro(ip);
+        return erro(res, 403, "Código de acesso incorreto.");
+      }
+      return res.status(200).json({ ok: true });
+    }
+
+    // Daqui em diante, só o administrador.
+    if (!process.env.CODIGO_ADMIN) return erro(res, 503, "O código de administrador ainda não está configurado no servidor.");
     if (!textosIguais(corpo.codigo, process.env.CODIGO_ADMIN)) {
       registrarErro(ip);
       return erro(res, 403, "Código de administrador incorreto.");

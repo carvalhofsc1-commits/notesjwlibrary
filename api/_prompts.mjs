@@ -494,9 +494,13 @@ const PRIORIDADE_ORIENTACAO = `PRIORIDADE DA ORIENTAÇÃO DO USUÁRIO (regra má
 const FORMATO_LISTA = `Responda SOMENTE com um objeto JSON, sem texto fora dele, neste formato:
 {"titulo": "<título do artigo ou null>", "erro": null ou "<motivo>", "artigo": "<número de 7 dígitos do artigo lido, do final do endereço, ou null>", "grupos": ["1, 2", "3", "4"], "recapitulacao": true}`;
 
-// Ordem das partes na mensagem de cada pedido (o que fica entre aspas vem das partes editáveis).
 const FORMATO_TEXTO_DIARIO = `FORMATO DOS COMENTÁRIOS ADICIONAIS (saída estruturada): {"comentarios": [{"ponto": "...", "comentario": "..."}]}. Quando a mensagem trouxer "COMENTÁRIOS JÁ SUGERIDOS", escreva comentários diferentes deles, com outras aplicações.`;
 
+// Regra fixa de vocabulário (pedida pelo usuário, permanente): vai em todos os pedidos à IA. O servidor também troca a
+// palavra no que a IA escrever, se ela escapar (semCulto em sugerir-formatacao.mjs).
+const VOCABULARIO_FIXO = `VOCABULÁRIO (regra fixa, vale sempre): NUNCA use a palavra "culto" (nem "cultos") em nenhum texto que você escrever. Use sempre "reunião" ou "reuniões" (ex.: "durante a reunião", "nas reuniões da congregação"). Vale para respostas, resumos, perguntas, aplicações, explicações e comentários.`;
+
+// Ordem das partes na mensagem de cada pedido (o que fica entre aspas vem das partes editáveis).
 const MONTAGEM_PEDIDOS = `COMO O APP MONTA A MENSAGEM DE CADA PEDIDO (além do prompt de sistema de cada tarefa)
 - Sugerir formatação: [orientação do usuário, se houver: "Orientação: abertura" e os itens dela] → "PREFERÊNCIAS DO USUÁRIO:" com as frases de "Opções da formatação com IA" e "Listas", conforme as caixas → [frases de "Textos bíblicos e Perspicaz" (resumo), se alguma opção de texto estiver marcada, e "Como a IA indica os textos bíblicos e os verbetes"] → "MODELOS DISPONÍVEIS:" (id, nome e conteúdo de cada modelo) → "LINHAS DO TEXTO:" (cada linha numerada [0], [1]...) → [lembrete final, se houver orientação] → [em "Outra sugestão" ou "Melhorar": "SUGESTÕES ANTERIORES (JSON)" e o pedido do botão].
 - Respostas do estudo (texto colado ou lido no wol.jw.org): [orientação] → "PREFERÊNCIAS:" com as frases de "Opções das respostas do estudo" e de "Textos bíblicos e Perspicaz" (respostas) e "Como a IA indica os textos bíblicos e os verbetes" → [escopo da recapitulação, se for o caso] → "TEXTO COLADO:" ou "TEXTO DO ESTUDO:" (cada pergunta como "Pergunta (parágrafo N): ...", os parágrafos numerados e as legendas das imagens; na recapitulação, o artigo inteiro e "PERGUNTAS DE RECAPITULAÇÃO (responda a cada uma):") → [lembrete final] → [em "Outra sugestão" ou "Melhorar": "RESPOSTAS ANTERIORES (JSON)" e o pedido do botão].
@@ -509,6 +513,7 @@ const MONTAGEM_PEDIDOS = `COMO O APP MONTA A MENSAGEM DE CADA PEDIDO (além do p
 
 export function travadosDe(limites) {
   return [
+  { id: "vocabulario_fixo", titulo: "Vocabulário: nunca \"culto\", sempre \"reunião\" ou \"reuniões\" (em todos os pedidos)", texto: VOCABULARIO_FIXO },
   { id: "regras_fixas_formatacao", titulo: "Regras fixas da formatação (pergunta só em pergunta; parênteses no fim da frase anterior; fontes permitidas)", texto: REGRAS_FIXAS_FORMATACAO },
   { id: "prioridade_orientacao", titulo: "Prioridade da orientação do usuário (campo Orientação para a IA)", texto: PRIORIDADE_ORIENTACAO },
   { id: "formato_estudo", titulo: "Formato JSON das respostas do estudo (Opção 1)", texto: FORMATO_ESTUDO },
@@ -573,13 +578,13 @@ export function montarPrompts(overrides, limitesArmazenados) {
   };
 
   return {
-    sistemaFormatacao: texto("formatacao") + "\n\n" + REGRAS_FIXAS_FORMATACAO + "\n\n" + PRIORIDADE_ORIENTACAO,
-    sistemaSentinela: texto("sentinela") + "\n\n" + blocosResposta + "\n\n" + REGRA_TEXTOS_PERGUNTA + "\n\n" + PRIORIDADE_ORIENTACAO,
-    sistemaEstudo: texto("estudo") + "\n\n" + blocosResposta + "\n\n" + REGRA_TEXTOS_PERGUNTA + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_ESTUDO,
-    sistemaLista: texto("lista") + "\n\n" + FORMATO_LISTA,
-    sistemaPerguntas: texto("perguntas") + "\n\n" + FORMATO_PERGUNTAS + "\n\n" + PRIORIDADE_ORIENTACAO,
-    sistemaTextoDiario: texto("texto_diario") + "\n\n" + FORMATO_TEXTO_DIARIO,
-    sistemaAplicacao: SISTEMA_APLICACAO + "\n\n" + texto("voz") + "\n\n" + texto("perspicaz_uso") + "\n\n" + PRIORIDADE_ORIENTACAO,
+    sistemaFormatacao: texto("formatacao") + "\n\n" + REGRAS_FIXAS_FORMATACAO + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO,
+    sistemaSentinela: texto("sentinela") + "\n\n" + blocosResposta + "\n\n" + REGRA_TEXTOS_PERGUNTA + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO,
+    sistemaEstudo: texto("estudo") + "\n\n" + blocosResposta + "\n\n" + REGRA_TEXTOS_PERGUNTA + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_ESTUDO,
+    sistemaLista: texto("lista") + "\n\n" + VOCABULARIO_FIXO + "\n\n" + FORMATO_LISTA,
+    sistemaPerguntas: texto("perguntas") + "\n\n" + FORMATO_PERGUNTAS + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO,
+    sistemaTextoDiario: texto("texto_diario") + "\n\n" + FORMATO_TEXTO_DIARIO + "\n\n" + VOCABULARIO_FIXO,
+    sistemaAplicacao: SISTEMA_APLICACAO + "\n\n" + texto("voz") + "\n\n" + texto("perspicaz_uso") + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO,
     leituraVoz: texto("leitura_voz"),
     limites,
     // Frases que o servidor junta em cada pedido, por nome (ver as partes "frases_..." acima).

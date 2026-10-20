@@ -241,15 +241,36 @@ const TEM_ASPAS = new RegExp(`[${ASPAS}]`);
 const ASPAS_NAS_PONTAS = new RegExp(`^[\\s${ASPAS}']+|[\\s${ASPAS}']+$`, "g");
 
 // Tira aspas e espaços das pontas do trecho, para que as aspas nunca recebam negrito/itálico.
+// Regra fixa (pedida pelo usuário, permanente): a palavra "culto" nunca aparece no que a IA escreve. O prompt já proíbe
+// (VOCABULARIO_FIXO em _prompts.mjs); se escapar, vira "reunião", com as palavras de antes no feminino
+// ("durante o culto" -> "durante a reunião", "aos nossos cultos" -> "às nossas reuniões").
+const FEMININO_ANTES_DE_REUNIAO = {
+  o: "a", os: "as", do: "da", dos: "das", no: "na", nos: "nas", ao: "à", aos: "às", pelo: "pela", pelos: "pelas",
+  um: "uma", uns: "umas", num: "numa", dum: "duma", este: "esta", estes: "estas", esse: "essa", esses: "essas",
+  deste: "desta", desse: "dessa", neste: "nesta", nesse: "nessa", nosso: "nossa", nossos: "nossas", seu: "sua",
+  seus: "suas", meu: "minha", meus: "minhas", todo: "toda", todos: "todas", próximo: "próxima", próximos: "próximas",
+};
+function mesmaCaixa(modelo, texto) {
+  if (modelo.length > 1 && modelo === modelo.toUpperCase() && modelo !== modelo.toLowerCase()) return texto.toUpperCase();
+  return modelo[0] !== modelo[0].toLowerCase() ? texto[0].toUpperCase() + texto.slice(1) : texto;
+}
+function semCulto(texto) {
+  return texto.replace(/(^|[^\p{L}])(?:(\p{L}+)(\s+))?(?:(\p{L}+)(\s+))?(cultos?)(?!\p{L})/giu, (todo, antes, p1, e1, p2, e2, culto) => {
+    const feminino = (p) => (p && FEMININO_ANTES_DE_REUNIAO[p.toLowerCase()] ? mesmaCaixa(p, FEMININO_ANTES_DE_REUNIAO[p.toLowerCase()]) : p);
+    const reuniao = mesmaCaixa(culto, culto.toLowerCase() === "cultos" ? "reuniões" : "reunião");
+    return antes + (p1 ? feminino(p1) + e1 : "") + (p2 ? feminino(p2) + e2 : "") + reuniao;
+  });
+}
+
 function limparTrecho(trecho) {
-  return typeof trecho === "string" ? trecho.replace(/[*`]+/g, "").replace(ASPAS_NAS_PONTAS, "") : "";
+  return typeof trecho === "string" ? semCulto(trecho.replace(/[*`]+/g, "").replace(ASPAS_NAS_PONTAS, "")) : "";
 }
 
 // Texto escrito pela IA (respostas e resumo): sem Markdown (* e `) e sem emojis no começo. As vezes ela escreve
 // **negrito** ou repete o emoji dentro do texto, e como a formatação vem dos campos emoji/destaques, isso
 // apareceria como asteriscos e emoji duplicado.
 function limparTextoGerado(valor, max) {
-  const texto = typeof valor === "string" ? valor : "";
+  const texto = typeof valor === "string" ? semCulto(valor) : "";
   return texto
     .replace(/[*`]+/g, "")
     .replace(/\s+/g, " ")
