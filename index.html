@@ -266,6 +266,8 @@
     /* As seções 2 e 3 viraram <details> (accordion) e saíram da contagem de
        nth-of-type("section"), então recebem a cor certa por classe explícita. */
     .card.tint-2 { background: var(--tint2-bg); border-color: var(--tint2-border); }
+    /* Tela Reuniões: o cartão das reuniões tem a mesma cor do cartão do texto, logo acima. */
+    .card.reunioes-card { background: var(--tint1-bg); border-color: var(--tint1-border); }
     .card.tint-3 { background: var(--tint3-bg); border-color: var(--tint3-border); }
     .card.tint-4 { background: var(--tint4-bg); border-color: var(--tint4-border); }
     .card.tint-5 { background: var(--tint5-bg); border-color: var(--tint5-border); }
@@ -1644,7 +1646,7 @@
 
     /* ---------- Telas: Formatar, Reuniões, Backup e Ajustes ----------
        É um app só: cada bloco diz em que tela aparece (screen-...). Formatar e Reuniões dividem o cartão do campo de
-       texto (screen-editor); dentro dele, as opções de formatação e as das reuniões se alternam. */
+       texto (screen-editor); as reuniões ficam num cartão próprio, logo abaixo dele (screen-reunioes). */
     body[data-screen="formatar"] :is(.screen-reunioes, .screen-backup, .screen-ajustes),
     body[data-screen="reunioes"] :is(.screen-formatar, .screen-backup, .screen-ajustes),
     body[data-screen="backup"] :is(.screen-editor, .screen-formatar, .screen-reunioes, .screen-ajustes),
@@ -1799,7 +1801,7 @@
     .backup-item.aberto .backup-item-body { display: block; -webkit-line-clamp: unset; overflow: visible; }
 
     /* Tela Reuniões: um card para cada parte; as que ainda não existem aparecem como "em breve". */
-    .reunioes-group { margin-top: 6px; }
+    .reunioes-group { margin-top: 0; }
     /* Seções (Preparação para as reuniões / de discursos) e grupos (comentários / dirigir) recolhíveis. */
     .reunioes-secao { margin-top: 14px; padding: 0 10px 12px; border: 2px solid var(--line); border-radius: 12px; }
     .reunioes-secao:not([open]) { padding-bottom: 0; }
@@ -2274,7 +2276,13 @@
           </div>
         </details>
 
-        <div id="reunioesGroup" class="reunioes-group screen-reunioes">
+          </div>
+        </div>
+
+      </section>
+
+      <section class="card reunioes-card screen-reunioes" id="reunioesCard">
+        <div id="reunioesGroup" class="reunioes-group">
           <div class="reunioes-week sent-option-site">
             <p class="reunioes-week-label">Semana das reuniões (vale para tudo abaixo)</p>
             <div class="ai-week">
@@ -2401,10 +2409,6 @@
               <input autocomplete="off" id="aiStudyCode" type="password" maxlength="100" placeholder="Digite o código uma vez; ele fica salvo neste aparelho">
             </details>
         </div>
-
-          </div>
-        </div>
-
       </section>
 
     </div>
@@ -4305,7 +4309,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '4.7.5'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0; 4.7.5: campo de texto volta a crescer depois de levar uma nota do backup; importar notas de outro backup; 4.7.4: card do desenvolvedor na largura do quadro de limitações (Sobre); 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
+    const APP_VERSION = '4.7.6'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0; 4.7.6: tela Reuniões em dois cartões (texto e reuniões); 4.7.5: campo de texto volta a crescer depois de levar uma nota do backup; importar notas de outro backup; 4.7.4: card do desenvolvedor na largura do quadro de limitações (Sobre); 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 
