@@ -1721,6 +1721,9 @@
     .backup-export { margin-top: 10px; }
     .backup-export > span { font-size: .86rem; font-weight: 650; }
     .backup-export .bk-row { margin-top: 6px; }
+    .bk-import .bk-import-title { margin: 0 0 4px; font-weight: 700; word-break: break-word; }
+    .bk-import .hint { margin: 6px 0 0; font-weight: 400; }
+    .bk-import-tags { max-height: 340px; overflow: auto; margin-top: 8px; }
     .backup-summary { margin: 12px 0 0; font-size: .86rem; color: var(--muted); }
     .backup-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
     .backup-controls label { margin: 8px 0 4px; font-size: .82rem; }
@@ -2648,6 +2651,14 @@
             <button id="backupExportCsvBtn" class="secondary" type="button">📄 CSV</button>
           </div>
         </div>
+        <div class="backup-export">
+          <span>📥 Importar notas de outro backup:</span>
+          <div class="bk-row">
+            <button id="backupImportBtn" class="secondary" type="button">📥 Escolher o outro backup (.jwlibrary)</button>
+          </div>
+          <input id="backupImportFile" type="file" accept=".jwlibrary,application/octet-stream" hidden>
+        </div>
+        <div id="backupImportBox" class="backup-save bk-import" hidden></div>
         <div id="backupSaveBox" class="backup-save" hidden>
           <p id="backupSaveInfo"></p>
           <button id="backupGenerateBtn" type="button">💾 Gerar backup modificado</button>
@@ -2793,6 +2804,8 @@
       try { localStorage.setItem(SCREEN_STORAGE_KEY, screen); } catch (e) { /* sem localStorage: só não lembra a tela */ }
       if (location.hash !== '#' + screen) history.replaceState(null, '', '#' + screen);
       if (changed && !(options && options.keepScroll)) window.scrollTo(0, 0);
+      // O texto pode ter mudado enquanto o campo estava escondido: mede de novo a altura quando a tela aparece.
+      requestAnimationFrame(() => { try { autoGrowInputText(); } catch (e) { /* ainda iniciando */ } });
     }
 
     // Em que tela fica um elemento (para o app abrir a tela certa quando precisa mostrar algo que está em outra).
@@ -3059,26 +3072,32 @@
       return { notas, grifos, favoritos, marcadores, respostas, listas };
     }
 
+    // Abre o ZIP do backup e o banco de dados dele. Devolve { zip, manifest, db } ou lança um erro com o motivo.
+    async function backupReadArchive(file) {
+      const [{ JSZip, SQL }] = await Promise.all([loadBackupLibs(), loadBackupPubs()]);
+      let zip;
+      try {
+        zip = await JSZip.loadAsync(await file.arrayBuffer());
+      } catch (e) {
+        throw new Error('o arquivo não é um backup .jwlibrary.');
+      }
+      const manifestFile = zip.file('manifest.json');
+      if (!manifestFile) throw new Error('não é um backup do JW Library (falta o manifest.json).');
+      const manifest = JSON.parse(await manifestFile.async('string'));
+      const info = manifest && manifest.userDataBackup;
+      if (!info) throw new Error('não é um backup do JW Library.');
+      const dbFile = zip.file(info.databaseName || 'userData.db');
+      if (!dbFile) throw new Error('o banco de dados não está dentro do arquivo.');
+      return { zip, manifest, db: new SQL.Database(await dbFile.async('uint8array')) };
+    }
+
     async function openBackupFile(file) {
       if (!file) return;
       setBackupStatus('Abrindo ' + file.name + '…', false);
       try {
-        const [{ JSZip, SQL }] = await Promise.all([loadBackupLibs(), loadBackupPubs()]);
-        let zip;
-        try {
-          zip = await JSZip.loadAsync(await file.arrayBuffer());
-        } catch (e) {
-          throw new Error('o arquivo não é um backup .jwlibrary.');
-        }
-        const manifestFile = zip.file('manifest.json');
-        if (!manifestFile) throw new Error('não é um backup do JW Library (falta o manifest.json).');
-        const manifest = JSON.parse(await manifestFile.async('string'));
-        const info = manifest && manifest.userDataBackup;
-        if (!info) throw new Error('não é um backup do JW Library.');
-        const dbFile = zip.file(info.databaseName || 'userData.db');
-        if (!dbFile) throw new Error('o banco de dados não está dentro do arquivo.');
-        const db = new SQL.Database(await dbFile.async('uint8array'));
+        const { zip, manifest, db } = await backupReadArchive(file);
         const data = readBackupData(db);
+        backupCloseImport();
         if (backupState && backupState.db) backupState.db.close();
         backupState = { zip, db, manifest, fileName: file.name, data, changes: 0, generated: null };
         document.getElementById('backupNewNoteSlot').textContent = '';
@@ -3361,8 +3380,8 @@
       return db.exec('SELECT last_insert_rowid()')[0].values[0][0];
     }
 
-    function backupMarkChanged() {
-      backupState.changes = (backupState.changes || 0) + 1;
+    function backupMarkChanged(quantas) {
+      backupState.changes = (backupState.changes || 0) + (quantas || 1);
       backupState.generated = null;
       renderBackupSaveBox();
     }
@@ -3638,6 +3657,7 @@
       if (!backupState) return;
       if (backupState.changes &&
         !(await askConfirm('As alterações deste backup ainda não foram gravadas em arquivo e serão perdidas. Fechar mesmo assim?', 'Fechar backup'))) return;
+      backupCloseImport();
       if (backupState.db) backupState.db.close();
       backupState = null;
       document.getElementById('backupSearch').value = '';
@@ -3665,6 +3685,7 @@
           userDataBackup: { lastModifiedDate: stamp, deviceName: 'NoteStyle', databaseName: 'userData.db', hash: '', schemaVersion: 16 }
         };
         const data = readBackupData(db);
+        backupCloseImport();
         if (backupState && backupState.db) backupState.db.close();
         backupState = { zip, db, manifest, fileName: 'Backup_novo.jwlibrary', data, changes: 0, generated: null, isNew: true };
         backupCategory = 'notas';
@@ -3859,6 +3880,282 @@
     document.getElementById('backupExportXlsxBtn').addEventListener('click', () => backupExport('xlsx'));
     document.getElementById('backupExportCsvBtn').addEventListener('click', () => backupExport('csv'));
 
+    // ---------- Backup do JW Library: importar notas de outro backup ----------
+    // Junta ao backup aberto as notas de outro arquivo .jwlibrary (por exemplo, um arquivo de pesquisas), escolhidas pelas
+    // etiquetas. Nada do backup aberto é apagado: entram as notas que ainda não existem nele (mesmo Guid ou mesma nota no
+    // mesmo lugar ficam de fora), com o lugar delas (Location), a cor e o trecho grifado da nota (UserMark e BlockRange) e
+    // as etiquetas (criadas se não existirem). O outro arquivo só é lido.
+    const BACKUP_SEM_ETIQUETA = '\u0000sem-etiqueta';
+    let backupImport = null; // { db, fileName, notas: [{ id, tags: [...], nova }], escolhidas: Set }
+
+    // Todas as linhas de uma consulta com parâmetros.
+    function backupAll(db, sql, params) {
+      const st = db.prepare(sql);
+      const rows = [];
+      try {
+        st.bind(params || []);
+        while (st.step()) rows.push(st.getAsObject());
+      } finally {
+        st.free();
+      }
+      return rows;
+    }
+
+    function backupOne(db, sql, params) {
+      return backupAll(db, sql, params)[0] || null;
+    }
+
+    function backupColumns(db, table) {
+      return backupRows(db, 'PRAGMA table_info(' + table + ')').map(r => r.name);
+    }
+
+    function backupCloseImport() {
+      if (backupImport && backupImport.db) backupImport.db.close();
+      backupImport = null;
+      const box = document.getElementById('backupImportBox');
+      box.textContent = '';
+      box.hidden = true;
+    }
+
+    async function backupStartImport(file) {
+      if (!file || !backupState) return;
+      backupCloseImport();
+      setBackupStatus('Lendo ' + file.name + '…', false);
+      try {
+        const { db } = await backupReadArchive(file);
+        const notas = backupAll(db, `
+          SELECT n.NoteId, n.Guid,
+                 (SELECT group_concat(t.Name, '\u0001') FROM TagMap tm JOIN Tag t ON t.TagId = tm.TagId WHERE tm.NoteId = n.NoteId) AS Tags
+          FROM Note n`).map(r => ({
+            id: r.NoteId,
+            tags: r.Tags ? r.Tags.split('\u0001') : [],
+            nova: !backupOne(backupState.db, 'SELECT 1 AS x FROM Note WHERE Guid = ?', [r.Guid])
+          }));
+        if (!notas.length) {
+          db.close();
+          return setBackupStatus('Esse backup não tem notas para importar.', true);
+        }
+        backupImport = { db, fileName: file.name, notas, escolhidas: new Set() };
+        renderBackupImport();
+        setBackupStatus('', false);
+      } catch (e) {
+        setBackupStatus('Não consegui ler o outro backup: ' + (e && e.message ? e.message : 'arquivo inválido.'), true);
+      }
+    }
+
+    // Etiquetas do outro backup, com quantas notas cada uma tem; "Sem etiqueta" para as notas sem nenhuma.
+    function backupImportTags() {
+      const contagem = new Map();
+      backupImport.notas.forEach(n => {
+        (n.tags.length ? n.tags : [BACKUP_SEM_ETIQUETA]).forEach(t => contagem.set(t, (contagem.get(t) || 0) + 1));
+      });
+      return [...contagem].sort((a, b) => (a[0] === BACKUP_SEM_ETIQUETA) - (b[0] === BACKUP_SEM_ETIQUETA) || a[0].localeCompare(b[0], 'pt-BR', { numeric: true }));
+    }
+
+    function backupImportSelected() {
+      const marcadas = backupImport.escolhidas;
+      return backupImport.notas.filter(n => (n.tags.length ? n.tags : [BACKUP_SEM_ETIQUETA]).some(t => marcadas.has(t)));
+    }
+
+    function renderBackupImport() {
+      const box = document.getElementById('backupImportBox');
+      box.textContent = '';
+      box.hidden = false;
+      const etiquetas = backupImportTags();
+      if (!backupImport.escolhidas.size) etiquetas.forEach(([t]) => backupImport.escolhidas.add(t));
+      const novas = backupImport.notas.filter(n => n.nova).length;
+
+      const titulo = document.createElement('p');
+      titulo.className = 'bk-import-title';
+      titulo.textContent = '📥 Importar notas de: ' + backupImport.fileName;
+      const resumo = document.createElement('p');
+      resumo.className = 'hint';
+      resumo.textContent = backupImport.notas.length.toLocaleString('pt-BR') + ' notas no arquivo · ' + novas.toLocaleString('pt-BR') +
+        ' novas · ' + (backupImport.notas.length - novas).toLocaleString('pt-BR') + ' já estão no seu backup';
+
+      const lista = document.createElement('div');
+      lista.className = 'ai-sources bk-import-tags';
+      const todas = document.createElement('label');
+      todas.className = 'ai-check';
+      const todasBox = document.createElement('input');
+      todasBox.type = 'checkbox';
+      todasBox.checked = etiquetas.every(([t]) => backupImport.escolhidas.has(t));
+      todas.append(todasBox, ' Todas as etiquetas');
+      lista.appendChild(todas);
+      const caixas = etiquetas.map(([t, n]) => {
+        const label = document.createElement('label');
+        label.className = 'ai-check';
+        const caixa = document.createElement('input');
+        caixa.type = 'checkbox';
+        caixa.checked = backupImport.escolhidas.has(t);
+        caixa.addEventListener('change', () => {
+          if (caixa.checked) backupImport.escolhidas.add(t);
+          else backupImport.escolhidas.delete(t);
+          todasBox.checked = etiquetas.every(([x]) => backupImport.escolhidas.has(x));
+          atualizar();
+        });
+        label.append(caixa, ' ' + (t === BACKUP_SEM_ETIQUETA ? 'Sem etiqueta' : t) + ' (' + n.toLocaleString('pt-BR') + ')');
+        lista.appendChild(label);
+        return caixa;
+      });
+      todasBox.addEventListener('change', () => {
+        etiquetas.forEach(([t], i) => {
+          caixas[i].checked = todasBox.checked;
+          if (todasBox.checked) backupImport.escolhidas.add(t);
+          else backupImport.escolhidas.delete(t);
+        });
+        atualizar();
+      });
+
+      const importar = backupButton('', () => backupRunImport(), '');
+      const acoes = document.createElement('div');
+      acoes.className = 'bk-row';
+      acoes.append(importar, backupButton('✖️ Cancelar', () => { backupCloseImport(); setBackupStatus('', false); }));
+      const aviso = document.createElement('p');
+      aviso.className = 'hint';
+      aviso.textContent = 'As notas entram no backup aberto com a cor, o trecho grifado de cada nota e as etiquetas. Nada do seu backup é apagado; as notas que você já tem ficam de fora. Depois, gere o backup modificado.';
+
+      function atualizar() {
+        const escolhidas = backupImportSelected();
+        const novasEscolhidas = escolhidas.filter(n => n.nova).length;
+        importar.disabled = !novasEscolhidas;
+        importar.textContent = novasEscolhidas
+          ? '📥 Importar ' + novasEscolhidas.toLocaleString('pt-BR') + (novasEscolhidas === 1 ? ' nota' : ' notas')
+          : escolhidas.length ? 'Essas notas já estão no seu backup' : 'Marque pelo menos uma etiqueta';
+      }
+      atualizar();
+      box.append(titulo, resumo, lista, acoes, aviso);
+      box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+
+    // Copia as notas escolhidas para o backup aberto. Devolve { importadas, existentes, etiquetasNovas }.
+    function backupImportNotes(src, ids) {
+      const dst = backupState.db;
+      const colunasDestino = backupColumns(dst, 'Location');
+      const colunasOrigem = new Set(backupColumns(src, 'Location'));
+      const temEdicao = colunasDestino.includes('Specialty') && colunasOrigem.has('Specialty');
+      const lugares = new Map();
+      const marcas = new Map();
+      const etiquetas = new Map();
+      const resultado = { importadas: 0, existentes: 0, etiquetasNovas: [] };
+
+      // O mesmo lugar (publicação, edição, documento ou capítulo da Bíblia) no backup aberto; criado se não existir.
+      const lugar = idOrigem => {
+        if (idOrigem === null || idOrigem === undefined) return null;
+        if (lugares.has(idOrigem)) return lugares.get(idOrigem);
+        const l = backupOne(src, 'SELECT * FROM Location WHERE LocationId = ?', [idOrigem]);
+        let id = null;
+        if (l) {
+          const achado = backupOne(dst,
+            'SELECT LocationId FROM Location WHERE BookNumber IS ? AND ChapterNumber IS ? AND DocumentId IS ? AND Track IS ? AND IssueTagNumber = ? AND KeySymbol IS ? AND MepsLanguage IS ? AND Type = ?' +
+            (temEdicao ? " AND COALESCE(Specialty, '') = ? AND COALESCE(Edition, '') = ?" : ''),
+            [l.BookNumber, l.ChapterNumber, l.DocumentId, l.Track, l.IssueTagNumber || 0, l.KeySymbol, l.MepsLanguage, l.Type]
+              .concat(temEdicao ? [l.Specialty || '', l.Edition || ''] : []))
+            || (l.BookNumber ? backupOne(dst, 'SELECT LocationId FROM Location WHERE BookNumber IS ? AND ChapterNumber IS ? AND KeySymbol IS ? AND MepsLanguage IS ? AND Type = ?',
+              [l.BookNumber, l.ChapterNumber, l.KeySymbol, l.MepsLanguage, l.Type]) : null);
+          if (achado) id = achado.LocationId;
+          else {
+            const colunas = colunasDestino.filter(c => c !== 'LocationId' && colunasOrigem.has(c));
+            dst.run('INSERT INTO Location (' + colunas.join(', ') + ') VALUES (' + colunas.map(() => '?').join(', ') + ')', colunas.map(c => l[c]));
+            id = backupLastId(dst);
+          }
+        }
+        lugares.set(idOrigem, id);
+        return id;
+      };
+
+      // A cor e o trecho grifado da nota; uma marca que já existe (mesmo Guid) é reaproveitada.
+      const marca = idOrigem => {
+        if (marcas.has(idOrigem)) return marcas.get(idOrigem);
+        const m = backupOne(src, 'SELECT * FROM UserMark WHERE UserMarkId = ?', [idOrigem]);
+        let id = null;
+        if (m) {
+          const existente = backupOne(dst, 'SELECT UserMarkId FROM UserMark WHERE UserMarkGuid = ?', [m.UserMarkGuid]);
+          const local = existente ? null : lugar(m.LocationId);
+          if (existente) id = existente.UserMarkId;
+          else if (local !== null) {
+            dst.run('INSERT INTO UserMark (ColorIndex, LocationId, StyleIndex, UserMarkGuid, Version) VALUES (?, ?, ?, ?, ?)',
+              [m.ColorIndex, local, m.StyleIndex, m.UserMarkGuid, m.Version]);
+            id = backupLastId(dst);
+            backupAll(src, 'SELECT BlockType, Identifier, StartToken, EndToken FROM BlockRange WHERE UserMarkId = ?', [idOrigem]).forEach(b => {
+              dst.run('INSERT INTO BlockRange (BlockType, Identifier, StartToken, EndToken, UserMarkId) VALUES (?, ?, ?, ?, ?)',
+                [b.BlockType, b.Identifier, b.StartToken, b.EndToken, id]);
+            });
+          }
+        }
+        marcas.set(idOrigem, id);
+        return id;
+      };
+
+      const etiqueta = (tipo, nome) => {
+        const chave = tipo + '|' + nome;
+        if (etiquetas.has(chave)) return etiquetas.get(chave);
+        const existente = backupOne(dst, 'SELECT TagId FROM Tag WHERE Type = ? AND Name = ?', [tipo, nome]);
+        let id;
+        if (existente) id = existente.TagId;
+        else {
+          dst.run('INSERT INTO Tag (Type, Name) VALUES (?, ?)', [tipo, nome]);
+          id = backupLastId(dst);
+          resultado.etiquetasNovas.push(nome);
+        }
+        etiquetas.set(chave, id);
+        return id;
+      };
+
+      dst.run('BEGIN');
+      try {
+        for (const idNota of ids) {
+          const n = backupOne(src, 'SELECT * FROM Note WHERE NoteId = ?', [idNota]);
+          if (!n) continue;
+          if (backupOne(dst, 'SELECT 1 AS x FROM Note WHERE Guid = ?', [n.Guid])) { resultado.existentes++; continue; }
+          const local = lugar(n.LocationId);
+          if (backupOne(dst, "SELECT 1 AS x FROM Note WHERE LocationId IS ? AND BlockIdentifier IS ? AND COALESCE(Title, '') = ? AND COALESCE(Content, '') = ?",
+            [local, n.BlockIdentifier, n.Title || '', n.Content || ''])) { resultado.existentes++; continue; }
+          const idMarca = n.UserMarkId ? marca(n.UserMarkId) : null;
+          const agora = backupNow();
+          dst.run('INSERT INTO Note (Guid, UserMarkId, LocationId, Title, Content, LastModified, Created, BlockType, BlockIdentifier) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [n.Guid, idMarca, local, n.Title, n.Content, n.LastModified || agora, n.Created || n.LastModified || agora,
+              local === null ? 0 : n.BlockType, local === null ? null : n.BlockIdentifier]);
+          const novaId = backupLastId(dst);
+          backupAll(src, 'SELECT t.Type, t.Name FROM TagMap tm JOIN Tag t ON t.TagId = tm.TagId WHERE tm.NoteId = ? ORDER BY tm.Position', [n.NoteId]).forEach(t => {
+            const idEtiqueta = etiqueta(t.Type, t.Name);
+            const posicao = backupOne(dst, 'SELECT COALESCE(MAX(Position), -1) + 1 AS p FROM TagMap WHERE TagId = ?', [idEtiqueta]).p;
+            dst.run('INSERT OR IGNORE INTO TagMap (TagId, NoteId, Position) VALUES (?, ?, ?)', [idEtiqueta, novaId, posicao]);
+          });
+          resultado.importadas++;
+        }
+        dst.run('COMMIT');
+      } catch (e) {
+        dst.run('ROLLBACK');
+        throw e;
+      }
+      return resultado;
+    }
+
+    function backupRunImport() {
+      if (!backupImport || !backupState) return;
+      const ids = backupImportSelected().filter(n => n.nova).map(n => n.id);
+      if (!ids.length) return;
+      try {
+        const r = backupImportNotes(backupImport.db, ids);
+        backupCloseImport();
+        if (r.importadas) backupMarkChanged(r.importadas);
+        backupCategory = 'notas';
+        backupRefresh('✅ ' + r.importadas.toLocaleString('pt-BR') + (r.importadas === 1 ? ' nota importada' : ' notas importadas') +
+          (r.existentes ? ' (' + r.existentes.toLocaleString('pt-BR') + ' já estavam no seu backup)' : '') +
+          (r.etiquetasNovas.length ? '. Etiquetas novas: ' + r.etiquetasNovas.join(', ') : '') +
+          '. Gere o backup modificado quando terminar.');
+      } catch (e) {
+        setBackupStatus('Não consegui importar (nada foi alterado): ' + (e && e.message ? e.message : 'erro desconhecido.'), true);
+      }
+    }
+
+    document.getElementById('backupImportBtn').addEventListener('click', () => document.getElementById('backupImportFile').click());
+    document.getElementById('backupImportFile').addEventListener('change', event => {
+      backupStartImport(event.target.files && event.target.files[0]);
+      event.target.value = '';
+    });
+
     // ---------- Tema (Auto / Claro / Escuro) ----------
 
     const THEME_STORAGE_KEY = 'jwLibraryNoteAplicarThemeV1';
@@ -4008,7 +4305,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '4.7.4'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0; 4.7.4: card do desenvolvedor na largura do quadro de limitações (Sobre); 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
+    const APP_VERSION = '4.7.5'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0; 4.7.5: campo de texto volta a crescer depois de levar uma nota do backup; importar notas de outro backup; 4.7.4: card do desenvolvedor na largura do quadro de limitações (Sobre); 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 
@@ -7376,6 +7673,9 @@ function saveTemplatesToStorage() {
     // textarea manualmente, então o campo cresce sozinho conforme o texto
     // aumenta (a altura mínima do CSS continua valendo como piso).
     function autoGrowInputText() {
+      // Campo escondido (outra tela, ex.: Backup): a medida daria zero e o campo ficaria travado pequeno. A altura é
+      // recalculada quando a tela com o campo aparece (showScreen).
+      if (!input.getClientRects().length) return;
       input.style.height = 'auto';
       // scrollHeight não conta a moldura; sem somá-la sobra uma rolagem interna de poucos pixels.
       const frame = input.offsetHeight - input.clientHeight;
