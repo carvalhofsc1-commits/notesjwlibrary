@@ -1,6 +1,7 @@
 // Leitura em voz alta: o app manda um trecho do texto (já em letras comuns, sem emojis) e o servidor pede o áudio à
 // API Text-to-Speech do Google Cloud. As credenciais ficam só aqui, em variáveis secretas da Vercel; o navegador recebe
-// apenas o áudio (MP3). Cada pedido custa créditos do Google, por isso exige o código de acesso da IA.
+// apenas o áudio (MP3). Cada pedido custa créditos do Google: o texto diário pede o código de acesso da IA; o campo de
+// texto da formatação, a senha de administrador (CODIGO_ADMIN).
 //  - GOOGLE_TTS_CREDENCIAIS: o JSON da conta de serviço (com o papel "Usuário da Plataforma de Agentes"). As vozes
 //    Gemini exigem essa identidade; uma chave de API comum é recusada (403 aiplatform.endpoints.predict).
 //  - GOOGLE_TTS_API_KEY: a chave de API, que basta para a voz Chirp 3 HD (a reserva).
@@ -122,9 +123,21 @@ export default async function handler(req, res) {
   if (!process.env.CODIGO_ESTUDO) return erro(res, 503, "O código de acesso da IA ainda não está configurado no servidor.");
 
   const body = req.body && typeof req.body === "object" ? req.body : {};
-  // O exemplo do painel do administrador usa as escolhas ainda não salvas; só com o código de administrador.
-  const exemplo = Boolean(body.exemplo && process.env.CODIGO_ADMIN && textosIguais(body.codigoAdmin, process.env.CODIGO_ADMIN));
-  if (!exemplo && !textosIguais(body.codigo, process.env.CODIGO_ESTUDO)) return erro(res, 403, "Código de acesso inválido.");
+  // Quem pode pedir o quê:
+  //  - o exemplo do painel do administrador usa as escolhas ainda não salvas: só com a senha de administrador;
+  //  - uso "texto-diario" (o texto diário da tela Início): qualquer pessoa com o código de acesso;
+  //  - qualquer outro pedido (o botão 🔊 do campo de texto da formatação, que é o padrão se "uso" não vier): só o administrador.
+  // O servidor não tem como saber de que texto veio o pedido; vale o uso que o app declara, e o limite por IP e o alerta de
+  // orçamento do Google seguram o custo.
+  const administrador = Boolean(process.env.CODIGO_ADMIN && textosIguais(body.codigoAdmin, process.env.CODIGO_ADMIN));
+  const exemplo = Boolean(body.exemplo && administrador);
+  if (!exemplo) {
+    if (body.uso === "texto-diario") {
+      if (!textosIguais(body.codigo, process.env.CODIGO_ESTUDO)) return erro(res, 403, "Código de acesso inválido.");
+    } else if (!administrador) {
+      return erro(res, 403, "A leitura em voz alta do campo de texto é só para o administrador.");
+    }
+  }
 
   const texto = typeof body.texto === "string" ? body.texto.replace(/\r\n?/g, "\n").trim() : "";
   if (!texto) return erro(res, 400, "Não há texto para ler.");
