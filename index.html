@@ -417,6 +417,7 @@
     details.subsection.ai-subsection { background: var(--tint6-bg); border-color: var(--tint6-border); }
 
     .ai-subsection .ai-box { margin-bottom: 0; }
+    .ai-box.ai-box-direto { margin-bottom: 0; }
 
     /* Dois botões de largura igual, inclusive no celular. */
     /* Os dois botões da IA ficam um embaixo do outro, cada um na largura toda. */
@@ -1792,9 +1793,15 @@
     .reunioes-secao:not([open]) { padding-bottom: 0; }
     .reunioes-secao > summary { padding: 10px 2px; -webkit-tap-highlight-color: transparent; }
     .reunioes-grupo { margin-top: 8px; }
-    .reunioes-grupo > summary { padding: 8px 2px; border-bottom: 1px dashed var(--line); -webkit-tap-highlight-color: transparent; }
+    .reunioes-grupo > summary { padding: 8px 10px; border-left: 4px solid var(--line); border-radius: 8px; background: var(--card); -webkit-tap-highlight-color: transparent; }
     .reunioes-group .reunioes-secao > summary .reunioes-title { margin: 0; font-size: 1.1rem; }
-    .reunioes-group .reunioes-grupo > summary .reunioes-subtitle { margin: 0; font-size: .98rem; color: var(--muted); }
+    .reunioes-group .reunioes-grupo > summary .reunioes-subtitle { margin: 0; font-size: .98rem; color: var(--text); }
+    /* Cores de cada seção e grupo (misturadas com a cor do card: funcionam no tema claro e no escuro). */
+    #secaoReunioes { border-color: #3b82f6; background: #dbeafe; background: color-mix(in srgb, #3b82f6 18%, var(--card)); }
+    #secaoDiscursos { border-color: #f59e0b; background: #fef3c7; background: color-mix(in srgb, #f59e0b 14%, var(--card)); }
+    #grupoComentarios > summary { border-left-color: #a855f7; background: #f3e8ff; background: color-mix(in srgb, #a855f7 16%, var(--card)); }
+    #grupoDirigir > summary { border-left-color: #14b8a6; background: #ccfbf1; background: color-mix(in srgb, #14b8a6 16%, var(--card)); }
+    #aiStudyCodeBox.reunioes-code { padding: 10px 12px; border: 2px solid #64748b; border-radius: 12px; background: #e2e8f0; background: color-mix(in srgb, #64748b 14%, var(--card)); }
     /* Semana no alto da tela: vale para todas as preparações (cada card usa a mesma). */
     .reunioes-week { margin: 2px 0 14px; padding: 10px 12px; border: 2px solid var(--line); border-radius: 12px; background: var(--card); }
     .reunioes-week-label { margin: 0 0 8px; font-size: .84rem; font-weight: 700; color: var(--muted); text-align: center; }
@@ -2218,9 +2225,7 @@
         <details class="subsection group-box group-ai screen-formatar" id="opcoesIaBox">
           <summary>🤖 Opções de formatação com IA</summary>
           <div class="group-box-body">
-            <details class="subsection ai-subsection" id="aiBoxDetails">
-              <summary id="aiBoxLabel">✨ Sugerir formatação com IA</summary>
-              <div class="subsection-body ai-box">
+            <div class="ai-box ai-box-direto" id="aiBox">
               <div class="ai-main-row">
                 <button id="aiSuggestBtn" class="ai-main-btn" type="button">✨ Sugerir formatação com IA de todo o texto original</button>
               </div>
@@ -2250,8 +2255,7 @@
               </div>
               </div>
               </div>
-              </div>
-            </details>
+            </div>
           </div>
         </details>
 
@@ -2617,7 +2621,7 @@
       <h2>📦 Backup do JW Library</h2>
       <div class="backup-open-row">
         <button id="backupOpenBtn" type="button">📂 Abrir backup (.jwlibrary)</button>
-        <input id="backupFile" type="file" hidden>
+        <input id="backupFile" type="file" accept=".jwlibrary,application/octet-stream" hidden>
         <div class="bk-row">
           <button id="backupNewBtn" class="secondary" type="button">🆕 Criar backup vazio</button>
           <button id="backupCloseBtn" class="secondary" type="button" hidden>✖️ Fechar backup</button>
@@ -3994,7 +3998,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '4.7.1'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
+    const APP_VERSION = '4.7.2'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 
@@ -7456,10 +7460,8 @@ function saveTemplatesToStorage() {
       group.addEventListener('toggle', () => safeSetItem(key, group.open ? '1' : '0'));
     });
 
-    const aiBoxDetails = document.getElementById('aiBoxDetails');
-    const AI_BOX_KEY = 'jwLibraryNoteAplicarAiBoxV1';
-    try { aiBoxDetails.open = localStorage.getItem(AI_BOX_KEY) === '1'; } catch (e) { /* sem localStorage: fica recolhido */ }
-    aiBoxDetails.addEventListener('toggle', () => safeSetItem(AI_BOX_KEY, aiBoxDetails.open ? '1' : '0'));
+    // O bloco da IA fica direto dentro do grupo "Opções de formatação com IA" (sem card próprio recolhível).
+    const opcoesIaGroup = document.getElementById('opcoesIaBox');
 
     // Status, resultados e botões de aplicar/refinar aparecem junto ao botão que o usuário acabou de usar:
     // na área do texto para a formatação e no card da Sentinela para as respostas do estudo.
@@ -7960,7 +7962,7 @@ function saveTemplatesToStorage() {
       aiLastKind = 'format';
       aiStatusKind = 'format';
       placeAiOutput(aiOutputHome);
-      openWithAncestors(aiBoxDetails); // o resultado aparece aqui dentro, então o bloco (e o grupo) precisa estar aberto
+      openWithAncestors(opcoesIaGroup); // o resultado aparece aqui dentro, então o grupo precisa estar aberto
 
       if (mode) {
         if (!(await confirmAiRestore())) return;
