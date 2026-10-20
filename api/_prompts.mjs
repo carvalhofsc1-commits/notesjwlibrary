@@ -484,7 +484,7 @@ const MONTAGEM_PEDIDOS = `COMO O APP MONTA A MENSAGEM DE CADA PEDIDO (além do p
 - Perguntas adicionais do dirigente: [orientação] → "PEDIDO (seções ligadas pelo usuário):" com ATIVA/INATIVA de cada seção → "TEXTO DO ESTUDO:" → [lembrete final].
 - Numeração dos parágrafos (só quando a leitura direta falha): "ENDEREÇO:" da página.
 - Aplicação dos versículos e do Perspicaz: [orientação] → "ITENS (JSON):" com o comentário, os versículos exatos e o verbete.
-- Leitura em voz alta (botão 🔊 Ouvir, voz do Google): o texto do campo (ou o trecho selecionado) em letras comuns, sem emojis e símbolos, com as regras do menu de voz (referências por extenso ou puladas, parênteses e cabeçalhos pulados), dividido em partes de até 1.500 caracteres. Nas vozes Gemini, cada parte vai com a instrução "Leitura em voz alta" + a frase do tom + a da altura + as instruções extras do administrador. A voz Chirp 3 HD recebe só o texto.`;
+- Leitura em voz alta (botão 🔊 Ouvir, voz do Google): o texto do campo (ou o trecho selecionado) em letras comuns, sem emojis e símbolos, com as regras do menu de voz (referências bíblicas na forma curta, por extenso ou como escritas; puladas, se marcado, as entre parênteses e as depois de travessão no fim do parágrafo, menos a do texto temático do texto diário; citações de publicações, parênteses e cabeçalhos pulados), dividido em partes que crescem de uns 150 até 1.500 caracteres, com duas preparadas à frente. Nas vozes Gemini, cada parte vai com a instrução "Leitura em voz alta" + a frase do tom + a da altura + as instruções extras do administrador. A voz Chirp 3 HD recebe só o texto.`;
 
 export function travadosDe(limites) {
   return [

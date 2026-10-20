@@ -41,6 +41,9 @@ export const ALTURAS = [
   { id: "aguda", nome: "Um pouco mais aguda", item: "Altura: mais aguda" },
 ];
 export const VELOCIDADES = [0.85, 1, 1.15, 1.3];
+// Como ler as referências bíblicas: "Primeira Coríntios treze, quatro a sete" (curta), "…, capítulo 13, versículos 4 a 7"
+// (extenso) ou como estão escritas.
+export const FORMATOS_REFS = ["curta", "extenso", "original"];
 
 export const PADRAO_VOZ = {
   modelo: "gemini-3.1-flash",
@@ -48,8 +51,9 @@ export const PADRAO_VOZ = {
   tom: "calmo",
   altura: "natural",
   velocidade: 1,
-  refsExtenso: true,
+  formatoRefs: "curta",
   pularRefs: false,
+  pularFontes: true,
   pularParenteses: false,
   pularCabecalhos: false,
   extra: "",
@@ -65,8 +69,10 @@ export function validarConfigVoz(entrada) {
     tom: escolher(c.tom, TONS.map((t) => t.id), PADRAO_VOZ.tom),
     altura: escolher(c.altura, ALTURAS.map((a) => a.id), PADRAO_VOZ.altura),
     velocidade: escolher(Number(c.velocidade), VELOCIDADES, PADRAO_VOZ.velocidade),
-    refsExtenso: typeof c.refsExtenso === "boolean" ? c.refsExtenso : PADRAO_VOZ.refsExtenso,
+    // Configuração antiga (antes da 4.8.2) tinha só "refsExtenso": desmarcada, as referências eram lidas como escritas.
+    formatoRefs: escolher(c.formatoRefs, FORMATOS_REFS, c.refsExtenso === false ? "original" : PADRAO_VOZ.formatoRefs),
     pularRefs: c.pularRefs === true,
+    pularFontes: typeof c.pularFontes === "boolean" ? c.pularFontes : PADRAO_VOZ.pularFontes,
     pularParenteses: c.pularParenteses === true,
     pularCabecalhos: c.pularCabecalhos === true,
     extra: typeof c.extra === "string" ? c.extra.replace(/\s+/g, " ").trim().slice(0, MAX_EXTRA) : "",
@@ -77,8 +83,9 @@ export function validarConfigVoz(entrada) {
 export function configPublicaVoz(c) {
   return {
     velocidade: c.velocidade,
-    refsExtenso: c.refsExtenso,
+    formatoRefs: c.formatoRefs,
     pularRefs: c.pularRefs,
+    pularFontes: c.pularFontes,
     pularParenteses: c.pularParenteses,
     pularCabecalhos: c.pularCabecalhos,
   };
