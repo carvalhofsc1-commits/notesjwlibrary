@@ -61,8 +61,6 @@ const MODELOS_LISTA = [
   "circleAlternate",
 ];
 
-const CATALOGO_LISTAS = `blueDiamond (🔷 losango azul), orangeDiamond (🔶 losango laranja), smallBlueDiamond (🔹 losango azul pequeno), smallOrangeDiamond (🔸 losango laranja pequeno), diamondDot (💠 losango com ponto), gemDiamond (💎 diamante, para itens de destaque), bullet (• ponto, o mais simples), arrow (➤ seta, para itens que levam a uma conclusão ou ação), check (✅ para itens cumpridos, vantagens ou confirmações), simpleCheck (✔ o mesmo, mais discreto), numberDot (1. 2. 3., o padrão para passos ou sequência), numberParen (1) 2) 3)), circled (① ② ③), blackCircle (❶ ❷ ❸), keycapNumber (1️⃣ 2️⃣ 3️⃣, numeração em destaque), squareBlue (🟦 quadrado azul), squareAlternate (🟦🟧🟩 quadrados que alternam de cor), circleBlue (🔵 círculo azul), circleAlternate (🔵🟣🟢 círculos que alternam de cor)`;
-
 const Saida = z.object({
   resumo: z.string().nullable(),
   sugestoes: z.array(
@@ -107,11 +105,13 @@ function excedeuLimite(ip, limitePorHora) {
 
 const INTENSIDADES = ["poucas", "moderada", "muitas"];
 const TAMANHOS_RESUMO = ["curto", "medio", "detalhado"];
-const DESCRICAO_TAMANHO = {
-  curto: "curto (1 a 2 frases, cerca de 30 palavras)",
-  medio: "médio (3 a 4 frases, cerca de 70 palavras)",
-  detalhado: "detalhado (um parágrafo de 5 a 7 frases, cerca de 120 palavras)",
-};
+// Nome de cada tamanho nas partes editáveis ("Tamanho do resumo: médio", "Tamanho da resposta: médio").
+const NOME_TAMANHO = { curto: "curto", medio: "médio", detalhado: "detalhado" };
+
+// Troca {{nome}} pelos valores (uma passada só: o que o usuário digitou não é trocado de novo).
+function trocar(frase, valores) {
+  return String(frase || "").replace(/\{\{(\w+)\}\}/g, (marca, nome) => (nome in valores ? String(valores[nome]) : marca));
+}
 
 function textoLivre(valor) {
   return typeof valor === "string" ? valor.replace(/\s+/g, " ").trim().slice(0, MAX_TEXTO_LIVRE) : "";
@@ -195,78 +195,46 @@ function validarEntrada(body, L) {
   };
 }
 
-const CATALOGO_FONTES =
-  "doubleStruck (letra dupla, só para algo MUITO importante), sans (sem serifa, para trechos de apoio; combina com negrito e itálico), squaredDark (caixa escura, só maiúsculas, só para UMA palavra curta e muito importante, no máximo duas)";
-
-// O que cada nível de "Quantidade de sugestões" significa. "Muitas" é para formatar bastante de verdade: o usuário pode
-// reduzir depois escolhendo "moderada" ou "poucas".
-const DESCRICAO_INTENSIDADE = {
-  poucas:
-    "POUCAS: só as linhas mais importantes (cerca de 1 a cada 4 ou 5), com 1 a 2 destaques e o mínimo de recursos (por exemplo, só um modelo ou só negrito). Deixe o resto sem formatação.",
-  moderada:
-    "MODERADA: cerca de metade das linhas, cada uma com 2 a 3 destaques e alguns recursos (modelo, emoji ou maiúsculas, o que combinar). Listas só quando houver enumeração clara.",
-  muitas:
-    'MUITAS: formatar BASTANTE, de verdade. Sugira para QUASE TODAS as linhas com conteúdo e use QUASE TODOS os recursos ativos, combinando vários em cada linha, até o limite de destaques por linha: modelo adequado à linha, emoji, vários destaques com estilos variados (negrito, itálico e negrito itálico alternados), PALAVRAS-CHAVE EM MAIÚSCULAS em muitas linhas (se permitido), tipos de fonte diferentes nos destaques (se ativo), citações bíblicas formatadas (se ativo) e listas numeradas ou com marcadores SEMPRE que duas ou mais linhas, ou itens separados por vírgula ou ponto e vírgula, formarem uma enumeração (se ativo). Não economize: o usuário pode escolher "moderada" ou "poucas" se achar demais; isto vale mais que a regra de sugerir só linhas que "realmente se beneficiam".',
-};
-
-function descreverPreferencias(o) {
+// Preferências da formatação: uma frase por caixa (partes editáveis "Opções da formatação com IA" e "Listas").
+function descreverPreferencias(o, P) {
+  const f = P.frases.formatacao;
+  const l = P.frases.listas;
   const estilos = [];
   if (o.negrito) estilos.push("negrito");
   if (o.italico) estilos.push("italico");
   if (o.negritoItalico) estilos.push("negrito_italico");
 
-  const linhas = [
-    `- Modelos: ${o.usarModelos ? "pode usar os modelos da lista" : "NÃO use modelos (modeloId sempre null), a menos que a orientação do usuário peça"}.`,
-    `- Estilos permitidos nos destaques: ${estilos.length ? estilos.join(", ") : "nenhum (estilo sempre null, a menos que a orientação do usuário peça)"}.`,
-    `- Letras maiúsculas nos destaques: ${o.maiusculas ? "permitidas" : "NÃO use (maiusculas sempre false), a menos que a orientação do usuário peça"}.`,
-    `- Emoji ilustrativo no início da frase: ${o.emoji ? "SIM, sugira emojis que ilustrem o assunto de cada linha destacada" : "NÃO use (emoji sempre null), a menos que a orientação do usuário peça"}.`,
-    `- Quantidade de sugestões: ${DESCRICAO_INTENSIDADE[o.intensidade]} (a orientação do usuário pode mudar isso).`,
-    o.variarFontes
-      ? `- Tipos de fonte nos destaques: ATIVO. Em "fonte" de cada destaque você pode escolher UMA destas fontes decorativas (nenhuma outra existe): ${CATALOGO_FONTES}. O negrito e o itálico na fonte principal ou em sem serifa podem ser usados à vontade; a letra dupla e a caixa escura são raras, só para algo muito importante (caixa escura: uma palavra, no máximo duas). Combine com "estilo" (negrito, itálico) quando a fonte tiver essa variação; null para manter a fonte principal.`
-      : '- Tipos de fonte nos destaques: INATIVO ("fonte" sempre null), a menos que a orientação do usuário peça outra fonte.',
-  ];
-  linhas.push(
-    o.resumo
-      ? `- Resumo: ATIVO, tamanho ${DESCRICAO_TAMANHO[o.resumoTamanho]}. Preencha o campo resumo.`
-      : "- Resumo: INATIVO (resumo sempre null)."
-  );
-  if (o.citacoesBiblicas) {
-    linhas.push(
-      '- Citações bíblicas: ATIVO. Identifique citações de textos bíblicos; marque o texto citado como tipo "citacao_texto" e a referência (livro, capítulo e versículos) como tipo "citacao_referencia". O servidor aplicará itálico ao texto e negrito à referência.'
-    );
-  } else {
-    linhas.push('- Citações bíblicas: INATIVO (use apenas o tipo "geral").');
-  }
-  linhas.push(
-    o.usarListas
-      ? `- Listas: ATIVO. Quando várias linhas formarem uma enumeração (passos, pontos, exemplos, itens), organize-as como lista preenchendo "lista" em CADA uma delas: {"modelo": um dos modelos de lista do app, "grupo": número da lista}. Linhas da mesma lista têm o mesmo grupo e o mesmo modelo; listas diferentes, grupos diferentes. Escolha o modelo que combina com o conteúdo: numerados (numberDot, numberParen, circled, blackCircle, keycapNumber) para passos ou sequência com ordem; os de símbolo para itens sem ordem. Prefira o mesmo modelo nas listas parecidas do texto. Com a quantidade "muitas", procure listas ativamente: linhas seguidas que tratem de itens do mesmo tipo, sequências de passos, perguntas e respostas e itens separados por vírgula ou ponto e vírgula dentro de uma linha longa (nesse caso separe-os em "quebras" e liste cada um). Modelos disponíveis: ${CATALOGO_LISTAS}. Só marque linhas que realmente são itens de enumeração; nas demais "lista" é null. Linhas de lista normalmente não precisam de modelo de texto nem de emoji. O app coloca os marcadores e os números; você não os escreve.`
-      : '- Listas: INATIVO (lista sempre null), a menos que a ORIENTAÇÃO DO USUÁRIO peça lista, marcadores ou numeração.'
-  );
-  linhas.push(
-    o.separarIdeias
-      ? '- Espaçamento: ATIVO. Separe as ideias com linhas em branco para o texto ficar arejado, mesmo que o original seja um só parágrafo: (1) em "quebras" liste, para cada linha, os trechos (copiados LITERALMENTE da linha) onde começa uma NOVA ideia, e o app insere uma linha em branco antes de cada um (não inclua o começo da linha; só quebras no meio, entre frases completas); (2) em "espacoAntes" informe true na linha que começa uma nova ideia em relação à linha anterior, e o app insere uma linha em branco antes dela (nunca na primeira linha). Não quebre no meio de uma frase nem separe uma ideia de seus exemplos ou explicações (a menos que a ORIENTAÇÃO DO USUÁRIO peça outro critério, por exemplo uma linha em branco entre cada frase: então liste em "quebras" o início de TODAS as frases, menos a primeira da linha). O app coloca as linhas em branco; você não as escreve.'
-      : '- Espaçamento: INATIVO ("quebras" sempre [] e "espacoAntes" sempre false), a menos que a ORIENTAÇÃO DO USUÁRIO peça linhas em branco ou separação entre frases, ideias ou trechos: nesse caso use "quebras" (início de cada frase ou trecho, menos o primeiro da linha) e "espacoAntes" conforme ela pedir. Para separar frases, "quebras" deve trazer o início LITERAL de cada frase seguinte da linha.'
-  );
-  return linhas.join("\n");
+  return [
+    f[o.usarModelos ? "Modelos: marcada" : "Modelos: desmarcada"],
+    estilos.length ? trocar(f["Estilos: algum marcado"], { estilos: estilos.join(", ") }) : f["Estilos: nenhum marcado"],
+    f[o.maiusculas ? "Maiúsculas: marcada" : "Maiúsculas: desmarcada"],
+    f[o.emoji ? "Emoji: marcada" : "Emoji: desmarcada"],
+    f["Quantidade: " + o.intensidade],
+    o.variarFontes ? trocar(f["Tipos de fonte: marcada"], { fontes: f["Catálogo de fontes"] }) : f["Tipos de fonte: desmarcada"],
+    o.resumo ? trocar(f["Resumo: marcada"], { tamanho: f["Tamanho do resumo: " + NOME_TAMANHO[o.resumoTamanho]] }) : f["Resumo: desmarcada"],
+    f[o.citacoesBiblicas ? "Citações bíblicas: marcada" : "Citações bíblicas: desmarcada"],
+    o.usarListas ? trocar(l["Listas: marcada"], { modelos_de_lista: l["Catálogo de listas"] }) : l["Listas: desmarcada"],
+    f[o.separarIdeias ? "Espaçamento: marcada" : "Espaçamento: desmarcada"],
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 // Orientação do usuário (campo "Orientação para a IA" do pedido e instruções fixas das configurações). Vai no INÍCIO da
 // mensagem, com prioridade total sobre as preferências (inclusive as opções desmarcadas). Em branco: nada é enviado.
-function blocoOrientacao(opcoes, ajuste) {
+function blocoOrientacao(opcoes, ajuste, P) {
+  const f = P.frases.pedidos;
   const itens = [];
-  if (ajuste) itens.push(`Orientação para este pedido: ${ajuste}`);
-  if (opcoes.instrucao) itens.push(`Instruções fixas: ${opcoes.instrucao}`);
+  if (ajuste) itens.push(trocar(f["Orientação: deste pedido"], { texto: ajuste }));
+  if (opcoes.instrucao) itens.push(trocar(f["Orientação: instruções fixas"], { texto: opcoes.instrucao }));
   if (!itens.length) return "";
-  return (
-    "ORIENTAÇÃO DO USUÁRIO (PRIORIDADE TOTAL: cumpra à risca, em todas as linhas ou respostas, acima de qualquer preferência, " +
-    'regra de estilo ou opção marcada como INATIVO / "NÃO use" abaixo; confira o resultado contra ela antes de responder):\n' +
-    itens.map((i) => `- ${i}`).join("\n") +
-    "\n\n"
-  );
+  return f["Orientação: abertura"] + "\n" + itens.map((i) => `- ${i}`).join("\n") + "\n\n";
 }
 
-const LEMBRETE_ORIENTACAO =
-  "\n\nLEMBRETE FINAL: cumpra a ORIENTAÇÃO DO USUÁRIO que abre esta mensagem; ela vale mais que as preferências.";
+// Lembrete no fim da mensagem, só quando há orientação do usuário.
+function lembreteFinal(opcoes, ajuste, P) {
+  return ajuste || opcoes.instrucao ? "\n\n" + P.frases.pedidos["Lembrete final"] : "";
+}
 
 const ASPAS = "\"“”„«»‘’❛❜❝❞";
 const TEM_ASPAS = new RegExp(`[${ASPAS}]`);
@@ -343,25 +311,34 @@ function sanearDestaques(destaques, texto, opcoes, estilosPermitidos, maxDestaqu
 }
 
 // Preferências de formatação enviadas à IA quando ela escreve respostas do estudo.
-function descreverFormatacaoResposta(o, maxDestaques, sep) {
+function descreverFormatacaoResposta(o, P, sep) {
+  const f = P.frases.respostas;
   const estilos = [];
   if (o.negrito) estilos.push("negrito");
   if (o.italico) estilos.push("italico");
   if (o.negritoItalico) estilos.push("negrito_italico");
 
-  const quantidade = o.intensidade === "poucas" ? "poucos (1 a 2)" : o.intensidade === "muitas" ? `vários (até ${maxDestaques})` : "alguns (2 a 3)";
   return [
-    `- Estilos permitidos nos destaques: ${estilos.length ? estilos.join(", ") : "nenhum (estilo sempre null, a menos que a orientação do usuário peça)"}.`,
-    `- Letras maiúsculas nos destaques: ${o.maiusculas ? "permitidas" : "NÃO use (maiusculas sempre false)"}.`,
-    `- Emoji ilustrativo no início da resposta: ${o.emoji ? "SIM, 1 a 3 emojis que ilustrem o assunto da resposta" : "NÃO use (emoji sempre null)"}.`,
-    `- Quantidade de destaques por resposta: ${quantidade}.`,
-    sep
-      ? `- Espaçamento: ATIVO. Em cada item preencha "quebras" com os trechos (copiados LITERALMENTE do campo "resposta") onde começa cada nova ${sep === "frases" ? "frase" : "ideia"}, menos o começo da resposta; o app coloca uma linha em branco antes de cada um. Não quebre no meio de uma frase.`
-      : '- Espaçamento: INATIVO ("quebras" sempre []).',
-    o.citacoesBiblicas
-      ? '- Citações bíblicas: se a resposta mencionar um texto bíblico (ex.: Efésios 6:12), marque a referência como tipo "citacao_referencia"; use o tipo "geral" nos demais destaques.'
-      : '- Use apenas o tipo "geral" nos destaques.',
-  ].join("\n");
+    estilos.length ? trocar(f["Estilos: algum marcado"], { estilos: estilos.join(", ") }) : f["Estilos: nenhum marcado"],
+    f[o.maiusculas ? "Maiúsculas: marcada" : "Maiúsculas: desmarcada"],
+    f[o.emoji ? "Emoji: marcada" : "Emoji: desmarcada"],
+    f["Destaques: " + o.intensidade],
+    sep ? trocar(f["Espaçamento: marcada"], { unidade: sep === "frases" ? "frase" : "ideia" }) : f["Espaçamento: desmarcada"],
+    f[o.citacoesBiblicas ? "Citações bíblicas: marcada" : "Citações bíblicas: desmarcada"],
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+// "PREFERÊNCIAS:" das respostas do estudo: o tamanho, a formatação e os textos bíblicos.
+function preferenciasDaResposta(o, P, sep) {
+  return (
+    "PREFERÊNCIAS:\n" +
+    P.frases.respostas["Tamanho da resposta: " + NOME_TAMANHO[o.resumoTamanho]] +
+    "\n" +
+    descreverFormatacaoResposta(o, P, sep) +
+    descreverFontes(o, P, false)
+  );
 }
 
 // ---------- Fontes de consulta: Bíblia e Estudo Perspicaz ----------
@@ -382,29 +359,17 @@ function consultaPedida(opcoes) {
 // Linhas das preferências sobre as fontes. paraTexto = "Sugerir formatação" (as referências valem para o texto todo).
 function descreverFontes(opcoes, P, paraTexto) {
   // Uma forma de usar os textos por vez; paraTexto = formatação (vale para o resumo), senão respostas do estudo.
+  const f = P.frases.textos;
+  const alvo = paraTexto ? "Resumo" : "Respostas";
   let linhaBiblia;
-  if (opcoes.explicarTextos) {
-    linhaBiblia = paraTexto
-      ? '- Textos bíblicos: EXPLICAR E APLICAR. Não mencione referências bíblicas no resumo e não transcreva versículos. Em "textosRelevantes" indique 1 ou 2 textos citados no texto, os mais relevantes. O app mostra, depois do resumo (ou no fim do texto), a referência com uma explicação e uma aplicação.'
-      : '- Textos bíblicos: EXPLICAR E APLICAR. NÃO mencione na "resposta" os textos citados só no parágrafo e não transcreva versículos. Em "textosRelevantes" indique 1 ou 2 textos citados no parágrafo, os mais relevantes (sem repetir os da pergunta); o app mostra, depois da resposta, a referência com uma explicação e uma aplicação. Os textos citados na própria PERGUNTA são exceção: mencione-os SEMPRE de forma natural na "resposta" e coloque-os em "referencias" (o app transcreve e explica cada um logo depois da resposta).';
-  } else if (opcoes.transcreverSemCitar) {
-    linhaBiblia = paraTexto
-      ? '- Textos bíblicos: TRANSCREVER SEM CITAR. Não mencione referências bíblicas no resumo. Em "textosRelevantes" indique os textos citados no texto que merecem ser transcritos (os mais relevantes; no máximo ' + P.limites.maxTextos + '). O app transcreve cada um depois do resumo (ou no fim do texto), com uma explicação e uma aplicação.'
-      : '- Textos bíblicos: TRANSCREVER SEM CITAR. NÃO mencione na "resposta" os textos citados só no parágrafo e não transcreva versículos nela. Em "textosRelevantes" indique os textos citados no parágrafo que forem relevantes para a resposta (no máximo ' + P.limites.maxTextos + '); o app transcreve cada um depois da resposta, com uma explicação e uma aplicação. Os textos citados na própria PERGUNTA são exceção: mencione-os SEMPRE de forma natural na "resposta" e coloque-os em "referencias" (o app transcreve e explica cada um logo depois da resposta).';
-  } else if (opcoes.citarTextos) {
-    linhaBiblia = paraTexto
-      ? '- Textos bíblicos: SÓ CITAR. Se houver resumo, mencione nele, de forma natural (ex.: "como mostra Efésios 6:12"), 1 ou 2 referências bíblicas relevantes citadas no texto, sem transcrever o versículo. "textosRelevantes" sempre []; nenhum texto será transcrito.'
-      : '- Textos bíblicos: SÓ CITAR. Mencione na "resposta", de forma natural (ex.: "como mostra Efésios 6:12"), 1 ou 2 referências bíblicas relevantes citadas no parágrafo, sem transcrever o versículo. "textosRelevantes" sempre []. Os textos citados na própria PERGUNTA são exceção: mencione-os SEMPRE de forma natural na "resposta" e coloque-os em "referencias" (o app transcreve e explica cada um logo depois da resposta).';
-  } else {
-    linhaBiblia = opcoes.consultarBiblia
-      ? "- Consulta à Bíblia: ATIVA.\n" + (paraTexto ? P.instrucoes.bibliaResumo : P.instrucoes.bibliaRelevantes)
-      : '- Consulta à Bíblia: INATIVA ("textosRelevantes" sempre []).';
-  }
+  if (opcoes.explicarTextos) linhaBiblia = f[`${alvo}: explicar e aplicar`];
+  else if (opcoes.transcreverSemCitar) linhaBiblia = f[`${alvo}: transcrever sem citar`];
+  else if (opcoes.citarTextos) linhaBiblia = f[`${alvo}: só citar`];
+  else if (opcoes.consultarBiblia) linhaBiblia = f["Transcrever e citar"] + "\n" + (paraTexto ? P.instrucoes.bibliaResumo : P.instrucoes.bibliaRelevantes);
+  else linhaBiblia = f["Nenhuma opção marcada"];
   const linhas = [
     linhaBiblia,
-    opcoes.consultarPerspicaz
-      ? `- Consulta ao Estudo Perspicaz: ATIVA. ${P.instrucoes.perspicazUso} Indique o verbete em "verbetes" (lista vazia se nenhum acrescentar algo útil).`
-      : '- Consulta ao Estudo Perspicaz: INATIVA ("verbetes" sempre []).',
+    opcoes.consultarPerspicaz ? trocar(f["Perspicaz: ativo"], { uso_do_perspicaz: P.instrucoes.perspicazUso }) : f["Perspicaz: inativo"],
   ];
   return "\n" + linhas.join("\n") + "\n\n" + P.instrucoes.referencias;
 }
@@ -708,12 +673,6 @@ const SaidaSentinela = z.object({
   ),
 });
 
-const DESCRICAO_RESPOSTA = {
-  curto: "curta (1 a 2 frases)",
-  medio: "média (2 a 4 frases)",
-  detalhado: "detalhada (4 a 6 frases)",
-};
-
 function tratarErro(e, res) {
   if (e instanceof Anthropic.RateLimitError) {
     return erro(res, 429, "Limite de uso da IA atingido. Tente novamente mais tarde.");
@@ -730,23 +689,19 @@ function tratarErro(e, res) {
 // Devolve { itens, uso } ou null se a IA não conseguiu gerar as respostas.
 async function escreverRespostas({ rotulo, texto, escopo, opcoes, modo, ajuste, anteriores, sep, P }) {
   let mensagem =
-    blocoOrientacao(opcoes, ajuste) +
-    "PREFERÊNCIAS:\n" +
-    `- Tamanho de cada resposta: ${DESCRICAO_RESPOSTA[opcoes.resumoTamanho]}.\n` +
-    descreverFormatacaoResposta(opcoes, P.limites.maxDestaques, sep) +
-    descreverFontes(opcoes, P, false) +
+    blocoOrientacao(opcoes, ajuste, P) +
+    preferenciasDaResposta(opcoes, P, sep) +
     (escopo ? `\n\n${escopo}` : "") +
     `\n\n${rotulo}:\n` +
     texto +
-    (ajuste || opcoes.instrucao ? LEMBRETE_ORIENTACAO : "");
+    lembreteFinal(opcoes, ajuste, P);
 
   if (modo && anteriores) {
     mensagem +=
       "\n\nRESPOSTAS ANTERIORES (JSON):\n" +
       anteriores +
-      (modo === "nova"
-        ? "\n\nPEDIDO: escreva respostas DIFERENTES das anteriores (outras palavras e outro enfoque), mantendo a fidelidade ao texto."
-        : "\n\nPEDIDO: melhore as respostas anteriores, mantendo o que estava bom, seguindo a orientação específica acima (se houver).");
+      "\n\n" +
+      P.frases.pedidos[modo === "nova" ? "Respostas: outra sugestão" : "Respostas: melhorar"];
   }
 
   const permitidos = estilosDe(opcoes);
@@ -786,7 +741,7 @@ async function responderSentinela(res, { linhas, opcoes, modo, ajuste, anteriore
     const { itens, uso } = await escreverRespostas({ rotulo: "TEXTO COLADO", texto: linhas.join("\n"), opcoes, modo, ajuste, anteriores, sep, P });
     console.log("Texto colado:", JSON.stringify(uso));
     if (!itens) return erro(res, 502, "A IA não conseguiu gerar as respostas para este texto.");
-    return res.status(200).json({ itens: await finalizarItens(itens, opcoes, P, blocoOrientacao(opcoes, ajuste)) });
+    return res.status(200).json({ itens: await finalizarItens(itens, opcoes, P, blocoOrientacao(opcoes, ajuste, P)) });
   } catch (e) {
     return tratarErro(e, res);
   }
@@ -801,8 +756,7 @@ async function responderEstudoLido(res, { lido, alvo, recapitulacao, opcoes, aju
   if (recapitulacao) {
     if (!lido.recapitulacao.length) return erro(res, 400, "Não encontrei o quadro de recapitulação neste artigo.");
     texto = textoDaRecapitulacao(lido);
-    escopo =
-      "ESCOPO: responda SOMENTE às PERGUNTAS DE RECAPITULAÇÃO que estão no fim do texto, um item para cada uma, com base em todo o artigo. Em paragrafos, ponha só o número da pergunta (1, 2, 3...). O artigo vem sem as perguntas dos parágrafos: não crie itens para os parágrafos.";
+    escopo = P.frases.pedidos["Escopo: recapitulação"];
   } else {
     const grupos = lido.grupos.filter((g) => g.numeros.some((n) => alvo.has(n)));
     if (!grupos.length) {
@@ -842,7 +796,7 @@ async function responderEstudoLido(res, { lido, alvo, recapitulacao, opcoes, aju
     console.log("Estudo (lido no site):", JSON.stringify({ pedidos: alvo ? [...alvo] : "recapitulacao", recebidos: itens.map((i) => i.paragrafos), caracteres: texto.length, leitura, ...uso }));
 
     const inicioFontes = Date.now();
-    const itensFinais = await finalizarItens(itens, opcoes, P, blocoOrientacao(opcoes, ajuste));
+    const itensFinais = await finalizarItens(itens, opcoes, P, blocoOrientacao(opcoes, ajuste, P));
     console.log("Estudo (tempo):", JSON.stringify({ fontes: Math.round((Date.now() - inicioFontes) / 100) / 10, total: Math.round((Date.now() - inicioPedido) / 100) / 10 }));
 
     return res.status(200).json({
@@ -976,35 +930,18 @@ async function responderEstudo(res, body, P) {
   }
   if (lido) return responderEstudoLido(res, { lido, alvo, recapitulacao, opcoes, ajuste, sep, modo, anteriores, P, inicioPedido });
 
-  const escopoDosParagrafos = (numeros) =>
-    `ESCOPO: responda SOMENTE às perguntas do(s) parágrafo(s) de número ${numeros.join(", ")} do artigo. São números de parágrafos (por exemplo, "8" é o parágrafo 8, e não "oito parágrafos"). Responda a TODOS eles, sem pular nenhum: quando dois ou mais parágrafos compartilham a mesma pergunta, faça um item só com os números de todos (ex.: "4, 5"). NÃO responda a nenhum outro parágrafo, nem aos anteriores.\n`;
+  const escopoDosParagrafos = (numeros) => trocar(P.frases.pedidos["Escopo: parágrafos (leitura pela IA)"], { numeros: numeros.join(", ") }) + "\n";
   const montarMensagem = (escopo) =>
-    blocoOrientacao(opcoes, ajuste) +
-    `ENDEREÇO: ${url}\n` +
-    escopo +
-    `PREFERÊNCIAS:\n- Tamanho de cada resposta: ${DESCRICAO_RESPOSTA[opcoes.resumoTamanho]}.\n` +
-    descreverFormatacaoResposta(opcoes, P.limites.maxDestaques, sep) +
-    descreverFontes(opcoes, P, false) +
-    (ajuste || opcoes.instrucao ? LEMBRETE_ORIENTACAO : "");
+    blocoOrientacao(opcoes, ajuste, P) + `ENDEREÇO: ${url}\n` + escopo + preferenciasDaResposta(opcoes, P, sep) + lembreteFinal(opcoes, ajuste, P);
 
-  let mensagem =
-    blocoOrientacao(opcoes, ajuste) +
-    `ENDEREÇO: ${url}\n` +
-    (alvo
-      ? escopoDosParagrafos([...alvo])
-      : 'ESCOPO: a RECAPITULAÇÃO. Responda SOMENTE às perguntas do quadro de recapitulação no fim do artigo (o quadro "Qual é a sua resposta?"), numeradas na ordem em que aparecem (1, 2, 3...). NÃO responda às perguntas dos parágrafos.\n') +
-    `PREFERÊNCIAS:\n- Tamanho de cada resposta: ${DESCRICAO_RESPOSTA[opcoes.resumoTamanho]}.\n` +
-    descreverFormatacaoResposta(opcoes, P.limites.maxDestaques, sep) +
-    descreverFontes(opcoes, P, false) +
-    (ajuste || opcoes.instrucao ? LEMBRETE_ORIENTACAO : "");
+  let mensagem = montarMensagem(alvo ? escopoDosParagrafos([...alvo]) : P.frases.pedidos["Escopo: recapitulação (leitura pela IA)"] + "\n");
 
   if (modo && anteriores) {
     mensagem +=
       "\n\nRESPOSTAS ANTERIORES (JSON):\n" +
       anteriores +
-      (modo === "nova"
-        ? "\n\nPEDIDO: escreva respostas DIFERENTES das anteriores (outras palavras e outro enfoque), mantendo a fidelidade ao artigo."
-        : "\n\nPEDIDO: melhore as respostas anteriores, mantendo o que estava bom, seguindo a orientação específica acima (se houver).");
+      "\n\n" +
+      P.frases.pedidos[modo === "nova" ? "Respostas: outra sugestão" : "Respostas: melhorar"];
   }
 
   const client = new Anthropic({ maxRetries: 1, timeout: 90_000 });
@@ -1097,7 +1034,7 @@ async function responderEstudo(res, body, P) {
     }
 
     const inicioFontes = Date.now();
-    const itensFinais = await finalizarItens(itens, opcoes, P, blocoOrientacao(opcoes, ajuste));
+    const itensFinais = await finalizarItens(itens, opcoes, P, blocoOrientacao(opcoes, ajuste, P));
     console.log("Estudo (tempo):", JSON.stringify({ fontes: Math.round((Date.now() - inicioFontes) / 100) / 10, total: Math.round((Date.now() - inicioPedido) / 100) / 10 }));
 
     return res.status(200).json({
@@ -1169,7 +1106,7 @@ async function sugerirPerguntas(res, body, P) {
   }
   const texto = textoDosGrupos(grupos);
   const mensagem =
-    blocoOrientacao(opcoes, ajuste) +
+    blocoOrientacao(opcoes, ajuste, P) +
     "PEDIDO (seções ligadas pelo usuário):\n" +
     `- Seção 1, perguntas complementares ("complementares"): ${opcoes.perguntasComplementares ? "ATIVA" : "INATIVA"}\n` +
     `- Seção 2, perguntas aplicativas ("aplicativas"): ${opcoes.perguntasAplicativas ? "ATIVA" : "INATIVA"}\n` +
@@ -1177,7 +1114,7 @@ async function sugerirPerguntas(res, body, P) {
     `- Seção 3, perguntas de entendimento dos textos bíblicos ("perguntasEntendimento"): ${opcoes.perguntasEntendimento ? "ATIVAS" : "INATIVAS"}\n` +
     "\nTEXTO DO ESTUDO:\n" +
     texto +
-    (ajuste || opcoes.instrucao ? LEMBRETE_ORIENTACAO : "");
+    lembreteFinal(opcoes, ajuste, P);
 
   try {
     const client = new Anthropic({ maxRetries: 1, timeout: 90_000 });
@@ -1429,9 +1366,9 @@ export default async function handler(req, res) {
   ]);
 
   let mensagem =
-    blocoOrientacao(opcoes, ajuste) +
+    blocoOrientacao(opcoes, ajuste, P) +
     "PREFERÊNCIAS DO USUÁRIO:\n" +
-    descreverPreferencias(opcoes) +
+    descreverPreferencias(opcoes, P) +
     (consultaPedida(opcoes) ? descreverFontes(opcoes, P, true) : "") +
     "\n\nMODELOS DISPONÍVEIS:\n" +
     (modelosUsaveis.length
@@ -1439,15 +1376,14 @@ export default async function handler(req, res) {
       : "(nenhum)") +
     "\n\nLINHAS DO TEXTO:\n" +
     linhas.map((l, i) => `[${i}] ${l}`).join("\n") +
-    (ajuste || opcoes.instrucao ? LEMBRETE_ORIENTACAO : "");
+    lembreteFinal(opcoes, ajuste, P);
 
   if (modo && anteriores) {
     mensagem +=
       "\n\nSUGESTÕES ANTERIORES (JSON):\n" +
       anteriores +
-      (modo === "nova"
-        ? "\n\nPEDIDO: proponha uma alternativa DIFERENTE das sugestões anteriores (outros modelos, trechos ou emojis)."
-        : "\n\nPEDIDO: melhore as sugestões anteriores, mantendo o que estava bom, seguindo a orientação específica acima (se houver).");
+      "\n\n" +
+      P.frases.pedidos[modo === "nova" ? "Formatação: outra sugestão" : "Formatação: melhorar"];
   }
 
   // As caixas dos textos bíblicos (transcrever, só citar, explicar e aplicar) valem para o texto e para o resumo.
@@ -1535,7 +1471,7 @@ export default async function handler(req, res) {
       relevantes: listaDeTextos(saida.textosRelevantes, P.limites.maxTextos),
       verbetes: listaDeTextos(saida.verbetes, 2),
     };
-    if (consultaPedida(opcoes)) await completarFontes([fonte], opcoes, P, blocoOrientacao(opcoes, ajuste));
+    if (consultaPedida(opcoes)) await completarFontes([fonte], opcoes, P, blocoOrientacao(opcoes, ajuste, P));
     const textos = fonte.textos || [];
     const perspicaz = fonte.perspicaz || null;
 
