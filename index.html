@@ -859,7 +859,16 @@
       background: #ccfbf1;
       background: color-mix(in srgb, #14b8a6 18%, var(--card));
     }
+    details.subsection.group-box.group-main {
+      border-color: #0ea5e9;
+      background: #e0f2fe;
+      background: color-mix(in srgb, #0ea5e9 14%, var(--card));
+    }
     details.subsection.group-box > summary { font-size: 1.02rem; font-weight: 750; padding: 14px; }
+    /* Dentro do card principal: texto de ajuda, botões de formatação e faixa de emojis. */
+    .principais-body #selectionInfo { margin: 0 0 8px; }
+    .principais-body .main-actions { margin: 4px 0 10px; }
+    .principais-body .quick-emojis { margin-bottom: 0; }
     .group-box-body { padding: 0 12px 12px; }
     .group-box-body > details.subsection:first-child { margin-top: 0; }
 
@@ -1972,11 +1981,7 @@
 
       .editor-controls-pane { display: flex; flex-direction: column; }
 
-      .editor-controls-pane > #selectionInfo { order: -3; margin: 0 0 8px; }
-
-      .editor-controls-pane > .main-actions { order: -2; margin: 0 0 10px; }
-
-      .editor-controls-pane > .quick-emojis { order: -2; }
+      .editor-controls-pane > #principaisBox { order: -2; margin: 0 0 10px; }
 
       .editor-controls-pane > .main-copy-status { order: -1; }
 
@@ -2087,6 +2092,11 @@
 
           <div class="editor-controls-pane">
 
+        <details class="subsection group-box group-main" id="principaisBox" open>
+          <summary>✏️ Opções principais de formatação</summary>
+          <div class="group-box-body principais-body">
+            <p id="selectionInfo" class="hint" role="status" aria-live="polite">Selecione um trecho e clique na formatação desejada. Use ⇥ Recuo ou a tecla Tab para aumentar o recuo do parágrafo. Repita para mais níveis; Shift+Tab reduz o recuo.</p>
+
         <div class="button-row action-row main-actions">
           <div class="action-item desktop-only">
             <button id="undoBtn" class="icon-action clear" type="button" title="Desfazer a última alteração no texto" aria-label="Desfazer a última alteração no texto" disabled>↩️</button>
@@ -2144,6 +2154,8 @@
         <div class="quick-emojis" role="group" aria-label="Faixa rápida de emojis (toque para inserir)">
           <div id="quickEmojiList" class="quick-emoji-list"></div>
         </div>
+          </div>
+        </details>
         <span id="copyStatus" class="ok main-copy-status" role="status" aria-live="polite"></span>
 
         <details class="subsection group-box group-tools screen-formatar" id="outrasOpcoesBox">
@@ -2386,8 +2398,6 @@
               <input autocomplete="off" id="aiStudyCode" type="password" maxlength="100" placeholder="Digite o código uma vez; ele fica salvo neste aparelho">
             </details>
         </div>
-
-        <p id="selectionInfo" class="hint" role="status" aria-live="polite">Selecione um trecho e clique na formatação desejada. Use ⇥ Recuo ou a tecla Tab para aumentar o recuo do parágrafo. Repita para mais níveis; Shift+Tab reduz o recuo.</p>
 
           </div>
         </div>
@@ -3998,7 +4008,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '4.7.2'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
+    const APP_VERSION = '4.7.3'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0; 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 
@@ -7453,6 +7463,17 @@ function saveTemplatesToStorage() {
     }
 
     // Os grupos recolhíveis (e os cards de resumo/textos bíblicos) lembram se estavam abertos.
+    // "Opções principais de formatação": aberto na primeira vez; depois lembra o que o usuário deixou.
+    (() => {
+      const box = document.getElementById('principaisBox');
+      const key = 'jwLibraryNoteAplicarGroup_principaisBox';
+      try {
+        const saved = localStorage.getItem(key);
+        if (saved !== null) box.open = saved === '1';
+      } catch (e) { /* sem localStorage: fica aberto */ }
+      box.addEventListener('toggle', () => safeSetItem(key, box.open ? '1' : '0'));
+    })();
+
     ['outrasOpcoesBox', 'opcoesIaBox', 'textosBiblicosBox', 'resumoTextosBox'].forEach(id => {
       const group = document.getElementById(id);
       const key = 'jwLibraryNoteAplicarGroup_' + id;
