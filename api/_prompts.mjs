@@ -293,11 +293,26 @@ Regras:
   {
     id: "leitura_voz",
     titulo: "Leitura em voz alta (como a voz do Google deve ler)",
-    descricao: "Instrução de estilo enviada à voz do Google (modelo Gemini) a cada leitura do botão 🔊 Ouvir: tom, ritmo, ênfase e como ler referências bíblicas.",
-    padrao: `Leia em português do Brasil, em tom calmo, caloroso e respeitoso, como quem faz um comentário numa reunião da congregação. Faça as perguntas soarem como perguntas, dê ênfase natural às palavras importantes e faça pausas curtas entre as ideias. Leia as referências bíblicas por extenso, como se fala: "João 3:16" é "João capítulo 3, versículo 16" e "Mateus 24:14; 28:19, 20" é "Mateus 24, versículo 14, e 28, versículos 19 e 20".`,
+    descricao: "Base da instrução enviada às vozes Gemini a cada leitura do botão 🔊 Ouvir. Depois dela o app junta a frase do tom e da altura escolhidos e as instruções extras do administrador (parte \"Tom, altura e instruções da voz\").",
+    padrao: `Leia em português do Brasil, com naturalidade, como quem faz um comentário numa reunião da congregação. Faça as perguntas soarem como perguntas, dê ênfase natural às palavras importantes e faça pausas curtas entre as ideias e um pouco maiores entre os parágrafos.`,
   },
   // ---------- Frases que o app junta em cada pedido, conforme as caixas marcadas ----------
   // Cada item começa com o nome entre colchetes; o servidor procura o item pelo nome. Item apagado = volta o padrão.
+  {
+    id: "frases_voz",
+    titulo: "Tom, altura e instruções da voz (leitura em voz alta)",
+    descricao:
+      "Frases juntadas à instrução \"Leitura em voz alta\" conforme o tom e a altura escolhidos no menu de voz (Ajustes) e as instruções extras do administrador. Só valem nas vozes Gemini. Edite só o texto depois do nome entre colchetes; não mude o nome. Marcador trocado pelo app: {{texto}} (as instruções extras).",
+    itens: [
+      ["Tom: calmo e respeitoso", "Use um tom calmo, caloroso e respeitoso."],
+      ["Tom: caloroso e animado", "Use um tom caloroso e animado, com entusiasmo moderado, sem exagero."],
+      ["Tom: sério e firme", "Use um tom sério, firme e claro, como numa explicação importante."],
+      ["Tom: narração", "Use um tom de narração, como quem lê um texto em voz alta para um grupo, com ritmo constante."],
+      ["Altura: mais grave", "Fale com a voz um pouco mais grave que o normal."],
+      ["Altura: mais aguda", "Fale com a voz um pouco mais aguda que o normal."],
+      ["Instruções do administrador", "Siga também estas instruções: {{texto}}"],
+    ],
+  },
   {
     id: "frases_formatacao",
     titulo: "Opções da formatação com IA (o que cada caixa pede à IA)",
@@ -469,7 +484,7 @@ const MONTAGEM_PEDIDOS = `COMO O APP MONTA A MENSAGEM DE CADA PEDIDO (além do p
 - Perguntas adicionais do dirigente: [orientação] → "PEDIDO (seções ligadas pelo usuário):" com ATIVA/INATIVA de cada seção → "TEXTO DO ESTUDO:" → [lembrete final].
 - Numeração dos parágrafos (só quando a leitura direta falha): "ENDEREÇO:" da página.
 - Aplicação dos versículos e do Perspicaz: [orientação] → "ITENS (JSON):" com o comentário, os versículos exatos e o verbete.
-- Leitura em voz alta (botão 🔊 Ouvir, voz do Google): o texto do campo (ou o trecho selecionado) em letras comuns, sem emojis e símbolos, dividido em partes de até 2.000 caracteres, cada uma com a instrução de "Leitura em voz alta".`;
+- Leitura em voz alta (botão 🔊 Ouvir, voz do Google): o texto do campo (ou o trecho selecionado) em letras comuns, sem emojis e símbolos, com as regras do menu de voz (referências por extenso ou puladas, parênteses e cabeçalhos pulados), dividido em partes de até 1.500 caracteres. Nas vozes Gemini, cada parte vai com a instrução "Leitura em voz alta" + a frase do tom + a da altura + as instruções extras do administrador. A voz Chirp 3 HD recebe só o texto.`;
 
 export function travadosDe(limites) {
   return [
@@ -551,6 +566,7 @@ export function montarPrompts(overrides, limitesArmazenados) {
       respostas: frasesDe("frases_respostas"),
       textos: frasesDe("frases_textos"),
       pedidos: frasesDe("frases_pedidos"),
+      voz: frasesDe("frases_voz"),
     },
     instrucoes: {
       referencias: FONTES_REFERENCIAS,

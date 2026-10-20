@@ -1928,6 +1928,17 @@
 
     .top-text-btn:hover { background: var(--neutral-dark); }
 
+    /* Painel da voz em Ajustes (administrador). */
+    details.subsection.voz-admin { background: #e0f2fe; background: color-mix(in srgb, #38bdf8 14%, var(--card)); border-color: #38bdf8; }
+    .voz-admin label { margin: 10px 0 4px; font-size: .86rem; }
+    .voz-admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .voz-admin-subtitulo { margin: 14px 0 4px; font-weight: 700; font-size: .92rem; }
+    .voz-admin textarea { min-height: 70px; }
+    .voz-consumo { margin-top: 14px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+    .voz-consumo p { margin: 4px 0; font-size: .88rem; }
+    .voz-link { flex: 1 1 140px; display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 8px 10px;
+      border: 2px solid var(--line); border-radius: 10px; font-size: .88rem; font-weight: 700; color: var(--text); text-decoration: none; text-align: center; }
+
     /* Tocador da leitura em voz alta, logo abaixo do campo de texto. */
     .voz-bar { margin-top: 8px; padding: 8px 10px; border: 2px solid #38bdf8; border-radius: 12px; background: #e0f2fe; background: color-mix(in srgb, #38bdf8 16%, var(--card)); }
     .voz-bar[hidden] { display: none; }
@@ -2488,6 +2499,58 @@
           <p class="hint">Área do administrador: mostra os textos que orientam a IA e permite editar o tom e as regras para todos os usuários.</p>
         </div>
 
+          </div>
+        </details>
+        <details class="subsection voz-admin" id="vozSection">
+          <summary>🔊 Leitura em voz alta (administrador)</summary>
+          <div class="subsection-body">
+            <p class="hint">Escolhas da voz do botão 🔊 Ouvir. Valem para todos os usuários; só o administrador pode mudar.</p>
+            <div id="vozAdminLogin">
+              <input id="vozAdminCode" type="password" inputmode="numeric" maxlength="100" placeholder="Código de administrador" autocomplete="off">
+              <p id="vozAdminError" class="hint" style="color:var(--danger); min-height:1.3em"></p>
+              <button id="vozAdminLoginBtn" type="button">🔓 Entrar</button>
+            </div>
+            <div id="vozAdminForm" hidden>
+              <label for="vozModelo">Qualidade (modelo de voz)</label>
+              <select id="vozModelo"></select>
+              <label for="vozVoz">Voz</label>
+              <select id="vozVoz"></select>
+              <div class="voz-admin-grid">
+                <div><label for="vozTom">Tom</label><select id="vozTom"></select></div>
+                <div><label for="vozAltura">Altura da voz</label><select id="vozAltura"></select></div>
+              </div>
+              <label for="vozVelocidadePadrao">Velocidade padrão</label>
+              <select id="vozVelocidadePadrao"></select>
+              <p class="hint">Tom, altura e instruções extras só valem nas vozes Gemini. Quem estiver ouvindo ainda pode mudar a velocidade na barra do tocador.</p>
+              <p class="voz-admin-subtitulo">O que ler e o que pular</p>
+              <div class="ai-sources">
+                <label class="ai-check"><input type="checkbox" autocomplete="off" id="vozRefsExtenso"> 📖 Ler as referências bíblicas por extenso ("1 Coríntios 13:4-7" vira "Primeira Coríntios, capítulo 13, versículos 4 a 7")</label>
+                <label class="ai-check"><input type="checkbox" autocomplete="off" id="vozPularRefs"> ⏭️ Pular as referências bíblicas</label>
+                <label class="ai-check"><input type="checkbox" autocomplete="off" id="vozPularParenteses"> ⏭️ Pular o que estiver entre parênteses</label>
+                <label class="ai-check"><input type="checkbox" autocomplete="off" id="vozPularCabecalhos"> ⏭️ Pular os cabeçalhos do app (ex.: "RESPOSTA 1.", "PERGUNTAS ADICIONAIS 2.")</label>
+              </div>
+              <p class="hint">Emojis, setas e símbolos nunca são lidos, e as letras formatadas são lidas como letras comuns.</p>
+              <label for="vozExtra">Instruções extras de leitura</label>
+              <textarea id="vozExtra" maxlength="400" placeholder='Ex.: leia "Jeová" com ênfase; faça uma pausa maior antes de cada pergunta.'></textarea>
+              <div class="bk-row">
+                <button id="vozExemploBtn" class="secondary" type="button">▶️ Ouvir um exemplo</button>
+                <button id="vozSalvarBtn" type="button">💾 Salvar para todos</button>
+              </div>
+              <span id="vozAdminStatus" class="ok" role="status" aria-live="polite"></span>
+              <div class="voz-consumo">
+                <p class="voz-admin-subtitulo">📊 Consumo da voz (contado neste aparelho)</p>
+                <div id="vozConsumo"></div>
+                <div class="voz-admin-grid">
+                  <div><label for="vozPrecoGemini">Gemini: US$ por minuto</label><input id="vozPrecoGemini" type="number" step="0.001" min="0" inputmode="decimal"></div>
+                  <div><label for="vozPrecoChirp">Chirp: US$ por milhão de caracteres</label><input id="vozPrecoChirp" type="number" step="0.5" min="0" inputmode="decimal"></div>
+                </div>
+                <p class="hint">É uma estimativa com os preços de referência acima (ajuste se o Google mudar). O valor exato fica no faturamento do Google Cloud, que é atualizado com algumas horas de atraso.</p>
+                <div class="bk-row">
+                  <a class="voz-link" href="https://console.cloud.google.com/billing" target="_blank" rel="noopener noreferrer">💳 Abrir o faturamento no Google Cloud</a>
+                  <button id="vozZerarBtn" class="secondary" type="button">🧹 Zerar a contagem</button>
+                </div>
+              </div>
+            </div>
           </div>
         </details>
         <details class="subsection sub-tint-5">
@@ -4213,15 +4276,148 @@
       if (salva && [...vozVelocidade.options].some(o => o.value === salva)) vozVelocidade.value = salva;
     } catch (e) { /* sem localStorage: 1× */ }
 
-    // Letras formatadas viram letras comuns; emojis, setas e símbolos decorativos saem (a voz leria o nome deles).
-    function textoParaVoz(texto) {
-      return removeUnicodeFormatting(String(texto || ''))
+    // Regras da leitura escolhidas pelo administrador (o que ler e pular, velocidade padrão). Vêm do servidor na primeira
+    // leitura; sem conexão com ele, valem estes padrões.
+    const VOZ_REGRAS_PADRAO = { velocidade: 1, refsExtenso: true, pularRefs: false, pularParenteses: false, pularCabecalhos: false };
+    let vozRegras = null;
+
+    async function vozCarregarRegras(forcar) {
+      if (vozRegras && !forcar) return vozRegras;
+      try {
+        const r = await postConfig({ acao: 'voz-publica' });
+        vozRegras = Object.assign({}, VOZ_REGRAS_PADRAO, r.ok && r.data && r.data.voz ? r.data.voz : {});
+      } catch (e) {
+        vozRegras = Object.assign({}, VOZ_REGRAS_PADRAO);
+      }
+      return vozRegras;
+    }
+
+    // ---------- Referências bíblicas para a voz ----------
+    // Nomes completos (com ou sem acento, porque as letras formatadas perdem os acentos) e as abreviações das publicações.
+    const VOZ_ABREVIACOES = {
+      'Gênesis': ['gên', 'gn'], 'Êxodo': ['êx', 'êxo', 'exod'], 'Levítico': ['lev', 'lv'], 'Números': ['núm', 'nm'],
+      'Deuteronômio': ['deut', 'dt'], 'Josué': ['jos', 'js'], 'Juízes': ['jz', 'juí'], 'Rute': ['ru', 'rt'],
+      '1 Samuel': ['1sa', '1sam', '1sm'], '2 Samuel': ['2sa', '2sam', '2sm'], '1 Reis': ['1rs', '1re'], '2 Reis': ['2rs', '2re'],
+      '1 Crônicas': ['1cr', '1crô', '1crôn'], '2 Crônicas': ['2cr', '2crô', '2crôn'], 'Esdras': ['esd', 'ed'], 'Neemias': ['ne', 'nee'],
+      'Ester': ['est', 'et'], 'Jó': ['jó'], 'Salmos': ['sal', 'sl', 'salmo'], 'Provérbios': ['pr', 'pro', 'prov', 'pv'],
+      'Eclesiastes': ['ec', 'ecl', 'ecles'], 'Cântico de Salomão': ['cân', 'cânt', 'ct'], 'Isaías': ['is', 'isa'],
+      'Jeremias': ['jer', 'jr'], 'Lamentações': ['lam', 'lm'], 'Ezequiel': ['ez', 'eze', 'ezeq'], 'Daniel': ['dan', 'dn'],
+      'Oseias': ['os', 'ose'], 'Joel': ['jl'], 'Amós': ['am', 'amó'], 'Obadias': ['ob', 'obd', 'oba'], 'Jonas': ['jon', 'jn'],
+      'Miqueias': ['miq', 'mq'], 'Naum': ['na'], 'Habacuque': ['hab', 'hc'], 'Sofonias': ['sof', 'sf'], 'Ageu': ['ag'],
+      'Zacarias': ['zac'], 'Malaquias': ['mal', 'ml'], 'Mateus': ['mt', 'mat'], 'Marcos': ['mr', 'mar', 'mc'],
+      'Lucas': ['lu', 'luc', 'lc'], 'João': ['jo'], 'Atos': ['at'], 'Romanos': ['ro', 'rom', 'rm'], '1 Coríntios': ['1co', '1cor'],
+      '2 Coríntios': ['2co', '2cor'], 'Gálatas': ['gál', 'gl'], 'Efésios': ['ef', 'efé'], 'Filipenses': ['fil', 'fp', 'flp'],
+      'Colossenses': ['col', 'cl'], '1 Tessalonicenses': ['1te', '1tes', '1ts'], '2 Tessalonicenses': ['2te', '2tes', '2ts'],
+      '1 Timóteo': ['1ti', '1tim', '1tm'], '2 Timóteo': ['2ti', '2tim', '2tm'], 'Tito': ['tit', 'tt'], 'Filêmon': ['flm', 'filêm', 'fm'],
+      'Hebreus': ['he', 'heb', 'hb'], 'Tiago': ['tg', 'tia'], '1 Pedro': ['1pe', '1ped', '1pd'], '2 Pedro': ['2pe', '2ped', '2pd'],
+      '1 João': ['1jo'], '2 João': ['2jo'], '3 João': ['3jo'], 'Judas': ['jud', 'jd'], 'Apocalipse': ['ap', 'apo', 'apoc']
+    };
+    const VOZ_ACENTOS = { a: '[aáàâã]', e: '[eéê]', i: '[ií]', o: '[oóôõ]', u: '[uúü]', c: '[cç]' };
+    const vozChave = texto => String(texto).toLowerCase().replace(/[.\s]+/g, '');
+    const vozChaveSemAcento = texto => vozChave(texto).normalize('NFD').replace(/[̀-ͯ]/g, '');
+    let vozRefs = null; // { regex, comAcento: Map, semAcento: Map }
+
+    function vozReferencias() {
+      if (vozRefs) return vozRefs;
+      const comAcento = new Map();
+      const semAcento = new Map();
+      const padroes = [];
+      const escapar = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      Object.entries(VOZ_ABREVIACOES).forEach(([livro, abrevs]) => {
+        [livro, ...abrevs].forEach(nome => {
+          if (!comAcento.has(vozChave(nome))) comAcento.set(vozChave(nome), livro);
+          if (!semAcento.has(vozChaveSemAcento(nome))) semAcento.set(vozChaveSemAcento(nome), livro);
+        });
+        // Nome completo: aceita sem acento (letras formatadas). Nomes curtos ("Jó") ficam exatos para não virar "Jo".
+        const base = livro.normalize('NFD').replace(/[̀-ͯ]/g, '');
+        const flexivel = livro.length <= 2 ? escapar(livro) : [...base].map(ch => VOZ_ACENTOS[ch.toLowerCase()] || escapar(ch)).join('');
+        padroes.push(flexivel.replace(/ /g, '\\s?'));
+        abrevs.forEach(a => padroes.push(escapar(a).replace(/^(\d)/, '$1\\s?') + '\\.?'));
+      });
+      padroes.sort((a, b) => b.length - a.length);
+      const versos = '\\d{1,3}(?:\\s*[-–]\\s*\\d{1,3})?(?:\\s*,\\s*\\d{1,3}(?:\\s*[-–]\\s*\\d{1,3})?)*';
+      const regex = new RegExp('(?<![\\p{L}\\d])(' + padroes.join('|') + ')\\s*(\\d{1,3}):(' + versos + ')((?:\\s*;\\s*\\d{1,3}:' + versos + ')*)', 'giu');
+      vozRefs = { regex, comAcento, semAcento };
+      return vozRefs;
+    }
+
+    // "1 Coríntios 13:4-7" -> "Primeira Coríntios, capítulo 13, versículos 4 a 7".
+    function vozReferenciaFalada(nome, capitulo, versos, outros) {
+      const { comAcento, semAcento } = vozReferencias();
+      const livro = comAcento.get(vozChave(nome)) || semAcento.get(vozChaveSemAcento(nome)) || nome;
+      const falarVersos = lista => {
+        const itens = lista.split(',').map(v => v.trim()).filter(Boolean).map(v => v.replace(/\s*[-–]\s*/, ' a '));
+        const plural = itens.length > 1 || itens.some(v => v.includes(' a '));
+        const juntos = itens.length > 1 ? itens.slice(0, -1).join(', ') + ' e ' + itens[itens.length - 1] : itens[0];
+        return (plural ? 'versículos ' : 'versículo ') + juntos;
+      };
+      const trechos = [[capitulo, versos]];
+      String(outros || '').split(';').map(s => s.trim()).filter(Boolean).forEach(s => {
+        const m = s.match(/^(\d{1,3}):(.+)$/);
+        if (m) trechos.push([m[1], m[2]]);
+      });
+      let falado = livro;
+      const numero = livro.match(/^([123]) (.+)$/);
+      if (numero) {
+        const masculino = /^(Samuel|Reis|Crônicas)$/.test(numero[2]);
+        const ordinais = masculino ? ['Primeiro', 'Segundo', 'Terceiro'] : ['Primeira', 'Segunda', 'Terceira'];
+        falado = ordinais[Number(numero[1]) - 1] + ' ' + numero[2];
+      }
+      // Salmos se fala pelo número do salmo: "Salmo 23, versículo 1".
+      if (livro === 'Salmos') return (trechos.length === 1 ? 'Salmo ' : 'Salmos ') + trechos.map(([c, v]) => c + ', ' + falarVersos(v)).join('; ');
+      return falado + ', ' + trechos.map(([c, v]) => 'capítulo ' + c + ', ' + falarVersos(v)).join('; ');
+    }
+
+    // Livros de um capítulo só, citados só com o versículo: "Filêmon 8, 9", "3 João 4", "Judas 3".
+    const VOZ_UM_CAPITULO = ['Obadias', 'Filêmon', '2 João', '3 João', 'Judas'];
+    let vozRegexUmCapitulo = null;
+    function vozUmCapitulo() {
+      if (vozRegexUmCapitulo) return vozRegexUmCapitulo;
+      const nomes = VOZ_UM_CAPITULO.flatMap(l => [l, l.normalize('NFD').replace(/[\u0300-\u036f]/g, '')])
+        .concat(['obd', 'oba', 'flm', 'filêm', '2jo', '3jo', 'jud'])
+        .map(n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '\\s?').replace(/^(\d)(?!\\s)/, '$1\\s?'))
+        .sort((a, b) => b.length - a.length);
+      vozRegexUmCapitulo = new RegExp('(?<![\\p{L}\\d])(' + nomes.join('|') + ')\\.?\\s+(\\d{1,2}(?:\\s*[-–]\\s*\\d{1,2})?(?:\\s*,\\s*\\d{1,2}(?:\\s*[-–]\\s*\\d{1,2})?)*)(?![\\d:])', 'giu');
+      return vozRegexUmCapitulo;
+    }
+
+    // Letras formatadas viram letras comuns; emojis, setas e símbolos decorativos saem (a voz leria o nome deles). Depois,
+    // as regras do administrador: cabeçalhos e parênteses pulados, referências puladas ou escritas por extenso.
+    function textoParaVoz(texto, regras) {
+      const r = Object.assign({}, VOZ_REGRAS_PADRAO, regras || vozRegras || {});
+      let t = removeUnicodeFormatting(String(texto || ''))
         .replace(/\p{Extended_Pictographic}/gu, ' ')
-        .replace(/[\uFE0E\uFE0F\u200D\u20E3]/g, '')
-        .replace(/[\u2190-\u21FF\u2300-\u23FF\u25A0-\u25FF\u2600-\u27BF\u2B00-\u2BFF\u2022\u2023\u2043\u204C\u204D\u2219]/g, ' ')
+        .replace(/[︎️‍⃣]/g, '')
+        .replace(/[←-⇿⌀-⏿■-◿☀-➿⬀-⯿•‣⁃⁌⁍∙]/g, ' ')
         .split('\n')
         .map(linha => linha.replace(/[ \t]+/g, ' ').trim())
-        .filter(Boolean)
+        .filter(Boolean);
+      if (r.pularCabecalhos) {
+        t = t
+          .map(linha => linha.replace(/^(?:RESPOSTAS?|PERGUNTAS ADICIONAIS|Recap\.)\s*[\d,\s\-–]*\.?\s*/i, ''))
+          .filter(linha => linha && !/^(?:Perguntas complementares|Perguntas aplicativas|Explica[cç][aã]o dos textos)\s*$/i.test(linha));
+      }
+      let junto = t.join('\n');
+      if (r.pularParenteses) junto = junto.replace(/\s*\([^()\n]*\)/g, '');
+      const { regex } = vozReferencias();
+      const umCapitulo = vozUmCapitulo();
+      if (r.pularRefs) {
+        junto = junto
+          .replace(regex, '')
+          .replace(umCapitulo, '')
+          .replace(/\s+e(?:\s+[.,;:]?)*\s*(?=[.,;:!?)]|$)/gm, '')
+          .replace(/\(\s*(?:(?:leia|veja|compare|note|também)\s*)*[.,;:\s]*\)/gi, '')
+          .replace(/\b(?:leia|veja|compare)(?:\s+também)?\s*(?=[.,;:!?)]|$)/gim, '')
+          .replace(/([.,;:!?])(?:\s*[.,;:])+/g, '$1');
+      } else if (r.refsExtenso) {
+        junto = junto
+          .replace(regex, (m, nome, capitulo, versos, outros) => vozReferenciaFalada(nome, capitulo, versos, outros))
+          .replace(umCapitulo, (m, nome, versos) => vozReferenciaFalada(nome, '1', versos, '').replace(/, capítulo 1,/, ','));
+      }
+      return junto
+        .split('\n')
+        .map(linha => linha.replace(/[ \t]+/g, ' ').replace(/\s+([,.;:!?])/g, '$1').trim())
+        .filter(linha => /[\p{L}\d]/u.test(linha))
         .join('\n');
     }
 
@@ -4279,12 +4475,15 @@
       vozVelocidade.hidden = !lendo;
     }
 
-    async function vozBuscar(texto) {
-      if (vozCache.has(texto)) return vozCache.get(texto);
+    // Pede o áudio de uma parte (ou devolve o guardado nesta sessão). exemplo: as escolhas do painel do administrador.
+    async function vozBuscar(texto, exemplo) {
+      const chave = (exemplo ? JSON.stringify(exemplo) + '\u0001' : '') + texto;
+      if (vozCache.has(chave)) return vozCache.get(chave);
+      const corpo = exemplo ? { exemplo, codigoAdmin: vozAdminCodigo, texto } : { codigo: aiStudyCode.value.trim(), texto };
       const resposta = await fetch(VOZ_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ codigo: aiStudyCode.value.trim(), texto })
+        body: JSON.stringify(corpo)
       });
       let dados = null;
       try { dados = await resposta.json(); } catch (e) { /* resposta sem JSON */ }
@@ -4293,9 +4492,10 @@
           ? 'A leitura em voz alta só funciona no site publicado.'
           : 'Não consegui gerar o áudio agora.'));
       }
-      const uri = 'data:' + (dados.tipo || 'audio/mpeg') + ';base64,' + dados.audio;
-      vozCache.set(texto, uri);
-      return uri;
+      const entrada = { uri: 'data:' + (dados.tipo || 'audio/mpeg') + ';base64,' + dados.audio, gemini: Boolean(dados.gemini), novo: true };
+      vozCache.set(chave, entrada);
+      vozSomarUso({ partes: 1, caracteres: texto.length, carChirp: entrada.gemini ? 0 : texto.length });
+      return entrada;
     }
 
     function vozAplicarVelocidade() {
@@ -4305,19 +4505,27 @@
       vozAudio.preservesPitch = true;
     }
 
-    function vozTocar(uri) {
+    function vozTocar(entrada) {
       return new Promise((resolve, reject) => {
+        // Os segundos entram no consumo só na primeira vez que a parte toca (repetir não custa).
+        const contar = () => {
+          if (!entrada.novo || vozAudio.currentSrc !== entrada.uri || !Number.isFinite(vozAudio.duration)) return;
+          entrada.novo = false;
+          vozSomarUso(entrada.gemini ? { segGemini: vozAudio.duration } : { segChirp: vozAudio.duration });
+        };
         const limpar = () => {
           vozAudio.removeEventListener('ended', fim);
           vozAudio.removeEventListener('error', falha);
+          vozAudio.removeEventListener('loadedmetadata', contar);
           vozFimAtual = null;
         };
         const fim = () => { limpar(); resolve(); };
         const falha = () => { limpar(); reject(new Error('Não consegui tocar o áudio.')); };
         vozAudio.addEventListener('ended', fim);
         vozAudio.addEventListener('error', falha);
+        vozAudio.addEventListener('loadedmetadata', contar);
         vozFimAtual = fim; // "Parar" encerra a espera
-        vozAudio.src = uri;
+        vozAudio.src = entrada.uri;
         vozAplicarVelocidade();
         vozAudio.play().catch(falha);
       });
@@ -4338,7 +4546,12 @@
 
       const inicio = input.selectionStart || 0;
       const fim = input.selectionEnd || 0;
-      const texto = textoParaVoz(fim > inicio ? input.value.slice(inicio, fim) : input.value);
+      const original = fim > inicio ? input.value.slice(inicio, fim) : input.value;
+      const regras = await vozCarregarRegras();
+      let velocidadeSalva = null;
+      try { velocidadeSalva = localStorage.getItem(VOZ_SPEED_KEY); } catch (e) { /* sem localStorage */ }
+      if (!velocidadeSalva && [...vozVelocidade.options].some(o => o.value === String(regras.velocidade))) vozVelocidade.value = String(regras.velocidade);
+      const texto = textoParaVoz(original, regras);
       if (!texto) {
         vozMensagem('Não há texto para ouvir.', true);
         return vozControlesAtivos(false);
@@ -4356,12 +4569,12 @@
       try {
         let proxima = vozBuscar(partes[0]);
         for (let i = 0; i < partes.length; i++) {
-          const uri = await proxima;
+          const entrada = await proxima;
           if (sessao !== vozSessao) return;
           proxima = i + 1 < partes.length ? vozBuscar(partes[i + 1]) : null;
           if (proxima) proxima.catch(() => {}); // o erro aparece quando chegar a vez dela
           vozMensagem('🔊 Lendo' + (partes.length > 1 ? ' a parte ' + (i + 1) + ' de ' + partes.length : '') + '…', false);
-          await vozTocar(uri);
+          await vozTocar(entrada);
           if (sessao !== vozSessao) return;
         }
         vozMensagem('✅ Leitura concluída.', false);
@@ -4389,6 +4602,228 @@
     });
     document.getElementById('speakTopBtn').addEventListener('click', vozOuvir);
     document.getElementById('speakBtn').addEventListener('click', vozOuvir);
+
+    // ---------- Consumo da voz (contado neste aparelho) ----------
+    // A cada parte gerada de verdade (não a guardada na sessão), o app soma caracteres e, quando o áudio carrega, os
+    // segundos. O custo é uma estimativa com os preços de referência abaixo; o valor exato fica no faturamento do Google.
+    const VOZ_USO_KEY = 'jwLibraryNoteAplicarVozUsoV1';
+    const VOZ_PRECOS_KEY = 'jwLibraryNoteAplicarVozPrecosV1';
+    // Gemini: US$ 18 por milhão de tokens de áudio, cerca de 25 tokens por segundo (≈ US$ 0,027 por minuto).
+    // Chirp 3 HD: US$ 30 por milhão de caracteres. Referências para a estimativa; o administrador pode mudar.
+    const VOZ_PRECOS_PADRAO = { gemini: 0.027, chirp: 30 };
+
+    function vozLerUso() {
+      try { return JSON.parse(localStorage.getItem(VOZ_USO_KEY) || '{}') || {}; } catch (e) { return {}; }
+    }
+
+    function vozLerPrecos() {
+      try { return Object.assign({}, VOZ_PRECOS_PADRAO, JSON.parse(localStorage.getItem(VOZ_PRECOS_KEY) || '{}') || {}); } catch (e) { return Object.assign({}, VOZ_PRECOS_PADRAO); }
+    }
+
+    function vozSomarUso(campos) {
+      const uso = vozLerUso();
+      const mes = new Date().toISOString().slice(0, 7);
+      const m = uso[mes] || (uso[mes] = { partes: 0, caracteres: 0, segGemini: 0, segChirp: 0, carChirp: 0 });
+      Object.entries(campos).forEach(([campo, valor]) => { m[campo] = (m[campo] || 0) + valor; });
+      safeSetItem(VOZ_USO_KEY, JSON.stringify(uso));
+      vozAtualizarConsumo();
+    }
+
+    function vozAtualizarConsumo() {
+      const caixa = document.getElementById('vozConsumo');
+      if (!caixa) return;
+      const uso = vozLerUso();
+      const precos = vozLerPrecos();
+      const somar = lista => lista.reduce((t, m) => {
+        Object.keys(t).forEach(k => { t[k] += Number(m[k]) || 0; });
+        return t;
+      }, { partes: 0, caracteres: 0, segGemini: 0, segChirp: 0, carChirp: 0 });
+      const mesAtual = new Date().toISOString().slice(0, 7);
+      const linha = (titulo, m) => {
+        const custo = (m.segGemini / 60) * precos.gemini + (m.carChirp / 1e6) * precos.chirp;
+        const minutos = (m.segGemini + m.segChirp) / 60;
+        return '<p><strong>' + titulo + ':</strong> ' + m.partes.toLocaleString('pt-BR') + (m.partes === 1 ? ' parte lida' : ' partes lidas') +
+          ' · ' + m.caracteres.toLocaleString('pt-BR') + ' caracteres · ' + minutos.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) +
+          ' min de áudio · ≈ US$ ' + custo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: custo < 0.1 ? 3 : 2 }) + '</p>';
+      };
+      const nomeMes = new Date().toLocaleDateString('pt-BR', { month: 'long' });
+      caixa.innerHTML = linha('Este mês (' + nomeMes + ')', somar([uso[mesAtual] || {}])) + linha('Desde o início', somar(Object.values(uso)));
+      const g = document.getElementById('vozPrecoGemini');
+      const c = document.getElementById('vozPrecoChirp');
+      if (g && document.activeElement !== g) g.value = precos.gemini;
+      if (c && document.activeElement !== c) c.value = precos.chirp;
+    }
+
+    // ---------- Leitura em voz alta: painel do administrador (Ajustes) ----------
+    // Escolhas válidas para todos: guardadas no servidor (api/config.mjs, "voz-ler" e "voz-salvar"), com o código de
+    // administrador. O exemplo usa as escolhas ainda não salvas.
+    const VOZ_TEXTO_EXEMPLO = 'RESPOSTA 1. Por que devemos orar sempre? Jesus ensinou a orar com fé e humildade (leia Mateus 6:9-13). Paulo também escreveu que não devemos ficar ansiosos por coisa alguma, como mostra Filipenses 4:6, 7.';
+    let vozAdminCodigo = '';
+    let vozExemploTocando = false;
+    const vozSection = document.getElementById('vozSection');
+    const vozAdminLogin = document.getElementById('vozAdminLogin');
+    const vozAdminForm = document.getElementById('vozAdminForm');
+    const vozAdminCode = document.getElementById('vozAdminCode');
+    const vozAdminError = document.getElementById('vozAdminError');
+    const vozAdminStatus = document.getElementById('vozAdminStatus');
+    const vozExemploBtn = document.getElementById('vozExemploBtn');
+    const vozCampos = {
+      modelo: document.getElementById('vozModelo'),
+      voz: document.getElementById('vozVoz'),
+      tom: document.getElementById('vozTom'),
+      altura: document.getElementById('vozAltura'),
+      velocidade: document.getElementById('vozVelocidadePadrao'),
+      refsExtenso: document.getElementById('vozRefsExtenso'),
+      pularRefs: document.getElementById('vozPularRefs'),
+      pularParenteses: document.getElementById('vozPularParenteses'),
+      pularCabecalhos: document.getElementById('vozPularCabecalhos'),
+      extra: document.getElementById('vozExtra')
+    };
+
+    function vozAdminMensagem(texto, aviso) {
+      vozAdminStatus.className = aviso ? 'warn' : 'ok';
+      vozAdminStatus.textContent = texto;
+    }
+
+    function vozPreencherSelect(select, itens) {
+      select.textContent = '';
+      itens.forEach(([valor, rotulo]) => {
+        const op = document.createElement('option');
+        op.value = valor;
+        op.textContent = rotulo;
+        select.appendChild(op);
+      });
+    }
+
+    function vozMostrarFormulario(opcoes, config) {
+      vozPreencherSelect(vozCampos.modelo, opcoes.modelos.map(m => [m.id, m.nome]));
+      vozCampos.voz.textContent = '';
+      [['F', 'Vozes femininas'], ['M', 'Vozes masculinas']].forEach(([genero, rotulo]) => {
+        const grupo = document.createElement('optgroup');
+        grupo.label = rotulo;
+        opcoes.vozes.filter(v => v.genero === genero).forEach(v => {
+          const op = document.createElement('option');
+          op.value = v.nome;
+          op.textContent = v.nome + ' (' + v.jeito + ')';
+          grupo.appendChild(op);
+        });
+        vozCampos.voz.appendChild(grupo);
+      });
+      vozPreencherSelect(vozCampos.tom, opcoes.tons.map(t => [t.id, t.nome]));
+      vozPreencherSelect(vozCampos.altura, opcoes.alturas.map(a => [a.id, a.nome]));
+      vozPreencherSelect(vozCampos.velocidade, opcoes.velocidades.map(v => [String(v), String(v).replace('.', ',') + '×']));
+      ['modelo', 'voz', 'tom', 'altura'].forEach(campo => { vozCampos[campo].value = config[campo]; });
+      vozCampos.velocidade.value = String(config.velocidade);
+      ['refsExtenso', 'pularRefs', 'pularParenteses', 'pularCabecalhos'].forEach(campo => { vozCampos[campo].checked = Boolean(config[campo]); });
+      vozCampos.extra.value = config.extra || '';
+      vozAdminLogin.hidden = true;
+      vozAdminForm.hidden = false;
+      vozAtualizarConsumo();
+    }
+
+    function vozLerFormulario() {
+      return {
+        modelo: vozCampos.modelo.value,
+        voz: vozCampos.voz.value,
+        tom: vozCampos.tom.value,
+        altura: vozCampos.altura.value,
+        velocidade: Number(vozCampos.velocidade.value) || 1,
+        refsExtenso: vozCampos.refsExtenso.checked,
+        pularRefs: vozCampos.pularRefs.checked,
+        pularParenteses: vozCampos.pularParenteses.checked,
+        pularCabecalhos: vozCampos.pularCabecalhos.checked,
+        extra: vozCampos.extra.value.trim().slice(0, 400)
+      };
+    }
+
+    async function vozAdminCarregar(codigo) {
+      const r = await postConfig({ acao: 'voz-ler', codigo });
+      if (!r.ok) {
+        vozAdminError.textContent = configErrorMessage(r, 'Não foi possível entrar agora.');
+        vozAdminCodigo = '';
+        vozAdminLogin.hidden = false;
+        vozAdminForm.hidden = true;
+        return false;
+      }
+      vozAdminCodigo = codigo;
+      vozAdminError.textContent = '';
+      vozMostrarFormulario(r.data.opcoes, r.data.config);
+      if (r.data.armazenamento && !r.data.armazenamento.escrita) vozAdminMensagem('O armazenamento do servidor ainda não permite salvar.', true);
+      return true;
+    }
+
+    async function vozAdminEntrar() {
+      const codigo = vozAdminCode.value.trim();
+      if (!codigo) {
+        vozAdminError.textContent = 'Digite o código de administrador.';
+        return vozAdminCode.focus();
+      }
+      vozAdminError.textContent = 'Entrando...';
+      vozAdminCode.value = '';
+      await vozAdminCarregar(codigo);
+    }
+
+    async function vozAdminSalvar() {
+      if (!vozAdminCodigo) return;
+      vozAdminMensagem('Salvando...', false);
+      const r = await postConfig({ acao: 'voz-salvar', codigo: vozAdminCodigo, config: vozLerFormulario() });
+      if (!r.ok) return vozAdminMensagem(configErrorMessage(r, 'Não foi possível salvar agora.'), true);
+      vozCache.clear(); // os áudios guardados foram feitos com as escolhas antigas
+      await vozCarregarRegras(true);
+      try { localStorage.removeItem(VOZ_SPEED_KEY); } catch (e) { /* sem localStorage */ }
+      vozVelocidade.value = String(r.data.config.velocidade);
+      vozAdminMensagem('✅ Salvo. As novas escolhas valem para todos em poucos segundos.', false);
+    }
+
+    async function vozExemplo() {
+      if (vozExemploTocando) return vozParar();
+      vozAudio.src = vozSilencio(); // dentro do toque: libera o áudio no iPhone
+      vozAudio.play().catch(() => {});
+      const config = vozLerFormulario();
+      const texto = textoParaVoz(VOZ_TEXTO_EXEMPLO, config);
+      const sessao = ++vozSessao;
+      vozExemploTocando = true;
+      vozExemploBtn.textContent = '⏹️ Parar o exemplo';
+      vozAdminMensagem('Gerando o exemplo…', false);
+      try {
+        const entrada = await vozBuscar(texto, config);
+        if (sessao !== vozSessao) return;
+        vozAdminMensagem('🔊 Tocando: "' + texto + '"', false);
+        await vozTocar(entrada);
+        if (sessao === vozSessao) vozAdminMensagem(entrada.gemini ? '✅ Exemplo com a voz Gemini.' : '✅ Exemplo com a voz Chirp 3 HD (o Gemini não respondeu ou não foi escolhido).', false);
+      } catch (e) {
+        if (sessao === vozSessao) vozAdminMensagem(e && e.message ? e.message : 'Não consegui tocar o exemplo.', true);
+      } finally {
+        vozExemploTocando = false;
+        vozExemploBtn.textContent = '▶️ Ouvir um exemplo';
+      }
+    }
+
+    document.getElementById('vozAdminLoginBtn').addEventListener('click', vozAdminEntrar);
+    vozAdminCode.addEventListener('keydown', event => { if (event.key === 'Enter') vozAdminEntrar(); });
+    document.getElementById('vozSalvarBtn').addEventListener('click', vozAdminSalvar);
+    vozExemploBtn.addEventListener('click', vozExemplo);
+    // Se o administrador já entrou em outra área nesta sessão, o painel abre direto.
+    vozSection.addEventListener('toggle', () => {
+      if (!vozSection.open) return;
+      vozAtualizarConsumo();
+      const codigo = vozAdminCodigo || (typeof promptsCode === 'string' && promptsCode) || (typeof defaultsAdminCode === 'string' && defaultsAdminCode) || '';
+      if (codigo && vozAdminForm.hidden) vozAdminCarregar(codigo);
+    });
+    [['vozPrecoGemini', 'gemini'], ['vozPrecoChirp', 'chirp']].forEach(([id, chave]) => {
+      document.getElementById(id).addEventListener('change', event => {
+        const precos = vozLerPrecos();
+        const valor = Number(event.target.value);
+        precos[chave] = Number.isFinite(valor) && valor >= 0 ? valor : VOZ_PRECOS_PADRAO[chave];
+        safeSetItem(VOZ_PRECOS_KEY, JSON.stringify(precos));
+        vozAtualizarConsumo();
+      });
+    });
+    document.getElementById('vozZerarBtn').addEventListener('click', async () => {
+      if (!(await askConfirm('Zerar a contagem de consumo da voz deste aparelho? (Não muda nada no Google.)', 'Zerar a contagem'))) return;
+      try { localStorage.removeItem(VOZ_USO_KEY); } catch (e) { /* sem localStorage */ }
+      vozAtualizarConsumo();
+    });
 
     // ---------- Tema (Auto / Claro / Escuro) ----------
 
@@ -4539,7 +4974,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '4.7.9'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0; 4.7.9: voz reserva (Chirp 3 HD) quando o Gemini é recusado; 4.7.8: botão 🔊 Ouvir (leitura em voz alta com a voz do Google); 4.7.7: Fonte CX com C preto e C branco, cada um ao lado do seu quadradinho; todos os cards começam fechados ao abrir o app; 4.7.6: tela Reuniões em dois cartões (texto e reuniões); 4.7.5: campo de texto volta a crescer depois de levar uma nota do backup; importar notas de outro backup; 4.7.4: card do desenvolvedor na largura do quadro de limitações (Sobre); 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
+    const APP_VERSION = '4.8.0'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0; 4.8.0: menu da voz para o administrador (modelo, voz, tom, o que ler e pular), consumo estimado e vozes Gemini com a conta de serviço do Google; 4.7.9: voz reserva (Chirp 3 HD) quando o Gemini é recusado; 4.7.8: botão 🔊 Ouvir (leitura em voz alta com a voz do Google); 4.7.7: Fonte CX com C preto e C branco, cada um ao lado do seu quadradinho; todos os cards começam fechados ao abrir o app; 4.7.6: tela Reuniões em dois cartões (texto e reuniões); 4.7.5: campo de texto volta a crescer depois de levar uma nota do backup; importar notas de outro backup; 4.7.4: card do desenvolvedor na largura do quadro de limitações (Sobre); 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 

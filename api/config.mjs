@@ -4,6 +4,7 @@ import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { diagnosticar, escritaDisponivel, leituraDisponivel, lerItem, gravarItem } from "./_armazem.mjs";
 import { LIMITES, PARTES, aplicarLimites, limitesPublicos, travadosDe, validarAlteracoes, validarLimites } from "./_prompts.mjs";
 import { esquecerCache, gravarAlteracoes, gravarLimites, lerAlteracoes, lerAnterior, lerLimites } from "./_promptsArmazenados.mjs";
+import { configPublicaVoz, gravarConfigVoz, lerConfigVoz, opcoesVoz } from "./_vozConfig.mjs";
 
 const CHAVE_PADRAO = "padrao_modelos";
 // Anotação do administrador (ex.: o código de uso dos recursos de IA, para não esquecer). Só é lida e gravada com o
@@ -118,6 +119,11 @@ export default async function handler(req, res) {
       return res.status(200).json({ limites: limitesPublicos(aplicarLimites(await lerLimites())) });
     }
 
+    // Pública: as regras da leitura em voz alta que o navegador aplica ao texto (o resto fica no servidor).
+    if (acao === "voz-publica") {
+      return res.status(200).json({ voz: configPublicaVoz(await lerConfigVoz()) });
+    }
+
     // Daqui em diante, só o administrador.
     if (!process.env.CODIGO_ADMIN) return erro(res, 503, "O código de administrador ainda não está configurado no servidor.");
 
@@ -175,6 +181,15 @@ export default async function handler(req, res) {
       const atuais = await lerAlteracoes();
       await gravarAlteracoes(anterior, atuais);
       return res.status(200).json(await estadoDosPrompts());
+    }
+
+    if (acao === "voz-ler") {
+      return res.status(200).json({ config: await lerConfigVoz(), opcoes: opcoesVoz(), armazenamento: descreverArmazenamento() });
+    }
+
+    if (acao === "voz-salvar") {
+      if (!exigirEscrita(res)) return;
+      return res.status(200).json({ config: await gravarConfigVoz(corpo.config) });
     }
 
     if (acao === "anotacao-salvar") {
