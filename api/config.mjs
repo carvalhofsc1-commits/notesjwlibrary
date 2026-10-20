@@ -1,6 +1,6 @@
 // Configurações editáveis pelo administrador: prompts da IA (tom e regras) e modelos padrão do app.
 // Tudo o que muda dados exige o CODIGO_ADMIN, conferido aqui no servidor. A leitura dos modelos padrão é pública.
-import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
+import { codigoDoDirigente, erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { diagnosticar, escritaDisponivel, leituraDisponivel, lerItem, gravarItem } from "./_armazem.mjs";
 import { LIMITES, PARTES, aplicarLimites, limitesPublicos, travadosDe, validarAlteracoes, validarLimites } from "./_prompts.mjs";
 import { esquecerCache, gravarAlteracoes, gravarLimites, lerAlteracoes, lerAnterior, lerLimites } from "./_promptsArmazenados.mjs";
@@ -134,6 +134,17 @@ export default async function handler(req, res) {
       if (!textosIguais(corpo.codigo, process.env.CODIGO_ESTUDO)) {
         registrarErro(ip);
         return erro(res, 403, "Código de acesso incorreto.");
+      }
+      return res.status(200).json({ ok: true });
+    }
+
+    // Confere o código do dirigente (CODIGO_DIRIGENTE; sem a variável, o código de acesso) quando ele é salvo em Ajustes.
+    if (acao === "dirigente-conferir") {
+      const esperado = codigoDoDirigente();
+      if (!esperado) return erro(res, 503, "O código do dirigente ainda não está configurado no servidor.");
+      if (!textosIguais(corpo.codigo, esperado)) {
+        registrarErro(ip);
+        return erro(res, 403, "Código do dirigente incorreto.");
       }
       return res.status(200).json({ ok: true });
     }

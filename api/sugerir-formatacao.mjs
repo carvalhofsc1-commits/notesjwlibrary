@@ -4,7 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
-import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
+import { codigoDoDirigente, erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { lerConfigIa } from "./_iaConfig.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
 import { buscarVerbete, buscarVersiculos, fontesConfiguradas, precarregarFontes } from "./_fontes.mjs";
@@ -1117,6 +1117,8 @@ const SaidaPerguntas = z.object({
 async function sugerirPerguntas(res, body, P) {
   if (!process.env.CODIGO_ESTUDO) return erro(res, 500, "A leitura do estudo ainda não está configurada no servidor.");
   if (!codigoValido(body.codigo)) return erro(res, 403, "Código de acesso inválido.");
+  // As perguntas adicionais para o dirigente são só de quem tem o código do dirigente.
+  if (!textosIguais(body.codigoDirigente, codigoDoDirigente())) return erro(res, 403, "Código do dirigente inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
 
   const url = urlDoEstudo(body);
   if (!url) return erro(res, 400, "Número ou link do artigo inválido. Use o número de 7 dígitos (ex.: 2026521) ou o link do wol.jw.org.");

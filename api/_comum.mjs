@@ -22,6 +22,12 @@ export function erro(res, status, mensagem) {
   res.status(status).json({ erro: mensagem });
 }
 
+// Código do dirigente (variável CODIGO_DIRIGENTE na Vercel): libera as opções de preparação para dirigir. Enquanto a variável
+// não existir, vale o código de acesso (CODIGO_ESTUDO), para o recurso já funcionar; criada a variável, só o código dela serve.
+export function codigoDoDirigente() {
+  return process.env.CODIGO_DIRIGENTE || process.env.CODIGO_ESTUDO || "";
+}
+
 // Compara dois textos sem vazar, pelo tempo de resposta, quantos caracteres coincidem.
 export function textosIguais(informado, esperado) {
   if (!esperado || typeof informado !== "string") return false;
