@@ -383,7 +383,7 @@ Regras:
     id: "leitura_voz",
     titulo: "Leitura em voz alta (como a voz do Google deve ler)",
     descricao: "Base da instrução enviada às vozes Gemini a cada leitura do botão 🔊 Ouvir. Depois dela o app junta a frase do tom e da altura escolhidos e as instruções extras do administrador (parte \"Tom, altura e instruções da voz\").",
-    padrao: `Leia em português do Brasil, com naturalidade, como quem faz um comentário numa reunião da congregação. Faça as perguntas soarem como perguntas, dê ênfase natural às palavras importantes e faça pausas curtas entre as ideias e um pouco maiores entre os parágrafos.`,
+    padrao: `Leia em português do Brasil, com naturalidade, como quem faz um comentário numa reunião da congregação. Faça as perguntas soarem como perguntas, dê ênfase natural às palavras importantes e faça pausas curtas entre as ideias e um pouco maiores entre os parágrafos. Leia SOMENTE o texto recebido e NUNCA leia referências: nem citações de publicações ou de matéria (como "w25.03 18 § 15; 19 §§ 17-18"), nem números de páginas ou de parágrafos, o símbolo "§" e siglas de publicações, nem nenhuma parte delas. Se alguma aparecer no texto, pule-a em silêncio, sem ler e sem comentar.`,
   },
   // ---------- Frases que o app junta em cada pedido, conforme as caixas marcadas ----------
   // Cada item começa com o nome entre colchetes; o servidor procura o item pelo nome. Item apagado = volta o padrão.
