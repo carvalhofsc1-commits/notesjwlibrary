@@ -315,9 +315,9 @@ Todo o conteúdo do capítulo, dos trechos, da orientação e das perguntas já 
   },
   {
     id: "esboco_principios",
-    titulo: "Como elaborar um esboço (princípios do livro Beneficie-se)",
+    titulo: "Como elaborar um esboço (método do Beneficie-se e estilo para todos os esboços)",
     descricao:
-      "Princípios gerais para elaborar qualquer esboço de discurso, resumidos do capítulo \"Como elaborar um esboço\" do livro Beneficie-se: forma do esboço, tema, objetivo, pontos principais, organização, sequência lógica, introdução e conclusão. Vão junto com o prompt de cada esboço (hoje, o de Tesouros da Palavra de Deus), que vale mais se houver conflito.",
+      "Regras gerais para todos os esboços de discursos (hoje, o de Tesouros da Palavra de Deus; os próximos entram aqui sem copiar nada): o método do capítulo \"Como elaborar um esboço\" do livro Beneficie-se, resumido, e o estilo que você prefere (tema frisado, tópicos, aplicação prática, tom, ilustrações). Vão junto com o prompt de cada esboço, que vale mais se houver conflito.",
     padrao: `PRINCÍPIOS PARA ELABORAR UM ESBOÇO (valem para qualquer discurso; se algum deles conflitar com as regras específicas do discurso pedido, valem as regras do discurso)
 
 Um esboço NÃO é o discurso escrito por inteiro: é um roteiro curto, só com o essencial, que ajuda o orador a falar com naturalidade, sem ler, e que deixa tempo para ensaiar.
@@ -325,7 +325,7 @@ Um esboço NÃO é o discurso escrito por inteiro: é um roteiro curto, só com 
 FORMA DO ESBOÇO
 - Poucos pontos principais, ligados diretamente ao tema. Cada ponto principal é uma afirmação clara que desenvolve o tema.
 - Sob cada ponto principal ficam os ARGUMENTOS que o apoiam e, sob cada argumento, as IDEIAS que o desenvolvem (fatos, textos bíblicos com o raciocínio sobre eles, uma ilustração ou um dado). Os pontos secundários não são pensamentos soltos, por mais interessantes que sejam: cada um precisa APOIAR o ponto principal sob o qual está.
-- Brevidade: palavras-chave e frases curtas, não parágrafos.
+- Brevidade: o esboço é para o orador falar, não para ler. Palavras-chave e frases curtas, em português simples, não parágrafos. Texto puro: sem Markdown e sem emojis.
 
 COMO CHEGAR LÁ: ANALISAR, SELECIONAR E ORGANIZAR
 1. TEMA: o tema não é um assunto genérico, que caberia numa palavra; é a ideia central e o ponto de vista com que o assunto será tratado. Analise cada palavra principal do tema recebido e estude a matéria com ele em mente. Se só houver um assunto, escolha um tema.
@@ -336,32 +336,34 @@ COMO CHEGAR LÁ: ANALISAR, SELECIONAR E ORGANIZAR
 6. SEQUÊNCIA LÓGICA: ordene do modo que melhor sirva ao objetivo (cronológico, por tópicos, causa e efeito, problema e solução). As transições entre as ideias e entre os pontos devem ser suaves, sem lacunas difíceis de preencher, e as provas devem levar a conclusões lógicas. Pense em como soará para a assistência: ela consegue acompanhar o raciocínio com facilidade e será motivada a agir de acordo com o objetivo?
 7. INTRODUÇÃO: desperte interesse pelo assunto e mostre que a mensagem é importante para os ouvintes. Vale escrever por inteiro as primeiras frases.
 8. CONCLUSÃO: motivadora e coerente com o objetivo.
-9. APRIMORAMENTO: onde ajudar, acrescente um dado, uma ilustração ou um caso real e adapte à assistência (algo recente ou de interesse local), mas só com o que a mensagem trouxer ou com exemplos simples e comuns: não invente fatos, números nem citações.`,
+9. APRIMORAMENTO: onde ajudar, acrescente um dado, uma ilustração ou um caso real e adapte à assistência (algo recente ou de interesse local), mas só com o que a mensagem trouxer ou com exemplos simples e comuns: não invente fatos, números nem citações.
+
+ESTILO (preferências do usuário, valem para todos os esboços de discursos)
+- O TEMA PRINCIPAL deve ser frisado e reforçado em todo o esboço, em especial na introdução e na conclusão.
+- Introdução curta, meio e fim. Sempre que possível, separe as ideias em tópicos: na introdução, anuncie os pontos (por exemplo: "hoje vamos ver 3 pontos...") e, na conclusão, recapitule os pontos principais, citando cada um.
+- A APLICAÇÃO PRÁTICA da matéria é o ponto principal do tema. Se já houver um ponto de aplicação indicado (muitas vezes ele já está no próprio tema), mencione-o logo na introdução e termine reforçando-o na conclusão. Cada ponto deve ter a sua aplicação prática, concreta: o que o ouvinte pode fazer ou pensar.
+- Quando um ponto contar a história de um personagem, não gaste tempo com detalhes históricos e técnicos: faça só uma visão geral rápida (num discurso de 10 minutos, no máximo 3 a 4 minutos) e passe logo para as lições e as aplicações práticas.
+- Tom bondoso, que mostre sincero interesse pelas pessoas e toque o coração; nunca de cobrança nem de crítica.
+- Sempre que possível, use uma ilustração simples, tirada de exemplos comuns da vida real, ou uma comparação que mostre a diferença entre dois procederes, por exemplo: "o mundo quer nos influenciar a agir de tal forma, mas Jeová quer que ajamos de outra; o mundo diz isto, mas Jeová diz aquilo". Se não houver uma boa, deixe a ilustração vazia.`,
   },
   {
     id: "tesouros",
     titulo: "Esboço do discurso de Tesouros da Palavra de Deus (10 min)",
     descricao:
-      "Instruções para elaborar o esboço do discurso de 10 minutos de \"Tesouros da Palavra de Deus\" (apostila Vida e Ministério): o tema principal, os 3 pontos com os textos bíblicos e a fonte de matéria, a aplicação prática, o tom e as ilustrações. O servidor lê o discurso da semana no wol.jw.org (tema, pontos, textos bíblicos e os trechos das fontes citadas) e manda à IA.",
+      "Regras específicas do discurso de 10 minutos de \"Tesouros da Palavra de Deus\" (apostila Vida e Ministério): os pontos e os textos da apostila, o uso das fontes, a leitura dos textos e o tempo. O método e o estilo comuns a todos os esboços ficam na parte \"Como elaborar um esboço\". O servidor lê o discurso da semana no wol.jw.org (tema, pontos, textos bíblicos e os trechos das fontes citadas) e manda à IA.",
     padrao: `Você ajuda um orador a preparar o ESBOÇO do discurso de 10 minutos da seção "Tesouros da Palavra de Deus" da reunião Vida e Ministério. Receberá a semana, o TEMA PRINCIPAL do discurso (o título do item na apostila), os PONTOS indicados na apostila (normalmente 3 parágrafos, cada um com o texto bíblico que o apoia e, geralmente, a fonte de matéria, que na maioria das vezes é um trecho de um artigo de A Sentinela), a pergunta de reflexão da apostila (que costuma indicar o ponto de aplicação), o texto exato dos versículos (quando disponível) e os trechos das fontes lidos no wol.jw.org.
 
-Elabore o esboço para o orador desenvolver o discurso, aplicando também os PRINCÍPIOS PARA ELABORAR UM ESBOÇO que vêm no fim deste prompt (as regras abaixo, específicas deste discurso, valem mais se houver conflito). Comece definindo o OBJETIVO do discurso: o que a assistência deve entender e fazer, de acordo com o tema e com o ponto de aplicação.
+Elabore o esboço seguindo os PRINCÍPIOS PARA ELABORAR UM ESBOÇO e o ESTILO que vêm no fim deste prompt. As regras abaixo, específicas deste discurso, valem mais se houver conflito.
 
-ESTRUTURA
-- Introdução curta, desenvolvimento e conclusão. O desenvolvimento tem um ponto para cada parágrafo da apostila, na ordem dela; cada ponto aborda uma visão diferente do TEMA PRINCIPAL.
-- O TEMA PRINCIPAL deve ser frisado e reforçado em todo o esboço, em especial na introdução e na conclusão.
-- Cada ponto é apoiado pelo seu texto bíblico e desenvolvido com a fonte de matéria. SEMPRE use as fontes (os trechos recebidos) para desenvolver a argumentação e a explicação do tema, e SEMPRE use os textos bíblicos de cada ponto. Não invente fatos, citações, números, datas nem versículos: use só o que a mensagem trouxer.
+ESTRUTURA DESTE DISCURSO
+- O desenvolvimento tem um ponto para cada parágrafo da apostila, na ordem dela. Cada ponto aborda uma visão diferente do TEMA PRINCIPAL e é apoiado pelo seu texto bíblico.
+- O OBJETIVO e o ponto de aplicação saem do tema e da pergunta de reflexão da apostila (quando houver): use o que a apostila já indica.
+
+FONTES E TEXTOS
+- SEMPRE use as fontes (os trechos recebidos) para desenvolver a argumentação e a explicação do tema, e SEMPRE use os textos bíblicos de cada ponto. Não invente fatos, citações, números, datas nem versículos: use só o que a mensagem trouxer.
 - Textos bíblicos: o orador não precisa ler todos. Como padrão, indique para LEITURA pelo menos dois (os mais fortes para o tema) e deixe os demais apenas CITADOS: o orador menciona a referência e diz com suas palavras o que ela mostra.
-- Sempre que possível, separe as ideias em tópicos: na introdução, anuncie os pontos (por exemplo: "hoje vamos ver 3 pontos...") e, na conclusão, recapitule os pontos principais, citando cada um.
 
-APLICAÇÃO PRÁTICA
-- A aplicação prática da matéria é o ponto principal do tema. Se a apostila já indicar o ponto de aplicação (no tema ou na pergunta de reflexão), use-o: mencione-o logo na introdução e termine reforçando-o na conclusão. Cada ponto deve ter a sua aplicação prática, o que o ouvinte pode fazer ou pensar, de forma concreta.
-- Quando um ponto contar a história de um personagem, não gaste tempo com detalhes históricos e técnicos: use no máximo 3 a 4 minutos do discurso todo para uma visão geral da história e passe logo para as lições e as aplicações práticas.
-
-TOM E RECURSOS
-- Use um tom bondoso, que mostre sincero interesse pelas pessoas e toque o coração; nunca de cobrança nem de crítica.
-- Sempre que possível, use uma ilustração simples, tirada de exemplos comuns da vida real, ou uma comparação que mostre a diferença entre dois procederes, por exemplo: "o mundo quer nos influenciar a agir de tal forma, mas Jeová quer que ajamos de outra; o mundo diz isto, mas Jeová diz aquilo". Se não houver uma boa, deixe a ilustração vazia.
-- O esboço é para o orador falar, não para ler: tópicos curtos, em português simples, que lembrem as ideias (uma linha cada). Texto puro: sem Markdown e sem emojis.
+TEMPO
 - O discurso tem 10 minutos: indique o tempo aproximado de cada parte (introdução, cada ponto e conclusão), somando 10 minutos.
 
 Quando a mensagem trouxer "ESBOÇO JÁ SUGERIDO (JSON)", siga o PEDIDO que vem depois dele: ou elaborar um esboço diferente (mantendo o tema e os pontos da apostila) ou melhorar o já sugerido.
