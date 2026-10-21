@@ -321,8 +321,13 @@ async function resolverCitacao(caminho, timeoutMs) {
   const destino = resposta.headers.get("location");
   if (!destino) return null;
   const url = new URL(destino, BASE);
-  const faixa = url.hash.match(/h=(\d+):\d+-(\d+):\d+/);
-  return { url: url.origin + url.pathname, de: faixa ? Number(faixa[1]) : null, ate: faixa ? Number(faixa[2]) : null, hash: url.hash };
+  const faixa = url.hash.match(/h=(\d+):\d+-(\d+):(\d+)/);
+  // O fim da faixa é "parágrafo:posição": com a posição 0 o parágrafo do fim NÃO entra ("#h=8:0-9:0" é só o parágrafo 8 e
+  // "#h=16:0-18:0", os parágrafos 16 e 17). Com outra posição, o parágrafo do fim entra (até aquele ponto).
+  const de = faixa ? Number(faixa[1]) : null;
+  let ate = faixa ? Number(faixa[2]) : null;
+  if (faixa && Number(faixa[3]) === 0 && ate > de) ate -= 1;
+  return { url: url.origin + url.pathname, de, ate, hash: url.hash };
 }
 
 // O trecho de outra publicação citado numa pergunta: título do artigo e os parágrafos do intervalo (até maxCaracteres).
@@ -588,4 +593,118 @@ export function textoDaRecapitulacao(artigo) {
     `PERGUNTAS DE RECAPITULAÇÃO (responda a cada uma):\n` +
     artigo.recapitulacao.map((q, i) => `${i + 1}. ${q}`).join("\n")
   );
+}
+
+// ---------- Tesouros da Palavra de Deus (discurso de 10 minutos) ----------
+// Na apostila Vida e Ministério, o item 1 da seção "Tesouros da Palavra de Deus" traz o tema (o título do item), "(10 min)",
+// normalmente três pontos (cada um é um parágrafo com o texto bíblico que o apoia e, quase sempre, a fonte de matéria: um
+// link /wol/pc/ para parágrafos de uma publicação, muitas vezes um artigo de A Sentinela) e, no fim, uma pergunta de reflexão
+// ("PERGUNTE-SE:", "PARA MEDITAR:"), que costuma indicar o ponto de aplicação. Depois dela pode vir a legenda de uma imagem
+// (parágrafo sem links), que fica de fora. O servidor lê os trechos das fontes citadas e a IA monta o esboço com eles.
+const tesouros = new Map(); // url da página de reuniões -> { quando, discurso }
+const MAX_FONTES_TESOUROS = 8;
+
+// Itens do bloco: { texto, referencias (bíblicas), citacoes (links /wol/pc/: { caminho, citacao }) }.
+function itemDeTesouros(conteudo) {
+  const citacoes = [...conteudo.matchAll(/<a\b[^>]*href="(\/pt\/wol\/pc\/[^"]+)"[^>]*>([\s\S]*?)<\/a>/g)].map(([, caminho, rotulo]) => ({ caminho, citacao: textoDe(rotulo) }));
+  return { texto: textoDe(conteudo), referencias: referenciasDe(conteudo), citacoes, temLinks: /<a\b/.test(conteudo) };
+}
+
+// O discurso de Tesouros no HTML da apostila (sem as fontes lidas): { titulo, minutos, pontos, reflexao } ou null.
+export function discursoDeTesouros(html) {
+  const secao = [...html.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2>/g)].find((m) => /tesouros da palavra de deus/.test(semAcento(textoDe(m[1]))));
+  if (!secao) return null;
+  const resto = html.slice(secao.index + secao[0].length);
+  const item = resto.match(/<h3\b[^>]*>([\s\S]*?)<\/h3>/);
+  if (!item) return null;
+  const depois = resto.slice(item.index + item[0].length);
+  const fim = depois.search(/<h[23]\b/);
+  const bloco = fim >= 0 ? depois.slice(0, fim) : depois;
+
+  const titulo = textoDe(item[1]).replace(/^\d+\.\s*/, "");
+  let minutos = null;
+  const pontos = [];
+  let reflexao = null;
+  for (const [, conteudo] of bloco.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/g)) {
+    const texto = textoDe(conteudo);
+    if (!texto) continue;
+    const tempo = texto.match(/^\((\d+)\s*min\)/);
+    if (tempo) {
+      minutos = Number(tempo[1]);
+      continue;
+    }
+    const dados = itemDeTesouros(conteudo);
+    // "PERGUNTE-SE: …" / "PARA MEDITAR: …": a pergunta de reflexão (ponto de aplicação).
+    if (/^\p{Lu}[\p{Lu}\s-]{3,}:/u.test(texto)) {
+      if (!reflexao) reflexao = dados;
+      continue;
+    }
+    // Sem links é a legenda de uma imagem; depois da reflexão não há mais pontos.
+    if (!dados.temLinks || reflexao) continue;
+    pontos.push(dados);
+  }
+  return pontos.length ? { titulo, minutos: minutos || 10, pontos, reflexao } : null;
+}
+
+// Lê o discurso de Tesouros da semana (e os trechos das fontes citadas nos pontos e na reflexão). null = não achou.
+export async function lerTesouros(urlReuniao, { timeoutMs = 8000 } = {}) {
+  const guardado = tesouros.get(urlReuniao);
+  if (guardado && Date.now() - guardado.quando < VALIDADE_MS) return guardado.discurso;
+
+  const apostila = idDaApostilaNaReuniao(await baixar(urlReuniao, timeoutMs));
+  if (!apostila) return null;
+  const url = `${BASE}/pt/wol/d/r5/lp-t/${apostila}`;
+  const html = await baixar(url, timeoutMs);
+  const base = discursoDeTesouros(html);
+  if (!base) return null;
+
+  // Cada publicação citada é lida uma vez só; os pontos costumam citar o mesmo artigo.
+  const docs = new Map();
+  const todas = [...base.pontos.flatMap((p) => p.citacoes), ...(base.reflexao ? base.reflexao.citacoes : [])];
+  const unicas = [...new Map(todas.map((c) => [c.caminho, c])).values()].slice(0, MAX_FONTES_TESOUROS);
+  const lidas = new Map(await Promise.all(unicas.map(async (c) => [c.caminho, await lerTrechoCitado(c, timeoutMs, 3500, docs).catch(() => null)])));
+  const comFontes = ({ temLinks, ...item }) => ({ ...item, fontes: item.citacoes.map((c) => lidas.get(c.caminho)).filter(Boolean) });
+
+  const discurso = {
+    semana: leituraDaApostila(html).semana,
+    titulo: base.titulo,
+    minutos: base.minutos,
+    pontos: base.pontos.map(comFontes),
+    reflexao: base.reflexao ? comFontes(base.reflexao) : null,
+    url,
+  };
+  tesouros.set(urlReuniao, { quando: Date.now(), discurso });
+  if (tesouros.size > 20) tesouros.delete(tesouros.keys().next().value);
+  return discurso;
+}
+
+// As referências bíblicas de todos os pontos (e da reflexão), sem repetir, na ordem da apostila.
+export function referenciasDeTesouros(discurso) {
+  return [...new Set([...discurso.pontos.flatMap((p) => p.referencias), ...(discurso.reflexao ? discurso.reflexao.referencias : [])])];
+}
+
+// Texto do discurso para a IA: o tema, cada ponto da apostila (com os textos bíblicos, a fonte e o trecho lido dela), a pergunta
+// de reflexão e o texto exato dos versículos (se vierem).
+export function textoDosTesouros(discurso, versiculos = []) {
+  const trechos = (fontes) => fontes.map((f) => `   Trecho da fonte (${f.citacao})${f.titulo ? ` do artigo "${f.titulo}"` : ""}: ${f.texto}`);
+  const partes = [
+    `SEMANA: ${discurso.semana || "(não informada)"} (apostila Vida e Ministério)`,
+    `DISCURSO: Tesouros da Palavra de Deus (${discurso.minutos} min)`,
+    `TEMA PRINCIPAL (título do item na apostila): ${discurso.titulo}`,
+  ];
+  discurso.pontos.forEach((p, i) => {
+    partes.push(
+      [
+        `PONTO ${i + 1} DA APOSTILA: ${p.texto}`,
+        `   Textos bíblicos: ${p.referencias.join("; ") || "(nenhum indicado)"}`,
+        `   Fonte de matéria: ${p.citacoes.map((c) => c.citacao).join("; ") || "(nenhuma indicada)"}`,
+        ...trechos(p.fontes),
+      ].join("\n")
+    );
+  });
+  if (discurso.reflexao) {
+    partes.push([`PERGUNTA DE REFLEXÃO DA APOSTILA (costuma indicar o ponto de aplicação): ${discurso.reflexao.texto}`, ...trechos(discurso.reflexao.fontes)].join("\n"));
+  }
+  if (versiculos.length) partes.push(`TEXTO DOS VERSÍCULOS:\n${versiculos.map((v) => `${v.referencia}: ${v.texto}`).join("\n")}`);
+  return partes.join("\n\n");
 }
