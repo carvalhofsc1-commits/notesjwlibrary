@@ -1545,16 +1545,18 @@ async function perguntasEbcDirigente(res, body, P) {
 
 const SaidaTesouros = z.object({
   tema: z.string(),
+  objetivo: z.string(),
   aplicacao: z.string(),
-  introducao: z.object({ minutos: z.number(), topicos: z.array(z.string()) }),
+  introducao: z.object({ minutos: z.number(), primeirasFrases: z.string(), topicos: z.array(z.string()) }),
   pontos: z.array(
     z.object({
       titulo: z.string(),
       minutos: z.number(),
       textos: z.array(z.object({ referencia: z.string(), ler: z.boolean() })),
-      desenvolvimento: z.array(z.string()),
+      desenvolvimento: z.array(z.object({ argumento: z.string(), ideias: z.array(z.string()) })),
       aplicacao: z.string(),
       ilustracao: z.string().nullable(),
+      transicao: z.string().nullable(),
     })
   ),
   conclusao: z.object({ minutos: z.number(), topicos: z.array(z.string()) }),
@@ -1669,9 +1671,14 @@ async function esbocoDeTesouros(res, body, P) {
           minutos: minutos(p.minutos),
           textos,
           fontes: daApostila ? daApostila.citacoes.map((c) => c.citacao) : [],
-          desenvolvimento: topicos(p.desenvolvimento, 6, 300),
+          // Como no modelo de esboço: argumentos que apoiam o ponto e, sob cada um, as ideias que o desenvolvem.
+          desenvolvimento: (Array.isArray(p.desenvolvimento) ? p.desenvolvimento : [])
+            .map((d) => ({ argumento: limparTextoGerado(d.argumento, 300), ideias: topicos(d.ideias, 4, 250) }))
+            .filter((d) => d.argumento)
+            .slice(0, 5),
           aplicacao: limparTextoGerado(p.aplicacao, 400),
           ilustracao: limparTextoGerado(p.ilustracao, 400) || null,
+          transicao: limparTextoGerado(p.transicao, 250) || null,
         };
       })
       .filter((p) => p.titulo);
@@ -1685,8 +1692,13 @@ async function esbocoDeTesouros(res, body, P) {
 
     const esboco = {
       tema: limparTextoGerado(saida.tema, 200) || discurso.titulo,
+      objetivo: limparTextoGerado(saida.objetivo, 300),
       aplicacao: limparTextoGerado(saida.aplicacao, 300),
-      introducao: { minutos: minutos(saida.introducao.minutos), topicos: topicos(saida.introducao.topicos, 5, 300) },
+      introducao: {
+        minutos: minutos(saida.introducao.minutos),
+        primeirasFrases: limparTextoGerado(saida.introducao.primeirasFrases, 400),
+        topicos: topicos(saida.introducao.topicos, 5, 300),
+      },
       pontos,
       conclusao: { minutos: minutos(saida.conclusao.minutos), topicos: topicos(saida.conclusao.topicos, 5, 300) },
     };
