@@ -631,13 +631,13 @@ export function validarAlteracoes(alteracoes) {
     const texto = alteracoes[parte.id];
     if (typeof texto !== "string") return { ok: false, erro: `Texto inválido em "${parte.titulo}".` };
     const limpo = texto.replace(/\r\n/g, "\n").trim();
-    if (limpo.length < 20) return { ok: false, erro: `"${parte.titulo}" está curto demais. Use "Restaurar padrão" para voltar ao texto original.` };
+    if (limpo.length < 20) return { ok: false, erro: `"${parte.titulo}" está curto demais. Use "Voltar ao texto original" para recuperar o texto que veio com o app.` };
     if (limpo.length > MAX_CHARS_PARTE) return { ok: false, erro: `"${parte.titulo}" passa de ${MAX_CHARS_PARTE} caracteres.` };
     if (parte.itens) {
       const nomes = [...itensDe(limpo).keys()];
-      if (!nomes.length) return { ok: false, erro: `"${parte.titulo}" ficou sem nenhum item [nome]. Use "Restaurar padrão" para voltar ao texto original.` };
+      if (!nomes.length) return { ok: false, erro: `"${parte.titulo}" ficou sem nenhum item [nome]. Use "Voltar ao texto original" para recuperar o texto que veio com o app.` };
       const desconhecido = nomes.find((n) => !parte.nomes.has(n));
-      if (desconhecido) return { ok: false, erro: `"${parte.titulo}": não existe o item [${desconhecido}]. Não mude os nomes entre colchetes; use "Restaurar padrão" para ver os nomes certos.` };
+      if (desconhecido) return { ok: false, erro: `"${parte.titulo}": não existe o item [${desconhecido}]. Não mude os nomes entre colchetes; use "Voltar ao texto original" para ver os nomes certos.` };
     }
     valores[parte.id] = limpo;
   }

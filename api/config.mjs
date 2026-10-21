@@ -57,6 +57,8 @@ async function estadoDosPrompts() {
       descricao: p.descricao,
       padrao: p.padrao,
       valor: typeof alteracoes[p.id] === "string" ? alteracoes[p.id] : p.padrao,
+      // Só diz se o texto salvo é diferente do original do app (habilita "Voltar ao texto original"); a tela não mostra mais
+      // aviso de "personalizado": o que foi salvo para todos é o padrão oficial.
       personalizado: typeof alteracoes[p.id] === "string" && alteracoes[p.id] !== p.padrao,
     })),
     travados: travadosDe(limites).map((t) => ({ id: t.id, titulo: t.titulo, texto: t.texto })),
