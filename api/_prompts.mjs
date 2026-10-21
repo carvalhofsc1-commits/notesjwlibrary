@@ -516,6 +516,64 @@ for (const parte of PARTES) {
   parte.padrao = parte.itens.map(([nome, frase]) => `[${nome}] ${frase}`).join("\n\n");
 }
 
+// Categorias da tela de prompts (a ordem aqui é a ordem na tela) e as partes de cada uma, na ordem em que aparecem lá.
+// Uma parte que não estiver em nenhuma categoria aparece num grupo "OUTROS" no fim da lista (a tela cuida disso).
+export const CATEGORIAS = [
+  {
+    id: "base",
+    emoji: "🧭",
+    titulo: "BASE DAS RESPOSTAS",
+    cor: "#6366f1",
+    descricao: "Valem para quase todas as respostas da IA: quem é o usuário e a congregação, a voz dos comentários, o uso de emoji e destaques e como a orientação do usuário entra nos pedidos.",
+    partes: ["contexto_congregacao", "voz", "regras_resposta", "frases_pedidos"],
+  },
+  {
+    id: "comentarios",
+    emoji: "✋",
+    titulo: "COMENTÁRIOS",
+    cor: "#a855f7",
+    descricao: "Preparar para comentar: respostas do estudo de A Sentinela (Opções 1 e 2 e a numeração dos parágrafos), Estudo Bíblico de Congregação, Joias Espirituais e texto diário.",
+    partes: ["estudo", "sentinela", "lista", "frases_respostas", "ebc", "joias", "texto_diario"],
+  },
+  {
+    id: "dirigente",
+    emoji: "🎤",
+    titulo: "DIRIGENTE",
+    cor: "#14b8a6",
+    descricao: "Preparar para dirigir: perguntas adicionais do estudo de A Sentinela e do Estudo Bíblico de Congregação.",
+    partes: ["perguntas", "ebc_dirigente"],
+  },
+  {
+    id: "biblia",
+    emoji: "📖",
+    titulo: "BÍBLIA E PERSPICAZ",
+    cor: "#3b82f6",
+    descricao: "Como a IA trata as referências e os textos bíblicos citados e quando ela deve usar o Perspicaz.",
+    partes: ["referencias_pergunta", "biblia_relevantes", "biblia_resumo", "perspicaz_uso", "frases_textos"],
+  },
+  {
+    id: "formatacao",
+    emoji: "✨",
+    titulo: "FORMATAÇÃO DE TEXTO",
+    cor: "#f43f5e",
+    descricao: "Sugerir formatação com IA (tela Formatar): o prompt principal e o que cada opção pede à IA.",
+    partes: ["formatacao", "frases_formatacao", "frases_listas"],
+  },
+  {
+    id: "voz",
+    emoji: "🔊",
+    titulo: "VOZ (LEITURA EM VOZ ALTA)",
+    cor: "#22c55e",
+    descricao: "Como a voz do Google deve ler (vozes Gemini): a instrução de leitura e as frases de tom, altura e instruções do administrador.",
+    partes: ["leitura_voz", "frases_voz"],
+  },
+];
+
+export function categoriaDaParte(id) {
+  const categoria = CATEGORIAS.find((c) => c.partes.includes(id));
+  return categoria ? categoria.id : "";
+}
+
 // "[nome] frase" -> Map(nome -> frase). A frase vai até o próximo "[nome]" no começo de uma linha.
 export function itensDe(texto) {
   const t = String(texto || "");

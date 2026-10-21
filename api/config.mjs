@@ -2,7 +2,7 @@
 // Tudo o que muda dados exige o CODIGO_ADMIN, conferido aqui no servidor. A leitura dos modelos padrão é pública.
 import { codigoDoDirigente, erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { diagnosticar, escritaDisponivel, leituraDisponivel, lerItem, gravarItem } from "./_armazem.mjs";
-import { LIMITES, PARTES, aplicarLimites, limitesPublicos, travadosDe, validarAlteracoes, validarLimites } from "./_prompts.mjs";
+import { CATEGORIAS, LIMITES, PARTES, aplicarLimites, categoriaDaParte, limitesPublicos, travadosDe, validarAlteracoes, validarLimites } from "./_prompts.mjs";
 import { esquecerCache, gravarAlteracoes, gravarLimites, lerAlteracoes, lerAnterior, lerLimites } from "./_promptsArmazenados.mjs";
 import { configPublicaVoz, gravarConfigVoz, lerConfigVoz, opcoesVoz } from "./_vozConfig.mjs";
 import { gravarConfigIa, lerConfigIa, lerCustoIa, opcoesIa } from "./_iaConfig.mjs";
@@ -51,8 +51,10 @@ async function estadoDosPrompts() {
       max: l.max,
       valor: limites[l.id],
     })),
+    categorias: CATEGORIAS.map((cat) => ({ id: cat.id, emoji: cat.emoji, titulo: cat.titulo, cor: cat.cor, descricao: cat.descricao, partes: cat.partes })),
     partes: PARTES.map((p) => ({
       id: p.id,
+      categoria: categoriaDaParte(p.id),
       titulo: p.titulo,
       descricao: p.descricao,
       padrao: p.padrao,
