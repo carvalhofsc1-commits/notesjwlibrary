@@ -548,6 +548,25 @@ export function textoDoCapituloEbc(capitulo, perguntas, versiculos = []) {
   return partes.join("\n\n");
 }
 
+// Texto do capítulo para a IA preparar as perguntas adicionais do dirigente (Estudo Bíblico de Congregação): o relato, as
+// referências de "Leia o relato na Bíblia" (com os versículos, se vierem), os trechos das publicações citadas e as
+// perguntas ORIGINAIS dos quatro quadros, que a IA não deve repetir.
+export function textoDoCapituloEbcDirigente(capitulo, versiculos = []) {
+  const partes = [
+    `CAPÍTULO: ${[capitulo.contexto, capitulo.titulo].filter(Boolean).join(": ")}`,
+    `RELATO:\n${capitulo.relato.join("\n")}`,
+    `LEIA O RELATO NA BÍBLIA: ${capitulo.leia.join("; ") || "(nenhuma referência)"}`,
+  ];
+  if (versiculos.length) partes.push(`TEXTO DOS VERSÍCULOS:\n${versiculos.map((v) => `${v.referencia}: ${v.texto}`).join("\n")}`);
+  if (capitulo.trechos.length) {
+    partes.push(`TRECHOS DAS PUBLICAÇÕES CITADAS NAS PERGUNTAS:\n${capitulo.trechos.map((t) => `(${t.citacao}) ${t.titulo ? `"${t.titulo}": ` : ""}${t.texto}`).join("\n\n")}`);
+  }
+  partes.push(
+    `PERGUNTAS ORIGINAIS DO CAPÍTULO (já fazem parte do estudo: NÃO repita nem reformule, e não trate do mesmo ponto que elas):\n${capitulo.perguntas.map((p) => `(${p.nomeQuadro}) ${p.pergunta}`).join("\n")}`
+  );
+  return partes.join("\n\n");
+}
+
 // Texto que vai para a IA: só as perguntas pedidas, cada uma com seus parágrafos (e as legendas das imagens).
 export function textoDosGrupos(grupos) {
   return grupos

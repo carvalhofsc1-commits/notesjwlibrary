@@ -17,6 +17,7 @@ import {
   textoDaRecapitulacao,
   textoDasJoias,
   textoDoCapituloEbc,
+  textoDoCapituloEbcDirigente,
   textoDosGrupos,
 } from "./_wol.mjs";
 
@@ -1258,7 +1259,6 @@ const SaidaEbc = z.object({
       verbetes: z.array(z.string()),
     })
   ),
-  textosBase: z.array(z.object({ referencia: z.string(), ponto: z.string() })),
 });
 
 // Lê o capítulo da semana pedida; devolve o capítulo ou responde com o erro (e devolve null).
@@ -1312,7 +1312,6 @@ async function responderEbc(res, body, P) {
   const sep = modoSeparacao(opcoes, ajuste);
   const modo = body.modo === "nova" || body.modo === "melhorar" ? body.modo : null;
   const anteriores = modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(body.anteriores).slice(0, 12000) : "";
-  const textosBase = body.textosBase === true;
   const inicioPedido = Date.now();
 
   const capitulo = await capituloEbc(res, body);
@@ -1332,7 +1331,7 @@ async function responderEbc(res, body, P) {
   let mensagem =
     blocoOrientacao(opcoes, ajuste, P) +
     preferenciasDaResposta(opcoes, P, sep) +
-    `\n\nPEDIDO: resumo dos textos-base ${textosBase ? "ATIVO" : "INATIVO"}.\n\n` +
+    "\n\n" +
     textoDoCapituloEbc(capitulo, perguntas, versiculos) +
     lembreteFinal(opcoes, ajuste, P);
   if (modo && anteriores) {
@@ -1367,12 +1366,6 @@ async function responderEbc(res, body, P) {
       porId.set(pergunta.id, item);
     }
     const itens = perguntas.map((p) => porId.get(p.id)).filter(Boolean);
-    const base = textosBase
-      ? resposta.parsed_output.textosBase
-          .map((t) => ({ referencia: limparLinha(limparTrecho(t.referencia), 80), ponto: limparTextoGerado(t.ponto, 400) }))
-          .filter((t) => t.referencia && t.ponto)
-          .slice(0, 3)
-      : [];
 
     console.log(
       "Estudo bíblico:",
@@ -1381,7 +1374,6 @@ async function responderEbc(res, body, P) {
         materia: capitulo.materia,
         pedidas: perguntas.map((p) => p.id),
         respondidas: itens.map((i) => i.paragrafos),
-        textosBase: base.length,
         citadas: capitulo.citadas, // publicações citadas nas perguntas; "trechos" = quantas delas o servidor conseguiu ler
         trechos: capitulo.trechos.length,
         versiculos: versiculos.length,
@@ -1400,6 +1392,127 @@ async function responderEbc(res, body, P) {
       url: capitulo.url,
       erro: itens.length ? null : "A IA não respondeu às perguntas. Tente de novo.",
       itens: itensFinais,
+    });
+  } catch (e) {
+    return tratarErro(e, res);
+  }
+}
+
+// ---------- Estudo Bíblico de Congregação: perguntas adicionais para o dirigente ----------
+// A IA recebe o capítulo da semana (relato, "Leia o relato na Bíblia", trechos das publicações) e as perguntas ORIGINAIS dos
+// quatro quadros, e elabora 5 perguntas adicionais com resposta (sem aplicações práticas), mais o resumo dos textos-base se
+// o usuário marcou. Só quem tem o código do dirigente.
+
+const SaidaEbcDirigente = z.object({
+  perguntas: z.array(z.object({ pergunta: z.string(), resposta: z.string() })),
+  textosBase: z.array(z.object({ referencia: z.string(), ponto: z.string() })),
+});
+
+// Para comparar perguntas: sem acentos, sem pontuação e sem o que vem entre parênteses (as perguntas originais trazem a
+// citação da publicação no fim, ex.: "(w09 1/12 17 § 4, nota)").
+const normalizarPergunta = (t) =>
+  String(t || "")
+    .replace(/\([^)]*\)/g, " ")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+
+// Uma é cópia da outra (igual ou uma contida na outra, quando já têm um tamanho que indique a mesma pergunta).
+const mesmaPergunta = (a, b) => Boolean(a && b && (a === b || (Math.min(a.length, b.length) >= 25 && (a.includes(b) || b.includes(a)))));
+
+async function perguntasEbcDirigente(res, body, P) {
+  if (!process.env.CODIGO_ESTUDO) return erro(res, 500, "A leitura do estudo ainda não está configurada no servidor.");
+  if (!codigoValido(body.codigo)) return erro(res, 403, "Código de acesso inválido.");
+  if (!textosIguais(body.codigoDirigente, codigoDoDirigente())) return erro(res, 403, "Código do dirigente inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
+  const opcoes = validarOpcoes(body.opcoes);
+  const ajuste = textoLivre(body.ajuste);
+  const modo = body.modo === "nova" || body.modo === "melhorar" ? body.modo : null;
+  const anteriores = modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(body.anteriores).slice(0, 12000) : "";
+  const textosBase = body.textosBase === true;
+  const inicioPedido = Date.now();
+  if (fontesConfiguradas()) precarregarFontes({ biblia: true, perspicaz: false });
+
+  const capitulo = await capituloEbc(res, body);
+  if (!capitulo) return;
+
+  let versiculos = [];
+  if (fontesConfiguradas()) {
+    try {
+      versiculos = await buscarVersiculos([...capitulo.leia, ...capitulo.perguntas.flatMap((p) => p.referencias)], 12);
+    } catch (e) {
+      console.error("Estudo bíblico (dirigente): versículos indisponíveis", e?.message);
+    }
+  }
+
+  let mensagem =
+    blocoOrientacao(opcoes, ajuste, P) +
+    `PEDIDO: elabore 5 perguntas adicionais com resposta; resumo dos textos-base ${textosBase ? "ATIVO" : "INATIVO"}.\n\n` +
+    textoDoCapituloEbcDirigente(capitulo, versiculos) +
+    lembreteFinal(opcoes, ajuste, P);
+  if (modo && anteriores) {
+    mensagem +=
+      "\n\nPERGUNTAS JÁ SUGERIDAS (JSON):\n" + anteriores + "\n\n" + P.frases.pedidos[modo === "nova" ? "Estudo Bíblico do dirigente: outras perguntas" : "Estudo Bíblico do dirigente: melhorar"];
+  }
+
+  try {
+    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 120_000) });
+    const inicio = Date.now();
+    const resposta = await chamarIa(
+      client,
+      P,
+      { max_tokens: 16000 /* o raciocínio também conta aqui */, system: P.sistemaEbcDirigente, messages: [{ role: "user", content: mensagem }] },
+      { schema: SaidaEbcDirigente }
+    );
+    if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
+      return erro(res, 502, "A IA não conseguiu elaborar as perguntas para este capítulo.");
+    }
+
+    // No máximo 5, só as que têm pergunta e resposta e que não são cópia de uma pergunta original do capítulo.
+    const originais = capitulo.perguntas.map((p) => normalizarPergunta(p.pergunta));
+    const vistas = [];
+    const perguntas = [];
+    for (const i of resposta.parsed_output.perguntas) {
+      const pergunta = limparTextoGerado(i.pergunta, 400);
+      const respostaTexto = limparTextoGerado(i.resposta, 900);
+      const chave = normalizarPergunta(pergunta);
+      if (!pergunta || !respostaTexto || originais.some((o) => mesmaPergunta(o, chave)) || vistas.some((v) => mesmaPergunta(v, chave))) continue;
+      vistas.push(chave);
+      perguntas.push({ pergunta, resposta: respostaTexto });
+      if (perguntas.length === 5) break;
+    }
+    const base = textosBase
+      ? resposta.parsed_output.textosBase
+          .map((t) => ({ referencia: limparLinha(limparTrecho(t.referencia), 80), ponto: limparTextoGerado(t.ponto, 400) }))
+          .filter((t) => t.referencia && t.ponto)
+          .slice(0, 3)
+      : [];
+
+    console.log(
+      "Estudo bíblico (dirigente):",
+      JSON.stringify({
+        modelo: P.ia.modelo,
+        materia: capitulo.materia,
+        perguntas: perguntas.length,
+        recebidas: resposta.parsed_output.perguntas.length,
+        textosBase: base.length,
+        originais: capitulo.perguntas.length,
+        versiculos: versiculos.length,
+        segundosIa: Math.round((Date.now() - inicio) / 100) / 10,
+        total: Math.round((Date.now() - inicioPedido) / 100) / 10,
+        entrada: resposta.usage?.input_tokens || 0,
+        saida: resposta.usage?.output_tokens || 0,
+        pensamento: resposta.usage?.output_tokens_details?.thinking_tokens ?? null,
+      })
+    );
+
+    return res.status(200).json({
+      materia: capitulo.materia,
+      titulo: [capitulo.contexto, capitulo.titulo].filter(Boolean).join(": "),
+      url: capitulo.url,
+      erro: perguntas.length ? null : "A IA não elaborou perguntas diferentes das originais. Tente de novo.",
+      perguntas,
       textosBase: base,
     });
   } catch (e) {
@@ -1810,6 +1923,7 @@ export default async function handler(req, res) {
   if (req.body && req.body.tarefa === "texto-diario-comentarios") return comentariosDoTextoDiario(res, req.body, P);
   if (req.body && req.body.tarefa === "ebc-ler") return lerEbc(res, req.body);
   if (req.body && req.body.tarefa === "ebc") return responderEbc(res, req.body, P);
+  if (req.body && req.body.tarefa === "ebc-dirigente") return perguntasEbcDirigente(res, req.body, P);
   if (req.body && req.body.tarefa === "joias-ler") return lerJoiasDaSemana(res, req.body);
   if (req.body && req.body.tarefa === "joias") return responderJoias(res, req.body, P);
 

@@ -2645,10 +2645,6 @@
                         <label class="ai-check"><input type="checkbox" autocomplete="off" data-ebc-quadro="medite" checked> 💭 Medite no que aprendeu</label>
                         <label class="ai-check"><input type="checkbox" autocomplete="off" data-ebc-quadro="quadro" checked> 🧩 Pense no quadro completo</label>
                       </div>
-                      <p class="dirigente-secoes-sub">Opcional</p>
-                      <div class="ai-sources">
-                        <label class="ai-check"><input type="checkbox" autocomplete="off" id="ebcTextosBase"> 📖 Resumo dos textos-base: 2 ou 3 trechos de "Leia o relato na Bíblia", com o ponto principal de cada um</label>
-                      </div>
                     </div>
                     <button id="ebcResponderBtn" class="ai-study-btn" type="button">💬 IA - Responder às perguntas</button>
                     <span id="ebcStatus" class="ok" role="status" aria-live="polite"></span>
@@ -2712,7 +2708,27 @@
             </section>
               </div>
             </details>
-            <div class="em-breve" aria-disabled="true"><span>📚 Estudo Bíblico de Congregação</span><span class="em-breve-badge">em breve</span></div>
+            <details class="subsection ebc-subsection" id="ebcDirBox">
+              <summary>📚 Estudo Bíblico de Congregação</summary>
+              <div class="subsection-body">
+                <section class="sent-option sent-option-site">
+                  <h3>A IA lê o capítulo da semana na biblioteca on-line (wol.jw.org) e elabora 5 perguntas adicionais, com a resposta de cada uma, que não repetem as perguntas originais do capítulo</h3>
+                  <div class="ai-study">
+                    <button id="ebcDirCarregarBtn" class="secondary ai-study-load" type="button">📋 Carregar o capítulo da semana</button>
+                    <p id="ebcDirInfo" class="hint ai-hint ebc-info"></p>
+                    <div class="dirigente-secoes">
+                      <p class="dirigente-secoes-sub">Opcional</p>
+                      <div class="ai-sources">
+                        <label class="ai-check"><input type="checkbox" autocomplete="off" id="ebcDirTextosBase"> 📖 Resumo dos textos-base: 2 ou 3 trechos de "Leia o relato na Bíblia", com o ponto principal de cada um</label>
+                      </div>
+                    </div>
+                    <button id="ebcDirPerguntasBtn" class="ai-study-btn" type="button">💬 IA - Elaborar 5 perguntas adicionais</button>
+                    <span id="ebcDirStatus" class="ok" role="status" aria-live="polite"></span>
+                  </div>
+                </section>
+                <div id="ebcDirOutputSlot"></div>
+              </div>
+            </details>
           </details>
           </details>
 
@@ -5487,7 +5503,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '5.0.4'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0; 5.0.4: cor dos títulos dos grupos Preparação de comentários e Preparação para dirigir mais suave; 5.0.3: títulos dos grupos Preparação de comentários e Preparação para dirigir com cor forte (roxo e verde-água escuros, letra branca); 5.0.2: o aviso "Nossa Vida Cristã (em breve)" saiu do grupo Preparação de comentários; 5.0.1: os grupos "Preparação de comentários" e "Preparação para dirigir" da tela Reuniões viram contêineres com borda na cor do grupo, para o que está dentro não parecer solto; 5.0.0: atalhos da tela Início coloridos, cada um com a cor da tela que abre; 4.9.9: Ajustes → Configurar formatação com IA ganha 💾 Salvar para todos (só administrador), que salva as opções de formatação como padrão de todos os usuários; 4.9.8: tela de prompts com um só botão 💾 Salvar para todos (modelo e esforço da IA, limites e prompts) e ícones ✋ e 🎤 nos grupos de comentários e de dirigir da tela Reuniões, como nos atalhos do Início; 4.9.7: o cartão de gasto da tela de prompts não explica mais como criar a chave de administrador da Anthropic (só indica o link do Claude Console); 4.9.6: o app confere o código do dirigente salvo com o servidor e, se ele deixou de valer, apaga o código e esconde as opções do dirigente; 4.9.5: código do dirigente (Ajustes → Autorização de acessos): sem ele, as opções de preparação para dirigir ficam escondidas e o servidor não faz as perguntas do dirigente; enquanto não existir a variável CODIGO_DIRIGENTE na Vercel, vale o código de acesso; 4.9.4: texto diário com comentários adicionais que podem ser salvos e recuperados no mesmo dia (no dia seguinte são apagados) e link do wol.jw.org legível; 4.9.3: o botão 🔊 do campo de texto só aparece (e só funciona no servidor) para o administrador; a leitura em voz alta do texto diário continua para todos; 4.9.2: pesquisas salvas por semana (só as da semana escolhida; o botão apaga as das semanas anteriores); 4.9.1: pesquisas salvas (histórico das respostas da IA das reuniões neste aparelho, para reabrir depois); 4.9.0: joias espirituais com 2 joias por capítulo, sem repetir o versículo da pergunta da apostila; 4.8.9: Joias Espirituais (leitura da semana lida no wol.jw.org com as publicações do Índice das Publicações; até 2 joias por capítulo e a resposta à pergunta da apostila) e, no Estudo Bíblico, textos citados nas perguntas seguindo as opções de textos bíblicos;4.8.8: Estudo Bíblico de Congregação (capítulo da semana lido no wol.jw.org, respostas da IA por quadro, trechos das publicações citadas, resumo opcional dos textos-base) e o contexto "Sobre mim e a congregação" nos prompts; 4.8.7: cada seção da tela de prompts virou um cartão recolhível; 4.8.6: modelo da IA de texto escolhido pelo administrador na tela de prompts (Haiku, Sonnet, Opus ou Fable) e gasto do mês pela Cost API da Anthropic; 4.8.6: a barra da leitura em voz alta fecha sozinha quando a leitura termina; 4.8.5: categorias de Ajustes direto na página (sem o cartão recolhível "Configurações gerais do app"); 4.8.4: Ajustes → Autorização de acessos (código de acesso e senha de administrador informados uma vez e salvos), a IA nunca escreve "culto" (sempre reunião), comentários adicionais recolhíveis e com Limpar, atalhos Comentários e Dirigentes abrem só o grupo deles; 4.8.3: tela Início com o texto diário (do wol.jw.org; um toque abre o comentário, ler em voz alta, levar para o campo de texto e comentários adicionais da IA) e atalhos; 4.8.2: referências bíblicas lidas na forma curta ("Primeira Coríntios treze, quatro a sete"), voz com duas partes à frente (sem pausas, também em 1,15×), pular citações de publicações (w24.09 21 § 6) e referências bíblicas só entre parênteses ou depois de travessão no fim do parágrafo (o texto temático do texto diário é lido); 4.8.1: voz começa mais rápido (primeiras partes curtas) e campos de preço alinhados; 4.8.0: menu da voz para o administrador (modelo, voz, tom, o que ler e pular), consumo estimado e vozes Gemini com a conta de serviço do Google; 4.7.9: voz reserva (Chirp 3 HD) quando o Gemini é recusado; 4.7.8: botão 🔊 Ouvir (leitura em voz alta com a voz do Google); 4.7.7: Fonte CX com C preto e C branco, cada um ao lado do seu quadradinho; todos os cards começam fechados ao abrir o app; 4.7.6: tela Reuniões em dois cartões (texto e reuniões); 4.7.5: campo de texto volta a crescer depois de levar uma nota do backup; importar notas de outro backup; 4.7.4: card do desenvolvedor na largura do quadro de limitações (Sobre); 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
+    const APP_VERSION = '5.0.5'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0; 5.0.5: Estudo Bíblico de Congregação no grupo Preparação para dirigir (5 perguntas adicionais com resposta, sem aplicações práticas, e o resumo dos textos-base, que saiu do cartão dos comentários); 5.0.4: cor dos títulos dos grupos Preparação de comentários e Preparação para dirigir mais suave; 5.0.3: títulos dos grupos Preparação de comentários e Preparação para dirigir com cor forte (roxo e verde-água escuros, letra branca); 5.0.2: o aviso "Nossa Vida Cristã (em breve)" saiu do grupo Preparação de comentários; 5.0.1: os grupos "Preparação de comentários" e "Preparação para dirigir" da tela Reuniões viram contêineres com borda na cor do grupo, para o que está dentro não parecer solto; 5.0.0: atalhos da tela Início coloridos, cada um com a cor da tela que abre; 4.9.9: Ajustes → Configurar formatação com IA ganha 💾 Salvar para todos (só administrador), que salva as opções de formatação como padrão de todos os usuários; 4.9.8: tela de prompts com um só botão 💾 Salvar para todos (modelo e esforço da IA, limites e prompts) e ícones ✋ e 🎤 nos grupos de comentários e de dirigir da tela Reuniões, como nos atalhos do Início; 4.9.7: o cartão de gasto da tela de prompts não explica mais como criar a chave de administrador da Anthropic (só indica o link do Claude Console); 4.9.6: o app confere o código do dirigente salvo com o servidor e, se ele deixou de valer, apaga o código e esconde as opções do dirigente; 4.9.5: código do dirigente (Ajustes → Autorização de acessos): sem ele, as opções de preparação para dirigir ficam escondidas e o servidor não faz as perguntas do dirigente; enquanto não existir a variável CODIGO_DIRIGENTE na Vercel, vale o código de acesso; 4.9.4: texto diário com comentários adicionais que podem ser salvos e recuperados no mesmo dia (no dia seguinte são apagados) e link do wol.jw.org legível; 4.9.3: o botão 🔊 do campo de texto só aparece (e só funciona no servidor) para o administrador; a leitura em voz alta do texto diário continua para todos; 4.9.2: pesquisas salvas por semana (só as da semana escolhida; o botão apaga as das semanas anteriores); 4.9.1: pesquisas salvas (histórico das respostas da IA das reuniões neste aparelho, para reabrir depois); 4.9.0: joias espirituais com 2 joias por capítulo, sem repetir o versículo da pergunta da apostila; 4.8.9: Joias Espirituais (leitura da semana lida no wol.jw.org com as publicações do Índice das Publicações; até 2 joias por capítulo e a resposta à pergunta da apostila) e, no Estudo Bíblico, textos citados nas perguntas seguindo as opções de textos bíblicos;4.8.8: Estudo Bíblico de Congregação (capítulo da semana lido no wol.jw.org, respostas da IA por quadro, trechos das publicações citadas, resumo opcional dos textos-base) e o contexto "Sobre mim e a congregação" nos prompts; 4.8.7: cada seção da tela de prompts virou um cartão recolhível; 4.8.6: modelo da IA de texto escolhido pelo administrador na tela de prompts (Haiku, Sonnet, Opus ou Fable) e gasto do mês pela Cost API da Anthropic; 4.8.6: a barra da leitura em voz alta fecha sozinha quando a leitura termina; 4.8.5: categorias de Ajustes direto na página (sem o cartão recolhível "Configurações gerais do app"); 4.8.4: Ajustes → Autorização de acessos (código de acesso e senha de administrador informados uma vez e salvos), a IA nunca escreve "culto" (sempre reunião), comentários adicionais recolhíveis e com Limpar, atalhos Comentários e Dirigentes abrem só o grupo deles; 4.8.3: tela Início com o texto diário (do wol.jw.org; um toque abre o comentário, ler em voz alta, levar para o campo de texto e comentários adicionais da IA) e atalhos; 4.8.2: referências bíblicas lidas na forma curta ("Primeira Coríntios treze, quatro a sete"), voz com duas partes à frente (sem pausas, também em 1,15×), pular citações de publicações (w24.09 21 § 6) e referências bíblicas só entre parênteses ou depois de travessão no fim do parágrafo (o texto temático do texto diário é lido); 4.8.1: voz começa mais rápido (primeiras partes curtas) e campos de preço alinhados; 4.8.0: menu da voz para o administrador (modelo, voz, tom, o que ler e pular), consumo estimado e vozes Gemini com a conta de serviço do Google; 4.7.9: voz reserva (Chirp 3 HD) quando o Gemini é recusado; 4.7.8: botão 🔊 Ouvir (leitura em voz alta com a voz do Google); 4.7.7: Fonte CX com C preto e C branco, cada um ao lado do seu quadradinho; todos os cards começam fechados ao abrir o app; 4.7.6: tela Reuniões em dois cartões (texto e reuniões); 4.7.5: campo de texto volta a crescer depois de levar uma nota do backup; importar notas de outro backup; 4.7.4: card do desenvolvedor na largura do quadro de limitações (Sobre); 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 
@@ -9183,16 +9199,17 @@ function saveTemplatesToStorage() {
 
     // A mensagem aparece junto ao botão que o usuário usou: na área da IA (formatação e respostas do texto colado) ou nos
     // cards da Sentinela (Comentários e Dirigente).
-    let aiStatusKind = 'format'; // 'format' | 'sentinela' | 'estudo' | 'lista' | 'dirigente'
+    let aiStatusKind = 'format'; // 'format' | 'sentinela' | 'estudo' | 'lista' | 'dirigente' | 'ebc' | 'joias' | 'ebcdir'
     let studyListCard = 'comentarios'; // card do último "Carregar os parágrafos": 'comentarios' ou 'dirigente'
 
     function aiStatusElements() {
-      return [aiStatus, aiStudyAnswerStatus, aiStudyStatus, leaderAnswerStatus, leaderStudyStatus, document.getElementById('ebcStatus'), document.getElementById('joiasStatus')];
+      return [aiStatus, aiStudyAnswerStatus, aiStudyStatus, leaderAnswerStatus, leaderStudyStatus, document.getElementById('ebcStatus'), document.getElementById('joiasStatus'), document.getElementById('ebcDirStatus')];
     }
 
     function aiStatusElement() {
       return aiStatusKind === 'estudo' ? aiStudyAnswerStatus
         : aiStatusKind === 'ebc' ? document.getElementById('ebcStatus')
+          : aiStatusKind === 'ebcdir' ? document.getElementById('ebcDirStatus')
           : aiStatusKind === 'joias' ? document.getElementById('joiasStatus')
           : aiStatusKind === 'dirigente' ? leaderAnswerStatus
             : aiStatusKind === 'lista' ? (studyListCard === 'dirigente' ? leaderStudyStatus : aiStudyStatus)
@@ -9252,6 +9269,7 @@ function saveTemplatesToStorage() {
       const all = [aiSuggestBtn, aiSentinelaBtn, aiStudyBtn, aiStudyQuestionsBtn, aiStudyLoadBtn, leaderStudyLoadBtn, aiAnotherBtn, aiImproveBtn,
         document.getElementById('tdGerarBtn'), document.getElementById('tdIaOutrosBtn'),
         document.getElementById('ebcCarregarBtn'), document.getElementById('ebcResponderBtn'),
+        document.getElementById('ebcDirCarregarBtn'), document.getElementById('ebcDirPerguntasBtn'),
         document.getElementById('joiasCarregarBtn'), document.getElementById('joiasResponderBtn')];
 
       if (!on) {
@@ -10376,6 +10394,7 @@ function saveTemplatesToStorage() {
     const refineAi = mode => (
       aiLastKind === 'estudo' ? requestStudyAnswers(mode)
         : aiLastKind === 'ebc' ? requestEbcAnswers(mode)
+          : aiLastKind === 'ebcdir' ? requestEbcDirigente(mode)
           : aiLastKind === 'joias' ? requestJoias(mode)
           : aiLastKind === 'sentinela' ? requestSentinelaAnswers(mode)
             : requestAiSuggestions(mode)
@@ -10390,37 +10409,37 @@ function saveTemplatesToStorage() {
     const ebcInfo = document.getElementById('ebcInfo');
     const ebcCarregarBtn = document.getElementById('ebcCarregarBtn');
     const ebcResponderBtn = document.getElementById('ebcResponderBtn');
-    const ebcTextosBase = document.getElementById('ebcTextosBase');
     const ebcOutputSlot = document.getElementById('ebcOutputSlot');
     const ebcQuadros = Array.from(document.querySelectorAll('[data-ebc-quadro]'));
-    const ebcEscolhas = () => ({ quadros: ebcQuadros.filter(c => c.checked).map(c => c.dataset.ebcQuadro), textosBase: ebcTextosBase.checked });
+    const ebcEscolhas = () => ({ quadros: ebcQuadros.filter(c => c.checked).map(c => c.dataset.ebcQuadro) });
     try {
       const salvo = JSON.parse(localStorage.getItem(EBC_KEY) || 'null');
       if (salvo && Array.isArray(salvo.quadros)) {
         ebcQuadros.forEach(c => { c.checked = salvo.quadros.includes(c.dataset.ebcQuadro); });
-        ebcTextosBase.checked = Boolean(salvo.textosBase);
       }
     } catch (e) { /* sem localStorage: valem os padrões */ }
-    [...ebcQuadros, ebcTextosBase].forEach(c => c.addEventListener('change', () => safeSetItem(EBC_KEY, JSON.stringify(ebcEscolhas()))));
+    ebcQuadros.forEach(c => c.addEventListener('change', () => safeSetItem(EBC_KEY, JSON.stringify(ebcEscolhas()))));
 
     // Matéria, título (com o link do capítulo no wol.jw.org) e, ao carregar, quantas perguntas há em cada quadro.
-    function ebcMostrarInfo(dados) {
-      ebcInfo.textContent = '';
+    function ebcMostrarInfo(dados, alvo = ebcInfo) {
+      alvo.textContent = '';
       if (!dados || !dados.titulo) return;
       const link = document.createElement('a');
       link.href = dados.url;
       link.target = '_blank';
       link.rel = 'noopener noreferrer';
       link.textContent = '📚 ' + [dados.materia, dados.titulo].filter(Boolean).join(' · ');
-      ebcInfo.appendChild(link);
+      alvo.appendChild(link);
       const quadros = (dados.quadros || []).filter(q => q.perguntas);
-      if (quadros.length) ebcInfo.append(document.createElement('br'), quadros.map(q => q.nome + ': ' + q.perguntas).join(' · '));
+      if (quadros.length) alvo.append(document.createElement('br'), quadros.map(q => q.nome + ': ' + q.perguntas).join(' · '));
     }
 
     // Semana trocada na barra do alto: o capítulo mostrado deixa de valer.
     function ebcSemanaMudou() {
-      const info = document.getElementById('ebcInfo');
-      if (info) info.textContent = '';
+      ['ebcInfo', 'ebcDirInfo'].forEach(id => {
+        const info = document.getElementById(id);
+        if (info) info.textContent = '';
+      });
     }
 
     async function ebcCarregar() {
@@ -10493,7 +10512,6 @@ function saveTemplatesToStorage() {
         ano: aiWeekYear,
         semana: aiWeekNumber,
         quadros: escolhas.quadros,
-        textosBase: escolhas.textosBase,
         opcoes: readAiOptions()
       };
       if (previousAnswers) {
@@ -10511,8 +10529,6 @@ function saveTemplatesToStorage() {
         if (!ebcInfo.textContent) ebcMostrarInfo(result.data);
 
         const parts = buildSentinelaParts(aiSentinelaRaw);
-        const base = Array.isArray(result.data.textosBase) ? result.data.textosBase : [];
-        if (base.length) parts.push(ebcParteTextosBase(base));
         aiResumo = { texto: parts.map(part => part.texto).join('\n\n\n'), partes: parts, done: false, kind: 'estudo', fonte: result.data.titulo || '' };
         appendToMainText(aiResumo.texto);
         historicoSalvar({ tipo: 'ebc', titulo: '📚 Estudo Bíblico' + (result.data.titulo ? ' · ' + result.data.titulo : ''), ano: payload.ano, numSemana: payload.semana, partes: parts });
@@ -10529,6 +10545,141 @@ function saveTemplatesToStorage() {
 
     ebcCarregarBtn.addEventListener('click', ebcCarregar);
     ebcResponderBtn.addEventListener('click', () => requestEbcAnswers());
+
+    // ---------- Estudo Bíblico de Congregação: perguntas adicionais para o dirigente ----------
+    // Grupo "Preparação para dirigir" (só com o código do dirigente). O servidor lê o capítulo da semana com as perguntas
+    // originais e a IA elabora 5 perguntas adicionais com resposta, sem aplicações práticas (e, se marcado, o resumo dos
+    // textos-base). Tudo vai para o campo de texto, cada pergunta com o botão azul de copiar.
+    const EBC_DIR_KEY = 'jwLibraryNoteAplicarEbcDirV1';
+    const ebcDirInfo = document.getElementById('ebcDirInfo');
+    const ebcDirCarregarBtn = document.getElementById('ebcDirCarregarBtn');
+    const ebcDirPerguntasBtn = document.getElementById('ebcDirPerguntasBtn');
+    const ebcDirTextosBase = document.getElementById('ebcDirTextosBase');
+    const ebcDirOutputSlot = document.getElementById('ebcDirOutputSlot');
+    try {
+      const salvo = JSON.parse(localStorage.getItem(EBC_DIR_KEY) || 'null');
+      if (salvo) ebcDirTextosBase.checked = Boolean(salvo.textosBase);
+    } catch (e) { /* sem localStorage: valem os padrões */ }
+    ebcDirTextosBase.addEventListener('change', () => safeSetItem(EBC_DIR_KEY, JSON.stringify({ textosBase: ebcDirTextosBase.checked })));
+
+    async function ebcDirCarregar() {
+      if (aiBusy) return;
+      aiStatusKind = 'ebcdir';
+      const accessError = studyAccessError();
+      if (accessError) return setAiStatus(accessError, true);
+      aiBusy = true;
+      setAiLoading(true, ebcDirCarregarBtn);
+      try {
+        const result = await postStudy({ tarefa: 'ebc-ler', codigo: codigoAcessoSalvo(), ano: aiWeekYear, semana: aiWeekNumber }, 60000);
+        if (!result.ok) return setAiStatus(studyFailureMessage(result, 'Não consegui ler o capítulo agora.'), true);
+        ebcMostrarInfo(result.data, ebcDirInfo);
+        setAiStatus('✅ Capítulo da semana carregado.', false);
+      } catch (e) {
+        setAiStatus(e && e.name === 'AbortError' ? 'O site demorou demais. Tente de novo.' : 'Falha de conexão ao ler o capítulo.', true);
+      } finally {
+        aiBusy = false;
+        setAiLoading(false);
+      }
+    }
+
+    // Uma parte por pergunta ("❔ PERGUNTA ADICIONAL 1 👉 …" e "✅ RESPOSTA 👉 …"), cada uma com o seu botão de copiar.
+    function ebcDirPartes(perguntas) {
+      const negrito = text => {
+        const styleId = aiStyleIdFor('negrito');
+        return styleId ? convertTextWithStyle(text, styleId) : text;
+      };
+      const answerTpl = readAiOptions().usarModelos ? aiTemplateByName('resposta') : null;
+      return perguntas.map((q, i) => ({
+        paragrafos: 'Pergunta ' + (i + 1),
+        texto: '❔ ' + negrito('PERGUNTA ADICIONAL ' + (i + 1)) + ' 👉 ' + q.pergunta + '\n\n' + aiLabelWith(answerTpl, '✅ RESPOSTA 👉 ', q.resposta)
+      }));
+    }
+
+    async function requestEbcDirigente(mode) {
+      if (aiBusy) return;
+      aiLastKind = 'ebcdir';
+      aiStatusKind = 'ebcdir';
+      placeAiOutput(ebcDirOutputSlot);
+      const accessError = studyAccessError();
+      if (accessError) return setAiStatus(accessError, true);
+      if (!codigoDirigenteSalvo()) return setAiStatus('Salve o código do dirigente em Ajustes → 🔐 Autorização de acessos.', true);
+
+      if (mode) {
+        if (!(await confirmAiRestore())) return;
+        if (aiAppliedAny) restoreAiBaseText();
+      } else {
+        aiSentinelaRaw = [];
+        aiAppliedAny = false;
+        // As perguntas novas ficam sozinhas no campo de texto (como nas respostas do Estudo Bíblico).
+        if (input.value) {
+          setInputRange(0, input.value.length, '', { message: 'Campo de texto limpo para as novas perguntas.' });
+          autoGrowInputText();
+        }
+      }
+
+      aiResults.textContent = '';
+      aiSuggestions = [];
+      aiRaw = [];
+      const previous = mode && aiResumo && aiSentinelaRaw.length ? aiSentinelaRaw : null;
+      aiResumo = null;
+      updateAiControls();
+      if (!aiAppliedAny) aiBaseText = input.value;
+      saveAiOptions();
+
+      const payload = {
+        tarefa: 'ebc-dirigente',
+        codigo: codigoAcessoSalvo(),
+        codigoDirigente: codigoDirigenteSalvo(),
+        ano: aiWeekYear,
+        semana: aiWeekNumber,
+        textosBase: ebcDirTextosBase.checked,
+        opcoes: readAiOptions()
+      };
+      if (previous) {
+        payload.modo = mode;
+        payload.anteriores = { perguntas: previous };
+      }
+
+      aiBusy = true;
+      setAiLoading(true, mode === 'nova' ? aiAnotherBtn : mode === 'melhorar' ? aiImproveBtn : ebcDirPerguntasBtn);
+      try {
+        const result = await postStudy(payload, IA_ESPERA_MS);
+        if (!result.ok) {
+          // O servidor recusou o código do dirigente salvo: apaga, esconde as opções e oferece informar o novo.
+          if (/^Código do dirigente inválido/.test((result.data && result.data.erro) || '')) {
+            dirigenteInvalido();
+            if (await askConfirm('O código do dirigente que estava salvo não vale mais, e as opções do dirigente foram escondidas. Quer informar o novo código agora?', 'Código do dirigente')) {
+              showScreen('ajustes');
+              abrirAcessos('dirigente');
+            }
+            return;
+          }
+          return setAiStatus(studyFailureMessage(result, 'Não foi possível elaborar as perguntas agora.'), true);
+        }
+        const perguntas = Array.isArray(result.data.perguntas) ? result.data.perguntas : [];
+        if (!perguntas.length) return setAiStatus(result.data.erro || 'A IA não elaborou as perguntas. Tente de novo.', true);
+        if (!ebcDirInfo.textContent) ebcMostrarInfo(result.data, ebcDirInfo);
+
+        aiSentinelaRaw = perguntas;
+        const parts = ebcDirPartes(perguntas);
+        const base = Array.isArray(result.data.textosBase) ? result.data.textosBase : [];
+        if (base.length) parts.unshift(ebcParteTextosBase(base));
+        aiResumo = { texto: parts.map(part => part.texto).join('\n\n\n'), partes: parts, done: false, kind: 'estudo', fonte: result.data.titulo || '' };
+        appendToMainText(aiResumo.texto);
+        historicoSalvar({ tipo: 'ebc-dirigente', titulo: '🎤 Estudo Bíblico · perguntas adicionais' + (result.data.titulo ? ' · ' + result.data.titulo : ''), ano: payload.ano, numSemana: payload.semana, partes: parts });
+        renderAiSuggestions();
+        aiRefineBox.hidden = false;
+        setAiStatus('✅ Perguntas adicionais no campo de texto, cada uma com o botão de copiar.', false);
+      } catch (e) {
+        setAiStatus(e && e.name === 'AbortError' ? 'A IA demorou demais. Tente de novo.' : 'Falha de conexão ao consultar a IA.', true);
+      } finally {
+        aiBusy = false;
+        setAiLoading(false);
+      }
+    }
+
+    ebcDirCarregarBtn.addEventListener('click', ebcDirCarregar);
+    ebcDirPerguntasBtn.addEventListener('click', () => requestEbcDirigente());
 
     // ---------- Joias espirituais ----------
     // O servidor lê a leitura da Bíblia da semana (no alto da apostila Vida e Ministério), os versículos de cada capítulo
@@ -10760,7 +10911,7 @@ function saveTemplatesToStorage() {
 
     function historicoRender() {
       // As perguntas do dirigente só aparecem aqui com o código do dirigente salvo neste aparelho.
-      const todas = historicoLer().filter(item => item.tipo !== 'dirigente' || codigoDirigenteSalvo());
+      const todas = historicoLer().filter(item => !['dirigente', 'ebc-dirigente'].includes(item.tipo) || codigoDirigenteSalvo());
       const atual = historicoChaveAtual();
       const lista = todas.filter(item => historicoChave(item) === atual);
       const anteriores = todas.filter(item => historicoChave(item) < atual).length;
