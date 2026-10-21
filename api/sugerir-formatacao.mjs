@@ -778,7 +778,7 @@ async function escreverRespostas({ rotulo, texto, escopo, opcoes, modo, ajuste, 
 
 async function responderSentinela(res, { linhas, opcoes, modo, ajuste, anteriores }, P) {
   const sep = modoSeparacao(opcoes, ajuste);
-  // A consulta às fontes não exige o código de acesso (o código vale só para a leitura do wol.jw.org).
+  // A consulta às fontes não exige o código de pesquisa (o código vale só para a leitura do wol.jw.org).
   if (consultaPedida(opcoes) && !fontesConfiguradas()) return erro(res, 500, "A consulta às fontes ainda não está configurada no servidor.");
   // Os versículos citados na pergunta são sempre transcritos: a Bíblia começa a carregar enquanto a IA escreve.
   precarregarFontes({ biblia: true, perspicaz: opcoes.consultarPerspicaz });
@@ -857,7 +857,7 @@ async function responderEstudoLido(res, { lido, alvo, recapitulacao, opcoes, aju
 }
 
 // ---------- Estudo da semana: leitura do artigo no wol.jw.org ----------
-// A cada clique de quem tem o código de acesso, o servidor lê o artigo direto no wol.jw.org (api/_wol.mjs) e manda à
+// A cada clique de quem tem o código de pesquisa, o servidor lê o artigo direto no wol.jw.org (api/_wol.mjs) e manda à
 // IA só as perguntas e os parágrafos pedidos. Se essa leitura falhar, a IA lê o site com a ferramenta web_fetch da
 // Anthropic (só no domínio wol.jw.org), como antes. O texto do artigo não é gravado nem devolvido ao navegador: só as
 // respostas, com palavras próprias, e o título do artigo lido.
@@ -871,6 +871,20 @@ const SaidaEstudo = z.object({
 
 function codigoValido(informado) {
   return textosIguais(informado, process.env.CODIGO_ESTUDO);
+}
+
+// O código do dirigente vale sozinho para as tarefas do dirigente (perguntas adicionais, Estudo Bíblico do dirigente) e,
+// junto com o código de pesquisa, para as que os dois cartões usam (lista de parágrafos e leitura do capítulo).
+function dirigenteValido(informado) {
+  return textosIguais(informado, codigoDoDirigente());
+}
+
+// Recusa com a mensagem do código que a pessoa estava usando: o do dirigente, se ele veio no pedido; senão o de pesquisa.
+function recusarAcesso(res, body) {
+  if (typeof body.codigoDirigente === "string" && body.codigoDirigente) {
+    return erro(res, 403, "Código do dirigente inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
+  }
+  return erro(res, 403, "Código de pesquisa inválido.");
 }
 
 // Aceita o número do artigo (7 dígitos), o link do artigo ou, sem nada, a página de reuniões da semana.
@@ -943,7 +957,7 @@ function numerosDosParagrafos(texto) {
 
 async function responderEstudo(res, body, P) {
   if (!process.env.CODIGO_ESTUDO) return erro(res, 500, "A leitura do estudo ainda não está configurada no servidor.");
-  if (!codigoValido(body.codigo)) return erro(res, 403, "Código de acesso inválido.");
+  if (!codigoValido(body.codigo)) return erro(res, 403, "Código de pesquisa inválido.");
 
   const url = urlDoEstudo(body);
   if (!url) return erro(res, 400, "Número ou link do artigo inválido. Use o número de 7 dígitos (ex.: 2026521) ou o link do wol.jw.org.");
@@ -1116,10 +1130,9 @@ const SaidaPerguntas = z.object({
 });
 
 async function sugerirPerguntas(res, body, P) {
-  if (!process.env.CODIGO_ESTUDO) return erro(res, 500, "A leitura do estudo ainda não está configurada no servidor.");
-  if (!codigoValido(body.codigo)) return erro(res, 403, "Código de acesso inválido.");
-  // As perguntas adicionais para o dirigente são só de quem tem o código do dirigente.
-  if (!textosIguais(body.codigoDirigente, codigoDoDirigente())) return erro(res, 403, "Código do dirigente inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
+  if (!codigoDoDirigente()) return erro(res, 500, "O código do dirigente ainda não está configurado no servidor.");
+  // As perguntas adicionais para o dirigente pedem só o código do dirigente.
+  if (!dirigenteValido(body.codigoDirigente)) return erro(res, 403, "Código do dirigente inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
 
   const url = urlDoEstudo(body);
   if (!url) return erro(res, 400, "Número ou link do artigo inválido. Use o número de 7 dígitos (ex.: 2026521) ou o link do wol.jw.org.");
@@ -1262,13 +1275,14 @@ const SaidaEbc = z.object({
 });
 
 // Lê o capítulo da semana pedida; devolve o capítulo ou responde com o erro (e devolve null).
-async function capituloEbc(res, body) {
-  if (!process.env.CODIGO_ESTUDO) {
+// autorizado = o chamador já conferiu o código (o do dirigente, nas tarefas dele); senão vale o código de pesquisa.
+async function capituloEbc(res, body, autorizado = false) {
+  if (!autorizado && !process.env.CODIGO_ESTUDO) {
     erro(res, 500, "A leitura do estudo ainda não está configurada no servidor.");
     return null;
   }
-  if (!codigoValido(body.codigo)) {
-    erro(res, 403, "Código de acesso inválido.");
+  if (!autorizado && !codigoValido(body.codigo)) {
+    erro(res, 403, "Código de pesquisa inválido.");
     return null;
   }
   const url = urlDoEstudo({ ano: body.ano, semana: body.semana });
@@ -1290,7 +1304,10 @@ async function capituloEbc(res, body) {
 
 // O que o app mostra ao carregar: a matéria, o título e quantas perguntas há em cada quadro.
 async function lerEbc(res, body) {
-  const capitulo = await capituloEbc(res, body);
+  // O cartão dos comentários lê com o código de pesquisa; o do dirigente, com o do dirigente.
+  const autorizado = codigoValido(body.codigo) || dirigenteValido(body.codigoDirigente);
+  if (!autorizado) return recusarAcesso(res, body);
+  const capitulo = await capituloEbc(res, body, true);
   if (!capitulo) return;
   return res.status(200).json({
     materia: capitulo.materia,
@@ -1423,9 +1440,8 @@ const normalizarPergunta = (t) =>
 const mesmaPergunta = (a, b) => Boolean(a && b && (a === b || (Math.min(a.length, b.length) >= 25 && (a.includes(b) || b.includes(a)))));
 
 async function perguntasEbcDirigente(res, body, P) {
-  if (!process.env.CODIGO_ESTUDO) return erro(res, 500, "A leitura do estudo ainda não está configurada no servidor.");
-  if (!codigoValido(body.codigo)) return erro(res, 403, "Código de acesso inválido.");
-  if (!textosIguais(body.codigoDirigente, codigoDoDirigente())) return erro(res, 403, "Código do dirigente inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
+  if (!codigoDoDirigente()) return erro(res, 500, "O código do dirigente ainda não está configurado no servidor.");
+  if (!dirigenteValido(body.codigoDirigente)) return erro(res, 403, "Código do dirigente inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
   const opcoes = validarOpcoes(body.opcoes);
   const ajuste = textoLivre(body.ajuste);
   const modo = body.modo === "nova" || body.modo === "melhorar" ? body.modo : null;
@@ -1434,7 +1450,7 @@ async function perguntasEbcDirigente(res, body, P) {
   const inicioPedido = Date.now();
   if (fontesConfiguradas()) precarregarFontes({ biblia: true, perspicaz: false });
 
-  const capitulo = await capituloEbc(res, body);
+  const capitulo = await capituloEbc(res, body, true);
   if (!capitulo) return;
 
   let versiculos = [];
@@ -1558,7 +1574,7 @@ async function leituraJoias(res, body) {
     return null;
   }
   if (!codigoValido(body.codigo)) {
-    erro(res, 403, "Código de acesso inválido.");
+    erro(res, 403, "Código de pesquisa inválido.");
     return null;
   }
   const url = urlDoEstudo({ ano: body.ano, semana: body.semana });
@@ -1713,8 +1729,8 @@ const SaidaTextoDiario = z.object({
 });
 
 async function comentariosDoTextoDiario(res, body, P) {
-  if (!process.env.CODIGO_ESTUDO) return erro(res, 500, "O código de acesso ainda não está configurado no servidor.");
-  if (!codigoValido(body.codigo)) return erro(res, 403, "Código de acesso inválido.");
+  if (!process.env.CODIGO_ESTUDO) return erro(res, 500, "O código de pesquisa ainda não está configurado no servidor.");
+  if (!codigoValido(body.codigo)) return erro(res, 403, "Código de pesquisa inválido.");
   const m = typeof body.data === "string" ? body.data.match(/^(\d{4})-(\d{2})-(\d{2})$/) : null;
   if (!m) return erro(res, 400, "Data inválida.");
 
@@ -1816,7 +1832,8 @@ function idDoArtigoLido(resposta, urlPedida, informadoPelaIa) {
 
 async function listarParagrafos(res, body, P) {
   if (!process.env.CODIGO_ESTUDO) return erro(res, 500, "A leitura do estudo ainda não está configurada no servidor.");
-  if (!codigoValido(body.codigo)) return erro(res, 403, "Código de acesso inválido.");
+  // Os dois cartões de A Sentinela usam esta lista: o de comentários com o código de pesquisa, o do dirigente com o do dirigente.
+  if (!codigoValido(body.codigo) && !dirigenteValido(body.codigoDirigente)) return recusarAcesso(res, body);
 
   const url = urlDoEstudo(body);
   if (!url) return erro(res, 400, "Número ou link do artigo inválido. Use o número de 7 dígitos (ex.: 2026521) ou o link do wol.jw.org.");

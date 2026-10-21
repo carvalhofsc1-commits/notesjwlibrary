@@ -8,7 +8,7 @@ import { configPublicaVoz, gravarConfigVoz, lerConfigVoz, opcoesVoz } from "./_v
 import { gravarConfigIa, lerConfigIa, lerCustoIa, opcoesIa } from "./_iaConfig.mjs";
 
 const CHAVE_PADRAO = "padrao_modelos";
-// Anotação do administrador (ex.: o código de uso dos recursos de IA, para não esquecer). Só é lida e gravada com o
+// Anotação do administrador (ex.: o código de pesquisa, para não esquecer). Só é lida e gravada com o
 // CODIGO_ADMIN; não vale como senha de nada: o código que funciona de verdade é o da variável CODIGO_ESTUDO na Vercel.
 const CHAVE_ANOTACAO = "anotacao_admin";
 const MAX_CHARS_ANOTACAO = 500;
@@ -128,17 +128,17 @@ export default async function handler(req, res) {
     const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "desconhecido";
     if (bloqueado(ip)) return erro(res, 429, "Muitas tentativas erradas. Tente novamente mais tarde.");
 
-    // Confere o código de acesso (CODIGO_ESTUDO) quando ele é salvo em Ajustes → Autorização de acessos.
+    // Confere o código de pesquisa (CODIGO_ESTUDO) quando ele é salvo em Ajustes → Autorização de acessos.
     if (acao === "codigo-conferir") {
-      if (!process.env.CODIGO_ESTUDO) return erro(res, 503, "O código de acesso ainda não está configurado no servidor.");
+      if (!process.env.CODIGO_ESTUDO) return erro(res, 503, "O código de pesquisa ainda não está configurado no servidor.");
       if (!textosIguais(corpo.codigo, process.env.CODIGO_ESTUDO)) {
         registrarErro(ip);
-        return erro(res, 403, "Código de acesso incorreto.");
+        return erro(res, 403, "Código de pesquisa incorreto.");
       }
       return res.status(200).json({ ok: true });
     }
 
-    // Confere o código do dirigente (CODIGO_DIRIGENTE; sem a variável, o código de acesso) quando ele é salvo em Ajustes.
+    // Confere o código do dirigente (CODIGO_DIRIGENTE; sem a variável, o código de pesquisa) quando ele é salvo em Ajustes.
     if (acao === "dirigente-conferir") {
       const esperado = codigoDoDirigente();
       if (!esperado) return erro(res, 503, "O código do dirigente ainda não está configurado no servidor.");

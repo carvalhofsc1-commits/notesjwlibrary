@@ -24,10 +24,10 @@ export default async function handler(req, res) {
     return erro(res, 405, "Método não permitido.");
   }
   if (!origemPermitida(req.headers.origin)) return erro(res, 403, "Origem não permitida.");
-  if (!process.env.CODIGO_ESTUDO) return erro(res, 503, "O código de acesso ainda não está configurado no servidor.");
+  if (!process.env.CODIGO_ESTUDO) return erro(res, 503, "O código de pesquisa ainda não está configurado no servidor.");
 
   const body = req.body && typeof req.body === "object" ? req.body : {};
-  if (!textosIguais(body.codigo, process.env.CODIGO_ESTUDO)) return erro(res, 403, "Código de acesso inválido.");
+  if (!textosIguais(body.codigo, process.env.CODIGO_ESTUDO)) return erro(res, 403, "Código de pesquisa inválido.");
 
   const m = typeof body.data === "string" ? body.data.match(/^(\d{4})-(\d{2})-(\d{2})$/) : null;
   const [ano, mes, dia] = m ? m.slice(1).map(Number) : [];

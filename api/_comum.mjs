@@ -23,7 +23,7 @@ export function erro(res, status, mensagem) {
 }
 
 // Código do dirigente (variável CODIGO_DIRIGENTE na Vercel): libera as opções de preparação para dirigir. Enquanto a variável
-// não existir, vale o código de acesso (CODIGO_ESTUDO), para o recurso já funcionar; criada a variável, só o código dela serve.
+// não existir, vale o código de pesquisa (CODIGO_ESTUDO), para o recurso já funcionar; criada a variável, só o código dela serve.
 export function codigoDoDirigente() {
   return process.env.CODIGO_DIRIGENTE || process.env.CODIGO_ESTUDO || "";
 }

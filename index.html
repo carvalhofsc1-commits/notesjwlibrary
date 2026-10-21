@@ -488,6 +488,10 @@
     /* Na área "Sugerir formatação com IA" o botão da Sentinela segue o tamanho do botão de formatação. */
     .ai-main-row .ai-sentinela-btn { margin-top: 0; min-height: 56px; }
 
+    /* Contêiner do botão "Responder resumidamente a pergunta do texto colado" (Opções com IA), separado do botão de cima. */
+    .ai-colado { margin-top: 14px; padding: 12px; border: 2px solid #a855f7; border-radius: 12px; background: var(--card); background: color-mix(in srgb, #a855f7 8%, var(--card)); }
+    .ai-colado .hint { margin: 8px 0 0; }
+
     /* ---------- Card de A Sentinela ---------- */
 
     details.subsection.sentinela-subsection {
@@ -502,7 +506,7 @@
       background: color-mix(in srgb, #14b8a6 10%, var(--card));
       border: 2px solid #14b8a6;
     }
-    /* Pesquisas salvas (histórico das respostas da IA neste aparelho). */
+    /* Pesquisas e respostas salvas (histórico dos resultados da IA neste aparelho). */
     .historico-qtd { color: var(--muted); font-size: .85rem; font-weight: 600; }
     .historico-lista { list-style: none; margin: 8px; padding: 0; display: grid; gap: 8px; }
     /* Categorias (Comentários, Dirigentes, Esboços): contêineres recolhíveis com a cor do grupo correspondente da tela Reuniões. */
@@ -884,7 +888,7 @@
     }
     details.subsection .subsection-body { padding: 12px 14px 14px; }
 
-    /* Grupos recolhíveis ("Outras opções de formatação" e "Opções de formatação com IA"): uma caixa por fora das
+    /* Grupos recolhíveis ("Outras opções de formatação" e "Opções com IA"): uma caixa por fora das
        seções, com o título um pouco maior. */
     details.subsection.group-box { background: var(--card); border-width: 2px; }
     /* Fundo colorido suave (misturado com a cor do card, para funcionar no tema claro e no escuro). */
@@ -1713,6 +1717,8 @@
     .inicio-grid { display: flex; flex-direction: column; gap: 22px; }
     .inicio-grid > .atalhos-card { flex: 1 1 auto; display: flex; flex-direction: column; }
     .atalhos-card .atalhos-grid { flex: 1 1 auto; grid-auto-rows: 1fr; }
+    /* Rótulo do cartão: centralizado e separado do resto por uma linha (a mesma cor da que separa o comentário). */
+    #textoDiarioTitulo { margin: 0 0 12px; padding-bottom: 10px; text-align: center; border-bottom: 1px solid var(--tint3-border); }
     .td-topo { display: flex; align-items: center; gap: 6px; }
     .td-card .td-nav { flex: 0 0 auto; min-width: 40px; min-height: 40px; padding: 4px 8px; }
     .td-card .td-abrir,
@@ -1973,19 +1979,22 @@
     .reunioes-grupo > summary::after { color: var(--text); }
     /* Cores de cada seção e grupo (misturadas com a cor do card: funcionam no tema claro e no escuro). */
     #secaoReunioes { border-color: #3b82f6; background: #dbeafe; background: color-mix(in srgb, #3b82f6 18%, var(--card)); }
-    #secaoDiscursos { border-color: #f59e0b; background: #fef3c7; background: color-mix(in srgb, #f59e0b 14%, var(--card)); }
+    #secaoHistorico { border-color: #22c55e; background: #dcfce7; background: color-mix(in srgb, #22c55e 14%, var(--card)); }
     #grupoComentarios { --grupo-cor: #a855f7; background: #faf5ff; background: color-mix(in srgb, #a855f7 6%, var(--card)); }
     #grupoComentarios > summary { background: #e0c8fc; background: color-mix(in srgb, #a855f7 34%, var(--card)); }
     #grupoDirigir { --grupo-cor: #14b8a6; background: #f0fdfa; background: color-mix(in srgb, #14b8a6 6%, var(--card)); }
     #grupoDirigir > summary { background: #a7f0e6; background: color-mix(in srgb, #14b8a6 34%, var(--card)); }
-    /* Sem o código do dirigente, o grupo aparece desabilitado: cinza, com cadeado, e não abre. */
-    #grupoDirigir.grupo-desabilitado { --grupo-cor: var(--line); background: var(--card); opacity: .8; }
-    #grupoDirigir.grupo-desabilitado > summary { background: var(--card); cursor: not-allowed; }
-    #grupoDirigir.grupo-desabilitado > summary .reunioes-subtitle { color: var(--muted); }
-    #grupoDirigir.grupo-desabilitado > summary::after { content: '🔒'; transform: none; }
+    #grupoDiscursos { --grupo-cor: #f59e0b; background: #fffbeb; background: color-mix(in srgb, #f59e0b 6%, var(--card)); }
+    #grupoDiscursos > summary { background: #fde3a1; background: color-mix(in srgb, #f59e0b 34%, var(--card)); }
+    /* Sem o código que o grupo pede (pesquisa e, no do dirigente, também o do dirigente), ele aparece desabilitado: cinza, com cadeado, e não abre. */
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos).grupo-desabilitado { --grupo-cor: var(--line); background: var(--card); opacity: .8; }
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos).grupo-desabilitado > summary { background: var(--card); cursor: not-allowed; }
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos).grupo-desabilitado > summary .reunioes-subtitle { color: var(--muted); }
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos).grupo-desabilitado > summary::after { content: '🔒'; transform: none; }
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos).grupo-desabilitado > :not(summary) { display: none; }
     .grupo-trava { display: block; margin-top: 2px; font-size: .78rem; font-weight: 650; color: var(--muted); }
     .grupo-trava[hidden] { display: none; }
-    /* Ajustes → Autorização de acessos: o código de acesso e a senha de administrador, salvos neste aparelho. */
+    /* Ajustes → Autorização de acessos: o código de pesquisa, o do dirigente e a senha de administrador, salvos neste aparelho. */
     details.subsection.acessos-box { background: #fef3c7; background: color-mix(in srgb, #f59e0b 16%, var(--card)); border-color: #f59e0b; }
     .acesso-item { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
     .acesso-item label { display: block; font-weight: 800; }
@@ -2262,6 +2271,13 @@
       .option-btn:hover,
       .icon-action:hover { transform: none; }
     }
+
+    /* Texto diário (tela Início) sem o código de pesquisa: a parte de cima fica cinza e bloqueada (ligamos "inert", que
+       bloqueia toque e teclado), mas o link para o wol.jw.org continua habilitado. */
+    .card.td-card.card-desabilitado { background: var(--card); border: 2px dashed var(--line); }
+    .card.td-card.card-desabilitado .td-topo { opacity: .75; filter: grayscale(1); }
+    .card.td-card.card-desabilitado .td-data, .card.td-card.card-desabilitado .td-tema { color: var(--muted); }
+    .td-link[hidden] { display: none; }
   </style>
 </head>
 <body data-screen="inicio">
@@ -2287,7 +2303,8 @@
   <main>
     <!-- Tela Início (num bloco próprio para não mudar a contagem das cores dos outros cartões). -->
     <div class="inicio-grid screen-inicio">
-      <section class="card tint-3 td-card" id="textoDiarioCard" aria-label="Texto diário">
+      <section class="card tint-3 td-card" id="textoDiarioCard" aria-labelledby="textoDiarioTitulo">
+        <h2 id="textoDiarioTitulo">📖 Texto diário</h2>
         <div class="td-topo">
           <button id="tdAnterior" class="secondary td-nav" type="button" aria-label="Dia anterior">◀</button>
           <button id="tdAbrir" class="td-abrir" type="button" aria-expanded="false" aria-controls="tdDetalhe">
@@ -2296,6 +2313,7 @@
           </button>
           <button id="tdProximo" class="secondary td-nav" type="button" aria-label="Próximo dia">▶</button>
         </div>
+        <a id="tdLinkTrava" class="td-link" href="https://wol.jw.org/pt/wol/h/r5/lp-t" target="_blank" rel="noopener noreferrer" hidden>🌐 Abrir no wol.jw.org</a>
         <div id="tdDetalhe" class="td-detalhe" hidden>
           <div id="tdComentario" class="td-comentario"></div>
           <p id="tdFonte" class="td-fonte"></p>
@@ -2328,8 +2346,8 @@
         <h2 id="atalhosTitulo">⚡ Atalhos</h2>
         <div class="atalhos-grid">
           <button type="button" class="atalho" data-atalho="formatar"><span class="atalho-icone" aria-hidden="true">✍️</span><span class="atalho-nome">Formatar um texto</span><span class="atalho-desc">Negrito, itálico, caixas e sugestões da IA</span></button>
-          <button type="button" class="atalho" data-atalho="comentarios"><span class="atalho-icone" aria-hidden="true">✋</span><span class="atalho-nome">Comentários</span><span class="atalho-desc">Ajuda na preparação para comentar</span></button>
-          <button type="button" class="atalho" data-atalho="dirigir"><span class="atalho-icone" aria-hidden="true">🎤</span><span class="atalho-nome">Dirigentes</span><span class="atalho-desc">Ajuda na preparação para dirigir</span><span class="atalho-trava" hidden>🔒 Requer o código do dirigente</span></button>
+          <button type="button" class="atalho" data-atalho="comentarios"><span class="atalho-icone" aria-hidden="true">✋</span><span class="atalho-nome">Comentários</span><span class="atalho-desc">Ajuda na preparação para comentar</span><span class="atalho-trava" hidden></span></button>
+          <button type="button" class="atalho" data-atalho="dirigir"><span class="atalho-icone" aria-hidden="true">🎤</span><span class="atalho-nome">Dirigentes</span><span class="atalho-desc">Ajuda na preparação para dirigir</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="backup"><span class="atalho-icone" aria-hidden="true">📦</span><span class="atalho-nome">Backup do JW Library</span><span class="atalho-desc">Notas, marcações e exportação</span></button>
         </div>
       </section>
@@ -2514,11 +2532,17 @@
           </div>
         </details>
         <details class="subsection group-box group-ai screen-formatar" id="opcoesIaBox">
-          <summary>🤖 Opções de formatação com IA</summary>
+          <summary>🤖 Opções com IA</summary>
           <div class="group-box-body">
             <div class="ai-box ai-box-direto" id="aiBox">
               <div class="ai-main-row">
                 <button id="aiSuggestBtn" class="ai-main-btn" type="button">✨ Sugerir formatação com IA de todo o texto original</button>
+              </div>
+              <div class="ai-colado">
+                <div class="ai-main-row">
+                  <button id="aiSentinelaBtn" class="ai-main-btn ai-sentinela-btn" type="button">📖 Responder resumidamente a pergunta do texto colado</button>
+                </div>
+                <p class="hint">Cole no campo de texto o parágrafo com a pergunta e a IA responde resumidamente.</p>
               </div>
               <details class="subsection sub-tint-2 textos-biblicos-box" id="resumoTextosBox">
                 <summary>📝 Resumo e textos bíblicos</summary>
@@ -2573,7 +2597,7 @@
           <details class="section-accordion reunioes-secao" id="secaoReunioes">
             <summary><h2 class="reunioes-title">📅 Preparação para as reuniões</h2></summary>
           <details class="section-accordion reunioes-grupo" id="grupoComentarios">
-            <summary><h3 class="reunioes-subtitle">✋ Preparar para comentar</h3></summary>
+            <summary><div><h3 class="reunioes-subtitle">✋ Preparar para comentar</h3><span class="grupo-trava" hidden></span></div></summary>
             <details class="subsection sentinela-subsection" id="sentinelaBox">
               <summary>📖 Estudo de A Sentinela</summary>
               <div class="subsection-body">
@@ -2599,11 +2623,6 @@
                 <button id="aiStudyBtn" class="ai-study-btn" type="button">🌐 IA - Responder resumidamente a pergunta do parágrafo selecionado</button>
                 <span id="aiStudyAnswerStatus" class="ok" role="status" aria-live="polite"></span>
               </div>
-            </section>
-
-            <section class="sent-option sent-option-colado">
-              <h3>Ou a partir do texto colado no campo de texto</h3>
-              <button id="aiSentinelaBtn" class="ai-main-btn ai-sentinela-btn" type="button">📖 Responder resumidamente a pergunta do texto colado</button>
             </section>
 
             <details class="subsection sub-tint-2 textos-biblicos-box" id="textosBiblicosBox">
@@ -2695,7 +2714,7 @@
             </details>
           </details>
           <details class="section-accordion reunioes-grupo" id="grupoDirigir">
-            <summary><div><h3 class="reunioes-subtitle">🎤 Preparar para dirigir</h3><span class="grupo-trava" hidden>🔒 Requer o código do dirigente (Ajustes)</span></div></summary>
+            <summary><div><h3 class="reunioes-subtitle">🎤 Preparar para dirigir</h3><span class="grupo-trava" hidden></span></div></summary>
             <details class="subsection dirigente-subsection" id="dirigenteBox">
               <summary>📖 Estudo de A Sentinela</summary>
               <div class="subsection-body">
@@ -2757,19 +2776,18 @@
               </div>
             </details>
           </details>
-          </details>
-
-          <details class="section-accordion reunioes-secao" id="secaoDiscursos">
-            <summary><h2 class="reunioes-title">🎤 Preparação de discursos e esboços</h2></summary>
+          <details class="section-accordion reunioes-grupo" id="grupoDiscursos">
+            <summary><div><h3 class="reunioes-subtitle">🎤 Preparação de discursos e esboços</h3><span class="grupo-trava" hidden></span></div></summary>
             <div class="em-breve" aria-disabled="true"><span>📜 Esboços de discursos públicos</span><span class="em-breve-badge">em breve</span></div>
             <div class="em-breve" aria-disabled="true"><span>✨ Tesouros da Palavra de Deus</span><span class="em-breve-badge">em breve</span></div>
             <div class="em-breve" aria-disabled="true"><span>🗣️ Faça seu melhor no ministério (semanas com discurso de 4 min)</span><span class="em-breve-badge">em breve</span></div>
             <div class="em-breve" aria-disabled="true"><span>📝 Outros esboços (necessidades locais, eventos especiais)</span><span class="em-breve-badge">em breve</span></div>
           </details>
+          </details>
 
-          <!-- Pesquisas salvas: cada resultado da IA fica guardado neste aparelho e pode ser reaberto depois. -->
+          <!-- Pesquisas e respostas salvas: cada resultado da IA fica guardado neste aparelho e pode ser reaberto depois. -->
           <details class="section-accordion reunioes-secao historico-secao" id="secaoHistorico">
-            <summary><h2 class="reunioes-title">🗂️ Pesquisas salvas <span id="historicoQtd" class="historico-qtd"></span></h2></summary>
+            <summary><h2 class="reunioes-title">🗂️ Pesquisas e respostas salvas <span id="historicoQtd" class="historico-qtd"></span></h2></summary>
             <p class="hint">Cada resultado da IA (A Sentinela, Estudo Bíblico, Joias e perguntas do dirigente) fica guardado neste aparelho, mesmo depois de fechar o app, separado em <strong>Comentários</strong>, <strong>Dirigentes</strong> e <strong>Esboços</strong>. Aqui aparecem só as pesquisas da <strong>semana escolhida no alto da tela</strong>. <strong>Abrir</strong> coloca o texto de volta no campo de texto, com os botões de copiar. Ficam as 60 pesquisas mais recentes.</p>
             <div id="historicoLista"></div>
             <button id="historicoLimparBtn" class="secondary historico-limpar" type="button">🗑️ Apagar as pesquisas das semanas anteriores</button>
@@ -2788,10 +2806,10 @@
             <p class="hint">Informe cada código uma única vez: ele é conferido no servidor e fica salvo neste aparelho. Os outros lugares do app usam o que estiver salvo aqui.</p>
 
             <div class="acesso-item">
-              <label for="aiStudyCode">🔑 Código de acesso</label>
-              <p class="hint">Obrigatório para a IA (estudo de A Sentinela, comentários do texto diário e perguntas do dirigente, que também pedem o código do dirigente) e para o texto diário da tela Início, inclusive para ouvi-lo em voz alta.</p>
+              <label for="aiStudyCode">🔑 Código de pesquisa</label>
+              <p class="hint">Libera os recursos de pesquisa de "Preparar para comentar": o estudo de A Sentinela lido no site, as Joias e o Estudo Bíblico, e também o texto diário da tela Início (inclusive ouvi-lo em voz alta). Sem ele, esses recursos ficam desabilitados.</p>
               <div class="acesso-linha">
-                <input autocomplete="off" id="aiStudyCode" type="password" maxlength="100" placeholder="Código de acesso">
+                <input autocomplete="off" id="aiStudyCode" type="password" maxlength="100" placeholder="Código de pesquisa">
                 <button id="acessoVerCodigo" class="secondary acesso-ver" type="button" aria-label="Mostrar o código" aria-pressed="false">👁️</button>
               </div>
               <div class="bk-row">
@@ -2803,7 +2821,7 @@
 
             <div class="acesso-item">
               <label for="dirigenteCode">🎤 Código do dirigente</label>
-              <p class="hint">Libera as opções de preparação para dirigir (a tela Reuniões → 🎤 Preparar para dirigir e o atalho Dirigentes da tela Início). Sem ele, essas opções ficam escondidas neste aparelho.</p>
+              <p class="hint">Libera as opções do dirigente, sem precisar do código de pesquisa: a tela Reuniões → 🎤 Preparar para dirigir, a Preparação de discursos e esboços e o atalho Dirigentes da tela Início. Sem ele, essas opções ficam desabilitadas neste aparelho.</p>
               <div class="acesso-linha">
                 <input autocomplete="off" id="dirigenteCode" type="password" maxlength="100" placeholder="Código do dirigente">
                 <button id="acessoVerDirigente" class="secondary acesso-ver" type="button" aria-label="Mostrar o código" aria-pressed="false">👁️</button>
@@ -3190,10 +3208,10 @@
         </details>
 
         <details class="prompt-item prompt-tint-codigo">
-          <summary><h3>🔑 Código de uso dos recursos de IA</h3></summary>
-          <p class="hint">Anotação só sua, para não esquecer o código. O código que vale de verdade é o da variável <strong>CODIGO_ESTUDO</strong> na Vercel: se trocar lá, atualize aqui também.</p>
+          <summary><h3>🔑 Código de pesquisa (anotação)</h3></summary>
+          <p class="hint">Anotação só sua, para não esquecer o código de pesquisa. O código que vale de verdade é o da variável <strong>CODIGO_ESTUDO</strong> na Vercel: se trocar lá, atualize aqui também.</p>
           <div class="admin-code-row">
-            <input id="adminCodeNote" type="text" maxlength="500" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Anote aqui o código de uso">
+            <input id="adminCodeNote" type="text" maxlength="500" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Anote aqui o código de pesquisa">
             <button id="adminCodeCopyBtn" class="secondary" type="button">📋 Copiar</button>
           </div>
           <div class="button-row">
@@ -4996,7 +5014,7 @@
     }
 
     // Pede o áudio de uma parte (ou devolve o guardado nesta sessão). exemplo: as escolhas do painel do administrador.
-    // uso: 'texto-diario' (código de acesso) ou 'campo' (o texto do campo de formatação: só com a senha de administrador).
+    // uso: 'texto-diario' (código de pesquisa) ou 'campo' (o texto do campo de formatação: só com a senha de administrador).
     async function vozBuscar(texto, exemplo, uso) {
       const chave = (exemplo ? JSON.stringify(exemplo) + '\u0001' : '') + texto;
       if (vozCache.has(chave)) return vozCache.get(chave);
@@ -5088,7 +5106,7 @@
     }
 
     // lugar: onde mostrar a barra do tocador (sem ele, no campo de texto).
-    // uso: 'campo' (padrão, só o administrador) ou 'texto-diario' (qualquer pessoa com o código de acesso).
+    // uso: 'campo' (padrão, só o administrador) ou 'texto-diario' (qualquer pessoa com o código de pesquisa).
     async function vozOuvirTexto(original, rotulo, lugar, uso = 'campo') {
       if (vozSessao && !vozBar.hidden && !vozPauseBtn.hidden) vozParar(); // tocar de novo recomeça
       // Dentro do toque: libera o áudio no iPhone antes de qualquer espera.
@@ -5531,7 +5549,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '5.1.0'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0 (e 5.0.1… 5.0.9 e então 5.1.0); 5.1.0: sem o código do dirigente, o atalho Dirigentes, o grupo Preparar para dirigir e a categoria Dirigentes das pesquisas salvas aparecem desabilitados (cinza, com cadeado) em vez de sumir; 5.0.9: "Faça seu melhor no ministério" (semanas com discurso de 4 min) entre as opções em breve de Preparação de discursos e esboços; 5.0.8: atalho Dirigentes da tela Início volta ao nome "Dirigentes" e só a linha explicativa passa a "Ajuda na preparação para dirigir" (e a do atalho Comentários, "Ajuda na preparação para comentar"); 5.0.7: grupos da tela Reuniões renomeados para "Preparar para comentar" e "Preparar para dirigir" e atalho do Início "Ajuda na preparação para dirigir"; 5.0.6: pesquisas salvas separadas em categorias (Comentários, Dirigentes e Esboços), cada uma recolhível e na cor do grupo; 5.0.5: Estudo Bíblico de Congregação no grupo Preparação para dirigir (5 perguntas adicionais com resposta, sem aplicações práticas, e o resumo dos textos-base, que saiu do cartão dos comentários); 5.0.4: cor dos títulos dos grupos Preparação de comentários e Preparação para dirigir mais suave; 5.0.3: títulos dos grupos Preparação de comentários e Preparação para dirigir com cor forte (roxo e verde-água escuros, letra branca); 5.0.2: o aviso "Nossa Vida Cristã (em breve)" saiu do grupo Preparação de comentários; 5.0.1: os grupos "Preparação de comentários" e "Preparação para dirigir" da tela Reuniões viram contêineres com borda na cor do grupo, para o que está dentro não parecer solto; 5.0.0: atalhos da tela Início coloridos, cada um com a cor da tela que abre; 4.9.9: Ajustes → Configurar formatação com IA ganha 💾 Salvar para todos (só administrador), que salva as opções de formatação como padrão de todos os usuários; 4.9.8: tela de prompts com um só botão 💾 Salvar para todos (modelo e esforço da IA, limites e prompts) e ícones ✋ e 🎤 nos grupos de comentários e de dirigir da tela Reuniões, como nos atalhos do Início; 4.9.7: o cartão de gasto da tela de prompts não explica mais como criar a chave de administrador da Anthropic (só indica o link do Claude Console); 4.9.6: o app confere o código do dirigente salvo com o servidor e, se ele deixou de valer, apaga o código e esconde as opções do dirigente; 4.9.5: código do dirigente (Ajustes → Autorização de acessos): sem ele, as opções de preparação para dirigir ficam escondidas e o servidor não faz as perguntas do dirigente; enquanto não existir a variável CODIGO_DIRIGENTE na Vercel, vale o código de acesso; 4.9.4: texto diário com comentários adicionais que podem ser salvos e recuperados no mesmo dia (no dia seguinte são apagados) e link do wol.jw.org legível; 4.9.3: o botão 🔊 do campo de texto só aparece (e só funciona no servidor) para o administrador; a leitura em voz alta do texto diário continua para todos; 4.9.2: pesquisas salvas por semana (só as da semana escolhida; o botão apaga as das semanas anteriores); 4.9.1: pesquisas salvas (histórico das respostas da IA das reuniões neste aparelho, para reabrir depois); 4.9.0: joias espirituais com 2 joias por capítulo, sem repetir o versículo da pergunta da apostila; 4.8.9: Joias Espirituais (leitura da semana lida no wol.jw.org com as publicações do Índice das Publicações; até 2 joias por capítulo e a resposta à pergunta da apostila) e, no Estudo Bíblico, textos citados nas perguntas seguindo as opções de textos bíblicos;4.8.8: Estudo Bíblico de Congregação (capítulo da semana lido no wol.jw.org, respostas da IA por quadro, trechos das publicações citadas, resumo opcional dos textos-base) e o contexto "Sobre mim e a congregação" nos prompts; 4.8.7: cada seção da tela de prompts virou um cartão recolhível; 4.8.6: modelo da IA de texto escolhido pelo administrador na tela de prompts (Haiku, Sonnet, Opus ou Fable) e gasto do mês pela Cost API da Anthropic; 4.8.6: a barra da leitura em voz alta fecha sozinha quando a leitura termina; 4.8.5: categorias de Ajustes direto na página (sem o cartão recolhível "Configurações gerais do app"); 4.8.4: Ajustes → Autorização de acessos (código de acesso e senha de administrador informados uma vez e salvos), a IA nunca escreve "culto" (sempre reunião), comentários adicionais recolhíveis e com Limpar, atalhos Comentários e Dirigentes abrem só o grupo deles; 4.8.3: tela Início com o texto diário (do wol.jw.org; um toque abre o comentário, ler em voz alta, levar para o campo de texto e comentários adicionais da IA) e atalhos; 4.8.2: referências bíblicas lidas na forma curta ("Primeira Coríntios treze, quatro a sete"), voz com duas partes à frente (sem pausas, também em 1,15×), pular citações de publicações (w24.09 21 § 6) e referências bíblicas só entre parênteses ou depois de travessão no fim do parágrafo (o texto temático do texto diário é lido); 4.8.1: voz começa mais rápido (primeiras partes curtas) e campos de preço alinhados; 4.8.0: menu da voz para o administrador (modelo, voz, tom, o que ler e pular), consumo estimado e vozes Gemini com a conta de serviço do Google; 4.7.9: voz reserva (Chirp 3 HD) quando o Gemini é recusado; 4.7.8: botão 🔊 Ouvir (leitura em voz alta com a voz do Google); 4.7.7: Fonte CX com C preto e C branco, cada um ao lado do seu quadradinho; todos os cards começam fechados ao abrir o app; 4.7.6: tela Reuniões em dois cartões (texto e reuniões); 4.7.5: campo de texto volta a crescer depois de levar uma nota do backup; importar notas de outro backup; 4.7.4: card do desenvolvedor na largura do quadro de limitações (Sobre); 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
+    const APP_VERSION = '5.1.7'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0 (e 5.0.1… 5.0.9 e então 5.1.0); 5.1.7: rótulo "Texto diário" centralizado e separado do resto do cartão por uma linha, e o aviso do cartão desabilitado fica só em "Requer o código de pesquisa."; 5.1.6: rótulo "Texto diário" no topo do cartão do texto diário; 5.1.5: Preparar para dirigir (e o atalho Dirigentes) pedem só o código do dirigente, que passa a valer sozinho no servidor para as tarefas do dirigente; 5.1.4: a Preparação de discursos e esboços vira um grupo dentro de Preparação para as reuniões e pede só o código do dirigente, a moldura de Pesquisas e respostas salvas (novo nome) ganha cor forte (verde) como as outras; 5.1.3: "Opções de formatação com IA" passa a "Opções com IA", o botão do texto colado fica separado do de formatação e dentro de um contêiner com o texto explicativo novo, e a Preparação de discursos e esboços (e a categoria Esboços das pesquisas salvas) também pedem o código do dirigente; 5.1.2: "Responder a partir do texto colado" mudou para Formatar → Opções de formatação com IA, o grupo Preparar para comentar (e o atalho Comentários) ficam desabilitados sem o código de pesquisa, o grupo e o atalho do dirigente pedem os dois códigos e o link do texto diário para o wol.jw.org fica habilitado sempre; 5.1.1: o código de acesso passa a se chamar "código de pesquisa" e os cartões que dependem dele (Joias, Estudo Bíblico, Estudo de A Sentinela do dirigente, a parte do Estudo de A Sentinela lida no site e o texto diário) ficam desabilitados sem o código; 5.1.0: sem o código do dirigente, o atalho Dirigentes, o grupo Preparar para dirigir e a categoria Dirigentes das pesquisas salvas aparecem desabilitados (cinza, com cadeado) em vez de sumir; 5.0.9: "Faça seu melhor no ministério" (semanas com discurso de 4 min) entre as opções em breve de Preparação de discursos e esboços; 5.0.8: atalho Dirigentes da tela Início volta ao nome "Dirigentes" e só a linha explicativa passa a "Ajuda na preparação para dirigir" (e a do atalho Comentários, "Ajuda na preparação para comentar"); 5.0.7: grupos da tela Reuniões renomeados para "Preparar para comentar" e "Preparar para dirigir" e atalho do Início "Ajuda na preparação para dirigir"; 5.0.6: pesquisas salvas separadas em categorias (Comentários, Dirigentes e Esboços), cada uma recolhível e na cor do grupo; 5.0.5: Estudo Bíblico de Congregação no grupo Preparação para dirigir (5 perguntas adicionais com resposta, sem aplicações práticas, e o resumo dos textos-base, que saiu do cartão dos comentários); 5.0.4: cor dos títulos dos grupos Preparação de comentários e Preparação para dirigir mais suave; 5.0.3: títulos dos grupos Preparação de comentários e Preparação para dirigir com cor forte (roxo e verde-água escuros, letra branca); 5.0.2: o aviso "Nossa Vida Cristã (em breve)" saiu do grupo Preparação de comentários; 5.0.1: os grupos "Preparação de comentários" e "Preparação para dirigir" da tela Reuniões viram contêineres com borda na cor do grupo, para o que está dentro não parecer solto; 5.0.0: atalhos da tela Início coloridos, cada um com a cor da tela que abre; 4.9.9: Ajustes → Configurar formatação com IA ganha 💾 Salvar para todos (só administrador), que salva as opções de formatação como padrão de todos os usuários; 4.9.8: tela de prompts com um só botão 💾 Salvar para todos (modelo e esforço da IA, limites e prompts) e ícones ✋ e 🎤 nos grupos de comentários e de dirigir da tela Reuniões, como nos atalhos do Início; 4.9.7: o cartão de gasto da tela de prompts não explica mais como criar a chave de administrador da Anthropic (só indica o link do Claude Console); 4.9.6: o app confere o código do dirigente salvo com o servidor e, se ele deixou de valer, apaga o código e esconde as opções do dirigente; 4.9.5: código do dirigente (Ajustes → Autorização de acessos): sem ele, as opções de preparação para dirigir ficam escondidas e o servidor não faz as perguntas do dirigente; enquanto não existir a variável CODIGO_DIRIGENTE na Vercel, vale o código de acesso; 4.9.4: texto diário com comentários adicionais que podem ser salvos e recuperados no mesmo dia (no dia seguinte são apagados) e link do wol.jw.org legível; 4.9.3: o botão 🔊 do campo de texto só aparece (e só funciona no servidor) para o administrador; a leitura em voz alta do texto diário continua para todos; 4.9.2: pesquisas salvas por semana (só as da semana escolhida; o botão apaga as das semanas anteriores); 4.9.1: pesquisas salvas (histórico das respostas da IA das reuniões neste aparelho, para reabrir depois); 4.9.0: joias espirituais com 2 joias por capítulo, sem repetir o versículo da pergunta da apostila; 4.8.9: Joias Espirituais (leitura da semana lida no wol.jw.org com as publicações do Índice das Publicações; até 2 joias por capítulo e a resposta à pergunta da apostila) e, no Estudo Bíblico, textos citados nas perguntas seguindo as opções de textos bíblicos;4.8.8: Estudo Bíblico de Congregação (capítulo da semana lido no wol.jw.org, respostas da IA por quadro, trechos das publicações citadas, resumo opcional dos textos-base) e o contexto "Sobre mim e a congregação" nos prompts; 4.8.7: cada seção da tela de prompts virou um cartão recolhível; 4.8.6: modelo da IA de texto escolhido pelo administrador na tela de prompts (Haiku, Sonnet, Opus ou Fable) e gasto do mês pela Cost API da Anthropic; 4.8.6: a barra da leitura em voz alta fecha sozinha quando a leitura termina; 4.8.5: categorias de Ajustes direto na página (sem o cartão recolhível "Configurações gerais do app"); 4.8.4: Ajustes → Autorização de acessos (código de acesso e senha de administrador informados uma vez e salvos), a IA nunca escreve "culto" (sempre reunião), comentários adicionais recolhíveis e com Limpar, atalhos Comentários e Dirigentes abrem só o grupo deles; 4.8.3: tela Início com o texto diário (do wol.jw.org; um toque abre o comentário, ler em voz alta, levar para o campo de texto e comentários adicionais da IA) e atalhos; 4.8.2: referências bíblicas lidas na forma curta ("Primeira Coríntios treze, quatro a sete"), voz com duas partes à frente (sem pausas, também em 1,15×), pular citações de publicações (w24.09 21 § 6) e referências bíblicas só entre parênteses ou depois de travessão no fim do parágrafo (o texto temático do texto diário é lido); 4.8.1: voz começa mais rápido (primeiras partes curtas) e campos de preço alinhados; 4.8.0: menu da voz para o administrador (modelo, voz, tom, o que ler e pular), consumo estimado e vozes Gemini com a conta de serviço do Google; 4.7.9: voz reserva (Chirp 3 HD) quando o Gemini é recusado; 4.7.8: botão 🔊 Ouvir (leitura em voz alta com a voz do Google); 4.7.7: Fonte CX com C preto e C branco, cada um ao lado do seu quadradinho; todos os cards começam fechados ao abrir o app; 4.7.6: tela Reuniões em dois cartões (texto e reuniões); 4.7.5: campo de texto volta a crescer depois de levar uma nota do backup; importar notas de outro backup; 4.7.4: card do desenvolvedor na largura do quadro de limitações (Sobre); 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 
@@ -7892,7 +7910,7 @@ function saveTemplatesToStorage() {
 
     // Opções e seleções do app que podem virar padrão: tudo o que está em "Configurar formatação com IA"
     // (caixas, tamanho do resumo, intensidade, categoria, instruções fixas) e o tipo de caractere escolhido.
-    // Tema claro/escuro, código de acesso e estado das seções ficam de fora: são pessoais.
+    // Tema claro/escuro, código de pesquisa e estado das seções ficam de fora: são pessoais.
     function collectPreferences() {
       return { ia: readAiOptions(), fonte: styleSelect.value };
     }
@@ -8555,7 +8573,7 @@ function saveTemplatesToStorage() {
       return out.join('\n') + '\n';
     }
 
-    // ---------- Anotação do código de uso (só o administrador vê) ----------
+    // ---------- Anotação do código de pesquisa (só o administrador vê) ----------
     const adminCodeNote = document.getElementById('adminCodeNote');
     const adminCodeStatus = document.getElementById('adminCodeStatus');
 
@@ -9188,7 +9206,7 @@ function saveTemplatesToStorage() {
     const aiOutput = document.getElementById('aiOutput');
     const aiOutputHome = document.getElementById('aiOutputHome');
     const sentinelaOutputSlot = document.getElementById('sentinelaOutputSlot');
-    // Abre a seção e todas as seções que a contêm (ex.: o grupo "Opções de formatação com IA").
+    // Abre a seção e todas as seções que a contêm (ex.: o grupo "Opções com IA").
     function openWithAncestors(details) {
       const screen = screenOf(details);
       if (screen && screen !== currentScreen()) showScreen(screen, { keepScroll: true });
@@ -9199,11 +9217,11 @@ function saveTemplatesToStorage() {
     // ficaram abertos. Apaga o que versões anteriores guardaram sobre isso.
     try {
       ['principaisBox', 'outrasOpcoesBox', 'opcoesIaBox', 'textosBiblicosBox', 'resumoTextosBox', 'secaoReunioes', 'grupoComentarios',
-        'grupoDirigir', 'secaoDiscursos'].forEach(id => localStorage.removeItem('jwLibraryNoteAplicarGroup_' + id));
+        'grupoDirigir', 'secaoDiscursos', 'grupoDiscursos'].forEach(id => localStorage.removeItem('jwLibraryNoteAplicarGroup_' + id));
       ['jwLibraryNoteAplicarSentinelaBoxV1', 'jwLibraryNoteAplicarDirigenteBoxV1', 'jwLibraryNoteAplicarAiBoxV1'].forEach(key => localStorage.removeItem(key));
     } catch (e) { /* sem localStorage */ }
 
-    // O bloco da IA fica direto dentro do grupo "Opções de formatação com IA" (sem card próprio recolhível).
+    // O bloco da IA fica direto dentro do grupo "Opções com IA" (sem card próprio recolhível).
     const opcoesIaGroup = document.getElementById('opcoesIaBox');
 
     // Status, resultados e botões de aplicar/refinar aparecem junto ao botão que o usuário acabou de usar:
@@ -9909,7 +9927,7 @@ function saveTemplatesToStorage() {
       if (aiBusy) return;
       aiLastKind = 'sentinela';
       aiStatusKind = 'sentinela';
-      placeAiOutput(sentinelaOutputSlot);
+      placeAiOutput(aiOutputHome); // o botão do texto colado fica na área da formatação com IA
 
       if (mode) {
         if (!(await confirmAiRestore())) return;
@@ -10164,8 +10182,26 @@ function saveTemplatesToStorage() {
       }
     }
 
+    // Acesso das funções do dirigente: só o código do dirigente (o servidor também o aceita sozinho para elas).
+    function dirigenteAccessError() {
+      if (!codigoDirigenteSalvo()) return 'Salve o código do dirigente em Ajustes → 🔐 Autorização de acessos.';
+      if (!navigator.onLine) return 'Sem conexão com a internet.';
+      return '';
+    }
+
+    // O servidor recusou o código do dirigente salvo: apaga, desabilita as opções e oferece informar o novo. Devolve true se era isso.
+    async function dirigenteRecusado(result) {
+      if (!/^Código do dirigente inválido/.test((result.data && result.data.erro) || '')) return false;
+      dirigenteInvalido();
+      if (await askConfirm('O código do dirigente que estava salvo não vale mais, e as opções do dirigente foram desabilitadas. Quer informar o novo código agora?', 'Código do dirigente')) {
+        showScreen('ajustes');
+        abrirAcessos('dirigente');
+      }
+      return true;
+    }
+
     function studyAccessError() {
-      if (!codigoAcessoSalvo()) return 'Salve o código de acesso em Ajustes → 🔐 Autorização de acessos.';
+      if (!codigoAcessoSalvo()) return 'Salve o código de pesquisa em Ajustes → 🔐 Autorização de acessos.';
       if (!navigator.onLine) return 'Sem conexão com a internet.';
       return '';
     }
@@ -10198,7 +10234,8 @@ function saveTemplatesToStorage() {
       if (aiBusy) return;
       aiStatusKind = 'lista';
       studyListCard = picker.card;
-      const accessError = studyAccessError();
+      const doDirigente = picker.card === 'dirigente';
+      const accessError = doDirigente ? dirigenteAccessError() : studyAccessError();
       if (accessError) return setStudyStatus(accessError, true);
 
       aiBusy = true;
@@ -10210,10 +10247,12 @@ function saveTemplatesToStorage() {
         const result = await postStudy({
           tarefa: 'estudo-lista',
           codigo: code,
+          ...(doDirigente ? { codigoDirigente: codigoDirigenteSalvo() } : {}),
           artigo: aiStudyArticle.value.trim(),
           ano: aiWeekYear,
           semana: aiWeekNumber
         }, IA_ESPERA_MS);
+        if (!result.ok && doDirigente && await dirigenteRecusado(result)) return;
 
         const groups = result.ok && Array.isArray(result.data.grupos) ? result.data.grupos : [];
         if (!groups.length) {
@@ -10360,9 +10399,8 @@ function saveTemplatesToStorage() {
       if (!sections.perguntasComplementares && !sections.perguntasAplicativas && !sections.perguntasTextos && !sections.perguntasEntendimento) {
         return setAiStatus('Marque pelo menos uma seção das perguntas.', true);
       }
-      const accessError = studyAccessError();
+      const accessError = dirigenteAccessError();
       if (accessError) return setAiStatus(accessError, true);
-      if (!codigoDirigenteSalvo()) return setAiStatus('Salve o código do dirigente em Ajustes → 🔐 Autorização de acessos.', true);
 
       saveAiOptions();
       const code = codigoAcessoSalvo();
@@ -10380,15 +10418,7 @@ function saveTemplatesToStorage() {
           opcoes: readAiOptions()
         }, IA_ESPERA_MS);
         if (!result.ok) {
-          // O servidor recusou o código do dirigente salvo: apaga, esconde as opções e oferece informar o novo.
-          if (/^Código do dirigente inválido/.test((result.data && result.data.erro) || '')) {
-            dirigenteInvalido();
-            if (await askConfirm('O código do dirigente que estava salvo não vale mais, e as opções do dirigente foram escondidas. Quer informar o novo código agora?', 'Código do dirigente')) {
-              showScreen('ajustes');
-              abrirAcessos('dirigente');
-            }
-            return;
-          }
+          if (await dirigenteRecusado(result)) return;
           return setAiStatus(studyFailureMessage(result, 'Não foi possível sugerir perguntas agora.'), true);
         }
         const items = Array.isArray(result.data.itens) ? result.data.itens : [];
@@ -10593,13 +10623,16 @@ function saveTemplatesToStorage() {
     async function ebcDirCarregar() {
       if (aiBusy) return;
       aiStatusKind = 'ebcdir';
-      const accessError = studyAccessError();
+      const accessError = dirigenteAccessError();
       if (accessError) return setAiStatus(accessError, true);
       aiBusy = true;
       setAiLoading(true, ebcDirCarregarBtn);
       try {
-        const result = await postStudy({ tarefa: 'ebc-ler', codigo: codigoAcessoSalvo(), ano: aiWeekYear, semana: aiWeekNumber }, 60000);
-        if (!result.ok) return setAiStatus(studyFailureMessage(result, 'Não consegui ler o capítulo agora.'), true);
+        const result = await postStudy({ tarefa: 'ebc-ler', codigo: codigoAcessoSalvo(), codigoDirigente: codigoDirigenteSalvo(), ano: aiWeekYear, semana: aiWeekNumber }, 60000);
+        if (!result.ok) {
+          if (await dirigenteRecusado(result)) return;
+          return setAiStatus(studyFailureMessage(result, 'Não consegui ler o capítulo agora.'), true);
+        }
         ebcMostrarInfo(result.data, ebcDirInfo);
         setAiStatus('✅ Capítulo da semana carregado.', false);
       } catch (e) {
@@ -10628,9 +10661,8 @@ function saveTemplatesToStorage() {
       aiLastKind = 'ebcdir';
       aiStatusKind = 'ebcdir';
       placeAiOutput(ebcDirOutputSlot);
-      const accessError = studyAccessError();
+      const accessError = dirigenteAccessError();
       if (accessError) return setAiStatus(accessError, true);
-      if (!codigoDirigenteSalvo()) return setAiStatus('Salve o código do dirigente em Ajustes → 🔐 Autorização de acessos.', true);
 
       if (mode) {
         if (!(await confirmAiRestore())) return;
@@ -10673,15 +10705,7 @@ function saveTemplatesToStorage() {
       try {
         const result = await postStudy(payload, IA_ESPERA_MS);
         if (!result.ok) {
-          // O servidor recusou o código do dirigente salvo: apaga, esconde as opções e oferece informar o novo.
-          if (/^Código do dirigente inválido/.test((result.data && result.data.erro) || '')) {
-            dirigenteInvalido();
-            if (await askConfirm('O código do dirigente que estava salvo não vale mais, e as opções do dirigente foram escondidas. Quer informar o novo código agora?', 'Código do dirigente')) {
-              showScreen('ajustes');
-              abrirAcessos('dirigente');
-            }
-            return;
-          }
+          if (await dirigenteRecusado(result)) return;
           return setAiStatus(studyFailureMessage(result, 'Não foi possível elaborar as perguntas agora.'), true);
         }
         const perguntas = Array.isArray(result.data.perguntas) ? result.data.perguntas : [];
@@ -10857,7 +10881,7 @@ function saveTemplatesToStorage() {
     joiasCarregarBtn.addEventListener('click', joiasCarregar);
     joiasResponderBtn.addEventListener('click', () => requestJoias());
 
-    // ---------- Pesquisas salvas ----------
+    // ---------- Pesquisas e respostas salvas ----------
     // Cada resultado da IA nas reuniões (A Sentinela, texto colado, Estudo Bíblico, Joias e perguntas do dirigente) é
     // guardado neste aparelho (localStorage), com o título, a semana das reuniões (ano e número ISO), a data e as partes
     // com o texto de cada resposta. A lista mostra só as pesquisas da semana escolhida no alto da tela Reuniões.
@@ -10939,11 +10963,11 @@ function saveTemplatesToStorage() {
     }
 
     // As pesquisas ficam em categorias, pela natureza delas (as cores são as dos grupos da tela Reuniões). Um tipo que não
-    // está em nenhuma cai em Comentários. "Dirigentes" só aparece com o código do dirigente; "Esboços" espera os esboços.
+    // está em nenhuma cai em Comentários. "Dirigentes" e "Esboços" (que ainda espera os esboços) pedem o código do dirigente.
     const HISTORICO_CATEGORIAS = [
       { id: 'comentarios', titulo: '✋ Comentários', cor: '#a855f7', tipos: ['colado', 'sentinela', 'ebc', 'joias'] },
       { id: 'dirigentes', titulo: '🎤 Dirigentes', cor: '#14b8a6', tipos: ['dirigente', 'ebc-dirigente'], soDirigente: true },
-      { id: 'esbocos', titulo: '📜 Esboços', cor: '#f59e0b', tipos: ['esboco'] }
+      { id: 'esbocos', titulo: '📜 Esboços', cor: '#f59e0b', tipos: ['esboco'], soDirigente: true }
     ];
     const historicoAbertas = { comentarios: true, dirigentes: true, esbocos: false }; // lembra quais estão abertas ao refazer a lista
     const historicoCategoriaDe = item => HISTORICO_CATEGORIAS.find(c => c.tipos.includes(item.tipo)) || HISTORICO_CATEGORIAS[0];
@@ -11320,6 +11344,7 @@ function saveTemplatesToStorage() {
       comentario: document.getElementById('tdComentario'),
       fonte: document.getElementById('tdFonte'),
       link: document.getElementById('tdLink'),
+      linkSempre: document.getElementById('tdLinkTrava'),
       status: document.getElementById('tdStatus'),
       hojeBtn: document.getElementById('tdHojeBtn'),
       ouvirBtn: document.getElementById('tdOuvirBtn'),
@@ -11445,7 +11470,7 @@ function saveTemplatesToStorage() {
         td.comentario.appendChild(p);
       });
       td.fonte.textContent = texto.fonte || '';
-      td.link.href = texto.url;
+      td.link.href = td.linkSempre.href = texto.url;
       td.ouvirBtn.disabled = td.campoBtn.disabled = td.gerarBtn.disabled = false;
       tdIaMostrar();
     }
@@ -11464,12 +11489,12 @@ function saveTemplatesToStorage() {
       td.tema.textContent = 'Carregando o texto do dia…';
       td.comentario.textContent = '';
       td.fonte.textContent = '';
-      td.link.href = 'https://wol.jw.org/pt/wol/h/r5/lp-t/' + data.getFullYear() + '/' + (data.getMonth() + 1) + '/' + data.getDate();
+      td.link.href = td.linkSempre.href = 'https://wol.jw.org/pt/wol/h/r5/lp-t/' + data.getFullYear() + '/' + (data.getMonth() + 1) + '/' + data.getDate();
       td.ouvirBtn.disabled = td.campoBtn.disabled = td.gerarBtn.disabled = true;
       tdIaMostrar();
       const codigo = codigoAcessoSalvo();
       if (!codigo) {
-        td.tema.textContent = 'Para ver o texto diário aqui, salve o código de acesso em Ajustes → 🔐 Autorização de acessos. Ou toque aqui e use 🌐 Abrir no wol.jw.org.';
+        td.tema.textContent = '🔒 Requer o código de pesquisa.';
         return;
       }
       try {
@@ -11495,6 +11520,7 @@ function saveTemplatesToStorage() {
     }
 
     td.abrir.addEventListener('click', () => {
+      if (!codigoAcessoSalvo()) return; // sem o código de pesquisa o cartão fica desabilitado
       const abrir = td.detalhe.hidden;
       td.detalhe.hidden = !abrir;
       td.abrir.setAttribute('aria-expanded', String(abrir));
@@ -11567,7 +11593,7 @@ function saveTemplatesToStorage() {
         td.iaStatus.textContent = 'Não foi possível copiar. Use ✍️ Levar para o campo de texto.';
       }
     });
-    // Código de acesso salvo depois (em Autorização de acessos): carrega o texto que ficou faltando.
+    // Código de pesquisa salvo depois (em Autorização de acessos): carrega o texto que ficou faltando.
     document.addEventListener('acesso-salvo', () => { if (!tdTexto) tdCarregar(tdData || tdHoje()); });
     // App aberto de novo noutro dia: se estava no texto de "hoje", passa para o do novo dia.
     document.addEventListener('visibilitychange', () => {
@@ -11583,7 +11609,7 @@ function saveTemplatesToStorage() {
     tdCarregar(tdHoje());
 
     // ---------- Ajustes → Autorização de acessos ----------
-    // O código de acesso (IA e texto diário, com a leitura dele em voz alta) e a senha de administrador ficam num lugar só:
+    // O código de pesquisa (IA das reuniões e texto diário, com a leitura dele em voz alta), o do dirigente e a senha de administrador ficam num lugar só:
     // informados uma vez, conferidos no servidor e salvos neste aparelho. O resto do app lê daqui (codigoAcessoSalvo e
     // senhaAdminSalva) e não pede mais nenhum código em outros lugares.
     function codigoAcessoSalvo() {
@@ -11609,7 +11635,7 @@ function saveTemplatesToStorage() {
     const acessos = {
       codigo: {
         campo: aiStudyCode, chave: 'jwLibraryNoteAplicarStudyCodeV1', acao: 'codigo-conferir', salvo: codigoAcessoSalvo,
-        status: document.getElementById('acessoStatusCodigo'), ver: document.getElementById('acessoVerCodigo'), nome: 'O código de acesso',
+        status: document.getElementById('acessoStatusCodigo'), ver: document.getElementById('acessoVerCodigo'), nome: 'O código de pesquisa',
         salvar: 'acessoSalvarCodigo', apagar: 'acessoApagarCodigo'
       },
       dirigente: {
@@ -11687,26 +11713,59 @@ function saveTemplatesToStorage() {
     vozAtualizarBotoes();
     aiPadraoAtualizar();
 
-    // Opções do dirigente (🎤 Preparar para dirigir e o atalho Dirigentes da tela Início): sem o código do dirigente salvo
-    // neste aparelho elas continuam visíveis, mas desabilitadas (cinza, com cadeado), para a pessoa saber que existem.
-    function dirigenteAtualizar() {
-      const liberado = Boolean(codigoDirigenteSalvo());
-      const grupo = document.getElementById('grupoDirigir');
-      grupo.classList.toggle('grupo-desabilitado', !liberado);
-      grupo.querySelector('.grupo-trava').hidden = liberado;
-      grupo.querySelector(':scope > summary').setAttribute('aria-disabled', String(!liberado));
-      if (!liberado) grupo.open = false;
-      const atalho = document.querySelector('.atalhos-grid [data-atalho="dirigir"]');
-      atalho.disabled = !liberado;
-      atalho.querySelector('.atalho-trava').hidden = liberado;
+    // Quais recursos cada código libera. Sem o código de pesquisa ficam desabilitados o grupo Preparar para comentar, o atalho
+    // Comentários e o texto diário (que mantém só o link para o wol.jw.org). Sem o código do dirigente, o grupo Preparar para
+    // dirigir, o atalho Dirigentes e a Preparação de discursos e esboços: o do dirigente vale sozinho para eles. Desabilitados continuam visíveis
+    // (cinza, com cadeado e dizendo o que falta), para a pessoa saber que existem.
+    const TRAVAS = {
+      pesquisa: '🔒 Requer o código de pesquisa',
+      dirigente: '🔒 Requer o código do dirigente'
+    };
+
+    function travarGrupo(id, motivo) {
+      const grupo = document.getElementById(id);
+      const trava = grupo.querySelector('.grupo-trava');
+      grupo.classList.toggle('grupo-desabilitado', Boolean(motivo));
+      trava.hidden = !motivo;
+      if (motivo) trava.textContent = TRAVAS[motivo] + ' (Ajustes)';
+      grupo.querySelector(':scope > summary').setAttribute('aria-disabled', String(Boolean(motivo)));
+      if (motivo) grupo.open = false;
+    }
+
+    function travarAtalho(nome, motivo) {
+      const atalho = document.querySelector('.atalhos-grid [data-atalho="' + nome + '"]');
+      const trava = atalho.querySelector('.atalho-trava');
+      atalho.disabled = Boolean(motivo);
+      trava.hidden = !motivo;
+      if (motivo) trava.textContent = TRAVAS[motivo];
+    }
+
+    function acessosAtualizar() {
+      const pesquisa = Boolean(codigoAcessoSalvo());
+      const dirigente = Boolean(codigoDirigenteSalvo());
+      const motivoDirigir = dirigente ? '' : 'dirigente';
+      travarGrupo('grupoComentarios', pesquisa ? '' : 'pesquisa');
+      travarGrupo('grupoDirigir', motivoDirigir);
+      travarGrupo('grupoDiscursos', motivoDirigir);
+      travarAtalho('comentarios', pesquisa ? '' : 'pesquisa');
+      travarAtalho('dirigir', motivoDirigir);
+      // Texto diário (tela Início): o cartão fica bloqueado, menos o link para o wol.jw.org, que vale sempre.
+      const texto = document.getElementById('textoDiarioCard');
+      texto.classList.toggle('card-desabilitado', !pesquisa);
+      texto.querySelector('.td-topo').inert = !pesquisa;
+      document.getElementById('tdLinkTrava').hidden = pesquisa;
+      if (!pesquisa && tdTexto) { tdCache.clear(); tdCarregar(tdData || tdHoje()); } // código apagado: o cartão volta à mensagem do cadeado
       historicoRender();
     }
     // Desabilitado, o grupo não abre (toque, Enter ou espaço no título).
-    document.querySelector('#grupoDirigir > summary').addEventListener('click', event => {
-      if (!codigoDirigenteSalvo()) event.preventDefault();
+    ['grupoComentarios', 'grupoDirigir', 'grupoDiscursos'].forEach(id => {
+      const grupo = document.getElementById(id);
+      grupo.querySelector(':scope > summary').addEventListener('click', event => {
+        if (grupo.classList.contains('grupo-desabilitado')) event.preventDefault();
+      });
     });
-    document.addEventListener('acesso-salvo', event => { if (event.detail === 'dirigente') dirigenteAtualizar(); });
-    dirigenteAtualizar();
+    document.addEventListener('acesso-salvo', event => { if (event.detail === 'codigo' || event.detail === 'dirigente') acessosAtualizar(); });
+    acessosAtualizar();
 
     // O código do dirigente salvo pode deixar de valer (o administrador trocou a variável no servidor). O app confere com o
     // servidor ao abrir e ao voltar a ele (no máximo de 10 em 10 minutos); se o servidor recusar (403), apaga o código salvo e
@@ -11726,7 +11785,7 @@ function saveTemplatesToStorage() {
       try { localStorage.removeItem('jwLibraryNoteAplicarDirigenteCodeV1'); } catch (e) { /* sem localStorage */ }
       acessoSituacao('dirigente');
       acessoStatus('dirigente', 'O código do dirigente que estava salvo não vale mais. Informe o novo código.', true);
-      dirigenteAtualizar();
+      acessosAtualizar();
     }
     dirigenteVerificar(true);
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') dirigenteVerificar(false); });

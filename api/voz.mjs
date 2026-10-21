@@ -1,6 +1,6 @@
 // Leitura em voz alta: o app manda um trecho do texto (já em letras comuns, sem emojis) e o servidor pede o áudio à
 // API Text-to-Speech do Google Cloud. As credenciais ficam só aqui, em variáveis secretas da Vercel; o navegador recebe
-// apenas o áudio (MP3). Cada pedido custa créditos do Google: o texto diário pede o código de acesso da IA; o campo de
+// apenas o áudio (MP3). Cada pedido custa créditos do Google: o texto diário pede o código de pesquisa; o campo de
 // texto da formatação, a senha de administrador (CODIGO_ADMIN).
 //  - GOOGLE_TTS_CREDENCIAIS: o JSON da conta de serviço (com o papel "Usuário da Plataforma de Agentes"). As vozes
 //    Gemini exigem essa identidade; uma chave de API comum é recusada (403 aiplatform.endpoints.predict).
@@ -120,12 +120,12 @@ export default async function handler(req, res) {
   if (!origemPermitida(req.headers.origin)) return erro(res, 403, "Origem não permitida.");
   const temChave = Boolean(process.env.GOOGLE_TTS_API_KEY);
   if (!temChave && !credenciais()) return erro(res, 503, "A leitura em voz alta ainda não está configurada no servidor.");
-  if (!process.env.CODIGO_ESTUDO) return erro(res, 503, "O código de acesso da IA ainda não está configurado no servidor.");
+  if (!process.env.CODIGO_ESTUDO) return erro(res, 503, "O código de pesquisa ainda não está configurado no servidor.");
 
   const body = req.body && typeof req.body === "object" ? req.body : {};
   // Quem pode pedir o quê:
   //  - o exemplo do painel do administrador usa as escolhas ainda não salvas: só com a senha de administrador;
-  //  - uso "texto-diario" (o texto diário da tela Início): qualquer pessoa com o código de acesso;
+  //  - uso "texto-diario" (o texto diário da tela Início): qualquer pessoa com o código de pesquisa;
   //  - qualquer outro pedido (o botão 🔊 do campo de texto da formatação, que é o padrão se "uso" não vier): só o administrador.
   // O servidor não tem como saber de que texto veio o pedido; vale o uso que o app declara, e o limite por IP e o alerta de
   // orçamento do Google seguram o custo.
@@ -133,7 +133,7 @@ export default async function handler(req, res) {
   const exemplo = Boolean(body.exemplo && administrador);
   if (!exemplo) {
     if (body.uso === "texto-diario") {
-      if (!textosIguais(body.codigo, process.env.CODIGO_ESTUDO)) return erro(res, 403, "Código de acesso inválido.");
+      if (!textosIguais(body.codigo, process.env.CODIGO_ESTUDO)) return erro(res, 403, "Código de pesquisa inválido.");
     } else if (!administrador) {
       return erro(res, 403, "A leitura em voz alta do campo de texto é só para o administrador.");
     }
