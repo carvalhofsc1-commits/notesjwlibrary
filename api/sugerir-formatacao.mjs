@@ -12,14 +12,17 @@ import {
   QUADROS_EBC,
   lerEstudoBiblico,
   lerEstudoDireto,
+  lerDiscursoCurto,
   lerJoias,
   lerTesouros,
   lerTextoDiario,
   referenciasDeTesouros,
+  referenciasDoDiscursoCurto,
   textoDaRecapitulacao,
   textoDasJoias,
   textoDoCapituloEbc,
   textoDoCapituloEbcDirigente,
+  textoDoDiscursoCurto,
   textoDosGrupos,
   textoDosTesouros,
 } from "./_wol.mjs";
@@ -1734,6 +1737,217 @@ async function esbocoDeTesouros(res, body, P) {
   }
 }
 
+// ---------- Faça seu melhor no ministério: esboço do discurso curto (4 a 5 minutos) ----------
+// Só as semanas com um item "Discurso" nessa seção. O servidor lê o item (tema, tempo, fonte e lição do th) e, quando a fonte só
+// traz o tema e alguns textos, pesquisa o tema no wol.jw.org (api/_wol.mjs); a IA elabora o esboço seguindo o prompt editável
+// "discurso_curto". Só com o código do dirigente.
+
+const SaidaDiscursoCurto = z.object({
+  tema: z.string(),
+  objetivo: z.string(),
+  aplicacao: z.string(),
+  introducao: z.object({ minutos: z.number(), primeirasFrases: z.string(), topicos: z.array(z.string()) }),
+  pontos: z.array(
+    z.object({
+      titulo: z.string(),
+      minutos: z.number(),
+      textos: z.array(z.string()),
+      desenvolvimento: z.array(z.object({ argumento: z.string(), ideias: z.array(z.string()) })),
+      aplicacao: z.string(),
+      ilustracao: z.string().nullable(),
+      transicao: z.string().nullable(),
+    })
+  ),
+  conclusao: z.object({ minutos: z.number(), topicos: z.array(z.string()) }),
+  fontes: z.array(z.string()),
+  licao: z.object({ aplicada: z.boolean(), dica: z.string().nullable() }),
+});
+
+// Lê o discurso curto da semana pedida; devolve o discurso ou responde com o erro (e devolve null).
+async function discursoCurtoDaSemana(res, body) {
+  const url = urlDoEstudo({ ano: body.ano, semana: body.semana });
+  if (!url) {
+    erro(res, 400, "Semana inválida.");
+    return null;
+  }
+  let discurso = null;
+  try {
+    discurso = await lerDiscursoCurto(url);
+  } catch (e) {
+    console.error("Discurso curto: leitura falhou", e?.name, e?.message);
+    erro(res, 502, "Não consegui ler a apostila no wol.jw.org agora. Tente de novo em instantes.");
+    return null;
+  }
+  if (!discurso) erro(res, 404, "Esta semana não tem discurso na seção Faça seu melhor no ministério da apostila (algumas semanas só têm conversas e demonstrações).");
+  return discurso;
+}
+
+// O que o app mostra ao carregar: o tema, o tempo, a fonte, a lição do th e os textos indicados.
+async function lerDiscursoCurtoDaSemana(res, body) {
+  if (!acessoDoDirigente(res, body)) return;
+  const discurso = await discursoCurtoDaSemana(res, body);
+  if (!discurso) return;
+  return res.status(200).json({
+    semana: discurso.semana,
+    titulo: discurso.titulo,
+    minutos: discurso.minutos,
+    url: discurso.url,
+    fonte: discurso.fonteCitada,
+    tipoFonte: discurso.fonte ? discurso.fonte.tipo : null,
+    licao: discurso.licaoCitada ? { citacao: discurso.licaoCitada, titulo: discurso.licao ? discurso.licao.titulo : "" } : null,
+    textos: discurso.referencias,
+    pesquisa: discurso.pesquisa.length,
+  });
+}
+
+async function esbocoDoDiscursoCurto(res, body, P) {
+  if (!acessoDoDirigente(res, body)) return;
+  const opcoes = validarOpcoes(body.opcoes);
+  const ajuste = textoLivre(body.ajuste);
+  const modo = body.modo === "nova" || body.modo === "melhorar" ? body.modo : null;
+  const anteriores = modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(body.anteriores).slice(0, 12000) : "";
+  const inicioPedido = Date.now();
+  if (fontesConfiguradas()) precarregarFontes({ biblia: true, perspicaz: false });
+
+  const discurso = await discursoCurtoDaSemana(res, body);
+  if (!discurso) return;
+
+  let versiculos = [];
+  if (fontesConfiguradas()) {
+    try {
+      versiculos = await buscarVersiculos(referenciasDoDiscursoCurto(discurso), 12);
+    } catch (e) {
+      console.error("Discurso curto: versículos indisponíveis", e?.message);
+    }
+  }
+
+  let mensagem =
+    blocoOrientacao(opcoes, ajuste, P) +
+    `PEDIDO: elabore o esboço do discurso de ${discurso.minutos} minutos de Faça seu melhor no ministério desta semana.\n\n` +
+    textoDoDiscursoCurto(discurso, versiculos) +
+    lembreteFinal(opcoes, ajuste, P);
+  if (modo && anteriores) {
+    mensagem += "\n\nESBOÇO JÁ SUGERIDO (JSON):\n" + anteriores + "\n\n" + P.frases.pedidos[modo === "nova" ? "Esboço: outra versão" : "Esboço: melhorar"];
+  }
+
+  try {
+    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 120_000) });
+    const inicio = Date.now();
+    const resposta = await chamarIa(
+      client,
+      P,
+      { max_tokens: 16000 /* o raciocínio também conta aqui */, system: P.sistemaDiscursoCurto, messages: [{ role: "user", content: mensagem }] },
+      { schema: SaidaDiscursoCurto }
+    );
+    if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
+      return erro(res, 502, "A IA não conseguiu elaborar o esboço deste discurso.");
+    }
+
+    const saida = resposta.parsed_output;
+    const topicos = (lista, max, tamanho) => (Array.isArray(lista) ? lista : []).map((x) => limparTextoGerado(x, tamanho)).filter(Boolean).slice(0, max);
+    const minutos = (n) => (Number.isFinite(n) ? Math.max(0, Math.min(discurso.minutos, Math.round(n))) : 0);
+
+    // Os textos bíblicos são lidos todos, no máximo 3 no discurso inteiro; cada ponto fica com pelo menos um (os indicados na
+    // apostila entram se a IA deixou o ponto sem texto).
+    const vistos = new Set();
+    const brutos = saida.pontos.slice(0, 2);
+    const limpos = brutos.map((p) => (Array.isArray(p.textos) ? p.textos : []).map((x) => limparLinha(limparTrecho(x), 80)).filter(Boolean));
+    const listas = limpos.map((l) => l.filter((x) => !vistos.has(x) && vistos.add(x)));
+    // Cada ponto fica com o seu primeiro texto (repetido só se o ponto ficaria sem nenhum); o que sobrar dos 3 vai para os textos
+    // seguintes, na ordem.
+    const mantidos = listas.map((l, i) => (l.length ? l.slice(0, 1) : limpos[i].slice(0, 1)));
+    let restantes = 3 - mantidos.reduce((n, l) => n + l.length, 0);
+    listas.forEach((l, i) => {
+      const extra = l.slice(1, 1 + Math.max(0, restantes));
+      mantidos[i].push(...extra);
+      restantes -= extra.length;
+    });
+    const pontos = brutos
+      .map((p, i) => {
+        return {
+          titulo: limparTextoGerado(p.titulo, 160),
+          minutos: minutos(p.minutos),
+          textos: mantidos[i],
+          fontes: [],
+          desenvolvimento: (Array.isArray(p.desenvolvimento) ? p.desenvolvimento : [])
+            .map((d) => ({ argumento: limparTextoGerado(d.argumento, 300), ideias: topicos(d.ideias, 4, 250) }))
+            .filter((d) => d.argumento)
+            .slice(0, 4),
+          aplicacao: limparTextoGerado(p.aplicacao, 400),
+          ilustracao: limparTextoGerado(p.ilustracao, 400) || null,
+          transicao: limparTextoGerado(p.transicao, 250) || null,
+        };
+      })
+      .filter((p) => p.titulo);
+    const indicados = discurso.referencias.filter((r) => !vistos.has(r));
+    for (const p of pontos) {
+      if (!p.textos.length && restantes > 0 && indicados.length) {
+        p.textos.push(indicados.shift());
+        restantes--;
+      }
+    }
+    for (const p of pontos) p.textos = p.textos.map((referencia) => ({ referencia, ler: true }));
+
+    // Só entram em "fontes" a fonte da apostila e as publicações que vieram da pesquisa no wol.jw.org (nada de fora do wol).
+    const norma = (s) => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    const permitidas = [discurso.fonteCitada, ...discurso.pesquisa.map((r) => r.rotulo)].filter(Boolean);
+    const usadas = (Array.isArray(saida.fontes) ? saida.fontes : [])
+      .map((f) => permitidas.find((permitida) => norma(f).length >= 3 && (norma(permitida) === norma(f) || norma(permitida).includes(norma(f)) || norma(f).includes(norma(permitida)))))
+      .filter(Boolean);
+    const fontes = [...new Set([...(discurso.fonteCitada ? [discurso.fonteCitada] : []), ...usadas])];
+
+    const dica = saida.licao && saida.licao.aplicada ? limparTextoGerado(saida.licao.dica, 300) : "";
+    const esboco = {
+      tema: limparTextoGerado(saida.tema, 200) || discurso.titulo,
+      objetivo: limparTextoGerado(saida.objetivo, 300),
+      aplicacao: limparTextoGerado(saida.aplicacao, 300),
+      introducao: {
+        minutos: minutos(saida.introducao.minutos),
+        primeirasFrases: limparTextoGerado(saida.introducao.primeirasFrases, 400),
+        topicos: topicos(saida.introducao.topicos, 4, 300),
+      },
+      pontos,
+      conclusao: { minutos: minutos(saida.conclusao.minutos), topicos: topicos(saida.conclusao.topicos, 4, 300) },
+      fontes,
+      licao: dica && discurso.licaoCitada ? { citacao: discurso.licaoCitada, titulo: discurso.licao ? discurso.licao.titulo : "", dica } : null,
+    };
+    const completo = pontos.length > 0 && esboco.introducao.topicos.length > 0 && esboco.conclusao.topicos.length > 0;
+
+    console.log(
+      "Esboço do discurso curto:",
+      JSON.stringify({
+        modelo: P.ia.modelo,
+        semana: discurso.semana,
+        tema: discurso.titulo,
+        minutos: discurso.minutos,
+        fonte: discurso.fonteCitada,
+        pesquisa: discurso.pesquisa.length,
+        licao: discurso.licaoCitada,
+        licaoAplicada: Boolean(esboco.licao),
+        pontos: pontos.length,
+        textos: pontos.reduce((n, p) => n + p.textos.length, 0),
+        fontesUsadas: usadas.length,
+        versiculos: versiculos.length,
+        segundosIa: Math.round((Date.now() - inicio) / 100) / 10,
+        total: Math.round((Date.now() - inicioPedido) / 100) / 10,
+        entrada: resposta.usage?.input_tokens || 0,
+        saida: resposta.usage?.output_tokens || 0,
+        pensamento: resposta.usage?.output_tokens_details?.thinking_tokens ?? null,
+      })
+    );
+
+    return res.status(200).json({
+      semana: discurso.semana,
+      titulo: discurso.titulo,
+      url: discurso.url,
+      erro: completo ? null : "A IA não montou o esboço completo (introdução, pontos e conclusão). Tente de novo.",
+      esboco: completo ? esboco : null,
+    });
+  } catch (e) {
+    return tratarErro(e, res);
+  }
+}
+
 // ---------- Joias espirituais ----------
 // O servidor lê a leitura da Bíblia da semana (capítulos com os versículos e os trechos das publicações do Índice das
 // Publicações) e a seção "Joias espirituais" da apostila (api/_wol.mjs). A IA escreve até 2 joias por capítulo e a
@@ -2141,6 +2355,8 @@ export default async function handler(req, res) {
   if (req.body && req.body.tarefa === "ebc-dirigente") return perguntasEbcDirigente(res, req.body, P);
   if (req.body && req.body.tarefa === "tesouros-ler") return lerTesourosDaSemana(res, req.body);
   if (req.body && req.body.tarefa === "tesouros") return esbocoDeTesouros(res, req.body, P);
+  if (req.body && req.body.tarefa === "discurso-ler") return lerDiscursoCurtoDaSemana(res, req.body);
+  if (req.body && req.body.tarefa === "discurso") return esbocoDoDiscursoCurto(res, req.body, P);
   if (req.body && req.body.tarefa === "joias-ler") return lerJoiasDaSemana(res, req.body);
   if (req.body && req.body.tarefa === "joias") return responderJoias(res, req.body, P);
 

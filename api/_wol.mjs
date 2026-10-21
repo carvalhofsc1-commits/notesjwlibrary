@@ -708,3 +708,172 @@ export function textoDosTesouros(discurso, versiculos = []) {
   if (versiculos.length) partes.push(`TEXTO DOS VERSÍCULOS:\n${versiculos.map((v) => `${v.referencia}: ${v.texto}`).join("\n")}`);
   return partes.join("\n\n");
 }
+
+// ---------- Discurso curto de "Faça seu melhor no ministério" (4 a 5 minutos) ----------
+// Só algumas semanas têm um item "Discurso" nessa seção (as outras trazem conversas e demonstrações), e o tempo varia (4 ou 5
+// minutos): o app lê os minutos da apostila. O item é curto: "(4 min) lmd apêndice A ponto 20 — Tema: Jesus não é o Deus
+// Todo-Poderoso. (th lição 7)" ou "(5 min) Discurso. ijwfq artigo 37 — Tema: … (th lição 14)". A fonte (link /wol/pc/) é um
+// ponto do apêndice A da brochura Ame as Pessoas (só a frase da verdade e os textos bíblicos) ou um artigo do jw.org inteiro, e
+// "th lição N" é a lição de "Aprimore sua leitura e seu ensino" que o orador vai exercitar. Quando a fonte só traz o tema e
+// alguns textos, o servidor pesquisa o tema no wol.jw.org (e só lá) e manda os resultados à IA.
+const discursosCurtos = new Map(); // url da página de reuniões -> { quando, discurso }
+const MAX_CARACTERES_ARTIGO = 5000;
+const MAX_CARACTERES_LICAO = 2500;
+const MAX_RESULTADOS_PESQUISA = 5;
+
+// O item "Discurso" no HTML da apostila (sem as fontes lidas) ou null (a semana não tem discurso nessa seção).
+export function discursoCurtoDaApostila(html) {
+  const secao = [...html.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2>/g)].find((m) => /faca seu melhor no ministerio/.test(semAcento(textoDe(m[1]))));
+  if (!secao) return null;
+  const resto = html.slice(secao.index + secao[0].length);
+  const fimSecao = resto.search(/<h2\b/);
+  const bloco = fimSecao >= 0 ? resto.slice(0, fimSecao) : resto;
+  const itens = [...bloco.matchAll(/<h3\b[^>]*>([\s\S]*?)<\/h3>/g)];
+
+  for (let i = 0; i < itens.length; i++) {
+    const titulo = textoDe(itens[i][1]);
+    const corpo = bloco.slice(itens[i].index + itens[i][0].length, i + 1 < itens.length ? itens[i + 1].index : undefined);
+    const paragrafo = (corpo.match(/<p\b[^>]*>(\s*\(\s*\d+\s*min\)[\s\S]*?)<\/p>/) || [])[1];
+    if (!paragrafo) continue;
+    const texto = textoDe(paragrafo);
+    // "7. Discurso" ou "(5 min) Discurso. …" (a "Demonstração" e as conversas ficam de fora).
+    if (!/^\d+\.\s*discurso\b/i.test(titulo) && !/^\(\s*\d+\s*min\)\s*discurso\b/i.test(texto)) continue;
+
+    const minutos = Number((texto.match(/^\(\s*(\d+)\s*min\)/) || [])[1]) || null;
+    const tema = ((texto.match(/Tema:\s*(.+?)\s*(?:\(\s*th\b|$)/i) || [])[1] || "").replace(/\s*[.;]+$/, "").trim();
+    const links = [...paragrafo.matchAll(/<a\b[^>]*href="(\/pt\/wol\/pc\/[^"]+)"[^>]*>([\s\S]*?)<\/a>/g)].map(([, caminho, rotulo]) => ({ caminho, citacao: textoDe(rotulo) }));
+    const licao = links.find((l) => /^th\b/i.test(l.citacao)) || null;
+    const fonte = links.find((l) => !/^th\b/i.test(l.citacao)) || null;
+    return { titulo: tema || texto.replace(/^\(\s*\d+\s*min\)\s*(?:discurso\.?)?\s*/i, ""), minutos, texto, fonte, licao, referencias: referenciasDe(paragrafo) };
+  }
+  return null;
+}
+
+// Um documento do wol (a página inteira ou os parágrafos da faixa): título, texto e referências bíblicas.
+async function lerDocumentoCitado(citado, timeoutMs, maxCaracteres) {
+  const destino = await resolverCitacao(citado.caminho, timeoutMs);
+  if (!destino) return null;
+  const html = await baixar(destino.url, timeoutMs);
+  const titulo = textoDe((html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/) || [])[1] || "");
+  const partes = [];
+  const brutos = [];
+  for (const [, , pid, conteudo] of html.matchAll(/<(p|h2|h3)\b[^>]*data-pid="(\d+)"[^>]*>([\s\S]*?)<\/\1>/g)) {
+    const n = Number(pid);
+    if (destino.de !== null && (n < destino.de || n > destino.ate)) continue;
+    const texto = textoDe(conteudo);
+    if (texto) {
+      partes.push(texto);
+      brutos.push(conteudo);
+    }
+  }
+  if (!partes.length) return null;
+  return {
+    tipo: destino.de !== null ? "ponto" : "documento",
+    citacao: citado.citacao,
+    titulo,
+    texto: partes.join("\n").slice(0, maxCaracteres),
+    referencias: referenciasDe(brutos.join(" ")).slice(0, 10),
+  };
+}
+
+// Pesquisa o tema no wol.jw.org (só lá) e devolve até 5 trechos de publicações: [{ rotulo, titulo, trecho, url }]. Primeiro as
+// palavras na mesma frase; se houver pouco, no mesmo parágrafo. Ficam de fora a própria apostila, o ponto do apêndice A (que já vem
+// à parte), o glossário e as publicações antigas (A Sentinela de antes de 1990).
+async function pesquisarNoWol(tema, timeoutMs) {
+  const consulta = String(tema || "").replace(/[“”"]/g, "").replace(/[?!.]+$/, "").trim();
+  if (consulta.length < 8) return [];
+  const buscar = async (proximidade) => {
+    const url = `${BASE}/pt/wol/s/r5/lp-t?q=${encodeURIComponent(consulta)}&p=${proximidade}&r=occ&st=a`;
+    const html = (await baixar(url, timeoutMs)).replace(/&lrm;/g, "");
+    return html
+      .split('<ul class="results resultContentDocument">')
+      .slice(1)
+      .map((bloco) => {
+        const cabeca = bloco.match(/<a class="lnk" href="\/pt\/wol\/d\/r5\/lp-t\/(\d+)[^"]*"[^>]*>([\s\S]*?)<\/a>/);
+        const ref = textoDe((bloco.match(/<li class="ref">([\s\S]*?)<\/li>/) || [])[1] || "");
+        const trecho = [...bloco.matchAll(/<div class="document">([\s\S]*?)<\/div>/g)].map((m) => textoDe(m[1])).join(" ").slice(0, 700);
+        return cabeca && trecho ? { rotulo: ref.split(" - ")[0].trim(), ano: Number((ref.match(/—\s*(\d{4})\s*$/) || [])[1]) || null, titulo: textoDe(cabeca[2]), trecho, url: `${BASE}/pt/wol/d/r5/lp-t/${cabeca[1]}` } : null;
+      })
+      .filter(Boolean);
+  };
+  const aproveita = (r) => !/^(?:mwb\d*|lmd|nwtstg)\b/i.test(r.rotulo) && !(r.ano && r.ano < 1990);
+  let achados = (await buscar("sen")).filter(aproveita);
+  if (achados.length < 3) {
+    const vistos = new Set(achados.map((r) => r.url));
+    achados = achados.concat((await buscar("par")).filter((r) => aproveita(r) && !vistos.has(r.url)));
+  }
+  return achados.slice(0, MAX_RESULTADOS_PESQUISA).map(({ ano, ...r }) => r);
+}
+
+// Lê o discurso curto da semana (a fonte, a lição do th e, se a fonte só traz o tema e textos, a pesquisa no wol). null = a semana
+// não tem discurso na seção Faça seu melhor no ministério (ou não achou a apostila).
+export async function lerDiscursoCurto(urlReuniao, { timeoutMs = 8000 } = {}) {
+  const guardado = discursosCurtos.get(urlReuniao);
+  if (guardado && Date.now() - guardado.quando < VALIDADE_MS) return guardado.discurso;
+
+  const apostila = idDaApostilaNaReuniao(await baixar(urlReuniao, timeoutMs));
+  if (!apostila) return null;
+  const url = `${BASE}/pt/wol/d/r5/lp-t/${apostila}`;
+  const html = await baixar(url, timeoutMs);
+  const base = discursoCurtoDaApostila(html);
+  if (!base) return null;
+
+  const [fonte, licao] = await Promise.all([
+    base.fonte ? lerDocumentoCitado(base.fonte, timeoutMs, MAX_CARACTERES_ARTIGO).catch(() => null) : null,
+    base.licao ? lerDocumentoCitado(base.licao, timeoutMs, MAX_CARACTERES_LICAO).catch(() => null) : null,
+  ]);
+  // Com um artigo inteiro como fonte não precisa pesquisar; só com o tema (e os textos do ponto do apêndice) a pesquisa ajuda.
+  const pesquisa = fonte && fonte.tipo === "documento" ? [] : await pesquisarNoWol(base.titulo, timeoutMs).catch(() => []);
+  const indicadas = [...new Set([...base.referencias, ...(fonte && fonte.tipo === "ponto" ? fonte.referencias : [])])];
+
+  const discurso = {
+    semana: leituraDaApostila(html).semana,
+    titulo: base.titulo,
+    minutos: base.minutos || 4,
+    fonte,
+    fonteCitada: base.fonte ? base.fonte.citacao : null,
+    licao,
+    licaoCitada: base.licao ? base.licao.citacao : null,
+    pesquisa,
+    referencias: indicadas,
+    url,
+  };
+  discursosCurtos.set(urlReuniao, { quando: Date.now(), discurso });
+  if (discursosCurtos.size > 20) discursosCurtos.delete(discursosCurtos.keys().next().value);
+  return discurso;
+}
+
+// As referências bíblicas para buscar o texto: as indicadas na apostila (e no ponto do apêndice) ou, com um artigo como fonte, as dele.
+export function referenciasDoDiscursoCurto(discurso) {
+  if (discurso.referencias.length) return discurso.referencias;
+  return discurso.fonte && discurso.fonte.tipo === "documento" ? discurso.fonte.referencias : [];
+}
+
+// Texto do discurso para a IA: o tema, a fonte indicada, a lição do th, o texto dos versículos e a pesquisa do tema no wol.jw.org.
+export function textoDoDiscursoCurto(discurso, versiculos = []) {
+  const partes = [
+    `SEMANA: ${discurso.semana || "(não informada)"} (apostila Vida e Ministério)`,
+    `DISCURSO: Faça seu melhor no ministério (${discurso.minutos} min)`,
+    `TEMA: ${discurso.titulo}`,
+  ];
+  if (discurso.fonte) {
+    const f = discurso.fonte;
+    partes.push(`FONTE DE MATÉRIA INDICADA NA APOSTILA (${f.citacao}${f.titulo ? ` — "${f.titulo}"` : ""}${f.tipo === "ponto" ? ", um ponto do apêndice A, só com a verdade e os textos bíblicos" : ", artigo"}):\n${f.texto}`);
+  } else {
+    partes.push("FONTE DE MATÉRIA INDICADA NA APOSTILA: nenhuma (só o tema).");
+  }
+  partes.push(`TEXTOS BÍBLICOS INDICADOS: ${discurso.referencias.join("; ") || "(nenhum: se a fonte for um artigo, escolha até 3 textos dele)"}`);
+  if (versiculos.length) partes.push(`TEXTO DOS VERSÍCULOS:\n${versiculos.map((v) => `${v.referencia}: ${v.texto}`).join("\n")}`);
+  if (discurso.licao) {
+    partes.push(`LIÇÃO QUE O ORADOR VAI EXERCITAR (${discurso.licao.citacao}, do livro Aprimore sua leitura e seu ensino${discurso.licao.titulo ? ` — "${discurso.licao.titulo}"` : ""}):\n${discurso.licao.texto}`);
+  } else if (discurso.licaoCitada) {
+    partes.push(`LIÇÃO QUE O ORADOR VAI EXERCITAR: ${discurso.licaoCitada} (o texto da lição não pôde ser lido).`);
+  }
+  if (discurso.pesquisa.length) {
+    partes.push(
+      `RESULTADOS DA PESQUISA DO TEMA NO WOL.JW.ORG (feita pelo servidor; use só estes, e só se ajudarem; cite a publicação pelo rótulo entre colchetes):\n` +
+        discurso.pesquisa.map((r) => `[${r.rotulo}] "${r.titulo}": ${r.trecho}`).join("\n\n")
+    );
+  }
+  return partes.join("\n\n");
+}

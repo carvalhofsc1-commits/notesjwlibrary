@@ -2856,7 +2856,21 @@
                 <div id="tesourosOutputSlot"></div>
               </div>
             </details>
-            <div class="em-breve" aria-disabled="true"><span>🗣️ Faça seu melhor no ministério (semanas com discurso de 4 min)</span><span class="em-breve-badge">em breve</span></div>
+            <details class="subsection ebc-subsection" id="discursoBox">
+              <summary>🗣️ Faça seu melhor no ministério (discurso curto)</summary>
+              <div class="subsection-body">
+                <section class="sent-option sent-option-site">
+                  <h3>A IA lê o discurso da semana na apostila (wol.jw.org): o tema, o tempo (4 ou 5 minutos), a fonte e a lição, e elabora o esboço. Só as semanas com "Discurso" nessa seção; as que têm só conversas e demonstrações não servem</h3>
+                  <div class="ai-study">
+                    <button id="discursoCarregarBtn" class="secondary ai-study-load" type="button">📋 Carregar o discurso da semana</button>
+                    <p id="discursoInfo" class="hint ai-hint ebc-info"></p>
+                    <button id="discursoEsbocoBtn" class="ai-study-btn" type="button">✨ IA - Elaborar o esboço do discurso</button>
+                    <span id="discursoStatus" class="ok" role="status" aria-live="polite"></span>
+                  </div>
+                </section>
+                <div id="discursoOutputSlot"></div>
+              </div>
+            </details>
             <div class="em-breve" aria-disabled="true"><span>📝 Outros esboços (necessidades locais, eventos especiais)</span><span class="em-breve-badge">em breve</span></div>
           </details>
           </details>
@@ -5654,7 +5668,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '5.2.7'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0 (e 5.0.1… 5.0.9 e então 5.1.0); 5.2.7: o prompt de Tesouros fica só com o que é específico do discurso (pontos e textos da apostila, fontes, leitura dos textos e tempo) e as regras de estilo comuns a todos os esboços (tema frisado, tópicos, aplicação, tom, ilustrações) vão para a parte Como elaborar um esboço; 5.2.6: o esboço de Tesouros passa a seguir o capítulo Como elaborar um esboço (Beneficie-se): nova parte editável com os princípios do esboço (objetivo, pontos principais, argumentos e ideias, sequência lógica, introdução e conclusão), e o resultado sai como no modelo, com o ponto principal em maiúsculas e as ideias recuadas; 5.2.5: Preparação de discursos e esboços ganha o card Tesouros da Palavra de Deus (esboço do discurso de 10 min com a IA, lendo a apostila e as fontes no wol.jw.org, só com o código do dirigente), o prompt editável do esboço fica na categoria Esboços e Discursos, e o trecho de cada fonte citada passa a ter só os parágrafos citados (antes vinha um a mais); 5.2.4: o botão Visualizar e editar prompts sai de Configurar formatação com IA e ganha um card próprio em Ajustes, e a tela de prompts passa a ser organizada em categorias recolhíveis com emoji (modelo/gasto/limites, base das respostas, comentários, dirigente, Bíblia, formatação, voz, diversos e parte técnica); 5.2.3: na tela de prompts o texto salvo com 💾 Salvar para todos vira o padrão oficial do app (some o aviso "personalizado") e "Restaurar padrão" passa a "Voltar ao texto original"; 5.2.2: a leitura do texto diário não lê mais a linha de referência da matéria (antes lia a parte depois do ponto e vírgula, "19 §§ 17-18"), o filtro de citações também tira essa continuação e a instrução de leitura manda nunca ler referências; 5.2.1: espaços padronizados (10px) entre o título, o campo de texto e as caixas de opções das telas Formatar e Reuniões; 5.2.0: nova opção Inserir emojis no texto em Outras opções de formatação (só escolher e buscar, favoritos no topo, sem edição) e a Preparação de discursos e esboços ganha o ícone 📜 (antes repetia o 🎤 de Preparar para dirigir); 5.1.9: na tela Reuniões o cartão do campo de texto ganha a dica "Para mais opções de formatação clique em Formatar."; 5.1.8: na tela Início o atalho Backup do JW Library sobe para a primeira linha, ao lado de Formatar um texto; 5.1.7: rótulo "Texto diário" centralizado e separado do resto do cartão por uma linha, e o aviso do cartão desabilitado fica só em "Requer o código de pesquisa."; 5.1.6: rótulo "Texto diário" no topo do cartão do texto diário; 5.1.5: Preparar para dirigir (e o atalho Dirigentes) pedem só o código do dirigente, que passa a valer sozinho no servidor para as tarefas do dirigente; 5.1.4: a Preparação de discursos e esboços vira um grupo dentro de Preparação para as reuniões e pede só o código do dirigente, a moldura de Pesquisas e respostas salvas (novo nome) ganha cor forte (verde) como as outras; 5.1.3: "Opções de formatação com IA" passa a "Opções com IA", o botão do texto colado fica separado do de formatação e dentro de um contêiner com o texto explicativo novo, e a Preparação de discursos e esboços (e a categoria Esboços das pesquisas salvas) também pedem o código do dirigente; 5.1.2: "Responder a partir do texto colado" mudou para Formatar → Opções de formatação com IA, o grupo Preparar para comentar (e o atalho Comentários) ficam desabilitados sem o código de pesquisa, o grupo e o atalho do dirigente pedem os dois códigos e o link do texto diário para o wol.jw.org fica habilitado sempre; 5.1.1: o código de acesso passa a se chamar "código de pesquisa" e os cartões que dependem dele (Joias, Estudo Bíblico, Estudo de A Sentinela do dirigente, a parte do Estudo de A Sentinela lida no site e o texto diário) ficam desabilitados sem o código; 5.1.0: sem o código do dirigente, o atalho Dirigentes, o grupo Preparar para dirigir e a categoria Dirigentes das pesquisas salvas aparecem desabilitados (cinza, com cadeado) em vez de sumir; 5.0.9: "Faça seu melhor no ministério" (semanas com discurso de 4 min) entre as opções em breve de Preparação de discursos e esboços; 5.0.8: atalho Dirigentes da tela Início volta ao nome "Dirigentes" e só a linha explicativa passa a "Ajuda na preparação para dirigir" (e a do atalho Comentários, "Ajuda na preparação para comentar"); 5.0.7: grupos da tela Reuniões renomeados para "Preparar para comentar" e "Preparar para dirigir" e atalho do Início "Ajuda na preparação para dirigir"; 5.0.6: pesquisas salvas separadas em categorias (Comentários, Dirigentes e Esboços), cada uma recolhível e na cor do grupo; 5.0.5: Estudo Bíblico de Congregação no grupo Preparação para dirigir (5 perguntas adicionais com resposta, sem aplicações práticas, e o resumo dos textos-base, que saiu do cartão dos comentários); 5.0.4: cor dos títulos dos grupos Preparação de comentários e Preparação para dirigir mais suave; 5.0.3: títulos dos grupos Preparação de comentários e Preparação para dirigir com cor forte (roxo e verde-água escuros, letra branca); 5.0.2: o aviso "Nossa Vida Cristã (em breve)" saiu do grupo Preparação de comentários; 5.0.1: os grupos "Preparação de comentários" e "Preparação para dirigir" da tela Reuniões viram contêineres com borda na cor do grupo, para o que está dentro não parecer solto; 5.0.0: atalhos da tela Início coloridos, cada um com a cor da tela que abre; 4.9.9: Ajustes → Configurar formatação com IA ganha 💾 Salvar para todos (só administrador), que salva as opções de formatação como padrão de todos os usuários; 4.9.8: tela de prompts com um só botão 💾 Salvar para todos (modelo e esforço da IA, limites e prompts) e ícones ✋ e 🎤 nos grupos de comentários e de dirigir da tela Reuniões, como nos atalhos do Início; 4.9.7: o cartão de gasto da tela de prompts não explica mais como criar a chave de administrador da Anthropic (só indica o link do Claude Console); 4.9.6: o app confere o código do dirigente salvo com o servidor e, se ele deixou de valer, apaga o código e esconde as opções do dirigente; 4.9.5: código do dirigente (Ajustes → Autorização de acessos): sem ele, as opções de preparação para dirigir ficam escondidas e o servidor não faz as perguntas do dirigente; enquanto não existir a variável CODIGO_DIRIGENTE na Vercel, vale o código de acesso; 4.9.4: texto diário com comentários adicionais que podem ser salvos e recuperados no mesmo dia (no dia seguinte são apagados) e link do wol.jw.org legível; 4.9.3: o botão 🔊 do campo de texto só aparece (e só funciona no servidor) para o administrador; a leitura em voz alta do texto diário continua para todos; 4.9.2: pesquisas salvas por semana (só as da semana escolhida; o botão apaga as das semanas anteriores); 4.9.1: pesquisas salvas (histórico das respostas da IA das reuniões neste aparelho, para reabrir depois); 4.9.0: joias espirituais com 2 joias por capítulo, sem repetir o versículo da pergunta da apostila; 4.8.9: Joias Espirituais (leitura da semana lida no wol.jw.org com as publicações do Índice das Publicações; até 2 joias por capítulo e a resposta à pergunta da apostila) e, no Estudo Bíblico, textos citados nas perguntas seguindo as opções de textos bíblicos;4.8.8: Estudo Bíblico de Congregação (capítulo da semana lido no wol.jw.org, respostas da IA por quadro, trechos das publicações citadas, resumo opcional dos textos-base) e o contexto "Sobre mim e a congregação" nos prompts; 4.8.7: cada seção da tela de prompts virou um cartão recolhível; 4.8.6: modelo da IA de texto escolhido pelo administrador na tela de prompts (Haiku, Sonnet, Opus ou Fable) e gasto do mês pela Cost API da Anthropic; 4.8.6: a barra da leitura em voz alta fecha sozinha quando a leitura termina; 4.8.5: categorias de Ajustes direto na página (sem o cartão recolhível "Configurações gerais do app"); 4.8.4: Ajustes → Autorização de acessos (código de acesso e senha de administrador informados uma vez e salvos), a IA nunca escreve "culto" (sempre reunião), comentários adicionais recolhíveis e com Limpar, atalhos Comentários e Dirigentes abrem só o grupo deles; 4.8.3: tela Início com o texto diário (do wol.jw.org; um toque abre o comentário, ler em voz alta, levar para o campo de texto e comentários adicionais da IA) e atalhos; 4.8.2: referências bíblicas lidas na forma curta ("Primeira Coríntios treze, quatro a sete"), voz com duas partes à frente (sem pausas, também em 1,15×), pular citações de publicações (w24.09 21 § 6) e referências bíblicas só entre parênteses ou depois de travessão no fim do parágrafo (o texto temático do texto diário é lido); 4.8.1: voz começa mais rápido (primeiras partes curtas) e campos de preço alinhados; 4.8.0: menu da voz para o administrador (modelo, voz, tom, o que ler e pular), consumo estimado e vozes Gemini com a conta de serviço do Google; 4.7.9: voz reserva (Chirp 3 HD) quando o Gemini é recusado; 4.7.8: botão 🔊 Ouvir (leitura em voz alta com a voz do Google); 4.7.7: Fonte CX com C preto e C branco, cada um ao lado do seu quadradinho; todos os cards começam fechados ao abrir o app; 4.7.6: tela Reuniões em dois cartões (texto e reuniões); 4.7.5: campo de texto volta a crescer depois de levar uma nota do backup; importar notas de outro backup; 4.7.4: card do desenvolvedor na largura do quadro de limitações (Sobre); 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
+    const APP_VERSION = '5.2.8'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0 (e 5.0.1… 5.0.9 e então 5.1.0); 5.2.8: novo card Faça seu melhor no ministério (discurso curto) em Preparação de discursos e esboços: o servidor lê só os itens "Discurso" da apostila (4 ou 5 minutos, como vier), a fonte (ponto do apêndice A ou artigo), a lição do th e, quando a fonte só traz o tema e textos, pesquisa o tema no wol.jw.org; a IA elabora o esboço com 1 ou 2 pontos e no máximo 3 textos lidos, e leva a lição do th em conta só se ela influenciar o esboço; 5.2.7: o prompt de Tesouros fica só com o que é específico do discurso (pontos e textos da apostila, fontes, leitura dos textos e tempo) e as regras de estilo comuns a todos os esboços (tema frisado, tópicos, aplicação, tom, ilustrações) vão para a parte Como elaborar um esboço; 5.2.6: o esboço de Tesouros passa a seguir o capítulo Como elaborar um esboço (Beneficie-se): nova parte editável com os princípios do esboço (objetivo, pontos principais, argumentos e ideias, sequência lógica, introdução e conclusão), e o resultado sai como no modelo, com o ponto principal em maiúsculas e as ideias recuadas; 5.2.5: Preparação de discursos e esboços ganha o card Tesouros da Palavra de Deus (esboço do discurso de 10 min com a IA, lendo a apostila e as fontes no wol.jw.org, só com o código do dirigente), o prompt editável do esboço fica na categoria Esboços e Discursos, e o trecho de cada fonte citada passa a ter só os parágrafos citados (antes vinha um a mais); 5.2.4: o botão Visualizar e editar prompts sai de Configurar formatação com IA e ganha um card próprio em Ajustes, e a tela de prompts passa a ser organizada em categorias recolhíveis com emoji (modelo/gasto/limites, base das respostas, comentários, dirigente, Bíblia, formatação, voz, diversos e parte técnica); 5.2.3: na tela de prompts o texto salvo com 💾 Salvar para todos vira o padrão oficial do app (some o aviso "personalizado") e "Restaurar padrão" passa a "Voltar ao texto original"; 5.2.2: a leitura do texto diário não lê mais a linha de referência da matéria (antes lia a parte depois do ponto e vírgula, "19 §§ 17-18"), o filtro de citações também tira essa continuação e a instrução de leitura manda nunca ler referências; 5.2.1: espaços padronizados (10px) entre o título, o campo de texto e as caixas de opções das telas Formatar e Reuniões; 5.2.0: nova opção Inserir emojis no texto em Outras opções de formatação (só escolher e buscar, favoritos no topo, sem edição) e a Preparação de discursos e esboços ganha o ícone 📜 (antes repetia o 🎤 de Preparar para dirigir); 5.1.9: na tela Reuniões o cartão do campo de texto ganha a dica "Para mais opções de formatação clique em Formatar."; 5.1.8: na tela Início o atalho Backup do JW Library sobe para a primeira linha, ao lado de Formatar um texto; 5.1.7: rótulo "Texto diário" centralizado e separado do resto do cartão por uma linha, e o aviso do cartão desabilitado fica só em "Requer o código de pesquisa."; 5.1.6: rótulo "Texto diário" no topo do cartão do texto diário; 5.1.5: Preparar para dirigir (e o atalho Dirigentes) pedem só o código do dirigente, que passa a valer sozinho no servidor para as tarefas do dirigente; 5.1.4: a Preparação de discursos e esboços vira um grupo dentro de Preparação para as reuniões e pede só o código do dirigente, a moldura de Pesquisas e respostas salvas (novo nome) ganha cor forte (verde) como as outras; 5.1.3: "Opções de formatação com IA" passa a "Opções com IA", o botão do texto colado fica separado do de formatação e dentro de um contêiner com o texto explicativo novo, e a Preparação de discursos e esboços (e a categoria Esboços das pesquisas salvas) também pedem o código do dirigente; 5.1.2: "Responder a partir do texto colado" mudou para Formatar → Opções de formatação com IA, o grupo Preparar para comentar (e o atalho Comentários) ficam desabilitados sem o código de pesquisa, o grupo e o atalho do dirigente pedem os dois códigos e o link do texto diário para o wol.jw.org fica habilitado sempre; 5.1.1: o código de acesso passa a se chamar "código de pesquisa" e os cartões que dependem dele (Joias, Estudo Bíblico, Estudo de A Sentinela do dirigente, a parte do Estudo de A Sentinela lida no site e o texto diário) ficam desabilitados sem o código; 5.1.0: sem o código do dirigente, o atalho Dirigentes, o grupo Preparar para dirigir e a categoria Dirigentes das pesquisas salvas aparecem desabilitados (cinza, com cadeado) em vez de sumir; 5.0.9: "Faça seu melhor no ministério" (semanas com discurso de 4 min) entre as opções em breve de Preparação de discursos e esboços; 5.0.8: atalho Dirigentes da tela Início volta ao nome "Dirigentes" e só a linha explicativa passa a "Ajuda na preparação para dirigir" (e a do atalho Comentários, "Ajuda na preparação para comentar"); 5.0.7: grupos da tela Reuniões renomeados para "Preparar para comentar" e "Preparar para dirigir" e atalho do Início "Ajuda na preparação para dirigir"; 5.0.6: pesquisas salvas separadas em categorias (Comentários, Dirigentes e Esboços), cada uma recolhível e na cor do grupo; 5.0.5: Estudo Bíblico de Congregação no grupo Preparação para dirigir (5 perguntas adicionais com resposta, sem aplicações práticas, e o resumo dos textos-base, que saiu do cartão dos comentários); 5.0.4: cor dos títulos dos grupos Preparação de comentários e Preparação para dirigir mais suave; 5.0.3: títulos dos grupos Preparação de comentários e Preparação para dirigir com cor forte (roxo e verde-água escuros, letra branca); 5.0.2: o aviso "Nossa Vida Cristã (em breve)" saiu do grupo Preparação de comentários; 5.0.1: os grupos "Preparação de comentários" e "Preparação para dirigir" da tela Reuniões viram contêineres com borda na cor do grupo, para o que está dentro não parecer solto; 5.0.0: atalhos da tela Início coloridos, cada um com a cor da tela que abre; 4.9.9: Ajustes → Configurar formatação com IA ganha 💾 Salvar para todos (só administrador), que salva as opções de formatação como padrão de todos os usuários; 4.9.8: tela de prompts com um só botão 💾 Salvar para todos (modelo e esforço da IA, limites e prompts) e ícones ✋ e 🎤 nos grupos de comentários e de dirigir da tela Reuniões, como nos atalhos do Início; 4.9.7: o cartão de gasto da tela de prompts não explica mais como criar a chave de administrador da Anthropic (só indica o link do Claude Console); 4.9.6: o app confere o código do dirigente salvo com o servidor e, se ele deixou de valer, apaga o código e esconde as opções do dirigente; 4.9.5: código do dirigente (Ajustes → Autorização de acessos): sem ele, as opções de preparação para dirigir ficam escondidas e o servidor não faz as perguntas do dirigente; enquanto não existir a variável CODIGO_DIRIGENTE na Vercel, vale o código de acesso; 4.9.4: texto diário com comentários adicionais que podem ser salvos e recuperados no mesmo dia (no dia seguinte são apagados) e link do wol.jw.org legível; 4.9.3: o botão 🔊 do campo de texto só aparece (e só funciona no servidor) para o administrador; a leitura em voz alta do texto diário continua para todos; 4.9.2: pesquisas salvas por semana (só as da semana escolhida; o botão apaga as das semanas anteriores); 4.9.1: pesquisas salvas (histórico das respostas da IA das reuniões neste aparelho, para reabrir depois); 4.9.0: joias espirituais com 2 joias por capítulo, sem repetir o versículo da pergunta da apostila; 4.8.9: Joias Espirituais (leitura da semana lida no wol.jw.org com as publicações do Índice das Publicações; até 2 joias por capítulo e a resposta à pergunta da apostila) e, no Estudo Bíblico, textos citados nas perguntas seguindo as opções de textos bíblicos;4.8.8: Estudo Bíblico de Congregação (capítulo da semana lido no wol.jw.org, respostas da IA por quadro, trechos das publicações citadas, resumo opcional dos textos-base) e o contexto "Sobre mim e a congregação" nos prompts; 4.8.7: cada seção da tela de prompts virou um cartão recolhível; 4.8.6: modelo da IA de texto escolhido pelo administrador na tela de prompts (Haiku, Sonnet, Opus ou Fable) e gasto do mês pela Cost API da Anthropic; 4.8.6: a barra da leitura em voz alta fecha sozinha quando a leitura termina; 4.8.5: categorias de Ajustes direto na página (sem o cartão recolhível "Configurações gerais do app"); 4.8.4: Ajustes → Autorização de acessos (código de acesso e senha de administrador informados uma vez e salvos), a IA nunca escreve "culto" (sempre reunião), comentários adicionais recolhíveis e com Limpar, atalhos Comentários e Dirigentes abrem só o grupo deles; 4.8.3: tela Início com o texto diário (do wol.jw.org; um toque abre o comentário, ler em voz alta, levar para o campo de texto e comentários adicionais da IA) e atalhos; 4.8.2: referências bíblicas lidas na forma curta ("Primeira Coríntios treze, quatro a sete"), voz com duas partes à frente (sem pausas, também em 1,15×), pular citações de publicações (w24.09 21 § 6) e referências bíblicas só entre parênteses ou depois de travessão no fim do parágrafo (o texto temático do texto diário é lido); 4.8.1: voz começa mais rápido (primeiras partes curtas) e campos de preço alinhados; 4.8.0: menu da voz para o administrador (modelo, voz, tom, o que ler e pular), consumo estimado e vozes Gemini com a conta de serviço do Google; 4.7.9: voz reserva (Chirp 3 HD) quando o Gemini é recusado; 4.7.8: botão 🔊 Ouvir (leitura em voz alta com a voz do Google); 4.7.7: Fonte CX com C preto e C branco, cada um ao lado do seu quadradinho; todos os cards começam fechados ao abrir o app; 4.7.6: tela Reuniões em dois cartões (texto e reuniões); 4.7.5: campo de texto volta a crescer depois de levar uma nota do backup; importar notas de outro backup; 4.7.4: card do desenvolvedor na largura do quadro de limitações (Sobre); 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 
@@ -9413,7 +9427,7 @@ function saveTemplatesToStorage() {
       if (slot && aiOutput.parentElement !== slot) slot.appendChild(aiOutput);
     }
 
-    let aiLastKind = 'format'; // último pedido feito: 'format', 'sentinela', 'estudo', 'ebc', 'ebcdir', 'joias' ou 'tesouros' (define o que "Outra sugestão/Melhorar" refazem)
+    let aiLastKind = 'format'; // último pedido feito: 'format', 'sentinela', 'estudo', 'ebc', 'ebcdir', 'joias', 'tesouros' ou 'discurso' (define o que "Outra sugestão/Melhorar" refazem)
     let aiSentinelaRaw = [];  // itens crus das respostas da Sentinela, reenviados ao refinar
     let aiRaw = [];           // resposta crua da IA, reenviada ao pedir "outra" ou "melhorar"
     let aiBaseText = '';      // texto antes de qualquer sugestão ser aplicada (para desfazer)
@@ -9428,11 +9442,11 @@ function saveTemplatesToStorage() {
 
     // A mensagem aparece junto ao botão que o usuário usou: na área da IA (formatação e respostas do texto colado) ou nos
     // cards da Sentinela (Comentários e Dirigente).
-    let aiStatusKind = 'format'; // 'format' | 'sentinela' | 'estudo' | 'lista' | 'dirigente' | 'ebc' | 'joias' | 'ebcdir' | 'tesouros'
+    let aiStatusKind = 'format'; // 'format' | 'sentinela' | 'estudo' | 'lista' | 'dirigente' | 'ebc' | 'joias' | 'ebcdir' | 'tesouros' | 'discurso'
     let studyListCard = 'comentarios'; // card do último "Carregar os parágrafos": 'comentarios' ou 'dirigente'
 
     function aiStatusElements() {
-      return [aiStatus, aiStudyAnswerStatus, aiStudyStatus, leaderAnswerStatus, leaderStudyStatus, document.getElementById('ebcStatus'), document.getElementById('joiasStatus'), document.getElementById('ebcDirStatus'), document.getElementById('tesourosStatus')];
+      return [aiStatus, aiStudyAnswerStatus, aiStudyStatus, leaderAnswerStatus, leaderStudyStatus, document.getElementById('ebcStatus'), document.getElementById('joiasStatus'), document.getElementById('ebcDirStatus'), document.getElementById('tesourosStatus'), document.getElementById('discursoStatus')];
     }
 
     function aiStatusElement() {
@@ -9440,6 +9454,7 @@ function saveTemplatesToStorage() {
         : aiStatusKind === 'ebc' ? document.getElementById('ebcStatus')
           : aiStatusKind === 'ebcdir' ? document.getElementById('ebcDirStatus')
           : aiStatusKind === 'tesouros' ? document.getElementById('tesourosStatus')
+          : aiStatusKind === 'discurso' ? document.getElementById('discursoStatus')
           : aiStatusKind === 'joias' ? document.getElementById('joiasStatus')
           : aiStatusKind === 'dirigente' ? leaderAnswerStatus
             : aiStatusKind === 'lista' ? (studyListCard === 'dirigente' ? leaderStudyStatus : aiStudyStatus)
@@ -9501,6 +9516,7 @@ function saveTemplatesToStorage() {
         document.getElementById('ebcCarregarBtn'), document.getElementById('ebcResponderBtn'),
         document.getElementById('ebcDirCarregarBtn'), document.getElementById('ebcDirPerguntasBtn'),
         document.getElementById('tesourosCarregarBtn'), document.getElementById('tesourosEsbocoBtn'),
+        document.getElementById('discursoCarregarBtn'), document.getElementById('discursoEsbocoBtn'),
         document.getElementById('joiasCarregarBtn'), document.getElementById('joiasResponderBtn')];
 
       if (!on) {
@@ -10361,7 +10377,9 @@ function saveTemplatesToStorage() {
         });
         let data = null;
         try { data = await response.json(); } catch (e) { /* resposta sem JSON */ }
-        return { ok: response.ok && !!data, data, unavailable: response.status === 404 || response.status === 501 };
+        // 404 ou 501 sem mensagem do servidor = a rota não existe (site fora do ar ou app aberto fora do site publicado). Com
+        // "erro" na resposta o servidor respondeu de verdade (por exemplo, "esta semana não tem discurso"): a mensagem dele vale.
+        return { ok: response.ok && !!data, data, unavailable: (response.status === 404 || response.status === 501) && !(data && data.erro) };
       } finally {
         clearTimeout(timer);
       }
@@ -10639,6 +10657,7 @@ function saveTemplatesToStorage() {
         : aiLastKind === 'ebc' ? requestEbcAnswers(mode)
           : aiLastKind === 'ebcdir' ? requestEbcDirigente(mode)
           : aiLastKind === 'tesouros' ? requestTesouros(mode)
+          : aiLastKind === 'discurso' ? requestDiscursoCurto(mode)
           : aiLastKind === 'joias' ? requestJoias(mode)
           : aiLastKind === 'sentinela' ? requestSentinelaAnswers(mode)
             : requestAiSuggestions(mode)
@@ -10919,57 +10938,83 @@ function saveTemplatesToStorage() {
     ebcDirCarregarBtn.addEventListener('click', ebcDirCarregar);
     ebcDirPerguntasBtn.addEventListener('click', () => requestEbcDirigente());
 
-    // ---------- Tesouros da Palavra de Deus: esboço do discurso de 10 minutos ----------
-    // Grupo "Preparação de discursos e esboços" (só com o código do dirigente). O servidor lê o discurso da semana na apostila
-    // (o tema, os pontos com os textos bíblicos e as fontes de matéria) e a IA elabora o esboço: tema, introdução, pontos e
-    // conclusão. Tudo vai para o campo de texto, cada parte com o botão azul de copiar, e fica em Pesquisas e respostas salvas
-    // (Esboços).
-    const tesourosInfo = document.getElementById('tesourosInfo');
-    const tesourosCarregarBtn = document.getElementById('tesourosCarregarBtn');
-    const tesourosEsbocoBtn = document.getElementById('tesourosEsbocoBtn');
-    const tesourosOutputSlot = document.getElementById('tesourosOutputSlot');
+    // ---------- Esboços de discursos: Tesouros da Palavra de Deus (10 min) e Faça seu melhor no ministério (4 a 5 min) ----------
+    // Grupo "Preparação de discursos e esboços" (só com o código do dirigente). O servidor lê o discurso da semana na apostila e a IA
+    // elabora o esboço: tema, introdução, pontos e conclusão. Tudo vai para o campo de texto, cada parte com o botão azul de copiar, e
+    // fica em Pesquisas e respostas salvas (Esboços). Os dois cards usam o mesmo código; cada um tem o seu texto de "Carregar".
+    const soComConteudo = (...itens) => itens.filter(Boolean);
+    const ESBOCOS = {
+      tesouros: {
+        kind: 'tesouros',
+        tarefaLer: 'tesouros-ler',
+        tarefa: 'tesouros',
+        info: document.getElementById('tesourosInfo'),
+        carregarBtn: document.getElementById('tesourosCarregarBtn'),
+        esbocoBtn: document.getElementById('tesourosEsbocoBtn'),
+        slot: document.getElementById('tesourosOutputSlot'),
+        tituloHistorico: '📜 Esboço de Tesouros',
+        falhaLer: 'Não consegui ler o discurso agora.',
+        // A semana e o tema (com o link da apostila no wol.jw.org) e, ao carregar, quantos pontos há e quais textos e fontes.
+        linhasDaInfo: dados => {
+          const pontos = Array.isArray(dados.pontos) ? dados.pontos : [];
+          const textos = [...new Set(pontos.flatMap(ponto => ponto.textos || []))];
+          const fontes = [...new Set(pontos.flatMap(ponto => ponto.fontes || []))];
+          return soComConteudo(
+            pontos.length ? pontos.length + (pontos.length === 1 ? ' ponto' : ' pontos') + (textos.length ? ' · textos: ' + textos.join('; ') : '') + (fontes.length ? ' · fontes: ' + fontes.join('; ') : '') : '',
+            dados.reflexao
+          );
+        }
+      },
+      discurso: {
+        kind: 'discurso',
+        tarefaLer: 'discurso-ler',
+        tarefa: 'discurso',
+        info: document.getElementById('discursoInfo'),
+        carregarBtn: document.getElementById('discursoCarregarBtn'),
+        esbocoBtn: document.getElementById('discursoEsbocoBtn'),
+        slot: document.getElementById('discursoOutputSlot'),
+        tituloHistorico: '🗣️ Esboço do discurso curto',
+        falhaLer: 'Não consegui ler a apostila agora.',
+        // O tempo (4 ou 5 minutos, como vem na apostila), a fonte, a lição do th, os textos indicados e quantos resultados a pesquisa
+        // do tema no wol.jw.org trouxe (só quando a fonte não é um artigo inteiro).
+        linhasDaInfo: dados => soComConteudo(
+          (dados.minutos ? dados.minutos + ' min' : '') + (dados.fonte ? ' · fonte: ' + dados.fonte : '') + (dados.licao ? ' · lição: ' + dados.licao.citacao + (dados.licao.titulo ? ' (' + dados.licao.titulo + ')' : '') : ''),
+          (dados.textos && dados.textos.length ? 'textos: ' + dados.textos.join('; ') : '') + (dados.pesquisa ? (dados.textos && dados.textos.length ? ' · ' : '') + 'pesquisa do tema no wol.jw.org: ' + dados.pesquisa + (dados.pesquisa === 1 ? ' resultado' : ' resultados') : '')
+        )
+      }
+    };
 
-    // A semana e o tema (com o link da apostila no wol.jw.org) e, ao carregar, quantos pontos há e quais textos e fontes.
-    function tesourosMostrarInfo(dados) {
-      tesourosInfo.textContent = '';
+    function esbocoMostrarInfo(cfg, dados) {
+      cfg.info.textContent = '';
       if (!dados || !dados.titulo) return;
       const link = document.createElement('a');
       link.href = dados.url;
       link.target = '_blank';
       link.rel = 'noopener noreferrer';
       link.textContent = '✨ ' + [dados.semana, dados.titulo].filter(Boolean).join(' · ');
-      tesourosInfo.appendChild(link);
-      const pontos = Array.isArray(dados.pontos) ? dados.pontos : [];
-      if (pontos.length) {
-        const textos = [...new Set(pontos.flatMap(ponto => ponto.textos || []))];
-        const fontes = [...new Set(pontos.flatMap(ponto => ponto.fontes || []))];
-        tesourosInfo.append(
-          document.createElement('br'),
-          pontos.length + (pontos.length === 1 ? ' ponto' : ' pontos') + (textos.length ? ' · textos: ' + textos.join('; ') : '') + (fontes.length ? ' · fontes: ' + fontes.join('; ') : '')
-        );
-      }
-      if (dados.reflexao) tesourosInfo.append(document.createElement('br'), dados.reflexao);
+      cfg.info.appendChild(link);
+      (cfg.linhasDaInfo(dados) || []).forEach(linha => { if (linha) cfg.info.append(document.createElement('br'), linha); });
     }
 
     // Semana trocada na barra do alto: o discurso mostrado deixa de valer.
-    function tesourosSemanaMudou() {
-      tesourosInfo.textContent = '';
+    function esbocosSemanaMudou() {
+      Object.values(ESBOCOS).forEach(cfg => { cfg.info.textContent = ''; });
     }
 
-    async function tesourosCarregar() {
+    async function esbocoCarregar(cfg) {
       if (aiBusy) return;
-      aiStatusKind = 'tesouros';
+      aiStatusKind = cfg.kind;
       const accessError = dirigenteAccessError();
       if (accessError) return setAiStatus(accessError, true);
       aiBusy = true;
-      setAiLoading(true, tesourosCarregarBtn);
+      setAiLoading(true, cfg.carregarBtn);
       try {
-        const result = await postStudy({ tarefa: 'tesouros-ler', codigoDirigente: codigoDirigenteSalvo(), ano: aiWeekYear, semana: aiWeekNumber }, 60000);
+        const result = await postStudy({ tarefa: cfg.tarefaLer, codigoDirigente: codigoDirigenteSalvo(), ano: aiWeekYear, semana: aiWeekNumber }, 60000);
         if (!result.ok) {
           if (await dirigenteRecusado(result)) return;
-          return setAiStatus(studyFailureMessage(result, 'Não consegui ler o discurso agora.'), true);
+          return setAiStatus(studyFailureMessage(result, cfg.falhaLer), true);
         }
-        tesourosMostrarInfo(result.data);
+        esbocoMostrarInfo(cfg, result.data);
         setAiStatus('✅ Discurso da semana carregado.', false);
       } catch (e) {
         setAiStatus(e && e.name === 'AbortError' ? 'O site demorou demais. Tente de novo.' : 'Falha de conexão ao ler o discurso.', true);
@@ -10980,19 +11025,22 @@ function saveTemplatesToStorage() {
     }
 
     // Uma parte para o tema, uma para a introdução, uma para cada ponto e uma para a conclusão, cada uma com o seu botão de copiar.
-    function tesourosPartes(esboco) {
+    function esbocoPartes(esboco) {
       const negrito = text => {
         const styleId = aiStyleIdFor('negrito');
         return styleId ? convertTextWithStyle(text, styleId) : text;
       };
       const tempo = minutos => (minutos ? ' (≈ ' + minutos + ' min)' : '');
-      const topicos = lista => lista.map(item => '• ' + item).join('\n');
+      const topicos = itens => itens.map(item => '• ' + item).join('\n');
       // Como no modelo de esboço: o ponto principal na margem, em maiúsculas; abaixo, os argumentos que o apoiam e, recuadas
       // (4 espaços, o mesmo recuo do app), as ideias que desenvolvem cada argumento.
-      const argumentos = lista => lista.map(item => '• ' + item.argumento + (item.ideias || []).map(ideia => '\n    ◦ ' + ideia).join('')).join('\n');
+      const argumentos = itens => itens.map(item => '• ' + item.argumento + (item.ideias || []).map(ideia => '\n    ◦ ' + ideia).join('')).join('\n');
       const abertura = [];
       if (esboco.objetivo) abertura.push('\n🧭 ' + negrito('OBJETIVO') + ' 👉 ' + esboco.objetivo);
       if (esboco.aplicacao) abertura.push('\n🎯 ' + negrito('APLICAÇÃO PRINCIPAL') + ' 👉 ' + esboco.aplicacao);
+      // Só no discurso curto: a lição do th quando ela influencia o esboço, e as fontes usadas (a da apostila e as do wol.jw.org).
+      if (esboco.licao) abertura.push('\n🎓 Lição do th (' + esboco.licao.citacao + (esboco.licao.titulo ? ': ' + esboco.licao.titulo : '') + ') 👉 ' + esboco.licao.dica);
+      if (Array.isArray(esboco.fontes) && esboco.fontes.length) abertura.push('\n📚 Fontes 👉 ' + esboco.fontes.join('; '));
       const intro = esboco.introducao;
       const partes = [{
         paragrafos: 'Tema',
@@ -11021,11 +11069,11 @@ function saveTemplatesToStorage() {
       return partes;
     }
 
-    async function requestTesouros(mode) {
+    async function requestEsboco(cfg, mode) {
       if (aiBusy) return;
-      aiLastKind = 'tesouros';
-      aiStatusKind = 'tesouros';
-      placeAiOutput(tesourosOutputSlot);
+      aiLastKind = cfg.kind;
+      aiStatusKind = cfg.kind;
+      placeAiOutput(cfg.slot);
       const accessError = dirigenteAccessError();
       if (accessError) return setAiStatus(accessError, true);
 
@@ -11052,7 +11100,7 @@ function saveTemplatesToStorage() {
       saveAiOptions();
 
       const payload = {
-        tarefa: 'tesouros',
+        tarefa: cfg.tarefa,
         codigoDirigente: codigoDirigenteSalvo(),
         ano: aiWeekYear,
         semana: aiWeekNumber,
@@ -11064,7 +11112,7 @@ function saveTemplatesToStorage() {
       }
 
       aiBusy = true;
-      setAiLoading(true, mode === 'nova' ? aiAnotherBtn : mode === 'melhorar' ? aiImproveBtn : tesourosEsbocoBtn);
+      setAiLoading(true, mode === 'nova' ? aiAnotherBtn : mode === 'melhorar' ? aiImproveBtn : cfg.esbocoBtn);
       try {
         const result = await postStudy(payload, IA_ESPERA_MS);
         if (!result.ok) {
@@ -11073,13 +11121,13 @@ function saveTemplatesToStorage() {
         }
         const esboco = result.data.esboco;
         if (!esboco) return setAiStatus(result.data.erro || 'A IA não elaborou o esboço. Tente de novo.', true);
-        if (!tesourosInfo.textContent) tesourosMostrarInfo(result.data);
+        if (!cfg.info.textContent) esbocoMostrarInfo(cfg, result.data);
 
         aiSentinelaRaw = [esboco];
-        const parts = tesourosPartes(esboco);
+        const parts = esbocoPartes(esboco);
         aiResumo = { texto: parts.map(part => part.texto).join('\n\n\n'), partes: parts, done: false, kind: 'estudo', fonte: result.data.titulo || '' };
         appendToMainText(aiResumo.texto);
-        historicoSalvar({ tipo: 'esboco', titulo: '📜 Esboço de Tesouros' + (result.data.titulo ? ' · ' + result.data.titulo : ''), ano: payload.ano, numSemana: payload.semana, partes: parts });
+        historicoSalvar({ tipo: 'esboco', titulo: cfg.tituloHistorico + (result.data.titulo ? ' · ' + result.data.titulo : ''), ano: payload.ano, numSemana: payload.semana, partes: parts });
         renderAiSuggestions();
         aiRefineBox.hidden = false;
         setAiStatus('✅ Esboço no campo de texto, cada parte com o botão de copiar.', false);
@@ -11091,8 +11139,12 @@ function saveTemplatesToStorage() {
       }
     }
 
-    tesourosCarregarBtn.addEventListener('click', tesourosCarregar);
-    tesourosEsbocoBtn.addEventListener('click', () => requestTesouros());
+    const requestTesouros = mode => requestEsboco(ESBOCOS.tesouros, mode);
+    const requestDiscursoCurto = mode => requestEsboco(ESBOCOS.discurso, mode);
+    Object.values(ESBOCOS).forEach(cfg => {
+      cfg.carregarBtn.addEventListener('click', () => esbocoCarregar(cfg));
+      cfg.esbocoBtn.addEventListener('click', () => requestEsboco(cfg));
+    });
 
     // ---------- Joias espirituais ----------
     // O servidor lê a leitura da Bíblia da semana (no alto da apostila Vida e Ministério), os versículos de cada capítulo
@@ -11517,7 +11569,7 @@ function saveTemplatesToStorage() {
       weekParts('today').forEach(btn => { btn.hidden = aiWeekOffset === 0; });
     }
 
-    const changeWeek = offset => { aiWeekOffset = offset; renderAiWeek(); refreshStudyPicker(); ebcSemanaMudou(); tesourosSemanaMudou(); joiasSemanaMudou(); historicoRender(); };
+    const changeWeek = offset => { aiWeekOffset = offset; renderAiWeek(); refreshStudyPicker(); ebcSemanaMudou(); esbocosSemanaMudou(); joiasSemanaMudou(); historicoRender(); };
     weekParts('today').forEach(btn => btn.addEventListener('click', () => changeWeek(0)));
     weekParts('prev').forEach(btn => btn.addEventListener('click', () => changeWeek(aiWeekOffset - 1)));
     weekParts('next').forEach(btn => btn.addEventListener('click', () => changeWeek(aiWeekOffset + 1)));
