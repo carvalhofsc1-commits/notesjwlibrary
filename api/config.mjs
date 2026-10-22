@@ -6,6 +6,7 @@ import { CATEGORIAS, LIMITES, PARTES, aplicarLimites, categoriaDaParte, limitesP
 import { esquecerCache, gravarAlteracoes, gravarLimites, lerAlteracoes, lerAnterior, lerLimites } from "./_promptsArmazenados.mjs";
 import { configPublicaVoz, gravarConfigVoz, lerConfigVoz, opcoesVoz } from "./_vozConfig.mjs";
 import { gravarConfigIa, lerConfigIa, lerCustoIa, opcoesIa } from "./_iaConfig.mjs";
+import { apagarEsboco, gravarEsbocos, gravarTemas, lerIndice, lerTemas, s34Configurado, temasDoTexto } from "./_s34.mjs";
 
 const CHAVE_PADRAO = "padrao_modelos";
 // Anotação do administrador (ex.: o código de pesquisa, para não esquecer). Só é lida e gravada com o
@@ -82,6 +83,17 @@ function soDiferencas(valores) {
     if (typeof valores[p.id] === "string" && valores[p.id].trim() !== p.padrao.trim()) resultado[p.id] = valores[p.id];
   }
   return resultado;
+}
+
+// Esboços de discursos públicos (S-34): o que está importado e a lista de temas.
+async function estadoS34() {
+  return { configurado: s34Configurado(), indice: await lerIndice(), temas: await lerTemas() };
+}
+
+function exigirS34(res) {
+  if (s34Configurado()) return true;
+  erro(res, 503, "O armazenamento privado (Blob) ainda não está configurado no servidor para os esboços S-34.");
+  return false;
 }
 
 function exigirEscrita(res) {
@@ -240,6 +252,36 @@ export default async function handler(req, res) {
             : "Não consegui consultar o gasto na Anthropic agora. Tente de novo.";
         return erro(res, 502, mensagem);
       }
+    }
+
+    // Esboços de discursos públicos (S-34), importados pela tela de Ajustes.
+    if (acao === "s34-estado") {
+      return res.status(200).json(await estadoS34());
+    }
+
+    // Confere (somenteConferir) ou grava até 25 esboços por pedido; devolve o que é novo, atualizado, igual ou inválido.
+    if (acao === "s34-gravar") {
+      if (!exigirS34(res)) return;
+      const esbocos = Array.isArray(corpo.esbocos) ? corpo.esbocos : [];
+      if (!esbocos.length) return erro(res, 400, "Nenhum esboço enviado.");
+      if (esbocos.length > 25) return erro(res, 400, "Esboços demais num pedido (no máximo 25).");
+      return res.status(200).json(await gravarEsbocos(esbocos, { somenteConferir: corpo.somenteConferir === true }));
+    }
+
+    // A lista dos temas (um por linha, "1. Título"): serve para conferir os arquivos importados e ver o que falta.
+    if (acao === "s34-lista-salvar") {
+      if (!exigirS34(res)) return;
+      const { itens, problemas } = temasDoTexto(corpo.texto);
+      if (!itens.length) return erro(res, 400, "Não encontrei temas numerados (um por linha, como \"1. Você conhece bem a Deus?\").");
+      await gravarTemas(itens);
+      return res.status(200).json({ quantidade: itens.length, problemas, temas: await lerTemas() });
+    }
+
+    if (acao === "s34-apagar") {
+      if (!exigirS34(res)) return;
+      const numero = Number(corpo.numero);
+      if (!Number.isInteger(numero) || numero < 1 || numero > 999) return erro(res, 400, "Número do tema inválido.");
+      return res.status(200).json({ apagado: await apagarEsboco(numero), indice: await lerIndice() });
     }
 
     if (acao === "anotacao-salvar") {
