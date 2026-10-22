@@ -273,3 +273,9 @@ export function textoDoDiscursoPublico(esboco, versiculos = []) {
   }
   return partes.join("\n\n");
 }
+
+// Os textos bíblicos do esboço do S-34 para a lista da tela: as leituras marcadas "[Leia …]" e os textos citados.
+export function textosBiblicosDoPublico(esboco) {
+  const { leituras, citadas } = referenciasDoPublico(esboco);
+  return { todos: [...leituras, ...citadas], leia: leituras };
+}

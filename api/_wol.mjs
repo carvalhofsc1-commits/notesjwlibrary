@@ -71,11 +71,27 @@ function numeros(rotulo) {
   return lista;
 }
 
+// O texto em volta de um link de texto bíblico diz que ele é para ler? Três formas: "(Leia Filipenses 4:11, 12.)" (o último "(" antes do
+// link abre um grupo que começa com "Leia" e ainda não fechou), "Leia Hebreus 13:16." no meio do parágrafo (o último "Leia" fica a
+// poucas palavras do link, sem fim de frase no meio) e "1 Coríntios 4:6, 7. (Leia.)" (o "(Leia.)" vem logo depois do link).
+function sobLeia(antes, depois) {
+  if (/^[^()]{0,14}\(\s*Leiam?\s*\.?\s*\)/i.test(depois)) return true;
+  const abre = antes.lastIndexOf("(");
+  if (abre >= 0 && abre > antes.lastIndexOf(")") && antes.length - abre <= 200 && /^\(\s*Leiam?\b/i.test(antes.slice(abre))) return true;
+  const leia = [...antes.matchAll(/\bLeiam?\b/gi)].pop();
+  if (!leia) return false;
+  const entre = antes.slice(leia.index + leia[0].length);
+  // Fim de frase: ponto (com ")" ou não) seguido de espaço e de algo que não é número ("Efé. 4:28" e "Tim. 6:17" são abreviaturas).
+  return entre.length <= 90 && !/[?!]/.test(entre) && !/\.\)?\s+(?!\d)/.test(entre);
+}
+
 // Referências bíblicas de um trecho da página: os links de texto bíblico (class="b"). Um link sem o nome do livro
 // continua o anterior: separado por vírgula, entra na mesma referência ("Filêmon 8, 9" + ", 17" -> "Filêmon 8, 9, 17");
 // separado por ponto e vírgula, vira outra do mesmo livro ("Mat. 24:14;" + "28:19, 20" -> "Mat. 28:19, 20").
-function referenciasDe(html) {
+// Com "marcadas" (um Set), as que o texto manda ler ("Leia") também são postas nele.
+export function referenciasDe(html, marcadas = null) {
   const lista = [];
+  const comLeia = new Set(); // posições da lista cujo link está dentro de um "(Leia …)"
   let livro = "";
   let fimAnterior = -1;
   let pontuacaoAnterior = ""; // ";" ou "," que ficou no fim do link anterior ("Isaías 1:18;")
@@ -88,13 +104,17 @@ function referenciasDe(html) {
     pontuacaoAnterior = bruto.slice(texto.length);
     if (!texto) continue;
     const comLivro = texto.match(/^((?:[1-3]\s*)?\p{L}[^\d]*?)\s*\d/u);
+    const leia = marcadas ? sobLeia(textoDe(html.slice(Math.max(0, m.index - 1500), m.index)), textoDe(html.slice(fimAnterior, fimAnterior + 600)).slice(0, 40)) : false;
     if (comLivro) livro = comLivro[1];
     else if (lista.length && (entre === "," || entre === "")) {
       lista[lista.length - 1] += `, ${texto}`;
+      if (leia) comLeia.add(lista.length - 1);
       continue;
     }
     lista.push(comLivro || !livro ? texto : `${livro} ${texto}`);
+    if (leia) comLeia.add(lista.length - 1);
   }
+  if (marcadas) comLeia.forEach((i) => marcadas.add(lista[i]));
   return [...new Set(lista)];
 }
 
@@ -339,12 +359,17 @@ async function lerTrechoCitado({ caminho, citacao }, timeoutMs, maxCaracteres = 
   const html = await (docs ? docs.get(destino.url) : baixar(destino.url, timeoutMs));
   const titulo = textoDe((html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/) || [])[1] || "");
   const partes = [];
+  const referencias = [];
+  const leias = new Set();
   for (const [, , pid, conteudo] of html.matchAll(/<(p|h2|h3)\b[^>]*data-pid="(\d+)"[^>]*>([\s\S]*?)<\/\1>/g)) {
     const n = Number(pid);
-    if (n >= destino.de && n <= destino.ate) partes.push(textoDe(conteudo));
+    if (n >= destino.de && n <= destino.ate) {
+      partes.push(textoDe(conteudo));
+      referencias.push(...referenciasDe(conteudo, leias));
+    }
   }
   const texto = partes.filter(Boolean).join("\n").slice(0, maxCaracteres);
-  return texto ? { citacao, titulo, texto } : null;
+  return texto ? { citacao, titulo, texto, referencias: [...new Set(referencias)], leias: [...leias] } : null;
 }
 
 const estudosBiblicos = new Map(); // url da página de reuniões -> { quando, capitulo }
@@ -683,6 +708,17 @@ export function referenciasDeTesouros(discurso) {
   return [...new Set([...discurso.pontos.flatMap((p) => p.referencias), ...(discurso.reflexao ? discurso.reflexao.referencias : [])])];
 }
 
+// Os textos bíblicos da matéria de Tesouros, para a lista da tela: os da apostila, os dos trechos das fontes lidas e os da reflexão
+// (todos), e os marcados com "(Leia …)" nessas fontes.
+export function textosBiblicosDeTesouros(discurso) {
+  const itens = [...discurso.pontos, ...(discurso.reflexao ? [discurso.reflexao] : [])];
+  const fontes = itens.flatMap((i) => i.fontes || []);
+  return {
+    todos: [...itens.flatMap((i) => i.referencias || []), ...fontes.flatMap((f) => f.referencias || [])],
+    leia: fontes.flatMap((f) => f.leias || []),
+  };
+}
+
 // Texto do discurso para a IA: o tema, cada ponto da apostila (com os textos bíblicos, a fonte e o trecho lido dela), a pergunta
 // de reflexão e o texto exato dos versículos (se vierem).
 export function textoDosTesouros(discurso, versiculos = []) {
@@ -744,7 +780,9 @@ export function discursoCurtoDaApostila(html) {
     const links = [...paragrafo.matchAll(/<a\b[^>]*href="(\/pt\/wol\/pc\/[^"]+)"[^>]*>([\s\S]*?)<\/a>/g)].map(([, caminho, rotulo]) => ({ caminho, citacao: textoDe(rotulo) }));
     const licao = links.find((l) => /^th\b/i.test(l.citacao)) || null;
     const fonte = links.find((l) => !/^th\b/i.test(l.citacao)) || null;
-    return { titulo: tema || texto.replace(/^\(\s*\d+\s*min\)\s*(?:discurso\.?)?\s*/i, ""), minutos, texto, fonte, licao, referencias: referenciasDe(paragrafo) };
+    const leias = new Set();
+    const referencias = referenciasDe(paragrafo, leias);
+    return { titulo: tema || texto.replace(/^\(\s*\d+\s*min\)\s*(?:discurso\.?)?\s*/i, ""), minutos, texto, fonte, licao, referencias, leias: [...leias] };
   }
   return null;
 }
@@ -767,12 +805,15 @@ async function lerDocumentoCitado(citado, timeoutMs, maxCaracteres) {
     }
   }
   if (!partes.length) return null;
+  const leias = new Set();
+  const referencias = referenciasDe(brutos.join(" "), leias);
   return {
     tipo: destino.de !== null ? "ponto" : "documento",
     citacao: citado.citacao,
     titulo,
     texto: partes.join("\n").slice(0, maxCaracteres),
-    referencias: referenciasDe(brutos.join(" ")).slice(0, 10),
+    referencias: referencias.slice(0, 40),
+    leias: [...leias],
   };
 }
 
@@ -836,6 +877,7 @@ export async function lerDiscursoCurto(urlReuniao, { timeoutMs = 8000 } = {}) {
     licaoCitada: base.licao ? base.licao.citacao : null,
     pesquisa,
     referencias: indicadas,
+    leias: [...new Set([...(base.leias || []), ...(fonte && fonte.tipo === "ponto" ? fonte.leias || [] : [])])],
     url,
   };
   discursosCurtos.set(urlReuniao, { quando: Date.now(), discurso });
@@ -847,6 +889,14 @@ export async function lerDiscursoCurto(urlReuniao, { timeoutMs = 8000 } = {}) {
 export function referenciasDoDiscursoCurto(discurso) {
   if (discurso.referencias.length) return discurso.referencias;
   return discurso.fonte && discurso.fonte.tipo === "documento" ? discurso.fonte.referencias : [];
+}
+
+// Os textos bíblicos da matéria do discurso curto, para a lista da tela: os indicados, os da fonte e os marcados com "(Leia …)".
+export function textosBiblicosDoDiscursoCurto(discurso) {
+  return {
+    todos: [...discurso.referencias, ...(discurso.fonte ? discurso.fonte.referencias || [] : [])],
+    leia: discurso.leias || [],
+  };
 }
 
 // Texto do discurso para a IA: o tema, a fonte indicada, a lição do th, o texto dos versículos e a pesquisa do tema no wol.jw.org.

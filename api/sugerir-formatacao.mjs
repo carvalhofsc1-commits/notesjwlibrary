@@ -8,7 +8,7 @@ import { codigoDoDirigente, erro, origemPermitida, textosIguais } from "./_comum
 import { lerConfigIa } from "./_iaConfig.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
 import { buscarVerbete, buscarVersiculos, fontesConfiguradas, precarregarFontes } from "./_fontes.mjs";
-import { lerEsboco, lerIndice, minutosDoEsboco, publicacoesDaSecao, referenciasDoPublico, s34Configurado, textoDoDiscursoPublico } from "./_s34.mjs";
+import { lerEsboco, lerIndice, minutosDoEsboco, publicacoesDaSecao, referenciasDoPublico, s34Configurado, textoDoDiscursoPublico, textosBiblicosDoPublico } from "./_s34.mjs";
 import {
   QUADROS_EBC,
   lerEstudoBiblico,
@@ -27,6 +27,8 @@ import {
   textoDoDiscursoCurto,
   textoDosGrupos,
   textoDosTesouros,
+  textosBiblicosDeTesouros,
+  textosBiblicosDoDiscursoCurto,
 } from "./_wol.mjs";
 
 // ---------- Modelo da IA ----------
@@ -1733,10 +1735,10 @@ async function corpoDoEsbocoLimpo(saidaBruta, o) {
   if (o.leituraEmCadaPonto && pontos.some((p) => !p.desenvolvimento.some((d) => d.leitura))) {
     avisos.push('Há ponto sem texto para leitura. Use "Melhorar" para pedir um texto em cada ponto.');
   }
-  if (o.leiturasPermitidas) {
+  if (o.leiturasObrigatorias && o.leiturasObrigatorias.length) {
     const lidas = new Set(leituras.map((l) => l.referencia));
-    const faltam = o.leiturasPermitidas.filter((r) => !lidas.has(r));
-    if (faltam.length) avisos.push(`Faltou a leitura de ${faltam.join("; ")}, que o esboço do S-34 marca. Use "Melhorar" para incluí-la.`);
+    const faltam = [...new Set(o.leiturasObrigatorias)].filter((r) => !lidas.has(r));
+    if (faltam.length) avisos.push(`Faltou a leitura de ${faltam.join("; ")}${o.motivoObrigatorias ? ", " + o.motivoObrigatorias : ""}. Use "Melhorar" ou "Incluir texto(s)" para incluí-la.`);
   }
   if (leituras.some((l) => !l.introducao || !l.destaque)) {
     avisos.push('Algum texto ficou sem a fala antes da leitura ou sem o comentário depois dela. Use "Melhorar" para corrigir.');
@@ -1770,6 +1772,85 @@ function anteriorParaIa(anteriores) {
       })),
     },
   };
+}
+
+// ---------- Textos bíblicos da matéria dos esboços ----------
+// A tela mostra, em cada esboço, todos os textos bíblicos da matéria (a apostila e as fontes, ou o esboço do S-34), com o texto exato
+// da Bíblia e a marca dos que a matéria manda ler ("Leia"). O orador marca os que quer ler além dos previstos e o app os manda de
+// volta em "textosExtras", já na primeira elaboração ou depois, no pedido "incluir".
+
+// A lista da tela (textosDaMateria): { referencia, texto, leia }, com os marcados com "Leia" primeiro (a ordem da matéria se mantém dentro de cada grupo).
+async function textosDaMateria({ todos, leia }) {
+  const itens = new Map(); // referência como a Bíblia escreve -> item
+  try {
+    for (const bruta of [...new Set([...(todos || []), ...(leia || [])])].slice(0, 80)) {
+      const achada = await leituraDaBiblia(bruta);
+      // Com a Bíblia no servidor, o que ela não acha (por exemplo, um capítulo inteiro, "Je 48") não entra: a IA não teria o texto.
+      if (fontesConfiguradas() && !achada.texto) continue;
+      if (!itens.has(achada.referencia)) itens.set(achada.referencia, { referencia: achada.referencia, texto: achada.texto, leia: false });
+    }
+    for (const bruta of leia || []) {
+      const item = itens.get((await leituraDaBiblia(bruta)).referencia);
+      if (item) item.leia = true;
+    }
+  } catch (e) {
+    console.error("Textos bíblicos da matéria: lista incompleta", e?.message);
+  }
+  return [...itens.values()].sort((a, b) => Number(b.leia) - Number(a.leia));
+}
+
+// As referências, como a Bíblia as escreve, de uma lista de referências da matéria (para conferir se o esboço as lê).
+async function referenciasDaBiblia(brutas) {
+  if (!fontesConfiguradas()) return [];
+  const vistas = new Set();
+  for (const bruta of brutas || []) vistas.add((await leituraDaBiblia(bruta)).referencia);
+  return [...vistas];
+}
+
+// Os textos que o orador escolheu ler além dos previstos: [{ referencia, texto }], conferidos na Bíblia, sem repetir (até 15).
+async function textosExtrasDoPedido(body) {
+  const brutos = (Array.isArray(body.textosExtras) ? body.textosExtras : []).filter((t) => typeof t === "string").map((t) => limparLinha(t, 80)).filter(Boolean).slice(0, 15);
+  const vistos = new Set();
+  const extras = [];
+  for (const bruto of brutos) {
+    const achado = await leituraDaBiblia(bruto);
+    if (fontesConfiguradas() && !achado.texto) continue; // a Bíblia não achou: a IA não teria o texto exato
+    if (vistos.has(achado.referencia)) continue;
+    vistos.add(achado.referencia);
+    extras.push(achado);
+  }
+  return extras;
+}
+
+// Os trechos do pedido (frases editáveis em "Orientação do usuário, lembrete…"): os textos marcados com "Leia" na matéria e os que o
+// orador escolheu, cada bloco com o texto exato dos versículos.
+function blocoDeTextosMarcados(leiaDaMateria, P) {
+  if (!leiaDaMateria.length) return "";
+  return "\n\n" + trocar(P.frases.pedidos["Esboço: textos marcados na matéria"], { textos: leiaDaMateria.join("; ") });
+}
+
+function blocoDeTextosEscolhidos(extras, P) {
+  if (!extras.length) return "";
+  const versiculos = extras.filter((e) => e.texto).map((e) => `${e.referencia}: ${e.texto}`);
+  return (
+    "\n\n" +
+    trocar(P.frases.pedidos["Esboço: textos escolhidos"], { textos: extras.map((e) => e.referencia).join("; ") }) +
+    (versiculos.length ? "\nTEXTO DOS VERSÍCULOS ESCOLHIDOS:\n" + versiculos.join("\n") : "")
+  );
+}
+
+// "Outra versão", "Melhorar" ou "Incluir texto(s)": o pedido que vai depois do esboço já sugerido.
+function pedidoDoModo(modo, P) {
+  return P.frases.pedidos[modo === "nova" ? "Esboço: outra versão" : modo === "incluir" ? "Esboço: incluir textos" : "Esboço: melhorar"];
+}
+
+// As leituras que o esboço anterior já tinha (para o pedido "incluir" não perder nenhuma).
+function leiturasDoEsbocoAnterior(anteriores) {
+  const pontos = anteriores && anteriores.esboco && Array.isArray(anteriores.esboco.pontos) ? anteriores.esboco.pontos : [];
+  return pontos
+    .flatMap((p) => (Array.isArray(p && p.desenvolvimento) ? p.desenvolvimento : []))
+    .map((d) => d && d.leitura && d.leitura.referencia)
+    .filter((r) => typeof r === "string" && r);
 }
 
 // Confere o código do dirigente; responde com o erro e devolve false se não valer.
@@ -1816,6 +1897,7 @@ async function lerTesourosDaSemana(res, body) {
     url: discurso.url,
     pontos: discurso.pontos.map((p) => ({ texto: p.texto, textos: p.referencias, fontes: p.citacoes.map((c) => c.citacao), fontesLidas: p.fontes.length })),
     reflexao: discurso.reflexao ? discurso.reflexao.texto : null,
+    textosBiblicos: await textosDaMateria(textosBiblicosDeTesouros(discurso)),
   });
 }
 
@@ -1823,7 +1905,7 @@ async function esbocoDeTesouros(res, body, P) {
   if (!acessoDoDirigente(res, body)) return;
   const opcoes = validarOpcoes(body.opcoes);
   const ajuste = textoLivre(body.ajuste);
-  const modo = body.modo === "nova" || body.modo === "melhorar" ? body.modo : null;
+  const modo = body.modo === "nova" || body.modo === "melhorar" || body.modo === "incluir" ? body.modo : null;
   const anteriores = modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(anteriorParaIa(body.anteriores)).slice(0, 12000) : "";
   const inicioPedido = Date.now();
   if (fontesConfiguradas()) precarregarFontes({ biblia: true, perspicaz: false });
@@ -1831,10 +1913,15 @@ async function esbocoDeTesouros(res, body, P) {
   const discurso = await discursoDaSemana(res, body);
   if (!discurso) return;
 
+  // Os textos marcados com "Leia" nas fontes da matéria e os que o orador escolheu ler além dos previstos.
+  const materia = textosBiblicosDeTesouros(discurso);
+  const extras = await textosExtrasDoPedido(body);
+  const leiaDaMateria = await referenciasDaBiblia(materia.leia);
+
   let versiculos = [];
   if (fontesConfiguradas()) {
     try {
-      versiculos = await buscarVersiculos(referenciasDeTesouros(discurso), 12);
+      versiculos = await buscarVersiculos([...materia.leia, ...referenciasDeTesouros(discurso)], 16);
     } catch (e) {
       console.error("Tesouros: versículos indisponíveis", e?.message);
     }
@@ -1845,9 +1932,11 @@ async function esbocoDeTesouros(res, body, P) {
     `PEDIDO: elabore o esboço do discurso de ${discurso.minutos} minutos de Tesouros da Palavra de Deus desta semana.\n` +
     emojisDoEsboco(opcoes, P) + "\n\n" +
     textoDosTesouros(discurso, versiculos) +
+    blocoDeTextosMarcados(leiaDaMateria, P) +
+    blocoDeTextosEscolhidos(extras, P) +
     lembreteFinal(opcoes, ajuste, P);
   if (modo && anteriores) {
-    mensagem += "\n\nESBOÇO JÁ SUGERIDO (JSON):\n" + anteriores + "\n\n" + P.frases.pedidos[modo === "nova" ? "Esboço: outra versão" : "Esboço: melhorar"];
+    mensagem += "\n\nESBOÇO JÁ SUGERIDO (JSON):\n" + anteriores + "\n\n" + pedidoDoModo(modo, P);
   }
 
   try {
@@ -1875,6 +1964,9 @@ async function esbocoDeTesouros(res, body, P) {
       maxBlocosConclusao: 5,
       fontesDoPonto: (i) => (discurso.pontos[i] ? discurso.pontos[i].citacoes.map((c) => c.citacao) : []),
       minLeituras: 2,
+      // Nenhuma leitura pode faltar: as marcadas com Leia na matéria, as que o orador escolheu e, ao incluir textos, as que o esboço já tinha.
+      leiturasObrigatorias: [...leiaDaMateria, ...extras.map((e) => e.referencia), ...(modo === "incluir" ? leiturasDoEsbocoAnterior(body.anteriores) : [])],
+      motivoObrigatorias: "que a matéria marca com Leia, que você escolheu ou que o esboço já tinha",
     });
     const pontos = esboco.pontos;
     const completo = pontos.length > 0 && esboco.introducao.blocos.length > 0 && esboco.conclusao.blocos.length > 0;
@@ -1904,6 +1996,7 @@ async function esbocoDeTesouros(res, body, P) {
       erro: completo ? null : "A IA não montou o esboço completo (introdução, pontos e conclusão). Tente de novo.",
       esboco: completo ? esboco : null,
       avisos: completo ? avisos : [],
+      textosBiblicos: await textosDaMateria(materia),
     });
   } catch (e) {
     return tratarErro(e, res);
@@ -1955,6 +2048,7 @@ async function lerDiscursoCurtoDaSemana(res, body) {
     licao: discurso.licaoCitada ? { citacao: discurso.licaoCitada, titulo: discurso.licao ? discurso.licao.titulo : "" } : null,
     textos: discurso.referencias,
     pesquisa: discurso.pesquisa.length,
+    textosBiblicos: await textosDaMateria(textosBiblicosDoDiscursoCurto(discurso)),
   });
 }
 
@@ -1962,7 +2056,7 @@ async function esbocoDoDiscursoCurto(res, body, P) {
   if (!acessoDoDirigente(res, body)) return;
   const opcoes = validarOpcoes(body.opcoes);
   const ajuste = textoLivre(body.ajuste);
-  const modo = body.modo === "nova" || body.modo === "melhorar" ? body.modo : null;
+  const modo = body.modo === "nova" || body.modo === "melhorar" || body.modo === "incluir" ? body.modo : null;
   const anteriores = modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(anteriorParaIa(body.anteriores)).slice(0, 12000) : "";
   const inicioPedido = Date.now();
   if (fontesConfiguradas()) precarregarFontes({ biblia: true, perspicaz: false });
@@ -1970,10 +2064,15 @@ async function esbocoDoDiscursoCurto(res, body, P) {
   const discurso = await discursoCurtoDaSemana(res, body);
   if (!discurso) return;
 
+  // Os textos marcados com "Leia" na matéria e os que o orador escolheu ler além dos previstos.
+  const materia = textosBiblicosDoDiscursoCurto(discurso);
+  const extras = await textosExtrasDoPedido(body);
+  const leiaDaMateria = await referenciasDaBiblia(materia.leia);
+
   let versiculos = [];
   if (fontesConfiguradas()) {
     try {
-      versiculos = await buscarVersiculos(referenciasDoDiscursoCurto(discurso), 12);
+      versiculos = await buscarVersiculos([...materia.leia, ...referenciasDoDiscursoCurto(discurso)], 14);
     } catch (e) {
       console.error("Discurso curto: versículos indisponíveis", e?.message);
     }
@@ -1984,9 +2083,11 @@ async function esbocoDoDiscursoCurto(res, body, P) {
     `PEDIDO: elabore o esboço do discurso de ${discurso.minutos} minutos de Faça seu melhor no ministério desta semana.\n` +
     emojisDoEsboco(opcoes, P) + "\n\n" +
     textoDoDiscursoCurto(discurso, versiculos) +
+    blocoDeTextosMarcados(leiaDaMateria, P) +
+    blocoDeTextosEscolhidos(extras, P) +
     lembreteFinal(opcoes, ajuste, P);
   if (modo && anteriores) {
-    mensagem += "\n\nESBOÇO JÁ SUGERIDO (JSON):\n" + anteriores + "\n\n" + P.frases.pedidos[modo === "nova" ? "Esboço: outra versão" : "Esboço: melhorar"];
+    mensagem += "\n\nESBOÇO JÁ SUGERIDO (JSON):\n" + anteriores + "\n\n" + pedidoDoModo(modo, P);
   }
 
   try {
@@ -2014,8 +2115,11 @@ async function esbocoDoDiscursoCurto(res, body, P) {
       maxBlocosIntro: 4,
       maxBlocosConclusao: 4,
       fontesDoPonto: () => [],
-      maxLeituras: 3,
+      // O orador lê todos os textos indicados (até 3) e os marcados com Leia na matéria; os que ele escolher entram além disso.
+      maxLeituras: Math.max(3, leiaDaMateria.length) + extras.length + (modo === "incluir" ? leiturasDoEsbocoAnterior(body.anteriores).length : 0),
       leituraEmCadaPonto: true,
+      leiturasObrigatorias: [...leiaDaMateria, ...extras.map((e) => e.referencia), ...(modo === "incluir" ? leiturasDoEsbocoAnterior(body.anteriores) : [])],
+      motivoObrigatorias: "que a matéria marca com Leia, que você escolheu ou que o esboço já tinha",
     });
     const pontos = corpo.pontos;
 
@@ -2065,6 +2169,7 @@ async function esbocoDoDiscursoCurto(res, body, P) {
       erro: completo ? null : "A IA não montou o esboço completo (introdução, pontos e conclusão). Tente de novo.",
       esboco: completo ? esboco : null,
       avisos: completo ? avisos : [],
+      textosBiblicos: await textosDaMateria(materia),
     });
   } catch (e) {
     return tratarErro(e, res);
@@ -2127,6 +2232,7 @@ async function lerTemaPublico(res, body) {
     secoes: esboco.secoes.map((s) => ({ titulo: s.titulo, minutos: s.minutos })),
     leituras,
     itens: esboco.secoes.reduce((n, s) => n + s.itens.length, 0),
+    textosBiblicos: await textosDaMateria(textosBiblicosDoPublico(esboco)),
   });
 }
 
@@ -2134,7 +2240,7 @@ async function esbocoDoDiscursoPublico(res, body, P) {
   if (!acessoDoDirigente(res, body)) return;
   const opcoes = validarOpcoes(body.opcoes);
   const ajuste = textoLivre(body.ajuste);
-  const modo = body.modo === "nova" || body.modo === "melhorar" ? body.modo : null;
+  const modo = body.modo === "nova" || body.modo === "melhorar" || body.modo === "incluir" ? body.modo : null;
   const anteriores = modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(anteriorParaIa(body.anteriores)).slice(0, 12000) : "";
   const inicioPedido = Date.now();
   if (fontesConfiguradas()) precarregarFontes({ biblia: true, perspicaz: false });
@@ -2142,6 +2248,7 @@ async function esbocoDoDiscursoPublico(res, body, P) {
   const tema = await esbocoDoTema(res, body);
   if (!tema) return;
   const { leituras: marcadas, citadas } = referenciasDoPublico(tema);
+  const extras = await textosExtrasDoPedido(body); // os textos que o orador escolheu ler além dos marcados no S-34
 
   let versiculos = [];
   let permitidas = null; // as leituras marcadas, como a Bíblia as escreve (sem a Bíblia no servidor não dá para conferir)
@@ -2150,7 +2257,8 @@ async function esbocoDoDiscursoPublico(res, body, P) {
       versiculos = await buscarVersiculos([...marcadas, ...citadas], 40);
       permitidas = [];
       for (const r of marcadas) permitidas.push((await leituraDaBiblia(r)).referencia);
-      permitidas = [...new Set(permitidas)];
+      // Além dos marcados no S-34, só se lê o que o orador escolheu.
+      permitidas = [...new Set([...permitidas, ...extras.map((e) => e.referencia)])];
     } catch (e) {
       console.error("Discurso público: versículos indisponíveis", e?.message);
       permitidas = null;
@@ -2162,9 +2270,10 @@ async function esbocoDoDiscursoPublico(res, body, P) {
     `PEDIDO: elabore o esboço do discurso público de ${minutosDoEsboco(tema)} minutos, tema "${tema.titulo}" (esboço S-34 nº ${tema.numero}).\n` +
     emojisDoEsboco(opcoes, P) + "\n\n" +
     textoDoDiscursoPublico(tema, versiculos) +
+    blocoDeTextosEscolhidos(extras, P) +
     lembreteFinal(opcoes, ajuste, P);
   if (modo && anteriores) {
-    mensagem += "\n\nESBOÇO JÁ SUGERIDO (JSON):\n" + anteriores + "\n\n" + P.frases.pedidos[modo === "nova" ? "Esboço: outra versão" : "Esboço: melhorar"];
+    mensagem += "\n\nESBOÇO JÁ SUGERIDO (JSON):\n" + anteriores + "\n\n" + pedidoDoModo(modo, P);
   }
 
   try {
@@ -2191,6 +2300,8 @@ async function esbocoDoDiscursoPublico(res, body, P) {
       // A linha "Fonte" de cada ponto traz as publicações que o esboço do S-34 cita naquela seção.
       fontesDoPonto: (i) => publicacoesDaSecao(tema.secoes[i]),
       leiturasPermitidas: permitidas,
+      leiturasObrigatorias: permitidas,
+      motivoObrigatorias: "que o esboço do S-34 marca ou que você escolheu",
     });
     // Os tempos são os do esboço do S-34 (um ponto por seção); a introdução e a conclusão cabem dentro deles.
     esboco.pontos.forEach((p, i) => {
@@ -2227,6 +2338,7 @@ async function esbocoDoDiscursoPublico(res, body, P) {
       erro: completo ? null : "A IA não montou o esboço completo (introdução, pontos e conclusão). Tente de novo.",
       esboco: completo ? esboco : null,
       avisos: completo ? avisos : [],
+      textosBiblicos: await textosDaMateria(textosBiblicosDoPublico(tema)),
     });
   } catch (e) {
     return tratarErro(e, res);
