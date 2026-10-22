@@ -1588,6 +1588,25 @@ function semRotuloDeTopico(texto) {
   return limpo === texto ? texto : limpo.charAt(0).toLocaleUpperCase("pt-BR") + limpo.slice(1);
 }
 
+// Emoji que a IA põe no começo de uma fala para ilustrar o assunto (regra do usuário: os esboços levam emojis): fica, com no máximo
+// 4 símbolos; o resto da fala segue as mesmas limpezas dos outros textos (a limpeza comum apagaria o emoji do começo).
+const EMOJI_NO_COMECO = /^(?:\p{Extended_Pictographic}[️‍\p{Emoji_Modifier}]*\s*)+/u;
+
+// Os emojis dos esboços são opcionais (a opção "Ilustrar com emoji" das configurações): com a opção desligada, o emoji do começo cai.
+function limparFala(valor, max, comEmoji = true) {
+  const bruto = typeof valor === "string" ? valor.replace(/[*`]+/g, "").replace(/\s+/g, " ").trim() : "";
+  const m = bruto.match(EMOJI_NO_COMECO);
+  const emoji = comEmoji && m && (m[0].match(/\p{Extended_Pictographic}/gu) || []).length <= 4 ? m[0].replace(/\s+/g, "") : "";
+  const resto = semRotuloDeTopico(limparTextoGerado(m ? bruto.slice(m[0].length) : bruto, max));
+  return emoji && resto ? emoji + " " + resto : resto;
+}
+
+// A frase do pedido que diz à IA se os emojis das falas do esboço estão ativos ou inativos (opção das configurações; texto editável
+// em "Orientação do usuário, lembrete…").
+function emojisDoEsboco(opcoes, P) {
+  return P.frases.pedidos[opcoes.emoji ? "Esboço: emojis ativos" : "Esboço: emojis inativos"];
+}
+
 // Número ou marcador que a IA escreve por conta própria no começo de um item de lista (o app numera os itens).
 const MARCA_DE_ITEM = /^\s*(?:\d{1,2}\s*[.)]|[•◦▪‣-])\s*/u;
 
@@ -1633,7 +1652,7 @@ async function conferirLeituras(pontos, max = Infinity) {
 // subtítulo e falas, pontos com argumentos, leituras, aplicação, ilustração e transição). Devolve também os avisos (regras do
 // usuário que a IA não cumpriu e que o servidor não conserta sozinho).
 async function corpoDoEsbocoLimpo(saida, o) {
-  const frase = (texto, tamanho) => semRotuloDeTopico(limparTextoGerado(texto, tamanho));
+  const frase = (texto, tamanho) => limparFala(texto, tamanho, o.emoji);
   const ideias = (lista, max, tamanho) => (Array.isArray(lista) ? lista : []).map((x) => frase(x, tamanho)).filter(Boolean).slice(0, max);
   const minutos = (n) => (Number.isFinite(n) ? Math.max(0, Math.min(o.minutosMax, Math.round(n))) : 0);
   const pontos = (Array.isArray(saida.pontos) ? saida.pontos : [])
@@ -1656,7 +1675,8 @@ async function corpoDoEsbocoLimpo(saida, o) {
         .slice(0, o.maxArgumentos),
       aplicacao: limparTextoGerado(p.aplicacao, 400),
       ilustracao: limparTextoGerado(p.ilustracao, 400) || null,
-      transicao: frase(p.transicao, 300) || null,
+      // A transição, como a aplicação e a ilustração, já tem o emoji da própria linha no app.
+      transicao: semRotuloDeTopico(limparTextoGerado(p.transicao, 300)) || null,
     }))
     .filter((p) => p.titulo);
   await conferirLeituras(pontos, o.maxLeituras);
@@ -1670,7 +1690,7 @@ async function corpoDoEsbocoLimpo(saida, o) {
     blocos: (Array.isArray(p && p.blocos) ? p.blocos : [])
       .map((b) => ({
         texto: frase(b && b.texto, 600),
-        lista: (Array.isArray(b && b.lista) ? b.lista : []).map((x) => limparTextoGerado(x, 250).replace(MARCA_DE_ITEM, "").trim()).filter(Boolean).slice(0, 6),
+        lista: (Array.isArray(b && b.lista) ? b.lista : []).map((x) => limparFala(typeof x === "string" ? x.replace(MARCA_DE_ITEM, "") : "", 250, o.emoji)).filter(Boolean).slice(0, 6),
       }))
       .filter((b) => b.texto)
       .slice(0, maxBlocos),
@@ -1788,7 +1808,8 @@ async function esbocoDeTesouros(res, body, P) {
 
   let mensagem =
     blocoOrientacao(opcoes, ajuste, P) +
-    `PEDIDO: elabore o esboço do discurso de ${discurso.minutos} minutos de Tesouros da Palavra de Deus desta semana.\n\n` +
+    `PEDIDO: elabore o esboço do discurso de ${discurso.minutos} minutos de Tesouros da Palavra de Deus desta semana.\n` +
+    emojisDoEsboco(opcoes, P) + "\n\n" +
     textoDosTesouros(discurso, versiculos) +
     lembreteFinal(opcoes, ajuste, P);
   if (modo && anteriores) {
@@ -1811,6 +1832,7 @@ async function esbocoDeTesouros(res, body, P) {
     // Texto limpo e dentro dos limites; a fonte de cada ponto vem da apostila (não da IA). O padrão do usuário é ler pelo menos dois
     // textos do discurso: se a IA indicar menos, o app avisa.
     const { esboco, avisos } = await corpoDoEsbocoLimpo(resposta.parsed_output, {
+      emoji: opcoes.emoji,
       temaPadrao: discurso.titulo,
       minutosMax: 10,
       maxPontos: 5,
@@ -1925,7 +1947,8 @@ async function esbocoDoDiscursoCurto(res, body, P) {
 
   let mensagem =
     blocoOrientacao(opcoes, ajuste, P) +
-    `PEDIDO: elabore o esboço do discurso de ${discurso.minutos} minutos de Faça seu melhor no ministério desta semana.\n\n` +
+    `PEDIDO: elabore o esboço do discurso de ${discurso.minutos} minutos de Faça seu melhor no ministério desta semana.\n` +
+    emojisDoEsboco(opcoes, P) + "\n\n" +
     textoDoDiscursoCurto(discurso, versiculos) +
     lembreteFinal(opcoes, ajuste, P);
   if (modo && anteriores) {
@@ -1949,6 +1972,7 @@ async function esbocoDoDiscursoCurto(res, body, P) {
     // ao menos uma leitura (se faltar, o app avisa).
     const saida = resposta.parsed_output;
     const { esboco: corpo, avisos } = await corpoDoEsbocoLimpo(saida, {
+      emoji: opcoes.emoji,
       temaPadrao: discurso.titulo,
       minutosMax: discurso.minutos,
       maxPontos: 2,
