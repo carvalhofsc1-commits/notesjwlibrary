@@ -11,6 +11,7 @@ import { buscarVerbete, buscarVersiculos, fontesConfiguradas, precarregarFontes 
 import {
   QUADROS_EBC,
   lerEstudoBiblico,
+  lerCamposDoDocumento,
   lerEstudoDireto,
   lerDiscursoCurto,
   lerJoias,
@@ -2409,6 +2410,46 @@ async function listarParagrafos(res, body, P) {
   }
 }
 
+// ---------- Tela Backup: caixas "Sua resposta" de documentos do wol.jw.org ----------
+// O navegador manda só os números dos documentos (nunca o conteúdo do backup); o servidor lê as páginas no wol.jw.org e devolve o
+// título, a publicação/edição e, de cada caixa de resposta, o id (TextTag), o número do parágrafo e a pergunta. Não usa a IA.
+// Vale o código de pesquisa (ou o do dirigente) e tem limite próprio, para não gastar os pedidos à IA.
+const acessosBackup = new Map();
+function excedeuLimiteBackup(ip) {
+  const agora = Date.now();
+  const lista = (acessosBackup.get(ip) || []).filter((t) => agora - t < 60 * 60 * 1000);
+  if (lista.length >= 60) {
+    acessosBackup.set(ip, lista);
+    return true;
+  }
+  lista.push(agora);
+  acessosBackup.set(ip, lista);
+  if (acessosBackup.size > 5000) acessosBackup.clear();
+  return false;
+}
+
+async function lerCamposDosDocumentos(req, res) {
+  const body = req.body || {};
+  if (!(codigoValido(body.codigo) || dirigenteValido(body.codigoDirigente))) return recusarAcesso(res, body);
+  const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "desconhecido";
+  if (excedeuLimiteBackup(ip)) return erro(res, 429, "Muitas consultas. Tente novamente em alguns minutos.");
+  const ids = [...new Set((Array.isArray(body.documentos) ? body.documentos : []).map((d) => String(d).trim()).filter((d) => /^\d{6,12}$/.test(d)))].slice(0, 10);
+  if (!ids.length) return erro(res, 400, "Nenhum documento válido.");
+  const documentos = {};
+  const falhas = [];
+  await Promise.all(
+    ids.map(async (id) => {
+      try {
+        documentos[id] = await lerCamposDoDocumento(id);
+      } catch (e) {
+        console.error("Backup: documento não lido", id, e?.name, e?.message);
+        falhas.push(id);
+      }
+    })
+  );
+  return res.status(200).json({ documentos, falhas });
+}
+
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
 
@@ -2420,6 +2461,8 @@ export default async function handler(req, res) {
   if (!origemPermitida(req.headers.origin)) {
     return erro(res, 403, "Origem não permitida.");
   }
+
+  if (req.body && req.body.tarefa === "backup-campos") return lerCamposDosDocumentos(req, res);
 
   if (!process.env.ANTHROPIC_API_KEY) {
     return erro(res, 500, "Recurso de IA ainda não configurado no servidor.");

@@ -877,3 +877,61 @@ export function textoDoDiscursoCurto(discurso, versiculos = []) {
   }
   return partes.join("\n\n");
 }
+
+// ---------- Caixas "Sua resposta" de um documento (tela Backup) ----------
+// Cada caixa de texto do documento (<textarea id="tt58">) fica num <div class="gen-field">, logo depois da pergunta: nos artigos
+// de estudo, <p class="qu"><strong>4.</strong> pergunta</p> (o número é o do parágrafo); nas apostilas e nos quadros do fim do
+// artigo, o texto que vem antes da caixa. O JW Library guarda a resposta com esse id (TextTag) e o número do documento (docId).
+// Só o título, os números e as perguntas voltam ao navegador (nada do backup do usuário passa por aqui).
+
+const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+const VALIDADE_CAMPOS_MS = 60 * 60 * 1000;
+const camposLidos = new Map(); // docId -> { quando, dados }
+
+export function camposDoDocumento(html) {
+  const titulo = textoDe((html.match(/<title>([\s\S]*?)<\/title>/i) || [, ""])[1]).replace(/\s*[—–-]\s*BIBLIOTECA ON-LINE.*$/i, "");
+  // A publicação e a edição, como no JW Library: "w25 julho págs. 20-25" -> w, 20250700; "mwb26 setembro págs. 14-15" -> mwb, 20260900.
+  const ref = html.match(/\b(w|mwb)(\d{2})\s+(janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\b/i);
+  const simbolo = ref ? ref[1].toLowerCase() : null;
+  const edicao = ref ? (2000 + Number(ref[2])) * 10000 + (MESES.indexOf(ref[3].toLowerCase()) + 1) * 100 : null;
+
+  const campos = [];
+  let fim = 0;
+  for (const m of html.matchAll(/<div class="gen-field"[^>]*>[\s\S]*?<textarea id="(tt\d+)"[^>]*>/g)) {
+    const antes = html.slice(Math.max(fim, m.index - 4000), m.index);
+    fim = m.index + m[0].length;
+    let numero = null;
+    let pergunta = "";
+    const perguntas = [...antes.matchAll(/<p\b[^>]*class="[^"]*\bqu\b[^"]*"[^>]*>([\s\S]*?)<\/p>/g)];
+    if (perguntas.length) {
+      const texto = textoDe(perguntas[perguntas.length - 1][1]);
+      const partes = texto.match(/^(\d+(?:\s*[,–-]\s*\d+)*)\s*\.\s*(.*)$/);
+      if (partes) {
+        numero = partes[1].replace(/\s+/g, " ");
+        pergunta = partes[2];
+      } else {
+        pergunta = texto;
+      }
+    } else {
+      // Sem pergunta numerada: o último texto antes da caixa (título do quadro, pergunta da apostila), sem o rótulo "Sua resposta".
+      const linhas = decodificar(antes.replace(/<\/(?:p|h[1-6]|li|div|label|header|section)>|<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, " "))
+        .split("\n")
+        .map((l) => l.replace(/\s+/g, " ").trim())
+        .filter((l) => l && !/^sua resposta$/i.test(l));
+      pergunta = linhas.length ? linhas[linhas.length - 1] : "";
+    }
+    campos.push({ tag: m[1], numero, pergunta: pergunta.slice(0, 200) });
+    if (campos.length >= 120) break;
+  }
+  return { titulo, simbolo, edicao, campos };
+}
+
+// Lê o documento (número do wol.jw.org, em português) e devolve o título, a publicação/edição e as caixas "Sua resposta".
+export async function lerCamposDoDocumento(docId, { timeoutMs = 8000 } = {}) {
+  const guardado = camposLidos.get(docId);
+  if (guardado && Date.now() - guardado.quando < VALIDADE_CAMPOS_MS) return guardado.dados;
+  const dados = camposDoDocumento(await baixar(`${BASE}/pt/wol/d/r5/lp-t/${docId}`, timeoutMs));
+  camposLidos.set(docId, { quando: Date.now(), dados });
+  if (camposLidos.size > 300) camposLidos.delete(camposLidos.keys().next().value);
+  return dados;
+}

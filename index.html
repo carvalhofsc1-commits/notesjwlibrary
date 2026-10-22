@@ -1981,7 +1981,8 @@
     .bk-color[aria-pressed="true"] { border-color: var(--text); box-shadow: 0 0 0 2px var(--card) inset; }
     .backup-new-note { width: 100%; margin-top: 10px; }
     .backup-new-note[hidden] { display: none; }
-    #backupNewNoteSlot .bk-editor { padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
+    #backupNewNoteSlot .bk-editor,
+    #backupNewAnswerSlot .bk-editor { padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
     .backup-save { margin-top: 12px; padding: 12px; border: 2px solid var(--accent); border-radius: 12px; background: color-mix(in srgb, var(--accent) 8%, var(--card)); }
     .backup-save[hidden] { display: none; }
     .backup-save p { margin: 0 0 8px; font-weight: 650; }
@@ -3235,7 +3236,7 @@
           <button id="backupCloseBtn" class="secondary" type="button" hidden>✖️ Fechar backup</button>
         </div>
       </div>
-      <p class="hint">O arquivo é lido só neste aparelho: nada é enviado para a internet.</p>
+      <p class="hint">O arquivo é lido só neste aparelho: nada do backup é enviado para a internet. Só na categoria Respostas o app consulta o wol.jw.org com o número dos documentos, para mostrar o parágrafo de cada resposta.</p>
       <span id="backupStatus" class="ok" role="status" aria-live="polite"></span>
       <div id="backupView" hidden>
         <p id="backupSummary" class="backup-summary"></p>
@@ -3281,8 +3282,11 @@
           </div>
         </div>
         <input id="backupSearch" class="backup-search" type="search" autocomplete="off" placeholder="Buscar no título, no texto ou nas etiquetas">
+        <p id="backupRespostasInfo" class="hint" hidden></p>
         <button id="backupNewNoteBtn" class="secondary backup-new-note" type="button">➕ Nova nota avulsa</button>
         <div id="backupNewNoteSlot"></div>
+        <button id="backupNewAnswerBtn" class="secondary backup-new-note" type="button" hidden>➕ Nova resposta</button>
+        <div id="backupNewAnswerSlot"></div>
         <p id="backupCount" class="hint"></p>
         <div id="backupTree" class="backup-tree"></div>
       </div>
@@ -3532,6 +3536,89 @@
     let backupCategory = 'notas';
     const backupGroupingByCategory = {};
 
+    // ---------- Backup: parágrafo de cada "Sua resposta" ----------
+    // O backup só guarda o id da caixa (ex.: "tt60") e o número do documento. Para dizer a que parágrafo e pergunta cada resposta se
+    // refere, o servidor lê o documento no wol.jw.org (só os números dos documentos saem do aparelho, nunca o conteúdo do backup) e
+    // devolve { titulo, simbolo, edicao, campos: [{ tag, numero, pergunta }] }. O resultado fica guardado neste aparelho.
+    const BACKUP_CAMPOS_KEY = 'jwLibraryNoteAplicarCamposV1';
+    let backupCampos = {}; // docId -> { titulo, simbolo, edicao, campos, quando }
+    try { backupCampos = JSON.parse(localStorage.getItem(BACKUP_CAMPOS_KEY) || '{}') || {}; } catch (e) { backupCampos = {}; }
+    const backupCamposFalhas = new Set(); // documentos que o servidor não conseguiu ler nesta visita (não insiste)
+    let backupCamposOcupado = false;
+
+    function backupCamposGuardar() {
+      const novos = {};
+      Object.keys(backupCampos).sort((a, b) => (backupCampos[b].quando || 0) - (backupCampos[a].quando || 0)).slice(0, 150).forEach(id => { novos[id] = backupCampos[id]; });
+      backupCampos = novos;
+      safeSetItem(BACKUP_CAMPOS_KEY, JSON.stringify(backupCampos));
+    }
+
+    // Consulta o servidor para os documentos que ainda não estão guardados (de 10 em 10). Devolve '' se deu certo ou a mensagem do problema.
+    async function backupCarregarCampos(docIds) {
+      const faltam = [...new Set(docIds.map(String))].filter(id => !backupCampos[id]);
+      for (let i = 0; i < faltam.length; i += 10) {
+        const acesso = studyAccessError();
+        if (acesso) return acesso;
+        let result;
+        try {
+          result = await postStudy({ tarefa: 'backup-campos', codigo: codigoAcessoSalvo(), documentos: faltam.slice(i, i + 10) }, 45000);
+        } catch (e) {
+          return e && e.name === 'AbortError' ? 'O site demorou demais. Tente de novo.' : 'Falha de conexão ao consultar o wol.jw.org.';
+        }
+        if (!result.ok) return studyFailureMessage(result, 'Não consegui consultar o wol.jw.org agora.');
+        Object.entries(result.data.documentos || {}).forEach(([id, d]) => {
+          backupCampos[id] = { titulo: d.titulo || '', simbolo: d.simbolo || null, edicao: d.edicao === undefined ? null : d.edicao, campos: d.campos || [], quando: Date.now() };
+        });
+        (result.data.falhas || []).forEach(id => backupCamposFalhas.add(String(id)));
+        backupCamposGuardar();
+      }
+      return '';
+    }
+
+    // Põe no item o parágrafo (número da pergunta), a pergunta e o título do documento, quando já se sabe.
+    function backupAplicarCampo(item) {
+      const info = backupCampos[item.documentId];
+      if (!info) return;
+      const campo = (info.campos || []).find(c => c.tag === item.textTag);
+      item.heading = 'Sua resposta' + (campo && campo.numero ? ' · parágrafo ' + campo.numero : '');
+      if (campo && campo.pergunta) item.where = campo.pergunta;
+      if (info.titulo) {
+        if (item.hasIssue && !item.detail2) item.detail2 = backupLevel(info.titulo, item.documentId || 0);
+        else if (!item.hasIssue && !item.detail1) item.detail1 = backupLevel(info.titulo, item.documentId || 0);
+      }
+    }
+
+    // Na categoria Respostas: identifica os parágrafos dos documentos que ainda não foram consultados e redesenha a lista a cada lote.
+    async function backupIdentificarRespostas() {
+      const info = document.getElementById('backupRespostasInfo');
+      if (!backupState || backupCategory !== 'respostas' || backupCamposOcupado) return;
+      const docs = [...new Set(backupState.data.respostas.map(r => r.documentId).filter(Boolean).map(String))];
+      const faltam = docs.filter(id => !backupCampos[id] && !backupCamposFalhas.has(id));
+      if (!faltam.length) { info.hidden = true; return; }
+      const acesso = studyAccessError();
+      info.hidden = false;
+      if (acesso) {
+        info.textContent = '🔎 Para mostrar o parágrafo de cada resposta o app consulta o wol.jw.org (só o número dos documentos é enviado). ' + acesso;
+        return;
+      }
+      const estado = backupState;
+      backupCamposOcupado = true;
+      let problema = '';
+      try {
+        for (let i = 0; i < faltam.length && !problema; i += 10) {
+          info.textContent = '🔎 Identificando os parágrafos das respostas… (' + Math.min(i + 10, faltam.length) + ' de ' + faltam.length + ' documentos)';
+          problema = await backupCarregarCampos(faltam.slice(i, i + 10));
+          if (backupState !== estado || backupCategory !== 'respostas') return;
+          estado.data.respostas.forEach(backupAplicarCampo);
+          renderBackupTree(true);
+        }
+      } finally {
+        backupCamposOcupado = false;
+      }
+      if (problema) info.textContent = '🔎 Não consegui identificar os parágrafos: ' + problema;
+      else info.hidden = true;
+    }
+
     function loadScriptOnce(src) {
       return new Promise((resolve, reject) => {
         const existing = document.querySelector('script[src="' + src + '"]');
@@ -3649,7 +3736,7 @@
       }
       return {
         type: backupLevel(typeName), title: backupLevel(titleName), lang: backupLevel(langName),
-        year: backupLevel(year || 'Sem ano', Number(year) || 0, true), detail1, detail2, where
+        year: backupLevel(year || 'Sem ano', Number(year) || 0, true), detail1, detail2, where, documentId: r.DocumentId, hasIssue
       };
     }
 
@@ -3714,6 +3801,7 @@
         ORDER BY l.IssueTagNumber DESC, l.DocumentId DESC, CAST(substr(i.TextTag, 3) AS INTEGER)`).map(r => ({
           id: r.LocationId + '|' + r.TextTag, locationId: r.LocationId, textTag: r.TextTag, heading: 'Sua resposta', text: r.Value || '', ...backupDescribe(r, titleByDoc)
         }));
+      respostas.forEach(backupAplicarCampo);
 
       const listas = backupRows(db, `
         SELECT p.PlaylistItemId, p.Label, t.Name AS Playlist
@@ -3792,6 +3880,7 @@
       renderBackupGroupingOptions();
       renderBackupTree(keepOpen);
       renderBackupSaveBox();
+      backupIdentificarRespostas();
     }
 
     function renderBackupGroupingOptions() {
@@ -3809,6 +3898,11 @@
       document.getElementById('backupSearch').hidden = !category.text;
       document.getElementById('backupNewNoteBtn').hidden = category.id !== 'notas';
       if (category.id !== 'notas') document.getElementById('backupNewNoteSlot').textContent = '';
+      document.getElementById('backupNewAnswerBtn').hidden = category.id !== 'respostas';
+      if (category.id !== 'respostas') {
+        document.getElementById('backupNewAnswerSlot').textContent = '';
+        document.getElementById('backupRespostasInfo').hidden = true;
+      }
     }
 
     function backupFilteredItems() {
@@ -4008,6 +4102,10 @@
       document.getElementById('backupSearch').value = '';
       renderBackupGroupingOptions();
       renderBackupTree();
+      if (backupCategory === 'respostas') {
+        backupCamposFalhas.clear(); // trocar de categoria é uma nova tentativa
+        backupIdentificarRespostas();
+      }
     });
     document.getElementById('backupGrouping').addEventListener('change', () => renderBackupTree());
     document.getElementById('backupSearch').addEventListener('input', () => renderBackupTree());
@@ -4092,6 +4190,169 @@
       backupMarkChanged();
     }
 
+    // ---------- Backup: criar uma resposta nova ("Sua resposta" de uma pergunta de um documento) ----------
+    // A resposta vai para a caixa de uma pergunta (id da caixa = TextTag) de um documento; o JW Library guarda isso numa "Location"
+    // do documento sem idioma (MepsLanguage vazio). As perguntas de cada documento vêm do wol.jw.org (servidor). Só A Sentinela de
+    // estudo e a apostila Vida e Ministério podem ganhar uma Location nova; nos demais documentos vale a que o backup já tem.
+
+    // Documentos do backup onde uma resposta nova pode entrar: os das publicações que têm caixas "Sua resposta".
+    function backupAnswerDocs() {
+      return backupRows(backupState.db, `
+        SELECT l.KeySymbol, l.IssueTagNumber, l.DocumentId, MAX(l.Title) AS Title
+        FROM Location l
+        WHERE l.DocumentId IS NOT NULL AND l.DocumentId > 0 AND l.Type = 0 AND l.KeySymbol IS NOT NULL
+          AND (l.KeySymbol IN ('w', 'mwb') OR l.KeySymbol IN (SELECT l2.KeySymbol FROM InputField i JOIN Location l2 ON l2.LocationId = i.LocationId))
+        GROUP BY l.KeySymbol, l.IssueTagNumber, l.DocumentId
+        ORDER BY l.IssueTagNumber DESC, l.DocumentId DESC LIMIT 80`);
+    }
+
+    function backupAnswerDocLabel(r) {
+      const { code } = backupProcessCode(r.KeySymbol, r.IssueTagNumber);
+      const pub = backupPubs && backupPubs.publicacoes ? backupPubs.publicacoes[code] : null;
+      const issue = String(r.IssueTagNumber || '');
+      const info = backupCampos[String(r.DocumentId)];
+      const titulo = (info && info.titulo) || r.Title || '';
+      return [pub ? pub[0] : code || r.KeySymbol, /^\d{8}$/.test(issue) && Number(issue) > 19000000 ? backupIssueLabel(issue) : '', titulo || 'documento ' + r.DocumentId].filter(Boolean).join(' · ');
+    }
+
+    // O número do documento a partir do endereço do wol.jw.org ("…/lp-t/2025487"), de um link com docid=… ou do próprio número.
+    function backupDocIdFrom(texto) {
+      const t = String(texto || '').trim();
+      const m = t.match(/docid=(\d{6,12})/i) || t.match(/\/(\d{6,12})(?:[\/?#]|$)/) || t.match(/^(\d{6,12})$/);
+      return m ? m[1] : '';
+    }
+
+    // Grava a resposta. Devolve '' se deu certo ou a mensagem do problema.
+    function backupCreateAnswer(docId, info, tag, text) {
+      const db = backupState.db;
+      const doc = Number(docId);
+      const dela = backupOne(db, 'SELECT l.LocationId FROM Location l JOIN InputField i ON i.LocationId = l.LocationId WHERE l.DocumentId = ? ORDER BY l.LocationId LIMIT 1', [doc]);
+      let locationId = dela ? dela.LocationId : null;
+      if (locationId === null) {
+        // Sem resposta nesse documento ainda: a Location sem idioma é criada com a publicação e a edição que o backup já conhece (ou, se
+        // o documento é novo para o backup, as que o wol.jw.org informa).
+        const base = backupOne(db, 'SELECT KeySymbol, IssueTagNumber FROM Location WHERE DocumentId = ? AND KeySymbol IS NOT NULL ORDER BY LocationId LIMIT 1', [doc]);
+        const simbolo = base ? base.KeySymbol : info.simbolo;
+        const edicao = base ? base.IssueTagNumber : info.edicao;
+        if (!simbolo || edicao === null || edicao === undefined) return 'Não consegui identificar a publicação deste documento. Só crio respostas em A Sentinela, na apostila Vida e Ministério e em documentos que já estão no backup.';
+        const achada = backupOne(db, 'SELECT LocationId FROM Location WHERE DocumentId = ? AND KeySymbol IS ? AND IssueTagNumber = ? AND MepsLanguage IS NULL AND Type = 0 AND BookNumber IS NULL AND ChapterNumber IS NULL ORDER BY LocationId LIMIT 1', [doc, simbolo, edicao]);
+        if (achada) locationId = achada.LocationId;
+        else {
+          const comTitulo = backupColumns(db, 'Location').includes('Title');
+          db.run('INSERT INTO Location (KeySymbol, IssueTagNumber, MepsLanguage, DocumentId, Type' + (comTitulo ? ', Title' : '') + ') VALUES (?, ?, NULL, ?, 0' + (comTitulo ? ", ''" : '') + ')', [simbolo, edicao, doc]);
+          locationId = backupLastId(db);
+        }
+      }
+      if (backupOne(db, 'SELECT 1 AS x FROM InputField WHERE LocationId = ? AND TextTag = ?', [locationId, tag])) return 'Essa pergunta já tem resposta: edite a que existe.';
+      db.run('INSERT INTO InputField (LocationId, TextTag, Value) VALUES (?, ?, ?)', [locationId, tag, text]);
+      backupMarkChanged();
+      return '';
+    }
+
+    function backupNewAnswerEditor(slot, onClose) {
+      const form = document.createElement('div');
+      form.className = 'bk-editor';
+      form.addEventListener('click', event => event.stopPropagation());
+
+      const docSelect = document.createElement('select');
+      const addOption = (select, value, label, disabled) => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = label;
+        option.disabled = Boolean(disabled);
+        select.appendChild(option);
+      };
+      addOption(docSelect, '', 'Escolha o documento…');
+      backupAnswerDocs().forEach(r => addOption(docSelect, String(r.DocumentId), backupAnswerDocLabel(r)));
+      addOption(docSelect, 'outro', '🔗 Outro documento (colar o endereço do wol.jw.org)');
+      form.appendChild(backupField('Documento', docSelect));
+
+      const linkInput = document.createElement('input');
+      linkInput.type = 'text';
+      linkInput.autocomplete = 'off';
+      linkInput.placeholder = 'https://wol.jw.org/pt/wol/d/r5/lp-t/2025487';
+      const linkRow = document.createElement('div');
+      linkRow.hidden = true;
+      linkRow.append(backupField('Endereço ou número do documento', linkInput), (() => {
+        const row = document.createElement('div');
+        row.className = 'bk-row';
+        row.appendChild(backupButton('🔎 Buscar as perguntas', () => escolher(backupDocIdFrom(linkInput.value))));
+        return row;
+      })());
+      form.appendChild(linkRow);
+
+      const aviso = document.createElement('p');
+      aviso.className = 'hint';
+      aviso.textContent = 'As perguntas de cada documento vêm do wol.jw.org (só o número do documento é enviado).';
+      form.appendChild(aviso);
+      const perguntaSelect = document.createElement('select');
+      perguntaSelect.disabled = true;
+      form.appendChild(backupField('Pergunta (parágrafo)', perguntaSelect));
+      const textArea = document.createElement('textarea');
+      textArea.className = 'bk-text';
+      form.appendChild(backupField('Resposta', textArea));
+      form.appendChild(backupBridgeRow(textArea));
+
+      let escolha = null; // { docId, info }
+      const salvar = backupButton('💾 Salvar', () => {
+        const tag = perguntaSelect.value;
+        const text = textArea.value.replace(/\s+$/, '');
+        if (!escolha || !tag) return setBackupStatus('Escolha o documento e a pergunta.', true);
+        if (!text.trim()) return setBackupStatus('Escreva a resposta.', true);
+        const problema = backupCreateAnswer(escolha.docId, escolha.info, tag, text);
+        if (problema) return setBackupStatus(problema, true);
+        onClose();
+        backupRefresh('✅ Resposta criada. Gere o backup modificado quando terminar.');
+      }, '');
+      salvar.disabled = true;
+      const actions = document.createElement('div');
+      actions.className = 'bk-row';
+      actions.append(salvar, backupButton('✖️ Cancelar', onClose));
+      form.appendChild(actions);
+
+      async function escolher(docId) {
+        escolha = null;
+        perguntaSelect.textContent = '';
+        perguntaSelect.disabled = true;
+        salvar.disabled = true;
+        if (!docId) { aviso.textContent = 'Escolha um documento ou cole o endereço dele.'; return; }
+        aviso.textContent = '🔎 Consultando o wol.jw.org…';
+        const problema = await backupCarregarCampos([docId]);
+        if (problema) { aviso.textContent = problema; return; }
+        const info = backupCampos[docId];
+        if (!info || !(info.campos || []).length) { aviso.textContent = 'Não encontrei caixas de resposta nesse documento.'; return; }
+        const respondidas = new Set(backupAll(backupState.db,
+          'SELECT i.TextTag AS tag FROM InputField i JOIN Location l ON l.LocationId = i.LocationId WHERE l.DocumentId = ?', [Number(docId)]).map(r => r.tag));
+        info.campos.forEach(c => {
+          const texto = (c.numero ? 'Parágrafo ' + c.numero + ' — ' : '') + (c.pergunta || c.tag);
+          addOption(perguntaSelect, c.tag, (texto.length > 110 ? texto.slice(0, 107) + '…' : texto) + (respondidas.has(c.tag) ? ' (já respondida)' : ''), respondidas.has(c.tag));
+        });
+        const livre = [...perguntaSelect.options].find(o => !o.disabled);
+        aviso.textContent = '📖 ' + (info.titulo || 'documento ' + docId) + (livre ? '' : ' — todas as perguntas já têm resposta.');
+        if (!livre) return;
+        perguntaSelect.value = livre.value;
+        perguntaSelect.disabled = false;
+        escolha = { docId, info };
+        salvar.disabled = false;
+      }
+
+      docSelect.addEventListener('change', () => {
+        linkRow.hidden = docSelect.value !== 'outro';
+        if (docSelect.value === 'outro') {
+          escolha = null;
+          perguntaSelect.textContent = '';
+          perguntaSelect.disabled = true;
+          salvar.disabled = true;
+          aviso.textContent = 'Cole o endereço do artigo no wol.jw.org (ou o número do documento) e toque em Buscar.';
+          linkInput.focus();
+        } else escolher(docSelect.value);
+      });
+
+      slot.appendChild(form);
+      docSelect.focus();
+      return form;
+    }
+
     function backupButton(label, onClick, className) {
       const btn = document.createElement('button');
       btn.type = 'button';
@@ -4107,6 +4368,26 @@
       label.textContent = labelText;
       wrap.append(label, control);
       return wrap;
+    }
+
+    // Ponte com o editor do NoteStyle: formatar o texto no campo principal e trazê-lo de volta para a nota ou a resposta.
+    function backupBridgeRow(textArea) {
+      const bridge = document.createElement('div');
+      bridge.className = 'bk-row';
+      bridge.append(
+        backupButton('➡️ Levar para o campo de texto', async () => {
+          if (input.value.trim() && !(await askConfirm('O texto do campo de texto será trocado por este texto (dá para desfazer). Continuar?', 'Levar para o campo de texto'))) return;
+          setInputRange(0, input.value.length, textArea.value, { message: 'Texto no campo de texto. Formate e depois use "⬅️ Trazer do campo de texto" no Backup.' });
+          autoGrowInputText();
+          showScreen('formatar');
+        }),
+        backupButton('⬅️ Trazer do campo de texto', () => {
+          if (!input.value.trim()) return setBackupStatus('O campo de texto está vazio.', true);
+          textArea.value = input.value;
+          setBackupStatus('Texto trazido do campo de texto. Confira e toque em 💾 Salvar.', false);
+        })
+      );
+      return bridge;
     }
 
     // Formulário de edição (ou de nota nova, quando item é null) dentro do cartão.
@@ -4151,23 +4432,7 @@
         form.appendChild(backupField('Cor', colors));
       }
 
-      // Ponte com o editor do NoteStyle: formatar o texto no campo principal e trazê-lo de volta para a nota.
-      const bridge = document.createElement('div');
-      bridge.className = 'bk-row';
-      bridge.append(
-        backupButton('➡️ Levar para o campo de texto', async () => {
-          if (input.value.trim() && !(await askConfirm('O texto do campo de texto será trocado pelo desta nota (dá para desfazer). Continuar?', 'Levar para o campo de texto'))) return;
-          setInputRange(0, input.value.length, textArea.value, { message: 'Texto da nota no campo de texto. Formate e depois use "⬅️ Trazer do campo de texto" no Backup.' });
-          autoGrowInputText();
-          showScreen('formatar');
-        }),
-        backupButton('⬅️ Trazer do campo de texto', () => {
-          if (!input.value.trim()) return setBackupStatus('O campo de texto está vazio.', true);
-          textArea.value = input.value;
-          setBackupStatus('Texto trazido do campo de texto. Confira e toque em 💾 Salvar.', false);
-        })
-      );
-      form.appendChild(bridge);
+      form.appendChild(backupBridgeRow(textArea));
 
       const actions = document.createElement('div');
       actions.className = 'bk-row';
@@ -4291,6 +4556,11 @@
       const slot = document.getElementById('backupNewNoteSlot');
       if (slot.firstChild) return;
       backupEditor(slot, null, 'notas', () => { slot.textContent = ''; });
+    });
+    document.getElementById('backupNewAnswerBtn').addEventListener('click', () => {
+      const slot = document.getElementById('backupNewAnswerSlot');
+      if (slot.firstChild) return;
+      backupNewAnswerEditor(slot, () => { slot.textContent = ''; });
     });
     window.addEventListener('beforeunload', event => {
       if (backupState && backupState.changes) {
@@ -5693,7 +5963,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '5.3.4'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0 (e 5.0.1… 5.0.9 e então 5.1.0); 5.3.4: esboços sem os botões azuis de copiar (o esboço é copiado inteiro e guardado em uma parte só no histórico), lista numerada colorida (1️⃣ 2️⃣ 3️⃣) com linha em branco antes dos itens e emojis no começo das falas, opcionais pela opção Ilustrar com emoji das configurações; 5.3.3: tela Backup: exportar notas e mesclar (importar) notas de outro backup viraram dois contêineres separados, dentro da seção recolhível ↔️ Importação e exportação; 5.3.2: esboços: perguntas em negrito, listas numeradas com os símbolos unicode do app (❶ ❷ ❸), a introdução não fala de aplicação nem usa Vamos ver como aplicar isso, e a conclusão não escreve recapitulando; 5.3.1: ajustes nos esboços: objetivo separado só por linhas em branco, linha em branco depois de cada subtítulo, introdução e conclusão escritas palavra por palavra e com listas numeradas (1) 2) 3)), todo texto lido com uma fala antes (que cria expectativa e liga a ideia anterior) e um destaque depois (Conforme vimos no texto…), ligação entre todas as partes (a transição do último ponto leva à conclusão), conclusão sempre motivadora e sem as frases Nosso tema é… e A aplicação é simples; o app avisa quando a IA não cumpre o mínimo de leituras; 5.3.0: novo formato de todos os esboços (Tesouros e discurso curto): tema e subtítulos em MAIÚSCULAS e negrito com o tempo ao lado, objetivo entre duas linhas, subtítulo próprio na introdução e na conclusão (sem as palavras Introdução, Conclusão, Ponto N nem Primeiras frases), linha em branco entre os argumentos, textos lidos anunciados com ➜ 🟡 📖 LEIA e a íntegra da Bíblia em itálico, Aplicação e Ilustração em negrito separadas, e a IA só escreve o que o orador diz (sem comentários nem rótulos); 5.2.9: a leitura em voz alta tenta de novo uma vez quando a conexão cai ao receber o áudio (o Safari avisava só "Load failed") e, se falhar de novo, mostra uma mensagem em português; 5.2.8: novo card Faça seu melhor no ministério (discurso curto) em Preparação de discursos e esboços: o servidor lê só os itens "Discurso" da apostila (4 ou 5 minutos, como vier), a fonte (ponto do apêndice A ou artigo), a lição do th e, quando a fonte só traz o tema e textos, pesquisa o tema no wol.jw.org; a IA elabora o esboço com 1 ou 2 pontos e no máximo 3 textos lidos, e leva a lição do th em conta só se ela influenciar o esboço; 5.2.7: o prompt de Tesouros fica só com o que é específico do discurso (pontos e textos da apostila, fontes, leitura dos textos e tempo) e as regras de estilo comuns a todos os esboços (tema frisado, tópicos, aplicação, tom, ilustrações) vão para a parte Como elaborar um esboço; 5.2.6: o esboço de Tesouros passa a seguir o capítulo Como elaborar um esboço (Beneficie-se): nova parte editável com os princípios do esboço (objetivo, pontos principais, argumentos e ideias, sequência lógica, introdução e conclusão), e o resultado sai como no modelo, com o ponto principal em maiúsculas e as ideias recuadas; 5.2.5: Preparação de discursos e esboços ganha o card Tesouros da Palavra de Deus (esboço do discurso de 10 min com a IA, lendo a apostila e as fontes no wol.jw.org, só com o código do dirigente), o prompt editável do esboço fica na categoria Esboços e Discursos, e o trecho de cada fonte citada passa a ter só os parágrafos citados (antes vinha um a mais); 5.2.4: o botão Visualizar e editar prompts sai de Configurar formatação com IA e ganha um card próprio em Ajustes, e a tela de prompts passa a ser organizada em categorias recolhíveis com emoji (modelo/gasto/limites, base das respostas, comentários, dirigente, Bíblia, formatação, voz, diversos e parte técnica); 5.2.3: na tela de prompts o texto salvo com 💾 Salvar para todos vira o padrão oficial do app (some o aviso "personalizado") e "Restaurar padrão" passa a "Voltar ao texto original"; 5.2.2: a leitura do texto diário não lê mais a linha de referência da matéria (antes lia a parte depois do ponto e vírgula, "19 §§ 17-18"), o filtro de citações também tira essa continuação e a instrução de leitura manda nunca ler referências; 5.2.1: espaços padronizados (10px) entre o título, o campo de texto e as caixas de opções das telas Formatar e Reuniões; 5.2.0: nova opção Inserir emojis no texto em Outras opções de formatação (só escolher e buscar, favoritos no topo, sem edição) e a Preparação de discursos e esboços ganha o ícone 📜 (antes repetia o 🎤 de Preparar para dirigir); 5.1.9: na tela Reuniões o cartão do campo de texto ganha a dica "Para mais opções de formatação clique em Formatar."; 5.1.8: na tela Início o atalho Backup do JW Library sobe para a primeira linha, ao lado de Formatar um texto; 5.1.7: rótulo "Texto diário" centralizado e separado do resto do cartão por uma linha, e o aviso do cartão desabilitado fica só em "Requer o código de pesquisa."; 5.1.6: rótulo "Texto diário" no topo do cartão do texto diário; 5.1.5: Preparar para dirigir (e o atalho Dirigentes) pedem só o código do dirigente, que passa a valer sozinho no servidor para as tarefas do dirigente; 5.1.4: a Preparação de discursos e esboços vira um grupo dentro de Preparação para as reuniões e pede só o código do dirigente, a moldura de Pesquisas e respostas salvas (novo nome) ganha cor forte (verde) como as outras; 5.1.3: "Opções de formatação com IA" passa a "Opções com IA", o botão do texto colado fica separado do de formatação e dentro de um contêiner com o texto explicativo novo, e a Preparação de discursos e esboços (e a categoria Esboços das pesquisas salvas) também pedem o código do dirigente; 5.1.2: "Responder a partir do texto colado" mudou para Formatar → Opções de formatação com IA, o grupo Preparar para comentar (e o atalho Comentários) ficam desabilitados sem o código de pesquisa, o grupo e o atalho do dirigente pedem os dois códigos e o link do texto diário para o wol.jw.org fica habilitado sempre; 5.1.1: o código de acesso passa a se chamar "código de pesquisa" e os cartões que dependem dele (Joias, Estudo Bíblico, Estudo de A Sentinela do dirigente, a parte do Estudo de A Sentinela lida no site e o texto diário) ficam desabilitados sem o código; 5.1.0: sem o código do dirigente, o atalho Dirigentes, o grupo Preparar para dirigir e a categoria Dirigentes das pesquisas salvas aparecem desabilitados (cinza, com cadeado) em vez de sumir; 5.0.9: "Faça seu melhor no ministério" (semanas com discurso de 4 min) entre as opções em breve de Preparação de discursos e esboços; 5.0.8: atalho Dirigentes da tela Início volta ao nome "Dirigentes" e só a linha explicativa passa a "Ajuda na preparação para dirigir" (e a do atalho Comentários, "Ajuda na preparação para comentar"); 5.0.7: grupos da tela Reuniões renomeados para "Preparar para comentar" e "Preparar para dirigir" e atalho do Início "Ajuda na preparação para dirigir"; 5.0.6: pesquisas salvas separadas em categorias (Comentários, Dirigentes e Esboços), cada uma recolhível e na cor do grupo; 5.0.5: Estudo Bíblico de Congregação no grupo Preparação para dirigir (5 perguntas adicionais com resposta, sem aplicações práticas, e o resumo dos textos-base, que saiu do cartão dos comentários); 5.0.4: cor dos títulos dos grupos Preparação de comentários e Preparação para dirigir mais suave; 5.0.3: títulos dos grupos Preparação de comentários e Preparação para dirigir com cor forte (roxo e verde-água escuros, letra branca); 5.0.2: o aviso "Nossa Vida Cristã (em breve)" saiu do grupo Preparação de comentários; 5.0.1: os grupos "Preparação de comentários" e "Preparação para dirigir" da tela Reuniões viram contêineres com borda na cor do grupo, para o que está dentro não parecer solto; 5.0.0: atalhos da tela Início coloridos, cada um com a cor da tela que abre; 4.9.9: Ajustes → Configurar formatação com IA ganha 💾 Salvar para todos (só administrador), que salva as opções de formatação como padrão de todos os usuários; 4.9.8: tela de prompts com um só botão 💾 Salvar para todos (modelo e esforço da IA, limites e prompts) e ícones ✋ e 🎤 nos grupos de comentários e de dirigir da tela Reuniões, como nos atalhos do Início; 4.9.7: o cartão de gasto da tela de prompts não explica mais como criar a chave de administrador da Anthropic (só indica o link do Claude Console); 4.9.6: o app confere o código do dirigente salvo com o servidor e, se ele deixou de valer, apaga o código e esconde as opções do dirigente; 4.9.5: código do dirigente (Ajustes → Autorização de acessos): sem ele, as opções de preparação para dirigir ficam escondidas e o servidor não faz as perguntas do dirigente; enquanto não existir a variável CODIGO_DIRIGENTE na Vercel, vale o código de acesso; 4.9.4: texto diário com comentários adicionais que podem ser salvos e recuperados no mesmo dia (no dia seguinte são apagados) e link do wol.jw.org legível; 4.9.3: o botão 🔊 do campo de texto só aparece (e só funciona no servidor) para o administrador; a leitura em voz alta do texto diário continua para todos; 4.9.2: pesquisas salvas por semana (só as da semana escolhida; o botão apaga as das semanas anteriores); 4.9.1: pesquisas salvas (histórico das respostas da IA das reuniões neste aparelho, para reabrir depois); 4.9.0: joias espirituais com 2 joias por capítulo, sem repetir o versículo da pergunta da apostila; 4.8.9: Joias Espirituais (leitura da semana lida no wol.jw.org com as publicações do Índice das Publicações; até 2 joias por capítulo e a resposta à pergunta da apostila) e, no Estudo Bíblico, textos citados nas perguntas seguindo as opções de textos bíblicos;4.8.8: Estudo Bíblico de Congregação (capítulo da semana lido no wol.jw.org, respostas da IA por quadro, trechos das publicações citadas, resumo opcional dos textos-base) e o contexto "Sobre mim e a congregação" nos prompts; 4.8.7: cada seção da tela de prompts virou um cartão recolhível; 4.8.6: modelo da IA de texto escolhido pelo administrador na tela de prompts (Haiku, Sonnet, Opus ou Fable) e gasto do mês pela Cost API da Anthropic; 4.8.6: a barra da leitura em voz alta fecha sozinha quando a leitura termina; 4.8.5: categorias de Ajustes direto na página (sem o cartão recolhível "Configurações gerais do app"); 4.8.4: Ajustes → Autorização de acessos (código de acesso e senha de administrador informados uma vez e salvos), a IA nunca escreve "culto" (sempre reunião), comentários adicionais recolhíveis e com Limpar, atalhos Comentários e Dirigentes abrem só o grupo deles; 4.8.3: tela Início com o texto diário (do wol.jw.org; um toque abre o comentário, ler em voz alta, levar para o campo de texto e comentários adicionais da IA) e atalhos; 4.8.2: referências bíblicas lidas na forma curta ("Primeira Coríntios treze, quatro a sete"), voz com duas partes à frente (sem pausas, também em 1,15×), pular citações de publicações (w24.09 21 § 6) e referências bíblicas só entre parênteses ou depois de travessão no fim do parágrafo (o texto temático do texto diário é lido); 4.8.1: voz começa mais rápido (primeiras partes curtas) e campos de preço alinhados; 4.8.0: menu da voz para o administrador (modelo, voz, tom, o que ler e pular), consumo estimado e vozes Gemini com a conta de serviço do Google; 4.7.9: voz reserva (Chirp 3 HD) quando o Gemini é recusado; 4.7.8: botão 🔊 Ouvir (leitura em voz alta com a voz do Google); 4.7.7: Fonte CX com C preto e C branco, cada um ao lado do seu quadradinho; todos os cards começam fechados ao abrir o app; 4.7.6: tela Reuniões em dois cartões (texto e reuniões); 4.7.5: campo de texto volta a crescer depois de levar uma nota do backup; importar notas de outro backup; 4.7.4: card do desenvolvedor na largura do quadro de limitações (Sobre); 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
+    const APP_VERSION = '5.4.0'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0 (e 5.0.1… 5.0.9 e então 5.1.0); 5.4.0: Backup, categoria Respostas: cada Sua resposta mostra o número do parágrafo e a pergunta (o servidor lê o documento no wol.jw.org; só o número do documento é enviado) e a lista agrupa pelo título do artigo; novo botão Nova resposta (escolhe o documento do backup ou cola o endereço do wol.jw.org, escolhe a pergunta e escreve a resposta); 5.3.4: esboços sem os botões azuis de copiar (o esboço é copiado inteiro e guardado em uma parte só no histórico), lista numerada colorida (1️⃣ 2️⃣ 3️⃣) com linha em branco antes dos itens e emojis no começo das falas, opcionais pela opção Ilustrar com emoji das configurações; 5.3.3: tela Backup: exportar notas e mesclar (importar) notas de outro backup viraram dois contêineres separados, dentro da seção recolhível ↔️ Importação e exportação; 5.3.2: esboços: perguntas em negrito, listas numeradas com os símbolos unicode do app (❶ ❷ ❸), a introdução não fala de aplicação nem usa Vamos ver como aplicar isso, e a conclusão não escreve recapitulando; 5.3.1: ajustes nos esboços: objetivo separado só por linhas em branco, linha em branco depois de cada subtítulo, introdução e conclusão escritas palavra por palavra e com listas numeradas (1) 2) 3)), todo texto lido com uma fala antes (que cria expectativa e liga a ideia anterior) e um destaque depois (Conforme vimos no texto…), ligação entre todas as partes (a transição do último ponto leva à conclusão), conclusão sempre motivadora e sem as frases Nosso tema é… e A aplicação é simples; o app avisa quando a IA não cumpre o mínimo de leituras; 5.3.0: novo formato de todos os esboços (Tesouros e discurso curto): tema e subtítulos em MAIÚSCULAS e negrito com o tempo ao lado, objetivo entre duas linhas, subtítulo próprio na introdução e na conclusão (sem as palavras Introdução, Conclusão, Ponto N nem Primeiras frases), linha em branco entre os argumentos, textos lidos anunciados com ➜ 🟡 📖 LEIA e a íntegra da Bíblia em itálico, Aplicação e Ilustração em negrito separadas, e a IA só escreve o que o orador diz (sem comentários nem rótulos); 5.2.9: a leitura em voz alta tenta de novo uma vez quando a conexão cai ao receber o áudio (o Safari avisava só "Load failed") e, se falhar de novo, mostra uma mensagem em português; 5.2.8: novo card Faça seu melhor no ministério (discurso curto) em Preparação de discursos e esboços: o servidor lê só os itens "Discurso" da apostila (4 ou 5 minutos, como vier), a fonte (ponto do apêndice A ou artigo), a lição do th e, quando a fonte só traz o tema e textos, pesquisa o tema no wol.jw.org; a IA elabora o esboço com 1 ou 2 pontos e no máximo 3 textos lidos, e leva a lição do th em conta só se ela influenciar o esboço; 5.2.7: o prompt de Tesouros fica só com o que é específico do discurso (pontos e textos da apostila, fontes, leitura dos textos e tempo) e as regras de estilo comuns a todos os esboços (tema frisado, tópicos, aplicação, tom, ilustrações) vão para a parte Como elaborar um esboço; 5.2.6: o esboço de Tesouros passa a seguir o capítulo Como elaborar um esboço (Beneficie-se): nova parte editável com os princípios do esboço (objetivo, pontos principais, argumentos e ideias, sequência lógica, introdução e conclusão), e o resultado sai como no modelo, com o ponto principal em maiúsculas e as ideias recuadas; 5.2.5: Preparação de discursos e esboços ganha o card Tesouros da Palavra de Deus (esboço do discurso de 10 min com a IA, lendo a apostila e as fontes no wol.jw.org, só com o código do dirigente), o prompt editável do esboço fica na categoria Esboços e Discursos, e o trecho de cada fonte citada passa a ter só os parágrafos citados (antes vinha um a mais); 5.2.4: o botão Visualizar e editar prompts sai de Configurar formatação com IA e ganha um card próprio em Ajustes, e a tela de prompts passa a ser organizada em categorias recolhíveis com emoji (modelo/gasto/limites, base das respostas, comentários, dirigente, Bíblia, formatação, voz, diversos e parte técnica); 5.2.3: na tela de prompts o texto salvo com 💾 Salvar para todos vira o padrão oficial do app (some o aviso "personalizado") e "Restaurar padrão" passa a "Voltar ao texto original"; 5.2.2: a leitura do texto diário não lê mais a linha de referência da matéria (antes lia a parte depois do ponto e vírgula, "19 §§ 17-18"), o filtro de citações também tira essa continuação e a instrução de leitura manda nunca ler referências; 5.2.1: espaços padronizados (10px) entre o título, o campo de texto e as caixas de opções das telas Formatar e Reuniões; 5.2.0: nova opção Inserir emojis no texto em Outras opções de formatação (só escolher e buscar, favoritos no topo, sem edição) e a Preparação de discursos e esboços ganha o ícone 📜 (antes repetia o 🎤 de Preparar para dirigir); 5.1.9: na tela Reuniões o cartão do campo de texto ganha a dica "Para mais opções de formatação clique em Formatar."; 5.1.8: na tela Início o atalho Backup do JW Library sobe para a primeira linha, ao lado de Formatar um texto; 5.1.7: rótulo "Texto diário" centralizado e separado do resto do cartão por uma linha, e o aviso do cartão desabilitado fica só em "Requer o código de pesquisa."; 5.1.6: rótulo "Texto diário" no topo do cartão do texto diário; 5.1.5: Preparar para dirigir (e o atalho Dirigentes) pedem só o código do dirigente, que passa a valer sozinho no servidor para as tarefas do dirigente; 5.1.4: a Preparação de discursos e esboços vira um grupo dentro de Preparação para as reuniões e pede só o código do dirigente, a moldura de Pesquisas e respostas salvas (novo nome) ganha cor forte (verde) como as outras; 5.1.3: "Opções de formatação com IA" passa a "Opções com IA", o botão do texto colado fica separado do de formatação e dentro de um contêiner com o texto explicativo novo, e a Preparação de discursos e esboços (e a categoria Esboços das pesquisas salvas) também pedem o código do dirigente; 5.1.2: "Responder a partir do texto colado" mudou para Formatar → Opções de formatação com IA, o grupo Preparar para comentar (e o atalho Comentários) ficam desabilitados sem o código de pesquisa, o grupo e o atalho do dirigente pedem os dois códigos e o link do texto diário para o wol.jw.org fica habilitado sempre; 5.1.1: o código de acesso passa a se chamar "código de pesquisa" e os cartões que dependem dele (Joias, Estudo Bíblico, Estudo de A Sentinela do dirigente, a parte do Estudo de A Sentinela lida no site e o texto diário) ficam desabilitados sem o código; 5.1.0: sem o código do dirigente, o atalho Dirigentes, o grupo Preparar para dirigir e a categoria Dirigentes das pesquisas salvas aparecem desabilitados (cinza, com cadeado) em vez de sumir; 5.0.9: "Faça seu melhor no ministério" (semanas com discurso de 4 min) entre as opções em breve de Preparação de discursos e esboços; 5.0.8: atalho Dirigentes da tela Início volta ao nome "Dirigentes" e só a linha explicativa passa a "Ajuda na preparação para dirigir" (e a do atalho Comentários, "Ajuda na preparação para comentar"); 5.0.7: grupos da tela Reuniões renomeados para "Preparar para comentar" e "Preparar para dirigir" e atalho do Início "Ajuda na preparação para dirigir"; 5.0.6: pesquisas salvas separadas em categorias (Comentários, Dirigentes e Esboços), cada uma recolhível e na cor do grupo; 5.0.5: Estudo Bíblico de Congregação no grupo Preparação para dirigir (5 perguntas adicionais com resposta, sem aplicações práticas, e o resumo dos textos-base, que saiu do cartão dos comentários); 5.0.4: cor dos títulos dos grupos Preparação de comentários e Preparação para dirigir mais suave; 5.0.3: títulos dos grupos Preparação de comentários e Preparação para dirigir com cor forte (roxo e verde-água escuros, letra branca); 5.0.2: o aviso "Nossa Vida Cristã (em breve)" saiu do grupo Preparação de comentários; 5.0.1: os grupos "Preparação de comentários" e "Preparação para dirigir" da tela Reuniões viram contêineres com borda na cor do grupo, para o que está dentro não parecer solto; 5.0.0: atalhos da tela Início coloridos, cada um com a cor da tela que abre; 4.9.9: Ajustes → Configurar formatação com IA ganha 💾 Salvar para todos (só administrador), que salva as opções de formatação como padrão de todos os usuários; 4.9.8: tela de prompts com um só botão 💾 Salvar para todos (modelo e esforço da IA, limites e prompts) e ícones ✋ e 🎤 nos grupos de comentários e de dirigir da tela Reuniões, como nos atalhos do Início; 4.9.7: o cartão de gasto da tela de prompts não explica mais como criar a chave de administrador da Anthropic (só indica o link do Claude Console); 4.9.6: o app confere o código do dirigente salvo com o servidor e, se ele deixou de valer, apaga o código e esconde as opções do dirigente; 4.9.5: código do dirigente (Ajustes → Autorização de acessos): sem ele, as opções de preparação para dirigir ficam escondidas e o servidor não faz as perguntas do dirigente; enquanto não existir a variável CODIGO_DIRIGENTE na Vercel, vale o código de acesso; 4.9.4: texto diário com comentários adicionais que podem ser salvos e recuperados no mesmo dia (no dia seguinte são apagados) e link do wol.jw.org legível; 4.9.3: o botão 🔊 do campo de texto só aparece (e só funciona no servidor) para o administrador; a leitura em voz alta do texto diário continua para todos; 4.9.2: pesquisas salvas por semana (só as da semana escolhida; o botão apaga as das semanas anteriores); 4.9.1: pesquisas salvas (histórico das respostas da IA das reuniões neste aparelho, para reabrir depois); 4.9.0: joias espirituais com 2 joias por capítulo, sem repetir o versículo da pergunta da apostila; 4.8.9: Joias Espirituais (leitura da semana lida no wol.jw.org com as publicações do Índice das Publicações; até 2 joias por capítulo e a resposta à pergunta da apostila) e, no Estudo Bíblico, textos citados nas perguntas seguindo as opções de textos bíblicos;4.8.8: Estudo Bíblico de Congregação (capítulo da semana lido no wol.jw.org, respostas da IA por quadro, trechos das publicações citadas, resumo opcional dos textos-base) e o contexto "Sobre mim e a congregação" nos prompts; 4.8.7: cada seção da tela de prompts virou um cartão recolhível; 4.8.6: modelo da IA de texto escolhido pelo administrador na tela de prompts (Haiku, Sonnet, Opus ou Fable) e gasto do mês pela Cost API da Anthropic; 4.8.6: a barra da leitura em voz alta fecha sozinha quando a leitura termina; 4.8.5: categorias de Ajustes direto na página (sem o cartão recolhível "Configurações gerais do app"); 4.8.4: Ajustes → Autorização de acessos (código de acesso e senha de administrador informados uma vez e salvos), a IA nunca escreve "culto" (sempre reunião), comentários adicionais recolhíveis e com Limpar, atalhos Comentários e Dirigentes abrem só o grupo deles; 4.8.3: tela Início com o texto diário (do wol.jw.org; um toque abre o comentário, ler em voz alta, levar para o campo de texto e comentários adicionais da IA) e atalhos; 4.8.2: referências bíblicas lidas na forma curta ("Primeira Coríntios treze, quatro a sete"), voz com duas partes à frente (sem pausas, também em 1,15×), pular citações de publicações (w24.09 21 § 6) e referências bíblicas só entre parênteses ou depois de travessão no fim do parágrafo (o texto temático do texto diário é lido); 4.8.1: voz começa mais rápido (primeiras partes curtas) e campos de preço alinhados; 4.8.0: menu da voz para o administrador (modelo, voz, tom, o que ler e pular), consumo estimado e vozes Gemini com a conta de serviço do Google; 4.7.9: voz reserva (Chirp 3 HD) quando o Gemini é recusado; 4.7.8: botão 🔊 Ouvir (leitura em voz alta com a voz do Google); 4.7.7: Fonte CX com C preto e C branco, cada um ao lado do seu quadradinho; todos os cards começam fechados ao abrir o app; 4.7.6: tela Reuniões em dois cartões (texto e reuniões); 4.7.5: campo de texto volta a crescer depois de levar uma nota do backup; importar notas de outro backup; 4.7.4: card do desenvolvedor na largura do quadro de limitações (Sobre); 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 
