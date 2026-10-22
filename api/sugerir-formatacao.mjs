@@ -1649,10 +1649,32 @@ async function conferirLeituras(pontos, max = Infinity) {
   }
 }
 
+// Regra do usuário: os esboços NUNCA usam a fonte gótica (fraktur, comum ou negrito). Se a IA escrever com essas letras do Unicode,
+// elas viram letras comuns (as outras fontes não mudam). As cinco letras que ficam fora do bloco (ℭ ℌ ℑ ℜ ℨ) também.
+const GOTICAS_FORA_DO_BLOCO = { "ℭ": "C", "ℌ": "H", "ℑ": "I", "ℜ": "R", "ℨ": "Z" };
+function semGotica(texto) {
+  return Array.from(texto, (ch) => {
+    if (GOTICAS_FORA_DO_BLOCO[ch]) return GOTICAS_FORA_DO_BLOCO[ch];
+    const cp = ch.codePointAt(0);
+    if (cp >= 0x1d504 && cp <= 0x1d51d) return String.fromCharCode(65 + cp - 0x1d504);
+    if (cp >= 0x1d51e && cp <= 0x1d537) return String.fromCharCode(97 + cp - 0x1d51e);
+    if (cp >= 0x1d56c && cp <= 0x1d585) return String.fromCharCode(65 + cp - 0x1d56c);
+    if (cp >= 0x1d586 && cp <= 0x1d59f) return String.fromCharCode(97 + cp - 0x1d586);
+    return ch;
+  }).join("");
+}
+function semGoticaTudo(valor) {
+  if (typeof valor === "string") return semGotica(valor);
+  if (Array.isArray(valor)) return valor.map(semGoticaTudo);
+  if (valor && typeof valor === "object") return Object.fromEntries(Object.entries(valor).map(([k, v]) => [k, semGoticaTudo(v)]));
+  return valor;
+}
+
 // A parte do esboço que os dois discursos têm em comum, limpa e dentro dos limites (tema, objetivo, introdução e conclusão com
 // subtítulo e falas, pontos com argumentos, leituras, aplicação, ilustração e transição). Devolve também os avisos (regras do
 // usuário que a IA não cumpriu e que o servidor não conserta sozinho).
-async function corpoDoEsbocoLimpo(saida, o) {
+async function corpoDoEsbocoLimpo(saidaBruta, o) {
+  const saida = semGoticaTudo(saidaBruta);
   const frase = (texto, tamanho) => limparFala(texto, tamanho, o.emoji);
   const ideias = (lista, max, tamanho) => (Array.isArray(lista) ? lista : []).map((x) => frase(x, tamanho)).filter(Boolean).slice(0, max);
   const minutos = (n) => (Number.isFinite(n) ? Math.max(0, Math.min(o.minutosMax, Math.round(n))) : 0);
