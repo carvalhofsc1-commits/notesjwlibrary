@@ -1546,24 +1546,164 @@ async function perguntasEbcDirigente(res, body, P) {
 // O servidor lê o discurso da semana na apostila (o tema, os pontos com os textos bíblicos, a pergunta de reflexão e os trechos
 // das fontes citadas; api/_wol.mjs) e a IA elabora o esboço seguindo o prompt editável "tesouros". Só com o código do dirigente.
 
-const SaidaTesouros = z.object({
+// Partes comuns aos esboços (Tesouros e discurso curto). Regras do usuário para TODOS os esboços: só entra o que o orador pode
+// dizer à assistência (ou um lembrete do que ele precisa dizer ou fazer); a introdução e a conclusão têm subtítulo próprio, criado
+// pela IA; e cada texto lido (LEIA) vem com a íntegra, que o servidor tira da Bíblia (a IA só indica onde a leitura entra).
+const parteDoEsboco = () => z.object({ titulo: z.string(), minutos: z.number(), topicos: z.array(z.string()) });
+const pontoDoEsboco = () =>
+  z.object({
+    titulo: z.string(),
+    minutos: z.number(),
+    desenvolvimento: z.array(z.object({ argumento: z.string(), leia: z.string().nullable(), ideias: z.array(z.string()) })),
+    aplicacao: z.string(),
+    ilustracao: z.string().nullable(),
+    transicao: z.string().nullable(),
+  });
+const corpoDoEsboco = () => ({
   tema: z.string(),
   objetivo: z.string(),
   aplicacao: z.string(),
-  introducao: z.object({ minutos: z.number(), primeirasFrases: z.string(), topicos: z.array(z.string()) }),
-  pontos: z.array(
-    z.object({
-      titulo: z.string(),
-      minutos: z.number(),
-      textos: z.array(z.object({ referencia: z.string(), ler: z.boolean() })),
-      desenvolvimento: z.array(z.object({ argumento: z.string(), ideias: z.array(z.string()) })),
-      aplicacao: z.string(),
-      ilustracao: z.string().nullable(),
-      transicao: z.string().nullable(),
-    })
-  ),
-  conclusao: z.object({ minutos: z.number(), topicos: z.array(z.string()) }),
+  introducao: parteDoEsboco(),
+  pontos: z.array(pontoDoEsboco()),
+  conclusao: parteDoEsboco(),
 });
+
+const SaidaTesouros = z.object(corpoDoEsboco());
+
+// Rótulos que a IA às vezes escreve no começo de um tópico ("Tema: ...", "Primeiras frases: ..."): o esboço só leva o que o orador
+// diz, então o rótulo cai e fica a frase.
+const ROTULO_DE_TOPICO =
+  /^(?:primeiras?\s+frases?|frases?\s+de\s+abertura|tema(?:\s+principal)?|objetivo|aplica[cç][aã]o(?:\s+pr[aá]tica)?|ilustra[cç][aã]o|transi[cç][aã]o|introdu[cç][aã]o|conclus[aã]o|recapitula[cç][aã]o)(?:\s*[:：]\s*|\s+[–—-]\s+)/iu;
+
+function semRotuloDeTopico(texto) {
+  const limpo = texto.replace(ROTULO_DE_TOPICO, "").trim();
+  return limpo === texto ? texto : limpo.charAt(0).toLocaleUpperCase("pt-BR") + limpo.slice(1);
+}
+
+// O texto exato de uma leitura, tirado da Bíblia (Tradução do Novo Mundo). Sem a Bíblia no servidor (ou se a referência não for
+// achada), fica só a referência e o orador lê na própria Bíblia.
+async function leituraDaBiblia(referencia) {
+  if (fontesConfiguradas()) {
+    try {
+      const [achado] = await buscarVersiculos([referencia], 1);
+      if (achado) return { referencia: achado.referencia, texto: achado.texto };
+    } catch (e) {
+      console.error("Esboço: versículo indisponível", e?.message);
+    }
+  }
+  return { referencia, texto: null };
+}
+
+// Cada "leia" da IA vira { referencia, texto }. Um texto nunca é lido duas vezes; o total respeita o máximo; e, como o usuário
+// pediu, o discurso fica com as leituras mínimas (completadas com os textos da apostila, no primeiro argumento do ponto que
+// ainda não tem leitura) e, quando for o caso, com ao menos uma leitura em cada ponto.
+async function conferirLeituras(pontos, { max = Infinity, minimo = 0, cadaPonto = false, indicadas = () => [], todas = [] }) {
+  const lidas = new Set();
+  let total = 0;
+  for (const ponto of pontos) {
+    for (const d of ponto.desenvolvimento) {
+      if (!d.leia) continue;
+      if (total >= max) {
+        d.leia = null;
+        continue;
+      }
+      const leitura = await leituraDaBiblia(d.leia);
+      if (lidas.has(leitura.referencia)) {
+        d.leia = null;
+        continue;
+      }
+      lidas.add(leitura.referencia);
+      total++;
+      d.leia = leitura;
+    }
+  }
+  const anexar = async (ponto, referencia) => {
+    const argumento = ponto.desenvolvimento.find((d) => !d.leia);
+    if (!argumento || total >= max) return false;
+    const leitura = await leituraDaBiblia(referencia);
+    if (lidas.has(leitura.referencia)) return false;
+    lidas.add(leitura.referencia);
+    total++;
+    argumento.leia = leitura;
+    return true;
+  };
+  if (cadaPonto) {
+    for (const ponto of pontos) {
+      if (ponto.desenvolvimento.some((d) => d.leia)) continue;
+      for (const referencia of [...indicadas(ponto.indice), ...todas]) if (await anexar(ponto, referencia)) break;
+    }
+  }
+  for (const ponto of pontos) {
+    for (const referencia of indicadas(ponto.indice)) {
+      if (total >= minimo) return;
+      await anexar(ponto, referencia);
+    }
+  }
+}
+
+// A parte do esboço que os dois discursos têm em comum, limpa e dentro dos limites (tema, objetivo, introdução com subtítulo,
+// pontos com argumentos, leituras, aplicação, ilustração e transição, e conclusão com subtítulo).
+async function corpoDoEsbocoLimpo(saida, o) {
+  const topicos = (lista, max, tamanho) =>
+    (Array.isArray(lista) ? lista : []).map((x) => semRotuloDeTopico(limparTextoGerado(x, tamanho))).filter(Boolean).slice(0, max);
+  const minutos = (n) => (Number.isFinite(n) ? Math.max(0, Math.min(o.minutosMax, Math.round(n))) : 0);
+  const pontos = (Array.isArray(saida.pontos) ? saida.pontos : [])
+    .slice(0, o.maxPontos)
+    .map((p, i) => ({
+      indice: i,
+      titulo: limparTextoGerado(p.titulo, 160),
+      minutos: minutos(p.minutos),
+      fontes: o.fontesDoPonto(i),
+      desenvolvimento: (Array.isArray(p.desenvolvimento) ? p.desenvolvimento : [])
+        .map((d) => ({
+          argumento: semRotuloDeTopico(limparTextoGerado(d.argumento, 300)),
+          leia: limparLinha(limparTrecho(d.leia), 80) || null,
+          ideias: topicos(d.ideias, 4, 250),
+        }))
+        .filter((d) => d.argumento)
+        .slice(0, o.maxArgumentos),
+      aplicacao: limparTextoGerado(p.aplicacao, 400),
+      ilustracao: limparTextoGerado(p.ilustracao, 400) || null,
+      transicao: limparTextoGerado(p.transicao, 250) || null,
+    }))
+    .filter((p) => p.titulo);
+  await conferirLeituras(pontos, o.leituras);
+  for (const p of pontos) delete p.indice;
+
+  const tema = limparTextoGerado(saida.tema, 200) || o.temaPadrao;
+  // Sem subtítulo da IA, a introdução e a conclusão usam o tema (nunca as palavras "Introdução" e "Conclusão").
+  const parte = (p, maxTopicos) => ({
+    titulo: limparTextoGerado(p && p.titulo, 160) || tema,
+    minutos: minutos(p && p.minutos),
+    topicos: topicos(p && p.topicos, maxTopicos, 300),
+  });
+  return {
+    tema,
+    objetivo: limparTextoGerado(saida.objetivo, 300),
+    aplicacao: limparTextoGerado(saida.aplicacao, 300),
+    introducao: parte(saida.introducao, o.maxTopicosIntro),
+    pontos,
+    conclusao: parte(saida.conclusao, o.maxTopicosConclusao),
+  };
+}
+
+// O esboço anterior volta para a IA (em "outra versão" e "melhorar") com a leitura só pela referência: o texto do versículo fica
+// de fora.
+function anteriorParaIa(anteriores) {
+  const e = anteriores && anteriores.esboco;
+  if (!e || !Array.isArray(e.pontos)) return anteriores;
+  const referencia = (leia) => (leia && typeof leia === "object" ? leia.referencia || null : typeof leia === "string" ? leia : null);
+  return {
+    ...anteriores,
+    esboco: {
+      ...e,
+      pontos: e.pontos.map((p) => ({
+        ...p,
+        desenvolvimento: (Array.isArray(p && p.desenvolvimento) ? p.desenvolvimento : []).map((d) => ({ ...d, leia: referencia(d && d.leia) })),
+      })),
+    },
+  };
+}
 
 // Confere o código do dirigente; responde com o erro e devolve false se não valer.
 function acessoDoDirigente(res, body) {
@@ -1617,7 +1757,7 @@ async function esbocoDeTesouros(res, body, P) {
   const opcoes = validarOpcoes(body.opcoes);
   const ajuste = textoLivre(body.ajuste);
   const modo = body.modo === "nova" || body.modo === "melhorar" ? body.modo : null;
-  const anteriores = modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(body.anteriores).slice(0, 12000) : "";
+  const anteriores = modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(anteriorParaIa(body.anteriores)).slice(0, 12000) : "";
   const inicioPedido = Date.now();
   if (fontesConfiguradas()) precarregarFontes({ biblia: true, perspicaz: false });
 
@@ -1655,56 +1795,19 @@ async function esbocoDeTesouros(res, body, P) {
       return erro(res, 502, "A IA não conseguiu elaborar o esboço deste discurso.");
     }
 
-    // Texto limpo e dentro dos limites; a fonte de cada ponto vem da apostila (não da IA) e os textos bíblicos do ponto nunca
-    // ficam vazios: sem texto da IA, entram os da apostila, só citados.
-    const saida = resposta.parsed_output;
-    const topicos = (lista, max, tamanho) => (Array.isArray(lista) ? lista : []).map((x) => limparTextoGerado(x, tamanho)).filter(Boolean).slice(0, max);
-    const minutos = (n) => (Number.isFinite(n) ? Math.max(0, Math.min(10, Math.round(n))) : 0);
-    const pontos = saida.pontos
-      .slice(0, 5)
-      .map((p, i) => {
-        const daApostila = discurso.pontos[i];
-        const vistos = new Set();
-        let textos = (Array.isArray(p.textos) ? p.textos : [])
-          .map((x) => ({ referencia: limparLinha(limparTrecho(x.referencia), 80), ler: Boolean(x.ler) }))
-          .filter((x) => x.referencia && !vistos.has(x.referencia) && vistos.add(x.referencia));
-        if (!textos.length && daApostila) textos = daApostila.referencias.map((referencia) => ({ referencia, ler: false }));
-        return {
-          titulo: limparTextoGerado(p.titulo, 160),
-          minutos: minutos(p.minutos),
-          textos,
-          fontes: daApostila ? daApostila.citacoes.map((c) => c.citacao) : [],
-          // Como no modelo de esboço: argumentos que apoiam o ponto e, sob cada um, as ideias que o desenvolvem.
-          desenvolvimento: (Array.isArray(p.desenvolvimento) ? p.desenvolvimento : [])
-            .map((d) => ({ argumento: limparTextoGerado(d.argumento, 300), ideias: topicos(d.ideias, 4, 250) }))
-            .filter((d) => d.argumento)
-            .slice(0, 5),
-          aplicacao: limparTextoGerado(p.aplicacao, 400),
-          ilustracao: limparTextoGerado(p.ilustracao, 400) || null,
-          transicao: limparTextoGerado(p.transicao, 250) || null,
-        };
-      })
-      .filter((p) => p.titulo);
-
-    // Padrão pedido pelo usuário: pelo menos dois textos do discurso para leitura (os demais só citados).
-    const todosTextos = pontos.flatMap((p) => p.textos);
-    for (const x of todosTextos) {
-      if (todosTextos.filter((y) => y.ler).length >= 2) break;
-      x.ler = true;
-    }
-
-    const esboco = {
-      tema: limparTextoGerado(saida.tema, 200) || discurso.titulo,
-      objetivo: limparTextoGerado(saida.objetivo, 300),
-      aplicacao: limparTextoGerado(saida.aplicacao, 300),
-      introducao: {
-        minutos: minutos(saida.introducao.minutos),
-        primeirasFrases: limparTextoGerado(saida.introducao.primeirasFrases, 400),
-        topicos: topicos(saida.introducao.topicos, 5, 300),
-      },
-      pontos,
-      conclusao: { minutos: minutos(saida.conclusao.minutos), topicos: topicos(saida.conclusao.topicos, 5, 300) },
-    };
+    // Texto limpo e dentro dos limites; a fonte de cada ponto vem da apostila (não da IA). Pelo menos dois textos do discurso
+    // são lidos (padrão do usuário); se a IA indicar menos, entram os textos da apostila.
+    const esboco = await corpoDoEsbocoLimpo(resposta.parsed_output, {
+      temaPadrao: discurso.titulo,
+      minutosMax: 10,
+      maxPontos: 5,
+      maxArgumentos: 5,
+      maxTopicosIntro: 5,
+      maxTopicosConclusao: 5,
+      fontesDoPonto: (i) => (discurso.pontos[i] ? discurso.pontos[i].citacoes.map((c) => c.citacao) : []),
+      leituras: { minimo: 2, indicadas: (i) => (discurso.pontos[i] ? discurso.pontos[i].referencias : []) },
+    });
+    const pontos = esboco.pontos;
     const completo = pontos.length > 0 && esboco.introducao.topicos.length > 0 && esboco.conclusao.topicos.length > 0;
 
     console.log(
@@ -1743,22 +1846,7 @@ async function esbocoDeTesouros(res, body, P) {
 // "discurso_curto". Só com o código do dirigente.
 
 const SaidaDiscursoCurto = z.object({
-  tema: z.string(),
-  objetivo: z.string(),
-  aplicacao: z.string(),
-  introducao: z.object({ minutos: z.number(), primeirasFrases: z.string(), topicos: z.array(z.string()) }),
-  pontos: z.array(
-    z.object({
-      titulo: z.string(),
-      minutos: z.number(),
-      textos: z.array(z.string()),
-      desenvolvimento: z.array(z.object({ argumento: z.string(), ideias: z.array(z.string()) })),
-      aplicacao: z.string(),
-      ilustracao: z.string().nullable(),
-      transicao: z.string().nullable(),
-    })
-  ),
-  conclusao: z.object({ minutos: z.number(), topicos: z.array(z.string()) }),
+  ...corpoDoEsboco(),
   fontes: z.array(z.string()),
   licao: z.object({ aplicada: z.boolean(), dica: z.string().nullable() }),
 });
@@ -1805,7 +1893,7 @@ async function esbocoDoDiscursoCurto(res, body, P) {
   const opcoes = validarOpcoes(body.opcoes);
   const ajuste = textoLivre(body.ajuste);
   const modo = body.modo === "nova" || body.modo === "melhorar" ? body.modo : null;
-  const anteriores = modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(body.anteriores).slice(0, 12000) : "";
+  const anteriores = modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(anteriorParaIa(body.anteriores)).slice(0, 12000) : "";
   const inicioPedido = Date.now();
   if (fontesConfiguradas()) precarregarFontes({ biblia: true, perspicaz: false });
 
@@ -1843,50 +1931,20 @@ async function esbocoDoDiscursoCurto(res, body, P) {
       return erro(res, 502, "A IA não conseguiu elaborar o esboço deste discurso.");
     }
 
+    // O orador LÊ todos os textos indicados, no máximo 3 no discurso inteiro, e cada ponto fica com pelo menos uma leitura (os
+    // textos indicados na apostila entram se a IA deixou o ponto sem leitura).
     const saida = resposta.parsed_output;
-    const topicos = (lista, max, tamanho) => (Array.isArray(lista) ? lista : []).map((x) => limparTextoGerado(x, tamanho)).filter(Boolean).slice(0, max);
-    const minutos = (n) => (Number.isFinite(n) ? Math.max(0, Math.min(discurso.minutos, Math.round(n))) : 0);
-
-    // Os textos bíblicos são lidos todos, no máximo 3 no discurso inteiro; cada ponto fica com pelo menos um (os indicados na
-    // apostila entram se a IA deixou o ponto sem texto).
-    const vistos = new Set();
-    const brutos = saida.pontos.slice(0, 2);
-    const limpos = brutos.map((p) => (Array.isArray(p.textos) ? p.textos : []).map((x) => limparLinha(limparTrecho(x), 80)).filter(Boolean));
-    const listas = limpos.map((l) => l.filter((x) => !vistos.has(x) && vistos.add(x)));
-    // Cada ponto fica com o seu primeiro texto (repetido só se o ponto ficaria sem nenhum); o que sobrar dos 3 vai para os textos
-    // seguintes, na ordem.
-    const mantidos = listas.map((l, i) => (l.length ? l.slice(0, 1) : limpos[i].slice(0, 1)));
-    let restantes = 3 - mantidos.reduce((n, l) => n + l.length, 0);
-    listas.forEach((l, i) => {
-      const extra = l.slice(1, 1 + Math.max(0, restantes));
-      mantidos[i].push(...extra);
-      restantes -= extra.length;
+    const corpo = await corpoDoEsbocoLimpo(saida, {
+      temaPadrao: discurso.titulo,
+      minutosMax: discurso.minutos,
+      maxPontos: 2,
+      maxArgumentos: 4,
+      maxTopicosIntro: 4,
+      maxTopicosConclusao: 4,
+      fontesDoPonto: () => [],
+      leituras: { max: 3, cadaPonto: true, todas: discurso.referencias },
     });
-    const pontos = brutos
-      .map((p, i) => {
-        return {
-          titulo: limparTextoGerado(p.titulo, 160),
-          minutos: minutos(p.minutos),
-          textos: mantidos[i],
-          fontes: [],
-          desenvolvimento: (Array.isArray(p.desenvolvimento) ? p.desenvolvimento : [])
-            .map((d) => ({ argumento: limparTextoGerado(d.argumento, 300), ideias: topicos(d.ideias, 4, 250) }))
-            .filter((d) => d.argumento)
-            .slice(0, 4),
-          aplicacao: limparTextoGerado(p.aplicacao, 400),
-          ilustracao: limparTextoGerado(p.ilustracao, 400) || null,
-          transicao: limparTextoGerado(p.transicao, 250) || null,
-        };
-      })
-      .filter((p) => p.titulo);
-    const indicados = discurso.referencias.filter((r) => !vistos.has(r));
-    for (const p of pontos) {
-      if (!p.textos.length && restantes > 0 && indicados.length) {
-        p.textos.push(indicados.shift());
-        restantes--;
-      }
-    }
-    for (const p of pontos) p.textos = p.textos.map((referencia) => ({ referencia, ler: true }));
+    const pontos = corpo.pontos;
 
     // Só entram em "fontes" a fonte da apostila e as publicações que vieram da pesquisa no wol.jw.org (nada de fora do wol).
     const norma = (s) => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
@@ -1898,16 +1956,7 @@ async function esbocoDoDiscursoCurto(res, body, P) {
 
     const dica = saida.licao && saida.licao.aplicada ? limparTextoGerado(saida.licao.dica, 300) : "";
     const esboco = {
-      tema: limparTextoGerado(saida.tema, 200) || discurso.titulo,
-      objetivo: limparTextoGerado(saida.objetivo, 300),
-      aplicacao: limparTextoGerado(saida.aplicacao, 300),
-      introducao: {
-        minutos: minutos(saida.introducao.minutos),
-        primeirasFrases: limparTextoGerado(saida.introducao.primeirasFrases, 400),
-        topicos: topicos(saida.introducao.topicos, 4, 300),
-      },
-      pontos,
-      conclusao: { minutos: minutos(saida.conclusao.minutos), topicos: topicos(saida.conclusao.topicos, 4, 300) },
+      ...corpo,
       fontes,
       licao: dica && discurso.licaoCitada ? { citacao: discurso.licaoCitada, titulo: discurso.licao ? discurso.licao.titulo : "", dica } : null,
     };
@@ -1925,7 +1974,7 @@ async function esbocoDoDiscursoCurto(res, body, P) {
         licao: discurso.licaoCitada,
         licaoAplicada: Boolean(esboco.licao),
         pontos: pontos.length,
-        textos: pontos.reduce((n, p) => n + p.textos.length, 0),
+        leituras: pontos.reduce((n, p) => n + p.desenvolvimento.filter((d) => d.leia).length, 0),
         fontesUsadas: usadas.length,
         versiculos: versiculos.length,
         segundosIa: Math.round((Date.now() - inicio) / 100) / 10,
