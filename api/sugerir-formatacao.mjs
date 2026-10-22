@@ -8,6 +8,7 @@ import { codigoDoDirigente, erro, origemPermitida, textosIguais } from "./_comum
 import { lerConfigIa } from "./_iaConfig.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
 import { buscarVerbete, buscarVersiculos, fontesConfiguradas, precarregarFontes } from "./_fontes.mjs";
+import { lerEsboco, lerIndice, minutosDoEsboco, publicacoesDaSecao, referenciasDoPublico, s34Configurado, textoDoDiscursoPublico } from "./_s34.mjs";
 import {
   QUADROS_EBC,
   lerEstudoBiblico,
@@ -1627,7 +1628,7 @@ async function leituraDaBiblia(referencia) {
 
 // Cada leitura da IA ganha o texto da Bíblia: { referencia, texto, introducao, destaque }. Um texto nunca é lido duas vezes e o
 // total respeita o máximo (a leitura que sobra cai, o argumento fica).
-async function conferirLeituras(pontos, max = Infinity) {
+async function conferirLeituras(pontos, max = Infinity, permitidas = null) {
   const lidas = new Set();
   let total = 0;
   for (const ponto of pontos) {
@@ -1638,6 +1639,11 @@ async function conferirLeituras(pontos, max = Infinity) {
         continue;
       }
       const achada = await leituraDaBiblia(d.leitura.referencia);
+      // No discurso público só se lê o que o esboço do S-34 marca com [Leia ...].
+      if (permitidas && !permitidas.has(achada.referencia)) {
+        d.leitura = null;
+        continue;
+      }
       if (lidas.has(achada.referencia)) {
         d.leitura = null;
         continue;
@@ -1702,7 +1708,7 @@ async function corpoDoEsbocoLimpo(saidaBruta, o) {
       transicao: semRotuloDeTopico(limparTextoGerado(p.transicao, 300)) || null,
     }))
     .filter((p) => p.titulo);
-  await conferirLeituras(pontos, o.maxLeituras);
+  await conferirLeituras(pontos, o.maxLeituras, o.leiturasPermitidas ? new Set(o.leiturasPermitidas) : null);
 
   const tema = limparTextoGerado(saida.tema, 200) || o.temaPadrao;
   // Introdução e conclusão são escritas palavra por palavra: falas curtas e, em cada uma, os itens de uma enumeração (que o app numera).
@@ -1726,6 +1732,11 @@ async function corpoDoEsbocoLimpo(saidaBruta, o) {
   }
   if (o.leituraEmCadaPonto && pontos.some((p) => !p.desenvolvimento.some((d) => d.leitura))) {
     avisos.push('Há ponto sem texto para leitura. Use "Melhorar" para pedir um texto em cada ponto.');
+  }
+  if (o.leiturasPermitidas) {
+    const lidas = new Set(leituras.map((l) => l.referencia));
+    const faltam = o.leiturasPermitidas.filter((r) => !lidas.has(r));
+    if (faltam.length) avisos.push(`Faltou a leitura de ${faltam.join("; ")}, que o esboço do S-34 marca. Use "Melhorar" para incluí-la.`);
   }
   if (leituras.some((l) => !l.introducao || !l.destaque)) {
     avisos.push('Algum texto ficou sem a fala antes da leitura ou sem o comentário depois dela. Use "Melhorar" para corrigir.');
@@ -2051,6 +2062,168 @@ async function esbocoDoDiscursoCurto(res, body, P) {
       semana: discurso.semana,
       titulo: discurso.titulo,
       url: discurso.url,
+      erro: completo ? null : "A IA não montou o esboço completo (introdução, pontos e conclusão). Tente de novo.",
+      esboco: completo ? esboco : null,
+      avisos: completo ? avisos : [],
+    });
+  } catch (e) {
+    return tratarErro(e, res);
+  }
+}
+
+// ---------- Discurso público (S-34, 30 min) ----------
+// O esboço oficial do S-34 do tema escolhido foi importado pelo administrador (api/_s34.mjs, Blob privado). O servidor o manda à IA
+// com o texto exato dos versículos; a IA elabora o esboço seguindo o prompt editável "discurso_publico". Só com o código do dirigente.
+
+const SaidaDiscursoPublico = z.object(corpoDoEsboco());
+
+// O esboço do S-34 do tema pedido ou a resposta de erro (e null).
+async function esbocoDoTema(res, body) {
+  const numero = Number(body.numero);
+  if (!Number.isInteger(numero) || numero < 1 || numero > 999) {
+    erro(res, 400, "Escolha um tema.");
+    return null;
+  }
+  if (!s34Configurado()) {
+    erro(res, 503, "Os esboços do S-34 ainda não foram configurados no servidor.");
+    return null;
+  }
+  let esboco = null;
+  try {
+    esboco = await lerEsboco(numero);
+  } catch (e) {
+    console.error("Discurso público: leitura do esboço falhou", e?.name, e?.message);
+    erro(res, 502, "Não consegui ler o esboço agora. Tente de novo em instantes.");
+    return null;
+  }
+  if (!esboco) erro(res, 404, "Esse tema ainda não foi importado (Ajustes → Esboços de discursos públicos).");
+  return esboco;
+}
+
+// Os temas já importados, para a pessoa escolher.
+async function listarTemasPublicos(res, body) {
+  if (!acessoDoDirigente(res, body)) return;
+  if (!s34Configurado()) return erro(res, 503, "Os esboços do S-34 ainda não foram configurados no servidor.");
+  const { temas } = await lerIndice();
+  return res.status(200).json({
+    temas: Object.entries(temas)
+      .map(([numero, t]) => ({ numero: Number(numero), titulo: t.titulo, revisao: t.revisao || "" }))
+      .sort((a, b) => a.numero - b.numero),
+  });
+}
+
+// O que o app mostra ao carregar o tema: título, revisão, seções com os tempos e as leituras marcadas.
+async function lerTemaPublico(res, body) {
+  if (!acessoDoDirigente(res, body)) return;
+  const esboco = await esbocoDoTema(res, body);
+  if (!esboco) return;
+  const { leituras } = referenciasDoPublico(esboco);
+  return res.status(200).json({
+    numero: esboco.numero,
+    titulo: esboco.titulo,
+    revisao: esboco.revisao || "",
+    minutos: minutosDoEsboco(esboco),
+    objetivo: esboco.notaAoOrador.slice(0, 240),
+    secoes: esboco.secoes.map((s) => ({ titulo: s.titulo, minutos: s.minutos })),
+    leituras,
+    itens: esboco.secoes.reduce((n, s) => n + s.itens.length, 0),
+  });
+}
+
+async function esbocoDoDiscursoPublico(res, body, P) {
+  if (!acessoDoDirigente(res, body)) return;
+  const opcoes = validarOpcoes(body.opcoes);
+  const ajuste = textoLivre(body.ajuste);
+  const modo = body.modo === "nova" || body.modo === "melhorar" ? body.modo : null;
+  const anteriores = modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(anteriorParaIa(body.anteriores)).slice(0, 12000) : "";
+  const inicioPedido = Date.now();
+  if (fontesConfiguradas()) precarregarFontes({ biblia: true, perspicaz: false });
+
+  const tema = await esbocoDoTema(res, body);
+  if (!tema) return;
+  const { leituras: marcadas, citadas } = referenciasDoPublico(tema);
+
+  let versiculos = [];
+  let permitidas = null; // as leituras marcadas, como a Bíblia as escreve (sem a Bíblia no servidor não dá para conferir)
+  if (fontesConfiguradas()) {
+    try {
+      versiculos = await buscarVersiculos([...marcadas, ...citadas], 40);
+      permitidas = [];
+      for (const r of marcadas) permitidas.push((await leituraDaBiblia(r)).referencia);
+      permitidas = [...new Set(permitidas)];
+    } catch (e) {
+      console.error("Discurso público: versículos indisponíveis", e?.message);
+      permitidas = null;
+    }
+  }
+
+  let mensagem =
+    blocoOrientacao(opcoes, ajuste, P) +
+    `PEDIDO: elabore o esboço do discurso público de ${minutosDoEsboco(tema)} minutos, tema "${tema.titulo}" (esboço S-34 nº ${tema.numero}).\n` +
+    emojisDoEsboco(opcoes, P) + "\n\n" +
+    textoDoDiscursoPublico(tema, versiculos) +
+    lembreteFinal(opcoes, ajuste, P);
+  if (modo && anteriores) {
+    mensagem += "\n\nESBOÇO JÁ SUGERIDO (JSON):\n" + anteriores + "\n\n" + P.frases.pedidos[modo === "nova" ? "Esboço: outra versão" : "Esboço: melhorar"];
+  }
+
+  try {
+    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 120_000) });
+    const inicio = Date.now();
+    const resposta = await chamarIa(
+      client,
+      P,
+      { max_tokens: 16000 /* o raciocínio também conta aqui */, system: P.sistemaDiscursoPublico, messages: [{ role: "user", content: mensagem }] },
+      { schema: SaidaDiscursoPublico }
+    );
+    if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
+      return erro(res, 502, "A IA não conseguiu elaborar o esboço deste discurso.");
+    }
+
+    const { esboco, avisos } = await corpoDoEsbocoLimpo(resposta.parsed_output, {
+      emoji: opcoes.emoji,
+      temaPadrao: tema.titulo,
+      minutosMax: 30,
+      maxPontos: tema.secoes.length,
+      maxArgumentos: 8,
+      maxBlocosIntro: 4,
+      maxBlocosConclusao: 4,
+      // A linha "Fonte" de cada ponto traz as publicações que o esboço do S-34 cita naquela seção.
+      fontesDoPonto: (i) => publicacoesDaSecao(tema.secoes[i]),
+      leiturasPermitidas: permitidas,
+    });
+    // Os tempos são os do esboço do S-34 (um ponto por seção); a introdução e a conclusão cabem dentro deles.
+    esboco.pontos.forEach((p, i) => {
+      if (tema.secoes[i]) p.minutos = tema.secoes[i].minutos || 0;
+    });
+    esboco.introducao.minutos = 0;
+    esboco.conclusao.minutos = 0;
+    if (esboco.pontos.length !== tema.secoes.length) avisos.push(`A IA fez ${esboco.pontos.length} ponto(s) e o esboço do S-34 tem ${tema.secoes.length} seções. Use "Melhorar" para ajustar.`);
+    const completo = esboco.pontos.length > 0 && esboco.introducao.blocos.length > 0 && esboco.conclusao.blocos.length > 0;
+
+    console.log(
+      "Esboço do discurso público:",
+      JSON.stringify({
+        modelo: P.ia.modelo,
+        tema: tema.numero,
+        revisao: tema.revisao || null,
+        secoes: tema.secoes.length,
+        pontos: esboco.pontos.length,
+        leiturasMarcadas: marcadas.length,
+        leituras: esboco.pontos.reduce((n, p) => n + p.desenvolvimento.filter((d) => d.leitura).length, 0),
+        versiculos: versiculos.length,
+        segundosIa: Math.round((Date.now() - inicio) / 100) / 10,
+        total: Math.round((Date.now() - inicioPedido) / 100) / 10,
+        entrada: resposta.usage?.input_tokens || 0,
+        saida: resposta.usage?.output_tokens || 0,
+        pensamento: resposta.usage?.output_tokens_details?.thinking_tokens ?? null,
+      })
+    );
+
+    return res.status(200).json({
+      semana: "Discurso público " + tema.numero,
+      titulo: tema.titulo,
+      url: null,
       erro: completo ? null : "A IA não montou o esboço completo (introdução, pontos e conclusão). Tente de novo.",
       esboco: completo ? esboco : null,
       avisos: completo ? avisos : [],
@@ -2509,6 +2682,9 @@ export default async function handler(req, res) {
   if (req.body && req.body.tarefa === "ebc-dirigente") return perguntasEbcDirigente(res, req.body, P);
   if (req.body && req.body.tarefa === "tesouros-ler") return lerTesourosDaSemana(res, req.body);
   if (req.body && req.body.tarefa === "tesouros") return esbocoDeTesouros(res, req.body, P);
+  if (req.body && req.body.tarefa === "publico-lista") return listarTemasPublicos(res, req.body);
+  if (req.body && req.body.tarefa === "publico-ler") return lerTemaPublico(res, req.body);
+  if (req.body && req.body.tarefa === "publico") return esbocoDoDiscursoPublico(res, req.body, P);
   if (req.body && req.body.tarefa === "discurso-ler") return lerDiscursoCurtoDaSemana(res, req.body);
   if (req.body && req.body.tarefa === "discurso") return esbocoDoDiscursoCurto(res, req.body, P);
   if (req.body && req.body.tarefa === "joias-ler") return lerJoiasDaSemana(res, req.body);

@@ -91,7 +91,10 @@ export function validarEsboco(bruto) {
         nivel: Math.max(0, Math.min(4, Math.round(Number(i && i.nivel) || 0))),
         texto: texto(i && i.texto, 1500),
         negrito: Boolean(i && i.negrito),
-        italico: Boolean(i && i.italico),
+        destaques: (Array.isArray(i && i.destaques) ? i.destaques : [])
+          .map((d) => ({ texto: texto(d && d.texto, 300), nivel: Number(d && d.nivel) === 2 ? 2 : 1 }))
+          .filter((d) => d.texto)
+          .slice(0, 6),
         nota: Boolean(i && i.nota),
         leituras: lista(i && i.leituras, 8, 100),
         referencias: lista(i && i.referencias, 20, 100),
@@ -224,4 +227,49 @@ export async function lerTemas() {
 
 export async function gravarTemas(itens) {
   await gravarJson("temas.json", { itens, atualizadoEm: new Date().toISOString() });
+}
+
+// ---------- Para a IA: o esboço do tema escolhido em texto ----------
+
+// As leituras marcadas "[Leia ...]" e os textos citados entre parênteses (sem repetir), nessa ordem.
+export function referenciasDoPublico(esboco) {
+  const itens = esboco.secoes.flatMap((s) => s.itens);
+  const leituras = [...new Set(itens.flatMap((i) => i.leituras || []))];
+  const citadas = [...new Set(itens.flatMap((i) => i.referencias || []))].filter((r) => !leituras.includes(r));
+  return { leituras, citadas };
+}
+
+// As publicações citadas numa seção (só as referências), para a linha "Fonte" do ponto.
+export function publicacoesDaSecao(secao) {
+  return [...new Set((secao ? secao.itens : []).flatMap((i) => i.publicacoes || []))];
+}
+
+export function minutosDoEsboco(esboco) {
+  return esboco.secoes.reduce((n, s) => n + (s.minutos || 0), 0);
+}
+
+// O esboço do S-34 como a IA o recebe: seções com tempo, itens em níveis e as marcas [LER], [DESTAQUE], [DESTAQUE MÁXIMO] e
+// [NOTA AO ORADOR]; depois a nota do fim e o texto exato dos versículos.
+export function textoDoDiscursoPublico(esboco, versiculos = []) {
+  const partes = [
+    `TEMA DO DISCURSO PÚBLICO: ${esboco.titulo} (esboço S-34 nº ${esboco.numero}${esboco.revisao ? `, revisão ${esboco.revisao}` : ""}; ${minutosDoEsboco(esboco)} minutos)`,
+  ];
+  if (esboco.notaAoOrador) partes.push(`NOTA AO ORADOR (objetivo do esboço): ${esboco.notaAoOrador}`);
+  esboco.secoes.forEach((secao, i) => {
+    const linhas = [`SEÇÃO ${i + 1} — ${secao.titulo}${secao.minutos ? ` (${secao.minutos} min)` : ""}`];
+    secao.itens.forEach((item) => {
+      const marcas = [];
+      if (item.negrito && !item.nota) marcas.push("EM NEGRITO NO ESBOÇO");
+      (item.leituras || []).forEach((l) => marcas.push(`LER: ${l}`));
+      (item.destaques || []).forEach((d) => marcas.push(`${d.nivel === 2 ? "DESTAQUE MÁXIMO" : "DESTAQUE"}: “${d.texto}”`));
+      const base = item.nota ? `[NOTA AO ORADOR: ${item.texto}]` : item.texto;
+      linhas.push(`${"  ".repeat(item.nivel || 0)}- ${base}${marcas.length ? ` [${marcas.join("] [")}]` : ""}`);
+    });
+    partes.push(linhas.join("\n"));
+  });
+  if (esboco.notaFinal) partes.push(`NOTA DO FIM DO ESBOÇO: ${esboco.notaFinal}`);
+  if (versiculos.length) {
+    partes.push("TEXTO DOS VERSÍCULOS (as leituras e os textos citados, na Tradução do Novo Mundo):\n" + versiculos.map((v) => `${v.referencia}: ${v.texto}`).join("\n"));
+  }
+  return partes.join("\n\n");
 }
