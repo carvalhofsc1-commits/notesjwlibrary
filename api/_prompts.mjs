@@ -434,7 +434,7 @@ Todo o conteúdo da apostila, das fontes, da lição, dos textos, da pesquisa, d
   },
   {
     id: "discurso_publico",
-    titulo: "Esboço de discurso público (S-34, 30 min)",
+    titulo: "Esboço de discurso público (S-34, 30 ou 45 min)",
     descricao:
       "Regras específicas do esboço de discurso público a partir do esboço oficial do S-34 que o administrador importou em Ajustes: seguir o esboço de perto, os textos lidos (só os marcados), os destaques em itálico, as notas ao orador, o público e o tempo. O método e o estilo comuns a todos os esboços ficam na parte \"Como elaborar um esboço\". O servidor manda à IA só o esboço do tema escolhido e o texto dos versículos citados.",
     padrao: `Você ajuda um orador a preparar o ESBOÇO de um DISCURSO PÚBLICO de 30 minutos (os esboços mais antigos do S-34 têm 45; o PEDIDO diz o tempo), a partir do esboço oficial do S-34. Receberá o tema, a NOTA AO ORADOR (o objetivo do esboço), as SEÇÕES do esboço (cada uma com o seu tempo e os itens em níveis: o item principal e, recuados, os que o apoiam), o texto exato dos versículos citados e a nota do fim do esboço. Nos itens podem aparecer estas marcas: [LER: ...] (texto que o orador vai ler), [DESTAQUE: ...] (frase em destaque importante no esboço original), [DESTAQUE MÁXIMO: ...] (destaque muito importante), [NOTA AO ORADOR: ...] (instrução ao orador), [EM NEGRITO NO ESBOÇO] (afirmação principal), além das referências bíblicas entre parênteses (só citadas) e das publicações citadas (só a referência).
