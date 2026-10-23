@@ -14,6 +14,7 @@ import {
   lerEstudoBiblico,
   lerCamposDoDocumento,
   lerArtigoDoWol,
+  lerReuniaoDaSemana,
   lerEstudoDireto,
   lerDiscursoCurto,
   lerJoias,
@@ -22,6 +23,7 @@ import {
   pesquisarNoWol,
   referenciasDeTesouros,
   referenciasDoDiscursoCurto,
+  semanasDosEstudos,
   textoDaRecapitulacao,
   textoDasJoias,
   textoDoCapituloEbc,
@@ -3077,6 +3079,45 @@ async function lerCamposDosDocumentos(req, res) {
   return res.status(200).json({ documentos, falhas });
 }
 
+// Em que semana cada artigo de estudo (A Sentinela) é estudado: o app manda só os números dos documentos e a edição de cada um.
+async function lerSemanasDosDocumentos(req, res) {
+  const body = req.body || {};
+  if (!(codigoValido(body.codigo) || dirigenteValido(body.codigoDirigente))) return recusarAcesso(res, body);
+  const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "desconhecido";
+  if (excedeuLimiteBackup(ip)) return erro(res, 429, "Muitas consultas. Tente novamente em alguns minutos.");
+  const vistos = new Set();
+  const documentos = (Array.isArray(body.documentos) ? body.documentos : [])
+    .map((d) => ({ id: String(d && d.id).trim(), edicao: Number(d && d.edicao) }))
+    .filter((d) => /^\d{6,12}$/.test(d.id) && Number.isInteger(d.edicao) && d.edicao >= 20220100 && d.edicao <= 20991200 && Math.floor(d.edicao / 100) % 100 >= 1 && Math.floor(d.edicao / 100) % 100 <= 12)
+    .filter((d) => (vistos.has(d.id) ? false : vistos.add(d.id)))
+    .slice(0, 40);
+  if (!documentos.length) return res.status(200).json({ semanas: {} });
+  try {
+    return res.status(200).json({ semanas: await semanasDosEstudos(documentos) });
+  } catch (e) {
+    console.error("Backup: semanas de estudo não lidas", e?.name, e?.message);
+    return erro(res, 502, "Não consegui consultar as semanas agora. Tente de novo em instantes.");
+  }
+}
+
+// As publicações de uma semana (o artigo de estudo de A Sentinela e a apostila Vida e Ministério), para criar respostas em documentos que
+// ainda não estão no backup.
+async function lerPublicacoesDaSemana(req, res) {
+  const body = req.body || {};
+  if (!(codigoValido(body.codigo) || dirigenteValido(body.codigoDirigente))) return recusarAcesso(res, body);
+  const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "desconhecido";
+  if (excedeuLimiteBackup(ip)) return erro(res, 429, "Muitas consultas. Tente novamente em alguns minutos.");
+  const ano = Number(body.ano);
+  const semana = Number(body.semana);
+  if (!Number.isInteger(ano) || ano < 2020 || ano > 2100 || !Number.isInteger(semana) || semana < 1 || semana > 53) return erro(res, 400, "Semana inválida.");
+  try {
+    return res.status(200).json(await lerReuniaoDaSemana(ano, semana));
+  } catch (e) {
+    console.error("Backup: semana não lida", ano, semana, e?.name, e?.message);
+    return erro(res, 502, "Não consegui ler essa semana no wol.jw.org agora. Tente de novo em instantes.");
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
 
@@ -3090,6 +3131,8 @@ export default async function handler(req, res) {
   }
 
   if (req.body && req.body.tarefa === "backup-campos") return lerCamposDosDocumentos(req, res);
+  if (req.body && req.body.tarefa === "backup-semanas") return lerSemanasDosDocumentos(req, res);
+  if (req.body && req.body.tarefa === "backup-semana") return lerPublicacoesDaSemana(req, res);
 
   if (!process.env.ANTHROPIC_API_KEY) {
     return erro(res, 500, "Recurso de IA ainda não configurado no servidor.");

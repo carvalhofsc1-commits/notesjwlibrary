@@ -1005,10 +1005,92 @@ export function camposDoDocumento(html) {
         .filter((l) => l && !/^sua resposta$/i.test(l));
       pergunta = linhas.length ? linhas[linhas.length - 1] : "";
     }
-    campos.push({ tag: m[1], numero, pergunta: pergunta.slice(0, 200) });
+    const campo = { tag: m[1], numero, pergunta: pergunta.slice(0, 200) };
+    // No fim dos artigos de estudo há um quadro (de recapitulação) com uma caixa para cada item: sem pergunta numerada, a caixa está
+    // dentro do último quadro (título em <div class="boxTtl"><h2>…</h2>) que vem antes dela.
+    if (simbolo === "w" && numero === null) {
+      const quadros = [...html.slice(0, m.index).matchAll(/<div\b[^>]*class="[^"]*\bboxTtl\b[^"]*"[^>]*>([\s\S]*?)<\/div>/g)];
+      const quadro = quadros.length ? textoDe(quadros[quadros.length - 1][1]) : "";
+      if (quadro) {
+        campo.quadro = quadro.slice(0, 160);
+        // O item de um quadro que continua o título ("O QUE VOCÊ APRENDEU COM . . ." + "o apóstolo Paulo?") vira a pergunta inteira.
+        if (/(\s*\.){3}\s*$|…\s*$/.test(quadro) || /^\p{Ll}/u.test(campo.pergunta)) {
+          const frase = quadro === quadro.toLocaleUpperCase("pt-BR") ? quadro.charAt(0) + quadro.slice(1).toLocaleLowerCase("pt-BR") : quadro;
+          campo.pergunta = perguntaDoQuadro(frase, campo.pergunta).slice(0, 200);
+        }
+      }
+    }
+    campos.push(campo);
     if (campos.length >= 120) break;
   }
   return { titulo, simbolo, edicao, campos };
+}
+
+// ---------- Semana de estudo dos artigos e publicações de uma semana (tela Backup) ----------
+// O artigo de A Sentinela não diz em que semana é estudado; quem diz é a página de reuniões da semana (/meetings/r5/lp-t/ano/semana,
+// semana ISO), que traz o período no título e os links do artigo de estudo e da apostila Vida e Ministério daquela semana.
+const reunioesLidas = new Map(); // "ano/semana" -> { quando, dados }
+const VALIDADE_REUNIAO_MS = 6 * 60 * 60 * 1000;
+
+// Ano e número da semana ISO de uma data (em UTC).
+export function anoSemanaIso(data) {
+  const d = new Date(Date.UTC(data.getUTCFullYear(), data.getUTCMonth(), data.getUTCDate()));
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  const inicio = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return { ano: d.getUTCFullYear(), semana: Math.ceil(((d - inicio) / 86400000 + 1) / 7) };
+}
+
+// { ano, semana, periodo: "15-21 de setembro", sentinela: { id, titulo } | null, apostila: { id, titulo } | null }
+export async function lerReuniaoDaSemana(ano, semana, { timeoutMs = 8000 } = {}) {
+  const chave = ano + "/" + semana;
+  const guardado = reunioesLidas.get(chave);
+  if (guardado && Date.now() - guardado.quando < VALIDADE_REUNIAO_MS) return guardado.dados;
+  const html = await baixar(`${BASE}/pt/wol/meetings/r5/lp-t/${ano}/${semana}`, timeoutMs);
+  const periodo = textoDe((html.match(/<title>([\s\S]*?)<\/title>/i) || [, ""])[1]).replace(/\s*[—–-]\s*BIBLIOTECA ON-LINE.*$/i, "");
+  let sentinela = null;
+  let apostila = null;
+  for (const m of html.matchAll(/<a\b[^>]*href="\/pt\/wol\/d\/r5\/lp-t\/(\d{6,12})"[^>]*>([\s\S]*?)<\/a>/g)) {
+    const texto = textoDe(m[2]);
+    if (!sentinela && /A Sentinela \(Estudo\)/i.test(texto)) sentinela = { id: m[1], titulo: texto.replace(/\s*A Sentinela \(Estudo\).*$/i, "").trim() };
+    if (!apostila && /Apostila Vida e Ministério/i.test(texto)) apostila = { id: m[1], titulo: texto.replace(/\s*Apostila Vida e Ministério.*$/i, "").trim() };
+  }
+  if (!sentinela) {
+    const id = idDoArtigoNaReuniao(html);
+    if (id) sentinela = { id, titulo: "" };
+  }
+  const dados = { ano, semana, periodo, sentinela, apostila };
+  reunioesLidas.set(chave, { quando: Date.now(), dados });
+  if (reunioesLidas.size > 400) reunioesLidas.delete(reunioesLidas.keys().next().value);
+  return dados;
+}
+
+// Em que semana cada artigo de estudo é estudado: docs = [{ id, edicao }] (edicao = 20250700 para "julho de 2025"). A edição de um mês é
+// estudada a partir de uns dois meses depois (a de julho, de meados de setembro a meados de outubro); a busca começa duas semanas antes
+// do primeiro dia do segundo mês seguinte e vai até 12 semanas, parando quando acha todos os artigos da edição. Devolve { id: { ano, semana, periodo } }.
+export async function semanasDosEstudos(docs, { concorrencia = 6, limiteMs = 40000 } = {}) {
+  const inicio = Date.now();
+  const achados = {};
+  const porEdicao = new Map();
+  for (const d of docs) {
+    if (!porEdicao.has(d.edicao)) porEdicao.set(d.edicao, new Set());
+    porEdicao.get(d.edicao).add(String(d.id));
+  }
+  for (const [edicao, ids] of porEdicao) {
+    const ano = Math.floor(edicao / 10000);
+    const mes = Math.floor(edicao / 100) % 100;
+    const base = Date.UTC(ano, mes - 1 + 2, 1) - 14 * 86400000;
+    const semanas = Array.from({ length: 12 }, (_, k) => anoSemanaIso(new Date(base + k * 7 * 86400000)));
+    for (let i = 0; i < semanas.length && ids.size && Date.now() - inicio < limiteMs; i += concorrencia) {
+      const lote = await Promise.all(semanas.slice(i, i + concorrencia).map((s) => lerReuniaoDaSemana(s.ano, s.semana).catch(() => null)));
+      for (const r of lote) {
+        if (r && r.sentinela && ids.has(r.sentinela.id)) {
+          achados[r.sentinela.id] = { ano: r.ano, semana: r.semana, periodo: r.periodo };
+          ids.delete(r.sentinela.id);
+        }
+      }
+    }
+  }
+  return achados;
 }
 
 // Lê o documento (número do wol.jw.org, em português) e devolve o título, a publicação/edição e as caixas "Sua resposta".
