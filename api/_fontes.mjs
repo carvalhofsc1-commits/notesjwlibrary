@@ -247,6 +247,36 @@ export async function buscarVersiculos(referencias, max) {
   return resultado;
 }
 
+// As referências bíblicas escritas num texto livre (as anotações que o orador colou): "Mateus 6:33", "Sl 37:10, 11", "Mt 24:14; 28:19, 20".
+// Só entram as que a Bíblia confirma (o livro existe e o versículo também), escritas como a Bíblia as escreve, sem repetir. Um trecho sem o
+// nome do livro só vale depois de ";" (continua o livro anterior). Num texto corrido o livro tem de começar por maiúscula (ou número), para
+// "reunião de 9:15" não virar Deuteronômio; com "livre" (o campo em que a pessoa digita só os textos) vale qualquer caixa ("mt 6:33").
+export async function referenciasNoTexto(texto, { max = 60, livre = false } = {}) {
+  const bruto = String(texto || "").slice(0, 20000);
+  if (!bruto.trim() || !fontesConfiguradas()) return [];
+  const indice = await carregarBiblia();
+  const padrao = /(?:((?:[1-3]\s?)?\p{L}\p{L}{0,18})\.?\s*)?(\d{1,3}):(\d{1,3}(?:\s*[-–]\s*\d{1,3})?(?:\s*,\s*\d{1,3}(?:\s*[-–]\s*\d{1,3})?)*)/gu;
+  const achadas = [];
+  const vistas = new Set();
+  let livro = "";
+  let fimAnterior = -1;
+  for (const m of bruto.matchAll(padrao)) {
+    if (achadas.length >= max) break;
+    const nome = m[1] && (livre || /^[1-3]|^\p{Lu}/u.test(m[1])) ? m[1] : "";
+    const continua = fimAnterior >= 0 && /^\s*;\s*$/.test(bruto.slice(fimAnterior, m.index));
+    const doLivro = nome || (continua ? livro : "");
+    if (!doLivro) continue;
+    const achado = lerReferencia(`${doLivro} ${m[2]}:${m[3]}`, indice);
+    if (!achado) continue;
+    if (nome) livro = nome;
+    fimAnterior = m.index + m[0].length;
+    if (vistas.has(achado.referencia)) continue;
+    vistas.add(achado.referencia);
+    achadas.push(achado.referencia);
+  }
+  return achadas;
+}
+
 // ---------- Estudo Perspicaz ----------
 
 let perspicaz = null; // Promise<Map<chave, { volume, titulo, texto }>>

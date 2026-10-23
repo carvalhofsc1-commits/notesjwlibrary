@@ -820,7 +820,7 @@ async function lerDocumentoCitado(citado, timeoutMs, maxCaracteres) {
 // Pesquisa o tema no wol.jw.org (só lá) e devolve até 5 trechos de publicações: [{ rotulo, titulo, trecho, url }]. Primeiro as
 // palavras na mesma frase; se houver pouco, no mesmo parágrafo. Ficam de fora a própria apostila, o ponto do apêndice A (que já vem
 // à parte), o glossário e as publicações antigas (A Sentinela de antes de 1990).
-async function pesquisarNoWol(tema, timeoutMs) {
+export async function pesquisarNoWol(tema, timeoutMs, maximo = MAX_RESULTADOS_PESQUISA) {
   const consulta = String(tema || "").replace(/[“”"]/g, "").replace(/[?!.]+$/, "").trim();
   if (consulta.length < 8) return [];
   const buscar = async (proximidade) => {
@@ -843,7 +843,42 @@ async function pesquisarNoWol(tema, timeoutMs) {
     const vistos = new Set(achados.map((r) => r.url));
     achados = achados.concat((await buscar("par")).filter((r) => aproveita(r) && !vistos.has(r.url)));
   }
-  return achados.slice(0, MAX_RESULTADOS_PESQUISA).map(({ ano, ...r }) => r);
+  return achados.slice(0, maximo).map(({ ano, ...r }) => r);
+}
+
+// Um artigo do wol.jw.org pelo endereço (colado pelo orador no card Outros esboços): título, texto (até maxCaracteres) e textos bíblicos.
+// Só aceita endereços do próprio wol (/pt/wol/d/r5/lp-t/<número do documento>; com "#h=7:0-9:0" na ponta, só os parágrafos daquela faixa).
+// null = não é um endereço de artigo do wol ou o artigo não tem texto.
+export async function lerArtigoDoWol(endereco, { timeoutMs = 8000, maxCaracteres = MAX_CARACTERES_ARTIGO } = {}) {
+  let url;
+  try {
+    url = new URL(String(endereco || "").trim());
+  } catch {
+    return null;
+  }
+  const doc = url.pathname.match(/^\/pt\/wol\/d\/r5\/lp-t\/(\d{5,12})\/?$/);
+  if (url.protocol !== "https:" || url.hostname !== "wol.jw.org" || !doc) return null;
+  const faixa = url.hash.match(/h=(\d+):\d+-(\d+):(\d+)/);
+  const de = faixa ? Number(faixa[1]) : null;
+  let ate = faixa ? Number(faixa[2]) : null;
+  if (faixa && Number(faixa[3]) === 0 && ate > de) ate -= 1;
+  const html = await baixar(BASE + "/pt/wol/d/r5/lp-t/" + doc[1], timeoutMs);
+  // O título é o h1; as publicações antigas não o têm e o título fica só na aba da página ("Título — BIBLIOTECA ON-LINE…").
+  const daAba = textoDe((html.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || "").replace(/\s*[—–-]\s*BIBLIOTECA ON-LINE.*$/i, "");
+  const titulo = textoDe((html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/) || [])[1] || "") || daAba;
+  const partes = [];
+  const brutos = [];
+  for (const [, , pid, conteudo] of html.matchAll(/<(p|h2|h3)\b[^>]*data-pid="(\d+)"[^>]*>([\s\S]*?)<\/\1>/g)) {
+    const n = Number(pid);
+    if (de !== null && (n < de || n > ate)) continue;
+    const texto = textoDe(conteudo);
+    if (texto) {
+      partes.push(texto);
+      brutos.push(conteudo);
+    }
+  }
+  if (!partes.length) return null;
+  return { titulo, texto: partes.join("\n").slice(0, maxCaracteres), referencias: referenciasDe(brutos.join(" ")).slice(0, 40), url: BASE + "/pt/wol/d/r5/lp-t/" + doc[1] };
 }
 
 // Lê o discurso curto da semana (a fonte, a lição do th e, se a fonte só traz o tema e textos, a pesquisa no wol). null = a semana

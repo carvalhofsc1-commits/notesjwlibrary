@@ -7,17 +7,19 @@ import { z } from "zod";
 import { codigoDoDirigente, erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { lerConfigIa } from "./_iaConfig.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
-import { buscarVerbete, buscarVersiculos, fontesConfiguradas, precarregarFontes } from "./_fontes.mjs";
+import { buscarVerbete, buscarVersiculos, fontesConfiguradas, precarregarFontes, referenciasNoTexto } from "./_fontes.mjs";
 import { lerEsboco, lerIndice, minutosDoEsboco, publicacoesDaSecao, referenciasDoPublico, s34Configurado, textoDoDiscursoPublico, textosBiblicosDoPublico } from "./_s34.mjs";
 import {
   QUADROS_EBC,
   lerEstudoBiblico,
   lerCamposDoDocumento,
+  lerArtigoDoWol,
   lerEstudoDireto,
   lerDiscursoCurto,
   lerJoias,
   lerTesouros,
   lerTextoDiario,
+  pesquisarNoWol,
   referenciasDeTesouros,
   referenciasDoDiscursoCurto,
   textoDaRecapitulacao,
@@ -2345,6 +2347,262 @@ async function esbocoDoDiscursoPublico(res, body, P) {
   }
 }
 
+// ---------- Outros esboços (tema livre: necessidades locais, eventos especiais) ----------
+// O orador informa o tema, a ideia, o tempo e, se quiser, os textos que quer ler e a matéria: um texto colado e/ou artigos do wol.jw.org
+// (os endereços colados ou os que ele escolheu na pesquisa do tema na biblioteca). Nada fica no servidor: tudo vem no pedido.
+// Três tarefas: outros-pesquisar (a pesquisa na biblioteca), outros-ler (lê a matéria e lista os textos bíblicos) e outros (o esboço).
+
+const SaidaOutros = z.object(corpoDoEsboco());
+const MAX_ARTIGOS_OUTROS = 5;
+const MAX_CARACTERES_ARTIGO_OUTROS = 8000;
+const MAX_MATERIA_OUTROS = 12000;
+
+// Texto de várias linhas (a ideia, a matéria): quebras de linha preservadas, sem excesso de linhas em branco.
+function textoLongo(valor, max) {
+  return typeof valor === "string"
+    ? valor.replace(/\r\n?/g, "\n").replace(/[^\S\n]+/g, " ").replace(/ ?\n ?/g, "\n").replace(/\n{3,}/g, "\n\n").trim().slice(0, max)
+    : "";
+}
+
+// Os endereços do wol.jw.org do pedido (uma lista, ou um texto com um endereço por linha), sem repetir.
+function enderecosDoOutros(valor) {
+  const brutos = Array.isArray(valor) ? valor : typeof valor === "string" ? valor.split(/\s+/) : [];
+  return [...new Set(brutos.filter((x) => typeof x === "string").map((x) => limparLinha(x, 300)).filter(Boolean))].slice(0, MAX_ARTIGOS_OUTROS);
+}
+
+// O que o orador digitou no card, já limpo.
+function dadosDoOutros(body) {
+  const minutos = Math.round(Number(body.minutos));
+  return {
+    tema: limparLinha(body.tema, 200),
+    ideia: textoLongo(body.ideia, 1500),
+    ocasiao: limparLinha(body.ocasiao, 120),
+    minutos: Number.isFinite(minutos) ? Math.max(3, Math.min(60, minutos)) : 30,
+    textosLer: limparLinha(body.textosLer, 600),
+    materia: textoLongo(body.materia, MAX_MATERIA_OUTROS),
+    artigos: enderecosDoOutros(body.artigos),
+  };
+}
+
+// Lê os artigos do wol.jw.org: { artigos: [{ titulo, url, texto, referencias }], falhas: [endereço que não deu para ler] }.
+async function artigosDoOutros(d) {
+  const lidos = await Promise.all(
+    d.artigos.map(async (endereco) => {
+      try {
+        const artigo = await lerArtigoDoWol(endereco, { timeoutMs: 8000, maxCaracteres: MAX_CARACTERES_ARTIGO_OUTROS });
+        return artigo ? { endereco, artigo } : { endereco, artigo: null };
+      } catch (e) {
+        console.error("Outros esboços: artigo não lido", e?.message);
+        return { endereco, artigo: null };
+      }
+    })
+  );
+  return { artigos: lidos.filter((l) => l.artigo).map((l) => l.artigo), falhas: lidos.filter((l) => !l.artigo).map((l) => l.endereco) };
+}
+
+// Os textos que o orador pediu para ler (o campo "Textos bíblicos que quer ler"), como a Bíblia os escreve.
+async function textosPedidosDoOutros(d) {
+  if (!d.textosLer) return [];
+  if (!fontesConfiguradas()) return d.textosLer.split(/\s*[;\n]\s*/).filter(Boolean).slice(0, 15);
+  return referenciasNoTexto(d.textosLer, { max: 15, livre: true });
+}
+
+// Quantos pontos o discurso comporta, conforme o tempo.
+function pontosDoOutros(minutos) {
+  return minutos <= 8 ? 2 : minutos <= 15 ? 3 : minutos <= 25 ? 4 : minutos <= 45 ? 6 : 7;
+}
+
+// Os minutos das partes (introdução, pontos e conclusão) passam a somar o tempo do discurso: proporcionais ao que a IA indicou
+// (ou, sem indicação, 1 min na introdução e na conclusão e o resto igual entre os pontos), com arredondamento que fecha a soma.
+// Nenhuma parte fica sem tempo quando o total comporta (a IA às vezes deixa um ponto em 0).
+function acertarMinutos(esboco, total) {
+  const partes = [esboco.introducao, ...esboco.pontos, esboco.conclusao];
+  const soma = partes.reduce((n, p) => n + (p.minutos || 0), 0);
+  if (soma === total) return;
+  const pesos = soma > 0
+    ? partes.map((p) => (total >= partes.length ? Math.max(1, p.minutos || 0) : p.minutos || 0))
+    : partes.map((_, i) => (i === 0 || i === partes.length - 1 ? 1 : Math.max(1, (total - 2) / Math.max(1, esboco.pontos.length))));
+  const somaPesos = pesos.reduce((n, p) => n + p, 0);
+  const exatos = pesos.map((p) => (p * total) / somaPesos);
+  const minutos = exatos.map(Math.floor);
+  let sobra = total - minutos.reduce((n, m) => n + m, 0);
+  exatos
+    .map((e, i) => ({ i, resto: e - Math.floor(e) }))
+    .sort((a, b) => b.resto - a.resto)
+    .forEach(({ i }) => {
+      if (sobra-- > 0) minutos[i]++;
+    });
+  partes.forEach((p, i) => {
+    p.minutos = minutos[i];
+  });
+}
+
+// O resumo do que o servidor leu (o mesmo em "outros-ler" e depois da elaboração do esboço), para a tela.
+async function resumoDoOutros(d, { artigos, falhas, pedidos }) {
+  const naMateria = await referenciasNoTexto(d.materia, { max: 40 });
+  return {
+    semana: "",
+    titulo: d.tema || "Matéria do discurso",
+    url: null,
+    minutos: d.minutos,
+    artigos: artigos.map((a) => ({ titulo: a.titulo, url: a.url, caracteres: a.texto.length })),
+    falhas,
+    pedidos,
+    avisoTextos: d.textosLer && !pedidos.length ? `Não reconheci nenhum texto bíblico em "${d.textosLer}". Escreva como "Mateus 6:33; Salmo 37:10, 11".` : "",
+    materia: d.materia.length,
+    // A lista passa de 80 textos com facilidade (um artigo traz dezenas): os pedidos e os da matéria colada vêm antes, para não ficarem de fora.
+    textosBiblicos: await textosDaMateria({ todos: [...pedidos, ...naMateria, ...artigos.flatMap((a) => a.referencias)], leia: pedidos }),
+  };
+}
+
+// A pesquisa do tema na biblioteca online (wol.jw.org): os resultados vão para a tela e o orador escolhe os que a IA vai ler.
+async function pesquisarOutros(res, body) {
+  if (!acessoDoDirigente(res, body)) return;
+  const consulta = limparLinha(body.consulta, 200) || limparLinha(body.tema, 200);
+  if (consulta.length < 8) return erro(res, 400, "Escreva o tema (ou as palavras da pesquisa) com pelo menos 8 letras.");
+  try {
+    const resultados = await pesquisarNoWol(consulta, 9000, 8);
+    return res.status(200).json({ consulta, resultados });
+  } catch (e) {
+    console.error("Outros esboços: pesquisa no wol falhou", e?.name, e?.message);
+    return erro(res, 502, "Não consegui pesquisar na biblioteca agora. Tente de novo em instantes.");
+  }
+}
+
+// Lê a matéria (os artigos do wol.jw.org e os textos bíblicos) e devolve o resumo com a lista de textos para marcar.
+async function lerOutros(res, body) {
+  if (!acessoDoDirigente(res, body)) return;
+  const d = dadosDoOutros(body);
+  if (!d.materia && !d.artigos.length && !d.textosLer) return erro(res, 400, "Informe a matéria (um texto colado ou artigos do wol.jw.org) ou os textos bíblicos que quer ler.");
+  if (fontesConfiguradas()) precarregarFontes({ biblia: true, perspicaz: false });
+  const [{ artigos, falhas }, pedidos] = await Promise.all([artigosDoOutros(d), textosPedidosDoOutros(d)]);
+  return res.status(200).json(await resumoDoOutros(d, { artigos, falhas, pedidos }));
+}
+
+// A mensagem dos dados do orador (a ordem e os rótulos estão na descrição da montagem, em _prompts.mjs).
+function textoDoOutros(d, { pedidos, sugeridas, artigos, versiculos }) {
+  const partes = [`TEMA DO DISCURSO: ${d.tema}`, `IDEIA DO DISCURSO: ${d.ideia || "o orador não informou; use o tema."}`];
+  if (d.ocasiao) partes.push(`OCASIÃO: ${d.ocasiao}`);
+  partes.push(`TEMPO TOTAL: ${d.minutos} minutos`);
+  partes.push(
+    "TEXTOS QUE O ORADOR PEDIU PARA LER: " +
+      (pedidos.length ? pedidos.join("; ") + "." : sugeridas ? `nenhum; escolha você até ${sugeridas} textos que reforcem os pontos.` : "nenhum além dos escolhidos pelo orador (indicados abaixo).")
+  );
+  if (d.materia) partes.push("MATÉRIA COLADA PELO ORADOR:\n" + d.materia);
+  if (artigos.length) {
+    partes.push("ARTIGOS DO WOL.JW.ORG LIDOS PELO SERVIDOR:\n" + artigos.map((a, i) => `[${i + 1}] ${a.titulo || "(sem título)"}\n${a.texto}`).join("\n\n"));
+  }
+  if (versiculos.length) partes.push("TEXTO DOS VERSÍCULOS:\n" + versiculos.map((v) => `${v.referencia}: ${v.texto}`).join("\n"));
+  return partes.join("\n\n");
+}
+
+async function esbocoDeOutros(res, body, P) {
+  if (!acessoDoDirigente(res, body)) return;
+  const d = dadosDoOutros(body);
+  if (d.tema.length < 4) return erro(res, 400, "Escreva o tema do discurso.");
+  const opcoes = validarOpcoes(body.opcoes);
+  const ajuste = textoLivre(body.ajuste);
+  const modo = body.modo === "nova" || body.modo === "melhorar" || body.modo === "incluir" ? body.modo : null;
+  const anteriores = modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(anteriorParaIa(body.anteriores)).slice(0, 12000) : "";
+  const inicioPedido = Date.now();
+  if (fontesConfiguradas()) precarregarFontes({ biblia: true, perspicaz: false });
+
+  const [{ artigos, falhas }, pedidos, extras] = await Promise.all([artigosDoOutros(d), textosPedidosDoOutros(d), textosExtrasDoPedido(body)]);
+  const naMateria = await referenciasNoTexto(d.materia, { max: 40 });
+  const doEsbocoAnterior = modo ? leiturasDoEsbocoAnterior(body.anteriores) : [];
+
+  // Os textos lidos: os que o orador pediu e os que ele marcou na lista; sem nenhum dos dois, a IA escolhe poucos (conforme o tempo).
+  const escolhidos = [...new Set([...pedidos, ...extras.map((e) => e.referencia), ...doEsbocoAnterior])];
+  const sugeridas = pedidos.length + extras.length ? 0 : Math.max(2, Math.min(8, Math.round(d.minutos / 6)));
+  const maxLeituras = sugeridas ? Math.max(escolhidos.length, sugeridas) : escolhidos.length;
+
+  let versiculos = [];
+  if (fontesConfiguradas()) {
+    try {
+      versiculos = await buscarVersiculos([...pedidos, ...extras.map((e) => e.referencia), ...naMateria, ...artigos.flatMap((a) => a.referencias)], 30);
+    } catch (e) {
+      console.error("Outros esboços: versículos indisponíveis", e?.message);
+    }
+  }
+
+  let mensagem =
+    blocoOrientacao(opcoes, ajuste, P) +
+    `PEDIDO: elabore o esboço de um discurso de ${d.minutos} minutos, tema "${d.tema}".\n` +
+    emojisDoEsboco(opcoes, P) + "\n\n" +
+    textoDoOutros(d, { pedidos, sugeridas, artigos, versiculos }) +
+    blocoDeTextosEscolhidos(extras, P) +
+    lembreteFinal(opcoes, ajuste, P);
+  if (modo && anteriores) {
+    mensagem += "\n\nESBOÇO JÁ SUGERIDO (JSON):\n" + anteriores + "\n\n" + pedidoDoModo(modo, P);
+  }
+
+  try {
+    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 120_000) });
+    const inicio = Date.now();
+    const resposta = await chamarIa(
+      client,
+      P,
+      { max_tokens: 16000 /* o raciocínio também conta aqui */, system: P.sistemaOutros, messages: [{ role: "user", content: mensagem }] },
+      { schema: SaidaOutros }
+    );
+    if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
+      return erro(res, 502, "A IA não conseguiu elaborar o esboço deste discurso.");
+    }
+
+    const { esboco: corpo, avisos } = await corpoDoEsbocoLimpo(resposta.parsed_output, {
+      emoji: opcoes.emoji,
+      temaPadrao: d.tema,
+      minutosMax: d.minutos,
+      maxPontos: pontosDoOutros(d.minutos),
+      maxArgumentos: 5,
+      maxBlocosIntro: 4,
+      maxBlocosConclusao: 4,
+      fontesDoPonto: () => [],
+      maxLeituras,
+      // Havendo textos pedidos ou marcados, só se lê o que o orador indicou (e o que o esboço anterior já lia).
+      leiturasPermitidas: sugeridas || !fontesConfiguradas() ? null : escolhidos,
+      leiturasObrigatorias: [...pedidos, ...extras.map((e) => e.referencia), ...(modo === "incluir" ? doEsbocoAnterior : [])],
+      motivoObrigatorias: "que você pediu, escolheu ou que o esboço já tinha",
+    });
+    // O tema é o que o orador digitou; as fontes são os artigos do wol.jw.org que o servidor leu.
+    const esboco = { ...corpo, tema: d.tema, fontes: artigos.map((a) => a.titulo).filter(Boolean) };
+    acertarMinutos(esboco, d.minutos);
+    const completo = esboco.pontos.length > 0 && esboco.introducao.blocos.length > 0 && esboco.conclusao.blocos.length > 0;
+    if (falhas.length) avisos.push(`Não consegui ler ${falhas.length === 1 ? "um artigo" : falhas.length + " artigos"} do wol.jw.org; o esboço não os usa.`);
+
+    console.log(
+      "Esboço de outro discurso:",
+      JSON.stringify({
+        modelo: P.ia.modelo,
+        minutos: d.minutos,
+        materia: d.materia.length,
+        artigos: artigos.length,
+        falhas: falhas.length,
+        pedidos: pedidos.length,
+        extras: extras.length,
+        sugeridas,
+        pontos: esboco.pontos.length,
+        leituras: esboco.pontos.reduce((n, p) => n + p.desenvolvimento.filter((x) => x.leitura).length, 0),
+        versiculos: versiculos.length,
+        segundosIa: Math.round((Date.now() - inicio) / 100) / 10,
+        total: Math.round((Date.now() - inicioPedido) / 100) / 10,
+        entrada: resposta.usage?.input_tokens || 0,
+        saida: resposta.usage?.output_tokens || 0,
+        pensamento: resposta.usage?.output_tokens_details?.thinking_tokens ?? null,
+      })
+    );
+
+    return res.status(200).json({
+      ...(await resumoDoOutros(d, { artigos, falhas, pedidos })),
+      erro: completo ? null : "A IA não montou o esboço completo (introdução, pontos e conclusão). Tente de novo.",
+      esboco: completo ? esboco : null,
+      avisos: completo ? avisos : [],
+    });
+  } catch (e) {
+    return tratarErro(e, res);
+  }
+}
+
 // ---------- Joias espirituais ----------
 // O servidor lê a leitura da Bíblia da semana (capítulos com os versículos e os trechos das publicações do Índice das
 // Publicações) e a seção "Joias espirituais" da apostila (api/_wol.mjs). A IA escreve até 2 joias por capítulo e a
@@ -2797,6 +3055,9 @@ export default async function handler(req, res) {
   if (req.body && req.body.tarefa === "publico-lista") return listarTemasPublicos(res, req.body);
   if (req.body && req.body.tarefa === "publico-ler") return lerTemaPublico(res, req.body);
   if (req.body && req.body.tarefa === "publico") return esbocoDoDiscursoPublico(res, req.body, P);
+  if (req.body && req.body.tarefa === "outros-pesquisar") return pesquisarOutros(res, req.body);
+  if (req.body && req.body.tarefa === "outros-ler") return lerOutros(res, req.body);
+  if (req.body && req.body.tarefa === "outros") return esbocoDeOutros(res, req.body, P);
   if (req.body && req.body.tarefa === "discurso-ler") return lerDiscursoCurtoDaSemana(res, req.body);
   if (req.body && req.body.tarefa === "discurso") return esbocoDoDiscursoCurto(res, req.body, P);
   if (req.body && req.body.tarefa === "joias-ler") return lerJoiasDaSemana(res, req.body);
