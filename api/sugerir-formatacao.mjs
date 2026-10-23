@@ -2212,7 +2212,7 @@ async function listarTemasPublicos(res, body) {
   const { temas } = await lerIndice();
   return res.status(200).json({
     temas: Object.entries(temas)
-      .map(([numero, t]) => ({ numero: Number(numero), titulo: t.titulo, revisao: t.revisao || "" }))
+      .map(([numero, t]) => ({ numero: Number(numero), titulo: t.titulo, revisao: t.revisao || "", minutos: t.minutos || 0 }))
       .sort((a, b) => a.numero - b.numero),
   });
 }
