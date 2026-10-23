@@ -248,14 +248,10 @@ export function minutosDoEsboco(esboco) {
   return esboco.secoes.reduce((n, s) => n + (s.minutos || 0), 0);
 }
 
-// O esboço do S-34 como a IA o recebe: seções com tempo, itens em níveis e as marcas [LER], [DESTAQUE], [DESTAQUE MÁXIMO] e
-// [NOTA AO ORADOR]; depois a nota do fim e o texto exato dos versículos.
-export function textoDoDiscursoPublico(esboco, versiculos = []) {
-  const partes = [
-    `TEMA DO DISCURSO PÚBLICO: ${esboco.titulo} (esboço S-34 nº ${esboco.numero}${esboco.revisao ? `, revisão ${esboco.revisao}` : ""}; ${minutosDoEsboco(esboco)} minutos)`,
-  ];
-  if (esboco.notaAoOrador) partes.push(`NOTA AO ORADOR (objetivo do esboço): ${esboco.notaAoOrador}`);
-  esboco.secoes.forEach((secao, i) => {
+// As seções do esboço como a IA as recebe: título com o tempo e os itens em níveis, com as marcas [LER], [DESTAQUE], [DESTAQUE MÁXIMO],
+// [NOTA AO ORADOR] e [EM NEGRITO NO ESBOÇO]. Uma string por seção.
+function textoDasSecoes(esboco) {
+  return esboco.secoes.map((secao, i) => {
     const linhas = [`SEÇÃO ${i + 1} — ${secao.titulo}${secao.minutos ? ` (${secao.minutos} min)` : ""}`];
     secao.itens.forEach((item) => {
       const marcas = [];
@@ -265,12 +261,32 @@ export function textoDoDiscursoPublico(esboco, versiculos = []) {
       const base = item.nota ? `[NOTA AO ORADOR: ${item.texto}]` : item.texto;
       linhas.push(`${"  ".repeat(item.nivel || 0)}- ${base}${marcas.length ? ` [${marcas.join("] [")}]` : ""}`);
     });
-    partes.push(linhas.join("\n"));
+    return linhas.join("\n");
   });
+}
+
+// O esboço do S-34 como a IA o recebe: seções com tempo, itens em níveis e as marcas [LER], [DESTAQUE], [DESTAQUE MÁXIMO] e
+// [NOTA AO ORADOR]; depois a nota do fim e o texto exato dos versículos.
+export function textoDoDiscursoPublico(esboco, versiculos = []) {
+  const partes = [
+    `TEMA DO DISCURSO PÚBLICO: ${esboco.titulo} (esboço S-34 nº ${esboco.numero}${esboco.revisao ? `, revisão ${esboco.revisao}` : ""}; ${minutosDoEsboco(esboco)} minutos)`,
+  ];
+  if (esboco.notaAoOrador) partes.push(`NOTA AO ORADOR (objetivo do esboço): ${esboco.notaAoOrador}`);
+  partes.push(...textoDasSecoes(esboco));
   if (esboco.notaFinal) partes.push(`NOTA DO FIM DO ESBOÇO: ${esboco.notaFinal}`);
   if (versiculos.length) {
     partes.push("TEXTO DOS VERSÍCULOS (as leituras e os textos citados, na Tradução do Novo Mundo):\n" + versiculos.map((v) => `${v.referencia}: ${v.texto}`).join("\n"));
   }
+  return partes.join("\n\n");
+}
+
+// Um esboço pronto que o orador importou no aparelho (no molde do S-34) como matéria do card Outros esboços: o mesmo texto, sem o
+// número do S-34 nem os versículos (estes vão à parte, junto dos demais textos da mensagem).
+export function textoDoEsbocoImportado(esboco) {
+  const partes = [`ESBOÇO PRONTO IMPORTADO PELO ORADOR: ${esboco.titulo}${esboco.revisao ? ` (revisão ${esboco.revisao})` : ""} (${minutosDoEsboco(esboco)} minutos)`];
+  if (esboco.notaAoOrador) partes.push(`NOTA AO ORADOR (objetivo do esboço): ${esboco.notaAoOrador}`);
+  partes.push(...textoDasSecoes(esboco));
+  if (esboco.notaFinal) partes.push(`NOTA DO FIM DO ESBOÇO: ${esboco.notaFinal}`);
   return partes.join("\n\n");
 }
 

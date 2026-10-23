@@ -8,7 +8,7 @@ import { codigoDoDirigente, erro, origemPermitida, textosIguais } from "./_comum
 import { lerConfigIa } from "./_iaConfig.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
 import { buscarVerbete, buscarVersiculos, fontesConfiguradas, precarregarFontes, referenciasNoTexto } from "./_fontes.mjs";
-import { lerEsboco, lerIndice, minutosDoEsboco, publicacoesDaSecao, referenciasDoPublico, s34Configurado, textoDoDiscursoPublico, textosBiblicosDoPublico } from "./_s34.mjs";
+import { lerEsboco, lerIndice, minutosDoEsboco, publicacoesDaSecao, referenciasDoPublico, s34Configurado, textoDoDiscursoPublico, textoDoEsbocoImportado, textosBiblicosDoPublico, validarEsboco } from "./_s34.mjs";
 import {
   QUADROS_EBC,
   lerEstudoBiblico,
@@ -2370,18 +2370,37 @@ function enderecosDoOutros(valor) {
   return [...new Set(brutos.filter((x) => typeof x === "string").map((x) => limparLinha(x, 300)).filter(Boolean))].slice(0, MAX_ARTIGOS_OUTROS);
 }
 
-// O que o orador digitou no card, já limpo.
+// O esboço pronto que o orador importou no aparelho (no molde do S-34), conferido e reescrito só com os campos conhecidos.
+function esbocoBaseDoPedido(bruto) {
+  if (!bruto || typeof bruto !== "object") return { esboco: null };
+  const v = validarEsboco({ ...bruto, numero: 1 });
+  return v.erro ? { erro: v.erro } : { esboco: v.esboco };
+}
+
+// O que o orador digitou no card, já limpo. Com esboço pronto importado, o tema (se vier em branco) é o dele e o tempo é a soma das seções.
 function dadosDoOutros(body) {
   const minutos = Math.round(Number(body.minutos));
+  const base = esbocoBaseDoPedido(body.esbocoBase);
+  const doBase = base.esboco ? minutosDoEsboco(base.esboco) : 0;
   return {
-    tema: limparLinha(body.tema, 200),
+    tema: limparLinha(body.tema, 200) || (base.esboco ? limparLinha(base.esboco.titulo, 200) : ""),
     ideia: textoLongo(body.ideia, 1500),
     ocasiao: limparLinha(body.ocasiao, 120),
-    minutos: Number.isFinite(minutos) ? Math.max(3, Math.min(60, minutos)) : 30,
+    minutos: doBase >= 3 ? Math.min(60, doBase) : Number.isFinite(minutos) ? Math.max(3, Math.min(60, minutos)) : 30,
     textosLer: limparLinha(body.textosLer, 600),
     materia: textoLongo(body.materia, MAX_MATERIA_OUTROS),
     artigos: enderecosDoOutros(body.artigos),
+    esbocoBase: base.esboco,
+    erroBase: base.erro || "",
   };
+}
+
+// As leituras marcadas [Leia …] do esboço importado (como a Bíblia as escreve) e os textos que ele só cita.
+async function referenciasDaBase(d) {
+  if (!d.esbocoBase) return { marcadas: [], citadas: [] };
+  const { leituras, citadas } = referenciasDoPublico(d.esbocoBase);
+  const marcadas = fontesConfiguradas() ? [...new Set(await Promise.all(leituras.map(async (r) => (await leituraDaBiblia(r)).referencia)))] : leituras;
+  return { marcadas, citadas };
 }
 
 // Lê os artigos do wol.jw.org: { artigos: [{ titulo, url, texto, referencias }], falhas: [endereço que não deu para ler] }.
@@ -2438,8 +2457,9 @@ function acertarMinutos(esboco, total) {
 }
 
 // O resumo do que o servidor leu (o mesmo em "outros-ler" e depois da elaboração do esboço), para a tela.
-async function resumoDoOutros(d, { artigos, falhas, pedidos }) {
+async function resumoDoOutros(d, { artigos, falhas, pedidos, daBase }) {
   const naMateria = await referenciasNoTexto(d.materia, { max: 40 });
+  const base = d.esbocoBase ? { titulo: d.esbocoBase.titulo, minutos: minutosDoEsboco(d.esbocoBase), secoes: d.esbocoBase.secoes.length, leituras: daBase.marcadas } : null;
   return {
     semana: "",
     titulo: d.tema || "Matéria do discurso",
@@ -2450,8 +2470,13 @@ async function resumoDoOutros(d, { artigos, falhas, pedidos }) {
     pedidos,
     avisoTextos: d.textosLer && !pedidos.length ? `Não reconheci nenhum texto bíblico em "${d.textosLer}". Escreva como "Mateus 6:33; Salmo 37:10, 11".` : "",
     materia: d.materia.length,
-    // A lista passa de 80 textos com facilidade (um artigo traz dezenas): os pedidos e os da matéria colada vêm antes, para não ficarem de fora.
-    textosBiblicos: await textosDaMateria({ todos: [...pedidos, ...naMateria, ...artigos.flatMap((a) => a.referencias)], leia: pedidos }),
+    base,
+    // A lista passa de 80 textos com facilidade (um artigo traz dezenas): os pedidos, os do esboço importado e os da matéria colada vêm antes,
+    // para não ficarem de fora. Os marcados "Leia" do esboço importado entram sozinhos no esboço, como os pedidos.
+    textosBiblicos: await textosDaMateria({
+      todos: [...pedidos, ...daBase.marcadas, ...daBase.citadas, ...naMateria, ...artigos.flatMap((a) => a.referencias)],
+      leia: [...pedidos, ...daBase.marcadas],
+    }),
   };
 }
 
@@ -2473,13 +2498,15 @@ async function pesquisarOutros(res, body) {
 async function lerOutros(res, body) {
   if (!acessoDoDirigente(res, body)) return;
   const d = dadosDoOutros(body);
-  if (!d.materia && !d.artigos.length && !d.textosLer) return erro(res, 400, "Informe a matéria (um texto colado ou artigos do wol.jw.org) ou os textos bíblicos que quer ler.");
+  if (d.erroBase) return erro(res, 400, "O esboço importado não serve: " + d.erroBase);
+  if (!d.materia && !d.artigos.length && !d.textosLer && !d.esbocoBase) return erro(res, 400, "Informe a matéria (um texto colado, artigos do wol.jw.org ou um esboço importado) ou os textos bíblicos que quer ler.");
   if (fontesConfiguradas()) precarregarFontes({ biblia: true, perspicaz: false });
-  const [{ artigos, falhas }, pedidos] = await Promise.all([artigosDoOutros(d), textosPedidosDoOutros(d)]);
-  return res.status(200).json(await resumoDoOutros(d, { artigos, falhas, pedidos }));
+  const [{ artigos, falhas }, pedidos, daBase] = await Promise.all([artigosDoOutros(d), textosPedidosDoOutros(d), referenciasDaBase(d)]);
+  return res.status(200).json(await resumoDoOutros(d, { artigos, falhas, pedidos, daBase }));
 }
 
-// A mensagem dos dados do orador (a ordem e os rótulos estão na descrição da montagem, em _prompts.mjs).
+// A mensagem dos dados do orador (a ordem e os rótulos estão na descrição da montagem, em _prompts.mjs). "pedidos" são todos os textos que a
+// IA lê: os que o orador pediu e os marcados "Leia" do esboço importado.
 function textoDoOutros(d, { pedidos, sugeridas, artigos, versiculos }) {
   const partes = [`TEMA DO DISCURSO: ${d.tema}`, `IDEIA DO DISCURSO: ${d.ideia || "o orador não informou; use o tema."}`];
   if (d.ocasiao) partes.push(`OCASIÃO: ${d.ocasiao}`);
@@ -2488,6 +2515,7 @@ function textoDoOutros(d, { pedidos, sugeridas, artigos, versiculos }) {
     "TEXTOS QUE O ORADOR PEDIU PARA LER: " +
       (pedidos.length ? pedidos.join("; ") + "." : sugeridas ? `nenhum; escolha você até ${sugeridas} textos que reforcem os pontos.` : "nenhum além dos escolhidos pelo orador (indicados abaixo).")
   );
+  if (d.esbocoBase) partes.push(textoDoEsbocoImportado(d.esbocoBase));
   if (d.materia) partes.push("MATÉRIA COLADA PELO ORADOR:\n" + d.materia);
   if (artigos.length) {
     partes.push("ARTIGOS DO WOL.JW.ORG LIDOS PELO SERVIDOR:\n" + artigos.map((a, i) => `[${i + 1}] ${a.titulo || "(sem título)"}\n${a.texto}`).join("\n\n"));
@@ -2499,6 +2527,7 @@ function textoDoOutros(d, { pedidos, sugeridas, artigos, versiculos }) {
 async function esbocoDeOutros(res, body, P) {
   if (!acessoDoDirigente(res, body)) return;
   const d = dadosDoOutros(body);
+  if (d.erroBase) return erro(res, 400, "O esboço importado não serve: " + d.erroBase);
   if (d.tema.length < 4) return erro(res, 400, "Escreva o tema do discurso.");
   const opcoes = validarOpcoes(body.opcoes);
   const ajuste = textoLivre(body.ajuste);
@@ -2507,19 +2536,22 @@ async function esbocoDeOutros(res, body, P) {
   const inicioPedido = Date.now();
   if (fontesConfiguradas()) precarregarFontes({ biblia: true, perspicaz: false });
 
-  const [{ artigos, falhas }, pedidos, extras] = await Promise.all([artigosDoOutros(d), textosPedidosDoOutros(d), textosExtrasDoPedido(body)]);
+  const [{ artigos, falhas }, pedidos, extras, daBase] = await Promise.all([artigosDoOutros(d), textosPedidosDoOutros(d), textosExtrasDoPedido(body), referenciasDaBase(d)]);
   const naMateria = await referenciasNoTexto(d.materia, { max: 40 });
   const doEsbocoAnterior = modo ? leiturasDoEsbocoAnterior(body.anteriores) : [];
+  const base = d.esbocoBase;
 
-  // Os textos lidos: os que o orador pediu e os que ele marcou na lista; sem nenhum dos dois, a IA escolhe poucos (conforme o tempo).
-  const escolhidos = [...new Set([...pedidos, ...extras.map((e) => e.referencia), ...doEsbocoAnterior])];
-  const sugeridas = pedidos.length + extras.length ? 0 : Math.max(2, Math.min(8, Math.round(d.minutos / 6)));
+  // Os textos lidos: os que o orador pediu, os marcados "Leia" do esboço importado e os que ele marcou na lista; sem nenhum deles, a IA
+  // escolhe poucos (conforme o tempo).
+  const aLer = [...new Set([...pedidos, ...daBase.marcadas])];
+  const escolhidos = [...new Set([...aLer, ...extras.map((e) => e.referencia), ...doEsbocoAnterior])];
+  const sugeridas = aLer.length + extras.length ? 0 : Math.max(2, Math.min(8, Math.round(d.minutos / 6)));
   const maxLeituras = sugeridas ? Math.max(escolhidos.length, sugeridas) : escolhidos.length;
 
   let versiculos = [];
   if (fontesConfiguradas()) {
     try {
-      versiculos = await buscarVersiculos([...pedidos, ...extras.map((e) => e.referencia), ...naMateria, ...artigos.flatMap((a) => a.referencias)], 30);
+      versiculos = await buscarVersiculos([...aLer, ...extras.map((e) => e.referencia), ...daBase.citadas, ...naMateria, ...artigos.flatMap((a) => a.referencias)], base ? 40 : 30);
     } catch (e) {
       console.error("Outros esboços: versículos indisponíveis", e?.message);
     }
@@ -2527,9 +2559,9 @@ async function esbocoDeOutros(res, body, P) {
 
   let mensagem =
     blocoOrientacao(opcoes, ajuste, P) +
-    `PEDIDO: elabore o esboço de um discurso de ${d.minutos} minutos, tema "${d.tema}".\n` +
+    `PEDIDO: elabore o esboço de um discurso de ${d.minutos} minutos, tema "${d.tema}"${base ? ", seguindo de perto o esboço pronto importado pelo orador" : ""}.\n` +
     emojisDoEsboco(opcoes, P) + "\n\n" +
-    textoDoOutros(d, { pedidos, sugeridas, artigos, versiculos }) +
+    textoDoOutros(d, { pedidos: aLer, sugeridas, artigos, versiculos }) +
     blocoDeTextosEscolhidos(extras, P) +
     lembreteFinal(opcoes, ajuste, P);
   if (modo && anteriores) {
@@ -2553,20 +2585,31 @@ async function esbocoDeOutros(res, body, P) {
       emoji: opcoes.emoji,
       temaPadrao: d.tema,
       minutosMax: d.minutos,
-      maxPontos: pontosDoOutros(d.minutos),
-      maxArgumentos: 5,
+      // Com esboço importado, um ponto por seção dele (como no discurso público), com a linha "Fonte" das publicações que a seção cita.
+      maxPontos: base ? base.secoes.length : pontosDoOutros(d.minutos),
+      maxArgumentos: base ? 8 : 5,
       maxBlocosIntro: 4,
       maxBlocosConclusao: 4,
-      fontesDoPonto: () => [],
+      fontesDoPonto: base ? (i) => publicacoesDaSecao(base.secoes[i]) : () => [],
       maxLeituras,
-      // Havendo textos pedidos ou marcados, só se lê o que o orador indicou (e o que o esboço anterior já lia).
+      // Havendo textos pedidos, marcados "Leia" ou escolhidos, só se lê o que o orador indicou (e o que o esboço anterior já lia).
       leiturasPermitidas: sugeridas || !fontesConfiguradas() ? null : escolhidos,
-      leiturasObrigatorias: [...pedidos, ...extras.map((e) => e.referencia), ...(modo === "incluir" ? doEsbocoAnterior : [])],
-      motivoObrigatorias: "que você pediu, escolheu ou que o esboço já tinha",
+      leiturasObrigatorias: [...aLer, ...extras.map((e) => e.referencia), ...(modo === "incluir" ? doEsbocoAnterior : [])],
+      motivoObrigatorias: "que você pediu, que o esboço importado marca, que você escolheu ou que o esboço já tinha",
     });
-    // O tema é o que o orador digitou; as fontes são os artigos do wol.jw.org que o servidor leu.
-    const esboco = { ...corpo, tema: d.tema, fontes: artigos.map((a) => a.titulo).filter(Boolean) };
-    acertarMinutos(esboco, d.minutos);
+    // O tema é o que o orador digitou (ou o do esboço importado); as fontes são o esboço importado e os artigos do wol.jw.org que o servidor leu.
+    const esboco = { ...corpo, tema: d.tema, fontes: [...(base ? ["Esboço importado: " + base.titulo] : []), ...artigos.map((a) => a.titulo).filter(Boolean)] };
+    if (base) {
+      // Os tempos são os das seções do esboço importado; a introdução e a conclusão cabem dentro deles.
+      esboco.pontos.forEach((p, i) => {
+        if (base.secoes[i]) p.minutos = base.secoes[i].minutos || 0;
+      });
+      esboco.introducao.minutos = 0;
+      esboco.conclusao.minutos = 0;
+      if (esboco.pontos.length !== base.secoes.length) avisos.push(`A IA fez ${esboco.pontos.length} ponto(s) e o esboço importado tem ${base.secoes.length} seções. Use "Melhorar" para ajustar.`);
+    } else {
+      acertarMinutos(esboco, d.minutos);
+    }
     const completo = esboco.pontos.length > 0 && esboco.introducao.blocos.length > 0 && esboco.conclusao.blocos.length > 0;
     if (falhas.length) avisos.push(`Não consegui ler ${falhas.length === 1 ? "um artigo" : falhas.length + " artigos"} do wol.jw.org; o esboço não os usa.`);
 
@@ -2579,6 +2622,7 @@ async function esbocoDeOutros(res, body, P) {
         artigos: artigos.length,
         falhas: falhas.length,
         pedidos: pedidos.length,
+        esbocoImportado: base ? { secoes: base.secoes.length, marcadas: daBase.marcadas.length } : null,
         extras: extras.length,
         sugeridas,
         pontos: esboco.pontos.length,
@@ -2593,7 +2637,7 @@ async function esbocoDeOutros(res, body, P) {
     );
 
     return res.status(200).json({
-      ...(await resumoDoOutros(d, { artigos, falhas, pedidos })),
+      ...(await resumoDoOutros(d, { artigos, falhas, pedidos, daBase })),
       erro: completo ? null : "A IA não montou o esboço completo (introdução, pontos e conclusão). Tente de novo.",
       esboco: completo ? esboco : null,
       avisos: completo ? avisos : [],

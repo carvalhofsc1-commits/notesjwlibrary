@@ -3039,6 +3039,19 @@
                     <textarea id="outrosIdeia" rows="3" maxlength="1500" placeholder="Ex.: Mostrar que Jeová cuida de nós e que a oração traz paz."></textarea>
                     <label for="outrosMinutos">Tempo do discurso (minutos)</label>
                     <input id="outrosMinutos" class="outros-minutos" type="number" inputmode="numeric" min="3" max="60" value="30">
+                    <details class="textos-box outros-materia" id="outrosBaseBox">
+                      <summary id="outrosBaseResumo">📥 Esboço pronto como base (opcional, só neste aparelho)</summary>
+                      <div class="textos-corpo">
+                        <p class="hint ai-hint">Importe um esboço .docx no molde dos esboços do S-34 (título, "Nota ao orador", seções em negrito e MAIÚSCULAS com o tempo, como "(5 min)", e leituras "[Leia …]"). Ele fica guardado só neste aparelho e a IA o segue de perto, como no discurso público: um ponto por seção, com os tempos dele e só as leituras marcadas. Se o seu esboço não segue esse molde, cole o texto em "Matéria colada".</p>
+                        <input id="outrosBaseArquivo" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple hidden>
+                        <button id="outrosBaseImportarBtn" class="secondary ai-study-load" type="button">📥 Importar esboço (.docx)</button>
+                        <span id="outrosBaseStatus" class="ok" role="status" aria-live="polite"></span>
+                        <label for="outrosBaseSelect">Esboço a usar</label>
+                        <select id="outrosBaseSelect"><option value="">Nenhum (usar só a matéria)</option></select>
+                        <p id="outrosBaseInfo" class="hint ai-hint ebc-info"></p>
+                        <button id="outrosBaseApagarBtn" class="secondary ai-study-load" type="button" hidden>🗑️ Apagar este esboço importado</button>
+                      </div>
+                    </details>
                     <details class="textos-box outros-materia" id="outrosMateriaBox">
                       <summary id="outrosMateriaResumo">📚 Ocasião, textos, matéria e pesquisa (opcional)</summary>
                       <div class="textos-corpo">
@@ -6215,7 +6228,8 @@
     }
 
     // Transforma os parágrafos num esboço { numero, titulo, notaAoOrador, secoes, notaFinal } e junta os avisos do que estranhou.
-    function s34Esboco(paragrafos, numero) {
+    // Com "livre" (esboço importado no card Outros esboços): sem número de tema, sem a conferência dos 30 minutos nem da linha de identificação.
+    function s34Esboco(paragrafos, numero, livre = false) {
       const avisos = [];
       const vivos = paragrafos.filter(p => p.texto);
       if (!vivos.length) return { erro: 'o documento está vazio' };
@@ -6345,17 +6359,17 @@
         ultima.itens.pop();
       }
 
-      if (!esboco.secoes.some(s => s.minutos !== null)) return { erro: 'não achei nenhuma seção com tempo, como "(5 min)"' };
+      if (!esboco.secoes.some(s => s.minutos !== null)) return { erro: livre ? 'não achei nenhuma seção com tempo, como "(5 min)": o esboço precisa estar no molde do S-34 (título, seções em negrito e MAIÚSCULAS com o tempo). Se ele não está, cole o texto em "Matéria colada"' : 'não achei nenhuma seção com tempo, como "(5 min)"' };
       const total = esboco.secoes.reduce((n, s) => n + (s.minutos || 0), 0);
-      const esperado = rodape && rodape.tempoTotal ? rodape.tempoTotal : tempoTotalDaLinha || 30;
-      if (total !== esperado) avisos.push('Os tempos das seções somam ' + total + ' min (o esboço diz ' + esperado + ').');
-      if (!rodape) avisos.push('Não achei a linha de identificação do fim do documento (como "N.° 15-T 12/16"): a revisão ficou em branco.');
+      const esperado = rodape && rodape.tempoTotal ? rodape.tempoTotal : tempoTotalDaLinha || (livre ? null : 30);
+      if (esperado && total !== esperado) avisos.push('Os tempos das seções somam ' + total + ' min (o esboço diz ' + esperado + ').');
+      if (!rodape) { if (!livre) avisos.push('Não achei a linha de identificação do fim do documento (como "N.° 15-T 12/16"): a revisão ficou em branco.'); }
       else {
-        if (rodape.numero !== numero) avisos.push('O número do documento (' + rodape.numero + ') não confere com o do nome do arquivo (' + numero + ').');
+        if (!livre && rodape.numero !== numero) avisos.push('O número do documento (' + rodape.numero + ') não confere com o do nome do arquivo (' + numero + ').');
         if (rodape.idioma !== 'T') avisos.push('O idioma do esboço é "' + rodape.idioma + '", não o português (T).');
       }
       esboco.secoes.forEach(s => { if (!s.itens.length && !/^v[ií]deo\b/i.test(s.titulo)) avisos.push('A seção "' + s.titulo.slice(0, 40) + '" ficou sem itens.'); });
-      if (!esboco.notaAoOrador) avisos.push('Não achei a "Nota ao orador".');
+      if (!livre && !esboco.notaAoOrador) avisos.push('Não achei a "Nota ao orador".');
       return { esboco, avisos };
     }
 
@@ -6382,9 +6396,9 @@
     }
 
     // Lê um .docx (bytes) e devolve { esboco, avisos } ou { erro }.
-    async function s34LerDocx(JSZip, nome, bytes, modificado) {
-      const numero = s34NumeroDoNome(nome);
-      if (!numero) return { erro: 'não achei o número do tema no nome do arquivo (esperado algo como S-34_T_015.docx)' };
+    async function s34LerDocx(JSZip, nome, bytes, modificado, livre = false) {
+      const numero = livre ? 0 : s34NumeroDoNome(nome);
+      if (!livre && !numero) return { erro: 'não achei o número do tema no nome do arquivo (esperado algo como S-34_T_015.docx)' };
       let zip;
       try { zip = await JSZip.loadAsync(bytes); } catch (e) { return { erro: 'não é um arquivo .docx válido' }; }
       const documento = zip.file('word/document.xml');
@@ -6396,7 +6410,7 @@
       try {
         const arquivoDeEstilos = zip.file('word/styles.xml');
         const estilos = arquivoDeEstilos ? s34Estilos(await arquivoDeEstilos.async('string')) : null;
-        resultado = s34Esboco(s34Paragrafos(await documento.async('string'), estilos), numero);
+        resultado = s34Esboco(s34Paragrafos(await documento.async('string'), estilos), numero, livre);
       } catch (e) { return { erro: e && e.message ? e.message : 'não consegui ler o documento' }; }
       if (resultado.erro) return resultado;
       resultado.esboco.arquivo = String(nome).split(/[\\/]/).pop();
@@ -6855,7 +6869,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '5.9.0'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0 (e 5.0.1… 5.0.9 e então 5.1.0); 5.9.0: novo card "Outros esboços" (discursos de tema livre: necessidades locais, eventos especiais) em Preparação de discursos e esboços: o orador escreve o tema, a ideia, o tempo (3 a 60 min) e, se quiser, a ocasião, os textos bíblicos que quer ler, uma matéria colada, endereços de artigos do wol.jw.org e/ou os resultados da pesquisa do tema na biblioteca online que ele marcar (a pesquisa mostra os resultados e deixa escolher); "Ler a matéria" lê os artigos e lista os textos bíblicos para marcar; a IA elabora o esboço (introdução, 2 a 7 pontos conforme o tempo, conclusão, minutos somando o tempo) só com o que foi informado, e ele segue o caminho dos outros esboços (campo de texto, pesquisas salvas com a semana, outra versão, melhorar, incluir textos); o que foi escrito no card fica salvo só neste aparelho; 5.8.9: discurso público: a importação do S-34 passa a achar as leituras marcadas "Leia" nos esboços mais antigos ("(Leia Mateus 4:17.)", "(re 171-2; leia Revelação 11:15-18.)", "Leia o Salmo 37:34", "[Leia o versículo 4.]", "(Leia.)" e um item só com "Leia Romanos 8:18."; antes só valia "[Leia …]" entre colchetes e o tema 109, por exemplo, ficava sem leituras marcadas; precisa importar de novo) e o campo do tema mostra o título inteiro (em quantas linhas precisar) e o tempo total do esboço (30 ou 45 min) depois do tema; 5.8.8: na tela de prompts a descrição de cada prompt vai numa caixa própria (fundo na cor da categoria), com mais espaço antes do campo do texto, que tem fundo neutro e borda da categoria; em Pesquisas e respostas salvas os botões de cada item deixam de ser azuis e seguem a cor da categoria (Comentários em roxo, Dirigentes em verde-azulado e Esboços em laranja; Abrir em tom forte e Original e apagar em tom suave); 5.8.7: a importação do S-34 no iPhone/Safari: os 25 arquivos .docx mais novos começam o XML com o BOM (um caractere invisível) e o Safari recusava com o erro "o documento do Word está ilegível" (o Chrome aceitava); o BOM agora é tirado antes de ler; 5.8.6: a importação do S-34 passa a entender os arquivos .docx mais novos (que usam estilos com nome do Word em vez de negrito e recuo em cada trecho: níveis, título da seção, nota ao orador, tempo total e identificação), o título com o número na frente (N.º 108), as variações da linha de identificação (No., N.o, S-34-T N.º 153-T, junto do ©) e os esboços de 45 minutos; o mesmo tema escolhido duas vezes com o mesmo conteúdo (por exemplo, o .zip e os arquivos soltos) deixa de ser erro e o repetido é só ignorado; 5.8.5: o ícone 🔊 do Texto diário perde o círculo, fica um pouco maior e só aparece com o texto expandido; 5.8.4: tela Início: ícone 🔊 ao lado do nome Texto diário, no topo do cartão, que lê o texto do dia em voz alta sem precisar abrir o texto (o tocador aparece logo abaixo do título; tocar de novo para a leitura); 5.8.3: Preparação para as reuniões com uma cor por categoria: tudo o que fica em Comentários (cards, botões, setas, campos e caixas de marcar) em roxo, em Dirigentes em verde-azulado e em Esboços em laranja; o Estudo Bíblico, as Joias e os Textos bíblicos deixam de ter cor própria (azul, verde, âmbar); 5.8.2: Ajustes → Esboços de discursos públicos: a lista de temas guardada no servidor agora aparece na caixa de texto (antes a caixa abria sempre vazia e parecia que a lista tinha sumido) e o título mostra quantos temas estão guardados; 5.8.1: ao salvar as alterações o botão mostra Alterações salvas! por uns segundos e a linha abaixo dele a hora; todas as pesquisas salvas de comentários e dirigentes mostram no nome a semana a que se referem (e os esboços da semana, também: 19 a 25 de outubro - título); o número do tema (Nº 125 - título) agora aparece nos esboços públicos já salvos assim que o app abre (o número vem da lista de temas do S-34); 5.8.0: novo botão 💾 Salvar alterações abaixo do campo de texto: depois de gerar um esboço ou respostas (ou de abrir uma pesquisa salva) dá para mexer no texto (inserir, formatar, trocar a fonte, espaços) e salvar; a pesquisa guarda a sua versão (o que a IA fez continua guardado e ↩️ Original volta a ele), e Abrir e o botão Carregar o esboço já salvo trazem a versão alterada; 5.7.2: o nome do esboço nas pesquisas salvas leva o número do tema no discurso público (Nº 125 - título) e a semana nos outros (19-25 de outubro - título); os esboços salvos antes ganham o número ou a semana quando o discurso deles é carregado; 5.7.1: ao carregar o discurso (o da semana ou o tema do S-34), se já existe esboço salvo em Pesquisas e respostas salvas, um botão logo abaixo do carregar abre o mais recente no campo de texto (os esboços salvos agora guardam também o JSON, então o aberto continua com Outra versão, Melhorar e Incluir texto(s)); 5.7.0: os três esboços (Tesouros, discurso curto e discurso público) ganham o card recolhível Textos bíblicos da matéria: lista todos os textos da apostila e das fontes (ou do S-34) com a Bíblia à mão (Ver texto), mostra os marcados com LEIA na matéria (que já entram no esboço) e deixa o orador marcar outros para ler; os marcados entram já na primeira elaboração e, depois dela, o botão Incluir texto(s) marcado(s) pede à IA o mesmo esboço com os textos novos; o servidor avisa quando um texto que devia ser lido ficou de fora; 5.6.1: a tela de Ajustes mostra a versão do app abaixo do link Sobre o app; 5.6.0: novo card Discurso público (esboço do S-34) na preparação de discursos e esboços: escolhe o tema entre os importados (com busca), mostra revisão, tempos, objetivo e leituras marcadas, e a IA elabora o esboço seguindo o S-34 (um ponto por seção com os tempos do esboço, só as leituras marcadas, destaques em itálico, notas ao orador) com as mesmas regras de formato dos outros esboços; a importação do S-34 agora guarda os destaques (itálico no meio da frase = importante; itálico + negrito = muito importante; itálico entre parênteses ou colchetes é o nome da publicação); 5.5.0: Ajustes (administrador): novo card Esboços de discursos públicos (S-34) para importar os esboços .docx (um por tema, ou um .zip): o navegador lê cada arquivo, mostra um relatório (novos, atualizados, iguais, avisos e erros, com a prévia do que foi entendido) e só depois de confirmar envia ao servidor, que guarda num armazenamento privado (Blob) com índice, revisão e lista de temas opcional; 5.4.1: esboços nunca usam a fonte gótica (fraktur): regra nos prompts, letras góticas escritas pela IA viram letras comuns no servidor e o app troca a gótica por serifada no negrito e no itálico do esboço; 5.4.0: Backup, categoria Respostas: cada Sua resposta mostra o número do parágrafo e a pergunta (o servidor lê o documento no wol.jw.org; só o número do documento é enviado) e a lista agrupa pelo título do artigo; novo botão Nova resposta (escolhe o documento do backup ou cola o endereço do wol.jw.org, escolhe a pergunta e escreve a resposta); 5.3.4: esboços sem os botões azuis de copiar (o esboço é copiado inteiro e guardado em uma parte só no histórico), lista numerada colorida (1️⃣ 2️⃣ 3️⃣) com linha em branco antes dos itens e emojis no começo das falas, opcionais pela opção Ilustrar com emoji das configurações; 5.3.3: tela Backup: exportar notas e mesclar (importar) notas de outro backup viraram dois contêineres separados, dentro da seção recolhível ↔️ Importação e exportação; 5.3.2: esboços: perguntas em negrito, listas numeradas com os símbolos unicode do app (❶ ❷ ❸), a introdução não fala de aplicação nem usa Vamos ver como aplicar isso, e a conclusão não escreve recapitulando; 5.3.1: ajustes nos esboços: objetivo separado só por linhas em branco, linha em branco depois de cada subtítulo, introdução e conclusão escritas palavra por palavra e com listas numeradas (1) 2) 3)), todo texto lido com uma fala antes (que cria expectativa e liga a ideia anterior) e um destaque depois (Conforme vimos no texto…), ligação entre todas as partes (a transição do último ponto leva à conclusão), conclusão sempre motivadora e sem as frases Nosso tema é… e A aplicação é simples; o app avisa quando a IA não cumpre o mínimo de leituras; 5.3.0: novo formato de todos os esboços (Tesouros e discurso curto): tema e subtítulos em MAIÚSCULAS e negrito com o tempo ao lado, objetivo entre duas linhas, subtítulo próprio na introdução e na conclusão (sem as palavras Introdução, Conclusão, Ponto N nem Primeiras frases), linha em branco entre os argumentos, textos lidos anunciados com ➜ 🟡 📖 LEIA e a íntegra da Bíblia em itálico, Aplicação e Ilustração em negrito separadas, e a IA só escreve o que o orador diz (sem comentários nem rótulos); 5.2.9: a leitura em voz alta tenta de novo uma vez quando a conexão cai ao receber o áudio (o Safari avisava só "Load failed") e, se falhar de novo, mostra uma mensagem em português; 5.2.8: novo card Faça seu melhor no ministério (discurso curto) em Preparação de discursos e esboços: o servidor lê só os itens "Discurso" da apostila (4 ou 5 minutos, como vier), a fonte (ponto do apêndice A ou artigo), a lição do th e, quando a fonte só traz o tema e textos, pesquisa o tema no wol.jw.org; a IA elabora o esboço com 1 ou 2 pontos e no máximo 3 textos lidos, e leva a lição do th em conta só se ela influenciar o esboço; 5.2.7: o prompt de Tesouros fica só com o que é específico do discurso (pontos e textos da apostila, fontes, leitura dos textos e tempo) e as regras de estilo comuns a todos os esboços (tema frisado, tópicos, aplicação, tom, ilustrações) vão para a parte Como elaborar um esboço; 5.2.6: o esboço de Tesouros passa a seguir o capítulo Como elaborar um esboço (Beneficie-se): nova parte editável com os princípios do esboço (objetivo, pontos principais, argumentos e ideias, sequência lógica, introdução e conclusão), e o resultado sai como no modelo, com o ponto principal em maiúsculas e as ideias recuadas; 5.2.5: Preparação de discursos e esboços ganha o card Tesouros da Palavra de Deus (esboço do discurso de 10 min com a IA, lendo a apostila e as fontes no wol.jw.org, só com o código do dirigente), o prompt editável do esboço fica na categoria Esboços e Discursos, e o trecho de cada fonte citada passa a ter só os parágrafos citados (antes vinha um a mais); 5.2.4: o botão Visualizar e editar prompts sai de Configurar formatação com IA e ganha um card próprio em Ajustes, e a tela de prompts passa a ser organizada em categorias recolhíveis com emoji (modelo/gasto/limites, base das respostas, comentários, dirigente, Bíblia, formatação, voz, diversos e parte técnica); 5.2.3: na tela de prompts o texto salvo com 💾 Salvar para todos vira o padrão oficial do app (some o aviso "personalizado") e "Restaurar padrão" passa a "Voltar ao texto original"; 5.2.2: a leitura do texto diário não lê mais a linha de referência da matéria (antes lia a parte depois do ponto e vírgula, "19 §§ 17-18"), o filtro de citações também tira essa continuação e a instrução de leitura manda nunca ler referências; 5.2.1: espaços padronizados (10px) entre o título, o campo de texto e as caixas de opções das telas Formatar e Reuniões; 5.2.0: nova opção Inserir emojis no texto em Outras opções de formatação (só escolher e buscar, favoritos no topo, sem edição) e a Preparação de discursos e esboços ganha o ícone 📜 (antes repetia o 🎤 de Preparar para dirigir); 5.1.9: na tela Reuniões o cartão do campo de texto ganha a dica "Para mais opções de formatação clique em Formatar."; 5.1.8: na tela Início o atalho Backup do JW Library sobe para a primeira linha, ao lado de Formatar um texto; 5.1.7: rótulo "Texto diário" centralizado e separado do resto do cartão por uma linha, e o aviso do cartão desabilitado fica só em "Requer o código de pesquisa."; 5.1.6: rótulo "Texto diário" no topo do cartão do texto diário; 5.1.5: Preparar para dirigir (e o atalho Dirigentes) pedem só o código do dirigente, que passa a valer sozinho no servidor para as tarefas do dirigente; 5.1.4: a Preparação de discursos e esboços vira um grupo dentro de Preparação para as reuniões e pede só o código do dirigente, a moldura de Pesquisas e respostas salvas (novo nome) ganha cor forte (verde) como as outras; 5.1.3: "Opções de formatação com IA" passa a "Opções com IA", o botão do texto colado fica separado do de formatação e dentro de um contêiner com o texto explicativo novo, e a Preparação de discursos e esboços (e a categoria Esboços das pesquisas salvas) também pedem o código do dirigente; 5.1.2: "Responder a partir do texto colado" mudou para Formatar → Opções de formatação com IA, o grupo Preparar para comentar (e o atalho Comentários) ficam desabilitados sem o código de pesquisa, o grupo e o atalho do dirigente pedem os dois códigos e o link do texto diário para o wol.jw.org fica habilitado sempre; 5.1.1: o código de acesso passa a se chamar "código de pesquisa" e os cartões que dependem dele (Joias, Estudo Bíblico, Estudo de A Sentinela do dirigente, a parte do Estudo de A Sentinela lida no site e o texto diário) ficam desabilitados sem o código; 5.1.0: sem o código do dirigente, o atalho Dirigentes, o grupo Preparar para dirigir e a categoria Dirigentes das pesquisas salvas aparecem desabilitados (cinza, com cadeado) em vez de sumir; 5.0.9: "Faça seu melhor no ministério" (semanas com discurso de 4 min) entre as opções em breve de Preparação de discursos e esboços; 5.0.8: atalho Dirigentes da tela Início volta ao nome "Dirigentes" e só a linha explicativa passa a "Ajuda na preparação para dirigir" (e a do atalho Comentários, "Ajuda na preparação para comentar"); 5.0.7: grupos da tela Reuniões renomeados para "Preparar para comentar" e "Preparar para dirigir" e atalho do Início "Ajuda na preparação para dirigir"; 5.0.6: pesquisas salvas separadas em categorias (Comentários, Dirigentes e Esboços), cada uma recolhível e na cor do grupo; 5.0.5: Estudo Bíblico de Congregação no grupo Preparação para dirigir (5 perguntas adicionais com resposta, sem aplicações práticas, e o resumo dos textos-base, que saiu do cartão dos comentários); 5.0.4: cor dos títulos dos grupos Preparação de comentários e Preparação para dirigir mais suave; 5.0.3: títulos dos grupos Preparação de comentários e Preparação para dirigir com cor forte (roxo e verde-água escuros, letra branca); 5.0.2: o aviso "Nossa Vida Cristã (em breve)" saiu do grupo Preparação de comentários; 5.0.1: os grupos "Preparação de comentários" e "Preparação para dirigir" da tela Reuniões viram contêineres com borda na cor do grupo, para o que está dentro não parecer solto; 5.0.0: atalhos da tela Início coloridos, cada um com a cor da tela que abre; 4.9.9: Ajustes → Configurar formatação com IA ganha 💾 Salvar para todos (só administrador), que salva as opções de formatação como padrão de todos os usuários; 4.9.8: tela de prompts com um só botão 💾 Salvar para todos (modelo e esforço da IA, limites e prompts) e ícones ✋ e 🎤 nos grupos de comentários e de dirigir da tela Reuniões, como nos atalhos do Início; 4.9.7: o cartão de gasto da tela de prompts não explica mais como criar a chave de administrador da Anthropic (só indica o link do Claude Console); 4.9.6: o app confere o código do dirigente salvo com o servidor e, se ele deixou de valer, apaga o código e esconde as opções do dirigente; 4.9.5: código do dirigente (Ajustes → Autorização de acessos): sem ele, as opções de preparação para dirigir ficam escondidas e o servidor não faz as perguntas do dirigente; enquanto não existir a variável CODIGO_DIRIGENTE na Vercel, vale o código de acesso; 4.9.4: texto diário com comentários adicionais que podem ser salvos e recuperados no mesmo dia (no dia seguinte são apagados) e link do wol.jw.org legível; 4.9.3: o botão 🔊 do campo de texto só aparece (e só funciona no servidor) para o administrador; a leitura em voz alta do texto diário continua para todos; 4.9.2: pesquisas salvas por semana (só as da semana escolhida; o botão apaga as das semanas anteriores); 4.9.1: pesquisas salvas (histórico das respostas da IA das reuniões neste aparelho, para reabrir depois); 4.9.0: joias espirituais com 2 joias por capítulo, sem repetir o versículo da pergunta da apostila; 4.8.9: Joias Espirituais (leitura da semana lida no wol.jw.org com as publicações do Índice das Publicações; até 2 joias por capítulo e a resposta à pergunta da apostila) e, no Estudo Bíblico, textos citados nas perguntas seguindo as opções de textos bíblicos;4.8.8: Estudo Bíblico de Congregação (capítulo da semana lido no wol.jw.org, respostas da IA por quadro, trechos das publicações citadas, resumo opcional dos textos-base) e o contexto "Sobre mim e a congregação" nos prompts; 4.8.7: cada seção da tela de prompts virou um cartão recolhível; 4.8.6: modelo da IA de texto escolhido pelo administrador na tela de prompts (Haiku, Sonnet, Opus ou Fable) e gasto do mês pela Cost API da Anthropic; 4.8.6: a barra da leitura em voz alta fecha sozinha quando a leitura termina; 4.8.5: categorias de Ajustes direto na página (sem o cartão recolhível "Configurações gerais do app"); 4.8.4: Ajustes → Autorização de acessos (código de acesso e senha de administrador informados uma vez e salvos), a IA nunca escreve "culto" (sempre reunião), comentários adicionais recolhíveis e com Limpar, atalhos Comentários e Dirigentes abrem só o grupo deles; 4.8.3: tela Início com o texto diário (do wol.jw.org; um toque abre o comentário, ler em voz alta, levar para o campo de texto e comentários adicionais da IA) e atalhos; 4.8.2: referências bíblicas lidas na forma curta ("Primeira Coríntios treze, quatro a sete"), voz com duas partes à frente (sem pausas, também em 1,15×), pular citações de publicações (w24.09 21 § 6) e referências bíblicas só entre parênteses ou depois de travessão no fim do parágrafo (o texto temático do texto diário é lido); 4.8.1: voz começa mais rápido (primeiras partes curtas) e campos de preço alinhados; 4.8.0: menu da voz para o administrador (modelo, voz, tom, o que ler e pular), consumo estimado e vozes Gemini com a conta de serviço do Google; 4.7.9: voz reserva (Chirp 3 HD) quando o Gemini é recusado; 4.7.8: botão 🔊 Ouvir (leitura em voz alta com a voz do Google); 4.7.7: Fonte CX com C preto e C branco, cada um ao lado do seu quadradinho; todos os cards começam fechados ao abrir o app; 4.7.6: tela Reuniões em dois cartões (texto e reuniões); 4.7.5: campo de texto volta a crescer depois de levar uma nota do backup; importar notas de outro backup; 4.7.4: card do desenvolvedor na largura do quadro de limitações (Sobre); 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
+    const APP_VERSION = '5.9.1'; // versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0 (e 5.0.1… 5.0.9 e então 5.1.0); 5.9.1: Outros esboços, etapa 2: o orador importa um esboço pronto (.docx no molde dos esboços do S-34, com qualquer nome de arquivo) que fica guardado só neste aparelho, escolhe-o como base e a IA o segue de perto como no discurso público (um ponto por seção, com os tempos dele, só as leituras marcadas "Leia" além dos textos pedidos, destaques e notas ao orador); o esboço importado vai ao servidor apenas no pedido e lá não é guardado; 5.9.0: novo card "Outros esboços" (discursos de tema livre: necessidades locais, eventos especiais) em Preparação de discursos e esboços: o orador escreve o tema, a ideia, o tempo (3 a 60 min) e, se quiser, a ocasião, os textos bíblicos que quer ler, uma matéria colada, endereços de artigos do wol.jw.org e/ou os resultados da pesquisa do tema na biblioteca online que ele marcar (a pesquisa mostra os resultados e deixa escolher); "Ler a matéria" lê os artigos e lista os textos bíblicos para marcar; a IA elabora o esboço (introdução, 2 a 7 pontos conforme o tempo, conclusão, minutos somando o tempo) só com o que foi informado, e ele segue o caminho dos outros esboços (campo de texto, pesquisas salvas com a semana, outra versão, melhorar, incluir textos); o que foi escrito no card fica salvo só neste aparelho; 5.8.9: discurso público: a importação do S-34 passa a achar as leituras marcadas "Leia" nos esboços mais antigos ("(Leia Mateus 4:17.)", "(re 171-2; leia Revelação 11:15-18.)", "Leia o Salmo 37:34", "[Leia o versículo 4.]", "(Leia.)" e um item só com "Leia Romanos 8:18."; antes só valia "[Leia …]" entre colchetes e o tema 109, por exemplo, ficava sem leituras marcadas; precisa importar de novo) e o campo do tema mostra o título inteiro (em quantas linhas precisar) e o tempo total do esboço (30 ou 45 min) depois do tema; 5.8.8: na tela de prompts a descrição de cada prompt vai numa caixa própria (fundo na cor da categoria), com mais espaço antes do campo do texto, que tem fundo neutro e borda da categoria; em Pesquisas e respostas salvas os botões de cada item deixam de ser azuis e seguem a cor da categoria (Comentários em roxo, Dirigentes em verde-azulado e Esboços em laranja; Abrir em tom forte e Original e apagar em tom suave); 5.8.7: a importação do S-34 no iPhone/Safari: os 25 arquivos .docx mais novos começam o XML com o BOM (um caractere invisível) e o Safari recusava com o erro "o documento do Word está ilegível" (o Chrome aceitava); o BOM agora é tirado antes de ler; 5.8.6: a importação do S-34 passa a entender os arquivos .docx mais novos (que usam estilos com nome do Word em vez de negrito e recuo em cada trecho: níveis, título da seção, nota ao orador, tempo total e identificação), o título com o número na frente (N.º 108), as variações da linha de identificação (No., N.o, S-34-T N.º 153-T, junto do ©) e os esboços de 45 minutos; o mesmo tema escolhido duas vezes com o mesmo conteúdo (por exemplo, o .zip e os arquivos soltos) deixa de ser erro e o repetido é só ignorado; 5.8.5: o ícone 🔊 do Texto diário perde o círculo, fica um pouco maior e só aparece com o texto expandido; 5.8.4: tela Início: ícone 🔊 ao lado do nome Texto diário, no topo do cartão, que lê o texto do dia em voz alta sem precisar abrir o texto (o tocador aparece logo abaixo do título; tocar de novo para a leitura); 5.8.3: Preparação para as reuniões com uma cor por categoria: tudo o que fica em Comentários (cards, botões, setas, campos e caixas de marcar) em roxo, em Dirigentes em verde-azulado e em Esboços em laranja; o Estudo Bíblico, as Joias e os Textos bíblicos deixam de ter cor própria (azul, verde, âmbar); 5.8.2: Ajustes → Esboços de discursos públicos: a lista de temas guardada no servidor agora aparece na caixa de texto (antes a caixa abria sempre vazia e parecia que a lista tinha sumido) e o título mostra quantos temas estão guardados; 5.8.1: ao salvar as alterações o botão mostra Alterações salvas! por uns segundos e a linha abaixo dele a hora; todas as pesquisas salvas de comentários e dirigentes mostram no nome a semana a que se referem (e os esboços da semana, também: 19 a 25 de outubro - título); o número do tema (Nº 125 - título) agora aparece nos esboços públicos já salvos assim que o app abre (o número vem da lista de temas do S-34); 5.8.0: novo botão 💾 Salvar alterações abaixo do campo de texto: depois de gerar um esboço ou respostas (ou de abrir uma pesquisa salva) dá para mexer no texto (inserir, formatar, trocar a fonte, espaços) e salvar; a pesquisa guarda a sua versão (o que a IA fez continua guardado e ↩️ Original volta a ele), e Abrir e o botão Carregar o esboço já salvo trazem a versão alterada; 5.7.2: o nome do esboço nas pesquisas salvas leva o número do tema no discurso público (Nº 125 - título) e a semana nos outros (19-25 de outubro - título); os esboços salvos antes ganham o número ou a semana quando o discurso deles é carregado; 5.7.1: ao carregar o discurso (o da semana ou o tema do S-34), se já existe esboço salvo em Pesquisas e respostas salvas, um botão logo abaixo do carregar abre o mais recente no campo de texto (os esboços salvos agora guardam também o JSON, então o aberto continua com Outra versão, Melhorar e Incluir texto(s)); 5.7.0: os três esboços (Tesouros, discurso curto e discurso público) ganham o card recolhível Textos bíblicos da matéria: lista todos os textos da apostila e das fontes (ou do S-34) com a Bíblia à mão (Ver texto), mostra os marcados com LEIA na matéria (que já entram no esboço) e deixa o orador marcar outros para ler; os marcados entram já na primeira elaboração e, depois dela, o botão Incluir texto(s) marcado(s) pede à IA o mesmo esboço com os textos novos; o servidor avisa quando um texto que devia ser lido ficou de fora; 5.6.1: a tela de Ajustes mostra a versão do app abaixo do link Sobre o app; 5.6.0: novo card Discurso público (esboço do S-34) na preparação de discursos e esboços: escolhe o tema entre os importados (com busca), mostra revisão, tempos, objetivo e leituras marcadas, e a IA elabora o esboço seguindo o S-34 (um ponto por seção com os tempos do esboço, só as leituras marcadas, destaques em itálico, notas ao orador) com as mesmas regras de formato dos outros esboços; a importação do S-34 agora guarda os destaques (itálico no meio da frase = importante; itálico + negrito = muito importante; itálico entre parênteses ou colchetes é o nome da publicação); 5.5.0: Ajustes (administrador): novo card Esboços de discursos públicos (S-34) para importar os esboços .docx (um por tema, ou um .zip): o navegador lê cada arquivo, mostra um relatório (novos, atualizados, iguais, avisos e erros, com a prévia do que foi entendido) e só depois de confirmar envia ao servidor, que guarda num armazenamento privado (Blob) com índice, revisão e lista de temas opcional; 5.4.1: esboços nunca usam a fonte gótica (fraktur): regra nos prompts, letras góticas escritas pela IA viram letras comuns no servidor e o app troca a gótica por serifada no negrito e no itálico do esboço; 5.4.0: Backup, categoria Respostas: cada Sua resposta mostra o número do parágrafo e a pergunta (o servidor lê o documento no wol.jw.org; só o número do documento é enviado) e a lista agrupa pelo título do artigo; novo botão Nova resposta (escolhe o documento do backup ou cola o endereço do wol.jw.org, escolhe a pergunta e escreve a resposta); 5.3.4: esboços sem os botões azuis de copiar (o esboço é copiado inteiro e guardado em uma parte só no histórico), lista numerada colorida (1️⃣ 2️⃣ 3️⃣) com linha em branco antes dos itens e emojis no começo das falas, opcionais pela opção Ilustrar com emoji das configurações; 5.3.3: tela Backup: exportar notas e mesclar (importar) notas de outro backup viraram dois contêineres separados, dentro da seção recolhível ↔️ Importação e exportação; 5.3.2: esboços: perguntas em negrito, listas numeradas com os símbolos unicode do app (❶ ❷ ❸), a introdução não fala de aplicação nem usa Vamos ver como aplicar isso, e a conclusão não escreve recapitulando; 5.3.1: ajustes nos esboços: objetivo separado só por linhas em branco, linha em branco depois de cada subtítulo, introdução e conclusão escritas palavra por palavra e com listas numeradas (1) 2) 3)), todo texto lido com uma fala antes (que cria expectativa e liga a ideia anterior) e um destaque depois (Conforme vimos no texto…), ligação entre todas as partes (a transição do último ponto leva à conclusão), conclusão sempre motivadora e sem as frases Nosso tema é… e A aplicação é simples; o app avisa quando a IA não cumpre o mínimo de leituras; 5.3.0: novo formato de todos os esboços (Tesouros e discurso curto): tema e subtítulos em MAIÚSCULAS e negrito com o tempo ao lado, objetivo entre duas linhas, subtítulo próprio na introdução e na conclusão (sem as palavras Introdução, Conclusão, Ponto N nem Primeiras frases), linha em branco entre os argumentos, textos lidos anunciados com ➜ 🟡 📖 LEIA e a íntegra da Bíblia em itálico, Aplicação e Ilustração em negrito separadas, e a IA só escreve o que o orador diz (sem comentários nem rótulos); 5.2.9: a leitura em voz alta tenta de novo uma vez quando a conexão cai ao receber o áudio (o Safari avisava só "Load failed") e, se falhar de novo, mostra uma mensagem em português; 5.2.8: novo card Faça seu melhor no ministério (discurso curto) em Preparação de discursos e esboços: o servidor lê só os itens "Discurso" da apostila (4 ou 5 minutos, como vier), a fonte (ponto do apêndice A ou artigo), a lição do th e, quando a fonte só traz o tema e textos, pesquisa o tema no wol.jw.org; a IA elabora o esboço com 1 ou 2 pontos e no máximo 3 textos lidos, e leva a lição do th em conta só se ela influenciar o esboço; 5.2.7: o prompt de Tesouros fica só com o que é específico do discurso (pontos e textos da apostila, fontes, leitura dos textos e tempo) e as regras de estilo comuns a todos os esboços (tema frisado, tópicos, aplicação, tom, ilustrações) vão para a parte Como elaborar um esboço; 5.2.6: o esboço de Tesouros passa a seguir o capítulo Como elaborar um esboço (Beneficie-se): nova parte editável com os princípios do esboço (objetivo, pontos principais, argumentos e ideias, sequência lógica, introdução e conclusão), e o resultado sai como no modelo, com o ponto principal em maiúsculas e as ideias recuadas; 5.2.5: Preparação de discursos e esboços ganha o card Tesouros da Palavra de Deus (esboço do discurso de 10 min com a IA, lendo a apostila e as fontes no wol.jw.org, só com o código do dirigente), o prompt editável do esboço fica na categoria Esboços e Discursos, e o trecho de cada fonte citada passa a ter só os parágrafos citados (antes vinha um a mais); 5.2.4: o botão Visualizar e editar prompts sai de Configurar formatação com IA e ganha um card próprio em Ajustes, e a tela de prompts passa a ser organizada em categorias recolhíveis com emoji (modelo/gasto/limites, base das respostas, comentários, dirigente, Bíblia, formatação, voz, diversos e parte técnica); 5.2.3: na tela de prompts o texto salvo com 💾 Salvar para todos vira o padrão oficial do app (some o aviso "personalizado") e "Restaurar padrão" passa a "Voltar ao texto original"; 5.2.2: a leitura do texto diário não lê mais a linha de referência da matéria (antes lia a parte depois do ponto e vírgula, "19 §§ 17-18"), o filtro de citações também tira essa continuação e a instrução de leitura manda nunca ler referências; 5.2.1: espaços padronizados (10px) entre o título, o campo de texto e as caixas de opções das telas Formatar e Reuniões; 5.2.0: nova opção Inserir emojis no texto em Outras opções de formatação (só escolher e buscar, favoritos no topo, sem edição) e a Preparação de discursos e esboços ganha o ícone 📜 (antes repetia o 🎤 de Preparar para dirigir); 5.1.9: na tela Reuniões o cartão do campo de texto ganha a dica "Para mais opções de formatação clique em Formatar."; 5.1.8: na tela Início o atalho Backup do JW Library sobe para a primeira linha, ao lado de Formatar um texto; 5.1.7: rótulo "Texto diário" centralizado e separado do resto do cartão por uma linha, e o aviso do cartão desabilitado fica só em "Requer o código de pesquisa."; 5.1.6: rótulo "Texto diário" no topo do cartão do texto diário; 5.1.5: Preparar para dirigir (e o atalho Dirigentes) pedem só o código do dirigente, que passa a valer sozinho no servidor para as tarefas do dirigente; 5.1.4: a Preparação de discursos e esboços vira um grupo dentro de Preparação para as reuniões e pede só o código do dirigente, a moldura de Pesquisas e respostas salvas (novo nome) ganha cor forte (verde) como as outras; 5.1.3: "Opções de formatação com IA" passa a "Opções com IA", o botão do texto colado fica separado do de formatação e dentro de um contêiner com o texto explicativo novo, e a Preparação de discursos e esboços (e a categoria Esboços das pesquisas salvas) também pedem o código do dirigente; 5.1.2: "Responder a partir do texto colado" mudou para Formatar → Opções de formatação com IA, o grupo Preparar para comentar (e o atalho Comentários) ficam desabilitados sem o código de pesquisa, o grupo e o atalho do dirigente pedem os dois códigos e o link do texto diário para o wol.jw.org fica habilitado sempre; 5.1.1: o código de acesso passa a se chamar "código de pesquisa" e os cartões que dependem dele (Joias, Estudo Bíblico, Estudo de A Sentinela do dirigente, a parte do Estudo de A Sentinela lida no site e o texto diário) ficam desabilitados sem o código; 5.1.0: sem o código do dirigente, o atalho Dirigentes, o grupo Preparar para dirigir e a categoria Dirigentes das pesquisas salvas aparecem desabilitados (cinza, com cadeado) em vez de sumir; 5.0.9: "Faça seu melhor no ministério" (semanas com discurso de 4 min) entre as opções em breve de Preparação de discursos e esboços; 5.0.8: atalho Dirigentes da tela Início volta ao nome "Dirigentes" e só a linha explicativa passa a "Ajuda na preparação para dirigir" (e a do atalho Comentários, "Ajuda na preparação para comentar"); 5.0.7: grupos da tela Reuniões renomeados para "Preparar para comentar" e "Preparar para dirigir" e atalho do Início "Ajuda na preparação para dirigir"; 5.0.6: pesquisas salvas separadas em categorias (Comentários, Dirigentes e Esboços), cada uma recolhível e na cor do grupo; 5.0.5: Estudo Bíblico de Congregação no grupo Preparação para dirigir (5 perguntas adicionais com resposta, sem aplicações práticas, e o resumo dos textos-base, que saiu do cartão dos comentários); 5.0.4: cor dos títulos dos grupos Preparação de comentários e Preparação para dirigir mais suave; 5.0.3: títulos dos grupos Preparação de comentários e Preparação para dirigir com cor forte (roxo e verde-água escuros, letra branca); 5.0.2: o aviso "Nossa Vida Cristã (em breve)" saiu do grupo Preparação de comentários; 5.0.1: os grupos "Preparação de comentários" e "Preparação para dirigir" da tela Reuniões viram contêineres com borda na cor do grupo, para o que está dentro não parecer solto; 5.0.0: atalhos da tela Início coloridos, cada um com a cor da tela que abre; 4.9.9: Ajustes → Configurar formatação com IA ganha 💾 Salvar para todos (só administrador), que salva as opções de formatação como padrão de todos os usuários; 4.9.8: tela de prompts com um só botão 💾 Salvar para todos (modelo e esforço da IA, limites e prompts) e ícones ✋ e 🎤 nos grupos de comentários e de dirigir da tela Reuniões, como nos atalhos do Início; 4.9.7: o cartão de gasto da tela de prompts não explica mais como criar a chave de administrador da Anthropic (só indica o link do Claude Console); 4.9.6: o app confere o código do dirigente salvo com o servidor e, se ele deixou de valer, apaga o código e esconde as opções do dirigente; 4.9.5: código do dirigente (Ajustes → Autorização de acessos): sem ele, as opções de preparação para dirigir ficam escondidas e o servidor não faz as perguntas do dirigente; enquanto não existir a variável CODIGO_DIRIGENTE na Vercel, vale o código de acesso; 4.9.4: texto diário com comentários adicionais que podem ser salvos e recuperados no mesmo dia (no dia seguinte são apagados) e link do wol.jw.org legível; 4.9.3: o botão 🔊 do campo de texto só aparece (e só funciona no servidor) para o administrador; a leitura em voz alta do texto diário continua para todos; 4.9.2: pesquisas salvas por semana (só as da semana escolhida; o botão apaga as das semanas anteriores); 4.9.1: pesquisas salvas (histórico das respostas da IA das reuniões neste aparelho, para reabrir depois); 4.9.0: joias espirituais com 2 joias por capítulo, sem repetir o versículo da pergunta da apostila; 4.8.9: Joias Espirituais (leitura da semana lida no wol.jw.org com as publicações do Índice das Publicações; até 2 joias por capítulo e a resposta à pergunta da apostila) e, no Estudo Bíblico, textos citados nas perguntas seguindo as opções de textos bíblicos;4.8.8: Estudo Bíblico de Congregação (capítulo da semana lido no wol.jw.org, respostas da IA por quadro, trechos das publicações citadas, resumo opcional dos textos-base) e o contexto "Sobre mim e a congregação" nos prompts; 4.8.7: cada seção da tela de prompts virou um cartão recolhível; 4.8.6: modelo da IA de texto escolhido pelo administrador na tela de prompts (Haiku, Sonnet, Opus ou Fable) e gasto do mês pela Cost API da Anthropic; 4.8.6: a barra da leitura em voz alta fecha sozinha quando a leitura termina; 4.8.5: categorias de Ajustes direto na página (sem o cartão recolhível "Configurações gerais do app"); 4.8.4: Ajustes → Autorização de acessos (código de acesso e senha de administrador informados uma vez e salvos), a IA nunca escreve "culto" (sempre reunião), comentários adicionais recolhíveis e com Limpar, atalhos Comentários e Dirigentes abrem só o grupo deles; 4.8.3: tela Início com o texto diário (do wol.jw.org; um toque abre o comentário, ler em voz alta, levar para o campo de texto e comentários adicionais da IA) e atalhos; 4.8.2: referências bíblicas lidas na forma curta ("Primeira Coríntios treze, quatro a sete"), voz com duas partes à frente (sem pausas, também em 1,15×), pular citações de publicações (w24.09 21 § 6) e referências bíblicas só entre parênteses ou depois de travessão no fim do parágrafo (o texto temático do texto diário é lido); 4.8.1: voz começa mais rápido (primeiras partes curtas) e campos de preço alinhados; 4.8.0: menu da voz para o administrador (modelo, voz, tom, o que ler e pular), consumo estimado e vozes Gemini com a conta de serviço do Google; 4.7.9: voz reserva (Chirp 3 HD) quando o Gemini é recusado; 4.7.8: botão 🔊 Ouvir (leitura em voz alta com a voz do Google); 4.7.7: Fonte CX com C preto e C branco, cada um ao lado do seu quadradinho; todos os cards começam fechados ao abrir o app; 4.7.6: tela Reuniões em dois cartões (texto e reuniões); 4.7.5: campo de texto volta a crescer depois de levar uma nota do backup; importar notas de outro backup; 4.7.4: card do desenvolvedor na largura do quadro de limitações (Sobre); 4.7.3: card recolhível "Opções principais de formatação"; 4.7.2: backup abre direto em Arquivos (sem Fototeca e câmera), cores nas seções da tela Reuniões e IA da formatação sem card recolhível a mais; 4.7.1: todas as instruções da IA na tela de prompts (frases das opções, orientação, escopo); 4.7: tela Reuniões em grupos (comentários, dirigir, discursos) e semana no alto; 4.6: card do dirigente (perguntas adicionais com seções que se ligam e desligam); 4.5: perguntas adicionais em três seções (complementares, aplicativas, explicação dos textos); 4.4: fechar backup, backup vazio e exportar notas (.xlsx/.csv); 4.3: edição do backup; 4.2: backup organizado como no JWLManager; 4.1: leitura do backup do JW Library (só leitura); 4.0: telas separadas (Formatar, Reuniões, Backup, Ajustes); 3.7: perguntas de entendimento dos textos bíblicos; 3.6: linha em branco entre as perguntas adicionais; 3.5: perguntas adicionais para o dirigente; 3.4: botão Fonte CX com caixa branca ou preta; 3.3: letras em emoji fixas no fim da faixa rápida; 3.2: regras fixas da IA (pergunta, parênteses, fontes); 3.1: estudo lido direto no wol.jw.org e limite de parágrafos; 3.0: novo nome e ícones
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -12217,11 +12231,12 @@ function saveTemplatesToStorage() {
         falhaLer: 'Não consegui ler a matéria agora.',
         extraPayload: () => outrosCampos(),
         validar: () => outrosValidar(),
-        validarLer: () => (outrosTemMateria() ? '' : 'Informe a matéria (um texto colado ou artigos do wol.jw.org) ou os textos bíblicos que quer ler.'),
+        validarLer: () => (outrosTemMateria() ? '' : 'Informe a matéria (um texto colado, artigos do wol.jw.org ou um esboço importado) ou os textos bíblicos que quer ler.'),
         // O tempo, os artigos que o servidor leu (e os que não deu para ler), os textos que o orador pediu e os que não foram reconhecidos.
         linhasDaInfo: dados => soComConteudo(
           dados.minutos + ' min' + (dados.artigos && dados.artigos.length ? ' · ' + dados.artigos.length + (dados.artigos.length === 1 ? ' artigo lido: ' : ' artigos lidos: ') + dados.artigos.map(a => '“' + a.titulo + '”').join('; ') : '') + (dados.materia ? ' · matéria colada: ' + dados.materia + ' caracteres' : ''),
           dados.falhas && dados.falhas.length ? '⚠️ Não consegui ler: ' + dados.falhas.join('; ') : '',
+          dados.base ? 'esboço importado: “' + dados.base.titulo.replace(/^[‘'“"]+|[’'”"]+$/g, '') + '” · ' + dados.base.minutos + ' min · ' + dados.base.secoes + (dados.base.secoes === 1 ? ' seção' : ' seções') + ' · ' + (dados.base.leituras.length ? 'leituras marcadas: ' + dados.base.leituras.join('; ') : 'sem leituras marcadas') : '',
           dados.avisoTextos ? '⚠️ ' + dados.avisoTextos : '',
           dados.pedidos && dados.pedidos.length ? 'textos para ler: ' + dados.pedidos.join('; ') : ''
         )
@@ -12814,6 +12829,16 @@ function saveTemplatesToStorage() {
     // marcar; "Elaborar" faz o esboço, que segue o caminho dos outros esboços (campo de texto, pesquisas salvas, outra versão, melhorar).
     const OUTROS_KEY = 'jwLibraryNoteAplicarOutrosV1';
     const OUTROS_MAX_ARTIGOS = 5;
+    // Os esboços prontos importados (só neste aparelho): [{ id, titulo, minutos, secoes, importadoEm, arquivo, esboco }], os mais novos primeiro.
+    const OUTROS_BASES_KEY = 'jwLibraryNoteAplicarOutrosBasesV1';
+    const OUTROS_MAX_BASES = 20;
+    let outrosBases = [];
+    let outrosBaseId = '';
+    try {
+      const guardadas = JSON.parse(localStorage.getItem(OUTROS_BASES_KEY) || '[]');
+      if (Array.isArray(guardadas)) outrosBases = guardadas.filter(b => b && b.id && b.esboco && Array.isArray(b.esboco.secoes)).slice(0, OUTROS_MAX_BASES);
+    } catch (e) { /* sem localStorage: nenhum esboço importado */ }
+    const outrosBaseAtual = () => outrosBases.find(b => b.id === outrosBaseId) || null;
     const outrosCamposEl = {
       tema: document.getElementById('outrosTema'),
       ideia: document.getElementById('outrosIdeia'),
@@ -12829,9 +12854,12 @@ function saveTemplatesToStorage() {
     const outrosPesquisarBtn = document.getElementById('outrosPesquisarBtn');
 
     const outrosEnderecos = () => [...new Set(outrosCamposEl.artigos.value.split(/\s+/).map(e => e.trim()).filter(Boolean))];
-    const outrosTemMateria = () => Boolean(outrosCamposEl.materia.value.trim() || outrosCamposEl.textos.value.trim() || outrosEnderecos().length);
+    const outrosTemMateria = () => Boolean(outrosCamposEl.materia.value.trim() || outrosCamposEl.textos.value.trim() || outrosEnderecos().length || outrosBaseAtual());
+    // O esboço importado vai ao servidor sem o nome do arquivo.
+    const outrosBaseParaEnviar = base => { const { arquivo, arquivoModificado, ...resto } = base.esboco; return resto; };
 
     function outrosCampos() {
+      const base = outrosBaseAtual();
       return {
         tema: outrosCamposEl.tema.value.trim(),
         ideia: outrosCamposEl.ideia.value.trim(),
@@ -12839,14 +12867,16 @@ function saveTemplatesToStorage() {
         ocasiao: outrosCamposEl.ocasiao.value.trim(),
         textosLer: outrosCamposEl.textos.value.trim(),
         materia: outrosCamposEl.materia.value.trim(),
-        artigos: outrosEnderecos()
+        artigos: outrosEnderecos(),
+        ...(base ? { esbocoBase: outrosBaseParaEnviar(base) } : {})
       };
     }
 
     function outrosValidar() {
-      if (outrosCamposEl.tema.value.trim().length < 4) return 'Escreva o tema do discurso.';
+      const base = outrosBaseAtual();
+      if (outrosCamposEl.tema.value.trim().length < 4 && !base) return 'Escreva o tema do discurso.';
       const minutos = Number(outrosCamposEl.minutos.value);
-      if (!Number.isFinite(minutos) || minutos < 3 || minutos > 60) return 'O tempo do discurso deve ficar entre 3 e 60 minutos.';
+      if (!base && (!Number.isFinite(minutos) || minutos < 3 || minutos > 60)) return 'O tempo do discurso deve ficar entre 3 e 60 minutos.';
       if (outrosEnderecos().length > OUTROS_MAX_ARTIGOS) return 'Use no máximo ' + OUTROS_MAX_ARTIGOS + ' artigos do wol.jw.org.';
       return '';
     }
@@ -12860,11 +12890,14 @@ function saveTemplatesToStorage() {
       const artigos = outrosEnderecos().length;
       if (artigos) itens.push(artigos + (artigos === 1 ? ' artigo' : ' artigos'));
       document.getElementById('outrosMateriaResumo').textContent = '📚 Ocasião, textos, matéria e pesquisa (opcional)' + (itens.length ? ' · ' + itens.join(', ') : '');
+      const base = outrosBaseAtual();
+      document.getElementById('outrosBaseResumo').textContent = '📥 Esboço pronto como base (opcional, só neste aparelho)' + (base ? ' · ' + base.titulo : '');
     }
 
     function outrosSalvarRascunho() {
       const dados = {};
       Object.entries(outrosCamposEl).forEach(([nome, el]) => { dados[nome] = el.value; });
+      dados.baseId = outrosBaseId;
       safeSetItem(OUTROS_KEY, JSON.stringify(dados));
       outrosAtualizarResumo();
     }
@@ -12875,8 +12908,10 @@ function saveTemplatesToStorage() {
         Object.entries(outrosCamposEl).forEach(([nome, el]) => { if (typeof salvo[nome] === 'string') el.value = salvo[nome]; });
         if (!outrosCamposEl.minutos.value) outrosCamposEl.minutos.value = '30';
         outrosMateriaBox.open = Boolean(outrosCamposEl.ocasiao.value || outrosCamposEl.textos.value || outrosCamposEl.materia.value || outrosCamposEl.artigos.value);
+        if (typeof salvo.baseId === 'string' && outrosBases.some(b => b.id === salvo.baseId)) outrosBaseId = salvo.baseId;
       }
     } catch (e) { /* sem localStorage: os campos começam vazios */ }
+    document.getElementById('outrosBaseBox').open = Boolean(outrosBaseId);
     outrosAtualizarResumo();
 
     // A caixa dos artigos e as marcas dos resultados da pesquisa andam juntas.
@@ -12951,17 +12986,132 @@ function saveTemplatesToStorage() {
     }
     outrosPesquisarBtn.addEventListener('click', outrosPesquisar);
 
-    document.getElementById('outrosLimparBtn').addEventListener('click', async () => {
-      if (!(await askConfirm('Apagar tudo o que você escreveu neste card (tema, ideia, matéria, artigos e textos)? O esboço que já está no campo de texto não muda.', 'Limpar os campos'))) return;
-      Object.values(outrosCamposEl).forEach(el => { el.value = ''; });
-      outrosCamposEl.minutos.value = '30';
-      outrosResultados.textContent = '';
-      outrosResultados.hidden = true;
+    // A leitura da matéria mostrada (e a lista de textos) deixa de valer quando a base muda.
+    function outrosZerarLeitura() {
       const cfg = ESBOCOS.outros;
       cfg.info.textContent = '';
       cfg.dadosCarregados = null;
       esbocoSalvoAtualizar(cfg);
       textosLimpar(cfg);
+    }
+
+    // ---------- Esboço pronto importado (só neste aparelho) ----------
+    // O .docx (no molde dos esboços do S-34) é lido aqui mesmo, com o leitor do S-34 (modo livre: sem número de tema), e fica guardado no
+    // localStorage deste aparelho; vai ao servidor só no pedido da IA, junto com o resto, e lá não é guardado.
+    const outrosBaseSelect = document.getElementById('outrosBaseSelect');
+    const outrosBaseStatus = document.getElementById('outrosBaseStatus');
+
+    function outrosBaseDizer(texto, aviso) {
+      outrosBaseStatus.textContent = texto;
+      outrosBaseStatus.className = aviso ? 'warn' : 'ok';
+    }
+
+    function outrosBaseGuardar() {
+      if (!safeSetItem(OUTROS_BASES_KEY, JSON.stringify(outrosBases))) outrosBaseDizer('Não coube na memória deste aparelho: o esboço vale só até fechar o app.', true);
+    }
+
+    const outrosBaseTotal = base => base.esboco.secoes.reduce((n, sc) => n + (sc.minutos || 0), 0);
+    const outrosBaseLeituras = base => [...new Set(base.esboco.secoes.flatMap(sc => sc.itens.flatMap(item => item.leituras || [])))];
+
+    // A lista, as informações do esboço escolhido e o campo de tempo (que passa a valer a soma das seções dele).
+    function outrosBaseMostrar() {
+      const atual = outrosBaseAtual();
+      if (!atual) outrosBaseId = '';
+      outrosBaseSelect.textContent = '';
+      const nenhum = document.createElement('option');
+      nenhum.value = '';
+      nenhum.textContent = outrosBases.length ? 'Nenhum (usar só a matéria)' : 'Nenhum esboço importado';
+      outrosBaseSelect.appendChild(nenhum);
+      outrosBases.forEach(b => {
+        const opcao = document.createElement('option');
+        opcao.value = b.id;
+        opcao.textContent = b.titulo.replace(/^[‘'“"]+|[’'”"]+$/g, '') + ' · ' + outrosBaseTotal(b) + ' min';
+        outrosBaseSelect.appendChild(opcao);
+      });
+      outrosBaseSelect.value = outrosBaseId;
+      const info = document.getElementById('outrosBaseInfo');
+      info.textContent = '';
+      if (atual) {
+        const leituras = outrosBaseLeituras(atual);
+        const linhas = [
+          '📥 ' + atual.titulo + ' · ' + outrosBaseTotal(atual) + ' min · ' + atual.esboco.secoes.length + (atual.esboco.secoes.length === 1 ? ' seção' : ' seções') + (atual.arquivo ? ' · arquivo ' + atual.arquivo : ''),
+          atual.esboco.notaAoOrador ? 'objetivo: ' + atual.esboco.notaAoOrador : '',
+          leituras.length ? 'leituras marcadas: ' + leituras.join('; ') : 'sem leituras marcadas: a IA escolhe os textos (ou você os escolhe na lista, depois de ler a matéria)'
+        ].filter(Boolean);
+        linhas.forEach((linha, i) => { if (i) info.appendChild(document.createElement('br')); info.append(linha); });
+      }
+      document.getElementById('outrosBaseApagarBtn').hidden = !atual;
+      outrosCamposEl.minutos.disabled = Boolean(atual);
+      if (atual) outrosCamposEl.minutos.value = String(Math.max(3, Math.min(60, outrosBaseTotal(atual) || 30)));
+      outrosCamposEl.tema.placeholder = atual ? atual.titulo : 'Ex.: Como enfrentar a ansiedade';
+      outrosAtualizarResumo();
+    }
+
+    function outrosBaseEscolher(id) {
+      outrosBaseId = id;
+      const atual = outrosBaseAtual();
+      if (atual && !outrosCamposEl.tema.value.trim()) outrosCamposEl.tema.value = atual.titulo.replace(/^[‘'“"]+|[’'”"]+$/g, '');
+      outrosZerarLeitura();
+      outrosBaseMostrar();
+      outrosSalvarRascunho();
+    }
+
+    async function outrosBaseImportar(arquivos) {
+      const docx = [...arquivos].filter(a => /\.docx$/i.test(a.name));
+      if (!docx.length) return outrosBaseDizer('Escolha um arquivo .docx.', true);
+      outrosBaseDizer('Lendo o esboço…', false);
+      try {
+        await loadScriptOnce(BACKUP_LIBS.jszip);
+        const mensagens = [];
+        let escolhido = '';
+        for (const arquivoDocx of docx) {
+          const resultado = await s34LerDocx(window.JSZip, arquivoDocx.name, new Uint8Array(await arquivoDocx.arrayBuffer()), arquivoDocx.lastModified, true);
+          if (resultado.erro) { mensagens.push('⚠️ ' + arquivoDocx.name + ': ' + resultado.erro + '.'); continue; }
+          const esboco = resultado.esboco;
+          const chave = JSON.stringify({ ...esboco, arquivo: '', arquivoModificado: '' });
+          const repetido = outrosBases.find(b => JSON.stringify({ ...b.esboco, arquivo: '', arquivoModificado: '' }) === chave);
+          if (repetido) { escolhido = repetido.id; mensagens.push('Já estava importado: ' + repetido.titulo + '.'); continue; }
+          const item = { id: 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), titulo: esboco.titulo, importadoEm: new Date().toISOString(), arquivo: arquivoDocx.name, esboco };
+          outrosBases.unshift(item);
+          escolhido = item.id;
+          const leituras = outrosBaseLeituras(item).length;
+          mensagens.push('✅ ' + esboco.titulo + ' (' + outrosBaseTotal(item) + ' min, ' + esboco.secoes.length + ' seções, ' + (leituras ? leituras + (leituras === 1 ? ' leitura marcada' : ' leituras marcadas') : 'sem leituras marcadas') + ').' + (resultado.avisos.length ? ' Avisos: ' + resultado.avisos.join(' ') : ''));
+        }
+        outrosBases = outrosBases.slice(0, OUTROS_MAX_BASES);
+        if (escolhido) { outrosBaseGuardar(); outrosBaseEscolher(escolhido); } else outrosBaseMostrar();
+        outrosBaseDizer(mensagens.join(' '), mensagens.some(m => m.startsWith('⚠️')));
+      } catch (e) {
+        outrosBaseDizer('Não consegui ler o arquivo agora.', true);
+      }
+    }
+
+    document.getElementById('outrosBaseImportarBtn').addEventListener('click', () => document.getElementById('outrosBaseArquivo').click());
+    document.getElementById('outrosBaseArquivo').addEventListener('change', event => {
+      const arquivos = [...event.target.files];
+      event.target.value = ''; // permite escolher o mesmo arquivo de novo
+      if (arquivos.length) outrosBaseImportar(arquivos);
+    });
+    outrosBaseSelect.addEventListener('change', () => outrosBaseEscolher(outrosBaseSelect.value));
+    document.getElementById('outrosBaseApagarBtn').addEventListener('click', async () => {
+      const atual = outrosBaseAtual();
+      if (!atual) return;
+      if (!(await askConfirm('Apagar o esboço importado "' + atual.titulo + '" deste aparelho? Não dá para desfazer (é só importar o arquivo de novo).', 'Apagar esboço importado'))) return;
+      outrosBases = outrosBases.filter(b => b.id !== atual.id);
+      outrosBaseGuardar();
+      outrosBaseEscolher('');
+      outrosBaseDizer('Esboço importado apagado deste aparelho.', false);
+    });
+    outrosBaseMostrar();
+
+    document.getElementById('outrosLimparBtn').addEventListener('click', async () => {
+      if (!(await askConfirm('Apagar tudo o que você escreveu neste card (tema, ideia, matéria, artigos e textos)? O esboço que já está no campo de texto não muda e os esboços importados continuam guardados neste aparelho.', 'Limpar os campos'))) return;
+      Object.values(outrosCamposEl).forEach(el => { el.value = ''; });
+      outrosCamposEl.minutos.value = '30';
+      outrosResultados.textContent = '';
+      outrosResultados.hidden = true;
+      outrosBaseId = '';
+      outrosBaseMostrar();
+      outrosZerarLeitura();
       outrosSalvarRascunho();
       aiStatusKind = 'outros';
       setAiStatus('', false);
