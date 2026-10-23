@@ -2647,6 +2647,24 @@ async function esbocoDeOutros(res, body, P) {
   }
 }
 
+// O texto exato (Tradução do Novo Mundo) de uma lista de textos bíblicos, para o app exportar um esboço para Word com os acentos certos
+// (as letras em itálico do campo de texto não têm acento). Só com o código do dirigente; sem IA, sem custo.
+async function textosDosVersiculos(res, body) {
+  if (!acessoDoDirigente(res, body)) return;
+  const referencias = (Array.isArray(body.referencias) ? body.referencias : [])
+    .filter((r) => typeof r === "string")
+    .map((r) => limparLinha(r, 80))
+    .filter(Boolean)
+    .slice(0, 40);
+  if (!referencias.length || !fontesConfiguradas()) return res.status(200).json({ versiculos: [] });
+  try {
+    return res.status(200).json({ versiculos: await buscarVersiculos(referencias, 40) });
+  } catch (e) {
+    console.error("Versículos para exportar: falhou", e?.message);
+    return erro(res, 502, "Não consegui buscar os versículos agora.");
+  }
+}
+
 // ---------- Joias espirituais ----------
 // O servidor lê a leitura da Bíblia da semana (capítulos com os versículos e os trechos das publicações do Índice das
 // Publicações) e a seção "Joias espirituais" da apostila (api/_wol.mjs). A IA escreve até 2 joias por capítulo e a
@@ -3099,6 +3117,7 @@ export default async function handler(req, res) {
   if (req.body && req.body.tarefa === "publico-lista") return listarTemasPublicos(res, req.body);
   if (req.body && req.body.tarefa === "publico-ler") return lerTemaPublico(res, req.body);
   if (req.body && req.body.tarefa === "publico") return esbocoDoDiscursoPublico(res, req.body, P);
+  if (req.body && req.body.tarefa === "versiculos") return textosDosVersiculos(res, req.body);
   if (req.body && req.body.tarefa === "outros-pesquisar") return pesquisarOutros(res, req.body);
   if (req.body && req.body.tarefa === "outros-ler") return lerOutros(res, req.body);
   if (req.body && req.body.tarefa === "outros") return esbocoDeOutros(res, req.body, P);
