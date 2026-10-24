@@ -284,7 +284,8 @@ export function textoDoDiscursoPublico(esboco, versiculos = []) {
 // número do S-34 nem os versículos (estes vão à parte, junto dos demais textos da mensagem).
 export function textoDoEsbocoImportado(esboco) {
   const partes = [`ESBOÇO PRONTO IMPORTADO PELO ORADOR: ${esboco.titulo}${esboco.revisao ? ` (revisão ${esboco.revisao})` : ""} (${minutosDoEsboco(esboco)} minutos)`];
-  if (esboco.notaAoOrador) partes.push(`NOTA AO ORADOR (objetivo do esboço): ${esboco.notaAoOrador}`);
+  // Nem todo esboço tem a nota ao orador (ou só traz "Nota"): sem ela a matéria começa logo depois do título.
+  partes.push(esboco.notaAoOrador ? `NOTA AO ORADOR (objetivo do esboço): ${esboco.notaAoOrador}` : "SEM NOTA AO ORADOR: o esboço não traz nota; a matéria começa logo depois do título.");
   partes.push(...textoDasSecoes(esboco));
   if (esboco.notaFinal) partes.push(`NOTA DO FIM DO ESBOÇO: ${esboco.notaFinal}`);
   return partes.join("\n\n");
