@@ -12,6 +12,7 @@ const CHAVE_PADRAO = "padrao_modelos";
 // Anotação do administrador (ex.: o código de pesquisa, para não esquecer). Só é lida e gravada com o
 // CODIGO_ADMIN; não vale como senha de nada: o código que funciona de verdade é o da variável CODIGO_ESTUDO na Vercel.
 const CHAVE_ANOTACAO = "anotacao_admin";
+const CHAVE_ANOTACAO_DIRIGENTE = "anotacao_dirigente"; // a mesma ideia, para o código do dirigente (variável CODIGO_DIRIGENTE)
 const MAX_CHARS_ANOTACAO = 500;
 const MAX_BYTES_PADRAO = 200_000;
 const MAX_MODELOS_PADRAO = 500;
@@ -68,11 +69,12 @@ async function estadoDosPrompts() {
     armazenamento: descreverArmazenamento(),
     temAnterior: Object.keys(anterior).length > 0,
     anotacao: await lerAnotacao(),
+    anotacaoDirigente: await lerAnotacao(CHAVE_ANOTACAO_DIRIGENTE),
   };
 }
 
-async function lerAnotacao() {
-  const valor = await lerItem(CHAVE_ANOTACAO);
+async function lerAnotacao(chave = CHAVE_ANOTACAO) {
+  const valor = await lerItem(chave);
   return typeof valor === "string" ? valor : "";
 }
 
@@ -288,6 +290,13 @@ export default async function handler(req, res) {
       if (!exigirEscrita(res)) return;
       const texto = typeof corpo.anotacao === "string" ? corpo.anotacao.trim().slice(0, MAX_CHARS_ANOTACAO) : "";
       await gravarItem(CHAVE_ANOTACAO, texto);
+      return res.status(200).json({ ok: true, anotacao: texto });
+    }
+
+    if (acao === "anotacao-dirigente-salvar") {
+      if (!exigirEscrita(res)) return;
+      const texto = typeof corpo.anotacao === "string" ? corpo.anotacao.trim().slice(0, MAX_CHARS_ANOTACAO) : "";
+      await gravarItem(CHAVE_ANOTACAO_DIRIGENTE, texto);
       return res.status(200).json({ ok: true, anotacao: texto });
     }
 
