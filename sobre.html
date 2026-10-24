@@ -187,6 +187,56 @@
     .notice.privacidade li { position: relative; padding-left: 1.6em; }
     .notice.privacidade li::before { content: "✔"; position: absolute; left: 0; color: var(--ok); font-weight: 800; }
 
+    /* Convidar alguém */
+    .convite-texto {
+      display: block;
+      width: 100%;
+      min-height: 150px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--bg);
+      color: var(--text);
+      font: inherit;
+      font-size: .92rem;
+      line-height: 1.45;
+      resize: vertical;
+    }
+
+    .convite-botoes { display: grid; gap: 8px; margin-top: 12px; }
+
+    .convite-botoes button {
+      min-height: 46px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--soft);
+      color: var(--accent-dark);
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .convite-botoes button.zap { background: #16a34a; border-color: #16a34a; color: #ffffff; }
+    .convite-botoes button[hidden] { display: none; }
+
+    .convite-status { min-height: 1.3em; margin: 8px 0 0; font-weight: 650; color: var(--ok); }
+    .convite-status.aviso { color: #b45309; }
+
+    .botao-link {
+      display: block;
+      margin-top: 12px;
+      padding: 11px 12px;
+      border: 1px solid var(--accent);
+      border-radius: 12px;
+      color: var(--accent);
+      font-weight: 700;
+      text-align: center;
+      text-decoration: none;
+    }
+
+    .botao-link:hover { background: var(--soft); color: var(--accent-dark); }
+
     .card {
       background: var(--card-tint);
       border: 1px solid var(--line);
@@ -266,7 +316,7 @@
     <img src="icon-header.png?v=3" alt="" class="about-logo" width="512" height="512" decoding="async">
     <h1 class="about-name">Note<span class="brand-accent">Style</span></h1>
     <p class="about-site"><a href="https://www.notestyle.com.br">www.notestyle.com.br</a></p>
-    <span class="pill">v6.1.21</span>
+    <span class="pill">v6.1.22</span>
 
     <p class="about-text">O NoteStyle ajuda você a preparar notas e reuniões: formata textos com destaques, apoia a preparação de comentários, perguntas e esboços de discursos com a ajuda de IA e organiza as suas pesquisas e as notas do backup do JW Library.</p>
 
@@ -276,10 +326,22 @@
         <li><strong>Formatar textos</strong> com negrito, itálico, fontes, emojis, listas e modelos, com sugestões de uma IA se você quiser.</li>
         <li><strong>Texto diário:</strong> ler, ouvir em voz alta e pedir comentários adicionais.</li>
         <li><strong>Reuniões:</strong> preparar comentários (A Sentinela, Joias Espirituais e Estudo Bíblico de Congregação), perguntas para dirigir e esboços de discursos, com exportação para Word.</li>
-        <li><strong>Convidar alguém:</strong> o botão 📨 Convidar (na tela Início e em Ajustes) monta uma mensagem de convite pronta, para enviar pelo WhatsApp, compartilhar ou copiar.</li>
         <li><strong>Pesquisas e respostas salvas:</strong> o que a IA preparou fica guardado só neste aparelho.</li>
         <li><strong>Backup do JW Library:</strong> ver, editar e criar notas e respostas no arquivo de backup, que é processado só no seu aparelho.</li>
       </ul>
+    </section>
+
+    <section class="notice" id="convite">
+      <h2>📨 Convidar alguém</h2>
+      <p>Quer que um amigo conheça o NoteStyle? A mensagem já vem pronta: toque em <strong>Enviar pelo WhatsApp</strong> para abrir o WhatsApp com o texto preenchido (você escolhe a pessoa e envia), compartilhe em outro aplicativo de mensagens ou copie para colar onde quiser. Os códigos de acesso não vão no convite.</p>
+      <textarea id="conviteTexto" class="convite-texto" rows="8" aria-label="Texto do convite"></textarea>
+      <div class="convite-botoes">
+        <button id="conviteZapBtn" class="zap" type="button">💬 Enviar pelo WhatsApp</button>
+        <button id="conviteCompartilharBtn" type="button" hidden>📤 Compartilhar…</button>
+        <button id="conviteCopiarBtn" type="button">📋 Copiar convite</button>
+      </div>
+      <p id="conviteStatus" class="convite-status" role="status" aria-live="polite"></p>
+      <p>Para mudar o texto padrão: no aplicativo, Ajustes → Gerenciar modelos e categorias → Texto do convite.</p>
     </section>
 
     <section class="notice">
@@ -304,6 +366,7 @@
         <li><strong>Você controla os seus dados.</strong> Em Ajustes → Privacidade e dados deste aparelho você retira a concordância, relata um problema com uma resposta da IA (por e-mail, enviado só se você quiser) e apaga tudo o que o aplicativo guardou no aparelho.</li>
       </ul>
       <p style="margin-top:12px">Detalhes completos na <a href="privacidade.html">Política de Privacidade</a>.</p>
+      <a class="botao-link" href="index.html#privacidade">⚙️ Opções de privacidade e dados deste aparelho</a>
     </section>
 
     <section class="notice">
@@ -355,5 +418,59 @@
 
     <a class="back-link" href="index.html">← Voltar</a>
   </main>
+
+  <script>
+    // Convite para o app: o texto padrão vem de Ajustes → Gerenciar modelos e categorias → Texto do convite (mesma chave do aplicativo);
+    // sem ele, vale este (mantenha-o igual ao CONVITE_ORIGINAL do index.html). Nada é enviado pelo site: a pessoa escolhe o contato no
+    // WhatsApp (ou no aplicativo de compartilhar) e envia.
+    (function () {
+      var ORIGINAL = 'Olá! Quero te apresentar o NoteStyle, um aplicativo para formatar notas do JW e ajudar na preparação para as reuniões, no estudo e nos discursos.\n\nAcesse: https://www.notestyle.com.br' +
+        '\n\nNo celular, abra o endereço no navegador e use "Adicionar à Tela de Início" para instalar como aplicativo. Alguns recursos exigem um código de acesso: peça a quem te convidou.';
+      var campo = document.getElementById('conviteTexto');
+      var status = document.getElementById('conviteStatus');
+      var compartilhar = document.getElementById('conviteCompartilharBtn');
+      var salvo = '';
+      try { salvo = localStorage.getItem('jwLibraryNoteAplicarConviteTextoV1') || ''; } catch (e) {}
+      campo.value = salvo.trim() ? salvo : ORIGINAL;
+      compartilhar.hidden = typeof navigator.share !== 'function';
+
+      function mensagem() { return campo.value.trim() || ORIGINAL; }
+      function avisar(texto, aviso) {
+        status.textContent = texto;
+        status.className = 'convite-status' + (aviso ? ' aviso' : '');
+      }
+
+      document.getElementById('conviteZapBtn').addEventListener('click', function () {
+        // Um link comum (e não window.open) para o navegador não bloquear; no celular abre o WhatsApp com o texto já preenchido.
+        var link = document.createElement('a');
+        link.href = 'https://wa.me/?text=' + encodeURIComponent(mensagem());
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        avisar('Abrindo o WhatsApp: escolha a pessoa e toque em enviar. Se não abrir, use Copiar convite.', false);
+      });
+
+      compartilhar.addEventListener('click', function () {
+        navigator.share({ text: mensagem() }).catch(function (e) {
+          if (!e || e.name !== 'AbortError') avisar('Não consegui compartilhar. Use Copiar convite.', true);
+        });
+      });
+
+      document.getElementById('conviteCopiarBtn').addEventListener('click', function () {
+        function copiado() { avisar('✅ Convite copiado. Cole em qualquer aplicativo de mensagens.', false); }
+        function manual() {
+          campo.focus();
+          campo.select();
+          var ok = false;
+          try { ok = document.execCommand('copy'); } catch (e) {}
+          if (ok) copiado(); else avisar('Não consegui copiar. Selecione o texto e copie.', true);
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(mensagem()).then(copiado, manual);
+        else manual();
+      });
+    })();
+  </script>
 </body>
 </html>
