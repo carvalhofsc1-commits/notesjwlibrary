@@ -4,17 +4,11 @@ import { createHash, timingSafeEqual } from "node:crypto";
 export function origemPermitida(origin) {
   if (!origin) return false;
   try {
-    const { hostname } = new URL(origin);
-    // Domínio próprio (notestyle.com.br), nome antigo do projeto (notesjwlibrary) e o novo (notestyle), com os endereços de prévia de cada um.
-    return (
-      hostname === "notestyle.com.br" ||
-      hostname === "www.notestyle.com.br" ||
-      hostname === "notesjwlibrary.vercel.app" ||
-      hostname === "notestyle.vercel.app" ||
-      hostname === "localhost" ||
-      hostname === "127.0.0.1" ||
-      /^(notesjwlibrary|notestyle)-[a-z0-9-]+\.vercel\.app$/.test(hostname)
-    );
+    const { hostname, protocol } = new URL(origin);
+    // Só o domínio próprio (com HTTPS) e, para testes na máquina do desenvolvedor, localhost. Os endereços *.vercel.app (antigos e de
+    // prévia) não valem mais: se algum ainda abrir a página, a API recusa os pedidos.
+    if (hostname === "localhost" || hostname === "127.0.0.1") return true;
+    return protocol === "https:" && (hostname === "notestyle.com.br" || hostname === "www.notestyle.com.br");
   } catch {
     return false;
   }
