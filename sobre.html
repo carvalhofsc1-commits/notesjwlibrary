@@ -221,6 +221,10 @@
     .convite-botoes button[hidden] { display: none; }
 
     .convite-status { min-height: 1.3em; margin: 8px 0 0; font-weight: 650; color: var(--ok); }
+    .convite-admin-nota { margin: 14px 0 0 !important; font-size: .85rem !important; }
+    .convite-botoes button:disabled { opacity: .55; cursor: default; }
+    #conviteAdmin[hidden] { display: none; }
+    .convite-texto[readonly] { cursor: default; }
     .convite-status.aviso { color: #b45309; }
 
     .botao-link {
@@ -316,7 +320,7 @@
     <img src="icon-header.png?v=3" alt="" class="about-logo" width="512" height="512" decoding="async">
     <h1 class="about-name">Note<span class="brand-accent">Style</span></h1>
     <p class="about-site"><a href="https://www.notestyle.com.br">www.notestyle.com.br</a></p>
-    <span class="pill">v6.1.22</span>
+    <span class="pill">v6.1.23</span>
 
     <p class="about-text">O NoteStyle ajuda você a preparar notas e reuniões: formata textos com destaques, apoia a preparação de comentários, perguntas e esboços de discursos com a ajuda de IA e organiza as suas pesquisas e as notas do backup do JW Library.</p>
 
@@ -340,8 +344,14 @@
         <button id="conviteCompartilharBtn" type="button" hidden>📤 Compartilhar…</button>
         <button id="conviteCopiarBtn" type="button">📋 Copiar convite</button>
       </div>
+      <div id="conviteAdmin" hidden>
+        <p class="convite-admin-nota">🔐 Só o administrador vê e muda esta mensagem; o que for salvo vale para todos.</p>
+        <div class="convite-botoes">
+          <button id="conviteSalvarBtn" type="button" disabled>💾 Salvar mensagem do convite</button>
+          <button id="conviteRestaurarBtn" type="button" disabled>🔄 Voltar ao texto original</button>
+        </div>
+      </div>
       <p id="conviteStatus" class="convite-status" role="status" aria-live="polite"></p>
-      <p>Para mudar o texto padrão: no aplicativo, Ajustes → Gerenciar modelos e categorias → Texto do convite.</p>
     </section>
 
     <section class="notice">
@@ -420,18 +430,31 @@
   </main>
 
   <script>
-    // Convite para o app: o texto padrão vem de Ajustes → Gerenciar modelos e categorias → Texto do convite (mesma chave do aplicativo);
-    // sem ele, vale este (mantenha-o igual ao CONVITE_ORIGINAL do index.html). Nada é enviado pelo site: a pessoa escolhe o contato no
-    // WhatsApp (ou no aplicativo de compartilhar) e envia.
+    // Convite para o app. O texto vem do servidor (o administrador o escreve e vale para todos); sem ele, ou sem conexão, vale a última cópia
+    // guardada ou este texto original (mantenha-o igual ao CONVITE_ORIGINAL do index.html). Só quem tem a senha de administrador salva neste
+    // aparelho (Ajustes → Autorização de acessos) pode mudar e salvar a mensagem; os outros só a veem e a enviam. Nada é enviado pelo site: a pessoa
+    // escolhe o contato no WhatsApp (ou no aplicativo de compartilhar) e envia.
     (function () {
       var ORIGINAL = 'Olá! Quero te apresentar o NoteStyle, um aplicativo para formatar notas do JW e ajudar na preparação para as reuniões, no estudo e nos discursos.\n\nAcesse: https://www.notestyle.com.br' +
         '\n\nNo celular, abra o endereço no navegador e use "Adicionar à Tela de Início" para instalar como aplicativo. Alguns recursos exigem um código de acesso: peça a quem te convidou.';
+      var CHAVE_SENHA = 'jwLibraryNoteAplicarAdminSenhaV1';
+      var CHAVE_COPIA = 'jwLibraryNoteAplicarConviteServidorV1';
+      var CHAVE_ANTIGA = 'jwLibraryNoteAplicarConviteTextoV1'; // versão 6.1.22 guardava o texto só no aparelho
       var campo = document.getElementById('conviteTexto');
       var status = document.getElementById('conviteStatus');
       var compartilhar = document.getElementById('conviteCompartilharBtn');
-      var salvo = '';
-      try { salvo = localStorage.getItem('jwLibraryNoteAplicarConviteTextoV1') || ''; } catch (e) {}
-      campo.value = salvo.trim() ? salvo : ORIGINAL;
+      var painelAdmin = document.getElementById('conviteAdmin');
+      var salvarBtn = document.getElementById('conviteSalvarBtn');
+      var restaurarBtn = document.getElementById('conviteRestaurarBtn');
+
+      function guardado(chave) { try { return (localStorage.getItem(chave) || '').trim(); } catch (e) { return ''; } }
+      var senha = guardado(CHAVE_SENHA);
+      var admin = Boolean(senha);
+      var pronto = false;
+
+      campo.readOnly = !admin;
+      painelAdmin.hidden = !admin;
+      campo.value = guardado(CHAVE_COPIA) || ORIGINAL;
       compartilhar.hidden = typeof navigator.share !== 'function';
 
       function mensagem() { return campo.value.trim() || ORIGINAL; }
@@ -439,6 +462,52 @@
         status.textContent = texto;
         status.className = 'convite-status' + (aviso ? ' aviso' : '');
       }
+      function liberar() { pronto = true; salvarBtn.disabled = false; restaurarBtn.disabled = false; }
+      function chamar(corpo) {
+        return fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) })
+          .then(function (r) {
+            return r.json().catch(function () { return null; }).then(function (dados) { return { ok: r.ok && !!dados, status: r.status, dados: dados }; });
+          });
+      }
+      function guardarCopia(texto) {
+        try { if (texto) localStorage.setItem(CHAVE_COPIA, texto); else localStorage.removeItem(CHAVE_COPIA); } catch (e) {}
+      }
+
+      // O texto do servidor entra no campo (o administrador só pode salvar depois de lê-lo, para não trocar o que está lá sem ver).
+      chamar({ acao: 'convite-ler' }).then(function (r) {
+        if (!r.ok) throw new Error('sem servidor');
+        var doServidor = String(r.dados.texto || '').trim();
+        guardarCopia(doServidor);
+        var antigo = admin ? guardado(CHAVE_ANTIGA) : '';
+        if (doServidor) campo.value = doServidor;
+        else if (antigo) {
+          campo.value = antigo;
+          avisar('Este texto estava salvo só neste aparelho. Toque em Salvar mensagem do convite para valer para todos.', false);
+        } else campo.value = ORIGINAL;
+        if (admin) liberar();
+      }).catch(function () {
+        if (admin) avisar('Sem conexão com o servidor: só dá para salvar a mensagem depois de carregar o texto dele. Atualize a página.', true);
+      });
+
+      function salvar(texto, ok) {
+        if (!pronto) return;
+        avisar('Salvando…', false);
+        chamar({ acao: 'convite-salvar', codigo: senha, texto: texto }).then(function (r) {
+          if (r.status === 403) return avisar('A senha de administrador salva neste aparelho não foi aceita. Confira em Ajustes → Autorização de acessos.', true);
+          if (!r.ok) return avisar((r.dados && r.dados.erro) || 'Não consegui salvar agora.', true);
+          var salvo = String(r.dados.texto || '');
+          guardarCopia(salvo);
+          try { localStorage.removeItem(CHAVE_ANTIGA); } catch (e) {}
+          campo.value = salvo || ORIGINAL;
+          avisar(ok, false);
+        }, function () { avisar('Falha de conexão com o servidor.', true); });
+      }
+      salvarBtn.addEventListener('click', function () {
+        var texto = campo.value.trim();
+        var padrao = !texto || texto === ORIGINAL;
+        salvar(padrao ? '' : texto, padrao ? '✅ Vale o texto original do convite (para todos).' : '✅ Mensagem do convite salva para todos.');
+      });
+      restaurarBtn.addEventListener('click', function () { salvar('', '✅ Voltou o texto original do convite (para todos).'); });
 
       document.getElementById('conviteZapBtn').addEventListener('click', function () {
         // Um link comum (e não window.open) para o navegador não bloquear; no celular abre o WhatsApp com o texto já preenchido.

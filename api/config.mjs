@@ -14,6 +14,9 @@ const CHAVE_PADRAO = "padrao_modelos";
 const CHAVE_ANOTACAO = "anotacao_admin";
 const CHAVE_ANOTACAO_DIRIGENTE = "anotacao_dirigente"; // a mesma ideia, para o código do dirigente (variável CODIGO_DIRIGENTE)
 const MAX_CHARS_ANOTACAO = 500;
+// Texto do convite para o app (página Sobre): o administrador o escreve e ele vale para todos; vazio = vale o texto original do app.
+const CHAVE_CONVITE = "convite_texto";
+const MAX_CHARS_CONVITE = 1500;
 const MAX_BYTES_PADRAO = 200_000;
 const MAX_MODELOS_PADRAO = 500;
 
@@ -136,6 +139,12 @@ export default async function handler(req, res) {
     // Pública: os limites de tamanho que o navegador usa para avisar antes de enviar um texto grande demais.
     if (acao === "limites-ler") {
       return res.status(200).json({ limites: limitesPublicos(aplicarLimites(await lerLimites())) });
+    }
+
+    // Pública: o texto do convite para o app que o administrador salvou (vazio = o texto original do app).
+    if (acao === "convite-ler") {
+      const valor = await lerItem(CHAVE_CONVITE);
+      return res.status(200).json({ texto: typeof valor === "string" ? valor : "" });
     }
 
     // Pública: as regras da leitura em voz alta que o navegador aplica ao texto (o resto fica no servidor).
@@ -298,6 +307,13 @@ export default async function handler(req, res) {
       const texto = typeof corpo.anotacao === "string" ? corpo.anotacao.trim().slice(0, MAX_CHARS_ANOTACAO) : "";
       await gravarItem(CHAVE_ANOTACAO_DIRIGENTE, texto);
       return res.status(200).json({ ok: true, anotacao: texto });
+    }
+
+    if (acao === "convite-salvar") {
+      if (!exigirEscrita(res)) return;
+      const texto = typeof corpo.texto === "string" ? corpo.texto.replace(/\r\n/g, "\n").trim().slice(0, MAX_CHARS_CONVITE) : "";
+      await gravarItem(CHAVE_CONVITE, texto);
+      return res.status(200).json({ ok: true, texto });
     }
 
     if (acao === "padrao-publicar") {
