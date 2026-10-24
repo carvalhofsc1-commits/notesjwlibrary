@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Política de Privacidade — NoteStyle</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
+  <meta name="description" content="Política de Privacidade do NoteStyle: quais dados ficam no aparelho, o que é enviado ao servidor e a terceiros (IA e voz), seus direitos e como falar conosco.">
+  <meta name="theme-color" content="#e7ecf6">
+  <script>
+    // Aplica o tema salvo antes do corpo renderizar, para não piscar o tema errado.
+    try {
+      var temaSalvo = localStorage.getItem('jwLibraryNoteAplicarThemeV1');
+      if (temaSalvo === 'dark' || temaSalvo === 'light') {
+        document.documentElement.setAttribute('data-theme', temaSalvo);
+      }
+    } catch (e) {}
+  </script>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #e7ecf6; --card: #ffffff; --text: #1f2937; --muted: #6b7280; --line: #d1d5db;
+      --accent: #2563eb; --brand: #5b3fb5; --accent-dark: #1d4ed8; --soft: #eef2ff; --ok: #15803d; --shadow: rgba(0, 0, 0, .05);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #0f172a; --card: #1e293b; --text: #e2e8f0; --muted: #94a3b8; --line: #334155;
+        --accent: #3b82f6; --brand: #b7a8f0; --accent-dark: #2563eb; --soft: #1e3a5f; --ok: #4ade80; --shadow: rgba(0, 0, 0, .4);
+      }
+    }
+    :root[data-theme="dark"] {
+      --bg: #0f172a; --card: #1e293b; --text: #e2e8f0; --muted: #94a3b8; --line: #334155;
+      --accent: #3b82f6; --brand: #b7a8f0; --accent-dark: #2563eb; --soft: #1e3a5f; --ok: #4ade80; --shadow: rgba(0, 0, 0, .4);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; overflow-wrap: break-word; }
+    main { width: min(760px, 100%); margin: 0 auto; padding: 24px clamp(16px, 4vw, 32px) 48px; }
+    .topo { text-align: center; }
+    .topo img { width: 84px; height: auto; }
+    h1 { margin: 8px 0 4px; font-size: clamp(1.5rem, 6vw, 2rem); }
+    .atualizacao { margin: 0; color: var(--muted); font-size: .9rem; }
+    h2 { margin: 30px 0 8px; font-size: 1.15rem; color: var(--brand); }
+    h3 { margin: 18px 0 6px; font-size: 1rem; }
+    p, li { font-size: .98rem; }
+    ul { padding-left: 1.3em; }
+    li + li { margin-top: 6px; }
+    a { color: var(--accent); text-underline-offset: 2px; }
+    a:hover { color: var(--accent-dark); }
+    .resumo { background: var(--card); border: 2px solid var(--ok); border-radius: 16px; padding: 14px 16px; margin: 22px 0 0; box-shadow: 0 8px 22px var(--shadow); }
+    .resumo h2 { margin: 0 0 8px; color: var(--text); font-size: 1.05rem; }
+    .resumo ul { list-style: none; padding-left: 0; margin: 0; }
+    .resumo li { position: relative; padding-left: 1.6em; }
+    .resumo li::before { content: "✔"; position: absolute; left: 0; color: var(--ok); font-weight: 800; }
+    .tabela { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: .9rem; }
+    .tabela th, .tabela td { border: 1px solid var(--line); padding: 8px; text-align: left; vertical-align: top; }
+    .tabela th { background: var(--soft); }
+    .rolagem { overflow-x: auto; }
+    /* Telas estreitas: cada linha da tabela vira um quadro, com o nome de cada coluna acima do texto. */
+    @media (max-width: 600px) {
+      .tabela thead { display: none; }
+      .tabela, .tabela tbody { display: block; }
+      .tabela tr { display: block; margin-bottom: 12px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--card); }
+      .tabela td { display: block; border: 0; border-bottom: 1px solid var(--line); padding: 8px 12px; }
+      .tabela td:last-child { border-bottom: 0; }
+      .tabela td::before { content: attr(data-rotulo); display: block; margin-bottom: 2px; color: var(--muted); font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+    }
+    .rodape { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--line); text-align: center; font-size: .92rem; }
+    .rodape a { margin: 0 8px; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="topo">
+      <img src="icon-header.png?v=3" alt="" width="512" height="512" decoding="async">
+      <h1>Política de Privacidade</h1>
+      <p class="atualizacao">NoteStyle · Versão 1.0 · Última atualização: 24 de outubro de 2026</p>
+    </div>
+
+    <section class="resumo">
+      <h2>Resumo em linguagem simples</h2>
+      <ul>
+        <li>Não há conta, anúncios, rastreadores nem ferramentas de análise de uso.</li>
+        <li>Seus textos, notas, pesquisas salvas e backups ficam <strong>no seu aparelho</strong>.</li>
+        <li><strong>Nada é publicado</strong> em lugar público: o NoteStyle não posta, não compartilha e não divulga o que você escreve.</li>
+        <li>Só sai algo do aparelho quando você usa um recurso que precisa disso (IA, leitura em voz alta, consulta ao wol.jw.org), e apenas o necessário para aquele pedido.</li>
+        <li>O backup do JW Library <strong>nunca é enviado</strong>: ele é lido e editado só no aparelho.</li>
+        <li>Você pode apagar tudo limpando os dados do aplicativo (ou do navegador).</li>
+      </ul>
+    </section>
+
+    <h2>1. Quem somos</h2>
+    <p>O NoteStyle é desenvolvido por <strong>Carvalho Apps — Fernando S. Carvalho</strong> (Brasil), que é o controlador dos dados tratados por este aplicativo, nos termos da Lei Geral de Proteção de Dados (LGPD, Lei nº 13.709/2018). Para qualquer assunto sobre privacidade, escreva para <a href="mailto:carvalhofsc1@gmail.com">carvalhofsc1@gmail.com</a> ou chame no WhatsApp <a href="https://wa.me/5564981808090">(64) 98180-8090</a>. Esse mesmo contato atende como encarregado pelo tratamento de dados pessoais.</p>
+    <p>O NoteStyle é um aplicativo independente: não tem vínculo com a Watch Tower Bible and Tract Society of Pennsylvania, com o site JW.ORG nem com o aplicativo JW Library.</p>
+
+    <h2>2. Quais dados tratamos e para quê</h2>
+
+    <h3>2.1 Dados que ficam só no seu aparelho</h3>
+    <p>Guardados no armazenamento local do navegador ou do aplicativo (localStorage/IndexedDB), sem sair do aparelho:</p>
+    <ul>
+      <li>textos que você digita ou cola, modelos, rascunhos e preferências (tema, formatação, opções de IA, limites de uso);</li>
+      <li>pesquisas e respostas salvas (as 60 mais recentes), esboços importados por você e dados temporários para agilizar o aplicativo (títulos, perguntas, semanas de estudo, textos do dia);</li>
+      <li>os códigos de acesso que você informou em Ajustes;</li>
+      <li>o <strong>backup do JW Library</strong>, quando você abre um: ele é lido e editado na memória do aparelho, e o arquivo novo é gerado e baixado por você. Ele não é enviado a nenhum servidor.</li>
+    </ul>
+    <p><strong>Finalidade:</strong> fazer o aplicativo funcionar e lembrar das suas escolhas. <strong>Base legal:</strong> execução do serviço que você pediu (LGPD, art. 7º, V). Esses dados ficam sob o seu controle e podem ser apagados a qualquer momento (item 8).</p>
+
+    <h3>2.2 Dados enviados quando você usa recursos específicos</h3>
+    <p>Todo envio é feito por conexão segura (HTTPS), ao servidor do NoteStyle, e só ocorre quando você toca no botão correspondente.</p>
+    <div class="rolagem">
+      <table class="tabela">
+        <thead>
+          <tr><th>Recurso</th><th>O que é enviado</th><th>Para quem</th><th>Para quê</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td data-rotulo="Recurso">Sugestões de formatação com IA; respostas a partir de texto colado</td>
+            <td data-rotulo="O que é enviado">O texto do campo (ou trecho colado), suas opções de formatação e a orientação extra que você escrever</td>
+            <td data-rotulo="Para quem">Servidor do NoteStyle → Anthropic (IA Claude)</td>
+            <td data-rotulo="Para quê">Gerar as sugestões e as respostas</td>
+          </tr>
+          <tr>
+            <td data-rotulo="Recurso">Reuniões: comentários (A Sentinela, Joias Espirituais, Estudo Bíblico), perguntas para dirigir, esboços de discursos, comentários do texto diário</td>
+            <td data-rotulo="O que é enviado">Semana, parágrafos ou tema escolhidos, suas opções, a orientação extra, o código de acesso e, nos esboços, o texto/esboço necessário. O servidor lê o wol.jw.org e entrega à IA só o trecho pedido</td>
+            <td data-rotulo="Para quem">Servidor do NoteStyle → wol.jw.org (leitura) e Anthropic (IA)</td>
+            <td data-rotulo="Para quê">Montar o material e gerar a resposta</td>
+          </tr>
+          <tr>
+            <td data-rotulo="Recurso">Leitura em voz alta</td>
+            <td data-rotulo="O que é enviado">O texto a ser lido (ou o trecho selecionado)</td>
+            <td data-rotulo="Para quem">Servidor do NoteStyle → Google Cloud (Text-to-Speech / Gemini)</td>
+            <td data-rotulo="Para quê">Gerar o áudio</td>
+          </tr>
+          <tr>
+            <td data-rotulo="Recurso">Texto diário</td>
+            <td data-rotulo="O que é enviado">A data escolhida e o código de acesso</td>
+            <td data-rotulo="Para quem">Servidor do NoteStyle → wol.jw.org</td>
+            <td data-rotulo="Para quê">Ler o texto do dia</td>
+          </tr>
+          <tr>
+            <td data-rotulo="Recurso">Backup do JW Library (títulos e perguntas)</td>
+            <td data-rotulo="O que é enviado">Somente os números dos documentos e das edições (nunca o conteúdo das suas notas)</td>
+            <td data-rotulo="Para quem">Servidor do NoteStyle → wol.jw.org</td>
+            <td data-rotulo="Para quê">Mostrar o nome do artigo, a semana de estudo e a pergunta de cada caixa de resposta</td>
+          </tr>
+          <tr>
+            <td data-rotulo="Recurso">Exportar esboço para Word</td>
+            <td data-rotulo="O que é enviado">As referências bíblicas do esboço (o arquivo é montado no aparelho)</td>
+            <td data-rotulo="Para quem">Servidor do NoteStyle</td>
+            <td data-rotulo="Para quê">Obter o texto dos versículos</td>
+          </tr>
+          <tr>
+            <td data-rotulo="Recurso">Conferência de códigos de acesso</td>
+            <td data-rotulo="O que é enviado">O código que você digitou</td>
+            <td data-rotulo="Para quem">Servidor do NoteStyle</td>
+            <td data-rotulo="Para quê">Confirmar se o código é válido (não é gravado)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>Importante:</strong> os textos que você envia à IA ou à voz podem conter dados pessoais ou, dependendo do assunto, informações que revelam crenças religiosas. <strong>Não envie dados pessoais ou sigilosos seus ou de outras pessoas</strong> (nomes, endereços, telefones, informações de saúde, relatos reservados). O NoteStyle não lê o conteúdo para outros fins e não guarda esses textos no servidor.</p>
+    <p><strong>Base legal:</strong> consentimento, manifestado quando você toca no botão que envia o texto (LGPD, arts. 7º, I e 11, I), e execução do serviço pedido. Você pode deixar de usar esses recursos a qualquer momento; o restante do aplicativo continua funcionando.</p>
+
+    <h3>2.3 Dados técnicos automáticos</h3>
+    <ul>
+      <li><strong>Endereço IP e dados de conexão</strong> chegam ao servidor e à plataforma de hospedagem, como em qualquer site. Usamos o IP só para limitar a quantidade de pedidos por hora e proteger o serviço contra abuso (contador temporário na memória do servidor), com base no legítimo interesse de segurança (LGPD, art. 10).</li>
+      <li><strong>Registros técnicos de funcionamento</strong> (tamanhos, tempos, quantidade de itens, mensagens de erro) ajudam a corrigir problemas. Eles não incluem o conteúdo dos seus textos; em caso de erro, pequenos trechos da resposta da IA podem aparecer nos registros para diagnóstico.</li>
+      <li><strong>Bibliotecas de código aberto</strong> (JSZip e sql.js) são baixadas do serviço cdnjs (Cloudflare) apenas quando você abre um backup do JW Library; nesse momento o endereço IP é visto por esse serviço.</li>
+    </ul>
+
+    <h2>3. O que o NoteStyle não faz</h2>
+    <ul>
+      <li>Não exige conta, nome, e-mail, telefone ou localização.</li>
+      <li>Não exibe anúncios e não usa publicidade comportamental.</li>
+      <li>Não usa ferramentas de análise, rastreamento ou impressão digital do aparelho.</li>
+      <li>Não vende, aluga nem compartilha dados com fins de marketing.</li>
+      <li>Não publica nada em redes sociais, fóruns ou outros locais públicos.</li>
+      <li>Não cria perfil seu nem toma decisões automatizadas sobre você: as respostas da IA são apenas sugestões que você revisa.</li>
+    </ul>
+
+    <h2>4. Dados pessoais sensíveis</h2>
+    <p>O NoteStyle é usado, em geral, por pessoas ligadas a uma religião, e o conteúdo que você escreve pode revelar convicção religiosa, que a LGPD considera dado pessoal sensível. Por isso: (a) <strong>não coletamos</strong> informações de identificação nem relacionamos o conteúdo a você; (b) o que você escreve fica no seu aparelho; (c) só enviamos algo a terceiros quando você pede um recurso de IA ou de voz, e apenas o texto necessário; e (d) recomendamos que você não inclua dados pessoais ou reservados.</p>
+
+    <h2>5. Com quem os dados são compartilhados</h2>
+    <p>Só com os prestadores de serviço que realizam o trabalho pedido, na condição de operadores, e apenas durante o uso do recurso:</p>
+    <ul>
+      <li><strong>Vercel Inc.</strong> (EUA) — hospedagem do aplicativo e das funções do servidor. <a href="https://vercel.com/legal/privacy-policy" rel="noopener noreferrer">Política de privacidade</a>.</li>
+      <li><strong>Anthropic PBC</strong> (EUA) — IA (Claude), que gera as sugestões e respostas a partir do texto enviado. <a href="https://www.anthropic.com/legal/privacy" rel="noopener noreferrer">Política de privacidade</a>.</li>
+      <li><strong>Google LLC</strong> (EUA) — leitura em voz alta (Google Cloud Text-to-Speech). <a href="https://policies.google.com/privacy" rel="noopener noreferrer">Política de privacidade</a>.</li>
+      <li><strong>Cloudflare, Inc.</strong> (EUA) — entrega das bibliotecas de código aberto pelo cdnjs. <a href="https://www.cloudflare.com/privacypolicy/" rel="noopener noreferrer">Política de privacidade</a>.</li>
+      <li><strong>wol.jw.org</strong> (Biblioteca on-line) — site consultado pelo nosso servidor. Os pedidos a ele saem do servidor do NoteStyle, não do seu aparelho; o seu endereço IP não é repassado.</li>
+    </ul>
+    <p>Esses prestadores têm suas próprias políticas e podem manter registros pelo prazo que definirem. Como os servidores ficam fora do Brasil, ocorre transferência internacional de dados, que realizamos com base no seu consentimento específico e destacado ao usar o recurso e na necessidade de execução do serviço pedido (LGPD, art. 33).</p>
+    <p>Também podemos divulgar informações se uma lei ou ordem judicial exigir.</p>
+
+    <h2>6. Por quanto tempo guardamos</h2>
+    <ul>
+      <li><strong>No aparelho:</strong> até você apagar (limpando os dados do aplicativo ou do navegador, ou removendo o aplicativo).</li>
+      <li><strong>No servidor do NoteStyle:</strong> o conteúdo dos seus pedidos é processado na hora e não é gravado. Ficam guardadas somente as configurações do administrador (instruções da IA, limites e escolhas de voz), que não contêm dados de usuários.</li>
+      <li><strong>Nos prestadores (Vercel, Anthropic, Google, Cloudflare):</strong> pelo prazo previsto em suas respectivas políticas.</li>
+    </ul>
+
+    <h2>7. Segurança</h2>
+    <p>Usamos conexão criptografada (HTTPS) em todos os envios, códigos de acesso para os recursos que consomem serviços pagos, limite de pedidos por hora e restrição de origem das requisições ao servidor. Nenhum sistema é totalmente imune a falhas; por isso, evite enviar informações reservadas.</p>
+
+    <h2>8. Seus direitos</h2>
+    <p>Nos termos do art. 18 da LGPD, você pode pedir: confirmação de que tratamos dados seus, acesso, correção, anonimização, bloqueio ou eliminação de dados desnecessários, portabilidade, informação sobre os compartilhamentos e a revogação do consentimento. Como o NoteStyle não mantém dados que identifiquem você, na prática quase tudo está no seu aparelho e você mesmo exerce esses direitos:</p>
+    <ul>
+      <li><strong>apagar</strong> pesquisas salvas individualmente, dentro do aplicativo (Reuniões → Pesquisas e respostas salvas), ou <strong>apagar tudo</strong> limpando os dados do aplicativo/navegador;</li>
+      <li><strong>revogar o consentimento</strong> deixando de usar os recursos de IA e de voz e apagando seus códigos em Ajustes → Autorização de acessos.</li>
+    </ul>
+    <p>Para qualquer pedido ou dúvida, use o contato do item 1. Você também pode reclamar à Autoridade Nacional de Proteção de Dados (ANPD).</p>
+
+    <h2>9. Crianças e adolescentes</h2>
+    <p>O NoteStyle não é voltado a crianças e não coleta intencionalmente dados de menores de 13 anos. O uso por adolescentes deve ocorrer com a ciência e a orientação dos pais ou responsáveis, que também podem falar conosco sobre qualquer dado que tenha sido enviado.</p>
+
+    <h2>10. Cookies e armazenamento local</h2>
+    <p>O NoteStyle não usa cookies de rastreamento nem de publicidade. O armazenamento local do aparelho serve apenas para guardar suas preferências, seus textos e suas pesquisas, como descrito no item 2.1.</p>
+
+    <h2>11. Links para outros sites</h2>
+    <p>O aplicativo contém links para wol.jw.org e jw.org. Esses sites têm suas próprias regras de privacidade e de uso, que não controlamos.</p>
+
+    <h2>12. Alterações desta política</h2>
+    <p>Podemos atualizar esta política para refletir mudanças no aplicativo ou na lei. A data da última atualização aparece no alto desta página; mudanças relevantes serão informadas no aplicativo. O uso continuado depois da atualização indica que você está ciente da nova versão.</p>
+
+    <h2>13. Lei aplicável</h2>
+    <p>Esta política é regida pelas leis do Brasil. Fica eleito o foro do domicílio do titular dos dados para dirimir questões dela decorrentes, quando a lei assim determinar.</p>
+
+    <p class="rodape">
+      <a href="sobre.html">Sobre</a> · <a href="termos.html">Termos de Uso</a> · <a href="index.html">← Voltar ao aplicativo</a>
+    </p>
+  </main>
+</body>
+</html>

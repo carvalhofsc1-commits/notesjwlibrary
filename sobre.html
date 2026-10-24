@@ -7,7 +7,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
-  <meta name="description" content="Sobre o NoteStyle — conversor que troca letras por caracteres Unicode parecidos com negrito, itálico e símbolos, para destacar notas em qualquer aplicativo.">
+  <meta name="description" content="Sobre o NoteStyle: formatação de notas, preparação para as reuniões com apoio de IA, consulta ao wol.jw.org e privacidade. Aplicativo independente.">
   <meta name="theme-color" content="#e7ecf6">
   <script>
     // Aplica o tema salvo antes do corpo renderizar, para não piscar o tema errado.
@@ -31,6 +31,7 @@
       --brand: #5b3fb5; /* violeta do logotipo, escurecido para dar contraste no fundo claro */
       --accent-dark: #1d4ed8;
       --soft: #eef2ff;
+      --ok: #15803d;
       --shadow: rgba(0, 0, 0, .05);
     }
 
@@ -46,6 +47,7 @@
         --brand: #b7a8f0; /* violeta do logotipo, claro para o fundo escuro */
         --accent-dark: #2563eb;
         --soft: #1e3a5f;
+        --ok: #4ade80;
         --shadow: rgba(0, 0, 0, .4);
       }
     }
@@ -61,6 +63,7 @@
       --brand: #b7a8f0; /* violeta do logotipo, claro para o fundo escuro */
       --accent-dark: #2563eb;
       --soft: #1e3a5f;
+      --ok: #4ade80;
       --shadow: rgba(0, 0, 0, .4);
     }
 
@@ -143,6 +146,15 @@
       text-align: center;
     }
 
+    .notice p {
+      margin: 0 0 10px;
+      color: var(--muted);
+      font-size: .92rem;
+      line-height: 1.5;
+    }
+
+    .notice p:last-child { margin-bottom: 0; }
+
     .notice ul {
       margin: 0;
       padding-left: 1.2em;
@@ -155,13 +167,22 @@
 
     .notice strong { color: var(--text); }
 
+    .notice a { color: var(--accent); text-underline-offset: 2px; }
+    .notice a:hover { color: var(--accent-dark); }
+
+    /* Quadro da privacidade: destacado, com marcas de confirmação. */
+    .notice.privacidade { border-color: var(--ok); }
+    .notice.privacidade ul { list-style: none; padding-left: 0; }
+    .notice.privacidade li { position: relative; padding-left: 1.6em; }
+    .notice.privacidade li::before { content: "✔"; position: absolute; left: 0; color: var(--ok); font-weight: 800; }
+
     .card {
       background: var(--card-tint);
       border: 1px solid var(--line);
       border-radius: 16px;
       padding: 18px 16px;
       margin-top: 24px;
-      max-width: 520px; /* mesma largura do quadro de limitações, acima */
+      max-width: 520px; /* mesma largura dos quadros acima */
       margin-left: auto;
       margin-right: auto;
       box-shadow: 0 8px 22px var(--shadow);
@@ -215,18 +236,75 @@
     .dev-contacts a:hover { color: var(--accent-dark); }
 
     .wa-icon { flex: 0 0 auto; }
+
+    .legal-links {
+      margin: 22px 0 0;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px 18px;
+      font-size: .92rem;
+    }
+
+    .legal-links a { color: var(--accent); text-underline-offset: 2px; }
+    .legal-links a:hover { color: var(--accent-dark); }
   </style>
 </head>
 <body>
   <main>
     <img src="icon-header.png?v=3" alt="" class="about-logo" width="512" height="512" decoding="async">
     <h1 class="about-name">Note<span class="brand-accent">Style</span></h1>
-    <span class="pill">v6.1.6</span>
+    <span class="pill">v6.1.7</span>
 
-    <p class="about-text">Este aplicativo não aplica formatação real. Ele troca as letras por caracteres Unicode parecidos com negrito, itálico, círculos, caixas e símbolos, para dar aparência de destaque em campos que aceitam apenas texto.</p>
+    <p class="about-text">O NoteStyle ajuda você a preparar notas e reuniões: formata textos com destaques, apoia a preparação de comentários, perguntas e esboços de discursos com a ajuda de IA e organiza as suas pesquisas e as notas do backup do JW Library.</p>
+
+    <section class="notice">
+      <h2>🧰 O que você pode fazer</h2>
+      <ul>
+        <li><strong>Formatar textos</strong> com negrito, itálico, fontes, emojis, listas e modelos, com sugestões de uma IA se você quiser.</li>
+        <li><strong>Texto diário:</strong> ler, ouvir em voz alta e pedir comentários adicionais.</li>
+        <li><strong>Reuniões:</strong> preparar comentários (A Sentinela, Joias Espirituais e Estudo Bíblico de Congregação), perguntas para dirigir e esboços de discursos, com exportação para Word.</li>
+        <li><strong>Pesquisas e respostas salvas:</strong> o que a IA preparou fica guardado só neste aparelho.</li>
+        <li><strong>Backup do JW Library:</strong> ver, editar e criar notas e respostas no arquivo de backup, que é processado só no seu aparelho.</li>
+      </ul>
+    </section>
+
+    <section class="notice">
+      <h2>📚 De onde vêm as informações</h2>
+      <p>As matérias das reuniões — artigo de estudo de A Sentinela, apostila Vida e Ministério, Estudo Bíblico de Congregação, leitura da Bíblia da semana, texto diário e as pesquisas por artigos — são <strong>consultadas no site wol.jw.org</strong> (Biblioteca on-line), no momento em que você pede.</p>
+      <ul>
+        <li>A consulta é feita pelo servidor do NoteStyle, que lê a página, separa só o trecho pedido (por exemplo, os parágrafos escolhidos) e o entrega ao aplicativo e, quando você pede uma resposta, à IA.</li>
+        <li>O NoteStyle <strong>não mantém uma biblioteca própria</strong> dessas publicações nem as republica: guarda, por pouco tempo, só o necessário para agilizar (como títulos e números de parágrafos).</li>
+        <li>Os versículos e os verbetes do Estudo Perspicaz que aparecem nas respostas vêm de uma base de consulta de uso restrito do servidor, usada apenas para buscar o texto pedido.</li>
+        <li>A IA só trabalha com o trecho que o servidor entrega a ela (e, em último caso, com páginas do próprio wol.jw.org).</li>
+      </ul>
+    </section>
+
+    <section class="notice privacidade">
+      <h2>🔒 Sua privacidade</h2>
+      <ul>
+        <li><strong>Nada é publicado.</strong> O NoteStyle não envia seus textos, notas, pesquisas ou backups para nenhum local público (redes sociais, fóruns, sites ou bancos de dados abertos).</li>
+        <li><strong>Sem conta, sem anúncios e sem rastreamento.</strong> Não pedimos nome, e-mail nem telefone e não usamos ferramentas de análise ou de publicidade.</li>
+        <li><strong>Seus dados ficam no aparelho:</strong> textos, preferências, modelos, pesquisas salvas e códigos de acesso. Eles somem se você limpar os dados do aplicativo ou do navegador.</li>
+        <li><strong>O backup do JW Library nunca sai do aparelho.</strong> O arquivo é aberto, editado e gerado aqui mesmo. Para mostrar títulos e perguntas, o aplicativo pede ao servidor apenas os números dos documentos.</li>
+        <li><strong>O que sai do aparelho é só o que você pede.</strong> Ao usar a IA ou a leitura em voz alta, o texto necessário é enviado, por conexão segura, ao servidor do NoteStyle e aos serviços que fazem o trabalho: Anthropic (IA — Claude) e Google (voz). Não envie dados pessoais nem sigilosos.</li>
+      </ul>
+      <p style="margin-top:12px">Detalhes completos na <a href="privacidade.html">Política de Privacidade</a>.</p>
+    </section>
+
+    <section class="notice">
+      <h2>🤖 Sobre as respostas da IA</h2>
+      <p>As respostas da IA são sugestões de apoio ao seu estudo e <strong>podem conter erros ou imprecisões</strong>. Confira sempre nas publicações e na Bíblia antes de usar e adapte com as suas próprias palavras. O uso é por sua conta e responsabilidade.</p>
+    </section>
+
+    <section class="notice">
+      <h2>ℹ️ Aplicativo independente</h2>
+      <p>O NoteStyle é um aplicativo independente, feito por um desenvolvedor particular. <strong>Não é um produto oficial e não tem vínculo, patrocínio ou aprovação</strong> da Watch Tower Bible and Tract Society of Pennsylvania, do site JW.ORG ou do aplicativo JW Library. Os nomes e os conteúdos dessas organizações pertencem aos seus proprietários e são consultados apenas para estudo pessoal.</p>
+    </section>
 
     <section class="notice">
       <h2>⚠️ Limitações do uso de caracteres Unicode</h2>
+      <p>O NoteStyle não aplica formatação real: ele troca as letras por caracteres Unicode parecidos com negrito, itálico, círculos, caixas e símbolos, para dar aparência de destaque em campos que aceitam apenas texto.</p>
       <ul>
         <li><strong>Acentos e cedilha se perdem.</strong> Os caracteres de negrito, itálico e outros estilos não existem com acento, então <em>á, ã, â, é, ê, í, ó, õ, ú, ü, ç</em> viram a letra simples (por exemplo, “Jeová” fica “𝐉𝐞𝐨𝐯𝐚”).</li>
         <li><strong>Não dá para voltar ao original.</strong> O botão Remover devolve letras comuns, mas sem os acentos que já foram perdidos. Guarde uma cópia do texto original antes de formatar.</li>
@@ -234,6 +312,11 @@
         <li><strong>O texto deixa de ser “texto comum”.</strong> Buscas, corretor ortográfico e leitores de tela podem não reconhecer as palavras formatadas, e alguns aparelhos ou aplicativos podem mostrar quadradinhos se não tiverem suporte aos caracteres.</li>
         <li><strong>Pontuação, espaços e emojis</strong> não são alterados.</li>
       </ul>
+    </section>
+
+    <section class="notice">
+      <h2>🧩 Créditos</h2>
+      <p>Leitura e gravação do backup com as bibliotecas de código aberto JSZip e sql.js. A organização das notas do backup foi inspirada no JWLManager (licença MIT). Respostas de IA: Claude, da Anthropic. Leitura em voz alta: Google Cloud. Hospedagem: Vercel.</p>
     </section>
 
     <section class="card">
@@ -250,6 +333,11 @@
         <a href="mailto:carvalhofsc1@gmail.com">✉️ carvalhofsc1@gmail.com</a>
       </div>
     </section>
+
+    <p class="legal-links">
+      <a href="privacidade.html">🔒 Política de Privacidade</a>
+      <a href="termos.html">📄 Termos de Uso</a>
+    </p>
 
     <a class="back-link" href="index.html">← Voltar</a>
   </main>
