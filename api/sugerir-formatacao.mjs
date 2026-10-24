@@ -2669,8 +2669,8 @@ async function textosDosVersiculos(res, body) {
 
 // ---------- Joias espirituais ----------
 // O servidor lê a leitura da Bíblia da semana (capítulos com os versículos e os trechos das publicações do Índice das
-// Publicações) e a seção "Joias espirituais" da apostila (api/_wol.mjs). A IA escreve até 2 joias por capítulo e a
-// resposta à pergunta da apostila, no estilo das respostas do estudo.
+// Publicações) e a seção "Joias espirituais" da apostila (api/_wol.mjs). A IA escreve até o limite de joias por capítulo
+// (P.limites.maxJoiasPorCapitulo, 2 por padrão) e a resposta à pergunta da apostila, no estilo das respostas do estudo.
 
 const DestaqueJoia = z.object({ trecho: z.string(), tipo: z.enum(TIPOS), estilo: z.enum(ESTILOS).nullable(), maiusculas: z.boolean() });
 const SaidaJoias = z.object({
@@ -2760,7 +2760,7 @@ async function responderJoias(res, body, P) {
   let mensagem =
     blocoOrientacao(opcoes, ajuste, P) +
     preferenciasDaResposta(opcoes, P, sep) +
-    `\n\nPEDIDO: pergunta da apostila ${pergunta ? "ATIVA" : "INATIVA"}; joias da leitura ${comLeitura ? "ATIVAS (no máximo 2 por capítulo)" : "INATIVAS"}.\n\n` +
+    `\n\nPEDIDO: pergunta da apostila ${pergunta ? "ATIVA" : "INATIVA"}; joias da leitura ${comLeitura ? `ATIVAS (no máximo ${P.limites.maxJoiasPorCapitulo} por capítulo)` : "INATIVAS"}.\n\n` +
     textoDasJoias(joias, { pergunta: Boolean(pergunta), leitura: comLeitura }) +
     lembreteFinal(opcoes, ajuste, P);
   if (modo && anteriores) {
@@ -2790,7 +2790,7 @@ async function responderJoias(res, body, P) {
       itemPergunta.referencias = [...new Set([...pergunta.referencias, ...itemPergunta.referencias])];
       if (!itemPergunta.resposta) itemPergunta = null;
     }
-    // No máximo 2 joias por capítulo, na ordem da leitura, e nenhuma sobre o versículo da pergunta da apostila (ela já
+    // No máximo P.limites.maxJoiasPorCapitulo joias por capítulo, na ordem da leitura, e nenhuma sobre o versículo da pergunta da apostila (ela já
     // tem a resposta própria). Os capítulos da leitura são de um livro só, então basta comparar capítulo e versículo.
     const chave = (t) => chaveDeBusca(t).replace(/\s+/g, "");
     const versosDe = (ref) => {
@@ -2811,7 +2811,7 @@ async function responderJoias(res, body, P) {
     const porCapitulo = new Map(joias.capitulos.map((c) => [chave(c.nome), []]));
     for (const j of comLeitura ? saida.joias : []) {
       const lista = porCapitulo.get(chave(j.capitulo)) || [...porCapitulo.values()].find((l, i) => chave(j.referencia).startsWith(chave(joias.capitulos[i].nome)));
-      if (!lista || lista.length >= 2 || repetePergunta(j.referencia)) continue;
+      if (!lista || lista.length >= P.limites.maxJoiasPorCapitulo || repetePergunta(j.referencia)) continue;
       const item = montarItem({ ...j, paragrafos: limparLinha(limparTrecho(j.referencia), 20), referencias: [] }, opcoes, permitidos, P.limites, sep);
       if (item.resposta) lista.push({ ...item, capitulo: joias.capitulos.find((c) => porCapitulo.get(chave(c.nome)) === lista).nome });
     }

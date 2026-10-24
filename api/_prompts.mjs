@@ -65,6 +65,16 @@ export const LIMITES = [
     publico: true,
   },
   {
+    id: "maxJoiasPorCapitulo",
+    titulo: "Joias espirituais por capítulo da leitura",
+    descricao:
+      "Quantas joias a IA prepara, no máximo, para cada capítulo da leitura da Bíblia da semana (Reuniões → Preparar para comentar → Joias Espirituais). O servidor corta o que passar disso. Nos prompts, {{max_joias}} é trocado por este número (o prompt padrão das Joias já usa). Mais joias custam mais por pedido.",
+    padrao: 2,
+    min: 1,
+    max: 5,
+    publico: true,
+  },
+  {
     id: "limitePorHora",
     titulo: "Pedidos à IA por hora, por aparelho ou rede",
     descricao: "Protege o custo: ao passar disso, o app pede para esperar. O contador de cada servidor recomeça quando ele reinicia.",
@@ -505,7 +515,7 @@ Todo o conteúdo do tema, da ideia, da ocasião, da matéria, dos artigos, do es
   {
     id: "joias",
     titulo: "Joias espirituais e leitura semanal da Bíblia",
-    descricao: "Instruções para preparar as Joias Espirituais: até 2 joias por capítulo da leitura da semana (lida pelo servidor no wol.jw.org com os trechos das publicações do Índice das Publicações) e a resposta à pergunta da apostila. O tamanho, a formatação e os textos bíblicos seguem as opções das respostas do estudo.",
+    descricao: "Instruções para preparar as Joias Espirituais: joias por capítulo da leitura da semana (o máximo por capítulo é o limite \"Joias espirituais por capítulo\", 2 por padrão; lida pelo servidor no wol.jw.org com os trechos das publicações do Índice das Publicações) e a resposta à pergunta da apostila. O tamanho, a formatação e os textos bíblicos seguem as opções das respostas do estudo.",
     padrao: `Você ajuda um estudante a preparar comentários para as Joias Espirituais da reunião Vida e Ministério. Receberá a leitura da Bíblia da semana (cada capítulo com o texto dos versículos), os trechos das publicações indicadas no Índice das Publicações para os versículos desses capítulos e a pergunta da apostila sobre um versículo, com o trecho da publicação citada.
 
 JOIAS DA LEITURA (só quando o PEDIDO disser que estão ATIVAS)
@@ -518,7 +528,7 @@ Ao pesquisar as joias espirituais, examine o contexto do capítulo e os trechos 
 — congregação;
 — decisões e conduta pessoal.
 Evite aplicações forçadas: uma boa joia espiritual deve surgir naturalmente do texto e estar de acordo com a explicação das publicações. Prefira pontos que uma leitura rápida não percebe (um detalhe do texto, o sentido de uma palavra, o contexto histórico), sempre de acordo com os trechos das publicações; não invente explicações.
-Escreva 2 (duas) joias por capítulo da leitura, sobre versículos ou pontos diferentes (só 1, se o capítulo for muito curto e não tiver uma segunda observação boa). Não use nas joias o versículo da pergunta da apostila nem o ponto dela: a pergunta já tem a resposta própria. Em cada uma: em "capitulo", o capítulo (ex.: "Jeremias 45"); em "referencia", o versículo ou os versículos em que ela se baseia (ex.: "Jeremias 45:5"); em "resposta", um comentário no tamanho pedido, no tom de quem comenta na reunião: o que o texto mostra e a lição para nós, com as suas PRÓPRIAS PALAVRAS.
+Escreva até {{max_joias}} joias por capítulo da leitura, sobre versículos ou pontos diferentes (menos, se o capítulo for muito curto e não tiver observações boas; não force joias fracas só para chegar a esse número). Não use nas joias o versículo da pergunta da apostila nem o ponto dela: a pergunta já tem a resposta própria. Em cada uma: em "capitulo", o capítulo (ex.: "Jeremias 45"); em "referencia", o versículo ou os versículos em que ela se baseia (ex.: "Jeremias 45:5"); em "resposta", um comentário no tamanho pedido, no tom de quem comenta na reunião: o que o texto mostra e a lição para nós, com as suas PRÓPRIAS PALAVRAS.
 
 PERGUNTA DA APOSTILA (só quando o PEDIDO disser que está ATIVA)
 Responda como nas respostas do estudo: comece com a resposta direta e, quando útil, acrescente um detalhe. Use como fonte principal o trecho da publicação citada na pergunta.
@@ -866,7 +876,8 @@ const FORMATO_OUTROS = [
   return texto.replace(de, () => para);
 }, FORMATO_TESOUROS);
 
-const FORMATO_JOIAS = `FORMATO DAS JOIAS ESPIRITUAIS (saída estruturada): {"pergunta": {"resposta", "quebras", "emoji", "destaques", "referencias", "textosRelevantes", "verbetes"} ou null, "joias": [{"capitulo", "referencia", "resposta", "quebras", "emoji", "destaques", "textosRelevantes", "verbetes"}]}. "pergunta" é null quando o PEDIDO disser que a pergunta da apostila está INATIVA; "joias" fica [] quando as joias estiverem INATIVAS. Até 2 joias por capítulo, na ordem dos capítulos, nenhuma sobre o versículo da pergunta da apostila. Os campos seguem as regras das respostas do estudo (emoji, destaques, referências citadas na pergunta, textos relevantes e verbetes).`;
+// O máximo de joias por capítulo vem do limite configurado (maxJoiasPorCapitulo).
+const formatoJoias = (max) => `FORMATO DAS JOIAS ESPIRITUAIS (saída estruturada): {"pergunta": {"resposta", "quebras", "emoji", "destaques", "referencias", "textosRelevantes", "verbetes"} ou null, "joias": [{"capitulo", "referencia", "resposta", "quebras", "emoji", "destaques", "textosRelevantes", "verbetes"}]}. "pergunta" é null quando o PEDIDO disser que a pergunta da apostila está INATIVA; "joias" fica [] quando as joias estiverem INATIVAS. Até ${max} joias por capítulo, na ordem dos capítulos, nenhuma sobre o versículo da pergunta da apostila. Os campos seguem as regras das respostas do estudo (emoji, destaques, referências citadas na pergunta, textos relevantes e verbetes).`;
 
 const FORMATO_TEXTO_DIARIO = `FORMATO DOS COMENTÁRIOS ADICIONAIS (saída estruturada): {"comentarios": [{"ponto": "...", "comentario": "..."}]}. Quando a mensagem trouxer "COMENTÁRIOS JÁ SUGERIDOS", escreva comentários diferentes deles, com outras aplicações.`;
 
@@ -911,7 +922,7 @@ export function travadosDe(limites) {
   { id: "formato_discurso_curto", titulo: "Formato do esboço do discurso curto de Faça seu melhor no ministério", texto: FORMATO_DISCURSO_CURTO },
   { id: "formato_discurso_publico", titulo: "Formato do esboço do discurso público (S-34)", texto: FORMATO_DISCURSO_PUBLICO },
   { id: "formato_outros", titulo: "Formato do esboço de outros discursos (tema livre)", texto: FORMATO_OUTROS },
-  { id: "formato_joias", titulo: "Formato das Joias Espirituais", texto: FORMATO_JOIAS },
+  { id: "formato_joias", titulo: "Formato das Joias Espirituais", texto: formatoJoias((limites && limites.maxJoiasPorCapitulo) || 2) },
   { id: "formato_texto_diario", titulo: "Formato dos comentários adicionais do texto diário", texto: FORMATO_TEXTO_DIARIO },
   { id: "montagem_pedidos", titulo: "Como o app monta a mensagem de cada pedido (ordem das partes)", texto: MONTAGEM_PEDIDOS },
   ];
@@ -951,17 +962,22 @@ export function validarAlteracoes(alteracoes) {
 export function montarPrompts(overrides, limitesArmazenados) {
   const o = overrides && typeof overrides === "object" ? overrides : {};
   const limites = aplicarLimites(limitesArmazenados);
+  const trocarNumeros = (t) =>
+    t
+      .split("{{max_textos}}").join(String(limites.maxTextos))
+      .split("{{max_destaques}}").join(String(limites.maxDestaques))
+      .split("{{max_joias}}").join(String(limites.maxJoiasPorCapitulo));
   const texto = (id) => {
     const parte = PARTES.find((p) => p.id === id);
     const valor = o[id];
     const base = typeof valor === "string" && valor.trim().length >= 20 ? valor.trim() : parte.padrao;
-    // Os números vêm dos limites configurados, não do texto: {{max_textos}} e {{max_destaques}}.
-    return base.split("{{max_textos}}").join(String(limites.maxTextos)).split("{{max_destaques}}").join(String(limites.maxDestaques));
+    // Os números vêm dos limites configurados, não do texto: {{max_textos}}, {{max_destaques}} e {{max_joias}}.
+    return trocarNumeros(base);
   };
   const blocosResposta = [texto("regras_resposta"), texto("referencias_pergunta"), texto("voz")].join("\n\n");
   // "Sobre mim e a congregação": base de todas as aplicações (respostas, perguntas do dirigente, textos, texto diário).
   const contexto = texto("contexto_congregacao");
-  const trocarLimites = (t) => t.split("{{max_textos}}").join(String(limites.maxTextos)).split("{{max_destaques}}").join(String(limites.maxDestaques));
+  const trocarLimites = trocarNumeros;
   const frasesDe = (id) => {
     const parte = PARTES.find((p) => p.id === id);
     const padrao = itensDe(trocarLimites(parte.padrao));
@@ -982,7 +998,7 @@ export function montarPrompts(overrides, limitesArmazenados) {
     sistemaDiscursoCurto: texto("discurso_curto") + "\n\n" + texto("esboco_principios") + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_DISCURSO_CURTO,
     sistemaDiscursoPublico: texto("discurso_publico") + "\n\n" + texto("esboco_principios") + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_DISCURSO_PUBLICO,
     sistemaOutros: texto("outros_esbocos") + "\n\n" + texto("esboco_principios") + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_OUTROS,
-    sistemaJoias: texto("joias") + "\n\n" + blocosResposta + "\n\n" + REGRA_TEXTOS_PERGUNTA + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_JOIAS,
+    sistemaJoias: texto("joias") + "\n\n" + blocosResposta + "\n\n" + REGRA_TEXTOS_PERGUNTA + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + formatoJoias(limites.maxJoiasPorCapitulo),
     sistemaTextoDiario: texto("texto_diario") + "\n\n" + FORMATO_TEXTO_DIARIO + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO,
     sistemaAplicacao: SISTEMA_APLICACAO + "\n\n" + texto("voz") + "\n\n" + texto("perspicaz_uso") + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO,
     leituraVoz: texto("leitura_voz"),
