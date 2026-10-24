@@ -87,7 +87,7 @@ export async function lerCustoIa() {
     busca.append("group_by[]", "description");
     if (pagina) busca.set("page", pagina);
     const resposta = await fetch(`${URL_CUSTO}?${busca}`, {
-      headers: { "x-api-key": process.env.ANTHROPIC_ADMIN_KEY, "anthropic-version": "2023-06-01", "User-Agent": "NoteStyle/1.0 (https://notestyle.vercel.app)" },
+      headers: { "x-api-key": process.env.ANTHROPIC_ADMIN_KEY, "anthropic-version": "2023-06-01", "User-Agent": "NoteStyle/1.0 (https://notestyle.com.br)" },
       signal: AbortSignal.timeout(15_000),
     });
     let dados = null;

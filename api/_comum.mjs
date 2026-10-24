@@ -5,8 +5,10 @@ export function origemPermitida(origin) {
   if (!origin) return false;
   try {
     const { hostname } = new URL(origin);
-    // Nome antigo do projeto (notesjwlibrary) e o novo (notestyle), com os endereços de prévia de cada um.
+    // Domínio próprio (notestyle.com.br), nome antigo do projeto (notesjwlibrary) e o novo (notestyle), com os endereços de prévia de cada um.
     return (
+      hostname === "notestyle.com.br" ||
+      hostname === "www.notestyle.com.br" ||
       hostname === "notesjwlibrary.vercel.app" ||
       hostname === "notestyle.vercel.app" ||
       hostname === "localhost" ||

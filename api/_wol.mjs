@@ -11,7 +11,7 @@
 // na tela Início: ele também fica só na memória (algumas horas) e nunca é gravado.
 
 const BASE = "https://wol.jw.org";
-const AGENTE = "Mozilla/5.0 (compatible; NoteStyle/1.0; +https://notestyle.vercel.app)";
+const AGENTE = "Mozilla/5.0 (compatible; NoteStyle/1.0; +https://notestyle.com.br/sobre.html)";
 const MAX_BYTES = 1_500_000;
 const VALIDADE_MS = 10 * 60 * 1000;
 const lidos = new Map(); // url -> { quando, artigo }
