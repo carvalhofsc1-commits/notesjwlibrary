@@ -81,6 +81,8 @@ const ESTILOS = ["negrito", "italico", "negrito_italico"];
 // O gótico (fraktur) ficou de fora a pedido do usuário.
 // Regra fixa do usuário: só estas três. Script, largura cheia, letras circuladas, gótico e monoespaçado ficam de fora.
 const FONTES = ["doubleStruck", "sans", "squaredDark"];
+// Os tipos de citação bíblica saíram do app (as opções de textos bíblicos cuidam disso); continuam aceitos aqui só para uma instrução
+// salva por um administrador antes não derrubar a resposta. Todo destaque é tratado como "geral".
 const TIPOS = ["geral", "citacao_texto", "citacao_referencia"];
 // Os modelos de lista que o app já tem (seção "Inserir marcadores e numeradores de lista"). A IA escolhe um deles para
 // cada lista; quem escreve os marcadores e os números é o app.
@@ -172,7 +174,6 @@ function validarOpcoes(opcoes) {
     maiusculas: o.maiusculas === true,
     variarFontes: o.variarFontes === true,
     emoji: o.emoji === true,
-    citacoesBiblicas: o.citacoesBiblicas === true,
     usarListas: o.usarListas === true,
     separarIdeias: o.separarIdeias === true,
     separarFrases: o.separarFrases === true,
@@ -258,7 +259,6 @@ function descreverPreferencias(o, P) {
     f["Quantidade: " + o.intensidade],
     o.variarFontes ? trocar(f["Tipos de fonte: marcada"], { fontes: f["Catálogo de fontes"] }) : f["Tipos de fonte: desmarcada"],
     o.resumo ? trocar(f["Resumo: marcada"], { tamanho: f["Tamanho do resumo: " + NOME_TAMANHO[o.resumoTamanho]] }) : f["Resumo: desmarcada"],
-    f[o.citacoesBiblicas ? "Citações bíblicas: marcada" : "Citações bíblicas: desmarcada"],
     o.usarListas ? trocar(l["Listas: marcada"], { modelos_de_lista: l["Catálogo de listas"] }) : l["Listas: desmarcada"],
     f[o.separarIdeias ? "Espaçamento: marcada" : "Espaçamento: desmarcada"],
   ]
@@ -354,18 +354,6 @@ function sanearDestaques(destaques, texto, opcoes, estilosPermitidos, maxDestaqu
     const trecho = limparTrecho(d && d.trecho);
     if (!trecho || !texto.includes(trecho)) continue;
 
-    if (d.tipo === "citacao_texto" || d.tipo === "citacao_referencia") {
-      if (!opcoes.citacoesBiblicas) continue;
-      resultado.push({
-        trecho,
-        tipo: d.tipo,
-        estilo: d.tipo === "citacao_texto" ? "italico" : "negrito",
-        maiusculas: false,
-        fonte: null,
-      });
-      continue;
-    }
-
     const estilo = d.estilo && estilosPermitidos.has(d.estilo) ? d.estilo : null;
     const maiusculas = opcoes.maiusculas && d.maiusculas === true;
     let fonte = opcoes.variarFontes && FONTES.includes(d.fonte) ? d.fonte : null;
@@ -391,7 +379,6 @@ function descreverFormatacaoResposta(o, P, sep) {
     f[o.emoji ? "Emoji: marcada" : "Emoji: desmarcada"],
     f["Destaques: " + o.intensidade],
     sep ? trocar(f["Espaçamento: marcada"], { unidade: sep === "frases" ? "frase" : "ideia" }) : f["Espaçamento: desmarcada"],
-    f[o.citacoesBiblicas ? "Citações bíblicas: marcada" : "Citações bíblicas: desmarcada"],
   ]
     .filter(Boolean)
     .join("\n");
