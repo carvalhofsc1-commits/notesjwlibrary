@@ -1330,6 +1330,7 @@ async function lerEbc(res, body) {
     url: capitulo.url,
     quadros: QUADROS_EBC.map((q) => ({ id: q.id, nome: q.nome, perguntas: capitulo.perguntas.filter((p) => p.quadro === q.id).length })),
     trechos: capitulo.trechos.length,
+    imagens: capitulo.imagens || [],
   });
 }
 
@@ -1914,6 +1915,7 @@ async function lerTesourosDaSemana(res, body) {
     url: discurso.url,
     pontos: discurso.pontos.map((p) => ({ texto: p.texto, textos: p.referencias, fontes: p.citacoes.map((c) => c.citacao), fontesLidas: p.fontes.length })),
     reflexao: discurso.reflexao ? discurso.reflexao.texto : null,
+    imagens: discurso.imagens || [],
     textosBiblicos: await textosDaMateria(textosBiblicosDeTesouros(discurso)),
   });
 }
@@ -2065,6 +2067,7 @@ async function lerDiscursoCurtoDaSemana(res, body) {
     licao: discurso.licaoCitada ? { citacao: discurso.licaoCitada, titulo: discurso.licao ? discurso.licao.titulo : "" } : null,
     textos: discurso.referencias,
     pesquisa: discurso.pesquisa.length,
+    imagens: discurso.imagens || [],
     textosBiblicos: await textosDaMateria(textosBiblicosDoDiscursoCurto(discurso)),
   });
 }

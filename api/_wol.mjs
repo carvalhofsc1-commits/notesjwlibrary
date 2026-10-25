@@ -40,6 +40,25 @@ function semAcento(texto) {
   return texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 }
 
+// Imagens de uma página do wol.jw.org: cada <figure> traz a descrição (o texto "alt" da <img>, que o site guarda para leitores de tela e que vai
+// junto quando se copia um trecho que passa por cima da imagem) e a legenda (<figcaption>). Cada figura vira um parágrafo sintético "x-figura"
+// (com o texto "§figura§"), para entrar na ordem da página; as figuras ficam na lista, na mesma ordem.
+export function separarFiguras(html) {
+  const figuras = [];
+  const semFiguras = html.replace(/<figure\b[^>]*>([\s\S]*?)<\/figure>/g, (todo, interno) => {
+    const descricao = [...interno.matchAll(/<img\b[^>]*?\balt="([^"]*)"/g)].map((a) => textoDe(a[1])).filter(Boolean).join(" ");
+    const legenda = textoDe((interno.match(/<figcaption\b[^>]*>([\s\S]*?)<\/figcaption>/) || [])[1] || "");
+    figuras.push({ descricao: descricao.slice(0, 700), legenda: legenda.slice(0, 400) });
+    return `<p class="x-figura" data-fig="${figuras.length - 1}">§figura§</p>`;
+  });
+  return { html: semFiguras, figuras };
+}
+
+// As figuras que dizem alguma coisa (as decorativas não têm descrição nem legenda), no máximo 12.
+export function imagensUteis(figuras) {
+  return figuras.filter((f) => f.descricao || f.legenda).slice(0, 12);
+}
+
 async function baixar(url, timeoutMs) {
   const resposta = await fetch(url, {
     headers: { "User-Agent": AGENTE, "Accept-Language": "pt-BR,pt;q=0.9", Accept: "text/html" },
@@ -130,16 +149,8 @@ function perguntaDoQuadro(titulo, item) {
 // Separa título, perguntas com seus parágrafos (e legendas de imagem) e as perguntas de recapitulação.
 export function analisarArtigo(html) {
   const inicio = html.indexOf('class="bodyTxt"');
-  const corpoBruto = inicio >= 0 ? html.slice(inicio) : html;
-  // As imagens: cada <figure> traz a descrição (o texto "alt" da <img>, que o site guarda para leitores de tela e que vai junto quando se copia um
-  // trecho que passa por cima da imagem) e a legenda (<figcaption>). Cada uma vira um parágrafo sintético "x-figura", para entrar na ordem do artigo.
-  const figuras = [];
-  const corpo = corpoBruto.replace(/<figure\b[^>]*>([\s\S]*?)<\/figure>/g, (todo, interno) => {
-    const descricao = [...interno.matchAll(/<img\b[^>]*?\balt="([^"]*)"/g)].map((a) => textoDe(a[1])).filter(Boolean).join(" ");
-    const legenda = textoDe((interno.match(/<figcaption\b[^>]*>([\s\S]*?)<\/figcaption>/) || [])[1] || "");
-    figuras.push({ descricao: descricao.slice(0, 700), legenda: legenda.slice(0, 400) });
-    return `<p class="x-figura" data-fig="${figuras.length - 1}">-</p>`;
-  });
+  // As imagens do artigo entram na ordem dele (veja separarFiguras).
+  const { html: corpo, figuras } = separarFiguras(inicio >= 0 ? html.slice(inicio) : html);
   const h1 = html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/);
   const titulo = h1 ? textoDe(h1[1]).slice(0, 200) : "";
 
@@ -295,10 +306,12 @@ export const QUADROS_EBC = [
 
 export function analisarCapituloEbc(html) {
   const inicio = html.search(/<p\b[^>]*class="contextTtl|<h1\b/);
-  const corpo = (inicio >= 0 ? html.slice(inicio) : html)
-    .replace(/<div class="stdPullQuote[\s\S]*?<\/div>/g, "") // frase em destaque (repete uma do relato)
-    .replace(/<div class="gen-field"[\s\S]*?<\/div>/g, "") // campo "Sua resposta" da página
-    .replace(/<figure[\s\S]*?<\/figure>/g, "");
+  // As imagens (descrição e legenda) saem do texto do capítulo e vão numa lista à parte: as perguntas as citam pela letra ("Imagem A").
+  const { html: corpo, figuras } = separarFiguras(
+    (inicio >= 0 ? html.slice(inicio) : html)
+      .replace(/<div class="stdPullQuote[\s\S]*?<\/div>/g, "") // frase em destaque (repete uma do relato)
+      .replace(/<div class="gen-field"[\s\S]*?<\/div>/g, "") // campo "Sua resposta" da página
+  );
   const contexto = textoDe((corpo.match(/<p\b[^>]*class="contextTtl[^"]*"[^>]*>([\s\S]*?)<\/p>/) || [])[1] || ""); // "13 JOSUÉ"
   const titulo = textoDe((corpo.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/) || [])[1] || "");
   const relato = [];
@@ -306,7 +319,7 @@ export function analisarCapituloEbc(html) {
   const perguntas = [];
   let secao = "relato";
   for (const [, tag, atributos, conteudo] of corpo.matchAll(/<(h2|h3|p)\b([^>]*)>([\s\S]*?)<\/\1>/g)) {
-    if (/contextTtl/.test(atributos)) continue;
+    if (/contextTtl|x-figura/.test(atributos)) continue;
     if (tag !== "p") {
       const nome = semAcento(textoDe(conteudo)).replace(/[:\s]+$/, "");
       if (nome.startsWith("aprenda mais")) break;
@@ -330,7 +343,7 @@ export function analisarCapituloEbc(html) {
       perguntas.push({ id: `${quadro.curto} ${numero}`, quadro: quadro.id, nomeQuadro: quadro.nome, numero, pergunta, referencias: referenciasDe(conteudo), citacoes });
     }
   }
-  return { contexto, titulo, relato, leia: [...new Set(leia)], perguntas };
+  return { contexto, titulo, relato, leia: [...new Set(leia)], perguntas, imagens: imagensUteis(figuras) };
 }
 
 // Na página de reuniões, o número da apostila Vida e Ministério da semana (bloco "pub-mwb").
@@ -591,6 +604,9 @@ export function textoDoCapituloEbc(capitulo, perguntas, versiculos = []) {
   if (capitulo.trechos.length) {
     partes.push(`TRECHOS DAS PUBLICAÇÕES CITADAS NAS PERGUNTAS:\n${capitulo.trechos.map((t) => `(${t.citacao}) ${t.titulo ? `"${t.titulo}": ` : ""}${t.texto}`).join("\n\n")}`);
   }
+  if (capitulo.imagens && capitulo.imagens.length) {
+    partes.push(`IMAGENS DO CAPÍTULO (as perguntas citam cada uma pela letra, como "Imagem A"):\n${capitulo.imagens.map(textoDaImagem).join("\n\n")}`);
+  }
   partes.push(`PERGUNTAS (responda a cada uma; em "pergunta", use o identificador entre colchetes):\n${perguntas.map((p) => `[${p.id}] (${p.nomeQuadro}) ${p.pergunta}`).join("\n")}`);
   return partes.join("\n\n");
 }
@@ -607,6 +623,9 @@ export function textoDoCapituloEbcDirigente(capitulo, versiculos = []) {
   if (versiculos.length) partes.push(`TEXTO DOS VERSÍCULOS:\n${versiculos.map((v) => `${v.referencia}: ${v.texto}`).join("\n")}`);
   if (capitulo.trechos.length) {
     partes.push(`TRECHOS DAS PUBLICAÇÕES CITADAS NAS PERGUNTAS:\n${capitulo.trechos.map((t) => `(${t.citacao}) ${t.titulo ? `"${t.titulo}": ` : ""}${t.texto}`).join("\n\n")}`);
+  }
+  if (capitulo.imagens && capitulo.imagens.length) {
+    partes.push(`IMAGENS DO CAPÍTULO (as perguntas citam cada uma pela letra, como "Imagem A"):\n${capitulo.imagens.map(textoDaImagem).join("\n\n")}`);
   }
   partes.push(
     `PERGUNTAS ORIGINAIS DO CAPÍTULO (já fazem parte do estudo: NÃO repita nem reformule, e não trate do mesmo ponto que elas):\n${capitulo.perguntas.map((p) => `(${p.nomeQuadro}) ${p.pergunta}`).join("\n")}`
@@ -667,7 +686,8 @@ export function discursoDeTesouros(html) {
   if (!item) return null;
   const depois = resto.slice(item.index + item[0].length);
   const fim = depois.search(/<h[23]\b/);
-  const bloco = fim >= 0 ? depois.slice(0, fim) : depois;
+  // As imagens do item (descrição e legenda) vão à parte (veja separarFiguras).
+  const { html: bloco, figuras } = separarFiguras(fim >= 0 ? depois.slice(0, fim) : depois);
 
   const titulo = textoDe(item[1]).replace(/^\d+\.\s*/, "");
   let minutos = null;
@@ -675,7 +695,7 @@ export function discursoDeTesouros(html) {
   let reflexao = null;
   for (const [, conteudo] of bloco.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/g)) {
     const texto = textoDe(conteudo);
-    if (!texto) continue;
+    if (!texto || texto === "§figura§") continue;
     const tempo = texto.match(/^\((\d+)\s*min\)/);
     if (tempo) {
       minutos = Number(tempo[1]);
@@ -691,7 +711,7 @@ export function discursoDeTesouros(html) {
     if (!dados.temLinks || reflexao) continue;
     pontos.push(dados);
   }
-  return pontos.length ? { titulo, minutos: minutos || 10, pontos, reflexao } : null;
+  return pontos.length ? { titulo, minutos: minutos || 10, pontos, reflexao, imagens: imagensUteis(figuras) } : null;
 }
 
 // Lê o discurso de Tesouros da semana (e os trechos das fontes citadas nos pontos e na reflexão). null = não achou.
@@ -719,6 +739,7 @@ export async function lerTesouros(urlReuniao, { timeoutMs = 8000 } = {}) {
     minutos: base.minutos,
     pontos: base.pontos.map(comFontes),
     reflexao: base.reflexao ? comFontes(base.reflexao) : null,
+    imagens: base.imagens || [],
     url,
   };
   tesouros.set(urlReuniao, { quando: Date.now(), discurso });
@@ -805,7 +826,7 @@ export function discursoCurtoDaApostila(html) {
     const fonte = links.find((l) => !/^th\b/i.test(l.citacao)) || null;
     const leias = new Set();
     const referencias = referenciasDe(paragrafo, leias);
-    return { titulo: tema || texto.replace(/^\(\s*\d+\s*min\)\s*(?:discurso\.?)?\s*/i, ""), minutos, texto, fonte, licao, referencias, leias: [...leias] };
+    return { titulo: tema || texto.replace(/^\(\s*\d+\s*min\)\s*(?:discurso\.?)?\s*/i, ""), minutos, texto, fonte, licao, referencias, leias: [...leias], imagens: imagensUteis(separarFiguras(corpo).figuras) };
   }
   return null;
 }
@@ -936,6 +957,7 @@ export async function lerDiscursoCurto(urlReuniao, { timeoutMs = 8000 } = {}) {
     pesquisa,
     referencias: indicadas,
     leias: [...new Set([...(base.leias || []), ...(fonte && fonte.tipo === "ponto" ? fonte.leias || [] : [])])],
+    imagens: base.imagens || [],
     url,
   };
   discursosCurtos.set(urlReuniao, { quando: Date.now(), discurso });
