@@ -174,6 +174,7 @@ function validarOpcoes(opcoes) {
     citacoesBiblicas: o.citacoesBiblicas === true,
     usarListas: o.usarListas === true,
     separarIdeias: o.separarIdeias === true,
+    separarFrases: o.separarFrases === true,
     resumo: o.resumo === true,
     resumoTamanho: TAMANHOS_RESUMO.includes(o.resumoTamanho) ? o.resumoTamanho : "medio",
     // Quatro formas de usar os textos bíblicos nas respostas, uma por vez: explicar e aplicar (sem transcrever nem citar
@@ -577,12 +578,12 @@ function modoSeparacao(opcoes, ajuste) {
   const pedido = `${ajuste || ""} ${opcoes.instrucao || ""}`;
   const pedeFrases =
     /(separ\w*|quebr\w*|linhas?\s+em\s+branco|espa[çc]\w*)[^.;\n]{0,40}\bfrases?\b|\bfrases?\b[^.;\n]{0,40}(linhas?\s+em\s+branco|separad\w*|quebr\w*)/i;
-  if (pedeFrases.test(pedido)) return "frases";
+  if (opcoes.separarFrases || pedeFrases.test(pedido)) return "frases";
   if (opcoes.separarIdeias || /linhas?\s+em\s+branco|separ\w*\s+(as\s+|os\s+)?(ideias|par[áa]grafos|trechos)/i.test(pedido)) return "ideias";
   return null;
 }
 
-const ABREVIACOES = new Set(["sr", "sra", "srta", "dr", "dra", "cap", "caps", "vs", "ex", "etc", "pág", "págs", "nº", "v", "vv", "cf", "obs"]);
+const ABREVIACOES = new Set(["sr", "sra", "srta", "dr", "dra", "cap", "caps", "vs", "ex", "etc", "pág", "págs", "par", "pars", "nº", "v", "vv", "cf", "obs"]);
 
 // Início de cada frase do texto, menos a primeira (o app coloca uma linha em branco antes de cada um). Cada trecho é
 // copiado do próprio texto e só vale se for localizado exatamente nesse ponto.
