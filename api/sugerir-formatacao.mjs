@@ -307,14 +307,14 @@ function semCulto(texto) {
 }
 
 function limparTrecho(trecho) {
-  return typeof trecho === "string" ? semCulto(trecho.replace(/[*`]+/g, "").replace(ASPAS_NAS_PONTAS, "")) : "";
+  return typeof trecho === "string" ? semCulto(semGotica(trecho.replace(/[*`]+/g, "").replace(ASPAS_NAS_PONTAS, ""))) : "";
 }
 
 // Texto escrito pela IA (respostas e resumo): sem Markdown (* e `) e sem emojis no começo. As vezes ela escreve
 // **negrito** ou repete o emoji dentro do texto, e como a formatação vem dos campos emoji/destaques, isso
 // apareceria como asteriscos e emoji duplicado.
 function limparTextoGerado(valor, max) {
-  const texto = typeof valor === "string" ? semCulto(valor) : "";
+  const texto = typeof valor === "string" ? semCulto(semGotica(valor)) : "";
   return texto
     .replace(/[*`]+/g, "")
     .replace(/\s+/g, " ")
@@ -1661,17 +1661,29 @@ async function conferirLeituras(pontos, max = Infinity, permitidas = null) {
   }
 }
 
-// Regra do usuário: os esboços NUNCA usam a fonte gótica (fraktur, comum ou negrito). Se a IA escrever com essas letras do Unicode,
-// elas viram letras comuns (as outras fontes não mudam). As cinco letras que ficam fora do bloco (ℭ ℌ ℑ ℜ ℨ) também.
-const GOTICAS_FORA_DO_BLOCO = { "ℭ": "C", "ℌ": "H", "ℑ": "I", "ℜ": "R", "ℨ": "Z" };
+// Regra do usuário: NENHUMA resposta da IA (estudo, joias, comentários, esboços…) usa as fontes gótica (fraktur) e script, comuns ou em
+// negrito. Se a IA escrever com essas letras do Unicode, elas viram letras comuns (as outras fontes não mudam). As letras que ficam fora dos
+// blocos principais (ℭ ℌ ℑ ℜ ℨ da gótica; ℬ ℰ ℱ ℋ ℐ ℒ ℳ ℛ ℯ ℊ ℴ do script) também. As letras duplas (ℂ ℍ ℕ ℙ ℚ ℝ ℤ) não entram.
+const GOTICAS_FORA_DO_BLOCO = {
+  "ℭ": "C", "ℌ": "H", "ℑ": "I", "ℜ": "R", "ℨ": "Z",
+  "ℬ": "B", "ℰ": "E", "ℱ": "F", "ℋ": "H", "ℐ": "I", "ℒ": "L", "ℳ": "M", "ℛ": "R", "ℯ": "e", "ℊ": "g", "ℴ": "o",
+};
+// Cada bloco tem 26 letras: [primeira letra do bloco, letra comum correspondente].
+const BLOCOS_GOTICA_E_SCRIPT = [
+  [0x1d49c, 65], [0x1d4b6, 97], // script
+  [0x1d4d0, 65], [0x1d4ea, 97], // script negrito
+  [0x1d504, 65], [0x1d51e, 97], // gótica
+  [0x1d56c, 65], [0x1d586, 97], // gótica negrito
+];
 function semGotica(texto) {
+  if (typeof texto !== "string") return "";
   return Array.from(texto, (ch) => {
     if (GOTICAS_FORA_DO_BLOCO[ch]) return GOTICAS_FORA_DO_BLOCO[ch];
     const cp = ch.codePointAt(0);
-    if (cp >= 0x1d504 && cp <= 0x1d51d) return String.fromCharCode(65 + cp - 0x1d504);
-    if (cp >= 0x1d51e && cp <= 0x1d537) return String.fromCharCode(97 + cp - 0x1d51e);
-    if (cp >= 0x1d56c && cp <= 0x1d585) return String.fromCharCode(65 + cp - 0x1d56c);
-    if (cp >= 0x1d586 && cp <= 0x1d59f) return String.fromCharCode(97 + cp - 0x1d586);
+    if (cp < 0x1d49c || cp > 0x1d59f) return ch;
+    for (const [inicio, base] of BLOCOS_GOTICA_E_SCRIPT) {
+      if (cp >= inicio && cp < inicio + 26) return String.fromCharCode(base + cp - inicio);
+    }
     return ch;
   }).join("");
 }
