@@ -3015,6 +3015,7 @@ async function listarParagrafos(res, body, P) {
         url: lido.url,
         grupos: lido.grupos.map((g) => g.rotulo).slice(0, 40),
         perguntas: lido.grupos.map((g) => g.pergunta || "").slice(0, 40), // alinhadas com "grupos": o app mostra a do parágrafo escolhido
+        imagens: lido.grupos.map((g) => (g.imagens || []).map((i) => ({ descricao: i.descricao, legenda: i.legenda }))).slice(0, 40), // idem: as imagens de cada grupo
         recapitulacao: lido.recapitulacao.length > 0,
         erro: null,
       });

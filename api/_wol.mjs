@@ -130,7 +130,16 @@ function perguntaDoQuadro(titulo, item) {
 // Separa título, perguntas com seus parágrafos (e legendas de imagem) e as perguntas de recapitulação.
 export function analisarArtigo(html) {
   const inicio = html.indexOf('class="bodyTxt"');
-  const corpo = inicio >= 0 ? html.slice(inicio) : html;
+  const corpoBruto = inicio >= 0 ? html.slice(inicio) : html;
+  // As imagens: cada <figure> traz a descrição (o texto "alt" da <img>, que o site guarda para leitores de tela e que vai junto quando se copia um
+  // trecho que passa por cima da imagem) e a legenda (<figcaption>). Cada uma vira um parágrafo sintético "x-figura", para entrar na ordem do artigo.
+  const figuras = [];
+  const corpo = corpoBruto.replace(/<figure\b[^>]*>([\s\S]*?)<\/figure>/g, (todo, interno) => {
+    const descricao = [...interno.matchAll(/<img\b[^>]*?\balt="([^"]*)"/g)].map((a) => textoDe(a[1])).filter(Boolean).join(" ");
+    const legenda = textoDe((interno.match(/<figcaption\b[^>]*>([\s\S]*?)<\/figcaption>/) || [])[1] || "");
+    figuras.push({ descricao: descricao.slice(0, 700), legenda: legenda.slice(0, 400) });
+    return `<p class="x-figura" data-fig="${figuras.length - 1}">-</p>`;
+  });
   const h1 = html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/);
   const titulo = h1 ? textoDe(h1[1]).slice(0, 200) : "";
 
@@ -157,13 +166,21 @@ export function analisarArtigo(html) {
       continue;
     }
     if (/\bpubRefs\b/.test(classe) && naRecapitulacao) break; // o cântico final encerra o artigo
+    if (/\bx-figura\b/.test(classe)) {
+      const figura = figuras[Number((atributos.match(/data-fig="(\d+)"/) || [])[1])];
+      if (figura && !naRecapitulacao && (figura.descricao || figura.legenda)) {
+        if (atual) atual.imagens.push(figura);
+        secoes.push({ imagem: figura });
+      }
+      continue;
+    }
     if (/\b(pubRefs|themeScrp|contextTtl|noticeText)\b/.test(classe)) continue;
 
     const pid = (atributos.match(/data-pid="(\d+)"/) || [])[1];
     if (/\bqu\b/.test(classe)) {
       const texto = textoDe(conteudo);
       const m = texto.match(/^(\d+(?:\s*[,–-]\s*\d+)*)\s*\.\s*([\s\S]*)$/);
-      atual = { rotulo: m ? m[1].replace(/\s*,\s*/g, ", ").replace(/\s*[-–]\s*/g, "-") : "", pergunta: m ? m[2] : texto, numeros: m ? numeros(m[1]) : [], paragrafos: [], legendas: [], referencias: referenciasDe(conteudo) };
+      atual = { rotulo: m ? m[1].replace(/\s*,\s*/g, ", ").replace(/\s*[-–]\s*/g, "-") : "", pergunta: m ? m[2] : texto, numeros: m ? numeros(m[1]) : [], paragrafos: [], legendas: [], imagens: [], referencias: referenciasDe(conteudo) };
       grupos.push(atual);
       if (pid) porPergunta.set(pid, atual);
       continue;
@@ -597,13 +614,19 @@ export function textoDoCapituloEbcDirigente(capitulo, versiculos = []) {
   return partes.join("\n\n");
 }
 
-// Texto que vai para a IA: só as perguntas pedidas, cada uma com seus parágrafos (e as legendas das imagens).
+// Uma imagem do artigo como a IA a recebe: a descrição do site e a legenda.
+function textoDaImagem(imagem) {
+  return [imagem.descricao && `Imagem (descrição do site): ${imagem.descricao}`, imagem.legenda && `Legenda da imagem: ${imagem.legenda}`].filter(Boolean).join("\n");
+}
+
+// Texto que vai para a IA: só as perguntas pedidas, cada uma com seus parágrafos (e as descrições e legendas das imagens).
 export function textoDosGrupos(grupos) {
   return grupos
     .map((g) =>
       [
         `Pergunta (${g.numeros.length > 1 ? "parágrafos" : "parágrafo"} ${g.rotulo}): ${g.pergunta}`,
         ...g.paragrafos.map((p) => `${p.numero ?? ""} ${p.texto}`.trim()),
+        ...g.imagens.map(textoDaImagem),
         ...g.legendas.map((l) => `Legenda da imagem: ${l}`),
       ].join("\n")
     )
@@ -612,7 +635,7 @@ export function textoDosGrupos(grupos) {
 
 // Para a recapitulação: o artigo inteiro (subtítulos e parágrafos, sem as perguntas) e as perguntas do quadro.
 export function textoDaRecapitulacao(artigo) {
-  const corpo = artigo.secoes.map((s) => (s.subtitulo ? `\n${s.subtitulo}` : `${s.numero ?? ""} ${s.texto}`.trim())).join("\n");
+  const corpo = artigo.secoes.map((s) => (s.imagem ? textoDaImagem(s.imagem) : s.subtitulo ? `\n${s.subtitulo}` : `${s.numero ?? ""} ${s.texto}`.trim())).join("\n");
   return (
     `ARTIGO: ${artigo.titulo}\n${corpo.trim()}\n\n` +
     `PERGUNTAS DE RECAPITULAÇÃO (responda a cada uma):\n` +
