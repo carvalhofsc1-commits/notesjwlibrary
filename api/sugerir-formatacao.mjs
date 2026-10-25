@@ -2256,6 +2256,12 @@ async function esbocoDoDiscursoPublico(res, body, P) {
 
   let versiculos = [];
   let permitidas = null; // as leituras marcadas, como a Bíblia as escreve (sem a Bíblia no servidor não dá para conferir)
+  let aceitas = null;    // o que o servidor mantém: as de cima e, se o esboço marca poucas, os textos citados que a IA escolher
+  // Os esboços mais antigos do S-34 (como o do tema 110, de 1995) citam os textos mas não marcam nenhum com "Leia": sem leituras o discurso sairia
+  // sem nenhum texto lido. Quando as marcadas e as escolhidas pelo orador não chegam ao mínimo (limite "Textos lidos no discurso público"),
+  // a IA escolhe as que faltam entre os textos citados no esboço.
+  const minimoLeituras = P.limites.minLeiturasPublico || 0;
+  const faltamLeituras = Math.max(0, minimoLeituras - new Set([...marcadas, ...extras.map((e) => e.referencia)]).size);
   if (fontesConfiguradas()) {
     try {
       versiculos = await buscarVersiculos([...marcadas, ...citadas], 40);
@@ -2263,17 +2269,30 @@ async function esbocoDoDiscursoPublico(res, body, P) {
       for (const r of marcadas) permitidas.push((await leituraDaBiblia(r)).referencia);
       // Além dos marcados no S-34, só se lê o que o orador escolheu.
       permitidas = [...new Set([...permitidas, ...extras.map((e) => e.referencia)])];
+      aceitas = permitidas;
+      if (faltamLeituras > 0) {
+        const candidatas = [];
+        for (const r of citadas) candidatas.push((await leituraDaBiblia(r)).referencia);
+        aceitas = [...new Set([...permitidas, ...candidatas])];
+      }
     } catch (e) {
       console.error("Discurso público: versículos indisponíveis", e?.message);
       permitidas = null;
+      aceitas = null;
     }
   }
+  const aEscolher = faltamLeituras > 0
+    ? `LEITURAS A ESCOLHER: o esboço do S-34 marca ${marcadas.length} texto(s) para ler${extras.length ? ` e o orador escolheu ${extras.length}` : ""}, e o discurso precisa ter pelo menos ${minimoLeituras} leituras. ` +
+      `Escolha você mais ${faltamLeituras} (ou mais, se ajudar) dentre os textos CITADOS no esboço, cujo versículo vem em "TEXTO DOS VERSÍCULOS": os que mais reforçam cada ponto, de preferência curtos e espalhados pelos pontos, ` +
+      `cada um no campo "leitura" do argumento a que se liga e uma só vez. Não leia nenhum texto que o esboço não cite. Não entregue o esboço com menos de ${minimoLeituras} leituras.\n\n`
+    : "";
 
   let mensagem =
     blocoOrientacao(opcoes, ajuste, P) +
     `PEDIDO: elabore o esboço do discurso público de ${minutosDoEsboco(tema)} minutos, tema "${tema.titulo}" (esboço S-34 nº ${tema.numero}).\n` +
     emojisDoEsboco(opcoes, P) + "\n\n" +
     textoDoDiscursoPublico(tema, versiculos) +
+    (aEscolher ? "\n\n" + aEscolher.trimEnd() + "\n\n" : "") +
     blocoDeTextosEscolhidos(extras, P) +
     lembreteFinal(opcoes, ajuste, P);
   if (modo && anteriores) {
@@ -2303,8 +2322,9 @@ async function esbocoDoDiscursoPublico(res, body, P) {
       maxBlocosConclusao: 4,
       // A linha "Fonte" de cada ponto traz as publicações que o esboço do S-34 cita naquela seção.
       fontesDoPonto: (i) => publicacoesDaSecao(tema.secoes[i]),
-      leiturasPermitidas: permitidas,
+      leiturasPermitidas: aceitas,
       leiturasObrigatorias: permitidas,
+      minLeituras: minimoLeituras || undefined,
       motivoObrigatorias: "que o esboço do S-34 marca ou que você escolheu",
     });
     // Os tempos são os do esboço do S-34 (um ponto por seção); a introdução e a conclusão cabem dentro deles.
@@ -2325,6 +2345,7 @@ async function esbocoDoDiscursoPublico(res, body, P) {
         secoes: tema.secoes.length,
         pontos: esboco.pontos.length,
         leiturasMarcadas: marcadas.length,
+        leiturasAEscolher: faltamLeituras,
         leituras: esboco.pontos.reduce((n, p) => n + p.desenvolvimento.filter((d) => d.leitura).length, 0),
         versiculos: versiculos.length,
         segundosIa: Math.round((Date.now() - inicio) / 100) / 10,
