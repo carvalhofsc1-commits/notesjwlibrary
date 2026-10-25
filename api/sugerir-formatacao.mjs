@@ -16,6 +16,7 @@ import {
   lerArtigoDoWol,
   lerReuniaoDaSemana,
   lerEstudoDireto,
+  lerImagensDaApostila,
   lerDiscursoCurto,
   lerJoias,
   lerTesouros,
@@ -2776,6 +2777,23 @@ async function lerJoiasDaSemana(res, body) {
   });
 }
 
+// Todas as imagens da apostila Vida e Ministério da semana (descrição e legenda), mesmo as de partes que o app não trata. Só lê o wol.jw.org.
+async function lerImagensDaApostilaSemana(res, body) {
+  const autorizado = codigoValido(body.codigo) || dirigenteValido(body.codigoDirigente);
+  if (!autorizado) return recusarAcesso(res, body);
+  const url = urlDoEstudo({ ano: body.ano, semana: body.semana });
+  if (!url) return erro(res, 400, "Semana inválida.");
+  let apostila = null;
+  try {
+    apostila = await lerImagensDaApostila(url);
+  } catch (e) {
+    console.error("Imagens da apostila: leitura falhou", e?.name, e?.message);
+    return erro(res, 502, "Não consegui ler a apostila no wol.jw.org agora. Tente de novo em instantes.");
+  }
+  if (!apostila) return erro(res, 404, "Não encontrei a apostila dessa semana.");
+  return res.status(200).json({ semana: apostila.semana, url: apostila.url, imagens: apostila.imagens });
+}
+
 async function responderJoias(res, body, P) {
   const comPergunta = body.pergunta !== false;
   const comLeitura = body.leitura !== false;
@@ -3206,6 +3224,7 @@ export default async function handler(req, res) {
   if (req.body && req.body.tarefa === "discurso-ler") return lerDiscursoCurtoDaSemana(res, req.body);
   if (req.body && req.body.tarefa === "discurso") return esbocoDoDiscursoCurto(res, req.body, P);
   if (req.body && req.body.tarefa === "joias-ler") return lerJoiasDaSemana(res, req.body);
+  if (req.body && req.body.tarefa === "apostila-imagens") return lerImagensDaApostilaSemana(res, req.body);
   if (req.body && req.body.tarefa === "joias") return responderJoias(res, req.body, P);
 
   const entrada = validarEntrada(req.body, P.limites);

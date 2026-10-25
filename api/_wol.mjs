@@ -59,6 +59,44 @@ export function imagensUteis(figuras) {
   return figuras.filter((f) => f.descricao || f.legenda).slice(0, 12);
 }
 
+// ---------- Imagens da apostila inteira ----------
+// Todas as imagens da apostila Vida e Ministério da semana, na ordem, cada uma com a seção e o item em que está (inclusive as de partes que
+// o app não trata, como "Nossa Vida Cristã").
+const imagensDasApostilas = new Map(); // url da página de reuniões -> { quando, apostila }
+
+export function imagensDaApostila(html) {
+  const { html: semFiguras, figuras } = separarFiguras(html);
+  const lista = [];
+  let secao = "";
+  let item = "";
+  for (const m of semFiguras.matchAll(/<(h2|h3)\b[^>]*>([\s\S]*?)<\/\1>|<p class="x-figura" data-fig="(\d+)">/g)) {
+    if (m[1]) {
+      const titulo = textoDe(m[2]);
+      if (m[1] === "h2") {
+        secao = titulo;
+        item = "";
+      } else item = titulo;
+      continue;
+    }
+    const figura = figuras[Number(m[3])];
+    if (figura && (figura.descricao || figura.legenda)) lista.push({ secao, item, descricao: figura.descricao, legenda: figura.legenda });
+  }
+  return lista.slice(0, 30);
+}
+
+export async function lerImagensDaApostila(urlReuniao, { timeoutMs = 8000 } = {}) {
+  const guardado = imagensDasApostilas.get(urlReuniao);
+  if (guardado && Date.now() - guardado.quando < VALIDADE_MS) return guardado.apostila;
+  const id = idDaApostilaNaReuniao(await baixar(urlReuniao, timeoutMs));
+  if (!id) return null;
+  const url = `${BASE}/pt/wol/d/r5/lp-t/${id}`;
+  const html = await baixar(url, timeoutMs);
+  const apostila = { semana: leituraDaApostila(html).semana, url, imagens: imagensDaApostila(html) };
+  imagensDasApostilas.set(urlReuniao, { quando: Date.now(), apostila });
+  if (imagensDasApostilas.size > 20) imagensDasApostilas.delete(imagensDasApostilas.keys().next().value);
+  return apostila;
+}
+
 async function baixar(url, timeoutMs) {
   const resposta = await fetch(url, {
     headers: { "User-Agent": AGENTE, "Accept-Language": "pt-BR,pt;q=0.9", Accept: "text/html" },
