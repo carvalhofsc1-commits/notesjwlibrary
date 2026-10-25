@@ -1154,6 +1154,9 @@ async function sugerirPerguntas(res, body, P) {
   if (!opcoes.perguntasComplementares && !opcoes.perguntasAplicativas && !opcoes.perguntasTextos && !opcoes.perguntasEntendimento)
     return erro(res, 400, "Marque pelo menos uma seção das perguntas.");
   const ajuste = textoLivre(body.ajuste);
+  // "Outra resposta" e "Melhorar": as perguntas já sugeridas voltam ao servidor (os mesmos itens que ele devolveu).
+  const modo = body.modo === "nova" || body.modo === "melhorar" ? body.modo : null;
+  const anteriores = modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(body.anteriores).slice(0, 12000) : "";
   const inicio = Date.now();
   let lido = null;
   try {
@@ -1169,7 +1172,7 @@ async function sugerirPerguntas(res, body, P) {
     return erro(res, 400, `Não encontrei esse(s) parágrafo(s) no artigo "${lido.titulo}": ele vai do parágrafo 1 ao ${ultimo}.`);
   }
   const texto = textoDosGrupos(grupos);
-  const mensagem =
+  let mensagem =
     blocoOrientacao(opcoes, ajuste, P) +
     "PEDIDO (seções ligadas pelo usuário):\n" +
     `- Seção 1, perguntas complementares ("complementares"): ${opcoes.perguntasComplementares ? "ATIVA" : "INATIVA"}\n` +
@@ -1179,6 +1182,10 @@ async function sugerirPerguntas(res, body, P) {
     "\nTEXTO DO ESTUDO:\n" +
     texto +
     lembreteFinal(opcoes, ajuste, P);
+  if (modo && anteriores) {
+    mensagem +=
+      "\n\nPERGUNTAS JÁ SUGERIDAS (JSON):\n" + anteriores + "\n\n" + P.frases.pedidos[modo === "nova" ? "Perguntas do dirigente: outras perguntas" : "Perguntas do dirigente: melhorar"];
+  }
 
   try {
     const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 90_000) });
