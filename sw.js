@@ -104,7 +104,7 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  if (/\.(png|svg|ico|webmanifest)$/.test(url.pathname)) {
+  if (/\.(png|jpe?g|svg|ico|webmanifest)$/.test(url.pathname)) {
     event.respondWith(cachePrimeiro(request));
   }
 });
