@@ -68,6 +68,10 @@
     }
     .rodape { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--line); text-align: center; font-size: .92rem; }
     .rodape a { margin: 0 8px; }
+    /* Botão Voltar: pequeno e discreto, centralizado na última linha da página. */
+    .voltar { margin: 18px 0 0; text-align: center; }
+    .botao-voltar { display: inline-block; padding: 6px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); color: var(--muted); font-size: .78rem; font-weight: 650; line-height: 1.2; text-decoration: none; }
+    .botao-voltar:hover { color: var(--text); }
   </style>
 </head>
 <body>
@@ -230,8 +234,9 @@
     <p>Esta política é regida pelas leis do Brasil. Fica eleito o foro do domicílio do titular dos dados para dirimir questões dela decorrentes, quando a lei assim determinar.</p>
 
     <p class="rodape">
-      <a href="sobre.html">Sobre</a> · <a href="termos.html">Termos de Uso</a> · <a href="index.html">← Voltar ao aplicativo</a>
+      <a href="sobre.html">Sobre</a> · <a href="termos.html">Termos de Uso</a>
     </p>
+    <p class="voltar"><a class="botao-voltar" href="index.html" title="Voltar ao aplicativo">← Voltar</a></p>
   </main>
 </body>
 </html>
