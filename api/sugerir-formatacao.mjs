@@ -2260,6 +2260,15 @@ async function lerTemaPublico(res, body) {
   });
 }
 
+// O esboço original do S-34 do tema (títulos, tempos, itens em níveis, destaques e notas), para o orador LER no próprio app ("Ver o esboço
+// original" do card Discurso público). Sem IA; só com o código do dirigente; vem do armazenamento privado, não fica guardado no aparelho.
+async function verEsbocoPublico(res, body) {
+  if (!acessoDoDirigente(res, body)) return;
+  const esboco = await esbocoDoTema(res, body);
+  if (!esboco) return;
+  return res.status(200).json({ esboco });
+}
+
 async function esbocoDoDiscursoPublico(res, body, P) {
   if (!acessoDoDirigente(res, body)) return;
   const opcoes = validarOpcoes(body.opcoes);
@@ -3274,6 +3283,7 @@ export default async function handler(req, res) {
   if (req.body && req.body.tarefa === "tesouros") return esbocoDeTesouros(res, req.body, P);
   if (req.body && req.body.tarefa === "publico-lista") return listarTemasPublicos(res, req.body);
   if (req.body && req.body.tarefa === "publico-ler") return lerTemaPublico(res, req.body);
+  if (req.body && req.body.tarefa === "publico-esboco") return verEsbocoPublico(res, req.body);
   if (req.body && req.body.tarefa === "publico") return esbocoDoDiscursoPublico(res, req.body, P);
   if (req.body && req.body.tarefa === "versiculos") return textosDosVersiculos(res, req.body);
   if (req.body && req.body.tarefa === "outros-pesquisar") return pesquisarOutros(res, req.body);
