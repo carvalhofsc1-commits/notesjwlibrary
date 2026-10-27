@@ -1429,8 +1429,8 @@ async function responderEbc(res, body, P) {
 
 // ---------- Estudo Bíblico de Congregação: perguntas adicionais para o dirigente ----------
 // A IA recebe o capítulo da semana (relato, "Leia o relato na Bíblia", trechos das publicações) e as perguntas ORIGINAIS dos
-// quatro quadros, e elabora 5 perguntas adicionais com resposta (sem aplicações práticas), mais o resumo dos textos-base se
-// o usuário marcou. Só quem tem o código do dirigente.
+// quatro quadros, e elabora 5 perguntas adicionais com resposta (sem aplicações práticas) e/ou escolhe os textos-base (2 ou 3 trechos
+// pequenos e significativos para ler), conforme o usuário marcou em "O que preparar" (uma, outra ou as duas). Só quem tem o código do dirigente.
 
 const SaidaEbcDirigente = z.object({
   perguntas: z.array(z.object({ pergunta: z.string(), resposta: z.string() })),
@@ -1458,7 +1458,10 @@ async function perguntasEbcDirigente(res, body, P) {
   const ajuste = textoLivre(body.ajuste);
   const modo = body.modo === "nova" || body.modo === "melhorar" ? body.modo : null;
   const anteriores = modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(body.anteriores).slice(0, 12000) : "";
+  // "O que preparar": as perguntas adicionais (ligadas, a não ser que venham desmarcadas) e/ou os textos-base; pelo menos uma.
+  const perguntasPedidas = body.perguntas !== false;
   const textosBase = body.textosBase === true;
+  if (!perguntasPedidas && !textosBase) return erro(res, 400, "Marque as perguntas adicionais ou os textos bíblicos para ler.");
   const inicioPedido = Date.now();
   if (fontesConfiguradas()) precarregarFontes({ biblia: true, perspicaz: false });
 
@@ -1476,12 +1479,15 @@ async function perguntasEbcDirigente(res, body, P) {
 
   let mensagem =
     blocoOrientacao(opcoes, ajuste, P) +
-    `PEDIDO: elabore 5 perguntas adicionais com resposta; resumo dos textos-base ${textosBase ? "ATIVO" : "INATIVO"}.\n\n` +
+    `PEDIDO: ${perguntasPedidas ? "elabore 5 perguntas adicionais com resposta" : "NÃO elabore perguntas adicionais (\"perguntas\" fica [])"}; resumo dos textos-base ${textosBase ? "ATIVO" : "INATIVO"}.\n\n` +
     textoDoCapituloEbcDirigente(capitulo, versiculos) +
     lembreteFinal(opcoes, ajuste, P);
   if (modo && anteriores) {
-    mensagem +=
-      "\n\nPERGUNTAS JÁ SUGERIDAS (JSON):\n" + anteriores + "\n\n" + P.frases.pedidos[modo === "nova" ? "Estudo Bíblico do dirigente: outras perguntas" : "Estudo Bíblico do dirigente: melhorar"];
+    const f = P.frases.pedidos;
+    const pedidos = [];
+    if (perguntasPedidas) pedidos.push(f[modo === "nova" ? "Estudo Bíblico do dirigente: outras perguntas" : "Estudo Bíblico do dirigente: melhorar"]);
+    if (textosBase) pedidos.push(f[modo === "nova" ? "Estudo Bíblico do dirigente: outros textos-base" : "Estudo Bíblico do dirigente: melhorar textos-base"]);
+    mensagem += `\n\n${perguntasPedidas ? "PERGUNTAS JÁ SUGERIDAS" : "TEXTOS-BASE JÁ SUGERIDOS"} (JSON):\n` + anteriores + "\n\n" + pedidos.join("\n");
   }
 
   try {
@@ -1501,7 +1507,7 @@ async function perguntasEbcDirigente(res, body, P) {
     const originais = capitulo.perguntas.map((p) => normalizarPergunta(p.pergunta));
     const vistas = [];
     const perguntas = [];
-    for (const i of resposta.parsed_output.perguntas) {
+    for (const i of perguntasPedidas ? resposta.parsed_output.perguntas : []) {
       const pergunta = limparTextoGerado(i.pergunta, 400);
       const respostaTexto = limparTextoGerado(i.resposta, 900);
       const chave = normalizarPergunta(pergunta);
@@ -1522,8 +1528,10 @@ async function perguntasEbcDirigente(res, body, P) {
       JSON.stringify({
         modelo: P.ia.modelo,
         materia: capitulo.materia,
+        perguntasPedidas,
         perguntas: perguntas.length,
         recebidas: resposta.parsed_output.perguntas.length,
+        textosBasePedidos: textosBase,
         textosBase: base.length,
         originais: capitulo.perguntas.length,
         versiculos: versiculos.length,
@@ -1539,7 +1547,7 @@ async function perguntasEbcDirigente(res, body, P) {
       materia: capitulo.materia,
       titulo: [capitulo.contexto, capitulo.titulo].filter(Boolean).join(": "),
       url: capitulo.url,
-      erro: perguntas.length ? null : "A IA não elaborou perguntas diferentes das originais. Tente de novo.",
+      erro: perguntas.length || base.length ? null : perguntasPedidas ? "A IA não elaborou perguntas diferentes das originais. Tente de novo." : "A IA não escolheu trechos dos textos bíblicos. Tente de novo.",
       perguntas,
       textosBase: base,
     });
