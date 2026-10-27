@@ -103,15 +103,41 @@ export function validarEsboco(bruto) {
     });
   }
   return {
-    esboco: {
+    esboco: limparEsboco({
       numero,
       titulo,
       revisao: texto(bruto.revisao, 20),
       notaAoOrador: texto(bruto.notaAoOrador, 3000),
       secoes,
       notaFinal: texto(bruto.notaFinal, 3000),
-    },
+    }),
   };
+}
+
+// O título sem acentos, maiúsculas nem pontuação, para comparar.
+const formaDoTitulo = (valor) => String(valor || "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+
+// Em alguns esboços do S-34 (como os dos temas 95, 100, 101, 104, 107 e 111) a última linha do documento repete o tema ("N.º 100 Título"). Os
+// que foram importados antes de o importador descartar essa linha a guardaram como último item da última seção, e a nota do fim ("Siga de
+// perto o material do esboço…") ficou como item antes dela. Aqui a linha sai e a nota volta a ser a nota do fim. Sem a repetição, devolve o
+// mesmo esboço.
+export function limparEsboco(esboco) {
+  if (!esboco || !Array.isArray(esboco.secoes)) return esboco;
+  const titulo = formaDoTitulo(esboco.titulo);
+  const repete = (item) => {
+    const m = String((item && item.texto) || "").match(/^N\.?\s*[°ºo]\.?\s*\d{1,3}\s+(.+)$/i);
+    return Boolean(m) && formaDoTitulo(m[1]) === titulo;
+  };
+  if (!esboco.secoes.some((s) => Array.isArray(s.itens) && s.itens.some(repete))) return esboco;
+  const secoes = esboco.secoes.map((s) => ({ ...s, itens: s.itens.filter((i) => !repete(i)) }));
+  const limpo = { ...esboco, secoes };
+  const ultima = secoes[secoes.length - 1];
+  const fim = ultima && ultima.itens[ultima.itens.length - 1];
+  if (!limpo.notaFinal && fim && fim.nota && /siga de perto|beneficie-se|n[aã]o h[aá] necessidade/i.test(fim.texto)) {
+    limpo.notaFinal = fim.texto;
+    ultima.itens = ultima.itens.slice(0, -1);
+  }
+  return limpo;
 }
 
 // O mesmo conteúdo dá sempre o mesmo hash (a ordem dos campos é a de validarEsboco); o nome do arquivo e a data dele não contam.
@@ -142,7 +168,7 @@ export async function lerIndice() {
 }
 
 export async function lerEsboco(numero) {
-  return lerJson(nomeDoEsboco(numero));
+  return limparEsboco(await lerJson(nomeDoEsboco(numero)));
 }
 
 // Confere e (se somenteConferir for falso) grava os esboços. Devolve, por número, o que aconteceu:
