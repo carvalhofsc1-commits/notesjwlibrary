@@ -2732,6 +2732,57 @@ const SaidaJoias = z.object({
   ),
 });
 
+// Versículos de uma referência do mesmo capítulo: "Jeremias 45:5" -> { capitulo: 45, versos: Set {5} }; "45:4, 6-7" -> {4, 6, 7}; null se não houver "cap:vers".
+function versosDe(ref) {
+  const m = String(ref || "").match(/(\d+):([\d,\s–-]+)/);
+  if (!m) return null;
+  const versos = new Set();
+  for (const parte of m[2].split(",")) {
+    const [de, ate] = parte.split(/[–-]/).map((n) => Number(n.trim()));
+    for (let v = de; v <= (ate || de) && v - de < 200; v++) versos.add(v);
+  }
+  return { capitulo: Number(m[1]), versos };
+}
+
+// "Jeremias 45" + [4, 5] -> "Jeremias 45:4, 5"; [4, 5, 6] -> "Jeremias 45:4-6" (como as publicações escrevem).
+function escreverVersos(nomeDoCapitulo, versos) {
+  const grupos = [];
+  for (const v of versos) {
+    const ultimo = grupos[grupos.length - 1];
+    if (ultimo && v === ultimo[1] + 1) ultimo[1] = v;
+    else grupos.push([v, v]);
+  }
+  return `${nomeDoCapitulo}:` + grupos.map(([a, b]) => (a === b ? `${a}` : b === a + 1 ? `${a}, ${b}` : `${a}-${b}`)).join(", ");
+}
+
+const MAX_VERSOS_DA_JOIA = 6;
+const MAX_CHARS_VERSICULO_DA_JOIA = 1200;
+
+// REGRA FIXA (pedido do usuário): toda joia da leitura mostra, ANTES do comentário, o texto bíblico completo a que ele se refere. O texto nunca
+// vem da IA: são os versículos de "referencia" lidos do capítulo da própria leitura (wol.jw.org, o mesmo texto que a IA recebeu) ou, se não
+// estiverem lá, da Bíblia do servidor. Devolve { referencia, texto } (a referência escrita com os versículos que couberam) ou null.
+async function versiculoDaJoia(capitulo, referencia) {
+  const alvo = versosDe(referencia);
+  if (capitulo && alvo && alvo.capitulo === capitulo.capitulo) {
+    const doCapitulo = new Map(capitulo.versiculos.map((v) => [v.verso, v.texto]));
+    const incluidos = [];
+    let texto = "";
+    for (const n of [...alvo.versos].sort((a, b) => a - b).slice(0, MAX_VERSOS_DA_JOIA)) {
+      const t = doCapitulo.get(n);
+      if (!t) continue;
+      if (texto && texto.length + 1 + t.length > MAX_CHARS_VERSICULO_DA_JOIA) break;
+      texto = texto ? `${texto} ${t}` : t;
+      incluidos.push(n);
+    }
+    if (texto) return { referencia: escreverVersos(capitulo.nome, incluidos), texto };
+  }
+  if (fontesConfiguradas()) {
+    const [achado] = await buscarVersiculos([referencia], 1).catch(() => []);
+    if (achado) return { referencia: achado.referencia, texto: achado.texto };
+  }
+  return null;
+}
+
 async function leituraJoias(res, body) {
   if (!process.env.CODIGO_ESTUDO) {
     erro(res, 500, "A leitura do estudo ainda não está configurada no servidor.");
@@ -2799,7 +2850,9 @@ async function responderJoias(res, body, P) {
   const ajuste = textoLivre(body.ajuste);
   const sep = modoSeparacao(opcoes, ajuste);
   const modo = body.modo === "nova" || body.modo === "melhorar" ? body.modo : null;
-  const anteriores = modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(body.anteriores).slice(0, 12000) : "";
+  // O texto bíblico de cada joia é copiado da Bíblia pelo servidor a cada pedido: não precisa ir de volta à IA nas respostas anteriores.
+  const semVersiculos = (a) => (a && Array.isArray(a.itens) ? { ...a, itens: a.itens.map((i) => (i && typeof i === "object" ? { ...i, versiculo: undefined } : i)) } : a);
+  const anteriores = modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(semVersiculos(body.anteriores)).slice(0, 12000) : "";
   const inicioPedido = Date.now();
 
   const joias = await leituraJoias(res, body);
@@ -2843,16 +2896,6 @@ async function responderJoias(res, body, P) {
     // No máximo P.limites.maxJoiasPorCapitulo joias por capítulo, na ordem da leitura, e nenhuma sobre o versículo da pergunta da apostila (ela já
     // tem a resposta própria). Os capítulos da leitura são de um livro só, então basta comparar capítulo e versículo.
     const chave = (t) => chaveDeBusca(t).replace(/\s+/g, "");
-    const versosDe = (ref) => {
-      const m = String(ref || "").match(/(\d+):([\d,\s–-]+)/);
-      if (!m) return null;
-      const versos = new Set();
-      for (const parte of m[2].split(",")) {
-        const [de, ate] = parte.split(/[–-]/).map((n) => Number(n.trim()));
-        for (let v = de; v <= (ate || de) && v - de < 200; v++) versos.add(v);
-      }
-      return { capitulo: Number(m[1]), versos };
-    };
     const daPergunta = joias.pergunta ? versosDe(joias.pergunta.referencias[0]) : null;
     const repetePergunta = (ref) => {
       const v = versosDe(ref);
@@ -2863,7 +2906,18 @@ async function responderJoias(res, body, P) {
       const lista = porCapitulo.get(chave(j.capitulo)) || [...porCapitulo.values()].find((l, i) => chave(j.referencia).startsWith(chave(joias.capitulos[i].nome)));
       if (!lista || lista.length >= P.limites.maxJoiasPorCapitulo || repetePergunta(j.referencia)) continue;
       const item = montarItem({ ...j, paragrafos: limparLinha(limparTrecho(j.referencia), 20), referencias: [] }, opcoes, permitidos, P.limites, sep);
-      if (item.resposta) lista.push({ ...item, capitulo: joias.capitulos.find((c) => porCapitulo.get(chave(c.nome)) === lista).nome });
+      if (!item.resposta) continue;
+      const cap = joias.capitulos.find((c) => porCapitulo.get(chave(c.nome)) === lista);
+      // O texto bíblico da joia vai inteiro acima do comentário (o app o escreve); não se repete depois dele entre os "outros textos".
+      const versiculo = await versiculoDaJoia(cap, j.referencia);
+      if (versiculo) {
+        const meus = versosDe(versiculo.referencia);
+        item.relevantes = item.relevantes.filter((r) => {
+          const v = versosDe(r);
+          return !(meus && v && v.capitulo === meus.capitulo && [...v.versos].every((n) => meus.versos.has(n)));
+        });
+      }
+      lista.push({ ...item, capitulo: cap.nome, versiculo });
     }
     const itensJoias = [...porCapitulo.values()].flat();
 
@@ -2874,6 +2928,7 @@ async function responderJoias(res, body, P) {
         leitura: joias.leitura,
         pergunta: Boolean(itemPergunta),
         joias: itensJoias.map((j) => j.paragrafos),
+        comTextoBiblico: itensJoias.filter((j) => j.versiculo).length,
         trechos: joias.capitulos.reduce((n, c) => n + c.trechos.length, 0),
         // Publicação citada na pergunta da apostila: null = pergunta não pedida ou sem citação; 0 = não consegui ler; senão, caracteres lidos.
         trechoPergunta: pergunta && pergunta.citacoes.length ? pergunta.trecho?.texto.length || 0 : null,
