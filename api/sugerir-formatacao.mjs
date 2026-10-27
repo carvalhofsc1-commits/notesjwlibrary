@@ -73,7 +73,8 @@ const tempoIa = (P, base) => (/haiku/.test(P.ia.modelo) ? base : Math.min(170_00
 // administrador e chegam por P.limites (ver LIMITES em _prompts.mjs).
 const MAX_MODELOS = 60;
 const MAX_CHARS_MODELO = 200;
-const MAX_TEXTO_LIVRE = 300;
+// Instruções adicionais do usuário para um pedido (campo de cada seção das reuniões) e instruções fixas (o app limita estas a 300): passam por textoLivre.
+const MAX_TEXTO_LIVRE = 800;
 
 const ESTILOS = ["negrito", "italico", "negrito_italico"];
 // Tipos de fonte (alfabetos Unicode do app) que a IA pode escolher para um destaque, além do negrito/itálico da fonte
@@ -266,7 +267,7 @@ function descreverPreferencias(o, P) {
     .join("\n");
 }
 
-// Orientação do usuário (campo "Orientação para a IA" do pedido e instruções fixas das configurações). Vai no INÍCIO da
+// Orientação do usuário (campo "Instruções adicionais para a IA" do pedido e instruções fixas das configurações). Vai no INÍCIO da
 // mensagem, com prioridade total sobre as preferências (inclusive as opções desmarcadas). Em branco: nada é enviado.
 function blocoOrientacao(opcoes, ajuste, P) {
   const f = P.frases.pedidos;

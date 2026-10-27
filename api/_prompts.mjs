@@ -701,7 +701,7 @@ Regras:
     id: "frases_pedidos",
     titulo: "Orientação do usuário, lembrete, \"Outra sugestão\", \"Melhorar\" e escopo",
     descricao:
-      "Frases que o app põe em volta do pedido: a abertura da orientação digitada pelo usuário (campo \"Orientação para a IA\" e instruções fixas), o lembrete final, os pedidos dos botões \"Outra sugestão\" e \"Melhorar\", o que fazer com os emojis dos esboços (ativos ou inativos, conforme a opção das configurações) e o escopo (quais perguntas responder). Edite só o texto depois do nome entre colchetes; não mude o nome. Marcadores trocados pelo app: {{texto}} (o que o usuário digitou), {{numeros}} (os parágrafos pedidos), {{textos}} (as referências bíblicas dos textos marcados com Leia ou escolhidos pelo orador).",
+      "Frases que o app põe em volta do pedido: a abertura da orientação digitada pelo usuário (campo \"Instruções adicionais para a IA\" de cada pedido e instruções fixas), o lembrete final, os pedidos dos botões \"Outra sugestão\" e \"Melhorar\", o que fazer com os emojis dos esboços (ativos ou inativos, conforme a opção das configurações) e o escopo (quais perguntas responder). Edite só o texto depois do nome entre colchetes; não mude o nome. Marcadores trocados pelo app: {{texto}} (o que o usuário digitou), {{numeros}} (os parágrafos pedidos), {{textos}} (as referências bíblicas dos textos marcados com Leia ou escolhidos pelo orador).",
     itens: [
       ["Orientação: abertura", "ORIENTAÇÃO DO USUÁRIO (PRIORIDADE TOTAL: cumpra à risca, em todas as linhas ou respostas, acima de qualquer preferência, regra de estilo ou opção marcada como INATIVO / \"NÃO use\" abaixo; confira o resultado contra ela antes de responder):"],
       ["Orientação: deste pedido", "Orientação para este pedido: {{texto}}"],
@@ -842,7 +842,7 @@ const REGRAS_FIXAS_FORMATACAO = `REGRAS FIXAS DA FORMATAÇÃO (valem sempre):
 2. Texto entre parênteses fica no final da frase anterior. Um trecho entre parênteses (referência bíblica ou de publicação, como "(Gên. 3:1-5; Jó 2:4)" ou "(w24.05 pág. 18)") pertence à frase que vem ANTES dele e fica no FINAL dela, nunca no começo da frase seguinte. Em "quebras", nunca comece um trecho com "(" nem separe o parêntese da frase anterior: a quebra vem DEPOIS do parêntese, antes da frase seguinte. Exemplo: em "...é mentira. (Gên. 3:1-5) Quando pregamos..." a quebra é em "Quando pregamos...", e nunca em "(Gên. 3:1-5)...".
 3. Fontes decorativas (quando as preferências ativarem os tipos de fonte): só existem três, letra dupla (doubleStruck), sem serifa (sans) e caixa escura (squaredDark). NUNCA use script, largura cheia, letras circuladas, gótico (fraktur) nem monoespaçado. A fonte normal com negrito e itálico (serifada ou sem serifa) pode ser usada à vontade. A letra dupla e a caixa escura são raras: só para algo MUITO importante. A caixa escura vai só em UMA palavra curta, duas no máximo (por exemplo, uma citação simplesinha ou o nome de algo central), nunca numa frase.`;
 
-// Regra travada: a orientação que o usuário digita no pedido ("Orientação para a IA") e as instruções fixas das
+// Regra travada: a orientação que o usuário digita no pedido ("Instruções adicionais para a IA") e as instruções fixas das
 // configurações valem mais que qualquer outra regra de estilo, tom ou preferência, inclusive as opções desmarcadas.
 // Formato das perguntas adicionais (contrato técnico: nomes dos campos e as seções ligadas no pedido). O que cada seção
 // deve conter está na parte editável "perguntas".
@@ -923,7 +923,7 @@ export function travadosDe(limites) {
   return [
   { id: "vocabulario_fixo", titulo: "Vocabulário: nunca \"culto\", sempre \"reunião\" ou \"reuniões\" (em todos os pedidos)", texto: VOCABULARIO_FIXO },
   { id: "regras_fixas_formatacao", titulo: "Regras fixas da formatação (pergunta só em pergunta; parênteses no fim da frase anterior; fontes permitidas)", texto: REGRAS_FIXAS_FORMATACAO },
-  { id: "prioridade_orientacao", titulo: "Prioridade da orientação do usuário (campo Orientação para a IA)", texto: PRIORIDADE_ORIENTACAO },
+  { id: "prioridade_orientacao", titulo: "Prioridade da orientação do usuário (campo Instruções adicionais para a IA)", texto: PRIORIDADE_ORIENTACAO },
   { id: "formato_estudo", titulo: "Formato JSON das respostas do estudo (Opção 1)", texto: FORMATO_ESTUDO },
   { id: "formato_lista", titulo: "Formato JSON da numeração dos parágrafos", texto: FORMATO_LISTA },
   { id: "textos_pergunta", titulo: "Textos bíblicos citados na pergunta (sempre citados, transcritos e explicados)", texto: REGRA_TEXTOS_PERGUNTA },
