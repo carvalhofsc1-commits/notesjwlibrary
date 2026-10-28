@@ -203,14 +203,21 @@ function lerReferencia(referencia, indice) {
     const achados = versos.filter((v) => indice.versiculos.has(`${livro}|${capitulo}|${v}`));
     if (!achados.length) continue;
     partes.push({ livro, capitulo, versos: achados });
-    achados.forEach((v) => trechos.push(indice.versiculos.get(`${livro}|${capitulo}|${v}`)));
+    achados.forEach((v) => trechos.push({ livro, capitulo, verso: v, texto: indice.versiculos.get(`${livro}|${capitulo}|${v}`) }));
   }
   if (!partes.length) return null;
 
+  // "texto" é o texto corrido; "textoNumerado" é o mesmo texto com o começo de cada versículo, do segundo em diante, marcado por
+  // [n] (ou [cap:n] quando o trecho passa a outro capítulo). O app escreve esses números em negrito na leitura (LEIA).
   let texto = "";
+  let textoNumerado = "";
+  let anterior = null;
   for (const t of trechos) {
-    if (texto && (texto + " " + t).length > MAX_CHARS_VERSICULOS) break;
-    texto = texto ? texto + " " + t : t;
+    if (texto && (texto + " " + t.texto).length > MAX_CHARS_VERSICULOS) break;
+    const marca = anterior ? `[${anterior.livro === t.livro && anterior.capitulo === t.capitulo ? t.verso : `${t.capitulo}:${t.verso}`}] ` : "";
+    texto = texto ? texto + " " + t.texto : t.texto;
+    textoNumerado = textoNumerado ? textoNumerado + " " + marca + t.texto : t.texto;
+    anterior = t;
   }
 
   // Referência escrita do jeito das publicações: "Efésios 6:11, 12"; "Mateus 24:14; 28:19, 20".
@@ -227,11 +234,13 @@ function lerReferencia(referencia, indice) {
   const escrita = partes
     .map((p, i) => (i === 0 || p.livro !== partes[i - 1].livro ? `${p.livro} ` : "") + (indice.capitulos.get(p.livro) === 1 ? "" : `${p.capitulo}:`) + versosEscritos(p.versos))
     .join("; ");
-  return { referencia: escrita, texto };
+  return { referencia: escrita, texto, textoNumerado };
 }
 
-// Busca as referências (no máximo `max`, sem repetir) e devolve [{ referencia, texto }] só das encontradas.
-export async function buscarVersiculos(referencias, max) {
+// Busca as referências (no máximo `max`, sem repetir) e devolve [{ referencia, texto }] só das encontradas. Com `numerado`, cada
+// item traz também "textoNumerado" (o texto com o começo dos versículos, do segundo em diante, marcado por [n]); sem ele, a IA e
+// as outras telas recebem só o texto corrido.
+export async function buscarVersiculos(referencias, max, { numerado = false } = {}) {
   const lista = (Array.isArray(referencias) ? referencias : []).filter((r) => typeof r === "string" && r.trim());
   if (!lista.length) return [];
   const indice = await carregarBiblia();
@@ -242,7 +251,7 @@ export async function buscarVersiculos(referencias, max) {
     const achado = lerReferencia(ref, indice);
     if (!achado || vistas.has(achado.referencia)) continue;
     vistas.add(achado.referencia);
-    resultado.push(achado);
+    resultado.push(numerado ? achado : { referencia: achado.referencia, texto: achado.texto });
   }
   return resultado;
 }

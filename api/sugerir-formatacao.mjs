@@ -471,9 +471,10 @@ async function completarFontes(itens, opcoes, P, orientacao) {
   try {
     const achados = await Promise.all(
       pedidos.map(async (p) => {
-        const daPergunta = await buscarVersiculos(p.daPergunta, 6); // os da pergunta entram sempre (até 6)
+        // numerado: o texto que o app mostra traz o começo de cada versículo, do segundo em diante, marcado por [n]; a IA recebe só o texto corrido.
+        const daPergunta = await buscarVersiculos(p.daPergunta, 6, { numerado: true }); // os da pergunta entram sempre (até 6)
         const vistos = new Set(daPergunta.map((t) => t.referencia));
-        const outros = (await buscarVersiculos(p.outros, P.limites.maxTextos)).filter((t) => !vistos.has(t.referencia));
+        const outros = (await buscarVersiculos(p.outros, P.limites.maxTextos, { numerado: true })).filter((t) => !vistos.has(t.referencia));
         return {
           // semTexto: só a referência e a explicação (opção "explicar e aplicar", nunca para os da pergunta)
           textos: [...daPergunta.map((t) => ({ ...t, semTexto: false })), ...outros.map((t) => ({ ...t, semTexto: modo === "explicar" }))],
@@ -485,13 +486,13 @@ async function completarFontes(itens, opcoes, P, orientacao) {
     achados.forEach((a, indice) => {
       // Os versículos transcritos já entram (texto exato); a explicação chega na etapa seguinte. Os "só explicar" só
       // entram se a explicação vier.
-      itens[indice].textos = a.textos.filter((t) => !t.semTexto).map(({ semTexto, ...t }) => ({ ...t, aplicacao: "" }));
+      itens[indice].textos = a.textos.filter((t) => !t.semTexto).map((t) => ({ referencia: t.referencia, texto: t.textoNumerado, aplicacao: "" }));
       if (!a.textos.length && !a.verbete) return;
       lista.push({
         indice,
         contexto: String(itens[indice].contexto || "").slice(0, 3000),
         explicar: true,
-        textos: a.textos.map(({ semTexto, ...t }) => t),
+        textos: a.textos.map((t) => ({ referencia: t.referencia, texto: t.texto })),
         ...(a.verbete ? { verbete: { titulo: a.verbete.verbete, volume: a.verbete.volume, trecho: a.verbete.trecho } } : {}),
       });
     });
@@ -521,7 +522,7 @@ async function completarFontes(itens, opcoes, P, orientacao) {
           const ap = aplicacaoDe(t, pos);
           const explicacao = ap ? limparTextoGerado(ap.aplicacao, 700) : "";
           if (t.semTexto) return explicacao ? { referencia: t.referencia, texto: "", aplicacao: explicacao } : null;
-          return { referencia: t.referencia, texto: t.texto, aplicacao: explicacao };
+          return { referencia: t.referencia, texto: t.textoNumerado, aplicacao: explicacao };
         })
         .filter(Boolean);
       const explicacao = achado.verbete && r.explicacao ? limparTextoGerado(r.explicacao, 700) : "";
@@ -1629,8 +1630,8 @@ const MARCA_DE_ITEM = /^\s*(?:\d{1,2}\s*[.)]|[•◦▪‣-])\s*/u;
 async function leituraDaBiblia(referencia) {
   if (fontesConfiguradas()) {
     try {
-      const [achado] = await buscarVersiculos([referencia], 1);
-      if (achado) return { referencia: achado.referencia, texto: achado.texto };
+      const [achado] = await buscarVersiculos([referencia], 1, { numerado: true });
+      if (achado) return { referencia: achado.referencia, texto: achado.texto, textoNumerado: achado.textoNumerado };
     } catch (e) {
       console.error("Esboço: versículo indisponível", e?.message);
     }
@@ -2784,18 +2785,20 @@ async function versiculoDaJoia(capitulo, referencia) {
     const doCapitulo = new Map(capitulo.versiculos.map((v) => [v.verso, v.texto]));
     const incluidos = [];
     let texto = "";
+    let textoNumerado = ""; // o mesmo texto com o começo de cada versículo, do segundo em diante, marcado por [n]
     for (const n of [...alvo.versos].sort((a, b) => a - b).slice(0, MAX_VERSOS_DA_JOIA)) {
       const t = doCapitulo.get(n);
       if (!t) continue;
       if (texto && texto.length + 1 + t.length > MAX_CHARS_VERSICULO_DA_JOIA) break;
+      textoNumerado = texto ? `${textoNumerado} [${n}] ${t}` : t;
       texto = texto ? `${texto} ${t}` : t;
       incluidos.push(n);
     }
-    if (texto) return { referencia: escreverVersos(capitulo.nome, incluidos), texto };
+    if (texto) return { referencia: escreverVersos(capitulo.nome, incluidos), texto: textoNumerado };
   }
   if (fontesConfiguradas()) {
-    const [achado] = await buscarVersiculos([referencia], 1).catch(() => []);
-    if (achado) return { referencia: achado.referencia, texto: achado.texto };
+    const [achado] = await buscarVersiculos([referencia], 1, { numerado: true }).catch(() => []);
+    if (achado) return { referencia: achado.referencia, texto: achado.textoNumerado };
   }
   return null;
 }
