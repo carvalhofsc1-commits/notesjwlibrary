@@ -81,7 +81,19 @@ export function validarConfigVoz(entrada) {
 
 // O que o navegador precisa para preparar o texto antes de mandar (o resto fica só no servidor).
 export function configPublicaVoz(c) {
+  const modelo = MODELOS_VOZ.find((m) => m.id === c.modelo) || MODELOS_VOZ[0];
+  const tom = TONS.find((x) => x.id === c.tom);
+  const altura = ALTURAS.find((x) => x.id === c.altura);
   return {
+    // Só para mostrar no tocador (o nome, a qualidade, o tom e a altura da voz que o administrador escolheu). Tom e altura só valem nos modelos
+    // Gemini: o Chirp 3 HD não segue instruções.
+    descricao: {
+      voz: c.voz,
+      qualidade: modelo.nome.split(":")[0],
+      gemini: modelo.gemini,
+      tom: modelo.gemini && tom ? tom.nome : null,
+      altura: modelo.gemini && altura ? altura.nome : null,
+    },
     velocidade: c.velocidade,
     formatoRefs: c.formatoRefs,
     pularRefs: c.pularRefs,
