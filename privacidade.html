@@ -166,7 +166,7 @@
     <p><strong>Importante:</strong> os textos que você envia à IA ou à voz podem conter dados pessoais ou, dependendo do assunto, informações que revelam crenças religiosas. <strong>Não envie dados pessoais ou sigilosos seus ou de outras pessoas</strong> (nomes, endereços, telefones, informações de saúde, relatos reservados). O NoteStyle não lê o conteúdo para outros fins e não guarda esses textos no servidor.</p>
     <p><strong>Base legal:</strong> consentimento, manifestado no aviso que o aplicativo mostra antes do primeiro uso da IA e da voz (botão “Concordo”) e, a cada envio, ao tocar no botão correspondente (LGPD, arts. 7º, I e 11, I), e execução do serviço pedido. A sua escolha fica salva só no aparelho. Você pode retirar a concordância a qualquer momento em Ajustes → Privacidade e dados deste aparelho e deixar de usar esses recursos; o restante do aplicativo continua funcionando.</p>
     <p><strong>Convidar alguém:</strong> na página Sobre, o convite é uma mensagem com o endereço do aplicativo (sem códigos de acesso nem dados seus; o texto dela é definido pelo administrador e baixado do servidor do NoteStyle ao abrir a página, sem enviar nada seu) e a entrega ao aplicativo de mensagens que você escolher (WhatsApp, a folha de compartilhar do aparelho ou a área de transferência). O NoteStyle não recebe nem guarda essa mensagem nem o contato escolhido: o envio é feito por você, no aplicativo de mensagens, sob as regras dele.</p>
-    <p><strong>Relatar problema com a IA:</strong> o botão “Relatar problema”, junto das respostas da IA e em Ajustes, abre o aplicativo de e-mail do seu aparelho com uma mensagem pronta para o contato do item 1 (versão do aplicativo, tipo de pedido e, se você optar por manter, um trecho da resposta). O aplicativo não envia nada por conta própria: a mensagem só chega a nós se você a enviar, e você pode apagar ou mudar qualquer parte antes. Usamos o que você enviar apenas para analisar e corrigir o problema.</p>
+    <p><strong>Relatar problema com a IA:</strong> o botão “Relatar um problema”, em Ajustes, abre o aplicativo de e-mail do seu aparelho com uma mensagem pronta para o contato do item 1 (versão do aplicativo e tipo de pedido). O aplicativo não envia nada por conta própria: a mensagem só chega a nós se você a enviar, e você pode apagar ou mudar qualquer parte antes. Usamos o que você enviar apenas para analisar e corrigir o problema.</p>
 
     <h3>2.3 Dados técnicos automáticos</h3>
     <ul>
@@ -236,7 +236,23 @@
     <p class="rodape">
       <a href="sobre.html">Sobre</a> · <a href="termos.html">Termos de Uso</a>
     </p>
-    <p class="voltar"><a class="botao-voltar" href="index.html" title="Voltar ao aplicativo">← Voltar</a></p>
+    <p class="voltar"><a class="botao-voltar" href="index.html#ajustes" title="Voltar à tela anterior">← Voltar</a></p>
   </main>
+  <script>
+    // "Voltar" leva à tela anterior (Ajustes, outra página de informações...). Só quando esta página foi aberta sem passar pelo app
+    // (endereço direto, outro site), o link leva a Ajustes.
+    (function () {
+      var botao = document.querySelector('.botao-voltar');
+      if (!botao) return;
+      botao.addEventListener('click', function (e) {
+        var origem = '';
+        try { origem = new URL(document.referrer).origin; } catch (erro) {}
+        if (origem && origem === location.origin && history.length > 1) {
+          e.preventDefault();
+          history.back();
+        }
+      });
+    })();
+  </script>
 </body>
 </html>

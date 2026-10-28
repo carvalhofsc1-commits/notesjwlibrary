@@ -128,7 +128,23 @@
     <p class="rodape">
       <a href="sobre.html">Sobre</a> · <a href="privacidade.html">Política de Privacidade</a>
     </p>
-    <p class="voltar"><a class="botao-voltar" href="index.html" title="Voltar ao aplicativo">← Voltar</a></p>
+    <p class="voltar"><a class="botao-voltar" href="index.html#ajustes" title="Voltar à tela anterior">← Voltar</a></p>
   </main>
+  <script>
+    // "Voltar" leva à tela anterior (Ajustes, outra página de informações...). Só quando esta página foi aberta sem passar pelo app
+    // (endereço direto, outro site), o link leva a Ajustes.
+    (function () {
+      var botao = document.querySelector('.botao-voltar');
+      if (!botao) return;
+      botao.addEventListener('click', function (e) {
+        var origem = '';
+        try { origem = new URL(document.referrer).origin; } catch (erro) {}
+        if (origem && origem === location.origin && history.length > 1) {
+          e.preventDefault();
+          history.back();
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
