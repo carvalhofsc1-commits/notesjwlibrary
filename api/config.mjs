@@ -165,6 +165,16 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
+    // Confere o código de leitura (CODIGO_LEITURA) quando ele é salvo em Ajustes: libera a tela Leitura em voz alta (api/voz.mjs, uso "leitura").
+    if (acao === "leitura-conferir") {
+      if (!process.env.CODIGO_LEITURA) return erro(res, 503, "O código de leitura ainda não está configurado no servidor.");
+      if (!textosIguais(corpo.codigo, process.env.CODIGO_LEITURA)) {
+        registrarErro(ip);
+        return erro(res, 403, "Código de leitura incorreto.");
+      }
+      return res.status(200).json({ ok: true });
+    }
+
     // Confere o código do dirigente (CODIGO_DIRIGENTE; sem a variável, o código de pesquisa) quando ele é salvo em Ajustes.
     if (acao === "dirigente-conferir") {
       const esperado = codigoDoDirigente();
