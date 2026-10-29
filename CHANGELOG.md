@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.2.06
+
+Tocador "pronto": os botões Ler e Continuar da tela Leitura, o 🔊 do texto diário, o dos comentários e o do campo de texto abrem o tocador sem começar a ler, para escolher a voz (🗣️) e a velocidade antes; o ▶️ Iniciar começa. Tocar numa frase da Leitura, o ⏮️ e o ⏭️ e trocar a voz durante a leitura continuam imediatos.
+
 ## 6.2.05
 
 Caixa do áudio: o botão Compartilhar não corta mais o texto (cada botão toma a largura do seu texto e, se faltar espaço, o último desce para a linha de baixo).

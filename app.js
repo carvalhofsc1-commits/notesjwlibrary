@@ -1972,6 +1972,7 @@
     const vozAudio = new Audio();
     const vozCache = new Map();
     let vozSessao = 0;
+    let vozInicio = null; // com o tocador aberto "pronto" (sem ler ainda): o que o ▶️ Iniciar faz
     let vozFimAtual = null;
     let vozSilencioUri = '';
 
@@ -2380,6 +2381,7 @@
     }
 
     function vozParar() {
+      vozInicio = null;
       vozSessao++;
       vozAudio.pause();
       if (vozFimAtual) vozFimAtual();
@@ -2473,7 +2475,43 @@
       }
     }
 
+    // Os botões Ler e 🔊 abrem o tocador "pronto" em vez de começar na hora: dá para trocar a voz e a velocidade antes. O ▶️ Iniciar começa.
+    // opcoes: lugar (onde o tocador abre), texto (o aviso), acesso() (texto do erro ou ''), iniciar() (começa a leitura).
+    async function vozAbrirPronto({ lugar, texto, acesso, iniciar }) {
+      if (vozSessao && !vozBar.hidden && !vozPauseBtn.hidden && !vozInicio) vozParar(); // lendo agora: a nova escolha recomeça
+      vozInicio = null;
+      vozBarEm(lugar);
+      vozProgresso.hidden = true;
+      const regras = await vozCarregarRegras();
+      vozInfoMostrar();
+      const erro = acesso ? acesso() : '';
+      if (erro) {
+        vozMensagem(erro, true);
+        return vozControlesAtivos(false);
+      }
+      let velocidadeSalva = null;
+      try { velocidadeSalva = localStorage.getItem(VOZ_SPEED_KEY); } catch (e) { /* sem localStorage */ }
+      if (!velocidadeSalva) vozVelocidade.value = vozVelocidadePerto(regras.velocidade);
+      vozAplicarVelocidade();
+      if (!audioGerando) audioMostrar('', []);
+      vozMensagem(texto, false);
+      vozControlesAtivos(true);
+      vozPausaMostrar(true); // ▶️
+      vozPauseBtn.title = 'Iniciar';
+      vozPauseBtn.setAttribute('aria-label', 'Iniciar a leitura');
+      vozStopBtn.textContent = '✖️';
+      vozStopBtn.title = 'Fechar';
+      vozStopBtn.setAttribute('aria-label', 'Fechar');
+      vozInicio = iniciar;
+    }
+
     vozPauseBtn.addEventListener('click', () => {
+      if (vozInicio) { // tocador "pronto": o ▶️ começa a leitura (e libera o áudio no iPhone, pois é um toque)
+        const iniciar = vozInicio;
+        vozInicio = null;
+        iniciar();
+        return;
+      }
       if (vozAudio.paused) {
         vozAudio.play().catch(() => {});
         vozPausaMostrar(false);
@@ -2560,8 +2598,9 @@
       vozAplicarVelocidade();
       safeSetItem(VOZ_SPEED_KEY, vozVelocidade.value);
     });
-    document.getElementById('speakTopBtn').addEventListener('click', vozOuvir);
-    document.getElementById('speakBtn').addEventListener('click', vozOuvir);
+    const vozOuvirPronto = () => vozAbrirPronto({ lugar: null, texto: 'Pronto para ler o texto do campo.', iniciar: vozOuvir });
+    document.getElementById('speakTopBtn').addEventListener('click', vozOuvirPronto);
+    document.getElementById('speakBtn').addEventListener('click', vozOuvirPronto);
 
     // ---------- Leitura em voz alta de arquivos e textos (tela Leitura, atalho do Início) ----------
     // Importa um PDF ou um Word (lido neste aparelho: o arquivo não vai a servidor nenhum) ou recebe um texto colado e o lê em voz alta com a
@@ -3918,8 +3957,8 @@
     ['wheel', 'touchmove'].forEach(evento => leituraVista.addEventListener(evento, () => { leituraRolouEm = Date.now(); }, { passive: true }));
 
     // desde: índice da frase em que começar (toque numa frase da vista); sem ele, lê o texto do campo desde o início.
-    function leituraLer(desde) {
-      return leitorLer({
+    function leituraCfg(desde) {
+      return {
         lugar: leituraBarra,
         uso: 'leitura',
         acesso: () => (!codigoLeituraSalvo() ? 'Salve o código de leitura em Ajustes → 🔐 Autorização de acessos.' : !navigator.onLine ? 'Sem conexão com a internet.' : ''),
@@ -3937,8 +3976,10 @@
           leituraDestacar(-1);
           leituraGravarPosicao(true);
         }
-      });
+      };
     }
+
+    const leituraLer = desde => leitorLer(leituraCfg(desde));
 
     // ---- Importar PDF ou Word ----
     const LEITURA_NS_WORD = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
@@ -4298,7 +4339,16 @@
       leituraImportar(arquivo);
     });
     // Parada no meio, a leitura continua da frase em que parou; o ⏹️ (stop) esquece o ponto e volta ao início do texto, sem ler.
-    leituraLerBtn.addEventListener('click', () => leituraLer(!leituraVista.hidden && leituraPosicao > 0 ? leituraPosicao : undefined));
+    leituraLerBtn.addEventListener('click', () => {
+      const desde = !leituraVista.hidden && leituraPosicao > 0 ? leituraPosicao : undefined;
+      const pct = leituraUnidades.length ? Math.round((leituraPosicao / leituraUnidades.length) * 100) : 0;
+      vozAbrirPronto({
+        lugar: leituraBarra,
+        texto: desde ? 'Pronto para continuar de onde parou (' + pct + '%).' : 'Pronto para ler o texto.',
+        acesso: leituraCfg(desde).acesso,
+        iniciar: () => leituraLer(desde)
+      });
+    });
     leituraInicioBtn.addEventListener('click', () => {
       vozParar();
       leituraPosicao = 0;
@@ -5487,7 +5537,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.2.05'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.2.06'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -14942,7 +14992,7 @@ function saveTemplatesToStorage() {
     td.ouvirTopoBtn.addEventListener('click', () => {
       if (!tdTexto) return;
       if (vozBar.parentNode === td.vozTopo && !vozBar.hidden && !vozPauseBtn.hidden) return vozParar();
-      leitorLer({
+      const cfg = {
         lugar: td.vozTopo,
         uso: 'texto-diario',
         acesso: studyAccessError,
@@ -14950,7 +15000,8 @@ function saveTemplatesToStorage() {
         nomeAudio: () => 'Texto diário - ' + (tdTexto ? tdTexto.titulo : ''),
         destacar: tdLeituraDestacar,
         limpar: () => tdLeituraDestacar(-1)
-      });
+      };
+      vozAbrirPronto({ lugar: cfg.lugar, texto: 'Pronto para ler o texto do dia.', acesso: cfg.acesso, iniciar: () => leitorLer(cfg) });
     });
     // O ícone fica destacado enquanto o tocador está no topo e aberto.
     const tdMarcarTocando = new MutationObserver(() => td.ouvirTopoBtn.classList.toggle('tocando', vozBar.parentNode === td.vozTopo && !vozBar.hidden));
@@ -14959,7 +15010,7 @@ function saveTemplatesToStorage() {
     td.ouvirIaBtn.addEventListener('click', () => {
       if (!td.iaLista.children.length) return;
       if (vozBar.parentNode === td.vozIa && !vozBar.hidden && !vozPauseBtn.hidden) return vozParar();
-      leitorLer({
+      const cfg = {
         lugar: td.vozIa,
         uso: 'texto-diario',
         acesso: studyAccessError,
@@ -14967,7 +15018,8 @@ function saveTemplatesToStorage() {
         nomeAudio: () => 'Comentários do texto diário - ' + (tdTexto ? tdTexto.titulo : ''),
         destacar: indice => tdLeituraDestacarEm(tdIaLeituraEstado, indice),
         limpar: () => tdLeituraDestacarEm(tdIaLeituraEstado, -1)
-      });
+      };
+      vozAbrirPronto({ lugar: cfg.lugar, texto: 'Pronto para ler os comentários.', acesso: cfg.acesso, iniciar: () => leitorLer(cfg) });
     });
     // O botão fica com contorno enquanto o tocador está nos comentários e aberto.
     const tdIaMarcarTocando = new MutationObserver(() => td.ouvirIaBtn.classList.toggle('tocando', vozBar.parentNode === td.vozIa && !vozBar.hidden));
