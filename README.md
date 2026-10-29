@@ -31,5 +31,6 @@ PWA estático de formatação de notas (negrito, itálico, fontes, emojis, lista
 ## Desenvolvimento
 
 - `npm run check`: confere a sintaxe de todos os arquivos de `api/`.
+- Numeração: três números, e **o último nunca passa de 99** (sempre com dois dígitos: 6.2.00 … 6.2.99, depois 6.3.00). No `package.json` vai o mesmo número sem o zero à esquerda (6.2.5 para 6.2.05), porque o npm não aceita o zero.
 - Ao mudar o app (`index.html`, `app.css` ou `app.js`), aumente `APP_VERSION` em `app.js`: isso renova a cache do service worker e é o que faz o app instalado avisar que há versão nova e registre a mudança em `CHANGELOG.md`.
 - Deploy: push para o repositório conectado à Vercel.

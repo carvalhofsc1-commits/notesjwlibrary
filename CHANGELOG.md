@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.2.00
+
+Nova numeração: a versão tem três números e **o último nunca passa de 99**, sempre com dois dígitos (6.2.00, 6.2.01 … 6.2.99; depois dela vem 6.3.00, 6.3.01…). Esta versão não muda funções: ela só fecha a série 6.1 (que chegou à 6.1.113) e começa a 6.2. O `package.json` guarda o mesmo número no formato do npm, sem o zero à esquerda (6.2.0, 6.2.1 … 6.2.99).
+
+## 6.1.113
+
+Limpeza e organização: CSS e JS em app.css e app.js, níveis de acesso da IA em api/_acesso.mjs, histórico de versões em CHANGELOG.md, README, código morto removido e respostas 503 padronizadas
+
 ## Versões anteriores à 6.1.112
 
 versões: 4.7.1, 4.7.2… 4.9.9 e depois 5.0.0 (e 5.0.1… 5.0.9 e então 5.1.0, …, 5.9.9 e então 6.0.0, …, 6.0.9 e então 6.1.0, 6.1.1, 6.1.2, 6.1.3, 6.1.4, 6.1.5, 6.1.6, 6.1.7, 6.1.8, 6.1.9, 6.1.10, 6.1.11, 6.1.12, 6.1.13, 6.1.14, 6.1.15, 6.1.16, 6.1.17, 6.1.18, 6.1.19, 6.1.20, 6.1.21, 6.1.22, 6.1.23, 6.1.24, 6.1.25, 6.1.26, 6.1.27, 6.1.28, 6.1.29, 6.1.30, 6.1.31, 6.1.32, 6.1.33, 6.1.34, 6.1.35, 6.1.36, 6.1.37, 6.1.38, 6.1.39, 6.1.40, 6.1.41, 6.1.42, 6.1.43, 6.1.44, 6.1.45, 6.1.46, 6.1.47, 6.1.48, 6.1.49, 6.1.50, 6.1.51, 6.1.52, 6.1.53, 6.1.54, 6.1.55, 6.1.56, 6.1.57, 6.1.58, 6.1.59, 6.1.60, 6.1.61, 6.1.62, 6.1.63, 6.1.64, 6.1.65, 6.1.66, 6.1.67, 6.1.68, 6.1.69, 6.1.70, 6.1.71, 6.1.72, 6.1.73, 6.1.74, 6.1.75, 6.1.76…)
