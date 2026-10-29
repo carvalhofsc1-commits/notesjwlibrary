@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.2.05
+
+Caixa do áudio: o botão Compartilhar não corta mais o texto (cada botão toma a largura do seu texto e, se faltar espaço, o último desce para a linha de baixo).
+
 ## 6.2.04
 
 Tocador mais limpo ao fim de uma leitura: sai o ✖️ largo (a caixa do áudio tem o seu Fechar) e saem os ícones 💾 do texto diário e dos comentários (o Salvar áudio da caixa basta). Sobram só os botões Salvar áudio e Fechar.
