@@ -2277,6 +2277,11 @@
       vozPauseBtn.setAttribute('aria-label', vozPauseBtn.title);
     }
 
+    // Sem leitura e com a caixa do áudio aberta, a linha de controles do tocador (só o ✖️) sai: a caixa tem o seu Fechar.
+    function vozBarAjustar() {
+      vozBar.classList.toggle('sem-controles', !document.getElementById('vozAudioBox').hidden && vozPauseBtn.hidden);
+    }
+
     function vozControlesAtivos(lendo) {
       vozControles.hidden = false;
       vozPauseBtn.hidden = !lendo;
@@ -2287,6 +2292,7 @@
       vozStopBtn.textContent = lendo ? '⏹️' : '✖️';
       vozStopBtn.title = lendo ? 'Parar' : 'Fechar';
       vozStopBtn.setAttribute('aria-label', vozStopBtn.title);
+      vozBarAjustar();
       vozVelocidade.hidden = !lendo;
     }
 
@@ -3315,6 +3321,7 @@
         botao.hidden = !(botoes || []).includes(nome) || (nome === 'compartilhar' && document.getElementById('exportarCompartilharBtn').hidden);
       });
       leituraAudioBtn.disabled = Boolean(audioGerando);
+      vozBarAjustar();
       if (texto && vozBar.hidden) {
         vozBarEm(audioLugar || (audioCtx && audioCtx.lugar) || vozBar.parentNode);
         vozControlesAtivos(false);
@@ -5480,7 +5487,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.2.03'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.2.04'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -14637,7 +14644,6 @@ function saveTemplatesToStorage() {
       status: document.getElementById('tdStatus'),
       hojeBtn: document.getElementById('tdHojeBtn'),
       ouvirTopoBtn: document.getElementById('tdOuvirTopoBtn'),
-      salvarTopoBtn: document.getElementById('tdSalvarTopoBtn'),
       vozTopo: document.getElementById('tdVozTopo'),
       ouvirIaBtn: document.getElementById('tdIaOuvirBtn'),
       vozIa: document.getElementById('tdIaVoz'),
@@ -14769,7 +14775,7 @@ function saveTemplatesToStorage() {
       });
       td.fonte.textContent = texto.fonte || '';
       td.link.href = td.linkSempre.href = texto.url;
-      td.salvarTopoBtn.disabled = td.ouvirTopoBtn.disabled = td.campoBtn.disabled = td.gerarBtn.disabled = false;
+      td.ouvirTopoBtn.disabled = td.campoBtn.disabled = td.gerarBtn.disabled = false;
       tdIaMostrar();
       inicioAjustarAltura();
     }
@@ -14789,7 +14795,7 @@ function saveTemplatesToStorage() {
       td.comentario.textContent = '';
       td.fonte.textContent = '';
       td.link.href = td.linkSempre.href = 'https://wol.jw.org/pt/wol/h/r5/lp-t/' + data.getFullYear() + '/' + (data.getMonth() + 1) + '/' + data.getDate();
-      td.salvarTopoBtn.disabled = td.ouvirTopoBtn.disabled = td.campoBtn.disabled = td.gerarBtn.disabled = true;
+      td.ouvirTopoBtn.disabled = td.campoBtn.disabled = td.gerarBtn.disabled = true;
       tdIaMostrar();
       const codigo = codigoAcessoSalvo();
       if (!codigo) {
@@ -14822,7 +14828,7 @@ function saveTemplatesToStorage() {
       if (!codigoAcessoSalvo()) return; // sem o código de pesquisa o cartão fica desabilitado
       const abrir = td.detalhe.hidden;
       td.detalhe.hidden = !abrir;
-      td.ouvirTopoBtn.hidden = td.salvarTopoBtn.hidden = !abrir; // os ícones 🔊 e 💾 do topo só aparecem com o texto expandido
+      td.ouvirTopoBtn.hidden = !abrir; // o ícone 🔊 do topo só aparece com o texto expandido
       td.abrir.setAttribute('aria-expanded', String(abrir));
       inicioAjustarAltura();
     });
@@ -14946,23 +14952,6 @@ function saveTemplatesToStorage() {
         limpar: () => tdLeituraDestacar(-1)
       });
     });
-    // 💾: salva o áudio do texto do dia (ou dos comentários) em MP3; sem ter ouvido, gera na hora (com aviso do tempo).
-    async function tdAudioSalvar(comentarios) {
-      if (!tdTexto || leitorAtivo || audioGerando) return;
-      const regras = await vozCarregarRegras();
-      const preparo = comentarios ? tdIaLeituraPreparar(regras) : tdLeituraPreparar(regras);
-      if (typeof preparo === 'string') return;
-      audioSalvar({
-        unidades: preparo.unidades,
-        desde: 0,
-        uso: 'texto-diario',
-        acesso: studyAccessError,
-        base: () => (comentarios ? 'Comentários do texto diário - ' : 'Texto diário - ') + tdTexto.titulo,
-        lugar: comentarios ? td.vozIa : td.vozTopo
-      });
-    }
-    td.salvarTopoBtn.addEventListener('click', () => tdAudioSalvar(false));
-    document.getElementById('tdIaSalvarBtn').addEventListener('click', () => tdAudioSalvar(true));
     // O ícone fica destacado enquanto o tocador está no topo e aberto.
     const tdMarcarTocando = new MutationObserver(() => td.ouvirTopoBtn.classList.toggle('tocando', vozBar.parentNode === td.vozTopo && !vozBar.hidden));
     tdMarcarTocando.observe(vozBar, { attributes: true, attributeFilter: ['hidden'] });

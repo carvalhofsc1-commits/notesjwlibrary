@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.2.04
+
+Tocador mais limpo ao fim de uma leitura: sai o ✖️ largo (a caixa do áudio tem o seu Fechar) e saem os ícones 💾 do texto diário e dos comentários (o Salvar áudio da caixa basta). Sobram só os botões Salvar áudio e Fechar.
+
 ## 6.2.03
 
 Lista das vozes refeita (ícone de mulher e de homem, nomes à esquerda e o jeito ao lado; antes o nome ficava invisível); A− chega a letras bem menores (10 tamanhos, de 0,55 a 1,75 rem); salvar o áudio de qualquer leitura: ao fim de uma leitura por frases o tocador não se fecha mais sozinho e oferece "Salvar áudio" (as partes ouvidas já estão guardadas), e o texto diário e os comentários ganharam o ícone 💾 ao lado do 🔊. A caixa do áudio agora fica no tocador, o mesmo cartão de todas as telas.

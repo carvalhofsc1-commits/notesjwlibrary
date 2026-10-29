@@ -2153,7 +2153,7 @@
     .td-ia { position: relative; margin-top: 12px; padding: 10px 12px; border: 1px solid var(--tint3-border); border-radius: 12px; background: var(--card); }
     .td-ia[hidden] { display: none; }
     /* Um toque no título recolhe ou mostra os comentários (a seta indica). */
-    .td-ia > .td-ia-titulo { display: flex; align-items: center; gap: 6px; position: relative; min-height: 34px; padding-right: 84px; cursor: pointer; list-style: none; font-size: .88rem; font-weight: 800; }
+    .td-ia > .td-ia-titulo { display: flex; align-items: center; gap: 6px; position: relative; min-height: 34px; padding-right: 60px; cursor: pointer; list-style: none; font-size: .88rem; font-weight: 800; }
     /* Aberto, uma linha separa o cabeçalho do conteúdo; o ícone de ouvir fica na frente dele, no canto direito (ao lado da seta). */
     .td-ia[open] > .td-ia-titulo { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--tint3-border); box-sizing: content-box; }
     .td-ia > .td-ia-titulo::-webkit-details-marker { display: none; }
@@ -2165,7 +2165,6 @@
     .td-ia-lista li { margin-bottom: 10px; line-height: 1.5; }
     .td-ia-ponto { display: block; font-weight: 800; color: var(--brand); }
     .td-ia > .td-ia-ouvir { position: absolute; top: 14px; right: 28px; width: 26px; height: 26px; min-height: 0; margin: 0; padding: 0; display: flex; align-items: center; justify-content: center; font-size: .95rem; line-height: 1; border-radius: 8px; }
-    .td-ia > .td-ia-ouvir.td-ia-salvar { right: 58px; }
     .td-ia > .td-ia-ouvir.tocando { box-shadow: 0 0 0 2px var(--accent); }
     .td-ia:not([open]) > .td-ia-ouvir { display: none; } /* recolhido, só o título */
     #tdIaVoz { margin: 0 0 10px; }
@@ -2843,6 +2842,8 @@
     .voz-lista button[aria-checked="true"]::after { content: '✓'; margin-left: auto; }
     /* Só a caixa do áudio (aberta por um botão 💾, sem leitura): o resto do tocador fica escondido. */
     .voz-bar.so-audio > :not(.leitura-audio) { display: none; }
+    /* Fim da leitura, com a caixa do áudio aberta: os botões Salvar e Fechar dela bastam (o ✖️ largo do tocador sai). */
+    .voz-bar.sem-controles .voz-controles { display: none; }
     .voz-bar .leitura-audio { margin-top: 6px; }
     .voz-info { margin: 6px 0 0; font-size: .7rem; line-height: 1.3; text-align: center; color: var(--muted); }
     .voz-info[hidden] { display: none; }
