@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.2.03
+
+Lista das vozes refeita (ícone de mulher e de homem, nomes à esquerda e o jeito ao lado; antes o nome ficava invisível); A− chega a letras bem menores (10 tamanhos, de 0,55 a 1,75 rem); salvar o áudio de qualquer leitura: ao fim de uma leitura por frases o tocador não se fecha mais sozinho e oferece "Salvar áudio" (as partes ouvidas já estão guardadas), e o texto diário e os comentários ganharam o ícone 💾 ao lado do 🔊. A caixa do áudio agora fica no tocador, o mesmo cartão de todas as telas.
+
 ## 6.2.02
 
 Leitura em voz alta: botão 💾 Áudio, que salva o áudio da leitura num arquivo MP3 (até 30 minutos, a partir da frase em que a leitura parou). O app pede ao servidor as partes que ainda não foram ouvidas (3 de cada vez, com aviso do que falta e do tempo), junta tudo e oferece compartilhar ou baixar. As partes da Leitura ficam guardadas na memória enquanto a tela está aberta e são descartadas ao sair da tela, limpar ou trocar o arquivo.

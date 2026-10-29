@@ -2384,6 +2384,7 @@
     // A barra do tocador fica no campo de texto; ao ouvir o texto diário, ela vai para o cartão dele (e depois volta).
     const vozBarCasa = { pai: vozBar.parentNode, depois: vozBar.nextSibling };
     function vozBarEm(lugar) {
+      vozBar.classList.remove('so-audio');
       if (lugar) lugar.appendChild(vozBar);
       else if (vozBar.parentNode !== vozBarCasa.pai) vozBarCasa.pai.insertBefore(vozBar, vozBarCasa.depois);
     }
@@ -2484,13 +2485,17 @@
       vozVozBtn.setAttribute('aria-expanded', 'false');
     }
 
-    function vozListaItem(nome, jeito, valor) {
+    function vozListaItem(nome, jeito, valor, icone) {
       const botao = document.createElement('button');
       botao.type = 'button';
       botao.setAttribute('role', 'menuitemradio');
       botao.setAttribute('aria-checked', String(vozEscolhida === valor));
       botao.dataset.voz = valor;
-      botao.append(document.createTextNode(nome));
+      const figura = document.createElement('span');
+      figura.className = 'voz-icone';
+      figura.setAttribute('aria-hidden', 'true');
+      figura.textContent = icone;
+      botao.append(figura, document.createTextNode(nome));
       if (jeito) {
         const pequeno = document.createElement('small');
         pequeno.textContent = jeito;
@@ -2502,12 +2507,12 @@
     function vozListaMontar() {
       const vozes = (vozRegras && vozRegras.vozes) || [];
       vozLista.textContent = '';
-      vozLista.append(vozListaItem('Padrão do app', vozRegras && vozRegras.descricao ? vozRegras.descricao.voz : '', ''));
+      vozLista.append(vozListaItem('Padrão do app', vozRegras && vozRegras.descricao ? vozRegras.descricao.voz : '', '', '🎙️'));
       [['F', 'Vozes femininas'], ['M', 'Vozes masculinas']].forEach(([genero, titulo]) => {
         const titulo4 = document.createElement('h4');
         titulo4.textContent = titulo;
         vozLista.append(titulo4);
-        vozes.filter(v => v.genero === genero).forEach(v => vozLista.append(vozListaItem(v.nome, v.jeito, v.nome)));
+        vozes.filter(v => v.genero === genero).forEach(v => vozLista.append(vozListaItem(v.nome, v.jeito, v.nome, genero === 'F' ? '👩' : '👨')));
       });
     }
 
@@ -2989,13 +2994,14 @@
       leituraBuscaCampo.focus({ preventScroll: true });
     });
     // A− / A+: o tamanho da letra do texto (vista e campo), guardado neste aparelho.
-    const LEITURA_FONTES = [0.8, 0.9, 1.02, 1.15, 1.3, 1.5, 1.75]; // rem; o terceiro é o tamanho de sempre
-    const LEITURA_FONTE_KEY = 'jwLibraryNoteAplicarLeituraFonteV1';
-    let leituraFonteIdx = 2;
+    const LEITURA_FONTES = [0.55, 0.62, 0.7, 0.8, 0.9, 1.02, 1.15, 1.3, 1.5, 1.75]; // rem; 1,02 é o tamanho de sempre
+    const LEITURA_FONTE_KEY = 'jwLibraryNoteAplicarLeituraFonteV2'; // o tamanho em rem (a V1 guardava a posição numa lista menor)
+    let leituraFonteIdx = LEITURA_FONTES.indexOf(1.02);
     try {
-      const bruto = localStorage.getItem(LEITURA_FONTE_KEY);
-      const salvo = bruto === null ? NaN : Number(bruto); // sem nada guardado, vale o tamanho de sempre (Number(null) daria 0)
-      if (Number.isInteger(salvo) && salvo >= 0 && salvo < LEITURA_FONTES.length) leituraFonteIdx = salvo;
+      const guardado = localStorage.getItem(LEITURA_FONTE_KEY);
+      const antigo = localStorage.getItem('jwLibraryNoteAplicarLeituraFonteV1');
+      const valor = guardado !== null ? Number(guardado) : antigo !== null ? [0.8, 0.9, 1.02, 1.15, 1.3, 1.5, 1.75][Number(antigo)] : NaN;
+      if (Number.isFinite(valor)) leituraFonteIdx = LEITURA_FONTES.reduce((melhor, v, i) => (Math.abs(v - valor) < Math.abs(LEITURA_FONTES[melhor] - valor) ? i : melhor), 0);
     } catch (e) { /* sem localStorage */ }
     function leituraFonteAplicar() {
       document.getElementById('leituraCard').style.setProperty('--leitura-fonte', LEITURA_FONTES[leituraFonteIdx] + 'rem');
@@ -3004,7 +3010,7 @@
     }
     function leituraFonteMudar(passo) {
       leituraFonteIdx = Math.max(0, Math.min(LEITURA_FONTES.length - 1, leituraFonteIdx + passo));
-      safeSetItem(LEITURA_FONTE_KEY, String(leituraFonteIdx));
+      safeSetItem(LEITURA_FONTE_KEY, String(LEITURA_FONTES[leituraFonteIdx]));
       // Mantém na tela a frase que a pessoa está lendo (a que está no alto da vista) quando as linhas mudam de lugar.
       const topo = leituraVista.hidden ? null : [...leituraVista.querySelectorAll('.lu')].find(el => el.offsetTop + el.offsetHeight > leituraVista.scrollTop);
       leituraFonteAplicar();
@@ -3278,40 +3284,62 @@
       visorCorpo.scrollTop = 0;
     }
 
-    // ---- Salvar o áudio da leitura ----
+    // ---- Salvar o áudio (tela Leitura, texto diário e comentários) ----
     // O app pede ao servidor as partes do texto (as mesmas da leitura, 3 de cada vez; as que já foram ouvidas estão guardadas e não são pedidas de
-    // novo), junta os MP3 num arquivo só e oferece compartilhar ou baixar. Vale a partir da frase em que a leitura parou e por até 30 minutos
-    // (cerca de 6 MB): texto maior sai em mais de um arquivo, avançando o ponto de partida. Gerar leva uns 14 s por parte de 1.450 caracteres.
-    const LEITURA_AUDIO_MAX_CARACTERES = 27000; // ≈ 30 min de fala (15 caracteres por segundo)
-    const LEITURA_AUDIO_PARALELO = 3;
+    // novo), junta os MP3 num arquivo só e oferece compartilhar ou baixar. Vale por até 30 minutos (cerca de 6 MB) a partir de onde a leitura
+    // parou: texto maior sai em mais de um arquivo, avançando o ponto de partida. Gerar leva uns 14 s por parte de 1.450 caracteres. O aviso e os
+    // botões ficam no tocador (a caixa #vozAudioBox), que se abre sozinho quando o salvar é pedido sem leitura.
+    const AUDIO_MAX_CARACTERES = 27000; // ≈ 30 min de fala (15 caracteres por segundo)
+    const AUDIO_PARALELO = 3;
     const leituraAudioBtn = document.getElementById('leituraAudioBtn');
-    const leituraAudioBox = document.getElementById('leituraAudioBox');
-    const leituraAudioTxt = document.getElementById('leituraAudioTxt');
-    const leituraAudioAcoes = {
-      compartilhar: document.getElementById('leituraAudioCompartilhar'),
-      baixar: document.getElementById('leituraAudioBaixar'),
-      cancelar: document.getElementById('leituraAudioCancelar'),
-      fechar: document.getElementById('leituraAudioFechar')
+    const audioBox = document.getElementById('vozAudioBox');
+    const audioTxt = document.getElementById('vozAudioTxt');
+    const audioAcoes = {
+      salvar: document.getElementById('vozAudioSalvar'),
+      compartilhar: document.getElementById('vozAudioCompartilhar'),
+      baixar: document.getElementById('vozAudioBaixar'),
+      cancelar: document.getElementById('vozAudioCancelar'),
+      fechar: document.getElementById('vozAudioFechar')
     };
-    let leituraAudioPronto = null; // { blob, nome }
-    let leituraAudioGerando = null; // { cancelado }
+    let audioPronto = null; // { blob, nome }
+    let audioGerando = null; // { cancelado }
+    let audioCtx = null; // o que o botão Salvar áudio vai gerar: { unidades, desde, uso, acesso(), base(), lugar }
+    let audioLugar = null; // onde o tocador abre se a caixa precisar dele
 
-    function leituraAudioMostrar(texto, botoes) {
-      leituraAudioBox.hidden = !texto;
-      leituraAudioTxt.textContent = texto || '';
-      Object.entries(leituraAudioAcoes).forEach(([nome, botao]) => {
+    // Mostra a caixa do áudio; se o tocador está fechado (o salvar foi pedido sem leitura), abre só com ela.
+    function audioMostrar(texto, botoes, ctx) {
+      if (ctx) audioCtx = ctx;
+      audioBox.hidden = !texto;
+      audioTxt.textContent = texto || '';
+      Object.entries(audioAcoes).forEach(([nome, botao]) => {
         botao.hidden = !(botoes || []).includes(nome) || (nome === 'compartilhar' && document.getElementById('exportarCompartilharBtn').hidden);
       });
-      leituraAudioBtn.disabled = Boolean(leituraAudioGerando);
+      leituraAudioBtn.disabled = Boolean(audioGerando);
+      if (texto && vozBar.hidden) {
+        vozBarEm(audioLugar || (audioCtx && audioCtx.lugar) || vozBar.parentNode);
+        vozControlesAtivos(false);
+        vozBar.classList.add('so-audio');
+        vozBar.hidden = false;
+      }
     }
 
-    // Descarta o que o salvar áudio guardou (as partes da Leitura na memória e o arquivo pronto): saindo da tela, limpando o texto ou trocando o arquivo.
+    function audioFechar() {
+      audioMostrar('', []);
+      if (!leitorAtivo) {
+        vozBar.hidden = true;
+        vozBar.classList.remove('so-audio');
+        vozProgresso.hidden = true;
+      }
+    }
+
+    // Descarta o que o salvar áudio guardou (as partes da Leitura na memória e o arquivo pronto): saindo da tela Leitura, limpando o texto ou trocando o arquivo.
     function leituraAudioLimpar() {
-      if (leituraAudioGerando) leituraAudioGerando.cancelado = true;
-      leituraAudioGerando = null;
-      leituraAudioPronto = null;
+      if (audioGerando) audioGerando.cancelado = true;
+      audioGerando = null;
+      audioPronto = null;
       [...vozCache.entries()].forEach(([chave, entrada]) => { if (entrada.uso === 'leitura') vozCache.delete(chave); });
-      leituraAudioMostrar('', []);
+      if (!leitorAtivo) audioFechar();
+      else audioMostrar('', []);
     }
 
     // MP3 em bytes, sem a etiqueta ID3 do começo e sem o quadro Xing/Info (que descreve só aquela parte): assim as partes juntam num arquivo só.
@@ -3334,7 +3362,7 @@
       return bytes.subarray(Math.min(i, bytes.length));
     }
 
-    const leituraAudioDuracao = blob => new Promise(resolver => {
+    const audioDuracao = blob => new Promise(resolver => {
       const teste = new Audio();
       const url = URL.createObjectURL(blob);
       const fim = valor => { URL.revokeObjectURL(url); resolver(valor); };
@@ -3345,77 +3373,94 @@
       teste.src = url;
     });
 
-    async function leituraAudioGerar() {
-      if (leituraAudioGerando || leituraVista.hidden || !leituraUnidades.length) return;
-      leituraAudioPronto = null;
-      const aviso = !codigoLeituraSalvo() ? 'Salve o código de leitura em Ajustes → 🔐 Autorização de acessos.' : !navigator.onLine ? 'Sem conexão com a internet.' : '';
-      if (aviso) return leituraAudioMostrar(aviso, ['fechar']);
+    // ctx: { unidades, desde, uso, acesso(), base(), lugar }. As unidades são as da leitura (frases com o texto falado).
+    async function audioSalvar(ctx) {
+      if (audioGerando) return;
+      audioPronto = null;
+      audioCtx = ctx;
+      audioLugar = ctx.lugar || null;
+      const aviso = (ctx.acesso && ctx.acesso()) || (!navigator.onLine ? 'Sem conexão com a internet.' : '');
+      if (aviso) return audioMostrar(aviso, ['fechar'], ctx);
       await vozCarregarRegras();
-      const desde = leituraPosicao > 0 && leituraPosicao < leituraUnidades.length ? leituraPosicao : 0;
+      const { unidades, desde } = ctx;
       let fim = desde;
       let caracteres = 0;
-      while (fim < leituraUnidades.length) {
-        const n = leituraUnidades[fim].falado.length + 1;
-        if (caracteres + n > LEITURA_AUDIO_MAX_CARACTERES && fim > desde) break;
+      while (fim < unidades.length) {
+        const n = unidades[fim].falado.length + 1;
+        if (caracteres + n > AUDIO_MAX_CARACTERES && fim > desde) break;
         caracteres += n;
         fim++;
       }
-      const partes = leitorPartes(leituraUnidades.slice(0, fim), desde, Number(vozVelocidade.value) || 1);
-      if (!partes.length) return leituraAudioMostrar('Não há texto para gravar neste trecho.', ['fechar']);
+      const partes = leitorPartes(unidades.slice(0, fim), desde, Number(vozVelocidade.value) || 1);
+      if (!partes.length) return audioMostrar('Não há texto para gravar neste trecho.', ['fechar'], ctx);
       const faltam = partes.filter(p => !vozCache.has(vozChaveCache(p.texto))).length;
       const minutos = Math.max(1, Math.round(caracteres / 15 / 60));
-      const ate = fim < leituraUnidades.length ? ' O texto continua depois deste trecho: para o resto, avance o ponto de partida e salve de novo.' : '';
+      const ate = fim < unidades.length ? ' O texto continua depois deste trecho: para o resto, avance o ponto de partida e salve de novo.' : '';
       if (faltam) {
-        const segundos = Math.ceil(faltam / LEITURA_AUDIO_PARALELO) * 15;
+        const segundos = Math.ceil(faltam / AUDIO_PARALELO) * 15;
         const demora = segundos < 90 ? 'uns ' + segundos + ' segundos' : 'uns ' + Math.round(segundos / 60) + ' minutos';
         const pergunta = 'Salvar o áudio de cerca de ' + minutos + ' min' + (desde ? ', a partir de onde a leitura parou' : '') + '? Faltam gerar ' + faltam + ' de ' + partes.length +
           ' partes, o que leva ' + demora + '. As partes que você já ouviu não são cobradas de novo.' + ate;
-        if (!(await askConfirm(pergunta, 'Salvar o áudio', { ok: 'Gerar', cancel: 'Cancelar' }))) return;
+        if (!(await askConfirm(pergunta, 'Salvar o áudio', { ok: 'Gerar', cancel: 'Cancelar' }))) return audioMostrar(audioBox.hidden ? '' : audioTxt.textContent, audioBox.hidden ? [] : ['salvar', 'fechar'], ctx);
       }
       const tarefa = { cancelado: false };
-      leituraAudioGerando = tarefa;
+      audioGerando = tarefa;
       const entradas = new Array(partes.length);
       let feitas = partes.length - faltam;
       let proxima = 0;
-      leituraAudioMostrar('Gerando o áudio… ' + feitas + ' de ' + partes.length + ' partes', ['cancelar']);
+      audioMostrar('Gerando o áudio… ' + feitas + ' de ' + partes.length + ' partes', ['cancelar'], ctx);
       const trabalhar = async () => {
         while (!tarefa.cancelado) {
           const i = proxima++;
           if (i >= partes.length) return;
-          entradas[i] = await vozBuscar(partes[i].texto, null, 'leitura');
+          entradas[i] = await vozBuscar(partes[i].texto, null, ctx.uso);
           feitas++;
-          if (!tarefa.cancelado) leituraAudioMostrar('Gerando o áudio… ' + feitas + ' de ' + partes.length + ' partes', ['cancelar']);
+          if (!tarefa.cancelado) audioMostrar('Gerando o áudio… ' + feitas + ' de ' + partes.length + ' partes', ['cancelar']);
         }
       };
       try {
-        await Promise.all(Array.from({ length: Math.min(LEITURA_AUDIO_PARALELO, partes.length) }, trabalhar));
+        await Promise.all(Array.from({ length: Math.min(AUDIO_PARALELO, partes.length) }, trabalhar));
         if (tarefa.cancelado) return;
         if (entradas.some(e => !e || !/^data:audio\/mpeg/.test(e.uri))) throw new Error('O servidor devolveu um áudio em formato que não dá para juntar.');
         const blob = new Blob(entradas.map(e => audioMp3Bytes(e.uri)), { type: 'audio/mpeg' });
-        const nome = leituraNomeBase() + ' - áudio' + (desde ? ' (a partir de ' + Math.round((desde / leituraUnidades.length) * 100) + '%)' : '') + '.mp3';
-        const duracao = (await leituraAudioDuracao(blob)) || caracteres / 15;
-        leituraAudioPronto = { blob, nome };
-        leituraAudioGerando = null;
-        leituraAudioMostrar('✅ Áudio pronto: ' + leitorHora(duracao) + ' · ' + (blob.size / 1048576).toFixed(1).replace('.', ',') + ' MB.' + ate, ['compartilhar', 'baixar', 'fechar']);
+        const base = removeUnicodeFormatting(String(ctx.base ? ctx.base() : 'Leitura')).replace(DOCX_EMOJI, ' ').replace(/[\\/:*?"<>|“”‘’]/g, '').replace(/\s+/g, ' ').trim().slice(0, 80) || 'Leitura';
+        const nome = base + ' - áudio' + (desde ? ' (a partir de ' + Math.round((desde / unidades.length) * 100) + '%)' : '') + '.mp3';
+        const duracao = (await audioDuracao(blob)) || caracteres / 15;
+        audioPronto = { blob, nome };
+        audioGerando = null;
+        audioMostrar('✅ Áudio pronto: ' + leitorHora(duracao) + ' · ' + (blob.size / 1048576).toFixed(1).replace('.', ',') + ' MB.' + ate, ['compartilhar', 'baixar', 'fechar']);
       } catch (e) {
         tarefa.cancelado = true;
-        if (leituraAudioGerando === tarefa) leituraAudioGerando = null;
-        leituraAudioMostrar((e && e.message ? e.message : 'Não consegui gerar o áudio.') + ' As partes que deram certo ficam guardadas: tocar em Áudio de novo continua de onde parou.', ['fechar']);
+        if (audioGerando === tarefa) audioGerando = null;
+        audioMostrar((e && e.message ? e.message : 'Não consegui gerar o áudio.') + ' As partes que deram certo ficam guardadas: tocar em Salvar áudio de novo continua de onde parou.', ['salvar', 'fechar']);
       }
     }
 
-    leituraAudioBtn.addEventListener('click', leituraAudioGerar);
-    leituraAudioAcoes.cancelar.addEventListener('click', () => {
-      if (leituraAudioGerando) leituraAudioGerando.cancelado = true;
-      leituraAudioGerando = null;
-      leituraAudioMostrar('Geração do áudio cancelada. As partes já geradas ficam guardadas.', ['fechar']);
+    audioAcoes.salvar.addEventListener('click', () => { if (audioCtx) audioSalvar(audioCtx); });
+    audioAcoes.cancelar.addEventListener('click', () => {
+      if (audioGerando) audioGerando.cancelado = true;
+      audioGerando = null;
+      audioMostrar('Geração do áudio cancelada. As partes já geradas ficam guardadas.', ['salvar', 'fechar']);
     });
-    leituraAudioAcoes.fechar.addEventListener('click', () => leituraAudioMostrar('', []));
-    [['compartilhar', true], ['baixar', false]].forEach(([nome, compartilhar]) => leituraAudioAcoes[nome].addEventListener('click', async () => {
-      if (!leituraAudioPronto) return;
-      const mensagem = await docxEntregar(leituraAudioPronto.blob, leituraAudioPronto.nome, compartilhar);
-      if (mensagem) leituraAudioMostrar(mensagem, ['compartilhar', 'baixar', 'fechar']);
+    audioAcoes.fechar.addEventListener('click', audioFechar);
+    [['compartilhar', true], ['baixar', false]].forEach(([nome, compartilhar]) => audioAcoes[nome].addEventListener('click', async () => {
+      if (!audioPronto) return;
+      const mensagem = await docxEntregar(audioPronto.blob, audioPronto.nome, compartilhar);
+      if (mensagem) audioMostrar(mensagem, ['compartilhar', 'baixar', 'fechar']);
     }));
+
+    // 💾 Áudio da tela Leitura: a partir da frase em que a leitura parou (ou do começo).
+    leituraAudioBtn.addEventListener('click', () => {
+      if (audioGerando || leituraVista.hidden || !leituraUnidades.length) return;
+      audioSalvar({
+        unidades: leituraUnidades,
+        desde: leituraPosicao > 0 && leituraPosicao < leituraUnidades.length ? leituraPosicao : 0,
+        uso: 'leitura',
+        acesso: () => (!codigoLeituraSalvo() ? 'Salve o código de leitura em Ajustes → 🔐 Autorização de acessos.' : ''),
+        base: leituraNomeBase,
+        lugar: leituraBarra
+      });
+    });
 
     // ---- Leitor com destaque (tela Leitura e texto diário) ----
     // Quem chama dá as unidades (frases ou parágrafos, cada uma com o texto que será FALADO e o elemento a destacar) e o leitor cuida do resto:
@@ -3741,6 +3786,7 @@
       vozAudio.play().catch(() => {});
       vozBarEm(cfg.lugar);
       vozProgresso.hidden = true;
+      if (!audioGerando) audioMostrar('', []); // a oferta de salvar a leitura anterior some
 
       const regras = await vozCarregarRegras();
       vozInfoMostrar();
@@ -3815,7 +3861,11 @@
         } catch (e) { /* a tela mudou */ }
         vozMensagem('✅ Leitura concluída.', false);
         vozControlesAtivos(false);
-        setTimeout(() => { if (sessao === vozSessao) { vozBar.hidden = true; vozProgresso.hidden = true; } }, 1500);
+        vozProgresso.hidden = true;
+        // O tocador fica aberto com a oferta de salvar o áudio (✖️ ou Fechar o tiram): as partes ouvidas estão guardadas, então salvar não custa de novo.
+        audioMostrar('Quer guardar o áudio desta leitura num arquivo MP3?', ['salvar', 'fechar'], {
+          unidades: preparo.unidades, desde: preparo.desde, uso: cfg.uso, acesso: cfg.acesso, base: cfg.nomeAudio || (() => 'Leitura'), lugar: cfg.lugar
+        });
       } catch (e) {
         if (sessao !== vozSessao) return;
         leitorAtivo = null;
@@ -3873,6 +3923,7 @@
           if (!leituraAbrirVista()) return 'Cole um texto ou importe um arquivo para ouvir.';
           return { unidades: leituraUnidades, desde: 0 };
         },
+        nomeAudio: leituraNomeBase,
         destacar: indice => leituraDestacar(indice),
         concluir: () => { leituraPosicao = 0; },
         limpar: () => {
@@ -4356,7 +4407,7 @@
     const leituraCartao = document.getElementById('leituraCard');
     // O marca-texto acompanha o tocador: indisponível lendo, disponível parado ou em pausa (o botão Pausar/Continuar muda de texto).
     const leituraMarcarTocando = () => {
-      leituraCartao.classList.toggle('tocando', vozBar.parentNode === leituraBarra && !vozBar.hidden);
+      leituraCartao.classList.toggle('tocando', vozBar.parentNode === leituraBarra && !vozBar.hidden && !vozPauseBtn.hidden);
       leituraMarcaAtualizar();
     };
     const leituraObservarTocador = new MutationObserver(leituraMarcarTocando);
@@ -5429,7 +5480,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.2.02'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.2.03'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -14586,6 +14637,7 @@ function saveTemplatesToStorage() {
       status: document.getElementById('tdStatus'),
       hojeBtn: document.getElementById('tdHojeBtn'),
       ouvirTopoBtn: document.getElementById('tdOuvirTopoBtn'),
+      salvarTopoBtn: document.getElementById('tdSalvarTopoBtn'),
       vozTopo: document.getElementById('tdVozTopo'),
       ouvirIaBtn: document.getElementById('tdIaOuvirBtn'),
       vozIa: document.getElementById('tdIaVoz'),
@@ -14717,7 +14769,7 @@ function saveTemplatesToStorage() {
       });
       td.fonte.textContent = texto.fonte || '';
       td.link.href = td.linkSempre.href = texto.url;
-      td.ouvirTopoBtn.disabled = td.campoBtn.disabled = td.gerarBtn.disabled = false;
+      td.salvarTopoBtn.disabled = td.ouvirTopoBtn.disabled = td.campoBtn.disabled = td.gerarBtn.disabled = false;
       tdIaMostrar();
       inicioAjustarAltura();
     }
@@ -14737,7 +14789,7 @@ function saveTemplatesToStorage() {
       td.comentario.textContent = '';
       td.fonte.textContent = '';
       td.link.href = td.linkSempre.href = 'https://wol.jw.org/pt/wol/h/r5/lp-t/' + data.getFullYear() + '/' + (data.getMonth() + 1) + '/' + data.getDate();
-      td.ouvirTopoBtn.disabled = td.campoBtn.disabled = td.gerarBtn.disabled = true;
+      td.salvarTopoBtn.disabled = td.ouvirTopoBtn.disabled = td.campoBtn.disabled = td.gerarBtn.disabled = true;
       tdIaMostrar();
       const codigo = codigoAcessoSalvo();
       if (!codigo) {
@@ -14770,7 +14822,7 @@ function saveTemplatesToStorage() {
       if (!codigoAcessoSalvo()) return; // sem o código de pesquisa o cartão fica desabilitado
       const abrir = td.detalhe.hidden;
       td.detalhe.hidden = !abrir;
-      td.ouvirTopoBtn.hidden = !abrir; // o ícone 🔊 do topo só aparece com o texto expandido
+      td.ouvirTopoBtn.hidden = td.salvarTopoBtn.hidden = !abrir; // os ícones 🔊 e 💾 do topo só aparecem com o texto expandido
       td.abrir.setAttribute('aria-expanded', String(abrir));
       inicioAjustarAltura();
     });
@@ -14889,10 +14941,28 @@ function saveTemplatesToStorage() {
         uso: 'texto-diario',
         acesso: studyAccessError,
         preparar: tdLeituraPreparar,
+        nomeAudio: () => 'Texto diário - ' + (tdTexto ? tdTexto.titulo : ''),
         destacar: tdLeituraDestacar,
         limpar: () => tdLeituraDestacar(-1)
       });
     });
+    // 💾: salva o áudio do texto do dia (ou dos comentários) em MP3; sem ter ouvido, gera na hora (com aviso do tempo).
+    async function tdAudioSalvar(comentarios) {
+      if (!tdTexto || leitorAtivo || audioGerando) return;
+      const regras = await vozCarregarRegras();
+      const preparo = comentarios ? tdIaLeituraPreparar(regras) : tdLeituraPreparar(regras);
+      if (typeof preparo === 'string') return;
+      audioSalvar({
+        unidades: preparo.unidades,
+        desde: 0,
+        uso: 'texto-diario',
+        acesso: studyAccessError,
+        base: () => (comentarios ? 'Comentários do texto diário - ' : 'Texto diário - ') + tdTexto.titulo,
+        lugar: comentarios ? td.vozIa : td.vozTopo
+      });
+    }
+    td.salvarTopoBtn.addEventListener('click', () => tdAudioSalvar(false));
+    document.getElementById('tdIaSalvarBtn').addEventListener('click', () => tdAudioSalvar(true));
     // O ícone fica destacado enquanto o tocador está no topo e aberto.
     const tdMarcarTocando = new MutationObserver(() => td.ouvirTopoBtn.classList.toggle('tocando', vozBar.parentNode === td.vozTopo && !vozBar.hidden));
     tdMarcarTocando.observe(vozBar, { attributes: true, attributeFilter: ['hidden'] });
@@ -14905,6 +14975,7 @@ function saveTemplatesToStorage() {
         uso: 'texto-diario',
         acesso: studyAccessError,
         preparar: tdIaLeituraPreparar,
+        nomeAudio: () => 'Comentários do texto diário - ' + (tdTexto ? tdTexto.titulo : ''),
         destacar: indice => tdLeituraDestacarEm(tdIaLeituraEstado, indice),
         limpar: () => tdLeituraDestacarEm(tdIaLeituraEstado, -1)
       });
