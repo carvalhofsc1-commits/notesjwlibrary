@@ -17,6 +17,7 @@ const PRECACHE = [
   'index.html',
   'app.css',
   'app.js',
+  'defaults.json',
   'manifest.webmanifest',
   // Os ícones vão com ?v=3 (o mesmo endereço usado no HTML e no manifesto) para trocar os antigos guardados.
   'icon-192.png?v=3',
