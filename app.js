@@ -1962,6 +1962,12 @@
     const vozAvancarBtn = document.getElementById('vozAvancarBtn');
     const vozVoltarBtn = document.getElementById('vozVoltarBtn');
     const vozVelocidade = document.getElementById('vozVelocidade');
+    const vozVozBtn = document.getElementById('vozVozBtn');
+    const vozLista = document.getElementById('vozLista');
+    // A voz que a pessoa escolheu no tocador ('' = a do administrador); vale em todas as leituras do app e fica neste aparelho.
+    const VOZ_ESCOLHIDA_KEY = 'jwLibraryNoteAplicarVozEscolhidaV1';
+    let vozEscolhida = '';
+    try { vozEscolhida = localStorage.getItem(VOZ_ESCOLHIDA_KEY) || ''; } catch (e) { /* sem localStorage: a voz do administrador */ }
     const vozControles = vozBar.querySelector('.voz-controles');
     const vozAudio = new Audio();
     const vozCache = new Map();
@@ -1969,9 +1975,15 @@
     let vozFimAtual = null;
     let vozSilencioUri = '';
 
+    // A velocidade da lista que fica mais perto de v (a padrão do administrador ou uma guardada antes de a lista mudar).
+    function vozVelocidadePerto(v) {
+      const alvo = Number(v) || 1;
+      return [...vozVelocidade.options].map(o => o.value).sort((a, b) => Math.abs(a - alvo) - Math.abs(b - alvo))[0];
+    }
+
     try {
       const salva = localStorage.getItem(VOZ_SPEED_KEY);
-      if (salva && [...vozVelocidade.options].some(o => o.value === salva)) vozVelocidade.value = salva;
+      if (salva) vozVelocidade.value = vozVelocidadePerto(salva);
     } catch (e) { /* sem localStorage: 1× */ }
 
     // Regras da leitura escolhidas pelo administrador (o que ler e pular, velocidade padrão). Vêm do servidor na primeira
@@ -2269,6 +2281,8 @@
       vozControles.hidden = false;
       vozPauseBtn.hidden = !lendo;
       vozAvancarBtn.hidden = vozVoltarBtn.hidden = !(lendo && leitorAtivo); // só nas leituras por frases (Leitura em voz alta e texto diário)
+      vozVozBtn.hidden = !(lendo && vozRegras && Array.isArray(vozRegras.vozes) && vozRegras.vozes.length); // a troca da voz vale em qualquer leitura
+      if (!lendo) vozListaFechar();
       vozPausaMostrar(false);
       vozStopBtn.textContent = lendo ? '⏹️' : '✖️';
       vozStopBtn.title = lendo ? 'Parar' : 'Fechar';
@@ -2279,8 +2293,12 @@
     // Pede o áudio de uma parte (ou devolve o guardado nesta sessão). exemplo: as escolhas do painel do administrador.
     // uso: 'texto-diario' (código de pesquisa), 'leitura' (a tela Leitura em voz alta: código de leitura) ou 'campo' (o texto do campo de
     // formatação: só com a senha de administrador).
+    // A chave do áudio guardado: o texto, mais a voz escolhida (e o exemplo do painel do administrador).
+    const vozChaveCache = (texto, exemplo) => (exemplo ? JSON.stringify(exemplo) + '\u0001' : '') + (!exemplo && vozEscolhida ? vozEscolhida + '\u0002' : '') + texto;
+
     async function vozBuscar(texto, exemplo, uso) {
-      const chave = (exemplo ? JSON.stringify(exemplo) + '\u0001' : '') + texto;
+      const voz = exemplo ? '' : vozEscolhida;
+      const chave = vozChaveCache(texto, exemplo);
       if (vozCache.has(chave)) return vozCache.get(chave);
       // Antes do primeiro áudio o app pede a concordância com o envio do texto ao Google (o exemplo do painel do administrador não pede).
       if (!exemplo && !(await garantirConsentimentoIa())) throw new Error(MSG_SEM_CONSENTIMENTO);
@@ -2291,6 +2309,7 @@
           : uso === 'texto-diario'
           ? { codigo: codigoAcessoSalvo(), texto, uso }
           : { codigoAdmin: senhaAdminSalva(), texto, uso: 'campo' };
+      if (voz) corpo.voz = voz;
       // A conexão do celular às vezes cai antes de a resposta chegar (o Safari avisa só "Load failed", em inglês, mesmo com o
       // servidor tendo gerado o áudio): tenta de novo uma vez e, se falhar de novo, avisa em português.
       let resposta = null;
@@ -2315,7 +2334,7 @@
           ? 'A leitura em voz alta só funciona no site publicado.'
           : 'Não consegui gerar o áudio agora.'));
       }
-      const entrada = { uri: 'data:' + (dados.tipo || 'audio/mpeg') + ';base64,' + dados.audio, gemini: Boolean(dados.gemini), novo: true };
+      const entrada = { uri: 'data:' + (dados.tipo || 'audio/mpeg') + ';base64,' + dados.audio, gemini: Boolean(dados.gemini), novo: true, uso };
       vozCache.set(chave, entrada);
       vozSomarUso({ partes: 1, caracteres: texto.length, carChirp: entrada.gemini ? 0 : texto.length });
       return entrada;
@@ -2400,7 +2419,7 @@
       vozProgresso.hidden = true; // esta leitura (campo de texto) não tem barra de andamento
       let velocidadeSalva = null;
       try { velocidadeSalva = localStorage.getItem(VOZ_SPEED_KEY); } catch (e) { /* sem localStorage */ }
-      if (!velocidadeSalva && [...vozVelocidade.options].some(o => o.value === String(regras.velocidade))) vozVelocidade.value = String(regras.velocidade);
+      if (!velocidadeSalva) vozVelocidade.value = vozVelocidadePerto(regras.velocidade);
       const texto = textoParaVoz(original, regras);
       if (!texto) {
         vozMensagem('Não há texto para ouvir.', true);
@@ -2457,6 +2476,75 @@
       }
     });
     vozStopBtn.addEventListener('click', vozParar);
+
+    // 🗣️ Voz: lista das 30 vozes (femininas e masculinas, com o jeito de cada uma) e a "padrão do app" (a do administrador). Ao escolher durante uma
+    // leitura por frases, ela recomeça da frase em que estava com a voz nova; nas outras leituras vale a partir da próxima parte.
+    function vozListaFechar() {
+      vozLista.hidden = true;
+      vozVozBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    function vozListaItem(nome, jeito, valor) {
+      const botao = document.createElement('button');
+      botao.type = 'button';
+      botao.setAttribute('role', 'menuitemradio');
+      botao.setAttribute('aria-checked', String(vozEscolhida === valor));
+      botao.dataset.voz = valor;
+      botao.append(document.createTextNode(nome));
+      if (jeito) {
+        const pequeno = document.createElement('small');
+        pequeno.textContent = jeito;
+        botao.append(pequeno);
+      }
+      return botao;
+    }
+
+    function vozListaMontar() {
+      const vozes = (vozRegras && vozRegras.vozes) || [];
+      vozLista.textContent = '';
+      vozLista.append(vozListaItem('Padrão do app', vozRegras && vozRegras.descricao ? vozRegras.descricao.voz : '', ''));
+      [['F', 'Vozes femininas'], ['M', 'Vozes masculinas']].forEach(([genero, titulo]) => {
+        const titulo4 = document.createElement('h4');
+        titulo4.textContent = titulo;
+        vozLista.append(titulo4);
+        vozes.filter(v => v.genero === genero).forEach(v => vozLista.append(vozListaItem(v.nome, v.jeito, v.nome)));
+      });
+    }
+
+    function vozListaAbrir() {
+      vozListaMontar();
+      vozLista.hidden = false;
+      vozVozBtn.setAttribute('aria-expanded', 'true');
+      const botao = vozVozBtn.getBoundingClientRect();
+      const largura = Math.min(300, window.innerWidth - 16);
+      vozLista.style.width = largura + 'px';
+      vozLista.style.left = Math.max(8, Math.min(botao.left + botao.width / 2 - largura / 2, window.innerWidth - largura - 8)) + 'px';
+      const embaixo = window.innerHeight - botao.bottom;
+      if (botao.top > embaixo) { // mais lugar em cima: a lista abre para cima do botão
+        vozLista.style.top = 'auto';
+        vozLista.style.bottom = (window.innerHeight - botao.top + 6) + 'px';
+        vozLista.style.maxHeight = Math.min(420, botao.top - 16) + 'px';
+      } else {
+        vozLista.style.bottom = 'auto';
+        vozLista.style.top = (botao.bottom + 6) + 'px';
+        vozLista.style.maxHeight = Math.min(420, embaixo - 16) + 'px';
+      }
+      const atual = vozLista.querySelector('[aria-checked="true"]');
+      if (atual) atual.scrollIntoView({ block: 'nearest' });
+    }
+
+    vozVozBtn.addEventListener('click', () => { if (vozLista.hidden) vozListaAbrir(); else vozListaFechar(); });
+    document.addEventListener('click', event => { if (!vozLista.hidden && !vozLista.contains(event.target) && !vozVozBtn.contains(event.target)) vozListaFechar(); });
+    document.addEventListener('keydown', event => { if (event.key === 'Escape' && !vozLista.hidden) vozListaFechar(); });
+    vozLista.addEventListener('click', event => {
+      const botao = event.target.closest('button[data-voz]');
+      if (!botao) return;
+      vozEscolhida = botao.dataset.voz;
+      safeSetItem(VOZ_ESCOLHIDA_KEY, vozEscolhida);
+      vozListaFechar();
+      vozInfoMostrar();
+      leitorRecomecarNaFrase(); // só tem efeito nas leituras por frases
+    });
     vozVelocidade.addEventListener('change', () => {
       vozAplicarVelocidade();
       safeSetItem(VOZ_SPEED_KEY, vozVelocidade.value);
@@ -3190,6 +3278,145 @@
       visorCorpo.scrollTop = 0;
     }
 
+    // ---- Salvar o áudio da leitura ----
+    // O app pede ao servidor as partes do texto (as mesmas da leitura, 3 de cada vez; as que já foram ouvidas estão guardadas e não são pedidas de
+    // novo), junta os MP3 num arquivo só e oferece compartilhar ou baixar. Vale a partir da frase em que a leitura parou e por até 30 minutos
+    // (cerca de 6 MB): texto maior sai em mais de um arquivo, avançando o ponto de partida. Gerar leva uns 14 s por parte de 1.450 caracteres.
+    const LEITURA_AUDIO_MAX_CARACTERES = 27000; // ≈ 30 min de fala (15 caracteres por segundo)
+    const LEITURA_AUDIO_PARALELO = 3;
+    const leituraAudioBtn = document.getElementById('leituraAudioBtn');
+    const leituraAudioBox = document.getElementById('leituraAudioBox');
+    const leituraAudioTxt = document.getElementById('leituraAudioTxt');
+    const leituraAudioAcoes = {
+      compartilhar: document.getElementById('leituraAudioCompartilhar'),
+      baixar: document.getElementById('leituraAudioBaixar'),
+      cancelar: document.getElementById('leituraAudioCancelar'),
+      fechar: document.getElementById('leituraAudioFechar')
+    };
+    let leituraAudioPronto = null; // { blob, nome }
+    let leituraAudioGerando = null; // { cancelado }
+
+    function leituraAudioMostrar(texto, botoes) {
+      leituraAudioBox.hidden = !texto;
+      leituraAudioTxt.textContent = texto || '';
+      Object.entries(leituraAudioAcoes).forEach(([nome, botao]) => {
+        botao.hidden = !(botoes || []).includes(nome) || (nome === 'compartilhar' && document.getElementById('exportarCompartilharBtn').hidden);
+      });
+      leituraAudioBtn.disabled = Boolean(leituraAudioGerando);
+    }
+
+    // Descarta o que o salvar áudio guardou (as partes da Leitura na memória e o arquivo pronto): saindo da tela, limpando o texto ou trocando o arquivo.
+    function leituraAudioLimpar() {
+      if (leituraAudioGerando) leituraAudioGerando.cancelado = true;
+      leituraAudioGerando = null;
+      leituraAudioPronto = null;
+      [...vozCache.entries()].forEach(([chave, entrada]) => { if (entrada.uso === 'leitura') vozCache.delete(chave); });
+      leituraAudioMostrar('', []);
+    }
+
+    // MP3 em bytes, sem a etiqueta ID3 do começo e sem o quadro Xing/Info (que descreve só aquela parte): assim as partes juntam num arquivo só.
+    function audioMp3Bytes(uri) {
+      const bruto = atob(uri.slice(uri.indexOf(',') + 1));
+      const bytes = new Uint8Array(bruto.length);
+      for (let i = 0; i < bruto.length; i++) bytes[i] = bruto.charCodeAt(i);
+      let i = 0;
+      if (bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33 && bytes.length > 10) i = 10 + ((bytes[6] << 21) | (bytes[7] << 14) | (bytes[8] << 7) | bytes[9]);
+      while (i + 4 < bytes.length && !(bytes[i] === 0xFF && (bytes[i + 1] & 0xE0) === 0xE0)) i++;
+      const versao = (bytes[i + 1] >> 3) & 3; // 3 = MPEG 1; 2 = MPEG 2; 0 = MPEG 2.5
+      const camada = (bytes[i + 1] >> 1) & 3; // 1 = Layer III
+      const kbps = (versao === 3 ? [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320] : [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160])[bytes[i + 2] >> 4] || 0;
+      const hz = ({ 3: [44100, 48000, 32000], 2: [22050, 24000, 16000], 0: [11025, 12000, 8000] }[versao] || [])[(bytes[i + 2] >> 2) & 3] || 0;
+      if (camada === 1 && kbps && hz) {
+        const tamanho = Math.floor((versao === 3 ? 144000 : 72000) * kbps / hz) + ((bytes[i + 2] >> 1) & 1);
+        const inicio = String.fromCharCode(...bytes.subarray(i + 4, Math.min(bytes.length, i + 44)));
+        if (/Xing|Info/.test(inicio)) i += tamanho;
+      }
+      return bytes.subarray(Math.min(i, bytes.length));
+    }
+
+    const leituraAudioDuracao = blob => new Promise(resolver => {
+      const teste = new Audio();
+      const url = URL.createObjectURL(blob);
+      const fim = valor => { URL.revokeObjectURL(url); resolver(valor); };
+      teste.preload = 'metadata';
+      teste.onloadedmetadata = () => fim(Number.isFinite(teste.duration) ? teste.duration : 0);
+      teste.onerror = () => fim(0);
+      setTimeout(() => fim(0), 4000);
+      teste.src = url;
+    });
+
+    async function leituraAudioGerar() {
+      if (leituraAudioGerando || leituraVista.hidden || !leituraUnidades.length) return;
+      leituraAudioPronto = null;
+      const aviso = !codigoLeituraSalvo() ? 'Salve o código de leitura em Ajustes → 🔐 Autorização de acessos.' : !navigator.onLine ? 'Sem conexão com a internet.' : '';
+      if (aviso) return leituraAudioMostrar(aviso, ['fechar']);
+      await vozCarregarRegras();
+      const desde = leituraPosicao > 0 && leituraPosicao < leituraUnidades.length ? leituraPosicao : 0;
+      let fim = desde;
+      let caracteres = 0;
+      while (fim < leituraUnidades.length) {
+        const n = leituraUnidades[fim].falado.length + 1;
+        if (caracteres + n > LEITURA_AUDIO_MAX_CARACTERES && fim > desde) break;
+        caracteres += n;
+        fim++;
+      }
+      const partes = leitorPartes(leituraUnidades.slice(0, fim), desde, Number(vozVelocidade.value) || 1);
+      if (!partes.length) return leituraAudioMostrar('Não há texto para gravar neste trecho.', ['fechar']);
+      const faltam = partes.filter(p => !vozCache.has(vozChaveCache(p.texto))).length;
+      const minutos = Math.max(1, Math.round(caracteres / 15 / 60));
+      const ate = fim < leituraUnidades.length ? ' O texto continua depois deste trecho: para o resto, avance o ponto de partida e salve de novo.' : '';
+      if (faltam) {
+        const segundos = Math.ceil(faltam / LEITURA_AUDIO_PARALELO) * 15;
+        const demora = segundos < 90 ? 'uns ' + segundos + ' segundos' : 'uns ' + Math.round(segundos / 60) + ' minutos';
+        const pergunta = 'Salvar o áudio de cerca de ' + minutos + ' min' + (desde ? ', a partir de onde a leitura parou' : '') + '? Faltam gerar ' + faltam + ' de ' + partes.length +
+          ' partes, o que leva ' + demora + '. As partes que você já ouviu não são cobradas de novo.' + ate;
+        if (!(await askConfirm(pergunta, 'Salvar o áudio', { ok: 'Gerar', cancel: 'Cancelar' }))) return;
+      }
+      const tarefa = { cancelado: false };
+      leituraAudioGerando = tarefa;
+      const entradas = new Array(partes.length);
+      let feitas = partes.length - faltam;
+      let proxima = 0;
+      leituraAudioMostrar('Gerando o áudio… ' + feitas + ' de ' + partes.length + ' partes', ['cancelar']);
+      const trabalhar = async () => {
+        while (!tarefa.cancelado) {
+          const i = proxima++;
+          if (i >= partes.length) return;
+          entradas[i] = await vozBuscar(partes[i].texto, null, 'leitura');
+          feitas++;
+          if (!tarefa.cancelado) leituraAudioMostrar('Gerando o áudio… ' + feitas + ' de ' + partes.length + ' partes', ['cancelar']);
+        }
+      };
+      try {
+        await Promise.all(Array.from({ length: Math.min(LEITURA_AUDIO_PARALELO, partes.length) }, trabalhar));
+        if (tarefa.cancelado) return;
+        if (entradas.some(e => !e || !/^data:audio\/mpeg/.test(e.uri))) throw new Error('O servidor devolveu um áudio em formato que não dá para juntar.');
+        const blob = new Blob(entradas.map(e => audioMp3Bytes(e.uri)), { type: 'audio/mpeg' });
+        const nome = leituraNomeBase() + ' - áudio' + (desde ? ' (a partir de ' + Math.round((desde / leituraUnidades.length) * 100) + '%)' : '') + '.mp3';
+        const duracao = (await leituraAudioDuracao(blob)) || caracteres / 15;
+        leituraAudioPronto = { blob, nome };
+        leituraAudioGerando = null;
+        leituraAudioMostrar('✅ Áudio pronto: ' + leitorHora(duracao) + ' · ' + (blob.size / 1048576).toFixed(1).replace('.', ',') + ' MB.' + ate, ['compartilhar', 'baixar', 'fechar']);
+      } catch (e) {
+        tarefa.cancelado = true;
+        if (leituraAudioGerando === tarefa) leituraAudioGerando = null;
+        leituraAudioMostrar((e && e.message ? e.message : 'Não consegui gerar o áudio.') + ' As partes que deram certo ficam guardadas: tocar em Áudio de novo continua de onde parou.', ['fechar']);
+      }
+    }
+
+    leituraAudioBtn.addEventListener('click', leituraAudioGerar);
+    leituraAudioAcoes.cancelar.addEventListener('click', () => {
+      if (leituraAudioGerando) leituraAudioGerando.cancelado = true;
+      leituraAudioGerando = null;
+      leituraAudioMostrar('Geração do áudio cancelada. As partes já geradas ficam guardadas.', ['fechar']);
+    });
+    leituraAudioAcoes.fechar.addEventListener('click', () => leituraAudioMostrar('', []));
+    [['compartilhar', true], ['baixar', false]].forEach(([nome, compartilhar]) => leituraAudioAcoes[nome].addEventListener('click', async () => {
+      if (!leituraAudioPronto) return;
+      const mensagem = await docxEntregar(leituraAudioPronto.blob, leituraAudioPronto.nome, compartilhar);
+      if (mensagem) leituraAudioMostrar(mensagem, ['compartilhar', 'baixar', 'fechar']);
+    }));
+
     // ---- Leitor com destaque (tela Leitura e texto diário) ----
     // Quem chama dá as unidades (frases ou parágrafos, cada uma com o texto que será FALADO e o elemento a destacar) e o leitor cuida do resto:
     // junta em partes, pede o áudio à frente, toca, destaca a unidade que está tocando e mostra o andamento (barra e percentual).
@@ -3215,11 +3442,25 @@
         vozInfo.hidden = true;
         return;
       }
-      const partes = ['Voz ' + d.voz, d.qualidade];
+      const partes = ['Voz ' + (vozEscolhida || d.voz), d.qualidade];
       if (d.tom) partes.push('tom ' + d.tom.toLowerCase());
       if (d.altura) partes.push('altura ' + d.altura.toLowerCase());
       vozInfo.textContent = partes.join(' · ') + (d.gemini && geminiReal === false ? ' (agora com a voz reserva, Chirp 3 HD)' : '');
       vozInfo.hidden = false;
+    }
+
+    // 0:05, 12:40 ou 1:02:15.
+    function leitorHora(segundos) {
+      const total = Math.max(0, Math.round(segundos));
+      const h = Math.floor(total / 3600);
+      const m = Math.floor((total % 3600) / 60);
+      const s = total % 60;
+      return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(s).padStart(2, '0');
+    }
+
+    function leitorTempoMostrar(atual, total) {
+      document.getElementById('vozTempoAtual').textContent = leitorHora(atual);
+      document.getElementById('vozTempoTotal').textContent = leitorHora(total);
     }
 
     function leitorProgresso(fracao) {
@@ -3434,6 +3675,21 @@
     }
     vozVoltarBtn.addEventListener('click', leitorVoltar);
 
+    // Recomeça a leitura na frase que está tocando (usado ao trocar a voz: as partes já pedidas à frente têm a voz antiga).
+    function leitorRecomecarNaFrase() {
+      const parte = leitorParteAtual;
+      const duracao = vozAudio.duration;
+      if (!leitorAtivo || !parte || !Number.isFinite(duracao) || duracao <= 0) return;
+      const tempos = leitorTempos(parte, duracao);
+      const t = Math.max(0, vozAudio.currentTime - LEITOR_ATRASO);
+      let k = 0;
+      for (let i = tempos.length - 1; i > 0; i--) if (t >= tempos[i]) { k = i; break; }
+      const cfg = leitorAtivo;
+      const unidades = leitorUnidades;
+      const desde = parte.trechos[k].indice;
+      leitorLer({ ...cfg, preparar: () => ({ unidades, desde }) });
+    }
+
     // Peso do que vem antes da unidade `ate` (o mesmo cálculo das partes): quando a leitura recomeça no meio do texto, o andamento conta o texto todo.
     function leitorPesoAte(unidades, ate) {
       let peso = 0;
@@ -3458,7 +3714,11 @@
       const fim = k + 1 < tempos.length ? tempos[k + 1] : duracao;
       const fracao = fim > tempos[k] ? Math.min(1, Math.max(0, (t - tempos[k]) / (fim - tempos[k]))) : 0;
       leitorAtivo.destacar(parte.trechos[k].indice, fracao);
-      leitorProgresso((parte.pesoAntes + Math.min(1, t / duracao) * parte.peso) / pesoTotal);
+      const feito = parte.pesoAntes + Math.min(1, t / duracao) * parte.peso;
+      leitorProgresso(feito / pesoTotal);
+      // O tempo tocado e o total: segundos de áudio por peso de texto vêm da parte que está tocando; a velocidade escolhida encurta o tempo.
+      const segundosPorPeso = duracao / parte.peso / (vozAudio.playbackRate || 1);
+      leitorTempoMostrar(feito * segundosPorPeso, pesoTotal * segundosPorPeso);
     }
 
     // Chamada por vozParar: a leitura acabou ou foi interrompida.
@@ -3496,7 +3756,7 @@
       }
       let velocidadeSalva = null;
       try { velocidadeSalva = localStorage.getItem(VOZ_SPEED_KEY); } catch (e) { /* sem localStorage */ }
-      if (!velocidadeSalva && [...vozVelocidade.options].some(o => o.value === String(regras.velocidade))) vozVelocidade.value = String(regras.velocidade);
+      if (!velocidadeSalva) vozVelocidade.value = vozVelocidadePerto(regras.velocidade);
       const partes = leitorPartes(preparo.unidades, preparo.desde, Number(vozVelocidade.value) || 1);
       if (!partes.length) {
         vozMensagem('Não há texto para ouvir.', true);
@@ -3544,8 +3804,8 @@
             vozAudio.removeEventListener('timeupdate', acompanhar);
           }
           if (sessao !== vozSessao) return;
-          // Um texto grande não pode encher a memória do aparelho: só as últimas partes ficam guardadas.
-          if (i >= 3) vozCache.delete(partes[i - 3].texto);
+          // As partes da Leitura ficam guardadas (cerca de 6 MB a cada 25 minutos) enquanto a tela está aberta: ouvir de novo não custa, e o áudio
+          // pode ser salvo sem gerar de novo. Saindo da tela, limpando o texto ou trocando o arquivo, elas são descartadas (leituraAudioLimpar).
         }
         leitorProgresso(1);
         leitorAtivo = null;
@@ -3595,6 +3855,7 @@
     // Saindo da tela Leitura, a leitura para (o tocador ficaria escondido).
     function leituraAoSair() {
       if (vozBar.parentNode === leituraBarra && !vozBar.hidden) vozParar();
+      leituraAudioLimpar();
     }
 
     ['wheel', 'touchmove'].forEach(evento => leituraVista.addEventListener(evento, () => { leituraRolouEm = Date.now(); }, { passive: true }));
@@ -3931,6 +4192,7 @@
       if (arquivo.size > LEITURA_MAX_ARQUIVO) return leituraInfo('O arquivo é grande demais (máximo de 40 MB).', true);
       if (leituraTexto.value.trim() && !(await askConfirm('Substituir o texto que está na página (e o que está gravado) pelo conteúdo do arquivo?', 'Importar arquivo', { ok: 'Substituir', cancel: 'Cancelar' }))) return;
       vozParar();
+      leituraAudioLimpar();
       leituraModo(false);
       leituraInfo('Lendo o arquivo…', false);
       leituraLerBtn.disabled = true;
@@ -4075,6 +4337,7 @@
     });
     document.getElementById('leituraLimparBtn').addEventListener('click', () => {
       vozParar();
+      leituraAudioLimpar();
       leituraModo(false);
       leituraTexto.value = '';
       leituraVista.textContent = '';
@@ -4270,7 +4533,7 @@
       vozCache.clear(); // os áudios guardados foram feitos com as escolhas antigas
       await vozCarregarRegras(true);
       try { localStorage.removeItem(VOZ_SPEED_KEY); } catch (e) { /* sem localStorage */ }
-      vozVelocidade.value = String(r.data.config.velocidade);
+      vozVelocidade.value = vozVelocidadePerto(r.data.config.velocidade);
       vozAdminMensagem('✅ Salvo. As novas escolhas valem para todos em poucos segundos.', false);
     }
 
@@ -5166,7 +5429,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.2.00'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.2.02'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -13682,11 +13945,15 @@ function saveTemplatesToStorage() {
     }
 
     // "nome do arquivo importado - com marcas.docx" (sem emojis nem caracteres que o sistema de arquivos não aceita); sem arquivo, a primeira linha do texto.
-    function docxNomeDaLeitura() {
+    function leituraNomeBase() {
       const arquivo = leituraInfoArquivo.replace(/^📄\s*/, '').split(' · ')[0].replace(/\.(pdf|docx)$/i, '');
-      const primeira = leituraSemMarcas(leituraTextoDaVista).split('\n').map(linha => linha.trim()).find(Boolean) || '';
+      const primeira = leituraSemMarcas(leituraTextoDaVista || leituraTexto.value).split('\n').map(linha => linha.trim()).find(Boolean) || '';
       const limpo = removeUnicodeFormatting(arquivo || primeira).replace(DOCX_EMOJI, ' ').replace(/[\\/:*?"<>|“”‘’]/g, '').replace(/\s+/g, ' ').trim().slice(0, 80);
-      return (limpo || 'Leitura') + (leituraMarcas.length ? ' - com marcas' : '') + '.docx';
+      return limpo || 'Leitura';
+    }
+
+    function docxNomeDaLeitura() {
+      return leituraNomeBase() + (leituraMarcas.length ? ' - com marcas' : '') + '.docx';
     }
 
     // "Esboço original - título.docx" (sem emojis nem caracteres que o sistema de arquivos não aceita).

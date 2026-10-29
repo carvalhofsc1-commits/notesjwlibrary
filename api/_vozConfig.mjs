@@ -95,6 +95,8 @@ export function configPublicaVoz(c) {
       altura: modelo.gemini && altura ? altura.nome : null,
     },
     velocidade: c.velocidade,
+    // As 30 vozes, para o usuário escolher a dele no tocador (o servidor confere o nome ao receber o pedido).
+    vozes: VOZES,
     formatoRefs: c.formatoRefs,
     pularRefs: c.pularRefs,
     pularFontes: c.pularFontes,

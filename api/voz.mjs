@@ -9,7 +9,7 @@
 import { createSign } from "node:crypto";
 import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
-import { ALTURAS, MODELOS_VOZ, TONS, lerConfigVoz, validarConfigVoz } from "./_vozConfig.mjs";
+import { ALTURAS, MODELOS_VOZ, TONS, VOZES, lerConfigVoz, validarConfigVoz } from "./_vozConfig.mjs";
 
 const URL_TTS = process.env.GOOGLE_TTS_URL || "https://texttospeech.googleapis.com/v1beta1/text:synthesize";
 const URL_TOKEN = process.env.GOOGLE_TOKEN_URL || "https://oauth2.googleapis.com/token";
@@ -150,7 +150,9 @@ export default async function handler(req, res) {
   const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "desconhecido";
   if (excedeuLimite(ip)) return erro(res, 429, "Muitas leituras seguidas. Tente de novo daqui a pouco.");
 
-  const config = exemplo ? validarConfigVoz(body.exemplo) : await lerConfigVoz();
+  let config = exemplo ? validarConfigVoz(body.exemplo) : await lerConfigVoz();
+  // A voz que a pessoa escolheu no tocador vale no lugar da do administrador (só nomes da lista; o resto da configuração continua o dele).
+  if (!exemplo && typeof body.voz === "string" && VOZES.some((v) => v.nome === body.voz)) config = { ...config, voz: body.voz };
   const modelo = MODELOS_VOZ.find((m) => m.id === config.modelo) || MODELOS_VOZ[0];
   const vozChirp = `pt-BR-Chirp3-HD-${config.voz}`;
   const pedidoChirp = { input: { text: texto }, voice: { languageCode: "pt-BR", name: vozChirp }, audioConfig: { audioEncoding: "MP3" } };

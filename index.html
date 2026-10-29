@@ -131,18 +131,24 @@
             <div id="vozBar" class="voz-bar" hidden>
               <span id="vozStatus" class="voz-status" role="status" aria-live="polite"></span>
               <div id="vozProgresso" class="voz-progresso" role="progressbar" aria-label="Andamento da leitura" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden><div id="vozProgressoPreench"></div></div>
+              <div class="voz-tempos" aria-hidden="true"><span id="vozTempoAtual"></span><span id="vozTempoTotal"></span></div>
               <div class="voz-controles">
                 <button id="vozVoltarBtn" class="secondary" type="button" title="Voltar para a frase anterior" aria-label="Voltar para a frase anterior" hidden>⏮️</button>
                 <button id="vozPauseBtn" class="secondary" type="button" title="Pausar" aria-label="Pausar">⏸️</button>
                 <button id="vozAvancarBtn" class="secondary" type="button" title="Pular para a próxima frase" aria-label="Pular para a próxima frase" hidden>⏭️</button>
                 <button id="vozStopBtn" class="secondary" type="button" title="Parar" aria-label="Parar">⏹️</button>
+                <button id="vozVozBtn" class="secondary" type="button" title="Trocar a voz" aria-label="Trocar a voz" aria-haspopup="menu" aria-expanded="false" hidden>🗣️</button>
                 <select id="vozVelocidade" aria-label="Velocidade da leitura">
-                  <option value="0.85">0,85×</option>
+                  <option value="0.5">0,5×</option>
+                  <option value="0.75">0,75×</option>
                   <option value="1" selected>1×</option>
-                  <option value="1.15">1,15×</option>
-                  <option value="1.3">1,3×</option>
+                  <option value="1.25">1,25×</option>
+                  <option value="1.5">1,5×</option>
+                  <option value="1.75">1,75×</option>
+                  <option value="2">2×</option>
                 </select>
               </div>
+              <div id="vozLista" class="voz-lista" role="menu" aria-label="Voz da leitura" hidden></div>
               <p id="vozInfo" class="voz-info" hidden></p>
             </div>
           </div>
@@ -1227,9 +1233,17 @@
           </div>
           <button id="leituraMarcarSelBtn" class="secondary" type="button" hidden>🖍️ Marcar seleção</button>
           <button id="leituraTirarBtn" class="secondary" type="button" title="Tirar todas as marcas do texto" aria-label="Tirar todas as marcas do texto" hidden>🧽 Tirar</button>
+          <button id="leituraAudioBtn" class="secondary" type="button" title="Salvar o áudio da leitura (até 30 minutos, a partir da frase em que você parou)">💾 Áudio</button>
           <button id="leituraWordBtn" class="secondary" type="button" title="Visualizar e exportar o texto, com os trechos marcados, para Word (.docx)">📄 Word</button>
         </div>
         <p id="leituraMarcaDica" class="hint" role="status" hidden></p>
+        <div id="leituraAudioBox" class="leitura-audio" hidden>
+          <span id="leituraAudioTxt" role="status" aria-live="polite"></span>
+          <button id="leituraAudioCompartilhar" class="secondary" type="button" hidden>📤 Compartilhar</button>
+          <button id="leituraAudioBaixar" class="secondary" type="button" hidden>⬇️ Baixar</button>
+          <button id="leituraAudioCancelar" class="secondary" type="button" hidden>✖️ Cancelar</button>
+          <button id="leituraAudioFechar" class="secondary" type="button" hidden>Fechar</button>
+        </div>
       </div>
       <div id="leituraBarra" class="leitura-barra"></div>
       <div class="leitura-acoes">

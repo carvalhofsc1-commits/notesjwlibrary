@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.2.02
+
+Leitura em voz alta: botão 💾 Áudio, que salva o áudio da leitura num arquivo MP3 (até 30 minutos, a partir da frase em que a leitura parou). O app pede ao servidor as partes que ainda não foram ouvidas (3 de cada vez, com aviso do que falta e do tempo), junta tudo e oferece compartilhar ou baixar. As partes da Leitura ficam guardadas na memória enquanto a tela está aberta e são descartadas ao sair da tela, limpar ou trocar o arquivo.
+
+## 6.2.01
+
+Leitura em voz alta, em todas as telas (o tocador é o mesmo em todas): botão 🗣️ para trocar a voz (30 vozes, femininas e masculinas, ou "Padrão do app"); a escolha fica no aparelho e, durante uma leitura por frases, ela recomeça da frase atual com a voz nova; mais velocidades (0,5× a 2×); e o tempo tocado e o total ("1:12 / 25:40") embaixo da barra de andamento. O servidor (api/voz.mjs) aceita o nome da voz e confere na lista.
+
 ## 6.2.00
 
 Nova numeração: a versão tem três números e **o último nunca passa de 99**, sempre com dois dígitos (6.2.00, 6.2.01 … 6.2.99; depois dela vem 6.3.00, 6.3.01…). Esta versão não muda funções: ela só fecha a série 6.1 (que chegou à 6.1.113) e começa a 6.2. O `package.json` guarda o mesmo número no formato do npm, sem o zero à esquerda (6.2.0, 6.2.1 … 6.2.99).
