@@ -4,7 +4,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
-import { codigoDoDirigente, erro, origemPermitida, textosIguais } from "./_comum.mjs";
+import { codigoDoDirigente, erro, origemPermitida } from "./_comum.mjs";
+import { acessoDoDirigente, codigoValido, dirigenteValido, exigirAcesso, recusarAcesso } from "./_acesso.mjs";
 import { lerConfigIa } from "./_iaConfig.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
 import { buscarVerbete, buscarVersiculos, fontesConfiguradas, precarregarFontes, referenciasNoTexto } from "./_fontes.mjs";
@@ -784,7 +785,7 @@ async function escreverRespostas({ rotulo, texto, escopo, opcoes, modo, ajuste, 
 async function responderSentinela(res, { linhas, opcoes, modo, ajuste, anteriores }, P) {
   const sep = modoSeparacao(opcoes, ajuste);
   // A consulta às fontes não exige o código de pesquisa (o código vale só para a leitura do wol.jw.org).
-  if (consultaPedida(opcoes) && !fontesConfiguradas()) return erro(res, 500, "A consulta às fontes ainda não está configurada no servidor.");
+  if (consultaPedida(opcoes) && !fontesConfiguradas()) return erro(res, 503, "A consulta às fontes ainda não está configurada no servidor.");
   // Os versículos citados na pergunta são sempre transcritos: a Bíblia começa a carregar enquanto a IA escreve.
   precarregarFontes({ biblia: true, perspicaz: opcoes.consultarPerspicaz });
 
@@ -874,24 +875,6 @@ const SaidaEstudo = z.object({
   itens: z.array(ItemResposta.nullable().catch(null)).catch([]),
 });
 
-function codigoValido(informado) {
-  return textosIguais(informado, process.env.CODIGO_ESTUDO);
-}
-
-// O código do dirigente vale sozinho para as tarefas do dirigente (perguntas adicionais, Estudo Bíblico do dirigente) e,
-// junto com o código de pesquisa, para as que os dois cartões usam (lista de parágrafos e leitura do capítulo).
-function dirigenteValido(informado) {
-  return textosIguais(informado, codigoDoDirigente());
-}
-
-// Recusa com a mensagem do código que a pessoa estava usando: o do dirigente, se ele veio no pedido; senão o de pesquisa.
-function recusarAcesso(res, body) {
-  if (typeof body.codigoDirigente === "string" && body.codigoDirigente) {
-    return erro(res, 403, "Código do dirigente inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
-  }
-  return erro(res, 403, "Código de pesquisa inválido.");
-}
-
 // Aceita o número do artigo (7 dígitos), o link do artigo ou, sem nada, a página de reuniões da semana.
 function urlDoEstudo(body) {
   const artigo = typeof body.artigo === "string" ? body.artigo.trim() : "";
@@ -961,7 +944,7 @@ function numerosDosParagrafos(texto) {
 }
 
 async function responderEstudo(res, body, P) {
-  if (!process.env.CODIGO_ESTUDO) return erro(res, 500, "A leitura do estudo ainda não está configurada no servidor.");
+  if (!process.env.CODIGO_ESTUDO) return erro(res, 503, "A leitura do estudo ainda não está configurada no servidor.");
   if (!codigoValido(body.codigo)) return erro(res, 403, "Código de pesquisa inválido.");
 
   const url = urlDoEstudo(body);
@@ -977,7 +960,7 @@ async function responderEstudo(res, body, P) {
   if (alvo && alvo.size > maxParagrafos)
     return erro(res, 400, `O máximo permitido é de ${maxParagrafos} ${maxParagrafos === 1 ? "parágrafo" : "parágrafos"} por consulta. Peça menos parágrafos de cada vez.`);
   const opcoes = validarOpcoes(body.opcoes);
-  if (consultaPedida(opcoes) && !fontesConfiguradas()) return erro(res, 500, "A consulta às fontes ainda não está configurada no servidor.");
+  if (consultaPedida(opcoes) && !fontesConfiguradas()) return erro(res, 503, "A consulta às fontes ainda não está configurada no servidor.");
   precarregarFontes({ biblia: true, perspicaz: opcoes.consultarPerspicaz });
   const ajuste = textoLivre(body.ajuste);
   const sep = modoSeparacao(opcoes, ajuste);
@@ -1135,7 +1118,7 @@ const SaidaPerguntas = z.object({
 });
 
 async function sugerirPerguntas(res, body, P) {
-  if (!codigoDoDirigente()) return erro(res, 500, "O código do dirigente ainda não está configurado no servidor.");
+  if (!codigoDoDirigente()) return erro(res, 503, "O código do dirigente ainda não está configurado no servidor.");
   // As perguntas adicionais para o dirigente pedem só o código do dirigente.
   if (!dirigenteValido(body.codigoDirigente)) return erro(res, 403, "Código do dirigente inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
 
@@ -1290,7 +1273,7 @@ const SaidaEbc = z.object({
 // autorizado = o chamador já conferiu o código (o do dirigente, nas tarefas dele); senão vale o código de pesquisa.
 async function capituloEbc(res, body, autorizado = false) {
   if (!autorizado && !process.env.CODIGO_ESTUDO) {
-    erro(res, 500, "A leitura do estudo ainda não está configurada no servidor.");
+    erro(res, 503, "A leitura do estudo ainda não está configurada no servidor.");
     return null;
   }
   if (!autorizado && !codigoValido(body.codigo)) {
@@ -1335,7 +1318,7 @@ async function responderEbc(res, body, P) {
   const quadros = new Set((Array.isArray(body.quadros) ? body.quadros : []).filter((q) => QUADROS_EBC.some((x) => x.id === q)));
   if (!quadros.size) return erro(res, 400, "Marque pelo menos um quadro de perguntas.");
   const opcoes = validarOpcoes(body.opcoes);
-  if (consultaPedida(opcoes) && !fontesConfiguradas()) return erro(res, 500, "A consulta às fontes ainda não está configurada no servidor.");
+  if (consultaPedida(opcoes) && !fontesConfiguradas()) return erro(res, 503, "A consulta às fontes ainda não está configurada no servidor.");
   // Os versículos de "Leia o relato na Bíblia" e os citados nas perguntas vão junto: a Bíblia começa a carregar já.
   precarregarFontes({ biblia: true, perspicaz: opcoes.consultarPerspicaz });
   const ajuste = textoLivre(body.ajuste);
@@ -1453,7 +1436,7 @@ const normalizarPergunta = (t) =>
 const mesmaPergunta = (a, b) => Boolean(a && b && (a === b || (Math.min(a.length, b.length) >= 25 && (a.includes(b) || b.includes(a)))));
 
 async function perguntasEbcDirigente(res, body, P) {
-  if (!codigoDoDirigente()) return erro(res, 500, "O código do dirigente ainda não está configurado no servidor.");
+  if (!codigoDoDirigente()) return erro(res, 503, "O código do dirigente ainda não está configurado no servidor.");
   if (!dirigenteValido(body.codigoDirigente)) return erro(res, 403, "Código do dirigente inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
   const opcoes = validarOpcoes(body.opcoes);
   const ajuste = textoLivre(body.ajuste);
@@ -1874,19 +1857,6 @@ function leiturasDoEsbocoAnterior(anteriores) {
     .flatMap((p) => (Array.isArray(p && p.desenvolvimento) ? p.desenvolvimento : []))
     .map((d) => d && d.leitura && d.leitura.referencia)
     .filter((r) => typeof r === "string" && r);
-}
-
-// Confere o código do dirigente; responde com o erro e devolve false se não valer.
-function acessoDoDirigente(res, body) {
-  if (!codigoDoDirigente()) {
-    erro(res, 500, "O código do dirigente ainda não está configurado no servidor.");
-    return false;
-  }
-  if (!dirigenteValido(body.codigoDirigente)) {
-    erro(res, 403, "Código do dirigente inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
-    return false;
-  }
-  return true;
 }
 
 // Lê o discurso de Tesouros da semana pedida; devolve o discurso ou responde com o erro (e devolve null).
@@ -2805,7 +2775,7 @@ async function versiculoDaJoia(capitulo, referencia) {
 
 async function leituraJoias(res, body) {
   if (!process.env.CODIGO_ESTUDO) {
-    erro(res, 500, "A leitura do estudo ainda não está configurada no servidor.");
+    erro(res, 503, "A leitura do estudo ainda não está configurada no servidor.");
     return null;
   }
   if (!codigoValido(body.codigo)) {
@@ -2865,7 +2835,7 @@ async function responderJoias(res, body, P) {
   const comLeitura = body.leitura !== false;
   if (!comPergunta && !comLeitura) return erro(res, 400, "Marque a pergunta da apostila ou as joias da leitura.");
   const opcoes = validarOpcoes(body.opcoes);
-  if (consultaPedida(opcoes) && !fontesConfiguradas()) return erro(res, 500, "A consulta às fontes ainda não está configurada no servidor.");
+  if (consultaPedida(opcoes) && !fontesConfiguradas()) return erro(res, 503, "A consulta às fontes ainda não está configurada no servidor.");
   precarregarFontes({ biblia: true, perspicaz: opcoes.consultarPerspicaz });
   const ajuste = textoLivre(body.ajuste);
   const sep = modoSeparacao(opcoes, ajuste);
@@ -2985,7 +2955,7 @@ const SaidaTextoDiario = z.object({
 });
 
 async function comentariosDoTextoDiario(res, body, P) {
-  if (!process.env.CODIGO_ESTUDO) return erro(res, 500, "O código de pesquisa ainda não está configurado no servidor.");
+  if (!process.env.CODIGO_ESTUDO) return erro(res, 503, "O código de pesquisa ainda não está configurado no servidor.");
   if (!codigoValido(body.codigo)) return erro(res, 403, "Código de pesquisa inválido.");
   const m = typeof body.data === "string" ? body.data.match(/^(\d{4})-(\d{2})-(\d{2})$/) : null;
   if (!m) return erro(res, 400, "Data inválida.");
@@ -3087,7 +3057,7 @@ function idDoArtigoLido(resposta, urlPedida, informadoPelaIa) {
 }
 
 async function listarParagrafos(res, body, P) {
-  if (!process.env.CODIGO_ESTUDO) return erro(res, 500, "A leitura do estudo ainda não está configurada no servidor.");
+  if (!process.env.CODIGO_ESTUDO) return erro(res, 503, "A leitura do estudo ainda não está configurada no servidor.");
   // Os dois cartões de A Sentinela usam esta lista: o de comentários com o código de pesquisa, o do dirigente com o do dirigente.
   if (!codigoValido(body.codigo) && !dirigenteValido(body.codigoDirigente)) return recusarAcesso(res, body);
 
@@ -3257,12 +3227,13 @@ export default async function handler(req, res) {
     return erro(res, 403, "Origem não permitida.");
   }
 
+  if (req.body && /^backup-/.test(req.body.tarefa) && !exigirAcesso(res, req.body)) return;
   if (req.body && req.body.tarefa === "backup-campos") return lerCamposDosDocumentos(req, res);
   if (req.body && req.body.tarefa === "backup-semanas") return lerSemanasDosDocumentos(req, res);
   if (req.body && req.body.tarefa === "backup-semana") return lerPublicacoesDaSemana(req, res);
 
   if (!process.env.ANTHROPIC_API_KEY) {
-    return erro(res, 500, "Recurso de IA ainda não configurado no servidor.");
+    return erro(res, 503, "Recurso de IA ainda não configurado no servidor.");
   }
 
   // Prompts e limites atuais (padrão do código + edições do administrador, guardadas no Global Config).
@@ -3275,6 +3246,7 @@ export default async function handler(req, res) {
     return erro(res, 429, "Muitas solicitações. Tente novamente em alguns minutos.");
   }
 
+  if (req.body && !exigirAcesso(res, req.body)) return;
   if (req.body && req.body.tarefa === "estudo") return responderEstudo(res, req.body, P);
   if (req.body && req.body.tarefa === "estudo-lista") return listarParagrafos(res, req.body, P);
   if (req.body && req.body.tarefa === "estudo-perguntas") return sugerirPerguntas(res, req.body, P);
@@ -3350,7 +3322,7 @@ export default async function handler(req, res) {
   }
 
   // As caixas dos textos bíblicos (transcrever, só citar, explicar e aplicar) valem para o texto e para o resumo.
-  if (consultaPedida(opcoes) && !fontesConfiguradas()) return erro(res, 500, "A consulta às fontes ainda não está configurada no servidor.");
+  if (consultaPedida(opcoes) && !fontesConfiguradas()) return erro(res, 503, "A consulta às fontes ainda não está configurada no servidor.");
   precarregarFontes({ biblia: opcoes.consultarBiblia, perspicaz: opcoes.consultarPerspicaz });
 
   try {

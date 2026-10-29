@@ -9,12 +9,14 @@
 const VERSION = new URL(self.location.href).searchParams.get('v') || 'dev';
 const CACHE = 'jw-notas-' + VERSION;
 
-// Só o essencial leve. O icon-512.png (283 KB) fica de fora de propósito: é usado
+// Só o essencial leve. O icon-512.png (~149 KB) fica de fora de propósito: é usado
 // apenas na instalação do app e entra na cache sob demanda, na primeira vez que
 // o navegador pedir por ele.
 const PRECACHE = [
   './',
   'index.html',
+  'app.css',
+  'app.js',
   'manifest.webmanifest',
   // Os ícones vão com ?v=3 (o mesmo endereço usado no HTML e no manifesto) para trocar os antigos guardados.
   'icon-192.png?v=3',
@@ -52,7 +54,7 @@ self.addEventListener('activate', event => {
 });
 
 // Busca na rede e guarda a cópia boa. Se a rede falhar, entrega o que estiver na cache.
-// Usado no HTML e no defaults.json: os dois precisam ser frescos quando há conexão.
+// Usado no HTML, no CSS, no JS e nos JSON: precisam ser frescos quando há conexão.
 async function redePrimeiro(request) {
   const cache = await caches.open(CACHE);
 
@@ -94,7 +96,7 @@ self.addEventListener('fetch', event => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  if (request.mode === 'navigate' || url.pathname.endsWith('.html')) {
+  if (request.mode === 'navigate' || /\.(html|css|js)$/.test(url.pathname)) {
     event.respondWith(redePrimeiro(request));
     return;
   }

@@ -1,0 +1,2964 @@
+    /* Sem zoom por toque duplo: tocar rápido nas setas (◀ ▶) não deve ampliar a tela no iPhone. */
+    html, body, button, input, select, textarea, label, summary, a { touch-action: manipulation; }
+    :root {
+      color-scheme: light dark;
+      --bg: #e7ecf6;
+      --card: #ffffff;
+      --card-tint: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #d1d5db;
+      --accent: #2563eb;
+      --brand: #5b3fb5; /* violeta do logotipo, escurecido para dar contraste no fundo claro */
+      --accent-dark: #1d4ed8;
+      --btn-azul: #60a5fa; /* azul dos botões, bem mais claro que o --accent; vale nos dois temas */
+      --btn-azul-hover: #3b82f6;
+      --soft: #eef2ff;
+      --soft-line: #a5b4fc;
+      --danger: #dc2626;
+      --danger-dark: #b91c1c;
+      --success: #047857;
+      --warning: #92400e;
+      --field: #ffffff;
+      --neutral: #e5e7eb;
+      --neutral-dark: #d1d5db;
+      --neutral-text: #111827;
+      --shadow: rgba(0, 0, 0, .05);
+
+      /* Matizes dos cartões de seção — no escuro ficam mais discretos, mas mantêm a cor. */
+      --tint1-bg: linear-gradient(180deg, #dbeafe 0%, #bfdbfe 100%); --tint1-border: #3b82f6;
+      --tint2-bg: linear-gradient(180deg, #dcfce7 0%, #bbf7d0 100%); --tint2-border: #22c55e;
+      --tint3-bg: linear-gradient(180deg, #f3e8ff 0%, #e9d5ff 100%); --tint3-border: #a855f7;
+      --tint4-bg: linear-gradient(180deg, #ffedd5 0%, #fed7aa 100%); --tint4-border: #fb923c;
+      --tint5-bg: linear-gradient(180deg, #e2e8f0 0%, #cbd5e1 100%); --tint5-border: #64748b;
+      --tint6-bg: linear-gradient(180deg, #ccfbf1 0%, #99f6e4 100%); --tint6-border: #14b8a6;
+      --rosa-bg: linear-gradient(180deg, #ffe4e6 0%, #fecdd3 100%); --rosa-border: #f43f5e; /* tela Leitura em voz alta */
+    }
+
+    /* Escuro pelo sistema, a menos que o usuário force o tema claro no seletor. */
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #0f172a;
+        --card: #1e293b;
+        --card-tint: #1e293b;
+        --text: #e2e8f0;
+        --muted: #94a3b8;
+        --line: #334155;
+        --accent: #3b82f6;
+        --brand: #b7a8f0; /* violeta do logotipo, claro para o fundo escuro */
+        --accent-dark: #2563eb;
+        --soft: #1e3a5f;
+        --soft-line: #3b82f6;
+        --danger: #ef4444;
+        --danger-dark: #dc2626;
+        --success: #34d399;
+        --warning: #fbbf24;
+        --field: #0f172a;
+        --neutral: #334155;
+        --neutral-dark: #475569;
+        --neutral-text: #e2e8f0;
+        --shadow: rgba(0, 0, 0, .4);
+        --tint1-bg: linear-gradient(180deg, #1e293b 0%, #1e3a5f 100%); --tint1-border: #3b82f6;
+        --tint2-bg: linear-gradient(180deg, #1e293b 0%, #14532d 100%); --tint2-border: #22c55e;
+        --tint3-bg: linear-gradient(180deg, #1e293b 0%, #4c1d95 100%); --tint3-border: #a78bfa;
+        --tint4-bg: linear-gradient(180deg, #1e293b 0%, #7c2d12 100%); --tint4-border: #fb923c;
+        --tint5-bg: linear-gradient(180deg, #1e293b 0%, #334155 100%); --tint5-border: #94a3b8;
+        --tint6-bg: linear-gradient(180deg, #1e293b 0%, #134e4a 100%); --tint6-border: #2dd4bf;
+        --rosa-bg: linear-gradient(180deg, #1e293b 0%, #881337 100%); --rosa-border: #fb7185;
+      }
+    }
+
+    /* Escuro forçado pelo usuário, mesmo com o sistema no claro. */
+    :root[data-theme="dark"] {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --card-tint: #1e293b;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --line: #334155;
+      --accent: #3b82f6;
+      --brand: #b7a8f0; /* violeta do logotipo, claro para o fundo escuro */
+      --accent-dark: #2563eb;
+      --soft: #1e3a5f;
+      --soft-line: #3b82f6;
+      --danger: #ef4444;
+      --danger-dark: #dc2626;
+      --success: #34d399;
+      --warning: #fbbf24;
+      --field: #0f172a;
+      --neutral: #334155;
+      --neutral-dark: #475569;
+      --neutral-text: #e2e8f0;
+      --shadow: rgba(0, 0, 0, .4);
+      --tint1-bg: linear-gradient(180deg, #1e293b 0%, #1e3a5f 100%); --tint1-border: #3b82f6;
+      --tint2-bg: linear-gradient(180deg, #1e293b 0%, #14532d 100%); --tint2-border: #22c55e;
+      --tint3-bg: linear-gradient(180deg, #1e293b 0%, #4c1d95 100%); --tint3-border: #a78bfa;
+      --tint4-bg: linear-gradient(180deg, #1e293b 0%, #7c2d12 100%); --tint4-border: #fb923c;
+      --tint5-bg: linear-gradient(180deg, #1e293b 0%, #334155 100%); --tint5-border: #94a3b8;
+      --tint6-bg: linear-gradient(180deg, #1e293b 0%, #134e4a 100%); --tint6-border: #2dd4bf;
+      --rosa-bg: linear-gradient(180deg, #1e293b 0%, #881337 100%); --rosa-border: #fb7185;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+      overflow-wrap: break-word;
+    }
+
+    /* ---------- Cabeçalho ---------- */
+
+    header {
+      background: transparent;
+      color: var(--text);
+      padding: 16px 16px 12px;
+      text-align: center;
+    }
+
+    .brand-title {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 4px;
+      max-width: 100%;
+      /* O logo é um link para a página Sobre: sem sublinhado nem cor de link, e sem o clarão cinza do toque no celular. */
+      color: inherit;
+      text-decoration: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .brand-title:focus-visible { outline: 2px solid var(--brand); outline-offset: 4px; border-radius: 14px; }
+
+    .brand-icon {
+      width: clamp(68px, 13vw, 96px);
+      height: auto;
+      aspect-ratio: 1;
+      flex: 0 0 auto;
+      filter: drop-shadow(0 4px 10px var(--shadow));
+    }
+
+    /* Nome em duas cores, como no logotipo: "Note" na cor do texto e "Style" em violeta. */
+    header h1 {
+      margin: 0;
+      color: var(--text);
+      font-size: clamp(1.9rem, 6.5vw, 2.75rem);
+      line-height: 1.1;
+    }
+
+    .brand-accent { color: var(--brand); }
+
+    .brand-subtitle {
+      margin: 6px auto 0;
+      max-width: 820px;
+      font-weight: 650;
+      font-size: clamp(.95rem, 2.6vw, 1.15rem);
+      color: var(--text);
+    }
+
+    header p {
+      margin: 6px auto 0;
+      max-width: 820px;
+      color: var(--muted);
+      font-size: .92rem;
+    }
+
+    .theme-switch-row {
+      display: flex;
+      justify-content: center;
+      padding: 4px 16px 18px;
+    }
+
+    .theme-switch {
+      display: flex;
+      width: min(480px, 100%);
+      gap: 4px;
+      padding: 4px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      box-shadow: 0 2px 8px var(--shadow);
+    }
+
+    .theme-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 650;
+      font-size: .85rem;
+      padding: 10px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+
+    .theme-btn:hover { color: var(--text); }
+
+    .theme-btn.active {
+      background: var(--btn-azul);
+      color: #ffffff;
+    }
+
+    /* Sobre, Privacidade e Termos: três botões pequenos e discretos, lado a lado na mesma linha. */
+    .about-link-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px 24px;
+    }
+
+    /* A versão do app aparece logo abaixo do logo, só na tela Ajustes. */
+    .brand-versao {
+      margin: 0 0 2px;
+      color: var(--muted);
+      font-size: .85rem;
+      font-weight: 650;
+    }
+
+    .about-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--card);
+      color: var(--muted);
+      font-size: .74rem;
+      font-weight: 650;
+      line-height: 1.2;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+
+    .about-link:hover { color: var(--text); }
+
+    /* Em telas estreitas (ex.: 360 px) os três botões encolhem um pouco para continuar na mesma linha. */
+    @media (max-width: 380px) {
+      .about-link-row { gap: 5px; padding-left: 8px; padding-right: 8px; }
+      .about-link { gap: 3px; padding: 6px 8px; font-size: .68rem; }
+    }
+
+    /* ---------- Estrutura ---------- */
+
+    main {
+      width: min(1680px, 100%);
+      margin: 0 auto;
+      padding: 22px clamp(12px, 3vw, 48px);
+      padding-left: max(clamp(12px, 3vw, 48px), env(safe-area-inset-left));
+      padding-right: max(clamp(12px, 3vw, 48px), env(safe-area-inset-right));
+    }
+
+    .single-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 22px;
+    }
+
+    .card {
+      background: var(--card-tint);
+      border: 2px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 8px 22px var(--shadow);
+      max-width: 100%;
+    }
+
+    /* Cada cartão tem um matiz próprio. No tema escuro os tokens --tintN-bg/border
+       (ver :root) viram neutros, para o contraste não sofrer. */
+    .card:nth-of-type(1) { background: var(--tint1-bg); border-color: var(--tint1-border); }
+    .card:nth-of-type(2) { background: var(--tint2-bg); border-color: var(--tint2-border); }
+    .card:nth-of-type(3) { background: var(--tint3-bg); border-color: var(--tint3-border); }
+    .card:nth-of-type(4) { background: var(--tint4-bg); border-color: var(--tint4-border); }
+    .card:nth-of-type(5) { background: var(--tint5-bg); border-color: var(--tint5-border); }
+    .card:nth-of-type(6) { background: var(--tint6-bg); border-color: var(--tint6-border); }
+
+    /* As seções 2 e 3 viraram <details> (accordion) e saíram da contagem de
+       nth-of-type("section"), então recebem a cor certa por classe explícita. */
+    .card.tint-2 { background: var(--tint2-bg); border-color: var(--tint2-border); }
+    /* Tela Reuniões: o cartão das reuniões tem a mesma cor do cartão do texto, logo acima. */
+    .card.reunioes-card { background: var(--tint1-bg); border-color: var(--tint1-border); }
+    .card.tint-3 { background: var(--tint3-bg); border-color: var(--tint3-border); }
+    .card.tint-4 { background: var(--tint4-bg); border-color: var(--tint4-border); }
+    .card.tint-5 { background: var(--tint5-bg); border-color: var(--tint5-border); }
+    .card.tint-6 { background: var(--tint6-bg); border-color: var(--tint6-border); }
+    .card.tint-rosa { background: var(--rosa-bg); border-color: var(--rosa-border); }
+    /* Instruções adicionais para a IA: caixa recolhida, fininha, no mesmo molde de "Imagens do capítulo" (classe imagens-box), abaixo do botão de cada
+       pedido das reuniões (criada por iaExtraCriar); ao tocar, abre o campo de texto. */
+    .ia-extra { position: relative; margin: 10px 0 0; }
+    /* Botão pequeno 🗑️ (limpar), sobre a ponta direita da linha do título; com texto escrito, o título deixa o lugar dele livre. */
+    .ia-extra > .ia-extra-limpar { position: absolute; top: 3px; right: 10px; width: auto; min-height: 0; margin: 0; padding: 1px 7px; border-width: 1px; border-radius: 999px; font-size: .75rem; line-height: 1.4; white-space: nowrap; }
+    .ia-extra > .ia-extra-limpar[hidden] { display: none; }
+    .ia-extra.tem-texto[open] > summary { padding-right: 34px; } /* fechada, o navegador não mostra nada além do título (nem o botão) */
+    .ia-extra.tem-texto:not([open]) > summary::after { content: ' ✓'; }
+    .ia-extra > textarea { margin-top: 6px; min-height: 72px; height: 72px; max-height: 60vh; resize: vertical; border-width: 2px; border-color: var(--g-borda, var(--line)); }
+    .ia-extra > .hint { margin: 4px 0 0; font-size: .8rem; line-height: 1.35; }
+
+    /* Convite para o FunPlayB (tela Formatar): título com brilho que corre pelas cores, ícone que flutua de leve e o endereço embaixo. */
+    /* Sem moldura (teste a pedido do usuário): sem borda, fundo nem sombra. Para voltar ao cartão: background: var(--card); border: 2px solid #a07ab7; box-shadow: 0 8px 22px var(--shadow); */
+    .card.funplayb-card { background: transparent; border: 0; box-shadow: none; border-radius: 0; text-align: center; padding: 10px 4px; }
+    .funplayb-titulo { margin: 0 0 8px; font-size: 1.2rem; line-height: 1.3; }
+    /* Cores do brilho do título: escuras no tema claro e claras no escuro (todas com contraste de 4,5 ou mais contra o fundo do cartão). */
+    .funplayb-card { --fp-a: #6d28d9; --fp-b: #be185d; --fp-c: #c2410c; --fp-d: #0369a1; }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .funplayb-card { --fp-a: #c4b5fd; --fp-b: #f9a8d4; --fp-c: #fcd34d; --fp-d: #7dd3fc; }
+    }
+    :root[data-theme="dark"] .funplayb-card { --fp-a: #c4b5fd; --fp-b: #f9a8d4; --fp-c: #fcd34d; --fp-d: #7dd3fc; }
+    .funplayb-anima {
+      background: linear-gradient(90deg, var(--fp-a), var(--fp-b), var(--fp-c), var(--fp-d), var(--fp-a));
+      background-size: 300% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: var(--fp-a);
+      animation: funplaybBrilho 6s linear infinite;
+    }
+    @keyframes funplaybBrilho { to { background-position: 300% 0; } }
+    .funplayb-texto { margin: 0 0 12px; font-size: .98rem; line-height: 1.45; }
+    .funplayb-logo { display: inline-block; border-radius: 11%; line-height: 0; box-shadow: 0 6px 16px var(--shadow); -webkit-tap-highlight-color: transparent; animation: funplaybFlutua 3s ease-in-out infinite; }
+    .funplayb-logo img { display: block; width: 96px; height: 96px; border-radius: 11%; }
+    .funplayb-logo:active { transform: scale(.96); }
+    @keyframes funplaybFlutua { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+    .funplayb-endereco { display: block; margin-top: 10px; font-weight: 700; font-size: .95rem; color: var(--brand); overflow-wrap: anywhere; }
+    @media (prefers-reduced-motion: reduce) { .funplayb-anima, .funplayb-logo { animation: none; } }
+
+    /* ---------- Sugestões de formatação (IA) ---------- */
+
+    .ai-options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .ai-check {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin: 0;
+      padding: 8px 10px;
+      border: 2px solid var(--muted);
+      border-radius: 10px;
+      background: var(--card);
+      font-size: .88rem;
+      font-weight: 650;
+      line-height: 1.25;
+      cursor: pointer;
+    }
+
+    .ai-check:hover { background: var(--soft); }
+
+    .ai-check input { margin: 2px 0 0; width: 16px; height: 16px; flex: 0 0 auto; accent-color: var(--accent); }
+
+    /* Caixas dos textos bíblicos, logo abaixo dos botões de responder. */
+    .ai-sources { display: grid; gap: 6px; margin-top: 8px; }
+
+    /* O marcador herdava o preenchimento e a borda dos campos de texto (11 px), o que o deixava enorme e o texto
+       desalinhado no alto da caixa. Aqui o marcador tem tamanho próprio e o texto fica centralizado nele. */
+    .ai-sources .ai-check { align-items: center; gap: 10px; padding: 5px 10px; line-height: 1.2; }
+    .ai-sources .ai-check input {
+      flex: 0 0 18px;
+      width: 18px;
+      height: 18px;
+      min-height: 0;
+      margin: 0;
+      padding: 0;
+      border: 0;
+    }
+
+    /* Caixas de marcar claras (no tema escuro o padrão do navegador ficava preto): fundo branco, borda cinza-azulada e,
+       quando marcada, azul com o visto branco. */
+    .ai-check input[type="checkbox"],
+    .ai-sources .ai-check input[type="checkbox"] {
+      -webkit-appearance: none;
+      appearance: none;
+      /* Com appearance:none a caixa passa a obedecer o estilo geral dos campos (altura mínima e preenchimento),
+         e ficava comprida no iPhone: aqui ela volta a ser um quadrado de 18 px. */
+      flex: 0 0 18px;
+      width: 18px;
+      height: 18px;
+      min-width: 18px;
+      min-height: 18px;
+      max-height: 18px;
+      padding: 0;
+      box-sizing: border-box;
+      background-color: #ffffff;
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: 14px 14px;
+      border: 2px solid #94a3b8;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .ai-check input[type="checkbox"]:checked,
+    .ai-sources .ai-check input[type="checkbox"]:checked {
+      background-color: var(--accent);
+      border-color: var(--accent-dark);
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3 8.5l3.2 3.2L13 4.8' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    }
+
+    .ai-refine { margin-top: 14px; }
+
+    /* Textos bíblicos da matéria nos esboços: card recolhível com a lista para marcar. */
+    .textos-box { margin-top: 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
+    .textos-box > summary { padding: 10px 12px; cursor: pointer; font-size: .9rem; font-weight: 700; }
+    .textos-corpo { padding: 0 12px 12px; }
+    .textos-acoes { display: grid; gap: 8px; margin-top: 8px; }
+    .textos-acoes button { min-height: 40px; margin-top: 0; }
+    .textos-acoes .ai-study-btn { min-height: 44px; }
+    .textos-lista { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
+    .textos-box [hidden] { display: none; }
+    /* Botão que abre o último esboço salvo do discurso carregado: logo abaixo do carregar (a cor vem da categoria Esboços). */
+    .esbocosalvo { margin-top: 8px; }
+    .esbocosalvo[hidden] { display: none; }
+    /* "Ver o esboço original": botão no mesmo molde e tamanho da caixa "Instruções adicionais para a IA" (imagens-box): moldura de 2 px na cor do grupo,
+       título pequeno e cinza, 35 px de altura; fica logo abaixo dela (a caixa de instruções vem logo depois do botão que elabora o esboço). */
+    .ver-esboco, .ver-esboco:hover { background: transparent; }
+    .ver-esboco { display: block; width: 100%; height: 35px; min-height: 0; margin: 8px 0 0; padding: 4px 10px 8px; border: 2px solid var(--g-borda, var(--line)); border-radius: 10px; color: var(--muted); font-size: .86rem; font-weight: 700; line-height: 19px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ver-esboco[hidden] { display: none; }
+    @media (hover: hover) { .ver-esboco:hover { background: var(--soft); } }
+    /* Esboço original do S-34: página em tela cheia dentro do app (por cima da barra de baixo), com o título e as letras ajustáveis (A− / A+). */
+    .visor { position: fixed; inset: 0; z-index: 2050; display: flex; flex-direction: column; background: var(--bg); color: var(--text); overscroll-behavior: contain; }
+    .visor[hidden] { display: none; }
+    .visor-topo { flex: 0 0 auto; border-bottom: 3px solid #f59e0b; background: var(--card); }
+    .visor-barra { display: flex; align-items: center; gap: 8px; padding: calc(env(safe-area-inset-top, 0px) + 8px) 12px 8px; }
+    .visor-barra button { flex: 0 0 auto; width: auto; min-height: 40px; margin: 0; padding: 6px 12px; white-space: nowrap; }
+    .visor-acoes { display: flex; gap: 8px; padding: 0 12px 8px; }
+    .visor-acoes button { flex: 1 1 0; min-width: 0; width: auto; min-height: 40px; margin: 0; padding: 6px 10px; font-size: .9rem; }
+    .visor-acoes button[hidden] { display: none; }
+    .visor-info { margin: 0; padding: 0 12px 8px; color: var(--success); font-size: .82rem; font-weight: 700; line-height: 1.3; text-align: center; }
+    .visor-info.aviso { color: var(--warning); }
+    .visor-info:empty { display: none; }
+    .visor-titulo { flex: 1 1 auto; min-width: 0; margin: 0; font-size: .95rem; font-weight: 800; line-height: 1.2; text-align: center; }
+    .visor-corpo { flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 14px 14px calc(env(safe-area-inset-bottom, 0px) + 28px); }
+    .visor-folha { max-width: 780px; margin: 0 auto; padding: 16px 16px 20px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); font-size: calc(1rem * var(--visor-zoom, 1)); line-height: 1.45; }
+    .visor-folha h2 { margin: 0 0 4px; font-size: 1.25em; line-height: 1.25; }
+    .visor-sub { margin: 0 0 12px; color: var(--muted); font-size: .85em; }
+    .visor-objetivo { margin: 0 0 14px; padding: 8px 10px; border-left: 4px solid #f59e0b; border-radius: 4px; background: var(--soft); font-style: italic; }
+    .visor-secao h3 { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 18px 0 6px; padding-bottom: 4px; border-bottom: 2px solid var(--line); font-size: 1.05em; line-height: 1.3; }
+    .visor-min { flex: 0 0 auto; color: var(--muted); font-size: .85em; font-weight: 700; white-space: nowrap; }
+    .visor-item { margin: 5px 0 0; padding-left: calc(var(--n, 0) * 1.2em); }
+    .visor-item.negrito { font-weight: 700; }
+    .visor-item.nota { color: var(--muted); font-style: italic; }
+    .visor-d1 { font-style: italic; }
+    .visor-d2 { font-style: italic; font-weight: 800; border-radius: 3px; background: rgba(245, 158, 11, .28); }
+    .visor-ler { display: inline-block; margin-left: 4px; padding: 0 8px; border-radius: 999px; background: var(--soft); font-size: .8em; font-weight: 700; font-style: normal; }
+    .visor-fim { margin: 16px 0 0; padding: 8px 10px; border-left: 4px solid var(--line); border-radius: 4px; background: var(--soft); font-style: italic; }
+    .visor-aviso { margin: 20px 0; text-align: center; color: var(--muted); font-weight: 700; }
+    /* Prévia do documento Word do campo de texto: uma folha branca (como a página do Word), com 11 pt na escala 1 e a primeira linha em 14 pt;
+       os recuos (--esq e --pen, em pontos) acompanham o tamanho da letra. */
+    .visor-dica { max-width: 780px; margin: 0 auto 10px; color: var(--muted); font-size: .8rem; line-height: 1.35; text-align: center; }
+    .visor-folha.doc { background: #ffffff; color: #111827; border-color: #cbd5e1; box-shadow: 0 2px 10px rgba(0, 0, 0, .18); font-family: Calibri, Carlito, "Segoe UI", system-ui, sans-serif; font-size: calc(11pt * var(--visor-zoom, 1)); line-height: 1.3; }
+    .doc-p { margin: 0; min-height: 1.3em; padding-left: calc(var(--esq, 0) * 1pt * var(--visor-zoom, 1)); text-indent: calc(var(--pen, 0) * -1pt * var(--visor-zoom, 1)); white-space: pre-wrap; overflow-wrap: anywhere; }
+    .doc-p.titulo { font-size: 1.2727em; }
+    .doc-b { font-weight: 700; }
+    .doc-p.leit { margin-bottom: calc(6pt * var(--visor-zoom, 1)); }
+    .doc-p.leit.titulo, .doc-p.leit.sub { margin-top: calc(12pt * var(--visor-zoom, 1)); }
+    .doc-p.leit:first-child { margin-top: 0; }
+    .doc-m { background: #9df0be; color: inherit; }
+    .doc-m[data-c="amarelo"] { background: #fde68a; }
+    .doc-m[data-c="laranja"] { background: #fdba74; }
+    .doc-m[data-c="rosa"] { background: #f9a8d4; }
+    .doc-m[data-c="roxo"] { background: #d8b4fe; }
+    .doc-i { font-style: italic; }
+    .textos-check { align-items: center; gap: 10px; padding: 6px 10px; border-width: 1px; }
+    .textos-ref { flex: 1 1 0; min-width: 0; font-weight: 700; }
+    .textos-tag { flex: 0 0 auto; padding: 1px 9px; border-radius: 999px; font-size: .72rem; font-weight: 700; background: var(--soft); white-space: nowrap; }
+    .textos-tag:empty { display: none; }
+    .textos-tag.leia { background: color-mix(in srgb, #f59e0b 30%, var(--card)); }
+    .textos-tag.incluido { background: color-mix(in srgb, #22c55e 28%, var(--card)); }
+    .textos-tag.pendente { background: color-mix(in srgb, #38bdf8 28%, var(--card)); }
+    .textos-tag.falta { background: color-mix(in srgb, #ef4444 26%, var(--card)); }
+    .textos-ver { margin: 4px 0 0 6px; }
+    .textos-ver > summary { cursor: pointer; font-size: .8rem; color: var(--muted); }
+    .textos-versiculo { margin: 4px 0 0; padding: 8px 10px; border-radius: 8px; background: var(--soft); font-size: .84rem; font-style: italic; line-height: 1.4; }
+
+    /* Outros esboços (tema livre): os campos do card e os resultados da pesquisa na biblioteca. */
+    .outros-form textarea { min-height: 0; }
+    .outros-form .ai-study-load { margin-top: 10px; }
+    .outros-form .outros-minutos { max-width: 130px; }
+    .outros-materia { margin-top: 12px; }
+    .outros-materia .textos-corpo > label:first-of-type { margin-top: 4px; }
+    .outros-resultados { display: grid; gap: 8px; margin-top: 10px; }
+    .outros-resultados[hidden] { display: none; }
+    .outros-resultado { align-items: flex-start; }
+    .outros-resultado-texto { flex: 1 1 0; min-width: 0; overflow-wrap: anywhere; }
+    .outros-resultado-rotulo { display: block; font-size: .76rem; font-weight: 600; color: var(--muted); }
+    .outros-resultado-trecho { display: block; margin-top: 4px; font-size: .82rem; font-weight: 500; line-height: 1.35; color: var(--muted); }
+
+    /* Botões de copiar as respostas do estudo: ficam sobre o campo de texto, logo abaixo de cada resposta. */
+    .editor-text-pane { position: relative; }
+
+    .answer-copy-layer {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 0;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .answer-copy-btn {
+      position: absolute;
+      pointer-events: auto;
+      min-height: 0;
+      padding: 0 10px;
+      border-radius: 8px;
+      font-size: .74rem;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    /* Aumenta a área de toque sem aumentar o botão (a linha em branco é estreita). */
+    .answer-copy-btn::after {
+      content: "";
+      position: absolute;
+      inset: -9px -6px;
+    }
+
+    .answer-copy-btn[hidden] { display: none; }
+
+    /* Espaço extra no fim do campo para o botão da última resposta. */
+    textarea.has-answer-buttons { padding-bottom: 44px; }
+
+    /* Outra sugestão / Melhorar esta: dois botões de largura igual, como os de formatar com IA. */
+    .ai-refine-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .ai-refine-row button {
+      width: 100%;
+      min-width: 0;
+      min-height: 56px;
+      padding: 10px 8px;
+      font-size: .98rem;
+      line-height: 1.2;
+    }
+
+
+    .ai-box { margin-bottom: 14px; }
+
+    .ai-box.ai-box-direto { margin-bottom: 0; }
+
+    /* Dois botões de largura igual, inclusive no celular. */
+    /* Os dois botões da IA ficam um embaixo do outro, cada um na largura toda. */
+    .ai-main-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .ai-main-btn {
+      width: 100%;
+      min-width: 0;
+      min-height: 56px;
+      padding: 10px 8px;
+      font-size: .98rem;
+      line-height: 1.2;
+    }
+
+    /* Cada botão da IA tem a sua cor: azul = formatação, roxo = Sentinela (texto colado), laranja = Sentinela (site). */
+
+    .ai-hint { margin: 8px 0 0; font-size: .82rem; }
+
+
+    /* ---------- Aviso de versão nova ---------- */
+
+    .update-banner {
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+      z-index: 2000;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 12px 14px;
+      border: 2px solid var(--accent);
+      border-radius: 14px;
+      background: var(--card);
+      color: var(--text);
+      box-shadow: 0 10px 30px var(--shadow);
+    }
+
+    .update-banner p {
+      flex: 1 1 220px;
+      margin: 0;
+      font-size: .95rem;
+      font-weight: 650;
+    }
+
+    .update-banner-actions { display: flex; gap: 8px; }
+
+    .ai-sentinela-btn {
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+      min-height: 48px;
+      background: #7e22ce;
+      color: #ffffff;
+    }
+
+    .ai-sentinela-btn:hover { background: #6b21a8; }
+
+    /* Na área "Sugerir formatação com IA" o botão da Sentinela segue o tamanho do botão de formatação. */
+    .ai-main-row .ai-sentinela-btn { margin-top: 0; min-height: 56px; }
+
+    /* Contêiner do botão "Responder resumidamente a pergunta do texto colado" (Opções com IA), separado do botão de cima. */
+    .ai-colado { margin-top: 14px; padding: 12px; border: 2px solid #a855f7; border-radius: 12px; background: var(--card); background: color-mix(in srgb, #a855f7 8%, var(--card)); }
+    .ai-colado .hint { margin: 8px 0 0; }
+
+    /* ---------- Card de A Sentinela ---------- */
+
+    details.subsection.sentinela-subsection {
+      background: var(--card);
+      background: color-mix(in srgb, #a855f7 10%, var(--card));
+      border: 2px solid #a855f7;
+    }
+
+    /* Card do dirigente: mesmo formato do card da Sentinela, em verde-azulado. */
+    details.subsection.dirigente-subsection {
+      background: var(--card);
+      background: color-mix(in srgb, #14b8a6 10%, var(--card));
+      border: 2px solid #14b8a6;
+    }
+    /* Pesquisas e respostas salvas (histórico dos resultados da IA neste aparelho). */
+    .historico-lista { list-style: none; margin: 8px; padding: 0; display: grid; gap: 8px; }
+    /* Categorias (Comentários, Dirigentes, Esboços): contêineres recolhíveis com a cor do grupo correspondente da tela Reuniões. */
+    .historico-cat { margin-top: 10px; border: 2px solid var(--cat-cor, var(--line)); border-radius: 12px; overflow: hidden; background: var(--card); background: color-mix(in srgb, var(--cat-cor, var(--line)) 6%, var(--card)); }
+    .historico-cat > summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; cursor: pointer; list-style: none; font-weight: 800; color: var(--text); background: var(--card); background: color-mix(in srgb, var(--cat-cor, var(--line)) 34%, var(--card)); -webkit-tap-highlight-color: transparent; }
+    .historico-cat > summary::-webkit-details-marker { display: none; }
+    .historico-cat > summary::after { content: '▸'; color: var(--text); font-size: 1.05rem; transition: transform .15s ease; }
+    .historico-cat[open] > summary::after { transform: rotate(90deg); }
+    .historico-cat > .historico-vazio { margin: 8px 12px; color: var(--muted); font-size: .9rem; }
+    .historico-cat.historico-cat-desabilitada { --cat-cor: var(--line); background: var(--card); opacity: .8; }
+    .historico-cat.historico-cat-desabilitada > summary { background: var(--card); color: var(--muted); cursor: not-allowed; }
+    .historico-cat.historico-cat-desabilitada > summary::after { content: '🔒'; transform: none; }
+    .historico-item { padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
+    .historico-titulo { font-weight: 750; line-height: 1.35; overflow-wrap: anywhere; }
+    .historico-meta { margin: 2px 0 8px; color: var(--muted); font-size: .82rem; }
+    .historico-acoes { display: flex; gap: 8px; }
+    .historico-acoes button { flex: 1 1 0; min-height: 40px; padding: 6px 10px; }
+    .historico-acoes .historico-apagar { flex: 0 0 auto; }
+    .historico-limpar { width: 100%; margin-top: 12px; }
+    .historico-limpar[hidden] { display: none; }
+    /* Card das Joias Espirituais: mesmo formato, em azul. */
+    details.subsection.joias-subsection {
+      background: var(--card);
+      background: color-mix(in srgb, #0ea5e9 10%, var(--card));
+      border: 2px solid #0ea5e9;
+    }
+    /* Card do Estudo Bíblico de Congregação: mesmo formato, em âmbar. */
+    details.subsection.ebc-subsection {
+      background: var(--card);
+      background: color-mix(in srgb, #f59e0b 10%, var(--card));
+      border: 2px solid #f59e0b;
+    }
+    .ebc-info:empty { display: none; }
+    /* Cor da marca: violeta escuro no tema claro e violeta claro no escuro (o roxo padrão dos links some no escuro). */
+    .ebc-info a { font-weight: 650; color: var(--brand); }
+    .dirigente-secoes { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+    .dirigente-secoes-titulo { margin: 0; font-size: .88rem; font-weight: 700; }
+    .dirigente-secoes-sub { margin: 10px 0 0; font-size: .84rem; font-weight: 700; }
+    /* "Seções da resposta" das perguntas do dirigente (A Sentinela): caixa recolhida, no mesmo molde (imagens-box) e tamanho de "Instruções adicionais
+       para a IA", logo acima; dentro, cada seção (1, 2 e 3) tem um título simples, sem fundo, fora da caixa de marcar (dirigente-secoes-sub). */
+    .secoes-resposta[open] > summary { margin-bottom: 2px; }
+    /* Cores das seções recolhíveis (as mesmas dos antigos cards numerados). */
+    details.subsection.sub-tint-2 { background: var(--tint2-bg); border-color: var(--tint2-border); }
+    details.subsection.sub-tint-3 { background: var(--tint3-bg); border-color: var(--tint3-border); }
+    details.subsection.sub-tint-4 { background: var(--tint4-bg); border-color: var(--tint4-border); }
+    details.subsection.sub-tint-5 { background: var(--tint5-bg); border-color: var(--tint5-border); }
+    details.subsection.sub-tint-6 { background: var(--tint6-bg); border-color: var(--tint6-border); }
+
+    /* Cada opção num recipiente próprio, com a cor do seu botão no alto. */
+    .sent-option {
+      margin-top: 14px;
+      padding: 12px;
+      border: 2px solid var(--muted);
+      border-radius: 12px;
+      background: var(--card);
+    }
+
+    /* A leitura do site é a única opção do card: sem a caixa em volta (borda, fundo e faixa colorida no alto). */
+    .sent-option.sent-option-site { margin-top: 8px; padding: 0; border: 0; border-radius: 0; background: transparent; }
+
+    .sent-option h3 {
+      margin: 0 0 4px;
+      font-size: .92rem;
+      line-height: 1.3;
+    }
+
+    /* Estudo de A Sentinela carregado: o tema do artigo vira o título do cartão, em destaque. */
+    .sent-option h3.study-aguardando { margin: 2px 0 10px; font-size: .95rem; font-weight: 600; line-height: 1.3; text-align: center; color: var(--muted); }
+    .sent-option h3[hidden] { display: none; }
+    .sent-option h3 a { color: inherit; text-decoration: none; }
+    /* Pesquisas e respostas salvas: título em destaque, centralizado (a lista é a da semana escolhida no alto da tela). */
+    .card h3.historico-cabecalho { margin: 10px 0 12px; font-size: 1.2rem; font-weight: 800; line-height: 1.3; text-align: center; color: var(--brand); }
+    .sent-option h3 .titulo-semana { display: block; margin-top: 2px; font-size: .95rem; font-weight: 700; }
+    .sent-option h3.study-tema { margin: 2px 0 10px; font-size: 1.2rem; font-weight: 800; line-height: 1.3; text-align: center; color: var(--brand); }
+
+    .sent-option .ai-sentinela-btn { margin-top: 8px; }
+
+    #sentinelaOutputSlot { margin-top: 6px; }
+
+    /* Mensagens de cada opção (ex.: "Resposta finalizada e colada no campo de texto"), logo abaixo dos botões dela. */
+    .sent-option .ok,
+    .sent-option .warn,
+    .status-fim .ok,
+    .status-fim .warn {
+      display: block;
+      margin: 8px 0 0;
+      text-align: center;
+    }
+    /* A mensagem da resposta (Estudo de A Sentinela, Joias e Estudo Bíblico, em Preparar para comentar) fica no fim do card, depois do card
+       "Textos bíblicos nas respostas"; vazia, não ocupa espaço. */
+    .status-fim .ok:empty,
+    .status-fim .warn:empty { display: none; }
+
+    /* ---------- IA lê o estudo da semana ---------- */
+
+    .ai-study { margin-top: 10px; }
+
+    .ai-study-load {
+      display: block;
+      width: 100%;
+      min-height: 44px;
+    }
+
+    .ai-study-picker {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .ai-study-picker .ai-week-nav { min-height: 44px; }
+
+    .ai-study-input { flex: 1 1 auto; min-width: 0; }
+
+    .ai-study-input label { margin: 0 0 4px; font-size: .82rem; }
+
+    .ai-study-input input { text-align: center; font-weight: 700; }
+
+    #aiStudyInfo { margin: 6px 0 0; text-align: center; }
+    #aiStudyInfo:empty { display: none; }
+
+    .study-pergunta { margin: 8px 0 0; text-align: center; font-size: .95rem; line-height: 1.45; }
+    .study-pergunta:empty { display: none; }
+    .study-pergunta p { margin: 0 0 6px; }
+    .study-pergunta p:last-child { margin-bottom: 0; }
+    .study-pergunta strong { color: var(--brand); }
+
+    .study-salva { margin: 10px 0 0; padding: 8px 10px; border: 1px solid var(--success); border-radius: 10px; background: color-mix(in srgb, var(--success) 12%, transparent); text-align: center; font-size: .92rem; line-height: 1.4; }
+    /* "Já tem resposta salva" do cartão de comentários: moldura e fundo na cor do grupo (roxo), não no verde de sucesso. */
+    #aiStudySalva, #ebcSalva, #joiasSalva { border-color: #a855f7; background: color-mix(in srgb, #a855f7 12%, transparent); }
+    .study-salva p { margin: 0 0 8px; }
+    .study-salva button { width: 100%; margin: 0; }
+
+    #aiStudyArticleBox label { margin: 8px 0 4px; font-size: .82rem; }
+
+    .ai-study-btn {
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+      min-height: 48px;
+      background: #c2410c;
+      color: #ffffff;
+    }
+
+    .ai-study-btn:hover { background: #9a3412; }
+    .ai-study-btn.ai-study-questions-btn { background: #6d28d9; }
+    .ai-study-btn.ai-study-questions-btn:hover { background: #5b21b6; }
+
+    /* ---------- Atalho para o estudo da semana (wol.jw.org) ---------- */
+
+    .ai-week {
+      display: flex;
+      align-items: stretch;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .ai-week-nav {
+      flex: 0 0 48px;
+      padding: 0;
+      min-height: 48px;
+    }
+
+    .ai-week-link {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 6px 10px;
+      border: 2px solid var(--muted);
+      border-radius: 10px;
+      background: var(--card);
+      color: var(--text);
+      font-weight: 700;
+      font-size: .92rem;
+      line-height: 1.25;
+      text-align: center;
+      text-decoration: none;
+    }
+
+    .ai-week-link:hover { border-color: var(--accent); }
+
+    /* Só aparece depois de mexer nas setas: leva de volta para a semana de hoje. */
+    .ai-week-today { width: 100%; min-height: 40px; margin-top: 8px; font-size: .9rem; }
+    .ai-week-today[hidden] { display: none; }
+
+    .ai-week-range { font-size: .78rem; font-weight: 600; color: var(--muted); }
+
+    /* Leitura do estudo no site: setas e "Carregar numeração" em amarelo vivo, para se destacarem do fundo do cartão. */
+    .sent-option-site .ai-week-nav,
+    .sent-option-site .ai-week-today,
+    .sent-option-site .ai-study-load {
+      background: #fde68a;
+      color: #422006;
+      border-color: #f5c542;
+    }
+
+    .sent-option-site .ai-week-nav:hover:not(:disabled),
+    .sent-option-site .ai-week-today:hover:not(:disabled),
+    .sent-option-site .ai-study-load:hover:not(:disabled) { background: #fcd96a; }
+
+    /* Controles da leitura do estudo mais finos: setas, "Estudo desta semana", "Carregar numeração" e parágrafos. */
+    .sent-option-site .ai-week-nav { flex-basis: 42px; min-height: 38px; }
+    .sent-option-site .ai-week-link { min-height: 38px; padding: 3px 8px; font-size: .86rem; line-height: 1.15; }
+    .sent-option-site .ai-week-range { font-size: .72rem; }
+    /* Barra da semana da tela Reuniões: mais alta, com a data afastada do título ("Semana atual"). */
+    .reunioes-week .ai-week-nav { min-height: 56px; }
+    .reunioes-week .ai-week-link { min-height: 56px; padding: 8px 10px; gap: 5px; font-size: .9rem; line-height: 1.2; }
+    .reunioes-week .ai-week-range { font-size: .78rem; }
+    .sent-option-site .ai-study-load { min-height: 36px; padding: 6px 10px; font-size: .88rem; line-height: 1.2; }
+    .sent-option-site .ai-study-picker .ai-week-nav { min-height: 38px; }
+    .sent-option-site .ai-study-input input { height: 38px; min-height: 0; padding-top: 0; padding-bottom: 0; }
+
+    /* Campos da leitura do estudo no site (estudo da semana e parágrafos): fundo azul-celeste para se distinguirem do cartão. */
+    .sent-option-site .ai-week-link,
+    .sent-option-site .ai-study-input input {
+      background: #e0f2fe;
+      background: color-mix(in srgb, #38bdf8 24%, var(--card));
+      border-color: #38bdf8;
+    }
+
+    /* ---------- Indicador de espera da IA ---------- */
+
+    .ai-spinner {
+      display: inline-block;
+      width: 1.05em;
+      height: 1.05em;
+      margin-right: .55em;
+      border: .17em solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      vertical-align: -.16em;
+      animation: ai-spin .8s linear infinite;
+    }
+
+    @keyframes ai-spin { to { transform: rotate(360deg); } }
+
+    button.is-loading { cursor: progress; opacity: 1; }
+
+    /* Reserva o espaço da barra para o layout não pular quando a IA começa a trabalhar. */
+    .ai-progress {
+      position: relative;
+      height: 5px;
+      margin-top: 8px;
+      border-radius: 999px;
+      background: var(--line);
+      overflow: hidden;
+      visibility: hidden;
+    }
+
+    .ai-progress.on { visibility: visible; }
+
+    .ai-progress::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 35%;
+      border-radius: inherit;
+      background: var(--accent);
+      animation: ai-slide 1.2s ease-in-out infinite;
+    }
+
+    @keyframes ai-slide {
+      0% { left: -35%; }
+      100% { left: 100%; }
+    }
+
+    /* "Puxe para atualizar" no app instalado (no navegador comum o próprio navegador já faz isso). */
+    .pull-refresh {
+      position: fixed;
+      top: calc(env(safe-area-inset-top, 0px) + 6px);
+      left: 50%;
+      z-index: 2100;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: var(--card);
+      color: var(--text);
+      border: 2px solid var(--accent);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, .25);
+      font-size: .88rem;
+      font-weight: 700;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-50%, -60px);
+    }
+
+    .pull-refresh-arrow { display: inline-block; font-size: 1.1rem; transition: transform .15s ease; }
+    .pull-refresh.ready .pull-refresh-arrow { transform: rotate(180deg); }
+
+    /* Faixa fixa no topo da tela enquanto a IA trabalha: aparece em qualquer ponto da página, mesmo longe do botão. */
+    .ai-floating {
+      position: fixed;
+      top: calc(env(safe-area-inset-top, 0px) + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      gap: 2px;
+      max-width: calc(100vw - 24px);
+      padding: 9px 16px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #ffffff;
+      font-size: .9rem;
+      font-weight: 700;
+      line-height: 1.2;
+      box-shadow: 0 6px 20px rgba(15, 23, 42, .35);
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    .ai-floating.on { display: flex; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .ai-spinner { animation-duration: 2s; }
+      .ai-progress::after { animation-duration: 3.5s; }
+    }
+
+    #aiOutput #aiStatus { display: block; margin: 8px 0 0; }
+
+    #aiStudyStatus { display: block; margin: 6px 0 0; text-align: center; }
+
+    .ai-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .card h2,
+    .card h3 { margin: 0 0 10px; }
+
+    .card h2 { font-size: 1.1rem; }
+    .card h3 { font-size: 1rem; }
+
+    /* ---------- Seções recolhíveis (accordion) ---------- */
+
+    .section-accordion > summary,
+    details.subsection > summary {
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .section-accordion > summary::-webkit-details-marker,
+    details.subsection > summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .section-accordion > summary::after,
+    details.subsection > summary::after {
+      content: '▸';
+      color: var(--muted);
+      font-size: 1.05rem;
+      flex: 0 0 auto;
+      transition: transform .15s ease;
+    }
+
+    .section-accordion[open] > summary::after,
+    details.subsection[open] > summary::after {
+      transform: rotate(90deg);
+    }
+
+    /* Item que não expande: abre uma página (por exemplo, Prompts da IA em Ajustes); a seta vira "›", como nos botões da tela Reuniões. */
+    details.subsection.abre-pagina > summary::after { content: '›'; transform: none; font-size: 1.7rem; line-height: 1; }
+
+    .section-accordion > summary h2 { margin: 0; }
+    .ajustes-lista > details.subsection:first-of-type { margin-top: 0; }
+
+    details.subsection {
+      border: 2px solid var(--muted);
+      border-radius: 10px;
+      margin: 12px 0 0;
+      background: var(--card);
+    }
+
+    /* O cabeçalho (summary) é um retângulo dentro de uma caixa de cantos arredondados: sem raio próprio, o fundo
+       dele aparecia sobre os cantos e parecia "cortá-los". O raio interno é o da caixa menos a borda (10 - 2). */
+    details.subsection > summary {
+      padding: 12px 14px;
+      font-weight: 650;
+      margin: 0;
+      border-radius: 8px;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    details.subsection[open] > summary { border-radius: 8px 8px 0 0; }
+
+    /* No celular o :hover "gruda" depois do toque e deixava o cabeçalho com o fundo marcado; só vale com mouse. */
+    @media (hover: hover) {
+      details.subsection > summary:hover { background: var(--soft); }
+    }
+    details.subsection .subsection-body { padding: 12px 14px 14px; }
+
+    /* Grupos recolhíveis ("Outras opções de formatação" e "Opções com IA"): uma caixa por fora das
+       seções, com o título um pouco maior. */
+    details.subsection.group-box { background: var(--card); border-width: 2px; }
+    /* Fundo colorido suave (misturado com a cor do card, para funcionar no tema claro e no escuro). */
+    details.subsection.group-box.group-tools {
+      border-color: #6366f1;
+      background: #e0e7ff;
+      background: color-mix(in srgb, #6366f1 16%, var(--card));
+    }
+    details.subsection.group-box.group-ai {
+      border-color: #0d9488;
+      background: #ccfbf1;
+      background: color-mix(in srgb, #14b8a6 18%, var(--card));
+    }
+    details.subsection.group-box.group-main {
+      border-color: #0ea5e9;
+      background: #e0f2fe;
+      background: color-mix(in srgb, #0ea5e9 14%, var(--card));
+    }
+    details.subsection.group-box > summary { font-size: 1.02rem; font-weight: 750; padding: 14px; }
+    /* Dentro do card principal: texto de ajuda, botões de formatação e faixa de emojis. */
+    .principais-body #selectionInfo { margin: 0 0 8px; }
+    .principais-body .main-actions { margin: 4px 0 10px; }
+    .principais-body .quick-emojis { margin-bottom: 0; }
+    .group-box-body { padding: 0 12px 12px; }
+    .group-box-body > details.subsection:first-child { margin-top: 0; }
+
+    details.subsection.subsection-editor { background: var(--tint1-bg); border-color: var(--tint1-border); }
+    details.subsection.subsection-categories { background: var(--tint4-bg); border-color: var(--tint4-border); }
+
+    .editor-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      row-gap: 10px;
+      column-gap: 18px;
+      align-items: stretch;
+    }
+
+    .editor-text-pane { min-width: 0; }
+
+    /* Os controles ficam numa coluna com 10px entre cada caixa (o mesmo espaço entre o título, o campo de texto e as
+       caixas), em qualquer largura de tela: as margens próprias das caixas ficam zeradas e quem separa é o gap. */
+    .editor-controls-pane { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+    .editor-controls-pane > details.subsection { margin: 0; }
+
+    /* ---------- Campos ---------- */
+
+    label,
+    .field-label {
+      display: block;
+      font-weight: 650;
+      margin: 12px 0 6px;
+      line-height: 1.2;
+    }
+
+    textarea,
+    select,
+    input {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 11px;
+      font: inherit;
+      font-size: 16px;
+      background: var(--field);
+      color: var(--text);
+    }
+
+    select { text-overflow: ellipsis; padding-right: 34px; }
+
+    /* Tema do discurso público: um select fecha o texto com "…", então o campo que se vê é um quadro que mostra o título inteiro (em quantas
+       linhas precisar); o select de verdade fica por cima, invisível, e recebe o toque (abre a lista do celular como sempre). */
+
+    textarea {
+      min-height: clamp(240px, 45vh, 500px);
+      resize: vertical;
+    }
+
+    /* Campo de texto principal com a mesma moldura forte dos cards. */
+    #inputText {
+      display: block; /* inline-block deixaria uma folga (linha de base) embaixo do campo */
+      border-width: 2px;
+      border-color: var(--tint1-border);
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: .92rem;
+      margin: 8px 0 0;
+      line-height: 1.35;
+    }
+
+    /* Na tela Reuniões o campo de texto só traz as opções principais; a dica manda para a tela Formatar. */
+    .dica-formatar { margin: 0; text-align: center; text-wrap: balance; }
+    /* O texto explicativo das páginas de Reuniões fica depois de todas as caixas de opções (os botões ficam juntos, o texto no fim). */
+    .editor-controls-pane > .dica-formatar { order: 1; }
+
+    .preview {
+      padding: 10px 12px;
+      background: var(--soft);
+      border: 1px dashed var(--soft-line);
+      border-radius: 10px;
+      min-height: 46px;
+      white-space: pre-wrap;
+      line-height: 1.65;
+    }
+
+    .controls,
+    .controls-3,
+    .symbol-toolbar,
+    .template-row,
+    .template-toolbar,
+    .style-full-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .controls > div,
+    .controls-3 > div,
+    .symbol-toolbar > div { min-width: 0; }
+
+    /* ---------- Botões ---------- */
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 11px 13px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      background: var(--btn-azul);
+      color: #ffffff;
+      min-height: 44px;
+    }
+
+    button:hover { background: var(--btn-azul-hover); }
+
+    button:focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    button:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    button.secondary {
+      background: var(--neutral);
+      color: var(--neutral-text);
+      border: 2px solid var(--muted);
+    }
+
+    button.secondary:hover { background: var(--neutral-dark); }
+
+    button.danger { background: var(--danger); color: #ffffff; }
+    button.danger:hover { background: var(--danger-dark); }
+
+    /* "Criar categoria" ocupa toda a largura do seu bloco. */
+    #addTemplateCategoryBtn { width: 100%; }
+
+    .button-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+      align-items: center;
+    }
+
+    .option-buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .option-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-height: 44px;
+      width: 100%;
+      border: 2px solid transparent;
+      border-radius: 14px;
+      box-shadow: 0 5px 14px var(--shadow);
+      transition: transform .12s ease, box-shadow .12s ease;
+      line-height: 1.15;
+      font-weight: 750;
+    }
+
+    .option-btn:hover:not(:disabled),
+    .option-btn:focus-visible {
+      transform: translateY(-1px);
+      box-shadow: 0 0 0 3px rgba(148, 163, 184, .28), 0 8px 18px var(--shadow);
+    }
+
+    .list-buttons { grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); }
+    .list-buttons .option-btn { min-height: 42px; padding: 9px 10px; font-size: 1.05rem; }
+
+    .case-buttons { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+
+    /* Paleta dos botões de opção. No tema escuro o fundo claro vira um véu translúcido
+       sobre o cartão, para o texto continuar legível sem trocar cada cor à mão. */
+    .btn-blue   { background: #dbeafe; color: #1e3a8a; }
+    .btn-green  { background: #dcfce7; color: #14532d; }
+    .btn-purple { background: #f3e8ff; color: #581c87; }
+    .btn-slate  { background: #e2e8f0; color: #0f172a; }
+    .btn-orange { background: #ffedd5; color: #7c2d12; }
+    .btn-sky    { background: #e0f2fe; color: #075985; }
+    .btn-teal   { background: #ccfbf1; color: #134e4a; }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .btn-blue   { background: #1e3a8a; color: #dbeafe; }
+      :root:not([data-theme="light"]) .btn-green  { background: #14532d; color: #dcfce7; }
+      :root:not([data-theme="light"]) .btn-purple { background: #581c87; color: #f3e8ff; }
+      :root:not([data-theme="light"]) .btn-slate  { background: #334155; color: #e2e8f0; }
+      :root:not([data-theme="light"]) .btn-orange { background: #7c2d12; color: #ffedd5; }
+      :root:not([data-theme="light"]) .btn-sky    { background: #075985; color: #e0f2fe; }
+      :root:not([data-theme="light"]) .btn-teal   { background: #134e4a; color: #ccfbf1; }
+    }
+
+    :root[data-theme="dark"] .btn-blue   { background: #1e3a8a; color: #dbeafe; }
+    :root[data-theme="dark"] .btn-green  { background: #14532d; color: #dcfce7; }
+    :root[data-theme="dark"] .btn-purple { background: #581c87; color: #f3e8ff; }
+    :root[data-theme="dark"] .btn-slate  { background: #334155; color: #e2e8f0; }
+    :root[data-theme="dark"] .btn-orange { background: #7c2d12; color: #ffedd5; }
+    :root[data-theme="dark"] .btn-sky    { background: #075985; color: #e0f2fe; }
+    :root[data-theme="dark"] .btn-teal   { background: #134e4a; color: #ccfbf1; }
+
+    /* ---------- Barra de ações principal ---------- */
+
+    .main-actions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(86px, 1fr));
+      gap: 8px;
+      width: 100%;
+      align-items: stretch;
+      margin: 10px 0 14px;
+    }
+
+    .action-item[hidden], .top-text-btn[hidden] { display: none; }
+
+    .action-item {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      min-width: 0;
+      width: 100%;
+      color: var(--muted);
+      font-size: .78rem;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .icon-action {
+      width: 100%;
+      min-height: 44px;
+      padding: 9px 10px;
+      font-size: 1.1rem;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 13px;
+      border: 2px solid transparent;
+    }
+
+    .icon-action.clear  { background: #e2e8f0; color: #0f172a; border-color: #94a3b8; }
+    .icon-action.quick  { background: #ede9fe; color: #4c1d95; border-color: #a78bfa; }
+    .icon-action.quick.remove { background: #fee2e2; color: #7f1d1d; border-color: #f87171; }
+    .icon-action.indent { background: #fef3c7; color: #92400e; border-color: #fbbf24; }
+    /* A seta ⇥ é um glifo fino e parecia minúscula ao lado dos outros ícones. */
+    .icon-action.indent { font-size: 1.9rem; font-weight: 700; padding-top: 4px; padding-bottom: 4px; }
+    .icon-action.copy   { background: #dcfce7; color: #14532d; border-color: #4ade80; }
+    .icon-action.select { background: #e0f2fe; color: #075985; border-color: #38bdf8; }
+    /* Faixa rápida logo abaixo dos botões de formatação: até 16 emojis numa moldura. No celular aparecem 8 e a faixa
+       rola para o lado com o dedo (sem barra de rolagem); no computador cabem os 16. */
+    .quick-emojis {
+      margin: 0 0 12px;
+      padding: 6px;
+      border: 2px solid #8b5cf6;
+      border-radius: 12px;
+      background: #f5f3ff;
+      background: color-mix(in srgb, #8b5cf6 10%, var(--card));
+    }
+    .quick-emoji-list {
+      --cols: 8;
+      --gap: 4px;
+      --min: 34px;
+      display: flex;
+      gap: var(--gap);
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      scroll-snap-type: x proximity;
+    }
+    .quick-emoji-list::-webkit-scrollbar { display: none; }
+    .quick-emoji-list button {
+      flex: 0 0 max(var(--min), calc((100% - (var(--cols) - 1) * var(--gap)) / var(--cols)));
+      height: 40px;
+      padding: 0;
+      font-size: 1.25rem;
+      line-height: 1;
+      border-radius: 9px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: var(--text);
+      box-shadow: none;
+      scroll-snap-align: start;
+    }
+    /* Letras em emoji que ficam fixas no fim da faixa, depois dos emojis do usuário (separadas por uma linha fina). */
+    .quick-emoji-sep {
+      flex: 0 0 3px;
+      align-self: stretch;
+      margin: 3px 2px;
+      border-radius: 2px;
+      background: #8b5cf6;
+      background: color-mix(in srgb, #8b5cf6 55%, transparent);
+    }
+    .quick-emoji-list button.letter { background: color-mix(in srgb, #8b5cf6 8%, var(--card)); }
+    @media (min-width: 561px) { .quick-emoji-list { --cols: 12; } }
+    @media (min-width: 980px) {
+      .quick-emoji-list { --cols: 16; --gap: 3px; --min: 28px; }
+      .quick-emoji-list button { height: 36px; font-size: 1.05rem; }
+    }
+
+    /* Editor da faixa rápida (em "Caracteres, ícones e emoticons") */
+    .quickbar-editor { margin: 4px 0 18px; }
+    .quickbar-slots {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .quickbar-slots button {
+      height: 42px;
+      min-width: 0;
+      padding: 0;
+      font-size: 1.25rem;
+      border-radius: 10px;
+      border: 2px solid var(--line);
+      background: var(--card);
+      color: var(--text);
+      box-shadow: none;
+    }
+    .quickbar-slots button.empty { border-style: dashed; color: var(--muted); font-size: .85rem; }
+    .quickbar-slots button.selected { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 18%, var(--card)); }
+    .quickbar-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+    .quickbar-actions[hidden] { display: none; }
+    .quickbar-actions button { flex: 1 1 0; min-width: 90px; }
+    /* Modo "escolher para a faixa": os caracteres da lista ganham contorno tracejado, porque o toque vai para a faixa. */
+    .quickbar-picking .symbol-btn { outline: 2px dashed var(--accent); outline-offset: -3px; }
+
+    .icon-action.font   { background: #ccfbf1; color: #134e4a; border-color: #2dd4bf; font-size: 1.3rem; }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .icon-action.clear  { background: #334155; color: #e2e8f0; border-color: #64748b; }
+      :root:not([data-theme="light"]) .icon-action.quick  { background: #4c1d95; color: #ede9fe; border-color: #8b5cf6; }
+      :root:not([data-theme="light"]) .icon-action.quick.remove { background: #7f1d1d; color: #fee2e2; border-color: #ef4444; }
+      :root:not([data-theme="light"]) .icon-action.indent { background: #92400e; color: #fef3c7; border-color: #f59e0b; }
+      :root:not([data-theme="light"]) .icon-action.copy   { background: #14532d; color: #dcfce7; border-color: #22c55e; }
+      :root:not([data-theme="light"]) .icon-action.select { background: #075985; color: #e0f2fe; border-color: #0ea5e9; }
+      :root:not([data-theme="light"]) .icon-action.font   { background: #134e4a; color: #ccfbf1; border-color: #14b8a6; }
+    }
+
+    :root[data-theme="dark"] .icon-action.clear  { background: #334155; color: #e2e8f0; border-color: #64748b; }
+    :root[data-theme="dark"] .icon-action.quick  { background: #4c1d95; color: #ede9fe; border-color: #8b5cf6; }
+    :root[data-theme="dark"] .icon-action.quick.remove { background: #7f1d1d; color: #fee2e2; border-color: #ef4444; }
+    :root[data-theme="dark"] .icon-action.indent { background: #92400e; color: #fef3c7; border-color: #f59e0b; }
+    :root[data-theme="dark"] .icon-action.copy   { background: #14532d; color: #dcfce7; border-color: #22c55e; }
+    :root[data-theme="dark"] .icon-action.select { background: #075985; color: #e0f2fe; border-color: #0ea5e9; }
+    :root[data-theme="dark"] .icon-action.font   { background: #134e4a; color: #ccfbf1; border-color: #14b8a6; }
+
+    /* Botão "Fonte CX": os dois C do meio aplicam a caixa; os quadradinhos escolhem se ela sai preta (esquerda, ao lado
+       do C preto) ou branca (direita, ao lado do C branco). Tem o mesmo tamanho dos outros botões da fileira. */
+    .icon-action.caixa { padding: 0; gap: 0; overflow: hidden; }
+    .icon-action.caixa button {
+      min-height: 0;
+      height: 100%;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: inherit;
+      box-shadow: none;
+      transform: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .icon-action.caixa button:hover:not(:disabled) { background: rgba(255, 255, 255, .14); }
+    .icon-action.caixa button:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+    .icon-action.caixa .caixa-main { flex: 1 1 auto; min-width: 0; gap: 3px; }
+    /* O rótulo: C em caixa preta e C em caixa branca, em qualquer tema (a caixa sai branca ou preta conforme o marcado). */
+    .icon-action.caixa .cx {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 5px;
+      border: 2px solid #0f172a;
+      font-size: .85rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .icon-action.caixa .cx.preta { background: #0f172a; border-color: #e2e8f0; color: #ffffff; }
+    .icon-action.caixa .cx.branca { background: #ffffff; color: #0f172a; }
+    .icon-action.caixa .caixa-cor { flex: 0 0 28px; align-self: stretch; }
+    .icon-action.caixa .caixa-cor i {
+      position: relative;
+      display: block;
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      border: 2px solid currentColor;
+      opacity: .6;
+    }
+    .icon-action.caixa .caixa-cor.white i { background: #ffffff; border-color: #0f172a; }
+    .icon-action.caixa .caixa-cor.black i { background: #0f172a; border-color: #e2e8f0; }
+    .icon-action.caixa .caixa-cor[aria-pressed="true"] { background: rgba(255, 255, 255, .22); }
+    .icon-action.caixa .caixa-cor[aria-pressed="true"] i { opacity: 1; box-shadow: 0 0 0 2px #14b8a6; }
+    /* Visto dentro do quadradinho marcado. */
+    .icon-action.caixa .caixa-cor[aria-pressed="true"] i::after {
+      content: "";
+      position: absolute;
+      left: 3px;
+      top: 0;
+      width: 4px;
+      height: 8px;
+      border: solid;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+    .icon-action.caixa .caixa-cor.white[aria-pressed="true"] i::after { border-color: #0f172a; }
+    .icon-action.caixa .caixa-cor.black[aria-pressed="true"] i::after { border-color: #ffffff; }
+
+    .icon-action:hover:not(:disabled),
+    .icon-action:focus-visible {
+      transform: translateY(-1px);
+      box-shadow: 0 0 0 3px rgba(148, 163, 184, .28), 0 8px 18px var(--shadow);
+    }
+
+    .main-copy-status {
+      display: inline-block;
+      min-height: 1.2em;
+      margin: 0;
+      font-size: .85rem;
+    }
+
+    .main-copy-status:empty { display: none; }
+
+    /* ---------- Modelos ---------- */
+
+    .templates {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .mini {
+      font-size: .92rem;
+      padding: 9px;
+      text-align: left;
+      width: 100%;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .template-card-btn {
+      border: 2px solid var(--muted);
+    }
+
+    .template-card-btn:hover { border-color: var(--accent); }
+
+    .template-card-name {
+      display: block;
+      font-size: .72rem;
+      line-height: 1.15;
+      color: var(--muted);
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .template-card-content {
+      display: block;
+      font-size: .94rem;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+
+    .category-chip {
+      display: inline-block;
+      font-size: .76rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .checkbox-list {
+      display: flex;
+      flex-direction: column;
+      margin-top: 8px;
+      border: 2px solid var(--muted);
+      border-radius: 10px;
+      max-height: 185px;
+      overflow-y: auto;
+      background: var(--card);
+    }
+
+    .checkbox-pill {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 4px 12px;
+      min-height: 0;
+      line-height: 1.2;
+      font-size: .85rem;
+      font-weight: 650;
+      cursor: pointer;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .checkbox-pill:last-child { border-bottom: none; }
+    .checkbox-pill:hover { background: var(--soft); }
+
+    .checkbox-pill input { margin: 0; width: 14px; height: 14px; flex: 0 0 auto; accent-color: var(--accent); }
+
+    .template-editor {
+      margin-top: 14px;
+      border-top: 1px solid var(--line);
+      padding-top: 14px;
+    }
+
+    /* Tela Criar ou alterar modelo: um formulário só, de cima para baixo (modelo, nome, texto, categoria), com Salvar em destaque.
+       O aviso do modo diz se o formulário cria um modelo novo ou muda o que foi escolhido; o que é raro (restaurar) fica em "Mais opções". */
+    .modelo-modos { display: flex; gap: 4px; padding: 4px; background: var(--card); border: 1px solid var(--line); border-radius: 999px; }
+    .modelo-modos button { flex: 1 1 0; min-width: 0; min-height: 44px; padding: 8px 6px; border-radius: 999px; background: transparent; color: var(--muted); font-size: .84rem; line-height: 1.15; }
+    .modelo-modos button:hover { background: var(--soft); color: var(--text); }
+    .modelo-modos button[aria-pressed="true"],
+    .modelo-modos button[aria-pressed="true"]:hover { background: var(--btn-azul); color: #ffffff; }
+    #templateEscolha[hidden],
+    #templateForm[hidden],
+    #deleteTemplateBtn[hidden],
+    #categoryNova[hidden],
+    #categoryAlterar[hidden],
+    #categoryAcoes[hidden] { display: none !important; }
+    #categoryNova button { margin-top: 10px; }
+    .template-modo { margin: 10px 0 0; padding: 8px 10px; border-radius: 10px; background: var(--soft); font-size: .88rem; line-height: 1.35; }
+    .modelo-marcador { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 8px; }
+    .modelo-marcador button { width: auto; min-height: 40px; padding: 8px 12px; font-size: .86rem; }
+    .modelo-marcador .hint { flex: 1 1 170px; margin: 0; font-size: .82rem; }
+    .extra-categorias { margin-top: 12px; }
+    .extra-categorias > summary,
+    .modelo-mais > summary { cursor: pointer; padding: 6px 0; color: var(--muted); font-size: .9rem; font-weight: 650; }
+    .modelo-acoes { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-top: 16px; }
+    .modelo-acoes button { min-height: 48px; padding: 11px 10px; font-size: .94rem; }
+    .publicar-admin { margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--muted); }
+    .publicar-admin-titulo { margin: 0 0 8px; font-weight: 700; }
+    .publicar-admin button { display: block; width: 100%; min-height: 48px; }
+    .modelo-mais { margin-top: 14px; padding-top: 6px; border-top: 1px solid var(--line); }
+    .modelo-mais button { width: 100%; margin-top: 8px; }
+
+    /* ---------- Caracteres ---------- */
+
+    /* Busca de caracteres pelo nome */
+    .symbol-search { margin-top: 10px; }
+    .symbol-search label { margin-bottom: 4px; }
+    .symbol-search .hint { margin: 6px 0 0; }
+
+    .symbols {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
+      gap: 6px;
+      margin-top: 8px;
+      width: 100%;
+    }
+
+    .symbol-item {
+      position: relative;
+      display: block;
+      min-width: 0;
+    }
+
+    .symbol-btn {
+      width: 100%;
+      min-height: 44px;
+      padding: 7px 4px;
+      background: var(--neutral);
+      color: var(--neutral-text);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      font-size: 1rem;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .symbol-btn:hover { background: var(--neutral-dark); }
+
+    .symbol-btn.favorite {
+      border-color: var(--accent);
+      background: var(--soft);
+    }
+
+    /* Alvo próprio para (des)favoritar: duplo-toque não é confiável em tela sensível. */
+    .symbol-star {
+      position: absolute;
+      top: -3px;
+      right: -3px;
+      min-height: 0;
+      width: 18px;
+      height: 18px;
+      padding: 0;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--muted);
+      opacity: .5;
+      font-size: .7rem;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .symbol-star:hover,
+    .symbol-star:focus-visible {
+      opacity: 1;
+      background: var(--card);
+      color: var(--text);
+    }
+
+    .symbol-star.on { color: #d97706; opacity: .85; }
+
+    /* Inserir emojis no texto (Formatar): o título dos favoritos e a lista da categoria ficam juntos dos seus quadros. */
+    #emojisBox h3 { margin: 12px 0 0; font-size: 1rem; }
+    #emojisBox .symbol-toolbar { margin-top: 14px; }
+
+    /* ---------- Modais ---------- */
+
+    /* Botões das configurações padrão: um embaixo do outro, na largura toda. */
+    .defaults-actions { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 12px; }
+    .defaults-actions button { width: 100%; min-height: 48px; }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, .46);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 9999;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal-card {
+      width: min(520px, 100%);
+      background: var(--card);
+      border-radius: 22px;
+      padding: 22px;
+      border: 1px solid var(--line);
+      box-shadow: 0 24px 80px rgba(15, 23, 42, .28);
+    }
+
+    .modal-card h2 { margin-top: 0; font-size: 1.25rem; }
+    .modal-card p { color: var(--muted); margin: 8px 0 0; }
+
+    .modal-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .modal-title-row h2 { margin: 0; }
+
+    .modal-close-btn {
+      width: auto;
+      min-width: 44px;
+      padding: 8px 12px;
+      border-radius: 12px;
+    }
+
+    .modal-actions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .modal-actions button {
+      min-height: 46px;
+      border-radius: 14px;
+    }
+
+    .modal-overlay.alert-only .modal-actions { grid-template-columns: 1fr; }
+    #conviteTextoSubsection[hidden] { display: none; }
+    /* Opções exclusivas do administrador: só aparecem com a senha de administrador salva neste aparelho e levam o ícone 🛡️ no título. */
+    .so-admin[hidden] { display: none !important; }
+    /* Título e ícone formam um só item do summary (que é flex com space-between): assim o 🛡️ fica colado ao texto, com o espaço normal. */
+    .adm-icone { font-size: .95em; }
+    /* Imagens dos artigos: a descrição (com o botão que copia só ela) e a legenda. */
+    .study-imagem { margin: 8px 0 0; }
+    .study-imagem p { margin: 4px 0 0; font-size: .86rem; line-height: 1.4; color: var(--muted); }
+    .study-imagem strong { color: var(--text); }
+    .study-imagem-legenda { font-style: italic; }
+    .study-imagem-copiar { width: auto; min-height: 0; margin: 0 0 0 4px; padding: 1px 9px; border-width: 1px; border-radius: 999px; font-size: .75rem; font-style: normal; font-weight: 700; white-space: nowrap; }
+    .imagens-box { margin-top: 8px; padding: 4px 10px 8px; border: 2px solid var(--g-borda, var(--line)); border-radius: 10px; text-align: left; }
+    .imagens-box > summary { cursor: pointer; font-size: .86rem; font-weight: 700; color: var(--muted); }
+    /* Lista "Imagens do capítulo" (Estudo Bíblico) e "Imagens da apostila" (esboços): uma linha, na largura inteira, separa cada imagem; a cor é a do grupo. */
+    .imagens-box > .study-imagem { margin-top: 10px; padding-top: 10px; border-top: 2px solid #7c4dbd; border-top: 2px solid color-mix(in srgb, var(--grupo-cor, #a855f7) 55%, transparent); }
+    /* Imagens da apostila inteira: agrupadas pela parte (seção e item) em que estão. */
+    .apostila-img-lista { text-align: left; }
+    .apostila-img-parte { margin: 14px 0 0; font-size: .8rem; font-weight: 800; letter-spacing: .2px; color: var(--muted); }
+    /* Cada imagem detectada ganha uma linha em cima (a largura inteira do cartão, em qualquer tela), na cor roxa do grupo. */
+    .apostila-img-item { margin-top: 14px; padding-top: 12px; border-top: 2px solid #7c4dbd; border-top: 2px solid color-mix(in srgb, #a855f7 55%, transparent); }
+    .apostila-img-item .apostila-img-parte { margin-top: 0; }
+    /* Linha que separa as opções do administrador (no fim da lista de Ajustes) das demais. */
+    .ajustes-separador { border: 0; border-top: 2px solid var(--muted); opacity: .6; margin: 22px 6px 10px; }
+
+    /* ---------- Página de prompts da IA (administrador) ---------- */
+
+    .ai-admin-row { margin-top: 16px; }
+    .ai-admin-row button { display: block; width: 100%; min-height: 48px; }
+
+    .prompt-item {
+      border: 2px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      margin-top: 14px;
+    }
+
+    .prompt-item h3 { margin: 0; font-size: 1rem; }
+
+    /* Cada seção da tela de prompts é um cartão recolhível: um toque no título abre ou fecha (a seta indica). */
+    details.prompt-item > summary { display: flex; align-items: center; gap: 8px; cursor: pointer; list-style: none; -webkit-tap-highlight-color: transparent; }
+    details.prompt-item > summary::-webkit-details-marker { display: none; }
+    details.prompt-item > summary h3 { flex: 1 1 auto; }
+    details.prompt-item > summary::after { content: '▸'; color: var(--muted); font-size: 1.1rem; }
+    details.prompt-item[open] > summary::after { content: '▾'; }
+    details.prompt-item[open] > summary { margin-bottom: 8px; }
+    .prompt-intro { background: var(--card); }
+
+    /* Cada seção da página de prompts tem uma cor de fundo suave própria, para uma não se misturar com a outra. */
+    .prompt-tint-codigo { background: var(--card); background: color-mix(in srgb, #10b981 14%, var(--card)); border-color: color-mix(in srgb, #10b981 50%, var(--line)); }
+    .prompt-tint-ia { background: var(--card); background: color-mix(in srgb, #6366f1 13%, var(--card)); border-color: color-mix(in srgb, #6366f1 50%, var(--line)); }
+    .prompt-tint-ia label { display: block; margin: 10px 0 4px; font-weight: 700; font-size: .9rem; }
+    .prompt-tint-ia select { width: 100%; }
+    .ia-custo { font-size: .92rem; line-height: 1.5; }
+    .ia-custo p { margin: 4px 0; }
+    .ia-custo ul { margin: 4px 0 8px; padding-left: 20px; }
+    .admin-code-row { display: flex; gap: 8px; align-items: stretch; margin-top: 8px; }
+    .admin-code-row input { flex: 1 1 auto; min-width: 0; font-family: ui-monospace, Consolas, monospace; letter-spacing: .04em; }
+    .admin-code-row button { flex: 0 0 auto; }
+    .prompt-tint-limits { background: var(--card); background: color-mix(in srgb, #eab308 14%, var(--card)); border-color: color-mix(in srgb, #eab308 50%, var(--line)); }
+
+    /* Categorias da tela de prompts: um bloco recolhível por assunto (emoji + nome em maiúsculas) com os cartões dentro. */
+    details.prompt-cat {
+      --cat-cor: #64748b;
+      margin-top: 16px;
+      border: 2px solid var(--cat-cor);
+      border-radius: 14px;
+      overflow: hidden;
+      background: var(--card);
+      background: color-mix(in srgb, var(--cat-cor) 6%, var(--card));
+    }
+    details.prompt-cat > summary {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px;
+      cursor: pointer;
+      list-style: none;
+      -webkit-tap-highlight-color: transparent;
+      background: var(--card);
+      background: color-mix(in srgb, var(--cat-cor) 30%, var(--card));
+    }
+    details.prompt-cat > summary::-webkit-details-marker { display: none; }
+    details.prompt-cat > summary h2 { flex: 1 1 auto; margin: 0; font-size: 1rem; letter-spacing: .02em; color: var(--text); }
+    details.prompt-cat > summary::after { content: '▸'; color: var(--text); font-size: 1.1rem; }
+    details.prompt-cat[open] > summary::after { content: '▾'; }
+    details.prompt-cat[open] > summary { border-bottom: 2px solid var(--cat-cor); }
+    .prompt-cat-qtd {
+      flex: 0 0 auto;
+      min-width: 24px;
+      padding: 1px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--cat-cor);
+      background: var(--card);
+      color: var(--text);
+      font-size: .78rem;
+      font-weight: 700;
+      text-align: center;
+    }
+    .prompt-cat-corpo { padding: 2px 10px 12px; }
+    .prompt-cat-corpo > .hint:first-child { margin: 10px 0 0; }
+    /* Dentro da categoria os cartões usam a cor dela (e não mais uma cor por cartão). */
+    .prompt-cat .prompt-item { margin-top: 10px; background: var(--card); border-color: color-mix(in srgb, var(--cat-cor) 45%, var(--line)); }
+
+    /* A descrição do prompt vai numa caixa própria, na cor da categoria e com bom espaço antes do campo do texto, que tem fundo neutro e
+       borda da categoria: assim a explicação não se confunde com o texto do prompt. */
+    .prompt-parte .prompt-descricao {
+      margin: 6px 0 22px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: var(--card);
+      background: color-mix(in srgb, var(--cat-cor, #64748b) 16%, var(--card));
+      border: 1px solid color-mix(in srgb, var(--cat-cor, #64748b) 45%, var(--line));
+      color: var(--text);
+      font-size: .88rem;
+      line-height: 1.45;
+    }
+    .prompt-parte textarea {
+      background: var(--field);
+      border: 2px solid color-mix(in srgb, var(--cat-cor, #64748b) 55%, var(--line));
+    }
+
+    .prompt-item textarea {
+      min-height: 340px;
+      font-size: .9rem;
+      line-height: 1.4;
+      resize: vertical;
+    }
+
+    /* Contador numa linha e, abaixo, os dois botões lado a lado, cada um com metade da largura. */
+    .prompt-item-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .prompt-item-actions button { width: 100%; min-height: 46px; }
+
+    /* Campo numérico dos limites: botões − e + grandes (como as setas dos parágrafos) no lugar das setinhas nativas. */
+    .limit-picker { align-items: stretch; margin-top: 4px; }
+    .limit-picker .ai-study-input { margin: 0; }
+    .limit-picker input[type="number"] {
+      min-height: 48px;
+      text-align: center;
+      font-weight: 700;
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+    .limit-picker input[type="number"]::-webkit-inner-spin-button,
+    .limit-picker input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .limit-picker .ai-week-nav { font-size: 1.4rem; font-weight: 700; }
+
+    /* Caixa dos limites: o botão de ação é um só e ocupa a largura toda. */
+    #promptsLimits .prompt-item-actions { grid-template-columns: 1fr; }
+
+    .prompt-count { grid-column: 1 / -1; color: var(--muted); font-size: .82rem; }
+
+    .prompt-locked pre {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      margin: 8px 0 0;
+      padding: 10px;
+      border-radius: 10px;
+      background: var(--soft);
+      color: var(--muted);
+      font-size: .8rem;
+      line-height: 1.4;
+    }
+
+    .prompt-locked summary { cursor: pointer; font-weight: 700; margin-top: 10px; }
+
+    /* Botões do fim da tela: sem faixa de fundo própria, para acompanharem a cor do card. */
+    /* Exportar tudo para ler com calma (colar no Word, por exemplo): dois botões, cada um na largura toda. */
+    .prompts-export-row { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 12px; }
+    .prompts-export-row button { width: 100%; min-height: 46px; }
+
+    .prompts-status-bottom { margin: 10px 0 0; text-align: center; }
+    .prompts-status-bottom.warn { margin: 10px 0 0; }
+
+    .prompts-sticky {
+      margin-top: 18px;
+      padding: 0;
+      background: transparent;
+    }
+
+    /* A página de prompts é uma tela do app, não uma janela por cima: ao abri-la o resto da página sai do caminho
+       (as janelas de confirmação continuam disponíveis) e, ao voltar, tudo reaparece como estava. */
+    #promptsSection[aria-busy="true"] { opacity: .55; pointer-events: none; }
+    #promptsScreen { display: none; }
+    body.view-prompts #promptsScreen { display: block; }
+    body.view-prompts > header,
+    body.view-prompts > main:not(#promptsScreen),
+    body.view-prompts > .theme-switch-row,
+    body.view-prompts > .about-link-row,
+    body.view-prompts > .app-nav { display: none; }
+
+    /* ---------- Telas: Formatar, Reuniões, Backup e Ajustes ----------
+       É um app só: cada bloco diz em que tela aparece (screen-...). Formatar e Reuniões dividem o cartão do campo de
+       texto (screen-editor); as reuniões ficam num cartão próprio, logo abaixo dele (screen-reunioes). */
+    body[data-screen="inicio"] :is(.screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-ajustes, .screen-leitura),
+    body[data-screen="formatar"] :is(.screen-inicio, .screen-reunioes, .screen-backup, .screen-ajustes, .screen-leitura),
+    body[data-screen="reunioes"] :is(.screen-inicio, .screen-formatar, .screen-backup, .screen-ajustes, .screen-leitura),
+    body[data-screen="backup"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-ajustes, .screen-leitura),
+    body[data-screen="ajustes"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-leitura),
+    body[data-screen="leitura"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-ajustes) { display: none !important; }
+
+    /* ---------- Tela Leitura em voz alta ---------- */
+    .leitura-topo { margin: 0 0 8px; }
+    .leitura-topo h2 { margin: 0; font-size: 1.2rem; text-align: center; }
+    .leitura-dica { margin: 0 0 8px; }
+    .leitura-dica > summary { cursor: pointer; font-size: .9rem; font-weight: 650; color: var(--muted); padding: 2px 0; }
+    .leitura-importar button { width: 100%; }
+    #leituraArquivoInfo:empty { display: none; }
+    /* Os dados do arquivo (nome, páginas, palavras e tempo) numa moldura fina e discreta. */
+    .leitura-dados { margin-top: 8px; padding: 3px 8px; border: 1px solid var(--rosa-border); border: 1px solid color-mix(in srgb, var(--rosa-border) 55%, transparent); border-radius: 10px; }
+    .leitura-dados[hidden] { display: none; }
+    /* No máximo duas linhas: o nome do arquivo e o resumo, cada um numa linha só. A letra é pequena e leituraDadosAjustar a diminui mais, se preciso,
+       até o texto caber na largura (e só então corta com "…"). */
+    .leitura-dados .hint { margin: 0; font-size: .8rem; line-height: 1.3; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .leitura-estat { margin: 0; }
+    .leitura-opcao { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 8px 0 0; font-size: .8rem; font-weight: 600; cursor: pointer; } /* embaixo da barra de botões */
+    .leitura-busca { display: flex; align-items: center; gap: 4px; margin-top: 8px; }
+    .leitura-busca[hidden] { display: none; }
+    /* Tocando, a busca sai para sobrar tela ao texto; só os botões do tamanho da letra ficam. */
+    #leituraCard.tocando .leitura-busca { justify-content: flex-end; }
+    #leituraCard.tocando .leitura-busca-caixa, #leituraCard.tocando .leitura-busca-qtd, #leituraCard.tocando #leituraBuscaAnt, #leituraCard.tocando #leituraBuscaProx { display: none; }
+    .leitura-fonte { display: flex; gap: 4px; margin-left: 4px; }
+    .leitura-busca .leitura-fonte button { font-size: .8rem; font-weight: 800; }
+    .leitura-busca-caixa { position: relative; flex: 1 1 auto; min-width: 0; }
+    .leitura-busca input { width: 100%; min-height: 32px; padding: 3px 26px 3px 10px; font-size: 16px; border-radius: 10px; } /* 16 px: menos que isso o iPhone dá zoom ao tocar no campo */
+    .leitura-busca input::-webkit-search-cancel-button { display: none; } /* o ✕ é o do app, dentro do campo */
+    /* O ✕ de limpar: pequeno, dentro do campo, na mesma linha (não ocupa espaço). */
+    .leitura-busca .leitura-busca-caixa > button { position: absolute; top: 50%; right: 5px; transform: translateY(-50%); flex: none; width: 18px; height: 18px; min-height: 0; padding: 0; border: 0; border-radius: 50%; background: transparent; box-shadow: none; color: var(--muted); font-size: .8rem; line-height: 1; display: flex; align-items: center; justify-content: center; }
+    .leitura-busca .leitura-busca-caixa > button:hover { background: var(--soft); transform: translateY(-50%); }
+    .leitura-busca .leitura-busca-caixa > button[hidden] { display: none; }
+    .leitura-busca-qtd { flex: 0 0 auto; font-size: .74rem; color: var(--muted); white-space: nowrap; }
+    .leitura-busca button { flex: 0 0 32px; width: 32px; height: 32px; min-height: 0; padding: 0; font-size: .75rem; border-radius: 10px; }
+    /* O que a busca achou: azul (o amarelo é da frase lida e o verde das marcas); o resultado em que está, mais forte. */
+    mark.lb { color: inherit; background: #bae6fd; background: color-mix(in srgb, #38bdf8 40%, var(--card)); border-radius: 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+    mark.lb.atual { background: #38bdf8; background: color-mix(in srgb, #38bdf8 80%, var(--card)); }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) mark.lb { background: #0c4a6e; background: color-mix(in srgb, #38bdf8 30%, var(--card)); }
+      :root:not([data-theme="light"]) mark.lb.atual { background: #0369a1; background: color-mix(in srgb, #38bdf8 60%, var(--card)); }
+    }
+    :root[data-theme="dark"] mark.lb { background: #0c4a6e; background: color-mix(in srgb, #38bdf8 30%, var(--card)); }
+    :root[data-theme="dark"] mark.lb.atual { background: #0369a1; background: color-mix(in srgb, #38bdf8 60%, var(--card)); }
+    .leitura-opcao input { flex: 0 0 auto; width: 16px; height: 16px; min-height: 0; margin: 0; }
+    .leitura-estat:empty { display: none; }
+    .leitura-estat.warn { color: var(--danger); font-weight: 650; }
+    #leituraArquivoInfo.warn { color: var(--danger); font-weight: 650; }
+    /* A tela Leitura usa a tela toda: sem o cabeçalho do app; o cartão cobre a altura da tela e o campo de texto ocupa o que sobra (os botões
+       ficam à mostra, sem rolar a página). Uma regra geral dos campos força min-height de 44px, por isso o campo tem a altura dele aqui. */
+    body[data-screen="leitura"] > header { display: none; }
+    #leituraCard { display: flex; flex-direction: column; min-height: calc(100vh - 118px); min-height: calc(100dvh - 118px); }
+    /* O tamanho da letra do texto (a vista e o campo) vem de --leitura-fonte, mudada pelos botões A− e A+. No campo, nunca abaixo de 16 px (menos que isso o iPhone dá zoom ao digitar). */
+    #leituraTexto { font-size: max(16px, var(--leitura-fonte, 1rem)); }
+    #leituraTexto { display: block; flex: 1 1 200px; min-height: 200px; margin-top: 8px; resize: none; border-width: 2px; border-color: var(--rosa-border); }
+    #leituraTexto[hidden], .leitura-vista[hidden] { display: none; }
+    /* A vista ocupa o que sobra do cartão (que cobre a altura da tela) e rola por dentro: os botões e o tocador ficam sempre à mostra enquanto ela acompanha a leitura. */
+    .leitura-vista { position: relative; margin-top: 8px; flex: 1 1 0; min-height: 180px; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 12px 14px; border: 2px solid var(--rosa-border); border-radius: 12px; background: var(--card); font-size: var(--leitura-fonte, 1.02rem); line-height: 1.7; }
+    .leitura-vista p { margin: 0 0 1em; }
+    /* Títulos e subtítulos do texto: em negrito e com mais espaço em volta (separam as seções). */
+    .leitura-vista p.lv-titulo { margin: 1.7em 0 .6em; font-size: 1.1em; font-weight: 800; line-height: 1.35; }
+    .leitura-vista p.lv-subtitulo { margin: 1.15em 0 .4em; font-weight: 700; }
+    .leitura-vista > p:first-child { margin-top: 0; }
+    .leitura-vista strong { font-weight: 750; }
+    /* Onde a leitura parou (o ponto de "Continuar"). */
+    .lu.parou { text-decoration: underline dotted var(--rosa-border); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+    .leitura-vista p:last-child { margin-bottom: 0; }
+    .leitura-vista .leitura-aviso { color: var(--danger); font-weight: 650; font-size: .92rem; }
+    .leitura-vista .lu { cursor: pointer; border-radius: 4px; -webkit-box-decoration-break: clone; box-decoration-break: clone; transition: background .15s ease; }
+    .lu.lendo { background: #fde68a; background: color-mix(in srgb, #facc15 50%, var(--card)); box-shadow: 0 0 0 3px #fde68a; box-shadow: 0 0 0 3px color-mix(in srgb, #facc15 50%, var(--card)); }
+    /* Tema escuro: o amarelo mais fraco, para o texto claro continuar legível sobre ele. */
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .lu.lendo { background: #4a3d0c; background: color-mix(in srgb, #facc15 30%, var(--card)); box-shadow: 0 0 0 3px #4a3d0c; box-shadow: 0 0 0 3px color-mix(in srgb, #facc15 30%, var(--card)); }
+    }
+    :root[data-theme="dark"] .lu.lendo { background: #4a3d0c; background: color-mix(in srgb, #facc15 30%, var(--card)); box-shadow: 0 0 0 3px #4a3d0c; box-shadow: 0 0 0 3px color-mix(in srgb, #facc15 30%, var(--card)); }
+    @media (hover: hover) { .leitura-vista .lu:hover:not(.lendo) { background: var(--soft); } }
+    /* Marca-texto: verde (o amarelo é da frase que está sendo lida). */
+    mark.lm { color: inherit; background: #bbf7d0; background: color-mix(in srgb, #4ade80 45%, var(--card)); border-radius: 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) mark.lm { background: #14532d; background: color-mix(in srgb, #4ade80 28%, var(--card)); }
+    }
+    :root[data-theme="dark"] mark.lm { background: #14532d; background: color-mix(in srgb, #4ade80 28%, var(--card)); }
+    /* Cores do marca-texto: verde (padrão), amarelo, laranja, rosa e roxo. */
+    mark.lm[data-c="amarelo"] { background: #fde68a; background: color-mix(in srgb, #eab308 45%, var(--card)); }
+    mark.lm[data-c="laranja"] { background: #fed7aa; background: color-mix(in srgb, #fb923c 45%, var(--card)); }
+    mark.lm[data-c="rosa"] { background: #fbcfe8; background: color-mix(in srgb, #f472b6 45%, var(--card)); }
+    mark.lm[data-c="roxo"] { background: #ddd6fe; background: color-mix(in srgb, #a78bfa 45%, var(--card)); }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) mark.lm[data-c="amarelo"] { background: #713f12; background: color-mix(in srgb, #eab308 28%, var(--card)); }
+      :root:not([data-theme="light"]) mark.lm[data-c="laranja"] { background: #7c2d12; background: color-mix(in srgb, #fb923c 28%, var(--card)); }
+      :root:not([data-theme="light"]) mark.lm[data-c="rosa"] { background: #831843; background: color-mix(in srgb, #f472b6 28%, var(--card)); }
+      :root:not([data-theme="light"]) mark.lm[data-c="roxo"] { background: #4c1d95; background: color-mix(in srgb, #a78bfa 28%, var(--card)); }
+    }
+    :root[data-theme="dark"] mark.lm[data-c="amarelo"] { background: #713f12; background: color-mix(in srgb, #eab308 28%, var(--card)); }
+    :root[data-theme="dark"] mark.lm[data-c="laranja"] { background: #7c2d12; background: color-mix(in srgb, #fb923c 28%, var(--card)); }
+    :root[data-theme="dark"] mark.lm[data-c="rosa"] { background: #831843; background: color-mix(in srgb, #f472b6 28%, var(--card)); }
+    :root[data-theme="dark"] mark.lm[data-c="roxo"] { background: #4c1d95; background: color-mix(in srgb, #a78bfa 28%, var(--card)); }
+    /* Botão Cor: abre uma lista com as cores, por cima do texto (não ocupa lugar na tela); o botão mostra a cor escolhida. */
+    .leitura-marca-botoes .cor-menu { position: relative; flex: 1 1 0; min-width: 0; display: flex; }
+    .leitura-marca-botoes .cor-menu[hidden] { display: none; }
+    .leitura-marca-botoes .cor-menu > button { flex: 1 1 auto; }
+    .leitura-cores { position: absolute; z-index: 20; bottom: calc(100% + 6px); left: 0; min-width: 150px; padding: 4px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); box-shadow: 0 6px 20px var(--shadow); display: grid; gap: 2px; }
+    .leitura-cores[hidden] { display: none; }
+    .leitura-marca-botoes .leitura-cores button { flex: none; display: flex; align-items: center; justify-content: flex-start; gap: 10px; width: 100%; min-height: 40px; padding: 6px 10px; border: 0; border-radius: 8px; background: transparent; box-shadow: none; font-size: .95rem; font-weight: 650; text-align: left; white-space: nowrap; }
+    .leitura-marca-botoes .leitura-cores button[aria-checked="true"] { background: var(--soft); font-weight: 800; }
+    .cor-bola { display: inline-block; flex: none; width: 14px; height: 14px; border-radius: 50%; vertical-align: -2px; border: 1px solid rgba(0, 0, 0, .25); }
+    .cor-opcao[data-c="verde"] .cor-bola, #leituraCorBtn[data-c="verde"] .cor-bola { background: #4ade80; }
+    .cor-opcao[data-c="amarelo"] .cor-bola, #leituraCorBtn[data-c="amarelo"] .cor-bola { background: #eab308; }
+    .cor-opcao[data-c="laranja"] .cor-bola, #leituraCorBtn[data-c="laranja"] .cor-bola { background: #fb923c; }
+    .cor-opcao[data-c="rosa"] .cor-bola, #leituraCorBtn[data-c="rosa"] .cor-bola { background: #f472b6; }
+    .cor-opcao[data-c="roxo"] .cor-bola, #leituraCorBtn[data-c="roxo"] .cor-bola { background: #a78bfa; }
+    .leitura-marca { margin-top: 8px; }
+    .leitura-marca[hidden] { display: none; }
+    .leitura-marca-botoes { display: flex; flex-wrap: wrap; gap: 6px; }
+    .leitura-marca-botoes button { flex: 1 1 0; min-width: 0; min-height: 36px; padding: 4px 6px; font-size: .88rem; white-space: nowrap; }
+    .leitura-marca-botoes button[hidden] { display: none; }
+    .leitura-marca-botoes #leituraMarcarSelBtn { flex: 1 1 100%; order: 5; } /* o botão da seleção ocupa uma linha só, abaixo dos outros */
+    .leitura-marca-botoes button[aria-pressed="true"] { background: #bbf7d0; background: color-mix(in srgb, #4ade80 45%, var(--card)); border-color: #4ade80; font-weight: 750; }
+    .leitura-marca .hint { margin: 6px 0 0; font-size: .8rem; line-height: 1.35; }
+    .leitura-marca .hint[hidden] { display: none; }
+    .leitura-vista.marcando { border-color: #4ade80; }
+    .leitura-vista.marcando .lu { cursor: cell; }
+    .leitura-acoes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+    .leitura-acoes .leitura-ler { grid-column: 1 / -1; min-height: 42px; font-size: 1.05rem; }
+    .leitura-acoes button { min-height: 38px; padding: 4px 6px; }
+    .leitura-acoes button[hidden] { display: none; }
+    #leituraCard.tocando .leitura-acoes { display: none; } /* o tocador aberto já traz as funções de leitura */
+    .leitura-barra .voz-bar { margin-top: 8px; }
+    /* Lendo: o que sobra de tela é da vista; a ajuda e o importador voltam ao editar o texto. */
+    body.leitura-lendo .leitura-dica,
+    body.leitura-lendo .leitura-importar { display: none; }
+    /* O nome do arquivo importado continua à mostra (numa linha só) até a pessoa tocar em Limpar. */
+    body.leitura-lendo .leitura-acoes { display: flex; gap: 6px; margin-top: 8px; }
+    body.leitura-lendo .leitura-acoes button { flex: 1 1 0; min-width: 0; min-height: 38px; padding: 4px 6px; font-size: .9rem; white-space: nowrap; }
+    body.leitura-lendo .leitura-acoes .leitura-ler { flex: 1.6 1 0; font-size: 1rem; }
+    body.leitura-lendo .leitura-acoes #leituraInicioBtn { flex: 0 0 42px; padding: 4px 0; }
+    body.leitura-lendo .leitura-acoes button[hidden] { display: none; }
+
+    /* ---------- Tela Início: texto diário (como no JW Library) e atalhos ---------- */
+    /* O Início ocupa a tela até a barra de baixo (altura mínima calculada em inicioAjustarAltura): o cartão dos atalhos
+       estica e os quadros crescem, sem sobrar espaço vazio no fim. */
+    .inicio-grid { display: flex; flex-direction: column; gap: 22px; }
+    .inicio-grid > .atalhos-card { flex: 1 1 auto; display: flex; flex-direction: column; }
+    .atalhos-card .atalhos-grid { flex: 1 1 auto; grid-auto-rows: 1fr; }
+    /* Rótulo do cartão: centralizado e separado do resto por uma linha (a mesma cor da que separa o comentário). */
+    .td-titulo-linha { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0 0 12px; padding-bottom: 10px; border-bottom: 1px solid var(--tint3-border); }
+    #textoDiarioTitulo { margin: 0; padding: 0; border: 0; text-align: center; font-size: 1.4rem; line-height: 1.2; }
+    /* O ícone 🔊 do topo: só o alto-falante (sem círculo), ao lado do nome do cartão, e só com o texto expandido. Tocando de novo, a
+       leitura para; enquanto o tocador está aberto o ícone brilha. */
+    .td-card .td-ouvir-topo,
+    .td-card .td-ouvir-topo:hover:not(:disabled) { flex: 0 0 auto; width: auto; height: auto; min-width: 0; min-height: 0; padding: 0 2px; border: 0; background: transparent; box-shadow: none; transform: none; font-size: 1.55rem; line-height: 1; }
+    .td-card .td-ouvir-topo[hidden] { display: none; }
+    .td-card .td-ouvir-topo:disabled { opacity: .45; }
+    .td-card .td-ouvir-topo.tocando { filter: drop-shadow(0 0 7px var(--accent)); }
+    #tdVozTopo { margin: -4px 0 12px; }
+    #tdVozTopo:empty { display: none; }
+    .td-topo { display: flex; align-items: center; gap: 6px; }
+    .td-card .td-nav { flex: 0 0 auto; min-width: 40px; min-height: 40px; padding: 4px 8px; }
+    .td-card .td-abrir,
+    .td-card .td-abrir:hover {
+      flex: 1 1 auto;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 4px;
+      border: 0;
+      background: transparent;
+      color: var(--text);
+      box-shadow: none;
+      transform: none;
+      text-align: center;
+      font-weight: 400;
+    }
+    .td-data { color: var(--brand); font-size: 1.15rem; font-weight: 800; }
+    .td-seta { display: inline-block; transition: transform .2s; }
+    .td-abrir[aria-expanded="true"] .td-seta { transform: rotate(90deg); }
+    .td-tema { font-size: 1.02rem; line-height: 1.45; }
+    .td-detalhe { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--tint3-border); }
+    .td-detalhe[hidden] { display: none; }
+    .td-comentario p { margin: 0 0 10px; line-height: 1.55; }
+    .td-fonte { margin: 0 0 10px; color: var(--muted); font-size: .9rem; text-align: right; }
+    .td-acoes { justify-content: center; align-items: stretch; }
+    .td-acoes button { flex: 1 1 0; }
+    .td-card .td-acoes .td-gerar { width: auto; margin-top: 0; }
+    .td-card .td-gerar { width: 100%; margin-top: 10px; background: #7c3aed; border-color: #7c3aed; color: #fff; }
+    .td-card .td-gerar:hover { background: #6d28d9; }
+    .td-card .td-gerar[hidden] { display: none; }
+    .td-ia { position: relative; margin-top: 12px; padding: 10px 12px; border: 1px solid var(--tint3-border); border-radius: 12px; background: var(--card); }
+    .td-ia[hidden] { display: none; }
+    /* Um toque no título recolhe ou mostra os comentários (a seta indica). */
+    .td-ia > .td-ia-titulo { display: flex; align-items: center; gap: 6px; min-height: 34px; padding-right: 38px; cursor: pointer; list-style: none; font-size: 1rem; font-weight: 800; }
+    /* Aberto, uma linha separa o cabeçalho do conteúdo; o ícone de ouvir fica na frente dele, no canto direito (ao lado da seta). */
+    .td-ia[open] > .td-ia-titulo { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--tint3-border); box-sizing: content-box; }
+    .td-ia > .td-ia-titulo::-webkit-details-marker { display: none; }
+    .td-ia > .td-ia-titulo::after { content: '▾'; margin-left: auto; color: var(--muted); }
+    .td-ia:not([open]) > .td-ia-titulo::after { content: '▸'; }
+    .td-ia-qtd { color: var(--muted); font-weight: 600; font-size: .88rem; }
+    .td-ia-dica { margin: 4px 0 8px; }
+    .td-ia-lista { margin: 0 0 4px; padding-left: 22px; }
+    .td-ia-lista li { margin-bottom: 10px; line-height: 1.5; }
+    .td-ia-ponto { display: block; font-weight: 800; color: var(--brand); }
+    .td-ia > .td-ia-ouvir { position: absolute; top: 10px; right: 32px; width: 34px; height: 34px; min-height: 0; margin: 0; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; line-height: 1; border-radius: 10px; }
+    .td-ia > .td-ia-ouvir.tocando { box-shadow: 0 0 0 2px var(--accent); }
+    .td-ia:not([open]) > .td-ia-ouvir { display: none; } /* recolhido, só o título */
+    #tdIaVoz { margin: 0 0 10px; }
+    #tdIaVoz:empty { display: none; }
+    .td-link, .td-link:visited { display: block; width: fit-content; margin: 10px auto 0; font-weight: 650; color: var(--brand); text-decoration: underline; text-underline-offset: 3px; }
+    .td-acoes-ia { display: grid; grid-template-columns: 1fr 1fr; }
+    .td-card .td-recuperar { width: 100%; margin-top: 8px; }
+    .td-card .td-recuperar[hidden] { display: none; }
+    .td-status:empty { display: none; }
+    .td-hoje { width: 100%; margin-top: 8px; }
+    .td-hoje[hidden] { display: none; }
+    .atalhos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .atalhos-grid .atalho,
+    .atalhos-grid .atalho:hover {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      min-height: 92px;
+      padding: 10px 12px;
+      border: 2px solid var(--atalho-borda, var(--tint6-border));
+      border-radius: 12px;
+      background: var(--atalho-fundo, var(--card));
+      color: var(--text);
+      text-align: center;
+      text-decoration: none;
+      box-shadow: 0 3px 10px var(--shadow);
+      transform: none;
+    }
+    /* Cada atalho tem a cor da tela que abre: Formatar azul, Comentários roxo e Dirigentes verde-água (como os grupos da tela
+       Reuniões) e Backup laranja. Usam os matizes dos cartões, que já têm versão clara e escura. */
+    .atalhos-grid .atalho[data-atalho="formatar"] { --atalho-fundo: var(--tint1-bg); --atalho-borda: var(--tint1-border); }
+    .atalhos-grid .atalho[data-atalho="comentarios"] { --atalho-fundo: var(--tint3-bg); --atalho-borda: var(--tint3-border); }
+    .atalhos-grid .atalho[data-atalho="dirigir"] { --atalho-fundo: var(--tint6-bg); --atalho-borda: var(--tint6-border); }
+    .atalhos-grid .atalho[data-atalho="backup"] { --atalho-fundo: var(--tint4-bg); --atalho-borda: var(--tint4-border); }
+    /* Discursos: âmbar, a cor do grupo "Preparação de discursos e esboços"; Pesquisas e respostas salvas: verde, a cor da seção delas. */
+    .atalhos-grid .atalho[data-atalho="discursos"] { --atalho-fundo: #fef3c7; --atalho-fundo: color-mix(in srgb, #f59e0b 22%, var(--card)); --atalho-borda: #f59e0b; }
+    .atalhos-grid .atalho[data-atalho="historico"] { --atalho-fundo: var(--tint2-bg); --atalho-borda: var(--tint2-border); }
+    .atalhos-grid .atalho[data-atalho="leitura"] { --atalho-fundo: var(--rosa-bg); --atalho-borda: var(--rosa-border); }
+    /* Sem o código do dirigente, o atalho aparece desabilitado: cinza, borda tracejada, ícone sem cor e um cadeado. */
+    .atalhos-grid .atalho:disabled,
+    .atalhos-grid .atalho:disabled:hover {
+      background: var(--card);
+      border: 2px dashed var(--line);
+      color: var(--muted);
+      box-shadow: none;
+      cursor: not-allowed;
+      opacity: .8;
+    }
+    .atalhos-grid .atalho:disabled .atalho-icone { filter: grayscale(1); opacity: .6; }
+    .atalhos-grid .atalho:disabled .atalho-desc { color: var(--muted); opacity: 1; }
+    .atalho-trava { margin-top: 4px; font-size: .75rem; font-weight: 700; color: var(--muted); }
+    .atalho-trava[hidden] { display: none; }
+    .atalho-icone { font-size: 2.3rem; line-height: 1; margin-bottom: 4px; }
+    .atalho-nome { font-weight: 800; font-size: 1rem; }
+    /* Texto das descrições: a cor normal do texto, um pouco suavizada (o cinza "muted" perde contraste nos fundos coloridos). */
+    .atalho-desc { color: var(--text); opacity: .85; font-size: .8rem; font-weight: 500; line-height: 1.3; }
+
+    /* Celular: o Início cabe numa tela só, sem rolar. Vem depois das regras acima para valer sobre elas. Em três faixas de altura:
+       - telas normais (a partir de 781 px, como os iPhones de hoje): o cabeçalho é compacto, o texto diário fica folgado (e leva a sobra de
+         altura, com o texto no meio) e cada atalho tem o tamanho do conteúdo, com ícone e letras grandes, sem vazio dentro;
+       - telas mais baixas (até 780 px): o texto diário e os atalhos ficam mais apertados;
+       - telas curtas (até 700 px): os atalhos perdem a descrição e ficam só com o ícone e o nome. */
+    @media (max-width: 640px) {
+      body[data-screen="inicio"] header { padding: 8px 10px 2px; }
+      body[data-screen="inicio"] .brand-title { margin-bottom: 0; gap: 8px; }
+      body[data-screen="inicio"] .brand-icon { width: 46px; }
+      body[data-screen="inicio"] header h1 { font-size: 1.6rem; }
+      body[data-screen="inicio"] .brand-subtitle { margin-top: 2px; font-size: .8rem; line-height: 1.3; }
+      body[data-screen="inicio"] main { padding-top: 8px; padding-bottom: 4px; }
+      .inicio-grid { gap: 8px; }
+      .inicio-grid > .card { padding: 10px 12px; }
+      .inicio-grid > .atalhos-card { padding: 10px; }
+      /* O texto diário fica enxuto; a sobra de altura vai quase toda para os atalhos (as linhas esticam por igual, sem passar do conteúdo de cada botão). */
+      .inicio-grid > #textoDiarioCard { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; }
+      .inicio-grid > .atalhos-card { flex: 5 1 auto; }
+      .atalhos-card .atalhos-grid { flex: 1 1 auto; grid-auto-rows: 1fr; } /* linhas de mesma altura (com "auto" a sobra era somada ao conteúdo de cada linha e os botões ficavam de tamanhos diferentes) */
+      .inicio-grid > #textoDiarioCard { justify-content: flex-start; padding-top: 8px; }
+      .td-titulo-linha { margin-bottom: 6px; padding-bottom: 8px; }
+      #textoDiarioTitulo { font-size: 1.35rem; }
+      .td-card .td-topo { margin-top: auto; margin-bottom: auto; }
+      .td-card .td-abrir, .td-card .td-abrir:hover { gap: 3px; padding: 3px 4px; }
+      .td-card .td-nav { min-width: 36px; min-height: 36px; padding: 2px 6px; }
+      .td-data { font-size: .98rem; line-height: 1.25; }
+      .td-tema { font-size: .95rem; line-height: 1.4; }
+      .atalhos-card h2 { margin: 0 0 6px; font-size: 1.1rem; }
+      .atalhos-grid { gap: 8px; }
+      .atalhos-grid .atalho, .atalhos-grid .atalho:hover { min-height: 0; padding: 4px 5px; gap: 1px; box-shadow: none; }
+      .atalho-icone { font-size: 2.35rem; line-height: 1; margin-bottom: 0; }
+      .atalho-nome { font-size: 1.1rem; line-height: 1.2; }
+      .atalho-desc { font-size: .84rem; line-height: 1.2; }
+      .atalho-trava { margin-top: 1px; font-size: .74rem; }
+    }
+    @media (max-width: 640px) and (max-height: 780px) {
+      .inicio-grid > .card { padding: 10px; }
+      .inicio-grid > #textoDiarioCard { padding-top: 6px; }
+      .td-titulo-linha { margin-bottom: 4px; padding-bottom: 6px; }
+      #textoDiarioTitulo { font-size: 1.2rem; }
+      .td-card .td-nav { min-width: 36px; min-height: 36px; padding: 2px 6px; }
+      .td-card .td-abrir, .td-card .td-abrir:hover { gap: 2px; padding: 2px; }
+      .td-data { font-size: .96rem; line-height: 1.25; }
+      .td-tema { font-size: .94rem; line-height: 1.35; }
+      .atalhos-card h2 { margin-bottom: 6px; font-size: 1.05rem; }
+      .atalhos-grid { gap: 6px; }
+      .atalhos-grid .atalho, .atalhos-grid .atalho:hover { padding: 3px 5px; gap: 1px; }
+      .atalho-icone { font-size: 1.85rem; line-height: 1; }
+      .atalho-nome { font-size: .98rem; }
+      .atalho-desc { font-size: .78rem; }
+    }
+    /* Texto do dia longo numa tela que não comporta tudo: o app (inicioAjustarAltura) aperta primeiro só o texto diário ("aperta") e, se ainda
+       não bastar, também os atalhos ("aperta2"), com as mesmas medidas da faixa acima. */
+    @media (max-width: 640px) {
+      .inicio-grid.aperta > .card { padding: 10px; }
+      .inicio-grid.aperta > #textoDiarioCard { padding-top: 6px; }
+      .inicio-grid.aperta .td-titulo-linha { margin-bottom: 4px; padding-bottom: 6px; }
+      .inicio-grid.aperta #textoDiarioTitulo { font-size: 1.2rem; }
+      .inicio-grid.aperta .td-card .td-nav { min-width: 36px; min-height: 36px; padding: 2px 6px; }
+      .inicio-grid.aperta .td-card .td-abrir, .inicio-grid.aperta .td-card .td-abrir:hover { gap: 2px; padding: 2px; }
+      .inicio-grid.aperta .td-data { font-size: .94rem; line-height: 1.25; }
+      .inicio-grid.aperta .td-tema { font-size: .94rem; line-height: 1.35; }
+      .inicio-grid.aperta2 > #textoDiarioCard { flex: 0 0 auto; } /* bem apertado, o cartão não leva a sobra (ficaria um vazio dentro dele) */
+      .inicio-grid.aperta2 .atalhos-card h2 { margin-bottom: 6px; font-size: 1.05rem; }
+      .inicio-grid.aperta2 .atalhos-grid { gap: 6px; }
+    }
+    /* Telas com mais de 780 px de altura: no "aperta2" os atalhos mantêm o tamanho dos cartões e ficam com as letras o mais cheias possível
+       (abaixo disso valem as faixas por altura). */
+    @media (max-width: 640px) and (min-height: 781px) {
+      .inicio-grid.aperta2 .atalhos-grid .atalho, .inicio-grid.aperta2 .atalhos-grid .atalho:hover { padding: 3px 5px; gap: 1px; }
+      .inicio-grid.aperta2 .atalho-icone { font-size: 2.25rem; line-height: 1; }
+      .inicio-grid.aperta2 .atalho-nome { font-size: 1.08rem; }
+      .inicio-grid.aperta2 .atalho-desc { font-size: .82rem; }
+    }
+    @media (max-width: 640px) and (max-height: 700px) {
+      .atalhos-grid .atalho .atalho-desc { display: none; }
+      .atalho-icone { font-size: 1.95rem; line-height: 1; }
+      .atalho-nome { font-size: 1.02rem; }
+    }
+    /* Texto do dia muito longo (nem o "aperta2" basta): os atalhos encolhem mais, com letras menores. */
+    @media (max-width: 640px) {
+      .inicio-grid.aperta3 .atalhos-grid .atalho, .inicio-grid.aperta3 .atalhos-grid .atalho:hover { padding: 4px 6px; gap: 1px; }
+      .inicio-grid.aperta3 .atalho-icone { font-size: 1.5rem; line-height: normal; }
+      .inicio-grid.aperta3 .atalho-nome { font-size: .88rem; }
+      .inicio-grid.aperta3 .atalho-desc { font-size: .7rem; }
+    }
+
+    /* Folga embaixo da barra das telas. No iPhone o app ocupa a tela toda e a barra encostava na borda, em cima do traço de rolar (home indicator):
+       lá a folga mínima é de 16 px (ou a área segura, se for maior). Nos outros aparelhos vale só a área segura, como antes. */
+    :root { --nav-fundo: env(safe-area-inset-bottom, 0px); }
+    @supports (-webkit-touch-callout: none) {
+      :root { --nav-fundo: max(env(safe-area-inset-bottom, 0px), 16px); }
+    }
+
+    /* Barra das telas: embaixo no celular (como nos apps), no alto no computador. */
+    .app-nav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 1500;
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 2px;
+      padding: 6px max(8px, env(safe-area-inset-right)) calc(6px + var(--nav-fundo)) max(8px, env(safe-area-inset-left));
+      background: var(--card);
+      border-top: 1px solid var(--line);
+      box-shadow: 0 -6px 18px var(--shadow);
+    }
+    .app-nav button,
+    .app-nav button:hover {
+      min-height: 52px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      padding: 4px 2px;
+      border: 0;
+      border-radius: 12px;
+      background: transparent;
+      color: var(--muted);
+      font-size: .66rem;
+      font-weight: 700;
+      line-height: 1.1;
+      box-shadow: none;
+      transform: none;
+    }
+    .app-nav .nav-icon { font-size: 1.3rem; line-height: 1; }
+    .app-nav button:disabled { opacity: .45; }
+    @media (max-width: 340px) { .app-nav button, .app-nav button:hover { font-size: .58rem; } } /* telas bem estreitas (iPhone SE antigo): os sete nomes cabem */
+    .app-nav button[aria-current="page"],
+    .app-nav button[aria-current="page"]:hover {
+      background: var(--soft);
+      background: color-mix(in srgb, var(--accent) 16%, var(--card));
+      color: var(--accent);
+    }
+    /* Reuniões, no centro da barra, com um destaque discreto: só um contorno no roxo do logotipo (--brand) e um preenchimento bem leve. O botão não
+       muda de tamanho nem sobe. O contorno é fino (1 px), também com a tela Reuniões aberta; nesse caso só o preenchimento fica mais forte. */
+    .app-nav button[data-screen-target="reunioes"],
+    .app-nav button[data-screen-target="reunioes"]:hover {
+      border-radius: 16px;
+      background: color-mix(in srgb, var(--brand) 7%, transparent);
+      color: var(--brand);
+      box-shadow: inset 0 0 0 1px var(--brand);
+    }
+    .app-nav button[data-screen-target="reunioes"][aria-current="page"],
+    .app-nav button[data-screen-target="reunioes"][aria-current="page"]:hover {
+      background: color-mix(in srgb, var(--brand) 18%, transparent);
+      box-shadow: inset 0 0 0 1px var(--brand);
+    }
+    body { padding-bottom: calc(72px + var(--nav-fundo)); }
+    .update-banner,
+    .update-bar { bottom: calc(80px + var(--nav-fundo)); }
+    @media (min-width: 980px) {
+      .app-nav {
+        position: sticky;
+        top: 8px;
+        bottom: auto;
+        max-width: 720px;
+        margin: 4px auto 0;
+        padding: 6px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        box-shadow: 0 6px 18px var(--shadow);
+      }
+      .app-nav button,
+      .app-nav button:hover { min-height: 44px; flex-direction: row; gap: 8px; font-size: .9rem; }
+      .app-nav .nav-icon { font-size: 1.15rem; }
+      body { padding-bottom: 0; }
+      .update-banner,
+      .update-bar { bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+    }
+
+    /* Tela Backup: abrir o .jwlibrary e ver as notas e as respostas dos quadros "Sua resposta" (só leitura). */
+    .backup-open-row { margin-top: 10px; }
+    .backup-open-row button { width: 100%; min-height: 50px; }
+    .backup-open-row .bk-row > button { min-height: 44px; }
+    .backup-export { margin-top: 10px; }
+    .backup-export > span { font-size: .86rem; font-weight: 650; }
+    .backup-export .bk-row { margin-top: 6px; }
+    /* Importação e exportação: cada função num contêiner próprio, dentro da seção recolhível. */
+    /* Esboços de discursos públicos (S-34): relatório da importação (Ajustes, administrador). */
+    .s34-estado { margin: 10px 0 6px; font-weight: 650; font-size: .9rem; }
+    .s34-resumo { margin: 10px 0 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); font-size: .88rem; font-weight: 650; }
+    .s34-lista { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+    .s34-item { padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); font-size: .86rem; }
+    .s34-item.erro { border-color: var(--danger); }
+    .s34-item.aviso { border-color: #f59e0b; }
+    .s34-item .s34-titulo { font-weight: 650; }
+    .s34-item .s34-meta { margin-top: 2px; font-size: .78rem; color: var(--muted); }
+    .s34-item .s34-aviso { margin-top: 4px; color: var(--danger); font-weight: 600; }
+    .s34-item ul { margin: 4px 0 0 18px; padding: 0; }
+    .s34-item details { margin-top: 6px; }
+    .s34-item summary { cursor: pointer; font-size: .8rem; color: var(--muted); }
+    .s34-item pre { margin: 6px 0 0; padding: 8px; max-height: 340px; overflow: auto; white-space: pre-wrap; word-break: break-word; font-size: .78rem; border-radius: 8px; background: var(--soft); }
+    .s34-tag { display: inline-block; margin-top: 4px; padding: 1px 9px; border-radius: 999px; font-size: .72rem; font-weight: 700; background: var(--soft); }
+    .backup-pane { margin-top: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
+    .backup-pane + .backup-pane { margin-top: 12px; }
+    .backup-pane > span { display: block; font-size: .95rem; font-weight: 700; }
+    .backup-pane > .hint { margin: 4px 0 0; }
+    .bk-import .bk-import-title { margin: 0 0 4px; font-weight: 700; word-break: break-word; }
+    .bk-import .hint { margin: 6px 0 0; font-weight: 400; }
+    .bk-import-tags { max-height: 340px; overflow: auto; margin-top: 8px; }
+    .backup-summary { margin: 12px 0 0; font-size: .86rem; color: var(--muted); }
+    .backup-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+    .backup-controls label { margin: 8px 0 4px; font-size: .82rem; }
+    .backup-search { margin-top: 10px; }
+    .backup-search[hidden] { display: none; }
+    /* Árvore no estilo do JWLManager: cada nível abre o seguinte; a quantidade fica à direita. */
+    .backup-tree { margin-top: 4px; }
+    .bk-node { margin: 0; }
+    .bk-node > summary,
+    .bk-leaf {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 4px;
+      border-bottom: 1px solid var(--line);
+      font-weight: 650;
+      line-height: 1.25;
+    }
+    .bk-node > summary { cursor: pointer; list-style: none; }
+    .bk-node > summary::-webkit-details-marker { display: none; }
+    .bk-node > summary::before { content: "▸"; flex: 0 0 auto; color: var(--muted); transition: transform .15s; }
+    .bk-node[open] > summary::before { transform: rotate(90deg); }
+    .bk-leaf { padding-left: 22px; font-weight: 600; }
+    .bk-name { flex: 1 1 auto; min-width: 0; }
+    .bk-leaf > span:first-child { flex: 1 1 auto; min-width: 0; }
+    .bk-count { flex: 0 0 auto; min-width: 34px; text-align: right; color: var(--muted); font-size: .85rem; font-variant-numeric: tabular-nums; }
+    .bk-children { padding-left: 14px; border-left: 2px solid var(--line); margin-left: 6px; }
+    .bk-children .backup-list { margin: 8px 0; }
+    .bk-more { width: 100%; margin: 4px 0 10px; }
+    .bk-more[hidden] { display: none; }
+    .backup-list { display: grid; gap: 10px; margin-top: 6px; }
+    /* Edição (Fase 2): ações no cartão aberto, formulário, cores e a caixa de gerar o arquivo. */
+    .bk-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .bk-row > button { flex: 1 1 140px; min-height: 40px; padding: 8px 10px; font-size: .88rem; }
+    .bk-row[hidden] { display: none; }
+    /* Seletor largo (Nova resposta): no celular a lista nativa de um select é estreita e não aceita cores; aqui o select fica escondido e a
+       lista vira um painel da largura do formulário, com o texto inteiro e as opções de destaque em outra cor. */
+    .bk-seletor-nativo { display: none !important; }
+    .bk-seletor-botao { display: block; position: relative; width: 100%; min-height: 46px; padding: 11px 36px 11px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; line-height: 1.35; text-align: left; white-space: normal; overflow-wrap: anywhere; cursor: pointer; }
+    .bk-seletor-botao::after { content: '▾'; position: absolute; right: 13px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+    .bk-seletor-botao[aria-expanded="true"]::after { content: '▴'; }
+    .bk-seletor-botao:disabled { opacity: .6; cursor: default; }
+    .bk-seletor-botao.vazio { color: var(--muted); }
+    .bk-seletor-lista { margin-top: 6px; max-height: 60vh; overflow-y: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
+    .bk-seletor-lista[hidden] { display: none; }
+    .bk-seletor-item.ativo { background: var(--soft); outline: 2px solid var(--accent); outline-offset: -2px; }
+    /* Discurso público: um campo só para digitar o número/título ou abrir a lista (▾) e escolher. */
+    .publico-campo { position: relative; }
+    .publico-campo input { width: 100%; padding-right: 48px; text-overflow: ellipsis; }
+    .publico-seta { position: absolute; right: 4px; top: 4px; bottom: 4px; width: 40px; min-height: 0; margin: 0; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font-size: 1.1rem; }
+    .publico-seta:hover:not(:disabled) { background: var(--soft); color: var(--text); }
+    .publico-seta:disabled { opacity: .5; }
+    .bk-seletor-item { display: block; width: 100%; margin: 0; padding: 11px 12px; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; color: var(--text); font: inherit; font-size: .95rem; line-height: 1.35; text-align: left; white-space: normal; overflow-wrap: anywhere; cursor: pointer; }
+    .bk-seletor-item:last-child { border-bottom: 0; }
+    .bk-seletor-item:hover:not(:disabled) { background: var(--soft); }
+    .bk-seletor-item.selecionado { font-weight: 800; background: var(--soft); }
+    .bk-seletor-item:disabled { color: var(--muted); cursor: default; }
+    .bk-seletor-item.destaque { font-weight: 800; border-left: 5px solid #0ea5e9; background: #dbeafe; background: color-mix(in srgb, #0ea5e9 24%, var(--card)); }
+    .bk-seletor-item.destaque:hover:not(:disabled) { background: color-mix(in srgb, #0ea5e9 36%, var(--card)); }
+    /* Carregar as publicações de uma semana (Nova resposta): setas e o nome da semana. */
+    .bk-semana-nav { display: flex; align-items: center; gap: 8px; }
+    .bk-semana-nav > button { flex: 0 0 48px; min-height: 44px; padding: 8px 0; }
+    .bk-semana { flex: 1 1 auto; text-align: center; font-weight: 650; font-size: .9rem; overflow-wrap: anywhere; }
+    /* Nova resposta: o aviso do que acabou de ser salvo fica logo acima da pergunta (a seguinte já vem escolhida). */
+    .bk-editor .bk-feito { margin: 8px 0 0; line-height: 1.4; }
+    .bk-editor .bk-feito:empty { display: none; }
+    .bk-actions { display: none; }
+    .backup-item.aberto .bk-actions { display: flex; }
+    .backup-item.editando .bk-actions,
+    .backup-item.editando.aberto .bk-actions,
+    .backup-item.editando.aberto .backup-item-body { display: none; }
+    .bk-danger,
+    .bk-danger:hover { background: var(--danger); color: #ffffff; }
+    .bk-editor { margin-top: 10px; padding-top: 6px; border-top: 1px dashed var(--line); cursor: default; }
+    .bk-editor label { margin: 8px 0 4px; font-size: .82rem; }
+    .bk-editor .bk-text { min-height: 150px; }
+    .bk-colors { display: flex; flex-wrap: wrap; gap: 8px; }
+    .bk-color,
+    .bk-color:hover { width: 34px; height: 34px; min-height: 0; padding: 0; border-radius: 50%; border: 3px solid transparent; background: var(--cor); }
+    .bk-color[aria-pressed="true"] { border-color: var(--text); box-shadow: 0 0 0 2px var(--card) inset; }
+    .backup-new-note { width: 100%; margin-top: 10px; }
+    .backup-new-note[hidden] { display: none; }
+    #backupNewNoteSlot .bk-editor,
+    #backupNewAnswerSlot .bk-editor { padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
+    .backup-save { margin-top: 12px; padding: 12px; border: 2px solid var(--accent); border-radius: 12px; background: color-mix(in srgb, var(--accent) 8%, var(--card)); }
+    .backup-save[hidden] { display: none; }
+    .backup-save p { margin: 0 0 8px; font-weight: 650; }
+    .backup-save .hint { margin: 8px 0 0; font-weight: 400; }
+    #backupGenerateBtn { width: 100%; min-height: 48px; }
+    #backupGenerateBtn[hidden] { display: none; }
+    .backup-item { padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); cursor: pointer; }
+    .backup-item-head { display: flex; align-items: center; gap: 8px; font-weight: 700; line-height: 1.3; }
+    .backup-item-head .sem-titulo { color: var(--muted); font-weight: 600; font-style: italic; }
+    .backup-dot { flex: 0 0 12px; width: 12px; height: 12px; border-radius: 50%; background: var(--cor, #9ca3af); }
+    .backup-item-meta { margin-top: 3px; font-size: .78rem; color: var(--muted); }
+    .backup-item-body {
+      margin-top: 6px;
+      font-size: .9rem;
+      white-space: pre-wrap;
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .backup-item.aberto .backup-item-body { display: block; -webkit-line-clamp: unset; overflow: visible; }
+
+    /* Tela Reuniões: a tela principal tem um botão para cada parte (comentar, dirigir, discursos e pesquisas salvas) e cada um abre a sua página. */
+    .reunioes-group { margin-top: 0; }
+    /* Seções (Preparação para as reuniões / pesquisas salvas) e grupos (comentários / dirigir / discursos): os botões da tela principal. */
+    .reunioes-secao { margin-top: 14px; padding: 0 10px 12px; border: 2px solid var(--line); border-radius: 12px; }
+    .reunioes-secao:not([open]) { padding-bottom: 0; }
+    .reunioes-secao > summary { padding: 10px 2px; -webkit-tap-highlight-color: transparent; }
+    /* Cada grupo (comentários / dirigir / discursos) é um botão com a cor dele: o título é a faixa do alto. */
+    .reunioes-grupo { margin-top: 10px; border: 2px solid var(--grupo-cor, var(--line)); border-radius: 12px; overflow: hidden; background: var(--card); }
+    .reunioes-grupo > summary { padding: 12px 12px; border: 0; border-radius: 0; background: var(--card); -webkit-tap-highlight-color: transparent; }
+    .reunioes-grupo > :not(summary) { margin: 10px 0 0; }
+    .reunioes-group .reunioes-secao > summary .reunioes-title { margin: 0; font-size: 1.1rem; }
+    /* Título do grupo: faixa com a cor do grupo misturada com a do card (visível, mas suave) e a letra normal do tema. */
+    .reunioes-group .reunioes-grupo > summary .reunioes-subtitle { margin: 0; font-size: 1rem; color: var(--text); }
+    .reunioes-grupo > summary::after { color: var(--text); }
+    /* Cores de cada seção e grupo (misturadas com a cor do card: funcionam no tema claro e no escuro). */
+    #secaoHistorico { border-color: #22c55e; background: #dcfce7; background: color-mix(in srgb, #22c55e 14%, var(--card)); }
+    #grupoComentarios { --grupo-cor: #a855f7; background: #faf5ff; background: color-mix(in srgb, #a855f7 6%, var(--card)); }
+    #grupoComentarios > summary { background: #e0c8fc; background: color-mix(in srgb, #a855f7 34%, var(--card)); }
+    #grupoDirigir { --grupo-cor: #14b8a6; background: #f0fdfa; background: color-mix(in srgb, #14b8a6 6%, var(--card)); }
+    #grupoDirigir > summary { background: #a7f0e6; background: color-mix(in srgb, #14b8a6 34%, var(--card)); }
+    #grupoDiscursos { --grupo-cor: #f59e0b; background: #fffbeb; background: color-mix(in srgb, #f59e0b 6%, var(--card)); }
+    #grupoDiscursos > summary { background: #fde3a1; background: color-mix(in srgb, #f59e0b 34%, var(--card)); }
+    /* Sem o código que o grupo pede (pesquisa e, no do dirigente, também o do dirigente), ele aparece desabilitado: cinza, com cadeado, e não abre. */
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos).grupo-desabilitado { --grupo-cor: var(--line); background: var(--card); opacity: .8; }
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos).grupo-desabilitado > summary { background: var(--card); cursor: not-allowed; }
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos).grupo-desabilitado > summary .reunioes-subtitle { color: var(--muted); }
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos).grupo-desabilitado > summary::after { content: '🔒'; transform: none; }
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos).grupo-desabilitado > :not(summary) { display: none; }
+
+    /* ---------- Tela Reuniões: a tela principal e as páginas ----------
+       A tela principal (hub) mostra só os botões (comentar, dirigir, discursos e pesquisas salvas) e cada um abre a sua página, com ◀ Voltar.
+       O atributo data-reunioes do body diz o que está à vista: hub, comentarios, dirigir, discursos ou historico. */
+    .reunioes-topo { display: none; }
+    .reunioes-aviso-campo { position: fixed; left: 50%; bottom: calc(82px + var(--nav-fundo)); z-index: 1400; transform: translateX(-50%); width: auto; max-width: calc(100% - 24px); margin: 0; padding: 10px 18px; border-radius: 999px; box-shadow: 0 6px 18px var(--shadow); font-weight: 700; }
+    .reunioes-aviso-campo[hidden] { display: none; }
+    #secaoReunioes { margin-top: 0; padding: 0; border: 0; background: transparent; }
+    #secaoReunioes > summary { display: none; }
+    .reunioes-grupo > summary::after,
+    .historico-secao > summary::after { content: '›'; transform: none; font-size: 1.7rem; line-height: 1; }
+    #secaoHistorico { margin-top: 10px; }
+    body[data-reunioes="comentarios"] :is(#grupoDirigir, #grupoDiscursos, #secaoHistorico),
+    body[data-reunioes="dirigir"] :is(#grupoComentarios, #grupoDiscursos, #secaoHistorico),
+    body[data-reunioes="discursos"] :is(#grupoComentarios, #grupoDirigir, #secaoHistorico),
+    body[data-reunioes="historico"] #secaoReunioes { display: none; }
+    body:not([data-reunioes="hub"]) :is(.reunioes-grupo, .historico-secao) > summary { display: none; }
+    /* Dentro de uma página (comentar, dirigir, discursos, pesquisas salvas) o contêiner do grupo some: as opções já têm a moldura delas e ficam soltas,
+       sem a moldura dupla. Só o botão do grupo, na tela principal (hub), mantém o contêiner. */
+    body:not([data-reunioes="hub"]) :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos) { margin-top: 0; border: 0; border-radius: 0; background: transparent; overflow: visible; }
+    body:not([data-reunioes="hub"]) #secaoHistorico { margin-top: 0; padding: 0; border: 0; border-radius: 0; background: transparent; }
+    body:not([data-reunioes="hub"]) .reunioes-topo { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; padding-bottom: 10px; border-bottom: 3px solid var(--topo-cor, var(--line)); }
+    .reunioes-topo[data-cor="comentarios"] { --topo-cor: #a855f7; }
+    .reunioes-topo[data-cor="dirigir"] { --topo-cor: #14b8a6; }
+    .reunioes-topo[data-cor="discursos"] { --topo-cor: #f59e0b; }
+    .reunioes-topo[data-cor="historico"] { --topo-cor: #22c55e; }
+    /* Com uma opção aberta (Estudo de A Sentinela, Estudo Bíblico…), as outras do mesmo grupo ficam escondidas; ao recolher, voltam. */
+    .reunioes-grupo.tem-aberto > details.subsection:not([open]) { display: none; }
+    .reunioes-topo .reunioes-pagina-titulo { flex: 1 1 auto; margin: 0; font-size: 1.02rem; line-height: 1.25; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    /* O emoji do título (mão, microfone…) é bem maior que as letras. */
+    .reunioes-topo .reunioes-pagina-icone { flex: 0 0 auto; font-size: 1.9rem; line-height: 1; }
+    /* Voltar e "ir ao campo de texto" têm o mesmo tamanho (largura e altura), cada um de um lado do título. */
+    .reunioes-topo button { flex: 0 0 5rem; width: 5rem; min-height: 2.5rem; margin: 0; padding: 8px 6px; white-space: nowrap; }
+    /* Tela principal: os botões crescem para ocupar a altura da tela (a medida --hub-btn-h vem de reunioesAjustarHub) e ganham uma descrição. */
+    .grupo-desc { display: none; }
+    /* O ícone de cada botão (comentar, dirigir, discursos, pesquisas salvas): grande na tela principal. */
+    .reunioes-grupo > summary .grupo-icone, .historico-secao > summary .grupo-icone { flex: 0 0 auto; font-size: 1.15rem; line-height: 1; }
+    .reunioes-grupo > summary > div, .historico-secao > summary > h2 { flex: 1 1 auto; min-width: 0; }
+    body[data-reunioes="hub"] :is(.reunioes-grupo, .historico-secao) > summary .grupo-icone { font-size: 2.7rem; }
+    /* Os quatro botões da tela principal: fontes um pouco maiores para encher mais o botão, com menos espaço em cima e embaixo para ele manter o
+       tamanho de antes. reunioesAjustarHub mede a altura com as medidas antigas (a classe hub-medindo, logo abaixo) e depois tira a classe. */
+    body[data-reunioes="hub"] .reunioes-grupo > summary { padding-top: 8px; padding-bottom: 8px; }
+    body[data-reunioes="hub"] .reunioes-grupo > summary .reunioes-subtitle,
+    body[data-reunioes="hub"] .historico-secao > summary .reunioes-title { font-size: 1.25rem; }
+    body[data-reunioes="hub"] .grupo-desc { display: block; margin-top: 4px; font-size: .93rem; font-weight: 500; line-height: 1.3; color: var(--muted); }
+    @media (max-width: 640px) and (max-height: 700px) {
+      body[data-reunioes="hub"] :is(.reunioes-grupo, .historico-secao) > summary .grupo-icone { font-size: 1.8rem; }
+      body[data-reunioes="hub"] .grupo-desc { display: none; }
+      body[data-reunioes="hub"] .reunioes-grupo > summary { padding: 6px 12px; }
+      body[data-reunioes="hub"] .reunioes-grupo > summary .reunioes-subtitle,
+      body[data-reunioes="hub"] .historico-secao > summary .reunioes-title { font-size: 1.15rem; }
+      .reunioes-week .ai-week-nav, .reunioes-week .ai-week-link { min-height: 50px; }
+      .reunioes-week .ai-week-link { padding: 4px 10px; gap: 3px; }
+    }
+    /* Só durante a medida da altura dos botões (reunioesAjustarHub): as fontes e os espaços de antes, para o tamanho dos botões não mudar. */
+    body.hub-medindo[data-reunioes="hub"] .reunioes-grupo > summary { padding-top: 12px; padding-bottom: 12px; }
+    body.hub-medindo[data-reunioes="hub"] .reunioes-grupo > summary .reunioes-subtitle,
+    body.hub-medindo[data-reunioes="hub"] .historico-secao > summary .reunioes-title { font-size: 1.15rem; }
+    body.hub-medindo[data-reunioes="hub"] .grupo-desc { font-size: .86rem; }
+    @media (max-width: 640px) and (max-height: 700px) {
+      body.hub-medindo[data-reunioes="hub"] .reunioes-grupo > summary { padding-top: 8px; padding-bottom: 8px; }
+      body.hub-medindo[data-reunioes="hub"] .reunioes-grupo > summary .reunioes-subtitle,
+      body.hub-medindo[data-reunioes="hub"] .historico-secao > summary .reunioes-title { font-size: 1.05rem; }
+    }
+    /* Sem o campo de texto na tela principal; nas páginas ele vem depois do conteúdo (as respostas da IA vão para lá). */
+    body[data-screen="reunioes"][data-reunioes="hub"] .screen-editor { display: none; }
+    body[data-screen="reunioes"]:not([data-reunioes="hub"]) .screen-editor { order: 5; }
+    /* "Outras opções de formatação" fica no cartão do campo de texto, que é o mesmo em Formatar e em todas as páginas de Reuniões (comentar, dirigir,
+       discursos e pesquisas e respostas salvas); some só na tela principal de Reuniões, onde o campo de texto não aparece. */
+
+    /* ---------- Cada categoria da tela Reuniões numa cor só ----------
+       Tudo o que fica dentro de uma categoria (cards, botões, setas, campos e caixas de marcar) usa a cor dela: Comentários em roxo/rosa,
+       Dirigentes em verde-azulado e Esboços em laranja. --g-cor: a cor da borda; --g-forte: botões de ação; --g-suave: botões de apoio. */
+    #grupoComentarios, .historico-cat[data-cat="comentarios"] { --g-cor: #a855f7; --g-forte: #7e22ce; --g-forte-h: #6b21a8; --g-suave: #f3e8ff; --g-suave-h: #e9d5ff; --g-borda: #c084fc; --g-texto: #4c1d95; }
+    #grupoDirigir, .historico-cat[data-cat="dirigentes"] { --g-cor: #14b8a6; --g-forte: #0f766e; --g-forte-h: #115e59; --g-suave: #ccfbf1; --g-suave-h: #99f6e4; --g-borda: #2dd4bf; --g-texto: #134e4a; }
+    #grupoDiscursos, .historico-cat[data-cat="esbocos"] { --g-cor: #f59e0b; --g-forte: #c2410c; --g-forte-h: #9a3412; --g-suave: #fde68a; --g-suave-h: #fcd96a; --g-borda: #f5c542; --g-texto: #422006; }
+
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos) details.subsection {
+      background: var(--card);
+      background: color-mix(in srgb, var(--g-cor) 10%, var(--card));
+      border-color: var(--g-cor);
+    }
+    /* Ferramentas dentro dos grupos (A Sentinela, Joias, Estudo Bíblico…): sem espaço em branco entre o título da ferramenta e o que vem logo abaixo. */
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos) > details.subsection[open] > summary { padding-bottom: 4px; }
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos) > details.subsection > .subsection-body { padding-top: 0; }
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos) > details.subsection > .subsection-body > .sent-option.sent-option-site:first-child { margin-top: 0; }
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos) > details.subsection > .subsection-body > .sent-option.sent-option-site:first-child > h3 { margin-top: 0; }
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos) :is(.ai-study-btn, .ai-sentinela-btn, .ai-study-btn.ai-study-questions-btn) { background: var(--g-forte); color: #ffffff; }
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos) :is(.ai-study-btn, .ai-sentinela-btn, .ai-study-btn.ai-study-questions-btn):hover:not(:disabled) { background: var(--g-forte-h); }
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos) :is(.ai-week-nav, .ai-week-today, .ai-study-load, button.secondary),
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos) .sent-option-site :is(.ai-week-nav, .ai-week-today, .ai-study-load) { background: var(--g-suave); color: var(--g-texto); border-color: var(--g-borda); }
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos) :is(.ai-week-nav, .ai-week-today, .ai-study-load, button.secondary):hover:not(:disabled),
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos) .sent-option-site :is(.ai-week-nav, .ai-week-today, .ai-study-load):hover:not(:disabled) { background: var(--g-suave-h); }
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos) .sent-option-site :is(.ai-week-link, .ai-study-input input) {
+      background: var(--card);
+      background: color-mix(in srgb, var(--g-cor) 22%, var(--card));
+      border-color: var(--g-cor);
+    }
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos) .ai-check { border-color: var(--g-borda); }
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos) .ai-check input[type="checkbox"]:checked { background-color: var(--g-forte); border-color: var(--g-forte); }
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos) :is(.textos-box, .dirigente-secoes, .sent-option:not(.sent-option-site)) { border-color: var(--g-borda); }
+    /* Pesquisas e respostas salvas: cada item e seus botões na cor da categoria (Abrir forte; Original e apagar suaves). */
+    .historico-cat .historico-item { border-color: var(--g-borda); }
+    .historico-cat .historico-acoes button:not(.secondary) { background: var(--g-forte); color: #ffffff; }
+    .historico-cat .historico-acoes button:not(.secondary):hover:not(:disabled) { background: var(--g-forte-h); }
+    .historico-cat .historico-acoes button.secondary { background: var(--g-suave); color: var(--g-texto); border-color: var(--g-borda); }
+    .historico-cat .historico-acoes button.secondary:hover:not(:disabled) { background: var(--g-suave-h); }
+    /* Esboços: o botão de abrir o esboço já salvo fica um tom acima do carregar (também laranja). */
+    #grupoDiscursos .sent-option-site .ai-study-load.esbocosalvo { background: #fdba74; color: #431407; border-color: #f97316; }
+    #grupoDiscursos .sent-option-site .ai-study-load.esbocosalvo:hover:not(:disabled) { background: #fb923c; }
+    .grupo-trava { display: block; margin-top: 2px; font-size: .78rem; font-weight: 650; color: var(--muted); }
+    .grupo-trava[hidden] { display: none; }
+    /* Ajustes → Autorização de acessos: o código de pesquisa, o do dirigente e a senha de administrador, salvos neste aparelho. */
+    details.subsection.acessos-box { background: #fef3c7; background: color-mix(in srgb, #f59e0b 16%, var(--card)); border-color: #f59e0b; }
+    .acesso-item { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
+    .acesso-item label { display: block; font-weight: 800; }
+    .acesso-item .hint { margin: 2px 0 8px; }
+    /* Resumo do que está guardado no aparelho (Ajustes → Privacidade e dados deste aparelho). */
+    .dados-resumo { margin: 4px 0 10px; text-align: left; }
+    .dados-linha { padding: 8px 0; border-top: 1px solid var(--line); }
+    .dados-linha:first-child { border-top: 0; }
+    .dados-nome { font-weight: 700; line-height: 1.3; }
+    .dados-meta, .dados-detalhe { margin-top: 2px; font-size: .86rem; line-height: 1.4; color: var(--muted); overflow-wrap: anywhere; }
+    .dados-total { padding-top: 10px; border-top: 2px solid var(--line); font-weight: 800; }
+    .acesso-linha { display: flex; gap: 6px; margin-bottom: 8px; }
+    .acesso-linha input { flex: 1 1 auto; min-width: 0; }
+    .acesso-linha .acesso-ver { flex: 0 0 auto; min-width: 44px; padding: 4px 8px; }
+    .acesso-item .bk-row button { flex: 1 1 0; }
+    .acesso-status:empty { display: none; }
+    .acesso-aviso { color: var(--warning); font-weight: 650; }
+    /* Semana no alto da tela: vale para todas as preparações (cada card usa a mesma). */
+    .reunioes-week { margin: 2px 0 14px; padding: 10px 12px; border: 2px solid var(--line); border-radius: 12px; background: var(--card); }
+    .reunioes-week-label { margin: 0 0 8px; font-size: 1.1rem; font-weight: 700; color: var(--muted); text-align: center; }
+
+    /* ---------- Estados ---------- */
+
+    .ok {
+      color: var(--success);
+      font-weight: 700;
+      margin-left: 8px;
+    }
+
+    .warn {
+      color: var(--warning);
+      font-weight: 700;
+      margin-left: 8px;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--soft);
+      color: var(--accent-dark);
+      font-size: .82rem;
+      font-weight: 700;
+      margin-left: 5px;
+    }
+
+    /* Aviso de versão nova. Nunca recarrega sozinho: isso apagaria a nota
+       que o usuário está escrevendo. */
+    .update-bar {
+      position: fixed;
+      left: 50%;
+      bottom: 12px;
+      transform: translateX(-50%);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      max-width: min(520px, calc(100vw - 24px));
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--card);
+      color: var(--text);
+      box-shadow: 0 12px 32px var(--shadow);
+      font-size: .92rem;
+      font-weight: 650;
+    }
+
+    .update-bar span {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .update-bar button {
+      min-height: 38px;
+      padding: 8px 14px;
+      border-radius: 10px;
+      flex: 0 0 auto;
+    }
+
+    @media (max-width: 560px) {
+      .update-bar {
+        left: 8px;
+        right: 8px;
+        transform: none;
+        max-width: none;
+        gap: 8px;
+        font-size: .86rem;
+      }
+
+      .update-bar button { padding: 8px 12px; }
+    }
+
+    /* ---------- Limpar/Copiar no topo do texto (só celular) ---------- */
+
+    .top-text-actions { display: none; }
+
+    .top-text-btn {
+      min-height: 40px;
+      padding: 6px 9px;
+      font-size: .8rem;
+      white-space: nowrap;
+      background: var(--neutral);
+      color: var(--neutral-text);
+      border: 2px solid var(--muted);
+    }
+
+    .top-text-btn:hover { background: var(--neutral-dark); }
+
+    /* Desfazer (só o ícone da seta em curva, no alto do campo de texto e entre as opções principais): fundo vermelho. */
+    #undoTopBtn, #undoBtn { background: #ef4444; color: #ffffff; border-color: #b91c1c; }
+    #undoTopBtn:hover:not(:disabled), #undoBtn:hover:not(:disabled) { background: #dc2626; }
+
+    /* Salvar as alterações na pesquisa salva: o bloco aparece abaixo do campo quando o texto é o de uma pesquisa salva; o botão fica em
+       verde forte (e habilitado) quando há alteração nova. */
+    .salvar-bloco { margin-top: 8px; }
+    .salvar-bloco[hidden] { display: none; }
+    .salvar-btn { display: block; width: 100%; min-height: 44px; }
+    .salvar-btn:not(:disabled) { background: #16a34a; color: #ffffff; border-color: #15803d; }
+    .salvar-btn:not(:disabled):hover { background: #15803d; }
+    .salvar-btn.salvo:disabled { background: #16a34a; color: #ffffff; border-color: #15803d; opacity: 1; }
+    .salvar-info { margin: 4px 0 0; font-size: .78rem; overflow-wrap: anywhere; }
+    /* Exportar o texto do campo para Word: abaixo do campo (e do salvar e dos botões de refazer), sempre que há texto. */
+    .exportar-bloco { margin-top: 10px; display: grid; gap: 8px; }
+    .exportar-bloco[hidden], .exportar-bloco [hidden] { display: none; }
+    .exportar-bloco button { display: block; width: 100%; min-height: 44px; margin: 0; }
+    .exportar-bloco .salvar-info { margin: 0; }
+
+    /* Painel da voz em Ajustes (administrador). */
+    details.subsection.voz-admin { background: #e0f2fe; background: color-mix(in srgb, #38bdf8 14%, var(--card)); border-color: #38bdf8; }
+    .voz-admin label { margin: 10px 0 4px; font-size: .86rem; }
+    .voz-admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    /* O rótulo ocupa a sobra de altura: os campos ficam alinhados mesmo quando um rótulo quebra em duas linhas. */
+    .voz-admin-grid > div { display: flex; flex-direction: column; min-width: 0; }
+    .voz-admin-grid > div > label { flex: 1; }
+    .voz-admin-subtitulo { margin: 14px 0 4px; font-weight: 700; font-size: .92rem; }
+    .voz-admin textarea { min-height: 70px; }
+    .voz-consumo { margin-top: 14px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+    .voz-consumo p { margin: 4px 0; font-size: .88rem; }
+    .voz-link { flex: 1 1 140px; display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 8px 10px;
+      border: 2px solid var(--line); border-radius: 10px; font-size: .88rem; font-weight: 700; color: var(--text); text-decoration: none; text-align: center; }
+
+    /* Tocador da leitura em voz alta, logo abaixo do campo de texto. */
+    .voz-bar { margin-top: 8px; padding: 8px 10px; border: 2px solid #38bdf8; border-radius: 12px; background: #e0f2fe; background: color-mix(in srgb, #38bdf8 16%, var(--card)); }
+    .voz-bar[hidden] { display: none; }
+    .voz-status { display: block; font-size: .88rem; font-weight: 650; }
+    .voz-status.warn { color: var(--danger); }
+    /* Barra de andamento da leitura (tela Leitura e texto diário) e, no fim do tocador, a voz escolhida em Ajustes, discreta. */
+    .voz-progresso { height: 8px; margin-top: 6px; border-radius: 999px; background: #bae6fd; background: color-mix(in srgb, #38bdf8 30%, var(--card)); overflow: hidden; }
+    .voz-progresso[hidden] { display: none; }
+    .voz-progresso > div { width: 0; height: 100%; border-radius: 999px; background: #0284c7; transition: width .25s linear; }
+    .voz-info { margin: 6px 0 0; font-size: .7rem; line-height: 1.3; text-align: center; color: var(--muted); }
+    .voz-info[hidden] { display: none; }
+    .voz-controles { display: flex; gap: 6px; margin-top: 6px; }
+    .voz-controles[hidden] { display: none; }
+    /* Só ícones, do mesmo tamanho e centralizados. */
+    .voz-controles button { flex: 1 1 0; min-width: 0; min-height: 40px; padding: 0; font-size: 1.3rem; line-height: 1; display: flex; align-items: center; justify-content: center; }
+    .voz-controles button[hidden] { display: none; }
+    .voz-controles select { flex: 0 0 auto; width: auto; min-height: 40px; padding: 2px 8px; }
+
+    /* ---------- Telas pequenas ---------- */
+
+    @media (max-width: 560px) {
+      body { line-height: 1.38; }
+
+      /* Título numa linha só e, logo abaixo, os três botões dividindo a largura do card. */
+      .card-title-row {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .card-title-row h2 { margin: 0; }
+
+      .top-text-actions { display: flex; gap: 6px; }
+      .top-text-actions { align-items: stretch; }
+      .top-text-actions .top-text-btn { flex: 1 1 0; min-width: 0; }
+      /* Limpar e Copiar maiores, com ícone grande; Desfazer é só o ícone, menor, na ponta direita. */
+      .top-text-actions .top-big-btn { min-height: 48px; font-size: .95rem; }
+      .top-text-actions .top-icon { font-size: 1.5rem; line-height: 1; margin-right: 4px; }
+      .top-text-actions .top-undo-btn { flex: 0 0 48px; min-height: 48px; padding: 2px; font-size: 1.3rem; }
+
+      /* Limpar e Copiar passam para o topo; a barra de baixo fica sem eles. */
+      .desktop-only { display: none; }
+
+      header { padding: 12px 10px 10px; }
+
+      .card { padding: 12px; border-radius: 12px; }
+
+      .option-buttons,
+      .case-buttons,
+      .templates { grid-template-columns: 1fr; }
+
+      /* Marcadores de lista são curtos: cabem lado a lado mesmo num celular
+         estreito, e empilhá-los deixaria o cartão longo demais para rolar. */
+      .list-buttons { grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); }
+
+      .symbols { grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); }
+
+      /* :not(.main-actions) porque a barra de ações principal já define as
+         próprias colunas — sem isso, esta regra a achataria numa coluna só. */
+      .button-row:not(.main-actions) {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .button-row:not(.main-actions) button { width: 100%; }
+
+      /* No celular a ordem, de cima para baixo, é: campo de texto, botões de formatação, Outras opções de formatação,
+         a formatação com IA (só em Formatar) e, por último, o texto explicativo das páginas de Reuniões. O painel vira
+         uma coluna para a ordem visual mudar sem mexer na ordem do HTML (a tela larga continua com o texto de um lado e
+         os controles do outro). */
+      .editor-controls-pane > #principaisBox { order: -2; }
+
+      .editor-controls-pane > .main-copy-status { order: -1; }
+
+      /* Sem Desfazer, Limpar e Copiar (que foram para o topo) sobram 9 botões: 3 + 3 + 3 (a terceira fileira são as fontes). */
+      .main-actions { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+      .action-item { font-size: .7rem; }
+
+      .ok,
+      .warn {
+        display: block;
+        width: 100%;
+        margin: 6px 0 0;
+        text-align: center;
+      }
+
+      .editor-controls-pane > .main-copy-status { margin: 0; }
+    }
+
+    /* ---------- Telas médias e grandes ---------- */
+
+    @media (min-width: 561px) {
+      .controls,
+      .template-row,
+      .symbol-toolbar { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+
+      .controls-3 { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); align-items: end; }
+
+      .template-row { grid-template-columns: 1fr auto; align-items: end; }
+
+      .modal-actions { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    @media (min-width: 980px) {
+      .editor-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+
+      .editor-text-pane {
+        display: flex;
+        flex-direction: column;
+        align-self: stretch;
+      }
+
+      #inputText {
+        flex: 1 1 auto;
+        height: auto;
+        min-height: clamp(420px, 58vh, 620px);
+      }
+
+      .editor-controls-pane { align-self: stretch; }
+    }
+
+    @media (min-width: 1280px) {
+      .controls-3 { grid-template-columns: repeat(4, minmax(180px, 1fr)); }
+    }
+
+    /* Em telas sensíveis ao toque, alvos menores que 44px são difíceis de acertar. */
+    @media (hover: none) and (pointer: coarse) {
+      button,
+      select,
+      input,
+      textarea { min-height: 44px; }
+
+      /* No toque o alvo precisa ser maior, mesmo com o ícone pequeno. */
+      .symbol-star { min-height: 0; width: 24px; height: 24px; font-size: .8rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; }
+      .option-btn:hover,
+      .icon-action:hover { transform: none; }
+    }
+
+    /* Texto diário (tela Início) sem o código de pesquisa: a parte de cima fica cinza e bloqueada (ligamos "inert", que
+       bloqueia toque e teclado), mas o link para o wol.jw.org continua habilitado. */
+    .card.td-card.card-desabilitado { background: var(--card); border: 2px dashed var(--line); }
+    .card.td-card.card-desabilitado .td-topo { opacity: .75; filter: grayscale(1); }
+    .card.td-card.card-desabilitado .td-data, .card.td-card.card-desabilitado .td-tema { color: var(--muted); }
+    .td-link[hidden] { display: none; }
+  
