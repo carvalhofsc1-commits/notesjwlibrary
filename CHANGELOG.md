@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.2.12
+
+Lista de temas do S-34: a coluna do número ficou mais larga e sem quebra, para o ✔ não descer nos temas de 3 dígitos (100 em diante).
+
 ## 6.2.11
 
 Lista de temas do S-34: as células usavam a classe "ok", que já existia para mensagens (verde, negrito, centralizada); agora têm classes próprias e ficam alinhadas à esquerda.
