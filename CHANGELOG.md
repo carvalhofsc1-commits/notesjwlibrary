@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.2.07
+
+Prompts da IA → Diversos: anotação do código de leitura (como as do código de pesquisa e do dirigente; vai ao servidor em api/config.mjs). Ajustes → Privacidade → "O que está guardado neste aparelho": lixeira pequena em cada item para apagar só aquele (com confirmação). "Puxar para atualizar" só na tela Início. Barra de baixo: sem o elástico de rolagem e em camada própria, para não se soltar da base no iPhone ao rolar.
+
 ## 6.2.06
 
 Tocador "pronto": os botões Ler e Continuar da tela Leitura, o 🔊 do texto diário, o dos comentários e o do campo de texto abrem o tocador sem começar a ler, para escolher a voz (🗣️) e a velocidade antes; o ▶️ Iniciar começa. Tocar numa frase da Leitura, o ⏮️ e o ⏭️ e trocar a voz durante a leitura continuam imediatos.

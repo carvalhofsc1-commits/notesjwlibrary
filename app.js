@@ -5537,7 +5537,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.2.06'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.2.07'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -7012,7 +7012,7 @@
         chaves.forEach(chave => usadas.add(chave));
         const tamanho = chaves.reduce((soma, chave) => soma + bytes(chave), 0);
         if (!tamanho) return;
-        grupos.push({ icone, nome, texto: qtd + ' ' + (qtd === 1 ? singular : plural), bytes: tamanho, periodo: periodoLegivel(datas || []), detalhe: detalhe || '' });
+        grupos.push({ icone, nome, texto: qtd + ' ' + (qtd === 1 ? singular : plural), bytes: tamanho, periodo: periodoLegivel(datas || []), detalhe: detalhe || '', chaves });
       };
 
       const pesquisas = lista(HISTORICO_KEY);
@@ -7078,7 +7078,8 @@
           }
         }
       } catch (e) { /* sem cache do navegador */ }
-      if (arquivos) grupos.push({ icone: '🗄️', nome: 'Arquivos do app (para abrir sem internet)', texto: arquivos + (arquivos === 1 ? ' arquivo' : ' arquivos'), bytes: arquivosBytes, periodo: '', detalhe: '' });
+      if (arquivos) grupos.push({ icone: '🗄️', nome: 'Arquivos do app (para abrir sem internet)', texto: arquivos + (arquivos === 1 ? ' arquivo' : ' arquivos'), bytes: arquivosBytes, periodo: '', detalhe: '',
+        apagar: async () => { for (const nome of await caches.keys()) if (nome.startsWith('jw-notas-')) await caches.delete(nome); } });
       return { grupos, total, arquivosBytes };
     }
 
@@ -7095,9 +7096,30 @@
       resumo.grupos.forEach(grupo => {
         const bloco = document.createElement('div');
         bloco.className = 'dados-linha';
-        bloco.appendChild(linha('dados-nome', grupo.icone + ' ' + grupo.nome));
-        bloco.appendChild(linha('dados-meta', [grupo.texto, tamanhoLegivel(grupo.bytes), grupo.periodo].filter(Boolean).join(' · ')));
-        if (grupo.detalhe) bloco.appendChild(linha('dados-detalhe', grupo.detalhe));
+        const corpo = document.createElement('div');
+        corpo.className = 'dados-corpo';
+        corpo.appendChild(linha('dados-nome', grupo.icone + ' ' + grupo.nome));
+        corpo.appendChild(linha('dados-meta', [grupo.texto, tamanhoLegivel(grupo.bytes), grupo.periodo].filter(Boolean).join(' · ')));
+        if (grupo.detalhe) corpo.appendChild(linha('dados-detalhe', grupo.detalhe));
+        // Lixeira discreta: apaga só este item (os outros ficam).
+        const lixeira = document.createElement('button');
+        lixeira.type = 'button';
+        lixeira.className = 'dados-apagar';
+        lixeira.textContent = '🗑️';
+        lixeira.title = 'Apagar este item deste aparelho';
+        lixeira.setAttribute('aria-label', 'Apagar: ' + grupo.nome);
+        lixeira.addEventListener('click', async () => {
+          const aviso = grupo.chaves && grupo.chaves.some(k => /Code|Senha|Admin|Codigo/i.test(k))
+            ? 'Apagar este item (' + grupo.nome + ') deste aparelho? Você terá de informar os códigos de novo em Autorização de acessos.'
+            : 'Apagar este item (' + grupo.nome + ') deste aparelho? Os outros itens ficam. Não dá para desfazer.';
+          if (!(await askConfirm(aviso, 'Apagar este item', { ok: '🗑️ Apagar', cancel: 'Cancelar' }))) return;
+          if (grupo.apagar) await grupo.apagar();
+          else if (grupo.chaves && grupo.chaves.includes(LEITURA_SALVA_KEY)) document.getElementById('leituraLimparBtn').click(); // limpa a tela e apaga o texto, a posição e as marcas
+          else grupo.chaves.forEach(chave => { try { localStorage.removeItem(chave); } catch (e) { /* sem localStorage */ } });
+          if (grupo.chaves && grupo.chaves.includes(HISTORICO_KEY)) historicoRender();
+          dadosAparelhoRender();
+        });
+        bloco.append(corpo, lixeira);
         dadosResumoEl.appendChild(bloco);
       });
       dadosResumoEl.appendChild(linha('dados-total', 'Total guardado: ' + tamanhoLegivel(resumo.total + resumo.arquivosBytes)));
@@ -8687,6 +8709,9 @@ function saveTemplatesToStorage() {
       adminCodeDirNote.value = '';
       delete adminCodeDirNote.dataset.loaded;
       adminCodeDirStatus.textContent = '';
+      adminCodeLeituraNote.value = '';
+      delete adminCodeLeituraNote.dataset.loaded;
+      adminCodeLeituraStatus.textContent = '';
       promptsLoginError.textContent = '';
       promptsStatus.textContent = '';
       promptsLogin.hidden = false;
@@ -8974,6 +8999,10 @@ function saveTemplatesToStorage() {
         adminCodeDirNote.value = typeof state.anotacaoDirigente === 'string' ? state.anotacaoDirigente : '';
         adminCodeDirNote.dataset.loaded = '1';
       }
+      if (!adminCodeLeituraNote.dataset.loaded) {
+        adminCodeLeituraNote.value = typeof state.anotacaoLeitura === 'string' ? state.anotacaoLeitura : '';
+        adminCodeLeituraNote.dataset.loaded = '1';
+      }
       renderLimits(state);
 
       promptsAgrupadas(state).forEach(({ cat, partes }) => {
@@ -9150,6 +9179,8 @@ function saveTemplatesToStorage() {
     const adminCodeStatus = document.getElementById('adminCodeStatus');
     const adminCodeDirNote = document.getElementById('adminCodeDirNote');
     const adminCodeDirStatus = document.getElementById('adminCodeDirStatus');
+    const adminCodeLeituraNote = document.getElementById('adminCodeLeituraNote');
+    const adminCodeLeituraStatus = document.getElementById('adminCodeLeituraStatus');
 
     function setAdminCodeStatus(message, isWarning) {
       adminCodeStatus.className = isWarning ? 'warn' : 'ok';
@@ -9204,6 +9235,34 @@ function saveTemplatesToStorage() {
       adminCodeDirNote.value = result.data.anotacao || '';
       if (promptsState) promptsState.anotacaoDirigente = adminCodeDirNote.value;
       setAdminCodeDirStatus('✅ Anotação salva.', false);
+    });
+
+    // ---------- Anotação do código de leitura (igual às outras) ----------
+    function setAdminCodeLeituraStatus(message, isWarning) {
+      adminCodeLeituraStatus.className = isWarning ? 'warn' : 'ok';
+      adminCodeLeituraStatus.textContent = message;
+    }
+
+    document.getElementById('adminCodeLeituraCopyBtn').addEventListener('click', async () => {
+      const text = adminCodeLeituraNote.value.trim();
+      if (!text) return setAdminCodeLeituraStatus('O campo está vazio.', true);
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (e) {
+        adminCodeLeituraNote.focus();
+        adminCodeLeituraNote.select();
+        try { document.execCommand('copy'); } catch (e2) { return setAdminCodeLeituraStatus('Não foi possível copiar. Selecione e copie manualmente.', true); }
+      }
+      setAdminCodeLeituraStatus('✅ Código copiado.', false);
+    });
+
+    document.getElementById('adminCodeLeituraSaveBtn').addEventListener('click', async () => {
+      setAdminCodeLeituraStatus('Salvando...', false);
+      const result = await postConfig({ acao: 'anotacao-leitura-salvar', codigo: promptsCode, anotacao: adminCodeLeituraNote.value });
+      if (!result.ok) return setAdminCodeLeituraStatus(configErrorMessage(result, 'Não foi possível salvar agora.'), true);
+      adminCodeLeituraNote.value = result.data.anotacao || '';
+      if (promptsState) promptsState.anotacaoLeitura = adminCodeLeituraNote.value;
+      setAdminCodeLeituraStatus('✅ Anotação salva.', false);
     });
 
     async function copyAllPrompts() {
@@ -14628,7 +14687,7 @@ function saveTemplatesToStorage() {
 
       window.addEventListener('touchstart', event => {
         if (event.touches.length !== 1 || window.scrollY > 0 || aiBusy) return;
-        if (currentScreen() === 'leitura') return; // na Leitura em voz alta o gesto não atualiza o app (um puxão sem querer perdia o texto da tela)
+        if (currentScreen() !== 'inicio') return; // o gesto de puxar para atualizar só vale na tela Início (nas outras, um puxão sem querer perdia texto e rolagem)
         if (event.target.closest('textarea, input, select, [contenteditable="true"]')) return;
         // Dentro de uma página ou janela por cima do app (o esboço original, a prévia do Word, as confirmações) o gesto de rolar não atualiza o
         // app: a tela de trás pode estar no topo e o gesto de voltar a rolar para cima recarregaria o app, fechando a página sozinha.

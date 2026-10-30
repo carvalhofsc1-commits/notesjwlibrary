@@ -2376,6 +2376,10 @@
       box-shadow: inset 0 0 0 1px var(--brand);
     }
     body { padding-bottom: calc(72px + var(--nav-fundo)); }
+    /* iPhone: ao rolar, a barra fixa de baixo às vezes se soltava da base (deixando um vazio embaixo). Sem o "elástico" de rolagem e com a barra na
+       sua própria camada de composição, ela fica presa à base. */
+    html, body { overscroll-behavior-y: none; }
+    .app-nav { -webkit-transform: translate3d(0, 0, 0); transform: translate3d(0, 0, 0); will-change: transform; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
     .update-banner,
     .update-bar { bottom: calc(80px + var(--nav-fundo)); }
     @media (min-width: 980px) {
@@ -2681,7 +2685,11 @@
     .acesso-item .hint { margin: 2px 0 8px; }
     /* Resumo do que está guardado no aparelho (Ajustes → Privacidade e dados deste aparelho). */
     .dados-resumo { margin: 4px 0 10px; text-align: left; }
-    .dados-linha { padding: 8px 0; border-top: 1px solid var(--line); }
+    .dados-linha { display: flex; align-items: flex-start; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); }
+    .dados-corpo { flex: 1 1 auto; min-width: 0; }
+    /* Lixeira pequena e discreta, no canto de cada item. */
+    .dados-apagar { flex: 0 0 auto; width: 30px; height: 30px; min-height: 0; padding: 0; border: 0; border-radius: 8px; background: transparent; box-shadow: none; font-size: .95rem; line-height: 1; opacity: .55; }
+    .dados-apagar:hover, .dados-apagar:focus-visible { opacity: 1; background: var(--soft); transform: none; }
     .dados-linha:first-child { border-top: 0; }
     .dados-nome { font-weight: 700; line-height: 1.3; }
     .dados-meta, .dados-detalhe { margin-top: 2px; font-size: .86rem; line-height: 1.4; color: var(--muted); overflow-wrap: anywhere; }
