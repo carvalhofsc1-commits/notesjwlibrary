@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.05
+
+Leitura em voz alta: ao tocar no botão do alto-falante 🔊 ou em "Ler", o tocador aguarda 4 segundos com contagem regressiva antes de iniciar o áudio direto se o usuário não mexer nas opções de configuração de voz (tempo configurável em Ajustes → Leitura em voz alta).
+
 ## 6.3.04
 
 Tela Leitura em voz alta: botão "Ler" no tom pastel suave alaranjado, combinando com o botão "Importar PDF ou Word".

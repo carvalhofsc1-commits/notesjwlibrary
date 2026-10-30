@@ -1939,6 +1939,17 @@
     // atual toca. O áudio de cada parte fica guardado nesta sessão: ouvir de novo não gasta créditos.
     const VOZ_ENDPOINT = '/api/voz';
     const VOZ_SPEED_KEY = 'jwLibraryNoteAplicarVozVelocidadeV1';
+    const VOZ_ESPERA_KEY = 'jwLibraryNoteAplicarVozEsperaV1';
+    function vozTempoEsperaPadrao() {
+      try {
+        const salvo = localStorage.getItem(VOZ_ESPERA_KEY);
+        if (salvo !== null && salvo !== '') {
+          const num = Number(salvo);
+          if (Number.isFinite(num) && num >= 0) return num;
+        }
+      } catch (e) {}
+      return 4; // padrão de 4 segundos
+    }
     const VOZ_MAX_PARTE = 1500;
     const VOZ_PRIMEIRA_PARTE = 150; // curta, para a leitura começar logo
 
@@ -2381,6 +2392,7 @@
     }
 
     function vozParar() {
+      vozAutoCancelar();
       vozInicio = null;
       vozSessao++;
       vozAudio.pause();
@@ -2475,11 +2487,32 @@
       }
     }
 
-    // Os botões Ler e 🔊 abrem o tocador "pronto" em vez de começar na hora: dá para trocar a voz e a velocidade antes. O ▶️ Iniciar começa.
+    // Os botões Ler e 🔊 abrem o tocador "pronto" em vez de começar na hora: dá para trocar a voz e a velocidade antes.
+    // Se o usuário não clicar em nada nas opções de voz durante o tempo configurado (padrão 4s), o áudio inicia direto.
     // opcoes: lugar (onde o tocador abre), texto (o aviso), acesso() (texto do erro ou ''), iniciar() (começa a leitura).
+    let vozAutoTimer = null;
+    let vozAutoInterval = null;
+    let vozTextoProntoOriginal = '';
+
+    function vozAutoCancelar() {
+      if (vozAutoTimer) {
+        clearTimeout(vozAutoTimer);
+        vozAutoTimer = null;
+      }
+      if (vozAutoInterval) {
+        clearInterval(vozAutoInterval);
+        vozAutoInterval = null;
+      }
+      if (vozInicio && vozTextoProntoOriginal) {
+        vozMensagem(vozTextoProntoOriginal, false);
+      }
+    }
+
     async function vozAbrirPronto({ lugar, texto, acesso, iniciar }) {
       if (vozSessao && !vozBar.hidden && !vozPauseBtn.hidden && !vozInicio) vozParar(); // lendo agora: a nova escolha recomeça
+      vozAutoCancelar();
       vozInicio = null;
+      vozTextoProntoOriginal = texto || '';
       vozBarEm(lugar);
       vozProgresso.hidden = true;
       const regras = await vozCarregarRegras();
@@ -2494,7 +2527,6 @@
       if (!velocidadeSalva) vozVelocidade.value = vozVelocidadePerto(regras.velocidade);
       vozAplicarVelocidade();
       if (!audioGerando) audioMostrar('', []);
-      vozMensagem(texto, false);
       vozControlesAtivos(true);
       vozPausaMostrar(true); // ▶️
       vozPauseBtn.title = 'Iniciar';
@@ -2503,9 +2535,48 @@
       vozStopBtn.title = 'Fechar';
       vozStopBtn.setAttribute('aria-label', 'Fechar');
       vozInicio = iniciar;
+
+      // No clique do usuário, desbloqueia a instância de áudio no Safari/iOS para permitir play após o temporizador
+      try {
+        vozAudio.src = vozSilencio();
+        vozAudio.play().catch(() => {});
+      } catch (e) {}
+
+      const espera = vozTempoEsperaPadrao();
+      if (espera > 0) {
+        let restantes = espera;
+        const msgContagem = () => {
+          vozMensagem(vozTextoProntoOriginal + ' (iniciando em ' + restantes + ' s…)', false);
+        };
+        msgContagem();
+        vozAutoInterval = setInterval(() => {
+          restantes--;
+          if (restantes > 0) {
+            msgContagem();
+          } else {
+            clearInterval(vozAutoInterval);
+            vozAutoInterval = null;
+          }
+        }, 1000);
+        vozAutoTimer = setTimeout(() => {
+          vozAutoTimer = null;
+          if (vozAutoInterval) {
+            clearInterval(vozAutoInterval);
+            vozAutoInterval = null;
+          }
+          if (vozInicio) {
+            const acao = vozInicio;
+            vozInicio = null;
+            acao();
+          }
+        }, espera * 1000);
+      } else {
+        vozMensagem(vozTextoProntoOriginal, false);
+      }
     }
 
     vozPauseBtn.addEventListener('click', () => {
+      vozAutoCancelar();
       if (vozInicio) { // tocador "pronto": o ▶️ começa a leitura (e libera o áudio no iPhone, pois é um toque)
         const iniciar = vozInicio;
         vozInicio = null;
@@ -2582,10 +2653,14 @@
       if (atual) atual.scrollIntoView({ block: 'nearest' });
     }
 
-    vozVozBtn.addEventListener('click', () => { if (vozLista.hidden) vozListaAbrir(); else vozListaFechar(); });
+    vozVozBtn.addEventListener('click', () => {
+      vozAutoCancelar();
+      if (vozLista.hidden) vozListaAbrir(); else vozListaFechar();
+    });
     document.addEventListener('click', event => { if (!vozLista.hidden && !vozLista.contains(event.target) && !vozVozBtn.contains(event.target)) vozListaFechar(); });
     document.addEventListener('keydown', event => { if (event.key === 'Escape' && !vozLista.hidden) vozListaFechar(); });
     vozLista.addEventListener('click', event => {
+      vozAutoCancelar();
       const botao = event.target.closest('button[data-voz]');
       if (!botao) return;
       vozEscolhida = botao.dataset.voz;
@@ -2595,8 +2670,16 @@
       leitorRecomecarNaFrase(); // só tem efeito nas leituras por frases
     });
     vozVelocidade.addEventListener('change', () => {
+      vozAutoCancelar();
       vozAplicarVelocidade();
       safeSetItem(VOZ_SPEED_KEY, vozVelocidade.value);
+    });
+    vozVelocidade.addEventListener('focus', vozAutoCancelar);
+    vozVelocidade.addEventListener('pointerdown', vozAutoCancelar);
+    vozBar.addEventListener('click', event => {
+      if (event.target !== vozPauseBtn && !vozPauseBtn.contains(event.target)) {
+        vozAutoCancelar();
+      }
     });
     const vozOuvirPronto = () => vozAbrirPronto({ lugar: null, texto: 'Pronto para ler o texto do campo.', iniciar: vozOuvir });
     document.getElementById('speakTopBtn').addEventListener('click', vozOuvirPronto);
@@ -4480,6 +4563,7 @@
     vozVelocidade.addEventListener('change', leituraEstatAtualizar);
     // Mudar a caixa dos parênteses refaz o que a voz fala de cada frase (a leitura em andamento segue como está; vale da próxima vez que ler).
     leituraParentesesCaixa.addEventListener('change', () => {
+      vozAutoCancelar();
       safeSetItem(LEITURA_PARENTESES_KEY, leituraParentesesCaixa.checked ? '1' : '0');
       const regras = leituraRegras(vozRegras || VOZ_REGRAS_PADRAO);
       leituraUnidades.forEach(u => {
@@ -4576,6 +4660,13 @@
     let vozAdminCodigo = '';
     let vozExemploTocando = false;
     const vozSection = document.getElementById('vozSection');
+    const vozAutoEspera = document.getElementById('vozAutoEspera');
+    if (vozAutoEspera) {
+      vozAutoEspera.value = String(vozTempoEsperaPadrao());
+      vozAutoEspera.addEventListener('change', () => {
+        safeSetItem(VOZ_ESPERA_KEY, vozAutoEspera.value);
+      });
+    }
     const vozAdminLogin = document.getElementById('vozAdminLogin');
     const vozAdminForm = document.getElementById('vozAdminForm');
     const vozAdminError = document.getElementById('vozAdminError');
@@ -4720,7 +4811,7 @@
       if (!vozSection.open) return;
       vozAtualizarConsumo();
       const codigo = senhaAdminSalva();
-      if (vozAdminForm.hidden || codigo !== vozAdminCodigo) vozAdminCarregar(codigo);
+      if (codigo && (vozAdminForm.hidden || codigo !== vozAdminCodigo)) vozAdminCarregar(codigo);
     });
     // ---------- Esboços de discursos públicos (S-34): importação pelo administrador (Ajustes) ----------
     // O navegador lê os arquivos .docx (um por tema, ou um .zip com todos) neste aparelho: o Word guarda o texto em
@@ -5605,7 +5696,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.04'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.05'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());

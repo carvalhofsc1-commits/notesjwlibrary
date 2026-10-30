@@ -1099,67 +1099,87 @@
             </div>
           </div>
         </details>
-        <!-- Opções exclusivas do administrador: no fim da lista, depois de uma linha; só aparecem com a senha de administrador salva. -->
-        <hr class="ajustes-separador so-admin" hidden>
-        <details class="subsection sub-tint-2 so-admin abre-pagina" id="promptsSection" hidden>
-          <summary><span class="adm-titulo">🛠️ Prompts da IA&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
-        </details>
-        <details class="subsection voz-admin so-admin" id="vozSection" hidden>
-          <summary><span class="adm-titulo">🔊 Leitura em voz alta&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
+        <details class="subsection voz-admin" id="vozSection">
+          <summary><span class="adm-titulo">🔊 Leitura em voz alta</span></summary>
           <div class="subsection-body">
-            <p class="hint">Escolhas da voz da leitura em voz alta (o texto diário, para quem tem o código de pesquisa; a tela Leitura em voz alta, para quem tem o código de leitura; e o botão 🔊 do campo de texto, que só o administrador vê). Valem para todos os usuários; só o administrador pode mudar.</p>
-            <div id="vozAdminLogin">
-              <p id="vozAdminError" class="hint acesso-aviso">Para mudar a voz, salve a senha de administrador em 🔐 Autorização de acessos.</p>
-              <button class="secondary" type="button" data-ir-acessos="senha">🔐 Abrir Autorização de acessos</button>
-            </div>
-            <div id="vozAdminForm" hidden>
-              <label for="vozModelo">Qualidade (modelo de voz)</label>
-              <select id="vozModelo"></select>
-              <label for="vozVoz">Voz</label>
-              <select id="vozVoz"></select>
-              <div class="voz-admin-grid">
-                <div><label for="vozTom">Tom</label><select id="vozTom"></select></div>
-                <div><label for="vozAltura">Altura da voz</label><select id="vozAltura"></select></div>
-              </div>
-              <label for="vozVelocidadePadrao">Velocidade padrão</label>
-              <select id="vozVelocidadePadrao"></select>
-              <p class="hint">Tom, altura e instruções extras só valem nas vozes Gemini. Quem estiver ouvindo ainda pode mudar a velocidade na barra do tocador.</p>
-              <label for="vozFormatoRefs">📖 Como ler as referências bíblicas</label>
-              <select id="vozFormatoRefs">
-                <option value="curta">Curta: Primeira Coríntios treze, quatro a sete</option>
-                <option value="extenso">Por extenso: Primeira Coríntios, capítulo 13, versículos 4 a 7</option>
-                <option value="original">Como estão escritas: 1 Cor. 13:4-7</option>
+            <div class="acesso-item">
+              <label for="vozAutoEspera">⏱️ Iniciar a leitura automaticamente</label>
+              <select id="vozAutoEspera">
+                <option value="0">Não iniciar sozinho (esperar o botão ▶️)</option>
+                <option value="2">Aguardar 2 segundos</option>
+                <option value="3">Aguardar 3 segundos</option>
+                <option value="4" selected>Aguardar 4 segundos (padrão)</option>
+                <option value="5">Aguardar 5 segundos</option>
+                <option value="6">Aguardar 6 segundos</option>
+                <option value="8">Aguardar 8 segundos</option>
+                <option value="10">Aguardar 10 segundos</option>
               </select>
-              <p class="voz-admin-subtitulo">O que ler e o que pular</p>
-              <div class="ai-sources">
-                <label class="ai-check"><input type="checkbox" autocomplete="off" id="vozPularRefs"> ⏭️ Pular as referências bíblicas entre parênteses e as que vêm depois de um travessão no fim do parágrafo. Só são lidas as que fazem parte do texto corrido (ex.: "Conforme mostra Mateus 5:3, os que…") e a do texto temático do texto diário, logo depois da data.</label>
-                <label class="ai-check"><input type="checkbox" autocomplete="off" id="vozPularFontes"> ⏭️ Pular as citações de publicações (ex.: "w24.09 21 § 6")</label>
-                <label class="ai-check"><input type="checkbox" autocomplete="off" id="vozPularParenteses"> ⏭️ Pular o que estiver entre parênteses</label>
-                <label class="ai-check"><input type="checkbox" autocomplete="off" id="vozPularCabecalhos"> ⏭️ Pular os cabeçalhos do app (ex.: "RESPOSTA 1.", "PERGUNTAS ADICIONAIS 2.")</label>
+              <p class="hint">Ao tocar em Ler ou no alto-falante 🔊, o tocador aguarda esse tempo para você poder trocar a voz ou a velocidade antes. Se não mexer em nada, a leitura começa sozinha.</p>
+            </div>
+
+            <!-- Opções exclusivas do administrador: só aparecem com a senha de administrador salva. -->
+            <div class="so-admin" id="vozAdminBloco" hidden>
+              <hr class="ajustes-separador" style="margin: 18px 0 14px;">
+              <p class="publicar-admin-titulo"><span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span>&nbsp;Voz padrão de todos os usuários (administrador)</p>
+              <p class="hint">Escolhas da voz da leitura em voz alta (o texto diário, para quem tem o código de pesquisa; a tela Leitura em voz alta, para quem tem o código de leitura; e o botão 🔊 do campo de texto, que só o administrador vê). Valem para todos os usuários; só o administrador pode mudar.</p>
+              <div id="vozAdminLogin">
+                <p id="vozAdminError" class="hint acesso-aviso">Para mudar a voz, salve a senha de administrador em 🔐 Autorização de acessos.</p>
+                <button class="secondary" type="button" data-ir-acessos="senha">🔐 Abrir Autorização de acessos</button>
               </div>
-              <p class="hint">Emojis, setas e símbolos nunca são lidos, e as letras formatadas são lidas como letras comuns.</p>
-              <label for="vozExtra">Instruções extras de leitura</label>
-              <textarea id="vozExtra" maxlength="400" placeholder='Ex.: leia "Jeová" com ênfase; faça uma pausa maior antes de cada pergunta.'></textarea>
-              <div class="bk-row">
-                <button id="vozExemploBtn" class="secondary" type="button">▶️ Ouvir um exemplo</button>
-                <button id="vozSalvarBtn" type="button">💾 Salvar para todos</button>
-              </div>
-              <span id="vozAdminStatus" class="ok" role="status" aria-live="polite"></span>
-              <div class="voz-consumo">
-                <p class="voz-admin-subtitulo">📊 Consumo da voz (contado neste aparelho)</p>
-                <div id="vozConsumo"></div>
+              <div id="vozAdminForm" hidden>
+                <label for="vozModelo">Qualidade (modelo de voz)</label>
+                <select id="vozModelo"></select>
+                <label for="vozVoz">Voz</label>
+                <select id="vozVoz"></select>
                 <div class="voz-admin-grid">
-                  <div><label for="vozPrecoGemini">Gemini: US$ por minuto</label><input id="vozPrecoGemini" type="number" step="0.001" min="0" inputmode="decimal"></div>
-                  <div><label for="vozPrecoChirp">Chirp: US$ por milhão de caracteres</label><input id="vozPrecoChirp" type="number" step="0.5" min="0" inputmode="decimal"></div>
+                  <div><label for="vozTom">Tom</label><select id="vozTom"></select></div>
+                  <div><label for="vozAltura">Altura da voz</label><select id="vozAltura"></select></div>
                 </div>
-                <p class="hint">É uma estimativa com os preços de referência acima (ajuste se o Google mudar). O valor exato fica no faturamento do Google Cloud, que é atualizado com algumas horas de atraso.</p>
+                <label for="vozVelocidadePadrao">Velocidade padrão</label>
+                <select id="vozVelocidadePadrao"></select>
+                <p class="hint">Tom, altura e instruções extras só valem nas vozes Gemini. Quem estiver ouvindo ainda pode mudar a velocidade na barra do tocador.</p>
+                <label for="vozFormatoRefs">📖 Como ler as referências bíblicas</label>
+                <select id="vozFormatoRefs">
+                  <option value="curta">Curta: Primeira Coríntios treze, quatro a sete</option>
+                  <option value="extenso">Por extenso: Primeira Coríntios, capítulo 13, versículos 4 a 7</option>
+                  <option value="original">Como estão escritas: 1 Cor. 13:4-7</option>
+                </select>
+                <p class="voz-admin-subtitulo">O que ler e o que pular</p>
+                <div class="ai-sources">
+                  <label class="ai-check"><input type="checkbox" autocomplete="off" id="vozPularRefs"> ⏭️ Pular as referências bíblicas entre parênteses e as que vêm depois de um travessão no fim do parágrafo. Só são lidas as que fazem parte do texto corrido (ex.: "Conforme mostra Mateus 5:3, os que…") e a do texto temático do texto diário, logo depois da data.</label>
+                  <label class="ai-check"><input type="checkbox" autocomplete="off" id="vozPularFontes"> ⏭️ Pular as citações de publicações (ex.: "w24.09 21 § 6")</label>
+                  <label class="ai-check"><input type="checkbox" autocomplete="off" id="vozPularParenteses"> ⏭️ Pular o que estiver entre parênteses</label>
+                  <label class="ai-check"><input type="checkbox" autocomplete="off" id="vozPularCabecalhos"> ⏭️ Pular os cabeçalhos do app (ex.: "RESPOSTA 1.", "PERGUNTAS ADICIONAIS 2.")</label>
+                </div>
+                <p class="hint">Emojis, setas e símbolos nunca são lidos, e as letras formatadas são lidas como letras comuns.</p>
+                <label for="vozExtra">Instruções extras de leitura</label>
+                <textarea id="vozExtra" maxlength="400" placeholder='Ex.: leia "Jeová" com ênfase; faça uma pausa maior antes de cada pergunta.'></textarea>
                 <div class="bk-row">
-                  <a class="voz-link" href="https://console.cloud.google.com/billing" target="_blank" rel="noopener noreferrer">💳 Abrir o faturamento no Google Cloud</a>
-                  <button id="vozZerarBtn" class="secondary" type="button">🧹 Zerar a contagem</button>
+                  <button id="vozExemploBtn" class="secondary" type="button">▶️ Ouvir um exemplo</button>
+                  <button id="vozSalvarBtn" type="button">💾 Salvar para todos</button>
+                </div>
+                <span id="vozAdminStatus" class="ok" role="status" aria-live="polite"></span>
+                <div class="voz-consumo">
+                  <p class="voz-admin-subtitulo">📊 Consumo da voz (contado neste aparelho)</p>
+                  <div id="vozConsumo"></div>
+                  <div class="voz-admin-grid">
+                    <div><label for="vozPrecoGemini">Gemini: US$ por minuto</label><input id="vozPrecoGemini" type="number" step="0.001" min="0" inputmode="decimal"></div>
+                    <div><label for="vozPrecoChirp">Chirp: US$ por milhão de caracteres</label><input id="vozPrecoChirp" type="number" step="0.5" min="0" inputmode="decimal"></div>
+                  </div>
+                  <p class="hint">É uma estimativa com os preços de referência acima (ajuste se o Google mudar). O valor exato fica no faturamento do Google Cloud, que é atualizado com algumas horas de atraso.</p>
+                  <div class="bk-row">
+                    <a class="voz-link" href="https://console.cloud.google.com/billing" target="_blank" rel="noopener noreferrer">💳 Abrir o faturamento no Google Cloud</a>
+                    <button id="vozZerarBtn" class="secondary" type="button">🧹 Zerar a contagem</button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+        </details>
+        <!-- Opções exclusivas do administrador: no fim da lista, depois de uma linha; só aparecem com a senha de administrador salva. -->
+        <hr class="ajustes-separador so-admin" hidden>
+        <details class="subsection sub-tint-2 so-admin abre-pagina" id="promptsSection" hidden>
+          <summary><span class="adm-titulo">🛠️ Prompts da IA&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
         </details>
         <details class="subsection sub-tint-3 so-admin" id="s34Section" hidden>
           <summary><span class="adm-titulo">📜 Esboços de discursos públicos — S-34&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
