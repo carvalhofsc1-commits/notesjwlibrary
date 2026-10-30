@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.2.16
+
+Qualidade da IA (causa 1, só prompts do servidor): a Voz das respostas manda responder primeiro à pergunta exata, sem fechamentos do tipo "o que aprendemos" nem aplicação não pedida e sem mostrar raciocínio; emojis, fontes decorativas e listas numeradas só quando as preferências permitirem e ajudarem (fontes raras, 1 a 3 emojis, lista só com 3 ou mais pontos); a abertura da orientação do usuário passa a citar as exceções (formato JSON, fidelidade às fontes e segurança). Se a tela Prompts da IA tiver uma versão salva dessas partes, ela vale no lugar do padrão: restaure ou cole o texto novo.
+
 ## 6.2.15
 
 Qualidade da IA (fase 0, só prompts do servidor): o contexto "Sobre mim e a congregação" virou pano de fundo com regras de uso (a pergunta e a fonte mandam; não forçar família, trabalho, serviço de campo ou casamento; variar exemplos); os pedidos "Outra sugestão"/"Outras perguntas"/"Outra versão" deixam de incentivar novidade sem fundamento (se a fonte não sustenta outro enfoque, mudam só as palavras ou devolvem menos perguntas); o Estudo Bíblico do dirigente passa a pedir "até 5" perguntas (antes pedia 5 e também dizia para não fazer pergunta sem resposta no relato).
