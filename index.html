@@ -1177,14 +1177,19 @@
               <span id="s34Status" class="ok" role="status" aria-live="polite"></span>
               <div id="s34Relatorio" hidden></div>
               <details class="subsection sub-tint-5">
-                <summary id="s34ListaTitulo">📋 Lista de temas (opcional)</summary>
+                <summary id="s34ListaTitulo">📋 Lista de temas</summary>
                 <div class="subsection-body">
                   <p id="s34ListaInfo" class="hint"></p>
-                  <p class="hint">Cole a lista dos temas, um por linha ("1. Você conhece bem a Deus?"). Ela serve para conferir o título de cada arquivo importado e mostrar quais temas ainda faltam. Pode colar de novo quando a lista mudar.</p>
-                  <textarea id="s34ListaTexto" rows="6" placeholder="1. Você conhece bem a Deus?&#10;2. Você vai sobreviver aos últimos dias?&#10;…"></textarea>
-                  <div class="bk-row">
-                    <button id="s34ListaBtn" class="secondary" type="button">💾 Guardar a lista</button>
-                  </div>
+                  <label class="s34-filtro"><input type="checkbox" id="s34GradeFaltam" autocomplete="off"> Mostrar só os temas que faltam</label>
+                  <div id="s34Grade" class="s34-grade" role="list"></div>
+                  <details class="s34-colar">
+                    <summary>✏️ Colar ou corrigir a lista (opcional)</summary>
+                    <p class="hint">A lista acima se monta sozinha com os esboços já importados. Colar a lista dos temas (um por linha, "1. Você conhece bem a Deus?") serve para mostrar também o título dos que ainda faltam e para conferir o título de cada arquivo importado.</p>
+                    <textarea id="s34ListaTexto" rows="6" placeholder="1. Você conhece bem a Deus?&#10;2. Você vai sobreviver aos últimos dias?&#10;…"></textarea>
+                    <div class="bk-row">
+                      <button id="s34ListaBtn" class="secondary" type="button">💾 Guardar a lista</button>
+                    </div>
+                  </details>
                 </div>
               </details>
             </div>

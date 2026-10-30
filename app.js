@@ -5148,18 +5148,42 @@
       s34MostrarLista(lista);
     }
 
-    // A lista de temas guardada no servidor aparece na caixa de texto (antes a caixa abria sempre vazia e parecia que a lista tinha
-    // sumido). Só preenche se a caixa estiver vazia: o que o administrador está digitando ou colando não é trocado.
+    // A lista dos temas, de 1 a 200 (ou até o maior número que existir), montada com os esboços importados no servidor: cada tema é uma célula
+    // com o número e o título. Importado = título do esboço; "falta" = só está na lista guardada (título da lista, esmaecido); sem esboço e sem
+    // título, a célula fica vazia. A caixa de texto (dentro de "Colar ou corrigir a lista") continua guardando a lista com os títulos de todos.
+    const S34_TEMAS_MIN = 200;
+
     function s34MostrarLista(lista) {
       const caixa = document.getElementById('s34ListaTexto');
-      const titulo = document.getElementById('s34ListaTitulo');
+      const indice = (s34Estado && s34Estado.indice && s34Estado.indice.temas) || {};
+      const guardados = new Map((lista || []).map(t => [t.numero, t.titulo]));
+      const numeros = [...Object.keys(indice).map(Number), ...guardados.keys()];
+      const maior = Math.max(S34_TEMAS_MIN, ...numeros);
+      const ultimoConhecido = Math.max(0, ...numeros);
+      const soFaltam = document.getElementById('s34GradeFaltam').checked;
+      const grade = document.getElementById('s34Grade');
+      grade.textContent = '';
+      let importados = 0;
+      for (let numero = 1; numero <= maior; numero++) {
+        const tema = indice[String(numero)];
+        const titulo = tema ? tema.titulo : guardados.get(numero) || '';
+        const estado = tema ? 'ok' : titulo ? 'falta' : 'vazio';
+        if (tema) importados++;
+        // O filtro mostra o que falta: os que têm título na lista e os vazios até o último tema conhecido (não os vazios depois dele).
+        if (soFaltam && (estado === 'ok' || (estado === 'vazio' && numero > ultimoConhecido))) continue;
+        const celula = s34Elemento('div', 's34-celula ' + estado);
+        celula.setAttribute('role', 'listitem');
+        celula.append(s34Elemento('b', '', String(numero)), s34Elemento('span', '', titulo || '—'));
+        if (estado === 'falta') celula.append(s34Elemento('em', '', 'falta importar'));
+        grade.appendChild(celula);
+      }
       const quando = s34Estado && s34Estado.temas && s34Estado.temas.atualizadoEm;
-      titulo.textContent = lista && lista.length ? '📋 Lista de temas (' + lista.length + ' guardados)' : '📋 Lista de temas (opcional)';
-      document.getElementById('s34ListaInfo').textContent = lista && lista.length
-        ? '✅ A lista abaixo está guardada no servidor' + (quando ? ' (atualizada em ' + new Date(quando).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ')' : '') + ' e vale para todos. Para mudá-la, edite ou cole de novo e toque em Guardar a lista.'
-        : '';
+      document.getElementById('s34ListaTitulo').textContent = '📋 Lista de temas (' + importados + ' importados)';
+      document.getElementById('s34ListaInfo').textContent = 'Montada com os esboços importados no servidor, de 1 a ' + maior + '. ✔ = importado; "falta importar" = está na lista guardada' +
+        (quando ? ' (atualizada em ' + new Date(quando).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ')' : '') + ' mas ainda não tem esboço; "—" = sem esboço e sem título.';
       if (lista && lista.length && !caixa.value.trim()) caixa.value = lista.map(t => t.numero + '. ' + t.titulo).join('\n');
     }
+    document.getElementById('s34GradeFaltam').addEventListener('change', () => s34MostrarLista(s34Estado && s34Estado.temas && s34Estado.temas.itens));
 
     // O relatório: um resumo e uma linha por arquivo (com o que o servidor fará e os avisos), cada uma com a prévia do que foi entendido.
     function s34Relatorio() {
@@ -5537,7 +5561,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.2.08'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.2.09'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());

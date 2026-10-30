@@ -2413,6 +2413,18 @@
     /* Esboços de discursos públicos (S-34): relatório da importação (Ajustes, administrador). */
     .s34-estado { margin: 10px 0 6px; font-weight: 650; font-size: .9rem; }
     .s34-resumo { margin: 10px 0 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); font-size: .88rem; font-weight: 650; }
+    /* A lista dos temas em células: número e título. */
+    .s34-filtro { display: flex; align-items: center; gap: 8px; margin: 4px 0 8px; font-size: .86rem; font-weight: 650; }
+    .s34-filtro input { width: 18px; height: 18px; min-height: 0; margin: 0; }
+    .s34-grade { display: grid; gap: 4px; max-height: 55vh; overflow-y: auto; padding: 2px; margin-bottom: 10px; -webkit-overflow-scrolling: touch; }
+    .s34-celula { display: grid; grid-template-columns: 3.2em 1fr; align-items: baseline; column-gap: 8px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); font-size: .86rem; line-height: 1.3; }
+    .s34-celula b { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .s34-celula.ok { border-color: #22c55e; border-color: color-mix(in srgb, #22c55e 55%, var(--line)); }
+    .s34-celula.ok b::after { content: ' ✔'; color: #16a34a; }
+    .s34-celula.falta { border-color: #f59e0b; background: color-mix(in srgb, #f59e0b 10%, var(--card)); color: var(--muted); }
+    .s34-celula.falta em { grid-column: 2; font-size: .74rem; font-style: normal; font-weight: 700; color: #b45309; }
+    .s34-celula.vazio { border-style: dashed; color: var(--muted); opacity: .65; }
+    .s34-colar > summary { cursor: pointer; font-size: .9rem; font-weight: 650; color: var(--muted); padding: 4px 0; }
     .s34-lista { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
     .s34-item { padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); font-size: .86rem; }
     .s34-item.erro { border-color: var(--danger); }
