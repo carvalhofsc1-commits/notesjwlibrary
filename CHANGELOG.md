@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.2.08
+
+"O que está guardado neste aparelho": linha divisória entre o cabeçalho e a lista.
+
 ## 6.2.07
 
 Prompts da IA → Diversos: anotação do código de leitura (como as do código de pesquisa e do dirigente; vai ao servidor em api/config.mjs). Ajustes → Privacidade → "O que está guardado neste aparelho": lixeira pequena em cada item para apagar só aquele (com confirmação). "Puxar para atualizar" só na tela Início. Barra de baixo: sem o elástico de rolagem e em camada própria, para não se soltar da base no iPhone ao rolar.

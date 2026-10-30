@@ -2684,7 +2684,7 @@
     .acesso-item label { display: block; font-weight: 800; }
     .acesso-item .hint { margin: 2px 0 8px; }
     /* Resumo do que está guardado no aparelho (Ajustes → Privacidade e dados deste aparelho). */
-    .dados-resumo { margin: 4px 0 10px; text-align: left; }
+    .dados-resumo { margin: 8px 0 10px; padding-top: 4px; border-top: 1px solid var(--line); text-align: left; } /* a linha separa o cabeçalho da lista */
     .dados-linha { display: flex; align-items: flex-start; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); }
     .dados-corpo { flex: 1 1 auto; min-width: 0; }
     /* Lixeira pequena e discreta, no canto de cada item. */
