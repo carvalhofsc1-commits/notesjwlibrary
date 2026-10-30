@@ -2030,6 +2030,14 @@
       :root:not([data-theme="light"]) .lu.lendo { background: #4a3d0c; background: color-mix(in srgb, #facc15 30%, var(--card)); box-shadow: 0 0 0 3px #4a3d0c; box-shadow: 0 0 0 3px color-mix(in srgb, #facc15 30%, var(--card)); }
     }
     :root[data-theme="dark"] .lu.lendo { background: #4a3d0c; background: color-mix(in srgb, #facc15 30%, var(--card)); box-shadow: 0 0 0 3px #4a3d0c; box-shadow: 0 0 0 3px color-mix(in srgb, #facc15 30%, var(--card)); }
+    /* O que a voz pula (parênteses, referências) fica sem o destaque: nas frases com trechos pulados (tem-nl) o realce vai só para os trechos lidos (.lt). */
+    mark.lt { background: transparent; color: inherit; }
+    .lu.tem-nl.lendo, :root[data-theme="dark"] .lu.tem-nl.lendo, :root:not([data-theme="light"]) .lu.tem-nl.lendo { background: transparent; box-shadow: none; }
+    .lu.lendo .lt { background: #fde68a; background: color-mix(in srgb, #facc15 50%, var(--card)); border-radius: 4px; }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .lu.lendo .lt { background: #4a3d0c; background: color-mix(in srgb, #facc15 30%, var(--card)); }
+    }
+    :root[data-theme="dark"] .lu.lendo .lt { background: #4a3d0c; background: color-mix(in srgb, #facc15 30%, var(--card)); }
     @media (hover: hover) { .leitura-vista .lu:hover:not(.lendo) { background: var(--soft); } }
     /* Marca-texto: verde (o amarelo é da frase que está sendo lida). */
     mark.lm { color: inherit; background: #bbf7d0; background: color-mix(in srgb, #4ade80 45%, var(--card)); border-radius: 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }

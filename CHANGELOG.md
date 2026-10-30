@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.2.14
+
+Leitura em voz alta: o destaque da frase lida não cobre mais o que a voz pula (o que está entre parênteses, as referências a publicações e a referência depois do travessão); só os trechos realmente lidos ficam realçados. Vale na tela Leitura, no texto diário e nos comentários.
+
 ## 6.2.13
 
 Páginas Sobre, Privacidade e Termos de Uso: botão "📄 Exportar esta página (.docx)" no fim de cada uma, visível só para o administrador (senha de administrador salva neste aparelho). Gera o Word com o conteúdo completo (títulos, parágrafos, listas, tabelas e negrito/itálico). Script: exportar-pagina.js.

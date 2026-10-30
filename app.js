@@ -2825,6 +2825,7 @@
         nota.textContent = aviso;
         leituraVista.appendChild(nota);
       }
+      leituraUnidades.forEach(u => leituraMudosNoSpan(u.el, regras));
       leituraMarcasValidar();
       leituraMarcasGravar();
       new Set(leituraMarcas.map(m => m.u)).forEach(u => leituraMarcasNoSpan(leituraUnidades[u].el, leituraMarcas.filter(m => m.u === u)));
@@ -2887,6 +2888,46 @@
         if (leituraMarcas.length) safeSetItem(LEITURA_MARCAS_KEY, JSON.stringify(leituraMarcas));
         else localStorage.removeItem(LEITURA_MARCAS_KEY);
       } catch (e) { /* sem localStorage: as marcas ficam só na tela */ }
+    }
+
+    // O destaque da frase lida só cobre o que a voz FALA: o que ela pula (o que está entre parênteses, as referências a publicações e a referência depois
+    // do travessão, conforme as regras de leitura) fica sem destaque. Acha os trechos pulados (cada candidato que, sozinho, não vira fala nenhuma) e
+    // envolve o resto em <mark class="lt">; a frase ganha a classe tem-nl, que passa o destaque do .lu inteiro para os .lt.
+    function leituraMudosNoSpan(span, regras) {
+      leituraDesenvolver(span, 'lt');
+      span.classList.remove('tem-nl');
+      const texto = span.textContent;
+      const mudos = [];
+      const candidato = expressao => {
+        for (const m of texto.matchAll(expressao)) {
+          if (!m[0].trim() || /[\p{L}\d]/u.test(textoParaVoz(m[0], regras))) continue;
+          mudos.push([m.index, m.index + m[0].length]);
+        }
+      };
+      candidato(/\s*\([^()\n]*\)/g); // entre parênteses
+      candidato(/\s*[—–]\s*[^—–]+$/g); // referência depois do travessão, no fim
+      VOZ_FONTES.forEach(fonte => candidato(new RegExp(fonte.source, 'g'))); // citações de publicações
+      if (!mudos.length) return;
+      mudos.sort((a, b) => a[0] - b[0]);
+      const unidos = [];
+      mudos.forEach(m => {
+        const ultimo = unidos[unidos.length - 1];
+        if (ultimo && m[0] <= ultimo[1]) ultimo[1] = Math.max(ultimo[1], m[1]);
+        else unidos.push([m[0], m[1]]);
+      });
+      const falados = [];
+      let pos = 0;
+      [...unidos, [texto.length, texto.length]].forEach(([ini, fim]) => {
+        let a = pos;
+        let b = ini;
+        while (a < b && /\s/.test(texto[a])) a++;
+        while (b > a && /\s/.test(texto[b - 1])) b--;
+        if (b > a) falados.push({ a, b });
+        pos = fim;
+      });
+      if (!falados.length) return;
+      span.classList.add('tem-nl');
+      leituraEnvolver(span, falados, 'lt');
     }
 
     // Envolve em <mark class="classe"> o que as faixas { a, b } (posições no texto da frase) cobrem; as faixas vêm em ordem e sem se tocar.
@@ -4441,7 +4482,10 @@
     leituraParentesesCaixa.addEventListener('change', () => {
       safeSetItem(LEITURA_PARENTESES_KEY, leituraParentesesCaixa.checked ? '1' : '0');
       const regras = leituraRegras(vozRegras || VOZ_REGRAS_PADRAO);
-      leituraUnidades.forEach(u => { u.falado = leituraFalado(u.texto, u.cabecalho, regras); });
+      leituraUnidades.forEach(u => {
+        u.falado = leituraFalado(u.texto, u.cabecalho, regras);
+        leituraMudosNoSpan(u.el, regras); // o destaque acompanha o que passou a ser (ou deixou de ser) lido
+      });
     });
     document.getElementById('leituraLimparBtn').addEventListener('click', () => {
       vozParar();
@@ -5561,7 +5605,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.2.13'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.2.14'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -14992,6 +15036,7 @@ function saveTemplatesToStorage() {
         if (!linha.falado) return;
         if (linha.inteira) {
           linha.el.classList.add('lu');
+          leituraMudosNoSpan(linha.el, regras);
           unidades.push({ falado: linha.falado, paragrafo, el: linha.el });
           return;
         }
@@ -15011,6 +15056,7 @@ function saveTemplatesToStorage() {
           unidades.push({ falado: linha.falado, paragrafo, el: null }); // lê, mas sem marcar
         } else if (pares.length === 1) {
           linha.el.classList.add('lu'); // uma frase só: a própria linha
+          leituraMudosNoSpan(linha.el, regras);
           unidades.push({ falado: pares[0].falada, paragrafo, el: linha.el });
         } else {
           linha.el.textContent = '';
@@ -15020,6 +15066,7 @@ function saveTemplatesToStorage() {
             span.className = 'lu';
             span.textContent = par.mostrada;
             linha.el.appendChild(span);
+            leituraMudosNoSpan(span, regras);
             unidades.push({ falado: par.falada, paragrafo, el: span });
           });
         }
