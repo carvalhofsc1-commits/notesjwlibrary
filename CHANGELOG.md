@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.2.15
+
+Qualidade da IA (fase 0, só prompts do servidor): o contexto "Sobre mim e a congregação" virou pano de fundo com regras de uso (a pergunta e a fonte mandam; não forçar família, trabalho, serviço de campo ou casamento; variar exemplos); os pedidos "Outra sugestão"/"Outras perguntas"/"Outra versão" deixam de incentivar novidade sem fundamento (se a fonte não sustenta outro enfoque, mudam só as palavras ou devolvem menos perguntas); o Estudo Bíblico do dirigente passa a pedir "até 5" perguntas (antes pedia 5 e também dizia para não fazer pergunta sem resposta no relato).
+
 ## 6.2.14
 
 Leitura em voz alta: o destaque da frase lida não cobre mais o que a voz pula (o que está entre parênteses, as referências a publicações e a referência depois do travessão); só os trechos realmente lidos ficam realçados. Vale na tela Leitura, no texto diário e nos comentários.

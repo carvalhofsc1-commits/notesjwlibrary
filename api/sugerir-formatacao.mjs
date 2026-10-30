@@ -1463,7 +1463,7 @@ async function perguntasEbcDirigente(res, body, P) {
 
   let mensagem =
     blocoOrientacao(opcoes, ajuste, P) +
-    `PEDIDO: ${perguntasPedidas ? "elabore 5 perguntas adicionais com resposta" : "NÃO elabore perguntas adicionais (\"perguntas\" fica [])"}; resumo dos textos-base ${textosBase ? "ATIVO" : "INATIVO"}.\n\n` +
+    `PEDIDO: ${perguntasPedidas ? "elabore até 5 perguntas adicionais com resposta" : "NÃO elabore perguntas adicionais (\"perguntas\" fica [])"}; resumo dos textos-base ${textosBase ? "ATIVO" : "INATIVO"}.\n\n` +
     textoDoCapituloEbcDirigente(capitulo, versiculos) +
     lembreteFinal(opcoes, ajuste, P);
   if (modo && anteriores) {
