@@ -5171,7 +5171,7 @@
         if (tema) importados++;
         // O filtro mostra o que falta: os que têm título na lista e os vazios até o último tema conhecido (não os vazios depois dele).
         if (soFaltam && (estado === 'ok' || (estado === 'vazio' && numero > ultimoConhecido))) continue;
-        const celula = s34Elemento('div', 's34-celula ' + estado);
+        const celula = s34Elemento('div', 's34-celula s34-' + estado);
         celula.setAttribute('role', 'listitem');
         celula.append(s34Elemento('b', '', String(numero)), s34Elemento('span', '', titulo || '—'));
         if (estado === 'falta') celula.append(s34Elemento('em', '', 'falta importar'));
@@ -5561,7 +5561,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.2.10'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.2.11'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
