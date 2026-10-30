@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.2.10
+
+Lista de temas do S-34: número e título alinhados à esquerda.
+
 ## 6.2.09
 
 Ajustes → Esboços de discursos públicos (S-34): a lista de temas agora se monta sozinha, de 1 a 200, com os esboços importados no servidor, em células (número e título; "falta importar" para os que só estão na lista guardada; "—" para os vazios), com filtro "só os que faltam". Colar a lista passou para "Colar ou corrigir a lista (opcional)".
