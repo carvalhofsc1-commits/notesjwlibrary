@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.04
+
+Tela Leitura em voz alta: botão "Ler" no tom pastel suave alaranjado, combinando com o botão "Importar PDF ou Word".
+
 ## 6.3.03
 
 Tela Leitura em voz alta: suavizado o tom de laranja do botão "Ler" para um laranja mais aberto e harmonioso.

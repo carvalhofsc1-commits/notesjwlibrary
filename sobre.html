@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
@@ -7,7 +8,8 @@
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
-  <meta name="description" content="Sobre o NoteStyle: formatação de notas, preparação para as reuniões com apoio de IA, consulta ao wol.jw.org e privacidade. Aplicativo independente.">
+  <meta name="description"
+    content="Sobre o NoteStyle: formatação de notas, preparação para as reuniões com apoio de IA, consulta ao wol.jw.org e privacidade. Aplicativo independente.">
   <meta name="theme-color" content="#e7ecf6">
   <script>
     // Aplica o tema salvo antes do corpo renderizar, para não piscar o tema errado.
@@ -16,7 +18,7 @@
       if (temaSalvo === 'dark' || temaSalvo === 'light') {
         document.documentElement.setAttribute('data-theme', temaSalvo);
       }
-    } catch (e) {}
+    } catch (e) { }
   </script>
   <style>
     :root {
@@ -28,7 +30,8 @@
       --muted: #6b7280;
       --line: #d1d5db;
       --accent: #2563eb;
-      --brand: #5b3fb5; /* violeta do logotipo, escurecido para dar contraste no fundo claro */
+      --brand: #5b3fb5;
+      /* violeta do logotipo, escurecido para dar contraste no fundo claro */
       --accent-dark: #1d4ed8;
       --soft: #eef2ff;
       --ok: #15803d;
@@ -44,7 +47,8 @@
         --muted: #94a3b8;
         --line: #334155;
         --accent: #3b82f6;
-        --brand: #b7a8f0; /* violeta do logotipo, claro para o fundo escuro */
+        --brand: #b7a8f0;
+        /* violeta do logotipo, claro para o fundo escuro */
         --accent-dark: #2563eb;
         --soft: #1e3a5f;
         --ok: #4ade80;
@@ -60,14 +64,17 @@
       --muted: #94a3b8;
       --line: #334155;
       --accent: #3b82f6;
-      --brand: #b7a8f0; /* violeta do logotipo, claro para o fundo escuro */
+      --brand: #b7a8f0;
+      /* violeta do logotipo, claro para o fundo escuro */
       --accent-dark: #2563eb;
       --soft: #1e3a5f;
       --ok: #4ade80;
       --shadow: rgba(0, 0, 0, .4);
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
@@ -100,7 +107,9 @@
       text-decoration: none;
     }
 
-    .botao-voltar:hover { color: var(--text); }
+    .botao-voltar:hover {
+      color: var(--text);
+    }
 
     .about-logo {
       width: clamp(128px, 40vw, 210px);
@@ -115,7 +124,9 @@
       font-weight: 800;
     }
 
-    .brand-accent { color: var(--brand); }
+    .brand-accent {
+      color: var(--brand);
+    }
 
     .about-site {
       margin: 4px 0 0;
@@ -125,8 +136,15 @@
       letter-spacing: .2px;
     }
 
-    .about-site a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
-    .about-site a:hover { color: var(--accent-dark); }
+    .about-site a {
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .about-site a:hover {
+      color: var(--accent-dark);
+    }
 
     .pill {
       display: inline-block;
@@ -171,7 +189,9 @@
       line-height: 1.5;
     }
 
-    .notice p:last-child { margin-bottom: 0; }
+    .notice p:last-child {
+      margin-bottom: 0;
+    }
 
     .notice ul {
       margin: 0;
@@ -181,18 +201,45 @@
       line-height: 1.5;
     }
 
-    .notice li + li { margin-top: 8px; }
+    .notice li+li {
+      margin-top: 8px;
+    }
 
-    .notice strong { color: var(--text); }
+    .notice strong {
+      color: var(--text);
+    }
 
-    .notice a { color: var(--accent); text-underline-offset: 2px; }
-    .notice a:hover { color: var(--accent-dark); }
+    .notice a {
+      color: var(--accent);
+      text-underline-offset: 2px;
+    }
+
+    .notice a:hover {
+      color: var(--accent-dark);
+    }
 
     /* Quadro da privacidade: destacado, com marcas de confirmação. */
-    .notice.privacidade { border-color: var(--ok); }
-    .notice.privacidade ul { list-style: none; padding-left: 0; }
-    .notice.privacidade li { position: relative; padding-left: 1.6em; }
-    .notice.privacidade li::before { content: "✔"; position: absolute; left: 0; color: var(--ok); font-weight: 800; }
+    .notice.privacidade {
+      border-color: var(--ok);
+    }
+
+    .notice.privacidade ul {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .notice.privacidade li {
+      position: relative;
+      padding-left: 1.6em;
+    }
+
+    .notice.privacidade li::before {
+      content: "✔";
+      position: absolute;
+      left: 0;
+      color: var(--ok);
+      font-weight: 800;
+    }
 
     /* Convidar alguém */
     .convite-texto {
@@ -210,7 +257,11 @@
       resize: vertical;
     }
 
-    .convite-botoes { display: grid; gap: 8px; margin-top: 12px; }
+    .convite-botoes {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
 
     .convite-botoes button {
       min-height: 46px;
@@ -224,15 +275,44 @@
       cursor: pointer;
     }
 
-    .convite-botoes button.zap { background: #16a34a; border-color: #16a34a; color: #ffffff; }
-    .convite-botoes button[hidden] { display: none; }
+    .convite-botoes button.zap {
+      background: #16a34a;
+      border-color: #16a34a;
+      color: #ffffff;
+    }
 
-    .convite-status { min-height: 1.3em; margin: 8px 0 0; font-weight: 650; color: var(--ok); }
-    .convite-admin-nota { margin: 14px 0 0 !important; font-size: .85rem !important; }
-    .convite-botoes button:disabled { opacity: .55; cursor: default; }
-    #conviteAdmin[hidden] { display: none; }
-    .convite-texto[readonly] { cursor: default; }
-    .convite-status.aviso { color: #b45309; }
+    .convite-botoes button[hidden] {
+      display: none;
+    }
+
+    .convite-status {
+      min-height: 1.3em;
+      margin: 8px 0 0;
+      font-weight: 650;
+      color: var(--ok);
+    }
+
+    .convite-admin-nota {
+      margin: 14px 0 0 !important;
+      font-size: .85rem !important;
+    }
+
+    .convite-botoes button:disabled {
+      opacity: .55;
+      cursor: default;
+    }
+
+    #conviteAdmin[hidden] {
+      display: none;
+    }
+
+    .convite-texto[readonly] {
+      cursor: default;
+    }
+
+    .convite-status.aviso {
+      color: #b45309;
+    }
 
     .botao-link {
       display: block;
@@ -246,7 +326,10 @@
       text-decoration: none;
     }
 
-    .botao-link:hover { background: var(--soft); color: var(--accent-dark); }
+    .botao-link:hover {
+      background: var(--soft);
+      color: var(--accent-dark);
+    }
 
     .card {
       background: var(--card-tint);
@@ -254,7 +337,8 @@
       border-radius: 16px;
       padding: 18px 16px;
       margin-top: 24px;
-      max-width: 520px; /* mesma largura dos quadros acima */
+      max-width: 520px;
+      /* mesma largura dos quadros acima */
       margin-left: auto;
       margin-right: auto;
       box-shadow: 0 8px 22px var(--shadow);
@@ -305,9 +389,13 @@
       text-underline-offset: 2px;
     }
 
-    .dev-contacts a:hover { color: var(--accent-dark); }
+    .dev-contacts a:hover {
+      color: var(--accent-dark);
+    }
 
-    .wa-icon { flex: 0 0 auto; }
+    .wa-icon {
+      flex: 0 0 auto;
+    }
 
     .legal-links {
       margin: 22px 0 0;
@@ -318,34 +406,50 @@
       font-size: .92rem;
     }
 
-    .legal-links a { color: var(--accent); text-underline-offset: 2px; }
-    .legal-links a:hover { color: var(--accent-dark); }
+    .legal-links a {
+      color: var(--accent);
+      text-underline-offset: 2px;
+    }
+
+    .legal-links a:hover {
+      color: var(--accent-dark);
+    }
   </style>
 </head>
+
 <body>
   <main>
     <img src="icon-header.png?v=3" alt="" class="about-logo" width="512" height="512" decoding="async">
     <h1 class="about-name">Note<span class="brand-accent">Style</span></h1>
     <p class="about-site"><a href="https://www.notestyle.com.br">www.notestyle.com.br</a></p>
-    <span class="pill">v6.3.03</span>
+    <span class="pill">v6.3.04</span>
 
-    <p class="about-text">O NoteStyle ajuda você a preparar notas e reuniões: formata textos com destaques, apoia a preparação de comentários, perguntas e esboços de discursos com a ajuda de IA e organiza as suas pesquisas e as notas do backup do JW Library.</p>
+    <p class="about-text">O NoteStyle ajuda você a preparar notas e reuniões: formata textos com destaques, apoia a
+      preparação de comentários, perguntas e esboços de discursos com a ajuda de IA e organiza as suas pesquisas e as
+      notas do backup do JW Library.</p>
 
     <section class="notice">
       <h2>🧰 O que você pode fazer</h2>
       <ul>
-        <li><strong>Formatar textos</strong> com negrito, itálico, fontes, emojis, listas e modelos, com sugestões de uma IA se você quiser, e exportar o texto do campo para Word (.docx).</li>
+        <li><strong>Formatar textos</strong> com negrito, itálico, fontes, emojis, listas e modelos, com sugestões de
+          uma IA se você quiser, e exportar o texto do campo para Word (.docx).</li>
         <li><strong>Texto diário:</strong> ler, ouvir em voz alta e pedir comentários adicionais.</li>
-        <li><strong>Leitura em voz alta:</strong> importar um PDF ou um Word, ou colar um texto, e ouvir com a frase lida em destaque; com a leitura em pausa, marcar os trechos importantes e exportar o documento marcado para Word.</li>
-        <li><strong>Reuniões:</strong> preparar comentários (A Sentinela, Joias Espirituais e Estudo Bíblico de Congregação), perguntas para dirigir e esboços de discursos, com exportação para Word.</li>
+        <li><strong>Leitura em voz alta:</strong> importar um PDF ou um Word, ou colar um texto, e ouvir com a frase
+          lida em destaque; com a leitura em pausa, marcar os trechos importantes e exportar o documento marcado para
+          Word.</li>
+        <li><strong>Reuniões:</strong> preparar comentários (A Sentinela, Joias Espirituais e Estudo Bíblico de
+          Congregação), perguntas para dirigir e esboços de discursos, com exportação para Word.</li>
         <li><strong>Pesquisas e respostas salvas:</strong> o que a IA preparou fica guardado só neste aparelho.</li>
-        <li><strong>Backup do JW Library:</strong> ver, editar e criar notas e respostas no arquivo de backup, que é processado só no seu aparelho.</li>
+        <li><strong>Backup do JW Library:</strong> ver, editar e criar notas e respostas no arquivo de backup, que é
+          processado só no seu aparelho.</li>
       </ul>
     </section>
 
     <section class="notice" id="convite">
       <h2>📨 Convidar alguém</h2>
-      <p>Quer que um amigo conheça o NoteStyle? A mensagem já vem pronta: toque em <strong>Enviar pelo WhatsApp</strong> para abrir o WhatsApp com o texto preenchido (você escolhe a pessoa e envia), compartilhe em outro aplicativo de mensagens ou copie para colar onde quiser. Os códigos de acesso não vão no convite.</p>
+      <p>Quer que um amigo conheça o NoteStyle? A mensagem já vem pronta: toque em <strong>Enviar pelo WhatsApp</strong>
+        para abrir o WhatsApp com o texto preenchido (você escolhe a pessoa e envia), compartilhe em outro aplicativo de
+        mensagens ou copie para colar onde quiser. Os códigos de acesso não vão no convite.</p>
       <textarea id="conviteTexto" class="convite-texto" rows="8" aria-label="Texto do convite"></textarea>
       <div class="convite-botoes">
         <button id="conviteZapBtn" class="zap" type="button">💬 Enviar pelo WhatsApp</button>
@@ -353,7 +457,8 @@
         <button id="conviteCopiarBtn" type="button">📋 Copiar convite</button>
       </div>
       <div id="conviteAdmin" hidden>
-        <p class="convite-admin-nota">🔐 Só o administrador vê e muda esta mensagem; o que for salvo vale para todos.</p>
+        <p class="convite-admin-nota">🔐 Só o administrador vê e muda esta mensagem; o que for salvo vale para todos.
+        </p>
         <div class="convite-botoes">
           <button id="conviteSalvarBtn" type="button" disabled>💾 Salvar mensagem do convite</button>
           <button id="conviteRestaurarBtn" type="button" disabled>🔄 Voltar ao texto original</button>
@@ -364,24 +469,39 @@
 
     <section class="notice">
       <h2>📚 De onde vêm as informações</h2>
-      <p>As matérias das reuniões — artigo de estudo de A Sentinela, apostila Vida e Ministério, Estudo Bíblico de Congregação, leitura da Bíblia da semana, texto diário e as pesquisas por artigos — são <strong>consultadas no site wol.jw.org</strong> (Biblioteca on-line), no momento em que você pede.</p>
+      <p>As matérias das reuniões — artigo de estudo de A Sentinela, apostila Vida e Ministério, Estudo Bíblico de
+        Congregação, leitura da Bíblia da semana, texto diário e as pesquisas por artigos — são <strong>consultadas no
+          site wol.jw.org</strong> (Biblioteca on-line), no momento em que você pede.</p>
       <ul>
-        <li>A consulta é feita pelo servidor do NoteStyle, que lê a página, separa só o trecho pedido (por exemplo, os parágrafos escolhidos) e o entrega ao aplicativo e, quando você pede uma resposta, à IA.</li>
-        <li>O NoteStyle <strong>não mantém uma biblioteca própria</strong> dessas publicações nem as republica: guarda, por pouco tempo, só o necessário para agilizar (como títulos e números de parágrafos).</li>
-        <li>Os versículos e os verbetes do Estudo Perspicaz que aparecem nas respostas vêm de uma base de consulta de uso restrito do servidor, usada apenas para buscar o texto pedido.</li>
-        <li>A IA só trabalha com o trecho que o servidor entrega a ela (e, em último caso, com páginas do próprio wol.jw.org).</li>
+        <li>A consulta é feita pelo servidor do NoteStyle, que lê a página, separa só o trecho pedido (por exemplo, os
+          parágrafos escolhidos) e o entrega ao aplicativo e, quando você pede uma resposta, à IA.</li>
+        <li>O NoteStyle <strong>não mantém uma biblioteca própria</strong> dessas publicações nem as republica: guarda,
+          por pouco tempo, só o necessário para agilizar (como títulos e números de parágrafos).</li>
+        <li>Os versículos e os verbetes do Estudo Perspicaz que aparecem nas respostas vêm de uma base de consulta de
+          uso restrito do servidor, usada apenas para buscar o texto pedido.</li>
+        <li>A IA só trabalha com o trecho que o servidor entrega a ela (e, em último caso, com páginas do próprio
+          wol.jw.org).</li>
       </ul>
     </section>
 
     <section class="notice privacidade">
       <h2>🔒 Sua privacidade</h2>
       <ul>
-        <li><strong>Nada é publicado.</strong> O NoteStyle não envia seus textos, notas, pesquisas ou backups para nenhum local público (redes sociais, fóruns, sites ou bancos de dados abertos).</li>
-        <li><strong>Sem conta, sem anúncios e sem rastreamento.</strong> Não pedimos nome, e-mail nem telefone e não usamos ferramentas de análise ou de publicidade.</li>
-        <li><strong>Seus dados ficam no aparelho:</strong> textos, preferências, modelos, pesquisas salvas e códigos de acesso. Eles somem se você limpar os dados do aplicativo ou do navegador.</li>
-        <li><strong>O backup do JW Library nunca sai do aparelho.</strong> O arquivo é aberto, editado e gerado aqui mesmo. Para mostrar títulos e perguntas, o aplicativo pede ao servidor apenas os números dos documentos.</li>
-        <li><strong>O que sai do aparelho é só o que você pede.</strong> Ao usar a IA ou a leitura em voz alta, o texto necessário é enviado, por conexão segura, ao servidor do NoteStyle e aos serviços que fazem o trabalho: Anthropic (IA — Claude) e Google (voz). O aplicativo pede a sua concordância antes do primeiro envio. Não envie dados pessoais nem sigilosos.</li>
-        <li><strong>Você controla os seus dados.</strong> Em Ajustes → Privacidade e dados deste aparelho você retira a concordância, relata um problema com uma resposta da IA (por e-mail, enviado só se você quiser) e apaga tudo o que o aplicativo guardou no aparelho.</li>
+        <li><strong>Nada é publicado.</strong> O NoteStyle não envia seus textos, notas, pesquisas ou backups para
+          nenhum local público (redes sociais, fóruns, sites ou bancos de dados abertos).</li>
+        <li><strong>Sem conta, sem anúncios e sem rastreamento.</strong> Não pedimos nome, e-mail nem telefone e não
+          usamos ferramentas de análise ou de publicidade.</li>
+        <li><strong>Seus dados ficam no aparelho:</strong> textos, preferências, modelos, pesquisas salvas e códigos de
+          acesso. Eles somem se você limpar os dados do aplicativo ou do navegador.</li>
+        <li><strong>O backup do JW Library nunca sai do aparelho.</strong> O arquivo é aberto, editado e gerado aqui
+          mesmo. Para mostrar títulos e perguntas, o aplicativo pede ao servidor apenas os números dos documentos.</li>
+        <li><strong>O que sai do aparelho é só o que você pede.</strong> Ao usar a IA ou a leitura em voz alta, o texto
+          necessário é enviado, por conexão segura, ao servidor do NoteStyle e aos serviços que fazem o trabalho:
+          Anthropic (IA — Claude) e Google (voz). O aplicativo pede a sua concordância antes do primeiro envio. Não
+          envie dados pessoais nem sigilosos.</li>
+        <li><strong>Você controla os seus dados.</strong> Em Ajustes → Privacidade e dados deste aparelho você retira a
+          concordância, relata um problema com uma resposta da IA (por e-mail, enviado só se você quiser) e apaga tudo o
+          que o aplicativo guardou no aparelho.</li>
       </ul>
       <p style="margin-top:12px">Detalhes completos na <a href="privacidade.html">Política de Privacidade</a>.</p>
       <a class="botao-link" href="index.html#privacidade">⚙️ Opções de privacidade e dados deste aparelho</a>
@@ -389,29 +509,44 @@
 
     <section class="notice">
       <h2>🤖 Sobre as respostas da IA</h2>
-      <p>As respostas da IA são sugestões de apoio ao seu estudo e <strong>podem conter erros ou imprecisões</strong>. Confira sempre nas publicações e na Bíblia antes de usar e adapte com as suas próprias palavras. O uso é por sua conta e responsabilidade. Se uma resposta vier errada, ofensiva ou inadequada, use o botão <strong>⚠️ Relatar um problema</strong> em Ajustes → Privacidade e dados deste aparelho.</p>
+      <p>As respostas da IA são sugestões de apoio ao seu estudo e <strong>podem conter erros ou imprecisões</strong>.
+        Confira sempre nas publicações e na Bíblia antes de usar e adapte com as suas próprias palavras. O uso é por sua
+        conta e responsabilidade. Se uma resposta vier errada, ofensiva ou inadequada, use o botão <strong>⚠️ Relatar um
+          problema</strong> em Ajustes → Privacidade e dados deste aparelho.</p>
     </section>
 
     <section class="notice">
       <h2>ℹ️ Aplicativo independente</h2>
-      <p>O NoteStyle é um aplicativo independente, feito por um desenvolvedor particular. <strong>Não é um produto oficial e não tem vínculo, patrocínio ou aprovação</strong> da Watch Tower Bible and Tract Society of Pennsylvania, do site JW.ORG ou do aplicativo JW Library. Os nomes e os conteúdos dessas organizações pertencem aos seus proprietários e são consultados apenas para estudo pessoal.</p>
+      <p>O NoteStyle é um aplicativo independente, feito por um desenvolvedor particular. <strong>Não é um produto
+          oficial e não tem vínculo, patrocínio ou aprovação</strong> da Watch Tower Bible and Tract Society of
+        Pennsylvania, do site JW.ORG ou do aplicativo JW Library. Os nomes e os conteúdos dessas organizações pertencem
+        aos seus proprietários e são consultados apenas para estudo pessoal.</p>
     </section>
 
     <section class="notice">
       <h2>⚠️ Limitações do uso de caracteres Unicode</h2>
-      <p>O NoteStyle não aplica formatação real: ele troca as letras por caracteres Unicode parecidos com negrito, itálico, círculos, caixas e símbolos, para dar aparência de destaque em campos que aceitam apenas texto.</p>
+      <p>O NoteStyle não aplica formatação real: ele troca as letras por caracteres Unicode parecidos com negrito,
+        itálico, círculos, caixas e símbolos, para dar aparência de destaque em campos que aceitam apenas texto.</p>
       <ul>
-        <li><strong>Acentos e cedilha se perdem.</strong> Os caracteres de negrito, itálico e outros estilos não existem com acento, então <em>á, ã, â, é, ê, í, ó, õ, ú, ü, ç</em> viram a letra simples (por exemplo, “Jeová” fica “𝐉𝐞𝐨𝐯𝐚”).</li>
-        <li><strong>Não dá para voltar ao original.</strong> O botão Remover devolve letras comuns, mas sem os acentos que já foram perdidos. Guarde uma cópia do texto original antes de formatar.</li>
-        <li><strong>Algumas fontes são incompletas.</strong> Em estilos como Script ou Fraktur, letras e números que não têm versão estilizada continuam normais.</li>
-        <li><strong>O texto deixa de ser “texto comum”.</strong> Buscas, corretor ortográfico e leitores de tela podem não reconhecer as palavras formatadas, e alguns aparelhos ou aplicativos podem mostrar quadradinhos se não tiverem suporte aos caracteres.</li>
+        <li><strong>Acentos e cedilha se perdem.</strong> Os caracteres de negrito, itálico e outros estilos não existem
+          com acento, então <em>á, ã, â, é, ê, í, ó, õ, ú, ü, ç</em> viram a letra simples (por exemplo, “Jeová” fica
+          “𝐉𝐞𝐨𝐯𝐚”).</li>
+        <li><strong>Não dá para voltar ao original.</strong> O botão Remover devolve letras comuns, mas sem os acentos
+          que já foram perdidos. Guarde uma cópia do texto original antes de formatar.</li>
+        <li><strong>Algumas fontes são incompletas.</strong> Em estilos como Script ou Fraktur, letras e números que não
+          têm versão estilizada continuam normais.</li>
+        <li><strong>O texto deixa de ser “texto comum”.</strong> Buscas, corretor ortográfico e leitores de tela podem
+          não reconhecer as palavras formatadas, e alguns aparelhos ou aplicativos podem mostrar quadradinhos se não
+          tiverem suporte aos caracteres.</li>
         <li><strong>Pontuação, espaços e emojis</strong> não são alterados.</li>
       </ul>
     </section>
 
     <section class="notice">
       <h2>🧩 Créditos</h2>
-      <p>Leitura e gravação do backup com as bibliotecas de código aberto JSZip e sql.js. A organização das notas do backup foi inspirada no JWLManager (licença MIT). Respostas de IA: Claude, da Anthropic. Leitura em voz alta: Google Cloud. Hospedagem: Vercel.</p>
+      <p>Leitura e gravação do backup com as bibliotecas de código aberto JSZip e sql.js. A organização das notas do
+        backup foi inspirada no JWLManager (licença MIT). Respostas de IA: Claude, da Anthropic. Leitura em voz alta:
+        Google Cloud. Hospedagem: Vercel.</p>
     </section>
 
     <section class="card">
@@ -422,7 +557,10 @@
       <p class="dev-name">Fernando S. Carvalho</p>
       <div class="dev-contacts">
         <a href="https://wa.me/5564981808090">
-          <svg class="wa-icon" width="18" height="18" viewBox="0 0 448 512" aria-hidden="true"><path fill="#25D366" d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/></svg>
+          <svg class="wa-icon" width="18" height="18" viewBox="0 0 448 512" aria-hidden="true">
+            <path fill="#25D366"
+              d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z" />
+          </svg>
           (64) 98180-8090
         </a>
         <a href="mailto:carvalhofsc1@gmail.com">✉️ carvalhofsc1@gmail.com</a>
@@ -478,7 +616,7 @@
           });
       }
       function guardarCopia(texto) {
-        try { if (texto) localStorage.setItem(CHAVE_COPIA, texto); else localStorage.removeItem(CHAVE_COPIA); } catch (e) {}
+        try { if (texto) localStorage.setItem(CHAVE_COPIA, texto); else localStorage.removeItem(CHAVE_COPIA); } catch (e) { }
       }
 
       // O texto do servidor entra no campo (o administrador só pode salvar depois de lê-lo, para não trocar o que está lá sem ver).
@@ -505,7 +643,7 @@
           if (!r.ok) return avisar((r.dados && r.dados.erro) || 'Não consegui salvar agora.', true);
           var salvo = String(r.dados.texto || '');
           guardarCopia(salvo);
-          try { localStorage.removeItem(CHAVE_ANTIGA); } catch (e) {}
+          try { localStorage.removeItem(CHAVE_ANTIGA); } catch (e) { }
           campo.value = salvo || ORIGINAL;
           avisar(ok, false);
         }, function () { avisar('Falha de conexão com o servidor.', true); });
@@ -541,7 +679,7 @@
           campo.focus();
           campo.select();
           var ok = false;
-          try { ok = document.execCommand('copy'); } catch (e) {}
+          try { ok = document.execCommand('copy'); } catch (e) { }
           if (ok) copiado(); else avisar('Não consegui copiar. Selecione o texto e copie.', true);
         }
         if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(mensagem()).then(copiado, manual);
@@ -557,7 +695,7 @@
       if (!botao) return;
       botao.addEventListener('click', function (e) {
         var origem = '';
-        try { origem = new URL(document.referrer).origin; } catch (erro) {}
+        try { origem = new URL(document.referrer).origin; } catch (erro) { }
         if (origem && origem === location.origin && history.length > 1) {
           e.preventDefault();
           history.back();
@@ -567,4 +705,5 @@
   </script>
   <script src="exportar-pagina.js"></script>
 </body>
+
 </html>
