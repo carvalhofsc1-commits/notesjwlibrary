@@ -3025,3 +3025,18 @@
     .memoria-item h4 { margin: 0 0 4px; font-size: .86rem; }
     .memoria-item p { margin: 4px 0; }
     .memoria-item .button-row { margin-top: 6px; }
+
+    /* Tela Leitura em voz alta: os dois botões principais saem do azul. Importar é um laranja suave (cor da página) e Ler um laranja forte; os dois com a moldura de 2px dos demais botões. */
+    #leituraArquivoBtn {
+      background: #fde7c3;
+      background: color-mix(in srgb, #f59e0b 24%, var(--card));
+      color: var(--neutral-text);
+      border: 2px solid #d97706;
+    }
+    #leituraArquivoBtn:hover { background: color-mix(in srgb, #f59e0b 36%, var(--card)); }
+    .leitura-acoes .leitura-ler {
+      background: #d97706;
+      color: #ffffff;
+      border: 2px solid #b45309;
+    }
+    .leitura-acoes .leitura-ler:hover { background: #b45309; }

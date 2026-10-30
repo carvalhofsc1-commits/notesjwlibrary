@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.02
+
+Tela Leitura em voz alta: os botões "Importar PDF ou Word" (laranja suave, na cor da página) e "Ler" (laranja forte) deixam o azul e ganham a moldura de 2px dos demais botões.
+
 ## 6.3.01
 
 Memória do piloto: em vez de guardar o texto original e o corrigido, a IA agora compara os dois, entende o que mudou (por exemplo, o sentido de uma pergunta), o provável motivo e escreve uma regra curta e geral; só essa lição é guardada (os textos são lidos para a análise e descartados). Mudanças só de digitação ou de conteúdo pessoal não viram lição. A caixa ao salvar passou a "🧠 Aprender com esta correção" e a seção em Prompts da IA lista as lições (o que mudou, por quê, regra) para desativar ou apagar. O arquivo antigo da 6.3.00, com os textos inteiros, é apagado do Blob na primeira leitura.
