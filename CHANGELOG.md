@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.2.13
+
+Páginas Sobre, Privacidade e Termos de Uso: botão "📄 Exportar esta página (.docx)" no fim de cada uma, visível só para o administrador (senha de administrador salva neste aparelho). Gera o Word com o conteúdo completo (títulos, parágrafos, listas, tabelas e negrito/itálico). Script: exportar-pagina.js.
+
 ## 6.2.12
 
 Lista de temas do S-34: a coluna do número ficou mais larga e sem quebra, para o ✔ não descer nos temas de 3 dígitos (100 em diante).
