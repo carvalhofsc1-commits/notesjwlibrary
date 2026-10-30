@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.2.17
+
+Prompts da IA: novo botão "♻️ Restaurar todos os padrões" no fim da tela, ao lado de "Salvar para todos" e "Voltar à versão anterior". Volta todos os textos editáveis ao padrão do app, para todos os usuários (limites e modelo da IA não mudam) e pede confirmação; "Voltar à versão anterior" desfaz.
+
 ## 6.2.16
 
 Qualidade da IA (causa 1, só prompts do servidor): a Voz das respostas manda responder primeiro à pergunta exata, sem fechamentos do tipo "o que aprendemos" nem aplicação não pedida e sem mostrar raciocínio; emojis, fontes decorativas e listas numeradas só quando as preferências permitirem e ajudarem (fontes raras, 1 a 3 emojis, lista só com 3 ou mais pontos); a abertura da orientação do usuário passa a citar as exceções (formato JSON, fidelidade às fontes e segurança). Se a tela Prompts da IA tiver uma versão salva dessas partes, ela vale no lugar do padrão: restaure ou cole o texto novo.

@@ -5605,7 +5605,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.2.16'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.2.17'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -8755,6 +8755,7 @@ function saveTemplatesToStorage() {
     const promptsLocked = document.getElementById('promptsLocked');
     const promptsSaveBtn = document.getElementById('promptsSaveBtn');
     const promptsUndoBtn = document.getElementById('promptsUndoBtn');
+    const promptsResetAllBtn = document.getElementById('promptsResetAllBtn');
     let promptsOpener = null;
     let promptsState = null;   // última resposta do servidor
     let promptsCode = '';      // a senha salva em Autorização de acessos, depois de aceita pelo servidor
@@ -9092,6 +9093,7 @@ function saveTemplatesToStorage() {
       });
 
       promptsUndoBtn.disabled = !state.temAnterior;
+      promptsResetAllBtn.disabled = !state.armazenamento.escrita;
       promptsSalvarHabilitado(state.armazenamento.escrita);
       if (!state.armazenamento.escrita) {
         setPromptsStatus('O armazenamento (Global Config) ainda não está configurado para gravar no servidor: dá para ler, mas não salvar.', true);
@@ -9184,6 +9186,12 @@ function saveTemplatesToStorage() {
       const ok = await askConfirm('Voltar "' + part.titulo + '" ao texto original que veio com o app, para todos os usuários? O texto salvo será substituído.', 'Voltar ao texto original');
       if (!ok) return;
       await sendPromptsAction({ acao: 'prompts-restaurar', id: part.id }, '✅ Texto original do app restaurado para todos os usuários.');
+    }
+
+    async function restoreAllPrompts() {
+      const ok = await askConfirm('Voltar TODOS os textos dos prompts ao padrão que veio com o app, para todos os usuários? Os textos salvos serão substituídos (os limites e o modelo da IA não mudam). Dá para desfazer em "Voltar à versão anterior".', 'Restaurar todos os padrões');
+      if (!ok) return;
+      await sendPromptsAction({ acao: 'prompts-restaurar-tudo' }, '✅ Todos os prompts voltaram ao padrão do app, para todos os usuários.');
     }
 
     async function undoPrompts() {
@@ -9375,6 +9383,7 @@ function saveTemplatesToStorage() {
     });
     promptsSaveBtn.addEventListener('click', salvarParaTodos);
     promptsUndoBtn.addEventListener('click', undoPrompts);
+    promptsResetAllBtn.addEventListener('click', restoreAllPrompts);
 
     // ---------- Modelo da IA de texto e gasto com ela (tela de prompts) ----------
     // O administrador escolhe o modelo e o esforço da IA para todos (api/_iaConfig.mjs). O gasto do mês vem da Cost API

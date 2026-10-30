@@ -1,6 +1,6 @@
 {
   "name": "notestyle",
-  "version": "6.2.16",
+  "version": "6.2.17",
   "private": true,
   "scripts": {
     "check": "node --check api/_acesso.mjs && node --check api/_armazem.mjs && node --check api/_comum.mjs && node --check api/_fontes.mjs && node --check api/_iaConfig.mjs && node --check api/_prompts.mjs && node --check api/_promptsArmazenados.mjs && node --check api/_s34.mjs && node --check api/_vozConfig.mjs && node --check api/_wol.mjs && node --check api/config.mjs && node --check api/sugerir-formatacao.mjs && node --check api/texto-diario.mjs && node --check api/voz.mjs && node --check app.js && node --check sw.js && node --check exportar-pagina.js"

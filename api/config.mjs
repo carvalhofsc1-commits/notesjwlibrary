@@ -236,6 +236,15 @@ export default async function handler(req, res) {
       return res.status(200).json(await estadoDosPrompts());
     }
 
+    // Volta TODOS os textos editáveis ao padrão do código. Os limites e o modelo da IA não mudam. Guarda os atuais como "anterior",
+    // então "Voltar à versão anterior" desfaz.
+    if (acao === "prompts-restaurar-tudo") {
+      if (!exigirEscrita(res)) return;
+      const atuais = await lerAlteracoes();
+      await gravarAlteracoes({}, atuais);
+      return res.status(200).json(await estadoDosPrompts());
+    }
+
     if (acao === "prompts-desfazer") {
       if (!exigirEscrita(res)) return;
       const anterior = await lerAnterior();
