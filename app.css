@@ -15,7 +15,7 @@
       --btn-azul-hover: #3b82f6;
       --soft: #eef2ff;
       --soft-line: #a5b4fc;
-      --danger: #f5b86c; /* softer orange */
+      --danger: #dc2626;
       --danger-dark: #b91c1c;
       --success: #047857;
       --warning: #92400e;
@@ -3035,8 +3035,8 @@
     }
     #leituraArquivoBtn:hover { background: color-mix(in srgb, #f59e0b 36%, var(--card)); }
     .leitura-acoes .leitura-ler {
-      background: #d97706;
+      background: #f97316;
       color: #ffffff;
-      border: 2px solid #b45309;
+      border: 2px solid #ea580c;
     }
-    .leitura-acoes .leitura-ler:hover { background: #b45309; }
+    .leitura-acoes .leitura-ler:hover { background: #ea580c; }
