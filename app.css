@@ -3016,3 +3016,12 @@
     .card.td-card.card-desabilitado .td-data, .card.td-card.card-desabilitado .td-tema { color: var(--muted); }
     .td-link[hidden] { display: none; }
   
+    /* Memória de correções (piloto): a caixa ao lado de Salvar alterações e a lista na tela Prompts da IA. */
+    .memoria-usar { display: flex; align-items: flex-start; gap: 8px; margin: 8px 0; font-size: .86rem; font-weight: 650; }
+    .memoria-usar input { width: 18px; height: 18px; min-height: 0; margin: 2px 0 0; flex: none; }
+    .memoria-lista { display: grid; gap: 8px; margin: 8px 0; }
+    .memoria-item { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; background: var(--card); font-size: .84rem; }
+    .memoria-item.inativa { opacity: .6; }
+    .memoria-item h4 { margin: 0 0 4px; font-size: .86rem; }
+    .memoria-item pre { white-space: pre-wrap; word-break: break-word; margin: 4px 0; max-height: 7em; overflow: auto; font: inherit; }
+    .memoria-item .button-row { margin-top: 6px; }

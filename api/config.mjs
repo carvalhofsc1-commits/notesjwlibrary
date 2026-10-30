@@ -6,6 +6,7 @@ import { CATEGORIAS, LIMITES, PARTES, aplicarLimites, categoriaDaParte, limitesP
 import { esquecerCache, gravarAlteracoes, gravarLimites, lerAlteracoes, lerAnterior, lerLimites } from "./_promptsArmazenados.mjs";
 import { configPublicaVoz, gravarConfigVoz, lerConfigVoz, opcoesVoz } from "./_vozConfig.mjs";
 import { gravarConfigIa, lerConfigIa, lerCustoIa, opcoesIa } from "./_iaConfig.mjs";
+import { acrescentarCorrecao, alterarCorrecao, apagarCorrecao, apagarTudo, ligarMemoria, lerMemoria, memoriaConfigurada } from "./_memoria.mjs";
 import { apagarEsboco, gravarEsbocos, gravarTemas, lerIndice, lerTemas, s34Configurado, temasDoTexto } from "./_s34.mjs";
 
 const CHAVE_PADRAO = "padrao_modelos";
@@ -251,6 +252,28 @@ export default async function handler(req, res) {
       const atuais = await lerAlteracoes();
       await gravarAlteracoes(anterior, atuais);
       return res.status(200).json(await estadoDosPrompts());
+    }
+
+    // Memória de correções (piloto, só administrador): por enquanto só guarda; nenhuma resposta da IA a usa.
+    if (acao.startsWith("memoria-")) {
+      if (!memoriaConfigurada()) return erro(res, 503, "O armazenamento privado (Blob) ainda não está configurado no servidor para a memória de correções.");
+      if (acao === "memoria-ler") return res.status(200).json({ memoria: await lerMemoria() });
+      if (acao === "memoria-ligar") return res.status(200).json({ memoria: await ligarMemoria(corpo.ligada) });
+      if (acao === "memoria-guardar") {
+        if (!(await lerMemoria()).ligada) return erro(res, 403, "A chave geral do piloto está desligada (Prompts da IA → Memória de correções).");
+        const r = await acrescentarCorrecao(corpo);
+        return r.erro ? erro(res, 400, r.erro) : res.status(200).json({ memoria: r.memoria });
+      }
+      if (acao === "memoria-ativar") {
+        const r = await alterarCorrecao(String(corpo.id || ""), corpo.ativo);
+        return r.erro ? erro(res, 404, r.erro) : res.status(200).json({ memoria: r.memoria });
+      }
+      if (acao === "memoria-apagar") {
+        const r = await apagarCorrecao(String(corpo.id || ""));
+        return r.erro ? erro(res, 404, r.erro) : res.status(200).json({ memoria: r.memoria });
+      }
+      if (acao === "memoria-apagar-tudo") return res.status(200).json({ memoria: (await apagarTudo()).memoria });
+      return erro(res, 400, "Ação desconhecida.");
     }
 
     if (acao === "voz-ler") {

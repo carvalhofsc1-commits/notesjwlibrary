@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.00
+
+Memória de correções (piloto, só administrador, por enquanto só guarda): ao tocar em Salvar alterações numa pesquisa salva que você editou, aparece a caixa "🧠 Guardar esta correção para melhorar as próximas respostas" (desmarcada, só com a senha de administrador salva). Marcada, o par "texto da IA → texto final" (com o tipo e o título) vai para o Blob privado do servidor. Em Prompts da IA há a seção "🧠 Memória de correções" com a chave geral do piloto, a lista, desativar, apagar uma e apagar todas. Nenhuma resposta da IA usa a memória ainda; o backup do JW Library nunca entra.
+
 ## 6.2.17
 
 Prompts da IA: novo botão "♻️ Restaurar todos os padrões" no fim da tela, ao lado de "Salvar para todos" e "Voltar à versão anterior". Volta todos os textos editáveis ao padrão do app, para todos os usuários (limites e modelo da IA não mudam) e pede confirmação; "Voltar à versão anterior" desfaz.

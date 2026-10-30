@@ -5605,7 +5605,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.2.17'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.00'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -9187,6 +9187,67 @@ function saveTemplatesToStorage() {
       if (!ok) return;
       await sendPromptsAction({ acao: 'prompts-restaurar', id: part.id }, '✅ Texto original do app restaurado para todos os usuários.');
     }
+
+    // ---------- Memória de correções: lista, desativar e apagar ----------
+    const memoriaStatus = document.getElementById('memoriaStatus');
+    const memoriaLista = document.getElementById('memoriaLista');
+    const memoriaLigadaCx = document.getElementById('memoriaLigada');
+
+    function memoriaRender(memoria) {
+      memoriaLigadaCx.checked = memoria.ligada;
+      memoriaLista.textContent = '';
+      document.getElementById('memoriaApagarTudoBtn').disabled = !memoria.itens.length;
+      if (!memoria.itens.length) {
+        memoriaStatus.textContent = 'Nenhuma correção guardada ainda.';
+        return;
+      }
+      memoriaStatus.textContent = memoria.itens.length + ' correção(ões) guardada(s).';
+      memoria.itens.forEach(i => {
+        const caixa = document.createElement('div');
+        caixa.className = 'memoria-item' + (i.ativo ? '' : ' inativa');
+        const titulo = document.createElement('h4');
+        titulo.textContent = (i.titulo || 'Sem título') + ' · ' + (i.tipo || '—') + ' · ' + new Date(i.criadoEm).toLocaleDateString('pt-BR');
+        const antes = document.createElement('pre');
+        antes.textContent = 'IA: ' + i.original;
+        const depois = document.createElement('pre');
+        depois.textContent = 'Final: ' + i.final;
+        const linha = document.createElement('div');
+        linha.className = 'button-row';
+        const ativar = document.createElement('button');
+        ativar.type = 'button';
+        ativar.className = 'secondary';
+        ativar.textContent = i.ativo ? '⏸️ Desativar' : '▶️ Ativar';
+        ativar.addEventListener('click', () => memoriaAcao({ acao: 'memoria-ativar', id: i.id, ativo: !i.ativo }));
+        const apagar = document.createElement('button');
+        apagar.type = 'button';
+        apagar.className = 'secondary';
+        apagar.textContent = '🗑️ Apagar';
+        apagar.addEventListener('click', async () => {
+          if (await askConfirm('Apagar esta correção da memória?', 'Apagar')) memoriaAcao({ acao: 'memoria-apagar', id: i.id });
+        });
+        linha.append(ativar, apagar);
+        caixa.append(titulo, antes, depois, linha);
+        memoriaLista.appendChild(caixa);
+      });
+    }
+
+    async function memoriaAcao(payload) {
+      if (!promptsCode) return;
+      memoriaStatus.textContent = 'Enviando...';
+      const r = await postConfig(Object.assign({ codigo: promptsCode }, payload));
+      if (!r.ok) {
+        memoriaStatus.textContent = (r.data && r.data.erro) || 'Não foi possível concluir agora.';
+        return;
+      }
+      memoriaRender(r.data.memoria);
+    }
+
+    document.getElementById('memoriaBox').addEventListener('toggle', e => { if (e.target.open) memoriaAcao({ acao: 'memoria-ler' }); });
+    document.getElementById('memoriaAtualizarBtn').addEventListener('click', () => memoriaAcao({ acao: 'memoria-ler' }));
+    memoriaLigadaCx.addEventListener('change', () => memoriaAcao({ acao: 'memoria-ligar', ligada: memoriaLigadaCx.checked }));
+    document.getElementById('memoriaApagarTudoBtn').addEventListener('click', async () => {
+      if (await askConfirm('Apagar TODAS as correções guardadas na memória? Não dá para desfazer.', 'Apagar todas')) memoriaAcao({ acao: 'memoria-apagar-tudo' });
+    });
 
     async function restoreAllPrompts() {
       const ok = await askConfirm('Voltar TODOS os textos dos prompts ao padrão que veio com o app, para todos os usuários? Os textos salvos serão substituídos (os limites e o modelo da IA não mudam). Dá para desfazer em "Voltar à versão anterior".', 'Restaurar todos os padrões');
@@ -13817,6 +13878,9 @@ function saveTemplatesToStorage() {
         delete exportarInfo.dataset.texto;
       }
       salvarBtn.disabled = !sujo;
+      const memoriaLinha = document.getElementById('memoriaUsarLinha');
+      memoriaLinha.hidden = !(ligado && sujo && senhaAdminSalva());
+      if (memoriaLinha.hidden) document.getElementById('memoriaUsar').checked = false;
       if (!ligado || sujo) salvarAvisoFim(); // mexeu de novo (ou trocou de texto): o aviso de salvo sai
       salvarInfo.textContent = !ligado ? '' : (sujo
         ? 'Grava o texto do campo em: '
@@ -13855,6 +13919,8 @@ function saveTemplatesToStorage() {
       }
       const texto = input.value;
       const original = (item.partes || []).map(p => p.texto).join('\n\n\n');
+      const guardarMemoria = document.getElementById('memoriaUsar').checked && senhaAdminSalva() && texto !== original;
+      if (guardarMemoria) memoriaGuardar(item, original, texto);
       if (texto === original) {
         delete item.textoEditado;
         delete item.editadoEm;
@@ -13875,6 +13941,15 @@ function saveTemplatesToStorage() {
       copyStatus.textContent = '💾 Alterações salvas. Ao abrir esta pesquisa em Pesquisas e respostas salvas, o texto volta como está agora.';
     }
     salvarBtn.addEventListener('click', historicoSalvarAlteracoes);
+
+    // ---------- Memória de correções (piloto, só administrador) ----------
+    // Ao salvar uma alteração com a caixa 🧠 marcada, o par "texto da IA → texto final" vai para o Blob privado do servidor (api/_memoria.mjs).
+    // Só são enviados esses dois textos, o tipo e o título da pesquisa salva. Por enquanto nenhuma resposta da IA usa a memória.
+    async function memoriaGuardar(item, original, final) {
+      const r = await postConfig({ acao: 'memoria-guardar', codigo: senhaAdminSalva(), tipo: item.tipo || '', titulo: item.titulo || '', original, final });
+      copyStatus.textContent = r.ok ? '🧠 Correção guardada na memória do piloto.' : '🧠 A correção não foi guardada: ' + ((r.data && r.data.erro) || 'sem conexão com o servidor') + '. O texto salvo no aparelho está certo.';
+      document.getElementById('memoriaUsar').checked = false;
+    }
 
     // ---------- Exportar o texto do campo para Word (.docx) ----------
     // O texto do campo (com as alterações do usuário) vira um documento Word, seja ele o que for: resposta, perguntas, esboço ou nota. As letras
