@@ -3023,5 +3023,5 @@
     .memoria-item { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; background: var(--card); font-size: .84rem; }
     .memoria-item.inativa { opacity: .6; }
     .memoria-item h4 { margin: 0 0 4px; font-size: .86rem; }
-    .memoria-item pre { white-space: pre-wrap; word-break: break-word; margin: 4px 0; max-height: 7em; overflow: auto; font: inherit; }
+    .memoria-item p { margin: 4px 0; }
     .memoria-item .button-row { margin-top: 6px; }

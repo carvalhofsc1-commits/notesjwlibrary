@@ -120,7 +120,7 @@
             <div id="answerCopyLayer" class="answer-copy-layer"></div>
             <div id="salvarBloco" class="salvar-bloco" hidden>
               <button id="saveBtn" class="salvar-btn" type="button">💾 Salvar alterações</button>
-              <label id="memoriaUsarLinha" class="memoria-usar" hidden><input type="checkbox" id="memoriaUsar" autocomplete="off"> 🧠 Guardar esta correção para melhorar as próximas respostas (piloto, só administrador)</label>
+              <label id="memoriaUsarLinha" class="memoria-usar" hidden><input type="checkbox" id="memoriaUsar" autocomplete="off"> 🧠 Aprender com esta correção (a IA guarda só a lição, não os textos; piloto, só administrador)</label>
               <p id="saveInfo" class="hint salvar-info"></p>
             </div>
             <!-- Exportar o texto do campo para Word: vale para qualquer texto (respostas, perguntas, esboços, notas); aparece com o campo preenchido. -->
@@ -1437,9 +1437,9 @@
         </details>
 
         <details class="prompt-item prompt-tint-codigo" id="memoriaBox">
-          <summary><h3>🧠 Memória de correções (piloto)</h3></summary>
-          <p class="hint">Guarda, no Blob privado do servidor, os pares "texto que a IA escreveu → como você deixou" que você marcar ao tocar em Salvar alterações. <strong>Nesta fase as correções só são guardadas: nenhuma resposta da IA as usa ainda.</strong> Só você (administrador) vê, desativa ou apaga. O backup do JW Library nunca entra aqui.</p>
-          <label class="memoria-usar"><input type="checkbox" id="memoriaLigada" autocomplete="off"> Permitir guardar correções (chave geral do piloto)</label>
+          <summary><h3>🧠 Lições das correções (piloto)</h3></summary>
+          <p class="hint">Quando você marca 🧠 ao tocar em Salvar alterações, a IA compara o texto dela com o seu, entende o que mudou e por quê, e guarda no Blob privado do servidor <strong>só a lição</strong> (o que mudou, o provável motivo e uma regra curta). Os textos, o original e o corrigido, não são guardados. <strong>Nesta fase as lições só são guardadas: nenhuma resposta da IA as usa ainda.</strong> Só você (administrador) vê, desativa ou apaga. O backup do JW Library nunca entra aqui.</p>
+          <label class="memoria-usar"><input type="checkbox" id="memoriaLigada" autocomplete="off"> Permitir aprender com as correções (chave geral do piloto)</label>
           <p id="memoriaStatus" class="ok" role="status" aria-live="polite"></p>
           <div id="memoriaLista" class="memoria-lista"></div>
           <div class="button-row">
