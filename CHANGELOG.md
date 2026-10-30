@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.06
+
+Ajustes: a seção "Leitura em voz alta" volta ao seu local original exclusivo do administrador (com ícone de escudo 🛡️ e agrupada após a linha separadora de opções administrativas).
+
 ## 6.3.05
 
 Leitura em voz alta: ao tocar no botão do alto-falante 🔊 ou em "Ler", o tocador aguarda 4 segundos com contagem regressiva antes de iniciar o áudio direto se o usuário não mexer nas opções de configuração de voz (tempo configurável em Ajustes → Leitura em voz alta).
