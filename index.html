@@ -1482,6 +1482,24 @@
       </div>
     </div>
 
+    <!-- Para que serve a tela Backup: aberta enquanto nenhum backup está aberto; recolhe sozinha ao abrir um backup e abre de novo ao fechá-lo. -->
+    <details id="backupAjuda" class="backup-ajuda screen-backup" open>
+      <summary>ℹ️ Para que serve esta tela</summary>
+      <div class="backup-ajuda-corpo">
+        <p>Abra o backup do <strong>JW Library</strong>, altere e gere um novo para restaurar no aplicativo. Você pode:</p>
+        <ul>
+          <li><strong>Ver</strong> notas, grifos, favoritos e marcadores</li>
+          <li><strong>Procurar</strong>, <strong>agrupar</strong> e achar notas duplicadas</li>
+          <li><strong>Editar</strong>, <strong>apagar</strong> e <strong>incluir</strong> notas e respostas</li>
+          <li><strong>Mesclar</strong> com as notas de outro backup</li>
+          <li><strong>Exportar</strong> para planilha (.xlsx) ou CSV</li>
+          <li><strong>Criar</strong> um backup vazio</li>
+          <li><strong>Gerar</strong> o backup modificado e compartilhar</li>
+        </ul>
+        <p><strong>Cuidado:</strong> guarde o backup original: restaurar substitui todos os dados do aparelho.</p>
+      </div>
+    </details>
+
     <section id="backupCard" class="card screen-backup">
       <h2>📦 Backup do JW Library</h2>
       <div class="backup-open-row">
@@ -1492,7 +1510,6 @@
           <button id="backupCloseBtn" class="secondary" type="button" hidden>✖️ Fechar backup</button>
         </div>
       </div>
-      <p class="hint">O arquivo é lido só neste aparelho: nada do backup é enviado para a internet. Só na categoria Respostas o app consulta o wol.jw.org com o número dos documentos, para mostrar o parágrafo de cada resposta.</p>
       <span id="backupStatus" class="ok" role="status" aria-live="polite"></span>
       <div id="backupView" hidden>
         <p id="backupSummary" class="backup-summary"></p>

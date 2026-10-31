@@ -7738,7 +7738,7 @@
     }
 
     .ajustes-grupo-titulo {
-      margin: 6px 0 2px;
+      margin: 6px 0 16px;
       font-size: 1rem;
       text-align: center;
     }
@@ -7772,4 +7772,57 @@
       margin: 0;
       font-size: .84rem;
       line-height: 1.3;
+    }
+
+    /* Explicação recolhível da tela Backup. */
+    .backup-ajuda {
+      border: 2px solid var(--muted);
+      border-radius: 12px;
+      background: var(--card);
+      margin: 0 0 14px;
+    }
+
+    .backup-ajuda>summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 8px 12px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .backup-ajuda>summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .backup-ajuda>summary::after {
+      content: '▸';
+      color: var(--muted);
+      font-size: 1.3rem;
+      transition: transform .15s ease;
+    }
+
+    .backup-ajuda[open]>summary::after {
+      transform: rotate(90deg);
+    }
+
+    .backup-ajuda-corpo {
+      padding: 0 12px 8px;
+      font-size: .84rem;
+      line-height: 1.3;
+    }
+
+    .backup-ajuda-corpo p {
+      margin: 0 0 4px;
+    }
+
+    .backup-ajuda-corpo ul {
+      margin: 0 0 4px;
+      padding-left: 18px;
+    }
+
+    .backup-ajuda-corpo li {
+      margin: 0 0 1px;
     }

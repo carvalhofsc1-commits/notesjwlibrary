@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.29
+
+Ajustes: mais espaço entre os rótulos "Ajustes gerais" e "Exclusivo do administrador" e o primeiro cartão de cada contêiner. Backup: o texto embaixo dos botões saiu (já está na documentação do app) e entrou, antes do cartão, uma explicação curta e recolhível do que a tela permite fazer (ver, procurar, agrupar, editar, apagar, incluir, mesclar, exportar, criar backup vazio e gerar o backup modificado), compacta para o cartão de opções continuar visível sem rolar; ela aparece aberta sem backup aberto, recolhe sozinha quando um backup é aberto e abre de novo quando ele é fechado.
+
 ## 6.3.28
 
 Texto diário: o botão ✨ Gerar comentários adicionais não some mais depois de gerar ou recuperar os comentários (fica sempre visível). Tela Formatar: o convite para o FunPlayB ficou compacto (ícone à esquerda, texto à direita, numa moldura) para caber na tela do celular sem cortar. Ajustes: as opções ficam em dois contêineres, "Ajustes gerais" (todos os usuários) e "Exclusivo do administrador" (só aparece com a senha de administrador salva).

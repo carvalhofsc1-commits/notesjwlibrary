@@ -469,7 +469,16 @@
       return BACKUP_CATEGORIES.find(c => c.id === backupCategory) || BACKUP_CATEGORIES.find(c => c.id === 'notas');
     }
 
+    // A explicação da tela Backup abre quando não há backup aberto e recolhe sozinha quando um backup é aberto (só nessa troca: se a pessoa a abrir ou
+    // fechar à mão, a escolha dela vale até o backup abrir ou fechar de novo).
+    let backupAjudaComBackup = false;
+
     function renderBackupView(keepOpen) {
+      const ajuda = document.getElementById('backupAjuda');
+      if (ajuda && backupAjudaComBackup !== Boolean(backupState)) {
+        backupAjudaComBackup = Boolean(backupState);
+        ajuda.open = !backupAjudaComBackup;
+      }
       const view = document.getElementById('backupView');
       document.getElementById('backupCloseBtn').hidden = !backupState;
       document.getElementById('backupOpenBtn').textContent = backupState ? '📂 Abrir outro backup' : '📂 Abrir backup (.jwlibrary)';
@@ -5747,7 +5756,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.28'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.29'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
