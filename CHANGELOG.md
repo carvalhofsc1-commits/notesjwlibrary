@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.31
+
+Backup: a explicação da tela ficou mais curta (frases resumidas, letra e espaços menores) para o cartão de opções aparecer inteiro na tela do celular.
+
 ## 6.3.30
 
 Backup: a explicação voltou ao texto completo (sem a frase sobre o envio do arquivo e o wol.jw.org) e o título passou a "Para que serve esta função"; cada tópico e o aviso de cuidado começam com um emoji; o botão da barra de baixo passou a se chamar "Backup JW", numa linha só e com os ícones alinhados.
