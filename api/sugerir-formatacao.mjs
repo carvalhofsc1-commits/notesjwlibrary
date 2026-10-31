@@ -152,6 +152,30 @@ function excedeuLimite(ip, limitePorHora) {
   return false;
 }
 
+function ipDoPedido(req) {
+  return String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "desconhecido";
+}
+
+async function carregarPromptsEIa() {
+  const [prompts, ia] = await Promise.all([carregarPrompts(), lerConfigIa()]);
+  return { ...prompts, ia };
+}
+
+// Tarefas que só leem o wol.jw.org, o Blob do S-34 ou os arquivos da Bíblia: não chamam a Anthropic.
+const TAREFAS_SEM_IA = new Set([
+  "ebc-ler",
+  "tesouros-ler",
+  "publico-lista",
+  "publico-ler",
+  "publico-esboco",
+  "versiculos",
+  "outros-pesquisar",
+  "outros-ler",
+  "discurso-ler",
+  "joias-ler",
+  "apostila-imagens",
+]);
+
 const INTENSIDADES = ["poucas", "moderada", "muitas"];
 const TAMANHOS_RESUMO = ["curto", "medio", "detalhado"];
 // Nome de cada tamanho nas partes editáveis ("Tamanho do resumo: médio", "Tamanho da resposta: médio").
@@ -2976,7 +3000,7 @@ async function comentariosDoTextoDiario(res, body, P) {
   const mensagem =
     `TEXTO DIÁRIO:\nData: ${texto.titulo}\nTexto temático: ${texto.tema}\nComentário:\n${texto.comentario.join("\n")}` +
     (anteriores.length
-      ? `\n\nCOMENTÁRIOS JÁ SUGERIDOS (escreva outros, com aplicações diferentes):\n${anteriores.map((a) => `- ${a}`).join("\n")}`
+      ? `\n\nCOMENTÁRIOS JÁ SUGERIDOS (outras palavras; só mude o enfoque se o texto do dia sustentar):\n${anteriores.map((a) => `- ${a}`).join("\n")}`
       : "");
 
   const inicio = Date.now();
@@ -3020,8 +3044,8 @@ async function comentariosDoTextoDiario(res, body, P) {
 }
 
 // ---------- Lista de parágrafos do estudo ----------
-// A IA lê o artigo e devolve só os números dos parágrafos, agrupados quando compartilham a mesma pergunta
-// (ex.: "1, 2"). O app usa essa lista para navegar entre os grupos.
+// No caminho feliz o servidor lê o artigo no wol.jw.org e devolve os grupos (sem IA). Só se essa leitura falhar
+// a IA lê a página (web_fetch, só wol.jw.org) e devolve os números. O app usa a lista para navegar entre os grupos.
 
 const SaidaLista = z.object({
   titulo: z.string().nullable().optional(),
@@ -3056,34 +3080,54 @@ function idDoArtigoLido(resposta, urlPedida, informadoPelaIa) {
   return /^\d{7}$/.test(String(informadoPelaIa || "").trim()) ? String(informadoPelaIa).trim() : null;
 }
 
-async function listarParagrafos(res, body, P) {
-  if (!process.env.CODIGO_ESTUDO) return erro(res, 503, "A leitura do estudo ainda não está configurada no servidor.");
-  // Os dois cartões de A Sentinela usam esta lista: o de comentários com o código de pesquisa, o do dirigente com o do dirigente.
-  if (!codigoValido(body.codigo) && !dirigenteValido(body.codigoDirigente)) return recusarAcesso(res, body);
+function jsonDaListaLida(lido) {
+  return {
+    titulo: lido.titulo || null,
+    artigo: lido.id,
+    url: lido.url,
+    grupos: lido.grupos.map((g) => g.rotulo).slice(0, 40),
+    perguntas: lido.grupos.map((g) => g.pergunta || "").slice(0, 40), // alinhadas com "grupos": o app mostra a do parágrafo escolhido
+    imagens: lido.grupos.map((g) => (g.imagens || []).map((i) => ({ descricao: i.descricao, legenda: i.legenda }))).slice(0, 40),
+    recapitulacao: lido.recapitulacao.length > 0,
+    erro: null,
+  };
+}
 
+// Tenta a leitura direta. Devolve true se já respondeu (sucesso ou URL inválida). false = precisa da IA.
+async function tentarListaNoSite(res, body) {
+  if (!process.env.CODIGO_ESTUDO) {
+    erro(res, 503, "A leitura do estudo ainda não está configurada no servidor.");
+    return true;
+  }
+  if (!codigoValido(body.codigo) && !dirigenteValido(body.codigoDirigente)) {
+    recusarAcesso(res, body);
+    return true;
+  }
   const url = urlDoEstudo(body);
-  if (!url) return erro(res, 400, "Número ou link do artigo inválido. Use o número de 7 dígitos (ex.: 2026521) ou o link do wol.jw.org.");
-
-  // Lida direto no site, a lista é exata e sai sem chamar a IA.
+  if (!url) {
+    erro(res, 400, "Número ou link do artigo inválido. Use o número de 7 dígitos (ex.: 2026521) ou o link do wol.jw.org.");
+    return true;
+  }
   const inicio = Date.now();
   try {
     const lido = await lerEstudoDireto(url);
     if (lido) {
       console.log("Estudo-lista (lido no site):", JSON.stringify({ grupos: lido.grupos.length, recapitulacao: lido.recapitulacao.length, segundos: Math.round((Date.now() - inicio) / 100) / 10 }));
-      return res.status(200).json({
-        titulo: lido.titulo || null,
-        artigo: lido.id,
-        url: lido.url,
-        grupos: lido.grupos.map((g) => g.rotulo).slice(0, 40),
-        perguntas: lido.grupos.map((g) => g.pergunta || "").slice(0, 40), // alinhadas com "grupos": o app mostra a do parágrafo escolhido
-        imagens: lido.grupos.map((g) => (g.imagens || []).map((i) => ({ descricao: i.descricao, legenda: i.legenda }))).slice(0, 40), // idem: as imagens de cada grupo
-        recapitulacao: lido.recapitulacao.length > 0,
-        erro: null,
-      });
+      res.status(200).json(jsonDaListaLida(lido));
+      return true;
     }
   } catch (e) {
     console.error("Estudo-lista: leitura direta falhou", e?.name, e?.message);
   }
+  return false;
+}
+
+async function listarParagrafos(res, body, P) {
+  if (!process.env.CODIGO_ESTUDO) return erro(res, 503, "A leitura do estudo ainda não está configurada no servidor.");
+  if (!codigoValido(body.codigo) && !dirigenteValido(body.codigoDirigente)) return recusarAcesso(res, body);
+
+  const url = urlDoEstudo(body);
+  if (!url) return erro(res, 400, "Número ou link do artigo inválido. Use o número de 7 dígitos (ex.: 2026521) ou o link do wol.jw.org.");
 
   try {
     const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 90_000) });
@@ -3227,10 +3271,46 @@ export default async function handler(req, res) {
     return erro(res, 403, "Origem não permitida.");
   }
 
-  if (req.body && /^backup-/.test(req.body.tarefa) && !exigirAcesso(res, req.body)) return;
-  if (req.body && req.body.tarefa === "backup-campos") return lerCamposDosDocumentos(req, res);
-  if (req.body && req.body.tarefa === "backup-semanas") return lerSemanasDosDocumentos(req, res);
-  if (req.body && req.body.tarefa === "backup-semana") return lerPublicacoesDaSemana(req, res);
+  const body = req.body && typeof req.body === "object" ? req.body : {};
+  const tarefa = body.tarefa;
+  const ip = ipDoPedido(req);
+
+  if (typeof tarefa === "string" && /^backup-/.test(tarefa) && !exigirAcesso(res, body)) return;
+  if (tarefa === "backup-campos") return lerCamposDosDocumentos(req, res);
+  if (tarefa === "backup-semanas") return lerSemanasDosDocumentos(req, res);
+  if (tarefa === "backup-semana") return lerPublicacoesDaSemana(req, res);
+
+  // Leituras (wol.jw.org, S-34, Bíblia): código de acesso e o limite de consultas, sem chave nem cota da IA.
+  if (TAREFAS_SEM_IA.has(tarefa)) {
+    if (!exigirAcesso(res, body)) return;
+    if (excedeuLimiteBackup(ip)) return erro(res, 429, "Muitas consultas. Tente novamente em alguns minutos.");
+    if (tarefa === "ebc-ler") return lerEbc(res, body);
+    if (tarefa === "tesouros-ler") return lerTesourosDaSemana(res, body);
+    if (tarefa === "publico-lista") return listarTemasPublicos(res, body);
+    if (tarefa === "publico-ler") return lerTemaPublico(res, body);
+    if (tarefa === "publico-esboco") return verEsbocoPublico(res, body);
+    if (tarefa === "versiculos") return textosDosVersiculos(res, body);
+    if (tarefa === "outros-pesquisar") return pesquisarOutros(res, body);
+    if (tarefa === "outros-ler") return lerOutros(res, body);
+    if (tarefa === "discurso-ler") return lerDiscursoCurtoDaSemana(res, body);
+    if (tarefa === "joias-ler") return lerJoiasDaSemana(res, body);
+    if (tarefa === "apostila-imagens") return lerImagensDaApostilaSemana(res, body);
+  }
+
+  // Lista da Sentinela: leitura no site primeiro (sem IA). Só se falhar é que a IA lê a página.
+  if (tarefa === "estudo-lista") {
+    if (!exigirAcesso(res, body)) return;
+    if (excedeuLimiteBackup(ip)) return erro(res, 429, "Muitas consultas. Tente novamente em alguns minutos.");
+    if (await tentarListaNoSite(res, body)) return;
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return erro(res, 503, "Não consegui ler o artigo no wol.jw.org agora, e o recurso de IA ainda não está configurado para tentar de outro jeito.");
+    }
+    const Plista = await carregarPromptsEIa();
+    if (excedeuLimite(ip, Plista.limites.limitePorHora)) {
+      return erro(res, 429, "Muitas solicitações. Tente novamente em alguns minutos.");
+    }
+    return listarParagrafos(res, body, Plista);
+  }
 
   if (!process.env.ANTHROPIC_API_KEY) {
     return erro(res, 503, "Recurso de IA ainda não configurado no servidor.");
@@ -3238,37 +3318,23 @@ export default async function handler(req, res) {
 
   // Prompts e limites atuais (padrão do código + edições do administrador, guardadas no Global Config).
   // Mais o modelo e o esforço da IA escolhidos pelo administrador (P.ia).
-  const [prompts, ia] = await Promise.all([carregarPrompts(), lerConfigIa()]);
-  const P = { ...prompts, ia };
+  const P = await carregarPromptsEIa();
 
-  const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "desconhecido";
   if (excedeuLimite(ip, P.limites.limitePorHora)) {
     return erro(res, 429, "Muitas solicitações. Tente novamente em alguns minutos.");
   }
 
-  if (req.body && !exigirAcesso(res, req.body)) return;
-  if (req.body && req.body.tarefa === "estudo") return responderEstudo(res, req.body, P);
-  if (req.body && req.body.tarefa === "estudo-lista") return listarParagrafos(res, req.body, P);
-  if (req.body && req.body.tarefa === "estudo-perguntas") return sugerirPerguntas(res, req.body, P);
-  if (req.body && req.body.tarefa === "texto-diario-comentarios") return comentariosDoTextoDiario(res, req.body, P);
-  if (req.body && req.body.tarefa === "ebc-ler") return lerEbc(res, req.body);
-  if (req.body && req.body.tarefa === "ebc") return responderEbc(res, req.body, P);
-  if (req.body && req.body.tarefa === "ebc-dirigente") return perguntasEbcDirigente(res, req.body, P);
-  if (req.body && req.body.tarefa === "tesouros-ler") return lerTesourosDaSemana(res, req.body);
-  if (req.body && req.body.tarefa === "tesouros") return esbocoDeTesouros(res, req.body, P);
-  if (req.body && req.body.tarefa === "publico-lista") return listarTemasPublicos(res, req.body);
-  if (req.body && req.body.tarefa === "publico-ler") return lerTemaPublico(res, req.body);
-  if (req.body && req.body.tarefa === "publico-esboco") return verEsbocoPublico(res, req.body);
-  if (req.body && req.body.tarefa === "publico") return esbocoDoDiscursoPublico(res, req.body, P);
-  if (req.body && req.body.tarefa === "versiculos") return textosDosVersiculos(res, req.body);
-  if (req.body && req.body.tarefa === "outros-pesquisar") return pesquisarOutros(res, req.body);
-  if (req.body && req.body.tarefa === "outros-ler") return lerOutros(res, req.body);
-  if (req.body && req.body.tarefa === "outros") return esbocoDeOutros(res, req.body, P);
-  if (req.body && req.body.tarefa === "discurso-ler") return lerDiscursoCurtoDaSemana(res, req.body);
-  if (req.body && req.body.tarefa === "discurso") return esbocoDoDiscursoCurto(res, req.body, P);
-  if (req.body && req.body.tarefa === "joias-ler") return lerJoiasDaSemana(res, req.body);
-  if (req.body && req.body.tarefa === "apostila-imagens") return lerImagensDaApostilaSemana(res, req.body);
-  if (req.body && req.body.tarefa === "joias") return responderJoias(res, req.body, P);
+  if (!exigirAcesso(res, body)) return;
+  if (tarefa === "estudo") return responderEstudo(res, body, P);
+  if (tarefa === "estudo-perguntas") return sugerirPerguntas(res, body, P);
+  if (tarefa === "texto-diario-comentarios") return comentariosDoTextoDiario(res, body, P);
+  if (tarefa === "ebc") return responderEbc(res, body, P);
+  if (tarefa === "ebc-dirigente") return perguntasEbcDirigente(res, body, P);
+  if (tarefa === "tesouros") return esbocoDeTesouros(res, body, P);
+  if (tarefa === "publico") return esbocoDoDiscursoPublico(res, body, P);
+  if (tarefa === "outros") return esbocoDeOutros(res, body, P);
+  if (tarefa === "discurso") return esbocoDoDiscursoCurto(res, body, P);
+  if (tarefa === "joias") return responderJoias(res, body, P);
 
   const entrada = validarEntrada(req.body, P.limites);
   if (!entrada) {

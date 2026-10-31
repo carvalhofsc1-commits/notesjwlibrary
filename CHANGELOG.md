@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.07
+
+Consultas que só leem o wol.jw.org, o S-34 ou os versículos (carregar matéria, lista de parágrafos quando o site responde, tesouros, joias, EBC, discurso curto, temas públicos, pesquisa de outros esboços) deixam de exigir a chave da IA e de gastar o limite de pedidos por hora; se a lista da Sentinela precisar da IA porque a leitura falhou, aí sim valem a chave e a cota. Formatos travados: perguntas do EBC para o dirigente passam a ser “até 5” (sem forçar cinco); “Gerar outros” no texto diário pede outras palavras, sem outro enfoque inventado. Política de Privacidade 1.3: armazenamento local só no localStorage; pdf.js do cdnjs entra junto com JSZip e sql.js.
+
 ## 6.3.06
 
 Ajustes: a seção "Leitura em voz alta" volta ao seu local original exclusivo do administrador (com ícone de escudo 🛡️ e agrupada após a linha separadora de opções administrativas).
