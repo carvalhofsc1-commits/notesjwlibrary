@@ -7179,7 +7179,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.59'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.60'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -17450,7 +17450,9 @@ function saveTemplatesToStorage() {
 
     function trAtualizarBotoes() {
       const ocupado = Boolean(trControle);
-      trEscolher.disabled = ocupado;
+      const gravando = typeof trGrav !== 'undefined' && Boolean(trGrav);
+      trEscolher.disabled = ocupado || gravando;
+      if (typeof trGravarBtn !== 'undefined') trGravarBtn.disabled = ocupado || gravando;
       trResumir.disabled = ocupado || trTexto.value.trim().length < 40;
       document.getElementById('transcricaoCopiarBtn').disabled = !trTexto.value.trim();
       document.getElementById('transcricaoCopiarResumoBtn').disabled = !trResumo.value.trim();
@@ -17588,6 +17590,133 @@ function saveTemplatesToStorage() {
     });
     trCancelar.addEventListener('click', () => { if (trControle) trControle.abort(); });
 
+    // ---------- Gravar um áudio agora ----------
+    // O microfone grava pelo navegador (MediaRecorder); ao parar, o arquivo gravado segue o mesmo caminho de um arquivo escolhido (decodificar,
+    // cortar em trechos e transcrever). Nada é enviado durante a gravação, e o arquivo inteiro nunca sai do aparelho.
+    const trGravarBtn = document.getElementById('transcricaoGravarBtn');
+    const trGravacao = document.getElementById('transcricaoGravacao');
+    const trGravTempo = document.getElementById('transcricaoGravTempo');
+    const trGravPausar = document.getElementById('transcricaoGravPausarBtn');
+    const trGravada = document.getElementById('transcricaoGravada');
+    let trGrav = null; // { gravador, stream, pedacos, acumulado, retomadoEm, pausado, intervalo, telaLigada, motivo }
+    let trUltimaGravacao = null; // { arquivo, url }
+
+    const trFormatarTempo = ms => {
+      const s = Math.floor(ms / 1000);
+      return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+    };
+    const trGravMs = () => (trGrav ? trGrav.acumulado + (trGrav.pausado ? 0 : Date.now() - trGrav.retomadoEm) : 0);
+
+    function trGravAtualizarTela() {
+      if (!trGrav) return;
+      trGravTempo.textContent = (trGrav.pausado ? '⏸️ Pausada ' : '🔴 Gravando ') + trFormatarTempo(trGravMs());
+      trGravPausar.textContent = trGrav.pausado ? '▶️ Continuar' : '⏸️ Pausar';
+      if (trGravMs() >= TRANSCRICAO_MAX_MIN * 60 * 1000) trGravarParar(true, 'A gravação chegou ao limite de ' + TRANSCRICAO_MAX_MIN + ' minutos e foi encerrada.');
+    }
+
+    async function trTelaLigada() {
+      try { if (trGrav && navigator.wakeLock && document.visibilityState === 'visible') trGrav.telaLigada = await navigator.wakeLock.request('screen'); } catch (e) { /* sem tela sempre ligada */ }
+    }
+    document.addEventListener('visibilitychange', () => { if (trGrav && document.visibilityState === 'visible') trTelaLigada(); });
+
+    async function trGravarIniciar() {
+      if (trGrav || trControle) return;
+      if (!codigoTextoSalvo()) return (trInfo.textContent = 'Salve o código de texto em Ajustes → 🔐 Autorização de acessos.');
+      if (!navigator.onLine) return (trInfo.textContent = 'Sem conexão com a internet.');
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) return (trInfo.textContent = 'Este aparelho ou navegador não permite gravar áudio aqui. Grave com o app de gravação do celular e escolha o arquivo.');
+      if (!(await trConsentimento())) return (trInfo.textContent = 'Nada foi gravado.');
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: true } });
+      } catch (e) {
+        return (trInfo.textContent = 'Não consegui usar o microfone. Permita o microfone para o NoteStyle (nos ajustes do navegador ou do aparelho) e tente de novo.');
+      }
+      const tipo = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'].find(t => MediaRecorder.isTypeSupported(t)) || '';
+      let gravador;
+      try {
+        gravador = new MediaRecorder(stream, tipo ? { mimeType: tipo } : undefined);
+      } catch (e) {
+        stream.getTracks().forEach(t => t.stop());
+        return (trInfo.textContent = 'Não consegui iniciar a gravação neste aparelho.');
+      }
+      trGravadaLimpar();
+      const estado = { gravador, stream, pedacos: [], acumulado: 0, retomadoEm: Date.now(), pausado: false, intervalo: null, telaLigada: null, motivo: '', transcrever: true };
+      trGrav = estado;
+      gravador.ondataavailable = e => { if (e.data && e.data.size) estado.pedacos.push(e.data); };
+      gravador.onstop = () => trGravarFim(estado);
+      gravador.start(1000); // um pedaço por segundo: se o aparelho parar a gravação, o que veio até ali é aproveitado
+      estado.intervalo = setInterval(trGravAtualizarTela, 500);
+      trGravacao.hidden = false;
+      trInfo.textContent = '';
+      trAtualizarBotoes();
+      trGravAtualizarTela();
+      trTelaLigada();
+    }
+
+    // Para a gravação (o arquivo é montado em trGravarFim, quando o gravador avisa que acabou).
+    function trGravarParar(transcrever, motivo) {
+      if (!trGrav) return;
+      trGrav.transcrever = transcrever;
+      trGrav.motivo = motivo || '';
+      trGrav.encerrando = true;
+      if (trGrav.gravador.state !== 'inactive') trGrav.gravador.stop();
+      else trGravarFim(trGrav);
+    }
+
+    function trGravarFim(estado) {
+      if (trGrav !== estado) return;
+      trGrav = null;
+      clearInterval(estado.intervalo);
+      estado.stream.getTracks().forEach(t => t.stop());
+      try { if (estado.telaLigada) estado.telaLigada.release(); } catch (e) { /* já liberada */ }
+      trGravacao.hidden = true;
+      const interrompida = !estado.encerrando; // o aparelho parou a gravação sem a pessoa pedir
+      if (!estado.transcrever) { trInfo.textContent = 'Gravação descartada.'; trAtualizarBotoes(); return; }
+      if (!estado.pedacos.length) { trInfo.textContent = 'Não houve áudio gravado.'; trAtualizarBotoes(); return; }
+      const tipo = (estado.gravador.mimeType || estado.pedacos[0].type || 'audio/mp4').split(';')[0];
+      const ext = /mp4|aac|m4a/.test(tipo) ? 'm4a' : /ogg/.test(tipo) ? 'ogg' : 'webm';
+      const agora = new Date();
+      const p = n => String(n).padStart(2, '0');
+      const nome = 'Gravação ' + agora.getFullYear() + '-' + p(agora.getMonth() + 1) + '-' + p(agora.getDate()) + ' ' + p(agora.getHours()) + '-' + p(agora.getMinutes()) + '.' + ext;
+      const arquivo = new File(estado.pedacos, nome, { type: tipo });
+      trUltimaGravacao = { arquivo, url: URL.createObjectURL(arquivo) };
+      trGravada.hidden = false;
+      trAtualizarBotoes();
+      const aviso = estado.motivo || (interrompida ? 'O aparelho parou a gravação; usei o que foi gravado.' : '');
+      trTranscrever(arquivo).then(() => { if (aviso) trInfo.textContent = aviso + ' ' + trInfo.textContent; });
+    }
+
+    function trGravadaLimpar() {
+      if (trUltimaGravacao) URL.revokeObjectURL(trUltimaGravacao.url);
+      trUltimaGravacao = null;
+      trGravada.hidden = true;
+    }
+
+    trGravarBtn.addEventListener('click', trGravarIniciar);
+    trGravPausar.addEventListener('click', () => {
+      if (!trGrav || trGrav.gravador.state === 'inactive') return;
+      if (trGrav.pausado) { trGrav.gravador.resume(); trGrav.pausado = false; trGrav.retomadoEm = Date.now(); }
+      else { trGrav.gravador.pause(); trGrav.acumulado += Date.now() - trGrav.retomadoEm; trGrav.pausado = true; }
+      trGravAtualizarTela();
+    });
+    document.getElementById('transcricaoGravPararBtn').addEventListener('click', () => trGravarParar(true));
+    document.getElementById('transcricaoGravDescartarBtn').addEventListener('click', async () => {
+      if (!trGrav) return;
+      if (!(await askConfirm('Descartar esta gravação? Ela não fica salva em nenhum lugar.', 'Descartar'))) return;
+      trGravarParar(false);
+    });
+    document.getElementById('transcricaoSalvarGravacaoBtn').addEventListener('click', () => {
+      if (!trUltimaGravacao) return;
+      const link = document.createElement('a');
+      link.href = trUltimaGravacao.url;
+      link.download = trUltimaGravacao.arquivo.name;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      trInfo.textContent = '💾 Gravação salva: ' + trUltimaGravacao.arquivo.name;
+    });
+
+
     trResumir.addEventListener('click', async () => {
       if (!codigoTextoSalvo()) return (trInfo.textContent = 'Salve o código de texto em Ajustes → 🔐 Autorização de acessos.');
       if (!(await trConsentimento())) return;
@@ -17624,6 +17753,7 @@ function saveTemplatesToStorage() {
       trTexto.value = '';
       trResumo.value = '';
       trContexto.value = ''; // o "sobre o áudio" vale só para um áudio; as instruções do resumo ficam salvas
+      trGravadaLimpar();
       trInfo.textContent = '';
       trAtualizarBotoes();
     });

@@ -8744,3 +8744,44 @@ details.subsection.ebc-subsection#publicoBox.s34-bloqueado {
 .tr-dica {
   margin: 2px 0 6px;
 }
+
+/* Áudio em texto: gravar um áudio agora. */
+.transcricao-gravacao {
+  margin: 8px 0;
+  padding: 10px 12px;
+  border: 2px solid #dc2626;
+  border-radius: 12px;
+  background: color-mix(in srgb, #ef4444 10%, var(--card));
+}
+
+.transcricao-gravacao[hidden] {
+  display: none;
+}
+
+.transcricao-grav-tempo {
+  margin: 0 0 6px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.transcricao-gravacao .bk-row {
+  margin: 6px 0;
+}
+
+.transcricao-gravacao .bk-row button {
+  flex: 1 1 auto;
+}
+
+#transcricaoGravarBtn {
+  margin-top: 8px;
+  width: 100%;
+}
+
+#transcricaoGravada {
+  margin: 6px 0;
+}
+
+#transcricaoGravada button {
+  width: 100%;
+}

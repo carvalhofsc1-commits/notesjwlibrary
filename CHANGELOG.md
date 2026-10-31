@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.60
+
+Áudio em texto: novo botão "🔴 Gravar um áudio agora", ao lado de "Escolher o arquivo de áudio". Ele pede a permissão do microfone, mostra o tempo de gravação com Pausar/Continuar, Parar e transcrever e Descartar, e ao parar a gravação já é carregada e transcrita, como um arquivo escolhido (limite de 30 minutos; a tela fica ligada durante a gravação, quando o aparelho permite). Se o aparelho interromper a gravação (por exemplo, o app foi para o segundo plano), o que foi gravado até ali é aproveitado. Há um botão para salvar a gravação no aparelho. Política de privacidade 1.7 (uso do microfone).
+
 ## 6.3.59
 
 Áudio em texto: os campos "Texto transcrito" e "Resumo" crescem sozinhos para mostrar o texto inteiro (como o campo de texto da Formatação) e ganharam uma barra com A− e A+ (tamanho da letra, guardado neste aparelho), ✏️ Editar e 📄 Word. Os campos ficam só para ver e formatar até tocar em Editar: aí viram texto simples para escrever e corrigir; ao tocar em Concluir edição, dá para selecionar um trecho e aplicar Negrito, Itálico ou Negrito itálico (as mesmas letras formatadas do campo de texto) ou Tirar a formatação. O botão Word abre a mesma prévia do campo de texto (com o tamanho da letra) e baixa ou compartilha o arquivo .docx, com o nome "Transcrição - nome do áudio" ou "Resumo - nome do áudio".

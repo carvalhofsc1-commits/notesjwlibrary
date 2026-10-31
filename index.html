@@ -1493,6 +1493,21 @@
       <div class="leitura-importar">
         <button id="transcricaoArquivoBtn" type="button">🎧 Escolher o arquivo de áudio</button>
         <input id="transcricaoArquivo" type="file" accept="audio/*,video/mp4,.mp3,.m4a,.wav,.aac,.ogg,.flac,.webm,.mp4" hidden>
+        <button id="transcricaoGravarBtn" class="secondary" type="button">🔴 Gravar um áudio agora</button>
+      </div>
+      <div id="transcricaoGravacao" class="transcricao-gravacao" hidden>
+        <p id="transcricaoGravTempo" class="transcricao-grav-tempo" role="timer" aria-live="off">🔴 Gravando 00:00</p>
+        <div class="bk-row">
+          <button id="transcricaoGravPausarBtn" class="secondary" type="button">⏸️ Pausar</button>
+          <button id="transcricaoGravPararBtn" type="button">⏹️ Parar e transcrever</button>
+        </div>
+        <div class="bk-row">
+          <button id="transcricaoGravDescartarBtn" class="secondary" type="button">🗑️ Descartar a gravação</button>
+        </div>
+        <p class="hint">Mantenha esta tela aberta e o aparelho desbloqueado: se o aplicativo for para o segundo plano, o celular pode parar a gravação (o que já foi gravado é aproveitado). A gravação dura no máximo 30 minutos.</p>
+      </div>
+      <div id="transcricaoGravada" class="bk-row" hidden>
+        <button id="transcricaoSalvarGravacaoBtn" class="secondary" type="button">💾 Salvar a gravação no aparelho</button>
       </div>
       <details class="leitura-dica transcricao-config">
         <summary>⚙️ Informações e instruções para a IA (opcional)</summary>
