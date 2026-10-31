@@ -3366,6 +3366,14 @@
       margin: 8px 0 0;
     }
 
+    /* No parágrafo: um traço antes e depois da descrição/legenda, para não misturar com a pergunta impressa. */
+    .study-pergunta>.study-imagem {
+      margin: 10px 0 4px;
+      padding: 10px 0;
+      border-top: 2px solid color-mix(in srgb, var(--grupo-cor, #a855f7) 45%, transparent);
+      border-bottom: 2px solid color-mix(in srgb, var(--grupo-cor, #a855f7) 45%, transparent);
+    }
+
     .study-imagem p {
       margin: 4px 0 0;
       font-size: .86rem;
@@ -6290,13 +6298,13 @@
     }
 
     /* Sem o código que o grupo pede (pesquisa e, no do dirigente, também o do dirigente), ele aparece desabilitado: cinza, com cadeado, e não abre. */
-    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos).grupo-desabilitado {
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos, #opcoesIaBox).grupo-desabilitado {
       --grupo-cor: var(--line);
       background: var(--card);
       opacity: .8;
     }
 
-    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos).grupo-desabilitado>summary {
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos, #opcoesIaBox).grupo-desabilitado>summary {
       background: var(--card);
       cursor: not-allowed;
     }
@@ -6305,13 +6313,28 @@
       color: var(--muted);
     }
 
-    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos).grupo-desabilitado>summary::after {
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos, #opcoesIaBox).grupo-desabilitado>summary::after {
       content: '🔒';
       transform: none;
     }
 
-    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos).grupo-desabilitado> :not(summary) {
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos, #opcoesIaBox).grupo-desabilitado> :not(summary) {
       display: none;
+    }
+
+    /* Formatar → Opções com IA sem o código de pesquisa: sem a cor teal, só o cartão cinza. */
+    #opcoesIaBox.grupo-desabilitado {
+      border-color: var(--muted);
+      background: var(--card);
+    }
+
+    #opcoesIaBox>summary .opcoes-ia-rotulo {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+      flex: 1 1 auto;
+      min-width: 0;
     }
 
     /* ---------- Tela Reuniões: a tela principal e as páginas ----------

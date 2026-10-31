@@ -5696,7 +5696,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.11'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.12'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -10234,10 +10234,15 @@ function saveTemplatesToStorage() {
     // Desde a 6.1.62 "Perguntas para entender e explicar o texto…" (perguntas do dirigente de A Sentinela) vem marcada por padrão. Quem já tinha as opções
     // salvas, com ela desmarcada (era o padrão antigo), recebe a marcação uma única vez; depois vale a escolha de cada um.
     const ENTENDIMENTO_PADRAO_KEY = 'jwLibraryNoteAplicarEntendimentoPadraoV1';
+    // Desde a 6.3.12 as 3 primeiras seções da resposta (complementares, aplicativas e entendimento) vêm marcadas por padrão.
+    const SECOES_RESPOSTA_PADRAO_KEY = 'jwLibraryNoteAplicarSecoesRespostaPadraoV1';
     let entendimentoPadraoPendente = false;
+    let secoesRespostaPadraoPendente = false;
     try {
       entendimentoPadraoPendente = localStorage.getItem(ENTENDIMENTO_PADRAO_KEY) === null;
       if (entendimentoPadraoPendente) localStorage.setItem(ENTENDIMENTO_PADRAO_KEY, '1');
+      secoesRespostaPadraoPendente = localStorage.getItem(SECOES_RESPOSTA_PADRAO_KEY) === null;
+      if (secoesRespostaPadraoPendente) localStorage.setItem(SECOES_RESPOSTA_PADRAO_KEY, '1');
     } catch (e) { /* sem localStorage */ }
 
     function loadAiOptions() {
@@ -10246,6 +10251,15 @@ function saveTemplatesToStorage() {
       if (entendimentoPadraoPendente) {
         entendimentoPadraoPendente = false;
         if (Object.keys(saved).length) {
+          saved.perguntasEntendimento = true;
+          safeSetItem(AI_OPTIONS_KEY, JSON.stringify(saved));
+        }
+      }
+      if (secoesRespostaPadraoPendente) {
+        secoesRespostaPadraoPendente = false;
+        if (Object.keys(saved).length) {
+          saved.perguntasComplementares = true;
+          saved.perguntasAplicativas = true;
           saved.perguntasEntendimento = true;
           safeSetItem(AI_OPTIONS_KEY, JSON.stringify(saved));
         }
@@ -10696,6 +10710,9 @@ function saveTemplatesToStorage() {
       placeAiOutput(aiOutputHome);
       openWithAncestors(opcoesIaGroup); // o resultado aparece aqui dentro, então o grupo precisa estar aberto
 
+      const acessoFormatar = studyAccessError();
+      if (acessoFormatar) return setAiStatus(acessoFormatar, true);
+
       if (mode) {
         if (!(await confirmAiRestore())) return;
         if (aiAppliedAny) restoreAiBaseText();
@@ -10734,7 +10751,7 @@ function saveTemplatesToStorage() {
       }));
 
       const options = readAiOptions(); // inclui "Incluir resumo do texto" e as consultas, como estão marcados agora
-      const payload = { linhas: lines, modelos, opcoes: options };
+      const payload = { tarefa: 'formatar', codigo: codigoAcessoSalvo(), linhas: lines, modelos, opcoes: options };
       if (mode && (aiRaw.length || previousSummary)) {
         payload.modo = mode;
         payload.anteriores = { resumo: previousSummary ? (previousSummary.texto || null) : null, textos: previousSummary ? previousSummary.textos : null, perspicaz: previousSummary ? previousSummary.perspicaz : null, sugestoes: aiRaw };
@@ -10902,6 +10919,9 @@ function saveTemplatesToStorage() {
       aiStatusKind = 'sentinela';
       placeAiOutput(aiOutputHome); // o botão do texto colado fica na área da formatação com IA
 
+      const acessoFormatar = studyAccessError();
+      if (acessoFormatar) return setAiStatus(acessoFormatar, true);
+
       if (mode) {
         if (!(await confirmAiRestore())) return;
         if (aiAppliedAny) restoreAiBaseText();
@@ -10929,7 +10949,7 @@ function saveTemplatesToStorage() {
       if (!aiAppliedAny) aiBaseText = input.value;
       saveAiOptions();
 
-      const payload = { tarefa: 'sentinela', linhas: lines, modelos: [], opcoes: readAiOptions() };
+      const payload = { tarefa: 'sentinela', codigo: codigoAcessoSalvo(), linhas: lines, modelos: [], opcoes: readAiOptions() };
       if (mode && hadPrevious) {
         payload.modo = mode;
         payload.anteriores = { itens: aiSentinelaRaw };
@@ -15564,8 +15584,10 @@ function saveTemplatesToStorage() {
       const grupo = document.getElementById(id);
       const trava = grupo.querySelector('.grupo-trava');
       grupo.classList.toggle('grupo-desabilitado', Boolean(motivo));
-      trava.hidden = !motivo;
-      if (motivo) trava.textContent = TRAVAS[motivo] + ' (Ajustes)';
+      if (trava) {
+        trava.hidden = !motivo;
+        if (motivo) trava.textContent = TRAVAS[motivo] + ' (Ajustes)';
+      }
       grupo.querySelector(':scope > summary').setAttribute('aria-disabled', String(Boolean(motivo)));
       if (motivo) grupo.open = false;
     }
@@ -15585,6 +15607,8 @@ function saveTemplatesToStorage() {
       travarGrupo('grupoComentarios', pesquisa ? '' : 'pesquisa');
       travarGrupo('grupoDirigir', motivoDirigir);
       travarGrupo('grupoDiscursos', motivoDirigir);
+      // Formatar → Opções com IA (formatação e texto colado): só com o código de pesquisa; sem ele, fica cinza e não abre.
+      travarGrupo('opcoesIaBox', pesquisa ? '' : 'pesquisa');
       travarAtalho('comentarios', pesquisa ? '' : 'pesquisa');
       travarAtalho('leitura', codigoLeituraSalvo() ? '' : 'leitura');
       document.getElementById('navLeitura').disabled = !codigoLeituraSalvo(); // sem o código de leitura, o botão da barra fica bloqueado como o atalho do Início
@@ -15602,7 +15626,7 @@ function saveTemplatesToStorage() {
       historicoRender();
     }
     // Desabilitado, o grupo não abre (toque, Enter ou espaço no título).
-    ['grupoComentarios', 'grupoDirigir', 'grupoDiscursos'].forEach(id => {
+    ['grupoComentarios', 'grupoDirigir', 'grupoDiscursos', 'opcoesIaBox'].forEach(id => {
       const grupo = document.getElementById(id);
       grupo.querySelector(':scope > summary').addEventListener('click', event => {
         if (grupo.classList.contains('grupo-desabilitado')) event.preventDefault();

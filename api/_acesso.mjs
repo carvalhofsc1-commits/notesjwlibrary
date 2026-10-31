@@ -1,7 +1,6 @@
 // Controle de acesso das tarefas de api/sugerir-formatacao.mjs, num lugar só.
 // Cada tarefa declara aqui o nível de acesso que exige; o handler confere antes de despachar. Uma tarefa nova que não seja
-// registrada em NIVEIS não passa por esta conferência: por isso, ao criar uma tarefa, registre-a aqui (use "publico" só
-// quando ela for aberta de propósito, como a formatação com IA).
+// registrada em NIVEIS não passa por esta conferência: por isso, ao criar uma tarefa, registre-a aqui.
 import { codigoDoDirigente, erro, textosIguais } from "./_comum.mjs";
 
 export function codigoValido(informado) {
@@ -37,8 +36,9 @@ export function acessoDoDirigente(res, body) {
 
 // publico: sem código · pesquisa: código de pesquisa · pesquisa-ou-dirigente: um dos dois · dirigente: código do dirigente.
 export const NIVEIS = {
-  // Formatação (aberta de propósito; vale o limite de pedidos por IP)
-  sentinela: "publico",
+  // Formatar (tela Formatar → Opções com IA): só com o código de pesquisa
+  formatar: "pesquisa",
+  sentinela: "pesquisa",
   // Código de pesquisa
   estudo: "pesquisa",
   "texto-diario-comentarios": "pesquisa",
@@ -69,9 +69,10 @@ export const NIVEIS = {
   discurso: "dirigente",
 };
 
-// Devolve true se o pedido pode seguir; senão já respondeu com o erro. Tarefa fora de NIVEIS (a formatação comum) segue.
+// Devolve true se o pedido pode seguir; senão já respondeu com o erro. Sem tarefa no corpo = formatação comum (tela Formatar).
 export function exigirAcesso(res, body) {
-  const nivel = body && Object.hasOwn(NIVEIS, body.tarefa) ? NIVEIS[body.tarefa] : "publico";
+  const tarefa = body && typeof body.tarefa === "string" && body.tarefa ? body.tarefa : "formatar";
+  const nivel = Object.hasOwn(NIVEIS, tarefa) ? NIVEIS[tarefa] : "publico";
   if (nivel === "publico") return true;
   if (nivel === "dirigente") return acessoDoDirigente(res, body);
   if (nivel === "pesquisa") {

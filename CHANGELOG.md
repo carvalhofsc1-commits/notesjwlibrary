@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.12
+
+Imagens no parágrafo: traço antes e depois da descrição/legenda, para não misturar com a pergunta. Seções da resposta: as 3 primeiras opções (complementares, aplicativas e entendimento) vêm marcadas por padrão. Formatar → Opções com IA só com o código de pesquisa (sem ele, o cartão fica cinza e bloqueado). Velocidade padrão da voz em Ajustes usa as mesmas opções da barra do tocador (0,5× a 2×).
+
 ## 6.3.11
 
 Imagens do capítulo: o botão 📋 Copiar de cada descrição fica sempre na linha de baixo do texto, alinhado à esquerda (deixou de ficar colado no fim da frase).

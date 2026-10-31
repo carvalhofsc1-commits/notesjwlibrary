@@ -40,7 +40,8 @@ export const ALTURAS = [
   { id: "grave", nome: "Um pouco mais grave", item: "Altura: mais grave" },
   { id: "aguda", nome: "Um pouco mais aguda", item: "Altura: mais aguda" },
 ];
-export const VELOCIDADES = [0.85, 1, 1.15, 1.3];
+// As mesmas velocidades do tocador (#vozVelocidade): quem define o padrão em Ajustes escolhe entre as opções da barra de áudio.
+export const VELOCIDADES = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 // Como ler as referências bíblicas: "Primeira Coríntios treze, quatro a sete" (curta), "…, capítulo 13, versículos 4 a 7"
 // (extenso) ou como estão escritas.
 export const FORMATOS_REFS = ["curta", "extenso", "original"];
@@ -68,7 +69,13 @@ export function validarConfigVoz(entrada) {
     voz: escolher(c.voz, VOZES.map((v) => v.nome), PADRAO_VOZ.voz),
     tom: escolher(c.tom, TONS.map((t) => t.id), PADRAO_VOZ.tom),
     altura: escolher(c.altura, ALTURAS.map((a) => a.id), PADRAO_VOZ.altura),
-    velocidade: escolher(Number(c.velocidade), VELOCIDADES, PADRAO_VOZ.velocidade),
+    velocidade: (() => {
+      const n = Number(c.velocidade);
+      if (VELOCIDADES.includes(n)) return n;
+      if (!Number.isFinite(n)) return PADRAO_VOZ.velocidade;
+      // Config antiga (0,85 / 1,15 / 1,3) ou valor fora da lista: a opção da barra mais próxima.
+      return VELOCIDADES.reduce((melhor, atual) => Math.abs(atual - n) < Math.abs(melhor - n) ? atual : melhor);
+    })(),
     // Configuração antiga (antes da 4.8.2) tinha só "refsExtenso": desmarcada, as referências eram lidas como escritas.
     formatoRefs: escolher(c.formatoRefs, FORMATOS_REFS, c.refsExtenso === false ? "original" : PADRAO_VOZ.formatoRefs),
     pularRefs: c.pularRefs === true,
