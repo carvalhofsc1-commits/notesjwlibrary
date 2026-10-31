@@ -480,6 +480,8 @@
         ajuda.open = !backupAjudaComBackup;
       }
       const view = document.getElementById('backupView');
+      const resultado = document.getElementById('backupMesclarResultado');
+      if (resultado && !(backupState && backupState.mesclado)) resultado.hidden = true;
       document.getElementById('backupCloseBtn').hidden = !backupState;
       document.getElementById('backupOpenBtn').textContent = backupState ? '📂 Abrir outro backup' : '📂 Abrir e editar backup (.jwlibrary)';
       if (!backupState) { view.hidden = true; renderBackupSaveBox(); return; }
@@ -487,9 +489,8 @@
       const info = backupState.manifest.userDataBackup || {};
       document.getElementById('backupSummary').textContent = [
         backupState.isNew ? '🆕 Backup novo' : backupState.mesclado ? '🔀 Backup mesclado (' + backupState.mesclado + ' arquivos)' : backupState.fileName,
-        backupDate(info.lastModifiedDate) && 'feito em ' + backupDate(info.lastModifiedDate),
-        info.deviceName,
-        'formato ' + (info.schemaVersion || '?')
+        backupState.mesclado ? backupState.baseNome && 'base: ' + backupState.baseNome : backupDate(info.lastModifiedDate) && 'feito em ' + backupDate(info.lastModifiedDate),
+        !backupState.mesclado && info.deviceName && 'aparelho ' + info.deviceName
       ].filter(Boolean).join(' · ');
 
       const categorySelect = document.getElementById('backupCategory');
@@ -1814,8 +1815,9 @@
       box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }
 
-    // Copia as notas escolhidas para o backup aberto. Devolve { importadas, existentes, etiquetasNovas }.
-    function backupImportNotes(src, ids) {
+    // Os ajudantes de qualquer importação de um backup de origem (src) para o backup aberto: o mesmo lugar (Location), a mesma marca de cor
+    // (UserMark e BlockRange) e a etiqueta, criados no backup aberto só se ainda não existirem.
+    function backupImportContexto(src) {
       const dst = backupState.db;
       const colunasDestino = backupColumns(dst, 'Location');
       const colunasOrigem = new Set(backupColumns(src, 'Location'));
@@ -1887,6 +1889,12 @@
         etiquetas.set(chave, id);
         return id;
       };
+      return { dst, lugar, marca, etiqueta, resultado };
+    }
+
+    // Copia as notas escolhidas para o backup aberto. Devolve { importadas, existentes, etiquetasNovas }.
+    function backupImportNotes(src, ids) {
+      const { dst, lugar, marca, etiqueta, resultado } = backupImportContexto(src);
 
       dst.run('BEGIN');
       try {
@@ -1910,6 +1918,56 @@
           });
           resultado.importadas++;
         }
+        dst.run('COMMIT');
+      } catch (e) {
+        dst.run('ROLLBACK');
+        throw e;
+      }
+      return resultado;
+    }
+
+    // Os grifos (marcas de cor com trecho grifado) do backup de origem que o backup aberto ainda não tem (mesmo UserMarkGuid). Devolve { novos }.
+    function backupImportGrifos(src) {
+      const { dst, marca } = backupImportContexto(src);
+      const resultado = { novos: 0 };
+      dst.run('BEGIN');
+      try {
+        backupAll(src, 'SELECT u.UserMarkId, u.UserMarkGuid FROM UserMark u WHERE EXISTS (SELECT 1 FROM BlockRange b WHERE b.UserMarkId = u.UserMarkId)').forEach(m => {
+          if (backupOne(dst, 'SELECT 1 AS x FROM UserMark WHERE UserMarkGuid = ?', [m.UserMarkGuid])) return;
+          if (marca(m.UserMarkId) !== null) resultado.novos++;
+        });
+        dst.run('COMMIT');
+      } catch (e) {
+        dst.run('ROLLBACK');
+        throw e;
+      }
+      return resultado;
+    }
+
+    // Os marcadores do backup de origem que o backup aberto ainda não tem (mesmo lugar, parágrafo e título). Cada marcador novo vai para o primeiro slot livre
+    // da publicação dele. Devolve { novos, existentes }.
+    function backupImportMarcadores(src) {
+      const { dst, lugar } = backupImportContexto(src);
+      const resultado = { novos: 0, existentes: 0 };
+      const colunasDestino = backupColumns(dst, 'Bookmark');
+      const colunasOrigem = new Set(backupColumns(src, 'Bookmark'));
+      if (!colunasDestino.length || !colunasOrigem.size) return resultado;
+      dst.run('BEGIN');
+      try {
+        backupAll(src, 'SELECT * FROM Bookmark ORDER BY PublicationLocationId, Slot').forEach(b => {
+          const local = lugar(b.LocationId);
+          const publicacao = lugar(b.PublicationLocationId);
+          if (local === null || publicacao === null) return;
+          if (backupOne(dst, "SELECT 1 AS x FROM Bookmark WHERE LocationId = ? AND PublicationLocationId = ? AND COALESCE(BlockIdentifier, -1) = COALESCE(?, -1) AND COALESCE(Title, '') = ?",
+            [local, publicacao, b.BlockIdentifier === undefined ? null : b.BlockIdentifier, b.Title || ''])) { resultado.existentes++; return; }
+          const ocupados = new Set(backupAll(dst, 'SELECT Slot FROM Bookmark WHERE PublicationLocationId = ?', [publicacao]).map(x => x.Slot));
+          let slot = 0;
+          while (ocupados.has(slot)) slot++;
+          const colunas = colunasDestino.filter(col => col !== 'BookmarkId' && colunasOrigem.has(col));
+          const valores = colunas.map(col => (col === 'LocationId' ? local : col === 'PublicationLocationId' ? publicacao : col === 'Slot' ? slot : b[col]));
+          dst.run('INSERT INTO Bookmark (' + colunas.join(', ') + ') VALUES (' + colunas.map(() => '?').join(', ') + ')', valores);
+          resultado.novos++;
+        });
         dst.run('COMMIT');
       } catch (e) {
         dst.run('ROLLBACK');
@@ -1951,6 +2009,7 @@
     let backupMesclarArquivos = []; // [{ file, nome, notas, guids: Map(guid -> { heading, text, colorIndex, tagsText, date, lastModified, where }) }]
     let backupMesclarSlotEscolhido = -1;
     let backupMesclando = false;
+    let backupMesclarBase = 0; // índice do arquivo-base (o que fica inteiro); os outros trazem notas, grifos e marcadores
     const backupMesclarRegra = { modo: 'recente', arquivo: 0 }; // modo: 'recente' | 'arquivo' | 'manual'
     const backupMesclarEscolhas = new Map(); // guid -> índice do arquivo (só no modo "uma a uma")
     const backupMesclarMarcadas = new Set(); // guids marcados na lista de duplicadas (para aplicar a várias de uma vez)
@@ -1966,6 +2025,7 @@
     function backupMesclarFechar() {
       backupMesclarArquivos = [];
       backupMesclarSlotEscolhido = -1;
+      backupMesclarBase = 0;
       backupMesclarRegra.modo = 'recente';
       backupMesclarRegra.arquivo = 0;
       backupMesclarEscolhas.clear();
@@ -2115,7 +2175,7 @@
         slot.className = 'merge-slot' + (arq ? ' pronto' : '');
         const rotulo = document.createElement('span');
         rotulo.className = 'merge-slot-rotulo';
-        rotulo.textContent = (i + 1) + 'º arquivo' + (i === 0 ? ' (base)' : i >= 2 ? ' (opcional)' : '');
+        rotulo.textContent = (i + 1) + 'º arquivo' + (i === backupMesclarBase ? ' — BASE ⭐' : i >= 2 ? ' (opcional)' : '');
         slot.appendChild(rotulo);
         if (arq) {
           const nome = document.createElement('span');
@@ -2123,9 +2183,17 @@
           nome.textContent = '✅ ' + arq.nome + ' · ' + arq.notas.toLocaleString('pt-BR') + (arq.notas === 1 ? ' nota' : ' notas');
           const acoes = document.createElement('div');
           acoes.className = 'bk-row';
+          if (i !== backupMesclarBase) acoes.append(backupButton('⭐ Usar como base', () => { backupMesclarBase = i; backupMesclarRender(); }));
           acoes.append(
             backupButton('🔁 Trocar', () => { backupMesclarSlotEscolhido = i; mesclarFile.click(); }),
-            backupButton('✖️ Remover', () => { backupMesclarArquivos.splice(i, 1); backupMesclarEscolhas.clear(); backupMesclarMarcadas.clear(); backupMesclarRender(); })
+            backupButton('✖️ Remover', () => {
+              backupMesclarArquivos.splice(i, 1);
+              if (i < backupMesclarBase) backupMesclarBase--;
+              else if (i === backupMesclarBase) backupMesclarBase = 0;
+              backupMesclarEscolhas.clear();
+              backupMesclarMarcadas.clear();
+              backupMesclarRender();
+            })
           );
           slot.append(nome, acoes);
         } else if (i === prontos) {
@@ -2182,39 +2250,47 @@
       backupMesclando = true;
       mesclarGoBtn.disabled = true;
       const arquivos = backupMesclarArquivos.slice();
+      const base = Math.min(backupMesclarBase, arquivos.length - 1);
+      const comGrifos = document.getElementById('backupMesclarGrifos').checked;
+      const comMarcadores = document.getElementById('backupMesclarMarcadores').checked;
       // Para cada duplicada, o arquivo que vale (decidido antes de abrir qualquer coisa).
       const vencedores = new Map(backupMesclarConflitos().map(c => [c.guid, backupMesclarVencedor(c)]));
       const anterior = backupState;
       let novo = null;
-      const total = { importadas: 0, existentes: 0, etiquetas: [], trocadas: 0 };
+      const total = { importadas: 0, existentes: 0, etiquetas: [], trocadas: 0, grifos: 0, marcadores: 0 };
       try {
-        setBackupStatus('Abrindo o 1º arquivo (' + arquivos[0].nome + ')…', false);
-        const base = await backupReadArchive(arquivos[0].file);
-        novo = { zip: base.zip, db: base.db, manifest: base.manifest, fileName: 'Backup_mesclado.jwlibrary', data: null, changes: 0, generated: null, mesclado: arquivos.length };
-        backupState = novo; // backupImportNotes copia as notas para o backup aberto
+        setBackupStatus('Abrindo o arquivo-base (' + arquivos[base].nome + ')…', false);
+        const aberta = await backupReadArchive(arquivos[base].file);
+        novo = { zip: aberta.zip, db: aberta.db, manifest: aberta.manifest, fileName: 'Backup_mesclado.jwlibrary', data: null, changes: 0, generated: null, mesclado: arquivos.length, baseNome: arquivos[base].nome };
+        backupState = novo; // as importações copiam para o backup aberto
         // Duplicada cuja versão vencedora não é a da base: a nota sai da base e entra a do arquivo vencedor.
         vencedores.forEach((i, guid) => {
-          if (i === 0) return;
-          const n = backupOne(base.db, 'SELECT NoteId, UserMarkId FROM Note WHERE Guid = ?', [guid]);
+          if (i === base) return;
+          const n = backupOne(aberta.db, 'SELECT NoteId, UserMarkId FROM Note WHERE Guid = ?', [guid]);
           if (!n) return;
-          base.db.run('DELETE FROM TagMap WHERE NoteId = ?', [n.NoteId]);
-          base.db.run('DELETE FROM Note WHERE NoteId = ?', [n.NoteId]);
+          aberta.db.run('DELETE FROM TagMap WHERE NoteId = ?', [n.NoteId]);
+          aberta.db.run('DELETE FROM Note WHERE NoteId = ?', [n.NoteId]);
           if (n.UserMarkId) {
-            base.db.run('DELETE FROM UserMark WHERE UserMarkId = ? AND NOT EXISTS (SELECT 1 FROM BlockRange WHERE UserMarkId = ?) AND NOT EXISTS (SELECT 1 FROM Note WHERE UserMarkId = ?)',
+            aberta.db.run('DELETE FROM UserMark WHERE UserMarkId = ? AND NOT EXISTS (SELECT 1 FROM BlockRange WHERE UserMarkId = ?) AND NOT EXISTS (SELECT 1 FROM Note WHERE UserMarkId = ?)',
               [n.UserMarkId, n.UserMarkId, n.UserMarkId]);
           }
           total.trocadas++;
         });
-        for (let i = 1; i < arquivos.length; i++) {
-          setBackupStatus('Mesclando o ' + (i + 1) + 'º arquivo de ' + arquivos.length + ' (' + arquivos[i].nome + ')…', false);
+        let feitos = 0;
+        for (let i = 0; i < arquivos.length; i++) {
+          if (i === base) continue;
+          feitos++;
+          setBackupStatus('Mesclando o arquivo ' + (i + 1) + ' (' + arquivos[i].nome + '), ' + feitos + ' de ' + (arquivos.length - 1) + '…', false);
           const outro = await backupReadArchive(arquivos[i].file);
           try {
-            // Só entram as notas que não são duplicadas ou cuja versão vale (a do arquivo i).
+            // Notas: só entram as que não são duplicadas ou cuja versão vale (a do arquivo i).
             const ids = backupAll(outro.db, 'SELECT NoteId, Guid FROM Note').filter(r => !vencedores.has(r.Guid) || vencedores.get(r.Guid) === i).map(r => r.NoteId);
             const r = backupImportNotes(outro.db, ids);
             total.importadas += r.importadas;
             total.existentes += r.existentes;
             r.etiquetasNovas.forEach(e => { if (!total.etiquetas.includes(e)) total.etiquetas.push(e); });
+            if (comGrifos) total.grifos += backupImportGrifos(outro.db).novos;
+            if (comMarcadores) total.marcadores += backupImportMarcadores(outro.db).novos;
           } finally {
             outro.db.close();
           }
@@ -2229,22 +2305,114 @@
       backupCloseImport();
       if (anterior && anterior.db) anterior.db.close();
       novo.data = readBackupData(novo.db);
-      if (total.importadas || total.trocadas) backupMarkChanged(total.importadas + total.trocadas);
+      const mudancas = total.importadas + total.trocadas + total.grifos + total.marcadores;
+      if (mudancas) backupMarkChanged(mudancas);
       backupMesclando = false;
-      const duplicadas = vencedores.size;
+      // A data de cada etiqueta nova: a da nota mais antiga que a usa (as etiquetas do JW Library não guardam a data em que foram criadas).
+      const etiquetas = total.etiquetas.map(nome => {
+        const linha = backupOne(novo.db, 'SELECT MIN(n.Created) AS d FROM Note n JOIN TagMap tm ON tm.NoteId = n.NoteId JOIN Tag t ON t.TagId = tm.TagId WHERE t.Name = ?', [nome]);
+        return { nome, data: linha && linha.d ? String(linha.d) : '' };
+      });
+      const resumo = { base: arquivos[base].nome, arquivos: arquivos.length, notas: total.importadas, repetidas: total.existentes, duplicadas: vencedores.size, trocadas: total.trocadas,
+        grifos: comGrifos ? total.grifos : null, marcadores: comMarcadores ? total.marcadores : null, etiquetas };
       backupMesclarFechar();
       backupCategory = 'notas';
       document.getElementById('backupNewNoteSlot').textContent = '';
-      backupRefresh('✅ Mesclagem pronta: ' + total.importadas.toLocaleString('pt-BR') + (total.importadas === 1 ? ' nota entrou' : ' notas entraram') + ' na base (' + arquivos[0].nome + ')' +
-        (total.existentes ? '; ' + total.existentes.toLocaleString('pt-BR') + ' já estavam nela e ficaram de fora' : '') +
-        (duplicadas ? '. Duplicadas com diferenças: ' + duplicadas.toLocaleString('pt-BR') + (total.trocadas ? ' (em ' + total.trocadas.toLocaleString('pt-BR') + ' valeu a versão de outro arquivo)' : ' (valeu a da base)') : '') +
-        (total.etiquetas.length ? '. Etiquetas novas: ' + total.etiquetas.join(', ') : '') +
-        '. Confira, edite o que quiser e gere o backup mesclado.');
+      backupRefresh('✅ Mesclagem pronta. Veja o resumo abaixo, edite o que quiser e gere o backup mesclado.');
+      backupMesclarResultadoMostrar(resumo);
+    }
+
+    // O resumo da mesclagem: números e, recolhidas, as etiquetas novas (em "pílulas", como no JW Library), em ordem alfabética ou por data.
+    function backupMesclarResultadoMostrar(d) {
+      const box = document.getElementById('backupMesclarResultado');
+      const n = v => v.toLocaleString('pt-BR');
+      box.textContent = '';
+      box.hidden = false;
+      const titulo = document.createElement('h3');
+      titulo.className = 'merge-resultado-titulo';
+      titulo.textContent = '📊 Resumo da mesclagem';
+      const base = document.createElement('p');
+      base.className = 'hint';
+      base.textContent = d.arquivos + ' arquivos mesclados. Base: ' + d.base + '.';
+      const linhas = [
+        ['📝 Notas que entraram', n(d.notas)],
+        ['♻️ Notas repetidas e iguais (ficaram uma vez só)', n(d.repetidas)],
+        ['⚖️ Notas duplicadas com diferenças', d.duplicadas ? n(d.duplicadas) + (d.trocadas ? ' (em ' + n(d.trocadas) + ' valeu a versão de outro arquivo)' : ' (valeu a da base)') : 'nenhuma encontrada'],
+        ['🖍️ Grifos novos', d.grifos === null ? 'não mesclados' : n(d.grifos)],
+        ['🔖 Marcadores novos', d.marcadores === null ? 'não mesclados' : n(d.marcadores)],
+        ['🏷️ Etiquetas novas', n(d.etiquetas.length)]
+      ];
+      const lista = document.createElement('div');
+      lista.className = 'merge-stats';
+      linhas.forEach(([rotulo, valor]) => {
+        const l = document.createElement('div');
+        l.className = 'merge-stat';
+        const r = document.createElement('span');
+        r.textContent = rotulo;
+        const v = document.createElement('strong');
+        v.textContent = valor;
+        l.append(r, v);
+        lista.appendChild(l);
+      });
+      box.append(titulo, base, lista);
+      if (!d.etiquetas.length) return;
+
+      const detalhes = document.createElement('details');
+      detalhes.className = 'merge-etiquetas';
+      const resumoEl = document.createElement('summary');
+      resumoEl.textContent = '🏷️ Ver as etiquetas novas (' + n(d.etiquetas.length) + ')';
+      const corpo = document.createElement('div');
+      corpo.className = 'merge-etiquetas-corpo';
+      const ordem = document.createElement('div');
+      ordem.className = 'bk-row';
+      const pilulas = document.createElement('div');
+      const chave = nome => nome.replace(/^[^\p{L}\p{N}]+/u, '').toLowerCase();
+      const az = (x, y) => chave(x.nome).localeCompare(chave(y.nome), 'pt-BR') || x.nome.localeCompare(y.nome, 'pt-BR');
+      const pilula = e => {
+        const p = document.createElement('span');
+        p.className = 'tag-pilula';
+        p.textContent = e.nome;
+        return p;
+      };
+      const desenhar = modo => {
+        pilulas.textContent = '';
+        botoes.forEach(([id, b]) => b.setAttribute('aria-pressed', String(id === modo)));
+        if (modo === 'az') {
+          const caixa = document.createElement('div');
+          caixa.className = 'tag-pilulas';
+          d.etiquetas.slice().sort(az).forEach(e => caixa.appendChild(pilula(e)));
+          pilulas.appendChild(caixa);
+          return;
+        }
+        // Por data: o mês e o ano da nota mais antiga de cada etiqueta, do mais novo para o mais antigo; dentro do mês, em ordem alfabética.
+        const grupos = new Map();
+        d.etiquetas.forEach(e => {
+          const mes = /^\d{4}-\d{2}/.test(e.data) ? e.data.slice(0, 7) : '';
+          if (!grupos.has(mes)) grupos.set(mes, []);
+          grupos.get(mes).push(e);
+        });
+        [...grupos.keys()].sort((x, y) => (x === '' ? 1 : y === '' ? -1 : y.localeCompare(x))).forEach(mes => {
+          const cab = document.createElement('div');
+          cab.className = 'tag-grupo-titulo';
+          cab.textContent = mes ? new Date(Number(mes.slice(0, 4)), Number(mes.slice(5, 7)) - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : 'Sem data';
+          const caixa = document.createElement('div');
+          caixa.className = 'tag-pilulas';
+          grupos.get(mes).sort(az).forEach(e => caixa.appendChild(pilula(e)));
+          pilulas.append(cab, caixa);
+        });
+      };
+      const botoes = [['az', backupButton('🔤 A–Z', () => desenhar('az'))], ['data', backupButton('📅 Por data', () => desenhar('data'))]];
+      botoes.forEach(([, b]) => ordem.appendChild(b));
+      corpo.append(ordem, pilulas);
+      detalhes.append(resumoEl, corpo);
+      box.appendChild(detalhes);
+      desenhar('az');
     }
 
     document.getElementById('backupMergeBtn').addEventListener('click', () => {
       if (!mesclarBox.hidden) return backupMesclarFechar();
       backupMesclarArquivos = [];
+      backupMesclarBase = 0;
       backupMesclarEscolhas.clear();
       backupMesclarMarcadas.clear();
       backupMesclarRegra.modo = 'recente';
@@ -6085,7 +6253,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.32'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.33'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
