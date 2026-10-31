@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.30
+
+Backup: a explicação voltou ao texto completo (sem a frase sobre o envio do arquivo e o wol.jw.org) e o título passou a "Para que serve esta função"; cada tópico e o aviso de cuidado começam com um emoji; o botão da barra de baixo passou a se chamar "Backup JW", numa linha só e com os ícones alinhados.
+
 ## 6.3.29
 
 Ajustes: mais espaço entre os rótulos "Ajustes gerais" e "Exclusivo do administrador" e o primeiro cartão de cada contêiner. Backup: o texto embaixo dos botões saiu (já está na documentação do app) e entrou, antes do cartão, uma explicação curta e recolhível do que a tela permite fazer (ver, procurar, agrupar, editar, apagar, incluir, mesclar, exportar, criar backup vazio e gerar o backup modificado), compacta para o cartão de opções continuar visível sem rolar; ela aparece aberta sem backup aberto, recolhe sozinha quando um backup é aberto e abre de novo quando ele é fechado.

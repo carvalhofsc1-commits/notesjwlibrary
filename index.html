@@ -41,7 +41,7 @@
     <button id="navLeitura" type="button" data-screen-target="leitura" title="Leitura em voz alta"><span class="nav-icon" aria-hidden="true">🔊</span><span>Leitura</span></button>
     <button type="button" data-screen-target="reunioes"><span class="nav-icon" aria-hidden="true">📅</span><span>Reuniões</span></button>
     <button id="navTranscricao" type="button" data-screen-target="transcricao" title="Áudio em texto"><span class="nav-icon" aria-hidden="true">🎙️</span><span>Áudio</span></button>
-    <button type="button" data-screen-target="backup"><span class="nav-icon" aria-hidden="true">📦</span><span>Backup</span></button>
+    <button type="button" data-screen-target="backup"><span class="nav-icon" aria-hidden="true">📦</span><span class="nav-rotulo-longo">Backup JW</span></button>
     <button type="button" data-screen-target="ajustes"><span class="nav-icon" aria-hidden="true">⚙️</span><span>Ajustes</span></button>
   </nav>
 
@@ -1484,19 +1484,20 @@
 
     <!-- Para que serve a tela Backup: aberta enquanto nenhum backup está aberto; recolhe sozinha ao abrir um backup e abre de novo ao fechá-lo. -->
     <details id="backupAjuda" class="backup-ajuda screen-backup" open>
-      <summary>ℹ️ Para que serve esta tela</summary>
+      <summary>ℹ️ Para que serve esta função</summary>
       <div class="backup-ajuda-corpo">
-        <p>Abra o backup do <strong>JW Library</strong>, altere e gere um novo para restaurar no aplicativo. Você pode:</p>
+        <p>Aqui você abre o backup que gerou no <strong>JW Library</strong>, faz alterações nele e gera um backup novo para restaurar no aplicativo.</p>
+        <p>O que dá para fazer:</p>
         <ul>
-          <li><strong>Ver</strong> notas, grifos, favoritos e marcadores</li>
-          <li><strong>Procurar</strong>, <strong>agrupar</strong> e achar notas duplicadas</li>
-          <li><strong>Editar</strong>, <strong>apagar</strong> e <strong>incluir</strong> notas e respostas</li>
-          <li><strong>Mesclar</strong> com as notas de outro backup</li>
-          <li><strong>Exportar</strong> para planilha (.xlsx) ou CSV</li>
-          <li><strong>Criar</strong> um backup vazio</li>
-          <li><strong>Gerar</strong> o backup modificado e compartilhar</li>
+          <li><span class="bk-aj-emoji" aria-hidden="true">👀</span><span><strong>Ver</strong> tudo o que está no backup: notas, grifos, favoritos, marcadores, listas de reprodução e as respostas dos quadros "Sua resposta".</span></li>
+          <li><span class="bk-aj-emoji" aria-hidden="true">🔎</span><span><strong>Procurar</strong> por título, texto ou etiqueta, e <strong>agrupar</strong> por tipo, título, idioma, ano, etiqueta ou cor. Também dá para listar só as notas <strong>duplicadas</strong>.</span></li>
+          <li><span class="bk-aj-emoji" aria-hidden="true">✏️</span><span><strong>Editar e apagar</strong> notas e respostas antigas, e <strong>incluir</strong> notas avulsas e respostas novas.</span></li>
+          <li><span class="bk-aj-emoji" aria-hidden="true">🔀</span><span><strong>Mesclar</strong> com outro backup: as notas do outro entram neste, e as que você já tem ficam de fora.</span></li>
+          <li><span class="bk-aj-emoji" aria-hidden="true">📤</span><span><strong>Exportar</strong> as notas para uma planilha (.xlsx) ou um arquivo CSV.</span></li>
+          <li><span class="bk-aj-emoji" aria-hidden="true">🆕</span><span><strong>Criar um backup vazio</strong>, para começar do zero.</span></li>
+          <li><span class="bk-aj-emoji" aria-hidden="true">💾</span><span><strong>Gerar o backup modificado</strong> e salvar ou compartilhar o arquivo.</span></li>
         </ul>
-        <p><strong>Cuidado:</strong> guarde o backup original: restaurar substitui todos os dados do aparelho.</p>
+        <p class="bk-aj-cuidado"><span class="bk-aj-emoji" aria-hidden="true">⚠️</span><span><strong>Cuidado:</strong> guarde também o backup original. Restaurar um backup no JW Library substitui todos os dados do aparelho.</span></p>
       </div>
     </details>
 

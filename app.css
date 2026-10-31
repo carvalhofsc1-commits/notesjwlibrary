@@ -7809,20 +7809,38 @@
     }
 
     .backup-ajuda-corpo {
-      padding: 0 12px 8px;
-      font-size: .84rem;
-      line-height: 1.3;
+      padding: 0 14px 10px;
+      font-size: .88rem;
+      line-height: 1.38;
     }
 
     .backup-ajuda-corpo p {
-      margin: 0 0 4px;
+      margin: 0 0 6px;
     }
 
     .backup-ajuda-corpo ul {
-      margin: 0 0 4px;
-      padding-left: 18px;
+      margin: 0 0 6px;
+      padding-left: 0;
+      list-style: none;
     }
 
-    .backup-ajuda-corpo li {
-      margin: 0 0 1px;
+    .backup-ajuda-corpo li,
+    .backup-ajuda-corpo .bk-aj-cuidado {
+      display: grid;
+      grid-template-columns: 1.6em 1fr;
+      align-items: start;
+      margin: 0 0 4px;
+    }
+
+    .bk-aj-emoji {
+      text-align: center;
+    }
+
+    /* Botão "Backup JW" da barra de baixo: o rótulo é mais comprido que os outros; fica numa linha só, com a letra um pouco menor, para os ícones continuarem alinhados. */
+    .app-nav .nav-rotulo-longo {
+      white-space: nowrap;
+      font-size: .6rem;
+      letter-spacing: -.02em;
+      line-height: 12px;
+      height: 12px;
     }
