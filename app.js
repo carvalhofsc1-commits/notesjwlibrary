@@ -2297,7 +2297,17 @@
           }
           const nome = document.createElement('span');
           nome.className = 'merge-slot-nome';
-          nome.textContent = '✅ ' + arq.nome + (arq.aberto ? ' (o backup que estava aberto)' : '') + ' · ' + arq.notas.toLocaleString('pt-BR') + (arq.notas === 1 ? ' nota' : ' notas');
+          nome.textContent = '✅ ' + arq.nome + (arq.aberto ? ' (o backup que estava aberto)' : '');
+          // O que há no arquivo, numa linha só: notas / respostas / grifos / marcadores.
+          let grifosArq = 0;
+          let marcadoresArq = 0;
+          arq.folhas.forEach(x => { grifosArq += x.grifos; marcadoresArq += x.marcadores; });
+          const plural = (n, um, varios) => n.toLocaleString('pt-BR') + ' ' + (n === 1 ? um : varios);
+          const contagem = document.createElement('span');
+          contagem.className = 'merge-slot-contagem';
+          contagem.textContent = [plural(arq.notas, 'nota', 'notas'), plural(arq.listaRespostas.length, 'resposta', 'respostas'), plural(grifosArq, 'grifo', 'grifos'), plural(marcadoresArq, 'marcador', 'marcadores')].join(' / ');
+          const info = document.createElement('div');
+          info.append(nome, contagem);
           const acoes = document.createElement('div');
           acoes.className = 'bk-row';
           if (i !== backupMesclarBase) acoes.append(backupButton('⭐ Usar como arquivo base', () => { backupMesclarBase = i; backupMesclarRender(); }));
@@ -2312,7 +2322,7 @@
               backupMesclarRender();
             })
           );
-          slot.append(nome, acoes);
+          slot.append(info, acoes);
           if (selecionar) {
             slot.appendChild(selecionar);
             if (arq.filtroAberto) slot.appendChild(backupMesclarFiltroPainel(arq, () => { selecionar.textContent = marca(); }));
@@ -6810,7 +6820,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.45'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.47'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());

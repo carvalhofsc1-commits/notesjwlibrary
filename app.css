@@ -7905,6 +7905,14 @@
       overflow-wrap: anywhere;
     }
 
+    .merge-slot-contagem {
+      display: block;
+      margin-top: 2px;
+      font-size: .84rem;
+      font-weight: 650;
+      color: var(--muted);
+    }
+
     .merge-slot button {
       min-height: 40px;
     }
@@ -8426,6 +8434,30 @@
 
     .backup-open-row #backupNewBtn:hover {
       background: color-mix(in srgb, #f59e0b 42%, var(--card));
+    }
+
+    /* Abrir e editar backup: azul bem clarinho com borda escura, no mesmo padrão dos outros. */
+    .backup-open-row #backupOpenBtn {
+      background: #dbeafe;
+      background: color-mix(in srgb, #3b82f6 18%, var(--card));
+      color: var(--neutral-text);
+      border: 2px solid #1d4ed8;
+    }
+
+    .backup-open-row #backupOpenBtn:hover {
+      background: color-mix(in srgb, #3b82f6 30%, var(--card));
+    }
+
+    /* Mesclar arquivos importados: amarelo clarinho com borda escura (apagado enquanto não há 2 arquivos). */
+    #backupMesclarGoBtn {
+      background: #fef08a;
+      background: color-mix(in srgb, #eab308 30%, var(--card));
+      color: var(--neutral-text);
+      border: 2px solid #a16207;
+    }
+
+    #backupMesclarGoBtn:hover:not(:disabled) {
+      background: color-mix(in srgb, #eab308 42%, var(--card));
     }
 
     /* Todos os botões do começo da tela Backup com a mesma dimensão (altura e letra). */

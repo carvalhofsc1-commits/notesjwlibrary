@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.47
+
+Tela Backup: (1) o bloco de gerar o arquivo (Gerar backup modificado / mesclado, Salvar o arquivo, Compartilhar) passou para o fim da página, depois do card de conteúdo do backup; (2) o botão "Abrir e editar backup" ficou azul bem clarinho com borda escura e texto escuro, no padrão dos outros; (3) o botão "Mesclar arquivos importados" ficou amarelo clarinho com borda escura.
+
+## 6.3.46
+
+Mesclar backups: cada arquivo escolhido mostra, numa linha só e separados por barra, quantas notas, respostas, grifos e marcadores tem (por exemplo, "878 notas / 266 respostas / 16.238 grifos / 10 marcadores"), e não só as notas.
+
 ## 6.3.45
 
 Backup: o arquivo gerado (modificado, novo ou mesclado) agora sai só com a extensão .jwlibrary. Antes o iPhone (e talvez outros aparelhos) acrescentava ".zip" no fim do nome, porque o arquivo era marcado como ZIP, e o JW Library não reconhecia o backup. Agora o arquivo é marcado como arquivo comum, tanto ao baixar quanto ao compartilhar.
