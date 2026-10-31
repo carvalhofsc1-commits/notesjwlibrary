@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.26
+
+Comentários adicionais do texto diário (prompt do servidor): cada comentário passa a começar chamando a atenção para o ponto específico do texto de hoje em que se baseia ("Como vimos no texto de hoje…", "O texto de hoje mostrou que…", "O texto de hoje nos ajudou a entender que…", "Um dos destaques do texto de hoje foi…"), com a abertura variada, e só então traz a aplicação a um aspecto da vida cristã (família, casamento, ministério, personalidade, conduta, entretenimento etc.); de 3 a 4 frases. Se a tela Prompts da IA tiver uma versão salva desse prompt, ela vale no lugar do padrão: restaure o padrão ou cole o texto novo.
+
 ## 6.3.25
 
 Destaque da frase lida: os cantos ficam sempre arredondados (no texto do dia e nos comentários, a frase em várias linhas ficava com cantos quadrados nas quebras de linha). Ajustes → Leitura em voz alta: o texto explicativo do campo da cor do destaque saiu (fica só a amostra) e o do tempo de espera foi resumido em uma linha.
