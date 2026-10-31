@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.18
+
+Política de Privacidade 1.4: descreve o piloto de aprendizado com as correções (recurso exclusivo do administrador, desligado por padrão): o que é enviado à IA, que só a lição (regra curta e geral) é guardada no Blob privado, que os textos original e corrigido são descartados, que as lições só entram nos pedidos do administrador e como vê-las, desativá-las e apagá-las; a retenção no servidor foi atualizada.
+
 ## 6.3.17
 
 Rolagem: o efeito elástico das telas (a página cede um pouco ao puxar além do topo ou do fim) voltou; a regra que o desligava (overscroll-behavior-y: none) saiu. A barra de baixo continua na sua própria camada. Puxar para atualizar continua só na tela Início.
