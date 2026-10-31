@@ -1491,7 +1491,7 @@
           <li><span class="bk-aj-emoji" aria-hidden="true">👀</span><span><strong>Ver</strong> notas, grifos, favoritos, marcadores, listas de reprodução e respostas dos quadros.</span></li>
           <li><span class="bk-aj-emoji" aria-hidden="true">🔎</span><span><strong>Procurar</strong> por título, texto ou etiqueta, <strong>agrupar</strong> por tipo, idioma, ano ou cor e listar notas <strong>duplicadas</strong>.</span></li>
           <li><span class="bk-aj-emoji" aria-hidden="true">✏️</span><span><strong>Editar e apagar</strong> notas e respostas antigas, e <strong>incluir</strong> novas.</span></li>
-          <li><span class="bk-aj-emoji" aria-hidden="true">🔀</span><span><strong>Mesclar</strong> com outro backup: as notas dele entram neste, sem repetir as que você já tem.</span></li>
+          <li><span class="bk-aj-emoji" aria-hidden="true">🔀</span><span><strong>Mesclar</strong> de 2 a 5 backups num só: as notas dos outros entram no primeiro, sem repetir.</span></li>
           <li><span class="bk-aj-emoji" aria-hidden="true">📤</span><span><strong>Exportar</strong> as notas para planilha (.xlsx) ou CSV.</span></li>
           <li><span class="bk-aj-emoji" aria-hidden="true">🆕</span><span><strong>Criar um backup vazio</strong>, para começar do zero.</span></li>
           <li><span class="bk-aj-emoji" aria-hidden="true">💾</span><span><strong>Gerar o backup modificado</strong> e salvar ou compartilhar.</span></li>
@@ -1503,11 +1503,33 @@
     <section id="backupCard" class="card screen-backup">
       <h2>📦 Backup do JW Library</h2>
       <div class="backup-open-row">
-        <button id="backupOpenBtn" type="button">📂 Abrir backup (.jwlibrary)</button>
+        <button id="backupOpenBtn" type="button">📂 Abrir e editar backup (.jwlibrary)</button>
+        <button id="backupMergeBtn" class="secondary" type="button">🔀 Mesclar backups (2 a 5 arquivos)</button>
         <input id="backupFile" type="file" accept=".jwlibrary,application/octet-stream" hidden>
         <div class="bk-row">
           <button id="backupNewBtn" class="secondary" type="button">🆕 Criar backup vazio</button>
           <button id="backupCloseBtn" class="secondary" type="button" hidden>✖️ Fechar backup</button>
+        </div>
+      </div>
+      <!-- Mesclar de 2 a 5 backups: o 1º é a base e as notas dos outros entram nele; depois abre a tela de edição de sempre. -->
+      <div id="backupMesclarBox" class="backup-save backup-mesclar" hidden>
+        <h3 class="backup-mesclar-titulo">🔀 Mesclar backups</h3>
+        <p class="hint">O 1º arquivo é a base: tudo dele fica. As notas dos outros entram nele (com cor, trecho grifado e etiquetas); as que ele já tem ficam de fora.</p>
+        <div id="backupMesclarSlots"></div>
+        <div id="backupMesclarRegra" class="merge-regra" hidden>
+          <h4 class="merge-regra-titulo">⚖️ Notas repetidas</h4>
+          <p id="backupMesclarConflitoInfo" class="hint"></p>
+          <label class="merge-opcao"><input type="radio" name="backupMesclarRegraModo" value="recente" checked> Valer a nota <strong>mais recente</strong> (pela data de modificação)</label>
+          <label class="merge-opcao"><input type="radio" name="backupMesclarRegraModo" value="arquivo"> Valer sempre a de um <strong>arquivo</strong>:</label>
+          <select id="backupMesclarRegraArquivo" aria-label="Arquivo cujas notas valem"></select>
+          <label class="merge-opcao"><input type="radio" name="backupMesclarRegraModo" value="manual"> Decidir <strong>uma a uma</strong></label>
+          <button id="backupMesclarResolverBtn" class="secondary" type="button" hidden>🔍 Resolver duplicadas</button>
+          <div id="backupMesclarResolver" class="merge-resolver" hidden></div>
+        </div>
+        <input id="backupMesclarFile" type="file" accept=".jwlibrary,application/octet-stream" hidden>
+        <div class="bk-row">
+          <button id="backupMesclarGoBtn" type="button" disabled>🔀 Mesclar arquivos importados</button>
+          <button id="backupMesclarCancelBtn" class="secondary" type="button">✖️ Cancelar</button>
         </div>
       </div>
       <span id="backupStatus" class="ok" role="status" aria-live="polite"></span>

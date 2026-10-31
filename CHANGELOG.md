@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.32
+
+Backup: o botão "Abrir backup" passou a "📂 Abrir e editar backup (.jwlibrary)" e ganhou, logo abaixo, "🔀 Mesclar backups (2 a 5 arquivos)": abre uma área com um campo para cada arquivo (os dois primeiros sempre; o 3º, o 4º e o 5º aparecem depois de adicionar o anterior, como opcionais), cada um mostrando o nome e quantas notas tem, com Trocar e Remover, e o botão "🔀 Mesclar arquivos importados" (a partir de 2 arquivos). O 1º arquivo é a base e as notas dos outros entram nele, com cor, trecho grifado e etiquetas (o mesmo caminho da importação de notas que já existia). Notas repetidas: quando a mesma nota (mesmo Guid) está em mais de um arquivo com diferenças (título, texto, cor ou etiquetas), a pessoa escolhe qual versão vale: a mais recente (pela data de modificação; padrão), sempre a de um arquivo escolhido, ou uma a uma, com o botão "🔍 Resolver duplicadas (N)", que lista cada nota com as versões de cada arquivo e permite marcar várias e aplicar a todas de uma vez ("usar a mais recente" ou "usar a do arquivo X"). No fim abre a tela de edição de sempre com o "Backup mesclado", para editar e gerar o arquivo ("Backup_mesclado_NoteStyle_…jwlibrary"). Se algo falhar, nada do que estava aberto é alterado. O aviso "Cuidado" da explicação do Backup ganhou moldura fina e fundo suave.
+
 ## 6.3.31
 
 Backup: a explicação da tela ficou mais curta (frases resumidas, letra e espaços menores) para o cartão de opções aparecer inteiro na tela do celular.

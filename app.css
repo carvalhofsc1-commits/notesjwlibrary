@@ -7848,3 +7848,154 @@
       line-height: 12px;
       height: 12px;
     }
+
+    /* Mesclar backups (2 a 5 arquivos). */
+    .backup-open-row #backupMergeBtn {
+      margin-top: 8px;
+    }
+
+    .backup-mesclar {
+      margin: 12px 0;
+    }
+
+    .backup-mesclar-titulo {
+      margin: 0 0 4px;
+      font-size: 1.05rem;
+    }
+
+    .merge-slot {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      border: 2px dashed var(--muted);
+      border-radius: 10px;
+      padding: 8px 10px;
+      margin: 8px 0;
+    }
+
+    .merge-slot.pronto {
+      border-style: solid;
+      border-color: #22c55e;
+    }
+
+    .merge-slot-rotulo {
+      font-weight: 800;
+      font-size: .9rem;
+    }
+
+    .merge-slot-nome {
+      font-size: .88rem;
+      overflow-wrap: anywhere;
+    }
+
+    .merge-slot button {
+      min-height: 40px;
+    }
+
+    /* Aviso "Cuidado" da explicação do Backup: moldura bem fina e fundo suave para chamar a atenção. */
+    .backup-ajuda-corpo .bk-aj-cuidado {
+      border: 1px solid #d97706;
+      border-radius: 8px;
+      background: color-mix(in srgb, #f59e0b 14%, var(--card));
+      padding: 6px 8px;
+      margin: 8px 0 2px;
+    }
+
+    /* Mesclar backups: regra para notas repetidas e lista "Resolver duplicadas". */
+    .merge-regra {
+      border: 2px solid var(--muted);
+      border-radius: 10px;
+      padding: 8px 10px;
+      margin: 10px 0;
+    }
+
+    .merge-regra-titulo {
+      margin: 0 0 2px;
+      font-size: .98rem;
+    }
+
+    .merge-opcao {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin: 6px 0;
+      font-size: .9rem;
+    }
+
+    .merge-opcao input {
+      width: 18px;
+      height: 18px;
+      min-height: 0;
+      margin: 2px 0 0;
+      flex: none;
+    }
+
+    .merge-regra select {
+      width: 100%;
+      margin: 0 0 4px;
+    }
+
+    .merge-regra>button {
+      width: 100%;
+      margin-top: 6px;
+    }
+
+    .merge-resolver {
+      margin-top: 8px;
+      max-height: 60vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .merge-barra {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 8px;
+      font-size: .9rem;
+      font-weight: 700;
+    }
+
+    .merge-barra .bk-row select {
+      flex: 1 1 auto;
+      margin: 0;
+    }
+
+    .merge-conflito {
+      border: 1px solid var(--muted);
+      border-radius: 8px;
+      padding: 6px 8px;
+      margin: 0 0 8px;
+      font-size: .86rem;
+    }
+
+    .merge-conflito-topo {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .merge-versao {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 4px 6px;
+      border-radius: 6px;
+      margin: 2px 0;
+    }
+
+    .merge-versao.escolhida {
+      background: color-mix(in srgb, #22c55e 18%, transparent);
+    }
+
+    .merge-versao input,
+    .merge-conflito-topo input,
+    .merge-barra input {
+      width: 18px;
+      height: 18px;
+      min-height: 0;
+      margin: 2px 0 0;
+      flex: none;
+    }
