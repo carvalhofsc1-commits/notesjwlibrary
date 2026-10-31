@@ -1266,6 +1266,18 @@
               <p class="hint">Vale para dois momentos. <strong>Para começar:</strong> ao tocar em Ler ou no alto-falante 🔊, o tocador aguarda esse tempo para você poder trocar a voz ou a velocidade antes; se não mexer em nada, a leitura começa sozinha. <strong>Para terminar:</strong> no texto do dia e nos comentários dele, quando a leitura acaba, a caixa "Quer guardar o áudio…?" se fecha sozinha depois do mesmo tempo, se você não tocar em nada. Em "Não iniciar nem fechar sozinho", nada é automático. Nas outras leituras a caixa fica aberta até você fechar.</p>
             </div>
 
+            <div class="acesso-item">
+              <label for="vozDestaqueCor">🖍️ Cor do destaque da frase lida</label>
+              <select id="vozDestaqueCor">
+                <option value="amarelo">Amarelo</option>
+                <option value="laranja" selected>Laranja (padrão)</option>
+                <option value="laranja-escuro">Laranja escuro</option>
+                <option value="roxo">Roxo</option>
+                <option value="azul">Azul</option>
+              </select>
+              <p class="hint">A cor que marca a frase enquanto ela é lida, na tela Leitura em voz alta, no texto do dia e nos comentários dele. Vale neste aparelho. <span id="vozDestaqueAmostra" class="lu lendo voz-destaque-amostra">Assim fica a frase lida</span></p>
+            </div>
+
             <div id="vozAdminLogin">
               <p id="vozAdminError" class="hint acesso-aviso">Para mudar a voz, salve a senha de administrador em 🔐 Autorização de acessos.</p>
               <button class="secondary" type="button" data-ir-acessos="senha">🔐 Abrir Autorização de acessos</button>

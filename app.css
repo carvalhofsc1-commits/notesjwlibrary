@@ -4143,28 +4143,53 @@
       transition: background .15s ease;
     }
 
-    .lu.lendo {
-      background: #fde68a;
-      background: color-mix(in srgb, #facc15 50%, var(--card));
-      box-shadow: 0 0 0 3px #fde68a;
-      box-shadow: 0 0 0 3px color-mix(in srgb, #facc15 50%, var(--card));
+    /* A frase que está sendo lida: cor forte, escolhida em Ajustes → Leitura em voz alta (padrão laranja). Os tons de --lendo-cor ficam abaixo; no tema
+       escuro a mistura com o fundo é menor, para o texto claro continuar legível. O marca-texto do usuário tem outros tons (mais suaves). */
+    :root {
+      --lendo-cor: #fb923c;
+      --lendo-pct-claro: 72%;
+      --lendo-pct-escuro: 50%;
     }
 
-    /* Tema escuro: o amarelo mais fraco, para o texto claro continuar legível sobre ele. */
+    :root[data-lendo="amarelo"] {
+      --lendo-cor: #facc15;
+      --lendo-pct-escuro: 32%;
+    }
+
+    :root[data-lendo="laranja-escuro"] {
+      --lendo-cor: #ea580c;
+    }
+
+    :root[data-lendo="roxo"] {
+      --lendo-cor: #a855f7;
+    }
+
+    :root[data-lendo="azul"] {
+      --lendo-cor: #3b82f6;
+    }
+
+    .lu.lendo {
+      background: #fdba74;
+      background: color-mix(in srgb, var(--lendo-cor) var(--lendo-pct-claro), var(--card));
+      box-shadow: 0 0 0 3px #fdba74;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--lendo-cor) var(--lendo-pct-claro), var(--card));
+    }
+
+    /* Tema escuro: o laranja um pouco mais fraco, para o texto claro continuar legível sobre ele. */
     @media (prefers-color-scheme: dark) {
       :root:not([data-theme="light"]) .lu.lendo {
-        background: #4a3d0c;
-        background: color-mix(in srgb, #facc15 30%, var(--card));
-        box-shadow: 0 0 0 3px #4a3d0c;
-        box-shadow: 0 0 0 3px color-mix(in srgb, #facc15 30%, var(--card));
+        background: #7c4a1d;
+        background: color-mix(in srgb, var(--lendo-cor) var(--lendo-pct-escuro), var(--card));
+        box-shadow: 0 0 0 3px #7c4a1d;
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--lendo-cor) var(--lendo-pct-escuro), var(--card));
       }
     }
 
     :root[data-theme="dark"] .lu.lendo {
-      background: #4a3d0c;
-      background: color-mix(in srgb, #facc15 30%, var(--card));
-      box-shadow: 0 0 0 3px #4a3d0c;
-      box-shadow: 0 0 0 3px color-mix(in srgb, #facc15 30%, var(--card));
+      background: #7c4a1d;
+      background: color-mix(in srgb, var(--lendo-cor) var(--lendo-pct-escuro), var(--card));
+      box-shadow: 0 0 0 3px #7c4a1d;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--lendo-cor) var(--lendo-pct-escuro), var(--card));
     }
 
     /* O que a voz pula (parênteses, referências) fica sem o destaque: nas frases com trechos pulados (tem-nl) o realce vai só para os trechos lidos (.lt). */
@@ -4181,21 +4206,21 @@
     }
 
     .lu.lendo .lt {
-      background: #fde68a;
-      background: color-mix(in srgb, #facc15 50%, var(--card));
+      background: #fdba74;
+      background: color-mix(in srgb, var(--lendo-cor) var(--lendo-pct-claro), var(--card));
       border-radius: 4px;
     }
 
     @media (prefers-color-scheme: dark) {
       :root:not([data-theme="light"]) .lu.lendo .lt {
-        background: #4a3d0c;
-        background: color-mix(in srgb, #facc15 30%, var(--card));
+        background: #7c4a1d;
+        background: color-mix(in srgb, var(--lendo-cor) var(--lendo-pct-escuro), var(--card));
       }
     }
 
     :root[data-theme="dark"] .lu.lendo .lt {
-      background: #4a3d0c;
-      background: color-mix(in srgb, #facc15 30%, var(--card));
+      background: #7c4a1d;
+      background: color-mix(in srgb, var(--lendo-cor) var(--lendo-pct-escuro), var(--card));
     }
 
     @media (hover: hover) {
@@ -4204,7 +4229,7 @@
       }
     }
 
-    /* Marca-texto: verde (o amarelo é da frase que está sendo lida). */
+    /* Marca-texto: verde (o laranja forte é da frase que está sendo lida). */
     mark.lm {
       color: inherit;
       background: #bbf7d0;
@@ -7663,3 +7688,6 @@
     .transcricao-campo { width: 100%; box-sizing: border-box; resize: vertical; min-height: 0; padding: 6px 8px; font-size: .9rem; }
     .transcricao-config .transcricao-rotulo { margin: 8px 0 3px; font-size: .85rem; }
     .transcricao-config .hint { margin: 3px 0 0; font-size: .78rem; }
+
+    /* Amostra da cor do destaque, em Ajustes → Leitura em voz alta. */
+    .voz-destaque-amostra { display: inline-block; padding: 2px 6px; margin-top: 6px; color: var(--text); font-weight: 500; }

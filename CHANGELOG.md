@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.24
+
+Leitura em voz alta: a frase que está sendo lida passa a ser destacada em cor forte (antes, amarelo fraco), nos temas claro e escuro, na tela Leitura, no texto do dia e nos comentários. A cor é escolhida em Ajustes → Leitura em voz alta (amarelo, laranja, laranja escuro, roxo ou azul; padrão laranja), neste aparelho, com uma amostra ao lado.
+
 ## 6.3.23
 
 Leitura em voz alta do texto do dia e dos comentários dele: terminada a leitura, a caixa que oferece salvar o áudio (ou fechar) se fecha sozinha depois do mesmo tempo de espera que inicia a leitura (Ajustes → Leitura em voz alta, padrão 4 s; em "Não iniciar nem fechar sozinho" ela fica aberta), se a pessoa não fez nada. A descrição do campo em Ajustes passou a explicar os dois usos. A Leitura em voz alta e as demais leituras continuam com a caixa aberta até a pessoa fechar.

@@ -4699,6 +4699,25 @@
         safeSetItem(VOZ_ESPERA_KEY, vozAutoEspera.value);
       });
     }
+    // Cor do destaque da frase lida (neste aparelho): o atributo data-lendo do <html> escolhe a variável --lendo-cor do CSS.
+    const VOZ_DESTAQUE_KEY = 'jwLibraryNoteAplicarVozDestaqueV1';
+    const VOZ_DESTAQUES = ['amarelo', 'laranja', 'laranja-escuro', 'roxo', 'azul'];
+    function vozDestaqueAplicar() {
+      let cor = '';
+      try { cor = localStorage.getItem(VOZ_DESTAQUE_KEY) || ''; } catch (e) { /* sem localStorage */ }
+      document.documentElement.dataset.lendo = VOZ_DESTAQUES.includes(cor) ? cor : 'laranja';
+      return document.documentElement.dataset.lendo;
+    }
+    const vozDestaqueCor = document.getElementById('vozDestaqueCor');
+    if (vozDestaqueCor) {
+      vozDestaqueCor.value = vozDestaqueAplicar();
+      vozDestaqueCor.addEventListener('change', () => {
+        safeSetItem(VOZ_DESTAQUE_KEY, vozDestaqueCor.value);
+        vozDestaqueAplicar();
+      });
+    } else {
+      vozDestaqueAplicar();
+    }
     const vozAdminLogin = document.getElementById('vozAdminLogin');
     const vozAdminForm = document.getElementById('vozAdminForm');
     const vozAdminError = document.getElementById('vozAdminError');
@@ -5728,7 +5747,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.23'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.24'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
