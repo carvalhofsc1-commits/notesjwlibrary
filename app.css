@@ -3382,9 +3382,10 @@
     }
 
     .study-imagem-copiar {
+      display: block;
       width: auto;
       min-height: 0;
-      margin: 0 0 0 4px;
+      margin: 6px 0 0;
       padding: 1px 9px;
       border-width: 1px;
       border-radius: 999px;

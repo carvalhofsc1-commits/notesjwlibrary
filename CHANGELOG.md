@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.11
+
+Imagens do capítulo: o botão 📋 Copiar de cada descrição fica sempre na linha de baixo do texto, alinhado à esquerda (deixou de ficar colado no fim da frase).
+
 ## 6.3.10
 
 Ajustes → Prompts da IA: com a senha de administrador salva, deixa de piscar o aviso “Abrir Autorização de acessos” enquanto busca os textos; depois da primeira carga na sessão, reabre na hora (como Leitura em voz alta e Esboços).
