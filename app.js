@@ -1424,7 +1424,8 @@
         manifest.name = fileName;
         st.zip.file(info.databaseName || 'userData.db', bytes);
         st.zip.file('manifest.json', JSON.stringify(manifest));
-        const blob = await st.zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+        // Tipo neutro (não application/zip): com o tipo ZIP, o iPhone e outros aparelhos acrescentam ".zip" ao nome e o JW Library não reconhece o arquivo.
+        const blob = await st.zip.generateAsync({ type: 'blob', mimeType: 'application/octet-stream', compression: 'DEFLATE', compressionOptions: { level: 6 } });
         st.manifest = manifest;
         st.changes = 0;
         st.generated = { blob, fileName };
@@ -1440,7 +1441,7 @@
     function backupDownload() {
       const generated = backupState && backupState.generated;
       if (!generated) return;
-      const url = URL.createObjectURL(generated.blob);
+      const url = URL.createObjectURL(new Blob([generated.blob], { type: 'application/octet-stream' }));
       const link = document.createElement('a');
       link.href = url;
       link.download = generated.fileName;
@@ -6809,7 +6810,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.44'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.45'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());

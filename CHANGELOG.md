@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.45
+
+Backup: o arquivo gerado (modificado, novo ou mesclado) agora sai só com a extensão .jwlibrary. Antes o iPhone (e talvez outros aparelhos) acrescentava ".zip" no fim do nome, porque o arquivo era marcado como ZIP, e o JW Library não reconhecia o backup. Agora o arquivo é marcado como arquivo comum, tanto ao baixar quanto ao compartilhar.
+
 ## 6.3.44
 
 Backup, Nova resposta: no celular, ao tocar no campo Documento (e nos outros seletores largos), o fundo ficava azul forte e o texto "Escolha o documento…" não dava para ler. Agora o campo fica com um fundo bem suave (o mesmo das opções selecionadas) e o texto legível enquanto está tocado, aberto ou com o foco.
