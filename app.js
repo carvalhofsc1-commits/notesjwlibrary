@@ -4054,9 +4054,20 @@
         vozControlesAtivos(false);
         vozProgresso.hidden = true;
         // O tocador fica aberto com a oferta de salvar o áudio (✖️ ou Fechar o tiram): as partes ouvidas estão guardadas, então salvar não custa de novo.
-        audioMostrar('Quer guardar o áudio desta leitura num arquivo MP3?', ['salvar', 'fechar'], {
+        const ofertaTexto = 'Quer guardar o áudio desta leitura num arquivo MP3?';
+        audioMostrar(ofertaTexto, ['salvar', 'fechar'], {
           unidades: preparo.unidades, desde: preparo.desde, uso: cfg.uso, acesso: cfg.acesso, base: cfg.nomeAudio || (() => 'Leitura'), lugar: cfg.lugar, vozExtra: cfg.vozExtra
         });
+        // Só no texto diário e nos comentários dele (cfg.fecharOferta): a oferta se fecha sozinha depois do mesmo tempo de espera que inicia a
+        // leitura (Ajustes → Leitura em voz alta; 0 = não fecha sozinha), se a pessoa não fez nada (não começou outra leitura, não pediu para
+        // salvar e não há uma pergunta aberta na tela).
+        const esperaFechar = vozTempoEsperaPadrao();
+        if (cfg.fecharOferta && esperaFechar > 0) {
+          setTimeout(() => {
+            const intacta = sessao === vozSessao && !audioGerando && !audioBox.hidden && audioTxt.textContent === ofertaTexto && !confirmOverlay.classList.contains('open');
+            if (intacta) audioFechar();
+          }, esperaFechar * 1000);
+        }
       } catch (e) {
         if (sessao !== vozSessao) return;
         leitorAtivo = null;
@@ -5717,7 +5728,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.22'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.23'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -15403,6 +15414,7 @@ function saveTemplatesToStorage() {
       const cfg = {
         lugar: td.vozTopo,
         uso: 'texto-diario',
+        fecharOferta: true, // terminada a leitura, a oferta de salvar o áudio some sozinha depois do tempo de espera configurado
         acesso: studyAccessError,
         vozExtra: { data: tdTexto.data, vozCupom: tdVozCupom },
         preparar: tdLeituraPreparar,
@@ -15424,6 +15436,7 @@ function saveTemplatesToStorage() {
       const cfg = {
         lugar: td.vozIa,
         uso: 'texto-diario',
+        fecharOferta: true,
         acesso: studyAccessError,
         vozExtra: { data: tdTexto.data, vozCupom: cupomIa },
         preparar: tdIaLeituraPreparar,

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.23
+
+Leitura em voz alta do texto do dia e dos comentários dele: terminada a leitura, a caixa que oferece salvar o áudio (ou fechar) se fecha sozinha depois do mesmo tempo de espera que inicia a leitura (Ajustes → Leitura em voz alta, padrão 4 s; em "Não iniciar nem fechar sozinho" ela fica aberta), se a pessoa não fez nada. A descrição do campo em Ajustes passou a explicar os dois usos. A Leitura em voz alta e as demais leituras continuam com a caixa aberta até a pessoa fechar.
+
 ## 6.3.22
 
 Barra de baixo: o botão Pesquisas deu lugar ao 🎙️ Áudio (tela Áudio em texto; fica bloqueado sem o código de texto). As pesquisas e respostas salvas continuam no atalho "Pesquisas salvas" do Início. O botão "Escolher o arquivo de áudio" ganhou a cor dos botões principais da tela Leitura. No resumo do áudio, a troca de "culto" por "reunião" passou a ajustar o artigo (a reunião, uma reunião).
