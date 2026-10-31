@@ -1,0 +1,13 @@
+{
+  "_leia": "Copie este arquivo para avaliacao/casos.json (que não vai para o GitHub) e troque pelos seus casos. Cada caso é um PEDIDO que você já fez à IA: o texto que foi enviado. 'grupo' separa os casos usados para ajustar ('ajuste') dos reservados só para a conferência final ('reserva'): não olhe os resultados da reserva até decidir.",
+  "casos": [
+    {
+      "id": "exemplo-1",
+      "grupo": "ajuste",
+      "tarefa": "sentinela",
+      "prompt": "sistemaSentinela",
+      "entrada": "PEDIDO: escreva a resposta ao comentário da pergunta.\n\nPERGUNTA: <cole aqui a pergunta do estudo>\n\nPARÁGRAFO: <cole aqui o parágrafo>",
+      "o_que_observar": "<opcional: o que você espera que melhore, ex.: resposta mais direta, sem aplicação forçada>"
+    }
+  ]
+}

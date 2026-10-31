@@ -3,7 +3,9 @@
   "version": "6.3.16",
   "private": true,
   "scripts": {
-    "check": "node --check api/_acesso.mjs && node --check api/_armazem.mjs && node --check api/_comum.mjs && node --check api/_fontes.mjs && node --check api/_iaConfig.mjs && node --check api/_memoria.mjs && node --check api/_prompts.mjs && node --check api/_promptsArmazenados.mjs && node --check api/_s34.mjs && node --check api/_vozConfig.mjs && node --check api/_vozCupom.mjs && node --check api/_wol.mjs && node --check api/config.mjs && node --check api/sugerir-formatacao.mjs && node --check api/texto-diario.mjs && node --check api/voz.mjs && node --check app.js && node --check sw.js && node --check exportar-pagina.js"
+    "avaliar": "node avaliacao/rodar.mjs",
+    "avaliar:contar": "node avaliacao/contar.mjs",
+    "check": "node --check avaliacao/rodar.mjs && node --check avaliacao/contar.mjs && node --check api/_acesso.mjs && node --check api/_armazem.mjs && node --check api/_comum.mjs && node --check api/_fontes.mjs && node --check api/_iaConfig.mjs && node --check api/_memoria.mjs && node --check api/_prompts.mjs && node --check api/_promptsArmazenados.mjs && node --check api/_s34.mjs && node --check api/_vozConfig.mjs && node --check api/_vozCupom.mjs && node --check api/_wol.mjs && node --check api/config.mjs && node --check api/sugerir-formatacao.mjs && node --check api/texto-diario.mjs && node --check api/voz.mjs && node --check app.js && node --check sw.js && node --check exportar-pagina.js"
   },
   "description": "NoteStyle - formatação de notas (PWA estático + função serverless de sugestões com IA)",
   "engines": {
