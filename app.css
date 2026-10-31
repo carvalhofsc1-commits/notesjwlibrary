@@ -8090,6 +8090,264 @@
       margin: 10px 0 6px;
       font-weight: 800;
       font-size: .88rem;
-      text-transform: capitalize;
       color: var(--muted);
+    }
+
+    /* Escolher o que importar de cada arquivo da mesclagem: um botão discreto (🎚️) no cabeçalho do arquivo e, só aberto, o painel de caixas de seleção. */
+    .merge-slot-cab {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .merge-slot button.merge-filtro-btn {
+      min-height: 0;
+      padding: 0 2px;
+      background: transparent;
+      border: 0;
+      color: var(--muted);
+      font-size: .78rem;
+      font-weight: 600;
+      text-decoration: underline;
+    }
+
+    .merge-slot button.merge-filtro-btn.ativo {
+      color: #d97706;
+      font-weight: 800;
+    }
+
+    .merge-filtro {
+      border-top: 1px dashed var(--muted);
+      padding-top: 6px;
+    }
+
+    .merge-filtro-secao {
+      margin: 6px 0;
+    }
+
+    .merge-filtro-cab {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: .86rem;
+    }
+
+    .merge-filtro-cab strong {
+      flex: 1 1 auto;
+    }
+
+    .merge-slot button.merge-mini {
+      min-height: 0;
+      padding: 1px 8px;
+      font-size: .74rem;
+      font-weight: 600;
+    }
+
+    .merge-filtro-lista {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      max-height: 32vh;
+      overflow-y: auto;
+      margin-top: 5px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .merge-check {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--muted) 18%, var(--card));
+      font-size: .8rem;
+      font-weight: 500;
+    }
+
+    .merge-check input {
+      width: 15px;
+      height: 15px;
+      min-height: 0;
+      margin: 0;
+      flex: none;
+    }
+
+    .merge-filtro-resumo {
+      margin: 0 0 6px;
+      font-size: .82rem;
+      font-weight: 700;
+    }
+
+    .merge-filtro-det {
+      margin: 6px 0;
+      border: 1px solid color-mix(in srgb, var(--muted) 50%, transparent);
+      border-radius: 8px;
+      padding: 4px 8px;
+    }
+
+    .merge-filtro-det>summary {
+      cursor: pointer;
+      font-size: .84rem;
+      font-weight: 700;
+    }
+
+    .merge-filtro-busca {
+      flex: 1 1 100%;
+      min-height: 36px;
+      margin: 0;
+    }
+
+    .merge-filtro-cab {
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+
+    .merge-filtro-linhas {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      max-height: 38vh;
+      overflow-y: auto;
+      margin-top: 4px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .merge-linha {
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+      padding: 4px 6px;
+      border-radius: 6px;
+      background: color-mix(in srgb, var(--muted) 10%, transparent);
+      font-size: .8rem;
+      font-weight: 500;
+      line-height: 1.3;
+    }
+
+    .merge-linha input {
+      width: 16px;
+      height: 16px;
+      min-height: 0;
+      margin: 2px 0 0;
+      flex: none;
+    }
+
+    .merge-linha strong {
+      font-weight: 800;
+    }
+
+    /* "Além das notas": moldura fina em volta das opções de grifos, marcadores e respostas. */
+    fieldset.merge-extras {
+      border: 1px solid var(--muted);
+      border-radius: 10px;
+      padding: 4px 10px 6px;
+      margin: 10px 0;
+      min-width: 0;
+    }
+
+    fieldset.merge-extras>legend {
+      padding: 0 6px;
+      font-size: .86rem;
+      font-weight: 800;
+    }
+
+    /* O conteúdo do backup aberto (a lista para conferir, procurar, editar e apagar): num contêiner com título. */
+    .backup-conteudo {
+      border: 2px solid var(--muted);
+      border-radius: 12px;
+      padding: 8px 10px 10px;
+      margin-top: 14px;
+      background: color-mix(in srgb, var(--card) 70%, transparent);
+    }
+
+    .backup-conteudo-titulo {
+      margin: 0 0 2px;
+      font-size: 1.02rem;
+    }
+
+    /* O 4º botão de cada arquivo da mesclagem: Selecionar o que importar (roxo claro). */
+    .merge-slot button.merge-selecionar {
+      width: 100%;
+      min-height: 42px;
+      background: #ddd6fe;
+      color: #3b0764;
+      border: 2px solid #8b5cf6;
+    }
+
+    .merge-slot button.merge-selecionar:hover {
+      background: #c4b5fd;
+    }
+
+    :root[data-theme="dark"] .merge-slot button.merge-selecionar {
+      background: #4c1d95;
+      color: #ede9fe;
+      border-color: #a78bfa;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .merge-slot button.merge-selecionar {
+        background: #4c1d95;
+        color: #ede9fe;
+        border-color: #a78bfa;
+      }
+    }
+
+    .merge-resultado button.merge-voltar {
+      width: 100%;
+      margin: 4px 0 6px;
+    }
+
+    /* A árvore Por publicação e artigo. */
+    .merge-arvore {
+      max-height: 45vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .merge-no-cab {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 0;
+      font-size: .84rem;
+    }
+
+    .merge-no-cab label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .merge-no-cab label span {
+      overflow-wrap: anywhere;
+    }
+
+    .merge-no-cab input {
+      width: 16px;
+      height: 16px;
+      min-height: 0;
+      margin: 0;
+      flex: none;
+    }
+
+    .merge-slot button.merge-no-abre,
+    button.merge-no-abre {
+      min-height: 0;
+      width: 22px;
+      padding: 0;
+      background: transparent;
+      border: 0;
+      color: var(--muted);
+      font-size: 1rem;
+      flex: none;
+    }
+
+    .merge-no-filhos {
+      margin-left: 14px;
+      padding-left: 8px;
+      border-left: 1px solid color-mix(in srgb, var(--muted) 40%, transparent);
     }

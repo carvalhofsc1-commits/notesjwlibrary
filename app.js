@@ -469,6 +469,18 @@
       return BACKUP_CATEGORIES.find(c => c.id === backupCategory) || BACKUP_CATEGORIES.find(c => c.id === 'notas');
     }
 
+    // Os botões do começo ("Abrir e editar backup" e "Mesclar backups") só aparecem sem nada em andamento. Com um backup aberto (ou uma mesclagem sendo montada) some
+    // o que já não vale, e o botão de abrir vira "Abrir outro backup para mesclar", que inclui outro backup na mesclagem. Para ver os botões do começo de novo, é só
+    // fechar o backup ou cancelar a mesclagem.
+    function backupAtualizarBotoes() {
+      const abrir = document.getElementById('backupOpenBtn');
+      const mesclar = document.getElementById('backupMergeBtn');
+      const emMesclagem = !document.getElementById('backupMesclarBox').hidden;
+      abrir.textContent = backupState ? '📂 Abrir outro backup para mesclar' : '📂 Abrir e editar backup (.jwlibrary)';
+      abrir.hidden = emMesclagem; // com a mesclagem aberta, os botões do começo saem (cancelar traz de volta)
+      mesclar.hidden = Boolean(backupState) || emMesclagem;
+    }
+
     // A explicação da tela Backup abre quando não há backup aberto e recolhe sozinha quando um backup é aberto (só nessa troca: se a pessoa a abrir ou
     // fechar à mão, a escolha dela vale até o backup abrir ou fechar de novo).
     let backupAjudaComBackup = false;
@@ -482,10 +494,18 @@
       const view = document.getElementById('backupView');
       const resultado = document.getElementById('backupMesclarResultado');
       if (resultado && !(backupState && backupState.mesclado)) resultado.hidden = true;
+      if (!(backupState && backupState.mesclado) && document.getElementById('backupMesclarBox').hidden) backupMesclarLimparSessao();
+      // Num backup que já é o resultado de uma mesclagem, "Mesclar: importar notas de outro backup" não faz sentido: some.
+      const painelMesclar = document.getElementById('backupImportBtn').closest('.backup-pane');
+      if (painelMesclar) painelMesclar.hidden = Boolean(backupState && backupState.mesclado);
       document.getElementById('backupCloseBtn').hidden = !backupState;
-      document.getElementById('backupOpenBtn').textContent = backupState ? '📂 Abrir outro backup' : '📂 Abrir e editar backup (.jwlibrary)';
+      backupAtualizarBotoes();
       if (!backupState) { view.hidden = true; renderBackupSaveBox(); return; }
       view.hidden = false;
+      document.getElementById('backupConteudoTitulo').textContent = backupState.mesclado ? '🔀 Conteúdo do backup mesclado' : backupState.isNew ? '🆕 Conteúdo do backup novo' : '📂 Conteúdo do backup aberto';
+      document.getElementById('backupConteudoDica').textContent = backupState.mesclado
+        ? 'Este é o resultado da mesclagem: a base mais o que veio dos outros arquivos. Confira, edite ou apague o que quiser e gere o arquivo mesclado.'
+        : 'Aqui você vê o que há no backup, procura, edita e apaga notas e respostas antes de gerar o arquivo.';
       const info = backupState.manifest.userDataBackup || {};
       document.getElementById('backupSummary').textContent = [
         backupState.isNew ? '🆕 Backup novo' : backupState.mesclado ? '🔀 Backup mesclado (' + backupState.mesclado + ' arquivos)' : backupState.fileName,
@@ -713,9 +733,8 @@
       return card;
     }
 
-    document.getElementById('backupOpenBtn').addEventListener('click', async () => {
-      if (backupState && backupState.changes &&
-        !(await askConfirm('As alterações deste backup ainda não foram gravadas em arquivo e serão perdidas. Abrir outro backup?', 'Abrir outro backup'))) return;
+    document.getElementById('backupOpenBtn').addEventListener('click', () => {
+      if (backupState) return backupMesclarAPartirDoAberto(); // com um backup aberto, "Abrir outro backup" o inclui numa mesclagem
       document.getElementById('backupFile').click();
     });
     document.getElementById('backupFile').addEventListener('change', event => {
@@ -1825,7 +1844,7 @@
       const lugares = new Map();
       const marcas = new Map();
       const etiquetas = new Map();
-      const resultado = { importadas: 0, existentes: 0, etiquetasNovas: [] };
+      const resultado = { importadas: 0, existentes: 0, avulsas: 0, etiquetasNovas: [] };
 
       // O mesmo lugar (publicação, edição, documento ou capítulo da Bíblia) no backup aberto; criado se não existir.
       const lugar = idOrigem => {
@@ -1917,6 +1936,7 @@
             dst.run('INSERT OR IGNORE INTO TagMap (TagId, NoteId, Position) VALUES (?, ?, ?)', [idEtiqueta, novaId, posicao]);
           });
           resultado.importadas++;
+          if (local === null) resultado.avulsas++;
         }
         dst.run('COMMIT');
       } catch (e) {
@@ -1927,12 +1947,13 @@
     }
 
     // Os grifos (marcas de cor com trecho grifado) do backup de origem que o backup aberto ainda não tem (mesmo UserMarkGuid). Devolve { novos }.
-    function backupImportGrifos(src) {
+    function backupImportGrifos(src, aceitaLoc) {
       const { dst, marca } = backupImportContexto(src);
       const resultado = { novos: 0 };
       dst.run('BEGIN');
       try {
-        backupAll(src, 'SELECT u.UserMarkId, u.UserMarkGuid FROM UserMark u WHERE EXISTS (SELECT 1 FROM BlockRange b WHERE b.UserMarkId = u.UserMarkId)').forEach(m => {
+        backupAll(src, 'SELECT u.UserMarkId, u.UserMarkGuid, u.LocationId FROM UserMark u WHERE EXISTS (SELECT 1 FROM BlockRange b WHERE b.UserMarkId = u.UserMarkId)').forEach(m => {
+          if (aceitaLoc && !aceitaLoc(m.LocationId)) return;
           if (backupOne(dst, 'SELECT 1 AS x FROM UserMark WHERE UserMarkGuid = ?', [m.UserMarkGuid])) return;
           if (marca(m.UserMarkId) !== null) resultado.novos++;
         });
@@ -1946,7 +1967,7 @@
 
     // Os marcadores do backup de origem que o backup aberto ainda não tem (mesmo lugar, parágrafo e título). Cada marcador novo vai para o primeiro slot livre
     // da publicação dele. Devolve { novos, existentes }.
-    function backupImportMarcadores(src) {
+    function backupImportMarcadores(src, aceitaLoc) {
       const { dst, lugar } = backupImportContexto(src);
       const resultado = { novos: 0, existentes: 0 };
       const colunasDestino = backupColumns(dst, 'Bookmark');
@@ -1955,6 +1976,7 @@
       dst.run('BEGIN');
       try {
         backupAll(src, 'SELECT * FROM Bookmark ORDER BY PublicationLocationId, Slot').forEach(b => {
+          if (aceitaLoc && !aceitaLoc(b.LocationId)) return;
           const local = lugar(b.LocationId);
           const publicacao = lugar(b.PublicationLocationId);
           if (local === null || publicacao === null) return;
@@ -1967,6 +1989,38 @@
           const valores = colunas.map(col => (col === 'LocationId' ? local : col === 'PublicationLocationId' ? publicacao : col === 'Slot' ? slot : b[col]));
           dst.run('INSERT INTO Bookmark (' + colunas.join(', ') + ') VALUES (' + colunas.map(() => '?').join(', ') + ')', valores);
           resultado.novos++;
+        });
+        dst.run('COMMIT');
+      } catch (e) {
+        dst.run('ROLLBACK');
+        throw e;
+      }
+      return resultado;
+    }
+
+    // As respostas (campos "Sua resposta") do backup de origem que o backup aberto ainda não tem; se a dele estiver vazia, entra a da origem. O que tem
+    // resposta nos dois fica como está no aberto. permitidos: ids "LocationId|TextTag" a trazer (null = todos). Devolve { novas, existentes }.
+    function backupImportRespostas(src, permitidos) {
+      const { dst, lugar } = backupImportContexto(src);
+      const resultado = { novas: 0, existentes: 0 };
+      if (!backupColumns(dst, 'InputField').length || !backupColumns(src, 'InputField').length) return resultado;
+      dst.run('BEGIN');
+      try {
+        backupAll(src, 'SELECT LocationId, TextTag, Value FROM InputField').forEach(r => {
+          if (permitidos && !permitidos.has(r.LocationId + '|' + r.TextTag)) return;
+          if (!r.Value) return;
+          const local = lugar(r.LocationId);
+          if (local === null) return;
+          const atual = backupOne(dst, 'SELECT Value FROM InputField WHERE LocationId = ? AND TextTag = ?', [local, r.TextTag]);
+          if (!atual) {
+            dst.run('INSERT INTO InputField (LocationId, TextTag, Value) VALUES (?, ?, ?)', [local, r.TextTag, r.Value]);
+            resultado.novas++;
+          } else if (!atual.Value) {
+            dst.run('UPDATE InputField SET Value = ? WHERE LocationId = ? AND TextTag = ?', [r.Value, local, r.TextTag]);
+            resultado.novas++;
+          } else {
+            resultado.existentes++;
+          }
         });
         dst.run('COMMIT');
       } catch (e) {
@@ -1994,12 +2048,6 @@
       }
     }
 
-    document.getElementById('backupImportBtn').addEventListener('click', () => document.getElementById('backupImportFile').click());
-    document.getElementById('backupImportFile').addEventListener('change', event => {
-      backupStartImport(event.target.files && event.target.files[0]);
-      event.target.value = '';
-    });
-
     // ---------- Mesclar backups (2 a 5 arquivos) ----------
     // Um caminho curto para o que a seção "Importação e exportação" já faz: a pessoa escolhe de 2 a 5 backups (um campo de cada vez, o seguinte só aparece
     // depois do anterior) e o app junta tudo num backup só. O 1º arquivo é a base (tudo dele fica) e as notas dos outros entram nele, como em
@@ -2022,7 +2070,8 @@
     const mesclarResolverBtn = document.getElementById('backupMesclarResolverBtn');
     const mesclarResolver = document.getElementById('backupMesclarResolver');
 
-    function backupMesclarFechar() {
+    // Esquece os arquivos, a base, as escolhas e os filtros da mesclagem.
+    function backupMesclarLimparSessao() {
       backupMesclarArquivos = [];
       backupMesclarSlotEscolhido = -1;
       backupMesclarBase = 0;
@@ -2030,10 +2079,27 @@
       backupMesclarRegra.arquivo = 0;
       backupMesclarEscolhas.clear();
       backupMesclarMarcadas.clear();
+    }
+
+    // Fecha a área de mesclagem. Com manter (backup mesclado aberto), os arquivos e as escolhas ficam guardados para a pessoa voltar à seleção.
+    function backupMesclarFechar(manter) {
+      if (!manter) backupMesclarLimparSessao();
       mesclarBox.hidden = true;
       mesclarSlots.textContent = '';
       mesclarResolver.hidden = true;
       mesclarResolver.textContent = '';
+      backupAtualizarBotoes();
+    }
+
+    // Depois de mesclar: volta à seleção dos arquivos, com tudo como estava (arquivos, base, regra e filtros), para mudar e mesclar de novo.
+    async function backupMesclarReabrir() {
+      if (backupMesclando || !backupMesclarArquivos.length) return;
+      if (backupState && backupState.changes > (backupState.changesDaMescla || 0) &&
+        !(await askConfirm('Você fez alterações no backup mesclado depois da mesclagem. Ao mesclar de novo, elas serão perdidas (a mesclagem recomeça dos arquivos). Voltar mesmo assim?', 'Voltar à seleção dos arquivos'))) return;
+      mesclarBox.hidden = false;
+      backupAtualizarBotoes();
+      backupMesclarRender();
+      mesclarBox.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }
 
     // As notas que estão em mais de um arquivo com versões diferentes (título, texto, cor ou etiquetas). Notas repetidas e iguais não são conflito.
@@ -2176,14 +2242,24 @@
         const rotulo = document.createElement('span');
         rotulo.className = 'merge-slot-rotulo';
         rotulo.textContent = (i + 1) + 'º arquivo' + (i === backupMesclarBase ? ' — BASE ⭐' : i >= 2 ? ' (opcional)' : '');
-        slot.appendChild(rotulo);
+        const cab = document.createElement('div');
+        cab.className = 'merge-slot-cab';
+        cab.appendChild(rotulo);
+        slot.appendChild(cab);
         if (arq) {
+          // O 4º botão (só nos arquivos que não são a base), abaixo dos outros: escolher o que importar deste arquivo (por publicação e artigo, notas e respostas).
+          const marca = () => '☑️ Selecionar o que importar' + (backupMesclarFiltroAtivo(arq) ? ' ●' : '');
+          let selecionar = null;
+          if (i !== backupMesclarBase && (arq.listaNotas.length || arq.listaRespostas.length || arq.folhas.size)) {
+            selecionar = backupButton(marca(), () => { arq.filtroAberto = !arq.filtroAberto; backupMesclarRender(); }, 'merge-selecionar');
+            selecionar.title = 'Escolher quais publicações, artigos, notas e respostas deste arquivo entram na mesclagem';
+          }
           const nome = document.createElement('span');
           nome.className = 'merge-slot-nome';
-          nome.textContent = '✅ ' + arq.nome + ' · ' + arq.notas.toLocaleString('pt-BR') + (arq.notas === 1 ? ' nota' : ' notas');
+          nome.textContent = '✅ ' + arq.nome + (arq.aberto ? ' (o backup que estava aberto)' : '') + ' · ' + arq.notas.toLocaleString('pt-BR') + (arq.notas === 1 ? ' nota' : ' notas');
           const acoes = document.createElement('div');
           acoes.className = 'bk-row';
-          if (i !== backupMesclarBase) acoes.append(backupButton('⭐ Usar como base', () => { backupMesclarBase = i; backupMesclarRender(); }));
+          if (i !== backupMesclarBase) acoes.append(backupButton('⭐ Usar como arquivo base', () => { backupMesclarBase = i; backupMesclarRender(); }));
           acoes.append(
             backupButton('🔁 Trocar', () => { backupMesclarSlotEscolhido = i; mesclarFile.click(); }),
             backupButton('✖️ Remover', () => {
@@ -2196,6 +2272,10 @@
             })
           );
           slot.append(nome, acoes);
+          if (selecionar) {
+            slot.appendChild(selecionar);
+            if (arq.filtroAberto) slot.appendChild(backupMesclarFiltroPainel(arq, () => { selecionar.textContent = marca(); }));
+          }
         } else if (i === prontos) {
           slot.appendChild(backupButton(i >= 2 ? '➕ Adicionar o ' + (i + 1) + 'º arquivo (.jwlibrary)' : '📂 Escolher o ' + (i + 1) + 'º arquivo (.jwlibrary)', () => { backupMesclarSlotEscolhido = i; mesclarFile.click(); }, ''));
         } else {
@@ -2211,9 +2291,326 @@
     }
 
     // Lê o arquivo só para conferir que é um backup e guardar um resumo das notas (o arquivo é lido de novo na hora de mesclar).
+    // O que a mesclagem precisa saber de um backup: as notas pelo Guid (para achar duplicadas), as etiquetas e a árvore de publicações e artigos (tipo, publicação, edição e
+    // artigo, como em backupDescribe), com quantas notas, respostas, grifos e marcadores há em cada artigo (uma "folha"). Serve para escolher o que importar.
+    // O filtro dele (nada excluído = traz tudo) fica em arq.filtro.
+    const BACKUP_FOLHA_AVULSAS = 'Notas avulsas';
+
+    function backupMesclarResumoFonte(db, data) {
+      const linhas = backupAll(db, "SELECT n.NoteId, n.Guid, n.LastModified, (SELECT group_concat(t.Name, '\u0001') FROM TagMap tm JOIN Tag t ON t.TagId = tm.TagId WHERE tm.NoteId = n.NoteId) AS Tags FROM Note n");
+      const brutas = new Map(linhas.map(r => [r.NoteId, r]));
+      const guids = new Map();
+      data.notas.forEach(n => {
+        const b = brutas.get(n.id);
+        if (!b) return;
+        guids.set(b.Guid, { heading: n.heading, text: n.text, colorIndex: n.colorIndex, tagsText: n.tagsText, date: n.date, lastModified: String(b.LastModified || ''), where: n.where || '' });
+      });
+      const tags = new Map();
+      let semTag = 0;
+      linhas.forEach(r => {
+        if (!r.Tags) { semTag++; return; }
+        new Set(r.Tags.split('\u0001')).forEach(nome => tags.set(nome, (tags.get(nome) || 0) + 1));
+      });
+
+      // Cada lugar (Location) cai numa folha da árvore: tipo > publicação > edição > artigo (ou "Notas avulsas", para notas sem lugar).
+      const titleByDoc = new Map(backupAll(db, "SELECT KeySymbol, IssueTagNumber, DocumentId, Title FROM Location WHERE Title IS NOT NULL AND Title != '' AND DocumentId IS NOT NULL")
+        .map(r => [r.KeySymbol + '|' + r.IssueTagNumber + '|' + r.DocumentId, r.Title]));
+      const folhas = new Map(); // chave -> { chave, caminho, notas, respostas, grifos, marcadores }
+      const locFolha = new Map(); // LocationId -> chave
+      const folha = caminho => {
+        const chave = caminho.join(' › ');
+        if (!folhas.has(chave)) folhas.set(chave, { chave, caminho, notas: 0, respostas: 0, grifos: 0, marcadores: 0 });
+        return folhas.get(chave);
+      };
+      backupAll(db, 'SELECT LocationId, KeySymbol, MepsLanguage, IssueTagNumber, DocumentId, BookNumber, ChapterNumber, Title AS LocTitle FROM Location').forEach(l => {
+        const d = backupDescribe(l, titleByDoc);
+        locFolha.set(l.LocationId, folha([d.type.label, d.title.label, d.detail1 && d.detail1.label, d.detail2 && d.detail2.label].filter(Boolean)).chave);
+      });
+      const folhaDoLugar = id => (id === null || id === undefined ? folha([BACKUP_FOLHA_AVULSAS]).chave : locFolha.get(id) || '');
+      const contar = (sql, campo) => backupAll(db, sql).forEach(r => { const c = folhaDoLugar(r.LocationId); if (c) folhas.get(c)[campo] += r.n; });
+      contar('SELECT LocationId, COUNT(*) AS n FROM Note GROUP BY LocationId', 'notas');
+      contar("SELECT LocationId, COUNT(*) AS n FROM InputField WHERE Value IS NOT NULL AND Value != '' GROUP BY LocationId", 'respostas');
+      contar('SELECT u.LocationId AS LocationId, COUNT(*) AS n FROM UserMark u WHERE EXISTS (SELECT 1 FROM BlockRange b WHERE b.UserMarkId = u.UserMarkId) GROUP BY u.LocationId', 'grifos');
+      contar('SELECT LocationId, COUNT(*) AS n FROM Bookmark GROUP BY LocationId', 'marcadores');
+      [...folhas.values()].forEach(x => { if (!x.notas && !x.respostas && !x.grifos && !x.marcadores) folhas.delete(x.chave); });
+
+      const listaNotas = data.notas.map(n => {
+        const b = brutas.get(n.id);
+        return b ? { guid: b.Guid, titulo: n.heading, texto: n.text, data: n.date, onde: n.where || '', tags: b.Tags || '', folha: folhaDoLugar(n.locationId) } : null;
+      }).filter(Boolean);
+      const listaRespostas = data.respostas.map(r => ({ id: r.id, texto: r.text, onde: r.where || '', publicacao: (r.title && r.title.label) || '', folha: folhaDoLugar(r.locationId) }));
+      return {
+        notas: linhas.length, guids, tags, semTag, folhas, locFolha, listaNotas, listaRespostas,
+        tagsPorGuid: new Map(linhas.map(r => [r.Guid, r.Tags || ''])), folhaPorGuid: new Map(listaNotas.map(x => [x.guid, x.folha])),
+        filtro: { tagsFora: new Set(), semTagFora: false, notasFora: new Set(), respostasFora: new Set(), folhasFora: new Set() }
+      };
+    }
+
+    const backupMesclarFiltroAtivo = arq => Boolean(arq.filtro.tagsFora.size || arq.filtro.semTagFora || arq.filtro.notasFora.size || arq.filtro.respostasFora.size || arq.filtro.folhasFora.size);
+
+    // Uma nota passa pelo filtro se não tem etiqueta e "sem etiqueta" está marcado, ou se tem alguma etiqueta marcada; e se ela e o artigo dela não foram desmarcados.
+    function backupMesclarTagsPassam(filtro, tagsTexto) {
+      if (!tagsTexto) return !filtro.semTagFora;
+      return tagsTexto.split('\u0001').some(nome => !filtro.tagsFora.has(nome));
+    }
+
+    const backupMesclarNotaPassa = (arq, guid) => backupMesclarTagsPassam(arq.filtro, arq.tagsPorGuid.get(guid) || '') && !arq.filtro.notasFora.has(guid) && !arq.filtro.folhasFora.has(arq.folhaPorGuid.get(guid) || '');
+    const backupMesclarRespostaPassa = (arq, r) => !arq.filtro.respostasFora.has(r.id) && !arq.filtro.folhasFora.has(r.folha);
+    // Grifos e marcadores passam pelo lugar (o artigo em que estão).
+    const backupMesclarLugarPassa = (arq, locationId) => !arq.filtro.folhasFora.has(arq.locFolha.get(locationId) || '');
+    const backupMesclarSemAcento = texto => String(texto || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+    // A árvore "Por publicação e artigo": tipo > publicação > edição > artigo, cada nível com a sua caixa (marca ou desmarca tudo o que há embaixo: notas, respostas, grifos e
+    // marcadores) e um botão para abrir. Com texto na busca, vira uma lista dos artigos que combinam.
+    function backupMesclarArvore(arq, atualizar) {
+      const f = arq.filtro;
+      const n = v => v.toLocaleString('pt-BR');
+      const raiz = { nome: '', filhos: new Map(), folhas: null };
+      [...arq.folhas.values()].forEach(x => {
+        let no = raiz;
+        x.caminho.forEach(nome => {
+          if (!no.filhos.has(nome)) no.filhos.set(nome, { nome, filhos: new Map(), folhas: null });
+          no = no.filhos.get(nome);
+        });
+        no.folha = x;
+      });
+      const todasDe = no => {
+        if (!no.folhas) {
+          no.folhas = no.folha ? [no.folha.chave] : [];
+          no.filhos.forEach(filho => no.folhas.push(...todasDe(filho)));
+        }
+        return no.folhas;
+      };
+      const itensDe = no => todasDe(no).reduce((s, chave) => { const x = arq.folhas.get(chave); return s + x.notas + x.respostas + x.grifos + x.marcadores; }, 0);
+
+      const det = document.createElement('details');
+      det.className = 'merge-filtro-det';
+      const sum = document.createElement('summary');
+      sum.textContent = '📚 Por publicação e artigo (' + n(arq.folhas.size) + ')';
+      const corpo = document.createElement('div');
+      const barra = document.createElement('div');
+      barra.className = 'merge-filtro-cab';
+      const campo = document.createElement('input');
+      campo.type = 'search';
+      campo.placeholder = 'Buscar publicação ou artigo…';
+      campo.className = 'merge-filtro-busca';
+      const dica = document.createElement('p');
+      dica.className = 'hint';
+      dica.textContent = 'Marcar ou desmarcar uma publicação, uma edição ou um artigo vale para tudo o que há nele: notas, respostas, grifos e marcadores.';
+      const area = document.createElement('div');
+      area.className = 'merge-arvore';
+      const caixas = []; // { no, cx } dos nós desenhados, para refletir as mudanças
+      let listadas = [...arq.folhas.keys()];
+
+      const definir = (chaves, marcado) => chaves.forEach(chave => (marcado ? f.folhasFora.delete(chave) : f.folhasFora.add(chave)));
+      const refletir = () => caixas.forEach(({ no, cx }) => {
+        const chaves = todasDe(no);
+        const fora = chaves.filter(chave => f.folhasFora.has(chave)).length;
+        cx.checked = fora === 0;
+        cx.indeterminate = fora > 0 && fora < chaves.length;
+      });
+      const noUI = (no, nivel) => {
+        const caixa = document.createElement('div');
+        caixa.className = 'merge-no';
+        const cab = document.createElement('div');
+        cab.className = 'merge-no-cab';
+        const abre = document.createElement('button');
+        abre.type = 'button';
+        abre.className = 'merge-no-abre';
+        const filhos = document.createElement('div');
+        filhos.className = 'merge-no-filhos';
+        filhos.hidden = true;
+        const temFilhos = no.filhos.size > 0;
+        abre.textContent = temFilhos ? '▸' : '';
+        abre.disabled = !temFilhos;
+        const rotulo = document.createElement('label');
+        const cx = document.createElement('input');
+        cx.type = 'checkbox';
+        cx.addEventListener('change', () => { definir(todasDe(no), cx.checked); refletir(); atualizar(); });
+        const texto = document.createElement('span');
+        texto.textContent = no.nome + ' · ' + n(itensDe(no));
+        rotulo.append(cx, texto);
+        cab.append(abre, rotulo);
+        caixa.append(cab, filhos);
+        caixas.push({ no, cx });
+        abre.addEventListener('click', () => {
+          filhos.hidden = !filhos.hidden;
+          abre.textContent = filhos.hidden ? '▸' : '▾';
+          if (!filhos.hidden && !filhos.childElementCount) {
+            // os mais novos primeiro nas edições e nos artigos que são números (ex.: 2026-08), senão em ordem alfabética
+            [...no.filhos.values()].sort((x, y) => x.nome.localeCompare(y.nome, 'pt-BR', { numeric: true })).forEach(filho => filhos.appendChild(noUI(filho, nivel + 1)));
+            refletir();
+          }
+        });
+        return caixa;
+      };
+      const desenhar = () => {
+        area.textContent = '';
+        caixas.length = 0;
+        const termo = backupMesclarSemAcento(campo.value.trim());
+        if (!termo) {
+          listadas = [...arq.folhas.keys()];
+          [...raiz.filhos.values()].sort((x, y) => x.nome.localeCompare(y.nome, 'pt-BR')).forEach(no => area.appendChild(noUI(no, 0)));
+          refletir();
+          return;
+        }
+        listadas = [...arq.folhas.values()].filter(x => backupMesclarSemAcento(x.caminho.join(' ')).includes(termo)).map(x => x.chave);
+        listadas.slice(0, 100).forEach(chave => {
+          const x = arq.folhas.get(chave);
+          const rotulo = document.createElement('label');
+          rotulo.className = 'merge-linha';
+          const cx = document.createElement('input');
+          cx.type = 'checkbox';
+          cx.checked = !f.folhasFora.has(chave);
+          cx.addEventListener('change', () => { definir([chave], cx.checked); atualizar(); });
+          const texto = document.createElement('span');
+          const forte = document.createElement('strong');
+          forte.textContent = x.caminho[x.caminho.length - 1];
+          texto.append(forte, document.createTextNode(' ' + x.caminho.slice(0, -1).join(' › ') + ' · ' + n(x.notas + x.respostas + x.grifos + x.marcadores)));
+          rotulo.append(cx, texto);
+          area.appendChild(rotulo);
+        });
+        if (listadas.length > 100) { const mais = document.createElement('p'); mais.className = 'hint'; mais.textContent = 'Mostrando 100 de ' + n(listadas.length) + '; refine a busca.'; area.appendChild(mais); }
+      };
+      const marcar = valor => { definir(listadas, valor); desenhar(); atualizar(); };
+      campo.addEventListener('input', desenhar);
+      barra.append(campo, backupButton('marcar todas', () => marcar(true), 'merge-mini'), backupButton('desmarcar todas', () => marcar(false), 'merge-mini'));
+      corpo.append(barra, dica, area);
+      det.append(sum, corpo);
+      desenhar();
+      return det;
+    }
+
+    // O painel (aberto pelo botão "☑️ Selecionar o que importar" de cada arquivo que não é a base) para escolher o que importar: por publicação e artigo (tudo o que há neles), as notas
+    // por etiqueta ou uma a uma e as respostas uma a uma. Tudo marcado traz tudo; só o que for desmarcado fica de fora.
+    function backupMesclarFiltroPainel(arq, atualizarMarca) {
+      const f = arq.filtro;
+      const n = v => v.toLocaleString('pt-BR');
+      const painel = document.createElement('div');
+      painel.className = 'merge-filtro';
+      const resumo = document.createElement('p');
+      resumo.className = 'merge-filtro-resumo';
+      const atualizar = () => {
+        const notas = arq.listaNotas.filter(x => backupMesclarNotaPassa(arq, x.guid)).length;
+        const respostas = arq.listaRespostas.filter(x => backupMesclarRespostaPassa(arq, x)).length;
+        let grifos = 0;
+        let grifosTotal = 0;
+        let marcadores = 0;
+        let marcadoresTotal = 0;
+        arq.folhas.forEach(x => {
+          grifosTotal += x.grifos;
+          marcadoresTotal += x.marcadores;
+          if (!f.folhasFora.has(x.chave)) { grifos += x.grifos; marcadores += x.marcadores; }
+        });
+        resumo.textContent = 'Vai importar ' + n(notas) + ' de ' + n(arq.listaNotas.length) + ' notas, ' + n(respostas) + ' de ' + n(arq.listaRespostas.length) + ' respostas, ' + n(grifos) + ' de ' + n(grifosTotal) + ' grifos e ' +
+          n(marcadores) + ' de ' + n(marcadoresTotal) + ' marcadores (os grifos, marcadores e respostas também dependem das caixas "Além das notas"). Desmarque o que NÃO deve vir deste arquivo.';
+        atualizarMarca();
+      };
+      painel.appendChild(resumo);
+      painel.appendChild(backupMesclarArvore(arq, atualizar));
+
+      // Uma seção recolhível; com busca (itens uma a uma) ou sem (grupos curtos).
+      const secao = (titulo, itens, { busca = false, linhas = false } = {}) => {
+        if (!itens.length) return;
+        const det = document.createElement('details');
+        det.className = 'merge-filtro-det';
+        const sum = document.createElement('summary');
+        sum.textContent = titulo + ' (' + n(itens.length) + ')';
+        const corpo = document.createElement('div');
+        const barra = document.createElement('div');
+        barra.className = 'merge-filtro-cab';
+        const campo = document.createElement('input');
+        campo.type = 'search';
+        campo.placeholder = 'Buscar…';
+        campo.className = 'merge-filtro-busca';
+        campo.hidden = !busca;
+        const info = document.createElement('span');
+        info.className = 'hint';
+        const lista = document.createElement('div');
+        lista.className = linhas ? 'merge-filtro-linhas' : 'merge-filtro-lista';
+        let listadas = itens;
+        const LIMITE = 100;
+        const desenhar = () => {
+          const termo = backupMesclarSemAcento(campo.value.trim());
+          listadas = termo ? itens.filter(it => it.busca.includes(termo)) : itens;
+          lista.textContent = '';
+          listadas.slice(0, LIMITE).forEach(it => {
+            const rotulo = document.createElement('label');
+            rotulo.className = linhas ? 'merge-linha' : 'merge-check';
+            const cx = document.createElement('input');
+            cx.type = 'checkbox';
+            cx.checked = it.marcado();
+            cx.addEventListener('change', () => { it.definir(cx.checked); atualizar(); });
+            const texto = document.createElement('span');
+            if (linhas) {
+              const forte = document.createElement('strong');
+              forte.textContent = it.rotulo;
+              texto.append(forte, document.createTextNode(it.sub ? ' ' + it.sub : ''));
+            } else {
+              texto.textContent = it.rotulo + ' · ' + it.n;
+            }
+            rotulo.append(cx, texto);
+            lista.appendChild(rotulo);
+          });
+          info.textContent = busca ? n(listadas.length) + (listadas.length === 1 ? ' listada' : ' listadas') + (listadas.length > LIMITE ? ' (mostrando as ' + LIMITE + ' primeiras; refine a busca)' : '') : '';
+        };
+        const marcar = valor => { listadas.forEach(it => it.definir(valor)); desenhar(); atualizar(); };
+        campo.addEventListener('input', desenhar);
+        barra.append(campo, backupButton(busca ? 'marcar listadas' : 'todas', () => marcar(true), 'merge-mini'), backupButton(busca ? 'desmarcar listadas' : 'nenhuma', () => marcar(false), 'merge-mini'));
+        corpo.append(barra, info, lista);
+        det.append(sum, corpo);
+        painel.appendChild(det);
+        desenhar();
+      };
+      const resumoTexto = (x, max) => { const t = (x || '').replace(/\s+/g, ' ').trim(); return t.length > max ? t.slice(0, max) + '…' : t; };
+      const chaveOrdem = nome => nome.replace(/^[^\p{L}\p{N}]+/u, '');
+
+      const itensTags = [...arq.tags.entries()].sort((x, y) => chaveOrdem(x[0]).localeCompare(chaveOrdem(y[0]), 'pt-BR'))
+        .map(([nome, qtd]) => ({ rotulo: nome, n: qtd, busca: backupMesclarSemAcento(nome), marcado: () => !f.tagsFora.has(nome), definir: v => (v ? f.tagsFora.delete(nome) : f.tagsFora.add(nome)) }));
+      if (arq.semTag) itensTags.push({ rotulo: '(sem etiqueta)', n: arq.semTag, busca: 'sem etiqueta', marcado: () => !f.semTagFora, definir: v => { f.semTagFora = !v; } });
+      secao('🏷️ Notas por etiqueta', itensTags);
+      secao('📝 Notas, uma a uma', arq.listaNotas.map(x => ({
+        rotulo: x.titulo || resumoTexto(x.texto, 40) || '(nota vazia)', sub: [x.data, x.onde, x.titulo ? resumoTexto(x.texto, 60) : ''].filter(Boolean).join(' · '),
+        busca: backupMesclarSemAcento([x.titulo, x.texto, x.onde, x.tags.replace(/\u0001/g, ' ')].join(' ')),
+        marcado: () => !f.notasFora.has(x.guid), definir: v => (v ? f.notasFora.delete(x.guid) : f.notasFora.add(x.guid))
+      })), { busca: true, linhas: true });
+      secao('✍️ Respostas, uma a uma', arq.listaRespostas.map(x => ({
+        rotulo: x.publicacao || 'Resposta', sub: [x.onde, resumoTexto(x.texto, 70)].filter(Boolean).join(' · '), busca: backupMesclarSemAcento([x.publicacao, x.onde, x.texto].join(' ')),
+        marcado: () => !f.respostasFora.has(x.id), definir: v => (v ? f.respostasFora.delete(x.id) : f.respostasFora.add(x.id))
+      })), { busca: true, linhas: true });
+      atualizar();
+      return painel;
+    }
+
+    // Abre uma fonte da mesclagem: o arquivo escolhido ou o backup que estava aberto (uma cópia do banco, com as alterações já feitas nele).
+    async function backupMesclarAbrirFonte(arq) {
+      if (arq.file) return backupReadArchive(arq.file);
+      const [{ SQL }] = await Promise.all([loadBackupLibs()]);
+      return { zip: arq.zip, manifest: arq.manifest, db: new SQL.Database(arq.bytes) };
+    }
+
+    // "Escolher o outro backup", em Importação e exportação de um backup aberto: leva à mesclagem de sempre, com o backup aberto como o 1º arquivo (e base),
+    // e já abre a escolha do 2º arquivo.
+    function backupMesclarAPartirDoAberto() {
+      const st = backupState;
+      if (!st) return;
+      backupMesclarArquivos = [{ file: null, aberto: true, zip: st.zip, manifest: st.manifest, bytes: st.db.export(), nome: st.isNew ? 'Backup novo (aberto)' : st.fileName, ...backupMesclarResumoFonte(st.db, st.data) }];
+      backupMesclarBase = 0;
+      backupMesclarEscolhas.clear();
+      backupMesclarMarcadas.clear();
+      backupMesclarRegra.modo = 'recente';
+      backupMesclarRegra.arquivo = 0;
+      mesclarBox.hidden = false;
+      backupAtualizarBotoes();
+      backupMesclarRender();
+      mesclarBox.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      backupMesclarSlotEscolhido = 1;
+      mesclarFile.click();
+    }
+
     async function backupMesclarAdicionar(file, indice) {
       if (!file) return;
-      if (backupMesclarArquivos.some((a, k) => k !== indice && a.nome === file.name && a.file.size === file.size)) {
+      if (backupMesclarArquivos.some((a, k) => k !== indice && a.file && a.nome === file.name && a.file.size === file.size)) {
         return setBackupStatus('Esse arquivo já está na lista de arquivos a mesclar.', true);
       }
       setBackupStatus('Lendo ' + file.name + '…', false);
@@ -2221,14 +2618,7 @@
         const { db } = await backupReadArchive(file);
         let arq;
         try {
-          const brutas = new Map(backupAll(db, 'SELECT NoteId, Guid, LastModified FROM Note').map(r => [r.NoteId, r]));
-          const guids = new Map();
-          readBackupData(db).notas.forEach(n => {
-            const b = brutas.get(n.id);
-            if (!b) return;
-            guids.set(b.Guid, { heading: n.heading, text: n.text, colorIndex: n.colorIndex, tagsText: n.tagsText, date: n.date, lastModified: String(b.LastModified || ''), where: n.where || '' });
-          });
-          arq = { file, nome: file.name, notas: brutas.size, guids };
+          arq = { file, nome: file.name, ...backupMesclarResumoFonte(db, readBackupData(db)) };
         } finally {
           db.close();
         }
@@ -2245,7 +2635,8 @@
 
     async function backupMesclarExecutar() {
       if (backupMesclando || backupMesclarArquivos.length < 2) return;
-      if (backupState && backupState.changes &&
+      // Se o backup aberto é um dos arquivos da mesclagem, as alterações dele entram junto; senão, seriam perdidas.
+      if (backupState && backupState.changes > (backupState.changesDaMescla || 0) && !(!backupState.mesclado && backupMesclarArquivos.some(a => a.aberto)) &&
         !(await askConfirm('As alterações do backup que está aberto ainda não foram gravadas em arquivo e serão perdidas. Mesclar mesmo assim?', 'Mesclar backups'))) return;
       backupMesclando = true;
       mesclarGoBtn.disabled = true;
@@ -2253,14 +2644,17 @@
       const base = Math.min(backupMesclarBase, arquivos.length - 1);
       const comGrifos = document.getElementById('backupMesclarGrifos').checked;
       const comMarcadores = document.getElementById('backupMesclarMarcadores').checked;
+      const comRespostas = document.getElementById('backupMesclarRespostas').checked;
       // Para cada duplicada, o arquivo que vale (decidido antes de abrir qualquer coisa).
       const vencedores = new Map(backupMesclarConflitos().map(c => [c.guid, backupMesclarVencedor(c)]));
       const anterior = backupState;
       let novo = null;
-      const total = { importadas: 0, existentes: 0, etiquetas: [], trocadas: 0, grifos: 0, marcadores: 0 };
+      // Uma duplicada cuja versão vencedora é de um arquivo em que o filtro deixou a nota de fora fica com a da base (senão a nota se perderia).
+      vencedores.forEach((i, guid) => { if (i !== base && !backupMesclarNotaPassa(arquivos[i], guid)) vencedores.set(guid, base); });
+      const total = { importadas: 0, existentes: 0, avulsas: 0, etiquetas: [], trocadas: 0, grifos: 0, marcadores: 0, respostas: 0 };
       try {
         setBackupStatus('Abrindo o arquivo-base (' + arquivos[base].nome + ')…', false);
-        const aberta = await backupReadArchive(arquivos[base].file);
+        const aberta = await backupMesclarAbrirFonte(arquivos[base]);
         novo = { zip: aberta.zip, db: aberta.db, manifest: aberta.manifest, fileName: 'Backup_mesclado.jwlibrary', data: null, changes: 0, generated: null, mesclado: arquivos.length, baseNome: arquivos[base].nome };
         backupState = novo; // as importações copiam para o backup aberto
         // Duplicada cuja versão vencedora não é a da base: a nota sai da base e entra a do arquivo vencedor.
@@ -2281,16 +2675,23 @@
           if (i === base) continue;
           feitos++;
           setBackupStatus('Mesclando o arquivo ' + (i + 1) + ' (' + arquivos[i].nome + '), ' + feitos + ' de ' + (arquivos.length - 1) + '…', false);
-          const outro = await backupReadArchive(arquivos[i].file);
+          const outro = await backupMesclarAbrirFonte(arquivos[i]);
           try {
             // Notas: só entram as que não são duplicadas ou cuja versão vale (a do arquivo i).
-            const ids = backupAll(outro.db, 'SELECT NoteId, Guid FROM Note').filter(r => !vencedores.has(r.Guid) || vencedores.get(r.Guid) === i).map(r => r.NoteId);
+            const filtro = arquivos[i].filtro;
+            const ids = backupAll(outro.db, "SELECT n.NoteId, n.Guid, (SELECT group_concat(t.Name, '\u0001') FROM TagMap tm JOIN Tag t ON t.TagId = tm.TagId WHERE tm.NoteId = n.NoteId) AS Tags FROM Note n")
+              .filter(r => (!vencedores.has(r.Guid) || vencedores.get(r.Guid) === i) && backupMesclarNotaPassa(arquivos[i], r.Guid)).map(r => r.NoteId);
             const r = backupImportNotes(outro.db, ids);
             total.importadas += r.importadas;
             total.existentes += r.existentes;
+            total.avulsas += r.avulsas;
             r.etiquetasNovas.forEach(e => { if (!total.etiquetas.includes(e)) total.etiquetas.push(e); });
-            if (comGrifos) total.grifos += backupImportGrifos(outro.db).novos;
-            if (comMarcadores) total.marcadores += backupImportMarcadores(outro.db).novos;
+            if (comRespostas) {
+              const permitidos = new Set(arquivos[i].listaRespostas.filter(x => backupMesclarRespostaPassa(arquivos[i], x)).map(x => x.id));
+              total.respostas += backupImportRespostas(outro.db, permitidos).novas;
+            }
+            if (comGrifos) total.grifos += backupImportGrifos(outro.db, loc => backupMesclarLugarPassa(arquivos[i], loc)).novos;
+            if (comMarcadores) total.marcadores += backupImportMarcadores(outro.db, loc => backupMesclarLugarPassa(arquivos[i], loc)).novos;
           } finally {
             outro.db.close();
           }
@@ -2305,17 +2706,19 @@
       backupCloseImport();
       if (anterior && anterior.db) anterior.db.close();
       novo.data = readBackupData(novo.db);
-      const mudancas = total.importadas + total.trocadas + total.grifos + total.marcadores;
+      const mudancas = total.importadas + total.trocadas + total.grifos + total.marcadores + total.respostas;
       if (mudancas) backupMarkChanged(mudancas);
+      novo.changesDaMescla = novo.changes || 0;
       backupMesclando = false;
       // A data de cada etiqueta nova: a da nota mais antiga que a usa (as etiquetas do JW Library não guardam a data em que foram criadas).
       const etiquetas = total.etiquetas.map(nome => {
         const linha = backupOne(novo.db, 'SELECT MIN(n.Created) AS d FROM Note n JOIN TagMap tm ON tm.NoteId = n.NoteId JOIN Tag t ON t.TagId = tm.TagId WHERE t.Name = ?', [nome]);
         return { nome, data: linha && linha.d ? String(linha.d) : '' };
       });
-      const resumo = { base: arquivos[base].nome, arquivos: arquivos.length, notas: total.importadas, repetidas: total.existentes, duplicadas: vencedores.size, trocadas: total.trocadas,
+      const resumo = { base: arquivos[base].nome, arquivos: arquivos.length, notas: total.importadas, avulsas: total.avulsas, respostas: comRespostas ? total.respostas : null,
+        filtros: arquivos.filter((a, k) => k !== base && backupMesclarFiltroAtivo(a)).length, repetidas: total.existentes, duplicadas: vencedores.size, trocadas: total.trocadas,
         grifos: comGrifos ? total.grifos : null, marcadores: comMarcadores ? total.marcadores : null, etiquetas };
-      backupMesclarFechar();
+      backupMesclarFechar(true); // os arquivos e as escolhas ficam guardados: dá para voltar à seleção pelo resumo
       backupCategory = 'notas';
       document.getElementById('backupNewNoteSlot').textContent = '';
       backupRefresh('✅ Mesclagem pronta. Veja o resumo abaixo, edite o que quiser e gere o backup mesclado.');
@@ -2335,13 +2738,15 @@
       base.className = 'hint';
       base.textContent = d.arquivos + ' arquivos mesclados. Base: ' + d.base + '.';
       const linhas = [
-        ['📝 Notas que entraram', n(d.notas)],
+        ['📝 Notas que entraram', n(d.notas) + (d.avulsas ? ' (' + n(d.avulsas) + (d.avulsas === 1 ? ' avulsa' : ' avulsas') + ')' : '')],
         ['♻️ Notas repetidas e iguais (ficaram uma vez só)', n(d.repetidas)],
         ['⚖️ Notas duplicadas com diferenças', d.duplicadas ? n(d.duplicadas) + (d.trocadas ? ' (em ' + n(d.trocadas) + ' valeu a versão de outro arquivo)' : ' (valeu a da base)') : 'nenhuma encontrada'],
         ['🖍️ Grifos novos', d.grifos === null ? 'não mesclados' : n(d.grifos)],
         ['🔖 Marcadores novos', d.marcadores === null ? 'não mesclados' : n(d.marcadores)],
+        ['✍️ Respostas novas', d.respostas === null ? 'não mescladas' : n(d.respostas)],
         ['🏷️ Etiquetas novas', n(d.etiquetas.length)]
       ];
+      if (d.filtros) linhas.push(['☑️ Arquivos em que você escolheu o que importar', n(d.filtros)]);
       const lista = document.createElement('div');
       lista.className = 'merge-stats';
       linhas.forEach(([rotulo, valor]) => {
@@ -2354,7 +2759,7 @@
         l.append(r, v);
         lista.appendChild(l);
       });
-      box.append(titulo, base, lista);
+      box.append(titulo, base, lista, backupButton('↩️ Voltar à seleção dos arquivos', backupMesclarReabrir, 'merge-voltar'));
       if (!d.etiquetas.length) return;
 
       const detalhes = document.createElement('details');
@@ -2378,10 +2783,23 @@
         pilulas.textContent = '';
         botoes.forEach(([id, b]) => b.setAttribute('aria-pressed', String(id === modo)));
         if (modo === 'az') {
-          const caixa = document.createElement('div');
-          caixa.className = 'tag-pilulas';
-          d.etiquetas.slice().sort(az).forEach(e => caixa.appendChild(pilula(e)));
-          pilulas.appendChild(caixa);
+          // Em ordem alfabética, com uma seção por letra (as que não começam por letra ficam em "#").
+          const porLetra = new Map();
+          d.etiquetas.slice().sort(az).forEach(e => {
+            const primeira = chave(e.nome).normalize('NFD').replace(/[̀-ͯ]/g, '').charAt(0).toUpperCase();
+            const letra = /[A-Z]/.test(primeira) ? primeira : '#';
+            if (!porLetra.has(letra)) porLetra.set(letra, []);
+            porLetra.get(letra).push(e);
+          });
+          [...porLetra.keys()].sort((x, y) => (x === '#' ? 1 : y === '#' ? -1 : x.localeCompare(y))).forEach(letra => {
+            const cab = document.createElement('div');
+            cab.className = 'tag-grupo-titulo';
+            cab.textContent = letra;
+            const caixa = document.createElement('div');
+            caixa.className = 'tag-pilulas';
+            porLetra.get(letra).forEach(e => caixa.appendChild(pilula(e)));
+            pilulas.append(cab, caixa);
+          });
           return;
         }
         // Por data: o mês e o ano da nota mais antiga de cada etiqueta, do mais novo para o mais antigo; dentro do mês, em ordem alfabética.
@@ -2394,7 +2812,8 @@
         [...grupos.keys()].sort((x, y) => (x === '' ? 1 : y === '' ? -1 : y.localeCompare(x))).forEach(mes => {
           const cab = document.createElement('div');
           cab.className = 'tag-grupo-titulo';
-          cab.textContent = mes ? new Date(Number(mes.slice(0, 4)), Number(mes.slice(5, 7)) - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : 'Sem data';
+          const mesAno = mes ? new Date(Number(mes.slice(0, 4)), Number(mes.slice(5, 7)) - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : 'Sem data';
+          cab.textContent = mesAno.charAt(0).toUpperCase() + mesAno.slice(1);
           const caixa = document.createElement('div');
           caixa.className = 'tag-pilulas';
           grupos.get(mes).sort(az).forEach(e => caixa.appendChild(pilula(e)));
@@ -2409,6 +2828,7 @@
       desenhar('az');
     }
 
+    document.getElementById('backupImportBtn').addEventListener('click', backupMesclarAPartirDoAberto);
     document.getElementById('backupMergeBtn').addEventListener('click', () => {
       if (!mesclarBox.hidden) return backupMesclarFechar();
       backupMesclarArquivos = [];
@@ -2418,6 +2838,7 @@
       backupMesclarRegra.modo = 'recente';
       backupMesclarRegra.arquivo = 0;
       mesclarBox.hidden = false;
+      backupAtualizarBotoes();
       backupMesclarRender();
       mesclarBox.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     });
@@ -2437,7 +2858,7 @@
       if (!mesclarResolver.hidden) backupMesclarRenderResolver(backupMesclarConflitos());
     });
     mesclarGoBtn.addEventListener('click', backupMesclarExecutar);
-    document.getElementById('backupMesclarCancelBtn').addEventListener('click', () => { if (!backupMesclando) { backupMesclarFechar(); setBackupStatus('', false); } });
+    document.getElementById('backupMesclarCancelBtn').addEventListener('click', () => { if (!backupMesclando) { backupMesclarFechar(Boolean(backupState && backupState.mesclado)); setBackupStatus('', false); } });
 
     // ---------- Leitura em voz alta (botão 🔊 Ouvir) ----------
     // O texto do campo (ou o trecho selecionado) vira letras comuns, sem emojis e símbolos, e vai em partes ao servidor,
@@ -6253,7 +6674,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.33'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.38'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());

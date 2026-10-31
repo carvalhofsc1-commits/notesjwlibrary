@@ -1516,10 +1516,12 @@
         <h3 class="backup-mesclar-titulo">🔀 Mesclar backups</h3>
         <p class="hint">Um arquivo é a base (⭐): tudo dele fica. Dos outros entram as notas (com cor, trecho grifado e etiquetas), os grifos e os marcadores que a base ainda não tem. Por padrão a base é o 1º arquivo; toque em "⭐ Usar como base" para trocar.</p>
         <div id="backupMesclarSlots"></div>
-        <div class="merge-extras">
+        <fieldset class="merge-extras">
+          <legend>Além das notas</legend>
           <label class="merge-opcao"><input type="checkbox" id="backupMesclarGrifos" checked><span>Mesclar também os grifos</span></label>
           <label class="merge-opcao"><input type="checkbox" id="backupMesclarMarcadores" checked><span>Mesclar também os marcadores</span></label>
-        </div>
+          <label class="merge-opcao"><input type="checkbox" id="backupMesclarRespostas" checked><span>Mesclar também as respostas</span></label>
+        </fieldset>
         <div id="backupMesclarRegra" class="merge-regra" hidden>
           <h4 class="merge-regra-titulo">⚖️ Notas repetidas</h4>
           <p id="backupMesclarConflitoInfo" class="hint"></p>
@@ -1554,11 +1556,10 @@
             </div>
             <div class="backup-export backup-pane">
               <span>📥 Mesclar: importar notas de outro backup</span>
-              <p class="hint">As notas do outro backup entram neste backup; as que você já tem ficam de fora.</p>
+              <p class="hint">Abre a mesclagem de backups com este backup como o 1º arquivo; você escolhe o 2º (e até mais 3).</p>
               <div class="bk-row">
                 <button id="backupImportBtn" class="secondary" type="button">📥 Escolher o outro backup (.jwlibrary)</button>
               </div>
-              <input id="backupImportFile" type="file" accept=".jwlibrary,application/octet-stream" hidden>
               <div id="backupImportBox" class="backup-save bk-import" hidden></div>
             </div>
           </div>
@@ -1572,6 +1573,9 @@
           </div>
           <p class="hint">Guarde também o backup original: restaurar um backup no JW Library substitui todos os dados do aparelho.</p>
         </div>
+        <div class="backup-conteudo">
+        <h3 id="backupConteudoTitulo" class="backup-conteudo-titulo"></h3>
+        <p id="backupConteudoDica" class="hint"></p>
         <div class="backup-controls">
           <div>
             <label for="backupCategory">Categoria</label>
@@ -1590,6 +1594,7 @@
         <div id="backupNewAnswerSlot"></div>
         <p id="backupCount" class="hint"></p>
         <div id="backupTree" class="backup-tree"></div>
+        </div>
       </div>
     </section>
 

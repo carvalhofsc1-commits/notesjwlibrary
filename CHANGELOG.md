@@ -2,6 +2,26 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.38
+
+Mesclar backups: (1) "Selecionar o que importar" ganhou a seção "📚 Por publicação e artigo", uma árvore (tipo > publicação > edição > artigo, como a revista A Sentinela de agosto de 2026 e o artigo dela) com caixas em cada nível: marcar ou desmarcar vale para tudo o que há ali (notas, respostas, grifos e marcadores), com busca e "marcar/desmarcar todas"; o painel mostra "Vai importar X de Y notas, respostas, grifos e marcadores"; (2) depois de mesclar, o resumo tem "↩️ Voltar à seleção dos arquivos", que reabre a primeira fase com os arquivos, a base, as regras e os filtros como estavam, para mudar e mesclar de novo (as alterações feitas no backup mesclado depois disso se perdem, com aviso); (3) "☑️ Selecionar o que importar" virou um 4º botão, abaixo de Remover, em roxo claro; (4) "Usar como base" passou a "Usar como arquivo base".
+
+## 6.3.37
+
+Mesclar backups: (1) as opções "grifos", "marcadores" e "respostas" ficam numa moldura fina com o título "Além das notas"; (2) os botões do começo ("Abrir e editar backup" e "Mesclar backups") somem enquanto há um backup aberto ou uma mesclagem sendo montada (para vê-los de novo, feche o backup ou cancele a mesclagem), e o botão de abrir vira "Abrir outro backup para mesclar", que inclui outro backup na mesclagem; (3) o conteúdo do backup aberto (categoria, agrupar, busca e lista) ficou num contêiner com título e explicação ("Conteúdo do backup mesclado", "Conteúdo do backup aberto"...); (4) em cada arquivo que não é a base, o texto "☑️ Selecionar o que importar" (no cabeçalho, sem ocupar linha) abre um painel para escolher o que entra: notas por etiqueta ou uma a uma, e respostas por publicação ou uma a uma, com busca e "marcar/desmarcar listadas"; o painel mostra "Vai importar X de Y notas e Z de W respostas".
+
+## 6.3.36
+
+Mesclar backups: (1) as respostas (campos "Sua resposta") também entram, em nova opção "Mesclar também as respostas" (se o aberto já tem resposta no mesmo campo, fica a dele; vazio, recebe a da origem); (2) em cada arquivo que não é a base há um botão discreto 🎚️ (acende quando há filtro) que abre uma lista de caixas para escolher o que importar dele: as etiquetas das notas (inclusive "sem etiqueta") e as respostas por publicação (por exemplo, só as de A Sentinela ou só as da apostila), cada lista com "todas" e "nenhuma"; sem tocar no botão, tudo é importado; (3) o resumo mostra quantas das notas que entraram são avulsas, as respostas novas e em quantos arquivos há filtro. Uma duplicada cuja versão vencedora fica de fora pelo filtro mantém a da base.
+
+## 6.3.35
+
+Backup: em Importação e exportação, "Mesclar: importar notas de outro backup" (num backup aberto) agora leva à mesma mesclagem de 2 a 5 arquivos: o backup que está aberto, com as alterações já feitas nele, entra como o 1º arquivo (e base) e já abre a escolha do 2º. Num backup que já é o resultado de uma mesclagem, essa opção some. A escolha de notas por etiqueta da importação antiga deixou de ser usada.
+
+## 6.3.34
+
+Etiquetas novas do resumo da mesclagem: na ordem alfabética, uma seção por letra (A, B, C…; as que não começam por letra ficam em "#"), como já era feito com os meses na ordem por data; os meses passaram a aparecer como "Julho de 2021" (só a primeira letra maiúscula).
+
 ## 6.3.33
 
 Mesclar backups: dá para escolher qual arquivo é a base (botão "⭐ Usar como base" em cada arquivo; por padrão, o 1º): tudo da base fica, e dos outros arquivos entram as notas, os grifos e os marcadores que a base ainda não tem. Grifos: os que a base não tem (mesmo UserMarkGuid), com o trecho e o lugar. Marcadores: os que a base não tem (mesmo lugar, parágrafo e título), cada um no primeiro slot livre da publicação. Duas opções (marcadas por padrão) permitem deixar de fora os grifos ou os marcadores. As regras para notas duplicadas valem para qualquer arquivo-base. Depois da mesclagem aparece um "📊 Resumo da mesclagem" (notas que entraram, notas repetidas e iguais, notas duplicadas com diferenças ou "nenhuma encontrada", grifos, marcadores e etiquetas novas) com as etiquetas novas numa seção recolhível, em pílulas como no JW Library, em ordem alfabética ou por data (mês e ano da nota mais antiga que usa a etiqueta). A linha de resumo do backup aberto deixou de mostrar "formato 16" (é a versão técnica do banco de dados do JW Library) e passou a dizer "aparelho …" (quem fez o backup) ou, no mesclado, "base: …".
