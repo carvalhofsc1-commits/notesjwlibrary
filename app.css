@@ -7614,3 +7614,45 @@
     #transcricaoProgresso { width: 100%; height: 10px; margin: 6px 0; }
     .transcricao-acoes { margin-top: 0; }
     .transcricao-acoes button[hidden] { display: none; }
+
+    /* Início com 8 atalhos no celular: quando a tela não comporta tudo (o app põe "aperta2"), os botões perdem a descrição e encolhem (ícone e letras menores),
+       para caber sem rolar. Vem por último para valer sobre as faixas por altura acima. */
+    @media (max-width: 640px) {
+
+      .inicio-grid.aperta2 .atalhos-grid .atalho-desc {
+        display: none;
+      }
+
+      .inicio-grid.aperta2 .atalhos-grid .atalho,
+      .inicio-grid.aperta2 .atalhos-grid .atalho:hover {
+        padding: 3px 5px;
+        gap: 0;
+      }
+
+      .inicio-grid.aperta2 .atalhos-grid .atalho-icone {
+        font-size: 1.9rem;
+        line-height: 1;
+      }
+
+      .inicio-grid.aperta2 .atalhos-grid .atalho-nome {
+        font-size: .95rem;
+        line-height: 1.15;
+      }
+
+      .inicio-grid.aperta2 .atalhos-grid .atalho-trava {
+        margin-top: 0;
+        font-size: .64rem;
+        max-width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .inicio-grid.aperta3 .atalhos-grid .atalho-icone {
+        font-size: 1.5rem;
+      }
+
+      .inicio-grid.aperta3 .atalhos-grid .atalho-nome {
+        font-size: .86rem;
+      }
+    }
