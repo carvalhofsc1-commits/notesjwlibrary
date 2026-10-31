@@ -6820,7 +6820,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.47'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.48'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -10033,6 +10033,9 @@ function saveTemplatesToStorage() {
       adminCodeLeituraNote.value = '';
       delete adminCodeLeituraNote.dataset.loaded;
       adminCodeLeituraStatus.textContent = '';
+      adminCodeS34Note.value = '';
+      delete adminCodeS34Note.dataset.loaded;
+      adminCodeS34Status.textContent = '';
       promptsEditor.querySelectorAll('details').forEach(card => { card.open = false; });
       promptsAbrindo = true;
       promptsSection.setAttribute('aria-busy', 'true');
@@ -10277,6 +10280,10 @@ function saveTemplatesToStorage() {
       if (!adminCodeLeituraNote.dataset.loaded) {
         adminCodeLeituraNote.value = typeof state.anotacaoLeitura === 'string' ? state.anotacaoLeitura : '';
         adminCodeLeituraNote.dataset.loaded = '1';
+      }
+      if (!adminCodeS34Note.dataset.loaded) {
+        adminCodeS34Note.value = typeof state.anotacaoS34 === 'string' ? state.anotacaoS34 : '';
+        adminCodeS34Note.dataset.loaded = '1';
       }
       renderLimits(state);
 
@@ -10551,6 +10558,8 @@ function saveTemplatesToStorage() {
     const adminCodeDirStatus = document.getElementById('adminCodeDirStatus');
     const adminCodeLeituraNote = document.getElementById('adminCodeLeituraNote');
     const adminCodeLeituraStatus = document.getElementById('adminCodeLeituraStatus');
+    const adminCodeS34Note = document.getElementById('adminCodeS34Note');
+    const adminCodeS34Status = document.getElementById('adminCodeS34Status');
 
     function setAdminCodeStatus(message, isWarning) {
       adminCodeStatus.className = isWarning ? 'warn' : 'ok';
@@ -10633,6 +10642,34 @@ function saveTemplatesToStorage() {
       adminCodeLeituraNote.value = result.data.anotacao || '';
       if (promptsState) promptsState.anotacaoLeitura = adminCodeLeituraNote.value;
       setAdminCodeLeituraStatus('✅ Anotação salva.', false);
+    });
+
+    // ---------- Anotação do código do S-34 (igual às outras) ----------
+    function setAdminCodeS34Status(message, isWarning) {
+      adminCodeS34Status.className = isWarning ? 'warn' : 'ok';
+      adminCodeS34Status.textContent = message;
+    }
+
+    document.getElementById('adminCodeS34CopyBtn').addEventListener('click', async () => {
+      const text = adminCodeS34Note.value.trim();
+      if (!text) return setAdminCodeS34Status('O campo está vazio.', true);
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (e) {
+        adminCodeS34Note.focus();
+        adminCodeS34Note.select();
+        try { document.execCommand('copy'); } catch (e2) { return setAdminCodeS34Status('Não foi possível copiar. Selecione e copie manualmente.', true); }
+      }
+      setAdminCodeS34Status('✅ Código copiado.', false);
+    });
+
+    document.getElementById('adminCodeS34SaveBtn').addEventListener('click', async () => {
+      setAdminCodeS34Status('Salvando...', false);
+      const result = await postConfig({ acao: 'anotacao-s34-salvar', codigo: promptsCode, anotacao: adminCodeS34Note.value });
+      if (!result.ok) return setAdminCodeS34Status(configErrorMessage(result, 'Não foi possível salvar agora.'), true);
+      adminCodeS34Note.value = result.data.anotacao || '';
+      if (promptsState) promptsState.anotacaoS34 = adminCodeS34Note.value;
+      setAdminCodeS34Status('✅ Anotação salva.', false);
     });
 
     async function copyAllPrompts() {
@@ -11155,7 +11192,10 @@ function saveTemplatesToStorage() {
     // Com a senha de administrador salva no aparelho, o pedido a leva junto: só assim o servidor usa a memória de lições do piloto.
     function corpoIa(payload) {
       const admin = senhaAdminSalva();
-      return JSON.stringify(admin ? Object.assign({}, payload, { codigoAdmin: admin }) : payload);
+      let corpo = admin ? Object.assign({}, payload, { codigoAdmin: admin }) : payload;
+      // As tarefas do discurso público (lista de temas, esboço original e esboço com IA) também levam o código do S-34.
+      if (corpo && typeof corpo.tarefa === 'string' && /^publico(-|$)/.test(corpo.tarefa)) corpo = Object.assign({}, corpo, { codigoS34: codigoS34Salvo() });
+      return JSON.stringify(corpo);
     }
     // Espera máxima por uma resposta da IA: os modelos mais potentes (escolhidos na tela de prompts) podem levar alguns
     // minutos; o servidor desiste antes disso (a função da Vercel vai até 300 s).
@@ -12538,6 +12578,8 @@ function saveTemplatesToStorage() {
         });
         let data = null;
         try { data = await response.json(); } catch (e) { /* resposta sem JSON */ }
+        // O servidor recusou o código do S-34 salvo (variável trocada): apaga e esconde a seção.
+        if (response.status === 403 && data && /^Código do S-34 inválido/.test(data.erro || '')) s34CodigoInvalido();
         // 404 ou 501 sem mensagem do servidor = a rota não existe (site fora do ar ou app aberto fora do site publicado). Com
         // "erro" na resposta o servidor respondeu de verdade (por exemplo, "esta semana não tem discurso"): a mensagem dele vale.
         return { ok: response.ok && !!data, data, unavailable: (response.status === 404 || response.status === 501) && !(data && data.erro) };
@@ -14026,7 +14068,7 @@ function saveTemplatesToStorage() {
     }
 
     async function publicoCarregarLista() {
-      const erroDeAcesso = dirigenteAccessError();
+      const erroDeAcesso = dirigenteAccessError() || (codigoS34Salvo() ? '' : 'Salve o código do S-34 em Ajustes → 🔐 Autorização de acessos.');
       aiStatusKind = 'publico';
       if (erroDeAcesso) return setAiStatus(erroDeAcesso, true);
       const result = await postStudy({ tarefa: 'publico-lista', codigoDirigente: codigoDirigenteSalvo() }, 30000).catch(() => null);
@@ -14067,7 +14109,7 @@ function saveTemplatesToStorage() {
     }
 
     publicoBox.addEventListener('toggle', () => {
-      if (publicoBox.open && !publicoCarregado && codigoDirigenteSalvo()) publicoCarregarLista();
+      if (publicoBox.open && !publicoCarregado && codigoDirigenteSalvo() && codigoS34Salvo()) publicoCarregarLista();
     });
     // Campo do tema (digitar ou abrir a lista): a lista é um painel largo, com o título inteiro de cada tema (a lista nativa do celular é estreita e corta o texto).
     publicoBusca.addEventListener('input', () => {
@@ -15126,7 +15168,7 @@ function saveTemplatesToStorage() {
     // Ao abrir o app, se há esboço público salvo sem número, busca a lista de temas (sem mostrar nada) e numera. Só com o código do dirigente.
     let publicoNumeracaoTentada = false;
     async function publicoNumerarSalvosEmSilencio() {
-      if (publicoNumeracaoTentada || !codigoDirigenteSalvo()) return;
+      if (publicoNumeracaoTentada || !codigoDirigenteSalvo() || !codigoS34Salvo()) return;
       const prefixo = ESBOCOS.publico.tituloHistorico + ' · ';
       if (!historicoLer().some(i => i.tipo === 'esboco' && !i.esbocoNumero && String(i.titulo).startsWith(prefixo))) return;
       publicoNumeracaoTentada = true;
@@ -16665,6 +16707,9 @@ function saveTemplatesToStorage() {
     function codigoLeituraSalvo() {
       try { return (localStorage.getItem('jwLibraryNoteAplicarLeituraCodeV1') || '').trim(); } catch (e) { return ''; }
     }
+    function codigoS34Salvo() {
+      try { return (localStorage.getItem('jwLibraryNoteAplicarS34CodeV1') || '').trim(); } catch (e) { return ''; }
+    }
     function codigoDirigenteSalvo() {
       try { return (localStorage.getItem('jwLibraryNoteAplicarDirigenteCodeV1') || '').trim(); } catch (e) { return ''; }
     }
@@ -16694,6 +16739,11 @@ function saveTemplatesToStorage() {
         campo: document.getElementById('leituraCode'), chave: 'jwLibraryNoteAplicarLeituraCodeV1', acao: 'leitura-conferir', salvo: codigoLeituraSalvo,
         status: document.getElementById('acessoStatusLeitura'), ver: document.getElementById('acessoVerLeitura'), nome: 'O código de leitura',
         salvar: 'acessoSalvarLeitura', apagar: 'acessoApagarLeitura'
+      },
+      s34: {
+        campo: document.getElementById('s34Code'), chave: 'jwLibraryNoteAplicarS34CodeV1', acao: 's34-conferir', salvo: codigoS34Salvo,
+        status: document.getElementById('acessoStatusS34'), ver: document.getElementById('acessoVerS34'), nome: 'O código do S-34',
+        salvar: 'acessoSalvarS34', apagar: 'acessoApagarS34'
       },
       texto: {
         campo: document.getElementById('textoCode'), chave: 'jwLibraryNoteAplicarTextoCodeV1', acao: 'texto-conferir', salvo: codigoTextoSalvo,
@@ -16819,6 +16869,10 @@ function saveTemplatesToStorage() {
       travarGrupo('grupoComentarios', pesquisa ? '' : 'pesquisa');
       travarGrupo('grupoDirigir', motivoDirigir);
       travarGrupo('grupoDiscursos', motivoDirigir);
+      // Discurso público - lista de temas (esboços do S-34): só aparece com o código do S-34 (e o do dirigente, que libera o grupo).
+      const s34 = Boolean(codigoS34Salvo());
+      publicoBox.hidden = !s34;
+      if (!s34 && publicoBox.open) publicoBox.open = false;
       // Formatar → Opções com IA (formatação e texto colado): só com o código de pesquisa; sem ele, fica cinza e não abre.
       travarGrupo('opcoesIaBox', pesquisa ? '' : 'pesquisa');
       travarAtalho('comentarios', pesquisa ? '' : 'pesquisa');
@@ -16847,7 +16901,7 @@ function saveTemplatesToStorage() {
         if (grupo.classList.contains('grupo-desabilitado')) event.preventDefault();
       });
     });
-    document.addEventListener('acesso-salvo', event => { if (event.detail === 'codigo' || event.detail === 'dirigente' || event.detail === 'leitura' || event.detail === 'texto') acessosAtualizar(); });
+    document.addEventListener('acesso-salvo', event => { if (event.detail === 'codigo' || event.detail === 'dirigente' || event.detail === 'leitura' || event.detail === 'texto' || event.detail === 's34') acessosAtualizar(); });
     acessosAtualizar();
 
     // O código do dirigente salvo pode deixar de valer (o administrador trocou a variável no servidor). O app confere com o
@@ -16906,7 +16960,26 @@ function saveTemplatesToStorage() {
       }
     }
     textoCodigoVerificar(true);
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { dirigenteVerificar(false); leituraCodigoVerificar(false); textoCodigoVerificar(false); } });
+
+    // O código do S-34 salvo também pode deixar de valer (variável CODIGO_S34 trocada no servidor): mesma conferência, só apaga se o servidor recusar (403).
+    function s34CodigoInvalido() {
+      if (!codigoS34Salvo()) return;
+      try { localStorage.removeItem('jwLibraryNoteAplicarS34CodeV1'); } catch (e) { /* sem localStorage */ }
+      acessoSituacao('s34');
+      acessoStatus('s34', 'O código do S-34 que estava salvo não vale mais. Informe o novo código.', true);
+      acessosAtualizar();
+    }
+    let s34CodigoConferidoEm = 0;
+    async function s34CodigoVerificar(forcar) {
+      const codigo = codigoS34Salvo();
+      if (!codigo || !navigator.onLine) return;
+      if (!forcar && Date.now() - s34CodigoConferidoEm < 10 * 60 * 1000) return;
+      s34CodigoConferidoEm = Date.now();
+      const r = await postConfig({ acao: 's34-conferir', codigo });
+      if (r.status === 403 && codigoS34Salvo() === codigo) s34CodigoInvalido();
+    }
+    s34CodigoVerificar(true);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { dirigenteVerificar(false); leituraCodigoVerificar(false); textoCodigoVerificar(false); s34CodigoVerificar(false); } });
 
     // ---------- Tela Áudio em texto ----------
     // O áudio é decodificado neste aparelho (Web Audio), reamostrado para 16 kHz mono, cortado em trechos de ~50 s (o Google aceita até 1 minuto por

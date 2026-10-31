@@ -13,6 +13,11 @@ export function dirigenteValido(informado) {
   return textosIguais(informado, codigoDoDirigente());
 }
 
+// O código do S-34 (variável CODIGO_S34) libera a lista de temas e os esboços do discurso público; vale junto com o do dirigente.
+export function s34Valido(informado) {
+  return textosIguais(informado, process.env.CODIGO_S34);
+}
+
 // Recusa com a mensagem do código que a pessoa estava usando: o do dirigente, se ele veio no pedido; senão o de pesquisa.
 export function recusarAcesso(res, body) {
   if (typeof body.codigoDirigente === "string" && body.codigoDirigente) {
@@ -34,7 +39,7 @@ export function acessoDoDirigente(res, body) {
   return true;
 }
 
-// publico: sem código · pesquisa: código de pesquisa · pesquisa-ou-dirigente: um dos dois · dirigente: código do dirigente.
+// publico: sem código · pesquisa: código de pesquisa · pesquisa-ou-dirigente: um dos dois · dirigente: código do dirigente · s34: o do dirigente e o do S-34.
 export const NIVEIS = {
   // Formatar (tela Formatar → Opções com IA): só com o código de pesquisa
   formatar: "pesquisa",
@@ -57,10 +62,10 @@ export const NIVEIS = {
   "ebc-dirigente": "dirigente",
   "tesouros-ler": "dirigente",
   tesouros: "dirigente",
-  "publico-lista": "dirigente",
-  "publico-ler": "dirigente",
-  "publico-esboco": "dirigente",
-  publico: "dirigente",
+  "publico-lista": "s34",
+  "publico-ler": "s34",
+  "publico-esboco": "s34",
+  publico: "s34",
   versiculos: "dirigente",
   "outros-pesquisar": "dirigente",
   "outros-ler": "dirigente",
@@ -75,6 +80,18 @@ export function exigirAcesso(res, body) {
   const nivel = Object.hasOwn(NIVEIS, tarefa) ? NIVEIS[tarefa] : "publico";
   if (nivel === "publico") return true;
   if (nivel === "dirigente") return acessoDoDirigente(res, body);
+  if (nivel === "s34") {
+    if (!acessoDoDirigente(res, body)) return false;
+    if (!process.env.CODIGO_S34) {
+      erro(res, 503, "O código do S-34 ainda não está configurado no servidor.");
+      return false;
+    }
+    if (!s34Valido(body.codigoS34)) {
+      erro(res, 403, "Código do S-34 inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
+      return false;
+    }
+    return true;
+  }
   if (nivel === "pesquisa") {
     if (!process.env.CODIGO_ESTUDO) {
       erro(res, 503, "A leitura do estudo ainda não está configurada no servidor.");

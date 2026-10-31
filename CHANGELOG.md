@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.48
+
+Código do S-34 (variável CODIGO_S34 na Vercel): a seção "🎙️ Discurso público - lista de temas (esboços do S-34)" só aparece para quem salvou esse código em Ajustes → 🔐 Autorização de acessos (campo novo "📜 Código do S-34"); sem ele, a seção fica escondida. O servidor também exige o código (além do do dirigente) para listar os temas, ler o esboço e gerar o esboço com IA. Se o código for trocado na Vercel, o app apaga o salvo e esconde a seção. Nova anotação do administrador "📜 Código do S-34 (anotação)" na tela de prompts da IA, em Diversos.
+
 ## 6.3.47
 
 Tela Backup: (1) o bloco de gerar o arquivo (Gerar backup modificado / mesclado, Salvar o arquivo, Compartilhar) passou para o fim da página, depois do card de conteúdo do backup; (2) o botão "Abrir e editar backup" ficou azul bem clarinho com borda escura e texto escuro, no padrão dos outros; (3) o botão "Mesclar arquivos importados" ficou amarelo clarinho com borda escura.

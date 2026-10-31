@@ -830,6 +830,20 @@
             </div>
 
             <div class="acesso-item">
+              <label for="s34Code">📜 Código do S-34</label>
+              <p class="hint">Libera a seção Discurso público - lista de temas (esboços do S-34), em Reuniões → Preparação de discursos e esboços. Sem ele, a seção fica escondida neste aparelho.</p>
+              <div class="acesso-linha">
+                <input autocomplete="off" id="s34Code" type="password" maxlength="100" placeholder="Código do S-34">
+                <button id="acessoVerS34" class="secondary acesso-ver" type="button" aria-label="Mostrar o código" aria-pressed="false">👁️</button>
+              </div>
+              <div class="bk-row">
+                <button id="acessoSalvarS34" type="button">💾 Salvar</button>
+                <button id="acessoApagarS34" class="secondary" type="button">🗑️ Apagar</button>
+              </div>
+              <p id="acessoStatusS34" class="hint acesso-status" role="status" aria-live="polite"></p>
+            </div>
+
+            <div class="acesso-item">
               <label for="adminSenha">🛡️ Senha de administrador</label>
               <p class="hint">Só para o administrador: prompts da IA, voz para todos e configurações padrão de todos os usuários.</p>
               <div class="acesso-linha">
@@ -1219,6 +1233,19 @@
             <div class="button-row">
               <button id="adminCodeLeituraSaveBtn" type="button">💾 Salvar anotação</button>
               <span id="adminCodeLeituraStatus" class="ok" role="status" aria-live="polite"></span>
+            </div>
+          </details>
+
+          <details class="prompt-item prompt-tint-codigo">
+            <summary><h3>📜 Código do S-34 (anotação)</h3></summary>
+            <p class="hint">Anotação só sua, para não esquecer o código do S-34 (seção Discurso público - lista de temas). O código que vale de verdade é o da variável <strong>CODIGO_S34</strong> na Vercel.</p>
+            <div class="admin-code-row">
+              <input id="adminCodeS34Note" type="text" maxlength="500" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Anote aqui o código do S-34">
+              <button id="adminCodeS34CopyBtn" class="secondary" type="button">📋 Copiar</button>
+            </div>
+            <div class="button-row">
+              <button id="adminCodeS34SaveBtn" type="button">💾 Salvar anotação</button>
+              <span id="adminCodeS34Status" class="ok" role="status" aria-live="polite"></span>
             </div>
           </details>
 

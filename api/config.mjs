@@ -15,6 +15,7 @@ const CHAVE_PADRAO = "padrao_modelos";
 const CHAVE_ANOTACAO = "anotacao_admin";
 const CHAVE_ANOTACAO_DIRIGENTE = "anotacao_dirigente"; // a mesma ideia, para o código do dirigente (variável CODIGO_DIRIGENTE)
 const CHAVE_ANOTACAO_LEITURA = "anotacao_leitura"; // e para o código de leitura (variável CODIGO_LEITURA)
+const CHAVE_ANOTACAO_S34 = "anotacao_s34"; // e para o código do S-34 (variável CODIGO_S34)
 const MAX_CHARS_ANOTACAO = 500;
 // Texto do convite para o app (página Sobre): o administrador o escreve e ele vale para todos; vazio = vale o texto original do app.
 const CHAVE_CONVITE = "convite_texto";
@@ -76,6 +77,7 @@ async function estadoDosPrompts() {
     anotacao: await lerAnotacao(),
     anotacaoDirigente: await lerAnotacao(CHAVE_ANOTACAO_DIRIGENTE),
     anotacaoLeitura: await lerAnotacao(CHAVE_ANOTACAO_LEITURA),
+    anotacaoS34: await lerAnotacao(CHAVE_ANOTACAO_S34),
   };
 }
 
@@ -174,6 +176,16 @@ export default async function handler(req, res) {
       if (!textosIguais(corpo.codigo, process.env.CODIGO_LEITURA)) {
         registrarErro(ip);
         return erro(res, 403, "Código de leitura incorreto.");
+      }
+      return res.status(200).json({ ok: true });
+    }
+
+    // Confere o código do S-34 (CODIGO_S34) quando ele é salvo em Ajustes: libera a seção Discurso público - lista de temas (api/_acesso.mjs, nível "s34").
+    if (acao === "s34-conferir") {
+      if (!process.env.CODIGO_S34) return erro(res, 503, "O código do S-34 ainda não está configurado no servidor.");
+      if (!textosIguais(corpo.codigo, process.env.CODIGO_S34)) {
+        registrarErro(ip);
+        return erro(res, 403, "Código do S-34 incorreto.");
       }
       return res.status(200).json({ ok: true });
     }
@@ -371,6 +383,13 @@ export default async function handler(req, res) {
       if (!exigirEscrita(res)) return;
       const texto = typeof corpo.anotacao === "string" ? corpo.anotacao.trim().slice(0, MAX_CHARS_ANOTACAO) : "";
       await gravarItem(CHAVE_ANOTACAO_LEITURA, texto);
+      return res.status(200).json({ ok: true, anotacao: texto });
+    }
+
+    if (acao === "anotacao-s34-salvar") {
+      if (!exigirEscrita(res)) return;
+      const texto = typeof corpo.anotacao === "string" ? corpo.anotacao.trim().slice(0, MAX_CHARS_ANOTACAO) : "";
+      await gravarItem(CHAVE_ANOTACAO_S34, texto);
       return res.status(200).json({ ok: true, anotacao: texto });
     }
 
