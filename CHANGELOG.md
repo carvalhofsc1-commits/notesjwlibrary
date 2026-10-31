@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.28
+
+Texto diário: o botão ✨ Gerar comentários adicionais não some mais depois de gerar ou recuperar os comentários (fica sempre visível). Tela Formatar: o convite para o FunPlayB ficou compacto (ícone à esquerda, texto à direita, numa moldura) para caber na tela do celular sem cortar. Ajustes: as opções ficam em dois contêineres, "Ajustes gerais" (todos os usuários) e "Exclusivo do administrador" (só aparece com a senha de administrador salva).
+
 ## 6.3.27
 
 Comentários adicionais do texto diário: a parte que cita o ponto do texto de hoje ("Como vimos no texto de hoje, …") aparece em negrito e itálico, e a aplicação, em texto normal; cada comentário começa com um emoji do assunto, antes do ponto. A IA agora devolve o comentário em dois campos (base e aplicação) e um emoji; o servidor os junta num comentário só (o que a voz lê e o que é copiado), então comentários salvos antes continuam funcionando, só sem negrito nem emoji. O negrito e o itálico se mantêm quando a leitura em voz alta divide o comentário em frases (a base é a(s) primeira(s) frase(s)). Se a tela Prompts da IA tiver uma versão salva do prompt dos comentários do texto diário, restaure o padrão.

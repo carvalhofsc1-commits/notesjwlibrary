@@ -389,12 +389,13 @@
       <!-- Convite para o FunPlayB (jogo de perguntas bíblicas): só na tela Formatar, logo abaixo do campo de texto. É um <div> (não uma <section>)
            para não mexer na contagem que dá a cor dos outros cartões (.card:nth-of-type). -->
       <div class="card funplayb-card screen-formatar" role="region" aria-labelledby="funplaybTitulo">
-        <h2 id="funplaybTitulo" class="funplayb-titulo"><span aria-hidden="true">🎮</span> <span class="funplayb-anima">Quer se divertir testando seus conhecimentos bíblicos?</span> <span aria-hidden="true">📖✨</span></h2>
-        <p class="funplayb-texto"><span aria-hidden="true">🧠</span> Experimente o <strong>FunPlayB</strong>, um jogo de perguntas bíblicas! <span aria-hidden="true">🎉</span><br>Toque no ícone abaixo e comece a jogar <span aria-hidden="true">👇</span></p>
         <a class="funplayb-logo" href="https://jogo-perguntas-app.vercel.app" target="_blank" rel="noopener noreferrer" aria-label="Abrir o FunPlayB, jogo de perguntas bíblicas, em outra página">
-          <img src="funplayb.jpg" width="96" height="96" alt="FunPlayB, jogo de perguntas bíblicas" loading="lazy">
+          <img src="funplayb.jpg" width="72" height="72" alt="FunPlayB, jogo de perguntas bíblicas" loading="lazy">
         </a>
-        <a class="funplayb-endereco" href="https://jogo-perguntas-app.vercel.app" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">🔗</span> jogo-perguntas-app.vercel.app</a>
+        <div class="funplayb-corpo">
+          <h2 id="funplaybTitulo" class="funplayb-titulo"><span aria-hidden="true">🎮</span> <span class="funplayb-anima">Quer se divertir testando seus conhecimentos bíblicos?</span></h2>
+          <p class="funplayb-texto">Experimente o <strong>FunPlayB</strong>, jogo de perguntas bíblicas! <span aria-hidden="true">🎉</span> Toque no ícone <span aria-hidden="true">👈</span></p>
+        </div>
       </div>
 
       <section class="card reunioes-card screen-reunioes" id="reunioesCard">
@@ -763,6 +764,9 @@
 
     <!-- Tela Ajustes: as categorias ficam direto na página (sem um cartão recolhível em volta). -->
     <div class="ajustes-lista screen-ajustes" id="settingsCard">
+        <!-- Os ajustes de todos os usuários ficam num contêiner (os do administrador, em outro, mais abaixo). -->
+        <div class="ajustes-grupo" id="ajustesGrupoGeral">
+        <h2 class="ajustes-grupo-titulo">⚙️ Ajustes gerais</h2>
         <!-- Todos os códigos e senhas do app num lugar só: informados uma vez e salvos neste aparelho. -->
         <details class="subsection acessos-box" id="acessosSection">
           <summary>🔐 Autorização de acessos</summary>
@@ -1115,8 +1119,10 @@
             </div>
           </div>
         </details>
-        <!-- Opções exclusivas do administrador: no fim da lista, depois de uma linha; só aparecem com a senha de administrador salva. -->
-        <hr class="ajustes-separador so-admin" hidden>
+        </div>
+        <!-- Opções exclusivas do administrador: num contêiner no fim da lista; só aparece com a senha de administrador salva. -->
+        <div class="ajustes-grupo ajustes-grupo-admin so-admin" id="ajustesGrupoAdmin" hidden>
+        <h2 class="ajustes-grupo-titulo">🛡️ Exclusivo do administrador</h2>
         <details class="subsection sub-tint-2 so-admin" id="promptsSection" hidden>
           <summary><span class="adm-titulo">🛠️ Prompts da IA&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
           <div class="subsection-body prompts-body">
@@ -1366,6 +1372,7 @@
             </div>
           </div>
         </details>
+        </div>
     </div>
 
     <!-- Tela Leitura em voz alta (atalho do Início): importar PDF ou Word, ou colar um texto, e ouvir com a frase lida destacada. É um <div> (não uma

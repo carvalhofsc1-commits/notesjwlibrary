@@ -2053,7 +2053,7 @@
     }
 
     /* Em Ajustes as setas dos botões (▸) ficam maiores para facilitar o toque e a leitura. */
-    .ajustes-lista>details.subsection>summary::after {
+    .ajustes-lista .ajustes-grupo>details.subsection>summary::after {
       font-size: 1.55rem;
       line-height: 1;
     }
@@ -2062,7 +2062,7 @@
       margin: 0;
     }
 
-    .ajustes-lista>details.subsection:first-of-type {
+    .ajustes-lista .ajustes-grupo>details.subsection:first-of-type {
       margin-top: 0;
     }
 
@@ -7717,4 +7717,59 @@
     .td-ia-base {
       font-weight: 700;
       font-style: italic;
+    }
+
+    /* Ajustes: um contêiner para as opções de todos os usuários e outro para as exclusivas do administrador. */
+    .ajustes-grupo {
+      border: 2px solid var(--muted);
+      border-radius: 16px;
+      padding: 6px 10px 12px;
+      margin: 12px 0;
+      background: color-mix(in srgb, var(--muted) 7%, transparent);
+    }
+
+    .ajustes-grupo[hidden] {
+      display: none;
+    }
+
+    .ajustes-grupo-admin {
+      border-color: #d97706;
+      background: color-mix(in srgb, #f59e0b 8%, transparent);
+    }
+
+    .ajustes-grupo-titulo {
+      margin: 6px 0 2px;
+      font-size: 1rem;
+      text-align: center;
+    }
+
+    /* Convite para o FunPlayB (tela Formatar), compacto: o ícone à esquerda e o texto à direita, numa moldura, para caber na tela do celular sem cortar. */
+    .card.funplayb-card {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+      padding: 10px 12px;
+      background: var(--card);
+      border: 2px solid #a07ab7;
+      border-radius: 14px;
+      box-shadow: 0 4px 14px var(--shadow);
+    }
+
+    .funplayb-logo img {
+      width: 72px;
+      height: 72px;
+    }
+
+    .card.funplayb-card .funplayb-titulo {
+      margin: 0 0 3px;
+      font-size: .95rem;
+      line-height: 1.25;
+    }
+
+    .card.funplayb-card .funplayb-texto {
+      margin: 0;
+      font-size: .84rem;
+      line-height: 1.3;
     }
