@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.22
+
+Barra de baixo: o botão Pesquisas deu lugar ao 🎙️ Áudio (tela Áudio em texto; fica bloqueado sem o código de texto). As pesquisas e respostas salvas continuam no atalho "Pesquisas salvas" do Início. O botão "Escolher o arquivo de áudio" ganhou a cor dos botões principais da tela Leitura. No resumo do áudio, a troca de "culto" por "reunião" passou a ajustar o artigo (a reunião, uma reunião).
+
+## 6.3.21
+
+Áudio em texto: dois campos opcionais para a IA. "Sobre o áudio" (quem fala, assunto, nomes e termos; vale só para o áudio atual e é limpo em Limpar tudo) e "Como fazer o resumo" (formato, tamanho e foco; fica salvo neste aparelho para os próximos áudios). O servidor os manda à IA separados da transcrição: o contexto ajuda a entender o assunto e a grafia de nomes, e as instruções mandam no formato do resumo, sem autorizar inventar fatos. Política de Privacidade 1.6 cita os dois campos.
+
 ## 6.3.20
 
 Início: o botão "Pesquisas salvas" (Pesquisas e respostas salvas) voltou aos atalhos (agora são 8, em pares). Quando a tela do celular não comporta tudo, os atalhos perdem a descrição e encolhem (ícone e letras menores), para o Início caber sem rolar. A tela Áudio em texto passou a ser reconhecida como tela própria na busca de onde fica cada elemento.

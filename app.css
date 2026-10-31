@@ -7586,15 +7586,17 @@
       margin-top: 6px;
     }
 
-    /* Tela Leitura em voz alta: os dois botões principais (Importar e Ler) usam o tom pastel suave alaranjado e moldura de 2px dos demais botões. */
-    #leituraArquivoBtn {
+    /* Tela Leitura em voz alta (e o botão Escolher o arquivo de áudio da tela Áudio em texto): os botões principais (Importar e Ler) usam o tom pastel suave alaranjado e moldura de 2px dos demais botões. */
+    #leituraArquivoBtn,
+    #transcricaoArquivoBtn {
       background: #fde7c3;
       background: color-mix(in srgb, #f59e0b 24%, var(--card));
       color: var(--neutral-text);
       border: 2px solid #d97706;
     }
 
-    #leituraArquivoBtn:hover {
+    #leituraArquivoBtn:hover,
+    #transcricaoArquivoBtn:hover {
       background: color-mix(in srgb, #f59e0b 36%, var(--card));
     }
 
@@ -7656,3 +7658,8 @@
         font-size: .86rem;
       }
     }
+
+    .transcricao-config { margin: 8px 0; }
+    .transcricao-campo { width: 100%; box-sizing: border-box; resize: vertical; min-height: 0; padding: 6px 8px; font-size: .9rem; }
+    .transcricao-config .transcricao-rotulo { margin: 8px 0 3px; font-size: .85rem; }
+    .transcricao-config .hint { margin: 3px 0 0; font-size: .78rem; }

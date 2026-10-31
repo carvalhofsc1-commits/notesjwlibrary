@@ -40,7 +40,7 @@
     <button type="button" data-screen-target="formatar"><span class="nav-icon" aria-hidden="true">✍️</span><span>Formatar</span></button>
     <button id="navLeitura" type="button" data-screen-target="leitura" title="Leitura em voz alta"><span class="nav-icon" aria-hidden="true">🔊</span><span>Leitura</span></button>
     <button type="button" data-screen-target="reunioes"><span class="nav-icon" aria-hidden="true">📅</span><span>Reuniões</span></button>
-    <button id="navHistorico" type="button" data-atalho="historico" title="Pesquisas e respostas salvas"><span class="nav-icon" aria-hidden="true">🗂️</span><span>Pesquisas</span></button>
+    <button id="navTranscricao" type="button" data-screen-target="transcricao" title="Áudio em texto"><span class="nav-icon" aria-hidden="true">🎙️</span><span>Áudio</span></button>
     <button type="button" data-screen-target="backup"><span class="nav-icon" aria-hidden="true">📦</span><span>Backup</span></button>
     <button type="button" data-screen-target="ajustes"><span class="nav-icon" aria-hidden="true">⚙️</span><span>Ajustes</span></button>
   </nav>
@@ -1435,6 +1435,15 @@
         <button id="transcricaoArquivoBtn" type="button">🎧 Escolher o arquivo de áudio</button>
         <input id="transcricaoArquivo" type="file" accept="audio/*,video/mp4,.mp3,.m4a,.wav,.aac,.ogg,.flac,.webm,.mp4" hidden>
       </div>
+      <details class="leitura-dica transcricao-config">
+        <summary>⚙️ Informações e instruções para a IA (opcional)</summary>
+        <label for="transcricaoContexto" class="transcricao-rotulo">Sobre o áudio</label>
+        <textarea id="transcricaoContexto" class="transcricao-campo" rows="2" maxlength="1500" placeholder="Ex.: reunião de planejamento da equipe de vendas, com Ana (gerente), Carlos e Paula. Termos: Ibirapuera, CRM." spellcheck="false"></textarea>
+        <p class="hint">Quem fala, o assunto e nomes ou termos difíceis. Ajuda a IA a entender o áudio e a escrever nomes certos no resumo. Vale só para este áudio e não fica salvo.</p>
+        <label for="transcricaoInstrucoes" class="transcricao-rotulo">Como fazer o resumo</label>
+        <textarea id="transcricaoInstrucoes" class="transcricao-campo" rows="2" maxlength="1500" placeholder="Ex.: resumo em no máximo 5 linhas, depois uma lista de tarefas com responsável e prazo." spellcheck="false"></textarea>
+        <p class="hint">Formato, tamanho e foco do resumo. Fica salvo neste aparelho para os próximos áudios. Sem instruções, a IA usa o formato padrão (resumo, pontos principais e decisões). Não escreva dados pessoais ou sigilosos aqui: estes campos vão à IA junto com o texto.</p>
+      </details>
       <p id="transcricaoInfo" class="hint" role="status" aria-live="polite"></p>
       <progress id="transcricaoProgresso" value="0" max="1" hidden></progress>
       <div class="leitura-acoes transcricao-acoes">

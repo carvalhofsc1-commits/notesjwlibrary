@@ -5717,7 +5717,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.20'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.22'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -15693,6 +15693,7 @@ function saveTemplatesToStorage() {
       travarAtalho('leitura', codigoLeituraSalvo() ? '' : 'leitura');
       travarAtalho('transcricao', codigoTextoSalvo() ? '' : 'texto');
       if (!codigoTextoSalvo() && currentScreen() === 'transcricao') showScreen('inicio'); // código apagado com a tela aberta: volta ao Início
+      document.getElementById('navTranscricao').disabled = !codigoTextoSalvo(); // sem o código de texto, o botão da barra fica bloqueado como o atalho do Início
       document.getElementById('navLeitura').disabled = !codigoLeituraSalvo(); // sem o código de leitura, o botão da barra fica bloqueado como o atalho do Início
       if (!codigoLeituraSalvo() && currentScreen() === 'leitura') showScreen('inicio'); // código apagado com a tela aberta: volta ao Início
       travarAtalho('dirigir', motivoDirigir);
@@ -15790,6 +15791,11 @@ function saveTemplatesToStorage() {
     const trCancelar = document.getElementById('transcricaoCancelarBtn');
     const trEscolher = document.getElementById('transcricaoArquivoBtn');
     const trResumir = document.getElementById('transcricaoResumirBtn');
+    const trContexto = document.getElementById('transcricaoContexto');
+    const trInstrucoes = document.getElementById('transcricaoInstrucoes');
+    const TRANSCRICAO_INSTR_KEY = 'jwLibraryNoteAplicarTextoInstrucoesV1';
+    try { trInstrucoes.value = localStorage.getItem(TRANSCRICAO_INSTR_KEY) || ''; } catch (e) { /* sem localStorage */ }
+    trInstrucoes.addEventListener('input', () => safeSetItem(TRANSCRICAO_INSTR_KEY, trInstrucoes.value));
     let trControle = null; // AbortController do que está em andamento
 
     function trAtualizarBotoes() {
@@ -15937,7 +15943,7 @@ function saveTemplatesToStorage() {
       trAtualizarBotoes();
       trInfo.textContent = '✨ A IA está resumindo…';
       try {
-        const r = await trPost({ acao: 'resumo', codigoTexto: codigoTextoSalvo(), texto: trTexto.value }, trControle.signal);
+        const r = await trPost({ acao: 'resumo', codigoTexto: codigoTextoSalvo(), texto: trTexto.value, contexto: trContexto.value, instrucoes: trInstrucoes.value }, trControle.signal);
         if (!r.ok) return (trInfo.textContent = trMensagem(r, 'Não foi possível resumir agora.'));
         trResumo.value = r.dados.resumo;
         trInfo.textContent = '✅ Resumo pronto. A IA pode errar: confira com o texto.';
@@ -15965,6 +15971,7 @@ function saveTemplatesToStorage() {
       if ((trTexto.value.trim() || trResumo.value.trim()) && !(await askConfirm('Apagar o texto transcrito e o resumo? Eles não ficam salvos em nenhum lugar.', 'Limpar tudo'))) return;
       trTexto.value = '';
       trResumo.value = '';
+      trContexto.value = ''; // o "sobre o áudio" vale só para um áudio; as instruções do resumo ficam salvas
       trInfo.textContent = '';
       trAtualizarBotoes();
     });
