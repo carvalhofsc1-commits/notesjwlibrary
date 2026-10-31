@@ -7,6 +7,7 @@ import { z } from "zod";
 import { codigoDoDirigente, erro, origemPermitida } from "./_comum.mjs";
 import { acessoDoDirigente, codigoValido, dirigenteValido, exigirAcesso, recusarAcesso } from "./_acesso.mjs";
 import { lerConfigIa } from "./_iaConfig.mjs";
+import { blocoLicoesPara } from "./_memoria.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
 import { buscarVerbete, buscarVersiculos, fontesConfiguradas, precarregarFontes, referenciasNoTexto } from "./_fontes.mjs";
 import { lerEsboco, lerIndice, minutosDoEsboco, publicacoesDaSecao, referenciasDoPublico, s34Configurado, textoDoDiscursoPublico, textoDoEsbocoImportado, textosBiblicosDoPublico, validarEsboco } from "./_s34.mjs";
@@ -53,14 +54,24 @@ import {
 const aceitaEsforco = (modelo) => !/haiku-4|sonnet-4-5|-3-/.test(modelo);
 const temFallback = (modelo) => /^claude-(sonnet-5-5|opus-5-5|fable-5-1)$/.test(modelo);
 
-async function chamarIa(client, P, params, { schema = null, semPensar = false } = {}) {
+// Quantas lições da memória entraram no último chamarIa com tarefa (para devolver memoriaUsada na resposta).
+let ultimoMemoriaUsada = 0;
+
+async function chamarIa(client, P, params, { schema = null, semPensar = false, tarefa = "" } = {}) {
+  let system = params.system || "";
+  // Só na chamada que informa a tarefa: as voltas seguintes (pause_turn) não zeram memoriaUsada.
+  if (tarefa) {
+    const m = await blocoLicoesPara(tarefa);
+    ultimoMemoriaUsada = m.usadas;
+    system += m.texto || "";
+  }
   const { modelo, esforco } = P.ia;
   const fallback = temFallback(modelo);
   const formato = schema ? (fallback ? betaZodOutputFormat(schema) : zodOutputFormat(schema)) : null;
   const output_config = { ...(formato ? { format: formato } : {}), ...(aceitaEsforco(modelo) ? { effort: esforco } : {}) };
   const pensar =
     semPensar && /haiku-5/.test(modelo) && process.env.CLAUDE_RACIOCINIO !== "on" ? { thinking: { type: "disabled" } } : {};
-  const corpo = { ...params, model: modelo, ...pensar, ...(Object.keys(output_config).length ? { output_config } : {}) };
+  const corpo = { ...params, system, model: modelo, ...pensar, ...(Object.keys(output_config).length ? { output_config } : {}) };
   if (!fallback) return schema ? client.messages.parse(corpo) : client.messages.create(corpo);
   const comFallback = { ...corpo, betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" };
   return schema ? client.beta.messages.parse(comFallback) : client.beta.messages.create(comFallback);
@@ -532,7 +543,7 @@ async function completarFontes(itens, opcoes, P, orientacao) {
         system: P.sistemaAplicacao,
         messages: [{ role: "user", content: (orientacao || "") + "ITENS (JSON):\n" + JSON.stringify(lista) }],
       },
-      { schema: SaidaAplicacao, semPensar: true }
+      { schema: SaidaAplicacao, semPensar: true, tarefa: "aplicacao" }
     );
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) return;
 
@@ -686,13 +697,14 @@ async function finalizarItens(itens, opcoes, P, orientacao) {
 
 // Conversa com a IA tratando pause_turn (turno longo pausado pela API, ex.: durante a leitura do site).
 // Devolve a última resposta e todos os blocos de todos os turnos.
-async function conversar(client, P, { system, mensagens, tools, maxTokens, voltas }) {
+async function conversar(client, P, { system, mensagens, tools, maxTokens, voltas, tarefa = "" }) {
   let resposta;
   const blocos = [];
   const inicio = Date.now();
   const uso = { modelo: P.ia.modelo, voltas: 0, entrada: 0, saida: 0 };
   for (let volta = 0; volta < voltas; volta++) {
-    resposta = await chamarIa(client, P, { max_tokens: maxTokens, system, messages: mensagens, tools });
+    // A memória só entra na 1ª volta (a tarefa só na primeira chamada); nas seguintes o system já está no histórico.
+    resposta = await chamarIa(client, P, { max_tokens: maxTokens, system, messages: mensagens, tools }, { tarefa: volta === 0 ? tarefa : "" });
     uso.voltas++;
     uso.entrada += resposta.usage?.input_tokens || 0;
     uso.saida += resposta.usage?.output_tokens || 0;
@@ -763,7 +775,7 @@ function tratarErro(e, res) {
 // Escreve as respostas do estudo a partir de um texto com as perguntas e os parágrafos: o colado pelo usuário
 // (Opção 2) ou o lido pelo servidor no wol.jw.org (Opção 1). A IA pensa antes de responder (o texto é curto).
 // Devolve { itens, uso } ou null se a IA não conseguiu gerar as respostas.
-async function escreverRespostas({ rotulo, texto, escopo, opcoes, modo, ajuste, anteriores, sep, P }) {
+async function escreverRespostas({ rotulo, texto, escopo, opcoes, modo, ajuste, anteriores, sep, P, tarefa = "sentinela" }) {
   let mensagem =
     blocoOrientacao(opcoes, ajuste, P) +
     preferenciasDaResposta(opcoes, P, sep) +
@@ -787,7 +799,7 @@ async function escreverRespostas({ rotulo, texto, escopo, opcoes, modo, ajuste, 
     client,
     P,
     { max_tokens: 12000 /* o raciocínio também conta aqui */, system: P.sistemaSentinela, messages: [{ role: "user", content: mensagem }] },
-    { schema: SaidaSentinela }
+    { schema: SaidaSentinela, tarefa }
   );
   const uso = {
     modelo: P.ia.modelo,
@@ -817,7 +829,8 @@ async function responderSentinela(res, { linhas, opcoes, modo, ajuste, anteriore
     const { itens, uso } = await escreverRespostas({ rotulo: "TEXTO COLADO", texto: linhas.join("\n"), opcoes, modo, ajuste, anteriores, sep, P });
     console.log("Texto colado:", JSON.stringify(uso));
     if (!itens) return erro(res, 502, "A IA não conseguiu gerar as respostas para este texto.");
-    return res.status(200).json({ itens: await finalizarItens(itens, opcoes, P, blocoOrientacao(opcoes, ajuste, P)) });
+    const memoriaUsada = ultimoMemoriaUsada;
+    return res.status(200).json({ itens: await finalizarItens(itens, opcoes, P, blocoOrientacao(opcoes, ajuste, P)), memoriaUsada });
   } catch (e) {
     return tratarErro(e, res);
   }
@@ -843,7 +856,7 @@ async function responderEstudoLido(res, { lido, alvo, recapitulacao, opcoes, aju
   }
 
   try {
-    const { itens: gerados, uso } = await escreverRespostas({ rotulo: "TEXTO DO ESTUDO", texto, escopo, opcoes, modo, ajuste, anteriores, sep, P });
+    const { itens: gerados, uso } = await escreverRespostas({ rotulo: "TEXTO DO ESTUDO", texto, escopo, opcoes, modo, ajuste, anteriores, sep, P, tarefa: "estudo" });
     if (!gerados) return erro(res, 502, "A IA não conseguiu gerar as respostas para este estudo.");
 
     // Recapitulação: as perguntas do quadro vêm numeradas 1, 2, 3...; o rótulo "Recap. N" não se confunde com parágrafos.
@@ -871,6 +884,7 @@ async function responderEstudoLido(res, { lido, alvo, recapitulacao, opcoes, aju
       : gerados;
     console.log("Estudo (lido no site):", JSON.stringify({ pedidos: alvo ? [...alvo] : "recapitulacao", recebidos: itens.map((i) => i.paragrafos), caracteres: texto.length, leitura, ...uso }));
 
+    const memoriaUsada = ultimoMemoriaUsada;
     const inicioFontes = Date.now();
     const itensFinais = await finalizarItens(itens, opcoes, P, blocoOrientacao(opcoes, ajuste, P));
     console.log("Estudo (tempo):", JSON.stringify({ fontes: Math.round((Date.now() - inicioFontes) / 100) / 10, total: Math.round((Date.now() - inicioPedido) / 100) / 10 }));
@@ -880,6 +894,7 @@ async function responderEstudoLido(res, { lido, alvo, recapitulacao, opcoes, aju
       erro: itens.length ? null : "A IA não respondeu ao(s) parágrafo(s) pedido(s). Tente de novo.",
       url: lido.url,
       itens: itensFinais,
+      memoriaUsada,
     });
   } catch (e) {
     return tratarErro(e, res);
@@ -1028,6 +1043,7 @@ async function responderEstudo(res, body, P) {
       tools,
       maxTokens: 16000, // folga para muitos parágrafos (e para o raciocínio, se for religado com CLAUDE_RACIOCINIO=on)
       voltas: 5,
+      tarefa: "estudo",
     });
     const texto = resposta.content
       .filter((bloco) => bloco.type === "text")
@@ -1037,7 +1053,7 @@ async function responderEstudo(res, body, P) {
   };
 
   try {
-    const { resposta, uso, texto, dados } = await consultar(mensagem);
+    const { resposta, uso, texto, dados } = await consultar(mensagem); // memoriaUsada via conversar(..., tarefa: estudo)
 
     if (resposta.stop_reason === "refusal") return erro(res, 502, "A IA não conseguiu responder a este pedido.");
     if (!dados.success || (!dados.data.itens.some(Boolean) && !dados.data.erro)) {
@@ -1105,6 +1121,7 @@ async function responderEstudo(res, body, P) {
       }
     }
 
+    const memoriaUsada = ultimoMemoriaUsada;
     const inicioFontes = Date.now();
     const itensFinais = await finalizarItens(itens, opcoes, P, blocoOrientacao(opcoes, ajuste, P));
     console.log("Estudo (tempo):", JSON.stringify({ fontes: Math.round((Date.now() - inicioFontes) / 100) / 10, total: Math.round((Date.now() - inicioPedido) / 100) / 10 }));
@@ -1118,6 +1135,7 @@ async function responderEstudo(res, body, P) {
           : limpar(dados.data.erro, 300) || "Não consegui ler o artigo ou encontrar as perguntas.",
       url,
       itens: itensFinais,
+      memoriaUsada,
     });
   } catch (e) {
     return tratarErro(e, res);
@@ -1202,7 +1220,7 @@ async function sugerirPerguntas(res, body, P) {
       client,
       P,
       { max_tokens: 8000 /* o raciocínio também conta aqui */, system: P.sistemaPerguntas, messages: [{ role: "user", content: mensagem }] },
-      { schema: SaidaPerguntas }
+      { schema: SaidaPerguntas, tarefa: "estudo-perguntas" }
     );
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
       return erro(res, 502, "A IA não conseguiu sugerir perguntas para este parágrafo.");
@@ -1260,6 +1278,7 @@ async function sugerirPerguntas(res, body, P) {
       titulo: lido.titulo || null,
       erro: itens.length ? null : "A IA não sugeriu perguntas para esse(s) parágrafo(s). Tente de novo.",
       itens,
+      memoriaUsada: ultimoMemoriaUsada,
     });
   } catch (e) {
     return tratarErro(e, res);
@@ -1382,7 +1401,7 @@ async function responderEbc(res, body, P) {
       client,
       P,
       { max_tokens: 16000 /* o raciocínio também conta aqui */, system: P.sistemaEbc, messages: [{ role: "user", content: mensagem }] },
-      { schema: SaidaEbc }
+      { schema: SaidaEbc, tarefa: "ebc" }
     );
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
       return erro(res, 502, "A IA não conseguiu gerar as respostas para este estudo.");
@@ -1421,6 +1440,7 @@ async function responderEbc(res, body, P) {
       })
     );
 
+    const memoriaUsada = ultimoMemoriaUsada;
     const itensFinais = await finalizarItens(itens, opcoes, P, blocoOrientacao(opcoes, ajuste, P));
     console.log("Estudo bíblico (tempo):", JSON.stringify({ total: Math.round((Date.now() - inicioPedido) / 100) / 10 }));
     return res.status(200).json({
@@ -1429,6 +1449,7 @@ async function responderEbc(res, body, P) {
       url: capitulo.url,
       erro: itens.length ? null : "A IA não respondeu às perguntas. Tente de novo.",
       itens: itensFinais,
+      memoriaUsada,
     });
   } catch (e) {
     return tratarErro(e, res);
@@ -1505,7 +1526,7 @@ async function perguntasEbcDirigente(res, body, P) {
       client,
       P,
       { max_tokens: 16000 /* o raciocínio também conta aqui */, system: P.sistemaEbcDirigente, messages: [{ role: "user", content: mensagem }] },
-      { schema: SaidaEbcDirigente }
+      { schema: SaidaEbcDirigente, tarefa: "ebc-dirigente" }
     );
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
       return erro(res, 502, "A IA não conseguiu elaborar as perguntas para este capítulo.");
@@ -1558,6 +1579,7 @@ async function perguntasEbcDirigente(res, body, P) {
       erro: perguntas.length || base.length ? null : perguntasPedidas ? "A IA não elaborou perguntas diferentes das originais. Tente de novo." : "A IA não escolheu trechos dos textos bíblicos. Tente de novo.",
       perguntas,
       textosBase: base,
+      memoriaUsada: ultimoMemoriaUsada,
     });
   } catch (e) {
     return tratarErro(e, res);
@@ -1964,7 +1986,7 @@ async function esbocoDeTesouros(res, body, P) {
       client,
       P,
       { max_tokens: 16000 /* o raciocínio também conta aqui */, system: P.sistemaTesouros, messages: [{ role: "user", content: mensagem }] },
-      { schema: SaidaTesouros }
+      { schema: SaidaTesouros, tarefa: "tesouros" }
     );
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
       return erro(res, 502, "A IA não conseguiu elaborar o esboço deste discurso.");
@@ -2015,6 +2037,7 @@ async function esbocoDeTesouros(res, body, P) {
       esboco: completo ? esboco : null,
       avisos: completo ? avisos : [],
       textosBiblicos: await textosDaMateria(materia),
+      memoriaUsada: ultimoMemoriaUsada,
     });
   } catch (e) {
     return tratarErro(e, res);
@@ -2116,7 +2139,7 @@ async function esbocoDoDiscursoCurto(res, body, P) {
       client,
       P,
       { max_tokens: 16000 /* o raciocínio também conta aqui */, system: P.sistemaDiscursoCurto, messages: [{ role: "user", content: mensagem }] },
-      { schema: SaidaDiscursoCurto }
+      { schema: SaidaDiscursoCurto, tarefa: "discurso" }
     );
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
       return erro(res, 502, "A IA não conseguiu elaborar o esboço deste discurso.");
@@ -2189,6 +2212,7 @@ async function esbocoDoDiscursoCurto(res, body, P) {
       esboco: completo ? esboco : null,
       avisos: completo ? avisos : [],
       textosBiblicos: await textosDaMateria(materia),
+      memoriaUsada: ultimoMemoriaUsada,
     });
   } catch (e) {
     return tratarErro(e, res);
@@ -2330,7 +2354,7 @@ async function esbocoDoDiscursoPublico(res, body, P) {
       client,
       P,
       { max_tokens: 16000 /* o raciocínio também conta aqui */, system: P.sistemaDiscursoPublico, messages: [{ role: "user", content: mensagem }] },
-      { schema: SaidaDiscursoPublico }
+      { schema: SaidaDiscursoPublico, tarefa: "publico" }
     );
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
       return erro(res, 502, "A IA não conseguiu elaborar o esboço deste discurso.");
@@ -2388,6 +2412,7 @@ async function esbocoDoDiscursoPublico(res, body, P) {
       esboco: completo ? esboco : null,
       avisos: completo ? avisos : [],
       textosBiblicos: await textosDaMateria(textosBiblicosDoPublico(tema)),
+      memoriaUsada: ultimoMemoriaUsada,
     });
   } catch (e) {
     return tratarErro(e, res);
@@ -2622,7 +2647,7 @@ async function esbocoDeOutros(res, body, P) {
       client,
       P,
       { max_tokens: 16000 /* o raciocínio também conta aqui */, system: P.sistemaOutros, messages: [{ role: "user", content: mensagem }] },
-      { schema: SaidaOutros }
+      { schema: SaidaOutros, tarefa: "outros" }
     );
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
       return erro(res, 502, "A IA não conseguiu elaborar o esboço deste discurso.");
@@ -2688,6 +2713,7 @@ async function esbocoDeOutros(res, body, P) {
       erro: completo ? null : "A IA não montou o esboço completo (introdução, pontos e conclusão). Tente de novo.",
       esboco: completo ? esboco : null,
       avisos: completo ? avisos : [],
+      memoriaUsada: ultimoMemoriaUsada,
     });
   } catch (e) {
     return tratarErro(e, res);
@@ -2891,7 +2917,7 @@ async function responderJoias(res, body, P) {
       client,
       P,
       { max_tokens: 16000 /* o raciocínio também conta aqui */, system: P.sistemaJoias, messages: [{ role: "user", content: mensagem }] },
-      { schema: SaidaJoias }
+      { schema: SaidaJoias, tarefa: "joias" }
     );
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
       return erro(res, 502, "A IA não conseguiu preparar as joias espirituais desta semana.");
@@ -2954,6 +2980,7 @@ async function responderJoias(res, body, P) {
       })
     );
 
+    const memoriaUsada = ultimoMemoriaUsada;
     const finais = await finalizarItens([...(itemPergunta ? [itemPergunta] : []), ...itensJoias], opcoes, P, blocoOrientacao(opcoes, ajuste, P));
     console.log("Joias espirituais (tempo):", JSON.stringify({ total: Math.round((Date.now() - inicioPedido) / 100) / 10 }));
     return res.status(200).json({
@@ -2963,6 +2990,7 @@ async function responderJoias(res, body, P) {
       erro: finais.length ? null : "A IA não preparou as joias. Tente de novo.",
       pergunta: itemPergunta ? finais[0] : null,
       joias: itemPergunta ? finais.slice(1) : finais,
+      memoriaUsada,
     });
   } catch (e) {
     return tratarErro(e, res);
@@ -3010,7 +3038,7 @@ async function comentariosDoTextoDiario(res, body, P) {
       client,
       P,
       { max_tokens: 6000 /* o raciocínio também conta aqui */, system: P.sistemaTextoDiario, messages: [{ role: "user", content: mensagem }] },
-      { schema: SaidaTextoDiario }
+      { schema: SaidaTextoDiario, tarefa: "texto-diario-comentarios" }
     );
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
       return erro(res, 502, "A IA não conseguiu sugerir comentários para este texto.");
@@ -3037,6 +3065,7 @@ async function comentariosDoTextoDiario(res, body, P) {
       data: texto.data,
       erro: comentarios.length ? null : "A IA não sugeriu comentários. Tente de novo.",
       comentarios,
+      memoriaUsada: ultimoMemoriaUsada,
     });
   } catch (e) {
     return tratarErro(e, res);
@@ -3397,7 +3426,7 @@ export default async function handler(req, res) {
       client,
       P,
       { max_tokens: opcoes.intensidade === "muitas" ? 10000 : 6000, system: P.sistemaFormatacao, messages: [{ role: "user", content: mensagem }] },
-      { schema: Saida, semPensar: true }
+      { schema: Saida, semPensar: true, tarefa: "formatar" }
     );
 
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
@@ -3470,11 +3499,12 @@ export default async function handler(req, res) {
       relevantes: listaDeTextos(saida.textosRelevantes, P.limites.maxTextos),
       verbetes: listaDeTextos(saida.verbetes, 2),
     };
+    const memoriaUsada = ultimoMemoriaUsada;
     if (consultaPedida(opcoes)) await completarFontes([fonte], opcoes, P, blocoOrientacao(opcoes, ajuste, P));
     const textos = fonte.textos || [];
     const perspicaz = fonte.perspicaz || null;
 
-    return res.status(200).json({ resumo, sugestoes, textos, perspicaz });
+    return res.status(200).json({ resumo, sugestoes, textos, perspicaz, memoriaUsada });
   } catch (e) {
     return tratarErro(e, res);
   }

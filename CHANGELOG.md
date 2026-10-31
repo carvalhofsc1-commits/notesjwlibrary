@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.14
+
+Preferências publicadas: as 3 seções da resposta (complementares, aplicativas e entendimento) voltam a vir marcadas no padrão do Global Config. Memória do piloto: com a chave geral ligada, lições ativas entram no system prompt das respostas de IA (filtradas pela tarefa, até 8); a resposta JSON inclui `memoriaUsada` para medir o piloto.
+
 ## 6.3.13
 
 Prompts da IA: ao abrir, se alguma parte ligada à qualidade das respostas (voz, formatação, contexto, pedidos, perguntas, texto diário, EBC dirigente) ainda diferir do texto que veio com o app, aparece um aviso listando quais — para o administrador revisar ou restaurar o padrão.

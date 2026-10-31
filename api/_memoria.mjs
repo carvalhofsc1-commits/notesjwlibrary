@@ -4,7 +4,7 @@
 // e registra só a LIÇÃO: o que mudou, o provável porquê e uma regra curta e geral para as próximas respostas. Os dois textos são lidos para
 // essa análise e DESCARTADOS: não são gravados em lugar nenhum. A lição fica num JSON no Vercel Blob PRIVADO (o mesmo store dos esboços S-34),
 // em "memoria/licoes.json". O navegador só lê e muda esses dados com o código de administrador, conferido em api/config.mjs.
-// Nesta fase as lições SÓ SÃO GUARDADAS: nenhuma resposta da IA as usa ainda (isso virá depois, com comparação medida).
+// Com a chave geral ligada, as lições ativas entram no system prompt das respostas de IA (até 8, filtradas pela tarefa).
 //
 // MEMORIA_DIR (só para testes no computador) troca o Blob por uma pasta local.
 import { randomUUID } from "node:crypto";
@@ -18,10 +18,53 @@ import { lerConfigIa } from "./_iaConfig.mjs";
 const NOME = "memoria/licoes.json";
 const MAX_ITENS = 300;
 const MAX_ENTRADA = 8000; // caracteres de cada texto enviados à análise
+const MAX_LICOES_NO_PROMPT = 8;
 const TIPOS_ALTERACAO = ["sentido_da_pergunta", "enfoque", "tom", "tamanho", "estrutura", "vocabulario", "fidelidade_a_fonte", "formatacao", "outro"];
 
 export function memoriaConfigurada() {
   return Boolean(process.env.BLOB_READ_WRITE_TOKEN || process.env.MEMORIA_DIR);
+}
+
+// A lição guarda o tipo do histórico (ex.: sentinela, esboco) ou o nome da tarefa da API; o pedido traz a tarefa da API.
+function licaoServePara(licaoTarefa, pedidoTarefa) {
+  const a = String(licaoTarefa || "").trim().toLowerCase();
+  const b = String(pedidoTarefa || "").trim().toLowerCase();
+  if (!b) return true;
+  if (!a) return true; // lição sem tarefa: vale de forma geral
+  if (a === b) return true;
+  // Histórico "colado" / "sentinela" ↔ API sentinela; "esboco" ↔ tesouros/discurso/publico/outros.
+  if (a === "colado" && b === "sentinela") return true;
+  if (a === "sentinela" && (b === "sentinela" || b === "estudo")) return true;
+  if (a === "estudo" && (b === "estudo" || b === "sentinela")) return true;
+  if (a === "esboco" && /^(tesouros|discurso|publico|outros)$/.test(b)) return true;
+  if (a === "dirigente" && b === "estudo-perguntas") return true;
+  if (a === "ebc-dirigente" && b === "ebc-dirigente") return true;
+  if (a === "ebc" && b === "ebc") return true;
+  if (a === "joias" && b === "joias") return true;
+  if (b.startsWith(a) || a.startsWith(b)) return true;
+  return false;
+}
+
+// Bloco curto para anexar ao system prompt. Só com a chave geral ligada e lições ativas.
+export async function blocoLicoesPara(tarefa) {
+  if (!memoriaConfigurada()) return { texto: "", usadas: 0 };
+  let memoria;
+  try {
+    memoria = await lerMemoria();
+  } catch {
+    return { texto: "", usadas: 0 };
+  }
+  if (!memoria.ligada) return { texto: "", usadas: 0 };
+  const escolhidas = memoria.itens
+    .filter((i) => i.ativo !== false && licaoServePara(i.tarefa, tarefa))
+    .slice(0, MAX_LICOES_NO_PROMPT);
+  if (!escolhidas.length) return { texto: "", usadas: 0 };
+  const linhas = escolhidas.map((i, n) => `${n + 1}. ${i.regra}`);
+  const texto =
+    "\n\nLIÇÕES DE CORREÇÕES ANTERIORES (preferências de estilo e ênfase aprendidas com edições do administrador; NÃO são fatos nem fonte):\n" +
+    "A pergunta e o texto da matéria mandam. Use as regras abaixo só quando ajudarem a responder melhor, sem inventar conteúdo nem contradizer a fonte.\n" +
+    linhas.join("\n");
+  return { texto, usadas: escolhidas.length };
 }
 
 async function lerBruto() {

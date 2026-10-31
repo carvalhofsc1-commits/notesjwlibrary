@@ -5696,7 +5696,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.13'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.14'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -10277,6 +10277,8 @@ function saveTemplatesToStorage() {
           safeSetItem(AI_OPTIONS_KEY, JSON.stringify(saved));
         }
       }
+      // Uma vez: as 3 primeiras seções da resposta ficam marcadas mesmo se o padrão publicado antigo as tinha desligadas.
+      const forcarSecoesResposta = secoesRespostaPadraoPendente;
       if (secoesRespostaPadraoPendente) {
         secoesRespostaPadraoPendente = false;
         if (Object.keys(saved).length) {
@@ -10287,6 +10289,11 @@ function saveTemplatesToStorage() {
         }
       }
       const options = Object.assign({}, AI_DEFAULT_OPTIONS, aiPublishedDefaults, saved);
+      if (forcarSecoesResposta) {
+        options.perguntasComplementares = true;
+        options.perguntasAplicativas = true;
+        options.perguntasEntendimento = true;
+      }
       renderAiCategoryOptions(String(options.categoria || 'all'));
       aiSummarySize.value = ['curto', 'medio', 'detalhado'].includes(options.resumoTamanho) ? options.resumoTamanho : 'medio';
       aiOptionInputs.forEach(el => { el.checked = !!options[el.dataset.aiOpt]; });
@@ -14089,7 +14096,8 @@ function saveTemplatesToStorage() {
 
     // ---------- Memória de lições das correções (piloto, só administrador) ----------
     // Ao salvar uma alteração com a caixa 🧠 marcada, o texto da IA e o texto final vão ao servidor só para a IA compará-los (api/_memoria.mjs):
-    // ela devolve a lição (o que mudou, o porquê e uma regra) e os dois textos são descartados. Por enquanto nenhuma resposta da IA usa a memória.
+    // ela devolve a lição (o que mudou, o porquê e uma regra) e os dois textos são descartados. Com a chave geral ligada,
+    // as lições ativas entram no system prompt das respostas de IA (filtradas pela tarefa; ver api/_memoria.mjs).
     async function memoriaGuardar(item, original, final) {
       copyStatus.textContent = '🧠 A IA está analisando a correção…';
       const r = await postConfig({ acao: 'memoria-guardar', codigo: senhaAdminSalva(), tarefa: item.tipo || '', original, final });

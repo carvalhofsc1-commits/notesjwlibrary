@@ -1202,8 +1202,8 @@
 
           <details class="prompt-item prompt-tint-codigo" id="memoriaBox">
             <summary><h3>🧠 Lições das correções (piloto)</h3></summary>
-            <p class="hint">Quando você marca 🧠 ao tocar em Salvar alterações, a IA compara o texto dela com o seu, entende o que mudou e por quê, e guarda no Blob privado do servidor <strong>só a lição</strong> (o que mudou, o provável motivo e uma regra curta). Os textos, o original e o corrigido, não são guardados. <strong>Nesta fase as lições só são guardadas: nenhuma resposta da IA as usa ainda.</strong> Só você (administrador) vê, desativa ou apaga. O backup do JW Library nunca entra aqui.</p>
-            <label class="memoria-usar"><input type="checkbox" id="memoriaLigada" autocomplete="off"> Permitir aprender com as correções (chave geral do piloto)</label>
+            <p class="hint">Quando você marca 🧠 ao tocar em Salvar alterações, a IA compara o texto dela com o seu, entende o que mudou e por quê, e guarda no Blob privado do servidor <strong>só a lição</strong> (o que mudou, o provável motivo e uma regra curta). Os textos, o original e o corrigido, não são guardados. <strong>Com a chave geral ligada</strong>, as lições <strong>ativas</strong> entram no pedido da IA (filtradas pela tarefa, até 8 regras). A matéria e a pergunta mandam; as lições são só preferências de estilo/ênfase. Só você (administrador) vê, desativa ou apaga. O backup do JW Library nunca entra aqui.</p>
+            <label class="memoria-usar"><input type="checkbox" id="memoriaLigada" autocomplete="off"> Usar lições nas respostas (chave geral do piloto; só lições ativas)</label>
             <p id="memoriaStatus" class="ok" role="status" aria-live="polite"></p>
             <div id="memoriaLista" class="memoria-lista"></div>
             <div class="button-row">
