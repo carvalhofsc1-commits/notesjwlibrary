@@ -1035,6 +1035,139 @@
       })());
       form.appendChild(linkRow);
 
+      // Respostas salvas da semana (Pesquisas salvas deste aparelho): depois de carregar as publicações de uma semana, a pessoa marca A Sentinela ou a
+      // apostila e o app leva para o backup, de uma vez, as respostas dessa semana que já estão salvas. A Sentinela casa pelo número do parágrafo (e
+      // "Recap. n" com o n-ésimo quadro de recapitulação); na apostila só a pergunta das joias casa sozinha, o resto a pessoa liga à pergunta certa.
+      let semanaCarregada = null; // { ano, semana, sentinela, apostila } da última semana carregada
+      const salvasBox = document.createElement('div');
+      salvasBox.className = 'bk-salvas';
+      salvasBox.hidden = true;
+      const salvasEscolha = document.createElement('div');
+      salvasEscolha.className = 'bk-row';
+      const salvasInfo = document.createElement('p');
+      salvasInfo.className = 'hint';
+      const salvasLista = document.createElement('div');
+      const btnRevista = backupButton('📖 A Sentinela', () => levarSalvas('sentinela'));
+      const btnApostila = backupButton('📋 Apostila', () => levarSalvas('apostila'));
+      salvasEscolha.append(btnRevista, btnApostila);
+      salvasBox.append(backupField('Levar as respostas salvas da semana', salvasEscolha), salvasInfo, salvasLista);
+      form.appendChild(salvasBox);
+
+      const planoSalva = texto => String(texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+      // A pergunta (campo) do documento que corresponde a uma parte salva, ou null.
+      const campoDaParte = (parte, tipo, campos) => {
+        const par = String(parte.paragrafos || '').trim().replace(/\s+/g, ' ');
+        if (tipo === 'sentinela') {
+          const recap = par.match(/^recap\.?\s*(\d+)/i);
+          if (recap) return campos.filter(c => c.quadro)[Number(recap[1]) - 1] || null;
+          if (!par) return null;
+          const primeiro = par.split(/\s*[,–-]\s*/)[0];
+          return campos.find(c => c.numero && c.numero === par) || campos.find(c => c.numero && c.numero.split(/\s*[,–-]\s*/)[0] === primeiro) || null;
+        }
+        if (tipo === 'joias' && !par) return campos.find(c => !c.numero && /joia/.test(planoSalva(c.pergunta))) || null;
+        return null;
+      };
+
+      async function levarSalvas(qual) {
+        if (!semanaCarregada) return;
+        btnRevista.setAttribute('aria-pressed', String(qual === 'sentinela'));
+        btnApostila.setAttribute('aria-pressed', String(qual === 'apostila'));
+        btnRevista.classList.toggle('ativo', qual === 'sentinela');
+        btnApostila.classList.toggle('ativo', qual === 'apostila');
+        salvasLista.textContent = '';
+        const pub = qual === 'sentinela' ? semanaCarregada.sentinela : semanaCarregada.apostila;
+        if (!pub) { salvasInfo.textContent = 'Essa publicação não foi encontrada nesta semana.'; return; }
+        if (docSelect.value !== pub.id) docSelect.value = pub.id;
+        salvasInfo.textContent = '🔎 Procurando as respostas salvas…';
+        await escolher(pub.id);
+        const tipos = qual === 'sentinela' ? ['sentinela'] : ['joias', 'ebc'];
+        const itens = historicoLer().filter(i => tipos.includes(i.tipo) && Number(i.ano) === semanaCarregada.ano && Number(i.numSemana) === semanaCarregada.semana);
+        const nome = qual === 'sentinela' ? 'A Sentinela' : 'a apostila';
+        if (!itens.length) { salvasInfo.textContent = 'Não há respostas salvas desta semana para ' + nome + ' em Pesquisas salvas.'; return; }
+        const info = backupCampos[pub.id];
+        if (!info || !(info.campos || []).length) { salvasInfo.textContent = 'Há respostas salvas, mas não consegui carregar as perguntas deste documento: ' + aviso.textContent; return; }
+        const campos = info.campos;
+        const respondidas = new Set(backupAll(backupState.db,
+          'SELECT i.TextTag AS tag FROM InputField i JOIN Location l ON l.LocationId = i.LocationId WHERE l.DocumentId = ?', [Number(pub.id)]).map(r => r.tag));
+        const vistos = new Set();
+        const respostas = [];
+        itens.forEach(item => (item.partes || []).forEach(parte => {
+          const texto = String(parte.texto || '').replace(/\s+$/, '');
+          const chave = item.tipo + '|' + String(parte.paragrafos || '') + '|' + (String(parte.paragrafos || '') ? '' : texto.slice(0, 40));
+          if (!texto.trim() || vistos.has(chave)) return; // a pesquisa mais nova da mesma pergunta vale
+          vistos.add(chave);
+          respostas.push({ item, parte, texto, campo: campoDaParte(parte, item.tipo, campos), estado: '' });
+        }));
+        const rotuloCampo = c => (c.numero ? 'Parágrafo ' + c.numero : c.quadro ? 'Quadro de recapitulação' : 'Pergunta') + (c.pergunta ? ' — ' + (c.pergunta.length > 70 ? c.pergunta.slice(0, 67) + '…' : c.pergunta) : '');
+        let levadas = 0;
+        const usadas = new Set();
+        respostas.forEach(r => {
+          if (!r.campo) { r.estado = 'sem'; return; }
+          if (respondidas.has(r.campo.tag) || usadas.has(r.campo.tag)) { r.estado = 'havia'; return; }
+          const problema = backupCreateAnswer(pub.id, info, r.campo.tag, r.texto);
+          if (problema) { r.estado = 'havia'; return; }
+          usadas.add(r.campo.tag);
+          r.estado = 'levada';
+          levadas++;
+        });
+        const resumo = () => {
+          const n = tipo => respostas.filter(r => r.estado === tipo).length;
+          salvasInfo.textContent = '✅ ' + (n('levada') === 1 ? '1 resposta levada' : n('levada') + ' respostas levadas') + ' para o backup' +
+            (n('havia') ? ' · ' + n('havia') + ' já tinha(m) resposta' : '') + (n('sem') ? ' · ' + n('sem') + ' sem pergunta correspondente (ligue abaixo)' : '') + '. Toque numa resposta para ver o texto.';
+        };
+        if (levadas) {
+          salvasAqui += levadas;
+          fechar.textContent = '✔️ Concluir';
+          backupRefresh();
+        }
+        const desenhar = () => {
+          salvasLista.textContent = '';
+          respostas.forEach(r => {
+            const det = document.createElement('details');
+            det.className = 'bk-salva';
+            const sum = document.createElement('summary');
+            const marca = r.estado === 'levada' ? '✅ ' : r.estado === 'havia' ? '↪️ ' : '❔ ';
+            sum.textContent = marca + (r.campo ? rotuloCampo(r.campo) : 'Resposta salva' + (r.parte.paragrafos ? ' · ' + r.parte.paragrafos : '') + ' (' + (r.item.titulo || r.item.tipo) + ')');
+            const corpo = document.createElement('div');
+            corpo.className = 'bk-salva-texto';
+            corpo.textContent = r.texto;
+            det.append(sum, corpo);
+            if (r.estado === 'sem') {
+              const destino = document.createElement('select');
+              const vazio = document.createElement('option');
+              vazio.value = '';
+              vazio.textContent = 'Levar para a pergunta…';
+              destino.appendChild(vazio);
+              campos.filter(c => !respondidas.has(c.tag) && !usadas.has(c.tag)).forEach(c => {
+                const o = document.createElement('option');
+                o.value = c.tag;
+                o.textContent = rotuloCampo(c);
+                destino.appendChild(o);
+              });
+              const levar = backupButton('➡️ Levar para a pergunta escolhida', () => {
+                const campo = campos.find(c => c.tag === destino.value);
+                if (!campo) return;
+                const problema = backupCreateAnswer(pub.id, info, campo.tag, r.texto);
+                if (problema) { salvasInfo.textContent = problema; return; }
+                usadas.add(campo.tag);
+                r.campo = campo;
+                r.estado = 'levada';
+                salvasAqui++;
+                fechar.textContent = '✔️ Concluir';
+                backupRefresh();
+                resumo();
+                desenhar();
+              });
+              corpo.append(destino, levar);
+            }
+            salvasLista.appendChild(det);
+          });
+        };
+        resumo();
+        desenhar();
+        await escolher(pub.id); // atualiza a lista de perguntas (as levadas passam a "já respondidas")
+      }
+
       const aviso = document.createElement('p');
       aviso.className = 'hint';
       aviso.textContent = 'As perguntas de cada documento vêm do wol.jw.org (só o número do documento é enviado).';
@@ -1166,10 +1299,17 @@
         });
         docSelect.value = novos[0].id;
         semanaRow.hidden = true;
+        // Libera "levar as respostas salvas da semana" (A Sentinela ou apostila) para a semana que acabou de ser carregada.
+        semanaCarregada = { ano: alvo.ano, semana: alvo.semana, sentinela: d.sentinela || null, apostila: d.apostila || null };
+        salvasBox.hidden = false;
+        salvasLista.textContent = '';
+        [btnRevista, btnApostila].forEach(b => { b.classList.remove('ativo'); b.setAttribute('aria-pressed', 'false'); });
+        salvasInfo.textContent = 'Marque A Sentinela ou a apostila: se houver respostas salvas desta semana (em Pesquisas salvas), elas vão de uma vez para o backup.';
         escolher(novos[0].id);
       }
 
       docSelect.addEventListener('change', () => {
+        salvasBox.hidden = true; // trocar o documento à mão encerra "levar as respostas salvas da semana"
         linkRow.hidden = docSelect.value !== 'outro';
         semanaRow.hidden = docSelect.value !== 'semana';
         if (docSelect.value === 'semana') {
@@ -1525,11 +1665,11 @@
         backupCloseImport();
         if (backupState && backupState.db) backupState.db.close();
         backupState = { zip, db, manifest, fileName: 'Backup_novo.jwlibrary', data, changes: 0, generated: null, isNew: true };
-        backupCategory = 'notas';
+        backupCategory = 'respostas';
         document.getElementById('backupSearch').value = '';
         document.getElementById('backupNewNoteSlot').textContent = '';
         renderBackupView();
-        setBackupStatus('✅ Backup vazio criado. Use "➕ Nova nota avulsa" para escrever notas e depois gere o arquivo.', false);
+        setBackupStatus('✅ Backup vazio criado. Use "➕ Nova resposta" (ou escolha a categoria Notas e use "➕ Nova nota avulsa") e depois gere o arquivo.', false);
       } catch (e) {
         setBackupStatus('Não consegui criar o backup: ' + (e && e.message ? e.message : 'erro desconhecido.'), true);
       }
@@ -6820,7 +6960,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.52'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.53'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());

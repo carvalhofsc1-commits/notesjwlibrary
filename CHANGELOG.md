@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.53
+
+Backup vazio: (1) a categoria padrão passou a ser Respostas; (2) em Nova resposta → "Carregar as publicações de uma semana", depois de carregar aparece "Levar as respostas salvas da semana" com A Sentinela e Apostila: ao marcar uma, o app procura em Pesquisas salvas as respostas dessa semana e leva todas de uma vez para o backup (A Sentinela pelo número do parágrafo e pelos quadros de recapitulação; na apostila, a pergunta das joias). Cada resposta aparece numa lista para ver o texto que foi levado; as que não casam com nenhuma pergunta ficam marcadas e podem ser ligadas à pergunta certa à mão.
+
 ## 6.3.52
 
 Mesclar backups: a linha de contagens de cada arquivo ganhou as etiquetas (notas / respostas / grifos / marcadores / etiquetas). Os marcadores são os marcadores de página do JW Library (poucos, em posições fixas), não as etiquetas.

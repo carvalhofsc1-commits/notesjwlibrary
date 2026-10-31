@@ -8598,3 +8598,49 @@ details.subsection.ebc-subsection#publicoBox.s34-bloqueado {
 .ico-codigo[hidden] {
   display: none;
 }
+
+/* Nova resposta: levar as respostas salvas da semana (A Sentinela ou apostila) para o backup. */
+.bk-salvas {
+  margin: 8px 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--soft);
+}
+
+.bk-salvas[hidden] {
+  display: none;
+}
+
+.bk-salvas button.ativo {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.bk-salva {
+  margin: 6px 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+}
+
+.bk-salva>summary {
+  padding: 9px 10px;
+  font-size: .88rem;
+  font-weight: 650;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.bk-salva-texto {
+  padding: 4px 10px 10px;
+  font-size: .86rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.bk-salva-texto select {
+  display: block;
+  width: 100%;
+  margin: 8px 0 6px;
+}
