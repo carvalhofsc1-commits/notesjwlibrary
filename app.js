@@ -7179,7 +7179,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.60'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.61'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -17869,6 +17869,16 @@ function saveTemplatesToStorage() {
     };
     trBarra(trTexto, trNomeWord('Transcrição'));
     trBarra(trResumo, trNomeWord('Resumo'));
+    // Um Word só com os dois: o resumo primeiro e, depois, o texto transcrito (cada um com o seu título em negrito).
+    const trWordTudo = document.getElementById('transcricaoWordTudoBtn');
+    trWordTudo.addEventListener('click', () => {
+      if (!trTexto.value.trim() || !trResumo.value.trim()) return;
+      const negrito = aiStyleIdFor('negrito');
+      const titulo = texto => (negrito ? convertTextWithStyle(texto, negrito) : texto);
+      const junto = titulo('Resumo') + '\n\n' + trResumo.value.trim() + '\n\n' + titulo('Texto transcrito') + '\n\n' + trTexto.value.trim();
+      docxPreviaAbrir(trWordTudo, junto, trNomeWord('Resumo e transcrição')());
+    });
+    trFerramentasAtualizar.push(() => { trWordTudo.disabled = !trTexto.value.trim() || !trResumo.value.trim(); });
     window.addEventListener('resize', trCrescerTudo);
     trFonteAplicar();
 

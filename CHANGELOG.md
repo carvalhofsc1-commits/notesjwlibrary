@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.61
+
+Áudio em texto: novo botão "📄 Word com resumo e transcrição", que abre a prévia do Word com os dois num arquivo só (o resumo primeiro e, depois, o texto transcrito, cada um com o título em negrito). Só fica ativo quando existem o resumo e o texto transcrito; os botões Word de cada campo continuam como estavam.
+
 ## 6.3.60
 
 Áudio em texto: novo botão "🔴 Gravar um áudio agora", ao lado de "Escolher o arquivo de áudio". Ele pede a permissão do microfone, mostra o tempo de gravação com Pausar/Continuar, Parar e transcrever e Descartar, e ao parar a gravação já é carregada e transcrita, como um arquivo escolhido (limite de 30 minutos; a tela fica ligada durante a gravação, quando o aparelho permite). Se o aparelho interromper a gravação (por exemplo, o app foi para o segundo plano), o que foi gravado até ali é aproveitado. Há um botão para salvar a gravação no aparelho. Política de privacidade 1.7 (uso do microfone).
