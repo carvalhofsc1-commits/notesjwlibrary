@@ -8785,3 +8785,78 @@ details.subsection.ebc-subsection#publicoBox.s34-bloqueado {
 #transcricaoGravada button {
   width: 100%;
 }
+
+/* Áudio em texto: as informações e instruções para a IA ficam num contêiner, com campos maiores. */
+.transcricao-conteiner {
+  margin: 10px 0;
+  padding: 10px 12px 12px;
+  border: 2px solid var(--muted);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--card) 70%, transparent);
+}
+
+.transcricao-conteiner>summary {
+  font-weight: 700;
+}
+
+.transcricao-conteiner .transcricao-rotulo {
+  display: block;
+  margin: 10px 0 4px;
+}
+
+.transcricao-conteiner select {
+  width: 100%;
+}
+
+.transcricao-conteiner .transcricao-campo {
+  min-height: 8em;
+  padding: 8px 10px;
+  font-size: max(16px, 1rem);
+  line-height: 1.45;
+}
+
+/* Ajustes → Configurações do Áudio em texto. */
+.audio-tipo {
+  margin: 8px 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+}
+
+.audio-tipo>summary {
+  padding: 10px 12px;
+  font-weight: 650;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.audio-tipo-corpo {
+  padding: 0 12px 12px;
+}
+
+.audio-tipo-corpo label {
+  display: block;
+  margin: 8px 0 4px;
+  font-size: .86rem;
+  font-weight: 650;
+}
+
+.audio-tipo-corpo input,
+.audio-tipo-corpo textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: max(16px, 1rem);
+}
+
+.audio-tipo-corpo textarea {
+  min-height: 8em;
+  resize: vertical;
+}
+
+.audio-tipo-corpo .bk-row {
+  margin-top: 8px;
+}
+
+.audio-tipo-corpo .bk-row button {
+  flex: 1 1 auto;
+}

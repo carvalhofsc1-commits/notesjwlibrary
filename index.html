@@ -904,6 +904,18 @@
 
           </div>
         </details>
+        <details class="subsection sub-tint-3" id="audioTiposSection">
+          <summary>🎙️ Configurações do Áudio em texto</summary>
+          <div class="subsection-body">
+            <p class="hint">Os tipos de áudio que aparecem na tela Áudio em texto, em Informações e instruções para a IA → Tipo de áudio. Ao escolher um tipo, a descrição dele preenche o campo “Sobre o áudio”. Você pode mudar os nomes e as descrições, criar tipos novos, reordenar e apagar. Ficam salvos só neste aparelho.</p>
+            <div id="audioTiposLista"></div>
+            <div class="bk-row">
+              <button id="audioTiposAdicionarBtn" type="button">➕ Novo tipo de áudio</button>
+              <button id="audioTiposRestaurarBtn" class="secondary" type="button">↩️ Restaurar os tipos originais</button>
+            </div>
+            <p id="audioTiposStatus" class="ok" role="status" aria-live="polite"></p>
+          </div>
+        </details>
         <details class="subsection sub-tint-5">
           <summary>🗂️ Gerenciar modelos e categorias</summary>
           <div class="subsection-body">
@@ -1488,7 +1500,7 @@
       </div>
       <details class="leitura-dica">
         <summary>ℹ️ Como funciona</summary>
-        <p class="hint">Escolha um arquivo de áudio gravado no celular ou no computador (mp3, m4a, wav, mp4 e outros que o seu aparelho abra). O app decodifica o áudio neste aparelho, corta em trechos de cerca de 50 segundos e envia cada trecho ao Google para virar texto (português do Brasil). Depois você pode pedir um resumo à IA. Limite de 30 minutos por arquivo. Nada é guardado no servidor do NoteStyle, e o texto não fica salvo no app: copie o que quiser guardar. Esta primeira versão não identifica quem está falando.</p>
+        <p class="hint">Você pode <strong>escolher um arquivo de áudio</strong> já gravado no celular ou no computador (mp3, m4a, wav, mp4 e outros que o seu aparelho abra) ou <strong>gravar um áudio agora</strong>, com o microfone do aparelho (o navegador pede a sua permissão; dá para pausar, e ao parar a gravação já é transcrita; mantenha a tela aberta e desbloqueada durante a gravação). O app decodifica o áudio neste aparelho, corta em trechos de cerca de 50 segundos e envia cada trecho ao Google para virar texto (português do Brasil). Depois você pode pedir um resumo à IA. Limite de 30 minutos por áudio, gravado ou em arquivo. Os dois campos de texto podem ser editados (toque em Editar), formatados com negrito e itálico, ter a letra ajustada com A− e A+ e ser exportados para Word. Nada é guardado no servidor do NoteStyle, e o texto não fica salvo no app: copie ou exporte o que quiser guardar (a gravação também pode ser salva no aparelho). Esta primeira versão não identifica quem está falando.</p>
       </details>
       <div class="leitura-importar">
         <button id="transcricaoArquivoBtn" type="button">🎧 Escolher o arquivo de áudio</button>
@@ -1509,13 +1521,16 @@
       <div id="transcricaoGravada" class="bk-row" hidden>
         <button id="transcricaoSalvarGravacaoBtn" class="secondary" type="button">💾 Salvar a gravação no aparelho</button>
       </div>
-      <details class="leitura-dica transcricao-config">
+      <details class="leitura-dica transcricao-config transcricao-conteiner">
         <summary>⚙️ Informações e instruções para a IA (opcional)</summary>
+        <label for="transcricaoTipo" class="transcricao-rotulo">Tipo de áudio</label>
+        <select id="transcricaoTipo"></select>
+        <p class="hint">Escolha um tipo para preencher o campo abaixo com uma descrição pronta, e complete com os nomes e termos deste áudio. Os tipos podem ser mudados em Ajustes → Configurações do Áudio em texto.</p>
         <label for="transcricaoContexto" class="transcricao-rotulo">Sobre o áudio</label>
-        <textarea id="transcricaoContexto" class="transcricao-campo" rows="2" maxlength="1500" placeholder="Ex.: reunião de planejamento da equipe de vendas, com Ana (gerente), Carlos e Paula. Termos: Ibirapuera, CRM." spellcheck="false"></textarea>
+        <textarea id="transcricaoContexto" class="transcricao-campo" rows="6" maxlength="1500" placeholder="Ex.: reunião de planejamento da equipe de vendas, com Ana (gerente), Carlos e Paula. Termos: Ibirapuera, CRM." spellcheck="false"></textarea>
         <p class="hint">Quem fala, o assunto e nomes ou termos difíceis. Ajuda a IA a entender o áudio e a escrever nomes certos no resumo. Vale só para este áudio e não fica salvo.</p>
         <label for="transcricaoInstrucoes" class="transcricao-rotulo">Como fazer o resumo</label>
-        <textarea id="transcricaoInstrucoes" class="transcricao-campo" rows="2" maxlength="1500" placeholder="Ex.: resumo em no máximo 5 linhas, depois uma lista de tarefas com responsável e prazo." spellcheck="false"></textarea>
+        <textarea id="transcricaoInstrucoes" class="transcricao-campo" rows="6" maxlength="1500" placeholder="Ex.: resumo em no máximo 5 linhas, depois uma lista de tarefas com responsável e prazo." spellcheck="false"></textarea>
         <p class="hint">Formato, tamanho e foco do resumo. Fica salvo neste aparelho para os próximos áudios. Sem instruções, a IA usa o formato padrão (resumo, pontos principais e decisões). Não escreva dados pessoais ou sigilosos aqui: estes campos vão à IA junto com o texto.</p>
       </details>
       <p id="transcricaoInfo" class="hint" role="status" aria-live="polite"></p>

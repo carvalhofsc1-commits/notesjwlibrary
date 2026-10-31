@@ -7179,7 +7179,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.61'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.63'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -8681,6 +8681,9 @@
 
       const comentarios = objeto(TD_SALVOS_KEY);
       adicionar('📅', 'Comentários do texto diário salvos', [TD_SALVOS_KEY], Object.keys(comentarios).length, ['dia', 'dias'], '', Object.values(comentarios).map(dia => dia && dia.salvoEm));
+
+      const tiposAudio = lista(AUDIO_TIPOS_KEY);
+      adicionar('🎙️', 'Tipos de áudio e instruções (Áudio em texto)', [AUDIO_TIPOS_KEY, TRANSCRICAO_INSTR_KEY], tiposAudio.length, ['tipo de áudio', 'tipos de áudio'], bruto(TRANSCRICAO_INSTR_KEY) ? 'com instruções do resumo' : '', []);
 
       const importados = lista(OUTROS_BASES_KEY);
       adicionar('📜', 'Esboços importados (Outros esboços)', [OUTROS_BASES_KEY], importados.length, ['esboço', 'esboços'], '', importados.map(base => base && base.importadoEm));
@@ -17446,6 +17449,138 @@ function saveTemplatesToStorage() {
     trInstrucoes.addEventListener('input', () => safeSetItem(TRANSCRICAO_INSTR_KEY, trInstrucoes.value));
     let trControle = null; // AbortController do que está em andamento
 
+    // ---------- Tipos de áudio (campo "Sobre o áudio") ----------
+    // Descrições prontas para o campo "Sobre o áudio" (ajudam a IA a entender o áudio e a escrever os termos certos). A pessoa muda, cria, reordena e apaga em
+    // Ajustes → Configurações do Áudio em texto; a lista fica neste aparelho.
+    const AUDIO_TIPOS_KEY = 'jwLibraryNoteAplicarAudioTiposV1';
+    const AUDIO_TIPOS_PADRAO = [
+      { id: 'p-publico', nome: 'Discurso em uma reunião pública das Testemunhas de Jeová', texto: 'Discurso em uma reunião pública das Testemunhas de Jeová, feito por um orador sobre um tema bíblico, com a congregação presente. Há citações e leituras de textos da Bíblia (escreva os livros e os versículos corretamente, como em Salmo 83:18) e termos próprios, como Jeová, congregação, Reino e Betel.' },
+      { id: 'p-palestra', nome: 'Palestra profissional sobre tema empresarial ou administrativo', texto: 'Palestra profissional para um público de trabalho sobre um tema empresarial ou administrativo (por exemplo, gestão, liderança, finanças, processos ou vendas). Há um palestrante principal, termos técnicos, siglas e nomes de empresas ou de métodos, que devem ser escritos corretamente.' },
+      { id: 'p-auditoria', nome: 'Entrevista com colaborador durante uma auditoria interna', texto: 'Entrevista de um auditor com um colaborador da empresa durante uma auditoria interna. As perguntas do auditor e as respostas do colaborador tratam de processos, controles, responsabilidades, evidências e possíveis falhas ou melhorias. Destaque fatos, datas, valores e nomes de sistemas e de documentos citados.' },
+      { id: 'p-equipe', nome: 'Reunião com equipe de colaboradores', texto: 'Reunião de uma equipe de colaboradores de uma mesma área, com várias pessoas falando: alinhamento de tarefas, andamento de projetos, problemas, decisões e próximos passos. Destaque as decisões, os responsáveis e os prazos.' },
+      { id: 'p-setores', nome: 'Reunião com setores da empresa', texto: 'Reunião entre representantes de setores ou departamentos diferentes da empresa (por exemplo, comercial, financeiro, operações e RH), tratando de assuntos que envolvem mais de uma área. Destaque o que cada setor precisa fazer, as pendências entre os setores, as decisões e os prazos.' },
+      { id: 'p-cliente', nome: 'Reunião com cliente ou fornecedor', texto: 'Reunião ou ligação com um cliente ou fornecedor: necessidades, propostas, valores, condições, objeções e combinados. Destaque o que foi combinado, os valores, os prazos e quem ficou de fazer o quê.' },
+      { id: 'p-treinamento', nome: 'Treinamento ou aula', texto: 'Aula, treinamento ou curso, com um instrutor explicando o conteúdo e, às vezes, perguntas dos participantes. Destaque os conceitos, as definições, os exemplos e as orientações práticas.' },
+      { id: 'p-entrevista', nome: 'Entrevista ou conversa geral', texto: 'Entrevista ou conversa entre duas ou mais pessoas, sobre um assunto livre. Destaque as ideias principais e a opinião de cada pessoa.' },
+      { id: 'p-voz', nome: 'Anotação de voz pessoal', texto: 'Anotação de voz de uma pessoa falando sozinha: lembretes, ideias e tarefas. Organize em itens.' }
+    ];
+
+    function audioTiposLer() {
+      try {
+        const guardado = JSON.parse(localStorage.getItem(AUDIO_TIPOS_KEY) || 'null');
+        if (Array.isArray(guardado)) return guardado.filter(t => t && typeof t.id === 'string' && typeof t.nome === 'string' && typeof t.texto === 'string');
+      } catch (e) { /* sem localStorage ou lista inválida: valem os tipos originais */ }
+      return AUDIO_TIPOS_PADRAO.map(t => ({ ...t }));
+    }
+    function audioTiposGravar(tipos) { safeSetItem(AUDIO_TIPOS_KEY, JSON.stringify(tipos)); }
+
+    // O seletor da tela Áudio em texto.
+    const trTipo = document.getElementById('transcricaoTipo');
+    let trTipoUltimoTexto = ''; // o último texto posto pelo seletor (para trocar sem perguntar se a pessoa não mexeu)
+    function trTiposDesenhar() {
+      const tipos = audioTiposLer();
+      trTipo.textContent = '';
+      const nenhum = document.createElement('option');
+      nenhum.value = '';
+      nenhum.textContent = tipos.length ? '— Escolher um tipo de áudio —' : '— Nenhum tipo configurado —';
+      trTipo.appendChild(nenhum);
+      tipos.forEach(t => {
+        const o = document.createElement('option');
+        o.value = t.id;
+        o.textContent = t.nome || '(sem nome)';
+        trTipo.appendChild(o);
+      });
+      trTipo.value = '';
+    }
+    trTiposDesenhar();
+    backupSeletorLargo(trTipo, null, { vazioEscolhivel: true });
+    trTipo.addEventListener('change', async () => {
+      const tipo = audioTiposLer().find(t => t.id === trTipo.value);
+      if (!tipo) return;
+      const atual = trContexto.value.trim();
+      if (atual && atual !== trTipoUltimoTexto && !(await askConfirm('O campo “Sobre o áudio” já tem texto. Trocar pela descrição do tipo escolhido?', 'Trocar o texto'))) { trTipo.value = ''; return; }
+      trContexto.value = tipo.texto;
+      trTipoUltimoTexto = tipo.texto;
+      trTipo.value = '';
+      trInfo.textContent = 'Descrição do tipo “' + tipo.nome + '” colocada em “Sobre o áudio”. Complete com os nomes e os termos deste áudio.';
+    });
+
+    // A configuração, em Ajustes.
+    const audioTiposLista = document.getElementById('audioTiposLista');
+    const audioTiposStatus = document.getElementById('audioTiposStatus');
+    const audioTiposDizer = texto => { audioTiposStatus.textContent = texto; };
+    function audioTiposSalvar(tipos, mensagem) {
+      audioTiposGravar(tipos);
+      trTiposDesenhar();
+      audioTiposDizer(mensagem || '✅ Salvo neste aparelho.');
+    }
+    function audioTiposRender(abrirId) {
+      const tipos = audioTiposLer();
+      audioTiposLista.textContent = '';
+      if (!tipos.length) {
+        const vazio = document.createElement('p');
+        vazio.className = 'hint';
+        vazio.textContent = 'Nenhum tipo de áudio. Toque em “Novo tipo de áudio” ou restaure os originais.';
+        audioTiposLista.appendChild(vazio);
+      }
+      tipos.forEach((tipo, i) => {
+        const det = document.createElement('details');
+        det.className = 'audio-tipo';
+        det.open = tipo.id === abrirId;
+        const sum = document.createElement('summary');
+        sum.textContent = tipo.nome || '(sem nome)';
+        const corpo = document.createElement('div');
+        corpo.className = 'audio-tipo-corpo';
+        const nome = document.createElement('input');
+        nome.type = 'text';
+        nome.maxLength = 120;
+        nome.autocomplete = 'off';
+        nome.value = tipo.nome;
+        nome.addEventListener('input', () => { tipo.nome = nome.value; sum.textContent = nome.value || '(sem nome)'; audioTiposSalvar(tipos); });
+        const texto = document.createElement('textarea');
+        texto.rows = 6;
+        texto.maxLength = 1400;
+        texto.spellcheck = false;
+        texto.value = tipo.texto;
+        texto.addEventListener('input', () => { tipo.texto = texto.value; audioTiposSalvar(tipos); });
+        const acoes = document.createElement('div');
+        acoes.className = 'bk-row';
+        const subir = backupButton('⬆️ Subir', () => { if (i) { [tipos[i - 1], tipos[i]] = [tipos[i], tipos[i - 1]]; audioTiposSalvar(tipos); audioTiposRender(tipo.id); } });
+        subir.disabled = i === 0;
+        const descer = backupButton('⬇️ Descer', () => { if (i < tipos.length - 1) { [tipos[i + 1], tipos[i]] = [tipos[i], tipos[i + 1]]; audioTiposSalvar(tipos); audioTiposRender(tipo.id); } });
+        descer.disabled = i === tipos.length - 1;
+        const apagar = backupButton('🗑️ Apagar', async () => {
+          if (!(await askConfirm('Apagar o tipo “' + (tipo.nome || 'sem nome') + '”? Dá para restaurar os originais depois.', 'Apagar'))) return;
+          tipos.splice(i, 1);
+          audioTiposSalvar(tipos, '🗑️ Tipo apagado.');
+          audioTiposRender();
+        });
+        acoes.append(subir, descer, apagar);
+        const rotuloNome = document.createElement('label');
+        rotuloNome.textContent = 'Nome do tipo';
+        const rotuloTexto = document.createElement('label');
+        rotuloTexto.textContent = 'Descrição (vai para “Sobre o áudio”)';
+        corpo.append(rotuloNome, nome, rotuloTexto, texto, acoes);
+        det.append(sum, corpo);
+        audioTiposLista.appendChild(det);
+      });
+    }
+    document.getElementById('audioTiposAdicionarBtn').addEventListener('click', () => {
+      const tipos = audioTiposLer();
+      const novo = { id: 't-' + Date.now().toString(36), nome: 'Novo tipo de áudio', texto: '' };
+      tipos.push(novo);
+      audioTiposSalvar(tipos, '➕ Tipo criado: dê um nome e escreva a descrição.');
+      audioTiposRender(novo.id);
+    });
+    document.getElementById('audioTiposRestaurarBtn').addEventListener('click', async () => {
+      if (!(await askConfirm('Voltar aos tipos de áudio originais? As suas mudanças e os tipos que você criou serão apagados.', 'Restaurar'))) return;
+      try { localStorage.removeItem(AUDIO_TIPOS_KEY); } catch (e) { /* sem localStorage */ }
+      trTiposDesenhar();
+      audioTiposRender();
+      audioTiposDizer('↩️ Tipos originais restaurados.');
+    });
+    audioTiposRender();
+
     const trFerramentasAtualizar = []; // atualiza os botões das barras dos dois campos (A−/A+, Word e formatação)
 
     function trAtualizarBotoes() {
@@ -17753,6 +17888,7 @@ function saveTemplatesToStorage() {
       trTexto.value = '';
       trResumo.value = '';
       trContexto.value = ''; // o "sobre o áudio" vale só para um áudio; as instruções do resumo ficam salvas
+      trTipoUltimoTexto = '';
       trGravadaLimpar();
       trInfo.textContent = '';
       trAtualizarBotoes();

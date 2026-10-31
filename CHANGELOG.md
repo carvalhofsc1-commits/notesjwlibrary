@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.63
+
+Áudio em texto: (1) "Informações e instruções para a IA" ficou dentro de um contêiner (caixa com borda) e os campos "Sobre o áudio" e "Como fazer o resumo" ficaram maiores (6 linhas, letra de 16 px); (2) novo seletor "Tipo de áudio" acima do campo "Sobre o áudio", com descrições prontas: discurso em uma reunião pública das Testemunhas de Jeová, palestra profissional sobre tema empresarial ou administrativo, entrevista com colaborador durante uma auditoria interna, reunião com equipe de colaboradores, reunião com setores da empresa, reunião com cliente ou fornecedor, treinamento ou aula, entrevista ou conversa geral e anotação de voz pessoal (escolher um tipo preenche o campo e pergunta antes de trocar um texto que a pessoa já escreveu); (3) nova seção em Ajustes → "🎙️ Configurações do Áudio em texto", onde se muda o nome e a descrição de cada tipo, cria tipos novos, reordena, apaga e restaura os originais (salvo neste aparelho e listado em Privacidade e dados deste aparelho).
+
+## 6.3.62
+
+Áudio em texto: o texto de "Como funciona" agora explica também a gravação de um áudio na hora (permissão do microfone, pausa, transcrição ao parar, tela aberta durante a gravação), o limite de 30 minutos para os dois jeitos e os recursos dos campos (Editar, negrito e itálico, A− e A+, Word).
+
 ## 6.3.61
 
 Áudio em texto: novo botão "📄 Word com resumo e transcrição", que abre a prévia do Word com os dois num arquivo só (o resumo primeiro e, depois, o texto transcrito, cada um com o título em negrito). Só fica ativo quando existem o resumo e o texto transcrito; os botões Word de cada campo continuam como estavam.
