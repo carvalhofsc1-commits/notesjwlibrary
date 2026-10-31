@@ -2,6 +2,18 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.57
+
+Backup vazio: o aviso "Backup vazio criado. Use Nova resposta…" foi retirado (o backup novo abre direto, sem a mensagem).
+
+## 6.3.56
+
+Leitura em voz alta: volume parelho entre as partes. Cada parte do texto é um pedido separado ao Google e o volume da voz varia de um pedido para outro (uma parte saía normal e a seguinte fraca); o destaque da frase não interferia, ele só acompanha o tempo do áudio. Agora cada parte é medida (só a fala, sem as pausas) e tocada com o ganho que a leva ao mesmo volume (entre -6 dB e +12 dB, com suavização de picos); diferenças de menos de 1 dB não são mexidas. O ajuste é feito no aparelho, em segundo plano, enquanto a parte anterior toca. O arquivo de áudio salvo continua com o áudio original.
+
+## 6.3.55
+
+Tela Backup: o card "Conteúdo do backup" (aberto, novo ou mesclado) agora é recolhível: toque no título para fechar ou abrir, com a seta à direita como nas outras seções. Começa aberto.
+
 ## 6.3.54
 
 Backup: nova seção própria "📚 Respostas preparadas para as reuniões" (saiu da Nova resposta). Escolha a semana (só aparecem as que têm respostas salvas em Pesquisas salvas) e a reunião: fim de semana (A Sentinela) ou meio de semana (apostila). A lista vem toda marcada e cada resposta mostra a pergunta de destino (dá para trocar e para ver o texto); as sem pergunta correspondente ficam sem marca até você escolher o destino. Um botão "Incluir N respostas no backup" leva só as marcadas, as incluídas ficam verdes ("incluída no backup"), o aviso diz que ainda falta gerar o arquivo e há um atalho para isso. Também: Marcar/Desmarcar todas, aviso das que já têm resposta no backup e das que disputam a mesma pergunta.

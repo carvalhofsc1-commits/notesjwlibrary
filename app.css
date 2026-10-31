@@ -8287,8 +8287,38 @@
     }
 
     .backup-conteudo-titulo {
-      margin: 0 0 2px;
+      margin: 0;
       font-size: 1.02rem;
+    }
+
+    /* O card do conteúdo é recolhível: o título é a barra que abre e fecha (seta à direita, como nas outras seções). */
+    .backup-conteudo>summary {
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .backup-conteudo>summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .backup-conteudo>summary::after {
+      content: '▸';
+      color: var(--muted);
+      font-size: 1.05rem;
+      flex: 0 0 auto;
+      transition: transform .15s ease;
+    }
+
+    .backup-conteudo[open]>summary::after {
+      transform: rotate(90deg);
+    }
+
+    .backup-conteudo[open]>summary {
+      margin-bottom: 2px;
     }
 
     /* O 4º botão de cada arquivo da mesclagem: Selecionar o que importar (roxo claro). */

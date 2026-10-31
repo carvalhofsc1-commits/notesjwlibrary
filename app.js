@@ -1802,7 +1802,6 @@
         document.getElementById('backupSearch').value = '';
         document.getElementById('backupNewNoteSlot').textContent = '';
         renderBackupView();
-        setBackupStatus('✅ Backup vazio criado. Use "➕ Nova resposta" (ou escolha a categoria Notas e use "➕ Nova nota avulsa") e depois gere o arquivo.', false);
       } catch (e) {
         setBackupStatus('Não consegui criar o backup: ' + (e && e.message ? e.message : 'erro desconhecido.'), true);
       }
@@ -3718,11 +3717,91 @@
       vozAudio.preservesPitch = true;
     }
 
+    // Volume parelho entre as partes. Cada parte da leitura é um pedido separado ao Google e o volume da voz muda de um pedido para outro (uma parte
+    // sai normal e a seguinte fraca). O destaque da frase não mexe no áudio (só lê o tempo tocado): a oscilação vem das próprias partes. Por isso cada parte
+    // é medida (volume da fala, sem as pausas) e tocada com o ganho que a leva ao mesmo nível: o áudio é decodificado e regravado como WAV só para tocar
+    // (o iPhone não deixa mudar o volume de um áudio; o Web Audio mudaria o comportamento do botão de silêncio). O arquivo salvo da leitura continua o original.
+    const VOZ_NIVEL_ALVO = 0.1; // volume (RMS) da fala depois do ajuste: cerca de -20 dB
+    const VOZ_GANHO_MIN = 0.5;
+    const VOZ_GANHO_MAX = 4;
+    const vozNiveladas = new Set(); // endereços temporários dos áudios ajustados (liberados quando a parte acaba ou a leitura para)
+
+    function vozGanhoDaFala(amostras, taxa) {
+      const janela = Math.max(1, Math.round(taxa * 0.02));
+      const energias = [];
+      for (let i = 0; i + janela <= amostras.length; i += janela) {
+        let soma = 0;
+        for (let k = i; k < i + janela; k++) soma += amostras[k] * amostras[k];
+        energias.push(soma / janela);
+      }
+      if (!energias.length) return 1;
+      const maxima = Math.max(...energias);
+      if (maxima < 1e-8) return 1;
+      // Só contam as janelas com fala (as pausas e a respiração ficam de fora): mais de 1/100 da energia da janela mais forte (-20 dB).
+      const falas = energias.filter(e => e > maxima * 0.01);
+      const media = falas.reduce((a, b) => a + b, 0) / falas.length;
+      return Math.min(VOZ_GANHO_MAX, Math.max(VOZ_GANHO_MIN, VOZ_NIVEL_ALVO / Math.sqrt(media)));
+    }
+
+    function vozWav(amostras, taxa) {
+      const bytes = new Uint8Array(44 + amostras.length * 2);
+      const dv = new DataView(bytes.buffer);
+      const escrever = (pos, txt) => [...txt].forEach((c, i) => { bytes[pos + i] = c.charCodeAt(0); });
+      escrever(0, 'RIFF'); dv.setUint32(4, 36 + amostras.length * 2, true); escrever(8, 'WAVE'); escrever(12, 'fmt ');
+      dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+      dv.setUint32(24, taxa, true); dv.setUint32(28, taxa * 2, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
+      escrever(36, 'data'); dv.setUint32(40, amostras.length * 2, true);
+      for (let i = 0; i < amostras.length; i++) dv.setInt16(44 + i * 2, Math.max(-32768, Math.min(32767, Math.round(amostras[i] * 32767))), true);
+      return new Blob([bytes], { type: 'audio/wav' });
+    }
+
+    // Devolve { url, ganho }: url é o áudio ajustado (ou null quando não precisa ou não foi possível ajustar: toca o original).
+    function vozNivelar(entrada) {
+      if (entrada.niv) return entrada.niv;
+      entrada.niv = (async () => {
+        try {
+          const Contexto = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+          if (!Contexto) return { url: null, ganho: 1 };
+          const bytes = await (await fetch(entrada.uri)).arrayBuffer();
+          const contexto = new Contexto(1, 1, 24000);
+          const buffer = await new Promise((ok, falha) => {
+            const promessa = contexto.decodeAudioData(bytes, ok, falha);
+            if (promessa && promessa.catch) promessa.catch(falha);
+          });
+          const origem = buffer.getChannelData(0);
+          const ganho = vozGanhoDaFala(origem, buffer.sampleRate);
+          entrada.ganho = ganho;
+          if (Math.abs(ganho - 1) < 0.12) return { url: null, ganho }; // diferença de menos de 1 dB: nem se nota
+          const saida = new Float32Array(origem.length);
+          for (let i = 0; i < origem.length; i++) {
+            const x = origem[i] * ganho;
+            const a = Math.abs(x);
+            saida[i] = a > 0.8 ? Math.sign(x) * (0.8 + 0.2 * Math.tanh((a - 0.8) / 0.2)) : x; // pico que passaria de 0,8 é suavizado (sem estalo)
+          }
+          const url = URL.createObjectURL(vozWav(saida, buffer.sampleRate));
+          vozNiveladas.add(url);
+          return { url, ganho };
+        } catch (e) {
+          return { url: null, ganho: 1 }; // sem o ajuste, toca o áudio como veio
+        }
+      })();
+      return entrada.niv;
+    }
+
+    function vozLiberarNiveladas() {
+      vozNiveladas.forEach(url => URL.revokeObjectURL(url));
+      vozNiveladas.clear();
+      vozCache.forEach(entrada => { entrada.niv = null; }); // os endereços acabaram de ser liberados: se a parte tocar de novo, o ajuste é refeito
+    }
+
     function vozTocar(entrada) {
-      return new Promise((resolve, reject) => {
+      const sessaoAoPedir = vozSessao;
+      return vozNivelar(entrada).then(niv => new Promise((resolve, reject) => {
+        if (sessaoAoPedir !== vozSessao) { resolve(); return; } // a leitura foi parada enquanto o volume era ajustado
+        const uri = niv.url || entrada.uri;
         // Os segundos entram no consumo só na primeira vez que a parte toca (repetir não custa).
         const contar = () => {
-          if (!entrada.novo || vozAudio.currentSrc !== entrada.uri || !Number.isFinite(vozAudio.duration)) return;
+          if (!entrada.novo || vozAudio.currentSrc !== uri || !Number.isFinite(vozAudio.duration)) return;
           entrada.novo = false;
           vozSomarUso(entrada.gemini ? { segGemini: vozAudio.duration } : { segChirp: vozAudio.duration });
         };
@@ -3731,6 +3810,11 @@
           vozAudio.removeEventListener('error', falha);
           vozAudio.removeEventListener('loadedmetadata', contar);
           vozFimAtual = null;
+          if (niv.url) { // o áudio ajustado já cumpriu o papel: a próxima vez que a parte tocar, ele é refeito
+            URL.revokeObjectURL(niv.url);
+            vozNiveladas.delete(niv.url);
+            entrada.niv = null;
+          }
         };
         const fim = () => { limpar(); resolve(); };
         const falha = () => { limpar(); reject(new Error('Não consegui tocar o áudio.')); };
@@ -3738,10 +3822,10 @@
         vozAudio.addEventListener('error', falha);
         vozAudio.addEventListener('loadedmetadata', contar);
         vozFimAtual = fim; // "Parar" encerra a espera
-        vozAudio.src = entrada.uri;
+        vozAudio.src = uri;
         vozAplicarVelocidade();
         vozAudio.play().catch(falha);
-      });
+      }));
     }
 
     function vozParar() {
@@ -3750,6 +3834,7 @@
       vozSessao++;
       vozAudio.pause();
       if (vozFimAtual) vozFimAtual();
+      vozLiberarNiveladas();
       vozBar.hidden = true;
       leitorAoParar(); // tira o destaque da frase e a barra de andamento, se a leitura era a da tela Leitura ou a do texto diário
     }
@@ -5363,7 +5448,7 @@
         const pedir = i => {
           if (i >= partes.length || pedidos[i]) return;
           pedidos[i] = vozBuscar(partes[i].texto, null, cfg.uso, extrasDaParte(partes[i])).then(entrada => {
-            if (sessao === vozSessao) leitorAnalisar(entrada, partes[i]); // em segundo plano
+            if (sessao === vozSessao) { leitorAnalisar(entrada, partes[i]); vozNivelar(entrada); } // em segundo plano (análise das frases e volume parelho)
             return entrada;
           });
           pedidos[i].catch(() => {}); // o erro aparece quando chegar a vez dela
@@ -7093,7 +7178,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.54'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.57'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
