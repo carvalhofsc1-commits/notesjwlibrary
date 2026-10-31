@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.44
+
+Backup, Nova resposta: no celular, ao tocar no campo Documento (e nos outros seletores largos), o fundo ficava azul forte e o texto "Escolha o documento…" não dava para ler. Agora o campo fica com um fundo bem suave (o mesmo das opções selecionadas) e o texto legível enquanto está tocado, aberto ou com o foco.
+
 ## 6.3.43
 
 Backup, categoria Respostas: toda resposta aparece dentro do seu artigo, mesmo quando a edição tem só um artigo. Se o título ainda não é conhecido (o backup não o traz e o wol.jw.org ainda não foi consultado), o nível do artigo mostra "Artigo (documento N)" e troca pelo título assim que ele é identificado.

@@ -5927,6 +5927,23 @@
       color: var(--muted);
     }
 
+    /* No iPhone o :hover fica "preso" depois do toque e o button:hover global deixava o campo azul forte (o texto sumia): o campo mantém
+       um fundo bem suave e o texto legível enquanto está tocado, aberto ou com o foco. */
+    .bk-seletor-botao:hover:not(:disabled),
+    .bk-seletor-botao:active:not(:disabled),
+    .bk-seletor-botao:focus,
+    .bk-seletor-botao[aria-expanded="true"] {
+      background: var(--soft);
+      color: var(--text);
+    }
+
+    .bk-seletor-botao.vazio:hover:not(:disabled),
+    .bk-seletor-botao.vazio:active:not(:disabled),
+    .bk-seletor-botao.vazio:focus,
+    .bk-seletor-botao.vazio[aria-expanded="true"] {
+      color: var(--muted);
+    }
+
     .bk-seletor-lista {
       margin-top: 6px;
       max-height: 60vh;
