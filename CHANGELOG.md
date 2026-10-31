@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.58
+
+Tela Início: o atalho e o botão da barra de baixo (nome ao tocar e segurar) passaram de "Leitura em voz alta" para "Leitura em voz".
+
 ## 6.3.57
 
 Backup vazio: o aviso "Backup vazio criado. Use Nova resposta…" foi retirado (o backup novo abre direto, sem a mensagem).
