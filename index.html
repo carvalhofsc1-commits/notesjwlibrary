@@ -1515,13 +1515,14 @@
       <div id="backupMesclarBox" class="backup-save backup-mesclar" hidden>
         <h3 class="backup-mesclar-titulo">🔀 Mesclar backups</h3>
         <p class="hint">Um arquivo é a base (⭐): tudo dele fica. Dos outros entram as notas (com cor, trecho grifado e etiquetas), os grifos e os marcadores que a base ainda não tem. Por padrão a base é o 1º arquivo; toque em "⭐ Usar como base" para trocar.</p>
-        <div id="backupMesclarSlots"></div>
         <fieldset class="merge-extras">
-          <legend>Além das notas</legend>
-          <label class="merge-opcao"><input type="checkbox" id="backupMesclarGrifos" checked><span>Mesclar também os grifos</span></label>
-          <label class="merge-opcao"><input type="checkbox" id="backupMesclarMarcadores" checked><span>Mesclar também os marcadores</span></label>
-          <label class="merge-opcao"><input type="checkbox" id="backupMesclarRespostas" checked><span>Mesclar também as respostas</span></label>
+          <legend>O que será mesclado</legend>
+          <label class="merge-opcao"><input type="checkbox" id="backupMesclarNotas" checked><span>Notas</span></label>
+          <label class="merge-opcao"><input type="checkbox" id="backupMesclarGrifos" checked><span>Grifos</span></label>
+          <label class="merge-opcao"><input type="checkbox" id="backupMesclarMarcadores" checked><span>Marcadores</span></label>
+          <label class="merge-opcao"><input type="checkbox" id="backupMesclarRespostas" checked><span>Respostas</span></label>
         </fieldset>
+        <div id="backupMesclarSlots"></div>
         <div id="backupMesclarRegra" class="merge-regra" hidden>
           <h4 class="merge-regra-titulo">⚖️ Notas repetidas</h4>
           <p id="backupMesclarConflitoInfo" class="hint"></p>

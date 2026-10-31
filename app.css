@@ -8351,3 +8351,18 @@
       padding-left: 8px;
       border-left: 1px solid color-mix(in srgb, var(--muted) 40%, transparent);
     }
+
+    /* "O que será mesclado": quatro opções em duas linhas, logo abaixo do texto sobre o arquivo base. */
+    fieldset.merge-extras {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      column-gap: 10px;
+    }
+
+    fieldset.merge-extras>legend {
+      grid-column: 1 / -1;
+    }
+
+    fieldset.merge-extras .merge-opcao {
+      margin: 3px 0;
+    }

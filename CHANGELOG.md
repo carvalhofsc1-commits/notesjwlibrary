@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.39
+
+Mesclar backups: (1) a árvore "Por publicação e artigo" ordena do mais novo para o mais antigo nas edições (e na ordem do app nos livros, capítulos e artigos); (2) as listas de "Selecionar o que importar" agora se SOMAM em vez de se anularem: uma lista só vale depois que você mexe nela, e o que estiver marcado em qualquer uma que valha é importado (notas: árvore, etiquetas e uma a uma; respostas: árvore e uma a uma; grifos e marcadores: árvore); sem mexer em lista alguma, tudo vem; há "🔄 Importar tudo (limpar a seleção)" e o resumo do painel diz o que vai entrar de cada tipo; (3) o botão "Selecionar o que importar" perdeu a bolinha; (4) as opções passaram para o topo da mesclagem, abaixo do texto sobre o arquivo base, com o título "O que será mesclado" e a nova opção "Notas" (para mesclar só grifos, marcadores e respostas), em duas linhas.
+
 ## 6.3.38
 
 Mesclar backups: (1) "Selecionar o que importar" ganhou a seção "📚 Por publicação e artigo", uma árvore (tipo > publicação > edição > artigo, como a revista A Sentinela de agosto de 2026 e o artigo dela) com caixas em cada nível: marcar ou desmarcar vale para tudo o que há ali (notas, respostas, grifos e marcadores), com busca e "marcar/desmarcar todas"; o painel mostra "Vai importar X de Y notas, respostas, grifos e marcadores"; (2) depois de mesclar, o resumo tem "↩️ Voltar à seleção dos arquivos", que reabre a primeira fase com os arquivos, a base, as regras e os filtros como estavam, para mudar e mesclar de novo (as alterações feitas no backup mesclado depois disso se perdem, com aviso); (3) "☑️ Selecionar o que importar" virou um 4º botão, abaixo de Remover, em roxo claro; (4) "Usar como base" passou a "Usar como arquivo base".
