@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.27
+
+Comentários adicionais do texto diário: a parte que cita o ponto do texto de hoje ("Como vimos no texto de hoje, …") aparece em negrito e itálico, e a aplicação, em texto normal; cada comentário começa com um emoji do assunto, antes do ponto. A IA agora devolve o comentário em dois campos (base e aplicação) e um emoji; o servidor os junta num comentário só (o que a voz lê e o que é copiado), então comentários salvos antes continuam funcionando, só sem negrito nem emoji. O negrito e o itálico se mantêm quando a leitura em voz alta divide o comentário em frases (a base é a(s) primeira(s) frase(s)). Se a tela Prompts da IA tiver uma versão salva do prompt dos comentários do texto diário, restaure o padrão.
+
 ## 6.3.26
 
 Comentários adicionais do texto diário (prompt do servidor): cada comentário passa a começar chamando a atenção para o ponto específico do texto de hoje em que se baseia ("Como vimos no texto de hoje…", "O texto de hoje mostrou que…", "O texto de hoje nos ajudou a entender que…", "Um dos destaques do texto de hoje foi…"), com a abertura variada, e só então traz a aplicação a um aspecto da vida cristã (família, casamento, ministério, personalidade, conduta, entretenimento etc.); de 3 a 4 frases. Se a tela Prompts da IA tiver uma versão salva desse prompt, ela vale no lugar do padrão: restaure o padrão ou cole o texto novo.

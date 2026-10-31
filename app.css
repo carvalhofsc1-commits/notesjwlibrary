@@ -7701,3 +7701,20 @@
       -webkit-box-decoration-break: clone;
       box-decoration-break: clone;
     }
+
+    /* Comentários adicionais do texto diário: emoji do assunto antes do ponto, e a parte que cita o ponto do texto de hoje em negrito e itálico. */
+    .td-ia-cabeca {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .td-ia-emoji {
+      font-style: normal;
+      flex: none;
+    }
+
+    .td-ia-base {
+      font-weight: 700;
+      font-style: italic;
+    }

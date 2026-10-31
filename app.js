@@ -5747,7 +5747,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.26'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.27'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -15152,7 +15152,7 @@ function saveTemplatesToStorage() {
     const tdTextoCompleto = t => [t.titulo, t.tema, ...t.comentario, t.fonte].filter(Boolean).join('\n');
     // Para a voz, sem a linha da citação da matéria ("w25.03 18 § 15; 19 §§ 17-18"): referência não se lê, nem em parte.
     const tdTextoParaOuvir = t => [t.titulo, t.tema, ...t.comentario].filter(Boolean).join('\n');
-    const tdComentariosEmTexto = lista => lista.map(c => '💡 ' + (c.ponto ? c.ponto + '\n' : '') + c.comentario).join('\n\n');
+    const tdComentariosEmTexto = lista => lista.map(c => (c.emoji || '💡') + ' ' + (c.ponto ? c.ponto + '\n' : '') + c.comentario).join('\n\n');
 
     // Comentários salvos (💾 Salvar): ficam neste aparelho, por dia do texto, e só valem para aquele dia. Quando o dia
     // passa, são apagados (a limpeza roda ao abrir o app, ao salvar, ao recuperar e ao voltar ao app noutro dia).
@@ -15174,7 +15174,7 @@ function saveTemplatesToStorage() {
       let limpou = false;
       for (const dia of Object.keys(salvos)) {
         const lista = salvos[dia] && Array.isArray(salvos[dia].comentarios)
-          ? salvos[dia].comentarios.filter(c => c && typeof c.comentario === 'string' && c.comentario.trim()).map(c => ({ ponto: typeof c.ponto === 'string' ? c.ponto : '', comentario: c.comentario }))
+          ? salvos[dia].comentarios.filter(c => c && typeof c.comentario === 'string' && c.comentario.trim()).map(c => ({ ponto: typeof c.ponto === 'string' ? c.ponto : '', comentario: c.comentario, emoji: typeof c.emoji === 'string' ? c.emoji : '', base: typeof c.base === 'string' ? c.base : '' }))
           : [];
         if (dia < hoje || !lista.length) { delete salvos[dia]; limpou = true; }
         else salvos[dia] = { salvoEm: salvos[dia].salvoEm, comentarios: lista, vozCupom: typeof salvos[dia].vozCupom === 'string' ? salvos[dia].vozCupom : '' };
@@ -15200,14 +15200,35 @@ function saveTemplatesToStorage() {
       lista.forEach(c => {
         const item = document.createElement('li');
         if (c.ponto) {
+          // O emoji do assunto vem antes do ponto, fora dele (o ponto é lido em voz alta; o emoji não).
+          const cabeca = document.createElement('span');
+          cabeca.className = 'td-ia-cabeca';
+          if (c.emoji) {
+            const emoji = document.createElement('span');
+            emoji.className = 'td-ia-emoji';
+            emoji.setAttribute('aria-hidden', 'true');
+            emoji.textContent = c.emoji;
+            cabeca.appendChild(emoji);
+          }
           const ponto = document.createElement('span');
           ponto.className = 'td-ia-ponto';
           ponto.textContent = c.ponto;
-          item.appendChild(ponto);
+          cabeca.appendChild(ponto);
+          item.appendChild(cabeca);
         }
         const texto = document.createElement('span');
         texto.className = 'td-ia-texto';
-        texto.textContent = c.comentario;
+        // A parte que cita o ponto do texto de hoje (a "base", o começo do comentário) fica em negrito e itálico; a aplicação, em texto normal.
+        const base = c.base && c.comentario.startsWith(c.base) && c.comentario.length > c.base.length ? c.base : '';
+        if (base) {
+          const destaque = document.createElement('span');
+          destaque.className = 'td-ia-base';
+          destaque.textContent = base;
+          texto.append(destaque, document.createTextNode(c.comentario.slice(base.length)));
+          texto.dataset.baseLen = String(base.length);
+        } else {
+          texto.textContent = c.comentario;
+        }
         item.appendChild(texto);
         td.iaLista.appendChild(item);
       });
@@ -15367,10 +15388,16 @@ function saveTemplatesToStorage() {
           unidades.push({ falado: pares[0].falada, origem: pares[0].mostrada || linha.texto || '', paragrafo, el: linha.el });
         } else {
           linha.el.textContent = '';
+          let posicao = 0; // onde a frase começa no texto da linha (para saber se ela é da "base" em negrito e itálico dos comentários da IA)
           pares.forEach((par, k) => {
             if (k) linha.el.appendChild(document.createTextNode(' '));
             const span = document.createElement('span');
             span.className = 'lu';
+            const inicio = linha.base ? linha.texto.indexOf(par.mostrada, posicao) : -1;
+            if (inicio >= 0) {
+              posicao = inicio + par.mostrada.length;
+              if (posicao <= linha.base + 1) span.classList.add('td-ia-base');
+            }
             span.textContent = par.mostrada;
             linha.el.appendChild(span);
             leituraMudosNoSpan(span, regras);
@@ -15418,7 +15445,7 @@ function saveTemplatesToStorage() {
           if (falado && !/[.!?…:;]$/.test(falado)) falado += '.'; // a voz faz uma pausa antes do comentário
           linhas.push({ el: ponto, texto: ponto.textContent, falado, inteira: true });
         }
-        if (texto) linhas.push({ el: texto, texto: texto.textContent, falado: textoParaVoz(texto.textContent, regras) });
+        if (texto) linhas.push({ el: texto, texto: texto.textContent, falado: textoParaVoz(texto.textContent, regras), base: Number(texto.dataset.baseLen) || 0 });
       });
       tdIaLeituraEstado.destaque = -1;
       tdIaLeituraEstado.unidades = tdLeituraCasar(linhas, regras);

@@ -3008,8 +3008,14 @@ async function responderJoias(res, body, P) {
 // Ela pensa antes de responder (o texto é curto e a qualidade importa mais que a pressa).
 
 const SaidaTextoDiario = z.object({
-  comentarios: z.array(z.object({ ponto: z.string(), comentario: z.string() })),
+  comentarios: z.array(z.object({ ponto: z.string(), emoji: z.string().optional(), base: z.string().optional(), aplicacao: z.string() })),
 });
+
+// Só um ou dois emojis de verdade (nada de texto); senão, vazio e o app usa o seu próprio.
+function emojiDoComentario(valor) {
+  const texto = typeof valor === "string" ? valor.trim() : "";
+  return /^(?:\p{Extended_Pictographic}\uFE0F?(?:\u200D\p{Extended_Pictographic}\uFE0F?)*){1,2}$/u.test(texto) ? texto : "";
+}
 
 async function comentariosDoTextoDiario(res, body, P) {
   if (!process.env.CODIGO_ESTUDO) return erro(res, 503, "O código de pesquisa ainda não está configurado no servidor.");
@@ -3048,8 +3054,18 @@ async function comentariosDoTextoDiario(res, body, P) {
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
       return erro(res, 502, "A IA não conseguiu sugerir comentários para este texto.");
     }
+    // "base" (a abertura, que o app mostra em negrito e itálico) e "aplicacao" viram um "comentario" só (o que a voz lê); a base é sempre o começo dele.
     const comentarios = resposta.parsed_output.comentarios
-      .map((c) => ({ ponto: limparLinha(limparTrecho(c.ponto), 120), comentario: limparTextoGerado(c.comentario, 700) }))
+      .map((c) => {
+        const base = limparTextoGerado(c.base || "", 350);
+        const aplicacao = limparTextoGerado(c.aplicacao, 500);
+        return {
+          ponto: limparLinha(limparTrecho(c.ponto), 120),
+          emoji: emojiDoComentario(c.emoji),
+          base: base && aplicacao ? base : "",
+          comentario: [base, aplicacao].filter(Boolean).join(" "),
+        };
+      })
       .filter((c) => c.comentario)
       .slice(0, 6);
 
