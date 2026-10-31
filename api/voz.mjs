@@ -8,59 +8,13 @@
 //    Gemini exigem essa identidade; uma chave de API comum é recusada (403 aiplatform.endpoints.predict).
 //  - GOOGLE_TTS_API_KEY: a chave de API, que basta para a voz Chirp 3 HD (a reserva).
 // Modelo, voz, tom, altura e instruções extras vêm da configuração do administrador (api/_vozConfig.mjs).
-import { createSign } from "node:crypto";
 import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
+import { credenciais, tokenDeAcesso } from "./_googleToken.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
 import { validarCupomVoz } from "./_vozCupom.mjs";
 import { ALTURAS, MODELOS_VOZ, TONS, VOZES, lerConfigVoz, validarConfigVoz } from "./_vozConfig.mjs";
 
 const URL_TTS = process.env.GOOGLE_TTS_URL || "https://texttospeech.googleapis.com/v1beta1/text:synthesize";
-const URL_TOKEN = process.env.GOOGLE_TOKEN_URL || "https://oauth2.googleapis.com/token";
-
-function credenciais() {
-  try {
-    // O JSON é colado inteiro na Vercel (com quebras de linha e, às vezes, espaços ou BOM no começo).
-    const c = JSON.parse(String(process.env.GOOGLE_TTS_CREDENCIAIS || "").replace(/^﻿/, "").trim());
-    return c && typeof c.client_email === "string" && typeof c.private_key === "string" ? c : null;
-  } catch {
-    return null;
-  }
-}
-
-// Token de acesso da conta de serviço (vale 1 hora; é guardado e renovado um pouco antes de vencer).
-let tokenGuardado = null;
-async function tokenDeAcesso() {
-  const c = credenciais();
-  if (!c) return null;
-  if (tokenGuardado && tokenGuardado.vence > Date.now() + 60_000) return tokenGuardado.token;
-  const agora = Math.floor(Date.now() / 1000);
-  const parte = (objeto) => Buffer.from(JSON.stringify(objeto)).toString("base64url");
-  const conteudo =
-    parte({ alg: "RS256", typ: "JWT" }) +
-    "." +
-    parte({ iss: c.client_email, scope: "https://www.googleapis.com/auth/cloud-platform", aud: URL_TOKEN, iat: agora, exp: agora + 3600 });
-  const assinatura = createSign("RSA-SHA256").update(conteudo).sign(c.private_key, "base64url");
-  const resposta = await fetch(URL_TOKEN, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion: conteudo + "." + assinatura }),
-    signal: AbortSignal.timeout(15_000),
-  });
-  let dados = null;
-  try {
-    dados = await resposta.json();
-  } catch {
-    // resposta sem JSON
-  }
-  if (!resposta.ok || !dados || !dados.access_token) {
-    const e = new Error((dados && (dados.error_description || dados.error)) || `HTTP ${resposta.status}`);
-    e.status = resposta.status;
-    throw e;
-  }
-  tokenGuardado = { token: dados.access_token, vence: Date.now() + (Number(dados.expires_in) || 3600) * 1000 };
-  return tokenGuardado.token;
-}
-
 const MAX_CARACTERES = 2000; // o app divide textos maiores em partes (o Google aceita até 4.000 bytes por parte)
 const LIMITE_POR_HORA = 150; // pedidos por IP (a proteção de custo de verdade é o alerta de orçamento no Google)
 

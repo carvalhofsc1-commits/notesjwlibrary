@@ -3800,12 +3800,13 @@
     /* ---------- Telas: Formatar, Reuniões, Backup e Ajustes ----------
        É um app só: cada bloco diz em que tela aparece (screen-...). Formatar e Reuniões dividem o cartão do campo de
        texto (screen-editor); as reuniões ficam num cartão próprio, logo abaixo dele (screen-reunioes). */
-    body[data-screen="inicio"] :is(.screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-ajustes, .screen-leitura),
-    body[data-screen="formatar"] :is(.screen-inicio, .screen-reunioes, .screen-backup, .screen-ajustes, .screen-leitura),
-    body[data-screen="reunioes"] :is(.screen-inicio, .screen-formatar, .screen-backup, .screen-ajustes, .screen-leitura),
-    body[data-screen="backup"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-ajustes, .screen-leitura),
-    body[data-screen="ajustes"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-leitura),
-    body[data-screen="leitura"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-ajustes) {
+    body[data-screen="inicio"] :is(.screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-ajustes, .screen-leitura, .screen-transcricao),
+    body[data-screen="formatar"] :is(.screen-inicio, .screen-reunioes, .screen-backup, .screen-ajustes, .screen-leitura, .screen-transcricao),
+    body[data-screen="reunioes"] :is(.screen-inicio, .screen-formatar, .screen-backup, .screen-ajustes, .screen-leitura, .screen-transcricao),
+    body[data-screen="backup"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-ajustes, .screen-leitura, .screen-transcricao),
+    body[data-screen="ajustes"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-leitura, .screen-transcricao),
+    body[data-screen="transcricao"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-ajustes, .screen-leitura),
+    body[data-screen="leitura"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-ajustes, .screen-transcricao) {
       display: none !important;
     }
 
@@ -7607,3 +7608,9 @@
     .leitura-acoes .leitura-ler:hover {
       background: color-mix(in srgb, #f59e0b 36%, var(--card));
     }
+    /* Tela Áudio em texto */
+    .transcricao-rotulo { display: block; margin: 12px 0 4px; font-size: .9rem; font-weight: 700; }
+    .transcricao-area { width: 100%; min-height: 9em; resize: vertical; box-sizing: border-box; }
+    #transcricaoProgresso { width: 100%; height: 10px; margin: 6px 0; }
+    .transcricao-acoes { margin-top: 0; }
+    .transcricao-acoes button[hidden] { display: none; }

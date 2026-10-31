@@ -178,6 +178,16 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
+    // Confere o código de texto (CODIGO_TEXTO) quando ele é salvo em Ajustes: libera a tela Áudio em texto (api/transcrever.mjs).
+    if (acao === "texto-conferir") {
+      if (!process.env.CODIGO_TEXTO) return erro(res, 503, "O código de texto ainda não está configurado no servidor.");
+      if (!textosIguais(corpo.codigo, process.env.CODIGO_TEXTO)) {
+        registrarErro(ip);
+        return erro(res, 403, "Código de texto incorreto.");
+      }
+      return res.status(200).json({ ok: true });
+    }
+
     // Confere o código do dirigente (CODIGO_DIRIGENTE; sem a variável, o código de pesquisa) quando ele é salvo em Ajustes.
     if (acao === "dirigente-conferir") {
       const esperado = codigoDoDirigente();

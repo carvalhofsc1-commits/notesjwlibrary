@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.19
+
+Áudio em texto (nova tela, atalho do Início, só com o código de texto): escolha um arquivo de áudio (mp3, m4a, wav, mp4…); o app o decodifica no aparelho, corta em trechos de ~50 s e o servidor (api/transcrever.mjs) transcreve cada trecho com a API Speech-to-Text V2 do Google (modelo chirp_3, pt-BR, região us, pontuação automática). Depois a IA pode resumir o texto. Limite de 30 minutos por arquivo; trechos em silêncio não são enviados; nada fica guardado no servidor nem no app. Novo código de texto (variável CODIGO_TEXTO) em Ajustes → Autorização de acessos. A autenticação no Google passou para api/_googleToken.mjs, compartilhada com a leitura em voz alta. Não identifica quem fala (isso exigiria o Cloud Storage e o BatchRecognize). Política de Privacidade 1.5: descreve o envio do áudio (em trechos) ao Google e do texto à Anthropic, o consentimento específico e o cuidado com a voz de terceiros.
+
 ## 6.3.18
 
 Política de Privacidade 1.4: descreve o piloto de aprendizado com as correções (recurso exclusivo do administrador, desligado por padrão): o que é enviado à IA, que só a lição (regra curta e geral) é guardada no Blob privado, que os textos original e corrigido são descartados, que as lições só entram nos pedidos do administrador e como vê-las, desativá-las e apagá-las; a retenção no servidor foi atualizada.

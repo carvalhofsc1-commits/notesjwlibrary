@@ -99,6 +99,7 @@
           <button type="button" class="atalho" data-atalho="dirigir"><span class="atalho-icone" aria-hidden="true">🎤</span><span class="atalho-nome">Dirigentes</span><span class="atalho-desc">Ajuda na preparação para dirigir</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="discursos"><span class="atalho-icone" aria-hidden="true">📜</span><span class="atalho-nome">Discursos</span><span class="atalho-desc">Ajuda na preparação de discursos e esboços</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="leitura"><span class="atalho-icone" aria-hidden="true">🔊</span><span class="atalho-nome">Leitura em voz alta</span><span class="atalho-desc">Ouvir um PDF, um Word ou um texto colado</span><span class="atalho-trava" hidden></span></button>
+          <button type="button" class="atalho" data-atalho="transcricao"><span class="atalho-icone" aria-hidden="true">🎙️</span><span class="atalho-nome">Áudio em texto</span><span class="atalho-desc">Transcrever um áudio e resumir com a IA</span><span class="atalho-trava" hidden></span></button>
         </div>
       </section>
     </div>
@@ -810,6 +811,20 @@
             </div>
 
             <div class="acesso-item">
+              <label for="textoCode">🎙️ Código de texto</label>
+              <p class="hint">Libera a tela Áudio em texto, da tela Início: transcrever um arquivo de áudio em texto e resumi-lo com a IA. Sem ele, esse atalho fica desabilitado neste aparelho.</p>
+              <div class="acesso-linha">
+                <input autocomplete="off" id="textoCode" type="password" maxlength="100" placeholder="Código de texto">
+                <button id="acessoVerTexto" class="secondary acesso-ver" type="button" aria-label="Mostrar o código" aria-pressed="false">👁️</button>
+              </div>
+              <div class="bk-row">
+                <button id="acessoSalvarTexto" type="button">💾 Salvar</button>
+                <button id="acessoApagarTexto" class="secondary" type="button">🗑️ Apagar</button>
+              </div>
+              <p id="acessoStatusTexto" class="hint acesso-status" role="status" aria-live="polite"></p>
+            </div>
+
+            <div class="acesso-item">
               <label for="adminSenha">🛡️ Senha de administrador</label>
               <p class="hint">Só para o administrador: prompts da IA, voz para todos e configurações padrão de todos os usuários.</p>
               <div class="acesso-linha">
@@ -1404,6 +1419,38 @@
         <button id="leituraLimparBtn" class="secondary" type="button">🧹 Limpar</button>
       </div>
       <label class="leitura-opcao" title="Vale só para esta tela. Desmarcado, a voz pula o que estiver entre parênteses."><input type="checkbox" id="leituraParenteses" autocomplete="off" checked> <span>Ler o que está entre parênteses</span></label>
+    </div>
+
+    <!-- Tela Áudio em texto (atalho do Início): transcreve um arquivo de áudio (Google Speech-to-Text, Chirp 3) e resume com a IA. Só com o código de texto. -->
+    <div id="transcricaoCard" class="card tint-rosa screen-transcricao">
+      <div class="leitura-topo">
+        <h2><span aria-hidden="true">🎙️</span> Áudio em texto</h2>
+      </div>
+      <details class="leitura-dica">
+        <summary>ℹ️ Como funciona</summary>
+        <p class="hint">Escolha um arquivo de áudio gravado no celular ou no computador (mp3, m4a, wav, mp4 e outros que o seu aparelho abra). O app decodifica o áudio neste aparelho, corta em trechos de cerca de 50 segundos e envia cada trecho ao Google para virar texto (português do Brasil). Depois você pode pedir um resumo à IA. Limite de 30 minutos por arquivo. Nada é guardado no servidor do NoteStyle, e o texto não fica salvo no app: copie o que quiser guardar. Esta primeira versão não identifica quem está falando.</p>
+      </details>
+      <div class="leitura-importar">
+        <button id="transcricaoArquivoBtn" type="button">🎧 Escolher o arquivo de áudio</button>
+        <input id="transcricaoArquivo" type="file" accept="audio/*,video/mp4,.mp3,.m4a,.wav,.aac,.ogg,.flac,.webm,.mp4" hidden>
+      </div>
+      <p id="transcricaoInfo" class="hint" role="status" aria-live="polite"></p>
+      <progress id="transcricaoProgresso" value="0" max="1" hidden></progress>
+      <div class="leitura-acoes transcricao-acoes">
+        <button id="transcricaoCancelarBtn" class="secondary" type="button" hidden>⏹️ Cancelar</button>
+      </div>
+      <label for="transcricaoTexto" class="transcricao-rotulo">Texto transcrito</label>
+      <textarea id="transcricaoTexto" class="transcricao-area" placeholder="O texto transcrito aparece aqui. Você pode corrigi-lo antes de resumir." spellcheck="false"></textarea>
+      <div class="leitura-acoes">
+        <button id="transcricaoResumirBtn" class="leitura-ler" type="button" disabled>✨ Resumir com a IA</button>
+        <button id="transcricaoCopiarBtn" class="secondary" type="button" disabled>📋 Copiar o texto</button>
+        <button id="transcricaoLimparBtn" class="secondary" type="button">🧹 Limpar tudo</button>
+      </div>
+      <label for="transcricaoResumo" class="transcricao-rotulo">Resumo</label>
+      <textarea id="transcricaoResumo" class="transcricao-area" placeholder="O resumo da IA aparece aqui." spellcheck="false"></textarea>
+      <div class="leitura-acoes">
+        <button id="transcricaoCopiarResumoBtn" class="secondary" type="button" disabled>📋 Copiar o resumo</button>
+      </div>
     </div>
 
     <section id="backupCard" class="card screen-backup">

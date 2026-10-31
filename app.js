@@ -3,7 +3,7 @@
     // É um app só: a tela escolhida (guardada no endereço, ex.: #reunioes) mostra os blocos dela e esconde os outros.
     // Formatar e Reuniões dividem o mesmo campo de texto. O app sempre abre no Início; ao recarregar a página, o endereço
     // mantém a tela em que se estava.
-    const APP_SCREENS = ['inicio', 'formatar', 'reunioes', 'backup', 'ajustes', 'leitura']; // "leitura" (Leitura em voz alta) abre pelo atalho do Início e não tem botão na barra
+    const APP_SCREENS = ['inicio', 'formatar', 'reunioes', 'backup', 'ajustes', 'leitura', 'transcricao']; // "leitura" (Leitura em voz alta) abre pelo atalho do Início e não tem botão na barra
     try { localStorage.removeItem('jwLibraryNoteAplicarScreenV1'); } catch (e) { /* a tela não é mais guardada */ }
 
     function currentScreen() {
@@ -5717,7 +5717,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.18'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.19'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -15527,6 +15527,9 @@ function saveTemplatesToStorage() {
     function senhaAdminSalva() {
       try { return (localStorage.getItem('jwLibraryNoteAplicarAdminSenhaV1') || '').trim(); } catch (e) { return ''; }
     }
+    function codigoTextoSalvo() {
+      try { return (localStorage.getItem('jwLibraryNoteAplicarTextoCodeV1') || '').trim(); } catch (e) { return ''; }
+    }
     function codigoLeituraSalvo() {
       try { return (localStorage.getItem('jwLibraryNoteAplicarLeituraCodeV1') || '').trim(); } catch (e) { return ''; }
     }
@@ -15559,6 +15562,11 @@ function saveTemplatesToStorage() {
         campo: document.getElementById('leituraCode'), chave: 'jwLibraryNoteAplicarLeituraCodeV1', acao: 'leitura-conferir', salvo: codigoLeituraSalvo,
         status: document.getElementById('acessoStatusLeitura'), ver: document.getElementById('acessoVerLeitura'), nome: 'O código de leitura',
         salvar: 'acessoSalvarLeitura', apagar: 'acessoApagarLeitura'
+      },
+      texto: {
+        campo: document.getElementById('textoCode'), chave: 'jwLibraryNoteAplicarTextoCodeV1', acao: 'texto-conferir', salvo: codigoTextoSalvo,
+        status: document.getElementById('acessoStatusTexto'), ver: document.getElementById('acessoVerTexto'), nome: 'O código de texto',
+        salvar: 'acessoSalvarTexto', apagar: 'acessoApagarTexto'
       },
       senha: {
         campo: document.getElementById('adminSenha'), chave: 'jwLibraryNoteAplicarAdminSenhaV1', acao: 'admin-entrar', salvo: senhaAdminSalva,
@@ -15648,7 +15656,8 @@ function saveTemplatesToStorage() {
     const TRAVAS = {
       pesquisa: '🔒 Requer o código de pesquisa',
       dirigente: '🔒 Requer o código do dirigente',
-      leitura: '🔒 Requer o código de leitura'
+      leitura: '🔒 Requer o código de leitura',
+      texto: '🔒 Requer o código de texto'
     };
 
     function travarGrupo(id, motivo) {
@@ -15682,6 +15691,8 @@ function saveTemplatesToStorage() {
       travarGrupo('opcoesIaBox', pesquisa ? '' : 'pesquisa');
       travarAtalho('comentarios', pesquisa ? '' : 'pesquisa');
       travarAtalho('leitura', codigoLeituraSalvo() ? '' : 'leitura');
+      travarAtalho('transcricao', codigoTextoSalvo() ? '' : 'texto');
+      if (!codigoTextoSalvo() && currentScreen() === 'transcricao') showScreen('inicio'); // código apagado com a tela aberta: volta ao Início
       document.getElementById('navLeitura').disabled = !codigoLeituraSalvo(); // sem o código de leitura, o botão da barra fica bloqueado como o atalho do Início
       if (!codigoLeituraSalvo() && currentScreen() === 'leitura') showScreen('inicio'); // código apagado com a tela aberta: volta ao Início
       travarAtalho('dirigir', motivoDirigir);
@@ -15703,7 +15714,7 @@ function saveTemplatesToStorage() {
         if (grupo.classList.contains('grupo-desabilitado')) event.preventDefault();
       });
     });
-    document.addEventListener('acesso-salvo', event => { if (event.detail === 'codigo' || event.detail === 'dirigente' || event.detail === 'leitura') acessosAtualizar(); });
+    document.addEventListener('acesso-salvo', event => { if (event.detail === 'codigo' || event.detail === 'dirigente' || event.detail === 'leitura' || event.detail === 'texto') acessosAtualizar(); });
     acessosAtualizar();
 
     // O código do dirigente salvo pode deixar de valer (o administrador trocou a variável no servidor). O app confere com o
@@ -15745,7 +15756,219 @@ function saveTemplatesToStorage() {
       }
     }
     leituraCodigoVerificar(true);
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { dirigenteVerificar(false); leituraCodigoVerificar(false); } });
+
+    // O código de texto salvo também pode deixar de valer (variável CODIGO_TEXTO trocada no servidor): mesma conferência, só apaga se o servidor recusar (403).
+    let textoCodigoConferidoEm = 0;
+    async function textoCodigoVerificar(forcar) {
+      const codigo = codigoTextoSalvo();
+      if (!codigo || !navigator.onLine) return;
+      if (!forcar && Date.now() - textoCodigoConferidoEm < 10 * 60 * 1000) return;
+      textoCodigoConferidoEm = Date.now();
+      const r = await postConfig({ acao: 'texto-conferir', codigo });
+      if (r.status === 403 && codigoTextoSalvo() === codigo) {
+        try { localStorage.removeItem('jwLibraryNoteAplicarTextoCodeV1'); } catch (e) { /* sem localStorage */ }
+        acessoSituacao('texto');
+        acessoStatus('texto', 'O código de texto que estava salvo não vale mais. Informe o novo código.', true);
+        acessosAtualizar();
+      }
+    }
+    textoCodigoVerificar(true);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { dirigenteVerificar(false); leituraCodigoVerificar(false); textoCodigoVerificar(false); } });
+
+    // ---------- Tela Áudio em texto ----------
+    // O áudio é decodificado neste aparelho (Web Audio), reamostrado para 16 kHz mono, cortado em trechos de ~50 s (o Google aceita até 1 minuto por
+    // pedido direto) e cada trecho vai a /api/transcrever, que usa o Chirp 3 do Google. Depois o texto pode ser resumido pela IA. Nada fica salvo.
+    const TRANSCRICAO_MAX_MIN = 30;
+    const TRANSCRICAO_TRECHO_S = 50;
+    const TRANSCRICAO_TAXA = 16000;
+    const TRANSCRICAO_CONSENT_KEY = 'jwLibraryNoteAplicarTextoConsentV1';
+    const trArquivo = document.getElementById('transcricaoArquivo');
+    const trInfo = document.getElementById('transcricaoInfo');
+    const trProgresso = document.getElementById('transcricaoProgresso');
+    const trTexto = document.getElementById('transcricaoTexto');
+    const trResumo = document.getElementById('transcricaoResumo');
+    const trCancelar = document.getElementById('transcricaoCancelarBtn');
+    const trEscolher = document.getElementById('transcricaoArquivoBtn');
+    const trResumir = document.getElementById('transcricaoResumirBtn');
+    let trControle = null; // AbortController do que está em andamento
+
+    function trAtualizarBotoes() {
+      const ocupado = Boolean(trControle);
+      trEscolher.disabled = ocupado;
+      trResumir.disabled = ocupado || trTexto.value.trim().length < 40;
+      document.getElementById('transcricaoCopiarBtn').disabled = !trTexto.value.trim();
+      document.getElementById('transcricaoCopiarResumoBtn').disabled = !trResumo.value.trim();
+      trCancelar.hidden = !ocupado;
+    }
+    trTexto.addEventListener('input', trAtualizarBotoes);
+    trResumo.addEventListener('input', trAtualizarBotoes);
+
+    function trConsentimento() {
+      try { if (localStorage.getItem(TRANSCRICAO_CONSENT_KEY)) return Promise.resolve(true); } catch (e) { /* sem localStorage */ }
+      const link = document.createElement('a');
+      link.href = 'privacidade.html';
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.textContent = '🔒 Ler a Política de Privacidade';
+      return askConfirm(
+        'Para transformar áudio em texto, o NoteStyle envia o áudio, em trechos e pela internet, ao Google (reconhecimento de voz) e, se você pedir o resumo, o texto transcrito à Anthropic (IA).\n\n' +
+        'O envio só acontece quando você escolhe um arquivo ou toca em Resumir, e nada fica guardado no servidor do NoteStyle. O áudio pode conter vozes e conversas de outras pessoas: use só gravações que você tem direito de usar e não grave nem transcreva alguém sem avisar. A transcrição pode errar: confira sempre.\n\n' +
+        'Você pode retirar a concordância quando quiser, em Ajustes → Privacidade e dados deste aparelho.',
+        'Antes de transcrever um áudio',
+        { ok: '✅ Concordo', cancel: 'Agora não', extra: link }
+      ).then(aceitou => {
+        if (aceitou) safeSetItem(TRANSCRICAO_CONSENT_KEY, JSON.stringify({ v: 1, data: new Date().toISOString() }));
+        return aceitou;
+      });
+    }
+
+    // Decodifica o arquivo já em 16 kHz mono (o decodeAudioData reamostra para a taxa do contexto; se o navegador não o fizer, reamostra aqui).
+    async function trDecodificar(arquivo) {
+      const Contexto = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+      if (!Contexto) throw new Error('Este navegador não consegue processar áudio.');
+      const bytes = await arquivo.arrayBuffer();
+      const contexto = new Contexto(1, TRANSCRICAO_TAXA, TRANSCRICAO_TAXA);
+      const buffer = await new Promise((ok, falha) => {
+        const promessa = contexto.decodeAudioData(bytes, ok, falha);
+        if (promessa && promessa.catch) promessa.catch(falha);
+      });
+      if (buffer.sampleRate === TRANSCRICAO_TAXA && buffer.numberOfChannels === 1) return buffer.getChannelData(0);
+      const saida = new Contexto(1, Math.max(1, Math.ceil(buffer.duration * TRANSCRICAO_TAXA)), TRANSCRICAO_TAXA);
+      const fonte = saida.createBufferSource();
+      fonte.buffer = buffer;
+      fonte.connect(saida.destination);
+      fonte.start();
+      return (await saida.startRendering()).getChannelData(0);
+    }
+
+    function trParaBase64(amostras) {
+      const pcm = new Int16Array(amostras.length);
+      let pico = 0;
+      for (let i = 0; i < amostras.length; i++) {
+        const v = Math.max(-1, Math.min(1, amostras[i]));
+        if (Math.abs(v) > pico) pico = Math.abs(v);
+        pcm[i] = v < 0 ? v * 0x8000 : v * 0x7fff;
+      }
+      const bytes = new Uint8Array(pcm.buffer);
+      let texto = '';
+      for (let i = 0; i < bytes.length; i += 0x8000) texto += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+      return { base64: btoa(texto), pico };
+    }
+
+    async function trPost(payload, sinal) {
+      try {
+        const resposta = await fetch('/api/transcrever', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), signal: sinal });
+        let dados = null;
+        try { dados = await resposta.json(); } catch (e) { /* resposta sem JSON */ }
+        return { ok: resposta.ok && Boolean(dados), status: resposta.status, dados };
+      } catch (e) {
+        return { ok: false, status: 0, dados: null, cancelado: e && e.name === 'AbortError' };
+      }
+    }
+
+    function trMensagem(r, padrao) {
+      if (r.cancelado) return 'Cancelado.';
+      if (r.status === 404 || r.status === 501) return 'A transcrição só funciona no site publicado (notestyle.com.br).';
+      if (r.status === 403 && r.dados && /Código de texto/.test(r.dados.erro || '')) return r.dados.erro;
+      return (r.dados && r.dados.erro) || padrao;
+    }
+
+    async function trTranscrever(arquivo) {
+      if (!codigoTextoSalvo()) return (trInfo.textContent = 'Salve o código de texto em Ajustes → 🔐 Autorização de acessos.');
+      if (!navigator.onLine) return (trInfo.textContent = 'Sem conexão com a internet.');
+      if (!(await trConsentimento())) return (trInfo.textContent = 'Nada foi enviado.');
+      trControle = new AbortController();
+      trAtualizarBotoes();
+      trTexto.value = '';
+      trResumo.value = '';
+      trProgresso.hidden = false;
+      trProgresso.removeAttribute('value'); // indeterminado enquanto decodifica
+      trInfo.textContent = '⏳ Preparando o áudio neste aparelho…';
+      try {
+        let amostras;
+        try {
+          amostras = await trDecodificar(arquivo);
+        } catch (e) {
+          return (trInfo.textContent = 'Não consegui abrir este áudio neste aparelho. Tente outro formato (mp3, m4a ou wav).');
+        }
+        const minutos = amostras.length / TRANSCRICAO_TAXA / 60;
+        if (minutos > TRANSCRICAO_MAX_MIN) return (trInfo.textContent = 'O áudio tem ' + Math.round(minutos) + ' minutos; o limite é de ' + TRANSCRICAO_MAX_MIN + ' minutos por arquivo.');
+        const porTrecho = TRANSCRICAO_TRECHO_S * TRANSCRICAO_TAXA;
+        const total = Math.ceil(amostras.length / porTrecho);
+        trProgresso.max = total;
+        trProgresso.value = 0;
+        const partes = [];
+        for (let n = 0; n < total; n++) {
+          if (trControle.signal.aborted) return (trInfo.textContent = 'Cancelado. O que já foi transcrito está abaixo.');
+          trInfo.textContent = '🎙️ Transcrevendo o trecho ' + (n + 1) + ' de ' + total + '…';
+          const { base64, pico } = trParaBase64(amostras.subarray(n * porTrecho, (n + 1) * porTrecho));
+          if (pico >= 0.005) { // trecho em silêncio não é enviado (não gasta)
+            let r = await trPost({ acao: 'trecho', codigoTexto: codigoTextoSalvo(), audio: base64 }, trControle.signal);
+            if (!r.ok && !r.cancelado && (r.status === 0 || r.status >= 500)) r = await trPost({ acao: 'trecho', codigoTexto: codigoTextoSalvo(), audio: base64 }, trControle.signal); // uma nova tentativa
+            if (!r.ok) {
+              trInfo.textContent = trMensagem(r, 'Não foi possível transcrever o trecho ' + (n + 1) + '.') + (partes.length ? ' O que já foi transcrito está abaixo.' : '');
+              return;
+            }
+            if (r.dados.texto) partes.push(r.dados.texto);
+            trTexto.value = partes.join('\n\n');
+          }
+          trProgresso.value = n + 1;
+        }
+        trInfo.textContent = partes.length ? '✅ Pronto: ' + total + ' trecho(s) transcrito(s). Confira o texto e, se quiser, peça o resumo.' : 'Não encontrei fala neste áudio.';
+      } finally {
+        trControle = null;
+        trProgresso.hidden = true;
+        trAtualizarBotoes();
+      }
+    }
+
+    trEscolher.addEventListener('click', () => trArquivo.click());
+    trArquivo.addEventListener('change', () => {
+      const arquivo = trArquivo.files && trArquivo.files[0];
+      trArquivo.value = '';
+      if (arquivo) trTranscrever(arquivo);
+    });
+    trCancelar.addEventListener('click', () => { if (trControle) trControle.abort(); });
+
+    trResumir.addEventListener('click', async () => {
+      if (!codigoTextoSalvo()) return (trInfo.textContent = 'Salve o código de texto em Ajustes → 🔐 Autorização de acessos.');
+      if (!(await trConsentimento())) return;
+      trControle = new AbortController();
+      trAtualizarBotoes();
+      trInfo.textContent = '✨ A IA está resumindo…';
+      try {
+        const r = await trPost({ acao: 'resumo', codigoTexto: codigoTextoSalvo(), texto: trTexto.value }, trControle.signal);
+        if (!r.ok) return (trInfo.textContent = trMensagem(r, 'Não foi possível resumir agora.'));
+        trResumo.value = r.dados.resumo;
+        trInfo.textContent = '✅ Resumo pronto. A IA pode errar: confira com o texto.';
+      } finally {
+        trControle = null;
+        trAtualizarBotoes();
+      }
+    });
+
+    async function trCopiar(campo, rotulo) {
+      const texto = campo.value;
+      try {
+        await navigator.clipboard.writeText(texto);
+      } catch (e) {
+        campo.focus();
+        campo.select();
+        try { document.execCommand('copy'); } catch (e2) { /* sem cópia */ }
+      }
+      trInfo.textContent = '📋 ' + rotulo + ' copiado.';
+    }
+    document.getElementById('transcricaoCopiarBtn').addEventListener('click', () => trCopiar(trTexto, 'Texto'));
+    document.getElementById('transcricaoCopiarResumoBtn').addEventListener('click', () => trCopiar(trResumo, 'Resumo'));
+    document.getElementById('transcricaoLimparBtn').addEventListener('click', async () => {
+      if (trControle) trControle.abort();
+      if ((trTexto.value.trim() || trResumo.value.trim()) && !(await askConfirm('Apagar o texto transcrito e o resumo? Eles não ficam salvos em nenhum lugar.', 'Limpar tudo'))) return;
+      trTexto.value = '';
+      trResumo.value = '';
+      trInfo.textContent = '';
+      trAtualizarBotoes();
+    });
+    trAtualizarBotoes();
 
     // ---------- Tela Reuniões: a tela principal e as páginas ----------
     // A tela principal mostra só os botões (comentar, dirigir, discursos e pesquisas salvas) e cada um abre a sua página, com ◀ Voltar. O que
