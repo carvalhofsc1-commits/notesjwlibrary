@@ -7691,3 +7691,13 @@
 
     /* Amostra da cor do destaque, em Ajustes → Leitura em voz alta. */
     .voz-destaque-amostra { display: inline-block; padding: 2px 6px; margin-top: 6px; color: var(--text); font-weight: 500; }
+
+    /* Destaque da frase lida com os cantos sempre arredondados. Na Leitura em voz alta a regra ".leitura-vista .lu" já fazia isso; no texto do dia e nos
+       comentários não, e a frase em várias linhas ficava com cantos quadrados nas quebras de linha. "clone" dá o arredondamento a cada linha da frase. */
+    .lu.lendo,
+    .lu.lendo .lt,
+    mark.lt {
+      border-radius: 6px;
+      -webkit-box-decoration-break: clone;
+      box-decoration-break: clone;
+    }

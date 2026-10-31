@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.25
+
+Destaque da frase lida: os cantos ficam sempre arredondados (no texto do dia e nos comentários, a frase em várias linhas ficava com cantos quadrados nas quebras de linha). Ajustes → Leitura em voz alta: o texto explicativo do campo da cor do destaque saiu (fica só a amostra) e o do tempo de espera foi resumido em uma linha.
+
 ## 6.3.24
 
 Leitura em voz alta: a frase que está sendo lida passa a ser destacada em cor forte (antes, amarelo fraco), nos temas claro e escuro, na tela Leitura, no texto do dia e nos comentários. A cor é escolhida em Ajustes → Leitura em voz alta (amarelo, laranja, laranja escuro, roxo ou azul; padrão laranja), neste aparelho, com uma amostra ao lado.
