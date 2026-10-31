@@ -5696,7 +5696,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.12'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.13'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -9179,6 +9179,28 @@ function saveTemplatesToStorage() {
       promptsSalvarHabilitado(state.armazenamento.escrita);
       if (!state.armazenamento.escrita) {
         setPromptsStatus('O armazenamento (Global Config) ainda não está configurado para gravar no servidor: dá para ler, mas não salvar.', true);
+      } else {
+        // Partes em que o Git já trouxe melhorias de qualidade: se o Global Config ainda tem texto antigo,
+        // ele manda no lugar do padrão. O botão "Voltar ao texto original" de cada cartão restaura.
+        const QUALIDADE = {
+          voz: 'Voz das respostas',
+          regras_resposta: 'Formatação das respostas',
+          contexto_congregacao: 'Sobre mim e a congregação',
+          frases_pedidos: 'Pedidos (outra sugestão / melhorar)',
+          perguntas: 'Perguntas adicionais (Sentinela)',
+          texto_diario: 'Comentários do texto diário',
+          ebc_dirigente: 'Perguntas do EBC (dirigente)'
+        };
+        const divergentes = (state.partes || []).filter(p => p.personalizado && QUALIDADE[p.id]);
+        if (divergentes.length) {
+          setPromptsStatus(
+            '⚠️ ' + divergentes.length + ' parte(s) de qualidade diferem do texto que veio com esta versão do app (o que está salvo no servidor vale para todos). Revise ou use “Voltar ao texto original”: ' +
+            divergentes.map(p => QUALIDADE[p.id] || p.titulo).join('; ') + '.',
+            true
+          );
+        } else {
+          setPromptsStatus('', false);
+        }
       }
     }
 
