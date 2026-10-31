@@ -8,6 +8,7 @@ import { codigoDoDirigente, erro, origemPermitida } from "./_comum.mjs";
 import { acessoDoDirigente, codigoValido, dirigenteValido, exigirAcesso, recusarAcesso } from "./_acesso.mjs";
 import { lerConfigIa } from "./_iaConfig.mjs";
 import { blocoLicoesPara } from "./_memoria.mjs";
+import { emitirCupomVoz } from "./_vozCupom.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
 import { buscarVerbete, buscarVersiculos, fontesConfiguradas, precarregarFontes, referenciasNoTexto } from "./_fontes.mjs";
 import { lerEsboco, lerIndice, minutosDoEsboco, publicacoesDaSecao, referenciasDoPublico, s34Configurado, textoDoDiscursoPublico, textoDoEsbocoImportado, textosBiblicosDoPublico, validarEsboco } from "./_s34.mjs";
@@ -3061,11 +3062,16 @@ async function comentariosDoTextoDiario(res, body, P) {
         pensamento: resposta.usage?.output_tokens_details?.thinking_tokens ?? null,
       })
     );
+    const vozCupom = emitirCupomVoz({
+      data: texto.data,
+      textos: comentarios.flatMap((c) => [c.ponto, c.comentario]).filter(Boolean),
+    });
     return res.status(200).json({
       data: texto.data,
       erro: comentarios.length ? null : "A IA não sugeriu comentários. Tente de novo.",
       comentarios,
       memoriaUsada: ultimoMemoriaUsada,
+      vozCupom,
     });
   } catch (e) {
     return tratarErro(e, res);

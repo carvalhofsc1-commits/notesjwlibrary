@@ -2,6 +2,7 @@
 // extenso, o texto temático, o comentário e a citação da publicação, lidos no wol.jw.org (api/_wol.mjs). Exige o código
 // de acesso da IA, para o servidor não virar uma passagem aberta para o conteúdo do site.
 import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
+import { emitirCupomVoz } from "./_vozCupom.mjs";
 import { lerTextoDiario } from "./_wol.mjs";
 
 const LIMITE_POR_HORA = 120; // pedidos por IP
@@ -40,7 +41,11 @@ export default async function handler(req, res) {
   try {
     const texto = await lerTextoDiario(ano, mes, dia);
     if (!texto) return erro(res, 404, "O wol.jw.org ainda não tem o texto diário dessa data.");
-    return res.status(200).json(texto);
+    const vozCupom = emitirCupomVoz({
+      data: texto.data,
+      textos: [texto.titulo, texto.tema, ...(Array.isArray(texto.comentario) ? texto.comentario : []), texto.fonte].filter(Boolean),
+    });
+    return res.status(200).json({ ...texto, vozCupom });
   } catch (e) {
     console.error("Texto diário: não consegui ler o wol.jw.org", body.data, e.message);
     return erro(res, 502, "Não consegui ler o texto diário no wol.jw.org agora. Tente de novo em instantes.");

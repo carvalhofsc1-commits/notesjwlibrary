@@ -2309,12 +2309,12 @@
     }
 
     // Pede o áudio de uma parte (ou devolve o guardado nesta sessão). exemplo: as escolhas do painel do administrador.
-    // uso: 'texto-diario' (código de pesquisa), 'leitura' (a tela Leitura em voz alta: código de leitura) ou 'campo' (o texto do campo de
-    // formatação: só com a senha de administrador).
+    // uso: 'texto-diario' (código de pesquisa + cupom), 'leitura' (código de leitura) ou 'campo' (senha de administrador).
+    // extras (texto-diario): { data, vozCupom, origem } — origem = texto antes das regras de pronúncia.
     // A chave do áudio guardado: o texto, mais a voz escolhida (e o exemplo do painel do administrador).
     const vozChaveCache = (texto, exemplo) => (exemplo ? JSON.stringify(exemplo) + '\u0001' : '') + (!exemplo && vozEscolhida ? vozEscolhida + '\u0002' : '') + texto;
 
-    async function vozBuscar(texto, exemplo, uso) {
+    async function vozBuscar(texto, exemplo, uso, extras) {
       const voz = exemplo ? '' : vozEscolhida;
       const chave = vozChaveCache(texto, exemplo);
       if (vozCache.has(chave)) return vozCache.get(chave);
@@ -2325,7 +2325,14 @@
         : uso === 'leitura'
           ? { codigoLeitura: codigoLeituraSalvo(), texto, uso }
           : uso === 'texto-diario'
-          ? { codigo: codigoAcessoSalvo(), texto, uso }
+          ? {
+              codigo: codigoAcessoSalvo(),
+              texto,
+              uso,
+              data: extras && extras.data,
+              vozCupom: extras && extras.vozCupom,
+              origem: extras && extras.origem
+            }
           : { codigoAdmin: senhaAdminSalva(), texto, uso: 'campo' };
       if (voz) corpo.voz = voz;
       // A conexão do celular às vezes cai antes de a resposta chegar (o Safari avisa só "Load failed", em inglês, mesmo com o
@@ -3583,7 +3590,14 @@
         while (!tarefa.cancelado) {
           const i = proxima++;
           if (i >= partes.length) return;
-          entradas[i] = await vozBuscar(partes[i].texto, null, ctx.uso);
+          entradas[i] = await vozBuscar(
+            partes[i].texto,
+            null,
+            ctx.uso,
+            ctx.uso === 'texto-diario' && ctx.vozExtra
+              ? { data: ctx.vozExtra.data, vozCupom: ctx.vozExtra.vozCupom, origem: partes[i].origem || '' }
+              : null
+          );
           feitas++;
           if (!tarefa.cancelado) audioMostrar('Gerando o áudio… ' + feitas + ' de ' + partes.length + ' partes', ['cancelar']);
         }
@@ -3719,12 +3733,16 @@
         if (!u.falado) continue;
         leitorCortar(u.falado, VOZ_MAX_PARTE).forEach(pedaco => {
           if (atual && atual.texto.length + 1 + pedaco.length > limite()) { partes.push(atual); atual = null; }
-          if (!atual) atual = { texto: '', trechos: [], paragrafo: u.paragrafo, peso: 0, tempos: null };
+          if (!atual) atual = { texto: '', origem: '', origens: new Set(), trechos: [], paragrafo: u.paragrafo, peso: 0, tempos: null };
           const quebra = Boolean(atual.texto) && u.paragrafo !== atual.paragrafo;
           const separador = atual.texto ? (quebra ? '\n' : ' ') : '';
           if (quebra) atual.peso += 5;
           const inicio = atual.texto.length + separador.length;
           atual.texto += separador + pedaco;
+          if (u.origem && !atual.origens.has(i)) {
+            atual.origens.add(i);
+            atual.origem = atual.origem ? atual.origem + '\n' + u.origem : u.origem;
+          }
           const pesoInicio = atual.peso;
           atual.peso += leitorPeso(pedaco);
           atual.trechos.push({ indice: i, inicio, fim: atual.texto.length, pesoInicio, pesoFim: atual.peso });
@@ -3947,8 +3965,8 @@
       leitorPct = -1;
     }
 
-    // cfg: { lugar: onde fica o tocador, uso: 'leitura' | 'texto-diario' (o que o servidor confere), acesso(): texto do erro ou '',
-    //        preparar(regras): { unidades, desde } ou o texto do erro, destacar(indice, fracao), limpar() }
+    // cfg: { lugar, uso: 'leitura' | 'texto-diario', acesso(), preparar(regras), destacar, limpar,
+    //        vozExtra?: { data, vozCupom } (obrigatório em texto-diario) }
     async function leitorLer(cfg) {
       if (vozSessao && !vozBar.hidden && !vozPauseBtn.hidden) vozParar(); // tocar de novo recomeça
       // Dentro do toque: libera o áudio no iPhone antes de qualquer espera.
@@ -3993,9 +4011,12 @@
       try {
         // Duas partes sempre sendo preparadas à frente (veja vozLimiteDaParte).
         const pedidos = [];
+        const extrasDaParte = parte => (cfg.uso === 'texto-diario' && cfg.vozExtra
+          ? { data: cfg.vozExtra.data, vozCupom: cfg.vozExtra.vozCupom, origem: parte.origem || '' }
+          : null);
         const pedir = i => {
           if (i >= partes.length || pedidos[i]) return;
-          pedidos[i] = vozBuscar(partes[i].texto, null, cfg.uso).then(entrada => {
+          pedidos[i] = vozBuscar(partes[i].texto, null, cfg.uso, extrasDaParte(partes[i])).then(entrada => {
             if (sessao === vozSessao) leitorAnalisar(entrada, partes[i]); // em segundo plano
             return entrada;
           });
@@ -4034,7 +4055,7 @@
         vozProgresso.hidden = true;
         // O tocador fica aberto com a oferta de salvar o áudio (✖️ ou Fechar o tiram): as partes ouvidas estão guardadas, então salvar não custa de novo.
         audioMostrar('Quer guardar o áudio desta leitura num arquivo MP3?', ['salvar', 'fechar'], {
-          unidades: preparo.unidades, desde: preparo.desde, uso: cfg.uso, acesso: cfg.acesso, base: cfg.nomeAudio || (() => 'Leitura'), lugar: cfg.lugar
+          unidades: preparo.unidades, desde: preparo.desde, uso: cfg.uso, acesso: cfg.acesso, base: cfg.nomeAudio || (() => 'Leitura'), lugar: cfg.lugar, vozExtra: cfg.vozExtra
         });
       } catch (e) {
         if (sessao !== vozSessao) return;
@@ -5696,7 +5717,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.14'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.15'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -15084,6 +15105,8 @@ function saveTemplatesToStorage() {
     const tdIaCache = new Map(); // "2026-10-20" -> comentários adicionais da IA [{ ponto, comentario }]
     let tdData = null; // dia mostrado (meia-noite, hora local)
     let tdTexto = null; // texto mostrado, quando carregou
+    let tdVozCupom = ''; // cupom HMAC do texto do dia (para /api/voz)
+    const tdIaVozCupons = new Map(); // data -> cupom dos comentários da IA
     let tdPedido = 0;
 
     const tdChave = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -15118,7 +15141,8 @@ function saveTemplatesToStorage() {
         const lista = salvos[dia] && Array.isArray(salvos[dia].comentarios)
           ? salvos[dia].comentarios.filter(c => c && typeof c.comentario === 'string' && c.comentario.trim()).map(c => ({ ponto: typeof c.ponto === 'string' ? c.ponto : '', comentario: c.comentario }))
           : [];
-        if (dia < hoje || !lista.length) { delete salvos[dia]; limpou = true; } else salvos[dia] = { salvoEm: salvos[dia].salvoEm, comentarios: lista };
+        if (dia < hoje || !lista.length) { delete salvos[dia]; limpou = true; }
+        else salvos[dia] = { salvoEm: salvos[dia].salvoEm, comentarios: lista, vozCupom: typeof salvos[dia].vozCupom === 'string' ? salvos[dia].vozCupom : '' };
       }
       if (limpou) tdSalvosGravar(salvos);
       return salvos;
@@ -15174,6 +15198,8 @@ function saveTemplatesToStorage() {
           return;
         }
         tdIaCache.set(data, lista);
+        if (typeof result.data.vozCupom === 'string' && result.data.vozCupom) tdIaVozCupons.set(data, result.data.vozCupom);
+        else tdIaVozCupons.delete(data);
         td.ia.open = true;
         if (tdTexto && tdTexto.data === data) tdIaMostrar();
       } catch (e) {
@@ -15186,6 +15212,7 @@ function saveTemplatesToStorage() {
 
     function tdMostrar(texto) {
       tdTexto = texto;
+      tdVozCupom = typeof texto.vozCupom === 'string' ? texto.vozCupom : '';
       td.data.textContent = texto.titulo;
       td.tema.textContent = texto.tema;
       td.comentario.textContent = '';
@@ -15210,6 +15237,7 @@ function saveTemplatesToStorage() {
       if (tdCache.has(chave)) return tdMostrar(tdCache.get(chave));
 
       tdTexto = null;
+      tdVozCupom = '';
       const dia = data.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
       td.data.textContent = dia.charAt(0).toUpperCase() + dia.slice(1);
       td.tema.textContent = 'Carregando o texto do dia…';
@@ -15281,7 +15309,7 @@ function saveTemplatesToStorage() {
         if (linha.inteira) {
           linha.el.classList.add('lu');
           leituraMudosNoSpan(linha.el, regras);
-          unidades.push({ falado: linha.falado, paragrafo, el: linha.el });
+          unidades.push({ falado: linha.falado, origem: linha.texto || '', paragrafo, el: linha.el });
           return;
         }
         const mostradas = leituraFrases(linha.texto);
@@ -15297,11 +15325,11 @@ function saveTemplatesToStorage() {
           }
         }
         if (!pares) {
-          unidades.push({ falado: linha.falado, paragrafo, el: null }); // lê, mas sem marcar
+          unidades.push({ falado: linha.falado, origem: linha.texto || '', paragrafo, el: null }); // lê, mas sem marcar
         } else if (pares.length === 1) {
           linha.el.classList.add('lu'); // uma frase só: a própria linha
           leituraMudosNoSpan(linha.el, regras);
-          unidades.push({ falado: pares[0].falada, paragrafo, el: linha.el });
+          unidades.push({ falado: pares[0].falada, origem: pares[0].mostrada || linha.texto || '', paragrafo, el: linha.el });
         } else {
           linha.el.textContent = '';
           pares.forEach((par, k) => {
@@ -15311,7 +15339,7 @@ function saveTemplatesToStorage() {
             span.textContent = par.mostrada;
             linha.el.appendChild(span);
             leituraMudosNoSpan(span, regras);
-            unidades.push({ falado: par.falada, paragrafo, el: span });
+            unidades.push({ falado: par.falada, origem: par.mostrada || '', paragrafo, el: span });
           });
         }
       });
@@ -15366,10 +15394,12 @@ function saveTemplatesToStorage() {
     td.ouvirTopoBtn.addEventListener('click', () => {
       if (!tdTexto) return;
       if (vozBar.parentNode === td.vozTopo && !vozBar.hidden && !vozPauseBtn.hidden) return vozParar();
+      if (!tdVozCupom) return showAlert('Recarregue o texto do dia para poder ouvi-lo.', 'Leitura em voz alta');
       const cfg = {
         lugar: td.vozTopo,
         uso: 'texto-diario',
         acesso: studyAccessError,
+        vozExtra: { data: tdTexto.data, vozCupom: tdVozCupom },
         preparar: tdLeituraPreparar,
         nomeAudio: () => 'Texto diário - ' + (tdTexto ? tdTexto.titulo : ''),
         destacar: tdLeituraDestacar,
@@ -15382,12 +15412,15 @@ function saveTemplatesToStorage() {
     tdMarcarTocando.observe(vozBar, { attributes: true, attributeFilter: ['hidden'] });
     tdMarcarTocando.observe(td.vozTopo, { childList: true });
     td.ouvirIaBtn.addEventListener('click', () => {
-      if (!td.iaLista.children.length) return;
+      if (!td.iaLista.children.length || !tdTexto) return;
       if (vozBar.parentNode === td.vozIa && !vozBar.hidden && !vozPauseBtn.hidden) return vozParar();
+      const cupomIa = tdIaVozCupons.get(tdTexto.data) || '';
+      if (!cupomIa) return showAlert('Gere os comentários de novo (ou recupere um salvamento recente) para poder ouvi-los.', 'Leitura em voz alta');
       const cfg = {
         lugar: td.vozIa,
         uso: 'texto-diario',
         acesso: studyAccessError,
+        vozExtra: { data: tdTexto.data, vozCupom: cupomIa },
         preparar: tdIaLeituraPreparar,
         nomeAudio: () => 'Comentários do texto diário - ' + (tdTexto ? tdTexto.titulo : ''),
         destacar: indice => tdLeituraDestacarEm(tdIaLeituraEstado, indice),
@@ -15421,6 +15454,7 @@ function saveTemplatesToStorage() {
         : 'Apagar os comentários adicionais deste dia? Para vê-los de novo, será preciso gerar outra vez (ou salve-os antes, com 💾 Salvar). Para só escondê-los, toque no título "Comentários adicionais".';
       if (!(await askConfirm(aviso, 'Limpar os comentários'))) return;
       tdIaCache.delete(tdTexto.data);
+      tdIaVozCupons.delete(tdTexto.data);
       tdIaMostrar();
     });
     // 💾 Salvar guarda neste aparelho os comentários que estão na tela, só para este dia (no dia seguinte são apagados).
@@ -15433,7 +15467,7 @@ function saveTemplatesToStorage() {
         return;
       }
       const salvos = tdSalvosLer();
-      salvos[tdTexto.data] = { salvoEm: new Date().toISOString(), comentarios };
+      salvos[tdTexto.data] = { salvoEm: new Date().toISOString(), comentarios, vozCupom: tdIaVozCupons.get(tdTexto.data) || '' };
       tdSalvosGravar(salvos);
       const gravado = tdSalvosLer()[tdTexto.data];
       td.iaStatus.textContent = gravado
@@ -15446,6 +15480,8 @@ function saveTemplatesToStorage() {
       const salvo = tdSalvosLer()[tdTexto.data];
       if (!salvo) return tdIaMostrar();
       tdIaCache.set(tdTexto.data, salvo.comentarios);
+      if (salvo.vozCupom) tdIaVozCupons.set(tdTexto.data, salvo.vozCupom);
+      else tdIaVozCupons.delete(tdTexto.data);
       td.ia.open = true;
       tdIaMostrar();
       const quando = tdQuandoSalvo(salvo.salvoEm);

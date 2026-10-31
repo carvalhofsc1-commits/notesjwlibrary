@@ -1,7 +1,9 @@
 // Leitura em voz alta: o app manda um trecho do texto (já em letras comuns, sem emojis) e o servidor pede o áudio à
 // API Text-to-Speech do Google Cloud. As credenciais ficam só aqui, em variáveis secretas da Vercel; o navegador recebe
-// apenas o áudio (MP3). Cada pedido custa créditos do Google: o texto diário pede o código de pesquisa; a tela Leitura em voz
-// alta, o código de leitura (CODIGO_LEITURA); o campo de texto da formatação, a senha de administrador (CODIGO_ADMIN).
+// apenas o áudio (MP3). Cada pedido custa créditos do Google: o texto diário pede o código de pesquisa e um cupom HMAC
+// (api/_vozCupom.mjs) emitido ao carregar o texto ou ao gerar os comentários — sem cupom válido não sintetiza texto
+// arbitrário; a tela Leitura em voz alta, o código de leitura (CODIGO_LEITURA); o campo de texto da formatação, a senha
+// de administrador (CODIGO_ADMIN).
 //  - GOOGLE_TTS_CREDENCIAIS: o JSON da conta de serviço (com o papel "Usuário da Plataforma de Agentes"). As vozes
 //    Gemini exigem essa identidade; uma chave de API comum é recusada (403 aiplatform.endpoints.predict).
 //  - GOOGLE_TTS_API_KEY: a chave de API, que basta para a voz Chirp 3 HD (a reserva).
@@ -9,6 +11,7 @@
 import { createSign } from "node:crypto";
 import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
+import { validarCupomVoz } from "./_vozCupom.mjs";
 import { ALTURAS, MODELOS_VOZ, TONS, VOZES, lerConfigVoz, validarConfigVoz } from "./_vozConfig.mjs";
 
 const URL_TTS = process.env.GOOGLE_TTS_URL || "https://texttospeech.googleapis.com/v1beta1/text:synthesize";
@@ -125,17 +128,19 @@ export default async function handler(req, res) {
   const body = req.body && typeof req.body === "object" ? req.body : {};
   // Quem pode pedir o quê:
   //  - o exemplo do painel do administrador usa as escolhas ainda não salvas: só com a senha de administrador;
-  //  - uso "texto-diario" (o texto diário da tela Início): qualquer pessoa com o código de pesquisa;
+  //  - uso "texto-diario": código de pesquisa + cupom HMAC (origem coberta pelo texto do dia ou pelos comentários);
   //  - uso "leitura" (a tela Leitura em voz alta, com arquivos e textos colados): só quem tem o código de leitura (CODIGO_LEITURA);
-  //  - qualquer outro pedido (o botão 🔊 do campo de texto da formatação, que é o padrão se "uso" não vier): só o administrador.
-  // O servidor não tem como saber de que texto veio o pedido; vale o uso que o app declara, e o limite por IP e o alerta de
-  // orçamento do Google seguram o custo.
+  //  - uso "campo" ou omitido (o botão 🔊 do campo de texto da formatação): só o administrador.
+  const uso = typeof body.uso === "string" ? body.uso : "";
+  if (uso && uso !== "texto-diario" && uso !== "leitura" && uso !== "campo") {
+    return erro(res, 400, "Tipo de leitura em voz alta inválido.");
+  }
   const administrador = Boolean(process.env.CODIGO_ADMIN && textosIguais(body.codigoAdmin, process.env.CODIGO_ADMIN));
   const exemplo = Boolean(body.exemplo && administrador);
   if (!exemplo) {
-    if (body.uso === "texto-diario") {
+    if (uso === "texto-diario") {
       if (!textosIguais(body.codigo, process.env.CODIGO_ESTUDO)) return erro(res, 403, "Código de pesquisa inválido.");
-    } else if (body.uso === "leitura") {
+    } else if (uso === "leitura") {
       if (!process.env.CODIGO_LEITURA) return erro(res, 503, "O código de leitura ainda não está configurado no servidor.");
       if (!textosIguais(body.codigoLeitura, process.env.CODIGO_LEITURA)) return erro(res, 403, "Código de leitura inválido.");
     } else if (!administrador) {
@@ -146,6 +151,15 @@ export default async function handler(req, res) {
   const texto = typeof body.texto === "string" ? body.texto.replace(/\r\n?/g, "\n").trim() : "";
   if (!texto) return erro(res, 400, "Não há texto para ler.");
   if (texto.length > MAX_CARACTERES) return erro(res, 400, `Trecho grande demais (máximo de ${MAX_CARACTERES} caracteres por parte).`);
+
+  if (!exemplo && uso === "texto-diario") {
+    const data = typeof body.data === "string" ? body.data.trim() : "";
+    const origem = typeof body.origem === "string" ? body.origem.replace(/\r\n?/g, "\n").trim() : "";
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return erro(res, 400, "Data do texto diário inválida.");
+    if (!origem) return erro(res, 400, "Falta o texto de origem para conferir a leitura.");
+    const conf = validarCupomVoz(body.vozCupom, { data, origem, texto });
+    if (!conf.ok) return erro(res, 403, conf.erro);
+  }
 
   const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "desconhecido";
   if (excedeuLimite(ip)) return erro(res, 429, "Muitas leituras seguidas. Tente de novo daqui a pouco.");

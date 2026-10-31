@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.15
+
+Leitura em voz alta do texto diário: o código de pesquisa sozinho não basta mais para sintetizar texto arbitrário. O servidor só gera áudio de trechos cobertos por um cupom assinado emitido ao carregar o texto do dia ou ao gerar os comentários da IA.
+
 ## 6.3.14
 
 Preferências publicadas: as 3 seções da resposta (complementares, aplicativas e entendimento) voltam a vir marcadas no padrão do Global Config. Memória do piloto: com a chave geral ligada, lições ativas entram no system prompt das respostas de IA (filtradas pela tarefa, até 8); a resposta JSON inclui `memoriaUsada` para medir o piloto.
