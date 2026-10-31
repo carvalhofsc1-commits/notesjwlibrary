@@ -2052,11 +2052,9 @@
       transform: rotate(90deg);
     }
 
-    /* Item que não expande: abre uma página (por exemplo, Prompts da IA em Ajustes); a seta vira "›", como nos botões da tela Reuniões. */
-    details.subsection.abre-pagina>summary::after {
-      content: '›';
-      transform: none;
-      font-size: 1.7rem;
+    /* Em Ajustes as setas dos botões (▸) ficam maiores para facilitar o toque e a leitura. */
+    .ajustes-lista>details.subsection>summary::after {
+      font-size: 1.55rem;
       line-height: 1;
     }
 
@@ -3777,27 +3775,17 @@
       background: transparent;
     }
 
-    /* A página de prompts é uma tela do app, não uma janela por cima: ao abri-la o resto da página sai do caminho
-       (as janelas de confirmação continuam disponíveis) e, ao voltar, tudo reaparece como estava. */
+    /* Enquanto os prompts carregam, a seção em Ajustes fica esmaecida. */
     #promptsSection[aria-busy="true"] {
       opacity: .55;
       pointer-events: none;
     }
 
-    #promptsScreen {
-      display: none;
-    }
-
-    body.view-prompts #promptsScreen {
-      display: block;
-    }
-
-    body.view-prompts>header,
-    body.view-prompts>main:not(#promptsScreen),
-    body.view-prompts>.theme-switch-row,
-    body.view-prompts>.about-link-row,
-    body.view-prompts>.app-nav {
-      display: none;
+    /* Prompts da IA dentro de Ajustes: o conteúdo cabe na seção sem a moldura de página inteira. */
+    .prompts-body .prompt-cat,
+    .prompts-body .prompt-item {
+      margin-left: 0;
+      margin-right: 0;
     }
 
     /* ---------- Telas: Formatar, Reuniões, Backup e Ajustes ----------

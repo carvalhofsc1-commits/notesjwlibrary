@@ -5696,7 +5696,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.08'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.09'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -8837,7 +8837,7 @@ function saveTemplatesToStorage() {
       } catch (e) { /* sem servidor: ficam os padrões */ }
     }
 
-    const promptsScreen = document.getElementById('promptsScreen');
+    const promptsSection = document.getElementById('promptsSection');
     const promptsLogin = document.getElementById('promptsLogin');
     const promptsEditor = document.getElementById('promptsEditor');
     const promptsLoginError = document.getElementById('promptsLoginError');
@@ -8847,20 +8847,29 @@ function saveTemplatesToStorage() {
     const promptsSaveBtn = document.getElementById('promptsSaveBtn');
     const promptsUndoBtn = document.getElementById('promptsUndoBtn');
     const promptsResetAllBtn = document.getElementById('promptsResetAllBtn');
-    let promptsOpener = null;
     let promptsState = null;   // última resposta do servidor
     let promptsCode = '';      // a senha salva em Autorização de acessos, depois de aceita pelo servidor
 
-    let promptsIsOpen = false;
-    let promptsScrollY = 0;
-
-    // A página só abre quando os prompts já chegaram (com a senha salva): sem tela de transição ("Entrando…") entre Ajustes e a página. Enquanto
-    // espera, a linha em Ajustes fica esmaecida. Sem a senha, ou se o servidor recusar, a página abre com o aviso de área restrita.
+    // Prompts da IA abre para baixo em Ajustes (como as outras opções). Enquanto os dados chegam, a linha fica esmaecida.
+    // Sem a senha, ou se o servidor recusar, aparece o aviso de área restrita dentro da própria seção.
     let promptsAbrindo = false;
-    async function openPrompts() {
-      if (promptsAbrindo || promptsIsOpen) return;
-      promptsOpener = document.activeElement;
-      promptsScrollY = window.scrollY;
+    // Ao cancelar "descartar e fechar", reabrimos a seção sem disparar um novo carregamento (que apagaria as edições).
+    let promptsIgnorarProximoToggle = false;
+    function limparPromptsAoFechar() {
+      promptsCode = '';
+      promptsState = null;
+      promptsList.textContent = '';
+      document.getElementById('promptsLimits').textContent = '';
+      promptsLocked.textContent = '';
+      promptsLogin.hidden = false;
+      promptsEditor.hidden = true;
+      promptsLoginError.textContent = '';
+      promptsStatus.textContent = '';
+      document.getElementById('promptsStatusBottom').textContent = '';
+    }
+
+    async function carregarPromptsAoAbrir() {
+      if (promptsAbrindo) return;
       promptsCode = '';
       promptsState = null;
       adminCodeNote.value = '';
@@ -8874,25 +8883,21 @@ function saveTemplatesToStorage() {
       adminCodeLeituraStatus.textContent = '';
       promptsLoginError.textContent = '';
       promptsStatus.textContent = '';
+      document.getElementById('promptsStatusBottom').textContent = '';
       promptsLogin.hidden = false;
       promptsEditor.hidden = true;
-      promptsEditor.querySelectorAll('details').forEach(card => { card.open = false; }); // os cartões começam fechados
+      promptsEditor.querySelectorAll('details').forEach(card => { card.open = false; });
       const code = senhaAdminSalva();
       let result = null;
       if (code) {
         promptsAbrindo = true;
-        const linha = document.getElementById('promptsSection');
-        linha.setAttribute('aria-busy', 'true');
+        promptsSection.setAttribute('aria-busy', 'true');
         try { result = await postConfig({ acao: 'prompts-ler', codigo: code }); } finally {
           promptsAbrindo = false;
-          linha.removeAttribute('aria-busy');
+          promptsSection.removeAttribute('aria-busy');
         }
+        if (!promptsSection.open) return; // fechou enquanto carregava
       }
-      promptsIsOpen = true;
-      document.body.classList.add('view-prompts');
-      // O botão Voltar do navegador (e o gesto de voltar do iPhone) também fecha a tela.
-      history.pushState({ prompts: true }, '');
-      window.scrollTo(0, 0);
       loginPrompts(code, result);
     }
 
@@ -8910,20 +8915,6 @@ function saveTemplatesToStorage() {
     function confirmDiscardPrompts() {
       if (!promptsTemPendencia()) return Promise.resolve(true);
       return askConfirm('Há alterações que ainda não foram salvas. Voltar mesmo assim?', 'Voltar sem salvar');
-    }
-
-    // Volta à tela principal exatamente onde o usuário estava (texto digitado, seções abertas e rolagem).
-    function showMainScreen() {
-      promptsIsOpen = false;
-      document.body.classList.remove('view-prompts');
-      promptsCode = '';
-      promptsState = null;
-      promptsList.textContent = '';
-      document.getElementById('promptsLimits').textContent = '';
-      promptsLocked.textContent = '';
-      window.scrollTo(0, promptsScrollY);
-      if (promptsOpener && typeof promptsOpener.focus === 'function') promptsOpener.focus({ preventScroll: true });
-      promptsOpener = null;
     }
 
     // Limites numéricos mudados na tela e ainda não salvos: { id: número }.
@@ -8948,27 +8939,7 @@ function saveTemplatesToStorage() {
       return promptsHasPending() || iaPendente();
     }
 
-    async function closePrompts() {
-      if (!promptsIsOpen) return;
-      if (!(await confirmDiscardPrompts())) return;
-      showMainScreen();
-      if (history.state && history.state.prompts) history.back(); // desfaz a entrada criada ao abrir
-    }
-
-    window.addEventListener('popstate', async () => {
-      if (!promptsIsOpen) return;
-      if (!promptsTemPendencia()) {
-        showMainScreen();
-        return;
-      }
-      history.pushState({ prompts: true }, ''); // continua na tela enquanto o usuário decide
-      if (await confirmDiscardPrompts()) {
-        showMainScreen();
-        history.back();
-      }
-    });
-
-    // A mensagem aparece no alto da página e também logo abaixo dos botões de salvar, onde o olhar está ao clicar.
+    // A mensagem aparece no alto da seção e também logo abaixo dos botões de salvar, onde o olhar está ao clicar.
     function setPromptsStatus(message, isError) {
       const bottom = document.getElementById('promptsStatusBottom');
       promptsStatus.className = isError ? 'warn' : 'ok';
@@ -9196,11 +9167,13 @@ function saveTemplatesToStorage() {
       if (!code) {
         promptsLoginError.textContent = 'Para ver e editar os prompts, salve a senha de administrador em 🔐 Autorização de acessos.';
         promptsLogin.hidden = false;
+        promptsEditor.hidden = true;
         return;
       }
-      if (!result.ok) {
+      if (!result || !result.ok) {
         promptsLogin.hidden = false;
-        promptsLoginError.textContent = configErrorMessage(result, 'Não foi possível entrar agora.') + (result.status === 403 ? ' Confira a senha em 🔐 Autorização de acessos.' : '');
+        promptsEditor.hidden = true;
+        promptsLoginError.textContent = configErrorMessage(result || {}, 'Não foi possível entrar agora.') + (result && result.status === 403 ? ' Confira a senha em 🔐 Autorização de acessos.' : '');
         return;
       }
       promptsCode = code;
@@ -9525,17 +9498,27 @@ function saveTemplatesToStorage() {
 
     document.getElementById('promptsCopyAllBtn').addEventListener('click', copyAllPrompts);
     document.getElementById('promptsDownloadBtn').addEventListener('click', downloadAllPrompts);
-    // Tocar em "Prompts da IA" (Ajustes) abre direto a página de prompts; a caixa em si nunca expande.
-    document.querySelector('#promptsSection > summary').addEventListener('click', event => {
-      event.preventDefault();
-      openPrompts();
+    // Tocar em "Prompts da IA" (Ajustes) abre a seção para baixo, como as outras opções.
+    promptsSection.addEventListener('toggle', async () => {
+      if (promptsIgnorarProximoToggle) {
+        promptsIgnorarProximoToggle = false;
+        return;
+      }
+      if (promptsSection.open) {
+        await carregarPromptsAoAbrir();
+        return;
+      }
+      if (promptsTemPendencia()) {
+        if (!(await confirmDiscardPrompts())) {
+          promptsIgnorarProximoToggle = true;
+          promptsSection.open = true; // o usuário cancelou: mantém aberta sem recarregar
+          return;
+        }
+      }
+      limparPromptsAoFechar();
     });
-    document.getElementById('closePromptsBtn').addEventListener('click', closePrompts);
-    // Sem a senha salva (ou recusada): fecha os prompts e leva a Ajustes → Autorização de acessos.
-    document.getElementById('promptsIrAcessosBtn').addEventListener('click', async () => {
-      await closePrompts();
-      if (!promptsIsOpen) abrirAcessos('senha');
-    });
+    // Sem a senha salva (ou recusada): leva a Autorização de acessos (a seção de prompts continua aberta).
+    document.getElementById('promptsIrAcessosBtn').addEventListener('click', () => abrirAcessos('senha'));
     promptsSaveBtn.addEventListener('click', salvarParaTodos);
     promptsUndoBtn.addEventListener('click', undoPrompts);
     promptsResetAllBtn.addEventListener('click', restoreAllPrompts);
@@ -9643,9 +9626,6 @@ function saveTemplatesToStorage() {
     iaModelo.addEventListener('change', iaMostrarPreco);
     document.getElementById('iaSalvarBtn').addEventListener('click', salvarParaTodos);
     document.getElementById('iaCustoBtn').addEventListener('click', iaCarregarCusto);
-    document.addEventListener('keydown', event => {
-      if (event.key === 'Escape' && promptsIsOpen && !confirmOverlay.classList.contains('open')) closePrompts();
-    });
 
     // ---------- Configurações padrão (valem para todos os usuários) ----------
     // O administrador publica o padrão pelos botões 💾 Salvar para todos (modelos e categorias; caracteres, favoritos e faixa rápida; opções da

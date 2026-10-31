@@ -1101,8 +1101,134 @@
         </details>
         <!-- Opções exclusivas do administrador: no fim da lista, depois de uma linha; só aparecem com a senha de administrador salva. -->
         <hr class="ajustes-separador so-admin" hidden>
-        <details class="subsection sub-tint-2 so-admin abre-pagina" id="promptsSection" hidden>
+        <details class="subsection sub-tint-2 so-admin" id="promptsSection" hidden>
           <summary><span class="adm-titulo">🛠️ Prompts da IA&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
+          <div class="subsection-body prompts-body">
+  <div id="promptsLogin">
+          <p class="hint">Área restrita ao administrador: os textos que orientam a IA para todos os usuários.</p>
+          <p id="promptsLoginError" class="hint acesso-aviso"></p>
+          <div class="button-row">
+            <button id="promptsIrAcessosBtn" class="secondary" type="button">🔐 Abrir Autorização de acessos</button>
+          </div>
+        </div>
+
+        <div id="promptsEditor" hidden>
+          <!-- A tela é organizada em categorias recolhíveis (emoji + nome); os cartões de cada prompt ficam dentro delas. -->
+          <details class="prompt-item prompt-intro">
+            <summary><h3>ℹ️ Como editar os prompts</h3></summary>
+            <p class="hint">Aqui você edita o <strong>tom e as regras</strong> da IA, organizados em categorias: toque no nome de uma categoria (🧭 base das respostas, ✋ comentários, 🎤 dirigente, 📖 Bíblia, ✨ formatação, 🔊 voz…) para abrir os prompts dela. O formato técnico da resposta (campos e JSON) e a forma de indicar os textos da Bíblia e os verbetes do Perspicaz ficam travados, só para leitura, no fim da página. O botão <strong>💾 Salvar para todos</strong> (no cartão do modelo e no fim da página) salva de uma vez o modelo e o esforço da IA, os limites e os prompts editados, e a mudança vale para todos os usuários em poucos segundos. O que você salva vira o padrão oficial do app para todos os usuários, sem nenhum aviso de "personalizado". "Descartar edição" desfaz só o que ainda não foi salvo, e "Voltar ao texto original" troca o texto salvo pelo que veio com o app. Nos textos, <strong>{{max_textos}}</strong> e <strong>{{max_destaques}}</strong> são trocados pelos limites do cartão "Limites (números)". Nas partes de frases (opções da formatação, listas, respostas, textos bíblicos e orientação), cada item começa com o nome entre colchetes, como <strong>[Emoji: marcada]</strong>: edite só o texto depois do nome. Item apagado volta ao texto padrão.</p>
+          </details>
+
+          <p id="promptsStatus" class="ok" role="status" aria-live="polite"></p>
+          <div class="prompts-export-row">
+            <button id="promptsCopyAllBtn" class="secondary" type="button">📋 Copiar todos os prompts</button>
+            <button id="promptsDownloadBtn" class="secondary" type="button">💾 Baixar todos em arquivo de texto (.txt)</button>
+          </div>
+
+          <details class="prompt-cat" id="catIa" style="--cat-cor:#eab308">
+            <summary><h2>🤖 MODELO, GASTO E LIMITES</h2><span class="prompt-cat-qtd" aria-label="3 itens">3</span></summary>
+            <div class="prompt-cat-corpo">
+          <details class="prompt-item prompt-tint-ia">
+            <summary><h3>🤖 Modelo da IA de texto</h3></summary>
+            <p class="hint">Vale para todas as respostas da IA (estudo, perguntas do dirigente, formatação, comentários do texto diário) e para todos os usuários. Os modelos mais potentes escrevem melhor, mas demoram mais e custam mais.</p>
+            <label for="iaModelo">Modelo</label>
+            <select id="iaModelo"></select>
+            <p id="iaModeloPreco" class="hint"></p>
+            <label for="iaEsforco">Esforço (quanto a IA pensa antes de responder)</label>
+            <select id="iaEsforco"></select>
+            <div class="button-row">
+              <button id="iaSalvarBtn" type="button">💾 Salvar para todos</button>
+              <span id="iaStatus" class="ok" role="status" aria-live="polite"></span>
+            </div>
+          </details>
+
+          <details class="prompt-item prompt-tint-ia">
+            <summary><h3>💲 Gasto com a IA de texto (Anthropic)</h3></summary>
+            <div id="iaCusto" class="ia-custo"></div>
+            <div class="button-row">
+              <button id="iaCustoBtn" class="secondary" type="button">🔄 Atualizar o gasto</button>
+              <a class="voz-link" href="https://platform.claude.com/cost" target="_blank" rel="noopener noreferrer">💳 Abrir os custos no Claude Console</a>
+            </div>
+          </details>
+
+              <div id="promptsLimits"></div>
+            </div>
+          </details>
+
+          <!-- As categorias com os prompts editáveis (BASE, COMENTÁRIOS, DIRIGENTE...) são montadas aqui pelo app, na ordem do servidor. -->
+          <div id="promptsList"></div>
+
+          <details class="prompt-cat" id="catDiversos" style="--cat-cor:#64748b">
+            <summary><h2>🧰 DIVERSOS</h2><span class="prompt-cat-qtd" aria-label="2 itens">2</span></summary>
+            <div class="prompt-cat-corpo">
+          <details class="prompt-item prompt-tint-codigo">
+            <summary><h3>🔑 Código de pesquisa (anotação)</h3></summary>
+            <p class="hint">Anotação só sua, para não esquecer o código de pesquisa. O código que vale de verdade é o da variável <strong>CODIGO_ESTUDO</strong> na Vercel: se trocar lá, atualize aqui também.</p>
+            <div class="admin-code-row">
+              <input id="adminCodeNote" type="text" maxlength="500" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Anote aqui o código de pesquisa">
+              <button id="adminCodeCopyBtn" class="secondary" type="button">📋 Copiar</button>
+            </div>
+            <div class="button-row">
+              <button id="adminCodeSaveBtn" type="button">💾 Salvar anotação</button>
+              <span id="adminCodeStatus" class="ok" role="status" aria-live="polite"></span>
+            </div>
+          </details>
+
+          <details class="prompt-item prompt-tint-codigo">
+            <summary><h3>🎤 Código do dirigente (anotação)</h3></summary>
+            <p class="hint">Anotação só sua, para não esquecer o código do dirigente. O código que vale de verdade é o da variável <strong>CODIGO_DIRIGENTE</strong> na Vercel (enquanto ela não existir, vale o código de pesquisa): se trocar lá, atualize aqui também.</p>
+            <div class="admin-code-row">
+              <input id="adminCodeDirNote" type="text" maxlength="500" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Anote aqui o código do dirigente">
+              <button id="adminCodeDirCopyBtn" class="secondary" type="button">📋 Copiar</button>
+            </div>
+            <div class="button-row">
+              <button id="adminCodeDirSaveBtn" type="button">💾 Salvar anotação</button>
+              <span id="adminCodeDirStatus" class="ok" role="status" aria-live="polite"></span>
+            </div>
+          </details>
+
+          <details class="prompt-item prompt-tint-codigo">
+            <summary><h3>🔊 Código de leitura (anotação)</h3></summary>
+            <p class="hint">Anotação só sua, para não esquecer o código de leitura (tela Leitura em voz alta). O código que vale de verdade é o da variável <strong>CODIGO_LEITURA</strong> na Vercel.</p>
+            <div class="admin-code-row">
+              <input id="adminCodeLeituraNote" type="text" maxlength="500" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Anote aqui o código de leitura">
+              <button id="adminCodeLeituraCopyBtn" class="secondary" type="button">📋 Copiar</button>
+            </div>
+            <div class="button-row">
+              <button id="adminCodeLeituraSaveBtn" type="button">💾 Salvar anotação</button>
+              <span id="adminCodeLeituraStatus" class="ok" role="status" aria-live="polite"></span>
+            </div>
+          </details>
+
+          <details class="prompt-item prompt-tint-codigo" id="memoriaBox">
+            <summary><h3>🧠 Lições das correções (piloto)</h3></summary>
+            <p class="hint">Quando você marca 🧠 ao tocar em Salvar alterações, a IA compara o texto dela com o seu, entende o que mudou e por quê, e guarda no Blob privado do servidor <strong>só a lição</strong> (o que mudou, o provável motivo e uma regra curta). Os textos, o original e o corrigido, não são guardados. <strong>Nesta fase as lições só são guardadas: nenhuma resposta da IA as usa ainda.</strong> Só você (administrador) vê, desativa ou apaga. O backup do JW Library nunca entra aqui.</p>
+            <label class="memoria-usar"><input type="checkbox" id="memoriaLigada" autocomplete="off"> Permitir aprender com as correções (chave geral do piloto)</label>
+            <p id="memoriaStatus" class="ok" role="status" aria-live="polite"></p>
+            <div id="memoriaLista" class="memoria-lista"></div>
+            <div class="button-row">
+              <button id="memoriaAtualizarBtn" class="secondary" type="button">🔄 Atualizar</button>
+              <button id="memoriaApagarTudoBtn" class="secondary" type="button">🗑️ Apagar todas</button>
+            </div>
+          </details>
+
+            </div>
+          </details>
+
+          <details class="prompt-cat" id="catTecnica" style="--cat-cor:#64748b">
+            <summary><h2>🔒 PARTE TÉCNICA (SOMENTE LEITURA)</h2><span id="catTecnicaQtd" class="prompt-cat-qtd"></span></summary>
+            <div class="prompt-cat-corpo">
+              <div id="promptsLocked" class="prompt-locked"></div>
+            </div>
+          </details>
+          <div class="button-row prompts-sticky">
+            <button id="promptsSaveBtn" type="button">💾 Salvar para todos</button>
+            <button id="promptsUndoBtn" class="secondary" type="button">↩ Voltar à versão anterior</button>
+            <button id="promptsResetAllBtn" class="secondary" type="button">♻️ Restaurar todos os padrões</button>
+          </div>
+          <p id="promptsStatusBottom" class="ok prompts-status-bottom" role="status" aria-live="polite"></p>
+          </div>
+          </div>
         </details>
         <details class="subsection voz-admin so-admin" id="vozSection" hidden>
           <summary><span class="adm-titulo">🔊 Leitura em voz alta&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
@@ -1346,142 +1472,6 @@
       </div>
     </section>
 
-  </main>
-
-  <main id="promptsScreen" aria-labelledby="promptsTitle">
-    <div class="single-grid">
-      <section class="card prompts-card">
-      <div class="modal-title-row">
-        <h2 id="promptsTitle">🛠️ Prompts da IA</h2>
-        <button id="closePromptsBtn" class="secondary modal-close-btn" type="button">← Voltar ao app</button>
-      </div>
-
-      <div id="promptsLogin">
-        <p class="hint">Área restrita ao administrador: os textos que orientam a IA para todos os usuários.</p>
-        <p id="promptsLoginError" class="hint acesso-aviso"></p>
-        <div class="button-row">
-          <button id="promptsIrAcessosBtn" class="secondary" type="button">🔐 Abrir Autorização de acessos</button>
-        </div>
-      </div>
-
-      <div id="promptsEditor" hidden>
-        <!-- A tela é organizada em categorias recolhíveis (emoji + nome); os cartões de cada prompt ficam dentro delas. -->
-        <details class="prompt-item prompt-intro">
-          <summary><h3>ℹ️ Como editar os prompts</h3></summary>
-          <p class="hint">Aqui você edita o <strong>tom e as regras</strong> da IA, organizados em categorias: toque no nome de uma categoria (🧭 base das respostas, ✋ comentários, 🎤 dirigente, 📖 Bíblia, ✨ formatação, 🔊 voz…) para abrir os prompts dela. O formato técnico da resposta (campos e JSON) e a forma de indicar os textos da Bíblia e os verbetes do Perspicaz ficam travados, só para leitura, no fim da página. O botão <strong>💾 Salvar para todos</strong> (no cartão do modelo e no fim da página) salva de uma vez o modelo e o esforço da IA, os limites e os prompts editados, e a mudança vale para todos os usuários em poucos segundos. O que você salva vira o padrão oficial do app para todos os usuários, sem nenhum aviso de "personalizado". "Descartar edição" desfaz só o que ainda não foi salvo, e "Voltar ao texto original" troca o texto salvo pelo que veio com o app. Nos textos, <strong>{{max_textos}}</strong> e <strong>{{max_destaques}}</strong> são trocados pelos limites do cartão "Limites (números)". Nas partes de frases (opções da formatação, listas, respostas, textos bíblicos e orientação), cada item começa com o nome entre colchetes, como <strong>[Emoji: marcada]</strong>: edite só o texto depois do nome. Item apagado volta ao texto padrão.</p>
-        </details>
-
-        <p id="promptsStatus" class="ok" role="status" aria-live="polite"></p>
-        <div class="prompts-export-row">
-          <button id="promptsCopyAllBtn" class="secondary" type="button">📋 Copiar todos os prompts</button>
-          <button id="promptsDownloadBtn" class="secondary" type="button">💾 Baixar todos em arquivo de texto (.txt)</button>
-        </div>
-
-        <details class="prompt-cat" id="catIa" style="--cat-cor:#eab308">
-          <summary><h2>🤖 MODELO, GASTO E LIMITES</h2><span class="prompt-cat-qtd" aria-label="3 itens">3</span></summary>
-          <div class="prompt-cat-corpo">
-        <details class="prompt-item prompt-tint-ia">
-          <summary><h3>🤖 Modelo da IA de texto</h3></summary>
-          <p class="hint">Vale para todas as respostas da IA (estudo, perguntas do dirigente, formatação, comentários do texto diário) e para todos os usuários. Os modelos mais potentes escrevem melhor, mas demoram mais e custam mais.</p>
-          <label for="iaModelo">Modelo</label>
-          <select id="iaModelo"></select>
-          <p id="iaModeloPreco" class="hint"></p>
-          <label for="iaEsforco">Esforço (quanto a IA pensa antes de responder)</label>
-          <select id="iaEsforco"></select>
-          <div class="button-row">
-            <button id="iaSalvarBtn" type="button">💾 Salvar para todos</button>
-            <span id="iaStatus" class="ok" role="status" aria-live="polite"></span>
-          </div>
-        </details>
-
-        <details class="prompt-item prompt-tint-ia">
-          <summary><h3>💲 Gasto com a IA de texto (Anthropic)</h3></summary>
-          <div id="iaCusto" class="ia-custo"></div>
-          <div class="button-row">
-            <button id="iaCustoBtn" class="secondary" type="button">🔄 Atualizar o gasto</button>
-            <a class="voz-link" href="https://platform.claude.com/cost" target="_blank" rel="noopener noreferrer">💳 Abrir os custos no Claude Console</a>
-          </div>
-        </details>
-
-            <div id="promptsLimits"></div>
-          </div>
-        </details>
-
-        <!-- As categorias com os prompts editáveis (BASE, COMENTÁRIOS, DIRIGENTE...) são montadas aqui pelo app, na ordem do servidor. -->
-        <div id="promptsList"></div>
-
-        <details class="prompt-cat" id="catDiversos" style="--cat-cor:#64748b">
-          <summary><h2>🧰 DIVERSOS</h2><span class="prompt-cat-qtd" aria-label="2 itens">2</span></summary>
-          <div class="prompt-cat-corpo">
-        <details class="prompt-item prompt-tint-codigo">
-          <summary><h3>🔑 Código de pesquisa (anotação)</h3></summary>
-          <p class="hint">Anotação só sua, para não esquecer o código de pesquisa. O código que vale de verdade é o da variável <strong>CODIGO_ESTUDO</strong> na Vercel: se trocar lá, atualize aqui também.</p>
-          <div class="admin-code-row">
-            <input id="adminCodeNote" type="text" maxlength="500" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Anote aqui o código de pesquisa">
-            <button id="adminCodeCopyBtn" class="secondary" type="button">📋 Copiar</button>
-          </div>
-          <div class="button-row">
-            <button id="adminCodeSaveBtn" type="button">💾 Salvar anotação</button>
-            <span id="adminCodeStatus" class="ok" role="status" aria-live="polite"></span>
-          </div>
-        </details>
-
-        <details class="prompt-item prompt-tint-codigo">
-          <summary><h3>🎤 Código do dirigente (anotação)</h3></summary>
-          <p class="hint">Anotação só sua, para não esquecer o código do dirigente. O código que vale de verdade é o da variável <strong>CODIGO_DIRIGENTE</strong> na Vercel (enquanto ela não existir, vale o código de pesquisa): se trocar lá, atualize aqui também.</p>
-          <div class="admin-code-row">
-            <input id="adminCodeDirNote" type="text" maxlength="500" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Anote aqui o código do dirigente">
-            <button id="adminCodeDirCopyBtn" class="secondary" type="button">📋 Copiar</button>
-          </div>
-          <div class="button-row">
-            <button id="adminCodeDirSaveBtn" type="button">💾 Salvar anotação</button>
-            <span id="adminCodeDirStatus" class="ok" role="status" aria-live="polite"></span>
-          </div>
-        </details>
-
-        <details class="prompt-item prompt-tint-codigo">
-          <summary><h3>🔊 Código de leitura (anotação)</h3></summary>
-          <p class="hint">Anotação só sua, para não esquecer o código de leitura (tela Leitura em voz alta). O código que vale de verdade é o da variável <strong>CODIGO_LEITURA</strong> na Vercel.</p>
-          <div class="admin-code-row">
-            <input id="adminCodeLeituraNote" type="text" maxlength="500" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Anote aqui o código de leitura">
-            <button id="adminCodeLeituraCopyBtn" class="secondary" type="button">📋 Copiar</button>
-          </div>
-          <div class="button-row">
-            <button id="adminCodeLeituraSaveBtn" type="button">💾 Salvar anotação</button>
-            <span id="adminCodeLeituraStatus" class="ok" role="status" aria-live="polite"></span>
-          </div>
-        </details>
-
-        <details class="prompt-item prompt-tint-codigo" id="memoriaBox">
-          <summary><h3>🧠 Lições das correções (piloto)</h3></summary>
-          <p class="hint">Quando você marca 🧠 ao tocar em Salvar alterações, a IA compara o texto dela com o seu, entende o que mudou e por quê, e guarda no Blob privado do servidor <strong>só a lição</strong> (o que mudou, o provável motivo e uma regra curta). Os textos, o original e o corrigido, não são guardados. <strong>Nesta fase as lições só são guardadas: nenhuma resposta da IA as usa ainda.</strong> Só você (administrador) vê, desativa ou apaga. O backup do JW Library nunca entra aqui.</p>
-          <label class="memoria-usar"><input type="checkbox" id="memoriaLigada" autocomplete="off"> Permitir aprender com as correções (chave geral do piloto)</label>
-          <p id="memoriaStatus" class="ok" role="status" aria-live="polite"></p>
-          <div id="memoriaLista" class="memoria-lista"></div>
-          <div class="button-row">
-            <button id="memoriaAtualizarBtn" class="secondary" type="button">🔄 Atualizar</button>
-            <button id="memoriaApagarTudoBtn" class="secondary" type="button">🗑️ Apagar todas</button>
-          </div>
-        </details>
-
-          </div>
-        </details>
-
-        <details class="prompt-cat" id="catTecnica" style="--cat-cor:#64748b">
-          <summary><h2>🔒 PARTE TÉCNICA (SOMENTE LEITURA)</h2><span id="catTecnicaQtd" class="prompt-cat-qtd"></span></summary>
-          <div class="prompt-cat-corpo">
-            <div id="promptsLocked" class="prompt-locked"></div>
-          </div>
-        </details>
-        <div class="button-row prompts-sticky">
-          <button id="promptsSaveBtn" type="button">💾 Salvar para todos</button>
-          <button id="promptsUndoBtn" class="secondary" type="button">↩ Voltar à versão anterior</button>
-          <button id="promptsResetAllBtn" class="secondary" type="button">♻️ Restaurar todos os padrões</button>
-        </div>
-        <p id="promptsStatusBottom" class="ok prompts-status-bottom" role="status" aria-live="polite"></p>
-      </div>
-      </section>
-    </div>
   </main>
 
   <div id="confirmOverlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">

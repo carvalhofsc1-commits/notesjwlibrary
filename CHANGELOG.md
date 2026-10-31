@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.09
+
+Ajustes: Prompts da IA deixa de abrir numa tela separada e passa a expandir para baixo, como as outras opções; as setas ▸ dos botões da lista de Ajustes ficam maiores.
+
 ## 6.3.08
 
 Botões de carregar perguntas, discurso, joias, imagens da apostila e de pesquisar na biblioteca passam a mostrar “Consultando o wol.jw.org…” (e o mesmo na faixa do topo), em vez de “Consultando a IA…”, porque essas consultas não usam a Anthropic. Os botões que geram respostas e esboços continuam com “Consultando a IA…”.
