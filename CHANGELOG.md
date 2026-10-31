@@ -2,6 +2,18 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.51
+
+Tela de prompts da IA, em Diversos: nova anotação do administrador "🎙️ Código de texto (anotação)", igual às do dirigente, da leitura e do S-34 (campo, Copiar e Salvar anotação; guardada no servidor, só o administrador vê).
+
+## 6.3.50
+
+As funções que só funcionam porque o código delas está salvo neste aparelho ganharam um ícone pequeno e discreto, uma chave (🔑), ao lado do nome: Comentários, Dirigentes, Discursos, Leitura em voz alta e Áudio em texto (atalhos do Início), os grupos de Reuniões, Formatar → Opções com IA, o card Discurso público - lista de temas e o Texto diário. Passando o dedo ou o mouse, o ícone explica que a função depende do código salvo. Enquanto a função está bloqueada, o ícone some e vale o cadeado.
+
+## 6.3.49
+
+O card "Discurso público - lista de temas (esboços do S-34)" agora aparece mesmo sem o código do S-34, só que bloqueado: em lilás (cor diferente dos grupos cinza), com cadeado e o aviso "Requer o código do S-34 (Ajustes)"; não abre até o código ser salvo.
+
 ## 6.3.48
 
 Código do S-34 (variável CODIGO_S34 na Vercel): a seção "🎙️ Discurso público - lista de temas (esboços do S-34)" só aparece para quem salvou esse código em Ajustes → 🔐 Autorização de acessos (campo novo "📜 Código do S-34"); sem ele, a seção fica escondida. O servidor também exige o código (além do do dirigente) para listar os temas, ler o esboço e gerar o esboço com IA. Se o código for trocado na Vercel, o app apaga o salvo e esconde a seção. Nova anotação do administrador "📜 Código do S-34 (anotação)" na tela de prompts da IA, em Diversos.

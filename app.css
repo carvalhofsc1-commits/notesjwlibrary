@@ -8561,3 +8561,40 @@
         color: #4ade80;
       }
     }
+
+/* Discurso público - lista de temas sem o código do S-34: o card aparece bloqueado, em lilás (diferente do cinza dos grupos), com cadeado, e não abre. */
+details.subsection.ebc-subsection#publicoBox.s34-bloqueado {
+  background: #ede9fe;
+  background: color-mix(in srgb, #8b5cf6 14%, var(--card));
+  border-color: #8b5cf6;
+  opacity: .9;
+}
+
+#publicoBox.s34-bloqueado>summary {
+  cursor: not-allowed;
+  color: var(--muted);
+}
+
+#publicoBox.s34-bloqueado>summary::after {
+  content: '🔒';
+}
+
+#publicoBox.s34-bloqueado>:not(summary) {
+  display: none;
+}
+
+/* 🔑 Marca discreta das funções que só funcionam porque o código delas está salvo neste aparelho. */
+.ico-codigo {
+  display: inline-block;
+  margin-left: 5px;
+  font-size: .62em;
+  font-weight: 400;
+  line-height: 1;
+  vertical-align: middle;
+  opacity: .5;
+  filter: grayscale(.4);
+}
+
+.ico-codigo[hidden] {
+  display: none;
+}

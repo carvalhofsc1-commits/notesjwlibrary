@@ -6820,7 +6820,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.48'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.51'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -10033,6 +10033,9 @@ function saveTemplatesToStorage() {
       adminCodeLeituraNote.value = '';
       delete adminCodeLeituraNote.dataset.loaded;
       adminCodeLeituraStatus.textContent = '';
+      adminCodeTextoNote.value = '';
+      delete adminCodeTextoNote.dataset.loaded;
+      adminCodeTextoStatus.textContent = '';
       adminCodeS34Note.value = '';
       delete adminCodeS34Note.dataset.loaded;
       adminCodeS34Status.textContent = '';
@@ -10280,6 +10283,10 @@ function saveTemplatesToStorage() {
       if (!adminCodeLeituraNote.dataset.loaded) {
         adminCodeLeituraNote.value = typeof state.anotacaoLeitura === 'string' ? state.anotacaoLeitura : '';
         adminCodeLeituraNote.dataset.loaded = '1';
+      }
+      if (!adminCodeTextoNote.dataset.loaded) {
+        adminCodeTextoNote.value = typeof state.anotacaoTexto === 'string' ? state.anotacaoTexto : '';
+        adminCodeTextoNote.dataset.loaded = '1';
       }
       if (!adminCodeS34Note.dataset.loaded) {
         adminCodeS34Note.value = typeof state.anotacaoS34 === 'string' ? state.anotacaoS34 : '';
@@ -10558,6 +10565,8 @@ function saveTemplatesToStorage() {
     const adminCodeDirStatus = document.getElementById('adminCodeDirStatus');
     const adminCodeLeituraNote = document.getElementById('adminCodeLeituraNote');
     const adminCodeLeituraStatus = document.getElementById('adminCodeLeituraStatus');
+    const adminCodeTextoNote = document.getElementById('adminCodeTextoNote');
+    const adminCodeTextoStatus = document.getElementById('adminCodeTextoStatus');
     const adminCodeS34Note = document.getElementById('adminCodeS34Note');
     const adminCodeS34Status = document.getElementById('adminCodeS34Status');
 
@@ -10642,6 +10651,34 @@ function saveTemplatesToStorage() {
       adminCodeLeituraNote.value = result.data.anotacao || '';
       if (promptsState) promptsState.anotacaoLeitura = adminCodeLeituraNote.value;
       setAdminCodeLeituraStatus('✅ Anotação salva.', false);
+    });
+
+    // ---------- Anotação do código de texto (igual às outras) ----------
+    function setAdminCodeTextoStatus(message, isWarning) {
+      adminCodeTextoStatus.className = isWarning ? 'warn' : 'ok';
+      adminCodeTextoStatus.textContent = message;
+    }
+
+    document.getElementById('adminCodeTextoCopyBtn').addEventListener('click', async () => {
+      const text = adminCodeTextoNote.value.trim();
+      if (!text) return setAdminCodeTextoStatus('O campo está vazio.', true);
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (e) {
+        adminCodeTextoNote.focus();
+        adminCodeTextoNote.select();
+        try { document.execCommand('copy'); } catch (e2) { return setAdminCodeTextoStatus('Não foi possível copiar. Selecione e copie manualmente.', true); }
+      }
+      setAdminCodeTextoStatus('✅ Código copiado.', false);
+    });
+
+    document.getElementById('adminCodeTextoSaveBtn').addEventListener('click', async () => {
+      setAdminCodeTextoStatus('Salvando...', false);
+      const result = await postConfig({ acao: 'anotacao-texto-salvar', codigo: promptsCode, anotacao: adminCodeTextoNote.value });
+      if (!result.ok) return setAdminCodeTextoStatus(configErrorMessage(result, 'Não foi possível salvar agora.'), true);
+      adminCodeTextoNote.value = result.data.anotacao || '';
+      if (promptsState) promptsState.anotacaoTexto = adminCodeTextoNote.value;
+      setAdminCodeTextoStatus('✅ Anotação salva.', false);
     });
 
     // ---------- Anotação do código do S-34 (igual às outras) ----------
@@ -16839,7 +16876,8 @@ function saveTemplatesToStorage() {
       pesquisa: '🔒 Requer o código de pesquisa',
       dirigente: '🔒 Requer o código do dirigente',
       leitura: '🔒 Requer o código de leitura',
-      texto: '🔒 Requer o código de texto'
+      texto: '🔒 Requer o código de texto',
+      s34: '🔒 Requer o código do S-34'
     };
 
     function travarGrupo(id, motivo) {
@@ -16862,6 +16900,41 @@ function saveTemplatesToStorage() {
       if (motivo) trava.textContent = TRAVAS[motivo];
     }
 
+    // Um ícone pequeno e discreto (🔑) marca cada função que só funciona porque o código dela está salvo neste aparelho. Fica escondido enquanto a função
+    // está bloqueada (nesse caso vale o cadeado).
+    const CHAVES_DE_CODIGO = [
+      { onde: '.atalhos-grid [data-atalho="comentarios"] .atalho-nome', codigo: 'pesquisa' },
+      { onde: '.atalhos-grid [data-atalho="dirigir"] .atalho-nome', codigo: 'dirigente' },
+      { onde: '.atalhos-grid [data-atalho="discursos"] .atalho-nome', codigo: 'dirigente' },
+      { onde: '.atalhos-grid [data-atalho="leitura"] .atalho-nome', codigo: 'leitura' },
+      { onde: '.atalhos-grid [data-atalho="transcricao"] .atalho-nome', codigo: 'texto' },
+      { onde: '#grupoComentarios .reunioes-subtitle', codigo: 'pesquisa' },
+      { onde: '#grupoDirigir .reunioes-subtitle', codigo: 'dirigente' },
+      { onde: '#grupoDiscursos .reunioes-subtitle', codigo: 'dirigente' },
+      { onde: '#opcoesIaBox .opcoes-ia-rotulo', codigo: 'pesquisa' },
+      { onde: '#publicoBox > summary', codigo: 's34' },
+      { onde: '#textoDiarioTitulo', codigo: 'pesquisa' }
+    ];
+    function chavesDeCodigoAtualizar(tem) {
+      CHAVES_DE_CODIGO.forEach(item => {
+        if (!item.marca) {
+          const alvo = document.querySelector(item.onde);
+          if (!alvo) return;
+          const marca = document.createElement('span');
+          marca.className = 'ico-codigo';
+          marca.setAttribute('role', 'img');
+          marca.setAttribute('aria-label', 'Funciona com o código salvo');
+          marca.title = 'Funciona porque o código está salvo neste aparelho (Ajustes → Autorização de acessos)';
+          marca.textContent = '🔑';
+          // Nos títulos com um aviso de bloqueio (grupo-trava) o ícone entra antes dele.
+          const trava = alvo.querySelector(':scope > .grupo-trava');
+          alvo.insertBefore(marca, trava || null);
+          item.marca = marca;
+        }
+        item.marca.hidden = !tem[item.codigo];
+      });
+    }
+
     function acessosAtualizar() {
       const pesquisa = Boolean(codigoAcessoSalvo());
       const dirigente = Boolean(codigoDirigenteSalvo());
@@ -16869,9 +16942,13 @@ function saveTemplatesToStorage() {
       travarGrupo('grupoComentarios', pesquisa ? '' : 'pesquisa');
       travarGrupo('grupoDirigir', motivoDirigir);
       travarGrupo('grupoDiscursos', motivoDirigir);
-      // Discurso público - lista de temas (esboços do S-34): só aparece com o código do S-34 (e o do dirigente, que libera o grupo).
+      // Discurso público - lista de temas (esboços do S-34): sem o código do S-34 aparece bloqueado (outra cor, com cadeado) e não abre.
       const s34 = Boolean(codigoS34Salvo());
-      publicoBox.hidden = !s34;
+      publicoBox.classList.toggle('s34-bloqueado', !s34);
+      const publicoTrava = document.getElementById('publicoTrava');
+      publicoTrava.hidden = s34;
+      publicoTrava.textContent = TRAVAS.s34 + ' (Ajustes)';
+      publicoBox.querySelector(':scope > summary').setAttribute('aria-disabled', String(!s34));
       if (!s34 && publicoBox.open) publicoBox.open = false;
       // Formatar → Opções com IA (formatação e texto colado): só com o código de pesquisa; sem ele, fica cinza e não abre.
       travarGrupo('opcoesIaBox', pesquisa ? '' : 'pesquisa');
@@ -16890,10 +16967,15 @@ function saveTemplatesToStorage() {
       texto.querySelector('.td-topo').inert = !pesquisa;
       document.getElementById('tdLinkTrava').hidden = pesquisa;
       if (!pesquisa && tdTexto) { tdCache.clear(); tdCarregar(tdData || tdHoje()); } // código apagado: o cartão volta à mensagem do cadeado
+      chavesDeCodigoAtualizar({ pesquisa, dirigente, leitura: Boolean(codigoLeituraSalvo()), texto: Boolean(codigoTextoSalvo()), s34 });
       reunioesConferirVista(); // página aberta cujo grupo acabou de ser bloqueado: volta à tela principal
       reunioesAjustarHub(); // o aviso de bloqueio muda a altura dos botões
       historicoRender();
     }
+    // Sem o código do S-34, o card do discurso público não abre.
+    publicoBox.querySelector(':scope > summary').addEventListener('click', event => {
+      if (publicoBox.classList.contains('s34-bloqueado')) event.preventDefault();
+    });
     // Desabilitado, o grupo não abre (toque, Enter ou espaço no título).
     ['grupoComentarios', 'grupoDirigir', 'grupoDiscursos', 'opcoesIaBox'].forEach(id => {
       const grupo = document.getElementById(id);

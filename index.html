@@ -643,7 +643,7 @@
           <details class="section-accordion reunioes-grupo" id="grupoDiscursos">
             <summary><span class="grupo-icone" aria-hidden="true">📜</span><div><h3 class="reunioes-subtitle">Preparação de discursos e esboços</h3><span class="grupo-desc">Público, Tesouros, curto e outros</span><span class="grupo-trava" hidden></span></div></summary>
             <details class="subsection ebc-subsection" id="publicoBox">
-              <summary>🎙️ Discurso público - lista de temas (esboços do S-34)</summary>
+              <summary>🎙️ Discurso público - lista de temas (esboços do S-34)<span class="grupo-trava" id="publicoTrava" hidden></span></summary>
               <div class="subsection-body">
                 <section class="sent-option sent-option-site">
                   <div class="ai-study">
@@ -1233,6 +1233,19 @@
             <div class="button-row">
               <button id="adminCodeLeituraSaveBtn" type="button">💾 Salvar anotação</button>
               <span id="adminCodeLeituraStatus" class="ok" role="status" aria-live="polite"></span>
+            </div>
+          </details>
+
+          <details class="prompt-item prompt-tint-codigo">
+            <summary><h3>🎙️ Código de texto (anotação)</h3></summary>
+            <p class="hint">Anotação só sua, para não esquecer o código de texto (tela Áudio em texto). O código que vale de verdade é o da variável <strong>CODIGO_TEXTO</strong> na Vercel.</p>
+            <div class="admin-code-row">
+              <input id="adminCodeTextoNote" type="text" maxlength="500" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Anote aqui o código de texto">
+              <button id="adminCodeTextoCopyBtn" class="secondary" type="button">📋 Copiar</button>
+            </div>
+            <div class="button-row">
+              <button id="adminCodeTextoSaveBtn" type="button">💾 Salvar anotação</button>
+              <span id="adminCodeTextoStatus" class="ok" role="status" aria-live="polite"></span>
             </div>
           </details>
 
