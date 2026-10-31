@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.52
+
+Mesclar backups: a linha de contagens de cada arquivo ganhou as etiquetas (notas / respostas / grifos / marcadores / etiquetas). Os marcadores são os marcadores de página do JW Library (poucos, em posições fixas), não as etiquetas.
+
 ## 6.3.51
 
 Tela de prompts da IA, em Diversos: nova anotação do administrador "🎙️ Código de texto (anotação)", igual às do dirigente, da leitura e do S-34 (campo, Copiar e Salvar anotação; guardada no servidor, só o administrador vê).
