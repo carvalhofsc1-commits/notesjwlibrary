@@ -5417,12 +5417,8 @@
       padding-bottom: calc(72px + var(--nav-fundo));
     }
 
-    /* iPhone: ao rolar, a barra fixa de baixo às vezes se soltava da base (deixando um vazio embaixo). Sem o "elástico" de rolagem e com a barra na
-       sua própria camada de composição, ela fica presa à base. */
-    html,
-    body {
-      overscroll-behavior-y: none;
-    }
+    /* iPhone: a barra fixa de baixo fica na sua própria camada de composição para ficar presa à base. O "elástico" da rolagem (overscroll) voltou
+       na 6.3.17: antes ele era desligado aqui (overscroll-behavior-y: none). */
 
     .app-nav {
       -webkit-transform: translate3d(0, 0, 0);

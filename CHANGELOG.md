@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.17
+
+Rolagem: o efeito elástico das telas (a página cede um pouco ao puxar além do topo ou do fim) voltou; a regra que o desligava (overscroll-behavior-y: none) saiu. A barra de baixo continua na sua própria camada. Puxar para atualizar continua só na tela Início.
+
 ## 6.3.16
 
 Memória do piloto: as lições só entram nas respostas de IA quando o pedido vem do administrador (o app envia a senha de administrador salva no aparelho; o servidor a confere); para os demais usuários nada muda. A leitura da memória nas respostas passa a ter um cache de 30 s por instância (gravações a invalidam), em vez de ler o Blob a cada chamada; e `memoriaUsada` é contada por pedido, sem se misturar entre pedidos simultâneos.
