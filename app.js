@@ -541,6 +541,7 @@
       renderBackupTree(keepOpen);
       renderBackupSaveBox();
       backupIdentificarRespostas();
+      if (document.getElementById('backupPreparadasBox').open) backupPrepRender();
     }
 
     function renderBackupGroupingOptions() {
@@ -969,6 +970,278 @@
       return '';
     }
 
+    // ---------- Backup: respostas preparadas para as reuniões ----------
+    // Seção própria (separada da Nova resposta): traz as respostas que já foram preparadas e salvas neste aparelho (Pesquisas salvas) para a reunião de fim de
+    // semana (A Sentinela) ou a do meio de semana (apostila), cada uma ligada à pergunta do documento, tudo marcado, e um botão leva as marcadas para o backup.
+    const BACKUP_PREP_TIPOS = { sentinela: ['sentinela'], apostila: ['joias', 'ebc'] };
+    const backupPrep = { para: null, chave: '', pub: '', semanas: new Map(), doc: null, itens: [], ocupado: false, mensagem: '', incluidas: 0 };
+
+    // As semanas que têm respostas preparadas salvas, da mais nova para a mais antiga, com quantas há para cada reunião.
+    function backupPrepSemanas() {
+      const mapa = new Map();
+      historicoLer().forEach(i => {
+        const pub = BACKUP_PREP_TIPOS.sentinela.includes(i.tipo) ? 'sentinela' : BACKUP_PREP_TIPOS.apostila.includes(i.tipo) ? 'apostila' : '';
+        if (!pub || !i.ano || !i.numSemana) return;
+        const chave = i.ano + '-' + i.numSemana;
+        const e = mapa.get(chave) || { chave, ano: Number(i.ano), semana: Number(i.numSemana), sentinela: 0, apostila: 0 };
+        e[pub] += (i.partes || []).filter(p => String(p.texto || '').trim()).length;
+        mapa.set(chave, e);
+      });
+      return [...mapa.values()].sort((a, b) => (b.ano * 100 + b.semana) - (a.ano * 100 + a.semana));
+    }
+
+    // A pergunta (campo) do documento que corresponde a uma parte salva, ou null. A Sentinela casa pelo número do parágrafo ("Recap. n" com o n-ésimo quadro de
+    // recapitulação); na apostila só a pergunta das joias casa sozinha.
+    function backupPrepCampoDaParte(parte, tipo, campos) {
+      const par = String(parte.paragrafos || '').trim().replace(/\s+/g, ' ');
+      if (tipo === 'sentinela') {
+        const recap = par.match(/^recap\.?\s*(\d+)/i);
+        if (recap) return campos.filter(c => c.quadro)[Number(recap[1]) - 1] || null;
+        if (!par) return null;
+        const primeiro = par.split(/\s*[,–-]\s*/)[0];
+        return campos.find(c => c.numero && c.numero === par) || campos.find(c => c.numero && c.numero.split(/\s*[,–-]\s*/)[0] === primeiro) || null;
+      }
+      if (tipo === 'joias' && !par) return campos.find(c => !c.numero && /joia/.test(backupPlain(c.pergunta))) || null;
+      return null;
+    }
+
+    function backupPrepRotuloCampo(c) {
+      return (c.numero ? 'Parágrafo ' + c.numero : c.quadro ? 'Recapitulação' : 'Pergunta') + (c.pergunta ? ' — ' + (c.pergunta.length > 70 ? c.pergunta.slice(0, 67) + '…' : c.pergunta) : '');
+    }
+
+    function backupPrepRespondidas() {
+      if (!backupPrep.doc) return new Set();
+      return new Set(backupAll(backupState.db,
+        'SELECT i.TextTag AS tag FROM InputField i JOIN Location l ON l.LocationId = i.LocationId WHERE l.DocumentId = ?', [Number(backupPrep.doc.id)]).map(r => r.tag));
+    }
+
+    // Escolhe a reunião (A Sentinela ou apostila) da semana: acha o documento no wol.jw.org, lê as perguntas e monta a lista com as respostas salvas.
+    async function backupPrepCarregar(pub) {
+      const semana = backupPrepSemanas().find(s => s.chave === backupPrep.chave);
+      if (!semana || backupPrep.ocupado) return;
+      backupPrep.pub = pub;
+      backupPrep.doc = null;
+      backupPrep.itens = [];
+      backupPrep.mensagem = '';
+      const acesso = studyAccessError();
+      if (acesso) { backupPrep.mensagem = acesso; return backupPrepRender(); }
+      backupPrep.ocupado = true;
+      backupPrep.mensagem = '🔎 Consultando o wol.jw.org…';
+      backupPrepRender();
+      try {
+        let dados = backupPrep.semanas.get(semana.chave);
+        if (!dados) {
+          const r = await postStudy({ tarefa: 'backup-semana', codigo: codigoAcessoSalvo(), ano: semana.ano, semana: semana.semana }, 45000);
+          if (!r.ok) { backupPrep.mensagem = studyFailureMessage(r, 'Não consegui ler essa semana agora.'); return; }
+          dados = r.data;
+          backupPrep.semanas.set(semana.chave, dados);
+          if (dados.sentinela) { backupSemanas[dados.sentinela.id] = backupPeriodoComAno(dados.periodo || rotuloDaSemanaIso(semana.ano, semana.semana), dados.ano); backupGuardarSemanas(); }
+        }
+        const publicacao = pub === 'sentinela' ? dados.sentinela : dados.apostila;
+        if (!publicacao) { backupPrep.mensagem = 'Não encontrei ' + (pub === 'sentinela' ? 'o artigo de estudo de A Sentinela' : 'a apostila') + ' dessa semana no wol.jw.org.'; return; }
+        const problema = await backupCarregarCampos([publicacao.id]);
+        if (problema) { backupPrep.mensagem = problema; return; }
+        const info = backupCampos[publicacao.id];
+        if (!info || !(info.campos || []).length) { backupPrep.mensagem = 'Não encontrei caixas de resposta nesse documento.'; return; }
+        backupPrep.doc = { id: String(publicacao.id), info, titulo: info.titulo || publicacao.titulo || '' };
+        const campos = info.campos;
+        const respondidas = backupPrepRespondidas();
+        const vistos = new Set();
+        const usadas = new Set(respondidas);
+        const itens = [];
+        historicoLer()
+          .filter(i => BACKUP_PREP_TIPOS[pub].includes(i.tipo) && Number(i.ano) === semana.ano && Number(i.numSemana) === semana.semana)
+          .forEach(item => (item.partes || []).forEach((parte, k) => {
+            const texto = String(parte.texto || '').replace(/\s+$/, '');
+            const par = String(parte.paragrafos || '');
+            const chave = item.tipo + '|' + par + '|' + (par ? '' : texto.slice(0, 40));
+            if (!texto.trim() || vistos.has(chave)) return; // a pesquisa mais nova da mesma pergunta vale
+            vistos.add(chave);
+            const campo = backupPrepCampoDaParte(parte, item.tipo, campos);
+            const livre = campo && !usadas.has(campo.tag);
+            if (livre) usadas.add(campo.tag);
+            const rotulo = item.tipo === 'sentinela'
+              ? (/^recap/i.test(par) ? 'Recapitulação ' + par.replace(/^\D*/, '') : par ? 'Parágrafo ' + par : 'Resposta')
+              : item.tipo === 'joias' ? (par ? 'Joia ' + par : 'Pergunta das joias') : 'Estudo bíblico' + (par ? ' · ' + par : '');
+            itens.push({ id: item.id + ':' + k, rotulo, texto, tag: campo ? campo.tag : '', marcado: Boolean(livre), estado: '', aberto: false });
+          }));
+        backupPrep.itens = itens;
+        backupPrep.mensagem = itens.length ? '' : 'Não há respostas salvas desta semana para ' + (pub === 'sentinela' ? 'A Sentinela' : 'a apostila') + '.';
+      } catch (e) {
+        backupPrep.mensagem = e && e.name === 'AbortError' ? 'O site demorou demais. Tente de novo.' : 'Falha de conexão ao consultar o wol.jw.org.';
+      } finally {
+        backupPrep.ocupado = false;
+        backupPrepRender();
+      }
+    }
+
+    // Leva para o backup as respostas marcadas (e só elas) e diz com clareza o que entrou.
+    function backupPrepIncluir() {
+      if (!backupPrep.doc || !backupState) return;
+      const respondidas = backupPrepRespondidas();
+      const usadas = new Set();
+      let n = 0;
+      const problemas = [];
+      backupPrep.itens.forEach(it => {
+        if (!it.marcado || it.estado || !it.tag || respondidas.has(it.tag) || usadas.has(it.tag)) return;
+        const problema = backupCreateAnswer(backupPrep.doc.id, backupPrep.doc.info, it.tag, it.texto);
+        if (problema) { problemas.push(it.rotulo + ': ' + problema); return; }
+        usadas.add(it.tag);
+        it.estado = 'incluida';
+        it.marcado = false;
+        n++;
+      });
+      backupPrep.incluidas += n;
+      backupPrep.mensagem = n
+        ? '✅ ' + (n === 1 ? '1 resposta foi incluída' : n + ' respostas foram incluídas') + ' no backup aberto. Elas ainda não estão no arquivo: toque em "Gerar" lá embaixo para gravar o arquivo.' + (problemas.length ? ' Problemas: ' + problemas.join(' · ') : '')
+        : (problemas.length ? 'Nenhuma resposta foi incluída. ' + problemas.join(' · ') : 'Nenhuma resposta marcada para incluir.');
+      if (n) backupRefresh(); // redesenha a lista de respostas e o aviso de alterações não gravadas (e chama backupPrepRender)
+      else backupPrepRender();
+    }
+
+    function backupPrepRender() {
+      const corpo = document.getElementById('backupPreparadasCorpo');
+      if (!corpo || !backupState) return;
+      if (backupPrep.para !== backupState) { // outro backup aberto: recomeça
+        backupPrep.para = backupState;
+        backupPrep.pub = '';
+        backupPrep.doc = null;
+        backupPrep.itens = [];
+        backupPrep.mensagem = '';
+        backupPrep.incluidas = 0;
+      }
+      corpo.textContent = '';
+      const semanas = backupPrepSemanas();
+      if (!semanas.length) {
+        const p = document.createElement('p');
+        p.className = 'hint';
+        p.textContent = 'Ainda não há respostas preparadas salvas neste aparelho. Prepare as respostas em Reuniões (A Sentinela, Joias e Estudo Bíblico); elas ficam em Pesquisas salvas e aparecem aqui.';
+        corpo.appendChild(p);
+        return;
+      }
+      if (!semanas.some(s => s.chave === backupPrep.chave)) { backupPrep.chave = semanas[0].chave; backupPrep.pub = ''; backupPrep.doc = null; backupPrep.itens = []; }
+      const atual = semanas.find(s => s.chave === backupPrep.chave);
+
+      const semanaSelect = document.createElement('select');
+      semanas.forEach(s => {
+        const o = document.createElement('option');
+        o.value = s.chave;
+        o.textContent = rotuloDaSemanaIso(s.ano, s.semana) + ' · ' + s.ano + ' (' + (s.sentinela + s.apostila) + (s.sentinela + s.apostila === 1 ? ' resposta' : ' respostas') + ')';
+        semanaSelect.appendChild(o);
+      });
+      semanaSelect.value = backupPrep.chave;
+      semanaSelect.disabled = backupPrep.ocupado;
+      semanaSelect.addEventListener('change', () => { backupPrep.chave = semanaSelect.value; backupPrep.pub = ''; backupPrep.doc = null; backupPrep.itens = []; backupPrep.mensagem = ''; backupPrepRender(); });
+      corpo.appendChild(backupField('Semana', semanaSelect));
+      backupSeletorLargo(semanaSelect);
+
+      const reunioes = document.createElement('div');
+      reunioes.className = 'bk-row';
+      [['sentinela', '📖 Fim de semana · A Sentinela'], ['apostila', '📋 Meio de semana · Apostila']].forEach(([pub, texto]) => {
+        const b = backupButton(texto + ' (' + atual[pub] + ')', () => backupPrepCarregar(pub));
+        b.disabled = backupPrep.ocupado || !atual[pub];
+        b.classList.toggle('ativo', backupPrep.pub === pub);
+        b.setAttribute('aria-pressed', String(backupPrep.pub === pub));
+        reunioes.appendChild(b);
+      });
+      corpo.appendChild(backupField('Reunião', reunioes));
+
+      if (backupPrep.mensagem) {
+        const m = document.createElement('p');
+        m.className = 'bk-feito ' + (/^✅/.test(backupPrep.mensagem) ? 'ok' : /^🔎/.test(backupPrep.mensagem) ? 'hint' : 'warn');
+        m.setAttribute('role', 'status');
+        m.textContent = backupPrep.mensagem;
+        corpo.appendChild(m);
+      }
+      if (!backupPrep.doc || !backupPrep.itens.length) return;
+
+      const respondidas = backupPrepRespondidas();
+      const campos = backupPrep.doc.info.campos;
+      const titulo = document.createElement('p');
+      titulo.className = 'bk-prep-doc';
+      titulo.textContent = '📖 ' + (backupPrep.doc.titulo || 'Documento da semana');
+      corpo.appendChild(titulo);
+
+      // Cada resposta: caixa de marcar, o texto (abre ao tocar) e a pergunta de destino. Duas marcadas para a mesma pergunta: só a primeira entra.
+      const usadas = new Set();
+      let entram = 0;
+      const sem = [];
+      const lista = document.createElement('div');
+      backupPrep.itens.forEach(it => {
+        const jaTem = it.tag && respondidas.has(it.tag) && it.estado !== 'incluida';
+        const duplicada = !it.estado && !jaTem && it.marcado && it.tag && usadas.has(it.tag);
+        const entra = !it.estado && !jaTem && !duplicada && it.marcado && Boolean(it.tag);
+        if (entra) { usadas.add(it.tag); entram++; }
+        if (!it.estado && !jaTem && it.marcado && !it.tag) sem.push(it.rotulo);
+        const det = document.createElement('details');
+        det.className = 'bk-salva' + (it.estado === 'incluida' ? ' incluida' : '');
+        det.open = it.aberto;
+        det.addEventListener('toggle', () => { it.aberto = det.open; });
+        const sum = document.createElement('summary');
+        const caixa = document.createElement('input');
+        caixa.type = 'checkbox';
+        caixa.checked = it.marcado;
+        caixa.disabled = Boolean(it.estado) || jaTem;
+        caixa.addEventListener('click', event => event.stopPropagation());
+        caixa.addEventListener('change', () => { it.marcado = caixa.checked; backupPrepRender(); });
+        const nome = document.createElement('span');
+        const campo = campos.find(c => c.tag === it.tag);
+        nome.textContent = ' ' + it.rotulo + (campo ? ' → ' + backupPrepRotuloCampo(campo) : '');
+        const estado = document.createElement('span');
+        estado.className = 'bk-prep-estado';
+        estado.textContent = it.estado === 'incluida' ? '✅ incluída no backup' : jaTem ? '↪️ já tem resposta no backup' : duplicada ? '⚠️ mesma pergunta de outra resposta' : !it.tag ? '❔ escolha a pergunta' : entra ? '' : '⬜ não será incluída';
+        sum.append(caixa, nome);
+        if (estado.textContent) sum.appendChild(estado);
+        const texto = document.createElement('div');
+        texto.className = 'bk-salva-texto';
+        texto.textContent = it.texto;
+        det.append(sum, texto);
+        if (!it.estado) {
+          const destino = document.createElement('select');
+          const vazio = document.createElement('option');
+          vazio.value = '';
+          vazio.textContent = '— escolha a pergunta de destino —';
+          destino.appendChild(vazio);
+          campos.forEach(c => {
+            const o = document.createElement('option');
+            o.value = c.tag;
+            o.textContent = backupPrepRotuloCampo(c) + (respondidas.has(c.tag) ? ' (já respondida)' : '');
+            o.disabled = respondidas.has(c.tag);
+            destino.appendChild(o);
+          });
+          destino.value = it.tag;
+          destino.addEventListener('change', () => { it.tag = destino.value; if (it.tag) it.marcado = true; backupPrepRender(); });
+          texto.append(backupField('Vai para a pergunta', destino));
+          backupSeletorLargo(destino);
+        }
+        lista.appendChild(det);
+      });
+      corpo.appendChild(lista);
+
+      const ferramentas = document.createElement('div');
+      ferramentas.className = 'bk-row';
+      ferramentas.append(
+        backupButton('☑️ Marcar todas', () => { backupPrep.itens.forEach(it => { if (!it.estado && it.tag && !respondidas.has(it.tag)) it.marcado = true; }); backupPrepRender(); }),
+        backupButton('⬜ Desmarcar todas', () => { backupPrep.itens.forEach(it => { if (!it.estado) it.marcado = false; }); backupPrepRender(); })
+      );
+      corpo.appendChild(ferramentas);
+
+      const resumo = document.createElement('p');
+      resumo.className = 'hint';
+      resumo.textContent = entram + (entram === 1 ? ' resposta vai ser incluída' : ' respostas vão ser incluídas') + ' no backup' + (sem.length ? ' · falta escolher a pergunta de: ' + sem.join(', ') : '') + '.';
+      corpo.appendChild(resumo);
+
+      const incluir = backupButton('➕ Incluir ' + entram + (entram === 1 ? ' resposta' : ' respostas') + ' no backup', backupPrepIncluir, '');
+      incluir.classList.add('bk-prep-incluir');
+      incluir.disabled = !entram;
+      corpo.appendChild(incluir);
+      if (backupPrep.incluidas) {
+        corpo.appendChild(backupButton('💾 Ir para gerar o arquivo do backup', () => document.getElementById('backupSaveBox').scrollIntoView({ block: 'center', behavior: 'smooth' }), 'secondary bk-prep-incluir'));
+      }
+    }
+
+    document.getElementById('backupPreparadasBox').addEventListener('toggle', event => { if (event.currentTarget.open) backupPrepRender(); });
+
     function backupNewAnswerEditor(slot, onClose) {
       const form = document.createElement('div');
       form.className = 'bk-editor';
@@ -1034,139 +1307,6 @@
         return row;
       })());
       form.appendChild(linkRow);
-
-      // Respostas salvas da semana (Pesquisas salvas deste aparelho): depois de carregar as publicações de uma semana, a pessoa marca A Sentinela ou a
-      // apostila e o app leva para o backup, de uma vez, as respostas dessa semana que já estão salvas. A Sentinela casa pelo número do parágrafo (e
-      // "Recap. n" com o n-ésimo quadro de recapitulação); na apostila só a pergunta das joias casa sozinha, o resto a pessoa liga à pergunta certa.
-      let semanaCarregada = null; // { ano, semana, sentinela, apostila } da última semana carregada
-      const salvasBox = document.createElement('div');
-      salvasBox.className = 'bk-salvas';
-      salvasBox.hidden = true;
-      const salvasEscolha = document.createElement('div');
-      salvasEscolha.className = 'bk-row';
-      const salvasInfo = document.createElement('p');
-      salvasInfo.className = 'hint';
-      const salvasLista = document.createElement('div');
-      const btnRevista = backupButton('📖 A Sentinela', () => levarSalvas('sentinela'));
-      const btnApostila = backupButton('📋 Apostila', () => levarSalvas('apostila'));
-      salvasEscolha.append(btnRevista, btnApostila);
-      salvasBox.append(backupField('Levar as respostas salvas da semana', salvasEscolha), salvasInfo, salvasLista);
-      form.appendChild(salvasBox);
-
-      const planoSalva = texto => String(texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-      // A pergunta (campo) do documento que corresponde a uma parte salva, ou null.
-      const campoDaParte = (parte, tipo, campos) => {
-        const par = String(parte.paragrafos || '').trim().replace(/\s+/g, ' ');
-        if (tipo === 'sentinela') {
-          const recap = par.match(/^recap\.?\s*(\d+)/i);
-          if (recap) return campos.filter(c => c.quadro)[Number(recap[1]) - 1] || null;
-          if (!par) return null;
-          const primeiro = par.split(/\s*[,–-]\s*/)[0];
-          return campos.find(c => c.numero && c.numero === par) || campos.find(c => c.numero && c.numero.split(/\s*[,–-]\s*/)[0] === primeiro) || null;
-        }
-        if (tipo === 'joias' && !par) return campos.find(c => !c.numero && /joia/.test(planoSalva(c.pergunta))) || null;
-        return null;
-      };
-
-      async function levarSalvas(qual) {
-        if (!semanaCarregada) return;
-        btnRevista.setAttribute('aria-pressed', String(qual === 'sentinela'));
-        btnApostila.setAttribute('aria-pressed', String(qual === 'apostila'));
-        btnRevista.classList.toggle('ativo', qual === 'sentinela');
-        btnApostila.classList.toggle('ativo', qual === 'apostila');
-        salvasLista.textContent = '';
-        const pub = qual === 'sentinela' ? semanaCarregada.sentinela : semanaCarregada.apostila;
-        if (!pub) { salvasInfo.textContent = 'Essa publicação não foi encontrada nesta semana.'; return; }
-        if (docSelect.value !== pub.id) docSelect.value = pub.id;
-        salvasInfo.textContent = '🔎 Procurando as respostas salvas…';
-        await escolher(pub.id);
-        const tipos = qual === 'sentinela' ? ['sentinela'] : ['joias', 'ebc'];
-        const itens = historicoLer().filter(i => tipos.includes(i.tipo) && Number(i.ano) === semanaCarregada.ano && Number(i.numSemana) === semanaCarregada.semana);
-        const nome = qual === 'sentinela' ? 'A Sentinela' : 'a apostila';
-        if (!itens.length) { salvasInfo.textContent = 'Não há respostas salvas desta semana para ' + nome + ' em Pesquisas salvas.'; return; }
-        const info = backupCampos[pub.id];
-        if (!info || !(info.campos || []).length) { salvasInfo.textContent = 'Há respostas salvas, mas não consegui carregar as perguntas deste documento: ' + aviso.textContent; return; }
-        const campos = info.campos;
-        const respondidas = new Set(backupAll(backupState.db,
-          'SELECT i.TextTag AS tag FROM InputField i JOIN Location l ON l.LocationId = i.LocationId WHERE l.DocumentId = ?', [Number(pub.id)]).map(r => r.tag));
-        const vistos = new Set();
-        const respostas = [];
-        itens.forEach(item => (item.partes || []).forEach(parte => {
-          const texto = String(parte.texto || '').replace(/\s+$/, '');
-          const chave = item.tipo + '|' + String(parte.paragrafos || '') + '|' + (String(parte.paragrafos || '') ? '' : texto.slice(0, 40));
-          if (!texto.trim() || vistos.has(chave)) return; // a pesquisa mais nova da mesma pergunta vale
-          vistos.add(chave);
-          respostas.push({ item, parte, texto, campo: campoDaParte(parte, item.tipo, campos), estado: '' });
-        }));
-        const rotuloCampo = c => (c.numero ? 'Parágrafo ' + c.numero : c.quadro ? 'Quadro de recapitulação' : 'Pergunta') + (c.pergunta ? ' — ' + (c.pergunta.length > 70 ? c.pergunta.slice(0, 67) + '…' : c.pergunta) : '');
-        let levadas = 0;
-        const usadas = new Set();
-        respostas.forEach(r => {
-          if (!r.campo) { r.estado = 'sem'; return; }
-          if (respondidas.has(r.campo.tag) || usadas.has(r.campo.tag)) { r.estado = 'havia'; return; }
-          const problema = backupCreateAnswer(pub.id, info, r.campo.tag, r.texto);
-          if (problema) { r.estado = 'havia'; return; }
-          usadas.add(r.campo.tag);
-          r.estado = 'levada';
-          levadas++;
-        });
-        const resumo = () => {
-          const n = tipo => respostas.filter(r => r.estado === tipo).length;
-          salvasInfo.textContent = '✅ ' + (n('levada') === 1 ? '1 resposta levada' : n('levada') + ' respostas levadas') + ' para o backup' +
-            (n('havia') ? ' · ' + n('havia') + ' já tinha(m) resposta' : '') + (n('sem') ? ' · ' + n('sem') + ' sem pergunta correspondente (ligue abaixo)' : '') + '. Toque numa resposta para ver o texto.';
-        };
-        if (levadas) {
-          salvasAqui += levadas;
-          fechar.textContent = '✔️ Concluir';
-          backupRefresh();
-        }
-        const desenhar = () => {
-          salvasLista.textContent = '';
-          respostas.forEach(r => {
-            const det = document.createElement('details');
-            det.className = 'bk-salva';
-            const sum = document.createElement('summary');
-            const marca = r.estado === 'levada' ? '✅ ' : r.estado === 'havia' ? '↪️ ' : '❔ ';
-            sum.textContent = marca + (r.campo ? rotuloCampo(r.campo) : 'Resposta salva' + (r.parte.paragrafos ? ' · ' + r.parte.paragrafos : '') + ' (' + (r.item.titulo || r.item.tipo) + ')');
-            const corpo = document.createElement('div');
-            corpo.className = 'bk-salva-texto';
-            corpo.textContent = r.texto;
-            det.append(sum, corpo);
-            if (r.estado === 'sem') {
-              const destino = document.createElement('select');
-              const vazio = document.createElement('option');
-              vazio.value = '';
-              vazio.textContent = 'Levar para a pergunta…';
-              destino.appendChild(vazio);
-              campos.filter(c => !respondidas.has(c.tag) && !usadas.has(c.tag)).forEach(c => {
-                const o = document.createElement('option');
-                o.value = c.tag;
-                o.textContent = rotuloCampo(c);
-                destino.appendChild(o);
-              });
-              const levar = backupButton('➡️ Levar para a pergunta escolhida', () => {
-                const campo = campos.find(c => c.tag === destino.value);
-                if (!campo) return;
-                const problema = backupCreateAnswer(pub.id, info, campo.tag, r.texto);
-                if (problema) { salvasInfo.textContent = problema; return; }
-                usadas.add(campo.tag);
-                r.campo = campo;
-                r.estado = 'levada';
-                salvasAqui++;
-                fechar.textContent = '✔️ Concluir';
-                backupRefresh();
-                resumo();
-                desenhar();
-              });
-              corpo.append(destino, levar);
-            }
-            salvasLista.appendChild(det);
-          });
-        };
-        resumo();
-        desenhar();
-        await escolher(pub.id); // atualiza a lista de perguntas (as levadas passam a "já respondidas")
-      }
 
       const aviso = document.createElement('p');
       aviso.className = 'hint';
@@ -1299,17 +1439,10 @@
         });
         docSelect.value = novos[0].id;
         semanaRow.hidden = true;
-        // Libera "levar as respostas salvas da semana" (A Sentinela ou apostila) para a semana que acabou de ser carregada.
-        semanaCarregada = { ano: alvo.ano, semana: alvo.semana, sentinela: d.sentinela || null, apostila: d.apostila || null };
-        salvasBox.hidden = false;
-        salvasLista.textContent = '';
-        [btnRevista, btnApostila].forEach(b => { b.classList.remove('ativo'); b.setAttribute('aria-pressed', 'false'); });
-        salvasInfo.textContent = 'Marque A Sentinela ou a apostila: se houver respostas salvas desta semana (em Pesquisas salvas), elas vão de uma vez para o backup.';
         escolher(novos[0].id);
       }
 
       docSelect.addEventListener('change', () => {
-        salvasBox.hidden = true; // trocar o documento à mão encerra "levar as respostas salvas da semana"
         linkRow.hidden = docSelect.value !== 'outro';
         semanaRow.hidden = docSelect.value !== 'semana';
         if (docSelect.value === 'semana') {
@@ -6960,7 +7093,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.53'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.54'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());

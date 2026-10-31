@@ -8599,22 +8599,38 @@ details.subsection.ebc-subsection#publicoBox.s34-bloqueado {
   display: none;
 }
 
-/* Nova resposta: levar as respostas salvas da semana (A Sentinela ou apostila) para o backup. */
-.bk-salvas {
-  margin: 8px 0;
-  padding: 10px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--soft);
-}
-
-.bk-salvas[hidden] {
+/* Backup: respostas preparadas para as reuniões (seção própria). */
+#backupView.mesclado #backupPreparadasBox {
   display: none;
 }
 
-.bk-salvas button.ativo {
+#backupPreparadasBox .bk-row button.ativo {
   outline: 3px solid var(--accent);
   outline-offset: 1px;
+}
+
+.bk-prep-doc {
+  margin: 10px 0 4px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.bk-prep-incluir {
+  display: block;
+  width: 100%;
+  margin: 8px 0 0;
+}
+
+#backupPreparadasBox .bk-row {
+  margin: 8px 0;
+}
+
+.bk-prep-estado {
+  display: block;
+  margin: 2px 0 0 28px;
+  font-size: .8rem;
+  font-weight: 650;
+  color: var(--muted);
 }
 
 .bk-salva {
@@ -8624,12 +8640,25 @@ details.subsection.ebc-subsection#publicoBox.s34-bloqueado {
   background: var(--card);
 }
 
+.bk-salva.incluida {
+  border-color: #16a34a;
+  background: color-mix(in srgb, #22c55e 12%, var(--card));
+}
+
 .bk-salva>summary {
   padding: 9px 10px;
   font-size: .88rem;
   font-weight: 650;
   cursor: pointer;
   overflow-wrap: anywhere;
+}
+
+.bk-salva>summary input {
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  margin: 0 2px 0 0;
+  vertical-align: middle;
 }
 
 .bk-salva-texto {

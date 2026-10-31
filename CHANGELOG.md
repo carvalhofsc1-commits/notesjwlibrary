@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.54
+
+Backup: nova seção própria "📚 Respostas preparadas para as reuniões" (saiu da Nova resposta). Escolha a semana (só aparecem as que têm respostas salvas em Pesquisas salvas) e a reunião: fim de semana (A Sentinela) ou meio de semana (apostila). A lista vem toda marcada e cada resposta mostra a pergunta de destino (dá para trocar e para ver o texto); as sem pergunta correspondente ficam sem marca até você escolher o destino. Um botão "Incluir N respostas no backup" leva só as marcadas, as incluídas ficam verdes ("incluída no backup"), o aviso diz que ainda falta gerar o arquivo e há um atalho para isso. Também: Marcar/Desmarcar todas, aviso das que já têm resposta no backup e das que disputam a mesma pergunta.
+
 ## 6.3.53
 
 Backup vazio: (1) a categoria padrão passou a ser Respostas; (2) em Nova resposta → "Carregar as publicações de uma semana", depois de carregar aparece "Levar as respostas salvas da semana" com A Sentinela e Apostila: ao marcar uma, o app procura em Pesquisas salvas as respostas dessa semana e leva todas de uma vez para o backup (A Sentinela pelo número do parágrafo e pelos quadros de recapitulação; na apostila, a pergunta das joias). Cada resposta aparece numa lista para ver o texto que foi levado; as que não casam com nenhuma pergunta ficam marcadas e podem ser ligadas à pergunta certa à mão.
