@@ -479,6 +479,8 @@
       abrir.textContent = backupState ? '📂 Abrir outro backup para mesclar' : '📂 Abrir e editar backup (.jwlibrary)';
       abrir.hidden = emMesclagem; // com a mesclagem aberta, os botões do começo saem (cancelar traz de volta)
       mesclar.hidden = Boolean(backupState) || emMesclagem;
+      // Criar um backup vazio é uma escolha do começo: some com um backup aberto ou uma mesclagem em andamento.
+      document.getElementById('backupNewBtn').hidden = Boolean(backupState) || emMesclagem;
     }
 
     // A explicação da tela Backup abre quando não há backup aberto e recolhe sozinha quando um backup é aberto (só nessa troca: se a pessoa a abrir ou
@@ -495,14 +497,12 @@
       const resultado = document.getElementById('backupMesclarResultado');
       if (resultado && !(backupState && backupState.mesclado)) resultado.hidden = true;
       if (!(backupState && backupState.mesclado) && document.getElementById('backupMesclarBox').hidden) backupMesclarLimparSessao();
-      // Num backup que já é o resultado de uma mesclagem, "Mesclar: importar notas de outro backup" não faz sentido: some.
-      const painelMesclar = document.getElementById('backupImportBtn').closest('.backup-pane');
-      if (painelMesclar) painelMesclar.hidden = Boolean(backupState && backupState.mesclado);
       document.getElementById('backupCloseBtn').hidden = !backupState;
       backupAtualizarBotoes();
       if (!backupState) { view.hidden = true; renderBackupSaveBox(); return; }
       view.hidden = false;
       document.getElementById('backupSoNovosBox').hidden = !(backupState.mesclado && backupState.novos);
+      view.classList.toggle('mesclado', Boolean(backupState.mesclado));
       document.getElementById('backupConteudoTitulo').textContent = backupState.mesclado ? '🔀 Conteúdo do backup mesclado' : backupState.isNew ? '🆕 Conteúdo do backup novo' : '📂 Conteúdo do backup aberto';
       document.getElementById('backupConteudoDica').textContent = backupState.mesclado
         ? 'Este é o resultado da mesclagem: a base mais o que veio dos outros arquivos. Confira, edite ou apague o que quiser e gere o arquivo mesclado.'
@@ -563,20 +563,23 @@
       return { items, search };
     }
 
-    function backupBuildTree(items, levels) {
-      const root = { children: new Map(), items: [], count: 0 };
+    function backupBuildTree(items, levels, ehNovo) {
+      const root = { children: new Map(), items: [], count: 0, novos: 0 };
       items.forEach(item => {
         let node = root;
+        const novo = Boolean(ehNovo && ehNovo(item));
         root.count++;
+        if (novo) root.novos++;
         for (const level of levels) {
           const value = item[level];
           if (!value) break;
           let child = node.children.get(value.label);
           if (!child) {
-            child = { label: value.label, key: value.key, desc: value.desc, level, children: new Map(), items: [], count: 0 };
+            child = { label: value.label, key: value.key, desc: value.desc, level, children: new Map(), items: [], count: 0, novos: 0 };
             node.children.set(value.label, child);
           }
           child.count++;
+          if (novo) child.novos++;
           node = child;
         }
         node.items.push(item);
@@ -602,7 +605,8 @@
       backupGroupingByCategory[category.id] = grouping;
       const { items, search } = backupFilteredItems();
       const total = backupState.data[category.id].length;
-      const tree = backupBuildTree(items, BACKUP_GROUPINGS[grouping].levels);
+      const novosDaCategoria = backupState.novos && backupState.novos[category.id];
+      const tree = backupBuildTree(items, BACKUP_GROUPINGS[grouping].levels, novosDaCategoria ? i => novosDaCategoria.has(i.id) : null);
       const holder = document.getElementById('backupTree');
       const openPaths = keepOpen ? [...holder.querySelectorAll('details.bk-node[open]')].map(d => d.dataset.path) : [];
       holder.textContent = '';
@@ -630,9 +634,10 @@
           row.className = 'bk-leaf';
           const name = document.createElement('span');
           name.textContent = child.label;
+          if (child.novos) name.classList.add('bk-tem-novos');
           const count = document.createElement('span');
           count.className = 'bk-count';
-          count.textContent = child.count.toLocaleString('pt-BR');
+          count.textContent = (child.novos ? '🆕 ' + child.novos.toLocaleString('pt-BR') + ' · ' : '') + child.count.toLocaleString('pt-BR');
           row.append(name, count);
           holder.appendChild(row);
           return;
@@ -644,9 +649,10 @@
         const name = document.createElement('span');
         name.className = 'bk-name';
         name.textContent = child.label;
+        if (child.novos) name.classList.add('bk-tem-novos'); // o título tem itens que vieram da mesclagem
         const count = document.createElement('span');
         count.className = 'bk-count';
-        count.textContent = child.count.toLocaleString('pt-BR');
+        count.textContent = (child.novos ? '🆕 ' + child.novos.toLocaleString('pt-BR') + ' · ' : '') + child.count.toLocaleString('pt-BR');
         summary.append(name, count);
         const body = document.createElement('div');
         body.className = 'bk-children';
@@ -2533,10 +2539,24 @@
       const n = v => v.toLocaleString('pt-BR');
       const painel = document.createElement('div');
       painel.className = 'merge-filtro';
-      const resumo = document.createElement('p');
-      resumo.className = 'merge-filtro-resumo';
+      // O que vai entrar, como numa planilha: uma linha por tipo (quanto entra e quanto há no arquivo) e o total embaixo.
+      const tabela = document.createElement('table');
+      tabela.className = 'merge-tabela';
+      const cabecalho = tabela.createTHead().insertRow();
+      ['', 'Vai entrar', 'No arquivo'].forEach(texto => { const th = document.createElement('th'); th.textContent = texto; cabecalho.appendChild(th); });
+      const corpoTabela = tabela.createTBody();
+      const linhasTabela = {};
+      [['notas', '📝 Notas', 'backupMesclarNotas'], ['respostas', '✍️ Respostas', 'backupMesclarRespostas'], ['grifos', '🖍️ Grifos', 'backupMesclarGrifos'], ['marcadores', '🔖 Marcadores', 'backupMesclarMarcadores']]
+        .forEach(([chave, rotulo, idCaixa]) => {
+          const tr = corpoTabela.insertRow();
+          tr.insertCell().textContent = rotulo;
+          linhasTabela[chave] = { tr, entra: tr.insertCell(), total: tr.insertCell(), idCaixa };
+        });
+      const rodape = tabela.createTFoot().insertRow();
+      rodape.insertCell().textContent = 'Σ Total';
+      const somaEntra = rodape.insertCell();
+      const somaTotal = rodape.insertCell();
       const atualizar = () => {
-        const ligado = id => document.getElementById(id).checked;
         const notas = arq.listaNotas.filter(x => backupMesclarNotaPassa(arq, x.guid)).length;
         const respostas = arq.listaRespostas.filter(x => backupMesclarRespostaPassa(arq, x)).length;
         let grifos = 0;
@@ -2548,21 +2568,42 @@
           marcadoresTotal += x.marcadores;
           if (!f.tocou.arvore || !f.folhasFora.has(x.chave)) { grifos += x.grifos; marcadores += x.marcadores; }
         });
-        const parte = (id, nome, x, y) => nome + ' ' + (ligado(id) ? n(x) + ' de ' + n(y) : '(fora da mesclagem)');
-        resumo.textContent = 'Vai importar: ' + [parte('backupMesclarNotas', 'notas', notas, arq.listaNotas.length), parte('backupMesclarRespostas', 'respostas', respostas, arq.listaRespostas.length),
-          parte('backupMesclarGrifos', 'grifos', grifos, grifosTotal), parte('backupMesclarMarcadores', 'marcadores', marcadores, marcadoresTotal)].join(' · ') + '.';
+        const valores = { notas: [notas, arq.listaNotas.length], respostas: [respostas, arq.listaRespostas.length], grifos: [grifos, grifosTotal], marcadores: [marcadores, marcadoresTotal] };
+        let entra = 0;
+        let total = 0;
+        Object.entries(linhasTabela).forEach(([chave, l]) => {
+          const ligado = document.getElementById(l.idCaixa).checked; // as caixas "O que será mesclado" do topo
+          l.tr.classList.toggle('fora', !ligado);
+          l.entra.textContent = ligado ? n(valores[chave][0]) : '—';
+          l.total.textContent = n(valores[chave][1]);
+          if (ligado) entra += valores[chave][0];
+          total += valores[chave][1];
+        });
+        somaEntra.textContent = n(entra);
+        somaTotal.textContent = n(total);
         atualizarMarca();
       };
-      painel.appendChild(resumo);
-      const dicaSoma = document.createElement('p');
-      dicaSoma.className = 'hint';
-      dicaSoma.textContent = 'As listas se somam: o que estiver marcado em qualquer uma que você mexer é importado, e uma lista não anula a outra. As que você não mexer não limitam nada. Sem mexer em nenhuma, tudo é importado.';
-      const limpar = backupButton('🔄 Importar tudo (limpar a seleção)', () => {
-        f.tagsFora.clear(); f.semTagFora = false; f.notasFora.clear(); f.respostasFora.clear(); f.folhasFora.clear();
-        f.tocou.arvore = false; f.tocou.tags = false; f.tocou.notas = false; f.tocou.respostas = false;
-        backupMesclarRender();
-      }, 'merge-mini');
-      painel.append(dicaSoma, limpar);
+      painel.appendChild(tabela);
+      // Dois botões gerais: importar tudo (limpa a seleção) e desmarcar tudo (nada entra até a pessoa marcar o que quer).
+      const geral = document.createElement('div');
+      geral.className = 'bk-row merge-geral';
+      geral.append(
+        backupButton('✅ Importar tudo', () => {
+          f.tagsFora.clear(); f.semTagFora = false; f.notasFora.clear(); f.respostasFora.clear(); f.folhasFora.clear();
+          f.tocou.arvore = false; f.tocou.tags = false; f.tocou.notas = false; f.tocou.respostas = false;
+          backupMesclarRender();
+        }, 'merge-geral-btn'),
+        backupButton('⬜ Desmarcar tudo', () => {
+          arq.tags.forEach((qtd, nome) => f.tagsFora.add(nome));
+          f.semTagFora = true;
+          arq.listaNotas.forEach(x => f.notasFora.add(x.guid));
+          arq.listaRespostas.forEach(x => f.respostasFora.add(x.id));
+          arq.folhas.forEach((x, chave) => f.folhasFora.add(chave));
+          f.tocou.arvore = true; f.tocou.tags = true; f.tocou.notas = true; f.tocou.respostas = true;
+          backupMesclarRender();
+        }, 'merge-geral-btn')
+      );
+      painel.appendChild(geral);
       painel.appendChild(backupMesclarArvore(arq, atualizar));
 
       // Uma seção recolhível; com busca (itens uma a uma) ou sem (grupos curtos).
@@ -2900,7 +2941,6 @@
       desenhar('az');
     }
 
-    document.getElementById('backupImportBtn').addEventListener('click', backupMesclarAPartirDoAberto);
     document.getElementById('backupMergeBtn').addEventListener('click', () => {
       if (!mesclarBox.hidden) return backupMesclarFechar();
       backupMesclarArquivos = [];
@@ -6755,7 +6795,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.40'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.42'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());

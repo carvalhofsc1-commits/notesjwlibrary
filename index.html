@@ -1545,7 +1545,7 @@
       <div id="backupView" hidden>
         <p id="backupSummary" class="backup-summary"></p>
         <details class="subsection sub-tint-5" id="backupTrocaBox">
-          <summary>↔️ Importação e exportação</summary>
+          <summary>📤 Exportação</summary>
           <div class="subsection-body">
             <div class="backup-export backup-pane">
               <span>📤 Exportar notas</span>
@@ -1555,14 +1555,7 @@
                 <button id="backupExportCsvBtn" class="secondary" type="button">📄 CSV</button>
               </div>
             </div>
-            <div class="backup-export backup-pane">
-              <span>📥 Mesclar: importar notas de outro backup</span>
-              <p class="hint">Abre a mesclagem de backups com este backup como o 1º arquivo; você escolhe o 2º (e até mais 3).</p>
-              <div class="bk-row">
-                <button id="backupImportBtn" class="secondary" type="button">📥 Escolher o outro backup (.jwlibrary)</button>
-              </div>
-              <div id="backupImportBox" class="backup-save bk-import" hidden></div>
-            </div>
+            <div id="backupImportBox" hidden></div>
           </div>
         </details>
         <div id="backupSaveBox" class="backup-save" hidden>
@@ -1577,7 +1570,6 @@
         <div class="backup-conteudo">
         <h3 id="backupConteudoTitulo" class="backup-conteudo-titulo"></h3>
         <p id="backupConteudoDica" class="hint"></p>
-        <label id="backupSoNovosBox" class="merge-opcao backup-so-novos" hidden><input type="checkbox" id="backupSoNovos"><span>🆕 Mostrar só o que veio da mesclagem</span></label>
         <div class="backup-controls">
           <div>
             <label for="backupCategory">Categoria</label>
@@ -1594,6 +1586,9 @@
         <div id="backupNewNoteSlot"></div>
         <button id="backupNewAnswerBtn" class="secondary backup-new-note" type="button" hidden>➕ Nova resposta</button>
         <div id="backupNewAnswerSlot"></div>
+        <div id="backupSoNovosBox" class="backup-so-novos" hidden>
+          <label class="merge-opcao"><input type="checkbox" id="backupSoNovos"><span>🆕 Mostrar só o que veio da mesclagem</span></label>
+        </div>
         <p id="backupCount" class="hint"></p>
         <div id="backupTree" class="backup-tree"></div>
         </div>

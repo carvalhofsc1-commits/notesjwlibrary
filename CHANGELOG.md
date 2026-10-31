@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.42
+
+Backup: com um backup aberto, saem "Criar backup vazio" (o botão some também durante uma mesclagem; criar um vazio é uma escolha do começo) e "Mesclar: importar notas de outro backup" de dentro da seção, que passou a se chamar "📤 Exportação" (para mesclar, há o botão "Abrir outro backup para mesclar" no topo).
+
+## 6.3.41
+
+Mesclar backups: (1) o painel "Selecionar o que importar" tem dois botões gerais, "✅ Importar tudo" (limpa a seleção) e "⬜ Desmarcar tudo" (nada entra até marcar o que se quer); (2) o resumo "Vai importar" virou uma tabela (notas, respostas, grifos e marcadores, com "Vai entrar" e "No arquivo" e a linha de total), sem o texto explicativo; (3) a opção "Mostrar só o que veio da mesclagem" ficou num cartão, abaixo da busca; (4) no backup mesclado não aparecem mais "Nova resposta" nem o aviso dos parágrafos; (5) na árvore do conteúdo, os títulos (tipo, publicação, edição e artigo) que têm itens vindos da mesclagem ficam em verde, sublinhados e com "🆕 N" antes do total.
+
 ## 6.3.40
 
 Mesclar backups: (1) depois de mesclar, o conteúdo abre na categoria Respostas; (2) as respostas escolhidas (e o resumo do painel) só contam as que têm texto, e o resumo mostra quantos grifos, marcadores e respostas já estavam na base (por isso "8 escolhidas" podiam virar "7 novas"); (3) no conteúdo do backup mesclado, os itens que vieram da mesclagem aparecem realçados (borda e fundo verdes e o selo "🆕 novo"), e há a caixa "🆕 Mostrar só o que veio da mesclagem"; (4) os três botões do começo da tela Backup têm cores diferentes: abrir (azul), mesclar (verde) e criar backup vazio (laranja); (5) "↩️ Voltar à seleção dos arquivos" esconde o conteúdo e o resumo, deixando só as opções da mesclagem como no começo; mesclar de novo os traz de volta, e cancelar também.

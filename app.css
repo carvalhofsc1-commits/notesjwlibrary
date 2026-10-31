@@ -8422,3 +8422,93 @@
       line-height: 1.2;
       padding: 4px 8px;
     }
+
+    /* A tabela "Vai entrar" do painel de seleção (como uma planilha) e os dois botões gerais. */
+    .merge-tabela {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .86rem;
+      margin: 4px 0 8px;
+    }
+
+    .merge-tabela th,
+    .merge-tabela td {
+      padding: 4px 6px;
+      border-bottom: 1px solid color-mix(in srgb, var(--muted) 35%, transparent);
+    }
+
+    .merge-tabela th {
+      font-size: .74rem;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: right;
+    }
+
+    .merge-tabela th:first-child,
+    .merge-tabela td:first-child {
+      text-align: left;
+    }
+
+    .merge-tabela td:not(:first-child) {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .merge-tabela tr.fora {
+      opacity: .45;
+    }
+
+    .merge-tabela tfoot td {
+      font-weight: 800;
+      border-top: 2px solid var(--muted);
+      border-bottom: 0;
+    }
+
+    .merge-geral {
+      margin: 0 0 8px;
+    }
+
+    .merge-slot button.merge-geral-btn {
+      flex: 1 1 0;
+      min-height: 40px;
+      font-size: .88rem;
+    }
+
+    /* A opção "só o que veio da mesclagem", num cartão; e, no backup mesclado, sem "Nova resposta" nem o aviso dos parágrafos. */
+    .backup-so-novos {
+      border: 2px solid #22c55e;
+      border-radius: 10px;
+      padding: 6px 10px;
+      margin: 10px 0;
+      background: color-mix(in srgb, #22c55e 10%, var(--card));
+    }
+
+    .backup-so-novos[hidden] {
+      display: none;
+    }
+
+    #backupView.mesclado #backupNewAnswerBtn,
+    #backupView.mesclado #backupNewAnswerSlot,
+    #backupView.mesclado #backupRespostasInfo {
+      display: none !important;
+    }
+
+    /* Títulos da árvore do conteúdo com itens que vieram da mesclagem. */
+    .bk-tem-novos {
+      color: #15803d;
+      font-weight: 800;
+      text-decoration: underline;
+      text-decoration-color: #22c55e;
+      text-decoration-thickness: 2px;
+      text-underline-offset: 3px;
+    }
+
+    :root[data-theme="dark"] .bk-tem-novos {
+      color: #4ade80;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .bk-tem-novos {
+        color: #4ade80;
+      }
+    }
