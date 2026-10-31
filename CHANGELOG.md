@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.59
+
+Áudio em texto: os campos "Texto transcrito" e "Resumo" crescem sozinhos para mostrar o texto inteiro (como o campo de texto da Formatação) e ganharam uma barra com A− e A+ (tamanho da letra, guardado neste aparelho), ✏️ Editar e 📄 Word. Os campos ficam só para ver e formatar até tocar em Editar: aí viram texto simples para escrever e corrigir; ao tocar em Concluir edição, dá para selecionar um trecho e aplicar Negrito, Itálico ou Negrito itálico (as mesmas letras formatadas do campo de texto) ou Tirar a formatação. O botão Word abre a mesma prévia do campo de texto (com o tamanho da letra) e baixa ou compartilha o arquivo .docx, com o nome "Transcrição - nome do áudio" ou "Resumo - nome do áudio".
+
 ## 6.3.58
 
 Tela Início: o atalho e o botão da barra de baixo (nome ao tocar e segurar) passaram de "Leitura em voz alta" para "Leitura em voz".

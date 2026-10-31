@@ -8703,3 +8703,44 @@ details.subsection.ebc-subsection#publicoBox.s34-bloqueado {
   width: 100%;
   margin: 8px 0 6px;
 }
+
+/* Áudio em texto: os campos do texto transcrito e do resumo crescem com o texto, com A−/A+, Editar, formatação e Word. */
+.screen-transcricao .transcricao-area {
+  min-height: 9em;
+  resize: none;
+  overflow: hidden;
+  font-size: max(16px, var(--transcricao-fonte, 1.02rem));
+  line-height: 1.45;
+}
+
+.screen-transcricao .transcricao-area[readonly] {
+  background: color-mix(in srgb, var(--field) 70%, var(--soft));
+}
+
+.tr-barra {
+  margin: 4px 0 6px;
+}
+
+.tr-linha {
+  margin: 4px 0;
+}
+
+.tr-linha button {
+  flex: 1 1 auto;
+  min-height: 40px;
+  padding: 6px 10px;
+  font-size: .86rem;
+}
+
+.tr-linha button:nth-child(-n+2) {
+  flex: 0 0 52px;
+  font-weight: 800;
+}
+
+.tr-linha[hidden] {
+  display: none;
+}
+
+.tr-dica {
+  margin: 2px 0 6px;
+}

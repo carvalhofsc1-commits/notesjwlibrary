@@ -37,6 +37,7 @@
         reunioesAjustarHub();
         reunioesTituloAjustar();
         if (screen === 'leitura') leituraAoEntrar().catch(() => {}); // devolve o texto gravado da Leitura em voz alta
+        if (screen === 'transcricao' && typeof trCrescerTudo === 'function') { try { trCrescerTudo(); } catch (e) { /* ainda iniciando */ } }
       });
     }
 
@@ -7178,7 +7179,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.58'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.59'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -14798,7 +14799,7 @@ function saveTemplatesToStorage() {
           : doc.modelo ? await docxGerarLeitura(doc.modelo, titulo, visorZoom) : await docxGerar(doc.texto, titulo, doc.acentos, visorZoom);
         const mensagem = await docxEntregar(blob, nome, compartilhar);
         visorDizer(mensagem);
-        if (doc && !doc.modelo && mensagem) {
+        if (doc && !doc.modelo && !doc.externo && mensagem) {
           // O resultado também aparece no card do campo de texto (some quando o texto do campo mudar).
           const info = document.getElementById('exportarInfo');
           info.textContent = mensagem;
@@ -14846,22 +14847,24 @@ function saveTemplatesToStorage() {
     }
 
     // Abre a prévia do documento Word com o texto do campo (os botões "Exportar para Word (.docx)" e "Compartilhar o arquivo Word").
-    async function docxPreviaAbrir(origem) {
-      const texto = input.value;
+    // textoDeFora e nomeDeFora (opcionais): o texto de outro campo (Áudio em texto) e o nome do arquivo (sem a extensão); sem eles vale o campo de texto.
+    async function docxPreviaAbrir(origem, textoDeFora, nomeDeFora) {
+      const deFora = typeof textoDeFora === 'string';
+      const texto = deFora ? textoDeFora : input.value;
       if (!texto.trim() || !visor.hidden) return;
       visorAbrir('Prévia do documento Word', origem, 'texto');
-      const nome = docxNomeDoArquivo(texto);
+      const nome = deFora ? (nomeDeFora || 'NoteStyle - ' + new Date().toISOString().slice(0, 10)) + '.docx' : docxNomeDoArquivo(texto);
       let acentos;
       try {
         // Nos esboços salvos, o texto dos versículos que faltam vem do servidor (só para devolver os acentos).
-        const salvo = historicoLigado && historicoLigado.esboco ? historicoLer().find(i => i.id === historicoLigado.id) : null;
+        const salvo = !deFora && historicoLigado && historicoLigado.esboco ? historicoLer().find(i => i.id === historicoLigado.id) : null;
         acentos = docxPrepararAcentos(texto, await docxCompletarVersiculos(salvo && salvo.esbocoJson));
       } catch (e) {
         if (!visor.hidden) visorAviso('Não consegui preparar a prévia: ' + (e && e.message ? e.message : 'erro desconhecido.'));
         return;
       }
       if (visor.hidden) return; // fechou antes de ficar pronta
-      visorDoc = { texto, nome, acentos };
+      visorDoc = { texto, nome, acentos, externo: deFora };
       visorBotoesDeExportar();
       visorTitulo.textContent = visorTituloDoc();
       visorCorpo.replaceChildren(docxPreviaMontar(visorDoc));
@@ -17443,6 +17446,8 @@ function saveTemplatesToStorage() {
     trInstrucoes.addEventListener('input', () => safeSetItem(TRANSCRICAO_INSTR_KEY, trInstrucoes.value));
     let trControle = null; // AbortController do que está em andamento
 
+    const trFerramentasAtualizar = []; // atualiza os botões das barras dos dois campos (A−/A+, Word e formatação)
+
     function trAtualizarBotoes() {
       const ocupado = Boolean(trControle);
       trEscolher.disabled = ocupado;
@@ -17450,6 +17455,7 @@ function saveTemplatesToStorage() {
       document.getElementById('transcricaoCopiarBtn').disabled = !trTexto.value.trim();
       document.getElementById('transcricaoCopiarResumoBtn').disabled = !trResumo.value.trim();
       trCancelar.hidden = !ocupado;
+      trFerramentasAtualizar.forEach(f => f());
     }
     trTexto.addEventListener('input', trAtualizarBotoes);
     trResumo.addEventListener('input', trAtualizarBotoes);
@@ -17529,6 +17535,7 @@ function saveTemplatesToStorage() {
       if (!navigator.onLine) return (trInfo.textContent = 'Sem conexão com a internet.');
       if (!(await trConsentimento())) return (trInfo.textContent = 'Nada foi enviado.');
       trControle = new AbortController();
+      trNomeBase = String(arquivo.name || '').replace(/\.[^.]+$/, '');
       trAtualizarBotoes();
       trTexto.value = '';
       trResumo.value = '';
@@ -17621,6 +17628,119 @@ function saveTemplatesToStorage() {
       trAtualizarBotoes();
     });
     trAtualizarBotoes();
+
+    // ---------- Texto transcrito e resumo: campos que crescem, A−/A+, editar, formatar e Word ----------
+    // Os dois campos crescem sozinhos para mostrar o texto inteiro (como o campo de texto da Formatação). Ficam só para ver (e formatar) até a pessoa tocar em
+    // Editar: aí o campo vira texto simples para escrever e corrigir; ao concluir, dá para selecionar trechos e aplicar negrito, itálico e negrito itálico (as
+    // mesmas letras formatadas do campo de texto) e exportar para Word, com a mesma prévia e o mesmo modelo do campo de texto.
+    const TR_FONTE_KEY = 'jwLibraryNoteAplicarTranscricaoFonteV1';
+    let trFonteIdx = LEITURA_FONTES.indexOf(1.02);
+    try {
+      const guardado = Number(localStorage.getItem(TR_FONTE_KEY));
+      if (Number.isFinite(guardado) && localStorage.getItem(TR_FONTE_KEY) !== null) trFonteIdx = LEITURA_FONTES.reduce((melhor, v, i) => (Math.abs(v - guardado) < Math.abs(LEITURA_FONTES[melhor] - guardado) ? i : melhor), 0);
+    } catch (e) { /* sem localStorage */ }
+    let trNomeBase = ''; // o nome do arquivo de áudio (sem a extensão), para o nome do arquivo Word
+
+    function trCrescer(campo) {
+      if (!campo.getClientRects().length) return; // escondido (outra tela): a altura é medida de novo quando a tela aparece
+      const pagina = document.scrollingElement || document.documentElement;
+      const rolagem = pagina.scrollTop;
+      campo.style.height = 'auto';
+      campo.style.height = (campo.scrollHeight + campo.offsetHeight - campo.clientHeight) + 'px';
+      pagina.scrollTop = rolagem;
+    }
+    const trCrescerTudo = () => [trTexto, trResumo].forEach(trCrescer);
+
+    function trFonteAplicar() {
+      document.getElementById('transcricaoCard').style.setProperty('--transcricao-fonte', LEITURA_FONTES[trFonteIdx] + 'rem');
+      trFerramentasAtualizar.forEach(f => f());
+      trCrescerTudo();
+    }
+    function trFonteMudar(passo) {
+      trFonteIdx = Math.max(0, Math.min(LEITURA_FONTES.length - 1, trFonteIdx + passo));
+      safeSetItem(TR_FONTE_KEY, String(LEITURA_FONTES[trFonteIdx]));
+      trFonteAplicar();
+    }
+
+    function trFormatar(campo, tipo) {
+      const ini = campo.selectionStart;
+      const fim = campo.selectionEnd;
+      if (ini === fim) { trInfo.textContent = 'Selecione um trecho do texto para aplicar o estilo.'; return; }
+      const selecionado = campo.value.slice(ini, fim);
+      let novo;
+      if (tipo === 'limpar') novo = removeUnicodeFormatting(selecionado);
+      else {
+        const estilo = aiStyleIdFor(tipo);
+        if (!estilo) { trInfo.textContent = 'Não encontrei esse estilo na fonte escolhida.'; return; }
+        novo = convertTextWithStyle(selecionado, estilo);
+      }
+      campo.setRangeText(novo, ini, fim, 'select');
+      campo.dispatchEvent(new Event('input', { bubbles: true }));
+      trInfo.textContent = tipo === 'limpar' ? 'Formatação tirada do trecho.' : 'Estilo aplicado ao trecho.';
+    }
+
+    // A barra de ferramentas de um campo. nome(): o nome do arquivo Word (sem a extensão).
+    function trBarra(campo, nome) {
+      const barra = document.createElement('div');
+      barra.className = 'tr-barra';
+      const linha = document.createElement('div');
+      linha.className = 'bk-row tr-linha';
+      const menos = backupButton('A−', () => trFonteMudar(-1));
+      menos.title = 'Diminuir a letra';
+      menos.setAttribute('aria-label', 'Diminuir a letra');
+      const mais = backupButton('A+', () => trFonteMudar(1));
+      mais.title = 'Aumentar a letra';
+      mais.setAttribute('aria-label', 'Aumentar a letra');
+      let editando = false;
+      const editar = backupButton('✏️ Editar', () => {
+        editando = !editando;
+        campo.readOnly = !editando;
+        editar.textContent = editando ? '✔️ Concluir edição' : '✏️ Editar';
+        formato.hidden = editando;
+        dica.textContent = editando ? 'Escreva ou corrija o texto. Ao terminar, toque em Concluir edição para formatar.' : 'Selecione um trecho e toque no estilo. Para escrever ou corrigir, toque em Editar.';
+        if (editando) campo.focus(); else campo.blur();
+      });
+      const word = backupButton('📄 Word', () => {
+        if (!campo.value.trim()) return;
+        docxPreviaAbrir(word, campo.value, nome());
+      });
+      word.title = 'Exportar para Word';
+      linha.append(menos, mais, editar, word);
+      const formato = document.createElement('div');
+      formato.className = 'bk-row tr-linha';
+      formato.append(
+        backupButton('𝗡 Negrito', () => trFormatar(campo, 'negrito')),
+        backupButton('𝘐 Itálico', () => trFormatar(campo, 'italico')),
+        backupButton('𝙉 Negrito itálico', () => trFormatar(campo, 'negrito_italico')),
+        backupButton('🧽 Tirar', () => trFormatar(campo, 'limpar'))
+      );
+      const dica = document.createElement('p');
+      dica.className = 'hint tr-dica';
+      dica.textContent = 'Selecione um trecho e toque no estilo. Para escrever ou corrigir, toque em Editar.';
+      barra.append(linha, formato, dica);
+      campo.readOnly = true;
+      campo.parentNode.insertBefore(barra, campo);
+      trFerramentasAtualizar.push(() => {
+        menos.disabled = trFonteIdx <= 0;
+        mais.disabled = trFonteIdx >= LEITURA_FONTES.length - 1;
+        word.disabled = !campo.value.trim();
+        formato.querySelectorAll('button').forEach(b => { b.disabled = !campo.value.trim(); });
+        editar.disabled = false;
+      });
+      // O campo cresce com o texto, venha ele da transcrição, do resumo ou da digitação.
+      const original = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
+      Object.defineProperty(campo, 'value', { configurable: true, get() { return original.get.call(this); }, set(v) { original.set.call(this, v); trCrescer(this); trFerramentasAtualizar.forEach(f => f()); } });
+      campo.addEventListener('input', () => trCrescer(campo));
+    }
+
+    const trNomeWord = rotulo => () => {
+      const base = (trNomeBase || new Date().toISOString().slice(0, 10)).replace(/[\\/:*?"<>|“”‘’]/g, '').replace(/\s+/g, ' ').trim().slice(0, 70);
+      return rotulo + ' - ' + base;
+    };
+    trBarra(trTexto, trNomeWord('Transcrição'));
+    trBarra(trResumo, trNomeWord('Resumo'));
+    window.addEventListener('resize', trCrescerTudo);
+    trFonteAplicar();
 
     // ---------- Tela Reuniões: a tela principal e as páginas ----------
     // A tela principal mostra só os botões (comentar, dirigir, discursos e pesquisas salvas) e cada um abre a sua página, com ◀ Voltar. O que
