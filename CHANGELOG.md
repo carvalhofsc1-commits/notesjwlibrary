@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.08
+
+Botões de carregar perguntas, discurso, joias, imagens da apostila e de pesquisar na biblioteca passam a mostrar “Consultando o wol.jw.org…” (e o mesmo na faixa do topo), em vez de “Consultando a IA…”, porque essas consultas não usam a Anthropic. Os botões que geram respostas e esboços continuam com “Consultando a IA…”.
+
 ## 6.3.07
 
 Consultas que só leem o wol.jw.org, o S-34 ou os versículos (carregar matéria, lista de parágrafos quando o site responde, tesouros, joias, EBC, discurso curto, temas públicos, pesquisa de outros esboços) deixam de exigir a chave da IA e de gastar o limite de pedidos por hora; se a lista da Sentinela precisar da IA porque a leitura falhou, aí sim valem a chave e a cota. Formatos travados: perguntas do EBC para o dirigente passam a ser “até 5” (sem forçar cinco); “Gerar outros” no texto diário pede outras palavras, sem outro enfoque inventado. Política de Privacidade 1.3: armazenamento local só no localStorage; pdf.js do cdnjs entra junto com JSZip e sql.js.

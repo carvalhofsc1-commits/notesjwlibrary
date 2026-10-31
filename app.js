@@ -5696,7 +5696,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.07'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.08'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -10143,14 +10143,13 @@ function saveTemplatesToStorage() {
       aiCategory.value = Array.from(aiCategory.options).some(o => o.value === wanted) ? wanted : 'all';
     }
 
-    // Mostra que a IA está trabalhando: botão com ícone girando, barra de progresso,
-    // cartões "fantasma" no lugar das sugestões e contador de segundos no status.
+    // Mostra que um pedido está em andamento: botão com ícone girando, barra de progresso e contador de segundos.
+    // modo "ia" (padrão): geração com Anthropic. modo "site": só leitura/pesquisa no wol.jw.org (sem IA).
     let aiLoadingTimer = null;
 
-    // Faixa no topo da tela com o "A IA está pensando… N s", sempre à vista (o indicador do botão fica fora da tela
-    // quando a página rola).
+    // Faixa no topo da tela com o andamento, sempre à vista (o indicador do botão fica fora da tela quando a página rola).
     const aiFloating = document.getElementById('aiFloating');
-    function showAiFloating(seconds) {
+    function showAiFloating(seconds, frase) {
       if (!aiFloating.classList.contains('on')) {
         const spinner = document.createElement('span');
         spinner.className = 'ai-spinner';
@@ -10160,10 +10159,10 @@ function saveTemplatesToStorage() {
         aiFloating.replaceChildren(spinner, label);
         aiFloating.classList.add('on');
       }
-      document.getElementById('aiFloatingText').textContent = 'A IA está pensando… ' + seconds + ' s';
+      document.getElementById('aiFloatingText').textContent = frase + ' ' + seconds + ' s';
     }
 
-    function setAiLoading(on, button) {
+    function setAiLoading(on, button, modo) {
       const all = [aiSuggestBtn, aiSentinelaBtn, aiStudyBtn, aiStudyQuestionsBtn, aiStudyLoadBtn, leaderStudyLoadBtn, aiAnotherBtn, aiImproveBtn,
         document.getElementById('tdGerarBtn'), document.getElementById('tdIaOutrosBtn'),
         document.getElementById('ebcCarregarBtn'), document.getElementById('ebcResponderBtn'),
@@ -10193,6 +10192,10 @@ function saveTemplatesToStorage() {
         return;
       }
 
+      const soSite = modo === 'site';
+      const rotuloBotao = soSite ? 'Consultando o wol.jw.org…' : 'Consultando a IA…';
+      const fraseFlutuante = soSite ? 'Consultando o wol.jw.org…' : 'A IA está pensando…';
+
       all.forEach(b => { b.disabled = true; });
       button.dataset.label = button.textContent;
       button.classList.add('is-loading');
@@ -10201,21 +10204,24 @@ function saveTemplatesToStorage() {
       spinner.className = 'ai-spinner';
       spinner.setAttribute('aria-hidden', 'true');
       button.textContent = '';
-      button.append(spinner, 'Consultando a IA…');
+      button.append(spinner, rotuloBotao);
 
       aiProgress.classList.add('on');
       aiResults.setAttribute('aria-busy', 'true');
-      // Sem cartões fantasma enquanto a IA trabalha: o botão com "Consultando a IA…", a barra de progresso e o
-      // contador de segundos já mostram que o pedido está em andamento.
+      // Sem cartões fantasma: o botão, a barra de progresso e o contador de segundos já mostram o andamento.
 
       const startedAt = Date.now();
       const tick = () => {
         const seconds = Math.floor((Date.now() - startedAt) / 1000);
-        showAiFloating(seconds);
+        showAiFloating(seconds, fraseFlutuante);
         setAiStatus(
-          seconds < 12
-            ? 'A IA está trabalhando… ' + seconds + ' s'
-            : 'Ainda trabalhando… ' + seconds + ' s (textos longos demoram mais). Aguarde.',
+          soSite
+            ? (seconds < 12
+              ? 'Consultando o wol.jw.org… ' + seconds + ' s'
+              : 'Ainda consultando o wol.jw.org… ' + seconds + ' s. Aguarde.')
+            : (seconds < 12
+              ? 'A IA está trabalhando… ' + seconds + ' s'
+              : 'Ainda trabalhando… ' + seconds + ' s (textos longos demoram mais). Aguarde.'),
           false
         );
       };
@@ -11277,7 +11283,7 @@ function saveTemplatesToStorage() {
         const index = currentStudyIndex(picker);
         picker.prev.disabled = !options.length || index <= 0;
         picker.next.disabled = !options.length || index >= options.length - 1;
-        // Durante o carregamento o botão mostra "Consultando a IA…": o rótulo volta no fim (setAiLoading).
+        // Durante o carregamento o botão mostra "Consultando o wol.jw.org…": o rótulo volta no fim (setAiLoading).
         if (!picker.load.dataset.label) picker.load.textContent = aiStudy ? '↻ Recarregar perguntas' : '📋 Carregar perguntas';
         const exact = options.some(option => plainStudyText(option) === plainStudyText(picker.input.value));
         picker.info.textContent = aiStudy ? (exact ? 'opção ' + (index + 1) + ' de ' + options.length : 'texto livre') : '';
@@ -11418,7 +11424,7 @@ function saveTemplatesToStorage() {
 
       aiBusy = true;
       setStudyStatus('', false);
-      setAiLoading(true, picker.load);
+      setAiLoading(true, picker.load, 'site');
 
       try {
         const code = codigoAcessoSalvo();
@@ -11846,7 +11852,7 @@ function saveTemplatesToStorage() {
       const accessError = studyAccessError();
       if (accessError) return setAiStatus(accessError, true);
       aiBusy = true;
-      setAiLoading(true, ebcCarregarBtn);
+      setAiLoading(true, ebcCarregarBtn, 'site');
       try {
         const result = await postStudy({ tarefa: 'ebc-ler', codigo: codigoAcessoSalvo(), ano: aiWeekYear, semana: aiWeekNumber }, 60000);
         if (!result.ok) return setAiStatus(studyFailureMessage(result, 'Não consegui ler o capítulo agora.'), true);
@@ -11978,7 +11984,7 @@ function saveTemplatesToStorage() {
       const accessError = dirigenteAccessError();
       if (accessError) return setAiStatus(accessError, true);
       aiBusy = true;
-      setAiLoading(true, ebcDirCarregarBtn);
+      setAiLoading(true, ebcDirCarregarBtn, 'site');
       try {
         const result = await postStudy({ tarefa: 'ebc-ler', codigo: codigoAcessoSalvo(), codigoDirigente: codigoDirigenteSalvo(), ano: aiWeekYear, semana: aiWeekNumber }, 60000);
         if (!result.ok) {
@@ -12530,7 +12536,7 @@ function saveTemplatesToStorage() {
       const accessError = dirigenteAccessError() || (cfg.validarLer ? cfg.validarLer() : '');
       if (accessError) return setAiStatus(accessError, true);
       aiBusy = true;
-      setAiLoading(true, cfg.carregarBtn);
+      setAiLoading(true, cfg.carregarBtn, 'site');
       try {
         const result = await postStudy({ tarefa: cfg.tarefaLer, codigoDirigente: codigoDirigenteSalvo(), ano: aiWeekYear, semana: aiWeekNumber, ...(cfg.extraPayload ? cfg.extraPayload() : {}) }, 60000);
         if (!result.ok) {
@@ -13417,7 +13423,7 @@ function saveTemplatesToStorage() {
       if (accessError) return setAiStatus(accessError, true);
       if ((outrosCamposEl.consulta.value.trim() || outrosCamposEl.tema.value.trim()).length < 8) return setAiStatus('Escreva o tema (ou as palavras da pesquisa) com pelo menos 8 letras.', true);
       aiBusy = true;
-      setAiLoading(true, outrosPesquisarBtn);
+      setAiLoading(true, outrosPesquisarBtn, 'site');
       try {
         const result = await postStudy({ tarefa: 'outros-pesquisar', codigoDirigente: codigoDirigenteSalvo(), tema: outrosCamposEl.tema.value.trim(), consulta: outrosCamposEl.consulta.value.trim() }, 60000);
         if (!result.ok) {
@@ -13700,7 +13706,7 @@ function saveTemplatesToStorage() {
       const accessError = studyAccessError();
       if (accessError) return setAiStatus(accessError, true);
       aiBusy = true;
-      setAiLoading(true, apostilaImgBtn);
+      setAiLoading(true, apostilaImgBtn, 'site');
       try {
         const result = await postStudy({ tarefa: 'apostila-imagens', codigo: codigoAcessoSalvo(), ano: aiWeekYear, semana: aiWeekNumber }, 60000);
         if (!result.ok) return setAiStatus(studyFailureMessage(result, 'Não consegui ler a apostila agora.'), true);
@@ -13728,7 +13734,7 @@ function saveTemplatesToStorage() {
       const accessError = studyAccessError();
       if (accessError) return setAiStatus(accessError, true);
       aiBusy = true;
-      setAiLoading(true, joiasCarregarBtn);
+      setAiLoading(true, joiasCarregarBtn, 'site');
       try {
         const result = await postStudy({ tarefa: 'joias-ler', codigo: codigoAcessoSalvo(), ano: aiWeekYear, semana: aiWeekNumber }, 60000);
         if (!result.ok) return setAiStatus(studyFailureMessage(result, 'Não consegui ler a leitura da semana agora.'), true);
