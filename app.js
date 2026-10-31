@@ -189,6 +189,16 @@
       return '';
     }
 
+    // Toda resposta pertence a um artigo: enquanto o título dele não é conhecido (o backup nem sempre o traz e o wol.jw.org ainda
+    // não foi consultado), a árvore mostra "Artigo (documento N)" no nível do artigo, que depois troca pelo título.
+    function backupArtigoProvisorio(item) {
+      if (!item.documentId) return;
+      const nivel = item.hasIssue ? 'detail2' : 'detail1';
+      if (item[nivel]) return;
+      item[nivel] = backupLevel('Artigo (documento ' + item.documentId + ')', item.documentId);
+      item.artigoProvisorio = true;
+    }
+
     // Põe no item o parágrafo (número da pergunta), a pergunta e o título do documento, quando já se sabe.
     function backupAplicarCampo(item) {
       const info = backupCampos[item.documentId];
@@ -197,8 +207,11 @@
       item.heading = 'Sua resposta' + (campo && campo.numero ? ' · parágrafo ' + campo.numero : campo && campo.quadro ? ' · quadro de recapitulação' : '');
       if (campo && campo.pergunta) item.where = campo.pergunta;
       if (info.titulo) {
-        if (item.hasIssue && !item.detail2) item.detail2 = backupLevel(info.titulo, item.documentId || 0);
-        else if (!item.hasIssue && !item.detail1) item.detail1 = backupLevel(info.titulo, item.documentId || 0);
+        const nivel = item.hasIssue ? 'detail2' : 'detail1';
+        if (!item[nivel] || item.artigoProvisorio) {
+          item[nivel] = backupLevel(info.titulo, item.documentId || 0);
+          item.artigoProvisorio = false;
+        }
       }
     }
 
@@ -415,6 +428,7 @@
         ORDER BY l.IssueTagNumber DESC, l.DocumentId DESC, CAST(substr(i.TextTag, 3) AS INTEGER)`).map(r => ({
           id: r.LocationId + '|' + r.TextTag, locationId: r.LocationId, textTag: r.TextTag, heading: 'Sua resposta', text: r.Value || '', ...backupDescribe(r, titleByDoc)
         }));
+      respostas.forEach(backupArtigoProvisorio);
       respostas.forEach(backupAplicarCampo);
 
       const listas = backupRows(db, `
@@ -6795,7 +6809,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.42'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.43'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());

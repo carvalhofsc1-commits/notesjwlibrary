@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.43
+
+Backup, categoria Respostas: toda resposta aparece dentro do seu artigo, mesmo quando a edição tem só um artigo. Se o título ainda não é conhecido (o backup não o traz e o wol.jw.org ainda não foi consultado), o nível do artigo mostra "Artigo (documento N)" e troca pelo título assim que ele é identificado.
+
 ## 6.3.42
 
 Backup: com um backup aberto, saem "Criar backup vazio" (o botão some também durante uma mesclagem; criar um vazio é uma escolha do começo) e "Mesclar: importar notas de outro backup" de dentro da seção, que passou a se chamar "📤 Exportação" (para mesclar, há o botão "Abrir outro backup para mesclar" no topo).
