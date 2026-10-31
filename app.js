@@ -5696,7 +5696,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.09'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.10'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -8852,6 +8852,7 @@ function saveTemplatesToStorage() {
 
     // Prompts da IA abre para baixo em Ajustes (como as outras opções). Enquanto os dados chegam, a linha fica esmaecida.
     // Sem a senha, ou se o servidor recusar, aparece o aviso de área restrita dentro da própria seção.
+    // Com a senha salva: não mostra o botão "Abrir Autorização de acessos" enquanto busca; se já carregou nesta sessão, reabre na hora (como Voz e Esboços).
     let promptsAbrindo = false;
     // Ao cancelar "descartar e fechar", reabrimos a seção sem disparar um novo carregamento (que apagaria as edições).
     let promptsIgnorarProximoToggle = false;
@@ -8861,17 +8862,44 @@ function saveTemplatesToStorage() {
       promptsList.textContent = '';
       document.getElementById('promptsLimits').textContent = '';
       promptsLocked.textContent = '';
-      promptsLogin.hidden = false;
+      promptsLogin.hidden = true;
       promptsEditor.hidden = true;
       promptsLoginError.textContent = '';
       promptsStatus.textContent = '';
       document.getElementById('promptsStatusBottom').textContent = '';
     }
 
+    function promptsDescartarEdicaoLocal() {
+      if (!promptsState) {
+        limparPromptsAoFechar();
+        return;
+      }
+      renderPrompts(promptsState);
+      setPromptsStatus('', false);
+      iaCarregar(); // repõe modelo/esforço se o administrador tinha mudado sem salvar
+    }
+
     async function carregarPromptsAoAbrir() {
       if (promptsAbrindo) return;
-      promptsCode = '';
-      promptsState = null;
+      const code = senhaAdminSalva();
+      if (!code) {
+        promptsLogin.hidden = false;
+        promptsEditor.hidden = true;
+        loginPrompts('', null);
+        return;
+      }
+      // Já entrou nesta sessão com a mesma senha: mostra na hora, sem nova ida ao servidor.
+      if (promptsState && promptsCode === code) {
+        promptsLogin.hidden = true;
+        promptsEditor.hidden = false;
+        return;
+      }
+      // Com senha: esconde o aviso de acesso; a seção fica só esmaecida até os prompts chegarem.
+      promptsLogin.hidden = true;
+      promptsEditor.hidden = true;
+      promptsLoginError.textContent = '';
+      promptsStatus.textContent = '';
+      document.getElementById('promptsStatusBottom').textContent = '';
       adminCodeNote.value = '';
       delete adminCodeNote.dataset.loaded;
       adminCodeStatus.textContent = '';
@@ -8881,23 +8909,15 @@ function saveTemplatesToStorage() {
       adminCodeLeituraNote.value = '';
       delete adminCodeLeituraNote.dataset.loaded;
       adminCodeLeituraStatus.textContent = '';
-      promptsLoginError.textContent = '';
-      promptsStatus.textContent = '';
-      document.getElementById('promptsStatusBottom').textContent = '';
-      promptsLogin.hidden = false;
-      promptsEditor.hidden = true;
       promptsEditor.querySelectorAll('details').forEach(card => { card.open = false; });
-      const code = senhaAdminSalva();
+      promptsAbrindo = true;
+      promptsSection.setAttribute('aria-busy', 'true');
       let result = null;
-      if (code) {
-        promptsAbrindo = true;
-        promptsSection.setAttribute('aria-busy', 'true');
-        try { result = await postConfig({ acao: 'prompts-ler', codigo: code }); } finally {
-          promptsAbrindo = false;
-          promptsSection.removeAttribute('aria-busy');
-        }
-        if (!promptsSection.open) return; // fechou enquanto carregava
+      try { result = await postConfig({ acao: 'prompts-ler', codigo: code }); } finally {
+        promptsAbrindo = false;
+        promptsSection.removeAttribute('aria-busy');
       }
+      if (!promptsSection.open) return; // fechou enquanto carregava
       loginPrompts(code, result);
     }
 
@@ -9514,8 +9534,10 @@ function saveTemplatesToStorage() {
           promptsSection.open = true; // o usuário cancelou: mantém aberta sem recarregar
           return;
         }
+        promptsDescartarEdicaoLocal(); // desfaz a edição e mantém o último carregamento para reabrir na hora
+        return;
       }
-      limparPromptsAoFechar();
+      // Sem pendência: não limpa — a próxima abertura reusa o que já veio do servidor.
     });
     // Sem a senha salva (ou recusada): leva a Autorização de acessos (a seção de prompts continua aberta).
     document.getElementById('promptsIrAcessosBtn').addEventListener('click', () => abrirAcessos('senha'));

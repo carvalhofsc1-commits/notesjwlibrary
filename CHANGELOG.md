@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.10
+
+Ajustes → Prompts da IA: com a senha de administrador salva, deixa de piscar o aviso “Abrir Autorização de acessos” enquanto busca os textos; depois da primeira carga na sessão, reabre na hora (como Leitura em voz alta e Esboços).
+
 ## 6.3.09
 
 Ajustes: Prompts da IA deixa de abrir numa tela separada e passa a expandir para baixo, como as outras opções; as setas ▸ dos botões da lista de Ajustes ficam maiores.
