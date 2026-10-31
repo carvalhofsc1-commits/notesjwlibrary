@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.40
+
+Mesclar backups: (1) depois de mesclar, o conteúdo abre na categoria Respostas; (2) as respostas escolhidas (e o resumo do painel) só contam as que têm texto, e o resumo mostra quantos grifos, marcadores e respostas já estavam na base (por isso "8 escolhidas" podiam virar "7 novas"); (3) no conteúdo do backup mesclado, os itens que vieram da mesclagem aparecem realçados (borda e fundo verdes e o selo "🆕 novo"), e há a caixa "🆕 Mostrar só o que veio da mesclagem"; (4) os três botões do começo da tela Backup têm cores diferentes: abrir (azul), mesclar (verde) e criar backup vazio (laranja); (5) "↩️ Voltar à seleção dos arquivos" esconde o conteúdo e o resumo, deixando só as opções da mesclagem como no começo; mesclar de novo os traz de volta, e cancelar também.
+
 ## 6.3.39
 
 Mesclar backups: (1) a árvore "Por publicação e artigo" ordena do mais novo para o mais antigo nas edições (e na ordem do app nos livros, capítulos e artigos); (2) as listas de "Selecionar o que importar" agora se SOMAM em vez de se anularem: uma lista só vale depois que você mexe nela, e o que estiver marcado em qualquer uma que valha é importado (notas: árvore, etiquetas e uma a uma; respostas: árvore e uma a uma; grifos e marcadores: árvore); sem mexer em lista alguma, tudo vem; há "🔄 Importar tudo (limpar a seleção)" e o resumo do painel diz o que vai entrar de cada tipo; (3) o botão "Selecionar o que importar" perdeu a bolinha; (4) as opções passaram para o topo da mesclagem, abaixo do texto sobre o arquivo base, com o título "O que será mesclado" e a nova opção "Notas" (para mesclar só grifos, marcadores e respostas), em duas linhas.

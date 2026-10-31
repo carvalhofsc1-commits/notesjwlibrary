@@ -502,6 +502,7 @@
       backupAtualizarBotoes();
       if (!backupState) { view.hidden = true; renderBackupSaveBox(); return; }
       view.hidden = false;
+      document.getElementById('backupSoNovosBox').hidden = !(backupState.mesclado && backupState.novos);
       document.getElementById('backupConteudoTitulo').textContent = backupState.mesclado ? '🔀 Conteúdo do backup mesclado' : backupState.isNew ? '🆕 Conteúdo do backup novo' : '📂 Conteúdo do backup aberto';
       document.getElementById('backupConteudoDica').textContent = backupState.mesclado
         ? 'Este é o resultado da mesclagem: a base mais o que veio dos outros arquivos. Confira, edite ou apague o que quiser e gere o arquivo mesclado.'
@@ -554,6 +555,7 @@
       const category = backupCategoryInfo();
       let items = backupState.data[category.id];
       if (document.getElementById('backupGrouping').value === 'duplicadas') items = items.filter(i => i.duplicate);
+      if (backupState.novos && document.getElementById('backupSoNovos').checked) items = items.filter(i => backupState.novos[category.id] && backupState.novos[category.id].has(i.id));
       const search = category.text ? backupPlain(document.getElementById('backupSearch').value.trim()) : '';
       if (search) {
         items = items.filter(i => backupPlain([i.heading, i.text, i.tagsText, i.where, i.title && i.title.label].join(' ')).includes(search));
@@ -613,8 +615,8 @@
         if (node && !node.open) { node.open = true; node._build(); }
       });
       document.getElementById('backupCount').textContent = !items.length
-        ? (search ? 'Nada encontrado.' : 'Nenhum item nesta categoria.')
-        : (search || grouping === 'duplicadas' ? items.length.toLocaleString('pt-BR') + ' de ' : '') + total.toLocaleString('pt-BR') +
+        ? (search ? 'Nada encontrado.' : backupState.novos && document.getElementById('backupSoNovos').checked ? 'Nada novo nesta categoria.' : 'Nenhum item nesta categoria.')
+        : (search || grouping === 'duplicadas' || (backupState.novos && document.getElementById('backupSoNovos').checked) ? items.length.toLocaleString('pt-BR') + ' de ' : '') + total.toLocaleString('pt-BR') +
           (total === 1 ? ' item.' : ' itens.');
     }
 
@@ -685,6 +687,8 @@
     function backupItemCard(item, category) {
       const card = document.createElement('article');
       card.className = 'backup-item';
+      const ehNovo = Boolean(backupState && backupState.novos && backupState.novos[category.id] && backupState.novos[category.id].has(item.id));
+      if (ehNovo) card.classList.add('backup-novo');
       const head = document.createElement('div');
       head.className = 'backup-item-head';
       if (category.id === 'notas') {
@@ -697,6 +701,12 @@
       if (item.heading) title.textContent = item.heading;
       else { title.textContent = '(sem título)'; title.className = 'sem-titulo'; }
       head.appendChild(title);
+      if (ehNovo) {
+        const selo = document.createElement('span');
+        selo.className = 'backup-novo-selo';
+        selo.textContent = '🆕 novo';
+        head.appendChild(selo);
+      }
       card.appendChild(head);
       const meta = [item.where, item.date, item.tagsText && '🏷️ ' + item.tagsText].filter(Boolean).join(' · ');
       if (meta) {
@@ -753,6 +763,7 @@
     });
     document.getElementById('backupGrouping').addEventListener('change', () => renderBackupTree());
     document.getElementById('backupSearch').addEventListener('input', () => renderBackupTree());
+    document.getElementById('backupSoNovos').addEventListener('change', () => renderBackupTree());
 
     // ---------- Backup do JW Library: edição (Fase 2) ----------
     // As alterações vão direto para o banco aberto na memória (sql.js). "Gerar backup modificado" monta um arquivo NOVO:
@@ -1691,6 +1702,7 @@
     // mesmo lugar ficam de fora), com o lugar delas (Location), a cor e o trecho grifado da nota (UserMark e BlockRange) e
     // as etiquetas (criadas se não existirem). O outro arquivo só é lido.
     const BACKUP_SEM_ETIQUETA = '\u0000sem-etiqueta';
+    let backupNovos = null; // durante a mesclagem: os ids dos itens que entram ({ notas, grifos, marcadores, respostas }), para marcá-los como novos
     let backupImport = null; // { db, fileName, notas: [{ id, tags: [...], nova }], escolhidas: Set }
 
     // Todas as linhas de uma consulta com parâmetros.
@@ -1887,6 +1899,7 @@
             backupAll(src, 'SELECT BlockType, Identifier, StartToken, EndToken FROM BlockRange WHERE UserMarkId = ?', [idOrigem]).forEach(b => {
               dst.run('INSERT INTO BlockRange (BlockType, Identifier, StartToken, EndToken, UserMarkId) VALUES (?, ?, ?, ?, ?)',
                 [b.BlockType, b.Identifier, b.StartToken, b.EndToken, id]);
+              if (backupNovos) backupNovos.grifos.add(backupLastId(dst));
             });
           }
         }
@@ -1930,6 +1943,7 @@
             [n.Guid, idMarca, local, n.Title, n.Content, n.LastModified || agora, n.Created || n.LastModified || agora,
               local === null ? 0 : n.BlockType, local === null ? null : n.BlockIdentifier]);
           const novaId = backupLastId(dst);
+          if (backupNovos) backupNovos.notas.add(novaId);
           backupAll(src, 'SELECT t.Type, t.Name FROM TagMap tm JOIN Tag t ON t.TagId = tm.TagId WHERE tm.NoteId = ? ORDER BY tm.Position', [n.NoteId]).forEach(t => {
             const idEtiqueta = etiqueta(t.Type, t.Name);
             const posicao = backupOne(dst, 'SELECT COALESCE(MAX(Position), -1) + 1 AS p FROM TagMap WHERE TagId = ?', [idEtiqueta]).p;
@@ -1949,12 +1963,12 @@
     // Os grifos (marcas de cor com trecho grifado) do backup de origem que o backup aberto ainda não tem (mesmo UserMarkGuid). Devolve { novos }.
     function backupImportGrifos(src, aceitaLoc) {
       const { dst, marca } = backupImportContexto(src);
-      const resultado = { novos: 0 };
+      const resultado = { novos: 0, existentes: 0 };
       dst.run('BEGIN');
       try {
         backupAll(src, 'SELECT u.UserMarkId, u.UserMarkGuid, u.LocationId FROM UserMark u WHERE EXISTS (SELECT 1 FROM BlockRange b WHERE b.UserMarkId = u.UserMarkId)').forEach(m => {
           if (aceitaLoc && !aceitaLoc(m.LocationId)) return;
-          if (backupOne(dst, 'SELECT 1 AS x FROM UserMark WHERE UserMarkGuid = ?', [m.UserMarkGuid])) return;
+          if (backupOne(dst, 'SELECT 1 AS x FROM UserMark WHERE UserMarkGuid = ?', [m.UserMarkGuid])) { resultado.existentes++; return; }
           if (marca(m.UserMarkId) !== null) resultado.novos++;
         });
         dst.run('COMMIT');
@@ -1988,6 +2002,7 @@
           const colunas = colunasDestino.filter(col => col !== 'BookmarkId' && colunasOrigem.has(col));
           const valores = colunas.map(col => (col === 'LocationId' ? local : col === 'PublicationLocationId' ? publicacao : col === 'Slot' ? slot : b[col]));
           dst.run('INSERT INTO Bookmark (' + colunas.join(', ') + ') VALUES (' + colunas.map(() => '?').join(', ') + ')', valores);
+          if (backupNovos) backupNovos.marcadores.add(backupLastId(dst));
           resultado.novos++;
         });
         dst.run('COMMIT');
@@ -2014,9 +2029,11 @@
           const atual = backupOne(dst, 'SELECT Value FROM InputField WHERE LocationId = ? AND TextTag = ?', [local, r.TextTag]);
           if (!atual) {
             dst.run('INSERT INTO InputField (LocationId, TextTag, Value) VALUES (?, ?, ?)', [local, r.TextTag, r.Value]);
+            if (backupNovos) backupNovos.respostas.add(local + '|' + r.TextTag);
             resultado.novas++;
           } else if (!atual.Value) {
             dst.run('UPDATE InputField SET Value = ? WHERE LocationId = ? AND TextTag = ?', [r.Value, local, r.TextTag]);
+            if (backupNovos) backupNovos.respostas.add(local + '|' + r.TextTag);
             resultado.novas++;
           } else {
             resultado.existentes++;
@@ -2097,6 +2114,9 @@
       if (backupState && backupState.changes > (backupState.changesDaMescla || 0) &&
         !(await askConfirm('Você fez alterações no backup mesclado depois da mesclagem. Ao mesclar de novo, elas serão perdidas (a mesclagem recomeça dos arquivos). Voltar mesmo assim?', 'Voltar à seleção dos arquivos'))) return;
       mesclarBox.hidden = false;
+      // Como se a mesclagem estivesse começando: some o conteúdo do backup mesclado e o resumo; voltam ao mesclar de novo (ou ao cancelar).
+      document.getElementById('backupView').hidden = true;
+      document.getElementById('backupMesclarResultado').hidden = true;
       backupAtualizarBotoes();
       backupMesclarRender();
       mesclarBox.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -2339,7 +2359,7 @@
         const b = brutas.get(n.id);
         return b ? { guid: b.Guid, titulo: n.heading, texto: n.text, data: n.date, onde: n.where || '', tags: b.Tags || '', folha: folhaDoLugar(n.locationId) } : null;
       }).filter(Boolean);
-      const listaRespostas = data.respostas.map(r => ({ id: r.id, texto: r.text, onde: r.where || '', publicacao: (r.title && r.title.label) || '', folha: folhaDoLugar(r.locationId) }));
+      const listaRespostas = data.respostas.filter(r => String(r.text || '').trim()).map(r => ({ id: r.id, texto: r.text, onde: r.where || '', publicacao: (r.title && r.title.label) || '', folha: folhaDoLugar(r.locationId) }));
       return {
         notas: linhas.length, guids, tags, semTag, folhas, locFolha, listaNotas, listaRespostas,
         tagsPorGuid: new Map(linhas.map(r => [r.Guid, r.Tags || ''])), folhaPorGuid: new Map(listaNotas.map(x => [x.guid, x.folha])),
@@ -2688,7 +2708,8 @@
       let novo = null;
       // Uma duplicada cuja versão vencedora é de um arquivo em que o filtro deixou a nota de fora fica com a da base (senão a nota se perderia).
       vencedores.forEach((i, guid) => { if (i !== base && !backupMesclarNotaPassa(arquivos[i], guid)) vencedores.set(guid, base); });
-      const total = { importadas: 0, existentes: 0, avulsas: 0, etiquetas: [], trocadas: 0, grifos: 0, marcadores: 0, respostas: 0 };
+      const total = { importadas: 0, existentes: 0, avulsas: 0, etiquetas: [], trocadas: 0, grifos: 0, marcadores: 0, respostas: 0, grifosExist: 0, marcadoresExist: 0, respostasExist: 0 };
+      backupNovos = { notas: new Set(), grifos: new Set(), marcadores: new Set(), respostas: new Set() };
       try {
         setBackupStatus('Abrindo o arquivo-base (' + arquivos[base].nome + ')…', false);
         const aberta = await backupMesclarAbrirFonte(arquivos[base]);
@@ -2724,15 +2745,26 @@
             r.etiquetasNovas.forEach(e => { if (!total.etiquetas.includes(e)) total.etiquetas.push(e); });
             if (comRespostas) {
               const permitidos = new Set(arquivos[i].listaRespostas.filter(x => backupMesclarRespostaPassa(arquivos[i], x)).map(x => x.id));
-              total.respostas += backupImportRespostas(outro.db, permitidos).novas;
+              const rr = backupImportRespostas(outro.db, permitidos);
+              total.respostas += rr.novas;
+              total.respostasExist += rr.existentes;
             }
-            if (comGrifos) total.grifos += backupImportGrifos(outro.db, loc => backupMesclarLugarPassa(arquivos[i], loc)).novos;
-            if (comMarcadores) total.marcadores += backupImportMarcadores(outro.db, loc => backupMesclarLugarPassa(arquivos[i], loc)).novos;
+            if (comGrifos) {
+              const g = backupImportGrifos(outro.db, loc => backupMesclarLugarPassa(arquivos[i], loc));
+              total.grifos += g.novos;
+              total.grifosExist += g.existentes;
+            }
+            if (comMarcadores) {
+              const m = backupImportMarcadores(outro.db, loc => backupMesclarLugarPassa(arquivos[i], loc));
+              total.marcadores += m.novos;
+              total.marcadoresExist += m.existentes;
+            }
           } finally {
             outro.db.close();
           }
         }
       } catch (e) {
+        backupNovos = null;
         if (novo && novo.db) novo.db.close();
         backupState = anterior; // nada foi alterado no que estava aberto
         backupMesclando = false;
@@ -2742,6 +2774,9 @@
       backupCloseImport();
       if (anterior && anterior.db) anterior.db.close();
       novo.data = readBackupData(novo.db);
+      novo.novos = backupNovos; // o que veio da mesclagem: aparece realçado no conteúdo
+      backupNovos = null;
+      document.getElementById('backupSoNovos').checked = false;
       const mudancas = total.importadas + total.trocadas + total.grifos + total.marcadores + total.respostas;
       if (mudancas) backupMarkChanged(mudancas);
       novo.changesDaMescla = novo.changes || 0;
@@ -2753,9 +2788,10 @@
       });
       const resumo = { base: arquivos[base].nome, arquivos: arquivos.length, notas: comNotas ? total.importadas : null, avulsas: total.avulsas, respostas: comRespostas ? total.respostas : null,
         filtros: arquivos.filter((a, k) => k !== base && backupMesclarFiltroAtivo(a)).length, repetidas: total.existentes, duplicadas: vencedores.size, trocadas: total.trocadas,
-        grifos: comGrifos ? total.grifos : null, marcadores: comMarcadores ? total.marcadores : null, etiquetas };
+        grifos: comGrifos ? total.grifos : null, marcadores: comMarcadores ? total.marcadores : null, etiquetas,
+        grifosExist: total.grifosExist, marcadoresExist: total.marcadoresExist, respostasExist: total.respostasExist };
       backupMesclarFechar(true); // os arquivos e as escolhas ficam guardados: dá para voltar à seleção pelo resumo
-      backupCategory = 'notas';
+      backupCategory = 'respostas';
       document.getElementById('backupNewNoteSlot').textContent = '';
       backupRefresh('✅ Mesclagem pronta. Veja o resumo abaixo, edite o que quiser e gere o backup mesclado.');
       backupMesclarResultadoMostrar(resumo);
@@ -2777,9 +2813,9 @@
         ['📝 Notas que entraram', d.notas === null ? 'não mescladas' : n(d.notas) + (d.avulsas ? ' (' + n(d.avulsas) + (d.avulsas === 1 ? ' avulsa' : ' avulsas') + ')' : '')],
         ['♻️ Notas repetidas e iguais (ficaram uma vez só)', n(d.repetidas)],
         ['⚖️ Notas duplicadas com diferenças', d.notas === null ? 'não se aplica' : d.duplicadas ? n(d.duplicadas) + (d.trocadas ? ' (em ' + n(d.trocadas) + ' valeu a versão de outro arquivo)' : ' (valeu a da base)') : 'nenhuma encontrada'],
-        ['🖍️ Grifos novos', d.grifos === null ? 'não mesclados' : n(d.grifos)],
-        ['🔖 Marcadores novos', d.marcadores === null ? 'não mesclados' : n(d.marcadores)],
-        ['✍️ Respostas novas', d.respostas === null ? 'não mescladas' : n(d.respostas)],
+        ['🖍️ Grifos novos', d.grifos === null ? 'não mesclados' : n(d.grifos) + (d.grifosExist ? ' (' + n(d.grifosExist) + ' já estavam na base)' : '')],
+        ['🔖 Marcadores novos', d.marcadores === null ? 'não mesclados' : n(d.marcadores) + (d.marcadoresExist ? ' (' + n(d.marcadoresExist) + ' já estavam na base)' : '')],
+        ['✍️ Respostas novas', d.respostas === null ? 'não mescladas' : n(d.respostas) + (d.respostasExist ? ' (' + n(d.respostasExist) + ' já tinham resposta na base)' : '')],
         ['🏷️ Etiquetas novas', n(d.etiquetas.length)]
       ];
       if (d.filtros) linhas.push(['☑️ Arquivos em que você escolheu o que importar', n(d.filtros)]);
@@ -2895,7 +2931,15 @@
     });
     mesclarGoBtn.addEventListener('click', backupMesclarExecutar);
     ['backupMesclarNotas', 'backupMesclarGrifos', 'backupMesclarMarcadores', 'backupMesclarRespostas'].forEach(id => document.getElementById(id).addEventListener('change', backupMesclarRender));
-    document.getElementById('backupMesclarCancelBtn').addEventListener('click', () => { if (!backupMesclando) { backupMesclarFechar(Boolean(backupState && backupState.mesclado)); setBackupStatus('', false); } });
+    document.getElementById('backupMesclarCancelBtn').addEventListener('click', () => {
+      if (backupMesclando) return;
+      backupMesclarFechar(Boolean(backupState && backupState.mesclado));
+      setBackupStatus('', false);
+      if (backupState && backupState.mesclado) { // voltando sem mesclar de novo: o conteúdo e o resumo do backup mesclado reaparecem
+        document.getElementById('backupView').hidden = false;
+        document.getElementById('backupMesclarResultado').hidden = false;
+      }
+    });
 
     // ---------- Leitura em voz alta (botão 🔊 Ouvir) ----------
     // O texto do campo (ou o trecho selecionado) vira letras comuns, sem emojis e símbolos, e vai em partes ao servidor,
@@ -6711,7 +6755,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.39'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.40'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
