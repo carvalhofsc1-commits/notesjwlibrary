@@ -5717,7 +5717,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.15'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.16'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -10049,6 +10049,11 @@ function saveTemplatesToStorage() {
     const aiInstruction = document.getElementById('aiInstruction');
     const aiOptionInputs = Array.from(document.querySelectorAll('[data-ai-opt]'));
     const AI_ENDPOINT = '/api/sugerir-formatacao';
+    // Com a senha de administrador salva no aparelho, o pedido a leva junto: só assim o servidor usa a memória de lições do piloto.
+    function corpoIa(payload) {
+      const admin = senhaAdminSalva();
+      return JSON.stringify(admin ? Object.assign({}, payload, { codigoAdmin: admin }) : payload);
+    }
     // Espera máxima por uma resposta da IA: os modelos mais potentes (escolhidos na tela de prompts) podem levar alguns
     // minutos; o servidor desiste antes disso (a função da Vercel vai até 300 s).
     const IA_ESPERA_MS = 290000;
@@ -10819,7 +10824,7 @@ function saveTemplatesToStorage() {
         const response = await fetch(AI_ENDPOINT, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          body: corpoIa(payload),
           signal: controller.signal
         });
 
@@ -11017,7 +11022,7 @@ function saveTemplatesToStorage() {
         const response = await fetch(AI_ENDPOINT, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          body: corpoIa(payload),
           signal: controller.signal
         });
 
@@ -11425,7 +11430,7 @@ function saveTemplatesToStorage() {
         const response = await fetch(AI_ENDPOINT, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          body: corpoIa(payload),
           signal: controller.signal
         });
         let data = null;

@@ -45,12 +45,23 @@ function licaoServePara(licaoTarefa, pedidoTarefa) {
   return false;
 }
 
+// Leitura usada só ao montar as respostas da IA: guardada por 30 s na instância (a tela de gestão lê sempre do Blob), para não ler o
+// Blob a cada chamada. Uma gravação nesta instância invalida na hora; em outras instâncias a mudança chega em até 30 s.
+let cacheRespostas = null;
+const VALIDADE_CACHE_MS = 30_000;
+async function lerMemoriaParaRespostas() {
+  if (cacheRespostas && Date.now() - cacheRespostas.em < VALIDADE_CACHE_MS) return cacheRespostas.valor;
+  const valor = await lerMemoria();
+  cacheRespostas = { valor, em: Date.now() };
+  return valor;
+}
+
 // Bloco curto para anexar ao system prompt. Só com a chave geral ligada e lições ativas.
 export async function blocoLicoesPara(tarefa) {
   if (!memoriaConfigurada()) return { texto: "", usadas: 0 };
   let memoria;
   try {
-    memoria = await lerMemoria();
+    memoria = await lerMemoriaParaRespostas();
   } catch {
     return { texto: "", usadas: 0 };
   }
@@ -86,6 +97,7 @@ async function lerBruto() {
 }
 
 async function gravarBruto(dados) {
+  cacheRespostas = null; // qualquer gravação invalida o cache das respostas
   const texto = JSON.stringify(dados);
   if (process.env.MEMORIA_DIR) {
     const { mkdir, writeFile } = await import("node:fs/promises");

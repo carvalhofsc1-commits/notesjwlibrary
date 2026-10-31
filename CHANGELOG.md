@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.16
+
+Memória do piloto: as lições só entram nas respostas de IA quando o pedido vem do administrador (o app envia a senha de administrador salva no aparelho; o servidor a confere); para os demais usuários nada muda. A leitura da memória nas respostas passa a ter um cache de 30 s por instância (gravações a invalidam), em vez de ler o Blob a cada chamada; e `memoriaUsada` é contada por pedido, sem se misturar entre pedidos simultâneos.
+
 ## 6.3.15
 
 Leitura em voz alta do texto diário: o código de pesquisa sozinho não basta mais para sintetizar texto arbitrário. O servidor só gera áudio de trechos cobertos por um cupom assinado emitido ao carregar o texto do dia ou ao gerar os comentários da IA.

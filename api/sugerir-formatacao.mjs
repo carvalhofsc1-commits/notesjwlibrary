@@ -1,10 +1,11 @@
 // Função serverless (Vercel) que pede à IA sugestões de formatação para as linhas do texto.
 // A chave da API fica só aqui, na variável de ambiente ANTHROPIC_API_KEY — nunca vai para o navegador.
+import { AsyncLocalStorage } from "node:async_hooks";
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
-import { codigoDoDirigente, erro, origemPermitida } from "./_comum.mjs";
+import { codigoDoDirigente, erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { acessoDoDirigente, codigoValido, dirigenteValido, exigirAcesso, recusarAcesso } from "./_acesso.mjs";
 import { lerConfigIa } from "./_iaConfig.mjs";
 import { blocoLicoesPara } from "./_memoria.mjs";
@@ -55,15 +56,18 @@ import {
 const aceitaEsforco = (modelo) => !/haiku-4|sonnet-4-5|-3-/.test(modelo);
 const temFallback = (modelo) => /^claude-(sonnet-5-5|opus-5-5|fable-5-1)$/.test(modelo);
 
-// Quantas lições da memória entraram no último chamarIa com tarefa (para devolver memoriaUsada na resposta).
-let ultimoMemoriaUsada = 0;
+// Contexto de cada pedido: se veio com o código de administrador (a memória de lições do piloto só vale para ele) e quantas lições
+// entraram na última chamada com tarefa (memoriaUsada). Por pedido, para pedidos simultâneos na mesma instância não se misturarem.
+const contextoDoPedido = new AsyncLocalStorage();
+const memoriaUsadaAgora = () => contextoDoPedido.getStore()?.memoriaUsada || 0;
 
 async function chamarIa(client, P, params, { schema = null, semPensar = false, tarefa = "" } = {}) {
   let system = params.system || "";
   // Só na chamada que informa a tarefa: as voltas seguintes (pause_turn) não zeram memoriaUsada.
-  if (tarefa) {
-    const m = await blocoLicoesPara(tarefa);
-    ultimoMemoriaUsada = m.usadas;
+  const contexto = contextoDoPedido.getStore();
+  if (tarefa && contexto) {
+    const m = contexto.admin ? await blocoLicoesPara(tarefa) : { texto: "", usadas: 0 };
+    contexto.memoriaUsada = m.usadas;
     system += m.texto || "";
   }
   const { modelo, esforco } = P.ia;
@@ -830,7 +834,7 @@ async function responderSentinela(res, { linhas, opcoes, modo, ajuste, anteriore
     const { itens, uso } = await escreverRespostas({ rotulo: "TEXTO COLADO", texto: linhas.join("\n"), opcoes, modo, ajuste, anteriores, sep, P });
     console.log("Texto colado:", JSON.stringify(uso));
     if (!itens) return erro(res, 502, "A IA não conseguiu gerar as respostas para este texto.");
-    const memoriaUsada = ultimoMemoriaUsada;
+    const memoriaUsada = memoriaUsadaAgora();
     return res.status(200).json({ itens: await finalizarItens(itens, opcoes, P, blocoOrientacao(opcoes, ajuste, P)), memoriaUsada });
   } catch (e) {
     return tratarErro(e, res);
@@ -885,7 +889,7 @@ async function responderEstudoLido(res, { lido, alvo, recapitulacao, opcoes, aju
       : gerados;
     console.log("Estudo (lido no site):", JSON.stringify({ pedidos: alvo ? [...alvo] : "recapitulacao", recebidos: itens.map((i) => i.paragrafos), caracteres: texto.length, leitura, ...uso }));
 
-    const memoriaUsada = ultimoMemoriaUsada;
+    const memoriaUsada = memoriaUsadaAgora();
     const inicioFontes = Date.now();
     const itensFinais = await finalizarItens(itens, opcoes, P, blocoOrientacao(opcoes, ajuste, P));
     console.log("Estudo (tempo):", JSON.stringify({ fontes: Math.round((Date.now() - inicioFontes) / 100) / 10, total: Math.round((Date.now() - inicioPedido) / 100) / 10 }));
@@ -1122,7 +1126,7 @@ async function responderEstudo(res, body, P) {
       }
     }
 
-    const memoriaUsada = ultimoMemoriaUsada;
+    const memoriaUsada = memoriaUsadaAgora();
     const inicioFontes = Date.now();
     const itensFinais = await finalizarItens(itens, opcoes, P, blocoOrientacao(opcoes, ajuste, P));
     console.log("Estudo (tempo):", JSON.stringify({ fontes: Math.round((Date.now() - inicioFontes) / 100) / 10, total: Math.round((Date.now() - inicioPedido) / 100) / 10 }));
@@ -1279,7 +1283,7 @@ async function sugerirPerguntas(res, body, P) {
       titulo: lido.titulo || null,
       erro: itens.length ? null : "A IA não sugeriu perguntas para esse(s) parágrafo(s). Tente de novo.",
       itens,
-      memoriaUsada: ultimoMemoriaUsada,
+      memoriaUsada: memoriaUsadaAgora(),
     });
   } catch (e) {
     return tratarErro(e, res);
@@ -1441,7 +1445,7 @@ async function responderEbc(res, body, P) {
       })
     );
 
-    const memoriaUsada = ultimoMemoriaUsada;
+    const memoriaUsada = memoriaUsadaAgora();
     const itensFinais = await finalizarItens(itens, opcoes, P, blocoOrientacao(opcoes, ajuste, P));
     console.log("Estudo bíblico (tempo):", JSON.stringify({ total: Math.round((Date.now() - inicioPedido) / 100) / 10 }));
     return res.status(200).json({
@@ -1580,7 +1584,7 @@ async function perguntasEbcDirigente(res, body, P) {
       erro: perguntas.length || base.length ? null : perguntasPedidas ? "A IA não elaborou perguntas diferentes das originais. Tente de novo." : "A IA não escolheu trechos dos textos bíblicos. Tente de novo.",
       perguntas,
       textosBase: base,
-      memoriaUsada: ultimoMemoriaUsada,
+      memoriaUsada: memoriaUsadaAgora(),
     });
   } catch (e) {
     return tratarErro(e, res);
@@ -2038,7 +2042,7 @@ async function esbocoDeTesouros(res, body, P) {
       esboco: completo ? esboco : null,
       avisos: completo ? avisos : [],
       textosBiblicos: await textosDaMateria(materia),
-      memoriaUsada: ultimoMemoriaUsada,
+      memoriaUsada: memoriaUsadaAgora(),
     });
   } catch (e) {
     return tratarErro(e, res);
@@ -2213,7 +2217,7 @@ async function esbocoDoDiscursoCurto(res, body, P) {
       esboco: completo ? esboco : null,
       avisos: completo ? avisos : [],
       textosBiblicos: await textosDaMateria(materia),
-      memoriaUsada: ultimoMemoriaUsada,
+      memoriaUsada: memoriaUsadaAgora(),
     });
   } catch (e) {
     return tratarErro(e, res);
@@ -2413,7 +2417,7 @@ async function esbocoDoDiscursoPublico(res, body, P) {
       esboco: completo ? esboco : null,
       avisos: completo ? avisos : [],
       textosBiblicos: await textosDaMateria(textosBiblicosDoPublico(tema)),
-      memoriaUsada: ultimoMemoriaUsada,
+      memoriaUsada: memoriaUsadaAgora(),
     });
   } catch (e) {
     return tratarErro(e, res);
@@ -2714,7 +2718,7 @@ async function esbocoDeOutros(res, body, P) {
       erro: completo ? null : "A IA não montou o esboço completo (introdução, pontos e conclusão). Tente de novo.",
       esboco: completo ? esboco : null,
       avisos: completo ? avisos : [],
-      memoriaUsada: ultimoMemoriaUsada,
+      memoriaUsada: memoriaUsadaAgora(),
     });
   } catch (e) {
     return tratarErro(e, res);
@@ -2981,7 +2985,7 @@ async function responderJoias(res, body, P) {
       })
     );
 
-    const memoriaUsada = ultimoMemoriaUsada;
+    const memoriaUsada = memoriaUsadaAgora();
     const finais = await finalizarItens([...(itemPergunta ? [itemPergunta] : []), ...itensJoias], opcoes, P, blocoOrientacao(opcoes, ajuste, P));
     console.log("Joias espirituais (tempo):", JSON.stringify({ total: Math.round((Date.now() - inicioPedido) / 100) / 10 }));
     return res.status(200).json({
@@ -3070,7 +3074,7 @@ async function comentariosDoTextoDiario(res, body, P) {
       data: texto.data,
       erro: comentarios.length ? null : "A IA não sugeriu comentários. Tente de novo.",
       comentarios,
-      memoriaUsada: ultimoMemoriaUsada,
+      memoriaUsada: memoriaUsadaAgora(),
       vozCupom,
     });
   } catch (e) {
@@ -3295,6 +3299,12 @@ async function lerPublicacoesDaSemana(req, res) {
 }
 
 export default async function handler(req, res) {
+  const corpo = req.body && typeof req.body === "object" ? req.body : {};
+  const admin = textosIguais(corpo.codigoAdmin, process.env.CODIGO_ADMIN);
+  return contextoDoPedido.run({ admin, memoriaUsada: 0 }, () => tratarPedido(req, res));
+}
+
+async function tratarPedido(req, res) {
   res.setHeader("Cache-Control", "no-store");
 
   if (req.method !== "POST") {
@@ -3505,7 +3515,7 @@ export default async function handler(req, res) {
       relevantes: listaDeTextos(saida.textosRelevantes, P.limites.maxTextos),
       verbetes: listaDeTextos(saida.verbetes, 2),
     };
-    const memoriaUsada = ultimoMemoriaUsada;
+    const memoriaUsada = memoriaUsadaAgora();
     if (consultaPedida(opcoes)) await completarFontes([fonte], opcoes, P, blocoOrientacao(opcoes, ajuste, P));
     const textos = fonte.textos || [];
     const perspicaz = fonte.perspicaz || null;
