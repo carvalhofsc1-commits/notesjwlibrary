@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.77
+
+Preparar para comentar e para dirigir: os botões "Carregar / Recarregar perguntas" ganharam a mesma cor dos botões "IA - Responder…" do grupo.
+
 ## 6.3.76
 
 Preparar para comentar e para dirigir: os botões "IA - Responder…", "Preparar as joias", "Responder às perguntas", "Sugerir perguntas adicionais" e "Preparar para dirigir o estudo" não aceitam clique enquanto as perguntas (a matéria) da semana escolhida não foram carregadas; ao carregar (ou ao trocar para uma semana já carregada) eles liberam sozinhos.

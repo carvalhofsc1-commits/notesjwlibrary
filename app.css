@@ -6706,7 +6706,18 @@
       background: var(--g-suave-h);
     }
 
-    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos) .sent-option-site :is(.ai-week-link, .ai-study-input input) {
+    /* "Carregar / Recarregar perguntas" de Preparar para comentar e para dirigir: a mesma cor do botão "IA - Responder…" do grupo. */
+    :is(#grupoComentarios, #grupoDirigir) :is(.ai-study-load, .sent-option-site .ai-study-load) {
+      background: var(--g-forte);
+      color: #ffffff;
+      border-color: var(--g-forte);
+    }
+
+    :is(#grupoComentarios, #grupoDirigir) :is(.ai-study-load, .sent-option-site .ai-study-load):hover:not(:disabled) {
+      background: var(--g-forte-h);
+    }
+
+    :is(#grupoComentarios, #grupoDirigir) .sent-option-site :is(.ai-week-link, .ai-study-input input) {
       background: var(--card);
       background: color-mix(in srgb, var(--g-cor) 22%, var(--card));
       border-color: var(--g-cor);
