@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.65
+
+Backup, respostas preparadas: "Marcar todas" e "Desmarcar todas" passam a valer para todas as respostas que ainda podem entrar (antes o "Marcar todas" só marcava as que já tinham pergunta de destino e, quando nenhuma tinha, parecia não fazer nada). As marcadas sem pergunta de destino aparecem no resumo ("falta escolher a pergunta de: …"). A rolagem da tela é mantida ao tocar nos botões, e as caixas de marcar da lista ficam claras (brancas, azuis com o visto quando marcadas) em vez de pretas no tema escuro.
+
 ## 6.3.64
 
 Início: no iPhone 17 (402 px de largura) os atalhos saíam para fora do cartão. Os textos "Requer o código do dirigente" (que não quebram de linha) alargavam as colunas da grade e empurravam o quadro da direita para além da borda. Agora as duas colunas têm largura fixa (cada uma metade do cartão, mesmo que o texto seja maior), o espaço interno dos botões no modo apertado ficou menor e a letra da frase do cadeado, um pouco menor, para o texto caber inteiro.

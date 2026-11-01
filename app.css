@@ -8684,12 +8684,35 @@ details.subsection.ebc-subsection#publicoBox.s34-bloqueado {
   overflow-wrap: anywhere;
 }
 
-.bk-salva>summary input {
-  width: 18px;
-  height: 18px;
-  min-height: 0;
+/* Caixa de marcar clara (como a das fontes da IA): no tema escuro a padrão do navegador ficava preta e não dava para ver se estava marcada. */
+.bk-salva>summary input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  max-height: 20px;
+  padding: 0;
   margin: 0 2px 0 0;
+  box-sizing: border-box;
   vertical-align: middle;
+  background-color: #ffffff;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 14px 14px;
+  border: 2px solid #94a3b8;
+  border-radius: 5px;
+}
+
+.bk-salva>summary input[type="checkbox"]:checked {
+  background-color: var(--accent);
+  border-color: var(--accent-dark);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3 8.5l3.2 3.2L13 4.8' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+}
+
+.bk-salva>summary input[type="checkbox"]:disabled {
+  opacity: .55;
 }
 
 .bk-salva-texto {

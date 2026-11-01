@@ -1100,6 +1100,19 @@
       else backupPrepRender();
     }
 
+    // Marcar/Desmarcar todas: vale para todas as respostas que ainda podem entrar (as já incluídas ou que a pergunta já tem resposta ficam como estão).
+    // As marcadas sem pergunta de destino não entram: o resumo abaixo da lista diz de quais falta escolher a pergunta. A tela redesenha a lista, então
+    // a posição da rolagem é mantida.
+    function backupPrepMarcarTodas(marcar, respondidas) {
+      const rolagem = window.scrollY;
+      backupPrep.itens.forEach(it => {
+        if (it.estado || (it.tag && respondidas.has(it.tag))) return;
+        it.marcado = marcar;
+      });
+      backupPrepRender();
+      window.scrollTo(0, rolagem);
+    }
+
     function backupPrepRender() {
       const corpo = document.getElementById('backupPreparadasCorpo');
       if (!corpo || !backupState) return;
@@ -1222,8 +1235,8 @@
       const ferramentas = document.createElement('div');
       ferramentas.className = 'bk-row';
       ferramentas.append(
-        backupButton('☑️ Marcar todas', () => { backupPrep.itens.forEach(it => { if (!it.estado && it.tag && !respondidas.has(it.tag)) it.marcado = true; }); backupPrepRender(); }),
-        backupButton('⬜ Desmarcar todas', () => { backupPrep.itens.forEach(it => { if (!it.estado) it.marcado = false; }); backupPrepRender(); })
+        backupButton('☑️ Marcar todas', () => backupPrepMarcarTodas(true, respondidas)),
+        backupButton('⬜ Desmarcar todas', () => backupPrepMarcarTodas(false, respondidas))
       );
       corpo.appendChild(ferramentas);
 
@@ -7179,7 +7192,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.64'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.65'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
