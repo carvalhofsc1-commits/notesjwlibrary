@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.68
+
+Backup, respostas preparadas: na reunião do meio de semana, a linha com a data da semana (título da apostila) saiu da lista, porque a barra da semana, no alto, já mostra a data; continua aparecendo o título do capítulo do Estudo Bíblico. Em A Sentinela continua o título do artigo.
+
 ## 6.3.67
 
 Backup, respostas preparadas: o botão "Ir para gerar o arquivo do backup" (atalho de rolagem que aparecia depois de incluir respostas) foi removido por ser confuso; o aviso depois de incluir já diz para tocar em Gerar, lá embaixo.
