@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.67
+
+Backup, respostas preparadas: o botão "Ir para gerar o arquivo do backup" (atalho de rolagem que aparecia depois de incluir respostas) foi removido por ser confuso; o aviso depois de incluir já diz para tocar em Gerar, lá embaixo.
+
 ## 6.3.66
 
 Backup: (1) ao criar um backup vazio, o quadro "Conteúdo do backup novo" não abre mais sozinho (o backup está vazio); (2) respostas preparadas para as reuniões: a semana agora é escolhida com a mesma barra da tela Reuniões (setas, "Semana atual", "Voltar para a semana atual") e os botões das reuniões mostram quantas respostas salvas a semana tem em cada uma; (3) o botão "Incluir respostas no backup" ficava desabilitado na reunião do meio de semana porque quase nenhuma resposta tinha pergunta de destino. Agora as joias sobre o versículo da pergunta da apostila vão para a caixa dessa pergunta, as joias da leitura da Bíblia vão juntas (numa resposta só) para a pergunta geral das joias, e as respostas do Estudo Bíblico vão para as caixas do capítulo do estudo da semana (Considerar, Analise, Medite e Quadro completo), que o servidor passou a informar (documento próprio, publicação wcg). Quando nenhuma pergunta é achada, o resumo continua dizendo de quais falta escolher a pergunta.
