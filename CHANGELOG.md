@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.84
+
+Áudio em texto: "Configurações do Áudio em texto" agora é exclusiva do administrador (fica no grupo 🛡️ de Ajustes) e cada tipo de áudio ganhou o campo "Como fazer o resumo", que preenche o campo de mesmo nome ao escolher o tipo.
+
 ## 6.3.83
 
 Preparação de discursos (Tesouros e discurso curto): o botão "IA - Elaborar o esboço do discurso" não aceita clique enquanto a matéria do discurso da semana não foi carregada; libera sozinho ao carregar.

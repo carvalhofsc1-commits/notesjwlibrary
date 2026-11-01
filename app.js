@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.83'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.84'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -17745,7 +17745,7 @@ function saveTemplatesToStorage() {
     function audioTiposLer() {
       try {
         const guardado = JSON.parse(localStorage.getItem(AUDIO_TIPOS_KEY) || 'null');
-        if (Array.isArray(guardado)) return guardado.filter(t => t && typeof t.id === 'string' && typeof t.nome === 'string' && typeof t.texto === 'string');
+        if (Array.isArray(guardado)) return guardado.filter(t => t && typeof t.id === 'string' && typeof t.nome === 'string' && typeof t.texto === 'string').map(t => ({ ...t, instrucoes: typeof t.instrucoes === 'string' ? t.instrucoes : '' }));
       } catch (e) { /* sem localStorage ou lista inválida: valem os tipos originais */ }
       return AUDIO_TIPOS_PADRAO.map(t => ({ ...t }));
     }
@@ -17754,6 +17754,7 @@ function saveTemplatesToStorage() {
     // O seletor da tela Áudio em texto.
     const trTipo = document.getElementById('transcricaoTipo');
     let trTipoUltimoTexto = ''; // o último texto posto pelo seletor (para trocar sem perguntar se a pessoa não mexeu)
+    let trTipoUltimaInstr = ''; // o mesmo para "Como fazer o resumo"
     function trTiposDesenhar() {
       const tipos = audioTiposLer();
       trTipo.textContent = '';
@@ -17775,11 +17776,19 @@ function saveTemplatesToStorage() {
       const tipo = audioTiposLer().find(t => t.id === trTipo.value);
       if (!tipo) return;
       const atual = trContexto.value.trim();
-      if (atual && atual !== trTipoUltimoTexto && !(await askConfirm('O campo “Sobre o áudio” já tem texto. Trocar pela descrição do tipo escolhido?', 'Trocar o texto'))) { trTipo.value = ''; return; }
+      const atualInstr = trInstrucoes.value.trim();
+      const mexeuSobre = Boolean(atual && atual !== trTipoUltimoTexto);
+      const mexeuInstr = Boolean(tipo.instrucoes && atualInstr && atualInstr !== trTipoUltimaInstr);
+      if ((mexeuSobre || mexeuInstr) && !(await askConfirm((mexeuSobre && mexeuInstr ? 'Os campos “Sobre o áudio” e “Como fazer o resumo” já têm texto. Trocar' : mexeuSobre ? 'O campo “Sobre o áudio” já tem texto. Trocar' : 'O campo “Como fazer o resumo” já tem texto. Trocar') + ' pelo que o tipo escolhido traz?', 'Trocar o texto'))) { trTipo.value = ''; return; }
       trContexto.value = tipo.texto;
       trTipoUltimoTexto = tipo.texto;
+      if (tipo.instrucoes) {
+        trInstrucoes.value = tipo.instrucoes;
+        trTipoUltimaInstr = tipo.instrucoes;
+        safeSetItem(TRANSCRICAO_INSTR_KEY, trInstrucoes.value);
+      }
       trTipo.value = '';
-      trInfo.textContent = 'Descrição do tipo “' + tipo.nome + '” colocada em “Sobre o áudio”. Complete com os nomes e os termos deste áudio.';
+      trInfo.textContent = 'Descrição do tipo “' + tipo.nome + '” colocada em “Sobre o áudio”' + (tipo.instrucoes ? ' e o modo de resumir em “Como fazer o resumo”' : '') + '. Complete com os nomes e os termos deste áudio.';
     });
 
     // A configuração, em Ajustes.
@@ -17820,6 +17829,13 @@ function saveTemplatesToStorage() {
         texto.spellcheck = false;
         texto.value = tipo.texto;
         texto.addEventListener('input', () => { tipo.texto = texto.value; audioTiposSalvar(tipos); });
+        const instrucoes = document.createElement('textarea');
+        instrucoes.rows = 5;
+        instrucoes.maxLength = 1400;
+        instrucoes.spellcheck = false;
+        instrucoes.placeholder = 'Ex.: resumo em no máximo 5 linhas, depois uma lista de tarefas com responsável e prazo.';
+        instrucoes.value = tipo.instrucoes || '';
+        instrucoes.addEventListener('input', () => { tipo.instrucoes = instrucoes.value; audioTiposSalvar(tipos); });
         const acoes = document.createElement('div');
         acoes.className = 'bk-row';
         const subir = backupButton('⬆️ Subir', () => { if (i) { [tipos[i - 1], tipos[i]] = [tipos[i], tipos[i - 1]]; audioTiposSalvar(tipos); audioTiposRender(tipo.id); } });
@@ -17837,14 +17853,16 @@ function saveTemplatesToStorage() {
         rotuloNome.textContent = 'Nome do tipo';
         const rotuloTexto = document.createElement('label');
         rotuloTexto.textContent = 'Descrição (vai para “Sobre o áudio”)';
-        corpo.append(rotuloNome, nome, rotuloTexto, texto, acoes);
+        const rotuloInstr = document.createElement('label');
+        rotuloInstr.textContent = 'Como fazer o resumo (vai para “Como fazer o resumo”; vazio = não muda o campo)';
+        corpo.append(rotuloNome, nome, rotuloTexto, texto, rotuloInstr, instrucoes, acoes);
         det.append(sum, corpo);
         audioTiposLista.appendChild(det);
       });
     }
     document.getElementById('audioTiposAdicionarBtn').addEventListener('click', () => {
       const tipos = audioTiposLer();
-      const novo = { id: 't-' + Date.now().toString(36), nome: 'Novo tipo de áudio', texto: '' };
+      const novo = { id: 't-' + Date.now().toString(36), nome: 'Novo tipo de áudio', texto: '', instrucoes: '' };
       tipos.push(novo);
       audioTiposSalvar(tipos, '➕ Tipo criado: dê um nome e escreva a descrição.');
       audioTiposRender(novo.id);

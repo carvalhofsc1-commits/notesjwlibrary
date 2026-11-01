@@ -902,18 +902,6 @@
 
           </div>
         </details>
-        <details class="subsection sub-tint-3" id="audioTiposSection">
-          <summary>🎙️ Configurações do Áudio em texto</summary>
-          <div class="subsection-body">
-            <p class="hint">Os tipos de áudio que aparecem na tela Áudio em texto, em Informações e instruções para a IA → Tipo de áudio. Ao escolher um tipo, a descrição dele preenche o campo “Sobre o áudio”. Você pode mudar os nomes e as descrições, criar tipos novos, reordenar e apagar. Ficam salvos só neste aparelho.</p>
-            <div id="audioTiposLista"></div>
-            <div class="bk-row">
-              <button id="audioTiposAdicionarBtn" type="button">➕ Novo tipo de áudio</button>
-              <button id="audioTiposRestaurarBtn" class="secondary" type="button">↩️ Restaurar os tipos originais</button>
-            </div>
-            <p id="audioTiposStatus" class="ok" role="status" aria-live="polite"></p>
-          </div>
-        </details>
         <details class="subsection sub-tint-5">
           <summary>🗂️ Gerenciar modelos e categorias</summary>
           <div class="subsection-body">
@@ -1422,6 +1410,18 @@
             </div>
           </div>
         </details>
+        <details class="subsection sub-tint-3 so-admin" id="audioTiposSection" hidden>
+          <summary><span class="adm-titulo">🎙️ Configurações do Áudio em texto&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
+          <div class="subsection-body">
+            <p class="hint">Os tipos de áudio que aparecem na tela Áudio em texto, em Informações e instruções para a IA → Tipo de áudio. Ao escolher um tipo, a descrição dele preenche o campo “Sobre o áudio”. Você pode mudar os nomes e as descrições, criar tipos novos, reordenar e apagar. Ficam salvos só neste aparelho.</p>
+            <div id="audioTiposLista"></div>
+            <div class="bk-row">
+              <button id="audioTiposAdicionarBtn" type="button">➕ Novo tipo de áudio</button>
+              <button id="audioTiposRestaurarBtn" class="secondary" type="button">↩️ Restaurar os tipos originais</button>
+            </div>
+            <p id="audioTiposStatus" class="ok" role="status" aria-live="polite"></p>
+          </div>
+        </details>
         </div>
     </div>
 
@@ -1523,7 +1523,7 @@
         <summary>⚙️ Informações e instruções para a IA (opcional)</summary>
         <label for="transcricaoTipo" class="transcricao-rotulo">Tipo de áudio</label>
         <select id="transcricaoTipo"></select>
-        <p class="hint">Escolha um tipo para preencher o campo abaixo com uma descrição pronta, e complete com os nomes e termos deste áudio. Os tipos podem ser mudados em Ajustes → Configurações do Áudio em texto.</p>
+        <p class="hint">Escolha um tipo para preencher o campo abaixo com uma descrição pronta, e complete com os nomes e termos deste áudio. Cada tipo também pode trazer o modo de fazer o resumo, que preenche o campo “Como fazer o resumo”. Os tipos são configurados pelo administrador, em Ajustes.</p>
         <label for="transcricaoContexto" class="transcricao-rotulo">Sobre o áudio</label>
         <textarea id="transcricaoContexto" class="transcricao-campo" rows="6" maxlength="1500" placeholder="Ex.: reunião de planejamento da equipe de vendas, com Ana (gerente), Carlos e Paula. Termos: Ibirapuera, CRM." spellcheck="false"></textarea>
         <p class="hint">Quem fala, o assunto e nomes ou termos difíceis. Ajuda a IA a entender o áudio e a escrever nomes certos no resumo. Vale só para este áudio e não fica salvo.</p>
