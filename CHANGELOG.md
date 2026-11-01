@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.86
+
+Áudio em texto: novo botão "Limpar os dois campos" (Sobre o áudio e Como fazer o resumo), para desfazer o que um tipo de áudio preencheu.
+
 ## 6.3.85
 
 Áudio em texto: os tipos de áudio originais agora vêm com uma sugestão pronta no campo "Como fazer o resumo" (discurso público, palestra, auditoria, reunião de equipe, de setores, com cliente, treinamento, entrevista e anotação de voz).
