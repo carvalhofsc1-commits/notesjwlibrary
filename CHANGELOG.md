@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.72
+
+Ajustes: o título do quadro dos esboços do S-34 passou a ser "Esboços de discursos - S-34".
+
 ## 6.3.71
 
 Backup, resumo da mesclagem: o botão "Voltar à seleção dos arquivos" passou para o fim do quadro; a linha "Etiquetas novas" da tabela agora é ela mesma o botão que abre as etiquetas (some a segunda linha "Ver as etiquetas novas"). Backup novo: o quadro "Conteúdo do backup novo", ao abrir, mostra primeiro uma tabela de resumo só com o que já foi criado nele (respostas, notas, grifos, favoritos, marcadores, listas e etiquetas).
