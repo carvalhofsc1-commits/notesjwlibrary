@@ -1642,17 +1642,22 @@
       font-weight: 700;
     }
 
-    #aiStudyInfo {
-      margin: 6px 0 0;
-      text-align: center;
+    /* "(opção 1 de 16)" na frente do título "Parágrafos": sem negrito, em tom suave. */
+    .study-opcao {
+      font-weight: 400;
+      color: var(--muted, #64748b);
     }
 
-    #aiStudyInfo:empty {
+    .study-opcao:empty {
       display: none;
     }
 
     .study-pergunta {
       margin: 8px 0 0;
+      padding: 10px 12px;
+      border: 2px solid color-mix(in srgb, var(--brand) 45%, transparent);
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--brand) 6%, transparent);
       text-align: center;
       font-size: .95rem;
       line-height: 1.45;
@@ -1705,15 +1710,15 @@
     /* "Recuperar a resposta/as perguntas salvas": amarelo mais forte, para se destacar (vale sobre a cor dos grupos). */
     .study-salva button,
     :is(#grupoComentarios, #grupoDirigir) .study-salva button.secondary {
-      background: #fcd34d;
+      background: #fef08a;
       color: #422006;
-      border-color: #f59e0b;
+      border-color: #facc15;
       font-weight: 700;
     }
 
     .study-salva button:hover:not(:disabled),
     :is(#grupoComentarios, #grupoDirigir) .study-salva button.secondary:hover:not(:disabled) {
-      background: #fbbf24;
+      background: #fde047;
     }
 
     #aiStudyArticleBox label {

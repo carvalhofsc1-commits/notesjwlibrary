@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.79
+
+Preparar para comentar e para dirigir: a pergunta do parágrafo ganhou moldura; "(opção 1 de x)" passou para a frente do título "Parágrafos", entre parênteses e sem negrito; os botões "Recuperar … salvas" ficaram num amarelo mais suave.
+
 ## 6.3.78
 
 Preparar para comentar e para dirigir: os botões "Recuperar a resposta salva" / "Recuperar as perguntas salvas" ficaram em amarelo mais forte, para se destacar.

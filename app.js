@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.78'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.79'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -13165,7 +13165,7 @@ function saveTemplatesToStorage() {
         // Durante o carregamento o botão mostra "Consultando o wol.jw.org…": o rótulo volta no fim (setAiLoading).
         if (!picker.load.dataset.label) picker.load.textContent = aiStudy ? '↻ Recarregar perguntas' : '📋 Carregar perguntas';
         const exact = options.some(option => plainStudyText(option) === plainStudyText(picker.input.value));
-        picker.info.textContent = aiStudy ? (exact ? 'opção ' + (index + 1) + ' de ' + options.length : 'texto livre') : '';
+        picker.info.textContent = aiStudy ? (exact ? '(opção ' + (index + 1) + ' de ' + options.length + ')' : '(texto livre)') : '';
         // O tema do artigo carregado é o título do cartão (em destaque); sem perguntas carregadas, "Aguardando carregar perguntas".
         if (picker.titulo) {
           const texto = aiStudy ? aiStudy.titulo || '' : 'Aguardando carregar perguntas';
