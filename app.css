@@ -4904,12 +4904,13 @@
 
     .atalhos-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(2, minmax(0, 1fr)); /* minmax(0, ...): o texto de um atalho nunca alarga a coluna e empurra a grade para fora do cartão */
       gap: 10px;
     }
 
     .atalhos-grid .atalho,
     .atalhos-grid .atalho:hover {
+      min-width: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -7669,7 +7670,7 @@
 
       .inicio-grid.aperta2 .atalhos-grid .atalho,
       .inicio-grid.aperta2 .atalhos-grid .atalho:hover {
-        padding: 3px 5px;
+        padding: 3px 3px;
         gap: 0;
       }
 
@@ -7685,7 +7686,7 @@
 
       .inicio-grid.aperta2 .atalhos-grid .atalho-trava {
         margin-top: 0;
-        font-size: .64rem;
+        font-size: .6rem;
         max-width: 100%;
         white-space: nowrap;
         overflow: hidden;

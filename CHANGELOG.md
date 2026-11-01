@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.64
+
+Início: no iPhone 17 (402 px de largura) os atalhos saíam para fora do cartão. Os textos "Requer o código do dirigente" (que não quebram de linha) alargavam as colunas da grade e empurravam o quadro da direita para além da borda. Agora as duas colunas têm largura fixa (cada uma metade do cartão, mesmo que o texto seja maior), o espaço interno dos botões no modo apertado ficou menor e a letra da frase do cadeado, um pouco menor, para o texto caber inteiro.
+
 ## 6.3.63
 
 Áudio em texto: (1) "Informações e instruções para a IA" ficou dentro de um contêiner (caixa com borda) e os campos "Sobre o áudio" e "Como fazer o resumo" ficaram maiores (6 linhas, letra de 16 px); (2) novo seletor "Tipo de áudio" acima do campo "Sobre o áudio", com descrições prontas: discurso em uma reunião pública das Testemunhas de Jeová, palestra profissional sobre tema empresarial ou administrativo, entrevista com colaborador durante uma auditoria interna, reunião com equipe de colaboradores, reunião com setores da empresa, reunião com cliente ou fornecedor, treinamento ou aula, entrevista ou conversa geral e anotação de voz pessoal (escolher um tipo preenche o campo e pergunta antes de trocar um texto que a pessoa já escreveu); (3) nova seção em Ajustes → "🎙️ Configurações do Áudio em texto", onde se muda o nome e a descrição de cada tipo, cria tipos novos, reordena, apaga e restaura os originais (salvo neste aparelho e listado em Privacidade e dados deste aparelho).
