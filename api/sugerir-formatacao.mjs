@@ -19,6 +19,7 @@ import {
   lerCamposDoDocumento,
   lerArtigoDoWol,
   lerReuniaoDaSemana,
+  lerEstudoDaSemana,
   lerEstudoDireto,
   lerImagensDaApostila,
   lerDiscursoCurto,
@@ -3307,7 +3308,10 @@ async function lerPublicacoesDaSemana(req, res) {
   const semana = Number(body.semana);
   if (!Number.isInteger(ano) || ano < 2020 || ano > 2100 || !Number.isInteger(semana) || semana < 1 || semana > 53) return erro(res, 400, "Semana inválida.");
   try {
-    return res.status(200).json(await lerReuniaoDaSemana(ano, semana));
+    const reuniao = await lerReuniaoDaSemana(ano, semana);
+    // O capítulo do Estudo Bíblico (parte da apostila, mas é outro documento): sem ele a semana vem só com a apostila.
+    const estudo = reuniao.apostila ? await lerEstudoDaSemana(reuniao.apostila.id).catch(() => null) : null;
+    return res.status(200).json({ ...reuniao, estudo });
   } catch (e) {
     console.error("Backup: semana não lida", ano, semana, e?.name, e?.message);
     return erro(res, 502, "Não consegui ler essa semana no wol.jw.org agora. Tente de novo em instantes.");

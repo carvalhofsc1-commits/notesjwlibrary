@@ -1056,12 +1056,47 @@ const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julh
 const VALIDADE_CAMPOS_MS = 60 * 60 * 1000;
 const camposLidos = new Map(); // docId -> { quando, dados }
 
+// No capítulo do Estudo Bíblico de Congregação, a qual pergunta (id das perguntas da leitura do estudo: "Considerar 1", "Analise 3", "Medite 2",
+// "Quadro completo 1") pertence cada caixa "Sua resposta": à última pergunta do quadro antes dela. Devolve Map(tag -> id); vazio se o documento não é um capítulo.
+function idsEbcDosCampos(html) {
+  const inicio = html.search(/<p\b[^>]*class="contextTtl|<h1\b/);
+  const marcado = (inicio >= 0 ? html.slice(inicio) : html)
+    .replace(/<div class="stdPullQuote[\s\S]*?<\/div>/g, "")
+    .replace(/<div class="gen-field"[^>]*>[\s\S]*?<textarea id="(tt\d+)"[^>]*>/g, (todo, tag) => `<i data-campo="${tag}"></i>`);
+  const { html: corpo } = separarFiguras(marcado);
+  const ids = new Map();
+  const contagem = {};
+  let secao = "relato";
+  let ultimo = "";
+  for (const m of corpo.matchAll(/<(h2|h3)\b[^>]*>([\s\S]*?)<\/\1>|<p\b([^>]*)>([\s\S]*?)<\/p>|<i data-campo="(tt\d+)"><\/i>/g)) {
+    if (m[1]) {
+      const nome = semAcento(textoDe(m[2])).replace(/[:\s]+$/, "");
+      if (nome.startsWith("aprenda mais")) break;
+      if (nome.startsWith("leia o relato")) secao = "leia";
+      const quadro = QUADROS_EBC.find((q) => nome.startsWith(semAcento(q.nome)));
+      if (quadro) secao = quadro.id;
+      ultimo = "";
+    } else if (m[5]) {
+      if (ultimo) ids.set(m[5], ultimo);
+    } else {
+      if (/contextTtl|x-figura/.test(m[3] || "") || !textoDe(m[4])) continue;
+      const quadro = QUADROS_EBC.find((q) => q.id === secao);
+      if (!quadro) continue;
+      contagem[quadro.id] = (contagem[quadro.id] || 0) + 1;
+      ultimo = `${quadro.curto} ${contagem[quadro.id]}`;
+    }
+  }
+  return ids;
+}
+
 export function camposDoDocumento(html) {
   const titulo = textoDe((html.match(/<title>([\s\S]*?)<\/title>/i) || [, ""])[1]).replace(/\s*[—–-]\s*BIBLIOTECA ON-LINE.*$/i, "");
   // A publicação e a edição, como no JW Library: "w25 julho págs. 20-25" -> w, 20250700; "mwb26 setembro págs. 14-15" -> mwb, 20260900.
   const ref = html.match(/\b(w|mwb)(\d{2})\s+(janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\b/i);
-  const simbolo = ref ? ref[1].toLowerCase() : null;
-  const edicao = ref ? (2000 + Number(ref[2])) * 10000 + (MESES.indexOf(ref[3].toLowerCase()) + 1) * 100 : null;
+  // Os capítulos do Estudo Bíblico de Congregação são de um livro ("wcg cap. 13 págs. 66-69"): publicação wcg, sem edição (0).
+  const livro = ref ? null : html.match(/\b(wcg)\s+cap\./i);
+  const simbolo = ref ? ref[1].toLowerCase() : livro ? livro[1].toLowerCase() : null;
+  const edicao = ref ? (2000 + Number(ref[2])) * 10000 + (MESES.indexOf(ref[3].toLowerCase()) + 1) * 100 : livro ? 0 : null;
 
   const campos = [];
   let fim = 0;
@@ -1106,6 +1141,8 @@ export function camposDoDocumento(html) {
     campos.push(campo);
     if (campos.length >= 120) break;
   }
+  const ebc = simbolo === "wcg" ? idsEbcDosCampos(html) : new Map();
+  campos.forEach((c) => { if (ebc.has(c.tag)) c.ebc = ebc.get(c.tag); });
   return { titulo, simbolo, edicao, campos };
 }
 
@@ -1144,6 +1181,20 @@ export async function lerReuniaoDaSemana(ano, semana, { timeoutMs = 8000 } = {})
   const dados = { ano, semana, periodo, sentinela, apostila };
   reunioesLidas.set(chave, { quando: Date.now(), dados });
   if (reunioesLidas.size > 400) reunioesLidas.delete(reunioesLidas.keys().next().value);
+  return dados;
+}
+
+// O capítulo do Estudo Bíblico de Congregação da semana (a apostila traz o link; o link /wol/pc/ redireciona para o capítulo): { id, titulo: "wcg cap. 13" } ou null.
+const estudosDaSemana = new Map(); // id da apostila -> { quando, dados }
+export async function lerEstudoDaSemana(apostilaId, { timeoutMs = 8000 } = {}) {
+  const guardado = estudosDaSemana.get(apostilaId);
+  if (guardado && Date.now() - guardado.quando < VALIDADE_REUNIAO_MS) return guardado.dados;
+  const link = linkDoEstudoBiblico(await baixar(`${BASE}/pt/wol/d/r5/lp-t/${apostilaId}`, timeoutMs));
+  const destino = link ? await resolverCitacao(link.caminho, timeoutMs) : null;
+  const id = destino ? (destino.url.match(/\/(\d{6,12})\/?$/) || [])[1] : null;
+  const dados = id ? { id, titulo: link.rotulo } : null;
+  estudosDaSemana.set(apostilaId, { quando: Date.now(), dados });
+  if (estudosDaSemana.size > 200) estudosDaSemana.delete(estudosDaSemana.keys().next().value);
   return dados;
 }
 

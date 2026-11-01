@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.66
+
+Backup: (1) ao criar um backup vazio, o quadro "Conteúdo do backup novo" não abre mais sozinho (o backup está vazio); (2) respostas preparadas para as reuniões: a semana agora é escolhida com a mesma barra da tela Reuniões (setas, "Semana atual", "Voltar para a semana atual") e os botões das reuniões mostram quantas respostas salvas a semana tem em cada uma; (3) o botão "Incluir respostas no backup" ficava desabilitado na reunião do meio de semana porque quase nenhuma resposta tinha pergunta de destino. Agora as joias sobre o versículo da pergunta da apostila vão para a caixa dessa pergunta, as joias da leitura da Bíblia vão juntas (numa resposta só) para a pergunta geral das joias, e as respostas do Estudo Bíblico vão para as caixas do capítulo do estudo da semana (Considerar, Analise, Medite e Quadro completo), que o servidor passou a informar (documento próprio, publicação wcg). Quando nenhuma pergunta é achada, o resumo continua dizendo de quais falta escolher a pergunta.
+
 ## 6.3.65
 
 Backup, respostas preparadas: "Marcar todas" e "Desmarcar todas" passam a valer para todas as respostas que ainda podem entrar (antes o "Marcar todas" só marcava as que já tinham pergunta de destino e, quando nenhuma tinha, parecia não fazer nada). As marcadas sem pergunta de destino aparecem no resumo ("falta escolher a pergunta de: …"). A rolagem da tela é mantida ao tocar nos botões, e as caixas de marcar da lista ficam claras (brancas, azuis com o visto quando marcadas) em vez de pretas no tema escuro.

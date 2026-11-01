@@ -170,7 +170,7 @@
     // Consulta o servidor para os documentos que ainda não estão guardados (de 10 em 10). Devolve '' se deu certo ou a mensagem do problema.
     async function backupCarregarCampos(docIds) {
       // Os guardados antes da versão 2 não têm o título do quadro de recapitulação: são lidos de novo.
-      const faltam = [...new Set(docIds.map(String))].filter(id => !backupCampos[id] || backupCampos[id].v !== 2);
+      const faltam = [...new Set(docIds.map(String))].filter(id => !backupCampos[id] || backupCampos[id].v !== 3);
       for (let i = 0; i < faltam.length; i += 10) {
         const acesso = studyAccessError();
         if (acesso) return acesso;
@@ -182,7 +182,7 @@
         }
         if (!result.ok) return studyFailureMessage(result, 'Não consegui consultar o wol.jw.org agora.');
         Object.entries(result.data.documentos || {}).forEach(([id, d]) => {
-          backupCampos[id] = { v: 2, titulo: d.titulo || '', simbolo: d.simbolo || null, edicao: d.edicao === undefined ? null : d.edicao, campos: d.campos || [], quando: Date.now() };
+          backupCampos[id] = { v: 3, titulo: d.titulo || '', simbolo: d.simbolo || null, edicao: d.edicao === undefined ? null : d.edicao, campos: d.campos || [], quando: Date.now() };
         });
         (result.data.falhas || []).forEach(id => backupCamposFalhas.add(String(id)));
         backupCamposGuardar();
@@ -221,7 +221,7 @@
       const info = document.getElementById('backupRespostasInfo');
       if (!backupState || backupCategory !== 'respostas' || backupCamposOcupado) return;
       const docs = [...new Set(backupState.data.respostas.map(r => r.documentId).filter(Boolean).map(String))];
-      const faltam = docs.filter(id => (!backupCampos[id] || backupCampos[id].v !== 2) && !backupCamposFalhas.has(id));
+      const faltam = docs.filter(id => (!backupCampos[id] || backupCampos[id].v !== 3) && !backupCamposFalhas.has(id));
       if (!faltam.length) { info.hidden = true; return; }
       const acesso = studyAccessError();
       info.hidden = false;
@@ -973,55 +973,103 @@
 
     // ---------- Backup: respostas preparadas para as reuniões ----------
     // Seção própria (separada da Nova resposta): traz as respostas que já foram preparadas e salvas neste aparelho (Pesquisas salvas) para a reunião de fim de
-    // semana (A Sentinela) ou a do meio de semana (apostila), cada uma ligada à pergunta do documento, tudo marcado, e um botão leva as marcadas para o backup.
+    // semana (A Sentinela) ou a do meio de semana (apostila e Estudo Bíblico de Congregação), cada uma ligada à pergunta do documento, tudo marcado, e um botão
+    // leva as marcadas para o backup. A semana é escolhida com a mesma barra da tela Reuniões (setas), e os botões das reuniões mostram quantas respostas há.
+    // A reunião do meio de semana tem dois documentos: a apostila (joias) e o capítulo do Estudo Bíblico (outro documento, com as próprias caixas de resposta).
     const BACKUP_PREP_TIPOS = { sentinela: ['sentinela'], apostila: ['joias', 'ebc'] };
-    const backupPrep = { para: null, chave: '', pub: '', semanas: new Map(), doc: null, itens: [], ocupado: false, mensagem: '', incluidas: 0 };
+    const backupPrep = { para: null, deslocamento: 0, pub: '', semanas: new Map(), docs: [], itens: [], ocupado: false, mensagem: '', incluidas: 0 };
 
-    // As semanas que têm respostas preparadas salvas, da mais nova para a mais antiga, com quantas há para cada reunião.
-    function backupPrepSemanas() {
-      const mapa = new Map();
-      historicoLer().forEach(i => {
-        const pub = BACKUP_PREP_TIPOS.sentinela.includes(i.tipo) ? 'sentinela' : BACKUP_PREP_TIPOS.apostila.includes(i.tipo) ? 'apostila' : '';
-        if (!pub || !i.ano || !i.numSemana) return;
-        const chave = i.ano + '-' + i.numSemana;
-        const e = mapa.get(chave) || { chave, ano: Number(i.ano), semana: Number(i.numSemana), sentinela: 0, apostila: 0 };
-        e[pub] += (i.partes || []).filter(p => String(p.texto || '').trim()).length;
-        mapa.set(chave, e);
-      });
-      return [...mapa.values()].sort((a, b) => (b.ano * 100 + b.semana) - (a.ano * 100 + a.semana));
+    function backupPrepSemana() {
+      const s = backupSemanaDeslocada(backupPrep.deslocamento);
+      return { ano: s.ano, semana: s.semana, rotulo: s.rotulo, chave: s.ano + '-' + s.semana };
     }
 
-    // A pergunta (campo) do documento que corresponde a uma parte salva, ou null. A Sentinela casa pelo número do parágrafo ("Recap. n" com o n-ésimo quadro de
-    // recapitulação); na apostila só a pergunta das joias casa sozinha.
-    function backupPrepCampoDaParte(parte, tipo, campos) {
-      const par = String(parte.paragrafos || '').trim().replace(/\s+/g, ' ');
-      if (tipo === 'sentinela') {
+    // As partes salvas de uma reunião na semana, a mais nova de cada pergunta (a pesquisa mais nova da mesma pergunta vale).
+    function backupPrepPartes(pub, ano, semana) {
+      const vistos = new Set();
+      const lista = [];
+      historicoLer()
+        .filter(i => BACKUP_PREP_TIPOS[pub].includes(i.tipo) && Number(i.ano) === ano && Number(i.numSemana) === semana)
+        .forEach(item => (item.partes || []).forEach((parte, k) => {
+          const texto = String(parte.texto || '').replace(/\s+$/, '');
+          const par = String(parte.paragrafos || '').trim().replace(/\s+/g, ' ');
+          const chave = item.tipo + '|' + par + '|' + (par ? '' : texto.slice(0, 40));
+          if (!texto.trim() || vistos.has(chave)) return;
+          vistos.add(chave);
+          lista.push({ id: item.id + ':' + k, tipo: item.tipo, par, texto });
+        }));
+      return lista;
+    }
+
+    // Quantas respostas salvas a semana tem em cada reunião.
+    function backupPrepContagem(ano, semana) {
+      return { sentinela: backupPrepPartes('sentinela', ano, semana).length, apostila: backupPrepPartes('apostila', ano, semana).length };
+    }
+
+    // A referência no começo da pergunta da apostila ("Jer. 46:22 — Em que sentido…"), sem espaços, pontos e acentos, para comparar com a da joia.
+    function backupPrepRefDaPergunta(texto) {
+      const partes = String(texto || '').split(/\s+[—–]\s+/);
+      return partes.length > 1 ? backupPlain(partes[0]).replace(/[\s.]/g, '') : '';
+    }
+
+    // A pergunta (campo) do documento que corresponde a uma parte salva: { doc, campo, junta } ou null.
+    // - A Sentinela casa pelo número do parágrafo ("Recap. n" com o n-ésimo quadro de recapitulação).
+    // - A joia sobre o versículo da pergunta da apostila ("Jer. 46:22") casa com a caixa dessa pergunta; as joias da leitura da Bíblia vão todas para a pergunta
+    //   geral das joias ("Que joias espirituais você encontrou…"), numa resposta só (junta): os textos das marcadas são unidos.
+    // - O Estudo Bíblico casa pelo id da pergunta ("Considerar 1", "Analise 2", "Medite 3", "Quadro completo 1") com a caixa do capítulo.
+    function backupPrepMapear(parte, pub, docs) {
+      const principal = docs.find(d => d.papel === 'principal');
+      const estudo = docs.find(d => d.papel === 'estudo');
+      const par = parte.par;
+      if (pub === 'sentinela') {
+        if (!principal) return null;
+        const campos = principal.info.campos;
+        let campo = null;
         const recap = par.match(/^recap\.?\s*(\d+)/i);
-        if (recap) return campos.filter(c => c.quadro)[Number(recap[1]) - 1] || null;
-        if (!par) return null;
-        const primeiro = par.split(/\s*[,–-]\s*/)[0];
-        return campos.find(c => c.numero && c.numero === par) || campos.find(c => c.numero && c.numero.split(/\s*[,–-]\s*/)[0] === primeiro) || null;
+        if (recap) campo = campos.filter(c => c.quadro)[Number(recap[1]) - 1] || null;
+        else if (par) {
+          const primeiro = par.split(/\s*[,–-]\s*/)[0];
+          campo = campos.find(c => c.numero && c.numero === par) || campos.find(c => c.numero && c.numero.split(/\s*[,–-]\s*/)[0] === primeiro) || null;
+        }
+        return campo ? { doc: principal.id, campo } : null;
       }
-      if (tipo === 'joias' && !par) return campos.find(c => !c.numero && /joia/.test(backupPlain(c.pergunta))) || null;
+      if (parte.tipo === 'ebc') {
+        const campo = estudo && par ? estudo.info.campos.find(c => c.ebc && c.ebc.toLowerCase() === par.toLowerCase()) : null;
+        return campo ? { doc: estudo.id, campo } : null;
+      }
+      if (parte.tipo === 'joias' && principal) {
+        const ref = backupPlain(par).replace(/[\s.]/g, '');
+        const doVerso = ref && principal.info.campos.find(c => backupPrepRefDaPergunta(c.pergunta) === ref);
+        if (doVerso) return { doc: principal.id, campo: doVerso };
+        const geral = principal.info.campos.find(c => !c.numero && /joia/.test(backupPlain(c.pergunta)));
+        return geral ? { doc: principal.id, campo: geral, junta: true } : null;
+      }
       return null;
     }
 
     function backupPrepRotuloCampo(c) {
-      return (c.numero ? 'Parágrafo ' + c.numero : c.quadro ? 'Recapitulação' : 'Pergunta') + (c.pergunta ? ' — ' + (c.pergunta.length > 70 ? c.pergunta.slice(0, 67) + '…' : c.pergunta) : '');
+      return (c.ebc ? c.ebc : c.numero ? 'Parágrafo ' + c.numero : c.quadro ? 'Recapitulação' : 'Pergunta') + (c.pergunta ? ' — ' + (c.pergunta.length > 70 ? c.pergunta.slice(0, 67) + '…' : c.pergunta) : '');
     }
 
+    // A chave do destino de uma resposta: documento e caixa ("2025487:tt58"); '' enquanto a pergunta não foi escolhida.
+    const backupPrepChave = it => (it.tag ? it.doc + ':' + it.tag : '');
+
+    // As caixas que já têm resposta no backup, em todos os documentos da reunião (chaves "documento:caixa").
     function backupPrepRespondidas() {
-      if (!backupPrep.doc) return new Set();
-      return new Set(backupAll(backupState.db,
-        'SELECT i.TextTag AS tag FROM InputField i JOIN Location l ON l.LocationId = i.LocationId WHERE l.DocumentId = ?', [Number(backupPrep.doc.id)]).map(r => r.tag));
+      const respondidas = new Set();
+      backupPrep.docs.forEach(d => {
+        backupAll(backupState.db,
+          'SELECT i.TextTag AS tag FROM InputField i JOIN Location l ON l.LocationId = i.LocationId WHERE l.DocumentId = ?', [Number(d.id)]).forEach(r => respondidas.add(d.id + ':' + r.tag));
+      });
+      return respondidas;
     }
 
-    // Escolhe a reunião (A Sentinela ou apostila) da semana: acha o documento no wol.jw.org, lê as perguntas e monta a lista com as respostas salvas.
+    // Escolhe a reunião (A Sentinela ou apostila) da semana: acha os documentos no wol.jw.org, lê as perguntas e monta a lista com as respostas salvas.
     async function backupPrepCarregar(pub) {
-      const semana = backupPrepSemanas().find(s => s.chave === backupPrep.chave);
-      if (!semana || backupPrep.ocupado) return;
+      const semana = backupPrepSemana();
+      if (backupPrep.ocupado) return;
       backupPrep.pub = pub;
-      backupPrep.doc = null;
+      backupPrep.docs = [];
       backupPrep.itens = [];
       backupPrep.mensagem = '';
       const acesso = studyAccessError();
@@ -1031,7 +1079,7 @@
       backupPrepRender();
       try {
         let dados = backupPrep.semanas.get(semana.chave);
-        if (!dados) {
+        if (!dados || (pub === 'apostila' && dados.estudo === undefined)) {
           const r = await postStudy({ tarefa: 'backup-semana', codigo: codigoAcessoSalvo(), ano: semana.ano, semana: semana.semana }, 45000);
           if (!r.ok) { backupPrep.mensagem = studyFailureMessage(r, 'Não consegui ler essa semana agora.'); return; }
           dados = r.data;
@@ -1040,34 +1088,33 @@
         }
         const publicacao = pub === 'sentinela' ? dados.sentinela : dados.apostila;
         if (!publicacao) { backupPrep.mensagem = 'Não encontrei ' + (pub === 'sentinela' ? 'o artigo de estudo de A Sentinela' : 'a apostila') + ' dessa semana no wol.jw.org.'; return; }
-        const problema = await backupCarregarCampos([publicacao.id]);
+        const estudo = pub === 'apostila' ? dados.estudo : null;
+        const publicacoes = [{ id: publicacao.id, titulo: publicacao.titulo, papel: 'principal' }, ...(estudo ? [{ id: estudo.id, titulo: estudo.titulo, papel: 'estudo' }] : [])];
+        const problema = await backupCarregarCampos(publicacoes.map(p => p.id));
         if (problema) { backupPrep.mensagem = problema; return; }
-        const info = backupCampos[publicacao.id];
-        if (!info || !(info.campos || []).length) { backupPrep.mensagem = 'Não encontrei caixas de resposta nesse documento.'; return; }
-        backupPrep.doc = { id: String(publicacao.id), info, titulo: info.titulo || publicacao.titulo || '' };
-        const campos = info.campos;
+        const docs = publicacoes
+          .map(p => { const info = backupCampos[p.id]; return info && (info.campos || []).length ? { id: String(p.id), info, titulo: info.titulo || p.titulo || '', papel: p.papel } : null; })
+          .filter(Boolean);
+        if (!docs.some(d => d.papel === 'principal')) { backupPrep.mensagem = 'Não encontrei caixas de resposta nesse documento.'; return; }
+        backupPrep.docs = docs;
         const respondidas = backupPrepRespondidas();
-        const vistos = new Set();
         const usadas = new Set(respondidas);
-        const itens = [];
-        historicoLer()
-          .filter(i => BACKUP_PREP_TIPOS[pub].includes(i.tipo) && Number(i.ano) === semana.ano && Number(i.numSemana) === semana.semana)
-          .forEach(item => (item.partes || []).forEach((parte, k) => {
-            const texto = String(parte.texto || '').replace(/\s+$/, '');
-            const par = String(parte.paragrafos || '');
-            const chave = item.tipo + '|' + par + '|' + (par ? '' : texto.slice(0, 40));
-            if (!texto.trim() || vistos.has(chave)) return; // a pesquisa mais nova da mesma pergunta vale
-            vistos.add(chave);
-            const campo = backupPrepCampoDaParte(parte, item.tipo, campos);
-            const livre = campo && !usadas.has(campo.tag);
-            if (livre) usadas.add(campo.tag);
-            const rotulo = item.tipo === 'sentinela'
-              ? (/^recap/i.test(par) ? 'Recapitulação ' + par.replace(/^\D*/, '') : par ? 'Parágrafo ' + par : 'Resposta')
-              : item.tipo === 'joias' ? (par ? 'Joia ' + par : 'Pergunta das joias') : 'Estudo bíblico' + (par ? ' · ' + par : '');
-            itens.push({ id: item.id + ':' + k, rotulo, texto, tag: campo ? campo.tag : '', marcado: Boolean(livre), estado: '', aberto: false });
-          }));
+        const itens = backupPrepPartes(pub, semana.ano, semana.semana).map(parte => {
+          const alvo = backupPrepMapear(parte, pub, docs);
+          const chave = alvo ? alvo.doc + ':' + alvo.campo.tag : '';
+          const livre = Boolean(alvo) && !respondidas.has(chave) && (alvo.junta || !usadas.has(chave));
+          if (livre) usadas.add(chave);
+          const rotulo = pub === 'sentinela'
+            ? (/^recap/i.test(parte.par) ? 'Recapitulação ' + parte.par.replace(/^\D*/, '') : parte.par ? 'Parágrafo ' + parte.par : 'Resposta')
+            : parte.tipo === 'joias' ? (parte.par ? 'Joia ' + parte.par : 'Pergunta das joias') : 'Estudo bíblico' + (parte.par ? ' · ' + parte.par : '');
+          return { id: parte.id, rotulo, texto: parte.texto, doc: alvo ? alvo.doc : '', tag: alvo ? alvo.campo.tag : '', junta: Boolean(alvo && alvo.junta), marcado: livre, estado: '', aberto: false };
+        });
         backupPrep.itens = itens;
-        backupPrep.mensagem = itens.length ? '' : 'Não há respostas salvas desta semana para ' + (pub === 'sentinela' ? 'A Sentinela' : 'a apostila') + '.';
+        backupPrep.mensagem = !itens.length
+          ? 'Não há respostas salvas desta semana para ' + (pub === 'sentinela' ? 'A Sentinela' : 'a apostila') + '.'
+          : pub === 'apostila' && itens.some(i => /^Estudo bíblico/.test(i.rotulo)) && !docs.some(d => d.papel === 'estudo')
+            ? 'Não consegui achar o capítulo do Estudo Bíblico dessa semana no wol.jw.org: as respostas dele precisam de uma pergunta escolhida à mão.'
+            : '';
       } catch (e) {
         backupPrep.mensagem = e && e.name === 'AbortError' ? 'O site demorou demais. Tente de novo.' : 'Falha de conexão ao consultar o wol.jw.org.';
       } finally {
@@ -1076,20 +1123,24 @@
       }
     }
 
-    // Leva para o backup as respostas marcadas (e só elas) e diz com clareza o que entrou.
+    // Leva para o backup as respostas marcadas (e só elas) e diz com clareza o que entrou. As joias da leitura vão juntas, numa resposta só.
     function backupPrepIncluir() {
-      if (!backupPrep.doc || !backupState) return;
+      if (!backupPrep.docs.length || !backupState) return;
       const respondidas = backupPrepRespondidas();
-      const usadas = new Set();
+      const grupos = new Map();
+      backupPrep.itens.forEach(it => {
+        const chave = backupPrepChave(it);
+        if (!it.marcado || it.estado || !chave || respondidas.has(chave)) return;
+        if (!grupos.has(chave)) grupos.set(chave, []);
+        if (it.junta || !grupos.get(chave).length) grupos.get(chave).push(it); // duas marcadas para a mesma pergunta: só a primeira entra (salvo as joias, que se unem)
+      });
       let n = 0;
       const problemas = [];
-      backupPrep.itens.forEach(it => {
-        if (!it.marcado || it.estado || !it.tag || respondidas.has(it.tag) || usadas.has(it.tag)) return;
-        const problema = backupCreateAnswer(backupPrep.doc.id, backupPrep.doc.info, it.tag, it.texto);
-        if (problema) { problemas.push(it.rotulo + ': ' + problema); return; }
-        usadas.add(it.tag);
-        it.estado = 'incluida';
-        it.marcado = false;
+      grupos.forEach(lista => {
+        const doc = backupPrep.docs.find(d => d.id === lista[0].doc);
+        const problema = doc ? backupCreateAnswer(doc.id, doc.info, lista[0].tag, lista.map(i => i.texto).join('\n\n')) : 'documento não encontrado.';
+        if (problema) { problemas.push(lista.map(i => i.rotulo).join(', ') + ': ' + problema); return; }
+        lista.forEach(i => { i.estado = 'incluida'; i.marcado = false; });
         n++;
       });
       backupPrep.incluidas += n;
@@ -1106,11 +1157,62 @@
     function backupPrepMarcarTodas(marcar, respondidas) {
       const rolagem = window.scrollY;
       backupPrep.itens.forEach(it => {
-        if (it.estado || (it.tag && respondidas.has(it.tag))) return;
+        if (it.estado || respondidas.has(backupPrepChave(it))) return;
         it.marcado = marcar;
       });
       backupPrepRender();
       window.scrollTo(0, rolagem);
+    }
+
+    // Troca de semana (setas) ou volta para a atual: some a lista da outra semana.
+    function backupPrepMudarSemana(deslocamento) {
+      backupPrep.deslocamento = deslocamento;
+      backupPrep.pub = '';
+      backupPrep.docs = [];
+      backupPrep.itens = [];
+      backupPrep.mensagem = '';
+      backupPrepRender();
+    }
+
+    // A barra da semana: a mesma da tela Reuniões (setas, título e datas, volta para a semana atual), só para esta seção.
+    function backupPrepBarraSemana(semana) {
+      const barra = document.createElement('div');
+      barra.className = 'reunioes-week';
+      const rotulo = document.createElement('p');
+      rotulo.className = 'reunioes-week-label';
+      rotulo.textContent = 'Selecione uma semana';
+      const linha = document.createElement('div');
+      linha.className = 'ai-week';
+      const seta = (texto, nome, delta) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'secondary ai-week-nav';
+        b.textContent = texto;
+        b.setAttribute('aria-label', nome);
+        b.disabled = backupPrep.ocupado;
+        b.addEventListener('click', event => { event.stopPropagation(); backupPrepMudarSemana(backupPrep.deslocamento + delta); });
+        return b;
+      };
+      const link = document.createElement('a');
+      link.className = 'ai-week-link';
+      link.href = 'https://wol.jw.org/pt/wol/meetings/r5/lp-t/' + semana.ano + '/' + semana.semana;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      const nomes = { '-1': 'Semana passada', '0': 'Semana atual', '1': 'Próxima semana' };
+      const titulo = document.createElement('span');
+      titulo.textContent = '📅 ' + (nomes[backupPrep.deslocamento] || 'Semana do estudo');
+      const datas = document.createElement('span');
+      datas.className = 'ai-week-range';
+      datas.textContent = semana.rotulo + (semana.ano !== new Date().getFullYear() ? ' de ' + semana.ano : '');
+      link.append(titulo, datas);
+      linha.append(seta('◀', 'Semana anterior', -1), link, seta('▶', 'Próxima semana', 1));
+      barra.append(rotulo, linha);
+      if (backupPrep.deslocamento !== 0) {
+        const hoje = backupButton('↩️ Voltar para a semana atual', () => backupPrepMudarSemana(0), 'secondary ai-week-today');
+        hoje.disabled = backupPrep.ocupado;
+        barra.appendChild(hoje);
+      }
+      return barra;
     }
 
     function backupPrepRender() {
@@ -1119,46 +1221,32 @@
       if (backupPrep.para !== backupState) { // outro backup aberto: recomeça
         backupPrep.para = backupState;
         backupPrep.pub = '';
-        backupPrep.doc = null;
+        backupPrep.docs = [];
         backupPrep.itens = [];
         backupPrep.mensagem = '';
         backupPrep.incluidas = 0;
       }
       corpo.textContent = '';
-      const semanas = backupPrepSemanas();
-      if (!semanas.length) {
-        const p = document.createElement('p');
-        p.className = 'hint';
-        p.textContent = 'Ainda não há respostas preparadas salvas neste aparelho. Prepare as respostas em Reuniões (A Sentinela, Joias e Estudo Bíblico); elas ficam em Pesquisas salvas e aparecem aqui.';
-        corpo.appendChild(p);
-        return;
-      }
-      if (!semanas.some(s => s.chave === backupPrep.chave)) { backupPrep.chave = semanas[0].chave; backupPrep.pub = ''; backupPrep.doc = null; backupPrep.itens = []; }
-      const atual = semanas.find(s => s.chave === backupPrep.chave);
-
-      const semanaSelect = document.createElement('select');
-      semanas.forEach(s => {
-        const o = document.createElement('option');
-        o.value = s.chave;
-        o.textContent = rotuloDaSemanaIso(s.ano, s.semana) + ' · ' + s.ano + ' (' + (s.sentinela + s.apostila) + (s.sentinela + s.apostila === 1 ? ' resposta' : ' respostas') + ')';
-        semanaSelect.appendChild(o);
-      });
-      semanaSelect.value = backupPrep.chave;
-      semanaSelect.disabled = backupPrep.ocupado;
-      semanaSelect.addEventListener('change', () => { backupPrep.chave = semanaSelect.value; backupPrep.pub = ''; backupPrep.doc = null; backupPrep.itens = []; backupPrep.mensagem = ''; backupPrepRender(); });
-      corpo.appendChild(backupField('Semana', semanaSelect));
-      backupSeletorLargo(semanaSelect);
+      const semana = backupPrepSemana();
+      const contagem = backupPrepContagem(semana.ano, semana.semana);
+      corpo.appendChild(backupPrepBarraSemana(semana));
 
       const reunioes = document.createElement('div');
       reunioes.className = 'bk-row';
       [['sentinela', '📖 Fim de semana · A Sentinela'], ['apostila', '📋 Meio de semana · Apostila']].forEach(([pub, texto]) => {
-        const b = backupButton(texto + ' (' + atual[pub] + ')', () => backupPrepCarregar(pub));
-        b.disabled = backupPrep.ocupado || !atual[pub];
+        const b = backupButton(texto + ' (' + contagem[pub] + ')', () => backupPrepCarregar(pub));
+        b.disabled = backupPrep.ocupado || !contagem[pub];
         b.classList.toggle('ativo', backupPrep.pub === pub);
         b.setAttribute('aria-pressed', String(backupPrep.pub === pub));
         reunioes.appendChild(b);
       });
       corpo.appendChild(backupField('Reunião', reunioes));
+      if (!contagem.sentinela && !contagem.apostila) {
+        const p = document.createElement('p');
+        p.className = 'hint';
+        p.textContent = 'Esta semana não tem respostas preparadas salvas neste aparelho. Mude a semana nas setas ou prepare as respostas em Reuniões (A Sentinela, Joias e Estudo Bíblico): elas ficam em Pesquisas salvas e aparecem aqui.';
+        corpo.appendChild(p);
+      }
 
       if (backupPrep.mensagem) {
         const m = document.createElement('p');
@@ -1167,26 +1255,31 @@
         m.textContent = backupPrep.mensagem;
         corpo.appendChild(m);
       }
-      if (!backupPrep.doc || !backupPrep.itens.length) return;
+      if (!backupPrep.docs.length || !backupPrep.itens.length) return;
 
       const respondidas = backupPrepRespondidas();
-      const campos = backupPrep.doc.info.campos;
-      const titulo = document.createElement('p');
-      titulo.className = 'bk-prep-doc';
-      titulo.textContent = '📖 ' + (backupPrep.doc.titulo || 'Documento da semana');
-      corpo.appendChild(titulo);
+      const docs = backupPrep.docs;
+      docs.forEach(d => {
+        const titulo = document.createElement('p');
+        titulo.className = 'bk-prep-doc';
+        titulo.textContent = (d.papel === 'estudo' ? '📚 ' : '📖 ') + (d.titulo || 'Documento da semana');
+        corpo.appendChild(titulo);
+      });
+      const campoDe = it => { const d = docs.find(x => x.id === it.doc); return d ? d.info.campos.find(c => c.tag === it.tag) : null; };
 
-      // Cada resposta: caixa de marcar, o texto (abre ao tocar) e a pergunta de destino. Duas marcadas para a mesma pergunta: só a primeira entra.
+      // Cada resposta: caixa de marcar, o texto (abre ao tocar) e a pergunta de destino. Duas marcadas para a mesma pergunta: só a primeira entra
+      // (as joias da leitura vão todas juntas para a pergunta geral das joias).
       const usadas = new Set();
       let entram = 0;
       const sem = [];
       const lista = document.createElement('div');
       backupPrep.itens.forEach(it => {
-        const jaTem = it.tag && respondidas.has(it.tag) && it.estado !== 'incluida';
-        const duplicada = !it.estado && !jaTem && it.marcado && it.tag && usadas.has(it.tag);
-        const entra = !it.estado && !jaTem && !duplicada && it.marcado && Boolean(it.tag);
-        if (entra) { usadas.add(it.tag); entram++; }
-        if (!it.estado && !jaTem && it.marcado && !it.tag) sem.push(it.rotulo);
+        const chave = backupPrepChave(it);
+        const jaTem = chave && respondidas.has(chave) && it.estado !== 'incluida';
+        const duplicada = !it.estado && !jaTem && it.marcado && chave && !it.junta && usadas.has(chave);
+        const entra = !it.estado && !jaTem && !duplicada && it.marcado && Boolean(chave);
+        if (entra) { if (!usadas.has(chave)) entram++; usadas.add(chave); }
+        if (!it.estado && !jaTem && it.marcado && !chave) sem.push(it.rotulo);
         const det = document.createElement('details');
         det.className = 'bk-salva' + (it.estado === 'incluida' ? ' incluida' : '');
         det.open = it.aberto;
@@ -1199,11 +1292,11 @@
         caixa.addEventListener('click', event => event.stopPropagation());
         caixa.addEventListener('change', () => { it.marcado = caixa.checked; backupPrepRender(); });
         const nome = document.createElement('span');
-        const campo = campos.find(c => c.tag === it.tag);
+        const campo = campoDe(it);
         nome.textContent = ' ' + it.rotulo + (campo ? ' → ' + backupPrepRotuloCampo(campo) : '');
         const estado = document.createElement('span');
         estado.className = 'bk-prep-estado';
-        estado.textContent = it.estado === 'incluida' ? '✅ incluída no backup' : jaTem ? '↪️ já tem resposta no backup' : duplicada ? '⚠️ mesma pergunta de outra resposta' : !it.tag ? '❔ escolha a pergunta' : entra ? '' : '⬜ não será incluída';
+        estado.textContent = it.estado === 'incluida' ? '✅ incluída no backup' : jaTem ? '↪️ já tem resposta no backup' : duplicada ? '⚠️ mesma pergunta de outra resposta' : !chave ? '❔ escolha a pergunta' : entra ? '' : '⬜ não será incluída';
         sum.append(caixa, nome);
         if (estado.textContent) sum.appendChild(estado);
         const texto = document.createElement('div');
@@ -1216,15 +1309,22 @@
           vazio.value = '';
           vazio.textContent = '— escolha a pergunta de destino —';
           destino.appendChild(vazio);
-          campos.forEach(c => {
+          docs.forEach(d => d.info.campos.forEach(c => {
             const o = document.createElement('option');
-            o.value = c.tag;
-            o.textContent = backupPrepRotuloCampo(c) + (respondidas.has(c.tag) ? ' (já respondida)' : '');
-            o.disabled = respondidas.has(c.tag);
+            o.value = d.id + ':' + c.tag;
+            o.textContent = (docs.length > 1 ? (d.papel === 'estudo' ? 'Estudo bíblico · ' : 'Apostila · ') : '') + backupPrepRotuloCampo(c) + (respondidas.has(o.value) ? ' (já respondida)' : '');
+            o.disabled = respondidas.has(o.value);
             destino.appendChild(o);
+          }));
+          destino.value = chave;
+          destino.addEventListener('change', () => {
+            const [docId, ...resto] = destino.value.split(':');
+            it.doc = destino.value ? docId : '';
+            it.tag = destino.value ? resto.join(':') : '';
+            it.junta = false;
+            if (it.tag) it.marcado = true;
+            backupPrepRender();
           });
-          destino.value = it.tag;
-          destino.addEventListener('change', () => { it.tag = destino.value; if (it.tag) it.marcado = true; backupPrepRender(); });
           texto.append(backupField('Vai para a pergunta', destino));
           backupSeletorLargo(destino);
         }
@@ -1816,6 +1916,7 @@
         document.getElementById('backupSearch').value = '';
         document.getElementById('backupNewNoteSlot').textContent = '';
         renderBackupView();
+        document.getElementById('backupConteudoBox').open = false; // o backup vazio abre com o conteúdo fechado (está vazio): quem quiser abre
       } catch (e) {
         setBackupStatus('Não consegui criar o backup: ' + (e && e.message ? e.message : 'erro desconhecido.'), true);
       }
@@ -7192,7 +7293,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.65'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.66'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
