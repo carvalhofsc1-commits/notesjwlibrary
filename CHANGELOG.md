@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.82
+
+Preparação de discursos e esboços: a matéria carregada do discurso (pontos, textos, fontes e imagens da apostila) agora fica dentro de um card.
+
 ## 6.3.81
 
 Preparação (Tesouros e discurso curto): o botão "Carregar discurso" passou a se chamar "Carregar matéria do discurso (wol.jw.org)" (e "Recarregar matéria do discurso (wol.jw.org)" depois de carregado).
