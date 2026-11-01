@@ -8076,14 +8076,28 @@
       max-width: 55%;
     }
 
-    .merge-etiquetas {
-      margin-top: 6px;
-    }
-
     .merge-etiquetas>summary {
       cursor: pointer;
-      font-weight: 800;
-      padding: 6px 0;
+      list-style: none;
+    }
+
+    .merge-etiquetas>summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .merge-etiquetas>summary .merge-seta {
+      display: inline-block;
+      width: 1em;
+      margin-left: 6px;
+      text-align: center;
+    }
+
+    .merge-etiquetas-corpo {
+      padding: 8px 0 4px;
+    }
+
+    .merge-resultado .merge-voltar {
+      margin-top: 12px;
     }
 
     .merge-etiquetas-corpo .bk-row {

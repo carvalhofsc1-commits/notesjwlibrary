@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.71
+
+Backup, resumo da mesclagem: o botão "Voltar à seleção dos arquivos" passou para o fim do quadro; a linha "Etiquetas novas" da tabela agora é ela mesma o botão que abre as etiquetas (some a segunda linha "Ver as etiquetas novas"). Backup novo: o quadro "Conteúdo do backup novo", ao abrir, mostra primeiro uma tabela de resumo só com o que já foi criado nele (respostas, notas, grifos, favoritos, marcadores, listas e etiquetas).
+
 ## 6.3.70
 
 Backup novo (vazio): o quadro "Exportação" (planilha e CSV das notas) não aparece mais, porque o backup novo não tem notas para exportar. Nos outros backups (abertos ou mesclados) continua.

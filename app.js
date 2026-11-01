@@ -523,6 +523,7 @@
       document.getElementById('backupConteudoDica').textContent = backupState.mesclado
         ? 'Este é o resultado da mesclagem: a base mais o que veio dos outros arquivos. Confira, edite ou apague o que quiser e gere o arquivo mesclado.'
         : 'Aqui você vê o que há no backup, procura, edita e apaga notas e respostas antes de gerar o arquivo.';
+      backupNovoResumoRender();
       const info = backupState.manifest.userDataBackup || {};
       document.getElementById('backupSummary').textContent = [
         backupState.isNew ? '🆕 Backup novo' : backupState.mesclado ? '🔀 Backup mesclado (' + backupState.mesclado + ' arquivos)' : backupState.fileName,
@@ -3250,6 +3251,52 @@
       backupMesclarResultadoMostrar(resumo);
     }
 
+    // Uma linha das tabelas de resumo (rótulo à esquerda, valor à direita); como="summary" faz dela o título de um <details>.
+    function backupResumoLinha(rotulo, valor, como) {
+      const l = document.createElement(como === 'summary' ? 'summary' : 'div');
+      l.className = 'merge-stat';
+      const r = document.createElement('span');
+      r.textContent = rotulo;
+      const v = document.createElement('strong');
+      v.textContent = valor;
+      l.append(r, v);
+      return l;
+    }
+
+    function backupResumoTabela(linhas) {
+      const lista = document.createElement('div');
+      lista.className = 'merge-stats';
+      linhas.forEach(([rotulo, valor]) => lista.appendChild(backupResumoLinha(rotulo, valor)));
+      return lista;
+    }
+
+    // O resumo do backup novo, no alto do quadro "Conteúdo do backup novo": só o que já foi criado nele (tudo o que há num backup novo foi criado aqui).
+    function backupNovoResumoRender() {
+      const box = document.getElementById('backupNovoResumo');
+      if (!box) return;
+      box.textContent = '';
+      box.hidden = true;
+      if (!backupState || !backupState.isNew) return;
+      const d = backupState.data;
+      const n = v => v.toLocaleString('pt-BR');
+      const etiquetas = (backupOne(backupState.db, 'SELECT COUNT(*) AS n FROM Tag WHERE Type = 1') || { n: 0 }).n;
+      const linhas = [
+        ['✍️ Respostas criadas', d.respostas.length],
+        ['📝 Notas criadas', d.notas.length],
+        ['🖍️ Grifos criados', d.grifos.length],
+        ['⭐ Favoritos criados', d.favoritos.length],
+        ['🔖 Marcadores criados', d.marcadores.length],
+        ['▶️ Listas de reprodução criadas', d.listas.length],
+        ['🏷️ Etiquetas criadas', etiquetas]
+      ].filter(l => l[1] > 0).map(([rotulo, valor]) => [rotulo, n(valor)]);
+      if (!linhas.length) return;
+      const titulo = document.createElement('h3');
+      titulo.className = 'merge-resultado-titulo';
+      titulo.textContent = '📊 Resumo do backup novo';
+      box.append(titulo, backupResumoTabela(linhas));
+      box.hidden = false;
+    }
+
     // O resumo da mesclagem: números e, recolhidas, as etiquetas novas (em "pílulas", como no JW Library), em ordem alfabética ou por data.
     function backupMesclarResultadoMostrar(d) {
       const box = document.getElementById('backupMesclarResultado');
@@ -3272,25 +3319,26 @@
         ['🏷️ Etiquetas novas', n(d.etiquetas.length)]
       ];
       if (d.filtros) linhas.push(['☑️ Arquivos em que você escolheu o que importar', n(d.filtros)]);
+      // A linha das etiquetas novas é ela mesma o botão que abre as etiquetas (em "pílulas", como no JW Library): não há uma segunda linha para a mesma coisa.
       const lista = document.createElement('div');
       lista.className = 'merge-stats';
-      linhas.forEach(([rotulo, valor]) => {
-        const l = document.createElement('div');
-        l.className = 'merge-stat';
-        const r = document.createElement('span');
-        r.textContent = rotulo;
-        const v = document.createElement('strong');
-        v.textContent = valor;
-        l.append(r, v);
-        lista.appendChild(l);
-      });
-      box.append(titulo, base, lista, backupButton('↩️ Voltar à seleção dos arquivos', backupMesclarReabrir, 'merge-voltar'));
-      if (!d.etiquetas.length) return;
-
       const detalhes = document.createElement('details');
       detalhes.className = 'merge-etiquetas';
-      const resumoEl = document.createElement('summary');
-      resumoEl.textContent = '🏷️ Ver as etiquetas novas (' + n(d.etiquetas.length) + ')';
+      const resumoEl = backupResumoLinha('🏷️ Etiquetas novas', n(d.etiquetas.length), 'summary');
+      const seta = document.createElement('span');
+      seta.className = 'merge-seta';
+      seta.setAttribute('aria-hidden', 'true');
+      seta.textContent = '▸';
+      resumoEl.querySelector('strong').appendChild(seta);
+      detalhes.addEventListener('toggle', () => { seta.textContent = detalhes.open ? '▾' : '▸'; });
+      linhas.forEach(([rotulo, valor]) => {
+        if (rotulo === '🏷️ Etiquetas novas' && d.etiquetas.length) lista.appendChild(detalhes);
+        else lista.appendChild(backupResumoLinha(rotulo, valor));
+      });
+      const voltar = backupButton('↩️ Voltar à seleção dos arquivos', backupMesclarReabrir, 'merge-voltar'); // no fim do quadro
+      box.append(titulo, base, lista);
+      if (!d.etiquetas.length) { box.appendChild(voltar); return; }
+
       const corpo = document.createElement('div');
       corpo.className = 'merge-etiquetas-corpo';
       const ordem = document.createElement('div');
@@ -3349,8 +3397,8 @@
       botoes.forEach(([, b]) => ordem.appendChild(b));
       corpo.append(ordem, pilulas);
       detalhes.append(resumoEl, corpo);
-      box.appendChild(detalhes);
       desenhar('az');
+      box.appendChild(voltar);
     }
 
     document.getElementById('backupMergeBtn').addEventListener('click', () => {
@@ -7293,7 +7341,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.70'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.71'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
