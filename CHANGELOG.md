@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.80
+
+Preparar para comentar e para dirigir: o card da pergunta do parágrafo ficou com fundo branco (sem cor).
+
 ## 6.3.79
 
 Preparar para comentar e para dirigir: a pergunta do parágrafo ganhou moldura; "(opção 1 de x)" passou para a frente do título "Parágrafos", entre parênteses e sem negrito; os botões "Recuperar … salvas" ficaram num amarelo mais suave.
