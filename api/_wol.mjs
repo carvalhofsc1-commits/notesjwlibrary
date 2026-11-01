@@ -419,10 +419,10 @@ async function resolverCitacao(caminho, timeoutMs) {
 }
 
 // O trecho de outra publicação citado numa pergunta: título do artigo e os parágrafos do intervalo (até maxCaracteres).
-// docs: páginas já baixadas neste pedido (várias citações costumam apontar para o mesmo artigo).
+// Sem "#h=…" no redirecionamento, lê o documento até o limite (como lerDocumentoCitado). docs: páginas já baixadas neste pedido.
 async function lerTrechoCitado({ caminho, citacao }, timeoutMs, maxCaracteres = 3000, docs = null) {
   const destino = await resolverCitacao(caminho, timeoutMs);
-  if (!destino || destino.de === null) return null;
+  if (!destino) return null;
   if (docs && !docs.has(destino.url)) docs.set(destino.url, baixar(destino.url, timeoutMs));
   const html = await (docs ? docs.get(destino.url) : baixar(destino.url, timeoutMs));
   const titulo = textoDe((html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/) || [])[1] || "");
@@ -431,16 +431,43 @@ async function lerTrechoCitado({ caminho, citacao }, timeoutMs, maxCaracteres = 
   const leias = new Set();
   for (const [, , pid, conteudo] of html.matchAll(/<(p|h2|h3)\b[^>]*data-pid="(\d+)"[^>]*>([\s\S]*?)<\/\1>/g)) {
     const n = Number(pid);
-    if (n >= destino.de && n <= destino.ate) {
-      partes.push(textoDe(conteudo));
+    if (destino.de !== null && (n < destino.de || n > destino.ate)) continue;
+    const texto = textoDe(conteudo);
+    if (texto) {
+      partes.push(texto);
       referencias.push(...referenciasDe(conteudo, leias));
     }
   }
-  const texto = partes.filter(Boolean).join("\n").slice(0, maxCaracteres);
-  return texto ? { citacao, titulo, texto, referencias: [...new Set(referencias)], leias: [...leias] } : null;
+  const texto = partes.join("\n").slice(0, maxCaracteres);
+  return texto ? { caminho, citacao, titulo, texto, referencias: [...new Set(referencias)], leias: [...leias] } : null;
 }
 
 const estudosBiblicos = new Map(); // url da página de reuniões -> { quando, capitulo }
+const MAX_TRECHOS_EBC = 12;
+
+// Completa capitulo.trechos com as publicações citadas nas perguntas pedidas (refaz o que faltou no cache).
+// Devolve { citadasPedidas, trechosOk, falhas }.
+export async function garantirTrechosEbc(capitulo, perguntas, { timeoutMs = 8000 } = {}) {
+  const pedidas = [...new Map((perguntas || []).flatMap((p) => p.citacoes || []).map((c) => [c.caminho, c])).values()];
+  const trechos = [...(capitulo.trechos || [])];
+  const cobertos = new Set();
+  for (const t of trechos) {
+    if (t.caminho) cobertos.add(t.caminho);
+    else {
+      const c = pedidas.find((p) => p.citacao === t.citacao);
+      if (c) cobertos.add(c.caminho);
+    }
+  }
+  const faltam = pedidas.filter((c) => !cobertos.has(c.caminho)).slice(0, MAX_TRECHOS_EBC);
+  if (faltam.length) {
+    const docs = new Map();
+    const novos = await Promise.all(faltam.map((c) => lerTrechoCitado(c, timeoutMs, 3000, docs).catch(() => null)));
+    for (const t of novos) if (t) trechos.push(t);
+  }
+  capitulo.trechos = trechos;
+  const trechosOk = pedidas.filter((c) => trechos.some((t) => t.caminho === c.caminho || t.citacao === c.citacao)).length;
+  return { citadasPedidas: pedidas.length, trechosOk, falhas: pedidas.length - trechosOk };
+}
 
 // Lê o capítulo do Estudo Bíblico de Congregação da semana (e os trechos citados nas perguntas). null = não achou.
 export async function lerEstudoBiblico(urlReuniao, { timeoutMs = 8000 } = {}) {
@@ -457,7 +484,11 @@ export async function lerEstudoBiblico(urlReuniao, { timeoutMs = 8000 } = {}) {
   if (!analisado.perguntas.length) return null;
 
   const citadas = [...new Map(analisado.perguntas.flatMap((p) => p.citacoes).map((c) => [c.caminho, c])).values()];
-  const trechos = (await Promise.all(citadas.slice(0, 6).map((c) => lerTrechoCitado(c, timeoutMs).catch(() => null)))).filter(Boolean);
+  const docs = new Map();
+  const trechos = (
+    await Promise.all(citadas.slice(0, MAX_TRECHOS_EBC).map((c) => lerTrechoCitado(c, timeoutMs, 3000, docs).catch(() => null)))
+  ).filter(Boolean);
+  console.log("Estudo bíblico (leitura):", JSON.stringify({ citadas: citadas.length, trechos: trechos.length }));
 
   const capitulo = { ...analisado, trechos, citadas: citadas.length, materia: link.rotulo, url: destino.url };
   estudosBiblicos.set(urlReuniao, { quando: Date.now(), capitulo });
@@ -641,6 +672,9 @@ export function textoDoCapituloEbc(capitulo, perguntas, versiculos = []) {
   if (versiculos.length) partes.push(`TEXTO DOS VERSÍCULOS:\n${versiculos.map((v) => `${v.referencia}: ${v.texto}`).join("\n")}`);
   if (capitulo.trechos.length) {
     partes.push(`TRECHOS DAS PUBLICAÇÕES CITADAS NAS PERGUNTAS:\n${capitulo.trechos.map((t) => `(${t.citacao}) ${t.titulo ? `"${t.titulo}": ` : ""}${t.texto}`).join("\n\n")}`);
+    partes.push(
+      "IMPORTANTE: quando a pergunta citar uma publicação cujo trecho está acima, use esse trecho como fonte principal da resposta. Não invente o que a publicação não diz."
+    );
   }
   if (capitulo.imagens && capitulo.imagens.length) {
     partes.push(`IMAGENS DO CAPÍTULO (as perguntas citam cada uma pela letra, como "Imagem A"):\n${capitulo.imagens.map(textoDaImagem).join("\n\n")}`);
@@ -661,6 +695,9 @@ export function textoDoCapituloEbcDirigente(capitulo, versiculos = []) {
   if (versiculos.length) partes.push(`TEXTO DOS VERSÍCULOS:\n${versiculos.map((v) => `${v.referencia}: ${v.texto}`).join("\n")}`);
   if (capitulo.trechos.length) {
     partes.push(`TRECHOS DAS PUBLICAÇÕES CITADAS NAS PERGUNTAS:\n${capitulo.trechos.map((t) => `(${t.citacao}) ${t.titulo ? `"${t.titulo}": ` : ""}${t.texto}`).join("\n\n")}`);
+    partes.push(
+      "IMPORTANTE: quando uma pergunta original citar uma publicação cujo trecho está acima, leve esse trecho em conta ao elaborar perguntas adicionais. Não invente o que a publicação não diz."
+    );
   }
   if (capitulo.imagens && capitulo.imagens.length) {
     partes.push(`IMAGENS DO CAPÍTULO (as perguntas citam cada uma pela letra, como "Imagem A"):\n${capitulo.imagens.map(textoDaImagem).join("\n\n")}`);

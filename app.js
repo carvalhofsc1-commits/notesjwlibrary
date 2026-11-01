@@ -7341,7 +7341,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.72'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.73'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -13725,7 +13725,11 @@ function saveTemplatesToStorage() {
         historicoSalvar({ tipo: 'ebc', titulo: '📚 Estudo Bíblico' + (result.data.titulo ? ' · ' + result.data.titulo : ''), ano: payload.ano, numSemana: payload.semana, partes: parts, refino: { ...aiRefino, itens: aiSentinelaRaw } });
         renderAiSuggestions();
         aiRefineBox.hidden = false;
-        setAiStatus('✅ Respostas no campo de texto, cada uma com o botão de copiar.', false);
+        setAiStatus(
+          '✅ Respostas no campo de texto, cada uma com o botão de copiar.' +
+            (result.data.aviso ? ' ⚠️ ' + result.data.aviso : ''),
+          false
+        );
       } catch (e) {
         setAiStatus(e && e.name === 'AbortError' ? 'A IA demorou demais. Tente com menos quadros.' : 'Falha de conexão ao consultar a IA.', true);
       } finally {
@@ -13872,7 +13876,11 @@ function saveTemplatesToStorage() {
         historicoSalvar({ tipo: 'ebc-dirigente', titulo: '🎤 Estudo Bíblico · ' + oQue + (result.data.titulo ? ' · ' + result.data.titulo : ''), ano: payload.ano, numSemana: payload.semana, partes: parts, refino: { ...aiRefino, itens: aiSentinelaRaw } });
         renderAiSuggestions();
         aiRefineBox.hidden = false;
-        setAiStatus('✅ ' + oQue.charAt(0).toUpperCase() + oQue.slice(1) + ' no campo de texto, ' + (perguntas.length && base.length ? 'cada parte' : base.length ? 'cada um' : 'cada uma') + ' com o botão de copiar.', false);
+        setAiStatus(
+          '✅ ' + oQue.charAt(0).toUpperCase() + oQue.slice(1) + ' no campo de texto, ' + (perguntas.length && base.length ? 'cada parte' : base.length ? 'cada um' : 'cada uma') + ' com o botão de copiar.' +
+            (result.data.aviso ? ' ⚠️ ' + result.data.aviso : ''),
+          false
+        );
       } catch (e) {
         setAiStatus(e && e.name === 'AbortError' ? 'A IA demorou demais. Tente de novo.' : 'Falha de conexão ao consultar a IA.', true);
       } finally {

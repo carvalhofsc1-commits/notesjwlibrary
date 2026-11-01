@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.73
+
+Estudo Bíblico de Congregação: publicações citadas nas perguntas passam a ser lidas mesmo sem intervalo de parágrafo no link; o servidor garante os trechos das perguntas pedidas antes de chamar a IA e avisa se alguma fonte citada não puder ser lida.
+
 ## 6.3.72
 
 Ajustes: o título do quadro dos esboços do S-34 passou a ser "Esboços de discursos - S-34".

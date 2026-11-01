@@ -15,6 +15,7 @@ import { buscarVerbete, buscarVersiculos, fontesConfiguradas, precarregarFontes,
 import { lerEsboco, lerIndice, minutosDoEsboco, publicacoesDaSecao, referenciasDoPublico, s34Configurado, textoDoDiscursoPublico, textoDoEsbocoImportado, textosBiblicosDoPublico, validarEsboco } from "./_s34.mjs";
 import {
   QUADROS_EBC,
+  garantirTrechosEbc,
   lerEstudoBiblico,
   lerCamposDoDocumento,
   lerArtigoDoWol,
@@ -1381,6 +1382,13 @@ async function responderEbc(res, body, P) {
   const perguntas = capitulo.perguntas.filter((p) => quadros.has(p.quadro));
   if (!perguntas.length) return erro(res, 400, "Os quadros marcados não têm perguntas neste capítulo.");
 
+  let fontesEbc = { citadasPedidas: 0, trechosOk: 0, falhas: 0 };
+  try {
+    fontesEbc = await garantirTrechosEbc(capitulo, perguntas);
+  } catch (e) {
+    console.error("Estudo bíblico: trechos das publicações", e?.message);
+  }
+
   let versiculos = [];
   if (fontesConfiguradas()) {
     try {
@@ -1436,7 +1444,9 @@ async function responderEbc(res, body, P) {
         materia: capitulo.materia,
         pedidas: perguntas.map((p) => p.id),
         respondidas: itens.map((i) => i.paragrafos),
-        citadas: capitulo.citadas, // publicações citadas nas perguntas; "trechos" = quantas delas o servidor conseguiu ler
+        citadas: capitulo.citadas, // publicações citadas no capítulo inteiro
+        citadasPedidas: fontesEbc.citadasPedidas,
+        trechosOk: fontesEbc.trechosOk,
         trechos: capitulo.trechos.length,
         versiculos: versiculos.length,
         segundosIa: Math.round((Date.now() - inicio) / 100) / 10,
@@ -1449,11 +1459,16 @@ async function responderEbc(res, body, P) {
     const memoriaUsada = memoriaUsadaAgora();
     const itensFinais = await finalizarItens(itens, opcoes, P, blocoOrientacao(opcoes, ajuste, P));
     console.log("Estudo bíblico (tempo):", JSON.stringify({ total: Math.round((Date.now() - inicioPedido) / 100) / 10 }));
+    const aviso =
+      fontesEbc.falhas > 0
+        ? `Não consegui ler ${fontesEbc.falhas} publicação(ões) citada(s) nas perguntas; a resposta pode ficar menos precisa.`
+        : null;
     return res.status(200).json({
       materia: capitulo.materia,
       titulo: [capitulo.contexto, capitulo.titulo].filter(Boolean).join(": "),
       url: capitulo.url,
       erro: itens.length ? null : "A IA não respondeu às perguntas. Tente de novo.",
+      aviso,
       itens: itensFinais,
       memoriaUsada,
     });
@@ -1502,6 +1517,13 @@ async function perguntasEbcDirigente(res, body, P) {
 
   const capitulo = await capituloEbc(res, body, true);
   if (!capitulo) return;
+
+  let fontesEbc = { citadasPedidas: 0, trechosOk: 0, falhas: 0 };
+  try {
+    fontesEbc = await garantirTrechosEbc(capitulo, capitulo.perguntas);
+  } catch (e) {
+    console.error("Estudo bíblico (dirigente): trechos das publicações", e?.message);
+  }
 
   let versiculos = [];
   if (fontesConfiguradas()) {
@@ -1569,6 +1591,9 @@ async function perguntasEbcDirigente(res, body, P) {
         textosBasePedidos: textosBase,
         textosBase: base.length,
         originais: capitulo.perguntas.length,
+        citadasPedidas: fontesEbc.citadasPedidas,
+        trechosOk: fontesEbc.trechosOk,
+        trechos: capitulo.trechos.length,
         versiculos: versiculos.length,
         segundosIa: Math.round((Date.now() - inicio) / 100) / 10,
         total: Math.round((Date.now() - inicioPedido) / 100) / 10,
@@ -1578,11 +1603,16 @@ async function perguntasEbcDirigente(res, body, P) {
       })
     );
 
+    const aviso =
+      fontesEbc.falhas > 0
+        ? `Não consegui ler ${fontesEbc.falhas} publicação(ões) citada(s) nas perguntas; a preparação pode ficar menos precisa.`
+        : null;
     return res.status(200).json({
       materia: capitulo.materia,
       titulo: [capitulo.contexto, capitulo.titulo].filter(Boolean).join(": "),
       url: capitulo.url,
       erro: perguntas.length || base.length ? null : perguntasPedidas ? "A IA não elaborou perguntas diferentes das originais. Tente de novo." : "A IA não escolheu trechos dos textos bíblicos. Tente de novo.",
+      aviso,
       perguntas,
       textosBase: base,
       memoriaUsada: memoriaUsadaAgora(),
