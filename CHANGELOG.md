@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.70
+
+Backup novo (vazio): o quadro "Exportação" (planilha e CSV das notas) não aparece mais, porque o backup novo não tem notas para exportar. Nos outros backups (abertos ou mesclados) continua.
+
 ## 6.3.69
 
 Backup, respostas preparadas: o aviso "N respostas foram incluídas no backup aberto…" saiu; depois de incluir, as respostas ficam marcadas como "incluída no backup" na lista. Só aparecem avisos quando alguma resposta não entra ou quando nada estava marcado.
