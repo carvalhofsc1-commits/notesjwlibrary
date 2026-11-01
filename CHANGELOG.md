@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.83
+
+Preparação de discursos (Tesouros e discurso curto): o botão "IA - Elaborar o esboço do discurso" não aceita clique enquanto a matéria do discurso da semana não foi carregada; libera sozinho ao carregar.
+
 ## 6.3.82
 
 Preparação de discursos e esboços: a matéria carregada do discurso (pontos, textos, fontes e imagens da apostila) agora fica dentro de um card.

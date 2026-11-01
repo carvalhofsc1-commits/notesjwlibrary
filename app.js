@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.82'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.83'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -11998,7 +11998,9 @@ function saveTemplatesToStorage() {
       ['aiStudyQuestionsBtn', () => Boolean(aiStudy)],
       ['joiasResponderBtn', () => joiasCarregado()],
       ['ebcResponderBtn', () => ebcCarregado('ebcTitulo')],
-      ['ebcDirPerguntasBtn', () => ebcCarregado('ebcDirTitulo')]
+      ['ebcDirPerguntasBtn', () => ebcCarregado('ebcDirTitulo')],
+      ['tesourosEsbocoBtn', () => Boolean(ESBOCOS.tesouros.dadosCarregados)],
+      ['discursoEsbocoBtn', () => Boolean(ESBOCOS.discurso.dadosCarregados)]
     ];
 
     function iaTravasAtualizar() {
@@ -12009,7 +12011,7 @@ function saveTemplatesToStorage() {
         try { ok = carregada(); } catch (e) { ok = true; } // ainda não montado (início do app): não trava
         botao.disabled = !ok;
         if (ok) botao.removeAttribute('title');
-        else botao.title = 'Carregue as perguntas desta semana antes de usar este botão.';
+        else botao.title = id.endsWith('EsbocoBtn') ? 'Carregue a matéria do discurso desta semana antes de usar este botão.' : 'Carregue as perguntas desta semana antes de usar este botão.';
       });
     }
 
@@ -14086,6 +14088,8 @@ function saveTemplatesToStorage() {
       }
     };
 
+    iaTravasAtualizar(); // Tesouros e discurso curto começam sem matéria carregada: "IA - Elaborar o esboço" fica travado
+
     // Tesouros e discurso curto: o tema do discurso carregado é o título do cartão (em destaque, com a semana na linha de baixo, e o link
     // da apostila no wol.jw.org); sem discurso carregado, "Aguardando carregar discurso". O botão vira "Recarregar discurso" depois de carregado.
     function esbocoTituloAtualizar(cfg, dados) {
@@ -14128,6 +14132,7 @@ function saveTemplatesToStorage() {
       esbocoRenomearSalvos(cfg);
       esbocoSalvoAtualizar(cfg);
       esbocoTituloAtualizar(cfg, cfg.dadosCarregados);
+      iaTravasAtualizar();
       if (!dados || !dados.titulo) return;
       // Sem título no cartão (discurso público e outros esboços), o tema vai na primeira linha das informações.
       if (!cfg.tituloEl) {
@@ -14163,6 +14168,7 @@ function saveTemplatesToStorage() {
         const guardado = carregadoDe(cfg.kind);
         if (guardado) esbocoMostrarInfo(cfg, guardado);
       });
+      iaTravasAtualizar();
     }
 
     // ---------- Esboço já salvo do discurso carregado ----------
