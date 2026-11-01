@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.69
+
+Backup, respostas preparadas: o aviso "N respostas foram incluídas no backup aberto…" saiu; depois de incluir, as respostas ficam marcadas como "incluída no backup" na lista. Só aparecem avisos quando alguma resposta não entra ou quando nada estava marcado.
+
 ## 6.3.68
 
 Backup, respostas preparadas: na reunião do meio de semana, a linha com a data da semana (título da apostila) saiu da lista, porque a barra da semana, no alto, já mostra a data; continua aparecendo o título do capítulo do Estudo Bíblico. Em A Sentinela continua o título do artigo.
