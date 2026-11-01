@@ -1702,6 +1702,20 @@
       margin: 0;
     }
 
+    /* "Recuperar a resposta/as perguntas salvas": amarelo mais forte, para se destacar (vale sobre a cor dos grupos). */
+    .study-salva button,
+    :is(#grupoComentarios, #grupoDirigir) .study-salva button.secondary {
+      background: #fcd34d;
+      color: #422006;
+      border-color: #f59e0b;
+      font-weight: 700;
+    }
+
+    .study-salva button:hover:not(:disabled),
+    :is(#grupoComentarios, #grupoDirigir) .study-salva button.secondary:hover:not(:disabled) {
+      background: #fbbf24;
+    }
+
     #aiStudyArticleBox label {
       margin: 8px 0 4px;
       font-size: .82rem;
