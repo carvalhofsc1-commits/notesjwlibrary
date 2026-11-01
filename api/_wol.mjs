@@ -342,6 +342,12 @@ export const QUADROS_EBC = [
   { id: "quadro", nome: "Pense no quadro completo", curto: "Quadro completo" },
 ];
 
+// Rótulo solto de imagem no capítulo ("Imagem A", "Imagem B"): às vezes o wol.jw.org deixa um <p> fora da <figure>
+// (além da legenda). Sem pular, ele virava pergunta fantasma e deslocava a numeração (ex.: a pergunta 2 virava "Analise 3").
+function ehRotuloDeImagemEbc(texto) {
+  return /^imagem(\s+[a-z])?$/i.test(String(texto || "").trim()) || /^§figura§$/i.test(String(texto || "").trim());
+}
+
 export function analisarCapituloEbc(html) {
   const inicio = html.search(/<p\b[^>]*class="contextTtl|<h1\b/);
   // As imagens (descrição e legenda) saem do texto do capítulo e vão numa lista à parte: as perguntas as citam pela letra ("Imagem A").
@@ -367,17 +373,18 @@ export function analisarCapituloEbc(html) {
       continue;
     }
     const texto = textoDe(conteudo);
-    if (!texto) continue;
+    if (!texto || ehRotuloDeImagemEbc(texto)) continue;
     if (secao === "relato") relato.push(texto);
     else if (secao === "leia") leia.push(...referenciasDe(conteudo));
     else {
       const quadro = QUADROS_EBC.find((q) => q.id === secao);
-      const numero = perguntas.filter((p) => p.quadro === quadro.id).length + 1;
-      const citacoes = [...conteudo.matchAll(/<a\b[^>]*href="(\/pt\/wol\/pc\/[^"]+)"[^>]*>([\s\S]*?)<\/a>/g)].map(([, caminho, rotulo]) => ({ caminho, citacao: textoDe(rotulo) }));
       // Tira o número da lista ("1.") e a letra que liga a pergunta a uma imagem ("A").
       const pergunta = textoDe(
         conteudo.replace(/<span class="txtSrcBullet">[\s\S]*?<\/span>/, "").replace(/<span\b[^>]*>\s*<strong>[A-Z]<\/strong>\s*<\/span>/g, "")
       );
+      if (!pergunta || ehRotuloDeImagemEbc(pergunta)) continue;
+      const numero = perguntas.filter((p) => p.quadro === quadro.id).length + 1;
+      const citacoes = [...conteudo.matchAll(/<a\b[^>]*href="(\/pt\/wol\/pc\/[^"]+)"[^>]*>([\s\S]*?)<\/a>/g)].map(([, caminho, rotulo]) => ({ caminho, citacao: textoDe(rotulo) }));
       perguntas.push({ id: `${quadro.curto} ${numero}`, quadro: quadro.id, nomeQuadro: quadro.nome, numero, pergunta, referencias: referenciasDe(conteudo), citacoes });
     }
   }
@@ -661,8 +668,13 @@ export function textoDasJoias(joias, { pergunta, leitura }) {
   return partes.join("\n\n");
 }
 
-// Texto do capítulo para a IA: o relato, as referências de "Leia o relato na Bíblia" (com os versículos, se vierem),
-// os trechos das publicações citadas e as perguntas pedidas, cada uma com o identificador entre colchetes.
+// Trecho já lido que casa com uma citação da pergunta (pelo caminho do link ou pelo rótulo).
+function trechoDaCitacao(capitulo, citacao) {
+  return (capitulo.trechos || []).find((t) => t.caminho === citacao.caminho || t.citacao === citacao.citacao) || null;
+}
+
+// Texto do capítulo para a IA: o relato, as referências de "Leia o relato na Bíblia" (com os versículos, se vierem)
+// e as perguntas pedidas; cada pergunta traz colado o trecho da publicação que ela cita (fonte principal da resposta).
 export function textoDoCapituloEbc(capitulo, perguntas, versiculos = []) {
   const partes = [
     `CAPÍTULO: ${[capitulo.contexto, capitulo.titulo].filter(Boolean).join(": ")}`,
@@ -670,16 +682,24 @@ export function textoDoCapituloEbc(capitulo, perguntas, versiculos = []) {
     `LEIA O RELATO NA BÍBLIA: ${capitulo.leia.join("; ") || "(nenhuma referência)"}`,
   ];
   if (versiculos.length) partes.push(`TEXTO DOS VERSÍCULOS:\n${versiculos.map((v) => `${v.referencia}: ${v.texto}`).join("\n")}`);
-  if (capitulo.trechos.length) {
-    partes.push(`TRECHOS DAS PUBLICAÇÕES CITADAS NAS PERGUNTAS:\n${capitulo.trechos.map((t) => `(${t.citacao}) ${t.titulo ? `"${t.titulo}": ` : ""}${t.texto}`).join("\n\n")}`);
-    partes.push(
-      "IMPORTANTE: quando a pergunta citar uma publicação cujo trecho está acima, use esse trecho como fonte principal da resposta. Não invente o que a publicação não diz."
-    );
-  }
   if (capitulo.imagens && capitulo.imagens.length) {
     partes.push(`IMAGENS DO CAPÍTULO (as perguntas citam cada uma pela letra, como "Imagem A"):\n${capitulo.imagens.map(textoDaImagem).join("\n\n")}`);
   }
-  partes.push(`PERGUNTAS (responda a cada uma; em "pergunta", use o identificador entre colchetes):\n${perguntas.map((p) => `[${p.id}] (${p.nomeQuadro}) ${p.pergunta}`).join("\n")}`);
+  const blocoPerguntas = perguntas
+    .map((p) => {
+      const linhas = [`[${p.id}] (${p.nomeQuadro}) ${p.pergunta}`];
+      for (const c of p.citacoes || []) {
+        const t = trechoDaCitacao(capitulo, c);
+        if (t) linhas.push(`FONTE PRINCIPAL DESTA PERGUNTA (${t.citacao})${t.titulo ? ` "${t.titulo}"` : ""}:\n${t.texto}`);
+        else if (c.citacao) linhas.push(`FONTE CITADA NESTA PERGUNTA (trecho não disponível): ${c.citacao}`);
+      }
+      return linhas.join("\n");
+    })
+    .join("\n\n");
+  partes.push(
+    "PERGUNTAS (responda a cada uma; em \"pergunta\", use o identificador entre colchetes). Quando houver FONTE PRINCIPAL logo abaixo da pergunta, baseie a resposta nela; não invente o que a publicação não diz.\n\n" +
+      blocoPerguntas
+  );
   return partes.join("\n\n");
 }
 
@@ -1116,7 +1136,8 @@ function idsEbcDosCampos(html) {
     } else if (m[5]) {
       if (ultimo) ids.set(m[5], ultimo);
     } else {
-      if (/contextTtl|x-figura/.test(m[3] || "") || !textoDe(m[4])) continue;
+      const texto = textoDe(m[4]);
+      if (/contextTtl|x-figura/.test(m[3] || "") || !texto || ehRotuloDeImagemEbc(texto)) continue;
       const quadro = QUADROS_EBC.find((q) => q.id === secao);
       if (!quadro) continue;
       contagem[quadro.id] = (contagem[quadro.id] || 0) + 1;

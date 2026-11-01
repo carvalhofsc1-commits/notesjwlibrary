@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.75
+
+Estudo Bíblico de Congregação: rótulos soltos de imagem ("Imagem A") deixam de ser contados como pergunta (a numeração da Análise voltava deslocada e a fonte da pergunta 2 ia para outra); cada pergunta recebe colado o trecho da publicação que cita.
+
 ## 6.3.74
 
 Backup JW: menos consultas ao wol.jw.org (Sentinela sem buscar o Estudo Bíblico; cache da semana compartilhado; identificar parágrafos só ao tocar no botão); joias casam melhor com a pergunta da apostila; Nova resposta lista o capítulo do EBC; respostas do dirigente entram nas preparadas.
