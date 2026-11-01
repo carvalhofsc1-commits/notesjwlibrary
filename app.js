@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.75'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.76'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -11990,6 +11990,29 @@ function saveTemplatesToStorage() {
       document.getElementById('aiFloatingText').textContent = frase + ' ' + seconds + ' s';
     }
 
+    // Regra: os botões "IA - Responder / Preparar / Sugerir…" do Preparar para comentar e para dirigir não aceitam clique enquanto a matéria (as perguntas)
+    // da semana escolhida não foi carregada: ficam desabilitados e voltam sozinhos quando o cartão mostra a matéria carregada. Não mexe nos botões
+    // enquanto a IA está ocupada (setAiLoading(false) refaz a conta).
+    const IA_BOTOES_DA_MATERIA = [
+      ['aiStudyBtn', () => Boolean(aiStudy)],
+      ['aiStudyQuestionsBtn', () => Boolean(aiStudy)],
+      ['joiasResponderBtn', () => joiasCarregado()],
+      ['ebcResponderBtn', () => ebcCarregado('ebcTitulo')],
+      ['ebcDirPerguntasBtn', () => ebcCarregado('ebcDirTitulo')]
+    ];
+
+    function iaTravasAtualizar() {
+      IA_BOTOES_DA_MATERIA.forEach(([id, carregada]) => {
+        const botao = document.getElementById(id);
+        if (!botao || aiBusy) return;
+        let ok = true;
+        try { ok = carregada(); } catch (e) { ok = true; } // ainda não montado (início do app): não trava
+        botao.disabled = !ok;
+        if (ok) botao.removeAttribute('title');
+        else botao.title = 'Carregue as perguntas desta semana antes de usar este botão.';
+      });
+    }
+
     function setAiLoading(on, button, modo) {
       const all = [aiSuggestBtn, aiSentinelaBtn, aiStudyBtn, aiStudyQuestionsBtn, aiStudyLoadBtn, leaderStudyLoadBtn, aiAnotherBtn, aiImproveBtn,
         document.getElementById('tdGerarBtn'), document.getElementById('tdIaOutrosBtn'),
@@ -12017,6 +12040,7 @@ function saveTemplatesToStorage() {
         aiResults.removeAttribute('aria-busy');
         aiFloating.classList.remove('on');
         aiFloating.textContent = '';
+        iaTravasAtualizar(); // os botões voltaram a ficar habilitados: os que pedem a matéria carregada voltam a travar, se for o caso
         return;
       }
 
@@ -13153,6 +13177,7 @@ function saveTemplatesToStorage() {
         showStudyQuestions(picker);
         showStudySaved(picker);
       });
+      iaTravasAtualizar();
     }
 
     function stepStudy(picker, delta) {
@@ -13614,6 +13639,7 @@ function saveTemplatesToStorage() {
         if (botao.dataset.label) botao.dataset.label = rotulo; // carregando: o rótulo volta ao fim (setAiLoading)
         else botao.textContent = rotulo;
       }
+      iaTravasAtualizar();
       if (!carregado) return;
       const quadros = (dados.quadros || []).filter(q => q.perguntas);
       if (quadros.length) alvo.append(quadros.map(q => q.nome + ': ' + q.perguntas).join(' · '));
@@ -15501,6 +15527,7 @@ function saveTemplatesToStorage() {
       if (joiasCarregarBtn.dataset.label) joiasCarregarBtn.dataset.label = rotulo; // carregando: o rótulo volta ao fim (setAiLoading)
       else joiasCarregarBtn.textContent = rotulo;
       if (carregado && dados.pergunta) joiasInfo.append('❓ ' + dados.pergunta);
+      iaTravasAtualizar();
     }
 
     // ---------- Imagens da apostila (a apostila Vida e Ministério da semana inteira) ----------

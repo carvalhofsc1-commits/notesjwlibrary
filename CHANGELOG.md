@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.76
+
+Preparar para comentar e para dirigir: os botões "IA - Responder…", "Preparar as joias", "Responder às perguntas", "Sugerir perguntas adicionais" e "Preparar para dirigir o estudo" não aceitam clique enquanto as perguntas (a matéria) da semana escolhida não foram carregadas; ao carregar (ou ao trocar para uma semana já carregada) eles liberam sozinhos.
+
 ## 6.3.75
 
 Estudo Bíblico de Congregação: rótulos soltos de imagem ("Imagem A") deixam de ser contados como pergunta (a numeração da Análise voltava deslocada e a fonte da pergunta 2 ia para outra); cada pergunta recebe colado o trecho da publicação que cita.
