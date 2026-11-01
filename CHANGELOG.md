@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.81
+
+Preparação (Tesouros e discurso curto): o botão "Carregar discurso" passou a se chamar "Carregar matéria do discurso (wol.jw.org)" (e "Recarregar matéria do discurso (wol.jw.org)" depois de carregado).
+
 ## 6.3.80
 
 Preparar para comentar e para dirigir: o card da pergunta do parágrafo ficou com fundo branco (sem cor).
