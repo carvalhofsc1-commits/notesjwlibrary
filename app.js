@@ -162,32 +162,39 @@
 
     function backupCamposGuardar() {
       const novos = {};
-      Object.keys(backupCampos).sort((a, b) => (backupCampos[b].quando || 0) - (backupCampos[a].quando || 0)).slice(0, 150).forEach(id => { novos[id] = backupCampos[id]; });
+      Object.keys(backupCampos).sort((a, b) => (backupCampos[b].quando || 0) - (backupCampos[a].quando || 0)).slice(0, 400).forEach(id => { novos[id] = backupCampos[id]; });
       backupCampos = novos;
       safeSetItem(BACKUP_CAMPOS_KEY, JSON.stringify(backupCampos));
     }
 
     // Consulta o servidor para os documentos que ainda não estão guardados (de 10 em 10). Devolve '' se deu certo ou a mensagem do problema.
+    let backupCamposFila = Promise.resolve(); // evita pedidos paralelos duplicados ao wol.jw.org
     async function backupCarregarCampos(docIds) {
       // Os guardados antes da versão 2 não têm o título do quadro de recapitulação: são lidos de novo.
       const faltam = [...new Set(docIds.map(String))].filter(id => !backupCampos[id] || backupCampos[id].v !== 3);
-      for (let i = 0; i < faltam.length; i += 10) {
-        const acesso = studyAccessError();
-        if (acesso) return acesso;
-        let result;
-        try {
-          result = await postStudy({ tarefa: 'backup-campos', codigo: codigoAcessoSalvo(), documentos: faltam.slice(i, i + 10) }, 45000);
-        } catch (e) {
-          return e && e.name === 'AbortError' ? 'O site demorou demais. Tente de novo.' : 'Falha de conexão ao consultar o wol.jw.org.';
+      if (!faltam.length) return '';
+      const trabalho = backupCamposFila.then(async () => {
+        const ainda = faltam.filter(id => !backupCampos[id] || backupCampos[id].v !== 3);
+        for (let i = 0; i < ainda.length; i += 10) {
+          const acesso = studyAccessError();
+          if (acesso) return acesso;
+          let result;
+          try {
+            result = await postStudy({ tarefa: 'backup-campos', codigo: codigoAcessoSalvo(), documentos: ainda.slice(i, i + 10) }, 45000);
+          } catch (e) {
+            return e && e.name === 'AbortError' ? 'O site demorou demais. Tente de novo.' : 'Falha de conexão ao consultar o wol.jw.org.';
+          }
+          if (!result.ok) return studyFailureMessage(result, 'Não consegui consultar o wol.jw.org agora.');
+          Object.entries(result.data.documentos || {}).forEach(([id, d]) => {
+            backupCampos[id] = { v: 3, titulo: d.titulo || '', simbolo: d.simbolo || null, edicao: d.edicao === undefined ? null : d.edicao, campos: d.campos || [], quando: Date.now() };
+          });
+          (result.data.falhas || []).forEach(id => backupCamposFalhas.add(String(id)));
+          backupCamposGuardar();
         }
-        if (!result.ok) return studyFailureMessage(result, 'Não consegui consultar o wol.jw.org agora.');
-        Object.entries(result.data.documentos || {}).forEach(([id, d]) => {
-          backupCampos[id] = { v: 3, titulo: d.titulo || '', simbolo: d.simbolo || null, edicao: d.edicao === undefined ? null : d.edicao, campos: d.campos || [], quando: Date.now() };
-        });
-        (result.data.falhas || []).forEach(id => backupCamposFalhas.add(String(id)));
-        backupCamposGuardar();
-      }
-      return '';
+        return '';
+      });
+      backupCamposFila = trabalho.then(() => {}, () => {});
+      return trabalho;
     }
 
     // Toda resposta pertence a um artigo: enquanto o título dele não é conhecido (o backup nem sempre o traz e o wol.jw.org ainda
@@ -216,24 +223,40 @@
       }
     }
 
-    // Na categoria Respostas: identifica os parágrafos dos documentos que ainda não foram consultados e redesenha a lista a cada lote.
-    async function backupIdentificarRespostas() {
+    // Na categoria Respostas: mostra quantos documentos ainda precisam do wol.jw.org; a consulta só roda ao tocar no botão (evita lotes grandes ao abrir).
+    function backupIdentificarRespostas() {
       const info = document.getElementById('backupRespostasInfo');
-      if (!backupState || backupCategory !== 'respostas' || backupCamposOcupado) return;
+      if (!backupState || backupCategory !== 'respostas') return;
+      if (backupCamposOcupado) return;
       const docs = [...new Set(backupState.data.respostas.map(r => r.documentId).filter(Boolean).map(String))];
       const faltam = docs.filter(id => (!backupCampos[id] || backupCampos[id].v !== 3) && !backupCamposFalhas.has(id));
-      if (!faltam.length) { info.hidden = true; return; }
+      if (!faltam.length) { info.hidden = true; info.textContent = ''; return; }
       const acesso = studyAccessError();
       info.hidden = false;
+      info.textContent = '';
       if (acesso) {
         info.textContent = '🔎 Para mostrar o parágrafo de cada resposta o app consulta o wol.jw.org (só o número dos documentos é enviado). ' + acesso;
         return;
       }
+      const texto = document.createElement('span');
+      texto.textContent = '🔎 ' + faltam.length + (faltam.length === 1 ? ' documento ainda sem ' : ' documentos ainda sem ') + 'parágrafo identificado. ';
+      const botao = document.createElement('button');
+      botao.type = 'button';
+      botao.className = 'secondary';
+      botao.textContent = 'Identificar parágrafos';
+      botao.addEventListener('click', () => backupIdentificarRespostasRodar(faltam));
+      info.append(texto, botao);
+    }
+
+    async function backupIdentificarRespostasRodar(faltam) {
+      const info = document.getElementById('backupRespostasInfo');
+      if (!backupState || backupCategory !== 'respostas' || backupCamposOcupado || !faltam.length) return;
       const estado = backupState;
       backupCamposOcupado = true;
       let problema = '';
       try {
         for (let i = 0; i < faltam.length && !problema; i += 10) {
+          info.hidden = false;
           info.textContent = '🔎 Identificando os parágrafos das respostas… (' + Math.min(i + 10, faltam.length) + ' de ' + faltam.length + ' documentos)';
           problema = await backupCarregarCampos(faltam.slice(i, i + 10));
           if (backupState !== estado || backupCategory !== 'respostas') return;
@@ -243,8 +266,10 @@
       } finally {
         backupCamposOcupado = false;
       }
-      if (problema) info.textContent = '🔎 Não consegui identificar os parágrafos: ' + problema;
-      else info.hidden = true;
+      if (problema) {
+        info.hidden = false;
+        info.textContent = '🔎 Não consegui identificar os parágrafos: ' + problema;
+      } else backupIdentificarRespostas();
     }
 
     function loadScriptOnce(src) {
@@ -891,6 +916,8 @@
     let backupSemanas = {}; // docId -> "15-21 de setembro de 2025"
     try { backupSemanas = JSON.parse(localStorage.getItem(BACKUP_SEMANAS_KEY) || '{}') || {}; } catch (e) { backupSemanas = {}; }
     const backupSemanasTentadas = new Set(); // não insiste na mesma visita
+    // Cache compartilhado da semana (Respostas preparadas e Nova resposta): evita dois backup-semana iguais na mesma visita.
+    const backupSemanaCache = new Map(); // "ano-semana" -> dados do servidor
 
     // "15-21 de setembro" -> "15-21 de setembro de 2025" (o período da virada do ano já traz os anos).
     const backupPeriodoComAno = (periodo, ano) => (/\d{4}/.test(periodo) ? periodo : periodo + ' de ' + ano);
@@ -899,6 +926,31 @@
       const ids = Object.keys(backupSemanas);
       if (ids.length > 400) ids.slice(0, ids.length - 400).forEach(id => { delete backupSemanas[id]; });
       safeSetItem(BACKUP_SEMANAS_KEY, JSON.stringify(backupSemanas));
+    }
+
+    // Busca Sentinela/apostila (e o capítulo do EBC se incluirEstudo). Reusa o cache; se só faltava o EBC, completa o pedido.
+    async function backupBuscarSemana(ano, semana, { incluirEstudo = false } = {}) {
+      const chave = ano + '-' + semana;
+      let dados = backupSemanaCache.get(chave);
+      const precisaEstudo = incluirEstudo && (!dados || dados.estudo === undefined);
+      if (!dados || precisaEstudo) {
+        const r = await postStudy({
+          tarefa: 'backup-semana',
+          codigo: codigoAcessoSalvo(),
+          ano,
+          semana,
+          incluirEstudo: Boolean(incluirEstudo)
+        }, 45000);
+        if (!r.ok) return { ok: false, result: r };
+        dados = dados ? { ...dados, ...r.data } : r.data;
+        if (incluirEstudo && dados.estudo === undefined) dados.estudo = null;
+        backupSemanaCache.set(chave, dados);
+        if (dados.sentinela) {
+          backupSemanas[dados.sentinela.id] = backupPeriodoComAno(dados.periodo || rotuloDaSemanaIso(ano, semana), dados.ano || ano);
+          backupGuardarSemanas();
+        }
+      }
+      return { ok: true, dados };
     }
 
     // Descobre, em segundo plano, a semana dos artigos de estudo (edições de 2022 em diante) que ainda não se conhecem; chama aoMudar a cada lote.
@@ -978,8 +1030,31 @@
     // semana (A Sentinela) ou a do meio de semana (apostila e Estudo Bíblico de Congregação), cada uma ligada à pergunta do documento, tudo marcado, e um botão
     // leva as marcadas para o backup. A semana é escolhida com a mesma barra da tela Reuniões (setas), e os botões das reuniões mostram quantas respostas há.
     // A reunião do meio de semana tem dois documentos: a apostila (joias) e o capítulo do Estudo Bíblico (outro documento, com as próprias caixas de resposta).
-    const BACKUP_PREP_TIPOS = { sentinela: ['sentinela'], apostila: ['joias', 'ebc'] };
-    const backupPrep = { para: null, deslocamento: 0, pub: '', semanas: new Map(), docs: [], itens: [], ocupado: false, mensagem: '', incluidas: 0 };
+    const BACKUP_PREP_TIPOS = { sentinela: ['sentinela'], apostila: ['joias', 'ebc', 'ebc-dirigente'] };
+    const backupPrep = { para: null, deslocamento: 0, pub: '', docs: [], itens: [], ocupado: false, mensagem: '', incluidas: 0 };
+
+    // Abreviações bíblicas comuns ↔ nome completo (sem acento), para casar joia salva com a pergunta da apostila.
+    const BACKUP_LIVRO_CANON = {
+      gen: 'genesis', ex: 'exodo', lev: 'levitico', num: 'numeros', deut: 'deuteronomio', jos: 'josue', ju: 'juizes',
+      rut: 'rute', '1sam': '1samuel', '2sam': '2samuel', '1rs': '1reis', '2rs': '2reis', '1cr': '1cronicas', '2cr': '2cronicas',
+      esd: 'esdras', ne: 'neemias', est: 'ester', jo: 'jo', sal: 'salmos', prov: 'proverbios', ec: 'eclesiastes', can: 'cantares',
+      is: 'isaias', jer: 'jeremias', lm: 'lamentacoes', ez: 'ezequiel', dan: 'daniel', os: 'oseias', jl: 'joel', am: 'amos',
+      ob: 'obadias', jn: 'jonas', miq: 'miqueias', na: 'naum', hc: 'habacuque', sf: 'sofonias', ag: 'ageu', zc: 'zacarias',
+      ml: 'malaquias', mt: 'mateus', mat: 'mateus', mc: 'marcos', lc: 'lucas', joao: 'joao', at: 'atos', rm: 'romanos',
+      '1co': '1corintios', '2co': '2corintios', gl: 'galatas', ef: 'efesios', fp: 'filipenses', cl: 'colossenses',
+      '1ts': '1tessalonicenses', '2ts': '2tessalonicenses', '1tm': '1timoteo', '2tm': '2timoteo', tt: 'tito', fm: 'filemom',
+      hb: 'hebreus', tg: 'tiago', '1pe': '1pedro', '2pe': '2pedro', '1jo': '1joao', '2jo': '2joao', '3jo': '3joao',
+      jd: 'judas', ap: 'apocalipse'
+    };
+
+    function backupPrepRefChave(texto) {
+      const t = backupPlain(texto);
+      const m = t.match(/(\d+)\s*[:：]\s*(\d+(?:\s*[-–,]\s*\d+)*)/);
+      if (!m) return t.replace(/[\s.]/g, '');
+      let livro = t.slice(0, m.index).replace(/[\s.]/g, '');
+      livro = BACKUP_LIVRO_CANON[livro] || livro;
+      return livro + m[1] + ':' + m[2].replace(/\s+/g, '');
+    }
 
     function backupPrepSemana() {
       const s = backupSemanaDeslocada(backupPrep.deslocamento);
@@ -1008,10 +1083,10 @@
       return { sentinela: backupPrepPartes('sentinela', ano, semana).length, apostila: backupPrepPartes('apostila', ano, semana).length };
     }
 
-    // A referência no começo da pergunta da apostila ("Jer. 46:22 — Em que sentido…"), sem espaços, pontos e acentos, para comparar com a da joia.
+    // A referência no começo da pergunta da apostila ("Jer. 46:22 — Em que sentido…"), para comparar com a da joia.
     function backupPrepRefDaPergunta(texto) {
       const partes = String(texto || '').split(/\s+[—–]\s+/);
-      return partes.length > 1 ? backupPlain(partes[0]).replace(/[\s.]/g, '') : '';
+      return partes.length > 1 ? backupPrepRefChave(partes[0]) : '';
     }
 
     // A pergunta (campo) do documento que corresponde a uma parte salva: { doc, campo, junta } ou null.
@@ -1019,6 +1094,7 @@
     // - A joia sobre o versículo da pergunta da apostila ("Jer. 46:22") casa com a caixa dessa pergunta; as joias da leitura da Bíblia vão todas para a pergunta
     //   geral das joias ("Que joias espirituais você encontrou…"), numa resposta só (junta): os textos das marcadas são unidos.
     // - O Estudo Bíblico casa pelo id da pergunta ("Considerar 1", "Analise 2", "Medite 3", "Quadro completo 1") com a caixa do capítulo.
+    // - Perguntas do dirigente (ebc-dirigente) em geral não têm id de quadro: ficam para escolha manual.
     function backupPrepMapear(parte, pub, docs) {
       const principal = docs.find(d => d.papel === 'principal');
       const estudo = docs.find(d => d.papel === 'estudo');
@@ -1035,12 +1111,12 @@
         }
         return campo ? { doc: principal.id, campo } : null;
       }
-      if (parte.tipo === 'ebc') {
+      if (parte.tipo === 'ebc' || parte.tipo === 'ebc-dirigente') {
         const campo = estudo && par ? estudo.info.campos.find(c => c.ebc && c.ebc.toLowerCase() === par.toLowerCase()) : null;
         return campo ? { doc: estudo.id, campo } : null;
       }
       if (parte.tipo === 'joias' && principal) {
-        const ref = backupPlain(par).replace(/[\s.]/g, '');
+        const ref = backupPrepRefChave(par);
         const doVerso = ref && principal.info.campos.find(c => backupPrepRefDaPergunta(c.pergunta) === ref);
         if (doVerso) return { doc: principal.id, campo: doVerso };
         const geral = principal.info.campos.find(c => !c.numero && /joia/.test(backupPlain(c.pergunta)));
@@ -1080,14 +1156,9 @@
       backupPrep.mensagem = '🔎 Consultando o wol.jw.org…';
       backupPrepRender();
       try {
-        let dados = backupPrep.semanas.get(semana.chave);
-        if (!dados || (pub === 'apostila' && dados.estudo === undefined)) {
-          const r = await postStudy({ tarefa: 'backup-semana', codigo: codigoAcessoSalvo(), ano: semana.ano, semana: semana.semana }, 45000);
-          if (!r.ok) { backupPrep.mensagem = studyFailureMessage(r, 'Não consegui ler essa semana agora.'); return; }
-          dados = r.data;
-          backupPrep.semanas.set(semana.chave, dados);
-          if (dados.sentinela) { backupSemanas[dados.sentinela.id] = backupPeriodoComAno(dados.periodo || rotuloDaSemanaIso(semana.ano, semana.semana), dados.ano); backupGuardarSemanas(); }
-        }
+        const buscado = await backupBuscarSemana(semana.ano, semana.semana, { incluirEstudo: pub === 'apostila' });
+        if (!buscado.ok) { backupPrep.mensagem = studyFailureMessage(buscado.result, 'Não consegui ler essa semana agora.'); return; }
+        const dados = buscado.dados;
         const publicacao = pub === 'sentinela' ? dados.sentinela : dados.apostila;
         if (!publicacao) { backupPrep.mensagem = 'Não encontrei ' + (pub === 'sentinela' ? 'o artigo de estudo de A Sentinela' : 'a apostila') + ' dessa semana no wol.jw.org.'; return; }
         const estudo = pub === 'apostila' ? dados.estudo : null;
@@ -1108,13 +1179,17 @@
           if (livre) usadas.add(chave);
           const rotulo = pub === 'sentinela'
             ? (/^recap/i.test(parte.par) ? 'Recapitulação ' + parte.par.replace(/^\D*/, '') : parte.par ? 'Parágrafo ' + parte.par : 'Resposta')
-            : parte.tipo === 'joias' ? (parte.par ? 'Joia ' + parte.par : 'Pergunta das joias') : 'Estudo bíblico' + (parte.par ? ' · ' + parte.par : '');
+            : parte.tipo === 'joias'
+              ? (parte.par ? 'Joia ' + parte.par : 'Pergunta das joias')
+              : parte.tipo === 'ebc-dirigente'
+                ? 'Dirigente' + (parte.par ? ' · ' + parte.par : '')
+                : 'Estudo bíblico' + (parte.par ? ' · ' + parte.par : '');
           return { id: parte.id, rotulo, texto: parte.texto, doc: alvo ? alvo.doc : '', tag: alvo ? alvo.campo.tag : '', junta: Boolean(alvo && alvo.junta), marcado: livre, estado: '', aberto: false };
         });
         backupPrep.itens = itens;
         backupPrep.mensagem = !itens.length
           ? 'Não há respostas salvas desta semana para ' + (pub === 'sentinela' ? 'A Sentinela' : 'a apostila') + '.'
-          : pub === 'apostila' && itens.some(i => /^Estudo bíblico/.test(i.rotulo)) && !docs.some(d => d.papel === 'estudo')
+          : pub === 'apostila' && itens.some(i => /^Estudo bíblico|^Dirigente/.test(i.rotulo)) && !docs.some(d => d.papel === 'estudo')
             ? 'Não consegui achar o capítulo do Estudo Bíblico dessa semana no wol.jw.org: as respostas dele precisam de uma pergunta escolhida à mão.'
             : '';
       } catch (e) {
@@ -1517,29 +1592,28 @@
         salvar.disabled = false;
       }
 
-      // Busca no servidor o artigo de estudo e a apostila da semana escolhida e põe os dois na lista de documentos.
+      // Busca no servidor o artigo de estudo, a apostila e o capítulo do EBC da semana e põe na lista de documentos.
       async function carregarSemana() {
         const alvo = backupSemanaDeslocada(deslocamento);
         const acesso = studyAccessError();
         if (acesso) { aviso.textContent = acesso; return; }
         aviso.textContent = '🔎 Consultando o wol.jw.org…';
-        let result;
+        let buscado;
         try {
-          result = await postStudy({ tarefa: 'backup-semana', codigo: codigoAcessoSalvo(), ano: alvo.ano, semana: alvo.semana }, 45000);
+          buscado = await backupBuscarSemana(alvo.ano, alvo.semana, { incluirEstudo: true });
         } catch (e) {
           aviso.textContent = e && e.name === 'AbortError' ? 'O site demorou demais. Tente de novo.' : 'Falha de conexão ao consultar o wol.jw.org.';
           return;
         }
-        if (!result.ok) { aviso.textContent = studyFailureMessage(result, 'Não consegui ler essa semana agora.'); return; }
-        const d = result.data;
+        if (!buscado.ok) { aviso.textContent = studyFailureMessage(buscado.result, 'Não consegui ler essa semana agora.'); return; }
+        const d = buscado.dados;
         const novos = [];
         const periodo = backupPeriodoComAno(d.periodo || alvo.rotulo, d.ano);
         if (d.sentinela) {
-          backupSemanas[d.sentinela.id] = periodo;
-          backupGuardarSemanas();
           novos.push({ id: d.sentinela.id, rotulo: 'A Sentinela · estudo de ' + periodo + (d.sentinela.titulo ? ' · ' + d.sentinela.titulo : '') });
         }
-        if (d.apostila) novos.push({ id: d.apostila.id, rotulo: 'Apostilas · ' + periodo });
+        if (d.apostila) novos.push({ id: d.apostila.id, rotulo: 'Apostila · ' + periodo });
+        if (d.estudo) novos.push({ id: d.estudo.id, rotulo: 'Estudo bíblico · ' + (d.estudo.titulo || periodo) });
         if (!novos.length) { aviso.textContent = 'Não encontrei publicações em ' + alvo.rotulo + '. Confira a semana ou cole o endereço de um documento.'; return; }
         // Entram no começo da lista (depois de "Escolha o documento…"); se já estavam, só o nome é atualizado.
         novos.slice().reverse().forEach(n => {
@@ -1565,7 +1639,7 @@
           perguntaSelect.textContent = '';
           perguntaSelect.disabled = true;
           salvar.disabled = true;
-          aviso.textContent = 'Escolha a semana e toque em Carregar: o app traz o artigo de estudo de A Sentinela e a apostila Vida e Ministério daquela semana.';
+          aviso.textContent = 'Escolha a semana e toque em Carregar: o app traz A Sentinela, a apostila e o Estudo Bíblico daquela semana.';
         } else if (docSelect.value === 'outro') {
           escolha = null;
           perguntaSelect.textContent = '';
@@ -7341,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.73'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.74'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());

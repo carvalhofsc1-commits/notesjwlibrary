@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.74
+
+Backup JW: menos consultas ao wol.jw.org (Sentinela sem buscar o Estudo Bíblico; cache da semana compartilhado; identificar parágrafos só ao tocar no botão); joias casam melhor com a pergunta da apostila; Nova resposta lista o capítulo do EBC; respostas do dirigente entram nas preparadas.
+
 ## 6.3.73
 
 Estudo Bíblico de Congregação: publicações citadas nas perguntas passam a ser lidas mesmo sem intervalo de parágrafo no link; o servidor garante os trechos das perguntas pedidas antes de chamar a IA e avisa se alguma fonte citada não puder ser lida.

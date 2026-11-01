@@ -192,6 +192,9 @@ const TAREFAS_SEM_IA = new Set([
   "discurso-ler",
   "joias-ler",
   "apostila-imagens",
+  "backup-campos",
+  "backup-semanas",
+  "backup-semana",
 ]);
 
 const INTENSIDADES = ["poucas", "moderada", "muitas"];
@@ -3339,12 +3342,13 @@ async function lerPublicacoesDaSemana(req, res) {
   if (!Number.isInteger(ano) || ano < 2020 || ano > 2100 || !Number.isInteger(semana) || semana < 1 || semana > 53) return erro(res, 400, "Semana inválida.");
   try {
     const reuniao = await lerReuniaoDaSemana(ano, semana);
-    // O capítulo do Estudo Bíblico (parte da apostila, mas é outro documento): sem ele a semana vem só com a apostila.
-    const estudo = reuniao.apostila ? await lerEstudoDaSemana(reuniao.apostila.id).catch(() => null) : null;
-    return res.status(200).json({ ...reuniao, estudo });
+    // O capítulo do Estudo Bíblico só é buscado quando o cliente precisa (apostila / respostas do EBC); Sentinela sozinha não paga essa leitura.
+    const incluirEstudo = body.incluirEstudo !== false;
+    const estudo = incluirEstudo && reuniao.apostila ? await lerEstudoDaSemana(reuniao.apostila.id).catch(() => null) : undefined;
+    return res.status(200).json(incluirEstudo ? { ...reuniao, estudo: estudo || null } : reuniao);
   } catch (e) {
     console.error("Backup: semana não lida", ano, semana, e?.name, e?.message);
-    return erro(res, 502, "Não consegui ler essa semana no wol.jw.org agora. Tente de novo em instantes.");
+    return erro(res, 502, "Não consegui ler essa semana no wol.jw.org agora. Tente de novo em instants.");
   }
 }
 
