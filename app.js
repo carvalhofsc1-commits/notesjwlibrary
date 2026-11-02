@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.09'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.10'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -18093,9 +18093,7 @@ function saveTemplatesToStorage() {
       trAtualizarBotoes();
       trTexto.value = '';
       trResumo.value = '';
-      trResumoBloco.hidden = true;
       trCorrigido.value = '';
-      trCorrigidoBloco.hidden = true;
       trProgresso.hidden = false;
       trProgresso.removeAttribute('value'); // indeterminado enquanto decodifica
       trInfo.textContent = '⏳ Preparando o áudio neste aparelho…';
@@ -18431,7 +18429,6 @@ function saveTemplatesToStorage() {
       if (!(await trConsentimento())) return;
       trControle = new AbortController();
       trOperacao = 'resumir';
-      trResumoBloco.hidden = false;
       trResumirProgresso.hidden = false;
       trResumirProgresso.removeAttribute('value'); // indeterminado: a IA resume de uma vez
       trAtualizarBotoes();
@@ -18452,8 +18449,8 @@ function saveTemplatesToStorage() {
     const trPassosAtualizar = () => {
       const tem = Boolean(trTexto.value.trim());
       trPassoTexto.hidden = !(trPendente || tem || (trControle && trOperacao === 'transcrever'));
-      trCorrigir.closest('details').hidden = !(tem || !trCorrigidoBloco.hidden);
-      trResumir.closest('details').hidden = !(tem || !trResumoBloco.hidden);
+      trCorrigir.closest('details').hidden = !(tem || trCorrigido.value.trim());
+      trResumir.closest('details').hidden = !(tem || trResumo.value.trim());
     };
     trFerramentasAtualizar.push(trPassosAtualizar);
     trPassosAtualizar();
@@ -18488,7 +18485,6 @@ function saveTemplatesToStorage() {
       trControle = new AbortController();
       trOperacao = 'corrigir';
       trCorrigido.value = '';
-      trCorrigidoBloco.hidden = false;
       trCorrigirProgresso.hidden = false;
       trCorrigirProgresso.max = blocos.length;
       trCorrigirProgresso.value = 0;
@@ -18528,9 +18524,7 @@ function saveTemplatesToStorage() {
       if ((trTexto.value.trim() || trResumo.value.trim()) && !(await askConfirm('Apagar o texto transcrito e o resumo? Eles não ficam salvos em nenhum lugar.', 'Limpar tudo'))) return;
       trTexto.value = '';
       trResumo.value = '';
-      trResumoBloco.hidden = true;
       trCorrigido.value = '';
-      trCorrigidoBloco.hidden = true;
       trPendenteLimpar();
       trContexto.value = ''; // o "sobre o áudio" vale só para um áudio; as instruções do resumo ficam salvas
       trDadosLimpar();

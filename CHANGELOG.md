@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.10
+
+Áudio em texto: ao abrir os contêineres Corrigir e Resumir, o campo e as barras de formatação (A−, A+, editar, copiar, negrito, itálico, Word e Limpar tudo) já aparecem, como no Transcrever, ainda vazios até a IA responder.
+
 ## 6.4.09
 
 Áudio em texto: a seta do ícone do título ficou mais fina (➔).
