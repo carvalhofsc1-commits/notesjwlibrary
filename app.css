@@ -9233,8 +9233,14 @@ details.transcricao-bloco:not([open]) {
   font-size: max(16px, 1rem);
 }
 
+#transcricaoContexto,
+#transcricaoInstrucoes {
+  resize: none;
+  overflow: hidden;
+}
+
 .transcricao-conteiner .transcricao-campo {
-  min-height: 8em;
+  min-height: 4.5em;
   padding: 8px 10px;
   font-size: max(16px, 1rem);
   line-height: 1.45;

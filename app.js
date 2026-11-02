@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.18'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.19'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -17878,6 +17878,21 @@ function saveTemplatesToStorage() {
       });
       trTipo.value = '';
     }
+    // "Sobre o áudio" e "Como fazer o resumo" crescem até mostrar o texto inteiro, sem barra de rolagem.
+    const trCamposAutoAltura = [trContexto, trInstrucoes];
+    const trCamposAjustar = () => trCamposAutoAltura.forEach(campo => {
+      if (!campo.offsetParent) return; // recolhido: sem medida; ajusta quando abrir
+      campo.style.height = 'auto';
+      campo.style.height = (campo.scrollHeight + 2) + 'px';
+    });
+    trCamposAutoAltura.forEach(campo => {
+      const dono = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
+      Object.defineProperty(campo, 'value', { get() { return dono.get.call(this); }, set(v) { dono.set.call(this, v); trCamposAjustar(); }, configurable: true });
+      campo.addEventListener('input', trCamposAjustar);
+      campo.closest('details').addEventListener('toggle', trCamposAjustar);
+    });
+    window.addEventListener('resize', trCamposAjustar);
+    trCamposAjustar();
     trTiposDesenhar();
     backupSeletorLargo(trTipo, null, { vazioEscolhivel: true });
     trTipo.addEventListener('change', async () => {
