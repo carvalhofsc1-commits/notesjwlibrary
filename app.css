@@ -4563,19 +4563,19 @@
     }
 
     /* Lendo: o que sobra de tela é da vista; a ajuda e o importador voltam ao editar o texto. */
-    body.leitura-lendo .leitura-dica,
-    body.leitura-lendo .leitura-importar {
+    body.leitura-lendo .screen-leitura .leitura-dica,
+    body.leitura-lendo .screen-leitura .leitura-importar {
       display: none;
     }
 
     /* O nome do arquivo importado continua à mostra (numa linha só) até a pessoa tocar em Limpar. */
-    body.leitura-lendo .leitura-acoes {
+    body.leitura-lendo .screen-leitura .leitura-acoes {
       display: flex;
       gap: 6px;
       margin-top: 8px;
     }
 
-    body.leitura-lendo .leitura-acoes button {
+    body.leitura-lendo .screen-leitura .leitura-acoes button {
       flex: 1 1 0;
       min-width: 0;
       min-height: 38px;
@@ -4584,17 +4584,17 @@
       white-space: nowrap;
     }
 
-    body.leitura-lendo .leitura-acoes .leitura-ler {
+    body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler {
       flex: 1.6 1 0;
       font-size: 1rem;
     }
 
-    body.leitura-lendo .leitura-acoes #leituraInicioBtn {
+    body.leitura-lendo .screen-leitura .leitura-acoes #leituraInicioBtn {
       flex: 0 0 42px;
       padding: 4px 0;
     }
 
-    body.leitura-lendo .leitura-acoes button[hidden] {
+    body.leitura-lendo .screen-leitura .leitura-acoes button[hidden] {
       display: none;
     }
 
