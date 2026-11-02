@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.86'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.87'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -17745,7 +17745,7 @@ function saveTemplatesToStorage() {
     function audioTiposLer() {
       try {
         const guardado = JSON.parse(localStorage.getItem(AUDIO_TIPOS_KEY) || 'null');
-        if (Array.isArray(guardado)) return guardado.filter(t => t && typeof t.id === 'string' && typeof t.nome === 'string' && typeof t.texto === 'string').map(t => ({ ...t, instrucoes: typeof t.instrucoes === 'string' ? t.instrucoes : ((AUDIO_TIPOS_PADRAO.find(p => p.id === t.id) || {}).instrucoes || '') })); // lista salva antes do campo existir: os tipos originais ganham a sugestão
+        if (Array.isArray(guardado)) return guardado.filter(t => t && typeof t.id === 'string' && typeof t.nome === 'string' && typeof t.texto === 'string').map(t => ({ ...t, instrucoes: typeof t.instrucoes === 'string' && t.instrucoes ? t.instrucoes : ((AUDIO_TIPOS_PADRAO.find(p => p.id === t.id) || {}).instrucoes || '') })); // lista salva antes do campo existir (ou com ele vazio): os tipos originais ganham a sugestão
       } catch (e) { /* sem localStorage ou lista inválida: valem os tipos originais */ }
       return AUDIO_TIPOS_PADRAO.map(t => ({ ...t }));
     }
@@ -17754,13 +17754,14 @@ function saveTemplatesToStorage() {
     // O seletor da tela Áudio em texto.
     const trTipo = document.getElementById('transcricaoTipo');
     let trTipoUltimoTexto = ''; // o último texto posto pelo seletor (para trocar sem perguntar se a pessoa não mexeu)
+    let trTipoAtual = ''; // o tipo escolhido no seletor (para voltar a ele se a pessoa não confirmar a troca)
     let trTipoUltimaInstr = ''; // o mesmo para "Como fazer o resumo"
     function trTiposDesenhar() {
       const tipos = audioTiposLer();
       trTipo.textContent = '';
       const nenhum = document.createElement('option');
       nenhum.value = '';
-      nenhum.textContent = tipos.length ? '— Escolher um tipo de áudio —' : '— Nenhum tipo configurado —';
+      nenhum.textContent = 'Nenhum (sem informações nem instruções)';
       trTipo.appendChild(nenhum);
       tipos.forEach(t => {
         const o = document.createElement('option');
@@ -17774,12 +17775,25 @@ function saveTemplatesToStorage() {
     backupSeletorLargo(trTipo, null, { vazioEscolhivel: true });
     trTipo.addEventListener('change', async () => {
       const tipo = audioTiposLer().find(t => t.id === trTipo.value);
-      if (!tipo) return;
+      if (!tipo) { // "Nenhum": os dois campos ficam em branco (e o "Como fazer o resumo" salvo no aparelho também)
+        const sobAlgo = trContexto.value.trim() && trContexto.value.trim() !== trTipoUltimoTexto;
+        const instAlgo = trInstrucoes.value.trim() && trInstrucoes.value.trim() !== trTipoUltimaInstr;
+        if ((sobAlgo || instAlgo) && !(await askConfirm('Deixar os campos “Sobre o áudio” e “Como fazer o resumo” em branco? O que você escreveu neles será apagado.', 'Limpar os campos'))) { trTipo.value = trTipoAtual; return; }
+        trTipoAtual = '';
+        trContexto.value = '';
+        trInstrucoes.value = '';
+        trTipoUltimoTexto = '';
+        trTipoUltimaInstr = '';
+        safeSetItem(TRANSCRICAO_INSTR_KEY, '');
+        trInfo.textContent = 'Nenhum tipo: os campos “Sobre o áudio” e “Como fazer o resumo” ficaram em branco.';
+        return;
+      }
       const atual = trContexto.value.trim();
       const atualInstr = trInstrucoes.value.trim();
       const mexeuSobre = Boolean(atual && atual !== trTipoUltimoTexto);
       const mexeuInstr = Boolean(tipo.instrucoes && atualInstr && atualInstr !== trTipoUltimaInstr);
-      if ((mexeuSobre || mexeuInstr) && !(await askConfirm((mexeuSobre && mexeuInstr ? 'Os campos “Sobre o áudio” e “Como fazer o resumo” já têm texto. Trocar' : mexeuSobre ? 'O campo “Sobre o áudio” já tem texto. Trocar' : 'O campo “Como fazer o resumo” já tem texto. Trocar') + ' pelo que o tipo escolhido traz?', 'Trocar o texto'))) { trTipo.value = ''; return; }
+      if ((mexeuSobre || mexeuInstr) && !(await askConfirm((mexeuSobre && mexeuInstr ? 'Os campos “Sobre o áudio” e “Como fazer o resumo” já têm texto. Trocar' : mexeuSobre ? 'O campo “Sobre o áudio” já tem texto. Trocar' : 'O campo “Como fazer o resumo” já tem texto. Trocar') + ' pelo que o tipo escolhido traz?', 'Trocar o texto'))) { trTipo.value = trTipoAtual; return; }
+      trTipoAtual = trTipo.value;
       trContexto.value = tipo.texto;
       trTipoUltimoTexto = tipo.texto;
       if (tipo.instrucoes) {
@@ -17787,19 +17801,7 @@ function saveTemplatesToStorage() {
         trTipoUltimaInstr = tipo.instrucoes;
         safeSetItem(TRANSCRICAO_INSTR_KEY, trInstrucoes.value);
       }
-      trTipo.value = '';
       trInfo.textContent = 'Descrição do tipo “' + tipo.nome + '” colocada em “Sobre o áudio”' + (tipo.instrucoes ? ' e o modo de resumir em “Como fazer o resumo”' : '') + '. Complete com os nomes e os termos deste áudio.';
-    });
-
-    // Limpar o que um tipo (ou a pessoa) pôs nos campos: "Sobre o áudio" e "Como fazer o resumo" (o salvo no aparelho também).
-    document.getElementById('transcricaoLimparCamposBtn').addEventListener('click', () => {
-      trContexto.value = '';
-      trInstrucoes.value = '';
-      trTipoUltimoTexto = '';
-      trTipoUltimaInstr = '';
-      safeSetItem(TRANSCRICAO_INSTR_KEY, '');
-      trTipo.value = '';
-      trInfo.textContent = '🧹 Os campos “Sobre o áudio” e “Como fazer o resumo” foram limpos.';
     });
 
     // A configuração, em Ajustes.
@@ -18195,6 +18197,8 @@ function saveTemplatesToStorage() {
       trResumo.value = '';
       trContexto.value = ''; // o "sobre o áudio" vale só para um áudio; as instruções do resumo ficam salvas
       trTipoUltimoTexto = '';
+      trTipo.value = '';
+      trTipoAtual = '';
       trGravadaLimpar();
       trInfo.textContent = '';
       trAtualizarBotoes();

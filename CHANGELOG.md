@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.87
+
+Áudio em texto: o botão "Limpar os dois campos" saiu; no seu lugar, o seletor de tipo de áudio ganhou a primeira opção "Nenhum (sem informações nem instruções)", que deixa os dois campos em branco, e o tipo escolhido continua visível. Corrigido: ao escolher um tipo, o campo "Como fazer o resumo" também é preenchido (listas salvas com esse campo vazio recebem a sugestão original).
+
 ## 6.3.86
 
 Áudio em texto: novo botão "Limpar os dois campos" (Sobre o áudio e Como fazer o resumo), para desfazer o que um tipo de áudio preencheu.
