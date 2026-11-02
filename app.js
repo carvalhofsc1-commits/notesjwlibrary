@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.15'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.16'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -18149,11 +18149,12 @@ function saveTemplatesToStorage() {
       trArquivoBox.hidden = true;
       trArquivoDados.textContent = '';
       trArquivoDados.hidden = false;
-      document.getElementById('transcricaoArquivoTitulo').textContent = 'Arquivo escolhido';
+      document.getElementById('transcricaoArquivoTitulo').textContent = 'Dados do áudio';
     }
     // Os dados do arquivo ficam à mostra enquanto ele é processado; a pessoa pode ocultá-los e mostrá-los de novo.
     function trArquivoAlternaAtualizar() {
       trArquivoAlterna.querySelector('.transcricao-seta').textContent = trArquivoDados.hidden ? '▶' : '▼';
+      trArquivoBox.classList.toggle('recolhido', trArquivoDados.hidden);
       trArquivoAlterna.title = trArquivoDados.hidden ? 'Mostrar os dados do arquivo' : 'Ocultar os dados do arquivo';
       trArquivoAlterna.setAttribute('aria-expanded', String(!trArquivoDados.hidden));
     }
@@ -18178,7 +18179,6 @@ function saveTemplatesToStorage() {
     }
     function trPendenteMostrar(arquivo, opcoes) {
       const gravado = Boolean(opcoes && opcoes.gravado);
-      document.getElementById('transcricaoArquivoTitulo').textContent = gravado ? 'Arquivo gravado' : 'Arquivo escolhido';
       trPendente = arquivo;
       trArquivoMostrado = arquivo;
       trArquivoDados.hidden = false;

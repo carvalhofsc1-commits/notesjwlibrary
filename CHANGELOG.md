@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.16
+
+Áudio em texto: o card do arquivo passa a se chamar "Dados do áudio" e, recolhido, fica baixo como os outros contêineres.
+
 ## 6.4.15
 
 Áudio em texto: na correção e no resumo, a barra que não andava foi trocada por um indicador girando com a mensagem do que a IA está fazendo; o título do card do arquivo agora tem uma seta que recolhe e mostra os dados (o botão Ocultar/Mostrar saiu).

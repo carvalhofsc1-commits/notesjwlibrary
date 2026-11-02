@@ -9085,6 +9085,15 @@ details.transcricao-bloco:not([open]) {
   margin: 0;
 }
 
+/* Recolhido, o card fica baixo como os outros contêineres. */
+#transcricaoArquivoBox.recolhido {
+  padding-bottom: 4px;
+}
+
+#transcricaoArquivoBox.recolhido .transcricao-rotulo-linha {
+  margin-bottom: 2px;
+}
+
 .transcricao-arquivo-botoes {
   display: inline-flex;
   gap: 6px;
