@@ -4100,6 +4100,17 @@
       border-color: var(--rosa-border);
     }
 
+    /* Sem texto, o campo e o cartão encolhem; com texto (ou colado), voltam a ocupar a tela. */
+    #leituraTexto:placeholder-shown {
+      flex: 0 0 auto;
+      min-height: 0;
+      height: 7.5em;
+    }
+
+    #leituraCard:has(#leituraTexto:placeholder-shown) {
+      min-height: 0;
+    }
+
     #leituraTexto[hidden],
     .leitura-vista[hidden] {
       display: none;
