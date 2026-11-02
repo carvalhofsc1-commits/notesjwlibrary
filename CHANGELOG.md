@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.20
+
+Áudio em texto: o botão Limpar do card "Dados do áudio" passa a se chamar Descartar.
+
 ## 6.4.19
 
 Áudio em texto: os campos "Sobre o áudio" e "Como fazer o resumo" crescem sozinhos para mostrar o texto inteiro, sem barra de rolagem.
