@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.98'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.99'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -18261,20 +18261,40 @@ function saveTemplatesToStorage() {
         const ctx = new Ctx();
         if (ctx.resume) ctx.resume().catch(() => {});
         const analisador = ctx.createAnalyser();
-        analisador.fftSize = 128;
-        analisador.smoothingTimeConstant = 0.7;
+        analisador.fftSize = 512;
+        analisador.smoothingTimeConstant = 0; // a suavização é feita aqui, em cada quadro
         ctx.createMediaStreamSource(estado.stream).connect(analisador); // sem ligar na saída: nada toca
         const dados = new Uint8Array(analisador.frequencyBinCount);
         const BARRAS = 32;
         const suave = new Array(BARRAS).fill(0);
+        // Cada barra cobre uma faixa de frequências da voz (de 120 Hz a 4,5 kHz, em escala logarítmica); o ruído de fundo constante é descontado.
+        const hzPorBin = ctx.sampleRate / analisador.fftSize;
+        const faixas = Array.from({ length: BARRAS }, (_, i) => {
+          const de = 120 * Math.pow(4500 / 120, i / BARRAS);
+          const ate = 120 * Math.pow(4500 / 120, (i + 1) / BARRAS);
+          const a = Math.max(1, Math.floor(de / hzPorBin));
+          return [a, Math.min(dados.length - 1, Math.max(a, Math.ceil(ate / hzPorBin)))];
+        });
+        const chao = new Array(BARRAS).fill(1);
+        const inicioMs = performance.now();
+        let ultimoMs = inicioMs;
         estado.onda = { ctx, quadro: 0 };
         const quadro = () => {
           if (!estado.onda) return;
           analisador.getByteFrequencyData(dados);
+          const agora = performance.now();
+          const aquecendo = agora - inicioMs < 800; // no começo o chão é o próprio nível (o ruído de fundo)
+          const sobe = 1 - Math.exp(-(agora - ultimoMs) / (agora - inicioMs < 4000 ? 500 : 4000)); // o chão sobe depressa nos 4 s iniciais (até o microfone "acordar") e depois devagar
+          ultimoMs = agora;
           for (let i = 0; i < BARRAS; i++) {
-            // as barras do meio vão para as frequências da voz; as das pontas ficam mais baixas
-            const alvo = estado.pausado ? 0 : Math.min(1, Math.pow(dados[Math.min(dados.length - 1, 1 + Math.floor(i * 0.9))] / 255, 1.6) * 1.5);
-            suave[i] = suave[i] + (alvo - suave[i]) * (alvo > suave[i] ? 0.6 : 0.2);
+            const [a, b] = faixas[i];
+            let pico = 0;
+            for (let k = a; k <= b; k++) if (dados[k] > pico) pico = dados[k];
+            const v = pico / 255;
+            // o "chão" acompanha o ruído de fundo: nos primeiros instantes é o próprio nível; depois desce na hora e só sobe devagar
+            chao[i] = aquecendo || v < chao[i] ? v : chao[i] + (v - chao[i]) * sobe;
+            const alvo = estado.pausado ? 0 : Math.min(1, Math.max(0, v - chao[i] - 0.05) * 2.6);
+            suave[i] = suave[i] + (alvo - suave[i]) * (alvo > suave[i] ? 0.6 : 0.25);
           }
           trOndaDesenhar(suave);
           estado.onda.quadro = requestAnimationFrame(quadro);

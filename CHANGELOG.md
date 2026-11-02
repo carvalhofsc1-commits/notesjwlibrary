@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.99
+
+Áudio em texto: o gráfico da gravação não fica mais "grosso" nas primeiras barras com o ambiente em silêncio; o ruído de fundo constante é descontado e as barras cobrem só a faixa da voz.
+
 ## 6.3.98
 
 Áudio em texto: enquanto grava, aparece um gráfico de barras animado (tipo equalizador) que se mexe com a voz; parado quando a gravação está pausada.
