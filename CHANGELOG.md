@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.00
+
+Áudio em texto: a ordem ficou Texto transcrito, botão Corrigir com a IA, Texto corrigido, botão Resumir com a IA (o último) e Resumo.
+
 ## 6.3.99
 
 Áudio em texto: o gráfico da gravação não fica mais "grosso" nas primeiras barras com o ambiente em silêncio; o ruído de fundo constante é descontado e as barras cobrem só a faixa da voz.
