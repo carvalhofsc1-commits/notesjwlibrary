@@ -1507,9 +1507,8 @@
       </div>
       <div id="transcricaoArquivoBox" class="transcricao-bloco" hidden>
         <div class="transcricao-rotulo-linha">
-          <label id="transcricaoArquivoTitulo" class="transcricao-rotulo" for="transcricaoArquivoDados">Arquivo escolhido</label>
+          <button id="transcricaoArquivoAlternaBtn" class="transcricao-arquivo-titulo-btn" type="button" aria-expanded="true" aria-controls="transcricaoArquivoDados"><span class="transcricao-seta" aria-hidden="true">▼</span> <span id="transcricaoArquivoTitulo" class="transcricao-rotulo">Arquivo escolhido</span></button>
           <span class="transcricao-arquivo-botoes">
-            <button id="transcricaoArquivoAlternaBtn" class="secondary transcricao-arquivo-alterna" type="button" aria-expanded="true" title="Ocultar os dados do arquivo" hidden>👁️ Ocultar</button>
             <button id="transcricaoArquivoLimparBtn" class="secondary transcricao-arquivo-limpar" type="button" title="Desistir deste arquivo" aria-label="Desistir deste arquivo">🗑️ Limpar</button>
           </span>
         </div>
@@ -1574,7 +1573,7 @@
         <div class="leitura-acoes">
           <button id="transcricaoCorrigirBtn" class="leitura-ler" type="button" disabled>✍️ Corrigir com a IA</button>
         </div>
-        <progress id="transcricaoCorrigirProgresso" class="transcricao-progresso" value="0" max="1" hidden></progress>
+        <p id="transcricaoCorrigirProgresso" class="transcricao-rodando" role="status" hidden><span class="transcricao-giro" aria-hidden="true"></span><span class="transcricao-rodando-txt">A IA está corrigindo…</span></p>
         <div class="leitura-acoes transcricao-acoes">
           <button id="transcricaoCorrigirCancelarBtn" class="secondary" type="button" hidden>⏹️ Cancelar</button>
         </div>
@@ -1587,7 +1586,7 @@
         <div class="leitura-acoes">
           <button id="transcricaoResumirBtn" class="leitura-ler" type="button" disabled>✨ Resumir com a IA</button>
         </div>
-        <progress id="transcricaoResumirProgresso" class="transcricao-progresso" value="0" max="1" hidden></progress>
+        <p id="transcricaoResumirProgresso" class="transcricao-rodando" role="status" hidden><span class="transcricao-giro" aria-hidden="true"></span><span class="transcricao-rodando-txt">A IA está resumindo…</span></p>
         <div class="leitura-acoes transcricao-acoes">
           <button id="transcricaoResumirCancelarBtn" class="secondary" type="button" hidden>⏹️ Cancelar</button>
         </div>

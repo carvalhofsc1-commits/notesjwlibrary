@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.14'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.15'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -18003,7 +18003,6 @@ function saveTemplatesToStorage() {
       trCorrigir.disabled = ocupado || trTexto.value.trim().length < 40;
       trIniciar.disabled = ocupado || gravando || !trPendente;
       document.getElementById('transcricaoArquivoLimparBtn').hidden = !trPendente; // depois de iniciar, só dá para ocultar os dados
-      trArquivoAlterna.hidden = Boolean(trPendente);
       trCancelar.hidden = !ocupado || trOperacao !== 'transcrever';
       trCancelarCorrigir.hidden = !ocupado || trOperacao !== 'corrigir';
       trCancelarResumir.hidden = !ocupado || trOperacao !== 'resumir';
@@ -18154,7 +18153,7 @@ function saveTemplatesToStorage() {
     }
     // Os dados do arquivo ficam à mostra enquanto ele é processado; a pessoa pode ocultá-los e mostrá-los de novo.
     function trArquivoAlternaAtualizar() {
-      trArquivoAlterna.textContent = trArquivoDados.hidden ? '👁️ Mostrar' : '👁️ Ocultar';
+      trArquivoAlterna.querySelector('.transcricao-seta').textContent = trArquivoDados.hidden ? '▶' : '▼';
       trArquivoAlterna.title = trArquivoDados.hidden ? 'Mostrar os dados do arquivo' : 'Ocultar os dados do arquivo';
       trArquivoAlterna.setAttribute('aria-expanded', String(!trArquivoDados.hidden));
     }
@@ -18446,8 +18445,7 @@ function saveTemplatesToStorage() {
       if (!(await trConsentimento())) return;
       trControle = new AbortController();
       trOperacao = 'resumir';
-      trResumirProgresso.hidden = false;
-      trResumirProgresso.removeAttribute('value'); // indeterminado: a IA resume de uma vez
+      trResumirProgresso.hidden = false; // indicador girando: a IA resume de uma vez, sem andamento por porcentagem
       trAtualizarBotoes();
       trInfo.textContent = '✨ A IA está resumindo…';
       try {
@@ -18520,19 +18518,17 @@ function saveTemplatesToStorage() {
       trOperacao = 'corrigir';
       trCorrigido.value = '';
       trCorrigirProgresso.hidden = false;
-      trCorrigirProgresso.max = blocos.length;
-      trCorrigirProgresso.value = 0;
       trAtualizarBotoes();
       const partes = [];
       try {
         for (let n = 0; n < blocos.length; n++) {
           if (trControle.signal.aborted) return (trInfo.textContent = 'Cancelado. O que já foi corrigido está abaixo.');
           trInfo.textContent = '✍️ A IA está corrigindo a parte ' + (n + 1) + ' de ' + blocos.length + '…';
+          trCorrigirProgresso.querySelector('.transcricao-rodando-txt').textContent = 'A IA está corrigindo a parte ' + (n + 1) + ' de ' + blocos.length + '…';
           const r = await trPost({ acao: 'corrigir', codigoTexto: codigoTextoSalvo(), texto: blocos[n], contexto: (trDadosTexto() + ' ' + trContexto.value).trim(), parte: n + 1, total: blocos.length }, trControle.signal);
           if (!r.ok) return (trInfo.textContent = trMensagem(r, 'Não foi possível corrigir a parte ' + (n + 1) + '.') + (partes.length ? ' O que já foi corrigido está abaixo.' : ''));
           partes.push(r.dados.texto);
           trCorrigido.value = partes.join('\n\n');
-          trCorrigirProgresso.value = n + 1;
         }
         trInfo.textContent = '✅ Texto corrigido. A IA pode errar: confira com o texto transcrito.';
       } finally {
