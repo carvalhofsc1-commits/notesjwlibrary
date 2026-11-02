@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.97'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.98'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -18230,6 +18230,66 @@ function saveTemplatesToStorage() {
       if (trGravMs() >= TRANSCRICAO_MAX_MIN * 60 * 1000) trGravarParar(true, 'A gravação chegou ao limite de ' + TRANSCRICAO_MAX_MIN + ' minutos e foi encerrada.');
     }
 
+    // O gráfico de áudio: barras que sobem e descem com o volume da voz (Web Audio, só leitura do microfone; nada é tocado nem enviado).
+    const trOnda = document.getElementById('transcricaoOnda');
+    function trOndaDesenhar(niveis) {
+      const dpr = window.devicePixelRatio || 1;
+      const larg = Math.round(trOnda.clientWidth * dpr) || 300;
+      const alt = Math.round(trOnda.clientHeight * dpr) || 64;
+      if (trOnda.width !== larg) trOnda.width = larg;
+      if (trOnda.height !== alt) trOnda.height = alt;
+      const g = trOnda.getContext('2d');
+      g.clearRect(0, 0, larg, alt);
+      const n = niveis.length;
+      const passo = larg / n;
+      const barra = passo * 0.55;
+      g.fillStyle = '#e11d48';
+      niveis.forEach((v, i) => {
+        const h = Math.max(4 * dpr, v * (alt - 8 * dpr));
+        const x = i * passo + (passo - barra) / 2;
+        const y = (alt - h) / 2;
+        const r = Math.min(barra / 2, h / 2);
+        g.beginPath();
+        if (g.roundRect) g.roundRect(x, y, barra, h, r); else g.rect(x, y, barra, h);
+        g.fill();
+      });
+    }
+    function trOndaIniciar(estado) {
+      try {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return;
+        const ctx = new Ctx();
+        if (ctx.resume) ctx.resume().catch(() => {});
+        const analisador = ctx.createAnalyser();
+        analisador.fftSize = 128;
+        analisador.smoothingTimeConstant = 0.7;
+        ctx.createMediaStreamSource(estado.stream).connect(analisador); // sem ligar na saída: nada toca
+        const dados = new Uint8Array(analisador.frequencyBinCount);
+        const BARRAS = 32;
+        const suave = new Array(BARRAS).fill(0);
+        estado.onda = { ctx, quadro: 0 };
+        const quadro = () => {
+          if (!estado.onda) return;
+          analisador.getByteFrequencyData(dados);
+          for (let i = 0; i < BARRAS; i++) {
+            // as barras do meio vão para as frequências da voz; as das pontas ficam mais baixas
+            const alvo = estado.pausado ? 0 : Math.min(1, Math.pow(dados[Math.min(dados.length - 1, 1 + Math.floor(i * 0.9))] / 255, 1.6) * 1.5);
+            suave[i] = suave[i] + (alvo - suave[i]) * (alvo > suave[i] ? 0.6 : 0.2);
+          }
+          trOndaDesenhar(suave);
+          estado.onda.quadro = requestAnimationFrame(quadro);
+        };
+        quadro();
+      } catch (e) { /* sem o gráfico a gravação segue normal */ }
+    }
+    function trOndaParar(estado) {
+      if (!estado.onda) return;
+      cancelAnimationFrame(estado.onda.quadro);
+      try { estado.onda.ctx.close(); } catch (e) { /* já fechado */ }
+      estado.onda = null;
+      trOnda.getContext('2d').clearRect(0, 0, trOnda.width, trOnda.height);
+    }
+
     async function trTelaLigada() {
       try { if (trGrav && navigator.wakeLock && document.visibilityState === 'visible') trGrav.telaLigada = await navigator.wakeLock.request('screen'); } catch (e) { /* sem tela sempre ligada */ }
     }
@@ -18258,6 +18318,7 @@ function saveTemplatesToStorage() {
       trGravadaLimpar();
       const estado = { gravador, stream, pedacos: [], acumulado: 0, retomadoEm: Date.now(), pausado: false, intervalo: null, telaLigada: null, motivo: '', transcrever: true };
       trGrav = estado;
+      trOndaIniciar(estado);
       gravador.ondataavailable = e => { if (e.data && e.data.size) estado.pedacos.push(e.data); };
       gravador.onstop = () => trGravarFim(estado);
       gravador.start(1000); // um pedaço por segundo: se o aparelho parar a gravação, o que veio até ali é aproveitado
@@ -18283,6 +18344,7 @@ function saveTemplatesToStorage() {
       if (trGrav !== estado) return;
       const duracaoMs = trGravMs();
       trGrav = null;
+      trOndaParar(estado);
       clearInterval(estado.intervalo);
       estado.stream.getTracks().forEach(t => t.stop());
       try { if (estado.telaLigada) estado.telaLigada.release(); } catch (e) { /* já liberada */ }

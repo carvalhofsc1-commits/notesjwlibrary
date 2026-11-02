@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.98
+
+Áudio em texto: enquanto grava, aparece um gráfico de barras animado (tipo equalizador) que se mexe com a voz; parado quando a gravação está pausada.
+
 ## 6.3.97
 
 Áudio em texto: o botão "Parar e transcrever" passou a se chamar "Finalizar gravação" (a gravação já não é transcrita sozinha ao terminar).

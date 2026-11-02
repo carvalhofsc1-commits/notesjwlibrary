@@ -8856,6 +8856,16 @@ details.subsection.ebc-subsection#publicoBox.s34-bloqueado {
   display: none;
 }
 
+/* O gráfico de barras que se mexe com a voz, enquanto a gravação está em andamento. */
+.transcricao-onda {
+  display: block;
+  width: 100%;
+  height: 64px;
+  margin: 0 0 8px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--card) 80%, transparent);
+}
+
 .transcricao-grav-tempo {
   margin: 0 0 6px;
   font-size: 1.15rem;
