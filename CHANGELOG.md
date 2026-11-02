@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.09
+
+Áudio em texto: a seta do ícone do título ficou mais fina (➔).
+
 ## 6.4.08
 
 Áudio em texto: tirado o aviso "Confira os dados do arquivo e toque em Iniciar a transcrição"; o ícone do título agora mostra o microfone, uma seta e o texto (áudio vira texto).
