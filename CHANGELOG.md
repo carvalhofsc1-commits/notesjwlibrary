@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.90
+
+Áudio em texto: a opção "⚙️ Informações e instruções para a IA (opcional)" passou a se chamar "⚙️ Informe o tipo de áudio".
+
 ## 6.3.89
 
 O aviso "Há uma versão nova" agora aparece só uma vez por versão; ao voltar ao app, ele não é mostrado de novo para a mesma versão.
