@@ -8923,6 +8923,10 @@ details.transcricao-bloco:not([open]) {
   background: color-mix(in srgb, var(--card) 70%, transparent);
 }
 
+.transcricao-passo[hidden] {
+  display: none;
+}
+
 .transcricao-passo>.leitura-acoes[hidden] {
   display: none;
 }

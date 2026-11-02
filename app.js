@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.01'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.02'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -18435,6 +18435,15 @@ function saveTemplatesToStorage() {
         trAtualizarBotoes();
       }
     });
+
+    // Os contêineres de "Corrigir com a IA" e "Resumir com a IA" só aparecem quando há texto transcrito (ou um resultado deles ainda na tela).
+    const trPassosAtualizar = () => {
+      const tem = Boolean(trTexto.value.trim());
+      trCorrigir.closest('.transcricao-passo').hidden = !(tem || !trCorrigidoBloco.hidden);
+      trResumir.closest('.transcricao-passo').hidden = !(tem || !trResumoBloco.hidden);
+    };
+    trFerramentasAtualizar.push(trPassosAtualizar);
+    trPassosAtualizar();
 
     // Corrigir com a IA: a IA fica fiel ao texto transcrito, sem resumir; corrige gramática e coerência e tira repetições sem sentido e ruídos.
     // O texto vai em blocos (de até ~5000 caracteres, em limites de parágrafo) para o texto corrigido caber por inteiro.

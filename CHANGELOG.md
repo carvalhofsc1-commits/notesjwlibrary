@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.02
+
+Áudio em texto: os contêineres "Corrigir com a IA" e "Resumir com a IA" só aparecem quando há um texto transcrito.
+
 ## 6.4.01
 
 Áudio em texto: cada etapa (Iniciar a transcrição, Corrigir com a IA e Resumir com a IA) virou um contêiner só, com o botão da ação em cima e o resultado logo abaixo, que recolhe junto.
