@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.32
+
+Joias Espirituais: o resumo de cada capítulo agora indica os versículos que sustentam a explicação e explica quem são as cidades, lugares, povos, nações e personagens, com o fundo histórico (de 120 a 200 palavras por capítulo).
+
 ## 6.4.31
 
 Joias Espirituais: nova opção "📚 Resumo de cada capítulo da leitura da semana" em "O que preparar" e, em "Instruções adicionais para a IA" das Joias, a caixa "⚡ Executar somente estas instruções", que faz a IA ignorar o que está marcado e cumprir só o que o campo pede.
