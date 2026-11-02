@@ -8999,11 +8999,24 @@ details.transcricao-bloco:not([open]) {
   display: none;
 }
 
-.transcricao-arquivo-limpar {
-  margin-top: 8px;
-  min-height: 30px;
-  padding: 3px 12px;
+/* O título "Arquivo escolhido" e o botão Limpar, centralizados na mesma linha; o Limpar num vermelho suave. */
+#transcricaoArquivoBox .transcricao-rotulo-linha {
+  align-items: center;
+  margin: 2px 0 8px;
+}
+
+#transcricaoArquivoBox .transcricao-rotulo {
+  margin: 0;
+}
+
+#transcricaoArquivoBox #transcricaoArquivoLimparBtn {
+  margin: 0;
+  min-height: 34px;
+  padding: 3px 14px;
   font-size: .85rem;
+  color: var(--text);
+  background: color-mix(in srgb, #ef4444 16%, var(--card));
+  border-color: color-mix(in srgb, #ef4444 45%, transparent);
 }
 
 .transcricao-arquivo-dados {

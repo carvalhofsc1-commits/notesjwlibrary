@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.07
+
+Áudio em texto: o título "Arquivo escolhido" e o botão Limpar ficaram alinhados na vertical, e o Limpar ganhou um vermelho suave.
+
 ## 6.4.06
 
 Corrigido: depois de ler um texto em voz alta na tela Leitura, as outras telas que usam o mesmo estilo (como o Áudio em texto) ficavam com os botões e contêineres escondidos. As regras do modo de leitura agora valem só dentro da tela Leitura.
