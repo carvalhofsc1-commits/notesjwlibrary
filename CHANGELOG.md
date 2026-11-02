@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.21
+
+Áudio em texto: com um áudio escolhido ou gravado, os botões "Escolher o arquivo de áudio" e "Gravar um áudio agora" ficam desabilitados até a pessoa descartá-lo.
+
 ## 6.4.20
 
 Áudio em texto: o botão Limpar do card "Dados do áudio" passa a se chamar Descartar.
