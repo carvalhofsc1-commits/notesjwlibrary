@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.23
+
+Áudio em texto: dois novos tipos de áudio, "ATA DE REUNIÃO - Assuntos do departamento" e "ATA DE REUNIÃO - Reunião entre setores", que pedem uma ata padrão completa, com campos [PREENCHER] para o que faltar.
+
 ## 6.4.22
 
 Leitura em voz alta: sem texto, o campo e o cartão ficam baixos; ao colar ou importar um texto, voltam a ocupar a tela.
