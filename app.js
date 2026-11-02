@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.03'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.04'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -18001,7 +18001,7 @@ function saveTemplatesToStorage() {
       if (typeof trGravarBtn !== 'undefined') trGravarBtn.disabled = ocupado || gravando;
       trResumir.disabled = ocupado || trTexto.value.trim().length < 40;
       trCorrigir.disabled = ocupado || trTexto.value.trim().length < 40;
-      trIniciar.disabled = ocupado || gravando;
+      trIniciar.disabled = ocupado || gravando || !trPendente;
       trCancelar.hidden = !ocupado || trOperacao !== 'transcrever';
       trCancelarCorrigir.hidden = !ocupado || trOperacao !== 'corrigir';
       trCancelarResumir.hidden = !ocupado || trOperacao !== 'resumir';
@@ -18145,7 +18145,6 @@ function saveTemplatesToStorage() {
     function trPendenteLimpar() {
       trPendente = null;
       trArquivoBox.hidden = true;
-      document.getElementById('transcricaoIniciarLinha').hidden = true;
       trArquivoDados.textContent = '';
       document.getElementById('transcricaoArquivoTitulo').textContent = 'Arquivo escolhido';
     }
@@ -18172,7 +18171,6 @@ function saveTemplatesToStorage() {
       document.getElementById('transcricaoArquivoTitulo').textContent = gravado ? 'Arquivo gravado' : 'Arquivo escolhido';
       trPendente = arquivo;
       trPassoTexto.open = true;
-      document.getElementById('transcricaoIniciarLinha').hidden = false;
       trArquivoAtual = arquivo;
       trMesmoAplicar();
       trArquivoBox.hidden = false;
@@ -18453,6 +18451,7 @@ function saveTemplatesToStorage() {
     // Os contêineres de "Corrigir com a IA" e "Resumir com a IA" só aparecem quando há texto transcrito (ou um resultado deles ainda na tela).
     const trPassosAtualizar = () => {
       const tem = Boolean(trTexto.value.trim());
+      trPassoTexto.hidden = !(trPendente || tem || (trControle && trOperacao === 'transcrever'));
       trCorrigir.closest('details').hidden = !(tem || !trCorrigidoBloco.hidden);
       trResumir.closest('details').hidden = !(tem || !trResumoBloco.hidden);
     };

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.04
+
+Áudio em texto: o contêiner Transcrever só aparece depois de escolher um arquivo, de finalizar uma gravação ou quando já existe texto transcrito; o botão "Iniciar a transcrição" fica fixo dentro dele (só habilita com um áudio escolhido ou gravado); espaços revisados entre o título, o botão, a barra de andamento e os botões de formatação.
+
 ## 6.4.03
 
 Áudio em texto: Transcrever, Corrigir e Resumir viraram contêineres recolhíveis, só com o título à mostra. Dentro de cada um ficam o botão da ação, a barra de andamento e o resultado; a barra da transcrição passou para dentro do contêiner Transcrever. Corrigir e Resumir só aparecem quando há texto transcrito.

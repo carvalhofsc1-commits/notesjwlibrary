@@ -1555,10 +1555,10 @@
         <input id="transcricaoData" class="transcricao-dado" type="date">
       </details>
       <p id="transcricaoInfo" class="hint" role="status" aria-live="polite"></p>
-      <details id="transcricaoPassoTexto" class="leitura-dica transcricao-config transcricao-conteiner transcricao-passo">
+      <details id="transcricaoPassoTexto" class="leitura-dica transcricao-config transcricao-conteiner transcricao-passo" hidden>
         <summary><span class="transcricao-icone" aria-hidden="true">🎙️</span> Transcrever</summary>
-        <div id="transcricaoIniciarLinha" class="leitura-acoes" hidden>
-          <button id="transcricaoIniciarBtn" class="leitura-ler" type="button">▶️ Iniciar a transcrição</button>
+        <div id="transcricaoIniciarLinha" class="leitura-acoes">
+          <button id="transcricaoIniciarBtn" class="leitura-ler" type="button" disabled>▶️ Iniciar a transcrição</button>
         </div>
         <progress id="transcricaoProgresso" class="transcricao-progresso" value="0" max="1" hidden></progress>
         <div class="leitura-acoes transcricao-acoes">

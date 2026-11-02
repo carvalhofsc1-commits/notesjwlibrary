@@ -8923,6 +8923,39 @@ details.transcricao-bloco:not([open]) {
   display: none;
 }
 
+/* Espaços dentro dos contêineres de etapa: respiro entre o título, o botão da ação, a barra de andamento e as barras de ferramentas. */
+.transcricao-passo[open]>summary {
+  margin-bottom: 14px;
+}
+
+.transcricao-passo>.leitura-acoes {
+  margin: 0 0 14px;
+}
+
+.transcricao-passo>.transcricao-acoes:not(:has(button:not([hidden]))) {
+  display: none;
+}
+
+.transcricao-passo>.transcricao-acoes {
+  margin: 0 0 10px;
+}
+
+.transcricao-passo .tr-barra {
+  margin: 0 0 12px;
+}
+
+.transcricao-passo .tr-linha {
+  margin: 8px 0;
+}
+
+.transcricao-passo .tr-linha:first-child {
+  margin-top: 0;
+}
+
+.transcricao-passo .tr-linha.tr-rodape {
+  margin: 12px 0 0;
+}
+
 .transcricao-progresso {
   display: block;
   width: 100%;
