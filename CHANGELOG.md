@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.05
+
+Áudio em texto: no card do arquivo escolhido, a origem passou a ser "pasta local".
+
 ## 6.4.04
 
 Áudio em texto: o contêiner Transcrever só aparece depois de escolher um arquivo, de finalizar uma gravação ou quando já existe texto transcrito; o botão "Iniciar a transcrição" fica fixo dentro dele (só habilita com um áudio escolhido ou gravado); espaços revisados entre o título, o botão, a barra de andamento e os botões de formatação.

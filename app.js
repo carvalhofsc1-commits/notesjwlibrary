@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.04'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.05'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -18174,7 +18174,7 @@ function saveTemplatesToStorage() {
       trArquivoAtual = arquivo;
       trMesmoAplicar();
       trArquivoBox.hidden = false;
-      let base = '🎵 Nome: ' + (arquivo.name || 'sem nome') + '\n📍 Origem: ' + (gravado ? 'gravado agora pelo app, neste aparelho' : 'arquivo escolhido neste aparelho') + '\n🏷️ Tipo: ' + (arquivo.type || 'não informado') + '\n📦 Tamanho: ' + trTamanhoTexto(arquivo.size);
+      let base = '🎵 Nome: ' + (arquivo.name || 'sem nome') + '\n📍 Origem: ' + (gravado ? 'gravado agora pelo app, neste aparelho' : 'pasta local') + '\n🏷️ Tipo: ' + (arquivo.type || 'não informado') + '\n📦 Tamanho: ' + trTamanhoTexto(arquivo.size);
       if (arquivo.lastModified > 0) {
         const quando = new Date(arquivo.lastModified);
         base += '\n📅 Data e hora: ' + quando.toLocaleDateString('pt-BR') + ' às ' + quando.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
