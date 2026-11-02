@@ -8860,10 +8860,10 @@ details.subsection.ebc-subsection#publicoBox.s34-bloqueado {
 .transcricao-onda {
   display: block;
   width: 100%;
-  height: 64px;
+  height: 48px;
   margin: 0 0 8px;
   border-radius: 10px;
-  background: color-mix(in srgb, var(--card) 80%, transparent);
+  background: color-mix(in srgb, #3b82f6 18%, var(--card));
 }
 
 .transcricao-grav-tempo {

@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.17'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.18'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -18258,7 +18258,7 @@ function saveTemplatesToStorage() {
     function trOndaDesenhar(niveis) {
       const dpr = window.devicePixelRatio || 1;
       const larg = Math.round(trOnda.clientWidth * dpr) || 300;
-      const alt = Math.round(trOnda.clientHeight * dpr) || 64;
+      const alt = Math.round(trOnda.clientHeight * dpr) || 48;
       if (trOnda.width !== larg) trOnda.width = larg;
       if (trOnda.height !== alt) trOnda.height = alt;
       const g = trOnda.getContext('2d');
@@ -18266,8 +18266,8 @@ function saveTemplatesToStorage() {
       const n = niveis.length;
       const passo = larg / n;
       const barra = passo * 0.55;
-      g.fillStyle = '#e11d48';
       niveis.forEach((v, i) => {
+        g.fillStyle = 'hsl(' + Math.round(215 - Math.min(1, v * 1.2) * 215) + ', 85%, 48%)'; // azul no silêncio, passando por verde e amarelo até vermelho nas vozes fortes
         const h = Math.max(4 * dpr, v * (alt - 8 * dpr));
         const x = i * passo + (passo - barra) / 2;
         const y = (alt - h) / 2;

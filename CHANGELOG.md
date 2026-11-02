@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.18
+
+Áudio em texto: o gráfico da gravação ficou mais baixo, com fundo azul claro e barras que mudam de cor conforme o volume (azul, verde, amarelo e vermelho).
+
 ## 6.4.17
 
 Áudio em texto: o botão Limpar do card "Dados do áudio" fica sempre disponível (também depois de iniciar a transcrição); se a transcrição estiver andando, ela é interrompida.
