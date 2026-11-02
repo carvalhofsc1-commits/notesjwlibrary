@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.89
+
+O aviso "Há uma versão nova" agora aparece só uma vez por versão; ao voltar ao app, ele não é mostrado de novo para a mesma versão.
+
 ## 6.3.88
 
 Áudio em texto: removidos os textos explicativos abaixo do seletor de tipo, de "Sobre o áudio" e de "Como fazer o resumo".

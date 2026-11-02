@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.88'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.89'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -16743,6 +16743,7 @@ function saveTemplatesToStorage() {
     const UPDATE_SIGNATURE = APP_VERSION;
     const UPDATE_TEXT_KEY = 'jwLibraryNoteAplicarTextoAntesDeAtualizar';
     const UPDATE_CHECK_MS = 10 * 60 * 1000;
+    const UPDATE_AVISADA_KEY = 'jwLibraryNoteAplicarVersaoAvisada'; // a última versão nova de que o aviso já foi mostrado
     let updateBanner = null;
     let updateDismissed = false;
 
@@ -16799,7 +16800,12 @@ function saveTemplatesToStorage() {
       if (updateBanner || updateDismissed || !navigator.onLine) return;
       try {
         const latest = await fetchLatestSignature();
-        if (latest && latest !== UPDATE_SIGNATURE) showUpdateBanner();
+        if (!latest || latest === UPDATE_SIGNATURE) return;
+        let avisada = '';
+        try { avisada = localStorage.getItem(UPDATE_AVISADA_KEY) || ''; } catch (e) { /* sem localStorage: avisa de novo */ }
+        if (avisada === latest) return; // o aviso desta versão já foi mostrado uma vez
+        safeSetItem(UPDATE_AVISADA_KEY, latest);
+        showUpdateBanner();
       } catch (e) { /* sem rede ou servidor indisponível: tenta de novo depois */ }
     }
 
@@ -16807,7 +16813,6 @@ function saveTemplatesToStorage() {
     window.addEventListener('online', checkForNewVersion);
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState !== 'visible') return;
-      updateDismissed = false;
       checkForNewVersion();
     });
     setInterval(() => {
