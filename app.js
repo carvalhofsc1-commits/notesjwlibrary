@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.94'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.95'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -17724,8 +17724,11 @@ function saveTemplatesToStorage() {
     const trCancelar = document.getElementById('transcricaoCancelarBtn');
     const trEscolher = document.getElementById('transcricaoArquivoBtn');
     const trResumir = document.getElementById('transcricaoResumirBtn');
+    const trCorrigir = document.getElementById('transcricaoCorrigirBtn');
+    const trCorrigido = document.getElementById('transcricaoCorrigido');
     const trContexto = document.getElementById('transcricaoContexto');
     const trResumoBloco = document.getElementById('transcricaoResumoBloco');
+    const trCorrigidoBloco = document.getElementById('transcricaoCorrigidoBloco');
     // "Dados do áudio": título, interlocutores (um campo novo a cada interlocutor escrito), evento, local e data.
     // Valem só para este áudio e vão à IA junto com o "Sobre o áudio".
     const trTitulo = document.getElementById('transcricaoTitulo');
@@ -17991,6 +17994,7 @@ function saveTemplatesToStorage() {
       trEscolher.disabled = ocupado || gravando;
       if (typeof trGravarBtn !== 'undefined') trGravarBtn.disabled = ocupado || gravando;
       trResumir.disabled = ocupado || trTexto.value.trim().length < 40;
+      trCorrigir.disabled = ocupado || trTexto.value.trim().length < 40;
       trIniciar.disabled = ocupado || gravando;
       trCancelar.hidden = !ocupado;
       trFerramentasAtualizar.forEach(f => f());
@@ -18080,6 +18084,8 @@ function saveTemplatesToStorage() {
       trTexto.value = '';
       trResumo.value = '';
       trResumoBloco.hidden = true;
+      trCorrigido.value = '';
+      trCorrigidoBloco.hidden = true;
       trProgresso.hidden = false;
       trProgresso.removeAttribute('value'); // indeterminado enquanto decodifica
       trInfo.textContent = '⏳ Preparando o áudio neste aparelho…';
@@ -18334,6 +18340,7 @@ function saveTemplatesToStorage() {
       if (!(await trConsentimento())) return;
       trControle = new AbortController();
       trResumoBloco.hidden = false;
+      trResumoBloco.open = true;
       trAtualizarBotoes();
       trInfo.textContent = '✨ A IA está resumindo…';
       try {
@@ -18343,6 +18350,60 @@ function saveTemplatesToStorage() {
         trInfo.textContent = '✅ Resumo pronto. A IA pode errar: confira com o texto.';
       } finally {
         trControle = null;
+        trAtualizarBotoes();
+      }
+    });
+
+    // Corrigir com a IA: a IA fica fiel ao texto transcrito, sem resumir; corrige gramática e coerência e tira repetições sem sentido e ruídos.
+    // O texto vai em blocos (de até ~5000 caracteres, em limites de parágrafo) para o texto corrigido caber por inteiro.
+    function trBlocosParaCorrigir(texto) {
+      const MAX = 5000;
+      const unidades = [];
+      texto.split(/\n{2,}/).map(p => p.trim()).filter(Boolean).forEach(p => {
+        if (p.length <= MAX) { unidades.push(p); return; }
+        let atual = '';
+        p.split(/(?<=[.!?])\s+/).forEach(frase => {
+          while (frase.length > MAX) { if (atual) { unidades.push(atual); atual = ''; } unidades.push(frase.slice(0, MAX)); frase = frase.slice(MAX); }
+          if (atual && (atual + ' ' + frase).length > MAX) { unidades.push(atual); atual = frase; } else atual = atual ? atual + ' ' + frase : frase;
+        });
+        if (atual) unidades.push(atual);
+      });
+      const blocos = [];
+      let atual = '';
+      unidades.forEach(u => {
+        if (atual && (atual + '\n\n' + u).length > MAX) { blocos.push(atual); atual = u; } else atual = atual ? atual + '\n\n' + u : u;
+      });
+      if (atual) blocos.push(atual);
+      return blocos;
+    }
+    trCorrigir.addEventListener('click', async () => {
+      if (!codigoTextoSalvo()) return (trInfo.textContent = 'Salve o código de texto em Ajustes → 🔐 Autorização de acessos.');
+      if (!(await trConsentimento())) return;
+      const blocos = trBlocosParaCorrigir(trTexto.value);
+      if (!blocos.length) return;
+      trControle = new AbortController();
+      trCorrigido.value = '';
+      trCorrigidoBloco.hidden = false;
+      trCorrigidoBloco.open = true;
+      trProgresso.hidden = false;
+      trProgresso.max = blocos.length;
+      trProgresso.value = 0;
+      trAtualizarBotoes();
+      const partes = [];
+      try {
+        for (let n = 0; n < blocos.length; n++) {
+          if (trControle.signal.aborted) return (trInfo.textContent = 'Cancelado. O que já foi corrigido está abaixo.');
+          trInfo.textContent = '✍️ A IA está corrigindo a parte ' + (n + 1) + ' de ' + blocos.length + '…';
+          const r = await trPost({ acao: 'corrigir', codigoTexto: codigoTextoSalvo(), texto: blocos[n], contexto: (trDadosTexto() + ' ' + trContexto.value).trim(), parte: n + 1, total: blocos.length }, trControle.signal);
+          if (!r.ok) return (trInfo.textContent = trMensagem(r, 'Não foi possível corrigir a parte ' + (n + 1) + '.') + (partes.length ? ' O que já foi corrigido está abaixo.' : ''));
+          partes.push(r.dados.texto);
+          trCorrigido.value = partes.join('\n\n');
+          trProgresso.value = n + 1;
+        }
+        trInfo.textContent = '✅ Texto corrigido. A IA pode errar: confira com o texto transcrito.';
+      } finally {
+        trControle = null;
+        trProgresso.hidden = true;
         trAtualizarBotoes();
       }
     });
@@ -18364,6 +18425,8 @@ function saveTemplatesToStorage() {
       trTexto.value = '';
       trResumo.value = '';
       trResumoBloco.hidden = true;
+      trCorrigido.value = '';
+      trCorrigidoBloco.hidden = true;
       trPendenteLimpar();
       trContexto.value = ''; // o "sobre o áudio" vale só para um áudio; as instruções do resumo ficam salvas
       trDadosLimpar();
@@ -18396,7 +18459,8 @@ function saveTemplatesToStorage() {
       campo.style.height = (campo.scrollHeight + campo.offsetHeight - campo.clientHeight) + 'px';
       pagina.scrollTop = rolagem;
     }
-    const trCrescerTudo = () => [trTexto, trResumo].forEach(trCrescer);
+    const trCrescerTudo = () => [trTexto, trResumo, trCorrigido].forEach(trCrescer);
+    document.querySelectorAll('details.transcricao-bloco').forEach(d => d.addEventListener('toggle', trCrescerTudo));
 
     function trFonteAplicar() {
       document.getElementById('transcricaoCard').style.setProperty('--transcricao-fonte', LEITURA_FONTES[trFonteIdx] + 'rem');
@@ -18449,7 +18513,7 @@ function saveTemplatesToStorage() {
         if (editando) campo.focus(); else campo.blur();
       });
       rotular(editar, 'Editar');
-      const copiar = rotular(backupButton('📋 Copiar', () => trCopiar(campo, campo === trTexto ? 'Texto' : 'Resumo')), 'Copiar');
+      const copiar = rotular(backupButton('📋 Copiar', () => trCopiar(campo, campo === trTexto ? 'Texto' : campo === trCorrigido ? 'Texto corrigido' : 'Resumo')), 'Copiar');
       const word = backupButton('📄 Word', () => {
         if (!campo.value.trim()) return;
         docxPreviaAbrir(word, campo.value, nome());
@@ -18492,6 +18556,7 @@ function saveTemplatesToStorage() {
     };
     trBarra(trTexto, trNomeWord('Transcrição'));
     trBarra(trResumo, trNomeWord('Resumo'));
+    trBarra(trCorrigido, trNomeWord('Texto corrigido'));
     window.addEventListener('resize', trCrescerTudo);
     trFonteAplicar();
 

@@ -8893,6 +8893,32 @@ details.subsection.ebc-subsection#publicoBox.s34-bloqueado {
   background: color-mix(in srgb, var(--card) 70%, transparent);
 }
 
+details.transcricao-bloco>summary {
+  margin: 0 -12px;
+  padding: 8px 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+details.transcricao-bloco:not([open]) {
+  padding-bottom: 0;
+}
+
+.transcricao-ia-acoes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.transcricao-ia-acoes button {
+  font-size: .9rem;
+}
+
+#transcricaoResumoBloco[hidden],
+#transcricaoCorrigidoBloco[hidden] {
+  display: none;
+}
+
 .transcricao-bloco .transcricao-rotulo {
   margin-top: 8px;
 }

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.95
+
+Áudio em texto: os campos "Texto transcrito", "Resumo" e o novo "Texto corrigido" ficam em contêineres recolhíveis. Novo botão "Corrigir com a IA": a IA corrige o texto transcrito sem resumir (gramática, coerência, repetições sem sentido, ruídos e trechos fora do assunto), em blocos, e o resultado aparece no contêiner "Texto corrigido".
+
 ## 6.3.94
 
 Áudio em texto: o campo Data de "Dados do áudio" não passa mais da largura do contêiner no celular, e a caixa "mesmo do arquivo" fica alinhada com o título do campo.
