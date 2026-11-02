@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.25'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.26'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -17882,6 +17882,9 @@ function saveTemplatesToStorage() {
     // O seletor da tela Áudio em texto.
     const trTipo = document.getElementById('transcricaoTipo');
     const trTipoNome = document.getElementById('transcricaoTipoNome');
+    const trTipoNomeBox = document.getElementById('transcricaoTipoNomeBox');
+    const TIPO_NOVO = '__novo__'; // a opção "Novo tipo": só ela mostra o campo do nome
+    const trTipoNomeMostrar = () => { trTipoNomeBox.hidden = trTipo.value !== TIPO_NOVO; };
     let trTipoUltimoTexto = ''; // o último texto posto pelo seletor (para trocar sem perguntar se a pessoa não mexeu)
     let trTipoAtual = ''; // o tipo escolhido no seletor (para voltar a ele se a pessoa não confirmar a troca)
     let trTipoUltimaInstr = ''; // o mesmo para "Como fazer o resumo"
@@ -17892,6 +17895,10 @@ function saveTemplatesToStorage() {
       nenhum.value = '';
       nenhum.textContent = 'Nenhum (sem informações nem instruções)';
       trTipo.appendChild(nenhum);
+      const novo = document.createElement('option');
+      novo.value = TIPO_NOVO;
+      novo.textContent = '➕ Novo tipo…';
+      trTipo.appendChild(novo);
       tipos.forEach(t => {
         const o = document.createElement('option');
         o.value = t.id;
@@ -17899,6 +17906,7 @@ function saveTemplatesToStorage() {
         trTipo.appendChild(o);
       });
       trTipo.value = manter && tipos.some(t => t.id === manter) ? manter : '';
+      trTipoNomeMostrar();
     }
     // "Sobre o áudio" e "Como fazer o resumo" crescem até mostrar o texto inteiro, sem barra de rolagem.
     const trCamposAutoAltura = [trContexto, trInstrucoes, trPauta];
@@ -17923,9 +17931,11 @@ function saveTemplatesToStorage() {
       if (!tipo) { // "Nenhum": os dois campos ficam em branco (e o "Como fazer o resumo" salvo no aparelho também)
         const sobAlgo = trContexto.value.trim() && trContexto.value.trim() !== trTipoUltimoTexto;
         const instAlgo = trInstrucoes.value.trim() && trInstrucoes.value.trim() !== trTipoUltimaInstr;
-        if ((sobAlgo || instAlgo) && !(await askConfirm('Deixar os campos “Sobre o áudio” e “Como fazer o resumo” em branco? O que você escreveu neles será apagado.', 'Limpar os campos'))) { trTipo.value = trTipoAtual; return; }
-        trTipoAtual = '';
+        if ((sobAlgo || instAlgo) && !(await askConfirm('Deixar os campos “Sobre o áudio” e “Como fazer o resumo” em branco? O que você escreveu neles será apagado.', 'Limpar os campos'))) { trTipo.value = trTipoAtual; trTipoNomeMostrar(); return; }
+        trTipoAtual = trTipo.value; // '' (Nenhum) ou o "Novo tipo"
         trTipoNome.value = '';
+        trTipoNomeMostrar();
+        if (trTipo.value === TIPO_NOVO) trTipoNome.focus();
         trContexto.value = '';
         trInstrucoes.value = '';
         trTipoUltimoTexto = '';
@@ -17936,9 +17946,10 @@ function saveTemplatesToStorage() {
       const atualInstr = trInstrucoes.value.trim();
       const mexeuSobre = Boolean(atual && atual !== trTipoUltimoTexto);
       const mexeuInstr = Boolean(tipo.instrucoes && atualInstr && atualInstr !== trTipoUltimaInstr);
-      if ((mexeuSobre || mexeuInstr) && !(await askConfirm((mexeuSobre && mexeuInstr ? 'Os campos “Sobre o áudio” e “Como fazer o resumo” já têm texto. Trocar' : mexeuSobre ? 'O campo “Sobre o áudio” já tem texto. Trocar' : 'O campo “Como fazer o resumo” já tem texto. Trocar') + ' pelo que o tipo escolhido traz?', 'Trocar o texto'))) { trTipo.value = trTipoAtual; return; }
+      if ((mexeuSobre || mexeuInstr) && !(await askConfirm((mexeuSobre && mexeuInstr ? 'Os campos “Sobre o áudio” e “Como fazer o resumo” já têm texto. Trocar' : mexeuSobre ? 'O campo “Sobre o áudio” já tem texto. Trocar' : 'O campo “Como fazer o resumo” já tem texto. Trocar') + ' pelo que o tipo escolhido traz?', 'Trocar o texto'))) { trTipo.value = trTipoAtual; trTipoNomeMostrar(); return; }
       trTipoAtual = trTipo.value;
       trTipoNome.value = tipo.nome;
+      trTipoNomeMostrar();
       trContexto.value = tipo.texto;
       trTipoUltimoTexto = tipo.texto;
       if (tipo.instrucoes) {
@@ -17976,9 +17987,8 @@ function saveTemplatesToStorage() {
       const texto = trContexto.value.trim();
       const instrucoes = trInstrucoes.value.trim();
       if (!texto && !instrucoes) return (trInfo.textContent = 'Escreva o “Sobre o áudio” ou o “Como fazer o resumo” antes de salvar o tipo.');
-      const nome = trTipoNome.value.trim() || await trTipoPerguntarNome(paraTodos);
+      const nome = (trTipo.value === TIPO_NOVO ? trTipoNome.value.trim() : '') || await trTipoPerguntarNome(paraTodos);
       if (!nome) return;
-      trTipoNome.value = nome;
       let id;
       if (!paraTodos) {
         const tipos = audioTiposLer();
@@ -18021,6 +18031,7 @@ function saveTemplatesToStorage() {
       trTiposDesenhar('');
       trTipoAtual = '';
       trTipoNome.value = '';
+      trTipoNomeMostrar();
       trTipoBotoesAtualizar();
       trInfo.textContent = '🗑️ Tipo removido dos tipos de todos.';
     });
@@ -18688,7 +18699,7 @@ function saveTemplatesToStorage() {
       trContexto.value = ''; // o "sobre o áudio" vale só para um áudio; as instruções do resumo ficam salvas
       trDadosLimpar();
       trTipoUltimoTexto = '';
-      trTipo.value = ''; trTipoNome.value = '';
+      trTipo.value = ''; trTipoNome.value = ''; trTipoNomeMostrar();
       trTipoAtual = '';
       trGravadaLimpar();
       trInfo.textContent = '';

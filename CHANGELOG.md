@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.26
+
+Áudio em texto: o campo "Nome do tipo" só aparece ao escolher a nova opção "➕ Novo tipo…" na lista de tipos de áudio.
+
 ## 6.4.25
 
 Áudio em texto: em "Informe o tipo de áudio" há um campo "Nome do tipo" para digitar o nome de um tipo novo; ele vem preenchido ao escolher um tipo e é usado ao salvar como meu tipo ou para todos.
