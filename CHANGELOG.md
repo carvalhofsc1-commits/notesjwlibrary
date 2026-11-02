@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.01
+
+Áudio em texto: cada etapa (Iniciar a transcrição, Corrigir com a IA e Resumir com a IA) virou um contêiner só, com o botão da ação em cima e o resultado logo abaixo, que recolhe junto.
+
 ## 6.4.00
 
 Áudio em texto: a ordem ficou Texto transcrito, botão Corrigir com a IA, Texto corrigido, botão Resumir com a IA (o último) e Resumo.

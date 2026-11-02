@@ -8914,6 +8914,40 @@ details.transcricao-bloco:not([open]) {
   padding-bottom: 0;
 }
 
+/* Cada etapa (transcrever, corrigir, resumir) é um contêiner só: o botão da ação em cima e, logo abaixo, o resultado, que recolhe junto. */
+.transcricao-passo {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border: 2px solid var(--muted);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--card) 70%, transparent);
+}
+
+.transcricao-passo>.leitura-acoes[hidden] {
+  display: none;
+}
+
+.transcricao-passo .transcricao-bloco {
+  margin: 8px 0 0;
+  padding: 0 10px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+}
+
+.transcricao-passo details.transcricao-bloco>summary {
+  margin: 0 -10px;
+  padding: 8px 10px;
+}
+
+.transcricao-passo>.transcricao-bloco:first-child {
+  margin-top: 0;
+}
+
+.transcricao-passo:has(> details.transcricao-bloco[hidden]:last-child) {
+  padding-bottom: 10px;
+}
+
 .transcricao-ia-acoes {
   display: grid;
   grid-template-columns: 1fr 1fr;

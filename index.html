@@ -1554,32 +1554,38 @@
         </div>
         <input id="transcricaoData" class="transcricao-dado" type="date">
       </details>
-      <div id="transcricaoIniciarLinha" class="leitura-acoes" hidden>
-        <button id="transcricaoIniciarBtn" class="leitura-ler" type="button">▶️ Iniciar a transcrição</button>
-      </div>
       <p id="transcricaoInfo" class="hint" role="status" aria-live="polite"></p>
       <progress id="transcricaoProgresso" value="0" max="1" hidden></progress>
       <div class="leitura-acoes transcricao-acoes">
         <button id="transcricaoCancelarBtn" class="secondary" type="button" hidden>⏹️ Cancelar</button>
       </div>
+      <div class="transcricao-passo">
+        <div id="transcricaoIniciarLinha" class="leitura-acoes" hidden>
+          <button id="transcricaoIniciarBtn" class="leitura-ler" type="button">▶️ Iniciar a transcrição</button>
+        </div>
       <details class="transcricao-bloco" open>
         <summary>Texto transcrito</summary>
         <textarea id="transcricaoTexto" class="transcricao-area" placeholder="O texto transcrito aparece aqui. Você pode corrigi-lo antes de resumir." spellcheck="false"></textarea>
       </details>
-      <div class="leitura-acoes">
-        <button id="transcricaoCorrigirBtn" class="leitura-ler" type="button" disabled>✍️ Corrigir com a IA</button>
       </div>
-      <details id="transcricaoCorrigidoBloco" class="transcricao-bloco" open hidden>
-        <summary>Texto corrigido</summary>
-        <textarea id="transcricaoCorrigido" class="transcricao-area" placeholder="O texto corrigido pela IA aparece aqui." spellcheck="false"></textarea>
-      </details>
-      <div class="leitura-acoes">
-        <button id="transcricaoResumirBtn" class="leitura-ler" type="button" disabled>✨ Resumir com a IA</button>
+      <div class="transcricao-passo">
+        <div class="leitura-acoes">
+          <button id="transcricaoCorrigirBtn" class="leitura-ler" type="button" disabled>✍️ Corrigir com a IA</button>
+        </div>
+        <details id="transcricaoCorrigidoBloco" class="transcricao-bloco" open hidden>
+          <summary>Texto corrigido</summary>
+          <textarea id="transcricaoCorrigido" class="transcricao-area" placeholder="O texto corrigido pela IA aparece aqui." spellcheck="false"></textarea>
+        </details>
       </div>
-      <details id="transcricaoResumoBloco" class="transcricao-bloco" open hidden>
-        <summary>Resumo</summary>
-        <textarea id="transcricaoResumo" class="transcricao-area" placeholder="O resumo da IA aparece aqui." spellcheck="false"></textarea>
-      </details>
+      <div class="transcricao-passo">
+        <div class="leitura-acoes">
+          <button id="transcricaoResumirBtn" class="leitura-ler" type="button" disabled>✨ Resumir com a IA</button>
+        </div>
+        <details id="transcricaoResumoBloco" class="transcricao-bloco" open hidden>
+          <summary>Resumo</summary>
+          <textarea id="transcricaoResumo" class="transcricao-area" placeholder="O resumo da IA aparece aqui." spellcheck="false"></textarea>
+        </details>
+      </div>
     </div>
 
     <!-- Para que serve a tela Backup: aberta enquanto nenhum backup está aberto; recolhe sozinha ao abrir um backup e abre de novo ao fechá-lo. -->
