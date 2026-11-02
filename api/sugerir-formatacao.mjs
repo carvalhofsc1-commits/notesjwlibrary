@@ -2808,7 +2808,7 @@ const SaidaJoias = z.object({
     })
   ),
   // Resumo dos capítulos e resultado do modo "somente as instruções adicionais": texto puro com um título.
-  outros: z.array(z.object({ titulo: z.string(), texto: z.string() })),
+  outros: z.array(z.object({ titulo: z.string(), texto: z.string(), verbetes: z.array(z.string()) })),
 });
 
 // Versículos de uma referência do mesmo capítulo: "Jeremias 45:5" -> { capitulo: 45, versos: Set {5} }; "45:4, 6-7" -> {4, 6, 7}; null se não houver "cap:vers".
@@ -2921,6 +2921,52 @@ async function lerImagensDaApostilaSemana(res, body) {
   return res.status(200).json({ semana: apostila.semana, url: apostila.url, imagens: apostila.imagens });
 }
 
+// Resumo dos capítulos com o Estudo Perspicaz (sempre, sem depender da caixa das opções): a IA indicou, em "verbetes" de cada resumo, os nomes de
+// cidades, lugares, povos, nações e personagens; o servidor busca esses verbetes no Perspicaz (Blob) e a IA reescreve os resumos com o fundo histórico
+// que eles trazem. Se algo falhar, ficam os resumos da primeira etapa (sem as fontes). Devolve [{ titulo, texto, perspicaz: ["Gaza (vol. 1)"] }].
+async function completarResumosComPerspicaz(outros, joias, P, opcoes, ajuste) {
+  const simples = outros.map((o) => ({ titulo: o.titulo, texto: o.texto, perspicaz: [] }));
+  if (!fontesConfiguradas() || !outros.length) return simples;
+  try {
+    const achados = [];
+    for (const o of outros) {
+      const lista = [];
+      for (const nome of o.verbetes) {
+        const v = await buscarVerbete([nome]);
+        if (v && !lista.some((x) => x.verbete === v.verbete)) lista.push({ nome, ...v });
+      }
+      achados.push(lista);
+    }
+    if (!achados.some((l) => l.length)) return simples;
+    const material = outros.map((o, indice) => ({
+      indice,
+      titulo: o.titulo,
+      resumo: o.texto,
+      verbetes: achados[indice].map((v) => ({ nome: v.nome, verbete: v.verbete, volume: v.volume, trecho: v.trecho })),
+    }));
+    const mensagem =
+      blocoOrientacao(opcoes, ajuste, P) +
+      P.frases.pedidos["Joias: resumo com o Perspicaz"] +
+      "\n\n" +
+      textoDasJoias(joias, { pergunta: false, leitura: false, resumo: true }) +
+      "\n\nRESUMOS E VERBETES (JSON):\n" +
+      JSON.stringify(material) +
+      lembreteFinal(opcoes, ajuste, P);
+    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 90_000) });
+    const resposta = await chamarIa(client, P, { max_tokens: 12000, system: P.sistemaJoias, messages: [{ role: "user", content: mensagem }] }, { schema: SaidaJoias, semPensar: true, tarefa: "joias" });
+    if (resposta.stop_reason === "refusal" || !resposta.parsed_output) return simples;
+    const novos = resposta.parsed_output.outros || [];
+    return outros.map((o, i) => {
+      const n = novos.find((x) => chaveDeBusca(x.titulo) === chaveDeBusca(o.titulo)) || novos[i];
+      const texto = n ? limparTextoGerado(n.texto, 3500) : "";
+      return { titulo: o.titulo, texto: texto || o.texto, perspicaz: texto ? achados[i].map((v) => `${v.verbete} (vol. ${v.volume})`) : [] };
+    });
+  } catch (e) {
+    console.error("Resumo com o Perspicaz falhou:", e?.status, e?.message);
+    return simples;
+  }
+}
+
 async function responderJoias(res, body, P) {
   const ajuste = textoLivre(body.ajuste);
   // "Executar somente estas instruções": só vale o que o usuário escreveu em "Instruções adicionais para a IA"; as caixas de "O que preparar" não contam.
@@ -2932,7 +2978,7 @@ async function responderJoias(res, body, P) {
   if (!somente && !comPergunta && !comLeitura && !comResumo) return erro(res, 400, "Marque a pergunta da apostila, as joias da leitura ou o resumo dos capítulos.");
   const opcoes = validarOpcoes(body.opcoes);
   if (consultaPedida(opcoes) && !fontesConfiguradas()) return erro(res, 503, "A consulta às fontes ainda não está configurada no servidor.");
-  precarregarFontes({ biblia: true, perspicaz: opcoes.consultarPerspicaz });
+  precarregarFontes({ biblia: true, perspicaz: opcoes.consultarPerspicaz || comResumo });
   const sep = modoSeparacao(opcoes, ajuste);
   const modo = body.modo === "nova" || body.modo === "melhorar" ? body.modo : null;
   // O texto bíblico de cada joia é copiado da Bíblia pelo servidor a cada pedido: não precisa ir de volta à IA nas respostas anteriores.
@@ -3009,10 +3055,13 @@ async function responderJoias(res, body, P) {
     }
     const itensJoias = [...porCapitulo.values()].flat();
     // Resumo dos capítulos e resultado do modo "somente as instruções": texto puro, com o título limpo (sem fontes especiais nem "culto").
-    const outros = (somente || comResumo ? saida.outros || [] : [])
-      .map((o) => ({ titulo: limparLinha(limparTrecho(o.titulo), 120), texto: limparTextoGerado(o.texto, 3000) }))
+    let outros = (somente || comResumo ? saida.outros || [] : [])
+      .map((o) => ({ titulo: limparLinha(limparTrecho(o.titulo), 120), texto: limparTextoGerado(o.texto, 3000), verbetes: listaDeTextos(o.verbetes, 8) }))
       .filter((o) => o.texto)
       .slice(0, somente ? 10 : joias.capitulos.length);
+    // O resumo dos capítulos sempre passa pelo Estudo Perspicaz (fundo histórico de cidades, povos e personagens).
+    if (comResumo) outros = await completarResumosComPerspicaz(outros, joias, P, opcoes, ajuste);
+    else outros = outros.map((o) => ({ titulo: o.titulo, texto: o.texto, perspicaz: [] }));
 
     console.log(
       "Joias espirituais:",
@@ -3021,6 +3070,7 @@ async function responderJoias(res, body, P) {
         leitura: joias.leitura,
         pergunta: Boolean(itemPergunta),
         outros: outros.length,
+        perspicaz: outros.reduce((n, o) => n + o.perspicaz.length, 0),
         somente,
         joias: itensJoias.map((j) => j.paragrafos),
         comTextoBiblico: itensJoias.filter((j) => j.versiculo).length,

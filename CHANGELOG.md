@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.33
+
+Joias Espirituais: o resumo dos capítulos passa sempre pelo Estudo Perspicaz. A IA indica as cidades, lugares, povos, nações e personagens, o servidor busca os verbetes e a IA completa o resumo com o fundo histórico deles; os verbetes usados aparecem numa linha "🔎 Estudo Perspicaz".
+
 ## 6.4.32
 
 Joias Espirituais: o resumo de cada capítulo agora indica os versículos que sustentam a explicação e explica quem são as cidades, lugares, povos, nações e personagens, com o fundo histórico (de 120 a 200 palavras por capítulo).
