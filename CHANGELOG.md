@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.97
+
+Áudio em texto: o botão "Parar e transcrever" passou a se chamar "Finalizar gravação" (a gravação já não é transcrita sozinha ao terminar).
+
 ## 6.3.96
 
 Áudio em texto: a ordem passou a ser Texto transcrito, Corrigir com a IA (Texto corrigido) e, por último, Resumir com a IA (Resumo).
