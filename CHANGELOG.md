@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.27
+
+Áudio em texto: os botões "Salvar como meu tipo" e "Salvar para todos" só aparecem com a opção "➕ Novo tipo…" selecionada; nos tipos da lista não aparecem (o botão de remover dos tipos de todos saiu desta tela).
+
 ## 6.4.26
 
 Áudio em texto: o campo "Nome do tipo" só aparece ao escolher a nova opção "➕ Novo tipo…" na lista de tipos de áudio.

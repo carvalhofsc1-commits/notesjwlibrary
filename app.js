@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.26'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.27'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -17884,7 +17884,11 @@ function saveTemplatesToStorage() {
     const trTipoNome = document.getElementById('transcricaoTipoNome');
     const trTipoNomeBox = document.getElementById('transcricaoTipoNomeBox');
     const TIPO_NOVO = '__novo__'; // a opção "Novo tipo": só ela mostra o campo do nome
-    const trTipoNomeMostrar = () => { trTipoNomeBox.hidden = trTipo.value !== TIPO_NOVO; };
+    const trTipoNomeMostrar = () => {
+      trTipoNomeBox.hidden = trTipo.value !== TIPO_NOVO;
+      const linha = document.getElementById('transcricaoTipoSalvarLinha');
+      if (linha) linha.hidden = trTipo.value !== TIPO_NOVO;
+    };
     let trTipoUltimoTexto = ''; // o último texto posto pelo seletor (para trocar sem perguntar se a pessoa não mexeu)
     let trTipoAtual = ''; // o tipo escolhido no seletor (para voltar a ele se a pessoa não confirmar a troca)
     let trTipoUltimaInstr = ''; // o mesmo para "Como fazer o resumo"
@@ -17961,11 +17965,11 @@ function saveTemplatesToStorage() {
     // Salvar o que está nos campos como um tipo: "meu" (só neste aparelho) ou "para todos" (o administrador, no servidor).
     const trTipoSalvarMeu = document.getElementById('transcricaoTipoSalvarMeuBtn');
     const trTipoSalvarTodos = document.getElementById('transcricaoTipoSalvarTodosBtn');
-    const trTipoRemoverTodos = document.getElementById('transcricaoTipoRemoverTodosBtn');
     function trTipoBotoesAtualizar() {
       const admin = Boolean(senhaAdminSalva());
       trTipoSalvarTodos.hidden = !admin;
-      trTipoRemoverTodos.hidden = !(admin && audioTiposTodos.some(g => g.id === trTipo.value));
+      // Os tipos da lista não são alterados por aqui: salvar só existe para o "Novo tipo".
+      document.getElementById('transcricaoTipoSalvarLinha').hidden = trTipo.value !== TIPO_NOVO;
     }
     trTipoBotoesAtualizar();
     trTipo.closest('details').addEventListener('toggle', trTipoBotoesAtualizar);
@@ -18018,23 +18022,6 @@ function saveTemplatesToStorage() {
     }
     trTipoSalvarMeu.addEventListener('click', () => trTipoSalvar(false));
     trTipoSalvarTodos.addEventListener('click', () => trTipoSalvar(true));
-    trTipoRemoverTodos.addEventListener('click', async () => {
-      const tipo = audioTiposTodos.find(g => g.id === trTipo.value);
-      if (!tipo) return;
-      if (!(await askConfirm('Remover “' + tipo.nome + '” dos tipos de todos? Quem já usa o app deixa de ver este tipo.', 'Remover para todos', { ok: 'Remover', cancel: 'Cancelar' }))) return;
-      const atual = await postConfig({ acao: 'audio-tipos-ler' });
-      if (!atual.ok) return (trInfo.textContent = configErrorMessage(atual, 'Não consegui ler os tipos de todos agora.'));
-      const lista = (Array.isArray(atual.data.tipos) ? atual.data.tipos.filter(audioTipoValido) : []).filter(t => t.id !== tipo.id);
-      const r = await postConfig({ acao: 'audio-tipos-salvar', codigo: senhaAdminSalva(), tipos: lista });
-      if (!r.ok) return (trInfo.textContent = configErrorMessage(r, 'Não consegui remover o tipo agora.'));
-      audioTiposTodosGuardar(r.data.tipos || lista);
-      trTiposDesenhar('');
-      trTipoAtual = '';
-      trTipoNome.value = '';
-      trTipoNomeMostrar();
-      trTipoBotoesAtualizar();
-      trInfo.textContent = '🗑️ Tipo removido dos tipos de todos.';
-    });
     // Ao abrir o app, busca os tipos de todos (sem internet, valem os que já estão guardados).
     (async () => {
       const r = await postConfig({ acao: 'audio-tipos-ler' });
