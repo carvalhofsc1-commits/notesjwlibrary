@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.93
+
+O card do arquivo ganhou o botão "Limpar", para desistir do arquivo (escolhido ou gravado) antes de transcrever.
+
+Áudio em texto: ao parar a gravação, o app não transcreve sozinho; mostra o card "Arquivo gravado" com os dados (nome, origem, tipo, tamanho, data e hora, duração), dá a opção de salvar a gravação no aparelho e só transcreve no botão "Iniciar a transcrição". O card dos dois casos passou a mostrar a origem do áudio.
+
 ## 6.3.92
 
 Áudio em texto: novo tipo de áudio "Ligação telefônica - recebimento de denúncia" (denúncia recebida por telefone de outro colaborador ou de pessoa externa), com a descrição e o modo de resumir já preenchidos. Quem já tem a lista salva no aparelho recebe o tipo novo uma vez.

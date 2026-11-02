@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.92'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.93'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -18129,7 +18129,9 @@ function saveTemplatesToStorage() {
     function trPendenteLimpar() {
       trPendente = null;
       trArquivoBox.hidden = true;
+      document.getElementById('transcricaoIniciarLinha').hidden = true;
       trArquivoDados.textContent = '';
+      document.getElementById('transcricaoArquivoTitulo').textContent = 'Arquivo escolhido';
     }
     const trTamanhoTexto = bytes => (bytes >= 1048576 ? (bytes / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(bytes / 1024)) + ' KB');
     const trDuracaoTexto = seg => {
@@ -18149,25 +18151,41 @@ function saveTemplatesToStorage() {
         audio.src = url;
       });
     }
-    function trPendenteMostrar(arquivo) {
+    function trPendenteMostrar(arquivo, opcoes) {
+      const gravado = Boolean(opcoes && opcoes.gravado);
+      document.getElementById('transcricaoArquivoTitulo').textContent = gravado ? 'Arquivo gravado' : 'Arquivo escolhido';
       trPendente = arquivo;
+      document.getElementById('transcricaoIniciarLinha').hidden = false;
       trArquivoAtual = arquivo;
       trMesmoAplicar();
       trArquivoBox.hidden = false;
-      let base = '🎵 Nome: ' + (arquivo.name || 'sem nome') + '\n🏷️ Tipo: ' + (arquivo.type || 'não informado') + '\n📦 Tamanho: ' + trTamanhoTexto(arquivo.size);
+      let base = '🎵 Nome: ' + (arquivo.name || 'sem nome') + '\n📍 Origem: ' + (gravado ? 'gravado agora pelo app, neste aparelho' : 'arquivo escolhido neste aparelho') + '\n🏷️ Tipo: ' + (arquivo.type || 'não informado') + '\n📦 Tamanho: ' + trTamanhoTexto(arquivo.size);
       if (arquivo.lastModified > 0) {
         const quando = new Date(arquivo.lastModified);
         base += '\n📅 Data e hora: ' + quando.toLocaleDateString('pt-BR') + ' às ' + quando.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       }
       trArquivoDados.textContent = base + '\n⏱️ Duração: calculando…';
-      trInfo.textContent = 'Confira os dados do arquivo e toque em Iniciar a transcrição.';
+      trInfo.textContent = gravado ? 'Gravação pronta. Se quiser, salve a gravação no aparelho; depois toque em Iniciar a transcrição.' : 'Confira os dados do arquivo e toque em Iniciar a transcrição.';
       trAtualizarBotoes();
-      trDuracaoLer(arquivo).then(seg => {
+      (gravado && opcoes.duracaoS ? Promise.resolve(opcoes.duracaoS) : trDuracaoLer(arquivo)).then(seg => {
         if (trPendente !== arquivo) return;
         trArquivoDados.textContent = base + '\n⏱️ Duração: ' + (seg ? trDuracaoTexto(seg) : 'não foi possível ler');
         if (seg && seg / 60 > TRANSCRICAO_MAX_MIN) trInfo.textContent = 'Atenção: o áudio tem mais de ' + TRANSCRICAO_MAX_MIN + ' minutos, que é o limite por arquivo.';
       });
     }
+    // Desistir do arquivo (escolhido ou gravado) antes de transcrever.
+    document.getElementById('transcricaoArquivoLimparBtn').addEventListener('click', async () => {
+      const gravado = Boolean(trUltimaGravacao && trPendente === trUltimaGravacao.arquivo);
+      if (gravado && !(await askConfirm('Descartar esta gravação? Se você não a salvou no aparelho, ela não fica guardada em nenhum lugar.', 'Descartar'))) return;
+      if (trTituloMesmo.checked) trTitulo.value = '';
+      if (trDataMesmo.checked) trData.value = '';
+      trArquivoAtual = null;
+      trMesmoAplicar();
+      trPendenteLimpar();
+      if (gravado) trGravadaLimpar();
+      trInfo.textContent = gravado ? 'Gravação descartada.' : 'Arquivo retirado. Nada foi enviado.';
+      trAtualizarBotoes();
+    });
     trEscolher.addEventListener('click', () => trArquivo.click());
     trArquivo.addEventListener('change', () => {
       const arquivo = trArquivo.files && trArquivo.files[0];
@@ -18257,6 +18275,7 @@ function saveTemplatesToStorage() {
 
     function trGravarFim(estado) {
       if (trGrav !== estado) return;
+      const duracaoMs = trGravMs();
       trGrav = null;
       clearInterval(estado.intervalo);
       estado.stream.getTracks().forEach(t => t.stop());
@@ -18275,7 +18294,8 @@ function saveTemplatesToStorage() {
       trGravada.hidden = false;
       trAtualizarBotoes();
       const aviso = estado.motivo || (interrompida ? 'O aparelho parou a gravação; usei o que foi gravado.' : '');
-      trTranscrever(arquivo).then(() => { if (aviso) trInfo.textContent = aviso + ' ' + trInfo.textContent; });
+      trPendenteMostrar(arquivo, { gravado: true, duracaoS: duracaoMs / 1000 });
+      if (aviso) trInfo.textContent = aviso + ' ' + trInfo.textContent;
     }
 
     function trGravadaLimpar() {

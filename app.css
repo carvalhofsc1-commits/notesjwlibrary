@@ -8901,6 +8901,17 @@ details.subsection.ebc-subsection#publicoBox.s34-bloqueado {
   flex: 1 1 100%;
 }
 
+#transcricaoIniciarLinha[hidden] {
+  display: none;
+}
+
+.transcricao-arquivo-limpar {
+  margin-top: 8px;
+  min-height: 30px;
+  padding: 3px 12px;
+  font-size: .85rem;
+}
+
 .transcricao-arquivo-dados {
   margin: 4px 0 10px;
   padding: 8px 10px;

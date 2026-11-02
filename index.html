@@ -1498,7 +1498,7 @@
       </div>
       <details class="leitura-dica">
         <summary>ℹ️ Como funciona</summary>
-        <p class="hint">Você pode <strong>escolher um arquivo de áudio</strong> já gravado no celular ou no computador (mp3, m4a, wav, mp4 e outros que o seu aparelho abra) ou <strong>gravar um áudio agora</strong>, com o microfone do aparelho (o navegador pede a sua permissão; dá para pausar, e ao parar a gravação já é transcrita; mantenha a tela aberta e desbloqueada durante a gravação). O app decodifica o áudio neste aparelho, corta em trechos de cerca de 50 segundos e envia cada trecho ao Google para virar texto (português do Brasil). Depois você pode pedir um resumo à IA. Limite de 30 minutos por áudio, gravado ou em arquivo. Os dois campos de texto podem ser editados (toque em Editar), formatados com negrito e itálico, ter a letra ajustada com A− e A+ e ser exportados para Word. Nada é guardado no servidor do NoteStyle, e o texto não fica salvo no app: copie ou exporte o que quiser guardar (a gravação também pode ser salva no aparelho). Esta primeira versão não identifica quem está falando.</p>
+        <p class="hint">Você pode <strong>escolher um arquivo de áudio</strong> já gravado no celular ou no computador (mp3, m4a, wav, mp4 e outros que o seu aparelho abra) ou <strong>gravar um áudio agora</strong>, com o microfone do aparelho (o navegador pede a sua permissão; dá para pausar, e ao parar a gravação você vê os dados do arquivo gravado e toca em Iniciar a transcrição; mantenha a tela aberta e desbloqueada durante a gravação). O app decodifica o áudio neste aparelho, corta em trechos de cerca de 50 segundos e envia cada trecho ao Google para virar texto (português do Brasil). Depois você pode pedir um resumo à IA. Limite de 30 minutos por áudio, gravado ou em arquivo. Os dois campos de texto podem ser editados (toque em Editar), formatados com negrito e itálico, ter a letra ajustada com A− e A+ e ser exportados para Word. Nada é guardado no servidor do NoteStyle, e o texto não fica salvo no app: copie ou exporte o que quiser guardar (a gravação também pode ser salva no aparelho). Esta primeira versão não identifica quem está falando.</p>
       </details>
       <div class="leitura-importar transcricao-importar">
         <button id="transcricaoArquivoBtn" type="button">🎧 Escolher o arquivo de áudio</button>
@@ -1506,11 +1506,11 @@
         <button id="transcricaoGravarBtn" class="secondary" type="button">🔴 Gravar um áudio agora</button>
       </div>
       <div id="transcricaoArquivoBox" class="transcricao-bloco" hidden>
-        <label class="transcricao-rotulo" for="transcricaoArquivoDados">Arquivo escolhido</label>
-        <div id="transcricaoArquivoDados" class="transcricao-arquivo-dados"></div>
-        <div class="leitura-acoes">
-          <button id="transcricaoIniciarBtn" class="leitura-ler" type="button">▶️ Iniciar a transcrição</button>
+        <div class="transcricao-rotulo-linha">
+          <label id="transcricaoArquivoTitulo" class="transcricao-rotulo" for="transcricaoArquivoDados">Arquivo escolhido</label>
+          <button id="transcricaoArquivoLimparBtn" class="secondary transcricao-arquivo-limpar" type="button" title="Desistir deste arquivo" aria-label="Desistir deste arquivo">🗑️ Limpar</button>
         </div>
+        <div id="transcricaoArquivoDados" class="transcricao-arquivo-dados"></div>
       </div>
       <div id="transcricaoGravacao" class="transcricao-gravacao" hidden>
         <p id="transcricaoGravTempo" class="transcricao-grav-tempo" role="timer" aria-live="off">🔴 Gravando 00:00</p>
@@ -1553,6 +1553,9 @@
         </div>
         <input id="transcricaoData" class="transcricao-dado" type="date">
       </details>
+      <div id="transcricaoIniciarLinha" class="leitura-acoes" hidden>
+        <button id="transcricaoIniciarBtn" class="leitura-ler" type="button">▶️ Iniciar a transcrição</button>
+      </div>
       <p id="transcricaoInfo" class="hint" role="status" aria-live="polite"></p>
       <progress id="transcricaoProgresso" value="0" max="1" hidden></progress>
       <div class="leitura-acoes transcricao-acoes">
