@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.16'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.17'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -18002,7 +18002,6 @@ function saveTemplatesToStorage() {
       trResumir.disabled = ocupado || trTexto.value.trim().length < 40;
       trCorrigir.disabled = ocupado || trTexto.value.trim().length < 40;
       trIniciar.disabled = ocupado || gravando || !trPendente;
-      document.getElementById('transcricaoArquivoLimparBtn').hidden = !trPendente; // depois de iniciar, só dá para ocultar os dados
       trCancelar.hidden = !ocupado || trOperacao !== 'transcrever';
       trCancelarCorrigir.hidden = !ocupado || trOperacao !== 'corrigir';
       trCancelarResumir.hidden = !ocupado || trOperacao !== 'resumir';
@@ -18203,10 +18202,11 @@ function saveTemplatesToStorage() {
     }
     // Desistir do arquivo (escolhido ou gravado) antes de transcrever.
     document.getElementById('transcricaoArquivoLimparBtn').addEventListener('click', async () => {
-      const gravado = Boolean(trUltimaGravacao && trPendente === trUltimaGravacao.arquivo);
+      const gravado = Boolean(trUltimaGravacao && trArquivoMostrado === trUltimaGravacao.arquivo);
       if (gravado && !(await askConfirm('Descartar esta gravação? Se você não a salvou no aparelho, ela não fica guardada em nenhum lugar.', 'Descartar'))) return;
       if (trTituloMesmo.checked) trTitulo.value = '';
       if (trDataMesmo.checked) trData.value = '';
+      if (trControle && trOperacao === 'transcrever') trControle.abort(); // desistiu do arquivo: para a transcrição em andamento
       trArquivoAtual = null;
       trMesmoAplicar();
       trPendenteLimpar();

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.17
+
+Áudio em texto: o botão Limpar do card "Dados do áudio" fica sempre disponível (também depois de iniciar a transcrição); se a transcrição estiver andando, ela é interrompida.
+
 ## 6.4.16
 
 Áudio em texto: o card do arquivo passa a se chamar "Dados do áudio" e, recolhido, fica baixo como os outros contêineres.
