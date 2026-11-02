@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.03
+
+Áudio em texto: Transcrever, Corrigir e Resumir viraram contêineres recolhíveis, só com o título à mostra. Dentro de cada um ficam o botão da ação, a barra de andamento e o resultado; a barra da transcrição passou para dentro do contêiner Transcrever. Corrigir e Resumir só aparecem quando há texto transcrito.
+
 ## 6.4.02
 
 Áudio em texto: os contêineres "Corrigir com a IA" e "Resumir com a IA" só aparecem quando há um texto transcrito.

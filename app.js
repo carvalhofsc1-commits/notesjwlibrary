@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.02'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.03'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -17722,6 +17722,12 @@ function saveTemplatesToStorage() {
     const trTexto = document.getElementById('transcricaoTexto');
     const trResumo = document.getElementById('transcricaoResumo');
     const trCancelar = document.getElementById('transcricaoCancelarBtn');
+    const trCancelarCorrigir = document.getElementById('transcricaoCorrigirCancelarBtn');
+    const trCancelarResumir = document.getElementById('transcricaoResumirCancelarBtn');
+    const trCorrigirProgresso = document.getElementById('transcricaoCorrigirProgresso');
+    const trResumirProgresso = document.getElementById('transcricaoResumirProgresso');
+    const trPassoTexto = document.getElementById('transcricaoPassoTexto');
+    let trOperacao = ''; // o que está em andamento: 'transcrever', 'corrigir' ou 'resumir' (cada contêiner mostra o seu Cancelar)
     const trEscolher = document.getElementById('transcricaoArquivoBtn');
     const trResumir = document.getElementById('transcricaoResumirBtn');
     const trCorrigir = document.getElementById('transcricaoCorrigirBtn');
@@ -17996,7 +18002,9 @@ function saveTemplatesToStorage() {
       trResumir.disabled = ocupado || trTexto.value.trim().length < 40;
       trCorrigir.disabled = ocupado || trTexto.value.trim().length < 40;
       trIniciar.disabled = ocupado || gravando;
-      trCancelar.hidden = !ocupado;
+      trCancelar.hidden = !ocupado || trOperacao !== 'transcrever';
+      trCancelarCorrigir.hidden = !ocupado || trOperacao !== 'corrigir';
+      trCancelarResumir.hidden = !ocupado || trOperacao !== 'resumir';
       trFerramentasAtualizar.forEach(f => f());
     }
     trTexto.addEventListener('input', trAtualizarBotoes);
@@ -18077,6 +18085,8 @@ function saveTemplatesToStorage() {
       if (!navigator.onLine) return (trInfo.textContent = 'Sem conexão com a internet.');
       if (!(await trConsentimento())) return (trInfo.textContent = 'Nada foi enviado.');
       trControle = new AbortController();
+      trOperacao = 'transcrever';
+      trPassoTexto.open = true;
       trNomeBase = String(arquivo.name || '').replace(/\.[^.]+$/, '');
       trArquivoAtual = arquivo;
       trMesmoAplicar();
@@ -18161,6 +18171,7 @@ function saveTemplatesToStorage() {
       const gravado = Boolean(opcoes && opcoes.gravado);
       document.getElementById('transcricaoArquivoTitulo').textContent = gravado ? 'Arquivo gravado' : 'Arquivo escolhido';
       trPendente = arquivo;
+      trPassoTexto.open = true;
       document.getElementById('transcricaoIniciarLinha').hidden = false;
       trArquivoAtual = arquivo;
       trMesmoAplicar();
@@ -18204,7 +18215,7 @@ function saveTemplatesToStorage() {
       trPendenteLimpar();
       trTranscrever(arquivo);
     });
-    trCancelar.addEventListener('click', () => { if (trControle) trControle.abort(); });
+    [trCancelar, trCancelarCorrigir, trCancelarResumir].forEach(b => b.addEventListener('click', () => { if (trControle) trControle.abort(); }));
 
     // ---------- Gravar um áudio agora ----------
     // O microfone grava pelo navegador (MediaRecorder); ao parar, o arquivo gravado segue o mesmo caminho de um arquivo escolhido (decodificar,
@@ -18421,8 +18432,10 @@ function saveTemplatesToStorage() {
       if (!codigoTextoSalvo()) return (trInfo.textContent = 'Salve o código de texto em Ajustes → 🔐 Autorização de acessos.');
       if (!(await trConsentimento())) return;
       trControle = new AbortController();
+      trOperacao = 'resumir';
       trResumoBloco.hidden = false;
-      trResumoBloco.open = true;
+      trResumirProgresso.hidden = false;
+      trResumirProgresso.removeAttribute('value'); // indeterminado: a IA resume de uma vez
       trAtualizarBotoes();
       trInfo.textContent = '✨ A IA está resumindo…';
       try {
@@ -18432,6 +18445,7 @@ function saveTemplatesToStorage() {
         trInfo.textContent = '✅ Resumo pronto. A IA pode errar: confira com o texto.';
       } finally {
         trControle = null;
+        trResumirProgresso.hidden = true;
         trAtualizarBotoes();
       }
     });
@@ -18439,8 +18453,8 @@ function saveTemplatesToStorage() {
     // Os contêineres de "Corrigir com a IA" e "Resumir com a IA" só aparecem quando há texto transcrito (ou um resultado deles ainda na tela).
     const trPassosAtualizar = () => {
       const tem = Boolean(trTexto.value.trim());
-      trCorrigir.closest('.transcricao-passo').hidden = !(tem || !trCorrigidoBloco.hidden);
-      trResumir.closest('.transcricao-passo').hidden = !(tem || !trResumoBloco.hidden);
+      trCorrigir.closest('details').hidden = !(tem || !trCorrigidoBloco.hidden);
+      trResumir.closest('details').hidden = !(tem || !trResumoBloco.hidden);
     };
     trFerramentasAtualizar.push(trPassosAtualizar);
     trPassosAtualizar();
@@ -18473,12 +18487,12 @@ function saveTemplatesToStorage() {
       const blocos = trBlocosParaCorrigir(trTexto.value);
       if (!blocos.length) return;
       trControle = new AbortController();
+      trOperacao = 'corrigir';
       trCorrigido.value = '';
       trCorrigidoBloco.hidden = false;
-      trCorrigidoBloco.open = true;
-      trProgresso.hidden = false;
-      trProgresso.max = blocos.length;
-      trProgresso.value = 0;
+      trCorrigirProgresso.hidden = false;
+      trCorrigirProgresso.max = blocos.length;
+      trCorrigirProgresso.value = 0;
       trAtualizarBotoes();
       const partes = [];
       try {
@@ -18489,12 +18503,12 @@ function saveTemplatesToStorage() {
           if (!r.ok) return (trInfo.textContent = trMensagem(r, 'Não foi possível corrigir a parte ' + (n + 1) + '.') + (partes.length ? ' O que já foi corrigido está abaixo.' : ''));
           partes.push(r.dados.texto);
           trCorrigido.value = partes.join('\n\n');
-          trProgresso.value = n + 1;
+          trCorrigirProgresso.value = n + 1;
         }
         trInfo.textContent = '✅ Texto corrigido. A IA pode errar: confira com o texto transcrito.';
       } finally {
         trControle = null;
-        trProgresso.hidden = true;
+        trCorrigirProgresso.hidden = true;
         trAtualizarBotoes();
       }
     });
@@ -18551,7 +18565,7 @@ function saveTemplatesToStorage() {
       pagina.scrollTop = rolagem;
     }
     const trCrescerTudo = () => [trTexto, trResumo, trCorrigido].forEach(trCrescer);
-    document.querySelectorAll('details.transcricao-bloco').forEach(d => d.addEventListener('toggle', trCrescerTudo));
+    document.querySelectorAll('details.transcricao-passo').forEach(d => d.addEventListener('toggle', trCrescerTudo));
 
     function trFonteAplicar() {
       document.getElementById('transcricaoCard').style.setProperty('--transcricao-fonte', LEITURA_FONTES[trFonteIdx] + 'rem');
