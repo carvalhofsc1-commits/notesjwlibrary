@@ -373,6 +373,19 @@ function limparTextoGerado(valor, max) {
     .slice(0, max);
 }
 
+// Resumo dos capítulos: como limparTextoGerado, mas mantém os parágrafos (um por trecho, separados por linha em branco) e o emoji do começo de cada um.
+function limparResumo(valor, max) {
+  const texto = typeof valor === "string" ? semCulto(semGotica(valor)) : "";
+  return texto
+    .replace(/\r\n/g, "\n")
+    .replace(/[*`]+/g, "")
+    .split(/\n+/)
+    .map((p) => p.replace(/[ \t]+/g, " ").trim())
+    .filter(Boolean)
+    .join("\n\n")
+    .slice(0, max);
+}
+
 const REGEX_EMOJI = /\p{Extended_Pictographic}/u;
 
 function limparEmoji(valor) {
@@ -2958,7 +2971,7 @@ async function completarResumosComPerspicaz(outros, joias, P, opcoes, ajuste) {
     const novos = resposta.parsed_output.outros || [];
     return outros.map((o, i) => {
       const n = novos.find((x) => chaveDeBusca(x.titulo) === chaveDeBusca(o.titulo)) || novos[i];
-      const texto = n ? limparTextoGerado(n.texto, 3500) : "";
+      const texto = n ? limparResumo(n.texto, 4500) : "";
       return { titulo: o.titulo, texto: texto || o.texto, perspicaz: texto ? achados[i].map((v) => `${v.verbete} (vol. ${v.volume})`) : [] };
     });
   } catch (e) {
@@ -3056,7 +3069,7 @@ async function responderJoias(res, body, P) {
     const itensJoias = [...porCapitulo.values()].flat();
     // Resumo dos capítulos e resultado do modo "somente as instruções": texto puro, com o título limpo (sem fontes especiais nem "culto").
     let outros = (somente || comResumo ? saida.outros || [] : [])
-      .map((o) => ({ titulo: limparLinha(limparTrecho(o.titulo), 120), texto: limparTextoGerado(o.texto, 3000), verbetes: listaDeTextos(o.verbetes, 8) }))
+      .map((o) => ({ titulo: limparLinha(limparTrecho(o.titulo), 120), texto: limparResumo(o.texto, 3500), verbetes: listaDeTextos(o.verbetes, 8) }))
       .filter((o) => o.texto)
       .slice(0, somente ? 10 : joias.capitulos.length);
     // O resumo dos capítulos sempre passa pelo Estudo Perspicaz (fundo histórico de cidades, povos e personagens).

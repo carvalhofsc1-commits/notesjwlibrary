@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.33'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.34'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -15688,7 +15688,8 @@ function saveTemplatesToStorage() {
     function joiasOutrosPartes(outros, somente) {
       return outros.map(o => ({
         paragrafos: o.titulo || '',
-        texto: (somente ? '📌 ' : '📚 ') + (o.titulo ? o.titulo.toUpperCase() + ' 👉 ' : '') + o.texto +
+        // vários parágrafos (o resumo dos capítulos): o título numa linha e os parágrafos abaixo; texto de um parágrafo só: "TÍTULO 👉 texto"
+        texto: (somente ? '📌 ' : '📚 ') + (o.titulo ? o.titulo.toUpperCase() + (o.texto.includes('\n') ? '\n\n' : ' 👉 ') : '') + o.texto +
           (Array.isArray(o.perspicaz) && o.perspicaz.length ? '\n\n🔎 Estudo Perspicaz: ' + o.perspicaz.join('; ') : '')
       }));
     }

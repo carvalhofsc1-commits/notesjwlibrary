@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.34
+
+Joias Espirituais: o resumo dos capítulos sai em parágrafos, um para cada trecho (versículos) do capítulo, cada um com um emoji que ilustra o ponto principal e os versículos entre parênteses.
+
 ## 6.4.33
 
 Joias Espirituais: o resumo dos capítulos passa sempre pelo Estudo Perspicaz. A IA indica as cidades, lugares, povos, nações e personagens, o servidor busca os verbetes e a IA completa o resumo com o fundo histórico deles; os verbetes usados aparecem numa linha "🔎 Estudo Perspicaz".
