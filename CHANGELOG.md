@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.35
+
+Joias Espirituais: no resumo dos capítulos, os versículos de cada trecho passam para o início do parágrafo, em negrito (antes ficavam no fim, entre parênteses).
+
 ## 6.4.34
 
 Joias Espirituais: o resumo dos capítulos sai em parágrafos, um para cada trecho (versículos) do capítulo, cada um com um emoji que ilustra o ponto principal e os versículos entre parênteses.
