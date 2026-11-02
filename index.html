@@ -1420,6 +1420,15 @@
               <button id="audioTiposRestaurarBtn" class="secondary" type="button">↩️ Restaurar os tipos originais</button>
             </div>
             <p id="audioTiposStatus" class="ok" role="status" aria-live="polite"></p>
+            <h3 class="audio-todos-titulo">🌐 Tipos de áudio de todos os usuários</h3>
+            <p class="hint">Os tipos 🌐 que aparecem para todos que usam o app. Aqui você edita, reordena, apaga ou cria; nada vale para os outros até tocar em <strong>💾 Salvar para todos</strong>. Os tipos novos também podem ser criados direto na tela Áudio em texto, com a opção “➕ Novo tipo…”.</p>
+            <div id="audioTiposTodosLista"></div>
+            <div class="bk-row">
+              <button id="audioTiposTodosAdicionarBtn" class="secondary" type="button">➕ Novo tipo para todos</button>
+              <button id="audioTiposTodosRecarregarBtn" class="secondary" type="button">🔄 Recarregar do servidor</button>
+              <button id="audioTiposTodosSalvarBtn" type="button">💾 Salvar para todos</button>
+            </div>
+            <p id="audioTiposTodosStatus" class="ok" role="status" aria-live="polite"></p>
           </div>
         </details>
         </div>
@@ -1494,7 +1503,7 @@
     <!-- Tela Áudio em texto (atalho do Início): transcreve um arquivo de áudio (Google Speech-to-Text, Chirp 3) e resume com a IA. Só com o código de texto. -->
     <div id="transcricaoCard" class="card tint-rosa screen-transcricao">
       <div class="leitura-topo">
-        <h2><span class="transcricao-icone-titulo" aria-hidden="true">🎙️ ➔ 📝</span> Áudio em texto</h2>
+        <h2><span class="transcricao-icone-titulo" aria-hidden="true">🎙️ ➔ 🔡</span> Áudio em texto</h2>
       </div>
       <details class="leitura-dica">
         <summary>ℹ️ Como funciona</summary>
@@ -1530,7 +1539,7 @@
         <button id="transcricaoSalvarGravacaoBtn" class="secondary" type="button">💾 Salvar a gravação no aparelho</button>
       </div>
       <details class="leitura-dica transcricao-config transcricao-conteiner">
-        <summary><span class="transcricao-icone" aria-hidden="true">⚙️</span> Informe o tipo de áudio <span class="transcricao-opcional">(opcional)</span></summary>
+        <summary><span class="transcricao-icone" aria-hidden="true">⚙️</span> Informe o tipo de áudio <span class="transcricao-opcional">(opcional)</span><button id="transcricaoTipoLimparBtn" class="transcricao-lixo" type="button" title="Limpar os campos deste bloco" aria-label="Limpar os campos de Informe o tipo de áudio">🗑️</button></summary>
         <label for="transcricaoTipo" class="transcricao-rotulo">Tipo de áudio</label>
         <select id="transcricaoTipo"></select>
         <div id="transcricaoTipoNomeBox" hidden>
@@ -1547,7 +1556,7 @@
         </div>
       </details>
       <details class="leitura-dica transcricao-config transcricao-conteiner" id="transcricaoDadosSection">
-        <summary><span class="transcricao-icone" aria-hidden="true">📋</span> Dados do áudio <span class="transcricao-opcional">(opcional)</span></summary>
+        <summary><span class="transcricao-icone" aria-hidden="true">📋</span> Dados do áudio <span class="transcricao-opcional">(opcional)</span><button id="transcricaoDadosLimparBtn" class="transcricao-lixo" type="button" title="Limpar os campos deste bloco" aria-label="Limpar os campos de Dados do áudio">🗑️</button></summary>
         <div class="transcricao-rotulo-linha">
           <label for="transcricaoTitulo" class="transcricao-rotulo">Título ou tema</label>
           <label class="transcricao-mesmo"><input type="checkbox" id="transcricaoTituloMesmo"> mesmo do arquivo</label>

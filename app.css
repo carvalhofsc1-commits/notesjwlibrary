@@ -9162,6 +9162,21 @@ details.transcricao-bloco:not([open]) {
   font-weight: 400;
 }
 
+.transcricao-conteiner>summary .transcricao-lixo {
+  float: right;
+  margin: 0;
+  padding: 2px 8px;
+  min-height: 0;
+  width: auto;
+  font-size: 1rem;
+  line-height: 1.2;
+  background: transparent;
+  border: 1px solid transparent;
+  box-shadow: none;
+  opacity: .55;
+}
+.transcricao-conteiner>summary .transcricao-lixo:hover,
+.transcricao-conteiner>summary .transcricao-lixo:focus-visible { opacity: 1; border-color: var(--border, currentColor); }
 .transcricao-conteiner>summary .transcricao-icone {
   font-size: 1.4em;
   line-height: 1;

@@ -2,6 +2,18 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.30
+
+Áudio em texto: o ícone de texto no título da tela passa a ser 🔡.
+
+## 6.4.29
+
+Áudio em texto: lixeira discreta, à direita no topo dos blocos "Informe o tipo de áudio" e "Dados do áudio", que limpa todos os campos do bloco (pede confirmação se houver texto).
+
+## 6.4.28
+
+Ajustes → Configurações do Áudio em texto (administrador): nova área "Tipos de áudio de todos os usuários" para editar, reordenar, apagar e criar os tipos 🌐; só vale para os outros ao tocar em Salvar para todos.
+
 ## 6.4.27
 
 Áudio em texto: os botões "Salvar como meu tipo" e "Salvar para todos" só aparecem com a opção "➕ Novo tipo…" selecionada; nos tipos da lista não aparecem (o botão de remover dos tipos de todos saiu desta tela).

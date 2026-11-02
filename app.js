@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.27'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.30'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -18020,6 +18020,34 @@ function saveTemplatesToStorage() {
       trTipoUltimaInstr = instrucoes;
       trTipoBotoesAtualizar();
     }
+    // Lixeira no topo dos blocos "Informe o tipo de áudio" e "Dados do áudio": limpa todos os campos do bloco.
+    function trLixeira(botao, temTexto, limpar, aviso) {
+      botao.addEventListener('click', async event => {
+        event.preventDefault(); // dentro do <summary>: não abre nem fecha o bloco
+        event.stopPropagation();
+        if (temTexto() && !(await askConfirm('Limpar todos os campos deste bloco? O que está escrito neles será apagado.', 'Limpar os campos'))) return;
+        limpar();
+        trInfo.textContent = aviso;
+      });
+    }
+    trLixeira(document.getElementById('transcricaoTipoLimparBtn'),
+      () => Boolean(trTipo.value || trTipoNome.value.trim() || trContexto.value.trim() || trInstrucoes.value.trim()),
+      () => {
+        trTipo.value = '';
+        trTipoAtual = '';
+        trTipoNome.value = '';
+        trContexto.value = '';
+        trInstrucoes.value = '';
+        trTipoUltimoTexto = '';
+        trTipoUltimaInstr = '';
+        trTipoNomeMostrar();
+        trTipoBotoesAtualizar();
+      },
+      '🗑️ Campos do tipo de áudio limpos.');
+    trLixeira(document.getElementById('transcricaoDadosLimparBtn'),
+      () => Boolean(trTitulo.value.trim() || trPauta.value.trim() || trEvento.value.trim() || trLocal.value.trim() || trData.value || trTituloMesmo.checked || trDataMesmo.checked || [...trInterlocutoresBox.querySelectorAll('input')].some(i => i.value.trim())),
+      () => trDadosLimpar(),
+      '🗑️ Campos dos dados do áudio limpos.');
     trTipoSalvarMeu.addEventListener('click', () => trTipoSalvar(false));
     trTipoSalvarTodos.addEventListener('click', () => trTipoSalvar(true));
     // Ao abrir o app, busca os tipos de todos (sem internet, valem os que já estão guardados).
@@ -18117,6 +18145,99 @@ function saveTemplatesToStorage() {
       audioTiposDizer('↩️ Tipos originais restaurados.');
     });
     audioTiposRender();
+
+    // Tipos de todos, em Ajustes (administrador): edita, reordena, apaga e cria num rascunho; só vale para os outros ao salvar.
+    const audioTodosLista = document.getElementById('audioTiposTodosLista');
+    const audioTodosStatus = document.getElementById('audioTiposTodosStatus');
+    const audioTodosDizer = texto => { audioTodosStatus.textContent = texto; };
+    let audioTodosRascunho = audioTiposTodos.map(t => ({ ...t, instrucoes: t.instrucoes || '' }));
+    function audioTodosRender(abrirId) {
+      audioTodosLista.textContent = '';
+      if (!audioTodosRascunho.length) {
+        const vazio = document.createElement('p');
+        vazio.className = 'hint';
+        vazio.textContent = 'Nenhum tipo para todos ainda. Toque em “Novo tipo para todos”.';
+        audioTodosLista.appendChild(vazio);
+      }
+      const tipos = audioTodosRascunho;
+      tipos.forEach((tipo, i) => {
+        const det = document.createElement('details');
+        det.className = 'audio-tipo';
+        det.open = tipo.id === abrirId;
+        const sum = document.createElement('summary');
+        sum.textContent = '🌐 ' + (tipo.nome || '(sem nome)');
+        const corpo = document.createElement('div');
+        corpo.className = 'audio-tipo-corpo';
+        const nome = document.createElement('input');
+        nome.type = 'text';
+        nome.maxLength = 120;
+        nome.autocomplete = 'off';
+        nome.value = tipo.nome;
+        nome.addEventListener('input', () => { tipo.nome = nome.value; sum.textContent = '🌐 ' + (nome.value || '(sem nome)'); audioTodosDizer('✏️ Mudanças ainda não salvas para todos.'); });
+        const texto = document.createElement('textarea');
+        texto.rows = 6;
+        texto.maxLength = 1500;
+        texto.spellcheck = false;
+        texto.value = tipo.texto;
+        texto.addEventListener('input', () => { tipo.texto = texto.value; audioTodosDizer('✏️ Mudanças ainda não salvas para todos.'); });
+        const instrucoes = document.createElement('textarea');
+        instrucoes.rows = 5;
+        instrucoes.maxLength = 1500;
+        instrucoes.spellcheck = false;
+        instrucoes.value = tipo.instrucoes || '';
+        instrucoes.addEventListener('input', () => { tipo.instrucoes = instrucoes.value; audioTodosDizer('✏️ Mudanças ainda não salvas para todos.'); });
+        const acoes = document.createElement('div');
+        acoes.className = 'bk-row';
+        const subir = backupButton('⬆️ Subir', () => { if (i) { [tipos[i - 1], tipos[i]] = [tipos[i], tipos[i - 1]]; audioTodosDizer('✏️ Mudanças ainda não salvas para todos.'); audioTodosRender(tipo.id); } });
+        subir.disabled = i === 0;
+        const descer = backupButton('⬇️ Descer', () => { if (i < tipos.length - 1) { [tipos[i + 1], tipos[i]] = [tipos[i], tipos[i + 1]]; audioTodosDizer('✏️ Mudanças ainda não salvas para todos.'); audioTodosRender(tipo.id); } });
+        descer.disabled = i === tipos.length - 1;
+        const apagar = backupButton('🗑️ Apagar', async () => {
+          if (!(await askConfirm('Apagar o tipo “' + (tipo.nome || 'sem nome') + '” da lista de todos? Só some para os outros quando você tocar em Salvar para todos.', 'Apagar'))) return;
+          tipos.splice(i, 1);
+          audioTodosDizer('🗑️ Tipo apagado do rascunho: toque em Salvar para todos.');
+          audioTodosRender();
+        });
+        acoes.append(subir, descer, apagar);
+        const rotuloNome = document.createElement('label');
+        rotuloNome.textContent = 'Nome do tipo';
+        const rotuloTexto = document.createElement('label');
+        rotuloTexto.textContent = 'Descrição (vai para “Sobre o áudio”)';
+        const rotuloInstr = document.createElement('label');
+        rotuloInstr.textContent = 'Como fazer o resumo (vai para “Como fazer o resumo”; vazio = não muda o campo)';
+        corpo.append(rotuloNome, nome, rotuloTexto, texto, rotuloInstr, instrucoes, acoes);
+        det.append(sum, corpo);
+        audioTodosLista.appendChild(det);
+      });
+    }
+    document.getElementById('audioTiposTodosAdicionarBtn').addEventListener('click', () => {
+      const novo = { id: 'g-' + Date.now().toString(36), nome: 'Novo tipo de áudio', texto: '', instrucoes: '' };
+      audioTodosRascunho.push(novo);
+      audioTodosDizer('➕ Tipo criado: dê um nome, escreva a descrição e toque em Salvar para todos.');
+      audioTodosRender(novo.id);
+    });
+    async function audioTodosRecarregar(silencioso) {
+      const r = await postConfig({ acao: 'audio-tipos-ler' });
+      if (!r.ok || !r.data || !Array.isArray(r.data.tipos)) return silencioso ? undefined : audioTodosDizer(configErrorMessage(r, 'Não consegui ler os tipos de todos agora.'));
+      audioTiposTodosGuardar(r.data.tipos);
+      audioTodosRascunho = audioTiposTodos.map(t => ({ ...t, instrucoes: t.instrucoes || '' }));
+      audioTodosRender();
+      trTiposDesenhar(trTipo.value);
+      if (!silencioso) audioTodosDizer('🔄 Lista recarregada do servidor.');
+    }
+    document.getElementById('audioTiposTodosRecarregarBtn').addEventListener('click', () => audioTodosRecarregar(false));
+    document.getElementById('audioTiposTodosSalvarBtn').addEventListener('click', async () => {
+      if (audioTodosRascunho.some(t => !t.nome.trim() || (!t.texto.trim() && !(t.instrucoes || '').trim()))) return audioTodosDizer('Todo tipo precisa de nome e de descrição ou de “Como fazer o resumo”.');
+      const r = await postConfig({ acao: 'audio-tipos-salvar', codigo: senhaAdminSalva(), tipos: audioTodosRascunho });
+      if (!r.ok) return audioTodosDizer(configErrorMessage(r, 'Não consegui salvar os tipos para todos agora.'));
+      audioTiposTodosGuardar(r.data.tipos || audioTodosRascunho);
+      audioTodosRascunho = audioTiposTodos.map(t => ({ ...t, instrucoes: t.instrucoes || '' }));
+      audioTodosRender();
+      trTiposDesenhar(trTipo.value);
+      audioTodosDizer('🌐 Salvo para todos (' + audioTodosRascunho.length + (audioTodosRascunho.length === 1 ? ' tipo).' : ' tipos).'));
+    });
+    document.getElementById('audioTiposSection').addEventListener('toggle', event => { if (event.target.open && senhaAdminSalva()) audioTodosRecarregar(true); });
+    audioTodosRender();
 
     const trFerramentasAtualizar = []; // atualiza os botões das barras dos dois campos (A−/A+, Word e formatação)
 
