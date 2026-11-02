@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.94
+
+Áudio em texto: o campo Data de "Dados do áudio" não passa mais da largura do contêiner no celular, e a caixa "mesmo do arquivo" fica alinhada com o título do campo.
+
 ## 6.3.93
 
 O card do arquivo ganhou o botão "Limpar", para desistir do arquivo (escolhido ou gravado) antes de transcrever.

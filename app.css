@@ -8977,7 +8977,7 @@ details.subsection.ebc-subsection#publicoBox.s34-bloqueado {
 
 .transcricao-rotulo-linha {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
   flex-wrap: wrap;
@@ -8987,7 +8987,7 @@ details.subsection.ebc-subsection#publicoBox.s34-bloqueado {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-top: 10px;
+  margin: 10px 0 4px;
   font-size: .85rem;
   font-weight: 400;
   cursor: pointer;
@@ -8999,6 +8999,22 @@ details.subsection.ebc-subsection#publicoBox.s34-bloqueado {
   width: 18px;
   height: 18px;
   margin: 0;
+}
+
+/* O campo de data do iPhone/Android tem largura própria: aqui ele acompanha a largura do contêiner, como os outros campos. */
+.transcricao-conteiner input[type="date"] {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 44px;
+  -webkit-appearance: none;
+  appearance: none;
+  text-align: left;
+}
+
+.transcricao-conteiner input[type="date"]::-webkit-date-and-time-value {
+  min-width: 0;
+  text-align: left;
 }
 
 .transcricao-dado[readonly] {
