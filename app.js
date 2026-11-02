@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.13'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.14'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -18002,6 +18002,8 @@ function saveTemplatesToStorage() {
       trResumir.disabled = ocupado || trTexto.value.trim().length < 40;
       trCorrigir.disabled = ocupado || trTexto.value.trim().length < 40;
       trIniciar.disabled = ocupado || gravando || !trPendente;
+      document.getElementById('transcricaoArquivoLimparBtn').hidden = !trPendente; // depois de iniciar, só dá para ocultar os dados
+      trArquivoAlterna.hidden = Boolean(trPendente);
       trCancelar.hidden = !ocupado || trOperacao !== 'transcrever';
       trCancelarCorrigir.hidden = !ocupado || trOperacao !== 'corrigir';
       trCancelarResumir.hidden = !ocupado || trOperacao !== 'resumir';
@@ -18139,13 +18141,24 @@ function saveTemplatesToStorage() {
     const trArquivoBox = document.getElementById('transcricaoArquivoBox');
     const trArquivoDados = document.getElementById('transcricaoArquivoDados');
     const trIniciar = document.getElementById('transcricaoIniciarBtn');
-    let trPendente = null;
+    const trArquivoAlterna = document.getElementById('transcricaoArquivoAlternaBtn');
+    let trPendente = null; // o arquivo esperando o "Iniciar a transcrição"
+    let trArquivoMostrado = null; // o arquivo cujos dados estão no card (continua depois de iniciar, até a pessoa limpar)
     function trPendenteLimpar() {
       trPendente = null;
+      trArquivoMostrado = null;
       trArquivoBox.hidden = true;
       trArquivoDados.textContent = '';
+      trArquivoDados.hidden = false;
       document.getElementById('transcricaoArquivoTitulo').textContent = 'Arquivo escolhido';
     }
+    // Os dados do arquivo ficam à mostra enquanto ele é processado; a pessoa pode ocultá-los e mostrá-los de novo.
+    function trArquivoAlternaAtualizar() {
+      trArquivoAlterna.textContent = trArquivoDados.hidden ? '👁️ Mostrar' : '👁️ Ocultar';
+      trArquivoAlterna.title = trArquivoDados.hidden ? 'Mostrar os dados do arquivo' : 'Ocultar os dados do arquivo';
+      trArquivoAlterna.setAttribute('aria-expanded', String(!trArquivoDados.hidden));
+    }
+    trArquivoAlterna.addEventListener('click', () => { trArquivoDados.hidden = !trArquivoDados.hidden; trArquivoAlternaAtualizar(); });
     const trTamanhoTexto = bytes => (bytes >= 1048576 ? (bytes / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(bytes / 1024)) + ' KB');
     const trDuracaoTexto = seg => {
       const t = Math.round(seg);
@@ -18168,6 +18181,9 @@ function saveTemplatesToStorage() {
       const gravado = Boolean(opcoes && opcoes.gravado);
       document.getElementById('transcricaoArquivoTitulo').textContent = gravado ? 'Arquivo gravado' : 'Arquivo escolhido';
       trPendente = arquivo;
+      trArquivoMostrado = arquivo;
+      trArquivoDados.hidden = false;
+      trArquivoAlternaAtualizar();
       trPassoTexto.open = true;
       trArquivoAtual = arquivo;
       trMesmoAplicar();
@@ -18181,7 +18197,7 @@ function saveTemplatesToStorage() {
       trInfo.textContent = gravado ? 'Gravação pronta. Se quiser, salve a gravação no aparelho; depois toque em Iniciar a transcrição.' : '';
       trAtualizarBotoes();
       (gravado && opcoes.duracaoS ? Promise.resolve(opcoes.duracaoS) : trDuracaoLer(arquivo)).then(seg => {
-        if (trPendente !== arquivo) return;
+        if (trArquivoMostrado !== arquivo) return;
         trArquivoDados.textContent = base + '\n⏱️ Duração: ' + (seg ? trDuracaoTexto(seg) : 'não foi possível ler');
         if (seg && seg / 60 > TRANSCRICAO_MAX_MIN) trInfo.textContent = 'Atenção: o áudio tem mais de ' + TRANSCRICAO_MAX_MIN + ' minutos, que é o limite por arquivo.';
       });
@@ -18208,7 +18224,8 @@ function saveTemplatesToStorage() {
     trIniciar.addEventListener('click', () => {
       const arquivo = trPendente;
       if (!arquivo) return;
-      trPendenteLimpar();
+      trPendente = null; // o card com os dados do arquivo continua à mostra durante a transcrição, a correção e o resumo
+      trAtualizarBotoes();
       trTranscrever(arquivo);
     });
     [trCancelar, trCancelarCorrigir, trCancelarResumir].forEach(b => b.addEventListener('click', () => { if (trControle) trControle.abort(); }));

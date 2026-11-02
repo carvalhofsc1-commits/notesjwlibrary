@@ -9031,6 +9031,26 @@ details.transcricao-bloco:not([open]) {
   margin: 0;
 }
 
+.transcricao-arquivo-botoes {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.transcricao-arquivo-botoes button[hidden] {
+  display: none;
+}
+
+#transcricaoArquivoBox #transcricaoArquivoAlternaBtn {
+  margin: 0;
+  min-height: 34px;
+  padding: 3px 12px;
+  font-size: .85rem;
+}
+
+.transcricao-arquivo-dados[hidden] {
+  display: none;
+}
+
 #transcricaoArquivoBox #transcricaoArquivoLimparBtn {
   margin: 0;
   min-height: 34px;

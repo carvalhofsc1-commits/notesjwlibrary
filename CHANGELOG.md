@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.14
+
+Áudio em texto: depois de iniciar a transcrição, o card com os dados do arquivo continua à mostra enquanto a pessoa transcreve, corrige e resume; um botão "Ocultar/Mostrar" permite recolher os dados.
+
 ## 6.4.13
 
 Corrigir com a IA: quando o texto é uma conversa ou diálogo, a IA passa a escrever cada fala em um parágrafo com travessão (—), para mostrar que são pessoas diferentes falando.

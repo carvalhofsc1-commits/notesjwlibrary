@@ -1508,7 +1508,10 @@
       <div id="transcricaoArquivoBox" class="transcricao-bloco" hidden>
         <div class="transcricao-rotulo-linha">
           <label id="transcricaoArquivoTitulo" class="transcricao-rotulo" for="transcricaoArquivoDados">Arquivo escolhido</label>
-          <button id="transcricaoArquivoLimparBtn" class="secondary transcricao-arquivo-limpar" type="button" title="Desistir deste arquivo" aria-label="Desistir deste arquivo">🗑️ Limpar</button>
+          <span class="transcricao-arquivo-botoes">
+            <button id="transcricaoArquivoAlternaBtn" class="secondary transcricao-arquivo-alterna" type="button" aria-expanded="true" title="Ocultar os dados do arquivo" hidden>👁️ Ocultar</button>
+            <button id="transcricaoArquivoLimparBtn" class="secondary transcricao-arquivo-limpar" type="button" title="Desistir deste arquivo" aria-label="Desistir deste arquivo">🗑️ Limpar</button>
+          </span>
         </div>
         <div id="transcricaoArquivoDados" class="transcricao-arquivo-dados"></div>
       </div>
