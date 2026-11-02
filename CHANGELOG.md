@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.12
+
+Áudio em texto: textos curtos mostram "menos de 1 min de leitura" na linha sob o título do contêiner.
+
 ## 6.4.11
 
 Áudio em texto: sob o título de Transcrever, Corrigir e Resumir aparece uma linha pequena com o número de palavras, de caracteres e o tempo de leitura quando já há texto, e o título do contêiner fica verde.

@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.11'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.12'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -18455,8 +18455,8 @@ function saveTemplatesToStorage() {
         linha.hidden = !texto;
         if (!texto) { linha.textContent = ''; return; }
         const palavras = texto.split(/\s+/).length;
-        const minutos = Math.max(1, Math.round(palavras / 180));
-        linha.textContent = '✅ ' + num(palavras) + (palavras === 1 ? ' palavra' : ' palavras') + ' · ' + num(texto.length) + ' caracteres · ~' + minutos + ' min de leitura';
+        const minutos = palavras / 180;
+        linha.textContent = '✅ ' + num(palavras) + (palavras === 1 ? ' palavra' : ' palavras') + ' · ' + num(texto.length) + ' caracteres · ' + (minutos < 1 ? 'menos de 1' : '~' + Math.round(minutos)) + ' min de leitura';
       });
     };
     trFerramentasAtualizar.push(trContagemAtualizar);
