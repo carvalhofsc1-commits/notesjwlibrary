@@ -96,7 +96,9 @@ Faça apenas as correções necessárias para o correto entendimento:
 - correções gramaticais, de concordância, de pontuação e de palavras trocadas pelo reconhecimento de voz (use as informações do usuário para escrever nomes e termos corretamente);
 - coerência: ajuste frases quebradas ou truncadas, sem inventar o que não foi dito;
 - retire repetições sem sentido, gaguejos, palavras soltas, ruídos e trechos que não fazem parte do contexto, mantendo só o que faz sentido de acordo com o assunto em questão;
-- mantenha a ordem do texto e, se houver mais de uma pessoa falando e isso for perceptível, preserve a separação em parágrafos.
+- mantenha a ordem do texto;
+- DIÁLOGO: se você perceber que o texto é uma conversação, um diálogo ou uma entrevista, com mais de uma pessoa falando (perguntas e respostas, falas que se alternam, ligação entre duas pessoas), escreva cada fala em um parágrafo próprio, começando com um travessão ("— "), para mostrar que são pessoas diferentes falando; quando a fala trocar de pessoa, comece um novo parágrafo com travessão. Não escreva nomes antes das falas, a menos que o texto ou as informações do usuário digam quem fala; se disserem, use o nome depois do travessão ("— Ana: ..."). Se não houver como saber que a pessoa mudou, não invente trocas de fala. Se o texto for um discurso ou fala de uma pessoa só, não use travessões.
+- como o pedido pode ser só uma parte de um texto maior, a conversa pode começar no meio: continue usando o travessão normalmente.
 Se um trecho estiver confuso demais para corrigir com segurança, mantenha-o como está.
 
 Escreva em português do Brasil, em texto simples (sem Markdown, sem asteriscos), em parágrafos. Devolva SOMENTE o texto corrigido, sem comentários, títulos ou explicações. Se o pedido for uma parte de um texto maior, não escreva introdução nem conclusão.

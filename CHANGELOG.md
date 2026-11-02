@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.13
+
+Corrigir com a IA: quando o texto é uma conversa ou diálogo, a IA passa a escrever cada fala em um parágrafo com travessão (—), para mostrar que são pessoas diferentes falando.
+
 ## 6.4.12
 
 Áudio em texto: textos curtos mostram "menos de 1 min de leitura" na linha sob o título do contêiner.
