@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.37
+
+Nova resposta sobre uma resposta salva (A Sentinela, Estudo Bíblico e Joias): quando a semana já tem resposta salva para o pedido, ela vai à IA como base e a IA a melhora acrescentando o que for possível, sem nunca tirar o que já estava; se não houver o que acrescentar, devolve a mesma resposta com algumas frases reformuladas. O botão Outra resposta passa a funcionar do mesmo jeito.
+
 ## 6.4.36
 
 Joias Espirituais: no resumo dos capítulos, o título (ex.: RESUMO DE JEREMIAS 49) fica sempre em negrito e os versículos do início de cada parágrafo ficam sempre entre parênteses e em negrito, ex.: (vv. 1-2).

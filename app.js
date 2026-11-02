@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.36'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.37'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -13399,7 +13399,10 @@ function saveTemplatesToStorage() {
       aiResults.textContent = '';
       aiSuggestions = [];
       aiRaw = [];
-      const previousAnswers = mode && aiResumo && aiSentinelaRaw.length ? aiSentinelaRaw : null;
+      // Pedido de novo sem resposta no campo: se esta semana já tem resposta salva para esses parágrafos, ela vai como base (a IA só acrescenta).
+      const pedidos = studyChave(requested);
+      const salva = !mode ? salvaParaAcrescentar('sentinela', i => studyChave(i && i.paragrafos).some(c => pedidos.includes(c))) : null;
+      const previousAnswers = mode && aiResumo && aiSentinelaRaw.length ? aiSentinelaRaw : (salva && salva.itens.length ? salva.itens : null);
       aiResumo = null;
       updateAiControls();
 
@@ -13418,7 +13421,7 @@ function saveTemplatesToStorage() {
         ajuste: iaExtra('estudo')
       };
       if (previousAnswers) {
-        payload.modo = mode;
+        payload.modo = mode || 'nova';
         payload.anteriores = { itens: previousAnswers };
       }
 
@@ -13807,7 +13810,8 @@ function saveTemplatesToStorage() {
       aiResults.textContent = '';
       aiSuggestions = [];
       aiRaw = [];
-      const previousAnswers = mode && aiResumo && aiSentinelaRaw.length ? aiSentinelaRaw : null;
+      const salva = !mode ? salvaParaAcrescentar('ebc') : null;
+      const previousAnswers = mode && aiResumo && aiSentinelaRaw.length ? aiSentinelaRaw : (salva && salva.itens.length ? salva.itens : null);
       aiResumo = null;
       updateAiControls();
       if (!aiAppliedAny) aiBaseText = input.value;
@@ -13823,7 +13827,7 @@ function saveTemplatesToStorage() {
         ajuste: iaExtra('ebc')
       };
       if (previousAnswers) {
-        payload.modo = mode;
+        payload.modo = mode || 'nova';
         payload.anteriores = { itens: previousAnswers };
       }
 
@@ -15729,8 +15733,9 @@ function saveTemplatesToStorage() {
       aiResults.textContent = '';
       aiSuggestions = [];
       aiRaw = [];
-      const previousOutros = mode && aiResumo && refino && Array.isArray(refino.outros) ? refino.outros : [];
-      const previousAnswers = mode && aiResumo && aiSentinelaRaw.length ? aiSentinelaRaw : null;
+      const salva = !mode ? salvaParaAcrescentar('joias') : null; // pedido de novo sem resposta no campo: a salva da semana é a base
+      const previousOutros = mode && aiResumo && refino && Array.isArray(refino.outros) ? refino.outros : (salva ? salva.outros : []);
+      const previousAnswers = mode && aiResumo && aiSentinelaRaw.length ? aiSentinelaRaw : (salva && salva.itens.length ? salva.itens : null);
       aiResumo = null;
       updateAiControls();
       if (!aiAppliedAny) aiBaseText = input.value;
@@ -15749,7 +15754,7 @@ function saveTemplatesToStorage() {
         ajuste: iaExtra('joias')
       };
       if (previousAnswers || previousOutros.length) {
-        payload.modo = mode;
+        payload.modo = mode || 'nova';
         payload.anteriores = { itens: previousAnswers || [], outros: previousOutros };
       }
 
@@ -16579,11 +16584,24 @@ function saveTemplatesToStorage() {
       return { ...base, pergunta: joiasPergunta.checked, leitura: joiasLeitura.checked, itens: partes.map(p => ({ paragrafos: p.paragrafos, resposta: comuns(p.texto) })) };
     }
 
+    // A resposta salva mais recente desta semana para o mesmo tipo de pedido (itens crus da IA e, nas joias, os resumos): quem pede de novo manda
+    // essa resposta como base e a IA a lê e só acrescenta (nunca tira nada). filtro (opcional) escolhe quais itens servem. null se não houver.
+    function salvaParaAcrescentar(tipo, filtro) {
+      const atual = historicoChaveAtual();
+      const item = historicoLer().find(i => i.tipo === tipo && historicoChave(i) === atual);
+      const r = item && historicoRefinoDe(item);
+      if (!r) return null;
+      const itens = (Array.isArray(r.itens) ? r.itens : []).filter(i => !filtro || filtro(i));
+      const outros = Array.isArray(r.outros) ? r.outros : [];
+      return itens.length || outros.length ? { itens, outros } : null;
+    }
+
     function historicoRefinoDe(item, soPartes) {
       const r = item.refino;
       // No Estudo Bíblico do dirigente só com os textos para ler (sem perguntas), os itens ficam vazios e os textos-base vão em r.base.
       const soTextosBase = r && r.kind === 'ebcdir' && Array.isArray(r.base) && r.base.length;
-      if (r && REFINO_TIPOS.includes(r.kind) && Array.isArray(r.itens) && (r.itens.length || soTextosBase)) {
+      const soResumos = r && r.kind === 'joias' && Array.isArray(r.outros) && r.outros.length; // joias só com o resumo dos capítulos: os itens ficam vazios
+      if (r && REFINO_TIPOS.includes(r.kind) && Array.isArray(r.itens) && (r.itens.length || soTextosBase || soResumos)) {
         if (!soPartes) return r;
         const todas = item.partes || [];
         const indices = r.kind === 'estudo' && todas.length === r.itens.length ? soPartes.map(p => todas.findIndex(q => q.texto === p.texto && q.paragrafos === p.paragrafos)) : [];
