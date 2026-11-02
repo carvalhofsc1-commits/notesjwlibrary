@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.88
+
+Áudio em texto: removidos os textos explicativos abaixo do seletor de tipo, de "Sobre o áudio" e de "Como fazer o resumo".
+
 ## 6.3.87
 
 Áudio em texto: o botão "Limpar os dois campos" saiu; no seu lugar, o seletor de tipo de áudio ganhou a primeira opção "Nenhum (sem informações nem instruções)", que deixa os dois campos em branco, e o tipo escolhido continua visível. Corrigido: ao escolher um tipo, o campo "Como fazer o resumo" também é preenchido (listas salvas com esse campo vazio recebem a sugestão original).

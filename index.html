@@ -1523,13 +1523,10 @@
         <summary>⚙️ Informações e instruções para a IA (opcional)</summary>
         <label for="transcricaoTipo" class="transcricao-rotulo">Tipo de áudio</label>
         <select id="transcricaoTipo"></select>
-        <p class="hint">Escolha um tipo para preencher os dois campos abaixo (ou “Nenhum”, para deixá-los em branco), e complete com os nomes e termos deste áudio. Cada tipo também pode trazer o modo de fazer o resumo, que preenche o campo “Como fazer o resumo”. Os tipos são configurados pelo administrador, em Ajustes.</p>
         <label for="transcricaoContexto" class="transcricao-rotulo">Sobre o áudio</label>
         <textarea id="transcricaoContexto" class="transcricao-campo" rows="6" maxlength="1500" placeholder="Ex.: reunião de planejamento da equipe de vendas, com Ana (gerente), Carlos e Paula. Termos: Ibirapuera, CRM." spellcheck="false"></textarea>
-        <p class="hint">Quem fala, o assunto e nomes ou termos difíceis. Ajuda a IA a entender o áudio e a escrever nomes certos no resumo. Vale só para este áudio e não fica salvo.</p>
         <label for="transcricaoInstrucoes" class="transcricao-rotulo">Como fazer o resumo</label>
         <textarea id="transcricaoInstrucoes" class="transcricao-campo" rows="6" maxlength="1500" placeholder="Ex.: resumo em no máximo 5 linhas, depois uma lista de tarefas com responsável e prazo." spellcheck="false"></textarea>
-        <p class="hint">Formato, tamanho e foco do resumo. Fica salvo neste aparelho para os próximos áudios. Sem instruções, a IA usa o formato padrão (resumo, pontos principais e decisões). Não escreva dados pessoais ou sigilosos aqui: estes campos vão à IA junto com o texto.</p>
       </details>
       <p id="transcricaoInfo" class="hint" role="status" aria-live="polite"></p>
       <progress id="transcricaoProgresso" value="0" max="1" hidden></progress>
