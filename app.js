@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.30'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.31'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -12152,7 +12152,7 @@ function saveTemplatesToStorage() {
     // (blocoOrientacao e PRIORIDADE_ORIENTACAO em api). Vale para o pedido, "Outra resposta" e "Melhorar" da seção; não fica guardado no aparelho.
     const IA_EXTRA_CAMPOS = {
       estudo: { botao: 'aiStudyBtn', exemplo: 'Ex.: explique também como o parágrafo se aplica à família, ou dê uma resposta mais curta.' },
-      joias: { botao: 'joiasResponderBtn', exemplo: 'Ex.: explique e aplique Jeremias 45:5 para quem se sente desanimado.' },
+      joias: { botao: 'joiasResponderBtn', exemplo: 'Ex.: explique e aplique Jeremias 45:5 para quem se sente desanimado.', somente: true },
       ebc: { botao: 'ebcResponderBtn', exemplo: 'Ex.: responda com mais detalhes ao quadro "Medite no que aprendeu".' },
       dirigente: { botao: 'aiStudyQuestionsBtn', exemplo: 'Ex.: sugira perguntas voltadas aos jovens, ou sobre o texto de 1 Pedro 5:2.' },
       ebcdir: { botao: 'ebcDirPerguntasBtn', exemplo: 'Ex.: elabore as perguntas sobre a atitude de Raabe e como imitá-la hoje.' },
@@ -12161,7 +12161,7 @@ function saveTemplatesToStorage() {
       discurso: { botao: 'discursoEsbocoBtn', exemplo: 'Ex.: faça uma introdução mais curta e foque na aplicação prática.' }
     };
 
-    function iaExtraCriar(chave, { botao, exemplo }) {
+    function iaExtraCriar(chave, { botao, exemplo, somente }) {
       const alvo = document.getElementById(botao);
       if (!alvo) return;
       const bloco = document.createElement('details'); // recolhida: só a linha do título; o texto digitado fica guardado enquanto o app está aberto
@@ -12210,9 +12210,25 @@ function saveTemplatesToStorage() {
       dica.className = 'hint';
       dica.textContent = 'Opcional. Valem mais que o prompt padrão, em todos os pedidos desta seção (inclusive Outra resposta e Melhorar).';
       bloco.append(rotulo, limpar, campo, dica);
+      if (somente) { // só nas seções cujo servidor aceita: ignora o que está marcado e faz apenas o que o campo pede
+        const caixa = document.createElement('label');
+        caixa.className = 'ai-check ia-extra-somente';
+        const marca = document.createElement('input');
+        marca.type = 'checkbox';
+        marca.id = 'iaExtraSomente_' + chave;
+        marca.autocomplete = 'off';
+        caixa.append(marca, ' ⚡ Executar somente estas instruções (ignora o que está marcado em “O que preparar”)');
+        bloco.append(caixa);
+      }
       alvo.insertAdjacentElement('afterend', bloco);
     }
     Object.entries(IA_EXTRA_CAMPOS).forEach(([chave, config]) => iaExtraCriar(chave, config));
+
+    // "Executar somente estas instruções" marcado (só as seções que têm a caixa).
+    function iaExtraSomente(chave) {
+      const caixa = document.getElementById('iaExtraSomente_' + chave);
+      return Boolean(caixa && caixa.checked);
+    }
 
     // O texto do campo da seção (uma linha só, até 800 caracteres); vazio se a seção não tem o campo.
     function iaExtra(chave) {
@@ -15491,16 +15507,18 @@ function saveTemplatesToStorage() {
     const joiasResponderBtn = document.getElementById('joiasResponderBtn');
     const joiasPergunta = document.getElementById('joiasPergunta');
     const joiasLeitura = document.getElementById('joiasLeitura');
+    const joiasResumo = document.getElementById('joiasResumo');
     const joiasOutputSlot = document.getElementById('joiasOutputSlot');
     try {
       const salvo = JSON.parse(localStorage.getItem(JOIAS_KEY) || 'null');
       if (salvo) {
         joiasPergunta.checked = salvo.pergunta !== false;
         joiasLeitura.checked = salvo.leitura !== false;
+        joiasResumo.checked = salvo.resumo === true;
       }
     } catch (e) { /* sem localStorage: valem os padrões */ }
-    [joiasPergunta, joiasLeitura].forEach(c => c.addEventListener('change', () => {
-      safeSetItem(JOIAS_KEY, JSON.stringify({ pergunta: joiasPergunta.checked, leitura: joiasLeitura.checked }));
+    [joiasPergunta, joiasLeitura, joiasResumo].forEach(c => c.addEventListener('change', () => {
+      safeSetItem(JOIAS_KEY, JSON.stringify({ pergunta: joiasPergunta.checked, leitura: joiasLeitura.checked, resumo: joiasResumo.checked }));
     }));
 
     // Leitura da semana (com o link da apostila no wol.jw.org) vira o título do cartão, em destaque; a linha de informações fica com a
@@ -15666,6 +15684,11 @@ function saveTemplatesToStorage() {
       });
     }
 
+    // O resumo dos capítulos e o resultado do modo "somente as instruções": um bloco para cada título, com o texto logo depois.
+    function joiasOutrosPartes(outros, somente) {
+      return outros.map(o => ({ paragrafos: o.titulo || '', texto: (somente ? '📌 ' : '📚 ') + (o.titulo ? o.titulo.toUpperCase() + ' 👉 ' : '') + o.texto }));
+    }
+
     async function requestJoias(mode) {
       if (aiBusy) return;
       aiLastKind = 'joias';
@@ -15674,7 +15697,10 @@ function saveTemplatesToStorage() {
       const refino = mode ? aiRefinoDe('joias') : null; // refazer: o mesmo pedido da resposta que está no campo
       const pedirPergunta = refino ? refino.pergunta : joiasPergunta.checked;
       const pedirLeitura = refino ? refino.leitura : joiasLeitura.checked;
-      if (!pedirPergunta && !pedirLeitura) return setAiStatus('Marque a pergunta da apostila ou as joias da leitura.', true);
+      const pedirResumo = refino ? Boolean(refino.resumo) : joiasResumo.checked;
+      const somente = refino ? Boolean(refino.somente) : iaExtraSomente('joias');
+      if (somente && !iaExtra('joias')) return setAiStatus('Escreva as instruções adicionais para usar “Executar somente estas instruções”.', true);
+      if (!somente && !pedirPergunta && !pedirLeitura && !pedirResumo) return setAiStatus('Marque a pergunta da apostila, as joias da leitura ou o resumo dos capítulos.', true);
       const accessError = studyAccessError();
       if (accessError) return setAiStatus(accessError, true);
 
@@ -15693,6 +15719,7 @@ function saveTemplatesToStorage() {
       aiResults.textContent = '';
       aiSuggestions = [];
       aiRaw = [];
+      const previousOutros = mode && aiResumo && refino && Array.isArray(refino.outros) ? refino.outros : [];
       const previousAnswers = mode && aiResumo && aiSentinelaRaw.length ? aiSentinelaRaw : null;
       aiResumo = null;
       updateAiControls();
@@ -15706,12 +15733,14 @@ function saveTemplatesToStorage() {
         semana: aiWeekNumber,
         pergunta: pedirPergunta,
         leitura: pedirLeitura,
+        resumo: pedirResumo,
+        somenteAjuste: somente,
         opcoes: readAiOptions(),
         ajuste: iaExtra('joias')
       };
-      if (previousAnswers) {
+      if (previousAnswers || previousOutros.length) {
         payload.modo = mode;
-        payload.anteriores = { itens: previousAnswers };
+        payload.anteriores = { itens: previousAnswers || [], outros: previousOutros };
       }
 
       aiBusy = true;
@@ -15721,18 +15750,19 @@ function saveTemplatesToStorage() {
         if (!result.ok) return setAiStatus(studyFailureMessage(result, 'Não foi possível preparar as joias agora.'), true);
         const pergunta = result.data.pergunta || null;
         const joias = Array.isArray(result.data.joias) ? result.data.joias : [];
+        const outros = Array.isArray(result.data.outros) ? result.data.outros.filter(o => o && o.texto) : [];
         aiSentinelaRaw = [...(pergunta ? [pergunta] : []), ...joias];
-        if (!aiSentinelaRaw.length) return setAiStatus(result.data.erro || 'A IA não preparou as joias. Tente de novo.', true);
+        if (!aiSentinelaRaw.length && !outros.length) return setAiStatus(result.data.erro || 'A IA não preparou as joias. Tente de novo.', true);
         if (!joiasCarregado()) joiasMostrarInfo(result.data);
 
-        const parts = [...(pergunta ? buildSentinelaParts([pergunta]) : []), ...joiasPartes(joias)];
+        const parts = [...joiasOutrosPartes(outros, somente), ...(pergunta ? buildSentinelaParts([pergunta]) : []), ...joiasPartes(joias)];
         aiResumo = { texto: parts.map(part => part.texto).join('\n\n\n'), partes: parts, done: false, kind: 'estudo', fonte: result.data.leitura || '' };
         appendToMainText(aiResumo.texto);
-        aiRefino = { kind: 'joias', pergunta: payload.pergunta, leitura: payload.leitura };
+        aiRefino = { kind: 'joias', pergunta: payload.pergunta, leitura: payload.leitura, resumo: pedirResumo, somente, outros };
         historicoSalvar({ tipo: 'joias', titulo: '💎 Joias espirituais' + (result.data.leitura ? ' · ' + result.data.leitura : ''), ano: payload.ano, numSemana: payload.semana, partes: parts, refino: { ...aiRefino, itens: aiSentinelaRaw } });
         renderAiSuggestions();
         aiRefineBox.hidden = false;
-        setAiStatus('✅ Joias no campo de texto, cada uma com o botão de copiar.', false);
+        setAiStatus(somente ? '✅ Resultado das instruções no campo de texto, com o botão de copiar.' : '✅ Joias no campo de texto, cada uma com o botão de copiar.', false);
       } catch (e) {
         setAiStatus(e && e.name === 'AbortError' ? 'A IA demorou demais. Tente de novo.' : 'Falha de conexão ao consultar a IA.', true);
       } finally {

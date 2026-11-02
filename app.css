@@ -9318,3 +9318,4 @@ details.transcricao-bloco:not([open]) {
 .audio-tipo-corpo .bk-row button {
   flex: 1 1 auto;
 }
+.ia-extra .ia-extra-somente { margin-top: 10px; }

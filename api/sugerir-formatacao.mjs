@@ -2807,6 +2807,8 @@ const SaidaJoias = z.object({
       verbetes: z.array(z.string()),
     })
   ),
+  // Resumo dos capítulos e resultado do modo "somente as instruções adicionais": texto puro com um título.
+  outros: z.array(z.object({ titulo: z.string(), texto: z.string() })),
 });
 
 // Versículos de uma referência do mesmo capítulo: "Jeremias 45:5" -> { capitulo: 45, versos: Set {5} }; "45:4, 6-7" -> {4, 6, 7}; null se não houver "cap:vers".
@@ -2920,13 +2922,17 @@ async function lerImagensDaApostilaSemana(res, body) {
 }
 
 async function responderJoias(res, body, P) {
-  const comPergunta = body.pergunta !== false;
-  const comLeitura = body.leitura !== false;
-  if (!comPergunta && !comLeitura) return erro(res, 400, "Marque a pergunta da apostila ou as joias da leitura.");
+  const ajuste = textoLivre(body.ajuste);
+  // "Executar somente estas instruções": só vale o que o usuário escreveu em "Instruções adicionais para a IA"; as caixas de "O que preparar" não contam.
+  const somente = body.somenteAjuste === true;
+  if (somente && !ajuste) return erro(res, 400, "Escreva as instruções adicionais para usar só elas.");
+  const comPergunta = !somente && body.pergunta !== false;
+  const comLeitura = !somente && body.leitura !== false;
+  const comResumo = !somente && body.resumo === true;
+  if (!somente && !comPergunta && !comLeitura && !comResumo) return erro(res, 400, "Marque a pergunta da apostila, as joias da leitura ou o resumo dos capítulos.");
   const opcoes = validarOpcoes(body.opcoes);
   if (consultaPedida(opcoes) && !fontesConfiguradas()) return erro(res, 503, "A consulta às fontes ainda não está configurada no servidor.");
   precarregarFontes({ biblia: true, perspicaz: opcoes.consultarPerspicaz });
-  const ajuste = textoLivre(body.ajuste);
   const sep = modoSeparacao(opcoes, ajuste);
   const modo = body.modo === "nova" || body.modo === "melhorar" ? body.modo : null;
   // O texto bíblico de cada joia é copiado da Bíblia pelo servidor a cada pedido: não precisa ir de volta à IA nas respostas anteriores.
@@ -2937,13 +2943,16 @@ async function responderJoias(res, body, P) {
   const joias = await leituraJoias(res, body);
   if (!joias) return;
   const pergunta = comPergunta && joias.pergunta;
-  if (!pergunta && !comLeitura) return erro(res, 400, "A apostila dessa semana não tem a pergunta das joias espirituais.");
+  if (!pergunta && !comLeitura && !comResumo && !somente) return erro(res, 400, "A apostila dessa semana não tem a pergunta das joias espirituais.");
 
   let mensagem =
     blocoOrientacao(opcoes, ajuste, P) +
     preferenciasDaResposta(opcoes, P, sep) +
-    `\n\nPEDIDO: pergunta da apostila ${pergunta ? "ATIVA" : "INATIVA"}; joias da leitura ${comLeitura ? `ATIVAS (no máximo ${P.limites.maxJoiasPorCapitulo} por capítulo)` : "INATIVAS"}.\n\n` +
-    textoDasJoias(joias, { pergunta: Boolean(pergunta), leitura: comLeitura }) +
+    `\n\nPEDIDO: pergunta da apostila ${pergunta ? "ATIVA" : "INATIVA"}; joias da leitura ${comLeitura ? `ATIVAS (no máximo ${P.limites.maxJoiasPorCapitulo} por capítulo)` : "INATIVAS"}; resumo dos capítulos ${comResumo ? "ATIVO" : "INATIVO"}.\n\n` +
+    (somente ? P.frases.pedidos["Joias: somente as instruções adicionais"] + "\n\n" : "") +
+    (comResumo ? P.frases.pedidos["Joias: resumo dos capítulos"] + "\n\n" : "") +
+    // No modo "somente", a leitura inteira vai como material de consulta (versículos, publicações e a pergunta), sem pedir nada dela.
+    textoDasJoias(joias, { pergunta: Boolean(pergunta) || somente, leitura: comLeitura || somente, resumo: comResumo || somente }) +
     lembreteFinal(opcoes, ajuste, P);
   if (modo && anteriores) {
     mensagem += "\n\nRESPOSTAS ANTERIORES (JSON):\n" + anteriores + "\n\n" + P.frases.pedidos[modo === "nova" ? "Respostas: outra sugestão" : "Respostas: melhorar"];
@@ -2999,6 +3008,11 @@ async function responderJoias(res, body, P) {
       lista.push({ ...item, capitulo: cap.nome, versiculo });
     }
     const itensJoias = [...porCapitulo.values()].flat();
+    // Resumo dos capítulos e resultado do modo "somente as instruções": texto puro, com o título limpo (sem fontes especiais nem "culto").
+    const outros = (somente || comResumo ? saida.outros || [] : [])
+      .map((o) => ({ titulo: limparLinha(limparTrecho(o.titulo), 120), texto: limparTextoGerado(o.texto, 3000) }))
+      .filter((o) => o.texto)
+      .slice(0, somente ? 10 : joias.capitulos.length);
 
     console.log(
       "Joias espirituais:",
@@ -3006,6 +3020,8 @@ async function responderJoias(res, body, P) {
         modelo: P.ia.modelo,
         leitura: joias.leitura,
         pergunta: Boolean(itemPergunta),
+        outros: outros.length,
+        somente,
         joias: itensJoias.map((j) => j.paragrafos),
         comTextoBiblico: itensJoias.filter((j) => j.versiculo).length,
         trechos: joias.capitulos.reduce((n, c) => n + c.trechos.length, 0),
@@ -3026,9 +3042,10 @@ async function responderJoias(res, body, P) {
       semana: joias.semana,
       leitura: joias.leitura,
       url: joias.url,
-      erro: finais.length ? null : "A IA não preparou as joias. Tente de novo.",
+      erro: finais.length || outros.length ? null : "A IA não preparou as joias. Tente de novo.",
       pergunta: itemPergunta ? finais[0] : null,
       joias: itemPergunta ? finais.slice(1) : finais,
+      outros,
       memoriaUsada,
     });
   } catch (e) {

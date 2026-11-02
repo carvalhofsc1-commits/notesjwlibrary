@@ -647,16 +647,16 @@ export async function lerJoias(urlReuniao, { timeoutMs = 8000 } = {}) {
 }
 
 // Texto para a IA: a leitura (cada capítulo com os versículos e os trechos das publicações) e a pergunta da apostila.
-export function textoDasJoias(joias, { pergunta, leitura }) {
+export function textoDasJoias(joias, { pergunta, leitura, resumo }) {
   const partes = [`LEITURA DA BÍBLIA DA SEMANA (${joias.semana}): ${joias.leitura}`];
-  if (leitura) {
+  if (leitura || resumo) {
     // O versículo da pergunta da apostila já tem a resposta própria: as joias devem ser sobre outros versículos.
-    if (joias.pergunta && joias.pergunta.referencias.length) {
+    if (leitura && joias.pergunta && joias.pergunta.referencias.length) {
       partes.push(`VERSÍCULO DA PERGUNTA DA APOSTILA (não use nas joias): ${joias.pergunta.referencias.join("; ")}`);
     }
     for (const c of joias.capitulos) {
       partes.push(`${c.nome.toUpperCase()}:\n${c.versiculos.map((v) => `${v.verso} ${v.texto}`).join("\n")}`);
-      if (c.trechos.length) {
+      if (leitura && c.trechos.length) {
         partes.push(`PUBLICAÇÕES SOBRE ${c.nome.toUpperCase()} (Índice das Publicações):\n${c.trechos.map((t) => `(${t.citacao}, sobre o versículo ${c.capitulo}:${t.verso}) ${t.titulo ? `"${t.titulo}": ` : ""}${t.texto}`).join("\n\n")}`);
       }
     }
