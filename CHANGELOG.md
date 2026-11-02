@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.08
+
+Áudio em texto: tirado o aviso "Confira os dados do arquivo e toque em Iniciar a transcrição"; o ícone do título agora mostra o microfone, uma seta e o texto (áudio vira texto).
+
 ## 6.4.07
 
 Áudio em texto: o título "Arquivo escolhido" e o botão Limpar ficaram alinhados na vertical, e o Limpar ganhou um vermelho suave.

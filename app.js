@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.07'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.08'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -18180,7 +18180,7 @@ function saveTemplatesToStorage() {
         base += '\n📅 Data e hora: ' + quando.toLocaleDateString('pt-BR') + ' às ' + quando.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       }
       trArquivoDados.textContent = base + '\n⏱️ Duração: calculando…';
-      trInfo.textContent = gravado ? 'Gravação pronta. Se quiser, salve a gravação no aparelho; depois toque em Iniciar a transcrição.' : 'Confira os dados do arquivo e toque em Iniciar a transcrição.';
+      trInfo.textContent = gravado ? 'Gravação pronta. Se quiser, salve a gravação no aparelho; depois toque em Iniciar a transcrição.' : '';
       trAtualizarBotoes();
       (gravado && opcoes.duracaoS ? Promise.resolve(opcoes.duracaoS) : trDuracaoLer(arquivo)).then(seg => {
         if (trPendente !== arquivo) return;
