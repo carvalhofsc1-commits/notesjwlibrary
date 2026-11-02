@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.36
+
+Joias Espirituais: no resumo dos capítulos, o título (ex.: RESUMO DE JEREMIAS 49) fica sempre em negrito e os versículos do início de cada parágrafo ficam sempre entre parênteses e em negrito, ex.: (vv. 1-2).
+
 ## 6.4.35
 
 Joias Espirituais: no resumo dos capítulos, os versículos de cada trecho passam para o início do parágrafo, em negrito (antes ficavam no fim, entre parênteses).

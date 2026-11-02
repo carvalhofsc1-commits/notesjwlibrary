@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.35'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.36'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -15686,14 +15686,15 @@ function saveTemplatesToStorage() {
 
     // O resumo dos capítulos e o resultado do modo "somente as instruções": um bloco para cada título, com o texto logo depois.
     function joiasOutrosPartes(outros, somente) {
-      // Os versículos do trecho vêm da IA entre [[ ]] no começo do parágrafo e ficam em negrito (sem a fonte de negrito, só tira os colchetes).
+      // Os versículos do trecho vêm da IA entre [[ ]] no começo do parágrafo e ficam sempre entre parênteses e em negrito, ex.: (vv. 1-2) (sem a fonte de negrito, só os parênteses).
       const negritoId = aiStyleIdFor('negrito');
-      const emNegrito = texto => String(texto || '').replace(/\[\[([^\[\]]+)\]\]/g, (m, ref) => negritoId ? convertTextWithStyle(ref.trim(), negritoId) : ref.trim());
+      const emNegrito = texto => String(texto || '').replace(/\[\[([^\[\]]+)\]\]/g, (m, ref) => { const r = '(' + ref.trim().replace(/^\(|\)$/g, '') + ')'; return negritoId ? convertTextWithStyle(r, negritoId) : r; });
+      const tituloNegrito = t => negritoId ? convertTextWithStyle(t, negritoId) : t; // o título (ex.: RESUMO DE JEREMIAS 49) também em negrito
       outros = outros.map(o => ({ ...o, texto: emNegrito(o.texto) }));
       return outros.map(o => ({
         paragrafos: o.titulo || '',
         // vários parágrafos (o resumo dos capítulos): o título numa linha e os parágrafos abaixo; texto de um parágrafo só: "TÍTULO 👉 texto"
-        texto: (somente ? '📌 ' : '📚 ') + (o.titulo ? o.titulo.toUpperCase() + (o.texto.includes('\n') ? '\n\n' : ' 👉 ') : '') + o.texto +
+        texto: (somente ? '📌 ' : '📚 ') + (o.titulo ? tituloNegrito(o.titulo.toUpperCase()) + (o.texto.includes('\n') ? '\n\n' : ' 👉 ') : '') + o.texto +
           (Array.isArray(o.perspicaz) && o.perspicaz.length ? '\n\n🔎 Estudo Perspicaz: ' + o.perspicaz.join('; ') : '')
       }));
     }
