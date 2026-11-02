@@ -21,6 +21,9 @@ const MAX_CHARS_ANOTACAO = 500;
 // Texto do convite para o app (página Sobre): o administrador o escreve e ele vale para todos; vazio = vale o texto original do app.
 const CHAVE_CONVITE = "convite_texto";
 const MAX_CHARS_CONVITE = 1500;
+// Tipos de áudio do "Áudio em texto" que o administrador publica para todos.
+const CHAVE_TIPOS_AUDIO = "audio_tipos_todos";
+const MAX_TIPOS_AUDIO = 30;
 const MAX_BYTES_PADRAO = 200_000;
 const MAX_MODELOS_PADRAO = 500;
 
@@ -123,6 +126,23 @@ function padraoValido(dados) {
   return null;
 }
 
+function tiposAudioLimpos(lista) {
+  if (!Array.isArray(lista) || lista.length > MAX_TIPOS_AUDIO) return null;
+  const vistos = new Set();
+  const saida = [];
+  for (const t of lista) {
+    if (!t || typeof t !== "object") return null;
+    const id = typeof t.id === "string" ? t.id.trim().slice(0, 40) : "";
+    const nome = typeof t.nome === "string" ? t.nome.trim().slice(0, 120) : "";
+    const texto = typeof t.texto === "string" ? t.texto.replace(/\r\n/g, "\n").trim().slice(0, 1500) : "";
+    const instrucoes = typeof t.instrucoes === "string" ? t.instrucoes.replace(/\r\n/g, "\n").trim().slice(0, 1500) : "";
+    if (!/^[A-Za-z0-9_-]+$/.test(id) || !nome || (!texto && !instrucoes) || vistos.has(id)) return null;
+    vistos.add(id);
+    saida.push({ id, nome, texto, instrucoes });
+  }
+  return saida;
+}
+
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
 
@@ -152,6 +172,12 @@ export default async function handler(req, res) {
     if (acao === "convite-ler") {
       const valor = await lerItem(CHAVE_CONVITE);
       return res.status(200).json({ texto: typeof valor === "string" ? valor : "" });
+    }
+
+    // Pública: os tipos de áudio que o administrador publicou para todos.
+    if (acao === "audio-tipos-ler") {
+      const lista = tiposAudioLimpos(await lerItem(CHAVE_TIPOS_AUDIO));
+      return res.status(200).json({ tipos: lista || [] });
     }
 
     // Pública: as regras da leitura em voz alta que o navegador aplica ao texto (o resto fica no servidor).
@@ -407,6 +433,14 @@ export default async function handler(req, res) {
       const texto = typeof corpo.texto === "string" ? corpo.texto.replace(/\r\n/g, "\n").trim().slice(0, MAX_CHARS_CONVITE) : "";
       await gravarItem(CHAVE_CONVITE, texto);
       return res.status(200).json({ ok: true, texto });
+    }
+
+    if (acao === "audio-tipos-salvar") {
+      if (!exigirEscrita(res)) return;
+      const lista = tiposAudioLimpos(corpo.tipos);
+      if (!lista) return erro(res, 400, "Lista de tipos inválida (até 30 tipos, cada um com nome e texto).");
+      await gravarItem(CHAVE_TIPOS_AUDIO, lista);
+      return res.status(200).json({ ok: true, tipos: lista });
     }
 
     if (acao === "padrao-publicar") {

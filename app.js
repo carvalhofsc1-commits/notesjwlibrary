@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.23'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.24'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -17738,6 +17738,7 @@ function saveTemplatesToStorage() {
     // "Dados do áudio": título, interlocutores (um campo novo a cada interlocutor escrito), evento, local e data.
     // Valem só para este áudio e vão à IA junto com o "Sobre o áudio".
     const trTitulo = document.getElementById('transcricaoTitulo');
+    const trPauta = document.getElementById('transcricaoPauta');
     const trEvento = document.getElementById('transcricaoEvento');
     const trLocal = document.getElementById('transcricaoLocal');
     const trData = document.getElementById('transcricaoData');
@@ -17793,6 +17794,7 @@ function saveTemplatesToStorage() {
       trTitulo.readOnly = false;
       trData.readOnly = false;
       trTitulo.value = '';
+      trPauta.value = '';
       trEvento.value = '';
       trLocal.value = '';
       trData.value = '';
@@ -17801,6 +17803,7 @@ function saveTemplatesToStorage() {
     function trDadosTexto() {
       const partes = [];
       if (trTitulo.value.trim()) partes.push('Título ou tema: ' + trTitulo.value.trim() + '.');
+      if (trPauta.value.trim()) partes.push('Pauta ou assuntos tratados: ' + trPauta.value.trim().replace(/\s+/g, ' ') + '.');
       const falantes = [...trInterlocutoresBox.querySelectorAll('input')].map(i => i.value.trim()).filter(Boolean);
       if (falantes.length) partes.push('Interlocutores: ' + falantes.join('; ') + '.');
       if (trEvento.value.trim()) partes.push('Evento: ' + trEvento.value.trim() + '.');
@@ -17862,13 +17865,27 @@ function saveTemplatesToStorage() {
     }
     function audioTiposGravar(tipos) { safeSetItem(AUDIO_TIPOS_KEY, JSON.stringify(tipos)); }
 
+    // Tipos de áudio para todos: o administrador publica no servidor; os demais só recebem (a cópia fica no aparelho, para funcionar sem internet).
+    const AUDIO_TIPOS_TODOS_KEY = 'jwLibraryNoteAplicarAudioTiposTodosV1';
+    const audioTipoValido = t => Boolean(t) && typeof t.id === 'string' && typeof t.nome === 'string' && typeof t.texto === 'string';
+    let audioTiposTodos = [];
+    try {
+      const guardados = JSON.parse(localStorage.getItem(AUDIO_TIPOS_TODOS_KEY) || '[]');
+      if (Array.isArray(guardados)) audioTiposTodos = guardados.filter(audioTipoValido);
+    } catch (e) { /* sem localStorage: sem a cópia */ }
+    // Os tipos do aparelho (originais e próprios) e, depois deles, os de todos.
+    const audioTiposDoSeletor = () => {
+      const meus = audioTiposLer();
+      return meus.concat(audioTiposTodos.filter(g => !meus.some(m => m.id === g.id)).map(g => ({ ...g, instrucoes: g.instrucoes || '', todos: true })));
+    };
+
     // O seletor da tela Áudio em texto.
     const trTipo = document.getElementById('transcricaoTipo');
     let trTipoUltimoTexto = ''; // o último texto posto pelo seletor (para trocar sem perguntar se a pessoa não mexeu)
     let trTipoAtual = ''; // o tipo escolhido no seletor (para voltar a ele se a pessoa não confirmar a troca)
     let trTipoUltimaInstr = ''; // o mesmo para "Como fazer o resumo"
-    function trTiposDesenhar() {
-      const tipos = audioTiposLer();
+    function trTiposDesenhar(manter) {
+      const tipos = audioTiposDoSeletor();
       trTipo.textContent = '';
       const nenhum = document.createElement('option');
       nenhum.value = '';
@@ -17877,13 +17894,13 @@ function saveTemplatesToStorage() {
       tipos.forEach(t => {
         const o = document.createElement('option');
         o.value = t.id;
-        o.textContent = t.nome || '(sem nome)';
+        o.textContent = (t.todos ? '🌐 ' : '') + (t.nome || '(sem nome)');
         trTipo.appendChild(o);
       });
-      trTipo.value = '';
+      trTipo.value = manter && tipos.some(t => t.id === manter) ? manter : '';
     }
     // "Sobre o áudio" e "Como fazer o resumo" crescem até mostrar o texto inteiro, sem barra de rolagem.
-    const trCamposAutoAltura = [trContexto, trInstrucoes];
+    const trCamposAutoAltura = [trContexto, trInstrucoes, trPauta];
     const trCamposAjustar = () => trCamposAutoAltura.forEach(campo => {
       if (!campo.offsetParent) return; // recolhido: sem medida; ajusta quando abrir
       campo.style.height = 'auto';
@@ -17900,7 +17917,8 @@ function saveTemplatesToStorage() {
     trTiposDesenhar();
     backupSeletorLargo(trTipo, null, { vazioEscolhivel: true });
     trTipo.addEventListener('change', async () => {
-      const tipo = audioTiposLer().find(t => t.id === trTipo.value);
+      trTipoBotoesAtualizar();
+      const tipo = audioTiposDoSeletor().find(t => t.id === trTipo.value);
       if (!tipo) { // "Nenhum": os dois campos ficam em branco (e o "Como fazer o resumo" salvo no aparelho também)
         const sobAlgo = trContexto.value.trim() && trContexto.value.trim() !== trTipoUltimoTexto;
         const instAlgo = trInstrucoes.value.trim() && trInstrucoes.value.trim() !== trTipoUltimaInstr;
@@ -17925,6 +17943,92 @@ function saveTemplatesToStorage() {
         trTipoUltimaInstr = tipo.instrucoes;
       }
     });
+
+    // Salvar o que está nos campos como um tipo: "meu" (só neste aparelho) ou "para todos" (o administrador, no servidor).
+    const trTipoSalvarMeu = document.getElementById('transcricaoTipoSalvarMeuBtn');
+    const trTipoSalvarTodos = document.getElementById('transcricaoTipoSalvarTodosBtn');
+    const trTipoRemoverTodos = document.getElementById('transcricaoTipoRemoverTodosBtn');
+    function trTipoBotoesAtualizar() {
+      const admin = Boolean(senhaAdminSalva());
+      trTipoSalvarTodos.hidden = !admin;
+      trTipoRemoverTodos.hidden = !(admin && audioTiposTodos.some(g => g.id === trTipo.value));
+    }
+    trTipoBotoesAtualizar();
+    trTipo.closest('details').addEventListener('toggle', trTipoBotoesAtualizar);
+    function audioTiposTodosGuardar(lista) {
+      audioTiposTodos = lista.filter(audioTipoValido);
+      safeSetItem(AUDIO_TIPOS_TODOS_KEY, JSON.stringify(audioTiposTodos));
+    }
+    async function trTipoPerguntarNome(paraTodos) {
+      const campo = document.createElement('input');
+      campo.type = 'text';
+      campo.maxLength = 120;
+      campo.placeholder = 'Nome do tipo';
+      campo.autocomplete = 'off';
+      campo.style.cssText = 'display:block;width:100%;box-sizing:border-box;margin-top:10px;padding:8px 10px;font-size:max(16px,1rem)';
+      const ok = await askConfirm(paraTodos ? 'Dê um nome a este tipo. Ele ficará disponível para todos que usam o app (se já existir um com o mesmo nome, será substituído).' : 'Dê um nome a este tipo. Ele fica salvo só neste aparelho, na sua lista de tipos.', paraTodos ? 'Salvar para todos' : 'Salvar como meu tipo', { ok: 'Salvar', cancel: 'Cancelar', extra: campo });
+      return ok ? campo.value.trim() : '';
+    }
+    async function trTipoSalvar(paraTodos) {
+      const texto = trContexto.value.trim();
+      const instrucoes = trInstrucoes.value.trim();
+      if (!texto && !instrucoes) return (trInfo.textContent = 'Escreva o “Sobre o áudio” ou o “Como fazer o resumo” antes de salvar o tipo.');
+      const nome = await trTipoPerguntarNome(paraTodos);
+      if (!nome) return;
+      let id;
+      if (!paraTodos) {
+        const tipos = audioTiposLer();
+        const existente = tipos.find(t => t.nome.trim().toLowerCase() === nome.toLowerCase() && t.id.startsWith('u-'));
+        id = existente ? existente.id : 'u-' + Date.now().toString(36);
+        if (existente) Object.assign(existente, { texto, instrucoes }); else tipos.push({ id, nome, texto, instrucoes });
+        audioTiposGravar(tipos);
+        trInfo.textContent = '💾 Tipo salvo neste aparelho: ' + nome + '.';
+      } else {
+        const atual = await postConfig({ acao: 'audio-tipos-ler' });
+        if (!atual.ok) return (trInfo.textContent = configErrorMessage(atual, 'Não consegui ler os tipos de todos agora.'));
+        const lista = Array.isArray(atual.data.tipos) ? atual.data.tipos.filter(audioTipoValido) : [];
+        const i = lista.findIndex(t => t.nome.trim().toLowerCase() === nome.toLowerCase());
+        id = i >= 0 ? lista[i].id : 'g-' + Date.now().toString(36);
+        const item = { id, nome, texto, instrucoes };
+        if (i >= 0) lista[i] = item; else lista.push(item);
+        const r = await postConfig({ acao: 'audio-tipos-salvar', codigo: senhaAdminSalva(), tipos: lista });
+        if (!r.ok) return (trInfo.textContent = configErrorMessage(r, 'Não consegui salvar o tipo para todos agora.'));
+        audioTiposTodosGuardar(r.data.tipos || lista);
+        trInfo.textContent = '🌐 Tipo salvo para todos: ' + nome + '.';
+      }
+      trTiposDesenhar(id);
+      trTipoAtual = id;
+      trTipoUltimoTexto = texto;
+      trTipoUltimaInstr = instrucoes;
+      trTipoBotoesAtualizar();
+    }
+    trTipoSalvarMeu.addEventListener('click', () => trTipoSalvar(false));
+    trTipoSalvarTodos.addEventListener('click', () => trTipoSalvar(true));
+    trTipoRemoverTodos.addEventListener('click', async () => {
+      const tipo = audioTiposTodos.find(g => g.id === trTipo.value);
+      if (!tipo) return;
+      if (!(await askConfirm('Remover “' + tipo.nome + '” dos tipos de todos? Quem já usa o app deixa de ver este tipo.', 'Remover para todos', { ok: 'Remover', cancel: 'Cancelar' }))) return;
+      const atual = await postConfig({ acao: 'audio-tipos-ler' });
+      if (!atual.ok) return (trInfo.textContent = configErrorMessage(atual, 'Não consegui ler os tipos de todos agora.'));
+      const lista = (Array.isArray(atual.data.tipos) ? atual.data.tipos.filter(audioTipoValido) : []).filter(t => t.id !== tipo.id);
+      const r = await postConfig({ acao: 'audio-tipos-salvar', codigo: senhaAdminSalva(), tipos: lista });
+      if (!r.ok) return (trInfo.textContent = configErrorMessage(r, 'Não consegui remover o tipo agora.'));
+      audioTiposTodosGuardar(r.data.tipos || lista);
+      trTiposDesenhar('');
+      trTipoAtual = '';
+      trTipoBotoesAtualizar();
+      trInfo.textContent = '🗑️ Tipo removido dos tipos de todos.';
+    });
+    // Ao abrir o app, busca os tipos de todos (sem internet, valem os que já estão guardados).
+    (async () => {
+      const r = await postConfig({ acao: 'audio-tipos-ler' });
+      if (!r.ok || !r.data || !Array.isArray(r.data.tipos)) return;
+      const antes = JSON.stringify(audioTiposTodos);
+      audioTiposTodosGuardar(r.data.tipos);
+      if (JSON.stringify(audioTiposTodos) === antes) return;
+      trTiposDesenhar(trTipo.value);
+      trTipoBotoesAtualizar();
+    })();
 
     // A configuração, em Ajustes.
     const audioTiposLista = document.getElementById('audioTiposLista');

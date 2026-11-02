@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.24
+
+Áudio em texto: novo campo "Pauta ou assuntos tratados" em Dados do áudio (vai para a IA na correção e no resumo). Em "Informe o tipo de áudio", o que está escrito nos campos pode ser salvo como "meu tipo" (só neste aparelho) e, para o administrador, "para todos" (publicado no servidor, aparece com 🌐 para quem usa o app) ou removido dos tipos de todos.
+
 ## 6.4.23
 
 Áudio em texto: dois novos tipos de áudio, "ATA DE REUNIÃO - Assuntos do departamento" e "ATA DE REUNIÃO - Reunião entre setores", que pedem uma ata padrão completa, com campos [PREENCHER] para o que faltar.

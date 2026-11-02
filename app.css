@@ -9245,7 +9245,8 @@ details.transcricao-bloco:not([open]) {
 }
 
 #transcricaoContexto,
-#transcricaoInstrucoes {
+#transcricaoInstrucoes,
+#transcricaoPauta {
   resize: none;
   overflow: hidden;
 }

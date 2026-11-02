@@ -1537,6 +1537,11 @@
         <textarea id="transcricaoContexto" class="transcricao-campo" rows="2" maxlength="1500" placeholder="Ex.: reunião de planejamento da equipe de vendas, com Ana (gerente), Carlos e Paula. Termos: Ibirapuera, CRM." spellcheck="false"></textarea>
         <label for="transcricaoInstrucoes" class="transcricao-rotulo">Como fazer o resumo</label>
         <textarea id="transcricaoInstrucoes" class="transcricao-campo" rows="2" maxlength="1500" placeholder="Ex.: resumo em no máximo 5 linhas, depois uma lista de tarefas com responsável e prazo." spellcheck="false"></textarea>
+        <div class="bk-row">
+          <button id="transcricaoTipoSalvarMeuBtn" class="secondary" type="button">💾 Salvar como meu tipo</button>
+          <button id="transcricaoTipoSalvarTodosBtn" class="secondary" type="button" hidden>🌐 Salvar para todos</button>
+          <button id="transcricaoTipoRemoverTodosBtn" class="secondary" type="button" hidden>🗑️ Remover dos tipos de todos</button>
+        </div>
       </details>
       <details class="leitura-dica transcricao-config transcricao-conteiner" id="transcricaoDadosSection">
         <summary><span class="transcricao-icone" aria-hidden="true">📋</span> Dados do áudio <span class="transcricao-opcional">(opcional)</span></summary>
@@ -1545,6 +1550,8 @@
           <label class="transcricao-mesmo"><input type="checkbox" id="transcricaoTituloMesmo"> mesmo do arquivo</label>
         </div>
         <input id="transcricaoTitulo" class="transcricao-dado" type="text" maxlength="200" autocomplete="off" spellcheck="false">
+        <label for="transcricaoPauta" class="transcricao-rotulo">Pauta ou assuntos tratados</label>
+        <textarea id="transcricaoPauta" class="transcricao-campo" rows="2" maxlength="600" spellcheck="false"></textarea>
         <div id="transcricaoInterlocutores"></div>
         <label for="transcricaoEvento" class="transcricao-rotulo">Evento</label>
         <input id="transcricaoEvento" class="transcricao-dado" type="text" maxlength="200" autocomplete="off" spellcheck="false">
