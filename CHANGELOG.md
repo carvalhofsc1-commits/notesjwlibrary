@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.25
+
+Áudio em texto: em "Informe o tipo de áudio" há um campo "Nome do tipo" para digitar o nome de um tipo novo; ele vem preenchido ao escolher um tipo e é usado ao salvar como meu tipo ou para todos.
+
 ## 6.4.24
 
 Áudio em texto: novo campo "Pauta ou assuntos tratados" em Dados do áudio (vai para a IA na correção e no resumo). Em "Informe o tipo de áudio", o que está escrito nos campos pode ser salvo como "meu tipo" (só neste aparelho) e, para o administrador, "para todos" (publicado no servidor, aparece com 🌐 para quem usa o app) ou removido dos tipos de todos.
