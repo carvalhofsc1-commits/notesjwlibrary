@@ -15,7 +15,7 @@ const MAX_AUDIO_BASE64 = 3_000_000; // ~2,2 MB de áudio: um trecho de 50 s em P
 const MAX_CARACTERES_RESUMO = 150_000;
 const LIMITE_TRECHOS_POR_HORA = 200; // ~2,7 horas de áudio por IP por hora
 const LIMITE_RESUMOS_POR_HORA = 30;
-const MAX_CAMPO_USUARIO = 1500; // "sobre o áudio" e "instruções do resumo"
+const MAX_CAMPO_USUARIO = 2500; // "sobre o áudio" (com os dados do áudio) e "instruções do resumo"
 
 const contagens = { trecho: new Map(), resumo: new Map() };
 function excedeu(tipo, ip, limite) {

@@ -1494,16 +1494,23 @@
     <!-- Tela Áudio em texto (atalho do Início): transcreve um arquivo de áudio (Google Speech-to-Text, Chirp 3) e resume com a IA. Só com o código de texto. -->
     <div id="transcricaoCard" class="card tint-rosa screen-transcricao">
       <div class="leitura-topo">
-        <h2><span aria-hidden="true">🎙️</span> Áudio em texto</h2>
+        <h2><span class="transcricao-icone-titulo" aria-hidden="true">🎙️</span> Áudio em texto</h2>
       </div>
       <details class="leitura-dica">
         <summary>ℹ️ Como funciona</summary>
         <p class="hint">Você pode <strong>escolher um arquivo de áudio</strong> já gravado no celular ou no computador (mp3, m4a, wav, mp4 e outros que o seu aparelho abra) ou <strong>gravar um áudio agora</strong>, com o microfone do aparelho (o navegador pede a sua permissão; dá para pausar, e ao parar a gravação já é transcrita; mantenha a tela aberta e desbloqueada durante a gravação). O app decodifica o áudio neste aparelho, corta em trechos de cerca de 50 segundos e envia cada trecho ao Google para virar texto (português do Brasil). Depois você pode pedir um resumo à IA. Limite de 30 minutos por áudio, gravado ou em arquivo. Os dois campos de texto podem ser editados (toque em Editar), formatados com negrito e itálico, ter a letra ajustada com A− e A+ e ser exportados para Word. Nada é guardado no servidor do NoteStyle, e o texto não fica salvo no app: copie ou exporte o que quiser guardar (a gravação também pode ser salva no aparelho). Esta primeira versão não identifica quem está falando.</p>
       </details>
-      <div class="leitura-importar">
+      <div class="leitura-importar transcricao-importar">
         <button id="transcricaoArquivoBtn" type="button">🎧 Escolher o arquivo de áudio</button>
         <input id="transcricaoArquivo" type="file" accept="audio/*,video/mp4,.mp3,.m4a,.wav,.aac,.ogg,.flac,.webm,.mp4" hidden>
         <button id="transcricaoGravarBtn" class="secondary" type="button">🔴 Gravar um áudio agora</button>
+      </div>
+      <div id="transcricaoArquivoBox" class="transcricao-bloco" hidden>
+        <label class="transcricao-rotulo" for="transcricaoArquivoDados">Arquivo escolhido</label>
+        <div id="transcricaoArquivoDados" class="transcricao-arquivo-dados"></div>
+        <div class="leitura-acoes">
+          <button id="transcricaoIniciarBtn" class="leitura-ler" type="button">▶️ Iniciar a transcrição</button>
+        </div>
       </div>
       <div id="transcricaoGravacao" class="transcricao-gravacao" hidden>
         <p id="transcricaoGravTempo" class="transcricao-grav-tempo" role="timer" aria-live="off">🔴 Gravando 00:00</p>
@@ -1520,7 +1527,7 @@
         <button id="transcricaoSalvarGravacaoBtn" class="secondary" type="button">💾 Salvar a gravação no aparelho</button>
       </div>
       <details class="leitura-dica transcricao-config transcricao-conteiner">
-        <summary>⚙️ Informe o tipo de áudio</summary>
+        <summary><span class="transcricao-icone" aria-hidden="true">⚙️</span> Informe o tipo de áudio <span class="transcricao-opcional">(opcional)</span></summary>
         <label for="transcricaoTipo" class="transcricao-rotulo">Tipo de áudio</label>
         <select id="transcricaoTipo"></select>
         <label for="transcricaoContexto" class="transcricao-rotulo">Sobre o áudio</label>
@@ -1528,23 +1535,39 @@
         <label for="transcricaoInstrucoes" class="transcricao-rotulo">Como fazer o resumo</label>
         <textarea id="transcricaoInstrucoes" class="transcricao-campo" rows="6" maxlength="1500" placeholder="Ex.: resumo em no máximo 5 linhas, depois uma lista de tarefas com responsável e prazo." spellcheck="false"></textarea>
       </details>
+      <details class="leitura-dica transcricao-config transcricao-conteiner" id="transcricaoDadosSection">
+        <summary><span class="transcricao-icone" aria-hidden="true">📋</span> Dados do áudio <span class="transcricao-opcional">(opcional)</span></summary>
+        <div class="transcricao-rotulo-linha">
+          <label for="transcricaoTitulo" class="transcricao-rotulo">Título ou tema</label>
+          <label class="transcricao-mesmo"><input type="checkbox" id="transcricaoTituloMesmo"> mesmo do arquivo</label>
+        </div>
+        <input id="transcricaoTitulo" class="transcricao-dado" type="text" maxlength="200" autocomplete="off" spellcheck="false">
+        <div id="transcricaoInterlocutores"></div>
+        <label for="transcricaoEvento" class="transcricao-rotulo">Evento</label>
+        <input id="transcricaoEvento" class="transcricao-dado" type="text" maxlength="200" autocomplete="off" spellcheck="false">
+        <label for="transcricaoLocal" class="transcricao-rotulo">Local</label>
+        <input id="transcricaoLocal" class="transcricao-dado" type="text" maxlength="200" autocomplete="off" spellcheck="false">
+        <div class="transcricao-rotulo-linha">
+          <label for="transcricaoData" class="transcricao-rotulo">Data</label>
+          <label class="transcricao-mesmo"><input type="checkbox" id="transcricaoDataMesmo"> mesmo do arquivo</label>
+        </div>
+        <input id="transcricaoData" class="transcricao-dado" type="date">
+      </details>
       <p id="transcricaoInfo" class="hint" role="status" aria-live="polite"></p>
       <progress id="transcricaoProgresso" value="0" max="1" hidden></progress>
       <div class="leitura-acoes transcricao-acoes">
         <button id="transcricaoCancelarBtn" class="secondary" type="button" hidden>⏹️ Cancelar</button>
       </div>
-      <label for="transcricaoTexto" class="transcricao-rotulo">Texto transcrito</label>
-      <textarea id="transcricaoTexto" class="transcricao-area" placeholder="O texto transcrito aparece aqui. Você pode corrigi-lo antes de resumir." spellcheck="false"></textarea>
+      <div class="transcricao-bloco">
+        <label for="transcricaoTexto" class="transcricao-rotulo">Texto transcrito</label>
+        <textarea id="transcricaoTexto" class="transcricao-area" placeholder="O texto transcrito aparece aqui. Você pode corrigi-lo antes de resumir." spellcheck="false"></textarea>
+      </div>
       <div class="leitura-acoes">
         <button id="transcricaoResumirBtn" class="leitura-ler" type="button" disabled>✨ Resumir com a IA</button>
-        <button id="transcricaoCopiarBtn" class="secondary" type="button" disabled>📋 Copiar o texto</button>
-        <button id="transcricaoLimparBtn" class="secondary" type="button">🧹 Limpar tudo</button>
       </div>
-      <label for="transcricaoResumo" class="transcricao-rotulo">Resumo</label>
-      <textarea id="transcricaoResumo" class="transcricao-area" placeholder="O resumo da IA aparece aqui." spellcheck="false"></textarea>
-      <div class="leitura-acoes">
-        <button id="transcricaoCopiarResumoBtn" class="secondary" type="button" disabled>📋 Copiar o resumo</button>
-        <button id="transcricaoWordTudoBtn" class="secondary" type="button" disabled>📄 Word com resumo e transcrição</button>
+      <div id="transcricaoResumoBloco" class="transcricao-bloco" hidden>
+        <label for="transcricaoResumo" class="transcricao-rotulo">Resumo</label>
+        <textarea id="transcricaoResumo" class="transcricao-area" placeholder="O resumo da IA aparece aqui." spellcheck="false"></textarea>
       </div>
     </div>
 

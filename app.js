@@ -7415,7 +7415,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.3.90'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.3.92'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -17725,10 +17725,84 @@ function saveTemplatesToStorage() {
     const trEscolher = document.getElementById('transcricaoArquivoBtn');
     const trResumir = document.getElementById('transcricaoResumirBtn');
     const trContexto = document.getElementById('transcricaoContexto');
+    const trResumoBloco = document.getElementById('transcricaoResumoBloco');
+    // "Dados do áudio": título, interlocutores (um campo novo a cada interlocutor escrito), evento, local e data.
+    // Valem só para este áudio e vão à IA junto com o "Sobre o áudio".
+    const trTitulo = document.getElementById('transcricaoTitulo');
+    const trEvento = document.getElementById('transcricaoEvento');
+    const trLocal = document.getElementById('transcricaoLocal');
+    const trData = document.getElementById('transcricaoData');
+    const trInterlocutoresBox = document.getElementById('transcricaoInterlocutores');
+    function trInterlocutorAdicionar() {
+      const n = trInterlocutoresBox.querySelectorAll('input').length + 1;
+      const rotulo = document.createElement('label');
+      rotulo.className = 'transcricao-rotulo';
+      rotulo.textContent = 'Interlocutor ' + n;
+      const campo = document.createElement('input');
+      campo.type = 'text';
+      campo.className = 'transcricao-dado';
+      campo.maxLength = 200;
+      campo.autocomplete = 'off';
+      campo.spellcheck = false;
+      campo.id = 'transcricaoInterlocutor' + n;
+      rotulo.htmlFor = campo.id;
+      campo.addEventListener('input', () => {
+        const todos = trInterlocutoresBox.querySelectorAll('input');
+        if (campo === todos[todos.length - 1] && campo.value.trim()) trInterlocutorAdicionar();
+      });
+      trInterlocutoresBox.append(rotulo, campo);
+    }
+    function trInterlocutoresLimpar() {
+      trInterlocutoresBox.textContent = '';
+      trInterlocutorAdicionar();
+    }
+    trInterlocutoresLimpar();
+    // "mesmo do arquivo": o título e a data vêm do arquivo escolhido (ou gravado) e o campo fica só para ver.
+    const trTituloMesmo = document.getElementById('transcricaoTituloMesmo');
+    const trDataMesmo = document.getElementById('transcricaoDataMesmo');
+    let trArquivoAtual = null;
+    function trMesmoAplicar() {
+      if (trTituloMesmo.checked && trArquivoAtual) trTitulo.value = String(trArquivoAtual.name || '').replace(/\.[^.]+$/, '');
+      trTitulo.readOnly = trTituloMesmo.checked;
+      trTitulo.placeholder = trTituloMesmo.checked && !trArquivoAtual ? 'Preenche ao escolher o áudio' : '';
+      if (trDataMesmo.checked && trArquivoAtual && trArquivoAtual.lastModified > 0) {
+        const q = new Date(trArquivoAtual.lastModified);
+        trData.value = q.getFullYear() + '-' + String(q.getMonth() + 1).padStart(2, '0') + '-' + String(q.getDate()).padStart(2, '0');
+      }
+      trData.readOnly = trDataMesmo.checked;
+    }
+    [[trTituloMesmo, trTitulo], [trDataMesmo, trData]].forEach(([caixa, campo]) => {
+      caixa.addEventListener('change', () => {
+        if (!caixa.checked) campo.value = ''; // sem arquivo ainda, a caixa fica marcada e o campo é preenchido quando o áudio for escolhido
+        trMesmoAplicar();
+      });
+    });
+    function trDadosLimpar() {
+      trTituloMesmo.checked = false;
+      trDataMesmo.checked = false;
+      trTitulo.placeholder = '';
+      trTitulo.readOnly = false;
+      trData.readOnly = false;
+      trTitulo.value = '';
+      trEvento.value = '';
+      trLocal.value = '';
+      trData.value = '';
+      trInterlocutoresLimpar();
+    }
+    function trDadosTexto() {
+      const partes = [];
+      if (trTitulo.value.trim()) partes.push('Título ou tema: ' + trTitulo.value.trim() + '.');
+      const falantes = [...trInterlocutoresBox.querySelectorAll('input')].map(i => i.value.trim()).filter(Boolean);
+      if (falantes.length) partes.push('Interlocutores: ' + falantes.join('; ') + '.');
+      if (trEvento.value.trim()) partes.push('Evento: ' + trEvento.value.trim() + '.');
+      if (trLocal.value.trim()) partes.push('Local: ' + trLocal.value.trim() + '.');
+      if (trData.value) partes.push('Data: ' + trData.value.split('-').reverse().join('/') + '.');
+      return partes.join(' ');
+    }
     const trInstrucoes = document.getElementById('transcricaoInstrucoes');
     const TRANSCRICAO_INSTR_KEY = 'jwLibraryNoteAplicarTextoInstrucoesV1';
-    try { trInstrucoes.value = localStorage.getItem(TRANSCRICAO_INSTR_KEY) || ''; } catch (e) { /* sem localStorage */ }
-    trInstrucoes.addEventListener('input', () => safeSetItem(TRANSCRICAO_INSTR_KEY, trInstrucoes.value));
+    // "Como fazer o resumo" começa em branco a cada abertura do app (só o tipo de áudio escolhido o preenche); o que ficou salvo nas versões antigas é apagado.
+    try { localStorage.removeItem(TRANSCRICAO_INSTR_KEY); } catch (e) { /* sem localStorage */ }
     let trControle = null; // AbortController do que está em andamento
 
     // ---------- Tipos de áudio (campo "Sobre o áudio") ----------
@@ -17742,15 +17816,34 @@ function saveTemplatesToStorage() {
       { id: 'p-equipe', nome: 'Reunião com equipe de colaboradores', texto: 'Reunião de uma equipe de colaboradores de uma mesma área, com várias pessoas falando: alinhamento de tarefas, andamento de projetos, problemas, decisões e próximos passos. Destaque as decisões, os responsáveis e os prazos.', instrucoes: 'Resumo em até 5 linhas da reunião. Depois, três listas: (1) decisões tomadas; (2) tarefas, com o responsável e o prazo de cada uma; (3) problemas ou pendências em aberto. Termine com os próximos passos e a data da próxima reunião, se houver.' },
       { id: 'p-setores', nome: 'Reunião com setores da empresa', texto: 'Reunião entre representantes de setores ou departamentos diferentes da empresa (por exemplo, comercial, financeiro, operações e RH), tratando de assuntos que envolvem mais de uma área. Destaque o que cada setor precisa fazer, as pendências entre os setores, as decisões e os prazos.', instrucoes: 'Resumo em até 5 linhas. Depois, por setor (comercial, financeiro, operações, RH etc.), o que cada um precisa fazer, com responsável e prazo. Em seguida, as pendências e dependências entre os setores, as decisões tomadas e os pontos que ainda precisam de definição.' },
       { id: 'p-cliente', nome: 'Reunião com cliente ou fornecedor', texto: 'Reunião ou ligação com um cliente ou fornecedor: necessidades, propostas, valores, condições, objeções e combinados. Destaque o que foi combinado, os valores, os prazos e quem ficou de fazer o quê.', instrucoes: 'Resumo em até 5 linhas da conversa. Depois, em tópicos: necessidades e pedidos do cliente ou fornecedor, propostas e valores, condições, objeções levantadas e o que foi combinado, com quem ficou de fazer o quê e até quando. Termine com os próximos passos.' },
+      { id: 'p-denuncia', nome: 'Ligação telefônica - recebimento de denúncia', texto: 'Ligação telefônica em que uma denúncia é recebida por um colaborador, vinda de outro colaborador ou de uma pessoa externa à empresa. Há duas vozes: quem atende e quem denuncia, que pode pedir sigilo ou anonimato. Destaque o que foi relatado, as pessoas, os setores e os locais envolvidos, as datas, os valores e os documentos citados, e escreva os nomes corretamente.', instrucoes: 'Resumo em até 5 linhas da denúncia. Depois, em tópicos: quem denunciou (colaborador ou pessoa externa) e se pediu sigilo ou anonimato; o que foi relatado; as pessoas, os setores e os locais envolvidos; datas, valores, sistemas e documentos citados; provas ou testemunhas mencionadas. Separe o que o denunciante diz ter visto ou ouvido do que é apenas suspeita, sem julgar nem concluir culpa. Termine com o que foi combinado na ligação e o que o atendente prometeu fazer. Não invente nada que não foi dito.' },
       { id: 'p-treinamento', nome: 'Treinamento ou aula', texto: 'Aula, treinamento ou curso, com um instrutor explicando o conteúdo e, às vezes, perguntas dos participantes. Destaque os conceitos, as definições, os exemplos e as orientações práticas.', instrucoes: 'Resumo em até 5 linhas do conteúdo. Depois, os conceitos e definições principais em tópicos, os exemplos dados, as orientações práticas e as dúvidas dos participantes com as respostas. Termine com uma lista curta do que é importante lembrar.' },
       { id: 'p-entrevista', nome: 'Entrevista ou conversa geral', texto: 'Entrevista ou conversa entre duas ou mais pessoas, sobre um assunto livre. Destaque as ideias principais e a opinião de cada pessoa.', instrucoes: 'Resumo em até 5 linhas do assunto. Depois, as ideias principais em tópicos e a opinião ou a posição de cada pessoa, identificando quem disse o quê quando isso estiver claro. Destaque eventuais conclusões ou pontos de discordância.' },
       { id: 'p-voz', nome: 'Anotação de voz pessoal', texto: 'Anotação de voz de uma pessoa falando sozinha: lembretes, ideias e tarefas. Organize em itens.', instrucoes: 'Organize em itens curtos, sem resumo longo: primeiro as tarefas (verbo no início, com prazo se houver), depois os lembretes e por fim as ideias. Mantenha as palavras da pessoa e não acrescente nada que ela não disse.' }
     ];
 
+    // Tipos originais criados depois que a lista já estava salva no aparelho: entram uma única vez (se a pessoa apagar, não voltam).
+    const AUDIO_TIPOS_NOVOS = ['p-denuncia'];
+    const AUDIO_TIPOS_NOVOS_KEY = 'jwLibraryNoteAplicarAudioTiposNovosV1';
+    function audioTiposNovosIncluir(guardado) {
+      let vistos = [];
+      try { vistos = JSON.parse(localStorage.getItem(AUDIO_TIPOS_NOVOS_KEY) || '[]') || []; } catch (e) { vistos = []; }
+      const faltam = AUDIO_TIPOS_NOVOS.filter(id => !vistos.includes(id));
+      if (!faltam.length) return guardado;
+      faltam.forEach(id => {
+        const padrao = AUDIO_TIPOS_PADRAO.find(t => t.id === id);
+        if (!padrao || guardado.some(t => t && t.id === id)) return;
+        const depois = guardado.findIndex(t => t && t.id === 'p-cliente');
+        guardado.splice(depois >= 0 ? depois + 1 : guardado.length, 0, { ...padrao });
+      });
+      audioTiposGravar(guardado);
+      safeSetItem(AUDIO_TIPOS_NOVOS_KEY, JSON.stringify(vistos.concat(faltam)));
+      return guardado;
+    }
     function audioTiposLer() {
       try {
         const guardado = JSON.parse(localStorage.getItem(AUDIO_TIPOS_KEY) || 'null');
-        if (Array.isArray(guardado)) return guardado.filter(t => t && typeof t.id === 'string' && typeof t.nome === 'string' && typeof t.texto === 'string').map(t => ({ ...t, instrucoes: typeof t.instrucoes === 'string' && t.instrucoes ? t.instrucoes : ((AUDIO_TIPOS_PADRAO.find(p => p.id === t.id) || {}).instrucoes || '') })); // lista salva antes do campo existir (ou com ele vazio): os tipos originais ganham a sugestão
+        if (Array.isArray(guardado)) return audioTiposNovosIncluir(guardado).filter(t => t && typeof t.id === 'string' && typeof t.nome === 'string' && typeof t.texto === 'string').map(t => ({ ...t, instrucoes: typeof t.instrucoes === 'string' && t.instrucoes ? t.instrucoes : ((AUDIO_TIPOS_PADRAO.find(p => p.id === t.id) || {}).instrucoes || '') })); // lista salva antes do campo existir (ou com ele vazio): os tipos originais ganham a sugestão
       } catch (e) { /* sem localStorage ou lista inválida: valem os tipos originais */ }
       return AUDIO_TIPOS_PADRAO.map(t => ({ ...t }));
     }
@@ -17789,8 +17882,6 @@ function saveTemplatesToStorage() {
         trInstrucoes.value = '';
         trTipoUltimoTexto = '';
         trTipoUltimaInstr = '';
-        safeSetItem(TRANSCRICAO_INSTR_KEY, '');
-        trInfo.textContent = 'Nenhum tipo: os campos “Sobre o áudio” e “Como fazer o resumo” ficaram em branco.';
         return;
       }
       const atual = trContexto.value.trim();
@@ -17804,9 +17895,7 @@ function saveTemplatesToStorage() {
       if (tipo.instrucoes) {
         trInstrucoes.value = tipo.instrucoes;
         trTipoUltimaInstr = tipo.instrucoes;
-        safeSetItem(TRANSCRICAO_INSTR_KEY, trInstrucoes.value);
       }
-      trInfo.textContent = 'Descrição do tipo “' + tipo.nome + '” colocada em “Sobre o áudio”' + (tipo.instrucoes ? ' e o modo de resumir em “Como fazer o resumo”' : '') + '. Complete com os nomes e os termos deste áudio.';
     });
 
     // A configuração, em Ajustes.
@@ -17902,8 +17991,7 @@ function saveTemplatesToStorage() {
       trEscolher.disabled = ocupado || gravando;
       if (typeof trGravarBtn !== 'undefined') trGravarBtn.disabled = ocupado || gravando;
       trResumir.disabled = ocupado || trTexto.value.trim().length < 40;
-      document.getElementById('transcricaoCopiarBtn').disabled = !trTexto.value.trim();
-      document.getElementById('transcricaoCopiarResumoBtn').disabled = !trResumo.value.trim();
+      trIniciar.disabled = ocupado || gravando;
       trCancelar.hidden = !ocupado;
       trFerramentasAtualizar.forEach(f => f());
     }
@@ -17986,9 +18074,12 @@ function saveTemplatesToStorage() {
       if (!(await trConsentimento())) return (trInfo.textContent = 'Nada foi enviado.');
       trControle = new AbortController();
       trNomeBase = String(arquivo.name || '').replace(/\.[^.]+$/, '');
+      trArquivoAtual = arquivo;
+      trMesmoAplicar();
       trAtualizarBotoes();
       trTexto.value = '';
       trResumo.value = '';
+      trResumoBloco.hidden = true;
       trProgresso.hidden = false;
       trProgresso.removeAttribute('value'); // indeterminado enquanto decodifica
       trInfo.textContent = '⏳ Preparando o áudio neste aparelho…';
@@ -18030,11 +18121,64 @@ function saveTemplatesToStorage() {
       }
     }
 
+    // O arquivo escolhido só é transcrito depois que a pessoa vê os dados dele e toca em "Iniciar a transcrição".
+    const trArquivoBox = document.getElementById('transcricaoArquivoBox');
+    const trArquivoDados = document.getElementById('transcricaoArquivoDados');
+    const trIniciar = document.getElementById('transcricaoIniciarBtn');
+    let trPendente = null;
+    function trPendenteLimpar() {
+      trPendente = null;
+      trArquivoBox.hidden = true;
+      trArquivoDados.textContent = '';
+    }
+    const trTamanhoTexto = bytes => (bytes >= 1048576 ? (bytes / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(bytes / 1024)) + ' KB');
+    const trDuracaoTexto = seg => {
+      const t = Math.round(seg);
+      const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60;
+      return (h ? h + ' h ' : '') + (h || m ? m + ' min ' : '') + s + ' s';
+    };
+    function trDuracaoLer(arquivo) {
+      return new Promise(resolve => {
+        const url = URL.createObjectURL(arquivo);
+        const audio = new Audio();
+        const fim = valor => { audio.removeAttribute('src'); URL.revokeObjectURL(url); resolve(valor); };
+        audio.preload = 'metadata';
+        audio.addEventListener('loadedmetadata', () => fim(Number.isFinite(audio.duration) ? audio.duration : 0), { once: true });
+        audio.addEventListener('error', () => fim(0), { once: true });
+        setTimeout(() => fim(0), 8000);
+        audio.src = url;
+      });
+    }
+    function trPendenteMostrar(arquivo) {
+      trPendente = arquivo;
+      trArquivoAtual = arquivo;
+      trMesmoAplicar();
+      trArquivoBox.hidden = false;
+      let base = '🎵 Nome: ' + (arquivo.name || 'sem nome') + '\n🏷️ Tipo: ' + (arquivo.type || 'não informado') + '\n📦 Tamanho: ' + trTamanhoTexto(arquivo.size);
+      if (arquivo.lastModified > 0) {
+        const quando = new Date(arquivo.lastModified);
+        base += '\n📅 Data e hora: ' + quando.toLocaleDateString('pt-BR') + ' às ' + quando.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      }
+      trArquivoDados.textContent = base + '\n⏱️ Duração: calculando…';
+      trInfo.textContent = 'Confira os dados do arquivo e toque em Iniciar a transcrição.';
+      trAtualizarBotoes();
+      trDuracaoLer(arquivo).then(seg => {
+        if (trPendente !== arquivo) return;
+        trArquivoDados.textContent = base + '\n⏱️ Duração: ' + (seg ? trDuracaoTexto(seg) : 'não foi possível ler');
+        if (seg && seg / 60 > TRANSCRICAO_MAX_MIN) trInfo.textContent = 'Atenção: o áudio tem mais de ' + TRANSCRICAO_MAX_MIN + ' minutos, que é o limite por arquivo.';
+      });
+    }
     trEscolher.addEventListener('click', () => trArquivo.click());
     trArquivo.addEventListener('change', () => {
       const arquivo = trArquivo.files && trArquivo.files[0];
       trArquivo.value = '';
-      if (arquivo) trTranscrever(arquivo);
+      if (arquivo) trPendenteMostrar(arquivo);
+    });
+    trIniciar.addEventListener('click', () => {
+      const arquivo = trPendente;
+      if (!arquivo) return;
+      trPendenteLimpar();
+      trTranscrever(arquivo);
     });
     trCancelar.addEventListener('click', () => { if (trControle) trControle.abort(); });
 
@@ -18169,10 +18313,11 @@ function saveTemplatesToStorage() {
       if (!codigoTextoSalvo()) return (trInfo.textContent = 'Salve o código de texto em Ajustes → 🔐 Autorização de acessos.');
       if (!(await trConsentimento())) return;
       trControle = new AbortController();
+      trResumoBloco.hidden = false;
       trAtualizarBotoes();
       trInfo.textContent = '✨ A IA está resumindo…';
       try {
-        const r = await trPost({ acao: 'resumo', codigoTexto: codigoTextoSalvo(), texto: trTexto.value, contexto: trContexto.value, instrucoes: trInstrucoes.value }, trControle.signal);
+        const r = await trPost({ acao: 'resumo', codigoTexto: codigoTextoSalvo(), texto: trTexto.value, contexto: (trDadosTexto() + ' ' + trContexto.value).trim(), instrucoes: trInstrucoes.value }, trControle.signal);
         if (!r.ok) return (trInfo.textContent = trMensagem(r, 'Não foi possível resumir agora.'));
         trResumo.value = r.dados.resumo;
         trInfo.textContent = '✅ Resumo pronto. A IA pode errar: confira com o texto.';
@@ -18193,21 +18338,22 @@ function saveTemplatesToStorage() {
       }
       trInfo.textContent = '📋 ' + rotulo + ' copiado.';
     }
-    document.getElementById('transcricaoCopiarBtn').addEventListener('click', () => trCopiar(trTexto, 'Texto'));
-    document.getElementById('transcricaoCopiarResumoBtn').addEventListener('click', () => trCopiar(trResumo, 'Resumo'));
-    document.getElementById('transcricaoLimparBtn').addEventListener('click', async () => {
+    async function trLimparTudo() {
       if (trControle) trControle.abort();
       if ((trTexto.value.trim() || trResumo.value.trim()) && !(await askConfirm('Apagar o texto transcrito e o resumo? Eles não ficam salvos em nenhum lugar.', 'Limpar tudo'))) return;
       trTexto.value = '';
       trResumo.value = '';
+      trResumoBloco.hidden = true;
+      trPendenteLimpar();
       trContexto.value = ''; // o "sobre o áudio" vale só para um áudio; as instruções do resumo ficam salvas
+      trDadosLimpar();
       trTipoUltimoTexto = '';
       trTipo.value = '';
       trTipoAtual = '';
       trGravadaLimpar();
       trInfo.textContent = '';
       trAtualizarBotoes();
-    });
+    }
     trAtualizarBotoes();
 
     // ---------- Texto transcrito e resumo: campos que crescem, A−/A+, editar, formatar e Word ----------
@@ -18273,38 +18419,44 @@ function saveTemplatesToStorage() {
       mais.title = 'Aumentar a letra';
       mais.setAttribute('aria-label', 'Aumentar a letra');
       let editando = false;
-      const editar = backupButton('✏️ Editar', () => {
+      const rotular = (btn, texto) => { btn.title = texto; btn.setAttribute('aria-label', texto); return btn; };
+      const editar = backupButton('✏️', () => {
         editando = !editando;
         campo.readOnly = !editando;
-        editar.textContent = editando ? '✔️ Concluir edição' : '✏️ Editar';
+        editar.textContent = editando ? '✔️' : '✏️';
+        rotular(editar, editando ? 'Concluir edição' : 'Editar');
         formato.hidden = editando;
-        dica.textContent = editando ? 'Escreva ou corrija o texto. Ao terminar, toque em Concluir edição para formatar.' : 'Selecione um trecho e toque no estilo. Para escrever ou corrigir, toque em Editar.';
         if (editando) campo.focus(); else campo.blur();
       });
+      rotular(editar, 'Editar');
+      const copiar = rotular(backupButton('📋 Copiar', () => trCopiar(campo, campo === trTexto ? 'Texto' : 'Resumo')), 'Copiar');
       const word = backupButton('📄 Word', () => {
         if (!campo.value.trim()) return;
         docxPreviaAbrir(word, campo.value, nome());
       });
       word.title = 'Exportar para Word';
-      linha.append(menos, mais, editar, word);
+      const limparTudo = backupButton('🧹 Limpar tudo', () => trLimparTudo());
+      const rodape = document.createElement('div');
+      rodape.className = 'bk-row tr-linha tr-rodape';
+      rodape.append(word, limparTudo);
+      linha.append(menos, mais, editar, copiar);
       const formato = document.createElement('div');
-      formato.className = 'bk-row tr-linha';
+      formato.className = 'bk-row tr-linha tr-formato';
       formato.append(
-        backupButton('𝗡 Negrito', () => trFormatar(campo, 'negrito')),
-        backupButton('𝘐 Itálico', () => trFormatar(campo, 'italico')),
-        backupButton('𝙉 Negrito itálico', () => trFormatar(campo, 'negrito_italico')),
-        backupButton('🧽 Tirar', () => trFormatar(campo, 'limpar'))
+        rotular(backupButton('𝗡', () => trFormatar(campo, 'negrito')), 'Negrito'),
+        rotular(backupButton('𝘐', () => trFormatar(campo, 'italico')), 'Itálico'),
+        rotular(backupButton('𝙉𝙄', () => trFormatar(campo, 'negrito_italico')), 'Negrito itálico'),
+        rotular(backupButton('🧽 Limpar formatação', () => trFormatar(campo, 'limpar')), 'Limpar formatação')
       );
-      const dica = document.createElement('p');
-      dica.className = 'hint tr-dica';
-      dica.textContent = 'Selecione um trecho e toque no estilo. Para escrever ou corrigir, toque em Editar.';
-      barra.append(linha, formato, dica);
+      barra.append(linha, formato);
       campo.readOnly = true;
       campo.parentNode.insertBefore(barra, campo);
+      campo.parentNode.insertBefore(rodape, campo.nextSibling);
       trFerramentasAtualizar.push(() => {
         menos.disabled = trFonteIdx <= 0;
         mais.disabled = trFonteIdx >= LEITURA_FONTES.length - 1;
         word.disabled = !campo.value.trim();
+        copiar.disabled = !campo.value.trim();
         formato.querySelectorAll('button').forEach(b => { b.disabled = !campo.value.trim(); });
         editar.disabled = false;
       });
@@ -18320,16 +18472,6 @@ function saveTemplatesToStorage() {
     };
     trBarra(trTexto, trNomeWord('Transcrição'));
     trBarra(trResumo, trNomeWord('Resumo'));
-    // Um Word só com os dois: o resumo primeiro e, depois, o texto transcrito (cada um com o seu título em negrito).
-    const trWordTudo = document.getElementById('transcricaoWordTudoBtn');
-    trWordTudo.addEventListener('click', () => {
-      if (!trTexto.value.trim() || !trResumo.value.trim()) return;
-      const negrito = aiStyleIdFor('negrito');
-      const titulo = texto => (negrito ? convertTextWithStyle(texto, negrito) : texto);
-      const junto = titulo('Resumo') + '\n\n' + trResumo.value.trim() + '\n\n' + titulo('Texto transcrito') + '\n\n' + trTexto.value.trim();
-      docxPreviaAbrir(trWordTudo, junto, trNomeWord('Resumo e transcrição')());
-    });
-    trFerramentasAtualizar.push(() => { trWordTudo.disabled = !trTexto.value.trim() || !trResumo.value.trim(); });
     window.addEventListener('resize', trCrescerTudo);
     trFonteAplicar();
 

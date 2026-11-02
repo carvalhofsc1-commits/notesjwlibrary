@@ -2,6 +2,22 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.3.92
+
+Áudio em texto: novo tipo de áudio "Ligação telefônica - recebimento de denúncia" (denúncia recebida por telefone de outro colaborador ou de pessoa externa), com a descrição e o modo de resumir já preenchidos. Quem já tem a lista salva no aparelho recebe o tipo novo uma vez.
+
+Áudio em texto: em "Dados do áudio", "Título ou tema" e "Data" ganharam a caixa "mesmo do arquivo", que preenche o campo com o nome e a data do arquivo (ou da gravação).
+
+Áudio em texto: ao escolher um arquivo, o app mostra os dados dele (nome, tipo, tamanho e duração) e só transcreve depois do botão "Iniciar a transcrição"; o contêiner do resumo só aparece quando o resumo é pedido; "Copiar" fica na barra de cima, e "Word" e "Limpar tudo" ficam juntos embaixo de cada contêiner.
+
+Áudio em texto: o texto transcrito e o resumo ficam cada um num contêiner, com a mesma barra de botões; o botão "Resumir com a IA" fica entre os dois; o botão "Word com resumo e transcrição" saiu (cada contêiner tem o seu Word).
+
+Áudio em texto: novo botão "📋 Dados do áudio" (título ou tema, interlocutores — um campo novo a cada interlocutor —, evento, local e data), que vai à IA junto com o "Sobre o áudio". O limite do campo no servidor subiu para 2500 caracteres. O campo "Como fazer o resumo" deixou de ser salvo no aparelho: começa em branco a cada abertura do app e só o tipo de áudio escolhido o preenche.
+
+## 6.3.91
+
+Áudio em texto: os botões "Escolher o arquivo de áudio" e "Gravar um áudio agora" ficam lado a lado, dividindo a mesma linha.
+
 ## 6.3.90
 
 Áudio em texto: a opção "⚙️ Informações e instruções para a IA (opcional)" passou a se chamar "⚙️ Informe o tipo de áudio".
