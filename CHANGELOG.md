@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.73
+
+Áudio em texto: (1) textos longos são resumidos em partes e depois unidos (instruções do usuário só no final); (2) o PCM decodificado fica em cache no aparelho para nova tentativa; (3) na correção, cada parte seguinte leva um trecho curto da anterior só como contexto.
+
 ## 6.4.72
 
 Áudio em texto: (1) a transcrição sobe até 3 trechos ao mesmo tempo; (2) na correção, as informações do áudio vão só na primeira parte e as demais usam um prompt curto; (3) o resumo usa o texto corrigido quando existir, senão a transcrição bruta (corrigir continua opcional).

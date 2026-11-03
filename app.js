@@ -7480,7 +7480,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.72'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.73'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -18716,6 +18716,18 @@ function saveTemplatesToStorage() {
       return (await saida.startRendering()).getChannelData(0);
     }
 
+    // Cache do PCM no item da lista: evita reabrir e reamostrar o arquivo em nova tentativa ou "Iniciar" de novo.
+    async function trDecodificarItem(item) {
+      if (item.pcm && item.pcm.length) return item.pcm;
+      const amostras = await trDecodificar(item.arquivo);
+      item.pcm = amostras;
+      return amostras;
+    }
+
+    function trPcmLiberar(item) {
+      if (item) item.pcm = null;
+    }
+
     function trParaBase64(amostras) {
       const pcm = new Int16Array(amostras.length);
       let pico = 0;
@@ -18789,12 +18801,13 @@ function saveTemplatesToStorage() {
       trListaRender();
       trProgresso.hidden = false;
       trProgresso.removeAttribute('value'); // indeterminado enquanto decodifica
-      trInfo.textContent = '⏳ ' + rotulo + 'preparando o áudio neste aparelho…';
+      trInfo.textContent = '⏳ ' + rotulo + (item.pcm ? 'usando o áudio já preparado…' : 'preparando o áudio neste aparelho…');
       let amostras;
       try {
-        amostras = await trDecodificar(arquivo);
+        amostras = await trDecodificarItem(item);
       } catch (e) {
         item.estado = 'erro';
+        trPcmLiberar(item);
         trInfo.textContent = rotulo + 'não consegui abrir este áudio neste aparelho. Tente outro formato (mp3, m4a ou wav).';
         return false;
       }
@@ -18802,6 +18815,7 @@ function saveTemplatesToStorage() {
       const limiteMin = item.gravado ? trLimites.gravacaoMin : trLimites.arquivoMin;
       if (minutos > limiteMin) {
         item.estado = 'erro';
+        trPcmLiberar(item);
         trInfo.textContent = rotulo + 'o áudio tem ' + Math.round(minutos) + ' minutos; o limite é de ' + limiteMin + ' minutos por ' + (item.gravado ? 'gravação' : 'arquivo') + '.';
         return false;
       }
@@ -18813,14 +18827,19 @@ function saveTemplatesToStorage() {
       const prefixo = (antes ? antes + '\n\n' : '') + (trLista.length > 1 ? '— ' + (item.gravado ? trNomeDoArquivoSalvo(arquivo) : arquivo.name) + ' —\n' : '');
       const partes = new Array(total); // índice = trecho; undefined = ainda em andamento; '' = silêncio
       let feitos = 0;
-      // Só junta do início até o primeiro buraco (trechos paralelos podem terminar fora de ordem).
+      // Append só do que ficou pronto em ordem (trechos paralelos podem terminar fora de ordem).
+      let ate = 0;
+      let corpo = '';
       const montarTexto = () => {
-        const comFala = [];
-        for (let i = 0; i < partes.length; i++) {
-          if (partes[i] === undefined) break;
-          if (partes[i]) comFala.push(partes[i]);
+        let mudou = false;
+        while (ate < partes.length && partes[ate] !== undefined) {
+          if (partes[ate]) {
+            corpo = corpo ? corpo + '\n\n' + partes[ate] : partes[ate];
+            mudou = true;
+          }
+          ate++;
         }
-        if (comFala.length) trTexto.value = prefixo + comFala.join('\n\n');
+        if (mudou) trTexto.value = prefixo + corpo;
       };
       try {
         await trMapaParalelo(total, TRANSCRICAO_PARALELO, async n => {
@@ -18847,13 +18866,14 @@ function saveTemplatesToStorage() {
       } catch (e) {
         montarTexto();
         item.estado = e && e.cancelado ? 'pendente' : 'erro';
-        const jaTem = partes.some(p => p);
+        const jaTem = Boolean(corpo);
         trInfo.textContent = (e && e.cancelado ? 'Cancelado.' : rotulo + ((e && e.message) || 'Falha na transcrição.')) + (jaTem ? ' O que já foi transcrito está abaixo.' : '');
         return false;
       }
       montarTexto();
       item.estado = 'pronto';
-      item.semFala = !partes.some(p => p);
+      item.semFala = !corpo;
+      trPcmLiberar(item); // PCM já não é preciso depois de transcrito
       trItemBdApagar(item); // o texto já existe: a parte não precisa mais ficar guardada
       return true;
     }
@@ -18907,7 +18927,7 @@ function saveTemplatesToStorage() {
     let trListaSeq = 0;
     const trListaTemPendente = () => trLista.some(i => i.estado === 'pendente' || i.estado === 'erro');
     function trPendenteLimpar() { // esvazia a lista de arquivos
-      trLista.forEach(trItemBdApagar);
+      trLista.forEach(item => { trPcmLiberar(item); trItemBdApagar(item); });
       trLista = [];
       trArquivoBox.hidden = true;
       trArquivoDados.textContent = '';
@@ -19180,6 +19200,7 @@ function saveTemplatesToStorage() {
         : item.estado === 'pronto' ? 'Tirar este arquivo da lista? O texto que já foi transcrito dele continua no campo.' : '';
       if (aviso && !(await askConfirm(aviso, 'Descartar'))) return;
       if (trControle || !trLista.includes(item)) return;
+      trPcmLiberar(item);
       trLista = trLista.filter(x => x !== item);
       trItemBdApagar(item);
       trArquivoAtual = trLista[0].arquivo;
@@ -19477,6 +19498,30 @@ function saveTemplatesToStorage() {
     document.getElementById('transcricaoSalvarGravacaoBtn').addEventListener('click', () => trSalvarArquivos(trLista.filter(i => i.gravado).map(i => i.arquivo)));
 
 
+    // Textos longos: resume em fatias (~8 mil caracteres) e depois une num resumo final (instruções do usuário só no final).
+    const TRANSCRICAO_RESUMO_DIRETO = 12000;
+    const TRANSCRICAO_RESUMO_FATIA = 8000;
+    function trBlocosParaResumir(texto) {
+      const MAX = TRANSCRICAO_RESUMO_FATIA;
+      const unidades = [];
+      texto.split(/\n{2,}/).map(p => p.trim()).filter(Boolean).forEach(p => {
+        if (p.length <= MAX) { unidades.push(p); return; }
+        let atual = '';
+        p.split(/(?<=[.!?])\s+/).forEach(frase => {
+          while (frase.length > MAX) { if (atual) { unidades.push(atual); atual = ''; } unidades.push(frase.slice(0, MAX)); frase = frase.slice(MAX); }
+          if (atual && (atual + ' ' + frase).length > MAX) { unidades.push(atual); atual = frase; } else atual = atual ? atual + ' ' + frase : frase;
+        });
+        if (atual) unidades.push(atual);
+      });
+      const blocos = [];
+      let atual = '';
+      unidades.forEach(u => {
+        if (atual && (atual + '\n\n' + u).length > MAX) { blocos.push(atual); atual = u; } else atual = atual ? atual + '\n\n' + u : u;
+      });
+      if (atual) blocos.push(atual);
+      return blocos;
+    }
+
     trResumir.addEventListener('click', async () => {
       if (!codigoTextoSalvo()) return (trInfo.textContent = 'Salve o código de texto em Ajustes → 🔐 Autorização de acessos.');
       if (!(await trConsentimento())) return;
@@ -19485,14 +19530,45 @@ function saveTemplatesToStorage() {
       if (fonteResumo.length < 40) return (trInfo.textContent = 'Texto curto demais para resumir.');
       trControle = new AbortController();
       trOperacao = 'resumir';
-      trResumirProgresso.hidden = false; // indicador girando: a IA resume de uma vez, sem andamento por porcentagem
+      trResumirProgresso.hidden = false;
       trAtualizarBotoes();
       const usouCorrigido = Boolean(trCorrigido.value.trim());
-      trInfo.textContent = usouCorrigido ? '✨ A IA está resumindo o texto corrigido…' : '✨ A IA está resumindo a transcrição…';
+      const contexto = (trDadosTexto() + ' ' + trContexto.value).trim();
+      const instrucoes = trInstrucoes.value;
+      const baseMsg = usouCorrigido ? 'o texto corrigido' : 'a transcrição';
       try {
-        const r = await trPost({ acao: 'resumo', codigoTexto: codigoTextoSalvo(), texto: fonteResumo, contexto: (trDadosTexto() + ' ' + trContexto.value).trim(), instrucoes: trInstrucoes.value }, trControle.signal);
-        if (!r.ok) return (trInfo.textContent = trMensagem(r, 'Não foi possível resumir agora.'));
-        trResumo.value = r.dados.resumo;
+        let final;
+        if (fonteResumo.length <= TRANSCRICAO_RESUMO_DIRETO) {
+          trInfo.textContent = '✨ A IA está resumindo ' + baseMsg + '…';
+          trResumirProgresso.querySelector('.transcricao-rodando-txt').textContent = 'A IA está resumindo…';
+          const r = await trPost({ acao: 'resumo', codigoTexto: codigoTextoSalvo(), texto: fonteResumo, contexto, instrucoes }, trControle.signal);
+          if (!r.ok) return (trInfo.textContent = trMensagem(r, 'Não foi possível resumir agora.'));
+          final = r.dados.resumo;
+        } else {
+          const fatias = trBlocosParaResumir(fonteResumo);
+          const parciais = [];
+          for (let n = 0; n < fatias.length; n++) {
+            if (trControle.signal.aborted) return (trInfo.textContent = 'Cancelado.');
+            trInfo.textContent = '✨ A IA está resumindo ' + baseMsg + ' (parte ' + (n + 1) + ' de ' + fatias.length + ')…';
+            trResumirProgresso.querySelector('.transcricao-rodando-txt').textContent = 'Resumindo a parte ' + (n + 1) + ' de ' + fatias.length + '…';
+            const r = await trPost({ acao: 'resumo', codigoTexto: codigoTextoSalvo(), texto: fatias[n], contexto, parcial: true }, trControle.signal);
+            if (!r.ok) return (trInfo.textContent = trMensagem(r, 'Não foi possível resumir a parte ' + (n + 1) + '.'));
+            parciais.push('Parte ' + (n + 1) + ':\n' + r.dados.resumo);
+          }
+          if (trControle.signal.aborted) return (trInfo.textContent = 'Cancelado.');
+          trInfo.textContent = '✨ A IA está unindo o resumo final…';
+          trResumirProgresso.querySelector('.transcricao-rodando-txt').textContent = 'Unindo o resumo final…';
+          const uniao = await trPost({
+            acao: 'resumo',
+            codigoTexto: codigoTextoSalvo(),
+            texto: 'RESUMOS PARCIAIS DO ÁUDIO:\n\n' + parciais.join('\n\n'),
+            contexto,
+            instrucoes
+          }, trControle.signal);
+          if (!uniao.ok) return (trInfo.textContent = trMensagem(uniao, 'Não foi possível unir o resumo final.'));
+          final = uniao.dados.resumo;
+        }
+        trResumo.value = final;
         trInfo.textContent = '✅ Resumo pronto' + (usouCorrigido ? ' (a partir do texto corrigido)' : '') + '. A IA pode errar: confira com o texto.';
       } finally {
         trControle = null;
@@ -19530,6 +19606,8 @@ function saveTemplatesToStorage() {
 
     // Corrigir com a IA: a IA fica fiel ao texto transcrito, sem resumir; corrige gramática e coerência e tira repetições sem sentido e ruídos.
     // O texto vai em blocos (de até ~5000 caracteres, em limites de parágrafo) para o texto corrigido caber por inteiro.
+    // Partes 2…N levam ~350 caracteres do fim do bloco anterior só como contexto (não reescritos).
+    const TRANSCRICAO_CORRECAO_OVERLAP = 350;
     function trBlocosParaCorrigir(texto) {
       const MAX = 5000;
       const unidades = [];
@@ -19570,6 +19648,7 @@ function saveTemplatesToStorage() {
           trCorrigirProgresso.querySelector('.transcricao-rodando-txt').textContent = 'A IA está corrigindo a parte ' + (n + 1) + ' de ' + blocos.length + '…';
           const corpo = { acao: 'corrigir', codigoTexto: codigoTextoSalvo(), texto: blocos[n], parte: n + 1, total: blocos.length };
           if (n === 0 && contextoUmaVez) corpo.contexto = contextoUmaVez;
+          if (n > 0) corpo.antes = blocos[n - 1].slice(-TRANSCRICAO_CORRECAO_OVERLAP);
           const r = await trPost(corpo, trControle.signal);
           if (!r.ok) return (trInfo.textContent = trMensagem(r, 'Não foi possível corrigir a parte ' + (n + 1) + '.') + (partes.length ? ' O que já foi corrigido está abaixo.' : ''));
           partes.push(r.dados.texto);
