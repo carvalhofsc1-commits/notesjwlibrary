@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.51
+
+Tela de prompts (administrador), Modelo, gasto e limites: "🤖 Modelo da IA de texto" e "📜 Preparação de discursos e esboços" ficam cada um no seu contêiner; o botão Salvar para todos fica logo abaixo dos dois.
+
 ## 6.4.50
 
 Tela de prompts (administrador), Modelo, gasto e limites: nova opção para escolher outro modelo e outro esforço da IA só para a Preparação de discursos e esboços (Tesouros, discurso curto, discurso público e Outros esboços). Em "o mesmo de cima" (padrão) eles usam o modelo geral.

@@ -1161,7 +1161,7 @@
           </div>
 
           <details class="prompt-cat" id="catIa" style="--cat-cor:#eab308">
-            <summary><h2>🤖 MODELO, GASTO E LIMITES</h2><span class="prompt-cat-qtd" aria-label="3 itens">3</span></summary>
+            <summary><h2>🤖 MODELO, GASTO E LIMITES</h2><span class="prompt-cat-qtd" aria-label="4 itens">4</span></summary>
             <div class="prompt-cat-corpo">
           <details class="prompt-item prompt-tint-ia">
             <summary><h3>🤖 Modelo da IA de texto</h3></summary>
@@ -1171,18 +1171,22 @@
             <p id="iaModeloPreco" class="hint"></p>
             <label for="iaEsforco">Esforço (quanto a IA pensa antes de responder)</label>
             <select id="iaEsforco"></select>
-            <p class="ia-esbocos-titulo"><strong>📜 Preparação de discursos e esboços</strong></p>
+          </details>
+
+          <details class="prompt-item prompt-tint-ia">
+            <summary><h3>📜 Preparação de discursos e esboços</h3></summary>
             <p class="hint">Escolha, se quiser, outro modelo (e esforço) só para a Preparação de discursos e esboços (Tesouros, discurso curto, discurso público e Outros esboços). Em “o mesmo de cima”, esses esboços usam o modelo e o esforço escolhidos acima, como todas as outras respostas da IA.</p>
             <label for="iaEsbocoModelo">Modelo para discursos e esboços</label>
             <select id="iaEsbocoModelo"></select>
             <p id="iaEsbocoPreco" class="hint"></p>
             <label for="iaEsbocoEsforco">Esforço para discursos e esboços</label>
             <select id="iaEsbocoEsforco"></select>
-            <div class="button-row">
-              <button id="iaSalvarBtn" type="button">💾 Salvar para todos</button>
-              <span id="iaStatus" class="ok" role="status" aria-live="polite"></span>
-            </div>
           </details>
+
+          <div class="button-row ia-salvar-linha">
+            <button id="iaSalvarBtn" type="button">💾 Salvar para todos</button>
+            <span id="iaStatus" class="ok" role="status" aria-live="polite"></span>
+          </div>
 
           <details class="prompt-item prompt-tint-ia">
             <summary><h3>💲 Gasto com a IA de texto (Anthropic)</h3></summary>
