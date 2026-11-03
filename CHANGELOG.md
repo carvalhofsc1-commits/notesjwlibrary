@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.46
+
+Esboços (Tesouros, discurso curto, discurso público e Outros esboços): os textos marcados com LEIA na matéria agora podem ser desmarcados pelo orador. Desmarcado, o texto não entra no esboço (nem fica como "falta"); se o esboço já o lia, o botão passa a "Atualizar o esboço com as mudanças nos textos" e a IA o retira, mantendo o resto. "Limpar marcação" devolve os LEIA.
+
 ## 6.4.45
 
 A Sentinela (comentários e dirigente) e Estudo Bíblico (comentários e dirigente): o botão "Carregar perguntas" passa a "Carregar matéria da semana" (e "Recarregar matéria da semana"), e o aviso "Aguardando carregar matéria da semana".

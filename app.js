@@ -7416,7 +7416,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.45'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.46'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -14346,7 +14346,8 @@ function saveTemplatesToStorage() {
       caixa.append(resumo, corpo);
       cfg.info.insertAdjacentElement('afterend', caixa);
       cfg.textosUi = { caixa, resumo, dica, incluir, limpar, lista };
-      limpar.addEventListener('click', () => { cfg.marcados.clear(); textosAtualizarMarcas(cfg); });
+      cfg.tirados = new Set(); // os textos LEIA que o orador desmarcou (não entram no esboço)
+      limpar.addEventListener('click', () => { cfg.marcados.clear(); cfg.tirados.clear(); textosAtualizarMarcas(cfg); }); // limpar também devolve os LEIA
       incluir.addEventListener('click', () => requestEsboco(cfg, 'incluir'));
     }
 
@@ -14355,6 +14356,7 @@ function saveTemplatesToStorage() {
       cfg.textos = [];
       cfg.textosAssinatura = '';
       cfg.marcados.clear();
+      cfg.tirados.clear();
       cfg.ultimoEsboco = null;
       cfg.itensUi = [];
       cfg.textosUi.lista.textContent = '';
@@ -14369,6 +14371,7 @@ function saveTemplatesToStorage() {
         cfg.textosAssinatura = assinatura;
         cfg.textos = nova;
         cfg.marcados = new Set(nova.filter(t => !t.leia && cfg.marcados.has(t.referencia)).map(t => t.referencia));
+        cfg.tirados = new Set(nova.filter(t => t.leia && cfg.tirados.has(t.referencia)).map(t => t.referencia)); // só valem os que continuam LEIA na lista nova
         cfg.textosUi.lista.textContent = '';
         cfg.itensUi = nova.map(t => {
           const item = document.createElement('li');
@@ -14395,7 +14398,10 @@ function saveTemplatesToStorage() {
             item.appendChild(ver);
           }
           caixa.addEventListener('change', () => {
-            if (caixa.checked) cfg.marcados.add(t.referencia);
+            if (t.leia) { // um texto LEIA vem marcado: desmarcar o tira do esboço (e marcar de novo o devolve)
+              if (caixa.checked) cfg.tirados.delete(t.referencia);
+              else cfg.tirados.add(t.referencia);
+            } else if (caixa.checked) cfg.marcados.add(t.referencia);
             else cfg.marcados.delete(t.referencia);
             textosAtualizarMarcas(cfg);
           });
@@ -14414,33 +14420,39 @@ function saveTemplatesToStorage() {
       const leia = textosLeia(cfg);
       const temEsboco = Boolean(cfg.ultimoEsboco);
       let pendentes = 0;
+      let pendentesTirar = 0; // textos LEIA que o orador tirou e que o esboço atual ainda lê
       cfg.itensUi.forEach(({ ref, caixa, tag }) => {
         const eLeia = leia.has(ref);
+        const tirado = eLeia && cfg.tirados.has(ref);
         const marcado = cfg.marcados.has(ref);
         const naoLeu = temEsboco && !noEsboco.has(ref);
-        caixa.checked = eLeia || marcado;
-        caixa.disabled = eLeia;
+        caixa.checked = eLeia ? !tirado : marcado;
+        caixa.disabled = false;
         let etiqueta = '';
         let classe = '';
-        if (eLeia) { etiqueta = naoLeu ? '📌 LEIA · falta no esboço' : '📌 LEIA'; classe = naoLeu ? 'falta' : 'leia'; }
+        if (tirado) {
+          if (temEsboco && noEsboco.has(ref)) { etiqueta = '🚫 LEIA · falta tirar do esboço'; classe = 'pendente'; pendentes++; pendentesTirar++; }
+          else etiqueta = '🚫 LEIA · você tirou';
+        }
+        else if (eLeia) { etiqueta = naoLeu ? '📌 LEIA · falta no esboço' : '📌 LEIA'; classe = naoLeu ? 'falta' : 'leia'; }
         else if (marcado && noEsboco.has(ref)) { etiqueta = '➕ incluído por você'; classe = 'incluido'; }
         else if (noEsboco.has(ref)) { etiqueta = '✅ no esboço'; classe = 'incluido'; }
         else if (marcado) { etiqueta = temEsboco ? '⏳ falta incluir' : '⏳ entra no esboço'; classe = 'pendente'; pendentes++; }
         tag.textContent = etiqueta;
         tag.className = 'textos-tag' + (classe ? ' ' + classe : '');
       });
-      const nLeia = leia.size;
+      const nLeia = [...leia].filter(ref => !cfg.tirados.has(ref)).length;
       const nMarcados = cfg.marcados.size;
       ui.resumo.textContent = '📖 Textos bíblicos da matéria (' + cfg.textos.length + ')' + (nLeia ? ' · ' + nLeia + ' com LEIA' : '') + (nMarcados ? ' · ' + nMarcados + (nMarcados === 1 ? ' marcado' : ' marcados') : '');
       ui.dica.textContent = temEsboco
         ? 'Marque mais textos para ler e toque em Incluir: a IA refaz o esboço com eles, mantendo o resto.'
-        : 'Marque os textos que quer ler além dos que a IA indicar: o esboço já sai com eles. Os marcados com LEIA entram sozinhos.';
+        : 'Marque os textos que quer ler além dos que a IA indicar: o esboço já sai com eles. Os marcados com LEIA entram sozinhos; desmarque um deles para tirá-lo do esboço.';
       ui.incluir.hidden = !temEsboco;
       if (!ui.incluir.classList.contains('is-loading')) {
-        ui.incluir.textContent = '➕ Incluir texto(s) marcado(s)' + (pendentes ? ' (' + pendentes + ')' : '');
+        ui.incluir.textContent = (pendentesTirar ? '🔄 Atualizar o esboço com as mudanças nos textos' : '➕ Incluir texto(s) marcado(s)') + (pendentes ? ' (' + pendentes + ')' : '');
         ui.incluir.disabled = !pendentes;
       }
-      ui.limpar.hidden = !nMarcados;
+      ui.limpar.hidden = !nMarcados && !cfg.tirados.size;
     }
 
     async function esbocoCarregar(cfg) {
@@ -14559,7 +14571,8 @@ function saveTemplatesToStorage() {
       const accessError = dirigenteAccessError() || (cfg.validar ? cfg.validar() : '');
       if (accessError) return setAiStatus(accessError, true);
       if (incluir && !cfg.ultimoEsboco) return setAiStatus('Elabore o esboço antes de incluir textos.', true);
-      if (incluir && !textosExtras(cfg).some(ref => !textosNoEsboco(cfg).has(ref))) return setAiStatus('Marque ao menos um texto que ainda não está no esboço.', true);
+      const tiraDoEsboco = [...cfg.tirados].some(ref => textosNoEsboco(cfg).has(ref)); // um texto LEIA desmarcado que o esboço ainda lê
+      if (incluir && !tiraDoEsboco && !textosExtras(cfg).some(ref => !textosNoEsboco(cfg).has(ref))) return setAiStatus('Marque ao menos um texto que ainda não está no esboço ou desmarque um que você não quer ler.', true);
 
       if (mode && (!incluir || esbocoNoCampo)) {
         if (!(await confirmAiRestore())) return;
@@ -14595,6 +14608,7 @@ function saveTemplatesToStorage() {
       // Os textos que o orador marcou na lista seguem em todo pedido (a primeira elaboração, outra versão, melhorar e incluir).
       const extras = textosExtras(cfg);
       if (extras.length) payload.textosExtras = extras;
+      if (cfg.tirados.size) payload.textosSem = [...cfg.tirados]; // os LEIA que o orador desmarcou: o esboço não os lê
       if (previous) {
         payload.modo = mode;
         payload.anteriores = { esboco: previous };

@@ -1722,7 +1722,7 @@ async function leituraDaBiblia(referencia) {
 
 // Cada leitura da IA ganha o texto da Bíblia: { referencia, texto, introducao, destaque }. Um texto nunca é lido duas vezes e o
 // total respeita o máximo (a leitura que sobra cai, o argumento fica).
-async function conferirLeituras(pontos, max = Infinity, permitidas = null) {
+async function conferirLeituras(pontos, max = Infinity, permitidas = null, proibidas = null) {
   const lidas = new Set();
   let total = 0;
   for (const ponto of pontos) {
@@ -1735,6 +1735,11 @@ async function conferirLeituras(pontos, max = Infinity, permitidas = null) {
       const achada = await leituraDaBiblia(d.leitura.referencia);
       // No discurso público só se lê o que o esboço do S-34 marca com [Leia ...].
       if (permitidas && !permitidas.has(achada.referencia)) {
+        d.leitura = null;
+        continue;
+      }
+      // Os textos que o orador tirou da lista nunca ficam no esboço.
+      if (proibidas && proibidas.size && proibidas.has(chaveDeBusca(achada.referencia).replace(/\s+/g, ""))) {
         d.leitura = null;
         continue;
       }
@@ -1814,7 +1819,8 @@ async function corpoDoEsbocoLimpo(saidaBruta, o) {
       transicao: semRotuloDeTopico(limparTextoGerado(p.transicao, 300)) || null,
     }))
     .filter((p) => p.titulo);
-  await conferirLeituras(pontos, o.maxLeituras, o.leiturasPermitidas ? new Set(o.leiturasPermitidas) : null);
+  const proibidas = new Set((o.leiturasProibidas || []).map((r) => chaveDeBusca(r).replace(/\s+/g, "")));
+  await conferirLeituras(pontos, o.maxLeituras, o.leiturasPermitidas ? new Set(o.leiturasPermitidas) : null, proibidas);
 
   const tema = limparTextoGerado(saida.tema, 200) || o.temaPadrao;
   // Introdução e conclusão são escritas palavra por palavra: falas curtas e, em cada uma, os itens de uma enumeração (que o app numera).
@@ -1841,7 +1847,7 @@ async function corpoDoEsbocoLimpo(saidaBruta, o) {
   }
   if (o.leiturasObrigatorias && o.leiturasObrigatorias.length) {
     const lidas = new Set(leituras.map((l) => l.referencia));
-    const faltam = [...new Set(o.leiturasObrigatorias)].filter((r) => !lidas.has(r));
+    const faltam = [...new Set(o.leiturasObrigatorias)].filter((r) => !lidas.has(r) && !proibidas.has(chaveDeBusca(r).replace(/\s+/g, "")));
     if (faltam.length) avisos.push(`Faltou a leitura de ${faltam.join("; ")}${o.motivoObrigatorias ? ", " + o.motivoObrigatorias : ""}. Use "Melhorar" ou "Incluir texto(s)" para incluí-la.`);
   }
   if (leituras.some((l) => !l.introducao || !l.destaque)) {
@@ -1926,6 +1932,19 @@ async function textosExtrasDoPedido(body) {
   return extras;
 }
 
+// Os textos que o orador TIROU da lista (inclusive os marcados com "Leia" na matéria): "textosSem" do pedido, como a Bíblia os escreve.
+async function textosTiradosDoPedido(body) {
+  const brutos = (Array.isArray(body.textosSem) ? body.textosSem : []).filter((t) => typeof t === "string").map((t) => limparLinha(t, 80)).filter(Boolean).slice(0, 40);
+  const tirados = new Set();
+  for (const bruto of brutos) tirados.add((await leituraDaBiblia(bruto)).referencia);
+  return tirados;
+}
+
+function blocoDeTextosTirados(tirados, P) {
+  if (!tirados.size) return "";
+  return "\n\n" + trocar(P.frases.pedidos["Esboço: textos tirados pelo orador"], { textos: [...tirados].join("; ") });
+}
+
 // Os trechos do pedido (frases editáveis em "Orientação do usuário, lembrete…"): os textos marcados com "Leia" na matéria e os que o
 // orador escolheu, cada bloco com o texto exato dos versículos.
 function blocoDeTextosMarcados(leiaDaMateria, P) {
@@ -2008,7 +2027,8 @@ async function esbocoDeTesouros(res, body, P) {
   // Os textos marcados com "Leia" nas fontes da matéria e os que o orador escolheu ler além dos previstos.
   const materia = textosBiblicosDeTesouros(discurso);
   const extras = await textosExtrasDoPedido(body);
-  const leiaDaMateria = await referenciasDaBiblia(materia.leia);
+  const tirados = await textosTiradosDoPedido(body);
+  const leiaDaMateria = (await referenciasDaBiblia(materia.leia)).filter((r) => !tirados.has(r));
 
   let versiculos = [];
   if (fontesConfiguradas()) {
@@ -2026,6 +2046,7 @@ async function esbocoDeTesouros(res, body, P) {
     textoDosTesouros(discurso, versiculos) +
     blocoDeTextosMarcados(leiaDaMateria, P) +
     blocoDeTextosEscolhidos(extras, P) +
+    blocoDeTextosTirados(tirados, P) +
     lembreteFinal(opcoes, ajuste, P);
   if (modo && anteriores) {
     mensagem += "\n\nESBOÇO JÁ SUGERIDO (JSON):\n" + anteriores + "\n\n" + pedidoDoModo(modo, P);
@@ -2059,6 +2080,7 @@ async function esbocoDeTesouros(res, body, P) {
       // Nenhuma leitura pode faltar: as marcadas com Leia na matéria, as que o orador escolheu e, ao incluir textos, as que o esboço já tinha.
       leiturasObrigatorias: [...leiaDaMateria, ...extras.map((e) => e.referencia), ...(modo === "incluir" ? leiturasDoEsbocoAnterior(body.anteriores) : [])],
       motivoObrigatorias: "que a matéria marca com Leia, que você escolheu ou que o esboço já tinha",
+      leiturasProibidas: [...tirados],
     });
     const pontos = esboco.pontos;
     const completo = pontos.length > 0 && esboco.introducao.blocos.length > 0 && esboco.conclusao.blocos.length > 0;
@@ -2161,7 +2183,8 @@ async function esbocoDoDiscursoCurto(res, body, P) {
   // Os textos marcados com "Leia" na matéria e os que o orador escolheu ler além dos previstos.
   const materia = textosBiblicosDoDiscursoCurto(discurso);
   const extras = await textosExtrasDoPedido(body);
-  const leiaDaMateria = await referenciasDaBiblia(materia.leia);
+  const tirados = await textosTiradosDoPedido(body);
+  const leiaDaMateria = (await referenciasDaBiblia(materia.leia)).filter((r) => !tirados.has(r));
 
   let versiculos = [];
   if (fontesConfiguradas()) {
@@ -2179,6 +2202,7 @@ async function esbocoDoDiscursoCurto(res, body, P) {
     textoDoDiscursoCurto(discurso, versiculos) +
     blocoDeTextosMarcados(leiaDaMateria, P) +
     blocoDeTextosEscolhidos(extras, P) +
+    blocoDeTextosTirados(tirados, P) +
     lembreteFinal(opcoes, ajuste, P);
   if (modo && anteriores) {
     mensagem += "\n\nESBOÇO JÁ SUGERIDO (JSON):\n" + anteriores + "\n\n" + pedidoDoModo(modo, P);
@@ -2214,6 +2238,7 @@ async function esbocoDoDiscursoCurto(res, body, P) {
       leituraEmCadaPonto: true,
       leiturasObrigatorias: [...leiaDaMateria, ...extras.map((e) => e.referencia), ...(modo === "incluir" ? leiturasDoEsbocoAnterior(body.anteriores) : [])],
       motivoObrigatorias: "que a matéria marca com Leia, que você escolheu ou que o esboço já tinha",
+      leiturasProibidas: [...tirados],
     });
     const pontos = corpo.pontos;
 
@@ -2353,6 +2378,7 @@ async function esbocoDoDiscursoPublico(res, body, P) {
   if (!tema) return;
   const { leituras: marcadas, citadas } = referenciasDoPublico(tema);
   const extras = await textosExtrasDoPedido(body); // os textos que o orador escolheu ler além dos marcados no S-34
+  const tirados = await textosTiradosDoPedido(body); // os que ele tirou da lista (mesmo marcados no S-34)
 
   let versiculos = [];
   let permitidas = null; // as leituras marcadas, como a Bíblia as escreve (sem a Bíblia no servidor não dá para conferir)
@@ -2367,6 +2393,7 @@ async function esbocoDoDiscursoPublico(res, body, P) {
       versiculos = await buscarVersiculos([...marcadas, ...citadas], 40);
       permitidas = [];
       for (const r of marcadas) permitidas.push((await leituraDaBiblia(r)).referencia);
+      permitidas = permitidas.filter((r) => !tirados.has(r));
       // Além dos marcados no S-34, só se lê o que o orador escolheu.
       permitidas = [...new Set([...permitidas, ...extras.map((e) => e.referencia)])];
       aceitas = permitidas;
@@ -2394,6 +2421,7 @@ async function esbocoDoDiscursoPublico(res, body, P) {
     textoDoDiscursoPublico(tema, versiculos) +
     (aEscolher ? "\n\n" + aEscolher.trimEnd() + "\n\n" : "") +
     blocoDeTextosEscolhidos(extras, P) +
+    blocoDeTextosTirados(tirados, P) +
     lembreteFinal(opcoes, ajuste, P);
   if (modo && anteriores) {
     mensagem += "\n\nESBOÇO JÁ SUGERIDO (JSON):\n" + anteriores + "\n\n" + pedidoDoModo(modo, P);
@@ -2426,6 +2454,7 @@ async function esbocoDoDiscursoPublico(res, body, P) {
       leiturasObrigatorias: permitidas,
       minLeituras: minimoLeituras || undefined,
       motivoObrigatorias: "que o esboço do S-34 marca ou que você escolheu",
+      leiturasProibidas: [...tirados],
     });
     // Os tempos são os do esboço do S-34 (um ponto por seção); a introdução e a conclusão cabem dentro deles.
     esboco.pontos.forEach((p, i) => {
@@ -2662,6 +2691,7 @@ async function esbocoDeOutros(res, body, P) {
 
   const [{ artigos, falhas }, pedidos, extras, daBase] = await Promise.all([artigosDoOutros(d), textosPedidosDoOutros(d), textosExtrasDoPedido(body), referenciasDaBase(d)]);
   const naMateria = await referenciasNoTexto(d.materia, { max: 40 });
+  const tirados = await textosTiradosDoPedido(body); // os textos que o orador tirou da lista (mesmo os marcados "Leia" do esboço importado)
   const doEsbocoAnterior = modo ? leiturasDoEsbocoAnterior(body.anteriores) : [];
   const base = d.esbocoBase;
 
@@ -2687,6 +2717,7 @@ async function esbocoDeOutros(res, body, P) {
     emojisDoEsboco(opcoes, P) + "\n\n" +
     textoDoOutros(d, { pedidos: aLer, sugeridas, artigos, versiculos }) +
     blocoDeTextosEscolhidos(extras, P) +
+    blocoDeTextosTirados(tirados, P) +
     lembreteFinal(opcoes, ajuste, P);
   if (modo && anteriores) {
     mensagem += "\n\nESBOÇO JÁ SUGERIDO (JSON):\n" + anteriores + "\n\n" + pedidoDoModo(modo, P);
@@ -2720,6 +2751,7 @@ async function esbocoDeOutros(res, body, P) {
       leiturasPermitidas: sugeridas || !fontesConfiguradas() ? null : escolhidos,
       leiturasObrigatorias: [...aLer, ...extras.map((e) => e.referencia), ...(modo === "incluir" ? doEsbocoAnterior : [])],
       motivoObrigatorias: "que você pediu, que o esboço importado marca, que você escolheu ou que o esboço já tinha",
+      leiturasProibidas: [...tirados],
     });
     // O tema é o que o orador digitou (ou o do esboço importado); as fontes são o esboço importado e os artigos do wol.jw.org que o servidor leu.
     const esboco = { ...corpo, tema: d.tema, fontes: [...(base ? ["Esboço importado: " + base.titulo] : []), ...artigos.map((a) => a.titulo).filter(Boolean)] };
