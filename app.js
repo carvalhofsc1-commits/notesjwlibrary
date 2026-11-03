@@ -7416,7 +7416,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.44'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.45'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -13182,12 +13182,12 @@ function saveTemplatesToStorage() {
         picker.prev.disabled = !options.length || index <= 0;
         picker.next.disabled = !options.length || index >= options.length - 1;
         // Durante o carregamento o botão mostra "Consultando o wol.jw.org…": o rótulo volta no fim (setAiLoading).
-        if (!picker.load.dataset.label) picker.load.textContent = aiStudy ? '↻ Recarregar perguntas' : '📋 Carregar perguntas';
+        if (!picker.load.dataset.label) picker.load.textContent = aiStudy ? '↻ Recarregar matéria da semana' : '📋 Carregar matéria da semana';
         const exact = options.some(option => plainStudyText(option) === plainStudyText(picker.input.value));
         picker.info.textContent = aiStudy ? (exact ? '(opção ' + (index + 1) + ' de ' + options.length + ')' : '(texto livre)') : '';
         // O tema do artigo carregado é o título do cartão (em destaque); sem perguntas carregadas, "Aguardando carregar perguntas".
         if (picker.titulo) {
-          const texto = aiStudy ? aiStudy.titulo || '' : 'Aguardando carregar perguntas';
+          const texto = aiStudy ? aiStudy.titulo || '' : 'Aguardando carregar matéria da semana';
           picker.titulo.textContent = texto;
           picker.titulo.hidden = !texto;
           picker.titulo.classList.toggle('study-tema', Boolean(aiStudy && texto));
@@ -13645,14 +13645,14 @@ function saveTemplatesToStorage() {
           link.textContent = [dados.materia, dados.titulo].filter(Boolean).join(' · ');
           titulo.appendChild(link);
         } else {
-          titulo.textContent = 'Aguardando carregar perguntas';
+          titulo.textContent = 'Aguardando carregar matéria da semana';
         }
         titulo.classList.toggle('study-tema', carregado);
         titulo.classList.toggle('study-aguardando', !carregado);
       }
       const botao = cartao && document.getElementById(cartao.botao);
       if (botao) {
-        const rotulo = carregado ? '↻ Recarregar perguntas' : '📋 Carregar perguntas';
+        const rotulo = carregado ? '↻ Recarregar matéria da semana' : '📋 Carregar matéria da semana';
         if (botao.dataset.label) botao.dataset.label = rotulo; // carregando: o rótulo volta ao fim (setAiLoading)
         else botao.textContent = rotulo;
       }
