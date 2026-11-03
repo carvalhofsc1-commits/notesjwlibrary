@@ -769,7 +769,8 @@ const MAX_FONTES_TESOUROS = 8;
 // Itens do bloco: { texto, referencias (bíblicas), citacoes (links /wol/pc/: { caminho, citacao }) }.
 function itemDeTesouros(conteudo) {
   const citacoes = [...conteudo.matchAll(/<a\b[^>]*href="(\/pt\/wol\/pc\/[^"]+)"[^>]*>([\s\S]*?)<\/a>/g)].map(([, caminho, rotulo]) => ({ caminho, citacao: textoDe(rotulo) }));
-  return { texto: textoDe(conteudo), referencias: referenciasDe(conteudo), citacoes, temLinks: /<a\b/.test(conteudo) };
+  const leias = new Set(); // os textos que o próprio texto da apostila manda ler ("(Leia …)")
+  return { texto: textoDe(conteudo), referencias: referenciasDe(conteudo, leias), leias: [...leias], citacoes, temLinks: /<a\b/.test(conteudo) };
 }
 
 // O discurso de Tesouros no HTML da apostila (sem as fontes lidas): { titulo, minutos, pontos, reflexao } ou null.
@@ -847,14 +848,15 @@ export function referenciasDeTesouros(discurso) {
   return [...new Set([...discurso.pontos.flatMap((p) => p.referencias), ...(discurso.reflexao ? discurso.reflexao.referencias : [])])];
 }
 
-// Os textos bíblicos da matéria de Tesouros, para a lista da tela: os da apostila, os dos trechos das fontes lidas e os da reflexão
-// (todos), e os marcados com "(Leia …)" nessas fontes.
+// Os textos bíblicos da matéria de Tesouros, para a lista da tela: os da apostila, os dos trechos das fontes lidas e os da reflexão (todos
+// podem ser lidos no esboço: a IA sugere e o orador marca). Só os marcados com "(Leia …)" no texto da própria apostila valem como LEIA
+// original; os "(Leia …)" que vêm dentro das publicações citadas como fonte (matéria de referência) não.
 export function textosBiblicosDeTesouros(discurso) {
   const itens = [...discurso.pontos, ...(discurso.reflexao ? [discurso.reflexao] : [])];
   const fontes = itens.flatMap((i) => i.fontes || []);
   return {
     todos: [...itens.flatMap((i) => i.referencias || []), ...fontes.flatMap((f) => f.referencias || [])],
-    leia: fontes.flatMap((f) => f.leias || []),
+    leia: itens.flatMap((i) => i.leias || []),
   };
 }
 
@@ -1051,7 +1053,7 @@ export async function lerDiscursoCurto(urlReuniao, { timeoutMs = 8000 } = {}) {
     licaoCitada: base.licao ? base.licao.citacao : null,
     pesquisa,
     referencias: indicadas,
-    leias: [...new Set([...(base.leias || []), ...(fonte && fonte.tipo === "ponto" ? fonte.leias || [] : [])])],
+    leias: [...new Set(base.leias || [])], // o LEIA original vale só para o que a apostila manda ler (os da fonte não são LEIA original)
     imagens: base.imagens || [],
     url,
   };
@@ -1066,7 +1068,8 @@ export function referenciasDoDiscursoCurto(discurso) {
   return discurso.fonte && discurso.fonte.tipo === "documento" ? discurso.fonte.referencias : [];
 }
 
-// Os textos bíblicos da matéria do discurso curto, para a lista da tela: os indicados, os da fonte e os marcados com "(Leia …)".
+// Os textos bíblicos da matéria do discurso curto, para a lista da tela: os indicados e os da fonte (artigo ou ponto do apêndice) entram, para
+// a IA sugerir e o orador marcar; só os marcados com "(Leia …)" na apostila valem como LEIA original (os da fonte não).
 export function textosBiblicosDoDiscursoCurto(discurso) {
   return {
     todos: [...discurso.referencias, ...(discurso.fonte ? discurso.fonte.referencias || [] : [])],

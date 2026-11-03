@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.47
+
+Esboços (Tesouros e discurso curto): só o que vem na matéria principal da apostila ("(Leia …)" no texto dela) e nos esboços (S-34 ou importado) é marcado como LEIA original. Os "(Leia …)" que vêm dentro das publicações citadas como fonte (artigos, trechos, ponto do apêndice) deixam de ser rotulados como LEIA na lista; esses textos continuam na lista, a IA pode sugeri-los e o orador pode marcá-los, e quando entram no esboço aparecem com LEIA dentro dele.
+
 ## 6.4.46
 
 Esboços (Tesouros, discurso curto, discurso público e Outros esboços): os textos marcados com LEIA na matéria agora podem ser desmarcados pelo orador. Desmarcado, o texto não entra no esboço (nem fica como "falta"); se o esboço já o lia, o botão passa a "Atualizar o esboço com as mudanças nos textos" e a IA o retira, mantendo o resto. "Limpar marcação" devolve os LEIA.
