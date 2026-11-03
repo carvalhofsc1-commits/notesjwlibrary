@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.59
+
+Notas de modelo nos botões das telas Leitura e Áudio em texto: o botão Ler mostra a voz e o modelo de voz; Iniciar a transcrição mostra o reconhecimento de voz (Google Chirp 3); Corrigir e Resumir mostram o modelo e o esforço da IA. Corrigir e Resumir passaram a usar o esforço escolhido na tela de modelos (antes ficava no padrão do modelo).
+
 ## 6.4.58
 
 Caixinha de formatação da seleção: corrigido no iPhone, onde os botões apareciam mas o toque não aplicava a formatação (o toque agora age no fim do toque, sem perder a seleção).

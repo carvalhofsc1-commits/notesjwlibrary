@@ -9,6 +9,9 @@ import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { credenciais, tokenDeAcesso } from "./_googleToken.mjs";
 import { lerConfigIa } from "./_iaConfig.mjs";
 
+// O esforço escolhido pelo administrador (o mesmo das outras respostas da IA). Modelos antigos (Haiku 4.5, Sonnet 4.5...) não aceitam "effort".
+const esforcoDoModelo = (modelo, esforco) => (/haiku-4|sonnet-4-5|-3-/.test(modelo) ? {} : { output_config: { effort: esforco } });
+
 const REGIAO = process.env.GOOGLE_STT_REGIAO || "us";
 const MODELO_STT = process.env.GOOGLE_STT_MODELO || "chirp_3";
 const MAX_AUDIO_BASE64 = 3_000_000; // ~2,2 MB de áudio: um trecho de 50 s em PCM 16 kHz mono tem ~1,6 MB (a Vercel aceita até 4,5 MB por pedido)
@@ -156,10 +159,11 @@ export default async function handler(req, res) {
       const texto = typeof corpo.texto === "string" ? corpo.texto.trim().slice(0, MAX_CARACTERES_RESUMO) : "";
       if (texto.length < 40) return erro(res, 400, "Texto curto demais para resumir.");
       if (excedeu("resumo", ip, LIMITE_RESUMOS_POR_HORA)) return erro(res, 429, "Muitos resumos nesta hora. Tente novamente mais tarde.");
-      const { modelo } = await lerConfigIa();
+      const { modelo, esforco } = await lerConfigIa();
       const client = new Anthropic({ maxRetries: 1, timeout: 120_000 });
       const resposta = await client.messages.create({
         model: modelo,
+        ...esforcoDoModelo(modelo, esforco),
         max_tokens: 4000,
         system: SISTEMA_RESUMO,
         messages: [{ role: "user", content: montarPedidoResumo(texto, corpo.contexto, corpo.instrucoes) }],
@@ -186,10 +190,11 @@ export default async function handler(req, res) {
       if (excedeu("correcao", ip, LIMITE_CORRECOES_POR_HORA)) return erro(res, 429, "Muitas correções nesta hora. Tente novamente mais tarde.");
       const parte = Math.max(1, Math.min(Number(corpo.parte) || 1, 1000));
       const total = Math.max(parte, Math.min(Number(corpo.total) || 1, 1000));
-      const { modelo } = await lerConfigIa();
+      const { modelo, esforco } = await lerConfigIa();
       const client = new Anthropic({ maxRetries: 1, timeout: 120_000 });
       const resposta = await client.messages.create({
         model: modelo,
+        ...esforcoDoModelo(modelo, esforco),
         max_tokens: 8000,
         system: SISTEMA_CORRECAO,
         messages: [{ role: "user", content: montarPedidoCorrecao(texto, corpo.contexto, parte, total) }],

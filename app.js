@@ -3605,7 +3605,8 @@
       aiSuggestBtn: 'geral', aiSentinelaBtn: 'geral', aiStudyBtn: 'geral', aiStudyQuestionsBtn: 'geral', tdGerarBtn: 'geral',
       joiasResponderBtn: 'geral', ebcResponderBtn: 'geral', ebcDirPerguntasBtn: 'geral',
       tesourosEsbocoBtn: 'esbocos', discursoEsbocoBtn: 'esbocos', publicoEsbocoBtn: 'esbocos', outrosEsbocoBtn: 'esbocos',
-      transcricaoCorrigirBtn: 'modelo', transcricaoResumirBtn: 'modelo'
+      transcricaoCorrigirBtn: 'geral', transcricaoResumirBtn: 'geral',
+      transcricaoIniciarBtn: '=Reconhecimento de voz: Google Chirp 3' // texto fixo (a transcrição é do Google, não da IA de texto); o botão Ler é preenchido por vozInfoMostrar
     };
     let iaNotaDados = null;
     try { iaNotaDados = JSON.parse(localStorage.getItem('ns-ia-nota') || 'null'); } catch (e) { /* sem armazenamento */ }
@@ -3615,6 +3616,7 @@
         const b = document.getElementById(id);
         if (!b) return;
         const tipo = IA_NOTA_BOTOES[id];
+        if (tipo.charAt(0) === '=') return b.setAttribute('data-ia-nota', tipo.slice(1));
         const d = iaNotaDados && iaNotaDados[tipo === 'esbocos' ? 'esbocos' : 'geral'];
         if (!d || !d.modelo) return b.removeAttribute('data-ia-nota');
         b.setAttribute('data-ia-nota', 'Modelo: ' + d.modelo + (tipo !== 'modelo' && d.esforco ? ' · esforço: ' + d.esforco.toLowerCase() : ''));
@@ -3632,6 +3634,7 @@
         }
       } catch (e) { /* sem conexão: fica o último valor */ }
     }
+    setTimeout(() => { vozCarregarRegras().then(() => vozInfoMostrar()).catch(() => {}); }, 0); // a voz da leitura (nota sob o botão Ler)
     setTimeout(iaNotaCarregar, 0); // depois do script inteiro: o postConfig usa CONFIG_ENDPOINT, declarado mais adiante (chamar já aqui falha em silêncio)
 
     // ---------- Referências bíblicas para a voz ----------
@@ -5373,6 +5376,11 @@
     // caído na voz reserva (Chirp 3 HD), avisa.
     function vozInfoMostrar(geminiReal) {
       const d = vozRegras && vozRegras.descricao;
+      const botaoLer = document.getElementById('leituraLerBtn'); // a notinha sob o botão Ler (mesmo estilo dos botões da IA)
+      if (botaoLer) {
+        if (d) botaoLer.setAttribute('data-ia-nota', 'Voz ' + (vozEscolhida || d.voz) + ' · ' + d.qualidade);
+        else botaoLer.removeAttribute('data-ia-nota');
+      }
       if (!d) {
         vozInfo.hidden = true;
         return;
@@ -7472,7 +7480,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.58'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.59'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
