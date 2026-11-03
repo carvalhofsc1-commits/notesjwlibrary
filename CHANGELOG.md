@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.56
+
+Sugerir formatação com IA: texto acima do limite recomendado não é mais bloqueado; o app avisa o tamanho e pergunta se deseja formatar mesmo assim (vale até 5 vezes o limite, no máximo 30000 caracteres e 500 linhas). Novo: sob o campo do texto, estatísticas discretas (palavras, caracteres, linhas, parágrafos e tempo de leitura em voz alta).
+
 ## 6.4.55
 
 Botões da IA: corrigido o aviso de modelo e esforço sob os botões, que não aparecia porque a consulta ao servidor era feita cedo demais, antes de o app terminar de carregar.

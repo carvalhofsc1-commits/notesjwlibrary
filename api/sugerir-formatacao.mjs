@@ -249,12 +249,18 @@ function validarOpcoes(opcoes) {
   };
 }
 
+// Texto acima do limite recomendado da Sugerir formatação: o app avisa e pergunta; se o usuário confirma, o pedido vai com "textoLongo" e vale até
+// 5 vezes o limite (no máximo 30000 caracteres e 500 linhas). O app usa a mesma conta (limiteDoTextoLongo, em app.js).
+const limiteDoTextoLongo = (chars, linhas) => ({ chars: Math.min(chars * 5, 30000), linhas: Math.min(linhas * 5, 500) });
+
 function validarEntrada(body, L) {
   if (!body || typeof body !== "object") return null;
 
   const tarefa = body.tarefa === "sentinela" ? "sentinela" : "formatar";
-  const maxChars = tarefa === "sentinela" ? L.maxCharsSentinela : L.maxCharsFormatacao;
-  const maxLinhas = tarefa === "sentinela" ? L.maxLinhasSentinela : L.maxLinhasFormatacao;
+  const longo = tarefa === "formatar" && body.textoLongo === true;
+  const teto = limiteDoTextoLongo(L.maxCharsFormatacao, L.maxLinhasFormatacao);
+  const maxChars = tarefa === "sentinela" ? L.maxCharsSentinela : longo ? teto.chars : L.maxCharsFormatacao;
+  const maxLinhas = tarefa === "sentinela" ? L.maxLinhasSentinela : longo ? teto.linhas : L.maxLinhasFormatacao;
 
   const { linhas, modelos } = body;
   if (!Array.isArray(linhas) || !Array.isArray(modelos)) return null;
@@ -280,6 +286,7 @@ function validarEntrada(body, L) {
 
   return {
     tarefa,
+    longo,
     linhas,
     modelos: modelosOk,
     opcoes: validarOpcoes(body.opcoes),
@@ -3620,11 +3627,11 @@ async function tratarPedido(req, res) {
   precarregarFontes({ biblia: opcoes.consultarBiblia, perspicaz: opcoes.consultarPerspicaz });
 
   try {
-    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 60_000) });
+    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, entrada.longo ? 110_000 : 60_000) });
     const resposta = await chamarIa(
       client,
       P,
-      { max_tokens: opcoes.intensidade === "muitas" ? 10000 : 6000, system: P.sistemaFormatacao, messages: [{ role: "user", content: mensagem }] },
+      { max_tokens: entrada.longo ? 16000 : opcoes.intensidade === "muitas" ? 10000 : 6000, system: P.sistemaFormatacao, messages: [{ role: "user", content: mensagem }] },
       { schema: Saida, semPensar: true, tarefa: "formatar" }
     );
 

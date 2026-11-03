@@ -7374,6 +7374,25 @@
     }
 
     const input = document.getElementById('inputText');
+    // Estatísticas do texto, em letra pequena sob o campo: atualizam ao digitar e quando o app troca o texto por código.
+    const textoEstatisticasEl = document.getElementById('textoEstatisticas');
+    function textoEstatisticasAtualizar() {
+      const t = input.value;
+      if (!t.trim()) { textoEstatisticasEl.textContent = ''; return; }
+      const n = x => x.toLocaleString('pt-BR');
+      const palavras = (t.match(/\S+/g) || []).length;
+      const linhas = t.split('\n').filter(l => l.trim()).length;
+      const paragrafos = t.split(/\n\s*\n/).filter(p => p.trim()).length;
+      const minutos = Math.max(1, Math.round(palavras / 130)); // fala em voz alta, cerca de 130 palavras por minuto
+      textoEstatisticasEl.textContent = n(palavras) + ' palavras · ' + n(t.length) + ' caracteres (' + n(t.replace(/\s/g, '').length) + ' sem espaços) · '
+        + n(linhas) + (linhas === 1 ? ' linha' : ' linhas') + ' · ' + n(paragrafos) + (paragrafos === 1 ? ' parágrafo' : ' parágrafos') + ' · leitura em voz alta: ~' + minutos + ' min';
+    }
+    {
+      const valorOriginal = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
+      Object.defineProperty(input, 'value', { configurable: true, get() { return valorOriginal.get.call(this); }, set(v) { valorOriginal.set.call(this, v); textoEstatisticasAtualizar(); } });
+      input.addEventListener('input', textoEstatisticasAtualizar);
+      textoEstatisticasAtualizar();
+    }
     const styleSelect = document.getElementById('styleSelect');
     const styleOptionInfo = document.getElementById('styleOptionInfo');
     const selectionInfo = document.getElementById('selectionInfo');
@@ -7453,7 +7472,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.55'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.56'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -11901,6 +11920,8 @@ function saveTemplatesToStorage() {
     const IA_ESPERA_MS = 290000;
     const AI_OPTIONS_KEY = 'jwLibraryNoteAplicarAiOptionsV1';
     // Limites de tamanho do texto enviado à IA: valem estes até o servidor informar os configurados pelo administrador.
+    // O mesmo cálculo do servidor (limiteDoTextoLongo): até 5 vezes o limite recomendado, no máximo 30000 caracteres e 500 linhas.
+    const limiteDoTextoLongo = (chars, linhas) => ({ chars: Math.min(chars * 5, 30000), linhas: Math.min(linhas * 5, 500) });
     let AI_MAX_CHARS = 4000;
     let AI_MAX_LINES = 80;
     let AI_SENTINELA_MAX_CHARS = 12000;
@@ -12671,10 +12692,16 @@ function saveTemplatesToStorage() {
       updateAiControls();
 
       if (!lines.length) return setAiStatus('Digite ou cole um texto no campo "Texto original" primeiro.', true);
-      if (totalChars > AI_MAX_CHARS || lines.length > AI_MAX_LINES) {
-        return setAiStatus('Texto grande demais para a IA (máximo ' + AI_MAX_CHARS + ' caracteres e ' + AI_MAX_LINES + ' linhas).', true);
+      // Texto acima do recomendado: não bloqueia; avisa e pergunta (só passa de um teto maior, que o servidor também confere).
+      const teto = limiteDoTextoLongo(AI_MAX_CHARS, AI_MAX_LINES);
+      const textoLongo = totalChars > AI_MAX_CHARS || lines.length > AI_MAX_LINES;
+      if (totalChars > teto.chars || lines.length > teto.linhas) {
+        return setAiStatus('Texto grande demais para a IA (máximo ' + teto.chars + ' caracteres e ' + teto.linhas + ' linhas). Formate por partes.', true);
       }
       if (!navigator.onLine) return setAiStatus('Sem conexão com a internet.', true);
+      if (textoLongo && !(await askConfirm('Este texto é longo: ' + totalChars + ' caracteres e ' + lines.length + ' linhas (o recomendado é até ' + AI_MAX_CHARS + ' caracteres e ' + AI_MAX_LINES + ' linhas). A formatação pode demorar mais, custar mais e vir menos caprichada. Deseja formatar mesmo assim?', 'Texto longo', { ok: 'Formatar mesmo assim', cancel: 'Cancelar' }))) {
+        return setAiStatus('Formatação cancelada. Nada foi enviado.', false);
+      }
 
       if (!aiAppliedAny) aiBaseText = input.value;
       saveAiOptions();
@@ -12691,6 +12718,7 @@ function saveTemplatesToStorage() {
 
       const options = readAiOptions(); // inclui "Incluir resumo do texto" e as consultas, como estão marcados agora
       const payload = { tarefa: 'formatar', codigo: codigoAcessoSalvo(), linhas: lines, modelos, opcoes: options };
+      if (textoLongo) payload.textoLongo = true;
       if (mode && (aiRaw.length || previousSummary)) {
         payload.modo = mode;
         payload.anteriores = { resumo: previousSummary ? (previousSummary.texto || null) : null, textos: previousSummary ? previousSummary.textos : null, perspicaz: previousSummary ? previousSummary.perspicaz : null, sugestoes: aiRaw };

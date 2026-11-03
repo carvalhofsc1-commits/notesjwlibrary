@@ -2271,6 +2271,18 @@
       border-color: var(--tint1-border);
     }
 
+    .texto-estatisticas {
+      margin: 4px 2px 0;
+      font-size: .7rem;
+      line-height: 1.3;
+      color: var(--muted, #64748b);
+      opacity: .85;
+    }
+
+    .texto-estatisticas:empty {
+      display: none;
+    }
+
     .hint {
       color: var(--muted);
       font-size: .92rem;
