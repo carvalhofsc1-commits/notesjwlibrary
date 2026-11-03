@@ -1442,6 +1442,16 @@
               <button id="audioTiposTodosSalvarBtn" type="button">💾 Salvar para todos</button>
             </div>
             <p id="audioTiposTodosStatus" class="ok" role="status" aria-live="polite"></p>
+            <h3 class="audio-todos-titulo">⏱️ Duração máxima do áudio</h3>
+            <p class="hint">Quanto tempo o áudio pode ter. Vale para todos os usuários depois de tocar em <strong>💾 Salvar para todos</strong>. Arquivos muito longos exigem muita memória do aparelho para serem abertos: em iPhones mais antigos o navegador pode fechar a página; se isso acontecer, reduza o valor do arquivo.</p>
+            <label for="audioLimArquivo">Arquivo escolhido na pasta do aparelho (minutos, de 5 a 180)</label>
+            <input id="audioLimArquivo" type="number" inputmode="numeric" min="5" max="180" step="1" autocomplete="off">
+            <label for="audioLimGravacao">Gravação feita ao vivo no app (minutos, de 5 a 180)</label>
+            <input id="audioLimGravacao" type="number" inputmode="numeric" min="5" max="180" step="1" autocomplete="off">
+            <div class="bk-row">
+              <button id="audioLimSalvarBtn" type="button">💾 Salvar para todos</button>
+            </div>
+            <p id="audioLimStatus" class="ok" role="status" aria-live="polite"></p>
           </div>
         </details>
         </div>
@@ -1520,7 +1530,7 @@
       </div>
       <details class="leitura-dica">
         <summary>ℹ️ Como funciona</summary>
-        <p class="hint">Você pode <strong>escolher um arquivo de áudio</strong> já gravado no celular ou no computador (mp3, m4a, wav, mp4 e outros que o seu aparelho abra) ou <strong>gravar um áudio agora</strong>, com o microfone do aparelho (o navegador pede a sua permissão; dá para pausar, e ao parar a gravação você vê os dados do arquivo gravado e toca em Iniciar a transcrição; mantenha a tela aberta e desbloqueada durante a gravação). O app decodifica o áudio neste aparelho, corta em trechos de cerca de 50 segundos e envia cada trecho ao Google para virar texto (português do Brasil). Depois você pode pedir um resumo à IA. Limite de 30 minutos por áudio, gravado ou em arquivo. Os dois campos de texto podem ser editados (toque em Editar), formatados com negrito e itálico, ter a letra ajustada com A− e A+ e ser exportados para Word. Nada é guardado no servidor do NoteStyle, e o texto não fica salvo no app: copie ou exporte o que quiser guardar (a gravação também pode ser salva no aparelho). Esta primeira versão não identifica quem está falando.</p>
+        <p class="hint">Você pode <strong>escolher um arquivo de áudio</strong> já gravado no celular ou no computador (mp3, m4a, wav, mp4 e outros que o seu aparelho abra) ou <strong>gravar um áudio agora</strong>, com o microfone do aparelho (o navegador pede a sua permissão; dá para pausar, e ao parar a gravação você vê os dados do arquivo gravado e toca em Iniciar a transcrição; mantenha a tela aberta e desbloqueada durante a gravação). O app decodifica o áudio neste aparelho, corta em trechos de cerca de 50 segundos e envia cada trecho ao Google para virar texto (português do Brasil). Depois você pode pedir um resumo à IA. Limite de <span data-tr-limite="arquivo">60</span> minutos para um arquivo escolhido na pasta e de <span data-tr-limite="gravacao">30</span> minutos para uma gravação feita aqui. Os dois campos de texto podem ser editados (toque em Editar), formatados com negrito e itálico, ter a letra ajustada com A− e A+ e ser exportados para Word. Nada é guardado no servidor do NoteStyle, e o texto não fica salvo no app: copie ou exporte o que quiser guardar (a gravação também pode ser salva no aparelho). Esta primeira versão não identifica quem está falando.</p>
       </details>
       <div class="leitura-importar transcricao-importar">
         <button id="transcricaoArquivoBtn" type="button">🎧 Escolher o arquivo de áudio</button>
@@ -1546,7 +1556,7 @@
         <div class="bk-row">
           <button id="transcricaoGravDescartarBtn" class="secondary" type="button">🗑️ Descartar a gravação</button>
         </div>
-        <p class="hint">Mantenha esta tela aberta e o aparelho desbloqueado: se o aplicativo for para o segundo plano, o celular pode parar a gravação (o que já foi gravado é aproveitado). A gravação dura no máximo 30 minutos.</p>
+        <p class="hint">Mantenha esta tela aberta e o aparelho desbloqueado: se o aplicativo for para o segundo plano, o celular pode parar a gravação (o que já foi gravado é aproveitado). A gravação dura no máximo <span data-tr-limite="gravacao">30</span> minutos.</p>
       </div>
       <div id="transcricaoGravada" class="bk-row" hidden>
         <button id="transcricaoSalvarGravacaoBtn" class="secondary" type="button">💾 Salvar a gravação no aparelho</button>

@@ -23,6 +23,20 @@ const CHAVE_CONVITE = "convite_texto";
 const MAX_CHARS_CONVITE = 1500;
 // Tipos de áudio do "Áudio em texto" que o administrador publica para todos.
 const CHAVE_TIPOS_AUDIO = "audio_tipos_todos";
+// Duração máxima, em minutos, do Áudio em texto: do arquivo escolhido na pasta do aparelho e da gravação feita ao vivo no app.
+const CHAVE_AUDIO_LIMITES = "audio_limites";
+const AUDIO_LIMITES_PADRAO = { arquivoMin: 60, gravacaoMin: 30 };
+const AUDIO_LIMITE_MIN = 5;
+const AUDIO_LIMITE_MAX = 180;
+
+function limitesAudioLimpos(valor) {
+  const v = valor && typeof valor === "object" && !Array.isArray(valor) ? valor : {};
+  const numero = (x, padrao) => {
+    const n = Math.round(Number(x));
+    return Number.isFinite(n) ? Math.max(AUDIO_LIMITE_MIN, Math.min(AUDIO_LIMITE_MAX, n)) : padrao;
+  };
+  return { arquivoMin: numero(v.arquivoMin, AUDIO_LIMITES_PADRAO.arquivoMin), gravacaoMin: numero(v.gravacaoMin, AUDIO_LIMITES_PADRAO.gravacaoMin) };
+}
 const MAX_TIPOS_AUDIO = 30;
 const MAX_BYTES_PADRAO = 200_000;
 const MAX_MODELOS_PADRAO = 500;
@@ -189,6 +203,11 @@ export default async function handler(req, res) {
         geral: { modelo: curto(modelos, cfg.modelo), esforco: curto(esforcos, cfg.esforco) },
         esbocos: { modelo: curto(modelos, cfg.esbocoModelo || cfg.modelo), esforco: curto(esforcos, cfg.esbocoEsforco || cfg.esforco) },
       });
+    }
+
+    // Pública: a duração máxima do áudio (arquivo da pasta e gravação ao vivo) que o administrador definiu.
+    if (acao === "audio-limites-ler") {
+      return res.status(200).json({ limites: limitesAudioLimpos(await lerItem(CHAVE_AUDIO_LIMITES)) });
     }
 
     // Pública: as regras da leitura em voz alta que o navegador aplica ao texto (o resto fica no servidor).
@@ -444,6 +463,13 @@ export default async function handler(req, res) {
       const texto = typeof corpo.texto === "string" ? corpo.texto.replace(/\r\n/g, "\n").trim().slice(0, MAX_CHARS_CONVITE) : "";
       await gravarItem(CHAVE_CONVITE, texto);
       return res.status(200).json({ ok: true, texto });
+    }
+
+    if (acao === "audio-limites-salvar") {
+      if (!exigirEscrita(res)) return;
+      const limites = limitesAudioLimpos(corpo.limites);
+      await gravarItem(CHAVE_AUDIO_LIMITES, limites);
+      return res.status(200).json({ ok: true, limites });
     }
 
     if (acao === "audio-tipos-salvar") {

@@ -7480,7 +7480,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.59'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.60'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -18057,7 +18057,40 @@ function saveTemplatesToStorage() {
     // ---------- Tela Áudio em texto ----------
     // O áudio é decodificado neste aparelho (Web Audio), reamostrado para 16 kHz mono, cortado em trechos de ~50 s (o Google aceita até 1 minuto por
     // pedido direto) e cada trecho vai a /api/transcrever, que usa o Chirp 3 do Google. Depois o texto pode ser resumido pela IA. Nada fica salvo.
-    const TRANSCRICAO_MAX_MIN = 30;
+    // Duração máxima do áudio, em minutos: do arquivo escolhido na pasta e da gravação ao vivo. O administrador ajusta em Ajustes → Configurações do Áudio
+    // em texto (api/config.mjs, "audio-limites-ler" e "audio-limites-salvar"); o último valor lido fica no aparelho.
+    let trLimites = { arquivoMin: 60, gravacaoMin: 30 };
+    try {
+      const guardado = JSON.parse(localStorage.getItem('ns-audio-limites') || 'null');
+      if (guardado && guardado.arquivoMin > 0 && guardado.gravacaoMin > 0) trLimites = { arquivoMin: guardado.arquivoMin, gravacaoMin: guardado.gravacaoMin };
+    } catch (e) { /* sem armazenamento: valem os padrões */ }
+    function trLimitesAplicar() {
+      document.querySelectorAll('[data-tr-limite]').forEach(el => { el.textContent = trLimites[el.dataset.trLimite === 'arquivo' ? 'arquivoMin' : 'gravacaoMin']; });
+      const a = document.getElementById('audioLimArquivo'), g = document.getElementById('audioLimGravacao');
+      if (a && document.activeElement !== a) a.value = trLimites.arquivoMin;
+      if (g && document.activeElement !== g) g.value = trLimites.gravacaoMin;
+    }
+    function trLimitesGuardar(l) {
+      trLimites = { arquivoMin: l.arquivoMin, gravacaoMin: l.gravacaoMin };
+      try { localStorage.setItem('ns-audio-limites', JSON.stringify(trLimites)); } catch (e) { /* sem armazenamento */ }
+      trLimitesAplicar();
+    }
+    async function trLimitesCarregar() {
+      const r = await postConfig({ acao: 'audio-limites-ler' });
+      if (r.ok && r.data && r.data.limites) trLimitesGuardar(r.data.limites);
+    }
+    trLimitesAplicar();
+    setTimeout(trLimitesCarregar, 0); // depois do script inteiro (o postConfig usa constantes declaradas mais adiante)
+    document.getElementById('audioLimSalvarBtn').addEventListener('click', async () => {
+      const status = document.getElementById('audioLimStatus');
+      const a = Math.round(Number(document.getElementById('audioLimArquivo').value));
+      const g = Math.round(Number(document.getElementById('audioLimGravacao').value));
+      if (!(a >= 5 && a <= 180 && g >= 5 && g <= 180)) return (status.textContent = 'Use valores de 5 a 180 minutos.');
+      const r = await postConfig({ acao: 'audio-limites-salvar', codigo: senhaAdminSalva(), limites: { arquivoMin: a, gravacaoMin: g } });
+      if (!r.ok) return (status.textContent = configErrorMessage(r, 'Não consegui salvar a duração agora.'));
+      trLimitesGuardar(r.data.limites);
+      status.textContent = '🌐 Salvo para todos: arquivo de até ' + trLimites.arquivoMin + ' min e gravação de até ' + trLimites.gravacaoMin + ' min.';
+    });
     const TRANSCRICAO_TRECHO_S = 50;
     const TRANSCRICAO_TAXA = 16000;
     const TRANSCRICAO_CONSENT_KEY = 'jwLibraryNoteAplicarTextoConsentV1';
@@ -18607,7 +18640,7 @@ function saveTemplatesToStorage() {
       trTiposDesenhar(trTipo.value);
       audioTodosDizer('🌐 Salvo para todos (' + audioTodosRascunho.length + (audioTodosRascunho.length === 1 ? ' tipo).' : ' tipos).'));
     });
-    document.getElementById('audioTiposSection').addEventListener('toggle', event => { if (event.target.open && senhaAdminSalva()) audioTodosRecarregar(true); });
+    document.getElementById('audioTiposSection').addEventListener('toggle', event => { if (event.target.open && senhaAdminSalva()) { audioTodosRecarregar(true); trLimitesCarregar(); } });
     audioTodosRender();
 
     const trFerramentasAtualizar = []; // atualiza os botões das barras dos dois campos (A−/A+, Word e formatação)
@@ -18724,7 +18757,9 @@ function saveTemplatesToStorage() {
           return (trInfo.textContent = 'Não consegui abrir este áudio neste aparelho. Tente outro formato (mp3, m4a ou wav).');
         }
         const minutos = amostras.length / TRANSCRICAO_TAXA / 60;
-        if (minutos > TRANSCRICAO_MAX_MIN) return (trInfo.textContent = 'O áudio tem ' + Math.round(minutos) + ' minutos; o limite é de ' + TRANSCRICAO_MAX_MIN + ' minutos por arquivo.');
+        const gravadoAqui = Boolean(trUltimaGravacao && trUltimaGravacao.arquivo === arquivo);
+        const limiteMin = gravadoAqui ? trLimites.gravacaoMin : trLimites.arquivoMin;
+        if (minutos > limiteMin) return (trInfo.textContent = 'O áudio tem ' + Math.round(minutos) + ' minutos; o limite é de ' + limiteMin + ' minutos por ' + (gravadoAqui ? 'gravação' : 'arquivo') + '.');
         const porTrecho = TRANSCRICAO_TRECHO_S * TRANSCRICAO_TAXA;
         const total = Math.ceil(amostras.length / porTrecho);
         trProgresso.max = total;
@@ -18834,7 +18869,8 @@ function saveTemplatesToStorage() {
         if (trArquivoMostrado !== arquivo) return;
         duracaoLinha = '\n⏱️ Duração: ' + (seg ? trDuracaoTexto(seg) : 'não foi possível ler');
         trArquivoDadosRedesenhar();
-        if (seg && seg / 60 > TRANSCRICAO_MAX_MIN) trInfo.textContent = 'Atenção: o áudio tem mais de ' + TRANSCRICAO_MAX_MIN + ' minutos, que é o limite por arquivo.';
+        const limiteMin = gravado ? trLimites.gravacaoMin : trLimites.arquivoMin;
+        if (seg && seg / 60 > limiteMin) trInfo.textContent = 'Atenção: o áudio tem mais de ' + limiteMin + ' minutos, que é o limite por ' + (gravado ? 'gravação' : 'arquivo') + '.';
       });
     }
     // Desistir do arquivo (escolhido ou gravado) antes de transcrever.
@@ -18887,7 +18923,7 @@ function saveTemplatesToStorage() {
       if (!trGrav) return;
       trGravTempo.textContent = (trGrav.pausado ? '⏸️ Pausada ' : '🔴 Gravando ') + trFormatarTempo(trGravMs());
       trGravPausar.textContent = trGrav.pausado ? '▶️ Continuar' : '⏸️ Pausar';
-      if (trGravMs() >= TRANSCRICAO_MAX_MIN * 60 * 1000) trGravarParar(true, 'A gravação chegou ao limite de ' + TRANSCRICAO_MAX_MIN + ' minutos e foi encerrada.');
+      if (trGravMs() >= trLimites.gravacaoMin * 60 * 1000) trGravarParar(true, 'A gravação chegou ao limite de ' + trLimites.gravacaoMin + ' minutos e foi encerrada.');
     }
 
     // O gráfico de áudio: barras que sobem e descem com o volume da voz (Web Audio, só leitura do microfone; nada é tocado nem enviado).
