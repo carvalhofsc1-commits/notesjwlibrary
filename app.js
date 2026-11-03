@@ -7472,7 +7472,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.57'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.58'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -10516,15 +10516,27 @@ function saveTemplatesToStorage() {
       return b;
     });
     document.body.appendChild(selecaoCaixa);
-    // O toque na caixinha não tira o foco do campo (senão a seleção some antes do clique).
-    ['mousedown', 'pointerdown', 'touchstart'].forEach(ev => selecaoCaixa.addEventListener(ev, e => e.preventDefault(), { passive: false }));
-    selecaoCaixa.addEventListener('click', e => {
-      const b = e.target.closest('.selecao-botao');
-      if (!b) return;
+    function selecaoCaixaAcionar(b) {
       const alvo = document.getElementById(b.dataset.alvo);
       if (alvo) alvo.click();
       setTimeout(selecaoCaixaMostrar, 0); // a seleção continua (o texto mudou de tamanho): a caixinha acompanha
+    }
+    // O mouse na caixinha não tira o foco do campo (senão a seleção some antes do clique).
+    selecaoCaixa.addEventListener('mousedown', e => e.preventDefault());
+    selecaoCaixa.addEventListener('click', e => {
+      const b = e.target.closest('.selecao-botao');
+      if (b) selecaoCaixaAcionar(b);
     });
+    // No iPhone o toque age no touchend (e o touchend impede o clique e a troca de foco que desmarcariam o trecho); um arrasto não conta como toque.
+    let selecaoCaixaArrasto = false;
+    selecaoCaixa.addEventListener('touchstart', () => { selecaoCaixaArrasto = false; }, { passive: true });
+    selecaoCaixa.addEventListener('touchmove', () => { selecaoCaixaArrasto = true; }, { passive: true });
+    selecaoCaixa.addEventListener('touchend', e => {
+      const b = e.target.closest('.selecao-botao');
+      if (!b) return;
+      e.preventDefault();
+      if (!selecaoCaixaArrasto && !b.disabled) selecaoCaixaAcionar(b);
+    }, { passive: false });
 
     // Posição (x, y, altura da linha) do caractere "pos" do campo, medida num espelho invisível do texto.
     function campoPosicaoDoCaractere(campo, pos) {

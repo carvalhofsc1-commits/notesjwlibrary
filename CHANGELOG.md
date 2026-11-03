@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.58
+
+Caixinha de formatação da seleção: corrigido no iPhone, onde os botões apareciam mas o toque não aplicava a formatação (o toque agora age no fim do toque, sem perder a seleção).
+
 ## 6.4.57
 
 Resposta resumida do texto colado: texto acima do limite recomendado também só pede confirmação em vez de bloquear (até 5 vezes o limite). Novo: ao selecionar um trecho no campo do texto, uma caixinha com negrito, itálico e negrito+itálico aparece junto da seleção, para não precisar rolar até os botões da barra em textos longos.
