@@ -7416,7 +7416,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.48'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.49'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -18632,16 +18632,16 @@ function saveTemplatesToStorage() {
     // Desistir do arquivo (escolhido ou gravado) antes de transcrever.
     document.getElementById('transcricaoArquivoLimparBtn').addEventListener('click', async () => {
       const gravado = Boolean(trUltimaGravacao && trArquivoMostrado === trUltimaGravacao.arquivo);
-      if (gravado && !(await askConfirm('Descartar esta gravação? Se você não a salvou no aparelho, ela não fica guardada em nenhum lugar.', 'Descartar'))) return;
-      if (trTituloMesmo.checked) trTitulo.value = '';
-      if (trDataMesmo.checked) trData.value = '';
-      if (trControle && trOperacao === 'transcrever') trControle.abort(); // desistiu do arquivo: para a transcrição em andamento
+      // Descartar o áudio também apaga tudo o que veio dele ou foi preenchido para ele: o texto transcrito, o corrigido, o resumo, o tipo de áudio e os dados do áudio.
+      const comTexto = Boolean(trTexto.value.trim() || trCorrigido.value.trim() || trResumo.value.trim());
+      const aviso = (gravado ? 'Descartar esta gravação? Se você não a salvou no aparelho, ela não fica guardada em nenhum lugar.' : 'Descartar este arquivo?') +
+        ' O tipo de áudio, os dados do áudio' + (comTexto ? ', o texto transcrito, o corrigido e o resumo' : '') + ' também serão apagados.';
+      if ((gravado || comTexto) && !(await askConfirm(aviso, 'Descartar'))) return;
+      if (trControle) trControle.abort(); // desistiu do arquivo: para a transcrição (ou correção e resumo) em andamento
       trArquivoAtual = null;
       trMesmoAplicar();
-      trPendenteLimpar();
-      if (gravado) trGravadaLimpar();
+      trLimparCampos();
       trInfo.textContent = gravado ? 'Gravação descartada.' : 'Arquivo retirado. Nada foi enviado.';
-      trAtualizarBotoes();
     });
     trEscolher.addEventListener('click', () => trArquivo.click());
     trArquivo.addEventListener('change', () => {
@@ -18979,9 +18979,8 @@ function saveTemplatesToStorage() {
       }
       trInfo.textContent = '📋 ' + rotulo + ' copiado.';
     }
-    async function trLimparTudo() {
-      if (trControle) trControle.abort();
-      if ((trTexto.value.trim() || trResumo.value.trim()) && !(await askConfirm('Apagar o texto transcrito e o resumo? Eles não ficam salvos em nenhum lugar.', 'Limpar tudo'))) return;
+    // Volta a tela do áudio ao começo: o texto transcrito, o corrigido e o resumo, o tipo de áudio, os dados do áudio e o arquivo (sem perguntar).
+    function trLimparCampos() {
       trTexto.value = '';
       trResumo.value = '';
       trCorrigido.value = '';
@@ -18991,9 +18990,16 @@ function saveTemplatesToStorage() {
       trTipoUltimoTexto = '';
       trTipo.value = ''; trTipoNome.value = ''; trTipoNomeMostrar();
       trTipoAtual = '';
+      trTipoBotoesAtualizar();
+      trResumoLinhasAtualizar(); // as linhas pequenas sob os títulos dos blocos recolhidos
       trGravadaLimpar();
       trInfo.textContent = '';
       trAtualizarBotoes();
+    }
+    async function trLimparTudo() {
+      if (trControle) trControle.abort();
+      if ((trTexto.value.trim() || trResumo.value.trim()) && !(await askConfirm('Apagar o texto transcrito e o resumo? Eles não ficam salvos em nenhum lugar.', 'Limpar tudo'))) return;
+      trLimparCampos();
     }
     trAtualizarBotoes();
 

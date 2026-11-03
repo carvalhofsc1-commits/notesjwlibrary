@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.49
+
+Áudio em texto: Descartar o áudio agora apaga também tudo o que está abaixo (texto transcrito, corrigido, resumo, tipo de áudio e dados do áudio), como o Limpar tudo; pede confirmação quando há texto ou gravação. O Limpar tudo também passou a limpar a linha pequena do tipo de áudio.
+
 ## 6.4.48
 
 Esboço de Tesouros da Palavra de Deus: ao carregar a matéria da semana, o card mostra a ilustração do discurso (a que vem no começo da seção Tesouros, antes do item do discurso, e as do próprio item; descrição e legenda, com o botão Copiar), e a IA recebe essas imagens com a orientação de fazer referência a elas no esboço, se ele ainda não as menciona. As imagens dos outros itens da seção ficam de fora.
