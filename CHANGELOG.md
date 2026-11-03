@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.42
+
+Áudio em texto: o campo Título ou tema aceita no máximo 120 caracteres (informado no rótulo e no campo); a gravação salva leva a data e a hora depois do título, ex.: Titulo-20261101-22h45s33.m4a.
+
 ## 6.4.41
 
 Áudio em texto: ao salvar uma gravação feita no app, se o título estiver preenchido em "Dados do áudio", ele vira o nome do arquivo salvo.
