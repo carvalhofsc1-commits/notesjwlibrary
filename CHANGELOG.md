@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.66
+
+Áudio em texto: os botões Salvar e Descartar de cada arquivo da lista passaram a dividir toda a largura do cartão.
+
 ## 6.4.65
 
 Áudio em texto, no computador: o botão da pasta de salvamento automático ocupa toda a largura e passou a se chamar Selecionar a pasta para salvar as gravações automaticamente; depois de escolhida, a pasta aparece em letra pequena sob o título do botão.
