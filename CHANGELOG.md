@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.50
+
+Tela de prompts (administrador), Modelo, gasto e limites: nova opção para escolher outro modelo e outro esforço da IA só para a Preparação de discursos e esboços (Tesouros, discurso curto, discurso público e Outros esboços). Em "o mesmo de cima" (padrão) eles usam o modelo geral.
+
 ## 6.4.49
 
 Áudio em texto: Descartar o áudio agora apaga também tudo o que está abaixo (texto transcrito, corrigido, resumo, tipo de áudio e dados do áudio), como o Limpar tudo; pede confirmação quando há texto ou gravação. O Limpar tudo também passou a limpar a linha pequena do tipo de áudio.

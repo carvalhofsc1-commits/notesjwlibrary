@@ -7,7 +7,7 @@ import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import { codigoDoDirigente, erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { acessoDoDirigente, codigoValido, dirigenteValido, exigirAcesso, recusarAcesso } from "./_acesso.mjs";
-import { lerConfigIa } from "./_iaConfig.mjs";
+import { iaDaTarefa, lerConfigIa } from "./_iaConfig.mjs";
 import { blocoLicoesPara } from "./_memoria.mjs";
 import { emitirCupomVoz } from "./_vozCupom.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
@@ -174,9 +174,9 @@ function ipDoPedido(req) {
   return String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "desconhecido";
 }
 
-async function carregarPromptsEIa() {
+async function carregarPromptsEIa(tarefa = "") {
   const [prompts, ia] = await Promise.all([carregarPrompts(), lerConfigIa()]);
-  return { ...prompts, ia };
+  return { ...prompts, ia: iaDaTarefa(ia, tarefa) }; // a Preparação de discursos e esboços pode ter modelo e esforço próprios
 }
 
 // Tarefas que só leem o wol.jw.org, o Blob do S-34 ou os arquivos da Bíblia: não chamam a Anthropic.
@@ -3546,7 +3546,7 @@ async function tratarPedido(req, res) {
 
   // Prompts e limites atuais (padrão do código + edições do administrador, guardadas no Global Config).
   // Mais o modelo e o esforço da IA escolhidos pelo administrador (P.ia).
-  const P = await carregarPromptsEIa();
+  const P = await carregarPromptsEIa(tarefa);
 
   if (excedeuLimite(ip, P.limites.limitePorHora)) {
     return erro(res, 429, "Muitas solicitações. Tente novamente em alguns minutos.");
