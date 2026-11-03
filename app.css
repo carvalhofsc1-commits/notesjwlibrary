@@ -9319,3 +9319,16 @@ details.transcricao-bloco:not([open]) {
   flex: 1 1 auto;
 }
 .ia-extra .ia-extra-somente { margin-top: 10px; }
+.joia-semana {
+  display: block;
+  margin: 10px 0;
+  padding: 10px 12px;
+  border: 2px solid color-mix(in srgb, #8b5cf6 55%, transparent);
+  border-radius: 12px;
+  background: var(--card);
+}
+.joia-semana-titulo {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 700;
+}

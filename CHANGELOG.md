@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.38
+
+Pesquisas e respostas salvas das joias: cada tipo de resposta (📚 Resumo dos capítulos, ❓ Joia da semana, 💎 Joias da leitura e 📌 Instruções adicionais) é salvo separado e com o nome do que é, mesmo quando foram pedidos juntos; o botão Recuperar traz os mais recentes de cada tipo, e pedir de novo parte só das salvas dos tipos pedidos. No backup do JW Library, o resumo e as instruções adicionais ficam para escolha manual.
+
+A seção "Joias Espirituais" passa a se chamar "💎 Tesouros da Palavra de Deus"; a pergunta da apostila carregada fica numa moldura com o título "Joia espiritual da semana"; a opção vira "Resposta à joia da semana da apostila"; o botão vira "💎 IA - Preparar opção selecionada". Em "Outra resposta" das joias, a IA escolhe outros textos, diferentes dos anteriores (o servidor também descarta joias sobre versículos que já saíram).
+
 ## 6.4.37
 
 Nova resposta sobre uma resposta salva (A Sentinela, Estudo Bíblico e Joias): quando a semana já tem resposta salva para o pedido, ela vai à IA como base e a IA a melhora acrescentando o que for possível, sem nunca tirar o que já estava; se não houver o que acrescentar, devolve a mesma resposta com algumas frases reformuladas. O botão Outra resposta passa a funcionar do mesmo jeito.

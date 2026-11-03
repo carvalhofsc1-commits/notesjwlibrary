@@ -68,7 +68,7 @@ export const LIMITES = [
     id: "maxJoiasPorCapitulo",
     titulo: "Joias espirituais por capítulo da leitura",
     descricao:
-      "Quantas joias a IA prepara, no máximo, para cada capítulo da leitura da Bíblia da semana (Reuniões → Preparar para comentar → Joias Espirituais). O servidor corta o que passar disso. Nos prompts, {{max_joias}} é trocado por este número (o prompt padrão das Joias já usa). Mais joias custam mais por pedido.",
+      "Quantas joias a IA prepara, no máximo, para cada capítulo da leitura da Bíblia da semana (Reuniões → Preparar para comentar → Tesouros da Palavra de Deus). O servidor corta o que passar disso. Nos prompts, {{max_joias}} é trocado por este número (o prompt padrão das Joias já usa). Mais joias custam mais por pedido.",
     padrao: 2,
     min: 1,
     max: 5,
@@ -726,6 +726,7 @@ Regras:
       ["Formatação: outra sugestão", "PEDIDO: proponha uma alternativa DIFERENTE das sugestões anteriores (outros modelos, trechos ou emojis)."],
       ["Formatação: melhorar", "PEDIDO: melhore as sugestões anteriores, mantendo o que estava bom, seguindo a orientação específica acima (se houver)."],
       ["Respostas: outra sugestão", "PEDIDO: já existe uma resposta salva para este pedido (as RESPOSTAS ANTERIORES acima). Leia-a com atenção e MELHORE-A, acrescentando o que for possível: mais informações, detalhes, pesquisa e explicações novas que ainda não estão nela, sempre fiéis ao texto e às fontes enviados. NUNCA exclua nem empobreça o que já foi respondido e pesquisado: mantenha as informações, os textos bíblicos e as fontes que a resposta salva já traz. O tamanho da resposta pode crescer para caber o que foi acrescentado. Se não for possível acrescentar nada novo com fidelidade ao texto e às fontes, devolva a mesma resposta salva, apenas reformulando algumas frases. A fidelidade ao texto e às fontes vem antes da novidade."],
+      ["Joias: outras joias", "PEDIDO: escolha OUTRAS joias da leitura, sobre versículos e pontos DIFERENTES dos que as RESPOSTAS ANTERIORES já trazem (não repita nenhuma joia anterior nem o versículo dela), cada uma com um comentário novo, sempre fiel aos versículos e às publicações enviados. Se um capítulo não tiver mais pontos bons além dos anteriores, escreva menos joias para ele (nenhuma fraca ou repetida). A resposta à joia da semana (pergunta da apostila) e os resumos dos capítulos, se pedidos, são refeitos com outras palavras e podem ganhar informações novas, sem excluir o que já foi pesquisado."],
       ["Respostas: melhorar", "PEDIDO: melhore as respostas anteriores, mantendo o que estava bom, seguindo a orientação específica acima (se houver)."],
       ["Perguntas do dirigente: outras perguntas", "PEDIDO: sugira perguntas adicionais DIFERENTES das já sugeridas, sobre outros pontos que o próprio parágrafo traz e que nem a pergunta impressa nem as já sugeridas cobrem, nas mesmas seções ATIVAS do pedido. Se o parágrafo não oferecer mais pontos, devolva menos perguntas (ou nenhuma) em vez de forçar."],
       ["Perguntas do dirigente: melhorar", "PEDIDO: melhore as perguntas adicionais já sugeridas, mantendo o que estava bom e as mesmas seções ATIVAS do pedido, seguindo a orientação específica acima (se houver)."],

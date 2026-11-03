@@ -2993,7 +2993,8 @@ async function responderJoias(res, body, P) {
   if (consultaPedida(opcoes) && !fontesConfiguradas()) return erro(res, 503, "A consulta às fontes ainda não está configurada no servidor.");
   precarregarFontes({ biblia: true, perspicaz: opcoes.consultarPerspicaz || comResumo });
   const sep = modoSeparacao(opcoes, ajuste);
-  const modo = body.modo === "nova" || body.modo === "melhorar" ? body.modo : null;
+  // "nova" (botão Outra resposta): outras joias, sobre outros textos; "acrescentar" (pedido de novo com resposta salva): a salva mais o que for possível; "melhorar".
+  const modo = ["nova", "melhorar", "acrescentar"].includes(body.modo) ? body.modo : null;
   // O texto bíblico de cada joia é copiado da Bíblia pelo servidor a cada pedido: não precisa ir de volta à IA nas respostas anteriores.
   const semVersiculos = (a) => (a && Array.isArray(a.itens) ? { ...a, itens: a.itens.map((i) => (i && typeof i === "object" ? { ...i, versiculo: undefined } : i)) } : a);
   const anteriores = modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(semVersiculos(body.anteriores)).slice(0, 12000) : "";
@@ -3014,8 +3015,15 @@ async function responderJoias(res, body, P) {
     textoDasJoias(joias, { pergunta: Boolean(pergunta) || somente, leitura: comLeitura || somente, resumo: comResumo || somente }) +
     lembreteFinal(opcoes, ajuste, P);
   if (modo && anteriores) {
-    mensagem += "\n\nRESPOSTAS ANTERIORES (JSON):\n" + anteriores + "\n\n" + P.frases.pedidos[modo === "nova" ? "Respostas: outra sugestão" : "Respostas: melhorar"];
+    const frase = modo === "nova" ? "Joias: outras joias" : modo === "acrescentar" ? "Respostas: outra sugestão" : "Respostas: melhorar";
+    mensagem += "\n\nRESPOSTAS ANTERIORES (JSON):\n" + anteriores + "\n\n" + P.frases.pedidos[frase];
   }
+  // Outras joias: os versículos que as respostas anteriores já usaram não voltam (conferido aqui, além do pedido à IA).
+  const jaUsadas = modo === "nova" && body.anteriores && Array.isArray(body.anteriores.itens) ? body.anteriores.itens.map((i) => versosDe(i && i.paragrafos)).filter(Boolean) : [];
+  const repeteAnterior = (ref) => {
+    const v = versosDe(ref);
+    return Boolean(v && jaUsadas.some((u) => u.capitulo === v.capitulo && [...v.versos].some((n) => u.versos.has(n))));
+  };
 
   try {
     const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 120_000) });
@@ -3051,7 +3059,7 @@ async function responderJoias(res, body, P) {
     const porCapitulo = new Map(joias.capitulos.map((c) => [chave(c.nome), []]));
     for (const j of comLeitura ? saida.joias : []) {
       const lista = porCapitulo.get(chave(j.capitulo)) || [...porCapitulo.values()].find((l, i) => chave(j.referencia).startsWith(chave(joias.capitulos[i].nome)));
-      if (!lista || lista.length >= P.limites.maxJoiasPorCapitulo || repetePergunta(j.referencia)) continue;
+      if (!lista || lista.length >= P.limites.maxJoiasPorCapitulo || repetePergunta(j.referencia) || repeteAnterior(j.referencia)) continue;
       const item = montarItem({ ...j, paragrafos: limparLinha(limparTrecho(j.referencia), 20), referencias: [] }, opcoes, permitidos, P.limites, sep);
       if (!item.resposta) continue;
       const cap = joias.capitulos.find((c) => porCapitulo.get(chave(c.nome)) === lista);

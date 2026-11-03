@@ -1073,7 +1073,7 @@
           const chave = item.tipo + '|' + par + '|' + (par ? '' : texto.slice(0, 40));
           if (!texto.trim() || vistos.has(chave)) return;
           vistos.add(chave);
-          lista.push({ id: item.id + ':' + k, tipo: item.tipo, par, texto });
+          lista.push({ id: item.id + ':' + k, tipo: item.tipo, sub: item.sub || '', par, texto });
         }));
       return lista;
     }
@@ -1115,6 +1115,7 @@
         const campo = estudo && par ? estudo.info.campos.find(c => c.ebc && c.ebc.toLowerCase() === par.toLowerCase()) : null;
         return campo ? { doc: estudo.id, campo } : null;
       }
+      if (parte.tipo === 'joias' && (parte.sub === 'resumo' || parte.sub === 'instrucoes')) return null; // não são respostas de uma caixa da apostila: ficam para escolha manual
       if (parte.tipo === 'joias' && principal) {
         const ref = backupPrepRefChave(par);
         const doVerso = ref && principal.info.campos.find(c => backupPrepRefDaPergunta(c.pergunta) === ref);
@@ -1180,7 +1181,7 @@
           const rotulo = pub === 'sentinela'
             ? (/^recap/i.test(parte.par) ? 'Recapitulação ' + parte.par.replace(/^\D*/, '') : parte.par ? 'Parágrafo ' + parte.par : 'Resposta')
             : parte.tipo === 'joias'
-              ? (parte.par ? 'Joia ' + parte.par : 'Pergunta das joias')
+              ? (parte.sub === 'resumo' ? 'Resumo dos capítulos' : parte.sub === 'instrucoes' ? 'Instruções adicionais' : parte.par ? 'Joia ' + parte.par : 'Pergunta das joias')
               : parte.tipo === 'ebc-dirigente'
                 ? 'Dirigente' + (parte.par ? ' · ' + parte.par : '')
                 : 'Estudo bíblico' + (parte.par ? ' · ' + parte.par : '');
@@ -7415,7 +7416,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.37'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.38'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -15554,7 +15555,15 @@ function saveTemplatesToStorage() {
       const rotulo = carregado ? '↻ Recarregar perguntas' : '📋 Carregar perguntas';
       if (joiasCarregarBtn.dataset.label) joiasCarregarBtn.dataset.label = rotulo; // carregando: o rótulo volta ao fim (setAiLoading)
       else joiasCarregarBtn.textContent = rotulo;
-      if (carregado && dados.pergunta) joiasInfo.append('❓ ' + dados.pergunta);
+      if (carregado && dados.pergunta) { // a pergunta da apostila sobre um versículo, numa moldura com o título "Joia espiritual da semana"
+        const moldura = document.createElement('span');
+        moldura.className = 'joia-semana';
+        const rotuloMoldura = document.createElement('span');
+        rotuloMoldura.className = 'joia-semana-titulo';
+        rotuloMoldura.textContent = 'Joia espiritual da semana';
+        moldura.append(rotuloMoldura, '❓ ' + dados.pergunta);
+        joiasInfo.appendChild(moldura);
+      }
       iaTravasAtualizar();
     }
 
@@ -15733,7 +15742,8 @@ function saveTemplatesToStorage() {
       aiResults.textContent = '';
       aiSuggestions = [];
       aiRaw = [];
-      const salva = !mode ? salvaParaAcrescentar('joias') : null; // pedido de novo sem resposta no campo: a salva da semana é a base
+      // pedido de novo sem resposta no campo: as salvas da semana dos tipos pedidos são a base
+      const salva = !mode ? salvaDasJoias(somente ? ['instrucoes'] : [pedirPergunta && 'pergunta', pedirLeitura && 'joias', pedirResumo && 'resumo'].filter(Boolean)) : null;
       const previousOutros = mode && aiResumo && refino && Array.isArray(refino.outros) ? refino.outros : (salva ? salva.outros : []);
       const previousAnswers = mode && aiResumo && aiSentinelaRaw.length ? aiSentinelaRaw : (salva && salva.itens.length ? salva.itens : null);
       aiResumo = null;
@@ -15754,7 +15764,7 @@ function saveTemplatesToStorage() {
         ajuste: iaExtra('joias')
       };
       if (previousAnswers || previousOutros.length) {
-        payload.modo = mode || 'nova';
+        payload.modo = mode || 'acrescentar';
         payload.anteriores = { itens: previousAnswers || [], outros: previousOutros };
       }
 
@@ -15770,11 +15780,24 @@ function saveTemplatesToStorage() {
         if (!aiSentinelaRaw.length && !outros.length) return setAiStatus(result.data.erro || 'A IA não preparou as joias. Tente de novo.', true);
         if (!joiasCarregado()) joiasMostrarInfo(result.data);
 
-        const parts = [...joiasOutrosPartes(outros, somente), ...(pergunta ? buildSentinelaParts([pergunta]) : []), ...joiasPartes(joias)];
+        const partesOutros = joiasOutrosPartes(outros, somente);
+        const partesPergunta = pergunta ? buildSentinelaParts([pergunta]) : [];
+        const partesJoias = joiasPartes(joias);
+        const parts = [...partesOutros, ...partesPergunta, ...partesJoias];
         aiResumo = { texto: parts.map(part => part.texto).join('\n\n\n'), partes: parts, done: false, kind: 'estudo', fonte: result.data.leitura || '' };
         appendToMainText(aiResumo.texto);
         aiRefino = { kind: 'joias', pergunta: payload.pergunta, leitura: payload.leitura, resumo: pedirResumo, somente, outros };
-        historicoSalvar({ tipo: 'joias', titulo: '💎 Joias espirituais' + (result.data.leitura ? ' · ' + result.data.leitura : ''), ano: payload.ano, numSemana: payload.semana, partes: parts, refino: { ...aiRefino, itens: aiSentinelaRaw } });
+        // Pesquisas salvas: cada tipo de resposta (resumo dos capítulos, joia da semana, joias da leitura, instruções adicionais) é salvo separado e com o
+        // nome do que é, mesmo quando o pedido e a resposta vieram juntos. O campo de texto continua com tudo junto.
+        const leituraTitulo = result.data.leitura ? ' · ' + result.data.leitura : '';
+        const refinoDe = (extra, itens) => ({ kind: 'joias', pergunta: false, leitura: false, resumo: false, somente: false, outros: [], ...extra, itens });
+        const aSalvar = [
+          partesJoias.length && { sub: 'joias', titulo: '💎 Joias da leitura' + leituraTitulo, partes: partesJoias, refino: refinoDe({ leitura: true }, joias) },
+          partesPergunta.length && { sub: 'pergunta', titulo: '❓ Joia da semana (resposta à pergunta da apostila)' + leituraTitulo, partes: partesPergunta, refino: refinoDe({ pergunta: true }, [pergunta]) },
+          partesOutros.length && { sub: somente ? 'instrucoes' : 'resumo', titulo: (somente ? '📌 Instruções adicionais' : '📚 Resumo dos capítulos') + leituraTitulo, partes: partesOutros, refino: refinoDe(somente ? { somente: true, outros } : { resumo: true, outros }, []) }
+        ].filter(Boolean);
+        aSalvar.forEach(s => historicoSalvar({ tipo: 'joias', ano: payload.ano, numSemana: payload.semana, ...s })); // o último salvo fica no alto da lista
+        if (aSalvar.length > 1) { historicoLigado = null; atualizarBotoesSalvar(); } // o campo tem mais de uma pesquisa: não dá para ligá-lo a uma só
         renderAiSuggestions();
         aiRefineBox.hidden = false;
         setAiStatus(somente ? '✅ Resultado das instruções no campo de texto, com o botão de copiar.' : '✅ Joias no campo de texto, cada uma com o botão de copiar.', false);
@@ -16407,7 +16430,7 @@ function saveTemplatesToStorage() {
     }
 
     // A semana é a do pedido à IA (ano e semana enviados ao servidor) ou, sem ela, a escolhida agora.
-    function historicoSalvar({ tipo, titulo, ano, numSemana, partes, esbocoJson, esbocoNumero, esbocoTitulo, refino }) {
+    function historicoSalvar({ tipo, titulo, ano, numSemana, partes, esbocoJson, esbocoNumero, esbocoTitulo, refino, sub }) {
       const item = {
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
         tipo,
@@ -16421,6 +16444,7 @@ function saveTemplatesToStorage() {
       if (esbocoJson) item.esbocoJson = esbocoJson;
       // Respostas do estudo: os itens crus da IA e o contexto do pedido (para Outra resposta e Melhorar depois de reabrir a pesquisa salva).
       if (refino) item.refino = refino;
+      if (sub) item.sub = sub; // joias: 'resumo', 'pergunta' (joia da semana), 'joias' (da leitura) ou 'instrucoes'; cada um é salvo separado
       if (esbocoNumero) item.esbocoNumero = esbocoNumero;
       if (esbocoTitulo) item.esbocoTitulo = esbocoTitulo;
       historicoGravar([item, ...historicoLer()]);
@@ -16596,6 +16620,44 @@ function saveTemplatesToStorage() {
       return itens.length || outros.length ? { itens, outros } : null;
     }
 
+    // As joias salvas desta semana (a mais recente de cada tipo, só dos tipos pedidos; as salvas antes da separação, com tudo junto, valem sempre):
+    // { itens, outros } para a IA ler como base, ou null.
+    function salvaDasJoias(subs) {
+      const atual = historicoChaveAtual();
+      const vistos = new Set();
+      const itens = [];
+      const outros = [];
+      historicoLer().filter(i => i.tipo === 'joias' && historicoChave(i) === atual).forEach(item => {
+        const sub = item.sub || 'misto';
+        if ((sub !== 'misto' && !subs.includes(sub)) || vistos.has(sub)) return;
+        vistos.add(sub);
+        const r = historicoRefinoDe(item);
+        if (!r) return;
+        itens.push(...(Array.isArray(r.itens) ? r.itens : []));
+        outros.push(...(Array.isArray(r.outros) ? r.outros : []));
+      });
+      return itens.length || outros.length ? { itens, outros } : null;
+    }
+
+    // As joias salvas desta semana juntas (a mais recente de cada tipo), na ordem do campo de texto, para o botão Recuperar: { itens, partes, refino } ou null.
+    const JOIAS_SUBS_ORDEM = ['instrucoes', 'resumo', 'pergunta', 'joias', 'misto'];
+    const JOIAS_SUBS_NOME = { instrucoes: 'instruções adicionais', resumo: 'resumo dos capítulos', pergunta: 'resposta à joia da semana', joias: 'joias da leitura', misto: 'joias' };
+    function joiasSalvasJuntas() {
+      const atual = historicoChaveAtual();
+      const porSub = new Map();
+      historicoLer().filter(i => i.tipo === 'joias' && historicoChave(i) === atual).forEach(item => {
+        const sub = item.sub || 'misto';
+        if (!porSub.has(sub)) porSub.set(sub, item);
+      });
+      const itens = JOIAS_SUBS_ORDEM.filter(sub => porSub.has(sub)).map(sub => ({ sub, item: porSub.get(sub) }));
+      if (!itens.length) return null;
+      const refinos = itens.map(({ item }) => historicoRefinoDe(item)).filter(Boolean);
+      const refino = refinos.length === itens.length
+        ? { kind: 'joias', pergunta: refinos.some(r => r.pergunta), leitura: refinos.some(r => r.leitura), resumo: refinos.some(r => r.resumo), somente: refinos.every(r => r.somente), outros: refinos.flatMap(r => Array.isArray(r.outros) ? r.outros : []), itens: refinos.flatMap(r => r.itens || []) }
+        : null;
+      return { itens, partes: itens.flatMap(({ item }) => item.partes || []), refino };
+    }
+
     function historicoRefinoDe(item, soPartes) {
       const r = item.refino;
       // No Estudo Bíblico do dirigente só com os textos para ler (sem perguntas), os itens ficam vazios e os textos-base vão em r.base.
@@ -16616,19 +16678,19 @@ function saveTemplatesToStorage() {
 
     // soPartes (opcional): abre só essas partes da pesquisa (recuperar a resposta de um parágrafo); aí o campo não fica ligado à pesquisa,
     // para o botão Salvar não trocar a pesquisa inteira por um pedaço dela. Devolve true se abriu.
-    async function historicoAbrir(id, soPartes) {
+    async function historicoAbrir(id, soPartes, juntado) {
       const item = historicoLer().find(i => i.id === id);
       if (!item) { historicoRender(); return false; }
       if (aiBusy) return false;
       if (input.value.trim() && !(await askConfirm('O texto do campo de texto será trocado por esta pesquisa salva (dá para desfazer). Continuar?', 'Abrir pesquisa salva'))) return false;
-      const partes = soPartes || item.partes || [];
-      const refino = historicoRefinoDe(item, soPartes);
+      const partes = juntado ? juntado.partes : soPartes || item.partes || [];
+      const refino = juntado ? juntado.refino : historicoRefinoDe(item, soPartes);
       aiSentinelaRaw = refino ? refino.itens : [];
       aiRaw = [];
       aiSuggestions = [];
       aiResults.textContent = '';
       aiResumo = { texto: partes.map(p => p.texto).join('\n\n\n'), partes, done: false, kind: 'estudo', restaurada: !refino, semBotoes: item.tipo === 'esboco' };
-      setInputRange(0, input.value.length, soPartes ? aiResumo.texto : item.textoEditado || aiResumo.texto); // a versão com as alterações salvas, se houver
+      setInputRange(0, input.value.length, soPartes || juntado ? aiResumo.texto : item.textoEditado || aiResumo.texto); // a versão com as alterações salvas, se houver
       autoGrowInputText();
       if (refino) {
         // Como numa resposta recém-gerada: Outra resposta, Melhorar e Desfazer voltam ao texto de antes (o texto colado, ou o campo vazio).
@@ -16641,7 +16703,7 @@ function saveTemplatesToStorage() {
       } else {
         aiRefino = null;
       }
-      if (soPartes) {
+      if (soPartes || juntado) {
         historicoLigado = null;
         atualizarBotoesSalvar();
       } else {
@@ -16669,6 +16731,12 @@ function saveTemplatesToStorage() {
         caixa.hidden = !itens.length;
         if (!itens.length) { delete caixa.dataset.item; return; }
         caixa.dataset.item = itens[0].id; // a lista guardada vem da mais nova para a mais antiga
+        if (cartao.tipo === 'joias') { // cada tipo de resposta é salvo separado: a caixa diz quais há e o botão traz a mais recente de cada um
+          const juntas = joiasSalvasJuntas();
+          const nomes = juntas.itens.map(({ sub }) => JOIAS_SUBS_NOME[sub]);
+          caixa.querySelector('p').textContent = '💾 Esta semana tem salvos: ' + nomes.join(', ') + ' (o mais recente em ' + historicoQuando(itens[0]) + '). Cada um está separado em Pesquisas e respostas salvas.';
+          return;
+        }
         caixa.querySelector('p').textContent = '💾 ' + cartao.quem + ' (salva em ' + historicoQuando(itens[0]) + ')'
           + (itens.length > 1 ? '. É a mais recente de ' + itens.length + '; as outras estão em Pesquisas e respostas salvas.' : '.');
       });
@@ -16678,7 +16746,8 @@ function saveTemplatesToStorage() {
       document.getElementById(caixa).querySelector('button').addEventListener('click', async () => {
         const id = document.getElementById(caixa).dataset.item;
         if (!id) return recuperarSalvasAtualizar();
-        if (!(await historicoAbrir(id))) return;
+        const juntas = caixa === 'joiasSalva' ? joiasSalvasJuntas() : null;
+        if (!(await historicoAbrir(id, undefined, juntas && juntas.itens.length > 1 ? juntas : undefined))) return;
         aiStatusKind = status;
         setAiStatus('✅ ' + mensagem, false);
       });
