@@ -9182,10 +9182,9 @@ details.transcricao-bloco:not([open]) {
 
 .transcricao-pasta {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 8px;
-  margin: 6px 0 2px;
+  align-items: stretch;
+  gap: 6px;
+  margin: 8px 0 4px;
 }
 
 .transcricao-pasta[hidden] {
@@ -9194,13 +9193,19 @@ details.transcricao-bloco:not([open]) {
 
 .transcricao-pasta button {
   margin: 0;
-  min-height: 34px;
-  padding: 3px 12px;
-  font-size: .85rem;
 }
 
-.transcricao-pasta .hint {
-  margin: 0;
+/* O botão da pasta ocupa toda a largura; o ✕ (parar de salvar na pasta) fica ao lado, só depois de escolher. */
+.transcricao-pasta #transcricaoPastaBtn {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 48px;
+}
+
+.transcricao-pasta #transcricaoPastaTirarBtn {
+  flex: 0 0 auto;
+  width: 48px;
+  padding: 0;
 }
 
 .tr-lista-rodape .tr-lista-botoes {

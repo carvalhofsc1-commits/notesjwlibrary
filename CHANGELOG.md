@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.65
+
+Áudio em texto, no computador: o botão da pasta de salvamento automático ocupa toda a largura e passou a se chamar Selecionar a pasta para salvar as gravações automaticamente; depois de escolhida, a pasta aparece em letra pequena sob o título do botão.
+
 ## 6.4.64
 
 Áudio em texto: os botões Salvar e Descartar na base de cada arquivo da lista ficaram pequenos e compridos numa linha, no mesmo padrão do Adicionar arquivo e do Descartar todos.

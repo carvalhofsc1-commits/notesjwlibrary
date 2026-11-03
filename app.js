@@ -7480,7 +7480,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.64'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.65'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -19064,16 +19064,18 @@ function saveTemplatesToStorage() {
     // Só no computador (Chrome ou Edge): uma pasta onde cada parte da gravação é salva sozinha, assim que fica pronta.
     let trPastaDir = null;
     const trPastaLinha = document.getElementById('transcricaoPastaLinha');
-    const trPastaNome = document.getElementById('transcricaoPastaNome');
+    const trPastaBtn = document.getElementById('transcricaoPastaBtn');
     const trPastaTirar = document.getElementById('transcricaoPastaTirarBtn');
     function trPastaMostrar() {
-      trPastaNome.textContent = trPastaDir ? 'Pasta: ' + trPastaDir.name : '';
+      // a pasta escolhida aparece em letra pequena sob o título do botão (o mesmo estilo da nota de modelo dos botões da IA)
+      if (trPastaDir) trPastaBtn.setAttribute('data-ia-nota', 'Pasta selecionada: ' + trPastaDir.name);
+      else trPastaBtn.removeAttribute('data-ia-nota');
       trPastaTirar.hidden = !trPastaDir;
     }
     if (typeof window.showDirectoryPicker === 'function' && window.indexedDB) {
       trPastaLinha.hidden = false;
       trBdFazer('config', 'readonly', l => l.get('pasta')).then(h => { if (h) { trPastaDir = h; trPastaMostrar(); } }).catch(() => {});
-      document.getElementById('transcricaoPastaBtn').addEventListener('click', async () => {
+      trPastaBtn.addEventListener('click', async () => {
         try {
           const dir = await window.showDirectoryPicker({ mode: 'readwrite' });
           trPastaDir = dir;
