@@ -821,6 +821,16 @@ export async function lerTesouros(urlReuniao, { timeoutMs = 8000 } = {}) {
   const html = await baixar(url, timeoutMs);
   const base = discursoDeTesouros(html);
   if (!base) return null;
+  // A ilustração do discurso: a que vem no começo da seção "Tesouros da Palavra de Deus", antes do primeiro item (o do discurso), e as do próprio
+  // item do discurso. As dos outros itens da seção (como a Leitura da Bíblia) ficam de fora.
+  const antesDoDiscurso = imagensDaApostila(html)
+    .filter((i) => /tesouros da palavra de deus/.test(semAcento(i.secao)) && !i.item)
+    .map(({ descricao, legenda }) => ({ descricao, legenda }));
+  const vistas = new Set();
+  base.imagens = [...antesDoDiscurso, ...(base.imagens || [])].filter((i) => {
+    const chave = `${i.descricao}|${i.legenda}`;
+    return !vistas.has(chave) && vistas.add(chave);
+  });
 
   // Cada publicação citada é lida uma vez só; os pontos costumam citar o mesmo artigo.
   const docs = new Map();

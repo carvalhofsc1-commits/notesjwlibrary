@@ -1940,6 +1940,14 @@ async function textosTiradosDoPedido(body) {
   return tirados;
 }
 
+// As imagens da seção da apostila (descrição e legenda do site) e a orientação de citá-las no esboço, se ele ainda não o faz.
+function blocoDeImagensDoEsboco(imagens, P) {
+  const lista = (Array.isArray(imagens) ? imagens : []).filter((i) => i && (i.descricao || i.legenda));
+  if (!lista.length) return "";
+  const linhas = lista.map((i, n) => `Imagem ${n + 1}${i.item ? ` (${i.item})` : ""}: ${[i.descricao && `descrição: ${i.descricao}`, i.legenda && `legenda: ${i.legenda}`].filter(Boolean).join(" | ")}`);
+  return "\n\nIMAGENS DA SEÇÃO DA APOSTILA (descrição e legenda do site):\n" + linhas.join("\n") + "\n\n" + P.frases.pedidos["Esboço: imagens da apostila"];
+}
+
 function blocoDeTextosTirados(tirados, P) {
   if (!tirados.size) return "";
   return "\n\n" + trocar(P.frases.pedidos["Esboço: textos tirados pelo orador"], { textos: [...tirados].join("; ") });
@@ -2044,6 +2052,7 @@ async function esbocoDeTesouros(res, body, P) {
     `PEDIDO: elabore o esboço do discurso de ${discurso.minutos} minutos de Tesouros da Palavra de Deus desta semana.\n` +
     emojisDoEsboco(opcoes, P) + "\n\n" +
     textoDosTesouros(discurso, versiculos) +
+    blocoDeImagensDoEsboco(discurso.imagens, P) +
     blocoDeTextosMarcados(leiaDaMateria, P) +
     blocoDeTextosEscolhidos(extras, P) +
     blocoDeTextosTirados(tirados, P) +

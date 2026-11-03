@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.48
+
+Esboço de Tesouros da Palavra de Deus: ao carregar a matéria da semana, o card mostra a ilustração do discurso (a que vem no começo da seção Tesouros, antes do item do discurso, e as do próprio item; descrição e legenda, com o botão Copiar), e a IA recebe essas imagens com a orientação de fazer referência a elas no esboço, se ele ainda não as menciona. As imagens dos outros itens da seção ficam de fora.
+
 ## 6.4.47
 
 Esboços (Tesouros e discurso curto): só o que vem na matéria principal da apostila ("(Leia …)" no texto dela) e nos esboços (S-34 ou importado) é marcado como LEIA original. Os "(Leia …)" que vêm dentro das publicações citadas como fonte (artigos, trechos, ponto do apêndice) deixam de ser rotulados como LEIA na lista; esses textos continuam na lista, a IA pode sugeri-los e o orador pode marcá-los, e quando entram no esboço aparecem com LEIA dentro dele.
