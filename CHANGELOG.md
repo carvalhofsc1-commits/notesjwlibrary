@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.39
+
+Estudo Bíblico de Congregação: os 4 quadros para responder (Para considerar, Analise mais a fundo, Medite no que aprendeu e Pense no quadro completo) começam sempre marcados.
+
 ## 6.4.38
 
 Pesquisas e respostas salvas das joias: cada tipo de resposta (📚 Resumo dos capítulos, ❓ Joia da semana, 💎 Joias da leitura e 📌 Instruções adicionais) é salvo separado e com o nome do que é, mesmo quando foram pedidos juntos; o botão Recuperar traz os mais recentes de cada tipo, e pedir de novo parte só das salvas dos tipos pedidos. No backup do JW Library, o resumo e as instruções adicionais ficam para escolha manual.

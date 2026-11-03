@@ -7416,7 +7416,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.38'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.39'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -13610,7 +13610,7 @@ function saveTemplatesToStorage() {
     // O servidor lê o capítulo da semana (página de reuniões -> apostila Vida e Ministério -> item "Estudo bíblico de
     // congregação") e a IA responde às perguntas dos quadros marcados, no mesmo estilo das respostas de A Sentinela
     // (tamanho, formatação e textos bíblicos das opções da IA). As respostas vão para o campo de texto, cada uma com o
-    // botão azul de copiar. Os quadros marcados ficam guardados neste aparelho.
+    // botão azul de copiar.
     const EBC_KEY = 'jwLibraryNoteAplicarEbcV1';
     const ebcInfo = document.getElementById('ebcInfo');
     const ebcCarregarBtn = document.getElementById('ebcCarregarBtn');
@@ -13618,13 +13618,8 @@ function saveTemplatesToStorage() {
     const ebcOutputSlot = document.getElementById('ebcOutputSlot');
     const ebcQuadros = Array.from(document.querySelectorAll('[data-ebc-quadro]'));
     const ebcEscolhas = () => ({ quadros: ebcQuadros.filter(c => c.checked).map(c => c.dataset.ebcQuadro) });
-    try {
-      const salvo = JSON.parse(localStorage.getItem(EBC_KEY) || 'null');
-      if (salvo && Array.isArray(salvo.quadros)) {
-        ebcQuadros.forEach(c => { c.checked = salvo.quadros.includes(c.dataset.ebcQuadro); });
-      }
-    } catch (e) { /* sem localStorage: valem os padrões */ }
-    ebcQuadros.forEach(c => c.addEventListener('change', () => safeSetItem(EBC_KEY, JSON.stringify(ebcEscolhas()))));
+    // Os quatro quadros começam sempre marcados (padrão, a cada abertura do app); desmarcar vale só até fechar o app. A escolha antiga guardada no aparelho é apagada.
+    try { localStorage.removeItem(EBC_KEY); } catch (e) { /* sem localStorage */ }
 
     // Cada cartão do Estudo Bíblico: onde ficam a linha de informações, o título e o botão de carregar.
     const EBC_CARTOES = [
