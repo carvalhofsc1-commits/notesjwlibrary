@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.64
+
+Áudio em texto: os botões Salvar e Descartar na base de cada arquivo da lista ficaram pequenos e compridos numa linha, no mesmo padrão do Adicionar arquivo e do Descartar todos.
+
 ## 6.4.63
 
 Áudio em texto: a gravação ao vivo agora é quebrada em partes (padrão 10 minutos, ajustável pelo administrador; a soma das partes vale o limite da gravação). A cada parte o app fecha o arquivo e começa a próxima sozinho; todas as partes entram na lista de arquivos e ficam guardadas no aparelho até serem transcritas ou descartadas (se o app fechar, elas voltam para a lista). Cada parte tem o seu Salvar, e o botão de salvar a gravação salva todas (no iPhone, pela folha de compartilhar). No computador (Chrome ou Edge) dá para escolher uma pasta onde cada parte é salva sozinha.

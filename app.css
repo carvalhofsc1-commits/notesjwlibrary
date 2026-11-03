@@ -9204,15 +9204,26 @@ details.transcricao-bloco:not([open]) {
 }
 
 .tr-lista-rodape .tr-lista-botoes {
-  display: inline-flex;
+  display: flex;
+  flex-wrap: wrap;
   gap: 6px;
 }
 
-.tr-lista-item .tr-lista-salvar {
+/* Salvar e Descartar do cartão: pequenos e compridos, numa linha, como o Adicionar arquivo e o Descartar todos do topo. */
+.tr-lista-item .tr-lista-botoes button {
+  width: auto;
+  flex: 0 0 auto;
   margin: 0;
-  min-height: 30px;
-  padding: 2px 12px;
-  font-size: .8rem;
+  min-height: 34px;
+  padding: 3px 14px;
+  font-size: .85rem;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+.tr-lista-item .tr-lista-salvar {
+  background: color-mix(in srgb, #2563eb 14%, var(--card));
+  border-color: color-mix(in srgb, #2563eb 40%, transparent);
 }
 
 /* Configurações do Áudio em texto (administrador): cada seção numa moldura. */
@@ -9265,9 +9276,9 @@ details.transcricao-bloco:not([open]) {
 
 .tr-lista-rodape {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
   margin-top: 4px;
 }
 
@@ -9277,11 +9288,6 @@ details.transcricao-bloco:not([open]) {
 }
 
 .tr-lista-item .tr-lista-descartar {
-  margin: 0;
-  min-height: 30px;
-  padding: 2px 12px;
-  font-size: .8rem;
-  color: var(--text);
   background: color-mix(in srgb, #ef4444 16%, var(--card));
   border-color: color-mix(in srgb, #ef4444 45%, transparent);
 }
