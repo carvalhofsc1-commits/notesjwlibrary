@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.52
+
+Preparação de discursos e esboços: nova regra fixa "Leitura sem adiantar o texto". Antes da leitura de um texto bíblico, o esboço não cita nem antecipa nada do conteúdo dele (só perguntas e problemas que a leitura responde); depois da leitura, cita e explica partes do texto à vontade. Textos que não serão lidos podem ser citados em qualquer parte.
+
 ## 6.4.51
 
 Tela de prompts (administrador), Modelo, gasto e limites: "🤖 Modelo da IA de texto" e "📜 Preparação de discursos e esboços" ficam cada um no seu contêiner; o botão Salvar para todos fica logo abaixo dos dois.

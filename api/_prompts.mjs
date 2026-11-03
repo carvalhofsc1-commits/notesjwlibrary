@@ -372,9 +372,9 @@ EMOJIS (opção do usuário, nas configurações)
 
 TEXTOS BÍBLICOS LIDOS (regra do usuário, obrigatória para todo texto lido, em todos os esboços)
 Não basta mencionar o texto e pedir que a assistência o acompanhe na leitura. Todo texto lido tem três partes, no campo "leitura" do argumento:
-1. "introducao": a fala ANTES da leitura. Ela liga a última ideia (ou as últimas ideias) ao texto, cria expectativa e focaliza a atenção no motivo de usar o texto. Pode ser: uma pergunta que leve a raciocinar (mais eficaz se a resposta não for óbvia); um problema, seguido do texto que ajuda a solucioná-lo (sem expectativas irreais: às vezes o texto dá só parte da solução, e então se pede que observem que orientação ele traz); um princípio de conduta, seguido do relato bíblico que ilustra a sabedoria de segui-lo; ou um pedido para que observem, no texto, um ou mais pontos específicos. Nunca apenas "vamos ler" nem "leia o texto".
+1. "introducao": a fala ANTES da leitura. Ela liga a última ideia (ou as últimas ideias) ao texto, cria expectativa e focaliza a atenção no motivo de usar o texto. Pode ser: uma pergunta que leve a raciocinar (mais eficaz se a resposta não for óbvia); um problema, seguido do texto que ajuda a solucioná-lo (sem expectativas irreais: às vezes o texto dá só parte da solução, e então se pede que observem que orientação ele traz); um princípio de conduta, seguido do relato bíblico que ilustra a sabedoria de segui-lo; ou um pedido para que observem o que o texto diz sobre o assunto, sem revelar o que é. NADA do conteúdo do texto que será lido pode ser citado antes da leitura (veja a regra fixa "Leitura sem adiantar o texto"). Nunca apenas "vamos ler" nem "leia o texto".
 2. A leitura em si: o app escreve o aviso LEIA e a íntegra do texto. Não transcreva o versículo e não precisa repetir a referência.
-3. "destaque": a fala DEPOIS da leitura, que faz a aplicação clara: mostra como o texto responde à pergunta ou prova o ponto. Ler o texto, mesmo com ênfase, em geral não basta (a pessoa mediana conhece pouco a Bíblia e dificilmente entende o ponto com uma única leitura): o orador volta ao texto e destaca as palavras ou frases-chave, repetindo-as e dizendo o que mostram. Comece com uma expressão como "Conforme vimos no texto...", "Vimos no texto que..." ou "Aprendemos no texto que...".
+3. "destaque": a fala DEPOIS da leitura, que faz a aplicação clara: mostra como o texto responde à pergunta ou prova o ponto. Ler o texto, mesmo com ênfase, em geral não basta (a pessoa mediana conhece pouco a Bíblia e dificilmente entende o ponto com uma única leitura): o orador volta ao texto e, só agora, cita e destaca as palavras ou frases-chave, repetindo-as e dizendo o que mostram. Comece com uma expressão como "Conforme vimos no texto...", "Vimos no texto que..." ou "Aprendemos no texto que...".
 Texto só citado (sem leitura) fica dentro da frase, entre parênteses, com a referência abreviada (por exemplo, (Mat. 6:33)), dizendo com as palavras do orador o que ele mostra.
 
 INTRODUÇÃO E CONCLUSÃO (regra do usuário: escritas palavra por palavra)
@@ -920,6 +920,13 @@ const FORMATO_TEXTO_DIARIO = `FORMATO DOS COMENTÁRIOS ADICIONAIS (saída estrut
 
 // Regra fixa de vocabulário (pedida pelo usuário, permanente): vai em todos os pedidos à IA. O servidor também troca a
 // palavra no que a IA escrever, se ela escapar (semCulto em sugerir-formatacao.mjs).
+// Regra do usuário (permanente): o texto bíblico que será LIDO não é adiantado antes da leitura; depois dela, sim.
+const REGRA_LEITURA_SEM_ADIANTAR = `LEITURA SEM ADIANTAR O TEXTO (regra fixa do usuário, vale em todos os esboços e para todo texto bíblico que será LIDO, no campo "leitura"):
+- ANTES da leitura (a "introducao" da leitura e qualquer fala do esboço que venha antes dela, inclusive na introdução e nos argumentos anteriores): NÃO cite, não parafraseie e não antecipe NENHUMA parte do conteúdo do texto que será lido: nem as palavras ou frases dele, nem as ideias, nem a conclusão a que ele chega. Pode e deve fazer perguntas ou propor um problema que a leitura vai responder, e pedir que observem o que o texto diz sobre o assunto, sem dizer o que é. Dizer só a referência (livro, capítulo e versículo) é permitido.
+- DEPOIS da leitura (o "destaque"): cite e faça referência a partes do texto (palavras e frases-chave), repetindo-as e explicando o que mostram, para fazer uma boa explicação e a aplicação.
+- Textos que NÃO serão lidos (só citados) podem ser citados, explicados e comentados à vontade, em qualquer parte do esboço, inclusive antes da leitura de outro texto.
+- Antes da leitura, o ruim é "Em Salmo 23:1 Davi diz que Jeová é o seu Pastor e que nada lhe faltará. Vamos ler."; o bom é "Como podemos ter certeza de que Jeová cuida de nós, mesmo nas dificuldades? Vejamos o que Davi escreveu." Só depois da leitura se diz "Vimos que Davi chama Jeová de seu Pastor e afirma que nada lhe faltará…".`;
+
 const VOCABULARIO_FIXO = `VOCABULÁRIO (regra fixa, vale sempre): NUNCA use a palavra "culto" (nem "cultos") em nenhum texto que você escrever. Use sempre "reunião" ou "reuniões" (ex.: "durante a reunião", "nas reuniões da congregação"). Vale para respostas, resumos, perguntas, aplicações, explicações e comentários.`;
 
 // Ordem das partes na mensagem de cada pedido (o que fica entre aspas vem das partes editáveis).
@@ -955,6 +962,7 @@ export function travadosDe(limites) {
   { id: "formato_perguntas", titulo: "Formato das perguntas adicionais do dirigente (campos e seções ligadas no pedido)", texto: FORMATO_PERGUNTAS },
   { id: "formato_ebc", titulo: "Formato das respostas do Estudo Bíblico de Congregação", texto: FORMATO_EBC },
   { id: "formato_ebc_dirigente", titulo: "Formato das perguntas adicionais do Estudo Bíblico para o dirigente", texto: FORMATO_EBC_DIRIGENTE },
+  { id: "regra_leitura_sem_adiantar", titulo: "Leitura sem adiantar o texto (esboços: nada do texto lido é citado antes da leitura)", texto: REGRA_LEITURA_SEM_ADIANTAR },
   { id: "formato_tesouros", titulo: "Formato do esboço do discurso de Tesouros da Palavra de Deus", texto: FORMATO_TESOUROS },
   { id: "formato_discurso_curto", titulo: "Formato do esboço do discurso curto de Faça seu melhor no ministério", texto: FORMATO_DISCURSO_CURTO },
   { id: "formato_discurso_publico", titulo: "Formato do esboço do discurso público (S-34)", texto: FORMATO_DISCURSO_PUBLICO },
@@ -1031,10 +1039,10 @@ export function montarPrompts(overrides, limitesArmazenados) {
     // Estudo Bíblico: sem a regra fixa dos textos citados na pergunta (pedido do usuário): eles seguem as opções marcadas.
     sistemaEbc: texto("ebc") + "\n\n" + [texto("regras_resposta"), texto("voz")].join("\n\n") + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_EBC,
     sistemaEbcDirigente: texto("ebc_dirigente") + "\n\n" + texto("regras_resposta") + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_EBC_DIRIGENTE,
-    sistemaTesouros: texto("tesouros") + "\n\n" + texto("esboco_principios") + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_TESOUROS,
-    sistemaDiscursoCurto: texto("discurso_curto") + "\n\n" + texto("esboco_principios") + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_DISCURSO_CURTO,
-    sistemaDiscursoPublico: texto("discurso_publico") + "\n\n" + texto("esboco_principios") + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_DISCURSO_PUBLICO,
-    sistemaOutros: texto("outros_esbocos") + "\n\n" + texto("esboco_principios") + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_OUTROS,
+    sistemaTesouros: texto("tesouros") + "\n\n" + texto("esboco_principios") + "\n\n" + REGRA_LEITURA_SEM_ADIANTAR + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_TESOUROS,
+    sistemaDiscursoCurto: texto("discurso_curto") + "\n\n" + texto("esboco_principios") + "\n\n" + REGRA_LEITURA_SEM_ADIANTAR + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_DISCURSO_CURTO,
+    sistemaDiscursoPublico: texto("discurso_publico") + "\n\n" + texto("esboco_principios") + "\n\n" + REGRA_LEITURA_SEM_ADIANTAR + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_DISCURSO_PUBLICO,
+    sistemaOutros: texto("outros_esbocos") + "\n\n" + texto("esboco_principios") + "\n\n" + REGRA_LEITURA_SEM_ADIANTAR + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_OUTROS,
     sistemaJoias: texto("joias") + "\n\n" + blocosResposta + "\n\n" + REGRA_TEXTOS_PERGUNTA + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + formatoJoias(limites.maxJoiasPorCapitulo),
     sistemaTextoDiario: texto("texto_diario") + "\n\n" + FORMATO_TEXTO_DIARIO + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO,
     sistemaAplicacao: SISTEMA_APLICACAO + "\n\n" + texto("voz") + "\n\n" + texto("perspicaz_uso") + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO,
