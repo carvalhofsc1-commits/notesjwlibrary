@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.40
+
+Áudio em texto: com os blocos "Informe o tipo de áudio" e "Dados do áudio" recolhidos, uma linha pequena e discreta sob o título de cada um mostra o tipo de áudio escolhido e o título preenchido.
+
 ## 6.4.39
 
 Estudo Bíblico de Congregação: os 4 quadros para responder (Para considerar, Analise mais a fundo, Medite no que aprendeu e Pense no quadro completo) começam sempre marcados.

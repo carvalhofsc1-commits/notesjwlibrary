@@ -7416,7 +7416,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.39'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.40'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -17902,6 +17902,7 @@ function saveTemplatesToStorage() {
         trData.value = q.getFullYear() + '-' + String(q.getMonth() + 1).padStart(2, '0') + '-' + String(q.getDate()).padStart(2, '0');
       }
       trData.readOnly = trDataMesmo.checked;
+      trResumoLinhasAtualizar();
     }
     [[trTituloMesmo, trTitulo], [trDataMesmo, trData]].forEach(([caixa, campo]) => {
       caixa.addEventListener('change', () => {
@@ -17921,6 +17922,7 @@ function saveTemplatesToStorage() {
       trLocal.value = '';
       trData.value = '';
       trInterlocutoresLimpar();
+      trResumoLinhasAtualizar();
     }
     function trDadosTexto() {
       const partes = [];
@@ -18033,6 +18035,7 @@ function saveTemplatesToStorage() {
       });
       trTipo.value = manter && tipos.some(t => t.id === manter) ? manter : '';
       trTipoNomeMostrar();
+      trResumoLinhasAtualizar();
     }
     // "Sobre o áudio" e "Como fazer o resumo" crescem até mostrar o texto inteiro, sem barra de rolagem.
     const trCamposAutoAltura = [trContexto, trInstrucoes, trPauta];
@@ -18142,6 +18145,26 @@ function saveTemplatesToStorage() {
       trTipoUltimaInstr = instrucoes;
       trTipoBotoesAtualizar();
     }
+    // Com o bloco recolhido, uma linha pequena sob o título diz o que há nele: o tipo de áudio escolhido e o título dos dados do áudio.
+    function trResumoLinhasAtualizar() {
+      const tipo = document.getElementById('transcricaoTipo');
+      const opcao = tipo && tipo.selectedOptions[0];
+      const nomeNovo = (document.getElementById('transcricaoTipoNome').value || '').trim();
+      const nomeTipo = tipo && tipo.value === '__novo__' ? nomeNovo : tipo && tipo.value && opcao ? opcao.textContent.trim() : '';
+      const titulo = (document.getElementById('transcricaoTitulo').value || '').trim();
+      [['transcricaoTipoResumo', nomeTipo], ['transcricaoDadosResumo', titulo]].forEach(([id, texto]) => {
+        const linha = document.getElementById(id);
+        linha.textContent = texto;
+        linha.hidden = !texto;
+      });
+    }
+    ['transcricaoTipo', 'transcricaoTipoNome', 'transcricaoTitulo'].forEach(id => {
+      const campo = document.getElementById(id);
+      campo.addEventListener('input', trResumoLinhasAtualizar);
+      campo.addEventListener('change', trResumoLinhasAtualizar);
+    });
+    trResumoLinhasAtualizar();
+
     // Lixeira no topo dos blocos "Informe o tipo de áudio" e "Dados do áudio": limpa todos os campos do bloco.
     function trLixeira(botao, temTexto, limpar, aviso) {
       botao.addEventListener('click', async event => {
@@ -18164,6 +18187,7 @@ function saveTemplatesToStorage() {
         trTipoUltimaInstr = '';
         trTipoNomeMostrar();
         trTipoBotoesAtualizar();
+        trResumoLinhasAtualizar();
       },
       '🗑️ Campos do tipo de áudio limpos.');
     trLixeira(document.getElementById('transcricaoDadosLimparBtn'),
