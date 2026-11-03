@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.55
+
+Botões da IA: corrigido o aviso de modelo e esforço sob os botões, que não aparecia porque a consulta ao servidor era feita cedo demais, antes de o app terminar de carregar.
+
 ## 6.4.54
 
 Preparação de discursos e esboços: nova orientação no prompt padrão. A IA define primeiro como o esboço termina (a admoestação final) e escreve a introdução na mesma linha de raciocínio, para que as duas se espelhem; o tema aparece com destaque na introdução e é retomado na conclusão.

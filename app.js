@@ -3632,7 +3632,7 @@
         }
       } catch (e) { /* sem conexão: fica o último valor */ }
     }
-    iaNotaCarregar();
+    setTimeout(iaNotaCarregar, 0); // depois do script inteiro: o postConfig usa CONFIG_ENDPOINT, declarado mais adiante (chamar já aqui falha em silêncio)
 
     // ---------- Referências bíblicas para a voz ----------
     // Nomes completos (com ou sem acento, porque as letras formatadas perdem os acentos) e as abreviações das publicações.
@@ -7453,7 +7453,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.54'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.55'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
