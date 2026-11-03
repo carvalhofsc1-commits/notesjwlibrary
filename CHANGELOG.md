@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.69
+
+Áudio em texto: os botões do topo, com arquivos na lista, voltaram aos ícones de antes (🎧 Adicionar arquivo de áudio e 🔴 Gravar novo áudio).
+
 ## 6.4.68
 
 Áudio em texto: com arquivos na lista, os botões do topo passam a se chamar ➕ Adicionar arquivo de áudio e ➕ Gravar novo áudio.

@@ -7480,7 +7480,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.68'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.69'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -18662,10 +18662,10 @@ function saveTemplatesToStorage() {
       const cheia = trLista.length >= trLimites.maxArquivos;
       const comLista = trLista.length > 0;
       trEscolher.disabled = ocupado || gravando || cheia;
-      trEscolher.textContent = comLista ? '➕ Adicionar arquivo de áudio' : '🎧 Escolher o arquivo de áudio';
+      trEscolher.textContent = comLista ? '🎧 Adicionar arquivo de áudio' : '🎧 Escolher o arquivo de áudio';
       if (typeof trGravarBtn !== 'undefined') {
         trGravarBtn.disabled = ocupado || gravando || cheia;
-        trGravarBtn.textContent = comLista ? '➕ Gravar novo áudio' : '🔴 Gravar um áudio agora';
+        trGravarBtn.textContent = comLista ? '🔴 Gravar novo áudio' : '🔴 Gravar um áudio agora';
       }
       document.querySelectorAll('.tr-lista-descartar').forEach(b => { b.disabled = ocupado || gravando; });
       trResumir.disabled = ocupado || trTexto.value.trim().length < 40;
