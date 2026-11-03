@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.44
+
+Tesouros da Palavra de Deus: o botão "Carregar perguntas" passa a "Carregar matéria da semana" (e "Recarregar matéria da semana"), e o aviso "Aguardando carregar matéria da semana".
+
 ## 6.4.43
 
 Áudio em texto: o quadro "Dados do áudio" (o do arquivo) passa a mostrar, numa gravação do app, o mesmo nome com que ela será salva (título + data e hora), e o nome acompanha o título enquanto você digita.
