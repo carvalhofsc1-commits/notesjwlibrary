@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.71
+
+Instruções adicionais para a IA (campo de cada seção, inclusive a tela de esboços): o limite de 800 caracteres foi retirado; o campo aceita tudo o que for digitado (o servidor só põe um teto alto de 30000 caracteres).
+
 ## 6.4.70
 
 Formatar, Opções com IA: a chave (🔑) passou para a mesma linha do título, em vez de ficar numa linha abaixo.

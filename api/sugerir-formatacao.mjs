@@ -94,6 +94,8 @@ const MAX_MODELOS = 60;
 const MAX_CHARS_MODELO = 200;
 // Instruções adicionais do usuário para um pedido (campo de cada seção das reuniões) e instruções fixas (o app limita estas a 300): passam por textoLivre.
 const MAX_TEXTO_LIVRE = 800;
+// As instruções adicionais para a IA (o campo de cada seção) quase não têm limite: só um teto alto, para um pedido com erro não custar uma fortuna.
+const MAX_AJUSTE = 30000;
 
 const ESTILOS = ["negrito", "italico", "negrito_italico"];
 // Tipos de fonte (alfabetos Unicode do app) que a IA pode escolher para um destaque, além do negrito/itálico da fonte
@@ -207,8 +209,8 @@ function trocar(frase, valores) {
   return String(frase || "").replace(/\{\{(\w+)\}\}/g, (marca, nome) => (nome in valores ? String(valores[nome]) : marca));
 }
 
-function textoLivre(valor) {
-  return typeof valor === "string" ? valor.replace(/\s+/g, " ").trim().slice(0, MAX_TEXTO_LIVRE) : "";
+function textoLivre(valor, max = MAX_TEXTO_LIVRE) {
+  return typeof valor === "string" ? valor.replace(/\s+/g, " ").trim().slice(0, max) : "";
 }
 
 function validarOpcoes(opcoes) {
@@ -293,7 +295,7 @@ function validarEntrada(body, L) {
     modelos: modelosOk,
     opcoes: validarOpcoes(body.opcoes),
     modo,
-    ajuste: textoLivre(body.ajuste),
+    ajuste: textoLivre(body.ajuste, MAX_AJUSTE),
     anteriores,
   };
 }
@@ -1033,7 +1035,7 @@ async function responderEstudo(res, body, P) {
   const opcoes = validarOpcoes(body.opcoes);
   if (consultaPedida(opcoes) && !fontesConfiguradas()) return erro(res, 503, "A consulta às fontes ainda não está configurada no servidor.");
   precarregarFontes({ biblia: true, perspicaz: opcoes.consultarPerspicaz });
-  const ajuste = textoLivre(body.ajuste);
+  const ajuste = textoLivre(body.ajuste, MAX_AJUSTE);
   const sep = modoSeparacao(opcoes, ajuste);
   const modo = body.modo === "nova" || body.modo === "melhorar" ? body.modo : null;
   const anteriores =
@@ -1212,7 +1214,7 @@ async function sugerirPerguntas(res, body, P) {
   const opcoes = validarOpcoes(body.opcoes);
   if (!opcoes.perguntasComplementares && !opcoes.perguntasAplicativas && !opcoes.perguntasTextos && !opcoes.perguntasEntendimento)
     return erro(res, 400, "Marque pelo menos uma seção das perguntas.");
-  const ajuste = textoLivre(body.ajuste);
+  const ajuste = textoLivre(body.ajuste, MAX_AJUSTE);
   // "Outra resposta" e "Melhorar": as perguntas já sugeridas voltam ao servidor (os mesmos itens que ele devolveu).
   const modo = body.modo === "nova" || body.modo === "melhorar" ? body.modo : null;
   const anteriores = modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(body.anteriores).slice(0, 12000) : "";
@@ -1396,7 +1398,7 @@ async function responderEbc(res, body, P) {
   if (consultaPedida(opcoes) && !fontesConfiguradas()) return erro(res, 503, "A consulta às fontes ainda não está configurada no servidor.");
   // Os versículos de "Leia o relato na Bíblia" e os citados nas perguntas vão junto: a Bíblia começa a carregar já.
   precarregarFontes({ biblia: true, perspicaz: opcoes.consultarPerspicaz });
-  const ajuste = textoLivre(body.ajuste);
+  const ajuste = textoLivre(body.ajuste, MAX_AJUSTE);
   const sep = modoSeparacao(opcoes, ajuste);
   const modo = body.modo === "nova" || body.modo === "melhorar" ? body.modo : null;
   const anteriores = modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(body.anteriores).slice(0, 12000) : "";
@@ -1530,7 +1532,7 @@ async function perguntasEbcDirigente(res, body, P) {
   if (!codigoDoDirigente()) return erro(res, 503, "O código do dirigente ainda não está configurado no servidor.");
   if (!dirigenteValido(body.codigoDirigente)) return erro(res, 403, "Código do dirigente inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
   const opcoes = validarOpcoes(body.opcoes);
-  const ajuste = textoLivre(body.ajuste);
+  const ajuste = textoLivre(body.ajuste, MAX_AJUSTE);
   const modo = body.modo === "nova" || body.modo === "melhorar" ? body.modo : null;
   const anteriores = modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(body.anteriores).slice(0, 12000) : "";
   // "O que preparar": as perguntas adicionais (ligadas, a não ser que venham desmarcadas) e/ou os textos-base; pelo menos uma.
@@ -2032,7 +2034,7 @@ async function lerTesourosDaSemana(res, body) {
 async function esbocoDeTesouros(res, body, P) {
   if (!acessoDoDirigente(res, body)) return;
   const opcoes = validarOpcoes(body.opcoes);
-  const ajuste = textoLivre(body.ajuste);
+  const ajuste = textoLivre(body.ajuste, MAX_AJUSTE);
   const modo = body.modo === "nova" || body.modo === "melhorar" || body.modo === "incluir" ? body.modo : null;
   const anteriores = modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(anteriorParaIa(body.anteriores)).slice(0, 12000) : "";
   const inicioPedido = Date.now();
@@ -2189,7 +2191,7 @@ async function lerDiscursoCurtoDaSemana(res, body) {
 async function esbocoDoDiscursoCurto(res, body, P) {
   if (!acessoDoDirigente(res, body)) return;
   const opcoes = validarOpcoes(body.opcoes);
-  const ajuste = textoLivre(body.ajuste);
+  const ajuste = textoLivre(body.ajuste, MAX_AJUSTE);
   const modo = body.modo === "nova" || body.modo === "melhorar" || body.modo === "incluir" ? body.modo : null;
   const anteriores = modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(anteriorParaIa(body.anteriores)).slice(0, 12000) : "";
   const inicioPedido = Date.now();
@@ -2386,7 +2388,7 @@ async function verEsbocoPublico(res, body) {
 async function esbocoDoDiscursoPublico(res, body, P) {
   if (!acessoDoDirigente(res, body)) return;
   const opcoes = validarOpcoes(body.opcoes);
-  const ajuste = textoLivre(body.ajuste);
+  const ajuste = textoLivre(body.ajuste, MAX_AJUSTE);
   const modo = body.modo === "nova" || body.modo === "melhorar" || body.modo === "incluir" ? body.modo : null;
   const anteriores = modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(anteriorParaIa(body.anteriores)).slice(0, 12000) : "";
   const inicioPedido = Date.now();
@@ -2701,7 +2703,7 @@ async function esbocoDeOutros(res, body, P) {
   if (d.erroBase) return erro(res, 400, "O esboço importado não serve: " + d.erroBase);
   if (d.tema.length < 4) return erro(res, 400, "Escreva o tema do discurso.");
   const opcoes = validarOpcoes(body.opcoes);
-  const ajuste = textoLivre(body.ajuste);
+  const ajuste = textoLivre(body.ajuste, MAX_AJUSTE);
   const modo = body.modo === "nova" || body.modo === "melhorar" || body.modo === "incluir" ? body.modo : null;
   const anteriores = modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(anteriorParaIa(body.anteriores)).slice(0, 12000) : "";
   const inicioPedido = Date.now();
@@ -3031,7 +3033,7 @@ async function completarResumosComPerspicaz(outros, joias, P, opcoes, ajuste) {
 }
 
 async function responderJoias(res, body, P) {
-  const ajuste = textoLivre(body.ajuste);
+  const ajuste = textoLivre(body.ajuste, MAX_AJUSTE);
   // "Executar somente estas instruções": só vale o que o usuário escreveu em "Instruções adicionais para a IA"; as caixas de "O que preparar" não contam.
   const somente = body.somenteAjuste === true;
   if (somente && !ajuste) return erro(res, 400, "Escreva as instruções adicionais para usar só elas.");
