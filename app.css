@@ -6461,11 +6461,17 @@
 
     #opcoesIaBox>summary .opcoes-ia-rotulo {
       display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 2px;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 2px 6px;
       flex: 1 1 auto;
       min-width: 0;
+    }
+
+    /* A chave (🔑) fica ao lado do título; o aviso de bloqueio, quando aparece, vai para a linha de baixo. */
+    #opcoesIaBox>summary .opcoes-ia-rotulo .grupo-trava {
+      flex: 0 0 100%;
     }
 
     /* ---------- Tela Reuniões: a tela principal e as páginas ----------
