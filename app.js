@@ -7480,7 +7480,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.62'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.63'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -18059,21 +18059,23 @@ function saveTemplatesToStorage() {
     // pedido direto) e cada trecho vai a /api/transcrever, que usa o Chirp 3 do Google. Depois o texto pode ser resumido pela IA. Nada fica salvo.
     // Duração máxima do áudio, em minutos: do arquivo escolhido na pasta e da gravação ao vivo. O administrador ajusta em Ajustes → Configurações do Áudio
     // em texto (api/config.mjs, "audio-limites-ler" e "audio-limites-salvar"); o último valor lido fica no aparelho.
-    let trLimites = { arquivoMin: 60, gravacaoMin: 30, maxArquivos: 5 };
+    let trLimites = { arquivoMin: 60, gravacaoMin: 30, maxArquivos: 5, pedacoMin: 10 };
     try {
       const guardado = JSON.parse(localStorage.getItem('ns-audio-limites') || 'null');
-      if (guardado && guardado.arquivoMin > 0 && guardado.gravacaoMin > 0) trLimites = { arquivoMin: guardado.arquivoMin, gravacaoMin: guardado.gravacaoMin, maxArquivos: guardado.maxArquivos > 0 ? guardado.maxArquivos : 5 };
+      if (guardado && guardado.arquivoMin > 0 && guardado.gravacaoMin > 0) trLimites = { arquivoMin: guardado.arquivoMin, gravacaoMin: guardado.gravacaoMin, maxArquivos: guardado.maxArquivos > 0 ? guardado.maxArquivos : 5, pedacoMin: guardado.pedacoMin > 0 ? guardado.pedacoMin : 10 };
     } catch (e) { /* sem armazenamento: valem os padrões */ }
     function trLimitesAplicar() {
-      const campo = { arquivo: 'arquivoMin', gravacao: 'gravacaoMin', arquivos: 'maxArquivos' };
+      const campo = { arquivo: 'arquivoMin', gravacao: 'gravacaoMin', arquivos: 'maxArquivos', pedaco: 'pedacoMin' };
       document.querySelectorAll('[data-tr-limite]').forEach(el => { el.textContent = trLimites[campo[el.dataset.trLimite]]; });
       const a = document.getElementById('audioLimArquivo'), g = document.getElementById('audioLimGravacao'), q = document.getElementById('audioLimArquivos');
       if (a && document.activeElement !== a) a.value = trLimites.arquivoMin;
       if (g && document.activeElement !== g) g.value = trLimites.gravacaoMin;
       if (q && document.activeElement !== q) q.value = trLimites.maxArquivos;
+      const pd = document.getElementById('audioLimPedaco');
+      if (pd && document.activeElement !== pd) pd.value = trLimites.pedacoMin;
     }
     function trLimitesGuardar(l) {
-      trLimites = { arquivoMin: l.arquivoMin, gravacaoMin: l.gravacaoMin, maxArquivos: l.maxArquivos > 0 ? l.maxArquivos : 5 };
+      trLimites = { arquivoMin: l.arquivoMin, gravacaoMin: l.gravacaoMin, maxArquivos: l.maxArquivos > 0 ? l.maxArquivos : 5, pedacoMin: l.pedacoMin > 0 ? l.pedacoMin : 10 };
       try { localStorage.setItem('ns-audio-limites', JSON.stringify(trLimites)); } catch (e) { /* sem armazenamento */ }
       trLimitesAplicar();
     }
@@ -18089,11 +18091,13 @@ function saveTemplatesToStorage() {
       const g = Math.round(Number(document.getElementById('audioLimGravacao').value));
       const q = Math.round(Number(document.getElementById('audioLimArquivos').value));
       if (!(a >= 5 && a <= 180 && g >= 5 && g <= 180)) return (status.textContent = 'Use valores de 5 a 180 minutos.');
+      const pd = Math.round(Number(document.getElementById('audioLimPedaco').value));
       if (!(q >= 1 && q <= 20)) return (status.textContent = 'A quantidade de arquivos vai de 1 a 20.');
-      const r = await postConfig({ acao: 'audio-limites-salvar', codigo: senhaAdminSalva(), limites: { arquivoMin: a, gravacaoMin: g, maxArquivos: q } });
+      if (!(pd >= 1 && pd <= 60)) return (status.textContent = 'A parte da gravação vai de 1 a 60 minutos.');
+      const r = await postConfig({ acao: 'audio-limites-salvar', codigo: senhaAdminSalva(), limites: { arquivoMin: a, gravacaoMin: g, maxArquivos: q, pedacoMin: pd } });
       if (!r.ok) return (status.textContent = configErrorMessage(r, 'Não consegui salvar a duração agora.'));
       trLimitesGuardar(r.data.limites);
-      status.textContent = '🌐 Salvo para todos: arquivo de até ' + trLimites.arquivoMin + ' min, gravação de até ' + trLimites.gravacaoMin + ' min e até ' + trLimites.maxArquivos + ' arquivos por vez.';
+      status.textContent = '🌐 Salvo para todos: arquivo de até ' + trLimites.arquivoMin + ' min, gravação de até ' + trLimites.gravacaoMin + ' min em partes de ' + trLimites.pedacoMin + ' min e até ' + trLimites.maxArquivos + ' arquivos por vez.';
     });
     const TRANSCRICAO_TRECHO_S = 50;
     const TRANSCRICAO_TAXA = 16000;
@@ -18797,6 +18801,7 @@ function saveTemplatesToStorage() {
       }
       item.estado = 'pronto';
       item.semFala = !partes.length;
+      trItemBdApagar(item); // o texto já existe: a parte não precisa mais ficar guardada
       return true;
     }
 
@@ -18849,6 +18854,7 @@ function saveTemplatesToStorage() {
     let trListaSeq = 0;
     const trListaTemPendente = () => trLista.some(i => i.estado === 'pendente' || i.estado === 'erro');
     function trPendenteLimpar() { // esvazia a lista de arquivos
+      trLista.forEach(trItemBdApagar);
       trLista = [];
       trArquivoBox.hidden = true;
       trArquivoDados.textContent = '';
@@ -18889,7 +18895,8 @@ function saveTemplatesToStorage() {
       const quando = new Date(arquivo.lastModified > 0 ? arquivo.lastModified : Date.now());
       const d2 = n => String(n).padStart(2, '0');
       const dataHora = quando.getFullYear() + d2(quando.getMonth() + 1) + d2(quando.getDate()) + '-' + d2(quando.getHours()) + 'h' + d2(quando.getMinutes()) + 's' + d2(quando.getSeconds());
-      return titulo ? titulo + '-' + dataHora + extensao : arquivo.name;
+      const parte = arquivo.parteGravacao ? '-parte' + String(arquivo.parteGravacao).padStart(2, '0') : ''; // gravação ao vivo quebrada em partes
+      return titulo ? titulo + '-' + dataHora + parte + extensao : arquivo.name;
     }
 
     const trSituacaoTexto = { pendente: '⏳ Aguardando a transcrição', transcrevendo: '🎙️ Transcrevendo…', pronto: '✅ Transcrito', erro: '⚠️ Não foi possível transcrever; toque em Iniciar para tentar de novo' };
@@ -18920,24 +18927,38 @@ function saveTemplatesToStorage() {
         descartar.title = 'Tirar este arquivo da lista';
         descartar.disabled = Boolean(trControle);
         descartar.addEventListener('click', () => trListaDescartar(item));
-        rodape.append(situacao, descartar);
+        const botoes = document.createElement('span');
+        botoes.className = 'tr-lista-botoes';
+        if (item.gravado) { // cada parte gravada pode ser salva no aparelho sozinha
+          const salvar = document.createElement('button');
+          salvar.type = 'button';
+          salvar.className = 'secondary tr-lista-salvar';
+          salvar.textContent = '💾 Salvar';
+          salvar.title = 'Salvar esta gravação no aparelho';
+          salvar.addEventListener('click', () => trSalvarArquivos([item.arquivo]));
+          botoes.appendChild(salvar);
+        }
+        botoes.appendChild(descartar);
+        rodape.append(situacao, botoes);
         caixa.append(dados, rodape);
         trArquivoDados.appendChild(caixa);
       });
+      trGravadaAtualizar();
     }
     trArquivoDadosRedesenhar = trListaRender; // o nome mostrado de uma gravação acompanha o título dos dados do áudio
 
     // Põe um arquivo (escolhido na pasta ou gravado agora) no fim da lista. Devolve false se a lista já está cheia.
     function trListaAdicionar(arquivo, opcoes) {
-      if (trLista.length >= trLimites.maxArquivos) return false;
+      if (trLista.length >= trLimites.maxArquivos && !(opcoes && opcoes.forcar)) return null; // as partes de uma gravação entram sempre
       const gravado = Boolean(opcoes && opcoes.gravado);
       let base = '\n📍 Origem: ' + (gravado ? 'gravado agora pelo app, neste aparelho' : 'pasta local') + '\n🏷️ Tipo: ' + (arquivo.type || 'não informado') + '\n📦 Tamanho: ' + trTamanhoTexto(arquivo.size);
       if (arquivo.lastModified > 0) {
         const quando = new Date(arquivo.lastModified);
         base += '\n📅 Data e hora: ' + quando.toLocaleDateString('pt-BR') + ' às ' + quando.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       }
-      const item = { id: ++trListaSeq, arquivo, gravado, duracaoS: gravado && opcoes.duracaoS ? opcoes.duracaoS : null, estado: 'pendente', base, semFala: false };
+      const item = { id: ++trListaSeq, arquivo, gravado, duracaoS: gravado && opcoes.duracaoS ? opcoes.duracaoS : null, estado: 'pendente', base, semFala: false, bdId: (opcoes && opcoes.bdId) || null };
       trLista.push(item);
+      if (gravado) trLista.sort((a, b) => (a.gravado && b.gravado ? a.arquivo.lastModified - b.arquivo.lastModified : 0)); // as partes ficam na ordem em que foram gravadas
       trArquivoDados.hidden = false;
       trArquivoAlternaAtualizar();
       trPassoTexto.open = true;
@@ -18954,7 +18975,146 @@ function saveTemplatesToStorage() {
           if (seg && seg / 60 > limiteMin) trInfo.textContent = 'Atenção: o áudio "' + arquivo.name + '" tem mais de ' + limiteMin + ' minutos, que é o limite por ' + (gravado ? 'gravação' : 'arquivo') + '.';
         });
       }
-      return true;
+      return item;
+    }
+
+    // As partes gravadas ficam também guardadas no aparelho (IndexedDB) até serem transcritas ou descartadas: se o app fechar, elas voltam para a lista.
+    let trBdAberto = null;
+    function trBd() {
+      if (!trBdAberto) {
+        trBdAberto = new Promise((ok, falha) => {
+          const r = indexedDB.open('notestyle-gravacoes', 1);
+          r.onupgradeneeded = () => { r.result.createObjectStore('pecas', { keyPath: 'id' }); r.result.createObjectStore('config'); };
+          r.onsuccess = () => ok(r.result);
+          r.onerror = () => falha(r.error);
+        }).catch(e => { trBdAberto = null; throw e; });
+      }
+      return trBdAberto;
+    }
+    async function trBdFazer(loja, modo, fn) {
+      const bd = await trBd();
+      return new Promise((ok, falha) => {
+        const t = bd.transaction(loja, modo);
+        const req = fn(t.objectStore(loja));
+        t.oncomplete = () => ok(req && req.result);
+        t.onerror = () => falha(t.error);
+        t.onabort = () => falha(t.error);
+      });
+    }
+    function trItemBdApagar(item) {
+      if (!item || !item.bdId) return;
+      const id = item.bdId;
+      item.bdId = null;
+      trBdFazer('pecas', 'readwrite', l => l.delete(id)).catch(() => { /* sem armazenamento: nada a apagar */ });
+    }
+    async function trItemBdGravar(item) {
+      const a = item.arquivo;
+      const id = Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+      try {
+        await trBdFazer('pecas', 'readwrite', l => l.put({ id, blob: a, nome: a.name, tipo: a.type, lastModified: a.lastModified, parte: a.parteGravacao || 0, duracaoS: item.duracaoS || 0 }));
+        if (trLista.includes(item)) item.bdId = id;
+        else trBdFazer('pecas', 'readwrite', l => l.delete(id)).catch(() => {});
+      } catch (e) { /* sem armazenamento (janela privada ou cheio): a parte fica só na memória */ }
+    }
+    async function trRecuperarGravacoes() {
+      if (trLista.length || !window.indexedDB) return;
+      let registros;
+      try { registros = await trBdFazer('pecas', 'readonly', l => l.getAll()); } catch (e) { return; }
+      if (!registros || !registros.length || trLista.length) return;
+      registros.sort((a, b) => a.lastModified - b.lastModified);
+      registros.forEach(r => {
+        const arquivo = new File([r.blob], r.nome, { type: r.tipo, lastModified: r.lastModified });
+        arquivo.parteGravacao = r.parte || 0;
+        trListaAdicionar(arquivo, { gravado: true, duracaoS: r.duracaoS || 0, forcar: true, bdId: r.id });
+      });
+      trInfo.textContent = '🎙️ Recuperei ' + registros.length + (registros.length === 1 ? ' parte' : ' partes') + ' de uma gravação anterior que ainda não foi transcrita. Se quiser, salve no aparelho e toque em Iniciar a transcrição.';
+    }
+    setTimeout(trRecuperarGravacoes, 0);
+
+    // Salva arquivos gravados no aparelho: um só pelo link de download; vários, de uma vez, pela folha de compartilhar (Salvar em Arquivos, no iPhone)
+    // quando o aparelho permite; senão, um download depois do outro.
+    async function trSalvarArquivos(arquivos) {
+      if (!arquivos.length) return;
+      const nomes = arquivos.map(a => trNomeDoArquivoSalvo(a));
+      if (arquivos.length > 1 && navigator.share && navigator.canShare) {
+        const copias = arquivos.map((a, i) => new File([a], nomes[i], { type: a.type, lastModified: a.lastModified }));
+        try {
+          if (navigator.canShare({ files: copias })) {
+            await navigator.share({ files: copias });
+            return (trInfo.textContent = '💾 ' + copias.length + ' partes enviadas para a folha de compartilhar: escolha Salvar em Arquivos.');
+          }
+        } catch (e) {
+          if (e && e.name === 'AbortError') return;
+        }
+      }
+      for (let i = 0; i < arquivos.length; i++) {
+        const url = URL.createObjectURL(arquivos[i]);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = nomes[i];
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+        if (i < arquivos.length - 1) await new Promise(r => setTimeout(r, 500));
+      }
+      trInfo.textContent = '💾 ' + (arquivos.length === 1 ? 'Gravação salva: ' + nomes[0] : arquivos.length + ' partes salvas.');
+    }
+
+    // Só no computador (Chrome ou Edge): uma pasta onde cada parte da gravação é salva sozinha, assim que fica pronta.
+    let trPastaDir = null;
+    const trPastaLinha = document.getElementById('transcricaoPastaLinha');
+    const trPastaNome = document.getElementById('transcricaoPastaNome');
+    const trPastaTirar = document.getElementById('transcricaoPastaTirarBtn');
+    function trPastaMostrar() {
+      trPastaNome.textContent = trPastaDir ? 'Pasta: ' + trPastaDir.name : '';
+      trPastaTirar.hidden = !trPastaDir;
+    }
+    if (typeof window.showDirectoryPicker === 'function' && window.indexedDB) {
+      trPastaLinha.hidden = false;
+      trBdFazer('config', 'readonly', l => l.get('pasta')).then(h => { if (h) { trPastaDir = h; trPastaMostrar(); } }).catch(() => {});
+      document.getElementById('transcricaoPastaBtn').addEventListener('click', async () => {
+        try {
+          const dir = await window.showDirectoryPicker({ mode: 'readwrite' });
+          trPastaDir = dir;
+          await trBdFazer('config', 'readwrite', l => l.put(dir, 'pasta')).catch(() => {});
+          trPastaMostrar();
+        } catch (e) { /* a pessoa desistiu */ }
+      });
+      trPastaTirar.addEventListener('click', () => {
+        trPastaDir = null;
+        trBdFazer('config', 'readwrite', l => l.delete('pasta')).catch(() => {});
+        trPastaMostrar();
+      });
+    }
+    // O navegador só deixa pedir a permissão da pasta num toque da pessoa (o Gravar).
+    async function trPastaPermissao() {
+      if (!trPastaDir) return false;
+      try {
+        if ((await trPastaDir.queryPermission({ mode: 'readwrite' })) === 'granted') return true;
+        return (await trPastaDir.requestPermission({ mode: 'readwrite' })) === 'granted';
+      } catch (e) { return false; }
+    }
+    async function trPastaSalvar(arquivo) {
+      if (!trPastaDir) return;
+      try {
+        if ((await trPastaDir.queryPermission({ mode: 'readwrite' })) !== 'granted') return;
+        const nome = trNomeDoArquivoSalvo(arquivo);
+        const arq = await trPastaDir.getFileHandle(nome, { create: true });
+        const escrita = await arq.createWritable();
+        await escrita.write(arquivo);
+        await escrita.close();
+        trInfo.textContent = '📁 Salvo na pasta ' + trPastaDir.name + ': ' + nome;
+      } catch (e) {
+        trInfo.textContent = 'Não consegui salvar na pasta escolhida. A parte continua na lista.';
+      }
+    }
+
+    // O bloco "Salvar a gravação no aparelho" aparece enquanto há partes gravadas na lista.
+    function trGravadaAtualizar() {
+      const n = trLista.filter(i => i.gravado).length;
+      trGravada.hidden = !n;
+      document.getElementById('transcricaoSalvarGravacaoBtn').textContent = n > 1 ? '💾 Salvar as ' + n + ' partes da gravação no aparelho' : '💾 Salvar a gravação no aparelho';
     }
 
     // Tira um arquivo da lista (com um só arquivo, é o mesmo que Descartar todos).
@@ -18966,7 +19126,7 @@ function saveTemplatesToStorage() {
       if (aviso && !(await askConfirm(aviso, 'Descartar'))) return;
       if (trControle || !trLista.includes(item)) return;
       trLista = trLista.filter(x => x !== item);
-      if (trUltimaGravacao && trUltimaGravacao.arquivo === item.arquivo) trGravadaLimpar();
+      trItemBdApagar(item);
       trArquivoAtual = trLista[0].arquivo;
       trMesmoAplicar();
       trListaRender();
@@ -19020,12 +19180,16 @@ function saveTemplatesToStorage() {
       const s = Math.floor(ms / 1000);
       return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
     };
-    const trGravMs = () => (trGrav ? trGrav.acumulado + (trGrav.pausado ? 0 : Date.now() - trGrav.retomadoEm) : 0);
+    const trGravMsDe = e => e.acumulado + (e.pausado ? 0 : Date.now() - e.retomadoEm);
+    const trGravMs = () => (trGrav ? trGravMsDe(trGrav) : 0);
 
     function trGravAtualizarTela() {
       if (!trGrav) return;
-      trGravTempo.textContent = (trGrav.pausado ? '⏸️ Pausada ' : '🔴 Gravando ') + trFormatarTempo(trGravMs());
+      const emPartes = trLimites.pedacoMin < trLimites.gravacaoMin;
+      trGravTempo.textContent = (trGrav.pausado ? '⏸️ Pausada ' : '🔴 Gravando ') + trFormatarTempo(trGravMs()) + (emPartes ? ' · parte ' + trGrav.numeroPeca : '');
       trGravPausar.textContent = trGrav.pausado ? '▶️ Continuar' : '⏸️ Pausar';
+      // A cada pedacoMin minutos de gravação, a parte é fechada e a próxima começa sozinha (a soma vale o limite da gravação).
+      if (emPartes && !trGrav.pausado && !trGrav.semPartes && trGravMs() - trGrav.pecaInicio >= trLimites.pedacoMin * 60 * 1000) trGravarRotacionar(trGrav);
       if (trGravMs() >= trLimites.gravacaoMin * 60 * 1000) trGravarParar(true, 'A gravação chegou ao limite de ' + trLimites.gravacaoMin + ' minutos e foi encerrada.');
     }
 
@@ -19114,11 +19278,25 @@ function saveTemplatesToStorage() {
     }
     document.addEventListener('visibilitychange', () => { if (trGrav && document.visibilityState === 'visible') trTelaLigada(); });
 
+    // Cria o gravador de uma parte e já começa a gravar; os pedaços de áudio dela ficam em estado.pedacos.
+    function trGravadorNovo(estado) {
+      const gravador = new MediaRecorder(estado.stream, estado.opcoes);
+      const pedacos = [];
+      gravador.ondataavailable = e => { if (e.data && e.data.size) pedacos.push(e.data); };
+      gravador.onstop = () => trGravarFim(estado); // a última parte: encerra a gravação (nas partes do meio, o onstop é trocado em trGravarRotacionar)
+      gravador.start(1000); // um pedaço por segundo: se o aparelho parar a gravação, o que veio até ali é aproveitado
+      estado.gravador = gravador;
+      estado.pedacos = pedacos;
+      estado.pecaInicio = trGravMsDe(estado);
+      estado.inicioDaPeca = new Date();
+    }
+
     async function trGravarIniciar() {
       if (trGrav || trControle) return;
       if (!codigoTextoSalvo()) return (trInfo.textContent = 'Salve o código de texto em Ajustes → 🔐 Autorização de acessos.');
       if (!navigator.onLine) return (trInfo.textContent = 'Sem conexão com a internet.');
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) return (trInfo.textContent = 'Este aparelho ou navegador não permite gravar áudio aqui. Grave com o app de gravação do celular e escolha o arquivo.');
+      const pastaOk = trPastaDir ? trPastaPermissao() : Promise.resolve(false); // pedida já no toque, antes de qualquer espera
       if (!(await trConsentimento())) return (trInfo.textContent = 'Nada foi gravado.');
       let stream;
       try {
@@ -19127,20 +19305,20 @@ function saveTemplatesToStorage() {
         return (trInfo.textContent = 'Não consegui usar o microfone. Permita o microfone para o NoteStyle (nos ajustes do navegador ou do aparelho) e tente de novo.');
       }
       const tipo = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'].find(t => MediaRecorder.isTypeSupported(t)) || '';
-      let gravador;
+      await pastaOk;
+      trGravadaLimpar();
+      const estado = { gravador: null, stream, pedacos: [], acumulado: 0, retomadoEm: Date.now(), pausado: false, intervalo: null, telaLigada: null, motivo: '', transcrever: true,
+        opcoes: tipo ? { mimeType: tipo } : undefined, pecaInicio: 0, inicioDaPeca: new Date(), itens: [], numeroPeca: 1, rotacionou: false };
+      trGrav = estado;
+      trOndaIniciar(estado);
       try {
-        gravador = new MediaRecorder(stream, tipo ? { mimeType: tipo } : undefined);
+        trGravadorNovo(estado);
       } catch (e) {
+        trOndaParar(estado);
+        trGrav = null;
         stream.getTracks().forEach(t => t.stop());
         return (trInfo.textContent = 'Não consegui iniciar a gravação neste aparelho.');
       }
-      trGravadaLimpar();
-      const estado = { gravador, stream, pedacos: [], acumulado: 0, retomadoEm: Date.now(), pausado: false, intervalo: null, telaLigada: null, motivo: '', transcrever: true };
-      trGrav = estado;
-      trOndaIniciar(estado);
-      gravador.ondataavailable = e => { if (e.data && e.data.size) estado.pedacos.push(e.data); };
-      gravador.onstop = () => trGravarFim(estado);
-      gravador.start(1000); // um pedaço por segundo: se o aparelho parar a gravação, o que veio até ali é aproveitado
       estado.intervalo = setInterval(trGravAtualizarTela, 500);
       trGravacao.hidden = false;
       trInfo.textContent = '';
@@ -19149,10 +19327,48 @@ function saveTemplatesToStorage() {
       trTelaLigada();
     }
 
-    // Para a gravação (o arquivo é montado em trGravarFim, quando o gravador avisa que acabou).
+    // Fecha a parte em andamento e começa a próxima já com o gravador novo ligado (as duas se sobrepõem por um instante: nada se perde na emenda).
+    function trGravarRotacionar(estado) {
+      if (estado.encerrando || estado.pausado || estado.rotacionando || estado.semPartes) return;
+      const velho = estado.gravador;
+      const pedacosVelhos = estado.pedacos;
+      const meta = { inicio: estado.inicioDaPeca, durMs: trGravMsDe(estado) - estado.pecaInicio, numero: estado.numeroPeca, tipo: velho.mimeType };
+      try {
+        trGravadorNovo(estado);
+      } catch (e) {
+        estado.semPartes = true; // este aparelho não deixou abrir outro gravador: segue gravando numa parte só
+        return;
+      }
+      estado.numeroPeca = meta.numero + 1;
+      estado.rotacionou = true;
+      estado.rotacionando = true;
+      velho.onstop = () => { estado.rotacionando = false; trPecaPronta(estado, pedacosVelhos, meta); };
+      try { velho.stop(); } catch (e) { estado.rotacionando = false; }
+    }
+
+    // Monta o arquivo de uma parte da gravação, põe na lista, guarda no aparelho e, se houver, salva na pasta escolhida.
+    function trPecaPronta(estado, pedacos, meta) {
+      if (estado.descartada || !pedacos.length) return null;
+      const tipo = (meta.tipo || pedacos[0].type || 'audio/mp4').split(';')[0];
+      const ext = /mp4|aac|m4a/.test(tipo) ? 'm4a' : /ogg/.test(tipo) ? 'ogg' : 'webm';
+      const q = meta.inicio;
+      const p = n => String(n).padStart(2, '0');
+      const emPartes = estado.rotacionou || meta.numero > 1;
+      const nome = 'Gravação ' + q.getFullYear() + '-' + p(q.getMonth() + 1) + '-' + p(q.getDate()) + ' ' + p(q.getHours()) + '-' + p(q.getMinutes()) + (emPartes ? ' parte ' + p(meta.numero) : '') + '.' + ext;
+      const arquivo = new File(pedacos, nome, { type: tipo, lastModified: q.getTime() });
+      if (emPartes) arquivo.parteGravacao = meta.numero;
+      const item = trListaAdicionar(arquivo, { gravado: true, duracaoS: meta.durMs / 1000, forcar: true });
+      estado.itens.push(item);
+      trItemBdGravar(item);
+      trPastaSalvar(arquivo);
+      return item;
+    }
+
+    // Para a gravação (a última parte é montada em trGravarFim, quando o gravador avisa que acabou).
     function trGravarParar(transcrever, motivo) {
       if (!trGrav) return;
       trGrav.transcrever = transcrever;
+      trGrav.descartada = !transcrever;
       trGrav.motivo = motivo || '';
       trGrav.encerrando = true;
       if (trGrav.gravador.state !== 'inactive') trGrav.gravador.stop();
@@ -19161,7 +19377,7 @@ function saveTemplatesToStorage() {
 
     function trGravarFim(estado) {
       if (trGrav !== estado) return;
-      const duracaoMs = trGravMs();
+      const duracaoMs = trGravMsDe(estado);
       trGrav = null;
       trOndaParar(estado);
       clearInterval(estado.intervalo);
@@ -19169,27 +19385,26 @@ function saveTemplatesToStorage() {
       try { if (estado.telaLigada) estado.telaLigada.release(); } catch (e) { /* já liberada */ }
       trGravacao.hidden = true;
       const interrompida = !estado.encerrando; // o aparelho parou a gravação sem a pessoa pedir
-      if (!estado.transcrever) { trInfo.textContent = 'Gravação descartada.'; trAtualizarBotoes(); return; }
-      if (!estado.pedacos.length) { trInfo.textContent = 'Não houve áudio gravado.'; trAtualizarBotoes(); return; }
-      const tipo = (estado.gravador.mimeType || estado.pedacos[0].type || 'audio/mp4').split(';')[0];
-      const ext = /mp4|aac|m4a/.test(tipo) ? 'm4a' : /ogg/.test(tipo) ? 'ogg' : 'webm';
-      const agora = new Date();
-      const p = n => String(n).padStart(2, '0');
-      const nome = 'Gravação ' + agora.getFullYear() + '-' + p(agora.getMonth() + 1) + '-' + p(agora.getDate()) + ' ' + p(agora.getHours()) + '-' + p(agora.getMinutes()) + '.' + ext;
-      const arquivo = new File(estado.pedacos, nome, { type: tipo });
-      trUltimaGravacao = { arquivo, url: URL.createObjectURL(arquivo) };
-      trGravada.hidden = false;
+      if (!estado.transcrever) { // descartada: sai também o que já tinha virado parte da lista
+        estado.itens.forEach(item => { if (item) { trLista = trLista.filter(x => x !== item); trItemBdApagar(item); } });
+        trArquivoAtual = trLista.length ? trLista[0].arquivo : null;
+        trMesmoAplicar();
+        trListaRender();
+        trInfo.textContent = 'Gravação descartada.';
+        trAtualizarBotoes();
+        return;
+      }
+      trPecaPronta(estado, estado.pedacos, { inicio: estado.inicioDaPeca, durMs: duracaoMs - estado.pecaInicio, numero: estado.numeroPeca, tipo: estado.gravador && estado.gravador.mimeType });
+      if (!estado.itens.length) { trInfo.textContent = 'Não houve áudio gravado.'; trAtualizarBotoes(); return; }
       trAtualizarBotoes();
       const aviso = estado.motivo || (interrompida ? 'O aparelho parou a gravação; usei o que foi gravado.' : '');
-      trListaAdicionar(arquivo, { gravado: true, duracaoS: duracaoMs / 1000 });
-      trInfo.textContent = 'Gravação pronta. Se quiser, salve a gravação no aparelho; depois toque em Iniciar a transcrição.';
+      const partes = estado.itens.length;
+      trInfo.textContent = (partes > 1 ? 'Gravação pronta em ' + partes + ' partes. ' : 'Gravação pronta. ') + 'Se quiser, salve no aparelho; depois toque em Iniciar a transcrição.';
       if (aviso) trInfo.textContent = aviso + ' ' + trInfo.textContent;
     }
 
     function trGravadaLimpar() {
-      if (trUltimaGravacao) URL.revokeObjectURL(trUltimaGravacao.url);
-      trUltimaGravacao = null;
-      trGravada.hidden = true;
+      trGravadaAtualizar();
     }
 
     trGravarBtn.addEventListener('click', trGravarIniciar);
@@ -19205,17 +19420,7 @@ function saveTemplatesToStorage() {
       if (!(await askConfirm('Descartar esta gravação? Ela não fica salva em nenhum lugar.', 'Descartar'))) return;
       trGravarParar(false);
     });
-    document.getElementById('transcricaoSalvarGravacaoBtn').addEventListener('click', () => {
-      if (!trUltimaGravacao) return;
-      const link = document.createElement('a');
-      link.href = trUltimaGravacao.url;
-      const nomeSalvo = trNomeDoArquivoSalvo(trUltimaGravacao.arquivo); // título + data e hora (ver trNomeDoArquivoSalvo)
-      link.download = nomeSalvo;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      trInfo.textContent = '💾 Gravação salva: ' + nomeSalvo;
-    });
+    document.getElementById('transcricaoSalvarGravacaoBtn').addEventListener('click', () => trSalvarArquivos(trLista.filter(i => i.gravado).map(i => i.arquivo)));
 
 
     trResumir.addEventListener('click', async () => {

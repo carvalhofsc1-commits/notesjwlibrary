@@ -9180,6 +9180,41 @@ details.transcricao-bloco:not([open]) {
   border-color: color-mix(in srgb, #ef4444 45%, transparent);
 }
 
+.transcricao-pasta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin: 6px 0 2px;
+}
+
+.transcricao-pasta[hidden] {
+  display: none;
+}
+
+.transcricao-pasta button {
+  margin: 0;
+  min-height: 34px;
+  padding: 3px 12px;
+  font-size: .85rem;
+}
+
+.transcricao-pasta .hint {
+  margin: 0;
+}
+
+.tr-lista-rodape .tr-lista-botoes {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.tr-lista-item .tr-lista-salvar {
+  margin: 0;
+  min-height: 30px;
+  padding: 2px 12px;
+  font-size: .8rem;
+}
+
 /* Configurações do Áudio em texto (administrador): cada seção numa moldura. */
 .audio-config-moldura {
   margin: 12px 0;

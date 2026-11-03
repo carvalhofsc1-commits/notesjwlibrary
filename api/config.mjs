@@ -25,7 +25,7 @@ const MAX_CHARS_CONVITE = 1500;
 const CHAVE_TIPOS_AUDIO = "audio_tipos_todos";
 // Limites do Áudio em texto: duração máxima, em minutos, do arquivo escolhido na pasta do aparelho e da gravação feita ao vivo no app, e quantos arquivos cabem na lista.
 const CHAVE_AUDIO_LIMITES = "audio_limites";
-const AUDIO_LIMITES_PADRAO = { arquivoMin: 60, gravacaoMin: 30, maxArquivos: 5 };
+const AUDIO_LIMITES_PADRAO = { arquivoMin: 60, gravacaoMin: 30, maxArquivos: 5, pedacoMin: 10 };
 const AUDIO_LIMITE_MIN = 5;
 const AUDIO_LIMITE_MAX = 180;
 
@@ -43,6 +43,8 @@ function limitesAudioLimpos(valor) {
     arquivoMin: numero(v.arquivoMin, AUDIO_LIMITES_PADRAO.arquivoMin),
     gravacaoMin: numero(v.gravacaoMin, AUDIO_LIMITES_PADRAO.gravacaoMin),
     maxArquivos: quantidade(v.maxArquivos, AUDIO_LIMITES_PADRAO.maxArquivos),
+    // A gravação ao vivo é salva em pedaços deste tamanho (de 1 a 60 minutos); a soma dos pedaços vale o limite da gravação.
+    pedacoMin: Math.max(1, Math.min(60, Math.round(Number(v.pedacoMin)) || AUDIO_LIMITES_PADRAO.pedacoMin)),
   };
 }
 const MAX_TIPOS_AUDIO = 30;

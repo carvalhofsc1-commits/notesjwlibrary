@@ -1452,8 +1452,10 @@
             <p class="hint">Quanto tempo o áudio pode ter. Vale para todos os usuários depois de tocar em <strong>💾 Salvar para todos</strong>. Arquivos muito longos exigem muita memória do aparelho para serem abertos: em iPhones mais antigos o navegador pode fechar a página; se isso acontecer, reduza o valor do arquivo.</p>
             <label for="audioLimArquivo">Arquivo escolhido na pasta do aparelho (minutos, de 5 a 180)</label>
             <input id="audioLimArquivo" type="number" inputmode="numeric" min="5" max="180" step="1" autocomplete="off">
-            <label for="audioLimGravacao">Gravação feita ao vivo no app (minutos, de 5 a 180)</label>
+            <label for="audioLimGravacao">Gravação feita ao vivo no app, soma de todas as partes (minutos, de 5 a 180)</label>
             <input id="audioLimGravacao" type="number" inputmode="numeric" min="5" max="180" step="1" autocomplete="off">
+            <label for="audioLimPedaco">Parte da gravação ao vivo (minutos, de 1 a 60): a cada tanto tempo a gravação é salva e a próxima parte começa</label>
+            <input id="audioLimPedaco" type="number" inputmode="numeric" min="1" max="60" step="1" autocomplete="off">
             <label for="audioLimArquivos">Quantos arquivos de áudio podem entrar na lista por vez (de 1 a 20)</label>
             <input id="audioLimArquivos" type="number" inputmode="numeric" min="1" max="20" step="1" autocomplete="off">
             <div class="bk-row">
@@ -1546,6 +1548,12 @@
         <input id="transcricaoArquivo" type="file" accept="audio/*,video/mp4,.mp3,.m4a,.wav,.aac,.ogg,.flac,.webm,.mp4" hidden>
         <button id="transcricaoGravarBtn" class="secondary" type="button">🔴 Gravar um áudio agora</button>
       </div>
+      <!-- Só no computador (Chrome ou Edge): uma pasta onde cada parte da gravação é salva sozinha. No iPhone o sistema não permite. -->
+      <div id="transcricaoPastaLinha" class="transcricao-pasta" hidden>
+        <button id="transcricaoPastaBtn" class="secondary" type="button" title="Escolher a pasta onde cada parte da gravação é salva sozinha">📁 Pasta para salvar as gravações sozinho</button>
+        <span id="transcricaoPastaNome" class="hint"></span>
+        <button id="transcricaoPastaTirarBtn" class="secondary" type="button" title="Parar de salvar numa pasta" aria-label="Parar de salvar numa pasta" hidden>✕</button>
+      </div>
       <div id="transcricaoArquivoBox" class="transcricao-bloco" hidden>
         <div class="transcricao-rotulo-linha">
           <button id="transcricaoArquivoAlternaBtn" class="transcricao-arquivo-titulo-btn" type="button" aria-expanded="true" aria-controls="transcricaoArquivoDados"><span class="transcricao-seta" aria-hidden="true">▼</span> <span id="transcricaoArquivoTitulo" class="transcricao-rotulo">Arquivos de áudio</span></button>
@@ -1566,7 +1574,7 @@
         <div class="bk-row">
           <button id="transcricaoGravDescartarBtn" class="secondary" type="button">🗑️ Descartar a gravação</button>
         </div>
-        <p class="hint">Mantenha esta tela aberta e o aparelho desbloqueado: se o aplicativo for para o segundo plano, o celular pode parar a gravação (o que já foi gravado é aproveitado). A gravação dura no máximo <span data-tr-limite="gravacao">30</span> minutos.</p>
+        <p class="hint">Mantenha esta tela aberta e o aparelho desbloqueado: se o aplicativo for para o segundo plano, o celular pode parar a gravação (o que já foi gravado é aproveitado). A gravação dura no máximo <span data-tr-limite="gravacao">30</span> minutos, em partes de <span data-tr-limite="pedaco">10</span> minutos: a cada parte o app guarda o arquivo e começa a próxima sozinho, e todas as partes entram na lista de arquivos.</p>
       </div>
       <div id="transcricaoGravada" class="bk-row" hidden>
         <button id="transcricaoSalvarGravacaoBtn" class="secondary" type="button">💾 Salvar a gravação no aparelho</button>
