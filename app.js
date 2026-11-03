@@ -7416,7 +7416,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.42'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.43'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -17860,6 +17860,7 @@ function saveTemplatesToStorage() {
     // "Dados do áudio": título, interlocutores (um campo novo a cada interlocutor escrito), evento, local e data.
     // Valem só para este áudio e vão à IA junto com o "Sobre o áudio".
     const trTitulo = document.getElementById('transcricaoTitulo');
+    let trArquivoDadosRedesenhar = null; // redesenha o quadro de dados do áudio (o nome mostrado acompanha o título)
     const trPauta = document.getElementById('transcricaoPauta');
     const trEvento = document.getElementById('transcricaoEvento');
     const trLocal = document.getElementById('transcricaoLocal');
@@ -18157,6 +18158,7 @@ function saveTemplatesToStorage() {
         linha.textContent = texto;
         linha.hidden = !texto;
       });
+      if (trArquivoDadosRedesenhar) trArquivoDadosRedesenhar();
     }
     ['transcricaoTipo', 'transcricaoTipoNome', 'transcricaoTitulo'].forEach(id => {
       const campo = document.getElementById(id);
@@ -18570,6 +18572,17 @@ function saveTemplatesToStorage() {
         audio.src = url;
       });
     }
+    // O nome com que a gravação do app é salva: o título dos dados do áudio (sem os caracteres que os sistemas não aceitam em nomes, até 120 caracteres),
+    // seguido da data e da hora da gravação, no formato Titulo-20261101-22h45s33 (hora, minutos e segundos) e da extensão. Sem título, vale o nome automático.
+    function trNomeDoArquivoSalvo(arquivo) {
+      const extensao = (arquivo.name.match(/\.[^.]+$/) || [''])[0];
+      const titulo = trTitulo.value.replace(/[\\\/:*?"<>|\u0000-\u001f]+/g, ' ').replace(/\s+/g, ' ').trim().replace(/^\.+|\.+$/g, '').slice(0, 120).trim();
+      const quando = new Date(arquivo.lastModified > 0 ? arquivo.lastModified : Date.now());
+      const d2 = n => String(n).padStart(2, '0');
+      const dataHora = quando.getFullYear() + d2(quando.getMonth() + 1) + d2(quando.getDate()) + '-' + d2(quando.getHours()) + 'h' + d2(quando.getMinutes()) + 's' + d2(quando.getSeconds());
+      return titulo ? titulo + '-' + dataHora + extensao : arquivo.name;
+    }
+
     function trPendenteMostrar(arquivo, opcoes) {
       const gravado = Boolean(opcoes && opcoes.gravado);
       trPendente = arquivo;
@@ -18580,17 +18593,24 @@ function saveTemplatesToStorage() {
       trArquivoAtual = arquivo;
       trMesmoAplicar();
       trArquivoBox.hidden = false;
-      let base = '🎵 Nome: ' + (arquivo.name || 'sem nome') + '\n📍 Origem: ' + (gravado ? 'gravado agora pelo app, neste aparelho' : 'pasta local') + '\n🏷️ Tipo: ' + (arquivo.type || 'não informado') + '\n📦 Tamanho: ' + trTamanhoTexto(arquivo.size);
+      let base = '\n📍 Origem: ' + (gravado ? 'gravado agora pelo app, neste aparelho' : 'pasta local') + '\n🏷️ Tipo: ' + (arquivo.type || 'não informado') + '\n📦 Tamanho: ' + trTamanhoTexto(arquivo.size);
       if (arquivo.lastModified > 0) {
         const quando = new Date(arquivo.lastModified);
         base += '\n📅 Data e hora: ' + quando.toLocaleDateString('pt-BR') + ' às ' + quando.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       }
-      trArquivoDados.textContent = base + '\n⏱️ Duração: calculando…';
+      // O nome mostrado: numa gravação do app, o nome com que ela será salva (título + data e hora); num arquivo escolhido, o nome dele.
+      let duracaoLinha = '\n⏱️ Duração: calculando…';
+      trArquivoDadosRedesenhar = () => {
+        if (trArquivoMostrado !== arquivo) return;
+        trArquivoDados.textContent = '🎵 Nome: ' + ((gravado ? trNomeDoArquivoSalvo(arquivo) : arquivo.name) || 'sem nome') + base + duracaoLinha;
+      };
+      trArquivoDadosRedesenhar();
       trInfo.textContent = gravado ? 'Gravação pronta. Se quiser, salve a gravação no aparelho; depois toque em Iniciar a transcrição.' : '';
       trAtualizarBotoes();
       (gravado && opcoes.duracaoS ? Promise.resolve(opcoes.duracaoS) : trDuracaoLer(arquivo)).then(seg => {
         if (trArquivoMostrado !== arquivo) return;
-        trArquivoDados.textContent = base + '\n⏱️ Duração: ' + (seg ? trDuracaoTexto(seg) : 'não foi possível ler');
+        duracaoLinha = '\n⏱️ Duração: ' + (seg ? trDuracaoTexto(seg) : 'não foi possível ler');
+        trArquivoDadosRedesenhar();
         if (seg && seg / 60 > TRANSCRICAO_MAX_MIN) trInfo.textContent = 'Atenção: o áudio tem mais de ' + TRANSCRICAO_MAX_MIN + ' minutos, que é o limite por arquivo.';
       });
     }
@@ -18826,14 +18846,7 @@ function saveTemplatesToStorage() {
       if (!trUltimaGravacao) return;
       const link = document.createElement('a');
       link.href = trUltimaGravacao.url;
-      // O título preenchido em "Dados do áudio" é o nome do arquivo salvo (sem os caracteres que os sistemas não aceitam em nomes); sem título, fica o nome automático.
-      const extensao = (trUltimaGravacao.arquivo.name.match(/\.[^.]+$/) || [''])[0];
-      const titulo = trTitulo.value.replace(/[\/:*?"<>|\u0000-\u001f]+/g, ' ').replace(/\s+/g, ' ').trim().replace(/^\.+|\.+$/g, '').slice(0, 120).trim();
-      // Depois do título vêm a data e a hora da gravação, no formato Titulo-20261101-22h45s33 (hora, minutos e segundos).
-      const quando = new Date(trUltimaGravacao.arquivo.lastModified > 0 ? trUltimaGravacao.arquivo.lastModified : Date.now());
-      const d2 = n => String(n).padStart(2, '0');
-      const dataHora = quando.getFullYear() + d2(quando.getMonth() + 1) + d2(quando.getDate()) + '-' + d2(quando.getHours()) + 'h' + d2(quando.getMinutes()) + 's' + d2(quando.getSeconds());
-      const nomeSalvo = titulo ? titulo + '-' + dataHora + extensao : trUltimaGravacao.arquivo.name;
+      const nomeSalvo = trNomeDoArquivoSalvo(trUltimaGravacao.arquivo); // título + data e hora (ver trNomeDoArquivoSalvo)
       link.download = nomeSalvo;
       document.body.appendChild(link);
       link.click();

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.43
+
+Áudio em texto: o quadro "Dados do áudio" (o do arquivo) passa a mostrar, numa gravação do app, o mesmo nome com que ela será salva (título + data e hora), e o nome acompanha o título enquanto você digita.
+
 ## 6.4.42
 
 Áudio em texto: o campo Título ou tema aceita no máximo 120 caracteres (informado no rótulo e no campo); a gravação salva leva a data e a hora depois do título, ex.: Titulo-20261101-22h45s33.m4a.
