@@ -7480,7 +7480,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.66'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.67'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -18657,10 +18657,16 @@ function saveTemplatesToStorage() {
       const ocupado = Boolean(trControle);
       const gravando = typeof trGrav !== 'undefined' && Boolean(trGrav);
       // com um áudio já escolhido ou gravado, os dois botões ficam desabilitados até a pessoa descartá-lo
-      trEscolher.disabled = ocupado || gravando || trLista.length > 0;
-      if (typeof trGravarBtn !== 'undefined') trGravarBtn.disabled = ocupado || gravando || trLista.length > 0;
-      const adicionar = document.getElementById('transcricaoArquivoAdicionarBtn'); // a lista de arquivos: adicionar, e descartar um a um
-      if (adicionar) adicionar.disabled = ocupado || gravando || trLista.length >= trLimites.maxArquivos;
+      // Os dois botões do topo ficam ativos com a lista cheia ou não (só param com a lista no limite, durante uma operação ou uma gravação);
+      // com arquivos na lista, eles passam a adicionar mais um.
+      const cheia = trLista.length >= trLimites.maxArquivos;
+      const comLista = trLista.length > 0;
+      trEscolher.disabled = ocupado || gravando || cheia;
+      trEscolher.textContent = comLista ? '🎧 Escolher ou adicionar arquivo de áudio' : '🎧 Escolher o arquivo de áudio';
+      if (typeof trGravarBtn !== 'undefined') {
+        trGravarBtn.disabled = ocupado || gravando || cheia;
+        trGravarBtn.textContent = comLista ? '🔴 Gravar e adicionar novo áudio' : '🔴 Gravar um áudio agora';
+      }
       document.querySelectorAll('.tr-lista-descartar').forEach(b => { b.disabled = ocupado || gravando; });
       trResumir.disabled = ocupado || trTexto.value.trim().length < 40;
       trCorrigir.disabled = ocupado || trTexto.value.trim().length < 40;
@@ -19152,7 +19158,6 @@ function saveTemplatesToStorage() {
     }
     document.getElementById('transcricaoArquivoLimparBtn').addEventListener('click', trDescartarTodos);
     trArquivo.multiple = true; // dá para escolher vários arquivos de uma vez
-    document.getElementById('transcricaoArquivoAdicionarBtn').addEventListener('click', () => trArquivo.click());
     trEscolher.addEventListener('click', () => trArquivo.click());
     trArquivo.addEventListener('change', () => {
       const arquivos = Array.from(trArquivo.files || []);
