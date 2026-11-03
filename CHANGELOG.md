@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.54
+
+Preparação de discursos e esboços: nova orientação no prompt padrão. A IA define primeiro como o esboço termina (a admoestação final) e escreve a introdução na mesma linha de raciocínio, para que as duas se espelhem; o tema aparece com destaque na introdução e é retomado na conclusão.
+
 ## 6.4.53
 
 Botões da IA: sob o título de cada botão que aciona a IA (responder, sugerir, preparar, elaborar o esboço, corrigir e resumir o áudio) aparece, em letra pequena e discreta, o modelo e o esforço escolhidos (nos esboços, os da Preparação de discursos e esboços). Na tela de modelos, o texto agora diz que o modelo próprio vale só para elaborar o esboço.
