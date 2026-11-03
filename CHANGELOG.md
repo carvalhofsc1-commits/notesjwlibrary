@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.41
+
+Áudio em texto: ao salvar uma gravação feita no app, se o título estiver preenchido em "Dados do áudio", ele vira o nome do arquivo salvo.
+
 ## 6.4.40
 
 Áudio em texto: com os blocos "Informe o tipo de áudio" e "Dados do áudio" recolhidos, uma linha pequena e discreta sob o título de cada um mostra o tipo de áudio escolhido e o título preenchido.
