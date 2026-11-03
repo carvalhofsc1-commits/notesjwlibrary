@@ -1735,6 +1735,17 @@
       font-size: .82rem;
     }
 
+    /* Modelo e esforço da IA, em letra pequena e discreta sob o título do botão (data-ia-nota, preenchido pelo app.js). */
+    button[data-ia-nota]::after {
+      content: attr(data-ia-nota);
+      display: block;
+      margin-top: 2px;
+      font-size: .68rem;
+      font-weight: 400;
+      line-height: 1.2;
+      opacity: .78;
+    }
+
     .ai-study-btn {
       display: block;
       width: 100%;

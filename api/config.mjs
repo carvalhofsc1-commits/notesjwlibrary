@@ -180,6 +180,17 @@ export default async function handler(req, res) {
       return res.status(200).json({ tipos: lista || [] });
     }
 
+    // Pública: o modelo e o esforço da IA (nomes curtos) para a notinha sob os botões da IA. "esbocos" = o da Preparação de discursos e esboços.
+    if (acao === "ia-publica") {
+      const cfg = await lerConfigIa();
+      const { modelos, esforcos } = opcoesIa();
+      const curto = (lista, id) => String((lista.find((x) => x.id === id) || {}).nome || "").split(":")[0].trim();
+      return res.status(200).json({
+        geral: { modelo: curto(modelos, cfg.modelo), esforco: curto(esforcos, cfg.esforco) },
+        esbocos: { modelo: curto(modelos, cfg.esbocoModelo || cfg.modelo), esforco: curto(esforcos, cfg.esbocoEsforco || cfg.esforco) },
+      });
+    }
+
     // Pública: as regras da leitura em voz alta que o navegador aplica ao texto (o resto fica no servidor).
     if (acao === "voz-publica") {
       return res.status(200).json({ voz: configPublicaVoz(await lerConfigVoz()) });

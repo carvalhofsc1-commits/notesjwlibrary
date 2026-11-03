@@ -3597,6 +3597,43 @@
       return vozRegras;
     }
 
+    // ---------- Modelo e esforço sob os botões da IA ----------
+    // Texto pequeno sob o título de cada botão que aciona a IA (atributo data-ia-nota, mostrado por ::after em app.css; o setAiLoading troca o texto
+    // do botão, mas não o atributo). "geral" = modelo e esforço gerais; "esbocos" = os da Preparação de discursos e esboços; "modelo" = só o modelo
+    // (o áudio em texto não usa o esforço escolhido).
+    const IA_NOTA_BOTOES = {
+      aiSuggestBtn: 'geral', aiSentinelaBtn: 'geral', aiStudyBtn: 'geral', aiStudyQuestionsBtn: 'geral', tdGerarBtn: 'geral',
+      joiasResponderBtn: 'geral', ebcResponderBtn: 'geral', ebcDirPerguntasBtn: 'geral',
+      tesourosEsbocoBtn: 'esbocos', discursoEsbocoBtn: 'esbocos', publicoEsbocoBtn: 'esbocos', outrosEsbocoBtn: 'esbocos',
+      transcricaoCorrigirBtn: 'modelo', transcricaoResumirBtn: 'modelo'
+    };
+    let iaNotaDados = null;
+    try { iaNotaDados = JSON.parse(localStorage.getItem('ns-ia-nota') || 'null'); } catch (e) { /* sem armazenamento */ }
+
+    function iaNotaAplicar() {
+      Object.keys(IA_NOTA_BOTOES).forEach(id => {
+        const b = document.getElementById(id);
+        if (!b) return;
+        const tipo = IA_NOTA_BOTOES[id];
+        const d = iaNotaDados && iaNotaDados[tipo === 'esbocos' ? 'esbocos' : 'geral'];
+        if (!d || !d.modelo) return b.removeAttribute('data-ia-nota');
+        b.setAttribute('data-ia-nota', 'Modelo: ' + d.modelo + (tipo !== 'modelo' && d.esforco ? ' · esforço: ' + d.esforco.toLowerCase() : ''));
+      });
+    }
+
+    async function iaNotaCarregar() {
+      iaNotaAplicar(); // primeiro o último valor conhecido; depois o do servidor
+      try {
+        const r = await postConfig({ acao: 'ia-publica' });
+        if (r.ok && r.data && r.data.geral) {
+          iaNotaDados = { geral: r.data.geral, esbocos: r.data.esbocos || r.data.geral };
+          try { localStorage.setItem('ns-ia-nota', JSON.stringify(iaNotaDados)); } catch (e) { /* sem armazenamento */ }
+          iaNotaAplicar();
+        }
+      } catch (e) { /* sem conexão: fica o último valor */ }
+    }
+    iaNotaCarregar();
+
     // ---------- Referências bíblicas para a voz ----------
     // Nomes completos (com ou sem acento, porque as letras formatadas perdem os acentos) e as abreviações das publicações.
     const VOZ_ABREVIACOES = {
@@ -7416,7 +7453,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.52'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.53'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -11450,6 +11487,7 @@ function saveTemplatesToStorage() {
       iaEsbocoEsforco.value = r.data.config.esbocoEsforco || '';
       iaSalvo = { modelo: r.data.config.modelo, esforco: r.data.config.esforco, esbocoModelo: r.data.config.esbocoModelo || '', esbocoEsforco: r.data.config.esbocoEsforco || '' };
       iaMostrarPreco();
+      iaNotaCarregar();
       return { ok: true };
     }
 

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.53
+
+Botões da IA: sob o título de cada botão que aciona a IA (responder, sugerir, preparar, elaborar o esboço, corrigir e resumir o áudio) aparece, em letra pequena e discreta, o modelo e o esforço escolhidos (nos esboços, os da Preparação de discursos e esboços). Na tela de modelos, o texto agora diz que o modelo próprio vale só para elaborar o esboço.
+
 ## 6.4.52
 
 Preparação de discursos e esboços: nova regra fixa "Leitura sem adiantar o texto". Antes da leitura de um texto bíblico, o esboço não cita nem antecipa nada do conteúdo dele (só perguntas e problemas que a leitura responde); depois da leitura, cita e explica partes do texto à vontade. Textos que não serão lidos podem ser citados em qualquer parte.
