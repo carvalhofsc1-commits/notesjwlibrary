@@ -23,9 +23,9 @@ const CHAVE_CONVITE = "convite_texto";
 const MAX_CHARS_CONVITE = 1500;
 // Tipos de áudio do "Áudio em texto" que o administrador publica para todos.
 const CHAVE_TIPOS_AUDIO = "audio_tipos_todos";
-// Duração máxima, em minutos, do Áudio em texto: do arquivo escolhido na pasta do aparelho e da gravação feita ao vivo no app.
+// Limites do Áudio em texto: duração máxima, em minutos, do arquivo escolhido na pasta do aparelho e da gravação feita ao vivo no app, e quantos arquivos cabem na lista.
 const CHAVE_AUDIO_LIMITES = "audio_limites";
-const AUDIO_LIMITES_PADRAO = { arquivoMin: 60, gravacaoMin: 30 };
+const AUDIO_LIMITES_PADRAO = { arquivoMin: 60, gravacaoMin: 30, maxArquivos: 5 };
 const AUDIO_LIMITE_MIN = 5;
 const AUDIO_LIMITE_MAX = 180;
 
@@ -35,7 +35,15 @@ function limitesAudioLimpos(valor) {
     const n = Math.round(Number(x));
     return Number.isFinite(n) ? Math.max(AUDIO_LIMITE_MIN, Math.min(AUDIO_LIMITE_MAX, n)) : padrao;
   };
-  return { arquivoMin: numero(v.arquivoMin, AUDIO_LIMITES_PADRAO.arquivoMin), gravacaoMin: numero(v.gravacaoMin, AUDIO_LIMITES_PADRAO.gravacaoMin) };
+  const quantidade = (x, padrao) => {
+    const n = Math.round(Number(x));
+    return Number.isFinite(n) ? Math.max(1, Math.min(20, n)) : padrao;
+  };
+  return {
+    arquivoMin: numero(v.arquivoMin, AUDIO_LIMITES_PADRAO.arquivoMin),
+    gravacaoMin: numero(v.gravacaoMin, AUDIO_LIMITES_PADRAO.gravacaoMin),
+    maxArquivos: quantidade(v.maxArquivos, AUDIO_LIMITES_PADRAO.maxArquivos),
+  };
 }
 const MAX_TIPOS_AUDIO = 30;
 const MAX_BYTES_PADRAO = 200_000;

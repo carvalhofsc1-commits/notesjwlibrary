@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.62
+
+Configurações do Áudio em texto (administrador): cada seção (tipos deste aparelho, tipos de todos os usuários e limites do áudio) ganhou uma moldura para separar melhor. O título da seção de limites agora é Limites do áudio.
+
+## 6.4.61
+
+Áudio em texto: lista de arquivos. Dá para escolher vários arquivos de uma vez e adicionar outros depois (botão Adicionar arquivo no card Arquivos de áudio); cada arquivo tem o seu Descartar e há o Descartar todos. O Iniciar a transcrição transcreve os arquivos em ordem e o texto sai junto, com uma linha com o nome de cada arquivo. O administrador define quantos arquivos cabem na lista (padrão 5).
+
 ## 6.4.60
 
 Áudio em texto: a duração máxima agora é ajustável pelo administrador (Ajustes → Configurações do Áudio em texto → Duração máxima do áudio) e separada em dois limites: arquivo escolhido na pasta do aparelho (padrão 60 minutos, antes 30) e gravação feita ao vivo no app (padrão 30 minutos).

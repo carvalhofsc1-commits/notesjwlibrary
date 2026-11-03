@@ -9180,6 +9180,77 @@ details.transcricao-bloco:not([open]) {
   border-color: color-mix(in srgb, #ef4444 45%, transparent);
 }
 
+/* Configurações do Áudio em texto (administrador): cada seção numa moldura. */
+.audio-config-moldura {
+  margin: 12px 0;
+  padding: 10px 12px 12px;
+  border: 2px solid var(--soft-line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--card) 55%, transparent);
+}
+
+.audio-config-moldura>.audio-todos-titulo:first-child {
+  margin-top: 0;
+}
+
+#transcricaoArquivoBox #transcricaoArquivoAdicionarBtn {
+  margin: 0;
+  min-height: 34px;
+  padding: 3px 12px;
+  font-size: .85rem;
+  color: var(--text);
+  background: color-mix(in srgb, #2563eb 14%, var(--card));
+  border-color: color-mix(in srgb, #2563eb 40%, transparent);
+}
+
+#transcricaoArquivoBox .transcricao-arquivo-botoes {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* Cada arquivo da lista do Áudio em texto: um cartão com os dados, a situação e o Descartar. */
+.tr-lista-item {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  font-size: .9rem;
+  line-height: 1.5;
+}
+
+.tr-lista-item:last-child {
+  margin-bottom: 0;
+}
+
+.tr-lista-dados {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.tr-lista-rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.tr-lista-situacao {
+  font-size: .85rem;
+  color: var(--muted);
+}
+
+.tr-lista-item .tr-lista-descartar {
+  margin: 0;
+  min-height: 30px;
+  padding: 2px 12px;
+  font-size: .8rem;
+  color: var(--text);
+  background: color-mix(in srgb, #ef4444 16%, var(--card));
+  border-color: color-mix(in srgb, #ef4444 45%, transparent);
+}
+
 .transcricao-arquivo-dados {
   margin: 4px 0 10px;
   padding: 8px 10px;

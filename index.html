@@ -1426,6 +1426,8 @@
         <details class="subsection sub-tint-3 so-admin" id="audioTiposSection" hidden>
           <summary><span class="adm-titulo">🎙️ Configurações do Áudio em texto&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
           <div class="subsection-body">
+            <div class="audio-config-moldura">
+            <h3 class="audio-todos-titulo">🎙️ Tipos de áudio deste aparelho</h3>
             <p class="hint">Os tipos de áudio que aparecem na tela Áudio em texto, em Informe o tipo de áudio → Tipo de áudio. Ao escolher um tipo, a descrição dele preenche o campo “Sobre o áudio”. Você pode mudar os nomes e as descrições, criar tipos novos, reordenar e apagar. Ficam salvos só neste aparelho.</p>
             <div id="audioTiposLista"></div>
             <div class="bk-row">
@@ -1433,6 +1435,8 @@
               <button id="audioTiposRestaurarBtn" class="secondary" type="button">↩️ Restaurar os tipos originais</button>
             </div>
             <p id="audioTiposStatus" class="ok" role="status" aria-live="polite"></p>
+            </div>
+            <div class="audio-config-moldura">
             <h3 class="audio-todos-titulo">🌐 Tipos de áudio de todos os usuários</h3>
             <p class="hint">Os tipos 🌐 que aparecem para todos que usam o app. Aqui você edita, reordena, apaga ou cria; nada vale para os outros até tocar em <strong>💾 Salvar para todos</strong>. Os tipos novos também podem ser criados direto na tela Áudio em texto, com a opção “➕ Novo tipo…”.</p>
             <div id="audioTiposTodosLista"></div>
@@ -1442,16 +1446,21 @@
               <button id="audioTiposTodosSalvarBtn" type="button">💾 Salvar para todos</button>
             </div>
             <p id="audioTiposTodosStatus" class="ok" role="status" aria-live="polite"></p>
-            <h3 class="audio-todos-titulo">⏱️ Duração máxima do áudio</h3>
+            </div>
+            <div class="audio-config-moldura">
+            <h3 class="audio-todos-titulo">⏱️ Limites do áudio</h3>
             <p class="hint">Quanto tempo o áudio pode ter. Vale para todos os usuários depois de tocar em <strong>💾 Salvar para todos</strong>. Arquivos muito longos exigem muita memória do aparelho para serem abertos: em iPhones mais antigos o navegador pode fechar a página; se isso acontecer, reduza o valor do arquivo.</p>
             <label for="audioLimArquivo">Arquivo escolhido na pasta do aparelho (minutos, de 5 a 180)</label>
             <input id="audioLimArquivo" type="number" inputmode="numeric" min="5" max="180" step="1" autocomplete="off">
             <label for="audioLimGravacao">Gravação feita ao vivo no app (minutos, de 5 a 180)</label>
             <input id="audioLimGravacao" type="number" inputmode="numeric" min="5" max="180" step="1" autocomplete="off">
+            <label for="audioLimArquivos">Quantos arquivos de áudio podem entrar na lista por vez (de 1 a 20)</label>
+            <input id="audioLimArquivos" type="number" inputmode="numeric" min="1" max="20" step="1" autocomplete="off">
             <div class="bk-row">
               <button id="audioLimSalvarBtn" type="button">💾 Salvar para todos</button>
             </div>
             <p id="audioLimStatus" class="ok" role="status" aria-live="polite"></p>
+            </div>
           </div>
         </details>
         </div>
@@ -1530,7 +1539,7 @@
       </div>
       <details class="leitura-dica">
         <summary>ℹ️ Como funciona</summary>
-        <p class="hint">Você pode <strong>escolher um arquivo de áudio</strong> já gravado no celular ou no computador (mp3, m4a, wav, mp4 e outros que o seu aparelho abra) ou <strong>gravar um áudio agora</strong>, com o microfone do aparelho (o navegador pede a sua permissão; dá para pausar, e ao parar a gravação você vê os dados do arquivo gravado e toca em Iniciar a transcrição; mantenha a tela aberta e desbloqueada durante a gravação). O app decodifica o áudio neste aparelho, corta em trechos de cerca de 50 segundos e envia cada trecho ao Google para virar texto (português do Brasil). Depois você pode pedir um resumo à IA. Limite de <span data-tr-limite="arquivo">60</span> minutos para um arquivo escolhido na pasta e de <span data-tr-limite="gravacao">30</span> minutos para uma gravação feita aqui. Os dois campos de texto podem ser editados (toque em Editar), formatados com negrito e itálico, ter a letra ajustada com A− e A+ e ser exportados para Word. Nada é guardado no servidor do NoteStyle, e o texto não fica salvo no app: copie ou exporte o que quiser guardar (a gravação também pode ser salva no aparelho). Esta primeira versão não identifica quem está falando.</p>
+        <p class="hint">Você pode <strong>escolher um arquivo de áudio</strong> já gravado no celular ou no computador (mp3, m4a, wav, mp4 e outros que o seu aparelho abra) ou <strong>gravar um áudio agora</strong>, com o microfone do aparelho (o navegador pede a sua permissão; dá para pausar, e ao parar a gravação você vê os dados do arquivo gravado e toca em Iniciar a transcrição; mantenha a tela aberta e desbloqueada durante a gravação). O app decodifica o áudio neste aparelho, corta em trechos de cerca de 50 segundos e envia cada trecho ao Google para virar texto (português do Brasil). Depois você pode pedir um resumo à IA. Limite de <span data-tr-limite="arquivo">60</span> minutos para cada arquivo escolhido na pasta e de <span data-tr-limite="gravacao">30</span> minutos para uma gravação feita aqui. Depois do primeiro arquivo, toque em <strong>➕ Adicionar arquivo</strong> para incluir outros (até <span data-tr-limite="arquivos">5</span> por vez): eles são transcritos em ordem e o texto sai junto, com uma linha com o nome de cada arquivo. Os dois campos de texto podem ser editados (toque em Editar), formatados com negrito e itálico, ter a letra ajustada com A− e A+ e ser exportados para Word. Nada é guardado no servidor do NoteStyle, e o texto não fica salvo no app: copie ou exporte o que quiser guardar (a gravação também pode ser salva no aparelho). Esta primeira versão não identifica quem está falando.</p>
       </details>
       <div class="leitura-importar transcricao-importar">
         <button id="transcricaoArquivoBtn" type="button">🎧 Escolher o arquivo de áudio</button>
@@ -1539,9 +1548,10 @@
       </div>
       <div id="transcricaoArquivoBox" class="transcricao-bloco" hidden>
         <div class="transcricao-rotulo-linha">
-          <button id="transcricaoArquivoAlternaBtn" class="transcricao-arquivo-titulo-btn" type="button" aria-expanded="true" aria-controls="transcricaoArquivoDados"><span class="transcricao-seta" aria-hidden="true">▼</span> <span id="transcricaoArquivoTitulo" class="transcricao-rotulo">Dados do áudio</span></button>
+          <button id="transcricaoArquivoAlternaBtn" class="transcricao-arquivo-titulo-btn" type="button" aria-expanded="true" aria-controls="transcricaoArquivoDados"><span class="transcricao-seta" aria-hidden="true">▼</span> <span id="transcricaoArquivoTitulo" class="transcricao-rotulo">Arquivos de áudio</span></button>
           <span class="transcricao-arquivo-botoes">
-            <button id="transcricaoArquivoLimparBtn" class="secondary transcricao-arquivo-limpar" type="button" title="Desistir deste arquivo" aria-label="Desistir deste arquivo">🗑️ Descartar</button>
+            <button id="transcricaoArquivoAdicionarBtn" class="secondary transcricao-arquivo-adicionar" type="button" title="Adicionar outro arquivo de áudio à lista" aria-label="Adicionar outro arquivo de áudio à lista">➕ Adicionar arquivo</button>
+            <button id="transcricaoArquivoLimparBtn" class="secondary transcricao-arquivo-limpar" type="button" title="Desistir de todos os arquivos" aria-label="Desistir de todos os arquivos">🗑️ Descartar todos</button>
           </span>
         </div>
         <div id="transcricaoArquivoDados" class="transcricao-arquivo-dados"></div>

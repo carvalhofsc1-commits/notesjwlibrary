@@ -7480,7 +7480,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.60'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.62'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -18059,19 +18059,21 @@ function saveTemplatesToStorage() {
     // pedido direto) e cada trecho vai a /api/transcrever, que usa o Chirp 3 do Google. Depois o texto pode ser resumido pela IA. Nada fica salvo.
     // Duração máxima do áudio, em minutos: do arquivo escolhido na pasta e da gravação ao vivo. O administrador ajusta em Ajustes → Configurações do Áudio
     // em texto (api/config.mjs, "audio-limites-ler" e "audio-limites-salvar"); o último valor lido fica no aparelho.
-    let trLimites = { arquivoMin: 60, gravacaoMin: 30 };
+    let trLimites = { arquivoMin: 60, gravacaoMin: 30, maxArquivos: 5 };
     try {
       const guardado = JSON.parse(localStorage.getItem('ns-audio-limites') || 'null');
-      if (guardado && guardado.arquivoMin > 0 && guardado.gravacaoMin > 0) trLimites = { arquivoMin: guardado.arquivoMin, gravacaoMin: guardado.gravacaoMin };
+      if (guardado && guardado.arquivoMin > 0 && guardado.gravacaoMin > 0) trLimites = { arquivoMin: guardado.arquivoMin, gravacaoMin: guardado.gravacaoMin, maxArquivos: guardado.maxArquivos > 0 ? guardado.maxArquivos : 5 };
     } catch (e) { /* sem armazenamento: valem os padrões */ }
     function trLimitesAplicar() {
-      document.querySelectorAll('[data-tr-limite]').forEach(el => { el.textContent = trLimites[el.dataset.trLimite === 'arquivo' ? 'arquivoMin' : 'gravacaoMin']; });
-      const a = document.getElementById('audioLimArquivo'), g = document.getElementById('audioLimGravacao');
+      const campo = { arquivo: 'arquivoMin', gravacao: 'gravacaoMin', arquivos: 'maxArquivos' };
+      document.querySelectorAll('[data-tr-limite]').forEach(el => { el.textContent = trLimites[campo[el.dataset.trLimite]]; });
+      const a = document.getElementById('audioLimArquivo'), g = document.getElementById('audioLimGravacao'), q = document.getElementById('audioLimArquivos');
       if (a && document.activeElement !== a) a.value = trLimites.arquivoMin;
       if (g && document.activeElement !== g) g.value = trLimites.gravacaoMin;
+      if (q && document.activeElement !== q) q.value = trLimites.maxArquivos;
     }
     function trLimitesGuardar(l) {
-      trLimites = { arquivoMin: l.arquivoMin, gravacaoMin: l.gravacaoMin };
+      trLimites = { arquivoMin: l.arquivoMin, gravacaoMin: l.gravacaoMin, maxArquivos: l.maxArquivos > 0 ? l.maxArquivos : 5 };
       try { localStorage.setItem('ns-audio-limites', JSON.stringify(trLimites)); } catch (e) { /* sem armazenamento */ }
       trLimitesAplicar();
     }
@@ -18085,11 +18087,13 @@ function saveTemplatesToStorage() {
       const status = document.getElementById('audioLimStatus');
       const a = Math.round(Number(document.getElementById('audioLimArquivo').value));
       const g = Math.round(Number(document.getElementById('audioLimGravacao').value));
+      const q = Math.round(Number(document.getElementById('audioLimArquivos').value));
       if (!(a >= 5 && a <= 180 && g >= 5 && g <= 180)) return (status.textContent = 'Use valores de 5 a 180 minutos.');
-      const r = await postConfig({ acao: 'audio-limites-salvar', codigo: senhaAdminSalva(), limites: { arquivoMin: a, gravacaoMin: g } });
+      if (!(q >= 1 && q <= 20)) return (status.textContent = 'A quantidade de arquivos vai de 1 a 20.');
+      const r = await postConfig({ acao: 'audio-limites-salvar', codigo: senhaAdminSalva(), limites: { arquivoMin: a, gravacaoMin: g, maxArquivos: q } });
       if (!r.ok) return (status.textContent = configErrorMessage(r, 'Não consegui salvar a duração agora.'));
       trLimitesGuardar(r.data.limites);
-      status.textContent = '🌐 Salvo para todos: arquivo de até ' + trLimites.arquivoMin + ' min e gravação de até ' + trLimites.gravacaoMin + ' min.';
+      status.textContent = '🌐 Salvo para todos: arquivo de até ' + trLimites.arquivoMin + ' min, gravação de até ' + trLimites.gravacaoMin + ' min e até ' + trLimites.maxArquivos + ' arquivos por vez.';
     });
     const TRANSCRICAO_TRECHO_S = 50;
     const TRANSCRICAO_TAXA = 16000;
@@ -18649,11 +18653,14 @@ function saveTemplatesToStorage() {
       const ocupado = Boolean(trControle);
       const gravando = typeof trGrav !== 'undefined' && Boolean(trGrav);
       // com um áudio já escolhido ou gravado, os dois botões ficam desabilitados até a pessoa descartá-lo
-      trEscolher.disabled = ocupado || gravando || Boolean(trArquivoMostrado);
-      if (typeof trGravarBtn !== 'undefined') trGravarBtn.disabled = ocupado || gravando || Boolean(trArquivoMostrado);
+      trEscolher.disabled = ocupado || gravando || trLista.length > 0;
+      if (typeof trGravarBtn !== 'undefined') trGravarBtn.disabled = ocupado || gravando || trLista.length > 0;
+      const adicionar = document.getElementById('transcricaoArquivoAdicionarBtn'); // a lista de arquivos: adicionar, e descartar um a um
+      if (adicionar) adicionar.disabled = ocupado || gravando || trLista.length >= trLimites.maxArquivos;
+      document.querySelectorAll('.tr-lista-descartar').forEach(b => { b.disabled = ocupado || gravando; });
       trResumir.disabled = ocupado || trTexto.value.trim().length < 40;
       trCorrigir.disabled = ocupado || trTexto.value.trim().length < 40;
-      trIniciar.disabled = ocupado || gravando || !trPendente;
+      trIniciar.disabled = ocupado || gravando || !trListaTemPendente();
       trCancelar.hidden = !ocupado || trOperacao !== 'transcrever';
       trCancelarCorrigir.hidden = !ocupado || trOperacao !== 'corrigir';
       trCancelarResumir.hidden = !ocupado || trOperacao !== 'resumir';
@@ -18732,59 +18739,102 @@ function saveTemplatesToStorage() {
       return (r.dados && r.dados.erro) || padrao;
     }
 
-    async function trTranscrever(arquivo) {
+    const trNomeSemExtensao = arquivo => String(arquivo.name || '').replace(/\.[^.]+$/, '');
+
+    // Transcreve um arquivo da lista (decodifica, corta em trechos de 50 s e envia cada um) e põe o texto no fim do campo, com uma linha com o nome do
+    // arquivo quando há mais de um na lista. Devolve true se terminou; false se deu erro ou se a pessoa cancelou (o item volta a poder ser iniciado).
+    async function trTranscreverItem(item) {
+      const arquivo = item.arquivo;
+      const posicao = trLista.indexOf(item) + 1;
+      const rotulo = trLista.length > 1 ? 'Arquivo ' + posicao + ' de ' + trLista.length + ': ' : '';
+      item.estado = 'transcrevendo';
+      trListaRender();
+      trProgresso.hidden = false;
+      trProgresso.removeAttribute('value'); // indeterminado enquanto decodifica
+      trInfo.textContent = '⏳ ' + rotulo + 'preparando o áudio neste aparelho…';
+      let amostras;
+      try {
+        amostras = await trDecodificar(arquivo);
+      } catch (e) {
+        item.estado = 'erro';
+        trInfo.textContent = rotulo + 'não consegui abrir este áudio neste aparelho. Tente outro formato (mp3, m4a ou wav).';
+        return false;
+      }
+      const minutos = amostras.length / TRANSCRICAO_TAXA / 60;
+      const limiteMin = item.gravado ? trLimites.gravacaoMin : trLimites.arquivoMin;
+      if (minutos > limiteMin) {
+        item.estado = 'erro';
+        trInfo.textContent = rotulo + 'o áudio tem ' + Math.round(minutos) + ' minutos; o limite é de ' + limiteMin + ' minutos por ' + (item.gravado ? 'gravação' : 'arquivo') + '.';
+        return false;
+      }
+      const porTrecho = TRANSCRICAO_TRECHO_S * TRANSCRICAO_TAXA;
+      const total = Math.ceil(amostras.length / porTrecho);
+      trProgresso.max = total;
+      trProgresso.value = 0;
+      const antes = trTexto.value.replace(/\s+$/, '');
+      const prefixo = (antes ? antes + '\n\n' : '') + (trLista.length > 1 ? '— ' + (item.gravado ? trNomeDoArquivoSalvo(arquivo) : arquivo.name) + ' —\n' : '');
+      const partes = [];
+      for (let n = 0; n < total; n++) {
+        if (trControle.signal.aborted) {
+          item.estado = 'pendente';
+          trInfo.textContent = 'Cancelado. O que já foi transcrito está abaixo.';
+          return false;
+        }
+        trInfo.textContent = '🎙️ ' + rotulo + 'transcrevendo o trecho ' + (n + 1) + ' de ' + total + '…';
+        const { base64, pico } = trParaBase64(amostras.subarray(n * porTrecho, (n + 1) * porTrecho));
+        if (pico >= 0.005) { // trecho em silêncio não é enviado (não gasta)
+          let r = await trPost({ acao: 'trecho', codigoTexto: codigoTextoSalvo(), audio: base64 }, trControle.signal);
+          if (!r.ok && !r.cancelado && (r.status === 0 || r.status >= 500)) r = await trPost({ acao: 'trecho', codigoTexto: codigoTextoSalvo(), audio: base64 }, trControle.signal); // uma nova tentativa
+          if (!r.ok) {
+            item.estado = r.cancelado ? 'pendente' : 'erro';
+            trInfo.textContent = rotulo + trMensagem(r, 'Não foi possível transcrever o trecho ' + (n + 1) + '.') + (partes.length ? ' O que já foi transcrito está abaixo.' : '');
+            return false;
+          }
+          if (r.dados.texto) partes.push(r.dados.texto);
+          if (partes.length) trTexto.value = prefixo + partes.join('\n\n');
+        }
+        trProgresso.value = n + 1;
+      }
+      item.estado = 'pronto';
+      item.semFala = !partes.length;
+      return true;
+    }
+
+    // "Iniciar a transcrição": transcreve, em ordem, os arquivos da lista que ainda não foram transcritos.
+    async function trTranscreverLista() {
       if (!codigoTextoSalvo()) return (trInfo.textContent = 'Salve o código de texto em Ajustes → 🔐 Autorização de acessos.');
       if (!navigator.onLine) return (trInfo.textContent = 'Sem conexão com a internet.');
       if (!(await trConsentimento())) return (trInfo.textContent = 'Nada foi enviado.');
+      const fila = trLista.filter(i => i.estado === 'pendente' || i.estado === 'erro');
+      if (!fila.length) return;
       trControle = new AbortController();
       trOperacao = 'transcrever';
       trPassoTexto.open = true;
-      trNomeBase = String(arquivo.name || '').replace(/\.[^.]+$/, '');
-      trArquivoAtual = arquivo;
+      trNomeBase = trNomeSemExtensao(trLista[0].arquivo);
+      trArquivoAtual = trLista[0].arquivo;
       trMesmoAplicar();
       trAtualizarBotoes();
-      trTexto.value = '';
-      trResumo.value = '';
-      trCorrigido.value = '';
-      trProgresso.hidden = false;
-      trProgresso.removeAttribute('value'); // indeterminado enquanto decodifica
-      trInfo.textContent = '⏳ Preparando o áudio neste aparelho…';
+      if (!trLista.some(i => i.estado === 'pronto')) { // primeira rodada: começa dos campos vazios (nas seguintes o texto novo entra no fim)
+        trTexto.value = '';
+        trResumo.value = '';
+        trCorrigido.value = '';
+      }
+      let feitos = 0;
+      let parou = false;
       try {
-        let amostras;
-        try {
-          amostras = await trDecodificar(arquivo);
-        } catch (e) {
-          return (trInfo.textContent = 'Não consegui abrir este áudio neste aparelho. Tente outro formato (mp3, m4a ou wav).');
+        for (const item of fila) {
+          if (!(await trTranscreverItem(item))) { parou = true; break; }
+          feitos++;
+          trListaRender();
         }
-        const minutos = amostras.length / TRANSCRICAO_TAXA / 60;
-        const gravadoAqui = Boolean(trUltimaGravacao && trUltimaGravacao.arquivo === arquivo);
-        const limiteMin = gravadoAqui ? trLimites.gravacaoMin : trLimites.arquivoMin;
-        if (minutos > limiteMin) return (trInfo.textContent = 'O áudio tem ' + Math.round(minutos) + ' minutos; o limite é de ' + limiteMin + ' minutos por ' + (gravadoAqui ? 'gravação' : 'arquivo') + '.');
-        const porTrecho = TRANSCRICAO_TRECHO_S * TRANSCRICAO_TAXA;
-        const total = Math.ceil(amostras.length / porTrecho);
-        trProgresso.max = total;
-        trProgresso.value = 0;
-        const partes = [];
-        for (let n = 0; n < total; n++) {
-          if (trControle.signal.aborted) return (trInfo.textContent = 'Cancelado. O que já foi transcrito está abaixo.');
-          trInfo.textContent = '🎙️ Transcrevendo o trecho ' + (n + 1) + ' de ' + total + '…';
-          const { base64, pico } = trParaBase64(amostras.subarray(n * porTrecho, (n + 1) * porTrecho));
-          if (pico >= 0.005) { // trecho em silêncio não é enviado (não gasta)
-            let r = await trPost({ acao: 'trecho', codigoTexto: codigoTextoSalvo(), audio: base64 }, trControle.signal);
-            if (!r.ok && !r.cancelado && (r.status === 0 || r.status >= 500)) r = await trPost({ acao: 'trecho', codigoTexto: codigoTextoSalvo(), audio: base64 }, trControle.signal); // uma nova tentativa
-            if (!r.ok) {
-              trInfo.textContent = trMensagem(r, 'Não foi possível transcrever o trecho ' + (n + 1) + '.') + (partes.length ? ' O que já foi transcrito está abaixo.' : '');
-              return;
-            }
-            if (r.dados.texto) partes.push(r.dados.texto);
-            trTexto.value = partes.join('\n\n');
-          }
-          trProgresso.value = n + 1;
+        if (!parou) {
+          const comFala = fila.filter(i => !i.semFala).length;
+          trInfo.textContent = comFala ? '✅ Pronto: ' + feitos + (feitos === 1 ? ' arquivo transcrito' : ' arquivos transcritos') + '. Confira o texto e, se quiser, peça o resumo.' : 'Não encontrei fala neste áudio.';
         }
-        trInfo.textContent = partes.length ? '✅ Pronto: ' + total + ' trecho(s) transcrito(s). Confira o texto e, se quiser, peça o resumo.' : 'Não encontrei fala neste áudio.';
       } finally {
         trControle = null;
         trProgresso.hidden = true;
+        trListaRender();
         trAtualizarBotoes();
       }
     }
@@ -18794,15 +18844,16 @@ function saveTemplatesToStorage() {
     const trArquivoDados = document.getElementById('transcricaoArquivoDados');
     const trIniciar = document.getElementById('transcricaoIniciarBtn');
     const trArquivoAlterna = document.getElementById('transcricaoArquivoAlternaBtn');
-    let trPendente = null; // o arquivo esperando o "Iniciar a transcrição"
-    let trArquivoMostrado = null; // o arquivo cujos dados estão no card (continua depois de iniciar, até a pessoa limpar)
-    function trPendenteLimpar() {
-      trPendente = null;
-      trArquivoMostrado = null;
+    // A lista de arquivos de áudio (escolhidos na pasta ou gravados): { id, arquivo, gravado, duracaoS, estado, base }, estado = pendente, transcrevendo, pronto ou erro.
+    let trLista = [];
+    let trListaSeq = 0;
+    const trListaTemPendente = () => trLista.some(i => i.estado === 'pendente' || i.estado === 'erro');
+    function trPendenteLimpar() { // esvazia a lista de arquivos
+      trLista = [];
       trArquivoBox.hidden = true;
       trArquivoDados.textContent = '';
       trArquivoDados.hidden = false;
-      document.getElementById('transcricaoArquivoTitulo').textContent = 'Dados do áudio';
+      document.getElementById('transcricaoArquivoTitulo').textContent = 'Arquivos de áudio';
     }
     // Os dados do arquivo ficam à mostra enquanto ele é processado; a pessoa pode ocultá-los e mostrá-los de novo.
     function trArquivoAlternaAtualizar() {
@@ -18841,64 +18892,116 @@ function saveTemplatesToStorage() {
       return titulo ? titulo + '-' + dataHora + extensao : arquivo.name;
     }
 
-    function trPendenteMostrar(arquivo, opcoes) {
+    const trSituacaoTexto = { pendente: '⏳ Aguardando a transcrição', transcrevendo: '🎙️ Transcrevendo…', pronto: '✅ Transcrito', erro: '⚠️ Não foi possível transcrever; toque em Iniciar para tentar de novo' };
+
+    // Redesenha a lista: um cartão por arquivo, com os dados, a situação e o Descartar.
+    function trListaRender() {
+      const titulo = document.getElementById('transcricaoArquivoTitulo');
+      titulo.textContent = trLista.length > 1 ? 'Arquivos de áudio (' + trLista.length + ')' : 'Arquivos de áudio';
+      trArquivoBox.hidden = !trLista.length;
+      trArquivoDados.textContent = '';
+      trLista.forEach((item, i) => {
+        const caixa = document.createElement('div');
+        caixa.className = 'tr-lista-item';
+        const dados = document.createElement('div');
+        dados.className = 'tr-lista-dados';
+        const nome = (item.gravado ? trNomeDoArquivoSalvo(item.arquivo) : item.arquivo.name) || 'sem nome';
+        const duracao = item.duracaoS === null ? 'calculando…' : item.duracaoS ? trDuracaoTexto(item.duracaoS) : 'não foi possível ler';
+        dados.textContent = (trLista.length > 1 ? '#' + (i + 1) + '  ' : '') + '🎵 Nome: ' + nome + item.base + '\n⏱️ Duração: ' + duracao;
+        const rodape = document.createElement('div');
+        rodape.className = 'tr-lista-rodape';
+        const situacao = document.createElement('span');
+        situacao.className = 'tr-lista-situacao';
+        situacao.textContent = trSituacaoTexto[item.estado] || '';
+        const descartar = document.createElement('button');
+        descartar.type = 'button';
+        descartar.className = 'secondary tr-lista-descartar';
+        descartar.textContent = '🗑️ Descartar';
+        descartar.title = 'Tirar este arquivo da lista';
+        descartar.disabled = Boolean(trControle);
+        descartar.addEventListener('click', () => trListaDescartar(item));
+        rodape.append(situacao, descartar);
+        caixa.append(dados, rodape);
+        trArquivoDados.appendChild(caixa);
+      });
+    }
+    trArquivoDadosRedesenhar = trListaRender; // o nome mostrado de uma gravação acompanha o título dos dados do áudio
+
+    // Põe um arquivo (escolhido na pasta ou gravado agora) no fim da lista. Devolve false se a lista já está cheia.
+    function trListaAdicionar(arquivo, opcoes) {
+      if (trLista.length >= trLimites.maxArquivos) return false;
       const gravado = Boolean(opcoes && opcoes.gravado);
-      trPendente = arquivo;
-      trArquivoMostrado = arquivo;
-      trArquivoDados.hidden = false;
-      trArquivoAlternaAtualizar();
-      trPassoTexto.open = true;
-      trArquivoAtual = arquivo;
-      trMesmoAplicar();
-      trArquivoBox.hidden = false;
       let base = '\n📍 Origem: ' + (gravado ? 'gravado agora pelo app, neste aparelho' : 'pasta local') + '\n🏷️ Tipo: ' + (arquivo.type || 'não informado') + '\n📦 Tamanho: ' + trTamanhoTexto(arquivo.size);
       if (arquivo.lastModified > 0) {
         const quando = new Date(arquivo.lastModified);
         base += '\n📅 Data e hora: ' + quando.toLocaleDateString('pt-BR') + ' às ' + quando.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       }
-      // O nome mostrado: numa gravação do app, o nome com que ela será salva (título + data e hora); num arquivo escolhido, o nome dele.
-      let duracaoLinha = '\n⏱️ Duração: calculando…';
-      trArquivoDadosRedesenhar = () => {
-        if (trArquivoMostrado !== arquivo) return;
-        trArquivoDados.textContent = '🎵 Nome: ' + ((gravado ? trNomeDoArquivoSalvo(arquivo) : arquivo.name) || 'sem nome') + base + duracaoLinha;
-      };
-      trArquivoDadosRedesenhar();
-      trInfo.textContent = gravado ? 'Gravação pronta. Se quiser, salve a gravação no aparelho; depois toque em Iniciar a transcrição.' : '';
+      const item = { id: ++trListaSeq, arquivo, gravado, duracaoS: gravado && opcoes.duracaoS ? opcoes.duracaoS : null, estado: 'pendente', base, semFala: false };
+      trLista.push(item);
+      trArquivoDados.hidden = false;
+      trArquivoAlternaAtualizar();
+      trPassoTexto.open = true;
+      trArquivoAtual = trLista[0].arquivo; // "mesmo do arquivo" (título e data) vale pelo primeiro da lista
+      trMesmoAplicar();
+      trListaRender();
       trAtualizarBotoes();
-      (gravado && opcoes.duracaoS ? Promise.resolve(opcoes.duracaoS) : trDuracaoLer(arquivo)).then(seg => {
-        if (trArquivoMostrado !== arquivo) return;
-        duracaoLinha = '\n⏱️ Duração: ' + (seg ? trDuracaoTexto(seg) : 'não foi possível ler');
-        trArquivoDadosRedesenhar();
-        const limiteMin = gravado ? trLimites.gravacaoMin : trLimites.arquivoMin;
-        if (seg && seg / 60 > limiteMin) trInfo.textContent = 'Atenção: o áudio tem mais de ' + limiteMin + ' minutos, que é o limite por ' + (gravado ? 'gravação' : 'arquivo') + '.';
-      });
+      if (item.duracaoS === null) {
+        trDuracaoLer(arquivo).then(seg => {
+          if (!trLista.includes(item)) return;
+          item.duracaoS = seg || 0;
+          trListaRender();
+          const limiteMin = gravado ? trLimites.gravacaoMin : trLimites.arquivoMin;
+          if (seg && seg / 60 > limiteMin) trInfo.textContent = 'Atenção: o áudio "' + arquivo.name + '" tem mais de ' + limiteMin + ' minutos, que é o limite por ' + (gravado ? 'gravação' : 'arquivo') + '.';
+        });
+      }
+      return true;
     }
-    // Desistir do arquivo (escolhido ou gravado) antes de transcrever.
-    document.getElementById('transcricaoArquivoLimparBtn').addEventListener('click', async () => {
-      const gravado = Boolean(trUltimaGravacao && trArquivoMostrado === trUltimaGravacao.arquivo);
-      // Descartar o áudio também apaga tudo o que veio dele ou foi preenchido para ele: o texto transcrito, o corrigido, o resumo, o tipo de áudio e os dados do áudio.
+
+    // Tira um arquivo da lista (com um só arquivo, é o mesmo que Descartar todos).
+    async function trListaDescartar(item) {
+      if (trControle || !trLista.includes(item)) return;
+      if (trLista.length === 1) return trDescartarTodos();
+      const aviso = item.gravado ? 'Descartar esta gravação? Se você não a salvou no aparelho, ela não fica guardada em nenhum lugar.'
+        : item.estado === 'pronto' ? 'Tirar este arquivo da lista? O texto que já foi transcrito dele continua no campo.' : '';
+      if (aviso && !(await askConfirm(aviso, 'Descartar'))) return;
+      if (trControle || !trLista.includes(item)) return;
+      trLista = trLista.filter(x => x !== item);
+      if (trUltimaGravacao && trUltimaGravacao.arquivo === item.arquivo) trGravadaLimpar();
+      trArquivoAtual = trLista[0].arquivo;
+      trMesmoAplicar();
+      trListaRender();
+      trAtualizarBotoes();
+      trInfo.textContent = 'Arquivo retirado da lista.';
+    }
+
+    // Descartar todos os arquivos também apaga tudo o que veio deles ou foi preenchido para eles: o texto transcrito, o corrigido, o resumo, o tipo de áudio e os dados do áudio.
+    async function trDescartarTodos() {
+      const gravado = trLista.some(i => i.gravado);
       const comTexto = Boolean(trTexto.value.trim() || trCorrigido.value.trim() || trResumo.value.trim());
-      const aviso = (gravado ? 'Descartar esta gravação? Se você não a salvou no aparelho, ela não fica guardada em nenhum lugar.' : 'Descartar este arquivo?') +
+      const varios = trLista.length > 1;
+      const aviso = (varios ? 'Descartar todos os arquivos da lista?' : gravado ? 'Descartar esta gravação? Se você não a salvou no aparelho, ela não fica guardada em nenhum lugar.' : 'Descartar este arquivo?') +
         ' O tipo de áudio, os dados do áudio' + (comTexto ? ', o texto transcrito, o corrigido e o resumo' : '') + ' também serão apagados.';
-      if ((gravado || comTexto) && !(await askConfirm(aviso, 'Descartar'))) return;
-      if (trControle) trControle.abort(); // desistiu do arquivo: para a transcrição (ou correção e resumo) em andamento
+      if ((varios || gravado || comTexto) && !(await askConfirm(aviso, 'Descartar'))) return;
+      if (trControle) trControle.abort(); // desistiu dos arquivos: para a transcrição (ou correção e resumo) em andamento
       trArquivoAtual = null;
       trMesmoAplicar();
       trLimparCampos();
-      trInfo.textContent = gravado ? 'Gravação descartada.' : 'Arquivo retirado. Nada foi enviado.';
-    });
+      trInfo.textContent = varios ? 'Arquivos retirados. Nada foi enviado.' : gravado ? 'Gravação descartada.' : 'Arquivo retirado. Nada foi enviado.';
+    }
+    document.getElementById('transcricaoArquivoLimparBtn').addEventListener('click', trDescartarTodos);
+    trArquivo.multiple = true; // dá para escolher vários arquivos de uma vez
+    document.getElementById('transcricaoArquivoAdicionarBtn').addEventListener('click', () => trArquivo.click());
     trEscolher.addEventListener('click', () => trArquivo.click());
     trArquivo.addEventListener('change', () => {
-      const arquivo = trArquivo.files && trArquivo.files[0];
+      const arquivos = Array.from(trArquivo.files || []);
       trArquivo.value = '';
-      if (arquivo) trPendenteMostrar(arquivo);
+      let sobrou = 0;
+      arquivos.forEach(arquivo => { if (!trListaAdicionar(arquivo)) sobrou++; });
+      if (sobrou) trInfo.textContent = 'A lista aceita até ' + trLimites.maxArquivos + ' arquivos por vez: ' + sobrou + (sobrou === 1 ? ' arquivo não foi adicionado.' : ' arquivos não foram adicionados.');
     });
     trIniciar.addEventListener('click', () => {
-      const arquivo = trPendente;
-      if (!arquivo) return;
-      trPendente = null; // o card com os dados do arquivo continua à mostra durante a transcrição, a correção e o resumo
-      trAtualizarBotoes();
-      trTranscrever(arquivo);
+      if (!trListaTemPendente()) return;
+      trTranscreverLista();
     });
     [trCancelar, trCancelarCorrigir, trCancelarResumir].forEach(b => b.addEventListener('click', () => { if (trControle) trControle.abort(); }));
 
@@ -19078,7 +19181,8 @@ function saveTemplatesToStorage() {
       trGravada.hidden = false;
       trAtualizarBotoes();
       const aviso = estado.motivo || (interrompida ? 'O aparelho parou a gravação; usei o que foi gravado.' : '');
-      trPendenteMostrar(arquivo, { gravado: true, duracaoS: duracaoMs / 1000 });
+      trListaAdicionar(arquivo, { gravado: true, duracaoS: duracaoMs / 1000 });
+      trInfo.textContent = 'Gravação pronta. Se quiser, salve a gravação no aparelho; depois toque em Iniciar a transcrição.';
       if (aviso) trInfo.textContent = aviso + ' ' + trInfo.textContent;
     }
 
@@ -19154,7 +19258,7 @@ function saveTemplatesToStorage() {
     // Os contêineres de "Corrigir com a IA" e "Resumir com a IA" só aparecem quando há texto transcrito (ou um resultado deles ainda na tela).
     const trPassosAtualizar = () => {
       const tem = Boolean(trTexto.value.trim());
-      trPassoTexto.hidden = !(trPendente || tem || (trControle && trOperacao === 'transcrever'));
+      trPassoTexto.hidden = !(trListaTemPendente() || tem || (trControle && trOperacao === 'transcrever'));
       trCorrigir.closest('details').hidden = !(tem || trCorrigido.value.trim());
       trResumir.closest('details').hidden = !(tem || trResumo.value.trim());
     };
