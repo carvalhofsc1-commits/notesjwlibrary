@@ -249,18 +249,20 @@ function validarOpcoes(opcoes) {
   };
 }
 
-// Texto acima do limite recomendado da Sugerir formatação: o app avisa e pergunta; se o usuário confirma, o pedido vai com "textoLongo" e vale até
-// 5 vezes o limite (no máximo 30000 caracteres e 500 linhas). O app usa a mesma conta (limiteDoTextoLongo, em app.js).
+// Texto acima do limite recomendado da Sugerir formatação e da resposta do texto colado: o app avisa e pergunta; se o usuário confirma, o pedido
+// vai com "textoLongo" e vale até 5 vezes o limite (no máximo 30000 caracteres e 500 linhas). O app usa a mesma conta (limiteDoTextoLongo, em app.js).
 const limiteDoTextoLongo = (chars, linhas) => ({ chars: Math.min(chars * 5, 30000), linhas: Math.min(linhas * 5, 500) });
 
 function validarEntrada(body, L) {
   if (!body || typeof body !== "object") return null;
 
   const tarefa = body.tarefa === "sentinela" ? "sentinela" : "formatar";
-  const longo = tarefa === "formatar" && body.textoLongo === true;
-  const teto = limiteDoTextoLongo(L.maxCharsFormatacao, L.maxLinhasFormatacao);
-  const maxChars = tarefa === "sentinela" ? L.maxCharsSentinela : longo ? teto.chars : L.maxCharsFormatacao;
-  const maxLinhas = tarefa === "sentinela" ? L.maxLinhasSentinela : longo ? teto.linhas : L.maxLinhasFormatacao;
+  const longo = body.textoLongo === true;
+  const baseChars = tarefa === "sentinela" ? L.maxCharsSentinela : L.maxCharsFormatacao;
+  const baseLinhas = tarefa === "sentinela" ? L.maxLinhasSentinela : L.maxLinhasFormatacao;
+  const teto = limiteDoTextoLongo(baseChars, baseLinhas);
+  const maxChars = longo ? teto.chars : baseChars;
+  const maxLinhas = longo ? teto.linhas : baseLinhas;
 
   const { linhas, modelos } = body;
   if (!Array.isArray(linhas) || !Array.isArray(modelos)) return null;
@@ -805,7 +807,7 @@ function tratarErro(e, res) {
 // Escreve as respostas do estudo a partir de um texto com as perguntas e os parágrafos: o colado pelo usuário
 // (Opção 2) ou o lido pelo servidor no wol.jw.org (Opção 1). A IA pensa antes de responder (o texto é curto).
 // Devolve { itens, uso } ou null se a IA não conseguiu gerar as respostas.
-async function escreverRespostas({ rotulo, texto, escopo, opcoes, modo, ajuste, anteriores, sep, P, tarefa = "sentinela" }) {
+async function escreverRespostas({ rotulo, texto, escopo, opcoes, modo, ajuste, anteriores, sep, P, tarefa = "sentinela", longo = false }) {
   let mensagem =
     blocoOrientacao(opcoes, ajuste, P) +
     preferenciasDaResposta(opcoes, P, sep) +
@@ -823,12 +825,12 @@ async function escreverRespostas({ rotulo, texto, escopo, opcoes, modo, ajuste, 
   }
 
   const permitidos = estilosDe(opcoes);
-  const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 90_000) });
+  const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, longo ? 130_000 : 90_000) });
   const inicio = Date.now();
   const resposta = await chamarIa(
     client,
     P,
-    { max_tokens: 12000 /* o raciocínio também conta aqui */, system: P.sistemaSentinela, messages: [{ role: "user", content: mensagem }] },
+    { max_tokens: longo ? 16000 : 12000 /* o raciocínio também conta aqui */, system: P.sistemaSentinela, messages: [{ role: "user", content: mensagem }] },
     { schema: SaidaSentinela, tarefa }
   );
   const uso = {
@@ -848,7 +850,7 @@ async function escreverRespostas({ rotulo, texto, escopo, opcoes, modo, ajuste, 
   return { itens, uso };
 }
 
-async function responderSentinela(res, { linhas, opcoes, modo, ajuste, anteriores }, P) {
+async function responderSentinela(res, { linhas, opcoes, modo, ajuste, anteriores, longo }, P) {
   const sep = modoSeparacao(opcoes, ajuste);
   // A consulta às fontes não exige o código de pesquisa (o código vale só para a leitura do wol.jw.org).
   if (consultaPedida(opcoes) && !fontesConfiguradas()) return erro(res, 503, "A consulta às fontes ainda não está configurada no servidor.");
@@ -856,7 +858,7 @@ async function responderSentinela(res, { linhas, opcoes, modo, ajuste, anteriore
   precarregarFontes({ biblia: true, perspicaz: opcoes.consultarPerspicaz });
 
   try {
-    const { itens, uso } = await escreverRespostas({ rotulo: "TEXTO COLADO", texto: linhas.join("\n"), opcoes, modo, ajuste, anteriores, sep, P });
+    const { itens, uso } = await escreverRespostas({ rotulo: "TEXTO COLADO", texto: linhas.join("\n"), opcoes, modo, ajuste, anteriores, sep, P, longo });
     console.log("Texto colado:", JSON.stringify(uso));
     if (!itens) return erro(res, 502, "A IA não conseguiu gerar as respostas para este texto.");
     const memoriaUsada = memoriaUsadaAgora();

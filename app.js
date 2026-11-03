@@ -7472,7 +7472,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.56'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.57'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -10497,6 +10497,96 @@ function saveTemplatesToStorage() {
 
 
 
+    // Caixinha flutuante junto do trecho selecionado no campo do texto, com negrito, itálico e negrito+itálico: em texto longo evita rolar até os
+    // botões da barra. Os botões dela só repassam o clique para os botões de cima (mesmas regras, inclusive quando a fonte não tem a opção).
+    const selecaoCaixa = document.createElement('div');
+    selecaoCaixa.id = 'selecaoCaixa';
+    selecaoCaixa.className = 'selecao-caixa';
+    selecaoCaixa.hidden = true;
+    selecaoCaixa.setAttribute('role', 'toolbar');
+    selecaoCaixa.setAttribute('aria-label', 'Formatar o trecho selecionado');
+    const selecaoBotoes = [['quickBoldBtn', 'Negrito'], ['quickItalicBtn', 'Itálico'], ['quickBoldItalicBtn', 'Negrito e itálico']].map(([id, nome]) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'selecao-botao';
+      b.dataset.alvo = id;
+      b.title = nome;
+      b.setAttribute('aria-label', nome);
+      selecaoCaixa.appendChild(b);
+      return b;
+    });
+    document.body.appendChild(selecaoCaixa);
+    // O toque na caixinha não tira o foco do campo (senão a seleção some antes do clique).
+    ['mousedown', 'pointerdown', 'touchstart'].forEach(ev => selecaoCaixa.addEventListener(ev, e => e.preventDefault(), { passive: false }));
+    selecaoCaixa.addEventListener('click', e => {
+      const b = e.target.closest('.selecao-botao');
+      if (!b) return;
+      const alvo = document.getElementById(b.dataset.alvo);
+      if (alvo) alvo.click();
+      setTimeout(selecaoCaixaMostrar, 0); // a seleção continua (o texto mudou de tamanho): a caixinha acompanha
+    });
+
+    // Posição (x, y, altura da linha) do caractere "pos" do campo, medida num espelho invisível do texto.
+    function campoPosicaoDoCaractere(campo, pos) {
+      const cs = getComputedStyle(campo);
+      const espelho = document.createElement('div');
+      ['boxSizing', 'width', 'fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'letterSpacing', 'lineHeight', 'textTransform', 'wordSpacing', 'textIndent',
+        'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth', 'borderStyle', 'tabSize']
+        .forEach(p => { espelho.style[p] = cs[p]; });
+      espelho.style.position = 'absolute';
+      espelho.style.visibility = 'hidden';
+      espelho.style.top = '0';
+      espelho.style.left = '-9999px';
+      espelho.style.whiteSpace = 'pre-wrap';
+      espelho.style.overflowWrap = 'break-word';
+      espelho.style.overflow = 'hidden';
+      espelho.textContent = campo.value.slice(0, pos);
+      const marca = document.createElement('span');
+      marca.textContent = campo.value.slice(pos, pos + 1) || '.';
+      espelho.appendChild(marca);
+      document.body.appendChild(espelho);
+      const linha = parseFloat(cs.lineHeight) || (parseFloat(cs.fontSize) || 16) * 1.3;
+      const r = { x: marca.offsetLeft, y: marca.offsetTop, h: linha };
+      espelho.remove();
+      return r;
+    }
+
+    function selecaoCaixaEsconder() { selecaoCaixa.hidden = true; }
+
+    function selecaoCaixaMostrar() {
+      if (document.activeElement !== input || input.selectionStart === input.selectionEnd || input.disabled) return selecaoCaixaEsconder();
+      if (!input.value.slice(input.selectionStart, input.selectionEnd).trim()) return selecaoCaixaEsconder();
+      selecaoBotoes.forEach(b => {
+        const alvo = document.getElementById(b.dataset.alvo);
+        b.textContent = alvo ? alvo.textContent : '';
+        b.disabled = !alvo || alvo.disabled;
+      });
+      const ret = input.getBoundingClientRect();
+      const p = campoPosicaoDoCaractere(input, input.selectionEnd);
+      const toque = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+      let x = ret.left + p.x - input.scrollLeft;
+      let y = ret.top + p.y - input.scrollTop; // topo da linha onde a seleção termina
+      if (y < ret.top - p.h || y > ret.bottom || y + p.h < 0 || y > window.innerHeight) return selecaoCaixaEsconder(); // o fim da seleção está fora da parte visível do campo ou da tela
+      selecaoCaixa.hidden = false;
+      const w = selecaoCaixa.offsetWidth, h = selecaoCaixa.offsetHeight;
+      const folga = toque ? 30 : 6; // no celular o sistema põe as alças da seleção logo abaixo da linha
+      let topo = y + p.h + folga;
+      if (topo + h > window.innerHeight - 8) topo = Math.max(8, y - h - (toque ? 46 : 6)); // sem espaço embaixo: vai para cima (no celular acima do menu do sistema)
+      x = Math.max(8, Math.min(x, window.innerWidth - w - 8));
+      selecaoCaixa.style.left = x + 'px';
+      selecaoCaixa.style.top = topo + 'px';
+    }
+
+    let selecaoCaixaTimer = null;
+    document.addEventListener('selectionchange', () => {
+      clearTimeout(selecaoCaixaTimer);
+      selecaoCaixaTimer = setTimeout(selecaoCaixaMostrar, 120);
+    });
+    input.addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== input) selecaoCaixaEsconder(); }, 150));
+    input.addEventListener('scroll', selecaoCaixaMostrar, { passive: true });
+    window.addEventListener('scroll', selecaoCaixaMostrar, { passive: true });
+    window.addEventListener('resize', selecaoCaixaMostrar);
+
     document.getElementById('quickBoldBtn').addEventListener('click', () => quickFormat('bold'));
     document.getElementById('quickItalicBtn').addEventListener('click', () => quickFormat('italic'));
     document.getElementById('quickBoldItalicBtn').addEventListener('click', () => quickFormat('boldItalic'));
@@ -12908,15 +12998,22 @@ function saveTemplatesToStorage() {
       updateAiControls();
 
       if (!lines.length) return setAiStatus('Cole no campo "Texto original" os parágrafos e perguntas do estudo.', true);
-      if (totalChars > AI_SENTINELA_MAX_CHARS || lines.length > AI_SENTINELA_MAX_LINES) {
-        return setAiStatus('Texto grande demais (máximo ' + AI_SENTINELA_MAX_CHARS + ' caracteres e ' + AI_SENTINELA_MAX_LINES + ' linhas). Cole menos parágrafos por vez.', true);
+      // Acima do recomendado: avisa e pergunta (só passa de um teto maior, que o servidor também confere).
+      const teto = limiteDoTextoLongo(AI_SENTINELA_MAX_CHARS, AI_SENTINELA_MAX_LINES);
+      const textoLongo = totalChars > AI_SENTINELA_MAX_CHARS || lines.length > AI_SENTINELA_MAX_LINES;
+      if (totalChars > teto.chars || lines.length > teto.linhas) {
+        return setAiStatus('Texto grande demais (máximo ' + teto.chars + ' caracteres e ' + teto.linhas + ' linhas). Cole menos parágrafos por vez.', true);
       }
       if (!navigator.onLine) return setAiStatus('Sem conexão com a internet.', true);
+      if (textoLongo && !(await askConfirm('Este texto é longo: ' + totalChars + ' caracteres e ' + lines.length + ' linhas (o recomendado é até ' + AI_SENTINELA_MAX_CHARS + ' caracteres e ' + AI_SENTINELA_MAX_LINES + ' linhas). A resposta pode demorar mais, custar mais e vir menos caprichada. Deseja responder mesmo assim?', 'Texto longo', { ok: 'Responder mesmo assim', cancel: 'Cancelar' }))) {
+        return setAiStatus('Resposta cancelada. Nada foi enviado.', false);
+      }
 
       if (!aiAppliedAny) aiBaseText = input.value;
       saveAiOptions();
 
       const payload = { tarefa: 'sentinela', codigo: codigoAcessoSalvo(), linhas: lines, modelos: [], opcoes: readAiOptions() };
+      if (textoLongo) payload.textoLongo = true;
       if (mode && hadPrevious) {
         payload.modo = mode;
         payload.anteriores = { itens: aiSentinelaRaw };

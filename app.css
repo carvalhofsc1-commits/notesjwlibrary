@@ -2271,6 +2271,35 @@
       border-color: var(--tint1-border);
     }
 
+    /* Caixinha de negrito, itálico e negrito+itálico junto do trecho selecionado (app.js, selecaoCaixa). */
+    .selecao-caixa {
+      position: fixed;
+      z-index: 60;
+      display: flex;
+      gap: 4px;
+      padding: 4px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, .22);
+    }
+
+    .selecao-caixa[hidden] {
+      display: none;
+    }
+
+    .selecao-caixa .selecao-botao {
+      min-width: 46px;
+      min-height: 40px;
+      padding: 4px 10px;
+      font-size: 1.05rem;
+      border-radius: 9px;
+    }
+
+    .selecao-caixa .selecao-botao:disabled {
+      opacity: .4;
+    }
+
     .texto-estatisticas {
       margin: 4px 2px 0;
       font-size: .7rem;

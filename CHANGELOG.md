@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.57
+
+Resposta resumida do texto colado: texto acima do limite recomendado também só pede confirmação em vez de bloquear (até 5 vezes o limite). Novo: ao selecionar um trecho no campo do texto, uma caixinha com negrito, itálico e negrito+itálico aparece junto da seleção, para não precisar rolar até os botões da barra em textos longos.
+
 ## 6.4.56
 
 Sugerir formatação com IA: texto acima do limite recomendado não é mais bloqueado; o app avisa o tamanho e pergunta se deseja formatar mesmo assim (vale até 5 vezes o limite, no máximo 30000 caracteres e 500 linhas). Novo: sob o campo do texto, estatísticas discretas (palavras, caracteres, linhas, parágrafos e tempo de leitura em voz alta).
