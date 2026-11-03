@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.72
+
+Áudio em texto: (1) a transcrição sobe até 3 trechos ao mesmo tempo; (2) na correção, as informações do áudio vão só na primeira parte e as demais usam um prompt curto; (3) o resumo usa o texto corrigido quando existir, senão a transcrição bruta (corrigir continua opcional).
+
 ## 6.4.71
 
 Instruções adicionais para a IA (campo de cada seção, inclusive a tela de esboços): o limite de 800 caracteres foi retirado; o campo aceita tudo o que for digitado (o servidor só põe um teto alto de 30000 caracteres).

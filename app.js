@@ -7480,7 +7480,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.71'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.72'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -18750,7 +18750,36 @@ function saveTemplatesToStorage() {
 
     const trNomeSemExtensao = arquivo => String(arquivo.name || '').replace(/\.[^.]+$/, '');
 
-    // Transcreve um arquivo da lista (decodifica, corta em trechos de 50 s e envia cada um) e põe o texto no fim do campo, com uma linha com o nome do
+    // Até 3 trechos de STT ao mesmo tempo (ordem do texto preservada na montagem).
+    const TRANSCRICAO_PARALELO = 3;
+
+    // Roda fn(índice) para 0…total-1 com no máximo `paralelo` em voo; respeita cancelamento.
+    async function trMapaParalelo(total, paralelo, fn) {
+      const saidas = new Array(total);
+      let proximo = 0;
+      let falha = null;
+      const trabalhadores = Array.from({ length: Math.min(paralelo, total) }, async () => {
+        while (!falha) {
+          if (trControle && trControle.signal.aborted) {
+            falha = { cancelado: true };
+            return;
+          }
+          const n = proximo++;
+          if (n >= total) return;
+          try {
+            saidas[n] = await fn(n);
+          } catch (e) {
+            falha = e;
+            return;
+          }
+        }
+      });
+      await Promise.all(trabalhadores);
+      if (falha) throw falha;
+      return saidas;
+    }
+
+    // Transcreve um arquivo da lista (decodifica, corta em trechos de 50 s e envia até 3 de uma vez) e põe o texto no fim do campo, com uma linha com o nome do
     // arquivo quando há mais de um na lista. Devolve true se terminou; false se deu erro ou se a pessoa cancelou (o item volta a poder ser iniciado).
     async function trTranscreverItem(item) {
       const arquivo = item.arquivo;
@@ -18782,30 +18811,49 @@ function saveTemplatesToStorage() {
       trProgresso.value = 0;
       const antes = trTexto.value.replace(/\s+$/, '');
       const prefixo = (antes ? antes + '\n\n' : '') + (trLista.length > 1 ? '— ' + (item.gravado ? trNomeDoArquivoSalvo(arquivo) : arquivo.name) + ' —\n' : '');
-      const partes = [];
-      for (let n = 0; n < total; n++) {
-        if (trControle.signal.aborted) {
-          item.estado = 'pendente';
-          trInfo.textContent = 'Cancelado. O que já foi transcrito está abaixo.';
-          return false;
+      const partes = new Array(total); // índice = trecho; undefined = ainda em andamento; '' = silêncio
+      let feitos = 0;
+      // Só junta do início até o primeiro buraco (trechos paralelos podem terminar fora de ordem).
+      const montarTexto = () => {
+        const comFala = [];
+        for (let i = 0; i < partes.length; i++) {
+          if (partes[i] === undefined) break;
+          if (partes[i]) comFala.push(partes[i]);
         }
-        trInfo.textContent = '🎙️ ' + rotulo + 'transcrevendo o trecho ' + (n + 1) + ' de ' + total + '…';
-        const { base64, pico } = trParaBase64(amostras.subarray(n * porTrecho, (n + 1) * porTrecho));
-        if (pico >= 0.005) { // trecho em silêncio não é enviado (não gasta)
-          let r = await trPost({ acao: 'trecho', codigoTexto: codigoTextoSalvo(), audio: base64 }, trControle.signal);
-          if (!r.ok && !r.cancelado && (r.status === 0 || r.status >= 500)) r = await trPost({ acao: 'trecho', codigoTexto: codigoTextoSalvo(), audio: base64 }, trControle.signal); // uma nova tentativa
-          if (!r.ok) {
-            item.estado = r.cancelado ? 'pendente' : 'erro';
-            trInfo.textContent = rotulo + trMensagem(r, 'Não foi possível transcrever o trecho ' + (n + 1) + '.') + (partes.length ? ' O que já foi transcrito está abaixo.' : '');
-            return false;
+        if (comFala.length) trTexto.value = prefixo + comFala.join('\n\n');
+      };
+      try {
+        await trMapaParalelo(total, TRANSCRICAO_PARALELO, async n => {
+          trInfo.textContent = '🎙️ ' + rotulo + 'transcrevendo… ' + feitos + ' de ' + total + ' trechos (até ' + TRANSCRICAO_PARALELO + ' ao mesmo tempo)';
+          const { base64, pico } = trParaBase64(amostras.subarray(n * porTrecho, (n + 1) * porTrecho));
+          let texto = '';
+          if (pico >= 0.005) { // trecho em silêncio não é enviado (não gasta)
+            let r = await trPost({ acao: 'trecho', codigoTexto: codigoTextoSalvo(), audio: base64 }, trControle.signal);
+            if (!r.ok && !r.cancelado && (r.status === 0 || r.status >= 500)) r = await trPost({ acao: 'trecho', codigoTexto: codigoTextoSalvo(), audio: base64 }, trControle.signal); // uma nova tentativa
+            if (!r.ok) {
+              const err = new Error(trMensagem(r, 'Não foi possível transcrever o trecho ' + (n + 1) + '.'));
+              err.cancelado = r.cancelado;
+              err.status = r.status;
+              throw err;
+            }
+            texto = (r.dados && r.dados.texto) || '';
           }
-          if (r.dados.texto) partes.push(r.dados.texto);
-          if (partes.length) trTexto.value = prefixo + partes.join('\n\n');
-        }
-        trProgresso.value = n + 1;
+          partes[n] = texto;
+          feitos++;
+          trProgresso.value = feitos;
+          montarTexto();
+          return texto;
+        });
+      } catch (e) {
+        montarTexto();
+        item.estado = e && e.cancelado ? 'pendente' : 'erro';
+        const jaTem = partes.some(p => p);
+        trInfo.textContent = (e && e.cancelado ? 'Cancelado.' : rotulo + ((e && e.message) || 'Falha na transcrição.')) + (jaTem ? ' O que já foi transcrito está abaixo.' : '');
+        return false;
       }
+      montarTexto();
       item.estado = 'pronto';
-      item.semFala = !partes.length;
+      item.semFala = !partes.some(p => p);
       trItemBdApagar(item); // o texto já existe: a parte não precisa mais ficar guardada
       return true;
     }
@@ -19432,16 +19480,20 @@ function saveTemplatesToStorage() {
     trResumir.addEventListener('click', async () => {
       if (!codigoTextoSalvo()) return (trInfo.textContent = 'Salve o código de texto em Ajustes → 🔐 Autorização de acessos.');
       if (!(await trConsentimento())) return;
+      // Preferência: texto já corrigido pela IA. Sem correção (opcional), resume a transcrição bruta.
+      const fonteResumo = trCorrigido.value.trim() || trTexto.value.trim();
+      if (fonteResumo.length < 40) return (trInfo.textContent = 'Texto curto demais para resumir.');
       trControle = new AbortController();
       trOperacao = 'resumir';
       trResumirProgresso.hidden = false; // indicador girando: a IA resume de uma vez, sem andamento por porcentagem
       trAtualizarBotoes();
-      trInfo.textContent = '✨ A IA está resumindo…';
+      const usouCorrigido = Boolean(trCorrigido.value.trim());
+      trInfo.textContent = usouCorrigido ? '✨ A IA está resumindo o texto corrigido…' : '✨ A IA está resumindo a transcrição…';
       try {
-        const r = await trPost({ acao: 'resumo', codigoTexto: codigoTextoSalvo(), texto: trTexto.value, contexto: (trDadosTexto() + ' ' + trContexto.value).trim(), instrucoes: trInstrucoes.value }, trControle.signal);
+        const r = await trPost({ acao: 'resumo', codigoTexto: codigoTextoSalvo(), texto: fonteResumo, contexto: (trDadosTexto() + ' ' + trContexto.value).trim(), instrucoes: trInstrucoes.value }, trControle.signal);
         if (!r.ok) return (trInfo.textContent = trMensagem(r, 'Não foi possível resumir agora.'));
         trResumo.value = r.dados.resumo;
-        trInfo.textContent = '✅ Resumo pronto. A IA pode errar: confira com o texto.';
+        trInfo.textContent = '✅ Resumo pronto' + (usouCorrigido ? ' (a partir do texto corrigido)' : '') + '. A IA pode errar: confira com o texto.';
       } finally {
         trControle = null;
         trResumirProgresso.hidden = true;
@@ -19509,12 +19561,16 @@ function saveTemplatesToStorage() {
       trCorrigirProgresso.hidden = false;
       trAtualizarBotoes();
       const partes = [];
+      // Contexto só na parte 1: nas demais o servidor usa o prompt curto de continuação (economia de tokens).
+      const contextoUmaVez = (trDadosTexto() + ' ' + trContexto.value).trim();
       try {
         for (let n = 0; n < blocos.length; n++) {
           if (trControle.signal.aborted) return (trInfo.textContent = 'Cancelado. O que já foi corrigido está abaixo.');
           trInfo.textContent = '✍️ A IA está corrigindo a parte ' + (n + 1) + ' de ' + blocos.length + '…';
           trCorrigirProgresso.querySelector('.transcricao-rodando-txt').textContent = 'A IA está corrigindo a parte ' + (n + 1) + ' de ' + blocos.length + '…';
-          const r = await trPost({ acao: 'corrigir', codigoTexto: codigoTextoSalvo(), texto: blocos[n], contexto: (trDadosTexto() + ' ' + trContexto.value).trim(), parte: n + 1, total: blocos.length }, trControle.signal);
+          const corpo = { acao: 'corrigir', codigoTexto: codigoTextoSalvo(), texto: blocos[n], parte: n + 1, total: blocos.length };
+          if (n === 0 && contextoUmaVez) corpo.contexto = contextoUmaVez;
+          const r = await trPost(corpo, trControle.signal);
           if (!r.ok) return (trInfo.textContent = trMensagem(r, 'Não foi possível corrigir a parte ' + (n + 1) + '.') + (partes.length ? ' O que já foi corrigido está abaixo.' : ''));
           partes.push(r.dados.texto);
           trCorrigido.value = partes.join('\n\n');
