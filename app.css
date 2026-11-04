@@ -10093,7 +10093,7 @@ details.transcricao-bloco:not([open]) {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 0 10px 10px;
+  padding: 10px 10px 10px; /* respiro entre a barra de progresso do grupo e o primeiro capítulo */
 }
 .biblia-cap {
   display: grid;

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.18
+
+Leitura diária da Bíblia: mais espaço entre a barra de progresso do grupo aberto e o primeiro capítulo.
+
 ## 6.5.17
 
 Leitura diária da Bíblia: cada capítulo ganha o link "🔗 WOL", que abre exatamente esse capítulo na Bíblia de estudo do wol.jw.org (nos capítulos partidos, como Salmos 119:1-63, abre o capítulo inteiro).
