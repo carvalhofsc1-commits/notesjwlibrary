@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.24
+
+Leitura diária da Bíblia: o fundo do capítulo lido passa de verde para azul claro.
+
 ## 6.5.23
 
 Leitura diária da Bíblia: ao marcar um capítulo como lido, o fundo do cartão dele fica verde suave.

@@ -10111,8 +10111,8 @@ details.transcricao-bloco:not([open]) {
   background: var(--card);
 }
 .biblia-cap.lido {
-  border-color: color-mix(in srgb, #16a34a 45%, var(--line));
-  background: color-mix(in srgb, #16a34a 20%, var(--card)); /* capítulo lido: fundo verde suave */
+  border-color: color-mix(in srgb, #3b82f6 45%, var(--line));
+  background: color-mix(in srgb, #60a5fa 24%, var(--card)); /* capítulo lido: fundo azul claro */
 }
 .biblia-cap-rotulo {
   grid-column: 1 / -1;
