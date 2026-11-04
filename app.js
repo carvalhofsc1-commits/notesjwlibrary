@@ -7540,7 +7540,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.32'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.34'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -20650,6 +20650,7 @@ function saveTemplatesToStorage() {
     const bibliaResumoCopiarBtn = document.getElementById('bibliaResumoCopiarBtn');
     const bibliaResumoWordBtn = document.getElementById('bibliaResumoWordBtn');
     let bibliaResumoAlvo = null; // { item, cap } do resumo aberto no fim da tela
+    let bibliaSecaoEscolhida = false; // ao abrir a tela nenhuma seção está escolhida: só aparecem os botões das seções
     let bibliaProgAberto = true; // programação de leitura da seção expandida ou recolhida
     let bibliaEstado = { itens: {}, secao: '', soPendentes: false, resumos: {} }; // itens: { idDoCapitulo: { lido, lidaEm } }; resumos: { idDoCapitulo: texto }
     let bibliaPronto = false;
@@ -20710,13 +20711,13 @@ function saveTemplatesToStorage() {
         }
       });
       if (!lista.length) lista.push({ livro: item.livro, rotulo: 'todo', nome: item.titulo });
-      // Dentro do grupo de um livro só, a linha mostra "Capítulo N" (o livro já está no título do grupo).
+      // Dentro do grupo de um livro só, a linha mostra "Cap. N" (o livro já está no título do grupo).
       const umLivro = lista.every(c => c.livro === lista[0].livro);
       lista.forEach((c, i) => {
         c.id = item.id + '#' + (i + 1);
         const resto = c.nome.slice(c.livro.length + 1);
-        // "Capítulo N"; nos trechos de versículos (Salmos 119:1-63) fica só "119:1-63", que é o que cabe na linha.
-        c.curto = umLivro && c.nome !== c.livro ? (resto.includes(':') ? '' : 'Capítulo ') + resto : c.nome;
+        // "Cap. N"; nos trechos de versículos (Salmos 119:1-63) fica só "119:1-63", que é o que cabe na linha.
+        c.curto = umLivro && c.nome !== c.livro ? (resto.includes(':') ? '' : 'Cap. ') + resto : c.nome;
       });
       bibliaCapsCache.set(item.id, lista);
       return lista;
@@ -20909,6 +20910,7 @@ function saveTemplatesToStorage() {
         el.textContent = c.lidos + '/' + c.total;
         const btn = el.closest('.biblia-secao-btn');
         btn.classList.toggle('completa', c.total > 0 && c.lidos === c.total); // seção toda lida: fundo verde e ✔
+        if (s.id === bibliaEstado.secao) bibliaProgToggle.classList.toggle('completa', c.total > 0 && c.lidos === c.total);
         btn.querySelector('.biblia-secao-barra > span').style.width = (c.total ? (c.lidos / c.total) * 100 : 0).toFixed(1) + '%';
       });
     }
@@ -20923,7 +20925,7 @@ function saveTemplatesToStorage() {
       cont.classList.toggle('concluido', completo);
     }
 
-    function bibliaLinhaCapitulo(item, cap, det) {
+    function bibliaLinhaCapitulo(item, cap, det, origem) { // origem 'livros': a linha está na leitura por livros (det é o cartão do livro)
       const linha = document.createElement('div');
       const marca0 = bibliaMarcaDe(cap.id);
       linha.className = 'biblia-cap' + (marca0.lido ? ' lido' : '');
@@ -20965,7 +20967,7 @@ function saveTemplatesToStorage() {
       const tem = Boolean((bibliaEstado.resumos[cap.id] || '').trim());
       btn.textContent = tem ? 'Ver resumo' : '✨ Resumir';
       btn.classList.toggle('tem', tem);
-      btn.addEventListener('click', () => bibliaAbrirResumo(item, cap));
+      btn.addEventListener('click', () => bibliaAbrirResumo(item, cap, origem));
 
       check.addEventListener('change', () => {
         const m = bibliaMarcaDe(cap.id);
@@ -20976,7 +20978,13 @@ function saveTemplatesToStorage() {
         linha.classList.toggle('lido', m.lido);
         data.value = m.lido ? bibliaDataBR(m.lidaEm) : '';
         ajustarData();
-        bibliaAtualizarGrupo(det, item);
+        if (origem === 'livros') {
+          bibliaLivrosAtualizar(); // contagens dos livros e grupos, no lugar
+          bibliaRenderSecao(); // a lista da seção mostra a mesma marcação
+        } else {
+          bibliaAtualizarGrupo(det, item);
+          bibliaLivrosSincronizar();
+        }
         bibliaAtualizarProgresso();
       });
 
@@ -21021,8 +21029,8 @@ function saveTemplatesToStorage() {
       bibliaAutoAlturar(bibliaResumoTexto);
     }
 
-    function bibliaAbrirResumo(item, cap) {
-      bibliaResumoAlvo = { item, cap };
+    function bibliaAbrirResumo(item, cap, origem) {
+      bibliaResumoAlvo = { item, cap, origem: origem || '' };
       bibliaResumoTitulo.textContent = '✨ Resumo · ' + cap.nome;
       bibliaResumoTexto.value = bibliaEstado.resumos[cap.id] || '';
       const extra = document.getElementById('iaExtra_biblia'); // instruções adicionais: começam vazias a cada resumo e recolhidas
@@ -21032,7 +21040,7 @@ function saveTemplatesToStorage() {
         extra.closest('details').open = false;
       }
       bibliaResumoStatus.textContent = '';
-      bibliaProgDefinir(false); // a programação recolhe; o resumo abre no fim da tela
+      if (origem !== 'livros') bibliaProgDefinir(false); // a programação recolhe; o resumo abre no fim da tela
       bibliaResumoCaixa.hidden = false;
       bibliaResumoSincronizar();
       bibliaResumoCaixa.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -21043,6 +21051,12 @@ function saveTemplatesToStorage() {
       bibliaResumoAlvo = null;
       bibliaResumoCaixa.hidden = true;
       if (!voltar || !alvo) return;
+      if (alvo.origem === 'livros') { // vindo da leitura por livros: volta ao capítulo no livro (o botão passa a "Ver resumo")
+        bibliaLivrosRender();
+        const l = bibliaLivros.querySelector('[data-cap-id="' + alvo.cap.id + '"]');
+        if (l) l.scrollIntoView({ block: 'center' });
+        return;
+      }
       // Volta à programação, com o grupo do capítulo aberto (o botão do capítulo passa a "Ver resumo" se o resumo foi feito).
       bibliaProgDefinir(true);
       bibliaAbertos.add(alvo.item.id);
@@ -21175,9 +21189,157 @@ function saveTemplatesToStorage() {
       } catch (e) { /* sem canvas: fica como está */ }
     }
 
+    // ----- Leitura por livros, na ordem da Bíblia -----
+    // Usa as mesmas marcações da leitura por seções: cada capítulo do livro é o mesmo capítulo do programa (mesmo id), então marcar, a data e o
+    // resumo valem nos dois modos. Os capítulos de cada livro saem do próprio programa (que cobre a Bíblia toda).
+    const bibliaLivros = document.getElementById('bibliaLivros');
+    const BIBLIA_GRUPOS_LIVROS = [
+      { id: 'pentateuco', matiz: 35, nome: 'Pentateuco', icone: '📜', livros: ['Gênesis', 'Êxodo', 'Levítico', 'Números', 'Deuteronômio'] },
+      { id: 'conquista', matiz: 140, nome: 'Conquista da terra e juízes', icone: '🏞️', livros: ['Josué', 'Juízes', 'Rute'] },
+      { id: 'reis', matiz: 48, nome: 'História dos reis', icone: '👑', livros: ['1 Samuel', '2 Samuel', '1 Reis', '2 Reis', '1 Crônicas', '2 Crônicas'] },
+      { id: 'volta', matiz: 200, nome: 'Volta do exílio', icone: '🧱', livros: ['Esdras', 'Neemias', 'Ester'] },
+      { id: 'poesia', matiz: 330, nome: 'Poesia e sabedoria', icone: '🎶', livros: ['Jó', 'Salmos', 'Provérbios', 'Eclesiastes', 'Cântico de Salomão'] },
+      { id: 'maiores', matiz: 270, nome: 'Profetas maiores', icone: '📣', livros: ['Isaías', 'Jeremias', 'Lamentações', 'Ezequiel', 'Daniel'] },
+      { id: 'menores', matiz: 15, nome: 'Profetas menores', icone: '🔥', livros: ['Oseias', 'Joel', 'Amós', 'Obadias', 'Jonas', 'Miqueias', 'Naum', 'Habacuque', 'Sofonias', 'Ageu', 'Zacarias', 'Malaquias'] },
+      { id: 'evangelhos', matiz: 215, nome: 'Evangelhos', icone: BIBLIA_ICONES.jesus, livros: ['Mateus', 'Marcos', 'Lucas', 'João'] },
+      { id: 'atos', matiz: 165, nome: 'Atos', icone: '🌍', livros: ['Atos'] },
+      { id: 'paulo', matiz: 300, nome: 'Cartas de Paulo', icone: '✉️', livros: ['Romanos', '1 Coríntios', '2 Coríntios', 'Gálatas', 'Efésios', 'Filipenses', 'Colossenses', '1 Tessalonicenses', '2 Tessalonicenses', '1 Timóteo', '2 Timóteo', 'Tito', 'Filêmon', 'Hebreus'] },
+      { id: 'gerais', matiz: 90, nome: 'Outras cartas', icone: '📨', livros: ['Tiago', '1 Pedro', '2 Pedro', '1 João', '2 João', '3 João', 'Judas'] },
+      { id: 'apocalipse', matiz: 0, nome: 'Apocalipse', icone: '🔮', livros: ['Apocalipse'] }
+    ];
+    // Cor de fundo suave de cada livro: um matiz por grupo, com tom e intensidade um pouco diferentes de um livro para o outro.
+    function bibliaCorLivro(livro) {
+      for (const g of BIBLIA_GRUPOS_LIVROS) {
+        const i = g.livros.indexOf(livro);
+        if (i < 0) continue;
+        const n = g.livros.length;
+        const t = n > 1 ? i / (n - 1) : 0.5;
+        const matiz = (g.matiz + (t - 0.5) * 24 + 360) % 360;
+        return 'color-mix(in srgb, hsl(' + matiz.toFixed(0) + ' 75% 58%) ' + (9 + t * 10).toFixed(0) + '%, var(--card))';
+      }
+      return '';
+    }
+    const bibliaLivrosAbertos = new Set(); // livros abertos
+    const bibliaGruposLivrosAbertos = new Set(); // grupos de livros abertos
+    let bibliaLivrosIndice = null;
+    let bibliaLivrosPronto = false;
+
+    // livro → capítulos (n) → linhas do programa que o cobrem ({ item, cap }); o Salmo 119 tem duas linhas.
+    function bibliaIndiceLivros() {
+      if (bibliaLivrosIndice) return bibliaLivrosIndice;
+      const mapa = new Map();
+      bibliaTodosItens().forEach(item => bibliaCapitulos(item).forEach(cap => {
+        const n = parseInt(cap.rotulo, 10);
+        if (!n) return;
+        if (!mapa.has(cap.livro)) mapa.set(cap.livro, new Map());
+        const porCap = mapa.get(cap.livro);
+        if (!porCap.has(n)) porCap.set(n, []);
+        porCap.get(n).push({ item, cap });
+      }));
+      bibliaLivrosIndice = mapa;
+      return mapa;
+    }
+
+    function bibliaCapsDoLivro(livro) {
+      const porCap = bibliaIndiceLivros().get(livro);
+      return porCap ? [...porCap.keys()].sort((a, b) => a - b).map(n => ({ n, entradas: porCap.get(n) })) : [];
+    }
+
+    function bibliaContarLivros(livros) { // capítulos lidos: o capítulo conta só com todas as suas linhas marcadas
+      let total = 0;
+      let lidos = 0;
+      livros.forEach(l => bibliaCapsDoLivro(l).forEach(c => { total++; if (c.entradas.every(e => bibliaMarcaDe(e.cap.id).lido)) lidos++; }));
+      return { total, lidos };
+    }
+
+    function bibliaPintarContagem(det, livros) {
+      const c = bibliaContarLivros(livros);
+      const completo = c.total > 0 && c.lidos === c.total;
+      det.classList.toggle('lido', completo);
+      det.style.setProperty('--p', (c.total ? Math.round((c.lidos / c.total) * 100) : 0) + '%');
+      const cont = det.querySelector(':scope > summary .biblia-grupo-cont');
+      cont.textContent = completo ? '✔' : c.lidos + '/' + c.total;
+      cont.classList.toggle('concluido', completo);
+    }
+
+    function bibliaLivrosAtualizar() { // contagens no lugar (sem refazer as linhas que o usuário está tocando)
+      bibliaLivros.querySelectorAll('.biblia-livro').forEach(det => bibliaPintarContagem(det, [det.dataset.livro]));
+      bibliaLivros.querySelectorAll('.biblia-gl').forEach(det => bibliaPintarContagem(det, det.dataset.livros.split('|')));
+    }
+
+    function bibliaLivroCard(livro) {
+      const det = document.createElement('details');
+      det.className = 'biblia-grupo biblia-livro';
+      det.dataset.livro = livro;
+      det.style.setProperty('--liv-bg', bibliaCorLivro(livro));
+      const sum = document.createElement('summary');
+      const titulo = document.createElement('span');
+      titulo.className = 'biblia-grupo-titulo';
+      titulo.textContent = livro;
+      const cont = document.createElement('span');
+      cont.className = 'biblia-grupo-cont';
+      sum.append(titulo, cont);
+      const caps = document.createElement('div');
+      caps.className = 'biblia-caps';
+      det.append(sum, caps);
+      const preencher = () => { // as linhas nascem quando o livro abre (são 1.189 capítulos no total)
+        if (caps.childElementCount) return;
+        bibliaCapsDoLivro(livro).forEach(({ n, entradas }) => entradas.forEach(({ item, cap }) => {
+          const linha = { ...cap, curto: String(cap.rotulo).includes(':') ? cap.rotulo : 'Cap. ' + n };
+          caps.appendChild(bibliaLinhaCapitulo(item, linha, det, 'livros'));
+        }));
+      };
+      det.addEventListener('toggle', () => {
+        if (det.open) { bibliaLivrosAbertos.add(livro); preencher(); } else bibliaLivrosAbertos.delete(livro);
+      });
+      det.open = bibliaLivrosAbertos.has(livro);
+      if (det.open) preencher();
+      bibliaPintarContagem(det, [livro]);
+      return det;
+    }
+
+    function bibliaLivrosRender() {
+      bibliaLivros.replaceChildren();
+      BIBLIA_GRUPOS_LIVROS.forEach(g => {
+        if (g.livros.length === 1) { // livro que forma um grupo sozinho (Atos, Apocalipse): o cartão do livro direto
+          bibliaLivros.appendChild(bibliaLivroCard(g.livros[0]));
+          return;
+        }
+        const det = document.createElement('details');
+        det.className = 'biblia-grupo biblia-gl';
+        det.dataset.livros = g.livros.join('|');
+        det.style.setProperty('--liv-bg', 'color-mix(in srgb, hsl(' + g.matiz + ' 75% 58%) 20%, var(--card))');
+        const sum = document.createElement('summary');
+        const titulo = document.createElement('span');
+        titulo.className = 'biblia-grupo-titulo';
+        const icone = document.createElement('span');
+        icone.className = 'biblia-gl-icone';
+        icone.setAttribute('aria-hidden', 'true');
+        icone.textContent = g.icone;
+        titulo.append(icone, g.nome);
+        const cont = document.createElement('span');
+        cont.className = 'biblia-grupo-cont';
+        sum.append(titulo, cont);
+        const lista = document.createElement('div');
+        lista.className = 'biblia-lista';
+        g.livros.forEach(l => lista.appendChild(bibliaLivroCard(l)));
+        det.append(sum, lista);
+        det.addEventListener('toggle', () => { if (det.open) bibliaGruposLivrosAbertos.add(g.id); else bibliaGruposLivrosAbertos.delete(g.id); });
+        det.open = bibliaGruposLivrosAbertos.has(g.id);
+        bibliaPintarContagem(det, g.livros);
+        bibliaLivros.appendChild(det);
+      });
+      bibliaLivrosPronto = true;
+    }
+
+    function bibliaLivrosSincronizar() { // uma marcação feita na leitura por seções: a leitura por livros, se já montada, é refeita
+      if (bibliaLivrosPronto && document.getElementById('bibliaModoLivros').open) bibliaLivrosRender();
+    }
+
     function bibliaRenderSecao() {
       const secoes = BIBLIA_PROG.secoes || [];
-      const secao = secoes.find(s => s.id === bibliaEstado.secao) || secoes[0];
+      const secao = bibliaSecaoEscolhida ? (secoes.find(s => s.id === bibliaEstado.secao) || secoes[0]) : null;
+      document.getElementById('bibliaProgCaixa').hidden = !secao; // sem seção escolhida, a programação não aparece
       bibliaSoPendentes.checked = Boolean(bibliaEstado.soPendentes);
       bibliaLista.replaceChildren();
       bibliaSecoes.querySelectorAll('.biblia-secao-btn').forEach(b => {
@@ -21189,6 +21351,8 @@ function saveTemplatesToStorage() {
       bibliaEstado.secao = secao.id;
       bibliaSecaoIcone.textContent = BIBLIA_ICONES[secao.id] || '📖'; // o ícone fica à esquerda, separado do nome
       bibliaSecaoTitulo.textContent = secao.nome;
+      bibliaProgToggle.dataset.secao = secao.id; // o card de baixo usa a cor do botão da seção
+      bibliaProgToggle.classList.toggle('completa', (c => c.total > 0 && c.lidos === c.total)(bibliaContar(secao.itens || [])));
       bibliaIconeCentrar();
       const soPend = bibliaSoPendentes.checked;
       let mostrados = 0;
@@ -21198,7 +21362,9 @@ function saveTemplatesToStorage() {
         if (soPend && c.total > 0 && c.lidos === c.total) return;
         mostrados++;
         const det = document.createElement('details');
-        det.className = 'biblia-grupo';
+        det.className = 'biblia-grupo biblia-colorido';
+        const livroCor = item.livro || ((Array.isArray(item.refs) && item.refs[0]) || {}).livro || ''; // fundo suave do livro, o mesmo da leitura por livros
+        det.style.setProperty('--liv-bg', bibliaCorLivro(livroCor));
         det.open = bibliaAbertos.has(item.id);
         det.addEventListener('toggle', () => { if (det.open) bibliaAbertos.add(item.id); else bibliaAbertos.delete(item.id); });
         const sum = document.createElement('summary');
@@ -21248,6 +21414,7 @@ function saveTemplatesToStorage() {
         b.append(icone, nome, cont, barra, ok);
         b.addEventListener('click', () => {
           bibliaEstado.secao = s.id;
+          bibliaSecaoEscolhida = true;
           if (bibliaResumoAlvo) bibliaFecharResumo(false);
           bibliaProgDefinir(true); // ao escolher a seção, a programação abre expandida (o usuário pode recolher)
           bibliaRenderSecao();
@@ -21266,6 +21433,10 @@ function saveTemplatesToStorage() {
 
     function bibliaAoEntrar() {
       bibliaCarregarEstado();
+      // Cada vez que a tela abre: "Seções e temas" expandido, sem nenhuma seção escolhida, e a lista de livros recolhida.
+      bibliaSecaoEscolhida = false;
+      document.getElementById('bibliaModoSecoes').open = true;
+      document.getElementById('bibliaModoLivros').open = false;
       if (!bibliaPronto) {
         bibliaMontarSecoes();
         const ids = (BIBLIA_PROG.secoes || []).map(s => s.id);
@@ -21282,6 +21453,8 @@ function saveTemplatesToStorage() {
           bibliaRenderSecao();
         });
         bibliaProgToggle.addEventListener('click', () => bibliaProgDefinir(!bibliaProgAberto));
+        document.getElementById('bibliaModoLivros').addEventListener('toggle', e => { if (e.target.open) bibliaLivrosRender(); }); // sempre refeita ao abrir: traz as marcações e resumos de agora
+        document.getElementById('bibliaModoSecoes').addEventListener('toggle', e => { if (e.target.open) bibliaIconeCentrar(); }); // o ícone só se mede com a seção visível
         document.getElementById('bibliaResumoFecharBtn').addEventListener('click', () => bibliaFecharResumo(true));
         bibliaResumirBtn.addEventListener('click', () => { bibliaGerarResumo(); });
         bibliaResumoTexto.addEventListener('input', () => {

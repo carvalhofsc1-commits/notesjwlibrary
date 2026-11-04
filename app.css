@@ -9984,16 +9984,16 @@ details.transcricao-bloco:not([open]) {
   position: relative;
   --sec-bg: color-mix(in srgb, hsl(var(--h, 250) 75% 55%) 17%, var(--card)); /* um matiz suave para cada seção */
 }
-.biblia-secao-btn[data-secao="moises"] { --h: 38; }
-.biblia-secao-btn[data-secao="terra"] { --h: 195; }
-.biblia-secao-btn[data-secao="reis"] { --h: 56; }
-.biblia-secao-btn[data-secao="exilio"] { --h: 235; }
-.biblia-secao-btn[data-secao="canticos"] { --h: 285; }
-.biblia-secao-btn[data-secao="profetas"] { --h: 340; }
-.biblia-secao-btn[data-secao="jesus"] { --h: 8; }
-.biblia-secao-btn[data-secao="atos"] { --h: 172; }
-.biblia-secao-btn[data-secao="paulo"] { --h: 315; }
-.biblia-secao-btn[data-secao="outros"] { --h: 262; }
+:is(.biblia-secao-btn, .biblia-prog-toggle)[data-secao="moises"] { --h: 38; }
+:is(.biblia-secao-btn, .biblia-prog-toggle)[data-secao="terra"] { --h: 195; }
+:is(.biblia-secao-btn, .biblia-prog-toggle)[data-secao="reis"] { --h: 56; }
+:is(.biblia-secao-btn, .biblia-prog-toggle)[data-secao="exilio"] { --h: 235; }
+:is(.biblia-secao-btn, .biblia-prog-toggle)[data-secao="canticos"] { --h: 285; }
+:is(.biblia-secao-btn, .biblia-prog-toggle)[data-secao="profetas"] { --h: 340; }
+:is(.biblia-secao-btn, .biblia-prog-toggle)[data-secao="jesus"] { --h: 8; }
+:is(.biblia-secao-btn, .biblia-prog-toggle)[data-secao="atos"] { --h: 172; }
+:is(.biblia-secao-btn, .biblia-prog-toggle)[data-secao="paulo"] { --h: 315; }
+:is(.biblia-secao-btn, .biblia-prog-toggle)[data-secao="outros"] { --h: 262; }
 .biblia-secao-btn.completa {
   --sec-bg: color-mix(in srgb, #16a34a 28%, var(--card));
   background: var(--sec-bg);
@@ -10082,8 +10082,13 @@ details.transcricao-bloco:not([open]) {
   text-align: center;
   box-shadow: none;
 }
+.biblia-prog-toggle {
+  --sec-bg: color-mix(in srgb, hsl(var(--h, 250) 75% 55%) 17%, var(--card)); /* a mesma cor do botão da seção escolhida */
+  background: var(--sec-bg);
+}
+.biblia-prog-toggle.completa { --sec-bg: color-mix(in srgb, #16a34a 28%, var(--card)); } /* seção toda lida: verde, como o botão */
 .biblia-prog-toggle:hover {
-  background: transparent;
+  background: var(--sec-bg);
 }
 .biblia-prog-icone { /* ícone da seção à esquerda, maior, sem aumentar a altura da moldura */
   flex: 0 0 auto;
@@ -10344,3 +10349,59 @@ details.transcricao-bloco:not([open]) {
   overflow: hidden; /* a altura acompanha o texto (bibliaAutoAlturar): sem barra de rolagem */
   resize: none;
 }
+
+/* ---------- Leitura da Bíblia: modos (por seções ou por livros) ---------- */
+.biblia-modo {
+  border: 2px solid color-mix(in srgb, var(--brand) 55%, var(--line));
+  border-radius: 16px;
+  margin: 0 0 12px;
+  background: color-mix(in srgb, var(--brand) 6%, var(--card));
+}
+.biblia-modo > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  font-weight: 750;
+  cursor: pointer;
+  list-style: none;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--brand) 22%, var(--card));
+  -webkit-tap-highlight-color: transparent;
+}
+.biblia-modo > summary::-webkit-details-marker { display: none; }
+.biblia-modo > summary::after {
+  content: '▸';
+  margin-left: auto;
+  font-size: 1.7rem;
+  line-height: 1;
+  font-weight: 700;
+  color: var(--brand);
+  transition: transform .15s ease;
+}
+.biblia-modo[open] > summary {
+  border-radius: 14px 14px 0 0;
+  border-bottom: 2px solid color-mix(in srgb, var(--brand) 55%, var(--line));
+}
+.biblia-modo[open] > summary::after { transform: rotate(90deg); }
+.biblia-modo-corpo { padding: 10px; }
+/* Dentro do contêiner recolhível não há outras molduras: os botões das seções e, abaixo, separada por uma linha, a programação da seção escolhida. */
+.biblia-modo-corpo > .biblia-caixa {
+  border: 0;
+  border-radius: 0;
+  background: none;
+  padding: 0;
+  margin: 0;
+}
+.biblia-modo-corpo > #bibliaProgCaixa {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 2px solid color-mix(in srgb, var(--brand) 55%, var(--line));
+}
+.biblia-livros-dica { margin: 0 0 10px; font-size: .8rem; }
+.biblia-gl { border-color: color-mix(in srgb, var(--brand) 45%, var(--line)); }
+.biblia-gl > .biblia-lista { padding: 10px; }
+.biblia-gl-icone { font-size: 1.15rem; line-height: 1; margin-right: 6px; }
+.biblia-grupo.biblia-livro, .biblia-grupo.biblia-gl { background: var(--liv-bg, color-mix(in srgb, var(--soft) 55%, var(--card))); }
+.biblia-grupo.biblia-colorido { background: var(--liv-bg, color-mix(in srgb, var(--soft) 55%, var(--card))); }
+#bibliaProgCaixa[hidden] { display: none; }

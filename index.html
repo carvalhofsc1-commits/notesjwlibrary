@@ -1511,8 +1511,10 @@
       </div>
       <p class="hint biblia-progresso" id="bibliaProgresso" role="status"></p>
       <div class="biblia-barra-geral" aria-hidden="true"><span id="bibliaBarraGeral"></span></div>
+      <details class="biblia-modo" id="bibliaModoSecoes" open>
+        <summary><span aria-hidden="true">📑</span> Seções e temas</summary>
+        <div class="biblia-modo-corpo">
       <div class="biblia-caixa">
-        <h3 class="biblia-caixa-titulo">Seções</h3>
         <div id="bibliaSecoes" class="biblia-secoes"></div>
       </div>
       <div class="biblia-caixa" id="bibliaProgCaixa">
@@ -1522,6 +1524,15 @@
         </div>
         <div id="bibliaLista" class="biblia-lista" aria-live="polite"></div>
       </div>
+        </div>
+      </details>
+      <details class="biblia-modo" id="bibliaModoLivros">
+        <summary><span aria-hidden="true">📚</span> Livros, na ordem da Bíblia</summary>
+        <div class="biblia-modo-corpo">
+          <p class="hint biblia-livros-dica">Escolha o livro e marque os capítulos. As marcações, as datas e os resumos são os mesmos da leitura por seções.</p>
+          <div id="bibliaLivros" class="biblia-lista"></div>
+        </div>
+      </details>
       <div class="biblia-caixa biblia-resumo-caixa" id="bibliaResumoCaixa" hidden>
         <div class="biblia-grupos-topo">
           <h3 class="biblia-caixa-titulo" id="bibliaResumoTitulo"></h3>

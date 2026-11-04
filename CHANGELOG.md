@@ -2,6 +2,20 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.34
+
+Leitura da Bíblia: ao abrir a tela, “Seções e temas” fica expandido, sem nenhuma seção escolhida (a programação só aparece depois de escolher uma), e a lista de livros fica recolhida.
+
+Leitura por livros: cada livro e cada grupo têm um fundo bem suave; um matiz por grupo, com tons diferentes de um livro para o outro. A leitura por seções e temas usa a mesma cor de cada livro, e o card com o nome da seção escolhida usa a cor do botão da seção.
+
+Leitura da Bíblia: o card “Seções” é um só contêiner recolhível, com os botões das seções e, abaixo, separada por uma linha, a programação da seção escolhida (sem as molduras internas).
+
+Leitura da Bíblia: o rótulo de cada capítulo passa a ser a abreviação “Cap. N” (o nome por extenso era cortado e escondia o número).
+
+## 6.5.33
+
+Leitura diária da Bíblia: nova leitura por livros, na ordem da Bíblia, num card próprio (fechado por padrão); a leitura por seções continua como padrão e agora também pode ser recolhida. Os livros ficam em grupos (Pentateuco, Conquista da terra e juízes, História dos reis, Volta do exílio, Poesia e sabedoria, Profetas maiores e menores, Evangelhos, Atos, Cartas de Paulo, Outras cartas, Apocalipse); ao abrir um livro aparecem os capítulos, com marcar, data, WOL e resumo como na leitura por seções. As marcações e os resumos são os mesmos dos dois modos, e as barras de andamento valem para livro e grupo.
+
 ## 6.5.32
 
 O botão “Estudo Bíblico de Congregação” (preparar para comentar e para dirigir) passa a se chamar “Estudo Bíblico”.
