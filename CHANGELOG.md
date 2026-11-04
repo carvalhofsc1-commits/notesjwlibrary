@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.04
+
+Logo da barra do topo: o ícone fica mais perto do nome, e o nome "NoteStyle" passa a ter exatamente a largura do slogan abaixo dele (ajustada na tela, para valer em qualquer aparelho).
+
 ## 6.5.03
 
 Logo da barra do topo: o nome volta à fonte normal (sem itálico).

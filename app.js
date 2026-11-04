@@ -94,6 +94,22 @@
     }
     window.addEventListener('resize', inicioAjustarAltura);
 
+    // Logo: o nome "NoteStyle" fica com a mesma largura do slogan logo abaixo dele (a fonte varia de aparelho para aparelho, então a medida é feita na tela).
+    function logoAjustar() {
+      const nome = document.querySelector('.brand-title h1');
+      const slogan = document.querySelector('.brand-subtitle');
+      if (!nome || !slogan) return;
+      const largura = el => { const r = document.createRange(); r.selectNodeContents(el); return r.getBoundingClientRect().width; };
+      nome.style.fontSize = '';
+      const alvo = largura(slogan), atual = largura(nome);
+      if (!alvo || !atual) return;
+      const tamanho = parseFloat(getComputedStyle(nome).fontSize) * (alvo / atual);
+      nome.style.fontSize = Math.max(18, Math.min(36, tamanho)).toFixed(2) + 'px';
+    }
+    window.addEventListener('resize', logoAjustar);
+    logoAjustar();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(logoAjustar);
+
     // Em que tela fica um elemento (para o app abrir a tela certa quando precisa mostrar algo que está em outra).
     function screenOf(element) {
       const holder = element && element.closest('.screen-inicio, .screen-formatar, .screen-reunioes, .screen-backup, .screen-ajustes, .screen-leitura, .screen-transcricao, .screen-biblia');
@@ -7530,7 +7546,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.03'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.04'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
