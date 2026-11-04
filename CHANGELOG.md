@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.10
+
+Leitura diária da Bíblia: o ícone da seção do exílio agora é uma corrente (⛓️), que lembra prisão.
+
 ## 6.5.09
 
 Leitura diária da Bíblia: os botões das seções não ficam mais azuis ao passar o mouse; o ícone da seção de Jesus volta ao emoji do homem de barba (🧔🏽) e o rosto desenhado saiu.
