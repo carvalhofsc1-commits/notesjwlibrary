@@ -7540,7 +7540,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.28'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.29'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12497,10 +12497,11 @@ function saveTemplatesToStorage() {
       // Leitura diária da Bíblia: o campo fica abaixo do botão Gerar resumo, na área do resumo.
       biblia: {
         botao: 'bibliaResumirBtn', linha: true, exemplo: 'Ex.: destaque os acontecimentos mais importantes, ou faça um resumo mais curto.', dica: '',
-        // Opções além do resumo; ficam marcadas neste aparelho. Fundo/personagens/lugares: Perspicaz e, se preciso, WOL.
-        opcoesTitulo: 'Opções adicionais para a IA (além do resumo)',
-        opcoesDica: 'Com opções marcadas, o resumo ganha seções (RESUMO, SOBRE JEOVÁ, etc.). Fundo histórico, personagens e lugares: o servidor consulta o Estudo Perspicaz e, se fizer falta, a biblioteca wol.jw.org; cite sempre a fonte.',
+        // Primeira opção (resumo) vem marcada por padrão; dá para desmarcar e pedir só outra seção.
+        opcoesTitulo: 'Opções para a IA',
+        opcoesDica: 'Marque o que deseja. “Gerar o resumo do capítulo” vem marcado por padrão (pode desmarcar). Com várias opções, o texto sai em seções (RESUMO, SOBRE JEOVÁ, etc.). Fundo, personagens e lugares: Perspicaz e, se preciso, wol.jw.org. Se já houver texto salvo, a IA o usa como base.',
         opcoes: [
+          { id: 'resumo', texto: '📚 Gerar o resumo do capítulo', padrao: true },
           { id: 'ensina', texto: '🌟 O que este capítulo me ensina sobre Jeová e as suas qualidades' },
           { id: 'aplicacoes', texto: '🛠️ Encontrar aplicações práticas para a vida real' },
           { id: 'fundo', texto: '🏛️ Explicar o fundo histórico dos acontecimentos (Perspicaz / WOL)' },
@@ -12567,10 +12568,25 @@ function saveTemplatesToStorage() {
         dica.textContent = 'Opcional. Valem mais que o prompt padrão, em todos os pedidos desta seção (inclusive Outra resposta e Melhorar).';
         bloco.append(dica);
       }
-      if (opcoes && opcoes.length) { // opções além do resumo / padrão: um cartão (caixa de marcar) para cada uma
+      if (opcoes && opcoes.length) { // opções: um cartão (caixa de marcar) para cada uma; as com padrao começam marcadas
         const chaveSalva = 'jwLibraryNoteAplicarIaOpcoes_' + chave;
-        let salvas = [];
-        try { salvas = JSON.parse(localStorage.getItem(chaveSalva) || '[]'); } catch (e) { /* sem armazenamento */ }
+        let salvas = null; // null = nunca salvou neste aparelho → usa as opções com padrao: true
+        try {
+          const bruto = localStorage.getItem(chaveSalva);
+          if (bruto !== null) salvas = JSON.parse(bruto);
+        } catch (e) { salvas = null; }
+        if (!Array.isArray(salvas)) salvas = null;
+        // Leitura diária: uma vez, inclui "resumo" nas preferências antigas que ainda não o tinham.
+        if (chave === 'biblia' && Array.isArray(salvas) && !salvas.includes('resumo')) {
+          try {
+            if (localStorage.getItem('jwLibraryNoteAplicarBibliaResumoPadraoV1') === null) {
+              localStorage.setItem('jwLibraryNoteAplicarBibliaResumoPadraoV1', '1');
+              salvas = ['resumo', ...salvas];
+              localStorage.setItem(chaveSalva, JSON.stringify(salvas));
+            }
+          } catch (e) { /* sem armazenamento */ }
+        }
+        const marcadas = salvas || opcoes.filter(o => o.padrao).map(o => o.id);
         const titulo = document.createElement('p');
         titulo.className = 'dirigente-secoes-titulo ia-extra-opcoes-titulo';
         titulo.textContent = opcoesTitulo || 'Opções padrão para a IA';
@@ -12584,7 +12600,7 @@ function saveTemplatesToStorage() {
           marca.autocomplete = 'off';
           marca.id = 'iaExtraOpc_' + chave + '_' + o.id;
           marca.dataset.opcao = o.id;
-          marca.checked = Array.isArray(salvas) && salvas.includes(o.id);
+          marca.checked = marcadas.includes(o.id);
           marca.addEventListener('change', () => {
             const ids = [...lista.querySelectorAll('input:checked')].map(i => i.dataset.opcao);
             try { localStorage.setItem(chaveSalva, JSON.stringify(ids)); } catch (e) { /* sem armazenamento */ }
@@ -12592,6 +12608,10 @@ function saveTemplatesToStorage() {
           caixa.append(marca, ' ' + o.texto);
           lista.append(caixa);
         });
+        // Quem nunca tinha preferências: grava já com os padrões (ex.: resumo marcado).
+        if (salvas === null) {
+          try { localStorage.setItem(chaveSalva, JSON.stringify(marcadas)); } catch (e) { /* sem armazenamento */ }
+        }
         bloco.append(titulo, lista);
         if (opcoesDica) {
           const dicaOp = document.createElement('p');
@@ -20738,6 +20758,16 @@ function saveTemplatesToStorage() {
       return { total, lidos };
     }
 
+    const BIBLIA_SECAO_TITULO = {
+      resumo: 'RESUMO',
+      ensina: 'SOBRE JEOVÁ',
+      aplicacoes: 'APLICAÇÕES PRÁTICAS',
+      fundo: 'FUNDO HISTÓRICO',
+      personagens: 'PERSONAGENS',
+      lugares: 'LUGARES E INFORMAÇÕES GERAIS'
+    };
+    const BIBLIA_SECAO_ORDEM = ['resumo', 'ensina', 'aplicacoes', 'fundo', 'personagens', 'lugares'];
+
     function bibliaFormatarResumo(outros) {
       if (!Array.isArray(outros) || !outros.length) return '';
       const negritoId = readAiOptions().negrito ? aiStyleIdFor('negrito') : '';
@@ -20747,6 +20777,82 @@ function saveTemplatesToStorage() {
         if (negritoId) texto = texto.replace(secoes, m => convertTextWithStyle(m.trim(), negritoId));
         return texto;
       }).join('\n\n\n');
+    }
+
+    // Formata só o corpo (seções) de um item da IA, sem o cabeçalho "📚 RESUMO DE…".
+    function bibliaFormatarCorpoSecao(outro) {
+      if (!outro || !outro.texto) return '';
+      const negritoId = readAiOptions().negrito ? aiStyleIdFor('negrito') : '';
+      const secoes = /^(RESUMO|SOBRE JEOVÁ|APLICAÇÕES PRÁTICAS|FUNDO HISTÓRICO|PERSONAGENS|LUGARES E INFORMAÇÕES GERAIS)\s*$/gm;
+      let corpo = aiAplicarDestaquesTexto(outro.texto, outro.destaques, outro.quebras);
+      const opcoes = readAiOptions();
+      if (!opcoes.emoji) corpo = String(corpo).replace(/(^|\n\n)(?:\p{Extended_Pictographic}\uFE0F?(?:\u200D\p{Extended_Pictographic}\uFE0F?)*)+\s*/gu, '$1');
+      corpo = String(corpo).replace(/\[\[([^\[\]]+)\]\]/g, (m, ref) => {
+        const r = '(' + ref.trim().replace(/^\(|\)$/g, '') + ')';
+        return negritoId ? convertTextWithStyle(r, negritoId) : r;
+      });
+      if (negritoId) corpo = corpo.replace(secoes, m => convertTextWithStyle(m.trim(), negritoId));
+      if (Array.isArray(outro.perspicaz) && outro.perspicaz.length) {
+        const rotulo = outro.perspicaz.some(s => /^WOL:/i.test(String(s))) ? '🔎 Fontes: ' : '🔎 Estudo Perspicaz: ';
+        corpo = corpo.replace(/\s+$/, '') + '\n\n' + rotulo + outro.perspicaz.join('; ');
+      }
+      return corpo.trim();
+    }
+
+    function bibliaTituloSecaoDaLinha(linha) {
+      const t = removeUnicodeFormatting(String(linha || '')).trim();
+      return Object.values(BIBLIA_SECAO_TITULO).find(tit => tit === t) || null;
+    }
+
+    function bibliaPartirSecoes(texto) {
+      const linhas = String(texto || '').split('\n');
+      const partes = [];
+      let atual = { titulo: null, linhas: [] };
+      linhas.forEach(linha => {
+        const tit = bibliaTituloSecaoDaLinha(linha);
+        if (tit) {
+          partes.push(atual);
+          atual = { titulo: tit, linhas: [linha] };
+        } else {
+          atual.linhas.push(linha);
+        }
+      });
+      partes.push(atual);
+      return partes;
+    }
+
+    function bibliaOrdenarSecoes(partes) {
+      const preambulo = partes.filter(p => !p.titulo);
+      const porTitulo = new Map(partes.filter(p => p.titulo).map(p => [p.titulo, p]));
+      const ordenadas = BIBLIA_SECAO_ORDEM.map(id => porTitulo.get(BIBLIA_SECAO_TITULO[id])).filter(Boolean);
+      const extras = partes.filter(p => p.titulo && !ordenadas.includes(p));
+      return [...preambulo, ...ordenadas, ...extras];
+    }
+
+    function bibliaJuntarSecoes(partes) {
+      return bibliaOrdenarSecoes(partes)
+        .map(p => p.linhas.join('\n').replace(/\s+$/, ''))
+        .filter(Boolean)
+        .join('\n\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+    }
+
+    // Acrescenta ou substitui uma seção no texto já salvo (demais seções intactas).
+    function bibliaMesclarSecao(textoAtual, tituloSecao, blocoSecao) {
+      const novas = String(blocoSecao || '').trim().split('\n');
+      if (!novas.length) return String(textoAtual || '').trim();
+      // Garante que o bloco começa pelo subtítulo da seção.
+      if (bibliaTituloSecaoDaLinha(novas[0]) !== tituloSecao) novas.unshift(tituloSecao);
+      const partes = bibliaPartirSecoes(textoAtual);
+      const idx = partes.findIndex(p => p.titulo === tituloSecao);
+      if (idx >= 0) partes[idx] = { titulo: tituloSecao, linhas: novas };
+      else partes.push({ titulo: tituloSecao, linhas: novas });
+      return bibliaJuntarSecoes(partes);
+    }
+
+    function bibliaSecaoExiste(texto, tituloSecao) {
+      return bibliaPartirSecoes(texto).some(p => p.titulo === tituloSecao);
     }
 
     // Progresso geral e contagem de cada botão de seção.
@@ -20914,22 +21020,40 @@ function saveTemplatesToStorage() {
         aiStatusKind = 'biblia';
         return setAiStatus(accessError, true);
       }
+      const idsOpcoes = iaExtraOpcoes('biblia');
+      if (!idsOpcoes.length) {
+        aiStatusKind = 'biblia';
+        return setAiStatus('Marque pelo menos uma opção para a IA.', true);
+      }
       saveAiOptions();
+      // Texto já salvo (campo ou memória): base para melhorar / acrescentar seção.
+      const textoAtual = (bibliaResumoTexto.value || bibliaEstado.resumos[alvo.cap.id] || '').trim();
+      const anterior = textoAtual ? removeUnicodeFormatting(textoAtual).trim() : '';
+      const umaOpcao = idsOpcoes.length === 1;
+      const idUnico = umaOpcao ? idsOpcoes[0] : '';
+      const tituloSecaoUnica = idUnico ? BIBLIA_SECAO_TITULO[idUnico] : '';
+      const secaoJaExiste = Boolean(anterior && tituloSecaoUnica && bibliaSecaoExiste(textoAtual, tituloSecaoUnica));
       bibliaResumindo = true;
       aiBusy = true;
       aiStatusKind = 'biblia';
       setAiLoading(true, bibliaResumirBtn);
       const naMesma = () => bibliaResumoAlvo && bibliaResumoAlvo.cap.id === alvo.cap.id;
       try {
-        const result = await postStudy({
+        const payload = {
           tarefa: 'leitura-biblia',
           codigo: codigoAcessoSalvo(),
           titulo: alvo.cap.nome,
           refs: [{ livro: alvo.cap.livro, rotulo: alvo.cap.rotulo }],
           ajuste: iaExtra('biblia'),
-          opcoesResumo: iaExtraOpcoes('biblia'),
+          opcoesResumo: idsOpcoes,
           opcoes: readAiOptions()
-        }, IA_ESPERA_MS);
+        };
+        if (anterior) {
+          payload.anterior = anterior.slice(0, 12000);
+          payload.modoAnterior = umaOpcao ? (secaoJaExiste ? 'melhorar-secao' : 'acrescentar-secao') : 'melhorar';
+          if (umaOpcao) payload.secaoUnica = idUnico;
+        }
+        const result = await postStudy(payload, IA_ESPERA_MS);
         if (!result.ok) {
           if (naMesma()) setAiStatus(studyFailureMessage(result, 'Não foi possível gerar o resumo agora.'), true);
           return;
@@ -20939,13 +21063,28 @@ function saveTemplatesToStorage() {
           if (naMesma()) setAiStatus(result.data.erro || 'A IA não preparou o resumo. Tente de novo.', true);
           return;
         }
-        const texto = bibliaFormatarResumo(outros);
+        let texto;
+        if (anterior && umaOpcao && tituloSecaoUnica) {
+          // Só a seção pedida: acrescenta ou substitui no texto já salvo, sem mexer no resto.
+          let base = textoAtual;
+          if (!base) {
+            const tit = ('Resumo de ' + alvo.cap.nome).toUpperCase();
+            const negritoId = readAiOptions().negrito ? aiStyleIdFor('negrito') : '';
+            base = '📚 ' + (negritoId ? convertTextWithStyle(tit, negritoId) : tit);
+          }
+          texto = bibliaMesclarSecao(base, tituloSecaoUnica, bibliaFormatarCorpoSecao(outros[0]));
+        } else {
+          texto = bibliaFormatarResumo(outros);
+        }
         bibliaEstado.resumos[alvo.cap.id] = texto; // fica salvo: o botão do capítulo passa a "Ver resumo"
         bibliaGravarEstado();
         if (naMesma()) {
           bibliaResumoTexto.value = texto;
           bibliaResumoSincronizar();
-          setAiStatus('✅ Resumo pronto e salvo. Você pode copiar ou guardar em Pesquisas salvas.', false);
+          const msg = anterior && umaOpcao
+            ? (secaoJaExiste ? '✅ Seção atualizada com base no texto já salvo.' : '✅ Nova seção acrescentada ao texto já salvo.')
+            : (anterior ? '✅ Texto atualizado com base no que já estava salvo.' : '✅ Resumo pronto e salvo. Você pode copiar ou guardar em Pesquisas salvas.');
+          setAiStatus(msg, false);
         }
       } catch (e) {
         if (naMesma()) setAiStatus(e && e.name === 'AbortError' ? 'A IA demorou demais. Tente de novo.' : 'Falha de conexão ao consultar a IA.', true);

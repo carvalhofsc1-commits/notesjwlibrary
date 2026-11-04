@@ -3221,11 +3221,21 @@ async function responderJoias(res, body, P) {
 
 // Caixas marcadas no resumo da leitura diária (id enviado pelo app → nome da frase editável em "Orientação do usuário…").
 const OPCOES_RESUMO_LEITURA = {
+  resumo: "Resumo da leitura: gerar o resumo",
   ensina: "Resumo da leitura: o que ensina sobre Jeová",
   aplicacoes: "Resumo da leitura: aplicações práticas",
   fundo: "Resumo da leitura: fundo histórico",
   personagens: "Resumo da leitura: personagens",
   lugares: "Resumo da leitura: lugares e medidas",
+};
+
+const SECAO_UNICA_RESUMO_LEITURA = {
+  resumo: "RESUMO",
+  ensina: "SOBRE JEOVÁ",
+  aplicacoes: "APLICAÇÕES PRÁTICAS",
+  fundo: "FUNDO HISTÓRICO",
+  personagens: "PERSONAGENS",
+  lugares: "LUGARES E INFORMAÇÕES GERAIS",
 };
 
 function idsOpcoesResumoLeitura(valor) {
@@ -3398,7 +3408,10 @@ async function resumirLeituraBiblia(res, body, P) {
   const titulo = typeof body.titulo === "string" ? body.titulo.trim().slice(0, 120) : refs.map((r) => `${r.livro} ${r.rotulo}`).join("; ");
 
   const idsOpcoes = idsOpcoesResumoLeitura(body.opcoesResumo);
-  // Perspicaz (e WOL na 2ª etapa) para fundo histórico, personagens e lugares — não para só Jeová/aplicações.
+  if (!idsOpcoes.length) return erro(res, 400, "Marque pelo menos uma opção para gerar o texto.");
+  // Compatibilidade: pedidos antigos sem a caixa "resumo" e sem outras caixas não chegam aqui; se só vierem opções
+  // "extras" sem "resumo", a seção RESUMO não é pedida (o usuário desmarcou de propósito).
+  // Perspicaz (e WOL na 2ª etapa) para fundo histórico, personagens e lugares — não para só Jeová/aplicações/resumo.
   const querFontes = idsOpcoes.includes("personagens") || idsOpcoes.includes("lugares") || idsOpcoes.includes("fundo");
   const opcoesFmt = validarOpcoes(body.opcoes);
   const sep = modoSeparacao(opcoesFmt, body.ajuste);
@@ -3406,6 +3419,19 @@ async function resumirLeituraBiblia(res, body, P) {
     "FORMATAÇÃO (as mesmas preferências das respostas do app):\n" +
     descreverFormatacaoResposta(opcoesFmt, P, sep) +
     "\nIndique em \"destaques\" trechos literais do \"texto\" a destacar (estilo negrito/italico/negrito_italico, maiusculas e, se permitido, fonte doubleStruck/sans/squaredDark). Em \"quebras\", trechos onde começa uma nova ideia ou frase (se o espaçamento estiver ativo). Se emoji estiver INATIVO, não comece parágrafos com emoji.\n\n";
+
+  const anterior = typeof body.anterior === "string" ? body.anterior.replace(/\s+/g, " ").trim().slice(0, 12000) : "";
+  const modoAnterior = anterior
+    ? body.modoAnterior === "acrescentar-secao" || body.modoAnterior === "melhorar-secao" || body.modoAnterior === "melhorar"
+      ? body.modoAnterior
+      : "melhorar"
+    : "";
+  const secaoUnica =
+    (modoAnterior === "acrescentar-secao" || modoAnterior === "melhorar-secao") &&
+    typeof body.secaoUnica === "string" &&
+    Object.hasOwn(SECAO_UNICA_RESUMO_LEITURA, body.secaoUnica)
+      ? body.secaoUnica
+      : "";
 
   precarregarFontes({ biblia: true, perspicaz: querFontes });
   const textoBiblia = await textoDeGruposBiblicos(refs, 32000);
@@ -3416,15 +3442,31 @@ async function resumirLeituraBiblia(res, body, P) {
   const f = P.frases.pedidos;
   const fraseBase = f["Resumo da leitura: base"] || f["Joias: resumo dos capítulos"];
   const fraseVerbetes = querFontes ? (f["Resumo da leitura: pedir verbetes"] || "") + "\n\n" : "";
+  let blocoAnterior = "";
+  if (anterior && modoAnterior === "melhorar") {
+    blocoAnterior = (f["Resumo da leitura: texto já salvo (melhorar)"] || "TEXTO JÁ SALVO (base): melhore sem perder o essencial.") + "\n\n" + anterior + "\n\n";
+  } else if (anterior && modoAnterior === "acrescentar-secao" && secaoUnica) {
+    blocoAnterior =
+      (f["Resumo da leitura: texto já salvo (acrescentar seção)"] || "Devolva só a seção nova.") +
+      `\nSeção a ACrescentAR: ${SECAO_UNICA_RESUMO_LEITURA[secaoUnica]}.\n\nTEXTO JÁ SALVO (contexto):\n` +
+      anterior +
+      "\n\n";
+  } else if (anterior && modoAnterior === "melhorar-secao" && secaoUnica) {
+    blocoAnterior =
+      (f["Resumo da leitura: texto já salvo (melhorar seção)"] || "Devolva só a seção melhorada.") +
+      `\nSeção a MELHORAR: ${SECAO_UNICA_RESUMO_LEITURA[secaoUnica]}.\n\nTEXTO JÁ SALVO:\n` +
+      anterior +
+      "\n\n";
+  }
   const mensagem =
     blocoOrientacao({}, ajuste, P) +
-    `PEDIDO: RESUMO DO CAPÍTULO da leitura diária da Bíblia (${titulo}).\n` +
-    `pergunta da apostila INATIVA; joias da leitura INATIVAS; resumo dos capítulos ATIVO.\n` +
+    `PEDIDO: texto da leitura diária da Bíblia (${titulo}).\n` +
+    `pergunta da apostila INATIVA; joias da leitura INATIVAS; seções pedidas = opções marcadas.\n` +
     `"pergunta" é null e "joias" é [].\n` +
-    (idsOpcoes.length
-      ? `Opções adicionais ATIVAS: use subtítulos em MAIÚSCULAS (RESUMO e as seções pedidas).\n`
-      : `Sem opções adicionais: só o resumo do capítulo, sem subtítulos de seção.\n`) +
-    "\n" +
+    `Opções ATIVAS: ${idsOpcoes.join(", ")}` +
+    (secaoUnica ? ` (modo seção única: só ${SECAO_UNICA_RESUMO_LEITURA[secaoUnica]}).` : ".") +
+    "\n\n" +
+    blocoAnterior +
     blocoFmt +
     fraseBase +
     "\n\n" +

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.29
+
+Resumo do capítulo (leitura diária): nova opção “Gerar o resumo do capítulo” (primeira, marcada por padrão; pode desmarcar para pedir só outra seção). Se já existir texto salvo, a IA o usa como base ao gerar de novo; com uma única opção marcada, acrescenta a seção nova ou só melhora a seção que já existia, sem alterar o restante.
+
 ## 6.5.28
 
 Resumo do capítulo (leitura diária): ao Gerar resumo, o mesmo indicador do app (“A IA está pensando…”, spinner no botão e contador). O resumo passa a usar as preferências de formatação das respostas (negrito, itálico, maiúsculas, variação de fonte, emoji, espaçamento), com destaques aplicados no texto.
