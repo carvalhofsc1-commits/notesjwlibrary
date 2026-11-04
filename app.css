@@ -10495,9 +10495,6 @@ details.transcricao-bloco:not([open]) {
   0%, 100% { height: 4px; }
   50% { height: 18px; }
 }
-@media (prefers-reduced-motion: reduce) {
-  .biblia-eq i { animation: none; height: 12px; }
-}
 .biblia-eq-v { /* versículo em andamento ao lado das barras de áudio */
   margin-left: 6px;
   min-width: 7.6em;

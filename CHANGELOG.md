@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.43
+
+Leitura da Bíblia: as barras de áudio do cabeçalho se movem também em aparelhos com “Reduzir Movimento” ligado (no iPhone elas ficavam paradas).
+
 ## 6.5.42
 
 Leitura da Bíblia: durante o áudio, o cabeçalho do grupo informa também o capítulo (“Cap. 4 v. 5/6”).
