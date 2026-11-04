@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.23
+
+Leitura diária da Bíblia: ao marcar um capítulo como lido, o fundo do cartão dele fica verde suave.
+
 ## 6.5.22
 
 Leitura diária da Bíblia: os botões WOL e Resumir de cada capítulo ficam lado a lado, na linha da data (o nome do capítulo ocupa a linha de cima).
