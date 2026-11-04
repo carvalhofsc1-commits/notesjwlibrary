@@ -168,6 +168,12 @@
       border-bottom: 1px solid var(--line);
     }
 
+    /* Espaço do mesmo tamanho do botão ☰ à direita: com ele, o logo fica no centro exato da barra. */
+    header.app-topbar::after {
+      content: "";
+      flex: 0 0 44px;
+    }
+
     .menu-toggle {
       flex: 0 0 auto;
       width: 44px;
@@ -215,7 +221,7 @@
     .brand-title {
       display: inline-flex;
       align-items: center;
-      justify-content: flex-start;
+      justify-content: center;
       gap: 10px;
       margin: 0;
       min-width: 0;
@@ -242,6 +248,7 @@
 
     .brand-text {
       min-width: 0;
+      text-align: left;
       display: flex;
       flex-direction: column;
       gap: 1px;

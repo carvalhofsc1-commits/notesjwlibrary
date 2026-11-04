@@ -2,9 +2,17 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.01
+
+Revisão da 6.5.00: logo centralizado na barra do topo (slogan encurtado para "Auxílio para estudo e preparação"); na Leitura diária da Bíblia, o resumo na caixa passa a ser sempre o do grupo selecionado (antes, ao abrir a tela com outro grupo como próximo pendente, o resumo do grupo anterior ficava na caixa e era gravado no grupo novo); nota do modelo da IA sob o botão Gerar resumo; a tecla Esc fecha o menu lateral; a entrada 6.4.81 do histórico, sobrescrita pela 6.5.00, foi restaurada.
+
 ## 6.5.00
 
 Leitura diária da Bíblia: nova tela com o programa anual (PDF sbr), seções, datas planejadas, marcação de leitura concluída e resumo dos capítulos no estilo das Joias espirituais (gerar, copiar e salvar). Redesign da navegação: barra superior só com o menu ☰ e o logo/slogan; menu lateral à esquerda com todas as funcionalidades, Sobre e Sair/Fechar; na barra inferior, Ajustes vira Menu; no Início, Pesquisas salvas dá lugar à Leitura diária da Bíblia (Pesquisas salvas e Ajustes ficam no menu).
+
+## 6.4.81
+
+Texto diário: a leitura em voz alta dos Comentários adicionais agora lê o cabeçalho "Comentários adicionais do texto diário", e antes de cada comentário anuncia "Comentário número 1", "Comentário número 2" e assim por diante. Cada fala fica numa linha própria, terminada em ponto, para a voz fazer uma pausa entre uma e outra. O servidor aceita essas falas de anúncio (folga de 120 caracteres na conferência do trecho).
 
 ## 6.4.80
 

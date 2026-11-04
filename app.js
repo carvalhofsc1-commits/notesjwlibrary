@@ -107,6 +107,7 @@
     document.getElementById('navMenuBtn').addEventListener('click', menuAbrir);
     document.getElementById('menuFecharBtn').addEventListener('click', menuFechar);
     document.getElementById('appMenuFundo').addEventListener('click', menuFechar);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && !document.getElementById('appMenu').hidden) menuFechar(); });
     document.getElementById('menuSairBtn').addEventListener('click', () => {
       menuFechar();
       showScreen('inicio');
@@ -3649,7 +3650,7 @@
     // (o áudio em texto não usa o esforço escolhido).
     const IA_NOTA_BOTOES = {
       aiSuggestBtn: 'geral', aiSentinelaBtn: 'geral', aiStudyBtn: 'geral', aiStudyQuestionsBtn: 'geral', tdGerarBtn: 'geral',
-      joiasResponderBtn: 'geral', ebcResponderBtn: 'geral', ebcDirPerguntasBtn: 'geral',
+      joiasResponderBtn: 'geral', bibliaResumirBtn: 'geral', ebcResponderBtn: 'geral', ebcDirPerguntasBtn: 'geral',
       tesourosEsbocoBtn: 'esbocos', discursoEsbocoBtn: 'esbocos', publicoEsbocoBtn: 'esbocos', outrosEsbocoBtn: 'esbocos',
       transcricaoCorrigirBtn: 'geral', transcricaoResumirBtn: 'geral',
       transcricaoIniciarBtn: '=Reconhecimento de voz: Google Chirp 3' // texto fixo (a transcrição é do Google, não da IA de texto); o botão Ler é preenchido por vozInfoMostrar
@@ -7529,7 +7530,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.00'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.01'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -20499,6 +20500,7 @@ function saveTemplatesToStorage() {
     let bibliaEstado = { itens: {}, secao: '', soPendentes: false, selecionado: '', resumos: {} };
     let bibliaPronto = false;
     let bibliaResumindo = false;
+    let bibliaTextoDe = ''; // id do grupo a que pertence o texto que está na caixa do resumo
 
     function bibliaLerEstado() {
       try {
@@ -20563,7 +20565,10 @@ function saveTemplatesToStorage() {
       bibliaEstado.selecionado = item.id;
       const salvo = bibliaEstado.resumos[item.id];
       bibliaResumoAlvo.textContent = 'Grupo: ' + item.titulo + (item.secaoNome ? ' · ' + item.secaoNome : '');
-      if (salvo && !bibliaResumoTexto.value.trim()) bibliaResumoTexto.value = salvo;
+      if (bibliaTextoDe !== item.id) { // trocou o grupo: a caixa mostra o resumo dele (ou fica vazia), nunca o do grupo anterior
+        bibliaResumoTexto.value = salvo || '';
+        bibliaTextoDe = item.id;
+      }
       const tem = Boolean(bibliaResumoTexto.value.trim());
       bibliaResumoSalvarBtn.disabled = !tem;
       bibliaResumoCopiarBtn.disabled = !tem;
@@ -20642,8 +20647,6 @@ function saveTemplatesToStorage() {
         row.append(check, corpo, data);
         row.addEventListener('click', () => {
           bibliaEstado.selecionado = item.id;
-          const salvo = bibliaEstado.resumos[item.id] || '';
-          bibliaResumoTexto.value = salvo;
           bibliaGravarEstado();
           bibliaAtualizarAlvo();
           bibliaRenderLista();
@@ -20685,7 +20688,7 @@ function saveTemplatesToStorage() {
           const tem = Boolean(bibliaResumoTexto.value.trim());
           bibliaResumoSalvarBtn.disabled = !tem;
           bibliaResumoCopiarBtn.disabled = !tem;
-          const id = bibliaEstado.selecionado;
+          const id = bibliaTextoDe || bibliaEstado.selecionado;
           if (id) {
             const t = bibliaResumoTexto.value;
             if (t.trim()) bibliaEstado.resumos[id] = t;
@@ -20734,6 +20737,7 @@ function saveTemplatesToStorage() {
         }
         const texto = bibliaFormatarResumo(outros);
         bibliaResumoTexto.value = texto;
+        bibliaTextoDe = item.id;
         bibliaEstado.resumos[item.id] = texto;
         bibliaGravarEstado();
         bibliaResumoSalvarBtn.disabled = false;
