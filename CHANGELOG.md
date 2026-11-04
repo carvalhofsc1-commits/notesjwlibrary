@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.46
+
+Leitura da Bíblia: o botão “Resumir” da linha do capítulo fica só com o texto (sem o ícone), para não cortar.
+
 ## 6.5.45
 
 Leitura da Bíblia (áudio): sai a fileira “Reiniciar / Parar”; entra um botão redondo ⏹ ao lado do ▶, que pára e zera o capítulo (o ▶ volta a tocar do começo). Os botões ▶, WOL e Resumir ficam um pouco menores.
