@@ -3181,7 +3181,24 @@ async function responderJoias(res, body, P) {
 // mesmo modelo das Joias espirituais (um item por capítulo, emoji + [[vv.]] no começo de cada parágrafo). Opcionalmente
 // completa com o Estudo Perspicaz, como no resumo das Joias.
 
-async function completarResumosLeituraComPerspicaz(outros, textoBiblia, P) {
+// Caixas marcadas no resumo da leitura diária (id enviado pelo app → nome da frase editável em "Orientação do usuário…").
+const OPCOES_RESUMO_LEITURA = {
+  ensina: "Resumo da leitura: o que ensina sobre Jeová",
+  aplicacoes: "Resumo da leitura: aplicações práticas",
+  fundo: "Resumo da leitura: fundo histórico",
+  personagens: "Resumo da leitura: personagens",
+  lugares: "Resumo da leitura: lugares e medidas",
+};
+
+function blocoOpcoesResumoLeitura(valor, P) {
+  const ids = [...new Set((Array.isArray(valor) ? valor : []).filter((id) => typeof id === "string" && Object.hasOwn(OPCOES_RESUMO_LEITURA, id)))];
+  const f = P.frases.pedidos;
+  const linhas = ids.map((id) => f[OPCOES_RESUMO_LEITURA[id]]).filter(Boolean);
+  if (!linhas.length) return "";
+  return `${f["Resumo da leitura: opções marcadas"] || "OPÇÕES MARCADAS PARA ESTE RESUMO:"}\n${linhas.map((l) => `- ${l}`).join("\n")}\n\n`;
+}
+
+async function completarResumosLeituraComPerspicaz(outros, textoBiblia, P, ajuste = "", opcoes = "") {
   const simples = outros.map((o) => ({ titulo: o.titulo, texto: o.texto, perspicaz: [] }));
   if (!fontesConfiguradas() || !outros.length) return simples;
   try {
@@ -3202,11 +3219,15 @@ async function completarResumosLeituraComPerspicaz(outros, textoBiblia, P) {
       verbetes: achados[indice].map((v) => ({ nome: v.nome, verbete: v.verbete, volume: v.volume, trecho: v.trecho })),
     }));
     const mensagem =
+      blocoOrientacao({}, ajuste, P) +
       P.frases.pedidos["Joias: resumo com o Perspicaz"] +
-      "\n\nLEITURA (versículos):\n" +
+      "\n\n" +
+      opcoes +
+      "LEITURA (versículos):\n" +
       textoBiblia +
       "\n\nRESUMOS E VERBETES (JSON):\n" +
-      JSON.stringify(material);
+      JSON.stringify(material) +
+      lembreteFinal({}, ajuste, P);
     const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 90_000) });
     const resposta = await chamarIa(
       client,
@@ -3245,13 +3266,19 @@ async function resumirLeituraBiblia(res, body, P) {
   const textoBiblia = await textoDeGruposBiblicos(refs, 32000);
   if (!textoBiblia.trim()) return erro(res, 404, "Não encontrei esses capítulos na Bíblia das fontes.");
 
+  const ajuste = textoLivre(body.ajuste, 1200); // instruções adicionais que o usuário escreveu para este resumo
+  const opcoes = blocoOpcoesResumoLeitura(body.opcoesResumo, P); // caixas marcadas (o que ensina sobre Jeová, aplicações, fundo histórico…)
   const mensagem =
+    blocoOrientacao({}, ajuste, P) +
     `PEDIDO: RESUMO DOS CAPÍTULOS da leitura diária da Bíblia (grupo: ${titulo}).\n` +
     `pergunta da apostila INATIVA; joias da leitura INATIVAS; resumo dos capítulos ATIVO.\n` +
     `"pergunta" é null e "joias" é [].\n\n` +
     P.frases.pedidos["Joias: resumo dos capítulos"] +
-    "\n\nLEITURA (versículos do grupo, na ordem):\n" +
-    textoBiblia;
+    "\n\n" +
+    opcoes +
+    "LEITURA (versículos do grupo, na ordem):\n" +
+    textoBiblia +
+    lembreteFinal({}, ajuste, P);
 
   const inicio = Date.now();
   try {
@@ -3272,7 +3299,7 @@ async function resumirLeituraBiblia(res, body, P) {
         verbetes: Array.isArray(o.verbetes) ? o.verbetes.map((v) => limparLinha(v, 60)).filter(Boolean).slice(0, 8) : [],
       }))
       .filter((o) => o.texto);
-    if (outros.length) outros = await completarResumosLeituraComPerspicaz(outros, textoBiblia, P);
+    if (outros.length) outros = await completarResumosLeituraComPerspicaz(outros, textoBiblia, P, ajuste, opcoes);
 
     console.log(
       "Leitura diária da Bíblia:",

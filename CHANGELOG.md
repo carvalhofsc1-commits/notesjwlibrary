@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.25
+
+Leitura diária da Bíblia, grande reformulação do resumo e da programação: o botão Resumir de cada capítulo só abre a área do resumo (no fim da tela, com o capítulo no título), e quem pede à IA é o botão Gerar resumo, que mostra o modelo e o esforço da IA; a programação da seção fica recolhível (nome da seção numa moldura com o ícone à esquerda, ao lado do "Só as pendentes"); ao fechar o resumo, a tela volta à programação com o capítulo à vista; o resumo feito fica salvo e o botão do capítulo vira "Ver resumo" (verde); o campo do resumo cresce com o texto, sem barra de rolagem; botão Word para exportar o resumo; campo recolhível "Instruções adicionais para a IA" com cinco opções padrão (o que ensina sobre Jeová, aplicações práticas, fundo histórico, personagens e lugares/medidas, estas duas com o Perspicaz), cujas frases ficam na tela de prompts. Nos capítulos: só "Capítulo N" dentro do grupo de um livro, botões WOL e Resumir lado a lado e centralizados, campo da data que não recebe clique (tocar nele marca ou desmarca a leitura). Espaços do quadro da seção recolhida padronizados.
+
 ## 6.5.24
 
 Leitura diária da Bíblia: o fundo do capítulo lido passa de verde para azul claro.

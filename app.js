@@ -3660,7 +3660,7 @@
     // (o áudio em texto não usa o esforço escolhido).
     const IA_NOTA_BOTOES = {
       aiSuggestBtn: 'geral', aiSentinelaBtn: 'geral', aiStudyBtn: 'geral', aiStudyQuestionsBtn: 'geral', tdGerarBtn: 'geral',
-      joiasResponderBtn: 'geral', ebcResponderBtn: 'geral', ebcDirPerguntasBtn: 'geral',
+      joiasResponderBtn: 'geral', bibliaResumirBtn: 'geral', ebcResponderBtn: 'geral', ebcDirPerguntasBtn: 'geral',
       tesourosEsbocoBtn: 'esbocos', discursoEsbocoBtn: 'esbocos', publicoEsbocoBtn: 'esbocos', outrosEsbocoBtn: 'esbocos',
       transcricaoCorrigirBtn: 'geral', transcricaoResumirBtn: 'geral',
       transcricaoIniciarBtn: '=Reconhecimento de voz: Google Chirp 3' // texto fixo (a transcrição é do Google, não da IA de texto); o botão Ler é preenchido por vozInfoMostrar
@@ -7540,7 +7540,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.24'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.25'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12491,10 +12491,22 @@ function saveTemplatesToStorage() {
       ebcdir: { botao: 'ebcDirPerguntasBtn', exemplo: 'Ex.: elabore as perguntas sobre a atitude de Raabe e como imitá-la hoje.' },
       publico: { botao: 'publicoEsbocoBtn', exemplo: 'Ex.: use uma ilustração do dia a dia e destaque a aplicação para os jovens.' },
       tesouros: { botao: 'tesourosEsbocoBtn', exemplo: 'Ex.: inclua uma ilustração sobre a esperança e perguntas que levem a plateia a pensar.' },
-      discurso: { botao: 'discursoEsbocoBtn', exemplo: 'Ex.: faça uma introdução mais curta e foque na aplicação prática.' }
+      discurso: { botao: 'discursoEsbocoBtn', exemplo: 'Ex.: faça uma introdução mais curta e foque na aplicação prática.' },
+      // Leitura diária da Bíblia: o campo fica abaixo do botão Gerar resumo, na área do resumo.
+      biblia: {
+        botao: 'bibliaResumirBtn', linha: true, exemplo: 'Ex.: destaque os acontecimentos mais importantes, ou faça um resumo mais curto.', dica: 'Opcional. Vale mais que o prompt padrão neste resumo; não fica guardado.',
+        // Opções padrão (uma caixa para cada); ficam marcadas neste aparelho para os próximos resumos.
+        opcoes: [
+          { id: 'ensina', texto: '🌟 O que este capítulo me ensina sobre Jeová e as suas qualidades' },
+          { id: 'aplicacoes', texto: '🛠️ Encontrar aplicações práticas para a vida real' },
+          { id: 'fundo', texto: '🏛️ Explicar o fundo histórico dos acontecimentos' },
+          { id: 'personagens', texto: '👤 Detalhar resumidamente a história dos personagens bíblicos conhecidos citados (Perspicaz)' },
+          { id: 'lugares', texto: '🗺️ Dar detalhes de localidades, lugares, cidades, nações, povos, medidas, moedas, valores etc. (Perspicaz)' }
+        ]
+      }
     };
 
-    function iaExtraCriar(chave, { botao, exemplo, somente, linha }) {
+    function iaExtraCriar(chave, { botao, exemplo, somente, linha, dica: textoDica, opcoes }) {
       const alvo = document.getElementById(botao);
       if (!alvo) return;
       const bloco = document.createElement('details'); // recolhida: só a linha do título; o texto digitado fica guardado enquanto o app está aberto
@@ -12540,8 +12552,35 @@ function saveTemplatesToStorage() {
       window.addEventListener('resize', crescer);
       const dica = document.createElement('p');
       dica.className = 'hint';
-      dica.textContent = 'Opcional. Valem mais que o prompt padrão, em todos os pedidos desta seção (inclusive Outra resposta e Melhorar).';
+      dica.textContent = textoDica || 'Opcional. Valem mais que o prompt padrão, em todos os pedidos desta seção (inclusive Outra resposta e Melhorar).';
       bloco.append(rotulo, limpar, campo, dica);
+      if (opcoes && opcoes.length) { // opções padrão: um cartão (caixa de marcar) para cada uma, como em "O que preparar"
+        const chaveSalva = 'jwLibraryNoteAplicarIaOpcoes_' + chave;
+        let salvas = [];
+        try { salvas = JSON.parse(localStorage.getItem(chaveSalva) || '[]'); } catch (e) { /* sem armazenamento */ }
+        const titulo = document.createElement('p');
+        titulo.className = 'dirigente-secoes-titulo ia-extra-opcoes-titulo';
+        titulo.textContent = 'Opções padrão para a IA';
+        const lista = document.createElement('div');
+        lista.className = 'ai-sources ia-extra-opcoes';
+        opcoes.forEach(o => {
+          const caixa = document.createElement('label');
+          caixa.className = 'ai-check';
+          const marca = document.createElement('input');
+          marca.type = 'checkbox';
+          marca.autocomplete = 'off';
+          marca.id = 'iaExtraOpc_' + chave + '_' + o.id;
+          marca.dataset.opcao = o.id;
+          marca.checked = Array.isArray(salvas) && salvas.includes(o.id);
+          marca.addEventListener('change', () => {
+            const ids = [...lista.querySelectorAll('input:checked')].map(i => i.dataset.opcao);
+            try { localStorage.setItem(chaveSalva, JSON.stringify(ids)); } catch (e) { /* sem armazenamento */ }
+          });
+          caixa.append(marca, ' ' + o.texto);
+          lista.append(caixa);
+        });
+        bloco.append(titulo, lista);
+      }
       if (somente) { // só nas seções cujo servidor aceita: ignora o que está marcado e faz apenas o que o campo pede
         const caixa = document.createElement('label');
         caixa.className = 'ai-check ia-extra-somente';
@@ -12552,7 +12591,7 @@ function saveTemplatesToStorage() {
         caixa.append(marca, ' ⚡ Executar somente estas instruções (ignora o que está marcado em “O que preparar”)');
         bloco.append(caixa);
       }
-      (linha ? alvo.closest('.ai-main-row') || alvo : alvo).insertAdjacentElement('afterend', bloco);
+      (linha ? alvo.closest('.ai-main-row, .biblia-gerar-linha') || alvo : alvo).insertAdjacentElement('afterend', bloco);
     }
     Object.entries(IA_EXTRA_CAMPOS).forEach(([chave, config]) => iaExtraCriar(chave, config));
 
@@ -12560,6 +12599,11 @@ function saveTemplatesToStorage() {
     function iaExtraSomente(chave) {
       const caixa = document.getElementById('iaExtraSomente_' + chave);
       return Boolean(caixa && caixa.checked);
+    }
+
+    // As opções padrão marcadas no campo da seção (ids), vazio se a seção não tem opções.
+    function iaExtraOpcoes(chave) {
+      return [...document.querySelectorAll('input[id^="iaExtraOpc_' + chave + '_"]:checked')].map(i => i.dataset.opcao);
     }
 
     // O texto do campo da seção (uma linha só, sem limite na tela; o servidor aceita até 30000 caracteres); vazio se a seção não tem o campo.
@@ -20537,8 +20581,20 @@ function saveTemplatesToStorage() {
     const bibliaSecoes = document.getElementById('bibliaSecoes');
     const bibliaLista = document.getElementById('bibliaLista');
     const bibliaSecaoTitulo = document.getElementById('bibliaSecaoTitulo');
+    const bibliaSecaoIcone = document.getElementById('bibliaSecaoIcone');
     const bibliaSoPendentes = document.getElementById('bibliaSoPendentes');
     const bibliaProgresso = document.getElementById('bibliaProgresso');
+    const bibliaProgToggle = document.getElementById('bibliaProgToggle');
+    const bibliaResumoCaixa = document.getElementById('bibliaResumoCaixa');
+    const bibliaResumoTitulo = document.getElementById('bibliaResumoTitulo');
+    const bibliaResumoTexto = document.getElementById('bibliaResumoTexto');
+    const bibliaResumoStatus = document.getElementById('bibliaResumoStatus');
+    const bibliaResumirBtn = document.getElementById('bibliaResumirBtn');
+    const bibliaResumoSalvarBtn = document.getElementById('bibliaResumoSalvarBtn');
+    const bibliaResumoCopiarBtn = document.getElementById('bibliaResumoCopiarBtn');
+    const bibliaResumoWordBtn = document.getElementById('bibliaResumoWordBtn');
+    let bibliaResumoAlvo = null; // { item, cap } do resumo aberto no fim da tela
+    let bibliaProgAberto = true; // programação de leitura da seção expandida ou recolhida
     let bibliaEstado = { itens: {}, secao: '', soPendentes: false, resumos: {} }; // itens: { idDoCapitulo: { lido, lidaEm } }; resumos: { idDoCapitulo: texto }
     let bibliaPronto = false;
     let bibliaResumindo = false;
@@ -20598,7 +20654,14 @@ function saveTemplatesToStorage() {
         }
       });
       if (!lista.length) lista.push({ livro: item.livro, rotulo: 'todo', nome: item.titulo });
-      lista.forEach((c, i) => { c.id = item.id + '#' + (i + 1); });
+      // Dentro do grupo de um livro só, a linha mostra "Capítulo N" (o livro já está no título do grupo).
+      const umLivro = lista.every(c => c.livro === lista[0].livro);
+      lista.forEach((c, i) => {
+        c.id = item.id + '#' + (i + 1);
+        const resto = c.nome.slice(c.livro.length + 1);
+        // "Capítulo N"; nos trechos de versículos (Salmos 119:1-63) fica só "119:1-63", que é o que cabe na linha.
+        c.curto = umLivro && c.nome !== c.livro ? (resto.includes(':') ? '' : 'Capítulo ') + resto : c.nome;
+      });
       bibliaCapsCache.set(item.id, lista);
       return lista;
     }
@@ -20677,6 +20740,7 @@ function saveTemplatesToStorage() {
       const linha = document.createElement('div');
       const marca0 = bibliaMarcaDe(cap.id);
       linha.className = 'biblia-cap' + (marca0.lido ? ' lido' : '');
+      linha.dataset.capId = cap.id;
 
       const rotulo = document.createElement('label');
       rotulo.className = 'biblia-cap-rotulo';
@@ -20687,7 +20751,7 @@ function saveTemplatesToStorage() {
       check.setAttribute('aria-label', 'Marcar ' + cap.nome + ' como lido');
       const nome = document.createElement('span');
       nome.className = 'biblia-cap-nome';
-      nome.textContent = cap.nome;
+      nome.textContent = cap.curto || cap.nome;
       rotulo.append(check, nome);
 
       const data = document.createElement('input');
@@ -20701,127 +20765,20 @@ function saveTemplatesToStorage() {
       const ajustarData = () => { data.style.width = 'calc(' + Math.max(data.value.length, data.value ? 10 : data.placeholder.length) + 'ch + 18px)'; }; // do tamanho do texto
       ajustarData();
 
+      // O campo da data só mostra a data: não recebe clique nem foco; tocar nele marca ou desmarca a leitura.
+      const dataCaixa = document.createElement('span');
+      dataCaixa.className = 'biblia-cap-data-caixa';
+      dataCaixa.appendChild(data);
+      dataCaixa.addEventListener('click', () => check.click());
+
+      // Resumir: só abre a área do resumo (no fim da tela); quem pede o resumo à IA é o botão dentro dela. Com resumo já feito, vira "Ver resumo".
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'secondary biblia-cap-resumir';
-
-      let painel = null;
-      let area = null;
-      let status = null;
-      let bNovo = null;
-      let bSalvar = null;
-      let bCopiar = null;
-      const temResumo = () => Boolean((bibliaEstado.resumos[cap.id] || '').trim());
-      const atualizarBotao = () => { btn.textContent = temResumo() ? '📄 Resumo' : '✨ Resumir'; };
-
-      const gerar = async () => {
-        montarPainel();
-        painel.hidden = false;
-        if (bibliaResumindo) return void (status.textContent = 'Aguarde o outro resumo terminar.');
-        const accessError = studyAccessError();
-        if (accessError) return void (status.textContent = accessError);
-        bibliaResumindo = true;
-        btn.disabled = true;
-        bNovo.disabled = true;
-        status.textContent = 'Preparando o resumo de ' + cap.nome + '…';
-        try {
-          const result = await postStudy({
-            tarefa: 'leitura-biblia',
-            codigo: codigoAcessoSalvo(),
-            titulo: cap.nome,
-            refs: [{ livro: cap.livro, rotulo: cap.rotulo }]
-          }, IA_ESPERA_MS);
-          if (!result.ok) {
-            status.textContent = studyFailureMessage(result, 'Não foi possível gerar o resumo agora.');
-            return;
-          }
-          const outros = Array.isArray(result.data.outros) ? result.data.outros.filter(o => o && o.texto) : [];
-          if (!outros.length) {
-            status.textContent = result.data.erro || 'A IA não preparou o resumo. Tente de novo.';
-            return;
-          }
-          const texto = bibliaFormatarResumo(outros);
-          area.value = texto;
-          bibliaEstado.resumos[cap.id] = texto;
-          bibliaGravarEstado();
-          bSalvar.disabled = false;
-          bCopiar.disabled = false;
-          atualizarBotao();
-          status.textContent = '✅ Resumo pronto. Você pode copiar ou salvar.';
-        } catch (e) {
-          status.textContent = e && e.name === 'AbortError' ? 'A IA demorou demais. Tente de novo.' : 'Falha de conexão ao consultar a IA.';
-        } finally {
-          bibliaResumindo = false;
-          btn.disabled = false;
-          bNovo.disabled = false;
-        }
-      };
-
-      function montarPainel() {
-        if (painel) return;
-        painel = document.createElement('div');
-        painel.className = 'biblia-cap-resumo';
-        status = document.createElement('p');
-        status.className = 'hint';
-        status.setAttribute('role', 'status');
-        area = document.createElement('textarea');
-        area.className = 'biblia-resumo-area';
-        area.placeholder = 'O resumo aparece aqui.';
-        area.spellcheck = false;
-        area.value = bibliaEstado.resumos[cap.id] || '';
-        const botoes = document.createElement('div');
-        botoes.className = 'bk-row';
-        bNovo = document.createElement('button');
-        bNovo.type = 'button';
-        bNovo.textContent = '🔄 Gerar de novo';
-        bSalvar = document.createElement('button');
-        bSalvar.type = 'button';
-        bSalvar.className = 'secondary';
-        bSalvar.textContent = '💾 Salvar';
-        bCopiar = document.createElement('button');
-        bCopiar.type = 'button';
-        bCopiar.className = 'secondary';
-        bCopiar.textContent = '📋 Copiar';
-        botoes.append(bNovo, bSalvar, bCopiar);
-        painel.append(area, botoes, status);
-        linha.appendChild(painel);
-        const sincronizar = () => { const tem = Boolean(area.value.trim()); bSalvar.disabled = !tem; bCopiar.disabled = !tem; };
-        sincronizar();
-        area.addEventListener('input', () => {
-          const t = area.value;
-          if (t.trim()) bibliaEstado.resumos[cap.id] = t; else delete bibliaEstado.resumos[cap.id];
-          bibliaGravarEstado();
-          sincronizar();
-          atualizarBotao();
-        });
-        bNovo.addEventListener('click', () => { gerar(); });
-        bCopiar.addEventListener('click', async () => {
-          const t = area.value.trim();
-          if (!t) return;
-          try {
-            await navigator.clipboard.writeText(t);
-            status.textContent = '📋 Resumo copiado.';
-          } catch (e) {
-            status.textContent = 'Não consegui copiar. Selecione o texto e copie manualmente.';
-          }
-        });
-        bSalvar.addEventListener('click', async () => {
-          const t = area.value.trim();
-          if (!t) return;
-          const salvo = await historicoSalvarNota(t, 'Resumo · ' + cap.nome, 'O resumo fica em Pesquisas e respostas salvas → Textos.');
-          if (salvo) status.textContent = '💾 Resumo salvo em Pesquisas e respostas salvas.';
-        });
-      }
-
-      btn.addEventListener('click', () => {
-        if (temResumo()) {
-          montarPainel();
-          painel.hidden = !painel.hidden;
-        } else {
-          gerar();
-        }
-      });
-      atualizarBotao();
+      const tem = Boolean((bibliaEstado.resumos[cap.id] || '').trim());
+      btn.textContent = tem ? 'Ver resumo' : '✨ Resumir';
+      btn.classList.toggle('tem', tem);
+      btn.addEventListener('click', () => bibliaAbrirResumo(item, cap));
 
       check.addEventListener('change', () => {
         const m = bibliaMarcaDe(cap.id);
@@ -20846,11 +20803,148 @@ function saveTemplatesToStorage() {
         link.textContent = '🔗 WOL';
         link.title = 'Abrir ' + cap.nome + ' no wol.jw.org';
         link.setAttribute('aria-label', 'Abrir ' + cap.nome + ' no wol.jw.org');
-        linha.append(rotulo, link, data, btn);
+        linha.append(rotulo, link, dataCaixa, btn);
       } else {
-        linha.append(rotulo, btn, data);
+        linha.append(rotulo, btn, dataCaixa);
       }
       return linha;
+    }
+
+    // ----- Programação recolhível e área do resumo (fim da tela) -----
+    function bibliaAutoAlturar(ta) { // o campo cresce com o texto, sem barra de rolagem
+      if (!ta || ta.offsetParent === null) return;
+      ta.style.height = 'auto';
+      ta.style.height = ta.scrollHeight + 2 + 'px';
+    }
+
+    function bibliaProgDefinir(aberto) {
+      bibliaProgAberto = aberto;
+      bibliaLista.hidden = !aberto;
+      document.getElementById('bibliaProgCaixa').classList.toggle('recolhida', !aberto); // recolhida: sem o espaço que separava a moldura da lista
+      bibliaProgToggle.setAttribute('aria-expanded', aberto ? 'true' : 'false');
+      bibliaProgToggle.classList.toggle('fechado', !aberto);
+    }
+
+    function bibliaResumoSincronizar() {
+      const tem = Boolean(bibliaResumoTexto.value.trim());
+      bibliaResumoSalvarBtn.disabled = !tem;
+      bibliaResumoCopiarBtn.disabled = !tem;
+      bibliaResumoWordBtn.disabled = !tem;
+      bibliaResumirBtn.textContent = tem ? '🔄 Gerar de novo' : '✨ Gerar resumo';
+      bibliaAutoAlturar(bibliaResumoTexto);
+    }
+
+    function bibliaAbrirResumo(item, cap) {
+      bibliaResumoAlvo = { item, cap };
+      bibliaResumoTitulo.textContent = '✨ Resumo · ' + cap.nome;
+      bibliaResumoTexto.value = bibliaEstado.resumos[cap.id] || '';
+      const extra = document.getElementById('iaExtra_biblia'); // instruções adicionais: começam vazias a cada resumo e recolhidas
+      if (extra) {
+        extra.value = '';
+        extra.dispatchEvent(new Event('input'));
+        extra.closest('details').open = false;
+      }
+      bibliaResumoStatus.textContent = '';
+      bibliaProgDefinir(false); // a programação recolhe; o resumo abre no fim da tela
+      bibliaResumoCaixa.hidden = false;
+      bibliaResumoSincronizar();
+      bibliaResumoCaixa.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function bibliaFecharResumo(voltar) {
+      const alvo = bibliaResumoAlvo;
+      bibliaResumoAlvo = null;
+      bibliaResumoCaixa.hidden = true;
+      if (!voltar || !alvo) return;
+      // Volta à programação, com o grupo do capítulo aberto (o botão do capítulo passa a "Ver resumo" se o resumo foi feito).
+      bibliaProgDefinir(true);
+      bibliaAbertos.add(alvo.item.id);
+      bibliaRenderSecao();
+      const linha = bibliaLista.querySelector('[data-cap-id="' + alvo.cap.id + '"]');
+      if (linha) linha.scrollIntoView({ block: 'center' });
+    }
+
+    async function bibliaGerarResumo() {
+      const alvo = bibliaResumoAlvo;
+      if (!alvo || bibliaResumindo) return;
+      const accessError = studyAccessError();
+      if (accessError) return void (bibliaResumoStatus.textContent = accessError);
+      bibliaResumindo = true;
+      bibliaResumirBtn.disabled = true;
+      bibliaResumoStatus.textContent = 'Preparando o resumo de ' + alvo.cap.nome + '…';
+      const naMesma = () => bibliaResumoAlvo && bibliaResumoAlvo.cap.id === alvo.cap.id;
+      try {
+        const result = await postStudy({
+          tarefa: 'leitura-biblia',
+          codigo: codigoAcessoSalvo(),
+          titulo: alvo.cap.nome,
+          refs: [{ livro: alvo.cap.livro, rotulo: alvo.cap.rotulo }],
+          ajuste: iaExtra('biblia'),
+          opcoesResumo: iaExtraOpcoes('biblia')
+        }, IA_ESPERA_MS);
+        if (!result.ok) {
+          if (naMesma()) bibliaResumoStatus.textContent = studyFailureMessage(result, 'Não foi possível gerar o resumo agora.');
+          return;
+        }
+        const outros = Array.isArray(result.data.outros) ? result.data.outros.filter(o => o && o.texto) : [];
+        if (!outros.length) {
+          if (naMesma()) bibliaResumoStatus.textContent = result.data.erro || 'A IA não preparou o resumo. Tente de novo.';
+          return;
+        }
+        const texto = bibliaFormatarResumo(outros);
+        bibliaEstado.resumos[alvo.cap.id] = texto; // fica salvo: o botão do capítulo passa a "Ver resumo"
+        bibliaGravarEstado();
+        if (naMesma()) {
+          bibliaResumoTexto.value = texto;
+          bibliaResumoSincronizar();
+          bibliaResumoStatus.textContent = '✅ Resumo pronto e salvo. Você pode copiar ou guardar em Pesquisas salvas.';
+        }
+      } catch (e) {
+        if (naMesma()) bibliaResumoStatus.textContent = e && e.name === 'AbortError' ? 'A IA demorou demais. Tente de novo.' : 'Falha de conexão ao consultar a IA.';
+      } finally {
+        bibliaResumindo = false;
+        bibliaResumirBtn.disabled = false;
+      }
+    }
+
+    // Cada aparelho desenha o emoji um pouco mais para cima ou para baixo da linha de base: mede onde a tinta do emoji cai (num canvas, com a mesma
+    // fonte) e desloca o ícone para o meio da altura da moldura do nome da seção.
+    function bibliaIconeCentrar() {
+      const ic = bibliaSecaoIcone;
+      ic.style.transform = '';
+      const moldura = bibliaProgToggle.getBoundingClientRect();
+      if (!moldura.height || !ic.textContent) return;
+      try {
+        const cs = getComputedStyle(ic);
+        const px = parseFloat(cs.fontSize);
+        const L = Math.ceil(px * 2.5);
+        const A = Math.ceil(px * 3);
+        const cv = document.createElement('canvas');
+        cv.width = L;
+        cv.height = A;
+        const g = cv.getContext('2d', { willReadFrequently: true });
+        g.font = cs.fontStyle + ' ' + cs.fontWeight + ' ' + px + 'px ' + cs.fontFamily;
+        g.textBaseline = 'alphabetic';
+        const base = Math.round(px * 2);
+        g.fillText(ic.textContent, 2, base);
+        const d = g.getImageData(0, 0, L, A).data;
+        let topo = -1;
+        let fundo = -1;
+        for (let y = 0; y < A; y++) {
+          for (let x = 0; x < L; x++) {
+            if (d[(y * L + x) * 4 + 3] > 20) { if (topo < 0) topo = y; fundo = y; break; }
+          }
+        }
+        if (topo < 0) return;
+        const centroAcimaDaBase = base - (topo + fundo + 1) / 2;
+        const sonda = document.createElement('span');
+        sonda.style.cssText = 'display:inline-block;width:0;height:0';
+        ic.appendChild(sonda);
+        const yBase = sonda.getBoundingClientRect().bottom;
+        sonda.remove();
+        const desvio = moldura.top + moldura.height / 2 - (yBase - centroAcimaDaBase);
+        if (Math.abs(desvio) < 12) ic.style.transform = 'translateY(' + desvio.toFixed(1) + 'px)';
+      } catch (e) { /* sem canvas: fica como está */ }
     }
 
     function bibliaRenderSecao() {
@@ -20865,7 +20959,9 @@ function saveTemplatesToStorage() {
       });
       if (!secao) return;
       bibliaEstado.secao = secao.id;
-      bibliaSecaoTitulo.replaceChildren(bibliaIcone(secao.id), document.createTextNode(' ' + secao.nome));
+      bibliaSecaoIcone.textContent = BIBLIA_ICONES[secao.id] || '📖'; // o ícone fica à esquerda, separado do nome
+      bibliaSecaoTitulo.textContent = secao.nome;
+      bibliaIconeCentrar();
       const soPend = bibliaSoPendentes.checked;
       let mostrados = 0;
       (secao.itens || []).forEach(item0 => {
@@ -20922,7 +21018,12 @@ function saveTemplatesToStorage() {
         ok.setAttribute('aria-hidden', 'true');
         ok.textContent = '✔';
         b.append(icone, nome, cont, barra, ok);
-        b.addEventListener('click', () => { bibliaEstado.secao = s.id; bibliaRenderSecao(); });
+        b.addEventListener('click', () => {
+          bibliaEstado.secao = s.id;
+          if (bibliaResumoAlvo) bibliaFecharResumo(false);
+          bibliaProgDefinir(true); // ao escolher a seção, a programação abre expandida (o usuário pode recolher)
+          bibliaRenderSecao();
+        });
         bibliaSecoes.appendChild(b);
       });
     }
@@ -20947,7 +21048,46 @@ function saveTemplatesToStorage() {
         const abrir = bibliaTodosItens().find(i => i.secaoId === bibliaEstado.secao && bibliaCapitulos(i).some(c => !bibliaMarcaDe(c.id).lido));
         if (abrir) bibliaAbertos.add(abrir.id);
         bibliaPronto = true;
-        bibliaSoPendentes.addEventListener('change', () => { bibliaEstado.soPendentes = bibliaSoPendentes.checked; bibliaRenderSecao(); });
+        bibliaSoPendentes.addEventListener('change', () => {
+          bibliaEstado.soPendentes = bibliaSoPendentes.checked;
+          if (!bibliaProgAberto) bibliaProgDefinir(true);
+          bibliaRenderSecao();
+        });
+        bibliaProgToggle.addEventListener('click', () => bibliaProgDefinir(!bibliaProgAberto));
+        document.getElementById('bibliaResumoFecharBtn').addEventListener('click', () => bibliaFecharResumo(true));
+        bibliaResumirBtn.addEventListener('click', () => { bibliaGerarResumo(); });
+        bibliaResumoTexto.addEventListener('input', () => {
+          const alvo = bibliaResumoAlvo;
+          if (alvo) {
+            const t = bibliaResumoTexto.value;
+            if (t.trim()) bibliaEstado.resumos[alvo.cap.id] = t; else delete bibliaEstado.resumos[alvo.cap.id];
+            bibliaGravarEstado();
+          }
+          bibliaResumoSincronizar();
+        });
+        window.addEventListener('resize', () => bibliaAutoAlturar(bibliaResumoTexto));
+        bibliaResumoCopiarBtn.addEventListener('click', async () => {
+          const t = bibliaResumoTexto.value.trim();
+          if (!t) return;
+          try {
+            await navigator.clipboard.writeText(t);
+            bibliaResumoStatus.textContent = '📋 Resumo copiado.';
+          } catch (e) {
+            bibliaResumoStatus.textContent = 'Não consegui copiar. Selecione o texto e copie manualmente.';
+          }
+        });
+        bibliaResumoWordBtn.addEventListener('click', () => { // a mesma prévia do documento Word dos outros textos (exportar ou compartilhar o .docx)
+          const t = bibliaResumoTexto.value;
+          if (!t.trim() || !bibliaResumoAlvo) return;
+          const nome = ('Resumo - ' + bibliaResumoAlvo.cap.nome).replace(/[\/:*?"<>|“”‘’]/g, '').replace(/\s+/g, ' ').trim().slice(0, 90);
+          docxPreviaAbrir(bibliaResumoWordBtn, t, nome);
+        });
+        bibliaResumoSalvarBtn.addEventListener('click', async () => {
+          const t = bibliaResumoTexto.value.trim();
+          if (!t || !bibliaResumoAlvo) return;
+          const salvo = await historicoSalvarNota(t, 'Resumo · ' + bibliaResumoAlvo.cap.nome, 'O resumo fica em Pesquisas e respostas salvas → Textos.');
+          if (salvo) bibliaResumoStatus.textContent = '💾 Resumo salvo em Pesquisas e respostas salvas.';
+        });
       }
       bibliaAtualizarProgresso();
       bibliaRenderSecao();

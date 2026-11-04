@@ -1515,12 +1515,28 @@
         <h3 class="biblia-caixa-titulo">Seções</h3>
         <div id="bibliaSecoes" class="biblia-secoes"></div>
       </div>
-      <div class="biblia-caixa">
+      <div class="biblia-caixa" id="bibliaProgCaixa">
         <div class="biblia-grupos-topo">
-          <h3 class="biblia-caixa-titulo" id="bibliaSecaoTitulo"></h3>
+          <button type="button" id="bibliaProgToggle" class="biblia-prog-toggle" aria-expanded="true" aria-controls="bibliaLista"><span id="bibliaSecaoIcone" class="biblia-prog-icone" aria-hidden="true"></span><span id="bibliaSecaoTitulo"></span><span class="biblia-prog-seta" aria-hidden="true">▾</span></button>
           <label class="ai-check biblia-so-pendentes"><input type="checkbox" id="bibliaSoPendentes" autocomplete="off"> Só as pendentes</label>
         </div>
         <div id="bibliaLista" class="biblia-lista" aria-live="polite"></div>
+      </div>
+      <div class="biblia-caixa biblia-resumo-caixa" id="bibliaResumoCaixa" hidden>
+        <div class="biblia-grupos-topo">
+          <h3 class="biblia-caixa-titulo" id="bibliaResumoTitulo"></h3>
+          <button type="button" id="bibliaResumoFecharBtn" class="secondary biblia-resumo-fechar">✕ Fechar</button>
+        </div>
+        <div class="bk-row biblia-gerar-linha">
+          <button id="bibliaResumirBtn" type="button">✨ Gerar resumo</button>
+        </div>
+        <textarea id="bibliaResumoTexto" class="biblia-resumo-area" placeholder="O resumo aparece aqui." spellcheck="false"></textarea>
+        <div class="bk-row">
+          <button id="bibliaResumoSalvarBtn" class="secondary" type="button" disabled>💾 Salvar em Pesquisas</button>
+          <button id="bibliaResumoCopiarBtn" class="secondary" type="button" disabled>📋 Copiar</button>
+          <button id="bibliaResumoWordBtn" class="secondary" type="button" title="Visualizar e exportar o resumo para Word (.docx)" disabled>📄 Word</button>
+        </div>
+        <p id="bibliaResumoStatus" class="hint" role="status" aria-live="polite"></p>
       </div>
     </div>
 

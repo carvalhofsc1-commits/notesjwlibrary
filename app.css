@@ -10025,7 +10025,7 @@ details.transcricao-bloco:not([open]) {
 }
 .biblia-grupos-topo {
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 8px;
@@ -10034,6 +10034,96 @@ details.transcricao-bloco:not([open]) {
   margin: 0;
   flex: 1 1 auto;
   min-width: 0;
+}
+.biblia-prog-toggle {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* ícone, nome e seta centralizados dentro da moldura */
+  gap: 8px;
+  min-height: 2.5rem;
+  padding: 4px 8px;
+  border: 1px solid color-mix(in srgb, var(--brand) 35%, var(--line)); /* moldura fina e discreta */
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 750;
+  text-align: center;
+  box-shadow: none;
+}
+.biblia-prog-toggle:hover {
+  background: transparent;
+}
+.biblia-prog-icone { /* ícone da seção à esquerda, maior, sem aumentar a altura da moldura */
+  flex: 0 0 auto;
+  font-size: 1.45rem;
+  line-height: 1;
+  height: 1em;
+  letter-spacing: 0;
+  display: inline-block;
+}
+.biblia-prog-seta {
+  flex: 0 0 auto;
+  color: var(--muted);
+  transition: transform .15s;
+}
+.biblia-prog-toggle.fechado .biblia-prog-seta {
+  transform: rotate(-90deg);
+}
+/* Moldura do nome da seção e "Só as pendentes" na mesma linha; o nome usa letra menor e no máximo duas linhas. */
+#bibliaProgCaixa .biblia-grupos-topo {
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 8px;
+}
+#bibliaSecaoTitulo {
+  flex: 1 1 auto;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  min-width: 0;
+  font-size: .78rem;
+  line-height: 1.2;
+  text-align: center;
+}
+#bibliaProgCaixa .biblia-so-pendentes { /* compacto (texto em duas linhas), para sobrar largura ao nome da seção */
+  display: flex;
+  align-items: center; /* a caixinha fica centralizada na altura do botão */
+  justify-content: center; /* e o conjunto (caixinha e texto) no meio da largura */
+  text-align: center;
+  gap: 5px;
+  margin: 0;
+  padding: 4px 8px;
+  font-size: .72rem;
+  line-height: 1.15;
+  white-space: normal;
+  max-width: 6.6rem;
+}
+#bibliaProgCaixa .biblia-so-pendentes input {
+  flex: 0 0 auto;
+  margin: 0;
+}
+#bibliaProgCaixa .biblia-prog-toggle {
+  gap: 4px;
+  padding: 4px 6px;
+}
+.biblia-caixa.recolhida .biblia-grupos-topo {
+  margin-bottom: 0; /* sem lista embaixo, a moldura fica a 10 px da borda do quadro, igual ao topo */
+}
+.biblia-lista[hidden] { display: none; }
+.biblia-resumo-caixa[hidden] { display: none; }
+.biblia-resumo-fechar {
+  flex: 0 0 auto;
+  width: auto;
+  min-height: 0;
+  height: 2rem;
+  padding: 0 12px;
+  font-size: .8rem;
 }
 .biblia-so-pendentes {
   flex: 0 0 auto;
@@ -10115,7 +10205,7 @@ details.transcricao-bloco:not([open]) {
   background: color-mix(in srgb, #60a5fa 24%, var(--card)); /* capítulo lido: fundo azul claro */
 }
 .biblia-cap-rotulo {
-  grid-column: 1 / -1;
+  grid-column: 1;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -10142,9 +10232,19 @@ details.transcricao-bloco:not([open]) {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.biblia-cap-data {
+.biblia-cap-data-caixa {
   grid-column: 1;
   grid-row: 2;
+  display: block;
+  min-width: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.biblia-cap-data {
+  pointer-events: none; /* o clique passa para a caixa em volta, que marca/desmarca a leitura */
+  user-select: none;
+  -webkit-user-select: none;
+  caret-color: transparent;
   min-width: 0;
   max-width: 100%;
   min-height: 0;
@@ -10165,7 +10265,7 @@ details.transcricao-bloco:not([open]) {
   width: 4.7rem;
   min-width: 0;
   min-height: 0;
-  height: 1.45rem;
+  height: 2rem;
   padding: 0 6px;
   border-radius: 8px;
   font-size: .72rem;
@@ -10185,15 +10285,20 @@ details.transcricao-bloco:not([open]) {
 }
 .biblia-cap-wol {
   grid-column: 2;
-  grid-row: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
   justify-self: end;
   --cor: 215; /* azul */
 }
 .biblia-cap .biblia-cap-resumir {
   grid-column: 3;
-  grid-row: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
   justify-self: end;
   --cor: 280; /* roxo */
+}
+.biblia-cap .biblia-cap-resumir.tem {
+  --cor: 150; /* verde: o resumo já existe ("Ver resumo") */
 }
 .biblia-cap-resumo {
   grid-column: 1 / -1;
@@ -10202,7 +10307,9 @@ details.transcricao-bloco:not([open]) {
 .biblia-cap-resumo[hidden] { display: none; }
 .biblia-resumo-area {
   width: 100%;
-  min-height: 140px;
-  margin-top: 4px;
-  resize: vertical;
+  box-sizing: border-box;
+  min-height: 6.5em;
+  margin-top: 10px;
+  overflow: hidden; /* a altura acompanha o texto (bibliaAutoAlturar): sem barra de rolagem */
+  resize: none;
 }
