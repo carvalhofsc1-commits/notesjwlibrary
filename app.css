@@ -10500,7 +10500,7 @@ details.transcricao-bloco:not([open]) {
 }
 .biblia-eq-v { /* versículo em andamento ao lado das barras de áudio */
   margin-left: 6px;
-  min-width: 4.2em;
+  min-width: 7.6em;
   font-size: .72rem;
   font-weight: 700;
   line-height: 1;

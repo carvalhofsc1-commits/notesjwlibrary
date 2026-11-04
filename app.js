@@ -7540,7 +7540,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.41'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.42'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21164,7 +21164,7 @@ function saveTemplatesToStorage() {
     }
     function bibliaAudioPintarVersiculo() {
       const a = bibliaAudioAtual;
-      const texto = a && a.v ? 'v. ' + a.v + (a.total ? '/' + a.total : '') : '';
+      const texto = a ? 'Cap. ' + a.n + (a.v ? ' v. ' + a.v + (a.total ? '/' + a.total : '') : '') : ''; // "Cap. 4 v. 5/6" (antes do versículo 1, só o capítulo)
       document.querySelectorAll('#bibliaCard .biblia-eq-v').forEach(el => { el.textContent = texto; });
     }
 

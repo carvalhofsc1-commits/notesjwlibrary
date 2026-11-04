@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.42
+
+Leitura da Bíblia: durante o áudio, o cabeçalho do grupo informa também o capítulo (“Cap. 4 v. 5/6”).
+
 ## 6.5.41
 
 Leitura da Bíblia: a quantidade de versículos aparece depois do capítulo, entre parênteses e sem negrito (“Cap. 1 (31)”; nos trechos do Salmo 119, só os versículos do trecho). Nas linhas que mostram o nome do livro, os nomes compridos são abreviados (Hab. 1 (17)) e o número do capítulo nunca é cortado. Durante o áudio, o cabeçalho do grupo mostra o versículo que está sendo lido (“v. 12/31”), a partir dos marcadores do áudio da jw.org.
