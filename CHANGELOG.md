@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.02
+
+Início: as descrições dos atalhos voltam a aparecer no celular (o atalho da Leitura diária da Bíblia tinha uma descrição de três linhas, que fazia o app esconder todas; ela foi encurtada e, no ajuste "aperta", ícones e letras dos atalhos ficam um pouco menores para os 8 atalhos caberem com as descrições numa tela de 852 px). Logo da barra do topo reestilizado: ícone à esquerda, nome em negrito inclinado maior e o slogan centralizado logo abaixo, da largura do nome.
+
 ## 6.5.01
 
 Revisão da 6.5.00: logo centralizado na barra do topo (slogan encurtado para "Auxílio para estudo e preparação"); na Leitura diária da Bíblia, o resumo na caixa passa a ser sempre o do grupo selecionado (antes, ao abrir a tela com outro grupo como próximo pendente, o resumo do grupo anterior ficava na caixa e era gravado no grupo novo); nota do modelo da IA sob o botão Gerar resumo; a tecla Esc fecha o menu lateral; a entrada 6.4.81 do histórico, sobrescrita pela 6.5.00, foi restaurada.

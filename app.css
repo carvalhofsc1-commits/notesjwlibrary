@@ -239,27 +239,32 @@
     }
 
     .brand-icon {
-      width: clamp(40px, 9vw, 52px);
+      width: 44px;
       height: auto;
       aspect-ratio: 1;
       flex: 0 0 auto;
       filter: drop-shadow(0 2px 6px var(--shadow));
     }
 
+    /* Como no logotipo: nome grande em negrito inclinado e o slogan centralizado logo abaixo, da largura do nome. */
     .brand-text {
       min-width: 0;
-      text-align: left;
+      text-align: center;
       display: flex;
       flex-direction: column;
-      gap: 1px;
+      align-items: center;
+      gap: 0;
     }
 
     /* Nome em duas cores, como no logotipo: "Note" na cor do texto e "Style" em violeta. */
     header h1 {
       margin: 0;
       color: var(--text);
-      font-size: clamp(1.15rem, 4.2vw, 1.55rem);
-      line-height: 1.1;
+      font-size: clamp(1.6rem, 7.6vw, 1.95rem);
+      font-weight: 800;
+      font-style: italic;
+      letter-spacing: .01em;
+      line-height: 1.05;
     }
 
     .brand-accent {
@@ -269,9 +274,9 @@
     .brand-subtitle {
       margin: 0;
       max-width: none;
-      font-weight: 550;
-      font-size: clamp(.68rem, 2.1vw, .82rem);
-      line-height: 1.25;
+      font-weight: 600;
+      font-size: clamp(.58rem, 2.55vw, .74rem);
+      line-height: 1.2;
       color: var(--muted);
       white-space: nowrap;
       overflow: hidden;
@@ -5551,6 +5556,26 @@
       .inicio-grid.aperta .td-tema {
         font-size: .94rem;
         line-height: 1.35;
+      }
+
+      /* Os 8 atalhos com as descrições cabem numa tela de iPhone (852 px) só com letras e ícones um pouco menores: assim o "aperta2" (que esconde as
+         descrições) fica para as telas mais baixas. */
+      .inicio-grid.aperta .atalhos-grid {
+        gap: 6px;
+      }
+
+      .inicio-grid.aperta .atalho-icone {
+        font-size: 2rem;
+      }
+
+      .inicio-grid.aperta .atalho-nome {
+        font-size: .98rem;
+        line-height: 1.15;
+      }
+
+      .inicio-grid.aperta .atalho-desc {
+        font-size: .78rem;
+        line-height: 1.2;
       }
 
       .inicio-grid.aperta2>#textoDiarioCard {
