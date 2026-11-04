@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.48
+
+Leitura da Bíblia (áudio): gráfico de barras mais esticado (9 barras, mais altas).
+
 ## 6.5.47
 
 Leitura da Bíblia: ao tocar no botão de uma seção, a tela desce até o começo da seção aberta (a programação).

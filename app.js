@@ -7540,7 +7540,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.47'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.48'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21146,7 +21146,7 @@ function saveTemplatesToStorage() {
           eq = document.createElement('span');
           eq.className = 'biblia-eq';
           eq.setAttribute('aria-hidden', 'true');
-          [215, 185, 150, 110, 70, 35, 5].forEach((h, i) => { const b = document.createElement('i'); b.style.setProperty('--h', h); b.style.setProperty('--d', (i * 0.13).toFixed(2) + 's'); eq.appendChild(b); });
+          [215, 195, 170, 140, 110, 80, 50, 25, 5].forEach((h, i) => { const b = document.createElement('i'); b.style.setProperty('--h', h); b.style.setProperty('--d', (i * 0.11).toFixed(2) + 's'); eq.appendChild(b); });
           const qual = document.createElement('span'); // o versículo em andamento, ao lado das barras
           qual.className = 'biblia-eq-v';
           eq.appendChild(qual);
