@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.08
+
+Leitura diária da Bíblia: o ícone da seção da vida e do ministério de Jesus agora é um rosto desenhado (pele clara, cabelo e barba pretos), já que os emojis não têm essa combinação.
+
 ## 6.5.07
 
 Leitura diária da Bíblia: o ícone da seção da vida e do ministério de Jesus passa para um tom de pele mais claro.

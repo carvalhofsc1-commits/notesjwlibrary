@@ -7546,7 +7546,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.07'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.08'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -20503,7 +20503,26 @@ function saveTemplatesToStorage() {
     // (registrada ao marcar) e o resumo valem para o capítulo. Marcações e resumos ficam só neste aparelho.
     const BIBLIA_PROG = window.PROGRAMA_LEITURA_BIBLIA || { secoes: [], total: 0, instrucoes: '' };
     const BIBLIA_KEY = 'jwLibraryNoteAplicarLeituraBibliaV1';
-    const BIBLIA_ICONES = { moises: '📜', terra: '🏞️', reis: '👑', exilio: '🧱', canticos: '🎶', profetas: '📣', jesus: '🧔🏼', atos: '🌍', paulo: '✉️', outros: '🔥' };
+    const BIBLIA_ICONES = { moises: '📜', terra: '🏞️', reis: '👑', exilio: '🧱', canticos: '🎶', profetas: '📣', jesus: 'svg:jesus', atos: '🌍', paulo: '✉️', outros: '🔥' };
+    // Rosto desenhado para a seção de Jesus (os emojis não têm barba e cabelo pretos com pele clara): pele clara, cabelo e barba pretos.
+    const BIBLIA_ICONE_JESUS = '<svg viewBox="0 0 32 32" width="1em" height="1em" aria-hidden="true" focusable="false">'
+      + '<path d="M7 17C5.2 8 9.5 3.5 16 3.5S26.8 8 25 17C24 12 20.5 9.3 16 9.3S8 12 7 17Z" fill="#141414"/>'
+      + '<path d="M7 16.5C5.8 21 6.6 25 9 27.5L11 19Z M25 16.5C26.2 21 25.4 25 23 27.5L21 19Z" fill="#141414"/>'
+      + '<ellipse cx="16" cy="16" rx="7.6" ry="8.6" fill="#f8dcc4"/>'
+      + '<path d="M8.4 14.6C9 10.5 12 8.6 16 8.6S23 10.5 23.6 14.6C21.8 12.6 19 11.8 16 11.8S10.2 12.6 8.4 14.6Z" fill="#141414"/>'
+      + '<path d="M8.4 17.2C8.6 25.6 12 29.2 16 29.2S23.4 25.6 23.6 17.2C22.2 19.8 20 21.2 16 21.2S9.8 19.8 8.4 17.2Z" fill="#141414"/>'
+      + '<ellipse cx="16" cy="23" rx="2.3" ry="0.9" fill="#a8504a"/>'
+      + '<circle cx="12.9" cy="15.2" r="1" fill="#141414"/><circle cx="19.1" cy="15.2" r="1" fill="#141414"/>'
+      + '<path d="M16 15.8L15.2 18.4H16.8" fill="none" stroke="#d9ad8d" stroke-width=".7" stroke-linecap="round" stroke-linejoin="round"/>'
+      + '</svg>';
+    function bibliaIcone(id) { // nó com o ícone da seção: emoji, ou o rosto desenhado
+      const el = document.createElement('span');
+      el.className = 'biblia-icone';
+      el.setAttribute('aria-hidden', 'true');
+      if (BIBLIA_ICONES[id] === 'svg:jesus') el.innerHTML = BIBLIA_ICONE_JESUS;
+      else el.textContent = BIBLIA_ICONES[id] || '📖';
+      return el;
+    }
     // Livros curtos que o programa lê "todo": quantos capítulos têm.
     const BIBLIA_CAPS_LIVRO = { 'Obadias': 1, 'Jonas': 4, 'Naum': 3, 'Habacuque': 3, 'Sofonias': 3, 'Ageu': 2, 'Tito': 3, 'Filêmon': 1, '2 João': 1, '3 João': 1, 'Judas': 1 };
     const bibliaSecoes = document.getElementById('bibliaSecoes');
@@ -20821,7 +20840,7 @@ function saveTemplatesToStorage() {
       });
       if (!secao) return;
       bibliaEstado.secao = secao.id;
-      bibliaSecaoTitulo.textContent = (BIBLIA_ICONES[secao.id] || '📖') + ' ' + secao.nome;
+      bibliaSecaoTitulo.replaceChildren(bibliaIcone(secao.id), document.createTextNode(' ' + secao.nome));
       const soPend = bibliaSoPendentes.checked;
       let mostrados = 0;
       (secao.itens || []).forEach(item0 => {
@@ -20863,10 +20882,8 @@ function saveTemplatesToStorage() {
         b.type = 'button';
         b.className = 'biblia-secao-btn';
         b.dataset.secao = s.id;
-        const icone = document.createElement('span');
-        icone.className = 'biblia-secao-icone';
-        icone.setAttribute('aria-hidden', 'true');
-        icone.textContent = BIBLIA_ICONES[s.id] || '📖';
+        const icone = bibliaIcone(s.id);
+        icone.classList.add('biblia-secao-icone');
         const nome = document.createElement('span');
         nome.className = 'biblia-secao-nome';
         nome.textContent = s.nome;
