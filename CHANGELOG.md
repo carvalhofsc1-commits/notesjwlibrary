@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.47
+
+Leitura da Bíblia: ao tocar no botão de uma seção, a tela desce até o começo da seção aberta (a programação).
+
 ## 6.5.46
 
 Leitura da Bíblia: o botão “Resumir” da linha do capítulo fica só com o texto (sem o ícone), para não cortar.

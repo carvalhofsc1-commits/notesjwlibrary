@@ -10515,3 +10515,4 @@ details.transcricao-bloco:not([open]) {
 /* ⏹ Parar: um segundo círculo ao lado do ▶ (em vermelho suave); apagado enquanto o capítulo não está em andamento. */
 .biblia-cap .biblia-cap-parar { grid-column: 3; --cor: 5; font-size: .7rem; }
 .biblia-cap .biblia-cap-parar:disabled { opacity: .4; cursor: default; }
+#bibliaProgCaixa { scroll-margin-top: calc(var(--topbar-h, 0px) + 78px); } /* ao descer até a seção, o começo dela fica logo abaixo da barra do topo */
