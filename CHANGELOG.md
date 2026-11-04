@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.30
+
+Resumo do capítulo (leitura diária): corrige falha ao gerar (erro “Não foi possível obter sugestões agora”) causada pelo schema JSON da resposta da IA (`z.any()` / campos opcionais inválidos). Volta a aceitar o formato completo das seções adicionais.
+
 ## 6.5.29
 
 Resumo do capítulo (leitura diária): nova opção “Gerar o resumo do capítulo” (primeira, marcada por padrão; pode desmarcar para pedir só outra seção). Se já existir texto salvo, a IA o usa como base ao gerar de novo; com uma única opção marcada, acrescenta a seção nova ou só melhora a seção que já existia, sem alterar o restante.

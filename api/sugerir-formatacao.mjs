@@ -2876,24 +2876,46 @@ const SaidaJoias = z.object({
   outros: z.array(z.object({ titulo: z.string(), texto: z.string(), verbetes: z.array(z.string()) })),
 });
 
-// Leitura diária: verbetes/Perspicaz, consultas WOL e destaques no mesmo padrão das respostas do estudo.
+// Leitura diária: mesmo esqueleto das Joias (schema JSON válido para a Anthropic), com campos extras em "outros".
+// Não usar z.any() / z.null() solto / .optional() solto: o conversor exige "type" em todo nó (erro visto em produção).
 const DestaqueResumoLeitura = z.object({
   trecho: z.string(),
-  estilo: z.enum(ESTILOS).nullable().optional(),
-  maiusculas: z.boolean().optional(),
-  fonte: z.enum(["doubleStruck", "sans", "squaredDark"]).nullable().optional(),
+  estilo: z.enum(ESTILOS).nullable(),
+  maiusculas: z.boolean(),
+  fonte: z.enum(["doubleStruck", "sans", "squaredDark"]).nullable(),
 });
 const SaidaResumoLeitura = z.object({
-  pergunta: z.null(),
-  joias: z.array(z.any()).max(0),
+  pergunta: z
+    .object({
+      resposta: z.string(),
+      quebras: z.array(z.string()),
+      emoji: z.string().nullable(),
+      destaques: z.array(DestaqueJoia),
+      referencias: z.array(z.string()),
+      textosRelevantes: z.array(z.string()),
+      verbetes: z.array(z.string()),
+    })
+    .nullable(),
+  joias: z.array(
+    z.object({
+      capitulo: z.string(),
+      referencia: z.string(),
+      resposta: z.string(),
+      quebras: z.array(z.string()),
+      emoji: z.string().nullable(),
+      destaques: z.array(DestaqueJoia),
+      textosRelevantes: z.array(z.string()),
+      verbetes: z.array(z.string()),
+    })
+  ),
   outros: z.array(
     z.object({
       titulo: z.string(),
       texto: z.string(),
       verbetes: z.array(z.string()),
-      consultasWol: z.array(z.string()).optional(),
-      destaques: z.array(DestaqueResumoLeitura).optional(),
-      quebras: z.array(z.string()).optional(),
+      consultasWol: z.array(z.string()),
+      destaques: z.array(DestaqueResumoLeitura),
+      quebras: z.array(z.string()),
     })
   ),
 });
@@ -3354,6 +3376,7 @@ async function completarResumosLeituraComFontes(outros, P, ajuste = "", blocoOpc
       : "";
     const mensagem =
       blocoOrientacao({}, ajuste, P) +
+      `"pergunta" é null; "joias" é []. Em cada item de "outros", preencha "verbetes", "consultasWol", "destaques" e "quebras" (listas; vazias se não houver).\n\n` +
       frase +
       "\n\n" +
       blocoFmt +
@@ -3462,7 +3485,7 @@ async function resumirLeituraBiblia(res, body, P) {
     blocoOrientacao({}, ajuste, P) +
     `PEDIDO: texto da leitura diária da Bíblia (${titulo}).\n` +
     `pergunta da apostila INATIVA; joias da leitura INATIVAS; seções pedidas = opções marcadas.\n` +
-    `"pergunta" é null e "joias" é [].\n` +
+    `"pergunta" é null e "joias" é []. Em cada item de "outros", preencha "verbetes", "consultasWol", "destaques" e "quebras" (listas; vazias se não houver).\n` +
     `Opções ATIVAS: ${idsOpcoes.join(", ")}` +
     (secaoUnica ? ` (modo seção única: só ${SECAO_UNICA_RESUMO_LEITURA[secaoUnica]}).` : ".") +
     "\n\n" +
