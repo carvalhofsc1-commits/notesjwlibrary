@@ -87,7 +87,8 @@ export function validarCupomVoz(cupom, { data, origem, texto } = {}) {
   const falado = typeof texto === "string" ? texto : "";
   const origemStr = typeof origem === "string" ? origem : "";
   // A pronúncia pode alongar um pouco; texto bem maior que a origem seria abuso com origem curta do corpus.
-  if (falado.length > Math.max(Math.ceil(origemStr.length * 2.5), 80)) {
+  // (+120: sobra para as falas que só anunciam, como "Comentário número 3", que não fazem parte da origem.)
+  if (falado.length > Math.max(Math.ceil(origemStr.length * 2.5) + 120, 80)) {
     return { ok: false, erro: "Trecho de áudio não corresponde ao texto autorizado." };
   }
   return { ok: true };

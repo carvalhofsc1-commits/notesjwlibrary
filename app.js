@@ -7483,7 +7483,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.80'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.81'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -17630,6 +17630,10 @@ function saveTemplatesToStorage() {
       const unidades = [];
       linhas.forEach((linha, paragrafo) => {
         if (!linha.falado) return;
+        if (linha.anuncio) { // fala que só anuncia (cabeçalho, "Comentário número 1"): não está na tela, então não há o que destacar
+          unidades.push({ falado: linha.falado, origem: '', paragrafo, el: null });
+          return;
+        }
         if (linha.inteira) {
           linha.el.classList.add('lu');
           leituraMudosNoSpan(linha.el, regras);
@@ -17705,7 +17709,11 @@ function saveTemplatesToStorage() {
 
     function tdIaLeituraPreparar(regras) {
       const linhas = [];
-      [...td.iaLista.children].forEach(item => {
+      // Cada fala de anúncio é uma linha (parágrafo) própria, terminada em ponto: a voz faz uma pausa antes e depois dela. Ordem lida:
+      // o cabeçalho, pausa, "Comentário número 1", pausa, o comentário 1, pausa, "Comentário número 2", e assim por diante.
+      linhas.push({ anuncio: true, falado: 'Comentários adicionais do texto diário.' });
+      [...td.iaLista.children].forEach((item, n) => {
+        linhas.push({ anuncio: true, falado: 'Comentário número ' + (n + 1) + '.' });
         const ponto = item.querySelector('.td-ia-ponto');
         const texto = item.querySelector('.td-ia-texto');
         if (ponto) {

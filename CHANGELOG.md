@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.81
+
+Texto diário: a leitura em voz alta dos Comentários adicionais agora lê o cabeçalho "Comentários adicionais do texto diário", e antes de cada comentário anuncia "Comentário número 1", "Comentário número 2" e assim por diante. Cada fala fica numa linha própria, terminada em ponto, para a voz fazer uma pausa entre uma e outra. O servidor aceita essas falas de anúncio (folga de 120 caracteres na conferência do trecho).
+
 ## 6.4.80
 
 Áudio em texto: a lista Arquivos de áudio ficava com duas molduras, uma dentro da outra; agora cada arquivo tem uma moldura só.
