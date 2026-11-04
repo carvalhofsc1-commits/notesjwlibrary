@@ -7483,7 +7483,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.78'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.79'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -12423,6 +12423,9 @@ function saveTemplatesToStorage() {
     // pedido como "ajuste": o servidor o põe no INÍCIO da mensagem, como orientação do usuário, com prioridade total sobre o prompt padrão
     // (blocoOrientacao e PRIORIDADE_ORIENTACAO em api). Vale para o pedido, "Outra resposta" e "Melhorar" da seção; não fica guardado no aparelho.
     const IA_EXTRA_CAMPOS = {
+      // Formatar → Opções com IA: o botão fica numa linha própria (.ai-main-row); o campo entra logo depois dela (linha: true).
+      formatar: { botao: 'aiSuggestBtn', linha: true, exemplo: 'Ex.: destaque em negrito só os nomes e as datas, e use emojis nos títulos.' },
+      sentinela: { botao: 'aiSentinelaBtn', linha: true, exemplo: 'Ex.: responda em no máximo duas frases e cite o texto bíblico do parágrafo.' },
       estudo: { botao: 'aiStudyBtn', exemplo: 'Ex.: explique também como o parágrafo se aplica à família, ou dê uma resposta mais curta.' },
       joias: { botao: 'joiasResponderBtn', exemplo: 'Ex.: explique e aplique Jeremias 45:5 para quem se sente desanimado.', somente: true },
       ebc: { botao: 'ebcResponderBtn', exemplo: 'Ex.: responda com mais detalhes ao quadro "Medite no que aprendeu".' },
@@ -12433,7 +12436,7 @@ function saveTemplatesToStorage() {
       discurso: { botao: 'discursoEsbocoBtn', exemplo: 'Ex.: faça uma introdução mais curta e foque na aplicação prática.' }
     };
 
-    function iaExtraCriar(chave, { botao, exemplo, somente }) {
+    function iaExtraCriar(chave, { botao, exemplo, somente, linha }) {
       const alvo = document.getElementById(botao);
       if (!alvo) return;
       const bloco = document.createElement('details'); // recolhida: só a linha do título; o texto digitado fica guardado enquanto o app está aberto
@@ -12491,7 +12494,7 @@ function saveTemplatesToStorage() {
         caixa.append(marca, ' ⚡ Executar somente estas instruções (ignora o que está marcado em “O que preparar”)');
         bloco.append(caixa);
       }
-      alvo.insertAdjacentElement('afterend', bloco);
+      (linha ? alvo.closest('.ai-main-row') || alvo : alvo).insertAdjacentElement('afterend', bloco);
     }
     Object.entries(IA_EXTRA_CAMPOS).forEach(([chave, config]) => iaExtraCriar(chave, config));
 
@@ -12904,6 +12907,8 @@ function saveTemplatesToStorage() {
 
       const options = readAiOptions(); // inclui "Incluir resumo do texto" e as consultas, como estão marcados agora
       const payload = { tarefa: 'formatar', codigo: codigoAcessoSalvo(), linhas: lines, modelos, opcoes: options };
+      const ajuste = iaExtra('formatar'); // instruções adicionais do campo da Sugerir formatação (valem mais que o prompt padrão)
+      if (ajuste) payload.ajuste = ajuste;
       if (textoLongo) payload.textoLongo = true;
       if (mode && (aiRaw.length || previousSummary)) {
         payload.modo = mode;
@@ -13109,6 +13114,8 @@ function saveTemplatesToStorage() {
       saveAiOptions();
 
       const payload = { tarefa: 'sentinela', codigo: codigoAcessoSalvo(), linhas: lines, modelos: [], opcoes: readAiOptions() };
+      const ajuste = iaExtra('sentinela'); // instruções adicionais do campo da resposta do texto colado
+      if (ajuste) payload.ajuste = ajuste;
       if (textoLongo) payload.textoLongo = true;
       if (mode && hadPrevious) {
         payload.modo = mode;

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.79
+
+Formatar → Opções com IA: campo de instruções adicionais para a IA sob o botão Sugerir formatação e sob o botão Responder a pergunta do texto colado. O texto vale mais que o prompt padrão, em todos os pedidos da seção (inclusive Outra sugestão e Melhorar), como nas outras seções.
+
 ## 6.4.78
 
 Áudio em texto: o botão Copiar da barra dos campos de texto (transcrição, texto corrigido e resumo) ficava com o texto cortado ("Cop"); agora mostra só o ícone 📋, como o ✏️ (o nome Copiar continua na dica e na leitura de tela).
