@@ -9870,9 +9870,9 @@ details.transcricao-bloco:not([open]) {
   gap: 2px;
   min-height: 0;
   padding: 10px 6px 8px;
-  border: 1px solid var(--line);
+  border: 1px solid color-mix(in srgb, hsl(var(--h, 250) 60% 50%) 30%, var(--line));
   border-radius: 14px;
-  background: color-mix(in srgb, var(--soft) 55%, var(--card));
+  background: var(--sec-bg);
   color: var(--text);
   font: inherit;
   text-align: center;
@@ -9880,9 +9880,21 @@ details.transcricao-bloco:not([open]) {
 }
 .biblia-secao-btn {
   position: relative;
+  --sec-bg: color-mix(in srgb, hsl(var(--h, 250) 75% 55%) 17%, var(--card)); /* um matiz suave para cada seção */
 }
+.biblia-secao-btn[data-secao="moises"] { --h: 38; }
+.biblia-secao-btn[data-secao="terra"] { --h: 195; }
+.biblia-secao-btn[data-secao="reis"] { --h: 56; }
+.biblia-secao-btn[data-secao="exilio"] { --h: 235; }
+.biblia-secao-btn[data-secao="canticos"] { --h: 285; }
+.biblia-secao-btn[data-secao="profetas"] { --h: 340; }
+.biblia-secao-btn[data-secao="jesus"] { --h: 8; }
+.biblia-secao-btn[data-secao="atos"] { --h: 172; }
+.biblia-secao-btn[data-secao="paulo"] { --h: 315; }
+.biblia-secao-btn[data-secao="outros"] { --h: 262; }
 .biblia-secao-btn.completa {
-  background: color-mix(in srgb, #16a34a 28%, var(--card));
+  --sec-bg: color-mix(in srgb, #16a34a 28%, var(--card));
+  background: var(--sec-bg);
   border-color: color-mix(in srgb, #16a34a 60%, var(--line));
 }
 .biblia-secao-ok {
@@ -9914,10 +9926,7 @@ details.transcricao-bloco:not([open]) {
   transition: width .25s;
 }
 .biblia-secao-btn:hover { /* sem o azul geral dos botões ao passar o mouse */
-  background: color-mix(in srgb, var(--soft) 55%, var(--card));
-}
-.biblia-secao-btn.completa:hover {
-  background: color-mix(in srgb, #16a34a 28%, var(--card));
+  background: var(--sec-bg);
 }
 .biblia-secao-btn.ativa {
   border-color: var(--brand);

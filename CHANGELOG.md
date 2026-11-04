@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.11
+
+Leitura diária da Bíblia: cada botão de seção ganha um fundo suave de cor própria (a seção completa continua verde).
+
 ## 6.5.10
 
 Leitura diária da Bíblia: o ícone da seção do exílio agora é uma corrente (⛓️), que lembra prisão.
