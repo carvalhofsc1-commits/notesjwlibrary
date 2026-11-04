@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.80
+
+Áudio em texto: a lista Arquivos de áudio ficava com duas molduras, uma dentro da outra; agora cada arquivo tem uma moldura só.
+
 ## 6.4.79
 
 Formatar → Opções com IA: campo de instruções adicionais para a IA sob o botão Sugerir formatação e sob o botão Responder a pergunta do texto colado. O texto vale mais que o prompt padrão, em todos os pedidos da seção (inclusive Outra sugestão e Melhorar), como nas outras seções.

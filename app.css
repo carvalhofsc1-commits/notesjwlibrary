@@ -9393,12 +9393,12 @@ details.transcricao-bloco:not([open]) {
   border-color: color-mix(in srgb, #ef4444 45%, transparent);
 }
 
+/* A lista de arquivos só agrupa os cartões (.tr-lista-item), que já têm a sua moldura: sem moldura própria, para não ficar uma dentro da outra. */
 .transcricao-arquivo-dados {
   margin: 4px 0 10px;
-  padding: 8px 10px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--card);
+  padding: 0;
+  border: 0;
+  background: transparent;
   font-size: .9rem;
   line-height: 1.5;
   white-space: pre-line;
