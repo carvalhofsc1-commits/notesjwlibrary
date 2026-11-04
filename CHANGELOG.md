@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.39
+
+Leitura da Bíblia: ao terminar de ouvir um capítulo, ele é marcado no lugar, sem refazer a lista (a tela não volta mais ao topo). Depois de gerar o resumo de um capítulo aparece o botão flutuante “📝 Resumo pronto · Ver ↓”, que leva ao texto do resumo. Ao salvar um texto em Pesquisas, o nome sugerido aparece normal, sem estar selecionado.
+
 ## 6.5.38
 
 Leitura da Bíblia: a barra de andamento do áudio ganha espaço (não encosta mais no campo da data nem na borda da linha).

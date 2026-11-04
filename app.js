@@ -7540,7 +7540,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.38'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.39'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -8882,7 +8882,8 @@
         confirmOverlay.classList.add('open');
         setTimeout(() => {
           confirmCampo.focus();
-          confirmCampo.select();
+          const fim = confirmCampo.value.length;
+          confirmCampo.setSelectionRange(fim, fim); // o nome aparece normal, sem estar selecionado (o cursor fica no fim)
         }, 0);
       });
     }
@@ -21118,9 +21119,19 @@ function saveTemplatesToStorage() {
       });
       if (!mudou) return;
       bibliaGravarEstado();
+      // Atualiza no lugar (as listas não são refeitas, então a tela fica parada, mostrando o capítulo lido).
+      entradas.forEach(e => {
+        document.querySelectorAll('.biblia-cap[data-cap-id="' + e.cap.id + '"]').forEach(l => {
+          l.classList.add('lido');
+          const ck = l.querySelector('.biblia-item-check');
+          if (ck) ck.checked = true;
+          const dt = l.querySelector('.biblia-cap-data');
+          if (dt) { dt.value = bibliaDataBR(bibliaMarcaDe(e.cap.id).lidaEm); dt.style.width = 'calc(10ch + 18px)'; }
+        });
+      });
+      bibliaLista.querySelectorAll(':scope > .biblia-grupo').forEach(det => { if (det._item) bibliaAtualizarGrupo(det, det._item); });
+      bibliaLivrosAtualizar();
       bibliaAtualizarProgresso();
-      bibliaRenderSecao();
-      bibliaLivrosSincronizar();
     }
 
     function bibliaAudioErro(linha, texto) {
@@ -21304,6 +21315,7 @@ function saveTemplatesToStorage() {
     }
 
     function bibliaFecharResumo(voltar) {
+      bibliaAvisoOcultar();
       const alvo = bibliaResumoAlvo;
       bibliaResumoAlvo = null;
       bibliaResumoCaixa.hidden = true;
@@ -21321,6 +21333,23 @@ function saveTemplatesToStorage() {
       const linha = bibliaLista.querySelector('[data-cap-id="' + alvo.cap.id + '"]');
       if (linha) linha.scrollIntoView({ block: 'center' });
     }
+
+    // Depois de gerar o resumo, um botão flutuante leva até o texto (some sozinho ou ao tocar).
+    function bibliaAvisoOcultar() {
+      const b = document.getElementById('bibliaAvisoResumo');
+      clearTimeout(b._timer);
+      b.hidden = true;
+    }
+    function bibliaAvisarResumo() {
+      const b = document.getElementById('bibliaAvisoResumo');
+      b.hidden = false;
+      clearTimeout(b._timer);
+      b._timer = setTimeout(bibliaAvisoOcultar, 15000);
+    }
+    document.getElementById('bibliaAvisoResumo').addEventListener('click', () => {
+      bibliaAvisoOcultar();
+      bibliaResumoTexto.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    });
 
     async function bibliaGerarResumo() {
       const alvo = bibliaResumoAlvo;
@@ -21391,6 +21420,7 @@ function saveTemplatesToStorage() {
         if (naMesma()) {
           bibliaResumoTexto.value = texto;
           bibliaResumoSincronizar();
+          bibliaAvisarResumo(); // botão flutuante "Ver ↓" que leva ao texto do resumo
           const msg = anterior && umaOpcao
             ? (secaoJaExiste ? '✅ Seção atualizada com base no texto já salvo.' : '✅ Nova seção acrescentada ao texto já salvo.')
             : (anterior ? '✅ Texto atualizado com base no que já estava salvo.' : '✅ Resumo pronto e salvo. Você pode copiar ou guardar em Pesquisas salvas.');
@@ -21620,6 +21650,7 @@ function saveTemplatesToStorage() {
         mostrados++;
         const det = document.createElement('details');
         det.className = 'biblia-grupo biblia-colorido';
+        det._item = item; // para atualizar a contagem do grupo no lugar (áudio ouvido até o fim)
         const livroCor = item.livro || ((Array.isArray(item.refs) && item.refs[0]) || {}).livro || ''; // fundo suave do livro, o mesmo da leitura por livros
         det.style.setProperty('--liv-bg', bibliaCorLivro(livroCor));
         det.open = bibliaAbertos.has(item.id);
