@@ -7540,7 +7540,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.43'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.44'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -20794,7 +20794,7 @@ function saveTemplatesToStorage() {
     let bibliaResumoAlvo = null; // { item, cap } do resumo aberto no fim da tela
     let bibliaSecaoEscolhida = false; // ao abrir a tela nenhuma seção está escolhida: só aparecem os botões das seções
     let bibliaProgAberto = true; // programação de leitura da seção expandida ou recolhida
-    let bibliaEstado = { itens: {}, secao: '', soPendentes: false, resumos: {} }; // itens: { idDoCapitulo: { lido, lidaEm } }; resumos: { idDoCapitulo: texto }
+    let bibliaEstado = { itens: {}, secao: '', soPendentes: false, resumos: {}, seguir: false }; // itens: { idDoCapitulo: { lido, lidaEm } }; resumos: { idDoCapitulo: texto }
     let bibliaPronto = false;
     let bibliaResumindo = false;
     const bibliaAbertos = new Set(); // grupos que estão abertos (sobrevivem a trocar de seção)
@@ -20808,6 +20808,7 @@ function saveTemplatesToStorage() {
         if (salvo.itens && typeof salvo.itens === 'object') bibliaEstado.itens = salvo.itens;
         if (typeof salvo.secao === 'string') bibliaEstado.secao = salvo.secao;
         if (typeof salvo.soPendentes === 'boolean') bibliaEstado.soPendentes = salvo.soPendentes;
+        if (typeof salvo.seguir === 'boolean') bibliaEstado.seguir = salvo.seguir;
         if (salvo.resumos && typeof salvo.resumos === 'object') bibliaEstado.resumos = salvo.resumos;
       } catch (e) { /* sem localStorage */ }
     }
@@ -20817,6 +20818,7 @@ function saveTemplatesToStorage() {
         itens: bibliaEstado.itens,
         secao: bibliaEstado.secao,
         soPendentes: bibliaEstado.soPendentes,
+        seguir: bibliaEstado.seguir,
         resumos: bibliaEstado.resumos
       }));
     }
@@ -21142,7 +21144,7 @@ function saveTemplatesToStorage() {
           eq = document.createElement('span');
           eq.className = 'biblia-eq';
           eq.setAttribute('aria-hidden', 'true');
-          [215, 170, 120, 55, 10].forEach((h, i) => { const b = document.createElement('i'); b.style.setProperty('--h', h); b.style.setProperty('--d', (i * 0.17).toFixed(2) + 's'); eq.appendChild(b); });
+          [215, 185, 150, 110, 70, 35, 5].forEach((h, i) => { const b = document.createElement('i'); b.style.setProperty('--h', h); b.style.setProperty('--d', (i * 0.13).toFixed(2) + 's'); eq.appendChild(b); });
           const qual = document.createElement('span'); // o versículo em andamento, ao lado das barras
           qual.className = 'biblia-eq-v';
           eq.appendChild(qual);
@@ -21168,8 +21170,8 @@ function saveTemplatesToStorage() {
       document.querySelectorAll('#bibliaCard .biblia-eq-v').forEach(el => { el.textContent = texto; });
     }
 
-    function bibliaAudioParar() { // pára o que estiver tocando e solta o capítulo (os botões voltam a ▶)
-      if (bibliaAudio) { bibliaAudio.pause(); bibliaAudio.removeAttribute('src'); bibliaAudio.load(); }
+    function bibliaAudioParar(preservar) { // pára o que estiver tocando e solta o capítulo (os botões voltam a ▶); "preservar" mantém o áudio carregado (passando ao próximo capítulo)
+      if (bibliaAudio) { bibliaAudio.pause(); if (!preservar) { bibliaAudio.removeAttribute('src'); bibliaAudio.load(); } }
       bibliaAudioAtual = null;
       bibliaAudioPintar();
     }
@@ -21210,7 +21212,47 @@ function saveTemplatesToStorage() {
       setTimeout(() => { btn.title = 'Ouvir o capítulo'; if (!bibliaAudioAtual) bibliaAudioPintarLinha(btn.closest('.biblia-cap')); }, 4000);
     }
 
-    function bibliaAudioAlternar(cap, linha) {
+    // O próximo capítulo, na ordem da lista em que se está ouvindo: na leitura por seções, a linha seguinte (abrindo o grupo dela, se for de outro grupo);
+    // na por livros, o capítulo seguinte do livro e, no fim dele, o primeiro do próximo livro (abrindo o grupo de livros e o livro). No fim da lista, para.
+    function bibliaAudioSeguir(a) {
+      let linha = null;
+      if (a.origem === 'livros') {
+        let alvo = null;
+        const caps = bibliaCapsDoLivro(a.livro);
+        const i = caps.findIndex(c => c.n === a.n);
+        if (i >= 0 && caps[i + 1]) alvo = { livro: a.livro, n: caps[i + 1].n };
+        for (let j = BIBLIA_LIVROS.indexOf(a.livro) + 1; !alvo && j > 0 && j < BIBLIA_LIVROS.length; j++) {
+          const cs = bibliaCapsDoLivro(BIBLIA_LIVROS[j]);
+          if (cs.length) alvo = { livro: BIBLIA_LIVROS[j], n: cs[0].n };
+        }
+        if (!alvo) return;
+        const det = bibliaLivros.querySelector('.biblia-livro[data-livro="' + alvo.livro + '"]');
+        if (!det) return;
+        const gl = det.closest('.biblia-gl');
+        if (gl) gl.open = true;
+        det.open = true;
+        if (det._preencher) det._preencher();
+        const entradas = (bibliaCapsDoLivro(alvo.livro).find(c => c.n === alvo.n) || {}).entradas || [];
+        if (entradas.length) linha = det.querySelector('.biblia-cap[data-cap-id="' + entradas[0].cap.id + '"]');
+      } else {
+        const linhas = [...bibliaLista.querySelectorAll('.biblia-cap')];
+        let i = linhas.findIndex(l => l.dataset.capId === a.id);
+        if (i < 0) return;
+        for (i++; i < linhas.length; i++) { // pula a outra parte do mesmo capítulo (Salmo 119 tem duas linhas)
+          const c = linhas[i]._cap;
+          if (!c || !(c.livro === a.livro && parseInt(c.rotulo, 10) === a.n)) break;
+        }
+        linha = linhas[i] || null;
+        const grupo = linha && linha.closest('details.biblia-grupo');
+        if (grupo) grupo.open = true;
+      }
+      if (!linha || !linha._cap) return;
+      const r = linha.getBoundingClientRect();
+      if (r.top < 90 || r.bottom > innerHeight - 90) linha.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      bibliaAudioAlternar(linha._cap, linha, true);
+    }
+
+    function bibliaAudioAlternar(cap, linha, continuar) {
       const n = parseInt(cap.rotulo, 10);
       if (!n) return;
       if (!bibliaAudio) {
@@ -21219,10 +21261,12 @@ function saveTemplatesToStorage() {
         bibliaAudio.addEventListener('timeupdate', bibliaAudioProgresso);
         bibliaAudio.addEventListener('playing', () => { if (bibliaAudioAtual) { bibliaAudioAtual.estado = 'tocando'; bibliaAudioPintar(); } });
         bibliaAudio.addEventListener('pause', () => { if (bibliaAudioAtual && !bibliaAudio.ended && bibliaAudioAtual.estado === 'tocando') { bibliaAudioAtual.estado = 'pausado'; bibliaAudioPintar(); } });
-        bibliaAudio.addEventListener('ended', () => { // terminou: para (nada de passar ao próximo) e marca como lido
+        bibliaAudio.addEventListener('ended', () => { // terminou: marca como lido e, se a opção estiver ligada, passa ao próximo capítulo; senão, para
           const a = bibliaAudioAtual;
-          bibliaAudioParar();
+          const seguir = Boolean(a && bibliaEstado.seguir);
+          bibliaAudioParar(seguir);
           if (a) bibliaAudioMarcarLido(a);
+          if (seguir) bibliaAudioSeguir(a);
         });
         bibliaAudio.addEventListener('error', () => { if (bibliaAudioAtual) bibliaAudioErro(document.querySelector('.biblia-cap[data-cap-id="' + bibliaAudioAtual.id + '"]'), 'Não consegui tocar este áudio agora. Confira a conexão e tente de novo.'); });
       }
@@ -21232,8 +21276,8 @@ function saveTemplatesToStorage() {
         else if (bibliaAudioAtual.estado === 'pausado') bibliaAudio.play().catch(() => {});
         return;
       }
-      bibliaAudioParar(); // outro capítulo: só um por vez
-      const atual = { id: cap.id, livro: cap.livro, n, estado: 'carregando', marcas: [], v: 0, total: bibliaVersiculosCapitulo(cap.livro, n) };
+      bibliaAudioParar(continuar); // outro capítulo: só um por vez
+      const atual = { id: cap.id, livro: cap.livro, n, estado: 'carregando', marcas: [], v: 0, total: bibliaVersiculosCapitulo(cap.livro, n), origem: linha && linha.closest('#bibliaLivros') ? 'livros' : 'secoes' };
       bibliaAudioAtual = atual;
       bibliaAudioPintar();
       const tocar = (url, marcas) => {
@@ -21256,6 +21300,7 @@ function saveTemplatesToStorage() {
       linha.className = 'biblia-cap' + (marca0.lido ? ' lido' : '');
       linha.dataset.capId = cap.id;
       linha.dataset.capNome = cap.nome;
+      linha._cap = cap; // para seguir ao próximo capítulo
 
       const rotulo = document.createElement('label');
       rotulo.className = 'biblia-cap-rotulo';
@@ -21333,6 +21378,29 @@ function saveTemplatesToStorage() {
       } else {
         linha.append(rotulo, ouvir, btn, dataCaixa);
       }
+      // Parar e Reiniciar: aparecem só enquanto este capítulo está em andamento (tocando ou pausado).
+      const ctl = document.createElement('div');
+      ctl.className = 'biblia-cap-ctl';
+      const reiniciar = document.createElement('button');
+      reiniciar.type = 'button';
+      reiniciar.className = 'secondary biblia-cap-mini';
+      reiniciar.textContent = '↺ Reiniciar';
+      reiniciar.title = 'Voltar ao começo do capítulo e tocar';
+      reiniciar.addEventListener('click', () => {
+        if (!bibliaAudioAtual || bibliaAudioAtual.id !== cap.id) return;
+        bibliaAudio.currentTime = 0;
+        bibliaAudioAtual.v = 0;
+        bibliaAudioPintarVersiculo();
+        if (bibliaAudio.paused) bibliaAudio.play().catch(() => {});
+      });
+      const parar = document.createElement('button');
+      parar.type = 'button';
+      parar.className = 'secondary biblia-cap-mini';
+      parar.textContent = '⏹ Parar';
+      parar.title = 'Parar o áudio (o ▶ volta a tocar do começo)';
+      parar.addEventListener('click', () => { if (bibliaAudioAtual && bibliaAudioAtual.id === cap.id) bibliaAudioParar(); });
+      ctl.append(reiniciar, parar);
+      linha.appendChild(ctl);
       bibliaAudioPintarLinha(linha);
       return linha;
     }
@@ -21640,6 +21708,7 @@ function saveTemplatesToStorage() {
           caps.appendChild(bibliaLinhaCapitulo(item, linha, det, 'livros'));
         }));
       };
+      det._preencher = preencher; // a leitura contínua abre o próximo livro por aqui
       det.addEventListener('toggle', () => {
         if (det.open) { bibliaLivrosAbertos.add(livro); preencher(); } else bibliaLivrosAbertos.delete(livro);
       });
@@ -21806,6 +21875,9 @@ function saveTemplatesToStorage() {
           if (!bibliaProgAberto) bibliaProgDefinir(true);
           bibliaRenderSecao();
         });
+        const caixaSeguir = document.getElementById('bibliaSeguir'); // "Ao terminar, tocar o próximo capítulo" (desligada por padrão: um capítulo por vez)
+        caixaSeguir.checked = Boolean(bibliaEstado.seguir);
+        caixaSeguir.addEventListener('change', () => { bibliaEstado.seguir = caixaSeguir.checked; bibliaGravarEstado(); });
         bibliaProgToggle.addEventListener('click', () => bibliaProgDefinir(!bibliaProgAberto));
         document.getElementById('bibliaModoLivros').addEventListener('toggle', e => { if (e.target.open) bibliaLivrosRender(); }); // sempre refeita ao abrir: traz as marcações e resumos de agora
         document.getElementById('bibliaModoSecoes').addEventListener('toggle', e => { if (e.target.open) bibliaIconeCentrar(); }); // o ícone só se mede com a seção visível
