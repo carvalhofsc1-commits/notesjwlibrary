@@ -10060,12 +10060,12 @@ details.transcricao-bloco:not([open]) {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin: 5px;
-  padding: 9px 10px;
+  margin: 0; /* a moldura da barra encosta no quadro do grupo */
+  padding: 10px 11px;
   border: 1px solid color-mix(in srgb, var(--brand) 50%, var(--line)); /* moldura fina em volta da barra de progresso */
   cursor: pointer;
   list-style: none;
-  border-radius: 10px; /* a barra verde enche o cartão da esquerda para a direita conforme os capítulos são lidos */
+  border-radius: 13px; /* a barra verde enche o cartão da esquerda para a direita conforme os capítulos são lidos */
   background: linear-gradient(90deg, color-mix(in srgb, #16a34a 42%, transparent) var(--p, 0%), transparent var(--p, 0%));
 }
 .biblia-grupo > summary::-webkit-details-marker { display: none; }

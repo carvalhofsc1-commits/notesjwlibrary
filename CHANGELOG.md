@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.21
+
+Leitura diária da Bíblia: a moldura da barra de progresso do grupo fica colada no quadro do grupo, sem espaço entre os dois.
+
 ## 6.5.20
 
 Leitura diária da Bíblia: moldura fina em volta da barra de progresso de cada grupo de capítulos (verde quando o grupo está completo).
