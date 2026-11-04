@@ -10435,12 +10435,15 @@ details.transcricao-bloco:not([open]) {
 .biblia-cap .biblia-cap-ouvir.ativo {
   background: color-mix(in srgb, hsl(var(--cor) 70% 45%) 32%, var(--card));
 }
-.biblia-cap.tocando { border-color: color-mix(in srgb, hsl(170 70% 38%) 60%, var(--line)); }
+.biblia-cap.tocando {
+  border-color: color-mix(in srgb, hsl(170 70% 38%) 60%, var(--line));
+  padding-bottom: 14px; /* espaço entre o campo da data e a barra de andamento, e entre a barra e a borda */
+}
 .biblia-cap.tocando::after {
   content: '';
   position: absolute;
   left: 10px;
-  bottom: 2px;
+  bottom: 5px;
   height: 3px;
   width: calc((100% - 20px) * var(--pa, 0));
   border-radius: 2px;

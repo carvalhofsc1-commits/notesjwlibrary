@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.38
+
+Leitura da Bíblia: a barra de andamento do áudio ganha espaço (não encosta mais no campo da data nem na borda da linha).
+
 ## 6.5.37
 
 Leitura da Bíblia: botão ▶ em cada capítulo que toca a gravação do capítulo (áudio da jw.org), um capítulo por vez: o mesmo botão pausa e retoma, outro ▶ troca de capítulo e, ao terminar, o áudio para e o capítulo é marcado como lido, com a data de hoje (as duas partes do Salmo 119 juntas). Uma barra fina no pé da linha mostra o andamento. Abaixo do título da tela, a data da última leitura (“Última leitura em: dd/mm/aaaa”), em letras pequenas, com há quantos dias (hoje, ontem, há N dias): verde com ✔ se foi hoje e vermelho com ⚠️ se passou mais de um dia.
