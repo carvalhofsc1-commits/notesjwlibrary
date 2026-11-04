@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.09
+
+Leitura diária da Bíblia: os botões das seções não ficam mais azuis ao passar o mouse; o ícone da seção de Jesus volta ao emoji do homem de barba (🧔🏽) e o rosto desenhado saiu.
+
 ## 6.5.08
 
 Leitura diária da Bíblia: o ícone da seção da vida e do ministério de Jesus agora é um rosto desenhado (pele clara, cabelo e barba pretos), já que os emojis não têm essa combinação.
