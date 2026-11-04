@@ -3427,6 +3427,38 @@
       grid-template-columns: 1fr;
     }
 
+    .confirm-campo {
+      display: grid;
+      gap: 6px;
+      margin-top: 14px;
+    }
+
+    .confirm-campo[hidden] {
+      display: none !important;
+    }
+
+    .confirm-campo-rotulo {
+      font-size: .92rem;
+      color: var(--muted);
+    }
+
+    .confirm-campo input {
+      width: 100%;
+      min-height: 46px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--bg);
+      color: var(--text);
+      font: inherit;
+      box-sizing: border-box;
+    }
+
+    .historico-dica {
+      margin: 0 0 12px;
+      font-size: .9rem;
+    }
+
     #conviteTextoSubsection[hidden] {
       display: none;
     }
@@ -6726,6 +6758,16 @@
     /* ---------- Cada categoria da tela Reuniões numa cor só ----------
        Tudo o que fica dentro de uma categoria (cards, botões, setas, campos e caixas de marcar) usa a cor dela: Comentários em roxo/rosa,
        Dirigentes em verde-azulado e Esboços em laranja. --g-cor: a cor da borda; --g-forte: botões de ação; --g-suave: botões de apoio. */
+    .historico-cat[data-cat="textos"] {
+      --g-cor: #0ea5e9;
+      --g-forte: #0369a1;
+      --g-forte-h: #075985;
+      --g-suave: #e0f2fe;
+      --g-suave-h: #bae6fd;
+      --g-borda: #38bdf8;
+      --g-texto: #0c4a6e;
+    }
+
     #grupoComentarios,
     .historico-cat[data-cat="comentarios"] {
       --g-cor: #a855f7;

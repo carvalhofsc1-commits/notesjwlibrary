@@ -7433,6 +7433,9 @@
     const confirmOverlay = document.getElementById('confirmOverlay');
     const confirmText = document.getElementById('confirmText');
     const confirmOkChoice = document.getElementById('confirmOkChoice');
+    const confirmCampoLinha = document.getElementById('confirmCampoLinha');
+    const confirmCampoRotulo = document.getElementById('confirmCampoRotulo');
+    const confirmCampo = document.getElementById('confirmCampo');
     const cancelConfirmChoice = document.getElementById('cancelConfirmChoice');
     const categoryDeleteOverlay = document.getElementById('categoryDeleteOverlay');
     const categoryDeleteText = document.getElementById('categoryDeleteText');
@@ -7480,7 +7483,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.76'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.77'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -8721,6 +8724,8 @@
           settled = true;
           confirmOkChoice.textContent = rotuloOk;
           cancelConfirmChoice.textContent = rotuloNao;
+          confirmCampoLinha.hidden = true;
+          confirmCampo.value = '';
           confirmOverlay.classList.remove('open');
           confirmOkChoice.removeEventListener('click', onOk);
           cancelConfirmChoice.removeEventListener('click', onCancel);
@@ -8740,6 +8745,8 @@
 
         document.getElementById('confirmTitle').textContent = title || 'Confirmar';
         confirmText.textContent = message;
+        confirmCampoLinha.hidden = true;
+        confirmCampo.value = '';
         if (opcoes && opcoes.ok) confirmOkChoice.textContent = opcoes.ok;
         if (opcoes && opcoes.cancel) cancelConfirmChoice.textContent = opcoes.cancel;
         if (opcoes && opcoes.extra) confirmText.append('\n\n', opcoes.extra);
@@ -8749,6 +8756,76 @@
         confirmOverlay.addEventListener('click', onOverlay);
         document.addEventListener('keydown', onKey);
         confirmOverlay.classList.add('open');
+      });
+    }
+
+    // Pede um texto curto (ex.: nome ao salvar). Devolve a string ou null se cancelar.
+    function askTexto(message, title, opcoes) {
+      return new Promise(resolve => {
+        let settled = false;
+        const rotuloOk = confirmOkChoice.textContent;
+        const rotuloNao = cancelConfirmChoice.textContent;
+        const max = (opcoes && opcoes.max) || 120;
+
+        function finish(value) {
+          if (settled) return;
+          settled = true;
+          confirmOkChoice.textContent = rotuloOk;
+          cancelConfirmChoice.textContent = rotuloNao;
+          confirmCampoLinha.hidden = true;
+          confirmCampo.value = '';
+          confirmOverlay.classList.remove('open');
+          confirmOkChoice.removeEventListener('click', onOk);
+          cancelConfirmChoice.removeEventListener('click', onCancel);
+          confirmOverlay.removeEventListener('click', onOverlay);
+          document.removeEventListener('keydown', onKey);
+          confirmCampo.removeEventListener('keydown', onCampoKey);
+          resolve(value);
+        }
+
+        function onOk() {
+          const nome = confirmCampo.value.replace(/\s+/g, ' ').trim().slice(0, max);
+          if (!nome) {
+            confirmCampo.focus();
+            return;
+          }
+          finish(nome);
+        }
+        function onCancel() { finish(null); }
+        function onOverlay(event) {
+          if (event.target === confirmOverlay) finish(null);
+        }
+        function onKey(event) {
+          if (event.key === 'Escape') finish(null);
+        }
+        function onCampoKey(event) {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            onOk();
+          }
+        }
+
+        document.getElementById('confirmTitle').textContent = title || 'Nome';
+        confirmText.textContent = message || '';
+        confirmCampoRotulo.textContent = (opcoes && opcoes.rotulo) || 'Nome';
+        confirmCampo.maxLength = max;
+        confirmCampo.placeholder = (opcoes && opcoes.placeholder) || '';
+        confirmCampo.value = (opcoes && opcoes.valor) || '';
+        confirmCampoLinha.hidden = false;
+        if (opcoes && opcoes.ok) confirmOkChoice.textContent = opcoes.ok;
+        else confirmOkChoice.textContent = '💾 Salvar';
+        if (opcoes && opcoes.cancel) cancelConfirmChoice.textContent = opcoes.cancel;
+
+        confirmOkChoice.addEventListener('click', onOk);
+        cancelConfirmChoice.addEventListener('click', onCancel);
+        confirmOverlay.addEventListener('click', onOverlay);
+        document.addEventListener('keydown', onKey);
+        confirmCampo.addEventListener('keydown', onCampoKey);
+        confirmOverlay.classList.add('open');
+        setTimeout(() => {
+          confirmCampo.focus();
+          confirmCampo.select();
+        }, 0);
       });
     }
 
@@ -16080,7 +16157,7 @@ function saveTemplatesToStorage() {
     // referem, logo depois do tipo ("💎 Joias espirituais · 19 a 25 de outubro - JEREMIAS 45-46"). Os esboços já trazem a semana ou o
     // número do tema no próprio nome, e o texto colado não tem semana de matéria.
     function historicoTituloExibido(item) {
-      if (item.tipo === 'esboco' || item.tipo === 'colado' || !item.ano || !item.numSemana) return item.titulo;
+      if (item.tipo === 'esboco' || item.tipo === 'colado' || item.tipo === 'nota' || !item.ano || !item.numSemana) return item.titulo;
       const rotulo = rotuloDaSemanaIso(item.ano, item.numSemana);
       const partes = String(item.titulo).split(' · ');
       if (partes.length === 1) return item.titulo + ' · ' + rotulo;
@@ -16606,6 +16683,10 @@ function saveTemplatesToStorage() {
     // Os dois botões do card abrem a prévia (página em tela cheia, a mesma do esboço original), onde se escolhe o tamanho da letra e se finaliza
     // a exportação (baixar ou compartilhar).
     document.getElementById('exportarDocxBtn').addEventListener('click', event => docxPreviaAbrir(event.currentTarget));
+    document.getElementById('salvarTextoBtn').addEventListener('click', async () => {
+      const guardado = await historicoSalvarNota(input.value, 'Texto do Formatar', 'O texto do campo Formatar será guardado em Pesquisas e respostas salvas → Textos, com o nome que você escolher.');
+      if (guardado) await showAlert('Texto salvo como «' + guardado.titulo + '». Para reabrir: Reuniões → Pesquisas e respostas salvas → Textos.', 'Texto salvo');
+    });
     document.getElementById('exportarCompartilharBtn').addEventListener('click', event => docxPreviaAbrir(event.currentTarget));
     // Compartilhar só aparece onde o aparelho aceita compartilhar arquivos (celulares).
     try {
@@ -16647,13 +16728,16 @@ function saveTemplatesToStorage() {
     }
 
     // A semana é a do pedido à IA (ano e semana enviados ao servidor) ou, sem ela, a escolhida agora.
-    function historicoSalvar({ tipo, titulo, ano, numSemana, partes, esbocoJson, esbocoNumero, esbocoTitulo, refino, sub }) {
+    // tipo "nota": texto livre (Formatar / Áudio) — sem vínculo com a semana das reuniões (ano e numSemana ficam 0).
+    // ligar: false evita associar o campo Formatar à pesquisa (ex.: salvar do Áudio sem abrir o texto lá).
+    function historicoSalvar({ tipo, titulo, ano, numSemana, partes, esbocoJson, esbocoNumero, esbocoTitulo, refino, sub, ligar }) {
+      const semSemana = tipo === 'nota';
       const item = {
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
         tipo,
         titulo,
-        ano: ano || aiWeekYear,
-        numSemana: numSemana || aiWeekNumber,
+        ano: semSemana ? 0 : (ano != null ? ano : aiWeekYear),
+        numSemana: semSemana ? 0 : (numSemana != null ? numSemana : aiWeekNumber),
         data: new Date().toISOString(),
         partes: (partes || []).map(p => ({ paragrafos: p.paragrafos || '', texto: p.texto }))
       };
@@ -16669,27 +16753,50 @@ function saveTemplatesToStorage() {
         // Não coube na memória do aparelho: avisa (antes o app não dizia nada e a resposta ficava só no campo de texto).
         showAlert('Não consegui salvar esta resposta em Pesquisas e respostas salvas: a memória do aparelho está cheia. Ela continua no campo de texto; copie o que precisar. Para abrir espaço, apague pesquisas antigas ou veja o que está guardado em Ajustes → Privacidade e dados deste aparelho.', '⚠️ Resposta não salva');
         historicoRender();
-        return;
+        return null;
       }
       historicoAbertas[historicoCategoriaDe(item).id] = true; // a categoria do item novo abre, para ele aparecer
-      historicoLigar(item.id, historicoTituloExibido(item)); // o texto que está no campo é o desta pesquisa: dá para salvar as alterações nela
+      if (ligar !== false) historicoLigar(item.id, historicoTituloExibido(item)); // o texto que está no campo é o desta pesquisa: dá para salvar as alterações nela
       historicoRender();
+      return item;
     }
 
     // As pesquisas ficam em categorias, pela natureza delas (as cores são as dos grupos da tela Reuniões). Um tipo que não
     // está em nenhuma cai em Comentários. "Dirigentes" e "Esboços" (que ainda espera os esboços) pedem o código do dirigente.
+    // "Textos" (tipo nota) não depende da semana escolhida: aparece sempre.
     const HISTORICO_CATEGORIAS = [
+      { id: 'textos', titulo: '📝 Textos', cor: '#0ea5e9', tipos: ['nota'], semSemana: true },
       { id: 'comentarios', titulo: '✋ Comentários', cor: '#a855f7', tipos: ['colado', 'sentinela', 'ebc', 'joias'] },
       { id: 'dirigentes', titulo: '🎤 Dirigentes', cor: '#14b8a6', tipos: ['dirigente', 'ebc-dirigente'], soDirigente: true },
       { id: 'esbocos', titulo: '📜 Esboços', cor: '#f59e0b', tipos: ['esboco'], soDirigente: true }
     ];
-    const historicoAbertas = { comentarios: false, dirigentes: false, esbocos: false }; // lembra quais estão abertas ao refazer a lista
+    const historicoAbertas = { textos: false, comentarios: false, dirigentes: false, esbocos: false }; // lembra quais estão abertas ao refazer a lista
     // Ao abrir a página Pesquisas e respostas salvas (pelo botão da barra, pelo atalho ou pelo botão da tela Reuniões), todas as categorias começam recolhidas.
     function historicoRecolher() {
       Object.keys(historicoAbertas).forEach(id => { historicoAbertas[id] = false; });
       document.querySelectorAll('#historicoLista > details').forEach(caixa => { caixa.open = false; });
     }
     const historicoCategoriaDe = item => HISTORICO_CATEGORIAS.find(c => c.tipos.includes(item.tipo)) || HISTORICO_CATEGORIAS[0];
+    const historicoEhNota = item => item && (item.tipo === 'nota' || historicoCategoriaDe(item).semSemana);
+
+    // Guarda um texto livre (campo Formatar ou Áudio→texto) com o nome pedido. Devolve o item ou null.
+    async function historicoSalvarNota(texto, sugestaoNome, origem) {
+      const limpo = String(texto || '').trim();
+      if (!limpo) {
+        await showAlert('Não há texto para salvar.', 'Salvar texto');
+        return null;
+      }
+      const sugestao = String(sugestaoNome || '').replace(/\s+/g, ' ').trim().slice(0, 80) || 'Texto salvo';
+      const nome = await askTexto(
+        origem || 'Escolha um nome para encontrar este texto depois em Pesquisas e respostas salvas → Textos.',
+        'Salvar texto',
+        { rotulo: 'Nome', valor: sugestao, placeholder: 'Ex.: Anotações da reunião', max: 100, ok: '💾 Salvar' }
+      );
+      if (!nome) return null;
+      // Só liga ao campo Formatar se o texto salvo for o que está nele (salvar do Formatar); do Áudio, não troca a ligação.
+      const ligar = input.value === limpo;
+      return historicoSalvar({ tipo: 'nota', titulo: nome, partes: [{ paragrafos: '', texto: limpo }], ligar }) || null;
+    }
 
     function historicoItemEl(item) {
       const li = document.createElement('li');
@@ -16735,14 +16842,16 @@ function saveTemplatesToStorage() {
       const comDirigente = Boolean(codigoDirigenteSalvo());
       const todas = historicoLer().filter(item => comDirigente || !historicoCategoriaDe(item).soDirigente);
       const atual = historicoChaveAtual();
-      const lista = todas.filter(item => historicoChave(item) === atual);
-      const anteriores = todas.filter(item => historicoChave(item) < atual).length;
+      // Textos (notas) não entram no filtro da semana; o restante segue a semana escolhida.
+      const listaSemana = todas.filter(item => !historicoEhNota(item) && historicoChave(item) === atual);
+      const anteriores = todas.filter(item => !historicoEhNota(item) && historicoChave(item) < atual).length;
       const holder = document.getElementById('historicoLista');
       holder.textContent = '';
       HISTORICO_CATEGORIAS.forEach(cat => {
         // Sem o código do dirigente, a categoria Dirigentes aparece desabilitada (cinza, com cadeado) e não abre.
         const bloqueada = Boolean(cat.soDirigente) && !comDirigente;
-        const itens = bloqueada ? [] : lista.filter(item => historicoCategoriaDe(item) === cat);
+        const fonte = cat.semSemana ? todas : listaSemana;
+        const itens = bloqueada ? [] : fonte.filter(item => historicoCategoriaDe(item) === cat);
         const box = document.createElement('details');
         box.className = 'historico-cat' + (bloqueada ? ' historico-cat-desabilitada' : '');
         box.dataset.cat = cat.id; // a cor dos botões vem daí (CSS)
@@ -16774,7 +16883,7 @@ function saveTemplatesToStorage() {
         } else {
           const vazio = document.createElement('p');
           vazio.className = 'historico-vazio';
-          vazio.textContent = 'Nenhuma pesquisa salva desta semana.';
+          vazio.textContent = cat.semSemana ? 'Nenhum texto salvo ainda.' : 'Nenhuma pesquisa salva desta semana.';
           box.appendChild(vazio);
         }
         holder.appendChild(box);
@@ -16899,14 +17008,17 @@ function saveTemplatesToStorage() {
       const item = historicoLer().find(i => i.id === id);
       if (!item) { historicoRender(); return false; }
       if (aiBusy) return false;
-      if (input.value.trim() && !(await askConfirm('O texto do campo de texto será trocado por esta pesquisa salva (dá para desfazer). Continuar?', 'Abrir pesquisa salva'))) return false;
+      const aviso = item.tipo === 'nota'
+        ? 'O texto do campo Formatar será trocado por este texto salvo (dá para desfazer). Continuar?'
+        : 'O texto do campo de texto será trocado por esta pesquisa salva (dá para desfazer). Continuar?';
+      if (input.value.trim() && !(await askConfirm(aviso, item.tipo === 'nota' ? 'Abrir texto salvo' : 'Abrir pesquisa salva'))) return false;
       const partes = juntado ? juntado.partes : soPartes || item.partes || [];
-      const refino = juntado ? juntado.refino : historicoRefinoDe(item, soPartes);
+      const refino = item.tipo === 'nota' ? null : (juntado ? juntado.refino : historicoRefinoDe(item, soPartes));
       aiSentinelaRaw = refino ? refino.itens : [];
       aiRaw = [];
       aiSuggestions = [];
       aiResults.textContent = '';
-      aiResumo = { texto: partes.map(p => p.texto).join('\n\n\n'), partes, done: false, kind: 'estudo', restaurada: !refino, semBotoes: item.tipo === 'esboco' };
+      aiResumo = { texto: partes.map(p => p.texto).join('\n\n\n'), partes, done: false, kind: 'estudo', restaurada: !refino, semBotoes: item.tipo === 'esboco' || item.tipo === 'nota' };
       setInputRange(0, input.value.length, soPartes || juntado ? aiResumo.texto : item.textoEditado || aiResumo.texto); // a versão com as alterações salvas, se houver
       autoGrowInputText();
       if (refino) {
@@ -16919,6 +17031,12 @@ function saveTemplatesToStorage() {
         aiAppliedSnapshot = input.value;
       } else {
         aiRefino = null;
+        if (item.tipo === 'nota') {
+          aiLastKind = null;
+          aiAppliedAny = false;
+          aiAppliedSnapshot = '';
+          aiBaseText = '';
+        }
       }
       if (soPartes || juntado) {
         historicoLigado = null;
@@ -16927,6 +17045,7 @@ function saveTemplatesToStorage() {
         historicoLigar(item.id, historicoTituloExibido(item));
       }
       renderAiSuggestions();
+      showScreen('formatar');
       requestAnimationFrame(() => input.scrollIntoView({ block: 'start', behavior: 'smooth' }));
       return true;
     }
@@ -16993,14 +17112,14 @@ function saveTemplatesToStorage() {
       historicoGravar(historicoLer().filter(i => i.id !== apagar.dataset.historicoApagar));
       historicoRender();
     });
-    // Apaga as pesquisas das semanas antes da escolhida; as dela e as das semanas seguintes continuam salvas.
+    // Apaga as pesquisas das semanas antes da escolhida; as dela, as seguintes e os textos (notas) continuam salvos.
     document.getElementById('historicoLimparBtn').addEventListener('click', async () => {
       const atual = historicoChaveAtual();
-      const anteriores = historicoLer().filter(item => historicoChave(item) < atual).length;
+      const anteriores = historicoLer().filter(item => !historicoEhNota(item) && historicoChave(item) < atual).length;
       if (!anteriores) return historicoRender();
       const quantas = anteriores === 1 ? 'a pesquisa salva' : 'as ' + anteriores + ' pesquisas salvas';
-      if (!(await askConfirm('Apagar ' + quantas + ' das semanas anteriores a ' + historicoSemana() + '? As desta semana e das seguintes continuam salvas. Não dá para desfazer.', 'Apagar semanas anteriores'))) return;
-      historicoGravar(historicoLer().filter(item => historicoChave(item) >= atual));
+      if (!(await askConfirm('Apagar ' + quantas + ' das semanas anteriores a ' + historicoSemana() + '? As desta semana, das seguintes e os textos salvos continuam. Não dá para desfazer.', 'Apagar semanas anteriores'))) return;
+      historicoGravar(historicoLer().filter(item => historicoEhNota(item) || historicoChave(item) >= atual));
       historicoRender();
     });
 
@@ -20052,6 +20171,20 @@ function saveTemplatesToStorage() {
       });
       rotular(editar, 'Editar');
       const copiar = rotular(backupButton('📋 Copiar', () => trCopiar(campo, campo === trTexto ? 'Texto' : campo === trCorrigido ? 'Texto corrigido' : 'Resumo')), 'Copiar');
+      const tipoNome = campo === trTexto ? 'Transcrição' : campo === trCorrigido ? 'Texto corrigido' : 'Resumo';
+      const salvarFmt = rotular(backupButton('💾 Salvar', async () => {
+        const sugestao = nome().replace(/[\\/:*?"<>|“”‘’]/g, '').replace(/\s+/g, ' ').trim().slice(0, 80) || tipoNome;
+        const guardado = await historicoSalvarNota(
+          campo.value,
+          sugestao,
+          'O ' + tipoNome.toLowerCase() + ' será guardado em Pesquisas e respostas salvas → Textos. Depois você pode abri-lo no campo Formatar.'
+        );
+        if (!guardado) return;
+        if (await askConfirm('Texto salvo como «' + guardado.titulo + '». Abrir agora no campo Formatar?', 'Texto salvo', { ok: '📂 Abrir no Formatar', cancel: 'Ficar aqui' })) {
+          await historicoAbrir(guardado.id);
+        }
+      }), 'Salvar no Formatar');
+      salvarFmt.title = 'Salvar este texto com um nome e poder abri-lo no Formatar';
       const word = backupButton('📄 Word', () => {
         if (!campo.value.trim()) return;
         docxPreviaAbrir(word, campo.value, nome());
@@ -20061,7 +20194,7 @@ function saveTemplatesToStorage() {
       const rodape = document.createElement('div');
       rodape.className = 'bk-row tr-linha tr-rodape';
       rodape.append(word, limparTudo);
-      linha.append(menos, mais, editar, copiar);
+      linha.append(menos, mais, editar, copiar, salvarFmt);
       const formato = document.createElement('div');
       formato.className = 'bk-row tr-linha tr-formato';
       formato.append(
@@ -20079,6 +20212,7 @@ function saveTemplatesToStorage() {
         mais.disabled = trFonteIdx >= LEITURA_FONTES.length - 1;
         word.disabled = !campo.value.trim();
         copiar.disabled = !campo.value.trim();
+        salvarFmt.disabled = !campo.value.trim();
         formato.querySelectorAll('button').forEach(b => { b.disabled = !campo.value.trim(); });
         editar.disabled = false;
       });

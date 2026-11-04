@@ -98,7 +98,7 @@
           <button type="button" class="atalho" data-atalho="comentarios"><span class="atalho-icone" aria-hidden="true">✋</span><span class="atalho-nome">Comentários</span><span class="atalho-desc">Ajuda na preparação para comentar</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="dirigir"><span class="atalho-icone" aria-hidden="true">🎤</span><span class="atalho-nome">Dirigentes</span><span class="atalho-desc">Ajuda na preparação para dirigir</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="discursos"><span class="atalho-icone" aria-hidden="true">📜</span><span class="atalho-nome">Discursos</span><span class="atalho-desc">Ajuda na preparação de discursos e esboços</span><span class="atalho-trava" hidden></span></button>
-          <button type="button" class="atalho" data-atalho="historico"><span class="atalho-icone" aria-hidden="true">🗂️</span><span class="atalho-nome">Pesquisas salvas</span><span class="atalho-desc">Respostas e pesquisas que a IA já preparou, guardadas neste aparelho</span></button>
+          <button type="button" class="atalho" data-atalho="historico"><span class="atalho-icone" aria-hidden="true">🗂️</span><span class="atalho-nome">Pesquisas salvas</span><span class="atalho-desc">Respostas da IA e textos que você salvou (Formatar e Áudio), neste aparelho</span></button>
           <button type="button" class="atalho" data-atalho="leitura"><span class="atalho-icone" aria-hidden="true">🔊</span><span class="atalho-nome">Leitura em voz</span><span class="atalho-desc">Ouvir um PDF, um Word ou um texto colado</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="transcricao"><span class="atalho-icone" aria-hidden="true">🎙️</span><span class="atalho-nome">Áudio em texto</span><span class="atalho-desc">Transcrever um áudio e resumir com a IA</span><span class="atalho-trava" hidden></span></button>
         </div>
@@ -128,6 +128,7 @@
             </div>
             <!-- Exportar o texto do campo para Word: vale para qualquer texto (respostas, perguntas, esboços, notas); aparece com o campo preenchido. -->
             <div id="exportarBloco" class="exportar-bloco" hidden>
+              <button id="salvarTextoBtn" class="secondary" type="button" title="Guarda este texto em Pesquisas e respostas salvas (categoria Textos), com o nome que você escolher">💾 Salvar texto</button>
               <button id="exportarDocxBtn" class="secondary" type="button">📄 Exportar para Word (.docx)</button>
               <button id="exportarCompartilharBtn" class="secondary" type="button" hidden>📤 Compartilhar o arquivo Word</button>
               <p id="exportarInfo" class="hint salvar-info"></p>
@@ -752,8 +753,9 @@
 
           <!-- Pesquisas e respostas salvas: cada resultado da IA fica guardado neste aparelho e pode ser reaberto depois. -->
           <details class="section-accordion reunioes-secao historico-secao" id="secaoHistorico">
-            <summary><span class="grupo-icone" aria-hidden="true">🗂️</span><h2 class="reunioes-title">Pesquisas e respostas salvas<span class="grupo-desc">Respostas da IA guardadas aqui</span></h2></summary>
-            <h3 class="historico-cabecalho">Pesquisas da semana selecionada</h3>
+            <summary><span class="grupo-icone" aria-hidden="true">🗂️</span><h2 class="reunioes-title">Pesquisas e respostas salvas<span class="grupo-desc">Respostas da IA e textos salvos</span></h2></summary>
+            <h3 class="historico-cabecalho">Pesquisas da semana e textos salvos</h3>
+            <p class="hint historico-dica">As respostas das reuniões seguem a semana escolhida no alto. Os <strong>textos salvos</strong> (campo Formatar e Áudio em texto) aparecem sempre, sem depender da semana.</p>
             <div id="historicoLista"></div>
             <button id="historicoLimparBtn" class="secondary historico-limpar" type="button">🗑️ Apagar as pesquisas das semanas anteriores</button>
           </details>
@@ -1789,6 +1791,10 @@
     <div class="modal-card">
       <h2 id="confirmTitle">Confirmar</h2>
       <p id="confirmText" style="white-space: pre-line;">Tem certeza?</p>
+      <label id="confirmCampoLinha" class="confirm-campo" hidden>
+        <span id="confirmCampoRotulo" class="confirm-campo-rotulo">Nome</span>
+        <input id="confirmCampo" type="text" maxlength="120" autocomplete="off" spellcheck="false">
+      </label>
       <div class="modal-actions">
         <button id="confirmOkChoice" type="button" class="btn-orange">✅ Confirmar</button>
         <button id="cancelConfirmChoice" type="button" class="btn-slate">✖️ Cancelar</button>

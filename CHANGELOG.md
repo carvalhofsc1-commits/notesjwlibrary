@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.77
+
+Salvar texto com nome: no Formatar (botão Salvar texto) e no Áudio em texto (transcrição, corrigido e resumo) dá para guardar o texto em Pesquisas e respostas salvas → categoria Textos, pedindo um nome. Esses textos não dependem da semana das reuniões; apagar semanas anteriores não os remove. Abrir um texto salvo coloca o conteúdo no campo Formatar.
+
 ## 6.4.76
 
 Áudio em texto, Documentos relacionados: leitura de PowerPoint corrigida (texto nos slides); imagens liberam memória após reduzir; aviso se o pedido passar do limite de tamanho; trava ao anexar vários arquivos; contexto do resumo parcial só na 1ª fatia.
