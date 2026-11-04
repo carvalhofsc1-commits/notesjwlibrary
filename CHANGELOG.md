@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.20
+
+Leitura diária da Bíblia: moldura fina em volta da barra de progresso de cada grupo de capítulos (verde quando o grupo está completo).
+
 ## 6.5.19
 
 Leitura diária da Bíblia: o link WOL e o botão Resumir de cada capítulo têm o mesmo tamanho e padrão, o WOL em azul e o Resumir em roxo.
