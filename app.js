@@ -7540,7 +7540,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.39'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.41'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -20738,6 +20738,34 @@ function saveTemplatesToStorage() {
       el.textContent = BIBLIA_ICONES[id] || '📖';
       return el;
     }
+    // Versículos de cada capítulo (biblia-versiculos.js): "Cap. 1 (31)". Os trechos de capítulo ("119:1-63") contam só os versículos do trecho.
+    function bibliaVersiculosCapitulo(livro, n) {
+      const t = window.BIBLIA_VERSICULOS;
+      const i = BIBLIA_LIVROS.indexOf(livro);
+      return (t && i >= 0 && t[i] && t[i][n - 1]) || 0;
+    }
+    function bibliaVersiculosDe(cap) {
+      const trecho = String(cap.rotulo).match(/^\d+:(\d+)-(\d+)$/);
+      if (trecho) return Number(trecho[2]) - Number(trecho[1]) + 1;
+      return bibliaVersiculosCapitulo(cap.livro, parseInt(cap.rotulo, 10));
+    }
+    // Nomes compridos abreviados onde a linha mostra o nome do livro (o número do capítulo nunca pode ser cortado).
+    const BIBLIA_ABREV = { 'Deuteronômio': 'Deut.', 'Habacuque': 'Hab.', 'Sofonias': 'Sof.', 'Lamentações': 'Lam.', 'Eclesiastes': 'Ecl.', 'Cântico de Salomão': 'Cânt.', 'Provérbios': 'Prov.', 'Zacarias': 'Zac.', 'Malaquias': 'Mal.', 'Miqueias': 'Miq.', 'Jeremias': 'Jer.', 'Ezequiel': 'Ezeq.', 'Colossenses': 'Col.', 'Filipenses': 'Filip.', '1 Coríntios': '1 Cor.', '2 Coríntios': '2 Cor.', '1 Tessalonicenses': '1 Tes.', '2 Tessalonicenses': '2 Tes.', 'Obadias': 'Obad.' };
+    // "Cap. 12 (31)" / "Hab. 1 (17)": o nome do livro encolhe (com reticências) antes de o número do capítulo ou a quantidade de versículos serem cortados.
+    function bibliaNomeCap(cap) {
+      const nome = document.createElement('span');
+      nome.className = 'biblia-cap-nome';
+      const rot = cap.curto || cap.nome;
+      const m = rot.match(/^(.*?)(\d[\d:\-]*)$/);
+      let pre = (m ? m[1] : rot).trim();
+      const num = m ? m[2] : '';
+      if (BIBLIA_ABREV[pre]) pre = BIBLIA_ABREV[pre];
+      if (pre) { const e = document.createElement('span'); e.className = 'biblia-cap-lv'; e.textContent = pre; nome.appendChild(e); }
+      if (num) { const e = document.createElement('span'); e.className = 'biblia-cap-nm'; e.textContent = num; nome.appendChild(e); }
+      const v = String(cap.rotulo).includes(':') ? 0 : bibliaVersiculosDe(cap); // nos trechos (119:1-63) o próprio intervalo já mostra a quantidade
+      if (v) { const e = document.createElement('span'); e.className = 'biblia-cap-vv'; e.textContent = '(' + v + ')'; e.title = v + (v === 1 ? ' versículo' : ' versículos'); nome.appendChild(e); }
+      return nome;
+    }
     // Livros curtos que o programa lê "todo": quantos capítulos têm.
     const BIBLIA_CAPS_LIVRO = { 'Obadias': 1, 'Jonas': 4, 'Naum': 3, 'Habacuque': 3, 'Sofonias': 3, 'Ageu': 2, 'Tito': 3, 'Filêmon': 1, '2 João': 1, '3 João': 1, 'Judas': 1 };
     // Os 66 livros na ordem da Bíblia (o número do livro vale no link do WOL).
@@ -21064,14 +21092,21 @@ function saveTemplatesToStorage() {
     const BIBLIA_AUDIO_API = 'https://b.jw-cdn.org/apis/pub-media/GETPUBMEDIALINKS?output=json&pub=nwt&fileformat=MP3&alllangs=0&langwritten=T&txtCMSLang=T&booknum=';
     const bibliaAudioLivros = new Map(); // livro → Promise<Map(capítulo → url)>
     let bibliaAudio = null;
-    let bibliaAudioAtual = null; // { id, livro, n, estado: 'carregando' | 'tocando' | 'pausado' }
+    let bibliaAudioAtual = null; // { id, livro, n, estado: 'carregando' | 'tocando' | 'pausado', marcas, v (versículo em andamento), total }
 
     function bibliaAudioUrls(livro) {
       if (!bibliaAudioLivros.has(livro)) {
         const n = BIBLIA_LIVROS.indexOf(livro) + 1;
         const p = n ? fetch(BIBLIA_AUDIO_API + n).then(r => r.json()).then(j => {
           const mapa = new Map();
-          (((j.files || {}).T || {}).MP3 || []).forEach(f => { if (f && f.track && f.file && f.file.url) mapa.set(Number(f.track), f.file.url); });
+          mapa.marcas = new Map(); // capítulo → [{ v: versículo, t: segundo em que começa }] (o áudio informa em que versículo está)
+          const segundos = txt => { const p = String(txt || '').split(':').map(Number); return p.length === 3 && p.every(Number.isFinite) ? p[0] * 3600 + p[1] * 60 + p[2] : null; };
+          (((j.files || {}).T || {}).MP3 || []).forEach(f => {
+            if (!(f && f.track && f.file && f.file.url)) return;
+            mapa.set(Number(f.track), f.file.url);
+            const ms = ((f.markers || {}).markers || []).map(x => ({ v: Number(x.verseNumber), t: segundos(x.startTime) })).filter(x => x.v > 0 && x.t !== null).sort((a, b) => a.t - b.t);
+            mapa.marcas.set(Number(f.track), ms);
+          });
           if (!mapa.size) throw new Error('sem áudio');
           return mapa;
         }) : Promise.reject(new Error('livro desconhecido'));
@@ -21095,11 +21130,42 @@ function saveTemplatesToStorage() {
     }
     function bibliaAudioPintar() {
       document.querySelectorAll('.biblia-cap[data-cap-id]').forEach(bibliaAudioPintarLinha);
+      // Barrinhas de áudio (como o gráfico do Áudio em texto, menores) no cabeçalho do grupo e do livro que tem o capítulo em andamento; paradas se pausado.
+      const pausado = Boolean(bibliaAudioAtual && bibliaAudioAtual.estado === 'pausado');
+      document.querySelectorAll('#bibliaCard details.biblia-grupo').forEach(det => {
+        const sum = det.querySelector(':scope > summary');
+        if (!sum) return;
+        const toca = Boolean(bibliaAudioAtual && det.querySelector('.biblia-cap.tocando'));
+        let eq = sum.querySelector(':scope > .biblia-eq');
+        if (!toca) { if (eq) eq.remove(); return; }
+        if (!eq) {
+          eq = document.createElement('span');
+          eq.className = 'biblia-eq';
+          eq.setAttribute('aria-hidden', 'true');
+          [215, 170, 120, 55, 10].forEach((h, i) => { const b = document.createElement('i'); b.style.setProperty('--h', h); b.style.setProperty('--d', (i * 0.17).toFixed(2) + 's'); eq.appendChild(b); });
+          const qual = document.createElement('span'); // o versículo em andamento, ao lado das barras
+          qual.className = 'biblia-eq-v';
+          eq.appendChild(qual);
+          sum.insertBefore(eq, sum.querySelector('.biblia-grupo-cont'));
+        }
+        bibliaAudioPintarVersiculo();
+        eq.classList.toggle('pausado', pausado);
+      });
     }
     function bibliaAudioProgresso() {
       if (!bibliaAudio || !bibliaAudioAtual || !(bibliaAudio.duration > 0)) return;
       const p = Math.min(1, bibliaAudio.currentTime / bibliaAudio.duration).toFixed(4);
       document.querySelectorAll('.biblia-cap[data-cap-id="' + bibliaAudioAtual.id + '"]').forEach(l => l.style.setProperty('--pa', p));
+      // Versículo que está sendo lido agora (o último marcador já alcançado); antes do versículo 1 fica vazio (é a introdução do capítulo).
+      const ms = bibliaAudioAtual.marcas || [];
+      let v = 0;
+      for (let i = 0; i < ms.length && ms[i].t <= bibliaAudio.currentTime + 0.05; i++) v = ms[i].v;
+      if (v !== bibliaAudioAtual.v) { bibliaAudioAtual.v = v; bibliaAudioPintarVersiculo(); }
+    }
+    function bibliaAudioPintarVersiculo() {
+      const a = bibliaAudioAtual;
+      const texto = a && a.v ? 'v. ' + a.v + (a.total ? '/' + a.total : '') : '';
+      document.querySelectorAll('#bibliaCard .biblia-eq-v').forEach(el => { el.textContent = texto; });
     }
 
     function bibliaAudioParar() { // pára o que estiver tocando e solta o capítulo (os botões voltam a ▶)
@@ -21167,19 +21233,20 @@ function saveTemplatesToStorage() {
         return;
       }
       bibliaAudioParar(); // outro capítulo: só um por vez
-      const atual = { id: cap.id, livro: cap.livro, n, estado: 'carregando' };
+      const atual = { id: cap.id, livro: cap.livro, n, estado: 'carregando', marcas: [], v: 0, total: bibliaVersiculosCapitulo(cap.livro, n) };
       bibliaAudioAtual = atual;
       bibliaAudioPintar();
-      const tocar = url => {
+      const tocar = (url, marcas) => {
         if (bibliaAudioAtual !== atual) return; // trocou de capítulo enquanto carregava
+        atual.marcas = marcas || [];
         bibliaAudio.src = url;
         bibliaAudio.play().catch(() => { if (bibliaAudioAtual === atual) bibliaAudioErro(linha, 'O aparelho não deixou tocar. Toque no ▶ de novo.'); });
       };
       const pronto = bibliaAudioLivros.get(cap.livro);
-      if (pronto && pronto.done && pronto.done.get(n)) { tocar(pronto.done.get(n)); return; } // endereço já conhecido: toca dentro do próprio toque
+      if (pronto && pronto.done && pronto.done.get(n)) { tocar(pronto.done.get(n), pronto.done.marcas.get(n)); return; } // endereço já conhecido: toca dentro do próprio toque
       bibliaAudioUrls(cap.livro).then(mapa => {
         if (!mapa.get(n)) throw new Error('capítulo sem áudio');
-        tocar(mapa.get(n));
+        tocar(mapa.get(n), mapa.marcas.get(n));
       }).catch(() => { if (bibliaAudioAtual === atual) bibliaAudioErro(linha, 'Não encontrei o áudio deste capítulo agora. Confira a conexão.'); });
     }
 
@@ -21197,10 +21264,7 @@ function saveTemplatesToStorage() {
       check.className = 'biblia-item-check';
       check.checked = Boolean(marca0.lido);
       check.setAttribute('aria-label', 'Marcar ' + cap.nome + ' como lido');
-      const nome = document.createElement('span');
-      nome.className = 'biblia-cap-nome';
-      nome.textContent = cap.curto || cap.nome;
-      rotulo.append(check, nome);
+      rotulo.append(check, bibliaNomeCap(cap));
 
       const data = document.createElement('input');
       data.type = 'text';
@@ -21617,6 +21681,7 @@ function saveTemplatesToStorage() {
         bibliaLivros.appendChild(det);
       });
       bibliaLivrosPronto = true;
+      bibliaAudioPintar();
     }
 
     function bibliaLivrosSincronizar() { // uma marcação feita na leitura por seções: a leitura por livros, se já montada, é refeita
@@ -21676,6 +21741,7 @@ function saveTemplatesToStorage() {
         bibliaLista.appendChild(vazio);
       }
       bibliaGravarEstado();
+      bibliaAudioPintar();
     }
 
     function bibliaMontarSecoes() {

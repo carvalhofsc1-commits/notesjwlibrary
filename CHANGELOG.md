@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.41
+
+Leitura da Bíblia: a quantidade de versículos aparece depois do capítulo, entre parênteses e sem negrito (“Cap. 1 (31)”; nos trechos do Salmo 119, só os versículos do trecho). Nas linhas que mostram o nome do livro, os nomes compridos são abreviados (Hab. 1 (17)) e o número do capítulo nunca é cortado. Durante o áudio, o cabeçalho do grupo mostra o versículo que está sendo lido (“v. 12/31”), a partir dos marcadores do áudio da jw.org.
+
+## 6.5.40
+
+Leitura da Bíblia: enquanto um capítulo toca, o cabeçalho do grupo (e do livro) mostra barrinhas de áudio animadas, como o gráfico do Áudio em texto em tamanho menor; elas param quando o áudio é pausado.
+
 ## 6.5.39
 
 Leitura da Bíblia: ao terminar de ouvir um capítulo, ele é marcado no lugar, sem refazer a lista (a tela não volta mais ao topo). Depois de gerar o resumo de um capítulo aparece o botão flutuante “📝 Resumo pronto · Ver ↓”, que leva ao texto do resumo. Ao salvar um texto em Pesquisas, o nome sugerido aparece normal, sem estar selecionado.
