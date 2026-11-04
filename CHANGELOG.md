@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.37
+
+Leitura da Bíblia: botão ▶ em cada capítulo que toca a gravação do capítulo (áudio da jw.org), um capítulo por vez: o mesmo botão pausa e retoma, outro ▶ troca de capítulo e, ao terminar, o áudio para e o capítulo é marcado como lido, com a data de hoje (as duas partes do Salmo 119 juntas). Uma barra fina no pé da linha mostra o andamento. Abaixo do título da tela, a data da última leitura (“Última leitura em: dd/mm/aaaa”), em letras pequenas, com há quantos dias (hoje, ontem, há N dias): verde com ✔ se foi hoje e vermelho com ⚠️ se passou mais de um dia.
+
 ## 6.5.36
 
 Preparação de discursos e esboços (prompt “Como elaborar um esboço”): a introdução pode abrir com história de personagem bíblico (de preferência um citado no esboço; quanto mais desconhecido, melhor; com fundo histórico breve), ilustração da vida real ou ocorrência/notícia real conhecida. Aplicação e ilustração deixam de ser obrigatórias em todo ponto — só entram quando ainda fizerem falta (muitas vezes a aplicação já está clara na matéria, no tema ou num tópico).

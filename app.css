@@ -10228,9 +10228,10 @@ details.transcricao-bloco:not([open]) {
 }
 .biblia-cap {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
   gap: 2px 8px;
   align-items: center;
+  position: relative;
   padding: 4px 8px;
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -10320,14 +10321,14 @@ details.transcricao-bloco:not([open]) {
   background: color-mix(in srgb, hsl(var(--cor) 80% 55%) 28%, var(--card));
 }
 .biblia-cap-wol {
-  grid-column: 2;
+  grid-column: 3;
   grid-row: 1 / span 2;
   align-self: center;
   justify-self: end;
   --cor: 215; /* azul */
 }
 .biblia-cap .biblia-cap-resumir {
-  grid-column: 3;
+  grid-column: 4;
   grid-row: 1 / span 2;
   align-self: center;
   justify-self: end;
@@ -10405,3 +10406,59 @@ details.transcricao-bloco:not([open]) {
 .biblia-grupo.biblia-livro, .biblia-grupo.biblia-gl { background: var(--liv-bg, color-mix(in srgb, var(--soft) 55%, var(--card))); }
 .biblia-grupo.biblia-colorido { background: var(--liv-bg, color-mix(in srgb, var(--soft) 55%, var(--card))); }
 #bibliaProgCaixa[hidden] { display: none; }
+
+/* ▶ Ouvir o capítulo: botão pequeno, redondo, ao lado do WOL; barra fina de andamento no pé da linha enquanto toca. */
+.biblia-cap .biblia-cap-ouvir {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  justify-self: end;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  min-width: 0;
+  min-height: 0;
+  height: 2rem;
+  padding: 0;
+  border-radius: 50%;
+  font-size: .85rem;
+  line-height: 1;
+  cursor: pointer;
+  --cor: 170;
+  border: 1px solid color-mix(in srgb, hsl(var(--cor) 70% 38%) 55%, var(--line));
+  background: color-mix(in srgb, hsl(var(--cor) 70% 45%) 16%, var(--card));
+  color: color-mix(in srgb, hsl(var(--cor) 75% 30%) 65%, var(--text));
+}
+.biblia-cap .biblia-cap-ouvir:hover,
+.biblia-cap .biblia-cap-ouvir.ativo {
+  background: color-mix(in srgb, hsl(var(--cor) 70% 45%) 32%, var(--card));
+}
+.biblia-cap.tocando { border-color: color-mix(in srgb, hsl(170 70% 38%) 60%, var(--line)); }
+.biblia-cap.tocando::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  bottom: 2px;
+  height: 3px;
+  width: calc((100% - 20px) * var(--pa, 0));
+  border-radius: 2px;
+  background: hsl(170 70% 38%);
+}
+@media (max-width: 420px) { /* com o ▶ a linha ganha um botão: os dois maiores ficam um pouco mais estreitos para a data caber */
+  .biblia-cap-wol,
+  .biblia-cap .biblia-cap-resumir { width: 4rem; font-size: .68rem; padding: 0 4px; }
+  .biblia-cap { gap: 2px 6px; }
+}
+
+/* "Última leitura em: dd/mm/aaaa", logo abaixo do título da tela: pequena e discreta. */
+.biblia-ultima {
+  margin: -4px 0 8px;
+  text-align: center;
+  font-size: .75rem;
+  color: var(--muted);
+}
+.biblia-ultima[hidden] { display: none; }
+.biblia-ultima.hoje { color: #16a34a; font-weight: 700; } /* leu hoje */
+.biblia-ultima.atrasada { color: #dc2626; font-weight: 700; } /* mais de um dia sem ler */

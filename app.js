@@ -7540,7 +7540,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.36'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.37'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21013,6 +21013,24 @@ function saveTemplatesToStorage() {
       const largura = (total ? (lidos / total) * 100 : 0).toFixed(1) + '%';
       document.getElementById('bibliaBarraGeral').style.width = largura; // barra geral abaixo do título
       document.querySelector('#bibliaAtalhoBarra > span').style.width = largura; // e a do atalho do Início
+      // "Última leitura em": a data mais recente entre os capítulos que estão marcados como lidos.
+      let ultima = '';
+      Object.values(bibliaEstado.itens).forEach(m => { if (m && m.lido && /^\d{4}-\d{2}-\d{2}$/.test(m.lidaEm || '') && m.lidaEm > ultima) ultima = m.lidaEm; });
+      const elUltima = document.getElementById('bibliaUltimaLeitura');
+      elUltima.hidden = !ultima;
+      elUltima.classList.remove('hoje', 'atrasada');
+      if (ultima) {
+        // Há quantos dias (pela data local): hoje = verde com ✔; ontem = discreto; mais de um dia = vermelho com ⚠️.
+        const [a, m, d] = ultima.split('-').map(Number);
+        const hoje = new Date();
+        const dias = Math.round((new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()) - new Date(a, m - 1, d)) / 86400000);
+        const quando = dias <= 0 ? 'hoje' : dias === 1 ? 'ontem' : 'há ' + dias + ' dias';
+        elUltima.classList.toggle('hoje', dias <= 0);
+        elUltima.classList.toggle('atrasada', dias > 1);
+        elUltima.textContent = (dias <= 0 ? '✔ ' : dias > 1 ? '⚠️ ' : '') + 'Última leitura em: ' + bibliaDataBR(ultima) + ' (' + quando + ')';
+      } else {
+        elUltima.textContent = '';
+      }
       const tudoLido = total > 0 && lidos === total; // as barras ficam âmbar até a leitura toda estar marcada; só então verdes
       document.getElementById('bibliaBarraGeral').classList.toggle('completa', tudoLido);
       document.getElementById('bibliaAtalhoBarra').classList.toggle('completa', tudoLido);
@@ -21038,11 +21056,128 @@ function saveTemplatesToStorage() {
       cont.classList.toggle('concluido', completo);
     }
 
+    // ----- Ouvir o capítulo (gravação da Bíblia da jw.org) -----
+    // O botão ▶ de cada capítulo toca a gravação em áudio dele, direto da jw.org, um capítulo por vez: ao terminar, o áudio para (não passa para o
+    // próximo) e o capítulo é marcado como lido, com a data de hoje. Os endereços dos arquivos vêm de uma consulta por livro (todos os capítulos de
+    // uma vez), feita antes do toque para o áudio poder começar no mesmo instante do clique (o iPhone só deixa tocar dentro do toque).
+    const BIBLIA_AUDIO_API = 'https://b.jw-cdn.org/apis/pub-media/GETPUBMEDIALINKS?output=json&pub=nwt&fileformat=MP3&alllangs=0&langwritten=T&txtCMSLang=T&booknum=';
+    const bibliaAudioLivros = new Map(); // livro → Promise<Map(capítulo → url)>
+    let bibliaAudio = null;
+    let bibliaAudioAtual = null; // { id, livro, n, estado: 'carregando' | 'tocando' | 'pausado' }
+
+    function bibliaAudioUrls(livro) {
+      if (!bibliaAudioLivros.has(livro)) {
+        const n = BIBLIA_LIVROS.indexOf(livro) + 1;
+        const p = n ? fetch(BIBLIA_AUDIO_API + n).then(r => r.json()).then(j => {
+          const mapa = new Map();
+          (((j.files || {}).T || {}).MP3 || []).forEach(f => { if (f && f.track && f.file && f.file.url) mapa.set(Number(f.track), f.file.url); });
+          if (!mapa.size) throw new Error('sem áudio');
+          return mapa;
+        }) : Promise.reject(new Error('livro desconhecido'));
+        p.then(mapa => { p.done = mapa; }, () => bibliaAudioLivros.delete(livro)); // guarda o resultado (toque síncrono) e, numa falha, tenta de novo no próximo toque
+        bibliaAudioLivros.set(livro, p);
+      }
+      return bibliaAudioLivros.get(livro);
+    }
+
+    // Atualiza o botão ▶ / ⏸ e a barra fina de andamento de todas as linhas do capítulo que está tocando.
+    function bibliaAudioPintarLinha(linha) {
+      const btn = linha.querySelector('.biblia-cap-ouvir');
+      if (!btn) return;
+      const a = bibliaAudioAtual && bibliaAudioAtual.id === linha.dataset.capId ? bibliaAudioAtual : null;
+      const estado = a ? a.estado : '';
+      btn.textContent = estado === 'tocando' ? '⏸' : estado === 'carregando' ? '…' : '▶';
+      btn.classList.toggle('ativo', Boolean(a));
+      btn.setAttribute('aria-label', (estado === 'tocando' ? 'Pausar ' : 'Ouvir ') + (linha.dataset.capNome || 'o capítulo'));
+      linha.classList.toggle('tocando', Boolean(a));
+      if (!a) linha.style.removeProperty('--pa');
+    }
+    function bibliaAudioPintar() {
+      document.querySelectorAll('.biblia-cap[data-cap-id]').forEach(bibliaAudioPintarLinha);
+    }
+    function bibliaAudioProgresso() {
+      if (!bibliaAudio || !bibliaAudioAtual || !(bibliaAudio.duration > 0)) return;
+      const p = Math.min(1, bibliaAudio.currentTime / bibliaAudio.duration).toFixed(4);
+      document.querySelectorAll('.biblia-cap[data-cap-id="' + bibliaAudioAtual.id + '"]').forEach(l => l.style.setProperty('--pa', p));
+    }
+
+    function bibliaAudioParar() { // pára o que estiver tocando e solta o capítulo (os botões voltam a ▶)
+      if (bibliaAudio) { bibliaAudio.pause(); bibliaAudio.removeAttribute('src'); bibliaAudio.load(); }
+      bibliaAudioAtual = null;
+      bibliaAudioPintar();
+    }
+
+    // O capítulo ouvido até o fim vira lido (todas as suas linhas: o Salmo 119 tem duas), com a data de hoje; as telas se atualizam.
+    function bibliaAudioMarcarLido(a) {
+      const entradas = (bibliaIndiceLivros().get(a.livro) || new Map()).get(a.n) || [];
+      let mudou = false;
+      entradas.forEach(e => {
+        if (bibliaMarcaDe(e.cap.id).lido) return;
+        bibliaEstado.itens[e.cap.id] = { lido: true, lidaEm: bibliaHojeISO() };
+        mudou = true;
+      });
+      if (!mudou) return;
+      bibliaGravarEstado();
+      bibliaAtualizarProgresso();
+      bibliaRenderSecao();
+      bibliaLivrosSincronizar();
+    }
+
+    function bibliaAudioErro(linha, texto) {
+      const btn = linha && linha.querySelector('.biblia-cap-ouvir');
+      bibliaAudioAtual = null;
+      bibliaAudioPintar();
+      if (!btn) return;
+      btn.textContent = '⚠️';
+      btn.title = texto;
+      setTimeout(() => { btn.title = 'Ouvir o capítulo'; if (!bibliaAudioAtual) bibliaAudioPintarLinha(btn.closest('.biblia-cap')); }, 4000);
+    }
+
+    function bibliaAudioAlternar(cap, linha) {
+      const n = parseInt(cap.rotulo, 10);
+      if (!n) return;
+      if (!bibliaAudio) {
+        bibliaAudio = new Audio();
+        bibliaAudio.preload = 'auto';
+        bibliaAudio.addEventListener('timeupdate', bibliaAudioProgresso);
+        bibliaAudio.addEventListener('playing', () => { if (bibliaAudioAtual) { bibliaAudioAtual.estado = 'tocando'; bibliaAudioPintar(); } });
+        bibliaAudio.addEventListener('pause', () => { if (bibliaAudioAtual && !bibliaAudio.ended && bibliaAudioAtual.estado === 'tocando') { bibliaAudioAtual.estado = 'pausado'; bibliaAudioPintar(); } });
+        bibliaAudio.addEventListener('ended', () => { // terminou: para (nada de passar ao próximo) e marca como lido
+          const a = bibliaAudioAtual;
+          bibliaAudioParar();
+          if (a) bibliaAudioMarcarLido(a);
+        });
+        bibliaAudio.addEventListener('error', () => { if (bibliaAudioAtual) bibliaAudioErro(document.querySelector('.biblia-cap[data-cap-id="' + bibliaAudioAtual.id + '"]'), 'Não consegui tocar este áudio agora. Confira a conexão e tente de novo.'); });
+      }
+      // O mesmo capítulo: o botão pausa e retoma.
+      if (bibliaAudioAtual && bibliaAudioAtual.id === cap.id) {
+        if (bibliaAudioAtual.estado === 'tocando') bibliaAudio.pause();
+        else if (bibliaAudioAtual.estado === 'pausado') bibliaAudio.play().catch(() => {});
+        return;
+      }
+      bibliaAudioParar(); // outro capítulo: só um por vez
+      const atual = { id: cap.id, livro: cap.livro, n, estado: 'carregando' };
+      bibliaAudioAtual = atual;
+      bibliaAudioPintar();
+      const tocar = url => {
+        if (bibliaAudioAtual !== atual) return; // trocou de capítulo enquanto carregava
+        bibliaAudio.src = url;
+        bibliaAudio.play().catch(() => { if (bibliaAudioAtual === atual) bibliaAudioErro(linha, 'O aparelho não deixou tocar. Toque no ▶ de novo.'); });
+      };
+      const pronto = bibliaAudioLivros.get(cap.livro);
+      if (pronto && pronto.done && pronto.done.get(n)) { tocar(pronto.done.get(n)); return; } // endereço já conhecido: toca dentro do próprio toque
+      bibliaAudioUrls(cap.livro).then(mapa => {
+        if (!mapa.get(n)) throw new Error('capítulo sem áudio');
+        tocar(mapa.get(n));
+      }).catch(() => { if (bibliaAudioAtual === atual) bibliaAudioErro(linha, 'Não encontrei o áudio deste capítulo agora. Confira a conexão.'); });
+    }
+
     function bibliaLinhaCapitulo(item, cap, det, origem) { // origem 'livros': a linha está na leitura por livros (det é o cartão do livro)
       const linha = document.createElement('div');
       const marca0 = bibliaMarcaDe(cap.id);
       linha.className = 'biblia-cap' + (marca0.lido ? ' lido' : '');
       linha.dataset.capId = cap.id;
+      linha.dataset.capNome = cap.nome;
 
       const rotulo = document.createElement('label');
       rotulo.className = 'biblia-cap-rotulo';
@@ -21101,6 +21236,14 @@ function saveTemplatesToStorage() {
         bibliaAtualizarProgresso();
       });
 
+      // ▶: toca a gravação do capítulo (um por vez; ao terminar, marca como lido). Os endereços do livro são consultados já, para o toque ser imediato.
+      const ouvir = document.createElement('button');
+      ouvir.type = 'button';
+      ouvir.className = 'secondary biblia-cap-ouvir';
+      ouvir.title = 'Ouvir o capítulo';
+      ouvir.textContent = '▶';
+      if (parseInt(cap.rotulo, 10)) bibliaAudioUrls(cap.livro).catch(() => {});
+      ouvir.addEventListener('click', () => bibliaAudioAlternar(cap, linha));
       const urlWol = bibliaLinkWol(cap);
       if (urlWol) {
         const link = document.createElement('a');
@@ -21111,10 +21254,11 @@ function saveTemplatesToStorage() {
         link.textContent = '🔗 WOL';
         link.title = 'Abrir ' + cap.nome + ' no wol.jw.org';
         link.setAttribute('aria-label', 'Abrir ' + cap.nome + ' no wol.jw.org');
-        linha.append(rotulo, link, dataCaixa, btn);
+        linha.append(rotulo, ouvir, link, dataCaixa, btn);
       } else {
-        linha.append(rotulo, btn, dataCaixa);
+        linha.append(rotulo, ouvir, btn, dataCaixa);
       }
+      bibliaAudioPintarLinha(linha);
       return linha;
     }
 
