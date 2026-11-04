@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.32
+
+O botão “Estudo Bíblico de Congregação” (preparar para comentar e para dirigir) passa a se chamar “Estudo Bíblico”.
+
 ## 6.5.31
 
 Resumo do capítulo (leitura diária): texto organizado em parágrafos. Cada grupo de versículos, aplicação, qualidade de Jeová, personagem e lugar ganha o seu parágrafo (linha em branco entre eles), em lista, com emoji no começo; o nome de cada personagem e lugar sai em negrito e o título de cada seção, em negrito com acentos e emoji. O servidor reorganiza o texto mesmo que a IA entregue tudo num bloco só, e as instruções da IA (frases editáveis na tela de prompts) descrevem a forma de cada seção. Corrigido: com o negrito ativo o app não reconhecia mais o título da seção (acrescentar ou melhorar uma seção duplicava ou falhava). Citação das fontes padronizada. Cards das ferramentas das reuniões (A Sentinela, Joias, Estudo Bíblico…): título com faixa de cor, linha separando-o dos dados e seta maior. Leitura da Bíblia: as barras de progresso ficam âmbar enquanto falta capítulo e só ficam verdes com tudo lido.
