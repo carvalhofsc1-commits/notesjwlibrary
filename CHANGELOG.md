@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.07
+
+Leitura diária da Bíblia: o ícone da seção da vida e do ministério de Jesus passa para um tom de pele mais claro.
+
 ## 6.5.06
 
 Leitura diária da Bíblia: o texto explicativo do topo saiu; as 10 seções viram botões com ícone, num quadro próprio; os grupos de capítulos de cada seção ficam num quadro e se abrem (toque no grupo) em uma linha por capítulo. A marcação de lido, o botão Resumir (com o resumo logo abaixo do capítulo) e a data valem só para o capítulo; a data não é editável e é registrada sozinha ao marcar o capítulo como lido (e some ao desmarcar). Quem já tinha grupos marcados mantém: cada capítulo do grupo aparece como lido. Também: o cartão do grupo fechado vira uma barra de andamento (enche de verde e ganha ✔ ao completar); os botões das seções têm barra de andamento e ficam verdes com ✔ quando completos; barra geral de leitura abaixo do título e no atalho do Início; linhas de capítulo mais finas; ícone de Jesus trocado por 🧔🏽; o quadro grande em volta da tela saiu.
