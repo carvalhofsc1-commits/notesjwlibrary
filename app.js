@@ -7540,7 +7540,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.30'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.31'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -20768,22 +20768,59 @@ function saveTemplatesToStorage() {
     };
     const BIBLIA_SECAO_ORDEM = ['resumo', 'ensina', 'aplicacoes', 'fundo', 'personagens', 'lugares'];
 
+    const BIBLIA_SECAO_EMOJI = {
+      'RESUMO': '📖',
+      'SOBRE JEOVÁ': '🌟',
+      'APLICAÇÕES PRÁTICAS': '🛠️',
+      'FUNDO HISTÓRICO': '🏛️',
+      'PERSONAGENS': '👤',
+      'LUGARES E INFORMAÇÕES GERAIS': '📍'
+    };
+    const BIBLIA_EMOJI_INICIO = /^(?:\p{Extended_Pictographic}[\uFE0F\u200D\p{Emoji_Modifier}\p{Extended_Pictographic}]*\s*)+/u;
+
+    // Chave de comparação de um título de seção: sem emoji, sem fonte especial, sem acentos, em maiúsculas. Assim o título é reconhecido
+    // mesmo em negrito (a fonte negrito não tem letras acentuadas) e com o emoji que o app põe na frente.
+    function bibliaChaveTitulo(linha) {
+      return removeUnicodeFormatting(String(linha || '')).replace(BIBLIA_EMOJI_INICIO, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim().toUpperCase();
+    }
+    const BIBLIA_TITULO_POR_CHAVE = new Map(Object.values(BIBLIA_SECAO_TITULO).map(t => [bibliaChaveTitulo(t), t]));
+
+    // Título em negrito mantendo os acentos: a letra vai para a fonte e o acento (marca combinante) acompanha.
+    function bibliaTituloNegrito(titulo, negritoId) {
+      if (!negritoId) return titulo;
+      return [...titulo.normalize('NFD')].map(ch => /[\u0300-\u036f]/.test(ch) ? ch : convertTextWithStyle(ch, negritoId)).join('');
+    }
+
+    // Acabamento do texto vindo do servidor (já em parágrafos): título de cada seção com emoji e negrito, e o nome de cada personagem e
+    // de cada lugar ("Davi: …", "Adulão: …") em negrito, sem depender de a IA ter indicado esse destaque.
+    function bibliaAcabamento(texto) {
+      const opcoes = readAiOptions();
+      const negritoId = opcoes.negrito ? aiStyleIdFor('negrito') : '';
+      let secao = '';
+      return String(texto || '').split('\n').map(linha => {
+        const titulo = BIBLIA_TITULO_POR_CHAVE.get(bibliaChaveTitulo(linha));
+        if (titulo) {
+          secao = titulo;
+          return (opcoes.emoji ? BIBLIA_SECAO_EMOJI[titulo] + ' ' : '') + bibliaTituloNegrito(titulo, negritoId);
+        }
+        if (/^🔎/.test(linha)) { secao = ''; return linha; } // linha das fontes, no fim
+        if (negritoId && (secao === 'PERSONAGENS' || secao === 'LUGARES E INFORMAÇÕES GERAIS')) {
+          const m = linha.match(/^((?:\p{Extended_Pictographic}[\uFE0F\u200D\p{Emoji_Modifier}\p{Extended_Pictographic}]*\s*)*)([^\s:.,;()][^:.,;()]{0,48}?):(\s.*)$/u);
+          if (m) return m[1] + convertTextWithStyle(m[2].trim(), negritoId) + ':' + m[3];
+        }
+        return linha;
+      }).join('\n');
+    }
+
     function bibliaFormatarResumo(outros) {
       if (!Array.isArray(outros) || !outros.length) return '';
-      const negritoId = readAiOptions().negrito ? aiStyleIdFor('negrito') : '';
-      const secoes = /^(RESUMO|SOBRE JEOVÁ|APLICAÇÕES PRÁTICAS|FUNDO HISTÓRICO|PERSONAGENS|LUGARES E INFORMAÇÕES GERAIS)\s*$/gm;
-      return joiasOutrosPartes(outros, false).map(p => {
-        let texto = p.texto;
-        if (negritoId) texto = texto.replace(secoes, m => convertTextWithStyle(m.trim(), negritoId));
-        return texto;
-      }).join('\n\n\n');
+      return joiasOutrosPartes(outros, false).map(p => bibliaAcabamento(p.texto)).join('\n\n\n');
     }
 
     // Formata só o corpo (seções) de um item da IA, sem o cabeçalho "📚 RESUMO DE…".
     function bibliaFormatarCorpoSecao(outro) {
       if (!outro || !outro.texto) return '';
       const negritoId = readAiOptions().negrito ? aiStyleIdFor('negrito') : '';
-      const secoes = /^(RESUMO|SOBRE JEOVÁ|APLICAÇÕES PRÁTICAS|FUNDO HISTÓRICO|PERSONAGENS|LUGARES E INFORMAÇÕES GERAIS)\s*$/gm;
       let corpo = aiAplicarDestaquesTexto(outro.texto, outro.destaques, outro.quebras);
       const opcoes = readAiOptions();
       if (!opcoes.emoji) corpo = String(corpo).replace(/(^|\n\n)(?:\p{Extended_Pictographic}\uFE0F?(?:\u200D\p{Extended_Pictographic}\uFE0F?)*)+\s*/gu, '$1');
@@ -20791,7 +20828,7 @@ function saveTemplatesToStorage() {
         const r = '(' + ref.trim().replace(/^\(|\)$/g, '') + ')';
         return negritoId ? convertTextWithStyle(r, negritoId) : r;
       });
-      if (negritoId) corpo = corpo.replace(secoes, m => convertTextWithStyle(m.trim(), negritoId));
+      corpo = bibliaAcabamento(corpo);
       if (Array.isArray(outro.perspicaz) && outro.perspicaz.length) {
         const rotulo = outro.perspicaz.some(s => /^WOL:/i.test(String(s))) ? '🔎 Fontes: ' : '🔎 Estudo Perspicaz: ';
         corpo = corpo.replace(/\s+$/, '') + '\n\n' + rotulo + outro.perspicaz.join('; ');
@@ -20800,8 +20837,7 @@ function saveTemplatesToStorage() {
     }
 
     function bibliaTituloSecaoDaLinha(linha) {
-      const t = removeUnicodeFormatting(String(linha || '')).trim();
-      return Object.values(BIBLIA_SECAO_TITULO).find(tit => tit === t) || null;
+      return BIBLIA_TITULO_POR_CHAVE.get(bibliaChaveTitulo(linha)) || null;
     }
 
     function bibliaPartirSecoes(texto) {
@@ -20863,6 +20899,9 @@ function saveTemplatesToStorage() {
       const largura = (total ? (lidos / total) * 100 : 0).toFixed(1) + '%';
       document.getElementById('bibliaBarraGeral').style.width = largura; // barra geral abaixo do título
       document.querySelector('#bibliaAtalhoBarra > span').style.width = largura; // e a do atalho do Início
+      const tudoLido = total > 0 && lidos === total; // as barras ficam âmbar até a leitura toda estar marcada; só então verdes
+      document.getElementById('bibliaBarraGeral').classList.toggle('completa', tudoLido);
+      document.getElementById('bibliaAtalhoBarra').classList.toggle('completa', tudoLido);
       (BIBLIA_PROG.secoes || []).forEach(s => {
         const el = bibliaSecoes.querySelector('[data-secao="' + s.id + '"] .biblia-secao-cont');
         if (!el) return;

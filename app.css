@@ -7042,6 +7042,31 @@
       margin-top: 0;
     }
 
+    /* Título da ferramenta (A Sentinela, Joias, Estudo Bíblico…): faixa de cor própria, para parecer uma opção que se abre, linha separando-o dos
+       dados quando aberto e seta maior (como nos cards do Áudio em texto). */
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos)>details.subsection>summary {
+      background: color-mix(in srgb, var(--g-cor) 24%, var(--card));
+      padding: 12px 14px;
+    }
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos)>details.subsection[open]>summary {
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--g-cor);
+    }
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos)>details.subsection>summary::after {
+      font-size: 1.7rem;
+      line-height: 1;
+      font-weight: 700;
+      color: var(--g-cor);
+    }
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos)>details.subsection>.subsection-body {
+      padding-top: 12px;
+    }
+    @media (hover: hover) {
+      :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos)>details.subsection>summary:hover {
+        background: color-mix(in srgb, var(--g-cor) 32%, var(--card));
+      }
+    }
+
     :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos) :is(.ai-study-btn, .ai-sentinela-btn, .ai-study-btn.ai-study-questions-btn) {
       background: var(--g-forte);
       color: #ffffff;
@@ -9900,9 +9925,10 @@ details.transcricao-bloco:not([open]) {
   height: 100%;
   width: 0;
   border-radius: 999px;
-  background: #16a34a;
+  background: #f59e0b; /* âmbar enquanto falta ler; verde só com 100% */
   transition: width .25s;
 }
+.biblia-barra-geral > span.completa { background: #16a34a; }
 .atalho-barra {
   display: block;
   width: 78%;
@@ -9917,8 +9943,9 @@ details.transcricao-bloco:not([open]) {
   height: 100%;
   width: 0;
   border-radius: 999px;
-  background: #16a34a;
+  background: #f59e0b;
 }
+.atalho-barra.completa > span { background: #16a34a; }
 .biblia-caixa {
   border: 2px solid color-mix(in srgb, var(--brand) 50%, var(--line));
   border-radius: 16px;
@@ -9997,9 +10024,10 @@ details.transcricao-bloco:not([open]) {
   height: 100%;
   width: 0;
   border-radius: 999px;
-  background: #16a34a;
+  background: #f59e0b;
   transition: width .25s;
 }
+.biblia-secao-btn.completa .biblia-secao-barra > span { background: #16a34a; }
 .biblia-secao-btn:hover { /* sem o azul geral dos botões ao passar o mouse */
   background: var(--sec-bg);
 }
@@ -10156,7 +10184,10 @@ details.transcricao-bloco:not([open]) {
   cursor: pointer;
   list-style: none;
   border-radius: 13px; /* a barra verde enche o cartão da esquerda para a direita conforme os capítulos são lidos */
-  background: linear-gradient(90deg, color-mix(in srgb, #16a34a 42%, transparent) var(--p, 0%), transparent var(--p, 0%));
+  background: linear-gradient(90deg, color-mix(in srgb, #f59e0b 45%, transparent) var(--p, 0%), transparent var(--p, 0%)); /* âmbar enquanto falta capítulo; verde quando o grupo está todo lido (.lido) */
+}
+.biblia-grupo.lido > summary {
+  background: linear-gradient(90deg, color-mix(in srgb, #16a34a 42%, transparent) 100%, transparent 100%);
 }
 .biblia-grupo > summary::-webkit-details-marker { display: none; }
 .biblia-grupo > summary::after {

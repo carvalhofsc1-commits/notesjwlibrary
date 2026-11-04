@@ -3321,17 +3321,94 @@ async function pesquisarWolParaResumoLeitura(tituloCap, outros, ajuste, idsOpcoe
   return lista;
 }
 
+// ----- Organização do texto do resumo (feita pelo servidor, para não depender de a IA seguir a forma à risca) -----
+// A IA às vezes entrega a seção toda num parágrafo só. Aqui cada item vira um parágrafo (linha em branco entre eles), com emoji no começo
+// quando a opção de emoji está ativa: um personagem ou lugar por parágrafo ("Nome: ..."), uma aplicação ou qualidade por parágrafo, e os
+// trechos do resumo e do fundo histórico em blocos curtos.
+const REGEX_EMOJI_INICIO = /^(?:\p{Extended_Pictographic}[\uFE0F\u200D\p{Emoji_Modifier}\p{Extended_Pictographic}]*\s*)+/u;
+const EMOJI_PADRAO_SECAO_RESUMO_LEITURA = {
+  RESUMO: "📖",
+  "SOBRE JEOVÁ": "🌟",
+  "APLICAÇÕES PRÁTICAS": "🛠️",
+  "FUNDO HISTÓRICO": "🏛️",
+  PERSONAGENS: "👤",
+  "LUGARES E INFORMAÇÕES GERAIS": "📍",
+};
+const TITULO_POR_CHAVE_RESUMO_LEITURA = new Map(Object.values(SECAO_UNICA_RESUMO_LEITURA).map((t) => [chaveDeBusca(t), t]));
+const ABREVIACOES_RESUMO_LEITURA = new Set(["v", "vv", "vol", "vols", "pág", "págs", "pag", "pags", "cap", "caps", "cf", "ex", "nº", "séc", "aprox", "ss", "pp"]);
+const REGEX_NOME_DE_ITEM = /(?<=[.!?…)"”]\s*)(?=(?:\p{Extended_Pictographic}\uFE0F?\s*)?(?:\p{Lu}|\d)[^\s:.,;()]*(?:\s+[^\s:.,;()]{1,14}){0,3}:\s)/u;
+const REGEX_COMECA_COM_NOME = /^(?:\p{Extended_Pictographic}[\uFE0F\u200D\p{Emoji_Modifier}\p{Extended_Pictographic}]*\s*)*[^\s:.,;()][^:.,;()]{0,48}:\s/u;
+
+function tituloDeSecaoResumoLeitura(linha) {
+  return TITULO_POR_CHAVE_RESUMO_LEITURA.get(chaveDeBusca(String(linha || "").replace(REGEX_EMOJI_INICIO, ""))) || "";
+}
+
+// Frases de um parágrafo; "v. 5", "vol. 1" e afins não encerram frase (depois do ponto só abre frase nova letra maiúscula ou emoji).
+function frasesDeParagrafo(texto) {
+  const pedacos = String(texto).split(/(?<=[.!?…]["”')\]]*)\s+(?=\p{Lu}|\p{Extended_Pictographic})/u);
+  const frases = [];
+  for (const p of pedacos) {
+    const anterior = frases[frases.length - 1];
+    const abrev = anterior && /(?:^|[\s(])(\p{L}{1,4})\.$/u.exec(anterior);
+    if (abrev && ABREVIACOES_RESUMO_LEITURA.has(abrev[1].toLowerCase())) frases[frases.length - 1] = anterior + " " + p;
+    else frases.push(p);
+  }
+  return frases.map((f) => f.trim()).filter(Boolean);
+}
+
+function organizarSecaoResumoLeitura(secao, paragrafos, emojiAtivo) {
+  let itens = paragrafos.map((p) => p.replace(/^[-•–]\s+/, "").trim()).filter(Boolean);
+  if (secao === "PERSONAGENS" || secao === "LUGARES E INFORMAÇÕES GERAIS") {
+    // Só divide o parágrafo que já começa em "Nome: …" (a IA seguiu o formato ao menos no primeiro); assim frases comuns com dois-pontos não são cortadas.
+    itens = itens.flatMap((p) => (REGEX_COMECA_COM_NOME.test(p) ? p.split(REGEX_NOME_DE_ITEM).map((x) => x.trim()).filter(Boolean) : [p]));
+  } else if (itens.length === 1) {
+    const frases = frasesDeParagrafo(itens[0]);
+    if ((secao === "SOBRE JEOVÁ" || secao === "APLICAÇÕES PRÁTICAS") && frases.length >= 3) {
+      itens = frases; // lista: uma frase (ponto) por parágrafo
+    } else if ((secao === "RESUMO" || secao === "FUNDO HISTÓRICO") && frases.length >= 4) {
+      itens = [];
+      for (let i = 0; i < frases.length; i += 2) itens.push(frases.slice(i, i + 2).join(" ")); // blocos de duas frases
+    }
+  }
+  if (emojiAtivo && secao) {
+    const padrao = EMOJI_PADRAO_SECAO_RESUMO_LEITURA[secao];
+    itens = itens.map((p) => (REGEX_EMOJI_INICIO.test(p) ? p : padrao + " " + p));
+  }
+  return itens;
+}
+
+function organizarResumoLeitura(texto, emojiAtivo) {
+  const saida = [];
+  let secao = "";
+  let corpo = [];
+  const fechar = () => {
+    saida.push(...organizarSecaoResumoLeitura(secao, corpo, emojiAtivo));
+    corpo = [];
+  };
+  for (const p of String(texto || "").split("\n\n")) {
+    const titulo = tituloDeSecaoResumoLeitura(p);
+    if (titulo) {
+      fechar();
+      secao = titulo;
+      saida.push(titulo); // o subtítulo fica sozinho e sem emoji; o app põe o emoji e o negrito
+    } else {
+      corpo.push(p);
+    }
+  }
+  fechar();
+  return saida.join("\n\n");
+}
+
 function sanearItemResumoLeitura(o, opcoesFmt, P, maxTexto) {
-  const texto = limparResumo(o.texto, maxTexto);
+  const texto = organizarResumoLeitura(limparResumo(o.texto, maxTexto), Boolean(opcoesFmt.emoji));
   const permitidos = estilosDe(opcoesFmt);
-  const sep = modoSeparacao(opcoesFmt, "");
   return {
     titulo: limparLinha(o.titulo, 120),
     texto,
     verbetes: Array.isArray(o.verbetes) ? o.verbetes.map((v) => limparLinha(v, 60)).filter(Boolean).slice(0, 8) : [],
     consultasWol: Array.isArray(o.consultasWol) ? o.consultasWol.map((v) => limparLinha(v, 120)).filter(Boolean).slice(0, 4) : [],
     destaques: sanearDestaques(o.destaques, texto, opcoesFmt, permitidos, P.limites.maxDestaques),
-    quebras: sep ? sanearQuebras(o.quebras, texto) : [],
+    quebras: [], // os parágrafos já vêm organizados por organizarResumoLeitura; quebras dentro deles quebrariam as listas
   };
 }
 
@@ -3376,7 +3453,7 @@ async function completarResumosLeituraComFontes(outros, P, ajuste = "", blocoOpc
       : "";
     const mensagem =
       blocoOrientacao({}, ajuste, P) +
-      `"pergunta" é null; "joias" é []. Em cada item de "outros", preencha "verbetes", "consultasWol", "destaques" e "quebras" (listas; vazias se não houver).\n\n` +
+      `"pergunta" é null; "joias" é []. Em cada item de "outros", preencha "verbetes", "consultasWol" e "destaques" (listas; vazias se não houver) e deixe "quebras" [].\n\n` +
       frase +
       "\n\n" +
       blocoFmt +
@@ -3437,11 +3514,10 @@ async function resumirLeituraBiblia(res, body, P) {
   // Perspicaz (e WOL na 2ª etapa) para fundo histórico, personagens e lugares — não para só Jeová/aplicações/resumo.
   const querFontes = idsOpcoes.includes("personagens") || idsOpcoes.includes("lugares") || idsOpcoes.includes("fundo");
   const opcoesFmt = validarOpcoes(body.opcoes);
-  const sep = modoSeparacao(opcoesFmt, body.ajuste);
   const blocoFmt =
     "FORMATAÇÃO (as mesmas preferências das respostas do app):\n" +
-    descreverFormatacaoResposta(opcoesFmt, P, sep) +
-    "\nIndique em \"destaques\" trechos literais do \"texto\" a destacar (estilo negrito/italico/negrito_italico, maiusculas e, se permitido, fonte doubleStruck/sans/squaredDark). Em \"quebras\", trechos onde começa uma nova ideia ou frase (se o espaçamento estiver ativo). Se emoji estiver INATIVO, não comece parágrafos com emoji.\n\n";
+    descreverFormatacaoResposta(opcoesFmt, P, "") +
+    "\nIndique em \"destaques\" trechos literais do \"texto\" a destacar (estilo negrito/italico/negrito_italico, maiusculas e, se permitido, fonte doubleStruck/sans/squaredDark). Deixe \"quebras\" []: a separação em parágrafos é a do próprio \"texto\" (linha em branco entre um item e outro). Os nomes de personagens e lugares (antes dos dois-pontos) o app põe em negrito sozinho; destaque outras palavras importantes. Se emoji estiver INATIVO, não comece parágrafos com emoji.\n\n";
 
   const anterior = typeof body.anterior === "string" ? body.anterior.replace(/\s+/g, " ").trim().slice(0, 12000) : "";
   const modoAnterior = anterior
@@ -3471,7 +3547,7 @@ async function resumirLeituraBiblia(res, body, P) {
   } else if (anterior && modoAnterior === "acrescentar-secao" && secaoUnica) {
     blocoAnterior =
       (f["Resumo da leitura: texto já salvo (acrescentar seção)"] || "Devolva só a seção nova.") +
-      `\nSeção a ACrescentAR: ${SECAO_UNICA_RESUMO_LEITURA[secaoUnica]}.\n\nTEXTO JÁ SALVO (contexto):\n` +
+      `\nSeção a ACRESCENTAR: ${SECAO_UNICA_RESUMO_LEITURA[secaoUnica]}.\n\nTEXTO JÁ SALVO (contexto):\n` +
       anterior +
       "\n\n";
   } else if (anterior && modoAnterior === "melhorar-secao" && secaoUnica) {
@@ -3485,7 +3561,7 @@ async function resumirLeituraBiblia(res, body, P) {
     blocoOrientacao({}, ajuste, P) +
     `PEDIDO: texto da leitura diária da Bíblia (${titulo}).\n` +
     `pergunta da apostila INATIVA; joias da leitura INATIVAS; seções pedidas = opções marcadas.\n` +
-    `"pergunta" é null e "joias" é []. Em cada item de "outros", preencha "verbetes", "consultasWol", "destaques" e "quebras" (listas; vazias se não houver).\n` +
+    `"pergunta" é null e "joias" é []. Em cada item de "outros", preencha "verbetes", "consultasWol" e "destaques" (listas; vazias se não houver) e deixe "quebras" [].\n` +
     `Opções ATIVAS: ${idsOpcoes.join(", ")}` +
     (secaoUnica ? ` (modo seção única: só ${SECAO_UNICA_RESUMO_LEITURA[secaoUnica]}).` : ".") +
     "\n\n" +
