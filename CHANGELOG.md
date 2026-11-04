@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.16
+
+Início: as descrições dos atalhos não somem mais em telas baixas (ficam com letra menor, e a tela rola se não couber); a data do texto diário, com o ícone e a seta ›, fica sempre numa linha só (a letra diminui se preciso).
+
 ## 6.5.15
 
 Formatar: corrigido o corte do lado direito da tela em celulares estreitos (360 px) quando o botão 🔊 aparece no alto do texto: a linha de botões (Limpar, Copiar, 🔊 e Desfazer) era mais larga que o cartão e empurrava tudo para fora. Agora ela encolhe e os botões ficam mais compactos. A coluna única das telas também passou a poder encolher, para que um item largo nunca mais empurre o cartão para fora da tela.

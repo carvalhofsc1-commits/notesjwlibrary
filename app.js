@@ -7540,7 +7540,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.15'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.16'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -17465,6 +17465,20 @@ function saveTemplatesToStorage() {
     const tdCache = new Map(); // "2026-10-20" -> texto do servidor
     const tdIaCache = new Map(); // "2026-10-20" -> comentários adicionais da IA [{ ponto, comentario }]
     let tdData = null; // dia mostrado (meia-noite, hora local)
+    // A data do texto diário (com o ícone e a seta ›) fica numa linha só: se não couber, a letra diminui até caber.
+    function tdDataCaber() {
+      const d = document.querySelector('.td-data');
+      const btn = d && d.closest('.td-abrir');
+      if (!btn || !btn.clientWidth) return;
+      d.style.fontSize = '';
+      const cs = getComputedStyle(btn);
+      const limite = btn.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      let px = parseFloat(getComputedStyle(d).fontSize);
+      while (d.getBoundingClientRect().width > limite && px > 10) {
+        px -= 0.5;
+        d.style.fontSize = px + 'px';
+      }
+    }
     let tdTexto = null; // texto mostrado, quando carregou
     let tdVozCupom = ''; // cupom HMAC do texto do dia (para /api/voz)
     const tdIaVozCupons = new Map(); // data -> cupom dos comentários da IA
@@ -17596,6 +17610,7 @@ function saveTemplatesToStorage() {
       tdTexto = texto;
       tdVozCupom = typeof texto.vozCupom === 'string' ? texto.vozCupom : '';
       td.data.textContent = texto.titulo;
+      tdDataCaber();
       td.tema.textContent = texto.tema;
       td.comentario.textContent = '';
       texto.comentario.forEach(paragrafo => {
@@ -17622,6 +17637,7 @@ function saveTemplatesToStorage() {
       tdVozCupom = '';
       const dia = data.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
       td.data.textContent = dia.charAt(0).toUpperCase() + dia.slice(1);
+      tdDataCaber();
       td.tema.textContent = 'Carregando o texto do dia…';
       td.comentario.textContent = '';
       td.fonte.textContent = '';
@@ -17663,6 +17679,8 @@ function saveTemplatesToStorage() {
       td.abrir.setAttribute('aria-expanded', String(abrir));
       inicioAjustarAltura();
     });
+    window.addEventListener('resize', tdDataCaber);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(tdDataCaber);
     document.getElementById('tdAnterior').addEventListener('click', () => tdCarregar(tdMais(tdData || tdHoje(), -1)));
     document.getElementById('tdProximo').addEventListener('click', () => tdCarregar(tdMais(tdData || tdHoje(), 1)));
     td.hojeBtn.addEventListener('click', () => tdCarregar(tdHoje()));
