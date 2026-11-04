@@ -533,7 +533,7 @@
 
     .single-grid {
       display: grid;
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr); /* a coluna pode encolher: um filho largo não empurra o cartão para fora da tela */
       gap: 22px;
     }
 
@@ -7764,6 +7764,46 @@
         min-height: 48px;
         padding: 2px;
         font-size: 1.3rem;
+      }
+
+      /* Com o botão 🔊 visível são quatro botões na linha: o conteúdo de Limpar e Copiar (ícone grande + texto) era mais largo que o espaço e
+         empurrava o cartão para fora da tela. A linha pode encolher e os botões ficam mais compactos nas telas estreitas. */
+      .top-text-actions {
+        min-width: 0;
+      }
+
+      .top-text-actions .top-text-btn {
+        overflow: hidden;
+        width: 0; /* a largura vem do flex (1 1 0); assim o conteúdo não define o mínimo da linha e do cartão */
+      }
+
+      .top-text-actions .top-undo-btn {
+        width: 48px;
+      }
+
+      @media (max-width: 400px) {
+        .top-text-actions .top-icon {
+          font-size: 1.25rem;
+          margin-right: 2px;
+        }
+
+        .top-text-actions .top-text-btn {
+          padding-left: 6px;
+          padding-right: 6px;
+        }
+      }
+
+      @media (max-width: 340px) {
+        .top-text-actions .top-icon {
+          font-size: .95rem;
+          margin-right: 1px;
+        }
+
+        .top-text-actions .top-text-btn {
+          padding-left: 3px;
+          padding-right: 3px;
+          font-size: .8rem;
+        }
       }
 
       /* Limpar e Copiar passam para o topo; a barra de baixo fica sem eles. */
