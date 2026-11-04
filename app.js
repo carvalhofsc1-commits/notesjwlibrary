@@ -7540,7 +7540,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.44'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.45'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21128,6 +21128,8 @@ function saveTemplatesToStorage() {
       btn.classList.toggle('ativo', Boolean(a));
       btn.setAttribute('aria-label', (estado === 'tocando' ? 'Pausar ' : 'Ouvir ') + (linha.dataset.capNome || 'o capítulo'));
       linha.classList.toggle('tocando', Boolean(a));
+      const parar = linha.querySelector('.biblia-cap-parar');
+      if (parar) parar.disabled = !a;
       if (!a) linha.style.removeProperty('--pa');
     }
     function bibliaAudioPintar() {
@@ -21364,6 +21366,15 @@ function saveTemplatesToStorage() {
       ouvir.textContent = '▶';
       if (parseInt(cap.rotulo, 10)) bibliaAudioUrls(cap.livro).catch(() => {});
       ouvir.addEventListener('click', () => bibliaAudioAlternar(cap, linha));
+      // ⏹ ao lado do ▶: pára e zera o capítulo (o ▶ volta a tocar do começo); só vale enquanto este capítulo está em andamento.
+      const parar = document.createElement('button');
+      parar.type = 'button';
+      parar.className = 'secondary biblia-cap-ouvir biblia-cap-parar';
+      parar.textContent = '⏹';
+      parar.title = 'Parar e voltar ao começo do capítulo';
+      parar.setAttribute('aria-label', 'Parar ' + cap.nome);
+      parar.disabled = true;
+      parar.addEventListener('click', () => { if (bibliaAudioAtual && bibliaAudioAtual.id === cap.id) bibliaAudioParar(); });
       const urlWol = bibliaLinkWol(cap);
       if (urlWol) {
         const link = document.createElement('a');
@@ -21374,33 +21385,10 @@ function saveTemplatesToStorage() {
         link.textContent = '🔗 WOL';
         link.title = 'Abrir ' + cap.nome + ' no wol.jw.org';
         link.setAttribute('aria-label', 'Abrir ' + cap.nome + ' no wol.jw.org');
-        linha.append(rotulo, ouvir, link, dataCaixa, btn);
+        linha.append(rotulo, ouvir, parar, link, dataCaixa, btn);
       } else {
-        linha.append(rotulo, ouvir, btn, dataCaixa);
+        linha.append(rotulo, ouvir, parar, btn, dataCaixa);
       }
-      // Parar e Reiniciar: aparecem só enquanto este capítulo está em andamento (tocando ou pausado).
-      const ctl = document.createElement('div');
-      ctl.className = 'biblia-cap-ctl';
-      const reiniciar = document.createElement('button');
-      reiniciar.type = 'button';
-      reiniciar.className = 'secondary biblia-cap-mini';
-      reiniciar.textContent = '↺ Reiniciar';
-      reiniciar.title = 'Voltar ao começo do capítulo e tocar';
-      reiniciar.addEventListener('click', () => {
-        if (!bibliaAudioAtual || bibliaAudioAtual.id !== cap.id) return;
-        bibliaAudio.currentTime = 0;
-        bibliaAudioAtual.v = 0;
-        bibliaAudioPintarVersiculo();
-        if (bibliaAudio.paused) bibliaAudio.play().catch(() => {});
-      });
-      const parar = document.createElement('button');
-      parar.type = 'button';
-      parar.className = 'secondary biblia-cap-mini';
-      parar.textContent = '⏹ Parar';
-      parar.title = 'Parar o áudio (o ▶ volta a tocar do começo)';
-      parar.addEventListener('click', () => { if (bibliaAudioAtual && bibliaAudioAtual.id === cap.id) bibliaAudioParar(); });
-      ctl.append(reiniciar, parar);
-      linha.appendChild(ctl);
       bibliaAudioPintarLinha(linha);
       return linha;
     }

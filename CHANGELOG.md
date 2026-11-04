@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.45
+
+Leitura da Bíblia (áudio): sai a fileira “Reiniciar / Parar”; entra um botão redondo ⏹ ao lado do ▶, que pára e zera o capítulo (o ▶ volta a tocar do começo). Os botões ▶, WOL e Resumir ficam um pouco menores.
+
 ## 6.5.44
 
 Leitura da Bíblia (áudio): gráfico de barras maior (7 barras, mais altas); opção “Ao terminar um capítulo, tocar o próximo” (desligada por padrão): ao fim de um capítulo toca o seguinte, abrindo o grupo (ou o livro) dele quando for de outro grupo; botões “↺ Reiniciar” e “⏹ Parar” na linha do capítulo em andamento (para recomeçar do início depois de pausar).
