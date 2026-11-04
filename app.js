@@ -7540,7 +7540,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.34'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.35'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -9225,6 +9225,119 @@
       backupState = null; // senão o navegador avisaria de alterações não gravadas ao recarregar
       location.replace(location.pathname);
     });
+
+    // ---------- Backup e restauração dos dados deste aparelho ----------
+    // Ajustes → Privacidade e dados deste aparelho: grava num arquivo .json tudo o que o app guarda no navegador (pesquisas salvas, marcações da
+    // leitura da Bíblia, resumos, esboços importados, modelos, favoritos, preferências) e o restaura em outro aparelho ou depois de reinstalar.
+    // Ficam de fora o que o app recarrega sozinho (leituras do wol.jw.org, arquivos em cache) e a concordância com o envio à IA (dada em cada aparelho).
+    // Os códigos e a senha só entram se a pessoa marcar a caixa.
+    const APPBK_PREFIXOS = ['jwLibraryNoteAplicar', 'ns-'];
+    const appbkSensivel = chave => /(Code|Senha)V\d+$/.test(chave);
+    function appbkChavesFora() {
+      return new Set([CARREGADOS_KEY, AI_STUDY_CACHE_KEY, PUBLISHED_DEFAULTS_CACHE_KEY, ONLINE_DEFAULTS_VERSION_STORAGE_KEY, UPDATE_AVISADA_KEY, CONSENT_IA_KEY, TRANSCRICAO_CONSENT_KEY, UPDATE_TEXT_KEY]);
+    }
+    function appbkChaveValida(chave) {
+      return typeof chave === 'string' && APPBK_PREFIXOS.some(p => chave.startsWith(p)) && !appbkChavesFora().has(chave);
+    }
+    const appBackupStatus = document.getElementById('appBackupStatus');
+    const appBackupCodigos = document.getElementById('appBackupCodigos');
+
+    function appbkMontar(comCodigos) {
+      const itens = {};
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const chave = localStorage.key(i);
+          if (!appbkChaveValida(chave)) continue;
+          if (appbkSensivel(chave) && !comCodigos) continue;
+          const valor = localStorage.getItem(chave);
+          if (typeof valor === 'string') itens[chave] = valor;
+        }
+      } catch (e) { /* sem localStorage */ }
+      return { app: 'NoteStyle', formato: 1, versaoApp: APP_VERSION, criadoEm: new Date().toISOString(), comCodigos: Boolean(comCodigos), itens };
+    }
+
+    // O que o backup traz, em palavras (para a pessoa conferir antes de restaurar).
+    function appbkResumo(itens) {
+      const json = chave => { try { return JSON.parse(itens[chave]); } catch (e) { return null; } };
+      const partes = [];
+      const pesquisas = json(HISTORICO_KEY);
+      if (Array.isArray(pesquisas) && pesquisas.length) partes.push(pesquisas.length + (pesquisas.length === 1 ? ' pesquisa ou resposta salva' : ' pesquisas e respostas salvas'));
+      const biblia = json(BIBLIA_KEY);
+      if (biblia && biblia.itens) {
+        const lidos = Object.values(biblia.itens).filter(m => m && m.lido).length;
+        const resumos = Object.keys(biblia.resumos || {}).length;
+        if (lidos) partes.push(lidos + (lidos === 1 ? ' capítulo da Bíblia lido' : ' capítulos da Bíblia lidos'));
+        if (resumos) partes.push(resumos + (resumos === 1 ? ' resumo de capítulo' : ' resumos de capítulos'));
+      }
+      const esbocos = json(OUTROS_BASES_KEY);
+      if (Array.isArray(esbocos) && esbocos.length) partes.push(esbocos.length + (esbocos.length === 1 ? ' esboço importado' : ' esboços importados'));
+      const modelos = json(STORAGE_KEY);
+      if (modelos && typeof modelos === 'object') { const n = Array.isArray(modelos) ? modelos.length : Object.keys(modelos).length; if (n) partes.push(n + ' modelos'); }
+      partes.push(Object.keys(itens).length + ' itens guardados no total');
+      return partes.join('; ');
+    }
+
+    function appbkNomeArquivo() {
+      return 'NoteStyle - backup - ' + new Date().toISOString().slice(0, 10) + '.json';
+    }
+
+    async function appbkFazer(compartilhar) {
+      const comCodigos = appBackupCodigos.checked;
+      const dados = appbkMontar(comCodigos);
+      if (!Object.keys(dados.itens).length) { appBackupStatus.textContent = 'Não há nada guardado neste aparelho para fazer o backup.'; return; }
+      const blob = new Blob([JSON.stringify(dados)], { type: 'application/json' });
+      const nome = appbkNomeArquivo();
+      const msg = await docxEntregar(blob, nome, compartilhar);
+      if (msg) appBackupStatus.textContent = msg + ' ' + appbkResumo(dados.itens) + (comCodigos ? '. Atenção: este arquivo contém os códigos e a senha.' : '.');
+    }
+
+    async function appbkRestaurar(arquivo) {
+      appBackupStatus.textContent = '';
+      let dados;
+      try { dados = JSON.parse(await arquivo.text()); } catch (e) { appBackupStatus.textContent = '⚠️ Este arquivo não é um backup do NoteStyle (não consegui ler).'; return; }
+      if (!dados || dados.app !== 'NoteStyle' || dados.formato !== 1 || !dados.itens || typeof dados.itens !== 'object' || Array.isArray(dados.itens)) {
+        appBackupStatus.textContent = '⚠️ Este arquivo não é um backup do NoteStyle.';
+        return;
+      }
+      const itens = {};
+      Object.entries(dados.itens).forEach(([chave, valor]) => { if (appbkChaveValida(chave) && typeof valor === 'string') itens[chave] = valor; });
+      if (!Object.keys(itens).length) { appBackupStatus.textContent = '⚠️ O backup não traz nenhum dado que o app possa restaurar.'; return; }
+      const data = dados.criadoEm ? new Date(dados.criadoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : 'data desconhecida';
+      const temCodigos = Object.keys(itens).some(appbkSensivel);
+      const ok = await askConfirm(
+        'Restaurar o backup de ' + data + '?\n\nEle traz: ' + appbkResumo(itens) + (temCodigos ? ', com os códigos e a senha de acesso' : '') + '.\n\n' +
+        'Os dados que estão no backup SUBSTITUEM os de mesmo tipo neste aparelho (por exemplo, as pesquisas salvas e as marcações da Bíblia daqui serão trocadas pelas do arquivo). O que não está no backup fica como está. Depois o app recarrega.',
+        'Restaurar o backup',
+        { ok: '📂 Restaurar', cancel: 'Cancelar' }
+      );
+      if (!ok) return;
+      try {
+        Object.entries(itens).forEach(([chave, valor]) => localStorage.setItem(chave, valor));
+      } catch (e) {
+        appBackupStatus.textContent = '⚠️ Não consegui gravar tudo (falta espaço no aparelho?). Nada foi recarregado; confira o que foi restaurado antes de continuar.';
+        return;
+      }
+      // Nada mais pode ser gravado até a página recarregar (um salvamento automático pendente traria de volta os dados que estavam na tela).
+      Storage.prototype.setItem = function () {};
+      backupState = null;
+      location.replace(location.pathname);
+    }
+
+    document.getElementById('appBackupSalvarBtn').addEventListener('click', () => appbkFazer(false));
+    document.getElementById('appBackupRestaurarBtn').addEventListener('click', () => document.getElementById('appBackupArquivo').click());
+    document.getElementById('appBackupArquivo').addEventListener('change', event => {
+      const arquivo = event.target.files && event.target.files[0];
+      event.target.value = '';
+      if (arquivo) appbkRestaurar(arquivo);
+    });
+    try { // "Compartilhar" só onde o aparelho deixa compartilhar arquivos (celulares)
+      const teste = new File(['{}'], 'teste.json', { type: 'application/json' });
+      if (navigator.canShare && navigator.canShare({ files: [teste] })) {
+        const botao = document.getElementById('appBackupCompartilharBtn');
+        botao.hidden = false;
+        botao.addEventListener('click', () => appbkFazer(true));
+      }
+    } catch (e) { /* sem compartilhamento */ }
 
     function askCategoryDeleteMode(name, count) {
       return new Promise(resolve => {

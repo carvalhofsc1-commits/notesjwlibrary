@@ -1161,6 +1161,19 @@
             </div>
 
             <div class="acesso-item">
+              <label>💾 Backup e restauração</label>
+              <p class="hint">Guarda num arquivo (.json) o que o app salvou neste aparelho: pesquisas e respostas salvas, marcações (como a leitura da Bíblia) e resumos, esboços importados, modelos, favoritos e preferências. Serve para trocar de aparelho ou antes de reinstalar o app. O arquivo fica com você: o NoteStyle não o envia a lugar nenhum. As gravações de áudio em andamento e os textos já carregados do wol.jw.org (que o app carrega de novo) não entram.</p>
+              <label class="ai-check"><input type="checkbox" id="appBackupCodigos" autocomplete="off"> Incluir os códigos e a senha de acesso (o arquivo passa a ter dados sensíveis: guarde-o com cuidado)</label>
+              <div class="bk-row">
+                <button id="appBackupSalvarBtn" type="button">💾 Fazer backup</button>
+                <button id="appBackupCompartilharBtn" class="secondary" type="button" hidden>📤 Compartilhar</button>
+                <button id="appBackupRestaurarBtn" class="secondary" type="button">📂 Restaurar um backup</button>
+                <input id="appBackupArquivo" type="file" accept=".json,application/json" hidden>
+              </div>
+              <p id="appBackupStatus" class="hint" role="status" aria-live="polite"></p>
+            </div>
+
+            <div class="acesso-item">
               <label>🗑️ Apagar os dados deste aparelho</label>
               <p class="hint">Apaga tudo o que o app guardou aqui: pesquisas e respostas salvas, esboços importados, modelos, preferências e os códigos e a senha salvos. O servidor não guarda dados de usuários. Os seus arquivos do JW Library não são afetados.</p>
               <div class="bk-row">

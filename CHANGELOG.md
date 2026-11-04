@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.35
+
+Ajustes → Privacidade e dados deste aparelho: backup e restauração. “Fazer backup” (ou “Compartilhar”, nos celulares) grava num arquivo .json as pesquisas e respostas salvas, as marcações e resumos da leitura da Bíblia, os esboços importados, modelos, favoritos e preferências; “Restaurar um backup” traz tudo de volta em outro aparelho ou depois de reinstalar o app. Os códigos e a senha só entram se a caixa for marcada. Ficam de fora os textos carregados do wol.jw.org e a concordância com o envio à IA.
+
 ## 6.5.34
 
 Leitura da Bíblia: ao abrir a tela, “Seções e temas” fica expandido, sem nenhuma seção escolhida (a programação só aparece depois de escolher uma), e a lista de livros fica recolhida.
