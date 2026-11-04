@@ -7480,7 +7480,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.73'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.74'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -18459,6 +18459,227 @@ function saveTemplatesToStorage() {
       () => Boolean(trTitulo.value.trim() || trPauta.value.trim() || trEvento.value.trim() || trLocal.value.trim() || trData.value || trTituloMesmo.checked || trDataMesmo.checked || [...trInterlocutoresBox.querySelectorAll('input')].some(i => i.value.trim())),
       () => trDadosLimpar(),
       '🗑️ Campos dos dados do áudio limpos.');
+    // ---------- Documentos relacionados ao áudio ----------
+    // Word, PDF, Excel, PowerPoint, texto e imagens que a pessoa anexa para a IA levar em conta no resumo. O texto é extraído neste aparelho; as imagens
+    // são reduzidas (JPEG) e vão para a IA ver. Nada é enviado antes de a pessoa pedir o resumo; nada fica guardado no servidor.
+    const TR_DOCS_MAX = 6;
+    const TR_DOCS_IMAGENS_MAX = 4;
+    const TR_DOC_CARACTERES = 40000;
+    const TR_DOCS_CARACTERES_TOTAL = 100000;
+    const TR_IMAGEM_BASE64_MAX = 800000;
+    let trDocs = []; // { id, nome, tipo: 'texto' | 'imagem', texto, data, media, extra }
+    let trDocsSeq = 0;
+    const trDocsLista = document.getElementById('transcricaoDocsLista');
+    const trDocsInfo = document.getElementById('transcricaoDocsInfo');
+    const trDocsArquivo = document.getElementById('transcricaoDocsArquivo');
+    const trDocsAdicionar = document.getElementById('transcricaoDocsAdicionarBtn');
+
+    function trDocsRender() {
+      trDocsLista.textContent = '';
+      trDocs.forEach(d => {
+        const linha = document.createElement('div');
+        linha.className = 'tr-doc-item';
+        const nome = document.createElement('div');
+        nome.className = 'tr-doc-nome';
+        nome.textContent = (d.tipo === 'imagem' ? '🖼️ ' : '📄 ') + d.nome;
+        const detalhe = document.createElement('small');
+        detalhe.textContent = d.extra;
+        nome.appendChild(detalhe);
+        const tirar = document.createElement('button');
+        tirar.type = 'button';
+        tirar.className = 'secondary';
+        tirar.textContent = '🗑️ Tirar';
+        tirar.title = 'Tirar este arquivo';
+        tirar.addEventListener('click', () => { trDocs = trDocs.filter(x => x !== d); trDocsRender(); });
+        linha.append(nome, tirar);
+        trDocsLista.appendChild(linha);
+      });
+      trDocsAdicionar.disabled = trDocs.length >= TR_DOCS_MAX;
+      const resumo = document.getElementById('transcricaoDocsResumo');
+      resumo.textContent = trDocs.length ? trDocs.length + (trDocs.length === 1 ? ' arquivo anexado' : ' arquivos anexados') : '';
+      resumo.hidden = !trDocs.length;
+    }
+    function trDocsLimpar() { trDocs = []; trDocsInfo.textContent = ''; trDocsRender(); }
+    const trDocsCaracteres = () => trDocs.reduce((s, d) => s + (d.texto ? d.texto.length : 0), 0);
+
+    async function trZip(buffer, tipo) {
+      await loadScriptOnce(BACKUP_LIBS.jszip).catch(() => { throw new Error('Sem conexão para carregar o leitor de arquivos. Confira a internet e tente de novo.'); });
+      try { return await window.JSZip.loadAsync(buffer); } catch (e) { throw new Error('Não consegui abrir este arquivo: ele não parece um ' + tipo + ' válido.'); }
+    }
+    const trXml = texto => new DOMParser().parseFromString(String(texto).replace(/^\uFEFF/, ''), 'application/xml');
+    const trZipTexto = async (zip, nome) => { const f = zip.file(nome); return f ? await f.async('string') : ''; };
+
+    async function trDocLerDocx(buffer) {
+      const r = await leituraLerDocx(buffer);
+      return r.paragrafos.map(p => p.replace(/^# /, '').replace(/\*\*/g, '')).join('\n');
+    }
+
+    async function trDocLerPdf(buffer) {
+      await loadScriptOnce(LEITURA_PDFJS.script).catch(() => { throw new Error('Sem conexão para carregar o leitor de PDF. Confira a internet e tente de novo.'); });
+      const pdfjs = window.pdfjsLib;
+      if (!pdfjs) throw new Error('Não consegui carregar o leitor de PDF.');
+      pdfjs.GlobalWorkerOptions.workerSrc = LEITURA_PDFJS.worker;
+      let pdf;
+      try { pdf = await pdfjs.getDocument({ data: new Uint8Array(buffer) }).promise; } catch (e) {
+        throw new Error(e && e.name === 'PasswordException' ? 'Este PDF está protegido por senha.' : 'Não consegui abrir este PDF.');
+      }
+      const paginas = [];
+      let total = 0;
+      for (let n = 1; n <= Math.min(pdf.numPages, 120) && total <= TR_DOC_CARACTERES; n++) {
+        const pagina = await pdf.getPage(n);
+        const conteudo = await pagina.getTextContent();
+        const texto = conteudo.items.map(i => i.str + (i.hasEOL ? '\n' : ' ')).join('').replace(/[ \t]+/g, ' ').replace(/ ?\n ?/g, '\n').trim();
+        if (texto) { paginas.push('PÁGINA ' + n + ':\n' + texto); total += texto.length; }
+      }
+      if (!paginas.length) throw new Error('Este PDF não tem texto (parece escaneado). Tire uma foto ou captura de tela dele e adicione como imagem.');
+      return paginas.join('\n\n');
+    }
+
+    async function trDocLerXlsx(buffer) {
+      const zip = await trZip(buffer, 'Excel (.xlsx)');
+      const compartilhadasXml = await trZipTexto(zip, 'xl/sharedStrings.xml');
+      const compartilhadas = compartilhadasXml ? Array.from(trXml(compartilhadasXml).getElementsByTagName('si')).map(si => Array.from(si.getElementsByTagName('t')).map(t => t.textContent).join('')) : [];
+      const livro = await trZipTexto(zip, 'xl/workbook.xml');
+      if (!livro) throw new Error('Não consegui abrir este arquivo: ele não parece um Excel (.xlsx) válido.');
+      const relacoes = {};
+      Array.from(trXml(await trZipTexto(zip, 'xl/_rels/workbook.xml.rels')).getElementsByTagName('Relationship')).forEach(r => { relacoes[r.getAttribute('Id')] = r.getAttribute('Target'); });
+      const coluna = letras => letras.split('').reduce((n, c) => n * 26 + c.charCodeAt(0) - 64, 0) - 1;
+      const saida = [];
+      for (const folha of Array.from(trXml(livro).getElementsByTagName('sheet'))) {
+        const alvo = relacoes[folha.getAttribute('r:id')];
+        if (!alvo) continue;
+        const dados = await trZipTexto(zip, alvo.replace(/^\//, '').replace(/^(?!xl\/)/, 'xl/'));
+        if (!dados) continue;
+        const linhas = [];
+        Array.from(trXml(dados).getElementsByTagName('row')).slice(0, 500).forEach(linha => {
+          const celulas = [];
+          Array.from(linha.getElementsByTagName('c')).forEach(c => {
+            const t = c.getAttribute('t');
+            const v = c.getElementsByTagName('v')[0];
+            let valor = '';
+            if (t === 's' && v) valor = compartilhadas[Number(v.textContent)] || '';
+            else if (t === 'inlineStr') valor = Array.from(c.getElementsByTagName('t')).map(x => x.textContent).join('');
+            else if (v) valor = v.textContent;
+            valor = String(valor).replace(/\s+/g, ' ').trim();
+            if (valor) celulas[coluna((c.getAttribute('r') || 'A1').replace(/\d+/g, ''))] = valor;
+          });
+          if (celulas.length) linhas.push(Array.from(celulas, x => x || '').join(' | '));
+        });
+        if (linhas.length) saida.push('PLANILHA "' + folha.getAttribute('name') + '":\n' + linhas.join('\n'));
+      }
+      if (!saida.length) throw new Error('Esta planilha não tem texto nem números para ler.');
+      return saida.join('\n\n');
+    }
+
+    async function trDocLerPptx(buffer) {
+      const zip = await trZip(buffer, 'PowerPoint (.pptx)');
+      const numero = nome => Number((nome.match(/(\d+)\.xml$/) || [0, 0])[1]);
+      const textoDe = xml => Array.from(trXml(xml).getElementsByTagName('a:p')).map(p => Array.from(p.getElementsByTagName('a:t')).map(t => t.textContent).join('')).map(s => s.trim()).filter(Boolean);
+      const slides = Object.keys(zip.files).filter(n => /^ppt\/slides\/slide\d+\.xml$/.test(n)).sort((a, b) => numero(a) - numero(b));
+      if (!slides.length) throw new Error('Não consegui abrir este arquivo: ele não parece um PowerPoint (.pptx) válido.');
+      const saida = [];
+      for (const nome of slides) {
+        const n = numero(nome);
+        const texto = textoDe(await trZipTexto(zip, nome));
+        const notas = textoDe(await trZipTexto(zip, 'ppt/notesSlides/notesSlide' + n + '.xml')).filter(l => !/^\d+$/.test(l));
+        if (texto.length || notas.length) saida.push('SLIDE ' + n + ':\n' + texto.join('\n') + (notas.length ? '\nNotas do slide: ' + notas.join(' ') : ''));
+      }
+      if (!saida.length) throw new Error('Esta apresentação não tem texto para ler (só imagens). Adicione os slides como imagens.');
+      return saida.join('\n\n');
+    }
+
+    // A imagem reduzida (lado maior até 1568 px) e em JPEG, para caber no pedido e para a IA ler bem.
+    async function trDocLerImagem(arquivo) {
+      let figura;
+      try { figura = await createImageBitmap(arquivo); } catch (e) {
+        figura = await new Promise((ok, falha) => {
+          const url = URL.createObjectURL(arquivo);
+          const img = new Image();
+          img.onload = () => { URL.revokeObjectURL(url); ok(img); };
+          img.onerror = () => { URL.revokeObjectURL(url); falha(new Error('Não consegui abrir esta imagem neste aparelho.')); };
+          img.src = url;
+        });
+      }
+      const largura = figura.width || figura.naturalWidth;
+      const altura = figura.height || figura.naturalHeight;
+      let lado = Math.min(1, 1568 / Math.max(largura, altura));
+      let qualidade = 0.82;
+      for (let tentativa = 0; tentativa < 6; tentativa++) {
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(largura * lado));
+        canvas.height = Math.max(1, Math.round(altura * lado));
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff'; // PNG com fundo transparente
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(figura, 0, 0, canvas.width, canvas.height);
+        const data = canvas.toDataURL('image/jpeg', qualidade).split(',')[1] || '';
+        if (data && data.length <= TR_IMAGEM_BASE64_MAX) return { data, extra: 'imagem ' + canvas.width + ' × ' + canvas.height };
+        lado *= 0.8;
+        qualidade = Math.max(0.55, qualidade - 0.06);
+      }
+      throw new Error('Esta imagem é pesada demais mesmo reduzida. Use uma menor.');
+    }
+
+    async function trDocLer(arquivo) {
+      const nome = arquivo.name || 'arquivo';
+      const ext = (nome.match(/\.([^.]+)$/) || ['', ''])[1].toLowerCase();
+      const ehImagem = /^image\//.test(arquivo.type) || /^(png|jpe?g|webp|gif|heic|heif|bmp)$/.test(ext);
+      if (ehImagem) {
+        const r = await trDocLerImagem(arquivo);
+        return { tipo: 'imagem', data: r.data, media: 'image/jpeg', extra: r.extra };
+      }
+      if (/^(doc|xls|ppt)$/.test(ext)) throw new Error('Formato antigo do Office (.' + ext + '): abra o arquivo e salve como ' + (ext === 'doc' ? '.docx' : ext === 'xls' ? '.xlsx' : '.pptx') + ' antes de anexar.');
+      let texto;
+      if (ext === 'docx') texto = await trDocLerDocx(await arquivo.arrayBuffer());
+      else if (ext === 'pdf') texto = await trDocLerPdf(await arquivo.arrayBuffer());
+      else if (ext === 'xlsx') texto = await trDocLerXlsx(await arquivo.arrayBuffer());
+      else if (ext === 'pptx') texto = await trDocLerPptx(await arquivo.arrayBuffer());
+      else if (/^(txt|csv|tsv|md)$/.test(ext) || /^text\//.test(arquivo.type)) texto = await arquivo.text();
+      else throw new Error('Formato não aceito. Use Word (.docx), PDF, Excel (.xlsx), PowerPoint (.pptx), texto, CSV ou imagem.');
+      texto = texto.replace(/\s+\n/g, '\n').trim();
+      if (!texto) throw new Error('Não encontrei texto neste arquivo.');
+      return { tipo: 'texto', texto };
+    }
+
+    async function trDocsAdicionarArquivos(arquivos) {
+      const avisos = [];
+      for (const arquivo of arquivos) {
+        if (trDocs.length >= TR_DOCS_MAX) { avisos.push('A lista aceita até ' + TR_DOCS_MAX + ' arquivos: "' + arquivo.name + '" e os seguintes não foram adicionados.'); break; }
+        const ehImagem = /^image\//.test(arquivo.type) || /\.(png|jpe?g|webp|gif|heic|heif|bmp)$/i.test(arquivo.name || '');
+        if (ehImagem && trDocs.filter(d => d.tipo === 'imagem').length >= TR_DOCS_IMAGENS_MAX) { avisos.push('Até ' + TR_DOCS_IMAGENS_MAX + ' imagens: "' + arquivo.name + '" não foi adicionada.'); continue; }
+        trDocsInfo.textContent = '⏳ Lendo "' + arquivo.name + '"…';
+        try {
+          const r = await trDocLer(arquivo);
+          if (r.tipo === 'texto') {
+            const original = r.texto.length;
+            const sobra = Math.max(0, TR_DOCS_CARACTERES_TOTAL - trDocsCaracteres());
+            if (!sobra) { avisos.push('"' + arquivo.name + '": o limite de texto dos anexos (' + TR_DOCS_CARACTERES_TOTAL.toLocaleString('pt-BR') + ' caracteres) já foi atingido.'); continue; }
+            r.texto = r.texto.slice(0, Math.min(TR_DOC_CARACTERES, sobra));
+            r.extra = r.texto.length.toLocaleString('pt-BR') + ' caracteres' + (original > r.texto.length ? ' (só o começo: o arquivo tem ' + original.toLocaleString('pt-BR') + ')' : '');
+          }
+          trDocs.push({ id: ++trDocsSeq, nome: arquivo.name || 'arquivo', ...r });
+          trDocsRender();
+        } catch (e) {
+          avisos.push('"' + arquivo.name + '": ' + ((e && e.message) || 'não consegui ler este arquivo.'));
+        }
+      }
+      trDocsInfo.textContent = avisos.length ? avisos.join(' ') : (trDocs.length ? '✅ Pronto. A IA vai ler esse material ao pedir o resumo.' : '');
+    }
+    trDocsAdicionar.addEventListener('click', () => trDocsArquivo.click());
+    trDocsArquivo.addEventListener('change', () => {
+      const arquivos = Array.from(trDocsArquivo.files || []);
+      trDocsArquivo.value = '';
+      if (arquivos.length) trDocsAdicionarArquivos(arquivos);
+    });
+    trLixeira(document.getElementById('transcricaoDocsLimparBtn'), () => trDocs.length > 0, () => trDocsLimpar(), '🗑️ Documentos tirados.');
+    // O que vai junto no pedido do resumo: o texto dos documentos e as imagens.
+    function trDocsPayload() {
+      const documentos = trDocs.filter(d => d.tipo === 'texto').map(d => ({ nome: d.nome, texto: d.texto }));
+      const imagens = trDocs.filter(d => d.tipo === 'imagem').map(d => ({ nome: d.nome, media: d.media, data: d.data }));
+      return { ...(documentos.length ? { documentos } : {}), ...(imagens.length ? { imagens } : {}) };
+    }
+    trDocsRender();
+
     trTipoSalvarMeu.addEventListener('click', () => trTipoSalvar(false));
     trTipoSalvarTodos.addEventListener('click', () => trTipoSalvar(true));
     // Ao abrir o app, busca os tipos de todos (sem internet, valem os que já estão guardados).
@@ -19539,9 +19760,9 @@ function saveTemplatesToStorage() {
       try {
         let final;
         if (fonteResumo.length <= TRANSCRICAO_RESUMO_DIRETO) {
-          trInfo.textContent = '✨ A IA está resumindo ' + baseMsg + '…';
+          trInfo.textContent = '✨ A IA está resumindo ' + baseMsg + (trDocs.length ? ' e lendo os arquivos anexados' : '') + '…';
           trResumirProgresso.querySelector('.transcricao-rodando-txt').textContent = 'A IA está resumindo…';
-          const r = await trPost({ acao: 'resumo', codigoTexto: codigoTextoSalvo(), texto: fonteResumo, contexto, instrucoes }, trControle.signal);
+          const r = await trPost({ acao: 'resumo', codigoTexto: codigoTextoSalvo(), texto: fonteResumo, contexto, instrucoes, ...trDocsPayload() }, trControle.signal);
           if (!r.ok) return (trInfo.textContent = trMensagem(r, 'Não foi possível resumir agora.'));
           final = r.dados.resumo;
         } else {
@@ -19563,13 +19784,15 @@ function saveTemplatesToStorage() {
             codigoTexto: codigoTextoSalvo(),
             texto: 'RESUMOS PARCIAIS DO ÁUDIO:\n\n' + parciais.join('\n\n'),
             contexto,
-            instrucoes
+            instrucoes,
+            ...trDocsPayload()
           }, trControle.signal);
           if (!uniao.ok) return (trInfo.textContent = trMensagem(uniao, 'Não foi possível unir o resumo final.'));
           final = uniao.dados.resumo;
         }
         trResumo.value = final;
-        trInfo.textContent = '✅ Resumo pronto' + (usouCorrigido ? ' (a partir do texto corrigido)' : '') + '. A IA pode errar: confira com o texto.';
+        const anexos = trDocs.length;
+        trInfo.textContent = '✅ Resumo pronto' + (usouCorrigido ? ' (a partir do texto corrigido)' : '') + (anexos ? ' e levando em conta ' + anexos + (anexos === 1 ? ' arquivo anexado' : ' arquivos anexados') : '') + '. A IA pode errar: confira com o texto.';
       } finally {
         trControle = null;
         trResumirProgresso.hidden = true;
@@ -19679,6 +19902,7 @@ function saveTemplatesToStorage() {
       trResumo.value = '';
       trCorrigido.value = '';
       trPendenteLimpar();
+      trDocsLimpar();
       trContexto.value = ''; // o "sobre o áudio" vale só para um áudio; as instruções do resumo ficam salvas
       trDadosLimpar();
       trTipoUltimoTexto = '';

@@ -1614,6 +1614,14 @@
         </div>
         <input id="transcricaoData" class="transcricao-dado" type="date">
       </details>
+      <details class="leitura-dica transcricao-config transcricao-conteiner" id="transcricaoDocsSection">
+        <summary><span class="transcricao-icone" aria-hidden="true">📎</span> Documentos relacionados <span class="transcricao-opcional">(opcional)</span><button id="transcricaoDocsLimparBtn" class="transcricao-lixo" type="button" title="Tirar todos os documentos" aria-label="Tirar todos os documentos">🗑️</button><span id="transcricaoDocsResumo" class="transcricao-resumo-linha" hidden></span></summary>
+        <p class="hint">Anexe documentos, planilhas, apresentações, PDFs ou imagens relacionados ao áudio (Word .docx, PDF, Excel .xlsx, PowerPoint .pptx, texto, CSV, fotos e capturas de tela). Ao pedir o <strong>resumo</strong>, a IA lê esse material e o leva em conta no resumo e nas conclusões. O conteúdo é lido neste aparelho e só vai para a IA quando você pede o resumo; nada é guardado no servidor. Até <span data-tr-docs="max">6</span> arquivos, 4 deles imagens.</p>
+        <button id="transcricaoDocsAdicionarBtn" class="secondary transcricao-docs-adicionar" type="button">📎 Adicionar documentos ou imagens</button>
+        <input id="transcricaoDocsArquivo" type="file" multiple accept=".docx,.pdf,.xlsx,.pptx,.txt,.csv,.tsv,.md,image/*" hidden>
+        <div id="transcricaoDocsLista" class="transcricao-docs-lista"></div>
+        <p id="transcricaoDocsInfo" class="hint" role="status" aria-live="polite"></p>
+      </details>
       <p id="transcricaoInfo" class="hint" role="status" aria-live="polite"></p>
       <details id="transcricaoPassoTexto" class="leitura-dica transcricao-config transcricao-conteiner transcricao-passo" hidden>
         <summary><span class="transcricao-icone" aria-hidden="true">🎙️</span> Transcrever<small class="transcricao-contagem" id="transcricaoContagemTexto" hidden></small></summary>
