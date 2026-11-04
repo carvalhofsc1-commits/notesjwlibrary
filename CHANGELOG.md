@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.36
+
+Preparação de discursos e esboços (prompt “Como elaborar um esboço”): a introdução pode abrir com história de personagem bíblico (de preferência um citado no esboço; quanto mais desconhecido, melhor; com fundo histórico breve), ilustração da vida real ou ocorrência/notícia real conhecida. Aplicação e ilustração deixam de ser obrigatórias em todo ponto — só entram quando ainda fizerem falta (muitas vezes a aplicação já está clara na matéria, no tema ou num tópico).
+
 ## 6.5.35
 
 Ajustes → Privacidade e dados deste aparelho: backup e restauração. “Fazer backup” (ou “Compartilhar”, nos celulares) grava num arquivo .json as pesquisas e respostas salvas, as marcações e resumos da leitura da Bíblia, os esboços importados, modelos, favoritos e preferências; “Restaurar um backup” traz tudo de volta em outro aparelho ou depois de reinstalar o app. Os códigos e a senha só entram se a caixa for marcada. Ficam de fora os textos carregados do wol.jw.org e a concordância com o envio à IA.

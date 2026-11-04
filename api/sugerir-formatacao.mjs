@@ -1670,7 +1670,8 @@ const pontoDoEsboco = () =>
         leitura: z.object({ referencia: z.string(), introducao: z.string(), destaque: z.string() }).nullable(),
       })
     ),
-    aplicacao: z.string(),
+    // Aplicação e ilustração são opcionais: vazias/null quando a aplicação já está clara na matéria/tema/tópico.
+    aplicacao: z.string().nullable(),
     ilustracao: z.string().nullable(),
     transicao: z.string(),
   });
@@ -1824,7 +1825,7 @@ async function corpoDoEsbocoLimpo(saidaBruta, o) {
         })
         .filter((d) => d.argumento)
         .slice(0, o.maxArgumentos),
-      aplicacao: limparTextoGerado(p.aplicacao, 400),
+      aplicacao: limparTextoGerado(p.aplicacao, 400) || null,
       ilustracao: limparTextoGerado(p.ilustracao, 400) || null,
       // A transição, como a aplicação e a ilustração, já tem o emoji da própria linha no app.
       transicao: semRotuloDeTopico(limparTextoGerado(p.transicao, 300)) || null,
