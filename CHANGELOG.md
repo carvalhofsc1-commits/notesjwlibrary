@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.49
+
+Ajustes: nova seção “📖 Leitura da Bíblia”, com a opção “Ao terminar um capítulo, tocar o próximo” (que saiu do topo da tela da Bíblia).
+
 ## 6.5.48
 
 Leitura da Bíblia (áudio): gráfico de barras mais esticado (9 barras, mais altas).

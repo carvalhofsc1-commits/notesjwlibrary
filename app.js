@@ -7540,7 +7540,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.48'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.49'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21864,9 +21864,6 @@ function saveTemplatesToStorage() {
           if (!bibliaProgAberto) bibliaProgDefinir(true);
           bibliaRenderSecao();
         });
-        const caixaSeguir = document.getElementById('bibliaSeguir'); // "Ao terminar, tocar o próximo capítulo" (desligada por padrão: um capítulo por vez)
-        caixaSeguir.checked = Boolean(bibliaEstado.seguir);
-        caixaSeguir.addEventListener('change', () => { bibliaEstado.seguir = caixaSeguir.checked; bibliaGravarEstado(); });
         bibliaProgToggle.addEventListener('click', () => bibliaProgDefinir(!bibliaProgAberto));
         document.getElementById('bibliaModoLivros').addEventListener('toggle', e => { if (e.target.open) bibliaLivrosRender(); }); // sempre refeita ao abrir: traz as marcações e resumos de agora
         document.getElementById('bibliaModoSecoes').addEventListener('toggle', e => { if (e.target.open) bibliaIconeCentrar(); }); // o ícone só se mede com a seção visível
@@ -21910,6 +21907,10 @@ function saveTemplatesToStorage() {
     }
 
     bibliaCarregarEstado();
+    // Ajustes → Leitura da Bíblia: "Ao terminar um capítulo, tocar o próximo" (desligada por padrão: um capítulo por vez).
+    const bibliaSeguirCaixa = document.getElementById('bibliaSeguir');
+    bibliaSeguirCaixa.checked = Boolean(bibliaEstado.seguir);
+    bibliaSeguirCaixa.addEventListener('change', () => { bibliaEstado.seguir = bibliaSeguirCaixa.checked; bibliaGravarEstado(); });
     bibliaAtualizarProgresso();
     if (currentScreen() === 'biblia') bibliaAoEntrar();
   

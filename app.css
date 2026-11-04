@@ -10506,12 +10506,6 @@ details.transcricao-bloco:not([open]) {
 }
 
 
-.biblia-seguir { /* opção no topo: seguir para o próximo capítulo ao terminar */
-  display: flex;
-  justify-content: center;
-  margin: 0 0 8px;
-  font-size: .8rem;
-}
 /* ⏹ Parar: um segundo círculo ao lado do ▶ (em vermelho suave); apagado enquanto o capítulo não está em andamento. */
 .biblia-cap .biblia-cap-parar { grid-column: 3; --cor: 5; font-size: .7rem; }
 .biblia-cap .biblia-cap-parar:disabled { opacity: .4; cursor: default; }
