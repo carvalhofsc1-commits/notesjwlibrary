@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.19
+
+Leitura diária da Bíblia: o link WOL e o botão Resumir de cada capítulo têm o mesmo tamanho e padrão, o WOL em azul e o Resumir em roxo.
+
 ## 6.5.18
 
 Leitura diária da Bíblia: mais espaço entre a barra de progresso do grupo aberto e o primeiro capítulo.

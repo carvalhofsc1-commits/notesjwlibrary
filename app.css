@@ -10136,26 +10136,6 @@ details.transcricao-bloco:not([open]) {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.biblia-cap-wol {
-  grid-column: 2;
-  grid-row: 1;
-  justify-self: end;
-  display: inline-flex;
-  align-items: center;
-  height: 1.45rem;
-  padding: 0 10px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  font-size: .72rem;
-  font-weight: 700;
-  line-height: 1;
-  color: var(--brand);
-  text-decoration: none;
-  white-space: nowrap;
-}
-.biblia-cap-wol:hover {
-  background: color-mix(in srgb, var(--brand) 12%, transparent);
-}
 .biblia-cap-data {
   grid-column: 1;
   grid-row: 2;
@@ -10169,16 +10149,45 @@ details.transcricao-bloco:not([open]) {
   background: transparent;
   cursor: default;
 }
-.biblia-cap-resumir {
-  grid-column: 2;
-  grid-row: 2;
-  width: auto;
+/* Link WOL e botão Resumir: mesmo tamanho e padrão, cada um de uma cor. */
+.biblia-cap-wol,
+.biblia-cap .biblia-cap-resumir {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 5.6rem;
+  min-width: 0;
   min-height: 0;
   height: 1.45rem;
-  padding: 0 10px;
+  padding: 0 6px;
+  border-radius: 8px;
   font-size: .72rem;
+  font-weight: 700;
   line-height: 1;
   white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  --cor: 215;
+  border: 1px solid color-mix(in srgb, hsl(var(--cor) 70% 50%) 55%, var(--line));
+  background: color-mix(in srgb, hsl(var(--cor) 80% 55%) 16%, var(--card));
+  color: color-mix(in srgb, hsl(var(--cor) 75% 42%) 65%, var(--text));
+}
+.biblia-cap-wol:hover,
+.biblia-cap .biblia-cap-resumir:hover {
+  background: color-mix(in srgb, hsl(var(--cor) 80% 55%) 28%, var(--card));
+}
+.biblia-cap-wol {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  --cor: 215; /* azul */
+}
+.biblia-cap .biblia-cap-resumir {
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: end;
+  --cor: 280; /* roxo */
 }
 .biblia-cap-resumo {
   grid-column: 1 / -1;
