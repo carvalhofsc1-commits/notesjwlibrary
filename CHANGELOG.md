@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.4.75
+
+Áudio em texto, Documentos relacionados: texto explicativo revisado (mais curto, sem a frase sobre o conteúdo ser lido no aparelho e não guardado no servidor).
+
 ## 6.4.74
 
 Áudio em texto: novo bloco Documentos relacionados. Dá para anexar Word (.docx), PDF, Excel (.xlsx), PowerPoint (.pptx), texto, CSV e imagens (fotos e capturas de tela) ligados ao áudio. O conteúdo é lido no aparelho e, ao pedir o resumo, a IA lê esse material e o leva em conta no resumo e nas conclusões (o prompt do resumo ganhou orientações para isso, inclusive uma seção CONCLUSÕES no formato padrão). Nada é guardado no servidor.
