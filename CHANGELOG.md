@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.03
+
+Logo da barra do topo: o nome volta à fonte normal (sem itálico).
+
 ## 6.5.02
 
 Início: as descrições dos atalhos voltam a aparecer no celular (o atalho da Leitura diária da Bíblia tinha uma descrição de três linhas, que fazia o app esconder todas; ela foi encurtada e, no ajuste "aperta", ícones e letras dos atalhos ficam um pouco menores para os 8 atalhos caberem com as descrições numa tela de 852 px). Logo da barra do topo reestilizado: ícone à esquerda, nome em negrito inclinado maior e o slogan centralizado logo abaixo, da largura do nome.
