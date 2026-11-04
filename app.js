@@ -7540,7 +7540,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.25'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.28'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12250,11 +12250,11 @@ function saveTemplatesToStorage() {
 
     // A mensagem aparece junto ao botão que o usuário usou: na área da IA (formatação e respostas do texto colado) ou nos
     // cards da Sentinela (Comentários e Dirigente).
-    let aiStatusKind = 'format'; // 'format' | 'sentinela' | 'estudo' | 'lista' | 'dirigente' | 'ebc' | 'joias' | 'ebcdir' | 'tesouros' | 'discurso'
+    let aiStatusKind = 'format'; // 'format' | 'sentinela' | 'estudo' | 'lista' | 'dirigente' | 'ebc' | 'joias' | 'ebcdir' | 'tesouros' | 'discurso' | 'biblia'
     let studyListCard = 'comentarios'; // card do último "Carregar os parágrafos": 'comentarios' ou 'dirigente'
 
     function aiStatusElements() {
-      return [aiStatus, aiStudyAnswerStatus, aiStudyStatus, leaderAnswerStatus, leaderStudyStatus, document.getElementById('ebcStatus'), document.getElementById('joiasStatus'), document.getElementById('apostilaImgStatus'), document.getElementById('ebcDirStatus'), document.getElementById('tesourosStatus'), document.getElementById('discursoStatus'), document.getElementById('publicoStatus'), document.getElementById('outrosStatus')];
+      return [aiStatus, aiStudyAnswerStatus, aiStudyStatus, leaderAnswerStatus, leaderStudyStatus, document.getElementById('ebcStatus'), document.getElementById('joiasStatus'), document.getElementById('apostilaImgStatus'), document.getElementById('ebcDirStatus'), document.getElementById('tesourosStatus'), document.getElementById('discursoStatus'), document.getElementById('publicoStatus'), document.getElementById('outrosStatus'), document.getElementById('bibliaResumoStatus')];
     }
 
     function aiStatusElement() {
@@ -12267,6 +12267,7 @@ function saveTemplatesToStorage() {
           : aiStatusKind === 'outros' ? document.getElementById('outrosStatus')
           : aiStatusKind === 'apostilaimg' ? document.getElementById('apostilaImgStatus')
           : aiStatusKind === 'joias' ? document.getElementById('joiasStatus')
+          : aiStatusKind === 'biblia' ? document.getElementById('bibliaResumoStatus')
           : aiStatusKind === 'dirigente' ? leaderAnswerStatus
             : aiStatusKind === 'lista' ? (studyListCard === 'dirigente' ? leaderStudyStatus : aiStudyStatus)
               : aiStatus;
@@ -12354,7 +12355,8 @@ function saveTemplatesToStorage() {
         document.getElementById('discursoCarregarBtn'), document.getElementById('discursoEsbocoBtn'), document.getElementById('publicoEsbocoBtn'),
         document.getElementById('outrosCarregarBtn'), document.getElementById('outrosEsbocoBtn'), document.getElementById('outrosPesquisarBtn'),
         document.getElementById('joiasCarregarBtn'), document.getElementById('joiasResponderBtn'), document.getElementById('apostilaImgCarregarBtn'),
-        ...(typeof ESBOCOS === 'undefined' ? [] : Object.values(ESBOCOS).map(cfg => cfg.textosUi && cfg.textosUi.incluir).filter(Boolean))];
+        document.getElementById('bibliaResumirBtn'),
+        ...(typeof ESBOCOS === 'undefined' ? [] : Object.values(ESBOCOS).map(cfg => cfg.textosUi && cfg.textosUi.incluir).filter(Boolean))].filter(Boolean);
 
       if (!on) {
         clearInterval(aiLoadingTimer);
@@ -12494,19 +12496,21 @@ function saveTemplatesToStorage() {
       discurso: { botao: 'discursoEsbocoBtn', exemplo: 'Ex.: faça uma introdução mais curta e foque na aplicação prática.' },
       // Leitura diária da Bíblia: o campo fica abaixo do botão Gerar resumo, na área do resumo.
       biblia: {
-        botao: 'bibliaResumirBtn', linha: true, exemplo: 'Ex.: destaque os acontecimentos mais importantes, ou faça um resumo mais curto.', dica: 'Opcional. Vale mais que o prompt padrão neste resumo; não fica guardado.',
-        // Opções padrão (uma caixa para cada); ficam marcadas neste aparelho para os próximos resumos.
+        botao: 'bibliaResumirBtn', linha: true, exemplo: 'Ex.: destaque os acontecimentos mais importantes, ou faça um resumo mais curto.', dica: '',
+        // Opções além do resumo; ficam marcadas neste aparelho. Fundo/personagens/lugares: Perspicaz e, se preciso, WOL.
+        opcoesTitulo: 'Opções adicionais para a IA (além do resumo)',
+        opcoesDica: 'Com opções marcadas, o resumo ganha seções (RESUMO, SOBRE JEOVÁ, etc.). Fundo histórico, personagens e lugares: o servidor consulta o Estudo Perspicaz e, se fizer falta, a biblioteca wol.jw.org; cite sempre a fonte.',
         opcoes: [
           { id: 'ensina', texto: '🌟 O que este capítulo me ensina sobre Jeová e as suas qualidades' },
           { id: 'aplicacoes', texto: '🛠️ Encontrar aplicações práticas para a vida real' },
-          { id: 'fundo', texto: '🏛️ Explicar o fundo histórico dos acontecimentos' },
+          { id: 'fundo', texto: '🏛️ Explicar o fundo histórico dos acontecimentos (Perspicaz / WOL)' },
           { id: 'personagens', texto: '👤 Detalhar resumidamente a história dos personagens bíblicos conhecidos citados (Perspicaz)' },
           { id: 'lugares', texto: '🗺️ Dar detalhes de localidades, lugares, cidades, nações, povos, medidas, moedas, valores etc. (Perspicaz)' }
         ]
       }
     };
 
-    function iaExtraCriar(chave, { botao, exemplo, somente, linha, dica: textoDica, opcoes }) {
+    function iaExtraCriar(chave, { botao, exemplo, somente, linha, dica: textoDica, opcoes, opcoesDica, opcoesTitulo }) {
       const alvo = document.getElementById(botao);
       if (!alvo) return;
       const bloco = document.createElement('details'); // recolhida: só a linha do título; o texto digitado fica guardado enquanto o app está aberto
@@ -12550,17 +12554,26 @@ function saveTemplatesToStorage() {
       campo.addEventListener('input', crescer);
       bloco.addEventListener('toggle', crescer);
       window.addEventListener('resize', crescer);
-      const dica = document.createElement('p');
-      dica.className = 'hint';
-      dica.textContent = textoDica || 'Opcional. Valem mais que o prompt padrão, em todos os pedidos desta seção (inclusive Outra resposta e Melhorar).';
-      bloco.append(rotulo, limpar, campo, dica);
-      if (opcoes && opcoes.length) { // opções padrão: um cartão (caixa de marcar) para cada uma, como em "O que preparar"
+      bloco.append(rotulo, limpar, campo);
+      if (textoDica) {
+        const dica = document.createElement('p');
+        dica.className = 'hint';
+        dica.textContent = textoDica;
+        bloco.append(dica);
+      } else if (textoDica !== '') {
+        // Sem dica explícita: o texto padrão das outras seções (Instruções adicionais).
+        const dica = document.createElement('p');
+        dica.className = 'hint';
+        dica.textContent = 'Opcional. Valem mais que o prompt padrão, em todos os pedidos desta seção (inclusive Outra resposta e Melhorar).';
+        bloco.append(dica);
+      }
+      if (opcoes && opcoes.length) { // opções além do resumo / padrão: um cartão (caixa de marcar) para cada uma
         const chaveSalva = 'jwLibraryNoteAplicarIaOpcoes_' + chave;
         let salvas = [];
         try { salvas = JSON.parse(localStorage.getItem(chaveSalva) || '[]'); } catch (e) { /* sem armazenamento */ }
         const titulo = document.createElement('p');
         titulo.className = 'dirigente-secoes-titulo ia-extra-opcoes-titulo';
-        titulo.textContent = 'Opções padrão para a IA';
+        titulo.textContent = opcoesTitulo || 'Opções padrão para a IA';
         const lista = document.createElement('div');
         lista.className = 'ai-sources ia-extra-opcoes';
         opcoes.forEach(o => {
@@ -12580,6 +12593,12 @@ function saveTemplatesToStorage() {
           lista.append(caixa);
         });
         bloco.append(titulo, lista);
+        if (opcoesDica) {
+          const dicaOp = document.createElement('p');
+          dicaOp.className = 'hint';
+          dicaOp.textContent = opcoesDica;
+          bloco.append(dicaOp);
+        }
       }
       if (somente) { // só nas seções cujo servidor aceita: ignora o que está marcado e faz apenas o que o campo pede
         const caixa = document.createElement('label');
@@ -16100,19 +16119,36 @@ function saveTemplatesToStorage() {
       });
     }
 
+    // Aplica destaques e quebras das preferências de formatação (negrito/itálico/maiúsculas/fontes) sem prefixar emoji no bloco todo.
+    function aiAplicarDestaquesTexto(texto, destaques, quebras) {
+      let base = aiApplyBreaks(String(texto || ''), quebras);
+      if (!Array.isArray(destaques) || !destaques.length) return base;
+      return aiBuildLine(base, { destaques, quebras: [], emoji: '' });
+    }
+
     // O resumo dos capítulos e o resultado do modo "somente as instruções": um bloco para cada título, com o texto logo depois.
+    // Usa as mesmas preferências de formatação das respostas (destaques, negrito nos [[vv.]] e no título).
     function joiasOutrosPartes(outros, somente) {
-      // Os versículos do trecho vêm da IA entre [[ ]] no começo do parágrafo e ficam sempre entre parênteses e em negrito, ex.: (vv. 1-2) (sem a fonte de negrito, só os parênteses).
-      const negritoId = aiStyleIdFor('negrito');
-      const emNegrito = texto => String(texto || '').replace(/\[\[([^\[\]]+)\]\]/g, (m, ref) => { const r = '(' + ref.trim().replace(/^\(|\)$/g, '') + ')'; return negritoId ? convertTextWithStyle(r, negritoId) : r; });
-      const tituloNegrito = t => negritoId ? convertTextWithStyle(t, negritoId) : t; // o título (ex.: RESUMO DE JEREMIAS 49) também em negrito
-      outros = outros.map(o => ({ ...o, texto: emNegrito(o.texto) }));
-      return outros.map(o => ({
-        paragrafos: o.titulo || '',
-        // vários parágrafos (o resumo dos capítulos): o título numa linha e os parágrafos abaixo; texto de um parágrafo só: "TÍTULO 👉 texto"
-        texto: (somente ? '📌 ' : '📚 ') + (o.titulo ? tituloNegrito(o.titulo.toUpperCase()) + (o.texto.includes('\n') ? '\n\n' : ' 👉 ') : '') + o.texto +
-          (Array.isArray(o.perspicaz) && o.perspicaz.length ? '\n\n🔎 Estudo Perspicaz: ' + o.perspicaz.join('; ') : '')
-      }));
+      const opcoes = readAiOptions();
+      const negritoId = opcoes.negrito ? aiStyleIdFor('negrito') : '';
+      const emNegrito = texto => String(texto || '').replace(/\[\[([^\[\]]+)\]\]/g, (m, ref) => {
+        const r = '(' + ref.trim().replace(/^\(|\)$/g, '') + ')';
+        return negritoId ? convertTextWithStyle(r, negritoId) : r;
+      });
+      const tituloNegrito = t => negritoId ? convertTextWithStyle(t, negritoId) : t;
+      // Sem emoji nas preferências: tira o emoji só do começo de cada parágrafo (o resto do texto fica).
+      const semEmojiInicio = texto => opcoes.emoji ? texto : String(texto || '').replace(/(^|\n\n)(?:\p{Extended_Pictographic}\uFE0F?(?:\u200D\p{Extended_Pictographic}\uFE0F?)*)+\s*/gu, '$1');
+      return outros.map(o => {
+        let corpo = aiAplicarDestaquesTexto(o.texto, o.destaques, o.quebras);
+        corpo = semEmojiInicio(emNegrito(corpo));
+        return {
+          paragrafos: o.titulo || '',
+          texto: (somente ? '📌 ' : '📚 ') + (o.titulo ? tituloNegrito(o.titulo.toUpperCase()) + (corpo.includes('\n') ? '\n\n' : ' 👉 ') : '') + corpo +
+            (Array.isArray(o.perspicaz) && o.perspicaz.length
+              ? '\n\n' + ((o.perspicaz.some(s => /^WOL:/i.test(String(s))) ? '🔎 Fontes: ' : '🔎 Estudo Perspicaz: ') + o.perspicaz.join('; '))
+              : '')
+        };
+      });
     }
 
     async function requestJoias(mode) {
@@ -20704,7 +20740,13 @@ function saveTemplatesToStorage() {
 
     function bibliaFormatarResumo(outros) {
       if (!Array.isArray(outros) || !outros.length) return '';
-      return joiasOutrosPartes(outros, false).map(p => p.texto).join('\n\n\n');
+      const negritoId = readAiOptions().negrito ? aiStyleIdFor('negrito') : '';
+      const secoes = /^(RESUMO|SOBRE JEOVÁ|APLICAÇÕES PRÁTICAS|FUNDO HISTÓRICO|PERSONAGENS|LUGARES E INFORMAÇÕES GERAIS)\s*$/gm;
+      return joiasOutrosPartes(outros, false).map(p => {
+        let texto = p.texto;
+        if (negritoId) texto = texto.replace(secoes, m => convertTextWithStyle(m.trim(), negritoId));
+        return texto;
+      }).join('\n\n\n');
     }
 
     // Progresso geral e contagem de cada botão de seção.
@@ -20866,12 +20908,17 @@ function saveTemplatesToStorage() {
 
     async function bibliaGerarResumo() {
       const alvo = bibliaResumoAlvo;
-      if (!alvo || bibliaResumindo) return;
+      if (!alvo || bibliaResumindo || aiBusy) return;
       const accessError = studyAccessError();
-      if (accessError) return void (bibliaResumoStatus.textContent = accessError);
+      if (accessError) {
+        aiStatusKind = 'biblia';
+        return setAiStatus(accessError, true);
+      }
+      saveAiOptions();
       bibliaResumindo = true;
-      bibliaResumirBtn.disabled = true;
-      bibliaResumoStatus.textContent = 'Preparando o resumo de ' + alvo.cap.nome + '…';
+      aiBusy = true;
+      aiStatusKind = 'biblia';
+      setAiLoading(true, bibliaResumirBtn);
       const naMesma = () => bibliaResumoAlvo && bibliaResumoAlvo.cap.id === alvo.cap.id;
       try {
         const result = await postStudy({
@@ -20880,15 +20927,16 @@ function saveTemplatesToStorage() {
           titulo: alvo.cap.nome,
           refs: [{ livro: alvo.cap.livro, rotulo: alvo.cap.rotulo }],
           ajuste: iaExtra('biblia'),
-          opcoesResumo: iaExtraOpcoes('biblia')
+          opcoesResumo: iaExtraOpcoes('biblia'),
+          opcoes: readAiOptions()
         }, IA_ESPERA_MS);
         if (!result.ok) {
-          if (naMesma()) bibliaResumoStatus.textContent = studyFailureMessage(result, 'Não foi possível gerar o resumo agora.');
+          if (naMesma()) setAiStatus(studyFailureMessage(result, 'Não foi possível gerar o resumo agora.'), true);
           return;
         }
         const outros = Array.isArray(result.data.outros) ? result.data.outros.filter(o => o && o.texto) : [];
         if (!outros.length) {
-          if (naMesma()) bibliaResumoStatus.textContent = result.data.erro || 'A IA não preparou o resumo. Tente de novo.';
+          if (naMesma()) setAiStatus(result.data.erro || 'A IA não preparou o resumo. Tente de novo.', true);
           return;
         }
         const texto = bibliaFormatarResumo(outros);
@@ -20897,13 +20945,15 @@ function saveTemplatesToStorage() {
         if (naMesma()) {
           bibliaResumoTexto.value = texto;
           bibliaResumoSincronizar();
-          bibliaResumoStatus.textContent = '✅ Resumo pronto e salvo. Você pode copiar ou guardar em Pesquisas salvas.';
+          setAiStatus('✅ Resumo pronto e salvo. Você pode copiar ou guardar em Pesquisas salvas.', false);
         }
       } catch (e) {
-        if (naMesma()) bibliaResumoStatus.textContent = e && e.name === 'AbortError' ? 'A IA demorou demais. Tente de novo.' : 'Falha de conexão ao consultar a IA.';
+        if (naMesma()) setAiStatus(e && e.name === 'AbortError' ? 'A IA demorou demais. Tente de novo.' : 'Falha de conexão ao consultar a IA.', true);
       } finally {
         bibliaResumindo = false;
-        bibliaResumirBtn.disabled = false;
+        aiBusy = false;
+        setAiLoading(false);
+        bibliaResumoSincronizar(); // restaura o rótulo Gerar resumo / Gerar de novo conforme o campo
       }
     }
 

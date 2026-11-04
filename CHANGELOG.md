@@ -2,6 +2,18 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.28
+
+Resumo do capítulo (leitura diária): ao Gerar resumo, o mesmo indicador do app (“A IA está pensando…”, spinner no botão e contador). O resumo passa a usar as preferências de formatação das respostas (negrito, itálico, maiúsculas, variação de fonte, emoji, espaçamento), com destaques aplicados no texto.
+
+## 6.5.27
+
+Resumo do capítulo (leitura diária): opções renomeadas para “Opções adicionais para a IA (além do resumo)”; removida a dica “Opcional. Vale mais…”. Com opções marcadas, o texto sai em seções com subtítulos em maiúsculas (RESUMO, SOBRE JEOVÁ, APLICAÇÕES PRÁTICAS, FUNDO HISTÓRICO, PERSONAGENS, LUGARES E INFORMAÇÕES GERAIS). Fundo histórico, personagens e lugares disparam pesquisa no Perspicaz e, se preciso, na biblioteca wol.jw.org (consultas da IA, referências nas instruções ou o capítulo); a resposta final cita a fonte. Jeová e aplicações práticas só orientam o texto, sem pesquisa extra.
+
+## 6.5.26
+
+Resumo do capítulo (leitura diária): a pesquisa no Estudo Perspicaz e a 2ª chamada à IA só rodam se Personagens ou Lugares/medidas estiverem marcados; as outras opções só orientam o texto. Prompt próprio do resumo diário (sem forçar fundo histórico nem verbetes). A etapa do Perspicaz não reenvia os versículos; busca dos verbetes em paralelo e sem repetir o mesmo nome. Instruções adicionais passam a aceitar o mesmo limite das outras telas. Dica na tela sobre o que cada opção faz.
+
 ## 6.5.25
 
 Leitura diária da Bíblia, grande reformulação do resumo e da programação: o botão Resumir de cada capítulo só abre a área do resumo (no fim da tela, com o capítulo no título), e quem pede à IA é o botão Gerar resumo, que mostra o modelo e o esforço da IA; a programação da seção fica recolhível (nome da seção numa moldura com o ícone à esquerda, ao lado do "Só as pendentes"); ao fechar o resumo, a tela volta à programação com o capítulo à vista; o resumo feito fica salvo e o botão do capítulo vira "Ver resumo" (verde); o campo do resumo cresce com o texto, sem barra de rolagem; botão Word para exportar o resumo; campo recolhível "Instruções adicionais para a IA" com cinco opções padrão (o que ensina sobre Jeová, aplicações práticas, fundo histórico, personagens e lugares/medidas, estas duas com o Perspicaz), cujas frases ficam na tela de prompts. Nos capítulos: só "Capítulo N" dentro do grupo de um livro, botões WOL e Resumir lado a lado e centralizados, campo da data que não recebe clique (tocar nele marca ou desmarca a leitura). Espaços do quadro da seção recolhida padronizados.

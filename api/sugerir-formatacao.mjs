@@ -2876,6 +2876,28 @@ const SaidaJoias = z.object({
   outros: z.array(z.object({ titulo: z.string(), texto: z.string(), verbetes: z.array(z.string()) })),
 });
 
+// Leitura diária: verbetes/Perspicaz, consultas WOL e destaques no mesmo padrão das respostas do estudo.
+const DestaqueResumoLeitura = z.object({
+  trecho: z.string(),
+  estilo: z.enum(ESTILOS).nullable().optional(),
+  maiusculas: z.boolean().optional(),
+  fonte: z.enum(["doubleStruck", "sans", "squaredDark"]).nullable().optional(),
+});
+const SaidaResumoLeitura = z.object({
+  pergunta: z.null(),
+  joias: z.array(z.any()).max(0),
+  outros: z.array(
+    z.object({
+      titulo: z.string(),
+      texto: z.string(),
+      verbetes: z.array(z.string()),
+      consultasWol: z.array(z.string()).optional(),
+      destaques: z.array(DestaqueResumoLeitura).optional(),
+      quebras: z.array(z.string()).optional(),
+    })
+  ),
+});
+
 // Versículos de uma referência do mesmo capítulo: "Jeremias 45:5" -> { capitulo: 45, versos: Set {5} }; "45:4, 6-7" -> {4, 6, 7}; null se não houver "cap:vers".
 function versosDe(ref) {
   const m = String(ref || "").match(/(\d+):([\d,\s–-]+)/);
@@ -2986,22 +3008,38 @@ async function lerImagensDaApostilaSemana(res, body) {
   return res.status(200).json({ semana: apostila.semana, url: apostila.url, imagens: apostila.imagens });
 }
 
-// Resumo dos capítulos com o Estudo Perspicaz (sempre, sem depender da caixa das opções): a IA indicou, em "verbetes" de cada resumo, os nomes de
+// Busca os verbetes indicados pela IA no Perspicaz (Blob), em paralelo e sem repetir o mesmo nome no pedido.
+async function buscarVerbetesDosResumos(outros) {
+  const cache = new Map(); // nome trimado (minúsculo) → resultado de buscarVerbete ou null
+  async function um(nome) {
+    const chave = String(nome || "").trim().toLowerCase();
+    if (!chave) return null;
+    if (cache.has(chave)) return cache.get(chave);
+    const promessa = buscarVerbete([nome]).catch(() => null);
+    cache.set(chave, promessa);
+    return promessa;
+  }
+  return Promise.all(
+    outros.map(async (o) => {
+      const nomes = Array.isArray(o.verbetes) ? o.verbetes : [];
+      const resultados = await Promise.all(nomes.map((nome) => um(nome).then((v) => (v ? { nome, ...v } : null))));
+      const lista = [];
+      for (const v of resultados) {
+        if (v && !lista.some((x) => x.verbete === v.verbete)) lista.push(v);
+      }
+      return lista;
+    })
+  );
+}
+
+// Resumo dos capítulos com o Estudo Perspicaz (Joias: sempre, quando há verbetes): a IA indicou, em "verbetes" de cada resumo, os nomes de
 // cidades, lugares, povos, nações e personagens; o servidor busca esses verbetes no Perspicaz (Blob) e a IA reescreve os resumos com o fundo histórico
 // que eles trazem. Se algo falhar, ficam os resumos da primeira etapa (sem as fontes). Devolve [{ titulo, texto, perspicaz: ["Gaza (vol. 1)"] }].
 async function completarResumosComPerspicaz(outros, joias, P, opcoes, ajuste) {
   const simples = outros.map((o) => ({ titulo: o.titulo, texto: o.texto, perspicaz: [] }));
   if (!fontesConfiguradas() || !outros.length) return simples;
   try {
-    const achados = [];
-    for (const o of outros) {
-      const lista = [];
-      for (const nome of o.verbetes) {
-        const v = await buscarVerbete([nome]);
-        if (v && !lista.some((x) => x.verbete === v.verbete)) lista.push({ nome, ...v });
-      }
-      achados.push(lista);
-    }
+    const achados = await buscarVerbetesDosResumos(outros);
     if (!achados.some((l) => l.length)) return simples;
     const material = outros.map((o, indice) => ({
       indice,
@@ -3190,60 +3228,157 @@ const OPCOES_RESUMO_LEITURA = {
   lugares: "Resumo da leitura: lugares e medidas",
 };
 
-function blocoOpcoesResumoLeitura(valor, P) {
-  const ids = [...new Set((Array.isArray(valor) ? valor : []).filter((id) => typeof id === "string" && Object.hasOwn(OPCOES_RESUMO_LEITURA, id)))];
+function idsOpcoesResumoLeitura(valor) {
+  return [...new Set((Array.isArray(valor) ? valor : []).filter((id) => typeof id === "string" && Object.hasOwn(OPCOES_RESUMO_LEITURA, id)))];
+}
+
+function blocoOpcoesResumoLeitura(ids, P) {
   const f = P.frases.pedidos;
   const linhas = ids.map((id) => f[OPCOES_RESUMO_LEITURA[id]]).filter(Boolean);
   if (!linhas.length) return "";
   return `${f["Resumo da leitura: opções marcadas"] || "OPÇÕES MARCADAS PARA ESTE RESUMO:"}\n${linhas.map((l) => `- ${l}`).join("\n")}\n\n`;
 }
 
-async function completarResumosLeituraComPerspicaz(outros, textoBiblia, P, ajuste = "", opcoes = "") {
-  const simples = outros.map((o) => ({ titulo: o.titulo, texto: o.texto, perspicaz: [] }));
-  if (!fontesConfiguradas() || !outros.length) return simples;
-  try {
-    const achados = [];
-    for (const o of outros) {
-      const lista = [];
-      for (const nome of o.verbetes || []) {
-        const v = await buscarVerbete([nome]);
-        if (v && !lista.some((x) => x.verbete === v.verbete)) lista.push({ nome, ...v });
+// Consultas ao wol.jw.org para o resumo: as que a IA pediu + referências/pedidos nas instruções + capítulo quando fundo/personagens/lugares.
+async function pesquisarWolParaResumoLeitura(tituloCap, outros, ajuste, idsOpcoes) {
+  const consultas = [];
+  const push = (q) => {
+    const t = String(q || "").replace(/\s+/g, " ").trim().slice(0, 120);
+    if (t.length < 8) return;
+    if (!consultas.some((c) => c.toLowerCase() === t.toLowerCase())) consultas.push(t);
+  };
+  const querFonte = idsOpcoes.includes("fundo") || idsOpcoes.includes("personagens") || idsOpcoes.includes("lugares");
+  if (querFonte && tituloCap) push(tituloCap);
+  for (const o of outros) {
+    for (const q of o.consultasWol || []) push(q);
+    for (const nome of (o.verbetes || []).slice(0, 4)) push(`${nome} ${tituloCap || ""}`.trim());
+  }
+  // Referências bíblicas ou pedido explícito nas instruções adicionais.
+  const textoAjuste = String(ajuste || "");
+  for (const m of textoAjuste.matchAll(/\b(?:[1-3]\s*)?[A-Za-zÀ-ú]{2,}(?:\s+[A-Za-zÀ-ú]+)?\s+\d{1,3}:\d{1,3}(?:\s*[-–]\s*\d{1,3})?\b/gu)) {
+    push(m[0]);
+  }
+  if (/(wol\.jw\.org|biblioteca|pesquise|pesquisa|publique|publicação)/i.test(textoAjuste)) {
+    push(tituloCap);
+  }
+  if (!consultas.length) return [];
+  const vistos = new Set();
+  const lotes = await Promise.all(
+    consultas.slice(0, 4).map(async (q) => {
+      try {
+        return await pesquisarNoWol(q, 8000, 2);
+      } catch {
+        return [];
       }
-      achados.push(lista);
+    })
+  );
+  const lista = [];
+  for (const achados of lotes) {
+    for (const a of achados) {
+      if (!a?.url || vistos.has(a.url)) continue;
+      vistos.add(a.url);
+      lista.push({
+        rotulo: a.rotulo || "",
+        titulo: a.titulo || "",
+        trecho: String(a.trecho || "").slice(0, 700),
+        url: a.url,
+      });
+      if (lista.length >= 6) return lista;
     }
-    if (!achados.some((l) => l.length)) return simples;
+  }
+  return lista;
+}
+
+function sanearItemResumoLeitura(o, opcoesFmt, P, maxTexto) {
+  const texto = limparResumo(o.texto, maxTexto);
+  const permitidos = estilosDe(opcoesFmt);
+  const sep = modoSeparacao(opcoesFmt, "");
+  return {
+    titulo: limparLinha(o.titulo, 120),
+    texto,
+    verbetes: Array.isArray(o.verbetes) ? o.verbetes.map((v) => limparLinha(v, 60)).filter(Boolean).slice(0, 8) : [],
+    consultasWol: Array.isArray(o.consultasWol) ? o.consultasWol.map((v) => limparLinha(v, 120)).filter(Boolean).slice(0, 4) : [],
+    destaques: sanearDestaques(o.destaques, texto, opcoesFmt, permitidos, P.limites.maxDestaques),
+    quebras: sep ? sanearQuebras(o.quebras, texto) : [],
+  };
+}
+
+// Fundo histórico, personagens e/ou lugares: Perspicaz (+ WOL se houver consultas) e reescrita com citação de fontes.
+// Não reenvia os versículos — só orientação, opções, rascunho, verbetes e trechos.
+async function completarResumosLeituraComFontes(outros, P, ajuste = "", blocoOpcoes = "", tituloCap = "", idsOpcoes = [], opcoesFmt = {}, blocoFmt = "") {
+  const simples = outros.map((o) => ({
+    titulo: o.titulo,
+    texto: o.texto,
+    perspicaz: [],
+    destaques: o.destaques || [],
+    quebras: o.quebras || [],
+  }));
+  const temVerbetes = outros.some((o) => (o.verbetes || []).length);
+  const temConsultas = outros.some((o) => (o.consultasWol || []).length) || Boolean(ajuste);
+  if (!outros.length || (!temVerbetes && !temConsultas && !idsOpcoes.includes("fundo"))) return simples;
+  try {
+    const [achados, wol] = await Promise.all([
+      fontesConfiguradas() && temVerbetes ? buscarVerbetesDosResumos(outros) : Promise.resolve(outros.map(() => [])),
+      pesquisarWolParaResumoLeitura(tituloCap, outros, ajuste, idsOpcoes),
+    ]);
+    if (!achados.some((l) => l.length) && !wol.length) return simples;
     const material = outros.map((o, indice) => ({
       indice,
       titulo: o.titulo,
       resumo: o.texto,
-      verbetes: achados[indice].map((v) => ({ nome: v.nome, verbete: v.verbete, volume: v.volume, trecho: v.trecho })),
+      verbetes: (achados[indice] || []).map((v) => ({
+        nome: v.nome,
+        verbete: v.verbete,
+        volume: v.volume,
+        trecho: v.trecho,
+        citarComo: `Estudo Perspicaz, vol. ${v.volume}, "${v.verbete}"`,
+      })),
     }));
+    const frase =
+      P.frases.pedidos["Resumo da leitura: com fontes"] ||
+      P.frases.pedidos["Resumo da leitura: com o Perspicaz"] ||
+      P.frases.pedidos["Joias: resumo com o Perspicaz"];
+    const blocoWol = wol.length
+      ? "\n\nPUBLICAÇÕES DO WOL.JW.ORG (trechos; cite o rotulo/titulo na resposta):\n" +
+        JSON.stringify(wol.map((w) => ({ rotulo: w.rotulo, titulo: w.titulo, trecho: w.trecho })))
+      : "";
     const mensagem =
       blocoOrientacao({}, ajuste, P) +
-      P.frases.pedidos["Joias: resumo com o Perspicaz"] +
+      frase +
       "\n\n" +
-      opcoes +
-      "LEITURA (versículos):\n" +
-      textoBiblia +
-      "\n\nRESUMOS E VERBETES (JSON):\n" +
+      blocoFmt +
+      blocoOpcoes +
+      "RESUMOS E VERBETES (JSON):\n" +
       JSON.stringify(material) +
+      blocoWol +
       lembreteFinal({}, ajuste, P);
     const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 90_000) });
     const resposta = await chamarIa(
       client,
       P,
       { max_tokens: 12000, system: P.sistemaJoias, messages: [{ role: "user", content: mensagem }] },
-      { schema: SaidaJoias, semPensar: true, tarefa: "leitura-biblia" }
+      { schema: SaidaResumoLeitura, semPensar: true, tarefa: "leitura-biblia" }
     );
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) return simples;
     const novos = resposta.parsed_output.outros || [];
     return outros.map((o, i) => {
       const n = novos.find((x) => chaveDeBusca(x.titulo) === chaveDeBusca(o.titulo)) || novos[i];
-      const texto = n ? limparResumo(n.texto, 4500) : "";
-      return { titulo: o.titulo, texto: texto || o.texto, perspicaz: texto ? achados[i].map((v) => `${v.verbete} (vol. ${v.volume})`) : [] };
+      if (!n || !n.texto) {
+        return { titulo: o.titulo, texto: o.texto, perspicaz: [], destaques: o.destaques || [], quebras: o.quebras || [] };
+      }
+      const saneado = sanearItemResumoLeitura(n, opcoesFmt, P, 9000);
+      const fontesPersp = (achados[i] || []).map((v) => `${v.verbete} (vol. ${v.volume})`);
+      const fontesWol = wol.map((w) => [w.rotulo, w.titulo].filter(Boolean).join(" — ")).filter(Boolean);
+      return {
+        titulo: saneado.titulo || o.titulo,
+        texto: saneado.texto || o.texto,
+        perspicaz: [...fontesPersp, ...fontesWol.map((f) => `WOL: ${f}`)],
+        destaques: saneado.destaques,
+        quebras: saneado.quebras,
+      };
     });
   } catch (e) {
-    console.error("Leitura diária: resumo com o Perspicaz falhou:", e?.status, e?.message);
+    console.error("Leitura diária: resumo com fontes falhou:", e?.status, e?.message);
     return simples;
   }
 }
@@ -3262,21 +3397,40 @@ async function resumirLeituraBiblia(res, body, P) {
   if (!refs.length) return erro(res, 400, "Informe o grupo de capítulos a resumir.");
   const titulo = typeof body.titulo === "string" ? body.titulo.trim().slice(0, 120) : refs.map((r) => `${r.livro} ${r.rotulo}`).join("; ");
 
-  precarregarFontes({ biblia: true, perspicaz: true });
+  const idsOpcoes = idsOpcoesResumoLeitura(body.opcoesResumo);
+  // Perspicaz (e WOL na 2ª etapa) para fundo histórico, personagens e lugares — não para só Jeová/aplicações.
+  const querFontes = idsOpcoes.includes("personagens") || idsOpcoes.includes("lugares") || idsOpcoes.includes("fundo");
+  const opcoesFmt = validarOpcoes(body.opcoes);
+  const sep = modoSeparacao(opcoesFmt, body.ajuste);
+  const blocoFmt =
+    "FORMATAÇÃO (as mesmas preferências das respostas do app):\n" +
+    descreverFormatacaoResposta(opcoesFmt, P, sep) +
+    "\nIndique em \"destaques\" trechos literais do \"texto\" a destacar (estilo negrito/italico/negrito_italico, maiusculas e, se permitido, fonte doubleStruck/sans/squaredDark). Em \"quebras\", trechos onde começa uma nova ideia ou frase (se o espaçamento estiver ativo). Se emoji estiver INATIVO, não comece parágrafos com emoji.\n\n";
+
+  precarregarFontes({ biblia: true, perspicaz: querFontes });
   const textoBiblia = await textoDeGruposBiblicos(refs, 32000);
   if (!textoBiblia.trim()) return erro(res, 404, "Não encontrei esses capítulos na Bíblia das fontes.");
 
-  const ajuste = textoLivre(body.ajuste, 1200); // instruções adicionais que o usuário escreveu para este resumo
-  const opcoes = blocoOpcoesResumoLeitura(body.opcoesResumo, P); // caixas marcadas (o que ensina sobre Jeová, aplicações, fundo histórico…)
+  const ajuste = textoLivre(body.ajuste, MAX_AJUSTE); // instruções adicionais que o usuário escreveu para este resumo
+  const blocoOpcoes = blocoOpcoesResumoLeitura(idsOpcoes, P);
+  const f = P.frases.pedidos;
+  const fraseBase = f["Resumo da leitura: base"] || f["Joias: resumo dos capítulos"];
+  const fraseVerbetes = querFontes ? (f["Resumo da leitura: pedir verbetes"] || "") + "\n\n" : "";
   const mensagem =
     blocoOrientacao({}, ajuste, P) +
-    `PEDIDO: RESUMO DOS CAPÍTULOS da leitura diária da Bíblia (grupo: ${titulo}).\n` +
+    `PEDIDO: RESUMO DO CAPÍTULO da leitura diária da Bíblia (${titulo}).\n` +
     `pergunta da apostila INATIVA; joias da leitura INATIVAS; resumo dos capítulos ATIVO.\n` +
-    `"pergunta" é null e "joias" é [].\n\n` +
-    P.frases.pedidos["Joias: resumo dos capítulos"] +
+    `"pergunta" é null e "joias" é [].\n` +
+    (idsOpcoes.length
+      ? `Opções adicionais ATIVAS: use subtítulos em MAIÚSCULAS (RESUMO e as seções pedidas).\n`
+      : `Sem opções adicionais: só o resumo do capítulo, sem subtítulos de seção.\n`) +
+    "\n" +
+    blocoFmt +
+    fraseBase +
     "\n\n" +
-    opcoes +
-    "LEITURA (versículos do grupo, na ordem):\n" +
+    fraseVerbetes +
+    blocoOpcoes +
+    "LEITURA (versículos do capítulo, na ordem):\n" +
     textoBiblia +
     lembreteFinal({}, ajuste, P);
 
@@ -3287,19 +3441,36 @@ async function resumirLeituraBiblia(res, body, P) {
       client,
       P,
       { max_tokens: 12000, system: P.sistemaJoias, messages: [{ role: "user", content: mensagem }] },
-      { schema: SaidaJoias, tarefa: "leitura-biblia" }
+      { schema: SaidaResumoLeitura, tarefa: "leitura-biblia" }
     );
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
       return erro(res, 502, "A IA não conseguiu preparar o resumo desta leitura.");
     }
+    const maxTexto = idsOpcoes.length ? 9000 : 4500;
     let outros = (resposta.parsed_output.outros || [])
-      .map((o) => ({
-        titulo: limparLinha(o.titulo, 120),
-        texto: limparResumo(o.texto, 4500),
-        verbetes: Array.isArray(o.verbetes) ? o.verbetes.map((v) => limparLinha(v, 60)).filter(Boolean).slice(0, 8) : [],
-      }))
+      .map((o) => {
+        const item = sanearItemResumoLeitura(o, opcoesFmt, P, maxTexto);
+        if (!querFontes) {
+          item.verbetes = [];
+          item.consultasWol = [];
+        }
+        return item;
+      })
       .filter((o) => o.texto);
-    if (outros.length) outros = await completarResumosLeituraComPerspicaz(outros, textoBiblia, P, ajuste, opcoes);
+    const precisaEtapa2 =
+      querFontes &&
+      outros.some((o) => o.verbetes.length || o.consultasWol.length || idsOpcoes.includes("fundo") || Boolean(ajuste));
+    if (precisaEtapa2) {
+      outros = await completarResumosLeituraComFontes(outros, P, ajuste, blocoOpcoes, titulo, idsOpcoes, opcoesFmt, blocoFmt);
+    } else {
+      outros = outros.map((o) => ({
+        titulo: o.titulo,
+        texto: o.texto,
+        perspicaz: [],
+        destaques: o.destaques,
+        quebras: o.quebras,
+      }));
+    }
 
     console.log(
       "Leitura diária da Bíblia:",
@@ -3307,6 +3478,9 @@ async function resumirLeituraBiblia(res, body, P) {
         modelo: P.ia.modelo,
         titulo,
         capitulos: outros.length,
+        opcoes: idsOpcoes,
+        fontes: querFontes,
+        verbetesAchados: outros.reduce((n, o) => n + (o.perspicaz || []).length, 0),
         segundos: Math.round((Date.now() - inicio) / 100) / 10,
         entrada: resposta.usage?.input_tokens || 0,
         saida: resposta.usage?.output_tokens || 0,
