@@ -151,20 +151,75 @@
 
     /* ---------- Cabeçalho ---------- */
 
-    header {
+    /* Barra superior compacta: menu ☰ + logo e slogan. */
+    header.app-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 1400;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: color-mix(in srgb, var(--card) 92%, transparent);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: var(--text);
+      padding: 8px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .menu-toggle {
+      flex: 0 0 auto;
+      width: 44px;
+      height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border: 0;
+      border-radius: 12px;
       background: transparent;
       color: var(--text);
-      padding: 16px 16px 12px;
-      text-align: center;
+      box-shadow: none;
     }
+
+    .menu-toggle:hover {
+      background: var(--soft);
+      transform: none;
+    }
+
+    .menu-bars,
+    .menu-bars::before,
+    .menu-bars::after {
+      display: block;
+      width: 20px;
+      height: 2px;
+      background: currentColor;
+      border-radius: 2px;
+    }
+
+    .menu-bars {
+      position: relative;
+    }
+
+    .menu-bars::before,
+    .menu-bars::after {
+      content: "";
+      position: absolute;
+      left: 0;
+    }
+
+    .menu-bars::before { top: -6px; }
+    .menu-bars::after { top: 6px; }
 
     .brand-title {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       gap: 10px;
-      margin-bottom: 4px;
-      max-width: 100%;
+      margin: 0;
+      min-width: 0;
+      flex: 1 1 auto;
       /* O logo é um link para a página Sobre: sem sublinhado nem cor de link, e sem o clarão cinza do toque no celular. */
       color: inherit;
       text-decoration: none;
@@ -178,18 +233,25 @@
     }
 
     .brand-icon {
-      width: clamp(68px, 13vw, 96px);
+      width: clamp(40px, 9vw, 52px);
       height: auto;
       aspect-ratio: 1;
       flex: 0 0 auto;
-      filter: drop-shadow(0 4px 10px var(--shadow));
+      filter: drop-shadow(0 2px 6px var(--shadow));
+    }
+
+    .brand-text {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
     }
 
     /* Nome em duas cores, como no logotipo: "Note" na cor do texto e "Style" em violeta. */
     header h1 {
       margin: 0;
       color: var(--text);
-      font-size: clamp(1.9rem, 6.5vw, 2.75rem);
+      font-size: clamp(1.15rem, 4.2vw, 1.55rem);
       line-height: 1.1;
     }
 
@@ -198,18 +260,127 @@
     }
 
     .brand-subtitle {
-      margin: 6px auto 0;
-      max-width: 820px;
-      font-weight: 650;
-      font-size: clamp(.95rem, 2.6vw, 1.15rem);
-      color: var(--text);
+      margin: 0;
+      max-width: none;
+      font-weight: 550;
+      font-size: clamp(.68rem, 2.1vw, .82rem);
+      line-height: 1.25;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     header p {
-      margin: 6px auto 0;
-      max-width: 820px;
+      margin: 0;
       color: var(--muted);
       font-size: .92rem;
+    }
+
+    /* Menu lateral (esquerda). */
+    .app-menu-fundo {
+      position: fixed;
+      inset: 0;
+      z-index: 1600;
+      background: rgba(15, 23, 42, .42);
+      border: 0;
+    }
+
+    .app-menu {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      z-index: 1700;
+      width: min(320px, 88vw);
+      display: flex;
+      flex-direction: column;
+      background: var(--card);
+      border-right: 1px solid var(--line);
+      box-shadow: 8px 0 28px var(--shadow);
+      padding: calc(10px + env(safe-area-inset-top, 0px)) 0 calc(12px + env(safe-area-inset-bottom, 0px));
+      transform: translateX(0);
+    }
+
+    .app-menu[hidden],
+    .app-menu-fundo[hidden] {
+      display: none !important;
+    }
+
+    .app-menu-cabeca {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 4px 14px 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .app-menu-titulo {
+      margin: 0;
+      font-weight: 750;
+      font-size: 1.05rem;
+      color: var(--text);
+    }
+
+    .app-menu-fechar {
+      width: 40px;
+      height: 40px;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 1.2rem;
+      box-shadow: none;
+    }
+
+    .app-menu-lista {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 10px 10px 0;
+      overflow: auto;
+      flex: 1 1 auto;
+    }
+
+    .app-menu-lista button,
+    .app-menu-lista a.app-menu-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      min-height: 46px;
+      padding: 10px 12px;
+      border: 0;
+      border-radius: 12px;
+      background: transparent;
+      color: var(--text);
+      font-size: .95rem;
+      font-weight: 650;
+      text-align: left;
+      text-decoration: none;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .app-menu-lista button:hover,
+    .app-menu-lista a.app-menu-link:hover {
+      background: var(--soft);
+      transform: none;
+    }
+
+    .app-menu-sep {
+      margin: 10px 8px;
+      border: 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .app-menu-sair {
+      color: var(--danger, #b91c1c) !important;
+    }
+
+    body.menu-aberto {
+      overflow: hidden;
     }
 
     .theme-switch-row {
@@ -3912,13 +4083,14 @@
     /* ---------- Telas: Formatar, Reuniões, Backup e Ajustes ----------
        É um app só: cada bloco diz em que tela aparece (screen-...). Formatar e Reuniões dividem o cartão do campo de
        texto (screen-editor); as reuniões ficam num cartão próprio, logo abaixo dele (screen-reunioes). */
-    body[data-screen="inicio"] :is(.screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-ajustes, .screen-leitura, .screen-transcricao),
-    body[data-screen="formatar"] :is(.screen-inicio, .screen-reunioes, .screen-backup, .screen-ajustes, .screen-leitura, .screen-transcricao),
-    body[data-screen="reunioes"] :is(.screen-inicio, .screen-formatar, .screen-backup, .screen-ajustes, .screen-leitura, .screen-transcricao),
-    body[data-screen="backup"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-ajustes, .screen-leitura, .screen-transcricao),
-    body[data-screen="ajustes"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-leitura, .screen-transcricao),
-    body[data-screen="transcricao"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-ajustes, .screen-leitura),
-    body[data-screen="leitura"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-ajustes, .screen-transcricao) {
+    body[data-screen="inicio"] :is(.screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-ajustes, .screen-leitura, .screen-transcricao, .screen-biblia),
+    body[data-screen="formatar"] :is(.screen-inicio, .screen-reunioes, .screen-backup, .screen-ajustes, .screen-leitura, .screen-transcricao, .screen-biblia),
+    body[data-screen="reunioes"] :is(.screen-inicio, .screen-formatar, .screen-backup, .screen-ajustes, .screen-leitura, .screen-transcricao, .screen-biblia),
+    body[data-screen="backup"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-ajustes, .screen-leitura, .screen-transcricao, .screen-biblia),
+    body[data-screen="ajustes"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-leitura, .screen-transcricao, .screen-biblia),
+    body[data-screen="transcricao"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-ajustes, .screen-leitura, .screen-biblia),
+    body[data-screen="leitura"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-ajustes, .screen-transcricao, .screen-biblia),
+    body[data-screen="biblia"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-ajustes, .screen-leitura, .screen-transcricao) {
       display: none !important;
     }
 
@@ -5148,29 +5320,6 @@
        - telas mais baixas (até 780 px): o texto diário e os atalhos ficam mais apertados;
        - telas curtas (até 700 px): os atalhos perdem a descrição e ficam só com o ícone e o nome. */
     @media (max-width: 640px) {
-      body[data-screen="inicio"] header {
-        padding: 8px 10px 2px;
-      }
-
-      body[data-screen="inicio"] .brand-title {
-        margin-bottom: 0;
-        gap: 8px;
-      }
-
-      body[data-screen="inicio"] .brand-icon {
-        width: 46px;
-      }
-
-      body[data-screen="inicio"] header h1 {
-        font-size: 1.6rem;
-      }
-
-      body[data-screen="inicio"] .brand-subtitle {
-        margin-top: 2px;
-        font-size: .8rem;
-        line-height: 1.3;
-      }
-
       body[data-screen="inicio"] main {
         padding-top: 8px;
         padding-bottom: 4px;
@@ -9610,3 +9759,85 @@ details.transcricao-bloco:not([open]) {
 }
 .transcricao-conteiner>summary .transcricao-resumo-linha[hidden],
 .transcricao-conteiner[open]>summary .transcricao-resumo-linha { display: none; }
+
+/* ---------- Leitura diária da Bíblia ---------- */
+.screen-biblia .biblia-progresso {
+  margin: 0 0 10px;
+  font-weight: 650;
+}
+.biblia-filtros {
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.biblia-filtro-lbl {
+  font-size: .85rem;
+  font-weight: 650;
+  color: var(--muted);
+}
+#bibliaSecao {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.biblia-so-pendentes {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.biblia-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: min(52vh, 520px);
+  overflow: auto;
+  padding: 2px 2px 8px;
+  margin-bottom: 12px;
+}
+.biblia-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--soft) 55%, var(--card));
+}
+.biblia-item.lido {
+  border-color: color-mix(in srgb, #16a34a 35%, var(--line));
+  background: color-mix(in srgb, #16a34a 8%, var(--card));
+}
+.biblia-item.selecionado {
+  box-shadow: inset 0 0 0 2px var(--brand);
+}
+.biblia-item-check {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+.biblia-item-corpo {
+  min-width: 0;
+}
+.biblia-item-titulo {
+  margin: 0;
+  font-weight: 700;
+  font-size: .95rem;
+  color: var(--text);
+}
+.biblia-item-meta {
+  margin: 2px 0 0;
+  font-size: .78rem;
+  color: var(--muted);
+}
+.biblia-item-data {
+  width: 8.2rem;
+  max-width: 100%;
+  font-size: .82rem;
+}
+.biblia-resumo-alvo {
+  font-weight: 650;
+}
+.biblia-resumo-area {
+  width: 100%;
+  min-height: 140px;
+  margin-top: 8px;
+  resize: vertical;
+}

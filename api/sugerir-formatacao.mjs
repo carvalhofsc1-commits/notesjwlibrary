@@ -11,7 +11,7 @@ import { iaDaTarefa, lerConfigIa } from "./_iaConfig.mjs";
 import { blocoLicoesPara } from "./_memoria.mjs";
 import { emitirCupomVoz } from "./_vozCupom.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
-import { buscarVerbete, buscarVersiculos, fontesConfiguradas, precarregarFontes, referenciasNoTexto } from "./_fontes.mjs";
+import { buscarVerbete, buscarVersiculos, fontesConfiguradas, precarregarFontes, referenciasNoTexto, textoDeGruposBiblicos } from "./_fontes.mjs";
 import { lerEsboco, lerIndice, minutosDoEsboco, publicacoesDaSecao, referenciasDoPublico, s34Configurado, textoDoDiscursoPublico, textoDoEsbocoImportado, textosBiblicosDoPublico, validarEsboco } from "./_s34.mjs";
 import {
   QUADROS_EBC,
@@ -3176,6 +3176,126 @@ async function responderJoias(res, body, P) {
   }
 }
 
+// ---------- Resumo da leitura diária da Bíblia (programa sbr) ----------
+// O app envia o grupo do dia (ex.: Gênesis 1-3). O servidor lê os versículos nas fontes e a IA escreve o resumo no
+// mesmo modelo das Joias espirituais (um item por capítulo, emoji + [[vv.]] no começo de cada parágrafo). Opcionalmente
+// completa com o Estudo Perspicaz, como no resumo das Joias.
+
+async function completarResumosLeituraComPerspicaz(outros, textoBiblia, P) {
+  const simples = outros.map((o) => ({ titulo: o.titulo, texto: o.texto, perspicaz: [] }));
+  if (!fontesConfiguradas() || !outros.length) return simples;
+  try {
+    const achados = [];
+    for (const o of outros) {
+      const lista = [];
+      for (const nome of o.verbetes || []) {
+        const v = await buscarVerbete([nome]);
+        if (v && !lista.some((x) => x.verbete === v.verbete)) lista.push({ nome, ...v });
+      }
+      achados.push(lista);
+    }
+    if (!achados.some((l) => l.length)) return simples;
+    const material = outros.map((o, indice) => ({
+      indice,
+      titulo: o.titulo,
+      resumo: o.texto,
+      verbetes: achados[indice].map((v) => ({ nome: v.nome, verbete: v.verbete, volume: v.volume, trecho: v.trecho })),
+    }));
+    const mensagem =
+      P.frases.pedidos["Joias: resumo com o Perspicaz"] +
+      "\n\nLEITURA (versículos):\n" +
+      textoBiblia +
+      "\n\nRESUMOS E VERBETES (JSON):\n" +
+      JSON.stringify(material);
+    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 90_000) });
+    const resposta = await chamarIa(
+      client,
+      P,
+      { max_tokens: 12000, system: P.sistemaJoias, messages: [{ role: "user", content: mensagem }] },
+      { schema: SaidaJoias, semPensar: true, tarefa: "leitura-biblia" }
+    );
+    if (resposta.stop_reason === "refusal" || !resposta.parsed_output) return simples;
+    const novos = resposta.parsed_output.outros || [];
+    return outros.map((o, i) => {
+      const n = novos.find((x) => chaveDeBusca(x.titulo) === chaveDeBusca(o.titulo)) || novos[i];
+      const texto = n ? limparResumo(n.texto, 4500) : "";
+      return { titulo: o.titulo, texto: texto || o.texto, perspicaz: texto ? achados[i].map((v) => `${v.verbete} (vol. ${v.volume})`) : [] };
+    });
+  } catch (e) {
+    console.error("Leitura diária: resumo com o Perspicaz falhou:", e?.status, e?.message);
+    return simples;
+  }
+}
+
+async function resumirLeituraBiblia(res, body, P) {
+  if (!process.env.CODIGO_ESTUDO) return erro(res, 503, "O código de pesquisa ainda não está configurado no servidor.");
+  if (!codigoValido(body.codigo)) return erro(res, 403, "Código de pesquisa inválido.");
+  if (!fontesConfiguradas()) return erro(res, 503, "A consulta às fontes ainda não está configurada no servidor.");
+
+  const refs = (Array.isArray(body.refs) ? body.refs : [])
+    .map((r) => ({
+      livro: typeof r?.livro === "string" ? r.livro.trim().slice(0, 40) : "",
+      rotulo: typeof r?.rotulo === "string" ? r.rotulo.trim().slice(0, 40) : "todo",
+    }))
+    .filter((r) => r.livro);
+  if (!refs.length) return erro(res, 400, "Informe o grupo de capítulos a resumir.");
+  const titulo = typeof body.titulo === "string" ? body.titulo.trim().slice(0, 120) : refs.map((r) => `${r.livro} ${r.rotulo}`).join("; ");
+
+  precarregarFontes({ biblia: true, perspicaz: true });
+  const textoBiblia = await textoDeGruposBiblicos(refs, 32000);
+  if (!textoBiblia.trim()) return erro(res, 404, "Não encontrei esses capítulos na Bíblia das fontes.");
+
+  const mensagem =
+    `PEDIDO: RESUMO DOS CAPÍTULOS da leitura diária da Bíblia (grupo: ${titulo}).\n` +
+    `pergunta da apostila INATIVA; joias da leitura INATIVAS; resumo dos capítulos ATIVO.\n` +
+    `"pergunta" é null e "joias" é [].\n\n` +
+    P.frases.pedidos["Joias: resumo dos capítulos"] +
+    "\n\nLEITURA (versículos do grupo, na ordem):\n" +
+    textoBiblia;
+
+  const inicio = Date.now();
+  try {
+    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 120_000) });
+    const resposta = await chamarIa(
+      client,
+      P,
+      { max_tokens: 12000, system: P.sistemaJoias, messages: [{ role: "user", content: mensagem }] },
+      { schema: SaidaJoias, tarefa: "leitura-biblia" }
+    );
+    if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
+      return erro(res, 502, "A IA não conseguiu preparar o resumo desta leitura.");
+    }
+    let outros = (resposta.parsed_output.outros || [])
+      .map((o) => ({
+        titulo: limparLinha(o.titulo, 120),
+        texto: limparResumo(o.texto, 4500),
+        verbetes: Array.isArray(o.verbetes) ? o.verbetes.map((v) => limparLinha(v, 60)).filter(Boolean).slice(0, 8) : [],
+      }))
+      .filter((o) => o.texto);
+    if (outros.length) outros = await completarResumosLeituraComPerspicaz(outros, textoBiblia, P);
+
+    console.log(
+      "Leitura diária da Bíblia:",
+      JSON.stringify({
+        modelo: P.ia.modelo,
+        titulo,
+        capitulos: outros.length,
+        segundos: Math.round((Date.now() - inicio) / 100) / 10,
+        entrada: resposta.usage?.input_tokens || 0,
+        saida: resposta.usage?.output_tokens || 0,
+      })
+    );
+    return res.status(200).json({
+      titulo,
+      erro: outros.length ? null : "A IA não preparou o resumo. Tente de novo.",
+      outros,
+      memoriaUsada: memoriaUsadaAgora(),
+    });
+  } catch (e) {
+    return tratarErro(e, res);
+  }
+}
+
 // ---------- Comentários adicionais sobre o texto diário (tela Início) ----------
 // O servidor lê o texto do dia no wol.jw.org (o mesmo da tela Início, guardado na memória) e a IA sugere aplicações
 // práticas do texto temático e dos pontos principais do comentário, para alguém comentar com as próprias palavras.
@@ -3574,6 +3694,7 @@ async function tratarPedido(req, res) {
   if (tarefa === "outros") return esbocoDeOutros(res, body, P);
   if (tarefa === "discurso") return esbocoDoDiscursoCurto(res, body, P);
   if (tarefa === "joias") return responderJoias(res, body, P);
+  if (tarefa === "leitura-biblia") return resumirLeituraBiblia(res, body, P);
 
   const entrada = validarEntrada(req.body, P.limites);
   if (!entrada) {

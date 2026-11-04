@@ -256,6 +256,92 @@ export async function buscarVersiculos(referencias, max, { numerado = false } = 
   return resultado;
 }
 
+// Versículos de um capítulo (1…N) que existem no índice da Bíblia.
+function versosDoCapitulo(indice, livro, capitulo) {
+  const versos = [];
+  for (let v = 1; v <= 200; v++) {
+    if (!indice.versiculos.has(`${livro}|${capitulo}|${v}`)) {
+      if (v > 1) break;
+      continue;
+    }
+    versos.push(v);
+  }
+  return versos;
+}
+
+// Expande um rótulo do programa de leitura ("1-3", "32", "todo", "116-119:63", "119:64-176") em capítulos com seus versículos.
+function expandirRotuloCapitulos(rotulo, livro, indice) {
+  const ultimo = indice.capitulos.get(livro) || 1;
+  const r = String(rotulo || "todo").trim();
+  if (!r || r === "todo") {
+    return Array.from({ length: ultimo }, (_, i) => i + 1).map((c) => ({ capitulo: c, versos: versosDoCapitulo(indice, livro, c) }));
+  }
+  // "119:64-176" (um capítulo, faixa de versículos) ou "116-119:63" (capítulos inteiros até o último, que vai só até o verso indicado).
+  const comVerso = r.match(/^(\d{1,3})(?:-(\d{1,3}))?:(\d{1,3})(?:-(\d{1,3}))?$/);
+  if (comVerso) {
+    const c1 = Number(comVerso[1]);
+    const c2 = comVerso[2] ? Number(comVerso[2]) : c1;
+    const v1 = Number(comVerso[3]);
+    const v2 = comVerso[4] ? Number(comVerso[4]) : null;
+    const out = [];
+    for (let c = c1; c <= c2; c++) {
+      const todos = versosDoCapitulo(indice, livro, c);
+      if (!todos.length) continue;
+      if (c1 === c2) {
+        // Um capítulo só: "119:64-176" ou "119:64".
+        out.push({ capitulo: c, versos: todos.filter((v) => v >= v1 && v <= (v2 ?? v1)) });
+      } else if (c === c2) {
+        // Último capítulo da faixa: versículos 1…v1 (ex.: Salmos 116-119:63 → 119:1-63).
+        out.push({ capitulo: c, versos: todos.filter((v) => v <= v1) });
+      } else {
+        out.push({ capitulo: c, versos: todos });
+      }
+    }
+    return out;
+  }
+  const faixa = r.match(/^(\d{1,3})(?:-(\d{1,3}))?$/);
+  if (!faixa) return [];
+  const a = Number(faixa[1]);
+  const b = faixa[2] ? Number(faixa[2]) : a;
+  const out = [];
+  for (let c = a; c <= b; c++) {
+    const versos = versosDoCapitulo(indice, livro, c);
+    if (versos.length) out.push({ capitulo: c, versos });
+  }
+  return out;
+}
+
+// Texto dos capítulos/grupos do programa de leitura diária da Bíblia, para a IA resumir (estilo Joias).
+// refs: [{ livro, rotulo }]. Devolve string com os capítulos e versículos, cortada em maxChars.
+export async function textoDeGruposBiblicos(refs, maxChars = 32000) {
+  if (!fontesConfiguradas()) return "";
+  const indice = await carregarBiblia();
+  const partes = [];
+  let total = 0;
+  for (const ref of Array.isArray(refs) ? refs : []) {
+    const livro = acharLivro(ref && ref.livro, indice);
+    if (!livro) continue;
+    for (const faixa of expandirRotuloCapitulos(ref.rotulo, livro, indice)) {
+      const linhas = faixa.versos
+        .map((v) => {
+          const t = indice.versiculos.get(`${livro}|${faixa.capitulo}|${v}`);
+          return t ? `${v} ${t}` : "";
+        })
+        .filter(Boolean);
+      if (!linhas.length) continue;
+      const bloco = `${livro} ${faixa.capitulo}\n${linhas.join("\n")}`;
+      if (total + bloco.length + 2 > maxChars) {
+        const resto = maxChars - total - 2;
+        if (resto > 80) partes.push(bloco.slice(0, resto));
+        return partes.join("\n\n");
+      }
+      partes.push(bloco);
+      total += bloco.length + 2;
+    }
+  }
+  return partes.join("\n\n");
+}
+
 // As referências bíblicas escritas num texto livre (as anotações que o orador colou): "Mateus 6:33", "Sl 37:10, 11", "Mt 24:14; 28:19, 20".
 // Só entram as que a Bíblia confirma (o livro existe e o versículo também), escritas como a Bíblia as escreve, sem repetir. Um trecho sem o
 // nome do livro só vale depois de ";" (continua o livro anterior). Num texto corrido o livro tem de começar por maiúscula (ou número), para

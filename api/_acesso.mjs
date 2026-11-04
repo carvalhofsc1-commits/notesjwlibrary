@@ -50,6 +50,7 @@ export const NIVEIS = {
   ebc: "pesquisa",
   joias: "pesquisa",
   "joias-ler": "pesquisa",
+  "leitura-biblia": "pesquisa",
   // Código de pesquisa ou do dirigente (os cartões de comentar e de dirigir usam a mesma leitura)
   "estudo-lista": "pesquisa-ou-dirigente",
   "ebc-ler": "pesquisa-ou-dirigente",

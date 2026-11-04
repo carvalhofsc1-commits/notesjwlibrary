@@ -2,9 +2,9 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
-## 6.4.81
+## 6.5.00
 
-Texto diário: a leitura em voz alta dos Comentários adicionais agora lê o cabeçalho "Comentários adicionais do texto diário", e antes de cada comentário anuncia "Comentário número 1", "Comentário número 2" e assim por diante. Cada fala fica numa linha própria, terminada em ponto, para a voz fazer uma pausa entre uma e outra. O servidor aceita essas falas de anúncio (folga de 120 caracteres na conferência do trecho).
+Leitura diária da Bíblia: nova tela com o programa anual (PDF sbr), seções, datas planejadas, marcação de leitura concluída e resumo dos capítulos no estilo das Joias espirituais (gerar, copiar e salvar). Redesign da navegação: barra superior só com o menu ☰ e o logo/slogan; menu lateral à esquerda com todas as funcionalidades, Sobre e Sair/Fechar; na barra inferior, Ajustes vira Menu; no Início, Pesquisas salvas dá lugar à Leitura diária da Bíblia (Pesquisas salvas e Ajustes ficam no menu).
 
 ## 6.4.80
 

@@ -25,15 +25,41 @@
 <body data-screen="inicio" data-reunioes="hub">
   <div id="aiFloating" class="ai-floating" role="status" aria-live="polite"></div>
   <div id="pullRefresh" class="pull-refresh" aria-hidden="true"><span class="pull-refresh-arrow">↓</span><span id="pullRefreshText">Puxe para atualizar</span></div>
-  <header>
+  <header class="app-topbar">
+    <button type="button" id="menuAbrirBtn" class="menu-toggle" aria-label="Abrir o menu" aria-controls="appMenu" aria-expanded="false">
+      <span class="menu-bars" aria-hidden="true"></span>
+    </button>
     <a class="brand-title" href="sobre.html" aria-label="Sobre o NoteStyle">
       <img src="icon-header.png?v=3" alt="" class="brand-icon" width="512" height="512" decoding="async">
-      <h1>Note<span class="brand-accent">Style</span></h1>
+      <span class="brand-text">
+        <h1>Note<span class="brand-accent">Style</span></h1>
+        <p class="brand-subtitle">Formatação de notas do JW e auxílio para estudo e preparação</p>
+      </span>
     </a>
-    <p class="brand-versao screen-ajustes" id="appVersionTexto"></p>
-    <p class="brand-subtitle">Formatação de notas do JW e auxílio para estudo e preparação</p>
-    <p class="screen-formatar">Digite ou cole um texto, escolha as opções, clique em Aplicar e copie o resultado para o aplicativo de destino.</p>
+    <p class="brand-versao screen-ajustes" id="appVersionTexto" hidden></p>
   </header>
+
+  <div id="appMenuFundo" class="app-menu-fundo" hidden></div>
+  <aside id="appMenu" class="app-menu" hidden aria-label="Menu do app">
+    <div class="app-menu-cabeca">
+      <p class="app-menu-titulo">Menu</p>
+      <button type="button" id="menuFecharBtn" class="app-menu-fechar" aria-label="Fechar o menu">✕</button>
+    </div>
+    <nav class="app-menu-lista" aria-label="Funcionalidades">
+      <button type="button" data-menu-ir="inicio"><span aria-hidden="true">🏠</span> Início</button>
+      <button type="button" data-menu-ir="formatar"><span aria-hidden="true">✍️</span> Formatar</button>
+      <button type="button" data-menu-ir="biblia"><span aria-hidden="true">📖</span> Leitura diária da Bíblia</button>
+      <button type="button" data-menu-ir="leitura"><span aria-hidden="true">🔊</span> Leitura em voz</button>
+      <button type="button" data-menu-ir="reunioes"><span aria-hidden="true">📅</span> Reuniões</button>
+      <button type="button" data-menu-ir="transcricao"><span aria-hidden="true">🎙️</span> Áudio em texto</button>
+      <button type="button" data-menu-ir="backup"><span aria-hidden="true">📦</span> Backup JW</button>
+      <button type="button" data-menu-atalho="historico"><span aria-hidden="true">🗂️</span> Pesquisas salvas</button>
+      <button type="button" data-menu-ir="ajustes"><span aria-hidden="true">⚙️</span> Ajustes</button>
+      <a class="app-menu-link" href="sobre.html"><span aria-hidden="true">ℹ️</span> Sobre</a>
+      <hr class="app-menu-sep" />
+      <button type="button" id="menuSairBtn" class="app-menu-sair"><span aria-hidden="true">🚪</span> Sair / Fechar</button>
+    </nav>
+  </aside>
 
   <nav id="appNav" class="app-nav" aria-label="Telas do app">
     <button type="button" data-screen-target="inicio"><span class="nav-icon" aria-hidden="true">🏠</span><span>Início</span></button>
@@ -42,7 +68,7 @@
     <button type="button" data-screen-target="reunioes"><span class="nav-icon" aria-hidden="true">📅</span><span>Reuniões</span></button>
     <button id="navTranscricao" type="button" data-screen-target="transcricao" title="Áudio em texto"><span class="nav-icon" aria-hidden="true">🎙️</span><span>Áudio</span></button>
     <button type="button" data-screen-target="backup"><span class="nav-icon" aria-hidden="true">📦</span><span class="nav-rotulo-longo">Backup JW</span></button>
-    <button type="button" data-screen-target="ajustes"><span class="nav-icon" aria-hidden="true">⚙️</span><span>Ajustes</span></button>
+    <button type="button" id="navMenuBtn" data-menu-abrir title="Menu"><span class="nav-icon" aria-hidden="true">☰</span><span>Menu</span></button>
   </nav>
 
   <main>
@@ -98,7 +124,7 @@
           <button type="button" class="atalho" data-atalho="comentarios"><span class="atalho-icone" aria-hidden="true">✋</span><span class="atalho-nome">Comentários</span><span class="atalho-desc">Ajuda na preparação para comentar</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="dirigir"><span class="atalho-icone" aria-hidden="true">🎤</span><span class="atalho-nome">Dirigentes</span><span class="atalho-desc">Ajuda na preparação para dirigir</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="discursos"><span class="atalho-icone" aria-hidden="true">📜</span><span class="atalho-nome">Discursos</span><span class="atalho-desc">Ajuda na preparação de discursos e esboços</span><span class="atalho-trava" hidden></span></button>
-          <button type="button" class="atalho" data-atalho="historico"><span class="atalho-icone" aria-hidden="true">🗂️</span><span class="atalho-nome">Pesquisas salvas</span><span class="atalho-desc">Respostas da IA e textos que você salvou (Formatar e Áudio), neste aparelho</span></button>
+          <button type="button" class="atalho" data-atalho="biblia"><span class="atalho-icone" aria-hidden="true">📖</span><span class="atalho-nome">Leitura diária da Bíblia</span><span class="atalho-desc">Programa anual, marcações e resumo dos capítulos lidos</span></button>
           <button type="button" class="atalho" data-atalho="leitura"><span class="atalho-icone" aria-hidden="true">🔊</span><span class="atalho-nome">Leitura em voz</span><span class="atalho-desc">Ouvir um PDF, um Word ou um texto colado</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="transcricao"><span class="atalho-icone" aria-hidden="true">🎙️</span><span class="atalho-nome">Áudio em texto</span><span class="atalho-desc">Transcrever um áudio e resumir com a IA</span><span class="atalho-trava" hidden></span></button>
         </div>
@@ -1470,6 +1496,33 @@
         </div>
     </div>
 
+    <!-- Tela Leitura diária da Bíblia: programa anual (PDF sbr), marcações e resumo do grupo lido. -->
+    <div id="bibliaCard" class="card tint-3 screen-biblia">
+      <div class="leitura-topo">
+        <h2><span aria-hidden="true">📖</span> Leitura diária da Bíblia</h2>
+      </div>
+      <p class="hint" id="bibliaInstrucoes"></p>
+      <p class="hint biblia-progresso" id="bibliaProgresso" role="status"></p>
+      <div class="bk-row biblia-filtros">
+        <label class="biblia-filtro-lbl" for="bibliaSecao">Seção</label>
+        <select id="bibliaSecao" aria-label="Seção do programa"></select>
+        <label class="ai-check biblia-so-pendentes"><input type="checkbox" id="bibliaSoPendentes" autocomplete="off"> Só as pendentes</label>
+      </div>
+      <div id="bibliaLista" class="biblia-lista" aria-live="polite"></div>
+      <details id="bibliaResumoBox" class="leitura-dica biblia-resumo-box" open>
+        <summary>✨ Resumo do grupo lido</summary>
+        <p class="hint">Escolha um grupo na lista (ou use o próximo pendente) e peça um resumo no estilo das Joias espirituais. Você pode salvar o resumo neste aparelho.</p>
+        <p id="bibliaResumoAlvo" class="hint biblia-resumo-alvo"></p>
+        <div class="bk-row">
+          <button id="bibliaResumirBtn" type="button">✨ Gerar resumo</button>
+          <button id="bibliaResumoSalvarBtn" class="secondary" type="button" disabled>💾 Salvar resumo</button>
+          <button id="bibliaResumoCopiarBtn" class="secondary" type="button" disabled>📋 Copiar</button>
+        </div>
+        <textarea id="bibliaResumoTexto" class="biblia-resumo-area" placeholder="O resumo aparece aqui." spellcheck="false"></textarea>
+        <p id="bibliaResumoStatus" class="hint" role="status" aria-live="polite"></p>
+      </details>
+    </div>
+
     <!-- Tela Leitura em voz alta (atalho do Início): importar PDF ou Word, ou colar um texto, e ouvir com a frase lida destacada. É um <div> (não uma
          <section>) para não mexer na contagem que dá a cor dos outros cartões (.card:nth-of-type). -->
     <div id="leituraCard" class="card tint-rosa screen-leitura">
@@ -1850,6 +1903,7 @@
     <a class="about-link" href="termos.html">📄 Termos de Uso</a>
   </div>
 
+  <script src="leitura-biblia-programa.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

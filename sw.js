@@ -17,6 +17,7 @@ const PRECACHE = [
   'index.html',
   'app.css',
   'app.js',
+  'leitura-biblia-programa.js',
   'exportar-pagina.js',
   'defaults.json',
   'manifest.webmanifest',
