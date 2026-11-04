@@ -3666,7 +3666,7 @@
     // (o áudio em texto não usa o esforço escolhido).
     const IA_NOTA_BOTOES = {
       aiSuggestBtn: 'geral', aiSentinelaBtn: 'geral', aiStudyBtn: 'geral', aiStudyQuestionsBtn: 'geral', tdGerarBtn: 'geral',
-      joiasResponderBtn: 'geral', bibliaResumirBtn: 'geral', ebcResponderBtn: 'geral', ebcDirPerguntasBtn: 'geral',
+      joiasResponderBtn: 'geral', ebcResponderBtn: 'geral', ebcDirPerguntasBtn: 'geral',
       tesourosEsbocoBtn: 'esbocos', discursoEsbocoBtn: 'esbocos', publicoEsbocoBtn: 'esbocos', outrosEsbocoBtn: 'esbocos',
       transcricaoCorrigirBtn: 'geral', transcricaoResumirBtn: 'geral',
       transcricaoIniciarBtn: '=Reconhecimento de voz: Google Chirp 3' // texto fixo (a transcrição é do Google, não da IA de texto); o botão Ler é preenchido por vozInfoMostrar
@@ -7546,7 +7546,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.05'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.06'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -20499,24 +20499,24 @@ function saveTemplatesToStorage() {
     reunioesIr('hub', { keepScroll: true });
 
     // ---------- Leitura diária da Bíblia (programa sbr) ----------
-    // Programa em leitura-biblia-programa.js. Marcações e resumos ficam só neste aparelho.
+    // Programa em leitura-biblia-programa.js (10 seções → grupos de capítulos). Cada grupo abre uma linha por capítulo; a marcação de lido, a data
+    // (registrada ao marcar) e o resumo valem para o capítulo. Marcações e resumos ficam só neste aparelho.
     const BIBLIA_PROG = window.PROGRAMA_LEITURA_BIBLIA || { secoes: [], total: 0, instrucoes: '' };
     const BIBLIA_KEY = 'jwLibraryNoteAplicarLeituraBibliaV1';
-    const bibliaSecao = document.getElementById('bibliaSecao');
+    const BIBLIA_ICONES = { moises: '📜', terra: '🏞️', reis: '👑', exilio: '🧱', canticos: '🎶', profetas: '📣', jesus: '🧔🏽', atos: '🌍', paulo: '✉️', outros: '🔥' };
+    // Livros curtos que o programa lê "todo": quantos capítulos têm.
+    const BIBLIA_CAPS_LIVRO = { 'Obadias': 1, 'Jonas': 4, 'Naum': 3, 'Habacuque': 3, 'Sofonias': 3, 'Ageu': 2, 'Tito': 3, 'Filêmon': 1, '2 João': 1, '3 João': 1, 'Judas': 1 };
+    const bibliaSecoes = document.getElementById('bibliaSecoes');
     const bibliaLista = document.getElementById('bibliaLista');
+    const bibliaSecaoTitulo = document.getElementById('bibliaSecaoTitulo');
     const bibliaSoPendentes = document.getElementById('bibliaSoPendentes');
     const bibliaProgresso = document.getElementById('bibliaProgresso');
-    const bibliaInstrucoes = document.getElementById('bibliaInstrucoes');
-    const bibliaResumoAlvo = document.getElementById('bibliaResumoAlvo');
-    const bibliaResumoTexto = document.getElementById('bibliaResumoTexto');
-    const bibliaResumoStatus = document.getElementById('bibliaResumoStatus');
-    const bibliaResumirBtn = document.getElementById('bibliaResumirBtn');
-    const bibliaResumoSalvarBtn = document.getElementById('bibliaResumoSalvarBtn');
-    const bibliaResumoCopiarBtn = document.getElementById('bibliaResumoCopiarBtn');
-    let bibliaEstado = { itens: {}, secao: '', soPendentes: false, selecionado: '', resumos: {} };
+    let bibliaEstado = { itens: {}, secao: '', soPendentes: false, resumos: {} }; // itens: { idDoCapitulo: { lido, lidaEm } }; resumos: { idDoCapitulo: texto }
     let bibliaPronto = false;
     let bibliaResumindo = false;
-    let bibliaTextoDe = ''; // id do grupo a que pertence o texto que está na caixa do resumo
+    const bibliaAbertos = new Set(); // grupos que estão abertos (sobrevivem a trocar de seção)
+    let bibliaItensCache = null;
+    const bibliaCapsCache = new Map();
 
     function bibliaLerEstado() {
       try {
@@ -20525,7 +20525,6 @@ function saveTemplatesToStorage() {
         if (salvo.itens && typeof salvo.itens === 'object') bibliaEstado.itens = salvo.itens;
         if (typeof salvo.secao === 'string') bibliaEstado.secao = salvo.secao;
         if (typeof salvo.soPendentes === 'boolean') bibliaEstado.soPendentes = salvo.soPendentes;
-        if (typeof salvo.selecionado === 'string') bibliaEstado.selecionado = salvo.selecionado;
         if (salvo.resumos && typeof salvo.resumos === 'object') bibliaEstado.resumos = salvo.resumos;
       } catch (e) { /* sem localStorage */ }
     }
@@ -20535,36 +20534,81 @@ function saveTemplatesToStorage() {
         itens: bibliaEstado.itens,
         secao: bibliaEstado.secao,
         soPendentes: bibliaEstado.soPendentes,
-        selecionado: bibliaEstado.selecionado,
         resumos: bibliaEstado.resumos
       }));
     }
 
     function bibliaTodosItens() {
-      return (BIBLIA_PROG.secoes || []).flatMap(s => (s.itens || []).map(item => ({ ...item, secaoId: s.id, secaoNome: s.nome })));
+      if (!bibliaItensCache) bibliaItensCache = (BIBLIA_PROG.secoes || []).flatMap(s => (s.itens || []).map(item => ({ ...item, secaoId: s.id, secaoNome: s.nome })));
+      return bibliaItensCache;
     }
 
-    function bibliaItemPorId(id) {
-      return bibliaTodosItens().find(i => i.id === id) || null;
+    // Capítulos de um grupo (uma linha por capítulo). "rotulo" é o que o servidor entende ("5", "119:1-63", "119:64-176"); "nome" é o que aparece na tela.
+    function bibliaCapitulos(item) {
+      if (bibliaCapsCache.has(item.id)) return bibliaCapsCache.get(item.id);
+      const refs = Array.isArray(item.refs) && item.refs.length ? item.refs : [{ livro: item.livro, rotulo: item.rotulo || 'todo' }];
+      const lista = [];
+      refs.forEach(ref => {
+        const livro = ref.livro;
+        const r = String(ref.rotulo || 'todo').trim();
+        let m;
+        if (r === 'todo') {
+          const n = BIBLIA_CAPS_LIVRO[livro] || 1;
+          for (let c = 1; c <= n; c++) lista.push({ livro, rotulo: String(c), nome: n === 1 ? livro : livro + ' ' + c });
+        } else if ((m = r.match(/^(\d+)(?:-(\d+))?:(\d+)(?:-(\d+))?$/))) {
+          const c1 = Number(m[1]);
+          const c2 = m[2] ? Number(m[2]) : c1;
+          for (let c = c1; c <= c2; c++) {
+            if (c1 === c2) lista.push({ livro, rotulo: r, nome: livro + ' ' + r }); // "119:64-176"
+            else if (c === c2) lista.push({ livro, rotulo: c + ':1-' + m[3], nome: livro + ' ' + c + ':1-' + m[3] }); // "116-119:63" termina em 119:1-63
+            else lista.push({ livro, rotulo: String(c), nome: livro + ' ' + c });
+          }
+        } else if ((m = r.match(/^(\d+)(?:-(\d+))?$/))) {
+          const a = Number(m[1]);
+          const b = m[2] ? Number(m[2]) : a;
+          for (let c = a; c <= b; c++) lista.push({ livro, rotulo: String(c), nome: livro + ' ' + c });
+        }
+      });
+      if (!lista.length) lista.push({ livro: item.livro, rotulo: 'todo', nome: item.titulo });
+      lista.forEach((c, i) => { c.id = item.id + '#' + (i + 1); });
+      bibliaCapsCache.set(item.id, lista);
+      return lista;
+    }
+
+    // Versão antiga marcava o grupo inteiro: passa a marcar cada capítulo dele.
+    function bibliaMigrar() {
+      let mudou = false;
+      bibliaTodosItens().forEach(item => {
+        const velho = bibliaEstado.itens[item.id];
+        if (velho === undefined) return;
+        if (velho && velho.lido) {
+          bibliaCapitulos(item).forEach(c => { if (!bibliaEstado.itens[c.id]) bibliaEstado.itens[c.id] = { lido: true, lidaEm: velho.lidaEm || '' }; });
+        }
+        delete bibliaEstado.itens[item.id];
+        mudou = true;
+      });
+      if (mudou) bibliaGravarEstado();
     }
 
     function bibliaMarcaDe(id) {
       const m = bibliaEstado.itens[id];
-      return m && typeof m === 'object' ? m : { lido: false, planejada: '', lidaEm: '' };
+      return m && typeof m === 'object' ? m : { lido: false, lidaEm: '' };
     }
 
-    function bibliaContagem() {
-      const todos = bibliaTodosItens();
-      const lidos = todos.filter(i => bibliaMarcaDe(i.id).lido).length;
-      return { total: todos.length || BIBLIA_PROG.total || 0, lidos };
+    function bibliaHojeISO() { // data local (não UTC), para não virar o dia à noite
+      const d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
     }
 
-    function bibliaProximoPendente() {
-      return bibliaTodosItens().find(i => !bibliaMarcaDe(i.id).lido) || null;
+    function bibliaDataBR(iso) {
+      return /^\d{4}-\d{2}-\d{2}$/.test(iso || '') ? iso.replace(/(\d{4})-(\d{2})-(\d{2})/, '$3/$2/$1') : '';
     }
 
-    function bibliaAlvoAtual() {
-      return bibliaItemPorId(bibliaEstado.selecionado) || bibliaProximoPendente() || bibliaTodosItens()[0] || null;
+    function bibliaContar(itens) {
+      let total = 0;
+      let lidos = 0;
+      itens.forEach(i => bibliaCapitulos(i).forEach(c => { total++; if (bibliaMarcaDe(c.id).lido) lidos++; }));
+      return { total, lidos };
     }
 
     function bibliaFormatarResumo(outros) {
@@ -20572,219 +20616,302 @@ function saveTemplatesToStorage() {
       return joiasOutrosPartes(outros, false).map(p => p.texto).join('\n\n\n');
     }
 
-    function bibliaAtualizarAlvo() {
-      const item = bibliaAlvoAtual();
-      if (!item) {
-        bibliaResumoAlvo.textContent = 'Nenhum grupo no programa.';
-        return;
-      }
-      bibliaEstado.selecionado = item.id;
-      const salvo = bibliaEstado.resumos[item.id];
-      bibliaResumoAlvo.textContent = 'Grupo: ' + item.titulo + (item.secaoNome ? ' · ' + item.secaoNome : '');
-      if (bibliaTextoDe !== item.id) { // trocou o grupo: a caixa mostra o resumo dele (ou fica vazia), nunca o do grupo anterior
-        bibliaResumoTexto.value = salvo || '';
-        bibliaTextoDe = item.id;
-      }
-      const tem = Boolean(bibliaResumoTexto.value.trim());
-      bibliaResumoSalvarBtn.disabled = !tem;
-      bibliaResumoCopiarBtn.disabled = !tem;
-    }
-
+    // Progresso geral e contagem de cada botão de seção.
     function bibliaAtualizarProgresso() {
-      const { total, lidos } = bibliaContagem();
+      const { total, lidos } = bibliaContar(bibliaTodosItens());
       const pct = total ? Math.round((lidos / total) * 100) : 0;
-      bibliaProgresso.textContent = lidos + ' de ' + total + ' grupos lidos (' + pct + '%)';
+      bibliaProgresso.textContent = lidos + ' de ' + total + ' capítulos lidos (' + pct + '%)';
+      const largura = (total ? (lidos / total) * 100 : 0).toFixed(1) + '%';
+      document.getElementById('bibliaBarraGeral').style.width = largura; // barra geral abaixo do título
+      document.querySelector('#bibliaAtalhoBarra > span').style.width = largura; // e a do atalho do Início
+      (BIBLIA_PROG.secoes || []).forEach(s => {
+        const el = bibliaSecoes.querySelector('[data-secao="' + s.id + '"] .biblia-secao-cont');
+        if (!el) return;
+        const c = bibliaContar(s.itens || []);
+        el.textContent = c.lidos + '/' + c.total;
+        const btn = el.closest('.biblia-secao-btn');
+        btn.classList.toggle('completa', c.total > 0 && c.lidos === c.total); // seção toda lida: fundo verde e ✔
+        btn.querySelector('.biblia-secao-barra > span').style.width = (c.total ? (c.lidos / c.total) * 100 : 0).toFixed(1) + '%';
+      });
     }
 
-    function bibliaRenderLista() {
-      const secaoId = bibliaSecao.value || bibliaEstado.secao;
-      const soPend = bibliaSoPendentes.checked;
-      bibliaEstado.secao = secaoId;
-      bibliaEstado.soPendentes = soPend;
-      const secao = (BIBLIA_PROG.secoes || []).find(s => s.id === secaoId) || (BIBLIA_PROG.secoes || [])[0];
-      const itens = ((secao && secao.itens) || []).filter(i => !soPend || !bibliaMarcaDe(i.id).lido);
+    function bibliaAtualizarGrupo(det, item) {
+      const c = bibliaContar([item]);
+      const completo = c.total > 0 && c.lidos === c.total;
+      det.classList.toggle('lido', completo);
+      det.style.setProperty('--p', (c.total ? Math.round((c.lidos / c.total) * 100) : 0) + '%'); // a barra do grupo avança a cada capítulo lido
+      const cont = det.querySelector('.biblia-grupo-cont');
+      cont.textContent = completo ? '✔' : c.lidos + '/' + c.total;
+      cont.classList.toggle('concluido', completo);
+    }
+
+    function bibliaLinhaCapitulo(item, cap, det) {
+      const linha = document.createElement('div');
+      const marca0 = bibliaMarcaDe(cap.id);
+      linha.className = 'biblia-cap' + (marca0.lido ? ' lido' : '');
+
+      const rotulo = document.createElement('label');
+      rotulo.className = 'biblia-cap-rotulo';
+      const check = document.createElement('input');
+      check.type = 'checkbox';
+      check.className = 'biblia-item-check';
+      check.checked = Boolean(marca0.lido);
+      check.setAttribute('aria-label', 'Marcar ' + cap.nome + ' como lido');
+      const nome = document.createElement('span');
+      nome.className = 'biblia-cap-nome';
+      nome.textContent = cap.nome;
+      rotulo.append(check, nome);
+
+      const data = document.createElement('input');
+      data.type = 'text';
+      data.readOnly = true;
+      data.tabIndex = -1;
+      data.className = 'biblia-cap-data';
+      data.placeholder = 'Data da leitura';
+      data.value = marca0.lido ? bibliaDataBR(marca0.lidaEm) : '';
+      data.setAttribute('aria-label', 'Data em que ' + cap.nome + ' foi lido');
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'secondary biblia-cap-resumir';
+
+      let painel = null;
+      let area = null;
+      let status = null;
+      let bNovo = null;
+      let bSalvar = null;
+      let bCopiar = null;
+      const temResumo = () => Boolean((bibliaEstado.resumos[cap.id] || '').trim());
+      const atualizarBotao = () => { btn.textContent = temResumo() ? '📄 Resumo' : '✨ Resumir'; };
+
+      const gerar = async () => {
+        montarPainel();
+        painel.hidden = false;
+        if (bibliaResumindo) return void (status.textContent = 'Aguarde o outro resumo terminar.');
+        const accessError = studyAccessError();
+        if (accessError) return void (status.textContent = accessError);
+        bibliaResumindo = true;
+        btn.disabled = true;
+        bNovo.disabled = true;
+        status.textContent = 'Preparando o resumo de ' + cap.nome + '…';
+        try {
+          const result = await postStudy({
+            tarefa: 'leitura-biblia',
+            codigo: codigoAcessoSalvo(),
+            titulo: cap.nome,
+            refs: [{ livro: cap.livro, rotulo: cap.rotulo }]
+          }, IA_ESPERA_MS);
+          if (!result.ok) {
+            status.textContent = studyFailureMessage(result, 'Não foi possível gerar o resumo agora.');
+            return;
+          }
+          const outros = Array.isArray(result.data.outros) ? result.data.outros.filter(o => o && o.texto) : [];
+          if (!outros.length) {
+            status.textContent = result.data.erro || 'A IA não preparou o resumo. Tente de novo.';
+            return;
+          }
+          const texto = bibliaFormatarResumo(outros);
+          area.value = texto;
+          bibliaEstado.resumos[cap.id] = texto;
+          bibliaGravarEstado();
+          bSalvar.disabled = false;
+          bCopiar.disabled = false;
+          atualizarBotao();
+          status.textContent = '✅ Resumo pronto. Você pode copiar ou salvar.';
+        } catch (e) {
+          status.textContent = e && e.name === 'AbortError' ? 'A IA demorou demais. Tente de novo.' : 'Falha de conexão ao consultar a IA.';
+        } finally {
+          bibliaResumindo = false;
+          btn.disabled = false;
+          bNovo.disabled = false;
+        }
+      };
+
+      function montarPainel() {
+        if (painel) return;
+        painel = document.createElement('div');
+        painel.className = 'biblia-cap-resumo';
+        status = document.createElement('p');
+        status.className = 'hint';
+        status.setAttribute('role', 'status');
+        area = document.createElement('textarea');
+        area.className = 'biblia-resumo-area';
+        area.placeholder = 'O resumo aparece aqui.';
+        area.spellcheck = false;
+        area.value = bibliaEstado.resumos[cap.id] || '';
+        const botoes = document.createElement('div');
+        botoes.className = 'bk-row';
+        bNovo = document.createElement('button');
+        bNovo.type = 'button';
+        bNovo.textContent = '🔄 Gerar de novo';
+        bSalvar = document.createElement('button');
+        bSalvar.type = 'button';
+        bSalvar.className = 'secondary';
+        bSalvar.textContent = '💾 Salvar';
+        bCopiar = document.createElement('button');
+        bCopiar.type = 'button';
+        bCopiar.className = 'secondary';
+        bCopiar.textContent = '📋 Copiar';
+        botoes.append(bNovo, bSalvar, bCopiar);
+        painel.append(area, botoes, status);
+        linha.appendChild(painel);
+        const sincronizar = () => { const tem = Boolean(area.value.trim()); bSalvar.disabled = !tem; bCopiar.disabled = !tem; };
+        sincronizar();
+        area.addEventListener('input', () => {
+          const t = area.value;
+          if (t.trim()) bibliaEstado.resumos[cap.id] = t; else delete bibliaEstado.resumos[cap.id];
+          bibliaGravarEstado();
+          sincronizar();
+          atualizarBotao();
+        });
+        bNovo.addEventListener('click', () => { gerar(); });
+        bCopiar.addEventListener('click', async () => {
+          const t = area.value.trim();
+          if (!t) return;
+          try {
+            await navigator.clipboard.writeText(t);
+            status.textContent = '📋 Resumo copiado.';
+          } catch (e) {
+            status.textContent = 'Não consegui copiar. Selecione o texto e copie manualmente.';
+          }
+        });
+        bSalvar.addEventListener('click', async () => {
+          const t = area.value.trim();
+          if (!t) return;
+          const salvo = await historicoSalvarNota(t, 'Resumo · ' + cap.nome, 'O resumo fica em Pesquisas e respostas salvas → Textos.');
+          if (salvo) status.textContent = '💾 Resumo salvo em Pesquisas e respostas salvas.';
+        });
+      }
+
+      btn.addEventListener('click', () => {
+        if (temResumo()) {
+          montarPainel();
+          painel.hidden = !painel.hidden;
+        } else {
+          gerar();
+        }
+      });
+      atualizarBotao();
+
+      check.addEventListener('change', () => {
+        const m = bibliaMarcaDe(cap.id);
+        m.lido = check.checked;
+        m.lidaEm = check.checked ? bibliaHojeISO() : ''; // a data é só um registro: nasce ao marcar e some ao desmarcar
+        bibliaEstado.itens[cap.id] = m;
+        bibliaGravarEstado();
+        linha.classList.toggle('lido', m.lido);
+        data.value = m.lido ? bibliaDataBR(m.lidaEm) : '';
+        bibliaAtualizarGrupo(det, item);
+        bibliaAtualizarProgresso();
+      });
+
+      linha.append(rotulo, btn, data);
+      return linha;
+    }
+
+    function bibliaRenderSecao() {
+      const secoes = BIBLIA_PROG.secoes || [];
+      const secao = secoes.find(s => s.id === bibliaEstado.secao) || secoes[0];
+      bibliaSoPendentes.checked = Boolean(bibliaEstado.soPendentes);
       bibliaLista.replaceChildren();
-      if (!itens.length) {
+      bibliaSecoes.querySelectorAll('.biblia-secao-btn').forEach(b => {
+        const ativo = Boolean(secao) && b.dataset.secao === secao.id;
+        b.classList.toggle('ativa', ativo);
+        b.setAttribute('aria-pressed', ativo ? 'true' : 'false');
+      });
+      if (!secao) return;
+      bibliaEstado.secao = secao.id;
+      bibliaSecaoTitulo.textContent = (BIBLIA_ICONES[secao.id] || '📖') + ' ' + secao.nome;
+      const soPend = bibliaSoPendentes.checked;
+      let mostrados = 0;
+      (secao.itens || []).forEach(item0 => {
+        const item = { ...item0, secaoId: secao.id, secaoNome: secao.nome };
+        const c = bibliaContar([item]);
+        if (soPend && c.total > 0 && c.lidos === c.total) return;
+        mostrados++;
+        const det = document.createElement('details');
+        det.className = 'biblia-grupo';
+        det.open = bibliaAbertos.has(item.id);
+        det.addEventListener('toggle', () => { if (det.open) bibliaAbertos.add(item.id); else bibliaAbertos.delete(item.id); });
+        const sum = document.createElement('summary');
+        const titulo = document.createElement('span');
+        titulo.className = 'biblia-grupo-titulo';
+        titulo.textContent = item.titulo;
+        const cont = document.createElement('span');
+        cont.className = 'biblia-grupo-cont';
+        sum.append(titulo, cont);
+        const caps = document.createElement('div');
+        caps.className = 'biblia-caps';
+        bibliaCapitulos(item).forEach(cap => caps.appendChild(bibliaLinhaCapitulo(item, cap, det)));
+        det.append(sum, caps);
+        bibliaAtualizarGrupo(det, item);
+        bibliaLista.appendChild(det);
+      });
+      if (!mostrados) {
         const vazio = document.createElement('p');
         vazio.className = 'hint';
         vazio.textContent = soPend ? 'Nenhuma leitura pendente nesta seção.' : 'Nenhum grupo nesta seção.';
         bibliaLista.appendChild(vazio);
       }
-      itens.forEach(item => {
-        const marca = bibliaMarcaDe(item.id);
-        const row = document.createElement('div');
-        row.className = 'biblia-item' + (marca.lido ? ' lido' : '') + (bibliaEstado.selecionado === item.id ? ' selecionado' : '');
-        row.dataset.bibliaId = item.id;
-
-        const check = document.createElement('input');
-        check.type = 'checkbox';
-        check.className = 'biblia-item-check';
-        check.checked = Boolean(marca.lido);
-        check.title = 'Marcar como lido';
-        check.setAttribute('aria-label', 'Marcar ' + item.titulo + ' como lido');
-        check.addEventListener('click', e => e.stopPropagation());
-        check.addEventListener('change', () => {
-          const atual = bibliaMarcaDe(item.id);
-          atual.lido = check.checked;
-          atual.lidaEm = check.checked ? (atual.lidaEm || new Date().toISOString().slice(0, 10)) : '';
-          bibliaEstado.itens[item.id] = atual;
-          bibliaGravarEstado();
-          bibliaAtualizarProgresso();
-          bibliaRenderLista();
-        });
-
-        const corpo = document.createElement('div');
-        corpo.className = 'biblia-item-corpo';
-        const titulo = document.createElement('p');
-        titulo.className = 'biblia-item-titulo';
-        titulo.textContent = item.titulo;
-        const meta = document.createElement('p');
-        meta.className = 'biblia-item-meta';
-        meta.textContent = marca.lido && marca.lidaEm
-          ? 'Lido em ' + marca.lidaEm.replace(/(\d{4})-(\d{2})-(\d{2})/, '$3/$2/$1')
-          : (marca.planejada ? 'Planejado: ' + marca.planejada.replace(/(\d{4})-(\d{2})-(\d{2})/, '$3/$2/$1') : 'Toque para resumir');
-        corpo.append(titulo, meta);
-
-        const data = document.createElement('input');
-        data.type = 'date';
-        data.className = 'biblia-item-data';
-        data.value = marca.planejada || '';
-        data.title = 'Data planejada para a leitura';
-        data.setAttribute('aria-label', 'Data planejada de ' + item.titulo);
-        data.addEventListener('click', e => e.stopPropagation());
-        data.addEventListener('change', () => {
-          const atual = bibliaMarcaDe(item.id);
-          atual.planejada = data.value || '';
-          bibliaEstado.itens[item.id] = atual;
-          bibliaGravarEstado();
-          bibliaRenderLista();
-        });
-
-        row.append(check, corpo, data);
-        row.addEventListener('click', () => {
-          bibliaEstado.selecionado = item.id;
-          bibliaGravarEstado();
-          bibliaAtualizarAlvo();
-          bibliaRenderLista();
-          document.getElementById('bibliaResumoBox').open = true;
-          document.getElementById('bibliaResumoBox').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        });
-        bibliaLista.appendChild(row);
-      });
-      bibliaAtualizarAlvo();
       bibliaGravarEstado();
     }
 
     function bibliaMontarSecoes() {
-      bibliaSecao.replaceChildren();
+      bibliaSecoes.replaceChildren();
       (BIBLIA_PROG.secoes || []).forEach(s => {
-        const opt = document.createElement('option');
-        opt.value = s.id;
-        opt.textContent = s.nome + ' (' + (s.itens || []).length + ')';
-        bibliaSecao.appendChild(opt);
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'biblia-secao-btn';
+        b.dataset.secao = s.id;
+        const icone = document.createElement('span');
+        icone.className = 'biblia-secao-icone';
+        icone.setAttribute('aria-hidden', 'true');
+        icone.textContent = BIBLIA_ICONES[s.id] || '📖';
+        const nome = document.createElement('span');
+        nome.className = 'biblia-secao-nome';
+        nome.textContent = s.nome;
+        const cont = document.createElement('span');
+        cont.className = 'biblia-secao-cont';
+        const barra = document.createElement('span');
+        barra.className = 'biblia-secao-barra';
+        barra.appendChild(document.createElement('span'));
+        const ok = document.createElement('span');
+        ok.className = 'biblia-secao-ok';
+        ok.setAttribute('aria-hidden', 'true');
+        ok.textContent = '✔';
+        b.append(icone, nome, cont, barra, ok);
+        b.addEventListener('click', () => { bibliaEstado.secao = s.id; bibliaRenderSecao(); });
+        bibliaSecoes.appendChild(b);
       });
-      const ids = (BIBLIA_PROG.secoes || []).map(s => s.id);
-      if (bibliaEstado.secao && ids.includes(bibliaEstado.secao)) bibliaSecao.value = bibliaEstado.secao;
-      else if (ids.length) {
-        bibliaSecao.value = ids[0];
-        bibliaEstado.secao = ids[0];
-      }
-      bibliaSoPendentes.checked = Boolean(bibliaEstado.soPendentes);
+    }
+
+    let bibliaCarregado = false;
+    function bibliaCarregarEstado() { // lê as marcações uma vez (o atalho do Início mostra o andamento sem abrir a tela)
+      if (bibliaCarregado) return;
+      bibliaLerEstado();
+      bibliaMigrar();
+      bibliaCarregado = true;
     }
 
     function bibliaAoEntrar() {
+      bibliaCarregarEstado();
       if (!bibliaPronto) {
-        bibliaLerEstado();
-        bibliaInstrucoes.textContent = BIBLIA_PROG.instrucoes || 'Marque cada grupo ao terminar a leitura. Peça um resumo no estilo das Joias espirituais.';
         bibliaMontarSecoes();
+        const ids = (BIBLIA_PROG.secoes || []).map(s => s.id);
+        if (!ids.includes(bibliaEstado.secao)) { // primeira vez: abre na seção do próximo capítulo pendente
+          const prox = bibliaTodosItens().find(i => bibliaCapitulos(i).some(c => !bibliaMarcaDe(c.id).lido));
+          bibliaEstado.secao = prox ? prox.secaoId : (ids[0] || '');
+        }
+        const abrir = bibliaTodosItens().find(i => i.secaoId === bibliaEstado.secao && bibliaCapitulos(i).some(c => !bibliaMarcaDe(c.id).lido));
+        if (abrir) bibliaAbertos.add(abrir.id);
         bibliaPronto = true;
-        bibliaSecao.addEventListener('change', bibliaRenderLista);
-        bibliaSoPendentes.addEventListener('change', bibliaRenderLista);
-        bibliaResumoTexto.addEventListener('input', () => {
-          const tem = Boolean(bibliaResumoTexto.value.trim());
-          bibliaResumoSalvarBtn.disabled = !tem;
-          bibliaResumoCopiarBtn.disabled = !tem;
-          const id = bibliaTextoDe || bibliaEstado.selecionado;
-          if (id) {
-            const t = bibliaResumoTexto.value;
-            if (t.trim()) bibliaEstado.resumos[id] = t;
-            else delete bibliaEstado.resumos[id];
-            bibliaGravarEstado();
-          }
-        });
-      }
-      // Abre na seção do próximo pendente, se houver.
-      const prox = bibliaProximoPendente();
-      if (prox && prox.secaoId) {
-        bibliaSecao.value = prox.secaoId;
-        bibliaEstado.secao = prox.secaoId;
-        if (!bibliaEstado.selecionado || bibliaMarcaDe(bibliaEstado.selecionado).lido) bibliaEstado.selecionado = prox.id;
+        bibliaSoPendentes.addEventListener('change', () => { bibliaEstado.soPendentes = bibliaSoPendentes.checked; bibliaRenderSecao(); });
       }
       bibliaAtualizarProgresso();
-      bibliaRenderLista();
+      bibliaRenderSecao();
     }
 
-    async function bibliaGerarResumo() {
-      if (bibliaResumindo) return;
-      const item = bibliaAlvoAtual();
-      if (!item) return void (bibliaResumoStatus.textContent = 'Escolha um grupo na lista.');
-      const accessError = studyAccessError();
-      if (accessError) return void (bibliaResumoStatus.textContent = accessError);
-
-      bibliaEstado.selecionado = item.id;
-      bibliaResumindo = true;
-      bibliaResumirBtn.disabled = true;
-      bibliaResumoStatus.textContent = 'Preparando o resumo de ' + item.titulo + '…';
-      try {
-        const result = await postStudy({
-          tarefa: 'leitura-biblia',
-          codigo: codigoAcessoSalvo(),
-          titulo: item.titulo,
-          refs: Array.isArray(item.refs) && item.refs.length ? item.refs : [{ livro: item.livro, rotulo: item.rotulo || 'todo' }]
-        }, IA_ESPERA_MS);
-        if (!result.ok) {
-          bibliaResumoStatus.textContent = studyFailureMessage(result, 'Não foi possível gerar o resumo agora.');
-          return;
-        }
-        const outros = Array.isArray(result.data.outros) ? result.data.outros.filter(o => o && o.texto) : [];
-        if (!outros.length) {
-          bibliaResumoStatus.textContent = result.data.erro || 'A IA não preparou o resumo. Tente de novo.';
-          return;
-        }
-        const texto = bibliaFormatarResumo(outros);
-        bibliaResumoTexto.value = texto;
-        bibliaTextoDe = item.id;
-        bibliaEstado.resumos[item.id] = texto;
-        bibliaGravarEstado();
-        bibliaResumoSalvarBtn.disabled = false;
-        bibliaResumoCopiarBtn.disabled = false;
-        bibliaResumoStatus.textContent = '✅ Resumo pronto. Você pode copiar ou salvar.';
-        bibliaRenderLista();
-      } catch (e) {
-        bibliaResumoStatus.textContent = e && e.name === 'AbortError' ? 'A IA demorou demais. Tente de novo.' : 'Falha de conexão ao consultar a IA.';
-      } finally {
-        bibliaResumindo = false;
-        bibliaResumirBtn.disabled = false;
-      }
-    }
-
-    bibliaResumirBtn.addEventListener('click', () => { bibliaGerarResumo(); });
-    bibliaResumoCopiarBtn.addEventListener('click', async () => {
-      const t = bibliaResumoTexto.value.trim();
-      if (!t) return;
-      try {
-        await navigator.clipboard.writeText(t);
-        bibliaResumoStatus.textContent = '📋 Resumo copiado.';
-      } catch (e) {
-        bibliaResumoStatus.textContent = 'Não consegui copiar. Selecione o texto e copie manualmente.';
-      }
-    });
-    bibliaResumoSalvarBtn.addEventListener('click', async () => {
-      const item = bibliaAlvoAtual();
-      const t = bibliaResumoTexto.value.trim();
-      if (!t) return;
-      const salvo = await historicoSalvarNota(t, 'Resumo · ' + (item ? item.titulo : 'leitura bíblica'), 'O resumo fica em Pesquisas e respostas salvas → Textos.');
-      if (salvo) bibliaResumoStatus.textContent = '💾 Resumo salvo em Pesquisas e respostas salvas.';
-    });
+    bibliaCarregarEstado();
+    bibliaAtualizarProgresso();
     if (currentScreen() === 'biblia') bibliaAoEntrar();
   

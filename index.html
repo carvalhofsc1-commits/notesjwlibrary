@@ -124,7 +124,7 @@
           <button type="button" class="atalho" data-atalho="comentarios"><span class="atalho-icone" aria-hidden="true">✋</span><span class="atalho-nome">Comentários</span><span class="atalho-desc">Ajuda na preparação para comentar</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="dirigir"><span class="atalho-icone" aria-hidden="true">🎤</span><span class="atalho-nome">Dirigentes</span><span class="atalho-desc">Ajuda na preparação para dirigir</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="discursos"><span class="atalho-icone" aria-hidden="true">📜</span><span class="atalho-nome">Discursos</span><span class="atalho-desc">Ajuda na preparação de discursos e esboços</span><span class="atalho-trava" hidden></span></button>
-          <button type="button" class="atalho" data-atalho="biblia"><span class="atalho-icone" aria-hidden="true">📖</span><span class="atalho-nome">Leitura diária da Bíblia</span><span class="atalho-desc">Programa anual e resumo dos capítulos</span></button>
+          <button type="button" class="atalho" data-atalho="biblia"><span class="atalho-icone" aria-hidden="true">📖</span><span class="atalho-nome">Leitura diária da Bíblia</span><span class="atalho-desc">Programa anual e resumo dos capítulos</span><span class="atalho-barra" id="bibliaAtalhoBarra" aria-hidden="true"><span></span></span></button>
           <button type="button" class="atalho" data-atalho="leitura"><span class="atalho-icone" aria-hidden="true">🔊</span><span class="atalho-nome">Leitura em voz</span><span class="atalho-desc">Ouvir um PDF, um Word ou um texto colado</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="transcricao"><span class="atalho-icone" aria-hidden="true">🎙️</span><span class="atalho-nome">Áudio em texto</span><span class="atalho-desc">Transcrever um áudio e resumir com a IA</span><span class="atalho-trava" hidden></span></button>
         </div>
@@ -1501,26 +1501,19 @@
       <div class="leitura-topo">
         <h2><span aria-hidden="true">📖</span> Leitura diária da Bíblia</h2>
       </div>
-      <p class="hint" id="bibliaInstrucoes"></p>
       <p class="hint biblia-progresso" id="bibliaProgresso" role="status"></p>
-      <div class="bk-row biblia-filtros">
-        <label class="biblia-filtro-lbl" for="bibliaSecao">Seção</label>
-        <select id="bibliaSecao" aria-label="Seção do programa"></select>
-        <label class="ai-check biblia-so-pendentes"><input type="checkbox" id="bibliaSoPendentes" autocomplete="off"> Só as pendentes</label>
+      <div class="biblia-barra-geral" aria-hidden="true"><span id="bibliaBarraGeral"></span></div>
+      <div class="biblia-caixa">
+        <h3 class="biblia-caixa-titulo">Seções</h3>
+        <div id="bibliaSecoes" class="biblia-secoes"></div>
       </div>
-      <div id="bibliaLista" class="biblia-lista" aria-live="polite"></div>
-      <details id="bibliaResumoBox" class="leitura-dica biblia-resumo-box" open>
-        <summary>✨ Resumo do grupo lido</summary>
-        <p class="hint">Escolha um grupo na lista (ou use o próximo pendente) e peça um resumo no estilo das Joias espirituais. Você pode salvar o resumo neste aparelho.</p>
-        <p id="bibliaResumoAlvo" class="hint biblia-resumo-alvo"></p>
-        <div class="bk-row">
-          <button id="bibliaResumirBtn" type="button">✨ Gerar resumo</button>
-          <button id="bibliaResumoSalvarBtn" class="secondary" type="button" disabled>💾 Salvar resumo</button>
-          <button id="bibliaResumoCopiarBtn" class="secondary" type="button" disabled>📋 Copiar</button>
+      <div class="biblia-caixa">
+        <div class="biblia-grupos-topo">
+          <h3 class="biblia-caixa-titulo" id="bibliaSecaoTitulo"></h3>
+          <label class="ai-check biblia-so-pendentes"><input type="checkbox" id="bibliaSoPendentes" autocomplete="off"> Só as pendentes</label>
         </div>
-        <textarea id="bibliaResumoTexto" class="biblia-resumo-area" placeholder="O resumo aparece aqui." spellcheck="false"></textarea>
-        <p id="bibliaResumoStatus" class="hint" role="status" aria-live="polite"></p>
-      </details>
+        <div id="bibliaLista" class="biblia-lista" aria-live="polite"></div>
+      </div>
     </div>
 
     <!-- Tela Leitura em voz alta (atalho do Início): importar PDF ou Word, ou colar um texto, e ouvir com a frase lida destacada. É um <div> (não uma

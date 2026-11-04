@@ -9799,18 +9799,149 @@ details.transcricao-bloco:not([open]) {
 .screen-biblia .biblia-progresso {
   margin: 0 0 10px;
   font-weight: 650;
+  text-align: center;
 }
-.biblia-filtros {
-  align-items: center;
+.screen-biblia .leitura-topo h2 > span {
+  font-size: 1.6em;
+  line-height: 1;
+  vertical-align: -.12em;
+}
+.card.tint-3.screen-biblia { /* sem o quadro grande em volta: só os quadros de cada parte */
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+.biblia-barra-geral {
+  height: 10px;
+  margin: 0 auto 12px;
+  max-width: 22rem;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--muted) 28%, transparent);
+}
+.biblia-barra-geral > span {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: #16a34a;
+  transition: width .25s;
+}
+.atalho-barra {
+  display: block;
+  width: 78%;
+  height: 5px;
+  margin: 4px auto 0;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--muted) 30%, transparent);
+}
+.atalho-barra > span {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: #16a34a;
+}
+.biblia-caixa {
+  border: 2px solid color-mix(in srgb, var(--brand) 50%, var(--line));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--brand) 17%, var(--card));
+  padding: 10px;
+  margin-bottom: 12px;
+}
+.biblia-caixa-titulo {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-weight: 750;
+  color: var(--text);
+}
+.biblia-secoes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
-  margin-bottom: 10px;
 }
-.biblia-filtro-lbl {
-  font-size: .85rem;
-  font-weight: 650;
+.biblia-secao-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 2px;
+  min-height: 0;
+  padding: 10px 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--soft) 55%, var(--card));
+  color: var(--text);
+  font: inherit;
+  text-align: center;
+  box-shadow: none;
+}
+.biblia-secao-btn {
+  position: relative;
+}
+.biblia-secao-btn.completa {
+  background: color-mix(in srgb, #16a34a 28%, var(--card));
+  border-color: color-mix(in srgb, #16a34a 60%, var(--line));
+}
+.biblia-secao-ok {
+  display: none;
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 1.05rem;
+  font-weight: 900;
+  line-height: 1;
+  color: #16a34a;
+}
+.biblia-secao-btn.completa .biblia-secao-ok { display: block; }
+.biblia-secao-barra {
+  display: block;
+  align-self: stretch;
+  height: 6px;
+  margin-top: 4px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--muted) 28%, transparent);
+}
+.biblia-secao-barra > span {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: #16a34a;
+  transition: width .25s;
+}
+.biblia-secao-btn.ativa {
+  border-color: var(--brand);
+  box-shadow: inset 0 0 0 2px var(--brand);
+}
+.biblia-secao-icone {
+  font-size: 1.7rem;
+  line-height: 1.1;
+}
+.biblia-secao-nome {
+  font-size: .82rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.biblia-secao-cont {
+  margin-top: auto; /* contagem e barra ficam sempre na base do botão, alinhadas entre todos */
+  padding-top: 2px;
+  font-size: .74rem;
+  font-weight: 600;
   color: var(--muted);
 }
-#bibliaSecao {
+.biblia-grupos-topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.biblia-grupos-topo .biblia-caixa-titulo {
+  margin: 0;
   flex: 1 1 auto;
   min-width: 0;
 }
@@ -9822,57 +9953,131 @@ details.transcricao-bloco:not([open]) {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: min(52vh, 520px);
-  overflow: auto;
-  padding: 2px 2px 8px;
-  margin-bottom: 12px;
 }
-.biblia-item {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 8px 10px;
-  align-items: center;
-  padding: 10px 12px;
+.biblia-grupo {
   border: 1px solid var(--line);
   border-radius: 14px;
   background: color-mix(in srgb, var(--soft) 55%, var(--card));
 }
-.biblia-item.lido {
-  border-color: color-mix(in srgb, #16a34a 35%, var(--line));
-  background: color-mix(in srgb, #16a34a 8%, var(--card));
+.biblia-grupo.lido {
+  border-color: color-mix(in srgb, #16a34a 55%, var(--line));
 }
-.biblia-item.selecionado {
-  box-shadow: inset 0 0 0 2px var(--brand);
+.biblia-grupo > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 11px 12px;
+  cursor: pointer;
+  list-style: none;
+  border-radius: 12px; /* a barra verde enche o cartão da esquerda para a direita conforme os capítulos são lidos */
+  background: linear-gradient(90deg, color-mix(in srgb, #16a34a 42%, transparent) var(--p, 0%), transparent var(--p, 0%));
 }
-.biblia-item-check {
-  width: 1.25rem;
-  height: 1.25rem;
+.biblia-grupo > summary::-webkit-details-marker { display: none; }
+.biblia-grupo > summary::after {
+  content: "▾";
+  flex: 0 0 auto;
+  color: var(--muted);
+  transition: transform .15s;
 }
-.biblia-item-corpo {
+.biblia-grupo[open] > summary::after { transform: rotate(180deg); }
+.biblia-grupo-titulo {
+  flex: 1 1 auto;
   min-width: 0;
-}
-.biblia-item-titulo {
-  margin: 0;
   font-weight: 700;
   font-size: .95rem;
   color: var(--text);
 }
-.biblia-item-meta {
-  margin: 2px 0 0;
+.biblia-grupo-cont.concluido {
+  color: #16a34a;
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+.biblia-grupo-cont {
+  flex: 0 0 auto;
   font-size: .78rem;
+  font-weight: 600;
   color: var(--muted);
 }
-.biblia-item-data {
-  width: 8.2rem;
-  max-width: 100%;
-  font-size: .82rem;
+.biblia-caps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 10px 10px;
 }
-.biblia-resumo-alvo {
+.biblia-cap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 8px;
+  align-items: center;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+}
+.biblia-cap.lido {
+  border-color: color-mix(in srgb, #16a34a 35%, var(--line));
+}
+.biblia-cap-rotulo {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin: 0; /* o estilo geral dos rótulos põe margem em cima */
+  cursor: pointer;
+}
+.biblia-cap .biblia-item-check {
+  flex: 0 0 auto;
+  width: 1.05rem;
+  height: 1.05rem;
+  min-width: 0;
+  min-height: 0; /* o estilo geral dos campos exige 44px */
+  margin: 0;
+  padding: 0;
+}
+.biblia-cap-nome {
+  min-width: 0;
   font-weight: 650;
+  font-size: .85rem;
+  line-height: 1.2;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+.biblia-cap-data {
+  grid-column: 1;
+  grid-row: 2;
+  width: 100%;
+  max-width: 9rem;
+  min-height: 0;
+  height: 1.45rem;
+  padding: 0 6px;
+  font-size: .72rem;
+  color: var(--muted);
+  background: transparent;
+  cursor: default;
+}
+.biblia-cap-resumir {
+  grid-column: 2;
+  grid-row: 2;
+  width: auto;
+  min-height: 0;
+  height: 1.45rem;
+  padding: 0 10px;
+  font-size: .72rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+.biblia-cap-resumo {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+}
+.biblia-cap-resumo[hidden] { display: none; }
 .biblia-resumo-area {
   width: 100%;
   min-height: 140px;
-  margin-top: 8px;
+  margin-top: 4px;
   resize: vertical;
 }
