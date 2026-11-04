@@ -56,9 +56,17 @@
       <button type="button" data-menu-atalho="historico"><span aria-hidden="true">🗂️</span> Pesquisas salvas</button>
       <button type="button" data-menu-ir="ajustes"><span aria-hidden="true">⚙️</span> Ajustes</button>
       <a class="app-menu-link" href="sobre.html"><span aria-hidden="true">ℹ️</span> Sobre</a>
-      <hr class="app-menu-sep" />
-      <button type="button" id="menuSairBtn" class="app-menu-sair"><span aria-hidden="true">🚪</span> Sair / Fechar</button>
     </nav>
+    <div class="app-menu-rodape">
+      <div class="theme-switch" role="group" aria-label="Tema do aplicativo">
+        <button type="button" class="theme-btn" data-theme-choice="auto">Auto</button>
+        <button type="button" class="theme-btn" data-theme-choice="light">☀️ Claro</button>
+        <button type="button" class="theme-btn" data-theme-choice="dark">🌙 Escuro</button>
+      </div>
+      <p class="app-menu-versao" id="menuVersao"></p>
+      <p class="app-menu-links"><a href="termos.html">Termos de uso</a> · <a href="privacidade.html">Política de privacidade</a></p>
+      <a class="app-menu-dev" href="sobre.html" aria-label="Carvalho Apps, desenvolvedor do NoteStyle"><img src="logo-cavalhoapps.png" alt="Carvalho Apps" width="72" height="48" loading="lazy"></a>
+    </div>
   </aside>
 
   <nav id="appNav" class="app-nav" aria-label="Telas do app">
@@ -1881,14 +1889,6 @@
   <noscript>
     <p style="padding:16px;text-align:center">Este conversor precisa de JavaScript ativado para funcionar.</p>
   </noscript>
-
-  <div class="theme-switch-row screen-ajustes">
-    <div class="theme-switch" role="group" aria-label="Tema do aplicativo">
-      <button type="button" class="theme-btn" data-theme-choice="auto">Auto</button>
-      <button type="button" class="theme-btn" data-theme-choice="light">☀️ Claro</button>
-      <button type="button" class="theme-btn" data-theme-choice="dark">🌙 Escuro</button>
-    </div>
-  </div>
 
   <div class="about-link-row screen-ajustes">
     <a class="about-link" href="sobre.html">ℹ️ Sobre o app</a>

@@ -124,12 +124,6 @@
     document.getElementById('menuFecharBtn').addEventListener('click', menuFechar);
     document.getElementById('appMenuFundo').addEventListener('click', menuFechar);
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && !document.getElementById('appMenu').hidden) menuFechar(); });
-    document.getElementById('menuSairBtn').addEventListener('click', () => {
-      menuFechar();
-      showScreen('inicio');
-      // Em PWA/navegador não há "sair" de verdade: volta ao Início e tenta fechar a aba se o sistema permitir.
-      try { window.close(); } catch (e) { /* o navegador pode bloquear */ }
-    });
     document.querySelectorAll('#appMenu [data-menu-ir]').forEach(btn => {
       btn.addEventListener('click', () => showScreen(btn.dataset.menuIr));
     });
@@ -7546,8 +7540,9 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.11'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.12'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
+    document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 

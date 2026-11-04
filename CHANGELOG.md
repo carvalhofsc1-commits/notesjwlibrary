@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.12
+
+Menu lateral: mais estreito; o botão Sair / Fechar saiu (o navegador não deixa um app fechar a si mesmo); a escolha de tema (Auto, Claro, Escuro) passou da tela de Ajustes para a base do menu; a base do menu também mostra a versão do app, os links de Termos de uso e Política de privacidade e, bem discreto, o logo da Carvalho Apps.
+
 ## 6.5.11
 
 Leitura diária da Bíblia: cada botão de seção ganha um fundo suave de cor própria (a seção completa continua verde).

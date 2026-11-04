@@ -307,7 +307,7 @@
       left: 0;
       bottom: 0;
       z-index: 1700;
-      width: min(320px, 88vw);
+      width: min(264px, 78vw);
       display: flex;
       flex-direction: column;
       background: var(--card);
@@ -384,24 +384,56 @@
       transform: none;
     }
 
-    .app-menu-sep {
-      margin: 10px 8px;
-      border: 0;
+    /* Base do menu: tema, versão, termos e privacidade, e o desenvolvedor (bem discreto). */
+    .app-menu-rodape {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 12px 0;
       border-top: 1px solid var(--line);
     }
 
-    .app-menu-sair {
-      color: var(--danger, #b91c1c) !important;
+    .app-menu-rodape .theme-switch {
+      width: 100%;
+    }
+
+    .app-menu-rodape .theme-btn {
+      padding: 8px 4px;
+      font-size: .78rem;
+      min-height: 0;
+    }
+
+    .app-menu-versao,
+    .app-menu-links {
+      margin: 0;
+      text-align: center;
+      font-size: .74rem;
+      color: var(--muted);
+    }
+
+    .app-menu-links a {
+      color: var(--muted);
+      text-decoration: underline;
+    }
+
+    .app-menu-dev {
+      display: inline-flex;
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 3px 8px;
+      opacity: .75;
+    }
+
+    .app-menu-dev img {
+      display: block;
+      width: 54px;
+      height: auto;
     }
 
     body.menu-aberto {
       overflow: hidden;
-    }
-
-    .theme-switch-row {
-      display: flex;
-      justify-content: center;
-      padding: 4px 16px 18px;
     }
 
     .theme-switch {
