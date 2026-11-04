@@ -7540,7 +7540,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.13'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.14'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -20672,6 +20672,8 @@ function saveTemplatesToStorage() {
       data.placeholder = 'Data da leitura';
       data.value = marca0.lido ? bibliaDataBR(marca0.lidaEm) : '';
       data.setAttribute('aria-label', 'Data em que ' + cap.nome + ' foi lido');
+      const ajustarData = () => { data.style.width = 'calc(' + Math.max(data.value.length, data.value ? 10 : data.placeholder.length) + 'ch + 18px)'; }; // do tamanho do texto
+      ajustarData();
 
       const btn = document.createElement('button');
       btn.type = 'button';
@@ -20803,6 +20805,7 @@ function saveTemplatesToStorage() {
         bibliaGravarEstado();
         linha.classList.toggle('lido', m.lido);
         data.value = m.lido ? bibliaDataBR(m.lidaEm) : '';
+        ajustarData();
         bibliaAtualizarGrupo(det, item);
         bibliaAtualizarProgresso();
       });

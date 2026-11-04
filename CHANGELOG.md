@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.14
+
+Leitura diária da Bíblia: o campo da data de cada capítulo agora tem o tamanho do texto (a data, ou o aviso "Data da leitura" quando ainda não foi lido), em vez de ocupar a linha toda.
+
 ## 6.5.13
 
 Barra de baixo: o botão Backup JW saiu e entrou o da Leitura diária da Bíblia (o Backup continua no menu e no Início).
