@@ -23,6 +23,7 @@ const LIMITE_CORRECOES_POR_HORA = 120; // um pedido por bloco de ~5000 caractere
 const MAX_CARACTERES_CORRECAO = 8000; // por pedido (o app manda o texto em blocos)
 const MAX_CARACTERES_ANTES = 500; // overlap do bloco anterior na correção (só contexto)
 const MAX_CAMPO_USUARIO = 2500; // "sobre o áudio" (com os dados do áudio) e "instruções do resumo"
+const campoDoUsuario = (valor) => (typeof valor === "string" ? valor.replace(/\s+/g, " ").trim().slice(0, MAX_CAMPO_USUARIO) : "");
 
 // Documentos relacionados ao áudio (anexados pelo usuário só para o resumo): o texto já vem extraído do aparelho; as imagens vêm reduzidas (JPEG em base64).
 const MAX_DOCUMENTOS = 6;
@@ -181,8 +182,6 @@ function montarPedidoCorrecao(texto, contexto, parte, total, antes) {
     texto
   );
 }
-
-const campoDoUsuario = (valor) => (typeof valor === "string" ? valor.replace(/\s+/g, " ").trim().slice(0, MAX_CAMPO_USUARIO) : "");
 
 function trocarCulto(texto) {
   return String(texto || "")

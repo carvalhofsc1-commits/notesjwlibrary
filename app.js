@@ -7480,7 +7480,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.4.75'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.4.76'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
@@ -18431,11 +18431,11 @@ function saveTemplatesToStorage() {
     trResumoLinhasAtualizar();
 
     // Lixeira no topo dos blocos "Informe o tipo de áudio" e "Dados do áudio": limpa todos os campos do bloco.
-    function trLixeira(botao, temTexto, limpar, aviso) {
+    function trLixeira(botao, temTexto, limpar, aviso, confirmar) {
       botao.addEventListener('click', async event => {
         event.preventDefault(); // dentro do <summary>: não abre nem fecha o bloco
         event.stopPropagation();
-        if (temTexto() && !(await askConfirm('Limpar todos os campos deste bloco? O que está escrito neles será apagado.', 'Limpar os campos'))) return;
+        if (temTexto() && !(await askConfirm(confirmar || 'Limpar todos os campos deste bloco? O que está escrito neles será apagado.', 'Limpar os campos'))) return;
         limpar();
         trInfo.textContent = aviso;
       });
@@ -18546,7 +18546,8 @@ function saveTemplatesToStorage() {
       const coluna = letras => letras.split('').reduce((n, c) => n * 26 + c.charCodeAt(0) - 64, 0) - 1;
       const saida = [];
       for (const folha of Array.from(trXml(livro).getElementsByTagName('sheet'))) {
-        const alvo = relacoes[folha.getAttribute('r:id')];
+        const rid = folha.getAttribute('r:id') || folha.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id');
+        const alvo = relacoes[rid];
         if (!alvo) continue;
         const dados = await trZipTexto(zip, alvo.replace(/^\//, '').replace(/^(?!xl\/)/, 'xl/'));
         if (!dados) continue;
@@ -18574,7 +18575,22 @@ function saveTemplatesToStorage() {
     async function trDocLerPptx(buffer) {
       const zip = await trZip(buffer, 'PowerPoint (.pptx)');
       const numero = nome => Number((nome.match(/(\d+)\.xml$/) || [0, 0])[1]);
-      const textoDe = xml => Array.from(trXml(xml).getElementsByTagName('a:p')).map(p => Array.from(p.getElementsByTagName('a:t')).map(t => t.textContent).join('')).map(s => s.trim()).filter(Boolean);
+      // DrawingML usa xmlns a=…: getElementsByTagName('a:t') falha nos navegadores; vale o localName (p, t).
+      const trTagsLocais = (raiz, nome) => {
+        const lista = [];
+        const visit = no => {
+          if (!no) return;
+          if (no.nodeType === 1 && (no.localName || no.nodeName || '').replace(/^.*:/, '') === nome) lista.push(no);
+          for (let i = 0; i < (no.childNodes || []).length; i++) visit(no.childNodes[i]);
+        };
+        visit(raiz.documentElement || raiz);
+        return lista;
+      };
+      const textoDe = xml => {
+        if (!xml) return [];
+        const doc = trXml(xml);
+        return trTagsLocais(doc, 'p').map(p => trTagsLocais(p, 't').map(t => t.textContent || '').join('')).map(s => s.trim()).filter(Boolean);
+      };
       const slides = Object.keys(zip.files).filter(n => /^ppt\/slides\/slide\d+\.xml$/.test(n)).sort((a, b) => numero(a) - numero(b));
       if (!slides.length) throw new Error('Não consegui abrir este arquivo: ele não parece um PowerPoint (.pptx) válido.');
       const saida = [];
@@ -18590,34 +18606,44 @@ function saveTemplatesToStorage() {
 
     // A imagem reduzida (lado maior até 1568 px) e em JPEG, para caber no pedido e para a IA ler bem.
     async function trDocLerImagem(arquivo) {
-      let figura;
-      try { figura = await createImageBitmap(arquivo); } catch (e) {
-        figura = await new Promise((ok, falha) => {
-          const url = URL.createObjectURL(arquivo);
-          const img = new Image();
-          img.onload = () => { URL.revokeObjectURL(url); ok(img); };
-          img.onerror = () => { URL.revokeObjectURL(url); falha(new Error('Não consegui abrir esta imagem neste aparelho.')); };
-          img.src = url;
-        });
+      let figura = null;
+      let ehBitmap = false;
+      try {
+        try {
+          figura = await createImageBitmap(arquivo);
+          ehBitmap = true;
+        } catch (e) {
+          figura = await new Promise((ok, falha) => {
+            const url = URL.createObjectURL(arquivo);
+            const img = new Image();
+            img.onload = () => { URL.revokeObjectURL(url); ok(img); };
+            img.onerror = () => { URL.revokeObjectURL(url); falha(new Error('Não consegui abrir esta imagem neste aparelho.')); };
+            img.src = url;
+          });
+        }
+        const largura = figura.width || figura.naturalWidth;
+        const altura = figura.height || figura.naturalHeight;
+        let lado = Math.min(1, 1568 / Math.max(largura, altura));
+        let qualidade = 0.82;
+        for (let tentativa = 0; tentativa < 6; tentativa++) {
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(largura * lado));
+          canvas.height = Math.max(1, Math.round(altura * lado));
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#ffffff'; // PNG com fundo transparente
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(figura, 0, 0, canvas.width, canvas.height);
+          const data = canvas.toDataURL('image/jpeg', qualidade).split(',')[1] || '';
+          if (data && data.length <= TR_IMAGEM_BASE64_MAX) return { data, extra: 'imagem ' + canvas.width + ' × ' + canvas.height };
+          lado *= 0.8;
+          qualidade = Math.max(0.55, qualidade - 0.06);
+        }
+        throw new Error('Esta imagem é pesada demais mesmo reduzida. Use uma menor.');
+      } finally {
+        if (ehBitmap && figura && typeof figura.close === 'function') {
+          try { figura.close(); } catch (e) { /* já liberada */ }
+        }
       }
-      const largura = figura.width || figura.naturalWidth;
-      const altura = figura.height || figura.naturalHeight;
-      let lado = Math.min(1, 1568 / Math.max(largura, altura));
-      let qualidade = 0.82;
-      for (let tentativa = 0; tentativa < 6; tentativa++) {
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.max(1, Math.round(largura * lado));
-        canvas.height = Math.max(1, Math.round(altura * lado));
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#ffffff'; // PNG com fundo transparente
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(figura, 0, 0, canvas.width, canvas.height);
-        const data = canvas.toDataURL('image/jpeg', qualidade).split(',')[1] || '';
-        if (data && data.length <= TR_IMAGEM_BASE64_MAX) return { data, extra: 'imagem ' + canvas.width + ' × ' + canvas.height };
-        lado *= 0.8;
-        qualidade = Math.max(0.55, qualidade - 0.06);
-      }
-      throw new Error('Esta imagem é pesada demais mesmo reduzida. Use uma menor.');
     }
 
     async function trDocLer(arquivo) {
@@ -18641,42 +18667,62 @@ function saveTemplatesToStorage() {
       return { tipo: 'texto', texto };
     }
 
+    let trDocsLendo = false;
     async function trDocsAdicionarArquivos(arquivos) {
+      if (trDocsLendo) return;
+      trDocsLendo = true;
+      trDocsAdicionar.disabled = true;
       const avisos = [];
-      for (const arquivo of arquivos) {
-        if (trDocs.length >= TR_DOCS_MAX) { avisos.push('A lista aceita até ' + TR_DOCS_MAX + ' arquivos: "' + arquivo.name + '" e os seguintes não foram adicionados.'); break; }
-        const ehImagem = /^image\//.test(arquivo.type) || /\.(png|jpe?g|webp|gif|heic|heif|bmp)$/i.test(arquivo.name || '');
-        if (ehImagem && trDocs.filter(d => d.tipo === 'imagem').length >= TR_DOCS_IMAGENS_MAX) { avisos.push('Até ' + TR_DOCS_IMAGENS_MAX + ' imagens: "' + arquivo.name + '" não foi adicionada.'); continue; }
-        trDocsInfo.textContent = '⏳ Lendo "' + arquivo.name + '"…';
-        try {
-          const r = await trDocLer(arquivo);
-          if (r.tipo === 'texto') {
-            const original = r.texto.length;
-            const sobra = Math.max(0, TR_DOCS_CARACTERES_TOTAL - trDocsCaracteres());
-            if (!sobra) { avisos.push('"' + arquivo.name + '": o limite de texto dos anexos (' + TR_DOCS_CARACTERES_TOTAL.toLocaleString('pt-BR') + ' caracteres) já foi atingido.'); continue; }
-            r.texto = r.texto.slice(0, Math.min(TR_DOC_CARACTERES, sobra));
-            r.extra = r.texto.length.toLocaleString('pt-BR') + ' caracteres' + (original > r.texto.length ? ' (só o começo: o arquivo tem ' + original.toLocaleString('pt-BR') + ')' : '');
+      try {
+        for (const arquivo of arquivos) {
+          if (trDocs.length >= TR_DOCS_MAX) { avisos.push('A lista aceita até ' + TR_DOCS_MAX + ' arquivos: "' + arquivo.name + '" e os seguintes não foram adicionados.'); break; }
+          const ehImagem = /^image\//.test(arquivo.type) || /\.(png|jpe?g|webp|gif|heic|heif|bmp)$/i.test(arquivo.name || '');
+          if (ehImagem && trDocs.filter(d => d.tipo === 'imagem').length >= TR_DOCS_IMAGENS_MAX) { avisos.push('Até ' + TR_DOCS_IMAGENS_MAX + ' imagens: "' + arquivo.name + '" não foi adicionada.'); continue; }
+          trDocsInfo.textContent = '⏳ Lendo "' + arquivo.name + '"…';
+          try {
+            const r = await trDocLer(arquivo);
+            if (r.tipo === 'texto') {
+              const original = r.texto.length;
+              const sobra = Math.max(0, TR_DOCS_CARACTERES_TOTAL - trDocsCaracteres());
+              if (!sobra) { avisos.push('"' + arquivo.name + '": o limite de texto dos anexos (' + TR_DOCS_CARACTERES_TOTAL.toLocaleString('pt-BR') + ' caracteres) já foi atingido.'); continue; }
+              r.texto = r.texto.slice(0, Math.min(TR_DOC_CARACTERES, sobra));
+              r.extra = r.texto.length.toLocaleString('pt-BR') + ' caracteres' + (original > r.texto.length ? ' (só o começo: o arquivo tem ' + original.toLocaleString('pt-BR') + ')' : '');
+            }
+            trDocs.push({ id: ++trDocsSeq, nome: arquivo.name || 'arquivo', ...r });
+            trDocsRender();
+          } catch (e) {
+            avisos.push('"' + arquivo.name + '": ' + ((e && e.message) || 'não consegui ler este arquivo.'));
           }
-          trDocs.push({ id: ++trDocsSeq, nome: arquivo.name || 'arquivo', ...r });
-          trDocsRender();
-        } catch (e) {
-          avisos.push('"' + arquivo.name + '": ' + ((e && e.message) || 'não consegui ler este arquivo.'));
         }
+        trDocsInfo.textContent = avisos.length ? avisos.join(' ') : (trDocs.length ? '✅ Pronto. A IA vai ler esse material ao pedir o resumo.' : '');
+      } finally {
+        trDocsLendo = false;
+        trDocsRender();
       }
-      trDocsInfo.textContent = avisos.length ? avisos.join(' ') : (trDocs.length ? '✅ Pronto. A IA vai ler esse material ao pedir o resumo.' : '');
     }
-    trDocsAdicionar.addEventListener('click', () => trDocsArquivo.click());
+    trDocsAdicionar.addEventListener('click', () => { if (!trDocsLendo) trDocsArquivo.click(); });
     trDocsArquivo.addEventListener('change', () => {
       const arquivos = Array.from(trDocsArquivo.files || []);
       trDocsArquivo.value = '';
       if (arquivos.length) trDocsAdicionarArquivos(arquivos);
     });
-    trLixeira(document.getElementById('transcricaoDocsLimparBtn'), () => trDocs.length > 0, () => trDocsLimpar(), '🗑️ Documentos tirados.');
+    trLixeira(
+      document.getElementById('transcricaoDocsLimparBtn'),
+      () => trDocs.length > 0,
+      () => trDocsLimpar(),
+      '🗑️ Documentos tirados.',
+      'Tirar todos os documentos e imagens anexados?'
+    );
     // O que vai junto no pedido do resumo: o texto dos documentos e as imagens.
     function trDocsPayload() {
       const documentos = trDocs.filter(d => d.tipo === 'texto').map(d => ({ nome: d.nome, texto: d.texto }));
       const imagens = trDocs.filter(d => d.tipo === 'imagem').map(d => ({ nome: d.nome, media: d.media, data: d.data }));
       return { ...(documentos.length ? { documentos } : {}), ...(imagens.length ? { imagens } : {}) };
+    }
+    // A Vercel aceita ~4,5 MB por pedido: estima o JSON antes de enviar (imagens em base64 pesam muito).
+    const TR_POST_MAX = 4_200_000;
+    function trPayloadCabe(payload) {
+      try { return JSON.stringify(payload).length <= TR_POST_MAX; } catch (e) { return false; }
     }
     trDocsRender();
 
@@ -18977,6 +19023,7 @@ function saveTemplatesToStorage() {
     function trMensagem(r, padrao) {
       if (r.cancelado) return 'Cancelado.';
       if (r.status === 404 || r.status === 501) return 'A transcrição só funciona no site publicado (notestyle.com.br).';
+      if (r.status === 413) return 'O pedido ficou grande demais (em geral pelas imagens anexadas). Tire uma ou mais imagens e tente de novo.';
       if (r.status === 403 && r.dados && /Código de texto/.test(r.dados.erro || '')) return r.dados.erro;
       return (r.dados && r.dados.erro) || padrao;
     }
@@ -19756,13 +19803,16 @@ function saveTemplatesToStorage() {
       const usouCorrigido = Boolean(trCorrigido.value.trim());
       const contexto = (trDadosTexto() + ' ' + trContexto.value).trim();
       const instrucoes = trInstrucoes.value;
+      const anexosPayload = trDocsPayload();
       const baseMsg = usouCorrigido ? 'o texto corrigido' : 'a transcrição';
       try {
         let final;
         if (fonteResumo.length <= TRANSCRICAO_RESUMO_DIRETO) {
           trInfo.textContent = '✨ A IA está resumindo ' + baseMsg + (trDocs.length ? ' e lendo os arquivos anexados' : '') + '…';
           trResumirProgresso.querySelector('.transcricao-rodando-txt').textContent = 'A IA está resumindo…';
-          const r = await trPost({ acao: 'resumo', codigoTexto: codigoTextoSalvo(), texto: fonteResumo, contexto, instrucoes, ...trDocsPayload() }, trControle.signal);
+          const pedido = { acao: 'resumo', codigoTexto: codigoTextoSalvo(), texto: fonteResumo, contexto, instrucoes, ...anexosPayload };
+          if (!trPayloadCabe(pedido)) return (trInfo.textContent = 'Os anexos ficaram grandes demais para um único pedido. Tire uma ou mais imagens (ou documentos) e tente de novo.');
+          const r = await trPost(pedido, trControle.signal);
           if (!r.ok) return (trInfo.textContent = trMensagem(r, 'Não foi possível resumir agora.'));
           final = r.dados.resumo;
         } else {
@@ -19772,21 +19822,26 @@ function saveTemplatesToStorage() {
             if (trControle.signal.aborted) return (trInfo.textContent = 'Cancelado.');
             trInfo.textContent = '✨ A IA está resumindo ' + baseMsg + ' (parte ' + (n + 1) + ' de ' + fatias.length + ')…';
             trResumirProgresso.querySelector('.transcricao-rodando-txt').textContent = 'Resumindo a parte ' + (n + 1) + ' de ' + fatias.length + '…';
-            const r = await trPost({ acao: 'resumo', codigoTexto: codigoTextoSalvo(), texto: fatias[n], contexto, parcial: true }, trControle.signal);
+            // Contexto só na 1ª fatia (como na correção); anexos só no resumo final.
+            const parcial = { acao: 'resumo', codigoTexto: codigoTextoSalvo(), texto: fatias[n], parcial: true };
+            if (n === 0 && contexto) parcial.contexto = contexto;
+            const r = await trPost(parcial, trControle.signal);
             if (!r.ok) return (trInfo.textContent = trMensagem(r, 'Não foi possível resumir a parte ' + (n + 1) + '.'));
             parciais.push('Parte ' + (n + 1) + ':\n' + r.dados.resumo);
           }
           if (trControle.signal.aborted) return (trInfo.textContent = 'Cancelado.');
-          trInfo.textContent = '✨ A IA está unindo o resumo final…';
+          trInfo.textContent = '✨ A IA está unindo o resumo final' + (trDocs.length ? ' e lendo os arquivos anexados' : '') + '…';
           trResumirProgresso.querySelector('.transcricao-rodando-txt').textContent = 'Unindo o resumo final…';
-          const uniao = await trPost({
+          const uniaoPedido = {
             acao: 'resumo',
             codigoTexto: codigoTextoSalvo(),
             texto: 'RESUMOS PARCIAIS DO ÁUDIO:\n\n' + parciais.join('\n\n'),
             contexto,
             instrucoes,
-            ...trDocsPayload()
-          }, trControle.signal);
+            ...anexosPayload
+          };
+          if (!trPayloadCabe(uniaoPedido)) return (trInfo.textContent = 'Os anexos ficaram grandes demais para um único pedido. Tire uma ou mais imagens (ou documentos) e tente de novo.');
+          const uniao = await trPost(uniaoPedido, trControle.signal);
           if (!uniao.ok) return (trInfo.textContent = trMensagem(uniao, 'Não foi possível unir o resumo final.'));
           final = uniao.dados.resumo;
         }
@@ -19916,7 +19971,8 @@ function saveTemplatesToStorage() {
     }
     async function trLimparTudo() {
       if (trControle) trControle.abort();
-      if ((trTexto.value.trim() || trResumo.value.trim()) && !(await askConfirm('Apagar o texto transcrito e o resumo? Eles não ficam salvos em nenhum lugar.', 'Limpar tudo'))) return;
+      const temAnexos = trDocs.length > 0;
+      if ((trTexto.value.trim() || trResumo.value.trim() || trCorrigido.value.trim() || temAnexos) && !(await askConfirm('Apagar o texto transcrito' + (trCorrigido.value.trim() ? ', o corrigido' : '') + (trResumo.value.trim() ? ' e o resumo' : '') + (temAnexos ? ', e tirar os documentos anexados' : '') + '? Eles não ficam salvos em nenhum lugar.', 'Limpar tudo'))) return;
       trLimparCampos();
     }
     trAtualizarBotoes();
