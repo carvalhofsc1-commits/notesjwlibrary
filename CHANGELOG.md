@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.05
+
+Logo da barra do topo: o desenho do ícone cresce para ficar da altura das duas linhas de texto (nome e slogan), sem aumentar a barra.
+
 ## 6.5.04
 
 Logo da barra do topo: o ícone fica mais perto do nome, e o nome "NoteStyle" passa a ter exatamente a largura do slogan abaixo dele (ajustada na tela, para valer em qualquer aparelho).
