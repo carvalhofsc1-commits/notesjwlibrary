@@ -7540,7 +7540,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.16'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.17'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -20526,6 +20526,14 @@ function saveTemplatesToStorage() {
     }
     // Livros curtos que o programa lê "todo": quantos capítulos têm.
     const BIBLIA_CAPS_LIVRO = { 'Obadias': 1, 'Jonas': 4, 'Naum': 3, 'Habacuque': 3, 'Sofonias': 3, 'Ageu': 2, 'Tito': 3, 'Filêmon': 1, '2 João': 1, '3 João': 1, 'Judas': 1 };
+    // Os 66 livros na ordem da Bíblia (o número do livro vale no link do WOL).
+    const BIBLIA_LIVROS = ['Gênesis', 'Êxodo', 'Levítico', 'Números', 'Deuteronômio', 'Josué', 'Juízes', 'Rute', '1 Samuel', '2 Samuel', '1 Reis', '2 Reis', '1 Crônicas', '2 Crônicas', 'Esdras', 'Neemias', 'Ester', 'Jó', 'Salmos', 'Provérbios', 'Eclesiastes', 'Cântico de Salomão', 'Isaías', 'Jeremias', 'Lamentações', 'Ezequiel', 'Daniel', 'Oseias', 'Joel', 'Amós', 'Obadias', 'Jonas', 'Miqueias', 'Naum', 'Habacuque', 'Sofonias', 'Ageu', 'Zacarias', 'Malaquias', 'Mateus', 'Marcos', 'Lucas', 'João', 'Atos', 'Romanos', '1 Coríntios', '2 Coríntios', 'Gálatas', 'Efésios', 'Filipenses', 'Colossenses', '1 Tessalonicenses', '2 Tessalonicenses', '1 Timóteo', '2 Timóteo', 'Tito', 'Filêmon', 'Hebreus', 'Tiago', '1 Pedro', '2 Pedro', '1 João', '2 João', '3 João', 'Judas', 'Apocalipse'];
+    // Endereço do capítulo na Bíblia de estudo do wol.jw.org (para os capítulos parciais, como Salmos 119:1-63, abre o capítulo todo).
+    function bibliaLinkWol(cap) {
+      const n = BIBLIA_LIVROS.indexOf(cap.livro) + 1;
+      const capitulo = parseInt(cap.rotulo, 10);
+      return n && capitulo ? 'https://wol.jw.org/pt/wol/b/r5/lp-t/nwtsty/' + n + '/' + capitulo : '';
+    }
     const bibliaSecoes = document.getElementById('bibliaSecoes');
     const bibliaLista = document.getElementById('bibliaLista');
     const bibliaSecaoTitulo = document.getElementById('bibliaSecaoTitulo');
@@ -20828,7 +20836,20 @@ function saveTemplatesToStorage() {
         bibliaAtualizarProgresso();
       });
 
-      linha.append(rotulo, btn, data);
+      const urlWol = bibliaLinkWol(cap);
+      if (urlWol) {
+        const link = document.createElement('a');
+        link.className = 'biblia-cap-wol';
+        link.href = urlWol;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = '🔗 WOL';
+        link.title = 'Abrir ' + cap.nome + ' no wol.jw.org';
+        link.setAttribute('aria-label', 'Abrir ' + cap.nome + ' no wol.jw.org');
+        linha.append(rotulo, link, data, btn);
+      } else {
+        linha.append(rotulo, btn, data);
+      }
       return linha;
     }
 

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.17
+
+Leitura diária da Bíblia: cada capítulo ganha o link "🔗 WOL", que abre exatamente esse capítulo na Bíblia de estudo do wol.jw.org (nos capítulos partidos, como Salmos 119:1-63, abre o capítulo inteiro).
+
 ## 6.5.16
 
 Início: as descrições dos atalhos não somem mais em telas baixas (ficam com letra menor, e a tela rola se não couber); a data do texto diário, com o ícone e a seta ›, fica sempre numa linha só (a letra diminui se preciso).
