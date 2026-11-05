@@ -58,6 +58,7 @@ export const NIVEIS = {
   "joias-ler": "pesquisa",
   // Código de resumo (só o resumo dos capítulos da Leitura diária da Bíblia)
   "leitura-biblia": "resumo",
+  "biblia-texto": "resumo",
   // Código de pesquisa ou do dirigente (os cartões de comentar e de dirigir usam a mesma leitura)
   "estudo-lista": "pesquisa-ou-dirigente",
   "ebc-ler": "pesquisa-ou-dirigente",

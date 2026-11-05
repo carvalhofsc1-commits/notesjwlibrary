@@ -10288,7 +10288,6 @@ details.transcricao-bloco:not([open]) {
   padding-top: 12px;
   border-top: 2px solid color-mix(in srgb, var(--brand) 55%, var(--line));
 }
-.biblia-livros-dica { margin: 0 0 10px; font-size: .8rem; }
 .biblia-gl { border-color: color-mix(in srgb, var(--brand) 45%, var(--line)); }
 .biblia-gl > .biblia-lista { padding: 10px; }
 .biblia-gl-icone { font-size: 1.15rem; line-height: 1; margin-right: 6px; }
@@ -10580,3 +10579,7 @@ details.transcricao-bloco:not([open]) {
 .bp-status-linha .bp-status { flex: 1 1 auto; min-width: 0; }
 .biblia-player .bp-eq { flex: 0 0 auto; margin: 0; height: 34px; }
 .biblia-player .bp-eq[hidden] { display: none; }
+
+/* O texto do versículo que está sendo lido, sob a barra de andamento do player (só com o código de resumo). */
+.biblia-player .bp-versiculo { margin: 2px 0 6px; padding: 7px 10px; border-radius: 10px; background: rgba(120, 120, 140, 0.12); font-size: 0.92rem; line-height: 1.4; text-align: left; overflow-wrap: anywhere; }
+.biblia-player .bp-versiculo[hidden] { display: none; }

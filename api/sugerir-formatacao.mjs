@@ -11,7 +11,7 @@ import { iaDaTarefa, lerConfigIa } from "./_iaConfig.mjs";
 import { blocoLicoesPara } from "./_memoria.mjs";
 import { emitirCupomVoz } from "./_vozCupom.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
-import { buscarVerbete, buscarVersiculos, fontesConfiguradas, precarregarFontes, referenciasNoTexto, textoDeGruposBiblicos } from "./_fontes.mjs";
+import { buscarVerbete, buscarVersiculos, versiculosDoCapitulo, fontesConfiguradas, precarregarFontes, referenciasNoTexto, textoDeGruposBiblicos } from "./_fontes.mjs";
 import { lerEsboco, lerIndice, minutosDoEsboco, publicacoesDaSecao, referenciasDoPublico, s34Configurado, textoDoDiscursoPublico, textoDoEsbocoImportado, textosBiblicosDoPublico, validarEsboco } from "./_s34.mjs";
 import {
   QUADROS_EBC,
@@ -3494,6 +3494,23 @@ async function completarResumosLeituraComFontes(outros, P, ajuste = "", blocoOpc
   }
 }
 
+// O texto de um capítulo, versículo por versículo, para o player da Leitura diária da Bíblia mostrar o versículo em andamento.
+// Sem IA: só lê a Bíblia das fontes. Exige o código de resumo, como o resumo dos capítulos.
+async function textoDoCapituloBiblia(res, body) {
+  if (!process.env.CODIGO_RESUMO) return erro(res, 503, "O código de resumo ainda não está configurado no servidor.");
+  if (!resumoValido(body.codigoResumo)) return erro(res, 403, "Código de resumo inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
+  if (!fontesConfiguradas()) return erro(res, 503, "A consulta às fontes ainda não está configurada no servidor.");
+  const livro = typeof body.livro === "string" ? body.livro.trim().slice(0, 40) : "";
+  if (!livro) return erro(res, 400, "Informe o livro e o capítulo.");
+  let versiculos;
+  try {
+    versiculos = await versiculosDoCapitulo(livro, body.capitulo);
+  } catch {
+    return erro(res, 502, "Não foi possível consultar o texto da Bíblia agora.");
+  }
+  return res.status(200).json({ livro, capitulo: Number(body.capitulo), versiculos });
+}
+
 async function resumirLeituraBiblia(res, body, P) {
   if (!process.env.CODIGO_RESUMO) return erro(res, 503, "O código de resumo ainda não está configurado no servidor.");
   if (!resumoValido(body.codigoResumo)) return erro(res, 403, "Código de resumo inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
@@ -4038,6 +4055,7 @@ async function tratarPedido(req, res) {
   if (tarefa === "discurso") return esbocoDoDiscursoCurto(res, body, P);
   if (tarefa === "joias") return responderJoias(res, body, P);
   if (tarefa === "leitura-biblia") return resumirLeituraBiblia(res, body, P);
+  if (tarefa === "biblia-texto") return textoDoCapituloBiblia(res, body);
 
   const entrada = validarEntrada(req.body, P.limites);
   if (!entrada) {

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.59
+
+Leitura da Bíblia: com o código de resumo, o player do painel do capítulo mostra, sob a barra de andamento, o **texto do versículo que está sendo lido** (por exemplo “5 · Davi disse…”), trocando sozinho a cada versículo, no ritmo dos marcadores do áudio. Novo pedido ao servidor (`biblia-texto`, sem IA): devolve o texto de um capítulo por vez, só com o código de resumo. Sem o código, a caixa continua como estava. Também saiu o texto explicativo de “Livros, na ordem da Bíblia”.
+
 ## 6.5.58
 
 Leitura da Bíblia: ao abrir a tela, “Livros, na ordem da Bíblia” também abre (junto com “Seções e temas”). Durante o áudio, o gráfico de barras aparece também dentro do player do painel do capítulo (ao lado da situação), parado quando o áudio está em pausa.

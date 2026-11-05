@@ -7542,7 +7542,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.58'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.59'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21354,6 +21354,7 @@ function saveTemplatesToStorage() {
           '<div class="bp-status-linha"><span class="voz-status bp-status" role="status" aria-live="polite"></span></div>' +
           '<div class="voz-progresso bp-progresso" role="slider" tabindex="0" aria-label="Posição do áudio" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="bp-preench"></div></div>' +
           '<div class="voz-tempos" aria-hidden="true"><span class="bp-t1"></span><span class="bp-t2"></span></div>' +
+          '<div class="bp-versiculo" hidden></div>' +
           '<div class="voz-controles">' +
             '<button type="button" class="secondary bp-vant" title="Versículo anterior" aria-label="Versículo anterior">⏮️</button>' +
             '<button type="button" class="secondary bp-play" title="Ouvir" aria-label="Ouvir">▶️</button>' +
@@ -21425,6 +21426,11 @@ function saveTemplatesToStorage() {
         q('.bp-play').setAttribute('aria-label', rotuloPlay);
         eqPlayer.hidden = !(meuAudio && a.estado !== 'carregando'); // as barras mexem enquanto toca e ficam paradas na pausa
         eqPlayer.classList.toggle('pausado', meuAudio && a.estado === 'pausado');
+        // O texto do versículo que está sendo lido (só com o código de resumo; sem ele a caixa fica como sempre foi).
+        const cx = q('.bp-versiculo');
+        const txt = meuAudio && a.estado !== 'carregando' && a.v ? bibliaTextoVersiculo(a.livro, a.n, a.v) : '';
+        cx.hidden = !txt;
+        cx.textContent = txt ? a.v + ' · ' + txt : '';
         q('.bp-stop').disabled = !meuAudio;
         q('.bp-vant').disabled = !meuAudio;
         q('.bp-vprox').disabled = !meuAudio;
@@ -21586,6 +21592,32 @@ function saveTemplatesToStorage() {
         eq.classList.toggle('pausado', pausado);
       });
     }
+    // Texto do capítulo que está tocando, versículo por versículo, para o player mostrar o versículo em andamento. O servidor só entrega com o
+    // código de resumo; um capítulo por vez, guardado na memória enquanto o app está aberto. Sem o código, nada é pedido e nada aparece.
+    const bibliaTextos = new Map(); // 'Livro|n' -> Map(v -> texto) | 'carregando' | 'falhou'
+    function bibliaTextoVersiculo(livro, n, v) {
+      const chave = livro + '|' + n;
+      const c = bibliaTextos.get(chave);
+      if (c instanceof Map) return c.get(v) || '';
+      if (!c && codigoResumoSalvo()) bibliaTextoCarregar(livro, n);
+      return '';
+    }
+    async function bibliaTextoCarregar(livro, n) {
+      const chave = livro + '|' + n;
+      if (bibliaTextos.has(chave)) return;
+      bibliaTextos.set(chave, 'carregando');
+      let resultado = 'falhou';
+      try {
+        const r = await postStudy({ tarefa: 'biblia-texto', codigoResumo: codigoResumoSalvo(), livro, capitulo: n }, 20000);
+        if (r && r.ok && r.data && Array.isArray(r.data.versiculos) && r.data.versiculos.length) {
+          resultado = new Map(r.data.versiculos.map(x => [Number(x.n), String(x.texto || '')]));
+        }
+      } catch (e) { /* sem rede: tenta de novo mais tarde */ }
+      bibliaTextos.set(chave, resultado);
+      if (resultado === 'falhou') setTimeout(() => { if (bibliaTextos.get(chave) === 'falhou') bibliaTextos.delete(chave); }, 30000);
+      else document.querySelectorAll('#bibliaCard .biblia-painel:not([hidden])').forEach(p => { if (p._pintarPlayer && p.dataset.chave === chave) p._pintarPlayer(); });
+    }
+
     function bibliaAudioProgresso() {
       const a = bibliaAudioAtual;
       if (!bibliaAudio || !a || !(bibliaAudio.duration > 0)) return;

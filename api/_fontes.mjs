@@ -240,6 +240,16 @@ function lerReferencia(referencia, indice) {
 // Busca as referências (no máximo `max`, sem repetir) e devolve [{ referencia, texto }] só das encontradas. Com `numerado`, cada
 // item traz também "textoNumerado" (o texto com o começo dos versículos, do segundo em diante, marcado por [n]); sem ele, a IA e
 // as outras telas recebem só o texto corrido.
+// O texto de UM capítulo, versículo por versículo: [{ n, texto }]. Usado pelo player da Leitura diária da Bíblia, que mostra o versículo
+// que está sendo lido. Devolve [] se o livro ou o capítulo não existem.
+export async function versiculosDoCapitulo(nomeLivro, capitulo) {
+  const indice = await carregarBiblia();
+  const livro = acharLivro(String(nomeLivro || ""), indice);
+  const cap = Number(capitulo);
+  if (!livro || !Number.isInteger(cap) || cap < 1) return [];
+  return versosDoCapitulo(indice, livro, cap).map((n) => ({ n, texto: indice.versiculos.get(`${livro}|${cap}|${n}`) }));
+}
+
 export async function buscarVersiculos(referencias, max, { numerado = false } = {}) {
   const lista = (Array.isArray(referencias) ? referencias : []).filter((r) => typeof r === "string" && r.trim());
   if (!lista.length) return [];
