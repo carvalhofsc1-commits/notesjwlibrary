@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.65
+
+Tela inicial: a Leitura diária da Bíblia passa para o 3º lugar, logo depois de Formatar um texto e Backup do JW Library.
+
 ## 6.5.64
 
 Em todo o app, ao passar o mouse sobre um botão o fundo não vira mais azul: ele escurece (no tema escuro, clareia) na própria cor do botão. Botões desativados não reagem.
