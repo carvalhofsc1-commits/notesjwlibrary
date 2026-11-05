@@ -7540,7 +7540,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.49'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.50'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -18155,6 +18155,9 @@ function saveTemplatesToStorage() {
     function codigoTextoSalvo() {
       try { return (localStorage.getItem('jwLibraryNoteAplicarTextoCodeV1') || '').trim(); } catch (e) { return ''; }
     }
+    function codigoResumoSalvo() {
+      try { return (localStorage.getItem('jwLibraryNoteAplicarResumoCodeV1') || '').trim(); } catch (e) { return ''; }
+    }
     function codigoLeituraSalvo() {
       try { return (localStorage.getItem('jwLibraryNoteAplicarLeituraCodeV1') || '').trim(); } catch (e) { return ''; }
     }
@@ -18167,7 +18170,7 @@ function saveTemplatesToStorage() {
 
     // Abre Ajustes → Autorização de acessos com o cursor no campo pedido ('codigo', 'dirigente' ou 'senha').
     function abrirAcessos(campo) {
-      const alvo = document.getElementById(campo === 'senha' ? 'adminSenha' : campo === 'dirigente' ? 'dirigenteCode' : campo === 'leitura' ? 'leituraCode' : 'aiStudyCode');
+      const alvo = document.getElementById(campo === 'senha' ? 'adminSenha' : campo === 'dirigente' ? 'dirigenteCode' : campo === 'leitura' ? 'leituraCode' : campo === 'resumo' ? 'resumoCode' : 'aiStudyCode');
       openWithAncestors(document.getElementById('acessosSection'));
       requestAnimationFrame(() => {
         alvo.scrollIntoView({ block: 'center', behavior: 'smooth' });
@@ -18190,6 +18193,11 @@ function saveTemplatesToStorage() {
         campo: document.getElementById('leituraCode'), chave: 'jwLibraryNoteAplicarLeituraCodeV1', acao: 'leitura-conferir', salvo: codigoLeituraSalvo,
         status: document.getElementById('acessoStatusLeitura'), ver: document.getElementById('acessoVerLeitura'), nome: 'O código de leitura',
         salvar: 'acessoSalvarLeitura', apagar: 'acessoApagarLeitura'
+      },
+      resumo: {
+        campo: document.getElementById('resumoCode'), chave: 'jwLibraryNoteAplicarResumoCodeV1', acao: 'resumo-conferir', salvo: codigoResumoSalvo,
+        status: document.getElementById('acessoStatusResumo'), ver: document.getElementById('acessoVerResumo'), nome: 'O código de resumo',
+        salvar: 'acessoSalvarResumo', apagar: 'acessoApagarResumo'
       },
       s34: {
         campo: document.getElementById('s34Code'), chave: 'jwLibraryNoteAplicarS34CodeV1', acao: 's34-conferir', salvo: codigoS34Salvo,
@@ -18290,6 +18298,7 @@ function saveTemplatesToStorage() {
       pesquisa: '🔒 Requer o código de pesquisa',
       dirigente: '🔒 Requer o código do dirigente',
       leitura: '🔒 Requer o código de leitura',
+      resumo: '🔒 Requer o código de resumo',
       texto: '🔒 Requer o código de texto',
       s34: '🔒 Requer o código do S-34'
     };
@@ -18440,6 +18449,23 @@ function saveTemplatesToStorage() {
     }
     leituraCodigoVerificar(true);
 
+    // O código de resumo salvo também pode deixar de valer (variável CODIGO_RESUMO trocada no servidor): mesma conferência, só apaga se o servidor recusar (403).
+    let resumoCodigoConferidoEm = 0;
+    async function resumoCodigoVerificar(forcar) {
+      const codigo = codigoResumoSalvo();
+      if (!codigo || !navigator.onLine) return;
+      if (!forcar && Date.now() - resumoCodigoConferidoEm < 10 * 60 * 1000) return;
+      resumoCodigoConferidoEm = Date.now();
+      const r = await postConfig({ acao: 'resumo-conferir', codigo });
+      if (r.status === 403 && codigoResumoSalvo() === codigo) {
+        try { localStorage.removeItem('jwLibraryNoteAplicarResumoCodeV1'); } catch (e) { /* sem localStorage */ }
+        acessoSituacao('resumo');
+        acessoStatus('resumo', 'O código de resumo que estava salvo não vale mais. Informe o novo código.', true);
+        document.dispatchEvent(new CustomEvent('acesso-salvo', { detail: 'resumo' }));
+      }
+    }
+    resumoCodigoVerificar(true);
+
     // O código de texto salvo também pode deixar de valer (variável CODIGO_TEXTO trocada no servidor): mesma conferência, só apaga se o servidor recusar (403).
     let textoCodigoConferidoEm = 0;
     async function textoCodigoVerificar(forcar) {
@@ -18475,7 +18501,7 @@ function saveTemplatesToStorage() {
       if (r.status === 403 && codigoS34Salvo() === codigo) s34CodigoInvalido();
     }
     s34CodigoVerificar(true);
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { dirigenteVerificar(false); leituraCodigoVerificar(false); textoCodigoVerificar(false); s34CodigoVerificar(false); } });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { dirigenteVerificar(false); leituraCodigoVerificar(false); resumoCodigoVerificar(false); textoCodigoVerificar(false); s34CodigoVerificar(false); } });
 
     // ---------- Tela Áudio em texto ----------
     // O áudio é decodificado neste aparelho (Web Audio), reamostrado para 16 kHz mono, cortado em trechos de ~50 s (o Google aceita até 1 minuto por
@@ -21413,7 +21439,13 @@ function saveTemplatesToStorage() {
       bibliaResumoSalvarBtn.disabled = !tem;
       bibliaResumoCopiarBtn.disabled = !tem;
       bibliaResumoWordBtn.disabled = !tem;
-      bibliaResumirBtn.textContent = tem ? '🔄 Gerar de novo' : '✨ Gerar resumo';
+      // Gerar resumo só funciona com o código de resumo salvo: com ele, o botão leva a 🔑; sem ele, fica desabilitado (🔒) e avisa onde informar o código.
+      const comCodigo = Boolean(codigoResumoSalvo());
+      bibliaResumirBtn.textContent = (comCodigo ? '🔑 ' : '🔒 ') + (tem ? 'Gerar de novo' : 'Gerar resumo');
+      bibliaResumirBtn.disabled = !comCodigo || bibliaResumindo;
+      document.getElementById('bibliaResumoIrAcessos').hidden = comCodigo;
+      if (!comCodigo) bibliaResumoStatus.textContent = TRAVAS.resumo + ' (Ajustes → Autorização de acessos).';
+      else if (bibliaResumoStatus.textContent.startsWith('🔒')) bibliaResumoStatus.textContent = '';
       bibliaAutoAlturar(bibliaResumoTexto);
     }
 
@@ -21454,6 +21486,8 @@ function saveTemplatesToStorage() {
       if (linha) linha.scrollIntoView({ block: 'center' });
     }
 
+    document.addEventListener('acesso-salvo', event => { if (event.detail === 'resumo') bibliaResumoSincronizar(); });
+
     // Depois de gerar o resumo, um botão flutuante leva até o texto (some sozinho ou ao tocar).
     function bibliaAvisoOcultar() {
       const b = document.getElementById('bibliaAvisoResumo');
@@ -21474,7 +21508,7 @@ function saveTemplatesToStorage() {
     async function bibliaGerarResumo() {
       const alvo = bibliaResumoAlvo;
       if (!alvo || bibliaResumindo || aiBusy) return;
-      const accessError = studyAccessError();
+      const accessError = !codigoResumoSalvo() ? 'Salve o código de resumo em Ajustes → 🔐 Autorização de acessos.' : !navigator.onLine ? 'Sem conexão com a internet.' : '';
       if (accessError) {
         aiStatusKind = 'biblia';
         return setAiStatus(accessError, true);
@@ -21500,7 +21534,7 @@ function saveTemplatesToStorage() {
       try {
         const payload = {
           tarefa: 'leitura-biblia',
-          codigo: codigoAcessoSalvo(),
+          codigoResumo: codigoResumoSalvo(),
           titulo: alvo.cap.nome,
           refs: [{ livro: alvo.cap.livro, rotulo: alvo.cap.rotulo }],
           ajuste: iaExtra('biblia'),

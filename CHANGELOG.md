@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.50
+
+Leitura da Bíblia: o resumo dos capítulos com a IA passa a exigir um código próprio, o código de resumo (variável CODIGO_RESUMO na Vercel), informado em Ajustes → Autorização de acessos. O botão “Gerar resumo” ganha o ícone 🔑 e, sem o código salvo, fica desabilitado (🔒) com um botão que leva a Ajustes. O código de pesquisa deixa de valer para esse resumo. O ícone da função Leitura diária da Bíblia passa a ser 📚 (menu, barra inferior, atalho do Início, título da tela e seção de Ajustes).
+
 ## 6.5.49
 
 Ajustes: nova seção “📖 Leitura da Bíblia”, com a opção “Ao terminar um capítulo, tocar o próximo” (que saiu do topo da tela da Bíblia).

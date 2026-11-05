@@ -48,7 +48,7 @@
     <nav class="app-menu-lista" aria-label="Funcionalidades">
       <button type="button" data-menu-ir="inicio"><span aria-hidden="true">🏠</span> Início</button>
       <button type="button" data-menu-ir="formatar"><span aria-hidden="true">✍️</span> Formatar</button>
-      <button type="button" data-menu-ir="biblia"><span aria-hidden="true">📖</span> Leitura diária da Bíblia</button>
+      <button type="button" data-menu-ir="biblia"><span aria-hidden="true">📚</span> Leitura diária da Bíblia</button>
       <button type="button" data-menu-ir="leitura"><span aria-hidden="true">🔊</span> Leitura em voz</button>
       <button type="button" data-menu-ir="reunioes"><span aria-hidden="true">📅</span> Reuniões</button>
       <button type="button" data-menu-ir="transcricao"><span aria-hidden="true">🎙️</span> Áudio em texto</button>
@@ -75,7 +75,7 @@
     <button id="navLeitura" type="button" data-screen-target="leitura" title="Leitura em voz"><span class="nav-icon" aria-hidden="true">🔊</span><span>Leitura</span></button>
     <button type="button" data-screen-target="reunioes"><span class="nav-icon" aria-hidden="true">📅</span><span>Reuniões</span></button>
     <button id="navTranscricao" type="button" data-screen-target="transcricao" title="Áudio em texto"><span class="nav-icon" aria-hidden="true">🎙️</span><span>Áudio</span></button>
-    <button type="button" data-screen-target="biblia" title="Leitura diária da Bíblia"><span class="nav-icon" aria-hidden="true">📖</span><span>Bíblia</span></button>
+    <button type="button" data-screen-target="biblia" title="Leitura diária da Bíblia"><span class="nav-icon" aria-hidden="true">📚</span><span>Bíblia</span></button>
     <button type="button" id="navMenuBtn" data-menu-abrir title="Menu"><span class="nav-icon" aria-hidden="true">☰</span><span>Menu</span></button>
   </nav>
 
@@ -132,7 +132,7 @@
           <button type="button" class="atalho" data-atalho="comentarios"><span class="atalho-icone" aria-hidden="true">✋</span><span class="atalho-nome">Comentários</span><span class="atalho-desc">Ajuda na preparação para comentar</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="dirigir"><span class="atalho-icone" aria-hidden="true">🎤</span><span class="atalho-nome">Dirigentes</span><span class="atalho-desc">Ajuda na preparação para dirigir</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="discursos"><span class="atalho-icone" aria-hidden="true">📜</span><span class="atalho-nome">Discursos</span><span class="atalho-desc">Ajuda na preparação de discursos e esboços</span><span class="atalho-trava" hidden></span></button>
-          <button type="button" class="atalho" data-atalho="biblia"><span class="atalho-icone" aria-hidden="true">📖</span><span class="atalho-nome">Leitura diária da Bíblia</span><span class="atalho-desc">Programa anual e resumo dos capítulos</span><span class="atalho-barra" id="bibliaAtalhoBarra" aria-hidden="true"><span></span></span></button>
+          <button type="button" class="atalho" data-atalho="biblia"><span class="atalho-icone" aria-hidden="true">📚</span><span class="atalho-nome">Leitura diária da Bíblia</span><span class="atalho-desc">Programa anual e resumo dos capítulos</span><span class="atalho-barra" id="bibliaAtalhoBarra" aria-hidden="true"><span></span></span></button>
           <button type="button" class="atalho" data-atalho="leitura"><span class="atalho-icone" aria-hidden="true">🔊</span><span class="atalho-nome">Leitura em voz</span><span class="atalho-desc">Ouvir um PDF, um Word ou um texto colado</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="transcricao"><span class="atalho-icone" aria-hidden="true">🎙️</span><span class="atalho-nome">Áudio em texto</span><span class="atalho-desc">Transcrever um áudio e resumir com a IA</span><span class="atalho-trava" hidden></span></button>
         </div>
@@ -866,6 +866,20 @@
             </div>
 
             <div class="acesso-item">
+              <label for="resumoCode">📝 Código de resumo</label>
+              <p class="hint">Libera o botão 🔑 Gerar resumo da tela Leitura diária da Bíblia: o resumo de cada capítulo (e as opções adicionais) feito com a IA. Sem ele, o botão fica desabilitado neste aparelho.</p>
+              <div class="acesso-linha">
+                <input autocomplete="off" id="resumoCode" type="password" maxlength="100" placeholder="Código de resumo">
+                <button id="acessoVerResumo" class="secondary acesso-ver" type="button" aria-label="Mostrar o código" aria-pressed="false">👁️</button>
+              </div>
+              <div class="bk-row">
+                <button id="acessoSalvarResumo" type="button">💾 Salvar</button>
+                <button id="acessoApagarResumo" class="secondary" type="button">🗑️ Apagar</button>
+              </div>
+              <p id="acessoStatusResumo" class="hint acesso-status" role="status" aria-live="polite"></p>
+            </div>
+
+            <div class="acesso-item">
               <label for="s34Code">📜 Código do S-34</label>
               <p class="hint">Libera a seção Discurso público - lista de temas (esboços do S-34), em Reuniões → Preparação de discursos e esboços. Sem ele, a seção fica escondida neste aparelho.</p>
               <div class="acesso-linha">
@@ -1117,7 +1131,7 @@
           </div>
         </details>
         <details class="subsection sub-tint-2" id="bibliaConfigSection">
-          <summary>📖 Leitura da Bíblia</summary>
+          <summary>📚 Leitura da Bíblia</summary>
           <div class="subsection-body">
             <p class="hint">Ajustes da tela Leitura diária da Bíblia, neste aparelho.</p>
             <div class="acesso-item">
@@ -1530,7 +1544,7 @@
     <!-- Tela Leitura diária da Bíblia: programa anual (PDF sbr), marcações e resumo do grupo lido. -->
     <div id="bibliaCard" class="card tint-3 screen-biblia">
       <div class="leitura-topo">
-        <h2><span aria-hidden="true">📖</span> Leitura diária da Bíblia</h2>
+        <h2><span aria-hidden="true">📚</span> Leitura diária da Bíblia</h2>
       </div>
       <p class="biblia-ultima" id="bibliaUltimaLeitura" hidden></p>
       <button id="bibliaAvisoResumo" class="reunioes-aviso-campo" type="button" hidden>📝 Resumo pronto · Ver ↓</button>
@@ -1564,7 +1578,8 @@
           <button type="button" id="bibliaResumoFecharBtn" class="secondary biblia-resumo-fechar">✕ Fechar</button>
         </div>
         <div class="bk-row biblia-gerar-linha">
-          <button id="bibliaResumirBtn" type="button">✨ Gerar resumo</button>
+          <button id="bibliaResumirBtn" type="button">🔑 Gerar resumo</button>
+          <button id="bibliaResumoIrAcessos" class="secondary" type="button" data-ir-acessos="resumo" hidden>🔐 Informar o código de resumo (Ajustes)</button>
         </div>
         <textarea id="bibliaResumoTexto" class="biblia-resumo-area" placeholder="O resumo aparece aqui." spellcheck="false"></textarea>
         <div class="bk-row">

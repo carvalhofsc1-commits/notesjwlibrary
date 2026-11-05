@@ -268,6 +268,16 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
+    // Confere o código de resumo (CODIGO_RESUMO) quando ele é salvo em Ajustes: libera o botão Gerar resumo da Leitura diária da Bíblia (api/sugerir-formatacao.mjs).
+    if (acao === "resumo-conferir") {
+      if (!process.env.CODIGO_RESUMO) return erro(res, 503, "O código de resumo ainda não está configurado no servidor.");
+      if (!textosIguais(corpo.codigo, process.env.CODIGO_RESUMO)) {
+        registrarErro(ip);
+        return erro(res, 403, "Código de resumo incorreto.");
+      }
+      return res.status(200).json({ ok: true });
+    }
+
     // Confere o código do dirigente (CODIGO_DIRIGENTE; sem a variável, o código de pesquisa) quando ele é salvo em Ajustes.
     if (acao === "dirigente-conferir") {
       const esperado = codigoDoDirigente();

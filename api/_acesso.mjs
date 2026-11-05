@@ -13,6 +13,12 @@ export function dirigenteValido(informado) {
   return textosIguais(informado, codigoDoDirigente());
 }
 
+// O código de resumo (variável CODIGO_RESUMO) libera só o resumo dos capítulos da Leitura diária da Bíblia com a IA; não vale para mais nada, e os outros
+// códigos não valem para ele.
+export function resumoValido(informado) {
+  return textosIguais(informado, process.env.CODIGO_RESUMO);
+}
+
 // O código do S-34 (variável CODIGO_S34) libera a lista de temas e os esboços do discurso público; vale junto com o do dirigente.
 export function s34Valido(informado) {
   return textosIguais(informado, process.env.CODIGO_S34);
@@ -39,7 +45,7 @@ export function acessoDoDirigente(res, body) {
   return true;
 }
 
-// publico: sem código · pesquisa: código de pesquisa · pesquisa-ou-dirigente: um dos dois · dirigente: código do dirigente · s34: o do dirigente e o do S-34.
+// publico: sem código · pesquisa: código de pesquisa · pesquisa-ou-dirigente: um dos dois · dirigente: código do dirigente · s34: o do dirigente e o do S-34 · resumo: o código de resumo.
 export const NIVEIS = {
   // Formatar (tela Formatar → Opções com IA): só com o código de pesquisa
   formatar: "pesquisa",
@@ -50,7 +56,8 @@ export const NIVEIS = {
   ebc: "pesquisa",
   joias: "pesquisa",
   "joias-ler": "pesquisa",
-  "leitura-biblia": "pesquisa",
+  // Código de resumo (só o resumo dos capítulos da Leitura diária da Bíblia)
+  "leitura-biblia": "resumo",
   // Código de pesquisa ou do dirigente (os cartões de comentar e de dirigir usam a mesma leitura)
   "estudo-lista": "pesquisa-ou-dirigente",
   "ebc-ler": "pesquisa-ou-dirigente",
@@ -89,6 +96,17 @@ export function exigirAcesso(res, body) {
     }
     if (!s34Valido(body.codigoS34)) {
       erro(res, 403, "Código do S-34 inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
+      return false;
+    }
+    return true;
+  }
+  if (nivel === "resumo") {
+    if (!process.env.CODIGO_RESUMO) {
+      erro(res, 503, "O código de resumo ainda não está configurado no servidor.");
+      return false;
+    }
+    if (!resumoValido(body.codigoResumo)) {
+      erro(res, 403, "Código de resumo inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
       return false;
     }
     return true;

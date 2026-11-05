@@ -6,7 +6,7 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import { codigoDoDirigente, erro, origemPermitida, textosIguais } from "./_comum.mjs";
-import { acessoDoDirigente, codigoValido, dirigenteValido, exigirAcesso, recusarAcesso } from "./_acesso.mjs";
+import { acessoDoDirigente, codigoValido, dirigenteValido, exigirAcesso, recusarAcesso, resumoValido } from "./_acesso.mjs";
 import { iaDaTarefa, lerConfigIa } from "./_iaConfig.mjs";
 import { blocoLicoesPara } from "./_memoria.mjs";
 import { emitirCupomVoz } from "./_vozCupom.mjs";
@@ -3495,8 +3495,8 @@ async function completarResumosLeituraComFontes(outros, P, ajuste = "", blocoOpc
 }
 
 async function resumirLeituraBiblia(res, body, P) {
-  if (!process.env.CODIGO_ESTUDO) return erro(res, 503, "O código de pesquisa ainda não está configurado no servidor.");
-  if (!codigoValido(body.codigo)) return erro(res, 403, "Código de pesquisa inválido.");
+  if (!process.env.CODIGO_RESUMO) return erro(res, 503, "O código de resumo ainda não está configurado no servidor.");
+  if (!resumoValido(body.codigoResumo)) return erro(res, 403, "Código de resumo inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
   if (!fontesConfiguradas()) return erro(res, 503, "A consulta às fontes ainda não está configurada no servidor.");
 
   const refs = (Array.isArray(body.refs) ? body.refs : [])
