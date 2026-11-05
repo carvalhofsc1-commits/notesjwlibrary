@@ -1139,6 +1139,36 @@
               <label class="ai-check"><input type="checkbox" id="bibliaSeguir" autocomplete="off"> 🔁 Ao terminar um capítulo, tocar o próximo</label>
               <p class="hint">Desligado, o áudio toca um capítulo por vez e pára no fim (o capítulo é marcado como lido). Ligado, em seguida toca o capítulo seguinte da lista que você está ouvindo, abrindo o grupo ou o livro dele quando for de outro, até o fim da lista.</p>
             </div>
+            <div class="acesso-item bib-marcar">
+              <label>✅ Marcar capítulos já lidos</label>
+              <p class="hint">Para quem começa a usar o app no meio de um ciclo de leitura. Os capítulos já marcados não mudam.</p>
+              <p class="bib-marcar-tit">Tudo, do começo da Bíblia até um capítulo</p>
+              <div class="bib-marcar-linha">
+                <select id="bibAteLivro" aria-label="Livro"></select>
+                <select id="bibAteCap" aria-label="Capítulo"></select>
+                <button type="button" class="secondary" id="bibAteBtn">Marcar</button>
+              </div>
+              <p class="bib-marcar-tit">Um livro, ou alguns capítulos dele</p>
+              <div class="bib-marcar-linha">
+                <select id="bibLivro" aria-label="Livro"></select>
+                <span>do cap.</span>
+                <select id="bibDe" aria-label="Do capítulo"></select>
+                <span>ao</span>
+                <select id="bibAte" aria-label="Ao capítulo"></select>
+                <button type="button" class="secondary" id="bibLivroBtn">Marcar</button>
+              </div>
+              <p class="bib-marcar-tit">Uma seção inteira</p>
+              <div class="bib-marcar-linha">
+                <select id="bibSecao" aria-label="Seção"></select>
+                <button type="button" class="secondary" id="bibSecaoBtn">Marcar</button>
+              </div>
+              <span id="bibMarcarMsg" class="ok" role="status" aria-live="polite"></span>
+            </div>
+            <div class="acesso-item">
+              <label>🔄 Recomeçar o ciclo</label>
+              <p class="hint">Terminou um ciclo de leitura? Desmarca todos os capítulos lidos e tira a fita. Os resumos salvos continuam.</p>
+              <button type="button" class="danger" id="bibZerarBtn">Zerar capítulos lidos</button>
+            </div>
           </div>
         </details>
         <details class="subsection sub-tint-3" id="defaultsSection">

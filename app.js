@@ -7542,7 +7542,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.59'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.60'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21386,7 +21386,7 @@ function saveTemplatesToStorage() {
         const lido = bibliaEspacoLido(e);
         q('.bp-check').checked = lido;
         const marca = e.entradas.map(x => bibliaMarcaDe(x.cap.id)).find(m => m.lido);
-        q('.bp-data').textContent = lido && marca ? 'em ' + bibliaDataBR(marca.lidaEm) : '';
+        q('.bp-data').textContent = lido && marca && bibliaDataBR(marca.lidaEm) ? 'em ' + bibliaDataBR(marca.lidaEm) : '';
         const aqui = Boolean(bibliaEstado.marcador) && bibliaEstado.marcador.chave === bibliaChave(e);
         const bm = q('.bp-marcador');
         bm.textContent = aqui ? '🔖 Tirar marcador' : '🔖 Marcar aqui';
@@ -22324,6 +22324,84 @@ function saveTemplatesToStorage() {
     const bibliaSeguirCaixa = document.getElementById('bibliaSeguir');
     bibliaSeguirCaixa.checked = Boolean(bibliaEstado.seguir);
     bibliaSeguirCaixa.addEventListener('change', () => { bibliaEstado.seguir = bibliaSeguirCaixa.checked; bibliaGravarEstado(); });
+    // Ajustes → Leitura da Bíblia: marcar de uma vez o que já foi lido (quem começa no meio de um ciclo) e recomeçar o ciclo.
+    (function bibliaMarcacaoEmMassa() {
+      const el = id => document.getElementById(id);
+      const msg = el('bibMarcarMsg');
+      const livros = BIBLIA_LIVROS.filter(l => bibliaCapsDoLivro(l).length);
+      const opcoes = lista => lista.map(([v, t]) => '<option value="' + String(v).replace(/"/g, '&quot;') + '">' + t + '</option>').join('');
+      ['bibAteLivro', 'bibLivro'].forEach(id => { el(id).innerHTML = opcoes(livros.map(l => [l, l])); });
+      el('bibSecao').innerHTML = opcoes((BIBLIA_PROG.secoes || []).map(s => [s.id, s.nome]));
+      const encher = (sel, livro, selecionar) => {
+        sel.innerHTML = opcoes(bibliaCapsDoLivro(livro).map(c => [c.n, c.n]));
+        if (selecionar === 'ultimo') sel.selectedIndex = sel.options.length - 1;
+      };
+      const enchePares = () => { encher(el('bibDe'), el('bibLivro').value); encher(el('bibAte'), el('bibLivro').value, 'ultimo'); };
+      el('bibAteLivro').addEventListener('change', () => encher(el('bibAteCap'), el('bibAteLivro').value));
+      el('bibLivro').addEventListener('change', enchePares);
+      encher(el('bibAteCap'), el('bibAteLivro').value);
+      enchePares();
+
+      const dizer = texto => { msg.textContent = texto; };
+      const plural = (n, um, varios) => n + ' ' + (n === 1 ? um : varios);
+      // Marca os capítulos (ids de cada linha do programa) que ainda não estão lidos, sem data (não se sabe quando foram lidos).
+      const marcarIds = async (ids, quemSao) => {
+        const novos = [...new Set(ids)].filter(id => !bibliaMarcaDe(id).lido);
+        if (!novos.length) { dizer('Esses capítulos já estavam marcados como lidos.'); return false; }
+        const capitulos = plural(novos.length, 'capítulo', 'capítulos');
+        const ok = await askConfirm('Marcar ' + quemSao + ' como lido? Serão marcados ' + capitulos + ' que ainda não estavam.', 'Marcar como lido', { ok: 'Marcar', cancel: 'Cancelar' });
+        if (!ok) { dizer(''); return false; }
+        novos.forEach(id => { bibliaEstado.itens[id] = { lido: true, lidaEm: '' }; });
+        bibliaGravarEstado();
+        bibliaAtualizarTudo();
+        dizer('✔ ' + capitulos + ' marcado' + (novos.length === 1 ? '' : 's') + ' como lido' + (novos.length === 1 ? '' : 's') + '.');
+        return true;
+      };
+      const idsDoCap = (livro, n) => ((bibliaIndiceLivros().get(livro) || new Map()).get(n) || []).map(e => e.cap.id);
+
+      el('bibAteBtn').addEventListener('click', async () => {
+        const livro = el('bibAteLivro').value;
+        const n = Number(el('bibAteCap').value);
+        const ids = [];
+        for (const l of livros) {
+          if (l === livro) { bibliaCapsDoLivro(l).forEach(c => { if (c.n <= n) ids.push(...idsDoCap(l, c.n)); }); break; }
+          bibliaCapsDoLivro(l).forEach(c => ids.push(...idsDoCap(l, c.n)));
+        }
+        const feito = await marcarIds(ids, 'tudo, de Gênesis até ' + (bibliaCapsDoLivro(livro).length === 1 ? livro : livro + ' ' + n) + ',');
+        if (feito) { // a fita passa para o capítulo seguinte
+          const prox = bibliaProximoEspaco(livro, n, 'livros', '');
+          if (prox) { bibliaMarcadorMover(prox.livro, prox.n, 'livros', ''); bibliaAtualizarTudo(); }
+        }
+      });
+      el('bibLivroBtn').addEventListener('click', async () => {
+        const livro = el('bibLivro').value;
+        let a = Number(el('bibDe').value);
+        let b = Number(el('bibAte').value);
+        if (a > b) [a, b] = [b, a];
+        const ids = [];
+        bibliaCapsDoLivro(livro).forEach(c => { if (c.n >= a && c.n <= b) ids.push(...idsDoCap(livro, c.n)); });
+        const todos = a === bibliaCapsDoLivro(livro)[0].n && b === bibliaCapsDoLivro(livro).slice(-1)[0].n;
+        await marcarIds(ids, todos ? livro : livro + ' ' + (a === b ? a : a + ' a ' + b));
+      });
+      el('bibSecaoBtn').addEventListener('click', async () => {
+        const secao = (BIBLIA_PROG.secoes || []).find(s => s.id === el('bibSecao').value);
+        if (!secao) return;
+        const ids = [];
+        (secao.itens || []).forEach(item => bibliaCapitulos(item).forEach(c => ids.push(c.id)));
+        await marcarIds(ids, 'a seção “' + secao.nome + '”');
+      });
+      el('bibZerarBtn').addEventListener('click', async () => {
+        const lidos = Object.values(bibliaEstado.itens).filter(m => m && m.lido).length;
+        if (!lidos && !bibliaEstado.marcador) { dizer('Não há capítulos marcados como lidos.'); return; }
+        const ok = await askConfirm('Zerar a marcação de todos os capítulos lidos' + (lidos ? ' (' + plural(lidos, 'marcação', 'marcações') + ')' : '') + ' e tirar a fita? Os resumos salvos continuam. Isto não pode ser desfeito.', 'Recomeçar o ciclo', { ok: 'Zerar', cancel: 'Cancelar' });
+        if (!ok) return;
+        bibliaEstado.itens = {};
+        bibliaEstado.marcador = null;
+        bibliaGravarEstado();
+        bibliaAtualizarTudo();
+        dizer('✔ Pronto: o ciclo recomeça do zero.');
+      });
+    })();
     bibliaAtualizarProgresso();
     if (currentScreen() === 'biblia') bibliaAoEntrar();
   

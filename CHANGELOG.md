@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.60
+
+Leitura da Bíblia: o texto do versículo no player fica em itálico. Em Ajustes → 📚 Leitura da Bíblia: **Marcar capítulos já lidos** (para quem começa no meio de um ciclo), com três jeitos — tudo, do começo da Bíblia até um capítulo (a fita passa para o capítulo seguinte), um livro ou alguns capítulos dele, ou uma seção inteira; os capítulos já marcados não mudam e os novos ficam sem data. E **Recomeçar o ciclo**: zera todos os capítulos lidos e tira a fita (os resumos salvos continuam). Ambos pedem confirmação.
+
 ## 6.5.59
 
 Leitura da Bíblia: com o código de resumo, o player do painel do capítulo mostra, sob a barra de andamento, o **texto do versículo que está sendo lido** (por exemplo “5 · Davi disse…”), trocando sozinho a cada versículo, no ritmo dos marcadores do áudio. Novo pedido ao servidor (`biblia-texto`, sem IA): devolve o texto de um capítulo por vez, só com o código de resumo. Sem o código, a caixa continua como estava. Também saiu o texto explicativo de “Livros, na ordem da Bíblia”.
