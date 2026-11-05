@@ -7542,7 +7542,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.70'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.72'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -9271,6 +9271,8 @@
         const resumos = Object.keys(biblia.resumos || {}).length;
         if (lidos) partes.push(lidos + (lidos === 1 ? ' capítulo da Bíblia lido' : ' capítulos da Bíblia lidos'));
         if (resumos) partes.push(resumos + (resumos === 1 ? ' resumo de capítulo' : ' resumos de capítulos'));
+        const notas = Object.keys(biblia.notas || {}).length;
+        if (notas) partes.push(notas + (notas === 1 ? ' anotação de capítulo' : ' anotações de capítulos'));
       }
       const esbocos = json(OUTROS_BASES_KEY);
       if (Array.isArray(esbocos) && esbocos.length) partes.push(esbocos.length + (esbocos.length === 1 ? ' esboço importado' : ' esboços importados'));
@@ -21080,7 +21082,7 @@ function saveTemplatesToStorage() {
     let bibliaResumoAlvo = null; // { item, cap } do resumo aberto no fim da tela
     let bibliaSecaoEscolhida = false; // ao abrir a tela nenhuma seção está escolhida: só aparecem os botões das seções
     let bibliaProgAberto = true; // programação de leitura da seção expandida ou recolhida
-    let bibliaEstado = { itens: {}, secao: '', soPendentes: false, resumos: {}, seguir: false, marcador: null, velocidade: 1 }; // itens: { idDoCapitulo: { lido, lidaEm } }; resumos: { idDoCapitulo: texto }
+    let bibliaEstado = { itens: {}, secao: '', soPendentes: false, resumos: {}, notas: {}, seguir: false, marcador: null, velocidade: 1 }; // itens: { idDoCapitulo: { lido, lidaEm } }; resumos: { idDoCapitulo: texto }
     const BIBLIA_VELOCIDADES_VALIDAS = [0.75, 1, 1.25, 1.5, 1.75, 2];
     let bibliaPronto = false;
     let bibliaResumindo = false;
@@ -21102,6 +21104,7 @@ function saveTemplatesToStorage() {
         }
         if (BIBLIA_VELOCIDADES_VALIDAS.includes(Number(salvo.velocidade))) bibliaEstado.velocidade = Number(salvo.velocidade);
         if (salvo.resumos && typeof salvo.resumos === 'object') bibliaEstado.resumos = salvo.resumos;
+        if (salvo.notas && typeof salvo.notas === 'object') bibliaEstado.notas = salvo.notas;
       } catch (e) { /* sem localStorage */ }
     }
 
@@ -21113,7 +21116,8 @@ function saveTemplatesToStorage() {
         seguir: bibliaEstado.seguir,
         marcador: bibliaEstado.marcador,
         velocidade: bibliaEstado.velocidade,
-        resumos: bibliaEstado.resumos
+        resumos: bibliaEstado.resumos,
+        notas: bibliaEstado.notas
       }));
     }
 
@@ -21174,6 +21178,11 @@ function saveTemplatesToStorage() {
         mudou = true;
       });
       if (mudou) bibliaGravarEstado();
+    }
+
+    // A anotação é do capítulo (a mesma na leitura por seções e por livros); as duas partes do Salmo 119 têm uma cada.
+    function bibliaNotaChave(e) {
+      return e.livro + '|' + e.n + (e.parcial ? '|' + e.entradas[0].cap.rotulo : '');
     }
 
     function bibliaMarcaDe(id) {
@@ -21490,6 +21499,7 @@ function saveTemplatesToStorage() {
       const ids = cel.dataset.ids.split(' ');
       cel.classList.toggle('lido', ids.every(id => bibliaMarcaDe(id).lido));
       cel.classList.toggle('tem-resumo', ids.some(id => (bibliaEstado.resumos[id] || '').trim() !== ''));
+      cel.classList.toggle('tem-nota', Boolean(cel.dataset.nota) && (bibliaEstado.notas[cel.dataset.nota] || '').trim() !== '');
       cel.classList.toggle('marcador', Boolean(bibliaEstado.marcador) && bibliaEstado.marcador.chave === cel.dataset.chave);
       cel.classList.toggle('tocando', Boolean(bibliaAudioAtual) && bibliaAudioAtual.chave === cel.dataset.chave);
     }
@@ -21575,6 +21585,10 @@ function saveTemplatesToStorage() {
         '<div class="bp-acoes">' +
           '<a class="bp-wol" target="_blank" rel="noopener noreferrer">🔗 WOL</a>' +
           '<button type="button" class="secondary bp-resumir">Resumir</button>' +
+        '</div>' +
+        '<div class="bp-notas">' +
+          '<label class="bp-notas-rotulo">📝 Anotações do capítulo</label>' +
+          '<textarea class="bp-notas-area" rows="4" placeholder="Pontos da leitura que você quer lembrar…" aria-label="Anotações do capítulo"></textarea>' +
         '</div>';
       const q = s => p.querySelector(s);
       const eqPlayer = bibliaEqCriar(false); // as barras de áudio dentro do player, ao lado da situação
@@ -21589,7 +21603,13 @@ function saveTemplatesToStorage() {
         const e = esp();
         if (!e) return;
         const cap0 = e.entradas[0].cap;
+        if (bibliaResumoAlvo && bibliaResumoAlvo.painel && p.contains(bibliaResumoCaixa) && bibliaResumoAlvo.cap.id !== cap0.id) bibliaFecharResumo(false); // outro capítulo: o resumo aberto era do anterior
         q('.bp-nome').textContent = bibliaEspacoTitulo(e);
+        const areaNota = q('.bp-notas-area');
+        const chaveNota = bibliaNotaChave(e);
+        const notaAtual = bibliaEstado.notas[chaveNota] || '';
+        // Mudou de capítulo: troca o texto sempre (mesmo com o cursor no campo, para a digitação não cair na anotação errada); no mesmo capítulo, não mexe enquanto se digita.
+        if (areaNota.dataset.chave !== chaveNota || (document.activeElement !== areaNota && areaNota.value !== notaAtual)) { areaNota.value = notaAtual; areaNota.dataset.chave = chaveNota; }
         const vv = bibliaEspacoVersiculos(e);
         q('.bp-vv').textContent = vv ? vv + (vv === 1 ? ' versículo' : ' versículos') : '';
         const lido = bibliaEspacoLido(e);
@@ -21722,9 +21742,21 @@ function saveTemplatesToStorage() {
         bibliaAudio.currentTime = Math.min(bibliaAudio.duration, Math.max(0, bibliaAudio.currentTime + (ev.key === 'ArrowRight' ? 5 : -5)));
       });
       // Resumir: só abre a área do resumo (no fim da tela); quem pede o resumo à IA é o botão dentro dela. Com resumo já feito, vira "Ver resumo".
+      let notaTimer = null;
+      q('.bp-notas-area').addEventListener('input', ev => {
+        const e = esp();
+        if (!e) return;
+        const chave = bibliaNotaChave(e);
+        const texto = ev.target.value;
+        if (texto.trim()) bibliaEstado.notas[chave] = texto; else delete bibliaEstado.notas[chave];
+        document.querySelectorAll('#bibliaCard .biblia-cel').forEach(c => { if (c.dataset.nota === chave) bibliaCelulaPintar(c); }); // a marca da célula acompanha a digitação
+        clearTimeout(notaTimer);
+        notaTimer = setTimeout(bibliaGravarEstado, 400);
+      });
+      q('.bp-notas-area').addEventListener('blur', () => { clearTimeout(notaTimer); bibliaGravarEstado(); });
       q('.bp-resumir').addEventListener('click', () => {
         const e = esp();
-        bibliaAbrirResumo(e.entradas[0].item, e.entradas[0].cap, caixa._origem === 'livros' ? 'livros' : '');
+        bibliaAbrirResumo(e.entradas[0].item, e.entradas[0].cap, caixa._origem === 'livros' ? 'livros' : '', p);
       });
       return p;
     }
@@ -21748,7 +21780,12 @@ function saveTemplatesToStorage() {
         cel.className = 'biblia-cel';
         cel.dataset.chave = bibliaChave(esp);
         cel.dataset.ids = bibliaEspacoIds(esp).join(' ');
+        cel.dataset.nota = bibliaNotaChave(esp);
         cel.textContent = esp.n || '•';
+        const pontoNota = document.createElement('i'); // a marca de "este capítulo tem anotação" (aparece só quando tem)
+        pontoNota.className = 'biblia-cel-nota';
+        pontoNota.setAttribute('aria-hidden', 'true');
+        cel.appendChild(pontoNota);
         cel.title = bibliaEspacoTitulo(esp);
         cel.setAttribute('aria-label', bibliaEspacoTitulo(esp));
         cel.addEventListener('click', () => {
@@ -22046,8 +22083,15 @@ function saveTemplatesToStorage() {
       bibliaAutoAlturar(bibliaResumoTexto);
     }
 
-    function bibliaAbrirResumo(item, cap, origem) {
-      bibliaResumoAlvo = { item, cap, origem: origem || '' };
+    // A caixa do resumo mora no fim da tela, mas ao pedir um resumo ela se muda para logo abaixo das ferramentas de leitura do capítulo (o painel).
+    // Antes de refazer as listas ela volta para o seu lugar, para não ser apagada junto com o painel.
+    const bibliaResumoLar = bibliaResumoCaixa.parentElement;
+    function bibliaResumoGuardar() {
+      if (bibliaResumoCaixa.parentElement !== bibliaResumoLar) bibliaResumoLar.appendChild(bibliaResumoCaixa);
+    }
+
+    function bibliaAbrirResumo(item, cap, origem, painel) {
+      bibliaResumoAlvo = { item, cap, origem: origem || '', painel: Boolean(painel) };
       bibliaResumoTitulo.textContent = '✨ Resumo · ' + cap.nome;
       bibliaResumoTexto.value = bibliaEstado.resumos[cap.id] || '';
       const extra = document.getElementById('iaExtra_biblia'); // instruções adicionais: começam vazias a cada resumo e recolhidas
@@ -22057,7 +22101,11 @@ function saveTemplatesToStorage() {
         extra.closest('details').open = false;
       }
       bibliaResumoStatus.textContent = '';
-      if (origem !== 'livros') bibliaProgDefinir(false); // a programação recolhe; o resumo abre no fim da tela
+      if (painel) painel.querySelector('.bp-acoes').after(bibliaResumoCaixa); // logo abaixo do player e dos botões WOL / Resumir
+      else {
+        bibliaResumoGuardar();
+        if (origem !== 'livros') bibliaProgDefinir(false); // a programação recolhe; o resumo abre no fim da tela
+      }
       bibliaResumoCaixa.hidden = false;
       bibliaResumoSincronizar();
       bibliaResumoCaixa.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -22068,6 +22116,13 @@ function saveTemplatesToStorage() {
       const alvo = bibliaResumoAlvo;
       bibliaResumoAlvo = null;
       bibliaResumoCaixa.hidden = true;
+      bibliaResumoGuardar();
+      if (voltar && alvo && alvo.painel) { // aberto dentro do painel: o painel continua onde está; só atualiza os botões e as marcas e volta à vista dele
+        bibliaAtualizarTudo();
+        const visivel = document.querySelector('#bibliaCard .biblia-painel:not([hidden])');
+        if (visivel) visivel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
       if (!voltar || !alvo) return;
       if (alvo.origem === 'livros') { // vindo da leitura por livros: volta ao capítulo no livro (o botão passa a "Ver resumo")
         bibliaLivrosRender();
@@ -22334,6 +22389,7 @@ function saveTemplatesToStorage() {
     }
 
     function bibliaLivrosRender() {
+      bibliaResumoGuardar();
       bibliaLivros.replaceChildren();
       BIBLIA_GRUPOS_LIVROS.forEach(g => {
         if (g.livros.length === 1) { // livro que forma um grupo sozinho (Atos, Apocalipse): o cartão do livro direto
@@ -22369,6 +22425,7 @@ function saveTemplatesToStorage() {
     }
 
     function bibliaRenderSecao() {
+      bibliaResumoGuardar();
       const secoes = BIBLIA_PROG.secoes || [];
       const secao = bibliaSecaoEscolhida ? (secoes.find(s => s.id === bibliaEstado.secao) || secoes[0]) : null;
       document.getElementById('bibliaProgCaixa').hidden = !secao; // sem seção escolhida, a programação não aparece

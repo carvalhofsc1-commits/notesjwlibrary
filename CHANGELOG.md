@@ -6,6 +6,14 @@ Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
 Áudio em texto (gravação ao vivo): corrige o caso de arquivo longo com metade muda — o app passa a vigiar o microfone e os pedaços do gravador, pausa o relógio sem sinal, avisa na tela e tenta retomar a captura (sem encher o arquivo de silêncio). Prefere WebM/Opus no Chrome (mais estável que mp4). Wake Lock reforçado. Texto deixa claro que gravar com a tela desligada / em segundo plano não é confiável nos navegadores (limitação do sistema).
 
+## 6.5.72
+
+Leitura da Bíblia: o capítulo que tem anotação ganha uma **marca âmbar** no canto da sua célula na grade. E, ao tocar em Resumir, a área do resumo agora abre **logo abaixo do player e dos botões WOL / Resumir**, dentro do painel do capítulo (antes ficava no fim da tela); ao fechar, o painel continua onde estava.
+
+## 6.5.71
+
+Leitura da Bíblia: o painel do capítulo ganhou o campo **📝 Anotações do capítulo**, abaixo de WOL e Resumir, para escrever os pontos da leitura. A anotação é guardada neste aparelho à medida que se escreve, é a mesma na leitura por seções e por livros, e entra no backup do app. “Zerar capítulos lidos” não apaga as anotações.
+
 ## 6.5.70
 
 Leitura da Bíblia: os cartões das seções, dos grupos de livros e dos livros tinham duas molduras seguidas (a do cartão e a da barra de progresso), o que parecia grosso; agora têm uma só, fina.

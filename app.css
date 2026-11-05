@@ -10619,3 +10619,25 @@ details.transcricao-bloco:not([open]) {
 .bib-marcar-linha select { flex: 1 1 0; width: auto; }
 .bib-marcar-linha span { flex: 0 0 auto; font-size: .85rem; }
 #bibZerarBtn { width: 100%; box-sizing: border-box; margin: 0; }
+
+/* Anotações do capítulo, no fim do painel da leitura da Bíblia. */
+.bp-notas { margin-top: 10px; }
+.bp-notas-rotulo { display: block; margin: 0 0 4px; font-size: .9rem; font-weight: 800; }
+.bp-notas-area { width: 100%; box-sizing: border-box; min-height: 5.5em; resize: vertical; font-size: .95rem; line-height: 1.4; }
+
+/* A marca de "este capítulo tem anotação": um lápis âmbar no canto de baixo à direita da célula. */
+.biblia-cel-nota { display: none; }
+.biblia-cel.tem-nota .biblia-cel-nota {
+  display: block;
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: #f59e0b;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #92400e 55%, transparent);
+  pointer-events: none;
+}
+/* O resumo, aberto dentro do painel do capítulo. */
+.biblia-painel .biblia-resumo-caixa { margin: 10px 0 0; scroll-margin-top: 72px; }
