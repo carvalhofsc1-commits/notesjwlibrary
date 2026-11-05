@@ -9271,6 +9271,27 @@ details.subsection.ebc-subsection#publicoBox.s34-bloqueado {
   font-variant-numeric: tabular-nums;
 }
 
+.transcricao-grav-alerta {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, #f59e0b 22%, var(--card));
+  border: 1px solid #d97706;
+  color: #92400e;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.transcricao-grav-alerta[hidden] {
+  display: none;
+}
+
+.transcricao-gravacao.sem-sinal {
+  border-color: #d97706;
+  background: color-mix(in srgb, #f59e0b 14%, var(--card));
+}
+
 .transcricao-gravacao .bk-row {
   margin: 6px 0;
 }

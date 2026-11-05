@@ -7542,7 +7542,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.65'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.66'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -20018,28 +20018,45 @@ function saveTemplatesToStorage() {
     // ---------- Gravar um áudio agora ----------
     // O microfone grava pelo navegador (MediaRecorder); ao parar, o arquivo gravado segue o mesmo caminho de um arquivo escolhido (decodificar,
     // cortar em trechos e transcrever). Nada é enviado durante a gravação, e o arquivo inteiro nunca sai do aparelho.
+    // Problema típico (arquivo longo com metade muda): o MediaRecorder continua rodando depois que o track do microfone silencia ou morre.
+    // Por isso monitoramos o track, o tamanho dos pedaços e o nível do analisador; sem sinal, pausamos o relógio, avisamos e tentamos retomar.
+    // Gravar com a tela desligada / em segundo plano: os navegadores móveis não permitem de forma confiável (limitação do sistema, não do app).
     const trGravarBtn = document.getElementById('transcricaoGravarBtn');
     const trGravacao = document.getElementById('transcricaoGravacao');
     const trGravTempo = document.getElementById('transcricaoGravTempo');
+    const trGravAlerta = document.getElementById('transcricaoGravAlerta');
     const trGravPausar = document.getElementById('transcricaoGravPausarBtn');
     const trGravada = document.getElementById('transcricaoGravada');
-    let trGrav = null; // { gravador, stream, pedacos, acumulado, retomadoEm, pausado, intervalo, telaLigada, motivo }
+    let trGrav = null; // { gravador, stream, pedacos, acumulado, retomadoEm, pausado, intervalo, telaLigada, motivo, ... }
     let trUltimaGravacao = null; // { arquivo, url }
+    const TR_SEM_DADO_MS = 3500; // sem pedaço útil do MediaRecorder → captura interrompida
+    const TR_RECUPERAR_COOLDOWN_MS = 10000;
 
     const trFormatarTempo = ms => {
       const s = Math.floor(ms / 1000);
       return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
     };
-    const trGravMsDe = e => e.acumulado + (e.pausado ? 0 : Date.now() - e.retomadoEm);
+    const trGravMsDe = e => e.acumulado + (e.pausado || e.aguardandoMic ? 0 : Date.now() - e.retomadoEm);
     const trGravMs = () => (trGrav ? trGravMsDe(trGrav) : 0);
+
+    function trGravAlertaMostrar(texto) {
+      if (!trGravAlerta) return;
+      if (!texto) { trGravAlerta.hidden = true; trGravAlerta.textContent = ''; trGravacao.classList.remove('sem-sinal'); return; }
+      trGravAlerta.hidden = false;
+      trGravAlerta.textContent = texto;
+      trGravacao.classList.add('sem-sinal');
+      try { navigator.vibrate?.(180); } catch (e) { /* sem vibração */ }
+    }
 
     function trGravAtualizarTela() {
       if (!trGrav) return;
       const emPartes = trLimites.pedacoMin < trLimites.gravacaoMin;
-      trGravTempo.textContent = (trGrav.pausado ? '⏸️ Pausada ' : '🔴 Gravando ') + trFormatarTempo(trGravMs()) + (emPartes ? ' · parte ' + trGrav.numeroPeca : '');
+      const prefixo = trGrav.aguardandoMic ? '⚠️ Sem sinal ' : trGrav.pausado ? '⏸️ Pausada ' : '🔴 Gravando ';
+      trGravTempo.textContent = prefixo + trFormatarTempo(trGravMs()) + (emPartes ? ' · parte ' + trGrav.numeroPeca : '');
       trGravPausar.textContent = trGrav.pausado ? '▶️ Continuar' : '⏸️ Pausar';
+      trGravVigiarSaude(trGrav);
       // A cada pedacoMin minutos de gravação, a parte é fechada e a próxima começa sozinha (a soma vale o limite da gravação).
-      if (emPartes && !trGrav.pausado && !trGrav.semPartes && trGravMs() - trGrav.pecaInicio >= trLimites.pedacoMin * 60 * 1000) trGravarRotacionar(trGrav);
+      if (emPartes && !trGrav.pausado && !trGrav.aguardandoMic && !trGrav.semPartes && trGravMs() - trGrav.pecaInicio >= trLimites.pedacoMin * 60 * 1000) trGravarRotacionar(trGrav);
       if (trGravMs() >= trLimites.gravacaoMin * 60 * 1000) trGravarParar(true, 'A gravação chegou ao limite de ' + trLimites.gravacaoMin + ' minutos e foi encerrada.');
     }
 
@@ -20091,14 +20108,16 @@ function saveTemplatesToStorage() {
         const chao = new Array(BARRAS).fill(1);
         const inicioMs = performance.now();
         let ultimoMs = inicioMs;
-        estado.onda = { ctx, quadro: 0 };
+        estado.onda = { ctx, analisador, quadro: 0 };
         const quadro = () => {
           if (!estado.onda) return;
+          if (estado.onda.ctx.state === 'suspended') estado.onda.ctx.resume().catch(() => {});
           analisador.getByteFrequencyData(dados);
           const agora = performance.now();
           const aquecendo = agora - inicioMs < 800; // no começo o chão é o próprio nível (o ruído de fundo)
           const sobe = 1 - Math.exp(-(agora - ultimoMs) / (agora - inicioMs < 4000 ? 500 : 4000)); // o chão sobe depressa nos 4 s iniciais (até o microfone "acordar") e depois devagar
           ultimoMs = agora;
+          let energia = 0;
           for (let i = 0; i < BARRAS; i++) {
             const [a, b] = faixas[i];
             let pico = 0;
@@ -20106,9 +20125,11 @@ function saveTemplatesToStorage() {
             const v = pico / 255;
             // o "chão" acompanha o ruído de fundo: nos primeiros instantes é o próprio nível; depois desce na hora e só sobe devagar
             chao[i] = aquecendo || v < chao[i] ? v : chao[i] + (v - chao[i]) * sobe;
-            const alvo = estado.pausado ? 0 : Math.min(1, Math.max(0, v - chao[i] - 0.05) * 2.6);
+            const alvo = estado.pausado || estado.aguardandoMic ? 0 : Math.min(1, Math.max(0, v - chao[i] - 0.05) * 2.6);
             suave[i] = suave[i] + (alvo - suave[i]) * (alvo > suave[i] ? 0.6 : 0.25);
+            energia += v;
           }
+          estado.nivelMic = energia / BARRAS;
           trOndaDesenhar(suave);
           estado.onda.quadro = requestAnimationFrame(quadro);
         };
@@ -20123,22 +20144,163 @@ function saveTemplatesToStorage() {
       trOnda.getContext('2d').clearRect(0, 0, trOnda.width, trOnda.height);
     }
 
-    async function trTelaLigada() {
-      try { if (trGrav && navigator.wakeLock && document.visibilityState === 'visible') trGrav.telaLigada = await navigator.wakeLock.request('screen'); } catch (e) { /* sem tela sempre ligada */ }
+    const trMicConstraints = () => ({
+      audio: {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false, // AGC instável em gravações longas de reunião
+        channelCount: 1,
+      },
+    });
+
+    // WebM/Opus no Chrome/Android é bem mais estável que audio/mp4 (que no Chromium costuma gerar silêncio ou truncar).
+    // Safari/iOS não tem WebM: cai em mp4.
+    function trMimeGravacao() {
+      return ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'].find(t => MediaRecorder.isTypeSupported(t)) || '';
     }
-    document.addEventListener('visibilitychange', () => { if (trGrav && document.visibilityState === 'visible') trTelaLigada(); });
+
+    async function trTelaLigada() {
+      if (!trGrav || !navigator.wakeLock || document.visibilityState !== 'visible') return;
+      try {
+        const lock = await navigator.wakeLock.request('screen');
+        trGrav.telaLigada = lock;
+        lock.addEventListener('release', () => {
+          if (trGrav && document.visibilityState === 'visible' && !trGrav.encerrando) setTimeout(trTelaLigada, 400);
+        });
+      } catch (e) { /* sem tela sempre ligada */ }
+    }
+
+    function trMicOuvirTrack(estado) {
+      const track = estado.stream && estado.stream.getAudioTracks()[0];
+      if (!track) return;
+      estado.track = track;
+      const aoMudo = () => {
+        if (estado.encerrando || estado.descartada) return;
+        estado.micMudo = true;
+        trGravMarcarSemSinal(estado, 'O microfone ficou mudo. Tentando retomar…');
+        trGravarRecuperarMic(estado);
+      };
+      const aoFim = () => {
+        if (estado.encerrando || estado.descartada) return;
+        trGravMarcarSemSinal(estado, 'O microfone foi interrompido. Tentando retomar…');
+        trGravarRecuperarMic(estado);
+      };
+      track.addEventListener('mute', aoMudo);
+      track.addEventListener('unmute', () => { estado.micMudo = false; });
+      track.addEventListener('ended', aoFim);
+      estado._tirarTrack = () => {
+        track.removeEventListener('mute', aoMudo);
+        track.removeEventListener('ended', aoFim);
+      };
+    }
+
+    function trGravCongelarRelogio(estado) {
+      if (estado.pausado || estado.aguardandoMic) return;
+      estado.acumulado += Date.now() - estado.retomadoEm;
+      estado.aguardandoMic = true;
+    }
+
+    function trGravMarcarSemSinal(estado, msg) {
+      trGravCongelarRelogio(estado);
+      trGravAlertaMostrar(msg);
+      trGravAtualizarTela();
+      try {
+        if (estado.gravador && estado.gravador.state === 'recording') {
+          estado.gravador.requestData();
+          estado.gravador.pause();
+        }
+      } catch (e) { /* pause pode falhar em alguns aparelhos */ }
+    }
+
+    function trGravVigiarSaude(estado) {
+      if (!estado || estado.pausado || estado.encerrando || estado.recuperando || estado.aguardandoMic) return;
+      const agora = Date.now();
+      if (estado.track && (estado.track.readyState !== 'live' || estado.track.muted)) {
+        trGravMarcarSemSinal(estado, 'O microfone parou de capturar. Tentando retomar…');
+        trGravarRecuperarMic(estado);
+        return;
+      }
+      // Sem pedaços do MediaRecorder: o gravador “anda” no relógio mas não recebe áudio (origem típica de arquivo longo e mudo).
+      // Não usamos só o nível do gráfico: pausas naturais da conversa gerariam falso alarme.
+      if (estado.ultimoDadoEm && agora - estado.ultimoDadoEm > TR_SEM_DADO_MS) {
+        try { estado.gravador && estado.gravador.state === 'recording' && estado.gravador.requestData(); } catch (e) { /* ignore */ }
+        if (agora - estado.ultimoDadoEm > TR_SEM_DADO_MS + 1500) {
+          trGravMarcarSemSinal(estado, 'A gravação parou de receber áudio. Tentando retomar…');
+          trGravarRecuperarMic(estado);
+        }
+      }
+    }
+
+    async function trGravarRecuperarMic(estado) {
+      if (!estado || estado.recuperando || estado.encerrando || estado.descartada) return;
+      if (estado.ultimaRecuperacao && Date.now() - estado.ultimaRecuperacao < TR_RECUPERAR_COOLDOWN_MS) return;
+      estado.recuperando = true;
+      estado.ultimaRecuperacao = Date.now();
+      trGravCongelarRelogio(estado);
+      trGravAlertaMostrar('Microfone interrompido. Tentando retomar a captura…');
+      try {
+        // Guarda o que já tinha áudio bom numa parte, para o arquivo não ficar cheio de silêncio.
+        if (estado.gravador && estado.gravador.state !== 'inactive' && estado.pedacos.length) {
+          await new Promise(resolve => {
+            const velho = estado.gravador;
+            const pedacosVelhos = estado.pedacos;
+            const meta = { inicio: estado.inicioDaPeca, durMs: Math.max(0, trGravMsDe(estado) - estado.pecaInicio), numero: estado.numeroPeca, tipo: velho.mimeType };
+            estado.rotacionou = true;
+            velho.onstop = () => { trPecaPronta(estado, pedacosVelhos, meta); resolve(); };
+            try { velho.requestData(); } catch (e) { /* ignore */ }
+            try { velho.stop(); } catch (e) { resolve(); }
+            setTimeout(resolve, 2500);
+          });
+          estado.numeroPeca += 1;
+        } else if (estado.gravador && estado.gravador.state !== 'inactive') {
+          try { estado.gravador.stop(); } catch (e) { /* ignore */ }
+        }
+        if (estado._tirarTrack) try { estado._tirarTrack(); } catch (e) { /* ignore */ }
+        trOndaParar(estado);
+        try { estado.stream.getTracks().forEach(t => t.stop()); } catch (e) { /* ignore */ }
+        const stream = await navigator.mediaDevices.getUserMedia(trMicConstraints());
+        estado.stream = stream;
+        estado.micMudo = false;
+        estado.ultimoDadoEm = Date.now();
+        trMicOuvirTrack(estado);
+        trOndaIniciar(estado);
+        trGravadorNovo(estado);
+        estado.aguardandoMic = false;
+        estado.retomadoEm = Date.now();
+        trGravAlertaMostrar('');
+        trTelaLigada();
+        trGravAtualizarTela();
+      } catch (e) {
+        trGravarParar(true, 'O microfone parou e não foi possível retomar. Guardei o que foi gravado até ali.');
+      } finally {
+        estado.recuperando = false;
+      }
+    }
 
     // Cria o gravador de uma parte e já começa a gravar; os pedaços de áudio dela ficam em estado.pedacos.
     function trGravadorNovo(estado) {
       const gravador = new MediaRecorder(estado.stream, estado.opcoes);
       const pedacos = [];
-      gravador.ondataavailable = e => { if (e.data && e.data.size) pedacos.push(e.data); };
+      gravador.ondataavailable = e => {
+        if (e.data && e.data.size) {
+          pedacos.push(e.data);
+          estado.ultimoDadoEm = Date.now();
+          estado.ultimoDadoBytes = e.data.size;
+        }
+      };
+      gravador.onerror = () => {
+        if (estado.encerrando || estado.descartada) return;
+        trGravMarcarSemSinal(estado, 'Erro no gravador. Tentando retomar…');
+        trGravarRecuperarMic(estado);
+      };
       gravador.onstop = () => trGravarFim(estado); // a última parte: encerra a gravação (nas partes do meio, o onstop é trocado em trGravarRotacionar)
-      gravador.start(1000); // um pedaço por segundo: se o aparelho parar a gravação, o que veio até ali é aproveitado
+      // 500 ms: detecta mais cedo se o aparelho parar de entregar pedaços (antes era 1 s).
+      gravador.start(500);
       estado.gravador = gravador;
       estado.pedacos = pedacos;
       estado.pecaInicio = trGravMsDe(estado);
       estado.inicioDaPeca = new Date();
+      estado.ultimoDadoEm = Date.now();
     }
 
     async function trGravarIniciar() {
@@ -20150,28 +20312,42 @@ function saveTemplatesToStorage() {
       if (!(await trConsentimento())) return (trInfo.textContent = 'Nada foi gravado.');
       let stream;
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: true } });
+        stream = await navigator.mediaDevices.getUserMedia(trMicConstraints());
       } catch (e) {
         return (trInfo.textContent = 'Não consegui usar o microfone. Permita o microfone para o NoteStyle (nos ajustes do navegador ou do aparelho) e tente de novo.');
       }
-      const tipo = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'].find(t => MediaRecorder.isTypeSupported(t)) || '';
+      const tipo = trMimeGravacao();
       await pastaOk;
       trGravadaLimpar();
-      const estado = { gravador: null, stream, pedacos: [], acumulado: 0, retomadoEm: Date.now(), pausado: false, intervalo: null, telaLigada: null, motivo: '', transcrever: true,
-        opcoes: tipo ? { mimeType: tipo } : undefined, pecaInicio: 0, inicioDaPeca: new Date(), itens: [], numeroPeca: 1, rotacionou: false };
+      trGravAlertaMostrar('');
+      const estado = {
+        gravador: null, stream, pedacos: [], acumulado: 0, retomadoEm: Date.now(), pausado: false, aguardandoMic: false,
+        intervalo: null, telaLigada: null, motivo: '', transcrever: true,
+        opcoes: tipo ? { mimeType: tipo, audioBitsPerSecond: 128000 } : { audioBitsPerSecond: 128000 },
+        pecaInicio: 0, inicioDaPeca: new Date(), itens: [], numeroPeca: 1, rotacionou: false,
+        ultimoDadoEm: Date.now(), nivelMic: 0, recuperando: false, ultimaRecuperacao: 0,
+      };
       trGrav = estado;
+      trMicOuvirTrack(estado);
       trOndaIniciar(estado);
       try {
         trGravadorNovo(estado);
       } catch (e) {
-        trOndaParar(estado);
-        trGrav = null;
-        stream.getTracks().forEach(t => t.stop());
-        return (trInfo.textContent = 'Não consegui iniciar a gravação neste aparelho.');
+        // Alguns aparelhos rejeitam audioBitsPerSecond; tenta de novo só com o mime.
+        try {
+          estado.opcoes = tipo ? { mimeType: tipo } : undefined;
+          trGravadorNovo(estado);
+        } catch (e2) {
+          trOndaParar(estado);
+          if (estado._tirarTrack) try { estado._tirarTrack(); } catch (err) { /* ignore */ }
+          trGrav = null;
+          stream.getTracks().forEach(t => t.stop());
+          return (trInfo.textContent = 'Não consegui iniciar a gravação neste aparelho.');
+        }
       }
       estado.intervalo = setInterval(trGravAtualizarTela, 500);
       trGravacao.hidden = false;
-      trInfo.textContent = '';
+      trInfo.textContent = 'Mantenha a tela aberta: com ela desligada ou o app em segundo plano, o celular costuma interromper o microfone.';
       trAtualizarBotoes();
       trGravAtualizarTela();
       trTelaLigada();
@@ -20179,7 +20355,7 @@ function saveTemplatesToStorage() {
 
     // Fecha a parte em andamento e começa a próxima já com o gravador novo ligado (as duas se sobrepõem por um instante: nada se perde na emenda).
     function trGravarRotacionar(estado) {
-      if (estado.encerrando || estado.pausado || estado.rotacionando || estado.semPartes) return;
+      if (estado.encerrando || estado.pausado || estado.aguardandoMic || estado.rotacionando || estado.semPartes || estado.recuperando) return;
       const velho = estado.gravador;
       const pedacosVelhos = estado.pedacos;
       const meta = { inicio: estado.inicioDaPeca, durMs: trGravMsDe(estado) - estado.pecaInicio, numero: estado.numeroPeca, tipo: velho.mimeType };
@@ -20193,13 +20369,14 @@ function saveTemplatesToStorage() {
       estado.rotacionou = true;
       estado.rotacionando = true;
       velho.onstop = () => { estado.rotacionando = false; trPecaPronta(estado, pedacosVelhos, meta); };
+      try { velho.requestData(); } catch (e) { /* ignore */ }
       try { velho.stop(); } catch (e) { estado.rotacionando = false; }
     }
 
     // Monta o arquivo de uma parte da gravação, põe na lista, guarda no aparelho e, se houver, salva na pasta escolhida.
     function trPecaPronta(estado, pedacos, meta) {
       if (estado.descartada || !pedacos.length) return null;
-      const tipo = (meta.tipo || pedacos[0].type || 'audio/mp4').split(';')[0];
+      const tipo = (meta.tipo || pedacos[0].type || 'audio/webm').split(';')[0];
       const ext = /mp4|aac|m4a/.test(tipo) ? 'm4a' : /ogg/.test(tipo) ? 'ogg' : 'webm';
       const q = meta.inicio;
       const p = n => String(n).padStart(2, '0');
@@ -20221,7 +20398,9 @@ function saveTemplatesToStorage() {
       trGrav.descartada = !transcrever;
       trGrav.motivo = motivo || '';
       trGrav.encerrando = true;
-      if (trGrav.gravador.state !== 'inactive') trGrav.gravador.stop();
+      trGravAlertaMostrar('');
+      try { if (trGrav.gravador && trGrav.gravador.state !== 'inactive') trGrav.gravador.requestData(); } catch (e) { /* ignore */ }
+      if (trGrav.gravador && trGrav.gravador.state !== 'inactive') trGrav.gravador.stop();
       else trGravarFim(trGrav);
     }
 
@@ -20230,10 +20409,13 @@ function saveTemplatesToStorage() {
       const duracaoMs = trGravMsDe(estado);
       trGrav = null;
       trOndaParar(estado);
+      if (estado._tirarTrack) try { estado._tirarTrack(); } catch (e) { /* ignore */ }
       clearInterval(estado.intervalo);
-      estado.stream.getTracks().forEach(t => t.stop());
+      try { estado.stream.getTracks().forEach(t => t.stop()); } catch (e) { /* ignore */ }
       try { if (estado.telaLigada) estado.telaLigada.release(); } catch (e) { /* já liberada */ }
       trGravacao.hidden = true;
+      trGravacao.classList.remove('sem-sinal');
+      trGravAlertaMostrar('');
       const interrompida = !estado.encerrando; // o aparelho parou a gravação sem a pessoa pedir
       if (!estado.transcrever) { // descartada: sai também o que já tinha virado parte da lista
         estado.itens.forEach(item => { if (item) { trLista = trLista.filter(x => x !== item); trItemBdApagar(item); } });
@@ -20244,7 +20426,7 @@ function saveTemplatesToStorage() {
         trAtualizarBotoes();
         return;
       }
-      trPecaPronta(estado, estado.pedacos, { inicio: estado.inicioDaPeca, durMs: duracaoMs - estado.pecaInicio, numero: estado.numeroPeca, tipo: estado.gravador && estado.gravador.mimeType });
+      trPecaPronta(estado, estado.pedacos, { inicio: estado.inicioDaPeca, durMs: Math.max(0, duracaoMs - estado.pecaInicio), numero: estado.numeroPeca, tipo: estado.gravador && estado.gravador.mimeType });
       if (!estado.itens.length) { trInfo.textContent = 'Não houve áudio gravado.'; trAtualizarBotoes(); return; }
       trAtualizarBotoes();
       const aviso = estado.motivo || (interrompida ? 'O aparelho parou a gravação; usei o que foi gravado.' : '');
@@ -20257,11 +20439,38 @@ function saveTemplatesToStorage() {
       trGravadaAtualizar();
     }
 
+    document.addEventListener('visibilitychange', () => {
+      if (!trGrav) return;
+      if (document.visibilityState === 'visible') {
+        if (trGrav.onda && trGrav.onda.ctx && trGrav.onda.ctx.state === 'suspended') trGrav.onda.ctx.resume().catch(() => {});
+        trTelaLigada();
+        trGravVigiarSaude(trGrav);
+        return;
+      }
+      // Saiu do primeiro plano: pedimos o que ainda está no buffer e avisamos (em muitos celulares o mic morre em seguida).
+      try { if (trGrav.gravador && trGrav.gravador.state === 'recording') trGrav.gravador.requestData(); } catch (e) { /* ignore */ }
+      trGravAlertaMostrar('App em segundo plano: o celular pode interromper o microfone. Volte para esta tela para continuar gravando.');
+    });
+    // Alguns celulares “congelam” a página (Page Lifecycle); tratamos como perda de primeiro plano.
+    document.addEventListener('freeze', () => {
+      if (!trGrav) return;
+      try { if (trGrav.gravador && trGrav.gravador.state === 'recording') trGrav.gravador.requestData(); } catch (e) { /* ignore */ }
+    });
+
     trGravarBtn.addEventListener('click', trGravarIniciar);
     trGravPausar.addEventListener('click', () => {
-      if (!trGrav || trGrav.gravador.state === 'inactive') return;
-      if (trGrav.pausado) { trGrav.gravador.resume(); trGrav.pausado = false; trGrav.retomadoEm = Date.now(); }
-      else { trGrav.gravador.pause(); trGrav.acumulado += Date.now() - trGrav.retomadoEm; trGrav.pausado = true; }
+      if (!trGrav || !trGrav.gravador || trGrav.gravador.state === 'inactive' || trGrav.aguardandoMic) return;
+      if (trGrav.pausado) {
+        trGrav.gravador.resume();
+        trGrav.pausado = false;
+        trGrav.retomadoEm = Date.now();
+        trGrav.ultimoDadoEm = Date.now();
+        trGravAlertaMostrar('');
+      } else {
+        trGrav.gravador.pause();
+        trGrav.acumulado += Date.now() - trGrav.retomadoEm;
+        trGrav.pausado = true;
+      }
       trGravAtualizarTela();
     });
     document.getElementById('transcricaoGravPararBtn').addEventListener('click', () => trGravarParar(true));
