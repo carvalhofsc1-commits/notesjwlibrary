@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.61
+
+Ajustes → Leitura da Bíblia: cada jeito de marcar capítulos já lidos ganhou a sua moldura, e os campos de livro, de seção e o botão “Marcar” passaram a ocupar sempre a largura toda.
+
 ## 6.5.60
 
 Leitura da Bíblia: o texto do versículo no player fica em itálico. Em Ajustes → 📚 Leitura da Bíblia: **Marcar capítulos já lidos** (para quem começa no meio de um ciclo), com três jeitos — tudo, do começo da Bíblia até um capítulo (a fita passa para o capítulo seguinte), um livro ou alguns capítulos dele, ou uma seção inteira; os capítulos já marcados não mudam e os novos ficam sem data. E **Recomeçar o ciclo**: zera todos os capítulos lidos e tira a fita (os resumos salvos continuam). Ambos pedem confirmação.

@@ -10584,10 +10584,10 @@ details.transcricao-bloco:not([open]) {
 .biblia-player .bp-versiculo { font-style: italic; margin: 2px 0 6px; padding: 7px 10px; border-radius: 10px; background: rgba(120, 120, 140, 0.12); font-size: 0.92rem; line-height: 1.4; text-align: left; overflow-wrap: anywhere; }
 .biblia-player .bp-versiculo[hidden] { display: none; }
 
-/* Ajustes → Leitura da Bíblia: marcar capítulos já lidos e recomeçar o ciclo. */
-.bib-marcar-tit { margin: 10px 0 4px; font-size: .85rem; font-weight: 800; }
-.bib-marcar-linha { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.bib-marcar-linha select { flex: 1 1 110px; min-width: 0; width: auto; }
-.bib-marcar-linha select#bibDe, .bib-marcar-linha select#bibAte, .bib-marcar-linha select#bibAteCap { flex: 0 1 76px; }
-.bib-marcar-linha span { font-size: .85rem; }
-.bib-marcar-linha button { flex: 0 0 auto; }
+/* Ajustes → Leitura da Bíblia: marcar capítulos já lidos e recomeçar o ciclo. Cada opção numa moldura; campos e botão sempre na largura toda. */
+.bib-opcao { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; }
+.bib-opcao .bib-marcar-tit { margin: 0; font-size: .9rem; font-weight: 800; }
+.bib-opcao select, .bib-opcao button { width: 100%; min-width: 0; box-sizing: border-box; margin: 0; }
+.bib-marcar-linha { display: flex; align-items: center; gap: 8px; }
+.bib-marcar-linha select { flex: 1 1 0; width: auto; }
+.bib-marcar-linha span { flex: 0 0 auto; font-size: .85rem; }

@@ -1142,23 +1142,25 @@
             <div class="acesso-item bib-marcar">
               <label>✅ Marcar capítulos já lidos</label>
               <p class="hint">Para quem começa a usar o app no meio de um ciclo de leitura. Os capítulos já marcados não mudam.</p>
-              <p class="bib-marcar-tit">Tudo, do começo da Bíblia até um capítulo</p>
-              <div class="bib-marcar-linha">
+              <div class="bib-opcao">
+                <p class="bib-marcar-tit">Tudo, do começo da Bíblia até um capítulo</p>
                 <select id="bibAteLivro" aria-label="Livro"></select>
                 <select id="bibAteCap" aria-label="Capítulo"></select>
                 <button type="button" class="secondary" id="bibAteBtn">Marcar</button>
               </div>
-              <p class="bib-marcar-tit">Um livro, ou alguns capítulos dele</p>
-              <div class="bib-marcar-linha">
+              <div class="bib-opcao">
+                <p class="bib-marcar-tit">Um livro, ou alguns capítulos dele</p>
                 <select id="bibLivro" aria-label="Livro"></select>
-                <span>do cap.</span>
-                <select id="bibDe" aria-label="Do capítulo"></select>
-                <span>ao</span>
-                <select id="bibAte" aria-label="Ao capítulo"></select>
+                <div class="bib-marcar-linha">
+                  <span>do cap.</span>
+                  <select id="bibDe" aria-label="Do capítulo"></select>
+                  <span>ao</span>
+                  <select id="bibAte" aria-label="Ao capítulo"></select>
+                </div>
                 <button type="button" class="secondary" id="bibLivroBtn">Marcar</button>
               </div>
-              <p class="bib-marcar-tit">Uma seção inteira</p>
-              <div class="bib-marcar-linha">
+              <div class="bib-opcao">
+                <p class="bib-marcar-tit">Uma seção inteira</p>
                 <select id="bibSecao" aria-label="Seção"></select>
                 <button type="button" class="secondary" id="bibSecaoBtn">Marcar</button>
               </div>
