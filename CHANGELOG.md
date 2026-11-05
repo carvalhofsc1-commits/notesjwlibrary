@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.62
+
+Ajustes → Leitura da Bíblia: o botão “Zerar capítulos lidos” ocupa a largura toda.
+
 ## 6.5.61
 
 Ajustes → Leitura da Bíblia: cada jeito de marcar capítulos já lidos ganhou a sua moldura, e os campos de livro, de seção e o botão “Marcar” passaram a ocupar sempre a largura toda.
