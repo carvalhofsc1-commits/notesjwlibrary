@@ -662,7 +662,7 @@
       height: 72px;
       max-height: 60vh;
       resize: vertical;
-      border-width: 2px;
+      border-width: 1px;
       border-color: var(--g-borda, var(--line));
     }
 
@@ -673,7 +673,7 @@
     }
 
     /* Convite para o FunPlayB (tela Formatar): título com brilho que corre pelas cores, ícone que flutua de leve e o endereço embaixo. */
-    /* Sem moldura (teste a pedido do usuário): sem borda, fundo nem sombra. Para voltar ao cartão: background: var(--card); border: 2px solid #a07ab7; box-shadow: 0 8px 22px var(--shadow); */
+    /* Sem moldura (teste a pedido do usuário): sem borda, fundo nem sombra. Para voltar ao cartão: background: var(--card); border: 1px solid #a07ab7; box-shadow: 0 8px 22px var(--shadow); */
     .card.funplayb-card {
       background: transparent;
       border: 0;
@@ -799,7 +799,7 @@
       gap: 8px;
       margin: 0;
       padding: 8px 10px;
-      border: 2px solid var(--muted);
+      border: 1px solid var(--muted);
       border-radius: 10px;
       background: var(--card);
       font-size: .88rem;
@@ -951,7 +951,7 @@
       min-height: 0;
       margin: 8px 0 0;
       padding: 4px 10px 8px;
-      border: 2px solid var(--g-borda, var(--line));
+      border: 1px solid var(--g-borda, var(--line));
       border-radius: 10px;
       color: var(--muted);
       font-size: .86rem;
@@ -1472,7 +1472,7 @@
       max-width: 560px;
       margin: 0 auto;
       padding: 12px 14px;
-      border: 2px solid var(--accent);
+      border: 1px solid var(--accent);
       border-radius: 14px;
       background: var(--card);
       color: var(--text);
@@ -1514,7 +1514,7 @@
     .ai-colado {
       margin-top: 14px;
       padding: 12px;
-      border: 2px solid #a855f7;
+      border: 1px solid #a855f7;
       border-radius: 12px;
       background: var(--card);
       background: color-mix(in srgb, #a855f7 8%, var(--card));
@@ -1529,14 +1529,14 @@
     details.subsection.sentinela-subsection {
       background: var(--card);
       background: color-mix(in srgb, #a855f7 10%, var(--card));
-      border: 2px solid #a855f7;
+      border: 1px solid #a855f7;
     }
 
     /* Card do dirigente: mesmo formato do card da Sentinela, em verde-azulado. */
     details.subsection.dirigente-subsection {
       background: var(--card);
       background: color-mix(in srgb, #14b8a6 10%, var(--card));
-      border: 2px solid #14b8a6;
+      border: 1px solid #14b8a6;
     }
 
     /* Pesquisas e respostas salvas (histórico dos resultados da IA neste aparelho). */
@@ -1551,7 +1551,7 @@
     /* Categorias (Comentários, Dirigentes, Esboços): contêineres recolhíveis com a cor do grupo correspondente da tela Reuniões. */
     .historico-cat {
       margin-top: 10px;
-      border: 2px solid var(--cat-cor, var(--line));
+      border: 1px solid var(--cat-cor, var(--line));
       border-radius: 12px;
       overflow: hidden;
       background: var(--card);
@@ -1658,14 +1658,14 @@
     details.subsection.joias-subsection {
       background: var(--card);
       background: color-mix(in srgb, #0ea5e9 10%, var(--card));
-      border: 2px solid #0ea5e9;
+      border: 1px solid #0ea5e9;
     }
 
     /* Card do Estudo Bíblico de Congregação: mesmo formato, em âmbar. */
     details.subsection.ebc-subsection {
       background: var(--card);
       background: color-mix(in srgb, #f59e0b 10%, var(--card));
-      border: 2px solid #f59e0b;
+      border: 1px solid #f59e0b;
     }
 
     .ebc-info:empty {
@@ -1676,7 +1676,7 @@
     :is(#tesourosInfo, #discursoInfo, #publicoInfo, #outrosInfo):not(:empty) {
       margin: 10px 0;
       padding: 10px 12px;
-      border: 2px solid color-mix(in srgb, #f59e0b 55%, transparent);
+      border: 1px solid color-mix(in srgb, #f59e0b 55%, transparent);
       border-radius: 12px;
       background: var(--card);
     }
@@ -1743,7 +1743,7 @@
     .sent-option {
       margin-top: 14px;
       padding: 12px;
-      border: 2px solid var(--muted);
+      border: 1px solid var(--muted);
       border-radius: 12px;
       background: var(--card);
     }
@@ -1884,7 +1884,7 @@
     .study-pergunta {
       margin: 8px 0 0;
       padding: 10px 12px;
-      border: 2px solid color-mix(in srgb, var(--brand) 45%, transparent);
+      border: 1px solid color-mix(in srgb, var(--brand) 45%, transparent);
       border-radius: 12px;
       background: var(--card);
       text-align: center;
@@ -2010,7 +2010,7 @@
       justify-content: center;
       min-height: 48px;
       padding: 6px 10px;
-      border: 2px solid var(--muted);
+      border: 1px solid var(--muted);
       border-radius: 10px;
       background: var(--card);
       color: var(--text);
@@ -2192,7 +2192,7 @@
       border-radius: 999px;
       background: var(--card);
       color: var(--text);
-      border: 2px solid var(--accent);
+      border: 1px solid var(--accent);
       box-shadow: 0 6px 18px rgba(15, 23, 42, .25);
       font-size: .88rem;
       font-weight: 700;
@@ -2326,7 +2326,7 @@
     }
 
     details.subsection {
-      border: 2px solid var(--muted);
+      border: 1px solid var(--muted);
       border-radius: 10px;
       margin: 12px 0 0;
       background: var(--card);
@@ -2361,7 +2361,7 @@
        seções, com o título um pouco maior. */
     details.subsection.group-box {
       background: var(--card);
-      border-width: 2px;
+      border-width: 1px;
     }
 
     /* Fundo colorido suave (misturado com a cor do card, para funcionar no tema claro e no escuro). */
@@ -2487,7 +2487,7 @@
     #inputText {
       display: block;
       /* inline-block deixaria uma folga (linha de base) embaixo do campo */
-      border-width: 2px;
+      border-width: 1px;
       border-color: var(--tint1-border);
     }
 
@@ -2613,7 +2613,7 @@
     button.secondary {
       background: var(--neutral);
       color: var(--neutral-text);
-      border: 2px solid var(--muted);
+      border: 1px solid var(--muted);
     }
 
     button.secondary:hover {
@@ -2885,7 +2885,7 @@
     .quick-emojis {
       margin: 0 0 12px;
       padding: 6px;
-      border: 2px solid #8b5cf6;
+      border: 1px solid #8b5cf6;
       border-radius: 12px;
       background: #f5f3ff;
       background: color-mix(in srgb, #8b5cf6 10%, var(--card));
@@ -2973,7 +2973,7 @@
       padding: 0;
       font-size: 1.25rem;
       border-radius: 10px;
-      border: 2px solid var(--line);
+      border: 1px solid var(--line);
       background: var(--card);
       color: var(--text);
       box-shadow: none;
@@ -3259,7 +3259,7 @@
     }
 
     .template-card-btn {
-      border: 2px solid var(--muted);
+      border: 1px solid var(--muted);
     }
 
     .template-card-btn:hover {
@@ -3293,7 +3293,7 @@
       display: flex;
       flex-direction: column;
       margin-top: 8px;
-      border: 2px solid var(--muted);
+      border: 1px solid var(--muted);
       border-radius: 10px;
       max-height: 185px;
       overflow-y: auto;
@@ -3739,7 +3739,7 @@
     .imagens-box {
       margin-top: 8px;
       padding: 4px 10px 8px;
-      border: 2px solid var(--g-borda, var(--line));
+      border: 1px solid var(--g-borda, var(--line));
       border-radius: 10px;
       text-align: left;
     }
@@ -3805,7 +3805,7 @@
     }
 
     .prompt-item {
-      border: 2px solid var(--line);
+      border: 1px solid var(--line);
       border-radius: 14px;
       padding: 12px;
       margin-top: 14px;
@@ -3918,7 +3918,7 @@
     details.prompt-cat {
       --cat-cor: #64748b;
       margin-top: 16px;
-      border: 2px solid var(--cat-cor);
+      border: 1px solid var(--cat-cor);
       border-radius: 14px;
       overflow: hidden;
       background: var(--card);
@@ -4007,7 +4007,7 @@
 
     .prompt-parte textarea {
       background: var(--field);
-      border: 2px solid color-mix(in srgb, var(--cat-cor, #64748b) 55%, var(--line));
+      border: 1px solid color-mix(in srgb, var(--cat-cor, #64748b) 55%, var(--line));
     }
 
     .prompt-item textarea {
@@ -4402,7 +4402,7 @@
       min-height: 200px;
       margin-top: 8px;
       resize: none;
-      border-width: 2px;
+      border-width: 1px;
       border-color: var(--rosa-border);
     }
 
@@ -4431,7 +4431,7 @@
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       padding: 12px 14px;
-      border: 2px solid var(--rosa-border);
+      border: 1px solid var(--rosa-border);
       border-radius: 12px;
       background: var(--card);
       font-size: var(--leitura-fonte, 1.02rem);
@@ -5264,7 +5264,7 @@
       gap: 3px;
       min-height: 92px;
       padding: 10px 12px;
-      border: 2px solid var(--atalho-borda, var(--tint6-border));
+      border: 1px solid var(--atalho-borda, var(--tint6-border));
       border-radius: 12px;
       background: var(--atalho-fundo, var(--card));
       color: var(--text);
@@ -6502,7 +6502,7 @@
     .backup-save {
       margin-top: 12px;
       padding: 12px;
-      border: 2px solid var(--accent);
+      border: 1px solid var(--accent);
       border-radius: 12px;
       background: color-mix(in srgb, var(--accent) 8%, var(--card));
     }
@@ -6591,7 +6591,7 @@
     .reunioes-secao {
       margin-top: 14px;
       padding: 0 10px 12px;
-      border: 2px solid var(--line);
+      border: 1px solid var(--line);
       border-radius: 12px;
     }
 
@@ -6607,7 +6607,7 @@
     /* Cada grupo (comentários / dirigir / discursos) é um botão com a cor dele: o título é a faixa do alto. */
     .reunioes-grupo {
       margin-top: 10px;
-      border: 2px solid var(--grupo-cor, var(--line));
+      border: 1px solid var(--grupo-cor, var(--line));
       border-radius: 12px;
       overflow: hidden;
       background: var(--card);
@@ -7295,7 +7295,7 @@
     .reunioes-week {
       margin: 2px 0 14px;
       padding: 10px 12px;
-      border: 2px solid var(--line);
+      border: 1px solid var(--line);
       border-radius: 12px;
       background: var(--card);
     }
@@ -7395,7 +7395,7 @@
       white-space: nowrap;
       background: var(--neutral);
       color: var(--neutral-text);
-      border: 2px solid var(--muted);
+      border: 1px solid var(--muted);
     }
 
     .top-text-btn:hover {
@@ -7536,7 +7536,7 @@
       justify-content: center;
       min-height: 40px;
       padding: 8px 10px;
-      border: 2px solid var(--line);
+      border: 1px solid var(--line);
       border-radius: 10px;
       font-size: .88rem;
       font-weight: 700;
@@ -7549,7 +7549,7 @@
     .voz-bar {
       margin-top: 8px;
       padding: 8px 10px;
-      border: 2px solid #38bdf8;
+      border: 1px solid #38bdf8;
       border-radius: 12px;
       background: #e0f2fe;
       background: color-mix(in srgb, #38bdf8 16%, var(--card));
@@ -8071,7 +8071,7 @@
       background: #fde7c3;
       background: color-mix(in srgb, #f59e0b 24%, var(--card));
       color: var(--neutral-text);
-      border: 2px solid #d97706;
+      border: 1px solid #d97706;
     }
 
     #leituraArquivoBtn:hover,
@@ -8083,7 +8083,7 @@
       background: #fde7c3;
       background: color-mix(in srgb, #f59e0b 24%, var(--card));
       color: var(--neutral-text);
-      border: 2px solid #d97706;
+      border: 1px solid #d97706;
     }
 
     .leitura-acoes .leitura-ler:hover {
@@ -8178,7 +8178,7 @@
 
     /* Ajustes: um contêiner para as opções de todos os usuários e outro para as exclusivas do administrador. */
     .ajustes-grupo {
-      border: 2px solid var(--muted);
+      border: 1px solid var(--muted);
       border-radius: 16px;
       padding: 6px 10px 12px;
       margin: 12px 0;
@@ -8233,7 +8233,7 @@
 
     /* Explicação recolhível da tela Backup. */
     .backup-ajuda {
-      border: 2px solid var(--muted);
+      border: 1px solid var(--muted);
       border-radius: 12px;
       background: var(--card);
       margin: 0 0 14px;
@@ -8368,7 +8368,7 @@
 
     /* Mesclar backups: regra para notas repetidas e lista "Resolver duplicadas". */
     .merge-regra {
-      border: 2px solid var(--muted);
+      border: 1px solid var(--muted);
       border-radius: 10px;
       padding: 8px 10px;
       margin: 10px 0;
@@ -8481,7 +8481,7 @@
 
     /* Resumo da mesclagem e etiquetas novas em pílulas. */
     .merge-resultado {
-      border: 2px solid var(--muted);
+      border: 1px solid var(--muted);
       border-radius: 12px;
       padding: 10px 12px;
       margin: 12px 0;
@@ -8733,7 +8733,7 @@
 
     /* O conteúdo do backup aberto (a lista para conferir, procurar, editar e apagar): num contêiner com título. */
     .backup-conteudo {
-      border: 2px solid var(--muted);
+      border: 1px solid var(--muted);
       border-radius: 12px;
       padding: 8px 10px 10px;
       margin-top: 14px;
@@ -8781,7 +8781,7 @@
       min-height: 42px;
       background: #ddd6fe;
       color: #3b0764;
-      border: 2px solid #8b5cf6;
+      border: 1px solid #8b5cf6;
     }
 
     .merge-slot button.merge-selecionar:hover {
@@ -8902,7 +8902,7 @@
       background: #bbf7d0;
       background: color-mix(in srgb, #22c55e 30%, var(--card));
       color: var(--neutral-text);
-      border: 2px solid #16a34a;
+      border: 1px solid #16a34a;
     }
 
     .backup-open-row #backupMergeBtn:hover {
@@ -8913,7 +8913,7 @@
       background: #fed7aa;
       background: color-mix(in srgb, #f59e0b 30%, var(--card));
       color: var(--neutral-text);
-      border: 2px solid #d97706;
+      border: 1px solid #d97706;
     }
 
     .backup-open-row #backupNewBtn:hover {
@@ -8925,7 +8925,7 @@
       background: #dbeafe;
       background: color-mix(in srgb, #3b82f6 18%, var(--card));
       color: var(--neutral-text);
-      border: 2px solid #1d4ed8;
+      border: 1px solid #1d4ed8;
     }
 
     .backup-open-row #backupOpenBtn:hover {
@@ -8937,7 +8937,7 @@
       background: #fef08a;
       background: color-mix(in srgb, #eab308 30%, var(--card));
       color: var(--neutral-text);
-      border: 2px solid #a16207;
+      border: 1px solid #a16207;
     }
 
     #backupMesclarGoBtn:hover:not(:disabled) {
@@ -9009,7 +9009,7 @@
 
     /* A opção "só o que veio da mesclagem", num cartão; e, no backup mesclado, sem "Nova resposta" nem o aviso dos parágrafos. */
     .backup-so-novos {
-      border: 2px solid #22c55e;
+      border: 1px solid #22c55e;
       border-radius: 10px;
       padding: 6px 10px;
       margin: 10px 0;
@@ -9245,7 +9245,7 @@ details.subsection.ebc-subsection#publicoBox.s34-bloqueado {
 .transcricao-gravacao {
   margin: 8px 0;
   padding: 10px 12px;
-  border: 2px solid #dc2626;
+  border: 1px solid #dc2626;
   border-radius: 12px;
   background: color-mix(in srgb, #ef4444 10%, var(--card));
 }
@@ -9639,7 +9639,7 @@ details.transcricao-bloco:not([open]) {
 .audio-config-moldura {
   margin: 12px 0;
   padding: 10px 12px 12px;
-  border: 2px solid var(--soft-line);
+  border: 1px solid var(--soft-line);
   border-radius: 12px;
   background: color-mix(in srgb, var(--card) 55%, transparent);
 }
@@ -9896,7 +9896,7 @@ details.transcricao-bloco:not([open]) {
   display: block;
   margin: 10px 0;
   padding: 10px 12px;
-  border: 2px solid color-mix(in srgb, #8b5cf6 55%, transparent);
+  border: 1px solid color-mix(in srgb, #8b5cf6 55%, transparent);
   border-radius: 12px;
   background: var(--card);
 }
@@ -9971,7 +9971,7 @@ details.transcricao-bloco:not([open]) {
 }
 .atalho-barra.completa > span { background: #16a34a; }
 .biblia-caixa {
-  border: 2px solid color-mix(in srgb, var(--brand) 50%, var(--line));
+  border: 1px solid color-mix(in srgb, var(--brand) 50%, var(--line));
   border-radius: 16px;
   background: color-mix(in srgb, var(--brand) 17%, var(--card));
   padding: 10px;
@@ -10268,7 +10268,7 @@ details.transcricao-bloco:not([open]) {
 
 /* ---------- Leitura da Bíblia: modos (por seções ou por livros) ---------- */
 .biblia-modo {
-  border: 2px solid color-mix(in srgb, var(--brand) 55%, var(--line));
+  border: 1px solid color-mix(in srgb, var(--brand) 55%, var(--line));
   border-radius: 16px;
   margin: 0 0 12px;
   background: color-mix(in srgb, var(--brand) 6%, var(--card));
@@ -10414,7 +10414,7 @@ details.transcricao-bloco:not([open]) {
   width: 100%;
   margin: 0 0 10px;
   padding: 10px 12px;
-  border: 2px solid #dc2626;
+  border: 1px solid #dc2626;
   border-radius: 12px;
   background: color-mix(in srgb, #dc2626 9%, var(--card));
   color: var(--text);
@@ -10492,7 +10492,7 @@ details.transcricao-bloco:not([open]) {
 .biblia-painel {
   margin-top: 10px;
   padding: 10px;
-  border: 2px solid color-mix(in srgb, var(--brand) 45%, var(--line));
+  border: 1px solid color-mix(in srgb, var(--brand) 45%, var(--line));
   border-radius: 14px;
   background: var(--card);
 }

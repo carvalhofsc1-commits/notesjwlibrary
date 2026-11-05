@@ -6,6 +6,10 @@ Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
 Áudio em texto (gravação ao vivo): corrige o caso de arquivo longo com metade muda — o app passa a vigiar o microfone e os pedaços do gravador, pausa o relógio sem sinal, avisa na tela e tenta retomar a captura (sem encher o arquivo de silêncio). Prefere WebM/Opus no Chrome (mais estável que mp4). Wake Lock reforçado. Texto deixa claro que gravar com a tela desligada / em segundo plano não é confiável nos navegadores (limitação do sistema).
 
+## 6.5.69
+
+Em todo o app, as molduras de tudo que fica dentro dos cartões (botões, campos de texto, seções recolhíveis, grupos, painéis, caixas) passam de 2 px para 1 px; só a moldura externa de cada cartão continua mais grossa. As caixinhas de marcar (checkbox) e as bolinhas de cor não mudaram.
+
 ## 6.5.68
 
 Áudio em texto: as molduras dos cards internos (arquivos de áudio, tipo de áudio, dados, documentos e etapas) passam de 2 px para 1 px.
