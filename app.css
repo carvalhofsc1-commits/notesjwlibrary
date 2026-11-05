@@ -10574,3 +10574,9 @@ details.transcricao-bloco:not([open]) {
   background: #ffffff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3.2 3.2L13 4.8' fill='none' stroke='%2316a34a' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 85% no-repeat;
 }
 .biblia-lista > .biblia-grupo { scroll-margin-top: 72px; } /* ao escolher um capítulo, o cartão do grupo para logo abaixo da barra do topo */
+
+/* As barras de áudio dentro do player do painel, na linha da situação ("🔊 Cap. 12 · v. 3/8"). */
+.bp-status-linha { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 0; }
+.bp-status-linha .bp-status { flex: 1 1 auto; min-width: 0; }
+.biblia-player .bp-eq { flex: 0 0 auto; margin: 0; height: 34px; }
+.biblia-player .bp-eq[hidden] { display: none; }

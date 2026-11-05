@@ -7542,7 +7542,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.57'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.58'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21351,7 +21351,7 @@ function saveTemplatesToStorage() {
           '<button type="button" class="secondary bp-marcador"></button>' +
         '</div>' +
         '<div class="voz-bar biblia-player">' +
-          '<span class="voz-status bp-status" role="status" aria-live="polite"></span>' +
+          '<div class="bp-status-linha"><span class="voz-status bp-status" role="status" aria-live="polite"></span></div>' +
           '<div class="voz-progresso bp-progresso" role="slider" tabindex="0" aria-label="Posição do áudio" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="bp-preench"></div></div>' +
           '<div class="voz-tempos" aria-hidden="true"><span class="bp-t1"></span><span class="bp-t2"></span></div>' +
           '<div class="voz-controles">' +
@@ -21367,6 +21367,10 @@ function saveTemplatesToStorage() {
           '<button type="button" class="secondary bp-resumir">Resumir</button>' +
         '</div>';
       const q = s => p.querySelector(s);
+      const eqPlayer = bibliaEqCriar(false); // as barras de áudio dentro do player, ao lado da situação
+      eqPlayer.classList.add('bp-eq');
+      eqPlayer.hidden = true;
+      q('.bp-status-linha').appendChild(eqPlayer);
       const esp = () => caixa._espacos[caixa._sel];
       const meu = () => Boolean(bibliaAudioAtual) && Boolean(esp()) && bibliaAudioAtual.chave === bibliaChave(esp());
 
@@ -21419,6 +21423,8 @@ function saveTemplatesToStorage() {
         const rotuloPlay = meuAudio && a.estado === 'tocando' ? 'Pausar' : 'Ouvir';
         q('.bp-play').title = rotuloPlay;
         q('.bp-play').setAttribute('aria-label', rotuloPlay);
+        eqPlayer.hidden = !(meuAudio && a.estado !== 'carregando'); // as barras mexem enquanto toca e ficam paradas na pausa
+        eqPlayer.classList.toggle('pausado', meuAudio && a.estado === 'pausado');
         q('.bp-stop').disabled = !meuAudio;
         q('.bp-vant').disabled = !meuAudio;
         q('.bp-vprox').disabled = !meuAudio;
@@ -21546,6 +21552,20 @@ function saveTemplatesToStorage() {
       return caixa;
     }
 
+    // O gráfico de barras do áudio (o mesmo no cabeçalho do grupo/livro e dentro do player do painel).
+    function bibliaEqCriar(comTexto) {
+      const eq = document.createElement('span');
+      eq.className = 'biblia-eq';
+      eq.setAttribute('aria-hidden', 'true');
+      [215, 195, 170, 140, 110, 80, 50, 25, 5].forEach((h, i) => { const b = document.createElement('i'); b.style.setProperty('--h', h); b.style.setProperty('--d', (i * 0.11).toFixed(2) + 's'); eq.appendChild(b); });
+      if (comTexto) { // o versículo em andamento, ao lado das barras
+        const qual = document.createElement('span');
+        qual.className = 'biblia-eq-v';
+        eq.appendChild(qual);
+      }
+      return eq;
+    }
+
     // ---- Áudio: pintura, andamento e versículo.
     function bibliaAudioPintar() {
       bibliaCelulasPintar();
@@ -21559,13 +21579,7 @@ function saveTemplatesToStorage() {
         let eq = sum.querySelector(':scope > .biblia-eq');
         if (!toca) { if (eq) eq.remove(); return; }
         if (!eq) {
-          eq = document.createElement('span');
-          eq.className = 'biblia-eq';
-          eq.setAttribute('aria-hidden', 'true');
-          [215, 195, 170, 140, 110, 80, 50, 25, 5].forEach((h, i) => { const b = document.createElement('i'); b.style.setProperty('--h', h); b.style.setProperty('--d', (i * 0.11).toFixed(2) + 's'); eq.appendChild(b); });
-          const qual = document.createElement('span'); // o versículo em andamento, ao lado das barras
-          qual.className = 'biblia-eq-v';
-          eq.appendChild(qual);
+          eq = bibliaEqCriar(true);
           sum.insertBefore(eq, sum.querySelector('.biblia-grupo-cont'));
         }
         bibliaAudioPintarVersiculo();
@@ -22210,10 +22224,10 @@ function saveTemplatesToStorage() {
 
     function bibliaAoEntrar() {
       bibliaCarregarEstado();
-      // Cada vez que a tela abre: "Seções e temas" expandido, sem nenhuma seção escolhida, e a lista de livros recolhida.
+      // Cada vez que a tela abre: "Seções e temas" e "Livros, na ordem da Bíblia" expandidos, e nenhuma seção escolhida.
       bibliaSecaoEscolhida = false;
       document.getElementById('bibliaModoSecoes').open = true;
-      document.getElementById('bibliaModoLivros').open = false;
+      document.getElementById('bibliaModoLivros').open = true;
       if (!bibliaPronto) {
         bibliaMontarSecoes();
         const ids = (BIBLIA_PROG.secoes || []).map(s => s.id);

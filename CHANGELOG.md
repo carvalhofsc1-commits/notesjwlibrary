@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.58
+
+Leitura da Bíblia: ao abrir a tela, “Livros, na ordem da Bíblia” também abre (junto com “Seções e temas”). Durante o áudio, o gráfico de barras aparece também dentro do player do painel do capítulo (ao lado da situação), parado quando o áudio está em pausa.
+
 ## 6.5.57
 
 Leitura da Bíblia por livros: as setas ‹ › do painel do capítulo só trocam o capítulo, sem mover a tela.
