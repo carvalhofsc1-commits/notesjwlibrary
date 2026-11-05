@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.63
+
+Leitura da Bíblia: ao passar o mouse sobre “Continuar de onde parou”, o fundo fica num vermelho um pouco mais forte (antes ficava azul).
+
 ## 6.5.62
 
 Ajustes → Leitura da Bíblia: o botão “Zerar capítulos lidos” ocupa a largura toda.

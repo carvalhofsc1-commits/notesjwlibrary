@@ -10398,6 +10398,7 @@ details.transcricao-bloco:not([open]) {
   text-align: center;
 }
 .biblia-continuar[hidden] { display: none; }
+.biblia-continuar:hover:not(:disabled) { background: color-mix(in srgb, #dc2626 20%, var(--card)); }
 
 /* A grade: uma célula quadrada por capítulo, como no wol.jw.org. */
 .biblia-grade {
