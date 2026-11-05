@@ -10192,7 +10192,7 @@ details.transcricao-bloco:not([open]) {
   gap: 8px;
 }
 .biblia-grupo {
-  border: 1px solid var(--line);
+  border: 1px solid color-mix(in srgb, var(--brand) 50%, var(--line)); /* uma moldura só: a da barra de dentro foi tirada */
   border-radius: 14px;
   background: color-mix(in srgb, var(--soft) 55%, var(--card));
 }
@@ -10208,8 +10208,8 @@ details.transcricao-bloco:not([open]) {
   justify-content: space-between;
   gap: 8px;
   margin: 0; /* a moldura da barra encosta no quadro do grupo */
-  padding: 10px 11px;
-  border: 1px solid color-mix(in srgb, var(--brand) 50%, var(--line)); /* moldura fina em volta da barra de progresso */
+  padding: 11px 12px;
+  border: 0; /* sem moldura própria: a do cartão já contorna a barra de progresso */
   cursor: pointer;
   list-style: none;
   border-radius: 13px; /* a barra verde enche o cartão da esquerda para a direita conforme os capítulos são lidos */
@@ -10297,7 +10297,7 @@ details.transcricao-bloco:not([open]) {
 }
 .biblia-modo[open] > summary {
   border-radius: 14px 14px 0 0;
-  border-bottom: 2px solid color-mix(in srgb, var(--brand) 55%, var(--line));
+  border-bottom: 1px solid color-mix(in srgb, var(--brand) 55%, var(--line));
 }
 .biblia-modo[open] > summary::after { transform: rotate(90deg); }
 .biblia-modo-corpo { padding: 10px; }
@@ -10312,7 +10312,7 @@ details.transcricao-bloco:not([open]) {
 .biblia-modo-corpo > #bibliaProgCaixa {
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 2px solid color-mix(in srgb, var(--brand) 55%, var(--line));
+  border-top: 1px solid color-mix(in srgb, var(--brand) 55%, var(--line));
 }
 .biblia-gl { border-color: color-mix(in srgb, var(--brand) 45%, var(--line)); }
 .biblia-gl > .biblia-lista { padding: 10px; }
