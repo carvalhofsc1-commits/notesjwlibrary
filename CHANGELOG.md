@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.64
+
+Em todo o app, ao passar o mouse sobre um botão o fundo não vira mais azul: ele escurece (no tema escuro, clareia) na própria cor do botão. Botões desativados não reagem.
+
 ## 6.5.63
 
 Leitura da Bíblia: ao passar o mouse sobre “Continuar de onde parou”, o fundo fica num vermelho um pouco mais forte (antes ficava azul).

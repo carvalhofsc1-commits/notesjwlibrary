@@ -26,6 +26,8 @@
       --btn-azul: #60a5fa;
       /* azul dos botões, bem mais claro que o --accent; vale nos dois temas */
       --btn-azul-hover: #3b82f6;
+      /* véu que escurece (tema claro) ou clareia (escuro) o botão ao passar o mouse: a cor continua a do próprio botão */
+      --hover-veu: rgba(0, 0, 0, .12);
       --soft: #eef2ff;
       --soft-line: #a5b4fc;
       --danger: #dc2626;
@@ -79,6 +81,7 @@
         --neutral: #334155;
         --neutral-dark: #475569;
         --neutral-text: #e2e8f0;
+        --hover-veu: rgba(255, 255, 255, .14);
         --shadow: rgba(0, 0, 0, .4);
         --tint1-bg: linear-gradient(180deg, #1e293b 0%, #1e3a5f 100%);
         --tint1-border: #3b82f6;
@@ -119,6 +122,7 @@
       --neutral: #334155;
       --neutral-dark: #475569;
       --neutral-text: #e2e8f0;
+        --hover-veu: rgba(255, 255, 255, .14);
       --shadow: rgba(0, 0, 0, .4);
       --tint1-bg: linear-gradient(180deg, #1e293b 0%, #1e3a5f 100%);
       --tint1-border: #3b82f6;
@@ -2589,8 +2593,9 @@
       min-height: 44px;
     }
 
-    button:hover {
-      background: var(--btn-azul-hover);
+    /* Ao passar o mouse, o botão só escurece (ou clareia, no tema escuro) na própria cor, sem virar azul. */
+    button:where(:not(:disabled)):hover {
+      background-image: linear-gradient(var(--hover-veu), var(--hover-veu));
     }
 
     button:focus-visible {

@@ -1,6 +1,6 @@
 {
   "name": "notestyle",
-  "version": "6.5.63",
+  "version": "6.5.64",
   "private": true,
   "scripts": {
     "avaliar": "node avaliacao/rodar.mjs",
