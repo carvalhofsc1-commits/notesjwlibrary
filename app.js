@@ -161,9 +161,9 @@
     // JSZip e sql.js, que só são baixados quando se abre um backup; nada é enviado ao servidor. A organização (categorias,
     // agrupamentos em árvore e nomes das publicações em jw-publicacoes.json) segue a do JWLManager (licença MIT).
     const BACKUP_LIBS = {
-      jszip: 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
-      sqljs: 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js',
-      wasm: 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.wasm'
+      jszip: 'vendor/jszip.min.js', // as bibliotecas ficam no próprio site (pasta vendor/) e na cache do aparelho: funcionam sem internet e sem chamar terceiros
+      sqljs: 'vendor/sql-wasm.js',
+      wasm: 'vendor/sql-wasm.wasm'
     };
     const BACKUP_PAGE = 50;
     const BACKUP_AUTO_OPEN = 60; // com a busca, até este número de resultados a árvore já vem aberta
@@ -4466,8 +4466,8 @@
     const LEITURA_MAX_ARQUIVO = 40 * 1024 * 1024;
     const LEITURA_MAX_CARACTERES = 100000; // cerca de 1h30 de áudio
     const LEITURA_PDFJS = {
-      script: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
-      worker: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
+      script: 'vendor/pdf.min.js',
+      worker: 'vendor/pdf.worker.min.js'
     };
     const leituraTexto = document.getElementById('leituraTexto');
     const leituraVista = document.getElementById('leituraVista');
@@ -7420,6 +7420,8 @@
 
       // A versão vai na query para o worker montar o nome da cache com ela — e para que
       // mudar APP_VERSION baste para o navegador enxergar um worker novo.
+      // Depois de abrir, pede ao service worker que guarde as bibliotecas de vendor/ (backup do JW Library e PDF funcionam sem internet).
+      navigator.serviceWorker.ready.then(registro => setTimeout(() => { if (registro.active) registro.active.postMessage('aquecer-vendor'); }, 6000)).catch(() => {});
       navigator.serviceWorker.register('sw.js?v=' + APP_VERSION).then(registro => {
         registro.addEventListener('updatefound', () => {
           const novo = registro.installing;
@@ -7540,7 +7542,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.52'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.53'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21399,7 +21401,7 @@ function saveTemplatesToStorage() {
       data.readOnly = true;
       data.tabIndex = -1;
       data.className = 'biblia-cap-data';
-      data.placeholder = 'Data da leitura';
+      data.placeholder = 'Data'; // curto: cabe no campo mesmo em celular de 360 px
       data.value = marca0.lido ? bibliaDataBR(marca0.lidaEm) : '';
       data.setAttribute('aria-label', 'Data em que ' + cap.nome + ' foi lido');
       const ajustarData = () => { data.style.width = 'calc(' + Math.max(data.value.length, data.value ? 10 : data.placeholder.length) + 'ch + 18px)'; }; // do tamanho do texto

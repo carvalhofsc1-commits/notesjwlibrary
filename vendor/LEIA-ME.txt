@@ -1,0 +1,8 @@
+Bibliotecas de terceiros usadas pelo NoteStyle (cópias idênticas às publicadas no cdnjs; conferidas pelos hashes SRI oficiais).
+
+- JSZip 3.10.1 (jszip.min.js) - MIT ou GPL-3.0 (à escolha do usuário). https://github.com/Stuk/jszip
+- sql.js 1.10.3 (sql-wasm.js e sql-wasm.wasm) - MIT. https://github.com/sql-js/sql.js
+- PDF.js 3.11.174 (pdf.min.js e pdf.worker.min.js) - Apache-2.0, Copyright 2023 Mozilla Foundation. https://github.com/mozilla/pdf.js
+
+Usos: JSZip e sql.js abrem o backup do JW Library (.jwlibrary) no aparelho; PDF.js lê o texto de PDFs na tela Leitura em voz alta.
+Nada disso envia arquivos a servidores: tudo roda no aparelho.

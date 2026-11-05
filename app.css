@@ -4009,7 +4009,7 @@
 
     .prompt-item textarea {
       min-height: 340px;
-      font-size: .9rem;
+      font-size: 1rem;
       line-height: 1.4;
       resize: vertical;
     }
@@ -10517,4 +10517,26 @@ details.transcricao-bloco:not([open]) {
   min-height: 0;
   padding: 9px 10px;
   font-size: .85rem;
+}
+
+/* Celulares estreitos (360 px, a largura mais comum no Android): botões da linha do capítulo mais compactos para o "Cap. 12 (31)" caber inteiro; no grupo de
+   livros, o gráfico de áudio fica só com as barras (o capítulo e o versículo aparecem no cabeçalho do livro). */
+@media (max-width: 380px) {
+  .biblia-cap-wol,
+  .biblia-cap .biblia-cap-resumir { width: 3.3rem; font-size: .66rem; padding: 0 2px; }
+  .biblia-cap .biblia-cap-ouvir { width: 1.6rem; height: 1.6rem; }
+  .biblia-cap { gap: 2px 4px; padding: 4px 6px; }
+  .biblia-gl > summary .biblia-eq-v { display: none; }
+  /* a leitura por livros tem mais caixas aninhadas (card, grupo, livro): menos espaço interno para as linhas ganharem largura */
+  .biblia-modo-corpo { padding: 6px; }
+  .biblia-gl > .biblia-lista { padding: 6px 3px; }
+  .biblia-caps { padding: 8px 4px 6px; }
+}
+@media (max-width: 340px) { /* telas muito pequenas (320 px): o número do capítulo vale mais que a contagem de versículos e que o texto do gráfico */
+  .biblia-cap-vv { display: none; }
+  .biblia-eq-v { display: none; }
+  .biblia-cap-wol,
+  .biblia-cap .biblia-cap-resumir { width: 2.9rem; font-size: .62rem; }
+  .biblia-cap .biblia-cap-ouvir { width: 1.45rem; height: 1.45rem; font-size: .6rem; }
+  .biblia-cap-nome { font-size: .8rem; }
 }

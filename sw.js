@@ -8,6 +8,16 @@
 
 const VERSION = new URL(self.location.href).searchParams.get('v') || 'dev';
 const CACHE = 'jw-notas-' + VERSION;
+// As bibliotecas de terceiros (pasta vendor/) mudam raramente: ficam numa cache própria, que NÃO muda a cada versão do app (nem é apagada na atualização),
+// para não baixá-las de novo (cerca de 2,2 MB) a cada publicação. Só a cache-primeiro; se um dia uma versão delas mudar, troque o número abaixo.
+const CACHE_VENDOR = 'jw-vendor-1';
+const VENDOR = [
+  'vendor/jszip.min.js',
+  'vendor/sql-wasm.js',
+  'vendor/sql-wasm.wasm',
+  'vendor/pdf.min.js',
+  'vendor/pdf.worker.min.js'
+];
 
 // Só o essencial leve. O icon-512.png (~149 KB) fica de fora de propósito: é usado
 // apenas na instalação do app e entra na cache sob demanda, na primeira vez que
@@ -80,6 +90,20 @@ async function redePrimeiro(request) {
   }
 }
 
+// Guarda as bibliotecas de vendor/ que ainda não estão na cache (a página pede isso depois de abrir; é o que faz o backup do JW Library e o PDF
+// funcionarem sem internet). Cada arquivo que falhar é ignorado: será guardado quando for usado.
+self.addEventListener('message', event => {
+  if (event.data !== 'aquecer-vendor') return;
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_VENDOR);
+    await Promise.all(VENDOR.map(async url => {
+      try {
+        if (!(await cache.match(url))) await cache.add(new Request(url, { cache: 'reload' }));
+      } catch (e) { /* sem rede agora: fica para o primeiro uso */ }
+    }));
+  })());
+});
+
 // Entrega da cache na hora e só vai à rede quando não tem nada guardado.
 // Usado nos ícones e no manifest, que praticamente não mudam.
 async function cachePrimeiro(request) {
@@ -99,6 +123,18 @@ self.addEventListener('fetch', event => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+
+  if (url.pathname.includes('/vendor/')) {
+    event.respondWith((async () => {
+      const cache = await caches.open(CACHE_VENDOR);
+      const guardado = await cache.match(request);
+      if (guardado) return guardado;
+      const response = await fetch(request);
+      if (response && response.ok) cache.put(request, response.clone());
+      return response;
+    })());
+    return;
+  }
 
   if (request.mode === 'navigate' || /\.(html|css|js)$/.test(url.pathname)) {
     event.respondWith(redePrimeiro(request));
