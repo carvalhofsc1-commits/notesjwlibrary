@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.56
+
+Leitura diária da Bíblia: os capítulos agora aparecem numa **grade de células quadradas**, uma por capítulo, como no wol.jw.org (na leitura por seções e na por livros), em vez de uma linha com botões para cada capítulo. Tocar numa célula abre, logo abaixo da grade, o **painel do capítulo**, um só para todos: título com o número de versículos, setas para o capítulo anterior e o seguinte, “Lido” com a data, o marcador, o **player completo** (mesmo padrão da Leitura em voz alta: ⏮️ versículo anterior, ▶️/⏸️, ⏭️ próximo versículo, ⏹️ parar, barra de andamento em que se toca ou arrasta, tempo e velocidade de 0,75× a 2×, que fica guardada), o 🔗 WOL e o Resumir (o nome do capítulo, no título, também abre o texto no wol.jw.org). Capítulos lidos ficam verdes; uma bolinha roxa marca os que têm resumo; o capítulo tocando pulsa. Nova **fita de marcador** (🔖) mostra onde a leitura parou: ao terminar um capítulo (marcado como lido ou ouvido até o fim) ela passa para o seguinte, e dá para pôr ou tirar a fita à mão (“Marcar aqui”). Ao tocar num capítulo a tela se move: na leitura por livros, até o painel de leitura dele; na por seções e temas, até o cartão do grupo de capítulos. A fita também aparece, sempre dentro do cartão (maior no botão da seção), nos cartões que levam até o capítulo: o botão da seção, o cartão do grupo de capítulos e, na leitura por livros, o cartão do grupo de livros e o do livro. Logo abaixo da barra de progresso geral e antes de “Seções e temas”, o botão “Continuar de onde parou” (com a fita vermelha grande como ícone) abre a lista, o grupo ou o livro e o capítulo da fita. Tudo se atualiza no lugar, sem refazer as listas. A leitura contínua (Ajustes) segue usando a ordem da lista em que se está.
+
 ## 6.5.55
 
 Reuniões → Preparar para comentar: ao abrir a página (pelo atalho Comentários do Início ou pelo botão da tela Reuniões), as quatro opções de preparação (A Sentinela, Tesouros da Palavra de Deus, Estudo Bíblico e Imagens da apostila) abrem sempre recolhidas.

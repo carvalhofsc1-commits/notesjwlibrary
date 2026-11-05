@@ -7542,7 +7542,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.55'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.56'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -20843,23 +20843,6 @@ function saveTemplatesToStorage() {
       if (trecho) return Number(trecho[2]) - Number(trecho[1]) + 1;
       return bibliaVersiculosCapitulo(cap.livro, parseInt(cap.rotulo, 10));
     }
-    // Nomes compridos abreviados onde a linha mostra o nome do livro (o número do capítulo nunca pode ser cortado).
-    const BIBLIA_ABREV = { 'Deuteronômio': 'Deut.', 'Habacuque': 'Hab.', 'Sofonias': 'Sof.', 'Lamentações': 'Lam.', 'Eclesiastes': 'Ecl.', 'Cântico de Salomão': 'Cânt.', 'Provérbios': 'Prov.', 'Zacarias': 'Zac.', 'Malaquias': 'Mal.', 'Miqueias': 'Miq.', 'Jeremias': 'Jer.', 'Ezequiel': 'Ezeq.', 'Colossenses': 'Col.', 'Filipenses': 'Filip.', '1 Coríntios': '1 Cor.', '2 Coríntios': '2 Cor.', '1 Tessalonicenses': '1 Tes.', '2 Tessalonicenses': '2 Tes.', 'Obadias': 'Obad.' };
-    // "Cap. 12 (31)" / "Hab. 1 (17)": o nome do livro encolhe (com reticências) antes de o número do capítulo ou a quantidade de versículos serem cortados.
-    function bibliaNomeCap(cap) {
-      const nome = document.createElement('span');
-      nome.className = 'biblia-cap-nome';
-      const rot = cap.curto || cap.nome;
-      const m = rot.match(/^(.*?)(\d[\d:\-]*)$/);
-      let pre = (m ? m[1] : rot).trim();
-      const num = m ? m[2] : '';
-      if (BIBLIA_ABREV[pre]) pre = BIBLIA_ABREV[pre];
-      if (pre) { const e = document.createElement('span'); e.className = 'biblia-cap-lv'; e.textContent = pre; nome.appendChild(e); }
-      if (num) { const e = document.createElement('span'); e.className = 'biblia-cap-nm'; e.textContent = num; nome.appendChild(e); }
-      const v = String(cap.rotulo).includes(':') ? 0 : bibliaVersiculosDe(cap); // nos trechos (119:1-63) o próprio intervalo já mostra a quantidade
-      if (v) { const e = document.createElement('span'); e.className = 'biblia-cap-vv'; e.textContent = '(' + v + ')'; e.title = v + (v === 1 ? ' versículo' : ' versículos'); nome.appendChild(e); }
-      return nome;
-    }
     // Livros curtos que o programa lê "todo": quantos capítulos têm.
     const BIBLIA_CAPS_LIVRO = { 'Obadias': 1, 'Jonas': 4, 'Naum': 3, 'Habacuque': 3, 'Sofonias': 3, 'Ageu': 2, 'Tito': 3, 'Filêmon': 1, '2 João': 1, '3 João': 1, 'Judas': 1 };
     // Os 66 livros na ordem da Bíblia (o número do livro vale no link do WOL).
@@ -20888,7 +20871,8 @@ function saveTemplatesToStorage() {
     let bibliaResumoAlvo = null; // { item, cap } do resumo aberto no fim da tela
     let bibliaSecaoEscolhida = false; // ao abrir a tela nenhuma seção está escolhida: só aparecem os botões das seções
     let bibliaProgAberto = true; // programação de leitura da seção expandida ou recolhida
-    let bibliaEstado = { itens: {}, secao: '', soPendentes: false, resumos: {}, seguir: false }; // itens: { idDoCapitulo: { lido, lidaEm } }; resumos: { idDoCapitulo: texto }
+    let bibliaEstado = { itens: {}, secao: '', soPendentes: false, resumos: {}, seguir: false, marcador: null, velocidade: 1 }; // itens: { idDoCapitulo: { lido, lidaEm } }; resumos: { idDoCapitulo: texto }
+    const BIBLIA_VELOCIDADES_VALIDAS = [0.75, 1, 1.25, 1.5, 1.75, 2];
     let bibliaPronto = false;
     let bibliaResumindo = false;
     const bibliaAbertos = new Set(); // grupos que estão abertos (sobrevivem a trocar de seção)
@@ -20903,6 +20887,11 @@ function saveTemplatesToStorage() {
         if (typeof salvo.secao === 'string') bibliaEstado.secao = salvo.secao;
         if (typeof salvo.soPendentes === 'boolean') bibliaEstado.soPendentes = salvo.soPendentes;
         if (typeof salvo.seguir === 'boolean') bibliaEstado.seguir = salvo.seguir;
+        if (salvo.marcador && typeof salvo.marcador === 'object' && typeof salvo.marcador.livro === 'string' && Number(salvo.marcador.n) > 0) {
+          const m = salvo.marcador;
+          bibliaEstado.marcador = { chave: m.livro + '|' + Number(m.n), livro: m.livro, n: Number(m.n), vista: m.vista === 'livros' ? 'livros' : 'secoes', itemId: typeof m.itemId === 'string' ? m.itemId : '' };
+        }
+        if (BIBLIA_VELOCIDADES_VALIDAS.includes(Number(salvo.velocidade))) bibliaEstado.velocidade = Number(salvo.velocidade);
         if (salvo.resumos && typeof salvo.resumos === 'object') bibliaEstado.resumos = salvo.resumos;
       } catch (e) { /* sem localStorage */ }
     }
@@ -20913,6 +20902,8 @@ function saveTemplatesToStorage() {
         secao: bibliaEstado.secao,
         soPendentes: bibliaEstado.soPendentes,
         seguir: bibliaEstado.seguir,
+        marcador: bibliaEstado.marcador,
+        velocidade: bibliaEstado.velocidade,
         resumos: bibliaEstado.resumos
       }));
     }
@@ -21181,14 +21172,18 @@ function saveTemplatesToStorage() {
       cont.classList.toggle('concluido', completo);
     }
 
-    // ----- Ouvir o capítulo (gravação da Bíblia da jw.org) -----
-    // O botão ▶ de cada capítulo toca a gravação em áudio dele, direto da jw.org, um capítulo por vez: ao terminar, o áudio para (não passa para o
-    // próximo) e o capítulo é marcado como lido, com a data de hoje. Os endereços dos arquivos vêm de uma consulta por livro (todos os capítulos de
-    // uma vez), feita antes do toque para o áudio poder começar no mesmo instante do clique (o iPhone só deixa tocar dentro do toque).
+    // ----- Grade de capítulos, painel do capítulo e player (áudio da Bíblia da jw.org) -----
+    // Cada grupo (na leitura por seções) e cada livro (na leitura por livros) mostra uma GRADE de células quadradas, uma por capítulo, como no wol.jw.org.
+    // Tocar numa célula abre, logo abaixo da grade, o PAINEL do capítulo: marcar como lido (com a data), o player do áudio, o 🔗 WOL e o Resumir. O painel é
+    // um só por grade, reaproveitado para todos os capítulos. Lido = célula verde. Um MARCADOR (a fita da Bíblia) mostra onde a leitura parou, e o botão
+    // "Continuar de onde parou" leva até ele. O áudio é a gravação da jw.org; os endereços vêm de uma consulta por livro (todos os capítulos de uma vez),
+    // feita antes do toque para o áudio poder começar no mesmo instante do clique (o iPhone só deixa tocar dentro do toque).
     const BIBLIA_AUDIO_API = 'https://b.jw-cdn.org/apis/pub-media/GETPUBMEDIALINKS?output=json&pub=nwt&fileformat=MP3&alllangs=0&langwritten=T&txtCMSLang=T&booknum=';
+    const BIBLIA_VELOCIDADES = BIBLIA_VELOCIDADES_VALIDAS;
     const bibliaAudioLivros = new Map(); // livro → Promise<Map(capítulo → url)>
     let bibliaAudio = null;
-    let bibliaAudioAtual = null; // { id, livro, n, estado: 'carregando' | 'tocando' | 'pausado', marcas, v (versículo em andamento), total }
+    let bibliaAudioAtual = null; // { chave 'Livro|n', livro, n, estado: 'carregando' | 'tocando' | 'pausado', marcas, v (versículo em andamento), total, origem, itemId }
+    let bibliaAudioMsg = null; // { chave, texto }: aviso de erro mostrado no painel do capítulo
 
     function bibliaAudioUrls(livro) {
       if (!bibliaAudioLivros.has(livro)) {
@@ -21212,28 +21207,352 @@ function saveTemplatesToStorage() {
       return bibliaAudioLivros.get(livro);
     }
 
-    // Atualiza o botão ▶ / ⏸ e a barra fina de andamento de todas as linhas do capítulo que está tocando.
-    function bibliaAudioPintarLinha(linha) {
-      const btn = linha.querySelector('.biblia-cap-ouvir');
-      if (!btn) return;
-      const a = bibliaAudioAtual && bibliaAudioAtual.id === linha.dataset.capId ? bibliaAudioAtual : null;
-      const estado = a ? a.estado : '';
-      btn.textContent = estado === 'tocando' ? '⏸' : estado === 'carregando' ? '…' : '▶';
-      btn.classList.toggle('ativo', Boolean(a));
-      btn.setAttribute('aria-label', (estado === 'tocando' ? 'Pausar ' : 'Ouvir ') + (linha.dataset.capNome || 'o capítulo'));
-      linha.classList.toggle('tocando', Boolean(a));
-      const parar = linha.querySelector('.biblia-cap-parar');
-      if (parar) parar.disabled = !a;
-      if (!a) linha.style.removeProperty('--pa');
+    // ---- Os espaços da grade: um por capítulo. Na leitura por seções, um por capítulo do grupo; na por livros, um por capítulo do livro (o Salmo 119 junta as duas partes).
+    function bibliaEspacosDoItem(item) {
+      return bibliaCapitulos(item).map(cap => ({ livro: cap.livro, n: parseInt(cap.rotulo, 10) || 0, parcial: String(cap.rotulo).includes(':'), entradas: [{ item, cap }] }));
     }
+    function bibliaEspacosDoLivro(livro) {
+      return bibliaCapsDoLivro(livro).map(c => ({ livro, n: c.n, parcial: false, entradas: c.entradas }));
+    }
+    const bibliaChave = e => e.livro + '|' + e.n;
+    const bibliaEspacoIds = e => e.entradas.map(x => x.cap.id);
+    const bibliaEspacoLido = e => e.entradas.every(x => bibliaMarcaDe(x.cap.id).lido);
+    function bibliaEspacoTitulo(e) {
+      const c = e.entradas[0].cap;
+      if (e.parcial) return c.nome; // "Salmos 119:1-63"
+      return bibliaCapsDoLivro(c.livro).length === 1 ? c.livro : c.livro + ' ' + e.n;
+    }
+    function bibliaEspacoVersiculos(e) {
+      return e.parcial ? bibliaVersiculosDe(e.entradas[0].cap) : bibliaVersiculosCapitulo(e.livro, e.n);
+    }
+
+    // ---- A ordem do programa (todas as seções, na ordem) e o "próximo capítulo".
+    let bibliaOrdemCache = null;
+    function bibliaOrdemPrograma() {
+      if (!bibliaOrdemCache) {
+        bibliaOrdemCache = [];
+        bibliaTodosItens().forEach(item => bibliaEspacosDoItem(item).forEach(e => bibliaOrdemCache.push({ livro: e.livro, n: e.n, itemId: item.id })));
+      }
+      return bibliaOrdemCache;
+    }
+    // O capítulo que vem depois: na leitura por livros, o seguinte do livro e, no fim dele, o primeiro do próximo livro; na por seções, o seguinte do programa.
+    function bibliaProximoEspaco(livro, n, origem, itemId) {
+      if (origem === 'livros') {
+        const caps = bibliaCapsDoLivro(livro);
+        const i = caps.findIndex(c => c.n === n);
+        if (i >= 0 && caps[i + 1]) return { livro, n: caps[i + 1].n };
+        for (let j = BIBLIA_LIVROS.indexOf(livro) + 1; j > 0 && j < BIBLIA_LIVROS.length; j++) {
+          const cs = bibliaCapsDoLivro(BIBLIA_LIVROS[j]);
+          if (cs.length) return { livro: BIBLIA_LIVROS[j], n: cs[0].n };
+        }
+        return null;
+      }
+      const ordem = bibliaOrdemPrograma();
+      let i = ordem.findIndex(x => x.itemId === itemId && x.livro === livro && x.n === n);
+      if (i < 0) return null;
+      for (i++; i < ordem.length; i++) if (!(ordem[i].livro === livro && ordem[i].n === n)) return ordem[i]; // pula a outra parte do Salmo 119
+      return null;
+    }
+
+    // ---- O marcador (a fita): onde a leitura parou. Guarda o capítulo e de onde foi marcado (seções ou livros).
+    function bibliaMarcadorMover(livro, n, origem, itemId) {
+      bibliaEstado.marcador = { chave: livro + '|' + n, livro, n, vista: origem === 'livros' ? 'livros' : 'secoes', itemId: itemId || '' };
+      bibliaGravarEstado();
+    }
+    // Ao terminar um capítulo (marcado como lido ou ouvido até o fim), a fita passa para o capítulo seguinte: é onde se continua.
+    function bibliaMarcadorAposLeitura(livro, n, origem, itemId) {
+      const prox = bibliaProximoEspaco(livro, n, origem, itemId);
+      if (prox) bibliaMarcadorMover(prox.livro, prox.n, origem, prox.itemId || itemId); else bibliaMarcadorMover(livro, n, origem, itemId);
+    }
+    function bibliaNomeDoMarcador() {
+      const m = bibliaEstado.marcador;
+      if (!m) return '';
+      return bibliaCapsDoLivro(m.livro).length === 1 ? m.livro : m.livro + ' ' + m.n;
+    }
+    function bibliaContinuarAtualizar() {
+      const btn = document.getElementById('bibliaContinuarBtn');
+      const m = bibliaEstado.marcador;
+      btn.hidden = !m;
+      document.getElementById('bibliaContinuarAlvo').textContent = m ? bibliaNomeDoMarcador() : '';
+    }
+
+    // ---- As células.
+    function bibliaCelulaPintar(cel) {
+      const ids = cel.dataset.ids.split(' ');
+      cel.classList.toggle('lido', ids.every(id => bibliaMarcaDe(id).lido));
+      cel.classList.toggle('tem-resumo', ids.some(id => (bibliaEstado.resumos[id] || '').trim() !== ''));
+      cel.classList.toggle('marcador', Boolean(bibliaEstado.marcador) && bibliaEstado.marcador.chave === cel.dataset.chave);
+      cel.classList.toggle('tocando', Boolean(bibliaAudioAtual) && bibliaAudioAtual.chave === cel.dataset.chave);
+    }
+    function bibliaCelulasPintar() {
+      document.querySelectorAll('#bibliaCard .biblia-cel').forEach(bibliaCelulaPintar);
+      bibliaFitasPintar();
+    }
+    // A fita também aparece nos cartões que levam até o capítulo do marcador: o botão da seção, o cartão do grupo de capítulos, e, na leitura por livros,
+    // o cartão do grupo de livros e o do livro. Assim se vê de longe onde a leitura parou.
+    function bibliaFitasPintar() {
+      document.querySelectorAll('#bibliaCard .com-fita').forEach(el => el.classList.remove('com-fita'));
+      const m = bibliaEstado.marcador;
+      if (!m) return;
+      const lugar = bibliaOrdemPrograma().find(x => x.livro === m.livro && x.n === m.n);
+      if (lugar) {
+        const item = bibliaTodosItens().find(i => i.id === lugar.itemId);
+        if (item) {
+          const btn = bibliaSecoes.querySelector('.biblia-secao-btn[data-secao="' + item.secaoId + '"]');
+          if (btn) btn.classList.add('com-fita');
+          const det = [...bibliaLista.children].find(d => d._item && d._item.id === item.id);
+          if (det) det.classList.add('com-fita');
+        }
+      }
+      const livro = bibliaLivros.querySelector('.biblia-livro[data-livro="' + m.livro + '"]');
+      if (livro) {
+        livro.classList.add('com-fita');
+        const gl = livro.closest('.biblia-gl');
+        if (gl) gl.classList.add('com-fita');
+      }
+    }
+    // Depois de qualquer mudança (marcar, ouvir até o fim): tudo se atualiza no lugar, sem refazer as listas (a tela fica parada).
+    function bibliaAtualizarTudo() {
+      bibliaCelulasPintar();
+      document.querySelectorAll('#bibliaCard .biblia-painel:not([hidden])').forEach(p => p._pintar());
+      bibliaLista.querySelectorAll(':scope > .biblia-grupo').forEach(det => { if (det._item) bibliaAtualizarGrupo(det, det._item); });
+      bibliaLivrosAtualizar();
+      bibliaAtualizarProgresso();
+      bibliaContinuarAtualizar();
+    }
+
+    function bibliaGradeSelecionar(caixa, i) {
+      caixa._sel = i;
+      caixa.querySelectorAll('.biblia-cel').forEach((c, k) => c.classList.toggle('sel', k === i));
+      const painel = caixa.querySelector('.biblia-painel');
+      if (i < 0) { painel.hidden = true; return; }
+      const esp = caixa._espacos[i];
+      painel.hidden = false;
+      painel.dataset.chave = bibliaChave(esp);
+      bibliaAudioUrls(esp.livro).catch(() => {}); // os endereços ficam prontos antes do toque no ▶
+      painel._pintar();
+    }
+
+    const bibliaTempo = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+
+    function bibliaCriarPainel(caixa) {
+      const p = document.createElement('div');
+      p.className = 'biblia-painel';
+      p.hidden = true;
+      p.innerHTML =
+        '<div class="biblia-painel-topo">' +
+          '<button type="button" class="secondary bp-ant" title="Capítulo anterior" aria-label="Capítulo anterior">‹</button>' +
+          '<div class="bp-titulo"><a class="bp-nome" target="_blank" rel="noopener noreferrer" title="Abrir no wol.jw.org"></a><span class="bp-vv"></span></div>' +
+          '<button type="button" class="secondary bp-prox" title="Próximo capítulo" aria-label="Próximo capítulo">›</button>' +
+        '</div>' +
+        '<div class="bp-lido-linha">' +
+          '<label class="bp-lido"><input type="checkbox" class="bp-check"> <span>Lido</span></label>' +
+          '<span class="bp-data"></span>' +
+          '<button type="button" class="secondary bp-marcador"></button>' +
+        '</div>' +
+        '<div class="voz-bar biblia-player">' +
+          '<span class="voz-status bp-status" role="status" aria-live="polite"></span>' +
+          '<div class="voz-progresso bp-progresso" role="slider" tabindex="0" aria-label="Posição do áudio" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="bp-preench"></div></div>' +
+          '<div class="voz-tempos" aria-hidden="true"><span class="bp-t1"></span><span class="bp-t2"></span></div>' +
+          '<div class="voz-controles">' +
+            '<button type="button" class="secondary bp-vant" title="Versículo anterior" aria-label="Versículo anterior">⏮️</button>' +
+            '<button type="button" class="secondary bp-play" title="Ouvir" aria-label="Ouvir">▶️</button>' +
+            '<button type="button" class="secondary bp-vprox" title="Próximo versículo" aria-label="Próximo versículo">⏭️</button>' +
+            '<button type="button" class="secondary bp-stop" title="Parar e voltar ao começo" aria-label="Parar e voltar ao começo">⏹️</button>' +
+            '<select class="bp-vel" aria-label="Velocidade do áudio">' + BIBLIA_VELOCIDADES.map(v => '<option value="' + v + '">' + String(v).replace('.', ',') + '×</option>').join('') + '</select>' +
+          '</div>' +
+        '</div>' +
+        '<div class="bp-acoes">' +
+          '<a class="bp-wol" target="_blank" rel="noopener noreferrer">🔗 WOL</a>' +
+          '<button type="button" class="secondary bp-resumir">Resumir</button>' +
+        '</div>';
+      const q = s => p.querySelector(s);
+      const esp = () => caixa._espacos[caixa._sel];
+      const meu = () => Boolean(bibliaAudioAtual) && Boolean(esp()) && bibliaAudioAtual.chave === bibliaChave(esp());
+
+      // Pinta o painel do capítulo selecionado.
+      p._pintar = () => {
+        const e = esp();
+        if (!e) return;
+        const cap0 = e.entradas[0].cap;
+        q('.bp-nome').textContent = bibliaEspacoTitulo(e);
+        const vv = bibliaEspacoVersiculos(e);
+        q('.bp-vv').textContent = vv ? vv + (vv === 1 ? ' versículo' : ' versículos') : '';
+        const lido = bibliaEspacoLido(e);
+        q('.bp-check').checked = lido;
+        const marca = e.entradas.map(x => bibliaMarcaDe(x.cap.id)).find(m => m.lido);
+        q('.bp-data').textContent = lido && marca ? 'em ' + bibliaDataBR(marca.lidaEm) : '';
+        const aqui = Boolean(bibliaEstado.marcador) && bibliaEstado.marcador.chave === bibliaChave(e);
+        const bm = q('.bp-marcador');
+        bm.textContent = aqui ? '🔖 Tirar marcador' : '🔖 Marcar aqui';
+        bm.classList.toggle('ativo', aqui);
+        q('.bp-ant').disabled = caixa._sel <= 0;
+        q('.bp-prox').disabled = caixa._sel >= caixa._espacos.length - 1;
+        const wol = q('.bp-wol');
+        const url = bibliaLinkWol(cap0);
+        wol.hidden = !url;
+        if (url) wol.href = url;
+        const nomeLink = q('.bp-nome'); // o nome do capítulo também é um link para o texto no wol.jw.org (o mesmo do botão)
+        if (url) nomeLink.href = url; else nomeLink.removeAttribute('href');
+        const tem = e.entradas.some(x => (bibliaEstado.resumos[x.cap.id] || '').trim() !== '');
+        const br = q('.bp-resumir');
+        br.textContent = tem ? 'Ver resumo' : 'Resumir';
+        br.classList.toggle('tem', tem);
+        q('.bp-vel').value = String(bibliaEstado.velocidade);
+        p._pintarPlayer();
+      };
+
+      // Pinta o player: estado do áudio deste capítulo (ou de outro que esteja tocando).
+      p._pintarPlayer = () => {
+        const e = esp();
+        if (!e) return;
+        const a = bibliaAudioAtual;
+        const meuAudio = meu();
+        const st = q('.bp-status');
+        st.classList.remove('warn');
+        if (bibliaAudioMsg && bibliaAudioMsg.chave === bibliaChave(e)) { st.textContent = bibliaAudioMsg.texto; st.classList.add('warn'); }
+        else if (meuAudio && a.estado === 'carregando') st.textContent = '⏳ Carregando o áudio…';
+        else if (meuAudio) st.textContent = (a.estado === 'tocando' ? '🔊 ' : '⏸️ ') + 'Cap. ' + a.n + (a.v ? ' · v. ' + a.v + (a.total ? '/' + a.total : '') : '');
+        else if (a) st.textContent = '🔊 Tocando agora: ' + (bibliaCapsDoLivro(a.livro).length === 1 ? a.livro : a.livro + ' ' + a.n);
+        else st.textContent = ''; // parado: sem texto (o ▶️ já diz o que fazer)
+        q('.bp-play').textContent = meuAudio && a.estado === 'tocando' ? '⏸️' : meuAudio && a.estado === 'carregando' ? '⏳' : '▶️';
+        const rotuloPlay = meuAudio && a.estado === 'tocando' ? 'Pausar' : 'Ouvir';
+        q('.bp-play').title = rotuloPlay;
+        q('.bp-play').setAttribute('aria-label', rotuloPlay);
+        q('.bp-stop').disabled = !meuAudio;
+        q('.bp-vant').disabled = !meuAudio;
+        q('.bp-vprox').disabled = !meuAudio;
+        if (!meuAudio) p._progresso(0, 0);
+        else p._progresso(bibliaAudio.currentTime, bibliaAudio.duration);
+      };
+      p._progresso = (t, d) => {
+        const f = d > 0 ? Math.min(1, t / d) : 0;
+        q('.bp-preench').style.width = (f * 100).toFixed(2) + '%';
+        q('.bp-progresso').setAttribute('aria-valuenow', String(Math.round(f * 100)));
+        q('.bp-t1').textContent = d > 0 ? bibliaTempo(t) : '';
+        q('.bp-t2').textContent = d > 0 ? bibliaTempo(d) : '';
+      };
+
+      // Capítulo anterior e próximo (mudam o capítulo mostrado no painel).
+      const ir = d => {
+        const i = caixa._sel + d;
+        if (i < 0 || i >= caixa._espacos.length) return;
+        bibliaGradeSelecionar(caixa, i);
+        const cel = caixa.querySelectorAll('.biblia-cel')[i];
+        if (cel) cel.scrollIntoView({ block: 'nearest' });
+      };
+      q('.bp-ant').addEventListener('click', () => ir(-1));
+      q('.bp-prox').addEventListener('click', () => ir(1));
+
+      // Lido (com a data de hoje) e marcador.
+      q('.bp-check').addEventListener('change', () => {
+        const e = esp();
+        const marcar = q('.bp-check').checked;
+        e.entradas.forEach(x => {
+          const m = bibliaMarcaDe(x.cap.id);
+          m.lido = marcar;
+          m.lidaEm = marcar ? bibliaHojeISO() : ''; // a data é só um registro: nasce ao marcar e some ao desmarcar
+          bibliaEstado.itens[x.cap.id] = m;
+        });
+        if (marcar) bibliaMarcadorAposLeitura(e.livro, e.n, caixa._origem, caixa._item && caixa._item.id);
+        bibliaGravarEstado();
+        bibliaAtualizarTudo();
+      });
+      q('.bp-marcador').addEventListener('click', () => {
+        const e = esp();
+        if (bibliaEstado.marcador && bibliaEstado.marcador.chave === bibliaChave(e)) { bibliaEstado.marcador = null; bibliaGravarEstado(); }
+        else bibliaMarcadorMover(e.livro, e.n, caixa._origem, caixa._item && caixa._item.id);
+        bibliaAtualizarTudo();
+      });
+
+      // Player.
+      q('.bp-play').addEventListener('click', () => {
+        const e = esp();
+        const a = bibliaAudioAtual;
+        if (meu() && a.estado === 'tocando') bibliaAudio.pause();
+        else if (meu() && a.estado === 'pausado') bibliaAudio.play().catch(() => {});
+        else if (!meu()) bibliaAudioAlternar(e.entradas[0].cap, { origem: caixa._origem, itemId: caixa._item ? caixa._item.id : '' });
+      });
+      q('.bp-stop').addEventListener('click', () => { if (meu()) bibliaAudioParar(); });
+      q('.bp-vant').addEventListener('click', () => { if (meu()) bibliaAudioVersiculo(-1); });
+      q('.bp-vprox').addEventListener('click', () => { if (meu()) bibliaAudioVersiculo(1); });
+      q('.bp-vel').addEventListener('change', () => {
+        bibliaEstado.velocidade = Number(q('.bp-vel').value) || 1;
+        bibliaGravarEstado();
+        if (bibliaAudio) { bibliaAudio.defaultPlaybackRate = bibliaEstado.velocidade; bibliaAudio.playbackRate = bibliaEstado.velocidade; }
+        document.querySelectorAll('#bibliaCard .bp-vel').forEach(s => { s.value = String(bibliaEstado.velocidade); });
+      });
+      // A barra de andamento: tocar ou arrastar muda o ponto do áudio (só do capítulo que está tocando).
+      const barra = q('.bp-progresso');
+      const irPara = ev => {
+        if (!meu() || !(bibliaAudio.duration > 0)) return;
+        const r = barra.getBoundingClientRect();
+        bibliaAudio.currentTime = Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width)) * bibliaAudio.duration;
+      };
+      barra.addEventListener('pointerdown', ev => { barra._arrasta = true; try { barra.setPointerCapture(ev.pointerId); } catch (e) { /* sem captura */ } irPara(ev); });
+      barra.addEventListener('pointermove', ev => { if (barra._arrasta) irPara(ev); });
+      ['pointerup', 'pointercancel'].forEach(n => barra.addEventListener(n, () => { barra._arrasta = false; }));
+      barra.addEventListener('keydown', ev => {
+        if (!meu() || !(bibliaAudio.duration > 0) || (ev.key !== 'ArrowLeft' && ev.key !== 'ArrowRight')) return;
+        ev.preventDefault();
+        bibliaAudio.currentTime = Math.min(bibliaAudio.duration, Math.max(0, bibliaAudio.currentTime + (ev.key === 'ArrowRight' ? 5 : -5)));
+      });
+      // Resumir: só abre a área do resumo (no fim da tela); quem pede o resumo à IA é o botão dentro dela. Com resumo já feito, vira "Ver resumo".
+      q('.bp-resumir').addEventListener('click', () => {
+        const e = esp();
+        bibliaAbrirResumo(e.entradas[0].item, e.entradas[0].cap, caixa._origem === 'livros' ? 'livros' : '');
+      });
+      return p;
+    }
+
+    // A grade de um grupo (origem 'secoes') ou de um livro (origem 'livros').
+    function bibliaCriarGrade(espacos, origem, det, item) {
+      const caixa = document.createElement('div');
+      caixa.className = 'biblia-grade-caixa';
+      caixa._espacos = espacos;
+      caixa._sel = -1;
+      caixa._origem = origem;
+      caixa._det = det;
+      caixa._item = item || null;
+      const grade = document.createElement('div');
+      grade.className = 'biblia-grade';
+      grade.setAttribute('role', 'group');
+      grade.setAttribute('aria-label', 'Capítulos');
+      espacos.forEach((esp, i) => {
+        const cel = document.createElement('button');
+        cel.type = 'button';
+        cel.className = 'biblia-cel';
+        cel.dataset.chave = bibliaChave(esp);
+        cel.dataset.ids = bibliaEspacoIds(esp).join(' ');
+        cel.textContent = esp.n || '•';
+        cel.title = bibliaEspacoTitulo(esp);
+        cel.setAttribute('aria-label', bibliaEspacoTitulo(esp));
+        cel.addEventListener('click', () => {
+          bibliaGradeSelecionar(caixa, caixa._sel === i ? -1 : i);
+          // Ao escolher um capítulo a tela se move: na leitura por livros, até o painel de leitura dele; na por seções e temas, até o cartão do grupo de capítulos.
+          if (caixa._sel >= 0) {
+            // Por livros: até o painel de leitura. Por seções e temas: até o cartão do grupo de capítulos (cabeçalho no topo, com a grade e o painel logo abaixo).
+            const alvo = caixa._origem === 'livros' ? caixa.querySelector('.biblia-painel') : caixa._det;
+            requestAnimationFrame(() => alvo.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+          }
+        });
+        bibliaCelulaPintar(cel);
+        grade.appendChild(cel);
+      });
+      caixa.append(grade, bibliaCriarPainel(caixa));
+      return caixa;
+    }
+
+    // ---- Áudio: pintura, andamento e versículo.
     function bibliaAudioPintar() {
-      document.querySelectorAll('.biblia-cap[data-cap-id]').forEach(bibliaAudioPintarLinha);
+      bibliaCelulasPintar();
+      document.querySelectorAll('#bibliaCard .biblia-painel:not([hidden])').forEach(p => p._pintar());
       // Barrinhas de áudio (como o gráfico do Áudio em texto, menores) no cabeçalho do grupo e do livro que tem o capítulo em andamento; paradas se pausado.
       const pausado = Boolean(bibliaAudioAtual && bibliaAudioAtual.estado === 'pausado');
       document.querySelectorAll('#bibliaCard details.biblia-grupo').forEach(det => {
         const sum = det.querySelector(':scope > summary');
         if (!sum) return;
-        const toca = Boolean(bibliaAudioAtual && det.querySelector('.biblia-cap.tocando'));
+        const toca = Boolean(bibliaAudioAtual && det.querySelector('.biblia-cel.tocando'));
         let eq = sum.querySelector(':scope > .biblia-eq');
         if (!toca) { if (eq) eq.remove(); return; }
         if (!eq) {
@@ -21251,106 +21570,105 @@ function saveTemplatesToStorage() {
       });
     }
     function bibliaAudioProgresso() {
-      if (!bibliaAudio || !bibliaAudioAtual || !(bibliaAudio.duration > 0)) return;
-      const p = Math.min(1, bibliaAudio.currentTime / bibliaAudio.duration).toFixed(4);
-      document.querySelectorAll('.biblia-cap[data-cap-id="' + bibliaAudioAtual.id + '"]').forEach(l => l.style.setProperty('--pa', p));
+      const a = bibliaAudioAtual;
+      if (!bibliaAudio || !a || !(bibliaAudio.duration > 0)) return;
+      document.querySelectorAll('#bibliaCard .biblia-painel:not([hidden])').forEach(p => { if (p.dataset.chave === a.chave) p._progresso(bibliaAudio.currentTime, bibliaAudio.duration); });
       // Versículo que está sendo lido agora (o último marcador já alcançado); antes do versículo 1 fica vazio (é a introdução do capítulo).
-      const ms = bibliaAudioAtual.marcas || [];
+      const ms = a.marcas || [];
       let v = 0;
       for (let i = 0; i < ms.length && ms[i].t <= bibliaAudio.currentTime + 0.05; i++) v = ms[i].v;
-      if (v !== bibliaAudioAtual.v) { bibliaAudioAtual.v = v; bibliaAudioPintarVersiculo(); }
+      if (v !== a.v) {
+        a.v = v;
+        bibliaAudioPintarVersiculo();
+        document.querySelectorAll('#bibliaCard .biblia-painel:not([hidden])').forEach(p => { if (p.dataset.chave === a.chave) p._pintarPlayer(); });
+      }
     }
     function bibliaAudioPintarVersiculo() {
       const a = bibliaAudioAtual;
       const texto = a ? 'Cap. ' + a.n + (a.v ? ' v. ' + a.v + (a.total ? '/' + a.total : '') : '') : ''; // "Cap. 4 v. 5/6" (antes do versículo 1, só o capítulo)
       document.querySelectorAll('#bibliaCard .biblia-eq-v').forEach(el => { el.textContent = texto; });
     }
+    // ⏮️ ⏭️: pula para o início do versículo anterior (ou volta ao começo do atual, se ele já passou de 2 s) e para o próximo; sem os marcadores, 10 s.
+    function bibliaAudioVersiculo(d) {
+      const a = bibliaAudioAtual;
+      if (!bibliaAudio || !a) return;
+      const ms = a.marcas || [];
+      const t = bibliaAudio.currentTime;
+      if (!ms.length) { bibliaAudio.currentTime = Math.max(0, t + d * 10); return; }
+      let i = -1;
+      for (let k = 0; k < ms.length && ms[k].t <= t + 0.05; k++) i = k;
+      if (d < 0) bibliaAudio.currentTime = i >= 0 && t - ms[i].t > 2 ? ms[i].t : (ms[i - 1] ? ms[i - 1].t : 0);
+      else if (ms[i + 1]) bibliaAudio.currentTime = ms[i + 1].t;
+    }
 
-    function bibliaAudioParar(preservar) { // pára o que estiver tocando e solta o capítulo (os botões voltam a ▶); "preservar" mantém o áudio carregado (passando ao próximo capítulo)
+    function bibliaAudioParar(preservar) { // pára o que estiver tocando e solta o capítulo (os botões voltam a ▶️); "preservar" mantém o áudio carregado (passando ao próximo capítulo)
       if (bibliaAudio) { bibliaAudio.pause(); if (!preservar) { bibliaAudio.removeAttribute('src'); bibliaAudio.load(); } }
       bibliaAudioAtual = null;
       bibliaAudioPintar();
     }
 
-    // O capítulo ouvido até o fim vira lido (todas as suas linhas: o Salmo 119 tem duas), com a data de hoje; as telas se atualizam.
+    // O capítulo ouvido até o fim vira lido (todas as suas partes: o Salmo 119 tem duas), com a data de hoje; a fita passa ao próximo capítulo; as telas se atualizam no lugar.
     function bibliaAudioMarcarLido(a) {
       const entradas = (bibliaIndiceLivros().get(a.livro) || new Map()).get(a.n) || [];
-      let mudou = false;
       entradas.forEach(e => {
         if (bibliaMarcaDe(e.cap.id).lido) return;
         bibliaEstado.itens[e.cap.id] = { lido: true, lidaEm: bibliaHojeISO() };
-        mudou = true;
       });
-      if (!mudou) return;
+      bibliaMarcadorAposLeitura(a.livro, a.n, a.origem, a.itemId);
       bibliaGravarEstado();
-      // Atualiza no lugar (as listas não são refeitas, então a tela fica parada, mostrando o capítulo lido).
-      entradas.forEach(e => {
-        document.querySelectorAll('.biblia-cap[data-cap-id="' + e.cap.id + '"]').forEach(l => {
-          l.classList.add('lido');
-          const ck = l.querySelector('.biblia-item-check');
-          if (ck) ck.checked = true;
-          const dt = l.querySelector('.biblia-cap-data');
-          if (dt) { dt.value = bibliaDataBR(bibliaMarcaDe(e.cap.id).lidaEm); dt.style.width = 'calc(10ch + 18px)'; }
-        });
-      });
-      bibliaLista.querySelectorAll(':scope > .biblia-grupo').forEach(det => { if (det._item) bibliaAtualizarGrupo(det, det._item); });
-      bibliaLivrosAtualizar();
-      bibliaAtualizarProgresso();
+      bibliaAtualizarTudo();
     }
 
-    function bibliaAudioErro(linha, texto) {
-      const btn = linha && linha.querySelector('.biblia-cap-ouvir');
+    function bibliaAudioErro(chave, texto) {
       bibliaAudioAtual = null;
+      bibliaAudioMsg = { chave, texto };
       bibliaAudioPintar();
-      if (!btn) return;
-      btn.textContent = '⚠️';
-      btn.title = texto;
-      setTimeout(() => { btn.title = 'Ouvir o capítulo'; if (!bibliaAudioAtual) bibliaAudioPintarLinha(btn.closest('.biblia-cap')); }, 4000);
+      setTimeout(() => { if (bibliaAudioMsg && bibliaAudioMsg.texto === texto) { bibliaAudioMsg = null; bibliaAudioPintar(); } }, 6000);
     }
 
-    // O próximo capítulo, na ordem da lista em que se está ouvindo: na leitura por seções, a linha seguinte (abrindo o grupo dela, se for de outro grupo);
-    // na por livros, o capítulo seguinte do livro e, no fim dele, o primeiro do próximo livro (abrindo o grupo de livros e o livro). No fim da lista, para.
-    function bibliaAudioSeguir(a) {
-      let linha = null;
-      if (a.origem === 'livros') {
-        let alvo = null;
-        const caps = bibliaCapsDoLivro(a.livro);
-        const i = caps.findIndex(c => c.n === a.n);
-        if (i >= 0 && caps[i + 1]) alvo = { livro: a.livro, n: caps[i + 1].n };
-        for (let j = BIBLIA_LIVROS.indexOf(a.livro) + 1; !alvo && j > 0 && j < BIBLIA_LIVROS.length; j++) {
-          const cs = bibliaCapsDoLivro(BIBLIA_LIVROS[j]);
-          if (cs.length) alvo = { livro: BIBLIA_LIVROS[j], n: cs[0].n };
-        }
-        if (!alvo) return;
+    // Abre o grupo ou o livro que tem o capítulo pedido e devolve a grade dele (ou null se não está na tela).
+    function bibliaLocalizarGrade(alvo, origem) {
+      if (origem === 'livros') {
         const det = bibliaLivros.querySelector('.biblia-livro[data-livro="' + alvo.livro + '"]');
-        if (!det) return;
+        if (!det) return null;
         const gl = det.closest('.biblia-gl');
         if (gl) gl.open = true;
         det.open = true;
         if (det._preencher) det._preencher();
-        const entradas = (bibliaCapsDoLivro(alvo.livro).find(c => c.n === alvo.n) || {}).entradas || [];
-        if (entradas.length) linha = det.querySelector('.biblia-cap[data-cap-id="' + entradas[0].cap.id + '"]');
-      } else {
-        const linhas = [...bibliaLista.querySelectorAll('.biblia-cap')];
-        let i = linhas.findIndex(l => l.dataset.capId === a.id);
-        if (i < 0) return;
-        for (i++; i < linhas.length; i++) { // pula a outra parte do mesmo capítulo (Salmo 119 tem duas linhas)
-          const c = linhas[i]._cap;
-          if (!c || !(c.livro === a.livro && parseInt(c.rotulo, 10) === a.n)) break;
-        }
-        linha = linhas[i] || null;
-        const grupo = linha && linha.closest('details.biblia-grupo');
-        if (grupo) grupo.open = true;
+        return det._grade || null;
       }
-      if (!linha || !linha._cap) return;
-      const r = linha.getBoundingClientRect();
-      if (r.top < 90 || r.bottom > innerHeight - 90) linha.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      bibliaAudioAlternar(linha._cap, linha, true);
+      const det = [...bibliaLista.children].find(d => d._item && d._item.id === alvo.itemId);
+      if (!det) return null;
+      det.open = true;
+      return det._grade || null;
+    }
+    // Seleciona o capítulo na grade e, se preciso, rola até a célula.
+    function bibliaGradeIrPara(caixa, livro, n) {
+      const i = caixa._espacos.findIndex(e => e.livro === livro && e.n === n);
+      if (i < 0) return -1;
+      bibliaGradeSelecionar(caixa, i);
+      const cel = caixa.querySelectorAll('.biblia-cel')[i];
+      const r = cel.getBoundingClientRect();
+      if (r.top < 90 || r.bottom > innerHeight - 90) cel.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      return i;
     }
 
-    function bibliaAudioAlternar(cap, linha, continuar) {
+    // Leitura contínua: ao fim de um capítulo, passa ao próximo da mesma lista (abrindo o grupo ou o livro dele). No fim da lista, para.
+    function bibliaAudioSeguir(a) {
+      const prox = bibliaProximoEspaco(a.livro, a.n, a.origem, a.itemId);
+      if (!prox) return;
+      const caixa = bibliaLocalizarGrade(prox, a.origem);
+      if (!caixa) return;
+      const i = bibliaGradeIrPara(caixa, prox.livro, prox.n);
+      if (i < 0) return;
+      bibliaAudioAlternar(caixa._espacos[i].entradas[0].cap, { origem: a.origem, itemId: caixa._item ? caixa._item.id : '' }, true);
+    }
+
+    // Toca o capítulo (ou pausa/retoma, se já é o que está em andamento). ctx: { origem, itemId }.
+    function bibliaAudioAlternar(cap, ctx, continuar) {
       const n = parseInt(cap.rotulo, 10);
       if (!n) return;
+      const chave = cap.livro + '|' + n;
       if (!bibliaAudio) {
         bibliaAudio = new Audio();
         bibliaAudio.preload = 'auto';
@@ -21364,127 +21682,76 @@ function saveTemplatesToStorage() {
           if (a) bibliaAudioMarcarLido(a);
           if (seguir) bibliaAudioSeguir(a);
         });
-        bibliaAudio.addEventListener('error', () => { if (bibliaAudioAtual) bibliaAudioErro(document.querySelector('.biblia-cap[data-cap-id="' + bibliaAudioAtual.id + '"]'), 'Não consegui tocar este áudio agora. Confira a conexão e tente de novo.'); });
+        bibliaAudio.addEventListener('error', () => { if (bibliaAudioAtual) bibliaAudioErro(bibliaAudioAtual.chave, 'Não consegui tocar este áudio agora. Confira a conexão e tente de novo.'); });
       }
-      // O mesmo capítulo: o botão pausa e retoma.
-      if (bibliaAudioAtual && bibliaAudioAtual.id === cap.id) {
+      // O mesmo capítulo: pausa e retoma.
+      if (bibliaAudioAtual && bibliaAudioAtual.chave === chave) {
         if (bibliaAudioAtual.estado === 'tocando') bibliaAudio.pause();
         else if (bibliaAudioAtual.estado === 'pausado') bibliaAudio.play().catch(() => {});
         return;
       }
       bibliaAudioParar(continuar); // outro capítulo: só um por vez
-      const atual = { id: cap.id, livro: cap.livro, n, estado: 'carregando', marcas: [], v: 0, total: bibliaVersiculosCapitulo(cap.livro, n), origem: linha && linha.closest('#bibliaLivros') ? 'livros' : 'secoes' };
+      bibliaAudioMsg = null;
+      const atual = { chave, livro: cap.livro, n, estado: 'carregando', marcas: [], v: 0, total: bibliaVersiculosCapitulo(cap.livro, n), origem: ctx && ctx.origem === 'livros' ? 'livros' : 'secoes', itemId: (ctx && ctx.itemId) || '' };
       bibliaAudioAtual = atual;
       bibliaAudioPintar();
       const tocar = (url, marcas) => {
         if (bibliaAudioAtual !== atual) return; // trocou de capítulo enquanto carregava
         atual.marcas = marcas || [];
         bibliaAudio.src = url;
-        bibliaAudio.play().catch(() => { if (bibliaAudioAtual === atual) bibliaAudioErro(linha, 'O aparelho não deixou tocar. Toque no ▶ de novo.'); });
+        bibliaAudio.defaultPlaybackRate = bibliaEstado.velocidade;
+        bibliaAudio.playbackRate = bibliaEstado.velocidade;
+        bibliaAudio.play().catch(() => { if (bibliaAudioAtual === atual) bibliaAudioErro(chave, 'O aparelho não deixou tocar. Toque no ▶️ de novo.'); });
       };
       const pronto = bibliaAudioLivros.get(cap.livro);
       if (pronto && pronto.done && pronto.done.get(n)) { tocar(pronto.done.get(n), pronto.done.marcas.get(n)); return; } // endereço já conhecido: toca dentro do próprio toque
       bibliaAudioUrls(cap.livro).then(mapa => {
         if (!mapa.get(n)) throw new Error('capítulo sem áudio');
         tocar(mapa.get(n), mapa.marcas.get(n));
-      }).catch(() => { if (bibliaAudioAtual === atual) bibliaAudioErro(linha, 'Não encontrei o áudio deste capítulo agora. Confira a conexão.'); });
+      }).catch(() => { if (bibliaAudioAtual === atual) bibliaAudioErro(chave, 'Não encontrei o áudio deste capítulo agora. Confira a conexão.'); });
     }
 
-    function bibliaLinhaCapitulo(item, cap, det, origem) { // origem 'livros': a linha está na leitura por livros (det é o cartão do livro)
-      const linha = document.createElement('div');
-      const marca0 = bibliaMarcaDe(cap.id);
-      linha.className = 'biblia-cap' + (marca0.lido ? ' lido' : '');
-      linha.dataset.capId = cap.id;
-      linha.dataset.capNome = cap.nome;
-      linha._cap = cap; // para seguir ao próximo capítulo
+    // Vai até o capítulo (pelo id de uma de suas partes) na lista pedida e o seleciona: usado ao fechar o resumo.
+    function bibliaSelecionarPorCapId(id, origem) {
+      const cel = (origem === 'livros' ? bibliaLivros : bibliaLista).querySelector('.biblia-cel[data-ids~="' + id + '"]');
+      if (!cel) return;
+      const caixa = cel.closest('.biblia-grade-caixa');
+      bibliaGradeSelecionar(caixa, [...caixa.querySelectorAll('.biblia-cel')].indexOf(cel));
+      cel.scrollIntoView({ block: 'center' });
+    }
 
-      const rotulo = document.createElement('label');
-      rotulo.className = 'biblia-cap-rotulo';
-      const check = document.createElement('input');
-      check.type = 'checkbox';
-      check.className = 'biblia-item-check';
-      check.checked = Boolean(marca0.lido);
-      check.setAttribute('aria-label', 'Marcar ' + cap.nome + ' como lido');
-      rotulo.append(check, bibliaNomeCap(cap));
-
-      const data = document.createElement('input');
-      data.type = 'text';
-      data.readOnly = true;
-      data.tabIndex = -1;
-      data.className = 'biblia-cap-data';
-      data.placeholder = 'Data'; // curto: cabe no campo mesmo em celular de 360 px
-      data.value = marca0.lido ? bibliaDataBR(marca0.lidaEm) : '';
-      data.setAttribute('aria-label', 'Data em que ' + cap.nome + ' foi lido');
-      const ajustarData = () => { data.style.width = 'calc(' + Math.max(data.value.length, data.value ? 10 : data.placeholder.length) + 'ch + 18px)'; }; // do tamanho do texto
-      ajustarData();
-
-      // O campo da data só mostra a data: não recebe clique nem foco; tocar nele marca ou desmarca a leitura.
-      const dataCaixa = document.createElement('span');
-      dataCaixa.className = 'biblia-cap-data-caixa';
-      dataCaixa.appendChild(data);
-      dataCaixa.addEventListener('click', () => check.click());
-
-      // Resumir: só abre a área do resumo (no fim da tela); quem pede o resumo à IA é o botão dentro dela. Com resumo já feito, vira "Ver resumo".
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'secondary biblia-cap-resumir';
-      const tem = Boolean((bibliaEstado.resumos[cap.id] || '').trim());
-      btn.textContent = tem ? 'Ver resumo' : 'Resumir';
-      btn.classList.toggle('tem', tem);
-      btn.addEventListener('click', () => bibliaAbrirResumo(item, cap, origem));
-
-      check.addEventListener('change', () => {
-        const m = bibliaMarcaDe(cap.id);
-        m.lido = check.checked;
-        m.lidaEm = check.checked ? bibliaHojeISO() : ''; // a data é só um registro: nasce ao marcar e some ao desmarcar
-        bibliaEstado.itens[cap.id] = m;
-        bibliaGravarEstado();
-        linha.classList.toggle('lido', m.lido);
-        data.value = m.lido ? bibliaDataBR(m.lidaEm) : '';
-        ajustarData();
-        if (origem === 'livros') {
-          bibliaLivrosAtualizar(); // contagens dos livros e grupos, no lugar
-          bibliaRenderSecao(); // a lista da seção mostra a mesma marcação
-        } else {
-          bibliaAtualizarGrupo(det, item);
-          bibliaLivrosSincronizar();
+    // "Continuar de onde parou": leva até o capítulo do marcador, na lista em que ele foi posto.
+    function bibliaContinuar() {
+      const m = bibliaEstado.marcador;
+      if (!m) return;
+      if (m.vista === 'secoes' && m.itemId) {
+        const item = bibliaTodosItens().find(i => i.id === m.itemId);
+        if (item) {
+          if (bibliaResumoAlvo) bibliaFecharResumo(false);
+          bibliaEstado.secao = item.secaoId;
+          bibliaSecaoEscolhida = true;
+          document.getElementById('bibliaModoSecoes').open = true;
+          document.getElementById('bibliaModoLivros').open = false;
+          bibliaProgDefinir(true);
+          bibliaAbertos.add(item.id);
+          bibliaRenderSecao();
+          const caixa = bibliaLocalizarGrade({ itemId: item.id }, 'secoes');
+          if (caixa) { bibliaGradeIrPara(caixa, m.livro, m.n); const det = caixa._det; requestAnimationFrame(() => det.scrollIntoView({ block: 'start', behavior: 'smooth' })); }
+          return;
         }
-        bibliaAtualizarProgresso();
-      });
-
-      // ▶: toca a gravação do capítulo (um por vez; ao terminar, marca como lido). Os endereços do livro são consultados já, para o toque ser imediato.
-      const ouvir = document.createElement('button');
-      ouvir.type = 'button';
-      ouvir.className = 'secondary biblia-cap-ouvir';
-      ouvir.title = 'Ouvir o capítulo';
-      ouvir.textContent = '▶';
-      if (parseInt(cap.rotulo, 10)) bibliaAudioUrls(cap.livro).catch(() => {});
-      ouvir.addEventListener('click', () => bibliaAudioAlternar(cap, linha));
-      // ⏹ ao lado do ▶: pára e zera o capítulo (o ▶ volta a tocar do começo); só vale enquanto este capítulo está em andamento.
-      const parar = document.createElement('button');
-      parar.type = 'button';
-      parar.className = 'secondary biblia-cap-ouvir biblia-cap-parar';
-      parar.textContent = '⏹';
-      parar.title = 'Parar e voltar ao começo do capítulo';
-      parar.setAttribute('aria-label', 'Parar ' + cap.nome);
-      parar.disabled = true;
-      parar.addEventListener('click', () => { if (bibliaAudioAtual && bibliaAudioAtual.id === cap.id) bibliaAudioParar(); });
-      const urlWol = bibliaLinkWol(cap);
-      if (urlWol) {
-        const link = document.createElement('a');
-        link.className = 'biblia-cap-wol';
-        link.href = urlWol;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        link.textContent = '🔗 WOL';
-        link.title = 'Abrir ' + cap.nome + ' no wol.jw.org';
-        link.setAttribute('aria-label', 'Abrir ' + cap.nome + ' no wol.jw.org');
-        linha.append(rotulo, ouvir, parar, link, dataCaixa, btn);
-      } else {
-        linha.append(rotulo, ouvir, parar, btn, dataCaixa);
       }
-      bibliaAudioPintarLinha(linha);
-      return linha;
+      // Leitura por livros (ou o grupo do programa já não existe): abre o grupo de livros e o livro.
+      const g = BIBLIA_GRUPOS_LIVROS.find(x => x.livros.includes(m.livro));
+      if (g) bibliaGruposLivrosAbertos.add(g.id);
+      bibliaLivrosAbertos.add(m.livro);
+      const modo = document.getElementById('bibliaModoLivros');
+      const ir = () => {
+        bibliaLivrosRender();
+        const caixa = bibliaLocalizarGrade({ livro: m.livro }, 'livros');
+        if (caixa) { bibliaGradeIrPara(caixa, m.livro, m.n); const det = caixa._det; requestAnimationFrame(() => det.scrollIntoView({ block: 'start', behavior: 'smooth' })); }
+      };
+      // Abrir a lista de livros faz o app refazê-la (evento "toggle"): espera isso passar para a seleção não se perder.
+      if (modo.open) ir(); else { modo.open = true; setTimeout(ir, 80); }
     }
 
     // ----- Programação recolhível e área do resumo (fim da tela) -----
@@ -21542,16 +21809,14 @@ function saveTemplatesToStorage() {
       if (!voltar || !alvo) return;
       if (alvo.origem === 'livros') { // vindo da leitura por livros: volta ao capítulo no livro (o botão passa a "Ver resumo")
         bibliaLivrosRender();
-        const l = bibliaLivros.querySelector('[data-cap-id="' + alvo.cap.id + '"]');
-        if (l) l.scrollIntoView({ block: 'center' });
+        bibliaSelecionarPorCapId(alvo.cap.id, 'livros');
         return;
       }
-      // Volta à programação, com o grupo do capítulo aberto (o botão do capítulo passa a "Ver resumo" se o resumo foi feito).
+      // Volta à programação, com o grupo do capítulo aberto e o capítulo selecionado (o botão passa a "Ver resumo" se o resumo foi feito).
       bibliaProgDefinir(true);
       bibliaAbertos.add(alvo.item.id);
       bibliaRenderSecao();
-      const linha = bibliaLista.querySelector('[data-cap-id="' + alvo.cap.id + '"]');
-      if (linha) linha.scrollIntoView({ block: 'center' });
+      bibliaSelecionarPorCapId(alvo.cap.id, 'secoes');
     }
 
     document.addEventListener('acesso-salvo', event => { if (event.detail === 'resumo') bibliaResumoSincronizar(); });
@@ -21791,12 +22056,10 @@ function saveTemplatesToStorage() {
       const caps = document.createElement('div');
       caps.className = 'biblia-caps';
       det.append(sum, caps);
-      const preencher = () => { // as linhas nascem quando o livro abre (são 1.189 capítulos no total)
-        if (caps.childElementCount) return;
-        bibliaCapsDoLivro(livro).forEach(({ n, entradas }) => entradas.forEach(({ item, cap }) => {
-          const linha = { ...cap, curto: String(cap.rotulo).includes(':') ? cap.rotulo : 'Cap. ' + n };
-          caps.appendChild(bibliaLinhaCapitulo(item, linha, det, 'livros'));
-        }));
+      const preencher = () => { // a grade nasce quando o livro abre (são 1.189 capítulos no total)
+        if (det._grade) return;
+        det._grade = bibliaCriarGrade(bibliaEspacosDoLivro(livro), 'livros', det, null);
+        caps.appendChild(det._grade);
       };
       det._preencher = preencher; // a leitura contínua abre o próximo livro por aqui
       det.addEventListener('toggle', () => {
@@ -21843,10 +22106,6 @@ function saveTemplatesToStorage() {
       bibliaAudioPintar();
     }
 
-    function bibliaLivrosSincronizar() { // uma marcação feita na leitura por seções: a leitura por livros, se já montada, é refeita
-      if (bibliaLivrosPronto && document.getElementById('bibliaModoLivros').open) bibliaLivrosRender();
-    }
-
     function bibliaRenderSecao() {
       const secoes = BIBLIA_PROG.secoes || [];
       const secao = bibliaSecaoEscolhida ? (secoes.find(s => s.id === bibliaEstado.secao) || secoes[0]) : null;
@@ -21888,7 +22147,8 @@ function saveTemplatesToStorage() {
         sum.append(titulo, cont);
         const caps = document.createElement('div');
         caps.className = 'biblia-caps';
-        bibliaCapitulos(item).forEach(cap => caps.appendChild(bibliaLinhaCapitulo(item, cap, det)));
+        det._grade = bibliaCriarGrade(bibliaEspacosDoItem(item), 'secoes', det, item);
+        caps.appendChild(det._grade);
         det.append(sum, caps);
         bibliaAtualizarGrupo(det, item);
         bibliaLista.appendChild(det);
@@ -21967,6 +22227,7 @@ function saveTemplatesToStorage() {
           bibliaRenderSecao();
         });
         bibliaProgToggle.addEventListener('click', () => bibliaProgDefinir(!bibliaProgAberto));
+        document.getElementById('bibliaContinuarBtn').addEventListener('click', bibliaContinuar);
         document.getElementById('bibliaModoLivros').addEventListener('toggle', e => { if (e.target.open) bibliaLivrosRender(); }); // sempre refeita ao abrir: traz as marcações e resumos de agora
         document.getElementById('bibliaModoSecoes').addEventListener('toggle', e => { if (e.target.open) bibliaIconeCentrar(); }); // o ícone só se mede com a seção visível
         document.getElementById('bibliaResumoFecharBtn').addEventListener('click', () => bibliaFecharResumo(true));
@@ -22006,6 +22267,7 @@ function saveTemplatesToStorage() {
       }
       bibliaAtualizarProgresso();
       bibliaRenderSecao();
+      bibliaContinuarAtualizar();
     }
 
     bibliaCarregarEstado();
