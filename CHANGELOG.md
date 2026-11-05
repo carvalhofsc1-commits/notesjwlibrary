@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.52
+
+O botão do menu lateral passa a se chamar “🔄 Buscar atualizações”.
+
 ## 6.5.51
 
 Novo botão “🔄 Atualizar o app” na base do menu lateral: confere a versão no servidor, remove o service worker e as cópias guardadas, baixa de novo os arquivos principais e recarrega (o texto do campo é mantido); depois mostra “App atualizado: versão X → Y” ou “Você já estava na versão mais recente”. Aviso de versão nova: tocar em “Depois” deixava de avisar até as versões seguintes durante toda a sessão (no app instalado, dias); agora o “Depois” vale só para aquela versão. Também confere ao voltar da memória do aparelho (pageshow) e ao voltar o foco ao app.
