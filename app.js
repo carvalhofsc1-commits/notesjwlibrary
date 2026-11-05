@@ -7542,7 +7542,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.54'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.55'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -20633,6 +20633,15 @@ function saveTemplatesToStorage() {
 
     function reunioesVistaAtual() { return document.body.dataset.reunioes || 'hub'; }
 
+    // Ao entrar na página "Preparar para comentar" (pelo atalho do Início ou pelo botão da tela Reuniões), as quatro opções de preparação abrem sempre
+    // recolhidas, sem lembrar a que ficou aberta da última vez.
+    function reunioesRecolherOpcoes(vista) {
+      if (vista !== 'comentarios') return;
+      const grupo = document.getElementById(REUNIOES_VISTAS[vista].caixa);
+      grupo.querySelectorAll(':scope > details.subsection').forEach(caixa => { caixa.open = false; });
+      reunioesSincronizarAbertas(grupo);
+    }
+
     // Atalhos (Início, menus): abrem a tela Reuniões já na página pedida; os outros abrem a tela do mesmo nome.
     document.querySelectorAll('[data-atalho]').forEach(botao => {
       botao.addEventListener('click', () => {
@@ -20640,6 +20649,7 @@ function saveTemplatesToStorage() {
         if (!REUNIOES_VISTAS[destino]) return showScreen(destino);
         showScreen('reunioes');
         if (destino === 'historico') historicoRecolher();
+        reunioesRecolherOpcoes(destino);
         reunioesIr(destino);
       });
     });
@@ -20784,6 +20794,7 @@ function saveTemplatesToStorage() {
         event.preventDefault();
         if (caixa.classList.contains('grupo-desabilitado')) return;
         if (vista === 'historico') historicoRecolher();
+        reunioesRecolherOpcoes(vista);
         reunioesIr(vista);
       });
     });

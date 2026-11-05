@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.55
+
+Reuniões → Preparar para comentar: ao abrir a página (pelo atalho Comentários do Início ou pelo botão da tela Reuniões), as quatro opções de preparação (A Sentinela, Tesouros da Palavra de Deus, Estudo Bíblico e Imagens da apostila) abrem sempre recolhidas.
+
 ## 6.5.54
 
 Página Sobre revisada: a introdução e o quadro “O que você pode fazer” agora citam a leitura diária da Bíblia (programa por seções e por livros, marcações, áudio dos capítulos e resumos com IA), o áudio em texto e o backup do aplicativo, e dizem quais recursos pedem código de acesso; também atualizados o texto de privacidade (áudio da Bíblia direto da jw.org, reconhecimento de voz) e os créditos (PDF.js).
