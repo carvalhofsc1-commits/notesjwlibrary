@@ -7540,7 +7540,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.50'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.51'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -17487,7 +17487,8 @@ function saveTemplatesToStorage() {
     const UPDATE_CHECK_MS = 10 * 60 * 1000;
     const UPDATE_AVISADA_KEY = 'jwLibraryNoteAplicarVersaoAvisada'; // a última versão nova de que o aviso já foi mostrado
     let updateBanner = null;
-    let updateDismissed = false;
+    let updateDispensadaVersao = ''; // a versão de que o usuário tocou em "Depois" (uma versão mais nova avisa de novo)
+    let updateVersaoDoAviso = '';
 
     async function fetchLatestSignature() {
       const response = await fetch(new URL('app.js', location.href).href, { cache: 'no-store' });
@@ -17528,7 +17529,7 @@ function saveTemplatesToStorage() {
       laterBtn.className = 'secondary';
       laterBtn.textContent = 'Depois';
       laterBtn.addEventListener('click', () => {
-        updateDismissed = true;
+        updateDispensadaVersao = updateVersaoDoAviso;
         updateBanner.remove();
         updateBanner = null;
       });
@@ -17539,10 +17540,12 @@ function saveTemplatesToStorage() {
     }
 
     async function checkForNewVersion() {
-      if (updateBanner || updateDismissed || !navigator.onLine) return;
+      if (updateBanner || !navigator.onLine) return;
       try {
         const latest = await fetchLatestSignature();
         if (!latest || latest === UPDATE_SIGNATURE) return;
+        if (latest === updateDispensadaVersao) return; // "Depois" nesta versão; uma mais nova avisa de novo
+        updateVersaoDoAviso = latest;
         let avisada = '';
         try { avisada = localStorage.getItem(UPDATE_AVISADA_KEY) || ''; } catch (e) { /* sem localStorage: avisa de novo */ }
         if (avisada === latest) return; // o aviso desta versão já foi mostrado uma vez
@@ -17557,9 +17560,61 @@ function saveTemplatesToStorage() {
       if (document.visibilityState !== 'visible') return;
       checkForNewVersion();
     });
+    window.addEventListener('pageshow', event => { if (event.persisted) checkForNewVersion(); }); // app instalado que volta da memória (sem recarregar)
+    window.addEventListener('focus', checkForNewVersion);
     setInterval(() => {
       if (document.visibilityState === 'visible') checkForNewVersion();
     }, UPDATE_CHECK_MS);
+
+    // Botão "Atualizar o app" (menu lateral): força a atualização. Confere a versão no servidor, remove o service worker e as cópias guardadas, baixa de novo
+    // os arquivos principais e recarrega (o texto do campo é mantido). Serve quando o aviso de versão nova não aparece.
+    const ATUALIZACAO_MANUAL_KEY = 'jwLibraryNoteAplicarAtualizacaoManual';
+    function mostrarMensagemDoApp(texto) {
+      const antiga = document.getElementById('updateBar');
+      if (antiga) antiga.remove();
+      const barra = document.createElement('div');
+      barra.id = 'updateBar';
+      barra.className = 'update-bar';
+      barra.setAttribute('role', 'status');
+      const span = document.createElement('span');
+      span.textContent = texto;
+      const ok = document.createElement('button');
+      ok.type = 'button';
+      ok.textContent = 'OK';
+      ok.addEventListener('click', () => barra.remove());
+      barra.append(span, ok);
+      document.body.appendChild(barra);
+      setTimeout(() => barra.remove(), 9000);
+    }
+    async function atualizarOApp() {
+      const botao = document.getElementById('menuAtualizarBtn');
+      const rotulo = botao.textContent;
+      if (!navigator.onLine) { mostrarMensagemDoApp('Sem conexão com a internet: não deu para atualizar agora.'); return; }
+      botao.disabled = true;
+      botao.textContent = '⏳ Atualizando…';
+      let latest = null;
+      try { latest = await fetchLatestSignature(); } catch (e) { /* sem resposta */ }
+      if (!latest) {
+        botao.disabled = false;
+        botao.textContent = rotulo;
+        mostrarMensagemDoApp('Não consegui falar com o servidor agora. Tente de novo em instantes.');
+        return;
+      }
+      try { (await navigator.serviceWorker.getRegistrations()).forEach(r => r.unregister()); } catch (e) { /* sem service worker */ }
+      try { for (const nome of await caches.keys()) if (nome.startsWith('jw-notas-')) await caches.delete(nome); } catch (e) { /* sem cache */ }
+      await Promise.all(['./', 'index.html', 'app.css', 'app.js', 'leitura-biblia-programa.js', 'biblia-versiculos.js', 'exportar-pagina.js', 'defaults.json']
+        .map(url => fetch(url, { cache: 'reload' }).catch(() => null)));
+      try { sessionStorage.setItem(ATUALIZACAO_MANUAL_KEY, JSON.stringify({ de: APP_VERSION, para: latest })); } catch (e) { /* sem sessionStorage */ }
+      applyUpdate();
+    }
+    document.getElementById('menuAtualizarBtn').addEventListener('click', atualizarOApp);
+    try { // depois de recarregar pelo botão: diz o que aconteceu
+      const feito = JSON.parse(sessionStorage.getItem(ATUALIZACAO_MANUAL_KEY) || 'null');
+      if (feito) {
+        sessionStorage.removeItem(ATUALIZACAO_MANUAL_KEY);
+        mostrarMensagemDoApp(feito.de !== APP_VERSION ? '✅ App atualizado: versão ' + feito.de + ' → ' + APP_VERSION + '.' : '✅ Você já estava na versão mais recente (' + APP_VERSION + '). Os arquivos do app foram baixados de novo.');
+      }
+    } catch (e) { /* sem sessionStorage */ }
 
     enableManifestWhenOnline();
     registerServiceWorker();

@@ -10510,3 +10510,11 @@ details.transcricao-bloco:not([open]) {
 .biblia-cap .biblia-cap-parar { grid-column: 3; --cor: 5; font-size: .7rem; }
 .biblia-cap .biblia-cap-parar:disabled { opacity: .4; cursor: default; }
 #bibliaProgCaixa { scroll-margin-top: calc(var(--topbar-h, 0px) + 78px); } /* ao descer até a seção, o começo dela fica logo abaixo da barra do topo */
+
+/* Botão "Atualizar o app" na base do menu lateral. */
+.app-menu-rodape .menu-atualizar {
+  width: 100%;
+  min-height: 0;
+  padding: 9px 10px;
+  font-size: .85rem;
+}

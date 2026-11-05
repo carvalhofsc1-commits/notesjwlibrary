@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.51
+
+Novo botão “🔄 Atualizar o app” na base do menu lateral: confere a versão no servidor, remove o service worker e as cópias guardadas, baixa de novo os arquivos principais e recarrega (o texto do campo é mantido); depois mostra “App atualizado: versão X → Y” ou “Você já estava na versão mais recente”. Aviso de versão nova: tocar em “Depois” deixava de avisar até as versões seguintes durante toda a sessão (no app instalado, dias); agora o “Depois” vale só para aquela versão. Também confere ao voltar da memória do aparelho (pageshow) e ao voltar o foco ao app.
+
 ## 6.5.50
 
 Leitura da Bíblia: o resumo dos capítulos com a IA passa a exigir um código próprio, o código de resumo (variável CODIGO_RESUMO na Vercel), informado em Ajustes → Autorização de acessos. O botão “Gerar resumo” ganha o ícone 🔑 e, sem o código salvo, fica desabilitado (🔒) com um botão que leva a Ajustes. O código de pesquisa deixa de valer para esse resumo. O ícone da função Leitura diária da Bíblia passa a ser 📚 (menu, barra inferior, atalho do Início, título da tela e seção de Ajustes).
