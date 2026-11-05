@@ -7542,7 +7542,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.56'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.57'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21438,8 +21438,11 @@ function saveTemplatesToStorage() {
         const i = caixa._sel + d;
         if (i < 0 || i >= caixa._espacos.length) return;
         bibliaGradeSelecionar(caixa, i);
-        const cel = caixa.querySelectorAll('.biblia-cel')[i];
-        if (cel) cel.scrollIntoView({ block: 'nearest' });
+        // Na leitura por livros, as setas só trocam o capítulo no painel, sem mexer na tela; na por seções, a célula escolhida é trazida à vista.
+        if (caixa._origem !== 'livros') {
+          const cel = caixa.querySelectorAll('.biblia-cel')[i];
+          if (cel) cel.scrollIntoView({ block: 'nearest' });
+        }
       };
       q('.bp-ant').addEventListener('click', () => ir(-1));
       q('.bp-prox').addEventListener('click', () => ir(1));
