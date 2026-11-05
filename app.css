@@ -9317,7 +9317,7 @@ details.subsection.ebc-subsection#publicoBox.s34-bloqueado {
 .transcricao-bloco {
   margin: 10px 0;
   padding: 4px 12px 12px;
-  border: 2px solid var(--muted);
+  border: 1px solid var(--muted);
   border-radius: 12px;
   background: color-mix(in srgb, var(--card) 70%, transparent);
 }
@@ -9717,7 +9717,7 @@ details.transcricao-bloco:not([open]) {
 .transcricao-conteiner {
   margin: 10px 0;
   padding: 10px 12px 12px;
-  border: 2px solid var(--muted);
+  border: 1px solid var(--muted);
   border-radius: 12px;
   background: color-mix(in srgb, var(--card) 70%, transparent);
 }
