@@ -7542,7 +7542,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.66'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.67'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21905,9 +21905,13 @@ function saveTemplatesToStorage() {
       const i = caixa._espacos.findIndex(e => e.livro === livro && e.n === n);
       if (i < 0) return -1;
       bibliaGradeSelecionar(caixa, i);
-      const cel = caixa.querySelectorAll('.biblia-cel')[i];
-      const r = cel.getBoundingClientRect();
-      if (r.top < 90 || r.bottom > innerHeight - 90) cel.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      // Na leitura por livros, o foco fica no painel do player (ele é que mostra o capítulo em andamento); na por seções, na célula do capítulo.
+      const alvo = caixa._origem === 'livros' ? caixa.querySelector('.biblia-painel') : caixa.querySelectorAll('.biblia-cel')[i];
+      setTimeout(() => { // depois de o livro abrir e a grade se acomodar
+        if (!alvo || alvo.hidden) return;
+        const r = alvo.getBoundingClientRect();
+        if (r.top < 90 || r.bottom > innerHeight - 20) alvo.scrollIntoView({ block: alvo.getBoundingClientRect().height > innerHeight - 200 ? 'start' : 'center', behavior: 'smooth' });
+      }, 120);
       return i;
     }
 
