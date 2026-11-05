@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.54
+
+Página Sobre revisada: a introdução e o quadro “O que você pode fazer” agora citam a leitura diária da Bíblia (programa por seções e por livros, marcações, áudio dos capítulos e resumos com IA), o áudio em texto e o backup do aplicativo, e dizem quais recursos pedem código de acesso; também atualizados o texto de privacidade (áudio da Bíblia direto da jw.org, reconhecimento de voz) e os créditos (PDF.js).
+
 ## 6.5.53
 
 Preparação para as lojas (Android primeiro). Política de Privacidade 1.8 (áudio da Bíblia direto da jw.org, backup do app, código de resumo; sai o item do Cloudflare). As bibliotecas JSZip, sql.js e pdf.js passam a ser entregues pelo próprio site (pasta `vendor/`, cópias idênticas às do cdnjs) e ficam numa cache própria do service worker, então o backup do JW Library e a importação de PDF funcionam **sem internet** e sem chamar terceiros. Manifesto completo (`id`, `scope`, `lang`, `categories`, atalhos para Formatar, Bíblia, Reuniões e Áudio); `/.well-known/assetlinks.json` criado vazio (para o Android); cabeçalhos de segurança (`vercel.json`: nosniff, Referrer-Policy, X-Frame-Options, Permissions-Policy). O zoom por pinça continua bloqueado (decisão do dono do app); só o último campo com letra menor que 16 px (tela de prompts do administrador) passou a 16 px. Leitura da Bíblia em celulares estreitos (320 a 380 px): o “Cap.” aparecia como “C…” na maioria das linhas e, em 320 px, o número do capítulo era cortado; agora os botões, os espaços internos e o gráfico de áudio se ajustam e nada fica cortado em 320, 360, 375 e 412 px, nos dois modos de leitura. O campo vazio da data diz só “Data”.
