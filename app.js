@@ -4566,7 +4566,16 @@
 
     // Palavras, caracteres e tempo estimado do texto que está no campo (a ~15 caracteres por segundo a 1×; muda com a velocidade escolhida).
     // Recalculado a cada edição, ao importar, ao concluir a edição e quando a velocidade muda. Passando do limite, avisa que só o começo é lido.
+    // Ler e Concluir só valem com texto no campo (digitado, colado ou vindo de um arquivo PDF/Word); sem texto ficam desabilitados. Também ficam
+    // desabilitados enquanto um arquivo está sendo lido.
+    let leituraCarregandoArquivo = false;
+    function leituraHabilitarBotoes() {
+      const comTexto = leituraTexto.value.trim() !== '';
+      leituraLerBtn.disabled = !comTexto || leituraCarregandoArquivo;
+      leituraConcluirBtn.disabled = !comTexto || leituraCarregandoArquivo;
+    }
     function leituraEstatAtualizar() {
+      leituraHabilitarBotoes();
       const texto = leituraTexto.value.trim();
       leituraEstat.classList.remove('warn');
       if (!texto) {
@@ -5117,6 +5126,7 @@
 
     // Com a leitura parada no meio, o botão vira "Continuar" (e o ⏹️ volta ao início do texto).
     function leituraBotoesAtualizar() {
+      leituraHabilitarBotoes();
       const continuar = !leituraVista.hidden && leituraPosicao > 0 && leituraPosicao < leituraUnidades.length;
       const pct = leituraUnidades.length ? Math.round((leituraPosicao / leituraUnidades.length) * 100) : 0;
       leituraLerBtn.textContent = continuar ? '▶️ Continuar' : '🔊 Ler';
@@ -6221,7 +6231,8 @@
       leituraAudioLimpar();
       leituraModo(false);
       leituraInfo('Lendo o arquivo…', false);
-      leituraLerBtn.disabled = true;
+      leituraCarregandoArquivo = true;
+      leituraHabilitarBotoes();
       try {
         const buffer = await arquivo.arrayBuffer();
         const resultado = extensao === 'pdf'
@@ -6255,7 +6266,8 @@
       } catch (e) {
         leituraInfo(e && e.message ? e.message : 'Não consegui ler este arquivo.', true);
       } finally {
-        leituraLerBtn.disabled = false;
+        leituraCarregandoArquivo = false;
+        leituraHabilitarBotoes();
       }
     }
 
@@ -6363,6 +6375,7 @@
       clearTimeout(leituraGravarTimer);
       leituraGravarTimer = setTimeout(leituraGravar, 1500);
     });
+    leituraHabilitarBotoes(); // ao abrir o app, sem texto: Ler e Concluir desabilitados
     vozVelocidade.addEventListener('change', leituraEstatAtualizar);
     // Mudar a caixa dos parênteses refaz o que a voz fala de cada frase (a leitura em andamento segue como está; vale da próxima vez que ler).
     leituraParentesesCaixa.addEventListener('change', () => {
@@ -7542,7 +7555,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.84'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.85'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
