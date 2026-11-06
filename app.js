@@ -7557,7 +7557,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.90'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.91'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -19470,6 +19470,20 @@ function saveTemplatesToStorage() {
     }
     trTexto.addEventListener('input', trAtualizarBotoes);
     trResumo.addEventListener('input', trAtualizarBotoes);
+
+    // A mensagem de andamento aparece dentro do quadro Transcrever, entre o botão Iniciar e a barra de progresso; fora dele (quadro ainda escondido), continua
+    // aparecendo no lugar de sempre, no alto. O texto é o mesmo (copiado de #transcricaoInfo).
+    const trInfoPasso = document.getElementById('transcricaoInfoPasso');
+    function trInfoSincronizar() {
+      const texto = trInfo.textContent;
+      const dentro = !trPassoTexto.hidden && texto !== '';
+      trInfoPasso.hidden = !dentro;
+      trInfoPasso.textContent = dentro ? texto : '';
+      trInfo.classList.toggle('info-no-passo', dentro); // o do alto se esconde enquanto a cópia aparece
+    }
+    new MutationObserver(trInfoSincronizar).observe(trInfo, { childList: true, characterData: true, subtree: true });
+    new MutationObserver(trInfoSincronizar).observe(trPassoTexto, { attributes: true, attributeFilter: ['hidden'] });
+    trInfoSincronizar();
 
     // Enquanto o app processa (transcrever, corrigir ou resumir), o botão da operação mostra um símbolo girando e o tempo que já passou (m:ss), para ficar claro que
     // não travou, mesmo sem ver a mensagem de andamento.

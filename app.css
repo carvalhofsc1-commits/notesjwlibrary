@@ -10695,3 +10695,10 @@ details.transcricao-bloco:not([open]) {
 button.processando:disabled { opacity: 1; cursor: progress; }
 .btn-ocupado { display: inline-flex; align-items: center; gap: 6px; margin-right: 8px; vertical-align: middle; font-weight: 800; font-variant-numeric: tabular-nums; }
 .btn-ocupado .transcricao-giro { width: 16px; height: 16px; border-width: 3px; border-color: color-mix(in srgb, currentColor 30%, transparent); border-top-color: currentColor; }
+
+/* A mensagem de andamento da transcrição fica dentro do quadro Transcrever; a do alto se esconde enquanto a cópia aparece. */
+#transcricaoInfo.info-no-passo { display: none; }
+.transcricao-info-passo { margin: 0 0 8px; }
+.transcricao-info-passo[hidden] { display: none; }
+/* Os botões Cancelar (transcrever, corrigir, resumir) ocupam a largura toda. */
+.transcricao-acoes > button { grid-column: 1 / -1; width: 100%; }
