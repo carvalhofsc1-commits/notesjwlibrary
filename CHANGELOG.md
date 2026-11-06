@@ -6,6 +6,10 @@ Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
 Áudio em texto (gravação ao vivo): corrige o caso de arquivo longo com metade muda — o app passa a vigiar o microfone e os pedaços do gravador, pausa o relógio sem sinal, avisa na tela e tenta retomar a captura (sem encher o arquivo de silêncio). Prefere WebM/Opus no Chrome (mais estável que mp4). Wake Lock reforçado. Texto deixa claro que gravar com a tela desligada / em segundo plano não é confiável nos navegadores (limitação do sistema).
 
+## 6.5.86
+
+Leitura da Bíblia: o botão **🎬 Vídeo: introdução ao livro** passa a aparecer no cartão do livro (leitura por livros) e no cartão do grupo que traz o capítulo 1 de um livro (leitura por seções e temas). Toca num player dentro do app, em streaming (nada é guardado no aparelho), com escolha de qualidade (360p de início, a escolha fica lembrada) e um link para abrir o vídeo no jw.org. O vídeo para ao tocar o áudio de leitura, recolher o cartão ou sair da tela; ao abrir o vídeo, a leitura em áudio é pausada.
+
 ## 6.5.85
 
 Leitura em voz alta: os botões Ler e Concluir só ficam habilitados quando há texto no campo (digitado, colado ou vindo de um arquivo PDF ou Word); sem texto, ou enquanto o arquivo está sendo lido, ficam desabilitados.

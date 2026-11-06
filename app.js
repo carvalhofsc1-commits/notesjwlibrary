@@ -46,6 +46,7 @@
       const screen = APP_SCREENS.includes(name) ? name : 'inicio';
       const changed = screen !== currentScreen();
       if (changed && currentScreen() === 'leitura') leituraAoSair(); // saindo da tela Leitura, a leitura em voz alta para
+      if (changed && currentScreen() === 'biblia') bibliaVideoParar(); // saindo da Leitura da Bíblia, o vídeo de introdução para
       document.body.dataset.screen = screen;
       menuFechar();
       navMarcar();
@@ -7555,7 +7556,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.85'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.86'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21821,8 +21822,108 @@ function saveTemplatesToStorage() {
         bibliaCelulaPintar(cel);
         grade.appendChild(cel);
       });
+      // O vídeo de introdução: no cartão do livro (por livros) ou no do grupo que traz o capítulo 1 de um livro (por seções e temas).
+      const livroVideo = origem === 'livros' ? (det && det.dataset ? det.dataset.livro : '') : ((espacos.find(e => e.n === 1 && !e.parcial) || {}).livro || '');
+      if (livroVideo && bibliaVideoLank(livroVideo)) caixa.append(bibliaVideoCriar(livroVideo));
       caixa.append(grade, bibliaCriarPainel(caixa));
       return caixa;
+    }
+
+    // ---- O vídeo de introdução ao livro (os vídeos "Introdução a Gênesis", "Introdução a Êxodo"… da JW). O botão aparece no cartão do livro (leitura por livros) e
+    // no cartão do grupo que traz o capítulo 1 do livro (leitura por seções e temas). Toca num player dentro do app, em streaming (nada é guardado no aparelho),
+    // com a qualidade à escolha (360p de início, para poupar dados) e um link para abrir a página do vídeo no jw.org.
+    const BIBLIA_VIDEO_API = 'https://b.jw-cdn.org/apis/mediator/v1/media-items/T/';
+    const BIBLIA_VIDEO_Q_KEY = 'jwLibraryNoteAplicarBibliaVideoQV1';
+    const bibliaVideosDados = new Map(); // livro -> Promise<{ lank, titulo, arquivos: [{ label, url }], poster } | null>
+    let bibliaVideoAberto = null; // { caixa, video }
+    function bibliaVideoLank(livro) {
+      const n = BIBLIA_LIVROS.indexOf(livro) + 1;
+      return n ? 'pub-nwtsv_' + (n * 10) + '_VIDEO' : '';
+    }
+    function bibliaVideoDados(livro) {
+      if (!bibliaVideosDados.has(livro)) {
+        const lank = bibliaVideoLank(livro);
+        const p = !lank ? Promise.resolve(null) : fetch(BIBLIA_VIDEO_API + lank).then(r => { if (!r.ok) throw new Error('sem vídeo'); return r.json(); }).then(j => {
+          const m = (j.media || [])[0];
+          const arquivos = ((m && m.files) || []).filter(f => f && f.progressiveDownloadURL && /mp4/i.test(f.mimetype || 'video/mp4')).map(f => ({ label: String(f.label || ''), url: f.progressiveDownloadURL }));
+          if (!m || !arquivos.length) return null;
+          const imgs = m.images || {};
+          const poster = ((imgs.wss || imgs.lsr || {}).md) || ((imgs.wss || imgs.lsr || {}).sm) || '';
+          return { lank, titulo: m.title || ('Introdução a ' + livro), arquivos, poster };
+        });
+        p.catch(() => bibliaVideosDados.delete(livro)); // numa falha tenta de novo no próximo toque
+        bibliaVideosDados.set(livro, p);
+      }
+      return bibliaVideosDados.get(livro);
+    }
+    function bibliaVideoParar() {
+      if (!bibliaVideoAberto) return;
+      const { caixa, video } = bibliaVideoAberto;
+      bibliaVideoAberto = null;
+      try { video.pause(); video.removeAttribute('src'); video.load(); } catch (e) { /* já saiu da tela */ }
+      caixa.hidden = true;
+      const btn = caixa.parentElement && caixa.parentElement.querySelector('.biblia-video-btn');
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+    }
+    function bibliaVideoCriar(livro) {
+      const linha = document.createElement('div');
+      linha.className = 'biblia-video';
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'secondary biblia-video-btn';
+      btn.setAttribute('aria-expanded', 'false');
+      btn.textContent = '🎬 Vídeo: introdução ao livro';
+      const caixa = document.createElement('div');
+      caixa.className = 'biblia-video-caixa';
+      caixa.hidden = true;
+      caixa.innerHTML =
+        '<div class="biblia-video-topo">' +
+          '<select class="biblia-video-q" aria-label="Qualidade do vídeo"></select>' +
+          '<a class="biblia-video-jw" target="_blank" rel="noopener noreferrer">🔗 jw.org</a>' +
+          '<button type="button" class="secondary biblia-video-fechar" aria-label="Fechar o vídeo">✕</button>' +
+        '</div>' +
+        '<video class="biblia-video-tela" controls playsinline preload="metadata"></video>' +
+        '<p class="hint biblia-video-msg" role="status" aria-live="polite"></p>';
+      linha.append(btn, caixa);
+      const video = caixa.querySelector('video');
+      const seletor = caixa.querySelector('.biblia-video-q');
+      const msg = caixa.querySelector('.biblia-video-msg');
+      let dados = null;
+      const tocar = (retomar) => {
+        const t = retomar ? video.currentTime : 0;
+        const arq = dados.arquivos.find(a => a.label === seletor.value) || dados.arquivos[0];
+        video.src = arq.url;
+        if (t > 0) video.addEventListener('loadedmetadata', () => { try { video.currentTime = t; } catch (e) { /* sem posição */ } }, { once: true });
+        video.play().catch(() => { /* o aparelho pede o toque no ▶️ do player */ });
+      };
+      btn.addEventListener('click', async () => {
+        if (bibliaVideoAberto && bibliaVideoAberto.caixa === caixa) { bibliaVideoParar(); return; } // tocar de novo no botão fecha
+        bibliaVideoParar();
+        if (typeof bibliaAudio !== 'undefined' && bibliaAudio && !bibliaAudio.paused) bibliaAudio.pause(); // um som por vez: pausa a leitura em áudio
+        caixa.hidden = false;
+        btn.setAttribute('aria-expanded', 'true');
+        bibliaVideoAberto = { caixa, video };
+        msg.textContent = 'Carregando o vídeo…';
+        try { dados = await bibliaVideoDados(livro); } catch (e) { dados = null; }
+        if (!bibliaVideoAberto || bibliaVideoAberto.caixa !== caixa) return; // fechou enquanto carregava
+        if (!dados) { msg.textContent = 'Não consegui carregar o vídeo agora. Confira a conexão e tente de novo.'; return; }
+        msg.textContent = '';
+        caixa.querySelector('.biblia-video-jw').href = 'https://www.jw.org/finder?lank=' + dados.lank + '&wtlocale=T';
+        let preferida = '360p';
+        try { preferida = localStorage.getItem(BIBLIA_VIDEO_Q_KEY) || preferida; } catch (e) { /* sem localStorage */ }
+        seletor.innerHTML = dados.arquivos.map(a => '<option value="' + a.label + '">' + a.label + '</option>').join('');
+        seletor.value = dados.arquivos.some(a => a.label === preferida) ? preferida : dados.arquivos[Math.min(1, dados.arquivos.length - 1)].label;
+        if (dados.poster) video.poster = dados.poster;
+        tocar(false);
+        caixa.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      });
+      seletor.addEventListener('change', () => {
+        try { localStorage.setItem(BIBLIA_VIDEO_Q_KEY, seletor.value); } catch (e) { /* sem localStorage */ }
+        if (dados) tocar(true);
+      });
+      video.addEventListener('error', () => { if (bibliaVideoAberto && bibliaVideoAberto.video === video && video.getAttribute('src')) msg.textContent = 'Não consegui tocar este vídeo agora. Tente outra qualidade ou o link do jw.org.'; });
+      caixa.querySelector('.biblia-video-fechar').addEventListener('click', bibliaVideoParar);
+      return linha;
     }
 
     // O gráfico de barras do áudio (o mesmo no cabeçalho do grupo/livro e dentro do player do painel).
@@ -21922,7 +22023,11 @@ function saveTemplatesToStorage() {
         eq.classList.toggle('pausado', a.estado === 'pausado');
       });
     }
-    document.addEventListener('toggle', ev => { if (ev.target.matches && ev.target.matches('#bibliaCard details.biblia-grupo')) bibliaEqTopoPintar(); }, true);
+    document.addEventListener('toggle', ev => {
+      if (!(ev.target.matches && ev.target.matches('#bibliaCard details.biblia-grupo'))) return;
+      bibliaEqTopoPintar();
+      if (!ev.target.open && bibliaVideoAberto && ev.target.contains(bibliaVideoAberto.caixa)) bibliaVideoParar(); // cartão recolhido: o vídeo para
+    }, true);
     // Texto do capítulo que está tocando, versículo por versículo, para o player mostrar o versículo em andamento. O servidor só entrega com o
     // código de resumo; um capítulo por vez, guardado na memória enquanto o app está aberto. Sem o código, nada é pedido e nada aparece.
     const bibliaTextos = new Map(); // 'Livro|n' -> Map(v -> texto) | 'carregando' | 'falhou'
@@ -22074,6 +22179,7 @@ function saveTemplatesToStorage() {
         else if (bibliaAudioAtual.estado === 'pausado') bibliaAudio.play().catch(() => {});
         return;
       }
+      bibliaVideoParar(); // um som por vez: o vídeo de introdução para
       bibliaAudioParar(continuar); // outro capítulo: só um por vez
       bibliaAudioMsg = null;
       const atual = { chave, livro: cap.livro, n, estado: 'carregando', marcas: [], v: 0, total: bibliaVersiculosCapitulo(cap.livro, n), origem: ctx && ctx.origem === 'livros' ? 'livros' : 'secoes', itemId: (ctx && ctx.itemId) || '' };
@@ -22475,6 +22581,7 @@ function saveTemplatesToStorage() {
 
     function bibliaLivrosRender() {
       bibliaResumoGuardar();
+      bibliaVideoParar();
       bibliaLivros.replaceChildren();
       BIBLIA_GRUPOS_LIVROS.forEach(g => {
         if (g.livros.length === 1) { // livro que forma um grupo sozinho (Atos, Apocalipse): o cartão do livro direto
@@ -22511,6 +22618,7 @@ function saveTemplatesToStorage() {
 
     function bibliaRenderSecao() {
       bibliaResumoGuardar();
+      bibliaVideoParar();
       const secoes = BIBLIA_PROG.secoes || [];
       const secao = bibliaSecaoEscolhida ? (secoes.find(s => s.id === bibliaEstado.secao) || secoes[0]) : null;
       document.getElementById('bibliaProgCaixa').hidden = !secao; // sem seção escolhida, a programação não aparece

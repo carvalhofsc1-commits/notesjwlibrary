@@ -10667,3 +10667,16 @@ details.transcricao-bloco:not([open]) {
 /* O gráfico no topo do cartão recolhido (grupo de capítulos ou livro) que tem o capítulo tocando. */
 .biblia-eq.biblia-eq-topo { width: 76px; height: 24px; gap: 2px; justify-content: space-between; margin-left: auto; margin-right: 6px; }
 .biblia-eq.biblia-eq-topo i { flex: 1 1 0; width: auto; min-width: 0; height: 3px; border-radius: 1px; animation: none; transition: height .08s linear; }
+
+/* O vídeo de introdução ao livro, no cartão do livro (ou do grupo com o capítulo 1). */
+.biblia-video { margin: 0 0 10px; }
+.biblia-video-btn { width: 100%; margin: 0; }
+.biblia-video-caixa { margin-top: 8px; padding: 8px; border: 1px solid color-mix(in srgb, var(--brand) 45%, var(--line)); border-radius: 12px; background: color-mix(in srgb, var(--soft) 55%, var(--card)); }
+.biblia-video-caixa[hidden] { display: none; }
+.biblia-video-topo { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.biblia-video-q { flex: 0 0 auto; width: auto; min-width: 0; margin: 0; }
+.biblia-video-jw { flex: 1 1 auto; min-width: 0; font-weight: 700; font-size: .9rem; }
+.biblia-video-fechar { flex: 0 0 auto; width: auto; min-height: 0; margin: 0; padding: 6px 12px; }
+.biblia-video-tela { display: block; width: 100%; max-height: 60vh; border-radius: 8px; background: #000; }
+.biblia-video-msg { margin: 6px 0 0; font-size: .85rem; }
+.biblia-video-msg:empty { display: none; }
