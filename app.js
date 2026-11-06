@@ -7542,7 +7542,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.76'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.77'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21541,15 +21541,18 @@ function saveTemplatesToStorage() {
     }
 
     function bibliaGradeSelecionar(caixa, i) {
+      // Só uma caixa de opções de leitura/áudio aberta por vez: abrir a deste capítulo fecha a de qualquer outro grupo ou livro.
+      if (i >= 0) document.querySelectorAll('#bibliaCard .biblia-grade-caixa').forEach(outra => { if (outra !== caixa && outra._sel >= 0) bibliaGradeSelecionar(outra, -1); });
       caixa._sel = i;
       caixa.querySelectorAll('.biblia-cel').forEach((c, k) => c.classList.toggle('sel', k === i));
       const painel = caixa.querySelector('.biblia-painel');
-      if (i < 0) { painel.hidden = true; return; }
+      if (i < 0) { painel.hidden = true; bibliaEqTopoPintar(); return; }
       const esp = caixa._espacos[i];
       painel.hidden = false;
       painel.dataset.chave = bibliaChave(esp);
       bibliaAudioUrls(esp.livro).catch(() => {}); // os endereços ficam prontos antes do toque no ▶
       painel._pintar();
+      bibliaEqTopoPintar();
     }
 
     const bibliaTempo = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
@@ -21819,6 +21822,41 @@ function saveTemplatesToStorage() {
       bibliaCelulasPintar();
       document.querySelectorAll('#bibliaCard .biblia-painel:not([hidden])').forEach(p => p._pintar());
       bibliaEqTopoPintar();
+      bibliaEqIniciar();
+    }
+    // As barras do gráfico simulam as ondas sonoras da voz: sobem e descem como num equalizador, num ritmo de sílabas e com pausas curtas; as graves (esquerda) e as
+    // médias têm mais força que as agudas. Não é a análise do áudio de verdade (o áudio vem de outro site e o navegador não deixa medi-lo), mas acompanha o tocar:
+    // anda enquanto toca e fica parado na pausa.
+    let bibliaEqQuadro = 0;
+    let bibliaEqUltimo = 0;
+    const bibliaEqVoz = { nivel: 0.5, proxSilaba: 0, pausaAte: 0, proxPausa: 0 };
+    function bibliaEqIniciar() {
+      if (!bibliaEqQuadro && bibliaAudioAtual && bibliaAudioAtual.estado === 'tocando') bibliaEqQuadro = requestAnimationFrame(bibliaEqLoop);
+    }
+    function bibliaEqLoop(ts) {
+      bibliaEqQuadro = 0;
+      if (!bibliaAudioAtual || bibliaAudioAtual.estado !== 'tocando') return;
+      if (ts - bibliaEqUltimo >= 75) { bibliaEqUltimo = ts; bibliaEqPasso(ts); }
+      bibliaEqQuadro = requestAnimationFrame(bibliaEqLoop);
+    }
+    function bibliaEqPasso(ts) {
+      const v = bibliaEqVoz;
+      if (ts >= v.proxPausa) { v.pausaAte = ts + 160 + Math.random() * 240; v.proxPausa = ts + 1500 + Math.random() * 2500; }
+      if (ts >= v.proxSilaba) { v.nivel = ts < v.pausaAte ? 0.06 : 0.35 + Math.random() * 0.65; v.proxSilaba = ts + 90 + Math.random() * 140; }
+      const parado = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      document.querySelectorAll('#bibliaCard .biblia-eq').forEach(eq => {
+        if (!eq.offsetParent) return; // escondido
+        const barras = eq.children;
+        const alto = Math.max(8, eq.clientHeight - 1);
+        for (let i = 0; i < barras.length; i++) {
+          const forma = 0.3 + 0.7 * Math.exp(-Math.pow((i - 6) / 8.5, 2)); // a voz tem mais energia nas faixas baixas e médias
+          const alvo = parado ? 0.35 * forma : v.nivel * forma * (0.5 + 0.5 * Math.random());
+          const b = barras[i];
+          const atual = b._v || 0;
+          b._v = atual + (alvo - atual) * (alvo > atual ? 0.7 : 0.35); // sobe depressa e desce devagar
+          b.style.height = (3 + b._v * (alto - 3)).toFixed(1) + 'px';
+        }
+      });
     }
     // O gráfico de barras fica no player do painel. Com o áudio tocando e o cartão do grupo (ou do livro) que o contém recolhido, o player não está à vista:
     // o gráfico passa para o topo do cartão que está à vista (o mais externo recolhido) e volta só ao player quando o cartão é aberto.
@@ -21829,7 +21867,11 @@ function saveTemplatesToStorage() {
         const cel = document.querySelector('#bibliaCard .biblia-cel.tocando');
         const grupos = [];
         for (let d = cel ? cel.closest('details') : null; d; d = d.parentElement ? d.parentElement.closest('details') : null) if (d.classList.contains('biblia-grupo')) grupos.push(d);
-        alvo = grupos.reverse().find(d => !d.open) || null;
+        alvo = grupos.slice().reverse().find(d => !d.open) || null;
+        if (!alvo && grupos[0]) { // cartões todos abertos: se o painel do cartão não mostra o capítulo que toca (nenhum capítulo escolhido, ou outro), o gráfico vai ao topo
+          const painel = grupos[0].querySelector('.biblia-painel');
+          if (!painel || painel.hidden || painel.dataset.chave !== a.chave) alvo = grupos[0];
+        }
       }
       document.querySelectorAll('#bibliaCard summary > .biblia-eq-topo').forEach(eq => { if (!alvo || eq.parentElement.parentElement !== alvo) eq.remove(); });
       if (!alvo) return;
