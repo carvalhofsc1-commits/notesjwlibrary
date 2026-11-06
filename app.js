@@ -7542,7 +7542,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.81'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.82'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21847,7 +21847,15 @@ function saveTemplatesToStorage() {
     function bibliaEqPasso(ts) {
       const v = bibliaEqVoz;
       if (ts >= v.proxPausa) { v.pausaAte = ts + 160 + Math.random() * 240; v.proxPausa = ts + 1500 + Math.random() * 2500; }
-      const mudo = ts < v.pausaAte;
+      // O silêncio de verdade que o app consegue saber: a respiração entre um versículo e outro (logo antes de cada marcador do áudio) e quando o áudio está carregando.
+      const a = bibliaAudioAtual;
+      let silencio = Boolean(bibliaAudio) && bibliaAudio.readyState < 3;
+      if (!silencio && a && bibliaAudio) {
+        const t = bibliaAudio.currentTime;
+        const prox = (a.marcas || []).find(m => m.t > t);
+        silencio = Boolean(prox) && prox.t - t < 0.4;
+      }
+      const mudo = silencio || ts < v.pausaAte;
       if (ts >= v.proxSilaba) { v.nivel = mudo ? 0.06 : 0.35 + Math.random() * 0.65; v.proxSilaba = ts + 90 + Math.random() * 140; }
       // as faixas agudas (direita, zona vermelha) têm o seu próprio ritmo: chiados (s, f, x) vêm em rajadas, independentes das sílabas
       if (ts >= v.proxAgudo) { v.agudo = mudo ? 0.05 : (Math.random() < 0.3 ? 0.15 : 0.45 + Math.random() * 0.55); v.proxAgudo = ts + 60 + Math.random() * 110; }
