@@ -7542,7 +7542,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.82'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.83'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21870,7 +21870,8 @@ function saveTemplatesToStorage() {
           const b = barras[i];
           const atual = b._v || 0;
           b._v = atual + (alvo - atual) * (alvo > atual ? 0.7 : 0.35); // sobe depressa e desce devagar
-          b.style.height = (3 + b._v * (alto - 3)).toFixed(1) + 'px';
+          const janela = Math.pow(Math.sin(Math.PI * (i + 0.5) / barras.length), 1.4); // as pontas quase não se mexem; quanto mais ao meio, maior a oscilação
+          b.style.height = (3 + b._v * janela * (alto - 3)).toFixed(1) + 'px';
         }
       });
     }
