@@ -203,6 +203,7 @@ async function iniciarLote(objeto) {
     }),
   });
   if (!op.name) throw new Error("o Google não devolveu a operação");
+  console.log("Lote: iniciado", JSON.stringify({ operacao: op.name, objeto, metadata: op.metadata || null }).slice(0, 1500));
   return op.name;
 }
 
@@ -414,7 +415,12 @@ export default async function handler(req, res) {
         if (e.status === 404 || e.status === 403) await apagarObjetoLote(objeto);
         throw e;
       }
-      if (!op.done) return res.status(200).json({ pronto: false });
+      if (!op.done) {
+        const m = op.metadata || {};
+        console.log("Lote: em andamento", JSON.stringify({ operacao, progresso: m.progressPercent, atualizado: m.updateTime, criado: m.createTime, arquivos: m.batchRecognizeMetadata || null }).slice(0, 1500));
+        return res.status(200).json({ pronto: false, progresso: typeof m.progressPercent === "number" ? m.progressPercent : null });
+      }
+      console.log("Lote: concluído", JSON.stringify({ operacao, erro: op.error || null, resposta: op.response ? Object.keys(op.response.results || {}).length + " arquivo(s)" : null }).slice(0, 1500));
       await apagarObjetoLote(objeto); // pronta (ou com erro): o áudio não fica no Google
       if (op.error) {
         const e = new Error(op.error.message || "falha na transcrição em lote");

@@ -7557,7 +7557,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.88'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.89'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -19637,17 +19637,21 @@ function saveTemplatesToStorage() {
         if (!inicio.ok) { objeto = ''; throw falha(trMensagem(inicio, 'Não foi possível iniciar a transcrição.'), { cancelado: inicio.cancelado }); }
         const operacao = inicio.dados.operacao;
         const comeco = Date.now();
+        const minutosAudio = amostras.length / TRANSCRICAO_TAXA / 60;
+        let progresso = null;
         for (;;) {
           await trEspera(5000);
           if (sinal.aborted) throw falha('Cancelado.', { cancelado: true });
           const minutos = Math.floor((Date.now() - comeco) / 60000);
-          trInfo.textContent = '🎙️ ' + rotulo + 'transcrevendo e identificando quem fala… ' + (minutos ? minutos + ' min' : 'menos de 1 min') + ' (pode levar alguns minutos)';
+          trInfo.textContent = '🎙️ ' + rotulo + 'transcrevendo e identificando quem fala… ' + (minutos ? minutos + ' min' : 'menos de 1 min') + (progresso !== null ? ' · ' + progresso + '%' : '') + ' (pode levar alguns minutos)';
           let r = await trPost({ acao: 'lote-estado', codigoTexto: codigo, objeto, operacao }, sinal);
           if (!r.ok && !r.cancelado && (r.status === 0 || r.status >= 500)) { await trEspera(3000); r = await trPost({ acao: 'lote-estado', codigoTexto: codigo, objeto, operacao }, sinal); } // uma nova tenta
           if (r.cancelado) throw falha('Cancelado.', { cancelado: true });
           if (!r.ok) { objeto = ''; throw falha(trMensagem(r, 'Não foi possível acompanhar a transcrição.')); } // o servidor já apagou o arquivo
           if (r.dados.pronto) { objeto = ''; return r.dados; }
-          if (Date.now() - comeco > 40 * 60 * 1000) throw falha('A transcrição demorou demais e foi interrompida. Tente de novo com um áudio mais curto.');
+          if (typeof r.dados.progresso === 'number') { progresso = r.dados.progresso; if (progresso >= 0 && progresso <= 100) { trProgresso.max = 100; trProgresso.value = progresso; } }
+          // O prazo acompanha o tamanho do áudio (um áudio curto não deve levar mais que alguns minutos); passado ele, para e apaga o arquivo.
+          if (Date.now() - comeco > Math.max(8, minutosAudio * 3) * 60 * 1000) throw falha('A transcrição demorou mais que o esperado e foi interrompida (o arquivo foi apagado do Google). Tente de novo; se repetir, avise o administrador.');
         }
       } catch (e) {
         apagar();

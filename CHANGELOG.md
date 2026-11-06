@@ -6,6 +6,10 @@ Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
 Áudio em texto (gravação ao vivo): corrige o caso de arquivo longo com metade muda — o app passa a vigiar o microfone e os pedaços do gravador, pausa o relógio sem sinal, avisa na tela e tenta retomar a captura (sem encher o arquivo de silêncio). Prefere WebM/Opus no Chrome (mais estável que mp4). Wake Lock reforçado. Texto deixa claro que gravar com a tela desligada / em segundo plano não é confiável nos navegadores (limitação do sistema).
 
+## 6.5.89
+
+Áudio em texto, identificação de quem fala: o acompanhamento mostra o andamento (%) quando o Google informa; o prazo agora acompanha o tamanho do áudio (no mínimo 8 minutos, ou 3 vezes a duração) e, passado ele, a transcrição é interrompida e o arquivo é apagado, em vez de esperar sem fim. O servidor registra o andamento da operação no log para diagnóstico.
+
 ## 6.5.88
 
 Áudio em texto: nova caixa **👥 Identificar quem fala** (em Transcrever). Ligada, o áudio inteiro é enviado, de uma vez, para um bucket privado do Google Cloud por uma URL assinada (o arquivo é apagado assim que a transcrição termina, e o bucket também apaga sozinho depois de 1 dia), o servidor pede a transcrição em lote com identificação de falantes (Speech-to-Text V2, chirp_3) e o app acompanha até ficar pronta. O texto sai separado por pessoa (“Falante 1: …”, “Falante 2: …”); a correção e o resumo respeitam esses rótulos. Se o Google não devolver os falantes, o texto vem corrido, com um aviso. Leva mais tempo que a transcrição comum (em geral, alguns minutos). A transcrição comum continua igual.
