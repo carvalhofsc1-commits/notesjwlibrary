@@ -7542,7 +7542,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.73'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.74'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21591,7 +21591,7 @@ function saveTemplatesToStorage() {
           '<textarea class="bp-notas-area" rows="4" placeholder="Pontos da leitura que você quer lembrar…" aria-label="Anotações do capítulo"></textarea>' +
         '</div>';
       const q = s => p.querySelector(s);
-      const eqPlayer = bibliaEqCriar(false); // as barras de áudio dentro do player, ao lado da situação
+      const eqPlayer = bibliaEqCriar(); // as barras de áudio dentro do player, ao lado da situação
       eqPlayer.classList.add('bp-eq');
       eqPlayer.hidden = true;
       q('.bp-status-linha').appendChild(eqPlayer);
@@ -21805,16 +21805,12 @@ function saveTemplatesToStorage() {
     }
 
     // O gráfico de barras do áudio (o mesmo no cabeçalho do grupo/livro e dentro do player do painel).
-    function bibliaEqCriar(comTexto) {
+    function bibliaEqCriar() { // 24 barras finas, do azul ao vermelho; só aparece dentro do player do painel do capítulo
       const eq = document.createElement('span');
       eq.className = 'biblia-eq';
       eq.setAttribute('aria-hidden', 'true');
-      [215, 195, 170, 140, 110, 80, 50, 25, 5].forEach((h, i) => { const b = document.createElement('i'); b.style.setProperty('--h', h); b.style.setProperty('--d', (i * 0.11).toFixed(2) + 's'); eq.appendChild(b); });
-      if (comTexto) { // o versículo em andamento, ao lado das barras
-        const qual = document.createElement('span');
-        qual.className = 'biblia-eq-v';
-        eq.appendChild(qual);
-      }
+      const n = 24;
+      for (let i = 0; i < n; i++) { const b = document.createElement('i'); b.style.setProperty('--h', Math.round(215 - (210 * i) / (n - 1))); b.style.setProperty('--d', (i * 0.05).toFixed(2) + 's'); eq.appendChild(b); }
       return eq;
     }
 
@@ -21822,21 +21818,6 @@ function saveTemplatesToStorage() {
     function bibliaAudioPintar() {
       bibliaCelulasPintar();
       document.querySelectorAll('#bibliaCard .biblia-painel:not([hidden])').forEach(p => p._pintar());
-      // Barrinhas de áudio (como o gráfico do Áudio em texto, menores) no cabeçalho do grupo e do livro que tem o capítulo em andamento; paradas se pausado.
-      const pausado = Boolean(bibliaAudioAtual && bibliaAudioAtual.estado === 'pausado');
-      document.querySelectorAll('#bibliaCard details.biblia-grupo').forEach(det => {
-        const sum = det.querySelector(':scope > summary');
-        if (!sum) return;
-        const toca = Boolean(bibliaAudioAtual && det.querySelector('.biblia-cel.tocando'));
-        let eq = sum.querySelector(':scope > .biblia-eq');
-        if (!toca) { if (eq) eq.remove(); return; }
-        if (!eq) {
-          eq = bibliaEqCriar(true);
-          sum.insertBefore(eq, sum.querySelector('.biblia-grupo-cont'));
-        }
-        bibliaAudioPintarVersiculo();
-        eq.classList.toggle('pausado', pausado);
-      });
     }
     // Texto do capítulo que está tocando, versículo por versículo, para o player mostrar o versículo em andamento. O servidor só entrega com o
     // código de resumo; um capítulo por vez, guardado na memória enquanto o app está aberto. Sem o código, nada é pedido e nada aparece.
