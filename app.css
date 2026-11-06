@@ -10702,3 +10702,19 @@ button.processando:disabled { opacity: 1; cursor: progress; }
 .transcricao-info-passo[hidden] { display: none; }
 /* Os botões Cancelar (transcrever, corrigir, resumir) ocupam a largura toda. */
 .transcricao-acoes > button { grid-column: 1 / -1; width: 100%; }
+
+/* A caixa "Identificar quem fala": caixa de marcar e texto centralizados e alinhados na mesma linha. */
+.transcricao-falantes .ai-check { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; box-sizing: border-box; text-align: center; margin: 0; }
+.transcricao-falantes .ai-check input { margin: 0; flex: none; }
+
+/* Dar nomes aos falantes (fim do campo da transcrição). */
+.transcricao-nomes { margin: 8px 0; }
+.transcricao-nomes > button { width: 100%; }
+.transcricao-nomes-painel { margin-top: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; }
+.transcricao-nomes-painel[hidden] { display: none; }
+.transcricao-nomes-painel .hint { margin: 0 0 8px; font-size: .82rem; }
+.transcricao-nomes-linha { margin-bottom: 10px; }
+.transcricao-nomes-rotulo { display: block; margin: 0 0 3px; font-weight: 800; font-size: .9rem; }
+.transcricao-nomes-linha .transcricao-dado { width: 100%; box-sizing: border-box; }
+.transcricao-nomes-linha .transcricao-nomes-inicio { margin: 3px 0 0; font-size: .78rem; }
+.transcricao-nomes-painel .bk-row button { flex: 1 1 0; margin: 0; }

@@ -1794,6 +1794,19 @@
         </div>
         <textarea id="transcricaoTexto" class="transcricao-area" placeholder="O texto transcrito aparece aqui. Se quiser, corrija com a IA; o resumo usa o texto corrigido quando houver, senão esta transcrição." spellcheck="false"></textarea>
       </details>
+      <div id="transcricaoNomesBloco" class="transcricao-nomes" hidden>
+        <button id="transcricaoNomesAbrirBtn" class="secondary" type="button" aria-expanded="false">👥 Dar nomes aos falantes</button>
+        <div id="transcricaoNomesPainel" class="transcricao-nomes-painel" hidden>
+          <p class="hint">Escreva o nome de cada falante (o início da fala dele ajuda a reconhecê-lo). Dá para pedir sugestões da IA, a partir dos nomes ouvidos no áudio e dos interlocutores informados em “Dados do áudio”.</p>
+          <div id="transcricaoNomesLista"></div>
+          <datalist id="transcricaoNomesSugestoes"></datalist>
+          <div class="bk-row">
+            <button id="transcricaoNomesSugerirBtn" class="secondary" type="button">✨ Sugerir nomes</button>
+            <button id="transcricaoNomesAplicarBtn" type="button">✅ Aplicar os nomes</button>
+          </div>
+          <p id="transcricaoNomesInfo" class="hint" role="status" aria-live="polite"></p>
+        </div>
+      </div>
       <details id="transcricaoPassoCorrigir" class="leitura-dica transcricao-config transcricao-conteiner transcricao-passo" hidden>
         <summary><span class="transcricao-icone" aria-hidden="true">✍️</span> Corrigir<small class="transcricao-contagem" id="transcricaoContagemCorrigir" hidden></small></summary>
         <div class="leitura-acoes">
