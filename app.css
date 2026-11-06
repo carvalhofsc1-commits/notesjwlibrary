@@ -10649,3 +10649,7 @@ details.transcricao-bloco:not([open]) {
 }
 /* O resumo, aberto dentro do painel do capítulo. */
 .biblia-painel .biblia-resumo-caixa { margin: 10px 0 0; scroll-margin-top: 72px; }
+
+/* A lixeira de limpar (Tipo de áudio, Dados, Documentos): sempre no centro da barra, à direita, sem cair para outra linha quando o título quebra. */
+.transcricao-conteiner>summary { position: relative; padding-right: 46px; }
+.transcricao-conteiner>summary .transcricao-lixo { position: absolute; float: none; right: 8px; top: 50%; transform: translateY(-50%); }

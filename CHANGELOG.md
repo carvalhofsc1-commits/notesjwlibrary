@@ -6,6 +6,10 @@ Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
 Áudio em texto (gravação ao vivo): corrige o caso de arquivo longo com metade muda — o app passa a vigiar o microfone e os pedaços do gravador, pausa o relógio sem sinal, avisa na tela e tenta retomar a captura (sem encher o arquivo de silêncio). Prefere WebM/Opus no Chrome (mais estável que mp4). Wake Lock reforçado. Texto deixa claro que gravar com a tela desligada / em segundo plano não é confiável nos navegadores (limitação do sistema).
 
+## 6.5.75
+
+Áudio em texto: o ícone da lixeira (limpar) das barras “Informe o tipo de áudio”, “Dados do áudio” e “Documentos relacionados” ficava desalinhado no computador, caindo para baixo da barra quando o título quebrava em duas linhas. Agora fica sempre centralizado na barra, à direita.
+
 ## 6.5.74
 
 Leitura da Bíblia: o gráfico de barras do áudio no player do painel passa a ter 140 px de largura, com 24 barras mais finas e menos altas. O gráfico (e o “Cap. N v. X/Y”) que aparecia no topo do grupo de capítulos e do livro foi retirado: a situação do áudio fica só no player.
