@@ -7542,7 +7542,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.80'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.81'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -22587,10 +22587,33 @@ function saveTemplatesToStorage() {
       bibliaCarregado = true;
     }
 
+    // "Seções e temas" e "Livros, na ordem da Bíblia": ao abrir a tela os dois vêm abertos; depois, abrir (ou tocar em) um recolhe o outro por inteiro,
+    // com os grupos, os livros e as caixas de leitura dentro dele. Nunca ficam os dois abertos ao mesmo tempo.
+    let bibliaModosEntrada = false;
+    function bibliaModoRecolher(det) {
+      if (bibliaResumoAlvo && det.contains(bibliaResumoCaixa)) bibliaFecharResumo(false);
+      det.querySelectorAll('.biblia-grade-caixa').forEach(c => { if (c._sel >= 0) bibliaGradeSelecionar(c, -1); });
+      det.querySelectorAll('details').forEach(d => { d.open = false; });
+      if (det.id === 'bibliaModoLivros') { bibliaGruposLivrosAbertos.clear(); bibliaLivrosAbertos.clear(); } else bibliaAbertos.clear();
+      det.open = false;
+    }
+    function bibliaModosLigar() {
+      const secoes = document.getElementById('bibliaModoSecoes');
+      const livros = document.getElementById('bibliaModoLivros');
+      [[secoes, livros], [livros, secoes]].forEach(([det, outro]) => {
+        det.addEventListener('toggle', () => { if (det.open && outro.open && !bibliaModosEntrada) bibliaModoRecolher(outro); });
+        det.querySelector(':scope > summary').addEventListener('click', ev => {
+          if (det.open && outro.open) { ev.preventDefault(); bibliaModoRecolher(outro); } // os dois abertos (ao entrar): o que foi tocado fica, o outro se recolhe
+        });
+      });
+    }
+
     function bibliaAoEntrar() {
       bibliaCarregarEstado();
       // Cada vez que a tela abre: "Seções e temas" e "Livros, na ordem da Bíblia" expandidos, e nenhuma seção escolhida.
       bibliaSecaoEscolhida = false;
+      bibliaModosEntrada = true; // só ao entrar os dois ficam abertos; depois, abrir um fecha o outro
+      setTimeout(() => { bibliaModosEntrada = false; }, 250);
       document.getElementById('bibliaModoSecoes').open = true;
       document.getElementById('bibliaModoLivros').open = true;
       if (!bibliaPronto) {
@@ -22610,6 +22633,7 @@ function saveTemplatesToStorage() {
         });
         bibliaProgToggle.addEventListener('click', () => bibliaProgDefinir(!bibliaProgAberto));
         document.getElementById('bibliaContinuarBtn').addEventListener('click', bibliaContinuar);
+        bibliaModosLigar();
         document.getElementById('bibliaModoLivros').addEventListener('toggle', e => { if (e.target.open) bibliaLivrosRender(); }); // sempre refeita ao abrir: traz as marcações e resumos de agora
         document.getElementById('bibliaModoSecoes').addEventListener('toggle', e => { if (e.target.open) bibliaIconeCentrar(); }); // o ícone só se mede com a seção visível
         document.getElementById('bibliaResumoFecharBtn').addEventListener('click', () => bibliaFecharResumo(true));
