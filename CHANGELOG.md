@@ -2,9 +2,9 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
-## 6.5.66
+## 6.5.97
 
-Áudio em texto (gravação ao vivo): corrige o caso de arquivo longo com metade muda — o app passa a vigiar o microfone e os pedaços do gravador, pausa o relógio sem sinal, avisa na tela e tenta retomar a captura (sem encher o arquivo de silêncio). Prefere WebM/Opus no Chrome (mais estável que mp4). Wake Lock reforçado. Texto deixa claro que gravar com a tela desligada / em segundo plano não é confiável nos navegadores (limitação do sistema).
+Outra resposta / Melhorar (texto colado, estudo, EBC, perguntas do dirigente, joias e esboços): o pedido volta a enviar as respostas anteriores mesmo se o resumo na tela já tiver sido limpo — antes dependia de `aiResumo` e às vezes gerava de novo do zero em vez de refinar.
 
 ## 6.5.96
 
@@ -125,6 +125,10 @@ Em todo o app, as molduras de tudo que fica dentro dos cartões (botões, campos
 ## 6.5.67
 
 Leitura da Bíblia: na leitura automática por livros, ao passar de um capítulo para o próximo (inclusive para o livro seguinte), a tela acompanha o painel do player em vez de parar na grade de capítulos.
+
+## 6.5.66
+
+Áudio em texto (gravação ao vivo): corrige o caso de arquivo longo com metade muda — o app passa a vigiar o microfone e os pedaços do gravador, pausa o relógio sem sinal, avisa na tela e tenta retomar a captura (sem encher o arquivo de silêncio). Prefere WebM/Opus no Chrome (mais estável que mp4). Wake Lock reforçado. Texto deixa claro que gravar com a tela desligada / em segundo plano não é confiável nos navegadores (limitação do sistema).
 
 ## 6.5.65
 

@@ -7557,7 +7557,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.96'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.97'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -13369,7 +13369,9 @@ function saveTemplatesToStorage() {
       aiResults.textContent = '';
       aiSuggestions = [];
       aiRaw = [];
-      const hadPrevious = !!aiResumo && aiSentinelaRaw.length > 0;
+      // Como em "Sugerir formatação": guarda os itens antes de limpar o resumo. Não depende de aiResumo
+      // (se ele já tiver sido limpo, Outra resposta / Melhorar ainda precisam enviar "anteriores").
+      const previousItens = mode && aiSentinelaRaw.length ? aiSentinelaRaw.slice() : null;
       aiResumo = null;
       updateAiControls();
 
@@ -13392,9 +13394,9 @@ function saveTemplatesToStorage() {
       const ajuste = iaExtra('sentinela'); // instruções adicionais do campo da resposta do texto colado
       if (ajuste) payload.ajuste = ajuste;
       if (textoLongo) payload.textoLongo = true;
-      if (mode && hadPrevious) {
+      if (previousItens) {
         payload.modo = mode;
-        payload.anteriores = { itens: aiSentinelaRaw };
+        payload.anteriores = { itens: previousItens };
       }
 
       if (!(await garantirConsentimentoIa())) return setAiStatus(MSG_SEM_CONSENTIMENTO, true);
@@ -13969,7 +13971,7 @@ function saveTemplatesToStorage() {
       // Pedido de novo sem resposta no campo: se esta semana já tem resposta salva para esses parágrafos, ela vai como base (a IA só acrescenta).
       const pedidos = studyChave(requested);
       const salva = !mode ? salvaParaAcrescentar('sentinela', i => studyChave(i && i.paragrafos).some(c => pedidos.includes(c))) : null;
-      const previousAnswers = mode && aiResumo && aiSentinelaRaw.length ? aiSentinelaRaw : (salva && salva.itens.length ? salva.itens : null);
+      const previousAnswers = mode && aiSentinelaRaw.length ? aiSentinelaRaw.slice() : (salva && salva.itens.length ? salva.itens : null);
       aiResumo = null;
       updateAiControls();
 
@@ -14084,7 +14086,7 @@ function saveTemplatesToStorage() {
           autoGrowInputText();
         }
       }
-      const previous = mode && aiResumo && aiSentinelaRaw.length ? aiSentinelaRaw : null;
+      const previous = mode && aiSentinelaRaw.length ? aiSentinelaRaw.slice() : null;
       if (!aiAppliedAny) aiBaseText = input.value;
 
       saveAiOptions();
@@ -14373,7 +14375,7 @@ function saveTemplatesToStorage() {
       aiSuggestions = [];
       aiRaw = [];
       const salva = !mode ? salvaParaAcrescentar('ebc') : null;
-      const previousAnswers = mode && aiResumo && aiSentinelaRaw.length ? aiSentinelaRaw : (salva && salva.itens.length ? salva.itens : null);
+      const previousAnswers = mode && aiSentinelaRaw.length ? aiSentinelaRaw.slice() : (salva && salva.itens.length ? salva.itens : null);
       aiResumo = null;
       updateAiControls();
       if (!aiAppliedAny) aiBaseText = input.value;
@@ -14514,8 +14516,8 @@ function saveTemplatesToStorage() {
       aiResults.textContent = '';
       aiSuggestions = [];
       aiRaw = [];
-      const previous = mode && aiResumo && aiSentinelaRaw.length ? aiSentinelaRaw : null;
-      const baseAnterior = mode && aiResumo && refino && Array.isArray(refino.base) ? refino.base : []; // os textos-base já sugeridos
+      const previous = mode && aiSentinelaRaw.length ? aiSentinelaRaw.slice() : null;
+      const baseAnterior = mode && refino && Array.isArray(refino.base) ? refino.base.slice() : []; // os textos-base já sugeridos
       aiResumo = null;
       updateAiControls();
       if (!aiAppliedAny) aiBaseText = input.value;
@@ -15157,7 +15159,7 @@ function saveTemplatesToStorage() {
       aiResults.textContent = '';
       aiSuggestions = [];
       aiRaw = [];
-      const previous = incluir ? cfg.ultimoEsboco : (mode && aiResumo && aiSentinelaRaw.length ? aiSentinelaRaw[0] : null);
+      const previous = incluir ? cfg.ultimoEsboco : (mode && aiSentinelaRaw.length ? aiSentinelaRaw[0] : null);
       aiResumo = null;
       updateAiControls();
       if (!aiAppliedAny) aiBaseText = input.value;
@@ -16337,8 +16339,8 @@ function saveTemplatesToStorage() {
       aiRaw = [];
       // pedido de novo sem resposta no campo: as salvas da semana dos tipos pedidos são a base
       const salva = !mode ? salvaDasJoias(somente ? ['instrucoes'] : [pedirPergunta && 'pergunta', pedirLeitura && 'joias', pedirResumo && 'resumo'].filter(Boolean)) : null;
-      const previousOutros = mode && aiResumo && refino && Array.isArray(refino.outros) ? refino.outros : (salva ? salva.outros : []);
-      const previousAnswers = mode && aiResumo && aiSentinelaRaw.length ? aiSentinelaRaw : (salva && salva.itens.length ? salva.itens : null);
+      const previousOutros = mode && refino && Array.isArray(refino.outros) ? refino.outros.slice() : (salva ? salva.outros : []);
+      const previousAnswers = mode && aiSentinelaRaw.length ? aiSentinelaRaw.slice() : (salva && salva.itens.length ? salva.itens : null);
       aiResumo = null;
       updateAiControls();
       if (!aiAppliedAny) aiBaseText = input.value;
