@@ -6973,6 +6973,12 @@
       order: 5;
     }
 
+    /* Nas páginas de Reuniões o cartão do Texto original só aparece quando alguma função da página joga texto nele (classe texto-chegou, posta pelo app);
+       em Formatar ele é o campo de trabalho e fica sempre à vista. */
+    body[data-screen="reunioes"]:not(.texto-chegou) :is(.screen-editor, #reunioesCampoBtn) {
+      display: none;
+    }
+
     /* "Outras opções de formatação" fica no cartão do campo de texto, que é o mesmo em Formatar e em todas as páginas de Reuniões (comentar, dirigir,
        discursos e pesquisas e respostas salvas); some só na tela principal de Reuniões, onde o campo de texto não aparece. */
 

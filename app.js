@@ -45,6 +45,7 @@
     function showScreen(name, options) {
       const screen = APP_SCREENS.includes(name) ? name : 'inicio';
       const changed = screen !== currentScreen();
+      if (changed) document.body.classList.remove('texto-chegou');
       if (changed && currentScreen() === 'leitura') leituraAoSair(); // saindo da tela Leitura, a leitura em voz alta para
       if (changed && currentScreen() === 'biblia') bibliaVideoParar(); // saindo da Leitura da Bíblia, o vídeo de introdução para
       document.body.dataset.screen = screen;
@@ -7556,7 +7557,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.86'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.87'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -7784,6 +7785,7 @@
     // (o usuário está digitando ou usando os botões de formatação com o cursor ali) o texto entra por execCommand, que mantém o desfazer do navegador;
     // fora dele entra por setRangeText (o desfazer do app, botão ↩️, continua valendo).
     function writeToField(field, start, end, text, selectStart, selectEnd) {
+      if (field === input) document.body.classList.add('texto-chegou'); // nas páginas de Reuniões, o cartão do Texto original só aparece depois que algo é jogado nele
       const scrollTop = field.scrollTop;
       const scrollLeft = field.scrollLeft;
       const expected = field.value.slice(0, start) + text + field.value.slice(end);
@@ -10919,7 +10921,7 @@ function saveTemplatesToStorage() {
     const copyTopLabel = copyTopBtn.innerHTML;
     document.getElementById('undoBtn').addEventListener('click', undoLastChange);
     document.getElementById('undoTopBtn').addEventListener('click', undoLastChange);
-    document.getElementById('clearTopBtn').addEventListener('click', () => document.getElementById('clearBtn').click());
+    document.getElementById('clearTopBtn').addEventListener('click', () => { document.getElementById('clearBtn').click(); document.body.classList.remove('texto-chegou'); });
     copyTopBtn.addEventListener('click', async () => {
       const result = await copyResult();
       if (result === null) return;
@@ -20882,6 +20884,7 @@ function saveTemplatesToStorage() {
     // vista: 'hub' (a tela principal) ou uma das páginas.
     function reunioesIr(vista, opcoes) {
       const destino = REUNIOES_VISTAS[vista] ? vista : 'hub';
+      if (document.body.dataset.reunioes !== destino) document.body.classList.remove('texto-chegou'); // cada página começa sem o cartão do Texto original
       document.body.dataset.reunioes = destino;
       GRUPOS_REUNIOES.forEach(id => { document.getElementById(id).open = destino !== 'hub' && REUNIOES_VISTAS[destino].caixa === id; });
       document.getElementById('secaoReunioes').open = destino !== 'historico'; // na tela principal o resumo dela fica escondido
