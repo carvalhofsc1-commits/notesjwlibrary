@@ -433,6 +433,17 @@ export default async function handler(req, res) {
     if (corpo.acao === "lote-apagar") {
       const objeto = typeof corpo.objeto === "string" ? corpo.objeto : "";
       if (!OBJETO_LOTE.test(objeto)) return erro(res, 400, "Arquivo inválido.");
+      // Se veio a operação (cancelamento, ou a transcrição travou no Google), ela também é cancelada para não ficar rodando (e cobrando) à toa.
+      const operacao = typeof corpo.operacao === "string" ? corpo.operacao : "";
+      if (OPERACAO_LOTE.test(operacao) && credenciais()) {
+        try {
+          const token = await tokenDeAcesso();
+          await googleJson(`https://${REGIAO}-speech.googleapis.com/v2/${operacao}:cancel`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: "{}" });
+          console.log("Lote: cancelado", operacao);
+        } catch (e) {
+          console.error("Lote: não cancelou a operação", e?.status, e?.message);
+        }
+      }
       await apagarObjetoLote(objeto);
       return res.status(200).json({ apagado: true });
     }

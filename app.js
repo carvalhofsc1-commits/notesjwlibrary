@@ -7557,7 +7557,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.91'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.92'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -19657,7 +19657,8 @@ function saveTemplatesToStorage() {
       const falha = (msg, extra) => Object.assign(new Error(msg), extra || {});
       const codigo = codigoTextoSalvo();
       let objeto = '';
-      const apagar = () => { if (objeto) trPost({ acao: 'lote-apagar', codigoTexto: codigo, objeto }, undefined); };
+      let operacaoAtual = '';
+      const apagar = () => { if (objeto) trPost({ acao: 'lote-apagar', codigoTexto: codigo, objeto, operacao: operacaoAtual }, undefined); };
       try {
         trProgresso.removeAttribute('value');
         trInfo.textContent = '⏳ ' + rotulo + 'preparando o envio do áudio…';
@@ -19678,6 +19679,7 @@ function saveTemplatesToStorage() {
         const inicio = await trPost({ acao: 'lote-iniciar', codigoTexto: codigo, objeto }, sinal);
         if (!inicio.ok) { objeto = ''; throw falha(trMensagem(inicio, 'Não foi possível iniciar a transcrição.'), { cancelado: inicio.cancelado }); }
         const operacao = inicio.dados.operacao;
+        operacaoAtual = operacao;
         const comeco = Date.now();
         const minutosAudio = amostras.length / TRANSCRICAO_TAXA / 60;
         let progresso = null;
@@ -19692,8 +19694,9 @@ function saveTemplatesToStorage() {
           if (!r.ok) { objeto = ''; throw falha(trMensagem(r, 'Não foi possível acompanhar a transcrição.')); } // o servidor já apagou o arquivo
           if (r.dados.pronto) { objeto = ''; return r.dados; }
           if (typeof r.dados.progresso === 'number') { progresso = r.dados.progresso; if (progresso >= 0 && progresso <= 100) { trProgresso.max = 100; trProgresso.value = progresso; } }
-          // O prazo acompanha o tamanho do áudio (um áudio curto não deve levar mais que alguns minutos); passado ele, para e apaga o arquivo.
-          if (Date.now() - comeco > Math.max(8, minutosAudio * 3) * 60 * 1000) throw falha('A transcrição demorou mais que o esperado e foi interrompida (o arquivo foi apagado do Google). Tente de novo; se repetir, avise o administrador.');
+          // O prazo acompanha o tamanho do áudio (um áudio curto leva segundos; o Google, às vezes, deixa um áudio travado sem responder): passado o prazo, a operação é
+          // cancelada, o arquivo apagado e o app segue com a transcrição comum (sem separar as pessoas).
+          if (Date.now() - comeco > Math.min(25, Math.max(3, minutosAudio + 2.5)) * 60 * 1000) throw falha('O Google não terminou a identificação de quem fala neste áudio.', { travou: true });
         }
       } catch (e) {
         apagar();
@@ -19743,9 +19746,14 @@ function saveTemplatesToStorage() {
           trProgresso.max = 1;
           return true;
         } catch (e) {
-          item.estado = e && e.cancelado ? 'pendente' : 'erro';
-          trInfo.textContent = e && e.cancelado ? 'Cancelado.' : rotulo + ((e && e.message) || 'Falha na transcrição.');
-          return false;
+          if (e && e.travou) { // o Google travou neste áudio: segue com a transcrição comum, sem separar as pessoas
+            item.semFalantes = true;
+            trInfo.textContent = '⚠️ ' + rotulo + 'o Google não conseguiu separar as pessoas neste áudio; transcrevendo sem identificar quem fala…';
+          } else {
+            item.estado = e && e.cancelado ? 'pendente' : 'erro';
+            trInfo.textContent = e && e.cancelado ? 'Cancelado.' : rotulo + ((e && e.message) || 'Falha na transcrição.');
+            return false;
+          }
         }
       }
       const porTrecho = TRANSCRICAO_TRECHO_S * TRANSCRICAO_TAXA;
