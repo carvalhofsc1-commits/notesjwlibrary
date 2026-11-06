@@ -7557,7 +7557,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.92'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.93'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -19635,9 +19635,14 @@ function saveTemplatesToStorage() {
     trFalantesCaixa.addEventListener('change', () => { try { localStorage.setItem(TRANSCRICAO_FALANTES_KEY, trFalantesCaixa.checked ? '1' : '0'); } catch (e) { /* sem localStorage */ } });
 
     function trParaWav(amostras) { // PCM de 16 bits, 16 kHz, mono, com o cabeçalho WAV
+      // Áudio muito baixo (gravação com a voz longe ou o microfone fraco) deixa o reconhecimento em lote do Google instável: sobe o volume até o pico ficar perto de
+      // 0,9 (no máximo 12 vezes). Áudio que já tem volume normal não é alterado.
+      let pico = 0;
+      for (let i = 0; i < amostras.length; i++) { const a = Math.abs(amostras[i]); if (a > pico) pico = a; }
+      const ganho = pico > 0 && pico < 0.5 ? Math.min(0.9 / pico, 12) : 1;
       const dados = new Int16Array(amostras.length);
       for (let i = 0; i < amostras.length; i++) {
-        const v = Math.max(-1, Math.min(1, amostras[i]));
+        const v = Math.max(-1, Math.min(1, amostras[i] * ganho));
         dados[i] = v < 0 ? v * 0x8000 : v * 0x7fff;
       }
       const cab = new DataView(new ArrayBuffer(44));

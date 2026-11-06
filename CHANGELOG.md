@@ -6,6 +6,10 @@ Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
 Áudio em texto (gravação ao vivo): corrige o caso de arquivo longo com metade muda — o app passa a vigiar o microfone e os pedaços do gravador, pausa o relógio sem sinal, avisa na tela e tenta retomar a captura (sem encher o arquivo de silêncio). Prefere WebM/Opus no Chrome (mais estável que mp4). Wake Lock reforçado. Texto deixa claro que gravar com a tela desligada / em segundo plano não é confiável nos navegadores (limitação do sistema).
 
+## 6.5.93
+
+Áudio em texto, identificar quem fala: o áudio enviado ao Google passa por um ajuste de volume quando é muito baixo (o pico sobe até cerca de 90%, no máximo 12 vezes). Uma gravação de teste muito baixa (pico de −19,7 dB, média de −41,5 dB) travava o reconhecimento em lote do Google; áudio com volume normal não é alterado.
+
 ## 6.5.92
 
 Áudio em texto, identificar quem fala: quando o Google deixa um áudio travado sem responder (aconteceu com uma gravação de 58 s, sem erro nem resultado), o app agora espera no máximo cerca de 3 minutos (mais, para áudios longos), cancela a operação no Google, apaga o arquivo do bucket e **segue com a transcrição comum**, avisando que não foi possível separar as pessoas. Ao cancelar, a operação também é cancelada no Google.
