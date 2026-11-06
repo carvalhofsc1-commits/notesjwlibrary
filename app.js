@@ -7557,7 +7557,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.89'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.90'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -19466,9 +19466,37 @@ function saveTemplatesToStorage() {
       trCancelarCorrigir.hidden = !ocupado || trOperacao !== 'corrigir';
       trCancelarResumir.hidden = !ocupado || trOperacao !== 'resumir';
       trFerramentasAtualizar.forEach(f => f());
+      if (typeof trBotaoOcupadoAtualizar === 'function') trBotaoOcupadoAtualizar();
     }
     trTexto.addEventListener('input', trAtualizarBotoes);
     trResumo.addEventListener('input', trAtualizarBotoes);
+
+    // Enquanto o app processa (transcrever, corrigir ou resumir), o botão da operação mostra um símbolo girando e o tempo que já passou (m:ss), para ficar claro que
+    // não travou, mesmo sem ver a mensagem de andamento.
+    let trOcupadoDesde = 0;
+    function trBotaoOcupadoAtualizar() {
+      const alvo = trControle ? ({ transcrever: trIniciar, corrigir: trCorrigir, resumir: trResumir })[trOperacao] || null : null;
+      [trIniciar, trCorrigir, trResumir].forEach(b => {
+        if (b === alvo) return;
+        const marca = b.querySelector(':scope > .btn-ocupado');
+        if (marca) marca.remove();
+        b.classList.remove('processando');
+      });
+      if (!alvo) { trOcupadoDesde = 0; return; }
+      if (!trOcupadoDesde) trOcupadoDesde = Date.now();
+      let marca = alvo.querySelector(':scope > .btn-ocupado');
+      if (!marca) {
+        marca = document.createElement('span');
+        marca.className = 'btn-ocupado';
+        marca.setAttribute('aria-hidden', 'true');
+        marca.innerHTML = '<span class="transcricao-giro"></span><span class="btn-tempo"></span>';
+        alvo.prepend(marca);
+        alvo.classList.add('processando');
+      }
+      const seg = Math.floor((Date.now() - trOcupadoDesde) / 1000);
+      marca.querySelector('.btn-tempo').textContent = Math.floor(seg / 60) + ':' + String(seg % 60).padStart(2, '0');
+    }
+    setInterval(trBotaoOcupadoAtualizar, 1000);
 
     function trConsentimento() {
       try { if (localStorage.getItem(TRANSCRICAO_CONSENT_KEY)) return Promise.resolve(true); } catch (e) { /* sem localStorage */ }

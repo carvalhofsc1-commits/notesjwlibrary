@@ -6,6 +6,10 @@ Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
 Áudio em texto (gravação ao vivo): corrige o caso de arquivo longo com metade muda — o app passa a vigiar o microfone e os pedaços do gravador, pausa o relógio sem sinal, avisa na tela e tenta retomar a captura (sem encher o arquivo de silêncio). Prefere WebM/Opus no Chrome (mais estável que mp4). Wake Lock reforçado. Texto deixa claro que gravar com a tela desligada / em segundo plano não é confiável nos navegadores (limitação do sistema).
 
+## 6.5.90
+
+Áudio em texto: enquanto o app processa, o botão da operação (Iniciar a transcrição, Corrigir com a IA ou Resumir com a IA) mostra um **símbolo girando e o tempo decorrido (m:ss)** no começo do título, para ficar claro que não travou, mesmo sem ver a mensagem de andamento.
+
 ## 6.5.89
 
 Áudio em texto, identificação de quem fala: o acompanhamento mostra o andamento (%) quando o Google informa; o prazo agora acompanha o tamanho do áudio (no mínimo 8 minutos, ou 3 vezes a duração) e, passado ele, a transcrição é interrompida e o arquivo é apagado, em vez de esperar sem fim. O servidor registra o andamento da operação no log para diagnóstico.

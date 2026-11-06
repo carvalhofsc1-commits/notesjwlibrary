@@ -10690,3 +10690,8 @@ details.transcricao-bloco:not([open]) {
 /* Transcrever: a caixa "Identificar quem fala". */
 .transcricao-falantes { margin: 8px 0; }
 .transcricao-falantes .hint { margin: 4px 0 0; font-size: .8rem; }
+
+/* O botão que está processando (Transcrever, Corrigir, Resumir): símbolo girando e o tempo decorrido, bem visíveis mesmo com o botão desabilitado. */
+button.processando:disabled { opacity: 1; cursor: progress; }
+.btn-ocupado { display: inline-flex; align-items: center; gap: 6px; margin-right: 8px; vertical-align: middle; font-weight: 800; font-variant-numeric: tabular-nums; }
+.btn-ocupado .transcricao-giro { width: 16px; height: 16px; border-width: 3px; border-color: color-mix(in srgb, currentColor 30%, transparent); border-top-color: currentColor; }
