@@ -6,6 +6,10 @@ Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
 Áudio em texto (gravação ao vivo): corrige o caso de arquivo longo com metade muda — o app passa a vigiar o microfone e os pedaços do gravador, pausa o relógio sem sinal, avisa na tela e tenta retomar a captura (sem encher o arquivo de silêncio). Prefere WebM/Opus no Chrome (mais estável que mp4). Wake Lock reforçado. Texto deixa claro que gravar com a tela desligada / em segundo plano não é confiável nos navegadores (limitação do sistema).
 
+## 6.5.95
+
+Áudio em texto: o botão **Dar nomes aos falantes** continua à vista depois de aplicar os nomes, para revisar. Os falantes já nomeados aparecem na lista com o nome e “já aplicado”; ao mudar o nome e tocar em “Aplicar os nomes”, o rótulo das falas é trocado (e o nome no resumo); deixando o campo vazio, a pessoa volta a ser “Falante N”. Texto apagado ou novo: a lista recomeça.
+
 ## 6.5.94
 
 Áudio em texto: (1) a caixa de marcar e o texto de “Identificar quem fala” ficam centralizados e alinhados na mesma linha. (2) **Dar nomes aos falantes**: com a transcrição separada por pessoa, um botão **👥 Dar nomes aos falantes** aparece logo abaixo do campo; ele abre a lista de falantes (com o começo da fala de cada um), onde se escreve o nome de cada um. **✨ Sugerir nomes** pede à IA os nomes mais prováveis, a partir dos nomes ouvidos no áudio e dos interlocutores de “Dados do áudio” (que também aparecem como sugestões em cada campo). **✅ Aplicar os nomes** troca “Falante N” pelo nome na transcrição e, se já existirem, no texto corrigido e no resumo.

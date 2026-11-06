@@ -7557,7 +7557,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.94'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.95'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21008,23 +21008,30 @@ function saveTemplatesToStorage() {
     const trNomesInfo = document.getElementById('transcricaoNomesInfo');
     const trNomesSugerirBtn = document.getElementById('transcricaoNomesSugerirBtn');
     const trNomesAplicarBtn = document.getElementById('transcricaoNomesAplicarBtn');
-    let trNomesValores = {}; // numero -> nome escrito
+    let trNomesValores = {}; // numero -> nome escrito (ainda não aplicado)
+    let trNomesAplicados = {}; // numero -> nome já aplicado ao texto: o botão continua à vista para revisar
     let trNomesEvidencia = {}; // numero -> por que a IA sugeriu
     let trNomesOuvidos = []; // nomes que a IA achou na transcrição
     trTexto.after(trNomesBloco); // logo abaixo do campo da transcrição (antes de Word e Limpar tudo)
 
-    function trFalantesDoTexto() { // [{ n, inicio }] na ordem em que aparecem
-      const vistos = new Map();
+    const trEscapar = t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    function trFalantesDoTexto() { // [{ n, inicio, nome }] em ordem de número: os ainda sem nome ("Falante N:") e os que já receberam nome
+      const mapa = new Map();
       const re = /^Falante (\d+):\s*(.*)$/gm;
       let m;
-      while ((m = re.exec(trTexto.value))) if (!vistos.has(Number(m[1]))) vistos.set(Number(m[1]), m[2].trim());
-      return [...vistos.entries()].map(([n, inicio]) => ({ n, inicio }));
+      while ((m = re.exec(trTexto.value))) if (!mapa.has(Number(m[1]))) mapa.set(Number(m[1]), m[2].trim());
+      Object.entries(trNomesAplicados).forEach(([n, nome]) => {
+        const achou = new RegExp('^' + trEscapar(nome) + ':\\s*(.*)$', 'm').exec(trTexto.value);
+        mapa.set(Number(n), achou ? achou[1].trim() : (mapa.get(Number(n)) || ''));
+      });
+      return [...mapa.entries()].sort((a, b) => a[0] - b[0]).map(([n, inicio]) => ({ n, inicio, nome: trNomesAplicados[n] || '' }));
     }
     function trNomesCandidatos() { // interlocutores informados + nomes ouvidos (sem repetir)
       const dosDados = [...trInterlocutoresBox.querySelectorAll('input')].map(i => i.value.trim()).filter(Boolean);
       return [...new Set([...dosDados, ...trNomesOuvidos])];
     }
     function trNomesRender() {
+      if (!trTexto.value.trim()) { trNomesAplicados = {}; trNomesValores = {}; trNomesEvidencia = {}; trNomesOuvidos = []; } // texto novo ou apagado: recomeça
       const falantes = trFalantesDoTexto();
       trNomesBloco.hidden = !falantes.length;
       if (!falantes.length) { trNomesPainel.hidden = true; trNomesAbrir.setAttribute('aria-expanded', 'false'); return; }
@@ -21047,11 +21054,11 @@ function saveTemplatesToStorage() {
         campo.spellcheck = false;
         campo.setAttribute('list', 'transcricaoNomesSugestoes');
         campo.placeholder = 'Nome do falante ' + f.n;
-        campo.value = trNomesValores[f.n] || '';
+        campo.value = trNomesValores[f.n] !== undefined ? trNomesValores[f.n] : f.nome;
         campo.addEventListener('input', () => { trNomesValores[f.n] = campo.value; });
         const inicio = document.createElement('p');
         inicio.className = 'hint transcricao-nomes-inicio';
-        inicio.textContent = '“' + (f.inicio.length > 70 ? f.inicio.slice(0, 70).trim() + '…' : f.inicio) + '”' + (trNomesEvidencia[f.n] ? ' · IA: ' + trNomesEvidencia[f.n] : '');
+        inicio.textContent = '“' + (f.inicio.length > 70 ? f.inicio.slice(0, 70).trim() + '…' : f.inicio) + '”' + (f.nome ? ' · já aplicado' : '') + (trNomesEvidencia[f.n] ? ' · IA: ' + trNomesEvidencia[f.n] : '');
         linha.append(rotulo, campo, inicio);
         if (ativo === String(f.n)) setTimeout(() => campo.focus(), 0);
         return linha;
@@ -21079,7 +21086,8 @@ function saveTemplatesToStorage() {
         trNomesOuvidos = Array.isArray(r.dados.nomesOuvidos) ? r.dados.nomesOuvidos : [];
         let preenchidos = 0;
         (r.dados.sugestoes || []).forEach(s => {
-          if (s.nome) { trNomesEvidencia[s.falante] = s.evidencia || ''; if (!(trNomesValores[s.falante] || '').trim()) { trNomesValores[s.falante] = s.nome; preenchidos++; } }
+          const atual = trNomesValores[s.falante] !== undefined ? trNomesValores[s.falante] : (trNomesAplicados[s.falante] || '');
+          if (s.nome) { trNomesEvidencia[s.falante] = s.evidencia || ''; if (!atual.trim()) { trNomesValores[s.falante] = s.nome; preenchidos++; } }
         });
         trNomesRender();
         trNomesInfo.textContent = preenchidos ? '✨ Sugeri ' + preenchidos + (preenchidos === 1 ? ' nome' : ' nomes') + ': confira, corrija se precisar e toque em “Aplicar os nomes”.' : (trNomesOuvidos.length ? 'Não achei com segurança quem é cada falante; os nomes ouvidos estão nas sugestões de cada campo.' : 'Não encontrei nomes no texto. Escreva os nomes à mão.');
@@ -21089,18 +21097,30 @@ function saveTemplatesToStorage() {
     });
 
     trNomesAplicarBtn.addEventListener('click', () => {
-      const escolhidos = Object.entries(trNomesValores).map(([n, nome]) => [Number(n), String(nome || '').replace(/[\r\n:]+/g, ' ').replace(/\s+/g, ' ').trim()]).filter(([n, nome]) => nome && trFalantesDoTexto().some(f => f.n === n));
-      if (!escolhidos.length) return (trNomesInfo.textContent = 'Escreva o nome de pelo menos um falante.');
+      const limpo = v => String(v || '').replace(/[\r\n:]+/g, ' ').replace(/\s+/g, ' ').trim();
+      const limite = '(^|[^\\p{L}\\p{N}])';
+      const fim = '(?![\\p{L}\\p{N}])';
       let trocas = 0;
-      [trTexto, trCorrigido, trResumo].forEach(campo => {
-        let t = campo.value;
-        escolhidos.forEach(([n, nome]) => { t = t.replace(new RegExp('\\bFalante ' + n + '\\b', 'g'), () => { trocas++; return nome; }); });
-        if (t !== campo.value) { campo.value = t; campo.dispatchEvent(new Event('input', { bubbles: true })); }
+      let mudou = 0;
+      trFalantesDoTexto().forEach(f => {
+        const anterior = trNomesAplicados[f.n] || '';
+        const novo = limpo(trNomesValores[f.n] !== undefined ? trNomesValores[f.n] : anterior);
+        if (novo === anterior) return;
+        mudou++;
+        [trTexto, trCorrigido, trResumo].forEach(campo => {
+          let t = campo.value;
+          if (!anterior) t = t.replace(new RegExp('\\bFalante ' + f.n + '\\b', 'g'), () => { trocas++; return novo; }); // primeira vez
+          else if (campo === trResumo) t = t.replace(new RegExp(limite + trEscapar(anterior) + fim, 'gu'), (_, a) => { trocas++; return a + (novo || 'Falante ' + f.n); }); // no resumo, o nome onde aparecer
+          else t = t.replace(new RegExp('^' + trEscapar(anterior) + ':', 'gm'), () => { trocas++; return (novo || 'Falante ' + f.n) + ':'; }); // na transcrição, só o rótulo da fala
+          if (t !== campo.value) { campo.value = t; campo.dispatchEvent(new Event('input', { bubbles: true })); }
+        });
+        if (novo) trNomesAplicados[f.n] = novo; else delete trNomesAplicados[f.n];
+        delete trNomesValores[f.n];
+        delete trNomesEvidencia[f.n];
       });
-      escolhidos.forEach(([n]) => { delete trNomesValores[n]; delete trNomesEvidencia[n]; });
+      if (!mudou) return (trNomesInfo.textContent = 'Nada para aplicar: escreva ou corrija o nome de algum falante.');
       trNomesRender();
-      trNomesInfo.textContent = '✅ Nomes aplicados (' + trocas + (trocas === 1 ? ' troca' : ' trocas') + ' no texto' + (trCorrigido.value.trim() || trResumo.value.trim() ? ', no texto corrigido e no resumo' : '') + ').';
-      if (trNomesBloco.hidden) trInfo.textContent = '✅ Nomes aplicados à transcrição.';
+      trNomesInfo.textContent = '✅ Nomes aplicados (' + trocas + (trocas === 1 ? ' troca' : ' trocas') + '). Este botão continua aqui para você revisar os nomes quando quiser.';
     });
 
 
