@@ -7557,7 +7557,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.95'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.96'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21120,7 +21120,10 @@ function saveTemplatesToStorage() {
       });
       if (!mudou) return (trNomesInfo.textContent = 'Nada para aplicar: escreva ou corrija o nome de algum falante.');
       trNomesRender();
-      trNomesInfo.textContent = '✅ Nomes aplicados (' + trocas + (trocas === 1 ? ' troca' : ' trocas') + '). Este botão continua aqui para você revisar os nomes quando quiser.';
+      trNomesInfo.textContent = '';
+      trNomesPainel.hidden = true; // fecha a caixa dos nomes: fica só o botão, que a abre de novo para revisar
+      trNomesAbrir.setAttribute('aria-expanded', 'false');
+      trInfo.textContent = '✅ Nomes aplicados (' + trocas + (trocas === 1 ? ' troca' : ' trocas') + '). Para revisar, toque em “Dar nomes aos falantes”.';
     });
 
 
