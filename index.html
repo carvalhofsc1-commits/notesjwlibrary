@@ -1781,6 +1781,10 @@
       <p id="transcricaoInfo" class="hint" role="status" aria-live="polite"></p>
       <details id="transcricaoPassoTexto" class="leitura-dica transcricao-config transcricao-conteiner transcricao-passo" hidden>
         <summary><span class="transcricao-icone" aria-hidden="true">🎙️</span> Transcrever<small class="transcricao-contagem" id="transcricaoContagemTexto" hidden></small></summary>
+        <div class="acesso-item transcricao-falantes">
+          <label class="ai-check"><input type="checkbox" id="transcricaoFalantes" autocomplete="off"> 👥 Identificar quem fala</label>
+          <p class="hint">Separa o texto por pessoa (“Falante 1”, “Falante 2”…). O áudio inteiro é enviado de uma vez ao Google, que o guarda por poucos minutos só para transcrever e depois o apaga; leva mais tempo que a transcrição comum (em geral, alguns minutos).</p>
+        </div>
         <div id="transcricaoIniciarLinha" class="leitura-acoes">
           <button id="transcricaoIniciarBtn" class="leitura-ler" type="button" disabled>▶️ Iniciar a transcrição</button>
         </div>

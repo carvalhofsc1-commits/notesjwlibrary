@@ -6,6 +6,10 @@ Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
 Áudio em texto (gravação ao vivo): corrige o caso de arquivo longo com metade muda — o app passa a vigiar o microfone e os pedaços do gravador, pausa o relógio sem sinal, avisa na tela e tenta retomar a captura (sem encher o arquivo de silêncio). Prefere WebM/Opus no Chrome (mais estável que mp4). Wake Lock reforçado. Texto deixa claro que gravar com a tela desligada / em segundo plano não é confiável nos navegadores (limitação do sistema).
 
+## 6.5.88
+
+Áudio em texto: nova caixa **👥 Identificar quem fala** (em Transcrever). Ligada, o áudio inteiro é enviado, de uma vez, para um bucket privado do Google Cloud por uma URL assinada (o arquivo é apagado assim que a transcrição termina, e o bucket também apaga sozinho depois de 1 dia), o servidor pede a transcrição em lote com identificação de falantes (Speech-to-Text V2, chirp_3) e o app acompanha até ficar pronta. O texto sai separado por pessoa (“Falante 1: …”, “Falante 2: …”); a correção e o resumo respeitam esses rótulos. Se o Google não devolver os falantes, o texto vem corrido, com um aviso. Leva mais tempo que a transcrição comum (em geral, alguns minutos). A transcrição comum continua igual.
+
 ## 6.5.87
 
 Reuniões: o cartão do **Texto original** deixa de aparecer sempre nas páginas (Comentários, Dirigentes, Discursos, Pesquisas e respostas salvas): ele só aparece quando alguma função da página joga texto dentro dele (uma resposta da IA, um esboço, um texto aberto das pesquisas salvas). Muda de página, sai da tela ou toca em Limpar, e ele some de novo. Em Formatar continua sempre à vista, por ser o campo de trabalho.

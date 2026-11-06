@@ -10686,3 +10686,7 @@ details.transcricao-bloco:not([open]) {
 .biblia-video-tela { display: block; width: 100%; max-height: 60vh; border-radius: 8px; background: #000; }
 .biblia-video-msg { margin: 6px 0 0; font-size: .85rem; }
 .biblia-video-msg:empty { display: none; }
+
+/* Transcrever: a caixa "Identificar quem fala". */
+.transcricao-falantes { margin: 8px 0; }
+.transcricao-falantes .hint { margin: 4px 0 0; font-size: .8rem; }

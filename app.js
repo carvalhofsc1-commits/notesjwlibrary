@@ -7557,7 +7557,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.87'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.88'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -19584,6 +19584,77 @@ function saveTemplatesToStorage() {
       return saidas;
     }
 
+
+    // ---- Identificar quem fala: o áudio inteiro (WAV 16 kHz mono) vai direto ao bucket do Google por uma URL assinada, o servidor pede a transcrição em lote com
+    // diarização e o app consulta até ficar pronta. O servidor apaga o arquivo do bucket ao terminar (e o bucket apaga sozinho depois de 1 dia).
+    const TRANSCRICAO_FALANTES_KEY = 'jwLibraryNoteAplicarTranscricaoFalantesV1';
+    const trFalantesCaixa = document.getElementById('transcricaoFalantes');
+    try { trFalantesCaixa.checked = localStorage.getItem(TRANSCRICAO_FALANTES_KEY) === '1'; } catch (e) { /* sem localStorage */ }
+    trFalantesCaixa.addEventListener('change', () => { try { localStorage.setItem(TRANSCRICAO_FALANTES_KEY, trFalantesCaixa.checked ? '1' : '0'); } catch (e) { /* sem localStorage */ } });
+
+    function trParaWav(amostras) { // PCM de 16 bits, 16 kHz, mono, com o cabeçalho WAV
+      const dados = new Int16Array(amostras.length);
+      for (let i = 0; i < amostras.length; i++) {
+        const v = Math.max(-1, Math.min(1, amostras[i]));
+        dados[i] = v < 0 ? v * 0x8000 : v * 0x7fff;
+      }
+      const cab = new DataView(new ArrayBuffer(44));
+      const texto = (pos, t) => { for (let i = 0; i < t.length; i++) cab.setUint8(pos + i, t.charCodeAt(i)); };
+      texto(0, 'RIFF'); cab.setUint32(4, 36 + dados.byteLength, true); texto(8, 'WAVE');
+      texto(12, 'fmt '); cab.setUint32(16, 16, true); cab.setUint16(20, 1, true); cab.setUint16(22, 1, true);
+      cab.setUint32(24, TRANSCRICAO_TAXA, true); cab.setUint32(28, TRANSCRICAO_TAXA * 2, true); cab.setUint16(32, 2, true); cab.setUint16(34, 16, true);
+      texto(36, 'data'); cab.setUint32(40, dados.byteLength, true);
+      return new Blob([cab.buffer, dados.buffer], { type: 'audio/wav' });
+    }
+
+    const trEspera = ms => new Promise(r => setTimeout(r, ms));
+
+    // Devolve { texto, falantes, rotulados } ou lança um erro com a mensagem para a pessoa (e.cancelado = true se ela cancelou).
+    async function trTranscreverLote(amostras, rotulo) {
+      const sinal = trControle.signal;
+      const falha = (msg, extra) => Object.assign(new Error(msg), extra || {});
+      const codigo = codigoTextoSalvo();
+      let objeto = '';
+      const apagar = () => { if (objeto) trPost({ acao: 'lote-apagar', codigoTexto: codigo, objeto }, undefined); };
+      try {
+        trProgresso.removeAttribute('value');
+        trInfo.textContent = '⏳ ' + rotulo + 'preparando o envio do áudio…';
+        const prep = await trPost({ acao: 'lote-preparar', codigoTexto: codigo }, sinal);
+        if (!prep.ok) throw falha(trMensagem(prep, 'Não foi possível preparar o envio do áudio.'), { cancelado: prep.cancelado });
+        objeto = prep.dados.objeto;
+        const wav = trParaWav(amostras);
+        trInfo.textContent = '⬆️ ' + rotulo + 'enviando o áudio (' + (wav.size / 1048576).toFixed(1).replace('.', ',') + ' MB)…';
+        let envio;
+        try {
+          envio = await fetch(prep.dados.url, { method: 'PUT', headers: { 'Content-Type': prep.dados.tipo || 'audio/wav' }, body: wav, signal: sinal });
+        } catch (e) {
+          if (e && e.name === 'AbortError') throw falha('Cancelado.', { cancelado: true });
+          throw falha('Não consegui enviar o áudio. Confira a conexão e tente de novo.');
+        }
+        if (!envio.ok) throw falha('O Google não aceitou o envio do áudio (código ' + envio.status + ').');
+        trInfo.textContent = '🎙️ ' + rotulo + 'transcrevendo e identificando quem fala… isto pode levar alguns minutos';
+        const inicio = await trPost({ acao: 'lote-iniciar', codigoTexto: codigo, objeto }, sinal);
+        if (!inicio.ok) { objeto = ''; throw falha(trMensagem(inicio, 'Não foi possível iniciar a transcrição.'), { cancelado: inicio.cancelado }); }
+        const operacao = inicio.dados.operacao;
+        const comeco = Date.now();
+        for (;;) {
+          await trEspera(5000);
+          if (sinal.aborted) throw falha('Cancelado.', { cancelado: true });
+          const minutos = Math.floor((Date.now() - comeco) / 60000);
+          trInfo.textContent = '🎙️ ' + rotulo + 'transcrevendo e identificando quem fala… ' + (minutos ? minutos + ' min' : 'menos de 1 min') + ' (pode levar alguns minutos)';
+          let r = await trPost({ acao: 'lote-estado', codigoTexto: codigo, objeto, operacao }, sinal);
+          if (!r.ok && !r.cancelado && (r.status === 0 || r.status >= 500)) { await trEspera(3000); r = await trPost({ acao: 'lote-estado', codigoTexto: codigo, objeto, operacao }, sinal); } // uma nova tenta
+          if (r.cancelado) throw falha('Cancelado.', { cancelado: true });
+          if (!r.ok) { objeto = ''; throw falha(trMensagem(r, 'Não foi possível acompanhar a transcrição.')); } // o servidor já apagou o arquivo
+          if (r.dados.pronto) { objeto = ''; return r.dados; }
+          if (Date.now() - comeco > 40 * 60 * 1000) throw falha('A transcrição demorou demais e foi interrompida. Tente de novo com um áudio mais curto.');
+        }
+      } catch (e) {
+        apagar();
+        throw e;
+      }
+    }
+
     // Transcreve um arquivo da lista (decodifica, corta em trechos de 50 s e envia até 3 de uma vez) e põe o texto no fim do campo, com uma linha com o nome do
     // arquivo quando há mais de um na lista. Devolve true se terminou; false se deu erro ou se a pessoa cancelou (o item volta a poder ser iniciado).
     async function trTranscreverItem(item) {
@@ -19611,6 +19682,25 @@ function saveTemplatesToStorage() {
         trPcmLiberar(item);
         trInfo.textContent = rotulo + 'o áudio tem ' + Math.round(minutos) + ' minutos; o limite é de ' + limiteMin + ' minutos por ' + (item.gravado ? 'gravação' : 'arquivo') + '.';
         return false;
+      }
+      if (trFalantesCaixa.checked) { // com a identificação de quem fala: o áudio inteiro, em lote
+        const antesLote = trTexto.value.replace(/\s+$/, '');
+        const prefixoLote = (antesLote ? antesLote + '\n\n' : '') + (trLista.length > 1 ? '— ' + (item.gravado ? trNomeDoArquivoSalvo(arquivo) : arquivo.name) + ' —\n' : '');
+        try {
+          const lote = await trTranscreverLote(amostras, rotulo);
+          trTexto.value = prefixoLote + (lote.texto || '');
+          item.estado = 'pronto';
+          item.semFala = !lote.texto;
+          item.semFalantes = !lote.rotulados && Boolean(lote.texto);
+          trPcmLiberar(item);
+          trItemBdApagar(item);
+          trProgresso.max = 1;
+          return true;
+        } catch (e) {
+          item.estado = e && e.cancelado ? 'pendente' : 'erro';
+          trInfo.textContent = e && e.cancelado ? 'Cancelado.' : rotulo + ((e && e.message) || 'Falha na transcrição.');
+          return false;
+        }
       }
       const porTrecho = TRANSCRICAO_TRECHO_S * TRANSCRICAO_TAXA;
       const total = Math.ceil(amostras.length / porTrecho);
@@ -19699,8 +19789,9 @@ function saveTemplatesToStorage() {
           trListaRender();
         }
         if (!parou) {
+          const semFalantes = fila.some(i => i.semFalantes);
           const comFala = fila.filter(i => !i.semFala).length;
-          trInfo.textContent = comFala ? '✅ Pronto: ' + feitos + (feitos === 1 ? ' arquivo transcrito' : ' arquivos transcritos') + '. Confira o texto e, se quiser, peça o resumo.' : 'Não encontrei fala neste áudio.';
+          trInfo.textContent = comFala ? '✅ Pronto: ' + feitos + (feitos === 1 ? ' arquivo transcrito' : ' arquivos transcritos') + '. Confira o texto e, se quiser, peça o resumo.' + (semFalantes ? ' Não foi possível identificar quem fala neste áudio: o texto veio sem separar as pessoas.' : '') : 'Não encontrei fala neste áudio.';
         }
       } finally {
         trControle = null;
