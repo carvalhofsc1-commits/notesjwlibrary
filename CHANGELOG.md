@@ -6,6 +6,10 @@ Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
 Áudio em texto (gravação ao vivo): corrige o caso de arquivo longo com metade muda — o app passa a vigiar o microfone e os pedaços do gravador, pausa o relógio sem sinal, avisa na tela e tenta retomar a captura (sem encher o arquivo de silêncio). Prefere WebM/Opus no Chrome (mais estável que mp4). Wake Lock reforçado. Texto deixa claro que gravar com a tela desligada / em segundo plano não é confiável nos navegadores (limitação do sistema).
 
+## 6.5.84
+
+Áudio em texto: removido o texto explicativo (“Mantenha esta tela aberta e em primeiro plano…”) que aparecia dentro da caixa de gravação.
+
 ## 6.5.83
 
 Leitura da Bíblia: no gráfico de barras, as primeiras e as últimas barras ficam sempre pequenas e quase não oscilam; quanto mais ao meio, maior a oscilação.
