@@ -6,6 +6,10 @@ Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
 Áudio em texto (gravação ao vivo): corrige o caso de arquivo longo com metade muda — o app passa a vigiar o microfone e os pedaços do gravador, pausa o relógio sem sinal, avisa na tela e tenta retomar a captura (sem encher o arquivo de silêncio). Prefere WebM/Opus no Chrome (mais estável que mp4). Wake Lock reforçado. Texto deixa claro que gravar com a tela desligada / em segundo plano não é confiável nos navegadores (limitação do sistema).
 
+## 6.5.80
+
+Leitura da Bíblia: na lista “Livros, na ordem da Bíblia”, o gráfico de barras do áudio aparece no topo do cartão do livro que está tocando sempre que o cartão está recolhido, mesmo quando o áudio foi iniciado pela leitura por seções (antes só aparecia se a grade de capítulos do livro já tivesse sido aberta).
+
 ## 6.5.79
 
 Leitura da Bíblia: (1) o topo do cartão do grupo de capítulos (e do livro) ganha um tom próprio enquanto nada foi lido (o verde só vem com a leitura) e, com o cartão aberto, uma linha o separa do conteúdo, para ficar claro que é um campo clicável. (2) O equalizador fica mais realista: as faixas agudas (zona vermelha) têm o seu próprio ritmo, em rajadas como os chiados da fala, e se mexem tanto quanto as graves.

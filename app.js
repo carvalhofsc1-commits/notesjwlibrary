@@ -7542,7 +7542,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.79'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.80'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21870,27 +21870,35 @@ function saveTemplatesToStorage() {
     // o gráfico passa para o topo do cartão que está à vista (o mais externo recolhido) e volta só ao player quando o cartão é aberto.
     function bibliaEqTopoPintar() {
       const a = bibliaAudioAtual;
-      let alvo = null;
+      const alvos = new Set();
       if (a && a.estado !== 'carregando') {
-        const cel = document.querySelector('#bibliaCard .biblia-cel.tocando');
-        const grupos = [];
-        for (let d = cel ? cel.closest('details') : null; d; d = d.parentElement ? d.parentElement.closest('details') : null) if (d.classList.contains('biblia-grupo')) grupos.push(d);
-        alvo = grupos.slice().reverse().find(d => !d.open) || null;
-        if (!alvo && grupos[0]) { // cartões todos abertos: se o painel do cartão não mostra o capítulo que toca (nenhum capítulo escolhido, ou outro), o gráfico vai ao topo
-          const painel = grupos[0].querySelector('.biblia-painel');
-          if (!painel || painel.hidden || painel.dataset.chave !== a.chave) alvo = grupos[0];
+        // De cada ponto onde o capítulo que toca aparece (a célula dele na grade e o cartão do livro dele na lista de livros, mesmo que a grade ainda não tenha sido
+        // aberta, como quando o áudio começou pela leitura por seções), sobe pelos cartões: o gráfico vai ao topo do mais externo que está recolhido.
+        const pontos = [...document.querySelectorAll('#bibliaCard .biblia-cel.tocando')].map(c => c.closest('details'));
+        const livro = [...document.querySelectorAll('#bibliaLivros .biblia-livro')].find(d => d.dataset.livro === a.livro);
+        if (livro) pontos.push(livro);
+        pontos.forEach(inicio => {
+          const grupos = [];
+          for (let d = inicio; d; d = d.parentElement ? d.parentElement.closest('details') : null) if (d.classList.contains('biblia-grupo')) grupos.push(d);
+          let alvo = grupos.slice().reverse().find(d => !d.open) || null;
+          if (!alvo && grupos[0]) { // cartões todos abertos: se o painel do cartão não mostra o capítulo que toca (nenhum capítulo escolhido, ou outro), o gráfico vai ao topo
+            const painel = grupos[0].querySelector('.biblia-painel');
+            if (!painel || painel.hidden || painel.dataset.chave !== a.chave) alvo = grupos[0];
+          }
+          if (alvo) alvos.add(alvo);
+        });
+      }
+      document.querySelectorAll('#bibliaCard summary > .biblia-eq-topo').forEach(eq => { if (!alvos.has(eq.parentElement.parentElement)) eq.remove(); });
+      alvos.forEach(alvo => {
+        const sum = alvo.querySelector(':scope > summary');
+        let eq = sum.querySelector(':scope > .biblia-eq-topo');
+        if (!eq) {
+          eq = bibliaEqCriar();
+          eq.classList.add('biblia-eq-topo');
+          sum.insertBefore(eq, sum.querySelector('.biblia-grupo-cont'));
         }
-      }
-      document.querySelectorAll('#bibliaCard summary > .biblia-eq-topo').forEach(eq => { if (!alvo || eq.parentElement.parentElement !== alvo) eq.remove(); });
-      if (!alvo) return;
-      const sum = alvo.querySelector(':scope > summary');
-      let eq = sum.querySelector(':scope > .biblia-eq-topo');
-      if (!eq) {
-        eq = bibliaEqCriar();
-        eq.classList.add('biblia-eq-topo');
-        sum.insertBefore(eq, sum.querySelector('.biblia-grupo-cont'));
-      }
-      eq.classList.toggle('pausado', a.estado === 'pausado');
+        eq.classList.toggle('pausado', a.estado === 'pausado');
+      });
     }
     document.addEventListener('toggle', ev => { if (ev.target.matches && ev.target.matches('#bibliaCard details.biblia-grupo')) bibliaEqTopoPintar(); }, true);
     // Texto do capítulo que está tocando, versículo por versículo, para o player mostrar o versículo em andamento. O servidor só entrega com o
