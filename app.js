@@ -7542,7 +7542,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.77'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.78'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21542,7 +21542,12 @@ function saveTemplatesToStorage() {
 
     function bibliaGradeSelecionar(caixa, i) {
       // Só uma caixa de opções de leitura/áudio aberta por vez: abrir a deste capítulo fecha a de qualquer outro grupo ou livro.
-      if (i >= 0) document.querySelectorAll('#bibliaCard .biblia-grade-caixa').forEach(outra => { if (outra !== caixa && outra._sel >= 0) bibliaGradeSelecionar(outra, -1); });
+      // E o cartão dele (o grupo de capítulos ou o livro) se recolhe por inteiro, ficando só o topo.
+      if (i >= 0) document.querySelectorAll('#bibliaCard .biblia-grade-caixa').forEach(outra => {
+        if (outra === caixa || outra._sel < 0) return;
+        bibliaGradeSelecionar(outra, -1);
+        if (outra._det && !outra._det.contains(caixa)) outra._det.open = false;
+      });
       caixa._sel = i;
       caixa.querySelectorAll('.biblia-cel').forEach((c, k) => c.classList.toggle('sel', k === i));
       const painel = caixa.querySelector('.biblia-painel');
@@ -21843,14 +21848,13 @@ function saveTemplatesToStorage() {
       const v = bibliaEqVoz;
       if (ts >= v.proxPausa) { v.pausaAte = ts + 160 + Math.random() * 240; v.proxPausa = ts + 1500 + Math.random() * 2500; }
       if (ts >= v.proxSilaba) { v.nivel = ts < v.pausaAte ? 0.06 : 0.35 + Math.random() * 0.65; v.proxSilaba = ts + 90 + Math.random() * 140; }
-      const parado = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       document.querySelectorAll('#bibliaCard .biblia-eq').forEach(eq => {
         if (!eq.offsetParent) return; // escondido
         const barras = eq.children;
         const alto = Math.max(8, eq.clientHeight - 1);
         for (let i = 0; i < barras.length; i++) {
           const forma = 0.3 + 0.7 * Math.exp(-Math.pow((i - 6) / 8.5, 2)); // a voz tem mais energia nas faixas baixas e médias
-          const alvo = parado ? 0.35 * forma : v.nivel * forma * (0.5 + 0.5 * Math.random());
+          const alvo = v.nivel * forma * (0.5 + 0.5 * Math.random());
           const b = barras[i];
           const atual = b._v || 0;
           b._v = atual + (alvo - atual) * (alvo > atual ? 0.7 : 0.35); // sobe depressa e desce devagar
