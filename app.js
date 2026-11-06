@@ -7542,7 +7542,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.75'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.5.76'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21818,7 +21818,31 @@ function saveTemplatesToStorage() {
     function bibliaAudioPintar() {
       bibliaCelulasPintar();
       document.querySelectorAll('#bibliaCard .biblia-painel:not([hidden])').forEach(p => p._pintar());
+      bibliaEqTopoPintar();
     }
+    // O gráfico de barras fica no player do painel. Com o áudio tocando e o cartão do grupo (ou do livro) que o contém recolhido, o player não está à vista:
+    // o gráfico passa para o topo do cartão que está à vista (o mais externo recolhido) e volta só ao player quando o cartão é aberto.
+    function bibliaEqTopoPintar() {
+      const a = bibliaAudioAtual;
+      let alvo = null;
+      if (a && a.estado !== 'carregando') {
+        const cel = document.querySelector('#bibliaCard .biblia-cel.tocando');
+        const grupos = [];
+        for (let d = cel ? cel.closest('details') : null; d; d = d.parentElement ? d.parentElement.closest('details') : null) if (d.classList.contains('biblia-grupo')) grupos.push(d);
+        alvo = grupos.reverse().find(d => !d.open) || null;
+      }
+      document.querySelectorAll('#bibliaCard summary > .biblia-eq-topo').forEach(eq => { if (!alvo || eq.parentElement.parentElement !== alvo) eq.remove(); });
+      if (!alvo) return;
+      const sum = alvo.querySelector(':scope > summary');
+      let eq = sum.querySelector(':scope > .biblia-eq-topo');
+      if (!eq) {
+        eq = bibliaEqCriar();
+        eq.classList.add('biblia-eq-topo');
+        sum.insertBefore(eq, sum.querySelector('.biblia-grupo-cont'));
+      }
+      eq.classList.toggle('pausado', a.estado === 'pausado');
+    }
+    document.addEventListener('toggle', ev => { if (ev.target.matches && ev.target.matches('#bibliaCard details.biblia-grupo')) bibliaEqTopoPintar(); }, true);
     // Texto do capítulo que está tocando, versículo por versículo, para o player mostrar o versículo em andamento. O servidor só entrega com o
     // código de resumo; um capítulo por vez, guardado na memória enquanto o app está aberto. Sem o código, nada é pedido e nada aparece.
     const bibliaTextos = new Map(); // 'Livro|n' -> Map(v -> texto) | 'carregando' | 'falhou'
