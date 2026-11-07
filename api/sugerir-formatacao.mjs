@@ -3634,7 +3634,7 @@ async function resumirLeituraBiblia(res, body, P) {
       "\n\n";
   }
   const avisoProfecias = idsOpcoes.includes("profecias")
-    ? "OBRIGATÓRIO: o \"texto\" deve trazer o subtítulo PROFECIAS E EXPRESSÕES SIMBÓLICAS (linha sozinha) e os itens dessa seção. O detalhe das profecias e símbolos NÃO fica só no RESUMO — o RESUMO narra; a interpretação (Profecia / Cumprimento) vai na seção própria.\n\n"
+    ? "OBRIGATÓRIO: o \"texto\" deve trazer o subtítulo PROFECIAS E EXPRESSÕES SIMBÓLICAS (linha sozinha) e os itens dessa seção. O detalhe das profecias e símbolos NÃO fica só no RESUMO — o RESUMO narra; a interpretação (Profecia / Cumprimento) vai na seção própria. Em cada item use exatamente um rótulo: Cumprimento (passado), Cumprimento (presente) ou Cumprimento (futuro). Em Daniel 2, os pés de ferro e argila são Cumprimento (presente) — a potência anglo-americana atual —, não (futuro).\n\n"
     : "";
   const mensagem =
     blocoOrientacao({}, ajuste, P) +
