@@ -10665,7 +10665,14 @@ body.biblia-resumo-aberto { overflow: hidden; }
   color: color-mix(in srgb, hsl(var(--cor) 75% 42%) 65%, var(--text));
 }
 .biblia-painel .bp-acoes > [hidden] { display: none; }
-.biblia-painel .bp-acoes .bp-jwl { --cor: 190; font-size: .85rem; }
+.biblia-painel .bp-acoes .bp-jwl,
+.biblia-painel .bp-acoes .bp-jwl:visited {
+  font-size: .85rem;
+  background: #5b2d86; /* o roxo do logo oficial do JW Library */
+  border-color: #4a2370;
+  color: #fff;
+}
+.biblia-painel .bp-acoes .bp-jwl:hover { background: #6d3a9c; }
 .biblia-painel .bp-acoes .bp-resumir { --cor: 280; }
 .biblia-painel .bp-acoes .bp-resumir.tem { --cor: 150; }
 

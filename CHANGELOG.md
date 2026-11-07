@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.11
+
+O botão 📖 JW Library fica no roxo do logo oficial do app, com o texto em branco.
+
 ## 6.6.10
 
 JW Library também no computador (app do Windows): o botão 📖 JW Library e o nome do capítulo, na leitura da Bíblia, deixam de ser só do celular. Texto diário: novo link “Abrir o texto do dia no JW Library”, que abre o texto bíblico do dia (o da frase temática) no app.
