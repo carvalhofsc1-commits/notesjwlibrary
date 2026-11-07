@@ -7610,7 +7610,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.34'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.35'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -13867,6 +13867,7 @@ function saveTemplatesToStorage() {
             comentariosAuto = { chave: alvo.chave, texto: input.value, ids: alvo.ids };
             aiStatusKind = alvo.status;
             setAiStatus('💾 ' + alvo.mensagem, false);
+            aiStatusElement().classList.add('status-discreto'); // letras pequenas e discretas, numa linha só (o próximo aviso volta ao normal)
           }
           return;
         }
@@ -13896,7 +13897,7 @@ function saveTemplatesToStorage() {
         ids: [salva.item.id],
         slot: sentinelaOutputSlot,
         status: 'estudo',
-        mensagem: 'Resposta salva ' + (salva.cobertos[0] === 'recap' ? 'da recapitulação' : salva.cobertos.length === 1 ? 'do parágrafo ' + salva.cobertos[0] : 'dos parágrafos ' + salva.cobertos.join(', ')) + ' (' + historicoQuando(salva.item) + ').',
+        mensagem: 'Resposta salva · ' + (salva.cobertos[0] === 'recap' ? 'recapitulação' : salva.cobertos.length === 1 ? 'parágrafo ' + salva.cobertos[0] : 'parágrafos ' + salva.cobertos.join(', ')) + ' · ' + historicoQuando(salva.item),
         abrir: () => historicoAbrir(salva.item.id, inteira ? undefined : salva.partes, undefined, { silencioso: true })
       });
     }
@@ -13908,7 +13909,7 @@ function saveTemplatesToStorage() {
         ids: juntas.ids,
         slot: ebcOutputSlot,
         status: 'ebc',
-        mensagem: 'Resposta salva do Estudo Bíblico.',
+        mensagem: 'Resposta salva · Estudo Bíblico',
         abrir: () => historicoAbrir(juntas.ids[0], undefined, juntas.ids.length > 1 ? juntas : undefined, { silencioso: true })
       });
     }
@@ -13921,7 +13922,7 @@ function saveTemplatesToStorage() {
         ids,
         slot: joiasOutputSlot,
         status: 'joias',
-        mensagem: 'Resposta salva das joias.',
+        mensagem: 'Resposta salva · joias',
         abrir: () => historicoAbrir(ids[0], undefined, ids.length > 1 ? juntas : undefined, { silencioso: true })
       });
     }

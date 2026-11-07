@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.35
+
+O aviso "Resposta salva · parágrafo…" fica em letras pequenas e discretas, numa linha só.
+
 ## 6.6.34
 
 Tela Reuniões: o botão 📝 ↓ do topo não sai mais torto (a linha do topo passava da largura da tela quando ele aparecia); o título agora encolhe e o botão, quando escondido, mantém o lugar.
