@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.24
+
+Tela de respostas (cartão Texto original) mais simples, em todas as telas: **Outra resposta** e **Melhorar esta resposta** passam para ACIMA do Salvar alterações, mais finos e leves; tudo o que vem depois do Salvar alterações fica num cartão recolhível **⚙️ Mais opções** (Salvar texto, Exportar para Word e Compartilhar na mesma linha, sem o texto explicativo e, fora da tela Formatar, as opções de formatação). Na tela Formatar as opções principais, outras opções de formatação e opções com IA continuam à vista.
+
 ## 6.6.23
 
 Preparar para comentar: (1) só uma resposta salva por parágrafo (A Sentinela) ou por pergunta/joia (Estudo Bíblico e Joias): ao salvar uma resposta nova, a antiga do mesmo parágrafo/pergunta sai; e gerar de novo com resposta salva usa a salva como base (a IA aproveita o que tem de bom) e a nova a substitui. (2) A resposta salva aparece sozinha embaixo ao abrir a matéria da semana ou trocar de parágrafo com as setas, como se tivesse acabado de ser gerada (com Copiar, JW Library, Outra resposta e Melhorar); sem resposta salva, a seção some e não mostra a de outro parágrafo. Trocar de parágrafo/matéria troca o texto do campo mesmo que ele tenha alterações não salvas (enquanto a escolha é a mesma, o texto em edição fica). O botão "Recuperar a resposta salva" some quando a resposta já aparece (e continua em Pesquisas e respostas salvas).

@@ -167,12 +167,21 @@
               <p id="saveInfo" class="hint salvar-info"></p>
             </div>
             <!-- Exportar o texto do campo para Word: vale para qualquer texto (respostas, perguntas, esboços, notas); aparece com o campo preenchido. -->
-            <div id="exportarBloco" class="exportar-bloco" hidden>
-              <button id="salvarTextoBtn" class="secondary" type="button" title="Guarda este texto em Pesquisas e respostas salvas (categoria Textos), com o nome que você escolher">💾 Salvar texto</button>
-              <button id="exportarDocxBtn" class="secondary" type="button">📄 Exportar para Word (.docx)</button>
-              <button id="exportarCompartilharBtn" class="secondary" type="button" hidden>📤 Compartilhar o arquivo Word</button>
-              <p id="exportarInfo" class="hint salvar-info"></p>
-            </div>
+            <!-- Depois do Salvar alterações: tudo fica num cartão recolhível "Mais opções". Nas telas que não são a Formatar, as opções de formatação (a coluna
+                 .editor-controls-pane) também ficam dentro dele; na Formatar elas ficam à vista (o app muda a coluna de lugar, veja editorOpcoesPosicionar). -->
+            <details id="maisOpcoes" class="subsection group-box mais-opcoes" hidden>
+              <summary>⚙️ Mais opções</summary>
+              <div id="maisOpcoesCorpo" class="group-box-body mais-opcoes-corpo">
+                <div id="exportarBloco" class="exportar-bloco" hidden>
+                  <button id="salvarTextoBtn" class="secondary" type="button" title="Guarda este texto em Pesquisas e respostas salvas (categoria Textos), com o nome que você escolher">💾 Salvar texto</button>
+                  <div class="exportar-linha">
+                    <button id="exportarDocxBtn" class="secondary" type="button">📄 Exportar para Word</button>
+                    <button id="exportarCompartilharBtn" class="secondary" type="button" hidden>📤 Compartilhar Word</button>
+                  </div>
+                  <p id="exportarInfo" class="hint salvar-info"></p>
+                </div>
+              </div>
+            </details>
             <div id="vozBar" class="voz-bar" hidden>
               <span id="vozStatus" class="voz-status" role="status" aria-live="polite"></span>
               <div id="vozProgresso" class="voz-progresso" role="progressbar" aria-label="Andamento da leitura" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden><div id="vozProgressoPreench"></div></div>

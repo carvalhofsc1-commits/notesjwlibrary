@@ -928,6 +928,16 @@
       margin-top: 14px;
     }
 
+    /* Outra resposta / Melhorar esta resposta: acima do Salvar alterações, finos e leves (os botões estão mais abaixo, em .ai-refine-row). */
+    .ai-refine-row button {
+      background: color-mix(in srgb, var(--brand) 6%, var(--card));
+      border-color: color-mix(in srgb, var(--brand) 28%, var(--line));
+    }
+
+    .editor-text-pane > .ai-refine {
+      margin: 10px 0 0;
+    }
+
     /* Textos bíblicos da matéria nos esboços: card recolhível com a lista para marcar. */
     .textos-box {
       margin-top: 10px;
@@ -1465,10 +1475,11 @@
     .ai-refine-row button {
       width: 100%;
       min-width: 0;
-      min-height: 56px;
-      padding: 10px 8px;
-      font-size: .98rem;
-      line-height: 1.2;
+      min-height: 34px;
+      padding: 5px 8px;
+      font-size: .85rem;
+      font-weight: 600;
+      line-height: 1.15;
     }
 
     .ai-box {
@@ -7531,6 +7542,42 @@
       width: 100%;
       min-height: 44px;
       margin: 0;
+    }
+
+    /* Exportar para Word e Compartilhar dividem a mesma linha (no computador o Compartilhar não aparece e o Exportar ocupa a linha toda). */
+    .exportar-linha {
+      display: flex;
+      gap: 8px;
+    }
+
+    .exportar-linha button {
+      flex: 1 1 0;
+      min-width: 0;
+      padding-left: 6px;
+      padding-right: 6px;
+      font-size: .9rem;
+    }
+
+    .exportar-bloco .salvar-info:empty {
+      display: none;
+    }
+
+    /* O cartão "Mais opções", logo abaixo do Salvar alterações. */
+    .mais-opcoes {
+      margin-top: 10px;
+    }
+
+    .mais-opcoes[hidden] {
+      display: none;
+    }
+
+    .mais-opcoes-corpo {
+      display: grid;
+      gap: 10px;
+    }
+
+    .mais-opcoes-corpo > .exportar-bloco {
+      margin-top: 0;
     }
 
     .exportar-bloco .salvar-info {

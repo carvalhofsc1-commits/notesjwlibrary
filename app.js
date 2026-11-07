@@ -76,6 +76,21 @@
     }
     window.addEventListener('resize', topbarAjustar);
 
+    // "Mais opções" (depois do Salvar alterações): na tela Formatar só o que é do texto (Salvar texto, Exportar) fica nele, e as opções de formatação ficam à vista;
+    // nas outras telas (Reuniões e demais onde o cartão Texto original mostra uma resposta) as opções de formatação também entram nele, recolhidas.
+    function editorOpcoesPosicionar() {
+      const caixa = document.getElementById('maisOpcoes');
+      const corpo = document.getElementById('maisOpcoesCorpo');
+      const painel = document.querySelector('.editor-controls-pane');
+      const layout = document.querySelector('.editor-layout');
+      const exportar = document.getElementById('exportarBloco');
+      if (!caixa || !corpo || !painel || !layout || !exportar) return;
+      const naFormatar = document.body.dataset.screen === 'formatar';
+      if (naFormatar) { if (painel.parentNode !== layout) layout.appendChild(painel); }
+      else if (painel.parentNode !== corpo) corpo.appendChild(painel);
+      caixa.hidden = naFormatar && exportar.hidden; // na Formatar sem texto não há nada dentro
+    }
+
     function showScreen(name, options) {
       const screen = APP_SCREENS.includes(name) ? name : 'inicio';
       const changed = screen !== currentScreen();
@@ -85,6 +100,7 @@
       document.body.dataset.screen = screen;
       if (screen !== 'formatar') formatarVoltar = null;
       formatarVoltarPintar();
+      editorOpcoesPosicionar();
       topbarAjustar();
       menuFechar();
       navMarcar();
@@ -7594,7 +7610,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.23'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.24'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12397,8 +12413,8 @@ function saveTemplatesToStorage() {
     function placeRefineBox() {
       if (aiLastKind === 'format') {
         if (aiRefineBox.parentElement !== aiOutput) aiOutput.appendChild(aiRefineBox);
-      } else if (aiRefineBox.previousElementSibling !== salvarBloco) {
-        salvarBloco.after(aiRefineBox);
+      } else if (aiRefineBox.nextElementSibling !== salvarBloco) {
+        salvarBloco.before(aiRefineBox); // Outra resposta e Melhorar ficam ACIMA do Salvar alterações
       }
     }
 
@@ -16719,6 +16735,7 @@ function saveTemplatesToStorage() {
       const sujo = ligado && input.value !== historicoLigado.base;
       salvarBloco.hidden = !ligado;
       document.getElementById('exportarBloco').hidden = !input.value.trim();
+      editorOpcoesPosicionar();
       // O resultado da última exportação ("✅ nome.docx") sai quando o texto muda, voltando à explicação de sempre.
       const exportarInfo = document.getElementById('exportarInfo');
       if (exportarInfo.dataset.texto !== undefined && exportarInfo.dataset.texto !== input.value) {
@@ -16813,7 +16830,7 @@ function saveTemplatesToStorage() {
     // (letra dupla, caixa escura…) viram letras comuns. Emojis e símbolos ficam. Cada linha do campo vira um parágrafo; o recuo (espaços no
     // começo da linha) vira recuo de parágrafo. O botão aparece sempre que o campo tem texto. Nos esboços salvos, o texto dos versículos que
     // faltam vem do servidor (só para devolver os acentos); o resto é montado no aparelho.
-    const EXPORTAR_INFO_PADRAO = 'Abre a prévia do documento Word com o texto do campo acima (com as suas alterações), em letras comuns, com negrito e itálico de verdade e os emojis. Lá você escolhe o tamanho da letra e finaliza a exportação.';
+    const EXPORTAR_INFO_PADRAO = ''; // sem o texto explicativo; o resultado de uma exportação ("✅ nome.docx") ainda aparece aqui
     document.getElementById('exportarInfo').textContent = EXPORTAR_INFO_PADRAO;
     document.getElementById('exportarInfo').dataset.padrao = EXPORTAR_INFO_PADRAO;
     const DOCX_ESTILO = { bold: 'b', sansBold: 'b', boldScript: 'b', boldFraktur: 'b', italic: 'i', sansItalic: 'i', boldItalic: 'bi', sansBoldItalic: 'bi' };
