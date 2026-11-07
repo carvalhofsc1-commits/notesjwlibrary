@@ -7594,7 +7594,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.21'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.22'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -13110,8 +13110,19 @@ function saveTemplatesToStorage() {
           jw.className = 'answer-jwl-btn';
           jw.href = jwlLinkPorId(part.jwl.docid, part.jwl.par);
           jw.textContent = '📖 JW Library';
-          jw.title = 'Abrir este parágrafo no JW Library, para colar a resposta';
+          jw.title = 'Copia esta resposta e abre o parágrafo no JW Library: é só colar no campo da resposta';
           jw.addEventListener('mousedown', event => event.preventDefault());
+          // O app JW Library não aceita texto de fora: o botão copia a resposta (o mesmo texto do Copiar) e só então abre o parágrafo; no campo da resposta basta colar.
+          jw.addEventListener('click', async event => {
+            event.preventDefault();
+            const destino = jw.href;
+            try {
+              await navigator.clipboard.writeText(part.texto);
+              jw.textContent = '✓ Copiado';
+              setTimeout(() => { jw.textContent = '📖 JW Library'; }, 2500);
+            } catch (e) { /* sem permissão para copiar: abre mesmo assim */ }
+            window.location.href = destino;
+          });
           answerCopyLayer.appendChild(jw);
         }
         answerCopyButtons.push({ btn, part, jw });

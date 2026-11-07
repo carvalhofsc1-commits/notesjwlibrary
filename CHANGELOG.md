@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.22
+
+O botão 📖 JW Library ao lado do Copiar agora também copia a resposta (o mesmo texto do Copiar) antes de abrir o parágrafo no app, para só colar no campo da resposta. (O JW Library não deixa outro app colocar texto nele.)
+
 ## 6.6.21
 
 (1) Joias e apostila: o botão 📖 JW Library ao lado do Copiar também aparece nas respostas das joias, e abre a apostila no lugar de colar a resposta: a pergunta da apostila (a joia da semana) na própria pergunta e as joias da leitura na pergunta geral das joias. (2) Os botões Copiar e JW Library no campo de texto não ficam mais por cima da última linha da resposta: a posição agora é medida numa cópia real do campo, com as mesmas letras, emojis e quebras de linha.
