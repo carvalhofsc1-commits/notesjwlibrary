@@ -42,10 +42,11 @@
   <div id="appMenuFundo" class="app-menu-fundo" hidden></div>
   <aside id="appMenu" class="app-menu" hidden aria-label="Menu do app">
     <div class="app-menu-cabeca">
-      <p class="app-menu-titulo">Menu</p>
+      <span class="app-menu-marca"><img src="icon-header.png?v=3" alt="" width="36" height="36" decoding="async"><span class="app-menu-nome">Note<b>Style</b></span></span>
       <button type="button" id="menuFecharBtn" class="app-menu-fechar" aria-label="Fechar o menu">✕</button>
     </div>
     <nav class="app-menu-lista" aria-label="Funcionalidades">
+      <p class="app-menu-secao">Menu principal</p>
       <button type="button" data-menu-ir="inicio"><span aria-hidden="true">🏠</span> Início</button>
       <button type="button" data-menu-ir="formatar"><span aria-hidden="true">✍️</span> Formatar</button>
       <button type="button" data-menu-ir="biblia"><span aria-hidden="true">📚</span> Leitura diária da Bíblia</button>
@@ -63,8 +64,7 @@
         <button type="button" class="theme-btn" data-theme-choice="light">☀️ Claro</button>
         <button type="button" class="theme-btn" data-theme-choice="dark">🌙 Escuro</button>
       </div>
-      <button type="button" id="menuAtualizarBtn" class="secondary menu-atualizar" title="Baixar de novo os arquivos do app e recarregar, para pegar a versão mais nova">🔄 Buscar atualizações</button>
-      <p class="app-menu-versao" id="menuVersao"></p>
+      <p class="app-menu-versao"><button type="button" id="menuAtualizarBtn" class="menu-atualizar-icone" aria-label="Buscar atualizações" title="Buscar atualizações: baixa de novo os arquivos do app e recarrega, para pegar a versão mais nova">↻</button><span id="menuVersao"></span></p>
       <p class="app-menu-links"><a href="termos.html">Termos de uso</a> · <a href="privacidade.html">Política de privacidade</a></p>
       <a class="app-menu-dev" href="sobre.html" aria-label="Carvalho Apps, desenvolvedor do NoteStyle"><img src="logo-cavalhoapps.png" alt="Carvalho Apps" width="72" height="48" loading="lazy"></a>
     </div>

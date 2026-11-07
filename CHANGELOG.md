@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.5.98
+
+Menu lateral: novo visual — no topo, o logo e o nome NoteStyle; o rótulo “MENU PRINCIPAL”; e o item da tela em que se está fica numa **célula** destacada (fundo suave da cor da marca, texto em negrito nessa cor e um pontinho à direita). O botão “Buscar atualizações” saiu: no lugar fica só o ícone ↻, bem discreto, na frente do número da versão; tocar nele faz a mesma atualização.
+
 ## 6.5.97
 
 Outra resposta / Melhorar (texto colado, estudo, EBC, perguntas do dirigente, joias e esboços): o pedido volta a enviar as respostas anteriores mesmo se o resumo na tela já tiver sido limpo — antes dependia de `aiResumo` e às vezes gerava de novo do zero em vez de refinar.

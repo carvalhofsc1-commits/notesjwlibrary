@@ -335,11 +335,39 @@
       border-bottom: 1px solid var(--line);
     }
 
-    .app-menu-titulo {
-      margin: 0;
-      font-weight: 750;
-      font-size: 1.05rem;
+    .app-menu-marca {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .app-menu-marca img {
+      flex: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      box-shadow: 0 1px 4px var(--shadow);
+    }
+
+    .app-menu-nome {
+      font-weight: 800;
+      font-size: 1.2rem;
       color: var(--text);
+      letter-spacing: -.01em;
+    }
+
+    .app-menu-nome b {
+      color: var(--brand);
+    }
+
+    .app-menu-secao {
+      margin: 6px 4px 4px;
+      font-size: .7rem;
+      font-weight: 800;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+      color: var(--muted);
     }
 
     .app-menu-fechar {
@@ -386,6 +414,24 @@
     .app-menu-lista a.app-menu-link:hover {
       background: var(--soft);
       transform: none;
+    }
+
+    /* O item da tela atual: uma "célula" com fundo suave da cor da marca, texto em negrito nessa cor e um pontinho à direita. */
+    .app-menu-lista button[aria-current="page"],
+    .app-menu-lista button[aria-current="page"]:hover {
+      background: color-mix(in srgb, var(--brand) 13%, var(--card));
+      color: var(--brand);
+      font-weight: 800;
+    }
+
+    .app-menu-lista button[aria-current="page"]::after {
+      content: "";
+      flex: none;
+      margin-left: auto;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--brand);
     }
 
     /* Base do menu: tema, versão, termos e privacidade, e o desenvolvedor (bem discreto). */
@@ -10393,13 +10439,28 @@ details.transcricao-bloco:not([open]) {
 
 #bibliaProgCaixa { scroll-margin-top: calc(var(--topbar-h, 0px) + 78px); } /* ao descer até a seção, o começo dela fica logo abaixo da barra do topo */
 
-/* Botão "Atualizar o app" na base do menu lateral. */
-.app-menu-rodape .menu-atualizar {
-  width: 100%;
+/* Atualizar o app: só o ícone ↻, bem discreto, na frente do número da versão (no menu lateral). */
+.app-menu-rodape .menu-atualizar-icone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
   min-height: 0;
-  padding: 9px 10px;
-  font-size: .85rem;
+  height: 26px;
+  margin: 0 4px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1;
+  opacity: .7;
+  vertical-align: middle;
+  box-shadow: none;
 }
+.app-menu-rodape .menu-atualizar-icone:hover { opacity: 1; color: var(--brand); }
 
 /* Celulares estreitos (360 px, a largura mais comum no Android): botões da linha do capítulo mais compactos para o "Cap. 12 (31)" caber inteiro; no grupo de
    livros, o gráfico de áudio fica só com as barras (o capítulo e o versículo aparecem no cabeçalho do livro). */
