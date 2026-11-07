@@ -5834,9 +5834,17 @@
       leitorPct = -1;
     }
 
+    // Quem está lendo só leva a tela junto com a frase lida se o usuário não mexeu nela nos últimos segundos: rolando, tocando ou arrastando, a tela é dele; passados
+    // LEITOR_SEGUIR_APOS ms sem mexer, a próxima troca de frase volta a acompanhar a leitura.
+    const LEITOR_SEGUIR_APOS = 4000;
+    let leitorUltimoToque = 0;
+    ['wheel', 'touchstart', 'touchmove', 'mousedown', 'keydown'].forEach(evento => document.addEventListener(evento, () => { leitorUltimoToque = Date.now(); }, { passive: true, capture: true }));
+    const leitorPodeSeguir = () => Date.now() - leitorUltimoToque > LEITOR_SEGUIR_APOS;
+
     // cfg: { lugar, uso: 'leitura' | 'texto-diario', acesso(), preparar(regras), destacar, limpar,
     //        vozExtra?: { data, vozCupom } (obrigatório em texto-diario) }
     async function leitorLer(cfg) {
+      leitorUltimoToque = 0; // começar a ler (ou tocar numa frase) leva a tela até a frase
       if (vozSessao && !vozBar.hidden && !vozPauseBtn.hidden) vozParar(); // tocar de novo recomeça
       // Dentro do toque: libera o áudio no iPhone antes de qualquer espera.
       vozAudio.src = vozSilencio();
@@ -7643,7 +7651,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.49'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.50'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -18472,6 +18480,7 @@ function saveTemplatesToStorage() {
       if (!u || !u.el) return; // parágrafo que não casou com a fala: não é marcado
       u.el.classList.add('lendo');
       if (!u.el.getClientRects().length) return; // com o texto fechado, não há o que mostrar
+      if (!leitorPodeSeguir()) return; // o usuário está mexendo na tela: ela fica com ele (volta a seguir a leitura depois de alguns segundos)
       // A barra do topo e a de baixo cobrem parte da janela: a frase lida precisa ficar na parte realmente visível (no meio dela, se não estiver).
       const barraTopo = document.querySelector('.app-topbar, header');
       const barraBase = document.getElementById('appNav');
@@ -23206,9 +23215,10 @@ function saveTemplatesToStorage() {
       bibliaResumoDestaque = -1;
       let secao = '';
       leituraEstrutura(bibliaResumoTexto.value).forEach((par, pi) => {
-        const plano = par.frases.join(' ').replace(/\*\*|__/g, '');
-        const titulo = par.tipo === 'texto' ? BIBLIA_TITULO_POR_CHAVE.get(bibliaChaveTitulo(plano)) : null;
-        const cabecalhoGeral = par.tipo === 'texto' && /^\u{1F4DA}/u.test(plano); // "📚 RESUMO DE GÊNESIS 1"
+        const plano = par.frases.join(' ').replace(/\*\*|__|%%/g, '');
+        // O título da seção vale com ou sem negrito em volta (a IA às vezes o destaca) e com ":" ou "." no fim; aí a linha toda em negrito seria lida como subtítulo.
+        const titulo = BIBLIA_TITULO_POR_CHAVE.get(bibliaChaveTitulo(plano.replace(/[\s:.\-–]+$/, ''))) || null;
+        const cabecalhoGeral = !titulo && /^\u{1F4DA}/u.test(plano); // "📚 RESUMO DE GÊNESIS 1"
         const fonte = /^\u{1F50E}\s*(?:Fontes|Estudo Perspicaz)\b/iu.test(plano); // a linha das fontes, no fim de uma seção
         const p = document.createElement('p');
         if (titulo) { secao = titulo; p.className = 'br-secao br-s' + BIBLIA_COR_SECAO[titulo]; }
@@ -23217,6 +23227,7 @@ function saveTemplatesToStorage() {
         else if (par.tipo === 'titulo') p.className = 'lv-titulo';
         else if (par.tipo === 'subtitulo') p.className = 'lv-subtitulo';
         const cabecalho = par.tipo !== 'texto' || Boolean(titulo) || cabecalhoGeral;
+        if (titulo || cabecalhoGeral) { for (let k = 0; k < par.frases.length; k++) par.frases[k] = par.frases[k].replace(/\*\*|__/g, ''); } // título sem as marcas: o traço colorido já o destaca
         const frases = par.frases.slice();
         if (!titulo && !cabecalhoGeral && !fonte && par.tipo === 'texto' && (secao === 'PERSONAGENS' || secao === 'LUGARES E INFORMAÇÕES GERAIS')) {
           const m = frases[0].match(/^((?:\p{Extended_Pictographic}[\uFE0F\u200D\p{Emoji_Modifier}\p{Extended_Pictographic}]*\s*)*)([^\s:.,;()*_%][^:.,;()*_%]{0,48}?):(\s.*)?$/u);
@@ -23258,7 +23269,7 @@ function saveTemplatesToStorage() {
       const u = bibliaResumoUnidades[indice];
       if (!u) return;
       u.el.classList.add('lendo');
-      u.el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      if (leitorPodeSeguir()) u.el.scrollIntoView({ block: 'center', behavior: 'smooth' }); // se o usuário está mexendo na tela, ela fica com ele
     }
 
     function bibliaResumoCfg() {

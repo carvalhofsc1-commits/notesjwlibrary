@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.50
+
+(1) Resumo do capítulo da Bíblia: os títulos das seções mantêm os traços coloridos mesmo quando a IA os põe em negrito ou com ":" no fim (antes, ao gerar de novo, esse título virava um subtítulo comum e perdia a cor). (2) Leitura em voz alta (resumo do capítulo e texto diário): a tela agora aceita rolar durante a leitura; ela só volta a acompanhar a frase lida depois de 4 segundos sem mexer, na próxima troca de frase.
+
 ## 6.6.49
 
 Resumo do capítulo da Bíblia, com a formatação de verdade (como nos comentários adicionais do texto diário): a tela do resumo passa a desenhar o texto com títulos das seções em **cores diferentes**, **negrito e itálico de verdade, com acentos**, marcas de versículos "(vv. 1-3)" coloridas, nomes de personagens e lugares em destaque e os emojis. O texto é guardado em letras comuns, com marcas simples (**negrito** e __itálico__), então a voz lê sem tropeçar nas letras especiais. O botão ✏️ Editar mostra o texto com as marcas para corrigir; Copiar, Word e Salvar levam o texto com letras de negrito e itálico (as cores só aparecem na tela). A leitura em voz alta usa a mesma vista, com a frase lida destacada.
