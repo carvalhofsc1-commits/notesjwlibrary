@@ -10247,8 +10247,19 @@ body.biblia-resumo-aberto { overflow: hidden; }
   background: var(--card);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: calc(12px + env(safe-area-inset-top)) max(14px, calc((100vw - 760px) / 2)) calc(28px + env(safe-area-inset-bottom));
+  padding: 0 max(14px, calc((100vw - 760px) / 2)) calc(28px + env(safe-area-inset-bottom));
 }
+/* O cabeçalho (título e Fechar) fica congelado no topo enquanto o resumo rola. */
+.biblia-resumo-caixa.tela > .biblia-grupos-topo {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  margin: 0 calc(-1 * max(14px, calc((100vw - 760px) / 2)));
+  padding: calc(10px + env(safe-area-inset-top)) max(14px, calc((100vw - 760px) / 2)) 10px;
+  background: var(--card);
+  border-bottom: 1px solid color-mix(in srgb, var(--brand) 45%, var(--line));
+}
+.biblia-resumo-caixa.tela > .biblia-grupos-topo .biblia-caixa-titulo { margin: 0; }
 .biblia-resumo-caixa.tela .biblia-resumo-area {
   min-height: 55vh;
   overflow: auto;

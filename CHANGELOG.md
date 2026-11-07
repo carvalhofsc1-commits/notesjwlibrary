@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.06
+
+Tela do resumo: o cabeçalho (título e botão Fechar) fica congelado no topo enquanto o resumo rola.
+
 ## 6.6.05
 
 Leitura da Bíblia: **Resumir** / **Ver resumo** abre as opções de resumo (ou o resumo já feito) numa tela separada, só com o resumo e com mais espaço para ler. Ao fechar, volta ao quadro da leitura, do jeito que estava.
