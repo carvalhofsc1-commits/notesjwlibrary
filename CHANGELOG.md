@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.34
+
+Tela Reuniões: o botão 📝 ↓ do topo não sai mais torto (a linha do topo passava da largura da tela quando ele aparecia); o título agora encolhe e o botão, quando escondido, mantém o lugar.
+
 ## 6.6.33
 
 Preparar para comentar: recolher um card (Sentinela, Tesouros, Estudo Bíblico) recolhe também o campo Texto original: a resposta dele sai e, sem nenhum card aberto, o cartão Texto original some.

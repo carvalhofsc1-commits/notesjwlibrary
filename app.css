@@ -6929,7 +6929,8 @@
     }
 
     .reunioes-topo .reunioes-pagina-titulo {
-      flex: 1 1 auto;
+      flex: 1 1 0;
+      min-width: 0;
       margin: 0;
       font-size: 1.02rem;
       line-height: 1.25;
@@ -6938,6 +6939,11 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
+    }
+
+    .reunioes-topo .reunioes-pagina-titulo > span:not(.reunioes-pagina-icone) {
+      min-width: 0;
+      max-width: 100%;
     }
 
     /* O emoji do título (mão, microfone…) é bem maior que as letras. */
@@ -7068,12 +7074,20 @@
 
     /* Nas páginas de Reuniões o cartão do Texto original só aparece quando alguma função da página joga texto nele (classe texto-chegou, posta pelo app);
        em Formatar ele é o campo de trabalho e fica sempre à vista. */
-    body[data-screen="reunioes"][data-reunioes="comentarios"].sem-texto-original :is(.screen-editor, #reunioesCampoBtn) {
+    body[data-screen="reunioes"][data-reunioes="comentarios"].sem-texto-original .screen-editor {
       display: none;
     }
 
-    body[data-screen="reunioes"]:not(.texto-chegou) :is(.screen-editor, #reunioesCampoBtn) {
+    body[data-screen="reunioes"]:not(.texto-chegou) .screen-editor {
       display: none;
+    }
+
+    /* O botão "📝 ↓" do topo some sem deixar o lugar (visibility, e não display): o título fica sempre no mesmo lugar e a linha do topo não muda de largura
+       quando ele aparece (antes a linha passava da largura da tela e o botão saía torto). */
+    body[data-screen="reunioes"][data-reunioes="comentarios"].sem-texto-original #reunioesCampoBtn,
+    body[data-screen="reunioes"]:not(.texto-chegou) #reunioesCampoBtn {
+      visibility: hidden;
+      pointer-events: none;
     }
 
     /* "Outras opções de formatação" fica no cartão do campo de texto, que é o mesmo em Formatar e em todas as páginas de Reuniões (comentar, dirigir,
