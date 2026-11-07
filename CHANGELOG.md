@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.00
+
+Leitura da Bíblia: o campo **Anotações do capítulo** saiu do painel do capítulo, e com ele a marca âmbar nas células. (As anotações que já tinham sido escritas continuam guardadas no aparelho, sem aparecer.)
+
 ## 6.5.99
 
 Leitura da Bíblia: uma linha fina separa o cabeçalho do painel do capítulo (setas, nome e versículos) do restante do painel.

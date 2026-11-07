@@ -7564,7 +7564,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.5.99'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.00'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21805,7 +21805,6 @@ function saveTemplatesToStorage() {
       const ids = cel.dataset.ids.split(' ');
       cel.classList.toggle('lido', ids.every(id => bibliaMarcaDe(id).lido));
       cel.classList.toggle('tem-resumo', ids.some(id => (bibliaEstado.resumos[id] || '').trim() !== ''));
-      cel.classList.toggle('tem-nota', Boolean(cel.dataset.nota) && (bibliaEstado.notas[cel.dataset.nota] || '').trim() !== '');
       cel.classList.toggle('marcador', Boolean(bibliaEstado.marcador) && bibliaEstado.marcador.chave === cel.dataset.chave);
       cel.classList.toggle('tocando', Boolean(bibliaAudioAtual) && bibliaAudioAtual.chave === cel.dataset.chave);
     }
@@ -21899,10 +21898,6 @@ function saveTemplatesToStorage() {
         '<div class="bp-acoes">' +
           '<a class="bp-wol" target="_blank" rel="noopener noreferrer">🔗 WOL</a>' +
           '<button type="button" class="secondary bp-resumir">Resumir</button>' +
-        '</div>' +
-        '<div class="bp-notas">' +
-          '<label class="bp-notas-rotulo">📝 Anotações do capítulo</label>' +
-          '<textarea class="bp-notas-area" rows="4" placeholder="Pontos da leitura que você quer lembrar…" aria-label="Anotações do capítulo"></textarea>' +
         '</div>';
       const q = s => p.querySelector(s);
       const eqPlayer = bibliaEqCriar(); // as barras de áudio dentro do player, ao lado da situação
@@ -21919,11 +21914,6 @@ function saveTemplatesToStorage() {
         const cap0 = e.entradas[0].cap;
         if (bibliaResumoAlvo && bibliaResumoAlvo.painel && p.contains(bibliaResumoCaixa) && bibliaResumoAlvo.cap.id !== cap0.id) bibliaFecharResumo(false); // outro capítulo: o resumo aberto era do anterior
         q('.bp-nome').textContent = bibliaEspacoTitulo(e);
-        const areaNota = q('.bp-notas-area');
-        const chaveNota = bibliaNotaChave(e);
-        const notaAtual = bibliaEstado.notas[chaveNota] || '';
-        // Mudou de capítulo: troca o texto sempre (mesmo com o cursor no campo, para a digitação não cair na anotação errada); no mesmo capítulo, não mexe enquanto se digita.
-        if (areaNota.dataset.chave !== chaveNota || (document.activeElement !== areaNota && areaNota.value !== notaAtual)) { areaNota.value = notaAtual; areaNota.dataset.chave = chaveNota; }
         const vv = bibliaEspacoVersiculos(e);
         q('.bp-vv').textContent = vv ? vv + (vv === 1 ? ' versículo' : ' versículos') : '';
         const lido = bibliaEspacoLido(e);
@@ -22056,18 +22046,6 @@ function saveTemplatesToStorage() {
         bibliaAudio.currentTime = Math.min(bibliaAudio.duration, Math.max(0, bibliaAudio.currentTime + (ev.key === 'ArrowRight' ? 5 : -5)));
       });
       // Resumir: só abre a área do resumo (no fim da tela); quem pede o resumo à IA é o botão dentro dela. Com resumo já feito, vira "Ver resumo".
-      let notaTimer = null;
-      q('.bp-notas-area').addEventListener('input', ev => {
-        const e = esp();
-        if (!e) return;
-        const chave = bibliaNotaChave(e);
-        const texto = ev.target.value;
-        if (texto.trim()) bibliaEstado.notas[chave] = texto; else delete bibliaEstado.notas[chave];
-        document.querySelectorAll('#bibliaCard .biblia-cel').forEach(c => { if (c.dataset.nota === chave) bibliaCelulaPintar(c); }); // a marca da célula acompanha a digitação
-        clearTimeout(notaTimer);
-        notaTimer = setTimeout(bibliaGravarEstado, 400);
-      });
-      q('.bp-notas-area').addEventListener('blur', () => { clearTimeout(notaTimer); bibliaGravarEstado(); });
       q('.bp-resumir').addEventListener('click', () => {
         const e = esp();
         bibliaAbrirResumo(e.entradas[0].item, e.entradas[0].cap, caixa._origem === 'livros' ? 'livros' : '', p);
@@ -22094,12 +22072,7 @@ function saveTemplatesToStorage() {
         cel.className = 'biblia-cel';
         cel.dataset.chave = bibliaChave(esp);
         cel.dataset.ids = bibliaEspacoIds(esp).join(' ');
-        cel.dataset.nota = bibliaNotaChave(esp);
         cel.textContent = esp.n || '•';
-        const pontoNota = document.createElement('i'); // a marca de "este capítulo tem anotação" (aparece só quando tem)
-        pontoNota.className = 'biblia-cel-nota';
-        pontoNota.setAttribute('aria-hidden', 'true');
-        cel.appendChild(pontoNota);
         cel.title = bibliaEspacoTitulo(esp);
         cel.setAttribute('aria-label', bibliaEspacoTitulo(esp));
         cel.addEventListener('click', () => {
