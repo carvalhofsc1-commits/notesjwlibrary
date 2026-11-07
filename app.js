@@ -1386,8 +1386,8 @@
       };
       const link = document.createElement('a');
       link.className = 'ai-week-link';
-      link.href = 'https://wol.jw.org/pt/wol/meetings/r5/lp-t/' + semana.ano + '/' + semana.semana;
-      link.target = '_blank';
+      link.href = jwlLinkSemana(segundaDaSemanaIso(semana.ano, semana.semana)); // abre a semana no app JW Library
+      link.title = 'Abrir a semana no app JW Library';
       link.rel = 'noopener noreferrer';
       const nomes = { '-1': 'Semana passada', '0': 'Semana atual', '1': 'Próxima semana' };
       const titulo = document.createElement('span');
@@ -7610,7 +7610,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.27'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.28'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -17737,7 +17737,11 @@ function saveTemplatesToStorage() {
       const [year, week] = isoYearWeek(monday);
       aiWeekYear = year;
       aiWeekNumber = week;
-      weekParts('link').forEach(link => { link.href = 'https://wol.jw.org/pt/wol/meetings/r5/lp-t/' + year + '/' + week; });
+      weekParts('link').forEach(link => { // o card da semana abre as matérias da semana no app JW Library (e não mais no wol.jw.org)
+        link.href = jwlLinkSemana(monday);
+        link.removeAttribute('target');
+        link.title = 'Abrir a semana no app JW Library';
+      });
 
       const range = rotuloDaSemana(monday);
       weekParts('range').forEach(el => { el.textContent = range; });
@@ -21667,6 +21671,18 @@ function saveTemplatesToStorage() {
       const verso = parseInt(String(m[3]).match(/\d+/)[0], 10);
       // O link vai exatamente ao versículo citado. (No celular o JW Library mostra a primeira linha dele um pouco acima; o app não controla isso. Apontar para o versículo anterior foi testado e descartado.)
       return n && capitulo && verso ? 'jwlibrary:///finder?bible=' + String(n).padStart(2, '0') + String(capitulo).padStart(3, '0') + String(verso).padStart(3, '0') + '&wtlocale=T' : '';
+    }
+    // A página de reuniões de uma semana no app JW Library, com o endereço que o próprio app gera ao compartilhar (alias=meetings e uma data da semana: a segunda-feira).
+    function jwlLinkSemana(segunda) {
+      const p = n => String(n).padStart(2, '0');
+      return 'jwlibrary:///finder?srcid=jwlshare&wtlocale=T&prefer=lang&alias=meetings&date=' + segunda.getFullYear() + p(segunda.getMonth() + 1) + p(segunda.getDate());
+    }
+    // A segunda-feira de uma semana ISO (ano e número), para o link acima.
+    function segundaDaSemanaIso(ano, semana) {
+      const quatroJan = new Date(ano, 0, 4, 12);
+      const segunda = new Date(quatroJan);
+      segunda.setDate(quatroJan.getDate() - ((quatroJan.getDay() + 6) % 7) + (semana - 1) * 7);
+      return segunda;
     }
     // Um documento do wol (".../wol/d/r5/lp-t/2026560") no app JW Library, com o endereço que o próprio app gera ao compartilhar (docid e, se houver, o parágrafo).
     function jwlLinkPorId(docid, par) {
