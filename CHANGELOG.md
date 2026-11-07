@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.52
+
+(1) Perguntas adicionais do dirigente: os botões Copiar e 📖 JW Library voltam a aparecer logo após gerar (o `semBotoes` da versão 6.6.39 escondia os dois). (2) No computador, o aviso “Não consegui abrir o JW Library” não aparece mais em falso (o app de mesa costuma abrir sem tirar o foco do navegador). (3) Cache das matérias da semana atualizado (V2): as leituras antigas sem o parágrafo (`pid`) do JW Library são descartadas; basta carregar a matéria de novo. (4) Resumo do capítulo da Bíblia: nova opção 🔮 **Esclarecer profecias e expressões simbólicas**, que gera a seção **PROFECIAS E EXPRESSÕES SIMBÓLICAS** (padrão Profecia / Cumprimento passado ou futuro), com consulta ao Estudo Perspicaz e, se preciso, ao wol.jw.org — útil em Daniel, Ezequiel, Apocalipse, alguns salmos, Gênesis e outras passagens simbólicas.
+
 ## 6.6.51
 
 Resumo do capítulo da Bíblia: o título de cada seção volta a ter o emoji dela na frente (🌟 SOBRE JEOVÁ, 🛠️ APLICAÇÕES PRÁTICAS, 🏛️ FUNDO HISTÓRICO…), também nos resumos que já estavam sem ele.

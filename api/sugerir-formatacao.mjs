@@ -3297,6 +3297,7 @@ const OPCOES_RESUMO_LEITURA = {
   fundo: "Resumo da leitura: fundo histórico",
   personagens: "Resumo da leitura: personagens",
   lugares: "Resumo da leitura: lugares e medidas",
+  profecias: "Resumo da leitura: profecias e expressões simbólicas",
 };
 
 const SECAO_UNICA_RESUMO_LEITURA = {
@@ -3306,6 +3307,7 @@ const SECAO_UNICA_RESUMO_LEITURA = {
   fundo: "FUNDO HISTÓRICO",
   personagens: "PERSONAGENS",
   lugares: "LUGARES E INFORMAÇÕES GERAIS",
+  profecias: "PROFECIAS E EXPRESSÕES SIMBÓLICAS",
 };
 
 function idsOpcoesResumoLeitura(valor) {
@@ -3327,7 +3329,11 @@ async function pesquisarWolParaResumoLeitura(tituloCap, outros, ajuste, idsOpcoe
     if (t.length < 8) return;
     if (!consultas.some((c) => c.toLowerCase() === t.toLowerCase())) consultas.push(t);
   };
-  const querFonte = idsOpcoes.includes("fundo") || idsOpcoes.includes("personagens") || idsOpcoes.includes("lugares");
+  const querFonte =
+    idsOpcoes.includes("fundo") ||
+    idsOpcoes.includes("personagens") ||
+    idsOpcoes.includes("lugares") ||
+    idsOpcoes.includes("profecias");
   if (querFonte && tituloCap) push(tituloCap);
   for (const o of outros) {
     for (const q of o.consultasWol || []) push(q);
@@ -3381,6 +3387,7 @@ const EMOJI_PADRAO_SECAO_RESUMO_LEITURA = {
   "FUNDO HISTÓRICO": "🏛️",
   PERSONAGENS: "👤",
   "LUGARES E INFORMAÇÕES GERAIS": "📍",
+  "PROFECIAS E EXPRESSÕES SIMBÓLICAS": "🔮",
 };
 const TITULO_POR_CHAVE_RESUMO_LEITURA = new Map(Object.values(SECAO_UNICA_RESUMO_LEITURA).map((t) => [chaveDeBusca(t), t]));
 const ABREVIACOES_RESUMO_LEITURA = new Set(["v", "vv", "vol", "vols", "pág", "págs", "pag", "pags", "cap", "caps", "cf", "ex", "nº", "séc", "aprox", "ss", "pp"]);
@@ -3406,7 +3413,7 @@ function frasesDeParagrafo(texto) {
 
 function organizarSecaoResumoLeitura(secao, paragrafos, emojiAtivo) {
   let itens = paragrafos.map((p) => p.replace(/^[-•–]\s+/, "").trim()).filter(Boolean);
-  if (secao === "PERSONAGENS" || secao === "LUGARES E INFORMAÇÕES GERAIS") {
+  if (secao === "PERSONAGENS" || secao === "LUGARES E INFORMAÇÕES GERAIS" || secao === "PROFECIAS E EXPRESSÕES SIMBÓLICAS") {
     // Só divide o parágrafo que já começa em "Nome: …" (a IA seguiu o formato ao menos no primeiro); assim frases comuns com dois-pontos não são cortadas.
     itens = itens.flatMap((p) => (REGEX_COMECA_COM_NOME.test(p) ? p.split(REGEX_NOME_DE_ITEM).map((x) => x.trim()).filter(Boolean) : [p]));
   } else if (itens.length === 1) {
@@ -3460,7 +3467,7 @@ function sanearItemResumoLeitura(o, opcoesFmt, P, maxTexto) {
   };
 }
 
-// Fundo histórico, personagens e/ou lugares: Perspicaz (+ WOL se houver consultas) e reescrita com citação de fontes.
+// Fundo histórico, personagens, lugares e/ou profecias: Perspicaz (+ WOL se houver consultas) e reescrita com citação de fontes.
 // Não reenvia os versículos — só orientação, opções, rascunho, verbetes e trechos.
 async function completarResumosLeituraComFontes(outros, P, ajuste = "", blocoOpcoes = "", tituloCap = "", idsOpcoes = [], opcoesFmt = {}, blocoFmt = "") {
   const simples = outros.map((o) => ({
@@ -3472,7 +3479,7 @@ async function completarResumosLeituraComFontes(outros, P, ajuste = "", blocoOpc
   }));
   const temVerbetes = outros.some((o) => (o.verbetes || []).length);
   const temConsultas = outros.some((o) => (o.consultasWol || []).length) || Boolean(ajuste);
-  if (!outros.length || (!temVerbetes && !temConsultas && !idsOpcoes.includes("fundo"))) return simples;
+  if (!outros.length || (!temVerbetes && !temConsultas && !idsOpcoes.includes("fundo") && !idsOpcoes.includes("profecias"))) return simples;
   try {
     const [achados, wol] = await Promise.all([
       fontesConfiguradas() && temVerbetes ? buscarVerbetesDosResumos(outros) : Promise.resolve(outros.map(() => [])),
@@ -3576,8 +3583,12 @@ async function resumirLeituraBiblia(res, body, P) {
   if (!idsOpcoes.length) return erro(res, 400, "Marque pelo menos uma opção para gerar o texto.");
   // Compatibilidade: pedidos antigos sem a caixa "resumo" e sem outras caixas não chegam aqui; se só vierem opções
   // "extras" sem "resumo", a seção RESUMO não é pedida (o usuário desmarcou de propósito).
-  // Perspicaz (e WOL na 2ª etapa) para fundo histórico, personagens e lugares — não para só Jeová/aplicações/resumo.
-  const querFontes = idsOpcoes.includes("personagens") || idsOpcoes.includes("lugares") || idsOpcoes.includes("fundo");
+  // Perspicaz (e WOL na 2ª etapa) para fundo, personagens, lugares e profecias — não para só Jeová/aplicações/resumo.
+  const querFontes =
+    idsOpcoes.includes("personagens") ||
+    idsOpcoes.includes("lugares") ||
+    idsOpcoes.includes("fundo") ||
+    idsOpcoes.includes("profecias");
   const opcoesFmt = validarOpcoes(body.opcoes);
   const blocoFmt =
     "FORMATAÇÃO (as mesmas preferências das respostas do app):\n" +
@@ -3665,7 +3676,14 @@ async function resumirLeituraBiblia(res, body, P) {
       .filter((o) => o.texto);
     const precisaEtapa2 =
       querFontes &&
-      outros.some((o) => o.verbetes.length || o.consultasWol.length || idsOpcoes.includes("fundo") || Boolean(ajuste));
+      outros.some(
+        (o) =>
+          o.verbetes.length ||
+          o.consultasWol.length ||
+          idsOpcoes.includes("fundo") ||
+          idsOpcoes.includes("profecias") ||
+          Boolean(ajuste)
+      );
     if (precisaEtapa2) {
       outros = await completarResumosLeituraComFontes(outros, P, ajuste, blocoOpcoes, titulo, idsOpcoes, opcoesFmt, blocoFmt);
     } else {

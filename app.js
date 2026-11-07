@@ -7651,7 +7651,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.51'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.52'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12729,14 +12729,15 @@ function saveTemplatesToStorage() {
         botao: 'bibliaResumirBtn', linha: true, exemplo: 'Ex.: destaque os acontecimentos mais importantes, ou faça um resumo mais curto.', dica: '',
         // Primeira opção (resumo) vem marcada por padrão; dá para desmarcar e pedir só outra seção.
         opcoesTitulo: 'Opções para a IA',
-        opcoesDica: 'Marque o que deseja. “Gerar o resumo do capítulo” vem marcado por padrão (pode desmarcar). Com várias opções, o texto sai em seções (RESUMO, SOBRE JEOVÁ, etc.). Fundo, personagens e lugares: Perspicaz e, se preciso, wol.jw.org. Se já houver texto salvo, a IA o usa como base.',
+        opcoesDica: 'Marque o que deseja. “Gerar o resumo do capítulo” vem marcado por padrão (pode desmarcar). Com várias opções, o texto sai em seções (RESUMO, SOBRE JEOVÁ, etc.). Fundo, personagens, lugares e profecias: Perspicaz e, se preciso, wol.jw.org. Se já houver texto salvo, a IA o usa como base.',
         opcoes: [
           { id: 'resumo', texto: '📚 Gerar o resumo do capítulo', padrao: true },
           { id: 'ensina', texto: '🌟 O que este capítulo me ensina sobre Jeová e as suas qualidades' },
           { id: 'aplicacoes', texto: '🛠️ Encontrar aplicações práticas para a vida real' },
           { id: 'fundo', texto: '🏛️ Explicar o fundo histórico dos acontecimentos (Perspicaz / WOL)' },
           { id: 'personagens', texto: '👤 Detalhar resumidamente a história dos personagens bíblicos conhecidos citados (Perspicaz)' },
-          { id: 'lugares', texto: '🗺️ Dar detalhes de localidades, lugares, cidades, nações, povos, medidas, moedas, valores etc. (Perspicaz)' }
+          { id: 'lugares', texto: '🗺️ Dar detalhes de localidades, lugares, cidades, nações, povos, medidas, moedas, valores etc. (Perspicaz)' },
+          { id: 'profecias', texto: '🔮 Esclarecer profecias e expressões simbólicas (cumprimento passado ou futuro; Perspicaz / WOL)' }
         ]
       }
     };
@@ -13593,7 +13594,8 @@ function saveTemplatesToStorage() {
 
     aiSuggestBtn.addEventListener('click', () => requestAiSuggestions());
     const AI_STUDY_CODE_KEY = 'jwLibraryNoteAplicarStudyCodeV1';
-    const AI_STUDY_CACHE_KEY = 'jwLibraryNoteAplicarStudyListV1';
+    // V2: passa a guardar pids (parágrafo → data-pid) para o botão JW Library; cache V1 sem pids é ignorado.
+    const AI_STUDY_CACHE_KEY = 'jwLibraryNoteAplicarStudyListV2';
     const aiStudyBtn = document.getElementById('aiStudyBtn');
     const aiStudyQuestionsBtn = document.getElementById('aiStudyQuestionsBtn');
     const aiStudyLoadBtn = document.getElementById('aiStudyLoadBtn');
@@ -14463,7 +14465,8 @@ function saveTemplatesToStorage() {
         // O parágrafo consultado no app JW Library (botão no topo do campo, que copia as perguntas e abre o parágrafo).
         const jwlPerguntas = result.data.jwl && result.data.jwl.docid ? { docid: String(result.data.jwl.docid), par: String(result.data.jwl.par || '') } : null;
         const partePerguntas = jwlPerguntas ? { paragrafos: 'perguntas', texto: perguntasTexto, jwl: jwlPerguntas } : { paragrafos: 'perguntas', texto: perguntasTexto };
-        aiResumo = { texto: perguntasTexto, partes: [partePerguntas], done: false, kind: 'estudo', semBotoes: true, fonte: result.data.titulo || '' };
+        // Copiar e JW Library ficam ao lado das perguntas (como na recapitulação); semBotoes esconderia os dois.
+        aiResumo = { texto: perguntasTexto, partes: [partePerguntas], done: false, kind: 'estudo', fonte: result.data.titulo || '' };
         aiRefino = {
           kind: 'dirigente',
           paragrafos: requested,
@@ -21923,10 +21926,16 @@ function saveTemplatesToStorage() {
       linha.append(wol, jw);
       titulo.appendChild(linha);
     }
-    // Qualquer link do JW Library do app: se o app não abrir, avisa (um aviso só, para todos).
+    // Qualquer link do JW Library do app: se o app não abrir, avisa (só no celular/tablet — no computador o app costuma abrir sem tirar o foco do navegador).
     document.addEventListener('click', ev => { if (ev.target.closest && ev.target.closest('a[href^="jwlibrary:"]')) bibliaJwLibraryAviso(); });
-    // Depois de tocar num link do JW Library: se a página continua à vista e em foco por 2,5 s, o app não abriu (ao abrir, o app ou a pergunta do navegador tira o foco).
+    // No Windows/macOS/Linux de mesa o JW Library abre sem blur/visibilitychange → aviso de 2,5 s daria falso positivo.
+    function bibliaJwLibraryEhDesktop() {
+      const ua = navigator.userAgent || '';
+      return /Windows NT|Macintosh|Linux x86_64|CrOS/i.test(ua) && !/Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+    }
+    // Depois de tocar num link do JW Library (celular/tablet): se a página continua à vista e em foco por 2,5 s, o app não abriu.
     function bibliaJwLibraryAviso() {
+      if (bibliaJwLibraryEhDesktop()) return;
       let saiu = false;
       const aoSair = () => { saiu = true; };
       window.addEventListener('blur', aoSair, { once: true });
@@ -22086,9 +22095,10 @@ function saveTemplatesToStorage() {
       aplicacoes: 'APLICAÇÕES PRÁTICAS',
       fundo: 'FUNDO HISTÓRICO',
       personagens: 'PERSONAGENS',
-      lugares: 'LUGARES E INFORMAÇÕES GERAIS'
+      lugares: 'LUGARES E INFORMAÇÕES GERAIS',
+      profecias: 'PROFECIAS E EXPRESSÕES SIMBÓLICAS'
     };
-    const BIBLIA_SECAO_ORDEM = ['resumo', 'ensina', 'aplicacoes', 'fundo', 'personagens', 'lugares'];
+    const BIBLIA_SECAO_ORDEM = ['resumo', 'ensina', 'aplicacoes', 'fundo', 'personagens', 'lugares', 'profecias'];
 
     const BIBLIA_SECAO_EMOJI = {
       'RESUMO': '📖',
@@ -22096,7 +22106,8 @@ function saveTemplatesToStorage() {
       'APLICAÇÕES PRÁTICAS': '🛠️',
       'FUNDO HISTÓRICO': '🏛️',
       'PERSONAGENS': '👤',
-      'LUGARES E INFORMAÇÕES GERAIS': '📍'
+      'LUGARES E INFORMAÇÕES GERAIS': '📍',
+      'PROFECIAS E EXPRESSÕES SIMBÓLICAS': '🔮'
     };
     const BIBLIA_EMOJI_INICIO = /^(?:\p{Extended_Pictographic}[\uFE0F\u200D\p{Emoji_Modifier}\p{Extended_Pictographic}]*\s*)+/u;
 
@@ -23180,7 +23191,7 @@ function saveTemplatesToStorage() {
     // mesma vista, com a frase lida destacada.
     let bibliaResumoEditando = false;
     let bibliaResumoRicoTexto = null;
-    const BIBLIA_COR_SECAO = { 'RESUMO': 0, 'SOBRE JEOVÁ': 1, 'APLICAÇÕES PRÁTICAS': 2, 'FUNDO HISTÓRICO': 3, 'PERSONAGENS': 4, 'LUGARES E INFORMAÇÕES GERAIS': 5 };
+    const BIBLIA_COR_SECAO = { 'RESUMO': 0, 'SOBRE JEOVÁ': 1, 'APLICAÇÕES PRÁTICAS': 2, 'FUNDO HISTÓRICO': 3, 'PERSONAGENS': 4, 'LUGARES E INFORMAÇÕES GERAIS': 5, 'PROFECIAS E EXPRESSÕES SIMBÓLICAS': 6 };
 
     // Uma frase com as marcas: **negrito**, __itálico__, %%nome%% (nome de personagem ou lugar) e as marcas de versículos "(vv. 1-3)".
     function bibliaRicoInline(span, texto, estado) {
@@ -23230,7 +23241,7 @@ function saveTemplatesToStorage() {
         if (titulo || cabecalhoGeral) { for (let k = 0; k < par.frases.length; k++) par.frases[k] = par.frases[k].replace(/\*\*|__/g, ''); } // título sem as marcas: o traço colorido já o destaca
         if (titulo && !/^\p{Extended_Pictographic}/u.test(par.frases[0] || '')) par.frases[0] = BIBLIA_SECAO_EMOJI[titulo] + ' ' + par.frases[0]; // o emoji da seção, na frente do título (só na tela)
         const frases = par.frases.slice();
-        if (!titulo && !cabecalhoGeral && !fonte && par.tipo === 'texto' && (secao === 'PERSONAGENS' || secao === 'LUGARES E INFORMAÇÕES GERAIS')) {
+        if (!titulo && !cabecalhoGeral && !fonte && par.tipo === 'texto' && (secao === 'PERSONAGENS' || secao === 'LUGARES E INFORMAÇÕES GERAIS' || secao === 'PROFECIAS E EXPRESSÕES SIMBÓLICAS')) {
           const m = frases[0].match(/^((?:\p{Extended_Pictographic}[\uFE0F\u200D\p{Emoji_Modifier}\p{Extended_Pictographic}]*\s*)*)([^\s:.,;()*_%][^:.,;()*_%]{0,48}?):(\s.*)?$/u);
           if (m) frases[0] = m[1] + '%%' + m[2].trim() + '%%:' + (m[3] || '');
         }
