@@ -7651,7 +7651,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.50'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.51'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -22162,7 +22162,7 @@ function saveTemplatesToStorage() {
         const titulo = BIBLIA_TITULO_POR_CHAVE.get(bibliaChaveTitulo(linha));
         if (titulo) {
           secao = titulo;
-          return (opcoes.emoji ? BIBLIA_SECAO_EMOJI[titulo] + ' ' : '') + bibliaTituloNegrito(titulo, negritoId);
+          return BIBLIA_SECAO_EMOJI[titulo] + ' ' + bibliaTituloNegrito(titulo, negritoId); // o emoji da seção sempre vai na frente do título
         }
         if (/^🔎/.test(linha)) { secao = ''; return linha; } // linha das fontes, no fim
         if (negritoId && (secao === 'PERSONAGENS' || secao === 'LUGARES E INFORMAÇÕES GERAIS')) {
@@ -23228,6 +23228,7 @@ function saveTemplatesToStorage() {
         else if (par.tipo === 'subtitulo') p.className = 'lv-subtitulo';
         const cabecalho = par.tipo !== 'texto' || Boolean(titulo) || cabecalhoGeral;
         if (titulo || cabecalhoGeral) { for (let k = 0; k < par.frases.length; k++) par.frases[k] = par.frases[k].replace(/\*\*|__/g, ''); } // título sem as marcas: o traço colorido já o destaca
+        if (titulo && !/^\p{Extended_Pictographic}/u.test(par.frases[0] || '')) par.frases[0] = BIBLIA_SECAO_EMOJI[titulo] + ' ' + par.frases[0]; // o emoji da seção, na frente do título (só na tela)
         const frases = par.frases.slice();
         if (!titulo && !cabecalhoGeral && !fonte && par.tipo === 'texto' && (secao === 'PERSONAGENS' || secao === 'LUGARES E INFORMAÇÕES GERAIS')) {
           const m = frases[0].match(/^((?:\p{Extended_Pictographic}[\uFE0F\u200D\p{Emoji_Modifier}\p{Extended_Pictographic}]*\s*)*)([^\s:.,;()*_%][^:.,;()*_%]{0,48}?):(\s.*)?$/u);

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.51
+
+Resumo do capítulo da Bíblia: o título de cada seção volta a ter o emoji dela na frente (🌟 SOBRE JEOVÁ, 🛠️ APLICAÇÕES PRÁTICAS, 🏛️ FUNDO HISTÓRICO…), também nos resumos que já estavam sem ele.
+
 ## 6.6.50
 
 (1) Resumo do capítulo da Bíblia: os títulos das seções mantêm os traços coloridos mesmo quando a IA os põe em negrito ou com ":" no fim (antes, ao gerar de novo, esse título virava um subtítulo comum e perdia a cor). (2) Leitura em voz alta (resumo do capítulo e texto diário): a tela agora aceita rolar durante a leitura; ela só volta a acompanhar a frase lida depois de 4 segundos sem mexer, na próxima troca de frase.
