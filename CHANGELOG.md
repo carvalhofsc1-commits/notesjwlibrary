@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.16
+
+Texto diário: saem os botões 📖 das referências bíblicas dos comentários e dos comentários adicionais (voltam a ficar como antes).
+
 ## 6.6.15
 
 Texto diário: as referências bíblicas do comentário e de cada comentário adicional ganham botões 📖 (no roxo do JW Library) que abrem cada texto no app.

@@ -7564,7 +7564,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.15'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.16'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -17868,8 +17868,6 @@ function saveTemplatesToStorage() {
           texto.textContent = c.comentario;
         }
         item.appendChild(texto);
-        const chipsIa = bibliaChipsJwLibrary((c.ponto || '') + ' ' + (c.comentario || ''));
-        if (chipsIa) item.appendChild(chipsIa);
         td.iaLista.appendChild(item);
       });
       td.iaQtd.textContent = lista.length ? '(' + lista.length + ')' : '';
@@ -17920,10 +17918,6 @@ function saveTemplatesToStorage() {
       });
       td.fonte.textContent = texto.fonte || '';
       td.link.href = td.linkSempre.href = texto.url;
-      const refsJwl = document.getElementById('tdJwlRefs'); // as referências do comentário, cada uma com o botão do JW Library
-      refsJwl.textContent = '';
-      const chipsJwl = bibliaChipsJwLibrary((texto.comentario || []).join(' '));
-      if (chipsJwl) refsJwl.appendChild(chipsJwl);
       const jwlTexto = bibliaLinkJwLibraryRef(texto.tema); // o texto bíblico do dia (ex.: "— Núm. 11:23.") no app JW Library
       const tdJwl = document.getElementById('tdJwl');
       tdJwl.hidden = !jwlTexto;
@@ -21413,42 +21407,6 @@ function saveTemplatesToStorage() {
       // O link vai exatamente ao versículo citado. (No celular o JW Library mostra a primeira linha dele um pouco acima; o app não controla isso. Apontar para o versículo anterior foi testado e descartado.)
       return n && capitulo && verso ? 'jwlibrary:///finder?bible=' + String(n).padStart(2, '0') + String(capitulo).padStart(3, '0') + String(verso).padStart(3, '0') + '&wtlocale=T' : '';
     }
-    // Todas as referências bíblicas de um texto ("Núm. 11:21-23; Heb. 3:2-5; 11:23-25") como botões 📖 que abrem cada uma no JW Library; null se não houver nenhuma.
-    function bibliaChipsJwLibrary(texto) {
-      const refs = vozReferencias();
-      const vistos = new Set();
-      const chips = [];
-      refs.regex.lastIndex = 0;
-      for (const m of String(texto || '').matchAll(refs.regex)) {
-        const livro = refs.comAcento.get(vozChave(m[1])) || refs.semAcento.get(vozChaveSemAcento(m[1]));
-        const n = BIBLIA_LIVROS.indexOf(livro) + 1;
-        if (!n) continue;
-        const partes = [m[2] + ':' + m[3]];
-        (m[4] || '').split(';').map(s => s.trim()).filter(Boolean).forEach(s => partes.push(s));
-        partes.forEach(parte => {
-          const mm = /^(\d{1,3}):\s*(\d{1,3})/.exec(parte);
-          if (!mm) return;
-          const rotulo = m[1].trim() + ' ' + parte.replace(/\s+/g, '');
-          if (vistos.has(rotulo)) return;
-          vistos.add(rotulo);
-          chips.push({ rotulo, link: 'jwlibrary:///finder?bible=' + String(n).padStart(2, '0') + String(parseInt(mm[1], 10)).padStart(3, '0') + String(parseInt(mm[2], 10)).padStart(3, '0') + '&wtlocale=T' });
-        });
-      }
-      refs.regex.lastIndex = 0;
-      if (!chips.length) return null;
-      const caixa = document.createElement('div');
-      caixa.className = 'jwl-refs';
-      chips.forEach(c => {
-        const a = document.createElement('a');
-        a.className = 'jwl-chip';
-        a.href = c.link;
-        a.textContent = '📖 ' + c.rotulo;
-        a.title = 'Abrir ' + c.rotulo + ' no JW Library';
-        caixa.appendChild(a);
-      });
-      return caixa;
-    }
-    document.addEventListener('click', ev => { if (ev.target.closest && ev.target.closest('a.jwl-chip')) bibliaJwLibraryAviso(); });
     // Depois de tocar num link do JW Library: se a página continua à vista e em foco por 2,5 s, o app não abriu (ao abrir, o app ou a pergunta do navegador tira o foco).
     function bibliaJwLibraryAviso() {
       let saiu = false;
