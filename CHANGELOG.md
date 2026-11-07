@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.29
+
+O cartão ⚙️ Mais opções volta a ter o fundo branco (a cor do cartão), mantendo o tamanho fino.
+
 ## 6.6.28
 
 O card da semana (Reuniões e preparação do Backup) agora abre as matérias da semana no app JW Library, com o endereço que o próprio app gera (alias=meetings e a data da semana), em vez do wol.jw.org.

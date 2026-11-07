@@ -7567,9 +7567,9 @@
       margin-top: 8px;
     }
 
-    /* Fino e discreto: sem fundo colorido, borda leve e título pequeno em cinza. */
+    /* Fino e discreto: fundo branco (a cor do cartão), borda leve e título pequeno em cinza. */
     details.subsection.group-box.mais-opcoes {
-      background: transparent;
+      background: var(--card);
       border-color: var(--line);
       border-radius: 10px;
     }
