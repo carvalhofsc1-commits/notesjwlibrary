@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.14
+
+JW Library, texto do dia: o link volta a apontar exatamente para o versículo citado (o do versículo anterior foi descartado).
+
 ## 6.6.13
 
 JW Library, texto do dia: o link aponta para o versículo anterior ao citado (ou para o começo do capítulo, se for o versículo 1), porque o celular abria uma linha abaixo do início do versículo.
