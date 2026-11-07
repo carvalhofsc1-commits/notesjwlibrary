@@ -7564,7 +7564,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.11'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.12'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21390,7 +21390,8 @@ function saveTemplatesToStorage() {
     function bibliaLinkJwLibrary(cap) {
       const n = BIBLIA_LIVROS.indexOf(cap.livro) + 1;
       const capitulo = parseInt(cap.rotulo, 10);
-      return n && capitulo ? 'jwlibrary:///finder?bible=' + String(n).padStart(2, '0') + String(capitulo).padStart(3, '0') + '001&wtlocale=T' : '';
+      // O capítulo inteiro: versículo 000 (o começo do capítulo, com o título). Com 001 o celular abria uma linha abaixo do início.
+      return n && capitulo ? 'jwlibrary:///finder?bible=' + String(n).padStart(2, '0') + String(capitulo).padStart(3, '0') + '000&wtlocale=T' : '';
     }
     // Uma referência escrita ("Núm. 11:23", "Heb. 3:2-5") vira o endereço do JW Library (no primeiro versículo citado); '' se não achar.
     function bibliaLinkJwLibraryRef(texto) {

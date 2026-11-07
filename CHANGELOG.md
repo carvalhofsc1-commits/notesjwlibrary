@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.12
+
+JW Library: o link do capítulo passa a usar o versículo 000 (começo do capítulo) em vez do 001, para o celular abrir no início do texto e não uma linha abaixo.
+
 ## 6.6.11
 
 O botão 📖 JW Library fica no roxo do logo oficial do app, com o texto em branco.
