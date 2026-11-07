@@ -3236,6 +3236,13 @@ async function responderJoias(res, body, P) {
 
     const memoriaUsada = memoriaUsadaAgora();
     const finais = await finalizarItens([...(itemPergunta ? [itemPergunta] : []), ...itensJoias], opcoes, P, blocoOrientacao(opcoes, ajuste, P));
+    // Botão do JW Library ao lado do Copiar: a apostila no lugar de colar a resposta (a pergunta da apostila; as joias da leitura vão na pergunta geral das joias).
+    if (joias.docid) {
+      finais.forEach((item, pos) => {
+        const par = itemPergunta && pos === 0 ? joias.pidPergunta : joias.pidGeral;
+        if (par) item.jwl = { docid: joias.docid, par };
+      });
+    }
     console.log("Joias espirituais (tempo):", JSON.stringify({ total: Math.round((Date.now() - inicioPedido) / 100) / 10 }));
     return res.status(200).json({
       semana: joias.semana,

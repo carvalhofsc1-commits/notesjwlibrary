@@ -530,21 +530,28 @@ function leituraDaApostila(html) {
 // Seção "Joias espirituais" da apostila: a pergunta sobre um versículo (com as publicações citadas) e a pergunta geral.
 function joiasDaApostila(html) {
   const titulo = [...html.matchAll(/<h3\b[^>]*>([\s\S]*?)<\/h3>/g)].find((m) => /joias espirituais/.test(semAcento(textoDe(m[1]))));
-  if (!titulo) return { pergunta: null, geral: null };
+  if (!titulo) return { pergunta: null, geral: null, pidPergunta: null, pidGeral: null };
   const resto = html.slice(titulo.index + titulo[0].length);
   const fim = resto.search(/<h[23]\b/);
   const secao = (fim >= 0 ? resto.slice(0, fim) : resto).replace(/<div class="gen-field"[\s\S]*?<\/div>/g, "");
   let pergunta = null;
   let geral = null;
+  let pidPergunta = null; // data-pid do parágrafo de cada pergunta (o "par" do endereço do JW Library)
+  let pidGeral = null;
   for (const [, conteudo] of secao.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/g)) {
     const texto = textoDe(conteudo);
     if (!texto) continue;
+    const pid = (conteudo.match(/data-pid="(\d+)"/) || [])[1] || null;
     if (!pergunta && /class="b"/.test(conteudo)) {
       const citacoes = [...conteudo.matchAll(/<a\b[^>]*href="(\/pt\/wol\/pc\/[^"]+)"[^>]*>([\s\S]*?)<\/a>/g)].map(([, caminho, rotulo]) => ({ caminho, citacao: textoDe(rotulo) }));
       pergunta = { texto, referencias: referenciasDe(conteudo), citacoes };
-    } else if (!geral) geral = texto;
+      pidPergunta = pid;
+    } else if (!geral) {
+      geral = texto;
+      pidGeral = pid;
+    }
   }
-  return { pergunta, geral };
+  return { pergunta, geral, pidPergunta, pidGeral };
 }
 
 // Versículos de um capítulo: "1 texto", "2 texto"… (sem os sinais de referência cruzada "+" e de nota "*").
@@ -646,6 +653,9 @@ export async function lerJoias(urlReuniao, { timeoutMs = 8000 } = {}) {
     pergunta: secao.pergunta ? { ...secao.pergunta, trecho: trechoPergunta } : null,
     geral: secao.geral,
     url: `${BASE}/pt/wol/d/r5/lp-t/${apostila}`,
+    docid: apostila, // com os data-pid das duas perguntas: onde abrir a apostila no app JW Library para colar a resposta
+    pidPergunta: secao.pidPergunta,
+    pidGeral: secao.pidGeral,
   };
   if (!joias.capitulos.length) return null;
   joiasLidas.set(urlReuniao, { quando: Date.now(), joias });

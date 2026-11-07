@@ -7594,7 +7594,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.20'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.21'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -13009,19 +13009,27 @@ function saveTemplatesToStorage() {
       });
     }
 
+    // O espelho é uma CÓPIA do próprio campo (um textarea com as mesmas classes e a mesma largura): o navegador quebra as linhas e mede as letras
+    // especiais e os emojis exatamente como no campo, então o fim de cada resposta é medido sem erro (um espelho de <div> errava por uma linha ou duas
+    // e o botão caía em cima do fim da resposta).
     function answerMirrorFor(textarea, style) {
-      if (!answerMirror) {
-        answerMirror = document.createElement('div');
+      if (!answerMirror || answerMirror.parentNode !== textarea.parentNode) {
+        if (answerMirror) answerMirror.remove();
+        answerMirror = document.createElement('textarea');
         answerMirror.setAttribute('aria-hidden', 'true');
-        document.body.appendChild(answerMirror);
+        answerMirror.tabIndex = -1;
+        answerMirror.readOnly = true;
+        textarea.parentNode.appendChild(answerMirror);
       }
-      ['fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'letterSpacing', 'lineHeight', 'wordSpacing',
-        'textIndent', 'tabSize', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft'
+      answerMirror.className = textarea.className;
+      answerMirror.removeAttribute('id');
+      ['fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'letterSpacing', 'lineHeight', 'wordSpacing', 'textIndent', 'tabSize',
+        'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'boxSizing', 'whiteSpace', 'overflowWrap', 'wordBreak', 'fontVariantLigatures', 'fontKerning', 'textRendering'
       ].forEach(prop => { answerMirror.style[prop] = style[prop]; });
       Object.assign(answerMirror.style, {
-        position: 'absolute', visibility: 'hidden', left: '-9999px', top: '0', boxSizing: 'border-box',
-        whiteSpace: 'pre-wrap', overflowWrap: 'break-word', border: '0', height: 'auto',
-        width: textarea.clientWidth + 'px'
+        position: 'absolute', visibility: 'hidden', pointerEvents: 'none', left: '-9999px', top: '0', border: '0',
+        height: '0px', minHeight: '0px', maxHeight: 'none', overflow: 'hidden', resize: 'none', margin: '0',
+        width: (textarea.offsetWidth - (parseFloat(style.borderLeftWidth) || 0) - (parseFloat(style.borderRightWidth) || 0)) + 'px'
       });
       return answerMirror;
     }
@@ -13050,13 +13058,12 @@ function saveTemplatesToStorage() {
       located.forEach(({ entry, end }) => {
         if (end < 0) { entry.btn.hidden = true; if (entry.jw) entry.jw.hidden = true; return; }
 
-        mirror.textContent = text.slice(0, end);
-        const marker = document.createElement('span');
-        marker.textContent = '​';
-        mirror.appendChild(marker);
+        // O texto até o fim desta resposta, no espelho: a altura dele (sem o espaço de baixo) é onde termina a última linha da resposta.
+        mirror.value = text.slice(0, end);
+        const fimDaResposta = mirror.scrollHeight - (parseFloat(style.paddingBottom) || 0);
 
-        // Última linha da resposta + 1 linha (a linha em branco que separa as respostas) centralizada.
-        const top = marker.offsetTop + lineHeight + (lineHeight - btnHeight) / 2 - input.scrollTop;
+        // Fim da última linha da resposta + a linha em branco que separa as respostas, com o botão centralizado nela.
+        const top = fimDaResposta + (lineHeight - btnHeight) / 2 - input.scrollTop;
         const visible = top >= 0 && top + btnHeight <= input.clientHeight;
         entry.btn.hidden = !visible;
         entry.btn.style.height = btnHeight + 'px';
@@ -16330,7 +16337,9 @@ function saveTemplatesToStorage() {
         const v = item.versiculo;
         const versiculo = v && v.referencia && v.texto ? buildSourceBlocks({ textos: [{ referencia: v.referencia, texto: v.texto }] }) : '';
         const extras = buildSourceBlocks(item);
-        return { paragrafos: item.paragrafos || '', texto: [versiculo, joia, extras].filter(Boolean).join('\n\n') };
+        const parte = { paragrafos: item.paragrafos || '', texto: [versiculo, joia, extras].filter(Boolean).join('\n\n') };
+        if (item.jwl && item.jwl.docid) parte.jwl = { docid: String(item.jwl.docid), par: String(item.jwl.par || '') }; // a apostila no lugar de colar a resposta, no app JW Library
+        return parte;
       });
     }
 
