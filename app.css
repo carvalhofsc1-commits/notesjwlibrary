@@ -267,7 +267,7 @@
     header h1 {
       margin: 0;
       color: var(--text);
-      font-size: clamp(1.1rem, 5vw, 1.3rem);
+      font-size: clamp(.95rem, 4.2vw, 1.1rem);
       font-weight: 800;
       font-style: normal;
       letter-spacing: .01em;
@@ -282,7 +282,7 @@
       margin: 0;
       max-width: none;
       font-weight: 600;
-      font-size: clamp(.5rem, 2vw, .58rem);
+      font-size: clamp(.44rem, 1.75vw, .5rem);
       line-height: 1.2;
       color: var(--muted);
       white-space: nowrap;
