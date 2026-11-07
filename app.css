@@ -10673,6 +10673,23 @@ body.biblia-resumo-aberto { overflow: hidden; }
   color: #fff;
 }
 .biblia-painel .bp-acoes .bp-jwl:hover { background: #6d3a9c; }
+/* As referências bíblicas dos comentários, cada uma com um botão que abre no JW Library (o roxo do logo do app). */
+.jwl-refs { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+.jwl-chip, .jwl-chip:visited {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #5b2d86;
+  border: 1px solid #4a2370;
+  color: #fff;
+  font-size: .8rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none;
+}
+.jwl-chip:hover { background: #6d3a9c; }
+#tdJwlRefs:empty { display: none; }
 .biblia-painel .bp-acoes .bp-resumir { --cor: 280; }
 .biblia-painel .bp-acoes .bp-resumir.tem { --cor: 150; }
 
