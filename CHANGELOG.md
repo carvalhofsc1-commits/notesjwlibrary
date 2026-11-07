@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.26
+
+O botão 💾 Salvar alterações fica sempre visível quando o campo tem texto (desabilitado se o texto não é de uma pesquisa salva ou não foi alterado; nesse caso uma linha diz para usar Salvar texto em Mais opções).
+
 ## 6.6.25
 
 A opção 🧠 Aprender com esta correção (só administrador) também fica escondida dentro de ⚙️ Mais opções.

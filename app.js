@@ -7610,7 +7610,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.25'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.26'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -16733,7 +16733,7 @@ function saveTemplatesToStorage() {
       if (historicoLigado && !input.value) historicoLigado = null;
       const ligado = Boolean(historicoLigado);
       const sujo = ligado && input.value !== historicoLigado.base;
-      salvarBloco.hidden = !ligado;
+      salvarBloco.hidden = !input.value.trim(); // sempre visível quando há texto (desabilitado se o texto não é de uma pesquisa salva ou não mudou)
       document.getElementById('exportarBloco').hidden = !input.value.trim();
       editorOpcoesPosicionar();
       // O resultado da última exportação ("✅ nome.docx") sai quando o texto muda, voltando à explicação de sempre.
@@ -16748,7 +16748,7 @@ function saveTemplatesToStorage() {
       editorOpcoesPosicionar();
       if (memoriaLinha.hidden) document.getElementById('memoriaUsar').checked = false;
       if (!ligado || sujo) salvarAvisoFim(); // mexeu de novo (ou trocou de texto): o aviso de salvo sai
-      salvarInfo.textContent = !ligado ? '' : (sujo
+      salvarInfo.textContent = !ligado ? 'Este texto não é de uma pesquisa salva. Para guardá-lo, use 💾 Salvar texto em ⚙️ Mais opções.' : (sujo
         ? 'Grava o texto do campo em: '
         : (historicoLigado.salvoEm ? '✅ Salvo às ' + historicoLigado.salvoEm.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + '. Pesquisa salva: ' : 'Sem alterações novas. Pesquisa salva: ')) + historicoLigado.titulo;
     }
