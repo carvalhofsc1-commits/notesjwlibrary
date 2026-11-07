@@ -922,6 +922,14 @@ async function responderEstudoLido(res, { lido, alvo, recapitulacao, opcoes, aju
     const inicioFontes = Date.now();
     const itensFinais = await finalizarItens(itens, opcoes, P, blocoOrientacao(opcoes, ajuste, P));
     // Para o botão do JW Library ao lado do Copiar: o documento e o parágrafo (o primeiro do grupo) onde colar a resposta.
+    // Na recapitulação, cada resposta ("Recap. N") abre a pergunta N do quadro final.
+    if (recapitulacao && lido.id && Array.isArray(lido.pidsRecapitulacao)) {
+      for (const i of itensFinais) {
+        const numero = Number((String(i.paragrafos).match(/\d+/) || [])[0]);
+        const par = numero ? lido.pidsRecapitulacao[numero - 1] : null;
+        if (par) i.jwl = { docid: lido.id, par };
+      }
+    }
     if (!recapitulacao && lido.id && lido.pids) {
       for (const i of itensFinais) {
         const primeiro = [...numerosDosParagrafos(i.paragrafos)].sort((a, b) => a - b)[0];

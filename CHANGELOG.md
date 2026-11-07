@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.43
+
+Recapitulação de A Sentinela (Comentários e Dirigentes): cada resposta ganha o botão 📖 JW Library ao lado do Copiar, que copia a resposta e abre a pergunta da recapitulação no app. Só nas respostas geradas a partir de agora.
+
 ## 6.6.42
 
 Preparar para dirigir → A Sentinela: depois do último parágrafo, a seta leva à **Recapitulação**, e o botão passa a **responder as perguntas da recapitulação** (como em Comentários, mas com o código do dirigente e o modelo de IA da elaboração das perguntas). Com resposta salva da recapitulação, ela é a base e a nova a substitui; a salva aparece sozinha ao voltar à recapitulação.

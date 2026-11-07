@@ -201,6 +201,7 @@ export function analisarArtigo(html) {
   const secoes = []; // para a recapitulação: o artigo inteiro, com os subtítulos
   const recapitulacao = [];
   const referenciasRecapitulacao = []; // alinhada com "recapitulacao": os textos citados em cada pergunta do quadro
+  const pidsRecapitulacao = []; // alinhada com "recapitulacao": o data-pid de cada pergunta do quadro (o "par" do JW Library)
   let atual = null;
   let naRecapitulacao = false;
   let tituloRecapitulacao = "";
@@ -263,6 +264,7 @@ export function analisarArtigo(html) {
     if (naRecapitulacao) {
       recapitulacao.push(perguntaDoQuadro(tituloRecapitulacao, texto));
       referenciasRecapitulacao.push(referenciasDe(conteudo));
+      pidsRecapitulacao.push(pid || null);
     }
     else if (atual) atual.legendas.push(texto);
   }
@@ -272,7 +274,7 @@ export function analisarArtigo(html) {
   // número do parágrafo -> data-pid (para abrir o parágrafo certo no app JW Library)
   const pids = {};
   for (const s of secoes) if (s.numero && s.pid && !pids[s.numero]) pids[s.numero] = s.pid;
-  return { titulo, grupos: validos, recapitulacao, referenciasRecapitulacao, secoes, pids };
+  return { titulo, grupos: validos, recapitulacao, referenciasRecapitulacao, pidsRecapitulacao, secoes, pids };
 }
 
 // Lê o artigo (ou, com a página de reuniões da semana, encontra o artigo nela e o lê). null = não deu para ler.
