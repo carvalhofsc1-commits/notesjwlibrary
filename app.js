@@ -7564,7 +7564,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.06'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.07'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21379,6 +21379,14 @@ function saveTemplatesToStorage() {
       const capitulo = parseInt(cap.rotulo, 10);
       return n && capitulo ? 'https://wol.jw.org/pt/wol/b/r5/lp-t/nwtsty/' + n + '/' + capitulo : '';
     }
+    // O mesmo capítulo no app JW Library instalado no celular: o endereço jwlibrary:///finder?bible=BBCCCVVV (livro, capítulo e versículo com 2, 3 e 3 dígitos).
+    // Só aparece em celular/tablet (no computador não há o app). Se o app não abrir, avisa e oferece o WOL.
+    const BIBLIA_CELULAR = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    function bibliaLinkJwLibrary(cap) {
+      const n = BIBLIA_LIVROS.indexOf(cap.livro) + 1;
+      const capitulo = parseInt(cap.rotulo, 10);
+      return n && capitulo ? 'jwlibrary:///finder?bible=' + String(n).padStart(2, '0') + String(capitulo).padStart(3, '0') + '001&wtlocale=T' : '';
+    }
     const bibliaSecoes = document.getElementById('bibliaSecoes');
     const bibliaLista = document.getElementById('bibliaLista');
     const bibliaSecaoTitulo = document.getElementById('bibliaSecaoTitulo');
@@ -21906,6 +21914,7 @@ function saveTemplatesToStorage() {
         '</div>' +
         '<div class="bp-acoes">' +
           '<a class="bp-wol" target="_blank" rel="noopener noreferrer">🔗 WOL</a>' +
+          '<a class="secondary bp-jwl" hidden>📖 JW Library</a>' +
           '<button type="button" class="secondary bp-resumir">Resumir</button>' +
         '</div>';
       const q = s => p.querySelector(s);
@@ -21939,6 +21948,10 @@ function saveTemplatesToStorage() {
         const url = bibliaLinkWol(cap0);
         wol.hidden = !url;
         if (url) wol.href = url;
+        const jwl = q('.bp-jwl');
+        const urlJwl = BIBLIA_CELULAR ? bibliaLinkJwLibrary(cap0) : '';
+        jwl.hidden = !urlJwl;
+        if (urlJwl) jwl.href = urlJwl;
         const nomeLink = q('.bp-nome'); // o nome do capítulo também é um link para o texto no wol.jw.org (o mesmo do botão)
         if (url) nomeLink.href = url; else nomeLink.removeAttribute('href');
         const tem = e.entradas.some(x => (bibliaEstado.resumos[x.cap.id] || '').trim() !== '');
@@ -22053,6 +22066,13 @@ function saveTemplatesToStorage() {
         if (!meu() || !(bibliaAudio.duration > 0) || (ev.key !== 'ArrowLeft' && ev.key !== 'ArrowRight')) return;
         ev.preventDefault();
         bibliaAudio.currentTime = Math.min(bibliaAudio.duration, Math.max(0, bibliaAudio.currentTime + (ev.key === 'ArrowRight' ? 5 : -5)));
+      });
+      // Abrir no JW Library: se o app não estiver instalado (ou não abrir), a página continua à vista e o aviso oferece o WOL.
+      q('.bp-jwl').addEventListener('click', () => {
+        setTimeout(() => {
+          if (document.visibilityState !== 'visible') return; // o app abriu
+          showAlert('Não consegui abrir o JW Library. Ele precisa estar instalado neste aparelho. Você pode usar o botão WOL para ler o capítulo no site.', 'JW Library');
+        }, 2500);
       });
       // Resumir: só abre a área do resumo (no fim da tela); quem pede o resumo à IA é o botão dentro dela. Com resumo já feito, vira "Ver resumo".
       q('.bp-resumir').addEventListener('click', () => {

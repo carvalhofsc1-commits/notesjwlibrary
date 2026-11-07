@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.07
+
+Leitura da Bíblia: novo botão **📖 JW Library** no painel do capítulo (só no celular/tablet) que abre o capítulo direto no app JW Library instalado. Se o app não abrir, o NoteStyle avisa e sugere o botão WOL.
+
 ## 6.6.06
 
 Tela do resumo: o cabeçalho (título e botão Fechar) fica congelado no topo enquanto o resumo rola.

@@ -10665,6 +10665,7 @@ body.biblia-resumo-aberto { overflow: hidden; }
   color: color-mix(in srgb, hsl(var(--cor) 75% 42%) 65%, var(--text));
 }
 .biblia-painel .bp-acoes > [hidden] { display: none; }
+.biblia-painel .bp-acoes .bp-jwl { --cor: 190; font-size: .85rem; }
 .biblia-painel .bp-acoes .bp-resumir { --cor: 280; }
 .biblia-painel .bp-acoes .bp-resumir.tem { --cor: 150; }
 
