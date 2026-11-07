@@ -7564,7 +7564,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.03'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.04'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -17995,7 +17995,16 @@ function saveTemplatesToStorage() {
       const u = estado.unidades[indice];
       if (!u || !u.el) return; // parágrafo que não casou com a fala: não é marcado
       u.el.classList.add('lendo');
-      if (u.el.getClientRects().length) u.el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); // com o texto fechado, não há o que mostrar
+      if (!u.el.getClientRects().length) return; // com o texto fechado, não há o que mostrar
+      // A barra do topo e a de baixo cobrem parte da janela: a frase lida precisa ficar na parte realmente visível (no meio dela, se não estiver).
+      const barraTopo = document.querySelector('.app-topbar, header');
+      const barraBase = document.getElementById('appNav');
+      const livreTopo = barraTopo ? Math.max(0, barraTopo.getBoundingClientRect().bottom) + 12 : 12;
+      const livreBase = innerHeight - (barraBase ? Math.max(0, innerHeight - barraBase.getBoundingClientRect().top) : 0) - 12;
+      const r = u.el.getBoundingClientRect();
+      if (r.top >= livreTopo && r.bottom <= livreBase) return;
+      const rolar = (window.scrollY || document.documentElement.scrollTop) + (r.top + r.bottom) / 2 - (livreTopo + livreBase) / 2;
+      window.scrollTo({ top: r.height > livreBase - livreTopo ? (window.scrollY || 0) + r.top - livreTopo : Math.max(0, rolar), behavior: 'smooth' });
     }
 
     // Casa as frases mostradas de cada linha ({ el, texto, falado }) com as faladas e devolve as unidades da leitura. Linha com `inteira` é uma

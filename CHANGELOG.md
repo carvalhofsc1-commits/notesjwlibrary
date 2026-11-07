@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.04
+
+Texto diário (texto e comentários adicionais): a tela passa a acompanhar a frase lida levando-a para o meio da parte realmente visível, entre a barra do topo e a de baixo. Antes, a frase podia ficar escondida atrás da barra de baixo sem a tela rolar.
+
 ## 6.6.03
 
 Texto diário, Comentários adicionais: o ícone 🔊 ficou do mesmo tamanho do 🔊 do texto (só o alto-falante, sem caixa), mais afastado da seta, e a seta de recolher/abrir ficou maior.
