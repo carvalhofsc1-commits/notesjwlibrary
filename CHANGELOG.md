@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.23
+
+Preparar para comentar: (1) só uma resposta salva por parágrafo (A Sentinela) ou por pergunta/joia (Estudo Bíblico e Joias): ao salvar uma resposta nova, a antiga do mesmo parágrafo/pergunta sai; e gerar de novo com resposta salva usa a salva como base (a IA aproveita o que tem de bom) e a nova a substitui. (2) A resposta salva aparece sozinha embaixo ao abrir a matéria da semana ou trocar de parágrafo com as setas, como se tivesse acabado de ser gerada (com Copiar, JW Library, Outra resposta e Melhorar); sem resposta salva, a seção some e não mostra a de outro parágrafo. Trocar de parágrafo/matéria troca o texto do campo mesmo que ele tenha alterações não salvas (enquanto a escolha é a mesma, o texto em edição fica). O botão "Recuperar a resposta salva" some quando a resposta já aparece (e continua em Pesquisas e respostas salvas).
+
 ## 6.6.22
 
 O botão 📖 JW Library ao lado do Copiar agora também copia a resposta (o mesmo texto do Copiar) antes de abrir o parágrafo no app, para só colar no campo da resposta. (O JW Library não deixa outro app colocar texto nele.)

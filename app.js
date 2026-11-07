@@ -7594,7 +7594,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.22'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.23'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -13798,14 +13798,118 @@ function saveTemplatesToStorage() {
       const box = picker.salva;
       if (!box) return;
       const salva = studySalvasPronto ? studySalvas(picker) : null;
-      box.hidden = !salva;
+      box.hidden = !salva || (picker.card === 'comentarios' && comentariosAutoMostrando(salva.item.id)); // já aparece embaixo: o botão de recuperar não faz falta
       if (salva) box.querySelector('p').textContent = studySalvaTexto(picker, salva);
     }
 
     // Chamado quando a lista de pesquisas salvas muda (salvar, apagar, trocar de semana).
     function studySalvasAtualizar() {
-      if (studySalvasPronto) studyPickers.forEach(showStudySaved);
+      if (!studySalvasPronto) return;
+      studyPickers.forEach(showStudySaved);
+      comentariosAutoTodos();
     }
+
+    // ---------- A resposta salva aparece sozinha (Preparar para comentar) ----------
+    // Cada parágrafo (A Sentinela) ou matéria (Estudo Bíblico, Joias) tem no máximo uma resposta salva. Ao abrir a matéria da semana ou trocar de parágrafo com as
+    // setas, a resposta salva dele entra no campo de texto e aparece embaixo, como se tivesse acabado de ser gerada; sem resposta salva, o que era de outro
+    // parágrafo sai e a seção some. A escolha de outro parágrafo/matéria troca o texto do campo mesmo que ele tenha alterações não salvas (pedido do usuário);
+    // enquanto a escolha é a mesma, o texto que ele está editando não é trocado.
+    let comentariosAuto = { chave: '', texto: '', ids: [] };
+    let comentariosAutoOcupado = false;
+    let comentariosFoco = 'sentinelaBox'; // qual das três matérias manda no campo agora (a última aberta ou usada)
+    const comentariosAutoMostrando = id => Boolean(comentariosAuto.chave) && comentariosAuto.ids.includes(id) && input.value === comentariosAuto.texto;
+    const comentariosLigadoSalvo = () => {
+      if (!historicoLigado || historicoLigado.base !== input.value) return false;
+      const item = historicoLer().find(i => i.id === historicoLigado.id);
+      return Boolean(item) && ['sentinela', 'ebc', 'joias'].includes(item.tipo);
+    };
+
+    async function comentariosAutoAplicar(alvo) {
+      if (aiBusy || comentariosAutoOcupado) return;
+      comentariosAutoOcupado = true;
+      try {
+        if (alvo) {
+          if (comentariosAuto.chave === alvo.chave && input.value.trim()) return; // a mesma escolha: o que está no campo (mesmo editado) fica
+          if (historicoLigado && historicoLigado.base === input.value && alvo.ids.includes(historicoLigado.id)) { // acabou de ser gerada ou aberta: já está no campo
+            comentariosAuto = { chave: alvo.chave, texto: input.value, ids: alvo.ids };
+            return;
+          }
+          placeAiOutput(alvo.slot);
+          if (await alvo.abrir()) {
+            comentariosAuto = { chave: alvo.chave, texto: input.value, ids: alvo.ids };
+            aiStatusKind = alvo.status;
+            setAiStatus('💾 ' + alvo.mensagem, false);
+          }
+          return;
+        }
+        // Sem resposta salva para o que está escolhido: a resposta de outro parágrafo/matéria sai e a seção do campo some.
+        if (input.value.trim() && (comentariosAuto.chave || comentariosLigadoSalvo())) {
+          document.getElementById('clearBtn').click();
+          document.body.classList.remove('texto-chegou');
+          aiResumo = null;
+          clearAnswerCopyButtons();
+          updateAiControls();
+        }
+        comentariosAuto = { chave: '', texto: '', ids: [] };
+      } finally {
+        comentariosAutoOcupado = false;
+        studyPickers.forEach(showStudySaved);
+        recuperarSalvasAtualizar();
+      }
+    }
+
+    function comentariosAutoSentinela() {
+      const picker = studyPickers.find(p => p.card === 'comentarios');
+      const salva = picker ? studySalvas(picker) : null;
+      if (!salva || salva.faltam.length) return comentariosAutoAplicar(null);
+      const inteira = salva.partes.length === (salva.item.partes || []).length || Boolean(salva.item.textoEditado);
+      return comentariosAutoAplicar({
+        chave: 'sent:' + salva.item.id + ':' + salva.cobertos.join(','),
+        ids: [salva.item.id],
+        slot: sentinelaOutputSlot,
+        status: 'estudo',
+        mensagem: 'Resposta salva ' + (salva.cobertos[0] === 'recap' ? 'da recapitulação' : salva.cobertos.length === 1 ? 'do parágrafo ' + salva.cobertos[0] : 'dos parágrafos ' + salva.cobertos.join(', ')) + ' (' + historicoQuando(salva.item) + ').',
+        abrir: () => historicoAbrir(salva.item.id, inteira ? undefined : salva.partes, undefined, { silencioso: true })
+      });
+    }
+    function comentariosAutoEbc() {
+      const juntas = ebcSalvasJuntas();
+      if (!juntas) return comentariosAutoAplicar(null);
+      return comentariosAutoAplicar({
+        chave: 'ebc:' + juntas.ids.join(','),
+        ids: juntas.ids,
+        slot: ebcOutputSlot,
+        status: 'ebc',
+        mensagem: 'Resposta salva do Estudo Bíblico.',
+        abrir: () => historicoAbrir(juntas.ids[0], undefined, juntas.ids.length > 1 ? juntas : undefined, { silencioso: true })
+      });
+    }
+    function comentariosAutoJoias() {
+      const juntas = joiasSalvasJuntas();
+      if (!juntas) return comentariosAutoAplicar(null);
+      const ids = juntas.itens.map(({ item }) => item.id);
+      return comentariosAutoAplicar({
+        chave: 'joias:' + ids.join(','),
+        ids,
+        slot: joiasOutputSlot,
+        status: 'joias',
+        mensagem: 'Resposta salva das joias.',
+        abrir: () => historicoAbrir(ids[0], undefined, ids.length > 1 ? juntas : undefined, { silencioso: true })
+      });
+    }
+    // Só quando a matéria está aberta na página Comentários de Reuniões (nas outras telas o campo de texto é de outra coisa).
+    function comentariosAutoTodos() {
+      if (currentScreen() !== 'reunioes') return;
+      const caixa = document.getElementById(comentariosFoco);
+      if (!caixa || !caixa.open || caixa.offsetParent === null) return;
+      const rodar = { sentinelaBox: comentariosAutoSentinela, ebcBox: comentariosAutoEbc, joiasBox: comentariosAutoJoias }[comentariosFoco];
+      if (rodar) rodar().catch(() => {});
+    }
+    ['sentinelaBox', 'ebcBox', 'joiasBox'].forEach(id => document.getElementById(id).addEventListener('toggle', event => {
+      if (!event.target.open) return;
+      comentariosFoco = id;
+      comentariosAutoTodos();
+    }));
 
     async function studyRecuperar(picker) {
       const salva = studySalvas(picker);
@@ -13848,6 +13952,7 @@ function saveTemplatesToStorage() {
         showStudySaved(picker);
       });
       iaTravasAtualizar();
+      if (studySalvasPronto) { comentariosFoco = 'sentinelaBox'; comentariosAutoTodos(); } // a escolha de parágrafo mudou: a resposta salva dele aparece (ou a seção some)
     }
 
     function stepStudy(picker, delta) {
@@ -14073,7 +14178,7 @@ function saveTemplatesToStorage() {
         ajuste: iaExtra('estudo')
       };
       if (previousAnswers) {
-        payload.modo = mode || 'nova';
+        payload.modo = mode || 'melhorar'; // com resposta salva do parágrafo: ela é a base, a IA aproveita o que tem de bom e a resposta nova a substitui
         payload.anteriores = { itens: previousAnswers };
       }
 
@@ -14473,7 +14578,7 @@ function saveTemplatesToStorage() {
         ajuste: iaExtra('ebc')
       };
       if (previousAnswers) {
-        payload.modo = mode || 'nova';
+        payload.modo = mode || 'melhorar'; // com resposta salva: ela é a base e a nova a substitui
         payload.anteriores = { itens: previousAnswers };
       }
 
@@ -16438,7 +16543,7 @@ function saveTemplatesToStorage() {
         ajuste: iaExtra('joias')
       };
       if (previousAnswers || previousOutros.length) {
-        payload.modo = mode || 'acrescentar';
+        payload.modo = mode || 'melhorar'; // com resposta salva: ela é a base e a nova a substitui
         payload.anteriores = { itens: previousAnswers || [], outros: previousOutros };
       }
 
@@ -17110,6 +17215,43 @@ function saveTemplatesToStorage() {
     // A semana é a do pedido à IA (ano e semana enviados ao servidor) ou, sem ela, a escolhida agora.
     // tipo "nota": texto livre (Formatar / Áudio) — sem vínculo com a semana das reuniões (ano e numSemana ficam 0).
     // ligar: false evita associar o campo Formatar à pesquisa (ex.: salvar do Áudio sem abrir o texto lá).
+    // Uma resposta só por parágrafo (A Sentinela) ou por pergunta/joia (Estudo Bíblico e Joias): as partes das respostas salvas antes que o novo item cobre saem
+    // (a nova resposta ficou no lugar delas); uma pesquisa antiga que ficou sem partes é apagada, e a que ficou com parte das suas perde só as cobertas.
+    function historicoChavesDaParte(item, parte) {
+      const rotulo = String((parte && parte.paragrafos) || '').trim();
+      if (item.tipo === 'sentinela') {
+        if (isRecapText(rotulo)) return ['recap:' + rotulo.replace(/^\D*/, '')];
+        const numeros = studyChave(rotulo);
+        return numeros.length ? numeros.map(n => 'p' + n) : ['t:' + rotulo.toLowerCase()];
+      }
+      return [(item.sub || '') + '|' + rotulo.toLowerCase()];
+    }
+    function historicoSemCobertas(novo, lista) {
+      if (!['sentinela', 'ebc', 'joias'].includes(novo.tipo)) return lista;
+      const cobertas = new Set((novo.partes || []).flatMap(p => historicoChavesDaParte(novo, p)));
+      if (!cobertas.size) return lista;
+      const resultado = [];
+      lista.forEach(item => {
+        if (item.tipo !== novo.tipo || item.ano !== novo.ano || item.numSemana !== novo.numSemana || (item.sub || '') !== (novo.sub || '')) { resultado.push(item); return; }
+        const partes = item.partes || [];
+        const manter = partes.map(p => !historicoChavesDaParte(item, p).some(c => cobertas.has(c)));
+        if (manter.every(Boolean)) { resultado.push(item); return; }
+        if (!manter.some(Boolean)) return; // tudo o que ela tinha foi substituído
+        const copia = { ...item, partes: partes.filter((_, i) => manter[i]) };
+        delete copia.textoEditado; // o texto com as alterações do usuário valia para a pesquisa inteira
+        delete copia.editadoEm;
+        const r = item.refino;
+        if (r) {
+          const filtra = itens => itens.filter((_, i) => manter[i]);
+          if (Array.isArray(r.itens) && r.itens.length === partes.length) copia.refino = { ...r, itens: filtra(r.itens) };
+          else if (Array.isArray(r.outros) && r.outros.length === partes.length && !(r.itens || []).length) copia.refino = { ...r, outros: filtra(r.outros) };
+          else delete copia.refino;
+        }
+        resultado.push(copia);
+      });
+      return resultado;
+    }
+
     function historicoSalvar({ tipo, titulo, ano, numSemana, partes, esbocoJson, esbocoNumero, esbocoTitulo, refino, sub, ligar }) {
       const semSemana = tipo === 'nota';
       const item = {
@@ -17128,7 +17270,7 @@ function saveTemplatesToStorage() {
       if (sub) item.sub = sub; // joias: 'resumo', 'pergunta' (joia da semana), 'joias' (da leitura) ou 'instrucoes'; cada um é salvo separado
       if (esbocoNumero) item.esbocoNumero = esbocoNumero;
       if (esbocoTitulo) item.esbocoTitulo = esbocoTitulo;
-      historicoGravar([item, ...historicoLer()]);
+      historicoGravar([item, ...historicoSemCobertas(item, historicoLer())]);
       if (!historicoLer().some(guardado => guardado.id === item.id)) {
         // Não coube na memória do aparelho: avisa (antes o app não dizia nada e a resposta ficava só no campo de texto).
         showAlert('Não consegui salvar esta resposta em Pesquisas e respostas salvas: a memória do aparelho está cheia. Ela continua no campo de texto; copie o que precisar. Para abrir espaço, apague pesquisas antigas ou veja o que está guardado em Ajustes → Privacidade e dados deste aparelho.', '⚠️ Resposta não salva');
@@ -17345,6 +17487,31 @@ function saveTemplatesToStorage() {
       return itens.length || outros.length ? { itens, outros } : null;
     }
 
+    // As respostas do Estudo Bíblico desta semana juntas (cada pergunta tem uma só; elas podem estar em pesquisas salvas diferentes), na ordem dos quadros:
+    // { ids, itens (como as joias, para o botão), partes, refino } ou null.
+    function ebcSalvasJuntas() {
+      const atual = historicoChaveAtual();
+      const itens = historicoLer().filter(i => i.tipo === 'ebc' && historicoChave(i) === atual);
+      if (!itens.length) return null;
+      const ordem = rotulo => {
+        const t = String(rotulo || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        const q = ['considerar', 'analise', 'medite', 'quadro'].findIndex(n => t.startsWith(n));
+        return (q < 0 ? 9 : q) * 1000 + (Number((t.match(/\d+/) || [0])[0]) || 0);
+      };
+      const pares = [];
+      const quadros = new Set();
+      let rawCompleto = true;
+      itens.slice().reverse().forEach(item => {
+        const r = historicoRefinoDe(item);
+        const partes = item.partes || [];
+        if (r && Array.isArray(r.itens) && r.itens.length === partes.length) { partes.forEach((p, i) => pares.push({ parte: p, raw: r.itens[i] })); (r.quadros || []).forEach(q => quadros.add(q)); }
+        else { partes.forEach(p => pares.push({ parte: p, raw: null })); rawCompleto = false; }
+      });
+      pares.sort((a, b) => ordem(a.parte.paragrafos) - ordem(b.parte.paragrafos));
+      const refino = rawCompleto ? { kind: 'ebc', quadros: [...quadros], itens: pares.map(p => p.raw) } : null;
+      return { ids: itens.map(i => i.id), itens, partes: pares.map(p => p.parte), refino };
+    }
+
     // As joias salvas desta semana juntas (a mais recente de cada tipo), na ordem do campo de texto, para o botão Recuperar: { itens, partes, refino } ou null.
     const JOIAS_SUBS_ORDEM = ['instrucoes', 'resumo', 'pergunta', 'joias', 'misto'];
     const JOIAS_SUBS_NOME = { instrucoes: 'instruções adicionais', resumo: 'resumo dos capítulos', pergunta: 'resposta à joia da semana', joias: 'joias da leitura', misto: 'joias' };
@@ -17384,14 +17551,15 @@ function saveTemplatesToStorage() {
 
     // soPartes (opcional): abre só essas partes da pesquisa (recuperar a resposta de um parágrafo); aí o campo não fica ligado à pesquisa,
     // para o botão Salvar não trocar a pesquisa inteira por um pedaço dela. Devolve true se abriu.
-    async function historicoAbrir(id, soPartes, juntado) {
+    async function historicoAbrir(id, soPartes, juntado, opcoes) {
+      const silencioso = Boolean(opcoes && opcoes.silencioso); // a resposta salva que aparece sozinha: sem perguntar, sem trocar de tela
       const item = historicoLer().find(i => i.id === id);
       if (!item) { historicoRender(); return false; }
       if (aiBusy) return false;
       const aviso = item.tipo === 'nota'
         ? 'O texto do campo Formatar será trocado por este texto salvo (dá para desfazer). Continuar?'
         : 'O texto do campo de texto será trocado por esta pesquisa salva (dá para desfazer). Continuar?';
-      if (input.value.trim() && !(await askConfirm(aviso, item.tipo === 'nota' ? 'Abrir texto salvo' : 'Abrir pesquisa salva'))) return false;
+      if (!silencioso && input.value.trim() && !(await askConfirm(aviso, item.tipo === 'nota' ? 'Abrir texto salvo' : 'Abrir pesquisa salva'))) return false;
       const partes = juntado ? juntado.partes : soPartes || item.partes || [];
       const refino = item.tipo === 'nota' ? null : (juntado ? juntado.refino : historicoRefinoDe(item, soPartes));
       aiSentinelaRaw = refino ? refino.itens : [];
@@ -17425,6 +17593,7 @@ function saveTemplatesToStorage() {
         historicoLigar(item.id, historicoTituloExibido(item));
       }
       renderAiSuggestions();
+      if (silencioso) return true;
       formatarAbrirComVoltar();
       requestAnimationFrame(() => input.scrollIntoView({ block: 'start', behavior: 'smooth' }));
       return true;
@@ -17446,6 +17615,7 @@ function saveTemplatesToStorage() {
         const itens = cartao.tipo === 'ebc-dirigente' && !codigoDirigenteSalvo() ? [] : historicoLer().filter(item => item.tipo === cartao.tipo && historicoChave(item) === atual);
         caixa.hidden = !itens.length;
         if (!itens.length) { delete caixa.dataset.item; return; }
+        if (['ebc', 'joias'].includes(cartao.tipo) && comentariosAuto.chave.startsWith(cartao.tipo + ':') && input.value === comentariosAuto.texto) { caixa.hidden = true; return; } // já aparece embaixo
         caixa.dataset.item = itens[0].id; // a lista guardada vem da mais nova para a mais antiga
         if (cartao.tipo === 'joias') { // cada tipo de resposta é salvo separado: a caixa diz quais há e o botão traz a mais recente de cada um
           const juntas = joiasSalvasJuntas();
@@ -17462,7 +17632,7 @@ function saveTemplatesToStorage() {
       document.getElementById(caixa).querySelector('button').addEventListener('click', async () => {
         const id = document.getElementById(caixa).dataset.item;
         if (!id) return recuperarSalvasAtualizar();
-        const juntas = caixa === 'joiasSalva' ? joiasSalvasJuntas() : null;
+        const juntas = caixa === 'joiasSalva' ? joiasSalvasJuntas() : caixa === 'ebcSalva' ? ebcSalvasJuntas() : null;
         if (!(await historicoAbrir(id, undefined, juntas && juntas.itens.length > 1 ? juntas : undefined))) return;
         aiStatusKind = status;
         setAiStatus('✅ ' + mensagem, false);
@@ -21280,7 +21450,7 @@ function saveTemplatesToStorage() {
       navMarcar();
       if (!(opcoes && opcoes.keepScroll)) window.scrollTo(0, 0);
       // O campo de texto fica escondido na tela principal (a medida dele daria zero): ao abrir uma página, recalcula a altura.
-      requestAnimationFrame(() => { try { autoGrowInputText(); } catch (e) { /* ainda iniciando */ } reunioesAjustarHub(); reunioesTituloAjustar(); });
+      requestAnimationFrame(() => { try { autoGrowInputText(); } catch (e) { /* ainda iniciando */ } reunioesAjustarHub(); reunioesTituloAjustar(); comentariosAutoTodos(); });
     }
 
     // O texto do título da página (ao lado do emoji) quebra em linhas e a caixa dele fica com toda a largura disponível; centralizado nela, o texto ficava
