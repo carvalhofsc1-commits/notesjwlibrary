@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.36
+
+Preparar para dirigir: como em Comentários, as perguntas adicionais já salvas do parágrafo (A Sentinela) e a preparação salva do Estudo Bíblico aparecem sozinhas ao abrir a matéria ou trocar de parágrafo com as setas, sem precisar do botão de recuperar; sem nada salvo, a seção some. Recolher o card recolhe também o campo de texto.
+
 ## 6.6.35
 
 O aviso "Resposta salva · parágrafo…" fica em letras pequenas e discretas, numa linha só.

@@ -7610,7 +7610,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.35'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.36'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -13826,7 +13826,7 @@ function saveTemplatesToStorage() {
       const box = picker.salva;
       if (!box) return;
       const salva = studySalvasPronto ? studySalvas(picker) : null;
-      box.hidden = !salva || (picker.card === 'comentarios' && comentariosAutoMostrando(salva.item.id)); // já aparece embaixo: o botão de recuperar não faz falta
+      box.hidden = !salva || ((picker.card === 'comentarios' || picker.card === 'dirigente') && comentariosAutoMostrando(salva.item.id)); // já aparece embaixo: o botão de recuperar não faz falta
       if (salva) box.querySelector('p').textContent = studySalvaTexto(picker, salva);
     }
 
@@ -13849,7 +13849,7 @@ function saveTemplatesToStorage() {
     const comentariosLigadoSalvo = () => {
       if (!historicoLigado || historicoLigado.base !== input.value) return false;
       const item = historicoLer().find(i => i.id === historicoLigado.id);
-      return Boolean(item) && ['sentinela', 'ebc', 'joias'].includes(item.tipo);
+      return Boolean(item) && ['sentinela', 'ebc', 'joias', 'dirigente', 'ebc-dirigente'].includes(item.tipo);
     };
 
     async function comentariosAutoAplicar(alvo) {
@@ -13862,7 +13862,7 @@ function saveTemplatesToStorage() {
             comentariosAuto = { chave: alvo.chave, texto: input.value, ids: alvo.ids };
             return;
           }
-          placeAiOutput(alvo.slot);
+          if (alvo.slot) placeAiOutput(alvo.slot);
           if (await alvo.abrir()) {
             comentariosAuto = { chave: alvo.chave, texto: input.value, ids: alvo.ids };
             aiStatusKind = alvo.status;
@@ -13926,12 +13926,41 @@ function saveTemplatesToStorage() {
         abrir: () => historicoAbrir(ids[0], undefined, ids.length > 1 ? juntas : undefined, { silencioso: true })
       });
     }
+    // Preparar para dirigir: as perguntas adicionais salvas do parágrafo (A Sentinela) e a preparação salva do Estudo Bíblico aparecem do mesmo jeito.
+    function comentariosAutoDirigente() {
+      const picker = studyPickers.find(p => p.card === 'dirigente');
+      const salva = picker ? studySalvas(picker) : null; // sem o código do dirigente não há nada (studySalvas já confere)
+      if (!salva || salva.faltam.length) return comentariosAutoAplicar(null);
+      const inteira = salva.partes.length === (salva.item.partes || []).length || Boolean(salva.item.textoEditado);
+      return comentariosAutoAplicar({
+        chave: 'dir:' + salva.item.id + ':' + salva.cobertos.join(','),
+        ids: [salva.item.id],
+        slot: null,
+        status: 'dirigente',
+        mensagem: 'Perguntas salvas · ' + (salva.cobertos[0] === 'recap' ? 'recapitulação' : salva.cobertos.length === 1 ? 'parágrafo ' + salva.cobertos[0] : 'parágrafos ' + salva.cobertos.join(', ')) + ' · ' + historicoQuando(salva.item),
+        abrir: () => historicoAbrir(salva.item.id, inteira ? undefined : salva.partes, undefined, { silencioso: true })
+      });
+    }
+    function comentariosAutoEbcDir() {
+      const atual = historicoChaveAtual();
+      const item = codigoDirigenteSalvo() ? historicoLer().find(i => i.tipo === 'ebc-dirigente' && historicoChave(i) === atual) : null;
+      if (!item) return comentariosAutoAplicar(null);
+      return comentariosAutoAplicar({
+        chave: 'ebcdir:' + item.id,
+        ids: [item.id],
+        slot: document.getElementById('ebcDirOutputSlot'),
+        status: 'ebcdir',
+        mensagem: 'Preparação salva · Estudo Bíblico · ' + historicoQuando(item),
+        abrir: () => historicoAbrir(item.id, undefined, undefined, { silencioso: true })
+      });
+    }
+
     // Só quando a matéria está aberta na página Comentários de Reuniões (nas outras telas o campo de texto é de outra coisa).
     function comentariosAutoTodos() {
       if (currentScreen() !== 'reunioes') return;
       const caixa = document.getElementById(comentariosFoco);
       if (!caixa || !caixa.open || caixa.offsetParent === null) return;
-      const rodar = { sentinelaBox: comentariosAutoSentinela, ebcBox: comentariosAutoEbc, joiasBox: comentariosAutoJoias, apostilaImgBox: () => comentariosAutoAplicar(null) }[comentariosFoco];
+      const rodar = { sentinelaBox: comentariosAutoSentinela, ebcBox: comentariosAutoEbc, joiasBox: comentariosAutoJoias, apostilaImgBox: () => comentariosAutoAplicar(null), dirigenteBox: comentariosAutoDirigente, ebcDirBox: comentariosAutoEbcDir }[comentariosFoco];
       if (rodar) rodar().catch(() => {});
     }
     // Imagens da apostila: não usam o campo de texto, então o cartão Texto original some por completo (e a resposta que estava nele sai).
@@ -13941,11 +13970,11 @@ function saveTemplatesToStorage() {
     }
     // De qual das matérias é a resposta que está no campo: a que apareceu sozinha ou a gerada/aberta e ainda ligada à pesquisa salva.
     function comentariosDono() {
-      const porChave = { 'sent:': 'sentinelaBox', 'ebc:': 'ebcBox', 'joias:': 'joiasBox' };
+      const porChave = { 'sent:': 'sentinelaBox', 'ebc:': 'ebcBox', 'joias:': 'joiasBox', 'dir:': 'dirigenteBox', 'ebcdir:': 'ebcDirBox' };
       const achou = Object.keys(porChave).find(p => comentariosAuto.chave.startsWith(p));
       if (achou) return porChave[achou];
       const item = historicoLigado && historicoLer().find(i => i.id === historicoLigado.id);
-      return item ? ({ sentinela: 'sentinelaBox', ebc: 'ebcBox', joias: 'joiasBox' }[item.tipo] || '') : '';
+      return item ? ({ sentinela: 'sentinelaBox', ebc: 'ebcBox', joias: 'joiasBox', dirigente: 'dirigenteBox', 'ebc-dirigente': 'ebcDirBox' }[item.tipo] || '') : '';
     }
     // Recolher uma matéria recolhe também o campo de texto: a resposta dela sai e, sem nenhuma matéria aberta, o cartão Texto original some.
     function comentariosAoRecolher(id) {
@@ -13956,11 +13985,11 @@ function saveTemplatesToStorage() {
         updateAiControls();
         comentariosAuto = { chave: '', texto: '', ids: [] };
       }
-      if (!['sentinelaBox', 'ebcBox', 'joiasBox', 'apostilaImgBox'].some(b => document.getElementById(b).open)) document.body.classList.remove('texto-chegou');
+      if (!['sentinelaBox', 'ebcBox', 'joiasBox', 'apostilaImgBox', 'dirigenteBox', 'ebcDirBox'].some(b => document.getElementById(b).open)) document.body.classList.remove('texto-chegou');
       studyPickers.forEach(showStudySaved);
       recuperarSalvasAtualizar();
     }
-    ['sentinelaBox', 'ebcBox', 'joiasBox', 'apostilaImgBox'].forEach(id => document.getElementById(id).addEventListener('toggle', event => {
+    ['sentinelaBox', 'ebcBox', 'joiasBox', 'apostilaImgBox', 'dirigenteBox', 'ebcDirBox'].forEach(id => document.getElementById(id).addEventListener('toggle', event => {
       if (event.target.open) {
         comentariosFoco = id;
         comentariosAutoTodos();
@@ -14009,7 +14038,7 @@ function saveTemplatesToStorage() {
         showStudySaved(picker);
       });
       iaTravasAtualizar();
-      if (studySalvasPronto) { comentariosFoco = 'sentinelaBox'; comentariosAutoTodos(); } // a escolha de parágrafo mudou: a resposta salva dele aparece (ou a seção some)
+      if (studySalvasPronto) { comentariosFoco = document.body.dataset.reunioes === 'dirigir' ? 'dirigenteBox' : 'sentinelaBox'; comentariosAutoTodos(); } // a escolha de parágrafo mudou: o que está salvo dele aparece (ou a seção some)
     }
 
     function stepStudy(picker, delta) {
@@ -17674,7 +17703,8 @@ function saveTemplatesToStorage() {
         const itens = cartao.tipo === 'ebc-dirigente' && !codigoDirigenteSalvo() ? [] : historicoLer().filter(item => item.tipo === cartao.tipo && historicoChave(item) === atual);
         caixa.hidden = !itens.length;
         if (!itens.length) { delete caixa.dataset.item; return; }
-        if (['ebc', 'joias'].includes(cartao.tipo) && comentariosAuto.chave.startsWith(cartao.tipo + ':') && input.value === comentariosAuto.texto) { caixa.hidden = true; return; } // já aparece embaixo
+        const prefixo = { ebc: 'ebc:', joias: 'joias:', 'ebc-dirigente': 'ebcdir:' }[cartao.tipo];
+        if (prefixo && comentariosAuto.chave.startsWith(prefixo) && input.value === comentariosAuto.texto) { caixa.hidden = true; return; } // já aparece embaixo
         caixa.dataset.item = itens[0].id; // a lista guardada vem da mais nova para a mais antiga
         if (cartao.tipo === 'joias') { // cada tipo de resposta é salvo separado: a caixa diz quais há e o botão traz a mais recente de cada um
           const juntas = joiasSalvasJuntas();
