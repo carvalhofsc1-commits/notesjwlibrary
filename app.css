@@ -5163,7 +5163,7 @@
       gap: 6px;
       position: relative;
       min-height: 34px;
-      padding-right: 60px;
+      padding-right: 92px;
       cursor: pointer;
       list-style: none;
       font-size: .88rem;
@@ -5185,10 +5185,12 @@
     .td-ia>.td-ia-titulo::after {
       content: '▾';
       position: absolute;
-      right: 2px;
+      right: 4px;
       top: 50%;
       transform: translateY(-50%);
       color: var(--muted);
+      font-size: 1.6rem;
+      line-height: 1;
     }
 
     /* a seta fica no canto; os ícones 🔊 e 💾 ficam ao lado dela */
@@ -5222,25 +5224,31 @@
       color: var(--brand);
     }
 
-    .td-ia>.td-ia-ouvir {
+    /* O ícone 🔊 dos comentários: do mesmo tamanho e jeito do 🔊 do texto diário (só o alto-falante), afastado da seta. */
+    .td-ia>.td-ia-ouvir,
+    .td-ia>.td-ia-ouvir:hover:not(:disabled) {
       position: absolute;
-      top: 14px;
-      right: 28px;
-      width: 26px;
-      height: 26px;
+      top: 10px;
+      right: 52px;
+      width: auto;
+      height: 34px;
+      min-width: 0;
       min-height: 0;
       margin: 0;
-      padding: 0;
+      padding: 0 2px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: .95rem;
+      font-size: 1.55rem;
       line-height: 1;
-      border-radius: 8px;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+      transform: none;
     }
 
     .td-ia>.td-ia-ouvir.tocando {
-      box-shadow: 0 0 0 2px var(--accent);
+      filter: drop-shadow(0 0 7px var(--accent));
     }
 
     .td-ia:not([open])>.td-ia-ouvir {
