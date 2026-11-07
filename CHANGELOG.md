@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.48
+
+Resumo do capítulo da Bíblia: o texto novo sai em letras comuns (com acentos e pontuação), sem as letras especiais de negrito e itálico, que atrapalhavam a leitura em voz alta (a voz lia "vv." como "vê vê"). Ficam os emojis, os títulos das seções em maiúsculas e os parágrafos. Resumos antigos continuam como estão (a leitura em voz alta já entende as letras especiais); para trocar, gere o resumo de novo.
+
 ## 6.6.47
 
 Barra do topo: o ícone do NoteStyle ficou um pouco maior (de 34 para 40 px), para ter a altura do bloco do nome e do slogan; a faixa não muda de altura.

@@ -7643,7 +7643,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.47'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.48'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -16691,9 +16691,11 @@ function saveTemplatesToStorage() {
 
     // O resumo dos capítulos e o resultado do modo "somente as instruções": um bloco para cada título, com o texto logo depois.
     // Usa as mesmas preferências de formatação das respostas (destaques, negrito nos [[vv.]] e no título).
-    function joiasOutrosPartes(outros, somente) {
+    // semEstilos: o resumo do capítulo da Bíblia sai em letras comuns (com acentos e pontuação), sem as letras especiais de negrito e itálico, que atrapalham a leitura
+    // em voz alta; ficam os emojis, os títulos em maiúsculas e os parágrafos.
+    function joiasOutrosPartes(outros, somente, semEstilos) {
       const opcoes = readAiOptions();
-      const negritoId = opcoes.negrito ? aiStyleIdFor('negrito') : '';
+      const negritoId = !semEstilos && opcoes.negrito ? aiStyleIdFor('negrito') : '';
       const emNegrito = texto => String(texto || '').replace(/\[\[([^\[\]]+)\]\]/g, (m, ref) => {
         const r = '(' + ref.trim().replace(/^\(|\)$/g, '') + ')';
         return negritoId ? convertTextWithStyle(r, negritoId) : r;
@@ -16702,7 +16704,7 @@ function saveTemplatesToStorage() {
       // Sem emoji nas preferências: tira o emoji só do começo de cada parágrafo (o resto do texto fica).
       const semEmojiInicio = texto => opcoes.emoji ? texto : String(texto || '').replace(/(^|\n\n)(?:\p{Extended_Pictographic}\uFE0F?(?:\u200D\p{Extended_Pictographic}\uFE0F?)*)+\s*/gu, '$1');
       return outros.map(o => {
-        let corpo = aiAplicarDestaquesTexto(o.texto, o.destaques, o.quebras);
+        let corpo = semEstilos ? aiApplyBreaks(String(o.texto || ''), o.quebras) : aiAplicarDestaquesTexto(o.texto, o.destaques, o.quebras);
         corpo = semEmojiInicio(emNegrito(corpo));
         return {
           paragrafos: o.titulo || '',
@@ -22106,7 +22108,7 @@ function saveTemplatesToStorage() {
     // de cada lugar ("Davi: …", "Adulão: …") em negrito, sem depender de a IA ter indicado esse destaque.
     function bibliaAcabamento(texto) {
       const opcoes = readAiOptions();
-      const negritoId = opcoes.negrito ? aiStyleIdFor('negrito') : '';
+      const negritoId = ''; // o resumo da Bíblia usa letras comuns (sem negrito de fonte especial), para a voz ler certo
       let secao = '';
       return String(texto || '').split('\n').map(linha => {
         const titulo = BIBLIA_TITULO_POR_CHAVE.get(bibliaChaveTitulo(linha));
@@ -22125,14 +22127,14 @@ function saveTemplatesToStorage() {
 
     function bibliaFormatarResumo(outros) {
       if (!Array.isArray(outros) || !outros.length) return '';
-      return joiasOutrosPartes(outros, false).map(p => bibliaAcabamento(p.texto)).join('\n\n\n');
+      return joiasOutrosPartes(outros, false, true).map(p => bibliaAcabamento(p.texto)).join('\n\n\n');
     }
 
     // Formata só o corpo (seções) de um item da IA, sem o cabeçalho "📚 RESUMO DE…".
     function bibliaFormatarCorpoSecao(outro) {
       if (!outro || !outro.texto) return '';
-      const negritoId = readAiOptions().negrito ? aiStyleIdFor('negrito') : '';
-      let corpo = aiAplicarDestaquesTexto(outro.texto, outro.destaques, outro.quebras);
+      const negritoId = ''; // letras comuns (veja bibliaAcabamento)
+      let corpo = aiApplyBreaks(String(outro.texto || ''), outro.quebras);
       const opcoes = readAiOptions();
       if (!opcoes.emoji) corpo = String(corpo).replace(/(^|\n\n)(?:\p{Extended_Pictographic}\uFE0F?(?:\u200D\p{Extended_Pictographic}\uFE0F?)*)+\s*/gu, '$1');
       corpo = String(corpo).replace(/\[\[([^\[\]]+)\]\]/g, (m, ref) => {
