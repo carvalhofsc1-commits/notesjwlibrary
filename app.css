@@ -10476,6 +10476,19 @@ body.biblia-resumo-aberto { overflow: hidden; }
 .biblia-resumo-leitura p { margin: 0 0 .8em; }
 .biblia-resumo-leitura p:last-child { margin-bottom: 0; }
 .biblia-resumo-leitura p.fonte-muda { color: var(--muted); font-size: .85em; } /* a linha das fontes aparece, mas não é lida */
+.biblia-resumo-leitura .br-fonte { color: var(--muted); font-size: .85em; } /* a linha das fontes aparece, mas não é lida */
+.biblia-resumo-leitura .br-titulo { margin-bottom: .6em; font-size: 1.15em; font-weight: 800; color: var(--brand); }
+.biblia-resumo-leitura .br-secao { margin: 1.1em 0 .4em; padding-bottom: 2px; font-weight: 800; letter-spacing: .02em; border-bottom: 2px solid currentColor; }
+.biblia-resumo-leitura .br-s0 { color: #2563eb; }
+.biblia-resumo-leitura .br-s1 { color: #d97706; }
+.biblia-resumo-leitura .br-s2 { color: #16a34a; }
+.biblia-resumo-leitura .br-s3 { color: #b45309; }
+.biblia-resumo-leitura .br-s4 { color: #9333ea; }
+.biblia-resumo-leitura .br-s5 { color: #0d9488; }
+.biblia-resumo-leitura .br-vv { color: #7c3aed; font-weight: 700; font-style: italic; }
+.biblia-resumo-leitura strong { color: color-mix(in srgb, var(--brand) 55%, var(--text)); }
+.biblia-resumo-leitura strong.br-nome { color: #9333ea; }
+.biblia-resumo-leitura em { font-style: italic; }
 .biblia-resumo-caixa.tela .biblia-resumo-leitura {
   min-height: 55vh;
   font-size: 1.05rem;

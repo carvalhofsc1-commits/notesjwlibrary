@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.49
+
+Resumo do capítulo da Bíblia, com a formatação de verdade (como nos comentários adicionais do texto diário): a tela do resumo passa a desenhar o texto com títulos das seções em **cores diferentes**, **negrito e itálico de verdade, com acentos**, marcas de versículos "(vv. 1-3)" coloridas, nomes de personagens e lugares em destaque e os emojis. O texto é guardado em letras comuns, com marcas simples (**negrito** e __itálico__), então a voz lê sem tropeçar nas letras especiais. O botão ✏️ Editar mostra o texto com as marcas para corrigir; Copiar, Word e Salvar levam o texto com letras de negrito e itálico (as cores só aparecem na tela). A leitura em voz alta usa a mesma vista, com a frase lida destacada.
+
 ## 6.6.48
 
 Resumo do capítulo da Bíblia: o texto novo sai em letras comuns (com acentos e pontuação), sem as letras especiais de negrito e itálico, que atrapalhavam a leitura em voz alta (a voz lia "vv." como "vê vê"). Ficam os emojis, os títulos das seções em maiúsculas e os parágrafos. Resumos antigos continuam como estão (a leitura em voz alta já entende as letras especiais); para trocar, gere o resumo de novo.

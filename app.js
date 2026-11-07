@@ -7643,7 +7643,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.48'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.49'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -16691,8 +16691,8 @@ function saveTemplatesToStorage() {
 
     // O resumo dos capítulos e o resultado do modo "somente as instruções": um bloco para cada título, com o texto logo depois.
     // Usa as mesmas preferências de formatação das respostas (destaques, negrito nos [[vv.]] e no título).
-    // semEstilos: o resumo do capítulo da Bíblia sai em letras comuns (com acentos e pontuação), sem as letras especiais de negrito e itálico, que atrapalham a leitura
-    // em voz alta; ficam os emojis, os títulos em maiúsculas e os parágrafos.
+    // semEstilos: o resumo do capítulo da Bíblia é guardado em letras comuns (com acentos e pontuação) e com marcas simples: **negrito** e __itálico__. A tela do resumo
+    // desenha essas marcas de verdade (negrito, itálico e cores), e a voz não tropeça em letras especiais.
     function joiasOutrosPartes(outros, somente, semEstilos) {
       const opcoes = readAiOptions();
       const negritoId = !semEstilos && opcoes.negrito ? aiStyleIdFor('negrito') : '';
@@ -16704,7 +16704,7 @@ function saveTemplatesToStorage() {
       // Sem emoji nas preferências: tira o emoji só do começo de cada parágrafo (o resto do texto fica).
       const semEmojiInicio = texto => opcoes.emoji ? texto : String(texto || '').replace(/(^|\n\n)(?:\p{Extended_Pictographic}\uFE0F?(?:\u200D\p{Extended_Pictographic}\uFE0F?)*)+\s*/gu, '$1');
       return outros.map(o => {
-        let corpo = semEstilos ? aiApplyBreaks(String(o.texto || ''), o.quebras) : aiAplicarDestaquesTexto(o.texto, o.destaques, o.quebras);
+        let corpo = semEstilos ? bibliaDestaquesMarcas(aiApplyBreaks(String(o.texto || ''), o.quebras), o.destaques) : aiAplicarDestaquesTexto(o.texto, o.destaques, o.quebras);
         corpo = semEmojiInicio(emNegrito(corpo));
         return {
           paragrafos: o.titulo || '',
@@ -22104,6 +22104,45 @@ function saveTemplatesToStorage() {
       return [...titulo.normalize('NFD')].map(ch => /[\u0300-\u036f]/.test(ch) ? ch : convertTextWithStyle(ch, negritoId)).join('');
     }
 
+    // Os destaques que a IA indicou (negrito, itálico, negrito itálico, maiúsculas) viram marcas simples: **negrito**, __itálico__ e **__negrito itálico__**.
+    function bibliaDestaquesMarcas(texto, destaques) {
+      if (!Array.isArray(destaques) || !destaques.length) return texto;
+      const spans = [];
+      destaques.forEach(d => {
+        const idx = d && d.trecho ? texto.indexOf(d.trecho) : -1;
+        if (idx < 0) return;
+        const tipo = d.estilo ? AI_STYLE_KIND[d.estilo] : '';
+        let t = d.maiusculas ? d.trecho.toUpperCase() : d.trecho;
+        if (tipo === 'bold') t = '**' + t + '**';
+        else if (tipo === 'italic') t = '__' + t + '__';
+        else if (tipo === 'boldItalic') t = '**__' + t + '__**';
+        else if (!d.maiusculas) return;
+        spans.push({ start: idx, end: idx + d.trecho.length, text: t });
+      });
+      spans.sort((a, b) => a.start - b.start);
+      let saida = '';
+      let pos = 0;
+      spans.forEach(s => {
+        if (s.start < pos) return; // trechos sobrepostos: fica o primeiro
+        saida += texto.slice(pos, s.start) + s.text;
+        pos = s.end;
+      });
+      return saida + texto.slice(pos);
+    }
+
+    // Para copiar e para o Word: as marcas viram letras de negrito e itálico (com os acentos, que acompanham a letra como marcas combinantes).
+    function bibliaMarcasParaUnicode(texto) {
+      let negrito = false;
+      let italico = false;
+      return String(texto || '').split(/(\*\*|__)/).map(parte => {
+        if (parte === '**') { negrito = !negrito; return ''; }
+        if (parte === '__') { italico = !italico; return ''; }
+        const id = negrito && italico ? 'boldItalic' : negrito ? 'bold' : italico ? 'italic' : '';
+        if (!id || !parte) return parte;
+        return [...parte.normalize('NFD')].map(ch => (/[\u0300-\u036f]/.test(ch) ? ch : convertTextWithStyle(ch, id))).join('');
+      }).join('');
+    }
+
     // Acabamento do texto vindo do servidor (já em parágrafos): título de cada seção com emoji e negrito, e o nome de cada personagem e
     // de cada lugar ("Davi: …", "Adulão: …") em negrito, sem depender de a IA ter indicado esse destaque.
     function bibliaAcabamento(texto) {
@@ -22134,7 +22173,7 @@ function saveTemplatesToStorage() {
     function bibliaFormatarCorpoSecao(outro) {
       if (!outro || !outro.texto) return '';
       const negritoId = ''; // letras comuns (veja bibliaAcabamento)
-      let corpo = aiApplyBreaks(String(outro.texto || ''), outro.quebras);
+      let corpo = bibliaDestaquesMarcas(aiApplyBreaks(String(outro.texto || ''), outro.quebras), outro.destaques);
       const opcoes = readAiOptions();
       if (!opcoes.emoji) corpo = String(corpo).replace(/(^|\n\n)(?:\p{Extended_Pictographic}\uFE0F?(?:\u200D\p{Extended_Pictographic}\uFE0F?)*)+\s*/gu, '$1');
       corpo = String(corpo).replace(/\[\[([^\[\]]+)\]\]/g, (m, ref) => {
@@ -23118,46 +23157,98 @@ function saveTemplatesToStorage() {
     }
 
     // ---- Ouvir o resumo ----
-    // A voz é a mesma da Leitura em voz alta (código de leitura). Durante a leitura o campo do resumo dá lugar ao texto em frases, com a frase lida
-    // destacada; ao parar ou terminar, o campo volta.
+    // A voz é a mesma da Leitura em voz alta (código de leitura); a frase lida fica destacada na vista do resumo.
     const bibliaResumoVozEl = document.getElementById('bibliaResumoVoz');
     const bibliaResumoLeituraEl = document.getElementById('bibliaResumoLeitura');
     const bibliaResumoOuvirBtn = document.getElementById('bibliaResumoOuvirBtn');
+    const bibliaResumoEditarBtn = document.getElementById('bibliaResumoEditarBtn');
     let bibliaResumoUnidades = [];
     let bibliaResumoDestaque = -1;
 
-    function bibliaResumoLeituraMostrar(ligada) {
-      bibliaResumoTexto.hidden = ligada;
-      bibliaResumoLeituraEl.hidden = !ligada;
+    // ---- A vista do resumo (formatação de verdade) ----
+    // O resumo aparece desenhado: títulos das seções em cores diferentes, negrito e itálico de verdade (com acentos), marcas de versículos "(vv. 1-3)" coloridas,
+    // nomes de personagens e lugares em destaque e os emojis. O botão Editar mostra o texto com as marcas (**negrito**, __itálico__). A leitura em voz alta usa a
+    // mesma vista, com a frase lida destacada.
+    let bibliaResumoEditando = false;
+    let bibliaResumoRicoTexto = null;
+    const BIBLIA_COR_SECAO = { 'RESUMO': 0, 'SOBRE JEOVÁ': 1, 'APLICAÇÕES PRÁTICAS': 2, 'FUNDO HISTÓRICO': 3, 'PERSONAGENS': 4, 'LUGARES E INFORMAÇÕES GERAIS': 5 };
+
+    // Uma frase com as marcas: **negrito**, __itálico__, %%nome%% (nome de personagem ou lugar) e as marcas de versículos "(vv. 1-3)".
+    function bibliaRicoInline(span, texto, estado) {
+      texto.split(/(\(\s*vv?\.[^()]*\))/i).forEach(parte => {
+        if (!parte) return;
+        if (/^\(\s*vv?\./i.test(parte)) {
+          const marca = document.createElement('span');
+          marca.className = 'br-vv';
+          marca.textContent = parte;
+          span.appendChild(marca);
+          return;
+        }
+        parte.split(/(\*\*|__|%%)/).forEach(ficha => {
+          if (ficha === '**') { estado.negrito = !estado.negrito; return; }
+          if (ficha === '__') { estado.italico = !estado.italico; return; }
+          if (ficha === '%%') { estado.nome = !estado.nome; return; }
+          if (!ficha) return;
+          let no = document.createTextNode(ficha);
+          if (estado.italico) { const em = document.createElement('em'); em.appendChild(no); no = em; }
+          if (estado.negrito || estado.nome) { const forte = document.createElement('strong'); if (estado.nome) forte.className = 'br-nome'; forte.appendChild(no); no = forte; }
+          span.appendChild(no);
+        });
+      });
     }
 
     function bibliaResumoLeituraMontar() {
-      // No resumo, o que está entre parênteses só é lido quando é referência aos versículos (as marcas "vv. 1-3" viram "versículos de um a três" e as citações
+      // Na leitura, o que está entre parênteses só é lido quando é referência aos versículos (as marcas "vv. 1-3" viram "versículos de um a três" e as citações
       // como "Gên. 1:3" são lidas); os outros parênteses saem, e a seção das fontes (🔎 Fontes / Estudo Perspicaz) aparece mas não é lida.
       const regras = { ...leituraRegras(vozRegras || VOZ_REGRAS_PADRAO), pularParenteses: true, lerRefsEntreParenteses: true };
       bibliaResumoLeituraEl.textContent = '';
       bibliaResumoUnidades = [];
       bibliaResumoDestaque = -1;
+      let secao = '';
       leituraEstrutura(bibliaResumoTexto.value).forEach((par, pi) => {
-        const cabecalho = par.tipo !== 'texto';
-        const fonte = /^🔎\s*(?:Fontes|Estudo Perspicaz)\b/i.test(par.frases[0] || ''); // a linha das fontes, no fim de uma seção
+        const plano = par.frases.join(' ').replace(/\*\*|__/g, '');
+        const titulo = par.tipo === 'texto' ? BIBLIA_TITULO_POR_CHAVE.get(bibliaChaveTitulo(plano)) : null;
+        const cabecalhoGeral = par.tipo === 'texto' && /^\u{1F4DA}/u.test(plano); // "📚 RESUMO DE GÊNESIS 1"
+        const fonte = /^\u{1F50E}\s*(?:Fontes|Estudo Perspicaz)\b/iu.test(plano); // a linha das fontes, no fim de uma seção
         const p = document.createElement('p');
-        if (par.tipo === 'titulo') p.className = 'lv-titulo';
+        if (titulo) { secao = titulo; p.className = 'br-secao br-s' + BIBLIA_COR_SECAO[titulo]; }
+        else if (cabecalhoGeral) p.className = 'br-titulo';
+        else if (fonte) p.className = 'br-fonte';
+        else if (par.tipo === 'titulo') p.className = 'lv-titulo';
         else if (par.tipo === 'subtitulo') p.className = 'lv-subtitulo';
-        const estado = { negrito: false };
-        par.frases.forEach((frase, k) => {
+        const cabecalho = par.tipo !== 'texto' || Boolean(titulo) || cabecalhoGeral;
+        const frases = par.frases.slice();
+        if (!titulo && !cabecalhoGeral && !fonte && par.tipo === 'texto' && (secao === 'PERSONAGENS' || secao === 'LUGARES E INFORMAÇÕES GERAIS')) {
+          const m = frases[0].match(/^((?:\p{Extended_Pictographic}[\uFE0F\u200D\p{Emoji_Modifier}\p{Extended_Pictographic}]*\s*)*)([^\s:.,;()*_%][^:.,;()*_%]{0,48}?):(\s.*)?$/u);
+          if (m) frases[0] = m[1] + '%%' + m[2].trim() + '%%:' + (m[3] || '');
+        }
+        const estado = { negrito: false, italico: false, nome: false };
+        frases.forEach((frase, k) => {
           if (k) p.appendChild(document.createTextNode(' '));
           const span = document.createElement('span');
           span.className = 'lu';
           span.dataset.i = String(bibliaResumoUnidades.length);
-          leituraRenderizarFrase(span, frase, estado, cabecalho);
+          bibliaRicoInline(span, frase, estado);
           p.appendChild(span);
-          bibliaResumoUnidades.push({ texto: frase, falado: fonte ? '' : leituraFalado(frase, cabecalho, regras), cabecalho, paragrafo: pi, el: span });
+          bibliaResumoUnidades.push({ texto: frase, falado: fonte ? '' : leituraFalado(frase.replace(/__|%%/g, ''), cabecalho, regras), cabecalho, paragrafo: pi, el: span });
         });
-        if (fonte) p.classList.add('fonte-muda');
         bibliaResumoLeituraEl.appendChild(p);
       });
-      bibliaResumoUnidades.forEach(u => leituraMudosNoSpan(u.el, regras));
+    }
+
+    // O que está à vista: a vista desenhada (com texto e sem editar) ou o campo com as marcas (editando ou sem texto ainda).
+    function bibliaResumoModo() {
+      const tem = Boolean(bibliaResumoTexto.value.trim());
+      const rico = tem && !bibliaResumoEditando;
+      if (rico && bibliaResumoRicoTexto !== bibliaResumoTexto.value) {
+        bibliaResumoLeituraMontar();
+        bibliaResumoRicoTexto = bibliaResumoTexto.value;
+      }
+      bibliaResumoTexto.hidden = rico;
+      bibliaResumoLeituraEl.hidden = !rico;
+      bibliaResumoEditarBtn.disabled = !tem;
+      bibliaResumoEditarBtn.textContent = bibliaResumoEditando ? '✔ Concluir' : '✏️ Editar';
+      if (!rico) bibliaAutoAlturar(bibliaResumoTexto);
     }
 
     function bibliaResumoDestacar(indice) {
@@ -23178,16 +23269,13 @@ function saveTemplatesToStorage() {
         preparar: () => {
           if (!bibliaResumoTexto.value.trim()) return 'Não há resumo para ouvir.';
           bibliaResumoTexto.blur(); // some o teclado do celular
-          bibliaResumoLeituraMontar();
-          bibliaResumoLeituraMostrar(true);
-          return { unidades: bibliaResumoUnidades, desde: 0 };
+          bibliaResumoEditando = false;
+          bibliaResumoModo(); // a vista desenhada (as frases com a lida destacada)
+          return bibliaResumoUnidades.length ? { unidades: bibliaResumoUnidades, desde: 0 } : 'Não há resumo para ouvir.';
         },
         nomeAudio: () => 'Resumo - ' + (bibliaResumoAlvo ? bibliaResumoAlvo.cap.nome : 'capítulo'),
         destacar: indice => bibliaResumoDestacar(indice),
-        limpar: () => {
-          bibliaResumoDestacar(-1);
-          bibliaResumoLeituraMostrar(false);
-        }
+        limpar: () => bibliaResumoDestacar(-1)
       };
     }
 
@@ -23215,8 +23303,14 @@ function saveTemplatesToStorage() {
       document.getElementById('bibliaResumoIrAcessos').hidden = comCodigo;
       if (!comCodigo) bibliaResumoStatus.textContent = TRAVAS.resumo + ' (Ajustes → Autorização de acessos).';
       else if (bibliaResumoStatus.textContent.startsWith('🔒')) bibliaResumoStatus.textContent = '';
-      bibliaAutoAlturar(bibliaResumoTexto);
+      bibliaResumoModo();
     }
+
+    bibliaResumoEditarBtn.addEventListener('click', () => {
+      if (vozBar.parentNode === bibliaResumoVozEl) vozParar(); // editar para a leitura
+      bibliaResumoEditando = !bibliaResumoEditando;
+      bibliaResumoModo();
+    });
 
     // A caixa do resumo mora no fim da tela, mas ao pedir um resumo ela se muda para logo abaixo das ferramentas de leitura do capítulo (o painel).
     // Antes de refazer as listas ela volta para o seu lugar, para não ser apagada junto com o painel.
@@ -23248,8 +23342,9 @@ function saveTemplatesToStorage() {
 
     function bibliaFecharResumo(voltar) {
       bibliaAvisoOcultar();
-      if (vozBar.parentNode === bibliaResumoVozEl) vozParar(); // fechando o resumo, a leitura dele para (e o campo volta)
-      bibliaResumoLeituraMostrar(false);
+      if (vozBar.parentNode === bibliaResumoVozEl) vozParar(); // fechando o resumo, a leitura dele para
+      bibliaResumoEditando = false;
+      bibliaResumoRicoTexto = null;
       const alvo = bibliaResumoAlvo;
       bibliaResumoAlvo = null;
       bibliaResumoCaixa.hidden = true;
@@ -23728,7 +23823,7 @@ function saveTemplatesToStorage() {
         });
         window.addEventListener('resize', () => bibliaAutoAlturar(bibliaResumoTexto));
         bibliaResumoCopiarBtn.addEventListener('click', async () => {
-          const t = bibliaResumoTexto.value.trim();
+          const t = bibliaMarcasParaUnicode(bibliaResumoTexto.value.trim());
           if (!t) return;
           try {
             await navigator.clipboard.writeText(t);
@@ -23741,10 +23836,10 @@ function saveTemplatesToStorage() {
           const t = bibliaResumoTexto.value;
           if (!t.trim() || !bibliaResumoAlvo) return;
           const nome = ('Resumo - ' + bibliaResumoAlvo.cap.nome).replace(/[\/:*?"<>|“”‘’]/g, '').replace(/\s+/g, ' ').trim().slice(0, 90);
-          docxPreviaAbrir(bibliaResumoWordBtn, t, nome);
+          docxPreviaAbrir(bibliaResumoWordBtn, bibliaMarcasParaUnicode(t), nome);
         });
         bibliaResumoSalvarBtn.addEventListener('click', async () => {
-          const t = bibliaResumoTexto.value.trim();
+          const t = bibliaMarcasParaUnicode(bibliaResumoTexto.value.trim());
           if (!t || !bibliaResumoAlvo) return;
           const salvo = await historicoSalvarNota(t, 'Resumo · ' + bibliaResumoAlvo.cap.nome, 'O resumo fica em Pesquisas e respostas salvas → Textos.');
           if (salvo) bibliaResumoStatus.textContent = '💾 Resumo salvo em Pesquisas e respostas salvas.';
