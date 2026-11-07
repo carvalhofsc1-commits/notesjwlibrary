@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.10
+
+JW Library também no computador (app do Windows): o botão 📖 JW Library e o nome do capítulo, na leitura da Bíblia, deixam de ser só do celular. Texto diário: novo link “Abrir o texto do dia no JW Library”, que abre o texto bíblico do dia (o da frase temática) no app.
+
 ## 6.6.09
 
 Barra do topo ainda mais estreita, com o logo e o nome menores. Leitura da Bíblia: no celular, o nome do livro/capítulo no painel passa a abrir o capítulo no app JW Library (no computador continua abrindo o wol.jw.org).
