@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.30
+
+O card da semana volta a abrir a página de reuniões no wol.jw.org: o link do app JW Library para a semana (alias=meetings) abria o app, mas com a página em branco.
+
 ## 6.6.29
 
 O cartão ⚙️ Mais opções volta a ter o fundo branco (a cor do cartão), mantendo o tamanho fino.
