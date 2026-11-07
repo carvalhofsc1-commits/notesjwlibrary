@@ -7610,7 +7610,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.37'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.38'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -13121,7 +13121,7 @@ function saveTemplatesToStorage() {
 
         answerCopyLayer.appendChild(btn);
         let jw = null;
-        if (part.jwl && part.jwl.docid) { // ao lado do Copiar: abre o parágrafo no app JW Library, o lugar de colar a resposta
+        if (part.jwl && part.jwl.docid && part.paragrafos !== 'perguntas') { // ao lado do Copiar: abre o parágrafo no app JW Library, o lugar de colar a resposta
           jw = document.createElement('a');
           jw.className = 'answer-jwl-btn';
           jw.href = jwlLinkPorId(part.jwl.docid, part.jwl.par);
@@ -13149,7 +13149,31 @@ function saveTemplatesToStorage() {
 
     // Tudo o que a IA devolve entra direto no campo de texto; só as respostas do estudo ganham botões Copiar (o esboço é copiado de
     // uma vez, sem botões).
+    // O botão 📖 JW Library no topo do campo: só com as perguntas adicionais do dirigente à vista (uma parte só, com o parágrafo consultado).
+    function editorJwlTopoAtualizar() {
+      const botao = document.getElementById('jwlTopBtn');
+      if (!botao) return;
+      const parte = aiResumo && Array.isArray(aiResumo.partes) && aiResumo.partes.length === 1 ? aiResumo.partes[0] : null;
+      botao.hidden = !(parte && parte.paragrafos === 'perguntas' && parte.jwl && parte.jwl.docid && input.value.trim());
+    }
+    document.getElementById('jwlTopBtn').addEventListener('click', async () => {
+      const botao = document.getElementById('jwlTopBtn');
+      const parte = aiResumo && Array.isArray(aiResumo.partes) ? aiResumo.partes[0] : null;
+      if (!parte || !parte.jwl) return;
+      const destino = jwlLinkPorId(parte.jwl.docid, parte.jwl.par);
+      const texto = input.value.includes(parte.texto) ? parte.texto : input.value; // as perguntas deste parágrafo (ou o campo, se foi mudado)
+      const rotulo = botao.innerHTML;
+      try {
+        await navigator.clipboard.writeText(texto);
+        botao.textContent = '✓ Copiado';
+        setTimeout(() => { botao.innerHTML = rotulo; }, 2500);
+      } catch (e) { /* sem permissão para copiar: abre mesmo assim */ }
+      bibliaJwLibraryAviso();
+      window.location.href = destino;
+    });
+
     function renderAiSuggestions() {
+      editorJwlTopoAtualizar();
       aiResults.textContent = '';
       if (aiResumo && aiResumo.kind === 'estudo') {
         if (aiResumo.semBotoes) clearAnswerCopyButtons();
@@ -14398,7 +14422,10 @@ function saveTemplatesToStorage() {
         aiAppliedAny = true;
         aiAppliedSnapshot = input.value;
         aiSentinelaRaw = items;
-        aiResumo = { texto: perguntasTexto, partes: [{ paragrafos: 'perguntas', texto: perguntasTexto }], done: false, kind: 'estudo', semBotoes: true, fonte: result.data.titulo || '' };
+        // O parágrafo consultado no app JW Library (botão no topo do campo, que copia as perguntas e abre o parágrafo).
+        const jwlPerguntas = result.data.jwl && result.data.jwl.docid ? { docid: String(result.data.jwl.docid), par: String(result.data.jwl.par || '') } : null;
+        const partePerguntas = jwlPerguntas ? { paragrafos: 'perguntas', texto: perguntasTexto, jwl: jwlPerguntas } : { paragrafos: 'perguntas', texto: perguntasTexto };
+        aiResumo = { texto: perguntasTexto, partes: [partePerguntas], done: false, kind: 'estudo', semBotoes: true, fonte: result.data.titulo || '' };
         aiRefino = {
           kind: 'dirigente',
           paragrafos: requested,
@@ -14410,7 +14437,7 @@ function saveTemplatesToStorage() {
             perguntasEntendimento: Boolean(sections.perguntasEntendimento)
           }
         };
-        historicoSalvar({ tipo: 'dirigente', titulo: '🎤 Perguntas do dirigente · parágrafos ' + requested, partes: [{ paragrafos: 'perguntas', texto: perguntasTexto }], refino: { ...aiRefino, itens: items } });
+        historicoSalvar({ tipo: 'dirigente', titulo: '🎤 Perguntas do dirigente · parágrafos ' + requested, partes: [partePerguntas], refino: { ...aiRefino, itens: items } });
         updateAiControls();
         aiRefineBox.hidden = false;
         setAiStatus('✅ Perguntas adicionais colocadas no fim do campo de texto.', false);
@@ -16806,6 +16833,7 @@ function saveTemplatesToStorage() {
       salvarBloco.hidden = !input.value.trim(); // sempre visível quando há texto (desabilitado se o texto não é de uma pesquisa salva ou não mudou)
       document.getElementById('exportarBloco').hidden = !input.value.trim();
       editorOpcoesPosicionar();
+      editorJwlTopoAtualizar();
       // O resultado da última exportação ("✅ nome.docx") sai quando o texto muda, voltando à explicação de sempre.
       const exportarInfo = document.getElementById('exportarInfo');
       if (exportarInfo.dataset.texto !== undefined && exportarInfo.dataset.texto !== input.value) {

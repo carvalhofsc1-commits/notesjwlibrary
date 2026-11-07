@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.38
+
+Barra de botões no topo do campo Texto original (celular): Limpar ficou só com o ícone da lixeira, para dar espaço, e nas perguntas adicionais do dirigente há um novo botão 📖 JW Library que copia as perguntas e abre o parágrafo consultado direto no app (é só colar no campo certo). O servidor passa a enviar o parágrafo consultado; perguntas salvas antes só ganham o botão ao gerar de novo.
+
 ## 6.6.37
 
 Preparar para dirigir (perguntas adicionais do estudo de A Sentinela e preparação do Estudo Bíblico do dirigente) passa a usar o mesmo modelo e esforço da Preparação de discursos e esboços, escolhidos pelo administrador na tela de prompts (sem escolha própria, usam o modelo geral, como antes). A nota sob os botões da IA do dirigente mostra esse modelo.

@@ -1326,9 +1326,12 @@ async function sugerirPerguntas(res, body, P) {
       })
     );
 
+    // O parágrafo consultado (o primeiro dos pedidos) no app JW Library: o documento e o "par" do parágrafo.
+    const parPedido = [...alvo].sort((a, b) => a - b).map((n) => lido.pids?.[n]).find(Boolean);
     return res.status(200).json({
       titulo: lido.titulo || null,
       erro: itens.length ? null : "A IA não sugeriu perguntas para esse(s) parágrafo(s). Tente de novo.",
+      jwl: lido.id && parPedido ? { docid: lido.id, par: parPedido } : null,
       itens,
       memoriaUsada: memoriaUsadaAgora(),
     });
