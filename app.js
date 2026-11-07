@@ -7643,7 +7643,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.45'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.46'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -23194,6 +23194,11 @@ function saveTemplatesToStorage() {
       const cfg = bibliaResumoCfg();
       vozAbrirPronto({ lugar: cfg.lugar, texto: 'Pronto para ler o resumo.', acesso: cfg.acesso, iniciar: () => leitorLer(cfg) });
     });
+
+    // O ícone brilha enquanto o tocador está aberto no resumo (como o 🔊 do texto diário).
+    const bibliaResumoMarcarTocando = new MutationObserver(() => bibliaResumoOuvirBtn.classList.toggle('tocando', vozBar.parentNode === bibliaResumoVozEl && !vozBar.hidden));
+    bibliaResumoMarcarTocando.observe(vozBar, { attributes: true, attributeFilter: ['hidden'] });
+    bibliaResumoMarcarTocando.observe(bibliaResumoVozEl, { childList: true });
 
     function bibliaResumoSincronizar() {
       const tem = Boolean(bibliaResumoTexto.value.trim());

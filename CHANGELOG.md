@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.46
+
+Tela do resumo do capítulo: o botão de ouvir passou para o topo, junto do Fechar, só com o ícone do alto-falante (grande), como no texto diário; brilha enquanto a leitura está aberta.
+
 ## 6.6.45
 
 (1) O gráfico de barras do player das leituras em voz (texto diário, Leitura e comentários) ficou pequeno e à direita da situação ("Lendo… 67%"), no mesmo padrão do player da leitura da Bíblia, e não mais numa linha toda. (4) No resumo, o que está entre parênteses só é lido se for referência aos versículos ("Gên. 1:3"; as marcas "vv. 1-3" são lidas por extenso) e a linha das fontes (🔎 Fontes / Estudo Perspicaz) aparece mas não é lida. (3) Na leitura em voz alta, as marcas de versículos dos resumos são lidas por extenso: "vv. 1-3" vira "versículos de um a três", "v. 5" vira "versículo cinco" e "vv. 1, 3" vira "versículos um e três". (2) Novo botão 🔊 Ouvir na tela do resumo do capítulo da Bíblia: lê o resumo em voz alta (a mesma voz da Leitura em voz alta, com o código de leitura), com a frase lida destacada e o player com o gráfico; ao parar, o campo do resumo volta.
