@@ -3711,11 +3711,11 @@
 
     // ---------- Modelo e esforço sob os botões da IA ----------
     // Texto pequeno sob o título de cada botão que aciona a IA (atributo data-ia-nota, mostrado por ::after em app.css; o setAiLoading troca o texto
-    // do botão, mas não o atributo). "geral" = modelo e esforço gerais; "esbocos" = os da Preparação de discursos e esboços; "modelo" = só o modelo
+    // do botão, mas não o atributo). "geral" = modelo e esforço gerais; "esbocos" = os da Preparação de discursos e esboços (e do Preparar para dirigir); "modelo" = só o modelo
     // (o áudio em texto não usa o esforço escolhido).
     const IA_NOTA_BOTOES = {
-      aiSuggestBtn: 'geral', aiSentinelaBtn: 'geral', aiStudyBtn: 'geral', aiStudyQuestionsBtn: 'geral', tdGerarBtn: 'geral',
-      joiasResponderBtn: 'geral', bibliaResumirBtn: 'geral', ebcResponderBtn: 'geral', ebcDirPerguntasBtn: 'geral',
+      aiSuggestBtn: 'geral', aiSentinelaBtn: 'geral', aiStudyBtn: 'geral', aiStudyQuestionsBtn: 'esbocos', tdGerarBtn: 'geral',
+      joiasResponderBtn: 'geral', bibliaResumirBtn: 'geral', ebcResponderBtn: 'geral', ebcDirPerguntasBtn: 'esbocos',
       tesourosEsbocoBtn: 'esbocos', discursoEsbocoBtn: 'esbocos', publicoEsbocoBtn: 'esbocos', outrosEsbocoBtn: 'esbocos',
       transcricaoCorrigirBtn: 'geral', transcricaoResumirBtn: 'geral',
       transcricaoIniciarBtn: '=Reconhecimento de voz: Google Chirp 3' // texto fixo (a transcrição é do Google, não da IA de texto); o botão Ler é preenchido por vozInfoMostrar
@@ -7610,7 +7610,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.36'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.37'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.

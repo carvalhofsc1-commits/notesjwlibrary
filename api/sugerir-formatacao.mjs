@@ -178,7 +178,7 @@ function ipDoPedido(req) {
 
 async function carregarPromptsEIa(tarefa = "") {
   const [prompts, ia] = await Promise.all([carregarPrompts(), lerConfigIa()]);
-  return { ...prompts, ia: iaDaTarefa(ia, tarefa) }; // a Preparação de discursos e esboços pode ter modelo e esforço próprios
+  return { ...prompts, ia: iaDaTarefa(ia, tarefa) }; // a Preparação de discursos e esboços (e o Preparar para dirigir) pode ter modelo e esforço próprios
 }
 
 // Tarefas que só leem o wol.jw.org, o Blob do S-34 ou os arquivos da Bíblia: não chamam a Anthropic.

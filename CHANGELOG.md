@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.37
+
+Preparar para dirigir (perguntas adicionais do estudo de A Sentinela e preparação do Estudo Bíblico do dirigente) passa a usar o mesmo modelo e esforço da Preparação de discursos e esboços, escolhidos pelo administrador na tela de prompts (sem escolha própria, usam o modelo geral, como antes). A nota sob os botões da IA do dirigente mostra esse modelo.
+
 ## 6.6.36
 
 Preparar para dirigir: como em Comentários, as perguntas adicionais já salvas do parágrafo (A Sentinela) e a preparação salva do Estudo Bíblico aparecem sozinhas ao abrir a matéria ou trocar de parágrafo com as setas, sem precisar do botão de recuperar; sem nada salvo, a seção some. Recolher o card recolhe também o campo de texto.

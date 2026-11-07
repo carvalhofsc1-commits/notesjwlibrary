@@ -28,7 +28,7 @@ export const PADRAO_IA = {
 };
 
 // Mantém só valores conhecidos; o que faltar ou vier errado volta ao padrão. "esbocoModelo" e "esbocoEsforco" são o modelo e o esforço
-// exclusivos da Preparação de discursos e esboços; vazio ("") = usa o mesmo modelo (ou esforço) de todas as outras funções.
+// exclusivos da Preparação de discursos e esboços e do Preparar para dirigir; vazio ("") = usa o mesmo modelo (ou esforço) de todas as outras funções.
 export function validarConfigIa(entrada) {
   const c = entrada && typeof entrada === "object" && !Array.isArray(entrada) ? entrada : {};
   return {
@@ -40,7 +40,8 @@ export function validarConfigIa(entrada) {
 }
 
 // O modelo e o esforço de uma tarefa: os de esboços e discursos (se o administrador escolheu outros) ou os gerais.
-export const TAREFAS_DE_ESBOCOS = new Set(["tesouros", "discurso", "publico", "outros"]);
+// "estudo-perguntas" (perguntas adicionais do estudo de A Sentinela) e "ebc-dirigente" (Estudo Bíblico) são do Preparar para dirigir, que usa o mesmo modelo dos esboços.
+export const TAREFAS_DE_ESBOCOS = new Set(["tesouros", "discurso", "publico", "outros", "estudo-perguntas", "ebc-dirigente"]);
 export function iaDaTarefa(config, tarefa) {
   if (!TAREFAS_DE_ESBOCOS.has(tarefa)) return { ...config, modelo: config.modelo, esforco: config.esforco };
   return { ...config, modelo: config.esbocoModelo || config.modelo, esforco: config.esbocoEsforco || config.esforco };

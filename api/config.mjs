@@ -204,7 +204,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ tipos: lista || [] });
     }
 
-    // Pública: o modelo e o esforço da IA (nomes curtos) para a notinha sob os botões da IA. "esbocos" = o da Preparação de discursos e esboços.
+    // Pública: o modelo e o esforço da IA (nomes curtos) para a notinha sob os botões da IA. "esbocos" = o da Preparação de discursos e esboços e do Preparar para dirigir.
     if (acao === "ia-publica") {
       const cfg = await lerConfigIa();
       const { modelos, esforcos } = opcoesIa();
