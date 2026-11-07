@@ -7651,7 +7651,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.52'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.53'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12737,7 +12737,7 @@ function saveTemplatesToStorage() {
           { id: 'fundo', texto: '🏛️ Explicar o fundo histórico dos acontecimentos (Perspicaz / WOL)' },
           { id: 'personagens', texto: '👤 Detalhar resumidamente a história dos personagens bíblicos conhecidos citados (Perspicaz)' },
           { id: 'lugares', texto: '🗺️ Dar detalhes de localidades, lugares, cidades, nações, povos, medidas, moedas, valores etc. (Perspicaz)' },
-          { id: 'profecias', texto: '🔮 Esclarecer profecias e expressões simbólicas (cumprimento passado ou futuro; Perspicaz / WOL)' }
+          { id: 'profecias', texto: '🔮 Esclarecer profecias e expressões simbólicas — seção própria (cumprimento passado ou futuro; Perspicaz / WOL)' }
         ]
       }
     };
@@ -12813,6 +12813,16 @@ function saveTemplatesToStorage() {
             if (localStorage.getItem('jwLibraryNoteAplicarBibliaResumoPadraoV1') === null) {
               localStorage.setItem('jwLibraryNoteAplicarBibliaResumoPadraoV1', '1');
               salvas = ['resumo', ...salvas];
+              localStorage.setItem(chaveSalva, JSON.stringify(salvas));
+            }
+          } catch (e) { /* sem armazenamento */ }
+        }
+        // Leitura diária: uma vez, inclui "profecias" (seção nova) nas preferências já salvas — o usuário pode desmarcar depois.
+        if (chave === 'biblia' && Array.isArray(salvas) && !salvas.includes('profecias')) {
+          try {
+            if (localStorage.getItem('jwLibraryNoteAplicarBibliaProfeciasPadraoV1') === null) {
+              localStorage.setItem('jwLibraryNoteAplicarBibliaProfeciasPadraoV1', '1');
+              salvas = [...salvas, 'profecias'];
               localStorage.setItem(chaveSalva, JSON.stringify(salvas));
             }
           } catch (e) { /* sem armazenamento */ }

@@ -3633,6 +3633,9 @@ async function resumirLeituraBiblia(res, body, P) {
       anterior +
       "\n\n";
   }
+  const avisoProfecias = idsOpcoes.includes("profecias")
+    ? "OBRIGATÓRIO: o \"texto\" deve trazer o subtítulo PROFECIAS E EXPRESSÕES SIMBÓLICAS (linha sozinha) e os itens dessa seção. O detalhe das profecias e símbolos NÃO fica só no RESUMO — o RESUMO narra; a interpretação (Profecia / Cumprimento) vai na seção própria.\n\n"
+    : "";
   const mensagem =
     blocoOrientacao({}, ajuste, P) +
     `PEDIDO: texto da leitura diária da Bíblia (${titulo}).\n` +
@@ -3641,6 +3644,7 @@ async function resumirLeituraBiblia(res, body, P) {
     `Opções ATIVAS: ${idsOpcoes.join(", ")}` +
     (secaoUnica ? ` (modo seção única: só ${SECAO_UNICA_RESUMO_LEITURA[secaoUnica]}).` : ".") +
     "\n\n" +
+    avisoProfecias +
     blocoAnterior +
     blocoFmt +
     fraseBase +
