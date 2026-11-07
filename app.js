@@ -7651,7 +7651,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.54'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.55'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -22140,7 +22140,7 @@ function saveTemplatesToStorage() {
       const spans = [];
       destaques.forEach(d => {
         const idx = d && d.trecho ? texto.indexOf(d.trecho) : -1;
-        if (idx < 0) return;
+        if (idx < 0 || d.trecho.length >= 100) return; // destaque é um trecho curto: um parágrafo inteiro não leva negrito
         const tipo = d.estilo ? AI_STYLE_KIND[d.estilo] : '';
         let t = d.maiusculas ? d.trecho.toUpperCase() : d.trecho;
         if (tipo === 'bold') t = '**' + t + '**';
@@ -23235,11 +23235,13 @@ function saveTemplatesToStorage() {
       bibliaResumoUnidades = [];
       bibliaResumoDestaque = -1;
       let secao = '';
-      leituraEstrutura(bibliaResumoTexto.value).forEach((par, pi) => {
+      // Cor e negrito são para títulos e destaques (trechos curtos): um negrito comprido (um parágrafo ou várias frases) é só texto normal.
+      const textoVista = bibliaResumoTexto.value.split('\n').map(linha => linha.replace(/\*\*([^*\n]{100,}?)\*\*/g, '$1').replace(/__([^_\n]{100,}?)__/g, '$1')).join('\n');
+      leituraEstrutura(textoVista).forEach((par, pi) => {
         const plano = par.frases.join(' ').replace(/\*\*|__|%%/g, '');
         // O título da seção vale com ou sem negrito em volta (a IA às vezes o destaca) e com ":" ou "." no fim; aí a linha toda em negrito seria lida como subtítulo.
         const titulo = BIBLIA_TITULO_POR_CHAVE.get(bibliaChaveTitulo(plano.replace(/[\s:.\-–]+$/, ''))) || null;
-        const cabecalhoGeral = !titulo && /^\u{1F4DA}/u.test(plano); // "📚 RESUMO DE GÊNESIS 1"
+        const cabecalhoGeral = pi === 0 && !titulo && /^\u{1F4DA}/u.test(plano); // só a primeira linha ("📚 RESUMO DE GÊNESIS 1"); um parágrafo que a IA começou com 📚 é texto normal // "📚 RESUMO DE GÊNESIS 1"
         const fonte = /^\u{1F50E}\s*(?:Fontes|Estudo Perspicaz)\b/iu.test(plano); // a linha das fontes, no fim de uma seção
         const p = document.createElement('p');
         if (titulo) { secao = titulo; p.className = 'br-secao br-s' + BIBLIA_COR_SECAO[titulo]; }

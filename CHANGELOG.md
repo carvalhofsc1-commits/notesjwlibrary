@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.55
+
+Resumo do capítulo da Bíblia: as cores e o negrito ficam só nos títulos e nos destaques curtos. Um parágrafo (ou um trecho de 100 letras ou mais) que a IA pôs em negrito não vira mais um bloco roxo: aparece como texto normal; e o destaque comprido deixa de ser marcado nos resumos novos. Também só a primeira linha (o cabeçalho "📚 …") ganha o estilo de título; um parágrafo que a IA começou com o emoji 📚 é texto normal.
+
 ## 6.6.54
 
 Resumo da Bíblia → profecias: o cumprimento passa a ter **três** rótulos — **(passado)**, **(presente)** e **(futuro)**. Exemplo em Daniel 2: os pés de ferro e argila são Cumprimento **(presente)** (potência anglo-americana atual), não futuro; o golpe da pedra na estátua continua **(futuro)**.
