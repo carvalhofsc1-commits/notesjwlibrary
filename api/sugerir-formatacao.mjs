@@ -1240,6 +1240,13 @@ async function sugerirPerguntas(res, body, P) {
     return erro(res, 400, `Não encontrei esse(s) parágrafo(s) no artigo "${lido.titulo}": ele vai do parágrafo 1 ao ${ultimo}.`);
   }
   const texto = textoDosGrupos(grupos);
+  // Perguntas aplicativas: os dois parágrafos seguintes ao último pedido vão só como consulta, para a IA não sugerir uma aplicação que a matéria à frente já trata.
+  let textoSeguintes = "";
+  if (opcoes.perguntasAplicativas) {
+    const ultimoPedido = Math.max(...grupos.flatMap((g) => g.numeros.filter((n) => alvo.has(n))));
+    const seguintes = lido.grupos.filter((g) => !g.numeros.some((n) => alvo.has(n)) && g.numeros.some((n) => n > ultimoPedido && n <= ultimoPedido + 2));
+    if (seguintes.length) textoSeguintes = textoDosGrupos(seguintes).slice(0, 6000);
+  }
   let mensagem =
     blocoOrientacao(opcoes, ajuste, P) +
     "PEDIDO (seções ligadas pelo usuário):\n" +
@@ -1249,6 +1256,9 @@ async function sugerirPerguntas(res, body, P) {
     `- Seção 3, perguntas de entendimento dos textos bíblicos ("perguntasEntendimento"): ${opcoes.perguntasEntendimento ? "ATIVAS" : "INATIVAS"}\n` +
     "\nTEXTO DO ESTUDO:\n" +
     texto +
+    (textoSeguintes
+      ? "\n\nPARÁGRAFOS SEGUINTES (só para consulta: não faça perguntas sobre eles; use-os apenas para evitar uma pergunta aplicativa cuja aplicação eles já tratam):\n" + textoSeguintes
+      : "") +
     lembreteFinal(opcoes, ajuste, P);
   if (modo && anteriores) {
     mensagem +=
@@ -1306,6 +1316,7 @@ async function sugerirPerguntas(res, body, P) {
         recebidos: itens.map((i) => i.paragrafos),
         complementares: opcoes.perguntasComplementares,
         aplicativas: opcoes.perguntasAplicativas,
+        paragrafosSeguintes: textoSeguintes.length,
         sobreTextos: opcoes.perguntasTextos,
         entendimento: opcoes.perguntasEntendimento,
         segundos: Math.round((Date.now() - inicio) / 100) / 10,

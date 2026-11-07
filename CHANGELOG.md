@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.32
+
+Perguntas adicionais para o dirigente: com as perguntas aplicativas marcadas, a IA também recebe os dois parágrafos seguintes (só para consulta) e é orientada a não sugerir uma aplicação que a matéria à frente já trata. A instrução fica no prompt "Perguntas adicionais para o dirigente" (editável na tela de prompts).
+
 ## 6.6.31
 
 Imagens da apostila: (1) o cartão Texto original some por completo enquanto Imagens da apostila está aberto (a resposta que estava nele também sai); (2) depois da descrição de cada imagem, ao lado do Copiar, um botão 📖 JW Library abre o app no lugar da imagem (o servidor passa a enviar o parágrafo que vem logo depois da imagem; imagens carregadas antes só ganham o botão ao recarregar as imagens).

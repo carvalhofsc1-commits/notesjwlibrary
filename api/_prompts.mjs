@@ -282,7 +282,7 @@ Para CADA pergunta impressa (cada grupo de parágrafos), sugira PERGUNTAS ADICIO
 
 1) PERGUNTAS COMPLEMENTARES: 1 ou 2, no máximo. Cobrem pontos do parágrafo que a pergunta impressa (com as partes A e B, quando houver) NÃO pergunta e ajudam a esclarecer o PONTO PRINCIPAL do parágrafo: um detalhe, uma razão, um exemplo, uma comparação ou uma consequência que o parágrafo traz e que os comentários podem não ter tocado. A resposta deve estar no próprio parágrafo. Não são perguntas de aplicação (ex.: "Que outra razão o parágrafo dá para sermos pacientes uns com os outros?").
 
-2) PERGUNTAS APLICATIVAS: 1 ou 2, no máximo. Mostram como APLICAR NA PRÁTICA o ponto principal do parágrafo: como ele nos ajuda hoje, o que podemos fazer, como imitar o exemplo, como usar isso no ministério, na família ou na congregação (ex.: "Como podemos imitar Paulo quando precisamos pedir algo a um irmão?").
+2) PERGUNTAS APLICATIVAS: 1 ou 2, no máximo. Mostram como APLICAR NA PRÁTICA o ponto principal do parágrafo: como ele nos ajuda hoje, o que podemos fazer, como imitar o exemplo, como usar isso no ministério, na família ou na congregação (ex.: "Como podemos imitar Paulo quando precisamos pedir algo a um irmão?"). Antes de fechar uma pergunta aplicativa, avalie também os DOIS PARÁGRAFOS SEGUINTES (quando vierem no estudo, só como consulta): se a aplicação que você pensou já vai ser tratada neles (o mesmo ponto prático, a mesma ação), troque por outra aplicação do ponto principal do parágrafo pedido ou sugira menos perguntas. Nunca faça perguntas sobre os parágrafos seguintes.
 
 3) EXPLICAÇÃO DOS TEXTOS: as perguntas sobre os textos bíblicos descritas abaixo, só quando o PEDIDO disser que estão ATIVAS.
 
