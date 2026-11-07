@@ -7610,7 +7610,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.43'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.44'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12562,6 +12562,8 @@ function saveTemplatesToStorage() {
         aiFloating.classList.remove('on');
         aiFloating.textContent = '';
         iaTravasAtualizar(); // os botões voltaram a ficar habilitados: os que pedem a matéria carregada voltam a travar, se for o caso
+        // Terminado o pedido, a resposta que acabou de ser salva já está no campo: o botão de recuperar não faz falta (o aviso automático não rodava com a IA ocupada).
+        setTimeout(() => { try { comentariosAutoTodos(); studyPickers.forEach(showStudySaved); recuperarSalvasAtualizar(); } catch (e) { /* ainda iniciando */ } }, 0);
         return;
       }
 
@@ -13078,8 +13080,9 @@ function saveTemplatesToStorage() {
         mirror.value = text.slice(0, end);
         const fimDaResposta = mirror.scrollHeight - (parseFloat(style.paddingBottom) || 0);
 
-        // Fim da última linha da resposta + a linha em branco que separa as respostas, com o botão centralizado nela.
-        const top = fimDaResposta + (lineHeight - btnHeight) / 2 - input.scrollTop;
+        // Fim da última linha da resposta + o espaço em branco que separa as respostas (duas linhas), com o botão no meio dele: assim sobra folga de uma linha
+        // para os dois lados, e um erro de medida pequeno não põe o botão por cima do texto.
+        const top = fimDaResposta + lineHeight - btnHeight / 2 - input.scrollTop;
         const visible = top >= 0 && top + btnHeight <= input.clientHeight;
         entry.btn.hidden = !visible;
         entry.btn.style.height = btnHeight + 'px';
@@ -13824,7 +13827,7 @@ function saveTemplatesToStorage() {
     }
 
     function studySalvaTexto(picker, salva) {
-      const coisa = picker.card === 'dirigente' ? 'perguntas adicionais salvas' : 'resposta salva';
+      const coisa = picker.card === 'dirigente' ? (isRecapText(picker.input.value) ? 'respostas salvas' : 'perguntas adicionais salvas') : 'resposta salva';
       const lista = salva.cobertos.join(', ');
       const quem = salva.cobertos[0] === 'recap' ? 'A recapitulação já tem ' + coisa
         : salva.cobertos.length === 1 ? 'O parágrafo ' + lista + ' já tem ' + coisa

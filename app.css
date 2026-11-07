@@ -1462,7 +1462,7 @@
 
     /* Espaço extra no fim do campo para o botão da última resposta. */
     textarea.has-answer-buttons {
-      padding-bottom: 44px;
+      padding-bottom: 52px;
     }
 
     /* Outra sugestão / Melhorar esta: dois botões de largura igual, como os de formatar com IA. */

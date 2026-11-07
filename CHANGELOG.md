@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.44
+
+(1) O botão "Recuperar as perguntas salvas" não aparece mais logo depois de gerar uma resposta (a resposta que acabou de ser salva já está no campo; antes o aviso automático não rodava enquanto a IA estava ocupada). (2) Os botões Copiar e JW Library no campo de texto ficam no meio do espaço entre as respostas (com mais folga embaixo), para não caírem por cima da última linha. (3) Na recapitulação do dirigente o aviso diz "respostas salvas".
+
 ## 6.6.43
 
 Recapitulação de A Sentinela (Comentários e Dirigentes): cada resposta ganha o botão 📖 JW Library ao lado do Copiar, que copia a resposta e abre a pergunta da recapitulação no app. Só nas respostas geradas a partir de agora.
