@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.20
+
+JW Library, preparação: (1) ao lado do 📋 Copiar de cada resposta do estudo de A Sentinela e do Estudo Bíblico, um botão 📖 JW Library abre o parágrafo (ou a pergunta) no app, o lugar de colar a resposta; (2) os cartões de matéria (A Sentinela, Estudo Bíblico, Tesouros, joias, imagens da apostila) têm sempre os dois botões lado a lado, 🔗 WOL e 📖 JW Library, e o título agora abre o JW Library; (3) o texto do botão JW Library fica branco; (4) ao abrir uma resposta recuperada (ou levar um texto) no campo de texto, uma barra ◀ Voltar fica congelada no topo e volta à tela de onde veio.
+
 ## 6.6.19
 
 Texto diário: os atalhos para o wol.jw.org e para o JW Library deixam de ser links sublinhados e viram dois botões lado a lado, como na leitura da Bíblia (🔗 WOL e 📖 JW Library).

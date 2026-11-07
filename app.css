@@ -8113,15 +8113,22 @@
       color: color-mix(in srgb, hsl(215 75% 42%) 65%, var(--text));
     }
 
-    .td-atalho-jwl,
-    .td-atalho-jwl:visited {
+    .td-atalhos .td-atalho.td-atalho-jwl,
+    .td-atalhos .td-atalho.td-atalho-jwl:visited,
+    .td-atalhos .td-atalho.td-atalho-jwl:hover {
       border: 1px solid #4a2370;
       background: #5b2d86; /* o roxo do logo do JW Library */
       color: #fff;
+      text-decoration: none;
     }
 
-    .td-atalho-jwl:hover {
+    .td-atalhos .td-atalho.td-atalho-jwl:hover {
       background: #6d3a9c;
+    }
+
+    .td-atalhos .td-atalho.td-atalho-wol,
+    .td-atalhos .td-atalho.td-atalho-wol:visited {
+      text-decoration: none;
     }
 
     /* Memória de correções (piloto): a caixa ao lado de Salvar alterações e a lista na tela Prompts da IA. */
@@ -10722,21 +10729,41 @@ body.biblia-resumo-aberto { overflow: hidden; }
 }
 .biblia-painel .bp-acoes .bp-jwl:hover { background: #6d3a9c; }
 /* O botão 📖 JW Library embaixo do título dos cartões de preparação (Tesouros, joias, estudo bíblico…). */
-a.jwl-mini, a.jwl-mini:visited {
-  display: flex;
-  width: fit-content;
-  margin: 8px auto 0;
-  padding: 5px 12px;
-  border-radius: 999px;
+/* O botão 📖 JW Library ao lado do Copiar de cada resposta, no campo de texto. */
+.answer-jwl-btn,
+.answer-jwl-btn:visited {
+  position: absolute;
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 0 10px;
+  border-radius: 8px;
   background: #5b2d86;
   border: 1px solid #4a2370;
   color: #fff;
-  font-size: .8rem;
+  font-size: .74rem;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1;
+  white-space: nowrap;
   text-decoration: none;
 }
-a.jwl-mini:hover { background: #6d3a9c; }
+.answer-jwl-btn[hidden] { display: none; }
+.answer-jwl-btn::after { content: ""; position: absolute; inset: -9px -6px; }
+
+/* A barra de voltar, congelada logo abaixo da barra do topo (só na tela Formatar aberta a partir de outra tela). */
+.voltar-barra {
+  position: sticky;
+  top: var(--topbar-h, 48px);
+  z-index: 1350;
+  padding: 6px 12px;
+  background: color-mix(in srgb, var(--card) 94%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.voltar-barra[hidden], body:not([data-screen="formatar"]) .voltar-barra { display: none; }
+.voltar-barra button { width: auto; min-height: 36px; padding: 0 16px; font-weight: 700; }
 .biblia-painel .bp-acoes .bp-resumir { --cor: 280; }
 .biblia-painel .bp-acoes .bp-resumir.tem { --cor: 150; }
 

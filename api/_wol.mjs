@@ -240,7 +240,7 @@ export function analisarArtigo(html) {
       const numero = Number((conteudo.match(/data-pnum="(\d+)"/) || [])[1]) || null;
       const texto = textoDe(conteudo.replace(/<span class="parNum"[\s\S]*?<\/span>/, ""));
       if (!texto) continue;
-      const paragrafo = { numero, texto };
+      const paragrafo = { numero, texto, pid: pid || null }; // pid = data-pid do parágrafo no wol (o "par" do endereço do JW Library)
       secoes.push(paragrafo);
       const donos = relacionados.split(",").map((id) => porPergunta.get(id.trim())).filter(Boolean);
       for (const grupo of donos.length ? [...new Set(donos)] : atual ? [atual] : []) {
@@ -262,7 +262,10 @@ export function analisarArtigo(html) {
 
   const validos = grupos.filter((g) => g.paragrafos.length && g.numeros.length);
   for (const g of validos) g.rotulo = [...g.numeros].sort((a, b) => a - b).join(", "); // "1, 2", como na lista do app
-  return { titulo, grupos: validos, recapitulacao, referenciasRecapitulacao, secoes };
+  // número do parágrafo -> data-pid (para abrir o parágrafo certo no app JW Library)
+  const pids = {};
+  for (const s of secoes) if (s.numero && s.pid && !pids[s.numero]) pids[s.numero] = s.pid;
+  return { titulo, grupos: validos, recapitulacao, referenciasRecapitulacao, secoes, pids };
 }
 
 // Lê o artigo (ou, com a página de reuniões da semana, encontra o artigo nela e o lê). null = não deu para ler.
@@ -388,7 +391,8 @@ export function analisarCapituloEbc(html) {
       if (!pergunta || ehRotuloDeImagemEbc(pergunta)) continue;
       const numero = perguntas.filter((p) => p.quadro === quadro.id).length + 1;
       const citacoes = [...conteudo.matchAll(/<a\b[^>]*href="(\/pt\/wol\/pc\/[^"]+)"[^>]*>([\s\S]*?)<\/a>/g)].map(([, caminho, rotulo]) => ({ caminho, citacao: textoDe(rotulo) }));
-      perguntas.push({ id: `${quadro.curto} ${numero}`, quadro: quadro.id, nomeQuadro: quadro.nome, numero, pergunta, referencias: referenciasDe(conteudo), citacoes });
+      const pid = (atributos.match(/data-pid="(\d+)"/) || [])[1] || null; // o "par" do endereço do JW Library
+      perguntas.push({ id: `${quadro.curto} ${numero}`, quadro: quadro.id, nomeQuadro: quadro.nome, numero, pergunta, referencias: referenciasDe(conteudo), citacoes, pid });
     }
   }
   return { contexto, titulo, relato, leia: [...new Set(leia)], perguntas, imagens: imagensUteis(figuras) };

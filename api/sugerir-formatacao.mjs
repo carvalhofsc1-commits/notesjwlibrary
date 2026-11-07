@@ -921,6 +921,13 @@ async function responderEstudoLido(res, { lido, alvo, recapitulacao, opcoes, aju
     const memoriaUsada = memoriaUsadaAgora();
     const inicioFontes = Date.now();
     const itensFinais = await finalizarItens(itens, opcoes, P, blocoOrientacao(opcoes, ajuste, P));
+    // Para o botão do JW Library ao lado do Copiar: o documento e o parágrafo (o primeiro do grupo) onde colar a resposta.
+    if (!recapitulacao && lido.id && lido.pids) {
+      for (const i of itensFinais) {
+        const primeiro = [...numerosDosParagrafos(i.paragrafos)].sort((a, b) => a - b)[0];
+        if (primeiro && lido.pids[primeiro]) i.jwl = { docid: lido.id, par: lido.pids[primeiro] };
+      }
+    }
     console.log("Estudo (tempo):", JSON.stringify({ fontes: Math.round((Date.now() - inicioFontes) / 100) / 10, total: Math.round((Date.now() - inicioPedido) / 100) / 10 }));
 
     return res.status(200).json({
@@ -1485,6 +1492,14 @@ async function responderEbc(res, body, P) {
 
     const memoriaUsada = memoriaUsadaAgora();
     const itensFinais = await finalizarItens(itens, opcoes, P, blocoOrientacao(opcoes, ajuste, P));
+    // Para o botão do JW Library ao lado do Copiar: o capítulo e o parágrafo da pergunta.
+    const docidEbc = (String(capitulo.url || "").match(/\/wol\/d\/r5\/lp-t\/(\d+)/) || [])[1];
+    if (docidEbc) {
+      for (const i of itensFinais) {
+        const pergunta = perguntas.find((p) => p.id === i.paragrafos);
+        if (pergunta && pergunta.pid) i.jwl = { docid: docidEbc, par: pergunta.pid };
+      }
+    }
     console.log("Estudo bíblico (tempo):", JSON.stringify({ total: Math.round((Date.now() - inicioPedido) / 100) / 10 }));
     const aviso =
       fontesEbc.falhas > 0

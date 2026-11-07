@@ -49,6 +49,33 @@
       document.getElementById('menuAbrirBtn').setAttribute('aria-expanded', 'false');
     }
 
+    // Ao abrir o campo de texto (Formatar) a partir de outra tela, com uma resposta recuperada ou levada para lá, uma barra congelada no topo traz de volta:
+    // { tela, vista (a página de Reuniões), rolagem }. Em qualquer outro caminho (menu, barra de baixo) ela não aparece.
+    let formatarVoltar = null;
+    function formatarVoltarPintar() {
+      const barra = document.getElementById('formatarVoltarBarra');
+      if (barra) barra.hidden = !(formatarVoltar && document.body.dataset.screen === 'formatar');
+    }
+    function formatarAbrirComVoltar() {
+      const tela = currentScreen();
+      if (tela !== 'formatar') formatarVoltar = { tela, vista: tela === 'reunioes' ? reunioesVistaAtual() : '', rolagem: window.scrollY };
+      showScreen('formatar');
+    }
+    function formatarVoltarIr() {
+      const v = formatarVoltar;
+      if (!v) return;
+      formatarVoltar = null;
+      showScreen(v.tela, { keepScroll: true });
+      if (v.tela === 'reunioes' && v.vista) reunioesIr(v.vista, { keepScroll: true });
+      requestAnimationFrame(() => window.scrollTo(0, v.rolagem || 0));
+    }
+    // A altura da barra do topo (para a barra de voltar grudar logo abaixo dela).
+    function topbarAjustar() {
+      const topo = document.querySelector('header.app-topbar');
+      if (topo) document.documentElement.style.setProperty('--topbar-h', topo.offsetHeight + 'px');
+    }
+    window.addEventListener('resize', topbarAjustar);
+
     function showScreen(name, options) {
       const screen = APP_SCREENS.includes(name) ? name : 'inicio';
       const changed = screen !== currentScreen();
@@ -56,6 +83,9 @@
       if (changed && currentScreen() === 'leitura') leituraAoSair(); // saindo da tela Leitura, a leitura em voz alta para
       if (changed && currentScreen() === 'biblia') bibliaVideoParar(); // saindo da Leitura da Bíblia, o vídeo de introdução para
       document.body.dataset.screen = screen;
+      if (screen !== 'formatar') formatarVoltar = null;
+      formatarVoltarPintar();
+      topbarAjustar();
       menuFechar();
       navMarcar();
       if (location.hash !== '#' + screen) history.replaceState(null, '', '#' + screen);
@@ -1820,7 +1850,7 @@
           if (input.value.trim() && !(await askConfirm('O texto do campo de texto será trocado por este texto (dá para desfazer). Continuar?', 'Levar para o campo de texto'))) return;
           setInputRange(0, input.value.length, textArea.value, { message: 'Texto no campo de texto. Formate e depois use "⬅️ Trazer do campo de texto" no Backup.' });
           autoGrowInputText();
-          showScreen('formatar');
+          formatarAbrirComVoltar();
         }),
         backupButton('⬅️ Trazer do campo de texto', () => {
           if (!input.value.trim()) return setBackupStatus('O campo de texto está vazio.', true);
@@ -7564,7 +7594,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.19'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.20'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -13018,7 +13048,7 @@ function saveTemplatesToStorage() {
       const borderTop = input.offsetTop + (parseFloat(style.borderTopWidth) || 0);
 
       located.forEach(({ entry, end }) => {
-        if (end < 0) { entry.btn.hidden = true; return; }
+        if (end < 0) { entry.btn.hidden = true; if (entry.jw) entry.jw.hidden = true; return; }
 
         mirror.textContent = text.slice(0, end);
         const marker = document.createElement('span');
@@ -13032,6 +13062,14 @@ function saveTemplatesToStorage() {
         entry.btn.style.height = btnHeight + 'px';
         entry.btn.style.left = left + 'px';
         entry.btn.style.top = (borderTop + top) + 'px';
+        if (entry.jw) { // o botão do JW Library logo à direita do Copiar
+          entry.jw.hidden = entry.btn.hidden;
+          if (!entry.btn.hidden) {
+            entry.jw.style.height = btnHeight + 'px';
+            entry.jw.style.top = (borderTop + top) + 'px';
+            entry.jw.style.left = (left + entry.btn.offsetWidth + 8) + 'px';
+          }
+        }
       });
     }
 
@@ -13059,7 +13097,17 @@ function saveTemplatesToStorage() {
         });
 
         answerCopyLayer.appendChild(btn);
-        answerCopyButtons.push({ btn, part });
+        let jw = null;
+        if (part.jwl && part.jwl.docid) { // ao lado do Copiar: abre o parágrafo no app JW Library, o lugar de colar a resposta
+          jw = document.createElement('a');
+          jw.className = 'answer-jwl-btn';
+          jw.href = jwlLinkPorId(part.jwl.docid, part.jwl.par);
+          jw.textContent = '📖 JW Library';
+          jw.title = 'Abrir este parágrafo no JW Library, para colar a resposta';
+          jw.addEventListener('mousedown', event => event.preventDefault());
+          answerCopyLayer.appendChild(jw);
+        }
+        answerCopyButtons.push({ btn, part, jw });
       });
 
       scheduleAnswerButtons();
@@ -13303,7 +13351,9 @@ function saveTemplatesToStorage() {
         });
         const answer = aiLabelWith(answerTpl, '✅ RESPOSTA 👉 ', number + body);
         const extras = buildSourceBlocks(item);
-        return { paragrafos: item.paragrafos || '', texto: extras ? answer + '\n\n' + extras : answer };
+        const parte = { paragrafos: item.paragrafos || '', texto: extras ? answer + '\n\n' + extras : answer };
+        if (item.jwl && item.jwl.docid) parte.jwl = { docid: String(item.jwl.docid), par: String(item.jwl.par || '') }; // onde colar a resposta no app JW Library
+        return parte;
       });
     }
 
@@ -13763,7 +13813,15 @@ function saveTemplatesToStorage() {
         // O tema do artigo carregado é o título do cartão (em destaque); sem perguntas carregadas, "Aguardando carregar perguntas".
         if (picker.titulo) {
           const texto = aiStudy ? aiStudy.titulo || '' : 'Aguardando carregar matéria da semana';
-          picker.titulo.textContent = texto;
+          picker.titulo.textContent = '';
+          const urlArtigo = aiStudy && aiStudy.artigo && texto ? 'https://wol.jw.org/pt/wol/d/r5/lp-t/' + aiStudy.artigo : '';
+          if (urlArtigo) { // o título abre o artigo no app JW Library; os dois botões (WOL e JW Library) ficam logo abaixo
+            const linkTitulo = document.createElement('a');
+            jwlAbrirLinkDoc(linkTitulo, urlArtigo);
+            linkTitulo.textContent = texto;
+            picker.titulo.appendChild(linkTitulo);
+            jwlBotaoDoDocumento(picker.titulo, urlArtigo);
+          } else picker.titulo.textContent = texto;
           picker.titulo.hidden = !texto;
           picker.titulo.classList.toggle('study-tema', Boolean(aiStudy && texto));
           picker.titulo.classList.toggle('study-aguardando', !aiStudy);
@@ -14214,9 +14272,7 @@ function saveTemplatesToStorage() {
         titulo.textContent = '';
         if (carregado) {
           const link = document.createElement('a');
-          link.href = dados.url;
-          link.target = '_blank';
-          link.rel = 'noopener noreferrer';
+          jwlAbrirLinkDoc(link, dados.url);
           link.textContent = [dados.materia, dados.titulo].filter(Boolean).join(' · ');
           titulo.appendChild(link);
           jwlBotaoDoDocumento(titulo, dados.url);
@@ -14693,9 +14749,7 @@ function saveTemplatesToStorage() {
       if (carregado) {
         const alvo = dados.url ? document.createElement('a') : el;
         if (dados.url) {
-          alvo.href = dados.url;
-          alvo.target = '_blank';
-          alvo.rel = 'noopener noreferrer';
+          jwlAbrirLinkDoc(alvo, dados.url);
           el.appendChild(alvo);
         }
         alvo.append(dados.titulo);
@@ -14733,9 +14787,7 @@ function saveTemplatesToStorage() {
         const titulo = '✨ ' + [cfg.semSemana ? '' : dados.semana, dados.titulo].filter(Boolean).join(' · ');
         if (dados.url) {
           const link = document.createElement('a');
-          link.href = dados.url;
-          link.target = '_blank';
-          link.rel = 'noopener noreferrer';
+          jwlAbrirLinkDoc(link, dados.url);
           link.textContent = titulo;
           cfg.info.appendChild(link);
         } else {
@@ -16122,9 +16174,7 @@ function saveTemplatesToStorage() {
       titulo.textContent = '';
       if (carregado) {
         const link = document.createElement('a');
-        link.href = dados.url;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
+        jwlAbrirLinkDoc(link, dados.url);
         const semana = String(dados.semana || '').toLowerCase();
         link.append(dados.leitura);
         if (semana) {
@@ -16170,9 +16220,7 @@ function saveTemplatesToStorage() {
       titulo.textContent = '';
       if (carregado) {
         const link = document.createElement('a');
-        link.href = dados.url;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
+        jwlAbrirLinkDoc(link, dados.url);
         link.append('Imagens da apostila');
         const semana = String(dados.semana || '').toLowerCase();
         if (semana) {
@@ -17051,7 +17099,7 @@ function saveTemplatesToStorage() {
         ano: semSemana ? 0 : (ano != null ? ano : aiWeekYear),
         numSemana: semSemana ? 0 : (numSemana != null ? numSemana : aiWeekNumber),
         data: new Date().toISOString(),
-        partes: (partes || []).map(p => ({ paragrafos: p.paragrafos || '', texto: p.texto }))
+        partes: (partes || []).map(p => (p.jwl ? { paragrafos: p.paragrafos || '', texto: p.texto, jwl: p.jwl } : { paragrafos: p.paragrafos || '', texto: p.texto }))
       };
       // Esboços: o JSON (para continuar com Outra versão, Melhorar e Incluir texto(s) depois de abrir o esboço salvo) e o número do tema do S-34.
       if (esbocoJson) item.esbocoJson = esbocoJson;
@@ -17357,7 +17405,7 @@ function saveTemplatesToStorage() {
         historicoLigar(item.id, historicoTituloExibido(item));
       }
       renderAiSuggestions();
-      showScreen('formatar');
+      formatarAbrirComVoltar();
       requestAnimationFrame(() => input.scrollIntoView({ block: 'start', behavior: 'smooth' }));
       return true;
     }
@@ -17931,8 +17979,6 @@ function saveTemplatesToStorage() {
       inicioAjustarAltura();
     }
 
-    document.getElementById('tdJwl').addEventListener('click', bibliaJwLibraryAviso);
-
     async function tdCarregar(data) {
       tdData = data;
       const chave = tdChave(data);
@@ -18173,7 +18219,7 @@ function saveTemplatesToStorage() {
       const texto = tdTextoCompleto(tdTexto) + (comentarios.length ? '\n\n💬 COMENTÁRIOS ADICIONAIS\n\n' + tdComentariosEmTexto(comentarios) : '');
       setInputRange(0, input.value.length, texto, { message: 'Texto diário no campo de texto.' });
       autoGrowInputText();
-      showScreen('formatar');
+      formatarAbrirComVoltar();
     });
     td.gerarBtn.addEventListener('click', () => tdGerarComentarios(false));
     td.iaOutrosBtn.addEventListener('click', () => tdGerarComentarios(true));
@@ -21262,6 +21308,9 @@ function saveTemplatesToStorage() {
       }
     }
     window.addEventListener('resize', reunioesAjustarHub);
+    document.getElementById('formatarVoltarBtn').addEventListener('click', formatarVoltarIr);
+    input.style.scrollMarginTop = 'calc(var(--topbar-h, 48px) + 56px)'; // o campo abre logo abaixo da barra do topo e da barra de voltar
+    topbarAjustar();
 
     // Um código apagado enquanto a página do grupo estava aberta: o grupo fica bloqueado, então volta à tela principal.
     function reunioesConferirVista() {
@@ -21412,22 +21461,41 @@ function saveTemplatesToStorage() {
       return n && capitulo && verso ? 'jwlibrary:///finder?bible=' + String(n).padStart(2, '0') + String(capitulo).padStart(3, '0') + String(verso).padStart(3, '0') + '&wtlocale=T' : '';
     }
     // Um documento do wol (".../wol/d/r5/lp-t/2026560") no app JW Library, com o endereço que o próprio app gera ao compartilhar (docid e, se houver, o parágrafo).
+    function jwlLinkPorId(docid, par) {
+      return docid ? 'jwlibrary:///finder?srcid=jwlshare&wtlocale=T&prefer=lang&docid=' + docid + (par ? '&par=' + par : '') : '';
+    }
     function jwlLinkDocumento(url, par) {
       const m = /\/wol\/d\/r5\/lp-t\/(\d+)/.exec(String(url || ''));
-      return m ? 'jwlibrary:///finder?srcid=jwlshare&wtlocale=T&prefer=lang&docid=' + m[1] + (par ? '&par=' + par : '') : '';
+      return m ? jwlLinkPorId(m[1], par) : '';
     }
-    // O botão 📖 JW Library logo abaixo do título (um link para o wol) de um cartão de preparação.
+    // O link do título de um cartão: no lugar do wol, abre o documento no app JW Library (sem endereço de documento, continua o do wol).
+    function jwlAbrirLinkDoc(link, url) {
+      const jw = jwlLinkDocumento(url);
+      link.href = jw || url;
+      if (jw) link.removeAttribute('target'); else link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+    }
+    // Os dois botões lado a lado logo abaixo do título de um cartão de preparação: 🔗 WOL e 📖 JW Library.
     function jwlBotaoDoDocumento(titulo, url) {
       const link = jwlLinkDocumento(url);
       if (!titulo || !link) return;
-      const a = document.createElement('a');
-      a.className = 'jwl-mini';
-      a.href = link;
-      a.textContent = '📖 JW Library';
-      a.title = 'Abrir no app JW Library';
-      titulo.appendChild(a);
+      const linha = document.createElement('div');
+      linha.className = 'td-atalhos';
+      const wol = document.createElement('a');
+      wol.className = 'td-atalho td-atalho-wol';
+      wol.href = url;
+      wol.target = '_blank';
+      wol.rel = 'noopener noreferrer';
+      wol.textContent = '🔗 WOL';
+      const jw = document.createElement('a');
+      jw.className = 'td-atalho td-atalho-jwl';
+      jw.href = link;
+      jw.textContent = '📖 JW Library';
+      linha.append(wol, jw);
+      titulo.appendChild(linha);
     }
-    document.addEventListener('click', ev => { if (ev.target.closest && ev.target.closest('a.jwl-mini')) bibliaJwLibraryAviso(); });
+    // Qualquer link do JW Library do app: se o app não abrir, avisa (um aviso só, para todos).
+    document.addEventListener('click', ev => { if (ev.target.closest && ev.target.closest('a[href^="jwlibrary:"]')) bibliaJwLibraryAviso(); });
     // Depois de tocar num link do JW Library: se a página continua à vista e em foco por 2,5 s, o app não abriu (ao abrir, o app ou a pergunta do navegador tira o foco).
     function bibliaJwLibraryAviso() {
       let saiu = false;
@@ -22124,8 +22192,6 @@ function saveTemplatesToStorage() {
         bibliaAudio.currentTime = Math.min(bibliaAudio.duration, Math.max(0, bibliaAudio.currentTime + (ev.key === 'ArrowRight' ? 5 : -5)));
       });
       // Abrir no JW Library: se o app não estiver instalado (ou não abrir), a página continua à vista e o aviso oferece o WOL.
-      q('.bp-jwl').addEventListener('click', bibliaJwLibraryAviso);
-      q('.bp-nome').addEventListener('click', () => { if (/^jwlibrary:/.test(q('.bp-nome').getAttribute('href') || '')) bibliaJwLibraryAviso(); });
       // Resumir: só abre a área do resumo (no fim da tela); quem pede o resumo à IA é o botão dentro dela. Com resumo já feito, vira "Ver resumo".
       q('.bp-resumir').addEventListener('click', () => {
         const e = esp();
