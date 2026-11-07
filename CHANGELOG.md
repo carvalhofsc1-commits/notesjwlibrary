@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.40
+
+Imagens do artigo de A Sentinela (Comentários e Dirigentes): o botão 📖 JW Library aparece ao lado do Copiar da descrição de cada imagem e abre o artigo no lugar da imagem (o servidor passa a enviar o parágrafo que vem logo depois dela; para as imagens já carregadas, toque em Recarregar matéria da semana).
+
 ## 6.6.39
 
 A barra de botões do topo do campo Texto original volta a ser a de antes (Limpar com texto). O botão 📖 JW Library das perguntas adicionais do dirigente fica no fim das perguntas, ao lado de Copiar perguntas, como no resto do app (copia as perguntas e abre o parágrafo). Perguntas salvas antes também ganham o botão: basta recarregar a matéria da semana uma vez (o servidor passa a enviar o parágrafo de cada número).

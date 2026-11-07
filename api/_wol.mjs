@@ -220,7 +220,10 @@ export function analisarArtigo(html) {
     }
     if (/\bpubRefs\b/.test(classe) && naRecapitulacao) break; // o cântico final encerra o artigo
     if (/\bx-figura\b/.test(classe)) {
-      const figura = figuras[Number((atributos.match(/data-fig="(\d+)"/) || [])[1])];
+      const figura0 = figuras[Number((atributos.match(/data-fig="(\d+)"/) || [])[1])];
+      // O "par" do endereço do JW Library: o parágrafo que vem logo depois da imagem (a imagem fica logo acima dele).
+      const pidFigura = (corpo.slice(m.index + m[0].length).match(/data-pid="(\d+)"/) || [])[1] || null;
+      const figura = figura0 ? { ...figura0, pid: pidFigura } : figura0;
       if (figura && !naRecapitulacao && (figura.descricao || figura.legenda)) {
         if (atual) atual.imagens.push(figura);
         secoes.push({ imagem: figura });

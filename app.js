@@ -7610,7 +7610,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.39'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.40'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -13760,7 +13760,8 @@ function saveTemplatesToStorage() {
         box.appendChild(p);
         // As imagens do parágrafo: a descrição que o wol.jw.org guarda (antes só vinha ao copiar um trecho por cima da imagem) e a legenda.
         (item.imagens || []).forEach(imagem => {
-          const bloco = imagemBloco(imagem);
+          // 📖 JW Library ao lado do Copiar: abre o artigo no lugar da imagem (nas imagens carregadas antes, só depois de recarregar os parágrafos)
+          const bloco = imagemBloco(imagem.pid && aiStudy && aiStudy.artigo ? { ...imagem, jwl: jwlLinkPorId(String(aiStudy.artigo), imagem.pid) } : imagem);
           if (bloco) box.appendChild(bloco);
         });
       });
@@ -14197,7 +14198,7 @@ function saveTemplatesToStorage() {
           titulo: result.data.titulo || '',
           grupos: groups,
           perguntas: Array.isArray(result.data.perguntas) ? result.data.perguntas.map(q => String(q || '')) : [],
-          imagens: Array.isArray(result.data.imagens) ? result.data.imagens.map(lista => (Array.isArray(lista) ? lista : []).map(i => ({ descricao: String((i && i.descricao) || ''), legenda: String((i && i.legenda) || '') }))) : [],
+          imagens: Array.isArray(result.data.imagens) ? result.data.imagens.map(lista => (Array.isArray(lista) ? lista : []).map(i => ({ descricao: String((i && i.descricao) || ''), legenda: String((i && i.legenda) || ''), pid: i && i.pid ? String(i.pid) : '' }))) : [],
           recapitulacao: result.data.recapitulacao !== false,
           pids: result.data.pids && typeof result.data.pids === 'object' ? result.data.pids : {} // número do parágrafo -> o "par" do JW Library
         };
