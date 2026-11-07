@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.05
+
+Leitura da Bíblia: **Resumir** / **Ver resumo** abre as opções de resumo (ou o resumo já feito) numa tela separada, só com o resumo e com mais espaço para ler. Ao fechar, volta ao quadro da leitura, do jeito que estava.
+
 ## 6.6.04
 
 Texto diário (texto e comentários adicionais): a tela passa a acompanhar a frase lida levando-a para o meio da parte realmente visível, entre a barra do topo e a de baixo. Antes, a frase podia ficar escondida atrás da barra de baixo sem a tela rolar.

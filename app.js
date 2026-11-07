@@ -7564,7 +7564,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.04'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.05'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -22588,14 +22588,14 @@ function saveTemplatesToStorage() {
         extra.closest('details').open = false;
       }
       bibliaResumoStatus.textContent = '';
-      if (painel) painel.querySelector('.bp-acoes').after(bibliaResumoCaixa); // logo abaixo do player e dos botões WOL / Resumir
-      else {
-        bibliaResumoGuardar();
-        if (origem !== 'livros') bibliaProgDefinir(false); // a programação recolhe; o resumo abre no fim da tela
-      }
+      // O resumo abre numa tela separada, por cima de tudo, só com o resumo (as opções, o texto e os botões), com mais espaço para ler.
+      // Ao fechar, volta-se ao quadro da leitura, do jeito que estava.
+      bibliaResumoGuardar();
+      bibliaResumoCaixa.classList.add('tela');
+      document.body.classList.add('biblia-resumo-aberto');
       bibliaResumoCaixa.hidden = false;
+      bibliaResumoCaixa.scrollTop = 0;
       bibliaResumoSincronizar();
-      bibliaResumoCaixa.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function bibliaFecharResumo(voltar) {
@@ -22603,6 +22603,8 @@ function saveTemplatesToStorage() {
       const alvo = bibliaResumoAlvo;
       bibliaResumoAlvo = null;
       bibliaResumoCaixa.hidden = true;
+      bibliaResumoCaixa.classList.remove('tela');
+      document.body.classList.remove('biblia-resumo-aberto');
       bibliaResumoGuardar();
       if (voltar && alvo && alvo.painel) { // aberto dentro do painel: o painel continua onde está; só atualiza os botões e as marcas e volta à vista dele
         bibliaAtualizarTudo();
@@ -22632,6 +22634,7 @@ function saveTemplatesToStorage() {
       b.hidden = true;
     }
     function bibliaAvisarResumo() {
+      if (bibliaResumoCaixa.classList.contains('tela')) { bibliaResumoTexto.scrollIntoView({ block: 'start', behavior: 'smooth' }); return; } // o resumo já está na tela inteira
       const b = document.getElementById('bibliaAvisoResumo');
       b.hidden = false;
       clearTimeout(b._timer);
