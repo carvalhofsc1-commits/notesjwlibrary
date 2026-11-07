@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.19
+
+Texto diário: os atalhos para o wol.jw.org e para o JW Library deixam de ser links sublinhados e viram dois botões lado a lado, como na leitura da Bíblia (🔗 WOL e 📖 JW Library).
+
 ## 6.6.18
 
 Barra do topo: o nome NoteStyle e o slogan ficam menores, em proporção ao logo.

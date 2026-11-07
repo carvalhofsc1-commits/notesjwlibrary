@@ -8072,8 +8072,56 @@
       color: var(--muted);
     }
 
-    .td-link[hidden] {
+    /* Os atalhos do texto diário (WOL e JW Library): dois botões lado a lado, como na leitura da Bíblia. */
+    .td-atalhos {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .td-atalhos:not(:has(.td-atalho:not([hidden]))) {
       display: none;
+    }
+
+    .td-atalho,
+    .td-atalho:visited {
+      flex: 1 1 0;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+      min-height: 40px;
+      padding: 0 10px;
+      border-radius: 10px;
+      font-size: .9rem;
+      font-weight: 700;
+      line-height: 1.1;
+      text-align: center;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .td-atalho[hidden] {
+      display: none;
+    }
+
+    .td-atalho-wol,
+    .td-atalho-wol:visited {
+      border: 1px solid color-mix(in srgb, hsl(215 70% 50%) 55%, var(--line));
+      background: color-mix(in srgb, hsl(215 80% 55%) 16%, var(--card));
+      color: color-mix(in srgb, hsl(215 75% 42%) 65%, var(--text));
+    }
+
+    .td-atalho-jwl,
+    .td-atalho-jwl:visited {
+      border: 1px solid #4a2370;
+      background: #5b2d86; /* o roxo do logo do JW Library */
+      color: #fff;
+    }
+
+    .td-atalho-jwl:hover {
+      background: #6d3a9c;
     }
 
     /* Memória de correções (piloto): a caixa ao lado de Salvar alterações e a lista na tela Prompts da IA. */
