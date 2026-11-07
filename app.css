@@ -167,7 +167,7 @@
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
       color: var(--text);
-      padding: 3px 12px;
+      padding: 1px 12px;
       text-align: left;
       border-bottom: 1px solid var(--line);
     }
@@ -175,13 +175,13 @@
     /* Espaço do mesmo tamanho do botão ☰ à direita: com ele, o logo fica no centro exato da barra. */
     header.app-topbar::after {
       content: "";
-      flex: 0 0 40px;
+      flex: 0 0 36px;
     }
 
     .menu-toggle {
       flex: 0 0 auto;
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -245,8 +245,8 @@
     /* A imagem tem margem transparente em cima e embaixo (o desenho ocupa ~77% da altura): 56 px de imagem deixam o desenho da altura das duas
        linhas de texto; a margem negativa evita que a barra fique mais alta. */
     .brand-icon {
-      width: 42px;
-      margin: -5px 0;
+      width: 34px;
+      margin: -4px 0;
       height: auto;
       aspect-ratio: 1;
       flex: 0 0 auto;
@@ -267,7 +267,7 @@
     header h1 {
       margin: 0;
       color: var(--text);
-      font-size: clamp(1.3rem, 6vw, 1.55rem);
+      font-size: clamp(1.1rem, 5vw, 1.3rem);
       font-weight: 800;
       font-style: normal;
       letter-spacing: .01em;
@@ -282,7 +282,7 @@
       margin: 0;
       max-width: none;
       font-weight: 600;
-      font-size: clamp(.5rem, 2.15vw, .62rem);
+      font-size: clamp(.5rem, 2vw, .58rem);
       line-height: 1.2;
       color: var(--muted);
       white-space: nowrap;

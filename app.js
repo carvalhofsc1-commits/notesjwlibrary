@@ -7564,7 +7564,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.08'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.09'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21952,8 +21952,10 @@ function saveTemplatesToStorage() {
         const urlJwl = BIBLIA_CELULAR ? bibliaLinkJwLibrary(cap0) : '';
         jwl.hidden = !urlJwl;
         if (urlJwl) jwl.href = urlJwl;
-        const nomeLink = q('.bp-nome'); // o nome do capítulo também é um link para o texto no wol.jw.org (o mesmo do botão)
-        if (url) nomeLink.href = url; else nomeLink.removeAttribute('href');
+        const nomeLink = q('.bp-nome'); // o nome do capítulo também é um link: no celular abre o JW Library; no computador, o texto no wol.jw.org
+        if (urlJwl) { nomeLink.href = urlJwl; nomeLink.removeAttribute('target'); nomeLink.title = 'Abrir no JW Library'; }
+        else if (url) { nomeLink.href = url; nomeLink.target = '_blank'; nomeLink.title = 'Abrir no wol.jw.org'; }
+        else nomeLink.removeAttribute('href');
         const tem = e.entradas.some(x => (bibliaEstado.resumos[x.cap.id] || '').trim() !== '');
         const br = q('.bp-resumir');
         br.textContent = tem ? 'Ver resumo' : 'Resumir';
@@ -22068,12 +22070,12 @@ function saveTemplatesToStorage() {
         bibliaAudio.currentTime = Math.min(bibliaAudio.duration, Math.max(0, bibliaAudio.currentTime + (ev.key === 'ArrowRight' ? 5 : -5)));
       });
       // Abrir no JW Library: se o app não estiver instalado (ou não abrir), a página continua à vista e o aviso oferece o WOL.
-      q('.bp-jwl').addEventListener('click', () => {
-        setTimeout(() => {
-          if (document.visibilityState !== 'visible') return; // o app abriu
-          showAlert('Não consegui abrir o JW Library. Ele precisa estar instalado neste aparelho. Você pode usar o botão WOL para ler o capítulo no site.', 'JW Library');
-        }, 2500);
-      });
+      const avisoJwl = () => setTimeout(() => {
+        if (document.visibilityState !== 'visible') return; // o app abriu
+        showAlert('Não consegui abrir o JW Library. Ele precisa estar instalado neste aparelho. Você pode usar o botão WOL para ler o capítulo no site.', 'JW Library');
+      }, 2500);
+      q('.bp-jwl').addEventListener('click', avisoJwl);
+      q('.bp-nome').addEventListener('click', () => { if (/^jwlibrary:/.test(q('.bp-nome').getAttribute('href') || '')) avisoJwl(); });
       // Resumir: só abre a área do resumo (no fim da tela); quem pede o resumo à IA é o botão dentro dela. Com resumo já feito, vira "Ver resumo".
       q('.bp-resumir').addEventListener('click', () => {
         const e = esp();
