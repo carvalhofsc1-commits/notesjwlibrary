@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.41
+
+O botão 📖 JW Library das imagens (apostila, artigo de A Sentinela e dirigente) agora também copia a descrição da imagem (a mesma do Copiar, com o modelo IMAGEM) antes de abrir o app no lugar dela.
+
 ## 6.6.40
 
 Imagens do artigo de A Sentinela (Comentários e Dirigentes): o botão 📖 JW Library aparece ao lado do Copiar da descrição de cada imagem e abre o artigo no lugar da imagem (o servidor passa a enviar o parágrafo que vem logo depois dela; para as imagens já carregadas, toque em Recarregar matéria da semana).

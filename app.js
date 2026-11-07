@@ -7610,7 +7610,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.40'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.41'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -13699,7 +13699,13 @@ function saveTemplatesToStorage() {
           jw.className = 'study-imagem-jwl';
           jw.href = imagem.jwl;
           jw.textContent = '📖 JW Library';
-          jw.title = 'Abrir no app JW Library, no lugar desta imagem';
+          jw.title = 'Copia a descrição da imagem e abre o app JW Library no lugar dela: é só colar';
+          // Como todo botão do JW Library que se refere a um texto: copia a descrição (a mesma do Copiar) e só então abre o app.
+          jw.addEventListener('click', async event => {
+            event.preventDefault();
+            await copiarDescricaoImagem(textoDaImagemCopiada(imagem.descricao), copiar);
+            window.location.href = jw.href;
+          });
           acoes.appendChild(jw);
         }
         bloco.append(desc, acoes);
