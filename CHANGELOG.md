@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.02
+
+Leitura em voz (texto diário, Leitura, comentários e demais): o gráfico de barras do som aparece no player e se mexe enquanto a leitura está em andamento; na pausa as barras param e, ao terminar, ficam baixas.
+
 ## 6.6.01
 
 Barra inferior: o botão **Áudio** passou a se chamar **Gravar**.

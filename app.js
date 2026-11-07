@@ -7564,7 +7564,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.01'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.02'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -22228,8 +22228,9 @@ function saveTemplatesToStorage() {
       if (ts >= v.proxPausa) { v.pausaAte = ts + 160 + Math.random() * 240; v.proxPausa = ts + 1500 + Math.random() * 2500; }
       // O silêncio de verdade que o app consegue saber: a respiração entre um versículo e outro (logo antes de cada marcador do áudio) e quando o áudio está carregando.
       const a = bibliaAudioAtual;
-      let silencio = Boolean(bibliaAudio) && bibliaAudio.readyState < 3;
-      if (!silencio && a && bibliaAudio) {
+      const daBiblia = Boolean(a) && Boolean(bibliaAudio) && a.estado === 'tocando';
+      let silencio = daBiblia && bibliaAudio.readyState < 3;
+      if (!silencio && daBiblia) {
         const t = bibliaAudio.currentTime;
         const prox = (a.marcas || []).find(m => m.t > t);
         silencio = Boolean(prox) && prox.t - t < 0.4;
@@ -22238,7 +22239,7 @@ function saveTemplatesToStorage() {
       if (ts >= v.proxSilaba) { v.nivel = mudo ? 0.06 : 0.35 + Math.random() * 0.65; v.proxSilaba = ts + 90 + Math.random() * 140; }
       // as faixas agudas (direita, zona vermelha) têm o seu próprio ritmo: chiados (s, f, x) vêm em rajadas, independentes das sílabas
       if (ts >= v.proxAgudo) { v.agudo = mudo ? 0.05 : (Math.random() < 0.3 ? 0.15 : 0.45 + Math.random() * 0.55); v.proxAgudo = ts + 60 + Math.random() * 110; }
-      document.querySelectorAll('#bibliaCard .biblia-eq').forEach(eq => {
+      document.querySelectorAll('#bibliaCard .biblia-eq, #vozBar .biblia-eq').forEach(eq => {
         if (!eq.offsetParent) return; // escondido
         const barras = eq.children;
         const alto = Math.max(8, eq.clientHeight - 1);
@@ -22254,6 +22255,27 @@ function saveTemplatesToStorage() {
         }
       });
     }
+    // O mesmo gráfico no player das leituras em voz (texto diário, Leitura, comentários): fica entre a situação e a barra de andamento, aparece com a barra
+    // e se mexe enquanto o áudio toca; na pausa as barras param e, ao terminar, voltam a ficar baixas.
+    const vozEq = bibliaEqCriar();
+    vozEq.classList.add('voz-eq');
+    vozEq.hidden = true;
+    vozStatus.after(vozEq);
+    let vozEqQuadro = 0;
+    let vozEqUltimo = 0;
+    function vozEqLoop(ts) {
+      vozEqQuadro = 0;
+      if (vozAudio.paused || vozAudio.ended || vozBar.hidden) return;
+      if (ts - vozEqUltimo >= 75) { vozEqUltimo = ts; bibliaEqPasso(ts); }
+      vozEqQuadro = requestAnimationFrame(vozEqLoop);
+    }
+    function vozEqAbaixar() { Array.from(vozEq.children).forEach(b => { b._v = 0; b.style.height = '3px'; }); }
+    vozAudio.addEventListener('playing', () => { if (!vozEqQuadro) vozEqQuadro = requestAnimationFrame(vozEqLoop); });
+    vozAudio.addEventListener('ended', vozEqAbaixar);
+    new MutationObserver(() => { vozEq.hidden = vozProgresso.hidden; if (vozEq.hidden) vozEqAbaixar(); }).observe(vozProgresso, { attributes: true, attributeFilter: ['hidden'] });
+    // O gráfico acompanha o áudio, mas o mesmo som não toca durante a pausa: ao pausar, as barras descem devagar.
+    vozAudio.addEventListener('pause', () => { if (!vozAudio.ended) setTimeout(() => { if (vozAudio.paused) vozEqAbaixar(); }, 0); });
+
     // O gráfico de barras fica no player do painel. Com o áudio tocando e o cartão do grupo (ou do livro) que o contém recolhido, o player não está à vista:
     // o gráfico passa para o topo do cartão que está à vista (o mais externo recolhido) e volta só ao player quando o cartão é aberto.
     function bibliaEqTopoPintar() {

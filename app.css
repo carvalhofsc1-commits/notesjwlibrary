@@ -10681,6 +10681,10 @@ details.transcricao-bloco:not([open]) {
 /* As barras de áudio dentro do player do painel, na linha da situação ("🔊 Cap. 12 · v. 3/8"). */
 .bp-status-linha { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 0; }
 .bp-status-linha .bp-status { flex: 1 1 auto; min-width: 0; }
+/* O gráfico de barras no player das leituras em voz (texto diário, Leitura): largura toda, entre a situação e a barra de andamento. */
+.voz-bar .biblia-eq.voz-eq { display: flex; width: 100%; height: 44px; margin: 8px 0 2px; gap: 3.2px; justify-content: space-between; }
+.voz-bar .biblia-eq.voz-eq[hidden] { display: none; }
+.voz-bar .biblia-eq.voz-eq i { flex: 1 1 0; width: auto; min-width: 0; height: 3px; border-radius: 1.5px; animation: none; transition: height .08s linear; }
 .biblia-player .bp-eq { flex: 0 0 auto; margin: 0; height: 34px; }
 .biblia-player .bp-eq[hidden] { display: none; }
 /* O gráfico do player: 24 barras finas em até 150 px de largura e 26 px de altura. */
