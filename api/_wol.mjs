@@ -69,8 +69,10 @@ export function imagensDaApostila(html) {
   const lista = [];
   let secao = "";
   let item = "";
+  let ultimoPid = null;
   for (const m of semFiguras.matchAll(/<(h2|h3)\b[^>]*>([\s\S]*?)<\/\1>|<p class="x-figura" data-fig="(\d+)">/g)) {
     if (m[1]) {
+      ultimoPid = (m[0].match(/data-pid="(\d+)"/) || [])[1] || ultimoPid;
       const titulo = textoDe(m[2]);
       if (m[1] === "h2") {
         secao = titulo;
@@ -79,7 +81,9 @@ export function imagensDaApostila(html) {
       continue;
     }
     const figura = figuras[Number(m[3])];
-    if (figura && (figura.descricao || figura.legenda)) lista.push({ secao, item, descricao: figura.descricao, legenda: figura.legenda });
+    // O "par" do endereço do JW Library: o parágrafo que vem logo depois da imagem (a imagem fica logo acima dele); sem ele, o último antes.
+    const pid = (semFiguras.slice(m.index).match(/data-pid="(\d+)"/) || [])[1] || ultimoPid || null;
+    if (figura && (figura.descricao || figura.legenda)) lista.push({ secao, item, descricao: figura.descricao, legenda: figura.legenda, pid });
   }
   return lista.slice(0, 30);
 }

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.31
+
+Imagens da apostila: (1) o cartão Texto original some por completo enquanto Imagens da apostila está aberto (a resposta que estava nele também sai); (2) depois da descrição de cada imagem, ao lado do Copiar, um botão 📖 JW Library abre o app no lugar da imagem (o servidor passa a enviar o parágrafo que vem logo depois da imagem; imagens carregadas antes só ganham o botão ao recarregar as imagens).
+
 ## 6.6.30
 
 O card da semana volta a abrir a página de reuniões no wol.jw.org: o link do app JW Library para a semana (alias=meetings) abria o app, mas com a página em branco.

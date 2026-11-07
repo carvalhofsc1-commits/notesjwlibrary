@@ -7610,7 +7610,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.30'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.31'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -13685,7 +13685,19 @@ function saveTemplatesToStorage() {
         copiar.setAttribute('aria-label', 'Copiar a descrição da imagem, com o modelo IMAGEM no começo');
         copiar.addEventListener('click', () => copiarDescricaoImagem(textoDaImagemCopiada(imagem.descricao), copiar));
         // O botão fica na linha de baixo da descrição, à esquerda — não no fim da frase (que desalinha quando o texto tem tamanhos diferentes).
-        bloco.append(desc, copiar);
+        // Nas imagens da apostila, o 📖 JW Library fica ao lado dele e abre o app no lugar da imagem.
+        const acoes = document.createElement('div');
+        acoes.className = 'study-imagem-acoes';
+        acoes.appendChild(copiar);
+        if (imagem.jwl) {
+          const jw = document.createElement('a');
+          jw.className = 'study-imagem-jwl';
+          jw.href = imagem.jwl;
+          jw.textContent = '📖 JW Library';
+          jw.title = 'Abrir no app JW Library, no lugar desta imagem';
+          acoes.appendChild(jw);
+        }
+        bloco.append(desc, acoes);
       }
       if (imagem.legenda) {
         const leg = document.createElement('p');
@@ -13918,13 +13930,20 @@ function saveTemplatesToStorage() {
       if (currentScreen() !== 'reunioes') return;
       const caixa = document.getElementById(comentariosFoco);
       if (!caixa || !caixa.open || caixa.offsetParent === null) return;
-      const rodar = { sentinelaBox: comentariosAutoSentinela, ebcBox: comentariosAutoEbc, joiasBox: comentariosAutoJoias }[comentariosFoco];
+      const rodar = { sentinelaBox: comentariosAutoSentinela, ebcBox: comentariosAutoEbc, joiasBox: comentariosAutoJoias, apostilaImgBox: () => comentariosAutoAplicar(null) }[comentariosFoco];
       if (rodar) rodar().catch(() => {});
     }
-    ['sentinelaBox', 'ebcBox', 'joiasBox'].forEach(id => document.getElementById(id).addEventListener('toggle', event => {
-      if (!event.target.open) return;
-      comentariosFoco = id;
-      comentariosAutoTodos();
+    // Imagens da apostila: não usam o campo de texto, então o cartão Texto original some por completo (e a resposta que estava nele sai).
+    function comentariosCartaoPintar() {
+      const caixa = document.getElementById('apostilaImgBox');
+      document.body.classList.toggle('sem-texto-original', comentariosFoco === 'apostilaImgBox' && Boolean(caixa) && caixa.open);
+    }
+    ['sentinelaBox', 'ebcBox', 'joiasBox', 'apostilaImgBox'].forEach(id => document.getElementById(id).addEventListener('toggle', event => {
+      if (event.target.open) {
+        comentariosFoco = id;
+        comentariosAutoTodos();
+      }
+      comentariosCartaoPintar();
     }));
 
     async function studyRecuperar(picker) {
@@ -16385,7 +16404,7 @@ function saveTemplatesToStorage() {
         : 'A apostila desta semana não tem imagens com descrição ou legenda.';
       let parteAtual = null;
       imagens.forEach(imagem => {
-        const bloco = imagemBloco(imagem);
+        const bloco = imagemBloco(imagem.pid ? { ...imagem, jwl: jwlLinkDocumento(dados.url, imagem.pid) } : imagem);
         if (!bloco) return;
         // Uma linha separa cada imagem da anterior (e a primeira da contagem acima); a parte da apostila aparece só na primeira imagem dela.
         const item = document.createElement('div');
