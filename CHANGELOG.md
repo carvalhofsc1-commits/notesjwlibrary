@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.25
+
+A opção 🧠 Aprender com esta correção (só administrador) também fica escondida dentro de ⚙️ Mais opções.
+
 ## 6.6.24
 
 Tela de respostas (cartão Texto original) mais simples, em todas as telas: **Outra resposta** e **Melhorar esta resposta** passam para ACIMA do Salvar alterações, mais finos e leves; tudo o que vem depois do Salvar alterações fica num cartão recolhível **⚙️ Mais opções** (Salvar texto, Exportar para Word e Compartilhar na mesma linha, sem o texto explicativo e, fora da tela Formatar, as opções de formatação). Na tela Formatar as opções principais, outras opções de formatação e opções com IA continuam à vista.

@@ -88,7 +88,7 @@
       const naFormatar = document.body.dataset.screen === 'formatar';
       if (naFormatar) { if (painel.parentNode !== layout) layout.appendChild(painel); }
       else if (painel.parentNode !== corpo) corpo.appendChild(painel);
-      caixa.hidden = naFormatar && exportar.hidden; // na Formatar sem texto não há nada dentro
+      caixa.hidden = naFormatar && exportar.hidden && document.getElementById('memoriaUsarLinha').hidden; // na Formatar sem texto não há nada dentro
     }
 
     function showScreen(name, options) {
@@ -7610,7 +7610,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.24'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.25'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -16745,6 +16745,7 @@ function saveTemplatesToStorage() {
       salvarBtn.disabled = !sujo;
       const memoriaLinha = document.getElementById('memoriaUsarLinha');
       memoriaLinha.hidden = !(ligado && sujo && senhaAdminSalva());
+      editorOpcoesPosicionar();
       if (memoriaLinha.hidden) document.getElementById('memoriaUsar').checked = false;
       if (!ligado || sujo) salvarAvisoFim(); // mexeu de novo (ou trocou de texto): o aviso de salvo sai
       salvarInfo.textContent = !ligado ? '' : (sujo
