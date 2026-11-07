@@ -7610,7 +7610,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.38'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.39'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -13121,7 +13121,12 @@ function saveTemplatesToStorage() {
 
         answerCopyLayer.appendChild(btn);
         let jw = null;
-        if (part.jwl && part.jwl.docid && part.paragrafos !== 'perguntas') { // ao lado do Copiar: abre o parágrafo no app JW Library, o lugar de colar a resposta
+        // Perguntas do dirigente guardadas antes de o servidor mandar o parágrafo: ele vem da lista de parágrafos carregada (aiStudy.pids), se for do mesmo artigo.
+        if (!part.jwl && part.paragrafos === 'perguntas' && aiRefino && aiRefino.kind === 'dirigente' && aiStudy && aiStudy.pids && String(aiStudy.artigo) === String(aiRefino.artigo)) {
+          const primeiro = studyNumbers(aiRefino.paragrafos || '')[0];
+          if (primeiro && aiStudy.pids[primeiro]) part = { ...part, jwl: { docid: String(aiStudy.artigo), par: String(aiStudy.pids[primeiro]) } };
+        }
+        if (part.jwl && part.jwl.docid) { // ao lado do Copiar: abre o parágrafo no app JW Library, o lugar de colar a resposta
           jw = document.createElement('a');
           jw.className = 'answer-jwl-btn';
           jw.href = jwlLinkPorId(part.jwl.docid, part.jwl.par);
@@ -13149,31 +13154,7 @@ function saveTemplatesToStorage() {
 
     // Tudo o que a IA devolve entra direto no campo de texto; só as respostas do estudo ganham botões Copiar (o esboço é copiado de
     // uma vez, sem botões).
-    // O botão 📖 JW Library no topo do campo: só com as perguntas adicionais do dirigente à vista (uma parte só, com o parágrafo consultado).
-    function editorJwlTopoAtualizar() {
-      const botao = document.getElementById('jwlTopBtn');
-      if (!botao) return;
-      const parte = aiResumo && Array.isArray(aiResumo.partes) && aiResumo.partes.length === 1 ? aiResumo.partes[0] : null;
-      botao.hidden = !(parte && parte.paragrafos === 'perguntas' && parte.jwl && parte.jwl.docid && input.value.trim());
-    }
-    document.getElementById('jwlTopBtn').addEventListener('click', async () => {
-      const botao = document.getElementById('jwlTopBtn');
-      const parte = aiResumo && Array.isArray(aiResumo.partes) ? aiResumo.partes[0] : null;
-      if (!parte || !parte.jwl) return;
-      const destino = jwlLinkPorId(parte.jwl.docid, parte.jwl.par);
-      const texto = input.value.includes(parte.texto) ? parte.texto : input.value; // as perguntas deste parágrafo (ou o campo, se foi mudado)
-      const rotulo = botao.innerHTML;
-      try {
-        await navigator.clipboard.writeText(texto);
-        botao.textContent = '✓ Copiado';
-        setTimeout(() => { botao.innerHTML = rotulo; }, 2500);
-      } catch (e) { /* sem permissão para copiar: abre mesmo assim */ }
-      bibliaJwLibraryAviso();
-      window.location.href = destino;
-    });
-
     function renderAiSuggestions() {
-      editorJwlTopoAtualizar();
       aiResults.textContent = '';
       if (aiResumo && aiResumo.kind === 'estudo') {
         if (aiResumo.semBotoes) clearAnswerCopyButtons();
@@ -14217,7 +14198,8 @@ function saveTemplatesToStorage() {
           grupos: groups,
           perguntas: Array.isArray(result.data.perguntas) ? result.data.perguntas.map(q => String(q || '')) : [],
           imagens: Array.isArray(result.data.imagens) ? result.data.imagens.map(lista => (Array.isArray(lista) ? lista : []).map(i => ({ descricao: String((i && i.descricao) || ''), legenda: String((i && i.legenda) || '') }))) : [],
-          recapitulacao: result.data.recapitulacao !== false
+          recapitulacao: result.data.recapitulacao !== false,
+          pids: result.data.pids && typeof result.data.pids === 'object' ? result.data.pids : {} // número do parágrafo -> o "par" do JW Library
         };
         saveStudyCache(aiStudy);
         showStudyArticleBox(false);
@@ -16833,7 +16815,6 @@ function saveTemplatesToStorage() {
       salvarBloco.hidden = !input.value.trim(); // sempre visível quando há texto (desabilitado se o texto não é de uma pesquisa salva ou não mudou)
       document.getElementById('exportarBloco').hidden = !input.value.trim();
       editorOpcoesPosicionar();
-      editorJwlTopoAtualizar();
       // O resultado da última exportação ("✅ nome.docx") sai quando o texto muda, voltando à explicação de sempre.
       const exportarInfo = document.getElementById('exportarInfo');
       if (exportarInfo.dataset.texto !== undefined && exportarInfo.dataset.texto !== input.value) {

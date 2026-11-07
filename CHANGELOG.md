@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.39
+
+A barra de botões do topo do campo Texto original volta a ser a de antes (Limpar com texto). O botão 📖 JW Library das perguntas adicionais do dirigente fica no fim das perguntas, ao lado de Copiar perguntas, como no resto do app (copia as perguntas e abre o parágrafo). Perguntas salvas antes também ganham o botão: basta recarregar a matéria da semana uma vez (o servidor passa a enviar o parágrafo de cada número).
+
 ## 6.6.38
 
 Barra de botões no topo do campo Texto original (celular): Limpar ficou só com o ícone da lixeira, para dar espaço, e nas perguntas adicionais do dirigente há um novo botão 📖 JW Library que copia as perguntas e abre o parágrafo consultado direto no app (é só colar no campo certo). O servidor passa a enviar o parágrafo consultado; perguntas salvas antes só ganham o botão ao gerar de novo.
