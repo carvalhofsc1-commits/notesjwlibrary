@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.47
+
+Barra do topo: o ícone do NoteStyle ficou um pouco maior (de 34 para 40 px), para ter a altura do bloco do nome e do slogan; a faixa não muda de altura.
+
 ## 6.6.46
 
 Tela do resumo do capítulo: o botão de ouvir passou para o topo, junto do Fechar, só com o ícone do alto-falante (grande), como no texto diário; brilha enquanto a leitura está aberta.

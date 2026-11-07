@@ -245,8 +245,8 @@
     /* A imagem tem margem transparente em cima e embaixo (o desenho ocupa ~77% da altura): 56 px de imagem deixam o desenho da altura das duas
        linhas de texto; a margem negativa evita que a barra fique mais alta. */
     .brand-icon {
-      width: 34px;
-      margin: -4px 0;
+      width: 40px;
+      margin: -6px 0;
       height: auto;
       aspect-ratio: 1;
       flex: 0 0 auto;
