@@ -10673,6 +10673,22 @@ body.biblia-resumo-aberto { overflow: hidden; }
   color: #fff;
 }
 .biblia-painel .bp-acoes .bp-jwl:hover { background: #6d3a9c; }
+/* O botão 📖 JW Library embaixo do título dos cartões de preparação (Tesouros, joias, estudo bíblico…). */
+a.jwl-mini, a.jwl-mini:visited {
+  display: flex;
+  width: fit-content;
+  margin: 8px auto 0;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: #5b2d86;
+  border: 1px solid #4a2370;
+  color: #fff;
+  font-size: .8rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none;
+}
+a.jwl-mini:hover { background: #6d3a9c; }
 .biblia-painel .bp-acoes .bp-resumir { --cor: 280; }
 .biblia-painel .bp-acoes .bp-resumir.tem { --cor: 150; }
 

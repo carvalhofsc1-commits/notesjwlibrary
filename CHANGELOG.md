@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.17
+
+JW Library nas telas de preparar: os cartões de estudo bíblico, Tesouros, joias, discursos e imagens da apostila ganham o botão 📖 JW Library abaixo do título, que abre o documento no app (com o mesmo endereço que o próprio JW Library gera ao compartilhar). Texto diário: o botão agora abre o dia inteiro no app, no título do dia (em vez do versículo); o servidor passa a enviar o número do documento e o parágrafo.
+
 ## 6.6.16
 
 Texto diário: saem os botões 📖 das referências bíblicas dos comentários e dos comentários adicionais (voltam a ficar como antes).

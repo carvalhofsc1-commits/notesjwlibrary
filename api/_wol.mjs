@@ -311,7 +311,10 @@ export function analisarTextoDiario(html) {
       )
     )
     .filter(Boolean);
-  return { titulo, tema, referencias: referenciasDe(temaHtml), comentario, fonte: citacoes.filter(Boolean).join(" ") };
+  // Para abrir o dia no app JW Library (jwlibrary:///finder?...&docid=…&par=…): o número do documento e o parágrafo do título do dia.
+  const docid = (html.match(/\bdocId-(\d+)/) || [])[1] || null;
+  const par = (bloco.match(/<h2\b[^>]*data-pid="(\d+)"/) || [])[1] || null;
+  return { titulo, tema, referencias: referenciasDe(temaHtml), comentario, fonte: citacoes.filter(Boolean).join(" "), docid, par };
 }
 
 const textosDiarios = new Map(); // "2026-10-20" -> { quando, texto }

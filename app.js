@@ -7564,7 +7564,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.16'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.17'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -14219,6 +14219,7 @@ function saveTemplatesToStorage() {
           link.rel = 'noopener noreferrer';
           link.textContent = [dados.materia, dados.titulo].filter(Boolean).join(' · ');
           titulo.appendChild(link);
+          jwlBotaoDoDocumento(titulo, dados.url);
         } else {
           titulo.textContent = 'Aguardando carregar matéria da semana';
         }
@@ -14704,6 +14705,7 @@ function saveTemplatesToStorage() {
           linhaSemana.textContent = dados.semana;
           alvo.appendChild(linhaSemana);
         }
+        jwlBotaoDoDocumento(el, dados.url);
       } else {
         el.textContent = 'Aguardando carregar discurso';
       }
@@ -16132,6 +16134,7 @@ function saveTemplatesToStorage() {
           link.appendChild(linhaSemana);
         }
         titulo.appendChild(link);
+        jwlBotaoDoDocumento(titulo, dados.url);
       } else {
         titulo.textContent = 'Aguardando carregar matéria da semana';
       }
@@ -16179,6 +16182,7 @@ function saveTemplatesToStorage() {
           link.appendChild(linhaSemana);
         }
         titulo.appendChild(link);
+        jwlBotaoDoDocumento(titulo, dados.url);
       } else {
         titulo.textContent = 'Aguardando carregar imagens';
       }
@@ -17918,7 +17922,7 @@ function saveTemplatesToStorage() {
       });
       td.fonte.textContent = texto.fonte || '';
       td.link.href = td.linkSempre.href = texto.url;
-      const jwlTexto = bibliaLinkJwLibraryRef(texto.tema); // o texto bíblico do dia (ex.: "— Núm. 11:23.") no app JW Library
+      const jwlTexto = texto.docid ? 'jwlibrary:///finder?srcid=jwlshare&wtlocale=T&prefer=lang&docid=' + texto.docid + (texto.par ? '&par=' + texto.par : '') : bibliaLinkJwLibraryRef(texto.tema); // o texto bíblico do dia (ex.: "— Núm. 11:23.") no app JW Library
       const tdJwl = document.getElementById('tdJwl');
       tdJwl.hidden = !jwlTexto;
       if (jwlTexto) tdJwl.href = jwlTexto;
@@ -21407,6 +21411,23 @@ function saveTemplatesToStorage() {
       // O link vai exatamente ao versículo citado. (No celular o JW Library mostra a primeira linha dele um pouco acima; o app não controla isso. Apontar para o versículo anterior foi testado e descartado.)
       return n && capitulo && verso ? 'jwlibrary:///finder?bible=' + String(n).padStart(2, '0') + String(capitulo).padStart(3, '0') + String(verso).padStart(3, '0') + '&wtlocale=T' : '';
     }
+    // Um documento do wol (".../wol/d/r5/lp-t/2026560") no app JW Library, com o endereço que o próprio app gera ao compartilhar (docid e, se houver, o parágrafo).
+    function jwlLinkDocumento(url, par) {
+      const m = /\/wol\/d\/r5\/lp-t\/(\d+)/.exec(String(url || ''));
+      return m ? 'jwlibrary:///finder?srcid=jwlshare&wtlocale=T&prefer=lang&docid=' + m[1] + (par ? '&par=' + par : '') : '';
+    }
+    // O botão 📖 JW Library logo abaixo do título (um link para o wol) de um cartão de preparação.
+    function jwlBotaoDoDocumento(titulo, url) {
+      const link = jwlLinkDocumento(url);
+      if (!titulo || !link) return;
+      const a = document.createElement('a');
+      a.className = 'jwl-mini';
+      a.href = link;
+      a.textContent = '📖 JW Library';
+      a.title = 'Abrir no app JW Library';
+      titulo.appendChild(a);
+    }
+    document.addEventListener('click', ev => { if (ev.target.closest && ev.target.closest('a.jwl-mini')) bibliaJwLibraryAviso(); });
     // Depois de tocar num link do JW Library: se a página continua à vista e em foco por 2,5 s, o app não abriu (ao abrir, o app ou a pergunta do navegador tira o foco).
     function bibliaJwLibraryAviso() {
       let saiu = false;
