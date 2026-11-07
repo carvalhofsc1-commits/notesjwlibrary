@@ -7610,7 +7610,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.32'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.33'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -13938,11 +13938,32 @@ function saveTemplatesToStorage() {
       const caixa = document.getElementById('apostilaImgBox');
       document.body.classList.toggle('sem-texto-original', comentariosFoco === 'apostilaImgBox' && Boolean(caixa) && caixa.open);
     }
+    // De qual das matérias é a resposta que está no campo: a que apareceu sozinha ou a gerada/aberta e ainda ligada à pesquisa salva.
+    function comentariosDono() {
+      const porChave = { 'sent:': 'sentinelaBox', 'ebc:': 'ebcBox', 'joias:': 'joiasBox' };
+      const achou = Object.keys(porChave).find(p => comentariosAuto.chave.startsWith(p));
+      if (achou) return porChave[achou];
+      const item = historicoLigado && historicoLer().find(i => i.id === historicoLigado.id);
+      return item ? ({ sentinela: 'sentinelaBox', ebc: 'ebcBox', joias: 'joiasBox' }[item.tipo] || '') : '';
+    }
+    // Recolher uma matéria recolhe também o campo de texto: a resposta dela sai e, sem nenhuma matéria aberta, o cartão Texto original some.
+    function comentariosAoRecolher(id) {
+      if (input.value.trim() && comentariosDono() === id) {
+        document.getElementById('clearBtn').click();
+        aiResumo = null;
+        clearAnswerCopyButtons();
+        updateAiControls();
+        comentariosAuto = { chave: '', texto: '', ids: [] };
+      }
+      if (!['sentinelaBox', 'ebcBox', 'joiasBox', 'apostilaImgBox'].some(b => document.getElementById(b).open)) document.body.classList.remove('texto-chegou');
+      studyPickers.forEach(showStudySaved);
+      recuperarSalvasAtualizar();
+    }
     ['sentinelaBox', 'ebcBox', 'joiasBox', 'apostilaImgBox'].forEach(id => document.getElementById(id).addEventListener('toggle', event => {
       if (event.target.open) {
         comentariosFoco = id;
         comentariosAutoTodos();
-      }
+      } else comentariosAoRecolher(id);
       comentariosCartaoPintar();
     }));
 

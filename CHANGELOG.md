@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.33
+
+Preparar para comentar: recolher um card (Sentinela, Tesouros, Estudo Bíblico) recolhe também o campo Texto original: a resposta dele sai e, sem nenhum card aberto, o cartão Texto original some.
+
 ## 6.6.32
 
 Perguntas adicionais para o dirigente: com as perguntas aplicativas marcadas, a IA também recebe os dois parágrafos seguintes (só para consulta) e é orientada a não sugerir uma aplicação que a matéria à frente já trata. A instrução fica no prompt "Perguntas adicionais para o dirigente" (editável na tela de prompts).
