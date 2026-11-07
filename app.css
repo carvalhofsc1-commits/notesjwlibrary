@@ -10574,7 +10574,7 @@ details.transcricao-bloco:not([open]) {
   background: var(--card);
 }
 .biblia-painel[hidden] { display: none; }
-.biblia-painel-topo { display: flex; align-items: center; gap: 8px; }
+.biblia-painel-topo { display: flex; align-items: center; gap: 8px; margin: 0 -10px 10px; padding: 0 10px 10px; border-bottom: 1px solid color-mix(in srgb, var(--brand) 45%, var(--line)); } /* uma linha separa o cabeçalho (capítulo e setas) do resto do painel */
 .biblia-painel .bp-ant,
 .biblia-painel .bp-prox {
   flex: 0 0 auto;
