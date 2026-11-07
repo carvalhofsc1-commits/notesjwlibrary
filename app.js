@@ -3925,6 +3925,25 @@
     // Letras formatadas viram letras comuns; emojis, setas e símbolos decorativos saem (a voz leria o nome deles). Depois,
     // as regras do administrador: cabeçalhos, citações de publicações, parênteses e referências pulados, e as referências
     // que ficam escritas por extenso.
+    // As marcas de versículos dos resumos ("(vv. 1-3)", "(v. 5)", "(vv. 1, 3)") viram palavras: "versículos de um a três", "versículo cinco", "versículos um e três".
+    // No começo da linha viram uma frase (com ponto, para a voz fazer a pausa); no meio do texto seguem na frase. Os parênteses saem junto, então a regra de
+    // pular o que está entre parênteses não leva a marca embora.
+    function vozVersiculosFalados(texto) {
+      const num = '\\d{1,3}';
+      const item = num + '(?:\\s*[-–]\\s*' + num + ')?';
+      const regex = new RegExp('(?:[(\\[]\\s*)?(?<![\\p{L}\\d])(vv?)\\.\\s*(' + item + '(?:\\s*(?:,|;|e)\\s*' + item + ')*)(?:\\s*[)\\]])?', 'giu');
+      return texto.replace(regex, (m, v, lista, posicao, inteiro) => {
+        const itens = lista.split(/\s*(?:,|;|\be\b)\s*/).filter(Boolean).map(parte => {
+          const faixa = parte.split(/\s*[-–]\s*/);
+          return faixa.length > 1 ? 'de ' + vozNumeroFalado(faixa[0]) + ' a ' + vozNumeroFalado(faixa[1]) : vozNumeroFalado(faixa[0]);
+        });
+        const plural = v.toLowerCase() === 'vv' || itens.length > 1 || lista.includes('-') || lista.includes('–');
+        const falado = (plural ? 'versículos ' : 'versículo ') + vozJuntarComE(itens);
+        const inicioDaLinha = !/\S/.test(inteiro.slice(0, posicao).split('\n').pop());
+        return inicioDaLinha ? falado.charAt(0).toUpperCase() + falado.slice(1) + '.' : falado;
+      });
+    }
+
     function textoParaVoz(texto, regras) {
       const r = Object.assign({}, VOZ_REGRAS_PADRAO, regras || vozRegras || {});
       let t = removeUnicodeFormatting(String(texto || ''))
@@ -3941,9 +3960,22 @@
           .map(linha => linha.replace(/^(?:RESPOSTAS?|PERGUNTAS ADICIONAIS|Recap\.)\s*[\d,\s\-–]*\.?\s*/i, ''))
           .filter(linha => linha && !/^(?:Perguntas complementares|Perguntas aplicativas|Explica[cç][aã]o dos textos)\s*$/i.test(linha));
       }
-      let junto = t.join('\n');
+      let junto = vozVersiculosFalados(t.join('\n'));
       if (r.pularFontes) junto = VOZ_FONTES.reduce((texto, fonte) => texto.replace(fonte, ''), junto);
-      if (r.pularParenteses) junto = junto.replace(/\s*\([^()\n]*\)/g, '');
+      if (r.pularParenteses) {
+        junto = junto.replace(/\s*\(([^()\n]*)\)/g, (m, dentro, posicao, inteiro) => {
+          if (!r.lerRefsEntreParenteses) return '';
+          const { regex } = vozReferencias();
+          regex.lastIndex = 0;
+          const ehReferencia = regex.test(dentro);
+          regex.lastIndex = 0;
+          if (!ehReferencia) return '';
+          const inicioDaLinha = !/\S/.test(inteiro.slice(0, posicao).split('\n').pop());
+          const depois = inteiro.slice(posicao + m.length).match(/^\s*(\S)/);
+          const virgula = depois && /[.,;:!?]/.test(depois[1]) ? '' : ','; // sem vírgula se já vem pontuação
+          return (inicioDaLinha ? '' : ', ') + dentro.trim() + virgula;
+        });
+      }
       if (r.pularRefs) junto = vozPularRefs(junto);
       if (r.formatoRefs === 'curta' || r.formatoRefs === 'extenso') {
         const { regex } = vozReferencias();
@@ -3954,6 +3986,7 @@
       return junto
         .replace(/\s*\(\s*[.,;:\s]*\)/g, '') // parênteses que ficaram vazios
         .replace(/([.,;:!?])(?:[ \t]+[.,;:])+/g, '$1') // pontuação que sobrou do que saiu (reticências ficam)
+        .replace(/,+([.!?])/g, '$1') // vírgula que ficou antes do ponto final
         .split('\n')
         .map(linha => linha.replace(/[ \t]+/g, ' ').replace(/\s+([,.;:!?])/g, '$1').trim())
         .filter(linha => /[\p{L}\d]/u.test(linha))
@@ -7610,7 +7643,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.44'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.45'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -22792,7 +22825,11 @@ function saveTemplatesToStorage() {
     const vozEq = bibliaEqCriar();
     vozEq.classList.add('voz-eq');
     vozEq.hidden = true;
-    vozStatus.after(vozEq);
+    // Pequeno, à direita da situação ("Lendo… 67%"), no mesmo padrão do player da leitura da Bíblia, e não numa linha toda.
+    const vozStatusLinha = document.createElement('div');
+    vozStatusLinha.className = 'voz-status-linha';
+    vozStatus.before(vozStatusLinha);
+    vozStatusLinha.append(vozStatus, vozEq);
     let vozEqQuadro = 0;
     let vozEqUltimo = 0;
     function vozEqLoop(ts) {
@@ -23078,8 +23115,89 @@ function saveTemplatesToStorage() {
       bibliaProgToggle.classList.toggle('fechado', !aberto);
     }
 
+    // ---- Ouvir o resumo ----
+    // A voz é a mesma da Leitura em voz alta (código de leitura). Durante a leitura o campo do resumo dá lugar ao texto em frases, com a frase lida
+    // destacada; ao parar ou terminar, o campo volta.
+    const bibliaResumoVozEl = document.getElementById('bibliaResumoVoz');
+    const bibliaResumoLeituraEl = document.getElementById('bibliaResumoLeitura');
+    const bibliaResumoOuvirBtn = document.getElementById('bibliaResumoOuvirBtn');
+    let bibliaResumoUnidades = [];
+    let bibliaResumoDestaque = -1;
+
+    function bibliaResumoLeituraMostrar(ligada) {
+      bibliaResumoTexto.hidden = ligada;
+      bibliaResumoLeituraEl.hidden = !ligada;
+    }
+
+    function bibliaResumoLeituraMontar() {
+      // No resumo, o que está entre parênteses só é lido quando é referência aos versículos (as marcas "vv. 1-3" viram "versículos de um a três" e as citações
+      // como "Gên. 1:3" são lidas); os outros parênteses saem, e a seção das fontes (🔎 Fontes / Estudo Perspicaz) aparece mas não é lida.
+      const regras = { ...leituraRegras(vozRegras || VOZ_REGRAS_PADRAO), pularParenteses: true, lerRefsEntreParenteses: true };
+      bibliaResumoLeituraEl.textContent = '';
+      bibliaResumoUnidades = [];
+      bibliaResumoDestaque = -1;
+      leituraEstrutura(bibliaResumoTexto.value).forEach((par, pi) => {
+        const cabecalho = par.tipo !== 'texto';
+        const fonte = /^🔎\s*(?:Fontes|Estudo Perspicaz)\b/i.test(par.frases[0] || ''); // a linha das fontes, no fim de uma seção
+        const p = document.createElement('p');
+        if (par.tipo === 'titulo') p.className = 'lv-titulo';
+        else if (par.tipo === 'subtitulo') p.className = 'lv-subtitulo';
+        const estado = { negrito: false };
+        par.frases.forEach((frase, k) => {
+          if (k) p.appendChild(document.createTextNode(' '));
+          const span = document.createElement('span');
+          span.className = 'lu';
+          span.dataset.i = String(bibliaResumoUnidades.length);
+          leituraRenderizarFrase(span, frase, estado, cabecalho);
+          p.appendChild(span);
+          bibliaResumoUnidades.push({ texto: frase, falado: fonte ? '' : leituraFalado(frase, cabecalho, regras), cabecalho, paragrafo: pi, el: span });
+        });
+        if (fonte) p.classList.add('fonte-muda');
+        bibliaResumoLeituraEl.appendChild(p);
+      });
+      bibliaResumoUnidades.forEach(u => leituraMudosNoSpan(u.el, regras));
+    }
+
+    function bibliaResumoDestacar(indice) {
+      const anterior = bibliaResumoUnidades[bibliaResumoDestaque];
+      if (anterior) anterior.el.classList.remove('lendo');
+      bibliaResumoDestaque = indice;
+      const u = bibliaResumoUnidades[indice];
+      if (!u) return;
+      u.el.classList.add('lendo');
+      u.el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+
+    function bibliaResumoCfg() {
+      return {
+        lugar: bibliaResumoVozEl,
+        uso: 'leitura',
+        acesso: () => (!codigoLeituraSalvo() ? 'Salve o código de leitura em Ajustes → 🔐 Autorização de acessos.' : !navigator.onLine ? 'Sem conexão com a internet.' : ''),
+        preparar: () => {
+          if (!bibliaResumoTexto.value.trim()) return 'Não há resumo para ouvir.';
+          bibliaResumoTexto.blur(); // some o teclado do celular
+          bibliaResumoLeituraMontar();
+          bibliaResumoLeituraMostrar(true);
+          return { unidades: bibliaResumoUnidades, desde: 0 };
+        },
+        nomeAudio: () => 'Resumo - ' + (bibliaResumoAlvo ? bibliaResumoAlvo.cap.nome : 'capítulo'),
+        destacar: indice => bibliaResumoDestacar(indice),
+        limpar: () => {
+          bibliaResumoDestacar(-1);
+          bibliaResumoLeituraMostrar(false);
+        }
+      };
+    }
+
+    bibliaResumoOuvirBtn.addEventListener('click', () => {
+      if (vozBar.parentNode === bibliaResumoVozEl && !vozBar.hidden && !vozPauseBtn.hidden) return vozParar(); // tocar de novo para
+      const cfg = bibliaResumoCfg();
+      vozAbrirPronto({ lugar: cfg.lugar, texto: 'Pronto para ler o resumo.', acesso: cfg.acesso, iniciar: () => leitorLer(cfg) });
+    });
+
     function bibliaResumoSincronizar() {
       const tem = Boolean(bibliaResumoTexto.value.trim());
+      bibliaResumoOuvirBtn.disabled = !tem;
       bibliaResumoSalvarBtn.disabled = !tem;
       bibliaResumoCopiarBtn.disabled = !tem;
       bibliaResumoWordBtn.disabled = !tem;
@@ -23123,6 +23241,8 @@ function saveTemplatesToStorage() {
 
     function bibliaFecharResumo(voltar) {
       bibliaAvisoOcultar();
+      if (vozBar.parentNode === bibliaResumoVozEl) vozParar(); // fechando o resumo, a leitura dele para (e o campo volta)
+      bibliaResumoLeituraMostrar(false);
       const alvo = bibliaResumoAlvo;
       bibliaResumoAlvo = null;
       bibliaResumoCaixa.hidden = true;

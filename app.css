@@ -10441,6 +10441,26 @@ body.biblia-resumo-aberto { overflow: hidden; }
   border-bottom: 1px solid color-mix(in srgb, var(--brand) 45%, var(--line));
 }
 .biblia-resumo-caixa.tela > .biblia-grupos-topo .biblia-caixa-titulo { margin: 0; }
+.biblia-resumo-leitura {
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--text);
+  text-align: left;
+}
+.biblia-resumo-leitura[hidden] { display: none; }
+.biblia-resumo-leitura p { margin: 0 0 .8em; }
+.biblia-resumo-leitura p:last-child { margin-bottom: 0; }
+.biblia-resumo-leitura p.fonte-muda { color: var(--muted); font-size: .85em; } /* a linha das fontes aparece, mas não é lida */
+.biblia-resumo-caixa.tela .biblia-resumo-leitura {
+  min-height: 55vh;
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
 .biblia-resumo-caixa.tela .biblia-resumo-area {
   min-height: 55vh;
   overflow: auto;
@@ -10946,8 +10966,10 @@ body.biblia-resumo-aberto { overflow: hidden; }
 /* As barras de áudio dentro do player do painel, na linha da situação ("🔊 Cap. 12 · v. 3/8"). */
 .bp-status-linha { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 0; }
 .bp-status-linha .bp-status { flex: 1 1 auto; min-width: 0; }
-/* O gráfico de barras no player das leituras em voz (texto diário, Leitura): largura toda, entre a situação e a barra de andamento. */
-.voz-bar .biblia-eq.voz-eq { display: flex; width: 100%; height: 44px; margin: 8px 0 2px; gap: 3.2px; justify-content: space-between; }
+/* O gráfico de barras no player das leituras em voz (texto diário, Leitura, resumo): pequeno, à direita da situação, como no player da leitura da Bíblia. */
+.voz-bar .voz-status-linha { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.voz-bar .voz-status-linha #vozStatus { flex: 1 1 auto; min-width: 128px; }
+.voz-bar .biblia-eq.voz-eq { display: flex; flex: 0 1 150px; width: auto; min-width: 100px; height: 26px; margin: 0; gap: 3.2px; justify-content: space-between; }
 .voz-bar .biblia-eq.voz-eq[hidden] { display: none; }
 .voz-bar .biblia-eq.voz-eq i { flex: 1 1 0; width: auto; min-width: 0; height: 3px; border-radius: 1.5px; animation: none; transition: height .08s linear; }
 .biblia-player .bp-eq { flex: 0 0 auto; margin: 0; height: 34px; }

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.45
+
+(1) O gráfico de barras do player das leituras em voz (texto diário, Leitura e comentários) ficou pequeno e à direita da situação ("Lendo… 67%"), no mesmo padrão do player da leitura da Bíblia, e não mais numa linha toda. (4) No resumo, o que está entre parênteses só é lido se for referência aos versículos ("Gên. 1:3"; as marcas "vv. 1-3" são lidas por extenso) e a linha das fontes (🔎 Fontes / Estudo Perspicaz) aparece mas não é lida. (3) Na leitura em voz alta, as marcas de versículos dos resumos são lidas por extenso: "vv. 1-3" vira "versículos de um a três", "v. 5" vira "versículo cinco" e "vv. 1, 3" vira "versículos um e três". (2) Novo botão 🔊 Ouvir na tela do resumo do capítulo da Bíblia: lê o resumo em voz alta (a mesma voz da Leitura em voz alta, com o código de leitura), com a frase lida destacada e o player com o gráfico; ao parar, o campo do resumo volta.
+
 ## 6.6.44
 
 (1) O botão "Recuperar as perguntas salvas" não aparece mais logo depois de gerar uma resposta (a resposta que acabou de ser salva já está no campo; antes o aviso automático não rodava enquanto a IA estava ocupada). (2) Os botões Copiar e JW Library no campo de texto ficam no meio do espaço entre as respostas (com mais folga embaixo), para não caírem por cima da última linha. (3) Na recapitulação do dirigente o aviso diz "respostas salvas".
