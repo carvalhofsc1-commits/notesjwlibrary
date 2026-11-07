@@ -7564,7 +7564,27 @@
 
     /* O cartão "Mais opções", logo abaixo do Salvar alterações. */
     .mais-opcoes {
-      margin-top: 10px;
+      margin-top: 8px;
+    }
+
+    /* Fino e discreto: sem fundo colorido, borda leve e título pequeno em cinza. */
+    details.subsection.group-box.mais-opcoes {
+      background: transparent;
+      border-color: var(--line);
+      border-radius: 10px;
+    }
+
+    details.subsection.group-box.mais-opcoes > summary {
+      padding: 6px 12px;
+      min-height: 0;
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    details.subsection.group-box.mais-opcoes[open] > summary {
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 8px;
     }
 
     .mais-opcoes[hidden] {
