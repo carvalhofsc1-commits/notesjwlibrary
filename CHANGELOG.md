@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.42
+
+Preparar para dirigir → A Sentinela: depois do último parágrafo, a seta leva à **Recapitulação**, e o botão passa a **responder as perguntas da recapitulação** (como em Comentários, mas com o código do dirigente e o modelo de IA da elaboração das perguntas). Com resposta salva da recapitulação, ela é a base e a nova a substitui; a salva aparece sozinha ao voltar à recapitulação.
+
 ## 6.6.41
 
 O botão 📖 JW Library das imagens (apostila, artigo de A Sentinela e dirigente) agora também copia a descrição da imagem (a mesma do Copiar, com o modelo IMAGEM) antes de abrir o app no lugar dela.

@@ -68,6 +68,7 @@ export const NIVEIS = {
   "backup-semana": "pesquisa-ou-dirigente",
   // Código do dirigente
   "estudo-perguntas": "dirigente",
+  "estudo-recap": "dirigente", // as respostas da recapitulação de A Sentinela, no Preparar para dirigir
   "ebc-dirigente": "dirigente",
   "tesouros-ler": "dirigente",
   tesouros: "dirigente",

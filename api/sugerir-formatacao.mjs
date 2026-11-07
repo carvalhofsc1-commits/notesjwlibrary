@@ -1023,9 +1023,12 @@ function numerosDosParagrafos(texto) {
   return numeros;
 }
 
-async function responderEstudo(res, body, P) {
-  if (!process.env.CODIGO_ESTUDO) return erro(res, 503, "A leitura do estudo ainda não está configurada no servidor.");
-  if (!codigoValido(body.codigo)) return erro(res, 403, "Código de pesquisa inválido.");
+// opcoesDirigente.dirigente: a recapitulação pedida no Preparar para dirigir (tarefa "estudo-recap"): o código do dirigente já foi conferido, sem o de pesquisa.
+async function responderEstudo(res, body, P, opcoesDirigente = {}) {
+  if (!opcoesDirigente.dirigente) {
+    if (!process.env.CODIGO_ESTUDO) return erro(res, 503, "A leitura do estudo ainda não está configurada no servidor.");
+    if (!codigoValido(body.codigo)) return erro(res, 403, "Código de pesquisa inválido.");
+  }
 
   const url = urlDoEstudo(body);
   if (!url) return erro(res, 400, "Número ou link do artigo inválido. Use o número de 7 dígitos (ex.: 2026521) ou o link do wol.jw.org.");
@@ -4082,6 +4085,7 @@ async function tratarPedido(req, res) {
 
   if (!exigirAcesso(res, body)) return;
   if (tarefa === "estudo") return responderEstudo(res, body, P);
+  if (tarefa === "estudo-recap") return responderEstudo(res, { ...body, paragrafos: "recapitulação" }, P, { dirigente: true });
   if (tarefa === "estudo-perguntas") return sugerirPerguntas(res, body, P);
   if (tarefa === "texto-diario-comentarios") return comentariosDoTextoDiario(res, body, P);
   if (tarefa === "ebc") return responderEbc(res, body, P);

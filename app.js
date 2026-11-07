@@ -7610,7 +7610,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.41'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.42'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -13593,11 +13593,11 @@ function saveTemplatesToStorage() {
     const STUDY_RECAP_LABEL = 'Recapitulação';
 
     // Cada card da Sentinela tem o seu campo de parágrafos (com setas); a semana e a lista carregada são as mesmas.
-    // O do dirigente não tem a recapitulação (as perguntas adicionais são só para os parágrafos).
+    // O do dirigente também tem a recapitulação, depois do último parágrafo: nela o botão passa a responder as perguntas da recapitulação.
     const studyPickers = [
       { card: 'comentarios', input: aiStudyParagraphs, prev: aiParaPrev, next: aiParaNext, info: aiStudyInfo, titulo: document.getElementById('aiStudyTitulo'), pergunta: document.getElementById('aiStudyPergunta'), salva: document.getElementById('aiStudySalva'), load: aiStudyLoadBtn, recap: true },
       { card: 'dirigente', input: leaderParagraphs, prev: document.getElementById('leaderParaPrev'), next: document.getElementById('leaderParaNext'),
-        info: document.getElementById('leaderStudyInfo'), titulo: document.getElementById('leaderStudyTitulo'), pergunta: document.getElementById('leaderStudyPergunta'), salva: document.getElementById('leaderStudySalva'), load: leaderStudyLoadBtn, recap: false }
+        info: document.getElementById('leaderStudyInfo'), titulo: document.getElementById('leaderStudyTitulo'), pergunta: document.getElementById('leaderStudyPergunta'), salva: document.getElementById('leaderStudySalva'), load: leaderStudyLoadBtn, recap: true }
     ];
 
     // Opções navegáveis: os grupos de parágrafos que a IA listou (os que compartilham pergunta vêm juntos) e
@@ -13785,7 +13785,7 @@ function saveTemplatesToStorage() {
 
     // Pesquisas do dirigente (e antigas, sem rótulo nas partes): os parágrafos vêm do fim do título ("… · parágrafos 3-5").
     function studyRotuloDoTitulo(titulo) {
-      const m = String(titulo).match(/ · (?:parágrafos\s+([\d,\s–-]+)|(recap\w*))\s*$/i);
+      const m = String(titulo).match(/ · (?:parágrafos\s+([\d,\s–-]+)|(recap\p{L}*))\s*$/iu);
       return m ? (m[1] || m[2]).trim() : '';
     }
 
@@ -14049,6 +14049,11 @@ function saveTemplatesToStorage() {
         showStudyQuestions(picker);
         showStudySaved(picker);
       });
+      // No Preparar para dirigir, na recapitulação o botão responde as perguntas da recapitulação em vez de sugerir perguntas adicionais.
+      const pickerDirigente = studyPickers.find(p => p.card === 'dirigente');
+      const rotuloDir = pickerDirigente && isRecapText(pickerDirigente.input.value) ? '💬 IA - Responder as perguntas da recapitulação' : '💬 IA - Sugerir perguntas adicionais';
+      if (aiStudyQuestionsBtn.dataset.label) aiStudyQuestionsBtn.dataset.label = rotuloDir; // carregando: o rótulo volta ao fim (setAiLoading)
+      else aiStudyQuestionsBtn.textContent = rotuloDir;
       iaTravasAtualizar();
       if (studySalvasPronto) { comentariosFoco = document.body.dataset.reunioes === 'dirigir' ? 'dirigenteBox' : 'sentinelaBox'; comentariosAutoTodos(); } // a escolha de parágrafo mudou: o que está salvo dele aparece (ou a seção some)
     }
@@ -14438,8 +14443,87 @@ function saveTemplatesToStorage() {
       }
     }
 
+    // Preparar para dirigir → A Sentinela → Recapitulação: responde as perguntas do quadro de recapitulação (a mesma resposta dos Comentários), com o código do dirigente
+    // e o modelo de IA da elaboração das perguntas. Com resposta salva da recapitulação, ela é a base e a nova a substitui.
+    async function requestRecapDirigente(mode) {
+      if (aiBusy) return;
+      aiLastKind = 'dirigente-recap';
+      aiStatusKind = 'dirigente';
+      const refino = mode ? aiRefinoDe('dirigente-recap') : null;
+      const accessError = dirigenteAccessError();
+      if (accessError) return setAiStatus(accessError, true);
+      if (mode) {
+        if (!(await confirmAiRestore())) return;
+        if (aiAppliedAny) restoreAiBaseText();
+      } else {
+        aiSentinelaRaw = [];
+        aiAppliedAny = false;
+        if (input.value) {
+          setInputRange(0, input.value.length, '', { message: 'Campo de texto limpo para as novas respostas.' });
+          autoGrowInputText();
+        }
+      }
+      aiResults.textContent = '';
+      aiSuggestions = [];
+      aiRaw = [];
+      const atual = historicoChaveAtual();
+      const salvaItem = !mode ? historicoLer().find(i => i.tipo === 'dirigente' && historicoChave(i) === atual && isRecapText(studyRotuloDoTitulo(i.titulo))) : null;
+      const salvaRefino = salvaItem && historicoRefinoDe(salvaItem);
+      const previousAnswers = mode && aiSentinelaRaw.length ? aiSentinelaRaw.slice() : (salvaRefino && Array.isArray(salvaRefino.itens) && salvaRefino.itens.length ? salvaRefino.itens : null);
+      aiResumo = null;
+      updateAiControls();
+      if (!aiAppliedAny) aiBaseText = input.value;
+      saveAiOptions();
+      const payload = {
+        tarefa: 'estudo-recap',
+        codigo: codigoAcessoSalvo(),
+        codigoDirigente: codigoDirigenteSalvo(),
+        artigo: refino ? refino.artigo : studyArticleId(),
+        ano: aiWeekYear,
+        semana: aiWeekNumber,
+        paragrafos: 'recapitulação',
+        opcoes: readAiOptions(),
+        ajuste: iaExtra('dirigente')
+      };
+      if (previousAnswers) {
+        payload.modo = mode || 'melhorar';
+        payload.anteriores = { itens: previousAnswers };
+      }
+      aiBusy = true;
+      setAiLoading(true, mode === 'nova' ? aiAnotherBtn : mode === 'melhorar' ? aiImproveBtn : aiStudyQuestionsBtn);
+      try {
+        const result = await postStudy(payload, IA_ESPERA_MS);
+        if (!result.ok) {
+          if (await dirigenteRecusado(result)) return;
+          return setAiStatus(studyFailureMessage(result, 'Não foi possível responder a recapitulação agora.'), true);
+        }
+        aiSentinelaRaw = Array.isArray(result.data.itens) ? result.data.itens : [];
+        if (!aiSentinelaRaw.length) return setAiStatus(result.data.erro || 'Não encontrei as perguntas de recapitulação nesse artigo.', true);
+        const parts = buildSentinelaParts(aiSentinelaRaw);
+        aiResumo = { texto: parts.map(part => part.texto).join('\n\n\n'), partes: parts, done: false, kind: 'estudo', fonte: result.data.titulo || '' };
+        appendToMainText(aiResumo.texto);
+        aiRefino = { kind: 'dirigente-recap', paragrafos: 'recapitulação', artigo: payload.artigo };
+        historicoSalvar({
+          tipo: 'dirigente',
+          titulo: '🎤 Recapitulação' + (result.data.titulo ? ' · ' + result.data.titulo : '') + ' · recapitulação',
+          ano: payload.ano,
+          numSemana: payload.semana,
+          partes: parts,
+          refino: { ...aiRefino, itens: aiSentinelaRaw }
+        });
+        renderAiSuggestions();
+        aiRefineBox.hidden = false;
+        setAiStatus('✅ Respostas da recapitulação no campo de texto.', false);
+      } catch (e) {
+        setAiStatus(e && e.name === 'AbortError' ? 'A IA demorou demais. Tente de novo.' : 'Falha de conexão ao consultar a IA.', true);
+      } finally {
+        aiBusy = false;
+        setAiLoading(false);
+      }
+    }
+
     aiStudyBtn.addEventListener('click', () => requestStudyAnswers());
-    aiStudyQuestionsBtn.addEventListener('click', () => requestStudyQuestions());
+    aiStudyQuestionsBtn.addEventListener('click', () => (isRecapText(leaderParagraphs.value) ? requestRecapDirigente() : requestStudyQuestions()));
     studyPickers.forEach(picker => {
       picker.load.addEventListener('click', () => requestStudyList(picker));
       picker.prev.addEventListener('click', () => stepStudy(picker, -1));
@@ -14453,6 +14537,7 @@ function saveTemplatesToStorage() {
     const refineAi = mode => (
       aiLastKind === 'estudo' ? requestStudyAnswers(mode)
         : aiLastKind === 'dirigente' ? requestStudyQuestions(mode)
+        : aiLastKind === 'dirigente-recap' ? requestRecapDirigente(mode)
         : aiLastKind === 'ebc' ? requestEbcAnswers(mode)
           : aiLastKind === 'ebcdir' ? requestEbcDirigente(mode)
           : aiLastKind === 'tesouros' ? requestTesouros(mode)
@@ -17323,6 +17408,7 @@ function saveTemplatesToStorage() {
     // (a nova resposta ficou no lugar delas); uma pesquisa antiga que ficou sem partes é apagada, e a que ficou com parte das suas perde só as cobertas.
     function historicoChavesDaParte(item, parte) {
       const rotulo = String((parte && parte.paragrafos) || '').trim();
+      if (item.tipo === 'dirigente') return isRecapText(rotulo) ? ['recap:' + rotulo.replace(/^\D*/, '')] : []; // só a recapitulação do dirigente tem uma por pergunta
       if (item.tipo === 'sentinela') {
         if (isRecapText(rotulo)) return ['recap:' + rotulo.replace(/^\D*/, '')];
         const numeros = studyChave(rotulo);
@@ -17331,7 +17417,8 @@ function saveTemplatesToStorage() {
       return [(item.sub || '') + '|' + rotulo.toLowerCase()];
     }
     function historicoSemCobertas(novo, lista) {
-      if (!['sentinela', 'ebc', 'joias'].includes(novo.tipo)) return lista;
+      const recapDirigente = novo.tipo === 'dirigente' && (novo.partes || []).some(p => isRecapText(p.paragrafos));
+      if (!['sentinela', 'ebc', 'joias'].includes(novo.tipo) && !recapDirigente) return lista;
       const cobertas = new Set((novo.partes || []).flatMap(p => historicoChavesDaParte(novo, p)));
       if (!cobertas.size) return lista;
       const resultado = [];
@@ -17528,7 +17615,7 @@ function saveTemplatesToStorage() {
     // Com soPartes (só alguns parágrafos), vão só os itens desses parágrafos e o pedido passa a ser só por eles. As pesquisas salvas antes
     // (ou sem como casar as partes) usam o texto salvo no lugar dos itens crus (ver historicoRefinoAntigo); sem como montar, null (a
     // pesquisa reabre só como texto, sem Outra resposta nem Melhorar).
-    const REFINO_TIPOS = ['estudo', 'dirigente', 'ebc', 'ebcdir', 'joias', 'sentinela'];
+    const REFINO_TIPOS = ['estudo', 'dirigente', 'dirigente-recap', 'ebc', 'ebcdir', 'joias', 'sentinela'];
 
     // Os parágrafos que um conjunto de rótulos cobre, no formato do pedido ("3, 4" ou "Recapitulação"); '' se algum não for número.
     function paragrafosDosRotulos(rotulos) {
