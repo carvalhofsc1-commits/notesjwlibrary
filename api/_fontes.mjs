@@ -473,7 +473,7 @@ function carregarLivros() {
       conteudos.forEach((conteudo, i) => {
         for (const bruto of conteudo.split(/\r?\n\s*\r?\n/)) {
           const texto = bruto.replace(/\s+/g, " ").trim();
-          if (texto.length < 80) continue;
+          if (texto.length < 80 || (texto.length < 200 && /\?$/.test(texto))) continue; // fora: sobras de quadro e perguntas soltas
           const palavras = new Set(palavrasDe(texto));
           for (const w of palavras) df.set(w, (df.get(w) || 0) + 1);
           paragrafos.push({ livro: LIVROS[i].nome, texto, palavras });
@@ -488,11 +488,15 @@ function carregarLivros() {
 
 // Os parágrafos dos livros que mais combinam com a consulta: [{ livro, trecho }].
 export async function buscarNosLivros(consulta, { max = 4, maxChars = 1500 } = {}) {
-  const termos = [...new Set(palavrasDe(consulta))];
-  if (!termos.length || !fontesConfiguradas()) return [];
+  const todos = [...new Set(palavrasDe(consulta))];
+  if (!todos.length || !fontesConfiguradas()) return [];
   const { paragrafos, df } = await carregarLivros();
   const n = paragrafos.length;
-  const pesos = termos.map((t) => (df.has(t) ? Math.log(1 + n / df.get(t)) : 0));
+  const peso = (t) => (df.has(t) ? Math.log(1 + n / df.get(t)) : 0);
+  // Consulta longa (um parágrafo do estudo, um capítulo): ficam as 14 palavras mais raras, que dizem do que ela trata.
+  const termos = todos.map((t) => [t, peso(t)]).filter(([, p]) => p > 0).sort((a, b) => b[1] - a[1]).slice(0, 14).map(([t]) => t);
+  if (!termos.length) return [];
+  const pesos = termos.map(peso);
   const pontuados = [];
   for (const p of paragrafos) {
     let pontos = 0;

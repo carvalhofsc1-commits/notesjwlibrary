@@ -11,7 +11,7 @@ import { iaDaTarefa, lerConfigIa } from "./_iaConfig.mjs";
 import { blocoLicoesPara } from "./_memoria.mjs";
 import { emitirCupomVoz } from "./_vozCupom.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
-import { buscarVerbete, buscarVersiculos, versiculosDoCapitulo, fontesConfiguradas, precarregarFontes, referenciasNoTexto, textoDeGruposBiblicos } from "./_fontes.mjs";
+import { buscarNosLivros, buscarVerbete, buscarVersiculos, versiculosDoCapitulo, fontesConfiguradas, precarregarFontes, referenciasNoTexto, textoDeGruposBiblicos } from "./_fontes.mjs";
 import { lerEsboco, lerIndice, minutosDoEsboco, publicacoesDaSecao, referenciasDoPublico, s34Configurado, textoDoDiscursoPublico, textoDoEsbocoImportado, textosBiblicosDoPublico, validarEsboco } from "./_s34.mjs";
 import {
   QUADROS_EBC,
@@ -809,6 +809,20 @@ function tratarErro(e, res) {
 // Escreve as respostas do estudo a partir de um texto com as perguntas e os parágrafos: o colado pelo usuário
 // (Opção 2) ou o lido pelo servidor no wol.jw.org (Opção 1). A IA pensa antes de responder (o texto é curto).
 // Devolve { itens, uso } ou null se a IA não conseguiu gerar as respostas.
+// Trechos dos livros (Adoração Pura, Reino de Deus, Princípios Bíblicos) que combinam com o assunto: vão como base de pesquisa no pedido à IA.
+// Se a busca falhar, o pedido segue sem eles.
+async function blocoLivros(P, consulta) {
+  if (!fontesConfiguradas() || !consulta) return "";
+  try {
+    const achados = await buscarNosLivros(String(consulta).slice(0, 12000), { max: 4, maxChars: 1200 });
+    if (!achados.length) return "";
+    return "\n\n" + trocar(P.frases.pedidos["Livros de apoio"] || "", { trechos: achados.map((a) => `[${a.livro}] ${a.trecho}`).join("\n\n") });
+  } catch (e) {
+    console.error("Livros de apoio: busca falhou", e?.message);
+    return "";
+  }
+}
+
 async function escreverRespostas({ rotulo, texto, escopo, opcoes, modo, ajuste, anteriores, sep, P, tarefa = "sentinela", longo = false }) {
   let mensagem =
     blocoOrientacao(opcoes, ajuste, P) +
@@ -816,6 +830,7 @@ async function escreverRespostas({ rotulo, texto, escopo, opcoes, modo, ajuste, 
     (escopo ? `\n\n${escopo}` : "") +
     `\n\n${rotulo}:\n` +
     texto +
+    (await blocoLivros(P, texto)) +
     lembreteFinal(opcoes, ajuste, P);
 
   if (modo && anteriores) {
@@ -1270,6 +1285,7 @@ async function sugerirPerguntas(res, body, P) {
     (textoSeguintes
       ? "\n\nPARÁGRAFOS SEGUINTES (só para consulta: não faça perguntas sobre eles; use-os apenas para evitar uma pergunta aplicativa cuja aplicação eles já tratam):\n" + textoSeguintes
       : "") +
+    (await blocoLivros(P, texto)) +
     lembreteFinal(opcoes, ajuste, P);
   if (modo && anteriores) {
     mensagem +=
@@ -1462,6 +1478,7 @@ async function responderEbc(res, body, P) {
     preferenciasDaResposta(opcoes, P, sep) +
     "\n\n" +
     textoDoCapituloEbc(capitulo, perguntas, versiculos) +
+    (await blocoLivros(P, perguntas.map((p) => p.pergunta || "").join(" ") + " " + (capitulo.titulo || "") + " " + capitulo.relato.join(" "))) +
     lembreteFinal(opcoes, ajuste, P);
   if (modo && anteriores) {
     mensagem += "\n\nRESPOSTAS ANTERIORES (JSON):\n" + anteriores + "\n\n" + P.frases.pedidos[modo === "nova" ? "Respostas: outra sugestão" : "Respostas: melhorar"];
@@ -1605,6 +1622,7 @@ async function perguntasEbcDirigente(res, body, P) {
     blocoOrientacao(opcoes, ajuste, P) +
     `PEDIDO: ${perguntasPedidas ? "elabore até 5 perguntas adicionais com resposta" : "NÃO elabore perguntas adicionais (\"perguntas\" fica [])"}; resumo dos textos-base ${textosBase ? "ATIVO" : "INATIVO"}.\n\n` +
     textoDoCapituloEbcDirigente(capitulo, versiculos) +
+    (await blocoLivros(P, textoDoCapituloEbcDirigente(capitulo, []))) +
     lembreteFinal(opcoes, ajuste, P);
   if (modo && anteriores) {
     const f = P.frases.pedidos;
@@ -3166,6 +3184,7 @@ async function responderJoias(res, body, P) {
     (comResumo ? P.frases.pedidos["Joias: resumo dos capítulos"] + "\n\n" : "") +
     // No modo "somente", a leitura inteira vai como material de consulta (versículos, publicações e a pergunta), sem pedir nada dela.
     textoDasJoias(joias, { pergunta: Boolean(pergunta) || somente, leitura: comLeitura || somente, resumo: comResumo || somente }) +
+    (await blocoLivros(P, (joias.pergunta && joias.pergunta.pergunta) || "")) +
     lembreteFinal(opcoes, ajuste, P);
   if (modo && anteriores) {
     const frase = modo === "nova" ? "Joias: outras joias" : modo === "acrescentar" ? "Respostas: outra sugestão" : "Respostas: melhorar";
@@ -3653,6 +3672,7 @@ async function resumirLeituraBiblia(res, body, P) {
     blocoOpcoes +
     "LEITURA (versículos do capítulo, na ordem):\n" +
     textoBiblia +
+    (await blocoLivros(P, titulo + " " + textoBiblia.slice(0, 8000))) +
     lembreteFinal({}, ajuste, P);
 
   const inicio = Date.now();
@@ -3763,7 +3783,8 @@ async function comentariosDoTextoDiario(res, body, P) {
     `TEXTO DIÁRIO:\nData: ${texto.titulo}\nTexto temático: ${texto.tema}\nComentário:\n${texto.comentario.join("\n")}` +
     (anteriores.length
       ? `\n\nCOMENTÁRIOS JÁ SUGERIDOS (outras palavras; só mude o enfoque se o texto do dia sustentar):\n${anteriores.map((a) => `- ${a}`).join("\n")}`
-      : "");
+      : "") +
+    (await blocoLivros(P, `${texto.tema} ${texto.comentario.join(" ")}`));
 
   const inicio = Date.now();
   try {
