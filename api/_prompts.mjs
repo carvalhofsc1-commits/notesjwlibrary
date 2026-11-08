@@ -951,6 +951,11 @@ const REGRA_LEITURA_SEM_ADIANTAR = `LEITURA SEM ADIANTAR O TEXTO (regra fixa do 
 - Textos que NÃO serão lidos (só citados) podem ser citados, explicados e comentados à vontade, em qualquer parte do esboço, inclusive antes da leitura de outro texto.
 - Antes da leitura, o ruim é "Em Salmo 23:1 Davi diz que Jeová é o seu Pastor e que nada lhe faltará. Vamos ler."; o bom é "Como podemos ter certeza de que Jeová cuida de nós, mesmo nas dificuldades? Vejamos o que Davi escreveu." Só depois da leitura se diz "Vimos que Davi chama Jeová de seu Pastor e afirma que nada lhe faltará…".`;
 
+const REGRA_FONTES_PRIORIDADE = `FONTES: PRIORIDADE E ATUALIDADE (regra fixa, vale sempre):
+1. Busque SEMPRE, em primeiro lugar, as informações nos arquivos do servidor: a Bíblia (Tradução do Novo Mundo), o Estudo Perspicaz e os livros de apoio (A Adoração Pura de Jeová É Restaurada!, O Reino de Deus Já Governa!, Princípios Bíblicos para a Vida Cristã). Eles vêm no pedido ou são buscados pelo servidor a partir das referências e dos verbetes que você indicar: indique-os sempre que ajudarem. O que você sabe de cabeça serve só para ligar as ideias, nunca como fonte de um fato, de uma data, de um versículo ou de uma citação.
+2. Nas pesquisas no wol.jw.org, a prioridade TOTAL é das matérias e publicações MAIS RECENTES: havendo mais de uma sobre o assunto, use a mais nova. Entendimentos, explicações e expressões atualizados prevalecem sobre os de publicações mais antigas; se uma publicação antiga divergir de uma recente, siga a recente. Procure sempre a informação mais atual disponível.
+3. O que não estiver nas fontes do pedido não se inventa: deixe de fora ou diga que não encontrou.`;
+
 const VOCABULARIO_FIXO = `VOCABULÁRIO (regra fixa, vale sempre): NUNCA use a palavra "culto" (nem "cultos") em nenhum texto que você escrever. Use sempre "reunião" ou "reuniões" (ex.: "durante a reunião", "nas reuniões da congregação"). Vale para respostas, resumos, perguntas, aplicações, explicações e comentários.`;
 
 // Ordem das partes na mensagem de cada pedido (o que fica entre aspas vem das partes editáveis).
@@ -976,6 +981,7 @@ const MONTAGEM_PEDIDOS = `COMO O APP MONTA A MENSAGEM DE CADA PEDIDO (além do p
 
 export function travadosDe(limites) {
   return [
+  { id: "fontes_prioridade", titulo: "Fontes: primeiro os arquivos do servidor; no wol.jw.org, sempre o mais recente", texto: REGRA_FONTES_PRIORIDADE },
   { id: "vocabulario_fixo", titulo: "Vocabulário: nunca \"culto\", sempre \"reunião\" ou \"reuniões\" (em todos os pedidos)", texto: VOCABULARIO_FIXO },
   { id: "regras_fixas_formatacao", titulo: "Regras fixas da formatação (pergunta só em pergunta; parênteses no fim da frase anterior; fontes permitidas)", texto: REGRAS_FIXAS_FORMATACAO },
   { id: "prioridade_orientacao", titulo: "Prioridade da orientação do usuário (campo Instruções adicionais para a IA)", texto: PRIORIDADE_ORIENTACAO },
@@ -1057,20 +1063,20 @@ export function montarPrompts(overrides, limitesArmazenados) {
 
   return {
     sistemaFormatacao: texto("formatacao") + "\n\n" + REGRAS_FIXAS_FORMATACAO + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO,
-    sistemaSentinela: texto("sentinela") + "\n\n" + blocosResposta + "\n\n" + REGRA_TEXTOS_PERGUNTA + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO,
-    sistemaEstudo: texto("estudo") + "\n\n" + blocosResposta + "\n\n" + REGRA_TEXTOS_PERGUNTA + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_ESTUDO,
+    sistemaSentinela: texto("sentinela") + "\n\n" + blocosResposta + "\n\n" + REGRA_TEXTOS_PERGUNTA + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + REGRA_FONTES_PRIORIDADE + "\n\n" + PRIORIDADE_ORIENTACAO,
+    sistemaEstudo: texto("estudo") + "\n\n" + blocosResposta + "\n\n" + REGRA_TEXTOS_PERGUNTA + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + REGRA_FONTES_PRIORIDADE + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_ESTUDO,
     sistemaLista: texto("lista") + "\n\n" + VOCABULARIO_FIXO + "\n\n" + FORMATO_LISTA,
-    sistemaPerguntas: texto("perguntas") + "\n\n" + FORMATO_PERGUNTAS + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO,
+    sistemaPerguntas: texto("perguntas") + "\n\n" + FORMATO_PERGUNTAS + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + REGRA_FONTES_PRIORIDADE + "\n\n" + PRIORIDADE_ORIENTACAO,
     // Estudo Bíblico: sem a regra fixa dos textos citados na pergunta (pedido do usuário): eles seguem as opções marcadas.
-    sistemaEbc: texto("ebc") + "\n\n" + [texto("regras_resposta"), texto("voz")].join("\n\n") + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_EBC,
-    sistemaEbcDirigente: texto("ebc_dirigente") + "\n\n" + texto("regras_resposta") + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_EBC_DIRIGENTE,
-    sistemaTesouros: texto("tesouros") + "\n\n" + texto("esboco_principios") + "\n\n" + REGRA_LEITURA_SEM_ADIANTAR + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_TESOUROS,
-    sistemaDiscursoCurto: texto("discurso_curto") + "\n\n" + texto("esboco_principios") + "\n\n" + REGRA_LEITURA_SEM_ADIANTAR + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_DISCURSO_CURTO,
-    sistemaDiscursoPublico: texto("discurso_publico") + "\n\n" + texto("esboco_principios") + "\n\n" + REGRA_LEITURA_SEM_ADIANTAR + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_DISCURSO_PUBLICO,
-    sistemaOutros: texto("outros_esbocos") + "\n\n" + texto("esboco_principios") + "\n\n" + REGRA_LEITURA_SEM_ADIANTAR + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_OUTROS,
-    sistemaJoias: texto("joias") + "\n\n" + blocosResposta + "\n\n" + REGRA_TEXTOS_PERGUNTA + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + formatoJoias(limites.maxJoiasPorCapitulo),
-    sistemaTextoDiario: texto("texto_diario") + "\n\n" + FORMATO_TEXTO_DIARIO + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO,
-    sistemaAplicacao: SISTEMA_APLICACAO + "\n\n" + texto("voz") + "\n\n" + texto("perspicaz_uso") + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO,
+    sistemaEbc: texto("ebc") + "\n\n" + [texto("regras_resposta"), texto("voz")].join("\n\n") + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + REGRA_FONTES_PRIORIDADE + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_EBC,
+    sistemaEbcDirigente: texto("ebc_dirigente") + "\n\n" + texto("regras_resposta") + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + REGRA_FONTES_PRIORIDADE + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_EBC_DIRIGENTE,
+    sistemaTesouros: texto("tesouros") + "\n\n" + texto("esboco_principios") + "\n\n" + REGRA_LEITURA_SEM_ADIANTAR + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + REGRA_FONTES_PRIORIDADE + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_TESOUROS,
+    sistemaDiscursoCurto: texto("discurso_curto") + "\n\n" + texto("esboco_principios") + "\n\n" + REGRA_LEITURA_SEM_ADIANTAR + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + REGRA_FONTES_PRIORIDADE + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_DISCURSO_CURTO,
+    sistemaDiscursoPublico: texto("discurso_publico") + "\n\n" + texto("esboco_principios") + "\n\n" + REGRA_LEITURA_SEM_ADIANTAR + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + REGRA_FONTES_PRIORIDADE + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_DISCURSO_PUBLICO,
+    sistemaOutros: texto("outros_esbocos") + "\n\n" + texto("esboco_principios") + "\n\n" + REGRA_LEITURA_SEM_ADIANTAR + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + REGRA_FONTES_PRIORIDADE + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_OUTROS,
+    sistemaJoias: texto("joias") + "\n\n" + blocosResposta + "\n\n" + REGRA_TEXTOS_PERGUNTA + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + REGRA_FONTES_PRIORIDADE + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + formatoJoias(limites.maxJoiasPorCapitulo),
+    sistemaTextoDiario: texto("texto_diario") + "\n\n" + FORMATO_TEXTO_DIARIO + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + REGRA_FONTES_PRIORIDADE,
+    sistemaAplicacao: SISTEMA_APLICACAO + "\n\n" + texto("voz") + "\n\n" + texto("perspicaz_uso") + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + REGRA_FONTES_PRIORIDADE + "\n\n" + PRIORIDADE_ORIENTACAO,
     leituraVoz: texto("leitura_voz"),
     limites,
     // Frases que o servidor junta em cada pedido, por nome (ver as partes "frases_..." acima).

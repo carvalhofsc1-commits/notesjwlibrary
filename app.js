@@ -7651,7 +7651,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.56'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.57'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -17046,13 +17046,17 @@ function saveTemplatesToStorage() {
       copyStatus.textContent = '🧠 A IA está analisando a correção…';
       const r = await postConfig({ acao: 'memoria-guardar', codigo: senhaAdminSalva(), tarefa: item.tipo || '', original, final });
       document.getElementById('memoriaUsar').checked = false;
+      // O resultado aparece também numa barra bem visível (o texto abaixo do botão some quando o campo muda).
+      let aviso;
       if (!r.ok) {
-        copyStatus.textContent = '🧠 A lição não foi guardada: ' + ((r.data && r.data.erro) || 'sem conexão com o servidor') + '. O texto salvo no aparelho está certo.';
-        return;
+        aviso = '🧠 A lição NÃO foi guardada: ' + ((r.data && r.data.erro) || 'sem conexão com o servidor') + '. O texto salvo no aparelho está certo.';
+      } else if (r.data.guardada) {
+        aviso = '🧠 Lição guardada: ' + r.data.licao.regra + (r.data.usadaNasRespostas ? '' : ' (A chave geral está desligada: a IA só passa a usar as lições quando você a ligar em Prompts da IA → Memória de correções.)');
+      } else {
+        aviso = '🧠 Nada guardado: ' + r.data.motivo;
       }
-      copyStatus.textContent = r.data.guardada
-        ? '🧠 Lição guardada: ' + r.data.licao.regra
-        : '🧠 Nada guardado: ' + r.data.motivo;
+      copyStatus.textContent = aviso;
+      mostrarMensagemDoApp(aviso);
     }
 
     // ---------- Exportar o texto do campo para Word (.docx) ----------

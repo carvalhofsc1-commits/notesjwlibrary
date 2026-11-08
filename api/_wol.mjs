@@ -1020,6 +1020,8 @@ export async function pesquisarNoWol(tema, timeoutMs, maximo = MAX_RESULTADOS_PE
     const vistos = new Set(achados.map((r) => r.url));
     achados = achados.concat((await buscar("par")).filter((r) => aproveita(r) && !vistos.has(r.url)));
   }
+  // A prioridade é das matérias mais recentes: ordem do ano mais novo para o mais antigo (sem ano, por último; no mesmo ano vale a ordem do site).
+  achados = achados.map((r, i) => ({ r, i })).sort((a, b) => (b.r.ano || 0) - (a.r.ano || 0) || a.i - b.i).map(({ r }) => r);
   return achados.slice(0, maximo).map(({ ano, ...r }) => r);
 }
 

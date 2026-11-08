@@ -360,13 +360,13 @@ export default async function handler(req, res) {
       if (acao === "memoria-ler") return res.status(200).json({ memoria: await lerMemoria() });
       if (acao === "memoria-ligar") return res.status(200).json({ memoria: await ligarMemoria(corpo.ligada) });
       if (acao === "memoria-guardar") {
-        if (!(await lerMemoria()).ligada) return erro(res, 403, "A chave geral do piloto está desligada (Prompts da IA → Memória de correções).");
+        // A lição é gravada com a chave geral ligada ou não: a chave só decide se as lições entram nas respostas da IA.
         // A IA compara os dois textos e devolve só a lição; os textos são descartados, nunca gravados.
         const a = await analisarCorrecao(corpo);
         if (a.erro) return erro(res, 400, a.erro);
         if (a.naoAproveitavel) return res.status(200).json({ guardada: false, motivo: a.naoAproveitavel });
         const r = await acrescentarLicao(a.licao);
-        return r.erro ? erro(res, 400, r.erro) : res.status(200).json({ guardada: true, licao: r.item, memoria: r.memoria });
+        return r.erro ? erro(res, 400, r.erro) : res.status(200).json({ guardada: true, licao: r.item, memoria: r.memoria, usadaNasRespostas: Boolean(r.memoria.ligada) });
       }
       if (acao === "memoria-ativar") {
         const r = await alterarLicao(String(corpo.id || ""), corpo.ativo);
