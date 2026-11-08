@@ -8281,6 +8281,37 @@
       margin: 8px 0;
     }
 
+    .estatisticas-resumo,
+    .estatisticas-dias,
+    .estatisticas-lista {
+      margin: 8px 0;
+      font-size: .88rem;
+    }
+
+    .estatisticas-resumo p,
+    .estatisticas-dias .hint,
+    .estatisticas-lista .hint {
+      margin: 4px 0 8px;
+    }
+
+    .estatisticas-dias ul {
+      margin: 0;
+      padding-left: 1.2em;
+    }
+
+    .estatisticas-item {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      background: var(--card);
+      margin-bottom: 6px;
+    }
+
+    .estatisticas-item .hint {
+      display: block;
+      margin-top: 4px;
+    }
+
     .memoria-item {
       border: 1px solid var(--line);
       border-radius: 8px;

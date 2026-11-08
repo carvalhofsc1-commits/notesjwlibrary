@@ -7,6 +7,7 @@ import { esquecerCache, gravarAlteracoes, gravarLimites, lerAlteracoes, lerAnter
 import { configPublicaVoz, gravarConfigVoz, lerConfigVoz, opcoesVoz } from "./_vozConfig.mjs";
 import { gravarConfigIa, lerConfigIa, lerCustoIa, opcoesIa } from "./_iaConfig.mjs";
 import { acrescentarLicao, alterarLicao, analisarCorrecao, apagarLicao, apagarTudo, ligarMemoria, lerMemoria, memoriaConfigurada } from "./_memoria.mjs";
+import { estatisticasConfiguradas, registrarPing, resumoEstatisticas } from "./_estatisticas.mjs";
 import { apagarEsboco, gravarEsbocos, gravarTemas, lerIndice, lerTemas, s34Configurado, temasDoTexto } from "./_s34.mjs";
 
 const CHAVE_PADRAO = "padrao_modelos";
@@ -225,6 +226,13 @@ export default async function handler(req, res) {
       return res.status(200).json({ voz: configPublicaVoz(await lerConfigVoz()) });
     }
 
+    // Pública: visita anônima do aparelho (UUID no localStorage) para estatísticas de acesso novo × recorrente.
+    if (acao === "estatisticas-ping") {
+      if (!estatisticasConfiguradas()) return res.status(200).json({ ok: false, configurado: false });
+      const r = await registrarPing(corpo.aparelhoId);
+      return res.status(200).json({ ok: Boolean(r && r.ok), novo: Boolean(r && r.novo), configurado: true });
+    }
+
     const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "desconhecido";
     if (bloqueado(ip)) return erro(res, 429, "Muitas tentativas erradas. Tente novamente mais tarde.");
 
@@ -410,6 +418,19 @@ export default async function handler(req, res) {
             ? "A Anthropic recusou a chave de administrador (ANTHROPIC_ADMIN_KEY). Confira a chave no Claude Console."
             : "Não consegui consultar o gasto na Anthropic agora. Tente de novo.";
         return erro(res, 502, mensagem);
+      }
+    }
+
+    // Painel de estatísticas: aparelhos anônimos, acessos novos/recorrentes, consultas e tokens da IA.
+    if (acao === "estatisticas-ler") {
+      if (!estatisticasConfiguradas()) {
+        return erro(res, 503, "O armazenamento privado (Blob) ainda não está configurado no servidor para as estatísticas.");
+      }
+      try {
+        return res.status(200).json({ estatisticas: await resumoEstatisticas() });
+      } catch (e) {
+        console.error("Estatísticas: leitura falhou", e && e.message);
+        return erro(res, 502, "Não consegui ler as estatísticas agora. Tente de novo.");
       }
     }
 

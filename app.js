@@ -7651,7 +7651,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.58'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.59'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -11043,6 +11043,35 @@ function saveTemplatesToStorage() {
 
     // ---------- Administrador: chamadas ao servidor e página de prompts da IA ----------
     const CONFIG_ENDPOINT = '/api/config';
+    // Identificador anônimo deste aparelho (estatísticas de acesso e uso da IA). Sem nome; só separa um celular do outro.
+    const APARELHO_ID_KEY = 'jwLibraryNoteAplicarAparelhoIdV1';
+    const APARELHO_PING_DIA_KEY = 'jwLibraryNoteAplicarPingDiaV1';
+    function aparelhoId() {
+      try {
+        let id = localStorage.getItem(APARELHO_ID_KEY) || '';
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
+          id = (crypto.randomUUID && crypto.randomUUID()) || '';
+          if (id) localStorage.setItem(APARELHO_ID_KEY, id);
+        }
+        return id;
+      } catch (e) { return ''; }
+    }
+    // Uma visita por dia por aparelho (acesso novo na 1ª vez; recorrente depois).
+    async function estatisticasPing() {
+      const id = aparelhoId();
+      if (!id || !navigator.onLine || !servidoPelaWeb()) return;
+      try {
+        const hoje = new Date().toISOString().slice(0, 10);
+        if (sessionStorage.getItem(APARELHO_PING_DIA_KEY) === hoje) return;
+        sessionStorage.setItem(APARELHO_PING_DIA_KEY, hoje);
+        await fetch(CONFIG_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ acao: 'estatisticas-ping', aparelhoId: id })
+        });
+      } catch (e) { /* estatísticas não bloqueiam o app */ }
+    }
+    setTimeout(estatisticasPing, 2500);
 
     // Devolve { ok, status, data, unavailable, error }. O código de administrador é conferido no servidor.
     async function postConfig(payload) {
@@ -11623,6 +11652,71 @@ function saveTemplatesToStorage() {
     document.getElementById('memoriaApagarTudoBtn').addEventListener('click', async () => {
       if (await askConfirm('Apagar TODAS as lições guardadas na memória? Não dá para desfazer.', 'Apagar todas')) memoriaAcao({ acao: 'memoria-apagar-tudo' });
     });
+
+    // ---------- Estatísticas de acesso e IA (só administrador) ----------
+    const estatisticasStatus = document.getElementById('estatisticasStatus');
+    const estatisticasResumo = document.getElementById('estatisticasResumo');
+    const estatisticasDias = document.getElementById('estatisticasDias');
+    const estatisticasLista = document.getElementById('estatisticasLista');
+    function estatisticasFmt(n) {
+      const x = Number(n) || 0;
+      return x.toLocaleString('pt-BR');
+    }
+    function estatisticasQuando(iso) {
+      if (!iso) return '—';
+      const d = new Date(iso);
+      return Number.isNaN(d.getTime()) ? String(iso).slice(0, 16) : d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+    function estatisticasRender(est) {
+      if (!est || !est.configurado) {
+        estatisticasStatus.textContent = 'As estatísticas ainda não estão configuradas no servidor (falta o Blob privado).';
+        estatisticasResumo.hidden = true;
+        estatisticasDias.hidden = true;
+        estatisticasLista.hidden = true;
+        return;
+      }
+      const t = est.totais || {};
+      const h = est.hoje || {};
+      estatisticasStatus.textContent = est.atualizadoEm ? 'Atualizado em ' + estatisticasQuando(est.atualizadoEm) + '.' : 'Pronto.';
+      estatisticasResumo.hidden = false;
+      estatisticasResumo.innerHTML =
+        '<p><strong>Hoje:</strong> ' + estatisticasFmt(h.novos) + ' acessos novos · ' + estatisticasFmt(h.recorrentes) + ' recorrentes · ' +
+        estatisticasFmt(h.consultas) + ' consultas IA · ' + estatisticasFmt((h.tokensIn || 0) + (h.tokensOut || 0)) + ' tokens</p>' +
+        '<p><strong>Total:</strong> ' + estatisticasFmt(t.aparelhos) + ' aparelhos · ' + estatisticasFmt(t.consultas) + ' consultas · ' +
+        estatisticasFmt(t.tokensIn) + ' entrada + ' + estatisticasFmt(t.tokensOut) + ' saída = ' + estatisticasFmt((t.tokensIn || 0) + (t.tokensOut || 0)) + ' tokens</p>';
+      const dias = Array.isArray(est.dias) ? est.dias.slice().reverse() : [];
+      estatisticasDias.hidden = !dias.length;
+      estatisticasDias.innerHTML = dias.length
+        ? '<p class="hint">Últimos dias</p><ul>' + dias.map(d =>
+          '<li><strong>' + d.dia + '</strong>: ' + estatisticasFmt(d.novos) + ' novos, ' + estatisticasFmt(d.recorrentes) + ' recorrentes, ' +
+          estatisticasFmt(d.consultas) + ' consultas, ' + estatisticasFmt((d.tokensIn || 0) + (d.tokensOut || 0)) + ' tokens</li>'
+        ).join('') + '</ul>'
+        : '';
+      const lista = Array.isArray(est.aparelhos) ? est.aparelhos : [];
+      estatisticasLista.hidden = !lista.length;
+      estatisticasLista.innerHTML = lista.length
+        ? '<p class="hint">Aparelhos (até 100, pelos que mais usaram tokens)</p>' + lista.map(a => {
+          const tarefas = Object.entries(a.porTarefa || {}).sort((x, y) => (y[1].n || 0) - (x[1].n || 0)).slice(0, 4)
+            .map(([nome, u]) => nome + ' ×' + (u.n || 0)).join(', ');
+          return '<div class="estatisticas-item"><strong>' + a.id + '…</strong> · ' + estatisticasFmt(a.consultas) + ' consultas · ' +
+            estatisticasFmt(a.tokens) + ' tokens' +
+            '<span class="hint">1ª vez ' + estatisticasQuando(a.primeiro) + ' · último ' + estatisticasQuando(a.ultimo) +
+            (tarefas ? ' · ' + tarefas : '') + '</span></div>';
+        }).join('')
+        : '';
+    }
+    async function estatisticasCarregar() {
+      if (!promptsCode) return;
+      estatisticasStatus.textContent = 'Carregando…';
+      const r = await postConfig({ acao: 'estatisticas-ler', codigo: promptsCode });
+      if (!r.ok) {
+        estatisticasStatus.textContent = (r.data && r.data.erro) || 'Não foi possível ler as estatísticas agora.';
+        return;
+      }
+      estatisticasRender(r.data.estatisticas);
+    }
+    document.getElementById('estatisticasBox').addEventListener('toggle', e => { if (e.target.open) estatisticasCarregar(); });
+    document.getElementById('estatisticasAtualizarBtn').addEventListener('click', estatisticasCarregar);
 
     async function restoreAllPrompts() {
       const ok = await askConfirm('Voltar TODOS os textos dos prompts ao padrão que veio com o app, para todos os usuários? Os textos salvos serão substituídos (os limites e o modelo da IA não mudam). Dá para desfazer em "Voltar à versão anterior".', 'Restaurar todos os padrões');
@@ -12386,6 +12480,8 @@ function saveTemplatesToStorage() {
       let corpo = admin ? Object.assign({}, payload, { codigoAdmin: admin }) : payload;
       // As tarefas do discurso público (lista de temas, esboço original e esboço com IA) também levam o código do S-34.
       if (corpo && typeof corpo.tarefa === 'string' && /^publico(-|$)/.test(corpo.tarefa)) corpo = Object.assign({}, corpo, { codigoS34: codigoS34Salvo() });
+      const id = aparelhoId();
+      if (id) corpo = Object.assign({}, corpo, { aparelhoId: id });
       return JSON.stringify(corpo);
     }
     // Espera máxima por uma resposta da IA: os modelos mais potentes (escolhidos na tela de prompts) podem levar alguns

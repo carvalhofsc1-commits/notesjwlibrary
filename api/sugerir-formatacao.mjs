@@ -9,6 +9,7 @@ import { codigoDoDirigente, erro, origemPermitida, textosIguais } from "./_comum
 import { acessoDoDirigente, codigoValido, dirigenteValido, exigirAcesso, recusarAcesso, resumoValido } from "./_acesso.mjs";
 import { iaDaTarefa, lerConfigIa } from "./_iaConfig.mjs";
 import { blocoLicoesPara } from "./_memoria.mjs";
+import { aparelhoIdLimpo, registrarUsoIa } from "./_estatisticas.mjs";
 import { emitirCupomVoz } from "./_vozCupom.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
 import { buscarNosLivros, buscarVerbete, buscarVersiculos, versiculosDoCapitulo, fontesConfiguradas, precarregarFontes, referenciasNoTexto, textoDeGruposBiblicos } from "./_fontes.mjs";
@@ -79,9 +80,21 @@ async function chamarIa(client, P, params, { schema = null, semPensar = false, t
   const pensar =
     semPensar && /haiku-5/.test(modelo) && process.env.CLAUDE_RACIOCINIO !== "on" ? { thinking: { type: "disabled" } } : {};
   const corpo = { ...params, system, model: modelo, ...pensar, ...(Object.keys(output_config).length ? { output_config } : {}) };
-  if (!fallback) return schema ? client.messages.parse(corpo) : client.messages.create(corpo);
-  const comFallback = { ...corpo, betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" };
-  return schema ? client.beta.messages.parse(comFallback) : client.beta.messages.create(comFallback);
+  let saida;
+  if (!fallback) {
+    saida = schema ? await client.messages.parse(corpo) : await client.messages.create(corpo);
+  } else {
+    const comFallback = { ...corpo, betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" };
+    saida = schema ? await client.beta.messages.parse(comFallback) : await client.beta.messages.create(comFallback);
+  }
+  // Acumula tokens neste pedido (o handler grava nas estatísticas ao terminar).
+  if (contexto) {
+    contexto.consultasIa = (contexto.consultasIa || 0) + 1;
+    contexto.tokensIn = (contexto.tokensIn || 0) + (saida.usage?.input_tokens || 0);
+    contexto.tokensOut = (contexto.tokensOut || 0) + (saida.usage?.output_tokens || 0);
+    if (tarefa) contexto.tarefaIa = tarefa;
+  }
+  return saida;
 }
 
 // Os modelos mais potentes pensam mais e demoram mais: o tempo máximo de espera dobra com eles (até 170 s, para a
@@ -4066,7 +4079,24 @@ async function lerPublicacoesDaSemana(req, res) {
 export default async function handler(req, res) {
   const corpo = req.body && typeof req.body === "object" ? req.body : {};
   const admin = textosIguais(corpo.codigoAdmin, process.env.CODIGO_ADMIN);
-  return contextoDoPedido.run({ admin, memoriaUsada: 0 }, () => tratarPedido(req, res));
+  const aparelhoId = aparelhoIdLimpo(corpo.aparelhoId);
+  const tarefaPedido = typeof corpo.tarefa === "string" ? corpo.tarefa : "";
+  return contextoDoPedido.run({ admin, memoriaUsada: 0, aparelhoId, consultasIa: 0, tokensIn: 0, tokensOut: 0, tarefaIa: tarefaPedido }, async () => {
+    try {
+      await tratarPedido(req, res);
+    } finally {
+      const s = contextoDoPedido.getStore();
+      if (s && s.aparelhoId && (s.consultasIa || s.tokensIn || s.tokensOut)) {
+        registrarUsoIa({
+          aparelhoId: s.aparelhoId,
+          tarefa: s.tarefaIa || tarefaPedido || "ia",
+          entrada: s.tokensIn,
+          saida: s.tokensOut,
+          consultas: s.consultasIa || 1,
+        }).catch(() => {});
+      }
+    }
+  });
 }
 
 async function tratarPedido(req, res) {

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.59
+
+Painel **📊 Estatísticas de acesso e IA** (Ajustes → prompts, só administrador): cada aparelho recebe um identificador anônimo; o app registra visitas (novo × recorrente no dia), consultas à IA e tokens de entrada/saída por aparelho e no total. A restrição de novos acessos com formulário de autorização fica para uma próxima versão.
+
 ## 6.6.58
 
 Preparar para dirigir → perguntas adicionais: os botões Copiar e JW Library agora aparecem logo na primeira geração, ao lado das perguntas (antes só apareciam depois de trocar de parágrafo com as setas e voltar).
