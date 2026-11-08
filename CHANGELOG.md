@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.58
+
+Preparar para dirigir → perguntas adicionais: os botões Copiar e JW Library agora aparecem logo na primeira geração, ao lado das perguntas (antes só apareciam depois de trocar de parágrafo com as setas e voltar).
+
 ## 6.6.57
 
 (1) 🧠 Aprender com esta correção: a lição passa a ser guardada mesmo com a chave geral da memória desligada (antes o servidor recusava em silêncio; a chave só decide se as lições entram nas respostas), e o resultado aparece numa barra visível, avisando quando a chave está desligada. (2) Nova regra fixa para a IA: buscar sempre primeiro as informações nos arquivos do servidor (Bíblia, Perspicaz e livros) e, nas pesquisas no wol.jw.org, dar prioridade total às matérias mais recentes (os resultados da pesquisa também passam a vir do ano mais novo para o mais antigo).
