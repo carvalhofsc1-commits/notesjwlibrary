@@ -99,6 +99,9 @@ async function chamarIa(client, P, params, { schema = null, semPensar = false, t
 
 // Os modelos mais potentes pensam mais e demoram mais: o tempo máximo de espera dobra com eles (até 170 s, para a
 // resposta e a aplicação dos textos caberem nos 300 s da função na Vercel).
+// Esboços e discursos: uma chamada só, até quase o limite de 300 s da função. Uma segunda tentativa depois de um tempo esgotado nunca caberia
+// nos 300 s (e fazia a função inteira estourar sem resposta).
+const TEMPO_ESBOCO_MS = 275_000;
 const tempoIa = (P, base) => (/haiku/.test(P.ia.modelo) ? base : Math.min(170_000, base * 2));
 // Os textos dos prompts moram em _prompts.mjs (o administrador edita o tom e as regras pelo app).
 // Os limites de tamanho e de quantidade (textos, destaques, respostas, pedidos por hora...) são configuráveis pelo
@@ -2145,7 +2148,7 @@ async function esbocoDeTesouros(res, body, P) {
   }
 
   try {
-    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 120_000) });
+    const client = new Anthropic({ maxRetries: 0, timeout: TEMPO_ESBOCO_MS });
     const inicio = Date.now();
     const resposta = await chamarIa(
       client,
@@ -2301,7 +2304,7 @@ async function esbocoDoDiscursoCurto(res, body, P) {
   }
 
   try {
-    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 120_000) });
+    const client = new Anthropic({ maxRetries: 0, timeout: TEMPO_ESBOCO_MS });
     const inicio = Date.now();
     const resposta = await chamarIa(
       client,
@@ -2520,7 +2523,7 @@ async function esbocoDoDiscursoPublico(res, body, P) {
   }
 
   try {
-    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 120_000) });
+    const client = new Anthropic({ maxRetries: 0, timeout: TEMPO_ESBOCO_MS });
     const inicio = Date.now();
     const resposta = await chamarIa(
       client,
@@ -2816,7 +2819,7 @@ async function esbocoDeOutros(res, body, P) {
   }
 
   try {
-    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 120_000) });
+    const client = new Anthropic({ maxRetries: 0, timeout: TEMPO_ESBOCO_MS });
     const inicio = Date.now();
     const resposta = await chamarIa(
       client,

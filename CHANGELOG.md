@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.61
+
+Esboços e discursos: a IA tem agora até 275 segundos numa só tentativa. Antes, quando a primeira tentativa passava de 170 s, a segunda tentativa estourava os 300 s da função e o app mostrava "A IA demorou demais" (discurso público, tema 46).
+
 ## 6.6.60
 
 Esboços e discursos (Tesouros, discurso curto, discurso público e Outros esboços): corrigido o erro "Não foi possível obter sugestões agora" ao elaborar o discurso público (tema 46). A IA gastava quase todo o espaço de resposta pensando e a resposta saía cortada. Os esboços voltam a não receber a regra de fontes da 6.6.57 e ganham mais espaço de resposta (21 mil em vez de 16 mil).
