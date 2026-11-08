@@ -2150,7 +2150,7 @@ async function esbocoDeTesouros(res, body, P) {
     const resposta = await chamarIa(
       client,
       P,
-      { max_tokens: 16000 /* o raciocínio também conta aqui */, system: P.sistemaTesouros, messages: [{ role: "user", content: mensagem }] },
+      { max_tokens: 21000 /* o raciocínio também conta aqui; 21000 é o teto sem streaming */, system: P.sistemaTesouros, messages: [{ role: "user", content: mensagem }] },
       { schema: SaidaTesouros, tarefa: "tesouros" }
     );
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
@@ -2306,7 +2306,7 @@ async function esbocoDoDiscursoCurto(res, body, P) {
     const resposta = await chamarIa(
       client,
       P,
-      { max_tokens: 16000 /* o raciocínio também conta aqui */, system: P.sistemaDiscursoCurto, messages: [{ role: "user", content: mensagem }] },
+      { max_tokens: 21000 /* o raciocínio também conta aqui; 21000 é o teto sem streaming */, system: P.sistemaDiscursoCurto, messages: [{ role: "user", content: mensagem }] },
       { schema: SaidaDiscursoCurto, tarefa: "discurso" }
     );
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
@@ -2525,7 +2525,7 @@ async function esbocoDoDiscursoPublico(res, body, P) {
     const resposta = await chamarIa(
       client,
       P,
-      { max_tokens: 16000 /* o raciocínio também conta aqui */, system: P.sistemaDiscursoPublico, messages: [{ role: "user", content: mensagem }] },
+      { max_tokens: 21000 /* o raciocínio também conta aqui; 21000 é o teto sem streaming */, system: P.sistemaDiscursoPublico, messages: [{ role: "user", content: mensagem }] },
       { schema: SaidaDiscursoPublico, tarefa: "publico" }
     );
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
@@ -2821,7 +2821,7 @@ async function esbocoDeOutros(res, body, P) {
     const resposta = await chamarIa(
       client,
       P,
-      { max_tokens: 16000 /* o raciocínio também conta aqui */, system: P.sistemaOutros, messages: [{ role: "user", content: mensagem }] },
+      { max_tokens: 21000 /* o raciocínio também conta aqui; 21000 é o teto sem streaming */, system: P.sistemaOutros, messages: [{ role: "user", content: mensagem }] },
       { schema: SaidaOutros, tarefa: "outros" }
     );
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.60
+
+Esboços e discursos (Tesouros, discurso curto, discurso público e Outros esboços): corrigido o erro "Não foi possível obter sugestões agora" ao elaborar o discurso público (tema 46). A IA gastava quase todo o espaço de resposta pensando e a resposta saía cortada. Os esboços voltam a não receber a regra de fontes da 6.6.57 e ganham mais espaço de resposta (21 mil em vez de 16 mil).
+
 ## 6.6.59
 
 Painel **📊 Estatísticas de acesso e IA** (Ajustes → prompts, só administrador): cada aparelho recebe um identificador anônimo; o app registra visitas (novo × recorrente no dia), consultas à IA e tokens de entrada/saída por aparelho e no total. A restrição de novos acessos com formulário de autorização fica para uma próxima versão.
