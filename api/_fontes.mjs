@@ -12,6 +12,9 @@ const ARQUIVOS = {
   biblia: "fontes/biblia.txt",
   perspicaz1: "fontes/perspicaz_v1.txt",
   perspicaz2: "fontes/perspicaz_v2.txt",
+  adoracaoPura: "fontes/adoracao_pura.txt",
+  reinoDeDeus: "fontes/reino_de_deus.txt",
+  principiosBiblicos: "fontes/principios_biblicos.txt",
 };
 
 const MAX_VERSICULOS_POR_REFERENCIA = 10;
@@ -446,9 +449,69 @@ export async function buscarVerbete(nomes) {
   return null;
 }
 
+// ---------- Livros (Adoração Pura, Reino de Deus, Princípios Bíblicos) ----------
+// Texto corrido em parágrafos (separados por linha em branco). A busca é por palavras: cada parágrafo recebe pontos pelas palavras da
+// consulta que contém (as raras valem mais) e vêm os melhores, com o nome do livro.
+
+const LIVROS = [
+  { chave: "adoracaoPura", nome: "A Adoração Pura de Jeová É Restaurada!" },
+  { chave: "reinoDeDeus", nome: "O Reino de Deus Já Governa!" },
+  { chave: "principiosBiblicos", nome: "Princípios Bíblicos para a Vida Cristã" },
+];
+const PALAVRAS_COMUNS = new Set("a o as os um uma de do da dos das em no na nos nas por para com sem sobre entre que se e ou mas como mais muito ao aos ela ele eles elas seu sua seus suas nao ja foi ser sao era tem ter isso este esta esse essa aquele quando onde qual quais".split(" "));
+let livros = null; // Promise<{ paragrafos: [{ livro, texto, palavras: Set }], df: Map }>
+
+function palavrasDe(texto) {
+  return normalizar(texto).split(" ").filter((w) => w.length > 2 && !PALAVRAS_COMUNS.has(w));
+}
+
+function carregarLivros() {
+  if (!livros) {
+    livros = Promise.all(LIVROS.map((l) => baixar(ARQUIVOS[l.chave]))).then((conteudos) => {
+      const paragrafos = [];
+      const df = new Map();
+      conteudos.forEach((conteudo, i) => {
+        for (const bruto of conteudo.split(/\r?\n\s*\r?\n/)) {
+          const texto = bruto.replace(/\s+/g, " ").trim();
+          if (texto.length < 80) continue;
+          const palavras = new Set(palavrasDe(texto));
+          for (const w of palavras) df.set(w, (df.get(w) || 0) + 1);
+          paragrafos.push({ livro: LIVROS[i].nome, texto, palavras });
+        }
+      });
+      return { paragrafos, df };
+    });
+    livros.catch(() => (livros = null));
+  }
+  return livros;
+}
+
+// Os parágrafos dos livros que mais combinam com a consulta: [{ livro, trecho }].
+export async function buscarNosLivros(consulta, { max = 4, maxChars = 1500 } = {}) {
+  const termos = [...new Set(palavrasDe(consulta))];
+  if (!termos.length || !fontesConfiguradas()) return [];
+  const { paragrafos, df } = await carregarLivros();
+  const n = paragrafos.length;
+  const pesos = termos.map((t) => (df.has(t) ? Math.log(1 + n / df.get(t)) : 0));
+  const pontuados = [];
+  for (const p of paragrafos) {
+    let pontos = 0;
+    let achadas = 0;
+    termos.forEach((t, i) => { if (p.palavras.has(t) && pesos[i]) { pontos += pesos[i]; achadas++; } });
+    if (achadas >= Math.min(2, termos.length)) pontuados.push({ p, pontos: pontos * (1 + achadas / termos.length) });
+  }
+  pontuados.sort((a, b) => b.pontos - a.pontos);
+  return pontuados.slice(0, max).map(({ p }) => {
+    let trecho = p.texto;
+    if (trecho.length > maxChars) { const corte = trecho.lastIndexOf(". ", maxChars); trecho = trecho.slice(0, corte > 300 ? corte + 1 : maxChars); }
+    return { livro: p.livro, trecho };
+  });
+}
+
 // Começa a baixar os arquivos enquanto a IA ainda escreve a resposta, para a busca não esperar o download depois.
-export function precarregarFontes({ biblia: comBiblia, perspicaz: comPerspicaz }) {
+export function precarregarFontes({ biblia: comBiblia, perspicaz: comPerspicaz, livros: comLivros }) {
   if (!fontesConfiguradas()) return;
   if (comBiblia) carregarBiblia().catch(() => {});
   if (comPerspicaz) carregarPerspicaz().catch(() => {});
+  if (comLivros) carregarLivros().catch(() => {});
 }
