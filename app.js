@@ -7651,7 +7651,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.55'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.56'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -22175,6 +22175,11 @@ function saveTemplatesToStorage() {
 
     // Acabamento do texto vindo do servidor (já em parágrafos): título de cada seção com emoji e negrito, e o nome de cada personagem e
     // de cada lugar ("Davi: …", "Adulão: …") em negrito, sem depender de a IA ter indicado esse destaque.
+    // Os rótulos "Profecia:" e "Cumprimento (passado/presente/futuro):" vão sempre em negrito, com ou sem marcas da IA em volta.
+    function bibliaRotulosProfecia(linha) {
+      return String(linha || '').replace(/\*{0,2}(Profecia|Cumprimento\s*\((?:passado|presente|futuro)\))\s*:\*{0,2}/gi, '**$1:**');
+    }
+
     function bibliaAcabamento(texto) {
       const opcoes = readAiOptions();
       const negritoId = ''; // o resumo da Bíblia usa letras comuns (sem negrito de fonte especial), para a voz ler certo
@@ -22186,6 +22191,7 @@ function saveTemplatesToStorage() {
           return BIBLIA_SECAO_EMOJI[titulo] + ' ' + bibliaTituloNegrito(titulo, negritoId); // o emoji da seção sempre vai na frente do título
         }
         if (/^🔎/.test(linha)) { secao = ''; return linha; } // linha das fontes, no fim
+        if (secao === 'PROFECIAS E EXPRESSÕES SIMBÓLICAS') return bibliaRotulosProfecia(linha);
         if (negritoId && (secao === 'PERSONAGENS' || secao === 'LUGARES E INFORMAÇÕES GERAIS')) {
           const m = linha.match(/^((?:\p{Extended_Pictographic}[\uFE0F\u200D\p{Emoji_Modifier}\p{Extended_Pictographic}]*\s*)*)([^\s:.,;()][^:.,;()]{0,48}?):(\s.*)$/u);
           if (m) return m[1] + convertTextWithStyle(m[2].trim(), negritoId) + ':' + m[3];
@@ -23236,7 +23242,7 @@ function saveTemplatesToStorage() {
       bibliaResumoDestaque = -1;
       let secao = '';
       // Cor e negrito são para títulos e destaques (trechos curtos): um negrito comprido (um parágrafo ou várias frases) é só texto normal.
-      const textoVista = bibliaResumoTexto.value.split('\n').map(linha => linha.replace(/\*\*([^*\n]{100,}?)\*\*/g, '$1').replace(/__([^_\n]{100,}?)__/g, '$1')).join('\n');
+      const textoVista = bibliaResumoTexto.value.split('\n').map(linha => bibliaRotulosProfecia(linha.replace(/\*\*([^*\n]{100,}?)\*\*/g, '$1').replace(/__([^_\n]{100,}?)__/g, '$1'))).join('\n');
       leituraEstrutura(textoVista).forEach((par, pi) => {
         const plano = par.frases.join(' ').replace(/\*\*|__|%%/g, '');
         // O título da seção vale com ou sem negrito em volta (a IA às vezes o destaca) e com ":" ou "." no fim; aí a linha toda em negrito seria lida como subtítulo.
