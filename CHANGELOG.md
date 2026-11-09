@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.13
+
+Anotações: na programação, o cartão da parte que já tem orador, congregação ou anotação ganha um fundo na tonalidade da linha colorida do modo (âmbar na assembleia, verde no congresso), para ver de relance o que já foi preenchido. A lista é refeita ao voltar da anotação para o programa.
+
 ## 6.7.12
 
 Pesquisas e respostas salvas: (1) o título da página passa a ter duas linhas (o botão da direita, que não aparece ali, não ocupa mais espaço); (2) nova seção **🗒️ Anotações**, exclusiva para as anotações salvas na tela Anotações: um grupo para as **Reuniões** e, para assembleias e congressos, **um grupo por evento**, com as anotações na ordem do programa. As anotações já salvas antes saem de “Textos” e entram aqui (o evento vem do nome).

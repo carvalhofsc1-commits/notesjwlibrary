@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.12'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.13'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -24982,6 +24982,8 @@ function saveTemplatesToStorage() {
         const k = indiceDaSerie(i);
         return k < 0 ? '' : semMarcador(partes[k].tema).replace(/^s[ée]rie de discursos\s*:\s*/i, '').trim();
       };
+      // Parte com orador, congregação ou anotação já preenchidos: o cartão dela ganha a cor do modo.
+      const preenchida = p => Boolean(p && (p.orador || p.congregacao || (p.nota && p.nota.trim())));
       const iniciaveis = () => partes.map((p, i) => i).filter(i => !ehInfo(partes[i]));
       const temNotas = () => partes.some(p => p.nota && p.nota.trim());
 
@@ -25021,6 +25023,7 @@ function saveTemplatesToStorage() {
 
       function irPara(v) {
         vista = v;
+        if (v === 'programa') pintarPartes();
         atualizarVista();
         window.scrollTo({ top: 0 });
       }
@@ -25122,6 +25125,7 @@ function saveTemplatesToStorage() {
             return;
           }
           if (i === expandida) item.classList.add('aberta');
+          if (preenchida(p)) item.classList.add('preenchida');
           const btn = document.createElement('button');
           btn.type = 'button';
           btn.className = 'anotacoes-parte';
@@ -25167,6 +25171,7 @@ function saveTemplatesToStorage() {
               campo.value = p[chave] || '';
               campo.addEventListener('input', () => {
                 p[chave] = campo.value.trim();
+                item.classList.toggle('preenchida', preenchida(p));
                 agendarRascunho();
               });
               label.appendChild(campo);
@@ -25189,6 +25194,7 @@ function saveTemplatesToStorage() {
             lixeira.textContent = '🗑️';
             lixeira.addEventListener('click', () => {
               camposDaParte.forEach(([chave, campo]) => { p[chave] = ''; campo.value = ''; });
+              item.classList.toggle('preenchida', preenchida(p));
               if (ativa && i === parteAtual) atualizarVista();
               agendarRascunho();
               if (camposDaParte[0]) camposDaParte[0][1].focus();

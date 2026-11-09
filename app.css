@@ -4775,6 +4775,16 @@
       cursor: pointer;
     }
 
+    /* Parte com orador, congregação ou anotação: o cartão ganha o fundo na tonalidade da linha colorida do modo. */
+    .screen-anotacoes .anotacoes-parte-item.preenchida .anotacoes-parte {
+      background: color-mix(in srgb, var(--anot-cor) 22%, var(--card));
+      border-color: var(--anot-cor);
+    }
+
+    .screen-anotacoes .anotacoes-parte-item.preenchida .anotacoes-parte-extra {
+      background: color-mix(in srgb, var(--anot-cor) 10%, var(--card));
+    }
+
     /* Título de uma série de discursos: informativo (sem cartão), um pouco mais forte que música e cântico. */
     .anotacoes-parte-serie {
       color: var(--text);
