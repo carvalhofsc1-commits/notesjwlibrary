@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.69'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.70'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12032,21 +12032,27 @@ function saveTemplatesToStorage() {
       acessoSiteAprovados.innerHTML = aprovados.length
         ? aprovados.map(a => {
           const nome = a.nomeCompleto || [a.nome, a.sobrenome].filter(Boolean).join(' ') || 'Usuário';
+          const cidade = a.cidadeEstado || [a.cidade, a.estado].filter(Boolean).join(', ');
           const nivel = a.nivel === 'admin' ? 'Administrador' : 'Normal';
           const especiais = estatisticasListaRecursos(a.recursos);
-          return '<div class="acesso-site-item">' +
-          '<strong>' + acessoSiteEscapar(nome) + '</strong>' +
-          (a.idade ? ' · ' + acessoSiteEscapar(a.idade) + ' anos' : '') +
-          ' · <strong>' + nivel + '</strong>' +
+          const resumo = [
+            acessoSiteEscapar(nome),
+            a.idade ? acessoSiteEscapar(a.idade) + ' anos' : '',
+            cidade ? acessoSiteEscapar(cidade) : ''
+          ].filter(Boolean).join(' · ');
+          return '<details class="acesso-site-item">' +
+          '<summary class="acesso-site-resumo">' + resumo + '</summary>' +
+          '<div class="acesso-site-detalhe">' +
           '<span class="hint">' +
-          [a.cidadeEstado || [a.cidade, a.estado].filter(Boolean).join(', '), a.congregacao].filter(Boolean).map(acessoSiteEscapar).join(' · ') +
+          'Nível: <strong>' + nivel + '</strong>' +
+          (a.congregacao ? '<br>Congregação: ' + acessoSiteEscapar(a.congregacao) : '') +
           (a.comoConheceu ? '<br>Como conheceu: ' + acessoSiteEscapar(a.comoConheceu) : '') +
           '<br>Recursos especiais: ' + (especiais.length ? acessoSiteEscapar(especiais.join(', ')) : 'nenhum código salvo neste aparelho') +
           '<br>Aparelho ' + acessoSiteEscapar(a.aparelhoId) + '… · ' + estatisticasQuando(a.aprovadoEm) +
           '</span>' +
           '<div class="button-row">' +
           '<button type="button" class="secondary acesso-site-revogar" data-aparelho="' + acessoSiteEscapar(a.aparelhoIdCompleto || '') + '">🗑️ Revogar</button>' +
-          '</div></div>';
+          '</div></div></details>';
         }).join('')
         : '<p class="hint">Ninguém se identificou ainda.</p>';
     }

@@ -79,18 +79,19 @@
     <div class="topo">
       <img src="icon-header.png?v=3" alt="" width="512" height="512" decoding="async">
       <h1>Política de Privacidade</h1>
-      <p class="atualizacao">NoteStyle · Versão 1.9 · Última atualização: 6 de novembro de 2026</p>
+      <p class="atualizacao">NoteStyle · Versão 2.0 · Última atualização: 9 de novembro de 2026</p>
     </div>
 
     <section class="resumo">
       <h2>Resumo em linguagem simples</h2>
       <ul>
-        <li>Não há conta, anúncios, rastreadores nem ferramentas de análise de uso.</li>
+        <li>Não há anúncios, rastreadores nem ferramentas de publicidade.</li>
+        <li>Para usar o app, você se <strong>identifica uma vez</strong> (nome, idade aproximada, cidade, congregação e como conheceu o NoteStyle). Isso fica no servidor, ligado ao aparelho, e o administrador pode ver.</li>
         <li>Seus textos, notas, pesquisas salvas e backups ficam <strong>no seu aparelho</strong>.</li>
         <li><strong>Nada é publicado</strong> em lugar público: o NoteStyle não posta, não compartilha e não divulga o que você escreve.</li>
         <li>Só sai algo do aparelho quando você usa um recurso que precisa disso (IA, leitura em voz alta, transcrição de áudio, consulta ao wol.jw.org, áudio da Bíblia da jw.org), e apenas o necessário para aquele pedido.</li>
         <li>O backup do JW Library <strong>nunca é enviado</strong>: ele é lido e editado só no aparelho.</li>
-        <li>Antes do primeiro uso da IA ou da voz, o aplicativo pede a sua concordância, e você pode apagar tudo em Ajustes → Privacidade e dados deste aparelho.</li>
+        <li>Antes do primeiro uso da IA ou da voz, o aplicativo pede a sua concordância, e você pode apagar os dados locais em Ajustes → Privacidade e dados deste aparelho. Para o cadastro no servidor, use Meus dados ou fale conosco (item 8).</li>
       </ul>
     </section>
 
@@ -112,7 +113,16 @@
     </ul>
     <p><strong>Finalidade:</strong> fazer o aplicativo funcionar e lembrar das suas escolhas. <strong>Base legal:</strong> execução do serviço que você pediu (LGPD, art. 7º, V). Esses dados ficam sob o seu controle e podem ser apagados a qualquer momento (item 8).</p>
 
-    <h3>2.2 Dados enviados quando você usa recursos específicos</h3>
+    <h3>2.2 Cadastro e estatísticas de acesso</h3>
+    <p>Para liberar o uso do site, o NoteStyle pede um <strong>cadastro por aparelho</strong>. São enviados ao servidor e guardados num armazenamento privado (Vercel Blob):</p>
+    <ul>
+      <li><strong>dados do cadastro:</strong> nome, sobrenome, mês e ano de nascimento (usados só para calcular a idade aproximada), cidade, estado (UF), congregação e como você conheceu o aplicativo;</li>
+      <li><strong>identificador do aparelho:</strong> um código gerado no navegador (UUID), salvo localmente e enviado junto aos pedidos, para ligar o cadastro e as estatísticas àquele aparelho;</li>
+      <li><strong>estatísticas de acesso e de IA:</strong> datas de visita, se o nível no aparelho é normal ou administrador (quando a senha de administrador é conferida), quais tipos de código de recurso estão salvos no aparelho (apenas “sim/não”, sem as senhas), e, quando você usa a IA, a tarefa (por exemplo, resumo de capítulo) e a quantidade de tokens.</li>
+    </ul>
+    <p>Esses dados <strong>não são públicos</strong>: só o administrador do NoteStyle os consulta, para autorizar aparelhos, entender o uso do serviço e controlar custos. Você pode corrigir o cadastro em Ajustes → <strong>Meus dados</strong>. O administrador pode revogar o acesso do aparelho. <strong>Finalidade:</strong> controle de acesso ao serviço e operação do aplicativo. <strong>Base legal:</strong> execução do serviço pedido e legítimo interesse na segurança e na administração do site (LGPD, art. 7º, V e IX), e o consentimento ao enviar o formulário de cadastro (art. 7º, I).</p>
+
+    <h3>2.3 Dados enviados quando você usa recursos específicos</h3>
     <p>Todo envio é feito por conexão segura (HTTPS), ao servidor do NoteStyle, e só ocorre quando você toca no botão correspondente.</p>
     <div class="rolagem">
       <table class="tabela">
@@ -194,7 +204,7 @@
 
     <p><strong>Áudio em texto:</strong> o áudio pode conter a voz e o conteúdo de conversas de outras pessoas. Use só gravações que você tem direito de usar e <strong>avise as pessoas</strong> antes de gravá-las ou transcrevê-las; o NoteStyle não identifica quem fala. Antes do primeiro uso, o aplicativo pede a sua concordância específica (botão “Concordo”), que fica salva só no aparelho e pode ser retirada em Ajustes → Privacidade e dados deste aparelho. O microfone só é usado quando você toca em “Gravar um áudio agora” (o navegador pede a sua permissão) e a gravação fica só no aparelho até você parar; o app não a guarda, e você pode salvá-la no aparelho se quiser. O áudio é decodificado e cortado no seu aparelho; o arquivo inteiro não é enviado, apenas os trechos, e trechos em silêncio não são enviados. O Google trata o áudio conforme a sua própria política. Os documentos e imagens que você anexa em “Documentos relacionados” são lidos no seu aparelho e só são enviados à IA quando você pede o resumo; o app não os guarda.</p>
 
-    <h3>2.3 Dados técnicos automáticos</h3>
+    <h3>2.4 Dados técnicos automáticos</h3>
     <ul>
       <li><strong>Endereço IP e dados de conexão</strong> chegam ao servidor e à plataforma de hospedagem, como em qualquer site. Usamos o IP só para limitar a quantidade de pedidos por hora e proteger o serviço contra abuso (contador temporário na memória do servidor), com base no legítimo interesse de segurança (LGPD, art. 10).</li>
       <li><strong>Registros técnicos de funcionamento</strong> (tamanhos, tempos, quantidade de itens, mensagens de erro) ajudam a corrigir problemas. Eles não incluem o conteúdo dos seus textos; em caso de erro, pequenos trechos da resposta da IA podem aparecer nos registros para diagnóstico.</li>
@@ -204,16 +214,16 @@
 
     <h2>3. O que o NoteStyle não faz</h2>
     <ul>
-      <li>Não exige conta, nome, e-mail, telefone ou localização.</li>
+      <li>Não exige e-mail, telefone nem localização GPS. O cadastro (item 2.2) pede nome, idade aproximada, cidade/UF, congregação e como conheceu o app — não cria uma “conta” com senha própria do usuário.</li>
       <li>Não exibe anúncios e não usa publicidade comportamental.</li>
-      <li>Não usa ferramentas de análise, rastreamento ou impressão digital do aparelho.</li>
+      <li>Não usa ferramentas de rastreamento publicitário nem impressão digital do aparelho.</li>
       <li>Não vende, aluga nem compartilha dados com fins de marketing.</li>
       <li>Não publica nada em redes sociais, fóruns ou outros locais públicos.</li>
-      <li>Não cria perfil seu nem toma decisões automatizadas sobre você: as respostas da IA são apenas sugestões que você revisa.</li>
+      <li>Não toma decisões automatizadas com efeitos jurídicos sobre você: as respostas da IA são apenas sugestões que você revisa.</li>
     </ul>
 
     <h2>4. Dados pessoais sensíveis</h2>
-    <p>O NoteStyle é usado, em geral, por pessoas ligadas a uma religião, e o conteúdo que você escreve pode revelar convicção religiosa, que a LGPD considera dado pessoal sensível. Por isso: (a) <strong>não coletamos</strong> informações de identificação nem relacionamos o conteúdo a você; (b) o que você escreve fica no seu aparelho; (c) só enviamos algo a terceiros quando você pede um recurso de IA ou de voz, e apenas o texto necessário; e (d) recomendamos que você não inclua dados pessoais ou reservados.</p>
+    <p>O NoteStyle é usado, em geral, por pessoas ligadas a uma religião. O cadastro (congregação) e o conteúdo que você escreve podem revelar convicção religiosa, que a LGPD considera dado pessoal sensível. Por isso: (a) o cadastro e as estatísticas de acesso ficam só no servidor privado do NoteStyle, para o administrador operar o serviço (item 2.2); (b) o que você escreve nas notas e respostas fica no seu aparelho; (c) só enviamos textos a terceiros (IA/voz) quando você pede o recurso, e apenas o necessário; e (d) recomendamos que você não inclua dados pessoais ou reservados nos envios à IA.</p>
 
     <h2>5. Com quem os dados são compartilhados</h2>
     <p>Só com os prestadores de serviço que realizam o trabalho pedido, na condição de operadores, e apenas durante o uso do recurso:</p>
@@ -221,7 +231,7 @@
       <li><strong>Vercel Inc.</strong> (EUA) — hospedagem do aplicativo e das funções do servidor. <a href="https://vercel.com/legal/privacy-policy" rel="noopener noreferrer">Política de privacidade</a>.</li>
       <li><strong>Anthropic PBC</strong> (EUA) — IA (Claude), que gera as sugestões e respostas a partir do texto enviado. <a href="https://www.anthropic.com/legal/privacy" rel="noopener noreferrer">Política de privacidade</a>.</li>
       <li><strong>Google LLC</strong> (EUA) — leitura em voz alta (Google Cloud Text-to-Speech) e transcrição de áudio em texto (Google Cloud Speech-to-Text). <a href="https://policies.google.com/privacy" rel="noopener noreferrer">Política de privacidade</a>.</li>
-      <li><strong>wol.jw.org</strong> (Biblioteca on-line) — site consultado pelo nosso servidor. Os pedidos a ele saem do servidor do NoteStyle, não do seu aparelho; o seu endereço IP não é repassado. A exceção é o <strong>áudio da Bíblia</strong> (item 2.3), que o seu aparelho obtém direto dos servidores de mídia da jw.org.</li>
+      <li><strong>wol.jw.org</strong> (Biblioteca on-line) — site consultado pelo nosso servidor. Os pedidos a ele saem do servidor do NoteStyle, não do seu aparelho; o seu endereço IP não é repassado. A exceção é o <strong>áudio da Bíblia</strong> (item 2.4), que o seu aparelho obtém direto dos servidores de mídia da jw.org.</li>
     </ul>
     <p>Esses prestadores têm suas próprias políticas e podem manter registros pelo prazo que definirem. Como os servidores ficam fora do Brasil, ocorre transferência internacional de dados, que realizamos com base no seu consentimento específico e destacado ao usar o recurso e na necessidade de execução do serviço pedido (LGPD, art. 33).</p>
     <p>Também podemos divulgar informações se uma lei ou ordem judicial exigir.</p>
@@ -229,7 +239,7 @@
     <h2>6. Por quanto tempo guardamos</h2>
     <ul>
       <li><strong>No aparelho:</strong> até você apagar (limpando os dados do aplicativo ou do navegador, ou removendo o aplicativo).</li>
-      <li><strong>No servidor do NoteStyle:</strong> o conteúdo dos seus pedidos é processado na hora e não é gravado. Ficam guardadas somente as configurações do administrador (instruções da IA, limites e escolhas de voz) e, se o administrador usar o piloto de aprendizado com correções, as lições descritas no item 2.2 (regras curtas e gerais, sem os textos), que ficam até o administrador apagá-las. Nada disso contém dados de usuários.</li>
+      <li><strong>No servidor do NoteStyle:</strong> o conteúdo dos pedidos de IA/voz é processado na hora e não é gravado como texto. Ficam guardados: o <strong>cadastro e as estatísticas</strong> do item 2.2 (até o administrador revogar o aparelho ou atender a um pedido de exclusão); as configurações do administrador (instruções da IA, limites e escolhas de voz); e, se o administrador usar o piloto de aprendizado com correções, as lições do item 2.3 (regras curtas e gerais, sem os textos), até ele apagá-las.</li>
       <li><strong>Nos prestadores (Vercel, Anthropic, Google):</strong> pelo prazo previsto em suas respectivas políticas.</li>
     </ul>
 
@@ -237,11 +247,13 @@
     <p>Usamos conexão criptografada (HTTPS) em todos os envios, códigos de acesso para os recursos que consomem serviços pagos, limite de pedidos por hora e restrição de origem das requisições ao servidor. Nenhum sistema é totalmente imune a falhas; por isso, evite enviar informações reservadas.</p>
 
     <h2>8. Seus direitos</h2>
-    <p>Nos termos do art. 18 da LGPD, você pode pedir: confirmação de que tratamos dados seus, acesso, correção, anonimização, bloqueio ou eliminação de dados desnecessários, portabilidade, informação sobre os compartilhamentos e a revogação do consentimento. Como o NoteStyle não mantém dados que identifiquem você, na prática quase tudo está no seu aparelho e você mesmo exerce esses direitos:</p>
+    <p>Nos termos do art. 18 da LGPD, você pode pedir: confirmação de que tratamos dados seus, acesso, correção, anonimização, bloqueio ou eliminação de dados desnecessários, portabilidade, informação sobre os compartilhamentos e a revogação do consentimento. Na prática:</p>
     <ul>
-      <li><strong>apagar</strong> pesquisas salvas individualmente, dentro do aplicativo (Reuniões → Pesquisas e respostas salvas), ou <strong>apagar tudo</strong> em Ajustes → Privacidade e dados deste aparelho → “Apagar os dados deste aparelho” (ou limpando os dados do aplicativo/navegador);</li>
-      <li><strong>levar os seus dados</strong> para outro aparelho ou guardá-los com segurança, com “Fazer backup” e “Restaurar um backup” (item 2.2);</li>
-      <li><strong>revogar o consentimento</strong> com “Retirar a minha concordância”, em Ajustes → Privacidade e dados deste aparelho, e apagando seus códigos em Ajustes → Autorização de acessos.</li>
+      <li><strong>corrigir o cadastro</strong> em Ajustes → Meus dados;</li>
+      <li><strong>apagar</strong> pesquisas salvas individualmente (Reuniões → Pesquisas e respostas salvas), ou <strong>apagar os dados locais</strong> em Ajustes → Privacidade e dados deste aparelho → “Apagar os dados deste aparelho” (ou limpando os dados do aplicativo/navegador);</li>
+      <li><strong>levar os dados locais</strong> com “Fazer backup” e “Restaurar um backup” (item 2.3);</li>
+      <li><strong>revogar o consentimento da IA/voz</strong> com “Retirar a minha concordância”, em Ajustes → Privacidade e dados deste aparelho, e apagando seus códigos em Ajustes → Autorização de acessos;</li>
+      <li><strong>pedir a exclusão do cadastro e das estatísticas no servidor</strong> pelo contato do item 1 (ou pedindo ao administrador que revogue o aparelho).</li>
     </ul>
     <p>Para qualquer pedido ou dúvida, use o contato do item 1. Você também pode reclamar à Autoridade Nacional de Proteção de Dados (ANPD).</p>
 

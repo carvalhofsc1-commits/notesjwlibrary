@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.70
+
+Usuários identificados: lista compacta — só **nome, idade e cidade** à vista; ao tocar, abre o restante (nível, congregação, códigos, aparelho e revogar). **Termos de Uso 1.1** e **Política de Privacidade 2.0** atualizados com o cadastro obrigatório, a aprovação/revogação pelo administrador e as estatísticas de acesso/IA.
+
 ## 6.6.69
 
 Uso de IA nas estatísticas: o servidor grava tokens **ainda durante** a consulta (antes de responder ao app). Antes, a gravação ficava para depois da resposta e a Vercel encerrava a função — o resumo de capítulo da Bíblia rodava, mas o uso não aparecia.

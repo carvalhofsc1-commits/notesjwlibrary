@@ -8351,9 +8351,41 @@
     .acesso-site-item {
       border: 1px solid var(--line);
       border-radius: 10px;
-      padding: 10px 12px;
+      padding: 8px 12px;
       background: var(--card);
       font-size: .9rem;
+    }
+
+    .acesso-site-item > summary.acesso-site-resumo {
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    .acesso-site-item > summary.acesso-site-resumo::-webkit-details-marker {
+      display: none;
+    }
+
+    .acesso-site-item > summary.acesso-site-resumo::before {
+      content: '▸';
+      flex: 0 0 auto;
+      color: var(--muted, #888);
+      font-weight: 400;
+      transition: transform .15s ease;
+    }
+
+    .acesso-site-item[open] > summary.acesso-site-resumo::before {
+      transform: rotate(90deg);
+    }
+
+    .acesso-site-item .acesso-site-detalhe {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--line);
     }
 
     .acesso-site-item .hint {
