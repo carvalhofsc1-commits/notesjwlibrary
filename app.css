@@ -5715,6 +5715,33 @@
       font-weight: 800;
     }
 
+    /* Os botões do topo (Voltar, Programa e Trocar de evento) têm todos o mesmo tamanho; o texto pode ir para duas linhas. */
+    .screen-anotacoes .anotacoes-topo,
+    .screen-anotacoes .anotacoes-topo[data-prog],
+    .screen-anotacoes .anotacoes-topo[data-troca] {
+      grid-template-columns: 5.4rem minmax(0, 1fr) 5.4rem;
+    }
+
+    .screen-anotacoes .anotacoes-topo button,
+    .screen-anotacoes .anotacoes-topo #anotacoesProgramaTopo,
+    .screen-anotacoes .anotacoes-topo #anotacoesTrocarTopo {
+      width: 5.4rem;
+      min-height: 40px;
+      padding: 4px 6px;
+      font-size: .74rem;
+      line-height: 1.15;
+      white-space: normal;
+    }
+
+    /* A data do evento numa moldura, com um fundo bem suave na cor do modo. */
+    .screen-anotacoes .anotacoes-data {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--card);
+      background: color-mix(in srgb, var(--anot-cor) 9%, var(--card));
+    }
+
     /* ---------- Tela Leitura em voz alta ---------- */
     .leitura-topo {
       margin: 0 0 8px;

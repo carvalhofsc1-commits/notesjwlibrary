@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.19
+
+Anotações: os botões do topo (Voltar, Programa e Trocar de evento) têm agora o mesmo tamanho, e o **Trocar de evento** fica em duas linhas (“↩ Trocar / de evento”), sem cortar; a data do evento ganhou uma moldura com um fundo bem suave, na cor do modo.
+
 ## 6.7.18
 
 Anotações (assembleia e congresso): o botão **Trocar de evento** passou para o topo da tela do programa, no lado direito da linha do Voltar (letra menor); a linha de botões abaixo da data fica só com Ver anotações e Exportar anotações, e some quando ainda não há anotações.
