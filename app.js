@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.10'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.11'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -25908,54 +25908,6 @@ function saveTemplatesToStorage() {
         irPara('programa');
       }
       const anotacoesEscolherPrograma = url => anotacoesCarregarPrograma(url, url);
-
-      // Atualizar programa: busca o programa de novo na WOL e junta com o que já existe (anotações, orador e congregação ficam). Partes que
-      // saíram do programa mas têm anotação não se perdem: vão para o fim, numa seção à parte.
-      const atualizarProgramaBtn = document.getElementById('anotacoesAtualizarPrograma');
-      atualizarProgramaBtn.addEventListener('click', async () => {
-        const entrada = (programaMeta && programaMeta.entrada) || (/^https?:/.test(chaveAtual) ? chaveAtual : '');
-        if (!entrada) return dizerProg('Este programa foi aberto antes desta versão: escolha-o de novo na lista para poder atualizá-lo.', true);
-        if (!navigator.onLine) return dizerProg('Sem conexão com a internet.', true);
-        atualizarProgramaBtn.disabled = true;
-        try {
-          const r = await postStudy({ tarefa: 'programa-pub', entrada }, 25000);
-          if (!r.ok || !r.data || !Array.isArray(r.data.partes) || !r.data.partes.length) {
-            return dizerProg((r.data && r.data.erro) || 'Não consegui atualizar o programa agora.', true);
-          }
-          guardarNota();
-          const antigos = new Map(partes.map(p => [p.docid + '|' + p.par, p]));
-          const usados = new Set();
-          const novas = r.data.partes.map(x => {
-            const chaveParte = (x.docid || r.data.docid || '') + '|' + (x.par || '');
-            const velho = antigos.get(chaveParte);
-            if (velho) usados.add(chaveParte);
-            return {
-              horario: x.horario || '', tema: x.tema || '', textoTematico: x.textoTematico || '', secao: x.secao || '',
-              docid: x.docid || r.data.docid || '', par: x.par || '',
-              orador: velho ? velho.orador || '' : '', congregacao: velho ? velho.congregacao || '' : '',
-              dia: x.dia || '', diaTema: x.diaTema || '',
-              nota: velho ? velho.nota || '' : ''
-            };
-          });
-          const orfas = partes.filter(p => !usados.has(p.docid + '|' + p.par) && ((p.nota && p.nota.trim()) || p.orador || p.congregacao));
-          orfas.forEach(p => novas.push({ ...p, secao: 'Partes que saíram do programa (com anotações)', dia: '', diaTema: '' }));
-          const meta = { ...r.data, entrada };
-          const abertoAntes = diaAberto;
-          partes = novas;
-          programaMeta = meta;
-          parteAtual = -1;
-          expandida = -1;
-          preencherTituloPrograma();
-          diaAberto = abertoAntes;
-          pintarPartes();
-          salvarRascunho();
-          piscarBotao(atualizarProgramaBtn, '✓ Programa atualizado');
-        } catch (e) {
-          dizerProg('Não consegui atualizar o programa agora.', true);
-        } finally {
-          atualizarProgramaBtn.disabled = false;
-        }
-      });
       const anotacoesProgramaManual = () => {
         const ref = programaPubEl.value.trim();
         anotacoesCarregarPrograma(ref, 'manual:' + ref.toLowerCase());

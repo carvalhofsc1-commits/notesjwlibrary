@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.11
+
+Anotações: saiu o botão **Atualizar programa** da tela do programa; fica só o **Atualizar lista** (na tela de escolha do evento). Os botões da tela do programa voltam a dividir a mesma linha.
+
 ## 6.7.10
 
 Anotações: dois botões para acompanhar a WOL: **🔄 Atualizar lista** (na tela de escolha do evento): busca de novo na WOL a lista de programas, ignorando o cache do aparelho e o do servidor (o servidor aceita no máximo uma busca forçada por minuto) — para quando um programa novo, como o congresso de 2027, acabou de sair; e **🔄 Atualizar programa** (na tela do programa): busca o programa do evento aberto e junta com o que já existe, mantendo anotações, orador e congregação (partes que saíram do programa mas têm anotação vão para o fim, numa seção à parte). Os botões da tela do programa ficam em duas colunas.
