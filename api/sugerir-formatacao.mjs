@@ -88,12 +88,28 @@ async function chamarIa(client, P, params, { schema = null, semPensar = false, t
     const comFallback = { ...corpo, betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" };
     saida = schema ? await client.beta.messages.parse(comFallback) : await client.beta.messages.create(comFallback);
   }
-  // Acumula tokens neste pedido (o handler grava nas estatísticas ao terminar).
+  // Grava tokens ainda DENTRO do pedido, antes do res.json: depois da resposta a Vercel pode
+  // congelar a função e um finally perdia o uso (foi o caso do resumo de capítulo da Bíblia).
   if (contexto) {
+    const entrada = saida.usage?.input_tokens || 0;
+    const saidaTok = saida.usage?.output_tokens || 0;
     contexto.consultasIa = (contexto.consultasIa || 0) + 1;
-    contexto.tokensIn = (contexto.tokensIn || 0) + (saida.usage?.input_tokens || 0);
-    contexto.tokensOut = (contexto.tokensOut || 0) + (saida.usage?.output_tokens || 0);
+    contexto.tokensIn = (contexto.tokensIn || 0) + entrada;
+    contexto.tokensOut = (contexto.tokensOut || 0) + saidaTok;
     if (tarefa) contexto.tarefaIa = tarefa;
+    if (contexto.aparelhoId) {
+      try {
+        await registrarUsoIa({
+          aparelhoId: contexto.aparelhoId,
+          tarefa: contexto.tarefaIa || tarefa || "ia",
+          entrada,
+          saida: saidaTok,
+          consultas: 1,
+        });
+      } catch (e) {
+        console.error("Estatísticas: falha ao gravar uso da IA", e && e.message);
+      }
+    }
   }
   return saida;
 }
@@ -4085,27 +4101,11 @@ export default async function handler(req, res) {
   const admin = textosIguais(corpo.codigoAdmin, process.env.CODIGO_ADMIN);
   const aparelhoId = aparelhoIdLimpo(corpo.aparelhoId);
   const tarefaPedido = typeof corpo.tarefa === "string" ? corpo.tarefa : "";
-  return contextoDoPedido.run({ admin, memoriaUsada: 0, aparelhoId, consultasIa: 0, tokensIn: 0, tokensOut: 0, tarefaIa: tarefaPedido }, async () => {
-    try {
-      await tratarPedido(req, res);
-    } finally {
-      // Precisa await: senão a função da Vercel encerra antes de gravar o Blob e o uso some.
-      const s = contextoDoPedido.getStore();
-      if (s && s.aparelhoId && (s.consultasIa || s.tokensIn || s.tokensOut)) {
-        try {
-          await registrarUsoIa({
-            aparelhoId: s.aparelhoId,
-            tarefa: s.tarefaIa || tarefaPedido || "ia",
-            entrada: s.tokensIn,
-            saida: s.tokensOut,
-            consultas: s.consultasIa || 1,
-          });
-        } catch (e) {
-          console.error("Estatísticas: falha ao gravar uso da IA", e && e.message);
-        }
-      }
-    }
-  });
+  // O uso da IA é gravado em chamarIa (antes da resposta). Aqui só roda o pedido.
+  return contextoDoPedido.run(
+    { admin, memoriaUsada: 0, aparelhoId, consultasIa: 0, tokensIn: 0, tokensOut: 0, tarefaIa: tarefaPedido },
+    () => tratarPedido(req, res)
+  );
 }
 
 async function tratarPedido(req, res) {

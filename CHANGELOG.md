@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.69
+
+Uso de IA nas estatísticas: o servidor grava tokens **ainda durante** a consulta (antes de responder ao app). Antes, a gravação ficava para depois da resposta e a Vercel encerrava a função — o resumo de capítulo da Bíblia rodava, mas o uso não aparecia.
+
 ## 6.6.68
 
 Correção das estatísticas: o perfil (admin/normal e códigos salvos) passa a sincronizar de verdade ao abrir o app ou atualizar a lista; o uso de IA (ex.: resumo de capítulo) é gravado com await e com nova tentativa se houver conflito no Blob — antes o ping do dia e a gravação em paralelo apagavam nível, códigos e tokens.
