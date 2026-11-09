@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.72
+
+Cadastro e Meus dados: campo obrigatório **Telefone de contato** com máscara `(64) 98180-8090`. O número aparece na lista do administrador (pendentes e identificados). Política de Privacidade 2.1, Termos 1.2 e texto da página Sobre atualizados.
+
+Texto diário: removido o botão "Levar para o campo de texto". Leitura da Bíblia: os botões do capítulo passam a se chamar "Ler na WOL" e "Ler no JW Library".
+
 ## 6.6.71
 
 Cadastro na primeira abertura: botão **Cancelar** no formulário. Ao cancelar, aparece uma tela com o logo do NoteStyle, o que o app faz, o logo da Carvalho Apps e o botão **Solicitar acesso**, que volta ao formulário de cadastro.

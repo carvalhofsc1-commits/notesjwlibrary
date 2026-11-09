@@ -106,12 +106,36 @@ function idadeAprox(ano, mes) {
   return idade;
 }
 
+function telefoneLimpo(valor) {
+  return String(valor || "").replace(/\D/g, "").slice(0, 11);
+}
+
+function telefoneFormatado(valor) {
+  const d = telefoneLimpo(valor);
+  if (!d) return "";
+  if (d.length <= 2) return "(" + d;
+  const resto = d.slice(2);
+  if (resto.length <= 4) return "(" + d.slice(0, 2) + ") " + resto;
+  if (d.length <= 10) return "(" + d.slice(0, 2) + ") " + resto.slice(0, 4) + "-" + resto.slice(4);
+  return "(" + d.slice(0, 2) + ") " + resto.slice(0, 5) + "-" + resto.slice(5, 9);
+}
+
+function telefoneValido(valor) {
+  const d = telefoneLimpo(valor);
+  if (d.length !== 10 && d.length !== 11) return false;
+  const ddd = Number(d.slice(0, 2));
+  if (!Number.isFinite(ddd) || ddd < 11) return false;
+  if (d.length === 11 && d[2] !== "9") return false;
+  return true;
+}
+
 function pedidoPublico(p) {
   return {
     id: p.id,
     aparelhoId: String(p.aparelhoId || "").slice(0, 8),
     nome: p.nome,
     sobrenome: p.sobrenome,
+    telefone: p.telefone || "",
     idade: p.idade,
     anoNascimento: p.anoNascimento || null,
     mesNascimento: p.mesNascimento || null,
@@ -175,6 +199,7 @@ function identidadeDe(a) {
     cidadeEstado: cidadeEstadoDe({ cidade: cidadeFinal, estado: estadoFinal, cidadeEstado: a && a.cidadeEstado }),
     congregacao: a.congregacao || "",
     comoConheceu: a.comoConheceu || "",
+    telefone: telefoneFormatado(a && a.telefone),
     aprovadoEm: a.aprovadoEm || "",
     pedidoId: a.pedidoId || "",
   };
@@ -186,12 +211,14 @@ function camposDoCorpo(corpo) {
   const cidade = limpar(corpo && corpo.cidade, 60) || limpar(corpo && corpo.cidadeEstado, 60);
   const estado = limpar(corpo && corpo.estado, 2).toUpperCase();
   const congregacao = limpar(corpo && corpo.congregacao, 100);
+  const telefone = telefoneFormatado(corpo && corpo.telefone);
   const comoOpcao = limpar(corpo && corpo.comoConheceuOpcao, 80) || limpar(corpo && corpo.comoConheceu, 80);
   const comoOutro = limpar(corpo && corpo.comoConheceuOutro, 160);
   const ano = Math.round(Number(corpo && corpo.anoNascimento));
   const mes = Math.round(Number(corpo && corpo.mesNascimento));
   const anoAtual = new Date().getFullYear();
   if (!nome || !sobrenome) return { erro: "Informe o nome e o sobrenome." };
+  if (!telefoneValido(telefone)) return { erro: "Informe um telefone válido, no formato (64) 98180-8090." };
   if (!Number.isFinite(mes) || mes < 1 || mes > 12) return { erro: "Escolha o mês de nascimento." };
   if (!Number.isFinite(ano) || ano < 1920 || ano > anoAtual - 12) return { erro: "Escolha o ano de nascimento." };
   const idade = idadeAprox(ano, mes);
@@ -206,6 +233,7 @@ function camposDoCorpo(corpo) {
     campos: {
       nome,
       sobrenome,
+      telefone,
       idade,
       anoNascimento: ano,
       mesNascimento: mes,
@@ -223,6 +251,7 @@ function registroDeCampos(campos, extras = {}) {
     ...extras,
     nome: campos.nome,
     sobrenome: campos.sobrenome,
+    telefone: campos.telefone || "",
     idade: campos.idade,
     anoNascimento: campos.anoNascimento,
     mesNascimento: campos.mesNascimento,
@@ -396,6 +425,7 @@ export async function decidirPedidoSite({ id, aprovar, codigoAdmin }) {
         {
           nome: p.nome,
           sobrenome: p.sobrenome,
+          telefone: p.telefone,
           idade: p.idade,
           anoNascimento: p.anoNascimento,
           mesNascimento: p.mesNascimento,

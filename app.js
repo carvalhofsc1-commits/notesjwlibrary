@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.71'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.72'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -11926,9 +11926,31 @@ function saveTemplatesToStorage() {
       }
     }
 
+    function cadastroMascaraTelefone(valor) {
+      const d = String(valor || '').replace(/\D/g, '').slice(0, 11);
+      if (!d) return '';
+      if (d.length <= 2) return '(' + d;
+      const resto = d.slice(2);
+      if (resto.length <= 4) return '(' + d.slice(0, 2) + ') ' + resto;
+      if (d.length <= 10) return '(' + d.slice(0, 2) + ') ' + resto.slice(0, 4) + '-' + resto.slice(4);
+      return '(' + d.slice(0, 2) + ') ' + resto.slice(0, 5) + '-' + resto.slice(5, 9);
+    }
+
+    function cadastroLigarTelefone(prefixo) {
+      const tel = document.getElementById(prefixo + 'Telefone');
+      if (!tel) return;
+      const aplicar = () => {
+        const formatado = cadastroMascaraTelefone(tel.value);
+        if (tel.value !== formatado) tel.value = formatado;
+      };
+      tel.addEventListener('input', aplicar);
+      tel.addEventListener('blur', aplicar);
+    }
+
     function cadastroLigarFormulario(prefixo) {
       cadastroMontarListas(prefixo);
       cadastroCidadeReset(prefixo, 'Escolha o estado primeiro');
+      cadastroLigarTelefone(prefixo);
       const mes = document.getElementById(prefixo + 'Mes');
       const ano = document.getElementById(prefixo + 'Ano');
       const estado = document.getElementById(prefixo + 'Estado');
@@ -11945,6 +11967,7 @@ function saveTemplatesToStorage() {
       return {
         nome: document.getElementById(prefixo + 'Nome').value,
         sobrenome: document.getElementById(prefixo + 'Sobrenome').value,
+        telefone: document.getElementById(prefixo + 'Telefone').value,
         mesNascimento: document.getElementById(prefixo + 'Mes').value,
         anoNascimento: document.getElementById(prefixo + 'Ano').value,
         cidade: document.getElementById(prefixo + 'Cidade').value,
@@ -11959,6 +11982,7 @@ function saveTemplatesToStorage() {
       if (!cadastro) return;
       document.getElementById(prefixo + 'Nome').value = cadastro.nome || '';
       document.getElementById(prefixo + 'Sobrenome').value = cadastro.sobrenome || '';
+      document.getElementById(prefixo + 'Telefone').value = cadastroMascaraTelefone(cadastro.telefone || '');
       document.getElementById(prefixo + 'Mes').value = cadastro.mesNascimento ? String(cadastro.mesNascimento) : '';
       document.getElementById(prefixo + 'Ano').value = cadastro.anoNascimento ? String(cadastro.anoNascimento) : '';
       document.getElementById(prefixo + 'Estado').value = cadastro.estado || '';
@@ -12025,6 +12049,7 @@ function saveTemplatesToStorage() {
           '<div class="acesso-site-item" data-pedido-id="' + acessoSiteEscapar(p.id) + '">' +
           '<strong>' + acessoSiteEscapar(p.nome + ' ' + p.sobrenome) + '</strong> · ' + acessoSiteEscapar(p.idade) + ' anos' +
           '<span class="hint">' + acessoSiteEscapar(p.cidadeEstado || [p.cidade, p.estado].filter(Boolean).join(', ')) + ' · ' + acessoSiteEscapar(p.congregacao) +
+          (p.telefone ? '<br>Telefone: ' + acessoSiteEscapar(p.telefone) : '') +
           '<br>Como conheceu: ' + acessoSiteEscapar(p.comoConheceu) +
           '<br>Aparelho ' + acessoSiteEscapar(p.aparelhoId) + '… · ' + estatisticasQuando(p.criadoEm) + '</span>' +
           '<div class="button-row">' +
@@ -12050,6 +12075,7 @@ function saveTemplatesToStorage() {
           '<div class="acesso-site-detalhe">' +
           '<span class="hint">' +
           'Nível: <strong>' + nivel + '</strong>' +
+          (a.telefone ? '<br>Telefone: ' + acessoSiteEscapar(a.telefone) : '') +
           (a.congregacao ? '<br>Congregação: ' + acessoSiteEscapar(a.congregacao) : '') +
           (a.comoConheceu ? '<br>Como conheceu: ' + acessoSiteEscapar(a.comoConheceu) : '') +
           '<br>Recursos especiais: ' + (especiais.length ? acessoSiteEscapar(especiais.join(', ')) : 'nenhum código salvo neste aparelho') +
@@ -18893,7 +18919,6 @@ function saveTemplatesToStorage() {
       vozTopo: document.getElementById('tdVozTopo'),
       ouvirIaBtn: document.getElementById('tdIaOuvirBtn'),
       vozIa: document.getElementById('tdIaVoz'),
-      campoBtn: document.getElementById('tdCampoBtn'),
       gerarBtn: document.getElementById('tdGerarBtn'),
       ia: document.getElementById('tdIa'),
       iaLista: document.getElementById('tdIaLista'),
@@ -19067,7 +19092,7 @@ function saveTemplatesToStorage() {
       const tdJwl = document.getElementById('tdJwl');
       tdJwl.hidden = !jwlTexto;
       if (jwlTexto) tdJwl.href = jwlTexto;
-      td.ouvirTopoBtn.disabled = td.campoBtn.disabled = td.gerarBtn.disabled = false;
+      td.ouvirTopoBtn.disabled = td.gerarBtn.disabled = false;
       tdIaMostrar();
       inicioAjustarAltura();
     }
@@ -19089,7 +19114,7 @@ function saveTemplatesToStorage() {
       td.comentario.textContent = '';
       td.fonte.textContent = '';
       td.link.href = td.linkSempre.href = 'https://wol.jw.org/pt/wol/h/r5/lp-t/' + data.getFullYear() + '/' + (data.getMonth() + 1) + '/' + data.getDate();
-      td.ouvirTopoBtn.disabled = td.campoBtn.disabled = td.gerarBtn.disabled = true;
+      td.ouvirTopoBtn.disabled = td.gerarBtn.disabled = true;
       tdIaMostrar();
       const codigo = codigoAcessoSalvo();
       if (!codigo) {
@@ -19310,16 +19335,6 @@ function saveTemplatesToStorage() {
     const tdIaMarcarTocando = new MutationObserver(() => td.ouvirIaBtn.classList.toggle('tocando', vozBar.parentNode === td.vozIa && !vozBar.hidden));
     tdIaMarcarTocando.observe(vozBar, { attributes: true, attributeFilter: ['hidden'] });
     tdIaMarcarTocando.observe(td.vozIa, { childList: true });
-    // Leva o texto do dia para o campo de texto, com os comentários adicionais no fim, se já foram gerados.
-    td.campoBtn.addEventListener('click', async () => {
-      if (!tdTexto) return;
-      if (input.value.trim() && !(await askConfirm('O texto do campo de texto será trocado pelo texto diário (dá para desfazer). Continuar?', 'Levar para o campo de texto'))) return;
-      const comentarios = tdIaCache.get(tdTexto.data) || [];
-      const texto = tdTextoCompleto(tdTexto) + (comentarios.length ? '\n\n💬 COMENTÁRIOS ADICIONAIS\n\n' + tdComentariosEmTexto(comentarios) : '');
-      setInputRange(0, input.value.length, texto, { message: 'Texto diário no campo de texto.' });
-      autoGrowInputText();
-      formatarAbrirComVoltar();
-    });
     td.gerarBtn.addEventListener('click', () => tdGerarComentarios(false));
     td.iaOutrosBtn.addEventListener('click', () => tdGerarComentarios(true));
     // Limpar tira os comentários da tela. Se este dia tem comentários salvos, a cópia salva continua (📂 Recuperar); senão, para
@@ -23192,8 +23207,8 @@ function saveTemplatesToStorage() {
           '</div>' +
         '</div>' +
         '<div class="bp-acoes">' +
-          '<a class="bp-wol" target="_blank" rel="noopener noreferrer">🔗 WOL</a>' +
-          '<a class="secondary bp-jwl" hidden>📖 JW Library</a>' +
+          '<a class="bp-wol" target="_blank" rel="noopener noreferrer">🔗 Ler na WOL</a>' +
+          '<a class="secondary bp-jwl" hidden>📖 Ler no JW Library</a>' +
           '<button type="button" class="secondary bp-resumir">Resumir</button>' +
         '</div>';
       const q = s => p.querySelector(s);
