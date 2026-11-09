@@ -2,13 +2,17 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.76
+
+Tela Identifique-se: corrigido o texto para "…solicite o acesso ao administrador."
+
 ## 6.6.75
 
 Campo Telefone de contato: o exemplo da máscara agora mostra (00) 00000-0000 (antes aparecia um número real), também na mensagem de erro.
 
 ## 6.6.74
 
-Tela Identifique-se: novo texto de apresentação ("…preencha seus dados e solicite o acesso a administrador.") e botão "Enviar cadastro e solicitar acesso".
+Tela Identifique-se: novo texto de apresentação ("…preencha seus dados e solicite o acesso ao administrador.") e botão "Enviar cadastro e solicitar acesso".
 
 ## 6.6.73
 

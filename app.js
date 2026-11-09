@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.75'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.76'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12179,7 +12179,7 @@ function saveTemplatesToStorage() {
         acessoSiteCancelarBtn.hidden = false;
         acessoSiteEnviarBtn.textContent = st.restringir ? '📨 Enviar cadastro e solicitar acesso' : '💾 Salvar e continuar';
       } else {
-        acessoSiteMsg.textContent = 'Para usar o NoteStyle, preencha seus dados e solicite o acesso a administrador.';
+        acessoSiteMsg.textContent = 'Para usar o NoteStyle, preencha seus dados e solicite o acesso ao administrador.';
         form.hidden = false;
         acessoSiteCancelarBtn.hidden = false;
         acessoSiteEnviarBtn.textContent = st.restringir ? '📨 Enviar cadastro e solicitar acesso' : '💾 Salvar e continuar';
