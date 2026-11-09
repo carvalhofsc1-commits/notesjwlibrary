@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.11'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.12'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -18241,7 +18241,7 @@ function saveTemplatesToStorage() {
       return resultado;
     }
 
-    function historicoSalvar({ tipo, titulo, ano, numSemana, partes, esbocoJson, esbocoNumero, esbocoTitulo, refino, sub, ligar, anotId }) {
+    function historicoSalvar({ tipo, titulo, ano, numSemana, partes, esbocoJson, esbocoNumero, esbocoTitulo, refino, sub, ligar, anotId, anotModo, anotEvento, anotOrdem }) {
       const semSemana = tipo === 'nota';
       const item = {
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
@@ -18260,7 +18260,12 @@ function saveTemplatesToStorage() {
       if (esbocoNumero) item.esbocoNumero = esbocoNumero;
       if (esbocoTitulo) item.esbocoTitulo = esbocoTitulo;
       // Anotações (reunião, assembleia, congresso): cada parte de cada evento tem um identificador fixo; salvar de novo atualiza a mesma entrada.
-      if (anotId) item.anotId = anotId;
+      if (anotId) {
+        item.anotId = anotId;
+        item.anotModo = anotModo || '';
+        item.anotEvento = anotEvento || '';
+        if (anotOrdem != null) item.anotOrdem = anotOrdem;
+      }
       const anteriores = anotId ? historicoLer().filter(g => g.anotId !== anotId) : historicoLer();
       historicoGravar([item, ...historicoSemCobertas(item, anteriores)]);
       if (!historicoLer().some(guardado => guardado.id === item.id)) {
@@ -18280,17 +18285,19 @@ function saveTemplatesToStorage() {
     // "Textos" (tipo nota) não depende da semana escolhida: aparece sempre.
     const HISTORICO_CATEGORIAS = [
       { id: 'textos', titulo: '📝 Textos', cor: '#0ea5e9', tipos: ['nota'], semSemana: true },
+      // Anotações salvas na tela Anotações (têm "anotId"): reuniões e, por evento, assembleias e congressos.
+      { id: 'anotacoes', titulo: '🗒️ Anotações', cor: '#6366f1', tipos: [], semSemana: true, anotacoes: true },
       { id: 'comentarios', titulo: '✋ Comentários', cor: '#a855f7', tipos: ['colado', 'sentinela', 'ebc', 'joias'] },
       { id: 'dirigentes', titulo: '🎤 Dirigentes', cor: '#14b8a6', tipos: ['dirigente', 'ebc-dirigente'], soDirigente: true },
       { id: 'esbocos', titulo: '📜 Esboços', cor: '#f59e0b', tipos: ['esboco'], soDirigente: true }
     ];
-    const historicoAbertas = { textos: false, comentarios: false, dirigentes: false, esbocos: false }; // lembra quais estão abertas ao refazer a lista
+    const historicoAbertas = { textos: false, anotacoes: false, comentarios: false, dirigentes: false, esbocos: false }; // lembra quais estão abertas ao refazer a lista
     // Ao abrir a página Pesquisas e respostas salvas (pelo botão da barra, pelo atalho ou pelo botão da tela Reuniões), todas as categorias começam recolhidas.
     function historicoRecolher() {
       Object.keys(historicoAbertas).forEach(id => { historicoAbertas[id] = false; });
-      document.querySelectorAll('#historicoLista > details').forEach(caixa => { caixa.open = false; });
+      document.querySelectorAll('#historicoLista details').forEach(caixa => { caixa.open = false; });
     }
-    const historicoCategoriaDe = item => HISTORICO_CATEGORIAS.find(c => c.tipos.includes(item.tipo)) || HISTORICO_CATEGORIAS[0];
+    const historicoCategoriaDe = item => (item && item.anotId ? HISTORICO_CATEGORIAS.find(c => c.anotacoes) : null) || HISTORICO_CATEGORIAS.find(c => c.tipos.includes(item.tipo)) || HISTORICO_CATEGORIAS[0];
     const historicoEhNota = item => item && (item.tipo === 'nota' || historicoCategoriaDe(item).semSemana);
 
     // Guarda um texto livre (campo Formatar ou Áudio→texto) com o nome pedido. Devolve o item ou null.
@@ -18312,12 +18319,61 @@ function saveTemplatesToStorage() {
       return historicoSalvar({ tipo: 'nota', titulo: nome, partes: [{ paragrafos: '', texto: limpo }], ligar }) || null;
     }
 
+    // Informações do grupo de uma anotação salva: o modo (reunião, assembleia ou congresso), o evento e a ordem da parte. As salvas antes desta
+    // versão não têm esses campos: o modo e a ordem vêm do identificador, e o evento, do começo do nome.
+    function historicoInfoAnotacao(item) {
+      const m = /^anot:([^:]+):(.*):(-?\d+)$/.exec(item.anotId || '');
+      const modo = item.anotModo || (m ? m[1] : 'reuniao');
+      const chave = m ? m[2] : '';
+      const rotulo = item.anotEvento || String(item.titulo || '').split(' · ')[0];
+      const ordem = item.anotOrdem != null ? item.anotOrdem : (m ? Number(m[3]) : 0);
+      return { modo, chave, rotulo, ordem };
+    }
+    // Dentro do grupo do evento o nome dele já está no alto: a anotação mostra só o tema do discurso.
+    function historicoTituloAnotacao(item) {
+      const partes = String(item.titulo || '').split(' · ');
+      return historicoInfoAnotacao(item).modo !== 'reuniao' && partes.length > 1 ? partes.slice(1).join(' · ') : item.titulo;
+    }
+    // A categoria Anotações: um grupo para as reuniões e um para cada evento (assembleia ou congresso), do mais recente ao mais antigo.
+    function historicoAnotacoesEl(itens) {
+      const grupos = new Map();
+      itens.forEach(item => {
+        const info = historicoInfoAnotacao(item);
+        const chaveGrupo = info.modo === 'reuniao' ? 'reuniao' : info.modo + '|' + (info.chave || info.rotulo);
+        if (!grupos.has(chaveGrupo)) grupos.set(chaveGrupo, { chave: chaveGrupo, modo: info.modo, rotulo: info.modo === 'reuniao' ? 'Reuniões' : info.rotulo, itens: [], recente: '' });
+        const g = grupos.get(chaveGrupo);
+        g.itens.push({ item, ordem: info.ordem });
+        if (String(item.data) > g.recente) g.recente = String(item.data);
+      });
+      const lista = [...grupos.values()].sort((a, b) => (a.modo === 'reuniao' ? -1 : 0) - (b.modo === 'reuniao' ? -1 : 0) || b.recente.localeCompare(a.recente));
+      const cont = document.createDocumentFragment();
+      lista.forEach(g => {
+        const box = document.createElement('details');
+        box.className = 'historico-anot-grupo';
+        const chaveAberta = 'anot:' + g.chave;
+        box.open = Boolean(historicoAbertas[chaveAberta]);
+        box.addEventListener('toggle', () => { historicoAbertas[chaveAberta] = box.open; });
+        const sum = document.createElement('summary');
+        const icone = g.modo === 'congresso' ? '🏟️' : g.modo === 'assembleia' ? '🏛️' : '📅';
+        sum.textContent = icone + ' ' + g.rotulo + ' (' + g.itens.length + ')';
+        box.appendChild(sum);
+        const ul = document.createElement('ul');
+        ul.className = 'historico-lista';
+        // Eventos: na ordem do programa; reuniões: a mais recente primeiro.
+        g.itens.sort((a, b) => (g.modo === 'reuniao' ? String(b.item.data).localeCompare(String(a.item.data)) : a.ordem - b.ordem));
+        g.itens.forEach(x => ul.appendChild(historicoItemEl(x.item)));
+        box.appendChild(ul);
+        cont.appendChild(box);
+      });
+      return cont;
+    }
+
     function historicoItemEl(item) {
       const li = document.createElement('li');
       li.className = 'historico-item';
       const titulo = document.createElement('div');
       titulo.className = 'historico-titulo';
-      titulo.textContent = historicoTituloExibido(item);
+      titulo.textContent = item.anotId ? historicoTituloAnotacao(item) : historicoTituloExibido(item);
       const meta = document.createElement('p');
       meta.className = 'historico-meta';
       const data = new Date(item.data);
@@ -18389,7 +18445,9 @@ function saveTemplatesToStorage() {
         box.addEventListener('toggle', () => { historicoAbertas[cat.id] = box.open; });
         titulo.textContent = cat.titulo + (itens.length ? ' (' + itens.length + ')' : '');
         box.appendChild(titulo);
-        if (itens.length) {
+        if (itens.length && cat.anotacoes) {
+          box.appendChild(historicoAnotacoesEl(itens));
+        } else if (itens.length) {
           const ul = document.createElement('ul');
           ul.className = 'historico-lista';
           itens.forEach(item => ul.appendChild(historicoItemEl(item)));
@@ -18397,7 +18455,7 @@ function saveTemplatesToStorage() {
         } else {
           const vazio = document.createElement('p');
           vazio.className = 'historico-vazio';
-          vazio.textContent = cat.semSemana ? 'Nenhum texto salvo ainda.' : 'Nenhuma pesquisa salva desta semana.';
+          vazio.textContent = cat.anotacoes ? 'Nenhuma anotação salva ainda. Use 💾 Salvar na tela Anotações.' : cat.semSemana ? 'Nenhum texto salvo ainda.' : 'Nenhuma pesquisa salva desta semana.';
           box.appendChild(vazio);
         }
         holder.appendChild(box);
@@ -26092,7 +26150,12 @@ function saveTemplatesToStorage() {
           titulo = ('Reunião · ' + (temaEl.value.trim() || formatarData(dataReuniaoEl.value) || new Date().toLocaleDateString('pt-BR'))).slice(0, 100);
         }
         const jaExistia = historicoLer().some(g => g.anotId === anotId);
-        const guardado = historicoSalvar({ tipo: 'nota', titulo, partes: [{ paragrafos: '', texto: textoDaAnotacao() }], ligar: false, anotId });
+        let anotEvento = '';
+        if (comPrograma()) {
+          const ev = (eventos || []).find(e => e.url === chaveAtual);
+          anotEvento = (ev ? ev.titulo : ((programaMeta && programaMeta.titulo) || (MODOS[modo].tipo === 'congresso' ? 'Congresso' : 'Assembleia'))) + (ev && ev.tipo === 'assembleia' && ev.grupo ? ' (' + ev.grupo + ')' : '') + (programaMeta && programaMeta.tema ? ' — ' + programaMeta.tema : '');
+        }
+        const guardado = historicoSalvar({ tipo: 'nota', titulo, partes: [{ paragrafos: '', texto: textoDaAnotacao() }], ligar: false, anotId, anotModo: modo, anotEvento, anotOrdem: comPrograma() ? parteAtual : null });
         if (guardado) piscarBotao(document.getElementById('anotacoesSalvarBtn'), jaExistia ? '✓ Atualizado' : '✓ Salvo');
       });
       document.getElementById('anotacoesDocxBtn').addEventListener('click', async () => {

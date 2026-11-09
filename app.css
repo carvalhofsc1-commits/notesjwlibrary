@@ -1645,6 +1645,58 @@
       transform: rotate(90deg);
     }
 
+    /* Anotações: um grupo recolhível para as reuniões e um para cada evento (assembleia ou congresso). */
+    .historico-anot-grupo {
+      margin: 8px 10px;
+      border: 1px solid var(--cat-cor, var(--line));
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--card);
+    }
+
+    .historico-anot-grupo>summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 10px;
+      cursor: pointer;
+      list-style: none;
+      font-size: .92rem;
+      font-weight: 700;
+      line-height: 1.25;
+      color: var(--text);
+      background: var(--card);
+      background: color-mix(in srgb, var(--cat-cor, var(--line)) 16%, var(--card));
+    }
+
+    .historico-anot-grupo>summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .historico-anot-grupo>summary::after {
+      content: '▸';
+      flex: 0 0 auto;
+      transition: transform .15s ease;
+    }
+
+    .historico-anot-grupo[open]>summary::after {
+      transform: rotate(90deg);
+    }
+
+    .historico-anot-grupo>.historico-lista {
+      margin: 6px 8px 8px;
+    }
+
+    /* Título da página Pesquisas e respostas salvas: sem o botão da direita, o título tem espaço para duas linhas. */
+    .reunioes-topo[data-cor="historico"] #reunioesCampoBtn {
+      display: none;
+    }
+
+    .reunioes-topo[data-cor="historico"] .reunioes-pagina-titulo {
+      font-size: .98rem;
+    }
+
     .historico-cat>.historico-vazio {
       margin: 8px 12px;
       color: var(--muted);
@@ -8399,6 +8451,16 @@
     /* ---------- Cada categoria da tela Reuniões numa cor só ----------
        Tudo o que fica dentro de uma categoria (cards, botões, setas, campos e caixas de marcar) usa a cor dela: Comentários em roxo/rosa,
        Dirigentes em verde-azulado e Esboços em laranja. --g-cor: a cor da borda; --g-forte: botões de ação; --g-suave: botões de apoio. */
+    .historico-cat[data-cat="anotacoes"] {
+      --g-cor: #6366f1;
+      --g-forte: #4338ca;
+      --g-forte-h: #3730a3;
+      --g-suave: #e0e7ff;
+      --g-suave-h: #c7d2fe;
+      --g-borda: #818cf8;
+      --g-texto: #312e81;
+    }
+
     .historico-cat[data-cat="textos"] {
       --g-cor: #0ea5e9;
       --g-forte: #0369a1;

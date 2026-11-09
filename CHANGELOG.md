@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.12
+
+Pesquisas e respostas salvas: (1) o título da página passa a ter duas linhas (o botão da direita, que não aparece ali, não ocupa mais espaço); (2) nova seção **🗒️ Anotações**, exclusiva para as anotações salvas na tela Anotações: um grupo para as **Reuniões** e, para assembleias e congressos, **um grupo por evento**, com as anotações na ordem do programa. As anotações já salvas antes saem de “Textos” e entram aqui (o evento vem do nome).
+
 ## 6.7.11
 
 Anotações: saiu o botão **Atualizar programa** da tela do programa; fica só o **Atualizar lista** (na tela de escolha do evento). Os botões da tela do programa voltam a dividir a mesma linha.
