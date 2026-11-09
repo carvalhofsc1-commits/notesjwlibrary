@@ -1331,7 +1331,7 @@
         <details class="subsection sub-tint-2" id="bibliaConfigSection">
           <summary>📚 Leitura da Bíblia</summary>
           <div class="subsection-body">
-            <p class="hint">Ajustes da tela Leitura diária da Bíblia, neste aparelho. As opções de leitura (tocar o próximo capítulo, resumo automático) ficam na própria tela da Leitura diária da Bíblia.</p>
+            <p class="hint">Ajustes da tela Leitura diária da Bíblia, neste aparelho. As opções de leitura (tocar o próximo capítulo, resumo automático) ficam no card de leitura de cada capítulo, em “Opções adicionais”.</p>
             <div class="acesso-item bib-marcar">
               <label>✅ Marcar capítulos já lidos</label>
               <p class="hint">Para quem começa a usar o app no meio de um ciclo de leitura. Os capítulos já marcados não mudam.</p>
@@ -1814,13 +1814,6 @@
       <details class="biblia-modo" id="bibliaModoSecoes" open>
         <summary><span aria-hidden="true">📑</span> Seções e temas</summary>
         <div class="biblia-modo-corpo">
-          <div class="biblia-opcoes">
-            <p class="biblia-opcoes-titulo">⚙️ Opções de leitura</p>
-            <label class="ai-check"><input type="checkbox" id="bibliaSeguirGrupo" autocomplete="off"> 🎯 Ler automaticamente só os capítulos sugeridos para o dia</label>
-            <p class="hint">Ligado, ao terminar um capítulo o áudio toca o seguinte do mesmo grupo e pára no fim dele. Desligado, toca um capítulo por vez e pára no fim.</p>
-            <label class="ai-check"><input type="checkbox" data-biblia-resumo-auto autocomplete="off"> 📝 Gerar e ler o resumo automaticamente</label>
-            <p class="hint">Depois de cada capítulo o app fala “Aguarde... gerando resumo”, gera o resumo e o lê em voz alta (precisa do código de resumo e do código de leitura, em Ajustes). Com o item acima ligado, só depois segue para o próximo capítulo.</p>
-          </div>
       <div class="biblia-caixa">
         <div id="bibliaSecoes" class="biblia-secoes"></div>
       </div>
@@ -1836,17 +1829,6 @@
       <details class="biblia-modo" id="bibliaModoLivros">
         <summary><span aria-hidden="true">📚</span> Livros, na ordem da Bíblia</summary>
         <div class="biblia-modo-corpo">
-          <div class="biblia-opcoes">
-            <p class="biblia-opcoes-titulo">⚙️ Opções de leitura</p>
-            <label class="ai-check"><input type="checkbox" id="bibliaSeguir" autocomplete="off"> 🔁 Ao terminar um capítulo, tocar o próximo</label>
-            <div class="biblia-limite" id="bibliaLimiteBox">
-              <label for="bibliaLimite">🔢 Máximo de capítulos lidos automaticamente</label>
-              <select id="bibliaLimite" aria-label="Máximo de capítulos lidos automaticamente"></select>
-            </div>
-            <p class="hint">Desligado, o áudio toca um capítulo por vez e pára no fim (o capítulo é marcado como lido). Ligado, em seguida toca o capítulo seguinte da Bíblia, até completar o máximo escolhido (contando o que você iniciou).</p>
-            <label class="ai-check"><input type="checkbox" data-biblia-resumo-auto autocomplete="off"> 📝 Gerar e ler o resumo automaticamente</label>
-            <p class="hint">Depois de cada capítulo o app fala “Aguarde... gerando resumo”, gera o resumo e o lê em voz alta (precisa do código de resumo e do código de leitura, em Ajustes). Com a opção de tocar o próximo ligada, só depois segue para o próximo capítulo.</p>
-          </div>
           <div id="bibliaLivros" class="biblia-lista"></div>
         </div>
       </details>

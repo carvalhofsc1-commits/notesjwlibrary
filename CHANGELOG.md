@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.15
+
+Leitura diária da Bíblia: as opções de leitura saíram do alto de cada modo e foram para dentro do **card de leitura de cada capítulo**, num bloco recolhível **⚙️ Opções adicionais** logo abaixo dos botões finais (Ler na WOL, Ler no JW Library, Resumir). Por livros: tocar o próximo capítulo e o máximo de capítulos (2 a 10); por seções e temas: ler só os capítulos sugeridos para o dia; nos dois: gerar e ler o resumo automaticamente. Dá para abrir e mudar a opção enquanto lê: vale já no fim do capítulo que está tocando. Começa recolhido; o que foi aberto fica aberto nos outros cards enquanto o app está aberto.
+
 ## 6.7.14
 
 **Leitura diária da Bíblia, opções de leitura** (agora na própria tela, em cada modo; saíram do Ajustes): em **Livros, na ordem da Bíblia**: “Ao terminar um capítulo, tocar o próximo” (que estava no Ajustes), com o **máximo de capítulos lidos automaticamente** (de 2 a 10, contando o que você iniciou); em **Seções e temas**: “Ler automaticamente só os capítulos sugeridos para o dia” (o grupo do dia: toca o próximo capítulo só enquanto for do mesmo grupo); nos dois modos: **Gerar e ler o resumo automaticamente**: ao terminar o capítulo, o app fala “Aguarde... gerando resumo”, gera o resumo (se ainda não existe) e o lê em voz alta; depois segue para o próximo, se a opção de seguir estiver ligada (precisa do código de resumo e do código de leitura).

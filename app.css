@@ -5594,28 +5594,33 @@
       display: none;
     }
 
-    /* Opções de leitura da Leitura diária da Bíblia (em cada modo: seções e temas / livros). */
-    .biblia-opcoes {
-      margin: 0 0 12px;
-      padding: 10px 12px;
+    /* Opções adicionais do card de leitura de cada capítulo (recolhidas): tocar o próximo, limite, grupo do dia e resumo automático. */
+    .bp-opcoes {
+      margin-top: 10px;
       border: 1px solid var(--line);
-      border-radius: 12px;
+      border-radius: 10px;
       background: var(--card);
     }
 
-    .biblia-opcoes-titulo {
-      margin: 0 0 6px;
-      font-size: .92rem;
+    .bp-opcoes > summary {
+      padding: 9px 12px;
+      font-size: .9rem;
       font-weight: 700;
+      cursor: pointer;
+      color: var(--text);
     }
 
-    .biblia-opcoes .ai-check {
+    .bp-opcoes-corpo {
+      padding: 0 12px 10px;
+    }
+
+    .bp-opcoes .ai-check {
       margin-top: 6px;
     }
 
-    .biblia-opcoes .hint {
+    .bp-opcoes .hint {
       margin: 2px 0 8px 1.6rem;
-      font-size: .82rem;
+      font-size: .8rem;
     }
 
     .biblia-limite {

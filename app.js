@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.14'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.15'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -23368,6 +23368,25 @@ function saveTemplatesToStorage() {
 
     const bibliaTempo = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
 
+    // "Opções adicionais" do card de leitura (recolhidas). Por livros: tocar o próximo capítulo e o máximo de capítulos (2 a 10); por seções e temas:
+    // ler só os capítulos sugeridos para o dia; nos dois: gerar e ler o resumo automaticamente. Valem na hora: dá para mudar lendo.
+    // O estado aberto/recolhido vale para os cards de leitura enquanto o app está aberto; começa recolhido.
+    let bibliaOpcoesAberto = false;
+    function bibliaOpcoesHtml(origem) {
+      const limites = Array.from({ length: 9 }, (_, i) => '<option value="' + (i + 2) + '">' + (i + 2) + '</option>').join('');
+      const seguir = origem === 'livros'
+        ? '<label class="ai-check"><input type="checkbox" class="bp-op-seguir"> 🔁 Ao terminar um capítulo, tocar o próximo</label>' +
+          '<div class="biblia-limite bp-op-limite"><label>🔢 Máximo de capítulos lidos automaticamente</label>' +
+          '<select class="bp-op-limite-sel" aria-label="Máximo de capítulos lidos automaticamente">' + limites + '</select></div>' +
+          '<p class="hint">Desligado, o áudio toca um capítulo por vez e pára no fim. Ligado, toca o seguinte da Bíblia até completar o máximo escolhido (contando o que você iniciou).</p>'
+        : '<label class="ai-check"><input type="checkbox" class="bp-op-grupo"> 🎯 Ler automaticamente só os capítulos sugeridos para o dia</label>' +
+          '<p class="hint">Ligado, ao terminar um capítulo toca o seguinte do mesmo grupo e pára no fim dele. Desligado, toca um capítulo por vez.</p>';
+      return '<details class="bp-opcoes"><summary>⚙️ Opções adicionais</summary><div class="bp-opcoes-corpo">' + seguir +
+        '<label class="ai-check"><input type="checkbox" class="bp-op-resumo"> 📝 Gerar e ler o resumo automaticamente</label>' +
+        '<p class="hint">Depois de cada capítulo o app fala “Aguarde... gerando resumo”, gera o resumo e o lê em voz alta (precisa do código de resumo e do código de leitura, em Ajustes). Com a opção de seguir ligada, só depois toca o próximo capítulo.</p>' +
+        '</div></details>';
+    }
+
     function bibliaCriarPainel(caixa) {
       const p = document.createElement('div');
       p.className = 'biblia-painel';
@@ -23400,8 +23419,32 @@ function saveTemplatesToStorage() {
           '<a class="bp-wol" target="_blank" rel="noopener noreferrer">🔗 Ler na WOL</a>' +
           '<a class="secondary bp-jwl" hidden>📖 Ler no JW Library</a>' +
           '<button type="button" class="secondary bp-resumir">Resumir</button>' +
-        '</div>';
+        '</div>' + bibliaOpcoesHtml(caixa._origem === 'livros' ? 'livros' : 'secoes');
       const q = s => p.querySelector(s);
+      // Opções adicionais: cada mudança vale na hora e fica guardada.
+      const opDet = q('.bp-opcoes');
+      const opSeguir = q('.bp-op-seguir');
+      const opLimite = q('.bp-op-limite-sel');
+      const opLimiteBox = q('.bp-op-limite');
+      const opGrupo = q('.bp-op-grupo');
+      const opResumo = q('.bp-op-resumo');
+      opDet.addEventListener('toggle', () => { bibliaOpcoesAberto = opDet.open; });
+      if (opSeguir) {
+        opSeguir.addEventListener('change', () => { bibliaEstado.seguir = opSeguir.checked; opLimiteBox.hidden = !opSeguir.checked; bibliaGravarEstado(); });
+        opLimite.addEventListener('change', () => { bibliaEstado.limite = Number(opLimite.value) || 2; bibliaGravarEstado(); });
+      }
+      if (opGrupo) opGrupo.addEventListener('change', () => { bibliaEstado.seguirGrupo = opGrupo.checked; bibliaGravarEstado(); });
+      opResumo.addEventListener('change', () => { bibliaEstado.resumoAuto = opResumo.checked; bibliaGravarEstado(); });
+      p._pintarOpcoes = () => { // os cards de leitura mostram o mesmo estado (o que foi mudado em outro vale aqui)
+        if (opDet.open !== bibliaOpcoesAberto) opDet.open = bibliaOpcoesAberto;
+        if (opSeguir) {
+          opSeguir.checked = Boolean(bibliaEstado.seguir);
+          opLimite.value = String(bibliaEstado.limite);
+          opLimiteBox.hidden = !bibliaEstado.seguir;
+        }
+        if (opGrupo) opGrupo.checked = Boolean(bibliaEstado.seguirGrupo);
+        opResumo.checked = Boolean(bibliaEstado.resumoAuto);
+      };
       const eqPlayer = bibliaEqCriar(); // as barras de áudio dentro do player, ao lado da situação
       eqPlayer.classList.add('bp-eq');
       eqPlayer.hidden = true;
@@ -23445,6 +23488,7 @@ function saveTemplatesToStorage() {
         br.textContent = tem ? 'Ver resumo' : 'Resumir';
         br.classList.toggle('tem', tem);
         q('.bp-vel').value = String(bibliaEstado.velocidade);
+        p._pintarOpcoes();
         p._pintarPlayer();
       };
 
@@ -24828,33 +24872,6 @@ function saveTemplatesToStorage() {
     }
 
     bibliaCarregarEstado();
-    // Opções de leitura (na própria tela da Leitura diária da Bíblia). Por livros: tocar o próximo até o máximo de capítulos (2 a 10); por seções e
-    // temas: ler só o grupo do dia; nos dois: gerar e ler o resumo automaticamente.
-    const bibliaSeguirCaixa = document.getElementById('bibliaSeguir');
-    const bibliaLimiteSel = document.getElementById('bibliaLimite');
-    const bibliaLimiteBox = document.getElementById('bibliaLimiteBox');
-    for (let n = 2; n <= 10; n++) bibliaLimiteSel.appendChild(new Option(String(n), String(n)));
-    bibliaLimiteSel.value = String(bibliaEstado.limite);
-    bibliaSeguirCaixa.checked = Boolean(bibliaEstado.seguir);
-    bibliaLimiteBox.hidden = !bibliaEstado.seguir;
-    bibliaSeguirCaixa.addEventListener('change', () => {
-      bibliaEstado.seguir = bibliaSeguirCaixa.checked;
-      bibliaLimiteBox.hidden = !bibliaEstado.seguir;
-      bibliaGravarEstado();
-    });
-    bibliaLimiteSel.addEventListener('change', () => { bibliaEstado.limite = Number(bibliaLimiteSel.value) || 2; bibliaGravarEstado(); });
-    const bibliaSeguirGrupoCaixa = document.getElementById('bibliaSeguirGrupo');
-    bibliaSeguirGrupoCaixa.checked = Boolean(bibliaEstado.seguirGrupo);
-    bibliaSeguirGrupoCaixa.addEventListener('change', () => { bibliaEstado.seguirGrupo = bibliaSeguirGrupoCaixa.checked; bibliaGravarEstado(); });
-    const bibliaResumoAutoCaixas = [...document.querySelectorAll('[data-biblia-resumo-auto]')]; // uma em cada modo, as duas valem o mesmo
-    bibliaResumoAutoCaixas.forEach(c => {
-      c.checked = Boolean(bibliaEstado.resumoAuto);
-      c.addEventListener('change', () => {
-        bibliaEstado.resumoAuto = c.checked;
-        bibliaResumoAutoCaixas.forEach(o => { o.checked = c.checked; });
-        bibliaGravarEstado();
-      });
-    });
     // Ajustes → Leitura da Bíblia: marcar de uma vez o que já foi lido (quem começa no meio de um ciclo) e recomeçar o ciclo.
     (function bibliaMarcacaoEmMassa() {
       const el = id => document.getElementById(id);
