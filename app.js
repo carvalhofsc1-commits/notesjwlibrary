@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.101'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.102'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -24904,7 +24904,7 @@ function saveTemplatesToStorage() {
       function atualizarVista() {
         const programa = comPrograma();
         ativa = programa && vista === 'anotando' && parteAtual >= 0 && Boolean(partes[parteAtual]);
-        programaBox.hidden = !programa;
+        programaBox.hidden = !programa || vista === 'anotando'; // vazia na tela de anotação: escondida, para não somar mais um espaço
         escolhaEl.hidden = vista !== 'escolha';
         programaVistaEl.hidden = vista !== 'programa';
         progTitulo.hidden = !programa || vista === 'escolha' || !programaMeta;

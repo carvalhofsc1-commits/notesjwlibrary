@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.102
+
+Anotações: menos espaço entre a linha colorida do tema e o que vem logo abaixo (a barra das setas ou a programação).
+
 ## 6.6.101
 
 Anotações: na gravação pronta, os botões passam a se chamar apenas **Resumo** e **Salvar**.
