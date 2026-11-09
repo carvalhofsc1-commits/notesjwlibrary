@@ -1731,8 +1731,10 @@ async function acrescentarTemas(itens, { concorrencia = 8, timeoutMs = 6000 } = 
   await Promise.all(Array.from({ length: Math.min(concorrencia, itens.length) }, trabalhador));
 }
 
-export async function listarProgramas({ timeoutMs = 10000 } = {}) {
-  if (programasLidos && Date.now() - programasLidos.quando < VALIDADE_PROGRAMAS_MS) return programasLidos.itens;
+export async function listarProgramas({ timeoutMs = 10000, forcar = false } = {}) {
+  // Com "forcar" (botão Atualizar lista) o cache de 6 h é ignorado, mas no máximo uma vez por minuto.
+  const validade = forcar ? 60 * 1000 : VALIDADE_PROGRAMAS_MS;
+  if (programasLidos && Date.now() - programasLidos.quando < validade) return programasLidos.itens;
   const paginas = await Promise.all(
     CATEGORIAS_PROGRAMAS.map((c) => baixar(`${PROGRAMAS_BIBLIOTECA}/${c.caminho}`, timeoutMs).then((html) => programasDaCategoria(html, c)).catch(() => [])),
   );

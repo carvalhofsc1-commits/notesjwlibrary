@@ -2980,9 +2980,9 @@ async function formatarAnotacoes(res, body, P) {
 }
 
 // Anotações: lista dos programas de assembleia e congresso disponíveis na WOL (o app a mostra ao abrir a tela, sem código).
-async function listaDeProgramas(res) {
+async function listaDeProgramas(res, body) {
   try {
-    const itens = await listarProgramas();
+    const itens = await listarProgramas({ forcar: Boolean(body && body.forcar) });
     if (!itens.length) return erro(res, 502, "Não consegui carregar a lista de programas agora.");
     return res.status(200).json({ programas: itens });
   } catch (e) {
@@ -4215,7 +4215,7 @@ async function tratarPedido(req, res) {
     if (tarefa === "versiculos") return textosDosVersiculos(res, body);
     if (tarefa === "anotacoes-versiculos") return textosDosVersiculosAnotacoes(res, body);
     if (tarefa === "programa-pub") return lerProgramaPub(res, body);
-    if (tarefa === "programas-lista") return listaDeProgramas(res);
+    if (tarefa === "programas-lista") return listaDeProgramas(res, body);
     if (tarefa === "outros-pesquisar") return pesquisarOutros(res, body);
     if (tarefa === "outros-ler") return lerOutros(res, body);
     if (tarefa === "discurso-ler") return lerDiscursoCurtoDaSemana(res, body);

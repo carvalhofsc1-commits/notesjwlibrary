@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.10
+
+Anotações: dois botões para acompanhar a WOL: **🔄 Atualizar lista** (na tela de escolha do evento): busca de novo na WOL a lista de programas, ignorando o cache do aparelho e o do servidor (o servidor aceita no máximo uma busca forçada por minuto) — para quando um programa novo, como o congresso de 2027, acabou de sair; e **🔄 Atualizar programa** (na tela do programa): busca o programa do evento aberto e junta com o que já existe, mantendo anotações, orador e congregação (partes que saíram do programa mas têm anotação vão para o fim, numa seção à parte). Os botões da tela do programa ficam em duas colunas.
+
 ## 6.7.09
 
 Anotações: corrigido o programa que traz o título de uma parte nas linhas de baixo, como o **VÍDEO PRINCIPAL:** do congresso (“A História e o Ministério de Jesus: Episódio 4 ‘Foi Por Isso Que Eu Vim’”): o título agora entra no tema da parte e as referências bíblicas vão para o texto temático. Um programa já guardado com o título incompleto é completado sozinho ao ser aberto de novo (as anotações, o orador e a congregação não mudam). No congresso, a programação agora abre com **todos os dias recolhidos**, e tocar no dia aberto o recolhe (abrir um dia continua fechando o outro).
