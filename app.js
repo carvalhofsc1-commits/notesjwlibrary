@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.66'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.67'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -11060,22 +11060,37 @@ function saveTemplatesToStorage() {
         return id;
       } catch (e) { return ''; }
     }
-    // Uma visita por dia por aparelho (acesso novo na 1ª vez; recorrente depois).
-    async function estatisticasPing() {
+    // Visita do dia + perfil do aparelho (nível admin e quais códigos de recurso estão salvos).
+    // Uma visita por dia no servidor; o perfil pode ser reenviado no mesmo dia (ex.: salvou um código).
+    function estatisticasPerfilAparelho() {
+      return {
+        pesquisa: Boolean(codigoAcessoSalvo()),
+        dirigente: Boolean(codigoDirigenteSalvo()),
+        leitura: Boolean(codigoLeituraSalvo()),
+        texto: Boolean(codigoTextoSalvo()),
+        resumo: Boolean(codigoResumoSalvo()),
+        s34: Boolean(codigoS34Salvo())
+      };
+    }
+    async function estatisticasPing(forcarPerfil) {
       const id = aparelhoId();
       if (!id || !navigator.onLine || !servidoPelaWeb()) return;
       try {
         const hoje = new Date().toISOString().slice(0, 10);
-        if (sessionStorage.getItem(APARELHO_PING_DIA_KEY) === hoje) return;
+        if (!forcarPerfil && sessionStorage.getItem(APARELHO_PING_DIA_KEY) === hoje) return;
         sessionStorage.setItem(APARELHO_PING_DIA_KEY, hoje);
+        const corpo = { acao: 'estatisticas-ping', aparelhoId: id, recursos: estatisticasPerfilAparelho() };
+        const admin = senhaAdminSalva();
+        if (admin) corpo.codigoAdmin = admin;
         await fetch(CONFIG_ENDPOINT, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ acao: 'estatisticas-ping', aparelhoId: id })
+          body: JSON.stringify(corpo)
         });
       } catch (e) { /* estatísticas não bloqueiam o app */ }
     }
-    setTimeout(estatisticasPing, 2500);
+    setTimeout(() => estatisticasPing(false), 2500);
+    document.addEventListener('acesso-salvo', () => { estatisticasPing(true); });
 
     // Devolve { ok, status, data, unavailable, error }. O código de administrador é conferido no servidor.
     async function postConfig(payload) {
@@ -11671,6 +11686,44 @@ function saveTemplatesToStorage() {
       const d = new Date(iso);
       return Number.isNaN(d.getTime()) ? String(iso).slice(0, 16) : d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     }
+    const ESTAT_RECURSO_NOME = {
+      pesquisa: 'Pesquisa', dirigente: 'Dirigente', leitura: 'Leitura',
+      texto: 'Texto', resumo: 'Resumo', s34: 'S-34'
+    };
+    const ESTAT_TAREFA_NOME = {
+      formatar: 'Formatar', sentinela: 'Sentinela', estudo: 'Estudo bíblico',
+      'estudo-perguntas': 'Perguntas do estudo', 'estudo-recap': 'Recapitulação',
+      ebc: 'EBC', 'ebc-dirigente': 'EBC dirigente', tesouros: 'Tesouros',
+      discurso: 'Discurso', publico: 'Discurso público', outros: 'Outros',
+      joias: 'Joias', 'texto-diario-comentarios': 'Texto diário',
+      'leitura-biblia': 'Leitura bíblica', 'biblia-texto': 'Texto bíblico',
+      'outros-pesquisar': 'Pesquisar', 'publico-esboco': 'Esboço S-34',
+      versiculos: 'Versículos', voz: 'Voz', ia: 'IA'
+    };
+    function estatisticasNomeTarefa(chave) {
+      return ESTAT_TAREFA_NOME[chave] || String(chave || 'IA');
+    }
+    function estatisticasListaRecursos(rec) {
+      const r = rec || {};
+      return Object.keys(ESTAT_RECURSO_NOME).filter(k => r[k]).map(k => ESTAT_RECURSO_NOME[k]);
+    }
+    function estatisticasUltimoAcessoHtml(ua) {
+      if (!ua || !ua.em) return 'Sem uso de IA no último acesso.';
+      const tarefas = Object.entries(ua.porTarefa || {})
+        .sort((x, y) => ((y[1].in || 0) + (y[1].out || 0)) - ((x[1].in || 0) + (x[1].out || 0)) || (y[1].n || 0) - (x[1].n || 0))
+        .map(([nome, u]) => {
+          const tok = (u.in || 0) + (u.out || 0);
+          return estatisticasNomeTarefa(nome) + ' ×' + (u.n || 0) + (tok ? ' (' + estatisticasFmt(tok) + ' tok.)' : '');
+        });
+      const partes = [
+        'Último acesso ' + estatisticasQuando(ua.em),
+        estatisticasFmt(ua.consultas) + ' consultas',
+        estatisticasFmt(ua.tokens || ((ua.tokensIn || 0) + (ua.tokensOut || 0))) + ' tokens'
+      ];
+      if (tarefas.length) partes.push('recursos: ' + tarefas.join(', '));
+      else partes.push('nenhum recurso de IA nesse dia');
+      return partes.join(' · ');
+    }
     function estatisticasRender(est) {
       if (!est || !est.configurado) {
         estatisticasStatus.textContent = 'As estatísticas ainda não estão configuradas no servidor (falta o Blob privado).';
@@ -11700,12 +11753,14 @@ function saveTemplatesToStorage() {
       estatisticasLista.hidden = !lista.length;
       estatisticasLista.innerHTML = lista.length
         ? '<p class="hint">Aparelhos (até 100, pelos que mais usaram tokens)</p>' + lista.map(a => {
-          const tarefas = Object.entries(a.porTarefa || {}).sort((x, y) => (y[1].n || 0) - (x[1].n || 0)).slice(0, 4)
-            .map(([nome, u]) => nome + ' ×' + (u.n || 0)).join(', ');
-          return '<div class="estatisticas-item"><strong>' + a.id + '…</strong> · ' + estatisticasFmt(a.consultas) + ' consultas · ' +
-            estatisticasFmt(a.tokens) + ' tokens' +
-            '<span class="hint">1ª vez ' + estatisticasQuando(a.primeiro) + ' · último ' + estatisticasQuando(a.ultimo) +
-            (tarefas ? ' · ' + tarefas : '') + '</span></div>';
+          const titulo = (a.nome && String(a.nome).trim()) || ('Aparelho ' + a.id + '…');
+          const nivel = a.nivel === 'admin' ? 'admin' : 'normal';
+          return '<div class="estatisticas-item"><strong>' + acessoSiteEscapar(titulo) + '</strong>' +
+            (a.nome ? ' <span class="hint">(' + acessoSiteEscapar(a.id) + '…)</span>' : '') +
+            ' · ' + nivel +
+            ' · ' + estatisticasFmt(a.consultas) + ' consultas · ' + estatisticasFmt(a.tokens) + ' tokens total' +
+            '<span class="hint">' + estatisticasUltimoAcessoHtml(a.ultimoAcesso) +
+            '<br>1ª vez ' + estatisticasQuando(a.primeiro) + ' · visto ' + estatisticasQuando(a.ultimo) + '</span></div>';
         }).join('')
         : '';
     }
@@ -11979,12 +12034,16 @@ function saveTemplatesToStorage() {
       acessoSiteAprovados.innerHTML = aprovados.length
         ? aprovados.map(a => {
           const nome = a.nomeCompleto || [a.nome, a.sobrenome].filter(Boolean).join(' ') || 'Usuário';
+          const nivel = a.nivel === 'admin' ? 'Administrador' : 'Normal';
+          const especiais = estatisticasListaRecursos(a.recursos);
           return '<div class="acesso-site-item">' +
           '<strong>' + acessoSiteEscapar(nome) + '</strong>' +
           (a.idade ? ' · ' + acessoSiteEscapar(a.idade) + ' anos' : '') +
+          ' · <strong>' + nivel + '</strong>' +
           '<span class="hint">' +
           [a.cidadeEstado || [a.cidade, a.estado].filter(Boolean).join(', '), a.congregacao].filter(Boolean).map(acessoSiteEscapar).join(' · ') +
           (a.comoConheceu ? '<br>Como conheceu: ' + acessoSiteEscapar(a.comoConheceu) : '') +
+          '<br>Recursos especiais: ' + (especiais.length ? acessoSiteEscapar(especiais.join(', ')) : 'nenhum código salvo neste aparelho') +
           '<br>Aparelho ' + acessoSiteEscapar(a.aparelhoId) + '… · ' + estatisticasQuando(a.aprovadoEm) +
           '</span>' +
           '<div class="button-row">' +

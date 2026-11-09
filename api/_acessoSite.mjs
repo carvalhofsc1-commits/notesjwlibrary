@@ -6,7 +6,7 @@
 import { randomUUID } from "node:crypto";
 import { get, put } from "@vercel/blob";
 import { textosIguais } from "./_comum.mjs";
-import { aparelhoIdLimpo } from "./_estatisticas.mjs";
+import { aparelhoIdLimpo, mapaPerfilAparelhos } from "./_estatisticas.mjs";
 
 const NOME = "estatisticas/acesso-site.json";
 const MAX_PEDIDOS = 500;
@@ -342,13 +342,26 @@ export async function atualizarCadastroSite(corpo) {
 
 export async function lerAcessoSiteAdmin() {
   const dados = (await lerBruto()) || vazio();
+  const perfis = await mapaPerfilAparelhos();
   const pendentes = dados.pedidos.filter((p) => p.status === "pendente").map(pedidoPublico);
   const recentes = dados.pedidos.filter((p) => p.status !== "pendente").slice(0, 40).map(pedidoPublico);
-  const aprovados = Object.entries(dados.aprovados || {}).map(([aparelhoId, a]) => ({
-    aparelhoId: aparelhoId.slice(0, 8),
-    aparelhoIdCompleto: aparelhoId,
-    ...identidadeDe(a),
-  }));
+  const aprovados = Object.entries(dados.aprovados || {}).map(([aparelhoId, a]) => {
+    const perfil = perfis[aparelhoId] || {};
+    return {
+      aparelhoId: aparelhoId.slice(0, 8),
+      aparelhoIdCompleto: aparelhoId,
+      ...identidadeDe(a),
+      nivel: perfil.nivel === "admin" ? "admin" : "normal",
+      recursos: perfil.recursos || {
+        pesquisa: false,
+        dirigente: false,
+        leitura: false,
+        texto: false,
+        resumo: false,
+        s34: false,
+      },
+    };
+  });
   aprovados.sort((a, b) => String(b.aprovadoEm).localeCompare(String(a.aprovadoEm)));
   return {
     configurado: true,

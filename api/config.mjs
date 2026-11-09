@@ -239,7 +239,12 @@ export default async function handler(req, res) {
     // Pública: visita anônima do aparelho (UUID no localStorage) para estatísticas de acesso novo × recorrente.
     if (acao === "estatisticas-ping") {
       if (!estatisticasConfiguradas()) return res.status(200).json({ ok: false, configurado: false });
-      const r = await registrarPing(corpo.aparelhoId);
+      // Nível admin só conta se a senha bater no servidor. Recursos: o cliente manda só flags
+      // (quais códigos estão salvos no aparelho), sem as senhas dos recursos especiais.
+      const r = await registrarPing(corpo.aparelhoId, {
+        nivel: textosIguais(corpo.codigoAdmin, process.env.CODIGO_ADMIN) ? "admin" : "normal",
+        recursos: corpo.recursos,
+      });
       return res.status(200).json({ ok: Boolean(r && r.ok), novo: Boolean(r && r.novo), configurado: true });
     }
 

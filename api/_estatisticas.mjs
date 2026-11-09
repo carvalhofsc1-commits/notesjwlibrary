@@ -91,6 +91,50 @@ function diaSlot(dados, dia) {
   return dados.dias[dia];
 }
 
+function aparelhoNovo(agora) {
+  return {
+    primeiro: agora,
+    ultimo: agora,
+    visitas: 0,
+    consultas: 0,
+    tokensIn: 0,
+    tokensOut: 0,
+    porTarefa: {},
+    visitou: {},
+    sessao: null,
+    nivel: "normal",
+    recursos: {},
+  };
+}
+
+// Sessão = uso no mesmo dia civil do último acesso (recursos e tokens desse dia).
+function sessaoDoDia(ap, agora) {
+  const dia = diaDe(agora);
+  if (!ap.sessao || ap.sessao.dia !== dia) {
+    ap.sessao = { dia, em: agora, consultas: 0, tokensIn: 0, tokensOut: 0, porTarefa: {} };
+  } else {
+    ap.sessao.em = agora;
+  }
+  return ap.sessao;
+}
+
+function recursosLimpos(bruto) {
+  const r = bruto && typeof bruto === "object" ? bruto : {};
+  return {
+    pesquisa: Boolean(r.pesquisa),
+    dirigente: Boolean(r.dirigente),
+    leitura: Boolean(r.leitura),
+    texto: Boolean(r.texto),
+    resumo: Boolean(r.resumo),
+    s34: Boolean(r.s34),
+  };
+}
+
+function aplicarPerfil(ap, { nivel, recursos } = {}) {
+  if (nivel === "admin" || nivel === "normal") ap.nivel = nivel;
+  if (recursos && typeof recursos === "object") ap.recursos = recursosLimpos(recursos);
+}
+
 // Uma fila por instância evita sobrescrever o JSON em gravações quase simultâneas nesta mesma máquina.
 let fila = Promise.resolve();
 function emFila(trabalho) {
@@ -112,7 +156,8 @@ async function comDados(mutar) {
 }
 
 // Visita do dia: a 1ª vez que o aparelho aparece conta como novo; se já existia, como recorrente (uma vez por dia).
-export async function registrarPing(aparelhoId) {
+// Opcional: nivel ("admin"|"normal") e recursos (quais códigos estão salvos no aparelho — só flags, sem as senhas).
+export async function registrarPing(aparelhoId, perfil = {}) {
   const id = aparelhoIdLimpo(aparelhoId);
   if (!id) return { ok: false };
   try {
@@ -123,7 +168,7 @@ export async function registrarPing(aparelhoId) {
       let ap = dados.aparelhos[id];
       const eraNovo = !ap;
       if (!ap) {
-        ap = { primeiro: agora, ultimo: agora, visitas: 0, consultas: 0, tokensIn: 0, tokensOut: 0, porTarefa: {}, visitou: {} };
+        ap = aparelhoNovo(agora);
         dados.aparelhos[id] = ap;
       }
       if (!ap.visitou) ap.visitou = {};
@@ -141,6 +186,8 @@ export async function registrarPing(aparelhoId) {
           });
       }
       ap.ultimo = agora;
+      sessaoDoDia(ap, agora);
+      aplicarPerfil(ap, perfil);
       return { ok: true, novo: eraNovo };
     });
   } catch (e) {
@@ -166,7 +213,7 @@ export async function registrarUsoIa({ aparelhoId, tarefa, entrada, saida, consu
       const slot = diaSlot(dados, dia);
       let ap = dados.aparelhos[id];
       if (!ap) {
-        ap = { primeiro: agora, ultimo: agora, visitas: 0, consultas: 0, tokensIn: 0, tokensOut: 0, porTarefa: {}, visitou: {} };
+        ap = aparelhoNovo(agora);
         dados.aparelhos[id] = ap;
         slot.novos += 1;
         ap.visitou[dia] = true;
@@ -182,6 +229,16 @@ export async function registrarUsoIa({ aparelhoId, tarefa, entrada, saida, consu
       t.in += tokensIn;
       t.out += tokensOut;
       ap.porTarefa[nomeTarefa] = t;
+      const sessao = sessaoDoDia(ap, agora);
+      sessao.consultas = (sessao.consultas || 0) + n;
+      sessao.tokensIn = (sessao.tokensIn || 0) + tokensIn;
+      sessao.tokensOut = (sessao.tokensOut || 0) + tokensOut;
+      if (!sessao.porTarefa) sessao.porTarefa = {};
+      const st = sessao.porTarefa[nomeTarefa] || { n: 0, in: 0, out: 0 };
+      st.n += n;
+      st.in += tokensIn;
+      st.out += tokensOut;
+      sessao.porTarefa[nomeTarefa] = st;
       slot.consultas += n;
       slot.tokensIn += tokensIn;
       slot.tokensOut += tokensOut;
@@ -206,12 +263,86 @@ export async function listarAparelhoIds() {
   }
 }
 
+// Nomes do cadastro (acesso-site.json). Leitura direta do Blob/pasta para não criar dependência circular com _acessoSite.mjs.
+async function nomesDosAparelhos() {
+  try {
+    const dir = process.env.ACESSO_SITE_DIR || process.env.ESTATISTICAS_DIR;
+    let bruto = null;
+    if (dir) {
+      const { readFile } = await import("node:fs/promises");
+      try {
+        bruto = JSON.parse(await readFile(`${dir}/acesso-site.json`, "utf8"));
+      } catch {
+        bruto = null;
+      }
+    } else if (process.env.BLOB_READ_WRITE_TOKEN) {
+      const resultado = await get("estatisticas/acesso-site.json", {
+        access: "private",
+        token: process.env.BLOB_READ_WRITE_TOKEN,
+        useCache: false,
+      }).catch(() => null);
+      if (resultado && resultado.statusCode === 200) {
+        bruto = JSON.parse(await new Response(resultado.stream).text());
+      }
+    }
+    const mapa = Object.create(null);
+    const aprovados = (bruto && bruto.aprovados) || {};
+    for (const [id, a] of Object.entries(aprovados)) {
+      const nome = String((a && a.nome) || "").trim();
+      const sobrenome = String((a && a.sobrenome) || "").trim();
+      let completo = `${nome} ${sobrenome}`.trim();
+      // Cadastros antigos: "nome" já vinha completo.
+      if (!sobrenome && nome) completo = nome;
+      if (completo) mapa[id] = completo;
+    }
+    return mapa;
+  } catch {
+    return Object.create(null);
+  }
+}
+
+function sessaoPublica(sessao) {
+  if (!sessao || typeof sessao !== "object") return null;
+  return {
+    dia: sessao.dia || "",
+    em: sessao.em || "",
+    consultas: sessao.consultas || 0,
+    tokensIn: sessao.tokensIn || 0,
+    tokensOut: sessao.tokensOut || 0,
+    tokens: (sessao.tokensIn || 0) + (sessao.tokensOut || 0),
+    porTarefa: sessao.porTarefa || {},
+  };
+}
+
+export async function mapaPerfilAparelhos() {
+  if (!estatisticasConfiguradas()) return {};
+  try {
+    const dados = (await lerBruto()) || vazio();
+    const mapa = Object.create(null);
+    for (const [id, ap] of Object.entries(dados.aparelhos || {})) {
+      mapa[id] = {
+        nivel: ap.nivel === "admin" ? "admin" : "normal",
+        recursos: recursosLimpos(ap.recursos),
+        ultimo: ap.ultimo || "",
+      };
+    }
+    return mapa;
+  } catch {
+    return {};
+  }
+}
+
 export async function resumoEstatisticas() {
   if (!estatisticasConfiguradas()) return { configurado: false };
   const dados = (await lerBruto()) || vazio();
+  const nomes = await nomesDosAparelhos();
   const hoje = diaDe(agoraIso());
   const lista = Object.entries(dados.aparelhos || {}).map(([id, ap]) => ({
     id: id.slice(0, 8),
+    aparelhoIdCompleto: id,
+    nome: nomes[id] || "",
+    nivel: ap.nivel === "admin" ? "admin" : "normal",
+    recursos: recursosLimpos(ap.recursos),
     primeiro: ap.primeiro || "",
     ultimo: ap.ultimo || "",
     visitas: ap.visitas || 0,
@@ -220,6 +351,7 @@ export async function resumoEstatisticas() {
     tokensOut: ap.tokensOut || 0,
     tokens: (ap.tokensIn || 0) + (ap.tokensOut || 0),
     porTarefa: ap.porTarefa || {},
+    ultimoAcesso: sessaoPublica(ap.sessao),
   }));
   lista.sort((a, b) => b.tokens - a.tokens || b.consultas - a.consultas || String(b.ultimo).localeCompare(String(a.ultimo)));
   const diasOrdenados = Object.keys(dados.dias || {})

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.67
+
+Estatísticas de acesso: cada aparelho mostra o **nome do usuário** (quando cadastrado), os **recursos de IA usados no último acesso** e quantos **tokens** foram gastos neles. Em **usuários identificados**: nível **normal** ou **admin** e quais **recursos especiais** (códigos) aquele aparelho tem salvos.
+
 ## 6.6.66
 
 Cadastro e Meus dados: ao escolher o **estado**, o app carrega só as **cidades daquele UF** (lista IBGE, sob demanda) para escolher na lista — sem embutir as 5.570 cidades no app.
