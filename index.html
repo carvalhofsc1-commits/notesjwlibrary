@@ -146,82 +146,96 @@
     </div>
 
     <!-- Anotações: reuniões, assembleias e congressos -->
-    <section class="card tint-6 screen-anotacoes" id="anotacoesCard" aria-labelledby="anotacoesTitulo">
+    <section class="card tint-5 screen-anotacoes" id="anotacoesCard" aria-labelledby="anotacoesTitulo" data-modo="">
       <div class="anotacoes-topo">
-        <button id="anotacoesVoltarHub" class="secondary" type="button" hidden>◀ Modos</button>
+        <button id="anotacoesVoltarHub" class="secondary" type="button" hidden>◀ Voltar</button>
         <h2 id="anotacoesTitulo">📝 Anotações</h2>
       </div>
 
       <div id="anotacoesHub" class="anotacoes-hub">
-        <p class="hint">Escolha o tipo de anotação. Você pode inserir textos bíblicos, carregar o programa (assembleia/congresso), gravar o discurso e exportar para Word.</p>
-        <div class="anotacoes-hub-grid">
-          <button type="button" class="atalho" data-anotacoes-modo="reuniao"><span class="atalho-icone" aria-hidden="true">📅</span><span class="atalho-nome">Reunião</span><span class="atalho-desc">Anotações de uma parte</span></button>
+        <p class="hint anotacoes-intro">Escolha o que vai anotar. Dá para inserir textos bíblicos, carregar o programa do evento, gravar o discurso (a gravação vira texto e resumo) e exportar para Word.</p>
+        <div class="atalhos-grid anotacoes-hub-grid">
+          <button type="button" class="atalho" data-anotacoes-modo="reuniao"><span class="atalho-icone" aria-hidden="true">📅</span><span class="atalho-nome">Reunião</span><span class="atalho-desc">Anote durante a reunião</span></button>
           <button type="button" class="atalho" data-anotacoes-modo="assembleia"><span class="atalho-icone" aria-hidden="true">🏛️</span><span class="atalho-nome">Assembleia</span><span class="atalho-desc">Programa e discursos</span></button>
           <button type="button" class="atalho" data-anotacoes-modo="congresso"><span class="atalho-icone" aria-hidden="true">🏟️</span><span class="atalho-nome">Congresso</span><span class="atalho-desc">Programa e discursos</span></button>
         </div>
       </div>
 
       <div id="anotacoesWorkspace" class="anotacoes-workspace" hidden>
-        <div class="anotacoes-biblia-barra" role="region" aria-label="Inserir texto bíblico">
-          <label class="anotacoes-biblia-campo">
-            <span class="visually-hidden">Referência bíblica</span>
-            <input id="anotacoesBibliaRef" type="text" inputmode="text" autocomplete="off" placeholder="Ex.: João 3:16 ou Sl 37:4" aria-label="Referência bíblica">
-          </label>
-          <button id="anotacoesBibliaInserir" type="button" title="Inserir o texto da referência no cursor">📖 Inserir</button>
-          <button id="anotacoesBibliaEscolher" class="secondary" type="button" title="Escolher livro, capítulo e versículo">📚</button>
-        </div>
-        <div id="anotacoesBibliaPick" class="anotacoes-biblia-pick" hidden>
-          <select id="anotacoesBibliaLivro" aria-label="Livro"></select>
-          <select id="anotacoesBibliaCap" aria-label="Capítulo"></select>
-          <select id="anotacoesBibliaDe" aria-label="Versículo inicial"></select>
-          <select id="anotacoesBibliaAte" aria-label="Versículo final"></select>
-          <button id="anotacoesBibliaPickOk" type="button">Inserir seleção</button>
-        </div>
-
-        <div id="anotacoesProgramaBox" class="anotacoes-programa" hidden>
-          <label class="anotacoes-campo">
-            <span>Programa (código ou link da wol/jw.org)</span>
-            <input id="anotacoesProgramaPub" type="text" autocomplete="off" placeholder="Ex.: CA-brpgm27, docid ou link da WOL / JW Library">
-          </label>
-          <div class="button-row">
-            <button id="anotacoesProgramaCarregar" type="button">⬇️ Carregar programa</button>
+        <!-- Assembleia e congresso: a lista dos programas vem da WOL; escolher um já carrega as partes. -->
+        <div id="anotacoesProgramaBox" class="anotacoes-bloco" hidden>
+          <h3 class="anotacoes-subtitulo">📋 Programa</h3>
+          <div id="anotacoesEventos" class="anotacoes-eventos" aria-live="polite"></div>
+          <button id="anotacoesEventosMais" class="secondary anotacoes-mais" type="button" hidden>▼ Mostrar programas anteriores</button>
+          <p id="anotacoesProgramaStatus" class="anotacoes-msg" role="status" aria-live="polite"></p>
+          <details class="leitura-dica anotacoes-outro">
+            <summary>🔎 Outro programa (código ou link)</summary>
+            <label for="anotacoesProgramaPub">Código, link da WOL ou do JW Library</label>
+            <input id="anotacoesProgramaPub" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Ex.: CA-brpgm27 ou o link do programa">
+            <div class="bk-row">
+              <button id="anotacoesProgramaCarregar" type="button">⬇️ Carregar programa</button>
+            </div>
+          </details>
+          <p id="anotacoesProgramaTitulo" class="anotacoes-programa-titulo" hidden></p>
+          <div class="anotacoes-partes-cab">
+            <h3 class="anotacoes-subtitulo">🗒️ Partes do programa</h3>
             <button id="anotacoesParteAdd" class="secondary" type="button">＋ Parte</button>
           </div>
-          <p id="anotacoesProgramaStatus" class="hint" role="status" aria-live="polite"></p>
-          <p id="anotacoesProgramaTitulo" class="anotacoes-programa-titulo" hidden></p>
           <div id="anotacoesPartes" class="anotacoes-partes"></div>
         </div>
 
-        <div class="anotacoes-meta">
-          <label class="anotacoes-campo"><span>Tema / parte</span><input id="anotacoesTema" type="text" autocomplete="off" placeholder="Tema do discurso ou da parte"></label>
-          <label class="anotacoes-campo"><span>Orador</span><input id="anotacoesOrador" type="text" autocomplete="name" placeholder="Nome do orador"></label>
-          <label class="anotacoes-campo"><span>Congregação</span><input id="anotacoesCongregacao" type="text" autocomplete="organization" placeholder="Congregação do orador"></label>
-          <div class="button-row">
-            <button id="anotacoesAplicarCabecalho" class="secondary" type="button">⬇️ Inserir cabeçalho na anotação</button>
+        <details id="anotacoesDetalhes" class="anotacoes-bloco anotacoes-detalhes" open>
+          <summary>👤 Tema, orador e congregação</summary>
+          <label for="anotacoesTema">Tema / parte</label>
+          <input id="anotacoesTema" type="text" autocomplete="off" placeholder="Tema do discurso ou da parte">
+          <label for="anotacoesOrador">Orador</label>
+          <input id="anotacoesOrador" type="text" autocomplete="name" placeholder="Nome do orador">
+          <label for="anotacoesCongregacao">Congregação</label>
+          <input id="anotacoesCongregacao" type="text" autocomplete="organization" placeholder="Congregação do orador">
+          <div class="bk-row">
+            <button id="anotacoesAplicarCabecalho" class="secondary" type="button">⬇️ Inserir cabeçalho nas anotações</button>
           </div>
-        </div>
+        </details>
 
-        <label class="anotacoes-campo anotacoes-texto-label" for="anotacoesTexto"><span>Anotações</span></label>
-        <textarea id="anotacoesTexto" class="anotacoes-texto" rows="12" placeholder="Escreva suas anotações aqui…"></textarea>
+        <div class="anotacoes-escrita">
+          <!-- Texto bíblico: digite a referência (ou escolha livro e versículos) e o texto entra onde está o cursor. -->
+          <div class="anotacoes-biblia-barra" role="region" aria-label="Inserir texto bíblico">
+            <input id="anotacoesBibliaRef" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="📖 Texto bíblico (ex.: João 3:16)" aria-label="Referência bíblica">
+            <button id="anotacoesBibliaInserir" type="button" title="Inserir o texto da referência onde está o cursor">Inserir</button>
+            <button id="anotacoesBibliaEscolher" class="secondary" type="button" title="Escolher livro, capítulo e versículos" aria-label="Escolher livro, capítulo e versículos" aria-expanded="false">📚</button>
+          </div>
+          <div id="anotacoesBibliaPick" class="anotacoes-biblia-pick" hidden>
+            <label class="anotacoes-pick-livro"><span>Livro</span><select id="anotacoesBibliaLivro"></select></label>
+            <label><span>Capítulo</span><select id="anotacoesBibliaCap"></select></label>
+            <label><span>De</span><select id="anotacoesBibliaDe"></select></label>
+            <label><span>Até</span><select id="anotacoesBibliaAte"></select></label>
+            <button id="anotacoesBibliaPickOk" type="button">Inserir seleção</button>
+          </div>
 
-        <div class="anotacoes-fmt" role="toolbar" aria-label="Formatação rápida">
-          <button type="button" class="secondary" data-anotacoes-fmt="bold" title="Negrito">𝐁</button>
-          <button type="button" class="secondary" data-anotacoes-fmt="italic" title="Itálico">𝐼</button>
-          <button type="button" class="secondary" data-anotacoes-fmt="ul" title="Lista">• Lista</button>
-          <button type="button" class="secondary" data-anotacoes-fmt="ol" title="Numeração">1. Lista</button>
-          <button type="button" class="secondary" data-anotacoes-fmt="hl" title="Grifo">≡ Grifo</button>
-        </div>
+          <label for="anotacoesTexto">✍️ Anotações</label>
+          <div class="anotacoes-fmt" role="toolbar" aria-label="Formatação rápida (selecione o trecho)">
+            <button type="button" class="secondary" data-anotacoes-fmt="bold" title="Negrito" aria-label="Negrito"><strong>𝐁</strong></button>
+            <button type="button" class="secondary" data-anotacoes-fmt="italic" title="Itálico" aria-label="Itálico">𝐼</button>
+            <button type="button" class="secondary" data-anotacoes-fmt="hl" title="Grifo (letra sem serifa em negrito)" aria-label="Grifo">Grifo</button>
+            <button type="button" class="secondary" data-anotacoes-fmt="ul" title="Lista com marcadores" aria-label="Lista com marcadores">• Lista</button>
+            <button type="button" class="secondary" data-anotacoes-fmt="ol" title="Lista numerada" aria-label="Lista numerada">1. Lista</button>
+          </div>
+          <textarea id="anotacoesTexto" class="anotacoes-texto" rows="12" placeholder="Escreva suas anotações aqui…"></textarea>
 
-        <div class="anotacoes-acoes button-row">
-          <button id="anotacoesGravarBtn" type="button" title="Gravar o discurso; ao parar, transcreve e resume">🎙️ Gravar</button>
-          <button id="anotacoesPararBtn" class="secondary" type="button" hidden>⏹️ Parar e resumir</button>
-          <button id="anotacoesJwlBtn" class="secondary" type="button" title="Copia as anotações e abre esta parte no JW Library para colar no campo de notas" hidden>📖 JW Library</button>
-          <button id="anotacoesSalvarBtn" class="secondary" type="button">💾 Salvar</button>
-          <button id="anotacoesDocxBtn" class="secondary" type="button">📄 Word</button>
-          <button id="anotacoesLimparBtn" class="secondary" type="button">🗑️ Limpar</button>
+          <div class="bk-row anotacoes-gravar">
+            <button id="anotacoesGravarBtn" type="button" title="Gravar o discurso; ao parar, transcreve e resume">🎙️ Gravar o discurso</button>
+            <button id="anotacoesPararBtn" type="button" hidden>⏹️ Parar e resumir</button>
+          </div>
+          <p id="anotacoesGravarStatus" class="anotacoes-msg" role="status" aria-live="polite"></p>
+
+          <div class="bk-row anotacoes-acoes">
+            <button id="anotacoesSalvarBtn" class="secondary" type="button">💾 Salvar</button>
+            <button id="anotacoesDocxBtn" class="secondary" type="button">📄 Word</button>
+            <button id="anotacoesJwlBtn" class="secondary" type="button" title="Copia as anotações e abre esta parte no JW Library para colar no campo de notas" hidden>📖 JW Library</button>
+            <button id="anotacoesLimparBtn" class="secondary" type="button">🗑️ Limpar</button>
+          </div>
+          <p id="anotacoesStatus" class="anotacoes-msg" role="status" aria-live="polite"></p>
         </div>
-        <p id="anotacoesGravarStatus" class="hint" role="status" aria-live="polite"></p>
-        <p id="anotacoesStatus" class="hint" role="status" aria-live="polite"></p>
       </div>
     </section>
 

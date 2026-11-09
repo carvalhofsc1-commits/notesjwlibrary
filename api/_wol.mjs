@@ -1359,6 +1359,8 @@ function pubDeEntrada(entrada) {
     }
     const doc = u.pathname.match(/\/wol\/d\/r5\/lp-t\/(\d{5,12})\/?$/);
     if (doc) return { pub: (u.searchParams.get("pub") || "").trim(), docId: doc[1], wolUrl: `${BASE}/pt/wol/d/r5/lp-t/${doc[1]}` };
+    // Página da biblioteca da WOL (a lista de programas do app): os documentos do programa estão ligados nela.
+    if (u.hostname === "wol.jw.org" && /\/wol\/library\//.test(u.pathname)) return { pub: "", docId: "", wolUrl: u.href, biblioteca: true };
     const pubParam = (u.searchParams.get("pub") || "").trim();
     if (pubParam) return { pub: pubParam, docId: "", wolUrl: "" };
     const pubPath = pubDoTexto(decodeURIComponent(u.pathname + " " + u.search));
@@ -1536,8 +1538,20 @@ async function temaDaPaginaWol(url, timeoutMs) {
   }
 }
 
+// "FELICIDADE ETERNA" -> "Felicidade Eterna" (só quando o título vem todo em maiúsculas).
+function capitalizarTitulo(texto) {
+  const t = String(texto || "").trim();
+  if (!t || t !== t.toUpperCase()) return t;
+  const pequenas = new Set(["de", "da", "do", "das", "dos", "e", "em", "a", "o", "para", "com", "por", "na", "no"]);
+  return t
+    .toLowerCase()
+    .split(/(\s+)/)
+    .map((p, i) => (/^\s+$/.test(p) || (i > 0 && pequenas.has(p)) ? p : p.charAt(0).toUpperCase() + p.slice(1)))
+    .join("");
+}
+
 export async function lerProgramaPublicacao(entrada, { timeoutMs = 12000 } = {}) {
-  const { pub, docId, wolUrl: wolDaEntrada } = pubDeEntrada(entrada);
+  const { pub, docId, wolUrl: wolDaEntrada, biblioteca } = pubDeEntrada(entrada);
   if (!pub && !docId && !wolDaEntrada) return null;
 
   const candidatos = new Set();
@@ -1548,9 +1562,16 @@ export async function lerProgramaPublicacao(entrada, { timeoutMs = 12000 } = {})
     wolDaEntrada && !docId ? baixar(wolDaEntrada, timeoutMs).catch(() => "") : Promise.resolve(""),
     !docId && pub ? descobrirDocsDoPub(pub, timeoutMs) : Promise.resolve([]),
   ]);
+  let tituloDaPagina = "";
   if (htmlPagina) {
     docsNoHtml(htmlPagina).forEach((id) => candidatos.add(id));
-    docsEmPaginaJw(htmlPagina).forEach((id) => candidatos.add(id));
+    // Páginas da WOL só têm os documentos do programa; as do jw.org misturam os do menu (os da publicação começam com 11).
+    if (!/^https:\/\/wol\.jw\.org\//i.test(wolDaEntrada)) docsEmPaginaJw(htmlPagina).forEach((id) => candidatos.add(id));
+    if (biblioteca) {
+      tituloDaPagina =
+        textoDe((htmlPagina.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/) || [])[1] || "") ||
+        textoDe((htmlPagina.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || "").replace(/\s*[—–-]\s*BIBLIOTECA ON-LINE.*$/i, "");
+    }
   }
   docsPub.forEach((id) => candidatos.add(id));
 
@@ -1559,38 +1580,27 @@ export async function lerProgramaPublicacao(entrada, { timeoutMs = 12000 } = {})
     (await descobrirDocsDoPub(pub, timeoutMs)).forEach((id) => candidatos.add(id));
   }
 
-  let lidos = [];
-  const fila = [...candidatos].slice(0, 8);
-  for (const id of fila) {
-    try {
-      const doc = await lerDocPrograma(id, timeoutMs);
-      lidos.push(doc);
-      doc.ligados.forEach((ligado) => {
-        if (!candidatos.has(ligado) && candidatos.size < 12) candidatos.add(ligado);
-      });
-    } catch {
-      /* documento inacessível */
-    }
-  }
-  // Segunda passagem: documentos ligados descobertos nos já lidos (capa → programa).
-  for (const id of [...candidatos].slice(0, 12)) {
-    if (lidos.some((d) => d.docId === id)) continue;
-    try {
-      lidos.push(await lerDocPrograma(id, timeoutMs));
-    } catch {
-      /* ignore */
-    }
+  const ler = async (ids) => (await Promise.all(ids.map((id) => lerDocPrograma(id, timeoutMs).catch(() => null)))).filter(Boolean);
+  const lidos = await ler([...candidatos].slice(0, 8));
+  // Documentos ligados descobertos nos já lidos (capa → programa). Na página da biblioteca a lista já está completa.
+  if (!biblioteca) {
+    const novos = [];
+    lidos.forEach((doc) => doc.ligados.forEach((ligado) => {
+      if (!candidatos.has(ligado) && candidatos.size + novos.length < 12 && !novos.includes(ligado)) novos.push(ligado);
+    }));
+    lidos.push(...(await ler(novos)));
   }
 
   if (!lidos.length && !meta) return null;
 
-  // O documento com a grade (horários) é o programa; a capa costuma ter só o tema.
-  lidos.sort((a, b) => b.partes.length - a.partes.length);
-  const programa = lidos.find((d) => d.partes.length) || lidos[0] || null;
+  // Os documentos com a grade de horários formam o programa (um congresso tem um por dia, em ordem de documento); a capa traz só o tema.
+  const comPartes = lidos.filter((d) => d.partes.length).sort((a, b) => Number(a.docId) - Number(b.docId));
+  const programa = comPartes[0] || lidos[0] || null;
   const capa = lidos.find((d) => d.tema && d.partes.length === 0) || lidos.find((d) => d.tema) || programa;
 
   // Capa: título longo da publicação + tema bíblico; programa: grade com horários (docid/par para o JW Library).
   const titulo =
+    tituloDaPagina ||
     (capa && capa.partes.length === 0 && capa.titulo) ||
     (meta && meta.titulo) ||
     (capa && capa.titulo) ||
@@ -1598,12 +1608,23 @@ export async function lerProgramaPublicacao(entrada, { timeoutMs = 12000 } = {})
     pub ||
     docId ||
     "";
-  const tema = (capa && capa.tema) || (programa && programa.tema) || "";
+  let tema = (capa && capa.tema) || (programa && programa.tema) || "";
+  // Congresso: o tema é o título (em maiúsculas) do primeiro documento, a capa do programa.
+  if (!tema && biblioteca) {
+    const primeiro = [...lidos].sort((x, y) => Number(x.docId) - Number(y.docId))[0];
+    if (primeiro && !primeiro.partes.length && primeiro.titulo) tema = capitalizarTitulo(primeiro.titulo);
+  }
   const referencias = (capa && capa.referencias && capa.referencias.length ? capa.referencias : null)
     || (programa && programa.referencias)
     || [];
   const wolUrl = (programa && programa.wolUrl) || (capa && capa.wolUrl) || wolDaEntrada || "";
   const docPrograma = (programa && programa.docId) || docId || "";
+
+  // Com vários dias, cada parte leva o nome do dia na seção ("Sábado · Manhã").
+  const varios = comPartes.length > 1;
+  const partes = comPartes.flatMap((doc) =>
+    doc.partes.map((p) => (varios && doc.titulo ? { ...p, secao: p.secao ? `${doc.titulo} · ${p.secao}` : doc.titulo } : p)),
+  );
 
   return {
     pub: (meta && meta.pub) || pub || (capa && capa.pub) || (programa && programa.pub) || "",
@@ -1613,6 +1634,57 @@ export async function lerProgramaPublicacao(entrada, { timeoutMs = 12000 } = {})
     pdfUrl: (meta && meta.pdfUrl) || "",
     wolUrl,
     docid: docPrograma,
-    partes: (programa && programa.partes) || [],
+    partes,
   };
+}
+
+// ---------- Lista dos programas disponíveis (assembleias de circuito e congressos) ----------
+// Lida das categorias "Programas" da biblioteca da WOL; o app mostra a lista já ao abrir a tela Anotações, sem código nem link.
+const PROGRAMAS_BIBLIOTECA = `${BASE}/pt/wol/library/r5/lp-t/todas-as-publica%C3%A7%C3%B5es/programas`;
+const CATEGORIAS_PROGRAMAS = [
+  { caminho: "congresso", tipo: "congresso", grupo: "Congresso" },
+  { caminho: "assembleia-de-circuito-com-o-superintendente-de-circuito", tipo: "assembleia", grupo: "Superintendente de Circuito" },
+  { caminho: "assembleia-de-circuito-com-o-representante-da-filial", tipo: "assembleia", grupo: "Representante de Betel" },
+];
+const VALIDADE_PROGRAMAS_MS = 6 * 60 * 60 * 1000;
+let programasLidos = null; // { quando, itens }
+
+export function programasDaCategoria(html, categoria) {
+  const itens = [];
+  const vistos = new Set();
+  for (const m of String(html || "").matchAll(/<a\b[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi)) {
+    let href = m[1];
+    try {
+      href = decodeURIComponent(href);
+    } catch {
+      /* mantém o original */
+    }
+    const dentro = href.split(`/programas/${categoria.caminho}/`)[1];
+    if (!dentro || dentro.includes("/") || vistos.has(href)) continue;
+    const titulo = textoDe(m[2]).replace(/\s+/g, " ").trim();
+    const anos = titulo.match(/(\d{4})(?:\s*[-–]\s*(\d{4}))?/);
+    if (!anos) continue;
+    vistos.add(href);
+    const ano = anos[2] ? `${anos[1]}-${anos[2]}` : anos[1];
+    itens.push({
+      tipo: categoria.tipo,
+      grupo: categoria.grupo,
+      ano,
+      ordem: Number(anos[2] || anos[1]),
+      titulo: categoria.tipo === "congresso" ? `Congresso ${ano}` : `Assembleia de Circuito ${ano}`,
+      url: href.startsWith("http") ? href : BASE + href,
+    });
+  }
+  return itens;
+}
+
+export async function listarProgramas({ timeoutMs = 10000 } = {}) {
+  if (programasLidos && Date.now() - programasLidos.quando < VALIDADE_PROGRAMAS_MS) return programasLidos.itens;
+  const paginas = await Promise.all(
+    CATEGORIAS_PROGRAMAS.map((c) => baixar(`${PROGRAMAS_BIBLIOTECA}/${c.caminho}`, timeoutMs).then((html) => programasDaCategoria(html, c)).catch(() => [])),
+  );
+  const itens = paginas.flat().sort((a, b) => b.ordem - a.ordem || a.grupo.localeCompare(b.grupo, "pt-BR"));
+  if (!itens.length) return programasLidos ? programasLidos.itens : [];
+  programasLidos = { quando: Date.now(), itens };
+  return itens;
 }

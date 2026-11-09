@@ -84,6 +84,7 @@ export const NIVEIS = {
   discurso: "dirigente",
   // Anotações: programa da assembleia/congresso (pub-media + WOL) sem código; textos bíblicos com o de resumo
   "programa-pub": "publico",
+  "programas-lista": "publico",
   "anotacoes-versiculos": "resumo",
 };
 

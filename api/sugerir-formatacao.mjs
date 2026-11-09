@@ -43,6 +43,7 @@ import {
   textosBiblicosDeTesouros,
   textosBiblicosDoDiscursoCurto,
   lerProgramaPublicacao,
+  listarProgramas,
 } from "./_wol.mjs";
 
 // ---------- Modelo da IA ----------
@@ -225,6 +226,7 @@ const TAREFAS_SEM_IA = new Set([
   "versiculos",
   "anotacoes-versiculos",
   "programa-pub",
+  "programas-lista",
   "outros-pesquisar",
   "outros-ler",
   "discurso-ler",
@@ -2930,7 +2932,7 @@ async function textosDosVersiculos(res, body) {
     .slice(0, 40);
   if (!referencias.length || !fontesConfiguradas()) return res.status(200).json({ versiculos: [] });
   try {
-  return res.status(200).json({ versiculos: await buscarVersiculos(referencias, 40) });
+    return res.status(200).json({ versiculos: await buscarVersiculos(referencias, 40) });
   } catch (e) {
     console.error("Versículos para exportar: falhou", e?.message);
     return erro(res, 502, "Não consegui buscar os versículos agora.");
@@ -2951,6 +2953,18 @@ async function textosDosVersiculosAnotacoes(res, body) {
   } catch (e) {
     console.error("Versículos (anotações): falhou", e?.message);
     return erro(res, 502, "Não consegui buscar o texto bíblico agora.");
+  }
+}
+
+// Anotações: lista dos programas de assembleia e congresso disponíveis na WOL (o app a mostra ao abrir a tela, sem código).
+async function listaDeProgramas(res) {
+  try {
+    const itens = await listarProgramas();
+    if (!itens.length) return erro(res, 502, "Não consegui carregar a lista de programas agora.");
+    return res.status(200).json({ programas: itens.map(({ ordem, ...resto }) => resto) });
+  } catch (e) {
+    console.error("Lista de programas: falhou", e?.message);
+    return erro(res, 502, "Não consegui carregar a lista de programas agora.");
   }
 }
 
@@ -4178,6 +4192,7 @@ async function tratarPedido(req, res) {
     if (tarefa === "versiculos") return textosDosVersiculos(res, body);
     if (tarefa === "anotacoes-versiculos") return textosDosVersiculosAnotacoes(res, body);
     if (tarefa === "programa-pub") return lerProgramaPub(res, body);
+    if (tarefa === "programas-lista") return listaDeProgramas(res);
     if (tarefa === "outros-pesquisar") return pesquisarOutros(res, body);
     if (tarefa === "outros-ler") return lerOutros(res, body);
     if (tarefa === "discurso-ler") return lerDiscursoCurtoDaSemana(res, body);
