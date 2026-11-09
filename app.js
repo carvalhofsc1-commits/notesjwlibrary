@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.85'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.86'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -24803,6 +24803,17 @@ function saveTemplatesToStorage() {
         jwlBtn.disabled = !link;
       }
 
+      // Moldura do programa escolhido, tudo centralizado: nome da publicação (pequeno), tema (grande, em negrito) e texto temático.
+      function mostrarTituloPrograma() {
+        if (!programaMeta || !(programaMeta.titulo || programaMeta.tema)) { progTitulo.hidden = true; return; }
+        const tema = String(programaMeta.tema || '');
+        const corte = tema.search(/\s[—–]\s/);
+        progTitulo.querySelector('.anotacoes-pt-nome').textContent = programaMeta.titulo || '';
+        progTitulo.querySelector('.anotacoes-pt-tema').textContent = corte >= 0 ? tema.slice(0, corte).trim() : tema;
+        progTitulo.querySelector('.anotacoes-pt-texto').textContent = corte >= 0 ? tema.slice(corte).replace(/^\s[—–]\s/, '').trim() : '';
+        progTitulo.hidden = false;
+      }
+
       // ----- Partes do programa: cada uma abre (orador, congregação e Iniciar anotação) e guarda a própria anotação -----
       const escritaEl = document.getElementById('anotacoesEscrita');
       const cabParteEl = document.getElementById('anotacoesCabParte');
@@ -24814,6 +24825,9 @@ function saveTemplatesToStorage() {
 
       const semMarcador = t => String(t || '').replace(/^[•·]\s*/, '');
       const comPrograma = () => Boolean(MODOS[modo] && MODOS[modo].programa);
+      // Música, cântico, oração, anúncios e intervalo só informam: sem cartão, sem anotação, e as setas passam direto por eles.
+      const ehInfo = p => /^(música|vídeo musical|cântico|oração|intervalo|anúncios)\b/i.test(semMarcador(p && p.tema).trim());
+      const iniciaveis = () => partes.map((p, i) => i).filter(i => !ehInfo(partes[i]));
 
       // Dados que valem para a anotação de agora: a parte (assembleia e congresso) ou os campos (reunião).
       function dadosDaParte() {
@@ -24841,11 +24855,20 @@ function saveTemplatesToStorage() {
         const quemEl = document.getElementById('anotacoesCabOrador');
         quemEl.textContent = quem;
         quemEl.hidden = !quem;
-        document.getElementById('anotacoesCabPos').textContent = 'Parte ' + (parteAtual + 1) + ' de ' + partes.length;
-        document.getElementById('anotacoesParteAnt').disabled = parteAtual <= 0;
-        document.getElementById('anotacoesParteProx').disabled = parteAtual >= partes.length - 1;
+        const lista = iniciaveis();
+        const pos = lista.indexOf(parteAtual);
+        document.getElementById('anotacoesCabPos').textContent = 'Parte ' + (pos + 1) + ' de ' + lista.length;
+        document.getElementById('anotacoesParteAnt').disabled = pos <= 0;
+        document.getElementById('anotacoesParteProx').disabled = pos < 0 || pos >= lista.length - 1;
         anotacoesJwlAtualizar();
+        atualizarCompacto();
       }
+
+      // Com a anotação em andamento e o programa recolhido, o cartão some e fica só o tipo e o tema, sem moldura.
+      function atualizarCompacto() {
+        programaBox.classList.toggle('compacto', comPrograma() && ativa && !programaBox.open);
+      }
+      programaBox.addEventListener('toggle', atualizarCompacto);
 
       function pintarPartes() {
         partesEl.replaceChildren();
@@ -24860,6 +24883,19 @@ function saveTemplatesToStorage() {
           }
           const item = document.createElement('div');
           item.className = 'anotacoes-parte-item';
+          if (ehInfo(p)) {
+            item.classList.add('anotacoes-parte-info');
+            const h = document.createElement('span');
+            h.className = 'anotacoes-parte-hora';
+            h.textContent = p.horario || '';
+            const t = document.createElement('span');
+            t.className = 'anotacoes-parte-texto';
+            t.textContent = semMarcador(p.tema);
+            item.append(h, t);
+            partesEl.appendChild(item);
+            return;
+          }
+          if (i === expandida) item.classList.add('aberta');
           const btn = document.createElement('button');
           btn.type = 'button';
           btn.className = 'anotacoes-parte';
@@ -24945,13 +24981,16 @@ function saveTemplatesToStorage() {
         ativa = true;
         abrirParteNaEscrita(i);
         programaBox.open = false; // o programa recolhe e a escrita sobe
+        atualizarCompacto();
         salvarRascunho();
         if (escritaEl.scrollIntoView) escritaEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
 
       function mudarParte(delta) {
-        const novo = parteAtual + delta;
-        if (!ativa || novo < 0 || novo >= partes.length) return;
+        const lista = iniciaveis();
+        const pos = lista.indexOf(parteAtual) + delta;
+        if (!ativa || pos < 0 || pos >= lista.length) return;
+        const novo = lista[pos];
         if (gravacao) return dizer('Pare a gravação antes de mudar de parte.', true);
         guardarNota();
         abrirParteNaEscrita(novo);
@@ -25104,7 +25143,6 @@ function saveTemplatesToStorage() {
         ativa = false;
         expandida = -1;
         progTitulo.hidden = true;
-        progTitulo.textContent = '';
         dizer('');
         dizerProg('');
         gravarStatus.textContent = '';
@@ -25121,6 +25159,7 @@ function saveTemplatesToStorage() {
         tituloEl.textContent = info.titulo;
         programaBox.hidden = !info.programa;
         programaBox.open = false; // o programa começa recolhido
+        programaBox.classList.remove('compacto');
         detalhesEl.hidden = info.programa; // tema/orador/congregação ficam nos campos só na reunião; nas outras vão em cada parte
         if (info.programa) programaRotuloEl.textContent = '📋 Selecione ' + (nome === 'congresso' ? 'o congresso' : 'a assembleia') + ' que você está assistindo';
         limparCampos(); // os campos de outro modo não passam para este
@@ -25191,10 +25230,7 @@ function saveTemplatesToStorage() {
           } else {
             texto.value = d.texto || '';
           }
-          if (programaMeta && programaMeta.titulo) {
-            progTitulo.hidden = false;
-            progTitulo.textContent = programaMeta.titulo + (programaMeta.tema ? ' — ' + programaMeta.tema : '');
-          }
+          mostrarTituloPrograma();
           pintarPartes();
         } catch (e) { /* rascunho ilegível */ }
       }
@@ -25349,8 +25385,7 @@ function saveTemplatesToStorage() {
           eventoAtual = evento ? evento.url : '';
           eventosEstado = evento ? 'recolhido' : 'lista';
           if (evento) programaPubEl.value = '';
-          progTitulo.hidden = false;
-          progTitulo.textContent = (programaMeta.titulo || '') + (programaMeta.tema ? ' — ' + programaMeta.tema : '');
+          mostrarTituloPrograma();
           texto.value = '';
           ativa = false;
           expandida = -1;
@@ -25455,7 +25490,7 @@ function saveTemplatesToStorage() {
           try {
             await navigator.clipboard.writeText(nota);
             jwlBtn.textContent = '✓ Copiado';
-            setTimeout(() => { jwlBtn.textContent = '📖 JW Library'; }, 2500);
+            setTimeout(() => { jwlBtn.textContent = '📖 Copiar e abrir no JW Library'; }, 2500);
             dizer('Anotações copiadas. Abrindo o JW Library — é só colar no campo de notas.');
           } catch (e) {
             dizer('Não consegui copiar automaticamente; abra o JW Library e cole manualmente se puder.', true);
@@ -25473,6 +25508,17 @@ function saveTemplatesToStorage() {
         const d = dadosDaParte();
         return (d.tema || temaEl.value.trim() || (programaMeta && programaMeta.titulo) || 'Anotações').slice(0, limite);
       }
+      document.getElementById('anotacoesCopiarBtn').addEventListener('click', async () => {
+        if (!texto.value.trim()) return dizer('Não há anotações para copiar.', true);
+        try {
+          await navigator.clipboard.writeText(textoDaAnotacao());
+          dizer('✅ Anotação copiada.');
+        } catch (e) {
+          texto.focus();
+          texto.select();
+          dizer('Não consegui copiar sozinho: o texto ficou selecionado; use Copiar do teclado.', true);
+        }
+      });
       document.getElementById('anotacoesSalvarBtn').addEventListener('click', async () => {
         if (!texto.value.trim()) return dizer('Não há anotações para salvar.', true);
         const guardado = await historicoSalvarNota(textoDaAnotacao(), tituloDaAnotacao(60), 'As anotações ficam em Pesquisas e respostas salvas → Textos.');

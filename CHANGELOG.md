@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.86
+
+Anotações (assembleia e congresso): música, cântico, oração, anúncios e intervalo passam a só informar, sem cartão e sem toque (e as setas ◀ ▶ pulam por eles); a parte aberta ganha a borda colorida em volta de tudo, inclusive do tema; o programa escolhido aparece numa moldura centralizada (nome pequeno, tema grande em negrito e texto temático embaixo); com a anotação em andamento, o cartão de seleção some e ficam só o tipo e o tema, sem moldura; novo botão **Copiar** e o do JW Library passa a **Copiar e abrir no JW Library**, no roxo do JW Library.
+
 ## 6.6.85
 
 Anotações (assembleia e congresso): (1) a lista mostra só os programas do ano de hoje em diante; os anteriores ficam em “Mostrar programas anteriores”. (2) Cada programa mostra o tipo, o ano e o **tema** (por exemplo, “Feliz É Aquele Que Confia em Jeová”). (3) O programa é um cartão recolhível, fechado ao abrir a tela, com o título “Selecione a assembleia/o congresso que você está assistindo”. Ao escolher, as partes carregam abertas, sem barra de rolagem. Tocar numa parte abre orador, congregação e **Iniciar anotação**; ao iniciar, o tema da parte fica em destaque no alto do campo de texto, com o orador discreto embaixo, e as setas ◀ ▶ (as mesmas da semana das Reuniões) trocam de parte, carregando a anotação que já existir. Cada parte guarda a sua própria anotação; Salvar e Word levam o cabeçalho junto.

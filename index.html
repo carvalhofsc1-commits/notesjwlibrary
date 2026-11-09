@@ -176,7 +176,7 @@
               <button id="anotacoesProgramaCarregar" type="button">⬇️ Carregar programa</button>
             </div>
           </details>
-          <p id="anotacoesProgramaTitulo" class="anotacoes-programa-titulo" hidden></p>
+          <div id="anotacoesProgramaTitulo" class="anotacoes-programa-titulo" hidden><span class="anotacoes-pt-nome"></span><strong class="anotacoes-pt-tema"></strong><span class="anotacoes-pt-texto"></span></div>
           <div class="anotacoes-partes-cab">
             <h3 class="anotacoes-subtitulo">🗒️ Partes do programa</h3>
             <button id="anotacoesParteAdd" class="secondary" type="button">＋ Parte</button>
@@ -242,9 +242,10 @@
           <p id="anotacoesGravarStatus" class="anotacoes-msg" role="status" aria-live="polite"></p>
 
           <div class="bk-row anotacoes-acoes">
+            <button id="anotacoesCopiarBtn" class="secondary" type="button" title="Copiar a anotação (com o tema e o orador)">📋 Copiar</button>
             <button id="anotacoesSalvarBtn" class="secondary" type="button">💾 Salvar</button>
             <button id="anotacoesDocxBtn" class="secondary" type="button">📄 Word</button>
-            <button id="anotacoesJwlBtn" class="secondary" type="button" title="Copia as anotações e abre esta parte no JW Library para colar no campo de notas" hidden>📖 JW Library</button>
+            <button id="anotacoesJwlBtn" class="anotacoes-jwl" type="button" title="Copia a anotação e abre esta parte no JW Library; é só colar no campo de notas" hidden>📖 Copiar e abrir no JW Library</button>
             <button id="anotacoesLimparBtn" class="secondary" type="button">🗑️ Limpar</button>
           </div>
           <p id="anotacoesStatus" class="anotacoes-msg" role="status" aria-live="polite"></p>
