@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.64
+
+Ajustes → **👤 Meus dados**: depois do cadastro obrigatório, o usuário (e o administrador) pode abrir e alterar nome, sobrenome, idade, cidade/estado, congregação e como conheceu o app. A alteração vale na hora, sem nova aprovação.
+
+## 6.6.63
+
+Cadastro obrigatório para **todo** aparelho (usuários antigos e administrador inclusive): ao abrir o site, quem ainda não se identificou vê a tela com nome, sobrenome, idade, cidade/estado, congregação e como conheceu o app. Sem cadastro o app fica bloqueado. A opção do administrador “Exigir minha aprovação nos cadastros novos” só decide se o cadastro libera na hora ou fica pendente.
+
 ## 6.6.62
 
 **Restrição de acesso ao site inteiro** (card separado em Ajustes → 🚪 Acesso ao site, só administrador): com a opção ligada, aparelhos novos veem um formulário de pedido (nome, idade, cidade, congregação, como conheceu o app) e ficam bloqueados até a aprovação. Ao ligar pela primeira vez, aparelhos já vistos nas estatísticas continuam liberados. O administrador aprova/recusa pedidos e pode revogar aparelhos; no bloqueio dá para entrar com a senha de administrador. As estatísticas saíram dos prompts da IA e ficaram neste card. O servidor também recusa IA, voz, texto diário e áudio em texto se o aparelho não estiver autorizado.

@@ -7,9 +7,10 @@ import { esquecerCache, gravarAlteracoes, gravarLimites, lerAlteracoes, lerAnter
 import { configPublicaVoz, gravarConfigVoz, lerConfigVoz, opcoesVoz } from "./_vozConfig.mjs";
 import { gravarConfigIa, lerConfigIa, lerCustoIa, opcoesIa } from "./_iaConfig.mjs";
 import { acrescentarLicao, alterarLicao, analisarCorrecao, apagarLicao, apagarTudo, ligarMemoria, lerMemoria, memoriaConfigurada } from "./_memoria.mjs";
-import { estatisticasConfiguradas, listarAparelhoIds, registrarPing, resumoEstatisticas } from "./_estatisticas.mjs";
+import { estatisticasConfiguradas, registrarPing, resumoEstatisticas } from "./_estatisticas.mjs";
 import {
   acessoSiteConfigurado,
+  atualizarCadastroSite,
   decidirPedidoSite,
   definirRestricaoSite,
   estadoAcessoSite,
@@ -245,13 +246,21 @@ export default async function handler(req, res) {
     // Pública: o aparelho pergunta se o site está restrito e se ele já foi aprovado / tem pedido pendente.
     if (acao === "acesso-site-estado") {
       if (!acessoSiteConfigurado()) return res.status(200).json({ configurado: false, restringir: false, ok: true });
-      return res.status(200).json(await estadoAcessoSite({ aparelhoId: corpo.aparelhoId, codigoAdmin: corpo.codigoAdmin }));
+      return res.status(200).json(await estadoAcessoSite({ aparelhoId: corpo.aparelhoId }));
     }
 
     // Pública: formulário de pedido de acesso (nome, congregação…).
     if (acao === "acesso-site-pedir") {
       if (!acessoSiteConfigurado()) return erro(res, 503, "O armazenamento privado (Blob) ainda não está configurado no servidor para os pedidos de acesso.");
       const r = await pedirAcessoSite(corpo);
+      if (r && r.erro) return erro(res, 400, r.erro);
+      return res.status(200).json(r);
+    }
+
+    // Pública: o próprio aparelho atualiza o cadastro já gravado (Ajustes → Meus dados).
+    if (acao === "acesso-site-atualizar") {
+      if (!acessoSiteConfigurado()) return erro(res, 503, "O armazenamento privado (Blob) ainda não está configurado no servidor para o cadastro.");
+      const r = await atualizarCadastroSite(corpo);
       if (r && r.erro) return erro(res, 400, r.erro);
       return res.status(200).json(r);
     }
@@ -468,8 +477,7 @@ export default async function handler(req, res) {
       if (!acessoSiteConfigurado()) {
         return erro(res, 503, "O armazenamento privado (Blob) ainda não está configurado no servidor para o controle de acesso.");
       }
-      const avosIds = corpo.avosConhecidos === false ? [] : await listarAparelhoIds();
-      const r = await definirRestricaoSite(corpo.restringir, { avosIds });
+      const r = await definirRestricaoSite(corpo.restringir);
       return res.status(200).json({ acesso: await lerAcessoSiteAdmin(), avos: (r && r.avos) || 0 });
     }
     if (acao === "acesso-site-decidir") {

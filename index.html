@@ -923,6 +923,30 @@
             </div>
           </div>
         </details>
+        <details class="subsection sub-tint-4" id="meusDadosSection">
+          <summary>👤 Meus dados</summary>
+          <div class="subsection-body">
+            <p class="hint">Seus dados de identificação neste aparelho. Dá para alterar quando quiser; a mudança vale na hora.</p>
+            <p id="meusDadosStatus" class="ok" role="status" aria-live="polite"></p>
+            <form id="meusDadosForm" class="acesso-site-form" autocomplete="on">
+              <label for="meusDadosNome">Nome</label>
+              <input id="meusDadosNome" name="nome" type="text" maxlength="60" required autocomplete="given-name">
+              <label for="meusDadosSobrenome">Sobrenome</label>
+              <input id="meusDadosSobrenome" name="sobrenome" type="text" maxlength="60" required autocomplete="family-name">
+              <label for="meusDadosIdade">Idade</label>
+              <input id="meusDadosIdade" name="idade" type="number" min="12" max="120" required inputmode="numeric">
+              <label for="meusDadosCidade">Cidade e estado</label>
+              <input id="meusDadosCidade" name="cidadeEstado" type="text" maxlength="80" required autocomplete="address-level2" placeholder="Ex.: São Paulo, SP">
+              <label for="meusDadosCongregacao">Congregação</label>
+              <input id="meusDadosCongregacao" name="congregacao" type="text" maxlength="100" required>
+              <label for="meusDadosComo">Como conheceu o app?</label>
+              <input id="meusDadosComo" name="comoConheceu" type="text" maxlength="200" required>
+              <div class="button-row">
+                <button id="meusDadosSalvarBtn" type="submit">💾 Salvar alterações</button>
+              </div>
+            </form>
+          </div>
+        </details>
         <details class="subsection sub-tint-6" id="aiSection">
           <summary>✨ Configurar formatação com IA</summary>
           <div class="subsection-body">
@@ -1426,21 +1450,21 @@
         <details class="subsection sub-tint-4 so-admin" id="acessoSiteSection" hidden>
           <summary><span class="adm-titulo">🚪 Acesso ao site&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
           <div class="subsection-body">
-            <p class="hint">Com a restrição ligada, o site inteiro fica bloqueado para aparelhos novos até você aprovar o pedido do formulário. Ao ligar pela primeira vez, os aparelhos já vistos nas estatísticas continuam liberados.</p>
+            <p class="hint">Todo aparelho (inclusive o do administrador e os usuários antigos) precisa se identificar uma vez com nome, idade, cidade, congregação e como conheceu o app. Sem cadastro o site fica bloqueado. Com a opção abaixo ligada, cada cadastro novo fica pendente até você aprovar.</p>
             <p id="acessoSiteStatus" class="ok" role="status" aria-live="polite"></p>
-            <label class="ai-check"><input type="checkbox" id="acessoSiteRestringir" autocomplete="off"> Restringir o acesso ao site (só aparelhos aprovados)</label>
+            <label class="ai-check"><input type="checkbox" id="acessoSiteRestringir" autocomplete="off"> Exigir minha aprovação nos cadastros novos</label>
             <div class="button-row">
-              <button id="acessoSiteSalvarRestricaoBtn" type="button">💾 Aplicar restrição</button>
+              <button id="acessoSiteSalvarRestricaoBtn" type="button">💾 Aplicar</button>
               <button id="acessoSiteAtualizarBtn" class="secondary" type="button">🔄 Atualizar</button>
             </div>
 
             <details class="prompt-item prompt-tint-codigo" open>
-              <summary><h3>📝 Pedidos pendentes</h3></summary>
+              <summary><h3>📝 Cadastros pendentes</h3></summary>
               <div id="acessoSitePedidos" class="acesso-site-lista"></div>
             </details>
 
             <details class="prompt-item prompt-tint-codigo">
-              <summary><h3>✅ Aparelhos aprovados</h3></summary>
+              <summary><h3>✅ Usuários identificados</h3></summary>
               <div id="acessoSiteAprovados" class="acesso-site-lista"></div>
             </details>
 
@@ -2012,8 +2036,8 @@
 
   <div id="acessoSiteOverlay" class="modal-overlay acesso-site-overlay" role="dialog" aria-modal="true" aria-labelledby="acessoSiteTitulo" hidden>
     <div class="modal-card acesso-site-card">
-      <h2 id="acessoSiteTitulo">Acesso ao NoteStyle</h2>
-      <p id="acessoSiteMsg" class="hint">Este aparelho ainda não está autorizado. Preencha o formulário para pedir acesso.</p>
+      <h2 id="acessoSiteTitulo">Identifique-se</h2>
+      <p id="acessoSiteMsg" class="hint">Para usar o NoteStyle, preencha seus dados. Isto vale para todos os aparelhos, inclusive os que já usavam o app.</p>
       <form id="acessoSiteForm" class="acesso-site-form" autocomplete="on">
         <label for="acessoSiteNome">Nome</label>
         <input id="acessoSiteNome" name="nome" type="text" maxlength="60" required autocomplete="given-name">
@@ -2028,19 +2052,10 @@
         <label for="acessoSiteComo">Como conheceu o app?</label>
         <input id="acessoSiteComo" name="comoConheceu" type="text" maxlength="200" required>
         <div class="modal-actions">
-          <button id="acessoSiteEnviarBtn" type="submit">📨 Enviar pedido</button>
+          <button id="acessoSiteEnviarBtn" type="submit">💾 Salvar e continuar</button>
         </div>
       </form>
       <p id="acessoSiteFormStatus" class="ok" role="status" aria-live="polite"></p>
-      <details class="acesso-site-admin-entrar">
-        <summary>🛡️ Sou o administrador</summary>
-        <label for="acessoSiteAdminSenha">Senha de administrador</label>
-        <div class="acesso-linha">
-          <input id="acessoSiteAdminSenha" type="password" inputmode="numeric" maxlength="100" autocomplete="off">
-          <button id="acessoSiteAdminEntrarBtn" class="secondary" type="button">Entrar</button>
-        </div>
-        <p id="acessoSiteAdminStatus" class="hint" role="status" aria-live="polite"></p>
-      </details>
     </div>
   </div>
 

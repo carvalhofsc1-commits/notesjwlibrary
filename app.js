@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.62'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.64'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -11726,7 +11726,7 @@ function saveTemplatesToStorage() {
     document.getElementById('estatisticasBox').addEventListener('toggle', e => { if (e.target.open) estatisticasCarregar(); });
     document.getElementById('estatisticasAtualizarBtn').addEventListener('click', estatisticasCarregar);
 
-    // ---------- Acesso ao site (restrição + pedidos; card separado do administrador) ----------
+    // ---------- Acesso ao site (cadastro obrigatório; card separado do administrador) ----------
     const acessoSiteSection = document.getElementById('acessoSiteSection');
     const acessoSiteStatus = document.getElementById('acessoSiteStatus');
     const acessoSiteRestringir = document.getElementById('acessoSiteRestringir');
@@ -11736,6 +11736,7 @@ function saveTemplatesToStorage() {
     const acessoSiteMsg = document.getElementById('acessoSiteMsg');
     const acessoSiteForm = document.getElementById('acessoSiteForm');
     const acessoSiteFormStatus = document.getElementById('acessoSiteFormStatus');
+    const acessoSiteEnviarBtn = document.getElementById('acessoSiteEnviarBtn');
     let acessoSiteLiberado = true;
 
     function acessoSiteEscapar(t) {
@@ -11753,7 +11754,7 @@ function saveTemplatesToStorage() {
       }
       acessoSiteRestringir.checked = Boolean(acesso.restringir);
       acessoSiteStatus.textContent = (aviso || '') + (acesso.atualizadoEm ? 'Atualizado em ' + estatisticasQuando(acesso.atualizadoEm) + '.' : 'Pronto.') +
-        (acesso.restringir ? ' Restrição ligada.' : ' Restrição desligada.');
+        (acesso.restringir ? ' Cadastros novos precisam da sua aprovação.' : ' Cadastro libera o acesso na hora.');
       const pendentes = Array.isArray(acesso.pendentes) ? acesso.pendentes : [];
       acessoSitePedidos.innerHTML = pendentes.length
         ? pendentes.map(p =>
@@ -11767,18 +11768,24 @@ function saveTemplatesToStorage() {
           '<button type="button" class="secondary acesso-site-recusar" data-id="' + acessoSiteEscapar(p.id) + '">✖️ Recusar</button>' +
           '</div></div>'
         ).join('')
-        : '<p class="hint">Nenhum pedido pendente.</p>';
+        : '<p class="hint">Nenhum cadastro pendente.</p>';
       const aprovados = Array.isArray(acesso.aprovados) ? acesso.aprovados : [];
       acessoSiteAprovados.innerHTML = aprovados.length
-        ? aprovados.map(a =>
-          '<div class="acesso-site-item">' +
-          '<strong>' + acessoSiteEscapar(a.nome || 'Aparelho') + '</strong>' +
-          '<span class="hint">Aparelho ' + acessoSiteEscapar(a.aparelhoId) + '… · aprovado ' + estatisticasQuando(a.aprovadoEm) + '</span>' +
+        ? aprovados.map(a => {
+          const nome = a.nomeCompleto || [a.nome, a.sobrenome].filter(Boolean).join(' ') || 'Usuário';
+          return '<div class="acesso-site-item">' +
+          '<strong>' + acessoSiteEscapar(nome) + '</strong>' +
+          (a.idade ? ' · ' + acessoSiteEscapar(a.idade) + ' anos' : '') +
+          '<span class="hint">' +
+          [a.cidadeEstado, a.congregacao].filter(Boolean).map(acessoSiteEscapar).join(' · ') +
+          (a.comoConheceu ? '<br>Como conheceu: ' + acessoSiteEscapar(a.comoConheceu) : '') +
+          '<br>Aparelho ' + acessoSiteEscapar(a.aparelhoId) + '… · ' + estatisticasQuando(a.aprovadoEm) +
+          '</span>' +
           '<div class="button-row">' +
           '<button type="button" class="secondary acesso-site-revogar" data-aparelho="' + acessoSiteEscapar(a.aparelhoIdCompleto || '') + '">🗑️ Revogar</button>' +
-          '</div></div>'
-        ).join('')
-        : '<p class="hint">Nenhum aparelho aprovado ainda.</p>';
+          '</div></div>';
+        }).join('')
+        : '<p class="hint">Ninguém se identificou ainda.</p>';
     }
 
     async function acessoSiteCarregarAdmin() {
@@ -11805,22 +11812,19 @@ function saveTemplatesToStorage() {
       const ligar = acessoSiteRestringir.checked;
       if (ligar) {
         const ok = await askConfirm(
-          'Ligar a restrição do site inteiro?\n\nAparelhos novos verão o formulário de pedido de acesso. Os aparelhos já vistos nas estatísticas continuam liberados automaticamente.',
-          'Restringir o site'
+          'Exigir sua aprovação em cada cadastro novo?\n\nQuem ainda não se identificou continua vendo o formulário. Depois de enviar, só usa o app quando você aprovar.',
+          'Exigir aprovação'
         );
         if (!ok) { acessoSiteRestringir.checked = false; return; }
       }
       acessoSiteStatus.textContent = 'Salvando…';
       const r = await postConfig({ acao: 'acesso-site-restringir', codigo, restringir: ligar });
       if (!r.ok) {
-        acessoSiteStatus.textContent = (r.data && r.data.erro) || 'Não foi possível salvar a restrição.';
+        acessoSiteStatus.textContent = (r.data && r.data.erro) || 'Não foi possível salvar.';
         acessoSiteRestringir.checked = !ligar;
         return;
       }
-      const avos = Number(r.data && r.data.avos) || 0;
-      acessoSiteRenderAdmin(r.data.acesso, ligar
-        ? ('Restrição ligada' + (avos ? ' · ' + avos + ' aparelho(s) já conhecido(s) liberado(s). ' : '. ') )
-        : 'Restrição desligada. ');
+      acessoSiteRenderAdmin(r.data.acesso, ligar ? 'Aprovação ligada. ' : 'Aprovação desligada. ');
     });
 
     acessoSitePedidos.addEventListener('click', async e => {
@@ -11829,13 +11833,13 @@ function saveTemplatesToStorage() {
       const codigo = codigoAdminAtual();
       if (!codigo) return;
       const aprovar = btn.classList.contains('acesso-site-aprovar');
-      if (!aprovar && !(await askConfirm('Recusar este pedido de acesso?', 'Recusar pedido'))) return;
+      if (!aprovar && !(await askConfirm('Recusar este cadastro?', 'Recusar cadastro'))) return;
       const r = await postConfig({ acao: 'acesso-site-decidir', codigo, id: btn.dataset.id, aprovar });
       if (!r.ok) {
-        acessoSiteStatus.textContent = (r.data && r.data.erro) || 'Não foi possível decidir o pedido.';
+        acessoSiteStatus.textContent = (r.data && r.data.erro) || 'Não foi possível decidir o cadastro.';
         return;
       }
-      acessoSiteRenderAdmin(r.data.acesso, aprovar ? 'Pedido aprovado. ' : 'Pedido recusado. ');
+      acessoSiteRenderAdmin(r.data.acesso, aprovar ? 'Cadastro aprovado. ' : 'Cadastro recusado. ');
     });
 
     acessoSiteAprovados.addEventListener('click', async e => {
@@ -11843,13 +11847,13 @@ function saveTemplatesToStorage() {
       if (!btn || !btn.dataset.aparelho) return;
       const codigo = codigoAdminAtual();
       if (!codigo) return;
-      if (!(await askConfirm('Revogar o acesso deste aparelho? Na próxima abertura ele verá o formulário de novo.', 'Revogar acesso'))) return;
+      if (!(await askConfirm('Revogar a identificação deste aparelho? Na próxima abertura ele precisará se cadastrar de novo.', 'Revogar identificação'))) return;
       const r = await postConfig({ acao: 'acesso-site-revogar', codigo, aparelhoId: btn.dataset.aparelho });
       if (!r.ok) {
         acessoSiteStatus.textContent = (r.data && r.data.erro) || 'Não foi possível revogar.';
         return;
       }
-      acessoSiteRenderAdmin(r.data.acesso, 'Acesso revogado. ');
+      acessoSiteRenderAdmin(r.data.acesso, 'Identificação revogada. ');
     });
 
     function acessoSiteMostrarOverlay(estado) {
@@ -11859,14 +11863,17 @@ function saveTemplatesToStorage() {
       document.body.style.overflow = 'hidden';
       const form = acessoSiteForm;
       if (estado && estado.pendente) {
-        acessoSiteMsg.textContent = 'Seu pedido de acesso foi enviado e ainda está em análise. Quando for aprovado, abra o app de novo.';
+        acessoSiteMsg.textContent = 'Seu cadastro foi enviado e ainda está em análise. Quando for aprovado, abra o app de novo.';
         form.hidden = true;
+        acessoSiteEnviarBtn.textContent = '💾 Salvar e continuar';
       } else if (estado && estado.recusado) {
-        acessoSiteMsg.textContent = 'O pedido deste aparelho foi recusado. Se precisar, envie um novo pedido pelo formulário abaixo.';
+        acessoSiteMsg.textContent = 'O cadastro deste aparelho foi recusado. Se precisar, envie um novo cadastro pelo formulário abaixo.';
         form.hidden = false;
+        acessoSiteEnviarBtn.textContent = estado.restringir ? '📨 Enviar cadastro' : '💾 Salvar e continuar';
       } else {
-        acessoSiteMsg.textContent = 'Este aparelho ainda não está autorizado a usar o NoteStyle. Preencha o formulário para pedir acesso.';
+        acessoSiteMsg.textContent = 'Para usar o NoteStyle, preencha seus dados. Isto vale para todos os aparelhos, inclusive os que já usavam o app e o do administrador.';
         form.hidden = false;
+        acessoSiteEnviarBtn.textContent = (estado && estado.restringir) ? '📨 Enviar cadastro' : '💾 Salvar e continuar';
       }
       acessoSiteFormStatus.textContent = '';
     }
@@ -11883,11 +11890,8 @@ function saveTemplatesToStorage() {
       const id = aparelhoId();
       if (!id) return;
       try {
-        const corpo = { acao: 'acesso-site-estado', aparelhoId: id };
-        const admin = senhaAdminSalva();
-        if (admin) corpo.codigoAdmin = admin;
-        const r = await postConfig(corpo);
-        if (!r.ok || !r.data || !r.data.configurado || !r.data.restringir || r.data.ok) {
+        const r = await postConfig({ acao: 'acesso-site-estado', aparelhoId: id });
+        if (!r.ok || !r.data || !r.data.configurado || r.data.ok) {
           acessoSiteLiberarOverlay();
           return;
         }
@@ -11902,9 +11906,8 @@ function saveTemplatesToStorage() {
         acessoSiteFormStatus.textContent = 'Não foi possível identificar este aparelho.';
         return;
       }
-      const btn = document.getElementById('acessoSiteEnviarBtn');
-      btn.disabled = true;
-      acessoSiteFormStatus.textContent = 'Enviando…';
+      acessoSiteEnviarBtn.disabled = true;
+      acessoSiteFormStatus.textContent = 'Salvando…';
       const r = await postConfig({
         acao: 'acesso-site-pedir',
         aparelhoId: id,
@@ -11915,40 +11918,97 @@ function saveTemplatesToStorage() {
         congregacao: document.getElementById('acessoSiteCongregacao').value,
         comoConheceu: document.getElementById('acessoSiteComo').value
       });
-      btn.disabled = false;
+      acessoSiteEnviarBtn.disabled = false;
       if (!r.ok) {
-        acessoSiteFormStatus.textContent = (r.data && r.data.erro) || 'Não foi possível enviar o pedido agora.';
+        acessoSiteFormStatus.textContent = (r.data && r.data.erro) || 'Não foi possível salvar o cadastro agora.';
         return;
       }
-      if (r.data && r.data.jaAprovado) {
+      if (r.data && (r.data.identificado || r.data.jaAprovado)) {
         acessoSiteLiberarOverlay();
         return;
       }
       acessoSiteMostrarOverlay({ pendente: true });
-      acessoSiteFormStatus.textContent = 'Pedido enviado. Aguarde a aprovação.';
-    });
-
-    document.getElementById('acessoSiteAdminEntrarBtn').addEventListener('click', async () => {
-      const senha = document.getElementById('acessoSiteAdminSenha').value.trim();
-      const st = document.getElementById('acessoSiteAdminStatus');
-      if (!senha) { st.textContent = 'Digite a senha.'; return; }
-      st.textContent = 'Conferindo…';
-      const r = await postConfig({ acao: 'admin-entrar', codigo: senha });
-      // admin-entrar exige código depois do bloqueio de rate-limit; se a senha estiver errada, 403.
-      // Mas admin-entrar está DEPOIS da checagem de admin no config — wait, looking at config:
-      // Public actions first, then IP block, then codigo-conferir etc, THEN admin check, THEN admin-entrar.
-      // So we need to call admin-entrar which requires correct codigo. Good.
-      if (!r.ok) {
-        st.textContent = (r.data && r.data.erro) || 'Senha incorreta.';
-        return;
-      }
-      try { localStorage.setItem('jwLibraryNoteAplicarAdminSenhaV1', senha); } catch (e) { /* */ }
-      document.dispatchEvent(new CustomEvent('acesso-salvo', { detail: 'senha' }));
-      acessoSiteLiberarOverlay();
-      st.textContent = '✅ Liberado neste aparelho.';
+      acessoSiteFormStatus.textContent = 'Cadastro enviado. Aguarde a aprovação.';
     });
 
     setTimeout(acessoSiteVerificarGate, 400);
+
+    // Ajustes → 👤 Meus dados: o usuário altera o cadastro deste aparelho depois de identificado.
+    const meusDadosSection = document.getElementById('meusDadosSection');
+    const meusDadosForm = document.getElementById('meusDadosForm');
+    const meusDadosStatus = document.getElementById('meusDadosStatus');
+    const meusDadosCampos = {
+      nome: document.getElementById('meusDadosNome'),
+      sobrenome: document.getElementById('meusDadosSobrenome'),
+      idade: document.getElementById('meusDadosIdade'),
+      cidadeEstado: document.getElementById('meusDadosCidade'),
+      congregacao: document.getElementById('meusDadosCongregacao'),
+      comoConheceu: document.getElementById('meusDadosComo')
+    };
+
+    function meusDadosPreencher(cadastro) {
+      if (!cadastro) return;
+      meusDadosCampos.nome.value = cadastro.nome || '';
+      meusDadosCampos.sobrenome.value = cadastro.sobrenome || '';
+      meusDadosCampos.idade.value = cadastro.idade != null ? cadastro.idade : '';
+      meusDadosCampos.cidadeEstado.value = cadastro.cidadeEstado || '';
+      meusDadosCampos.congregacao.value = cadastro.congregacao || '';
+      meusDadosCampos.comoConheceu.value = cadastro.comoConheceu || '';
+    }
+
+    async function meusDadosCarregar() {
+      const id = aparelhoId();
+      if (!id) {
+        meusDadosStatus.textContent = 'Não foi possível identificar este aparelho.';
+        return;
+      }
+      meusDadosStatus.textContent = 'Carregando…';
+      const r = await postConfig({ acao: 'acesso-site-estado', aparelhoId: id });
+      if (!r.ok || !r.data || !r.data.configurado) {
+        meusDadosStatus.textContent = (r.data && r.data.erro) || 'O cadastro ainda não está disponível neste servidor.';
+        return;
+      }
+      if (!r.data.ok || !r.data.cadastro) {
+        meusDadosStatus.textContent = r.data.pendente
+          ? 'Seu cadastro ainda está em análise. Depois da aprovação, você poderá alterar os dados aqui.'
+          : 'Complete primeiro a tela de identificação ao abrir o app.';
+        return;
+      }
+      meusDadosPreencher(r.data.cadastro);
+      meusDadosStatus.textContent = r.data.cadastro.aprovadoEm
+        ? 'Cadastro neste aparelho desde ' + estatisticasQuando(r.data.cadastro.aprovadoEm) + '.'
+        : 'Pronto para editar.';
+    }
+
+    meusDadosSection.addEventListener('toggle', () => { if (meusDadosSection.open) meusDadosCarregar(); });
+    meusDadosForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const id = aparelhoId();
+      if (!id) {
+        meusDadosStatus.textContent = 'Não foi possível identificar este aparelho.';
+        return;
+      }
+      const btn = document.getElementById('meusDadosSalvarBtn');
+      btn.disabled = true;
+      meusDadosStatus.textContent = 'Salvando…';
+      const r = await postConfig({
+        acao: 'acesso-site-atualizar',
+        aparelhoId: id,
+        nome: meusDadosCampos.nome.value,
+        sobrenome: meusDadosCampos.sobrenome.value,
+        idade: meusDadosCampos.idade.value,
+        cidadeEstado: meusDadosCampos.cidadeEstado.value,
+        congregacao: meusDadosCampos.congregacao.value,
+        comoConheceu: meusDadosCampos.comoConheceu.value
+      });
+      btn.disabled = false;
+      if (!r.ok) {
+        meusDadosStatus.textContent = (r.data && r.data.erro) || 'Não foi possível salvar as alterações.';
+        return;
+      }
+      if (r.data && r.data.cadastro) meusDadosPreencher(r.data.cadastro);
+      meusDadosStatus.textContent = '✅ Dados atualizados.';
+    });
 
     async function restoreAllPrompts() {
       const ok = await askConfirm('Voltar TODOS os textos dos prompts ao padrão que veio com o app, para todos os usuários? Os textos salvos serão substituídos (os limites e o modelo da IA não mudam). Dá para desfazer em "Voltar à versão anterior".', 'Restaurar todos os padrões');
