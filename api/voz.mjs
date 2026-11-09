@@ -9,6 +9,7 @@
 //  - GOOGLE_TTS_API_KEY: a chave de API, que basta para a voz Chirp 3 HD (a reserva).
 // Modelo, voz, tom, altura e instruções extras vêm da configuração do administrador (api/_vozConfig.mjs).
 import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
+import { mensagemSeBloqueado } from "./_acessoSite.mjs";
 import { credenciais, tokenDeAcesso } from "./_googleToken.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
 import { validarCupomVoz } from "./_vozCupom.mjs";
@@ -80,6 +81,8 @@ export default async function handler(req, res) {
   if (!process.env.CODIGO_ESTUDO) return erro(res, 503, "O código de pesquisa ainda não está configurado no servidor.");
 
   const body = req.body && typeof req.body === "object" ? req.body : {};
+  const bloqueioSite = await mensagemSeBloqueado({ aparelhoId: body.aparelhoId, codigoAdmin: body.codigoAdmin });
+  if (bloqueioSite) return erro(res, 403, bloqueioSite);
   // Quem pode pedir o quê:
   //  - o exemplo do painel do administrador usa as escolhas ainda não salvas: só com a senha de administrador;
   //  - uso "texto-diario": código de pesquisa + cupom HMAC (origem coberta pelo texto do dia ou pelos comentários);

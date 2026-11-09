@@ -4103,6 +4103,10 @@
             }
           : { codigoAdmin: senhaAdminSalva(), texto, uso: 'campo' };
       if (voz) corpo.voz = voz;
+      const aparelhoVoz = aparelhoId();
+      if (aparelhoVoz) corpo.aparelhoId = aparelhoVoz;
+      const adminVoz = senhaAdminSalva();
+      if (adminVoz && !corpo.codigoAdmin) corpo.codigoAdmin = adminVoz;
       // A conexão do celular às vezes cai antes de a resposta chegar (o Safari avisa só "Load failed", em inglês, mesmo com o
       // servidor tendo gerado o áudio): tenta de novo uma vez e, se falhar de novo, avisa em português.
       let resposta = null;
@@ -7651,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.61'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.62'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -11705,10 +11709,14 @@ function saveTemplatesToStorage() {
         }).join('')
         : '';
     }
+    function codigoAdminAtual() {
+      return promptsCode || senhaAdminSalva();
+    }
     async function estatisticasCarregar() {
-      if (!promptsCode) return;
+      const codigo = codigoAdminAtual();
+      if (!codigo) return;
       estatisticasStatus.textContent = 'Carregando…';
-      const r = await postConfig({ acao: 'estatisticas-ler', codigo: promptsCode });
+      const r = await postConfig({ acao: 'estatisticas-ler', codigo });
       if (!r.ok) {
         estatisticasStatus.textContent = (r.data && r.data.erro) || 'Não foi possível ler as estatísticas agora.';
         return;
@@ -11717,6 +11725,230 @@ function saveTemplatesToStorage() {
     }
     document.getElementById('estatisticasBox').addEventListener('toggle', e => { if (e.target.open) estatisticasCarregar(); });
     document.getElementById('estatisticasAtualizarBtn').addEventListener('click', estatisticasCarregar);
+
+    // ---------- Acesso ao site (restrição + pedidos; card separado do administrador) ----------
+    const acessoSiteSection = document.getElementById('acessoSiteSection');
+    const acessoSiteStatus = document.getElementById('acessoSiteStatus');
+    const acessoSiteRestringir = document.getElementById('acessoSiteRestringir');
+    const acessoSitePedidos = document.getElementById('acessoSitePedidos');
+    const acessoSiteAprovados = document.getElementById('acessoSiteAprovados');
+    const acessoSiteOverlay = document.getElementById('acessoSiteOverlay');
+    const acessoSiteMsg = document.getElementById('acessoSiteMsg');
+    const acessoSiteForm = document.getElementById('acessoSiteForm');
+    const acessoSiteFormStatus = document.getElementById('acessoSiteFormStatus');
+    let acessoSiteLiberado = true;
+
+    function acessoSiteEscapar(t) {
+      return String(t == null ? '' : t)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function acessoSiteRenderAdmin(acesso, aviso) {
+      if (!acesso || !acesso.configurado) {
+        acessoSiteStatus.textContent = 'O controle de acesso ainda não está configurado no servidor (falta o Blob privado).';
+        acessoSiteRestringir.checked = false;
+        acessoSitePedidos.innerHTML = '';
+        acessoSiteAprovados.innerHTML = '';
+        return;
+      }
+      acessoSiteRestringir.checked = Boolean(acesso.restringir);
+      acessoSiteStatus.textContent = (aviso || '') + (acesso.atualizadoEm ? 'Atualizado em ' + estatisticasQuando(acesso.atualizadoEm) + '.' : 'Pronto.') +
+        (acesso.restringir ? ' Restrição ligada.' : ' Restrição desligada.');
+      const pendentes = Array.isArray(acesso.pendentes) ? acesso.pendentes : [];
+      acessoSitePedidos.innerHTML = pendentes.length
+        ? pendentes.map(p =>
+          '<div class="acesso-site-item" data-pedido-id="' + acessoSiteEscapar(p.id) + '">' +
+          '<strong>' + acessoSiteEscapar(p.nome + ' ' + p.sobrenome) + '</strong> · ' + acessoSiteEscapar(p.idade) + ' anos' +
+          '<span class="hint">' + acessoSiteEscapar(p.cidadeEstado) + ' · ' + acessoSiteEscapar(p.congregacao) +
+          '<br>Como conheceu: ' + acessoSiteEscapar(p.comoConheceu) +
+          '<br>Aparelho ' + acessoSiteEscapar(p.aparelhoId) + '… · ' + estatisticasQuando(p.criadoEm) + '</span>' +
+          '<div class="button-row">' +
+          '<button type="button" class="acesso-site-aprovar" data-id="' + acessoSiteEscapar(p.id) + '">✅ Aprovar</button>' +
+          '<button type="button" class="secondary acesso-site-recusar" data-id="' + acessoSiteEscapar(p.id) + '">✖️ Recusar</button>' +
+          '</div></div>'
+        ).join('')
+        : '<p class="hint">Nenhum pedido pendente.</p>';
+      const aprovados = Array.isArray(acesso.aprovados) ? acesso.aprovados : [];
+      acessoSiteAprovados.innerHTML = aprovados.length
+        ? aprovados.map(a =>
+          '<div class="acesso-site-item">' +
+          '<strong>' + acessoSiteEscapar(a.nome || 'Aparelho') + '</strong>' +
+          '<span class="hint">Aparelho ' + acessoSiteEscapar(a.aparelhoId) + '… · aprovado ' + estatisticasQuando(a.aprovadoEm) + '</span>' +
+          '<div class="button-row">' +
+          '<button type="button" class="secondary acesso-site-revogar" data-aparelho="' + acessoSiteEscapar(a.aparelhoIdCompleto || '') + '">🗑️ Revogar</button>' +
+          '</div></div>'
+        ).join('')
+        : '<p class="hint">Nenhum aparelho aprovado ainda.</p>';
+    }
+
+    async function acessoSiteCarregarAdmin() {
+      const codigo = codigoAdminAtual();
+      if (!codigo) {
+        acessoSiteStatus.textContent = 'Salve a senha de administrador em Autorização de acessos.';
+        return;
+      }
+      acessoSiteStatus.textContent = 'Carregando…';
+      const r = await postConfig({ acao: 'acesso-site-ler', codigo });
+      if (!r.ok) {
+        acessoSiteStatus.textContent = (r.data && r.data.erro) || 'Não foi possível ler o controle de acesso agora.';
+        return;
+      }
+      acessoSiteRenderAdmin(r.data.acesso);
+    }
+
+    document.getElementById('acessoSiteAtualizarBtn').addEventListener('click', acessoSiteCarregarAdmin);
+    acessoSiteSection.addEventListener('toggle', () => { if (acessoSiteSection.open) acessoSiteCarregarAdmin(); });
+
+    document.getElementById('acessoSiteSalvarRestricaoBtn').addEventListener('click', async () => {
+      const codigo = codigoAdminAtual();
+      if (!codigo) return;
+      const ligar = acessoSiteRestringir.checked;
+      if (ligar) {
+        const ok = await askConfirm(
+          'Ligar a restrição do site inteiro?\n\nAparelhos novos verão o formulário de pedido de acesso. Os aparelhos já vistos nas estatísticas continuam liberados automaticamente.',
+          'Restringir o site'
+        );
+        if (!ok) { acessoSiteRestringir.checked = false; return; }
+      }
+      acessoSiteStatus.textContent = 'Salvando…';
+      const r = await postConfig({ acao: 'acesso-site-restringir', codigo, restringir: ligar });
+      if (!r.ok) {
+        acessoSiteStatus.textContent = (r.data && r.data.erro) || 'Não foi possível salvar a restrição.';
+        acessoSiteRestringir.checked = !ligar;
+        return;
+      }
+      const avos = Number(r.data && r.data.avos) || 0;
+      acessoSiteRenderAdmin(r.data.acesso, ligar
+        ? ('Restrição ligada' + (avos ? ' · ' + avos + ' aparelho(s) já conhecido(s) liberado(s). ' : '. ') )
+        : 'Restrição desligada. ');
+    });
+
+    acessoSitePedidos.addEventListener('click', async e => {
+      const btn = e.target.closest('button[data-id]');
+      if (!btn) return;
+      const codigo = codigoAdminAtual();
+      if (!codigo) return;
+      const aprovar = btn.classList.contains('acesso-site-aprovar');
+      if (!aprovar && !(await askConfirm('Recusar este pedido de acesso?', 'Recusar pedido'))) return;
+      const r = await postConfig({ acao: 'acesso-site-decidir', codigo, id: btn.dataset.id, aprovar });
+      if (!r.ok) {
+        acessoSiteStatus.textContent = (r.data && r.data.erro) || 'Não foi possível decidir o pedido.';
+        return;
+      }
+      acessoSiteRenderAdmin(r.data.acesso, aprovar ? 'Pedido aprovado. ' : 'Pedido recusado. ');
+    });
+
+    acessoSiteAprovados.addEventListener('click', async e => {
+      const btn = e.target.closest('button.acesso-site-revogar');
+      if (!btn || !btn.dataset.aparelho) return;
+      const codigo = codigoAdminAtual();
+      if (!codigo) return;
+      if (!(await askConfirm('Revogar o acesso deste aparelho? Na próxima abertura ele verá o formulário de novo.', 'Revogar acesso'))) return;
+      const r = await postConfig({ acao: 'acesso-site-revogar', codigo, aparelhoId: btn.dataset.aparelho });
+      if (!r.ok) {
+        acessoSiteStatus.textContent = (r.data && r.data.erro) || 'Não foi possível revogar.';
+        return;
+      }
+      acessoSiteRenderAdmin(r.data.acesso, 'Acesso revogado. ');
+    });
+
+    function acessoSiteMostrarOverlay(estado) {
+      acessoSiteLiberado = false;
+      acessoSiteOverlay.hidden = false;
+      acessoSiteOverlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      const form = acessoSiteForm;
+      if (estado && estado.pendente) {
+        acessoSiteMsg.textContent = 'Seu pedido de acesso foi enviado e ainda está em análise. Quando for aprovado, abra o app de novo.';
+        form.hidden = true;
+      } else if (estado && estado.recusado) {
+        acessoSiteMsg.textContent = 'O pedido deste aparelho foi recusado. Se precisar, envie um novo pedido pelo formulário abaixo.';
+        form.hidden = false;
+      } else {
+        acessoSiteMsg.textContent = 'Este aparelho ainda não está autorizado a usar o NoteStyle. Preencha o formulário para pedir acesso.';
+        form.hidden = false;
+      }
+      acessoSiteFormStatus.textContent = '';
+    }
+
+    function acessoSiteLiberarOverlay() {
+      acessoSiteLiberado = true;
+      acessoSiteOverlay.hidden = true;
+      acessoSiteOverlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    async function acessoSiteVerificarGate() {
+      if (!servidoPelaWeb() || !navigator.onLine) return;
+      const id = aparelhoId();
+      if (!id) return;
+      try {
+        const corpo = { acao: 'acesso-site-estado', aparelhoId: id };
+        const admin = senhaAdminSalva();
+        if (admin) corpo.codigoAdmin = admin;
+        const r = await postConfig(corpo);
+        if (!r.ok || !r.data || !r.data.configurado || !r.data.restringir || r.data.ok) {
+          acessoSiteLiberarOverlay();
+          return;
+        }
+        acessoSiteMostrarOverlay(r.data);
+      } catch (e) { /* sem conexão: não trava o app offline */ }
+    }
+
+    acessoSiteForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const id = aparelhoId();
+      if (!id) {
+        acessoSiteFormStatus.textContent = 'Não foi possível identificar este aparelho.';
+        return;
+      }
+      const btn = document.getElementById('acessoSiteEnviarBtn');
+      btn.disabled = true;
+      acessoSiteFormStatus.textContent = 'Enviando…';
+      const r = await postConfig({
+        acao: 'acesso-site-pedir',
+        aparelhoId: id,
+        nome: document.getElementById('acessoSiteNome').value,
+        sobrenome: document.getElementById('acessoSiteSobrenome').value,
+        idade: document.getElementById('acessoSiteIdade').value,
+        cidadeEstado: document.getElementById('acessoSiteCidade').value,
+        congregacao: document.getElementById('acessoSiteCongregacao').value,
+        comoConheceu: document.getElementById('acessoSiteComo').value
+      });
+      btn.disabled = false;
+      if (!r.ok) {
+        acessoSiteFormStatus.textContent = (r.data && r.data.erro) || 'Não foi possível enviar o pedido agora.';
+        return;
+      }
+      if (r.data && r.data.jaAprovado) {
+        acessoSiteLiberarOverlay();
+        return;
+      }
+      acessoSiteMostrarOverlay({ pendente: true });
+      acessoSiteFormStatus.textContent = 'Pedido enviado. Aguarde a aprovação.';
+    });
+
+    document.getElementById('acessoSiteAdminEntrarBtn').addEventListener('click', async () => {
+      const senha = document.getElementById('acessoSiteAdminSenha').value.trim();
+      const st = document.getElementById('acessoSiteAdminStatus');
+      if (!senha) { st.textContent = 'Digite a senha.'; return; }
+      st.textContent = 'Conferindo…';
+      const r = await postConfig({ acao: 'admin-entrar', codigo: senha });
+      // admin-entrar exige código depois do bloqueio de rate-limit; se a senha estiver errada, 403.
+      // Mas admin-entrar está DEPOIS da checagem de admin no config — wait, looking at config:
+      // Public actions first, then IP block, then codigo-conferir etc, THEN admin check, THEN admin-entrar.
+      // So we need to call admin-entrar which requires correct codigo. Good.
+      if (!r.ok) {
+        st.textContent = (r.data && r.data.erro) || 'Senha incorreta.';
+        return;
+      }
+      try { localStorage.setItem('jwLibraryNoteAplicarAdminSenhaV1', senha); } catch (e) { /* */ }
+      document.dispatchEvent(new CustomEvent('acesso-salvo', { detail: 'senha' }));
+      acessoSiteLiberarOverlay();
+      st.textContent = '✅ Liberado neste aparelho.';
+    });
+
+    setTimeout(acessoSiteVerificarGate, 400);
 
     async function restoreAllPrompts() {
       const ok = await askConfirm('Voltar TODOS os textos dos prompts ao padrão que veio com o app, para todos os usuários? Os textos salvos serão substituídos (os limites e o modelo da IA não mudam). Dá para desfazer em "Voltar à versão anterior".', 'Restaurar todos os padrões');
@@ -18545,10 +18777,15 @@ function saveTemplatesToStorage() {
         return;
       }
       try {
+        const tdCorpo = { codigo, data: chave };
+        const tdAparelho = aparelhoId();
+        if (tdAparelho) tdCorpo.aparelhoId = tdAparelho;
+        const tdAdmin = senhaAdminSalva();
+        if (tdAdmin) tdCorpo.codigoAdmin = tdAdmin;
         const resposta = await fetch(TD_ENDPOINT, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ codigo, data: chave })
+          body: JSON.stringify(tdCorpo)
         });
         let dados = null;
         try { dados = await resposta.json(); } catch (e) { /* resposta sem JSON */ }
@@ -20194,7 +20431,12 @@ function saveTemplatesToStorage() {
 
     async function trPost(payload, sinal) {
       try {
-        const resposta = await fetch('/api/transcrever', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), signal: sinal });
+        const corpo = Object.assign({}, payload);
+        const trAparelho = aparelhoId();
+        if (trAparelho) corpo.aparelhoId = trAparelho;
+        const trAdmin = senhaAdminSalva();
+        if (trAdmin) corpo.codigoAdmin = trAdmin;
+        const resposta = await fetch('/api/transcrever', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo), signal: sinal });
         let dados = null;
         try { dados = await resposta.json(); } catch (e) { /* resposta sem JSON */ }
         return { ok: resposta.ok && Boolean(dados), status: resposta.status, dados };

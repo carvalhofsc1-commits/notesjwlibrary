@@ -10,6 +10,7 @@ import { acessoDoDirigente, codigoValido, dirigenteValido, exigirAcesso, recusar
 import { iaDaTarefa, lerConfigIa } from "./_iaConfig.mjs";
 import { blocoLicoesPara } from "./_memoria.mjs";
 import { aparelhoIdLimpo, registrarUsoIa } from "./_estatisticas.mjs";
+import { mensagemSeBloqueado } from "./_acessoSite.mjs";
 import { emitirCupomVoz } from "./_vozCupom.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
 import { buscarNosLivros, buscarVerbete, buscarVersiculos, versiculosDoCapitulo, fontesConfiguradas, precarregarFontes, referenciasNoTexto, textoDeGruposBiblicos } from "./_fontes.mjs";
@@ -4117,6 +4118,9 @@ async function tratarPedido(req, res) {
   const body = req.body && typeof req.body === "object" ? req.body : {};
   const tarefa = body.tarefa;
   const ip = ipDoPedido(req);
+
+  const bloqueioSite = await mensagemSeBloqueado({ aparelhoId: body.aparelhoId, codigoAdmin: body.codigoAdmin });
+  if (bloqueioSite) return erro(res, 403, bloqueioSite);
 
   if (typeof tarefa === "string" && /^backup-/.test(tarefa) && !exigirAcesso(res, body)) return;
   if (tarefa === "backup-campos") return lerCamposDosDocumentos(req, res);

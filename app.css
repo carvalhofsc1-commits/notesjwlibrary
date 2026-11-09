@@ -8281,6 +8281,78 @@
       margin: 8px 0;
     }
 
+    .acesso-site-overlay {
+      z-index: 10050;
+      background: rgba(15, 23, 42, .72);
+      overflow: auto;
+      align-items: flex-start;
+      padding: 24px 14px 40px;
+    }
+
+    .acesso-site-overlay[hidden] {
+      display: none !important;
+    }
+
+    .acesso-site-overlay:not([hidden]) {
+      display: flex;
+    }
+
+    .acesso-site-card {
+      width: min(440px, 100%);
+      margin: auto;
+      max-height: none;
+    }
+
+    .acesso-site-form {
+      display: grid;
+      gap: 6px;
+      margin-top: 12px;
+    }
+
+    .acesso-site-form label {
+      margin-top: 6px;
+      font-size: .9rem;
+    }
+
+    .acesso-site-form input {
+      width: 100%;
+    }
+
+    .acesso-site-admin-entrar {
+      margin-top: 16px;
+      border-top: 1px solid var(--line);
+      padding-top: 10px;
+    }
+
+    .acesso-site-admin-entrar summary {
+      cursor: pointer;
+      color: var(--muted);
+      font-size: .9rem;
+    }
+
+    .acesso-site-lista {
+      display: grid;
+      gap: 8px;
+      margin: 8px 0;
+    }
+
+    .acesso-site-item {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: var(--card);
+      font-size: .9rem;
+    }
+
+    .acesso-site-item .hint {
+      display: block;
+      margin-top: 4px;
+    }
+
+    .acesso-site-item .button-row {
+      margin-top: 8px;
+    }
+
     .estatisticas-resumo,
     .estatisticas-dias,
     .estatisticas-lista {

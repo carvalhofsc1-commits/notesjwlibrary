@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.62
+
+**Restrição de acesso ao site inteiro** (card separado em Ajustes → 🚪 Acesso ao site, só administrador): com a opção ligada, aparelhos novos veem um formulário de pedido (nome, idade, cidade, congregação, como conheceu o app) e ficam bloqueados até a aprovação. Ao ligar pela primeira vez, aparelhos já vistos nas estatísticas continuam liberados. O administrador aprova/recusa pedidos e pode revogar aparelhos; no bloqueio dá para entrar com a senha de administrador. As estatísticas saíram dos prompts da IA e ficaram neste card. O servidor também recusa IA, voz, texto diário e áudio em texto se o aparelho não estiver autorizado.
+
 ## 6.6.61
 
 Esboços e discursos: a IA tem agora até 275 segundos numa só tentativa. Antes, quando a primeira tentativa passava de 170 s, a segunda tentativa estourava os 300 s da função e o app mostrava "A IA demorou demais" (discurso público, tema 46).

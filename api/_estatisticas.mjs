@@ -195,6 +195,17 @@ function somarDias(dias, chave) {
   return Object.values(dias || {}).reduce((n, d) => n + (Number(d[chave]) || 0), 0);
 }
 
+// IDs completos dos aparelhos já vistos (para aprovar de uma vez ao ligar a restrição).
+export async function listarAparelhoIds() {
+  if (!estatisticasConfiguradas()) return [];
+  try {
+    const dados = (await lerBruto()) || vazio();
+    return Object.keys(dados.aparelhos || {});
+  } catch {
+    return [];
+  }
+}
+
 export async function resumoEstatisticas() {
   if (!estatisticasConfiguradas()) return { configurado: false };
   const dados = (await lerBruto()) || vazio();

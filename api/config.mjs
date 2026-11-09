@@ -7,7 +7,16 @@ import { esquecerCache, gravarAlteracoes, gravarLimites, lerAlteracoes, lerAnter
 import { configPublicaVoz, gravarConfigVoz, lerConfigVoz, opcoesVoz } from "./_vozConfig.mjs";
 import { gravarConfigIa, lerConfigIa, lerCustoIa, opcoesIa } from "./_iaConfig.mjs";
 import { acrescentarLicao, alterarLicao, analisarCorrecao, apagarLicao, apagarTudo, ligarMemoria, lerMemoria, memoriaConfigurada } from "./_memoria.mjs";
-import { estatisticasConfiguradas, registrarPing, resumoEstatisticas } from "./_estatisticas.mjs";
+import { estatisticasConfiguradas, listarAparelhoIds, registrarPing, resumoEstatisticas } from "./_estatisticas.mjs";
+import {
+  acessoSiteConfigurado,
+  decidirPedidoSite,
+  definirRestricaoSite,
+  estadoAcessoSite,
+  lerAcessoSiteAdmin,
+  pedirAcessoSite,
+  revogarAcessoSite,
+} from "./_acessoSite.mjs";
 import { apagarEsboco, gravarEsbocos, gravarTemas, lerIndice, lerTemas, s34Configurado, temasDoTexto } from "./_s34.mjs";
 
 const CHAVE_PADRAO = "padrao_modelos";
@@ -233,6 +242,20 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: Boolean(r && r.ok), novo: Boolean(r && r.novo), configurado: true });
     }
 
+    // Pública: o aparelho pergunta se o site está restrito e se ele já foi aprovado / tem pedido pendente.
+    if (acao === "acesso-site-estado") {
+      if (!acessoSiteConfigurado()) return res.status(200).json({ configurado: false, restringir: false, ok: true });
+      return res.status(200).json(await estadoAcessoSite({ aparelhoId: corpo.aparelhoId, codigoAdmin: corpo.codigoAdmin }));
+    }
+
+    // Pública: formulário de pedido de acesso (nome, congregação…).
+    if (acao === "acesso-site-pedir") {
+      if (!acessoSiteConfigurado()) return erro(res, 503, "O armazenamento privado (Blob) ainda não está configurado no servidor para os pedidos de acesso.");
+      const r = await pedirAcessoSite(corpo);
+      if (r && r.erro) return erro(res, 400, r.erro);
+      return res.status(200).json(r);
+    }
+
     const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "desconhecido";
     if (bloqueado(ip)) return erro(res, 429, "Muitas tentativas erradas. Tente novamente mais tarde.");
 
@@ -432,6 +455,38 @@ export default async function handler(req, res) {
         console.error("Estatísticas: leitura falhou", e && e.message);
         return erro(res, 502, "Não consegui ler as estatísticas agora. Tente de novo.");
       }
+    }
+
+    // Restrição de acesso ao site + pedidos do formulário (card separado em Ajustes).
+    if (acao === "acesso-site-ler") {
+      if (!acessoSiteConfigurado()) {
+        return erro(res, 503, "O armazenamento privado (Blob) ainda não está configurado no servidor para o controle de acesso.");
+      }
+      return res.status(200).json({ acesso: await lerAcessoSiteAdmin() });
+    }
+    if (acao === "acesso-site-restringir") {
+      if (!acessoSiteConfigurado()) {
+        return erro(res, 503, "O armazenamento privado (Blob) ainda não está configurado no servidor para o controle de acesso.");
+      }
+      const avosIds = corpo.avosConhecidos === false ? [] : await listarAparelhoIds();
+      const r = await definirRestricaoSite(corpo.restringir, { avosIds });
+      return res.status(200).json({ acesso: await lerAcessoSiteAdmin(), avos: (r && r.avos) || 0 });
+    }
+    if (acao === "acesso-site-decidir") {
+      if (!acessoSiteConfigurado()) {
+        return erro(res, 503, "O armazenamento privado (Blob) ainda não está configurado no servidor para o controle de acesso.");
+      }
+      const r = await decidirPedidoSite({ id: corpo.id, aprovar: corpo.aprovar !== false, codigoAdmin: corpo.codigo });
+      if (r && r.erro) return erro(res, 400, r.erro);
+      return res.status(200).json({ ok: true, pedido: r.pedido, acesso: await lerAcessoSiteAdmin() });
+    }
+    if (acao === "acesso-site-revogar") {
+      if (!acessoSiteConfigurado()) {
+        return erro(res, 503, "O armazenamento privado (Blob) ainda não está configurado no servidor para o controle de acesso.");
+      }
+      const r = await revogarAcessoSite({ aparelhoId: corpo.aparelhoId, codigoAdmin: corpo.codigo });
+      if (r && r.erro) return erro(res, 400, r.erro);
+      return res.status(200).json({ ok: true, acesso: await lerAcessoSiteAdmin() });
     }
 
     // Esboços de discursos públicos (S-34), importados pela tela de Ajustes.

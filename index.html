@@ -1393,18 +1393,6 @@
             </div>
           </details>
 
-          <details class="prompt-item prompt-tint-codigo" id="estatisticasBox">
-            <summary><h3>📊 Estatísticas de acesso e IA</h3></summary>
-            <p class="hint">Cada aparelho tem um identificador anônimo (sem nome). Aqui você vê acessos novos e recorrentes do dia, consultas à IA e tokens gastos por aparelho e no total. A restrição de novos acessos (formulário de autorização) vem numa próxima versão.</p>
-            <p id="estatisticasStatus" class="ok" role="status" aria-live="polite"></p>
-            <div id="estatisticasResumo" class="estatisticas-resumo" hidden></div>
-            <div id="estatisticasDias" class="estatisticas-dias" hidden></div>
-            <div id="estatisticasLista" class="estatisticas-lista" hidden></div>
-            <div class="button-row">
-              <button id="estatisticasAtualizarBtn" class="secondary" type="button">🔄 Atualizar</button>
-            </div>
-          </details>
-
           <details class="prompt-item prompt-tint-codigo" id="memoriaBox">
             <summary><h3>🧠 Lições das correções (piloto)</h3></summary>
             <p class="hint">Quando você marca 🧠 ao tocar em Salvar alterações, a IA compara o texto dela com o seu, entende o que mudou e por quê, e guarda no Blob privado do servidor <strong>só a lição</strong> (o que mudou, o provável motivo e uma regra curta). Os textos, o original e o corrigido, não são guardados. <strong>Com a chave geral ligada</strong>, as lições <strong>ativas</strong> entram no pedido da IA (filtradas pela tarefa, até 8 regras). A matéria e a pergunta mandam; as lições são só preferências de estilo/ênfase. Só você (administrador) vê, desativa ou apaga. O backup do JW Library nunca entra aqui.</p>
@@ -1433,6 +1421,40 @@
           </div>
           <p id="promptsStatusBottom" class="ok prompts-status-bottom" role="status" aria-live="polite"></p>
           </div>
+          </div>
+        </details>
+        <details class="subsection sub-tint-4 so-admin" id="acessoSiteSection" hidden>
+          <summary><span class="adm-titulo">🚪 Acesso ao site&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
+          <div class="subsection-body">
+            <p class="hint">Com a restrição ligada, o site inteiro fica bloqueado para aparelhos novos até você aprovar o pedido do formulário. Ao ligar pela primeira vez, os aparelhos já vistos nas estatísticas continuam liberados.</p>
+            <p id="acessoSiteStatus" class="ok" role="status" aria-live="polite"></p>
+            <label class="ai-check"><input type="checkbox" id="acessoSiteRestringir" autocomplete="off"> Restringir o acesso ao site (só aparelhos aprovados)</label>
+            <div class="button-row">
+              <button id="acessoSiteSalvarRestricaoBtn" type="button">💾 Aplicar restrição</button>
+              <button id="acessoSiteAtualizarBtn" class="secondary" type="button">🔄 Atualizar</button>
+            </div>
+
+            <details class="prompt-item prompt-tint-codigo" open>
+              <summary><h3>📝 Pedidos pendentes</h3></summary>
+              <div id="acessoSitePedidos" class="acesso-site-lista"></div>
+            </details>
+
+            <details class="prompt-item prompt-tint-codigo">
+              <summary><h3>✅ Aparelhos aprovados</h3></summary>
+              <div id="acessoSiteAprovados" class="acesso-site-lista"></div>
+            </details>
+
+            <details class="prompt-item prompt-tint-codigo" id="estatisticasBox">
+              <summary><h3>📊 Estatísticas de acesso e IA</h3></summary>
+              <p class="hint">Cada aparelho tem um identificador anônimo (sem nome). Aqui você vê acessos novos e recorrentes do dia, consultas à IA e tokens gastos por aparelho e no total.</p>
+              <p id="estatisticasStatus" class="ok" role="status" aria-live="polite"></p>
+              <div id="estatisticasResumo" class="estatisticas-resumo" hidden></div>
+              <div id="estatisticasDias" class="estatisticas-dias" hidden></div>
+              <div id="estatisticasLista" class="estatisticas-lista" hidden></div>
+              <div class="button-row">
+                <button id="estatisticasAtualizarBtn" class="secondary" type="button">🔄 Atualizar</button>
+              </div>
+            </details>
           </div>
         </details>
         <details class="subsection voz-admin so-admin" id="vozSection" hidden>
@@ -1987,6 +2009,40 @@
     </section>
 
   </main>
+
+  <div id="acessoSiteOverlay" class="modal-overlay acesso-site-overlay" role="dialog" aria-modal="true" aria-labelledby="acessoSiteTitulo" hidden>
+    <div class="modal-card acesso-site-card">
+      <h2 id="acessoSiteTitulo">Acesso ao NoteStyle</h2>
+      <p id="acessoSiteMsg" class="hint">Este aparelho ainda não está autorizado. Preencha o formulário para pedir acesso.</p>
+      <form id="acessoSiteForm" class="acesso-site-form" autocomplete="on">
+        <label for="acessoSiteNome">Nome</label>
+        <input id="acessoSiteNome" name="nome" type="text" maxlength="60" required autocomplete="given-name">
+        <label for="acessoSiteSobrenome">Sobrenome</label>
+        <input id="acessoSiteSobrenome" name="sobrenome" type="text" maxlength="60" required autocomplete="family-name">
+        <label for="acessoSiteIdade">Idade</label>
+        <input id="acessoSiteIdade" name="idade" type="number" min="12" max="120" required inputmode="numeric">
+        <label for="acessoSiteCidade">Cidade e estado</label>
+        <input id="acessoSiteCidade" name="cidadeEstado" type="text" maxlength="80" required autocomplete="address-level2" placeholder="Ex.: São Paulo, SP">
+        <label for="acessoSiteCongregacao">Congregação</label>
+        <input id="acessoSiteCongregacao" name="congregacao" type="text" maxlength="100" required>
+        <label for="acessoSiteComo">Como conheceu o app?</label>
+        <input id="acessoSiteComo" name="comoConheceu" type="text" maxlength="200" required>
+        <div class="modal-actions">
+          <button id="acessoSiteEnviarBtn" type="submit">📨 Enviar pedido</button>
+        </div>
+      </form>
+      <p id="acessoSiteFormStatus" class="ok" role="status" aria-live="polite"></p>
+      <details class="acesso-site-admin-entrar">
+        <summary>🛡️ Sou o administrador</summary>
+        <label for="acessoSiteAdminSenha">Senha de administrador</label>
+        <div class="acesso-linha">
+          <input id="acessoSiteAdminSenha" type="password" inputmode="numeric" maxlength="100" autocomplete="off">
+          <button id="acessoSiteAdminEntrarBtn" class="secondary" type="button">Entrar</button>
+        </div>
+        <p id="acessoSiteAdminStatus" class="hint" role="status" aria-live="polite"></p>
+      </details>
+    </div>
+  </div>
 
   <div id="confirmOverlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
     <div class="modal-card">

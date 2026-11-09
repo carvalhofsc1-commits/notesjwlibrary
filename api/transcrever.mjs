@@ -7,6 +7,7 @@
 //  - GOOGLE_STT_REGIAO: região do Chirp 3 (padrão "us"; o chirp_3 só existe em "us" e "eu").
 import Anthropic from "@anthropic-ai/sdk";
 import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
+import { mensagemSeBloqueado } from "./_acessoSite.mjs";
 import { createHash, createSign, randomBytes } from "node:crypto";
 import { credenciais, tokenDeAcesso } from "./_googleToken.mjs";
 import { lerConfigIa } from "./_iaConfig.mjs";
@@ -382,6 +383,8 @@ export default async function handler(req, res) {
   if (!process.env.CODIGO_TEXTO) return erro(res, 503, "O código de texto ainda não está configurado no servidor.");
 
   const corpo = req.body && typeof req.body === "object" ? req.body : {};
+  const bloqueioSite = await mensagemSeBloqueado({ aparelhoId: corpo.aparelhoId, codigoAdmin: corpo.codigoAdmin });
+  if (bloqueioSite) return erro(res, 403, bloqueioSite);
   if (!textosIguais(corpo.codigoTexto, process.env.CODIGO_TEXTO)) return erro(res, 403, "Código de texto inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
   const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "desconhecido";
 
