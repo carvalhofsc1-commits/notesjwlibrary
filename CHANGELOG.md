@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.66
+
+Cadastro e Meus dados: ao escolher o **estado**, o app carrega só as **cidades daquele UF** (lista IBGE, sob demanda) para escolher na lista — sem embutir as 5.570 cidades no app.
+
+## 6.6.65
+
+Tela de cadastro (e Ajustes → Meus dados): idade vira **mês e ano de nascimento** (listas), com idade aproximada calculada; **estado** em lista dos UFs; **como conheceu o app** com opções comuns e “Outros meios”.
+
 ## 6.6.64
 
 Ajustes → **👤 Meus dados**: depois do cadastro obrigatório, o usuário (e o administrador) pode abrir e alterar nome, sobrenome, idade, cidade/estado, congregação e como conheceu o app. A alteração vale na hora, sem nova aprovação.

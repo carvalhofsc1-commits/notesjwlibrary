@@ -933,14 +933,28 @@
               <input id="meusDadosNome" name="nome" type="text" maxlength="60" required autocomplete="given-name">
               <label for="meusDadosSobrenome">Sobrenome</label>
               <input id="meusDadosSobrenome" name="sobrenome" type="text" maxlength="60" required autocomplete="family-name">
-              <label for="meusDadosIdade">Idade</label>
-              <input id="meusDadosIdade" name="idade" type="number" min="12" max="120" required inputmode="numeric">
-              <label for="meusDadosCidade">Cidade e estado</label>
-              <input id="meusDadosCidade" name="cidadeEstado" type="text" maxlength="80" required autocomplete="address-level2" placeholder="Ex.: São Paulo, SP">
+              <div class="acesso-site-nasc-grid">
+                <div>
+                  <label for="meusDadosMes">Mês de nascimento</label>
+                  <select id="meusDadosMes" name="mesNascimento" required></select>
+                </div>
+                <div>
+                  <label for="meusDadosAno">Ano de nascimento</label>
+                  <select id="meusDadosAno" name="anoNascimento" required></select>
+                </div>
+              </div>
+              <p id="meusDadosIdadeCalc" class="hint">Idade aproximada: —</p>
+              <label for="meusDadosEstado">Estado</label>
+              <select id="meusDadosEstado" name="estado" required></select>
+              <label for="meusDadosCidade">Cidade</label>
+              <select id="meusDadosCidade" name="cidade" required disabled>
+                <option value="">Escolha o estado primeiro</option>
+              </select>
               <label for="meusDadosCongregacao">Congregação</label>
               <input id="meusDadosCongregacao" name="congregacao" type="text" maxlength="100" required>
               <label for="meusDadosComo">Como conheceu o app?</label>
-              <input id="meusDadosComo" name="comoConheceu" type="text" maxlength="200" required>
+              <select id="meusDadosComo" name="comoConheceuOpcao" required></select>
+              <input id="meusDadosComoOutro" name="comoConheceuOutro" type="text" maxlength="160" placeholder="Descreva como conheceu o app" hidden>
               <div class="button-row">
                 <button id="meusDadosSalvarBtn" type="submit">💾 Salvar alterações</button>
               </div>
@@ -2043,14 +2057,28 @@
         <input id="acessoSiteNome" name="nome" type="text" maxlength="60" required autocomplete="given-name">
         <label for="acessoSiteSobrenome">Sobrenome</label>
         <input id="acessoSiteSobrenome" name="sobrenome" type="text" maxlength="60" required autocomplete="family-name">
-        <label for="acessoSiteIdade">Idade</label>
-        <input id="acessoSiteIdade" name="idade" type="number" min="12" max="120" required inputmode="numeric">
-        <label for="acessoSiteCidade">Cidade e estado</label>
-        <input id="acessoSiteCidade" name="cidadeEstado" type="text" maxlength="80" required autocomplete="address-level2" placeholder="Ex.: São Paulo, SP">
+        <div class="acesso-site-nasc-grid">
+          <div>
+            <label for="acessoSiteMes">Mês de nascimento</label>
+            <select id="acessoSiteMes" name="mesNascimento" required></select>
+          </div>
+          <div>
+            <label for="acessoSiteAno">Ano de nascimento</label>
+            <select id="acessoSiteAno" name="anoNascimento" required></select>
+          </div>
+        </div>
+        <p id="acessoSiteIdadeCalc" class="hint">Idade aproximada: —</p>
+        <label for="acessoSiteEstado">Estado</label>
+        <select id="acessoSiteEstado" name="estado" required></select>
+        <label for="acessoSiteCidade">Cidade</label>
+        <select id="acessoSiteCidade" name="cidade" required disabled>
+          <option value="">Escolha o estado primeiro</option>
+        </select>
         <label for="acessoSiteCongregacao">Congregação</label>
         <input id="acessoSiteCongregacao" name="congregacao" type="text" maxlength="100" required>
         <label for="acessoSiteComo">Como conheceu o app?</label>
-        <input id="acessoSiteComo" name="comoConheceu" type="text" maxlength="200" required>
+        <select id="acessoSiteComo" name="comoConheceuOpcao" required></select>
+        <input id="acessoSiteComoOutro" name="comoConheceuOutro" type="text" maxlength="160" placeholder="Descreva como conheceu o app" hidden>
         <div class="modal-actions">
           <button id="acessoSiteEnviarBtn" type="submit">💾 Salvar e continuar</button>
         </div>

@@ -8314,8 +8314,20 @@
       font-size: .9rem;
     }
 
-    .acesso-site-form input {
+    .acesso-site-form input,
+    .acesso-site-form select {
       width: 100%;
+    }
+
+    .acesso-site-nasc-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .acesso-site-nasc-grid label {
+      margin-top: 0;
     }
 
     .acesso-site-admin-entrar {

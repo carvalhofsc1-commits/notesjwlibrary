@@ -84,6 +84,28 @@ async function comDados(mutar) {
 const limpar = (valor, max) =>
   typeof valor === "string" ? valor.replace(/\r\n?/g, "\n").replace(/\s+/g, " ").trim().slice(0, max) : "";
 
+const ESTADOS_UF = new Set([
+  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO",
+]);
+
+const COMO_CONHECEU = new Set([
+  "Um amigo ou irmão da congregação",
+  "Grupo de WhatsApp",
+  "Pesquisa na internet",
+  "Redes sociais",
+  "Indicação na congregação ou reunião",
+  "Outros meios",
+]);
+
+const MESES_NOME = ["", "janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+
+function idadeAprox(ano, mes) {
+  const agora = new Date();
+  let idade = agora.getFullYear() - ano;
+  if (agora.getMonth() + 1 < mes) idade -= 1;
+  return idade;
+}
+
 function pedidoPublico(p) {
   return {
     id: p.id,
@@ -91,6 +113,10 @@ function pedidoPublico(p) {
     nome: p.nome,
     sobrenome: p.sobrenome,
     idade: p.idade,
+    anoNascimento: p.anoNascimento || null,
+    mesNascimento: p.mesNascimento || null,
+    cidade: p.cidade || "",
+    estado: p.estado || "",
     cidadeEstado: p.cidadeEstado,
     congregacao: p.congregacao,
     comoConheceu: p.comoConheceu,
@@ -110,14 +136,43 @@ function nomeESobrenome(a) {
   return { nome: nome.slice(0, 60), sobrenome };
 }
 
+function cidadeEstadoDe(a) {
+  const cidade = limpar(a && a.cidade, 60);
+  const estado = limpar(a && a.estado, 2).toUpperCase();
+  if (cidade && estado) return `${cidade}, ${estado}`;
+  return limpar(a && a.cidadeEstado, 80);
+}
+
 function identidadeDe(a) {
   const { nome, sobrenome } = nomeESobrenome(a);
+  const cidade = limpar(a && a.cidade, 60);
+  const estado = limpar(a && a.estado, 2).toUpperCase();
+  let cidadeFinal = cidade;
+  let estadoFinal = estado;
+  if ((!cidadeFinal || !estadoFinal) && a && a.cidadeEstado) {
+    const m = String(a.cidadeEstado).match(/^(.*),\s*([A-Za-z]{2})\s*$/);
+    if (m) {
+      if (!cidadeFinal) cidadeFinal = limpar(m[1], 60);
+      if (!estadoFinal) estadoFinal = m[2].toUpperCase();
+    }
+  }
+  const ano = Number(a && a.anoNascimento);
+  const mes = Number(a && a.mesNascimento);
+  const idade =
+    Number.isFinite(ano) && ano >= 1900 && Number.isFinite(mes) && mes >= 1 && mes <= 12
+      ? idadeAprox(ano, mes)
+      : a.idade || null;
   return {
     nome,
     sobrenome,
     nomeCompleto: `${nome} ${sobrenome}`.trim(),
-    idade: a.idade || null,
-    cidadeEstado: a.cidadeEstado || "",
+    idade,
+    anoNascimento: Number.isFinite(ano) ? ano : null,
+    mesNascimento: Number.isFinite(mes) && mes >= 1 && mes <= 12 ? mes : null,
+    mesNascimentoNome: Number.isFinite(mes) && mes >= 1 && mes <= 12 ? MESES_NOME[mes] : "",
+    cidade: cidadeFinal,
+    estado: estadoFinal,
+    cidadeEstado: cidadeEstadoDe({ cidade: cidadeFinal, estado: estadoFinal, cidadeEstado: a && a.cidadeEstado }),
     congregacao: a.congregacao || "",
     comoConheceu: a.comoConheceu || "",
     aprovadoEm: a.aprovadoEm || "",
@@ -128,16 +183,55 @@ function identidadeDe(a) {
 function camposDoCorpo(corpo) {
   const nome = limpar(corpo && corpo.nome, 60);
   const sobrenome = limpar(corpo && corpo.sobrenome, 60);
-  const cidadeEstado = limpar(corpo && corpo.cidadeEstado, 80);
+  const cidade = limpar(corpo && corpo.cidade, 60) || limpar(corpo && corpo.cidadeEstado, 60);
+  const estado = limpar(corpo && corpo.estado, 2).toUpperCase();
   const congregacao = limpar(corpo && corpo.congregacao, 100);
-  const comoConheceu = limpar(corpo && corpo.comoConheceu, 200);
-  const idade = Math.round(Number(corpo && corpo.idade));
+  const comoOpcao = limpar(corpo && corpo.comoConheceuOpcao, 80) || limpar(corpo && corpo.comoConheceu, 80);
+  const comoOutro = limpar(corpo && corpo.comoConheceuOutro, 160);
+  const ano = Math.round(Number(corpo && corpo.anoNascimento));
+  const mes = Math.round(Number(corpo && corpo.mesNascimento));
+  const anoAtual = new Date().getFullYear();
   if (!nome || !sobrenome) return { erro: "Informe o nome e o sobrenome." };
-  if (!Number.isFinite(idade) || idade < 12 || idade > 120) return { erro: "Informe uma idade válida." };
-  if (!cidadeEstado) return { erro: "Informe a cidade e o estado." };
+  if (!Number.isFinite(mes) || mes < 1 || mes > 12) return { erro: "Escolha o mês de nascimento." };
+  if (!Number.isFinite(ano) || ano < 1920 || ano > anoAtual - 12) return { erro: "Escolha o ano de nascimento." };
+  const idade = idadeAprox(ano, mes);
+  if (idade < 12 || idade > 120) return { erro: "A idade aproximada precisa ser de pelo menos 12 anos." };
+  if (!cidade) return { erro: "Informe a cidade." };
+  if (!ESTADOS_UF.has(estado)) return { erro: "Escolha o estado." };
   if (!congregacao) return { erro: "Informe o nome da congregação." };
-  if (!comoConheceu) return { erro: "Informe como você conheceu o app." };
-  return { campos: { nome, sobrenome, idade, cidadeEstado, congregacao, comoConheceu } };
+  if (!COMO_CONHECEU.has(comoOpcao)) return { erro: "Escolha como você conheceu o app." };
+  if (comoOpcao === "Outros meios" && !comoOutro) return { erro: "Descreva como você conheceu o app." };
+  const comoConheceu = comoOpcao === "Outros meios" ? `Outros meios: ${comoOutro}` : comoOpcao;
+  return {
+    campos: {
+      nome,
+      sobrenome,
+      idade,
+      anoNascimento: ano,
+      mesNascimento: mes,
+      cidade,
+      estado,
+      cidadeEstado: `${cidade}, ${estado}`,
+      congregacao,
+      comoConheceu,
+    },
+  };
+}
+
+function registroDeCampos(campos, extras = {}) {
+  return {
+    ...extras,
+    nome: campos.nome,
+    sobrenome: campos.sobrenome,
+    idade: campos.idade,
+    anoNascimento: campos.anoNascimento,
+    mesNascimento: campos.mesNascimento,
+    cidade: campos.cidade,
+    estado: campos.estado,
+    cidadeEstado: campos.cidadeEstado,
+    congregacao: campos.congregacao,
+    comoConheceu: campos.comoConheceu,
+  };
 }
 
 function gravarIdentidade(dados, id, campos, { pedidoId = "", statusPedido = "aprovado", aprovadoEm } = {}) {
@@ -145,12 +239,7 @@ function gravarIdentidade(dados, id, campos, { pedidoId = "", statusPedido = "ap
   const pedido = {
     id: pedidoId || randomUUID(),
     aparelhoId: id,
-    nome: campos.nome,
-    sobrenome: campos.sobrenome,
-    idade: campos.idade,
-    cidadeEstado: campos.cidadeEstado,
-    congregacao: campos.congregacao,
-    comoConheceu: campos.comoConheceu,
+    ...registroDeCampos(campos),
     criadoEm: agora,
     status: statusPedido,
     decididoEm: statusPedido === "pendente" ? null : agora,
@@ -160,16 +249,10 @@ function gravarIdentidade(dados, id, campos, { pedidoId = "", statusPedido = "ap
     if (dados.pedidos.length > MAX_PEDIDOS) dados.pedidos.length = MAX_PEDIDOS;
     return pedido;
   }
-  dados.aprovados[id] = {
+  dados.aprovados[id] = registroDeCampos(campos, {
     pedidoId: pedido.id,
     aprovadoEm: aprovadoEm || agora,
-    nome: campos.nome,
-    sobrenome: campos.sobrenome,
-    idade: campos.idade,
-    cidadeEstado: campos.cidadeEstado,
-    congregacao: campos.congregacao,
-    comoConheceu: campos.comoConheceu,
-  };
+  });
   dados.pedidos.unshift(pedido);
   if (dados.pedidos.length > MAX_PEDIDOS) dados.pedidos.length = MAX_PEDIDOS;
   return pedido;
@@ -248,17 +331,11 @@ export async function atualizarCadastroSite(corpo) {
       return { erro: "Este aparelho ainda não tem cadastro. Preencha a tela de identificação primeiro." };
     }
     const anterior = dados.aprovados[id];
-    dados.aprovados[id] = {
+    dados.aprovados[id] = registroDeCampos(campos, {
       pedidoId: anterior.pedidoId || "",
       aprovadoEm: anterior.aprovadoEm || agoraIso(),
       atualizadoEm: agoraIso(),
-      nome: campos.nome,
-      sobrenome: campos.sobrenome,
-      idade: campos.idade,
-      cidadeEstado: campos.cidadeEstado,
-      congregacao: campos.congregacao,
-      comoConheceu: campos.comoConheceu,
-    };
+    });
     return { ok: true, atualizado: true, cadastro: identidadeDe(dados.aprovados[id]) };
   });
 }
@@ -302,16 +379,21 @@ export async function decidirPedidoSite({ id, aprovar, codigoAdmin }) {
     p.status = aprovar ? "aprovado" : "recusado";
     p.decididoEm = agoraIso();
     if (aprovar) {
-      dados.aprovados[p.aparelhoId] = {
-        pedidoId: p.id,
-        aprovadoEm: p.decididoEm,
-        nome: p.nome,
-        sobrenome: p.sobrenome,
-        idade: p.idade,
-        cidadeEstado: p.cidadeEstado,
-        congregacao: p.congregacao,
-        comoConheceu: p.comoConheceu,
-      };
+      dados.aprovados[p.aparelhoId] = registroDeCampos(
+        {
+          nome: p.nome,
+          sobrenome: p.sobrenome,
+          idade: p.idade,
+          anoNascimento: p.anoNascimento,
+          mesNascimento: p.mesNascimento,
+          cidade: p.cidade,
+          estado: p.estado,
+          cidadeEstado: p.cidadeEstado,
+          congregacao: p.congregacao,
+          comoConheceu: p.comoConheceu,
+        },
+        { pedidoId: p.id, aprovadoEm: p.decididoEm }
+      );
     }
     return { ok: true, pedido: pedidoPublico(p) };
   });

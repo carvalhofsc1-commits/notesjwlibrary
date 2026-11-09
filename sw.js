@@ -141,7 +141,7 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  if (url.pathname.endsWith('defaults.json') || url.pathname.endsWith('emoji-busca.json')) {
+  if (url.pathname.endsWith('defaults.json') || url.pathname.endsWith('emoji-busca.json') || url.pathname.includes('/dados/cidades/')) {
     event.respondWith(redePrimeiro(request));
     return;
   }

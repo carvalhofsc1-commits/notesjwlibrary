@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.64'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.66'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -11727,6 +11727,210 @@ function saveTemplatesToStorage() {
     document.getElementById('estatisticasAtualizarBtn').addEventListener('click', estatisticasCarregar);
 
     // ---------- Acesso ao site (cadastro obrigatório; card separado do administrador) ----------
+    const CADASTRO_MESES = [
+      ['1', 'Janeiro'], ['2', 'Fevereiro'], ['3', 'Março'], ['4', 'Abril'], ['5', 'Maio'], ['6', 'Junho'],
+      ['7', 'Julho'], ['8', 'Agosto'], ['9', 'Setembro'], ['10', 'Outubro'], ['11', 'Novembro'], ['12', 'Dezembro']
+    ];
+    const CADASTRO_UFS = [
+      ['AC', 'Acre'], ['AL', 'Alagoas'], ['AP', 'Amapá'], ['AM', 'Amazonas'], ['BA', 'Bahia'], ['CE', 'Ceará'],
+      ['DF', 'Distrito Federal'], ['ES', 'Espírito Santo'], ['GO', 'Goiás'], ['MA', 'Maranhão'], ['MT', 'Mato Grosso'],
+      ['MS', 'Mato Grosso do Sul'], ['MG', 'Minas Gerais'], ['PA', 'Pará'], ['PB', 'Paraíba'], ['PR', 'Paraná'],
+      ['PE', 'Pernambuco'], ['PI', 'Piauí'], ['RJ', 'Rio de Janeiro'], ['RN', 'Rio Grande do Norte'],
+      ['RS', 'Rio Grande do Sul'], ['RO', 'Rondônia'], ['RR', 'Roraima'], ['SC', 'Santa Catarina'],
+      ['SP', 'São Paulo'], ['SE', 'Sergipe'], ['TO', 'Tocantins']
+    ];
+    const CADASTRO_COMO = [
+      'Um amigo ou irmão da congregação',
+      'Grupo de WhatsApp',
+      'Pesquisa na internet',
+      'Redes sociais',
+      'Indicação na congregação ou reunião',
+      'Outros meios'
+    ];
+
+    function cadastroIdadeAprox(ano, mes) {
+      const a = Number(ano);
+      const m = Number(mes);
+      if (!Number.isFinite(a) || !Number.isFinite(m) || m < 1 || m > 12) return null;
+      const agora = new Date();
+      let idade = agora.getFullYear() - a;
+      if (agora.getMonth() + 1 < m) idade -= 1;
+      return idade;
+    }
+
+    function cadastroPreencherSelect(select, itens, placeholder) {
+      if (!select) return;
+      const atual = select.value;
+      select.innerHTML = '';
+      const vazio = document.createElement('option');
+      vazio.value = '';
+      vazio.textContent = placeholder;
+      select.appendChild(vazio);
+      itens.forEach(item => {
+        const o = document.createElement('option');
+        if (Array.isArray(item)) { o.value = item[0]; o.textContent = item[1]; }
+        else { o.value = item; o.textContent = item; }
+        select.appendChild(o);
+      });
+      if ([...select.options].some(o => o.value === atual)) select.value = atual;
+    }
+
+    function cadastroMontarListas(prefixo) {
+      const mes = document.getElementById(prefixo + 'Mes');
+      const ano = document.getElementById(prefixo + 'Ano');
+      const estado = document.getElementById(prefixo + 'Estado');
+      const como = document.getElementById(prefixo + 'Como');
+      const anoAtual = new Date().getFullYear();
+      const anos = [];
+      for (let y = anoAtual - 12; y >= 1920; y--) anos.push([String(y), String(y)]);
+      cadastroPreencherSelect(mes, CADASTRO_MESES, 'Mês');
+      cadastroPreencherSelect(ano, anos, 'Ano');
+      cadastroPreencherSelect(estado, CADASTRO_UFS.map(([uf, nome]) => [uf, uf + ' — ' + nome]), 'Estado');
+      cadastroPreencherSelect(como, CADASTRO_COMO, 'Escolha…');
+    }
+
+    function cadastroAtualizarIdade(prefixo) {
+      const el = document.getElementById(prefixo + 'IdadeCalc');
+      if (!el) return;
+      const idade = cadastroIdadeAprox(
+        document.getElementById(prefixo + 'Ano').value,
+        document.getElementById(prefixo + 'Mes').value
+      );
+      el.textContent = idade == null ? 'Idade aproximada: —' : ('Idade aproximada: ' + idade + ' anos');
+    }
+
+    function cadastroAtualizarComoOutro(prefixo) {
+      const como = document.getElementById(prefixo + 'Como');
+      const outro = document.getElementById(prefixo + 'ComoOutro');
+      if (!como || !outro) return;
+      const mostrar = como.value === 'Outros meios';
+      outro.hidden = !mostrar;
+      outro.required = mostrar;
+      if (!mostrar) outro.value = '';
+    }
+
+    // Cidades por UF (IBGE): um JSON pequeno por estado, carregado só quando o estado é escolhido.
+    const CADASTRO_CIDADES_CACHE = Object.create(null);
+    const CADASTRO_CIDADES_PEDIDOS = Object.create(null);
+
+    function cadastroCidadeSelect(prefixo) {
+      return document.getElementById(prefixo + 'Cidade');
+    }
+
+    function cadastroCidadeReset(prefixo, mensagem) {
+      const cidade = cadastroCidadeSelect(prefixo);
+      if (!cidade) return;
+      cidade.innerHTML = '';
+      const o = document.createElement('option');
+      o.value = '';
+      o.textContent = mensagem || 'Escolha o estado primeiro';
+      cidade.appendChild(o);
+      cidade.value = '';
+      cidade.disabled = true;
+    }
+
+    async function cadastroCidadesDoEstado(uf) {
+      const sigla = String(uf || '').toUpperCase();
+      if (!/^[A-Z]{2}$/.test(sigla)) return [];
+      if (CADASTRO_CIDADES_CACHE[sigla]) return CADASTRO_CIDADES_CACHE[sigla];
+      if (CADASTRO_CIDADES_PEDIDOS[sigla]) return CADASTRO_CIDADES_PEDIDOS[sigla];
+      CADASTRO_CIDADES_PEDIDOS[sigla] = (async () => {
+        try {
+          const r = await fetch('dados/cidades/' + sigla + '.json', { cache: 'force-cache' });
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          const lista = await r.json();
+          const limpa = Array.isArray(lista) ? lista.filter(c => typeof c === 'string' && c) : [];
+          CADASTRO_CIDADES_CACHE[sigla] = limpa;
+          return limpa;
+        } catch (e) {
+          delete CADASTRO_CIDADES_PEDIDOS[sigla];
+          throw e;
+        }
+      })();
+      return CADASTRO_CIDADES_PEDIDOS[sigla];
+    }
+
+    async function cadastroCarregarCidades(prefixo, { manterCidade } = {}) {
+      const estado = document.getElementById(prefixo + 'Estado');
+      const cidade = cadastroCidadeSelect(prefixo);
+      if (!estado || !cidade) return;
+      const uf = estado.value;
+      const escolhida = manterCidade || cidade.value || '';
+      if (!uf) {
+        cadastroCidadeReset(prefixo, 'Escolha o estado primeiro');
+        return;
+      }
+      cidade.disabled = true;
+      cadastroPreencherSelect(cidade, [], 'Carregando cidades…');
+      try {
+        const lista = await cadastroCidadesDoEstado(uf);
+        cadastroPreencherSelect(cidade, lista, 'Escolha a cidade…');
+        cidade.disabled = false;
+        if (escolhida && [...cidade.options].some(o => o.value === escolhida)) cidade.value = escolhida;
+      } catch (e) {
+        cadastroPreencherSelect(cidade, [], 'Não foi possível carregar as cidades');
+        cidade.disabled = true;
+      }
+    }
+
+    function cadastroLigarFormulario(prefixo) {
+      cadastroMontarListas(prefixo);
+      cadastroCidadeReset(prefixo, 'Escolha o estado primeiro');
+      const mes = document.getElementById(prefixo + 'Mes');
+      const ano = document.getElementById(prefixo + 'Ano');
+      const estado = document.getElementById(prefixo + 'Estado');
+      const como = document.getElementById(prefixo + 'Como');
+      const atualizar = () => { cadastroAtualizarIdade(prefixo); cadastroAtualizarComoOutro(prefixo); };
+      mes.addEventListener('change', atualizar);
+      ano.addEventListener('change', atualizar);
+      como.addEventListener('change', () => cadastroAtualizarComoOutro(prefixo));
+      estado.addEventListener('change', () => { cadastroCarregarCidades(prefixo); });
+      atualizar();
+    }
+
+    function cadastroLerCampos(prefixo) {
+      return {
+        nome: document.getElementById(prefixo + 'Nome').value,
+        sobrenome: document.getElementById(prefixo + 'Sobrenome').value,
+        mesNascimento: document.getElementById(prefixo + 'Mes').value,
+        anoNascimento: document.getElementById(prefixo + 'Ano').value,
+        cidade: document.getElementById(prefixo + 'Cidade').value,
+        estado: document.getElementById(prefixo + 'Estado').value,
+        congregacao: document.getElementById(prefixo + 'Congregacao').value,
+        comoConheceuOpcao: document.getElementById(prefixo + 'Como').value,
+        comoConheceuOutro: document.getElementById(prefixo + 'ComoOutro').value
+      };
+    }
+
+    async function cadastroPreencherCampos(prefixo, cadastro) {
+      if (!cadastro) return;
+      document.getElementById(prefixo + 'Nome').value = cadastro.nome || '';
+      document.getElementById(prefixo + 'Sobrenome').value = cadastro.sobrenome || '';
+      document.getElementById(prefixo + 'Mes').value = cadastro.mesNascimento ? String(cadastro.mesNascimento) : '';
+      document.getElementById(prefixo + 'Ano').value = cadastro.anoNascimento ? String(cadastro.anoNascimento) : '';
+      document.getElementById(prefixo + 'Estado').value = cadastro.estado || '';
+      document.getElementById(prefixo + 'Congregacao').value = cadastro.congregacao || '';
+      const como = String(cadastro.comoConheceu || '');
+      const outro = document.getElementById(prefixo + 'ComoOutro');
+      const selectComo = document.getElementById(prefixo + 'Como');
+      if (como.indexOf('Outros meios:') === 0) {
+        selectComo.value = 'Outros meios';
+        outro.value = como.replace(/^Outros meios:\s*/, '');
+      } else if (CADASTRO_COMO.indexOf(como) >= 0) {
+        selectComo.value = como;
+        outro.value = '';
+      } else if (como) {
+        selectComo.value = 'Outros meios';
+        outro.value = como;
+      } else {
+        selectComo.value = '';
+        outro.value = '';
+      }
+      cadastroAtualizarIdade(prefixo);
+      cadastroAtualizarComoOutro(prefixo);
+      await cadastroCarregarCidades(prefixo, { manterCidade: cadastro.cidade || '' });
+    }
+
     const acessoSiteSection = document.getElementById('acessoSiteSection');
     const acessoSiteStatus = document.getElementById('acessoSiteStatus');
     const acessoSiteRestringir = document.getElementById('acessoSiteRestringir');
@@ -11738,6 +11942,8 @@ function saveTemplatesToStorage() {
     const acessoSiteFormStatus = document.getElementById('acessoSiteFormStatus');
     const acessoSiteEnviarBtn = document.getElementById('acessoSiteEnviarBtn');
     let acessoSiteLiberado = true;
+    cadastroLigarFormulario('acessoSite');
+    cadastroLigarFormulario('meusDados');
 
     function acessoSiteEscapar(t) {
       return String(t == null ? '' : t)
@@ -11760,7 +11966,7 @@ function saveTemplatesToStorage() {
         ? pendentes.map(p =>
           '<div class="acesso-site-item" data-pedido-id="' + acessoSiteEscapar(p.id) + '">' +
           '<strong>' + acessoSiteEscapar(p.nome + ' ' + p.sobrenome) + '</strong> · ' + acessoSiteEscapar(p.idade) + ' anos' +
-          '<span class="hint">' + acessoSiteEscapar(p.cidadeEstado) + ' · ' + acessoSiteEscapar(p.congregacao) +
+          '<span class="hint">' + acessoSiteEscapar(p.cidadeEstado || [p.cidade, p.estado].filter(Boolean).join(', ')) + ' · ' + acessoSiteEscapar(p.congregacao) +
           '<br>Como conheceu: ' + acessoSiteEscapar(p.comoConheceu) +
           '<br>Aparelho ' + acessoSiteEscapar(p.aparelhoId) + '… · ' + estatisticasQuando(p.criadoEm) + '</span>' +
           '<div class="button-row">' +
@@ -11777,7 +11983,7 @@ function saveTemplatesToStorage() {
           '<strong>' + acessoSiteEscapar(nome) + '</strong>' +
           (a.idade ? ' · ' + acessoSiteEscapar(a.idade) + ' anos' : '') +
           '<span class="hint">' +
-          [a.cidadeEstado, a.congregacao].filter(Boolean).map(acessoSiteEscapar).join(' · ') +
+          [a.cidadeEstado || [a.cidade, a.estado].filter(Boolean).join(', '), a.congregacao].filter(Boolean).map(acessoSiteEscapar).join(' · ') +
           (a.comoConheceu ? '<br>Como conheceu: ' + acessoSiteEscapar(a.comoConheceu) : '') +
           '<br>Aparelho ' + acessoSiteEscapar(a.aparelhoId) + '… · ' + estatisticasQuando(a.aprovadoEm) +
           '</span>' +
@@ -11908,16 +12114,7 @@ function saveTemplatesToStorage() {
       }
       acessoSiteEnviarBtn.disabled = true;
       acessoSiteFormStatus.textContent = 'Salvando…';
-      const r = await postConfig({
-        acao: 'acesso-site-pedir',
-        aparelhoId: id,
-        nome: document.getElementById('acessoSiteNome').value,
-        sobrenome: document.getElementById('acessoSiteSobrenome').value,
-        idade: document.getElementById('acessoSiteIdade').value,
-        cidadeEstado: document.getElementById('acessoSiteCidade').value,
-        congregacao: document.getElementById('acessoSiteCongregacao').value,
-        comoConheceu: document.getElementById('acessoSiteComo').value
-      });
+      const r = await postConfig(Object.assign({ acao: 'acesso-site-pedir', aparelhoId: id }, cadastroLerCampos('acessoSite')));
       acessoSiteEnviarBtn.disabled = false;
       if (!r.ok) {
         acessoSiteFormStatus.textContent = (r.data && r.data.erro) || 'Não foi possível salvar o cadastro agora.';
@@ -11937,24 +12134,6 @@ function saveTemplatesToStorage() {
     const meusDadosSection = document.getElementById('meusDadosSection');
     const meusDadosForm = document.getElementById('meusDadosForm');
     const meusDadosStatus = document.getElementById('meusDadosStatus');
-    const meusDadosCampos = {
-      nome: document.getElementById('meusDadosNome'),
-      sobrenome: document.getElementById('meusDadosSobrenome'),
-      idade: document.getElementById('meusDadosIdade'),
-      cidadeEstado: document.getElementById('meusDadosCidade'),
-      congregacao: document.getElementById('meusDadosCongregacao'),
-      comoConheceu: document.getElementById('meusDadosComo')
-    };
-
-    function meusDadosPreencher(cadastro) {
-      if (!cadastro) return;
-      meusDadosCampos.nome.value = cadastro.nome || '';
-      meusDadosCampos.sobrenome.value = cadastro.sobrenome || '';
-      meusDadosCampos.idade.value = cadastro.idade != null ? cadastro.idade : '';
-      meusDadosCampos.cidadeEstado.value = cadastro.cidadeEstado || '';
-      meusDadosCampos.congregacao.value = cadastro.congregacao || '';
-      meusDadosCampos.comoConheceu.value = cadastro.comoConheceu || '';
-    }
 
     async function meusDadosCarregar() {
       const id = aparelhoId();
@@ -11974,7 +12153,7 @@ function saveTemplatesToStorage() {
           : 'Complete primeiro a tela de identificação ao abrir o app.';
         return;
       }
-      meusDadosPreencher(r.data.cadastro);
+      await cadastroPreencherCampos('meusDados', r.data.cadastro);
       meusDadosStatus.textContent = r.data.cadastro.aprovadoEm
         ? 'Cadastro neste aparelho desde ' + estatisticasQuando(r.data.cadastro.aprovadoEm) + '.'
         : 'Pronto para editar.';
@@ -11991,22 +12170,13 @@ function saveTemplatesToStorage() {
       const btn = document.getElementById('meusDadosSalvarBtn');
       btn.disabled = true;
       meusDadosStatus.textContent = 'Salvando…';
-      const r = await postConfig({
-        acao: 'acesso-site-atualizar',
-        aparelhoId: id,
-        nome: meusDadosCampos.nome.value,
-        sobrenome: meusDadosCampos.sobrenome.value,
-        idade: meusDadosCampos.idade.value,
-        cidadeEstado: meusDadosCampos.cidadeEstado.value,
-        congregacao: meusDadosCampos.congregacao.value,
-        comoConheceu: meusDadosCampos.comoConheceu.value
-      });
+      const r = await postConfig(Object.assign({ acao: 'acesso-site-atualizar', aparelhoId: id }, cadastroLerCampos('meusDados')));
       btn.disabled = false;
       if (!r.ok) {
         meusDadosStatus.textContent = (r.data && r.data.erro) || 'Não foi possível salvar as alterações.';
         return;
       }
-      if (r.data && r.data.cadastro) meusDadosPreencher(r.data.cadastro);
+      if (r.data && r.data.cadastro) await cadastroPreencherCampos('meusDados', r.data.cadastro);
       meusDadosStatus.textContent = '✅ Dados atualizados.';
     });
 
