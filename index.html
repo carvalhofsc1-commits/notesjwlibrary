@@ -181,6 +181,11 @@
             </details>
           </div>
           <div id="anotacoesProgramaVista" hidden>
+            <div class="anotacoes-data">
+              <label for="anotacoesData" id="anotacoesDataRotulo">📅 Data do evento</label>
+              <input id="anotacoesData" type="date">
+              <p id="anotacoesDataInfo" class="anotacoes-msg" role="status" aria-live="polite"></p>
+            </div>
             <div class="anotacoes-programa-acoes">
               <button id="anotacoesVerNotas" class="anotacoes-ver-notas" type="button" hidden>✍️ Ver anotações</button>
               <button id="anotacoesTrocarEvento" class="secondary anotacoes-trocar" type="button">↩ Trocar de evento</button>
@@ -191,6 +196,8 @@
 
         <details id="anotacoesDetalhes" class="anotacoes-bloco anotacoes-detalhes" open>
           <summary>👤 Tema, orador e congregação</summary>
+          <label for="anotacoesDataReuniao">Data</label>
+          <input id="anotacoesDataReuniao" type="date">
           <label for="anotacoesTema">Tema / parte</label>
           <input id="anotacoesTema" type="text" autocomplete="off" placeholder="Tema do discurso ou da parte">
           <label for="anotacoesOrador">Orador</label>

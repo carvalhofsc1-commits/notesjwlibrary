@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.89'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.90'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -24787,6 +24787,7 @@ function saveTemplatesToStorage() {
         const d = dadosDaParte();
         const linhas = [];
         if (d.tema) linhas.push(convertTextWithStyle(d.tema, 'bold'));
+        if (d.data) linhas.push('Data: ' + d.data);
         if (d.orador) linhas.push('Orador: ' + d.orador);
         if (d.congregacao) linhas.push('Congregação: ' + d.congregacao);
         return linhas.length ? linhas.join('\n') + '\n\n' : '';
@@ -24827,6 +24828,47 @@ function saveTemplatesToStorage() {
       let ativa = false; // está na tela de anotação de uma parte (assembleia e congresso)
       let expandida = -1; // parte aberta na lista
       let chaveAtual = ''; // endereço (ou código digitado) do evento escolhido: é por ele que as anotações são guardadas
+      let dataAtual = ''; // data do evento escolhido (AAAA-MM-DD); no congresso, o primeiro dia (sexta-feira)
+      const dataEl = document.getElementById('anotacoesData');
+      const dataInfoEl = document.getElementById('anotacoesDataInfo');
+      const dataReuniaoEl = document.getElementById('anotacoesDataReuniao');
+      const DIAS_SEMANA = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+
+      // Datas: o evento da assembleia tem um dia só; o congresso tem três, sempre de sexta a domingo (basta informar a sexta).
+      const lerData = iso => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12) : null; };
+      const somarDias = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n, 12);
+      const doisDig = n => String(n).padStart(2, '0');
+      function formatarData(iso) {
+        const d = lerData(iso);
+        return d ? doisDig(d.getDate()) + '/' + doisDig(d.getMonth() + 1) + '/' + d.getFullYear() : '';
+      }
+      const ehCongresso = () => Boolean(MODOS[modo] && MODOS[modo].tipo === 'congresso');
+      // Última data do evento (o domingo, no congresso).
+      const fimDoEvento = iso => { const d = lerData(iso); return d ? (ehCongresso() ? somarDias(d, 2) : d) : null; };
+      // Data de uma parte: assembleia = a data do evento; congresso = o dia da seção da parte (Sexta, Sábado ou Domingo).
+      function dataDaParte(p) {
+        const d = lerData(dataAtual);
+        if (!d) return '';
+        if (!ehCongresso()) return formatarData(dataAtual);
+        const dia = /^sexta/i.test(p.secao || '') ? 0 : /^s[áa]bado/i.test(p.secao || '') ? 1 : /^domingo/i.test(p.secao || '') ? 2 : -1;
+        if (dia < 0) return '';
+        const x = somarDias(d, dia);
+        return doisDig(x.getDate()) + '/' + doisDig(x.getMonth() + 1) + '/' + x.getFullYear();
+      }
+      function textoDaData() {
+        const d = lerData(dataAtual);
+        if (!d) return '';
+        const nome = x => DIAS_SEMANA[x.getDay()].replace(/^./, c => c.toUpperCase());
+        if (!ehCongresso()) return nome(d) + ', ' + formatarData(dataAtual);
+        const fim = somarDias(d, 2);
+        return 'De sexta ' + doisDig(d.getDate()) + '/' + doisDig(d.getMonth() + 1) + ' a domingo ' + doisDig(fim.getDate()) + '/' + doisDig(fim.getMonth() + 1) + '/' + fim.getFullYear();
+      }
+      function mostrarData(aviso) {
+        dataEl.value = dataAtual || '';
+        document.getElementById('anotacoesDataRotulo').textContent = ehCongresso() ? '📅 Primeiro dia do congresso (sexta-feira)' : '📅 Data da assembleia';
+        dataInfoEl.textContent = aviso || textoDaData();
+        dataInfoEl.className = 'anotacoes-msg';
+      }
 
       const semMarcador = t => String(t || '').replace(/^[•·]\s*/, '');
       const comPrograma = () => Boolean(MODOS[modo] && MODOS[modo].programa);
@@ -24874,10 +24916,10 @@ function saveTemplatesToStorage() {
       function dadosDaParte() {
         if (comPrograma()) {
           const p = partes[parteAtual];
-          if (!p) return { tema: '', orador: '', congregacao: '' };
-          return { tema: [semMarcador(p.tema), p.textoTematico].filter(Boolean).join(' — '), orador: p.orador || '', congregacao: p.congregacao || '' };
+          if (!p) return { tema: '', orador: '', congregacao: '', data: '' };
+          return { tema: [semMarcador(p.tema), p.textoTematico].filter(Boolean).join(' — '), orador: p.orador || '', congregacao: p.congregacao || '', data: dataDaParte(p) };
         }
-        return { tema: temaEl.value.trim(), orador: oradorEl.value.trim(), congregacao: congEl.value.trim() };
+        return { tema: temaEl.value.trim(), orador: oradorEl.value.trim(), congregacao: congEl.value.trim(), data: formatarData(dataReuniaoEl.value) };
       }
 
       function guardarNota() {
@@ -25005,6 +25047,41 @@ function saveTemplatesToStorage() {
       }
       document.getElementById('anotacoesParteAnt').addEventListener('click', () => mudarParte(-1));
       document.getElementById('anotacoesParteProx').addEventListener('click', () => mudarParte(1));
+
+      dataEl.addEventListener('change', () => {
+        const d = lerData(dataEl.value);
+        if (!dataEl.value) { dataAtual = ''; mostrarData(); salvarRascunho(); return; }
+        if (!d) return;
+        if (ehCongresso() && d.getDay() !== 5) {
+          mostrarData('O congresso começa numa sexta-feira: escolha a sexta (o domingo é calculado sozinho).');
+          dataInfoEl.className = 'anotacoes-msg warn';
+          dataEl.value = dataAtual || '';
+          return;
+        }
+        dataAtual = dataEl.value;
+        mostrarData();
+        salvarRascunho();
+      });
+
+      // Abre sozinho o evento (que já tenha data gravada) que está em andamento ou começa nos próximos 30 dias; se mais de um, o mais próximo.
+      function eventoAutomatico() {
+        const salvos = (lerRascunhos()[modo] || {}).eventos || {};
+        const hoje = new Date();
+        const dia0 = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), 12);
+        let melhor = null;
+        Object.keys(salvos).forEach(chave => {
+          const e = salvos[chave];
+          const ini = lerData(e && e.data);
+          if (!ini || !Array.isArray(e.partes) || !e.partes.length) return;
+          const fim = fimDoEvento(e.data);
+          const faltam = Math.round((ini - dia0) / 86400000);
+          const emAndamento = ini <= dia0 && dia0 <= fim;
+          if (!emAndamento && !(faltam > 0 && faltam <= 30)) return;
+          const distancia = emAndamento ? 0 : faltam;
+          if (!melhor || distancia < melhor.distancia) melhor = { chave, distancia, emAndamento, faltam };
+        });
+        return melhor;
+      }
 
       // Voltar vai sempre para a tela anterior: anotação → programa → lista de eventos → menu.
       function voltar() {
@@ -25143,6 +25220,8 @@ function saveTemplatesToStorage() {
         parteAtual = -1;
         programaMeta = null;
         chaveAtual = '';
+        dataAtual = '';
+        dataReuniaoEl.value = '';
         vista = 'escolha';
         ativa = false;
         expandida = -1;
@@ -25167,6 +25246,12 @@ function saveTemplatesToStorage() {
           pintarEventos();
           pintarPartes();
           anotacoesCarregarEventos(false);
+          const auto = eventoAutomatico();
+          const salvo = auto && eventoSalvo(auto.chave);
+          if (salvo) {
+            aplicarPrograma(salvo.programaMeta, salvo.partes, auto.chave, salvo.data,
+              (auto.emAndamento ? 'Evento em andamento, aberto automaticamente. ' : 'Aberto automaticamente: começa em ' + auto.faltam + (auto.faltam === 1 ? ' dia. ' : ' dias. ')) + textoDaData());
+          }
         } else {
           carregarRascunho();
         }
@@ -25211,10 +25296,10 @@ function saveTemplatesToStorage() {
           const atual = dados[modo] && typeof dados[modo] === 'object' ? dados[modo] : {};
           if (comPrograma()) {
             const eventosSalvos = atual.eventos && typeof atual.eventos === 'object' ? atual.eventos : {};
-            if (chaveAtual && partes.length) eventosSalvos[chaveAtual] = { programaMeta, partes, parteAtual, em: new Date().toISOString() };
+            if (chaveAtual && partes.length) eventosSalvos[chaveAtual] = { programaMeta: { ...programaMeta, partes: [] }, partes, parteAtual, data: dataAtual, em: new Date().toISOString() };
             dados[modo] = { eventos: eventosSalvos };
           } else {
-            dados[modo] = { texto: texto.value, tema: temaEl.value, orador: oradorEl.value, congregacao: congEl.value, em: new Date().toISOString() };
+            dados[modo] = { texto: texto.value, tema: temaEl.value, orador: oradorEl.value, congregacao: congEl.value, data: dataReuniaoEl.value, em: new Date().toISOString() };
           }
           localStorage.setItem(ANOT_KEY, JSON.stringify(dados));
         } catch (e) { /* sem espaço */ }
@@ -25227,6 +25312,7 @@ function saveTemplatesToStorage() {
         temaEl.value = d.tema || '';
         oradorEl.value = d.orador || '';
         congEl.value = d.congregacao || '';
+        dataReuniaoEl.value = d.data || '';
       }
 
       // Anotações já feitas neste evento (se houver), para não perder ao escolher o mesmo evento de novo.
@@ -25242,7 +25328,7 @@ function saveTemplatesToStorage() {
         clearTimeout(tempoRascunho);
         tempoRascunho = setTimeout(salvarRascunho, 800);
       }
-      [texto, temaEl, oradorEl, congEl].forEach(campo => campo.addEventListener('input', agendarRascunho));
+      [texto, temaEl, oradorEl, congEl, dataReuniaoEl].forEach(campo => campo.addEventListener('input', agendarRascunho));
       document.addEventListener('visibilitychange', () => { if (document.hidden) salvarRascunho(); });
 
       document.querySelectorAll('[data-anotacoes-modo]').forEach(btn => {
@@ -25374,7 +25460,7 @@ function saveTemplatesToStorage() {
         // Evento já aberto antes neste aparelho: volta com as anotações que ele tinha, sem buscar de novo.
         const salvo = eventoSalvo(chave);
         if (salvo) {
-          aplicarPrograma(salvo.programaMeta, salvo.partes, chave);
+          aplicarPrograma(salvo.programaMeta, salvo.partes, chave, salvo.data);
           return;
         }
         if (!navigator.onLine) return dizerProg('Sem conexão com a internet.', true);
@@ -25416,10 +25502,12 @@ function saveTemplatesToStorage() {
       }
 
       // O evento escolhido abre na tela do programa: o tema uma vez no alto e, embaixo, a programação.
-      function aplicarPrograma(meta, lista, chave) {
+      function aplicarPrograma(meta, lista, chave, data, aviso) {
         programaMeta = meta;
         partes = lista;
         chaveAtual = chave;
+        dataAtual = data || '';
+        mostrarData(aviso);
         parteAtual = -1;
         expandida = -1;
         texto.value = '';
@@ -25527,7 +25615,7 @@ function saveTemplatesToStorage() {
           anotId = 'anot:' + modo + ':' + chaveAtual + ':' + parteAtual;
           titulo = (evento + ' · ' + (dadosDaParte().tema || 'Parte ' + (parteAtual + 1))).slice(0, 100);
         } else {
-          titulo = ('Reunião · ' + (temaEl.value.trim() || new Date().toLocaleDateString('pt-BR'))).slice(0, 100);
+          titulo = ('Reunião · ' + (temaEl.value.trim() || formatarData(dataReuniaoEl.value) || new Date().toLocaleDateString('pt-BR'))).slice(0, 100);
         }
         const jaExistia = historicoLer().some(g => g.anotId === anotId);
         const guardado = historicoSalvar({ tipo: 'nota', titulo, partes: [{ paragrafos: '', texto: textoDaAnotacao() }], ligar: false, anotId });

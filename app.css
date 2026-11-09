@@ -4488,33 +4488,60 @@
     /* Moldura do programa escolhido: nome pequeno, tema grande em negrito e texto temático discreto, tudo centralizado. */
     .anotacoes-programa-titulo {
       display: grid;
-      gap: 6px;
-      margin: 12px 0 0;
-      padding: 12px;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      background: var(--field);
+      gap: 4px;
+      margin: 0;
+      padding: 0 6px;
       text-align: center;
-      line-height: 1.3;
+      line-height: 1.35;
     }
 
     .anotacoes-pt-nome {
       color: var(--muted);
-      font-size: .8rem;
+      font-size: .76rem;
       font-weight: 400;
     }
 
     .anotacoes-pt-tema {
       color: var(--text);
-      font-size: 1.2rem;
-      font-weight: 800;
-      line-height: 1.25;
+      font-size: 1.05rem;
+      font-weight: 600;
+      line-height: 1.3;
     }
 
     .anotacoes-pt-texto {
-      color: var(--text);
-      font-size: .9rem;
+      color: var(--muted);
+      font-size: .84rem;
       font-weight: 400;
+    }
+
+    /* Ritmo vertical da tela: o mesmo espaço entre uma caixa e outra (nada fica emendado). */
+    .anotacoes-workspace {
+      display: grid;
+      gap: 14px;
+    }
+
+    .anotacoes-workspace > * {
+      margin: 0;
+    }
+
+    .anotacoes-workspace > [hidden] {
+      display: none;
+    }
+
+    .anotacoes-bloco {
+      margin: 0;
+    }
+
+    .anotacoes-data {
+      margin: 0 0 14px;
+    }
+
+    .anotacoes-data label {
+      margin: 0 0 6px;
+    }
+
+    .anotacoes-programa-acoes {
+      margin: 0 0 14px;
     }
 
     .anotacoes-pt-texto:empty {
@@ -4781,7 +4808,7 @@
 
     /* Cabeçalho da parte: no molde da barra de semana das Reuniões (setas amarelas), com o tema em destaque e o orador discreto embaixo. */
     .anotacoes-cab-parte {
-      margin: 0 0 10px;
+      margin: 0 0 14px;
     }
 
     .anotacoes-cab-parte .ai-week {
@@ -4841,7 +4868,7 @@
       gap: 8px;
       align-items: center;
       padding: 8px;
-      margin: 0 0 8px;
+      margin: 0 0 14px;
       border: 1px solid var(--line);
       border-radius: 12px;
       background: var(--card);
@@ -4857,7 +4884,7 @@
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 8px;
-      margin: 0 0 8px;
+      margin: 0 0 14px;
       padding: 10px;
       border: 1px dashed var(--line);
       border-radius: 12px;
@@ -4892,7 +4919,16 @@
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 6px;
-      margin: 0 0 8px;
+      margin: 0 0 10px;
+    }
+
+    .anotacoes-escrita > label {
+      margin: 2px 0 8px;
+    }
+
+    .anotacoes-escrita .anotacoes-gravar,
+    .anotacoes-escrita .anotacoes-acoes {
+      margin-top: 12px;
     }
 
     .anotacoes-fmt button {
