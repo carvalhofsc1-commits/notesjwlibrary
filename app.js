@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.100'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.101'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -26022,7 +26022,7 @@ function saveTemplatesToStorage() {
         const ext = /mp4|aac|m4a/.test(tipo) ? 'm4a' : /ogg/.test(tipo) ? 'ogg' : 'webm';
         gravacaoPronta = { arquivo: new File(g.pedacos, 'Anotacao.' + ext, { type: tipo, lastModified: Date.now() }), duracaoS, ext, salvo: false };
         gravInfoEl.textContent = '✅ Gravação pronta · ' + mmss(duracaoS);
-        gravarStatus.textContent = 'Toque em Fazer o resumo para transcrever e resumir, em Salvar o áudio para guardar o arquivo, ou descarte a gravação.';
+        gravarStatus.textContent = 'Toque em Resumo para transcrever e resumir, em Salvar para guardar o arquivo de áudio, ou descarte a gravação.';
         mostrarGravacao('pronta');
       });
 
@@ -26073,7 +26073,7 @@ function saveTemplatesToStorage() {
               gravacaoPronta = null;
               mostrarGravacao('ocioso');
             } else {
-              gravarStatus.textContent += ' O áudio ainda não foi salvo: salve-o ou descarte para gravar de novo.';
+              gravarStatus.textContent += ' O áudio ainda não foi salvo: toque em Salvar ou descarte para gravar de novo.';
             }
           }
         } finally {
