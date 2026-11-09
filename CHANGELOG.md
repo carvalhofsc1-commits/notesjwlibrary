@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.00
+
+Anotações: um pouco mais de espaço (uns 10 px) entre a linha colorida do tema e a barra das setas / a programação. Numeração: o último número da versão nunca passa de 99 (depois da 6.6.99 vem a 6.7.00); as versões 6.6.100 a 6.6.102 foram publicadas fora dessa regra e esta é a primeira que a retoma.
+
 ## 6.6.102
 
 Anotações: menos espaço entre a linha colorida do tema e o que vem logo abaixo (a barra das setas ou a programação).

@@ -5256,9 +5256,9 @@
       font-size: .86rem;
     }
 
-    /* Pouco espaço entre a linha colorida do tema e o que vem logo abaixo (a grade da tela dá 14 px; aqui sobram uns 5 px). */
+    /* Pouco espaço entre a linha colorida do tema e o que vem logo abaixo (a grade da tela dá 14 px; aqui sobram uns 10 px). */
     .screen-anotacoes .anotacoes-workspace > .anotacoes-programa-titulo {
-      margin-bottom: -9px;
+      margin-bottom: -4px;
     }
 
     /* A mesma linha colorida do topo (a cor do modo) fecha o tema por baixo. */
