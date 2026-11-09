@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.67'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.68'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -11049,7 +11049,6 @@ function saveTemplatesToStorage() {
     const CONFIG_ENDPOINT = '/api/config';
     // Identificador anônimo deste aparelho (estatísticas de acesso e uso da IA). Sem nome; só separa um celular do outro.
     const APARELHO_ID_KEY = 'jwLibraryNoteAplicarAparelhoIdV1';
-    const APARELHO_PING_DIA_KEY = 'jwLibraryNoteAplicarPingDiaV1';
     function aparelhoId() {
       try {
         let id = localStorage.getItem(APARELHO_ID_KEY) || '';
@@ -11060,8 +11059,9 @@ function saveTemplatesToStorage() {
         return id;
       } catch (e) { return ''; }
     }
-    // Visita do dia + perfil do aparelho (nível admin e quais códigos de recurso estão salvos).
-    // Uma visita por dia no servidor; o perfil pode ser reenviado no mesmo dia (ex.: salvou um código).
+    // Visita do dia + perfil (nível admin e quais códigos estão salvos). Sempre reenvia o perfil:
+    // o servidor já conta só uma visita por dia; pular no cliente fazia o perfil ficar vazio depois de um
+    // ping antigo no mesmo dia (ex.: atualizou o app e o sessionStorage ainda marcava "já pingou").
     function estatisticasPerfilAparelho() {
       return {
         pesquisa: Boolean(codigoAcessoSalvo()),
@@ -11072,13 +11072,10 @@ function saveTemplatesToStorage() {
         s34: Boolean(codigoS34Salvo())
       };
     }
-    async function estatisticasPing(forcarPerfil) {
+    async function estatisticasPing() {
       const id = aparelhoId();
       if (!id || !navigator.onLine || !servidoPelaWeb()) return;
       try {
-        const hoje = new Date().toISOString().slice(0, 10);
-        if (!forcarPerfil && sessionStorage.getItem(APARELHO_PING_DIA_KEY) === hoje) return;
-        sessionStorage.setItem(APARELHO_PING_DIA_KEY, hoje);
         const corpo = { acao: 'estatisticas-ping', aparelhoId: id, recursos: estatisticasPerfilAparelho() };
         const admin = senhaAdminSalva();
         if (admin) corpo.codigoAdmin = admin;
@@ -11089,8 +11086,8 @@ function saveTemplatesToStorage() {
         });
       } catch (e) { /* estatísticas não bloqueiam o app */ }
     }
-    setTimeout(() => estatisticasPing(false), 2500);
-    document.addEventListener('acesso-salvo', () => { estatisticasPing(true); });
+    setTimeout(estatisticasPing, 2500);
+    document.addEventListener('acesso-salvo', () => { estatisticasPing(); });
 
     // Devolve { ok, status, data, unavailable, error }. O código de administrador é conferido no servidor.
     async function postConfig(payload) {
@@ -11771,6 +11768,7 @@ function saveTemplatesToStorage() {
       const codigo = codigoAdminAtual();
       if (!codigo) return;
       estatisticasStatus.textContent = 'Carregando…';
+      await estatisticasPing(); // atualiza nível/códigos deste aparelho antes de ler
       const r = await postConfig({ acao: 'estatisticas-ler', codigo });
       if (!r.ok) {
         estatisticasStatus.textContent = (r.data && r.data.erro) || 'Não foi possível ler as estatísticas agora.';
@@ -12060,6 +12058,7 @@ function saveTemplatesToStorage() {
         return;
       }
       acessoSiteStatus.textContent = 'Carregando…';
+      await estatisticasPing(); // atualiza nível/códigos deste aparelho antes de listar
       const r = await postConfig({ acao: 'acesso-site-ler', codigo });
       if (!r.ok) {
         acessoSiteStatus.textContent = (r.data && r.data.erro) || 'Não foi possível ler o controle de acesso agora.';

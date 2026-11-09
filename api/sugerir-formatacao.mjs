@@ -4089,15 +4089,20 @@ export default async function handler(req, res) {
     try {
       await tratarPedido(req, res);
     } finally {
+      // Precisa await: senão a função da Vercel encerra antes de gravar o Blob e o uso some.
       const s = contextoDoPedido.getStore();
       if (s && s.aparelhoId && (s.consultasIa || s.tokensIn || s.tokensOut)) {
-        registrarUsoIa({
-          aparelhoId: s.aparelhoId,
-          tarefa: s.tarefaIa || tarefaPedido || "ia",
-          entrada: s.tokensIn,
-          saida: s.tokensOut,
-          consultas: s.consultasIa || 1,
-        }).catch(() => {});
+        try {
+          await registrarUsoIa({
+            aparelhoId: s.aparelhoId,
+            tarefa: s.tarefaIa || tarefaPedido || "ia",
+            entrada: s.tokensIn,
+            saida: s.tokensOut,
+            consultas: s.consultasIa || 1,
+          });
+        } catch (e) {
+          console.error("Estatísticas: falha ao gravar uso da IA", e && e.message);
+        }
       }
     }
   });

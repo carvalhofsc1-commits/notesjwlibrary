@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.68
+
+Correção das estatísticas: o perfil (admin/normal e códigos salvos) passa a sincronizar de verdade ao abrir o app ou atualizar a lista; o uso de IA (ex.: resumo de capítulo) é gravado com await e com nova tentativa se houver conflito no Blob — antes o ping do dia e a gravação em paralelo apagavam nível, códigos e tokens.
+
 ## 6.6.67
 
 Estatísticas de acesso: cada aparelho mostra o **nome do usuário** (quando cadastrado), os **recursos de IA usados no último acesso** e quantos **tokens** foram gastos neles. Em **usuários identificados**: nível **normal** ou **admin** e quais **recursos especiais** (códigos) aquele aparelho tem salvos.

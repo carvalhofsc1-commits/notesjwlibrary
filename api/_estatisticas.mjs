@@ -143,15 +143,25 @@ function emFila(trabalho) {
   return proxima;
 }
 
+// Lê → altera → confere se ninguém gravou no meio → grava. Em conflito, tenta de novo em cima do JSON fresco
+// (ping e uso de IA em instâncias diferentes da Vercel não se apagam mutuamente).
 async function comDados(mutar) {
   if (!estatisticasConfiguradas()) return null;
   return emFila(async () => {
-    const dados = podar((await lerBruto()) || vazio());
-    if (!dados.aparelhos) dados.aparelhos = {};
-    if (!dados.dias) dados.dias = {};
-    const resultado = mutar(dados) || null;
-    await gravarBruto(podar(dados));
-    return resultado;
+    for (let tentativa = 0; tentativa < 5; tentativa++) {
+      const bruto = (await lerBruto()) || vazio();
+      const marca = bruto.atualizadoEm || "";
+      const dados = podar(JSON.parse(JSON.stringify(bruto)));
+      if (!dados.aparelhos) dados.aparelhos = {};
+      if (!dados.dias) dados.dias = {};
+      const resultado = mutar(dados) || null;
+      const outra = (await lerBruto()) || vazio();
+      if ((outra.atualizadoEm || "") !== marca) continue;
+      await gravarBruto(podar(dados));
+      return resultado;
+    }
+    console.error("Estatísticas: desistiu após conflitos de gravação");
+    return null;
   });
 }
 
