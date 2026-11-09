@@ -1448,6 +1448,32 @@ function partesDoProgramaHtml(html, docId) {
   return partes;
 }
 
+// Perguntas de recapitulação da assembleia de circuito ("Preste atenção às respostas para as seguintes perguntas"): parágrafos numerados
+// ("1. Como podemos…? (Sal. 37:4)") seguidos do campo "Sua resposta". Devolve [] em qualquer outro documento.
+export function perguntasDoDocHtml(html) {
+  const perguntas = [];
+  for (const m of String(html || "").matchAll(/<p\b[^>]*data-pid="\d+"[^>]*>\s*<span class="txtSrcBullet">\s*(\d{1,2})\.\s*<\/span>([\s\S]*?)<\/p>\s*<div class="gen-field"/gi)) {
+    const bruto = m[2];
+    const refs = [...bruto.matchAll(/<a\b[^>]*class="b"[^>]*>([\s\S]*?)<\/a>/gi)].map((r) => textoDe(r[1])).join(" ").replace(/\s+/g, " ").replace(/\s+([,;])/g, "$1").trim();
+    const texto = textoDe(bruto.replace(/\([^()]*<a\b[\s\S]*$/i, "")).replace(/\s+/g, " ").trim();
+    if (texto.length > 4) perguntas.push({ n: Number(m[1]), texto, refs });
+  }
+  return perguntas;
+}
+
+// Partes do programa que têm pergunta de recapitulação: os discursos principais, na ordem. Ficam de fora música, cântico, oração, intervalo,
+// anúncios, batismo, experiências e o resumo de A Sentinela; uma série de discursos conta como UMA parte (a do título da série), sem os discursos dela.
+const SEM_PERGUNTA_RE = /^(música|vídeo musical|cântico|oração|intervalo|anúncios)\b|batismo|experi[êe]ncias|resumo de a sentinela/i;
+export function partesComPergunta(partes) {
+  const indices = [];
+  (partes || []).forEach((p, i) => {
+    const tema = String((p && p.tema) || "").trim();
+    if (!p || !p.horario || /^[•·]/.test(tema) || SEM_PERGUNTA_RE.test(tema)) return;
+    indices.push(i);
+  });
+  return indices;
+}
+
 async function lerDocPrograma(docId, timeoutMs) {
   const html = await baixar(`${BASE}/pt/wol/d/r5/lp-t/${docId}`, timeoutMs);
   const titulo =
@@ -1466,6 +1492,7 @@ async function lerDocPrograma(docId, timeoutMs) {
     referencias: referenciasDe(temaHtml),
     wolUrl: `${BASE}/pt/wol/d/r5/lp-t/${docId}`,
     partes: partesDoProgramaHtml(html, docId),
+    perguntas: perguntasDoDocHtml(html),
     ligados: docsNoHtml(html).filter((id) => id !== String(docId)),
     pub: ((html.match(/\bpub-([A-Za-z]{1,6}-[A-Za-z0-9]+)/) || [])[1] || ""),
   };
@@ -1650,6 +1677,20 @@ export async function lerProgramaPublicacao(entrada, { timeoutMs = 12000 } = {})
     doc.partes.map((p) => (varios && doc.titulo ? { ...p, secao: p.secao ? `${doc.titulo} · ${p.secao}` : doc.titulo, dia: doc.titulo, diaTema: doc.diaTema || "" } : p)),
   );
 
+  // Só a assembleia de circuito tem a segunda sessão (perguntas de recapitulação). Com o mesmo número de perguntas e de partes que têm pergunta,
+  // cada pergunta vai para a parte da mesma posição (perguntaN); senão fica "pendente" e o app pede à IA que organize.
+  const perguntas = (lidos.find((d) => d.perguntas && d.perguntas.length) || {}).perguntas || [];
+  let atribuicao = "";
+  if (perguntas.length) {
+    const elegiveis = partesComPergunta(partes);
+    if (elegiveis.length === perguntas.length) {
+      elegiveis.forEach((indice, k) => { partes[indice].perguntaN = perguntas[k].n; });
+      atribuicao = "auto";
+    } else {
+      atribuicao = "pendente";
+    }
+  }
+
   return {
     pub: (meta && meta.pub) || pub || (capa && capa.pub) || (programa && programa.pub) || "",
     titulo,
@@ -1660,6 +1701,8 @@ export async function lerProgramaPublicacao(entrada, { timeoutMs = 12000 } = {})
     docid: docPrograma,
     docidCapa: String(docidCapa || docPrograma || ""),
     partes,
+    perguntas,
+    atribuicao,
   };
 }
 

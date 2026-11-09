@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.24'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.25'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -25157,9 +25157,119 @@ function saveTemplatesToStorage() {
         return k < 0 ? '' : semMarcador(partes[k].tema).replace(/^s[ée]rie de discursos\s*:\s*/i, '').trim();
       };
       // Parte com orador, congregação ou anotação já preenchidos: o cartão dela ganha a cor do modo.
-      const preenchida = p => Boolean(p && (p.orador || p.congregacao || (p.nota && p.nota.trim())));
+      const preenchida = p => Boolean(p && (p.orador || p.congregacao || (p.nota && p.nota.trim()) || (p.resposta && p.resposta.trim())));
       const iniciaveis = () => partes.map((p, i) => i).filter(i => !ehInfo(partes[i]));
-      const temNotas = () => partes.some(p => p.nota && p.nota.trim());
+      // Partes com anotação ou com resposta à pergunta de recapitulação.
+      const indicesComAnotacao = () => partes.map((p, i) => i).filter(i => (partes[i].nota || '').trim() || (partes[i].resposta || '').trim());
+      const temNotas = () => indicesComAnotacao().length > 0;
+
+      // Perguntas de recapitulação (só a assembleia de circuito): perguntaN aponta para a lista programaMeta.perguntas. Numa série de discursos há UMA pergunta,
+      // guardada na parte do título da série (com a resposta), e ela vale para todos os discursos da série.
+      const perguntasDoEvento = () => (programaMeta && Array.isArray(programaMeta.perguntas) ? programaMeta.perguntas : []);
+      const donaDaPergunta = i => { const k = indiceDaSerie(i); return k >= 0 ? k : i; };
+      const perguntaDaParte = i => {
+        const dono = comPrograma() && partes[donaDaPergunta(i)];
+        return dono && dono.perguntaN ? perguntasDoEvento().find(q => q.n === dono.perguntaN) || null : null;
+      };
+      const respostaDaParte = i => { const dono = partes[donaDaPergunta(i)]; return (dono && dono.resposta) || ''; };
+      const revisaoEl = document.getElementById('anotacoesRevisao');
+      const respostaEl = document.getElementById('anotacoesResposta');
+      const perguntasBox = document.getElementById('anotacoesPerguntas');
+      const perguntasTexto = document.getElementById('anotacoesPerguntasTexto');
+      const perguntasBtn = document.getElementById('anotacoesPerguntasIa');
+      let perguntasExtra = ''; // recado da última organização pela IA
+      let atribuindoPerguntas = false;
+      const textoDaPergunta = q => q.n + '. ' + q.texto + (q.refs ? ' (' + q.refs + ')' : '');
+      // Bloco da pergunta e da resposta que vai junto ao copiar, salvar, enviar ao JW Library e exportar para Word. soProprio: no Word de todas as anotações
+      // a resposta de uma série aparece uma vez só (na parte do título da série), não em cada discurso dela.
+      function revisaoTexto(i, soProprio) {
+        const q = perguntaDaParte(i);
+        const r = q ? respostaDaParte(i).trim() : '';
+        if (!q || !r || (soProprio && donaDaPergunta(i) !== i)) return '';
+        return '\n\n❓ ' + estiloComAcentos('Pergunta de recapitulação', 'bold') + '\n' + q.texto + '\n' + r;
+      }
+      const temConteudoAtual = () => Boolean(texto.value.trim() || (comPrograma() && ativa && respostaDaParte(parteAtual).trim() && perguntaDaParte(parteAtual)));
+      function pintarRevisao() {
+        const q = ativa ? perguntaDaParte(parteAtual) : null;
+        revisaoEl.hidden = !q;
+        if (!q) return;
+        document.getElementById('anotacoesRevisaoPergunta').textContent = textoDaPergunta(q);
+        const dono = donaDaPergunta(parteAtual);
+        if (respostaEl.dataset.dono !== String(dono)) {
+          respostaEl.value = partes[dono].resposta || '';
+          respostaEl.dataset.dono = String(dono);
+        }
+      }
+      respostaEl.addEventListener('input', () => {
+        if (!ativa || !perguntaDaParte(parteAtual)) return;
+        partes[donaDaPergunta(parteAtual)].resposta = respostaEl.value;
+        agendarRascunho();
+      });
+      // Aviso no programa: como as perguntas foram atribuídas e, quando a ordem não bateu, o botão da IA.
+      function pintarAvisoPerguntas() {
+        const perguntas = perguntasDoEvento();
+        const mostrar = comPrograma() && !ehCongresso() && perguntas.length > 0 && vista === 'programa';
+        perguntasBox.hidden = !mostrar;
+        if (!mostrar) return;
+        const atribuidas = partes.filter(p => p.perguntaN).length;
+        const completo = atribuidas === perguntas.length;
+        const porIa = programaMeta.atribuicao === 'ia';
+        perguntasTexto.textContent = '❓ ' + (completo
+          ? perguntas.length + ' perguntas de recapitulação ' + (porIa ? 'organizadas pela IA nos discursos (confira).' : 'atribuídas aos discursos pela ordem do programa.')
+          : atribuidas + ' de ' + perguntas.length + ' perguntas de recapitulação atribuídas aos discursos: a ordem automática não bateu.') + (perguntasExtra ? ' ' + perguntasExtra : '');
+        perguntasBtn.hidden = completo && !porIa;
+        perguntasBtn.disabled = atribuindoPerguntas;
+        perguntasBtn.textContent = porIa || completo ? '🤖 Organizar de novo com a IA' : '🤖 Organizar as perguntas com a IA';
+      }
+      // A IA organiza (só quando a ordem automática não bate, ou a pedido): o servidor confere os números que ela devolve.
+      async function atribuirPerguntasIa() {
+        const perguntas = perguntasDoEvento();
+        if (!perguntas.length || atribuindoPerguntas) return;
+        if (!navigator.onLine) { perguntasExtra = 'Sem conexão com a internet.'; return pintarAvisoPerguntas(); }
+        atribuindoPerguntas = true;
+        perguntasExtra = 'A IA está organizando as perguntas nos discursos…';
+        pintarAvisoPerguntas();
+        try {
+          const lista = partes.map((p, i) => ({ i, tema: p.tema || '', textoTematico: p.textoTematico || '', secao: p.secao || '', horario: p.horario || '', info: ehInfo(p) && !ehSerie(p) }))
+            .filter(x => x.horario && !x.info && !/^[•·]/.test(x.tema))
+            .map(({ i, tema, textoTematico, secao }) => ({ i, tema, textoTematico, secao }));
+          const r = await postStudy({ tarefa: 'anotacoes-perguntas', codigo: codigoAcessoSalvo(), perguntas, partes: lista }, IA_ESPERA_MS);
+          if (!r.ok) { perguntasExtra = (r.data && r.data.erro) || 'Não consegui organizar as perguntas agora.'; return; }
+          const atrib = (r.data && r.data.atribuicoes) || [];
+          if (!atrib.length) { perguntasExtra = 'A IA não achou em quais discursos colocar as perguntas.'; return; }
+          partes.forEach(p => { p.perguntaN = 0; });
+          atrib.forEach(a => { if (partes[a.parte]) partes[a.parte].perguntaN = a.pergunta; });
+          programaMeta.atribuicao = 'ia';
+          const sem = (r.data && r.data.semParte) || [];
+          perguntasExtra = sem.length ? 'Sem discurso certo para a pergunta ' + sem.join(', ') + '.' : '';
+          salvarRascunho();
+          pintarPartes();
+        } catch (e) {
+          perguntasExtra = 'Não consegui organizar as perguntas agora.';
+        } finally {
+          atribuindoPerguntas = false;
+          pintarAvisoPerguntas();
+        }
+      }
+      perguntasBtn.addEventListener('click', atribuirPerguntasIa);
+      // Evento guardado antes das perguntas existirem: busca só as perguntas (e a ordem automática) e junta ao que já está guardado.
+      async function completarPerguntas() {
+        if (ehCongresso() || !programaMeta || programaMeta.perguntas !== undefined || !navigator.onLine) return;
+        const ref = programaMeta.entrada || chaveAtual;
+        if (!/^https?:|^[A-Za-z]{1,6}-[A-Za-z0-9]+$/.test(ref)) return;
+        const chave = chaveAtual;
+        try {
+          const r = await postStudy({ tarefa: 'programa-pub', entrada: ref }, 25000);
+          if (!r.ok || !r.data || chave !== chaveAtual) return;
+          programaMeta.perguntas = Array.isArray(r.data.perguntas) ? r.data.perguntas : [];
+          programaMeta.atribuicao = r.data.atribuicao || '';
+          const porParte = new Map((r.data.partes || []).map(x => [x.docid + '|' + x.par, x]));
+          partes.forEach(p => { const x = porParte.get(p.docid + '|' + p.par); if (x && x.perguntaN) p.perguntaN = x.perguntaN; });
+          salvarRascunho();
+          pintarPartes();
+          if (programaMeta.atribuicao === 'pendente') atribuirPerguntasIa();
+        } catch (e) { /* sem conexão: tenta na próxima vez */ }
+      }
 
       // Mostra só o que pertence à tela de agora: no programa não aparece o campo de anotações, e na lista de eventos não aparece nada do evento.
       function atualizarVista() {
@@ -25182,6 +25292,8 @@ function saveTemplatesToStorage() {
         document.getElementById('anotacoesTrocarTopo').hidden = !naTelaDoPrograma; // Trocar de evento: no topo da tela do programa
         topoEl.toggleAttribute('data-troca', naTelaDoPrograma);
         document.querySelector('.anotacoes-programa-acoes').hidden = !temNotas(); // sem anotações, os botões Ver e Exportar não aparecem e a linha some
+        pintarRevisao();
+        pintarAvisoPerguntas();
         if (ativa) {
           const d = dadosDaParte();
           preencherLinhaTema(document.getElementById('anotacoesCabTema'), partes[parteAtual], 'Sem tema', tituloDaSerie(parteAtual));
@@ -25298,7 +25410,7 @@ function saveTemplatesToStorage() {
             h.textContent = p.horario || '';
             const t = document.createElement('span');
             t.className = 'anotacoes-parte-texto';
-            t.textContent = semMarcador(p.tema);
+            t.textContent = semMarcador(p.tema) + (p.perguntaN ? ' ❓' : '');
             item.append(h, t);
             partesEl.appendChild(item);
             return;
@@ -25326,6 +25438,13 @@ function saveTemplatesToStorage() {
             marca.title = 'Tem anotações';
             marca.textContent = '✍️';
             btn.appendChild(marca);
+          }
+          if (p.perguntaN) {
+            const marcaPergunta = document.createElement('span');
+            marcaPergunta.className = 'anotacoes-parte-marca';
+            marcaPergunta.title = 'Tem pergunta de recapitulação';
+            marcaPergunta.textContent = '❓';
+            btn.appendChild(marcaPergunta);
           }
           btn.addEventListener('click', () => {
             expandida = expandida === i ? -1 : i;
@@ -25392,6 +25511,7 @@ function saveTemplatesToStorage() {
         expandida = i;
         abrirDiaDaParte(i);
         texto.value = (partes[i] && partes[i].nota) || '';
+        respostaEl.dataset.dono = '';
         vista = 'anotando';
         pintarPartes();
         gravarStatus.textContent = '';
@@ -25499,8 +25619,9 @@ function saveTemplatesToStorage() {
       document.getElementById('anotacoesTrocarTopo').addEventListener('click', () => { salvarRascunho(); irPara('escolha'); });
       // Ver anotações: abre a primeira parte (na ordem do programa) que já tem anotação.
       verNotasBtn.addEventListener('click', () => {
-        const i = partes.findIndex(p => p.nota && p.nota.trim());
-        if (i >= 0) iniciarAnotacao(i);
+        const achada = indicesComAnotacao()[0];
+        if (achada === undefined) return;
+        iniciarAnotacao(ehInfo(partes[achada]) ? achada + 1 : achada);
       });
 
       // ----- Lista dos programas (assembleias e congressos): vem da WOL ao abrir a tela, sem código nem link -----
@@ -26090,6 +26211,7 @@ function saveTemplatesToStorage() {
           }
           aplicarPrograma(salvo.programaMeta, salvo.partes, chave, salvo.data);
           salvarRascunho();
+          completarPerguntas();
           return;
         }
         if (!navigator.onLine) return dizerProg('Sem conexão com a internet.', true);
@@ -26123,11 +26245,15 @@ function saveTemplatesToStorage() {
             congregacao: p.congregacao || '',
             dia: p.dia || '', // congresso: o dia (Sexta-feira…) e o tema do dia
             diaTema: p.diaTema || '',
+            perguntaN: p.perguntaN || 0, // assembleia de circuito: a pergunta de recapitulação deste discurso
+            resposta: '',
             nota: ''
           }));
           meta.entrada = ref;
+          meta.perguntas = Array.isArray(meta.perguntas) ? meta.perguntas : [];
           aplicarPrograma(meta, lista, chave);
           salvarRascunho();
+          if (meta.atribuicao === 'pendente') atribuirPerguntasIa(); // a ordem não bateu: a IA organiza
         } finally {
           carregandoPrograma = false;
         }
@@ -26139,6 +26265,8 @@ function saveTemplatesToStorage() {
         partes = lista;
         chaveAtual = chave;
         diaAberto = '';
+        perguntasExtra = '';
+        respostaEl.dataset.dono = '';
         dataAtual = data || '';
         mostrarData(aviso);
         parteAtual = -1;
@@ -26193,7 +26321,7 @@ function saveTemplatesToStorage() {
         jwlBtn.addEventListener('click', async () => {
           const destino = anotacoesJwlDestino();
           if (!destino) return dizer('Selecione uma parte do programa carregada da WOL.', true);
-          if (!texto.value.trim()) return dizer('Escreva as anotações antes de enviar ao JW Library.', true);
+          if (!temConteudoAtual()) return dizer('Escreva as anotações antes de enviar ao JW Library.', true);
           const nota = textoDaAnotacao(); // com o tema, o horário e os dados do orador
           try {
             await navigator.clipboard.writeText(nota);
@@ -26256,7 +26384,7 @@ function saveTemplatesToStorage() {
       const exportarNotasBtn = document.getElementById('anotacoesExportarNotas');
       exportarNotasBtn.addEventListener('click', async () => {
         guardarNota();
-        const comNota = partes.map((p, i) => i).filter(i => (partes[i].nota || '').trim());
+        const comNota = indicesComAnotacao();
         if (!comNota.length) return dizer('Ainda não há anotações neste evento.', true);
         exportarNotasBtn.disabled = true;
         const rotulo = exportarNotasBtn.textContent;
@@ -26285,7 +26413,11 @@ function saveTemplatesToStorage() {
               const dataDoDia = dataDaParte(p);
               linhas.push(estiloComAcentos(p.dia.toUpperCase() + (dataDoDia ? ' — ' + dataDoDia : '') + (p.diaTema ? ' — ' + p.diaTema : ''), 'bold'), '');
             }
-            linhas.push(cabecalhoTexto(i).replace(/\n+$/, ''), '', p.nota.trim(), '', '');
+            linhas.push(cabecalhoTexto(i).replace(/\n+$/, ''), '');
+            if ((p.nota || '').trim()) linhas.push(p.nota.trim());
+            const revisao = revisaoTexto(i, true).trim();
+            if (revisao) linhas.push('', revisao);
+            linhas.push('', '');
           });
           const titulo = (nomeEvento + (temaEvento ? ' — ' + temaEvento : '')).slice(0, 80);
           const blob = await docxGerar(linhas.join('\n').trim(), titulo, null, 1);
@@ -26302,14 +26434,14 @@ function saveTemplatesToStorage() {
 
       // Salvar e Word: nas partes de assembleia e congresso o cabeçalho (tema, orador e congregação) vai junto automaticamente.
       function textoDaAnotacao() {
-        return (cabecalhoTexto() + texto.value).trim();
+        return (cabecalhoTexto() + texto.value + (comPrograma() && ativa ? revisaoTexto(parteAtual) : '')).trim();
       }
       function tituloDaAnotacao(limite) {
         const d = dadosDaParte();
         return (d.tema || temaEl.value.trim() || (programaMeta && programaMeta.titulo) || 'Anotações').slice(0, limite);
       }
       document.getElementById('anotacoesCopiarBtn').addEventListener('click', async () => {
-        if (!texto.value.trim()) return dizer('Não há anotações para copiar.', true);
+        if (!temConteudoAtual()) return dizer('Não há anotações para copiar.', true);
         try {
           await navigator.clipboard.writeText(textoDaAnotacao());
           piscarBotao(document.getElementById('anotacoesCopiarBtn'), '✓ Copiado');
@@ -26322,7 +26454,7 @@ function saveTemplatesToStorage() {
       // Salvar: copia a anotação para Pesquisas e respostas salvas → Textos, já ligada ao evento e à parte (ou à reunião), sem pedir nome. Salvar de
       // novo atualiza a mesma entrada. (O rascunho em si já é guardado sozinho neste aparelho enquanto você escreve.)
       document.getElementById('anotacoesSalvarBtn').addEventListener('click', () => {
-        if (!texto.value.trim()) return dizer('Não há anotações para salvar.', true);
+        if (!temConteudoAtual()) return dizer('Não há anotações para salvar.', true);
         salvarRascunho();
         let anotId = 'anot:reuniao';
         let titulo;
@@ -26345,7 +26477,7 @@ function saveTemplatesToStorage() {
       });
       document.getElementById('anotacoesDocxBtn').addEventListener('click', async () => {
         const bruto = textoDaAnotacao();
-        if (!texto.value.trim()) return dizer('Não há texto para exportar.', true);
+        if (!temConteudoAtual()) return dizer('Não há texto para exportar.', true);
         dizer('Gerando Word…');
         try {
           const titulo = tituloDaAnotacao(80);

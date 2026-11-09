@@ -5760,6 +5760,43 @@
       background: color-mix(in srgb, var(--anot-cor) 9%, var(--card));
     }
 
+    /* Perguntas de recapitulação (assembleia de circuito): o aviso no programa e o campo da resposta embaixo das anotações. */
+    .screen-anotacoes .anotacoes-perguntas {
+      display: grid;
+      gap: 6px;
+      margin: 0 0 10px;
+    }
+
+    .screen-anotacoes .anotacoes-perguntas .anotacoes-msg {
+      margin: 0;
+      text-align: left;
+    }
+
+    .screen-anotacoes .anotacoes-revisao {
+      margin: 14px 0 4px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: color-mix(in srgb, #5b7396 10%, var(--card));
+    }
+
+    .screen-anotacoes .anotacoes-revisao label {
+      margin: 0 0 4px;
+      font-weight: 800;
+    }
+
+    .screen-anotacoes .anotacoes-revisao-pergunta {
+      margin: 0 0 8px;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .screen-anotacoes .anotacoes-resposta {
+      width: 100%;
+      min-height: 96px;
+      resize: vertical;
+    }
+
     /* ---------- Tela Leitura em voz alta ---------- */
     .leitura-topo {
       margin: 0 0 8px;

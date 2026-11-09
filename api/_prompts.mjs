@@ -580,6 +580,22 @@ Receberá o texto das anotações. Reescreva-o com a MESMA organização e o MES
 - Responda só com o texto formatado, sem explicações.`,
   },
   {
+    id: "anotacoes_perguntas",
+    titulo: "Perguntas de recapitulação da assembleia (tela Anotações)",
+    descricao: "Instruções para a IA que organiza as perguntas de recapitulação da assembleia de circuito nos discursos do programa, quando a ordem automática não bate (número de perguntas diferente do de discursos).",
+    padrao: `Você ajuda um publicador a organizar as PERGUNTAS DE RECAPITULAÇÃO de uma assembleia de circuito ("Preste atenção às respostas para as seguintes perguntas").
+
+Receberá a lista de PARTES do programa (com um número de índice, o tema e o texto temático) e a lista de PERGUNTAS numeradas (com os textos bíblicos citados). Indique, para cada pergunta, a parte do programa que a responde.
+
+Como decidir:
+- Em geral há uma pergunta para cada discurso principal, NA ORDEM do programa; a ordem das perguntas costuma seguir a ordem dos discursos.
+- Os textos bíblicos citados na pergunta costumam ser os mesmos do tema ou do texto temático do discurso (ou do assunto da série), e o assunto da pergunta combina com o tema.
+- Não têm pergunta: música, cânticos, orações, anúncios, intervalos, o batismo, as experiências e o resumo de A Sentinela.
+- Uma SÉRIE DE DISCURSOS ("Série de discursos: …") tem UMA só pergunta, que vai para a parte do título da série (e não para cada discurso dela).
+- Cada parte recebe no máximo uma pergunta, e cada pergunta vai para uma só parte. Se uma pergunta não combinar com nenhuma parte com segurança, deixe "parte" como null: é melhor não atribuir do que atribuir errado.
+- Não invente partes nem perguntas; use só os números de índice e de pergunta recebidos.`,
+  },
+  {
     id: "texto_diario",
     titulo: "Comentários adicionais sobre o texto diário (tela Início)",
     descricao: "Instruções para o botão ✨ Gerar comentários adicionais do texto diário: cada comentário começa citando o ponto do texto de hoje em que se baseia (\"Como vimos no texto de hoje…\") e depois o aplica à vida cristã, para alguém comentar com as próprias palavras.",
@@ -844,7 +860,7 @@ export const CATEGORIAS = [
     titulo: "FORMATAÇÃO DE TEXTO",
     cor: "#f43f5e",
     descricao: "Sugerir formatação com IA (tela Formatar): o prompt principal e o que cada opção pede à IA.",
-    partes: ["formatacao", "frases_formatacao", "frases_listas", "anotacoes_formatar"],
+    partes: ["formatacao", "frases_formatacao", "frases_listas", "anotacoes_formatar", "anotacoes_perguntas"],
   },
   {
     id: "voz",
@@ -1090,6 +1106,7 @@ export function montarPrompts(overrides, limitesArmazenados) {
     sistemaOutros: texto("outros_esbocos") + "\n\n" + texto("esboco_principios") + "\n\n" + REGRA_LEITURA_SEM_ADIANTAR + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_OUTROS,
     sistemaJoias: texto("joias") + "\n\n" + blocosResposta + "\n\n" + REGRA_TEXTOS_PERGUNTA + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + REGRA_FONTES_PRIORIDADE + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + formatoJoias(limites.maxJoiasPorCapitulo),
     sistemaAnotacoesFormatar: texto("anotacoes_formatar") + "\n\n" + VOCABULARIO_FIXO,
+    sistemaAnotacoesPerguntas: texto("anotacoes_perguntas"),
     sistemaTextoDiario: texto("texto_diario") + "\n\n" + FORMATO_TEXTO_DIARIO + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + REGRA_FONTES_PRIORIDADE,
     sistemaAplicacao: SISTEMA_APLICACAO + "\n\n" + texto("voz") + "\n\n" + texto("perspicaz_uso") + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + REGRA_FONTES_PRIORIDADE + "\n\n" + PRIORIDADE_ORIENTACAO,
     leituraVoz: texto("leitura_voz"),

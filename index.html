@@ -193,6 +193,10 @@
               <button id="anotacoesVerNotas" class="anotacoes-ver-notas" type="button" hidden>✍️ Ver anotações</button>
               <button id="anotacoesExportarNotas" class="secondary anotacoes-exportar" type="button" title="Gera um Word com as anotações de todos os discursos deste evento" hidden>📄 Exportar anotações</button>
             </div>
+            <div id="anotacoesPerguntas" class="anotacoes-perguntas" hidden>
+              <p id="anotacoesPerguntasTexto" class="anotacoes-msg" role="status" aria-live="polite"></p>
+              <button id="anotacoesPerguntasIa" class="secondary" type="button" title="A IA organiza qual pergunta de recapitulação vai em cada discurso" hidden>🤖 Organizar as perguntas com a IA</button>
+            </div>
             <div id="anotacoesPartes" class="anotacoes-partes"></div>
           </div>
         </div>
@@ -245,6 +249,13 @@
             <button type="button" class="secondary" data-anotacoes-fmt="ol" title="Lista numerada" aria-label="Lista numerada">1. Lista</button>
           </div>
           <textarea id="anotacoesTexto" class="anotacoes-texto" rows="16" placeholder="Escreva suas anotações aqui…"></textarea>
+
+          <!-- Assembleia de circuito: a pergunta de recapitulação que este discurso responde, com um campo só para a resposta. -->
+          <div id="anotacoesRevisao" class="anotacoes-revisao" hidden>
+            <label for="anotacoesResposta" id="anotacoesRevisaoRotulo">❓ Pergunta de recapitulação</label>
+            <p id="anotacoesRevisaoPergunta" class="anotacoes-revisao-pergunta"></p>
+            <textarea id="anotacoesResposta" class="anotacoes-resposta" rows="4" placeholder="Escreva aqui a resposta a esta pergunta…"></textarea>
+          </div>
 
           <div class="anotacoes-acoes">
             <button id="anotacoesCopiarBtn" class="secondary" type="button" title="Copiar a anotação (com o tema e o orador)">📋 Copiar</button>

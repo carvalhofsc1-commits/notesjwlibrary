@@ -88,6 +88,8 @@ export const NIVEIS = {
   "programas-lista": "publico",
   // Formatar as anotações com IA (tela Anotações): código de pesquisa, como a formatação da tela Formatar
   "anotacoes-formatar": "pesquisa",
+  // Perguntas de recapitulação da assembleia: a IA só organiza (atribui) as perguntas aos discursos quando a ordem não bate
+  "anotacoes-perguntas": "pesquisa",
   "anotacoes-versiculos": "resumo",
 };
 

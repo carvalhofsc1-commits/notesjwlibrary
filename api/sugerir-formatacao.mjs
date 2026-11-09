@@ -2980,6 +2980,50 @@ async function formatarAnotacoes(res, body, P) {
   }
 }
 
+// Anotações (assembleia de circuito): quando o número de perguntas de recapitulação não bate com o de discursos, a IA organiza qual pergunta
+// vai em cada parte do programa. O servidor confere o que ela devolve (índices válidos, sem repetir parte nem pergunta).
+const SaidaPerguntasAtribuidas = z.object({ atribuicoes: z.array(z.object({ pergunta: z.number(), parte: z.number().nullable() })) });
+async function atribuirPerguntas(res, body, P) {
+  const partes = (Array.isArray(body.partes) ? body.partes : [])
+    .map((p) => ({ i: Number(p && p.i), tema: limparLinha((p && p.tema) || "", 300), textoTematico: limparLinha((p && p.textoTematico) || "", 200), secao: limparLinha((p && p.secao) || "", 80) }))
+    .filter((p) => Number.isInteger(p.i) && p.i >= 0 && p.tema)
+    .slice(0, 80);
+  const perguntas = (Array.isArray(body.perguntas) ? body.perguntas : [])
+    .map((q) => ({ n: Number(q && q.n), texto: limparLinha((q && q.texto) || "", 400), refs: limparLinha((q && q.refs) || "", 200) }))
+    .filter((q) => Number.isInteger(q.n) && q.n > 0 && q.texto)
+    .slice(0, 30);
+  if (!partes.length || !perguntas.length) return erro(res, 400, "Faltam as partes do programa ou as perguntas.");
+  const lista = partes.map((p) => `[${p.i}] ${p.secao ? p.secao + " · " : ""}${p.tema}${p.textoTematico ? " — " + p.textoTematico : ""}`).join("\n");
+  const quadro = perguntas.map((q) => `${q.n}. ${q.texto}${q.refs ? " (" + q.refs + ")" : ""}`).join("\n");
+  try {
+    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 60_000) });
+    const resposta = await chamarIa(
+      client,
+      P,
+      { max_tokens: 2000, system: P.sistemaAnotacoesPerguntas, messages: [{ role: "user", content: `PARTES DO PROGRAMA:\n${lista}\n\nPERGUNTAS DE RECAPITULAÇÃO:\n${quadro}` }] },
+      { schema: SaidaPerguntasAtribuidas, semPensar: true, tarefa: "anotacoes-perguntas" }
+    );
+    const bruto = resposta.parsed_output && Array.isArray(resposta.parsed_output.atribuicoes) ? resposta.parsed_output.atribuicoes : [];
+    if (resposta.stop_reason === "refusal" || !bruto.length) return erro(res, 502, "A IA não conseguiu organizar as perguntas. Tente de novo.");
+    const indicesValidos = new Set(partes.map((p) => p.i));
+    const numerosValidos = new Set(perguntas.map((q) => q.n));
+    const partesUsadas = new Set();
+    const perguntasUsadas = new Set();
+    const atribuicoes = [];
+    for (const a of bruto) {
+      if (a.parte == null || !indicesValidos.has(a.parte) || !numerosValidos.has(a.pergunta)) continue;
+      if (partesUsadas.has(a.parte) || perguntasUsadas.has(a.pergunta)) continue;
+      partesUsadas.add(a.parte);
+      perguntasUsadas.add(a.pergunta);
+      atribuicoes.push({ pergunta: a.pergunta, parte: a.parte });
+    }
+    return res.status(200).json({ atribuicoes, semParte: perguntas.filter((q) => !perguntasUsadas.has(q.n)).map((q) => q.n) });
+  } catch (e) {
+    console.error("Atribuir perguntas: falhou", e?.name, e?.message);
+    return tratarErro(e, res);
+  }
+}
+
 // Anotações: lista dos programas de assembleia e congresso disponíveis na WOL (o app a mostra ao abrir a tela, sem código).
 async function listaDeProgramas(res, body) {
   try {
@@ -4285,6 +4329,7 @@ async function tratarPedido(req, res) {
   if (tarefa === "estudo-perguntas") return sugerirPerguntas(res, body, P);
   if (tarefa === "texto-diario-comentarios") return comentariosDoTextoDiario(res, body, P);
   if (tarefa === "anotacoes-formatar") return formatarAnotacoes(res, body, P);
+  if (tarefa === "anotacoes-perguntas") return atribuirPerguntas(res, body, P);
   if (tarefa === "ebc") return responderEbc(res, body, P);
   if (tarefa === "ebc-dirigente") return perguntasEbcDirigente(res, body, P);
   if (tarefa === "tesouros") return esbocoDeTesouros(res, body, P);
