@@ -1678,6 +1678,34 @@ export function programasDaCategoria(html, categoria) {
   return itens;
 }
 
+// O tema de cada programa está nos links da página dele: congresso = "PROGRAMA Felicidade Eterna"; assembleia = o 2º link (“Feliz É Aquele…”).
+export function temaDoProgramaHtml(html, tipo) {
+  const links = [...String(html || "").matchAll(/<a\b[^>]*href="[^"]*\/wol\/d\/r5\/lp-t\/\d+"[^>]*>([\s\S]*?)<\/a>/gi)]
+    .map((m) => textoDe(m[1]).replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+  if (tipo === "congresso") {
+    const capa = links.find((t) => /^PROGRAMA\s+/i.test(t));
+    return capa ? capitalizarTitulo(capa.replace(/^PROGRAMA\s+/i, "")) : "";
+  }
+  const tema = links[1] || "";
+  return /^(preste aten|programa d)/i.test(tema) ? "" : tema;
+}
+
+async function acrescentarTemas(itens, { concorrencia = 8, timeoutMs = 6000 } = {}) {
+  let proximo = 0;
+  const trabalhador = async () => {
+    while (proximo < itens.length) {
+      const item = itens[proximo++];
+      try {
+        item.tema = temaDoProgramaHtml(await baixar(item.url, timeoutMs), item.tipo);
+      } catch {
+        item.tema = "";
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(concorrencia, itens.length) }, trabalhador));
+}
+
 export async function listarProgramas({ timeoutMs = 10000 } = {}) {
   if (programasLidos && Date.now() - programasLidos.quando < VALIDADE_PROGRAMAS_MS) return programasLidos.itens;
   const paginas = await Promise.all(
@@ -1685,6 +1713,7 @@ export async function listarProgramas({ timeoutMs = 10000 } = {}) {
   );
   const itens = paginas.flat().sort((a, b) => b.ordem - a.ordem || a.grupo.localeCompare(b.grupo, "pt-BR"));
   if (!itens.length) return programasLidos ? programasLidos.itens : [];
+  await acrescentarTemas(itens);
   programasLidos = { quando: Date.now(), itens };
   return itens;
 }

@@ -2961,7 +2961,7 @@ async function listaDeProgramas(res) {
   try {
     const itens = await listarProgramas();
     if (!itens.length) return erro(res, 502, "Não consegui carregar a lista de programas agora.");
-    return res.status(200).json({ programas: itens.map(({ ordem, ...resto }) => resto) });
+    return res.status(200).json({ programas: itens });
   } catch (e) {
     console.error("Lista de programas: falhou", e?.message);
     return erro(res, 502, "Não consegui carregar a lista de programas agora.");
