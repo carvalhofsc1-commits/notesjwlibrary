@@ -5288,6 +5288,28 @@
       padding-bottom: 8px;
     }
 
+    /* Tela do programa: o botão Trocar de evento ocupa o lado direito do topo (um pouco mais largo, com letra menor). */
+    .screen-anotacoes .anotacoes-topo[data-troca] {
+      grid-template-columns: 4.4rem minmax(0, 1fr) 7rem;
+    }
+
+    .screen-anotacoes .anotacoes-topo #anotacoesTrocarTopo {
+      grid-column: 3;
+      grid-row: 1;
+      width: 7rem;
+      padding: 4px 4px;
+      font-size: .7rem;
+      white-space: nowrap;
+    }
+
+    .screen-anotacoes .anotacoes-topo #anotacoesTrocarTopo[hidden] {
+      display: none;
+    }
+
+    .screen-anotacoes .anotacoes-programa-acoes[hidden] {
+      display: none;
+    }
+
     .screen-anotacoes .anotacoes-topo[data-prog] {
       grid-template-columns: 4.4rem minmax(0, 1fr) 5.6rem;
     }

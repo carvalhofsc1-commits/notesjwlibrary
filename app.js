@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.17'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.18'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -25176,7 +25176,12 @@ function saveTemplatesToStorage() {
         voltarHub.hidden = !modo;
         const botaoPrograma = document.getElementById('anotacoesProgramaTopo');
         botaoPrograma.hidden = !ativa;
-        botaoPrograma.closest('.anotacoes-topo').toggleAttribute('data-prog', ativa);
+        const topoEl = botaoPrograma.closest('.anotacoes-topo');
+        topoEl.toggleAttribute('data-prog', ativa);
+        const naTelaDoPrograma = programa && vista === 'programa';
+        document.getElementById('anotacoesTrocarTopo').hidden = !naTelaDoPrograma; // Trocar de evento: no topo da tela do programa
+        topoEl.toggleAttribute('data-troca', naTelaDoPrograma);
+        document.querySelector('.anotacoes-programa-acoes').hidden = !temNotas(); // sem anotações, os botões Ver e Exportar não aparecem e a linha some
         if (ativa) {
           const d = dadosDaParte();
           preencherLinhaTema(document.getElementById('anotacoesCabTema'), partes[parteAtual], 'Sem tema', tituloDaSerie(parteAtual));
@@ -25491,7 +25496,7 @@ function saveTemplatesToStorage() {
       progTitulo.addEventListener('click', abrirProgramaNoJwl);
       progTitulo.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirProgramaNoJwl(); } });
       cabCentro.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); editarOradorDaParte(); } });
-      document.getElementById('anotacoesTrocarEvento').addEventListener('click', () => { salvarRascunho(); irPara('escolha'); });
+      document.getElementById('anotacoesTrocarTopo').addEventListener('click', () => { salvarRascunho(); irPara('escolha'); });
       // Ver anotações: abre a primeira parte (na ordem do programa) que já tem anotação.
       verNotasBtn.addEventListener('click', () => {
         const i = partes.findIndex(p => p.nota && p.nota.trim());

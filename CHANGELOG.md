@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.18
+
+Anotações (assembleia e congresso): o botão **Trocar de evento** passou para o topo da tela do programa, no lado direito da linha do Voltar (letra menor); a linha de botões abaixo da data fica só com Ver anotações e Exportar anotações, e some quando ainda não há anotações.
+
 ## 6.7.17
 
 Leitura diária da Bíblia: o texto “Opções adicionais” desceu um pouco e ficou quase encostado na moldura de baixo do card de leitura.
