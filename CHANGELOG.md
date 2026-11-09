@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.05
+
+Anotações: nas **séries de discursos**, o título da série (“Série de discursos: …”) passa a ser só informativo, sem cartão e sem orador, como música e cântico, mas em fonte maior e em negrito (as setas também passam direto por ele); o orador é informado em cada discurso da série. O tema de cada discurso aparece com o título da série na frente e um travessão (“Busque o que traz verdadeira felicidade — Um estilo de vida simples”) no cabeçalho da anotação, no Salvar, no Copiar e no Word.
+
 ## 6.7.04
 
 Anotações: na parte aberta do programa, nova lixeira ao lado de Iniciar/Continuar a anotação, que limpa o orador e a congregação daquela parte.

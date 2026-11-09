@@ -4666,6 +4666,22 @@
       line-height: 1.3;
     }
 
+    /* Título de uma série de discursos: informativo (sem cartão), um pouco mais forte que música e cântico. */
+    .anotacoes-parte-serie {
+      color: var(--text);
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1.3;
+      padding-top: 8px;
+      padding-bottom: 2px;
+    }
+
+    .anotacoes-parte-serie .anotacoes-parte-hora {
+      color: var(--text);
+      font-size: .85rem;
+      font-weight: 700;
+    }
+
     .anotacoes-parte-info .anotacoes-parte-hora {
       flex: 0 0 3.1rem;
       font-size: .8rem;

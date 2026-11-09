@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.04'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.05'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -24891,10 +24891,11 @@ function saveTemplatesToStorage() {
 
       const semMarcador = t => String(t || '').replace(/^[•·]\s*/, '');
       // O tema e, no fim da mesma linha, o texto temático depois de um travessão (no máximo duas linhas; o resto é cortado com reticências).
-      function preencherLinhaTema(el, p, vazio) {
+      function preencherLinhaTema(el, p, vazio, serie) {
         el.replaceChildren();
         const tema = document.createElement('strong');
-        tema.textContent = semMarcador(p && p.tema) || vazio || '';
+        // Discurso de uma série: o título da série, um travessão e o tema do discurso ("Busque o que traz verdadeira felicidade — Um estilo de vida simples").
+        tema.textContent = (serie ? serie + ' — ' : '') + (semMarcador(p && p.tema) || vazio || '');
         el.appendChild(tema);
         if (p && p.textoTematico) {
           const tt = document.createElement('span');
@@ -24905,7 +24906,18 @@ function saveTemplatesToStorage() {
       }
       const comPrograma = () => Boolean(MODOS[modo] && MODOS[modo].programa);
       // Música, cântico, oração, anúncios e intervalo só informam: sem cartão, sem anotação, e as setas passam direto por eles.
-      const ehInfo = p => /^(música|vídeo musical|cântico|oração|intervalo|anúncios)\b/i.test(semMarcador(p && p.tema).trim());
+      // O título de uma série de discursos ("Série de discursos: …") também só informa: o orador é informado em cada discurso da série.
+      const ehSerie = p => /^s[ée]rie de discursos\s*:/i.test(semMarcador(p && p.tema).trim());
+      const ehInfo = p => ehSerie(p) || /^(música|vídeo musical|cântico|oração|intervalo|anúncios)\b/i.test(semMarcador(p && p.tema).trim());
+      // Título da série a que pertence o discurso i (os discursos vêm logo depois do título, com marcador "•"); '' se não for de uma série.
+      function tituloDaSerie(i) {
+        if (!/^[•·]/.test((partes[i] && partes[i].tema) || '')) return '';
+        for (let k = i - 1; k >= 0; k--) {
+          if (ehSerie(partes[k])) return semMarcador(partes[k].tema).replace(/^s[ée]rie de discursos\s*:\s*/i, '').trim();
+          if (!/^[•·]/.test(partes[k].tema || '')) return '';
+        }
+        return '';
+      }
       const iniciaveis = () => partes.map((p, i) => i).filter(i => !ehInfo(partes[i]));
       const temNotas = () => partes.some(p => p.nota && p.nota.trim());
 
@@ -24926,7 +24938,7 @@ function saveTemplatesToStorage() {
         botaoPrograma.closest('.anotacoes-topo').toggleAttribute('data-prog', ativa);
         if (ativa) {
           const d = dadosDaParte();
-          preencherLinhaTema(document.getElementById('anotacoesCabTema'), partes[parteAtual], 'Sem tema');
+          preencherLinhaTema(document.getElementById('anotacoesCabTema'), partes[parteAtual], 'Sem tema', tituloDaSerie(parteAtual));
           const quem = [d.orador, d.congregacao].filter(Boolean).join(' · ');
           const quemEl = document.getElementById('anotacoesCabOrador');
           quemEl.textContent = quem;
@@ -24953,7 +24965,7 @@ function saveTemplatesToStorage() {
         if (comPrograma()) {
           const p = partes[parteAtual];
           if (!p) return { tema: '', orador: '', congregacao: '', data: '' };
-          return { tema: [semMarcador(p.tema), p.textoTematico].filter(Boolean).join(' — '), orador: p.orador || '', congregacao: p.congregacao || '', data: dataDaParte(p) };
+          return { tema: [tituloDaSerie(parteAtual), semMarcador(p.tema), p.textoTematico].filter(Boolean).join(' — '), orador: p.orador || '', congregacao: p.congregacao || '', data: dataDaParte(p) };
         }
         return { tema: temaEl.value.trim(), orador: oradorEl.value.trim(), congregacao: congEl.value.trim(), data: formatarData(dataReuniaoEl.value) };
       }
@@ -24977,6 +24989,7 @@ function saveTemplatesToStorage() {
           item.className = 'anotacoes-parte-item';
           if (ehInfo(p)) {
             item.classList.add('anotacoes-parte-info');
+            if (ehSerie(p)) item.classList.add('anotacoes-parte-serie');
             const h = document.createElement('span');
             h.className = 'anotacoes-parte-hora';
             h.textContent = p.horario || '';
