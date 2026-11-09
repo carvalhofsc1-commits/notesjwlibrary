@@ -5141,6 +5141,121 @@
       scroll-margin-top: calc(var(--topbar-h, 52px) + 10px);
     }
 
+    /* Botões mais finos e leves em toda a tela Anotações: texto numa linha só, sem negrito, fonte menor. */
+    .screen-anotacoes button {
+      font-weight: 500;
+    }
+
+    .screen-anotacoes .anotacoes-topo {
+      grid-template-columns: 4.4rem minmax(0, 1fr) 4.4rem;
+      gap: 8px;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+    }
+
+    .screen-anotacoes .anotacoes-topo[data-prog] {
+      grid-template-columns: 4.4rem minmax(0, 1fr) 5.6rem;
+    }
+
+    /* O título do topo (ícone e nome) ocupa no máximo duas linhas. */
+    .screen-anotacoes .anotacoes-topo h2 {
+      font-size: .95rem;
+      line-height: 1.2;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .screen-anotacoes .anotacoes-topo button {
+      width: 4.4rem;
+      min-height: 34px;
+      padding: 4px 6px;
+      font-size: .8rem;
+    }
+
+    .screen-anotacoes .anotacoes-topo #anotacoesProgramaTopo {
+      width: 5.6rem;
+      font-size: .8rem;
+    }
+
+    .screen-anotacoes .anotacoes-biblia-barra {
+      padding: 6px;
+      gap: 6px;
+    }
+
+    .screen-anotacoes .anotacoes-biblia-barra input {
+      min-height: 38px;
+      padding: 6px 10px;
+    }
+
+    .screen-anotacoes .anotacoes-biblia-barra button {
+      min-height: 38px;
+      padding: 4px 10px;
+      font-size: .82rem;
+    }
+
+    .screen-anotacoes .anotacoes-fmt button {
+      min-height: 32px;
+      padding: 3px 4px;
+      font-size: .8rem;
+    }
+
+    .screen-anotacoes .anotacoes-acoes {
+      grid-template-columns: repeat(3, minmax(0, 1fr)) 2.6rem;
+      gap: 6px;
+    }
+
+    .screen-anotacoes .anotacoes-acoes button {
+      min-height: 34px;
+      padding: 3px 4px;
+      font-size: .8rem;
+      line-height: 1.1;
+      white-space: nowrap;
+    }
+
+    .screen-anotacoes .anotacoes-jwl,
+    .screen-anotacoes .anotacoes-gravacao #anotacoesGravarBtn {
+      min-height: 36px;
+      padding: 4px 10px;
+      font-size: .84rem;
+    }
+
+    .screen-anotacoes .anotacoes-gravacao .bk-row > button {
+      min-height: 34px;
+      padding: 3px 6px;
+      font-size: .8rem;
+      white-space: nowrap;
+    }
+
+    .screen-anotacoes .anotacoes-gravacao .bk-row > button[aria-label] {
+      flex: 0 0 2.6rem;
+    }
+
+    .screen-anotacoes .anotacoes-programa-acoes button,
+    .screen-anotacoes .anotacoes-mais,
+    .screen-anotacoes .anotacoes-partes-cab button {
+      min-height: 34px;
+      padding: 4px 10px;
+      font-size: .82rem;
+    }
+
+    .screen-anotacoes .anotacoes-iniciar {
+      min-height: 38px;
+      font-size: .86rem;
+    }
+
+    .screen-anotacoes .anotacoes-trilha-btn {
+      min-height: 32px;
+      padding: 4px 10px;
+      font-size: .8rem;
+    }
+
+    .screen-anotacoes .anotacoes-opcao {
+      min-height: 38px;
+      font-size: .86rem;
+    }
+
     /* ---------- Tela Leitura em voz alta ---------- */
     .leitura-topo {
       margin: 0 0 8px;
