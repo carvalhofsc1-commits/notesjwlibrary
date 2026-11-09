@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.24
+
+Anotações: a faixa do título do card aberto ficou um pouco mais escura (azul-acinzentado, na mesma cor das faixas Manhã e Tarde).
+
 ## 6.7.23
 
 Anotações: a faixa do título do card aberto voltou a ter o fundo próprio (cinza-azulado suave), mesmo com o dedo ainda em cima.

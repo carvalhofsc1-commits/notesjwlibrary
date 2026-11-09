@@ -4900,7 +4900,7 @@
     /* Card aberto: a faixa do título tem um fundo próprio (também com o dedo ainda em cima). */
     .screen-anotacoes .anotacoes-parte-item.aberta:not(.preenchida) .anotacoes-parte,
     .screen-anotacoes .anotacoes-parte-item.aberta:not(.preenchida) .anotacoes-parte:where(:not(:disabled)):hover {
-      background-color: var(--soft);
+      background-color: color-mix(in srgb, #5b7396 28%, var(--card));
     }
 
     .screen-anotacoes .anotacoes-parte-item.preenchida .anotacoes-parte:where(:not(:disabled)):hover {
