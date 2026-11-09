@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.93
+
+Anotações: o campo de data (assembleia, congresso e reunião) não sai mais da tela no iPhone: passa a seguir a largura da caixa.
+
 ## 6.6.92
 
 Anotações, texto bíblico guiado: ao digitar no campo de texto bíblico, o app já sugere os livros (“jo” → Josué, Jó, Joel, Jonas, João, 1 João, 2 João, 3 João); ao escolher o livro, abre a grade de capítulos; ao escolher o capítulo, abre a de versículos, com três jeitos: um (toque no versículo), **intercalados** (toque em 2, 4 e 6) e **corrido** (modo “de / até”: toque no primeiro e no último), além de “Capítulo todo”. A referência vai sendo escrita no campo (por exemplo, “João 3:2-4, 6”) e o botão Inserir coloca o texto no cursor. Digitar a referência inteira continua funcionando. Livros de um capítulo só pulam a escolha do capítulo.

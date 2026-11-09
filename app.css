@@ -4545,6 +4545,26 @@
       margin: 0 0 6px;
     }
 
+    /* Campo de data no iPhone: o Safari dá ao campo uma largura própria e ele sai da tela; aqui ele segue a largura da caixa. */
+    .anotacoes-data input[type="date"],
+    #anotacoesDataReuniao {
+      display: block;
+      -webkit-appearance: none;
+      appearance: none;
+      box-sizing: border-box;
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      min-height: 46px;
+      text-align: left;
+    }
+
+    .anotacoes-data input[type="date"]::-webkit-date-and-time-value,
+    #anotacoesDataReuniao::-webkit-date-and-time-value {
+      min-height: 1.3em;
+      text-align: left;
+    }
+
     .anotacoes-programa-acoes {
       margin: 0 0 14px;
     }
