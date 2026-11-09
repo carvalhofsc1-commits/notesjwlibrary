@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.02
+
+Anotações: o campo de mensagens sob os botões (“Texto bíblico inserido.” e parecidas) deixou de mostrar o que deu certo; só aparecem os avisos do que falhou ou falta fazer. Copiar e Salvar confirmam piscando “✓ Copiado” / “✓ Salvo” no próprio botão.
+
 ## 6.7.01
 
 Anotações: (1) **texto bíblico inserido** em novo formato: a referência (livro, capítulo e versículos) em **negrito**, depois “:” e, na mesma linha, o texto todo entre aspas e em *itálico* (os acentos continuam aparecendo no negrito e no itálico); (2) novo botão **✨ Formatar com IA**, na mesma linha do Copiar e abrir no JW Library: a IA deixa o texto pronto para colar no campo de notas do JW Library usando só emojis e letras maiúsculas para dar destaque (muitos emojis para ilustrar os pontos), mantendo os negritos e itálicos que a pessoa já fez; dá para **desfazer** a formatação (as instruções da IA estão em Prompts da IA → Formatação de texto); (3) título “📖 Inserir texto nas anotações” acima do campo de texto bíblico; (4) tocar no **card do tema e do orador** abre o programa com a parte aberta, no lugar de editar o orador e a congregação.

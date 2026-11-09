@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.01'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.02'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -24756,9 +24756,18 @@ function saveTemplatesToStorage() {
       let programaMeta = null;
       let gravacao = null;
 
+      // Só os avisos (o que falhou ou falta fazer) aparecem; as mensagens sobre o que deu certo não: o resultado já se vê na tela.
       function dizer(msg, aviso) {
-        statusEl.textContent = msg || '';
+        statusEl.textContent = aviso ? (msg || '') : '';
         statusEl.className = 'anotacoes-msg' + (aviso ? ' warn' : '');
+      }
+      // Confirmação discreta no próprio botão (✓ por um instante), no lugar de uma frase.
+      function piscarBotao(botao, rotulo) {
+        const antes = botao.dataset.rotulo || botao.textContent;
+        botao.dataset.rotulo = antes;
+        botao.textContent = rotulo;
+        clearTimeout(botao._piscar);
+        botao._piscar = setTimeout(() => { botao.textContent = antes; }, 1500);
       }
       function dizerProg(msg, aviso) {
         progStatus.textContent = msg || '';
@@ -25878,7 +25887,7 @@ function saveTemplatesToStorage() {
         if (!texto.value.trim()) return dizer('Não há anotações para copiar.', true);
         try {
           await navigator.clipboard.writeText(textoDaAnotacao());
-          dizer('✅ Anotação copiada.');
+          piscarBotao(document.getElementById('anotacoesCopiarBtn'), '✓ Copiado');
         } catch (e) {
           texto.focus();
           texto.select();
@@ -25902,7 +25911,7 @@ function saveTemplatesToStorage() {
         }
         const jaExistia = historicoLer().some(g => g.anotId === anotId);
         const guardado = historicoSalvar({ tipo: 'nota', titulo, partes: [{ paragrafos: '', texto: textoDaAnotacao() }], ligar: false, anotId });
-        if (guardado) dizer((jaExistia ? '✅ Atualizada em «' : '✅ Salva em «') + guardado.titulo + '» (Pesquisas e respostas salvas → Textos).');
+        if (guardado) piscarBotao(document.getElementById('anotacoesSalvarBtn'), jaExistia ? '✓ Atualizado' : '✓ Salvo');
       });
       document.getElementById('anotacoesDocxBtn').addEventListener('click', async () => {
         const bruto = textoDaAnotacao();
