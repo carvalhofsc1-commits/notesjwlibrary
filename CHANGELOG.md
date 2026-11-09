@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.94
+
+Anotações: (1) lixeira no campo de texto bíblico, ao lado de Inserir e 📚; (2) os botões Um a um, Corrido, Capítulo todo e Limpar da escolha de versículos saíram: toque liga/desliga o versículo (2, 4, 6) e **toque longo** (ou Shift+clique) no último escolhe o trecho corrido desde o anterior; (3) o botão **📋 Programa** foi para o topo, no lado direito do Voltar; (4) o cabeçalho da parte mostra também o **horário** (e o período) do discurso; (5) **gravação** redesenhada num quadro só: Gravar → gráfico de barras reduzido, tempo, Pausar/Retomar, Parar e Descartar; depois de parada, a gravação fica pronta e **Fazer o resumo** é um botão à parte (ou Descartar); (6) Copiar, Salvar, Word e a lixeira (Limpar, só o ícone) ficam na mesma linha, o botão do JW Library vem depois e a gravação por último; o campo de texto ficou bem maior.
+
 ## 6.6.93
 
 Anotações: o campo de data (assembleia, congresso e reunião) não sai mais da tela no iPhone: passa a seguir a largura da caixa.

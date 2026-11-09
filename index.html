@@ -150,6 +150,7 @@
       <div class="anotacoes-topo">
         <button id="anotacoesVoltarHub" class="secondary" type="button" hidden>◀ Voltar</button>
         <h2 id="anotacoesTitulo">📝 Anotações</h2>
+        <button id="anotacoesProgramaTopo" class="secondary" type="button" title="Voltar ao programa do evento" hidden>📋 Programa</button>
       </div>
 
       <div id="anotacoesHub" class="anotacoes-hub">
@@ -221,13 +222,13 @@
               </div>
               <button id="anotacoesParteProx" class="secondary ai-week-nav" type="button" aria-label="Próxima parte" title="Próxima parte">▶</button>
             </div>
-            <button id="anotacoesVerPrograma" class="secondary anotacoes-ver-programa" type="button">📋 Ver o programa</button>
           </div>
           <!-- Texto bíblico: digite a referência (ou escolha livro e versículos) e o texto entra onde está o cursor. -->
           <div class="anotacoes-biblia-barra" role="region" aria-label="Inserir texto bíblico">
-            <input id="anotacoesBibliaRef" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="📖 Texto bíblico: digite o livro (ex.: Jo)" aria-label="Referência bíblica">
+            <input id="anotacoesBibliaRef" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="📖 Livro (ex.: Jo)" aria-label="Referência bíblica">
             <button id="anotacoesBibliaInserir" type="button" title="Inserir o texto da referência onde está o cursor">Inserir</button>
             <button id="anotacoesBibliaEscolher" class="secondary" type="button" title="Escolher livro, capítulo e versículos" aria-label="Escolher livro, capítulo e versículos" aria-expanded="false">📚</button>
+            <button id="anotacoesBibliaLimpar" class="secondary" type="button" title="Limpar o campo de texto bíblico" aria-label="Limpar o campo de texto bíblico">🗑️</button>
           </div>
           <div id="anotacoesBibliaPick" class="anotacoes-biblia-pick" hidden>
             <div id="anotacoesBibliaTrilha" class="anotacoes-trilha"></div>
@@ -243,23 +244,41 @@
             <button type="button" class="secondary" data-anotacoes-fmt="ul" title="Lista com marcadores" aria-label="Lista com marcadores">• Lista</button>
             <button type="button" class="secondary" data-anotacoes-fmt="ol" title="Lista numerada" aria-label="Lista numerada">1. Lista</button>
           </div>
-          <textarea id="anotacoesTexto" class="anotacoes-texto" rows="12" placeholder="Escreva suas anotações aqui…"></textarea>
+          <textarea id="anotacoesTexto" class="anotacoes-texto" rows="16" placeholder="Escreva suas anotações aqui…"></textarea>
           <p class="anotacoes-msg anotacoes-auto">✅ O que você escreve é guardado sozinho neste aparelho, em cada parte do evento.</p>
 
-          <div class="bk-row anotacoes-gravar">
-            <button id="anotacoesGravarBtn" type="button" title="Gravar o discurso; ao parar, transcreve e resume">🎙️ Gravar o discurso</button>
-            <button id="anotacoesPararBtn" type="button" hidden>⏹️ Parar e resumir</button>
-          </div>
-          <p id="anotacoesGravarStatus" class="anotacoes-msg" role="status" aria-live="polite"></p>
-
-          <div class="bk-row anotacoes-acoes">
+          <div class="anotacoes-acoes">
             <button id="anotacoesCopiarBtn" class="secondary" type="button" title="Copiar a anotação (com o tema e o orador)">📋 Copiar</button>
             <button id="anotacoesSalvarBtn" class="secondary" type="button" title="Guarda uma cópia em Pesquisas e respostas salvas → Textos, ligada a esta parte; salvar de novo atualiza a mesma">💾 Salvar</button>
             <button id="anotacoesDocxBtn" class="secondary" type="button">📄 Word</button>
-            <button id="anotacoesJwlBtn" class="anotacoes-jwl" type="button" title="Copia a anotação e abre esta parte no JW Library; é só colar no campo de notas" hidden>📖 Copiar e abrir no JW Library</button>
-            <button id="anotacoesLimparBtn" class="secondary" type="button">🗑️ Limpar</button>
+            <button id="anotacoesLimparBtn" class="secondary anotacoes-lixeira" type="button" title="Limpar as anotações" aria-label="Limpar as anotações">🗑️</button>
           </div>
+          <button id="anotacoesJwlBtn" class="anotacoes-jwl" type="button" title="Copia a anotação e abre esta parte no JW Library; é só colar no campo de notas" hidden>📖 Copiar e abrir no JW Library</button>
           <p id="anotacoesStatus" class="anotacoes-msg" role="status" aria-live="polite"></p>
+
+          <!-- Gravação do discurso: tudo neste quadro. Gravar → pausar, parar ou descartar → gravação pronta → Fazer o resumo (ou descartar). -->
+          <section id="anotacoesGravacao" class="anotacoes-gravacao" aria-label="Gravação do discurso">
+            <div id="anotacoesGravOcioso">
+              <button id="anotacoesGravarBtn" type="button" title="Gravar o discurso; depois, o resumo é pedido à parte">🎙️ Gravar o discurso</button>
+            </div>
+            <div id="anotacoesGravAtiva" hidden>
+              <p id="anotacoesGravTempo" class="anotacoes-grav-tempo" role="timer" aria-live="off">🔴 Gravando 00:00</p>
+              <canvas id="anotacoesOnda" class="anotacoes-onda" height="40" aria-hidden="true"></canvas>
+              <div class="bk-row">
+                <button id="anotacoesGravPausarBtn" class="secondary" type="button">⏸️ Pausar</button>
+                <button id="anotacoesGravPararBtn" type="button">⏹️ Parar</button>
+                <button id="anotacoesGravDescartarBtn" class="secondary" type="button" title="Descartar a gravação" aria-label="Descartar a gravação">🗑️</button>
+              </div>
+            </div>
+            <div id="anotacoesGravPronta" hidden>
+              <p id="anotacoesGravInfo" class="anotacoes-grav-tempo"></p>
+              <div class="bk-row">
+                <button id="anotacoesGravResumoBtn" type="button">✨ Fazer o resumo</button>
+                <button id="anotacoesGravDescartar2Btn" class="secondary" type="button" title="Descartar a gravação" aria-label="Descartar a gravação">🗑️</button>
+              </div>
+            </div>
+            <p id="anotacoesGravarStatus" class="anotacoes-msg" role="status" aria-live="polite"></p>
+          </section>
         </div>
       </div>
     </section>

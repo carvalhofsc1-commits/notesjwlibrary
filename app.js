@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.93'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.94'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21487,13 +21487,14 @@ function saveTemplatesToStorage() {
 
     // O gráfico de áudio: barras que sobem e descem com o volume da voz (Web Audio, só leitura do microfone; nada é tocado nem enviado).
     const trOnda = document.getElementById('transcricaoOnda');
-    function trOndaDesenhar(niveis) {
+    function trOndaDesenhar(niveis, tela) {
+      const cv = tela || trOnda;
       const dpr = window.devicePixelRatio || 1;
-      const larg = Math.round(trOnda.clientWidth * dpr) || 300;
-      const alt = Math.round(trOnda.clientHeight * dpr) || 48;
-      if (trOnda.width !== larg) trOnda.width = larg;
-      if (trOnda.height !== alt) trOnda.height = alt;
-      const g = trOnda.getContext('2d');
+      const larg = Math.round(cv.clientWidth * dpr) || 300;
+      const alt = Math.round(cv.clientHeight * dpr) || 48;
+      if (cv.width !== larg) cv.width = larg;
+      if (cv.height !== alt) cv.height = alt;
+      const g = cv.getContext('2d');
       g.clearRect(0, 0, larg, alt);
       const n = niveis.length;
       const passo = larg / n;
@@ -21509,7 +21510,8 @@ function saveTemplatesToStorage() {
         g.fill();
       });
     }
-    function trOndaIniciar(estado) {
+    function trOndaIniciar(estado, tela) {
+      estado.telaOnda = tela || trOnda;
       try {
         const Ctx = window.AudioContext || window.webkitAudioContext;
         if (!Ctx) return;
@@ -21555,7 +21557,7 @@ function saveTemplatesToStorage() {
             energia += v;
           }
           estado.nivelMic = energia / BARRAS;
-          trOndaDesenhar(suave);
+          trOndaDesenhar(suave, estado.telaOnda);
           estado.onda.quadro = requestAnimationFrame(quadro);
         };
         quadro();
@@ -21566,7 +21568,8 @@ function saveTemplatesToStorage() {
       cancelAnimationFrame(estado.onda.quadro);
       try { estado.onda.ctx.close(); } catch (e) { /* já fechado */ }
       estado.onda = null;
-      trOnda.getContext('2d').clearRect(0, 0, trOnda.width, trOnda.height);
+      const cv = estado.telaOnda || trOnda;
+      cv.getContext('2d').clearRect(0, 0, cv.width, cv.height);
     }
 
     const trMicConstraints = () => ({
@@ -24737,7 +24740,6 @@ function saveTemplatesToStorage() {
       const bibPick = document.getElementById('anotacoesBibliaPick');
       const gravarStatus = document.getElementById('anotacoesGravarStatus');
       const gravarBtn = document.getElementById('anotacoesGravarBtn');
-      const pararBtn = document.getElementById('anotacoesPararBtn');
       const jwlBtn = document.getElementById('anotacoesJwlBtn');
       if (!hub || !workspace || !texto) return;
 
@@ -24885,6 +24887,9 @@ function saveTemplatesToStorage() {
         escritaEl.hidden = programa && !ativa;
         cabParteEl.hidden = !ativa;
         voltarHub.hidden = !modo;
+        const botaoPrograma = document.getElementById('anotacoesProgramaTopo');
+        botaoPrograma.hidden = !ativa;
+        botaoPrograma.closest('.anotacoes-topo').toggleAttribute('data-prog', ativa);
         if (ativa) {
           const d = dadosDaParte();
           document.getElementById('anotacoesCabTema').textContent = d.tema || 'Sem tema';
@@ -24894,7 +24899,8 @@ function saveTemplatesToStorage() {
           quemEl.hidden = !quem;
           const lista = iniciaveis();
           const pos = lista.indexOf(parteAtual);
-          document.getElementById('anotacoesCabPos').textContent = 'Parte ' + (pos + 1) + ' de ' + lista.length;
+          const pa = partes[parteAtual] || {};
+          document.getElementById('anotacoesCabPos').textContent = [pa.horario, pa.secao, 'Parte ' + (pos + 1) + ' de ' + lista.length].filter(Boolean).join(' · ');
           document.getElementById('anotacoesParteAnt').disabled = pos <= 0;
           document.getElementById('anotacoesParteProx').disabled = pos < 0 || pos >= lista.length - 1;
         }
@@ -25089,7 +25095,7 @@ function saveTemplatesToStorage() {
         if (vista === 'programa') { irPara('escolha'); return; }
         voltarAoHub();
       }
-      document.getElementById('anotacoesVerPrograma').addEventListener('click', voltar);
+      document.getElementById('anotacoesProgramaTopo').addEventListener('click', voltar);
       document.getElementById('anotacoesTrocarEvento').addEventListener('click', () => { salvarRascunho(); irPara('escolha'); });
       // Ver anotações: abre a primeira parte (na ordem do programa) que já tem anotação.
       verNotasBtn.addEventListener('click', () => {
@@ -25476,39 +25482,44 @@ function saveTemplatesToStorage() {
           return;
         }
 
-        // Passo 3: versículos (um a um, intercalados ou em sequência)
+        // Passo 3: versículos. Toque = escolhe ou tira (dá para pular: 2, 4, 6). Toque num e segure outro = trecho corrido (de / até).
         const total = caps[guia.cap - 1] || 0;
         modoVersosEl.hidden = false;
         modoVersosEl.replaceChildren();
-        const modos = document.createElement('div');
-        modos.className = 'anotacoes-modos';
-        [['soltos', 'Um a um (2, 4, 6)'], ['faixa', 'Corrido (de / até)']].forEach(([id, rotulo]) => {
-          const b = botaoGuia(rotulo, () => { guia.modo = id; guia.inicio = 0; pintarGuia(''); }, 'secondary anotacoes-modo-btn');
-          if (guia.modo === id) b.setAttribute('aria-pressed', 'true');
-          modos.appendChild(b);
-        });
-        modoVersosEl.appendChild(modos);
-        const acoes = document.createElement('div');
-        acoes.className = 'anotacoes-modos';
-        acoes.appendChild(botaoGuia('Capítulo todo', () => { guia.sel = new Set(Array.from({ length: total }, (_, i) => i + 1)); guia.inicio = 0; escreverReferencia(); pintarGuia(''); }, 'secondary anotacoes-modo-btn'));
-        acoes.appendChild(botaoGuia('Limpar', () => { guia.sel = new Set(); guia.inicio = 0; escreverReferencia(); pintarGuia(''); }, 'secondary anotacoes-modo-btn'));
-        modoVersosEl.appendChild(acoes);
         const dica = document.createElement('p');
         dica.className = 'anotacoes-msg';
-        dica.textContent = guia.modo === 'faixa'
-          ? (guia.inicio ? 'Agora toque no último versículo (começou no ' + guia.inicio + ').' : 'Toque no primeiro e depois no último versículo.')
-          : 'Toque nos versículos que quer (pode pular).';
+        dica.textContent = 'Toque nos versículos que quer (pode pular: 2, 4, 6). Para um trecho corrido, toque no primeiro e segure o último.';
         modoVersosEl.appendChild(dica);
 
         const grade = document.createElement('div');
         grade.className = 'anotacoes-grade anotacoes-grade-numeros';
         for (let n = 1; n <= total; n++) {
-          const b = botaoGuia(String(n), () => tocarVersiculo(n), 'secondary anotacoes-opcao');
+          const b = botaoVersiculo(n);
           if (guia.sel.has(n)) b.setAttribute('aria-pressed', 'true');
           if (guia.inicio === n) b.classList.add('inicio');
           grade.appendChild(b);
         }
         opcoesEl.appendChild(grade);
+      }
+
+      // Versículo: toque simples liga e desliga; toque longo (ou Shift+clique no computador) escolhe o trecho corrido desde o último tocado.
+      function botaoVersiculo(n) {
+        const b = botaoGuia(String(n), () => {}, 'secondary anotacoes-opcao anotacoes-versiculo');
+        let tempo = null;
+        let longo = false;
+        const cancelar = () => { clearTimeout(tempo); tempo = null; };
+        b.addEventListener('pointerdown', () => {
+          longo = false;
+          cancelar();
+          tempo = setTimeout(() => { longo = true; tocarVersiculo(n, true); }, 450);
+        });
+        ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => b.addEventListener(ev, cancelar));
+        b.addEventListener('contextmenu', e => e.preventDefault());
+        b.addEventListener('click', e => {
+          if (longo) { longo = false; return; }
+          tocarVersiculo(n, e.shiftKey);
+        });
+        return b;
       }
 
       function escolherLivro(livro) {
@@ -25528,16 +25539,18 @@ function saveTemplatesToStorage() {
         pintarGuia('');
       }
 
-      function tocarVersiculo(n) {
-        if (guia.modo === 'faixa') {
-          if (!guia.inicio) { guia.inicio = n; pintarGuia(''); return; }
+      // guia.inicio = o último versículo tocado (de onde começa o trecho corrido).
+      function tocarVersiculo(n, corrido) {
+        if (corrido && guia.inicio && guia.inicio !== n) {
           const a = Math.min(guia.inicio, n), b = Math.max(guia.inicio, n);
           for (let v = a; v <= b; v++) guia.sel.add(v);
-          guia.inicio = 0;
+          guia.inicio = n;
         } else if (guia.sel.has(n)) {
           guia.sel.delete(n);
+          guia.inicio = 0;
         } else {
           guia.sel.add(n);
+          guia.inicio = n;
         }
         escreverReferencia();
         pintarGuia('');
@@ -25550,6 +25563,13 @@ function saveTemplatesToStorage() {
       bibRef.addEventListener('focus', () => {
         if (!guia.aberto && !bibRef.value.trim()) return;
         guia.aberto = true;
+        sincronizarDoTexto();
+      });
+      // Lixeira: apaga o que foi digitado ou escolhido e fecha o painel.
+      document.getElementById('anotacoesBibliaLimpar').addEventListener('click', () => {
+        bibRef.value = '';
+        guia.aberto = false;
+        document.getElementById('anotacoesBibliaEscolher').setAttribute('aria-expanded', 'false');
         sincronizarDoTexto();
       });
       document.getElementById('anotacoesBibliaEscolher').addEventListener('click', () => {
@@ -25880,15 +25900,41 @@ function saveTemplatesToStorage() {
         if (!r.ok) {
           inserirNoCursor('\n—— Transcrição ——\n' + transc + '\n');
           gravarStatus.textContent = trMensagem(r, 'Transcrição inserida; o resumo falhou.');
-          return;
+          return true; // a transcrição já entrou no texto
         }
         const resumo = (r.dados && r.dados.resumo) || '';
         inserirNoCursor('\n—— Resumo da gravação ——\n' + resumo + '\n');
         gravarStatus.textContent = 'Resumo inserido nas anotações.';
         salvarRascunho();
+        return true;
       }
+      // ----- Gravação do discurso: tudo num quadro só. Gravar → (pausar, parar ou descartar) → gravação pronta → Fazer o resumo ou descartar -----
+      const gravOciosoEl = document.getElementById('anotacoesGravOcioso');
+      const gravAtivaEl = document.getElementById('anotacoesGravAtiva');
+      const gravProntaEl = document.getElementById('anotacoesGravPronta');
+      const gravTempoEl = document.getElementById('anotacoesGravTempo');
+      const gravInfoEl = document.getElementById('anotacoesGravInfo');
+      const ondaEl = document.getElementById('anotacoesOnda');
+      const gravPausarBtn = document.getElementById('anotacoesGravPausarBtn');
+      const gravResumoBtn = document.getElementById('anotacoesGravResumoBtn');
+      let gravacaoPronta = null; // { arquivo, duracaoS }: gravação parada, esperando o resumo (ou o descarte)
+
+      const mmss = seg => String(Math.floor(seg / 60)).padStart(2, '0') + ':' + String(Math.floor(seg % 60)).padStart(2, '0');
+      function mostrarGravacao(estado) {
+        gravOciosoEl.hidden = estado !== 'ocioso';
+        gravAtivaEl.hidden = estado !== 'ativa';
+        gravProntaEl.hidden = estado !== 'pronta';
+      }
+      const tempoGravadoS = g => (g.acumulado + (g.pausado ? 0 : Date.now() - g.retomadoEm)) / 1000;
+
+      function liberarMicrofone(g) {
+        clearInterval(g.timer);
+        trOndaParar(g);
+        try { g.stream.getTracks().forEach(t => t.stop()); } catch (e) { /* já parado */ }
+      }
+
       gravarBtn.addEventListener('click', async () => {
-        if (gravacao) return;
+        if (gravacao || gravacaoPronta) return;
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
           gravarStatus.textContent = 'Este aparelho não permite gravar aqui. Use Áudio em texto.';
           return;
@@ -25903,43 +25949,92 @@ function saveTemplatesToStorage() {
           const gravador = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
           const pedacos = [];
           gravador.ondataavailable = e => { if (e.data && e.data.size) pedacos.push(e.data); };
-          gravacao = { stream, gravador, pedacos, inicio: Date.now() };
+          const g = { stream, gravador, pedacos, acumulado: 0, retomadoEm: Date.now(), pausado: false };
+          gravacao = g;
           gravador.start(1000);
-          gravarBtn.hidden = true;
-          pararBtn.hidden = false;
-          const atual = gravacao;
-          const mostrarTempo = () => {
-            const seg = Math.floor((Date.now() - atual.inicio) / 1000);
-            gravarStatus.textContent = '🔴 Gravando ' + String(Math.floor(seg / 60)).padStart(2, '0') + ':' + String(seg % 60).padStart(2, '0') + ' · toque em Parar e resumir ao terminar.';
-          };
-          mostrarTempo();
-          atual.timer = setInterval(mostrarTempo, 1000);
+          gravPausarBtn.textContent = '⏸️ Pausar';
+          gravarStatus.textContent = '';
+          mostrarGravacao('ativa');
+          const atualizar = () => { gravTempoEl.textContent = (g.pausado ? '⏸️ Pausado ' : '🔴 Gravando ') + mmss(tempoGravadoS(g)); };
+          atualizar();
+          g.timer = setInterval(atualizar, 500);
+          trOndaIniciar(g, ondaEl); // o gráfico de barras do Áudio em texto, em versão reduzida
         } catch (e) {
           gravarStatus.textContent = 'Não consegui acessar o microfone.';
         }
       });
-      pararBtn.addEventListener('click', async () => {
-        if (!gravacao) return;
-        const estado = gravacao;
+
+      gravPausarBtn.addEventListener('click', () => {
+        const g = gravacao;
+        if (!g) return;
+        if (!g.pausado) {
+          try { g.gravador.pause(); } catch (e) { return; }
+          g.acumulado += Date.now() - g.retomadoEm;
+          g.pausado = true;
+          gravPausarBtn.textContent = '▶️ Retomar';
+        } else {
+          try { g.gravador.resume(); } catch (e) { return; }
+          g.retomadoEm = Date.now();
+          g.pausado = false;
+          gravPausarBtn.textContent = '⏸️ Pausar';
+        }
+      });
+
+      // Parar: encerra a gravação e a deixa pronta; o resumo é pedido à parte.
+      document.getElementById('anotacoesGravPararBtn').addEventListener('click', async () => {
+        const g = gravacao;
+        if (!g) return;
+        const duracaoS = Math.max(1, tempoGravadoS(g));
         gravacao = null;
-        clearInterval(estado.timer);
         await new Promise(resolve => {
-          estado.gravador.onstop = resolve;
-          try { estado.gravador.requestData(); } catch (e) { /* ignore */ }
-          estado.gravador.stop();
+          g.gravador.onstop = resolve;
+          try { g.gravador.requestData(); } catch (e) { /* ignore */ }
+          try { g.gravador.stop(); } catch (e) { resolve(); }
         });
-        estado.stream.getTracks().forEach(t => t.stop());
-        gravarBtn.hidden = false;
-        pararBtn.hidden = true;
-        const tipo = (estado.gravador.mimeType || 'audio/webm').split(';')[0];
-        const ext = /mp4|aac|m4a/.test(tipo) ? 'm4a' : /ogg/.test(tipo) ? 'ogg' : 'webm';
-        const arquivo = new File(estado.pedacos, 'Anotacao.' + ext, { type: tipo, lastModified: Date.now() });
-        const duracaoS = Math.max(1, (Date.now() - estado.inicio) / 1000);
-        if (!estado.pedacos.length) {
+        liberarMicrofone(g);
+        if (!g.pedacos.length) {
+          mostrarGravacao('ocioso');
           gravarStatus.textContent = 'Não houve áudio gravado.';
           return;
         }
-        await anotacoesProcessarGravacao(arquivo, duracaoS);
+        const tipo = (g.gravador.mimeType || 'audio/webm').split(';')[0];
+        const ext = /mp4|aac|m4a/.test(tipo) ? 'm4a' : /ogg/.test(tipo) ? 'ogg' : 'webm';
+        gravacaoPronta = { arquivo: new File(g.pedacos, 'Anotacao.' + ext, { type: tipo, lastModified: Date.now() }), duracaoS };
+        gravInfoEl.textContent = '✅ Gravação pronta · ' + mmss(duracaoS);
+        gravarStatus.textContent = 'Toque em Fazer o resumo para transcrever e resumir, ou descarte a gravação.';
+        mostrarGravacao('pronta');
+      });
+
+      // Descartar (durante a gravação ou depois de parada): apaga sem transcrever.
+      async function descartarGravacao() {
+        const ok = await askConfirm('Descartar esta gravação? Ela será apagada e não dá para recuperar.', 'Descartar a gravação', { ok: 'Descartar', cancel: 'Continuar' });
+        if (!ok) return;
+        if (gravacao) {
+          const g = gravacao;
+          gravacao = null;
+          g.gravador.onstop = null;
+          try { g.gravador.stop(); } catch (e) { /* já parado */ }
+          liberarMicrofone(g);
+        }
+        gravacaoPronta = null;
+        mostrarGravacao('ocioso');
+        gravarStatus.textContent = 'Gravação descartada.';
+      }
+      document.getElementById('anotacoesGravDescartarBtn').addEventListener('click', descartarGravacao);
+      document.getElementById('anotacoesGravDescartar2Btn').addEventListener('click', descartarGravacao);
+
+      gravResumoBtn.addEventListener('click', async () => {
+        if (!gravacaoPronta) return;
+        gravResumoBtn.disabled = true;
+        try {
+          const feito = await anotacoesProcessarGravacao(gravacaoPronta.arquivo, gravacaoPronta.duracaoS);
+          if (feito) {
+            gravacaoPronta = null;
+            mostrarGravacao('ocioso');
+          }
+        } finally {
+          gravResumoBtn.disabled = false;
+        }
       });
 
       texto.addEventListener('blur', salvarRascunho);
