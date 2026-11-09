@@ -8281,9 +8281,46 @@
       margin: 8px 0;
     }
 
+    .splash-app {
+      position: fixed;
+      inset: 0;
+      z-index: 10060;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: var(--bg);
+      transition: opacity .25s ease;
+    }
+
+    .splash-app[hidden] {
+      display: none !important;
+    }
+
+    .splash-app.saindo {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .splash-app img {
+      width: 96px;
+      height: 96px;
+      border-radius: 20px;
+      object-fit: contain;
+    }
+
+    .splash-nome {
+      margin: 0;
+      font-size: 1.7rem;
+      font-weight: 700;
+      letter-spacing: -.02em;
+      color: var(--text);
+    }
+
     .acesso-site-overlay {
       z-index: 10050;
-      background: rgba(15, 23, 42, .72);
+      background: var(--bg); /* tela cheia opaca: o app não aparece por trás do cadastro nem da tela institucional */
       overflow: auto;
       align-items: flex-start;
       padding: 24px 14px 40px;

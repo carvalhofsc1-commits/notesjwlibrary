@@ -2049,6 +2049,13 @@
 
   </main>
 
+  <!-- Tela de abertura: cobre o app (com o logo) até o servidor dizer se este aparelho já está cadastrado. Cadastrado: abre o Início;
+       não cadastrado: abre a tela de cadastro em tela cheia. Sem conexão ou fora do site, some logo. -->
+  <div id="splashApp" class="splash-app" role="presentation">
+    <img src="icon-header.png?v=3" alt="" width="96" height="96" decoding="async">
+    <p class="splash-nome">Note<span class="brand-accent">Style</span></p>
+  </div>
+
   <div id="acessoSiteOverlay" class="modal-overlay acesso-site-overlay" role="dialog" aria-modal="true" aria-labelledby="acessoSiteTitulo" hidden>
     <div class="modal-card acesso-site-card">
       <div id="acessoSitePainelForm">

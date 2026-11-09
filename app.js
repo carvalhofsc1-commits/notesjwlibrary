@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.72'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.73'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12244,7 +12244,18 @@ function saveTemplatesToStorage() {
       acessoSiteFormStatus.textContent = 'Cadastro enviado. Aguarde a aprovação.';
     });
 
-    setTimeout(acessoSiteVerificarGate, 400);
+    // Tela de abertura: fica até o servidor responder (no máximo ~5 s; sem conexão ou fora do site some na hora), por pelo menos 600 ms.
+    const splashApp = document.getElementById('splashApp');
+    const splashInicio = Date.now();
+    function splashFechar() {
+      if (!splashApp || splashApp.hidden) return;
+      setTimeout(() => {
+        splashApp.classList.add('saindo');
+        setTimeout(() => { splashApp.hidden = true; }, 260);
+      }, Math.max(0, 600 - (Date.now() - splashInicio)));
+    }
+    setTimeout(splashFechar, 5000);
+    setTimeout(() => acessoSiteVerificarGate().then(splashFechar, splashFechar), 0);
 
     // Ajustes → 👤 Meus dados: o usuário altera o cadastro deste aparelho depois de identificado.
     const meusDadosSection = document.getElementById('meusDadosSection');

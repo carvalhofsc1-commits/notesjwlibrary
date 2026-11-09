@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.73
+
+Tela de abertura com o logo ao abrir o app: se o aparelho já está cadastrado, abre o Início; se não, abre o cadastro. O cadastro e a tela institucional (ao cancelar) agora ocupam a tela inteira, com fundo opaco: o app não aparece mais por trás.
+
 ## 6.6.72
 
 Cadastro e Meus dados: campo obrigatório **Telefone de contato** com máscara `(64) 98180-8090`. O número aparece na lista do administrador (pendentes e identificados). Política de Privacidade 2.1, Termos 1.2 e texto da página Sobre atualizados.
