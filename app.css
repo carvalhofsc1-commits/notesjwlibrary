@@ -8365,6 +8365,53 @@
       object-fit: contain;
     }
 
+    .acesso-site-pendente {
+      margin: 0 0 14px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(34, 197, 94, .55);
+      background: rgba(34, 197, 94, .14);
+      font-weight: 700;
+      font-size: .95rem;
+      line-height: 1.4;
+    }
+
+    .acesso-site-pendente[hidden],
+    .acesso-site-contato[hidden] {
+      display: none !important;
+    }
+
+    .acesso-site-contato {
+      margin: 12px 0 0;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+    }
+
+    .acesso-site-contato .hint {
+      margin: 0 0 8px;
+      text-align: left;
+    }
+
+    .acesso-site-contato-link {
+      flex: 1 1 140px;
+      display: block;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: var(--text);
+      font-weight: 700;
+      text-align: center;
+      text-decoration: none;
+    }
+
+    .acesso-site-contato-link.zap {
+      background: #16a34a;
+      border-color: #16a34a;
+      color: #fff;
+    }
+
     .acesso-site-nome {
       margin: 0;
       font-size: 1.55rem;

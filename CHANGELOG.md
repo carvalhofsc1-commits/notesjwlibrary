@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.80
+
+Cadastro enviado: o formulário fecha e abre a tela institucional com o aviso "Cadastro enviado. Aguarde a aprovação do administrador." (também ao reabrir o app com o cadastro em análise). Se a pessoa tocar em Solicitar acesso de novo, o app avisa que já há um cadastro para este aparelho e sugere avisar o administrador por WhatsApp ou e-mail.
+
 ## 6.6.79
 
 Página Sobre: "Convidar alguém" só aparece para aparelho cadastrado, sem exceção: ter a senha de administrador salva não basta (o administrador também precisa estar cadastrado).

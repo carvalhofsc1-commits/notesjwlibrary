@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.79'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.80'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12157,10 +12157,25 @@ function saveTemplatesToStorage() {
       acessoSiteRenderAdmin(r.data.acesso, 'Identificação revogada. ');
     });
 
+    // Tela institucional. Com cadastro já enviado (aguardando aprovação), mostra o aviso verde no alto; tentar solicitar de novo não abre o
+    // formulário: explica que já há um cadastro e sugere avisar o administrador por WhatsApp ou e-mail.
+    const ACESSO_ADMIN_ZAP = '5564981808090';
+    const ACESSO_ADMIN_EMAIL = 'carvalhofsc1@gmail.com';
+    const acessoSitePendente = document.getElementById('acessoSitePendente');
+    const acessoSiteContatoAdmin = document.getElementById('acessoSiteContatoAdmin');
     function acessoSiteMostrarBoasVindas() {
       acessoSitePainelForm.hidden = true;
       acessoSitePainelBoasVindas.hidden = false;
       acessoSiteFormStatus.textContent = '';
+      const pendente = Boolean(acessoSiteUltimoEstado && acessoSiteUltimoEstado.pendente);
+      acessoSitePendente.hidden = !pendente;
+      acessoSiteContatoAdmin.hidden = true;
+    }
+    function acessoSiteJaEnviado() {
+      const aviso = 'Pedido de acesso do NoteStyle: já enviei meu cadastro e aguardo a aprovação.';
+      document.getElementById('acessoSiteZapAdmin').href = 'https://wa.me/' + ACESSO_ADMIN_ZAP + '?text=' + encodeURIComponent(aviso);
+      document.getElementById('acessoSiteEmailAdmin').href = 'mailto:' + ACESSO_ADMIN_EMAIL + '?subject=' + encodeURIComponent('Pedido de acesso ao NoteStyle') + '&body=' + encodeURIComponent(aviso);
+      acessoSiteContatoAdmin.hidden = false;
     }
 
     function acessoSiteMostrarFormulario(estado) {
@@ -12193,7 +12208,8 @@ function saveTemplatesToStorage() {
       acessoSiteOverlay.hidden = false;
       acessoSiteOverlay.classList.add('open');
       document.body.style.overflow = 'hidden';
-      acessoSiteMostrarFormulario(estado);
+      if (estado && estado.pendente) acessoSiteMostrarBoasVindas(); // cadastro enviado: fecha o formulário e mostra a tela institucional com o aviso
+      else acessoSiteMostrarFormulario(estado);
     }
 
     function acessoSiteLiberarOverlay() {
@@ -12205,7 +12221,10 @@ function saveTemplatesToStorage() {
     }
 
     acessoSiteCancelarBtn.addEventListener('click', () => acessoSiteMostrarBoasVindas());
-    acessoSiteSolicitarBtn.addEventListener('click', () => acessoSiteMostrarFormulario(acessoSiteUltimoEstado));
+    acessoSiteSolicitarBtn.addEventListener('click', () => {
+      if (acessoSiteUltimoEstado && acessoSiteUltimoEstado.pendente) acessoSiteJaEnviado();
+      else acessoSiteMostrarFormulario(acessoSiteUltimoEstado);
+    });
 
     async function acessoSiteVerificarGate() {
       if (!servidoPelaWeb() || !navigator.onLine) return;
@@ -12241,7 +12260,7 @@ function saveTemplatesToStorage() {
         return;
       }
       acessoSiteMostrarOverlay({ pendente: true });
-      acessoSiteFormStatus.textContent = 'Cadastro enviado. Aguarde a aprovação.';
+      acessoSiteOverlay.scrollTop = 0;
     });
 
     // Tela de abertura: fica até o servidor responder (no máximo ~5 s; sem conexão ou fora do site some na hora), por pelo menos 600 ms.
