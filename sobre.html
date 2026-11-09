@@ -422,7 +422,7 @@
     <img src="icon-header.png?v=3" alt="" class="about-logo" width="512" height="512" decoding="async">
     <h1 class="about-name">Note<span class="brand-accent">Style</span></h1>
     <p class="about-site"><a href="https://www.notestyle.com.br">www.notestyle.com.br</a></p>
-    <span class="pill">v6.6.77</span>
+    <span class="pill">v6.6.78</span>
 
     <p class="about-text">O NoteStyle ajuda você a preparar notas, reuniões e o estudo pessoal: acompanha a leitura
       diária da Bíblia (com o áudio dos capítulos), formata textos com destaques, apoia a preparação de comentários,
@@ -461,7 +461,7 @@
       </ul>
     </section>
 
-    <section class="notice" id="convite">
+    <section class="notice" id="convite" hidden>
       <h2>📨 Convidar alguém</h2>
       <p>Quer que um amigo conheça o NoteStyle? A mensagem já vem pronta: toque em <strong>Enviar pelo WhatsApp</strong>
         para abrir o WhatsApp com o texto preenchido (você escolhe a pessoa e envia), compartilhe em outro aplicativo de
@@ -606,6 +606,7 @@
       var CHAVE_SENHA = 'jwLibraryNoteAplicarAdminSenhaV1';
       var CHAVE_COPIA = 'jwLibraryNoteAplicarConviteServidorV1';
       var CHAVE_ANTIGA = 'jwLibraryNoteAplicarConviteTextoV1'; // versão 6.1.22 guardava o texto só no aparelho
+      var secao = document.getElementById('convite');
       var campo = document.getElementById('conviteTexto');
       var status = document.getElementById('conviteStatus');
       var compartilhar = document.getElementById('conviteCompartilharBtn');
@@ -618,7 +619,26 @@
       var admin = Boolean(senha);
       var pronto = false;
 
-      campo.readOnly = !admin;
+      campo.readOnly = !admin; // só o administrador edita o texto; os demais usuários só o veem e o enviam
+
+      // "Convidar alguém" só aparece para usuário cadastrado (ou para o administrador). O servidor diz se este aparelho está identificado;
+      // sem conexão vale o último resultado guardado aqui.
+      var CHAVE_CADASTRADO = 'jwLibraryNoteSobreCadastradoV1';
+      function mostrarConvite(sim) { secao.hidden = !(sim || admin); }
+      mostrarConvite(guardado(CHAVE_CADASTRADO) === '1');
+      (function () {
+        var id = guardado('jwLibraryNoteAplicarAparelhoIdV1');
+        if (!id) return;
+        fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ acao: 'acesso-site-estado', aparelhoId: id }) })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (d) {
+            if (!d) return;
+            var cadastrado = Boolean(d.identificado || d.configurado === false);
+            try { if (cadastrado) localStorage.setItem(CHAVE_CADASTRADO, '1'); else localStorage.removeItem(CHAVE_CADASTRADO); } catch (e) { }
+            mostrarConvite(cadastrado);
+          })
+          .catch(function () { });
+      })();
       painelAdmin.hidden = !admin;
       campo.value = guardado(CHAVE_COPIA) || ORIGINAL;
       compartilhar.hidden = typeof navigator.share !== 'function';

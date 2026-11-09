@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.78
+
+Página Sobre: a seção "Convidar alguém" só aparece para usuários cadastrados (e para o administrador). O texto do convite continua só editável pelo administrador; os demais usuários só o veem e o enviam.
+
 ## 6.6.77
 
 Cadastro (Identifique-se e Meus dados): campos obrigatórios marcados com * e a nota "* Campos obrigatórios". Congregação e "Como conheceu o app?" passam a ser opcionais (também no servidor).
