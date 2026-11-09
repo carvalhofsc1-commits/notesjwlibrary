@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.77
+
+Cadastro (Identifique-se e Meus dados): campos obrigatórios marcados com * e a nota "* Campos obrigatórios". Congregação e "Como conheceu o app?" passam a ser opcionais (também no servidor).
+
 ## 6.6.76
 
 Tela Identifique-se: corrigido o texto para "…solicite o acesso ao administrador."

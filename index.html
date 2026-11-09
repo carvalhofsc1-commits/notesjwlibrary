@@ -928,33 +928,34 @@
             <p class="hint">Seus dados de identificação neste aparelho. Dá para alterar quando quiser; a mudança vale na hora.</p>
             <p id="meusDadosStatus" class="ok" role="status" aria-live="polite"></p>
             <form id="meusDadosForm" class="acesso-site-form" autocomplete="on">
-              <label for="meusDadosNome">Nome</label>
+              <p class="hint acesso-site-obrig-nota"><span class="obrig" aria-hidden="true">*</span> Campos obrigatórios.</p>
+              <label for="meusDadosNome">Nome <span class="obrig" aria-hidden="true">*</span></label>
               <input id="meusDadosNome" name="nome" type="text" maxlength="60" required autocomplete="given-name">
-              <label for="meusDadosSobrenome">Sobrenome</label>
+              <label for="meusDadosSobrenome">Sobrenome <span class="obrig" aria-hidden="true">*</span></label>
               <input id="meusDadosSobrenome" name="sobrenome" type="text" maxlength="60" required autocomplete="family-name">
-              <label for="meusDadosTelefone">Telefone de contato</label>
+              <label for="meusDadosTelefone">Telefone de contato <span class="obrig" aria-hidden="true">*</span></label>
               <input id="meusDadosTelefone" name="telefone" type="tel" inputmode="tel" maxlength="15" required autocomplete="tel-national" placeholder="(00) 00000-0000">
               <div class="acesso-site-nasc-grid">
                 <div>
-                  <label for="meusDadosMes">Mês de nascimento</label>
+                  <label for="meusDadosMes">Mês de nascimento <span class="obrig" aria-hidden="true">*</span></label>
                   <select id="meusDadosMes" name="mesNascimento" required></select>
                 </div>
                 <div>
-                  <label for="meusDadosAno">Ano de nascimento</label>
+                  <label for="meusDadosAno">Ano de nascimento <span class="obrig" aria-hidden="true">*</span></label>
                   <select id="meusDadosAno" name="anoNascimento" required></select>
                 </div>
               </div>
               <p id="meusDadosIdadeCalc" class="hint">Idade aproximada: —</p>
-              <label for="meusDadosEstado">Estado</label>
+              <label for="meusDadosEstado">Estado <span class="obrig" aria-hidden="true">*</span></label>
               <select id="meusDadosEstado" name="estado" required></select>
-              <label for="meusDadosCidade">Cidade</label>
+              <label for="meusDadosCidade">Cidade <span class="obrig" aria-hidden="true">*</span></label>
               <select id="meusDadosCidade" name="cidade" required disabled>
                 <option value="">Escolha o estado primeiro</option>
               </select>
-              <label for="meusDadosCongregacao">Congregação</label>
-              <input id="meusDadosCongregacao" name="congregacao" type="text" maxlength="100" required>
-              <label for="meusDadosComo">Como conheceu o app?</label>
-              <select id="meusDadosComo" name="comoConheceuOpcao" required></select>
+              <label for="meusDadosCongregacao">Congregação <span class="opc">(opcional)</span></label>
+              <input id="meusDadosCongregacao" name="congregacao" type="text" maxlength="100">
+              <label for="meusDadosComo">Como conheceu o app? <span class="opc">(opcional)</span></label>
+              <select id="meusDadosComo" name="comoConheceuOpcao"></select>
               <input id="meusDadosComoOutro" name="comoConheceuOutro" type="text" maxlength="160" placeholder="Descreva como conheceu o app" hidden>
               <div class="button-row">
                 <button id="meusDadosSalvarBtn" type="submit">💾 Salvar alterações</button>
@@ -2062,33 +2063,34 @@
         <h2 id="acessoSiteTitulo">Identifique-se</h2>
         <p id="acessoSiteMsg" class="hint">Para usar o NoteStyle, preencha seus dados e solicite o acesso ao administrador.</p>
         <form id="acessoSiteForm" class="acesso-site-form" autocomplete="on">
-          <label for="acessoSiteNome">Nome</label>
+          <p class="hint acesso-site-obrig-nota"><span class="obrig" aria-hidden="true">*</span> Campos obrigatórios.</p>
+          <label for="acessoSiteNome">Nome <span class="obrig" aria-hidden="true">*</span></label>
           <input id="acessoSiteNome" name="nome" type="text" maxlength="60" required autocomplete="given-name">
-          <label for="acessoSiteSobrenome">Sobrenome</label>
+          <label for="acessoSiteSobrenome">Sobrenome <span class="obrig" aria-hidden="true">*</span></label>
           <input id="acessoSiteSobrenome" name="sobrenome" type="text" maxlength="60" required autocomplete="family-name">
-          <label for="acessoSiteTelefone">Telefone de contato</label>
+          <label for="acessoSiteTelefone">Telefone de contato <span class="obrig" aria-hidden="true">*</span></label>
           <input id="acessoSiteTelefone" name="telefone" type="tel" inputmode="tel" maxlength="15" required autocomplete="tel-national" placeholder="(00) 00000-0000">
           <div class="acesso-site-nasc-grid">
             <div>
-              <label for="acessoSiteMes">Mês de nascimento</label>
+              <label for="acessoSiteMes">Mês de nascimento <span class="obrig" aria-hidden="true">*</span></label>
               <select id="acessoSiteMes" name="mesNascimento" required></select>
             </div>
             <div>
-              <label for="acessoSiteAno">Ano de nascimento</label>
+              <label for="acessoSiteAno">Ano de nascimento <span class="obrig" aria-hidden="true">*</span></label>
               <select id="acessoSiteAno" name="anoNascimento" required></select>
             </div>
           </div>
           <p id="acessoSiteIdadeCalc" class="hint">Idade aproximada: —</p>
-          <label for="acessoSiteEstado">Estado</label>
+          <label for="acessoSiteEstado">Estado <span class="obrig" aria-hidden="true">*</span></label>
           <select id="acessoSiteEstado" name="estado" required></select>
-          <label for="acessoSiteCidade">Cidade</label>
+          <label for="acessoSiteCidade">Cidade <span class="obrig" aria-hidden="true">*</span></label>
           <select id="acessoSiteCidade" name="cidade" required disabled>
             <option value="">Escolha o estado primeiro</option>
           </select>
-          <label for="acessoSiteCongregacao">Congregação</label>
-          <input id="acessoSiteCongregacao" name="congregacao" type="text" maxlength="100" required>
-          <label for="acessoSiteComo">Como conheceu o app?</label>
-          <select id="acessoSiteComo" name="comoConheceuOpcao" required></select>
+          <label for="acessoSiteCongregacao">Congregação <span class="opc">(opcional)</span></label>
+          <input id="acessoSiteCongregacao" name="congregacao" type="text" maxlength="100">
+          <label for="acessoSiteComo">Como conheceu o app? <span class="opc">(opcional)</span></label>
+          <select id="acessoSiteComo" name="comoConheceuOpcao"></select>
           <input id="acessoSiteComoOutro" name="comoConheceuOutro" type="text" maxlength="160" placeholder="Descreva como conheceu o app" hidden>
           <div class="modal-actions acesso-site-acoes">
             <button id="acessoSiteEnviarBtn" type="submit">💾 Salvar e continuar</button>

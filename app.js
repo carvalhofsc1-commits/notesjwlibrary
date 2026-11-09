@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.76'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.77'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12048,9 +12048,9 @@ function saveTemplatesToStorage() {
         ? pendentes.map(p =>
           '<div class="acesso-site-item" data-pedido-id="' + acessoSiteEscapar(p.id) + '">' +
           '<strong>' + acessoSiteEscapar(p.nome + ' ' + p.sobrenome) + '</strong> · ' + acessoSiteEscapar(p.idade) + ' anos' +
-          '<span class="hint">' + acessoSiteEscapar(p.cidadeEstado || [p.cidade, p.estado].filter(Boolean).join(', ')) + ' · ' + acessoSiteEscapar(p.congregacao) +
+          '<span class="hint">' + acessoSiteEscapar(p.cidadeEstado || [p.cidade, p.estado].filter(Boolean).join(', ')) + (p.congregacao ? ' · ' + acessoSiteEscapar(p.congregacao) : '') +
           (p.telefone ? '<br>Telefone: ' + acessoSiteEscapar(p.telefone) : '') +
-          '<br>Como conheceu: ' + acessoSiteEscapar(p.comoConheceu) +
+          (p.comoConheceu ? '<br>Como conheceu: ' + acessoSiteEscapar(p.comoConheceu) : '') +
           '<br>Aparelho ' + acessoSiteEscapar(p.aparelhoId) + '… · ' + estatisticasQuando(p.criadoEm) + '</span>' +
           '<div class="button-row">' +
           '<button type="button" class="acesso-site-aprovar" data-id="' + acessoSiteEscapar(p.id) + '">✅ Aprovar</button>' +

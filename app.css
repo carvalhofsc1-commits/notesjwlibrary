@@ -8424,6 +8424,22 @@
       text-underline-offset: 2px;
     }
 
+    .acesso-site-form .obrig,
+    .acesso-site-obrig-nota .obrig {
+      color: #dc2626;
+      font-weight: 700;
+    }
+
+    .acesso-site-form .opc {
+      color: var(--muted);
+      font-weight: 400;
+      font-size: .85em;
+    }
+
+    .acesso-site-obrig-nota {
+      margin: 0;
+    }
+
     .acesso-site-form {
       display: grid;
       gap: 6px;

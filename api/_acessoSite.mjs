@@ -225,10 +225,8 @@ function camposDoCorpo(corpo) {
   if (idade < 12 || idade > 120) return { erro: "A idade aproximada precisa ser de pelo menos 12 anos." };
   if (!cidade) return { erro: "Informe a cidade." };
   if (!ESTADOS_UF.has(estado)) return { erro: "Escolha o estado." };
-  if (!congregacao) return { erro: "Informe o nome da congregação." };
-  if (!COMO_CONHECEU.has(comoOpcao)) return { erro: "Escolha como você conheceu o app." };
-  if (comoOpcao === "Outros meios" && !comoOutro) return { erro: "Descreva como você conheceu o app." };
-  const comoConheceu = comoOpcao === "Outros meios" ? `Outros meios: ${comoOutro}` : comoOpcao;
+  if (comoOpcao && !COMO_CONHECEU.has(comoOpcao)) return { erro: "Escolha como você conheceu o app." };
+  const comoConheceu = comoOpcao === "Outros meios" ? (comoOutro ? `Outros meios: ${comoOutro}` : "Outros meios") : comoOpcao;
   return {
     campos: {
       nome,
