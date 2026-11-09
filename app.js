@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.97'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.98'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -24810,8 +24810,20 @@ function saveTemplatesToStorage() {
         const tema = String((programaMeta && programaMeta.tema) || '');
         const corte = tema.search(/\s[—–]\s/);
         progTitulo.querySelector('.anotacoes-pt-nome').textContent = (programaMeta && programaMeta.titulo) || '';
-        progTitulo.querySelector('.anotacoes-pt-tema').textContent = corte >= 0 ? tema.slice(0, corte).trim() : tema;
-        progTitulo.querySelector('.anotacoes-pt-texto').textContent = corte >= 0 ? tema.slice(corte).replace(/^\s[—–]\s/, '').trim() : '';
+        // Tema e texto temático na mesma linha, ligados por um travessão ("Tema — Salmo 37:4"), em no máximo duas linhas.
+        const el = progTitulo.querySelector('.anotacoes-pt-tema');
+        el.replaceChildren();
+        const forte = document.createElement('strong');
+        forte.textContent = corte >= 0 ? tema.slice(0, corte).trim() : tema;
+        el.appendChild(forte);
+        const textoTem = corte >= 0 ? tema.slice(corte).replace(/^\s[—–]\s/, '').trim() : '';
+        if (textoTem) {
+          const tt = document.createElement('span');
+          tt.className = 'anotacoes-tt';
+          tt.textContent = ' — ' + textoTem;
+          el.appendChild(tt);
+        }
+        progTitulo.querySelector('.anotacoes-pt-texto').textContent = '';
       }
 
       // ----- Telas de assembleia e congresso: 'escolha' (lista de eventos) → 'programa' (o evento escolhido) → 'anotando' (uma parte) -----
