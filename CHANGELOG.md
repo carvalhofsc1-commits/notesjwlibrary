@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.03
+
+Anotações: o título acima do campo de texto bíblico passa a “📖 Inserir texto bíblico nas anotações”, em negrito.
+
 ## 6.7.02
 
 Anotações: o campo de mensagens sob os botões (“Texto bíblico inserido.” e parecidas) deixou de mostrar o que deu certo; só aparecem os avisos do que falhou ou falta fazer. Copiar e Salvar confirmam piscando “✓ Copiado” / “✓ Salvo” no próprio botão.
