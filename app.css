@@ -5245,6 +5245,25 @@
       font-size: .86rem;
     }
 
+    /* Iniciar anotação e, ao lado, a lixeira que limpa o orador e a congregação. */
+    .anotacoes-parte-botoes {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .screen-anotacoes .anotacoes-parte-botoes .anotacoes-iniciar {
+      flex: 1 1 auto;
+      margin-top: 0;
+    }
+
+    .screen-anotacoes .anotacoes-lixeira-parte {
+      flex: 0 0 2.8rem;
+      min-height: 38px;
+      padding: 4px;
+      font-size: .9rem;
+    }
+
     .screen-anotacoes .anotacoes-trilha-btn {
       min-height: 32px;
       padding: 4px 10px;

@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.03'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.04'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -25022,6 +25022,7 @@ function saveTemplatesToStorage() {
           if (i === expandida) {
             const extra = document.createElement('div');
             extra.className = 'anotacoes-parte-extra';
+            const camposDaParte = [];
             [['Orador', 'orador', 'Nome do orador', 'name'], ['Congregação', 'congregacao', 'Congregação do orador', 'organization']].forEach(([rotuloCampo, chave, dica, auto]) => {
               const label = document.createElement('label');
               label.textContent = rotuloCampo;
@@ -25036,13 +25037,30 @@ function saveTemplatesToStorage() {
               });
               label.appendChild(campo);
               extra.appendChild(label);
+              camposDaParte.push([chave, campo]);
             });
+            const botoes = document.createElement('div');
+            botoes.className = 'anotacoes-parte-botoes';
             const iniciar = document.createElement('button');
             iniciar.type = 'button';
             iniciar.className = 'anotacoes-iniciar';
             iniciar.textContent = p.nota && p.nota.trim() ? '✍️ Continuar a anotação' : '✍️ Iniciar anotação';
             iniciar.addEventListener('click', () => iniciarAnotacao(i));
-            extra.appendChild(iniciar);
+            // Lixeira: limpa o orador e a congregação desta parte.
+            const lixeira = document.createElement('button');
+            lixeira.type = 'button';
+            lixeira.className = 'secondary anotacoes-lixeira-parte';
+            lixeira.title = 'Limpar o orador e a congregação';
+            lixeira.setAttribute('aria-label', 'Limpar o orador e a congregação');
+            lixeira.textContent = '🗑️';
+            lixeira.addEventListener('click', () => {
+              camposDaParte.forEach(([chave, campo]) => { p[chave] = ''; campo.value = ''; });
+              if (ativa && i === parteAtual) atualizarVista();
+              agendarRascunho();
+              if (camposDaParte[0]) camposDaParte[0][1].focus();
+            });
+            botoes.append(iniciar, lixeira);
+            extra.appendChild(botoes);
             item.appendChild(extra);
           }
           partesEl.appendChild(item);

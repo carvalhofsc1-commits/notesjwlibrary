@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.04
+
+Anotações: na parte aberta do programa, nova lixeira ao lado de Iniciar/Continuar a anotação, que limpa o orador e a congregação daquela parte.
+
 ## 6.7.03
 
 Anotações: o título acima do campo de texto bíblico passa a “📖 Inserir texto bíblico nas anotações”, em negrito.
