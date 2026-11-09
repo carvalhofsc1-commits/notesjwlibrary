@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.23
+
+Anotações: a faixa do título do card aberto voltou a ter o fundo próprio (cinza-azulado suave), mesmo com o dedo ainda em cima.
+
 ## 6.7.22
 
 Anotações (assembleia e congresso): as faixas **Manhã** e **Tarde** ficaram em azul-acinzentado forte, com texto branco; e os cartões das partes não mudam mais de cor ao passar o dedo ou o mouse — a cor só muda quando há anotações.
