@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.99'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.100'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -26020,10 +26020,28 @@ function saveTemplatesToStorage() {
         }
         const tipo = (g.gravador.mimeType || 'audio/webm').split(';')[0];
         const ext = /mp4|aac|m4a/.test(tipo) ? 'm4a' : /ogg/.test(tipo) ? 'ogg' : 'webm';
-        gravacaoPronta = { arquivo: new File(g.pedacos, 'Anotacao.' + ext, { type: tipo, lastModified: Date.now() }), duracaoS };
+        gravacaoPronta = { arquivo: new File(g.pedacos, 'Anotacao.' + ext, { type: tipo, lastModified: Date.now() }), duracaoS, ext, salvo: false };
         gravInfoEl.textContent = '✅ Gravação pronta · ' + mmss(duracaoS);
-        gravarStatus.textContent = 'Toque em Fazer o resumo para transcrever e resumir, ou descarte a gravação.';
+        gravarStatus.textContent = 'Toque em Fazer o resumo para transcrever e resumir, em Salvar o áudio para guardar o arquivo, ou descarte a gravação.';
         mostrarGravacao('pronta');
+      });
+
+      // Salvar o áudio: baixa o arquivo (no iPhone, abre o compartilhar, de onde dá para guardar em Arquivos). O nome leva o tema da parte e a data.
+      document.getElementById('anotacoesGravSalvarBtn').addEventListener('click', async () => {
+        const gp = gravacaoPronta;
+        if (!gp) return;
+        const base = removeUnicodeFormatting(tituloDaAnotacao(60)).replace(DOCX_EMOJI, ' ').replace(/[\\/:*?"<>|\u201C\u201D\u2018\u2019]/g, '').replace(/\s+/g, ' ').trim().slice(0, 60);
+        const nome = 'Gravação - ' + (base || 'discurso') + ' - ' + new Date().toISOString().slice(0, 10) + '.' + gp.ext;
+        const podeCompartilhar = typeof navigator.canShare === 'function' && navigator.canShare({ files: [new File([gp.arquivo], nome, { type: gp.arquivo.type })] });
+        try {
+          const msg = await docxEntregar(gp.arquivo, nome, podeCompartilhar);
+          if (msg) {
+            gp.salvo = true;
+            gravarStatus.textContent = msg;
+          }
+        } catch (e) {
+          gravarStatus.textContent = 'Não consegui salvar o áudio. Tente de novo.';
+        }
       });
 
       // Descartar (durante a gravação ou depois de parada): apaga sem transcrever.
@@ -26050,8 +26068,13 @@ function saveTemplatesToStorage() {
         try {
           const feito = await anotacoesProcessarGravacao(gravacaoPronta.arquivo, gravacaoPronta.duracaoS);
           if (feito) {
-            gravacaoPronta = null;
-            mostrarGravacao('ocioso');
+            // O áudio só sai daqui depois de salvo; senão fica pronto para salvar (ou descartar).
+            if (gravacaoPronta.salvo) {
+              gravacaoPronta = null;
+              mostrarGravacao('ocioso');
+            } else {
+              gravarStatus.textContent += ' O áudio ainda não foi salvo: salve-o ou descarte para gravar de novo.';
+            }
           }
         } finally {
           gravResumoBtn.disabled = false;

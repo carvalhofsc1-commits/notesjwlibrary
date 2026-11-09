@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.100
+
+Anotações: depois de parar a gravação do discurso, novo botão **💾 Salvar o áudio**: baixa o arquivo (no iPhone abre o compartilhar, de onde dá para guardar em Arquivos), com o nome “Gravação - tema - data”. Depois de **Fazer o resumo**, o áudio só some da tela quando já foi salvo; senão continua disponível para salvar ou descartar.
+
 ## 6.6.99
 
 Anotações: a linha colorida do topo (a cor do modo) também fecha o tema por baixo, nas telas do programa e da anotação.
