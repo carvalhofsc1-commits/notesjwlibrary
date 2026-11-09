@@ -1335,3 +1335,284 @@ export async function lerCamposDoDocumento(docId, { timeoutMs = 8000 } = {}) {
   if (camposLidos.size > 300) camposLidos.delete(camposLidos.keys().next().value);
   return dados;
 }
+
+// ---------- Programas de assembleia / congresso (pub-media + página WOL, se houver) ----------
+// Entrada: código da publicação (CA-brpgm27), link jw.org/finder?pub=…, link wol /d/… ou caminho da biblioteca.
+// Devolve título, tema (se a WOL tiver), URL do PDF (para o app extrair as partes) e link da WOL quando existir.
+function pubDoTexto(bruto) {
+  const t = String(bruto || "");
+  const m =
+    t.match(/\b((?:CA|CO|CR|ca|co|cr)-[A-Za-z0-9]+)\b/) ||
+    t.match(/\b([A-Za-z]{1,6}-[A-Za-z0-9]*pgm[A-Za-z0-9]*)\b/i);
+  return m ? m[1] : "";
+}
+
+function pubDeEntrada(entrada) {
+  const bruto = String(entrada || "").trim();
+  if (!bruto) return { pub: "", docId: "", wolUrl: "" };
+  try {
+    const u = new URL(bruto);
+    // docid do finder (jw.org/finder?docid=…) ou da WOL (/wol/d/…) — mais específico que o pub=
+    const docParam = (u.searchParams.get("docid") || u.searchParams.get("docId") || "").trim();
+    if (/^\d{5,12}$/.test(docParam)) {
+      return { pub: (u.searchParams.get("pub") || "").trim(), docId: docParam, wolUrl: `${BASE}/pt/wol/d/r5/lp-t/${docParam}` };
+    }
+    const doc = u.pathname.match(/\/wol\/d\/r5\/lp-t\/(\d{5,12})\/?$/);
+    if (doc) return { pub: (u.searchParams.get("pub") || "").trim(), docId: doc[1], wolUrl: `${BASE}/pt/wol/d/r5/lp-t/${doc[1]}` };
+    const pubParam = (u.searchParams.get("pub") || "").trim();
+    if (pubParam) return { pub: pubParam, docId: "", wolUrl: "" };
+    const pubPath = pubDoTexto(decodeURIComponent(u.pathname + " " + u.search));
+    if (pubPath) {
+      const wolUrl = /wol\.jw\.org/i.test(u.hostname) ? u.href : "";
+      return { pub: pubPath, docId: "", wolUrl };
+    }
+  } catch {
+    /* não é URL */
+  }
+  const soPub = bruto.match(/^([A-Za-z]{1,6}-[A-Za-z0-9]+)$/i);
+  if (soPub) return { pub: soPub[1], docId: "", wolUrl: "" };
+  const docSo = bruto.match(/^(\d{5,12})$/);
+  if (docSo) return { pub: "", docId: docSo[1], wolUrl: `${BASE}/pt/wol/d/r5/lp-t/${docSo[1]}` };
+  return { pub: pubDoTexto(bruto), docId: "", wolUrl: "" };
+}
+
+function docsNoHtml(html) {
+  return [...new Set([...String(html || "").matchAll(/\/wol\/d\/r5\/lp-t\/(\d{5,12})/g)].map((m) => m[1]))];
+}
+
+function docsEmPaginaJw(html) {
+  // Páginas jw.org misturam dezenas de docids do menu; os da publicação na WOL são 11xxxxxxxxx (ex.: 1102027242).
+  return [...new Set([...String(html || "").matchAll(/\b(11\d{8,10})\b/g)].map((m) => m[1]))];
+}
+
+// Partes do programa (horário + tema) a partir do HTML da WOL; cada item leva o data-pid para abrir no JW Library.
+function partesDoProgramaHtml(html, docId) {
+  const partes = [];
+  let secao = "";
+  const blocos = [...String(html || "").matchAll(/<(h2|p)\b([^>]*)>([\s\S]*?)<\/\1>/gi)];
+  for (const m of blocos) {
+    const tag = m[1].toLowerCase();
+    const pid = (m[2].match(/data-pid="(\d+)"/) || [])[1] || "";
+    if (!pid) continue;
+    const texto = textoDe(m[3]).replace(/\s+/g, " ").trim();
+    if (!texto) continue;
+    if (tag === "h2") {
+      secao = texto;
+      continue;
+    }
+    const hora = texto.match(/^(\d{1,2})[:h](\d{2})\s+(.*)$/i);
+    const sub = texto.match(/^[•·]\s*(.+)$/);
+    if (!hora && !sub) continue;
+    let horario = "";
+    let resto = texto;
+    if (hora) {
+      horario = hora[1].padStart(2, "0") + ":" + hora[2];
+      resto = hora[3].trim();
+    }
+    let tema = resto;
+    let textoTematico = "";
+    const sep = resto.split(/\s*[—–]\s*/);
+    if (sep.length >= 2) {
+      tema = sep[0].trim();
+      textoTematico = sep.slice(1).join(" — ").trim();
+    }
+    if (tema.length < 2) continue;
+    partes.push({
+      horario,
+      tema,
+      textoTematico,
+      secao,
+      docid: String(docId || ""),
+      par: pid,
+      orador: "",
+      congregacao: "",
+    });
+  }
+  return partes;
+}
+
+async function lerDocPrograma(docId, timeoutMs) {
+  const html = await baixar(`${BASE}/pt/wol/d/r5/lp-t/${docId}`, timeoutMs);
+  const titulo =
+    textoDe((html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/) || [])[1] || "") ||
+    textoDe((html.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || "").replace(/\s*[—–-]\s*BIBLIOTECA ON-LINE.*$/i, "");
+  const temaHtml = (html.match(/<p\b[^>]*class="[^"]*themeScrp[^"]*"[^>]*>([\s\S]*?)<\/p>/i) || [])[1] || "";
+  return {
+    docId: String(docId),
+    titulo,
+    tema: textoDe(temaHtml),
+    referencias: referenciasDe(temaHtml),
+    wolUrl: `${BASE}/pt/wol/d/r5/lp-t/${docId}`,
+    partes: partesDoProgramaHtml(html, docId),
+    ligados: docsNoHtml(html).filter((id) => id !== String(docId)),
+    pub: ((html.match(/\bpub-([A-Za-z]{1,6}-[A-Za-z0-9]+)/) || [])[1] || ""),
+  };
+}
+
+async function descobrirDocsDoPub(pub, timeoutMs) {
+  const codigo = String(pub || "").trim();
+  if (!codigo) return [];
+  const urls = [
+    `https://www.jw.org/finder?srcid=jwlshare&wtlocale=T&prefer=lang&pub=${encodeURIComponent(codigo)}`,
+    `${BASE}/pt/wol/s/r5/lp-t?q=${encodeURIComponent(codigo)}`,
+  ];
+  const achados = new Set();
+  for (const url of urls) {
+    try {
+      const html = await baixar(url, timeoutMs);
+      docsEmPaginaJw(html).forEach((id) => achados.add(id));
+      docsNoHtml(html).forEach((id) => achados.add(id));
+    } catch {
+      /* tenta a próxima */
+    }
+  }
+  return [...achados].slice(0, 12);
+}
+
+async function metaPubMedia(pub, timeoutMs) {
+  const codigo = String(pub || "").trim();
+  if (!codigo) return null;
+  const url =
+    "https://b.jw-cdn.org/apis/pub-media/GETPUBMEDIALINKS?output=json&fileformat=PDF,JWPUB&langwritten=T&pub=" +
+    encodeURIComponent(codigo);
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const r = await fetch(url, {
+      headers: { "User-Agent": AGENTE, Accept: "application/json", "Accept-Language": "pt-BR,pt;q=0.9" },
+      signal: ctrl.signal,
+    });
+    if (!r.ok) return null;
+    const j = await r.json();
+    const pdf = j && j.files && j.files.T && j.files.T.PDF && j.files.T.PDF[0];
+    return {
+      pub: j.pub || codigo,
+      titulo: (pdf && pdf.title) || j.pubName || codigo,
+      pdfUrl: pdf && pdf.file && pdf.file.url ? pdf.file.url : "",
+    };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function temaDoDocWol(docId, timeoutMs) {
+  if (!docId) return { tema: "", referencias: [], wolUrl: "" };
+  try {
+    const html = await baixar(`${BASE}/pt/wol/d/r5/lp-t/${docId}`, timeoutMs);
+    const titulo =
+      textoDe((html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/) || [])[1] || "") ||
+      textoDe((html.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || "").replace(/\s*[—–-]\s*BIBLIOTECA ON-LINE.*$/i, "");
+    const temaHtml = (html.match(/<p\b[^>]*class="[^"]*themeScrp[^"]*"[^>]*>([\s\S]*?)<\/p>/i) || [])[1] || "";
+    const tema = textoDe(temaHtml);
+    return {
+      titulo,
+      tema,
+      referencias: referenciasDe(temaHtml),
+      wolUrl: `${BASE}/pt/wol/d/r5/lp-t/${docId}`,
+    };
+  } catch {
+    return { titulo: "", tema: "", referencias: [], wolUrl: "" };
+  }
+}
+
+async function temaDaPaginaWol(url, timeoutMs) {
+  if (!url || !/^https:\/\/wol\.jw\.org\//i.test(url)) return { titulo: "", tema: "", referencias: [], wolUrl: "" };
+  try {
+    const html = await baixar(url, timeoutMs);
+    const titulo =
+      textoDe((html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/) || [])[1] || "") ||
+      textoDe((html.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || "").replace(/\s*[—–-]\s*BIBLIOTECA ON-LINE.*$/i, "");
+    const temaHtml = (html.match(/<p\b[^>]*class="[^"]*themeScrp[^"]*"[^>]*>([\s\S]*?)<\/p>/i) || [])[1] || "";
+    return {
+      titulo,
+      tema: textoDe(temaHtml),
+      referencias: referenciasDe(temaHtml),
+      wolUrl: url,
+    };
+  } catch {
+    return { titulo: "", tema: "", referencias: [], wolUrl: url };
+  }
+}
+
+export async function lerProgramaPublicacao(entrada, { timeoutMs = 12000 } = {}) {
+  const { pub, docId, wolUrl: wolDaEntrada } = pubDeEntrada(entrada);
+  if (!pub && !docId && !wolDaEntrada) return null;
+
+  const candidatos = new Set();
+  if (docId) candidatos.add(String(docId));
+
+  const [meta, htmlPagina, docsPub] = await Promise.all([
+    pub ? metaPubMedia(pub, timeoutMs) : Promise.resolve(null),
+    wolDaEntrada && !docId ? baixar(wolDaEntrada, timeoutMs).catch(() => "") : Promise.resolve(""),
+    !docId && pub ? descobrirDocsDoPub(pub, timeoutMs) : Promise.resolve([]),
+  ]);
+  if (htmlPagina) {
+    docsNoHtml(htmlPagina).forEach((id) => candidatos.add(id));
+    docsEmPaginaJw(htmlPagina).forEach((id) => candidatos.add(id));
+  }
+  docsPub.forEach((id) => candidatos.add(id));
+
+  // Sem candidatos ainda: tenta o finder da publicação (jw.org) quando só veio o código.
+  if (!candidatos.size && pub) {
+    (await descobrirDocsDoPub(pub, timeoutMs)).forEach((id) => candidatos.add(id));
+  }
+
+  let lidos = [];
+  const fila = [...candidatos].slice(0, 8);
+  for (const id of fila) {
+    try {
+      const doc = await lerDocPrograma(id, timeoutMs);
+      lidos.push(doc);
+      doc.ligados.forEach((ligado) => {
+        if (!candidatos.has(ligado) && candidatos.size < 12) candidatos.add(ligado);
+      });
+    } catch {
+      /* documento inacessível */
+    }
+  }
+  // Segunda passagem: documentos ligados descobertos nos já lidos (capa → programa).
+  for (const id of [...candidatos].slice(0, 12)) {
+    if (lidos.some((d) => d.docId === id)) continue;
+    try {
+      lidos.push(await lerDocPrograma(id, timeoutMs));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  if (!lidos.length && !meta) return null;
+
+  // O documento com a grade (horários) é o programa; a capa costuma ter só o tema.
+  lidos.sort((a, b) => b.partes.length - a.partes.length);
+  const programa = lidos.find((d) => d.partes.length) || lidos[0] || null;
+  const capa = lidos.find((d) => d.tema && d.partes.length === 0) || lidos.find((d) => d.tema) || programa;
+
+  // Capa: título longo da publicação + tema bíblico; programa: grade com horários (docid/par para o JW Library).
+  const titulo =
+    (capa && capa.partes.length === 0 && capa.titulo) ||
+    (meta && meta.titulo) ||
+    (capa && capa.titulo) ||
+    (programa && programa.titulo) ||
+    pub ||
+    docId ||
+    "";
+  const tema = (capa && capa.tema) || (programa && programa.tema) || "";
+  const referencias = (capa && capa.referencias && capa.referencias.length ? capa.referencias : null)
+    || (programa && programa.referencias)
+    || [];
+  const wolUrl = (programa && programa.wolUrl) || (capa && capa.wolUrl) || wolDaEntrada || "";
+  const docPrograma = (programa && programa.docId) || docId || "";
+
+  return {
+    pub: (meta && meta.pub) || pub || (capa && capa.pub) || (programa && programa.pub) || "",
+    titulo,
+    tema,
+    referencias,
+    pdfUrl: (meta && meta.pdfUrl) || "",
+    wolUrl,
+    docid: docPrograma,
+    partes: (programa && programa.partes) || [],
+  };
+}

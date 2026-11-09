@@ -44,10 +44,10 @@
   ],
   "shortcuts": [
     {
-      "name": "Formatar texto",
-      "short_name": "Formatar",
-      "description": "Formatar notas com negrito, fontes e emojis",
-      "url": "/#formatar",
+      "name": "Anotações",
+      "short_name": "Anotações",
+      "description": "Anotações de reuniões, assembleias e congressos",
+      "url": "/#anotacoes",
       "icons": [
         {
           "src": "icon-192.png?v=3",

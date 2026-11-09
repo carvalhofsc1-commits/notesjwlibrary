@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.83
+
+Anotações: o programa da assembleia/congresso passa a ser lido da WOL com as partes e o `data-pid` (ex. documento 1102027242 / CA-brpgm27), não só a capa em imagem. Botão **📖 JW Library** copia as anotações e abre a parte no app para colar no campo de notas.
+
+## 6.6.82
+
+Nova tela **Anotações** (reunião, assembleia e congresso) no lugar do atalho Formatar: barra para inserir texto bíblico, carregar programa (código/link JW Library ou WOL, ex. CA-brpgm27), orador/congregação, formatação rápida, gravação com transcrição e resumo, salvar e exportar Word. Formatar fica só no menu.
+
 ## 6.6.81
 
 Tela de cadastro enviado: botão "Verificar se o acesso foi liberado". Consulta o servidor; se o administrador já aprovou, abre o NoteStyle; senão, avisa que ainda está em análise.

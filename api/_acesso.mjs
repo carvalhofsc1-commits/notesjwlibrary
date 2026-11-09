@@ -82,6 +82,9 @@ export const NIVEIS = {
   outros: "dirigente",
   "discurso-ler": "dirigente",
   discurso: "dirigente",
+  // Anotações: programa da assembleia/congresso (pub-media + WOL) sem código; textos bíblicos com o de resumo
+  "programa-pub": "publico",
+  "anotacoes-versiculos": "resumo",
 };
 
 // Devolve true se o pedido pode seguir; senão já respondeu com o erro. Sem tarefa no corpo = formatação comum (tela Formatar).

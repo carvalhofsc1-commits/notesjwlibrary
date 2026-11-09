@@ -48,6 +48,7 @@
     <nav class="app-menu-lista" aria-label="Funcionalidades">
       <p class="app-menu-secao">Menu principal</p>
       <button type="button" data-menu-ir="inicio"><span aria-hidden="true">🏠</span> Início</button>
+      <button type="button" data-menu-ir="anotacoes"><span aria-hidden="true">📝</span> Anotações</button>
       <button type="button" data-menu-ir="formatar"><span aria-hidden="true">✍️</span> Formatar</button>
       <button type="button" data-menu-ir="biblia"><span aria-hidden="true">📚</span> Leitura diária da Bíblia</button>
       <button type="button" data-menu-ir="leitura"><span aria-hidden="true">🔊</span> Leitura em voz</button>
@@ -72,7 +73,7 @@
 
   <nav id="appNav" class="app-nav" aria-label="Telas do app">
     <button type="button" data-screen-target="inicio"><span class="nav-icon" aria-hidden="true">🏠</span><span>Início</span></button>
-    <button type="button" data-screen-target="formatar"><span class="nav-icon" aria-hidden="true">✍️</span><span>Formatar</span></button>
+    <button type="button" data-screen-target="anotacoes" title="Anotações de reuniões, assembleias e congressos"><span class="nav-icon" aria-hidden="true">📝</span><span>Anotações</span></button>
     <button id="navLeitura" type="button" data-screen-target="leitura" title="Leitura em voz"><span class="nav-icon" aria-hidden="true">🔊</span><span>Leitura</span></button>
     <button type="button" data-screen-target="reunioes"><span class="nav-icon" aria-hidden="true">📅</span><span>Reuniões</span></button>
     <button id="navTranscricao" type="button" data-screen-target="transcricao" title="Áudio em texto"><span class="nav-icon" aria-hidden="true">🎙️</span><span>Gravar</span></button>
@@ -132,7 +133,7 @@
 
       <section class="card tint-6 atalhos-card" aria-label="Atalhos">
         <div class="atalhos-grid">
-          <button type="button" class="atalho" data-atalho="formatar"><span class="atalho-icone" aria-hidden="true">✍️</span><span class="atalho-nome">Formatar um texto</span><span class="atalho-desc">Negrito, itálico, caixas e sugestões da IA</span></button>
+          <button type="button" class="atalho" data-atalho="anotacoes"><span class="atalho-icone" aria-hidden="true">📝</span><span class="atalho-nome">Anotações</span><span class="atalho-desc">Reuniões, assembleias e congressos</span></button>
           <button type="button" class="atalho" data-atalho="backup"><span class="atalho-icone" aria-hidden="true">📦</span><span class="atalho-nome">Backup do JW Library</span><span class="atalho-desc">Notas, marcações e exportação</span></button>
           <button type="button" class="atalho" data-atalho="biblia"><span class="atalho-icone" aria-hidden="true">📚</span><span class="atalho-nome">Leitura diária da Bíblia</span><span class="atalho-desc">Programa anual e resumo dos capítulos</span><span class="atalho-barra" id="bibliaAtalhoBarra" aria-hidden="true"><span></span></span></button>
           <button type="button" class="atalho" data-atalho="comentarios"><span class="atalho-icone" aria-hidden="true">✋</span><span class="atalho-nome">Comentários</span><span class="atalho-desc">Ajuda na preparação para comentar</span><span class="atalho-trava" hidden></span></button>
@@ -143,6 +144,86 @@
         </div>
       </section>
     </div>
+
+    <!-- Anotações: reuniões, assembleias e congressos -->
+    <section class="card tint-6 screen-anotacoes" id="anotacoesCard" aria-labelledby="anotacoesTitulo">
+      <div class="anotacoes-topo">
+        <button id="anotacoesVoltarHub" class="secondary" type="button" hidden>◀ Modos</button>
+        <h2 id="anotacoesTitulo">📝 Anotações</h2>
+      </div>
+
+      <div id="anotacoesHub" class="anotacoes-hub">
+        <p class="hint">Escolha o tipo de anotação. Você pode inserir textos bíblicos, carregar o programa (assembleia/congresso), gravar o discurso e exportar para Word.</p>
+        <div class="anotacoes-hub-grid">
+          <button type="button" class="atalho" data-anotacoes-modo="reuniao"><span class="atalho-icone" aria-hidden="true">📅</span><span class="atalho-nome">Reunião</span><span class="atalho-desc">Anotações de uma parte</span></button>
+          <button type="button" class="atalho" data-anotacoes-modo="assembleia"><span class="atalho-icone" aria-hidden="true">🏛️</span><span class="atalho-nome">Assembleia</span><span class="atalho-desc">Programa e discursos</span></button>
+          <button type="button" class="atalho" data-anotacoes-modo="congresso"><span class="atalho-icone" aria-hidden="true">🏟️</span><span class="atalho-nome">Congresso</span><span class="atalho-desc">Programa e discursos</span></button>
+        </div>
+      </div>
+
+      <div id="anotacoesWorkspace" class="anotacoes-workspace" hidden>
+        <div class="anotacoes-biblia-barra" role="region" aria-label="Inserir texto bíblico">
+          <label class="anotacoes-biblia-campo">
+            <span class="visually-hidden">Referência bíblica</span>
+            <input id="anotacoesBibliaRef" type="text" inputmode="text" autocomplete="off" placeholder="Ex.: João 3:16 ou Sl 37:4" aria-label="Referência bíblica">
+          </label>
+          <button id="anotacoesBibliaInserir" type="button" title="Inserir o texto da referência no cursor">📖 Inserir</button>
+          <button id="anotacoesBibliaEscolher" class="secondary" type="button" title="Escolher livro, capítulo e versículo">📚</button>
+        </div>
+        <div id="anotacoesBibliaPick" class="anotacoes-biblia-pick" hidden>
+          <select id="anotacoesBibliaLivro" aria-label="Livro"></select>
+          <select id="anotacoesBibliaCap" aria-label="Capítulo"></select>
+          <select id="anotacoesBibliaDe" aria-label="Versículo inicial"></select>
+          <select id="anotacoesBibliaAte" aria-label="Versículo final"></select>
+          <button id="anotacoesBibliaPickOk" type="button">Inserir seleção</button>
+        </div>
+
+        <div id="anotacoesProgramaBox" class="anotacoes-programa" hidden>
+          <label class="anotacoes-campo">
+            <span>Programa (código ou link da wol/jw.org)</span>
+            <input id="anotacoesProgramaPub" type="text" autocomplete="off" placeholder="Ex.: CA-brpgm27, docid ou link da WOL / JW Library">
+          </label>
+          <div class="button-row">
+            <button id="anotacoesProgramaCarregar" type="button">⬇️ Carregar programa</button>
+            <button id="anotacoesParteAdd" class="secondary" type="button">＋ Parte</button>
+          </div>
+          <p id="anotacoesProgramaStatus" class="hint" role="status" aria-live="polite"></p>
+          <p id="anotacoesProgramaTitulo" class="anotacoes-programa-titulo" hidden></p>
+          <div id="anotacoesPartes" class="anotacoes-partes"></div>
+        </div>
+
+        <div class="anotacoes-meta">
+          <label class="anotacoes-campo"><span>Tema / parte</span><input id="anotacoesTema" type="text" autocomplete="off" placeholder="Tema do discurso ou da parte"></label>
+          <label class="anotacoes-campo"><span>Orador</span><input id="anotacoesOrador" type="text" autocomplete="name" placeholder="Nome do orador"></label>
+          <label class="anotacoes-campo"><span>Congregação</span><input id="anotacoesCongregacao" type="text" autocomplete="organization" placeholder="Congregação do orador"></label>
+          <div class="button-row">
+            <button id="anotacoesAplicarCabecalho" class="secondary" type="button">⬇️ Inserir cabeçalho na anotação</button>
+          </div>
+        </div>
+
+        <label class="anotacoes-campo anotacoes-texto-label" for="anotacoesTexto"><span>Anotações</span></label>
+        <textarea id="anotacoesTexto" class="anotacoes-texto" rows="12" placeholder="Escreva suas anotações aqui…"></textarea>
+
+        <div class="anotacoes-fmt" role="toolbar" aria-label="Formatação rápida">
+          <button type="button" class="secondary" data-anotacoes-fmt="bold" title="Negrito">𝐁</button>
+          <button type="button" class="secondary" data-anotacoes-fmt="italic" title="Itálico">𝐼</button>
+          <button type="button" class="secondary" data-anotacoes-fmt="ul" title="Lista">• Lista</button>
+          <button type="button" class="secondary" data-anotacoes-fmt="ol" title="Numeração">1. Lista</button>
+          <button type="button" class="secondary" data-anotacoes-fmt="hl" title="Grifo">≡ Grifo</button>
+        </div>
+
+        <div class="anotacoes-acoes button-row">
+          <button id="anotacoesGravarBtn" type="button" title="Gravar o discurso; ao parar, transcreve e resume">🎙️ Gravar</button>
+          <button id="anotacoesPararBtn" class="secondary" type="button" hidden>⏹️ Parar e resumir</button>
+          <button id="anotacoesJwlBtn" class="secondary" type="button" title="Copia as anotações e abre esta parte no JW Library para colar no campo de notas" hidden>📖 JW Library</button>
+          <button id="anotacoesSalvarBtn" class="secondary" type="button">💾 Salvar</button>
+          <button id="anotacoesDocxBtn" class="secondary" type="button">📄 Word</button>
+          <button id="anotacoesLimparBtn" class="secondary" type="button">🗑️ Limpar</button>
+        </div>
+        <p id="anotacoesGravarStatus" class="hint" role="status" aria-live="polite"></p>
+        <p id="anotacoesStatus" class="hint" role="status" aria-live="polite"></p>
+      </div>
+    </section>
 
     <div class="single-grid">
       <section class="card screen-editor">

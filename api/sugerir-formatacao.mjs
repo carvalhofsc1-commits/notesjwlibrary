@@ -42,6 +42,7 @@ import {
   textoDosTesouros,
   textosBiblicosDeTesouros,
   textosBiblicosDoDiscursoCurto,
+  lerProgramaPublicacao,
 } from "./_wol.mjs";
 
 // ---------- Modelo da IA ----------
@@ -222,6 +223,8 @@ const TAREFAS_SEM_IA = new Set([
   "publico-ler",
   "publico-esboco",
   "versiculos",
+  "anotacoes-versiculos",
+  "programa-pub",
   "outros-pesquisar",
   "outros-ler",
   "discurso-ler",
@@ -2927,10 +2930,41 @@ async function textosDosVersiculos(res, body) {
     .slice(0, 40);
   if (!referencias.length || !fontesConfiguradas()) return res.status(200).json({ versiculos: [] });
   try {
-    return res.status(200).json({ versiculos: await buscarVersiculos(referencias, 40) });
+  return res.status(200).json({ versiculos: await buscarVersiculos(referencias, 40) });
   } catch (e) {
     console.error("Versículos para exportar: falhou", e?.message);
     return erro(res, 502, "Não consegui buscar os versículos agora.");
+  }
+}
+
+// Anotações: mesmos versículos, com o código de resumo (barra bíblica da tela Anotações).
+async function textosDosVersiculosAnotacoes(res, body) {
+  const referencias = (Array.isArray(body.referencias) ? body.referencias : [])
+    .filter((r) => typeof r === "string")
+    .map((r) => limparLinha(r, 80))
+    .filter(Boolean)
+    .slice(0, 12);
+  if (!referencias.length) return erro(res, 400, "Informe a referência bíblica.");
+  if (!fontesConfiguradas()) return erro(res, 503, "A leitura da Bíblia ainda não está configurada no servidor.");
+  try {
+    return res.status(200).json({ versiculos: await buscarVersiculos(referencias, 12, { numerado: true }) });
+  } catch (e) {
+    console.error("Versículos (anotações): falhou", e?.message);
+    return erro(res, 502, "Não consegui buscar o texto bíblico agora.");
+  }
+}
+
+// Anotações: metadados do programa (assembleia/congresso) via pub-media e, se houver, tema na WOL.
+async function lerProgramaPub(res, body) {
+  const entrada = limparLinha(body.entrada || body.pub || body.url || "", 500);
+  if (!entrada) return erro(res, 400, "Informe o código da publicação (ex.: CA-brpgm27) ou o link.");
+  try {
+    const dados = await lerProgramaPublicacao(entrada);
+    if (!dados) return erro(res, 404, "Não encontrei esse programa. Confira o código ou o link.");
+    return res.status(200).json(dados);
+  } catch (e) {
+    console.error("Programa pub: falhou", e?.message);
+    return erro(res, 502, "Não consegui carregar o programa agora.");
   }
 }
 
@@ -4142,6 +4176,8 @@ async function tratarPedido(req, res) {
     if (tarefa === "publico-ler") return lerTemaPublico(res, body);
     if (tarefa === "publico-esboco") return verEsbocoPublico(res, body);
     if (tarefa === "versiculos") return textosDosVersiculos(res, body);
+    if (tarefa === "anotacoes-versiculos") return textosDosVersiculosAnotacoes(res, body);
+    if (tarefa === "programa-pub") return lerProgramaPub(res, body);
     if (tarefa === "outros-pesquisar") return pesquisarOutros(res, body);
     if (tarefa === "outros-ler") return lerOutros(res, body);
     if (tarefa === "discurso-ler") return lerDiscursoCurtoDaSemana(res, body);
