@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.17
+
+Leitura diária da Bíblia: o texto “Opções adicionais” desceu um pouco e ficou quase encostado na moldura de baixo do card de leitura.
+
 ## 6.7.16
 
 Leitura diária da Bíblia: o bloco **Opções adicionais** do card de leitura ficou discreto: sem moldura em volta e só um texto fininho, pequeno e cinza, com pouco espaço.

@@ -5595,13 +5595,18 @@
     }
 
     /* Opções adicionais do card de leitura de cada capítulo (recolhidas): tocar o próximo, limite, grupo do dia e resumo automático. */
+    /* Um pouco mais abaixo e quase encostado na moldura de baixo do card (a margem negativa come o espaço do card; aberto, volta ao normal). */
     .bp-opcoes {
-      margin-top: 2px;
+      margin: 6px 0 -9px;
+    }
+
+    .bp-opcoes[open] {
+      margin-bottom: 0;
     }
 
     /* Discreto: só um texto fininho, sem moldura e com pouco espaço. */
     .bp-opcoes > summary {
-      padding: 3px 2px;
+      padding: 3px 2px 0;
       font-size: .74rem;
       font-weight: 300;
       cursor: pointer;
