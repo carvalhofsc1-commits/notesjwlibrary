@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.91
+
+Anotações: corrigido o menu (Reunião, Assembleia, Congresso), que mostrava por baixo os campos de anotação (a 6.6.90 deixou a área de trabalho aparecer sempre).
+
 ## 6.6.90
 
 Anotações: (1) espaçamento revisado, com o mesmo espaço entre todas as caixas (nada emendado); (2) o tema do evento ficou mais leve e sem moldura (nome pequeno, tema em peso médio e texto temático discreto); (3) **data do evento**: a assembleia tem uma data; o congresso, o primeiro dia (sexta-feira), e o domingo é calculado sozinho (se a data não for sexta, o app avisa). A data entra no cabeçalho das anotações (no congresso, a de cada dia: sexta, sábado ou domingo), e a reunião também ganhou o campo Data; (4) **abertura automática**: ao entrar em Assembleia ou Congresso, o app já abre o evento com data gravada que está em andamento ou começa nos próximos 30 dias (o mais próximo); senão, mostra a lista para escolher.

@@ -4520,6 +4520,11 @@
       gap: 14px;
     }
 
+    /* O display da grade vencia o atributo hidden: no menu aparecia o campo de anotações. */
+    .anotacoes-workspace[hidden] {
+      display: none;
+    }
+
     .anotacoes-workspace > * {
       margin: 0;
     }
