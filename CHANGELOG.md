@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.89
+
+Anotações: o botão **Salvar** não pergunta mais o nome: guarda uma cópia em Pesquisas e respostas salvas → Textos, já ligada ao evento e à parte (ou à reunião), e salvar de novo **atualiza a mesma entrada** em vez de criar outra. Aviso fixo abaixo do campo lembra que a anotação já é guardada sozinha neste aparelho, em cada parte.
+
 ## 6.6.88
 
 Anotações (assembleia e congresso), nova navegação em três telas: **lista de eventos → programa do evento → anotação de uma parte**. Entrar em Assembleia ou Congresso abre sempre a lista de eventos. Escolhido o evento, o tema aparece **uma vez** no alto (nome pequeno, tema grande em negrito e texto temático) e, logo abaixo, a programação, sem o título “Partes do programa” e sem o botão ＋ Parte (os programas não mudam). Na tela do programa não aparece o campo de anotações. **Voltar** sempre vai para a tela anterior (anotação → programa → lista de eventos → menu); **Trocar de evento** também leva à lista. Se o evento já tem anotações, aparece **✍️ Ver anotações**, que abre a primeira anotação na ordem do programa. As anotações ficam guardadas por evento e voltam ao escolhê-lo de novo. O tema do evento aparece também no alto da tela de anotação.

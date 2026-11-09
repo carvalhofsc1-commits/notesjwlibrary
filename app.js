@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.88'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.89'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -18241,7 +18241,7 @@ function saveTemplatesToStorage() {
       return resultado;
     }
 
-    function historicoSalvar({ tipo, titulo, ano, numSemana, partes, esbocoJson, esbocoNumero, esbocoTitulo, refino, sub, ligar }) {
+    function historicoSalvar({ tipo, titulo, ano, numSemana, partes, esbocoJson, esbocoNumero, esbocoTitulo, refino, sub, ligar, anotId }) {
       const semSemana = tipo === 'nota';
       const item = {
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
@@ -18259,7 +18259,10 @@ function saveTemplatesToStorage() {
       if (sub) item.sub = sub; // joias: 'resumo', 'pergunta' (joia da semana), 'joias' (da leitura) ou 'instrucoes'; cada um é salvo separado
       if (esbocoNumero) item.esbocoNumero = esbocoNumero;
       if (esbocoTitulo) item.esbocoTitulo = esbocoTitulo;
-      historicoGravar([item, ...historicoSemCobertas(item, historicoLer())]);
+      // Anotações (reunião, assembleia, congresso): cada parte de cada evento tem um identificador fixo; salvar de novo atualiza a mesma entrada.
+      if (anotId) item.anotId = anotId;
+      const anteriores = anotId ? historicoLer().filter(g => g.anotId !== anotId) : historicoLer();
+      historicoGravar([item, ...historicoSemCobertas(item, anteriores)]);
       if (!historicoLer().some(guardado => guardado.id === item.id)) {
         // Não coube na memória do aparelho: avisa (antes o app não dizia nada e a resposta ficava só no campo de texto).
         showAlert('Não consegui salvar esta resposta em Pesquisas e respostas salvas: a memória do aparelho está cheia. Ela continua no campo de texto; copie o que precisar. Para abrir espaço, apague pesquisas antigas ou veja o que está guardado em Ajustes → Privacidade e dados deste aparelho.', '⚠️ Resposta não salva');
@@ -25511,11 +25514,24 @@ function saveTemplatesToStorage() {
           dizer('Não consegui copiar sozinho: o texto ficou selecionado; use Copiar do teclado.', true);
         }
       });
-      document.getElementById('anotacoesSalvarBtn').addEventListener('click', async () => {
+      // Salvar: copia a anotação para Pesquisas e respostas salvas → Textos, já ligada ao evento e à parte (ou à reunião), sem pedir nome. Salvar de
+      // novo atualiza a mesma entrada. (O rascunho em si já é guardado sozinho neste aparelho enquanto você escreve.)
+      document.getElementById('anotacoesSalvarBtn').addEventListener('click', () => {
         if (!texto.value.trim()) return dizer('Não há anotações para salvar.', true);
-        const guardado = await historicoSalvarNota(textoDaAnotacao(), tituloDaAnotacao(60), 'As anotações ficam em Pesquisas e respostas salvas → Textos.');
-        if (guardado) dizer('Salvo como «' + guardado.titulo + '».');
         salvarRascunho();
+        let anotId = 'anot:reuniao';
+        let titulo;
+        if (comPrograma()) {
+          const ev = (eventos || []).find(e => e.url === chaveAtual);
+          const evento = ev ? ev.titulo : ((programaMeta && programaMeta.titulo) || (MODOS[modo].tipo === 'congresso' ? 'Congresso' : 'Assembleia'));
+          anotId = 'anot:' + modo + ':' + chaveAtual + ':' + parteAtual;
+          titulo = (evento + ' · ' + (dadosDaParte().tema || 'Parte ' + (parteAtual + 1))).slice(0, 100);
+        } else {
+          titulo = ('Reunião · ' + (temaEl.value.trim() || new Date().toLocaleDateString('pt-BR'))).slice(0, 100);
+        }
+        const jaExistia = historicoLer().some(g => g.anotId === anotId);
+        const guardado = historicoSalvar({ tipo: 'nota', titulo, partes: [{ paragrafos: '', texto: textoDaAnotacao() }], ligar: false, anotId });
+        if (guardado) dizer((jaExistia ? '✅ Atualizada em «' : '✅ Salva em «') + guardado.titulo + '» (Pesquisas e respostas salvas → Textos).');
       });
       document.getElementById('anotacoesDocxBtn').addEventListener('click', async () => {
         const bruto = textoDaAnotacao();
