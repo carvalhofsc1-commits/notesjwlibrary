@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.73'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.74'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12177,12 +12177,12 @@ function saveTemplatesToStorage() {
         acessoSiteMsg.textContent = 'O cadastro deste aparelho foi recusado. Se precisar, envie um novo cadastro pelo formulário abaixo.';
         form.hidden = false;
         acessoSiteCancelarBtn.hidden = false;
-        acessoSiteEnviarBtn.textContent = st.restringir ? '📨 Enviar cadastro' : '💾 Salvar e continuar';
+        acessoSiteEnviarBtn.textContent = st.restringir ? '📨 Enviar cadastro e solicitar acesso' : '💾 Salvar e continuar';
       } else {
-        acessoSiteMsg.textContent = 'Para usar o NoteStyle, preencha seus dados. Isto vale para todos os aparelhos, inclusive os que já usavam o app e o do administrador.';
+        acessoSiteMsg.textContent = 'Para usar o NoteStyle, preencha seus dados e solicite o acesso a administrador.';
         form.hidden = false;
         acessoSiteCancelarBtn.hidden = false;
-        acessoSiteEnviarBtn.textContent = st.restringir ? '📨 Enviar cadastro' : '💾 Salvar e continuar';
+        acessoSiteEnviarBtn.textContent = st.restringir ? '📨 Enviar cadastro e solicitar acesso' : '💾 Salvar e continuar';
       }
       acessoSiteFormStatus.textContent = '';
     }

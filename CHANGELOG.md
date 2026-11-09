@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.74
+
+Tela Identifique-se: novo texto de apresentação ("…preencha seus dados e solicite o acesso a administrador.") e botão "Enviar cadastro e solicitar acesso".
+
 ## 6.6.73
 
 Tela de abertura com o logo ao abrir o app: se o aparelho já está cadastrado, abre o Início; se não, abre o cadastro. O cadastro e a tela institucional (ao cancelar) agora ocupam a tela inteira, com fundo opaco: o app não aparece mais por trás.
