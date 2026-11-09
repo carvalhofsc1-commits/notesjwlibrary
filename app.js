@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.86'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.87'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -25174,7 +25174,7 @@ function saveTemplatesToStorage() {
         window.scrollTo({ top: 0 });
       }
 
-      function voltarAoHub() {
+      function voltarAoHub(semRolar) {
         if (gravacao) return dizer('Pare a gravação antes de voltar.', true);
         salvarRascunho();
         modo = '';
@@ -25184,8 +25184,19 @@ function saveTemplatesToStorage() {
         voltarHub.hidden = true;
         tituloEl.textContent = '📝 Anotações';
         dizer('');
-        window.scrollTo({ top: 0 });
+        if (semRolar !== true) window.scrollTo({ top: 0 });
       }
+
+      // Ao sair da tela Anotações, tudo é guardado e a tela volta ao menu (Reunião, Assembleia, Congresso), com tudo recolhido: quem voltar
+      // escolhe de novo, e as anotações de cada modo continuam salvas. (Com uma gravação em andamento, a tela fica como está.)
+      let telaAnterior = document.body.dataset.screen;
+      new MutationObserver(() => {
+        const atual = document.body.dataset.screen;
+        if (atual === telaAnterior) return;
+        const saiu = telaAnterior === 'anotacoes';
+        telaAnterior = atual;
+        if (saiu && modo) voltarAoHub(true);
+      }).observe(document.body, { attributes: true, attributeFilter: ['data-screen'] });
 
       function salvarRascunho() {
         if (!modo) return;

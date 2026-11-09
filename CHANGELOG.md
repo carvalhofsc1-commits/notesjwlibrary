@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.87
+
+Anotações: ao sair da tela e voltar, ela abre no menu (Reunião, Assembleia, Congresso), com tudo recolhido, para escolher de novo. As anotações de cada modo continuam salvas e voltam ao escolher o modo.
+
 ## 6.6.86
 
 Anotações (assembleia e congresso): música, cântico, oração, anúncios e intervalo passam a só informar, sem cartão e sem toque (e as setas ◀ ▶ pulam por eles); a parte aberta ganha a borda colorida em volta de tudo, inclusive do tema; o programa escolhido aparece numa moldura centralizada (nome pequeno, tema grande em negrito e texto temático embaixo); com a anotação em andamento, o cartão de seleção some e ficam só o tipo e o tema, sem moldura; novo botão **Copiar** e o do JW Library passa a **Copiar e abrir no JW Library**, no roxo do JW Library.
