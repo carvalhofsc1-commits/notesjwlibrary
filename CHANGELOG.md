@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.16
+
+Leitura diária da Bíblia: o bloco **Opções adicionais** do card de leitura ficou discreto: sem moldura em volta e só um texto fininho, pequeno e cinza, com pouco espaço.
+
 ## 6.7.15
 
 Leitura diária da Bíblia: as opções de leitura saíram do alto de cada modo e foram para dentro do **card de leitura de cada capítulo**, num bloco recolhível **⚙️ Opções adicionais** logo abaixo dos botões finais (Ler na WOL, Ler no JW Library, Resumir). Por livros: tocar o próximo capítulo e o máximo de capítulos (2 a 10); por seções e temas: ler só os capítulos sugeridos para o dia; nos dois: gerar e ler o resumo automaticamente. Dá para abrir e mudar a opção enquanto lê: vale já no fim do capítulo que está tocando. Começa recolhido; o que foi aberto fica aberto nos outros cards enquanto o app está aberto.

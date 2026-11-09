@@ -5596,22 +5596,20 @@
 
     /* Opções adicionais do card de leitura de cada capítulo (recolhidas): tocar o próximo, limite, grupo do dia e resumo automático. */
     .bp-opcoes {
-      margin-top: 10px;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      background: var(--card);
+      margin-top: 2px;
     }
 
+    /* Discreto: só um texto fininho, sem moldura e com pouco espaço. */
     .bp-opcoes > summary {
-      padding: 9px 12px;
-      font-size: .9rem;
-      font-weight: 700;
+      padding: 3px 2px;
+      font-size: .74rem;
+      font-weight: 300;
       cursor: pointer;
-      color: var(--text);
+      color: var(--muted);
     }
 
     .bp-opcoes-corpo {
-      padding: 0 12px 10px;
+      padding: 0 2px 4px;
     }
 
     .bp-opcoes .ai-check {
