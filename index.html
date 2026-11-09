@@ -2050,40 +2050,71 @@
 
   <div id="acessoSiteOverlay" class="modal-overlay acesso-site-overlay" role="dialog" aria-modal="true" aria-labelledby="acessoSiteTitulo" hidden>
     <div class="modal-card acesso-site-card">
-      <h2 id="acessoSiteTitulo">Identifique-se</h2>
-      <p id="acessoSiteMsg" class="hint">Para usar o NoteStyle, preencha seus dados. Isto vale para todos os aparelhos, inclusive os que já usavam o app.</p>
-      <form id="acessoSiteForm" class="acesso-site-form" autocomplete="on">
-        <label for="acessoSiteNome">Nome</label>
-        <input id="acessoSiteNome" name="nome" type="text" maxlength="60" required autocomplete="given-name">
-        <label for="acessoSiteSobrenome">Sobrenome</label>
-        <input id="acessoSiteSobrenome" name="sobrenome" type="text" maxlength="60" required autocomplete="family-name">
-        <div class="acesso-site-nasc-grid">
-          <div>
-            <label for="acessoSiteMes">Mês de nascimento</label>
-            <select id="acessoSiteMes" name="mesNascimento" required></select>
+      <div id="acessoSitePainelForm">
+        <h2 id="acessoSiteTitulo">Identifique-se</h2>
+        <p id="acessoSiteMsg" class="hint">Para usar o NoteStyle, preencha seus dados. Isto vale para todos os aparelhos, inclusive os que já usavam o app.</p>
+        <form id="acessoSiteForm" class="acesso-site-form" autocomplete="on">
+          <label for="acessoSiteNome">Nome</label>
+          <input id="acessoSiteNome" name="nome" type="text" maxlength="60" required autocomplete="given-name">
+          <label for="acessoSiteSobrenome">Sobrenome</label>
+          <input id="acessoSiteSobrenome" name="sobrenome" type="text" maxlength="60" required autocomplete="family-name">
+          <div class="acesso-site-nasc-grid">
+            <div>
+              <label for="acessoSiteMes">Mês de nascimento</label>
+              <select id="acessoSiteMes" name="mesNascimento" required></select>
+            </div>
+            <div>
+              <label for="acessoSiteAno">Ano de nascimento</label>
+              <select id="acessoSiteAno" name="anoNascimento" required></select>
+            </div>
           </div>
-          <div>
-            <label for="acessoSiteAno">Ano de nascimento</label>
-            <select id="acessoSiteAno" name="anoNascimento" required></select>
+          <p id="acessoSiteIdadeCalc" class="hint">Idade aproximada: —</p>
+          <label for="acessoSiteEstado">Estado</label>
+          <select id="acessoSiteEstado" name="estado" required></select>
+          <label for="acessoSiteCidade">Cidade</label>
+          <select id="acessoSiteCidade" name="cidade" required disabled>
+            <option value="">Escolha o estado primeiro</option>
+          </select>
+          <label for="acessoSiteCongregacao">Congregação</label>
+          <input id="acessoSiteCongregacao" name="congregacao" type="text" maxlength="100" required>
+          <label for="acessoSiteComo">Como conheceu o app?</label>
+          <select id="acessoSiteComo" name="comoConheceuOpcao" required></select>
+          <input id="acessoSiteComoOutro" name="comoConheceuOutro" type="text" maxlength="160" placeholder="Descreva como conheceu o app" hidden>
+          <div class="modal-actions acesso-site-acoes">
+            <button id="acessoSiteEnviarBtn" type="submit">💾 Salvar e continuar</button>
+            <button id="acessoSiteCancelarBtn" type="button" class="secondary">✖️ Cancelar</button>
           </div>
+        </form>
+        <p id="acessoSiteFormStatus" class="ok" role="status" aria-live="polite"></p>
+      </div>
+
+      <div id="acessoSitePainelBoasVindas" class="acesso-site-boasvindas" hidden>
+        <img class="acesso-site-logo-app" src="icon-header.png?v=3" alt="" width="96" height="96" decoding="async">
+        <h2 class="acesso-site-nome">Note<span class="brand-accent">Style</span></h2>
+        <p class="acesso-site-slogan">Auxílio para estudo e preparação</p>
+        <p class="acesso-site-intro">O NoteStyle ajuda você a preparar notas, reuniões e o estudo pessoal — no celular ou no computador.</p>
+        <ul class="acesso-site-funcoes">
+          <li><strong>Leitura diária da Bíblia</strong> — marcar capítulos, ouvir o áudio e pedir resumos com IA.</li>
+          <li><strong>Formatar textos</strong> — destaques, emojis, listas e exportação para Word.</li>
+          <li><strong>Texto diário e voz</strong> — ler, ouvir e pedir comentários adicionais.</li>
+          <li><strong>Reuniões</strong> — comentários, perguntas para dirigir e esboços de discursos.</li>
+          <li><strong>Áudio em texto</strong> — transcrever gravações e resumir com IA.</li>
+          <li><strong>Backup do JW Library</strong> — notas e respostas só neste aparelho.</li>
+        </ul>
+        <p class="hint acesso-site-dica-codigos">Os recursos de IA, voz e transcrição pedem um código de acesso (em Ajustes). Formatar, marcar a Bíblia e o backup funcionam sem código — depois do cadastro.</p>
+        <div class="acesso-site-dev">
+          <img src="logo-cavalhoapps.png" alt="Carvalho Apps" width="96" height="64" loading="lazy">
+          <p class="hint">Desenvolvido por Carvalho Apps · aplicativo independente</p>
         </div>
-        <p id="acessoSiteIdadeCalc" class="hint">Idade aproximada: —</p>
-        <label for="acessoSiteEstado">Estado</label>
-        <select id="acessoSiteEstado" name="estado" required></select>
-        <label for="acessoSiteCidade">Cidade</label>
-        <select id="acessoSiteCidade" name="cidade" required disabled>
-          <option value="">Escolha o estado primeiro</option>
-        </select>
-        <label for="acessoSiteCongregacao">Congregação</label>
-        <input id="acessoSiteCongregacao" name="congregacao" type="text" maxlength="100" required>
-        <label for="acessoSiteComo">Como conheceu o app?</label>
-        <select id="acessoSiteComo" name="comoConheceuOpcao" required></select>
-        <input id="acessoSiteComoOutro" name="comoConheceuOutro" type="text" maxlength="160" placeholder="Descreva como conheceu o app" hidden>
-        <div class="modal-actions">
-          <button id="acessoSiteEnviarBtn" type="submit">💾 Salvar e continuar</button>
+        <div class="modal-actions acesso-site-acoes">
+          <button id="acessoSiteSolicitarBtn" type="button">📨 Solicitar acesso</button>
         </div>
-      </form>
-      <p id="acessoSiteFormStatus" class="ok" role="status" aria-live="polite"></p>
+        <p class="acesso-site-links">
+          <a href="sobre.html">Sobre</a> ·
+          <a href="privacidade.html">Privacidade</a> ·
+          <a href="termos.html">Termos</a>
+        </p>
+      </div>
     </div>
   </div>
 

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.71
+
+Cadastro na primeira abertura: botão **Cancelar** no formulário. Ao cancelar, aparece uma tela com o logo do NoteStyle, o que o app faz, o logo da Carvalho Apps e o botão **Solicitar acesso**, que volta ao formulário de cadastro.
+
 ## 6.6.70
 
 Usuários identificados: lista compacta — só **nome, idade e cidade** à vista; ao tocar, abre o restante (nível, congregação, códigos, aparelho e revogar). **Termos de Uso 1.1** e **Política de Privacidade 2.0** atualizados com o cadastro obrigatório, a aprovação/revogação pelo administrador e as estatísticas de acesso/IA.

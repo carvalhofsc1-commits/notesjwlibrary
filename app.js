@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.70'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.71'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -11990,11 +11990,16 @@ function saveTemplatesToStorage() {
     const acessoSitePedidos = document.getElementById('acessoSitePedidos');
     const acessoSiteAprovados = document.getElementById('acessoSiteAprovados');
     const acessoSiteOverlay = document.getElementById('acessoSiteOverlay');
+    const acessoSitePainelForm = document.getElementById('acessoSitePainelForm');
+    const acessoSitePainelBoasVindas = document.getElementById('acessoSitePainelBoasVindas');
     const acessoSiteMsg = document.getElementById('acessoSiteMsg');
     const acessoSiteForm = document.getElementById('acessoSiteForm');
     const acessoSiteFormStatus = document.getElementById('acessoSiteFormStatus');
     const acessoSiteEnviarBtn = document.getElementById('acessoSiteEnviarBtn');
+    const acessoSiteCancelarBtn = document.getElementById('acessoSiteCancelarBtn');
+    const acessoSiteSolicitarBtn = document.getElementById('acessoSiteSolicitarBtn');
     let acessoSiteLiberado = true;
+    let acessoSiteUltimoEstado = null; // último estado do gate (para reabrir o formulário depois de Cancelar)
     cadastroLigarFormulario('acessoSite');
     cadastroLigarFormulario('meusDados');
 
@@ -12126,34 +12131,55 @@ function saveTemplatesToStorage() {
       acessoSiteRenderAdmin(r.data.acesso, 'Identificação revogada. ');
     });
 
-    function acessoSiteMostrarOverlay(estado) {
-      acessoSiteLiberado = false;
-      acessoSiteOverlay.hidden = false;
-      acessoSiteOverlay.classList.add('open');
-      document.body.style.overflow = 'hidden';
+    function acessoSiteMostrarBoasVindas() {
+      acessoSitePainelForm.hidden = true;
+      acessoSitePainelBoasVindas.hidden = false;
+      acessoSiteFormStatus.textContent = '';
+    }
+
+    function acessoSiteMostrarFormulario(estado) {
+      const st = estado || acessoSiteUltimoEstado || {};
+      acessoSitePainelBoasVindas.hidden = true;
+      acessoSitePainelForm.hidden = false;
       const form = acessoSiteForm;
-      if (estado && estado.pendente) {
+      if (st.pendente) {
         acessoSiteMsg.textContent = 'Seu cadastro foi enviado e ainda está em análise. Quando for aprovado, abra o app de novo.';
         form.hidden = true;
+        acessoSiteCancelarBtn.hidden = true;
         acessoSiteEnviarBtn.textContent = '💾 Salvar e continuar';
-      } else if (estado && estado.recusado) {
+      } else if (st.recusado) {
         acessoSiteMsg.textContent = 'O cadastro deste aparelho foi recusado. Se precisar, envie um novo cadastro pelo formulário abaixo.';
         form.hidden = false;
-        acessoSiteEnviarBtn.textContent = estado.restringir ? '📨 Enviar cadastro' : '💾 Salvar e continuar';
+        acessoSiteCancelarBtn.hidden = false;
+        acessoSiteEnviarBtn.textContent = st.restringir ? '📨 Enviar cadastro' : '💾 Salvar e continuar';
       } else {
         acessoSiteMsg.textContent = 'Para usar o NoteStyle, preencha seus dados. Isto vale para todos os aparelhos, inclusive os que já usavam o app e o do administrador.';
         form.hidden = false;
-        acessoSiteEnviarBtn.textContent = (estado && estado.restringir) ? '📨 Enviar cadastro' : '💾 Salvar e continuar';
+        acessoSiteCancelarBtn.hidden = false;
+        acessoSiteEnviarBtn.textContent = st.restringir ? '📨 Enviar cadastro' : '💾 Salvar e continuar';
       }
       acessoSiteFormStatus.textContent = '';
     }
 
+    function acessoSiteMostrarOverlay(estado) {
+      acessoSiteLiberado = false;
+      acessoSiteUltimoEstado = estado || null;
+      acessoSiteOverlay.hidden = false;
+      acessoSiteOverlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      acessoSiteMostrarFormulario(estado);
+    }
+
     function acessoSiteLiberarOverlay() {
       acessoSiteLiberado = true;
+      acessoSiteUltimoEstado = null;
       acessoSiteOverlay.hidden = true;
       acessoSiteOverlay.classList.remove('open');
       document.body.style.overflow = '';
     }
+
+    acessoSiteCancelarBtn.addEventListener('click', () => acessoSiteMostrarBoasVindas());
+    acessoSiteSolicitarBtn.addEventListener('click', () => acessoSiteMostrarFormulario(acessoSiteUltimoEstado));
 
     async function acessoSiteVerificarGate() {
       if (!servidoPelaWeb() || !navigator.onLine) return;
