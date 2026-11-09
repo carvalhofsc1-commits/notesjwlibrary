@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.06'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.07'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -24790,10 +24790,11 @@ function saveTemplatesToStorage() {
         dizer('Inserido.');
       }
 
-      function cabecalhoTexto() {
-        const d = dadosDaParte();
+      function cabecalhoTexto(indice) {
+        const d = dadosDaParte(indice);
         const linhas = [];
-        if (d.tema) linhas.push(convertTextWithStyle(d.tema, 'bold'));
+        if (d.tema) linhas.push(estiloComAcentos(d.tema, 'bold'));
+        if (d.horario) linhas.push('Horário: ' + d.horario);
         if (d.data) linhas.push('Data: ' + d.data);
         if (d.orador) linhas.push('Orador: ' + d.orador);
         if (d.congregacao) linhas.push('Congregação: ' + d.congregacao);
@@ -24910,14 +24911,18 @@ function saveTemplatesToStorage() {
       const ehSerie = p => /^s[ée]rie de discursos\s*:/i.test(semMarcador(p && p.tema).trim());
       const ehInfo = p => ehSerie(p) || /^(música|vídeo musical|cântico|oração|intervalo|anúncios)\b/i.test(semMarcador(p && p.tema).trim());
       // Título da série a que pertence o discurso i (os discursos vêm logo depois do título, com marcador "•"); '' se não for de uma série.
-      function tituloDaSerie(i) {
-        if (!/^[•·]/.test((partes[i] && partes[i].tema) || '')) return '';
+      function indiceDaSerie(i) {
+        if (!/^[•·]/.test((partes[i] && partes[i].tema) || '')) return -1;
         for (let k = i - 1; k >= 0; k--) {
-          if (ehSerie(partes[k])) return semMarcador(partes[k].tema).replace(/^s[ée]rie de discursos\s*:\s*/i, '').trim();
-          if (!/^[•·]/.test(partes[k].tema || '')) return '';
+          if (ehSerie(partes[k])) return k;
+          if (!/^[•·]/.test(partes[k].tema || '')) return -1;
         }
-        return '';
+        return -1;
       }
+      const tituloDaSerie = i => {
+        const k = indiceDaSerie(i);
+        return k < 0 ? '' : semMarcador(partes[k].tema).replace(/^s[ée]rie de discursos\s*:\s*/i, '').trim();
+      };
       const iniciaveis = () => partes.map((p, i) => i).filter(i => !ehInfo(partes[i]));
       const temNotas = () => partes.some(p => p.nota && p.nota.trim());
 
@@ -24930,6 +24935,7 @@ function saveTemplatesToStorage() {
         programaVistaEl.hidden = vista !== 'programa';
         progTitulo.hidden = !programa || vista === 'escolha' || !programaMeta;
         verNotasBtn.hidden = !temNotas();
+        document.getElementById('anotacoesExportarNotas').hidden = !temNotas();
         escritaEl.hidden = programa && !ativa;
         cabParteEl.hidden = !ativa;
         voltarHub.hidden = !modo;
@@ -24961,13 +24967,23 @@ function saveTemplatesToStorage() {
       }
 
       // Dados que valem para a anotação de agora: a parte (assembleia e congresso) ou os campos (reunião).
-      function dadosDaParte() {
+      // Os discursos de uma série não têm horário próprio: valem o do início da série.
+      function horarioDaParte(i, p, periodo) {
+        const k = indiceDaSerie(i);
+        const hora = p.horario || (k >= 0 ? partes[k].horario : '');
+        return hora ? hora + (periodo ? ' (' + periodo + ')' : '') : '';
+      }
+
+      function dadosDaParte(indice) {
         if (comPrograma()) {
-          const p = partes[parteAtual];
-          if (!p) return { tema: '', orador: '', congregacao: '', data: '' };
-          return { tema: [tituloDaSerie(parteAtual), semMarcador(p.tema), p.textoTematico].filter(Boolean).join(' — '), orador: p.orador || '', congregacao: p.congregacao || '', data: dataDaParte(p) };
+          const i = indice === undefined ? parteAtual : indice;
+          const p = partes[i];
+          if (!p) return { tema: '', orador: '', congregacao: '', data: '', horario: '' };
+          // Horário: "10:00 (Manhã)"; no congresso a seção é "Sábado · Manhã" e o dia já vai na data.
+          const periodo = String(p.secao || '').split(' · ').pop();
+          return { tema: [tituloDaSerie(i), semMarcador(p.tema), p.textoTematico].filter(Boolean).join(' — '), orador: p.orador || '', congregacao: p.congregacao || '', data: dataDaParte(p), horario: horarioDaParte(i, p, periodo) };
         }
-        return { tema: temaEl.value.trim(), orador: oradorEl.value.trim(), congregacao: congEl.value.trim(), data: formatarData(dataReuniaoEl.value) };
+        return { tema: temaEl.value.trim(), orador: oradorEl.value.trim(), congregacao: congEl.value.trim(), data: formatarData(dataReuniaoEl.value), horario: '' };
       }
 
       function guardarNota() {
@@ -25806,14 +25822,6 @@ function saveTemplatesToStorage() {
       document.getElementById('anotacoesProgramaCarregar').addEventListener('click', anotacoesProgramaManual);
       programaPubEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); anotacoesProgramaManual(); } });
 
-      // Reunião: o cabeçalho (tema, orador e congregação) entra no texto quando você pede.
-      document.getElementById('anotacoesAplicarCabecalho').addEventListener('click', () => {
-        const cab = cabecalhoTexto();
-        if (!cab.trim()) return dizer('Preencha o tema, o orador ou a congregação.', true);
-        inserirNoCursor(cab);
-        salvarRascunho();
-      });
-
       document.querySelectorAll('[data-anotacoes-fmt]').forEach(btn => {
         btn.addEventListener('click', () => {
           const acao = btn.dataset.anotacoesFmt;
@@ -25848,8 +25856,8 @@ function saveTemplatesToStorage() {
         jwlBtn.addEventListener('click', async () => {
           const destino = anotacoesJwlDestino();
           if (!destino) return dizer('Selecione uma parte do programa carregada da WOL.', true);
-          const nota = texto.value.trim();
-          if (!nota) return dizer('Escreva as anotações antes de enviar ao JW Library.', true);
+          if (!texto.value.trim()) return dizer('Escreva as anotações antes de enviar ao JW Library.', true);
+          const nota = textoDaAnotacao(); // com o tema, o horário e os dados do orador
           try {
             await navigator.clipboard.writeText(nota);
             jwlBtn.textContent = '✓ Copiado';
@@ -25906,9 +25914,58 @@ function saveTemplatesToStorage() {
       // Digitar depois de formatar encerra o "desfazer" (para não apagar o que foi escrito depois).
       texto.addEventListener('input', () => { iaDesfazer.hidden = true; textoAntesDaIa = null; });
 
+      // Exportar anotações: um Word com todas as anotações do evento. No começo, o tema do evento; depois, para cada discurso com anotação,
+      // o tema, o horário, o orador e as anotações (no congresso, antes de cada dia vêm o dia, a data e o tema do dia).
+      const exportarNotasBtn = document.getElementById('anotacoesExportarNotas');
+      exportarNotasBtn.addEventListener('click', async () => {
+        guardarNota();
+        const comNota = partes.map((p, i) => i).filter(i => (partes[i].nota || '').trim());
+        if (!comNota.length) return dizer('Ainda não há anotações neste evento.', true);
+        exportarNotasBtn.disabled = true;
+        const rotulo = exportarNotasBtn.textContent;
+        exportarNotasBtn.textContent = 'Gerando…';
+        try {
+          // Congresso: o tema de cada dia vem do programa; eventos guardados antes não o têm, então ele é buscado de novo.
+          if (ehCongresso() && comNota.some(i => !partes[i].diaTema) && /^https?:/.test(chaveAtual) && navigator.onLine) {
+            const r = await postStudy({ tarefa: 'programa-pub', entrada: chaveAtual }, 25000);
+            if (r.ok && r.data && Array.isArray(r.data.partes)) {
+              const porParte = new Map(r.data.partes.map(x => [x.docid + '|' + x.par, x]));
+              partes.forEach(p => { const x = porParte.get(p.docid + '|' + p.par); if (x) { p.dia = x.dia || p.dia || ''; p.diaTema = x.diaTema || ''; } });
+              salvarRascunho();
+            }
+          }
+          const ev = (eventos || []).find(e => e.url === chaveAtual);
+          const nomeEvento = ev ? ev.titulo : ((programaMeta && programaMeta.titulo) || (ehCongresso() ? 'Congresso' : 'Assembleia'));
+          const temaEvento = (programaMeta && programaMeta.tema) || '';
+          const linhas = [estiloComAcentos(nomeEvento + (temaEvento ? ' — ' + temaEvento : ''), 'bold')];
+          if (dataAtual) linhas.push(textoDaData());
+          linhas.push('');
+          let diaAnterior = null;
+          comNota.forEach(i => {
+            const p = partes[i];
+            if (ehCongresso() && p.dia && p.dia !== diaAnterior) {
+              diaAnterior = p.dia;
+              const dataDoDia = dataDaParte(p);
+              linhas.push(estiloComAcentos(p.dia.toUpperCase() + (dataDoDia ? ' — ' + dataDoDia : '') + (p.diaTema ? ' — ' + p.diaTema : ''), 'bold'), '');
+            }
+            linhas.push(cabecalhoTexto(i).replace(/\n+$/, ''), '', p.nota.trim(), '', '');
+          });
+          const titulo = (nomeEvento + (temaEvento ? ' — ' + temaEvento : '')).slice(0, 80);
+          const blob = await docxGerar(linhas.join('\n').trim(), titulo, null, 1);
+          const limpo = removeUnicodeFormatting('Anotações - ' + nomeEvento).replace(DOCX_EMOJI, ' ').replace(/[\\/:*?"<>|\u201C\u201D\u2018\u2019]/g, '').replace(/\s+/g, ' ').trim().slice(0, 80);
+          const msg = await docxEntregar(blob, limpo + ' - ' + new Date().toISOString().slice(0, 10) + '.docx', false);
+          if (msg) piscarBotao(exportarNotasBtn, '✓ Exportado');
+        } catch (e) {
+          dizer('Não consegui gerar o Word. Confira a conexão e tente de novo.', true);
+        } finally {
+          exportarNotasBtn.disabled = false;
+          if (exportarNotasBtn.textContent === 'Gerando…') exportarNotasBtn.textContent = rotulo;
+        }
+      });
+
       // Salvar e Word: nas partes de assembleia e congresso o cabeçalho (tema, orador e congregação) vai junto automaticamente.
       function textoDaAnotacao() {
-        return comPrograma() ? (cabecalhoTexto() + texto.value).trim() : texto.value.trim();
+        return (cabecalhoTexto() + texto.value).trim();
       }
       function tituloDaAnotacao(limite) {
         const d = dadosDaParte();

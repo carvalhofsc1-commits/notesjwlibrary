@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.07
+
+Anotações: (1) novo botão **📄 Exportar anotações** na tela do programa (junto de Ver anotações e Trocar de evento): gera um Word com todas as anotações do evento, começando pelo tema da assembleia ou do congresso e, para cada discurso com anotação, o tema, o horário, o orador e a congregação, e as anotações; (2) no congresso, antes de cada dia vêm o nome do dia, a data e o **tema do dia** (lido do programa na WOL); (3) o texto copiado (Copiar e Copiar e abrir no JW Library), o Salvar e o Word da anotação levam **sempre**, além das notas, o tema do discurso, o horário, a data e os dados do orador. Por isso saiu da Reunião o botão “Inserir cabeçalho nas anotações”. Os discursos de uma série (que não têm horário próprio) levam o horário de início da série, e os títulos em negrito mantêm os acentos.
+
 ## 6.7.06
 
 Anotações: o tema (do cabeçalho da parte, da moldura do programa e da lista de partes) passa a ocupar no máximo **3 linhas** (antes 2), para caber o título da série e o tema do discurso.

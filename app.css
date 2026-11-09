@@ -5261,6 +5261,22 @@
       font-size: .86rem;
     }
 
+    /* Ver anotações, Trocar de evento e Exportar anotações dividem a linha (o texto de cada botão pode ir para uma segunda linha). */
+    .screen-anotacoes .anotacoes-programa-acoes {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(0, 1fr);
+      gap: 6px;
+    }
+
+    .screen-anotacoes .anotacoes-programa-acoes button {
+      min-height: 40px;
+      padding: 4px 6px;
+      font-size: .78rem;
+      line-height: 1.15;
+      white-space: normal;
+    }
+
     /* Iniciar anotação e, ao lado, a lixeira que limpa o orador e a congregação. */
     .anotacoes-parte-botoes {
       display: flex;

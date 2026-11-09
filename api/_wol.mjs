@@ -1443,6 +1443,11 @@ async function lerDocPrograma(docId, timeoutMs) {
     docId: String(docId),
     titulo,
     tema: textoDe(temaHtml),
+    // Congresso: o tema do dia é o parágrafo logo abaixo do nome do dia (“Felizes os que… ” — Mateus 5:3).
+    diaTema: (() => {
+      const t = textoDe((html.match(/<p\b[^>]*data-pid="2"[^>]*>([\s\S]*?)<\/p>/) || [])[1] || "").replace(/\s+/g, " ").trim();
+      return /^\d{1,2}[:h]\d{2}/.test(t) ? "" : t;
+    })(),
     referencias: referenciasDe(temaHtml),
     wolUrl: `${BASE}/pt/wol/d/r5/lp-t/${docId}`,
     partes: partesDoProgramaHtml(html, docId),
@@ -1623,7 +1628,7 @@ export async function lerProgramaPublicacao(entrada, { timeoutMs = 12000 } = {})
   // Com vários dias, cada parte leva o nome do dia na seção ("Sábado · Manhã").
   const varios = comPartes.length > 1;
   const partes = comPartes.flatMap((doc) =>
-    doc.partes.map((p) => (varios && doc.titulo ? { ...p, secao: p.secao ? `${doc.titulo} · ${p.secao}` : doc.titulo } : p)),
+    doc.partes.map((p) => (varios && doc.titulo ? { ...p, secao: p.secao ? `${doc.titulo} · ${p.secao}` : doc.titulo, dia: doc.titulo, diaTema: doc.diaTema || "" } : p)),
   );
 
   return {
