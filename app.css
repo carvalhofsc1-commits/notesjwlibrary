@@ -4666,6 +4666,59 @@
       line-height: 1.3;
     }
 
+    /* Congresso: cada dia é um cartão recolhível (um dia aberto de cada vez). */
+    .screen-anotacoes .anotacoes-dia {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      min-height: 46px;
+      padding: 8px 12px;
+      margin-top: 4px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--soft);
+      color: var(--text);
+      text-align: left;
+      font-weight: 400;
+    }
+
+    .screen-anotacoes .anotacoes-dia[aria-expanded="true"] {
+      border: 2px solid var(--anot-cor);
+    }
+
+    .anotacoes-dia-seta {
+      flex: 0 0 auto;
+      color: var(--muted);
+    }
+
+    .anotacoes-dia-texto {
+      flex: 1 1 auto;
+      min-width: 0;
+      display: grid;
+      gap: 1px;
+      line-height: 1.25;
+    }
+
+    .anotacoes-dia-texto strong {
+      font-size: .95rem;
+      font-weight: 700;
+    }
+
+    .anotacoes-dia-texto small {
+      color: var(--muted);
+      font-size: .78rem;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    /* O tema do evento (entre as duas linhas coloridas) abre o programa no JW Library. */
+    .screen-anotacoes .anotacoes-programa-titulo {
+      cursor: pointer;
+    }
+
     /* Título de uma série de discursos: informativo (sem cartão), um pouco mais forte que música e cântico. */
     .anotacoes-parte-serie {
       color: var(--text);

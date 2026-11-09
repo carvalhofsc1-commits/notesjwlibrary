@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.07'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.08'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -24847,6 +24847,7 @@ function saveTemplatesToStorage() {
       let vista = 'escolha';
       let ativa = false; // está na tela de anotação de uma parte (assembleia e congresso)
       let expandida = -1; // parte aberta na lista
+      let diaAberto = ''; // congresso: o dia que está aberto na programação (um de cada vez)
       let chaveAtual = ''; // endereço (ou código digitado) do evento escolhido: é por ele que as anotações são guardadas
       let dataAtual = ''; // data do evento escolhido (AAAA-MM-DD); no congresso, o primeiro dia (sexta-feira)
       const dataEl = document.getElementById('anotacoesData');
@@ -24990,15 +24991,68 @@ function saveTemplatesToStorage() {
         if (comPrograma() && ativa && partes[parteAtual]) partes[parteAtual].nota = texto.value;
       }
 
+      // Congresso: o dia de cada parte ("Sexta-feira") e qual deve estar aberto (o de hoje, se a data do congresso foi registrada; senão o primeiro).
+      const diaDaParteCongresso = p => (p && (p.dia || String(p.secao || '').split(' · ')[0])) || '';
+      function diaInicial(dias) {
+        const ini = lerData(dataAtual);
+        if (ini) {
+          const dia0 = new Date(); dia0.setHours(12, 0, 0, 0);
+          const k = Math.round((dia0 - ini) / 86400000);
+          if (k >= 0 && k < dias.length) return dias[k];
+        }
+        return dias[0];
+      }
+      function abrirDiaDaParte(i) {
+        if (ehCongresso() && partes[i]) diaAberto = diaDaParteCongresso(partes[i]);
+      }
+
       function pintarPartes() {
         partesEl.replaceChildren();
         let secaoAtual = '';
+        const dias = ehCongresso() ? [...new Set(partes.map(diaDaParteCongresso).filter(Boolean))] : [];
+        const agrupar = dias.length > 1;
+        if (agrupar && !dias.includes(diaAberto)) diaAberto = diaInicial(dias);
+        let diaAnterior = null;
         partes.forEach((p, i) => {
+          const diaP = agrupar ? diaDaParteCongresso(p) : '';
+          if (agrupar && diaP !== diaAnterior) {
+            diaAnterior = diaP;
+            secaoAtual = '';
+            const aberto = diaP === diaAberto;
+            const cab = document.createElement('button');
+            cab.type = 'button';
+            cab.className = 'anotacoes-dia';
+            cab.setAttribute('aria-expanded', String(aberto));
+            const seta = document.createElement('span');
+            seta.className = 'anotacoes-dia-seta';
+            seta.setAttribute('aria-hidden', 'true');
+            seta.textContent = aberto ? '▼' : '▶';
+            const caixa = document.createElement('span');
+            caixa.className = 'anotacoes-dia-texto';
+            const dataDia = dataDaParte(p).slice(0, 5);
+            const nome = document.createElement('strong');
+            nome.textContent = diaP + (dataDia ? ' · ' + dataDia : '');
+            caixa.appendChild(nome);
+            if (p.diaTema) {
+              const tema = document.createElement('small');
+              tema.textContent = p.diaTema;
+              caixa.appendChild(tema);
+            }
+            cab.append(seta, caixa);
+            cab.addEventListener('click', () => {
+              diaAberto = diaP; // abre este dia e fecha os outros
+              expandida = -1;
+              pintarPartes();
+              cab.scrollIntoView && partesEl.querySelector('.anotacoes-dia[aria-expanded="true"]').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            });
+            partesEl.appendChild(cab);
+          }
+          if (agrupar && diaP !== diaAberto) return;
           if (p.secao && p.secao !== secaoAtual) {
             secaoAtual = p.secao;
             const rotulo = document.createElement('p');
             rotulo.className = 'anotacoes-secao';
-            rotulo.textContent = secaoAtual;
+            rotulo.textContent = agrupar ? (secaoAtual.split(' · ').slice(1).join(' · ') || secaoAtual) : secaoAtual;
             partesEl.appendChild(rotulo);
           }
           const item = document.createElement('div');
@@ -25100,6 +25154,7 @@ function saveTemplatesToStorage() {
       function abrirParteNaEscrita(i) {
         parteAtual = i;
         expandida = i;
+        abrirDiaDaParte(i);
         texto.value = (partes[i] && partes[i].nota) || '';
         vista = 'anotando';
         pintarPartes();
@@ -25138,7 +25193,9 @@ function saveTemplatesToStorage() {
           return;
         }
         dataAtual = dataEl.value;
+        diaAberto = '';
         mostrarData();
+        pintarPartes();
         salvarRascunho();
       });
 
@@ -25181,6 +25238,7 @@ function saveTemplatesToStorage() {
         guardarNota();
         salvarRascunho();
         expandida = parteAtual;
+        abrirDiaDaParte(parteAtual);
         vista = 'programa';
         pintarPartes();
         window.scrollTo({ top: 0 });
@@ -25190,6 +25248,17 @@ function saveTemplatesToStorage() {
         if (campo) campo.focus({ preventScroll: true });
       }
       cabCentro.addEventListener('click', editarOradorDaParte);
+      // O tema do evento (entre as duas linhas coloridas) abre o programa do evento no JW Library.
+      progTitulo.setAttribute('role', 'button');
+      progTitulo.tabIndex = 0;
+      progTitulo.title = 'Abrir o programa no JW Library';
+      function abrirProgramaNoJwl() {
+        const link = programaMeta ? jwlLinkPorId(programaMeta.docidCapa || programaMeta.docid) : '';
+        if (link) window.location.href = link;
+        else dizer('Este programa não tem link para o JW Library.', true);
+      }
+      progTitulo.addEventListener('click', abrirProgramaNoJwl);
+      progTitulo.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirProgramaNoJwl(); } });
       cabCentro.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); editarOradorDaParte(); } });
       document.getElementById('anotacoesTrocarEvento').addEventListener('click', () => { salvarRascunho(); irPara('escolha'); });
       // Ver anotações: abre a primeira parte (na ordem do programa) que já tem anotação.
@@ -25317,6 +25386,7 @@ function saveTemplatesToStorage() {
         parteAtual = -1;
         programaMeta = null;
         chaveAtual = '';
+        diaAberto = '';
         dataAtual = '';
         dataReuniaoEl.value = '';
         vista = 'escolha';
@@ -25788,6 +25858,8 @@ function saveTemplatesToStorage() {
             par: p.par || '',
             orador: p.orador || '',
             congregacao: p.congregacao || '',
+            dia: p.dia || '', // congresso: o dia (Sexta-feira…) e o tema do dia
+            diaTema: p.diaTema || '',
             nota: ''
           }));
           aplicarPrograma(meta, lista, chave);
@@ -25802,6 +25874,7 @@ function saveTemplatesToStorage() {
         programaMeta = meta;
         partes = lista;
         chaveAtual = chave;
+        diaAberto = '';
         dataAtual = data || '';
         mostrarData(aviso);
         parteAtual = -1;

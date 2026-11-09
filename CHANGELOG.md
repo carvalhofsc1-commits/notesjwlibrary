@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.08
+
+Anotações: (1) no **congresso**, a programação de cada dia é recolhível (cartão com o dia, a data e o tema do dia) e **um dia fica aberto de cada vez**: abrir um dia fecha os outros (abre primeiro o dia de hoje, se a data do congresso foi registrada, ou o primeiro); (2) tocar no **tema do evento** (entre as duas linhas coloridas) abre o programa do evento no app JW Library.
+
 ## 6.7.07
 
 Anotações: (1) novo botão **📄 Exportar anotações** na tela do programa (junto de Ver anotações e Trocar de evento): gera um Word com todas as anotações do evento, começando pelo tema da assembleia ou do congresso e, para cada discurso com anotação, o tema, o horário, o orador e a congregação, e as anotações; (2) no congresso, antes de cada dia vêm o nome do dia, a data e o **tema do dia** (lido do programa na WOL); (3) o texto copiado (Copiar e Copiar e abrir no JW Library), o Salvar e o Word da anotação levam **sempre**, além das notas, o tema do discurso, o horário, a data e os dados do orador. Por isso saiu da Reunião o botão “Inserir cabeçalho nas anotações”. Os discursos de uma série (que não têm horário próprio) levam o horário de início da série, e os títulos em negrito mantêm os acentos.

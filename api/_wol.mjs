@@ -1614,10 +1614,14 @@ export async function lerProgramaPublicacao(entrada, { timeoutMs = 12000 } = {})
     docId ||
     "";
   let tema = (capa && capa.tema) || (programa && programa.tema) || "";
+  let docidCapa = (capa && capa.docId) || (programa && programa.docId) || "";
   // Congresso: o tema é o título (em maiúsculas) do primeiro documento, a capa do programa.
   if (!tema && biblioteca) {
     const primeiro = [...lidos].sort((x, y) => Number(x.docId) - Number(y.docId))[0];
-    if (primeiro && !primeiro.partes.length && primeiro.titulo) tema = capitalizarTitulo(primeiro.titulo);
+    if (primeiro && !primeiro.partes.length && primeiro.titulo) {
+      tema = capitalizarTitulo(primeiro.titulo);
+      docidCapa = primeiro.docId; // congresso: a capa do programa
+    }
   }
   const referencias = (capa && capa.referencias && capa.referencias.length ? capa.referencias : null)
     || (programa && programa.referencias)
@@ -1639,6 +1643,7 @@ export async function lerProgramaPublicacao(entrada, { timeoutMs = 12000 } = {})
     pdfUrl: (meta && meta.pdfUrl) || "",
     wolUrl,
     docid: docPrograma,
+    docidCapa: String(docidCapa || docPrograma || ""),
     partes,
   };
 }
