@@ -8376,6 +8376,21 @@
       line-height: 1.4;
     }
 
+    .acesso-site-pendente p {
+      margin: 0;
+    }
+
+    .acesso-site-pendente button {
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .acesso-site-verificar-status {
+      margin-top: 8px !important;
+      font-size: .88rem;
+      font-weight: 400;
+    }
+
     .acesso-site-pendente[hidden],
     .acesso-site-contato[hidden] {
       display: none !important;

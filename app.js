@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.80'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.81'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12169,8 +12169,38 @@ function saveTemplatesToStorage() {
       acessoSiteFormStatus.textContent = '';
       const pendente = Boolean(acessoSiteUltimoEstado && acessoSiteUltimoEstado.pendente);
       acessoSitePendente.hidden = !pendente;
+      acessoSiteVerificarStatus.textContent = '';
       acessoSiteContatoAdmin.hidden = true;
     }
+    // Botão "Verificar se o acesso foi liberado": pergunta ao servidor; liberado, recarrega o app já como usuário cadastrado.
+    const acessoSiteVerificarBtn = document.getElementById('acessoSiteVerificarBtn');
+    const acessoSiteVerificarStatus = document.getElementById('acessoSiteVerificarStatus');
+    acessoSiteVerificarBtn.addEventListener('click', async () => {
+      const id = aparelhoId();
+      if (!id) { acessoSiteVerificarStatus.textContent = 'Não foi possível identificar este aparelho.'; return; }
+      if (!navigator.onLine) { acessoSiteVerificarStatus.textContent = 'Sem conexão com a internet. Tente de novo quando estiver online.'; return; }
+      acessoSiteVerificarBtn.disabled = true;
+      acessoSiteVerificarStatus.textContent = 'Verificando…';
+      try {
+        const r = await postConfig({ acao: 'acesso-site-estado', aparelhoId: id });
+        if (!r.ok || !r.data) {
+          acessoSiteVerificarStatus.textContent = 'Não consegui consultar o servidor agora. Tente de novo em instantes.';
+        } else if (r.data.ok || r.data.identificado) {
+          acessoSiteVerificarStatus.textContent = '✅ Acesso liberado! Abrindo o NoteStyle…';
+          acessoSiteLiberarOverlay();
+          setTimeout(() => location.reload(), 600);
+          return;
+        } else if (r.data.recusado) {
+          acessoSiteUltimoEstado = r.data;
+          acessoSiteMostrarFormulario(r.data);
+        } else {
+          acessoSiteVerificarStatus.textContent = 'Ainda em análise. Quando o administrador aprovar, toque aqui de novo.';
+        }
+      } catch (e) {
+        acessoSiteVerificarStatus.textContent = 'Falha de conexão com o servidor.';
+      }
+      acessoSiteVerificarBtn.disabled = false;
+    });
     function acessoSiteJaEnviado() {
       const aviso = 'Pedido de acesso do NoteStyle: já enviei meu cadastro e aguardo a aprovação.';
       document.getElementById('acessoSiteZapAdmin').href = 'https://wa.me/' + ACESSO_ADMIN_ZAP + '?text=' + encodeURIComponent(aviso);

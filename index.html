@@ -2104,7 +2104,11 @@
         <img class="acesso-site-logo-app" src="icon-header.png?v=3" alt="" width="96" height="96" decoding="async">
         <h2 class="acesso-site-nome">Note<span class="brand-accent">Style</span></h2>
         <p class="acesso-site-slogan">Auxílio para estudo e preparação</p>
-        <p id="acessoSitePendente" class="acesso-site-pendente" role="status" hidden>✅ Cadastro enviado. Aguarde a aprovação do administrador.</p>
+        <div id="acessoSitePendente" class="acesso-site-pendente" role="status" hidden>
+          <p>✅ Cadastro enviado. Aguarde a aprovação do administrador.</p>
+          <button id="acessoSiteVerificarBtn" type="button" class="secondary">🔄 Verificar se o acesso foi liberado</button>
+          <p id="acessoSiteVerificarStatus" class="acesso-site-verificar-status" aria-live="polite"></p>
+        </div>
         <p class="acesso-site-intro">O NoteStyle ajuda você a preparar notas, reuniões e o estudo pessoal — no celular ou no computador.</p>
         <ul class="acesso-site-funcoes">
           <li><strong>Leitura diária da Bíblia</strong> — marcar capítulos, ouvir o áudio e pedir resumos com IA.</li>
