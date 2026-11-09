@@ -5305,7 +5305,7 @@
     /* Moldura do programa: o tema (com o texto temático no fim da mesma linha) em no máximo duas linhas. */
     .screen-anotacoes .anotacoes-pt-tema {
       display: -webkit-box;
-      -webkit-line-clamp: 2;
+      -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
       overflow: hidden;
       font-size: clamp(.86rem, 4vw, 1.02rem);
@@ -5347,7 +5347,7 @@
 
     .screen-anotacoes .anotacoes-cab-tema {
       display: -webkit-box;
-      -webkit-line-clamp: 2;
+      -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
       overflow: hidden;
       max-width: 100%;
@@ -5392,7 +5392,7 @@
     /* Lista do programa: tema e texto temático na mesma linha, até duas linhas. */
     .screen-anotacoes .anotacoes-parte-linha {
       display: -webkit-box;
-      -webkit-line-clamp: 2;
+      -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
       overflow: hidden;
       font-size: clamp(.8rem, 3.5vw, .92rem);

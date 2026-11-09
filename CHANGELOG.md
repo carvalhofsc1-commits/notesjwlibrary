@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.06
+
+Anotações: o tema (do cabeçalho da parte, da moldura do programa e da lista de partes) passa a ocupar no máximo **3 linhas** (antes 2), para caber o título da série e o tema do discurso.
+
 ## 6.7.05
 
 Anotações: nas **séries de discursos**, o título da série (“Série de discursos: …”) passa a ser só informativo, sem cartão e sem orador, como música e cântico, mas em fonte maior e em negrito (as setas também passam direto por ele); o orador é informado em cada discurso da série. O tema de cada discurso aparece com o título da série na frente e um travessão (“Busque o que traz verdadeira felicidade — Um estilo de vida simples”) no cabeçalho da anotação, no Salvar, no Copiar e no Word.
