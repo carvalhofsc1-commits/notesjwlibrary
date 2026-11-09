@@ -61,6 +61,7 @@ export const NIVEIS = {
   "biblia-texto": "resumo",
   // Código de pesquisa ou do dirigente (os cartões de comentar e de dirigir usam a mesma leitura)
   "estudo-lista": "pesquisa-ou-dirigente",
+  "estudo-paragrafos": "pesquisa-ou-dirigente", // o texto dos parágrafos de uma pergunta (sem IA)
   "ebc-ler": "pesquisa-ou-dirigente",
   "apostila-imagens": "pesquisa-ou-dirigente",
   "backup-campos": "pesquisa-ou-dirigente",

@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.13'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.14'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -14544,6 +14544,64 @@ function saveTemplatesToStorage() {
       return found.slice(0, 8);
     }
 
+    // Caixa "Ver o texto do parágrafo", logo abaixo da pergunta: recolhida por padrão; ao abrir, o servidor lê o parágrafo no wol.jw.org (sem IA).
+    const studyTextoCache = new Map();
+    async function studyTextoBuscar(item, picker) {
+      const chave = (aiStudy && aiStudy.artigo ? aiStudy.artigo : '') + '|' + item.rotulo;
+      if (studyTextoCache.has(chave)) return studyTextoCache.get(chave);
+      const doDirigente = picker.card === 'dirigente';
+      const result = await postStudy({
+        tarefa: 'estudo-paragrafos',
+        codigo: codigoAcessoSalvo(),
+        ...(doDirigente ? { codigoDirigente: codigoDirigenteSalvo() } : {}),
+        artigo: (aiStudy && aiStudy.artigo) || aiStudyArticle.value.trim(),
+        ano: aiWeekYear,
+        semana: aiWeekNumber,
+        paragrafos: item.rotulo
+      }, 25000);
+      const lista = result.ok && result.data && Array.isArray(result.data.paragrafos) ? result.data.paragrafos : null;
+      if (lista && lista.length) studyTextoCache.set(chave, lista);
+      return lista && lista.length ? lista : { erro: studyFailureMessage(result, 'Não consegui carregar o texto agora.') };
+    }
+    function studyTextoBloco(item, picker) {
+      const bloco = document.createElement('div');
+      bloco.className = 'study-texto';
+      const dos = studyNumbers(item.rotulo).length > 1 ? 'dos parágrafos ' : 'do parágrafo ';
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'secondary study-texto-btn';
+      btn.setAttribute('aria-expanded', 'false');
+      btn.textContent = '📖 Ver o texto ' + dos + item.rotulo;
+      const corpo = document.createElement('div');
+      corpo.className = 'study-texto-corpo';
+      corpo.hidden = true;
+      btn.addEventListener('click', async () => {
+        const abrir = corpo.hidden;
+        corpo.hidden = !abrir;
+        btn.setAttribute('aria-expanded', String(abrir));
+        btn.textContent = (abrir ? '▲ Esconder o texto ' : '📖 Ver o texto ') + dos + item.rotulo;
+        if (!abrir || corpo.dataset.pronto) return;
+        corpo.textContent = 'Carregando o texto…';
+        const lista = await studyTextoBuscar(item, picker);
+        corpo.textContent = '';
+        if (!Array.isArray(lista)) { corpo.textContent = lista.erro + ' Feche e abra de novo para tentar outra vez.'; return; }
+        lista.forEach(par => {
+          const p = document.createElement('p');
+          if (par.numero != null && par.numero !== '') {
+            const n = document.createElement('span');
+            n.className = 'study-texto-num';
+            n.textContent = par.numero;
+            p.appendChild(n);
+          }
+          p.appendChild(document.createTextNode(par.texto));
+          corpo.appendChild(p);
+        });
+        corpo.dataset.pronto = '1';
+      });
+      bloco.append(btn, corpo);
+      return bloco;
+    }
+
     function showStudyQuestions(picker) {
       const box = picker.pergunta;
       if (!box) return;
@@ -14555,6 +14613,7 @@ function saveTemplatesToStorage() {
         p.appendChild(label);
         p.appendChild(document.createTextNode(' ' + item.pergunta));
         box.appendChild(p);
+        box.appendChild(studyTextoBloco(item, picker));
         // As imagens do parágrafo: a descrição que o wol.jw.org guarda (antes só vinha ao copiar um trecho por cima da imagem) e a legenda.
         (item.imagens || []).forEach(imagem => {
           // 📖 JW Library ao lado do Copiar: abre o artigo no lugar da imagem (nas imagens carregadas antes, só depois de recarregar os parágrafos)
@@ -22777,7 +22836,7 @@ function saveTemplatesToStorage() {
     let bibliaResumoAlvo = null; // { item, cap } do resumo aberto no fim da tela
     let bibliaSecaoEscolhida = false; // ao abrir a tela nenhuma seção está escolhida: só aparecem os botões das seções
     let bibliaProgAberto = true; // programação de leitura da seção expandida ou recolhida
-    let bibliaEstado = { itens: {}, secao: '', soPendentes: false, resumos: {}, notas: {}, seguir: false, marcador: null, velocidade: 1 }; // itens: { idDoCapitulo: { lido, lidaEm } }; resumos: { idDoCapitulo: texto }
+    let bibliaEstado = { itens: {}, secao: '', soPendentes: false, resumos: {}, notas: {}, seguir: false, seguirGrupo: false, limite: 2, resumoAuto: false, marcador: null, velocidade: 1 }; // itens: { idDoCapitulo: { lido, lidaEm } }; resumos: { idDoCapitulo: texto }
     const BIBLIA_VELOCIDADES_VALIDAS = [0.75, 1, 1.25, 1.5, 1.75, 2];
     let bibliaPronto = false;
     let bibliaResumindo = false;
@@ -22793,6 +22852,9 @@ function saveTemplatesToStorage() {
         if (typeof salvo.secao === 'string') bibliaEstado.secao = salvo.secao;
         if (typeof salvo.soPendentes === 'boolean') bibliaEstado.soPendentes = salvo.soPendentes;
         if (typeof salvo.seguir === 'boolean') bibliaEstado.seguir = salvo.seguir;
+        if (typeof salvo.seguirGrupo === 'boolean') bibliaEstado.seguirGrupo = salvo.seguirGrupo;
+        if (typeof salvo.resumoAuto === 'boolean') bibliaEstado.resumoAuto = salvo.resumoAuto;
+        if (Number.isInteger(salvo.limite) && salvo.limite >= 2 && salvo.limite <= 10) bibliaEstado.limite = salvo.limite;
         if (salvo.marcador && typeof salvo.marcador === 'object' && typeof salvo.marcador.livro === 'string' && Number(salvo.marcador.n) > 0) {
           const m = salvo.marcador;
           bibliaEstado.marcador = { chave: m.livro + '|' + Number(m.n), livro: m.livro, n: Number(m.n), vista: m.vista === 'livros' ? 'livros' : 'secoes', itemId: typeof m.itemId === 'string' ? m.itemId : '' };
@@ -22809,6 +22871,9 @@ function saveTemplatesToStorage() {
         secao: bibliaEstado.secao,
         soPendentes: bibliaEstado.soPendentes,
         seguir: bibliaEstado.seguir,
+        seguirGrupo: bibliaEstado.seguirGrupo,
+        limite: bibliaEstado.limite,
+        resumoAuto: bibliaEstado.resumoAuto,
         marcador: bibliaEstado.marcador,
         velocidade: bibliaEstado.velocidade,
         resumos: bibliaEstado.resumos,
@@ -23877,6 +23942,65 @@ function saveTemplatesToStorage() {
       return i;
     }
 
+    // ---- Opções de leitura ----
+    // Leitura por livros: "tocar o próximo" até o máximo escolhido (2 a 10 capítulos, contando o que a pessoa iniciou). Leitura por seções e temas:
+    // "só o grupo do dia": continua enquanto o próximo capítulo for do mesmo grupo. bibliaSeq conta os capítulos da sequência automática.
+    let bibliaSeq = 0;
+    let bibliaAutoToken = 0; // muda quando a pessoa faz outra coisa (toca outro capítulo, fecha o resumo…): a rotina automática desiste
+    function bibliaPodeContinuar(a) {
+      if (!a) return false;
+      if (a.origem === 'livros') return Boolean(bibliaEstado.seguir) && bibliaSeq < (bibliaEstado.limite || 2);
+      if (!bibliaEstado.seguirGrupo) return false;
+      const prox = bibliaProximoEspaco(a.livro, a.n, a.origem, a.itemId);
+      return Boolean(prox) && prox.itemId === a.itemId;
+    }
+
+    // Lê em voz alta (voz da Leitura) e diz se foi até o fim; false se a pessoa parou ou deu erro.
+    function bibliaLerAteOFim(cfg) {
+      return new Promise(resolve => {
+        let fim = false;
+        leitorLer({ ...cfg, concluir: () => { fim = true; resolve(true); } }).then(() => { if (!fim) resolve(false); }, () => resolve(false));
+      });
+    }
+
+    // Resumo automático do capítulo que acabou de tocar: abre o resumo, fala "Aguarde... gerando resumo" enquanto a IA trabalha (se o resumo ainda
+    // não existe), gera e lê o resumo em voz alta. Devolve true se tudo correu e a leitura pode seguir para o próximo capítulo.
+    async function bibliaAutoResumo(a, token) {
+      const entradas = (bibliaIndiceLivros().get(a.livro) || new Map()).get(a.n) || [];
+      const ent = entradas.find(e => e.item && a.itemId && e.item.id === a.itemId) || entradas[0];
+      if (!ent) return true;
+      const chave = a.livro + '|' + a.n;
+      const existente = (bibliaEstado.resumos[ent.cap.id] || '').trim();
+      if (!existente && !codigoResumoSalvo()) { bibliaAudioErro(chave, 'Para gerar o resumo automático, salve o código de resumo em Ajustes → Autorização de acessos.'); return false; }
+      if (!codigoLeituraSalvo()) { bibliaAudioErro(chave, 'Para ler o resumo em voz alta, salve o código de leitura em Ajustes → Autorização de acessos.'); return false; }
+      if (!navigator.onLine) { bibliaAudioErro(chave, 'Sem conexão com a internet.'); return false; }
+      if (bibliaResumoAlvo) bibliaFecharResumo(false);
+      bibliaAbrirResumo(ent.item, ent.cap, a.origem === 'livros' ? 'livros' : '', true);
+      const cfg = bibliaResumoCfg();
+      if (!existente) {
+        const gerar = bibliaGerarResumo();
+        await bibliaLerAteOFim({ ...cfg, preparar: () => ({ unidades: [{ falado: 'Aguarde... gerando resumo', paragrafo: 0 }], desde: 0 }), nomeAudio: () => 'Aviso', destacar: () => {}, limpar: () => {} });
+        await gerar;
+        if (token !== bibliaAutoToken) return false;
+        if (!(bibliaResumoTexto.value || '').trim()) return false; // não gerou: o motivo está na tela do resumo
+      }
+      if (token !== bibliaAutoToken) return false;
+      const lido = await bibliaLerAteOFim(bibliaResumoCfg());
+      if (token !== bibliaAutoToken || !lido) return false;
+      bibliaFecharResumo(true);
+      return true;
+    }
+
+    async function bibliaAudioFim(a, seguir) {
+      const token = bibliaAutoToken;
+      if (bibliaEstado.resumoAuto) {
+        const ok = await bibliaAutoResumo(a, token);
+        if (!ok) return;
+      }
+      if (token !== bibliaAutoToken) return;
+      if (seguir) bibliaAudioSeguir(a);
+    }
+
     // Leitura contínua: ao fim de um capítulo, passa ao próximo da mesma lista (abrindo o grupo ou o livro dele). No fim da lista, para.
     function bibliaAudioSeguir(a) {
       const prox = bibliaProximoEspaco(a.livro, a.n, a.origem, a.itemId);
@@ -23899,12 +24023,12 @@ function saveTemplatesToStorage() {
         bibliaAudio.addEventListener('timeupdate', bibliaAudioProgresso);
         bibliaAudio.addEventListener('playing', () => { if (bibliaAudioAtual) { bibliaAudioAtual.estado = 'tocando'; bibliaAudioPintar(); } });
         bibliaAudio.addEventListener('pause', () => { if (bibliaAudioAtual && !bibliaAudio.ended && bibliaAudioAtual.estado === 'tocando') { bibliaAudioAtual.estado = 'pausado'; bibliaAudioPintar(); } });
-        bibliaAudio.addEventListener('ended', () => { // terminou: marca como lido e, se a opção estiver ligada, passa ao próximo capítulo; senão, para
+        bibliaAudio.addEventListener('ended', () => { // terminou: marca como lido; se houver resumo automático, ele vem primeiro; depois, se a opção estiver ligada, passa ao próximo capítulo; senão, para
           const a = bibliaAudioAtual;
-          const seguir = Boolean(a && bibliaEstado.seguir);
+          const seguir = bibliaPodeContinuar(a);
           bibliaAudioParar(seguir);
           if (a) bibliaAudioMarcarLido(a);
-          if (seguir) bibliaAudioSeguir(a);
+          if (a) bibliaAudioFim(a, seguir);
         });
         bibliaAudio.addEventListener('error', () => { if (bibliaAudioAtual) bibliaAudioErro(bibliaAudioAtual.chave, 'Não consegui tocar este áudio agora. Confira a conexão e tente de novo.'); });
       }
@@ -23916,6 +24040,16 @@ function saveTemplatesToStorage() {
       }
       bibliaVideoParar(); // um som por vez: o vídeo de introdução para
       bibliaAudioParar(continuar); // outro capítulo: só um por vez
+      if (continuar) {
+        bibliaSeq++;
+      } else {
+        bibliaSeq = 1; // a pessoa iniciou este capítulo: a sequência automática recomeça (e a rotina do resumo automático anterior desiste)
+        bibliaAutoToken++;
+        if (bibliaEstado.resumoAuto) { // ainda dentro do toque: libera o áudio da voz no iPhone, para o resumo poder tocar sozinho depois
+          vozAudio.src = vozSilencio();
+          vozAudio.play().catch(() => {});
+        }
+      }
       bibliaAudioMsg = null;
       const atual = { chave, livro: cap.livro, n, estado: 'carregando', marcas: [], v: 0, total: bibliaVersiculosCapitulo(cap.livro, n), origem: ctx && ctx.origem === 'livros' ? 'livros' : 'secoes', itemId: (ctx && ctx.itemId) || '' };
       bibliaAudioAtual = atual;
@@ -24694,10 +24828,33 @@ function saveTemplatesToStorage() {
     }
 
     bibliaCarregarEstado();
-    // Ajustes → Leitura da Bíblia: "Ao terminar um capítulo, tocar o próximo" (desligada por padrão: um capítulo por vez).
+    // Opções de leitura (na própria tela da Leitura diária da Bíblia). Por livros: tocar o próximo até o máximo de capítulos (2 a 10); por seções e
+    // temas: ler só o grupo do dia; nos dois: gerar e ler o resumo automaticamente.
     const bibliaSeguirCaixa = document.getElementById('bibliaSeguir');
+    const bibliaLimiteSel = document.getElementById('bibliaLimite');
+    const bibliaLimiteBox = document.getElementById('bibliaLimiteBox');
+    for (let n = 2; n <= 10; n++) bibliaLimiteSel.appendChild(new Option(String(n), String(n)));
+    bibliaLimiteSel.value = String(bibliaEstado.limite);
     bibliaSeguirCaixa.checked = Boolean(bibliaEstado.seguir);
-    bibliaSeguirCaixa.addEventListener('change', () => { bibliaEstado.seguir = bibliaSeguirCaixa.checked; bibliaGravarEstado(); });
+    bibliaLimiteBox.hidden = !bibliaEstado.seguir;
+    bibliaSeguirCaixa.addEventListener('change', () => {
+      bibliaEstado.seguir = bibliaSeguirCaixa.checked;
+      bibliaLimiteBox.hidden = !bibliaEstado.seguir;
+      bibliaGravarEstado();
+    });
+    bibliaLimiteSel.addEventListener('change', () => { bibliaEstado.limite = Number(bibliaLimiteSel.value) || 2; bibliaGravarEstado(); });
+    const bibliaSeguirGrupoCaixa = document.getElementById('bibliaSeguirGrupo');
+    bibliaSeguirGrupoCaixa.checked = Boolean(bibliaEstado.seguirGrupo);
+    bibliaSeguirGrupoCaixa.addEventListener('change', () => { bibliaEstado.seguirGrupo = bibliaSeguirGrupoCaixa.checked; bibliaGravarEstado(); });
+    const bibliaResumoAutoCaixas = [...document.querySelectorAll('[data-biblia-resumo-auto]')]; // uma em cada modo, as duas valem o mesmo
+    bibliaResumoAutoCaixas.forEach(c => {
+      c.checked = Boolean(bibliaEstado.resumoAuto);
+      c.addEventListener('change', () => {
+        bibliaEstado.resumoAuto = c.checked;
+        bibliaResumoAutoCaixas.forEach(o => { o.checked = c.checked; });
+        bibliaGravarEstado();
+      });
+    });
     // Ajustes → Leitura da Bíblia: marcar de uma vez o que já foi lido (quem começa no meio de um ciclo) e recomeçar o ciclo.
     (function bibliaMarcacaoEmMassa() {
       const el = id => document.getElementById(id);

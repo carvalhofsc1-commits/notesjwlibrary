@@ -227,6 +227,7 @@ const TAREFAS_SEM_IA = new Set([
   "anotacoes-versiculos",
   "programa-pub",
   "programas-lista",
+  "estudo-paragrafos",
   "outros-pesquisar",
   "outros-ler",
   "discurso-ler",
@@ -3998,6 +3999,28 @@ function jsonDaListaLida(lido) {
 }
 
 // Tenta a leitura direta. Devolve true se já respondeu (sucesso ou URL inválida). false = precisa da IA.
+// O texto dos parágrafos de uma pergunta do estudo (para a caixa "Ver o texto do parágrafo"): lido no wol.jw.org, sem IA.
+async function textoDosParagrafosDoEstudo(res, body) {
+  const url = urlDoEstudo(body);
+  if (!url) return erro(res, 400, "Número ou link do artigo inválido.");
+  const pedido = String(body.paragrafos || "").trim();
+  const alvo = /^[\d\s,\-–]{1,120}$/.test(pedido) ? numerosDosParagrafos(pedido) : null;
+  if (!alvo || !alvo.size) return erro(res, 400, "Informe os parágrafos.");
+  try {
+    const lido = await lerEstudoDireto(url);
+    if (!lido) return erro(res, 502, "Não consegui ler o artigo no wol.jw.org agora.");
+    const paragrafos = lido.grupos
+      .filter((g) => g.numeros.some((n) => alvo.has(n)))
+      .flatMap((g) => g.paragrafos.map((p) => ({ numero: p.numero ?? null, texto: String(p.texto || "").trim() })))
+      .filter((p) => p.texto);
+    if (!paragrafos.length) return erro(res, 404, "Não encontrei o texto desse(s) parágrafo(s) no artigo.");
+    return res.status(200).json({ paragrafos });
+  } catch (e) {
+    console.error("Texto dos parágrafos do estudo: falhou", e?.name, e?.message);
+    return erro(res, 502, "Não consegui ler o artigo no wol.jw.org agora.");
+  }
+}
+
 async function tentarListaNoSite(res, body) {
   if (!process.env.CODIGO_ESTUDO) {
     erro(res, 503, "A leitura do estudo ainda não está configurada no servidor.");
@@ -4221,6 +4244,12 @@ async function tratarPedido(req, res) {
     if (tarefa === "discurso-ler") return lerDiscursoCurtoDaSemana(res, body);
     if (tarefa === "joias-ler") return lerJoiasDaSemana(res, body);
     if (tarefa === "apostila-imagens") return lerImagensDaApostilaSemana(res, body);
+  }
+
+  if (tarefa === "estudo-paragrafos") {
+    if (!exigirAcesso(res, body)) return;
+    if (excedeuLimiteBackup(ip)) return erro(res, 429, "Muitas consultas. Tente novamente em alguns minutos.");
+    return textoDosParagrafosDoEstudo(res, body);
   }
 
   // Lista da Sentinela: leitura no site primeiro (sem IA). Só se falhar é que a IA lê a página.

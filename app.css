@@ -5594,6 +5594,97 @@
       display: none;
     }
 
+    /* Opções de leitura da Leitura diária da Bíblia (em cada modo: seções e temas / livros). */
+    .biblia-opcoes {
+      margin: 0 0 12px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--card);
+    }
+
+    .biblia-opcoes-titulo {
+      margin: 0 0 6px;
+      font-size: .92rem;
+      font-weight: 700;
+    }
+
+    .biblia-opcoes .ai-check {
+      margin-top: 6px;
+    }
+
+    .biblia-opcoes .hint {
+      margin: 2px 0 8px 1.6rem;
+      font-size: .82rem;
+    }
+
+    .biblia-limite {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 8px 0 0 1.6rem;
+    }
+
+    .biblia-limite label {
+      flex: 1 1 auto;
+      margin: 0;
+      font-size: .86rem;
+      font-weight: 500;
+    }
+
+    .biblia-limite select {
+      flex: 0 0 4.6rem;
+      width: 4.6rem;
+      padding: 7px 8px;
+    }
+
+    .biblia-limite[hidden] {
+      display: none;
+    }
+
+    /* Caixa "Ver o texto do parágrafo" (Estudo de A Sentinela): recolhida; abre para baixo, na largura da pergunta. */
+    .study-texto {
+      margin: 8px 0 0;
+    }
+
+    .study-texto-btn {
+      display: block;
+      width: 100%;
+      min-height: 38px;
+      padding: 6px 10px;
+      font-size: .86rem;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .study-texto-corpo {
+      margin: 6px 0 0;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--card);
+      font-size: .92rem;
+      line-height: 1.5;
+    }
+
+    .study-texto-corpo[hidden] {
+      display: none;
+    }
+
+    .study-texto-corpo p {
+      margin: 0 0 8px;
+    }
+
+    .study-texto-corpo p:last-child {
+      margin-bottom: 0;
+    }
+
+    .study-texto-corpo .study-texto-num {
+      margin-right: 4px;
+      color: var(--accent);
+      font-weight: 800;
+    }
+
     /* ---------- Tela Leitura em voz alta ---------- */
     .leitura-topo {
       margin: 0 0 8px;

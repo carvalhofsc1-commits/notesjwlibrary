@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.14
+
+**Leitura diária da Bíblia, opções de leitura** (agora na própria tela, em cada modo; saíram do Ajustes): em **Livros, na ordem da Bíblia**: “Ao terminar um capítulo, tocar o próximo” (que estava no Ajustes), com o **máximo de capítulos lidos automaticamente** (de 2 a 10, contando o que você iniciou); em **Seções e temas**: “Ler automaticamente só os capítulos sugeridos para o dia” (o grupo do dia: toca o próximo capítulo só enquanto for do mesmo grupo); nos dois modos: **Gerar e ler o resumo automaticamente**: ao terminar o capítulo, o app fala “Aguarde... gerando resumo”, gera o resumo (se ainda não existe) e o lê em voz alta; depois segue para o próximo, se a opção de seguir estiver ligada (precisa do código de resumo e do código de leitura).
+
+**Estudo de A Sentinela, Preparar para comentar e dirigir**: abaixo de cada pergunta do parágrafo, um botão na largura do cartão, **📖 Ver o texto do parágrafo** (recolhido por padrão), que abre para baixo com o texto do parágrafo (ou dos parágrafos) da pergunta, lido no wol.jw.org sem IA.
+
 ## 6.7.13
 
 Anotações: na programação, o cartão da parte que já tem orador, congregação ou anotação ganha um fundo na tonalidade da linha colorida do modo (âmbar na assembleia, verde no congresso), para ver de relance o que já foi preenchido. A lista é refeita ao voltar da anotação para o programa.
