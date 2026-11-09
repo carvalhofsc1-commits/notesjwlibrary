@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.08'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.09'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -24991,17 +24991,8 @@ function saveTemplatesToStorage() {
         if (comPrograma() && ativa && partes[parteAtual]) partes[parteAtual].nota = texto.value;
       }
 
-      // Congresso: o dia de cada parte ("Sexta-feira") e qual deve estar aberto (o de hoje, se a data do congresso foi registrada; senão o primeiro).
+      // Congresso: o dia de cada parte ("Sexta-feira"). A programação abre com todos os dias recolhidos; tocar num dia o abre (e fecha o que estava aberto) e tocar no dia aberto o recolhe.
       const diaDaParteCongresso = p => (p && (p.dia || String(p.secao || '').split(' · ')[0])) || '';
-      function diaInicial(dias) {
-        const ini = lerData(dataAtual);
-        if (ini) {
-          const dia0 = new Date(); dia0.setHours(12, 0, 0, 0);
-          const k = Math.round((dia0 - ini) / 86400000);
-          if (k >= 0 && k < dias.length) return dias[k];
-        }
-        return dias[0];
-      }
       function abrirDiaDaParte(i) {
         if (ehCongresso() && partes[i]) diaAberto = diaDaParteCongresso(partes[i]);
       }
@@ -25011,7 +25002,7 @@ function saveTemplatesToStorage() {
         let secaoAtual = '';
         const dias = ehCongresso() ? [...new Set(partes.map(diaDaParteCongresso).filter(Boolean))] : [];
         const agrupar = dias.length > 1;
-        if (agrupar && !dias.includes(diaAberto)) diaAberto = diaInicial(dias);
+        if (agrupar && !dias.includes(diaAberto)) diaAberto = '';
         let diaAnterior = null;
         partes.forEach((p, i) => {
           const diaP = agrupar ? diaDaParteCongresso(p) : '';
@@ -25022,6 +25013,7 @@ function saveTemplatesToStorage() {
             const cab = document.createElement('button');
             cab.type = 'button';
             cab.className = 'anotacoes-dia';
+            cab.dataset.dia = diaP;
             cab.setAttribute('aria-expanded', String(aberto));
             const seta = document.createElement('span');
             seta.className = 'anotacoes-dia-seta';
@@ -25040,10 +25032,11 @@ function saveTemplatesToStorage() {
             }
             cab.append(seta, caixa);
             cab.addEventListener('click', () => {
-              diaAberto = diaP; // abre este dia e fecha os outros
+              diaAberto = diaAberto === diaP ? '' : diaP; // abre este dia (fechando os outros) ou, se já estava aberto, recolhe
               expandida = -1;
               pintarPartes();
-              cab.scrollIntoView && partesEl.querySelector('.anotacoes-dia[aria-expanded="true"]').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+              const novo = [...partesEl.querySelectorAll('.anotacoes-dia')].find(x => x.dataset.dia === diaP);
+              if (novo && novo.scrollIntoView) novo.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
             });
             partesEl.appendChild(cab);
           }
@@ -25826,7 +25819,22 @@ function saveTemplatesToStorage() {
         // Evento já aberto antes neste aparelho: volta com as anotações que ele tinha, sem buscar de novo.
         const salvo = eventoSalvo(chave);
         if (salvo) {
+          // Programa guardado com algum título incompleto (termina em “:”, como “VÍDEO PRINCIPAL:”): busca o programa de novo e completa os títulos,
+          // sem mexer nas anotações, no orador nem na congregação.
+          if (navigator.onLine && salvo.partes.some(p => /:\s*$/.test(p.tema || ''))) {
+            try {
+              const r = await postStudy({ tarefa: 'programa-pub', entrada: ref }, 25000);
+              if (r.ok && r.data && Array.isArray(r.data.partes)) {
+                const novos = new Map(r.data.partes.map(x => [x.docid + '|' + x.par, x]));
+                salvo.partes.forEach(p => {
+                  const x = novos.get(p.docid + '|' + p.par);
+                  if (x && /:\s*$/.test(p.tema || '')) { p.tema = x.tema; p.textoTematico = x.textoTematico || p.textoTematico; }
+                });
+              }
+            } catch (e) { /* sem conexão: segue com o que está guardado */ }
+          }
           aplicarPrograma(salvo.programaMeta, salvo.partes, chave, salvo.data);
+          salvarRascunho();
           return;
         }
         if (!navigator.onLine) return dizerProg('Sem conexão com a internet.', true);

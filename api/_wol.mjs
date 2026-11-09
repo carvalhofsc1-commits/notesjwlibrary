@@ -1391,6 +1391,7 @@ function docsEmPaginaJw(html) {
 function partesDoProgramaHtml(html, docId) {
   const partes = [];
   let secao = "";
+  let esperaTitulo = false;
   const blocos = [...String(html || "").matchAll(/<(h2|p)\b([^>]*)>([\s\S]*?)<\/\1>/gi)];
   for (const m of blocos) {
     const tag = m[1].toLowerCase();
@@ -1400,11 +1401,24 @@ function partesDoProgramaHtml(html, docId) {
     if (!texto) continue;
     if (tag === "h2") {
       secao = texto;
+      esperaTitulo = false;
       continue;
     }
     const hora = texto.match(/^(\d{1,2})[:h](\d{2})\s+(.*)$/i);
     const sub = texto.match(/^[•·]\s*(.+)$/);
-    if (!hora && !sub) continue;
+    // "10:10 VÍDEO PRINCIPAL:" traz o título do vídeo nos parágrafos de baixo (sem horário nem marcador): eles completam a parte, e as
+    // referências bíblicas finais (entre parênteses) vão para o texto temático.
+    if (!hora && !sub) {
+      if (esperaTitulo && partes.length) {
+        const ultimo = partes[partes.length - 1];
+        const refs = texto.match(/^(.*?)\s*\(([^()]*\d[^()]*)\)\s*$/);
+        const titulo = refs && refs[1] ? refs[1] : texto;
+        ultimo.tema = (ultimo.tema + " " + titulo).replace(/\s+/g, " ").trim();
+        if (refs && refs[1]) ultimo.textoTematico = [ultimo.textoTematico, refs[2].trim()].filter(Boolean).join("; ");
+      }
+      continue;
+    }
+    esperaTitulo = false;
     let horario = "";
     let resto = texto;
     if (hora) {
@@ -1429,6 +1443,7 @@ function partesDoProgramaHtml(html, docId) {
       orador: "",
       congregacao: "",
     });
+    esperaTitulo = !sub && /:$/.test(tema) && !textoTematico;
   }
   return partes;
 }

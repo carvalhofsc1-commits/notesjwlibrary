@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.09
+
+Anotações: corrigido o programa que traz o título de uma parte nas linhas de baixo, como o **VÍDEO PRINCIPAL:** do congresso (“A História e o Ministério de Jesus: Episódio 4 ‘Foi Por Isso Que Eu Vim’”): o título agora entra no tema da parte e as referências bíblicas vão para o texto temático. Um programa já guardado com o título incompleto é completado sozinho ao ser aberto de novo (as anotações, o orador e a congregação não mudam). No congresso, a programação agora abre com **todos os dias recolhidos**, e tocar no dia aberto o recolhe (abrir um dia continua fechando o outro).
+
 ## 6.7.08
 
 Anotações: (1) no **congresso**, a programação de cada dia é recolhível (cartão com o dia, a data e o tema do dia) e **um dia fica aberto de cada vez**: abrir um dia fecha os outros (abre primeiro o dia de hoje, se a data do congresso foi registrada, ou o primeiro); (2) tocar no **tema do evento** (entre as duas linhas coloridas) abre o programa do evento no app JW Library.
