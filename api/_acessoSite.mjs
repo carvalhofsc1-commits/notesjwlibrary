@@ -218,7 +218,7 @@ function camposDoCorpo(corpo) {
   const mes = Math.round(Number(corpo && corpo.mesNascimento));
   const anoAtual = new Date().getFullYear();
   if (!nome || !sobrenome) return { erro: "Informe o nome e o sobrenome." };
-  if (!telefoneValido(telefone)) return { erro: "Informe um telefone válido, no formato (64) 98180-8090." };
+  if (!telefoneValido(telefone)) return { erro: "Informe um telefone válido, no formato (00) 00000-0000." };
   if (!Number.isFinite(mes) || mes < 1 || mes > 12) return { erro: "Escolha o mês de nascimento." };
   if (!Number.isFinite(ano) || ano < 1920 || ano > anoAtual - 12) return { erro: "Escolha o ano de nascimento." };
   const idade = idadeAprox(ano, mes);
