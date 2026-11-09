@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.97
+
+Anotações: o cabeçalho da parte (setas e tema) ficou mais baixo; o tema e o texto temático ficam na mesma linha, ligados por um travessão ("Tema — Texto"), em no máximo duas linhas, com a fonte se ajustando à largura da tela; o nome do orador e a congregação vão numa linha só, em fonte pequena e discreta, logo abaixo do tema; o horário e “Parte x de y” passam para uma linha pequena embaixo da barra. A lista do programa também mostra tema e texto temático na mesma linha, até duas linhas. O rótulo da data passou a “Registre a data da sua assembleia” (no congresso, “Registre a data do seu congresso”), e a tela não ganha mais rolagem lateral com textos longos.
+
 ## 6.6.96
 
 Anotações: a data do evento (e a da reunião) fica centralizada dentro do campo.

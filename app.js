@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.96'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.97'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -24863,12 +24863,25 @@ function saveTemplatesToStorage() {
       }
       function mostrarData(aviso) {
         dataEl.value = dataAtual || '';
-        document.getElementById('anotacoesDataRotulo').textContent = ehCongresso() ? '📅 Primeiro dia do congresso (sexta-feira)' : '📅 Data da assembleia';
+        document.getElementById('anotacoesDataRotulo').textContent = ehCongresso() ? '📅 Registre a data do seu congresso (primeiro dia, sexta-feira)' : '📅 Registre a data da sua assembleia';
         dataInfoEl.textContent = aviso || textoDaData();
         dataInfoEl.className = 'anotacoes-msg';
       }
 
       const semMarcador = t => String(t || '').replace(/^[•·]\s*/, '');
+      // O tema e, no fim da mesma linha, o texto temático depois de um travessão (no máximo duas linhas; o resto é cortado com reticências).
+      function preencherLinhaTema(el, p, vazio) {
+        el.replaceChildren();
+        const tema = document.createElement('strong');
+        tema.textContent = semMarcador(p && p.tema) || vazio || '';
+        el.appendChild(tema);
+        if (p && p.textoTematico) {
+          const tt = document.createElement('span');
+          tt.className = 'anotacoes-tt';
+          tt.textContent = ' — ' + p.textoTematico;
+          el.appendChild(tt);
+        }
+      }
       const comPrograma = () => Boolean(MODOS[modo] && MODOS[modo].programa);
       // Música, cântico, oração, anúncios e intervalo só informam: sem cartão, sem anotação, e as setas passam direto por eles.
       const ehInfo = p => /^(música|vídeo musical|cântico|oração|intervalo|anúncios)\b/i.test(semMarcador(p && p.tema).trim());
@@ -24892,7 +24905,7 @@ function saveTemplatesToStorage() {
         botaoPrograma.closest('.anotacoes-topo').toggleAttribute('data-prog', ativa);
         if (ativa) {
           const d = dadosDaParte();
-          document.getElementById('anotacoesCabTema').textContent = d.tema || 'Sem tema';
+          preencherLinhaTema(document.getElementById('anotacoesCabTema'), partes[parteAtual], 'Sem tema');
           const quem = [d.orador, d.congregacao].filter(Boolean).join(' · ');
           const quemEl = document.getElementById('anotacoesCabOrador');
           quemEl.textContent = quem;
@@ -24964,14 +24977,10 @@ function saveTemplatesToStorage() {
           hora.textContent = p.horario || '';
           const corpo = document.createElement('span');
           corpo.className = 'anotacoes-parte-texto';
-          const strong = document.createElement('strong');
-          strong.textContent = semMarcador(p.tema) || ('Parte ' + (i + 1));
-          corpo.appendChild(strong);
-          if (p.textoTematico) {
-            const peq = document.createElement('small');
-            peq.textContent = p.textoTematico;
-            corpo.appendChild(peq);
-          }
+          const linha = document.createElement('span');
+          linha.className = 'anotacoes-parte-linha';
+          preencherLinhaTema(linha, p, 'Parte ' + (i + 1));
+          corpo.appendChild(linha);
           btn.append(hora, corpo);
           if (p.nota && p.nota.trim()) {
             const marca = document.createElement('span');
