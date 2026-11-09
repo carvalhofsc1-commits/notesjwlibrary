@@ -5256,6 +5256,12 @@
       font-size: .86rem;
     }
 
+    /* A mesma linha colorida do topo (a cor do modo) fecha o tema por baixo. */
+    .screen-anotacoes .anotacoes-programa-titulo {
+      padding-bottom: 12px;
+      border-bottom: 3px solid var(--anot-cor);
+    }
+
     /* Moldura do programa: o tema (com o texto temático no fim da mesma linha) em no máximo duas linhas. */
     .screen-anotacoes .anotacoes-pt-tema {
       display: -webkit-box;

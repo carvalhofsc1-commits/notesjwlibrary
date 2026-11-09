@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.99
+
+Anotações: a linha colorida do topo (a cor do modo) também fecha o tema por baixo, nas telas do programa e da anotação.
+
 ## 6.6.98
 
 Anotações: na moldura do programa no alto, o texto temático (por exemplo, “Salmo 37:4”) passa para a mesma linha do tema, ligado por um travessão (“Tema — Salmo 37:4”), em no máximo duas linhas.
