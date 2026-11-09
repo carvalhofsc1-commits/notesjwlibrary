@@ -4678,8 +4678,8 @@
       padding: 4px 8px;
       border-radius: 8px;
       background: var(--soft);
-      background: color-mix(in srgb, var(--anot-cor) 32%, var(--card));
-      border-left: 4px solid var(--anot-cor);
+      background: color-mix(in srgb, #64748b 30%, var(--card));
+      border-left: 4px solid #64748b;
       color: var(--text);
       font-size: .82rem;
       font-weight: 800;

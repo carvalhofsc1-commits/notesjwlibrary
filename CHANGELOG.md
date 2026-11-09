@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.21
+
+Anotações (assembleia e congresso): as faixas **Manhã** e **Tarde** passaram para um cinza-azulado mais forte (em vez da cor do modo).
+
 ## 6.7.20
 
 Anotações (assembleia e congresso): as faixas **Manhã** e **Tarde** ganharam uma cor mais forte, na cor do modo, com uma barra mais escura na esquerda.
