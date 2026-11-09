@@ -4885,10 +4885,10 @@
       padding: 8px 14px;
     }
 
+    /* Texto bíblico guiado: livros (sugeridos pelo que se digita) → capítulos → versículos. */
     .anotacoes-biblia-pick {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 8px;
+      gap: 10px;
       margin: 0 0 14px;
       padding: 10px;
       border: 1px dashed var(--line);
@@ -4896,28 +4896,92 @@
       background: var(--card);
     }
 
-    .anotacoes-biblia-pick[hidden] {
+    .anotacoes-biblia-pick[hidden],
+    .anotacoes-modo-versos[hidden] {
       display: none;
     }
 
-    .anotacoes-biblia-pick label {
-      margin: 0;
-      font-size: .8rem;
-      color: var(--muted);
+    .anotacoes-trilha {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
     }
 
-    .anotacoes-biblia-pick label span {
-      display: block;
-      margin-bottom: 3px;
+    .anotacoes-trilha:empty {
+      display: none;
     }
 
-    .anotacoes-biblia-pick select {
-      padding: 9px 6px;
+    .anotacoes-trilha-btn {
+      min-height: 36px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--soft);
+      border: 1px solid var(--line);
+      color: var(--text);
+      font-size: .88rem;
     }
 
-    .anotacoes-pick-livro,
-    .anotacoes-biblia-pick > button {
-      grid-column: 1 / -1;
+    .anotacoes-modo-versos {
+      display: grid;
+      gap: 8px;
+    }
+
+    .anotacoes-modos {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .anotacoes-modo-btn {
+      min-height: 38px;
+      padding: 6px 8px;
+      font-size: .84rem;
+    }
+
+    .anotacoes-modo-btn[aria-pressed="true"] {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #ffffff;
+    }
+
+    .anotacoes-opcoes {
+      max-height: 280px;
+      overflow: auto;
+      overscroll-behavior: contain;
+    }
+
+    .anotacoes-grade {
+      display: grid;
+      gap: 6px;
+    }
+
+    .anotacoes-grade-livros {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .anotacoes-grade-numeros {
+      grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
+    }
+
+    .anotacoes-opcao {
+      min-height: 44px;
+      padding: 6px 8px;
+      font-size: .92rem;
+    }
+
+    .anotacoes-grade-livros .anotacoes-opcao {
+      text-align: left;
+    }
+
+    .anotacoes-opcao[aria-pressed="true"] {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #ffffff;
+    }
+
+    .anotacoes-opcao.inicio {
+      outline: 3px solid var(--anot-cor);
+      outline-offset: -3px;
     }
 
     .anotacoes-fmt {

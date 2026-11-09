@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.6.91'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.6.92'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -24735,10 +24735,6 @@ function saveTemplatesToStorage() {
       const congEl = document.getElementById('anotacoesCongregacao');
       const bibRef = document.getElementById('anotacoesBibliaRef');
       const bibPick = document.getElementById('anotacoesBibliaPick');
-      const bibLivro = document.getElementById('anotacoesBibliaLivro');
-      const bibCap = document.getElementById('anotacoesBibliaCap');
-      const bibDe = document.getElementById('anotacoesBibliaDe');
-      const bibAte = document.getElementById('anotacoesBibliaAte');
       const gravarStatus = document.getElementById('anotacoesGravarStatus');
       const gravarBtn = document.getElementById('anotacoesGravarBtn');
       const pararBtn = document.getElementById('anotacoesPararBtn');
@@ -25336,79 +25332,253 @@ function saveTemplatesToStorage() {
       });
       voltarHub.addEventListener('click', voltar);
 
-      function anotacoesLivrosComVersos() {
-        const counts = window.BIBLIA_VERSICULOS || [];
-        return BIBLIA_LIVROS.filter((_, i) => Array.isArray(counts[i]) && counts[i].length);
-      }
-      function anotacoesCapsDoLivro(livro) {
+      // ----- Texto bíblico guiado: digita o livro (já sugere), escolhe o capítulo e depois os versículos (um, corrido ou intercalado) -----
+      const semAcentos = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+      const trilhaEl = document.getElementById('anotacoesBibliaTrilha');
+      const opcoesEl = document.getElementById('anotacoesBibliaOpcoes');
+      const modoVersosEl = document.getElementById('anotacoesBibliaModo');
+      const guia = { livro: '', cap: 0, sel: new Set(), modo: 'soltos', inicio: 0, texto: '', aberto: false };
+
+      function capitulosDoLivro(livro) {
         const i = BIBLIA_LIVROS.indexOf(livro);
-        const counts = (window.BIBLIA_VERSICULOS || [])[i] || [];
-        return counts.map((qtd, idx) => ({ n: idx + 1, qtd }));
+        return ((window.BIBLIA_VERSICULOS || [])[i] || []);
       }
-      function anotacoesEncherSelect(sel, valores) {
-        sel.replaceChildren();
-        valores.forEach(v => {
-          const o = document.createElement('option');
-          o.value = String(v.v != null ? v.v : v);
-          o.textContent = v.t != null ? v.t : String(v);
-          sel.appendChild(o);
+
+      // Livros cujo nome (ou uma das palavras do nome) começa com o que foi digitado: "jo" → Josué, Jó, Joel, Jonas, João, 1 João, 2 João, 3 João.
+      function livrosPorPrefixo(texto) {
+        const t = semAcentos(texto).replace(/^([1-3])\s*/, '$1 ').trim();
+        if (!t) return BIBLIA_LIVROS.slice();
+        const temNumero = /^[1-3] /.test(t);
+        return BIBLIA_LIVROS.filter(l => {
+          const n = semAcentos(l);
+          const palavras = n.split(' ').filter((w, k) => !(k === 0 && /^[1-3]$/.test(w)));
+          return n.startsWith(t) || (!temNumero && palavras.some(w => w.startsWith(t)));
         });
       }
-      function anotacoesAtualizarPick() {
-        const livros = anotacoesLivrosComVersos();
-        if (!bibLivro.options.length) {
-          anotacoesEncherSelect(bibLivro, livros.map(l => ({ v: l, t: l })));
+
+      // "2, 4-6" → [2, 4, 5, 6]
+      function versosDoTexto(texto) {
+        const s = new Set();
+        String(texto || '').split(/[,.]/).forEach(p => {
+          const f = p.match(/(\d{1,3})\s*[-–—]\s*(\d{1,3})/);
+          if (f) { for (let n = Number(f[1]); n <= Number(f[2]) && n < 200; n++) s.add(n); return; }
+          const u = p.match(/\d{1,3}/);
+          if (u) s.add(Number(u[0]));
+        });
+        return s;
+      }
+
+      // [2, 3, 4, 6] → "2-4, 6" ; [2, 4, 6] → "2, 4, 6"
+      function versosEmTexto(conjunto) {
+        const v = [...conjunto].sort((a, b) => a - b);
+        const grupos = [];
+        v.forEach(n => {
+          const g = grupos[grupos.length - 1];
+          if (g && n === g[1] + 1) g[1] = n; else grupos.push([n, n]);
+        });
+        return grupos.map(([a, b]) => (a === b ? String(a) : b === a + 1 ? a + ', ' + b : a + '-' + b)).join(', ');
+      }
+
+      function referenciaDoGuia() {
+        if (!guia.livro) return guia.texto;
+        const um = capitulosDoLivro(guia.livro).length === 1;
+        if (!guia.cap) return guia.livro + ' ';
+        const versos = versosEmTexto(guia.sel);
+        return guia.livro + ' ' + guia.cap + (versos || !um ? ':' : '') + versos;
+      }
+
+      function escreverReferencia() {
+        bibRef.value = referenciaDoGuia();
+      }
+
+      // Lê o que está digitado e decide em que passo o guia está (livro, capítulo ou versículos).
+      function sincronizarDoTexto() {
+        const bruto = bibRef.value;
+        guia.texto = bruto;
+        const m = bruto.match(/^\s*((?:[1-3]\s*)?\p{L}[\p{L}\s.]*?)\s*(?:(\d{1,3})\s*(?::\s*([\d\s,.\-–—]*))?)?\s*$/u);
+        guia.livro = '';
+        guia.cap = 0;
+        guia.sel = new Set();
+        guia.inicio = 0;
+        if (m) {
+          const candidatos = livrosPorPrefixo(m[1]);
+          // Livro resolvido: o único que combina; ou o nome digitado igualzinho (com acento: "Jó", "João"); ou, com o capítulo já digitado, o nome sem acento ("joao 3").
+          const digitado = m[1].trim().toLowerCase();
+          const livro = candidatos.length === 1 ? candidatos[0]
+            : (candidatos.find(c => c.toLowerCase() === digitado) || (m[2] ? candidatos.find(c => semAcentos(c) === semAcentos(m[1])) : null));
+          if (livro) {
+            const caps = capitulosDoLivro(livro);
+            if (m[2] && Number(m[2]) >= 1 && Number(m[2]) <= caps.length) {
+              guia.livro = livro;
+              guia.cap = Number(m[2]);
+              guia.sel = versosDoTexto(m[3] || '');
+            } else if (!m[2] && (candidatos.length > 1 || semAcentos(m[1]) === semAcentos(livro))) {
+              if (semAcentos(m[1]) === semAcentos(livro)) {
+                guia.livro = livro;
+                if (caps.length === 1) guia.cap = 1;
+              }
+            }
+          }
         }
-        const livro = bibLivro.value || livros[0];
-        if (bibLivro.value !== livro) bibLivro.value = livro;
-        const caps = anotacoesCapsDoLivro(livro);
-        const capAntes = Number(bibCap.value) || 1;
-        anotacoesEncherSelect(bibCap, caps.map(c => ({ v: c.n, t: String(c.n) })));
-        bibCap.value = String(caps.some(c => c.n === capAntes) ? capAntes : (caps[0] && caps[0].n) || 1);
-        const qtd = (caps.find(c => c.n === Number(bibCap.value)) || { qtd: 1 }).qtd;
-        const versos = Array.from({ length: qtd }, (_, i) => i + 1);
-        const deAntes = Number(bibDe.value) || 1;
-        const ateAntes = Number(bibAte.value) || deAntes;
-        anotacoesEncherSelect(bibDe, versos.map(n => ({ v: n, t: String(n) })));
-        anotacoesEncherSelect(bibAte, versos.map(n => ({ v: n, t: String(n) })));
-        bibDe.value = String(Math.min(deAntes, qtd));
-        bibAte.value = String(Math.min(Math.max(ateAntes, Number(bibDe.value)), qtd));
+        pintarGuia(m ? m[1] : bruto);
       }
-      function anotacoesRefDoPick() {
-        const livro = bibLivro.value;
-        let a = Number(bibDe.value), b = Number(bibAte.value);
-        if (a > b) [a, b] = [b, a];
-        return livro + ' ' + bibCap.value + ':' + (a === b ? a : a + '-' + b);
+
+      function botaoGuia(rotulo, aoTocar, classe, titulo) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = classe || 'secondary';
+        b.textContent = rotulo;
+        if (titulo) b.title = titulo;
+        b.addEventListener('click', aoTocar);
+        return b;
       }
+
+      function pintarGuia(filtroLivro) {
+        const painel = bibPick;
+        painel.hidden = !guia.aberto;
+        trilhaEl.replaceChildren();
+        opcoesEl.replaceChildren();
+        modoVersosEl.hidden = true;
+        if (!guia.aberto) return;
+
+        // Trilha: Livro › Capítulo (toque para voltar a esse passo)
+        if (guia.livro) {
+          trilhaEl.appendChild(botaoGuia('📖 ' + guia.livro, () => { guia.livro = ''; guia.cap = 0; guia.sel = new Set(); bibRef.value = ''; guia.texto = ''; pintarGuia(''); bibRef.focus(); }, 'anotacoes-trilha-btn', 'Trocar de livro'));
+          if (guia.cap && capitulosDoLivro(guia.livro).length > 1) {
+            trilhaEl.appendChild(botaoGuia('Cap. ' + guia.cap, () => { guia.cap = 0; guia.sel = new Set(); escreverReferencia(); pintarGuia(''); }, 'anotacoes-trilha-btn', 'Trocar de capítulo'));
+          }
+        }
+
+        if (!guia.livro) {
+          // Passo 1: livros (todos, ou os que combinam com o que foi digitado)
+          const lista = livrosPorPrefixo(filtroLivro);
+          if (!lista.length) {
+            const p = document.createElement('p');
+            p.className = 'anotacoes-msg';
+            p.textContent = 'Nenhum livro começa com “' + String(filtroLivro || '').trim() + '”.';
+            opcoesEl.appendChild(p);
+            return;
+          }
+          const grade = document.createElement('div');
+          grade.className = 'anotacoes-grade anotacoes-grade-livros';
+          lista.forEach(livro => grade.appendChild(botaoGuia(livro, () => escolherLivro(livro), 'secondary anotacoes-opcao')));
+          opcoesEl.appendChild(grade);
+          return;
+        }
+
+        const caps = capitulosDoLivro(guia.livro);
+        if (!guia.cap) {
+          // Passo 2: capítulos
+          const grade = document.createElement('div');
+          grade.className = 'anotacoes-grade anotacoes-grade-numeros';
+          caps.forEach((qtd, i) => grade.appendChild(botaoGuia(String(i + 1), () => escolherCapitulo(i + 1), 'secondary anotacoes-opcao', qtd + ' versículos')));
+          opcoesEl.appendChild(grade);
+          return;
+        }
+
+        // Passo 3: versículos (um a um, intercalados ou em sequência)
+        const total = caps[guia.cap - 1] || 0;
+        modoVersosEl.hidden = false;
+        modoVersosEl.replaceChildren();
+        const modos = document.createElement('div');
+        modos.className = 'anotacoes-modos';
+        [['soltos', 'Um a um (2, 4, 6)'], ['faixa', 'Corrido (de / até)']].forEach(([id, rotulo]) => {
+          const b = botaoGuia(rotulo, () => { guia.modo = id; guia.inicio = 0; pintarGuia(''); }, 'secondary anotacoes-modo-btn');
+          if (guia.modo === id) b.setAttribute('aria-pressed', 'true');
+          modos.appendChild(b);
+        });
+        modoVersosEl.appendChild(modos);
+        const acoes = document.createElement('div');
+        acoes.className = 'anotacoes-modos';
+        acoes.appendChild(botaoGuia('Capítulo todo', () => { guia.sel = new Set(Array.from({ length: total }, (_, i) => i + 1)); guia.inicio = 0; escreverReferencia(); pintarGuia(''); }, 'secondary anotacoes-modo-btn'));
+        acoes.appendChild(botaoGuia('Limpar', () => { guia.sel = new Set(); guia.inicio = 0; escreverReferencia(); pintarGuia(''); }, 'secondary anotacoes-modo-btn'));
+        modoVersosEl.appendChild(acoes);
+        const dica = document.createElement('p');
+        dica.className = 'anotacoes-msg';
+        dica.textContent = guia.modo === 'faixa'
+          ? (guia.inicio ? 'Agora toque no último versículo (começou no ' + guia.inicio + ').' : 'Toque no primeiro e depois no último versículo.')
+          : 'Toque nos versículos que quer (pode pular).';
+        modoVersosEl.appendChild(dica);
+
+        const grade = document.createElement('div');
+        grade.className = 'anotacoes-grade anotacoes-grade-numeros';
+        for (let n = 1; n <= total; n++) {
+          const b = botaoGuia(String(n), () => tocarVersiculo(n), 'secondary anotacoes-opcao');
+          if (guia.sel.has(n)) b.setAttribute('aria-pressed', 'true');
+          if (guia.inicio === n) b.classList.add('inicio');
+          grade.appendChild(b);
+        }
+        opcoesEl.appendChild(grade);
+      }
+
+      function escolherLivro(livro) {
+        guia.livro = livro;
+        guia.cap = capitulosDoLivro(livro).length === 1 ? 1 : 0; // livros de um capítulo só pulam a escolha do capítulo
+        guia.sel = new Set();
+        guia.inicio = 0;
+        escreverReferencia();
+        pintarGuia('');
+      }
+
+      function escolherCapitulo(n) {
+        guia.cap = n;
+        guia.sel = new Set();
+        guia.inicio = 0;
+        escreverReferencia();
+        pintarGuia('');
+      }
+
+      function tocarVersiculo(n) {
+        if (guia.modo === 'faixa') {
+          if (!guia.inicio) { guia.inicio = n; pintarGuia(''); return; }
+          const a = Math.min(guia.inicio, n), b = Math.max(guia.inicio, n);
+          for (let v = a; v <= b; v++) guia.sel.add(v);
+          guia.inicio = 0;
+        } else if (guia.sel.has(n)) {
+          guia.sel.delete(n);
+        } else {
+          guia.sel.add(n);
+        }
+        escreverReferencia();
+        pintarGuia('');
+      }
+
+      bibRef.addEventListener('input', () => {
+        guia.aberto = Boolean(bibRef.value.trim()) || guia.aberto;
+        sincronizarDoTexto();
+      });
+      bibRef.addEventListener('focus', () => {
+        if (!guia.aberto && !bibRef.value.trim()) return;
+        guia.aberto = true;
+        sincronizarDoTexto();
+      });
+      document.getElementById('anotacoesBibliaEscolher').addEventListener('click', () => {
+        guia.aberto = !guia.aberto;
+        document.getElementById('anotacoesBibliaEscolher').setAttribute('aria-expanded', String(guia.aberto));
+        sincronizarDoTexto();
+      });
+
       async function anotacoesInserirBiblia(ref) {
         const referencia = String(ref || '').trim();
-        if (!referencia) return dizer('Informe a referência (ex.: João 3:16).', true);
+        if (!referencia) return dizer('Digite o livro (ex.: Jo) ou a referência (ex.: João 3:16).', true);
         if (!codigoResumoSalvo()) return dizer('Salve o código de resumo em Ajustes → 🔐 Autorização de acessos.', true);
         if (!navigator.onLine) return dizer('Sem conexão com a internet.', true);
         dizer('Buscando ' + referencia + '…');
         const r = await postStudy({ tarefa: 'anotacoes-versiculos', codigoResumo: codigoResumoSalvo(), referencias: [referencia] }, 20000);
         if (!r.ok) return dizer((r.data && r.data.erro) || 'Não consegui buscar o texto bíblico.', true);
         const lista = (r.data && r.data.versiculos) || [];
-        if (!lista.length) return dizer('Não encontrei o texto de “' + referencia + '”.', true);
+        if (!lista.length) return dizer('Não encontrei o texto de “' + referencia + '”. Confira o livro, o capítulo e os versículos.', true);
         const bloco = lista.map(v => (v.referencia || referencia) + '\n' + (v.texto || '').trim()).filter(Boolean).join('\n\n');
         inserirNoCursor(bloco + '\n');
         dizer('Texto bíblico inserido.');
+        // Pronto para o próximo: limpa o campo e fecha o guia.
+        bibRef.value = '';
+        guia.aberto = false;
+        document.getElementById('anotacoesBibliaEscolher').setAttribute('aria-expanded', 'false');
+        sincronizarDoTexto();
       }
       document.getElementById('anotacoesBibliaInserir').addEventListener('click', () => anotacoesInserirBiblia(bibRef.value));
       bibRef.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); anotacoesInserirBiblia(bibRef.value); } });
-      document.getElementById('anotacoesBibliaEscolher').addEventListener('click', () => {
-        bibPick.hidden = !bibPick.hidden;
-        document.getElementById('anotacoesBibliaEscolher').setAttribute('aria-expanded', String(!bibPick.hidden));
-        if (!bibPick.hidden) anotacoesAtualizarPick();
-      });
-      bibLivro.addEventListener('change', anotacoesAtualizarPick);
-      bibCap.addEventListener('change', anotacoesAtualizarPick);
-      bibDe.addEventListener('change', () => { if (Number(bibAte.value) < Number(bibDe.value)) bibAte.value = bibDe.value; });
-      document.getElementById('anotacoesBibliaPickOk').addEventListener('click', () => {
-        const ref = anotacoesRefDoPick();
-        bibRef.value = ref;
-        anotacoesInserirBiblia(ref);
-      });
 
       function anotacoesPartesDoTexto(txt) {
         const linhas = String(txt || '').split(/\r?\n/).map(l => l.replace(/\s+/g, ' ').trim()).filter(Boolean);

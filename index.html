@@ -225,16 +225,14 @@
           </div>
           <!-- Texto bíblico: digite a referência (ou escolha livro e versículos) e o texto entra onde está o cursor. -->
           <div class="anotacoes-biblia-barra" role="region" aria-label="Inserir texto bíblico">
-            <input id="anotacoesBibliaRef" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="📖 Texto bíblico (ex.: João 3:16)" aria-label="Referência bíblica">
+            <input id="anotacoesBibliaRef" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="📖 Texto bíblico: digite o livro (ex.: Jo)" aria-label="Referência bíblica">
             <button id="anotacoesBibliaInserir" type="button" title="Inserir o texto da referência onde está o cursor">Inserir</button>
             <button id="anotacoesBibliaEscolher" class="secondary" type="button" title="Escolher livro, capítulo e versículos" aria-label="Escolher livro, capítulo e versículos" aria-expanded="false">📚</button>
           </div>
           <div id="anotacoesBibliaPick" class="anotacoes-biblia-pick" hidden>
-            <label class="anotacoes-pick-livro"><span>Livro</span><select id="anotacoesBibliaLivro"></select></label>
-            <label><span>Capítulo</span><select id="anotacoesBibliaCap"></select></label>
-            <label><span>De</span><select id="anotacoesBibliaDe"></select></label>
-            <label><span>Até</span><select id="anotacoesBibliaAte"></select></label>
-            <button id="anotacoesBibliaPickOk" type="button">Inserir seleção</button>
+            <div id="anotacoesBibliaTrilha" class="anotacoes-trilha"></div>
+            <div id="anotacoesBibliaModo" class="anotacoes-modo-versos" hidden></div>
+            <div id="anotacoesBibliaOpcoes" class="anotacoes-opcoes"></div>
           </div>
 
           <label for="anotacoesTexto">✍️ Anotações</label>
