@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.01
+
+Anotações: (1) **texto bíblico inserido** em novo formato: a referência (livro, capítulo e versículos) em **negrito**, depois “:” e, na mesma linha, o texto todo entre aspas e em *itálico* (os acentos continuam aparecendo no negrito e no itálico); (2) novo botão **✨ Formatar com IA**, na mesma linha do Copiar e abrir no JW Library: a IA deixa o texto pronto para colar no campo de notas do JW Library usando só emojis e letras maiúsculas para dar destaque (muitos emojis para ilustrar os pontos), mantendo os negritos e itálicos que a pessoa já fez; dá para **desfazer** a formatação (as instruções da IA estão em Prompts da IA → Formatação de texto); (3) título “📖 Inserir texto nas anotações” acima do campo de texto bíblico; (4) tocar no **card do tema e do orador** abre o programa com a parte aberta, no lugar de editar o orador e a congregação.
+
 ## 6.7.00
 
 Anotações: um pouco mais de espaço (uns 10 px) entre a linha colorida do tema e a barra das setas / a programação. Numeração: o último número da versão nunca passa de 99 (depois da 6.6.99 vem a 6.7.00); as versões 6.6.100 a 6.6.102 foram publicadas fora dessa regra e esta é a primeira que a retoma.

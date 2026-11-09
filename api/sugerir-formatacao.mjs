@@ -2956,6 +2956,29 @@ async function textosDosVersiculosAnotacoes(res, body) {
   }
 }
 
+// Anotações: deixa o texto pronto para colar no JW Library (só emojis e maiúsculas, mantendo os negritos e itálicos que a pessoa já fez).
+const SaidaAnotacoesFormatadas = z.object({ texto: z.string() });
+async function formatarAnotacoes(res, body, P) {
+  const bruto = typeof body.texto === "string" ? body.texto.replace(/\r\n/g, "\n").trim() : "";
+  if (!bruto) return erro(res, 400, "Escreva as anotações antes de formatar.");
+  if (bruto.length > 12000) return erro(res, 413, "O texto está grande demais para formatar de uma vez (limite de 12.000 caracteres). Formate por partes.");
+  try {
+    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 90_000) });
+    const resposta = await chamarIa(
+      client,
+      P,
+      { max_tokens: 12000, system: P.sistemaAnotacoesFormatar, messages: [{ role: "user", content: `ANOTAÇÕES:\n${bruto}` }] },
+      { schema: SaidaAnotacoesFormatadas, semPensar: true, tarefa: "anotacoes-formatar" }
+    );
+    const texto = resposta.parsed_output && typeof resposta.parsed_output.texto === "string" ? semCulto(resposta.parsed_output.texto).trim() : "";
+    if (resposta.stop_reason === "refusal" || !texto) return erro(res, 502, "A IA não conseguiu formatar este texto. Tente de novo.");
+    return res.status(200).json({ texto });
+  } catch (e) {
+    console.error("Formatar anotações: falhou", e?.name, e?.message);
+    return tratarErro(e, res);
+  }
+}
+
 // Anotações: lista dos programas de assembleia e congresso disponíveis na WOL (o app a mostra ao abrir a tela, sem código).
 async function listaDeProgramas(res) {
   try {
@@ -4232,6 +4255,7 @@ async function tratarPedido(req, res) {
   if (tarefa === "estudo-recap") return responderEstudo(res, { ...body, paragrafos: "recapitulação" }, P, { dirigente: true });
   if (tarefa === "estudo-perguntas") return sugerirPerguntas(res, body, P);
   if (tarefa === "texto-diario-comentarios") return comentariosDoTextoDiario(res, body, P);
+  if (tarefa === "anotacoes-formatar") return formatarAnotacoes(res, body, P);
   if (tarefa === "ebc") return responderEbc(res, body, P);
   if (tarefa === "ebc-dirigente") return perguntasEbcDirigente(res, body, P);
   if (tarefa === "tesouros") return esbocoDeTesouros(res, body, P);

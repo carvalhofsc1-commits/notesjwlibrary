@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.00'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.01'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -9026,7 +9026,7 @@
     const REPORT_EMAIL = 'carvalhofsc1@gmail.com'; // o mesmo contato da página Sobre
     const MSG_SEM_CONSENTIMENTO = 'Para usar a IA e a leitura em voz alta é preciso concordar com o envio do texto. Toque no botão de novo quando quiser concordar.';
     // As tarefas do servidor que usam a IA (as outras só leem o wol.jw.org ou a Bíblia e não precisam da concordância).
-    const IA_TAREFAS = new Set(['estudo', 'estudo-lista', 'estudo-perguntas', 'texto-diario-comentarios', 'ebc', 'ebc-dirigente', 'tesouros', 'publico', 'outros', 'discurso', 'joias', 'leitura-biblia', 'sentinela']);
+    const IA_TAREFAS = new Set(['anotacoes-formatar', 'estudo', 'estudo-lista', 'estudo-perguntas', 'texto-diario-comentarios', 'ebc', 'ebc-dirigente', 'tesouros', 'publico', 'outros', 'discurso', 'joias', 'leitura-biblia', 'sentinela']);
     let consentimentoIaSessao = false; // vale só até fechar o app quando o aparelho não deixa gravar a escolha
     let consentimentoIaEmCurso = null;
 
@@ -11695,7 +11695,7 @@ function saveTemplatesToStorage() {
       joias: 'Joias', 'texto-diario-comentarios': 'Texto diário',
       'leitura-biblia': 'Leitura bíblica', 'biblia-texto': 'Texto bíblico',
       'outros-pesquisar': 'Pesquisar', 'publico-esboco': 'Esboço S-34',
-      versiculos: 'Versículos', 'anotacoes-versiculos': 'Bíblia (anotações)',
+      versiculos: 'Versículos', 'anotacoes-versiculos': 'Bíblia (anotações)', 'anotacoes-formatar': 'Formatar anotações (IA)',
       'programa-pub': 'Programa (assembleia)', voz: 'Voz', ia: 'IA'
     };
     function estatisticasNomeTarefa(chave) {
@@ -25117,6 +25117,24 @@ function saveTemplatesToStorage() {
         voltarAoHub();
       }
       document.getElementById('anotacoesProgramaTopo').addEventListener('click', voltar);
+      // Tocar no card do tema e do orador leva ao programa, com esta parte aberta no lugar de editar o orador e a congregação.
+      const cabCentro = document.querySelector('.anotacoes-cab-centro');
+      function editarOradorDaParte() {
+        if (!ativa) return;
+        if (gravacao) return dizer('Pare a gravação antes de sair desta tela.', true);
+        guardarNota();
+        salvarRascunho();
+        expandida = parteAtual;
+        vista = 'programa';
+        pintarPartes();
+        window.scrollTo({ top: 0 });
+        const alvo = partesEl.querySelector('.anotacoes-parte[aria-expanded="true"]');
+        if (alvo && alvo.scrollIntoView) alvo.scrollIntoView({ block: 'center' });
+        const campo = partesEl.querySelector('.anotacoes-parte-extra input');
+        if (campo) campo.focus({ preventScroll: true });
+      }
+      cabCentro.addEventListener('click', editarOradorDaParte);
+      cabCentro.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); editarOradorDaParte(); } });
       document.getElementById('anotacoesTrocarEvento').addEventListener('click', () => { salvarRascunho(); irPara('escolha'); });
       // Ver anotações: abre a primeira parte (na ordem do programa) que já tem anotação.
       verNotasBtn.addEventListener('click', () => {
@@ -25599,6 +25617,12 @@ function saveTemplatesToStorage() {
         sincronizarDoTexto();
       });
 
+      // Negrito ou itálico Unicode que mantém os acentos: as letras viram as do estilo e os acentos (decompostos) seguem colados nelas.
+      function estiloComAcentos(texto, id) {
+        const estilo = styles.find(x => x.id === id) || styles[0];
+        return [...removeUnicodeFormatting(String(texto || '')).normalize('NFD')].map(ch => (/\p{M}/u.test(ch) ? ch : convertChar(ch, estilo))).join('');
+      }
+
       async function anotacoesInserirBiblia(ref) {
         const referencia = String(ref || '').trim();
         if (!referencia) return dizer('Digite o livro (ex.: Jo) ou a referência (ex.: João 3:16).', true);
@@ -25609,7 +25633,12 @@ function saveTemplatesToStorage() {
         if (!r.ok) return dizer((r.data && r.data.erro) || 'Não consegui buscar o texto bíblico.', true);
         const lista = (r.data && r.data.versiculos) || [];
         if (!lista.length) return dizer('Não encontrei o texto de “' + referencia + '”. Confira o livro, o capítulo e os versículos.', true);
-        const bloco = lista.map(v => (v.referencia || referencia) + '\n' + (v.texto || '').trim()).filter(Boolean).join('\n\n');
+        // Referência em negrito (livro, capítulo e versículos), depois “:” e, na mesma linha, o texto todo entre aspas e em itálico.
+        const bloco = lista
+          .filter(v => (v.texto || '').trim())
+          .map(v => estiloComAcentos(v.referencia || referencia, 'bold') + ': “' + estiloComAcentos((v.texto || '').trim(), 'italic') + '”')
+          .join('\n');
+        if (!bloco) return dizer('Não encontrei o texto de “' + referencia + '”.', true);
         inserirNoCursor(bloco + '\n');
         dizer('Texto bíblico inserido.');
         // Pronto para o próximo: limpa o campo e fecha o guia.
@@ -25793,6 +25822,49 @@ function saveTemplatesToStorage() {
           window.location.href = destino;
         });
       }
+
+      // Formatar com IA: deixa o texto pronto para colar no JW Library (só emojis e maiúsculas; os negritos e itálicos que já existem ficam).
+      // O texto de antes fica guardado para o "Desfazer a formatação".
+      const iaBtn = document.getElementById('anotacoesIaBtn');
+      const iaDesfazer = document.getElementById('anotacoesIaDesfazer');
+      let textoAntesDaIa = null;
+      iaBtn.addEventListener('click', async () => {
+        const original = texto.value;
+        if (!original.trim()) return dizer('Escreva as anotações antes de formatar com a IA.', true);
+        if (original.length > 12000) return dizer('O texto está grande demais para formatar de uma vez (12.000 caracteres). Formate por partes.', true);
+        if (!codigoAcessoSalvo()) return dizer('Salve o código de pesquisa em Ajustes → 🔐 Autorização de acessos.', true);
+        if (!navigator.onLine) return dizer('Sem conexão com a internet.', true);
+        iaBtn.disabled = true;
+        const rotulo = iaBtn.textContent;
+        iaBtn.textContent = '✨ Formatando…';
+        dizer('A IA está formatando o texto…');
+        try {
+          const r = await postStudy({ tarefa: 'anotacoes-formatar', codigo: codigoAcessoSalvo(), texto: original }, IA_ESPERA_MS);
+          const novo = r.ok && r.data && typeof r.data.texto === 'string' ? r.data.texto : '';
+          if (!novo.trim()) return dizer(r.ok ? 'A IA não devolveu o texto. Tente de novo.' : studyFailureMessage(r, 'Não foi possível formatar agora.'), true);
+          if (texto.value !== original) return dizer('O texto mudou enquanto a IA formatava; nada foi trocado. Tente de novo.', true);
+          textoAntesDaIa = original;
+          texto.value = novo;
+          guardarNota();
+          salvarRascunho();
+          iaDesfazer.hidden = false;
+          dizer('✅ Texto formatado para o JW Library. Confira e, se não gostar, desfaça.');
+        } finally {
+          iaBtn.disabled = false;
+          iaBtn.textContent = rotulo;
+        }
+      });
+      iaDesfazer.addEventListener('click', () => {
+        if (textoAntesDaIa == null) return;
+        texto.value = textoAntesDaIa;
+        textoAntesDaIa = null;
+        iaDesfazer.hidden = true;
+        guardarNota();
+        salvarRascunho();
+        dizer('Formatação desfeita: voltou o texto de antes.');
+      });
+      // Digitar depois de formatar encerra o "desfazer" (para não apagar o que foi escrito depois).
+      texto.addEventListener('input', () => { iaDesfazer.hidden = true; textoAntesDaIa = null; });
 
       // Salvar e Word: nas partes de assembleia e congresso o cabeçalho (tema, orador e congregação) vai junto automaticamente.
       function textoDaAnotacao() {

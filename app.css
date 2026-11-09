@@ -5374,6 +5374,56 @@
       font-weight: 400;
     }
 
+    .screen-anotacoes .anotacoes-cab-centro {
+      cursor: pointer;
+    }
+
+    .card h3.anotacoes-titulo-biblia {
+      margin: 2px 0 6px;
+      font-size: .92rem;
+      font-weight: 600;
+    }
+
+    /* Linha do JW Library e do Formatar com IA: dividem a largura (o JW Library, quando aparece, fica com o que sobra). */
+    .anotacoes-linha-jw {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    /* Dividindo a linha, o texto de cada botão pode ir para uma segunda linha. */
+    .screen-anotacoes .anotacoes-linha-jw button {
+      margin-top: 0;
+      min-width: 0;
+      min-height: 40px;
+      padding: 4px 8px;
+      font-size: .78rem;
+      line-height: 1.15;
+      white-space: normal;
+      text-align: center;
+    }
+
+    .anotacoes-linha-jw .anotacoes-jwl[hidden] {
+      display: none;
+    }
+
+    .anotacoes-linha-jw .anotacoes-jwl[hidden] + .anotacoes-ia {
+      grid-column: 1 / -1;
+    }
+
+    .anotacoes-desfazer {
+      display: block;
+      width: 100%;
+      min-height: 34px;
+      margin-top: 8px;
+      font-size: .82rem;
+    }
+
+    .anotacoes-desfazer[hidden] {
+      display: none;
+    }
+
     /* ---------- Tela Leitura em voz alta ---------- */
     .leitura-topo {
       margin: 0 0 8px;

@@ -215,7 +215,7 @@
           <div id="anotacoesCabParte" class="anotacoes-cab-parte" hidden>
             <div class="ai-week anotacoes-cab sent-option-site">
               <button id="anotacoesParteAnt" class="secondary ai-week-nav" type="button" aria-label="Parte anterior" title="Parte anterior">◀</button>
-              <div class="ai-week-link anotacoes-cab-centro">
+              <div class="ai-week-link anotacoes-cab-centro" role="button" tabindex="0" title="Tocar para editar o orador e a congregação desta parte">
                 <span id="anotacoesCabTema" class="anotacoes-cab-tema"></span>
                 <small id="anotacoesCabOrador" class="anotacoes-cab-orador" hidden></small>
               </div>
@@ -224,8 +224,9 @@
             <p id="anotacoesCabPos" class="anotacoes-cab-pos"></p>
           </div>
           <!-- Texto bíblico: digite a referência (ou escolha livro e versículos) e o texto entra onde está o cursor. -->
+          <h3 class="anotacoes-subtitulo anotacoes-titulo-biblia">📖 Inserir texto nas anotações</h3>
           <div class="anotacoes-biblia-barra" role="region" aria-label="Inserir texto bíblico">
-            <input id="anotacoesBibliaRef" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="📖 Livro (ex.: Jo)" aria-label="Referência bíblica">
+            <input id="anotacoesBibliaRef" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Livro (ex.: Jo)" aria-label="Referência bíblica">
             <button id="anotacoesBibliaInserir" type="button" title="Inserir o texto da referência onde está o cursor">Inserir</button>
             <button id="anotacoesBibliaEscolher" class="secondary" type="button" title="Escolher livro, capítulo e versículos" aria-label="Escolher livro, capítulo e versículos" aria-expanded="false">📚</button>
             <button id="anotacoesBibliaLimpar" class="secondary" type="button" title="Limpar o campo de texto bíblico" aria-label="Limpar o campo de texto bíblico">🗑️</button>
@@ -252,8 +253,12 @@
             <button id="anotacoesDocxBtn" class="secondary" type="button">📄 Word</button>
             <button id="anotacoesLimparBtn" class="secondary anotacoes-lixeira" type="button" title="Limpar as anotações" aria-label="Limpar as anotações">🗑️</button>
           </div>
-          <button id="anotacoesJwlBtn" class="anotacoes-jwl" type="button" title="Copia a anotação e abre esta parte no JW Library; é só colar no campo de notas" hidden>📖 Copiar e abrir no JW Library</button>
+          <div class="anotacoes-linha-jw">
+            <button id="anotacoesJwlBtn" class="anotacoes-jwl" type="button" title="Copia a anotação e abre esta parte no JW Library; é só colar no campo de notas" hidden>📖 Copiar e abrir no JW Library</button>
+            <button id="anotacoesIaBtn" class="secondary anotacoes-ia" type="button" title="A IA deixa o texto pronto para colar no JW Library: só emojis e letras maiúsculas, mantendo os seus negritos e itálicos">✨ Formatar com IA</button>
+          </div>
           <p id="anotacoesStatus" class="anotacoes-msg" role="status" aria-live="polite"></p>
+          <button id="anotacoesIaDesfazer" class="secondary anotacoes-desfazer" type="button" hidden>↩️ Desfazer a formatação</button>
 
           <!-- Gravação do discurso: tudo neste quadro. Gravar → pausar, parar ou descartar → gravação pronta → Fazer o resumo (ou descartar). -->
           <section id="anotacoesGravacao" class="anotacoes-gravacao" aria-label="Gravação do discurso">

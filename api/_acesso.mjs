@@ -85,6 +85,8 @@ export const NIVEIS = {
   // Anotações: programa da assembleia/congresso (pub-media + WOL) sem código; textos bíblicos com o de resumo
   "programa-pub": "publico",
   "programas-lista": "publico",
+  // Formatar as anotações com IA (tela Anotações): código de pesquisa, como a formatação da tela Formatar
+  "anotacoes-formatar": "pesquisa",
   "anotacoes-versiculos": "resumo",
 };
 
