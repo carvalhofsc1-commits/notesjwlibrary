@@ -4678,9 +4678,9 @@
       padding: 4px 8px;
       border-radius: 8px;
       background: var(--soft);
-      background: color-mix(in srgb, #64748b 30%, var(--card));
-      border-left: 4px solid #64748b;
-      color: var(--text);
+      background: #5b7396;
+      border-left: 4px solid #3b4f70;
+      color: #ffffff;
       font-size: .82rem;
       font-weight: 800;
       text-transform: uppercase;
@@ -4888,7 +4888,17 @@
 
     .anotacoes-parte[aria-current="true"] {
       border: 2px solid var(--anot-cor);
-      background: var(--soft);
+    }
+
+    /* Passar o dedo ou o mouse não muda a cor do cartão: a cor só muda quando há anotações (.preenchida). */
+    .screen-anotacoes .anotacoes-parte:where(:not(:disabled)):hover,
+    .screen-anotacoes .anotacoes-parte.secondary:hover {
+      background-image: none;
+      background-color: var(--field);
+    }
+
+    .screen-anotacoes .anotacoes-parte-item.preenchida .anotacoes-parte:where(:not(:disabled)):hover {
+      background-color: color-mix(in srgb, var(--anot-cor) 22%, var(--card));
     }
 
     .anotacoes-parte-sub {

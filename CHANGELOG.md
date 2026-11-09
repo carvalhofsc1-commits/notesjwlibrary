@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.22
+
+Anotações (assembleia e congresso): as faixas **Manhã** e **Tarde** ficaram em azul-acinzentado forte, com texto branco; e os cartões das partes não mudam mais de cor ao passar o dedo ou o mouse — a cor só muda quando há anotações.
+
 ## 6.7.21
 
 Anotações (assembleia e congresso): as faixas **Manhã** e **Tarde** passaram para um cinza-azulado mais forte (em vez da cor do modo).
