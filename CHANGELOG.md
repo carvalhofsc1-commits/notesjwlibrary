@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.79
+
+Página Sobre: "Convidar alguém" só aparece para aparelho cadastrado, sem exceção: ter a senha de administrador salva não basta (o administrador também precisa estar cadastrado).
+
 ## 6.6.78
 
 Página Sobre: a seção "Convidar alguém" só aparece para usuários cadastrados (e para o administrador). O texto do convite continua só editável pelo administrador; os demais usuários só o veem e o enviam.
