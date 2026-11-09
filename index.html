@@ -163,26 +163,31 @@
 
       <div id="anotacoesWorkspace" class="anotacoes-workspace" hidden>
         <!-- Assembleia e congresso: a lista dos programas vem da WOL; escolher um já carrega as partes. -->
-        <details id="anotacoesProgramaBox" class="anotacoes-bloco anotacoes-programa-card" hidden>
-          <summary><span id="anotacoesProgramaRotulo">📋 Selecione o programa</span><small id="anotacoesProgramaEscolhido" class="anotacoes-escolhido" hidden></small></summary>
-          <div id="anotacoesEventos" class="anotacoes-eventos" aria-live="polite"></div>
-          <button id="anotacoesEventosMais" class="secondary anotacoes-mais" type="button" hidden>▼ Mostrar programas anteriores</button>
-          <p id="anotacoesProgramaStatus" class="anotacoes-msg" role="status" aria-live="polite"></p>
-          <details class="leitura-dica anotacoes-outro">
-            <summary>🔎 Outro programa (código ou link)</summary>
-            <label for="anotacoesProgramaPub">Código, link da WOL ou do JW Library</label>
-            <input id="anotacoesProgramaPub" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Ex.: CA-brpgm27 ou o link do programa">
-            <div class="bk-row">
-              <button id="anotacoesProgramaCarregar" type="button">⬇️ Carregar programa</button>
-            </div>
-          </details>
-          <div id="anotacoesProgramaTitulo" class="anotacoes-programa-titulo" hidden><span class="anotacoes-pt-nome"></span><strong class="anotacoes-pt-tema"></strong><span class="anotacoes-pt-texto"></span></div>
-          <div class="anotacoes-partes-cab">
-            <h3 class="anotacoes-subtitulo">🗒️ Partes do programa</h3>
-            <button id="anotacoesParteAdd" class="secondary" type="button">＋ Parte</button>
+        <!-- Assembleia e congresso: 1) lista dos eventos (da WOL); 2) o programa do evento escolhido; 3) a anotação de uma parte (abaixo). -->
+        <div id="anotacoesProgramaTitulo" class="anotacoes-programa-titulo" hidden><span class="anotacoes-pt-nome"></span><strong class="anotacoes-pt-tema"></strong><span class="anotacoes-pt-texto"></span></div>
+        <div id="anotacoesProgramaBox" hidden>
+          <div id="anotacoesEscolha" class="anotacoes-bloco">
+            <h3 id="anotacoesProgramaRotulo" class="anotacoes-subtitulo">📋 Selecione o programa</h3>
+            <div id="anotacoesEventos" class="anotacoes-eventos" aria-live="polite"></div>
+            <button id="anotacoesEventosMais" class="secondary anotacoes-mais" type="button" hidden>▼ Mostrar programas anteriores</button>
+            <p id="anotacoesProgramaStatus" class="anotacoes-msg" role="status" aria-live="polite"></p>
+            <details class="leitura-dica anotacoes-outro">
+              <summary>🔎 Outro programa (código ou link)</summary>
+              <label for="anotacoesProgramaPub">Código, link da WOL ou do JW Library</label>
+              <input id="anotacoesProgramaPub" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Ex.: CA-brpgm27 ou o link do programa">
+              <div class="bk-row">
+                <button id="anotacoesProgramaCarregar" type="button">⬇️ Carregar programa</button>
+              </div>
+            </details>
           </div>
-          <div id="anotacoesPartes" class="anotacoes-partes"></div>
-        </details>
+          <div id="anotacoesProgramaVista" hidden>
+            <div class="anotacoes-programa-acoes">
+              <button id="anotacoesVerNotas" class="anotacoes-ver-notas" type="button" hidden>✍️ Ver anotações</button>
+              <button id="anotacoesTrocarEvento" class="secondary anotacoes-trocar" type="button">↩ Trocar de evento</button>
+            </div>
+            <div id="anotacoesPartes" class="anotacoes-partes"></div>
+          </div>
+        </div>
 
         <details id="anotacoesDetalhes" class="anotacoes-bloco anotacoes-detalhes" open>
           <summary>👤 Tema, orador e congregação</summary>

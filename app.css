@@ -4630,6 +4630,29 @@
       margin-top: 3px;
     }
 
+    .anotacoes-programa-acoes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 10px;
+    }
+
+    .anotacoes-programa-acoes button {
+      flex: 1 1 140px;
+      min-height: 40px;
+      padding: 8px 10px;
+      font-size: .88rem;
+    }
+
+    .anotacoes-programa-acoes button[hidden] {
+      display: none;
+    }
+
+    .anotacoes-ver-notas {
+      background: var(--anot-cor);
+      color: #0f172a;
+    }
+
     .anotacoes-iniciar {
       margin-top: 10px;
       min-height: 46px;
