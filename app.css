@@ -4568,13 +4568,13 @@
       min-width: 0;
       max-width: 100%;
       min-height: 46px;
-      text-align: left;
+      text-align: center;
     }
 
     .anotacoes-data input[type="date"]::-webkit-date-and-time-value,
     #anotacoesDataReuniao::-webkit-date-and-time-value {
       min-height: 1.3em;
-      text-align: left;
+      text-align: center;
     }
 
     .anotacoes-programa-acoes {

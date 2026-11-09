@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.6.96
+
+Anotações: a data do evento (e a da reunião) fica centralizada dentro do campo.
+
 ## 6.6.95
 
 Anotações: botões mais finos e leves em toda a tela (altura menor, texto numa linha só, sem negrito e com fonte menor): Copiar, Salvar, Word e lixeira, Copiar e abrir no JW Library, Gravar o discurso, formatação (negrito, itálico…), texto bíblico, os botões do topo e os das partes do programa. O título do topo ("Anotações · Assembleia") fica em no máximo duas linhas. Saiu o aviso "O que você escreve é guardado sozinho…" abaixo do campo de texto (o salvamento automático continua).
