@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.30
+
+Anotações da assembleia: tocar numa pergunta de recapitulação da lista abre a tela de anotações do discurso dela, já no campo da resposta.
+
 ## 6.7.29
 
 Anotações (assembleia e congresso): o título **Programa da assembleia** (ou **do congresso**) ficou do lado de fora, acima do cartão dos discursos, e o título **Perguntas de recapitulação** também ficou fora, acima do cartão das perguntas.

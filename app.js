@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.29'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.30'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -25235,11 +25235,13 @@ function saveTemplatesToStorage() {
             // A série de discursos tem a pergunta no título (que não abre): vai para o primeiro discurso dela.
             const alvo = ehInfo(partes[dono]) ? dono + 1 : dono;
             if (!partes[alvo]) return;
-            abrirDiaDaParte(alvo);
-            expandida = alvo;
-            pintarPartes();
-            const aberta = partesEl.querySelector('.anotacoes-parte[aria-expanded="true"]');
-            if (aberta && aberta.scrollIntoView) aberta.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            // Abre a tela de anotações do discurso, já no campo da resposta a esta pergunta.
+            iniciarAnotacao(alvo);
+            setTimeout(() => {
+              if (revisaoEl.hidden) return;
+              revisaoEl.scrollIntoView({ block: 'center', behavior: 'auto' });
+              respostaEl.focus({ preventScroll: true });
+            }, 120);
           });
           li.appendChild(b);
           perguntasLista.appendChild(li);
