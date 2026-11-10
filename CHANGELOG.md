@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.59
+
+Menu lateral: uma linha separa o consumo de IA do restante do menu, por cima (por baixo já havia a do rodapé).
+
 ## 6.7.58
 
 Menu lateral: no fim da lista, em letras pequenas e discretas, o **mês atual** e o **consumo de IA até agora** (por exemplo, “Novembro de 2026 · R$ 7,35 até agora”). Só aparece quando o aparelho tem códigos de IA salvos e internet; tocar leva a Ajustes → Consumo de IA e faturamento. Atualiza ao abrir o menu (no máximo uma vez por minuto).
