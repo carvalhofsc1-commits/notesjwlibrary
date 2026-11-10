@@ -7658,7 +7658,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.60'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.61'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -16324,7 +16324,28 @@ function saveTemplatesToStorage() {
 
     // O esboço salvo mais recente do discurso carregado: nos da semana, o mesmo título na mesma semana; no discurso público, o mesmo
     // tema do S-34 (pelo número; os salvos antes da 5.7.1 só têm o título). A lista salva vem da mais nova para a mais antiga.
+    // "Outros esboços": o esboço pode ter sido preparado sem "Carregar" (só com o esboço pronto importado ou o tema digitado). Então o esboço salvo é
+    // reconhecido, na mesma semana, pelo título do esboço importado, pelo tema digitado ou pelo título da matéria carregada (sem aspas, acentos e
+    // maiúsculas). Quem tem mais de uma versão salva recebe sempre a mais recente (a lista vem da mais nova para a mais antiga).
+    const esbocoTituloNorm = t => String(t || '').replace(/[‘’'“”"]/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+    function esbocoSalvoDeOutros(cfg) {
+      let candidatos = [];
+      try { // chamada antes de a seção "Outros esboços" ser montada (os campos ainda não existem): nada a reconhecer
+        const base = outrosBaseAtual();
+        candidatos = [outrosCamposEl.tema.value, base && base.titulo, cfg.dadosCarregados && cfg.dadosCarregados.titulo].map(esbocoTituloNorm).filter(t => t.length >= 8);
+      } catch (e) { candidatos = []; }
+      if (!candidatos.length) return { item: null, total: 0 };
+      const iguais = (a, b) => a === b || (Math.min(a.length, b.length) >= 12 && (a.includes(b) || b.includes(a)));
+      const achados = historicoLer().filter(item => {
+        if (item.tipo !== 'esboco' || !String(item.titulo).startsWith(cfg.tituloHistorico) || historicoChave(item) !== historicoChaveAtual()) return false;
+        const nomes = [item.esbocoTitulo, String(item.titulo).slice(String(item.titulo).lastIndexOf(' - ') + 3)].map(esbocoTituloNorm).filter(t => t.length >= 8);
+        return nomes.some(n => candidatos.some(c => iguais(n, c)));
+      });
+      return { item: achados[0] || null, total: achados.length };
+    }
+
     function esbocoSalvoDe(cfg) {
+      if (cfg.kind === 'outros') return esbocoSalvoDeOutros(cfg);
       const dados = cfg.dadosCarregados;
       if (!dados) return { item: null, total: 0 };
       const antigo = esbocoNomeAntigo(cfg, dados);
@@ -17402,6 +17423,7 @@ function saveTemplatesToStorage() {
     }
 
     // O resumo do bloco opcional mostra o que há dentro dele (com o bloco fechado, o orador sabe que a matéria está lá).
+    outrosCamposEl.tema.addEventListener('input', () => esbocoSalvoAtualizar(ESBOCOS.outros));
     function outrosAtualizarResumo() {
       const itens = [];
       if (outrosCamposEl.ocasiao.value.trim()) itens.push('ocasião');
@@ -17412,6 +17434,7 @@ function saveTemplatesToStorage() {
       document.getElementById('outrosMateriaResumo').textContent = '📚 Ocasião, textos, matéria e pesquisa (opcional)' + (itens.length ? ' · ' + itens.join(', ') : '');
       const base = outrosBaseAtual();
       document.getElementById('outrosBaseResumo').textContent = '📥 Esboço pronto como base (opcional, só neste aparelho)' + (base ? ' · ' + base.titulo : '');
+      esbocoSalvoAtualizar(ESBOCOS.outros); // com esboço importado como base, já pode haver uma versão preparada e salva
     }
 
     function outrosSalvarRascunho() {

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.61
+
+Outros esboços: o app reconhece o esboço já preparado e salvo mesmo quando ele veio de um esboço pronto importado (sem “Carregar a matéria”): na mesma semana, pelo título do esboço importado ou pelo tema digitado. Aparece o botão **📂 Carregar o esboço já salvo**, que traz sempre a versão mais recente e liga o esboço à pesquisa salva — com isso valem Outra versão, Melhorar e Incluir texto(s).
+
 ## 6.7.60
 
 Reuniões → Preparação de discursos e esboços: ao recolher o card de um esboço (Discurso público, Tesouros, discurso curto ou Outros esboços) ou o grupo inteiro, o esboço também sai do campo de texto e, sem nenhum card aberto, o cartão **1. Texto original** some (como já acontecia nos cards de Comentários). O esboço continua guardado em Pesquisas e respostas salvas.
