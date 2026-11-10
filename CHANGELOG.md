@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.28
+
+Anotações (assembleia e congresso): a tela do programa agora tem **três contêineres** separados: 1) o alto, que termina no card da data; 2) os discursos, com Ver e Exportar anotações, até o último discurso; 3) as perguntas de recapitulação (só na assembleia de circuito).
+
 ## 6.7.27
 
 Anotações da assembleia: o ícone ❓ saiu dos temas na lista do programa (as perguntas continuam na lista de perguntas e dentro de cada discurso).

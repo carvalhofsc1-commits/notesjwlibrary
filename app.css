@@ -5761,17 +5761,29 @@
     }
 
     /* Perguntas de recapitulação (assembleia de circuito): o aviso no programa e o campo da resposta embaixo das anotações. */
-    .screen-anotacoes .anotacoes-perguntas,
     .screen-anotacoes .anotacoes-revisao {
       margin: 14px 0 4px;
     }
 
-    .screen-anotacoes .anotacoes-perguntas[hidden],
+    /* Tela do programa: os cartões dos discursos e das perguntas ficam separados do cartão do alto (que termina no card da data). */
+    .anotacoes-programa-cards {
+      display: block;
+    }
+
+    .anotacoes-programa-cards[hidden],
+    .anotacoes-programa-cards > [hidden],
     .screen-anotacoes .anotacoes-revisao[hidden] {
       display: none;
     }
 
-    .screen-anotacoes .anotacoes-perguntas-card,
+    .anotacoes-programa-cards > .card {
+      margin: 14px 0 0;
+    }
+
+    .screen-anotacoes .anotacoes-perguntas-lista + .anotacoes-msg {
+      margin: 0;
+    }
+
     .screen-anotacoes .anotacoes-revisao-card {
       display: grid;
       gap: 8px;

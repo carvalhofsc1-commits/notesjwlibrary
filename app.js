@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.27'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.28'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -25305,6 +25305,7 @@ function saveTemplatesToStorage() {
         programaBox.hidden = !programa || vista === 'anotando'; // vazia na tela de anotação: escondida, para não somar mais um espaço
         escolhaEl.hidden = vista !== 'escolha';
         programaVistaEl.hidden = vista !== 'programa';
+        document.getElementById('anotacoesProgramaCards').hidden = !programa || vista !== 'programa'; // o 2º e o 3º contêiner: discursos e perguntas
         progTitulo.hidden = !programa || vista === 'escolha' || !programaMeta;
         verNotasBtn.hidden = !temNotas();
         document.getElementById('anotacoesExportarNotas').hidden = !temNotas();
@@ -25791,6 +25792,7 @@ function saveTemplatesToStorage() {
         if (!info) return;
         modo = nome;
         cartao.dataset.modo = nome;
+        document.querySelectorAll('.anotacoes-cartao-extra').forEach(c => { c.dataset.modo = nome; }); // os cartões dos discursos e das perguntas têm a cor do modo
         hub.hidden = true;
         workspace.hidden = false;
         tituloEl.textContent = info.titulo;
