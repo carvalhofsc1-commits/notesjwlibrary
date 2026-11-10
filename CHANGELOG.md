@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.32
+
+Anotações: a barra **Inserir texto bíblico** fica congelada no topo da tela enquanto se rola (também na resposta da pergunta de recapitulação); o texto entra no último campo em que se tocou, as anotações ou a resposta. Corrige a 6.7.31, que tinha deixado a barra de fora do topo ao agrupá-la.
+
 ## 6.7.31
 
 Anotações da assembleia: ao tocar no campo da resposta da pergunta de recapitulação, o bloco **Inserir texto bíblico** sobe para cima desse campo (antes ficava fora da tela, com o teclado aberto) e o texto é inserido na resposta; ao tocar nas anotações ele volta ao lugar de origem.

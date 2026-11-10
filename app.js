@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.31'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.32'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -25191,22 +25191,13 @@ function saveTemplatesToStorage() {
         return '\n\n❓ ' + estiloComAcentos('Pergunta de recapitulação', 'bold') + '\n' + q.texto + '\n' + r;
       }
       const temConteudoAtual = () => Boolean(texto.value.trim() || (comPrograma() && ativa && respostaDaParte(parteAtual).trim() && perguntaDaParte(parteAtual)));
-      // Texto bíblico: o bloco "Inserir texto bíblico" fica acima das anotações; ao tocar no campo da resposta ele passa para cima desse campo (senão ficaria
-      // fora da tela, com o teclado aberto) e o texto é inserido nele. Ao tocar nas anotações, ou ao trocar de parte, volta ao lugar de origem.
-      const bibliaBloco = document.getElementById('anotacoesBibliaBloco');
+      // Texto bíblico: a barra "Inserir texto bíblico" fica congelada no topo da tela (sticky) enquanto se rola; o texto é inserido no último campo em que
+      // se tocou: as anotações ou a resposta da pergunta de recapitulação.
       const bibliaTitulo = document.getElementById('anotacoesBibliaTitulo');
-      const bibliaLugar = document.createComment('lugar do texto bíblico');
-      bibliaBloco.before(bibliaLugar);
       let alvoInsercao = texto;
       function bibliaPara(campo) {
         alvoInsercao = campo;
-        if (campo === respostaEl) {
-          revisaoEl.querySelector('.anotacoes-revisao-card').insertBefore(bibliaBloco, respostaEl);
-          bibliaTitulo.textContent = '📖 Inserir texto bíblico na resposta';
-        } else {
-          if (bibliaLugar.nextSibling !== bibliaBloco) bibliaLugar.after(bibliaBloco);
-          bibliaTitulo.textContent = '📖 Inserir texto bíblico nas anotações';
-        }
+        bibliaTitulo.textContent = campo === respostaEl ? '📖 Inserir texto bíblico na resposta' : '📖 Inserir texto bíblico nas anotações';
       }
       respostaEl.addEventListener('focus', () => { if (alvoInsercao !== respostaEl) bibliaPara(respostaEl); });
       texto.addEventListener('focus', () => { if (alvoInsercao !== texto) bibliaPara(texto); });

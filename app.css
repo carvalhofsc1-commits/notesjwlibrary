@@ -5049,6 +5049,11 @@
       display: none;
     }
 
+    /* O contêiner do bloco não conta no layout: assim a barra (sticky) fica congelada no topo enquanto se rola todo o campo de escrita. */
+    #anotacoesBibliaBloco {
+      display: contents;
+    }
+
     .anotacoes-biblia-barra {
       position: sticky;
       top: calc(var(--topbar-h, 52px) + 4px);
