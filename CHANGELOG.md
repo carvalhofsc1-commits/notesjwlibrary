@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.27
+
+Anotações da assembleia: o ícone ❓ saiu dos temas na lista do programa (as perguntas continuam na lista de perguntas e dentro de cada discurso).
+
 ## 6.7.26
 
 Anotações da assembleia de circuito: o título **Pergunta de recapitulação** passou para a área cinza, fora do card da resposta; e, na página do programa, depois dos discursos, há um contêiner à parte com a **lista das perguntas de recapitulação** (cada uma mostra o discurso dela e abre esse discurso ao tocar), junto do aviso e do botão da IA.

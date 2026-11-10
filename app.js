@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.26'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.27'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -25437,7 +25437,7 @@ function saveTemplatesToStorage() {
             h.textContent = p.horario || '';
             const t = document.createElement('span');
             t.className = 'anotacoes-parte-texto';
-            t.textContent = semMarcador(p.tema) + (p.perguntaN ? ' ❓' : '');
+            t.textContent = semMarcador(p.tema);
             item.append(h, t);
             partesEl.appendChild(item);
             return;
@@ -25465,13 +25465,6 @@ function saveTemplatesToStorage() {
             marca.title = 'Tem anotações';
             marca.textContent = '✍️';
             btn.appendChild(marca);
-          }
-          if (p.perguntaN) {
-            const marcaPergunta = document.createElement('span');
-            marcaPergunta.className = 'anotacoes-parte-marca';
-            marcaPergunta.title = 'Tem pergunta de recapitulação';
-            marcaPergunta.textContent = '❓';
-            btn.appendChild(marcaPergunta);
           }
           btn.addEventListener('click', () => {
             expandida = expandida === i ? -1 : i;
