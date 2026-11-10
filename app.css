@@ -5819,22 +5819,28 @@
 
     /* A data do evento: só um texto discreto (como as instruções adicionais de áudio da leitura da Bíblia) que abre e fecha o campo; sem moldura nem destaque. */
     .screen-anotacoes .anotacoes-data {
-      margin: 0 0 6px;
+      margin: -8px 0 -10px; /* aproxima da linha colorida de cima e da moldura de baixo */
       padding: 0;
       border: 0;
       background: none;
+      text-align: center;
     }
 
     .anotacoes-data > summary {
-      padding: 3px 2px;
+      padding: 2px;
       font-size: .74rem;
       font-weight: 300;
       cursor: pointer;
       color: var(--muted);
+      text-align: center;
     }
 
     .anotacoes-data-corpo {
-      padding: 6px 0 4px;
+      padding: 2px 0 0;
+    }
+
+    .anotacoes-data-corpo .anotacoes-msg {
+      margin: 4px 0 0;
     }
 
     /* Botões de cada campo de texto (anotações e resposta), bem finos, logo abaixo da moldura do campo: copiar, formatar com IA e a lixeira (só o ícone). */
