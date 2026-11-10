@@ -5838,9 +5838,10 @@
     }
 
     /* Só o texto com o ícone, discreto como o rótulo da data da assembleia: sem caixa, sem cor de fundo. */
-    .study-texto-btn,
-    .study-texto-btn:hover,
-    .study-texto-btn:active {
+    button.study-texto-btn,
+    button.study-texto-btn:hover,
+    button.study-texto-btn:active,
+    button.study-texto-btn:focus {
       display: block;
       width: 100%;
       min-height: 0;

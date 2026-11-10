@@ -7658,7 +7658,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.64'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.65'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -14895,7 +14895,7 @@ function saveTemplatesToStorage() {
       btn.type = 'button';
       btn.className = 'secondary study-texto-btn';
       btn.setAttribute('aria-expanded', 'false');
-      btn.textContent = '📖 Ver o texto ' + dos + item.rotulo;
+      btn.textContent = '📖 Ver o texto ' + dos + item.rotulo + ' ▾';
       const corpo = document.createElement('div');
       corpo.className = 'study-texto-corpo';
       corpo.hidden = true;
@@ -14903,7 +14903,7 @@ function saveTemplatesToStorage() {
         const abrir = corpo.hidden;
         corpo.hidden = !abrir;
         btn.setAttribute('aria-expanded', String(abrir));
-        btn.textContent = (abrir ? '▲ Esconder o texto ' : '📖 Ver o texto ') + dos + item.rotulo;
+        btn.textContent = abrir ? '▲ Esconder o texto ' + dos + item.rotulo : '📖 Ver o texto ' + dos + item.rotulo + ' ▾';
         if (!abrir || corpo.dataset.pronto) return;
         corpo.textContent = 'Carregando o texto…';
         const lista = await studyTextoBuscar(item, picker);
