@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.30'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.31'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -25006,19 +25006,20 @@ function saveTemplatesToStorage() {
         progStatus.className = 'anotacoes-msg' + (aviso ? ' warn' : '');
       }
 
-      function inserirNoCursor(trecho) {
+      function inserirNoCursor(trecho, campo = texto) {
         const t = String(trecho || '');
         if (!t) return;
-        const ini = texto.selectionStart ?? texto.value.length;
-        const fim = texto.selectionEnd ?? ini;
-        const antes = texto.value.slice(0, ini);
-        const depois = texto.value.slice(fim);
+        const ini = campo.selectionStart ?? campo.value.length;
+        const fim = campo.selectionEnd ?? ini;
+        const antes = campo.value.slice(0, ini);
+        const depois = campo.value.slice(fim);
         const precisaNL = antes && !/\n$/.test(antes) && !/^\n/.test(t);
         const bloco = (precisaNL ? '\n' : '') + t;
-        texto.value = antes + bloco + depois;
+        campo.value = antes + bloco + depois;
         const pos = (antes + bloco).length;
-        texto.focus();
-        texto.setSelectionRange(pos, pos);
+        campo.focus();
+        campo.setSelectionRange(pos, pos);
+        if (campo !== texto) campo.dispatchEvent(new Event('input', { bubbles: true })); // a resposta da pergunta é guardada na parte
         dizer('Inserido.');
       }
 
@@ -25190,15 +25191,35 @@ function saveTemplatesToStorage() {
         return '\n\n❓ ' + estiloComAcentos('Pergunta de recapitulação', 'bold') + '\n' + q.texto + '\n' + r;
       }
       const temConteudoAtual = () => Boolean(texto.value.trim() || (comPrograma() && ativa && respostaDaParte(parteAtual).trim() && perguntaDaParte(parteAtual)));
+      // Texto bíblico: o bloco "Inserir texto bíblico" fica acima das anotações; ao tocar no campo da resposta ele passa para cima desse campo (senão ficaria
+      // fora da tela, com o teclado aberto) e o texto é inserido nele. Ao tocar nas anotações, ou ao trocar de parte, volta ao lugar de origem.
+      const bibliaBloco = document.getElementById('anotacoesBibliaBloco');
+      const bibliaTitulo = document.getElementById('anotacoesBibliaTitulo');
+      const bibliaLugar = document.createComment('lugar do texto bíblico');
+      bibliaBloco.before(bibliaLugar);
+      let alvoInsercao = texto;
+      function bibliaPara(campo) {
+        alvoInsercao = campo;
+        if (campo === respostaEl) {
+          revisaoEl.querySelector('.anotacoes-revisao-card').insertBefore(bibliaBloco, respostaEl);
+          bibliaTitulo.textContent = '📖 Inserir texto bíblico na resposta';
+        } else {
+          if (bibliaLugar.nextSibling !== bibliaBloco) bibliaLugar.after(bibliaBloco);
+          bibliaTitulo.textContent = '📖 Inserir texto bíblico nas anotações';
+        }
+      }
+      respostaEl.addEventListener('focus', () => { if (alvoInsercao !== respostaEl) bibliaPara(respostaEl); });
+      texto.addEventListener('focus', () => { if (alvoInsercao !== texto) bibliaPara(texto); });
       function pintarRevisao() {
         const q = ativa ? perguntaDaParte(parteAtual) : null;
         revisaoEl.hidden = !q;
-        if (!q) return;
+        if (!q) { if (alvoInsercao !== texto) bibliaPara(texto); return; }
         document.getElementById('anotacoesRevisaoPergunta').textContent = textoDaPergunta(q);
         const dono = donaDaPergunta(parteAtual);
         if (respostaEl.dataset.dono !== String(dono)) {
           respostaEl.value = partes[dono].resposta || '';
           respostaEl.dataset.dono = String(dono);
+          if (alvoInsercao !== texto) bibliaPara(texto);
         }
       }
       respostaEl.addEventListener('input', () => {
@@ -26159,7 +26180,7 @@ function saveTemplatesToStorage() {
           .map(v => estiloComAcentos(v.referencia || referencia, 'bold') + ': “' + estiloComAcentos((v.texto || '').trim(), 'italic') + '”')
           .join('\n');
         if (!bloco) return dizer('Não encontrei o texto de “' + referencia + '”.', true);
-        inserirNoCursor(bloco + '\n');
+        inserirNoCursor(bloco + '\n', alvoInsercao);
         dizer('Texto bíblico inserido.');
         // Pronto para o próximo: limpa o campo e fecha o guia.
         bibRef.value = '';

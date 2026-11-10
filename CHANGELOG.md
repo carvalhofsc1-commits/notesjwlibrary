@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.31
+
+Anotações da assembleia: ao tocar no campo da resposta da pergunta de recapitulação, o bloco **Inserir texto bíblico** sobe para cima desse campo (antes ficava fora da tela, com o teclado aberto) e o texto é inserido na resposta; ao tocar nas anotações ele volta ao lugar de origem.
+
 ## 6.7.30
 
 Anotações da assembleia: tocar numa pergunta de recapitulação da lista abre a tela de anotações do discurso dela, já no campo da resposta.
