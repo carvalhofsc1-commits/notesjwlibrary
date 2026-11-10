@@ -58,6 +58,11 @@
       <button type="button" data-menu-atalho="historico"><span aria-hidden="true">🗂️</span> Pesquisas salvas</button>
       <button type="button" data-menu-ir="ajustes"><span aria-hidden="true">⚙️</span> Ajustes</button>
       <a class="app-menu-link" href="sobre.html"><span aria-hidden="true">ℹ️</span> Sobre</a>
+      <!-- Consumo de IA do mês até agora (só aparece com códigos de IA salvos e internet); tocar leva a Ajustes → Consumo de IA e faturamento. -->
+      <button type="button" id="menuConsumo" class="app-menu-consumo" hidden aria-label="Ver o consumo de IA em Ajustes">
+        <span class="app-menu-consumo-mes" id="menuConsumoMes"></span>
+        <span class="app-menu-consumo-valor" id="menuConsumoValor"></span>
+      </button>
     </nav>
     <div class="app-menu-rodape">
       <div class="theme-switch" role="group" aria-label="Tema do aplicativo">

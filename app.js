@@ -7658,7 +7658,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.57'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.58'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -11936,15 +11936,9 @@ function saveTemplatesToStorage() {
         consumoPixStatus.textContent = 'Não consegui copiar. Selecione e copie manualmente.';
       }
     }
-    async function consumoCarregar(mes) {
-      if (!navigator.onLine || !servidoPelaWeb()) {
-        consumoStatus.className = 'hint';
-        consumoStatus.textContent = 'O consumo só aparece com internet, no site publicado (notestyle.com.br).';
-        return;
-      }
-      consumoStatus.className = 'hint';
-      consumoStatus.textContent = 'Carregando…';
-      const r = await postConfig({
+    // Os códigos salvos só servem para o servidor saber a que recursos o aparelho tem acesso.
+    function consumoPedido(mes) {
+      return {
         acao: 'faturamento-meu',
         aparelhoId: aparelhoId(),
         mes: mes || '',
@@ -11954,7 +11948,39 @@ function saveTemplatesToStorage() {
         codigoResumo: codigoResumoSalvo(),
         codigoLeitura: codigoLeituraSalvo(),
         codigoTexto: codigoTextoSalvo()
-      });
+      };
+    }
+    // Menu lateral: o mês atual e o consumo até agora (no máximo uma consulta por minuto; sem códigos, sem internet ou com erro, a linha some).
+    let menuConsumoEm = 0;
+    async function menuConsumoAtualizar() {
+      const botao = document.getElementById('menuConsumo');
+      if (!botao || Date.now() - menuConsumoEm < 60000) return;
+      if (!navigator.onLine || !servidoPelaWeb()) return;
+      menuConsumoEm = Date.now();
+      const r = await postConfig(consumoPedido(''));
+      if (!r.ok || !r.data || !Array.isArray(r.data.recursos) || !r.data.recursos.length) { botao.hidden = true; return; }
+      document.getElementById('menuConsumoMes').textContent = '💳 Consumo de IA · ' + consumoMesNome(r.data.mes);
+      document.getElementById('menuConsumoValor').textContent = consumoReais(r.data.total) + ' até agora';
+      botao.hidden = false;
+    }
+    document.getElementById('menuConsumo').addEventListener('click', () => {
+      showScreen('ajustes');
+      menuFechar();
+      if (!consumoSection.open) consumoSection.open = true;
+      consumoCarregar('');
+      setTimeout(() => consumoSection.scrollIntoView({ block: 'start' }), 80);
+    });
+    document.getElementById('menuAbrirBtn').addEventListener('click', menuConsumoAtualizar);
+    document.getElementById('navMenuBtn').addEventListener('click', menuConsumoAtualizar);
+    async function consumoCarregar(mes) {
+      if (!navigator.onLine || !servidoPelaWeb()) {
+        consumoStatus.className = 'hint';
+        consumoStatus.textContent = 'O consumo só aparece com internet, no site publicado (notestyle.com.br).';
+        return;
+      }
+      consumoStatus.className = 'hint';
+      consumoStatus.textContent = 'Carregando…';
+      const r = await postConfig(consumoPedido(mes));
       if (!r.ok) {
         consumoStatus.className = 'warn';
         consumoStatus.textContent = configErrorMessage(r, 'Não foi possível ler o consumo agora.');
