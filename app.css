@@ -438,7 +438,8 @@
     .app-menu-lista button.app-menu-consumo {
       display: flex;
       flex-direction: column;
-      align-items: flex-start;
+      align-items: center;
+      text-align: center;
       flex: none;
       gap: 0;
       min-height: 0;
