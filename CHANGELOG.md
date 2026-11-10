@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.71
+
+Anotações → Perguntas de recapitulação: o botão **Organizar de novo com a IA** (e o de organizar as perguntas) ficou mais fino e ocupa toda a largura do cartão.
+
 ## 6.7.70
 
 Anotações → lista de assembleias e congressos: o evento já realizado (data gravada anterior à de hoje; no congresso, o último dia) ganha um fundo verde suave e o ✅ ao lado da seta.

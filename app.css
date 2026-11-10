@@ -4608,6 +4608,20 @@
       margin-top: 8px;
     }
 
+    /* Organizar as perguntas / de novo com a IA: botão fino, na largura do cartão. */
+    button#anotacoesPerguntasIa {
+      display: block;
+      width: 100%;
+      min-height: 32px;
+      padding: 4px 10px;
+      font-size: .84rem;
+      font-weight: 600;
+    }
+
+    button#anotacoesPerguntasIa[hidden] {
+      display: none;
+    }
+
     .anotacoes-mais[hidden] {
       display: none;
     }
