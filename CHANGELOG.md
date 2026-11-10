@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.73
+
+Ajustes → Consumo de IA e faturamento: o botão Atualizar virou só o ícone 🔄, e o campo do mês/ano passa a mostrar o valor inteiro, sem cortar.
+
 ## 6.7.72
 
 Menu lateral: o mês e o valor do consumo de IA ficam centralizados.

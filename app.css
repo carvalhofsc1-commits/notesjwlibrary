@@ -13329,6 +13329,18 @@ button.processando:disabled { opacity: 1; cursor: progress; }
       margin: 0;
     }
 
+    .consumo-mes select {
+      min-width: 0;
+      width: 100%;
+    }
+
+    /* Atualizar: só o ícone, para o mês/ano caber inteiro no campo. */
+    .consumo-mes button {
+      width: 44px;
+      padding: 0;
+      text-align: center;
+    }
+
     .consumo-lista {
       display: grid;
       gap: 8px;
