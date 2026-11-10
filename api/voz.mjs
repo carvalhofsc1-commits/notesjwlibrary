@@ -11,7 +11,7 @@
 import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { mensagemSeBloqueado } from "./_acessoSite.mjs";
 import { registrarUsoIa } from "./_estatisticas.mjs";
-import { credenciais, tokenDeAcesso } from "./_googleToken.mjs";
+import { credenciais, prepararConta, tokenDeAcesso, variaveisDaConta } from "./_googleToken.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
 import { validarCupomVoz } from "./_vozCupom.mjs";
 import { ALTURAS, MODELOS_VOZ, TONS, VOZES, lerConfigVoz, validarConfigVoz } from "./_vozConfig.mjs";
@@ -33,8 +33,8 @@ function excedeuLimite(ip) {
 }
 
 // token: o da conta de serviço (vozes Gemini); sem ele, vai a chave de API.
-async function sintetizar(corpo, token) {
-  const autorizacao = token ? { Authorization: `Bearer ${token}` } : { "X-Goog-Api-Key": process.env.GOOGLE_TTS_API_KEY };
+async function sintetizar(corpo, token, chaveApi) {
+  const autorizacao = token ? { Authorization: `Bearer ${token}` } : { "X-Goog-Api-Key": chaveApi };
   const resposta = await fetch(URL_TTS, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...autorizacao },
@@ -77,7 +77,9 @@ export default async function handler(req, res) {
     return erro(res, 405, "Método não permitido.");
   }
   if (!origemPermitida(req.headers.origin)) return erro(res, 403, "Origem não permitida.");
-  const temChave = Boolean(process.env.GOOGLE_TTS_API_KEY);
+  await prepararConta(); // a conta do Google escolhida pelo administrador (a outra fica de reserva)
+  const chaveApi = variaveisDaConta().apiKey;
+  const temChave = Boolean(chaveApi);
   if (!temChave && !credenciais()) return erro(res, 503, "A leitura em voz alta ainda não está configurada no servidor.");
   if (!process.env.CODIGO_ESTUDO) return erro(res, 503, "O código de pesquisa ainda não está configurado no servidor.");
 
@@ -153,6 +155,7 @@ export default async function handler(req, res) {
           audioConfig: { audioEncoding: "MP3" },
         },
         token,
+        chaveApi,
       );
       usada = modelo.modelo + " / " + config.voz;
       gemini = true;
@@ -166,7 +169,7 @@ export default async function handler(req, res) {
 
   if (!audio) {
     try {
-      audio = await sintetizar(pedidoChirp, temChave ? null : token);
+      audio = await sintetizar(pedidoChirp, temChave ? null : token, chaveApi);
     } catch (e) {
       console.error("Voz: a voz Chirp 3 HD falhou", e.status, e.message);
       const mensagem =

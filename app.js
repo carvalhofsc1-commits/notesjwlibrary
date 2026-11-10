@@ -7658,7 +7658,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.73'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.74'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12099,6 +12099,70 @@ function saveTemplatesToStorage() {
         fim.textContent = (r.data && r.data.erro) || configErrorMessage(r, 'Não foi possível salvar agora.');
       }
     }
+    // ---------- Ajustes → Conta do Google (voz e transcrição): a principal ou a de reserva ----------
+    const GOOGLE_CONTA_NOMES = { principal: 'Conta principal', alternativa: 'Conta de reserva' };
+    function googleContaRender(d) {
+      const lista = document.getElementById('googleContaLista');
+      lista.replaceChildren();
+      ['principal', 'alternativa'].forEach(chave => {
+        const c = (d.contas || {})[chave] || {};
+        const rotulo = document.createElement('label');
+        rotulo.className = 'google-conta-item' + (c.configurada ? '' : ' google-conta-vazia');
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'googleConta';
+        radio.value = chave;
+        radio.disabled = !c.configurada;
+        radio.checked = d.escolhida === chave && Boolean(c.configurada);
+        const texto = document.createElement('span');
+        texto.className = 'google-conta-texto';
+        const nome = document.createElement('strong');
+        nome.textContent = GOOGLE_CONTA_NOMES[chave] + (d.emUso === chave ? ' · em uso agora' : '');
+        const detalhe = document.createElement('small');
+        detalhe.textContent = c.configurada
+          ? (c.email || '') + (c.projeto ? ' · projeto ' + c.projeto : '') + (c.bucket ? ' · bucket ' + c.bucket : ' · sem bucket (a transcrição de áudios longos não funciona)')
+          : 'Não configurada: crie as variáveis ' + (chave === 'principal' ? 'GOOGLE_TTS_CREDENCIAIS e GOOGLE_STT_BUCKET' : 'GOOGLE_ALT_CREDENCIAIS e GOOGLE_ALT_STT_BUCKET') + ' na Vercel e faça um novo deploy.';
+        texto.append(nome, detalhe);
+        rotulo.append(radio, texto);
+        lista.appendChild(rotulo);
+      });
+    }
+    async function googleContaCarregar() {
+      const status = document.getElementById('googleContaStatus');
+      const codigo = codigoAdminAtual();
+      if (!codigo) { status.textContent = 'Salve a senha de administrador em 🔐 Autorização de acessos.'; return; }
+      status.className = 'hint';
+      status.textContent = 'Carregando…';
+      const r = await postConfig({ acao: 'google-conta-ler', codigo });
+      if (!r.ok) { status.className = 'warn'; status.textContent = (r.data && r.data.erro) || configErrorMessage(r, 'Não foi possível ler as contas agora.'); return; }
+      googleContaRender(r.data);
+      status.textContent = '';
+    }
+    async function googleContaSalvar() {
+      const fim = document.getElementById('googleContaStatusFim');
+      const codigo = codigoAdminAtual();
+      if (!codigo) { fim.className = 'warn'; fim.textContent = 'Salve a senha de administrador em 🔐 Autorização de acessos.'; return; }
+      const marcada = document.querySelector('#googleContaLista input[name="googleConta"]:checked');
+      if (!marcada) { fim.className = 'warn'; fim.textContent = 'Escolha uma das contas configuradas.'; return; }
+      const botao = document.getElementById('googleContaSalvarBtn');
+      fim.className = 'hint';
+      fim.textContent = 'Salvando…';
+      botao.disabled = true;
+      const r = await postConfig({ acao: 'google-conta-salvar', codigo, conta: marcada.value });
+      botao.disabled = false;
+      if (r.ok) {
+        googleContaRender(r.data);
+        fim.className = 'ok';
+        fim.textContent = '✓ Agora a voz e a transcrição usam a ' + GOOGLE_CONTA_NOMES[marcada.value].toLowerCase() + '.';
+      } else {
+        fim.className = 'warn';
+        fim.textContent = (r.data && r.data.erro) || configErrorMessage(r, 'Não foi possível salvar agora.');
+      }
+    }
+    document.getElementById('googleContaSection').addEventListener('toggle', e => { if (e.target.open) googleContaCarregar(); });
+    document.getElementById('googleContaSalvarBtn').addEventListener('click', googleContaSalvar);
+    document.getElementById('googleContaAtualizarBtn').addEventListener('click', googleContaCarregar);
+
     document.getElementById('faturamentoBox').addEventListener('toggle', e => { if (e.target.open) faturamentoCarregar(); });
     document.getElementById('faturamentoSalvarBtn').addEventListener('click', faturamentoSalvar);
     document.getElementById('faturamentoAtualizarBtn').addEventListener('click', faturamentoCarregar);

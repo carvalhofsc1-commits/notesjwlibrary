@@ -9,7 +9,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { mensagemSeBloqueado } from "./_acessoSite.mjs";
 import { createHash, createSign, randomBytes } from "node:crypto";
-import { credenciais, tokenDeAcesso } from "./_googleToken.mjs";
+import { credenciais, prepararConta, tokenDeAcesso, variaveisDaConta } from "./_googleToken.mjs";
 import { lerConfigIa } from "./_iaConfig.mjs";
 import { registrarUsoIa } from "./_estatisticas.mjs";
 
@@ -92,7 +92,7 @@ function excedeu(tipo, ip, limite) {
 
 async function reconhecer(audioBase64) {
   const c = credenciais();
-  const projeto = process.env.GOOGLE_PROJECT_ID || (c && c.project_id);
+  const projeto = variaveisDaConta().projeto;
   if (!c || !projeto) {
     const e = new Error("sem conta de serviço ou projeto do Google");
     e.status = 503;
@@ -139,7 +139,7 @@ async function reconhecer(audioBase64) {
 //  3) "lote-estado": consulta a operação; pronta, devolve o texto por falante e APAGA o arquivo do bucket (o bucket também apaga sozinho depois de 1 dia);
 //  4) "lote-apagar": o app pede para apagar se a pessoa cancela.
 // O bucket é o GOOGLE_STT_BUCKET (padrão: notestyle-audio-512212, multirregião US) e a conta de serviço precisa do papel "Administrador de objetos do Storage" nele.
-const BUCKET_LOTE = process.env.GOOGLE_STT_BUCKET || "notestyle-audio-512212";
+const bucketLote = () => variaveisDaConta().bucket; // o bucket da conta do Google em uso (GOOGLE_STT_BUCKET ou GOOGLE_ALT_STT_BUCKET)
 const LIMITE_LOTES_POR_HORA = 12;
 const OBJETO_LOTE = /^audio\/\d{10,16}-[a-f0-9]{16}\.wav$/;
 const OPERACAO_LOTE = /^projects\/\d+\/locations\/[a-z0-9-]+\/operations\/[A-Za-z0-9_.-]+$/;
@@ -161,7 +161,7 @@ export function urlAssinadaPut(objeto, tipoConteudo, segundos = 900) {
     .sort()
     .map((k) => codificarUri(k) + "=" + codificarUri(consulta[k]))
     .join("&");
-  const caminho = "/" + BUCKET_LOTE + "/" + objeto.split("/").map(codificarUri).join("/");
+  const caminho = "/" + bucketLote() + "/" + objeto.split("/").map(codificarUri).join("/");
   const canonica = ["PUT", caminho, consultaCanonica, `content-type:${tipoConteudo}\nhost:storage.googleapis.com\n`, "content-type;host", "UNSIGNED-PAYLOAD"].join("\n");
   const paraAssinar = ["GOOG4-RSA-SHA256", data, escopo, createHash("sha256").update(canonica).digest("hex")].join("\n");
   const assinatura = createSign("RSA-SHA256").update(paraAssinar).sign(c.private_key, "hex");
@@ -171,7 +171,7 @@ export function urlAssinadaPut(objeto, tipoConteudo, segundos = 900) {
 async function apagarObjetoLote(objeto) {
   try {
     const token = await tokenDeAcesso();
-    await fetch(`https://storage.googleapis.com/storage/v1/b/${BUCKET_LOTE}/o/${encodeURIComponent(objeto)}`, {
+    await fetch(`https://storage.googleapis.com/storage/v1/b/${bucketLote()}/o/${encodeURIComponent(objeto)}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
       signal: AbortSignal.timeout(15_000),
@@ -199,7 +199,7 @@ async function googleJson(url, opcoes) {
 
 async function iniciarLote(objeto) {
   const c = credenciais();
-  const projeto = process.env.GOOGLE_PROJECT_ID || (c && c.project_id);
+  const projeto = variaveisDaConta().projeto;
   const token = await tokenDeAcesso();
   const url = `https://${REGIAO}-speech.googleapis.com/v2/projects/${projeto}/locations/${REGIAO}/recognizers/_:batchRecognize`;
   const op = await googleJson(url, {
@@ -212,7 +212,7 @@ async function iniciarLote(objeto) {
         model: MODELO_STT,
         features: { enableAutomaticPunctuation: true, diarizationConfig: {} },
       },
-      files: [{ uri: `gs://${BUCKET_LOTE}/${objeto}` }],
+      files: [{ uri: `gs://${bucketLote()}/${objeto}` }],
       recognitionOutputConfig: { inlineResponseConfig: {} },
     }),
   });
@@ -399,6 +399,7 @@ export default async function handler(req, res) {
   if (bloqueioSite) return erro(res, 403, bloqueioSite);
   if (!textosIguais(corpo.codigoTexto, process.env.CODIGO_TEXTO)) return erro(res, 403, "Código de texto inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
   const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "desconhecido";
+  await prepararConta(); // a conta do Google escolhida pelo administrador (a outra fica de reserva)
 
   try {
     if (corpo.acao === "trecho") {
@@ -413,6 +414,7 @@ export default async function handler(req, res) {
 
     if (corpo.acao === "lote-preparar") {
       if (!credenciais()) return erro(res, 503, "A transcrição ainda não está configurada no servidor (conta de serviço do Google).");
+      if (!bucketLote()) return erro(res, 503, "O bucket da transcrição desta conta do Google ainda não está configurado no servidor.");
       if (excedeu("lote", ip, LIMITE_LOTES_POR_HORA)) return erro(res, 429, "Muitas transcrições com identificação de falantes nesta hora. Tente novamente mais tarde.");
       const objeto = `audio/${Date.now()}-${randomBytes(8).toString("hex")}.wav`;
       return res.status(200).json({ objeto, url: urlAssinadaPut(objeto, "audio/wav"), tipo: "audio/wav" });

@@ -6,6 +6,7 @@ import { CATEGORIAS, LIMITES, PARTES, aplicarLimites, categoriaDaParte, limitesP
 import { esquecerCache, gravarAlteracoes, gravarLimites, lerAlteracoes, lerAnterior, lerLimites } from "./_promptsArmazenados.mjs";
 import { configPublicaVoz, gravarConfigVoz, lerConfigVoz, opcoesVoz } from "./_vozConfig.mjs";
 import { gravarConfigIa, lerConfigIa, lerCustoIa, opcoesIa } from "./_iaConfig.mjs";
+import { descreverContas, gravarContaEscolhida } from "./_googleToken.mjs";
 import { acrescentarLicao, alterarLicao, analisarCorrecao, apagarLicao, apagarTudo, ligarMemoria, lerMemoria, memoriaConfigurada } from "./_memoria.mjs";
 import { estatisticasConfiguradas, registrarPing, resumoEstatisticas } from "./_estatisticas.mjs";
 import { consumoDoUsuario, custosDeReferencia, gravarConfigFaturamento, lerConfigFaturamento, opcoesFaturamento } from "./_faturamento.mjs";
@@ -445,6 +446,21 @@ export default async function handler(req, res) {
     if (acao === "voz-salvar") {
       if (!exigirEscrita(res)) return;
       return res.status(200).json({ config: await gravarConfigVoz(corpo.config) });
+    }
+
+    // Conta do Google Cloud usada pela voz e pela transcrição (Ajustes → Conta do Google): a principal ou a reserva.
+    if (acao === "google-conta-ler") {
+      return res.status(200).json({ ...(await descreverContas()), armazenamento: descreverArmazenamento() });
+    }
+
+    if (acao === "google-conta-salvar") {
+      if (!exigirEscrita(res)) return;
+      try {
+        await gravarContaEscolhida(corpo.conta);
+      } catch (e) {
+        return erro(res, e.status || 500, e.message || "Não foi possível salvar a conta.");
+      }
+      return res.status(200).json(await descreverContas());
     }
 
     // Preços do faturamento e chave PIX (Ajustes → Acesso ao site → Preços e PIX).

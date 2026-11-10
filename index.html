@@ -1777,6 +1777,19 @@
             </details>
           </div>
         </details>
+        <details class="subsection so-admin" id="googleContaSection" hidden>
+          <summary><span class="adm-titulo">☁️ Conta do Google (voz e transcrição)&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
+          <div class="subsection-body">
+            <p class="hint">A leitura em voz alta e o Áudio em texto usam uma conta do Google Cloud. O app aceita duas ao mesmo tempo: a <strong>principal</strong> (variáveis <code>GOOGLE_TTS_CREDENCIAIS</code> e <code>GOOGLE_STT_BUCKET</code> na Vercel) e a de <strong>reserva</strong> (<code>GOOGLE_ALT_CREDENCIAIS</code> e <code>GOOGLE_ALT_STT_BUCKET</code>). Escolha aqui qual usar; a mudança vale para todos em poucos segundos, sem novo deploy. Uma transcrição em andamento na hora da troca pode falhar: é só tentar de novo.</p>
+            <p id="googleContaStatus" class="ok" role="status" aria-live="polite"></p>
+            <div id="googleContaLista" class="google-conta-lista"></div>
+            <div class="button-row">
+              <button id="googleContaSalvarBtn" type="button">💾 Usar a conta escolhida</button>
+              <button id="googleContaAtualizarBtn" class="secondary" type="button">🔄 Recarregar</button>
+            </div>
+            <p id="googleContaStatusFim" class="ok" role="status" aria-live="polite"></p>
+          </div>
+        </details>
         <details class="subsection voz-admin so-admin" id="vozSection" hidden>
           <summary><span class="adm-titulo">🔊 Leitura em voz alta&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
           <div class="subsection-body">
