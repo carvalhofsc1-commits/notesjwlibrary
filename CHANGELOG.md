@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.57
+
+Administrador: ao salvar os preços e o PIX, a mensagem “✓ Preços e PIX salvos com sucesso” aparece logo abaixo dos botões (e o botão mostra “✓ Salvo” por instantes); se der erro, o motivo aparece no mesmo lugar.
+
 ## 6.7.56
 
 Administrador (Preços do consumo de IA e PIX): cada categoria mostra o **custo de hoje**, em reais e em dólares: a IA de texto e a dos esboços, com os preços do modelo escolhido na tela de prompts (entrada e saída, por 1 milhão de tokens); a voz (por 1.000 caracteres; o Chirp 3 HD é preço de tabela, os modelos Gemini são estimativa) e a transcrição de áudio (por minuto). O dólar é o do dia (ou o que o administrador digitar). Novo botão **Preencher os preços com custo + margem** (margem em %, padrão 100%). “Preparar para dirigir” passou para a categoria dos esboços, que é a IA que ele realmente usa.

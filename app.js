@@ -7658,7 +7658,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.56'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.57'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12053,9 +12053,25 @@ function saveTemplatesToStorage() {
         config.precos[cat][campo] = document.getElementById(id).value.trim();
       });
       FAT_PIX.forEach(([id, campo]) => { config.pix[campo] = document.getElementById(id).value.trim(); });
-      faturamentoStatus.textContent = 'Salvando…';
+      // A mensagem aparece logo abaixo dos botões (onde está o olhar de quem acabou de tocar em Salvar) e o botão confirma com um ✓.
+      const fim = document.getElementById('faturamentoStatusFim');
+      const botao = document.getElementById('faturamentoSalvarBtn');
+      faturamentoStatus.textContent = '';
+      fim.className = 'hint';
+      fim.textContent = 'Salvando…';
+      botao.disabled = true;
       const r = await postConfig({ acao: 'faturamento-salvar', codigo, config });
-      faturamentoStatus.textContent = r.ok ? '✓ Preços e PIX salvos.' : ((r.data && r.data.erro) || 'Não foi possível salvar agora.');
+      botao.disabled = false;
+      if (r.ok) {
+        fim.className = 'ok';
+        fim.textContent = '✓ Preços e PIX salvos com sucesso. Já valem para todos os usuários.';
+        botao.textContent = '✓ Salvo';
+        clearTimeout(botao._piscar);
+        botao._piscar = setTimeout(() => { botao.textContent = '💾 Salvar preços e PIX'; }, 2000);
+      } else {
+        fim.className = 'warn';
+        fim.textContent = (r.data && r.data.erro) || configErrorMessage(r, 'Não foi possível salvar agora.');
+      }
     }
     document.getElementById('faturamentoBox').addEventListener('toggle', e => { if (e.target.open) faturamentoCarregar(); });
     document.getElementById('faturamentoSalvarBtn').addEventListener('click', faturamentoSalvar);
