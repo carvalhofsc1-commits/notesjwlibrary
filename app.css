@@ -5837,14 +5837,23 @@
       margin: 8px 0 0;
     }
 
-    .study-texto-btn {
+    /* Só o texto com o ícone, discreto como o rótulo da data da assembleia: sem caixa, sem cor de fundo. */
+    .study-texto-btn,
+    .study-texto-btn:hover,
+    .study-texto-btn:active {
       display: block;
       width: 100%;
-      min-height: 38px;
-      padding: 6px 10px;
-      font-size: .86rem;
-      font-weight: 600;
+      min-height: 0;
+      padding: 2px;
+      border: 0;
+      border-radius: 0;
+      background: none;
+      box-shadow: none;
+      font-size: .74rem;
+      font-weight: 300;
+      color: var(--muted);
       text-align: center;
+      cursor: pointer;
     }
 
     .study-texto-corpo {
