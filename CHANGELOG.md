@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.66
+
+Botão **Ver o texto do parágrafo**: o fundo que aparece ao tocar tem os cantos arredondados (antes saía quadrado).
+
 ## 6.7.65
 
 Botão **Ver o texto do parágrafo** (Comentários e Dirigentes): corrigido, a moldura e o fundo não saíam na 6.7.64 (a regra dos botões secundários vencia). Agora é só o texto com o ícone e a setinha (▾ fechado, ▲ aberto), sem caixa nem cor.
