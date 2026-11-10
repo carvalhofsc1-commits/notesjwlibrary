@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.75
+
+Texto diário: a autorização para ouvir os comentários adicionais passou de 6 para 36 horas, para dar para ouvir à noite os comentários gerados de manhã (antes aparecia “A autorização para ouvir expirou”). Os comentários gerados antes desta versão ainda têm o prazo antigo: gere-os de novo uma vez.
+
 ## 6.7.74
 
 **Duas contas do Google Cloud para a voz e a transcrição.** Novo painel do administrador em Ajustes → **☁️ Conta do Google**: escolhe-se a conta **principal** (variáveis `GOOGLE_TTS_CREDENCIAIS`, `GOOGLE_STT_BUCKET`) ou a **de reserva** (`GOOGLE_ALT_CREDENCIAIS`, `GOOGLE_ALT_STT_BUCKET`, opcionais `GOOGLE_ALT_PROJECT_ID` e `GOOGLE_ALT_TTS_API_KEY`). A escolha vale para todos em poucos segundos, sem novo deploy. Se a conta escolhida não estiver configurada, o servidor usa a outra.

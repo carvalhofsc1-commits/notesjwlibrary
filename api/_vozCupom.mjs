@@ -23,14 +23,16 @@ function assinatura(payload) {
 }
 
 // data: YYYY-MM-DD; textos: trechos que o cliente pode pedir para sintetizar (origem, antes das regras de voz).
-export function emitirCupomVoz({ data, textos, horas = 6 } = {}) {
+// A autorização vale 36 horas: os comentários gerados de manhã ficam salvos no app o dia todo e podem ser ouvidos à noite (o cupom só vale para a data
+// em que foi emitido, e o app apaga os comentários dos dias que passaram).
+export function emitirCupomVoz({ data, textos, horas = 36 } = {}) {
   if (!segredo() || typeof data !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(data)) return "";
   const lista = (Array.isArray(textos) ? textos : [])
     .map((t) => (typeof t === "string" ? t.replace(/\r\n?/g, "\n").trim().slice(0, MAX_CHARS_TEXTO) : ""))
     .filter(Boolean)
     .slice(0, MAX_TEXTOS);
   if (!lista.length) return "";
-  const corpo = { data, textos: lista, exp: Date.now() + Math.max(1, Number(horas) || 6) * 3600_000 };
+  const corpo = { data, textos: lista, exp: Date.now() + Math.max(1, Number(horas) || 36) * 3600_000 };
   const payload = Buffer.from(JSON.stringify(corpo), "utf8").toString("base64url");
   return payload + "." + assinatura(payload);
 }
