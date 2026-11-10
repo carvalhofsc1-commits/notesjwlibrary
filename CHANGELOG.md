@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.62
+
+Prompt dos esboços (regra fixa, vale em Tesouros, discurso curto, discurso público e Outros esboços): nova regra sobre **textos bíblicos não lidos**. Nem todo texto precisa ser citado, mas, quando uma explicação ou aplicação estiver diretamente ligada a um texto, o orador faz referência a ele na própria fala (por exemplo, “Conforme nos orienta a Bíblia em Mateus 5:3, nossa felicidade está diretamente ligada a satisfazer nossas necessidades espirituais” ou “Em Lucas 21:5, Jesus nos alertou que...”), sem exagero e sem adiantar o conteúdo de um texto que ainda será lido.
+
 ## 6.7.61
 
 Outros esboços: o app reconhece o esboço já preparado e salvo mesmo quando ele veio de um esboço pronto importado (sem “Carregar a matéria”): na mesma semana, pelo título do esboço importado ou pelo tema digitado. Aparece o botão **📂 Carregar o esboço já salvo**, que traz sempre a versão mais recente e liga o esboço à pesquisa salva — com isso valem Outra versão, Melhorar e Incluir texto(s).
