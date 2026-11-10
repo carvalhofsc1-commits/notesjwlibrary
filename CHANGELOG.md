@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.49
+
+Anotações: o botão **Gravar o discurso** passou de azul para vermelho.
+
 ## 6.7.48
 
 Anotações (assembleia): o quadro **Gravar o discurso** passou para logo abaixo do botão “Copiar e abrir no JW Library” das anotações, antes do título “Pergunta de recapitulação”.

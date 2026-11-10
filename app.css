@@ -5312,6 +5312,18 @@
       width: 100%;
     }
 
+    /* Botão de gravar em vermelho (cor de gravação), em vez do azul padrão. */
+    .anotacoes-gravacao #anotacoesGravarBtn {
+      border-color: #b91c1c;
+      background: #c62828;
+      color: #fff;
+    }
+
+    .anotacoes-gravacao #anotacoesGravarBtn:hover,
+    .anotacoes-gravacao #anotacoesGravarBtn:active {
+      background: #b71c1c;
+    }
+
     .anotacoes-grav-tempo {
       margin: 0 0 8px;
       font-size: 1.05rem;
