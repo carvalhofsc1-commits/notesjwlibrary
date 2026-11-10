@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.70
+
+Anotações → lista de assembleias e congressos: o evento já realizado (data gravada anterior à de hoje; no congresso, o último dia) ganha um fundo verde suave e o ✅ ao lado da seta.
+
 ## 6.7.69
 
 Anotações: corrigido o calendário da data do evento, que fechava na mesma hora e deixava a data de hoje (o campo recolhia assim que o valor mudava). Agora o campo só recolhe depois que você termina de escolher e sai dele.

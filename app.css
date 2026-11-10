@@ -4552,6 +4552,19 @@
       background: var(--soft);
     }
 
+    /* Evento já realizado (a data gravada é anterior à de hoje): outro fundo e o ✅. */
+    .anotacoes-evento.anotacoes-evento-realizado {
+      background: #e6f3e8;
+      background: color-mix(in srgb, #2e9e4f 16%, var(--field));
+      border-color: color-mix(in srgb, #2e9e4f 45%, var(--line));
+    }
+
+    .anotacoes-evento-ok {
+      flex: 0 0 auto;
+      font-size: 1.1rem;
+      line-height: 1;
+    }
+
     .anotacoes-evento-icone {
       flex: 0 0 auto;
       font-size: 1.6rem;

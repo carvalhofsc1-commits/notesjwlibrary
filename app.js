@@ -7658,7 +7658,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.69'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.70'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -26220,7 +26220,7 @@ function saveTemplatesToStorage() {
         guardarNota();
         salvarRascunho();
         if (vista === 'anotando') { irPara('programa'); return; }
-        if (vista === 'programa') { irPara('escolha'); return; }
+        if (vista === 'programa') { irPara('escolha'); pintarEventos(); return; }
         voltarAoHub();
       }
       document.getElementById('anotacoesProgramaTopo').addEventListener('click', voltar);
@@ -26334,7 +26334,21 @@ function saveTemplatesToStorage() {
           seta.className = 'anotacoes-evento-seta';
           seta.setAttribute('aria-hidden', 'true');
           seta.textContent = '›';
-          btn.append(icone, caixa, seta);
+          // Evento já realizado: a data gravada (no congresso, o último dia) é anterior à de hoje. Ganha outra cor de fundo e o ✅.
+          const salvoDoEvento = eventoSalvo(e.url);
+          const fimGravado = salvoDoEvento && salvoDoEvento.data ? fimDoEvento(salvoDoEvento.data) : null;
+          const hojeMeioDia = new Date(); hojeMeioDia.setHours(12, 0, 0, 0);
+          if (fimGravado && fimGravado < new Date(hojeMeioDia.getFullYear(), hojeMeioDia.getMonth(), hojeMeioDia.getDate(), 0)) {
+            btn.classList.add('anotacoes-evento-realizado');
+            const ok = document.createElement('span');
+            ok.className = 'anotacoes-evento-ok';
+            ok.setAttribute('role', 'img');
+            ok.setAttribute('aria-label', 'Evento já realizado');
+            ok.textContent = '✅';
+            btn.append(icone, caixa, ok, seta);
+          } else {
+            btn.append(icone, caixa, seta);
+          }
           btn.addEventListener('click', () => anotacoesEscolherPrograma(e.url));
           eventosEl.appendChild(btn);
         });
