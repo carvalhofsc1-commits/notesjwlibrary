@@ -4609,10 +4609,6 @@
       margin: 0 0 14px;
     }
 
-    .anotacoes-data label {
-      margin: 0 0 6px;
-    }
-
     /* Campo de data no iPhone: o Safari dá ao campo uma largura própria e ele sai da tela; aqui ele segue a largura da caixa. */
     .anotacoes-data input[type="date"],
     #anotacoesDataReuniao {
@@ -5821,13 +5817,24 @@
       white-space: normal;
     }
 
-    /* A data do evento numa moldura, com um fundo bem suave na cor do modo. */
+    /* A data do evento: só um texto discreto (como as instruções adicionais de áudio da leitura da Bíblia) que abre e fecha o campo; sem moldura nem destaque. */
     .screen-anotacoes .anotacoes-data {
-      padding: 12px;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      background: var(--card);
-      background: color-mix(in srgb, var(--anot-cor) 9%, var(--card));
+      margin: 0 0 6px;
+      padding: 0;
+      border: 0;
+      background: none;
+    }
+
+    .anotacoes-data > summary {
+      padding: 3px 2px;
+      font-size: .74rem;
+      font-weight: 300;
+      cursor: pointer;
+      color: var(--muted);
+    }
+
+    .anotacoes-data-corpo {
+      padding: 6px 0 4px;
     }
 
     /* Botões de cada campo de texto (anotações e resposta), bem finos, logo abaixo da moldura do campo: copiar, formatar com IA e a lixeira (só o ícone). */

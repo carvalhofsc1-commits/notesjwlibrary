@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.45
+
+Anotações (programa): o campo da data do evento perdeu a moldura amarelada e passou a ser recolhível: fica só o texto “📅 Registre a data…” (discreto, como as instruções adicionais de áudio da leitura da Bíblia) e, ao tocar nele, abre o campo da data.
+
 ## 6.7.44
 
 Anotações (texto bíblico): ao tocar num livro (ou capítulo) o teclado fecha e a lista de capítulos e versículos sumia da vista; agora a barra e a lista continuam fixas no topo enquanto a lista estiver aberta.

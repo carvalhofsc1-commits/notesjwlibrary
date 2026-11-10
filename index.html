@@ -184,11 +184,13 @@
             </details>
           </div>
           <div id="anotacoesProgramaVista" hidden>
-            <div class="anotacoes-data">
-              <label for="anotacoesData" id="anotacoesDataRotulo">📅 Registre a data do seu evento</label>
-              <input id="anotacoesData" type="date">
-              <p id="anotacoesDataInfo" class="anotacoes-msg" role="status" aria-live="polite"></p>
-            </div>
+            <details class="anotacoes-data">
+              <summary id="anotacoesDataRotulo">📅 Registre a data do seu evento</summary>
+              <div class="anotacoes-data-corpo">
+                <input id="anotacoesData" type="date" aria-labelledby="anotacoesDataRotulo">
+                <p id="anotacoesDataInfo" class="anotacoes-msg" role="status" aria-live="polite"></p>
+              </div>
+            </details>
           </div>
         </div>
 
