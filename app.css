@@ -5242,6 +5242,20 @@
       margin: 8px 0 6px;
     }
 
+    /* Modelos prontos (Aplicar, Importante): uma linha de dois botões finos, do mesmo tamanho, logo abaixo da formatação. */
+    .anotacoes-fmt.anotacoes-fmt-modelos {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin: -4px 0 10px;
+    }
+
+    .anotacoes-fmt.anotacoes-fmt-modelos-resp {
+      margin: -2px 0 6px;
+    }
+
+    .anotacoes-fmt-modelos button {
+      white-space: nowrap;
+    }
+
     .anotacoes-escrita > label {
       margin: 2px 0 8px;
     }
@@ -5363,7 +5377,7 @@
     }
 
     @media (max-width: 340px) {
-      .anotacoes-fmt {
+      .anotacoes-fmt:not(.anotacoes-fmt-modelos) {
         grid-template-columns: repeat(3, minmax(0, 1fr));
       }
     }

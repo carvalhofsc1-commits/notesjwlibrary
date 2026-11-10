@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.51
+
+Anotações: logo abaixo dos botões de formatação, uma linha com dois botões finos de modelos prontos: **✅ 𝐀𝐩𝐥𝐢𝐜𝐚𝐫 👉** e **🎯⚡️⚡️ 𝑰𝑴𝑷𝑶𝑹𝑻𝑨𝑵𝑻𝑬 👉**. Tocar insere o modelo onde está o cursor (também no campo da resposta da pergunta de recapitulação).
+
 ## 6.7.50
 
 Anotações (inserir texto bíblico): com mais de um versículo, o começo de cada um, do segundo em diante, leva o número em **negrito entre colchetes** (a mesma regra dos textos bíblicos nos comentários), por exemplo: “… contra ele? [𝟐𝟗] Ouvimos …”.
