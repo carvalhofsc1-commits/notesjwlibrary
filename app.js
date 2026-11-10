@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.25'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.26'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -25176,6 +25176,7 @@ function saveTemplatesToStorage() {
       const respostaEl = document.getElementById('anotacoesResposta');
       const perguntasBox = document.getElementById('anotacoesPerguntas');
       const perguntasTexto = document.getElementById('anotacoesPerguntasTexto');
+      const perguntasLista = document.getElementById('anotacoesPerguntasLista');
       const perguntasBtn = document.getElementById('anotacoesPerguntasIa');
       let perguntasExtra = ''; // recado da última organização pela IA
       let atribuindoPerguntas = false;
@@ -25217,6 +25218,32 @@ function saveTemplatesToStorage() {
         perguntasTexto.textContent = '❓ ' + (completo
           ? perguntas.length + ' perguntas de recapitulação ' + (porIa ? 'organizadas pela IA nos discursos (confira).' : 'atribuídas aos discursos pela ordem do programa.')
           : atribuidas + ' de ' + perguntas.length + ' perguntas de recapitulação atribuídas aos discursos: a ordem automática não bateu.') + (perguntasExtra ? ' ' + perguntasExtra : '');
+        perguntasLista.replaceChildren();
+        perguntas.forEach(q => {
+          const dono = partes.findIndex(p => p.perguntaN === q.n);
+          const li = document.createElement('li');
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'secondary anotacoes-pergunta-item';
+          const t = document.createElement('strong');
+          t.textContent = textoDaPergunta(q);
+          const d = document.createElement('small');
+          d.textContent = dono >= 0 ? '→ ' + [partes[dono].horario, semMarcador(partes[dono].tema)].filter(Boolean).join(' · ') : 'Sem discurso atribuído';
+          b.append(t, d);
+          if (dono < 0) b.disabled = true;
+          else b.addEventListener('click', () => {
+            // A série de discursos tem a pergunta no título (que não abre): vai para o primeiro discurso dela.
+            const alvo = ehInfo(partes[dono]) ? dono + 1 : dono;
+            if (!partes[alvo]) return;
+            abrirDiaDaParte(alvo);
+            expandida = alvo;
+            pintarPartes();
+            const aberta = partesEl.querySelector('.anotacoes-parte[aria-expanded="true"]');
+            if (aberta && aberta.scrollIntoView) aberta.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+          });
+          li.appendChild(b);
+          perguntasLista.appendChild(li);
+        });
         perguntasBtn.hidden = completo && !porIa;
         perguntasBtn.disabled = atribuindoPerguntas;
         perguntasBtn.textContent = porIa || completo ? '🤖 Organizar de novo com a IA' : '🤖 Organizar as perguntas com a IA';

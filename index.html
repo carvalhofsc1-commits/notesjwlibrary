@@ -193,11 +193,16 @@
               <button id="anotacoesVerNotas" class="anotacoes-ver-notas" type="button" hidden>✍️ Ver anotações</button>
               <button id="anotacoesExportarNotas" class="secondary anotacoes-exportar" type="button" title="Gera um Word com as anotações de todos os discursos deste evento" hidden>📄 Exportar anotações</button>
             </div>
-            <div id="anotacoesPerguntas" class="anotacoes-perguntas" hidden>
-              <p id="anotacoesPerguntasTexto" class="anotacoes-msg" role="status" aria-live="polite"></p>
-              <button id="anotacoesPerguntasIa" class="secondary" type="button" title="A IA organiza qual pergunta de recapitulação vai em cada discurso" hidden>🤖 Organizar as perguntas com a IA</button>
-            </div>
             <div id="anotacoesPartes" class="anotacoes-partes"></div>
+            <!-- Assembleia de circuito: depois dos discursos, a lista das perguntas de recapitulação num contêiner à parte. -->
+            <div id="anotacoesPerguntas" class="anotacoes-perguntas" hidden>
+              <h3 class="anotacoes-subtitulo">❓ Perguntas de recapitulação</h3>
+              <div class="anotacoes-perguntas-card">
+                <ol id="anotacoesPerguntasLista" class="anotacoes-perguntas-lista"></ol>
+                <p id="anotacoesPerguntasTexto" class="anotacoes-msg" role="status" aria-live="polite"></p>
+                <button id="anotacoesPerguntasIa" class="secondary" type="button" title="A IA organiza qual pergunta de recapitulação vai em cada discurso" hidden>🤖 Organizar as perguntas com a IA</button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -252,9 +257,11 @@
 
           <!-- Assembleia de circuito: a pergunta de recapitulação que este discurso responde, com um campo só para a resposta. -->
           <div id="anotacoesRevisao" class="anotacoes-revisao" hidden>
-            <label for="anotacoesResposta" id="anotacoesRevisaoRotulo">❓ Pergunta de recapitulação</label>
-            <p id="anotacoesRevisaoPergunta" class="anotacoes-revisao-pergunta"></p>
-            <textarea id="anotacoesResposta" class="anotacoes-resposta" rows="4" placeholder="Escreva aqui a resposta a esta pergunta…"></textarea>
+            <h3 class="anotacoes-subtitulo">❓ Pergunta de recapitulação</h3>
+            <div class="anotacoes-revisao-card">
+              <p id="anotacoesRevisaoPergunta" class="anotacoes-revisao-pergunta"></p>
+              <textarea id="anotacoesResposta" class="anotacoes-resposta" rows="4" aria-label="Resposta à pergunta de recapitulação" placeholder="Escreva aqui a resposta a esta pergunta…"></textarea>
+            </div>
           </div>
 
           <div class="anotacoes-acoes">

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.26
+
+Anotações da assembleia de circuito: o título **Pergunta de recapitulação** passou para a área cinza, fora do card da resposta; e, na página do programa, depois dos discursos, há um contêiner à parte com a **lista das perguntas de recapitulação** (cada uma mostra o discurso dela e abre esse discurso ao tocar), junto do aviso e do botão da IA.
+
 ## 6.7.25
 
 Anotações da assembleia de circuito: **perguntas de recapitulação**. O programa traz a segunda sessão (“Preste atenção às respostas para as seguintes perguntas”); cada discurso principal que tem pergunta (não têm o batismo, as experiências e o resumo de A Sentinela; a série de discursos tem uma só) mostra a pergunta num campo próprio, abaixo das anotações, para escrever a resposta. A pergunta é atribuída sozinha pela ordem do programa; quando o número de perguntas não bate com o de discursos, a **IA organiza** qual pergunta vai em cada parte (e há um botão para organizar de novo). A pergunta e a resposta vão junto ao copiar, salvar, enviar ao JW Library e nos Words.

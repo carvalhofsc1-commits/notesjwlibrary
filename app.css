@@ -5761,32 +5761,76 @@
     }
 
     /* Perguntas de recapitulação (assembleia de circuito): o aviso no programa e o campo da resposta embaixo das anotações. */
-    .screen-anotacoes .anotacoes-perguntas {
-      display: grid;
-      gap: 6px;
-      margin: 0 0 10px;
-    }
-
-    .screen-anotacoes .anotacoes-perguntas .anotacoes-msg {
-      margin: 0;
-      text-align: left;
-    }
-
+    .screen-anotacoes .anotacoes-perguntas,
     .screen-anotacoes .anotacoes-revisao {
       margin: 14px 0 4px;
+    }
+
+    .screen-anotacoes .anotacoes-perguntas[hidden],
+    .screen-anotacoes .anotacoes-revisao[hidden] {
+      display: none;
+    }
+
+    .screen-anotacoes .anotacoes-perguntas-card,
+    .screen-anotacoes .anotacoes-revisao-card {
+      display: grid;
+      gap: 8px;
       padding: 12px;
       border: 1px solid var(--line);
       border-radius: 12px;
       background: color-mix(in srgb, #5b7396 10%, var(--card));
     }
 
-    .screen-anotacoes .anotacoes-revisao label {
-      margin: 0 0 4px;
-      font-weight: 800;
+    .screen-anotacoes .anotacoes-perguntas-card .anotacoes-msg {
+      margin: 0;
+      text-align: left;
+    }
+
+    .screen-anotacoes .anotacoes-perguntas-lista {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .screen-anotacoes .anotacoes-pergunta-item {
+      display: block;
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--card);
+      color: var(--text);
+      text-align: left;
+      font-weight: 400;
+      line-height: 1.35;
+    }
+
+    .screen-anotacoes .anotacoes-pergunta-item:where(:not(:disabled)):hover,
+    .screen-anotacoes .anotacoes-pergunta-item.secondary:hover {
+      background-image: none;
+      background-color: var(--card);
+    }
+
+    .screen-anotacoes .anotacoes-pergunta-item:disabled {
+      opacity: 1;
+      cursor: default;
+    }
+
+    .screen-anotacoes .anotacoes-pergunta-item strong {
+      display: block;
+    }
+
+    .screen-anotacoes .anotacoes-pergunta-item small {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: .78rem;
     }
 
     .screen-anotacoes .anotacoes-revisao-pergunta {
-      margin: 0 0 8px;
+      margin: 0;
       font-weight: 700;
       line-height: 1.35;
     }
