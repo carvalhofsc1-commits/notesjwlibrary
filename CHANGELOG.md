@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.52
+
+Anotações: as perguntas de recapitulação (na lista do programa e no cartão da resposta) passaram a usar a mesma fonte do tema dos discursos (.94rem em destaque, linha de baixo .82rem, espaçamento de linha igual).
+
 ## 6.7.51
 
 Anotações: logo abaixo dos botões de formatação, uma linha com dois botões finos de modelos prontos: **✅ 𝐀𝐩𝐥𝐢𝐜𝐚𝐫 👉** e **🎯⚡️⚡️ 𝑰𝑴𝑷𝑶𝑹𝑻𝑨𝑵𝑻𝑬 👉**. Tocar insere o modelo onde está o cursor (também no campo da resposta da pergunta de recapitulação).
