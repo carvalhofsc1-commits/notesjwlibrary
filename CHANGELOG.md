@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.42
+
+Anotações: (1) a marca ✍️ e o cartão preenchido consideram também a **resposta** à pergunta (e o título da série que a guarda); (2) formatação rápida também no campo da resposta; (3) volta o botão **Atualizar programa** (merge com a WOL sem perder anotações); (4) grupo próprio de Anotações em Privacidade e dados deste aparelho; (5) aviso se o armazenamento local das anotações ficar grande.
+
 ## 6.7.41
 
 Anotações: (1) inserir texto bíblico, negrito/itálico/lista e colar o resumo da gravação passam a gravar o rascunho na hora; (2) **Trocar de evento** bloqueia se houver gravação em andamento ou pronta (como Voltar/Programa); (3) a barra bíblica fica fixa com o teclado também na **Reunião**; (4) organizar perguntas com a IA pede o código de pesquisa antes, com aviso claro para Ajustes.

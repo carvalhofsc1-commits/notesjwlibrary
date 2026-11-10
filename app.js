@@ -7658,7 +7658,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.41'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.42'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -9253,6 +9253,28 @@
       const campos = objeto(BACKUP_CAMPOS_KEY);
       adicionar('📦', 'Dados lidos para o backup do JW Library (campos e semanas)', [BACKUP_CAMPOS_KEY, BACKUP_SEMANAS_KEY], Object.keys(campos).length + Object.keys(objeto(BACKUP_SEMANAS_KEY)).length, ['registro', 'registros'], '',
         Object.values(campos).map(item => item && item.quando));
+
+      const ANOTACOES_DADOS_KEY = 'jwLibraryNoteAplicarAnotacoesV1';
+      const ANOTACOES_PROG_KEY = 'jwLibraryNoteAplicarAnotacoesProgramasV2';
+      const anotDados = objeto(ANOTACOES_DADOS_KEY);
+      let nAnotItens = 0;
+      const datasAnot = [];
+      Object.keys(anotDados).forEach(chaveModo => {
+        const d = anotDados[chaveModo];
+        if (!d || typeof d !== 'object') return;
+        if (d.eventos && typeof d.eventos === 'object') {
+          Object.keys(d.eventos).forEach(chaveEv => {
+            nAnotItens++;
+            const ev = d.eventos[chaveEv];
+            if (ev && ev.em) datasAnot.push(ev.em);
+          });
+        } else if (d.texto || d.tema || d.orador) {
+          nAnotItens++;
+          if (d.em) datasAnot.push(d.em);
+        }
+      });
+      adicionar('📝', 'Anotações (reunião, assembleia e congresso)', [ANOTACOES_DADOS_KEY, ANOTACOES_PROG_KEY], nAnotItens || (bruto(ANOTACOES_DADOS_KEY) || bruto(ANOTACOES_PROG_KEY) ? 1 : 0), ['item', 'itens'],
+        bruto(ANOTACOES_PROG_KEY) ? 'com lista de programas da WOL' : '', datasAnot);
 
       const codigos = [['jwLibraryNoteAplicarStudyCodeV1', 'código de pesquisa'], ['jwLibraryNoteAplicarDirigenteCodeV1', 'código do dirigente'], ['jwLibraryNoteAplicarAdminSenhaV1', 'senha de administrador']].filter(([chave]) => bruto(chave));
       adicionar('🔑', 'Códigos e senha', codigos.map(([chave]) => chave), codigos.length, ['salvo', 'salvos'], codigos.map(([, nome]) => nome).join(' · '), []);
@@ -25200,12 +25222,7 @@ function saveTemplatesToStorage() {
         const k = indiceDaSerie(i);
         return k < 0 ? '' : semMarcador(partes[k].tema).replace(/^s[ée]rie de discursos\s*:\s*/i, '').trim();
       };
-      // Parte com orador, congregação ou anotação já preenchidos: o cartão dela ganha a cor do modo.
-      const preenchida = p => Boolean(p && (p.orador || p.congregacao || (p.nota && p.nota.trim()) || (p.resposta && p.resposta.trim())));
       const iniciaveis = () => partes.map((p, i) => i).filter(i => !ehInfo(partes[i]));
-      // Partes com anotação ou com resposta à pergunta de recapitulação.
-      const indicesComAnotacao = () => partes.map((p, i) => i).filter(i => (partes[i].nota || '').trim() || (partes[i].resposta || '').trim());
-      const temNotas = () => indicesComAnotacao().length > 0;
 
       // Perguntas de recapitulação (só a assembleia de circuito): perguntaN aponta para a lista programaMeta.perguntas. Numa série de discursos há UMA pergunta,
       // guardada na parte do título da série (com a resposta), e ela vale para todos os discursos da série.
@@ -25216,6 +25233,17 @@ function saveTemplatesToStorage() {
         return dono && dono.perguntaN ? perguntasDoEvento().find(q => q.n === dono.perguntaN) || null : null;
       };
       const respostaDaParte = i => { const dono = partes[donaDaPergunta(i)]; return (dono && dono.resposta) || ''; };
+      // Nota própria OU resposta da pergunta (no dono da série, quando for o caso): marca ✍️ e cartão “preenchido”.
+      const parteTemNota = i => Boolean(partes[i] && String(partes[i].nota || '').trim());
+      const parteTemResposta = i => Boolean(String(respostaDaParte(i) || '').trim());
+      const parteTemConteudoEscrito = i => parteTemNota(i) || parteTemResposta(i);
+      const preenchidaDaParte = i => {
+        const p = partes[i];
+        return Boolean(p && (p.orador || p.congregacao || parteTemConteudoEscrito(i)));
+      };
+      // Partes com anotação ou com resposta à pergunta de recapitulação (incluindo o título da série que guarda a resposta).
+      const indicesComAnotacao = () => partes.map((p, i) => i).filter(i => parteTemConteudoEscrito(i));
+      const temNotas = () => indicesComAnotacao().length > 0;
       const revisaoEl = document.getElementById('anotacoesRevisao');
       const respostaEl = document.getElementById('anotacoesResposta');
       const perguntasBox = document.getElementById('anotacoesPerguntas');
@@ -25621,6 +25649,7 @@ function saveTemplatesToStorage() {
           if (ehInfo(p)) {
             item.classList.add('anotacoes-parte-info');
             if (ehSerie(p)) item.classList.add('anotacoes-parte-serie');
+            if (ehSerie(p) && preenchidaDaParte(i)) item.classList.add('preenchida');
             const h = document.createElement('span');
             h.className = 'anotacoes-parte-hora';
             h.textContent = p.horario || '';
@@ -25628,11 +25657,18 @@ function saveTemplatesToStorage() {
             t.className = 'anotacoes-parte-texto';
             t.textContent = semMarcador(p.tema);
             item.append(h, t);
+            if (ehSerie(p) && parteTemConteudoEscrito(i)) {
+              const marca = document.createElement('span');
+              marca.className = 'anotacoes-parte-marca';
+              marca.title = parteTemResposta(i) ? 'Tem resposta à pergunta de recapitulação' : 'Tem anotações';
+              marca.textContent = '✍️';
+              item.appendChild(marca);
+            }
             partesEl.appendChild(item);
             return;
           }
           if (i === expandida) item.classList.add('aberta');
-          if (preenchida(p)) item.classList.add('preenchida');
+          if (preenchidaDaParte(i)) item.classList.add('preenchida');
           const btn = document.createElement('button');
           btn.type = 'button';
           btn.className = 'anotacoes-parte';
@@ -25648,10 +25684,10 @@ function saveTemplatesToStorage() {
           preencherLinhaTema(linha, p, 'Parte ' + (i + 1));
           corpo.appendChild(linha);
           btn.append(hora, corpo);
-          if (p.nota && p.nota.trim()) {
+          if (parteTemConteudoEscrito(i)) {
             const marca = document.createElement('span');
             marca.className = 'anotacoes-parte-marca';
-            marca.title = 'Tem anotações';
+            marca.title = parteTemNota(i) ? 'Tem anotações' : 'Tem resposta à pergunta de recapitulação';
             marca.textContent = '✍️';
             btn.appendChild(marca);
           }
@@ -25678,7 +25714,7 @@ function saveTemplatesToStorage() {
               campo.value = p[chave] || '';
               campo.addEventListener('input', () => {
                 p[chave] = campo.value.trim();
-                item.classList.toggle('preenchida', preenchida(p));
+                item.classList.toggle('preenchida', preenchidaDaParte(i));
                 agendarRascunho();
               });
               label.appendChild(campo);
@@ -25690,7 +25726,7 @@ function saveTemplatesToStorage() {
             const iniciar = document.createElement('button');
             iniciar.type = 'button';
             iniciar.className = 'anotacoes-iniciar';
-            iniciar.textContent = p.nota && p.nota.trim() ? '✍️ Continuar a anotação' : '✍️ Iniciar anotação';
+            iniciar.textContent = parteTemConteudoEscrito(i) ? '✍️ Continuar a anotação' : '✍️ Iniciar anotação';
             iniciar.addEventListener('click', () => iniciarAnotacao(i));
             // Lixeira: limpa o orador e a congregação desta parte.
             const lixeira = document.createElement('button');
@@ -25701,7 +25737,7 @@ function saveTemplatesToStorage() {
             lixeira.textContent = '🗑️';
             lixeira.addEventListener('click', () => {
               camposDaParte.forEach(([chave, campo]) => { p[chave] = ''; campo.value = ''; });
-              item.classList.toggle('preenchida', preenchida(p));
+              item.classList.toggle('preenchida', preenchidaDaParte(i));
               if (ativa && i === parteAtual) atualizarVista();
               agendarRascunho();
               if (camposDaParte[0]) camposDaParte[0][1].focus();
@@ -26039,6 +26075,22 @@ function saveTemplatesToStorage() {
         try { return JSON.parse(localStorage.getItem(ANOT_KEY) || '{}') || {}; } catch (e) { return {}; }
       }
 
+      // Aviso se as anotações guardadas neste aparelho ficarem grandes (o localStorage do navegador costuma parar perto de 5 MB).
+      let avisoEspacoAnotacoes = false;
+      const ANOT_AVISO_BYTES = 1.5 * 1024 * 1024;
+      function avisarEspacoAnotacoesSeGrande() {
+        if (avisoEspacoAnotacoes) return;
+        let bytes = 0;
+        try {
+          const v = localStorage.getItem(ANOT_KEY);
+          if (v) bytes = (ANOT_KEY.length + v.length) * 2;
+        } catch (e) { return; }
+        if (bytes < ANOT_AVISO_BYTES) return;
+        avisoEspacoAnotacoes = true;
+        const mb = (bytes / 1048576).toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+        dizer('As anotações deste aparelho já ocupam cerca de ' + mb + ' MB. Se o navegador avisar que o armazenamento está cheio, exporte as anotações ou apague eventos antigos.', true);
+      }
+
       function salvarRascunho() {
         if (!modo) return;
         guardarNota();
@@ -26053,7 +26105,10 @@ function saveTemplatesToStorage() {
             dados[modo] = { texto: texto.value, tema: temaEl.value, orador: oradorEl.value, congregacao: congEl.value, data: dataReuniaoEl.value, em: new Date().toISOString() };
           }
           localStorage.setItem(ANOT_KEY, JSON.stringify(dados));
-        } catch (e) { /* sem espaço */ }
+          avisarEspacoAnotacoesSeGrande();
+        } catch (e) {
+          dizer('Não consegui guardar as anotações (o armazenamento deste aparelho pode estar cheio). Exporte o que puder e apague eventos antigos.', true);
+        }
       }
 
       function carregarRascunho() {
@@ -26533,6 +26588,66 @@ function saveTemplatesToStorage() {
         irPara('programa');
       }
       const anotacoesEscolherPrograma = url => anotacoesCarregarPrograma(url, url);
+
+      // Atualizar programa: busca o programa de novo na WOL e junta com o que já existe (anotações, orador, congregação e respostas ficam).
+      // Partes que saíram do programa mas têm conteúdo não se perdem: vão para o fim, numa seção à parte.
+      const atualizarProgramaBtn = document.getElementById('anotacoesAtualizarPrograma');
+      atualizarProgramaBtn.addEventListener('click', async () => {
+        const entrada = (programaMeta && programaMeta.entrada) || (/^https?:/.test(chaveAtual) ? chaveAtual : '');
+        if (!entrada) return dizerProg('Este programa foi aberto antes desta versão: escolha-o de novo na lista para poder atualizá-lo.', true);
+        if (!navigator.onLine) return dizerProg('Sem conexão com a internet.', true);
+        if (gravacao) return dizerProg('Pare a gravação antes de atualizar o programa.', true);
+        if (gravacaoPronta) return dizerProg('Descarte ou faça o resumo da gravação antes de atualizar o programa.', true);
+        atualizarProgramaBtn.disabled = true;
+        dizerProg('Atualizando o programa…');
+        try {
+          const r = await postStudy({ tarefa: 'programa-pub', entrada }, 25000);
+          if (!r.ok || !r.data || !Array.isArray(r.data.partes) || !r.data.partes.length) {
+            return dizerProg((r.data && r.data.erro) || 'Não consegui atualizar o programa agora.', true);
+          }
+          guardarNota();
+          const antigos = new Map(partes.map(p => [p.docid + '|' + p.par, p]));
+          const usados = new Set();
+          const novas = r.data.partes.map(x => {
+            const chaveParte = (x.docid || r.data.docid || '') + '|' + (x.par || '');
+            const velho = antigos.get(chaveParte);
+            if (velho) usados.add(chaveParte);
+            return {
+              horario: x.horario || '', tema: x.tema || '', textoTematico: x.textoTematico || '', secao: x.secao || '',
+              docid: x.docid || r.data.docid || '', par: x.par || '',
+              orador: velho ? velho.orador || '' : '', congregacao: velho ? velho.congregacao || '' : '',
+              dia: x.dia || '', diaTema: x.diaTema || '',
+              perguntaN: velho && velho.perguntaN ? velho.perguntaN : (x.perguntaN || 0),
+              resposta: velho ? velho.resposta || '' : '',
+              nota: velho ? velho.nota || '' : ''
+            };
+          });
+          const orfas = partes.filter(p => !usados.has(p.docid + '|' + p.par) && ((p.nota && p.nota.trim()) || (p.resposta && p.resposta.trim()) || p.orador || p.congregacao));
+          orfas.forEach(p => novas.push({ ...p, secao: 'Partes que saíram do programa (com anotações)', dia: '', diaTema: '' }));
+          const meta = { ...r.data, entrada, perguntas: Array.isArray(r.data.perguntas) ? r.data.perguntas : (programaMeta.perguntas || []) };
+          const abertoAntes = diaAberto;
+          partes = novas;
+          programaMeta = meta;
+          parteAtual = -1;
+          expandida = -1;
+          respostaEl.dataset.dono = '';
+          preencherTituloPrograma();
+          diaAberto = abertoAntes;
+          perguntasExtra = '';
+          pintarPartes();
+          salvarRascunho();
+          dizerProg(orfas.length
+            ? 'Programa atualizado. ' + orfas.length + (orfas.length === 1 ? ' parte antiga' : ' partes antigas') + ' com anotações ficou no fim.'
+            : 'Programa atualizado.');
+          piscarBotao(atualizarProgramaBtn, '✓ Programa atualizado');
+          if (meta.atribuicao === 'pendente') atribuirPerguntasIa();
+        } catch (e) {
+          dizerProg('Não consegui atualizar o programa agora.', true);
+        } finally {
+          atualizarProgramaBtn.disabled = false;
+        }
+      });
+
       const anotacoesProgramaManual = () => {
         const ref = programaPubEl.value.trim();
         anotacoesCarregarPrograma(ref, 'manual:' + ref.toLowerCase());
@@ -26543,13 +26658,16 @@ function saveTemplatesToStorage() {
 
       document.querySelectorAll('[data-anotacoes-fmt]').forEach(btn => {
         btn.addEventListener('click', () => {
+          const naResposta = Boolean(btn.closest('.anotacoes-fmt-resp'));
+          const campo = naResposta ? respostaEl : texto;
+          const dizerFmt = naResposta ? dizerResp : dizer;
           const acao = btn.dataset.anotacoesFmt;
-          const ini = texto.selectionStart || 0;
-          const fim = texto.selectionEnd || 0;
+          const ini = campo.selectionStart || 0;
+          const fim = campo.selectionEnd || 0;
           if (ini === fim && (acao === 'bold' || acao === 'italic' || acao === 'hl')) {
-            return dizer('Selecione o trecho para formatar.', true);
+            return dizerFmt('Selecione o trecho para formatar.', true);
           }
-          const sel = texto.value.slice(ini, fim);
+          const sel = campo.value.slice(ini, fim);
           let novo = sel;
           if (acao === 'bold') novo = convertTextWithStyle(sel, 'bold');
           else if (acao === 'italic') novo = convertTextWithStyle(sel, 'italic');
@@ -26564,12 +26682,12 @@ function saveTemplatesToStorage() {
               return leading + getListPrefix(model, itemIndex++) + content;
             }).join('\n');
           }
-          texto.value = texto.value.slice(0, ini) + novo + texto.value.slice(fim);
-          texto.focus();
-          texto.setSelectionRange(ini, ini + novo.length);
-          guardarNota();
-          agendarRascunho();
-          dizer('Formatação aplicada.');
+          campo.value = campo.value.slice(0, ini) + novo + campo.value.slice(fim);
+          campo.focus();
+          campo.setSelectionRange(ini, ini + novo.length);
+          if (naResposta) campo.dispatchEvent(new Event('input', { bubbles: true }));
+          else { guardarNota(); agendarRascunho(); }
+          dizerFmt('Formatação aplicada.');
         });
       });
 

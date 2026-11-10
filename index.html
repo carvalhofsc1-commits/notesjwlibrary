@@ -258,6 +258,13 @@
             <h3 class="anotacoes-subtitulo">❓ Pergunta de recapitulação</h3>
             <div class="anotacoes-revisao-card">
               <p id="anotacoesRevisaoPergunta" class="anotacoes-revisao-pergunta"></p>
+              <div class="anotacoes-fmt anotacoes-fmt-resp" role="toolbar" aria-label="Formatação rápida da resposta (selecione o trecho)">
+                <button type="button" class="secondary" data-anotacoes-fmt="bold" title="Negrito" aria-label="Negrito"><strong>𝐁</strong></button>
+                <button type="button" class="secondary" data-anotacoes-fmt="italic" title="Itálico" aria-label="Itálico">𝐼</button>
+                <button type="button" class="secondary" data-anotacoes-fmt="hl" title="Grifo (letra sem serifa em negrito)" aria-label="Grifo">Grifo</button>
+                <button type="button" class="secondary" data-anotacoes-fmt="ul" title="Lista com marcadores" aria-label="Lista com marcadores">• Lista</button>
+                <button type="button" class="secondary" data-anotacoes-fmt="ol" title="Lista numerada" aria-label="Lista numerada">1. Lista</button>
+              </div>
               <textarea id="anotacoesResposta" class="anotacoes-resposta" rows="4" aria-label="Resposta à pergunta de recapitulação" placeholder="Escreva aqui a resposta a esta pergunta…"></textarea>
               <!-- Botões da resposta (só da resposta), na mesma ordem dos das anotações: copiar, formatar com IA, lixeira; embaixo, o JW Library. -->
               <div class="anotacoes-acoes-campo">
@@ -312,6 +319,7 @@
       <section class="card tint-5 screen-anotacoes anotacoes-cartao-extra" id="anotacoesCardDiscursos" data-modo="">
         <div class="anotacoes-programa-acoes">
           <button id="anotacoesVerNotas" class="anotacoes-ver-notas" type="button" hidden>✍️ Ver anotações</button>
+          <button id="anotacoesAtualizarPrograma" class="secondary anotacoes-atualizar" type="button" title="Buscar o programa de novo na WOL, sem perder anotações, orador nem congregação">🔄 Atualizar programa</button>
           <button id="anotacoesExportarNotas" class="secondary anotacoes-exportar" type="button" title="Gera um Word com as anotações de todos os discursos deste evento" hidden>📄 Exportar anotações</button>
         </div>
         <div id="anotacoesPartes" class="anotacoes-partes"></div>

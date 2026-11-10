@@ -5232,6 +5232,10 @@
       margin: 0 0 10px;
     }
 
+    .anotacoes-fmt-resp {
+      margin: 8px 0 6px;
+    }
+
     .anotacoes-escrita > label {
       margin: 2px 0 8px;
     }
@@ -5476,7 +5480,7 @@
       font-size: .86rem;
     }
 
-    /* Ver anotações, Trocar de evento e Exportar anotações dividem a linha (o texto de cada botão pode ir para uma segunda linha). */
+    /* Ver anotações, Atualizar programa e Exportar anotações dividem a linha (o texto de cada botão pode ir para uma segunda linha). */
     .screen-anotacoes .anotacoes-programa-acoes {
       display: grid;
       grid-auto-flow: column;
