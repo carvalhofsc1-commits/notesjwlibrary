@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.33'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.34'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -25243,13 +25243,104 @@ function saveTemplatesToStorage() {
         if (respostaEl.dataset.dono !== String(dono)) {
           respostaEl.value = partes[dono].resposta || '';
           respostaEl.dataset.dono = String(dono);
+          respDesfazer.hidden = true;
+          respostaAntesDaIa = null;
+          dizerResp('');
           if (alvoInsercao !== texto) bibliaPara(texto);
         }
       }
+      const respStatus = document.getElementById('anotacoesRespStatus');
+      const respDesfazer = document.getElementById('anotacoesRespDesfazer');
+      const respIaBtn = document.getElementById('anotacoesRespIa');
+      let respostaAntesDaIa = null;
+      const dizerResp = (msg, aviso) => { respStatus.textContent = msg || ''; respStatus.className = 'anotacoes-msg' + (aviso ? ' warn' : ''); };
       respostaEl.addEventListener('input', () => {
+        respDesfazer.hidden = true;
+        respostaAntesDaIa = null;
         if (!ativa || !perguntaDaParte(parteAtual)) return;
         partes[donaDaPergunta(parteAtual)].resposta = respostaEl.value;
         agendarRascunho();
+      });
+      // Botões do campo da resposta (só da resposta): copiar, copiar e abrir a pergunta no JW Library, formatar com IA e limpar.
+      function textoDaResposta() {
+        const q = ativa ? perguntaDaParte(parteAtual) : null;
+        const r = respostaEl.value.trim();
+        return q && r ? '❓ ' + estiloComAcentos('Pergunta de recapitulação', 'bold') + '\n' + q.texto + '\n\n' + r : '';
+      }
+      document.getElementById('anotacoesRespCopiar').addEventListener('click', async () => {
+        const t = textoDaResposta();
+        if (!t) return dizerResp('Não há resposta para copiar.', true);
+        try {
+          await navigator.clipboard.writeText(t);
+          piscarBotao(document.getElementById('anotacoesRespCopiar'), '✓ Copiado');
+          dizerResp('');
+        } catch (e) {
+          respostaEl.focus();
+          respostaEl.select();
+          dizerResp('Não consegui copiar sozinho: o texto ficou selecionado; use Copiar do teclado.', true);
+        }
+      });
+      document.getElementById('anotacoesRespJwl').addEventListener('click', async () => {
+        const q = ativa ? perguntaDaParte(parteAtual) : null;
+        const t = textoDaResposta();
+        if (!t) return dizerResp('Escreva a resposta antes de enviar ao JW Library.', true);
+        if (!q || !q.docid || !q.par) {
+          completarPerguntas(); // evento guardado antes de a pergunta ter endereço: busca de novo
+          return dizerResp('Ainda não tenho o endereço desta pergunta no JW Library. Com internet, tente de novo em alguns segundos.', true);
+        }
+        const botao = document.getElementById('anotacoesRespJwl');
+        try {
+          await navigator.clipboard.writeText(t);
+          botao.textContent = '✓ Copiado';
+          setTimeout(() => { botao.textContent = '📖 Copiar e abrir no JW Library'; }, 2500);
+          dizerResp('Resposta copiada. Abrindo a pergunta no JW Library — é só colar no campo de notas dela.');
+        } catch (e) {
+          dizerResp('Não consegui copiar automaticamente; abra o JW Library e cole manualmente se puder.', true);
+        }
+        window.location.href = jwlLinkPorId(q.docid, q.par); // copia e só então abre o parágrafo da pergunta no app
+      });
+      respIaBtn.addEventListener('click', async () => {
+        const original = respostaEl.value;
+        if (!original.trim()) return dizerResp('Escreva a resposta antes de formatar com a IA.', true);
+        if (original.length > 12000) return dizerResp('O texto está grande demais para formatar de uma vez (12.000 caracteres).', true);
+        if (!codigoAcessoSalvo()) return dizerResp('Salve o código de pesquisa em Ajustes → 🔐 Autorização de acessos.', true);
+        if (!navigator.onLine) return dizerResp('Sem conexão com a internet.', true);
+        respIaBtn.disabled = true;
+        const rotulo = respIaBtn.textContent;
+        respIaBtn.textContent = '✨ Formatando…';
+        dizerResp('A IA está formatando a resposta…');
+        try {
+          const r = await postStudy({ tarefa: 'anotacoes-formatar', codigo: codigoAcessoSalvo(), texto: original }, IA_ESPERA_MS);
+          const novo = r.ok && r.data && typeof r.data.texto === 'string' ? r.data.texto : '';
+          if (!novo.trim()) return dizerResp(r.ok ? 'A IA não devolveu o texto. Tente de novo.' : studyFailureMessage(r, 'Não foi possível formatar agora.'), true);
+          if (respostaEl.value !== original) return dizerResp('O texto mudou enquanto a IA formatava; nada foi trocado. Tente de novo.', true);
+          respostaAntesDaIa = original;
+          respostaEl.value = novo;
+          if (ativa && perguntaDaParte(parteAtual)) partes[donaDaPergunta(parteAtual)].resposta = novo;
+          salvarRascunho();
+          respDesfazer.hidden = false;
+          dizerResp('✅ Resposta formatada para o JW Library. Confira e, se não gostar, desfaça.');
+        } finally {
+          respIaBtn.disabled = false;
+          respIaBtn.textContent = rotulo;
+        }
+      });
+      respDesfazer.addEventListener('click', () => {
+        if (respostaAntesDaIa == null) return;
+        respostaEl.value = respostaAntesDaIa;
+        respostaAntesDaIa = null;
+        respDesfazer.hidden = true;
+        if (ativa && perguntaDaParte(parteAtual)) partes[donaDaPergunta(parteAtual)].resposta = respostaEl.value;
+        salvarRascunho();
+        dizerResp('Formatação desfeita: voltou o texto de antes.');
+      });
+      document.getElementById('anotacoesRespLimpar').addEventListener('click', async () => {
+        if (!respostaEl.value.trim()) return dizerResp('A resposta já está vazia.', true);
+        const ok = await askConfirm('Apagar a resposta desta pergunta? As anotações do discurso ficam como estão.', 'Limpar resposta', { ok: 'Limpar', cancel: 'Cancelar' });
+        if (!ok) return;
+        respostaEl.value = '';
+        respostaEl.dispatchEvent(new Event('input', { bubbles: true }));
+        dizerResp('Resposta apagada.');
       });
       // Aviso no programa: como as perguntas foram atribuídas e, quando a ordem não bateu, o botão da IA.
       function pintarAvisoPerguntas() {
@@ -25328,7 +25419,9 @@ function saveTemplatesToStorage() {
       perguntasBtn.addEventListener('click', atribuirPerguntasIa);
       // Evento guardado antes das perguntas existirem: busca só as perguntas (e a ordem automática) e junta ao que já está guardado.
       async function completarPerguntas() {
-        if (ehCongresso() || !programaMeta || programaMeta.perguntas !== undefined || !navigator.onLine) return;
+        if (ehCongresso() || !programaMeta || !navigator.onLine) return;
+        const soEndereco = programaMeta.perguntas !== undefined; // já tinha as perguntas, mas sem o endereço delas no JW Library
+        if (soEndereco && !programaMeta.perguntas.some(q => !q.par)) return;
         const ref = programaMeta.entrada || chaveAtual;
         if (!/^https?:|^[A-Za-z]{1,6}-[A-Za-z0-9]+$/.test(ref)) return;
         const chave = chaveAtual;
@@ -25336,6 +25429,7 @@ function saveTemplatesToStorage() {
           const r = await postStudy({ tarefa: 'programa-pub', entrada: ref }, 25000);
           if (!r.ok || !r.data || chave !== chaveAtual) return;
           programaMeta.perguntas = Array.isArray(r.data.perguntas) ? r.data.perguntas : [];
+          if (soEndereco) { salvarRascunho(); pintarPartes(); return; } // só atualiza as perguntas; a atribuição já feita fica
           programaMeta.atribuicao = r.data.atribuicao || '';
           const porParte = new Map((r.data.partes || []).map(x => [x.docid + '|' + x.par, x]));
           partes.forEach(p => { const x = porParte.get(p.docid + '|' + p.par); if (x && x.perguntaN) p.perguntaN = x.perguntaN; });
@@ -26391,7 +26485,7 @@ function saveTemplatesToStorage() {
         jwlBtn.addEventListener('click', async () => {
           const destino = anotacoesJwlDestino();
           if (!destino) return dizer('Selecione uma parte do programa carregada da WOL.', true);
-          if (!temConteudoAtual()) return dizer('Escreva as anotações antes de enviar ao JW Library.', true);
+          if (!texto.value.trim()) return dizer('Escreva as anotações antes de enviar ao JW Library.', true);
           const nota = textoDaAnotacao(); // com o tema, o horário e os dados do orador
           try {
             await navigator.clipboard.writeText(nota);
@@ -26504,14 +26598,18 @@ function saveTemplatesToStorage() {
 
       // Salvar e Word: nas partes de assembleia e congresso o cabeçalho (tema, orador e congregação) vai junto automaticamente.
       function textoDaAnotacao() {
-        return (cabecalhoTexto() + texto.value + (comPrograma() && ativa ? revisaoTexto(parteAtual) : '')).trim();
+        return (cabecalhoTexto() + texto.value).trim();
+      }
+      // O discurso inteiro (anotações e, na assembleia, a pergunta de recapitulação com a resposta): para Salvar e Word.
+      function textoDoDiscurso() {
+        return (textoDaAnotacao() + (comPrograma() && ativa ? revisaoTexto(parteAtual) : '')).trim();
       }
       function tituloDaAnotacao(limite) {
         const d = dadosDaParte();
         return (d.tema || temaEl.value.trim() || (programaMeta && programaMeta.titulo) || 'Anotações').slice(0, limite);
       }
       document.getElementById('anotacoesCopiarBtn').addEventListener('click', async () => {
-        if (!temConteudoAtual()) return dizer('Não há anotações para copiar.', true);
+        if (!texto.value.trim()) return dizer('Não há anotações para copiar.', true);
         try {
           await navigator.clipboard.writeText(textoDaAnotacao());
           piscarBotao(document.getElementById('anotacoesCopiarBtn'), '✓ Copiado');
@@ -26542,11 +26640,11 @@ function saveTemplatesToStorage() {
           const ev = (eventos || []).find(e => e.url === chaveAtual);
           anotEvento = (ev ? ev.titulo : ((programaMeta && programaMeta.titulo) || (MODOS[modo].tipo === 'congresso' ? 'Congresso' : 'Assembleia'))) + (ev && ev.tipo === 'assembleia' && ev.grupo ? ' (' + ev.grupo + ')' : '') + (programaMeta && programaMeta.tema ? ' — ' + programaMeta.tema : '');
         }
-        const guardado = historicoSalvar({ tipo: 'nota', titulo, partes: [{ paragrafos: '', texto: textoDaAnotacao() }], ligar: false, anotId, anotModo: modo, anotEvento, anotOrdem: comPrograma() ? parteAtual : null });
+        const guardado = historicoSalvar({ tipo: 'nota', titulo, partes: [{ paragrafos: '', texto: textoDoDiscurso() }], ligar: false, anotId, anotModo: modo, anotEvento, anotOrdem: comPrograma() ? parteAtual : null });
         if (guardado) piscarBotao(document.getElementById('anotacoesSalvarBtn'), jaExistia ? '✓ Atualizado' : '✓ Salvo');
       });
       document.getElementById('anotacoesDocxBtn').addEventListener('click', async () => {
-        const bruto = textoDaAnotacao();
+        const bruto = textoDoDiscurso();
         if (!temConteudoAtual()) return dizer('Não há texto para exportar.', true);
         dizer('Gerando Word…');
         try {

@@ -1450,13 +1450,13 @@ function partesDoProgramaHtml(html, docId) {
 
 // Perguntas de recapitulação da assembleia de circuito ("Preste atenção às respostas para as seguintes perguntas"): parágrafos numerados
 // ("1. Como podemos…? (Sal. 37:4)") seguidos do campo "Sua resposta". Devolve [] em qualquer outro documento.
-export function perguntasDoDocHtml(html) {
+export function perguntasDoDocHtml(html, docId) {
   const perguntas = [];
-  for (const m of String(html || "").matchAll(/<p\b[^>]*data-pid="\d+"[^>]*>\s*<span class="txtSrcBullet">\s*(\d{1,2})\.\s*<\/span>([\s\S]*?)<\/p>\s*<div class="gen-field"/gi)) {
-    const bruto = m[2];
+  for (const m of String(html || "").matchAll(/<p\b[^>]*data-pid="(\d+)"[^>]*>\s*<span class="txtSrcBullet">\s*(\d{1,2})\.\s*<\/span>([\s\S]*?)<\/p>\s*<div class="gen-field"/gi)) {
+    const bruto = m[3];
     const refs = [...bruto.matchAll(/<a\b[^>]*class="b"[^>]*>([\s\S]*?)<\/a>/gi)].map((r) => textoDe(r[1])).join(" ").replace(/\s+/g, " ").replace(/\s+([,;])/g, "$1").trim();
     const texto = textoDe(bruto.replace(/\([^()]*<a\b[\s\S]*$/i, "")).replace(/\s+/g, " ").trim();
-    if (texto.length > 4) perguntas.push({ n: Number(m[1]), texto, refs });
+    if (texto.length > 4) perguntas.push({ n: Number(m[2]), texto, refs, docid: String(docId || ""), par: m[1] });
   }
   return perguntas;
 }
@@ -1492,7 +1492,7 @@ async function lerDocPrograma(docId, timeoutMs) {
     referencias: referenciasDe(temaHtml),
     wolUrl: `${BASE}/pt/wol/d/r5/lp-t/${docId}`,
     partes: partesDoProgramaHtml(html, docId),
-    perguntas: perguntasDoDocHtml(html),
+    perguntas: perguntasDoDocHtml(html, docId),
     ligados: docsNoHtml(html).filter((id) => id !== String(docId)),
     pub: ((html.match(/\bpub-([A-Za-z]{1,6}-[A-Za-z0-9]+)/) || [])[1] || ""),
   };

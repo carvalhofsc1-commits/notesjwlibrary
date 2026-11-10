@@ -249,6 +249,17 @@
             <div class="anotacoes-revisao-card">
               <p id="anotacoesRevisaoPergunta" class="anotacoes-revisao-pergunta"></p>
               <textarea id="anotacoesResposta" class="anotacoes-resposta" rows="4" aria-label="Resposta à pergunta de recapitulação" placeholder="Escreva aqui a resposta a esta pergunta…"></textarea>
+              <!-- Botões da resposta: agem só na resposta (os de baixo agem nas anotações do discurso). -->
+              <div class="anotacoes-acoes anotacoes-resp-acoes">
+                <button id="anotacoesRespCopiar" class="secondary" type="button" title="Copiar a pergunta e a resposta">📋 Copiar</button>
+                <button id="anotacoesRespLimpar" class="secondary anotacoes-lixeira" type="button" title="Limpar a resposta" aria-label="Limpar a resposta">🗑️</button>
+              </div>
+              <div class="anotacoes-linha-jw">
+                <button id="anotacoesRespJwl" class="anotacoes-jwl" type="button" title="Copia a pergunta e a resposta e abre esta pergunta no JW Library; é só colar no campo de notas dela">📖 Copiar e abrir no JW Library</button>
+                <button id="anotacoesRespIa" class="secondary anotacoes-ia" type="button" title="A IA deixa a resposta pronta para colar no JW Library: só emojis e letras maiúsculas, mantendo os seus negritos e itálicos">✨ Formatar com IA</button>
+              </div>
+              <p id="anotacoesRespStatus" class="anotacoes-msg" role="status" aria-live="polite"></p>
+              <button id="anotacoesRespDesfazer" class="secondary anotacoes-desfazer" type="button" hidden>↩️ Desfazer a formatação</button>
             </div>
           </div>
 

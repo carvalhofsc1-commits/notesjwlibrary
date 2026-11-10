@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.34
+
+Anotações da assembleia: o campo da **resposta da pergunta de recapitulação** ganhou botões próprios: **Copiar**, **Copiar e abrir no JW Library** (abre a pergunta dela no documento “Preste atenção às respostas…”, para colar como nota da pergunta), **Formatar com IA** (com Desfazer) e lixeira. Os botões de baixo agem só nas anotações do discurso (Copiar e JW Library sem juntar a resposta); Salvar e Word levam o discurso todo, anotações e resposta.
+
 ## 6.7.33
 
 Anotações: com o teclado aberto, a barra **Inserir texto bíblico** passa a ficar fixa no topo da área visível (o “sticky” não funciona com o teclado do iPhone), acompanhando a tela; ao fechar o teclado, ela volta ao lugar normal.
