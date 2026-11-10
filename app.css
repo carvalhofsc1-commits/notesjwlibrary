@@ -5914,6 +5914,11 @@
       text-align: center;
     }
 
+    /* Aberto, o campo ganha folga embaixo (fechado continua como está). */
+    .screen-anotacoes .anotacoes-data[open] {
+      margin-bottom: 6px;
+    }
+
     .anotacoes-data > summary {
       padding: 2px;
       font-size: .74rem;

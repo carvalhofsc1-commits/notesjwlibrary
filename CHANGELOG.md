@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.68
+
+Anotações: o campo da data do evento fica **aberto enquanto a data não for informada** (num evento novo) e passa a ficar sempre recolhido depois que ela é registrada. Aberto, tem mais espaço entre o campo e a moldura; fechado, nada mudou.
+
 ## 6.7.67
 
 Texto diário: o título voltou a ter uma só chave (a pequena); o 🔊 do topo, que já fica junto do título, não leva mais a chave grande.

@@ -7658,7 +7658,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.67'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.68'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -25556,6 +25556,8 @@ function saveTemplatesToStorage() {
         document.getElementById('anotacoesDataRotulo').textContent = ehCongresso() ? '📅 Registre a data do seu congresso (primeiro dia, sexta-feira)' : '📅 Registre a data da sua assembleia';
         dataInfoEl.textContent = aviso || textoDaData();
         dataInfoEl.className = 'anotacoes-msg';
+        // Sem data, o campo fica aberto até ela ser informada; com data, fica sempre recolhido (a pessoa pode abri-lo quando quiser).
+        document.querySelector('.anotacoes-data').open = !dataAtual;
       }
 
       const semMarcador = t => String(t || '').replace(/^[•·]\s*/, '');
