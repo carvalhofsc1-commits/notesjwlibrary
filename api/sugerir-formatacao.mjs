@@ -3579,6 +3579,36 @@ function frasesDeParagrafo(texto) {
   return frases.map((f) => f.trim()).filter(Boolean);
 }
 
+// Marcas de versículo ([[vv. 1-3]] / (v. 5) etc.) vão para o início do parágrafo (depois do emoji), nunca no fim.
+function moverVersiculosParaInicioParagrafo(paragrafo) {
+  const marcas = [];
+  const resto = String(paragrafo || "")
+    .replace(/(?:\[\[\s*|\(\s*)(vv?\.\s*[^\]\)]+?)(?:\s*\]\]|\s*\))/gi, (m, corpo) => {
+      const marca = "[[" + String(corpo || "").replace(/\s+/g, " ").trim() + "]]";
+      if (!marcas.some((x) => x.toLowerCase() === marca.toLowerCase())) marcas.push(marca);
+      return " ";
+    })
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\s+([,.;:!?])/g, "$1")
+    .trim();
+  if (!marcas.length) return String(paragrafo || "").trim();
+  const mEmoji = resto.match(REGEX_EMOJI_INICIO);
+  const emoji = mEmoji ? mEmoji[0] : "";
+  const corpo = resto.slice(emoji.length).trim();
+  return (emoji + marcas.join(" ") + (corpo ? " " + corpo : "")).replace(/[ \t]{2,}/g, " ").trim();
+}
+
+// "Cumprimento (passado):" → "Cumprimento passado:" (a voz lê o que está entre parênteses só em casos especiais).
+function normalizarRotulosProfecia(texto) {
+  return String(texto || "").replace(
+    /\*{0,2}(Profecia|Cumprimento)\s*(?:\((passado|presente|futuro)\)|(passado|presente|futuro))\s*:\*{0,2}/gi,
+    (_, rotulo, a, b) => {
+      const tempo = a || b;
+      return tempo ? `${rotulo} ${tempo.toLowerCase()}:` : `${rotulo}:`;
+    }
+  );
+}
+
 function organizarSecaoResumoLeitura(secao, paragrafos, emojiAtivo) {
   let itens = paragrafos.map((p) => p.replace(/^[-•–]\s+/, "").trim()).filter(Boolean);
   if (secao === "PERSONAGENS" || secao === "LUGARES E INFORMAÇÕES GERAIS" || secao === "PROFECIAS E EXPRESSÕES SIMBÓLICAS") {
@@ -3597,7 +3627,8 @@ function organizarSecaoResumoLeitura(secao, paragrafos, emojiAtivo) {
     const padrao = EMOJI_PADRAO_SECAO_RESUMO_LEITURA[secao];
     itens = itens.map((p) => (REGEX_EMOJI_INICIO.test(p) ? p : padrao + " " + p));
   }
-  return itens;
+  if (secao === "PROFECIAS E EXPRESSÕES SIMBÓLICAS") itens = itens.map(normalizarRotulosProfecia);
+  return itens.map(moverVersiculosParaInicioParagrafo);
 }
 
 function organizarResumoLeitura(texto, emojiAtivo) {
@@ -3802,7 +3833,7 @@ async function resumirLeituraBiblia(res, body, P) {
       "\n\n";
   }
   const avisoProfecias = idsOpcoes.includes("profecias")
-    ? "OBRIGATÓRIO: o \"texto\" deve trazer o subtítulo PROFECIAS E EXPRESSÕES SIMBÓLICAS (linha sozinha) e os itens dessa seção. O detalhe das profecias e símbolos NÃO fica só no RESUMO — o RESUMO narra; a interpretação (Profecia / Cumprimento) vai na seção própria. Em cada item use exatamente um rótulo: Cumprimento (passado), Cumprimento (presente) ou Cumprimento (futuro). Em Daniel 2, os pés de ferro e argila são Cumprimento (presente) — a potência anglo-americana atual —, não (futuro).\n\n"
+    ? "OBRIGATÓRIO: o \"texto\" deve trazer o subtítulo PROFECIAS E EXPRESSÕES SIMBÓLICAS (linha sozinha) e os itens dessa seção. O detalhe das profecias e símbolos NÃO fica só no RESUMO — o RESUMO narra; a interpretação (Profecia / Cumprimento) vai na seção própria. Em cada item use exatamente um rótulo SEM parênteses: Cumprimento passado, Cumprimento presente ou Cumprimento futuro. Em Daniel 2, os pés de ferro e argila são Cumprimento presente — a potência anglo-americana atual —, não futuro.\n\n"
     : "";
   const mensagem =
     blocoOrientacao({}, ajuste, P) +

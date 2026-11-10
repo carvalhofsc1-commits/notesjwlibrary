@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.40
+
+Resumo do capítulo da Bíblia: (1) as marcas de versículos (`v.` / `vv.`) passam a ficar **sempre no início** do parágrafo/frase, em todas as seções; (2) na seção de profecias, o cumprimento fica **passado / presente / futuro** sem parênteses, para a voz ler; (3) a marcação da frase lida deixa de se adiantar ou atrasar (a voz não cria mais uma pausa falsa após o “versículos…”, e o realce ignora o que ela pula).
+
 ## 6.7.39
 
 Leitura diária da Bíblia: o rótulo “Opções adicionais” do card de leitura passou a ser **Instruções adicionais de áudio**.

@@ -3926,8 +3926,8 @@
     // as regras do administrador: cabeçalhos, citações de publicações, parênteses e referências pulados, e as referências
     // que ficam escritas por extenso.
     // As marcas de versículos dos resumos ("(vv. 1-3)", "(v. 5)", "(vv. 1, 3)") viram palavras: "versículos de um a três", "versículo cinco", "versículos um e três".
-    // No começo da linha viram uma frase (com ponto, para a voz fazer a pausa); no meio do texto seguem na frase. Os parênteses saem junto, então a regra de
-    // pular o que está entre parênteses não leva a marca embora.
+    // Ficam na mesma frase (vírgula no começo da linha, sem ponto): um ponto extra criava pausa falsa e a marcação da frase lida se adiantava ou atrasava.
+    // Os parênteses saem junto, então a regra de pular o que está entre parênteses não leva a marca embora.
     function vozVersiculosFalados(texto) {
       const num = '\\d{1,3}';
       const item = num + '(?:\\s*[-–]\\s*' + num + ')?';
@@ -3940,7 +3940,10 @@
         const plural = v.toLowerCase() === 'vv' || itens.length > 1 || lista.includes('-') || lista.includes('–');
         const falado = (plural ? 'versículos ' : 'versículo ') + vozJuntarComE(itens);
         const inicioDaLinha = !/\S/.test(inteiro.slice(0, posicao).split('\n').pop());
-        return inicioDaLinha ? falado.charAt(0).toUpperCase() + falado.slice(1) + '.' : falado;
+        if (!inicioDaLinha) return falado;
+        const depois = inteiro.slice(posicao + m.length).match(/^\s*(\S)/);
+        const sep = depois && /[,.;:!?]/.test(depois[1]) ? '' : ',';
+        return falado.charAt(0).toUpperCase() + falado.slice(1) + sep;
       });
     }
 
@@ -7655,7 +7658,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.39'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.40'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -23042,9 +23045,40 @@ function saveTemplatesToStorage() {
 
     // Acabamento do texto vindo do servidor (já em parágrafos): título de cada seção com emoji e negrito, e o nome de cada personagem e
     // de cada lugar ("Davi: …", "Adulão: …") em negrito, sem depender de a IA ter indicado esse destaque.
-    // Os rótulos "Profecia:" e "Cumprimento (passado/presente/futuro):" vão sempre em negrito, com ou sem marcas da IA em volta.
+    // Os rótulos "Profecia:" e "Cumprimento passado/presente/futuro:" vão sempre em negrito (sem parênteses no tempo, para a voz ler).
     function bibliaRotulosProfecia(linha) {
-      return String(linha || '').replace(/\*{0,2}(Profecia|Cumprimento\s*\((?:passado|presente|futuro)\))\s*:\*{0,2}/gi, '**$1:**');
+      return String(linha || '')
+        .replace(/\*{0,2}(Profecia)\s*:\*{0,2}/gi, '**$1:**')
+        .replace(/\*{0,2}Cumprimento\s*\((passado|presente|futuro)\)\s*:\*{0,2}/gi, '**Cumprimento $1:**')
+        .replace(/\*{0,2}Cumprimento\s+(passado|presente|futuro)\s*:\*{0,2}/gi, '**Cumprimento $1:**');
+    }
+
+    // Marcas "(vv. 1-3)" / "[[v. 5]]" no início do parágrafo (depois do emoji), em qualquer seção.
+    function bibliaMoverVersiculosParaInicio(paragrafo) {
+      const marcas = [];
+      const resto = String(paragrafo || '')
+        .replace(/(?:\[\[\s*|\(\s*)(vv?\.\s*[^\]\)]+?)(?:\s*\]\]|\s*\))/gi, (m, corpo) => {
+          const marca = '(' + String(corpo || '').replace(/\s+/g, ' ').trim() + ')';
+          if (!marcas.some(x => x.toLowerCase() === marca.toLowerCase())) marcas.push(marca);
+          return ' ';
+        })
+        .replace(/[ \t]{2,}/g, ' ')
+        .replace(/\s+([,.;:!?])/g, '$1')
+        .trim();
+      if (!marcas.length) return String(paragrafo || '').trim();
+      const mEmoji = resto.match(/^(?:\p{Extended_Pictographic}[\uFE0F\u200D\p{Emoji_Modifier}\p{Extended_Pictographic}]*\s*)+/u);
+      const emoji = mEmoji ? mEmoji[0] : '';
+      const corpo = resto.slice(emoji.length).trim();
+      return (emoji + marcas.join(' ') + (corpo ? ' ' + corpo : '')).replace(/[ \t]{2,}/g, ' ').trim();
+    }
+
+    function bibliaNormalizarParagrafosResumo(texto) {
+      return String(texto || '').split('\n').map(linha => {
+        if (!linha.trim()) return linha;
+        if (BIBLIA_TITULO_POR_CHAVE.get(bibliaChaveTitulo(linha))) return linha;
+        if (/^🔎/.test(linha)) return linha;
+        return bibliaMoverVersiculosParaInicio(bibliaRotulosProfecia(linha));
+      }).join('\n');
     }
 
     function bibliaAcabamento(texto) {
@@ -23058,11 +23092,12 @@ function saveTemplatesToStorage() {
           return BIBLIA_SECAO_EMOJI[titulo] + ' ' + bibliaTituloNegrito(titulo, negritoId); // o emoji da seção sempre vai na frente do título
         }
         if (/^🔎/.test(linha)) { secao = ''; return linha; } // linha das fontes, no fim
-        if (secao === 'PROFECIAS E EXPRESSÕES SIMBÓLICAS') return bibliaRotulosProfecia(linha);
+        if (secao === 'PROFECIAS E EXPRESSÕES SIMBÓLICAS') linha = bibliaRotulosProfecia(linha);
         if (negritoId && (secao === 'PERSONAGENS' || secao === 'LUGARES E INFORMAÇÕES GERAIS')) {
           const m = linha.match(/^((?:\p{Extended_Pictographic}[\uFE0F\u200D\p{Emoji_Modifier}\p{Extended_Pictographic}]*\s*)*)([^\s:.,;()][^:.,;()]{0,48}?):(\s.*)$/u);
-          if (m) return m[1] + convertTextWithStyle(m[2].trim(), negritoId) + ':' + m[3];
+          if (m) linha = m[1] + convertTextWithStyle(m[2].trim(), negritoId) + ':' + m[3];
         }
+        if (!/^🔎/.test(linha) && secao) return bibliaMoverVersiculosParaInicio(linha);
         return linha;
       }).join('\n');
     }
@@ -24222,7 +24257,7 @@ function saveTemplatesToStorage() {
       bibliaResumoDestaque = -1;
       let secao = '';
       // Cor e negrito são para títulos e destaques (trechos curtos): um negrito comprido (um parágrafo ou várias frases) é só texto normal.
-      const textoVista = bibliaResumoTexto.value.split('\n').map(linha => bibliaRotulosProfecia(linha.replace(/\*\*([^*\n]{100,}?)\*\*/g, '$1').replace(/__([^_\n]{100,}?)__/g, '$1'))).join('\n');
+      const textoVista = bibliaNormalizarParagrafosResumo(bibliaResumoTexto.value.split('\n').map(linha => linha.replace(/\*\*([^*\n]{100,}?)\*\*/g, '$1').replace(/__([^_\n]{100,}?)__/g, '$1')).join('\n'));
       leituraEstrutura(textoVista).forEach((par, pi) => {
         const plano = par.frases.join(' ').replace(/\*\*|__|%%/g, '');
         // O título da seção vale com ou sem negrito em volta (a IA às vezes o destaca) e com ":" ou "." no fim; aí a linha toda em negrito seria lida como subtítulo.
@@ -24255,6 +24290,8 @@ function saveTemplatesToStorage() {
         });
         bibliaResumoLeituraEl.appendChild(p);
       });
+      // O que a voz pula (citações entre parênteses, etc.) fica sem o realce — senão a marcação parece adiantada ou atrasada em relação à fala.
+      bibliaResumoUnidades.forEach(u => { if (u.falado) leituraMudosNoSpan(u.el, regras); });
     }
 
     // O que está à vista: a vista desenhada (com texto e sem editar) ou o campo com as marcas (editando ou sem texto ainda).
