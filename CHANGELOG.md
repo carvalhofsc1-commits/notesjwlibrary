@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.35
+
+Anotações: botões reorganizados. Cada campo de texto (anotações e resposta da pergunta) tem, logo abaixo da moldura, **Copiar**, **Formatar com IA** e a lixeira (só o ícone), bem finos, e embaixo o botão **Copiar e abrir no JW Library** na largura toda. **Salvar** e **Word** foram para o fim de tudo, numa moldura própria, os dois numa linha, depois do botão Gravar o discurso.
+
 ## 6.7.34
 
 Anotações da assembleia: o campo da **resposta da pergunta de recapitulação** ganhou botões próprios: **Copiar**, **Copiar e abrir no JW Library** (abre a pergunta dela no documento “Preste atenção às respostas…”, para colar como nota da pergunta), **Formatar com IA** (com Desfazer) e lixeira. Os botões de baixo agem só nas anotações do discurso (Copiar e JW Library sem juntar a resposta); Salvar e Word levam o discurso todo, anotações e resposta.

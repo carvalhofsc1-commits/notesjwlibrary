@@ -5774,6 +5774,54 @@
       background: color-mix(in srgb, var(--anot-cor) 9%, var(--card));
     }
 
+    /* Botões de cada campo de texto (anotações e resposta), bem finos, logo abaixo da moldura do campo: copiar, formatar com IA e a lixeira (só o ícone). */
+    .screen-anotacoes .anotacoes-acoes-campo {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 2.6rem;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .screen-anotacoes .anotacoes-acoes-campo button {
+      min-height: 30px;
+      padding: 2px 3px;
+      font-size: .78rem;
+      font-weight: 600;
+      line-height: 1.1;
+      white-space: nowrap;
+    }
+
+    /* O botão do JW Library pega a largura toda, logo abaixo dos três. */
+    .screen-anotacoes .anotacoes-jwl.anotacoes-jwl-largo {
+      width: 100%;
+      min-height: 32px;
+      margin: 6px 0 0;
+      padding: 3px 10px;
+      font-size: .8rem;
+      font-weight: 600;
+    }
+
+    .screen-anotacoes .anotacoes-revisao-card .anotacoes-jwl-largo {
+      margin-top: 0;
+    }
+
+    /* Salvar e Word do discurso: no final de tudo, numa moldura própria, os dois numa linha só. */
+    .screen-anotacoes .anotacoes-final {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 16px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--card);
+    }
+
+    .screen-anotacoes .anotacoes-final button {
+      min-height: 40px;
+      font-size: .88rem;
+    }
+
     /* Perguntas de recapitulação (assembleia de circuito): o aviso no programa e o campo da resposta embaixo das anotações. */
     .screen-anotacoes .anotacoes-revisao {
       margin: 14px 0 4px;

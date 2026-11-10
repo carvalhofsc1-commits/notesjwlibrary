@@ -242,6 +242,15 @@
             <button type="button" class="secondary" data-anotacoes-fmt="ol" title="Lista numerada" aria-label="Lista numerada">1. Lista</button>
           </div>
           <textarea id="anotacoesTexto" class="anotacoes-texto" rows="16" placeholder="Escreva suas anotações aqui…"></textarea>
+          <!-- Botões das anotações do discurso, logo abaixo da moldura do campo: copiar, formatar com IA e a lixeira (só o ícone); embaixo, o JW Library. -->
+          <div class="anotacoes-acoes-campo">
+            <button id="anotacoesCopiarBtn" class="secondary" type="button" title="Copiar a anotação (com o tema e o orador)">📋 Copiar</button>
+            <button id="anotacoesIaBtn" class="secondary anotacoes-ia" type="button" title="A IA deixa o texto pronto para colar no JW Library: só emojis e letras maiúsculas, mantendo os seus negritos e itálicos">✨ Formatar com IA</button>
+            <button id="anotacoesLimparBtn" class="secondary anotacoes-lixeira" type="button" title="Limpar as anotações" aria-label="Limpar as anotações">🗑️</button>
+          </div>
+          <button id="anotacoesJwlBtn" class="anotacoes-jwl anotacoes-jwl-largo" type="button" title="Copia a anotação e abre esta parte no JW Library; é só colar no campo de notas" hidden>📖 Copiar e abrir no JW Library</button>
+          <p id="anotacoesStatus" class="anotacoes-msg" role="status" aria-live="polite"></p>
+          <button id="anotacoesIaDesfazer" class="secondary anotacoes-desfazer" type="button" hidden>↩️ Desfazer a formatação</button>
 
           <!-- Assembleia de circuito: a pergunta de recapitulação que este discurso responde, com um campo só para a resposta. -->
           <div id="anotacoesRevisao" class="anotacoes-revisao" hidden>
@@ -249,32 +258,17 @@
             <div class="anotacoes-revisao-card">
               <p id="anotacoesRevisaoPergunta" class="anotacoes-revisao-pergunta"></p>
               <textarea id="anotacoesResposta" class="anotacoes-resposta" rows="4" aria-label="Resposta à pergunta de recapitulação" placeholder="Escreva aqui a resposta a esta pergunta…"></textarea>
-              <!-- Botões da resposta: agem só na resposta (os de baixo agem nas anotações do discurso). -->
-              <div class="anotacoes-acoes anotacoes-resp-acoes">
+              <!-- Botões da resposta (só da resposta), na mesma ordem dos das anotações: copiar, formatar com IA, lixeira; embaixo, o JW Library. -->
+              <div class="anotacoes-acoes-campo">
                 <button id="anotacoesRespCopiar" class="secondary" type="button" title="Copiar a pergunta e a resposta">📋 Copiar</button>
+                <button id="anotacoesRespIa" class="secondary anotacoes-ia" type="button" title="A IA deixa a resposta pronta para colar no JW Library: só emojis e letras maiúsculas, mantendo os seus negritos e itálicos">✨ Formatar com IA</button>
                 <button id="anotacoesRespLimpar" class="secondary anotacoes-lixeira" type="button" title="Limpar a resposta" aria-label="Limpar a resposta">🗑️</button>
               </div>
-              <div class="anotacoes-linha-jw">
-                <button id="anotacoesRespJwl" class="anotacoes-jwl" type="button" title="Copia a pergunta e a resposta e abre esta pergunta no JW Library; é só colar no campo de notas dela">📖 Copiar e abrir no JW Library</button>
-                <button id="anotacoesRespIa" class="secondary anotacoes-ia" type="button" title="A IA deixa a resposta pronta para colar no JW Library: só emojis e letras maiúsculas, mantendo os seus negritos e itálicos">✨ Formatar com IA</button>
-              </div>
+              <button id="anotacoesRespJwl" class="anotacoes-jwl anotacoes-jwl-largo" type="button" title="Copia a pergunta e a resposta e abre esta pergunta no JW Library; é só colar no campo de notas dela">📖 Copiar e abrir no JW Library</button>
               <p id="anotacoesRespStatus" class="anotacoes-msg" role="status" aria-live="polite"></p>
               <button id="anotacoesRespDesfazer" class="secondary anotacoes-desfazer" type="button" hidden>↩️ Desfazer a formatação</button>
             </div>
           </div>
-
-          <div class="anotacoes-acoes">
-            <button id="anotacoesCopiarBtn" class="secondary" type="button" title="Copiar a anotação (com o tema e o orador)">📋 Copiar</button>
-            <button id="anotacoesSalvarBtn" class="secondary" type="button" title="Guarda uma cópia em Pesquisas e respostas salvas → Textos, ligada a esta parte; salvar de novo atualiza a mesma">💾 Salvar</button>
-            <button id="anotacoesDocxBtn" class="secondary" type="button">📄 Word</button>
-            <button id="anotacoesLimparBtn" class="secondary anotacoes-lixeira" type="button" title="Limpar as anotações" aria-label="Limpar as anotações">🗑️</button>
-          </div>
-          <div class="anotacoes-linha-jw">
-            <button id="anotacoesJwlBtn" class="anotacoes-jwl" type="button" title="Copia a anotação e abre esta parte no JW Library; é só colar no campo de notas" hidden>📖 Copiar e abrir no JW Library</button>
-            <button id="anotacoesIaBtn" class="secondary anotacoes-ia" type="button" title="A IA deixa o texto pronto para colar no JW Library: só emojis e letras maiúsculas, mantendo os seus negritos e itálicos">✨ Formatar com IA</button>
-          </div>
-          <p id="anotacoesStatus" class="anotacoes-msg" role="status" aria-live="polite"></p>
-          <button id="anotacoesIaDesfazer" class="secondary anotacoes-desfazer" type="button" hidden>↩️ Desfazer a formatação</button>
 
           <!-- Gravação do discurso: tudo neste quadro. Gravar → pausar, parar ou descartar → gravação pronta → Fazer o resumo (ou descartar). -->
           <section id="anotacoesGravacao" class="anotacoes-gravacao" aria-label="Gravação do discurso">
@@ -300,6 +294,12 @@
             </div>
             <p id="anotacoesGravarStatus" class="anotacoes-msg" role="status" aria-live="polite"></p>
           </section>
+
+          <!-- Salvar e Word do discurso inteiro (anotações e resposta da pergunta), no final de tudo. -->
+          <div class="anotacoes-final">
+            <button id="anotacoesSalvarBtn" class="secondary" type="button" title="Guarda uma cópia em Pesquisas e respostas salvas → Textos, ligada a esta parte; salvar de novo atualiza a mesma">💾 Salvar</button>
+            <button id="anotacoesDocxBtn" class="secondary" type="button" title="Gera um Word do discurso: anotações e, na assembleia, a pergunta com a resposta">📄 Word</button>
+          </div>
         </div>
       </div>
     </section>
