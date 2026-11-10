@@ -94,7 +94,7 @@
       <section class="card tint-3 td-card" id="textoDiarioCard" aria-labelledby="textoDiarioTitulo">
         <div class="td-titulo-linha">
           <h2 id="textoDiarioTitulo">📖 Texto diário</h2>
-          <button id="tdOuvirTopoBtn" class="secondary td-ouvir-topo" type="button" title="Ouvir o texto diário em voz alta" aria-label="Ouvir o texto diário em voz alta" hidden disabled>🔊</button>
+          <button id="tdOuvirTopoBtn" data-codigo-ia="pesquisa" class="secondary td-ouvir-topo" type="button" title="Ouvir o texto diário em voz alta" aria-label="Ouvir o texto diário em voz alta" hidden disabled>🔊</button>
         </div>
         <div id="tdVozTopo"></div>
         <div class="td-topo">
@@ -110,19 +110,19 @@
           <div id="tdComentario" class="td-comentario"></div>
           <p id="tdFonte" class="td-fonte"></p>
           <div class="bk-row td-acoes">
-            <button id="tdGerarBtn" class="td-gerar" type="button">✨ Gerar comentários adicionais</button>
+            <button id="tdGerarBtn" data-codigo-ia="pesquisa" class="td-gerar" type="button">✨ Gerar comentários adicionais</button>
           </div>
           <button id="tdRecuperarBtn" class="secondary td-recuperar" type="button" hidden>📂 Recuperar comentários salvos</button>
           <details id="tdIa" class="td-ia" open hidden>
             <summary class="td-ia-titulo">💬 Comentários adicionais <span id="tdIaQtd" class="td-ia-qtd"></span></summary>
             <p class="hint td-ia-dica">Aplicações práticas do texto temático e do comentário, para você comentar com as suas palavras.</p>
-            <button id="tdIaOuvirBtn" class="secondary td-ia-ouvir" type="button" title="Ouvir os comentários adicionais em voz alta" aria-label="Ouvir os comentários adicionais em voz alta">🔊</button>
+            <button id="tdIaOuvirBtn" data-codigo-ia="pesquisa" class="secondary td-ia-ouvir" type="button" title="Ouvir os comentários adicionais em voz alta" aria-label="Ouvir os comentários adicionais em voz alta">🔊</button>
             <div id="tdIaVoz"></div>
             <ol id="tdIaLista" class="td-ia-lista"></ol>
             <div class="bk-row td-acoes td-acoes-ia">
               <button id="tdIaCopiarBtn" class="secondary" type="button">📋 Copiar</button>
               <button id="tdIaSalvarBtn" class="secondary" type="button">💾 Salvar</button>
-              <button id="tdIaOutrosBtn" class="secondary" type="button">🔄 Gerar outros</button>
+              <button id="tdIaOutrosBtn" data-codigo-ia="pesquisa" class="secondary" type="button">🔄 Gerar outros</button>
               <button id="tdIaLimparBtn" class="secondary" type="button">🗑️ Limpar</button>
             </div>
           </details>
@@ -257,7 +257,7 @@
           <!-- Botões das anotações do discurso, logo abaixo da moldura do campo: copiar, formatar com IA e a lixeira (só o ícone); embaixo, o JW Library. -->
           <div class="anotacoes-acoes-campo">
             <button id="anotacoesCopiarBtn" class="secondary" type="button" title="Copiar a anotação (com o tema e o orador)">📋 Copiar</button>
-            <button id="anotacoesIaBtn" class="secondary anotacoes-ia" type="button" title="A IA deixa o texto pronto para colar no JW Library: só emojis e letras maiúsculas, mantendo os seus negritos e itálicos">✨ Formatar com IA</button>
+            <button id="anotacoesIaBtn" data-codigo-ia="pesquisa" class="secondary anotacoes-ia" type="button" title="A IA deixa o texto pronto para colar no JW Library: só emojis e letras maiúsculas, mantendo os seus negritos e itálicos">✨ Formatar com IA</button>
             <button id="anotacoesLimparBtn" class="secondary anotacoes-lixeira" type="button" title="Limpar as anotações" aria-label="Limpar as anotações">🗑️</button>
           </div>
           <button id="anotacoesJwlBtn" class="anotacoes-jwl anotacoes-jwl-largo" type="button" title="Copia a anotação e abre esta parte no JW Library; é só colar no campo de notas" hidden>📖 Copiar e abrir no JW Library</button>
@@ -267,7 +267,7 @@
           <!-- Gravação do discurso: tudo neste quadro. Gravar → pausar, parar ou descartar → gravação pronta → Fazer o resumo (ou descartar). -->
           <section id="anotacoesGravacao" class="anotacoes-gravacao" aria-label="Gravação do discurso">
             <div id="anotacoesGravOcioso">
-              <button id="anotacoesGravarBtn" type="button" title="Gravar o discurso; depois, o resumo é pedido à parte">🎙️ Gravar e resumir o discurso</button>
+              <button id="anotacoesGravarBtn" data-codigo-ia="texto" type="button" title="Gravar o discurso; depois, o resumo é pedido à parte">🎙️ Gravar e resumir o discurso</button>
             </div>
             <div id="anotacoesGravAtiva" hidden>
               <p id="anotacoesGravTempo" class="anotacoes-grav-tempo" role="timer" aria-live="off">🔴 Gravando 00:00</p>
@@ -281,7 +281,7 @@
             <div id="anotacoesGravPronta" hidden>
               <p id="anotacoesGravInfo" class="anotacoes-grav-tempo"></p>
               <div class="bk-row">
-                <button id="anotacoesGravResumoBtn" type="button" title="Transcrever a gravação e fazer o resumo">✨ Resumo</button>
+                <button id="anotacoesGravResumoBtn" data-codigo-ia="texto" type="button" title="Transcrever a gravação e fazer o resumo">✨ Resumo</button>
                 <button id="anotacoesGravSalvarBtn" class="secondary" type="button" title="Salvar o arquivo de áudio da gravação neste aparelho">💾 Salvar</button>
                 <button id="anotacoesGravDescartar2Btn" class="secondary" type="button" title="Descartar a gravação" aria-label="Descartar a gravação">🗑️</button>
               </div>
@@ -309,7 +309,7 @@
               <!-- Botões da resposta (só da resposta), na mesma ordem dos das anotações: copiar, formatar com IA, lixeira; embaixo, o JW Library. -->
               <div class="anotacoes-acoes-campo">
                 <button id="anotacoesRespCopiar" class="secondary" type="button" title="Copiar a pergunta e a resposta">📋 Copiar</button>
-                <button id="anotacoesRespIa" class="secondary anotacoes-ia" type="button" title="A IA deixa a resposta pronta para colar no JW Library: só emojis e letras maiúsculas, mantendo os seus negritos e itálicos">✨ Formatar com IA</button>
+                <button id="anotacoesRespIa" data-codigo-ia="pesquisa" class="secondary anotacoes-ia" type="button" title="A IA deixa a resposta pronta para colar no JW Library: só emojis e letras maiúsculas, mantendo os seus negritos e itálicos">✨ Formatar com IA</button>
                 <button id="anotacoesRespLimpar" class="secondary anotacoes-lixeira" type="button" title="Limpar a resposta" aria-label="Limpar a resposta">🗑️</button>
               </div>
               <button id="anotacoesRespJwl" class="anotacoes-jwl anotacoes-jwl-largo" type="button" title="Copia a pergunta e a resposta e abre esta pergunta no JW Library; é só colar no campo de notas dela">📖 Copiar e abrir no JW Library</button>
@@ -344,7 +344,7 @@
         <section class="card tint-5 screen-anotacoes anotacoes-cartao-extra anotacoes-perguntas" data-modo="">
           <ol id="anotacoesPerguntasLista" class="anotacoes-perguntas-lista"></ol>
           <p id="anotacoesPerguntasTexto" class="anotacoes-msg" role="status" aria-live="polite"></p>
-          <button id="anotacoesPerguntasIa" class="secondary" type="button" title="A IA organiza qual pergunta de recapitulação vai em cada discurso" hidden>🤖 Organizar as perguntas com a IA</button>
+          <button id="anotacoesPerguntasIa" data-codigo-ia="pesquisa" class="secondary" type="button" title="A IA organiza qual pergunta de recapitulação vai em cada discurso" hidden>🤖 Organizar as perguntas com a IA</button>
         </section>
       </div>
     </div>
@@ -599,11 +599,11 @@
           <div class="group-box-body">
             <div class="ai-box ai-box-direto" id="aiBox">
               <div class="ai-main-row">
-                <button id="aiSuggestBtn" class="ai-main-btn" type="button">✨ Sugerir formatação com IA de todo o texto original</button>
+                <button id="aiSuggestBtn" data-codigo-ia="pesquisa" class="ai-main-btn" type="button">✨ Sugerir formatação com IA de todo o texto original</button>
               </div>
               <div class="ai-colado">
                 <div class="ai-main-row">
-                  <button id="aiSentinelaBtn" class="ai-main-btn ai-sentinela-btn" type="button">📖 Responder resumidamente a pergunta do texto colado</button>
+                  <button id="aiSentinelaBtn" data-codigo-ia="pesquisa" class="ai-main-btn ai-sentinela-btn" type="button">📖 Responder resumidamente a pergunta do texto colado</button>
                 </div>
                 <p class="hint">Cole no campo de texto o parágrafo com a pergunta e a IA responde resumidamente.</p>
               </div>
@@ -626,8 +626,8 @@
               <div id="aiResults" class="ai-list"></div>
               <div id="aiRefineBox" class="ai-refine" hidden>
                 <div class="ai-refine-row">
-                  <button id="aiAnotherBtn" class="secondary" type="button">🔄 Outra sugestão</button>
-                  <button id="aiImproveBtn" class="secondary" type="button">🛠️ Melhorar esta</button>
+                  <button id="aiAnotherBtn" data-codigo-ia="refino" class="secondary" type="button">🔄 Outra sugestão</button>
+                  <button id="aiImproveBtn" data-codigo-ia="refino" class="secondary" type="button">🛠️ Melhorar esta</button>
                 </div>
               </div>
               </div>
@@ -704,7 +704,7 @@
                   <label for="aiStudyArticle">Não achei o artigo sozinho. Cole o número ou o link dele:</label>
                   <input autocomplete="off" id="aiStudyArticle" type="text" inputmode="url" placeholder="Ex.: 2026521">
                 </div>
-                <button id="aiStudyBtn" class="ai-study-btn" type="button">🌐 IA - Responder resumidamente a pergunta do parágrafo selecionado</button>
+                <button id="aiStudyBtn" data-codigo-ia="pesquisa" class="ai-study-btn" type="button">🌐 IA - Responder resumidamente a pergunta do parágrafo selecionado</button>
               </div>
             </section>
 
@@ -743,7 +743,7 @@
                       <p></p>
                       <button type="button" class="secondary">📂 Recuperar a resposta salva</button>
                     </div>
-                    <button id="joiasResponderBtn" class="ai-study-btn" type="button">💎 IA - Preparar opção selecionada</button>
+                    <button id="joiasResponderBtn" data-codigo-ia="pesquisa" class="ai-study-btn" type="button">💎 IA - Preparar opção selecionada</button>
                   </div>
                 </section>
 
@@ -783,7 +783,7 @@
                       <p></p>
                       <button type="button" class="secondary">📂 Recuperar a resposta salva</button>
                     </div>
-                    <button id="ebcResponderBtn" class="ai-study-btn" type="button">💬 IA - Responder às perguntas</button>
+                    <button id="ebcResponderBtn" data-codigo-ia="pesquisa" class="ai-study-btn" type="button">💬 IA - Responder às perguntas</button>
                   </div>
                 </section>
 
@@ -845,7 +845,7 @@
                   <label for="leaderStudyArticle">Não achei o artigo sozinho. Cole o número ou o link dele:</label>
                   <input autocomplete="off" id="leaderStudyArticle" type="text" inputmode="url" placeholder="Ex.: 2026521">
                 </div>
-                <button id="aiStudyQuestionsBtn" class="ai-study-btn ai-study-questions-btn" type="button">💬 IA - Sugerir perguntas adicionais</button>
+                <button id="aiStudyQuestionsBtn" data-codigo-ia="dirigente" class="ai-study-btn ai-study-questions-btn" type="button">💬 IA - Sugerir perguntas adicionais</button>
                 <details class="imagens-box secoes-resposta">
                   <summary>Seções da resposta</summary>
                   <p class="dirigente-secoes-sub">1️⃣ Perguntas complementares</p>
@@ -886,7 +886,7 @@
                       <p></p>
                       <button type="button" class="secondary">📂 Recuperar a resposta salva</button>
                     </div>
-                    <button id="ebcDirPerguntasBtn" class="ai-study-btn" type="button">💬 IA - Preparar para dirigir o estudo</button>
+                    <button id="ebcDirPerguntasBtn" data-codigo-ia="dirigente" class="ai-study-btn" type="button">💬 IA - Preparar para dirigir o estudo</button>
                     <span id="ebcDirStatus" class="ok" role="status" aria-live="polite"></span>
                   </div>
                 </section>
@@ -911,7 +911,7 @@
                       <select id="publicoTema" hidden disabled><option value="">Abra o card para carregar os temas</option></select>
                     </div>
                     <p id="publicoInfo" class="hint ai-hint ebc-info"></p>
-                    <button id="publicoEsbocoBtn" class="ai-study-btn" type="button">✨ IA - Elaborar o esboço do discurso</button>
+                    <button id="publicoEsbocoBtn" data-codigo-ia="publico" class="ai-study-btn" type="button">✨ IA - Elaborar o esboço do discurso</button>
                     <button id="publicoVerBtn" class="ver-esboco" type="button" hidden>📄 Ver o esboço original</button>
                     <span id="publicoStatus" class="ok" role="status" aria-live="polite"></span>
                   </div>
@@ -927,7 +927,7 @@
                   <div class="ai-study">
                     <button id="tesourosCarregarBtn" class="secondary ai-study-load" type="button">📋 Carregar matéria do discurso (wol.jw.org)</button>
                     <p id="tesourosInfo" class="hint ai-hint ebc-info"></p>
-                    <button id="tesourosEsbocoBtn" class="ai-study-btn" type="button">✨ IA - Elaborar o esboço do discurso</button>
+                    <button id="tesourosEsbocoBtn" data-codigo-ia="dirigente" class="ai-study-btn" type="button">✨ IA - Elaborar o esboço do discurso</button>
                     <span id="tesourosStatus" class="ok" role="status" aria-live="polite"></span>
                   </div>
                 </section>
@@ -942,7 +942,7 @@
                   <div class="ai-study">
                     <button id="discursoCarregarBtn" class="secondary ai-study-load" type="button">📋 Carregar matéria do discurso (wol.jw.org)</button>
                     <p id="discursoInfo" class="hint ai-hint ebc-info"></p>
-                    <button id="discursoEsbocoBtn" class="ai-study-btn" type="button">✨ IA - Elaborar o esboço do discurso</button>
+                    <button id="discursoEsbocoBtn" data-codigo-ia="dirigente" class="ai-study-btn" type="button">✨ IA - Elaborar o esboço do discurso</button>
                     <span id="discursoStatus" class="ok" role="status" aria-live="polite"></span>
                   </div>
                 </section>
@@ -993,7 +993,7 @@
                     </details>
                     <button id="outrosCarregarBtn" class="secondary ai-study-load" type="button">📋 Ler a matéria e listar os textos bíblicos</button>
                     <p id="outrosInfo" class="hint ai-hint ebc-info"></p>
-                    <button id="outrosEsbocoBtn" class="ai-study-btn" type="button">✨ IA - Elaborar o esboço do discurso</button>
+                    <button id="outrosEsbocoBtn" data-codigo-ia="dirigente" class="ai-study-btn" type="button">✨ IA - Elaborar o esboço do discurso</button>
                     <span id="outrosStatus" class="ok" role="status" aria-live="polite"></span>
                     <button id="outrosLimparBtn" class="secondary ai-study-load outros-limpar" type="button">🧹 Limpar os campos deste card</button>
                   </div>
@@ -1976,11 +1976,11 @@
       <div class="biblia-caixa biblia-resumo-caixa" id="bibliaResumoCaixa" hidden>
         <div class="biblia-grupos-topo">
           <h3 class="biblia-caixa-titulo" id="bibliaResumoTitulo"></h3>
-          <button type="button" id="bibliaResumoOuvirBtn" class="secondary biblia-resumo-ouvir" title="Ouvir o resumo em voz alta, com a frase lida destacada (precisa do código de leitura)" aria-label="Ouvir o resumo em voz alta" disabled>🔊</button>
+          <button type="button" id="bibliaResumoOuvirBtn" data-codigo-ia="leitura" class="secondary biblia-resumo-ouvir" title="Ouvir o resumo em voz alta, com a frase lida destacada (precisa do código de leitura)" aria-label="Ouvir o resumo em voz alta" disabled>🔊</button>
           <button type="button" id="bibliaResumoFecharBtn" class="secondary biblia-resumo-fechar">✕ Fechar</button>
         </div>
         <div class="bk-row biblia-gerar-linha">
-          <button id="bibliaResumirBtn" type="button">🔑 Gerar resumo</button>
+          <button id="bibliaResumirBtn" data-codigo-ia="resumo" type="button">Gerar resumo</button>
           <button id="bibliaResumoIrAcessos" class="secondary" type="button" data-ir-acessos="resumo" hidden>🔐 Informar o código de resumo (Ajustes)</button>
         </div>
         <div id="bibliaResumoVoz"></div>
@@ -2053,7 +2053,7 @@
       </div>
       <div id="leituraBarra" class="leitura-barra"></div>
       <div class="leitura-acoes">
-        <button id="leituraLerBtn" class="leitura-ler" type="button">🔊 Ler</button>
+        <button id="leituraLerBtn" data-codigo-ia="leitura" class="leitura-ler" type="button">🔊 Ler</button>
         <button id="leituraInicioBtn" class="secondary" type="button" title="Parar e voltar ao início do texto" aria-label="Parar e voltar ao início do texto" hidden>⏹️</button>
         <button id="leituraEditarBtn" class="secondary" type="button" hidden>✏️ Editar</button>
         <button id="leituraConcluirBtn" class="secondary" type="button" title="Termina a edição e mostra o texto em frases, pronto para ler">✅ Concluir</button>
@@ -2157,7 +2157,7 @@
           <label class="ai-check"><input type="checkbox" id="transcricaoFalantes" autocomplete="off"> 👥 Identificar quem fala</label>
         </div>
         <div id="transcricaoIniciarLinha" class="leitura-acoes">
-          <button id="transcricaoIniciarBtn" class="leitura-ler" type="button" disabled>▶️ Iniciar a transcrição</button>
+          <button id="transcricaoIniciarBtn" data-codigo-ia="texto" class="leitura-ler" type="button" disabled>▶️ Iniciar a transcrição</button>
         </div>
         <p id="transcricaoInfoPasso" class="hint transcricao-info-passo" role="status" aria-live="polite" hidden></p>
         <progress id="transcricaoProgresso" class="transcricao-progresso" value="0" max="1" hidden></progress>
@@ -2173,7 +2173,7 @@
           <div id="transcricaoNomesLista"></div>
           <datalist id="transcricaoNomesSugestoes"></datalist>
           <div class="bk-row">
-            <button id="transcricaoNomesSugerirBtn" class="secondary" type="button">✨ Sugerir nomes</button>
+            <button id="transcricaoNomesSugerirBtn" data-codigo-ia="texto" class="secondary" type="button">✨ Sugerir nomes</button>
             <button id="transcricaoNomesAplicarBtn" type="button">✅ Aplicar os nomes</button>
           </div>
           <p id="transcricaoNomesInfo" class="hint" role="status" aria-live="polite"></p>
@@ -2182,7 +2182,7 @@
       <details id="transcricaoPassoCorrigir" class="leitura-dica transcricao-config transcricao-conteiner transcricao-passo" hidden>
         <summary><span class="transcricao-icone" aria-hidden="true">✍️</span> Corrigir<small class="transcricao-contagem" id="transcricaoContagemCorrigir" hidden></small></summary>
         <div class="leitura-acoes">
-          <button id="transcricaoCorrigirBtn" class="leitura-ler" type="button" disabled>✍️ Corrigir com a IA</button>
+          <button id="transcricaoCorrigirBtn" data-codigo-ia="texto" class="leitura-ler" type="button" disabled>✍️ Corrigir com a IA</button>
         </div>
         <p id="transcricaoCorrigirProgresso" class="transcricao-rodando" role="status" hidden><span class="transcricao-giro" aria-hidden="true"></span><span class="transcricao-rodando-txt">A IA está corrigindo…</span></p>
         <div class="leitura-acoes transcricao-acoes">
@@ -2195,7 +2195,7 @@
       <details id="transcricaoPassoResumir" class="leitura-dica transcricao-config transcricao-conteiner transcricao-passo" hidden>
         <summary><span class="transcricao-icone" aria-hidden="true">✨</span> Resumir<small class="transcricao-contagem" id="transcricaoContagemResumir" hidden></small></summary>
         <div class="leitura-acoes">
-          <button id="transcricaoResumirBtn" class="leitura-ler" type="button" disabled>✨ Resumir com a IA</button>
+          <button id="transcricaoResumirBtn" data-codigo-ia="texto" class="leitura-ler" type="button" disabled>✨ Resumir com a IA</button>
         </div>
         <p id="transcricaoResumirProgresso" class="transcricao-rodando" role="status" hidden><span class="transcricao-giro" aria-hidden="true"></span><span class="transcricao-rodando-txt">A IA está resumindo…</span></p>
         <div class="leitura-acoes transcricao-acoes">

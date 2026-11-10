@@ -7658,7 +7658,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.62'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.63'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -14058,6 +14058,7 @@ function saveTemplatesToStorage() {
       if (aiBusy) return;
       const study = aiLastKind !== 'format';
       aiAnotherBtn.textContent = study ? '🔄 Outra resposta' : '🔄 Outra sugestão';
+      marcasIaAtualizar();
       aiImproveBtn.textContent = study ? '🛠️ Melhorar esta resposta' : '🛠️ Melhorar esta';
     }
 
@@ -16468,6 +16469,7 @@ function saveTemplatesToStorage() {
       const acoes = document.createElement('div');
       acoes.className = 'textos-acoes';
       const incluir = document.createElement('button');
+      incluir.dataset.codigoIa = 'dirigente';
       incluir.type = 'button';
       incluir.className = 'ai-study-btn';
       const limpar = document.createElement('button');
@@ -20169,7 +20171,32 @@ function saveTemplatesToStorage() {
       });
     }
 
+    // Cada botão que usa a IA (ou a voz) leva data-codigo-ia com o código que ele exige. O ícone vem do CSS (::before), por isso sobrevive aos textos que o
+    // app troca (progresso, "Gerar de novo"…): 🔑 com o código salvo neste aparelho, 🔒 sem ele. "publico" exige o do dirigente e o do S-34; "refino" (Outra
+    // resposta/Melhorar) segue o último pedido feito.
+    function marcasIaAtualizar() {
+      const tem = {
+        pesquisa: Boolean(codigoAcessoSalvo()),
+        dirigente: Boolean(codigoDirigenteSalvo()),
+        publico: Boolean(codigoDirigenteSalvo() && codigoS34Salvo()),
+        texto: Boolean(codigoTextoSalvo()),
+        resumo: Boolean(codigoResumoSalvo()),
+        leitura: Boolean(codigoLeituraSalvo())
+      };
+      const doDirigente = ['dirigente', 'dirigente-recap', 'ebcdir', 'tesouros', 'discurso', 'outros'].includes(aiLastKind);
+      tem.refino = aiLastKind === 'publico' ? tem.publico : (doDirigente ? tem.dirigente : tem.pesquisa);
+      document.querySelectorAll('[data-codigo-ia]').forEach(botao => {
+        const chave = tem[botao.dataset.codigoIa];
+        botao.dataset.chave = chave ? 'sim' : 'nao';
+        botao.title = botao.title || '';
+        if (!botao.dataset.tituloBase) botao.dataset.tituloBase = botao.title;
+        const aviso = chave ? 'Funciona porque o código está salvo neste aparelho' : 'Precisa do código (Ajustes → Autorização de acessos)';
+        botao.title = botao.dataset.tituloBase ? botao.dataset.tituloBase + ' · ' + aviso : aviso;
+      });
+    }
+
     function acessosAtualizar() {
+      marcasIaAtualizar();
       const pesquisa = Boolean(codigoAcessoSalvo());
       const dirigente = Boolean(codigoDirigenteSalvo());
       const motivoDirigir = dirigente ? '' : 'dirigente';
@@ -20217,7 +20244,7 @@ function saveTemplatesToStorage() {
         if (grupo.classList.contains('grupo-desabilitado')) event.preventDefault();
       });
     });
-    document.addEventListener('acesso-salvo', event => { if (event.detail === 'codigo' || event.detail === 'dirigente' || event.detail === 'leitura' || event.detail === 'texto' || event.detail === 's34') acessosAtualizar(); });
+    document.addEventListener('acesso-salvo', event => { if (event.detail === 'codigo' || event.detail === 'dirigente' || event.detail === 'leitura' || event.detail === 'texto' || event.detail === 's34' || event.detail === 'resumo') acessosAtualizar(); });
     acessosAtualizar();
 
     // O código do dirigente salvo pode deixar de valer (o administrador trocou a variável no servidor). O app confere com o
@@ -24720,7 +24747,7 @@ function saveTemplatesToStorage() {
       bibliaResumoWordBtn.disabled = !tem;
       // Gerar resumo só funciona com o código de resumo salvo: com ele, o botão leva a 🔑; sem ele, fica desabilitado (🔒) e avisa onde informar o código.
       const comCodigo = Boolean(codigoResumoSalvo());
-      bibliaResumirBtn.textContent = (comCodigo ? '🔑 ' : '🔒 ') + (tem ? 'Gerar de novo' : 'Gerar resumo');
+      bibliaResumirBtn.textContent = tem ? 'Gerar de novo' : 'Gerar resumo';
       bibliaResumirBtn.disabled = !comCodigo || bibliaResumindo;
       document.getElementById('bibliaResumoIrAcessos').hidden = comCodigo;
       if (!comCodigo) bibliaResumoStatus.textContent = TRAVAS.resumo + ' (Ajustes → Autorização de acessos).';

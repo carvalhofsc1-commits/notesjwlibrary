@@ -451,6 +451,19 @@
       color: var(--muted);
     }
 
+    /* Botões que usam a IA ou a voz: 🔑 com o código salvo neste aparelho, 🔒 sem ele (marcado por marcasIaAtualizar). */
+    button[data-chave="sim"]::before {
+      content: "\1F511\00a0";
+    }
+
+    button[data-chave="nao"]::before {
+      content: "\1F512\00a0";
+    }
+
+    button[data-chave].is-loading::before {
+      content: none;
+    }
+
     .app-menu-lista button.app-menu-consumo:hover {
       border-radius: 0;
     }

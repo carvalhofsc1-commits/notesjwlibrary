@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.63
+
+Revisão geral dos botões que usam a IA ou a voz: todos mostram agora **🔑** quando o código que eles exigem está salvo neste aparelho e **🔒** quando não está. Entram, entre outros: Formatar com IA e Resumo (Anotações), Gravar e resumir o discurso, Gerar resumo (Leitura da Bíblia) e o 🔊 do resumo, Iniciar a transcrição, Sugerir nomes, Corrigir e Resumir com a IA (Áudio em texto), Ler (Leitura em voz alta), comentários do texto diário, respostas e esboços das Reuniões, Outra resposta, Melhorar e Incluir texto(s).
+
 ## 6.7.62
 
 Prompt dos esboços (regra fixa, vale em Tesouros, discurso curto, discurso público e Outros esboços): nova regra sobre **textos bíblicos não lidos**. Nem todo texto precisa ser citado, mas, quando uma explicação ou aplicação estiver diretamente ligada a um texto, o orador faz referência a ele na própria fala (por exemplo, “Conforme nos orienta a Bíblia em Mateus 5:3, nossa felicidade está diretamente ligada a satisfazer nossas necessidades espirituais” ou “Em Lucas 21:5, Jesus nos alertou que...”), sem exagero e sem adiantar o conteúdo de um texto que ainda será lido.
