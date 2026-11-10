@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.41
+
+Anotações: (1) inserir texto bíblico, negrito/itálico/lista e colar o resumo da gravação passam a gravar o rascunho na hora; (2) **Trocar de evento** bloqueia se houver gravação em andamento ou pronta (como Voltar/Programa); (3) a barra bíblica fica fixa com o teclado também na **Reunião**; (4) organizar perguntas com a IA pede o código de pesquisa antes, com aviso claro para Ajustes.
+
 ## 6.7.40
 
 Resumo do capítulo da Bíblia: (1) as marcas de versículos (`v.` / `vv.`) passam a ficar **sempre no início** do parágrafo/frase, em todas as seções; (2) na seção de profecias, o cumprimento fica **passado / presente / futuro** sem parênteses, para a voz ler; (3) a marcação da frase lida deixa de se adiantar ou atrasar (a voz não cria mais uma pausa falsa após o “versículos…”, e o realce ignora o que ela pula).

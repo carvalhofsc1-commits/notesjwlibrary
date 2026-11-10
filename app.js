@@ -7658,7 +7658,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.40'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.41'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -25056,7 +25056,13 @@ function saveTemplatesToStorage() {
         const pos = (antes + bloco).length;
         campo.focus();
         campo.setSelectionRange(pos, pos);
-        if (campo !== texto) campo.dispatchEvent(new Event('input', { bubbles: true })); // a resposta da pergunta é guardada na parte
+        // Sem o evento input o rascunho não agenda: inserir bíblia, formatar ou colar o resumo da gravação sumiriam se o app fechasse na hora.
+        if (campo === texto) {
+          guardarNota();
+          agendarRascunho();
+        } else {
+          campo.dispatchEvent(new Event('input', { bubbles: true })); // a resposta da pergunta é guardada na parte
+        }
         if (!silencioso) dizer('Inserido.');
       }
 
@@ -25244,7 +25250,9 @@ function saveTemplatesToStorage() {
         const vv = window.visualViewport;
         const foco = document.activeElement;
         const escrevendo = foco === texto || foco === respostaEl || bibliaBarra.contains(foco);
-        const fixar = Boolean(vv && ativa && escrevendo && window.innerHeight - vv.height > 120);
+        // Também na Reunião (sem programa): a barra precisa ficar fixa com o teclado do iPhone; em assembleia/congresso, só na tela da parte.
+        const naEscrita = Boolean(escritaEl && !escritaEl.hidden);
+        const fixar = Boolean(vv && naEscrita && escrevendo && window.innerHeight - vv.height > 120);
         if (fixar) {
           if (!bibliaEspaco) {
             const r = bibliaBarra.getBoundingClientRect();
@@ -25427,6 +25435,7 @@ function saveTemplatesToStorage() {
       async function atribuirPerguntasIa() {
         const perguntas = perguntasDoEvento();
         if (!perguntas.length || atribuindoPerguntas) return;
+        if (!codigoAcessoSalvo()) { perguntasExtra = 'Salve o código de pesquisa em Ajustes → 🔐 Autorização de acessos.'; return pintarAvisoPerguntas(); }
         if (!navigator.onLine) { perguntasExtra = 'Sem conexão com a internet.'; return pintarAvisoPerguntas(); }
         atribuindoPerguntas = true;
         perguntasExtra = 'A IA está organizando as perguntas nos discursos…';
@@ -25816,7 +25825,12 @@ function saveTemplatesToStorage() {
       progTitulo.addEventListener('click', abrirProgramaNoJwl);
       progTitulo.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirProgramaNoJwl(); } });
       cabCentro.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); editarOradorDaParte(); } });
-      document.getElementById('anotacoesTrocarTopo').addEventListener('click', () => { salvarRascunho(); irPara('escolha'); });
+      document.getElementById('anotacoesTrocarTopo').addEventListener('click', () => {
+        if (gravacao) return dizer('Pare a gravação antes de trocar de evento.', true);
+        if (gravacaoPronta) return dizer('Descarte ou faça o resumo da gravação antes de trocar de evento.', true);
+        salvarRascunho();
+        irPara('escolha');
+      });
       // Ver anotações: abre a primeira parte (na ordem do programa) que já tem anotação.
       verNotasBtn.addEventListener('click', () => {
         const achada = indicesComAnotacao()[0];
@@ -26553,6 +26567,8 @@ function saveTemplatesToStorage() {
           texto.value = texto.value.slice(0, ini) + novo + texto.value.slice(fim);
           texto.focus();
           texto.setSelectionRange(ini, ini + novo.length);
+          guardarNota();
+          agendarRascunho();
           dizer('Formatação aplicada.');
         });
       });
