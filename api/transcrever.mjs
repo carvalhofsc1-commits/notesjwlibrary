@@ -11,6 +11,18 @@ import { mensagemSeBloqueado } from "./_acessoSite.mjs";
 import { createHash, createSign, randomBytes } from "node:crypto";
 import { credenciais, tokenDeAcesso } from "./_googleToken.mjs";
 import { lerConfigIa } from "./_iaConfig.mjs";
+import { registrarUsoIa } from "./_estatisticas.mjs";
+
+// Consumo do aparelho (faturamento): minutos de áudio transcritos e tokens da IA do resumo e da correção. Gravado antes de responder
+// (depois a Vercel pode congelar a função); uma falha aqui nunca derruba o pedido.
+async function registrarConsumo(corpo, dados) {
+  try {
+    await registrarUsoIa({ aparelhoId: corpo.aparelhoId, consultas: 1, ...dados });
+  } catch (e) {
+    console.error("Transcrever: falha ao gravar o uso", e && e.message);
+  }
+}
+const usoDaResposta = (resposta) => ({ entrada: resposta.usage?.input_tokens || 0, saida: resposta.usage?.output_tokens || 0 });
 
 // O esforço escolhido pelo administrador (o mesmo das outras respostas da IA). Modelos antigos (Haiku 4.5, Sonnet 4.5...) não aceitam "effort".
 const esforcoDoModelo = (modelo, esforco) => (/haiku-4|sonnet-4-5|-3-/.test(modelo) ? {} : { output_config: { effort: esforco } });
@@ -395,6 +407,7 @@ export default async function handler(req, res) {
       if (!audio || audio.length > MAX_AUDIO_BASE64) return erro(res, 400, "Trecho de áudio inválido ou grande demais.");
       if (excedeu("trecho", ip, LIMITE_TRECHOS_POR_HORA)) return erro(res, 429, "Muitos trechos transcritos nesta hora. Tente novamente mais tarde.");
       const texto = await reconhecer(audio);
+      await registrarConsumo(corpo, { tarefa: "audio", segundos: (audio.length * 0.75) / 32000 });
       return res.status(200).json({ texto });
     }
 
@@ -410,7 +423,11 @@ export default async function handler(req, res) {
       const objeto = typeof corpo.objeto === "string" ? corpo.objeto : "";
       if (!OBJETO_LOTE.test(objeto)) return erro(res, 400, "Arquivo inválido.");
       try {
-        return res.status(200).json({ operacao: await iniciarLote(objeto) });
+        const operacao = await iniciarLote(objeto);
+        // A duração vem do aparelho (a transcrição em lote não passa pelo servidor); até 6 horas por pedido.
+        const segundos = Math.max(0, Math.min(21600, Number(corpo.segundos) || 0));
+        if (segundos) await registrarConsumo(corpo, { tarefa: "audio", segundos });
+        return res.status(200).json({ operacao });
       } catch (e) {
         await apagarObjetoLote(objeto);
         throw e;
@@ -480,6 +497,7 @@ export default async function handler(req, res) {
         system: SISTEMA_NOMES,
         messages: [{ role: "user", content: pedido }],
       });
+      await registrarConsumo(corpo, { tarefa: "audio-nomes", ...usoDaResposta(resposta) });
       if (resposta.stop_reason === "refusal") return erro(res, 502, "A IA não conseguiu sugerir nomes para este texto.");
       const bruto = resposta.content.filter((b) => b.type === "text").map((b) => b.text).join("\n");
       let dados = null;
@@ -517,6 +535,7 @@ export default async function handler(req, res) {
         system: parcial ? SISTEMA_RESUMO_PARCIAL : SISTEMA_RESUMO + (documentos.length || imagens.length ? REGRAS_DOCUMENTOS : ""),
         messages: [{ role: "user", content: conteudo }],
       });
+      await registrarConsumo(corpo, { tarefa: "audio-resumo", ...usoDaResposta(resposta) });
       if (resposta.stop_reason === "refusal") return erro(res, 502, "A IA não conseguiu resumir este texto.");
       const resumo = trocarCulto(
         resposta.content
@@ -547,6 +566,7 @@ export default async function handler(req, res) {
         system: parte > 1 && total > 1 ? SISTEMA_CORRECAO_CONTINUA : SISTEMA_CORRECAO,
         messages: [{ role: "user", content: montarPedidoCorrecao(texto, corpo.contexto, parte, total, antes) }],
       });
+      await registrarConsumo(corpo, { tarefa: "audio-correcao", ...usoDaResposta(resposta) });
       if (resposta.stop_reason === "refusal") return erro(res, 502, "A IA não conseguiu corrigir este texto.");
       if (resposta.stop_reason === "max_tokens") return erro(res, 502, "A correção ficou grande demais para esta parte. Tente novamente.");
       const corrigido = trocarCulto(

@@ -16,7 +16,8 @@ const VENDOR = [
   'vendor/sql-wasm.js',
   'vendor/sql-wasm.wasm',
   'vendor/pdf.min.js',
-  'vendor/pdf.worker.min.js'
+  'vendor/pdf.worker.min.js',
+  'vendor/qrcode.min.js'
 ];
 
 // Só o essencial leve. O icon-512.png (~149 KB) fica de fora de propósito: é usado

@@ -8,6 +8,7 @@ import { configPublicaVoz, gravarConfigVoz, lerConfigVoz, opcoesVoz } from "./_v
 import { gravarConfigIa, lerConfigIa, lerCustoIa, opcoesIa } from "./_iaConfig.mjs";
 import { acrescentarLicao, alterarLicao, analisarCorrecao, apagarLicao, apagarTudo, ligarMemoria, lerMemoria, memoriaConfigurada } from "./_memoria.mjs";
 import { estatisticasConfiguradas, registrarPing, resumoEstatisticas } from "./_estatisticas.mjs";
+import { consumoDoUsuario, gravarConfigFaturamento, lerConfigFaturamento, opcoesFaturamento } from "./_faturamento.mjs";
 import {
   acessoSiteConfigurado,
   atualizarCadastroSite,
@@ -248,6 +249,18 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: Boolean(r && r.ok), novo: Boolean(r && r.novo), configurado: true });
     }
 
+    // Pública (Ajustes → Consumo de IA e faturamento): o uso do mês deste aparelho, os preços e o PIX. Os códigos que o aparelho manda só servem para
+    // saber a quais recursos ele tem acesso (conferidos aqui; nada é gravado).
+    if (acao === "faturamento-meu") {
+      if (!estatisticasConfiguradas()) return erro(res, 503, "O armazenamento privado (Blob) ainda não está configurado no servidor para o consumo.");
+      try {
+        return res.status(200).json(await consumoDoUsuario(corpo));
+      } catch (e) {
+        console.error("Faturamento: falhou", e && e.message);
+        return erro(res, 502, "Não consegui ler o consumo agora. Tente de novo.");
+      }
+    }
+
     // Pública: o aparelho pergunta se o site está restrito e se ele já foi aprovado / tem pedido pendente.
     if (acao === "acesso-site-estado") {
       if (!acessoSiteConfigurado()) return res.status(200).json({ configurado: false, restringir: false, ok: true });
@@ -432,6 +445,16 @@ export default async function handler(req, res) {
     if (acao === "voz-salvar") {
       if (!exigirEscrita(res)) return;
       return res.status(200).json({ config: await gravarConfigVoz(corpo.config) });
+    }
+
+    // Preços do faturamento e chave PIX (Ajustes → Acesso ao site → Preços e PIX).
+    if (acao === "faturamento-ler") {
+      return res.status(200).json({ config: await lerConfigFaturamento(), opcoes: opcoesFaturamento(), armazenamento: descreverArmazenamento() });
+    }
+
+    if (acao === "faturamento-salvar") {
+      if (!exigirEscrita(res)) return;
+      return res.status(200).json({ config: await gravarConfigFaturamento(corpo.config) });
     }
 
     // Modelo e esforço da IA de texto (tela de prompts).

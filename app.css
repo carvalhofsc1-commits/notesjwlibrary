@@ -13220,3 +13220,105 @@ button.processando:disabled { opacity: 1; cursor: progress; }
 .transcricao-nomes-linha .transcricao-dado { width: 100%; box-sizing: border-box; }
 .transcricao-nomes-linha .transcricao-nomes-inicio { margin: 3px 0 0; font-size: .78rem; }
 .transcricao-nomes-painel .bk-row button { flex: 1 1 0; margin: 0; }
+
+    /* Ajustes → Consumo de IA e faturamento (usuário) e Preços e PIX (administrador). */
+    .consumo-mes {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+      margin: 6px 0 8px;
+    }
+
+    .consumo-mes label {
+      margin: 0;
+    }
+
+    .consumo-lista {
+      display: grid;
+      gap: 8px;
+      margin: 8px 0;
+    }
+
+    .consumo-item {
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--card);
+    }
+
+    .consumo-item-topo {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .consumo-item-topo strong {
+      font-size: .94rem;
+      line-height: 1.3;
+    }
+
+    .consumo-valor {
+      flex: 0 0 auto;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .consumo-item p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: .82rem;
+      line-height: 1.35;
+    }
+
+    .consumo-total {
+      margin: 6px 0 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 2px solid var(--accent, #3b82f6);
+      background: var(--card);
+      font-size: 1.05rem;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .consumo-pix {
+      display: grid;
+      gap: 8px;
+      justify-items: center;
+    }
+
+    .consumo-pix[hidden] {
+      display: none;
+    }
+
+    .consumo-pix .button-row {
+      width: 100%;
+    }
+
+    .consumo-pix-qr {
+      width: min(260px, 100%);
+      height: auto;
+      aspect-ratio: 1;
+      padding: 8px;
+      border-radius: 10px;
+      background: #fff;
+      image-rendering: pixelated;
+    }
+
+    .faturamento-grade {
+      display: grid;
+      gap: 4px;
+      margin: 8px 0;
+    }
+
+    .faturamento-grade label {
+      margin: 6px 0 0;
+      font-size: .88rem;
+    }
+
+    .faturamento-subtitulo {
+      margin: 14px 0 4px;
+      font-size: 1rem;
+    }

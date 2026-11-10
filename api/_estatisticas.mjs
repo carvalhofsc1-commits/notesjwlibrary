@@ -26,6 +26,13 @@ function agoraIso() {
   return new Date().toISOString();
 }
 
+// Mês de faturamento ("2026-11"), no horário de Brasília (UTC-3).
+export function mesDe(iso) {
+  const t = new Date(iso || Date.now()).getTime();
+  return new Date((Number.isFinite(t) ? t : Date.now()) - 3 * 3600 * 1000).toISOString().slice(0, 7);
+}
+const MAX_MESES = 14;
+
 function vazio() {
   return { versao: 1, atualizadoEm: agoraIso(), aparelhos: {}, dias: {} };
 }
@@ -206,11 +213,14 @@ export async function registrarPing(aparelhoId, perfil = {}) {
   }
 }
 
-// Consulta de IA (tokens da Anthropic). Fire-and-forget do handler.
-export async function registrarUsoIa({ aparelhoId, tarefa, entrada, saida, consultas }) {
+// Consulta de IA (tokens da Anthropic) ou uso medido de voz (caracteres) e de transcrição de áudio (segundos). Fire-and-forget do handler.
+// Além dos totais, cada aparelho guarda o uso por mês e por tarefa (meses["2026-11"].porTarefa), que alimenta o faturamento.
+export async function registrarUsoIa({ aparelhoId, tarefa, entrada, saida, consultas, caracteres, segundos }) {
   const id = aparelhoIdLimpo(aparelhoId);
   const tokensIn = Math.max(0, Math.floor(Number(entrada) || 0));
   const tokensOut = Math.max(0, Math.floor(Number(saida) || 0));
+  const car = Math.max(0, Math.floor(Number(caracteres) || 0));
+  const seg = Math.max(0, Math.round(Number(segundos) || 0));
   const n = Math.max(1, Math.floor(Number(consultas) || 1));
   if (!id || (!tokensIn && !tokensOut && n < 1)) return;
   const nomeTarefa = String(tarefa || "ia")
@@ -249,6 +259,22 @@ export async function registrarUsoIa({ aparelhoId, tarefa, entrada, saida, consu
       st.in += tokensIn;
       st.out += tokensOut;
       sessao.porTarefa[nomeTarefa] = st;
+      if (!ap.meses) ap.meses = {};
+      const mes = mesDe(agora);
+      if (!ap.meses[mes]) ap.meses[mes] = { porTarefa: {} };
+      const mt = ap.meses[mes].porTarefa[nomeTarefa] || { n: 0, in: 0, out: 0, car: 0, seg: 0 };
+      mt.n += n;
+      mt.in += tokensIn;
+      mt.out += tokensOut;
+      mt.car = (mt.car || 0) + car;
+      mt.seg = (mt.seg || 0) + seg;
+      ap.meses[mes].porTarefa[nomeTarefa] = mt;
+      Object.keys(ap.meses)
+        .sort()
+        .slice(0, -MAX_MESES)
+        .forEach((m) => {
+          delete ap.meses[m];
+        });
       slot.consultas += n;
       slot.tokensIn += tokensIn;
       slot.tokensOut += tokensOut;
@@ -256,6 +282,19 @@ export async function registrarUsoIa({ aparelhoId, tarefa, entrada, saida, consu
   } catch (e) {
     console.error("Estatísticas: uso IA falhou", e && e.message);
   }
+}
+
+// Uso deste aparelho num mês: { porTarefa, meses } (meses = os que têm uso guardado, do mais novo ao mais antigo).
+export async function consumoDoAparelho(aparelhoId, mes) {
+  const id = aparelhoIdLimpo(aparelhoId);
+  if (!id || !estatisticasConfiguradas()) return { porTarefa: {}, meses: [] };
+  const dados = (await lerBruto()) || vazio();
+  const ap = (dados.aparelhos || {})[id];
+  const meses = ap && ap.meses ? ap.meses : {};
+  return {
+    porTarefa: (meses[mes] && meses[mes].porTarefa) || {},
+    meses: Object.keys(meses).sort().reverse(),
+  };
 }
 
 function somarDias(dias, chave) {

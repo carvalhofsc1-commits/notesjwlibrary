@@ -1163,6 +1163,34 @@
             </form>
           </div>
         </details>
+        <details class="subsection sub-tint-5" id="consumoSection">
+          <summary>💳 Consumo de IA e faturamento</summary>
+          <div class="subsection-body">
+            <p class="hint">O que você usou de IA no mês, em cada recurso liberado pelos seus códigos, e o valor a pagar. O consumo é contado por aparelho, a partir do momento em que esta função foi ativada.</p>
+            <div class="consumo-mes">
+              <label for="consumoMes">Mês</label>
+              <select id="consumoMes" autocomplete="off"></select>
+              <button id="consumoAtualizarBtn" class="secondary" type="button">🔄 Atualizar</button>
+            </div>
+            <p id="consumoStatus" class="ok" role="status" aria-live="polite"></p>
+            <div id="consumoLista" class="consumo-lista" hidden></div>
+            <p id="consumoTotal" class="consumo-total" hidden></p>
+            <details class="prompt-item" id="consumoPix">
+              <summary><h3>💠 Pagar com PIX</h3></summary>
+              <p id="consumoPixAviso" class="hint" hidden></p>
+              <div id="consumoPixCorpo" class="consumo-pix" hidden>
+                <p class="hint" id="consumoPixDados"></p>
+                <label class="ai-check" id="consumoPixValorLinha"><input type="checkbox" id="consumoPixComValor" checked autocomplete="off"> <span id="consumoPixValorTexto">Incluir o valor do mês no QR code</span></label>
+                <canvas id="consumoPixQr" class="consumo-pix-qr" width="10" height="10" aria-label="QR code do PIX"></canvas>
+                <div class="button-row">
+                  <button id="consumoPixCopiarCodigo" class="secondary" type="button">📋 Copiar código PIX (copia e cola)</button>
+                  <button id="consumoPixCopiarChave" class="secondary" type="button">🔑 Copiar a chave</button>
+                </div>
+                <p id="consumoPixStatus" class="ok" role="status" aria-live="polite"></p>
+              </div>
+            </details>
+          </div>
+        </details>
         <details class="subsection sub-tint-6" id="aiSection">
           <summary>✨ Configurar formatação com IA</summary>
           <div class="subsection-body">
@@ -1689,6 +1717,42 @@
               <div id="estatisticasLista" class="estatisticas-lista" hidden></div>
               <div class="button-row">
                 <button id="estatisticasAtualizarBtn" class="secondary" type="button">🔄 Atualizar</button>
+              </div>
+            </details>
+
+            <details class="prompt-item prompt-tint-codigo" id="faturamentoBox">
+              <summary><h3>💳 Preços do consumo de IA e PIX</h3></summary>
+              <p class="hint">Estes preços valem para todos e aparecem para cada usuário em Ajustes → Consumo de IA e faturamento. Texto e esboços: reais por 1 milhão de tokens (entrada e saída). Voz: reais por 1.000 caracteres lidos. Áudio em texto: reais por minuto de áudio. Use vírgula ou ponto nos centavos.</p>
+              <p id="faturamentoStatus" class="ok" role="status" aria-live="polite"></p>
+              <div class="faturamento-grade">
+                <label for="fatTextoEntrada">IA de texto · entrada (R$ por 1 mi tokens)</label>
+                <input id="fatTextoEntrada" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00">
+                <label for="fatTextoSaida">IA de texto · saída (R$ por 1 mi tokens)</label>
+                <input id="fatTextoSaida" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00">
+                <label for="fatEsbocosEntrada">Esboços e discursos (a IA mais cara) · entrada (R$ por 1 mi tokens)</label>
+                <input id="fatEsbocosEntrada" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00">
+                <label for="fatEsbocosSaida">Esboços e discursos (a IA mais cara) · saída (R$ por 1 mi tokens)</label>
+                <input id="fatEsbocosSaida" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00">
+                <label for="fatVoz">Leitura em voz alta (R$ por 1.000 caracteres)</label>
+                <input id="fatVoz" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00">
+                <label for="fatAudio">Áudio em texto (R$ por minuto de áudio)</label>
+                <input id="fatAudio" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00">
+              </div>
+              <h3 class="faturamento-subtitulo">💠 PIX para receber</h3>
+              <p class="hint">A chave exatamente como está cadastrada no banco (e-mail, CPF/CNPJ só com números, telefone com +55 e DDD, ou chave aleatória). O nome e a cidade aparecem para quem paga.</p>
+              <div class="faturamento-grade">
+                <label for="fatPixChave">Chave PIX</label>
+                <input id="fatPixChave" type="text" autocomplete="off" maxlength="77" placeholder="Ex.: nome@email.com ou +5511999999999">
+                <label for="fatPixNome">Nome do recebedor (até 25 letras)</label>
+                <input id="fatPixNome" type="text" autocomplete="off" maxlength="25">
+                <label for="fatPixCidade">Cidade do recebedor (até 15 letras)</label>
+                <input id="fatPixCidade" type="text" autocomplete="off" maxlength="15">
+                <label for="fatPixDescricao">Mensagem do PIX <span class="opc">(opcional, até 40 letras)</span></label>
+                <input id="fatPixDescricao" type="text" autocomplete="off" maxlength="40" placeholder="Ex.: NoteStyle">
+              </div>
+              <div class="button-row">
+                <button id="faturamentoSalvarBtn" type="button">💾 Salvar preços e PIX</button>
+                <button id="faturamentoAtualizarBtn" class="secondary" type="button">🔄 Recarregar</button>
               </div>
             </details>
           </div>

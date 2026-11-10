@@ -7658,7 +7658,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.54'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.55'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -11804,6 +11804,210 @@ function saveTemplatesToStorage() {
     }
     document.getElementById('estatisticasBox').addEventListener('toggle', e => { if (e.target.open) estatisticasCarregar(); });
     document.getElementById('estatisticasAtualizarBtn').addEventListener('click', estatisticasCarregar);
+
+    // ---------- Ajustes → Consumo de IA e faturamento (usuário) e Preços e PIX (administrador) ----------
+    const consumoSection = document.getElementById('consumoSection');
+    const consumoMesEl = document.getElementById('consumoMes');
+    const consumoStatus = document.getElementById('consumoStatus');
+    const consumoListaEl = document.getElementById('consumoLista');
+    const consumoTotalEl = document.getElementById('consumoTotal');
+    const consumoPixEl = document.getElementById('consumoPix');
+    const consumoPixAviso = document.getElementById('consumoPixAviso');
+    const consumoPixCorpo = document.getElementById('consumoPixCorpo');
+    const consumoPixStatus = document.getElementById('consumoPixStatus');
+    let consumoDados = null;
+    const consumoReais = n => (Number(n) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const consumoNum = n => (Number(n) || 0).toLocaleString('pt-BR');
+    const consumoMesNome = ym => {
+      const [a, m] = String(ym).split('-').map(Number);
+      const nome = new Date(a, (m || 1) - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+      return nome.charAt(0).toUpperCase() + nome.slice(1);
+    };
+    // Os preços por categoria, em texto: "R$ 3,00 (entrada) e R$ 15,00 (saída) por 1 milhão de tokens".
+    function consumoPrecoTexto(cat) {
+      if (!cat) return '';
+      const p = cat.preco || {};
+      if (cat.id === 'voz') return consumoReais(p.mil) + ' por 1.000 caracteres';
+      if (cat.id === 'audio') return consumoReais(p.minuto) + ' por minuto de áudio';
+      return consumoReais(p.entrada) + ' (entrada) e ' + consumoReais(p.saida) + ' (saída) por 1 milhão de tokens';
+    }
+    function consumoUsoTexto(r) {
+      if (r.categoria === 'voz') return consumoNum(r.caracteres) + ' caracteres lidos';
+      if (r.categoria === 'audio') return consumoNum(Math.round(r.segundos / 6) / 10) + ' min de áudio';
+      return consumoNum(r.entrada) + ' tokens de entrada · ' + consumoNum(r.saida) + ' de saída';
+    }
+    function consumoRender(d) {
+      consumoDados = d;
+      const atual = consumoMesEl.value;
+      consumoMesEl.replaceChildren();
+      (d.meses || [d.mes]).forEach(m => {
+        const o = document.createElement('option');
+        o.value = m;
+        o.textContent = consumoMesNome(m);
+        consumoMesEl.appendChild(o);
+      });
+      consumoMesEl.value = d.mes || atual;
+      consumoListaEl.replaceChildren();
+      const cats = {};
+      (d.categorias || []).forEach(c => { cats[c.id] = c; });
+      if (!d.recursos.length) {
+        consumoListaEl.hidden = true;
+        consumoTotalEl.hidden = true;
+        consumoStatus.className = 'hint';
+        consumoStatus.textContent = 'Nenhum recurso de IA liberado neste aparelho. Informe seus códigos em 🔐 Autorização de acessos.';
+      } else {
+        consumoStatus.className = 'ok';
+        consumoStatus.textContent = '';
+        d.recursos.forEach(r => {
+          const item = document.createElement('div');
+          item.className = 'consumo-item';
+          const topo = document.createElement('div');
+          topo.className = 'consumo-item-topo';
+          const nome = document.createElement('strong');
+          nome.textContent = r.rotulo;
+          const valor = document.createElement('span');
+          valor.className = 'consumo-valor';
+          valor.textContent = consumoReais(r.valor);
+          topo.append(nome, valor);
+          const uso = document.createElement('p');
+          uso.textContent = (r.consultas ? r.consultas + (r.consultas === 1 ? ' uso · ' : ' usos · ') : 'Sem uso neste mês · ') + consumoUsoTexto(r);
+          const preco = document.createElement('p');
+          preco.textContent = 'Preço: ' + consumoPrecoTexto(cats[r.categoria]);
+          item.append(topo, uso, preco);
+          consumoListaEl.appendChild(item);
+        });
+        consumoListaEl.hidden = false;
+        consumoTotalEl.textContent = 'Total de ' + consumoMesNome(d.mes) + ': ' + consumoReais(d.total);
+        consumoTotalEl.hidden = false;
+      }
+      consumoPixRender();
+    }
+    function consumoPixRender() {
+      const d = consumoDados;
+      const pix = d && d.pix;
+      if (!pix || !pix.configurado) {
+        consumoPixAviso.hidden = false;
+        consumoPixAviso.textContent = 'O administrador ainda não cadastrou a chave PIX.';
+        consumoPixCorpo.hidden = true;
+        return;
+      }
+      consumoPixAviso.hidden = true;
+      consumoPixCorpo.hidden = false;
+      document.getElementById('consumoPixDados').textContent = 'Chave PIX: ' + pix.chave + (pix.nome ? ' · ' + pix.nome : '') + (pix.cidade ? ' (' + pix.cidade + ')' : '');
+      const temValor = d.total >= 0.01;
+      const linha = document.getElementById('consumoPixValorLinha');
+      linha.hidden = !temValor;
+      document.getElementById('consumoPixValorTexto').textContent = 'Incluir o valor do mês (' + consumoReais(d.total) + ') no QR code';
+      consumoPixDesenhar();
+    }
+    function consumoPixCodigo() {
+      const d = consumoDados;
+      if (!d || !d.pix) return '';
+      const comValor = d.total >= 0.01 && document.getElementById('consumoPixComValor').checked;
+      return comValor ? d.pix.codigo : d.pix.codigoLivre;
+    }
+    async function consumoPixDesenhar() {
+      const codigo = consumoPixCodigo();
+      const canvas = document.getElementById('consumoPixQr');
+      if (!codigo) return;
+      try {
+        await loadScriptOnce('vendor/qrcode.min.js');
+        const qr = window.qrcode(0, 'M');
+        qr.addData(codigo);
+        qr.make();
+        const n = qr.getModuleCount();
+        const cel = 6;
+        const margem = 2;
+        canvas.width = canvas.height = (n + margem * 2) * cel;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#000';
+        for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) ctx.fillRect((c + margem) * cel, (r + margem) * cel, cel, cel);
+      } catch (e) {
+        consumoPixStatus.textContent = 'Não consegui desenhar o QR code agora. Use o código copia e cola.';
+      }
+    }
+    async function consumoCopiar(texto, aviso) {
+      try {
+        await navigator.clipboard.writeText(texto);
+        consumoPixStatus.textContent = aviso;
+      } catch (e) {
+        consumoPixStatus.textContent = 'Não consegui copiar. Selecione e copie manualmente.';
+      }
+    }
+    async function consumoCarregar(mes) {
+      if (!navigator.onLine || !servidoPelaWeb()) {
+        consumoStatus.className = 'hint';
+        consumoStatus.textContent = 'O consumo só aparece com internet, no site publicado (notestyle.com.br).';
+        return;
+      }
+      consumoStatus.className = 'hint';
+      consumoStatus.textContent = 'Carregando…';
+      const r = await postConfig({
+        acao: 'faturamento-meu',
+        aparelhoId: aparelhoId(),
+        mes: mes || '',
+        codigo: codigoAcessoSalvo(),
+        codigoDirigente: codigoDirigenteSalvo(),
+        codigoS34: codigoS34Salvo(),
+        codigoResumo: codigoResumoSalvo(),
+        codigoLeitura: codigoLeituraSalvo(),
+        codigoTexto: codigoTextoSalvo()
+      });
+      if (!r.ok) {
+        consumoStatus.className = 'warn';
+        consumoStatus.textContent = configErrorMessage(r, 'Não foi possível ler o consumo agora.');
+        return;
+      }
+      consumoRender(r.data);
+    }
+    consumoSection.addEventListener('toggle', () => { if (consumoSection.open) consumoCarregar(consumoMesEl.value); });
+    consumoMesEl.addEventListener('change', () => consumoCarregar(consumoMesEl.value));
+    document.getElementById('consumoAtualizarBtn').addEventListener('click', () => consumoCarregar(consumoMesEl.value));
+    consumoPixEl.addEventListener('toggle', () => { if (consumoPixEl.open) consumoPixDesenhar(); });
+    document.getElementById('consumoPixComValor').addEventListener('change', consumoPixDesenhar);
+    document.getElementById('consumoPixCopiarCodigo').addEventListener('click', () => consumoCopiar(consumoPixCodigo(), 'Código PIX copiado. No app do banco, escolha PIX → Copia e Cola.'));
+    document.getElementById('consumoPixCopiarChave').addEventListener('click', () => consumoCopiar((consumoDados && consumoDados.pix && consumoDados.pix.chave) || '', 'Chave PIX copiada.'));
+
+    // Administrador: preços por categoria e a chave PIX.
+    const faturamentoStatus = document.getElementById('faturamentoStatus');
+    const FAT_CAMPOS = [
+      ['fatTextoEntrada', 'texto', 'entrada'], ['fatTextoSaida', 'texto', 'saida'],
+      ['fatEsbocosEntrada', 'esbocos', 'entrada'], ['fatEsbocosSaida', 'esbocos', 'saida'],
+      ['fatVoz', 'voz', 'mil'], ['fatAudio', 'audio', 'minuto']
+    ];
+    const FAT_PIX = [['fatPixChave', 'chave'], ['fatPixNome', 'nome'], ['fatPixCidade', 'cidade'], ['fatPixDescricao', 'descricao']];
+    async function faturamentoCarregar() {
+      const codigo = codigoAdminAtual();
+      if (!codigo) { faturamentoStatus.textContent = 'Salve a senha de administrador em 🔐 Autorização de acessos.'; return; }
+      faturamentoStatus.textContent = 'Carregando…';
+      const r = await postConfig({ acao: 'faturamento-ler', codigo });
+      if (!r.ok) { faturamentoStatus.textContent = (r.data && r.data.erro) || 'Não foi possível ler os preços agora.'; return; }
+      const c = r.data.config || {};
+      FAT_CAMPOS.forEach(([id, cat, campo]) => {
+        const v = c.precos && c.precos[cat] ? c.precos[cat][campo] : 0;
+        document.getElementById(id).value = v ? String(v).replace('.', ',') : '';
+      });
+      FAT_PIX.forEach(([id, campo]) => { document.getElementById(id).value = (c.pix && c.pix[campo]) || ''; });
+      faturamentoStatus.textContent = '';
+    }
+    async function faturamentoSalvar() {
+      const codigo = codigoAdminAtual();
+      if (!codigo) { faturamentoStatus.textContent = 'Salve a senha de administrador em 🔐 Autorização de acessos.'; return; }
+      const config = { precos: {}, pix: {} };
+      FAT_CAMPOS.forEach(([id, cat, campo]) => {
+        config.precos[cat] = config.precos[cat] || {};
+        config.precos[cat][campo] = document.getElementById(id).value.trim();
+      });
+      FAT_PIX.forEach(([id, campo]) => { config.pix[campo] = document.getElementById(id).value.trim(); });
+      faturamentoStatus.textContent = 'Salvando…';
+      const r = await postConfig({ acao: 'faturamento-salvar', codigo, config });
+      faturamentoStatus.textContent = r.ok ? '✓ Preços e PIX salvos.' : ((r.data && r.data.erro) || 'Não foi possível salvar agora.');
+    }
+    document.getElementById('faturamentoBox').addEventListener('toggle', e => { if (e.target.open) faturamentoCarregar(); });
+    document.getElementById('faturamentoSalvarBtn').addEventListener('click', faturamentoSalvar);
+    document.getElementById('faturamentoAtualizarBtn').addEventListener('click', faturamentoCarregar);
 
     // ---------- Acesso ao site (cadastro obrigatório; card separado do administrador) ----------
     const CADASTRO_MESES = [
@@ -21080,7 +21284,7 @@ function saveTemplatesToStorage() {
         }
         if (!envio.ok) throw falha('O Google não aceitou o envio do áudio (código ' + envio.status + ').');
         trInfo.textContent = '🎙️ ' + rotulo + 'transcrevendo e identificando quem fala… isto pode levar alguns minutos';
-        const inicio = await trPost({ acao: 'lote-iniciar', codigoTexto: codigo, objeto }, sinal);
+        const inicio = await trPost({ acao: 'lote-iniciar', codigoTexto: codigo, objeto, segundos: Math.round(amostras.length / TRANSCRICAO_TAXA) }, sinal);
         if (!inicio.ok) { objeto = ''; throw falha(trMensagem(inicio, 'Não foi possível iniciar a transcrição.'), { cancelado: inicio.cancelado }); }
         const operacao = inicio.dados.operacao;
         operacaoAtual = operacao;

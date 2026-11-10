@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.55
+
+**Consumo de IA e faturamento.** Novo módulo em Ajustes → 💳 Consumo de IA e faturamento, para o usuário comum: lista os recursos de IA que os códigos salvos no aparelho liberam, o consumo do mês em cada um (tokens de entrada e saída, caracteres lidos em voz alta, minutos de áudio transcrito), o preço de cada categoria e o valor devido, com o total do mês (dá para ver os meses anteriores). Abaixo, a seção **Pagar com PIX**, recolhida por padrão: mostra a chave, gera o QR code e o “copia e cola” (com ou sem o valor do mês). O consumo é contado por aparelho a partir desta versão.
+
+Administrador: em Ajustes → Acesso ao site → 💳 Preços do consumo de IA e PIX, define o preço por categoria (IA de texto e esboços, por 1 milhão de tokens de entrada e de saída; voz, por 1.000 caracteres; áudio em texto, por minuto) e cadastra a chave PIX, o nome e a cidade do recebedor.
+
+Servidor: o uso passa a ser guardado por mês e por tarefa em cada aparelho; a leitura em voz alta (caracteres), a transcrição de áudio (minutos) e o resumo, a correção e os nomes do Áudio em texto (tokens) agora também são contados.
+
 ## 6.7.54
 
 Anotações: o botão **Gravar o discurso** passou a se chamar **Gravar e resumir o discurso**.

@@ -10,6 +10,7 @@
 // Modelo, voz, tom, altura e instruções extras vêm da configuração do administrador (api/_vozConfig.mjs).
 import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { mensagemSeBloqueado } from "./_acessoSite.mjs";
+import { registrarUsoIa } from "./_estatisticas.mjs";
 import { credenciais, tokenDeAcesso } from "./_googleToken.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
 import { validarCupomVoz } from "./_vozCupom.mjs";
@@ -179,5 +180,14 @@ export default async function handler(req, res) {
   }
 
   console.log("Voz:", JSON.stringify({ caracteres: texto.length, voz: usada, exemplo, segundos: Math.round((Date.now() - inicio) / 100) / 10 }));
+  // Consumo do aparelho (faturamento): os caracteres lidos. O exemplo do painel do administrador não conta. Gravado antes de responder, porque
+  // depois a Vercel pode congelar a função.
+  if (!exemplo) {
+    try {
+      await registrarUsoIa({ aparelhoId: body.aparelhoId, tarefa: "voz", caracteres: texto.length, consultas: 1 });
+    } catch (e) {
+      console.error("Voz: falha ao gravar o uso", e && e.message);
+    }
+  }
   return res.status(200).json({ audio, tipo: "audio/mpeg", voz: usada, gemini });
 }
