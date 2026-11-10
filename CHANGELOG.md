@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.67
+
+Texto diário: o título voltou a ter uma só chave (a pequena); o 🔊 do topo, que já fica junto do título, não leva mais a chave grande.
+
 ## 6.7.66
 
 Botão **Ver o texto do parágrafo**: o fundo que aparece ao tocar tem os cantos arredondados (antes saía quadrado).
