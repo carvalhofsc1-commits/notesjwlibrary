@@ -13322,3 +13322,17 @@ button.processando:disabled { opacity: 1; cursor: progress; }
       margin: 14px 0 4px;
       font-size: 1rem;
     }
+
+    .faturamento-custo {
+      margin: 2px 0 6px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--accent, #3b82f6) 10%, var(--card));
+      color: var(--muted);
+      font-size: .8rem;
+      line-height: 1.35;
+    }
+
+    .faturamento-custo:empty {
+      display: none;
+    }

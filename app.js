@@ -7658,7 +7658,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.55'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.56'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -11978,6 +11978,54 @@ function saveTemplatesToStorage() {
       ['fatVoz', 'voz', 'mil'], ['fatAudio', 'audio', 'minuto']
     ];
     const FAT_PIX = [['fatPixChave', 'chave'], ['fatPixNome', 'nome'], ['fatPixCidade', 'cidade'], ['fatPixDescricao', 'descricao']];
+    let faturamentoCustos = null;
+    const fatReais = (n, casas = 2) => (Number(n) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: casas, maximumFractionDigits: casas });
+    const fatLerNumero = id => { const n = Number(String(document.getElementById(id).value).replace(',', '.')); return Number.isFinite(n) ? n : 0; };
+    // Cotação usada nas contas: a digitada, senão a do dia, senão a padrão do servidor.
+    function fatDolar() {
+      const c = faturamentoCustos || {};
+      return fatLerNumero('fatDolar') || c.dolarDoDia || c.dolarPadrao || 5.5;
+    }
+    // Custo em reais por unidade de cada categoria (a IA de texto e os esboços: por 1 milhão de tokens de entrada e de saída).
+    function fatCustosEmReais() {
+      const c = faturamentoCustos;
+      if (!c) return null;
+      const d = fatDolar();
+      return {
+        texto: { entrada: c.texto.entrada * d, saida: c.texto.saida * d },
+        esbocos: { entrada: c.esbocos.entrada * d, saida: c.esbocos.saida * d },
+        voz: { mil: c.voz.mil * d },
+        audio: { minuto: c.audio.minuto * d }
+      };
+    }
+    function faturamentoCustosRender() {
+      const c = faturamentoCustos;
+      const info = document.getElementById('fatDolarInfo');
+      if (!c) return;
+      info.textContent = c.dolarDoDia ? 'Cotação de hoje: ' + fatReais(c.dolarDoDia) + ' por dólar. As contas de custo abaixo usam a cotação ' + (fatLerNumero('fatDolar') ? 'digitada: ' + fatReais(fatDolar()) + '.' : 'de hoje.')
+        : 'Não consegui a cotação de hoje; as contas usam ' + fatReais(fatDolar()) + ' por dólar. Digite a cotação para ajustar.';
+      const r = fatCustosEmReais();
+      const usd = n => 'US$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+      const texto = (id, mod, a, b) => { document.getElementById(id).textContent = 'Custo hoje (' + mod + '): ' + fatReais(a) + ' de entrada e ' + fatReais(b) + ' de saída por 1 milhão de tokens (' + usd(a / fatDolar()) + ' e ' + usd(b / fatDolar()) + ').'; };
+      texto('fatCustoTexto', c.texto.modelo, r.texto.entrada, r.texto.saida);
+      texto('fatCustoEsbocos', c.esbocos.modelo, r.esbocos.entrada, r.esbocos.saida);
+      document.getElementById('fatCustoVoz').textContent = 'Custo hoje (' + c.voz.modelo + (c.voz.estimado ? ', estimativa por token convertida em caracteres' : '') + '): ' + fatReais(r.voz.mil, 3) + ' por 1.000 caracteres (' + usd(c.voz.mil) + ').';
+      document.getElementById('fatCustoAudio').textContent = 'Custo hoje (' + c.audio.modelo + '): ' + fatReais(r.audio.minuto, 3) + ' por minuto de áudio (' + usd(c.audio.minuto) + ').';
+    }
+    function faturamentoAplicarMargem() {
+      const r = fatCustosEmReais();
+      if (!r) return;
+      const f = 1 + (fatLerNumero('fatMargem') || 0) / 100;
+      const pr = (id, v) => { document.getElementById(id).value = (Math.round(v * f * 100) / 100).toFixed(2).replace('.', ','); };
+      pr('fatTextoEntrada', r.texto.entrada); pr('fatTextoSaida', r.texto.saida);
+      pr('fatEsbocosEntrada', r.esbocos.entrada); pr('fatEsbocosSaida', r.esbocos.saida);
+      // Voz e áudio têm valores pequenos: três casas decimais.
+      const pr3 = (id, v) => { document.getElementById(id).value = (Math.round(v * f * 1000) / 1000).toFixed(3).replace('.', ','); };
+      pr3('fatVoz', r.voz.mil); pr3('fatAudio', r.audio.minuto);
+      faturamentoStatus.textContent = 'Preços preenchidos com o custo + ' + (fatLerNumero('fatMargem') || 0) + '% de margem. Confira e toque em Salvar.';
+    }
+    document.getElementById('fatAplicarBtn').addEventListener('click', faturamentoAplicarMargem);
+    document.getElementById('fatDolar').addEventListener('input', faturamentoCustosRender);
     async function faturamentoCarregar() {
       const codigo = codigoAdminAtual();
       if (!codigo) { faturamentoStatus.textContent = 'Salve a senha de administrador em 🔐 Autorização de acessos.'; return; }
@@ -11990,12 +12038,16 @@ function saveTemplatesToStorage() {
         document.getElementById(id).value = v ? String(v).replace('.', ',') : '';
       });
       FAT_PIX.forEach(([id, campo]) => { document.getElementById(id).value = (c.pix && c.pix[campo]) || ''; });
+      document.getElementById('fatDolar').value = c.dolar ? String(c.dolar).replace('.', ',') : '';
+      document.getElementById('fatMargem').value = String(c.margem === undefined ? 100 : c.margem);
+      faturamentoCustos = r.data.custos || null;
+      faturamentoCustosRender();
       faturamentoStatus.textContent = '';
     }
     async function faturamentoSalvar() {
       const codigo = codigoAdminAtual();
       if (!codigo) { faturamentoStatus.textContent = 'Salve a senha de administrador em 🔐 Autorização de acessos.'; return; }
-      const config = { precos: {}, pix: {} };
+      const config = { precos: {}, pix: {}, dolar: document.getElementById('fatDolar').value.trim(), margem: document.getElementById('fatMargem').value.trim() };
       FAT_CAMPOS.forEach(([id, cat, campo]) => {
         config.precos[cat] = config.precos[cat] || {};
         config.precos[cat][campo] = document.getElementById(id).value.trim();

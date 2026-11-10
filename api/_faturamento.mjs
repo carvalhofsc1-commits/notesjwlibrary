@@ -7,6 +7,8 @@
 import { codigoDoDirigente, textosIguais } from "./_comum.mjs";
 import { gravarItem, lerItem } from "./_armazem.mjs";
 import { consumoDoAparelho, mesDe } from "./_estatisticas.mjs";
+import { MODELOS_IA, iaDaTarefa, lerConfigIa } from "./_iaConfig.mjs";
+import { MODELOS_VOZ, lerConfigVoz } from "./_vozConfig.mjs";
 
 const CHAVE = "faturamento_config";
 const VALIDADE_MS = 20_000;
@@ -32,7 +34,7 @@ export const RECURSOS = [
   { id: "ebc", rotulo: "Estudo Bíblico de Congregação", cat: "texto", acesso: ["pesquisa"], tarefas: ["ebc"] },
   { id: "joias", rotulo: "Joias espirituais", cat: "texto", acesso: ["pesquisa"], tarefas: ["joias"] },
   { id: "texto-diario", rotulo: "Comentários do texto diário", cat: "texto", acesso: ["pesquisa"], tarefas: ["texto-diario-comentarios"] },
-  { id: "dirigir", rotulo: "Preparar para dirigir (perguntas e recapitulação)", cat: "texto", acesso: ["dirigente"], tarefas: ["estudo-perguntas", "estudo-recap", "ebc-dirigente"] },
+  { id: "dirigir", rotulo: "Preparar para dirigir (perguntas e recapitulação)", cat: "esbocos", acesso: ["dirigente"], tarefas: ["estudo-perguntas", "estudo-recap", "ebc-dirigente"] },
   { id: "esbocos", rotulo: "Esboços: Tesouros, discurso curto e outros", cat: "esbocos", acesso: ["dirigente"], tarefas: ["tesouros", "discurso", "outros"] },
   { id: "publico", rotulo: "Esboço do discurso público (S-34)", cat: "esbocos", acesso: ["s34"], tarefas: ["publico"] },
   { id: "leitura-biblia", rotulo: "Resumo da leitura diária da Bíblia", cat: "texto", acesso: ["resumo"], tarefas: ["leitura-biblia"] },
@@ -96,10 +98,15 @@ export function validarConfigFaturamento(entrada) {
     const bruto = p[cat.id] && typeof p[cat.id] === "object" ? p[cat.id] : {};
     for (const campo of cat.campos) precos[cat.id][campo] = numero(bruto[campo]);
   }
+  const dolar = Number(String(c.dolar ?? "").replace(",", "."));
+  const margem = Number(String(c.margem ?? "").replace(",", "."));
   const x = c.pix && typeof c.pix === "object" ? c.pix : {};
   const limpa = (v, max) => String(v || "").replace(/\s+/g, " ").trim().slice(0, max);
   return {
     precos,
+    // Cotação do dólar usada só nas contas de custo da tela do administrador (0 = a do dia) e a margem sobre o custo (%).
+    dolar: Number.isFinite(dolar) && dolar >= 1 && dolar <= 50 ? Math.round(dolar * 100) / 100 : 0,
+    margem: Number.isFinite(margem) && margem >= 0 && margem <= 1000 ? Math.round(margem) : 100,
     pix: {
       chave: limpa(x.chave, 77).replace(/\s/g, ""),
       nome: limpa(x.nome, 25),
@@ -202,6 +209,48 @@ export async function consumoDoUsuario(corpo) {
       codigo: codigoPix(pix, total),
       codigoLivre: codigoPix(pix, 0),
     },
+  };
+}
+
+// ---------- custo de referência (para o administrador decidir o preço) ----------
+// Dólares. IA de texto: os preços do modelo que o administrador escolheu (api/_iaConfig.mjs). Voz: a Google cobra o Chirp 3 HD por caractere
+// (US$ 30 por milhão); os modelos Gemini, por token (áudio gerado a 25 tokens por segundo, mais o texto), e a conta por 1.000 caracteres
+// (uns 70 segundos de fala) é uma estimativa. Áudio em texto: Speech-to-Text V2, US$ 0,016 por minuto. Conferido na tabela de preços do Google em nov/2026.
+const CUSTO_VOZ_USD_MIL = { chirp: 0.03, "gemini-2.5-flash": 0.018, "gemini-2.5-pro": 0.036, "gemini-3.1-flash": 0.036 };
+const CUSTO_AUDIO_USD_MINUTO = 0.016;
+const COTACAO_PADRAO = 5.5;
+let cotacao = null;
+
+// Cotação do dólar do dia (API pública do mercado, sem chave); em caso de falha, null.
+async function dolarDoDia() {
+  if (cotacao && Date.now() - cotacao.em < 60 * 60 * 1000) return cotacao.valor;
+  try {
+    const r = await fetch("https://economia.awesomeapi.com.br/json/last/USD-BRL", { signal: AbortSignal.timeout(4000) });
+    const n = Number((await r.json())?.USDBRL?.bid);
+    if (Number.isFinite(n) && n > 1 && n < 50) {
+      cotacao = { valor: Math.round(n * 100) / 100, em: Date.now() };
+      return cotacao.valor;
+    }
+  } catch {
+    // sem cotação do dia: vale a que o administrador digitou ou a padrão
+  }
+  return null;
+}
+
+export async function custosDeReferencia() {
+  const ia = await lerConfigIa();
+  const voz = await lerConfigVoz();
+  const modeloDe = (id) => MODELOS_IA.find((m) => m.id === id) || MODELOS_IA[0];
+  const texto = modeloDe(ia.modelo);
+  const esbocos = modeloDe(iaDaTarefa(ia, "tesouros").modelo);
+  const vozModelo = MODELOS_VOZ.find((m) => m.id === voz.modelo) || MODELOS_VOZ[0];
+  return {
+    dolarDoDia: await dolarDoDia(),
+    dolarPadrao: COTACAO_PADRAO,
+    texto: { modelo: texto.nome.split(":")[0], entrada: texto.entrada, saida: texto.saida },
+    esbocos: { modelo: esbocos.nome.split(":")[0], entrada: esbocos.entrada, saida: esbocos.saida },
+    voz: { modelo: vozModelo.nome.split(":")[0], mil: CUSTO_VOZ_USD_MIL[vozModelo.id] ?? CUSTO_VOZ_USD_MIL.chirp, estimado: !/chirp/i.test(vozModelo.id) },
+    audio: { modelo: "Speech-to-Text V2 (Chirp 3)", minuto: CUSTO_AUDIO_USD_MINUTO },
   };
 }
 

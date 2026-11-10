@@ -1725,18 +1725,32 @@
               <p class="hint">Estes preços valem para todos e aparecem para cada usuário em Ajustes → Consumo de IA e faturamento. Texto e esboços: reais por 1 milhão de tokens (entrada e saída). Voz: reais por 1.000 caracteres lidos. Áudio em texto: reais por minuto de áudio. Use vírgula ou ponto nos centavos.</p>
               <p id="faturamentoStatus" class="ok" role="status" aria-live="polite"></p>
               <div class="faturamento-grade">
+                <label for="fatDolar">Cotação do dólar (R$) <span class="opc">(vazio = a do dia)</span></label>
+                <input id="fatDolar" type="text" inputmode="decimal" autocomplete="off" placeholder="Cotação do dia">
+                <p id="fatDolarInfo" class="hint"></p>
+                <label for="fatMargem">Margem sobre o custo (%)</label>
+                <input id="fatMargem" type="text" inputmode="numeric" autocomplete="off" placeholder="100">
+              </div>
+              <div class="button-row">
+                <button id="fatAplicarBtn" class="secondary" type="button">🧮 Preencher os preços com custo + margem</button>
+              </div>
+              <div class="faturamento-grade">
                 <label for="fatTextoEntrada">IA de texto · entrada (R$ por 1 mi tokens)</label>
                 <input id="fatTextoEntrada" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00">
                 <label for="fatTextoSaida">IA de texto · saída (R$ por 1 mi tokens)</label>
                 <input id="fatTextoSaida" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00">
+                <p id="fatCustoTexto" class="faturamento-custo"></p>
                 <label for="fatEsbocosEntrada">Esboços e discursos (a IA mais cara) · entrada (R$ por 1 mi tokens)</label>
                 <input id="fatEsbocosEntrada" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00">
                 <label for="fatEsbocosSaida">Esboços e discursos (a IA mais cara) · saída (R$ por 1 mi tokens)</label>
                 <input id="fatEsbocosSaida" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00">
+                <p id="fatCustoEsbocos" class="faturamento-custo"></p>
                 <label for="fatVoz">Leitura em voz alta (R$ por 1.000 caracteres)</label>
                 <input id="fatVoz" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00">
+                <p id="fatCustoVoz" class="faturamento-custo"></p>
                 <label for="fatAudio">Áudio em texto (R$ por minuto de áudio)</label>
                 <input id="fatAudio" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00">
+                <p id="fatCustoAudio" class="faturamento-custo"></p>
               </div>
               <h3 class="faturamento-subtitulo">💠 PIX para receber</h3>
               <p class="hint">A chave exatamente como está cadastrada no banco (e-mail, CPF/CNPJ só com números, telefone com +55 e DDD, ou chave aleatória). O nome e a cidade aparecem para quem paga.</p>

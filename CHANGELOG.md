@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.56
+
+Administrador (Preços do consumo de IA e PIX): cada categoria mostra o **custo de hoje**, em reais e em dólares: a IA de texto e a dos esboços, com os preços do modelo escolhido na tela de prompts (entrada e saída, por 1 milhão de tokens); a voz (por 1.000 caracteres; o Chirp 3 HD é preço de tabela, os modelos Gemini são estimativa) e a transcrição de áudio (por minuto). O dólar é o do dia (ou o que o administrador digitar). Novo botão **Preencher os preços com custo + margem** (margem em %, padrão 100%). “Preparar para dirigir” passou para a categoria dos esboços, que é a IA que ele realmente usa.
+
 ## 6.7.55
 
 **Consumo de IA e faturamento.** Novo módulo em Ajustes → 💳 Consumo de IA e faturamento, para o usuário comum: lista os recursos de IA que os códigos salvos no aparelho liberam, o consumo do mês em cada um (tokens de entrada e saída, caracteres lidos em voz alta, minutos de áudio transcrito), o preço de cada categoria e o valor devido, com o total do mês (dá para ver os meses anteriores). Abaixo, a seção **Pagar com PIX**, recolhida por padrão: mostra a chave, gera o QR code e o “copia e cola” (com ou sem o valor do mês). O consumo é contado por aparelho a partir desta versão.

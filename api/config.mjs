@@ -8,7 +8,7 @@ import { configPublicaVoz, gravarConfigVoz, lerConfigVoz, opcoesVoz } from "./_v
 import { gravarConfigIa, lerConfigIa, lerCustoIa, opcoesIa } from "./_iaConfig.mjs";
 import { acrescentarLicao, alterarLicao, analisarCorrecao, apagarLicao, apagarTudo, ligarMemoria, lerMemoria, memoriaConfigurada } from "./_memoria.mjs";
 import { estatisticasConfiguradas, registrarPing, resumoEstatisticas } from "./_estatisticas.mjs";
-import { consumoDoUsuario, gravarConfigFaturamento, lerConfigFaturamento, opcoesFaturamento } from "./_faturamento.mjs";
+import { consumoDoUsuario, custosDeReferencia, gravarConfigFaturamento, lerConfigFaturamento, opcoesFaturamento } from "./_faturamento.mjs";
 import {
   acessoSiteConfigurado,
   atualizarCadastroSite,
@@ -449,7 +449,7 @@ export default async function handler(req, res) {
 
     // Preços do faturamento e chave PIX (Ajustes → Acesso ao site → Preços e PIX).
     if (acao === "faturamento-ler") {
-      return res.status(200).json({ config: await lerConfigFaturamento(), opcoes: opcoesFaturamento(), armazenamento: descreverArmazenamento() });
+      return res.status(200).json({ config: await lerConfigFaturamento(), opcoes: opcoesFaturamento(), custos: await custosDeReferencia(), armazenamento: descreverArmazenamento() });
     }
 
     if (acao === "faturamento-salvar") {
