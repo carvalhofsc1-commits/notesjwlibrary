@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.44
+
+Anotações (texto bíblico): ao tocar num livro (ou capítulo) o teclado fecha e a lista de capítulos e versículos sumia da vista; agora a barra e a lista continuam fixas no topo enquanto a lista estiver aberta.
+
 ## 6.7.43
 
 Anotações (texto bíblico): com o teclado aberto, a lista de livros, capítulos e versículos agora aparece **logo abaixo da barra fixa**, na área visível (com rolagem própria), e se atualiza conforme se digita; antes ela ficava lá no alto da página, fora da vista.

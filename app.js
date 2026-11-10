@@ -7658,7 +7658,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.43'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.44'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -25280,7 +25280,9 @@ function saveTemplatesToStorage() {
         const escrevendo = foco === texto || foco === respostaEl || bibliaBarra.contains(foco) || bibPick.contains(foco);
         // Também na Reunião (sem programa): a barra precisa ficar fixa com o teclado do iPhone; em assembleia/congresso, só na tela da parte.
         const naEscrita = Boolean(escritaEl && !escritaEl.hidden);
-        const fixar = Boolean(vv && naEscrita && escrevendo && window.innerHeight - vv.height > 120);
+        const tecladoAberto = Boolean(vv && window.innerHeight - vv.height > 120);
+        // Com a lista (livros, capítulos, versículos) aberta, a barra continua fixa mesmo que o teclado feche ao tocar num livro; senão a lista voltaria para o alto da página.
+        const fixar = Boolean(vv && naEscrita && ((escrevendo && tecladoAberto) || (bibliaEspaco && !bibPick.hidden)));
         if (fixar) {
           if (!bibliaEspaco) {
             const r = bibliaBarra.getBoundingClientRect();
@@ -26267,7 +26269,7 @@ function saveTemplatesToStorage() {
         trilhaEl.replaceChildren();
         opcoesEl.replaceChildren();
         modoVersosEl.hidden = true;
-        posicionarListaBiblia();
+        ajustarBarraBiblia();
         if (!guia.aberto) return;
 
         // Trilha: Livro › Capítulo (toque para voltar a esse passo)
