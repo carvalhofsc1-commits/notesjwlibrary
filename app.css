@@ -5776,8 +5776,13 @@
       display: none;
     }
 
-    .anotacoes-programa-cards > .card {
-      margin: 14px 0 0;
+    .anotacoes-programa-cards .card {
+      margin: 0;
+    }
+
+    /* Os títulos "Programa da assembleia" e "Perguntas de recapitulação" ficam fora dos cartões, na área cinza. */
+    .anotacoes-programa-cards .anotacoes-subtitulo {
+      margin: 16px 2px 6px;
     }
 
     .screen-anotacoes .anotacoes-perguntas-lista + .anotacoes-msg {

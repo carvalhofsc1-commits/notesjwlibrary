@@ -294,6 +294,7 @@
     <!-- Tela do programa (assembleia e congresso), em três contêineres: 1) o cartão acima, que termina no card da data; 2) os discursos, que terminam no
          último discurso; 3) as perguntas de recapitulação (só na assembleia de circuito). -->
     <div id="anotacoesProgramaCards" class="anotacoes-programa-cards" hidden>
+      <h3 id="anotacoesProgramaCardsTitulo" class="anotacoes-subtitulo screen-anotacoes">📋 Programa da assembleia</h3>
       <section class="card tint-5 screen-anotacoes anotacoes-cartao-extra" id="anotacoesCardDiscursos" data-modo="">
         <div class="anotacoes-programa-acoes">
           <button id="anotacoesVerNotas" class="anotacoes-ver-notas" type="button" hidden>✍️ Ver anotações</button>
@@ -301,12 +302,14 @@
         </div>
         <div id="anotacoesPartes" class="anotacoes-partes"></div>
       </section>
-      <section class="card tint-5 screen-anotacoes anotacoes-cartao-extra anotacoes-perguntas" id="anotacoesPerguntas" data-modo="" hidden>
-        <h3 class="anotacoes-subtitulo">❓ Perguntas de recapitulação</h3>
-        <ol id="anotacoesPerguntasLista" class="anotacoes-perguntas-lista"></ol>
-        <p id="anotacoesPerguntasTexto" class="anotacoes-msg" role="status" aria-live="polite"></p>
-        <button id="anotacoesPerguntasIa" class="secondary" type="button" title="A IA organiza qual pergunta de recapitulação vai em cada discurso" hidden>🤖 Organizar as perguntas com a IA</button>
-      </section>
+      <div id="anotacoesPerguntas" class="screen-anotacoes" hidden>
+        <h3 class="anotacoes-subtitulo screen-anotacoes">❓ Perguntas de recapitulação</h3>
+        <section class="card tint-5 screen-anotacoes anotacoes-cartao-extra anotacoes-perguntas" data-modo="">
+          <ol id="anotacoesPerguntasLista" class="anotacoes-perguntas-lista"></ol>
+          <p id="anotacoesPerguntasTexto" class="anotacoes-msg" role="status" aria-live="polite"></p>
+          <button id="anotacoesPerguntasIa" class="secondary" type="button" title="A IA organiza qual pergunta de recapitulação vai em cada discurso" hidden>🤖 Organizar as perguntas com a IA</button>
+        </section>
+      </div>
     </div>
 
     <div class="single-grid">
