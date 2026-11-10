@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.50
+
+Anotações (inserir texto bíblico): com mais de um versículo, o começo de cada um, do segundo em diante, leva o número em **negrito entre colchetes** (a mesma regra dos textos bíblicos nos comentários), por exemplo: “… contra ele? [𝟐𝟗] Ouvimos …”.
+
 ## 6.7.49
 
 Anotações: o botão **Gravar o discurso** passou de azul para vermelho.

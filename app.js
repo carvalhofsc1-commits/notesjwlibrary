@@ -7658,7 +7658,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.49'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.50'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -26465,9 +26465,14 @@ function saveTemplatesToStorage() {
         const lista = (r.data && r.data.versiculos) || [];
         if (!lista.length) return dizerBiblia('Não encontrei o texto de “' + referencia + '”. Confira o livro, o capítulo e os versículos.', true);
         // Referência em negrito (livro, capítulo e versículos), depois “:” e, na mesma linha, o texto todo entre aspas e em itálico.
+        // Mais de um versículo: a mesma regra dos comentários — o começo de cada versículo, do segundo em diante, leva o número em negrito entre
+        // colchetes (o servidor manda a marca como [n], ou [cap:n] quando o trecho passa a outro capítulo).
+        const comNumeros = v => String(v.textoNumerado || v.texto || '').trim().split(/\[(\d{1,3}(?::\d{1,3})?)\]/)
+          .map((parte, i) => i % 2 ? '[' + estiloComAcentos(parte, 'bold') + ']' : (parte.trim() ? estiloComAcentos(parte, 'italic') : parte))
+          .join('');
         const bloco = lista
           .filter(v => (v.texto || '').trim())
-          .map(v => estiloComAcentos(v.referencia || referencia, 'bold') + ': “' + estiloComAcentos((v.texto || '').trim(), 'italic') + '”')
+          .map(v => estiloComAcentos(v.referencia || referencia, 'bold') + ': “' + comNumeros(v) + '”')
           .join('\n');
         if (!bloco) return dizerBiblia('Não encontrei o texto de “' + referencia + '”.', true);
         inserirNoCursor(bloco + '\n', alvoInsercao, true);
