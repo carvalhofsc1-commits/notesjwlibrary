@@ -7658,7 +7658,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.68'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.69'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -25551,13 +25551,14 @@ function saveTemplatesToStorage() {
         const fim = somarDias(d, 2);
         return 'De sexta ' + doisDig(d.getDate()) + '/' + doisDig(d.getMonth() + 1) + ' a domingo ' + doisDig(fim.getDate()) + '/' + doisDig(fim.getMonth() + 1) + '/' + fim.getFullYear();
       }
-      function mostrarData(aviso) {
+      function mostrarData(aviso, mantemAberto) {
         dataEl.value = dataAtual || '';
         document.getElementById('anotacoesDataRotulo').textContent = ehCongresso() ? '📅 Registre a data do seu congresso (primeiro dia, sexta-feira)' : '📅 Registre a data da sua assembleia';
         dataInfoEl.textContent = aviso || textoDaData();
         dataInfoEl.className = 'anotacoes-msg';
         // Sem data, o campo fica aberto até ela ser informada; com data, fica sempre recolhido (a pessoa pode abri-lo quando quiser).
-        document.querySelector('.anotacoes-data').open = !dataAtual;
+        // Logo depois de escolher a data o campo NÃO fecha na hora (no iPhone isso derrubava o calendário aberto); ele recolhe quando o campo perde o foco.
+        if (!dataAtual || !mantemAberto) document.querySelector('.anotacoes-data').open = !dataAtual;
       }
 
       const semMarcador = t => String(t || '').replace(/^[•·]\s*/, '');
@@ -26174,6 +26175,7 @@ function saveTemplatesToStorage() {
       document.getElementById('anotacoesParteAnt').addEventListener('click', () => mudarParte(-1));
       document.getElementById('anotacoesParteProx').addEventListener('click', () => mudarParte(1));
 
+      dataEl.addEventListener('blur', () => { if (dataAtual) setTimeout(() => { if (dataAtual && document.activeElement !== dataEl) document.querySelector('.anotacoes-data').open = false; }, 250); });
       dataEl.addEventListener('change', () => {
         const d = lerData(dataEl.value);
         if (!dataEl.value) { dataAtual = ''; mostrarData(); salvarRascunho(); return; }
@@ -26186,7 +26188,7 @@ function saveTemplatesToStorage() {
         }
         dataAtual = dataEl.value;
         diaAberto = '';
-        mostrarData();
+        mostrarData(undefined, true);
         pintarPartes();
         salvarRascunho();
       });

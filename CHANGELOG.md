@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.69
+
+Anotações: corrigido o calendário da data do evento, que fechava na mesma hora e deixava a data de hoje (o campo recolhia assim que o valor mudava). Agora o campo só recolhe depois que você termina de escolher e sai dele.
+
 ## 6.7.68
 
 Anotações: o campo da data do evento fica **aberto enquanto a data não for informada** (num evento novo) e passa a ficar sempre recolhido depois que ela é registrada. Aberto, tem mais espaço entre o campo e a moldura; fechado, nada mudou.
