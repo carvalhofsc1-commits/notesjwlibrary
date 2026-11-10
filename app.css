@@ -5149,6 +5149,33 @@
       overscroll-behavior: contain;
     }
 
+    /* Lista de livros do texto bíblico: um contêiner para o Velho e outro para o Novo Testamento. */
+    .anotacoes-testamento {
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--card);
+    }
+
+    .anotacoes-testamento + .anotacoes-testamento {
+      margin-top: 10px;
+    }
+
+    .anotacoes-testamento-titulo {
+      display: grid;
+      gap: 1px;
+      margin: 0 2px 8px;
+    }
+
+    .anotacoes-testamento-titulo strong {
+      font-size: .92rem;
+    }
+
+    .anotacoes-testamento-titulo small {
+      color: var(--muted);
+      font-size: .74rem;
+    }
+
     .anotacoes-grade {
       display: grid;
       gap: 6px;
