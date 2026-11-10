@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.33
+
+Anotações: com o teclado aberto, a barra **Inserir texto bíblico** passa a ficar fixa no topo da área visível (o “sticky” não funciona com o teclado do iPhone), acompanhando a tela; ao fechar o teclado, ela volta ao lugar normal.
+
 ## 6.7.32
 
 Anotações: a barra **Inserir texto bíblico** fica congelada no topo da tela enquanto se rola (também na resposta da pergunta de recapitulação); o texto entra no último campo em que se tocou, as anotações ou a resposta. Corrige a 6.7.31, que tinha deixado a barra de fora do topo ao agrupá-la.

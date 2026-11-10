@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.32'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.33'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -25199,6 +25199,39 @@ function saveTemplatesToStorage() {
         alvoInsercao = campo;
         bibliaTitulo.textContent = campo === respostaEl ? '📖 Inserir texto bíblico na resposta' : '📖 Inserir texto bíblico nas anotações';
       }
+      // Com o teclado aberto (iPhone), o "sticky" não segura a barra: a tela visível é só uma parte da página. Então, escrevendo num dos campos e com o teclado
+      // aberto, a barra vira "fixed" no topo da área visível (acompanhando a rolagem da área visível pelo visualViewport); sem o teclado, volta ao normal.
+      const bibliaBarra = document.querySelector('.anotacoes-biblia-barra');
+      let bibliaEspaco = null;
+      function ajustarBarraBiblia() {
+        const vv = window.visualViewport;
+        const foco = document.activeElement;
+        const escrevendo = foco === texto || foco === respostaEl || bibliaBarra.contains(foco);
+        const fixar = Boolean(vv && ativa && escrevendo && window.innerHeight - vv.height > 120);
+        if (fixar) {
+          if (!bibliaEspaco) {
+            const r = bibliaBarra.getBoundingClientRect();
+            bibliaEspaco = document.createElement('div');
+            bibliaEspaco.style.height = (bibliaBarra.offsetHeight + 14) + 'px'; // guarda o lugar da barra para o texto não pular
+            bibliaBarra.before(bibliaEspaco);
+            bibliaBarra.style.left = r.left + 'px';
+            bibliaBarra.style.width = r.width + 'px';
+            bibliaBarra.classList.add('anotacoes-biblia-fixa');
+          }
+          bibliaBarra.style.transform = 'translateY(' + vv.offsetTop + 'px)';
+        } else if (bibliaEspaco) {
+          bibliaEspaco.remove();
+          bibliaEspaco = null;
+          bibliaBarra.classList.remove('anotacoes-biblia-fixa');
+          bibliaBarra.style.left = bibliaBarra.style.width = bibliaBarra.style.transform = '';
+        }
+      }
+      if (window.visualViewport) {
+        ['resize', 'scroll'].forEach(ev => window.visualViewport.addEventListener(ev, ajustarBarraBiblia));
+      }
+      // Ao sair de um campo o foco passa por um instante pelo "nada": espera um pouco para não soltar a barra no meio do toque nela.
+      document.addEventListener('focusin', () => setTimeout(ajustarBarraBiblia, 50));
+      document.addEventListener('focusout', () => setTimeout(ajustarBarraBiblia, 300));
       respostaEl.addEventListener('focus', () => { if (alvoInsercao !== respostaEl) bibliaPara(respostaEl); });
       texto.addEventListener('focus', () => { if (alvoInsercao !== texto) bibliaPara(texto); });
       function pintarRevisao() {

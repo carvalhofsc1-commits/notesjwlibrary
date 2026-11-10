@@ -5054,6 +5054,15 @@
       display: contents;
     }
 
+    /* Teclado aberto: a barra fica fixa no topo da área visível (posição e largura vêm do app). */
+    .anotacoes-biblia-barra.anotacoes-biblia-fixa {
+      position: fixed;
+      top: 0;
+      z-index: 1600;
+      margin: 0;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, .28);
+    }
+
     .anotacoes-biblia-barra {
       position: sticky;
       top: calc(var(--topbar-h, 52px) + 4px);
