@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.60
+
+Reuniões → Preparação de discursos e esboços: ao recolher o card de um esboço (Discurso público, Tesouros, discurso curto ou Outros esboços) ou o grupo inteiro, o esboço também sai do campo de texto e, sem nenhum card aberto, o cartão **1. Texto original** some (como já acontecia nos cards de Comentários). O esboço continua guardado em Pesquisas e respostas salvas.
+
 ## 6.7.59
 
 Menu lateral: uma linha separa o consumo de IA do restante do menu, por cima (por baixo já havia a do rodapé).

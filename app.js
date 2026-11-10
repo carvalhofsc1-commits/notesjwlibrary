@@ -7658,7 +7658,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.59'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.60'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -16780,6 +16780,27 @@ function saveTemplatesToStorage() {
       if (cfg.carregarBtn) cfg.carregarBtn.addEventListener('click', () => esbocoCarregar(cfg));
       cfg.esbocoBtn.addEventListener('click', () => requestEsboco(cfg));
     });
+
+    // Recolher o card de um esboço (ou o grupo inteiro) recolhe também o que é dele: o esboço sai do campo de texto e, sem nenhum card de discursos aberto,
+    // o cartão Texto original some (como já acontece nos cards de Comentários).
+    const ESBOCO_BOXES = { tesourosBox: 'tesouros', discursoBox: 'discurso', publicoBox: 'publico', outrosBox: 'outros' };
+    function esbocosAoRecolher(idFechado) {
+      const grupo = document.getElementById('grupoDiscursos');
+      const abertos = Object.keys(ESBOCO_BOXES).filter(id => grupo.open && document.getElementById(id).open);
+      const ligado = historicoLigado && historicoLer().find(i => i.id === historicoLigado.id);
+      const esbocoNoCampo = Boolean(input.value.trim()) && (Object.values(ESBOCO_BOXES).includes(aiLastKind) || Boolean(ligado && ligado.tipo === 'esboco'));
+      // O esboço do card que acabou de fechar sai; se for de outro card que continua aberto, fica.
+      const dele = !idFechado || ESBOCO_BOXES[idFechado] === aiLastKind || Boolean(ligado && ligado.tipo === 'esboco' && !abertos.length);
+      if (esbocoNoCampo && (dele || !abertos.length)) {
+        document.getElementById('clearBtn').click();
+        aiResumo = null;
+        clearAnswerCopyButtons();
+        updateAiControls();
+      }
+      if (!abertos.length && currentScreen() === 'reunioes') document.body.classList.remove('texto-chegou');
+    }
+    Object.keys(ESBOCO_BOXES).forEach(id => document.getElementById(id).addEventListener('toggle', event => { if (!event.target.open) esbocosAoRecolher(id); }));
+    document.getElementById('grupoDiscursos').addEventListener('toggle', event => { if (event.target === document.getElementById('grupoDiscursos') && !event.target.open) esbocosAoRecolher(''); });
 
     // ---------- Discurso público: lista de temas e informações do tema escolhido ----------
     // A lista vem do servidor (só os temas que o administrador já importou) quando o card é aberto; a busca filtra por número ou título.
