@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.37'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.38'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -25006,7 +25006,7 @@ function saveTemplatesToStorage() {
         progStatus.className = 'anotacoes-msg' + (aviso ? ' warn' : '');
       }
 
-      function inserirNoCursor(trecho, campo = texto) {
+      function inserirNoCursor(trecho, campo = texto, silencioso = false) {
         const t = String(trecho || '');
         if (!t) return;
         const ini = campo.selectionStart ?? campo.value.length;
@@ -25020,7 +25020,7 @@ function saveTemplatesToStorage() {
         campo.focus();
         campo.setSelectionRange(pos, pos);
         if (campo !== texto) campo.dispatchEvent(new Event('input', { bubbles: true })); // a resposta da pergunta é guardada na parte
-        dizer('Inserido.');
+        if (!silencioso) dizer('Inserido.');
       }
 
       function cabecalhoTexto(indice) {
@@ -26310,24 +26310,35 @@ function saveTemplatesToStorage() {
         return [...removeUnicodeFormatting(String(texto || '')).normalize('NFD')].map(ch => (/\p{M}/u.test(ch) ? ch : convertChar(ch, estilo))).join('');
       }
 
+      // Recado do texto bíblico: aparece dentro da barra (logo abaixo do campo "Livro"), onde está a atenção de quem digita, e some sozinho.
+      let tempoMsgBiblia = null;
+      function dizerBiblia(msg, aviso) {
+        const el = document.getElementById('anotacoesBibliaMsg');
+        clearTimeout(tempoMsgBiblia);
+        el.textContent = msg || '';
+        el.className = 'anotacoes-msg anotacoes-biblia-msg' + (aviso ? ' warn' : '');
+        el.hidden = !msg;
+        if (msg && !/^Buscando/.test(msg)) tempoMsgBiblia = setTimeout(() => { el.hidden = true; el.textContent = ''; }, aviso ? 7000 : 3500);
+      }
+
       async function anotacoesInserirBiblia(ref) {
         const referencia = String(ref || '').trim();
-        if (!referencia) return dizer('Digite o livro (ex.: Jo) ou a referência (ex.: João 3:16).', true);
-        if (!codigoResumoSalvo()) return dizer('Salve o código de resumo em Ajustes → 🔐 Autorização de acessos.', true);
-        if (!navigator.onLine) return dizer('Sem conexão com a internet.', true);
-        dizer('Buscando ' + referencia + '…');
+        if (!referencia) return dizerBiblia('Digite o livro (ex.: Jo) ou a referência (ex.: João 3:16).', true);
+        if (!codigoResumoSalvo()) return dizerBiblia('Salve o código de resumo em Ajustes → 🔐 Autorização de acessos.', true);
+        if (!navigator.onLine) return dizerBiblia('Sem conexão com a internet.', true);
+        dizerBiblia('Buscando ' + referencia + '…');
         const r = await postStudy({ tarefa: 'anotacoes-versiculos', codigoResumo: codigoResumoSalvo(), referencias: [referencia] }, 20000);
-        if (!r.ok) return dizer((r.data && r.data.erro) || 'Não consegui buscar o texto bíblico.', true);
+        if (!r.ok) return dizerBiblia((r.data && r.data.erro) || 'Não consegui buscar o texto bíblico.', true);
         const lista = (r.data && r.data.versiculos) || [];
-        if (!lista.length) return dizer('Não encontrei o texto de “' + referencia + '”. Confira o livro, o capítulo e os versículos.', true);
+        if (!lista.length) return dizerBiblia('Não encontrei o texto de “' + referencia + '”. Confira o livro, o capítulo e os versículos.', true);
         // Referência em negrito (livro, capítulo e versículos), depois “:” e, na mesma linha, o texto todo entre aspas e em itálico.
         const bloco = lista
           .filter(v => (v.texto || '').trim())
           .map(v => estiloComAcentos(v.referencia || referencia, 'bold') + ': “' + estiloComAcentos((v.texto || '').trim(), 'italic') + '”')
           .join('\n');
-        if (!bloco) return dizer('Não encontrei o texto de “' + referencia + '”.', true);
-        inserirNoCursor(bloco + '\n', alvoInsercao);
-        dizer('Texto bíblico inserido.');
+        if (!bloco) return dizerBiblia('Não encontrei o texto de “' + referencia + '”.', true);
+        inserirNoCursor(bloco + '\n', alvoInsercao, true);
+        dizerBiblia('Texto bíblico inserido.');
         // Pronto para o próximo: limpa o campo e fecha o guia.
         bibRef.value = '';
         guia.aberto = false;

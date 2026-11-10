@@ -5063,6 +5063,21 @@
       box-shadow: 0 4px 14px rgba(0, 0, 0, .28);
     }
 
+    /* Recado do texto bíblico (livro faltando, buscando, inserido…): aparece logo abaixo do campo, dentro da área branca da barra, que cresce
+       enquanto ele está na tela (some sozinho depois de alguns segundos). */
+    .anotacoes-biblia-barra .anotacoes-biblia-msg {
+      grid-column: 1 / -1;
+      margin: 0;
+      padding: 2px 4px 0;
+      font-size: .84rem;
+      line-height: 1.3;
+      text-align: left;
+    }
+
+    .anotacoes-biblia-barra .anotacoes-biblia-msg[hidden] {
+      display: none;
+    }
+
     .anotacoes-biblia-barra {
       position: sticky;
       top: calc(var(--topbar-h, 52px) + 4px);
@@ -5601,7 +5616,7 @@
     .anotacoes-cab-pos {
       margin: 4px 0 0;
       color: var(--muted);
-      font-size: .72rem;
+      font-size: .86rem;
       text-align: center;
     }
 
