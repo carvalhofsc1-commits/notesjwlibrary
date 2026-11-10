@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.53
+
+Anotações: as perguntas de recapitulação ficaram com o mesmo tamanho e peso (600, menos intenso) dos temas dos discursos.
+
 ## 6.7.52
 
 Anotações: as perguntas de recapitulação (na lista do programa e no cartão da resposta) passaram a usar a mesma fonte do tema dos discursos (.94rem em destaque, linha de baixo .82rem, espaçamento de linha igual).
