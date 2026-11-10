@@ -7658,7 +7658,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.42'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.43'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -25277,7 +25277,7 @@ function saveTemplatesToStorage() {
       function ajustarBarraBiblia() {
         const vv = window.visualViewport;
         const foco = document.activeElement;
-        const escrevendo = foco === texto || foco === respostaEl || bibliaBarra.contains(foco);
+        const escrevendo = foco === texto || foco === respostaEl || bibliaBarra.contains(foco) || bibPick.contains(foco);
         // Também na Reunião (sem programa): a barra precisa ficar fixa com o teclado do iPhone; em assembleia/congresso, só na tela da parte.
         const naEscrita = Boolean(escritaEl && !escritaEl.hidden);
         const fixar = Boolean(vv && naEscrita && escrevendo && window.innerHeight - vv.height > 120);
@@ -25297,6 +25297,24 @@ function saveTemplatesToStorage() {
           bibliaEspaco = null;
           bibliaBarra.classList.remove('anotacoes-biblia-fixa');
           bibliaBarra.style.left = bibliaBarra.style.width = bibliaBarra.style.transform = '';
+        }
+        posicionarListaBiblia();
+      }
+      // A lista de livros/capítulos/versículos fica logo abaixo da barra: com a barra fixa (teclado aberto) ela acompanha a barra, na área visível,
+      // com rolagem própria; senão ficaria lá no alto da página, fora da vista, e quem digita não veria as sugestões.
+      function posicionarListaBiblia() {
+        const fixa = bibliaBarra.classList.contains('anotacoes-biblia-fixa') && !bibPick.hidden;
+        const vv = window.visualViewport;
+        if (fixa && vv) {
+          const topo = vv.offsetTop + bibliaBarra.offsetHeight + 4;
+          bibPick.classList.add('anotacoes-biblia-pick-fixa');
+          bibPick.style.left = bibliaBarra.style.left;
+          bibPick.style.width = bibliaBarra.style.width;
+          bibPick.style.top = topo + 'px';
+          bibPick.style.maxHeight = Math.max(120, vv.height - bibliaBarra.offsetHeight - 12) + 'px';
+        } else if (bibPick.classList.contains('anotacoes-biblia-pick-fixa')) {
+          bibPick.classList.remove('anotacoes-biblia-pick-fixa');
+          bibPick.style.left = bibPick.style.width = bibPick.style.top = bibPick.style.maxHeight = '';
         }
       }
       if (window.visualViewport) {
@@ -26249,6 +26267,7 @@ function saveTemplatesToStorage() {
         trilhaEl.replaceChildren();
         opcoesEl.replaceChildren();
         modoVersosEl.hidden = true;
+        posicionarListaBiblia();
         if (!guia.aberto) return;
 
         // Trilha: Livro › Capítulo (toque para voltar a esse passo)
@@ -26424,6 +26443,7 @@ function saveTemplatesToStorage() {
         el.textContent = msg || '';
         el.className = 'anotacoes-msg anotacoes-biblia-msg' + (aviso ? ' warn' : '');
         el.hidden = !msg;
+        posicionarListaBiblia();
         if (msg && !/^Buscando/.test(msg)) tempoMsgBiblia = setTimeout(() => { el.hidden = true; el.textContent = ''; }, aviso ? 7000 : 3500);
       }
 

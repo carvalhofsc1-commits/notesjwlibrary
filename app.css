@@ -5063,6 +5063,16 @@
       box-shadow: 0 4px 14px rgba(0, 0, 0, .28);
     }
 
+    /* Barra fixa (teclado aberto): a lista de livros/capítulos/versículos vem logo abaixo dela, na área visível, com rolagem própria. */
+    .anotacoes-biblia-pick.anotacoes-biblia-pick-fixa {
+      position: fixed;
+      z-index: 1599;
+      margin: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, .3);
+    }
+
     /* Recado do texto bíblico (livro faltando, buscando, inserido…): aparece logo abaixo do campo, dentro da área branca da barra, que cresce
        enquanto ele está na tela (some sozinho depois de alguns segundos). */
     .anotacoes-biblia-barra .anotacoes-biblia-msg {

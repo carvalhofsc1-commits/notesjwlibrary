@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.43
+
+Anotações (texto bíblico): com o teclado aberto, a lista de livros, capítulos e versículos agora aparece **logo abaixo da barra fixa**, na área visível (com rolagem própria), e se atualiza conforme se digita; antes ela ficava lá no alto da página, fora da vista.
+
 ## 6.7.42
 
 Anotações: (1) a marca ✍️ e o cartão preenchido consideram também a **resposta** à pergunta (e o título da série que a guarda); (2) formatação rápida também no campo da resposta; (3) volta o botão **Atualizar programa** (merge com a WOL sem perder anotações); (4) grupo próprio de Anotações em Privacidade e dados deste aparelho; (5) aviso se o armazenamento local das anotações ficar grande.
