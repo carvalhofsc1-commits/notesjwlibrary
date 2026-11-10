@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.46
+
+Anotações: na tela inicial (Reunião, Assembleia, Congresso) não aparece mais o programa do evento aberto antes; ao voltar para o menu tudo é fechado (as anotações continuam salvas e voltam ao escolher o modo de novo).
+
 ## 6.7.45
 
 Anotações (programa): o campo da data do evento perdeu a moldura amarelada e passou a ser recolhível: fica só o texto “📅 Registre a data…” (discreto, como as instruções adicionais de áudio da leitura da Bíblia) e, ao tocar nele, abre o campo da data.
