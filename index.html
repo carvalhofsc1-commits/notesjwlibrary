@@ -255,31 +255,6 @@
           <p id="anotacoesStatus" class="anotacoes-msg" role="status" aria-live="polite"></p>
           <button id="anotacoesIaDesfazer" class="secondary anotacoes-desfazer" type="button" hidden>↩️ Desfazer a formatação</button>
 
-          <!-- Assembleia de circuito: a pergunta de recapitulação que este discurso responde, com um campo só para a resposta. -->
-          <div id="anotacoesRevisao" class="anotacoes-revisao" hidden>
-            <h3 class="anotacoes-subtitulo">❓ Pergunta de recapitulação</h3>
-            <div class="anotacoes-revisao-card">
-              <p id="anotacoesRevisaoPergunta" class="anotacoes-revisao-pergunta"></p>
-              <div class="anotacoes-fmt anotacoes-fmt-resp" role="toolbar" aria-label="Formatação rápida da resposta (selecione o trecho)">
-                <button type="button" class="secondary" data-anotacoes-fmt="bold" title="Negrito" aria-label="Negrito"><strong>𝐁</strong></button>
-                <button type="button" class="secondary" data-anotacoes-fmt="italic" title="Itálico" aria-label="Itálico">𝐼</button>
-                <button type="button" class="secondary" data-anotacoes-fmt="hl" title="Grifo (letra sem serifa em negrito)" aria-label="Grifo">Grifo</button>
-                <button type="button" class="secondary" data-anotacoes-fmt="ul" title="Lista com marcadores" aria-label="Lista com marcadores">• Lista</button>
-                <button type="button" class="secondary" data-anotacoes-fmt="ol" title="Lista numerada" aria-label="Lista numerada">1. Lista</button>
-              </div>
-              <textarea id="anotacoesResposta" class="anotacoes-resposta" rows="4" aria-label="Resposta à pergunta de recapitulação" placeholder="Escreva aqui a resposta a esta pergunta…"></textarea>
-              <!-- Botões da resposta (só da resposta), na mesma ordem dos das anotações: copiar, formatar com IA, lixeira; embaixo, o JW Library. -->
-              <div class="anotacoes-acoes-campo">
-                <button id="anotacoesRespCopiar" class="secondary" type="button" title="Copiar a pergunta e a resposta">📋 Copiar</button>
-                <button id="anotacoesRespIa" class="secondary anotacoes-ia" type="button" title="A IA deixa a resposta pronta para colar no JW Library: só emojis e letras maiúsculas, mantendo os seus negritos e itálicos">✨ Formatar com IA</button>
-                <button id="anotacoesRespLimpar" class="secondary anotacoes-lixeira" type="button" title="Limpar a resposta" aria-label="Limpar a resposta">🗑️</button>
-              </div>
-              <button id="anotacoesRespJwl" class="anotacoes-jwl anotacoes-jwl-largo" type="button" title="Copia a pergunta e a resposta e abre esta pergunta no JW Library; é só colar no campo de notas dela">📖 Copiar e abrir no JW Library</button>
-              <p id="anotacoesRespStatus" class="anotacoes-msg" role="status" aria-live="polite"></p>
-              <button id="anotacoesRespDesfazer" class="secondary anotacoes-desfazer" type="button" hidden>↩️ Desfazer a formatação</button>
-            </div>
-          </div>
-
           <!-- Gravação do discurso: tudo neste quadro. Gravar → pausar, parar ou descartar → gravação pronta → Fazer o resumo (ou descartar). -->
           <section id="anotacoesGravacao" class="anotacoes-gravacao" aria-label="Gravação do discurso">
             <div id="anotacoesGravOcioso">
@@ -304,6 +279,31 @@
             </div>
             <p id="anotacoesGravarStatus" class="anotacoes-msg" role="status" aria-live="polite"></p>
           </section>
+
+          <!-- Assembleia de circuito: a pergunta de recapitulação que este discurso responde, com um campo só para a resposta. -->
+          <div id="anotacoesRevisao" class="anotacoes-revisao" hidden>
+            <h3 class="anotacoes-subtitulo">❓ Pergunta de recapitulação</h3>
+            <div class="anotacoes-revisao-card">
+              <p id="anotacoesRevisaoPergunta" class="anotacoes-revisao-pergunta"></p>
+              <div class="anotacoes-fmt anotacoes-fmt-resp" role="toolbar" aria-label="Formatação rápida da resposta (selecione o trecho)">
+                <button type="button" class="secondary" data-anotacoes-fmt="bold" title="Negrito" aria-label="Negrito"><strong>𝐁</strong></button>
+                <button type="button" class="secondary" data-anotacoes-fmt="italic" title="Itálico" aria-label="Itálico">𝐼</button>
+                <button type="button" class="secondary" data-anotacoes-fmt="hl" title="Grifo (letra sem serifa em negrito)" aria-label="Grifo">Grifo</button>
+                <button type="button" class="secondary" data-anotacoes-fmt="ul" title="Lista com marcadores" aria-label="Lista com marcadores">• Lista</button>
+                <button type="button" class="secondary" data-anotacoes-fmt="ol" title="Lista numerada" aria-label="Lista numerada">1. Lista</button>
+              </div>
+              <textarea id="anotacoesResposta" class="anotacoes-resposta" rows="4" aria-label="Resposta à pergunta de recapitulação" placeholder="Escreva aqui a resposta a esta pergunta…"></textarea>
+              <!-- Botões da resposta (só da resposta), na mesma ordem dos das anotações: copiar, formatar com IA, lixeira; embaixo, o JW Library. -->
+              <div class="anotacoes-acoes-campo">
+                <button id="anotacoesRespCopiar" class="secondary" type="button" title="Copiar a pergunta e a resposta">📋 Copiar</button>
+                <button id="anotacoesRespIa" class="secondary anotacoes-ia" type="button" title="A IA deixa a resposta pronta para colar no JW Library: só emojis e letras maiúsculas, mantendo os seus negritos e itálicos">✨ Formatar com IA</button>
+                <button id="anotacoesRespLimpar" class="secondary anotacoes-lixeira" type="button" title="Limpar a resposta" aria-label="Limpar a resposta">🗑️</button>
+              </div>
+              <button id="anotacoesRespJwl" class="anotacoes-jwl anotacoes-jwl-largo" type="button" title="Copia a pergunta e a resposta e abre esta pergunta no JW Library; é só colar no campo de notas dela">📖 Copiar e abrir no JW Library</button>
+              <p id="anotacoesRespStatus" class="anotacoes-msg" role="status" aria-live="polite"></p>
+              <button id="anotacoesRespDesfazer" class="secondary anotacoes-desfazer" type="button" hidden>↩️ Desfazer a formatação</button>
+            </div>
+          </div>
 
           <!-- Salvar e Word do discurso inteiro (anotações e resposta da pergunta), no final de tudo. -->
           <div class="anotacoes-final">

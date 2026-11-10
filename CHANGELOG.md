@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.48
+
+Anotações (assembleia): o quadro **Gravar o discurso** passou para logo abaixo do botão “Copiar e abrir no JW Library” das anotações, antes do título “Pergunta de recapitulação”.
+
 ## 6.7.47
 
 Anotações (programa): o campo da data ficou centralizado e com menos espaço em volta (entre a linha colorida e o campo, e entre o campo e a moldura).
