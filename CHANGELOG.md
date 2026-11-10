@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.54
+
+Anotações: o botão **Gravar o discurso** passou a se chamar **Gravar e resumir o discurso**.
+
 ## 6.7.53
 
 Anotações: as perguntas de recapitulação ficaram com o mesmo tamanho e peso (600, menos intenso) dos temas dos discursos.
