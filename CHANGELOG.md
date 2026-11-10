@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.37
+
+Anotações (texto bíblico): os contêineres passam a se chamar **Escrituras Hebraicas** e **Escrituras Gregas Cristãs** (sem a cruz; o segundo usa 🕊️). Cada seção tem uma cor só, igual para todos os livros dela (Gênesis–Deuteronômio, Josué–Rute, 1 Samuel–2 Crônicas, Esdras–Ester, Jó–Cântico de Salomão, Isaías–Daniel, Oseias–Malaquias, Mateus–João, Atos, Romanos–Hebreus, Tiago–Judas e Apocalipse); só o Salmos tem a cor da poesia mais forte.
+
 ## 6.7.36
 
 Anotações (texto bíblico): a lista de livros agora tem **dois contêineres**, Velho Testamento e Novo Testamento, e cada livro leva o fundo suave da cor da sua seção (Pentateuco, história dos reis, poesia, profetas, evangelhos, cartas…), as mesmas cores da leitura da Bíblia.

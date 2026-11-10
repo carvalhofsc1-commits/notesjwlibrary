@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.36'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.37'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -26165,7 +26165,14 @@ function saveTemplatesToStorage() {
           }
           // Dois contêineres, um para cada testamento; cada livro tem o fundo suave da cor da sua seção (Pentateuco, profetas, evangelhos, cartas…).
           const livrosNT = new Set(BIBLIA_GRUPOS_LIVROS.slice(7).flatMap(g => g.livros)); // do grupo dos Evangelhos em diante
-          [['📜 Velho Testamento', 'Escrituras Hebraicas e Aramaicas', l => !livrosNT.has(l)], ['✝️ Novo Testamento', 'Escrituras Gregas Cristãs', l => livrosNT.has(l)]].forEach(([titulo, sub, nesteTestamento]) => {
+          // Uma cor por seção (igual para todos os livros dela; só o Salmos, na poesia, tem a mesma cor mais forte). Matizes bem distintos entre as seções vizinhas.
+          const MATIZ_SECAO = { pentateuco: 28, conquista: 135, reis: 55, volta: 190, poesia: 330, maiores: 270, menores: 355, evangelhos: 215, atos: 165, paulo: 300, gerais: 90, apocalipse: 0 };
+          const corDoLivro = livro => {
+            const g = BIBLIA_GRUPOS_LIVROS.find(x => x.livros.includes(livro));
+            if (!g) return '';
+            return 'color-mix(in srgb, hsl(' + MATIZ_SECAO[g.id] + ' 78% 56%) ' + (livro === 'Salmos' ? 36 : 17) + '%, var(--card))';
+          };
+          [['📜 Escrituras Hebraicas', l => !livrosNT.has(l)], ['🕊️ Escrituras Gregas Cristãs', l => livrosNT.has(l)]].forEach(([titulo, nesteTestamento]) => {
             const livros = lista.filter(nesteTestamento);
             if (!livros.length) return;
             const caixa = document.createElement('div');
@@ -26174,14 +26181,12 @@ function saveTemplatesToStorage() {
             cab.className = 'anotacoes-testamento-titulo';
             const forte = document.createElement('strong');
             forte.textContent = titulo;
-            const pequeno = document.createElement('small');
-            pequeno.textContent = sub;
-            cab.append(forte, pequeno);
+            cab.append(forte);
             const grade = document.createElement('div');
             grade.className = 'anotacoes-grade anotacoes-grade-livros';
             livros.forEach(livro => {
               const b = botaoGuia(livro, () => escolherLivro(livro), 'secondary anotacoes-opcao');
-              const cor = bibliaCorLivro(livro);
+              const cor = corDoLivro(livro);
               if (cor) b.style.background = cor;
               const grupo = BIBLIA_GRUPOS_LIVROS.find(g => g.livros.includes(livro));
               if (grupo) b.title = grupo.nome;
