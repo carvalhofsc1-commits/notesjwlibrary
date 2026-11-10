@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.39
+
+Leitura diária da Bíblia: o rótulo “Opções adicionais” do card de leitura passou a ser **Instruções adicionais de áudio**.
+
 ## 6.7.38
 
 Anotações: os recados do texto bíblico (“Digite o livro…”, “Buscando…”, “Texto bíblico inserido”) aparecem agora logo abaixo do campo **Livro**, dentro da área branca da barra, que cresce enquanto o recado está na tela e some sozinho depois de alguns segundos (antes ele aparecia lá embaixo, fora da vista). O horário e o número da parte, no alto do campo de anotações, ganharam letra um pouco maior.

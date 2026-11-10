@@ -7655,7 +7655,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.38'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.39'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -23381,7 +23381,7 @@ function saveTemplatesToStorage() {
           '<p class="hint">Desligado, o áudio toca um capítulo por vez e pára no fim. Ligado, toca o seguinte da Bíblia até completar o máximo escolhido (contando o que você iniciou).</p>'
         : '<label class="ai-check"><input type="checkbox" class="bp-op-grupo"> 🎯 Ler automaticamente só os capítulos sugeridos para o dia</label>' +
           '<p class="hint">Ligado, ao terminar um capítulo toca o seguinte do mesmo grupo e pára no fim dele. Desligado, toca um capítulo por vez.</p>';
-      return '<details class="bp-opcoes"><summary>⚙️ Opções adicionais</summary><div class="bp-opcoes-corpo">' + seguir +
+      return '<details class="bp-opcoes"><summary>⚙️ Instruções adicionais de áudio</summary><div class="bp-opcoes-corpo">' + seguir +
         '<label class="ai-check"><input type="checkbox" class="bp-op-resumo"> 📝 Gerar e ler o resumo automaticamente</label>' +
         '<p class="hint">Depois de cada capítulo o app fala “Aguarde... gerando resumo”, gera o resumo e o lê em voz alta (precisa do código de resumo e do código de leitura, em Ajustes). Com a opção de seguir ligada, só depois toca o próximo capítulo.</p>' +
         '</div></details>';
