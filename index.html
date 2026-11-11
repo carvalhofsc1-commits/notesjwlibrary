@@ -1567,7 +1567,7 @@
             <details class="prompt-item prompt-tint-ia">
               <summary><h3>🤖 Produção de texto: modelo para uso geral</h3></summary>
               <p class="hint">Vale para todas as respostas da IA (estudo, perguntas do dirigente, formatação, comentários do texto diário) e para todos os usuários. Os modelos mais potentes escrevem melhor, mas demoram mais e custam mais.</p>
-              <label for="iaModelo">Modelo</label>
+              <label for="iaModelo">Escolha o modelo</label>
               <select id="iaModelo"></select>
               <p id="iaModeloPreco" class="hint"></p>
               <label for="iaEsforco">Esforço (quanto a IA pensa antes de responder)</label>
@@ -1600,33 +1600,6 @@
               <summary><span class="adm-titulo">🔊 Leitura em voz: modelo para leitura&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
               <div class="subsection-body">
                 <p class="hint">Escolhas da voz da leitura em voz alta (o texto diário, para quem tem o código de pesquisa; a tela Leitura em voz alta, para quem tem o código de leitura; e o botão 🔊 do campo de texto, que só o administrador vê). Valem para todos os usuários; só o administrador pode mudar.</p>
-
-                <div class="acesso-item">
-                  <label for="vozAutoEspera">⏱️ Iniciar e fechar sozinho: tempo de espera</label>
-                  <select id="vozAutoEspera">
-                    <option value="0">Não iniciar nem fechar sozinho (esperar os botões)</option>
-                    <option value="2">Aguardar 2 segundos</option>
-                    <option value="3">Aguardar 3 segundos</option>
-                    <option value="4" selected>Aguardar 4 segundos (padrão)</option>
-                    <option value="5">Aguardar 5 segundos</option>
-                    <option value="6">Aguardar 6 segundos</option>
-                    <option value="8">Aguardar 8 segundos</option>
-                    <option value="10">Aguardar 10 segundos</option>
-                  </select>
-                  <p class="hint">Espera para iniciar a leitura sozinha e para fechar sozinha a caixa de salvar o áudio (texto do dia e comentários).</p>
-                </div>
-
-                <div class="acesso-item">
-                  <label for="vozDestaqueCor">🖍️ Cor do destaque da frase lida</label>
-                  <select id="vozDestaqueCor">
-                    <option value="amarelo">Amarelo</option>
-                    <option value="laranja" selected>Laranja (padrão)</option>
-                    <option value="laranja-escuro">Laranja escuro</option>
-                    <option value="roxo">Roxo</option>
-                    <option value="azul">Azul</option>
-                  </select>
-                  <span id="vozDestaqueAmostra" class="lu lendo voz-destaque-amostra">Assim fica a frase lida</span>
-                </div>
 
                 <div id="vozAdminLogin">
                   <p id="vozAdminError" class="hint acesso-aviso">Para mudar a voz, salve a senha de administrador em 🔐 Autorização de acessos.</p>
@@ -1678,6 +1651,33 @@
                       <button id="vozZerarBtn" class="secondary" type="button">🧹 Zerar a contagem</button>
                     </div>
                   </div>
+                </div>
+
+                <div class="acesso-item">
+                  <label for="vozAutoEspera">⏱️ Iniciar e fechar sozinho: tempo de espera</label>
+                  <select id="vozAutoEspera">
+                    <option value="0">Não iniciar nem fechar sozinho (esperar os botões)</option>
+                    <option value="2">Aguardar 2 segundos</option>
+                    <option value="3">Aguardar 3 segundos</option>
+                    <option value="4" selected>Aguardar 4 segundos (padrão)</option>
+                    <option value="5">Aguardar 5 segundos</option>
+                    <option value="6">Aguardar 6 segundos</option>
+                    <option value="8">Aguardar 8 segundos</option>
+                    <option value="10">Aguardar 10 segundos</option>
+                  </select>
+                  <p class="hint">Espera para iniciar a leitura sozinha e para fechar sozinha a caixa de salvar o áudio (texto do dia e comentários).</p>
+                </div>
+
+                <div class="acesso-item">
+                  <label for="vozDestaqueCor">🖍️ Cor do destaque da frase lida</label>
+                  <select id="vozDestaqueCor">
+                    <option value="amarelo">Amarelo</option>
+                    <option value="laranja" selected>Laranja (padrão)</option>
+                    <option value="laranja-escuro">Laranja escuro</option>
+                    <option value="roxo">Roxo</option>
+                    <option value="azul">Azul</option>
+                  </select>
+                  <span id="vozDestaqueAmostra" class="lu lendo voz-destaque-amostra">Assim fica a frase lida</span>
                 </div>
               </div>
             </details>

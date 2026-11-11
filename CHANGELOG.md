@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.87
+
+Modelos e agentes de IA: no cartão do modelo para uso geral o rótulo “Modelo” virou **Escolha o modelo**. No cartão **Leitura em voz: modelo para leitura**, a escolha do modelo, da voz e as configurações da leitura vêm primeiro; o tempo de espera e a cor do destaque (que valem só neste aparelho) foram para o fim do cartão.
+
 ## 6.7.86
 
 Definição das contas: nos dois cartões o rótulo da escolha passou a ser **Escolha a conta**. Na conta para voz e áudio saiu o subtítulo “Conta do Google: escolha”, e as duas contas (principal e reserva) ficaram numa moldura só, com o rótulo acima dela.
