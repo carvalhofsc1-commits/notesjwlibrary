@@ -13558,9 +13558,44 @@ button.processando:disabled { opacity: 1; cursor: progress; }
   background: color-mix(in srgb, var(--accent, #2563eb) 6%, var(--card));
 }
 
-.modelos-resumo > .modelos-ia-titulo {
-  margin: 12px 0 8px;
+/* Recolhida: abre ao tocar no título (seta como nos outros cartões). */
+.modelos-resumo > summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.modelos-resumo > summary::-webkit-details-marker {
+  display: none;
+}
+
+.modelos-resumo > summary::after {
+  content: '▸';
+  color: var(--muted);
+  font-size: 1.2rem;
+  transition: transform .15s ease;
+}
+
+.modelos-resumo[open] > summary::after {
+  transform: rotate(90deg);
+}
+
+.modelos-resumo > summary .modelos-ia-titulo {
+  margin: 10px 0;
   text-align: center;
+}
+
+/* Cabeçalho de cada parte da tabela (Contas, Texto, Voz e áudio). */
+.modelos-resumo-tabela tr.modelos-resumo-secao th {
+  width: auto;
+  text-align: center;
+  color: var(--ink, inherit);
+  font-weight: 700;
+  background: color-mix(in srgb, var(--accent, #2563eb) 12%, var(--card));
 }
 
 .modelos-resumo-tabela {

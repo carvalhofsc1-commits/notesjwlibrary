@@ -7659,7 +7659,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.88'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.89'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -13227,46 +13227,61 @@ function saveTemplatesToStorage() {
         postConfig({ acao: 'voz-ler', codigo }),
       ]);
       if (pedido !== modelosResumoPedido) return; // chegou um pedido mais novo
-      const linhas = [];
+      // Três partes: Contas, Texto, Voz e áudio.
       const falhou = 'não foi possível ler agora';
-      if (ia.ok) {
-        const c = ia.data.config, o = ia.data.opcoes;
-        const esf = id => nomeCurto(o.esforcos, id).toLowerCase();
-        linhas.push(['Conta para texto', nomeCurto(o.provedores, c.provedor)]);
-        linhas.push(['Texto: uso geral', nomeCurto(o.modelos, c.modelo) + ' · esforço ' + esf(c.esforco)]);
-        linhas.push(['Texto: esboços e dirigir', (c.esbocoModelo ? nomeCurto(o.modelos, c.esbocoModelo) : 'o mesmo do uso geral') + ' · esforço ' + esf(c.esbocoEsforco || c.esforco)]);
-        linhas.push(['Áudio: transcrição', c.audioMotor === 'gemini' ? 'Gemini · ' + nomeCurto(o.modelos, c.audioGeminiModelo) : 'Chirp 3 (Speech-to-Text)']);
-        linhas.push(['Áudio: resumo, nomes e correção', c.audioModelo ? nomeCurto(o.modelos, c.audioModelo) : 'o mesmo do uso geral']);
-      } else {
-        linhas.push(['Texto e áudio', falhou]);
-      }
+      const contas = [], texto = [], vozAudio = [];
+      const cIa = ia.ok ? ia.data.config : null, oIa = ia.ok ? ia.data.opcoes : null;
+      const esf = id => nomeCurto(oIa.esforcos, id).toLowerCase();
+      contas.push(['Conta para texto', cIa ? nomeCurto(oIa.provedores, cIa.provedor) : falhou]);
       if (conta.ok) {
         const emUso = conta.data.emUso;
         const dados = (conta.data.contas || {})[emUso] || {};
-        linhas.splice(1, 0, ['Conta para voz e áudio', (GOOGLE_CONTA_NOMES[emUso] || emUso) + (dados.projeto ? ' · projeto ' + dados.projeto : '')]);
+        contas.push(['Conta para voz e áudio', (GOOGLE_CONTA_NOMES[emUso] || emUso) + (dados.projeto ? ' · projeto ' + dados.projeto : '')]);
       } else {
-        linhas.splice(1, 0, ['Conta para voz e áudio', falhou]);
+        contas.push(['Conta para voz e áudio', falhou]);
+      }
+      if (cIa) {
+        texto.push(['Uso geral', nomeCurto(oIa.modelos, cIa.modelo) + ' · esforço ' + esf(cIa.esforco)]);
+        texto.push(['Esboços e dirigir', (cIa.esbocoModelo ? nomeCurto(oIa.modelos, cIa.esbocoModelo) : 'o mesmo do uso geral') + ' · esforço ' + esf(cIa.esbocoEsforco || cIa.esforco)]);
+      } else {
+        texto.push(['Modelos de texto', falhou]);
       }
       if (voz.ok) {
         const c = voz.data.config, o = voz.data.opcoes;
         const velocidade = Number(c.velocidade) ? ' · velocidade ' + String(c.velocidade).replace('.', ',') + '×' : '';
-        linhas.splice(ia.ok ? 4 : 2, 0, ['Voz: leitura', nomeCurto(o.modelos, c.modelo) + ' · voz ' + c.voz + velocidade]);
+        vozAudio.push(['Leitura em voz', nomeCurto(o.modelos, c.modelo) + ' · voz ' + c.voz + velocidade]);
       } else {
-        linhas.splice(ia.ok ? 4 : 2, 0, ['Voz: leitura', falhou]);
+        vozAudio.push(['Leitura em voz', falhou]);
+      }
+      if (cIa) {
+        vozAudio.push(['Áudio: transcrição', cIa.audioMotor === 'gemini' ? 'Gemini · ' + nomeCurto(oIa.modelos, cIa.audioGeminiModelo) : 'Chirp 3 (Speech-to-Text)']);
+        vozAudio.push(['Áudio: resumo, nomes e correção', cIa.audioModelo ? nomeCurto(oIa.modelos, cIa.audioModelo) : 'o mesmo do uso geral']);
+      } else {
+        vozAudio.push(['Áudio em texto', falhou]);
       }
       const tabela = document.createElement('table');
       tabela.className = 'modelos-resumo-tabela';
       const corpo = document.createElement('tbody');
-      linhas.forEach(([rotulo, valor]) => {
-        const tr = document.createElement('tr');
-        const th = document.createElement('th');
-        th.scope = 'row';
-        th.textContent = rotulo;
-        const td = document.createElement('td');
-        td.textContent = valor;
-        if (valor === falhou) td.className = 'warn';
-        tr.append(th, td);
-        corpo.appendChild(tr);
+      [['🔑 Contas', contas], ['✍️ Texto', texto], ['🔊 Voz e áudio', vozAudio]].forEach(([titulo, linhas]) => {
+        const cab = document.createElement('tr');
+        cab.className = 'modelos-resumo-secao';
+        const thCab = document.createElement('th');
+        thCab.colSpan = 2;
+        thCab.scope = 'colgroup';
+        thCab.textContent = titulo;
+        cab.appendChild(thCab);
+        corpo.appendChild(cab);
+        linhas.forEach(([rotulo, valor]) => {
+          const tr = document.createElement('tr');
+          const th = document.createElement('th');
+          th.scope = 'row';
+          th.textContent = rotulo;
+          const td = document.createElement('td');
+          td.textContent = valor;
+          if (valor === falhou) td.className = 'warn';
+          tr.append(th, td);
+          corpo.appendChild(tr);
+        });
       });
       tabela.appendChild(corpo);
       caixa.replaceChildren(tabela);
