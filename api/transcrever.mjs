@@ -5,12 +5,12 @@
 //  - GOOGLE_TTS_CREDENCIAIS: a conta de serviço do Google (a mesma da leitura em voz alta). Ela precisa do papel "Cliente do Cloud Speech"
 //    (roles/speech.client) no projeto; o projeto é o do próprio JSON (project_id) ou GOOGLE_PROJECT_ID.
 //  - GOOGLE_STT_REGIAO: região do Chirp 3 (padrão "us"; o chirp_3 só existe em "us" e "eu").
-import Anthropic from "@anthropic-ai/sdk";
 import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { mensagemSeBloqueado } from "./_acessoSite.mjs";
 import { createHash, createSign, randomBytes } from "node:crypto";
 import { credenciais, prepararConta, tokenDeAcesso, variaveisDaConta } from "./_googleToken.mjs";
 import { lerConfigIa } from "./_iaConfig.mjs";
+import { criarClienteIa, erroSemIa, iaDisponivel } from "./_clienteIa.mjs";
 import { registrarUsoIa } from "./_estatisticas.mjs";
 
 // Consumo do aparelho (faturamento): minutos de áudio transcritos e tokens da IA do resumo e da correção. Gravado antes de responder
@@ -483,7 +483,7 @@ export default async function handler(req, res) {
     }
 
     if (corpo.acao === "nomes") {
-      if (!process.env.ANTHROPIC_API_KEY) return erro(res, 503, "O recurso de IA ainda não está configurado no servidor.");
+      if (!(await iaDisponivel())) return erro(res, 503, erroSemIa());
       const texto = typeof corpo.texto === "string" ? corpo.texto.trim().slice(0, MAX_CARACTERES_RESUMO) : "";
       const falantes = (Array.isArray(corpo.falantes) ? corpo.falantes : []).map(Number).filter((n) => Number.isInteger(n) && n > 0 && n < 100).slice(0, 20);
       if (texto.length < 20 || !falantes.length) return erro(res, 400, "Não há falantes para sugerir nomes.");
@@ -491,7 +491,7 @@ export default async function handler(req, res) {
       const sobre = campoDoUsuario(corpo.contexto);
       const pedido = (sobre ? "INFORMAÇÕES DO USUÁRIO (interlocutores, pauta, evento…):\n" + sobre + "\n\n" : "") + "FALANTES: " + falantes.map((n) => "Falante " + n).join(", ") + "\n\nTRANSCRIÇÃO:\n" + texto;
       const { modelo, esforco } = await lerConfigIa();
-      const client = new Anthropic({ maxRetries: 1, timeout: 90_000 });
+      const client = criarClienteIa({ maxRetries: 1, timeout: 90_000 });
       const resposta = await client.messages.create({
         model: modelo,
         ...esforcoDoModelo(modelo, esforco),
@@ -516,7 +516,7 @@ export default async function handler(req, res) {
     }
 
     if (corpo.acao === "resumo") {
-      if (!process.env.ANTHROPIC_API_KEY) return erro(res, 503, "O recurso de IA ainda não está configurado no servidor.");
+      if (!(await iaDisponivel())) return erro(res, 503, erroSemIa());
       const texto = typeof corpo.texto === "string" ? corpo.texto.trim().slice(0, MAX_CARACTERES_RESUMO) : "";
       if (texto.length < 40) return erro(res, 400, "Texto curto demais para resumir.");
       if (excedeu("resumo", ip, LIMITE_RESUMOS_POR_HORA)) return erro(res, 429, "Muitos resumos nesta hora. Tente novamente mais tarde.");
@@ -529,7 +529,7 @@ export default async function handler(req, res) {
         ? [...imagens.map((i) => ({ type: "image", source: { type: "base64", media_type: i.media, data: i.data } })), { type: "text", text: pedido }]
         : pedido;
       const { modelo, esforco } = await lerConfigIa();
-      const client = new Anthropic({ maxRetries: 1, timeout: 120_000 });
+      const client = criarClienteIa({ maxRetries: 1, timeout: 120_000 });
       const resposta = await client.messages.create({
         model: modelo,
         ...esforcoDoModelo(modelo, esforco),
@@ -550,7 +550,7 @@ export default async function handler(req, res) {
     }
 
     if (corpo.acao === "corrigir") {
-      if (!process.env.ANTHROPIC_API_KEY) return erro(res, 503, "O recurso de IA ainda não está configurado no servidor.");
+      if (!(await iaDisponivel())) return erro(res, 503, erroSemIa());
       const texto = typeof corpo.texto === "string" ? corpo.texto.trim().slice(0, MAX_CARACTERES_CORRECAO) : "";
       if (texto.length < 10) return erro(res, 400, "Texto curto demais para corrigir.");
       if (excedeu("correcao", ip, LIMITE_CORRECOES_POR_HORA)) return erro(res, 429, "Muitas correções nesta hora. Tente novamente mais tarde.");
@@ -558,7 +558,7 @@ export default async function handler(req, res) {
       const total = Math.max(parte, Math.min(Number(corpo.total) || 1, 1000));
       const antes = typeof corpo.antes === "string" ? corpo.antes : "";
       const { modelo, esforco } = await lerConfigIa();
-      const client = new Anthropic({ maxRetries: 1, timeout: 120_000 });
+      const client = criarClienteIa({ maxRetries: 1, timeout: 120_000 });
       // max_tokens proporcional ao bloco (~3 chars/token de saída + margem); evita reservar 8000 em blocos curtos.
       const maxTokens = Math.min(8000, Math.max(1200, Math.ceil(texto.length / 2.5) + 400));
       const resposta = await client.messages.create({

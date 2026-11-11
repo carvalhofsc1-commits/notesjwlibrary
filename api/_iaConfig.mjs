@@ -22,6 +22,12 @@ export const ESFORCOS_IA = [
   { id: "high", nome: "Alto: mais cuidadoso, demora mais" },
 ];
 
+// De onde vem o Claude: a API direta da Anthropic ou o Google Cloud (Vertex AI), cobrado na conta do Google (ver api/_clienteIa.mjs).
+export const PROVEDORES_IA = [
+  { id: "anthropic", nome: "Anthropic (API direta)" },
+  { id: "vertex", nome: "Google Cloud (Vertex AI, conta do Google)" },
+];
+
 export const PADRAO_IA = {
   modelo: MODELOS_IA.some((m) => m.id === process.env.CLAUDE_MODEL) ? process.env.CLAUDE_MODEL : "claude-haiku-5-5",
   esforco: ESFORCOS_IA.some((e) => e.id === process.env.CLAUDE_EFFORT) ? process.env.CLAUDE_EFFORT : "low",
@@ -32,6 +38,7 @@ export const PADRAO_IA = {
 export function validarConfigIa(entrada) {
   const c = entrada && typeof entrada === "object" && !Array.isArray(entrada) ? entrada : {};
   return {
+    provedor: PROVEDORES_IA.some((p) => p.id === c.provedor) ? c.provedor : "anthropic",
     modelo: MODELOS_IA.some((m) => m.id === c.modelo) ? c.modelo : PADRAO_IA.modelo,
     esforco: ESFORCOS_IA.some((e) => e.id === c.esforco) ? c.esforco : PADRAO_IA.esforco,
     esbocoModelo: MODELOS_IA.some((m) => m.id === c.esbocoModelo) ? c.esbocoModelo : "",
@@ -48,13 +55,19 @@ export function iaDaTarefa(config, tarefa) {
 }
 
 export function opcoesIa() {
-  return { modelos: MODELOS_IA, esforcos: ESFORCOS_IA };
+  return { modelos: MODELOS_IA, esforcos: ESFORCOS_IA, provedores: PROVEDORES_IA };
 }
 
 let cache = null;
+// O provedor valendo agora (atualizado a cada leitura da configuração; todo pedido lê a configuração antes de chamar a IA).
+let provedorEscolhido = "anthropic";
+export const provedorAtual = () => provedorEscolhido;
 
 export async function lerConfigIa() {
-  if (cache && Date.now() - cache.em < VALIDADE_MS) return cache.valor;
+  if (cache && Date.now() - cache.em < VALIDADE_MS) {
+    provedorEscolhido = cache.valor.provedor;
+    return cache.valor;
+  }
   let guardada = null;
   try {
     guardada = await lerItem(CHAVE);
@@ -63,6 +76,7 @@ export async function lerConfigIa() {
   }
   const valor = validarConfigIa(guardada);
   cache = { valor, em: Date.now() };
+  provedorEscolhido = valor.provedor;
   return valor;
 }
 
@@ -70,6 +84,7 @@ export async function gravarConfigIa(entrada) {
   const valor = validarConfigIa(entrada);
   await gravarItem(CHAVE, valor);
   cache = { valor, em: Date.now() };
+  provedorEscolhido = valor.provedor;
   return valor;
 }
 

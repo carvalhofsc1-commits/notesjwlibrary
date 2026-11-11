@@ -8,12 +8,12 @@
 //
 // MEMORIA_DIR (só para testes no computador) troca o Blob por uma pasta local.
 import { randomUUID } from "node:crypto";
-import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import { del, get, put } from "@vercel/blob";
-import { lerConfigIa } from "./_iaConfig.mjs";
+import { lerConfigIa, provedorAtual } from "./_iaConfig.mjs";
+import { criarClienteIa, iaDisponivel } from "./_clienteIa.mjs";
 
 const NOME = "memoria/licoes.json";
 const MAX_ITENS = 300;
@@ -195,10 +195,10 @@ export async function analisarCorrecao(bruto) {
   const final = limpar(bruto && bruto.final, MAX_ENTRADA);
   if (original.length < 20 || final.length < 20) return { erro: "Texto curto demais para virar uma lição." };
   if (original === final) return { erro: "O texto final é igual ao original: não há correção a registrar." };
-  if (!process.env.ANTHROPIC_API_KEY) return { erro: "A chave da IA (ANTHROPIC_API_KEY) não está configurada no servidor." };
+  if (!(await iaDisponivel())) return { erro: "A IA ainda não está configurada no servidor (ANTHROPIC_API_KEY ou a conta do Google)." };
 
   const { modelo } = await lerConfigIa();
-  const fallback = temFallback(modelo);
+  const fallback = temFallback(modelo) && provedorAtual() === "anthropic";
   const formato = fallback ? betaZodOutputFormat(Licao) : zodOutputFormat(Licao);
   const corpo = {
     model: modelo,
@@ -212,7 +212,7 @@ export async function analisarCorrecao(bruto) {
     ],
     output_config: { format: formato, ...(aceitaEsforco(modelo) ? { effort: "low" } : {}) },
   };
-  const client = new Anthropic({ maxRetries: 1, timeout: 90_000 });
+  const client = criarClienteIa({ maxRetries: 1, timeout: 90_000 });
   const resposta = fallback
     ? await client.beta.messages.parse({ ...corpo, betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" })
     : await client.messages.parse(corpo);

@@ -90,8 +90,7 @@ export async function descreverContas() {
 
 // Token de acesso da conta de serviço (vale 1 hora; é guardado por conta e renovado um pouco antes de vencer).
 const tokensGuardados = {};
-export async function tokenDeAcesso() {
-  const conta = contaEmUso;
+export async function tokenDeAcesso(conta = contaEmUso) {
   const c = credenciaisDaConta(conta);
   if (!c) return null;
   const guardado = tokensGuardados[conta];

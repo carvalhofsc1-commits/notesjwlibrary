@@ -7658,7 +7658,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.75'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.76'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -13016,6 +13016,7 @@ function saveTemplatesToStorage() {
     // ---------- Modelo da IA de texto e gasto com ela (tela de prompts) ----------
     // O administrador escolhe o modelo e o esforço da IA para todos (api/_iaConfig.mjs). O gasto do mês vem da Cost API
     // da Anthropic, quando há uma chave de administrador da Anthropic na Vercel (ANTHROPIC_ADMIN_KEY).
+    const iaProvedor = document.getElementById('iaProvedor'); // de onde vem o Claude: Anthropic direta ou Google Cloud (Vertex)
     const iaModelo = document.getElementById('iaModelo');
     const iaEsforco = document.getElementById('iaEsforco');
     const iaEsbocoModelo = document.getElementById('iaEsbocoModelo'); // modelo e esforço só da Preparação de discursos e esboços ('' = os de cima)
@@ -13057,7 +13058,7 @@ function saveTemplatesToStorage() {
       const r = await postConfig({ acao: 'ia-ler', codigo: promptsCode });
       if (!r.ok) return iaMensagem(configErrorMessage(r, 'Não foi possível carregar o modelo da IA.'), true);
       iaOpcoes = r.data.opcoes;
-      [[iaModelo, iaOpcoes.modelos, ''], [iaEsforco, iaOpcoes.esforcos, ''], [iaEsbocoModelo, iaOpcoes.modelos, 'O mesmo modelo de cima'], [iaEsbocoEsforco, iaOpcoes.esforcos, 'O mesmo esforço de cima']].forEach(([select, itens, primeira]) => {
+      [[iaProvedor, iaOpcoes.provedores, ''], [iaModelo, iaOpcoes.modelos, ''], [iaEsforco, iaOpcoes.esforcos, ''], [iaEsbocoModelo, iaOpcoes.modelos, 'O mesmo modelo de cima'], [iaEsbocoEsforco, iaOpcoes.esforcos, 'O mesmo esforço de cima']].forEach(([select, itens, primeira]) => {
         select.textContent = '';
         if (primeira) { // "o mesmo de cima": os esboços usam o modelo ou o esforço geral
           const igual = document.createElement('option');
@@ -13072,11 +13073,12 @@ function saveTemplatesToStorage() {
           select.appendChild(op);
         });
       });
+      iaProvedor.value = r.data.config.provedor;
       iaModelo.value = r.data.config.modelo;
       iaEsforco.value = r.data.config.esforco;
       iaEsbocoModelo.value = r.data.config.esbocoModelo || '';
       iaEsbocoEsforco.value = r.data.config.esbocoEsforco || '';
-      iaSalvo = { modelo: r.data.config.modelo, esforco: r.data.config.esforco, esbocoModelo: r.data.config.esbocoModelo || '', esbocoEsforco: r.data.config.esbocoEsforco || '' };
+      iaSalvo = { provedor: r.data.config.provedor, modelo: r.data.config.modelo, esforco: r.data.config.esforco, esbocoModelo: r.data.config.esbocoModelo || '', esbocoEsforco: r.data.config.esbocoEsforco || '' };
       iaMostrarPreco();
       iaMensagem(r.data.armazenamento && !r.data.armazenamento.escrita ? 'O armazenamento do servidor ainda não permite salvar.' : '', true);
       iaCarregarCusto();
@@ -13085,19 +13087,20 @@ function saveTemplatesToStorage() {
     // Modelo e esforço como estão salvos no servidor (para saber se a escolha na tela mudou).
     let iaSalvo = null;
     function iaPendente() {
-      return Boolean(iaSalvo && iaOpcoes && (iaModelo.value !== iaSalvo.modelo || iaEsforco.value !== iaSalvo.esforco
+      return Boolean(iaSalvo && iaOpcoes && (iaProvedor.value !== iaSalvo.provedor || iaModelo.value !== iaSalvo.modelo || iaEsforco.value !== iaSalvo.esforco
         || iaEsbocoModelo.value !== iaSalvo.esbocoModelo || iaEsbocoEsforco.value !== iaSalvo.esbocoEsforco));
     }
 
     // Envia o modelo e o esforço escolhidos; quem chama (salvarParaTodos) mostra a mensagem.
     async function iaSalvarModelo() {
-      const r = await postConfig({ acao: 'ia-salvar', codigo: promptsCode, config: { modelo: iaModelo.value, esforco: iaEsforco.value, esbocoModelo: iaEsbocoModelo.value, esbocoEsforco: iaEsbocoEsforco.value } });
+      const r = await postConfig({ acao: 'ia-salvar', codigo: promptsCode, config: { provedor: iaProvedor.value, modelo: iaModelo.value, esforco: iaEsforco.value, esbocoModelo: iaEsbocoModelo.value, esbocoEsforco: iaEsbocoEsforco.value } });
       if (!r.ok) return { ok: false, erro: configErrorMessage(r, 'Não foi possível salvar agora.') };
+      iaProvedor.value = r.data.config.provedor;
       iaModelo.value = r.data.config.modelo;
       iaEsforco.value = r.data.config.esforco;
       iaEsbocoModelo.value = r.data.config.esbocoModelo || '';
       iaEsbocoEsforco.value = r.data.config.esbocoEsforco || '';
-      iaSalvo = { modelo: r.data.config.modelo, esforco: r.data.config.esforco, esbocoModelo: r.data.config.esbocoModelo || '', esbocoEsforco: r.data.config.esbocoEsforco || '' };
+      iaSalvo = { provedor: r.data.config.provedor, modelo: r.data.config.modelo, esforco: r.data.config.esforco, esbocoModelo: r.data.config.esbocoModelo || '', esbocoEsforco: r.data.config.esbocoEsforco || '' };
       iaMostrarPreco();
       iaNotaCarregar();
       return { ok: true };
@@ -13141,6 +13144,24 @@ function saveTemplatesToStorage() {
     iaModelo.addEventListener('change', iaMostrarPreco);
     iaEsbocoModelo.addEventListener('change', iaMostrarPreco);
     document.getElementById('iaSalvarBtn').addEventListener('click', salvarParaTodos);
+
+    // Testa o provedor escolhido na tela (mesmo sem salvar): um pedido simples e um com resposta estruturada, como o app usa.
+    document.getElementById('iaTestarBtn').addEventListener('click', async () => {
+      const botao = document.getElementById('iaTestarBtn');
+      const saida = document.getElementById('iaTesteResultado');
+      botao.disabled = true;
+      saida.className = 'hint';
+      saida.textContent = 'Testando… (pode levar alguns segundos)';
+      const r = await postConfig({ acao: 'ia-testar', codigo: promptsCode, provedor: iaProvedor.value, modelo: iaModelo.value, esforco: iaEsforco.value });
+      botao.disabled = false;
+      if (!r.ok) { saida.className = 'warn'; saida.textContent = configErrorMessage(r, 'Não foi possível testar agora.'); return; }
+      const linha = (nome, t) => !t ? '' : nome + ': ' + (t.ok ? 'funcionou (' + (t.ms / 1000).toFixed(1).replace('.', ',') + ' s)' : 'FALHOU' + (t.status ? ' (' + t.status + ')' : '') + ' — ' + (t.erro || 'erro desconhecido'));
+      const d = r.data;
+      const tudoOk = d.simples && d.simples.ok && d.estruturada && d.estruturada.ok;
+      saida.className = tudoOk ? 'ok' : 'warn';
+      saida.textContent = [(tudoOk ? '✓ ' : '✗ ') + 'Modelo ' + d.modelo + (d.regiao ? ' · região ' + d.regiao : ''), linha('Pedido simples', d.simples), linha('Resposta estruturada', d.estruturada)].filter(Boolean).join('\n');
+      saida.style.whiteSpace = 'pre-line';
+    });
     document.getElementById('iaCustoBtn').addEventListener('click', iaCarregarCusto);
 
     // ---------- Configurações padrão (valem para todos os usuários) ----------

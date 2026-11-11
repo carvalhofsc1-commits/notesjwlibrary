@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.76
+
+**Claude pelo Google Cloud (Vertex AI) como segunda opção de IA de texto.** Na tela de prompts, em “Modelo da IA de texto”, o administrador escolhe **De onde vem a IA**: Anthropic (API direta, como sempre) ou Google Cloud (Claude da Vertex AI, cobrado na conta do Google da empresa, usando a mesma conta de serviço da voz). Vale para todas as funções de IA de texto. O botão **Testar esta escolha** faz um pedido simples e um com resposta estruturada antes de salvar. O padrão continua sendo a Anthropic. Região opcional em `GOOGLE_VERTEX_REGIAO` (padrão “global”). Na Vertex não há o refazer automático em outro modelo, e o gasto aparece no faturamento do Google Cloud, não no painel de consumo.
+
 ## 6.7.75
 
 Texto diário: a autorização para ouvir os comentários adicionais passou de 6 para 36 horas, para dar para ouvir à noite os comentários gerados de manhã (antes aparecia “A autorização para ouvir expirou”). Os comentários gerados antes desta versão ainda têm o prazo antigo: gere-os de novo uma vez.

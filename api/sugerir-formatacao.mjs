@@ -1,5 +1,5 @@
 // Função serverless (Vercel) que pede à IA sugestões de formatação para as linhas do texto.
-// A chave da API fica só aqui, na variável de ambiente ANTHROPIC_API_KEY — nunca vai para o navegador.
+// A chave da API fica só aqui, na variável de ambiente ANTHROPIC_API_KEY (ou a conta de serviço do Google, se o administrador escolheu o Claude pelo Vertex) — nunca vai para o navegador.
 import { AsyncLocalStorage } from "node:async_hooks";
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
@@ -7,7 +7,8 @@ import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import { codigoDoDirigente, erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { acessoDoDirigente, codigoValido, dirigenteValido, exigirAcesso, recusarAcesso, resumoValido } from "./_acesso.mjs";
-import { iaDaTarefa, lerConfigIa } from "./_iaConfig.mjs";
+import { iaDaTarefa, lerConfigIa, provedorAtual } from "./_iaConfig.mjs";
+import { criarClienteIa, erroSemIa, iaDisponivel } from "./_clienteIa.mjs";
 import { blocoLicoesPara } from "./_memoria.mjs";
 import { aparelhoIdLimpo, registrarUsoIa } from "./_estatisticas.mjs";
 import { mensagemSeBloqueado } from "./_acessoSite.mjs";
@@ -77,7 +78,7 @@ async function chamarIa(client, P, params, { schema = null, semPensar = false, t
     system += m.texto || "";
   }
   const { modelo, esforco } = P.ia;
-  const fallback = temFallback(modelo);
+  const fallback = temFallback(modelo) && provedorAtual() === "anthropic"; // o fallback do servidor é da API direta da Anthropic
   const formato = schema ? (fallback ? betaZodOutputFormat(schema) : zodOutputFormat(schema)) : null;
   const output_config = { ...(formato ? { format: formato } : {}), ...(aceitaEsforco(modelo) ? { effort: esforco } : {}) };
   const pensar =
@@ -607,7 +608,7 @@ async function completarFontes(itens, opcoes, P, orientacao) {
     });
     if (!lista.length) return;
 
-    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 40_000) });
+    const client = criarClienteIa({ maxRetries: 1, timeout: tempoIa(P, 40_000) });
     const resposta = await chamarIa(
       client,
       P,
@@ -881,7 +882,7 @@ async function escreverRespostas({ rotulo, texto, escopo, opcoes, modo, ajuste, 
   }
 
   const permitidos = estilosDe(opcoes);
-  const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, longo ? 130_000 : 90_000) });
+  const client = criarClienteIa({ maxRetries: 1, timeout: tempoIa(P, longo ? 130_000 : 90_000) });
   const inicio = Date.now();
   const resposta = await chamarIa(
     client,
@@ -1137,7 +1138,7 @@ async function responderEstudo(res, body, P, opcoesDirigente = {}) {
       P.frases.pedidos[modo === "nova" ? "Respostas: outra sugestão" : "Respostas: melhorar"];
   }
 
-  const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 90_000) });
+  const client = criarClienteIa({ maxRetries: 1, timeout: tempoIa(P, 90_000) });
   const tools = [
     { type: "web_fetch_20250910", name: "web_fetch", max_uses: 3, allowed_domains: ["wol.jw.org"], max_content_tokens: 60000 },
   ];
@@ -1332,7 +1333,7 @@ async function sugerirPerguntas(res, body, P) {
   }
 
   try {
-    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 90_000) });
+    const client = criarClienteIa({ maxRetries: 1, timeout: tempoIa(P, 90_000) });
     const resposta = await chamarIa(
       client,
       P,
@@ -1524,7 +1525,7 @@ async function responderEbc(res, body, P) {
   }
 
   try {
-    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 120_000) });
+    const client = criarClienteIa({ maxRetries: 1, timeout: tempoIa(P, 120_000) });
     const inicio = Date.now();
     const resposta = await chamarIa(
       client,
@@ -1672,7 +1673,7 @@ async function perguntasEbcDirigente(res, body, P) {
   }
 
   try {
-    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 120_000) });
+    const client = criarClienteIa({ maxRetries: 1, timeout: tempoIa(P, 120_000) });
     const inicio = Date.now();
     const resposta = await chamarIa(
       client,
@@ -2171,7 +2172,7 @@ async function esbocoDeTesouros(res, body, P) {
   }
 
   try {
-    const client = new Anthropic({ maxRetries: 0, timeout: TEMPO_ESBOCO_MS });
+    const client = criarClienteIa({ maxRetries: 0, timeout: TEMPO_ESBOCO_MS });
     const inicio = Date.now();
     const resposta = await chamarIa(
       client,
@@ -2327,7 +2328,7 @@ async function esbocoDoDiscursoCurto(res, body, P) {
   }
 
   try {
-    const client = new Anthropic({ maxRetries: 0, timeout: TEMPO_ESBOCO_MS });
+    const client = criarClienteIa({ maxRetries: 0, timeout: TEMPO_ESBOCO_MS });
     const inicio = Date.now();
     const resposta = await chamarIa(
       client,
@@ -2546,7 +2547,7 @@ async function esbocoDoDiscursoPublico(res, body, P) {
   }
 
   try {
-    const client = new Anthropic({ maxRetries: 0, timeout: TEMPO_ESBOCO_MS });
+    const client = criarClienteIa({ maxRetries: 0, timeout: TEMPO_ESBOCO_MS });
     const inicio = Date.now();
     const resposta = await chamarIa(
       client,
@@ -2842,7 +2843,7 @@ async function esbocoDeOutros(res, body, P) {
   }
 
   try {
-    const client = new Anthropic({ maxRetries: 0, timeout: TEMPO_ESBOCO_MS });
+    const client = criarClienteIa({ maxRetries: 0, timeout: TEMPO_ESBOCO_MS });
     const inicio = Date.now();
     const resposta = await chamarIa(
       client,
@@ -2964,7 +2965,7 @@ async function formatarAnotacoes(res, body, P) {
   if (!bruto) return erro(res, 400, "Escreva as anotações antes de formatar.");
   if (bruto.length > 12000) return erro(res, 413, "O texto está grande demais para formatar de uma vez (limite de 12.000 caracteres). Formate por partes.");
   try {
-    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 90_000) });
+    const client = criarClienteIa({ maxRetries: 1, timeout: tempoIa(P, 90_000) });
     const resposta = await chamarIa(
       client,
       P,
@@ -2996,7 +2997,7 @@ async function atribuirPerguntas(res, body, P) {
   const lista = partes.map((p) => `[${p.i}] ${p.secao ? p.secao + " · " : ""}${p.tema}${p.textoTematico ? " — " + p.textoTematico : ""}`).join("\n");
   const quadro = perguntas.map((q) => `${q.n}. ${q.texto}${q.refs ? " (" + q.refs + ")" : ""}`).join("\n");
   try {
-    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 60_000) });
+    const client = criarClienteIa({ maxRetries: 1, timeout: tempoIa(P, 60_000) });
     const resposta = await chamarIa(
       client,
       P,
@@ -3285,7 +3286,7 @@ async function completarResumosComPerspicaz(outros, joias, P, opcoes, ajuste) {
       "\n\nRESUMOS E VERBETES (JSON):\n" +
       JSON.stringify(material) +
       lembreteFinal(opcoes, ajuste, P);
-    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 90_000) });
+    const client = criarClienteIa({ maxRetries: 1, timeout: tempoIa(P, 90_000) });
     const resposta = await chamarIa(client, P, { max_tokens: 12000, system: P.sistemaJoias, messages: [{ role: "user", content: mensagem }] }, { schema: SaidaJoias, semPensar: true, tarefa: "joias" });
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) return simples;
     const novos = resposta.parsed_output.outros || [];
@@ -3347,7 +3348,7 @@ async function responderJoias(res, body, P) {
   };
 
   try {
-    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 120_000) });
+    const client = criarClienteIa({ maxRetries: 1, timeout: tempoIa(P, 120_000) });
     const inicio = Date.now();
     const resposta = await chamarIa(
       client,
@@ -3716,7 +3717,7 @@ async function completarResumosLeituraComFontes(outros, P, ajuste = "", blocoOpc
       JSON.stringify(material) +
       blocoWol +
       lembreteFinal({}, ajuste, P);
-    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 90_000) });
+    const client = criarClienteIa({ maxRetries: 1, timeout: tempoIa(P, 90_000) });
     const resposta = await chamarIa(
       client,
       P,
@@ -3857,7 +3858,7 @@ async function resumirLeituraBiblia(res, body, P) {
 
   const inicio = Date.now();
   try {
-    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 120_000) });
+    const client = criarClienteIa({ maxRetries: 1, timeout: tempoIa(P, 120_000) });
     const resposta = await chamarIa(
       client,
       P,
@@ -3968,7 +3969,7 @@ async function comentariosDoTextoDiario(res, body, P) {
 
   const inicio = Date.now();
   try {
-    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 90_000) });
+    const client = criarClienteIa({ maxRetries: 1, timeout: tempoIa(P, 90_000) });
     const resposta = await chamarIa(
       client,
       P,
@@ -4132,7 +4133,7 @@ async function listarParagrafos(res, body, P) {
   if (!url) return erro(res, 400, "Número ou link do artigo inválido. Use o número de 7 dígitos (ex.: 2026521) ou o link do wol.jw.org.");
 
   try {
-    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, 90_000) });
+    const client = criarClienteIa({ maxRetries: 1, timeout: tempoIa(P, 90_000) });
     const tools = [
       { type: "web_fetch_20250910", name: "web_fetch", max_uses: 3, allowed_domains: ["wol.jw.org"], max_content_tokens: 60000 },
     ];
@@ -4332,7 +4333,7 @@ async function tratarPedido(req, res) {
     if (!exigirAcesso(res, body)) return;
     if (excedeuLimiteBackup(ip)) return erro(res, 429, "Muitas consultas. Tente novamente em alguns minutos.");
     if (await tentarListaNoSite(res, body)) return;
-    if (!process.env.ANTHROPIC_API_KEY) {
+    if (!(await iaDisponivel())) {
       return erro(res, 503, "Não consegui ler o artigo no wol.jw.org agora, e o recurso de IA ainda não está configurado para tentar de outro jeito.");
     }
     const Plista = await carregarPromptsEIa();
@@ -4342,8 +4343,8 @@ async function tratarPedido(req, res) {
     return listarParagrafos(res, body, Plista);
   }
 
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return erro(res, 503, "Recurso de IA ainda não configurado no servidor.");
+  if (!(await iaDisponivel())) {
+    return erro(res, 503, erroSemIa());
   }
 
   // Prompts e limites atuais (padrão do código + edições do administrador, guardadas no Global Config).
@@ -4427,7 +4428,7 @@ async function tratarPedido(req, res) {
   precarregarFontes({ biblia: opcoes.consultarBiblia, perspicaz: opcoes.consultarPerspicaz });
 
   try {
-    const client = new Anthropic({ maxRetries: 1, timeout: tempoIa(P, entrada.longo ? 110_000 : 60_000) });
+    const client = criarClienteIa({ maxRetries: 1, timeout: tempoIa(P, entrada.longo ? 110_000 : 60_000) });
     const resposta = await chamarIa(
       client,
       P,

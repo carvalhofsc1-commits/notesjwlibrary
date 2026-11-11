@@ -5,7 +5,8 @@ import { diagnosticar, escritaDisponivel, leituraDisponivel, lerItem, gravarItem
 import { CATEGORIAS, LIMITES, PARTES, aplicarLimites, categoriaDaParte, limitesPublicos, travadosDe, validarAlteracoes, validarLimites } from "./_prompts.mjs";
 import { esquecerCache, gravarAlteracoes, gravarLimites, lerAlteracoes, lerAnterior, lerLimites } from "./_promptsArmazenados.mjs";
 import { configPublicaVoz, gravarConfigVoz, lerConfigVoz, opcoesVoz } from "./_vozConfig.mjs";
-import { gravarConfigIa, lerConfigIa, lerCustoIa, opcoesIa } from "./_iaConfig.mjs";
+import { gravarConfigIa, lerConfigIa, lerCustoIa, opcoesIa, PROVEDORES_IA } from "./_iaConfig.mjs";
+import { testarIa } from "./_clienteIa.mjs";
 import { descreverContas, gravarContaEscolhida } from "./_googleToken.mjs";
 import { acrescentarLicao, alterarLicao, analisarCorrecao, apagarLicao, apagarTudo, ligarMemoria, lerMemoria, memoriaConfigurada } from "./_memoria.mjs";
 import { estatisticasConfiguradas, registrarPing, resumoEstatisticas } from "./_estatisticas.mjs";
@@ -481,6 +482,14 @@ export default async function handler(req, res) {
     if (acao === "ia-salvar") {
       if (!exigirEscrita(res)) return;
       return res.status(200).json({ config: await gravarConfigIa(corpo.config) });
+    }
+
+    // Teste de um provedor da IA (Anthropic ou Vertex) com o modelo e o esforço dados, sem salvar nada.
+    if (acao === "ia-testar") {
+      const cfg = await lerConfigIa();
+      const provedor = PROVEDORES_IA.some((p) => p.id === corpo.provedor) ? corpo.provedor : cfg.provedor;
+      const modelo = typeof corpo.modelo === "string" && corpo.modelo ? corpo.modelo : cfg.modelo;
+      return res.status(200).json(await testarIa(provedor, modelo, typeof corpo.esforco === "string" ? corpo.esforco : cfg.esforco));
     }
 
     // Gasto do mês com a IA de texto, pela Cost API da Anthropic (precisa de ANTHROPIC_ADMIN_KEY).
