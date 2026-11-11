@@ -124,6 +124,8 @@ async function chamarIa(client, P, params, { schema = null, semPensar = false, t
 // Esboços e discursos: uma chamada só, até quase o limite de 300 s da função. Uma segunda tentativa depois de um tempo esgotado nunca caberia
 // nos 300 s (e fazia a função inteira estourar sem resposta).
 const TEMPO_ESBOCO_MS = 275_000;
+// No Gemini o raciocínio consome maxOutputTokens junto com a saída; 40 mil dá folga para pensar e devolver o JSON completo (a API direta da Anthropic limita a 21 mil sem streaming).
+const tetoTokensEsboco = () => (provedorAtual() === "gemini" ? 40000 : 21000);
 const tempoIa = (P, base) => (/haiku|flash/.test(P.ia.modelo) ? base : Math.min(170_000, base * 2));
 // Os textos dos prompts moram em _prompts.mjs (o administrador edita o tom e as regras pelo app).
 // Os limites de tamanho e de quantidade (textos, destaques, respostas, pedidos por hora...) são configuráveis pelo
@@ -843,6 +845,21 @@ function tratarErro(e, res) {
   }
   if (e instanceof Anthropic.APIError && e.status === 400 && /usage limits/i.test(String(e.message))) {
     return erro(res, 429, "O limite mensal de gastos da IA foi atingido. As sugestões voltam no próximo mês.");
+  }
+  if (
+    e &&
+    (e.name === "TimeoutError" ||
+      e.name === "AbortError" ||
+      e instanceof Anthropic.APIConnectionTimeoutError ||
+      /timeout|aborted/i.test(String(e.message)) ||
+      /timeout|aborted/i.test(String(e.cause?.message)))
+  ) {
+    console.error("Tempo limite esgotado ao chamar a IA:", e?.status, e?.message);
+    return erro(
+      res,
+      504,
+      "A IA demorou demais para responder (tempo limite esgotado). Tente novamente ou use um modelo mais rápido (como o Gemini Flash ou esforço baixo) em Ajustes → Modelos e agentes de IA."
+    );
   }
   console.error("Erro ao chamar a IA:", e?.status, e?.message);
   return erro(res, 502, "Não foi possível obter sugestões agora. Tente novamente.");
@@ -2179,7 +2196,7 @@ async function esbocoDeTesouros(res, body, P) {
     const resposta = await chamarIa(
       client,
       P,
-      { max_tokens: 21000 /* o raciocínio também conta aqui; 21000 é o teto sem streaming */, system: P.sistemaTesouros, messages: [{ role: "user", content: mensagem }] },
+      { max_tokens: tetoTokensEsboco() /* no Gemini o raciocínio consome maxOutputTokens; 40000 dá folga para pensar e devolver o JSON completo */, system: P.sistemaTesouros, messages: [{ role: "user", content: mensagem }] },
       { schema: SaidaTesouros, tarefa: "tesouros" }
     );
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
@@ -2335,7 +2352,7 @@ async function esbocoDoDiscursoCurto(res, body, P) {
     const resposta = await chamarIa(
       client,
       P,
-      { max_tokens: 21000 /* o raciocínio também conta aqui; 21000 é o teto sem streaming */, system: P.sistemaDiscursoCurto, messages: [{ role: "user", content: mensagem }] },
+      { max_tokens: tetoTokensEsboco() /* no Gemini o raciocínio consome maxOutputTokens; 40000 dá folga para pensar e devolver o JSON completo */, system: P.sistemaDiscursoCurto, messages: [{ role: "user", content: mensagem }] },
       { schema: SaidaDiscursoCurto, tarefa: "discurso" }
     );
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
@@ -2573,7 +2590,7 @@ async function esbocoDoDiscursoPublico(res, body, P) {
     const resposta = await chamarIa(
       client,
       P,
-      { max_tokens: 21000 /* o raciocínio também conta aqui; 21000 é o teto sem streaming */, system: P.sistemaDiscursoPublico, messages: [{ role: "user", content: conteudo }] },
+      { max_tokens: tetoTokensEsboco() /* no Gemini o raciocínio consome maxOutputTokens; 40000 dá folga para pensar e devolver o JSON completo */, system: P.sistemaDiscursoPublico, messages: [{ role: "user", content: conteudo }] },
       { schema: SaidaDiscursoPublico, tarefa: "publico" }
     );
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
@@ -2735,7 +2752,7 @@ async function esbocoImportadoDoPublico(res, body, P) {
     // Passar para o formato não pede raciocínio longo: com ele o Gemini 4 Carbon chegou a 16 mil tokens e 231 s (perto dos tetos), e às vezes
     // passava do limite de saída e a resposta vinha cortada. Pensa pouco (semPensar) e, no Gemini, o teto de saída é maior (a API direta
     // da Anthropic não aceita mais de 21 mil sem streaming).
-    const teto = provedorAtual() === "gemini" ? 40000 : 21000;
+    const teto = tetoTokensEsboco();
     const resposta = await chamarIa(
       client,
       P,
@@ -3031,7 +3048,7 @@ async function esbocoDeOutros(res, body, P) {
     const resposta = await chamarIa(
       client,
       P,
-      { max_tokens: 21000 /* o raciocínio também conta aqui; 21000 é o teto sem streaming */, system: P.sistemaOutros, messages: [{ role: "user", content: mensagem }] },
+      { max_tokens: tetoTokensEsboco() /* no Gemini o raciocínio consome maxOutputTokens; 40000 dá folga para pensar e devolver o JSON completo */, system: P.sistemaOutros, messages: [{ role: "user", content: mensagem }] },
       { schema: SaidaOutros, tarefa: "outros" }
     );
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {

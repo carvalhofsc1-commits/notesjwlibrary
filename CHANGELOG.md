@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.8.13
+
+Elaboração e refino de esboços com IA:
+- Aviso claro de tempo esgotado: quando a IA demora mais do que o limite do servidor para responder (comum ao processar discursos longos com muitas gravuras e raciocínio profundo), o app avisa especificamente que o tempo limite esgotou e orienta a tentar novamente ou selecionar um modelo mais rápido (como o Gemini Flash ou esforço baixo).
+- Teto de tokens ampliado para o Gemini: o limite de saída nas chamadas de todos os tipos de esboços (tesouros, discurso curto, discurso público e outros discursos) subiu para 40 mil tokens no provedor Gemini, garantindo folga suficiente para o raciocínio e geração completa do JSON.
+
 ## 6.8.12
 
 Instruções adicionais para a IA: novo campo logo acima dos botões **Outra resposta** e **Melhorar esta resposta** (com o mesmo formato dos outros campos de instruções), para orientar o refino da resposta ou do esboço.
