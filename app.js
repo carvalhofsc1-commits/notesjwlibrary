@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.8.06'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.8.07'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -16556,11 +16556,17 @@ function saveTemplatesToStorage() {
         extraPayload: () => ({ numero: Number(document.getElementById('publicoTema').value) || 0 }),
         validar: () => (document.getElementById('publicoTema').value ? '' : 'Escolha o tema do discurso.'),
         // Revisão do esboço, tempo e seções, o objetivo (nota ao orador) e as leituras que o S-34 marca.
-        linhasDaInfo: dados => soComConteudo(
-          'esboço S-34 nº ' + dados.numero + (dados.revisao ? ' · revisão ' + dados.revisao : '') + ' · ' + dados.minutos + ' min · ' + (dados.secoes || []).map(secao => secao.minutos + ' min').join(' + '),
-          dados.objetivo ? 'objetivo: ' + dados.objetivo : '',
-          dados.leituras && dados.leituras.length ? 'leituras marcadas: ' + dados.leituras.join('; ') : 'sem leituras marcadas: a IA escolhe os textos entre os citados no esboço (ou você os escolhe em Textos bíblicos da matéria)'
-        )
+        // Seções separadas por uma linha: dados do esboço (número, revisão e tempo total em destaque), objetivo e leituras.
+        linhasDaInfo: dados => {
+          const forte = texto => { const el = document.createElement('strong'); el.className = 'esboco-info-destaque'; el.textContent = texto; return el; };
+          const secao = (...partes) => { const el = document.createElement('div'); el.className = 'esboco-info-secao'; el.append(...partes.filter(p => p !== '' && p != null)); return el; };
+          const tempos = (dados.secoes || []).map(s => s.minutos + ' min').join(' + ');
+          return [
+            secao(forte('Esboço S-34 nº ' + dados.numero), dados.revisao ? ' · ' : '', dados.revisao ? forte('revisão ' + dados.revisao) : '', ' · ', forte(dados.minutos + ' min'), tempos ? ' (' + tempos + ')' : ''),
+            dados.objetivo ? secao(forte('Objetivo:'), ' ' + dados.objetivo) : '',
+            secao(dados.leituras && dados.leituras.length ? 'leituras marcadas: ' + dados.leituras.join('; ') : 'sem leituras marcadas: a IA escolhe os textos entre os citados no esboço (ou você os escolhe em Textos bíblicos da matéria)')
+          ].filter(Boolean);
+        }
       },
       // Outros esboços (tema livre): o tema, a ideia e a matéria vêm dos campos do card; o servidor lê os artigos do wol.jw.org e lista os
       // textos bíblicos da matéria. Fica ligado à semana escolhida no alto da tela (como os esboços da semana).
@@ -16652,7 +16658,7 @@ function saveTemplatesToStorage() {
         }
       }
       (cfg.linhasDaInfo(dados) || []).filter(Boolean).forEach((linha, i) => {
-        if (i > 0) cfg.info.append(document.createElement('br'));
+        if (i > 0 && !(linha instanceof Element)) cfg.info.append(document.createElement('br')); // as seções em bloco já quebram a linha
         cfg.info.append(linha);
       });
       imagensRender(cfg.info, dados.imagens, cfg.tituloImagens || 'Imagens da apostila');

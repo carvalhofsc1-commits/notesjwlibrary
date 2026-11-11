@@ -13929,3 +13929,16 @@ a.esboco-info-tema {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+/* Resumo do esboço do discurso público: cada seção separada por uma linha; número, revisão, tempo total e "Objetivo:" em destaque
+   (menos que o tema). */
+.esboco-info-secao {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+
+.esboco-info-destaque {
+  font-weight: 700;
+  color: var(--text);
+}
