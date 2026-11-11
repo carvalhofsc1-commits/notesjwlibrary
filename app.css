@@ -13942,3 +13942,8 @@ a.esboco-info-tema {
   font-weight: 700;
   color: var(--text);
 }
+
+/* Gravuras do esboço: o botão de adicionar na largura do cartão. */
+#publicoGravurasAddBtn {
+  width: 100%;
+}
