@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.82
+
+Modelos e agentes de IA: saiu o atalho do menu lateral (a seção continua em Ajustes, no grupo do administrador) e saiu o contêiner do gasto com a IA de texto. Os botões ficaram padronizados: **cada cartão tem o seu 💾 Salvar para todos**, dentro dele (modelo da IA, esboços, Áudio em texto, conta do Google, voz e limites), e nenhum contêiner tem botão solto. O botão da conta do Google, que se chamava “Usar a conta escolhida”, também virou “Salvar para todos”.
+
 ## 6.7.81
 
 Modelos e agentes de IA: o cartão **🎙️ Áudio em texto: qual IA transcreve e resume** saiu do contêiner da IA de texto e foi para o contêiner **☁️ Google Cloud: conta, voz e transcrição**, junto das outras configurações do Áudio em texto, com o seu próprio botão de salvar.

@@ -57,7 +57,6 @@
       <button type="button" data-menu-ir="backup"><span aria-hidden="true">📦</span> Backup JW</button>
       <button type="button" data-menu-atalho="historico"><span aria-hidden="true">🗂️</span> Pesquisas salvas</button>
       <button type="button" data-menu-ir="ajustes"><span aria-hidden="true">⚙️</span> Ajustes</button>
-      <button type="button" id="menuModelosIa" class="so-admin" hidden><span aria-hidden="true">🤖</span> Modelos e agentes de IA</button>
       <a class="app-menu-link" href="sobre.html"><span aria-hidden="true">ℹ️</span> Sobre</a>
       <!-- Consumo de IA do mês até agora (só aparece com códigos de IA salvos e internet); tocar leva a Ajustes → Consumo de IA e faturamento. -->
       <button type="button" id="menuConsumo" class="app-menu-consumo" hidden aria-label="Ver o consumo de IA em Ajustes">
@@ -1530,7 +1529,7 @@
         <details class="subsection sub-tint-2 so-admin" id="modelosIaSection" hidden>
           <summary><span class="adm-titulo">🤖 Modelos e agentes de IA&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
           <div class="subsection-body modelos-ia-body">
-            <p class="hint">Tudo o que define a IA do app, num lugar só: a IA de texto (de onde vem, modelos e esforço), o gasto, a conta do Google, a leitura em voz alta e o Áudio em texto. As escolhas valem para todos os usuários.</p>
+            <p class="hint">Tudo o que define a IA do app, num lugar só: a IA de texto (de onde vem, modelos e esforço), a conta do Google, a leitura em voz alta e o Áudio em texto. Cada cartão tem o seu 💾 Salvar para todos; as escolhas valem para todos os usuários.</p>
             <div class="modelos-ia-grupo" style="--grupo-cor:#7c3aed">
             <h3 class="modelos-ia-titulo">✍️ IA de texto</h3>
             <details class="prompt-item prompt-tint-ia">
@@ -1548,6 +1547,10 @@
               <p id="iaModeloPreco" class="hint"></p>
               <label for="iaEsforco">Esforço (quanto a IA pensa antes de responder)</label>
               <select id="iaEsforco"></select>
+              <div class="button-row">
+                <button id="iaSalvarBtn" type="button">💾 Salvar para todos</button>
+              </div>
+              <p id="iaStatus" class="ok" role="status" aria-live="polite"></p>
             </details>
 
             <details class="prompt-item prompt-tint-ia">
@@ -1558,32 +1561,14 @@
               <p id="iaEsbocoPreco" class="hint"></p>
               <label for="iaEsbocoEsforco">Esforço para discursos, esboços e dirigir</label>
               <select id="iaEsbocoEsforco"></select>
+              <div class="button-row">
+                <button id="iaEsbocoSalvarBtn" type="button">💾 Salvar para todos</button>
+              </div>
+              <p id="iaEsbocoStatus" class="ok" role="status" aria-live="polite"></p>
             </details>
 
-            <div class="button-row ia-salvar-linha">
-              <button id="iaSalvarBtn" type="button">💾 Salvar para todos</button>
-              <span id="iaStatus" class="ok" role="status" aria-live="polite"></span>
             </div>
 
-            </div>
-
-            <div class="modelos-ia-grupo" id="iaGastoGrupo" style="--grupo-cor:#16a34a">
-              <h3 class="modelos-ia-titulo" id="iaGastoTitulo">💲 Gasto com a IA de texto</h3>
-              <div id="iaGastoAnthropic">
-                <p class="hint">A IA de texto está na Anthropic: o gasto do mês vem do Claude Console.</p>
-                <div id="iaCusto" class="ia-custo"></div>
-                <div class="button-row">
-                  <button id="iaCustoBtn" class="secondary" type="button">🔄 Atualizar o gasto</button>
-                  <a class="voz-link" href="https://platform.claude.com/cost" target="_blank" rel="noopener noreferrer">💳 Abrir os custos no Claude Console</a>
-                </div>
-              </div>
-              <div id="iaGastoGoogle" hidden>
-                <p class="hint">A IA de texto está no Google Cloud (Gemini ou Claude pela Vertex): o gasto entra no faturamento do Google Cloud da conta em uso, junto com a voz e a transcrição. O app não lê esse valor; veja-o no console do Google.</p>
-                <div class="button-row">
-                  <a class="voz-link" href="https://console.cloud.google.com/billing" target="_blank" rel="noopener noreferrer">💳 Abrir o faturamento no Google Cloud</a>
-                </div>
-              </div>
-            </div>
             <div class="modelos-ia-grupo" style="--grupo-cor:#0284c7">
             <h3 class="modelos-ia-titulo">☁️ Google Cloud: conta, voz e transcrição</h3>
             <details class="prompt-item prompt-tint-ia">
@@ -1607,7 +1592,7 @@
                 <p id="googleContaStatus" class="ok" role="status" aria-live="polite"></p>
                 <div id="googleContaLista" class="google-conta-lista"></div>
                 <div class="button-row">
-                  <button id="googleContaSalvarBtn" type="button">💾 Usar a conta escolhida</button>
+                  <button id="googleContaSalvarBtn" type="button">💾 Salvar para todos</button>
                   <button id="googleContaAtualizarBtn" class="secondary" type="button">🔄 Recarregar</button>
                 </div>
                 <p id="googleContaStatusFim" class="ok" role="status" aria-live="polite"></p>

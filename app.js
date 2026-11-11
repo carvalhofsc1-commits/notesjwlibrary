@@ -7658,7 +7658,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.81'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.82'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -13023,7 +13023,6 @@ function saveTemplatesToStorage() {
     const iaEsbocoPreco = document.getElementById('iaEsbocoPreco');
     const iaModeloPreco = document.getElementById('iaModeloPreco');
     const iaStatus = document.getElementById('iaStatus');
-    const iaCusto = document.getElementById('iaCusto');
     let iaOpcoes = null;
     const iaDolares = valor => 'US$ ' + Number(valor || 0).toFixed(2).replace('.', ',');
     const iaPreco = valor => String(valor).replace('.', ',');
@@ -13122,7 +13121,6 @@ function saveTemplatesToStorage() {
       iaSalvo = { provedor: r.data.config.provedor, modelo: r.data.config.modelo, esforco: r.data.config.esforco, esbocoModelo: r.data.config.esbocoModelo || '', esbocoEsforco: r.data.config.esbocoEsforco || '', audioMotor: r.data.config.audioMotor || 'chirp', audioGeminiModelo: r.data.config.audioGeminiModelo || '', audioModelo: r.data.config.audioModelo || '' };
       iaMostrarPreco();
       iaMensagem(r.data.armazenamento && !r.data.armazenamento.escrita ? 'O armazenamento do servidor ainda não permite salvar.' : '', true);
-      iaAtualizarGasto();
     }
 
     // Modelo e esforço como estão salvos no servidor (para saber se a escolha na tela mudou).
@@ -13148,52 +13146,7 @@ function saveTemplatesToStorage() {
       iaSalvo = { provedor: r.data.config.provedor, modelo: r.data.config.modelo, esforco: r.data.config.esforco, esbocoModelo: r.data.config.esbocoModelo || '', esbocoEsforco: r.data.config.esbocoEsforco || '', audioMotor: r.data.config.audioMotor || 'chirp', audioGeminiModelo: r.data.config.audioGeminiModelo || '', audioModelo: r.data.config.audioModelo || '' };
       iaMostrarPreco();
       iaNotaCarregar();
-      iaAtualizarGasto();
       return { ok: true };
-    }
-
-    // O cartão de gasto acompanha o provedor SALVO: Anthropic mostra o gasto do Claude Console; Google Cloud leva ao faturamento do Google.
-    function iaAtualizarGasto() {
-      const anthropic = !iaSalvo || iaSalvo.provedor === 'anthropic';
-      document.getElementById('iaGastoAnthropic').hidden = !anthropic;
-      document.getElementById('iaGastoGoogle').hidden = anthropic;
-      document.getElementById('iaGastoTitulo').textContent = '💲 Gasto com a IA de texto (' + (anthropic ? 'Anthropic' : 'Google Cloud') + ')';
-      if (anthropic) iaCarregarCusto();
-    }
-
-    async function iaCarregarCusto() {
-      iaCusto.textContent = 'Consultando o gasto na Anthropic…';
-      const r = await postConfig({ acao: 'ia-custo', codigo: codigoAdminAtual() });
-      iaCusto.textContent = '';
-      const paragrafo = (texto, classe) => {
-        const p = document.createElement('p');
-        if (classe) p.className = classe;
-        p.textContent = texto;
-        iaCusto.appendChild(p);
-        return p;
-      };
-      if (!r.ok) return paragrafo(configErrorMessage(r, 'Não consegui consultar o gasto agora.'), 'warn');
-      if (!r.data.configurado) {
-        paragrafo('O gasto com a IA de texto aparece no Claude Console, pelo link abaixo.', 'hint');
-        return;
-      }
-      const desde = r.data.desde.split('-').reverse().slice(0, 2).join('/');
-      const resumo = paragrafo('', '');
-      resumo.append('Este mês (desde ' + desde + '): ');
-      const total = document.createElement('strong');
-      total.textContent = iaDolares(r.data.mes);
-      resumo.append(total, ' · Hoje: ' + iaDolares(r.data.hoje));
-      if (r.data.porModelo.length) {
-        const lista = document.createElement('ul');
-        r.data.porModelo.forEach(item => {
-          const li = document.createElement('li');
-          li.textContent = item.modelo + ': ' + iaDolares(item.valor);
-          lista.appendChild(li);
-        });
-        iaCusto.appendChild(lista);
-      }
-      const hora = new Date(r.data.atualizadoEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-      paragrafo('Valores da Anthropic, em dólares, consultados às ' + hora + '. Cada uso aparece uns 5 minutos depois.', 'hint');
     }
 
     iaModelo.addEventListener('change', iaMostrarPreco);
@@ -13207,6 +13160,19 @@ function saveTemplatesToStorage() {
       const r = await iaSalvarModelo();
       botao.disabled = false;
       iaMensagem(r.ok ? '✅ Salvo. Vale para todos em poucos segundos.' : r.erro, !r.ok);
+    });
+    // 💾 do cartão dos esboços: salva a mesma configuração da IA, com o aviso no próprio cartão.
+    document.getElementById('iaEsbocoSalvarBtn').addEventListener('click', async () => {
+      const aviso = document.getElementById('iaEsbocoStatus');
+      if (!iaPendente()) { aviso.className = 'ok'; aviso.textContent = 'Nada foi alterado.'; return; }
+      const botao = document.getElementById('iaEsbocoSalvarBtn');
+      botao.disabled = true;
+      aviso.className = 'hint';
+      aviso.textContent = 'Salvando…';
+      const r = await iaSalvarModelo();
+      botao.disabled = false;
+      aviso.className = r.ok ? 'ok' : 'warn';
+      aviso.textContent = r.ok ? '✅ Salvo. Vale para todos em poucos segundos.' : r.erro;
     });
     // 💾 do cartão do Áudio em texto (no contêiner do Google Cloud): salva a mesma configuração da IA, com o aviso no próprio cartão.
     document.getElementById('iaAudioSalvarBtn').addEventListener('click', async () => {
@@ -13228,13 +13194,6 @@ function saveTemplatesToStorage() {
       if (!codigoAdminAtual()) return iaMensagem('Salve a senha de administrador em 🔐 Autorização de acessos.', true);
       iaCarregar();
     });
-    // Atalho no menu lateral: abre Ajustes já nesta seção.
-    document.getElementById('menuModelosIa').addEventListener('click', () => {
-      showScreen('ajustes');
-      menuFechar();
-      if (!modelosIaSection.open) modelosIaSection.open = true;
-      setTimeout(() => modelosIaSection.scrollIntoView({ block: 'start' }), 80);
-    });
 
     // Testa o provedor escolhido na tela (mesmo sem salvar): um pedido simples e um com resposta estruturada, como o app usa.
     document.getElementById('iaTestarBtn').addEventListener('click', async () => {
@@ -13253,7 +13212,6 @@ function saveTemplatesToStorage() {
       saida.textContent = [(tudoOk ? '✓ ' : '✗ ') + 'Modelo ' + d.modelo + (d.regiao ? ' · região ' + d.regiao : ''), linha('Pedido simples', d.simples), linha('Resposta estruturada', d.estruturada)].filter(Boolean).join('\n');
       saida.style.whiteSpace = 'pre-line';
     });
-    document.getElementById('iaCustoBtn').addEventListener('click', iaCarregarCusto);
 
     // ---------- Configurações padrão (valem para todos os usuários) ----------
     // O administrador publica o padrão pelos botões 💾 Salvar para todos (modelos e categorias; caracteres, favoritos e faixa rápida; opções da
