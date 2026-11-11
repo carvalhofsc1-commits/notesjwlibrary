@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.92
+
+Definições em vigor: novo botão **📋 Copiar as definições**, que copia a tabela inteira em texto (data e hora, as três partes e uma linha por item).
+
 ## 6.7.91
 
 Modelos e agentes de IA: **✏️ Escolher contas e modelos** também fica recolhida e abre ao tocar no título, como as Definições em vigor.

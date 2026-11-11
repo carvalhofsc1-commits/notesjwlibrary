@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.91'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.92'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -13238,6 +13238,17 @@ function saveTemplatesToStorage() {
       caixa.replaceChildren(tabela);
     }
     document.addEventListener('modelos-ia-mudou', () => { if (modelosIaSection.open) modelosResumoCarregar(); });
+    // 📋 Copiar as definições: a tabela em texto simples (título de cada parte e uma linha por item).
+    document.getElementById('modelosResumoCopiarBtn').addEventListener('click', event => {
+      const linhas = [...document.querySelectorAll('#modelosResumoTabela tr')];
+      if (!linhas.length) return;
+      const partes = ['NoteStyle · Definições em vigor (' + new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) + ')'];
+      linhas.forEach(tr => {
+        if (tr.classList.contains('modelos-resumo-secao')) partes.push('', tr.textContent.trim());
+        else partes.push('• ' + tr.cells[0].textContent.trim() + ': ' + tr.cells[1].textContent.trim());
+      });
+      copiarDescricaoImagem(partes.join('\n'), event.currentTarget);
+    });
 
     // Testa o provedor escolhido na tela (mesmo sem salvar): um pedido simples e um com resposta estruturada, como o app usa.
     document.getElementById('iaTestarBtn').addEventListener('click', async () => {

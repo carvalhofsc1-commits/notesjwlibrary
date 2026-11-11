@@ -13675,3 +13675,9 @@ button.modelos-salvar {
   width: 100%;
   margin-top: 8px;
 }
+
+/* 📋 Copiar as definições: abaixo da tabela das Definições em vigor, na largura dela. */
+button.modelos-copiar {
+  width: 100%;
+  margin-top: 10px;
+}
