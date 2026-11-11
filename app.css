@@ -8346,14 +8346,20 @@
       white-space: normal;
       overflow-wrap: anywhere;
       cursor: pointer;
+      -webkit-tap-highlight-color: transparent; /* rolar a lista com o dedo não pinta a linha tocada */
+      -webkit-user-select: none;
+      user-select: none;
     }
 
     .bk-seletor-item:last-child {
       border-bottom: 0;
     }
 
-    .bk-seletor-item:hover:not(:disabled) {
-      background: var(--soft);
+    /* Só com mouse: no celular o :hover "gruda" na linha em que o dedo encostou ao rolar. */
+    @media (hover: hover) {
+      .bk-seletor-item:hover:not(:disabled) {
+        background: var(--soft);
+      }
     }
 
     .bk-seletor-item.selecionado {
@@ -13692,6 +13698,15 @@ button.modelos-copiar {
   display: flex;
   align-items: baseline;
   gap: 8px;
+  /* Linha dos temas que já têm esboço preparado: fundo verde claro e uma faixa verde à esquerda. */
+  background: color-mix(in srgb, #22c55e 14%, var(--card));
+  box-shadow: inset 4px 0 0 #22c55e;
+}
+
+@media (hover: hover) {
+  .bk-seletor-item.publico-tem-salvo:hover:not(:disabled) {
+    background: color-mix(in srgb, #22c55e 24%, var(--card));
+  }
 }
 
 .publico-salvo {

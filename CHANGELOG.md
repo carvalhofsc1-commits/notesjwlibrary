@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.99
+
+Lista de temas do discurso público (e as outras listas de escolha): rolar com o dedo não deixa mais uma linha marcada (o realce de “passar o mouse” agora vale só com mouse, e o toque não pinta a linha). As linhas dos temas que já têm esboço preparado ficam com **fundo verde claro** e uma faixa verde à esquerda, além da etiqueta 📂 salvo.
+
+O lembrete de backup passou a aparecer depois de **30 dias** sem backup (antes, 15).
+
 ## 6.7.98
 
 **Pesquisas e respostas salvas num banco de dados (IndexedDB).** Antes elas ficavam no armazenamento rápido do navegador (perto de 5 MB por site), com teto de 60 itens e 1,5 milhão de caracteres: passando disso, as mais antigas eram apagadas sozinhas para caber as novas. Agora ficam no banco “notestyle-dados”, com espaço de centenas de MB, e o teto subiu para 3000 itens, sem limite de caracteres. Na primeira abertura o que já estava salvo passa sozinho para o banco. O backup inclui as pesquisas salvas e a restauração as grava direto no banco; “Apagar os dados deste aparelho” também apaga o banco. O resumo dos dados mostra o espaço do banco.
