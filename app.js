@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.8.07'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.8.08'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -17793,10 +17793,12 @@ function saveTemplatesToStorage() {
     const ORADOR_KEY = 'jwLibraryNoteAplicarOradorV1';
     const oradorNome = document.getElementById('publicoOradorNome');
     const oradorCongregacao = document.getElementById('publicoOradorCongregacao');
+    const oradorCidade = document.getElementById('publicoOradorCidade');
     try {
       const salvo = JSON.parse(localStorage.getItem(ORADOR_KEY) || '{}');
       oradorNome.value = (salvo && salvo.nome) || '';
       oradorCongregacao.value = (salvo && salvo.congregacao) || '';
+      oradorCidade.value = (salvo && salvo.cidade) || '';
     } catch (e) { /* sem localStorage: campos vazios */ }
     function presidenteTexto() {
       const numero = publicoTema.value;
@@ -17806,6 +17808,7 @@ function saveTemplatesToStorage() {
         '*Discurso público*',
         '👤 Orador: ' + (oradorNome.value.trim() || '(informe o nome)'),
         '🏠 Congregação: ' + (oradorCongregacao.value.trim() || '(informe a congregação)'),
+        '📍 Cidade: ' + (oradorCidade.value.trim() || '(informe a cidade)'),
         '🎤 Tema: ' + (tema ? 'Nº ' + tema.numero + ' — ' + tema.titulo.replace(/^[‘'“"]+|[’'”"]+$/g, '') : '(escolha o tema)'),
         '🎵 Cântico inicial: ' + (cantico ? 'Nº ' + cantico.numero + ' — ' + cantico.titulo : '(ainda não escolhido)')
       ].join('\n');
@@ -17813,8 +17816,8 @@ function saveTemplatesToStorage() {
     function presidenteAtualizar() {
       document.getElementById('publicoPresidenteTexto').textContent = presidenteTexto();
     }
-    [oradorNome, oradorCongregacao].forEach(campo => campo.addEventListener('input', () => {
-      safeSetItem(ORADOR_KEY, JSON.stringify({ nome: oradorNome.value.trim(), congregacao: oradorCongregacao.value.trim() }));
+    [oradorNome, oradorCongregacao, oradorCidade].forEach(campo => campo.addEventListener('input', () => {
+      safeSetItem(ORADOR_KEY, JSON.stringify({ nome: oradorNome.value.trim(), congregacao: oradorCongregacao.value.trim(), cidade: oradorCidade.value.trim() }));
       presidenteAtualizar();
     }));
     document.getElementById('publicoPresidenteCopiarBtn').addEventListener('click', event => copiarDescricaoImagem(presidenteTexto(), event.currentTarget));

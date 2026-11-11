@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.8.08
+
+Dados para o presidente da reunião: novo campo **Cidade** do orador (guardado com o nome e a congregação), que entra no texto para copiar ou enviar pelo WhatsApp (📍 Cidade).
+
 ## 6.8.07
 
 Discurso público: o resumo do esboço escolhido ficou dividido em seções separadas por uma linha (tema, dados do esboço, objetivo e leituras). O número do esboço, a revisão, o tempo total e a palavra “Objetivo” ficam em negrito, com menos destaque que o tema.
