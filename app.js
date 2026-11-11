@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.8.13'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.8.14'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -14076,7 +14076,7 @@ function saveTemplatesToStorage() {
       ebc: { botao: 'ebcResponderBtn', exemplo: 'Ex.: responda com mais detalhes ao quadro "Medite no que aprendeu".' },
       dirigente: { botao: 'aiStudyQuestionsBtn', exemplo: 'Ex.: sugira perguntas voltadas aos jovens, ou sobre o texto de 1 Pedro 5:2.' },
       ebcdir: { botao: 'ebcDirPerguntasBtn', exemplo: 'Ex.: elabore as perguntas sobre a atitude de Raabe e como imitá-la hoje.' },
-      publico: { botao: 'publicoEsbocoBtn', exemplo: 'Ex.: use uma ilustração do dia a dia e destaque a aplicação para os jovens.' },
+      publico: { botao: 'publicoEsbocoBtn', antes: true, exemplo: 'Ex.: use uma ilustração do dia a dia e destaque a aplicação para os jovens.' },
       tesouros: { botao: 'tesourosEsbocoBtn', exemplo: 'Ex.: inclua uma ilustração sobre a esperança e perguntas que levem a plateia a pensar.' },
       discurso: { botao: 'discursoEsbocoBtn', exemplo: 'Ex.: faça uma introdução mais curta e foque na aplicação prática.' },
       // Leitura diária da Bíblia: o campo fica abaixo do botão Gerar resumo, na área do resumo.
@@ -16890,7 +16890,8 @@ function saveTemplatesToStorage() {
       lista.className = 'textos-lista';
       corpo.append(dica, acoes, lista);
       caixa.append(resumo, corpo);
-      cfg.info.insertAdjacentElement('afterend', caixa);
+      const ancoragem = (cfg.kind === 'publico' && document.getElementById('publicoVerBtn')) || cfg.info;
+      ancoragem.insertAdjacentElement('afterend', caixa);
       cfg.textosUi = { caixa, resumo, dica, incluir, limpar, lista };
       cfg.tirados = new Set(); // os textos LEIA que o orador desmarcou (não entram no esboço)
       limpar.addEventListener('click', () => { cfg.marcados.clear(); cfg.tirados.clear(); textosAtualizarMarcas(cfg); }); // limpar também devolve os LEIA

@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.8.14
+
+Anotações e Discurso público:
+- Tela de anotações: fonte ajustada e reduzida no botão **🎯⚡️⚡️ IMPORTANTE 👉** para não vazar a borda em telas estreitas (como 360 px ou menores).
+- Discurso público: ordem dos botões reorganizada para um fluxo mais direto — o botão **📄 Ver o esboço original** fica logo abaixo do card de resumo do S-34, e a caixa **✍️ Instruções adicionais para a IA** fica logo acima do botão **✨ IA - Elaborar o esboço do discurso**.
+
 ## 6.8.13
 
 Elaboração e refino de esboços com IA:

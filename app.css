@@ -5343,6 +5343,33 @@
 
     .anotacoes-fmt-modelos button {
       white-space: nowrap;
+      padding: 6px 4px;
+      font-size: .82rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .anotacoes-fmt-modelos button[data-anotacoes-modelo="importante"] {
+      font-size: .74rem;
+    }
+
+    @media (max-width: 380px) {
+      .anotacoes-fmt-modelos button {
+        padding: 6px 2px;
+        font-size: .78rem;
+      }
+      .anotacoes-fmt-modelos button[data-anotacoes-modelo="importante"] {
+        font-size: .68rem;
+      }
+    }
+
+    @media (max-width: 340px) {
+      .anotacoes-fmt-modelos button {
+        font-size: .72rem;
+      }
+      .anotacoes-fmt-modelos button[data-anotacoes-modelo="importante"] {
+        font-size: .62rem;
+      }
     }
 
     .anotacoes-escrita > label {
