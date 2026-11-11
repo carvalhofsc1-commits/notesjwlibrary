@@ -13524,3 +13524,9 @@ button.processando:disabled { opacity: 1; cursor: progress; }
 .modelos-ia-body > .modelos-ia-titulo:first-of-type {
   margin-top: 10px;
 }
+
+/* Subtítulo dentro de um cartão de Modelos e agentes de IA (ex.: "Conta do Google: escolha"). */
+.modelos-ia-sub {
+  margin: 8px 0 2px;
+  font-weight: 650;
+}

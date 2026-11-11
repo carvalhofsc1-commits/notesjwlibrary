@@ -7658,7 +7658,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.84'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.85'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -13160,6 +13160,19 @@ function saveTemplatesToStorage() {
       const r = await iaSalvarModelo();
       botao.disabled = false;
       iaMensagem(r.ok ? '✅ Salvo. Vale para todos em poucos segundos.' : r.erro, !r.ok);
+    });
+    // 💾 do cartão Conta para modelos de texto (Definição das contas): salva o provedor junto com a configuração da IA.
+    document.getElementById('iaContaSalvarBtn').addEventListener('click', async () => {
+      const aviso = document.getElementById('iaContaStatus');
+      if (!iaPendente()) { aviso.className = 'ok'; aviso.textContent = 'Nada foi alterado.'; return; }
+      const botao = document.getElementById('iaContaSalvarBtn');
+      botao.disabled = true;
+      aviso.className = 'hint';
+      aviso.textContent = 'Salvando…';
+      const r = await iaSalvarModelo();
+      botao.disabled = false;
+      aviso.className = r.ok ? 'ok' : 'warn';
+      aviso.textContent = r.ok ? '✅ Salvo. Vale para todos em poucos segundos.' : r.erro;
     });
     // 💾 do cartão dos esboços: salva a mesma configuração da IA, com o aviso no próprio cartão.
     document.getElementById('iaEsbocoSalvarBtn').addEventListener('click', async () => {

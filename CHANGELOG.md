@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.85
+
+Modelos e agentes de IA: novo contêiner **🔑 Definição das contas**, com dois cartões: **✍️ Conta para modelos de texto** (a escolha “De onde vem a IA” e o teste) e **🔊 Conta para voz e áudio** (a Conta do Google: escolha). Em **Modelos IA para voz e transcrição**, os dois cartões do Áudio em texto ficaram juntos, depois da leitura em voz. O cartão dos esboços passou a se chamar **📜 Produção de texto: modelo para preparação de discursos e esboços e preparar para dirigir**.
+
 ## 6.7.84
 
 Modelos e agentes de IA: os cartões **🤖 Modelo da IA de texto** e **☁️ Conta do Google (voz e transcrição)** passaram a se chamar **🤖 Produção de texto: modelo para uso geral** e **☁️ Conta do Google: escolha**.

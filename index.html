@@ -1530,11 +1530,10 @@
           <summary><span class="adm-titulo">🤖 Modelos e agentes de IA&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
           <div class="subsection-body modelos-ia-body">
             <p class="hint">Tudo o que define a IA do app, num lugar só: a IA de texto (de onde vem, modelos e esforço), a conta do Google, a leitura em voz alta e o Áudio em texto. Cada cartão tem o seu 💾 Salvar para todos; as escolhas valem para todos os usuários.</p>
-            <div class="modelos-ia-grupo" style="--grupo-cor:#7c3aed">
-            <h3 class="modelos-ia-titulo">✍️ Modelos IA para texto</h3>
+            <div class="modelos-ia-grupo" style="--grupo-cor:#d97706">
+            <h3 class="modelos-ia-titulo">🔑 Definição das contas</h3>
             <details class="prompt-item prompt-tint-ia">
-              <summary><h3>🤖 Produção de texto: modelo para uso geral</h3></summary>
-              <p class="hint">Vale para todas as respostas da IA (estudo, perguntas do dirigente, formatação, comentários do texto diário) e para todos os usuários. Os modelos mais potentes escrevem melhor, mas demoram mais e custam mais.</p>
+              <summary><h3>✍️ Conta para modelos de texto</h3></summary>
               <label for="iaProvedor">De onde vem a IA</label>
               <select id="iaProvedor"></select>
               <p class="hint">“Anthropic” usa a chave <code>ANTHROPIC_API_KEY</code>. “Google Cloud · Gemini” e “Google Cloud · Claude” usam a Vertex AI, cobrada na conta do Google da empresa (a mesma conta de serviço da voz, sem chave nova; regiões em <code>GOOGLE_GEMINI_REGIAO</code> e <code>GOOGLE_VERTEX_REGIAO</code>, padrão “global”). Cada provedor tem a sua lista de modelos. Com o Gemini, a leitura de páginas pela IA é feita pela ferramenta de endereços do Google, e os resultados podem ser um pouco diferentes dos do Claude: teste as funções principais antes de adotar. O gasto mostrado mais abaixo é só o da Anthropic; o da Vertex aparece no faturamento do Google Cloud. Na Vertex não existe o refazer automático em outro modelo quando um filtro de segurança recusa um pedido.</p>
@@ -1542,6 +1541,32 @@
                 <button id="iaTestarBtn" class="secondary" type="button">🧪 Testar esta escolha</button>
               </div>
               <p id="iaTesteResultado" class="hint" role="status" aria-live="polite"></p>
+              <div class="button-row">
+                <button id="iaContaSalvarBtn" type="button">💾 Salvar para todos</button>
+              </div>
+              <p id="iaContaStatus" class="ok" role="status" aria-live="polite"></p>
+            </details>
+            <details class="prompt-item prompt-tint-ia so-admin" id="googleContaSection" hidden>
+              <summary><h3>🔊 Conta para voz e áudio</h3></summary>
+              <div>
+                <p class="modelos-ia-sub">☁️ Conta do Google: escolha</p>
+                <p class="hint">A leitura em voz alta e o Áudio em texto usam uma conta do Google Cloud. O app aceita duas ao mesmo tempo: a <strong>principal</strong> (variáveis <code>GOOGLE_TTS_CREDENCIAIS</code> e <code>GOOGLE_STT_BUCKET</code> na Vercel) e a de <strong>reserva</strong> (<code>GOOGLE_ALT_CREDENCIAIS</code> e <code>GOOGLE_ALT_STT_BUCKET</code>). Escolha aqui qual usar; a mudança vale para todos em poucos segundos, sem novo deploy. Uma transcrição em andamento na hora da troca pode falhar: é só tentar de novo.</p>
+                <p id="googleContaStatus" class="ok" role="status" aria-live="polite"></p>
+                <div id="googleContaLista" class="google-conta-lista"></div>
+                <div class="button-row">
+                  <button id="googleContaSalvarBtn" type="button">💾 Salvar para todos</button>
+                  <button id="googleContaAtualizarBtn" class="secondary" type="button">🔄 Recarregar</button>
+                </div>
+                <p id="googleContaStatusFim" class="ok" role="status" aria-live="polite"></p>
+              </div>
+            </details>
+            </div>
+
+            <div class="modelos-ia-grupo" style="--grupo-cor:#7c3aed">
+            <h3 class="modelos-ia-titulo">✍️ Modelos IA para texto</h3>
+            <details class="prompt-item prompt-tint-ia">
+              <summary><h3>🤖 Produção de texto: modelo para uso geral</h3></summary>
+              <p class="hint">Vale para todas as respostas da IA (estudo, perguntas do dirigente, formatação, comentários do texto diário) e para todos os usuários. Os modelos mais potentes escrevem melhor, mas demoram mais e custam mais.</p>
               <label for="iaModelo">Modelo</label>
               <select id="iaModelo"></select>
               <p id="iaModeloPreco" class="hint"></p>
@@ -1554,7 +1579,7 @@
             </details>
 
             <details class="prompt-item prompt-tint-ia">
-              <summary><h3>📜 Preparação de discursos e esboços e Preparar para dirigir</h3></summary>
+              <summary><h3>📜 Produção de texto: modelo para preparação de discursos e esboços e preparar para dirigir</h3></summary>
               <p class="hint">Escolha, se quiser, outro modelo (e esforço) só para ELABORAR o esboço (Tesouros, discurso curto, discurso público e Outros esboços) e para as respostas do Preparar para dirigir (perguntas adicionais do estudo de A Sentinela e preparação do Estudo Bíblico do dirigente). Carregar a matéria, pesquisar na biblioteca e listar os textos bíblicos não usam IA ou usam o modelo geral. Em “o mesmo de cima”, tudo isso usa o modelo e o esforço escolhidos acima, como todas as outras respostas da IA.</p>
               <label for="iaEsbocoModelo">Modelo para discursos, esboços e dirigir</label>
               <select id="iaEsbocoModelo"></select>
@@ -1571,33 +1596,6 @@
 
             <div class="modelos-ia-grupo" style="--grupo-cor:#0284c7">
             <h3 class="modelos-ia-titulo">☁️ Modelos IA para voz e transcrição</h3>
-            <details class="prompt-item prompt-tint-ia">
-              <summary><h3>🎙️ Áudio em texto: modelo para transcrever e resumir</h3></summary>
-              <p class="hint">A transcrição usa o Speech-to-Text do Google (Chirp 3) ou um Gemini, que ouve cada trecho de 50 segundos e o escreve. A identificação de quem fala continua sempre no Chirp 3. O resumo, a sugestão de nomes e a correção do texto usam a IA de texto: o mesmo modelo de cima ou outro, só para o Áudio em texto.</p>
-              <label for="iaAudioMotor">Motor da transcrição</label>
-              <select id="iaAudioMotor"></select>
-              <label for="iaAudioGeminiModelo">Modelo Gemini da transcrição (quando o motor for o Gemini)</label>
-              <select id="iaAudioGeminiModelo"></select>
-              <label for="iaAudioModelo">Modelo do resumo, dos nomes e da correção</label>
-              <select id="iaAudioModelo"></select>
-              <div class="button-row">
-                <button id="iaAudioSalvarBtn" type="button">💾 Salvar para todos</button>
-              </div>
-              <p id="iaAudioStatus" class="ok" role="status" aria-live="polite"></p>
-            </details>
-            <details class="subsection so-admin" id="googleContaSection" hidden>
-              <summary><span class="adm-titulo">☁️ Conta do Google: escolha&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
-              <div class="subsection-body">
-                <p class="hint">A leitura em voz alta e o Áudio em texto usam uma conta do Google Cloud. O app aceita duas ao mesmo tempo: a <strong>principal</strong> (variáveis <code>GOOGLE_TTS_CREDENCIAIS</code> e <code>GOOGLE_STT_BUCKET</code> na Vercel) e a de <strong>reserva</strong> (<code>GOOGLE_ALT_CREDENCIAIS</code> e <code>GOOGLE_ALT_STT_BUCKET</code>). Escolha aqui qual usar; a mudança vale para todos em poucos segundos, sem novo deploy. Uma transcrição em andamento na hora da troca pode falhar: é só tentar de novo.</p>
-                <p id="googleContaStatus" class="ok" role="status" aria-live="polite"></p>
-                <div id="googleContaLista" class="google-conta-lista"></div>
-                <div class="button-row">
-                  <button id="googleContaSalvarBtn" type="button">💾 Salvar para todos</button>
-                  <button id="googleContaAtualizarBtn" class="secondary" type="button">🔄 Recarregar</button>
-                </div>
-                <p id="googleContaStatusFim" class="ok" role="status" aria-live="polite"></p>
-              </div>
-            </details>
             <details class="subsection voz-admin so-admin" id="vozSection" hidden>
               <summary><span class="adm-titulo">🔊 Leitura em voz: modelo para leitura&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
               <div class="subsection-body">
@@ -1682,6 +1680,20 @@
                   </div>
                 </div>
               </div>
+            </details>
+            <details class="prompt-item prompt-tint-ia">
+              <summary><h3>🎙️ Áudio em texto: modelo para transcrever e resumir</h3></summary>
+              <p class="hint">A transcrição usa o Speech-to-Text do Google (Chirp 3) ou um Gemini, que ouve cada trecho de 50 segundos e o escreve. A identificação de quem fala continua sempre no Chirp 3. O resumo, a sugestão de nomes e a correção do texto usam a IA de texto: o mesmo modelo de cima ou outro, só para o Áudio em texto.</p>
+              <label for="iaAudioMotor">Motor da transcrição</label>
+              <select id="iaAudioMotor"></select>
+              <label for="iaAudioGeminiModelo">Modelo Gemini da transcrição (quando o motor for o Gemini)</label>
+              <select id="iaAudioGeminiModelo"></select>
+              <label for="iaAudioModelo">Modelo do resumo, dos nomes e da correção</label>
+              <select id="iaAudioModelo"></select>
+              <div class="button-row">
+                <button id="iaAudioSalvarBtn" type="button">💾 Salvar para todos</button>
+              </div>
+              <p id="iaAudioStatus" class="ok" role="status" aria-live="polite"></p>
             </details>
             <details class="subsection sub-tint-3 so-admin" id="audioTiposSection" hidden>
               <summary><span class="adm-titulo">🎙️ Áudio em texto: configurações&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
