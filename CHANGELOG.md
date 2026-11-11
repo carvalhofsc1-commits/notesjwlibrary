@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.83
+
+Modelos e agentes de IA: novos nomes. Os contêineres viraram **✍️ Modelos IA para texto** e **☁️ Modelos IA para voz e transcrição**; os cartões, **🎙️ Áudio em texto: modelo para transcrever e resumir**, **🔊 Leitura em voz: modelo para leitura** e **🎙️ Áudio em texto: configurações**.
+
 ## 6.7.82
 
 Modelos e agentes de IA: saiu o atalho do menu lateral (a seção continua em Ajustes, no grupo do administrador) e saiu o contêiner do gasto com a IA de texto. Os botões ficaram padronizados: **cada cartão tem o seu 💾 Salvar para todos**, dentro dele (modelo da IA, esboços, Áudio em texto, conta do Google, voz e limites), e nenhum contêiner tem botão solto. O botão da conta do Google, que se chamava “Usar a conta escolhida”, também virou “Salvar para todos”.
