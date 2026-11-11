@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.80
+
+**Áudio em texto: escolha do motor da transcrição e do modelo do resumo.** Em Modelos e agentes de IA, o novo cartão **🎙️ Áudio em texto: transcrição e resumo** deixa o administrador escolher o **motor da transcrição**: o Chirp 3 (Speech-to-Text do Google, o padrão) ou um **Gemini**, que ouve cada trecho de 50 segundos e o escreve (o modelo Gemini também é escolhido ali). A identificação de quem fala continua sempre no Chirp 3. O **resumo, a sugestão de nomes e a correção** podem usar um modelo próprio, ou o mesmo da IA de texto.
+
+A tela **Modelos e agentes de IA** ficou organizada em três contêineres com moldura e cor próprias: **✍️ IA de texto**, **💲 Gasto com a IA de texto** e **☁️ Google Cloud: conta, voz e transcrição**. O cartão do gasto acompanha o provedor salvo: com a Anthropic mostra o gasto do Claude Console; com o Gemini (ou o Claude pela Vertex) explica que o gasto está no faturamento do Google Cloud e leva até ele, sem consultar a Anthropic.
+
 ## 6.7.79
 
 Cabeçalho de segurança do site: saiu o item `interest-cohort` (do FLoC, abandonado pelo Google), que fazia o Chrome mostrar no console o aviso “Unrecognized feature: 'interest-cohort'”. Nada muda no funcionamento.

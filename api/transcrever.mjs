@@ -9,7 +9,7 @@ import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { mensagemSeBloqueado } from "./_acessoSite.mjs";
 import { createHash, createSign, randomBytes } from "node:crypto";
 import { credenciais, prepararConta, tokenDeAcesso, variaveisDaConta } from "./_googleToken.mjs";
-import { lerConfigIa } from "./_iaConfig.mjs";
+import { iaDaTarefa, lerConfigIa } from "./_iaConfig.mjs";
 import { criarClienteIa, erroSemIa, iaDisponivel } from "./_clienteIa.mjs";
 import { registrarUsoIa } from "./_estatisticas.mjs";
 
@@ -88,6 +88,42 @@ function excedeu(tipo, ip, limite) {
   mapa.set(ip, lista);
   if (mapa.size > 5000) mapa.clear();
   return passou;
+}
+
+// ---- Transcrição pelo Gemini (opção do administrador em Modelos e agentes de IA) ----
+// O trecho chega em PCM 16 bits, 16 kHz, mono (sem cabeçalho); o Gemini precisa de um arquivo de áudio: ganha o cabeçalho WAV de 44 bytes.
+function wavDoPcm(base64) {
+  const pcm = Buffer.from(base64, "base64");
+  const cab = Buffer.alloc(44);
+  cab.write("RIFF", 0);
+  cab.writeUInt32LE(36 + pcm.length, 4);
+  cab.write("WAVE", 8);
+  cab.write("fmt ", 12);
+  cab.writeUInt32LE(16, 16);
+  cab.writeUInt16LE(1, 20); // PCM
+  cab.writeUInt16LE(1, 22); // mono
+  cab.writeUInt32LE(16000, 24);
+  cab.writeUInt32LE(32000, 28); // bytes por segundo
+  cab.writeUInt16LE(2, 32);
+  cab.writeUInt16LE(16, 34);
+  cab.write("data", 36);
+  cab.writeUInt32LE(pcm.length, 40);
+  return Buffer.concat([cab, pcm]).toString("base64");
+}
+const SISTEMA_TRANSCRICAO_GEMINI =
+  "Você transcreve áudio em português do Brasil. Escreva exatamente o que é falado, palavra por palavra, com pontuação e letras maiúsculas corretas. " +
+  "Não resuma, não traduza, não comente, não acrescente títulos nem nomes de falantes. Se não houver fala, devolva o texto vazio.";
+async function reconhecerComGemini(audioBase64, modelo) {
+  const client = criarClienteIa({ maxRetries: 1, timeout: 60_000 }, "gemini");
+  const resposta = await client.messages.create({
+    model: modelo,
+    max_tokens: 4000,
+    system: SISTEMA_TRANSCRICAO_GEMINI,
+    output_config: { effort: "low" },
+    messages: [{ role: "user", content: [{ type: "audio", source: { type: "base64", media_type: "audio/wav", data: wavDoPcm(audioBase64) } }, { type: "text", text: "Transcreva este trecho." }] }],
+  });
+  if (resposta.stop_reason === "refusal") return "";
+  return resposta.content.filter((b) => b.type === "text").map((b) => b.text).join(" ").replace(/\s+/g, " ").trim();
 }
 
 async function reconhecer(audioBase64) {
@@ -407,7 +443,8 @@ export default async function handler(req, res) {
       const audio = typeof corpo.audio === "string" ? corpo.audio : "";
       if (!audio || audio.length > MAX_AUDIO_BASE64) return erro(res, 400, "Trecho de áudio inválido ou grande demais.");
       if (excedeu("trecho", ip, LIMITE_TRECHOS_POR_HORA)) return erro(res, 429, "Muitos trechos transcritos nesta hora. Tente novamente mais tarde.");
-      const texto = await reconhecer(audio);
+      const cfg = await lerConfigIa();
+      const texto = cfg.audioMotor === "gemini" ? await reconhecerComGemini(audio, cfg.audioGeminiModelo) : await reconhecer(audio);
       await registrarConsumo(corpo, { tarefa: "audio", segundos: (audio.length * 0.75) / 32000 });
       return res.status(200).json({ texto });
     }
@@ -490,7 +527,7 @@ export default async function handler(req, res) {
       if (excedeu("nomes", ip, LIMITE_NOMES_POR_HORA)) return erro(res, 429, "Muitos pedidos de nomes nesta hora. Tente novamente mais tarde.");
       const sobre = campoDoUsuario(corpo.contexto);
       const pedido = (sobre ? "INFORMAÇÕES DO USUÁRIO (interlocutores, pauta, evento…):\n" + sobre + "\n\n" : "") + "FALANTES: " + falantes.map((n) => "Falante " + n).join(", ") + "\n\nTRANSCRIÇÃO:\n" + texto;
-      const { modelo, esforco } = await lerConfigIa();
+      const { modelo, esforco } = iaDaTarefa(await lerConfigIa(), "audio");
       const client = criarClienteIa({ maxRetries: 1, timeout: 90_000 });
       const resposta = await client.messages.create({
         model: modelo,
@@ -528,7 +565,7 @@ export default async function handler(req, res) {
       const conteudo = imagens.length
         ? [...imagens.map((i) => ({ type: "image", source: { type: "base64", media_type: i.media, data: i.data } })), { type: "text", text: pedido }]
         : pedido;
-      const { modelo, esforco } = await lerConfigIa();
+      const { modelo, esforco } = iaDaTarefa(await lerConfigIa(), "audio");
       const client = criarClienteIa({ maxRetries: 1, timeout: 120_000 });
       const resposta = await client.messages.create({
         model: modelo,
@@ -557,7 +594,7 @@ export default async function handler(req, res) {
       const parte = Math.max(1, Math.min(Number(corpo.parte) || 1, 1000));
       const total = Math.max(parte, Math.min(Number(corpo.total) || 1, 1000));
       const antes = typeof corpo.antes === "string" ? corpo.antes : "";
-      const { modelo, esforco } = await lerConfigIa();
+      const { modelo, esforco } = iaDaTarefa(await lerConfigIa(), "audio");
       const client = criarClienteIa({ maxRetries: 1, timeout: 120_000 });
       // max_tokens proporcional ao bloco (~3 chars/token de saída + margem); evita reservar 8000 em blocos curtos.
       const maxTokens = Math.min(8000, Math.max(1200, Math.ceil(texto.length / 2.5) + 400));

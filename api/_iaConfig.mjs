@@ -24,6 +24,13 @@ export const MODELOS_IA = [
 ];
 const MODELO_PADRAO_GEMINI = "gemini-3.5-flash";
 
+// Motor da transcrição do Áudio em texto: o Speech-to-Text do Google (Chirp 3) ou um Gemini, que ouve cada trecho de 50 s e o escreve.
+// A identificação de quem fala (modo em lote, com diarização) continua sempre no Chirp 3.
+export const MOTORES_AUDIO = [
+  { id: "chirp", nome: "Chirp 3 (Speech-to-Text do Google): o padrão" },
+  { id: "gemini", nome: "Gemini (Vertex AI): ouve o áudio e escreve o texto" },
+];
+
 // Esforço: quanto a IA pensa antes de responder (mais esforço = respostas mais cuidadosas, mais demora e mais custo).
 export const ESFORCOS_IA = [
   { id: "low", nome: "Baixo: mais rápido e barato" },
@@ -57,6 +64,10 @@ export function validarConfigIa(entrada) {
     modelo: daFamilia(c.modelo) ? c.modelo : familia === "gemini" ? MODELO_PADRAO_GEMINI : PADRAO_IA.modelo,
     esforco: ESFORCOS_IA.some((e) => e.id === c.esforco) ? c.esforco : PADRAO_IA.esforco,
     esbocoModelo: daFamilia(c.esbocoModelo) ? c.esbocoModelo : "",
+    // Áudio em texto: motor da transcrição, modelo Gemini dela e modelo do resumo/nomes/correção ("" = o modelo geral).
+    audioMotor: MOTORES_AUDIO.some((m) => m.id === c.audioMotor) ? c.audioMotor : "chirp",
+    audioGeminiModelo: MODELOS_IA.some((m) => m.id === c.audioGeminiModelo && m.familia === "gemini") ? c.audioGeminiModelo : MODELO_PADRAO_GEMINI,
+    audioModelo: daFamilia(c.audioModelo) ? c.audioModelo : "",
     esbocoEsforco: ESFORCOS_IA.some((e) => e.id === c.esbocoEsforco) ? c.esbocoEsforco : "",
   };
 }
@@ -65,12 +76,13 @@ export function validarConfigIa(entrada) {
 // "estudo-perguntas" (perguntas adicionais do estudo de A Sentinela) e "ebc-dirigente" (Estudo Bíblico) são do Preparar para dirigir, que usa o mesmo modelo dos esboços.
 export const TAREFAS_DE_ESBOCOS = new Set(["tesouros", "discurso", "publico", "outros", "estudo-perguntas", "ebc-dirigente", "estudo-recap"]);
 export function iaDaTarefa(config, tarefa) {
+  if (tarefa === "audio") return { ...config, modelo: config.audioModelo || config.modelo, esforco: config.esforco };
   if (!TAREFAS_DE_ESBOCOS.has(tarefa)) return { ...config, modelo: config.modelo, esforco: config.esforco };
   return { ...config, modelo: config.esbocoModelo || config.modelo, esforco: config.esbocoEsforco || config.esforco };
 }
 
 export function opcoesIa() {
-  return { modelos: MODELOS_IA, esforcos: ESFORCOS_IA, provedores: PROVEDORES_IA };
+  return { modelos: MODELOS_IA, esforcos: ESFORCOS_IA, provedores: PROVEDORES_IA, motoresAudio: MOTORES_AUDIO };
 }
 
 let cache = null;

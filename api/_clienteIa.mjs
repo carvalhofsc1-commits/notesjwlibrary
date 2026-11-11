@@ -57,7 +57,7 @@ function partesGemini(conteudo) {
   const partes = [];
   for (const b of Array.isArray(conteudo) ? conteudo : []) {
     if (b && b.type === "text" && typeof b.text === "string") partes.push({ text: b.text });
-    else if (b && b.type === "image" && b.source && b.source.type === "base64") partes.push({ inlineData: { mimeType: b.source.media_type, data: b.source.data } });
+    else if (b && (b.type === "image" || b.type === "audio") && b.source && b.source.type === "base64") partes.push({ inlineData: { mimeType: b.source.media_type, data: b.source.data } });
     // blocos de ferramenta ou de raciocínio da Anthropic não existem no Gemini: ficam de fora
   }
   return partes.length ? partes : [{ text: "" }];

@@ -1531,6 +1531,7 @@
           <summary><span class="adm-titulo">🤖 Modelos e agentes de IA&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
           <div class="subsection-body modelos-ia-body">
             <p class="hint">Tudo o que define a IA do app, num lugar só: a IA de texto (de onde vem, modelos e esforço), o gasto, a conta do Google, a leitura em voz alta e o Áudio em texto. As escolhas valem para todos os usuários.</p>
+            <div class="modelos-ia-grupo" style="--grupo-cor:#7c3aed">
             <h3 class="modelos-ia-titulo">✍️ IA de texto</h3>
             <details class="prompt-item prompt-tint-ia">
               <summary><h3>🤖 Modelo da IA de texto</h3></summary>
@@ -1559,20 +1560,43 @@
               <select id="iaEsbocoEsforco"></select>
             </details>
 
+            <details class="prompt-item prompt-tint-ia">
+              <summary><h3>🎙️ Áudio em texto: transcrição e resumo</h3></summary>
+              <p class="hint">A transcrição usa o Speech-to-Text do Google (Chirp 3) ou um Gemini, que ouve cada trecho de 50 segundos e o escreve. A identificação de quem fala continua sempre no Chirp 3. O resumo, a sugestão de nomes e a correção do texto usam a IA de texto: o mesmo modelo de cima ou outro, só para o Áudio em texto.</p>
+              <label for="iaAudioMotor">Motor da transcrição</label>
+              <select id="iaAudioMotor"></select>
+              <label for="iaAudioGeminiModelo">Modelo Gemini da transcrição (quando o motor for o Gemini)</label>
+              <select id="iaAudioGeminiModelo"></select>
+              <label for="iaAudioModelo">Modelo do resumo, dos nomes e da correção</label>
+              <select id="iaAudioModelo"></select>
+            </details>
+
             <div class="button-row ia-salvar-linha">
               <button id="iaSalvarBtn" type="button">💾 Salvar para todos</button>
               <span id="iaStatus" class="ok" role="status" aria-live="polite"></span>
             </div>
 
-            <details class="prompt-item prompt-tint-ia">
-              <summary><h3>💲 Gasto com a IA de texto (Anthropic)</h3></summary>
-              <div id="iaCusto" class="ia-custo"></div>
-              <div class="button-row">
-                <button id="iaCustoBtn" class="secondary" type="button">🔄 Atualizar o gasto</button>
-                <a class="voz-link" href="https://platform.claude.com/cost" target="_blank" rel="noopener noreferrer">💳 Abrir os custos no Claude Console</a>
+            </div>
+
+            <div class="modelos-ia-grupo" id="iaGastoGrupo" style="--grupo-cor:#16a34a">
+              <h3 class="modelos-ia-titulo" id="iaGastoTitulo">💲 Gasto com a IA de texto</h3>
+              <div id="iaGastoAnthropic">
+                <p class="hint">A IA de texto está na Anthropic: o gasto do mês vem do Claude Console.</p>
+                <div id="iaCusto" class="ia-custo"></div>
+                <div class="button-row">
+                  <button id="iaCustoBtn" class="secondary" type="button">🔄 Atualizar o gasto</button>
+                  <a class="voz-link" href="https://platform.claude.com/cost" target="_blank" rel="noopener noreferrer">💳 Abrir os custos no Claude Console</a>
+                </div>
               </div>
-            </details>
-            <h3 class="modelos-ia-titulo">🔊 Voz e transcrição</h3>
+              <div id="iaGastoGoogle" hidden>
+                <p class="hint">A IA de texto está no Google Cloud (Gemini ou Claude pela Vertex): o gasto entra no faturamento do Google Cloud da conta em uso, junto com a voz e a transcrição. O app não lê esse valor; veja-o no console do Google.</p>
+                <div class="button-row">
+                  <a class="voz-link" href="https://console.cloud.google.com/billing" target="_blank" rel="noopener noreferrer">💳 Abrir o faturamento no Google Cloud</a>
+                </div>
+              </div>
+            </div>
+            <div class="modelos-ia-grupo" style="--grupo-cor:#0284c7">
+            <h3 class="modelos-ia-titulo">☁️ Google Cloud: conta, voz e transcrição</h3>
             <details class="subsection so-admin" id="googleContaSection" hidden>
               <summary><span class="adm-titulo">☁️ Conta do Google (voz e transcrição)&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
               <div class="subsection-body">
@@ -1713,6 +1737,7 @@
                 </div>
               </div>
             </details>
+            </div>
           </div>
         </details>
         <details class="subsection sub-tint-2 so-admin" id="promptsSection" hidden>

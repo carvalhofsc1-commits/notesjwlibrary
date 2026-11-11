@@ -7658,7 +7658,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.79'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.80'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -13014,6 +13014,9 @@ function saveTemplatesToStorage() {
     // da Anthropic, quando há uma chave de administrador da Anthropic na Vercel (ANTHROPIC_ADMIN_KEY).
     const iaProvedor = document.getElementById('iaProvedor'); // de onde vem o Claude: Anthropic direta ou Google Cloud (Vertex)
     const iaModelo = document.getElementById('iaModelo');
+    const iaAudioMotor = document.getElementById('iaAudioMotor'); // Áudio em texto: motor da transcrição, modelo Gemini dela e modelo do resumo
+    const iaAudioGeminiModelo = document.getElementById('iaAudioGeminiModelo');
+    const iaAudioModelo = document.getElementById('iaAudioModelo');
     const iaEsforco = document.getElementById('iaEsforco');
     const iaEsbocoModelo = document.getElementById('iaEsbocoModelo'); // modelo e esforço só da Preparação de discursos e esboços ('' = os de cima)
     const iaEsbocoEsforco = document.getElementById('iaEsbocoEsforco');
@@ -13078,6 +13081,13 @@ function saveTemplatesToStorage() {
       iaPreencher(iaEsforco, iaOpcoes.esforcos, '');
       iaPreencher(iaEsbocoModelo, iaModelosDaFamilia(), 'O mesmo modelo de cima');
       iaPreencher(iaEsbocoEsforco, iaOpcoes.esforcos, 'O mesmo esforço de cima');
+      const motor = iaAudioMotor.value;
+      const geminiAudio = iaAudioGeminiModelo.value;
+      iaPreencher(iaAudioMotor, iaOpcoes.motoresAudio || [], '');
+      iaPreencher(iaAudioGeminiModelo, (iaOpcoes.modelos || []).filter(x => x.familia === 'gemini'), '');
+      iaPreencher(iaAudioModelo, iaModelosDaFamilia(), 'O mesmo modelo de cima');
+      if (motor) iaAudioMotor.value = motor;
+      if (geminiAudio) iaAudioGeminiModelo.value = geminiAudio;
       if (esforco) iaEsforco.value = esforco;
       iaEsbocoEsforco.value = esforcoEsboco || '';
     }
@@ -13088,6 +13098,7 @@ function saveTemplatesToStorage() {
       const salvoServe = iaSalvo && lista.some(x => x.id === iaSalvo.modelo);
       iaModelo.value = salvoServe ? iaSalvo.modelo : (lista[1] || lista[0] || {}).id || '';
       iaEsbocoModelo.value = iaSalvo && lista.some(x => x.id === iaSalvo.esbocoModelo) ? iaSalvo.esbocoModelo : '';
+      iaAudioModelo.value = iaSalvo && lista.some(x => x.id === iaSalvo.audioModelo) ? iaSalvo.audioModelo : '';
       document.getElementById('iaTesteResultado').textContent = '';
       iaMostrarPreco();
     });
@@ -13105,32 +13116,49 @@ function saveTemplatesToStorage() {
       iaEsforco.value = r.data.config.esforco;
       iaEsbocoModelo.value = r.data.config.esbocoModelo || '';
       iaEsbocoEsforco.value = r.data.config.esbocoEsforco || '';
-      iaSalvo = { provedor: r.data.config.provedor, modelo: r.data.config.modelo, esforco: r.data.config.esforco, esbocoModelo: r.data.config.esbocoModelo || '', esbocoEsforco: r.data.config.esbocoEsforco || '' };
+      iaAudioMotor.value = r.data.config.audioMotor || 'chirp';
+      iaAudioGeminiModelo.value = r.data.config.audioGeminiModelo || '';
+      iaAudioModelo.value = r.data.config.audioModelo || '';
+      iaSalvo = { provedor: r.data.config.provedor, modelo: r.data.config.modelo, esforco: r.data.config.esforco, esbocoModelo: r.data.config.esbocoModelo || '', esbocoEsforco: r.data.config.esbocoEsforco || '', audioMotor: r.data.config.audioMotor || 'chirp', audioGeminiModelo: r.data.config.audioGeminiModelo || '', audioModelo: r.data.config.audioModelo || '' };
       iaMostrarPreco();
       iaMensagem(r.data.armazenamento && !r.data.armazenamento.escrita ? 'O armazenamento do servidor ainda não permite salvar.' : '', true);
-      iaCarregarCusto();
+      iaAtualizarGasto();
     }
 
     // Modelo e esforço como estão salvos no servidor (para saber se a escolha na tela mudou).
     let iaSalvo = null;
     function iaPendente() {
       return Boolean(iaSalvo && iaOpcoes && (iaProvedor.value !== iaSalvo.provedor || iaModelo.value !== iaSalvo.modelo || iaEsforco.value !== iaSalvo.esforco
-        || iaEsbocoModelo.value !== iaSalvo.esbocoModelo || iaEsbocoEsforco.value !== iaSalvo.esbocoEsforco));
+        || iaEsbocoModelo.value !== iaSalvo.esbocoModelo || iaEsbocoEsforco.value !== iaSalvo.esbocoEsforco
+        || iaAudioMotor.value !== iaSalvo.audioMotor || iaAudioGeminiModelo.value !== iaSalvo.audioGeminiModelo || iaAudioModelo.value !== iaSalvo.audioModelo));
     }
 
     // Envia o modelo e o esforço escolhidos; quem chama (salvarParaTodos) mostra a mensagem.
     async function iaSalvarModelo() {
-      const r = await postConfig({ acao: 'ia-salvar', codigo: codigoAdminAtual(), config: { provedor: iaProvedor.value, modelo: iaModelo.value, esforco: iaEsforco.value, esbocoModelo: iaEsbocoModelo.value, esbocoEsforco: iaEsbocoEsforco.value } });
+      const r = await postConfig({ acao: 'ia-salvar', codigo: codigoAdminAtual(), config: { provedor: iaProvedor.value, modelo: iaModelo.value, esforco: iaEsforco.value, esbocoModelo: iaEsbocoModelo.value, esbocoEsforco: iaEsbocoEsforco.value, audioMotor: iaAudioMotor.value, audioGeminiModelo: iaAudioGeminiModelo.value, audioModelo: iaAudioModelo.value } });
       if (!r.ok) return { ok: false, erro: configErrorMessage(r, 'Não foi possível salvar agora.') };
       iaProvedor.value = r.data.config.provedor;
       iaModelo.value = r.data.config.modelo;
       iaEsforco.value = r.data.config.esforco;
       iaEsbocoModelo.value = r.data.config.esbocoModelo || '';
       iaEsbocoEsforco.value = r.data.config.esbocoEsforco || '';
-      iaSalvo = { provedor: r.data.config.provedor, modelo: r.data.config.modelo, esforco: r.data.config.esforco, esbocoModelo: r.data.config.esbocoModelo || '', esbocoEsforco: r.data.config.esbocoEsforco || '' };
+      iaAudioMotor.value = r.data.config.audioMotor || 'chirp';
+      iaAudioGeminiModelo.value = r.data.config.audioGeminiModelo || '';
+      iaAudioModelo.value = r.data.config.audioModelo || '';
+      iaSalvo = { provedor: r.data.config.provedor, modelo: r.data.config.modelo, esforco: r.data.config.esforco, esbocoModelo: r.data.config.esbocoModelo || '', esbocoEsforco: r.data.config.esbocoEsforco || '', audioMotor: r.data.config.audioMotor || 'chirp', audioGeminiModelo: r.data.config.audioGeminiModelo || '', audioModelo: r.data.config.audioModelo || '' };
       iaMostrarPreco();
       iaNotaCarregar();
+      iaAtualizarGasto();
       return { ok: true };
+    }
+
+    // O cartão de gasto acompanha o provedor SALVO: Anthropic mostra o gasto do Claude Console; Google Cloud leva ao faturamento do Google.
+    function iaAtualizarGasto() {
+      const anthropic = !iaSalvo || iaSalvo.provedor === 'anthropic';
+      document.getElementById('iaGastoAnthropic').hidden = !anthropic;
+      document.getElementById('iaGastoGoogle').hidden = anthropic;
+      document.getElementById('iaGastoTitulo').textContent = '💲 Gasto com a IA de texto (' + (anthropic ? 'Anthropic' : 'Google Cloud') + ')';
+      if (anthropic) iaCarregarCusto();
     }
 
     async function iaCarregarCusto() {

@@ -13502,6 +13502,25 @@ button.processando:disabled { opacity: 1; cursor: progress; }
   font-size: 1rem;
 }
 
+/* Cada parte da tela (IA de texto, gasto, Google Cloud) numa moldura própria, com a cor dela. */
+.modelos-ia-grupo {
+  border: 1px solid color-mix(in srgb, var(--grupo-cor, var(--muted)) 55%, var(--line));
+  border-radius: 16px;
+  padding: 2px 12px 14px;
+  margin: 14px 0 0;
+  background: color-mix(in srgb, var(--grupo-cor, var(--muted)) 7%, var(--card));
+}
+
+.modelos-ia-grupo > .modelos-ia-titulo {
+  margin: 12px 0 2px;
+  text-align: center;
+}
+
+.modelos-ia-grupo .prompt-item,
+.modelos-ia-grupo details.subsection {
+  background: var(--card);
+}
+
 .modelos-ia-body > .modelos-ia-titulo:first-of-type {
   margin-top: 10px;
 }
