@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.77
+
+**Gemini (Google Cloud) como opção de IA de texto.** A tela de prompts ganhou o provedor **Google Cloud · Gemini** (Vertex AI, na conta do Google da empresa, sem chave nova). Cada provedor mostra a sua lista de modelos: Claude (Haiku, Sonnet, Opus, Fable) para Anthropic e Vertex; Gemini 3.1 Flash Lite, 3.5 Flash, 3.1 Pro, 3.8 Flash, 4 Argon e 4 Carbon para o Gemini (os três últimos com preço estimado, por falta de tabela pública confirmada). Um adaptador converte os pedidos do app para o Gemini e a resposta de volta, incluindo respostas estruturadas, nível de raciocínio e imagens; a leitura de páginas pela IA usa a ferramenta de endereços do Gemini. O botão **Testar esta escolha** funciona para o Gemini. Região opcional em `GOOGLE_GEMINI_REGIAO` (padrão “global”). Preços do Gemini são de referência; o gasto real está no faturamento do Google Cloud.
+
 ## 6.7.76
 
 **Claude pelo Google Cloud (Vertex AI) como segunda opção de IA de texto.** Na tela de prompts, em “Modelo da IA de texto”, o administrador escolhe **De onde vem a IA**: Anthropic (API direta, como sempre) ou Google Cloud (Claude da Vertex AI, cobrado na conta do Google da empresa, usando a mesma conta de serviço da voz). Vale para todas as funções de IA de texto. O botão **Testar esta escolha** faz um pedido simples e um com resposta estruturada antes de salvar. O padrão continua sendo a Anthropic. Região opcional em `GOOGLE_VERTEX_REGIAO` (padrão “global”). Na Vertex não há o refazer automático em outro modelo, e o gasto aparece no faturamento do Google Cloud, não no painel de consumo.

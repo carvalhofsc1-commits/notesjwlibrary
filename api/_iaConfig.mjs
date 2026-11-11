@@ -9,11 +9,20 @@ const VALIDADE_MS = 20_000;
 // Preços da Anthropic em US$ por milhão de tokens (entrada / saída), para a tela comparar os modelos. O Haiku 5.5 vale
 // para pedidos de até 100 mil tokens (os deste app são bem menores).
 export const MODELOS_IA = [
-  { id: "claude-haiku-5-5", nome: "Haiku 5.5: rápida e econômica", entrada: 0.1, saida: 0.5 },
-  { id: "claude-sonnet-5-5", nome: "Sonnet 5.5: equilíbrio entre qualidade e custo", entrada: 2, saida: 10 },
-  { id: "claude-opus-5-5", nome: "Opus 5.5: a mais potente para respostas", entrada: 4, saida: 20 },
-  { id: "claude-fable-5-1", nome: "Fable 5.1: a mais capaz, mais lenta e mais cara", entrada: 10, saida: 50 },
+  { familia: "claude", id: "claude-haiku-5-5", nome: "Haiku 5.5: rápida e econômica", entrada: 0.1, saida: 0.5 },
+  { familia: "claude", id: "claude-sonnet-5-5", nome: "Sonnet 5.5: equilíbrio entre qualidade e custo", entrada: 2, saida: 10 },
+  { familia: "claude", id: "claude-opus-5-5", nome: "Opus 5.5: a mais potente para respostas", entrada: 4, saida: 20 },
+  { familia: "claude", id: "claude-fable-5-1", nome: "Fable 5.1: a mais capaz, mais lenta e mais cara", entrada: 10, saida: 50 },
+  // Preços do Gemini: valores de referência da tabela pública do Google (variam por faixa de uso e região); o gasto real está no faturamento do Google Cloud.
+  { familia: "gemini", id: "gemini-3.1-flash-lite", nome: "Gemini 3.1 Flash Lite: a mais rápida e econômica", entrada: 0.25, saida: 1.5 },
+  { familia: "gemini", id: "gemini-3.5-flash", nome: "Gemini 3.5 Flash: equilíbrio entre qualidade e custo", entrada: 1.5, saida: 9 },
+  { familia: "gemini", id: "gemini-3.1-pro-preview", nome: "Gemini 3.1 Pro: capaz, mais lenta e mais cara", entrada: 2, saida: 12 },
+  // Sem preço público confirmado no app: valores estimados (a tela avisa); o faturamento aos membros usa esta estimativa.
+  { familia: "gemini", id: "gemini-3.8-flash", nome: "Gemini 3.8 Flash: a Flash mais nova", entrada: 1.5, saida: 9, estimado: true },
+  { familia: "gemini", id: "gemini-4-argon", nome: "Gemini 4 Argon: muito potente, para tarefas longas", entrada: 2, saida: 12, estimado: true },
+  { familia: "gemini", id: "gemini-4-carbon", nome: "Gemini 4 Carbon: a mais potente do Google", entrada: 2, saida: 12, estimado: true },
 ];
+const MODELO_PADRAO_GEMINI = "gemini-3.5-flash";
 
 // Esforço: quanto a IA pensa antes de responder (mais esforço = respostas mais cuidadosas, mais demora e mais custo).
 export const ESFORCOS_IA = [
@@ -25,8 +34,11 @@ export const ESFORCOS_IA = [
 // De onde vem o Claude: a API direta da Anthropic ou o Google Cloud (Vertex AI), cobrado na conta do Google (ver api/_clienteIa.mjs).
 export const PROVEDORES_IA = [
   { id: "anthropic", nome: "Anthropic (API direta)" },
-  { id: "vertex", nome: "Google Cloud (Vertex AI, conta do Google)" },
+  { id: "vertex", nome: "Google Cloud · Claude (Vertex AI)" },
+  { id: "gemini", nome: "Google Cloud · Gemini (conta do Google)" },
 ];
+// Cada modelo é de uma família: o Claude (Anthropic direta ou Vertex) ou o Gemini.
+export const familiaDoProvedor = (provedor) => (provedor === "gemini" ? "gemini" : "claude");
 
 export const PADRAO_IA = {
   modelo: MODELOS_IA.some((m) => m.id === process.env.CLAUDE_MODEL) ? process.env.CLAUDE_MODEL : "claude-haiku-5-5",
@@ -37,11 +49,14 @@ export const PADRAO_IA = {
 // exclusivos da Preparação de discursos e esboços e do Preparar para dirigir; vazio ("") = usa o mesmo modelo (ou esforço) de todas as outras funções.
 export function validarConfigIa(entrada) {
   const c = entrada && typeof entrada === "object" && !Array.isArray(entrada) ? entrada : {};
+  const provedor = PROVEDORES_IA.some((p) => p.id === c.provedor) ? c.provedor : "anthropic";
+  const familia = familiaDoProvedor(provedor);
+  const daFamilia = (id) => MODELOS_IA.some((m) => m.id === id && m.familia === familia);
   return {
-    provedor: PROVEDORES_IA.some((p) => p.id === c.provedor) ? c.provedor : "anthropic",
-    modelo: MODELOS_IA.some((m) => m.id === c.modelo) ? c.modelo : PADRAO_IA.modelo,
+    provedor,
+    modelo: daFamilia(c.modelo) ? c.modelo : familia === "gemini" ? MODELO_PADRAO_GEMINI : PADRAO_IA.modelo,
     esforco: ESFORCOS_IA.some((e) => e.id === c.esforco) ? c.esforco : PADRAO_IA.esforco,
-    esbocoModelo: MODELOS_IA.some((m) => m.id === c.esbocoModelo) ? c.esbocoModelo : "",
+    esbocoModelo: daFamilia(c.esbocoModelo) ? c.esbocoModelo : "",
     esbocoEsforco: ESFORCOS_IA.some((e) => e.id === c.esbocoEsforco) ? c.esbocoEsforco : "",
   };
 }

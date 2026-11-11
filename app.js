@@ -7658,7 +7658,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.76'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.77'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -13034,45 +13034,76 @@ function saveTemplatesToStorage() {
       iaStatus.textContent = texto;
     }
 
+    // Os modelos da família do provedor escolhido: Claude (Anthropic direta ou Vertex) ou Gemini (Google Cloud).
+    const iaFamilia = () => (iaProvedor.value === 'gemini' ? 'gemini' : 'claude');
+    const iaModelosDaFamilia = () => (iaOpcoes ? iaOpcoes.modelos : []).filter(x => x.familia === iaFamilia());
     function iaMostrarPreco() {
-      const modelos = iaOpcoes ? iaOpcoes.modelos : [];
+      const modelos = iaModelosDaFamilia();
+      const maisBarato = modelos[0] || { nome: '', saida: 1 };
+      const nomeBase = maisBarato.nome.split(':')[0];
       const m = modelos.find(x => x.id === iaModelo.value);
       if (!m) iaModeloPreco.textContent = '';
       else {
-        const vezes = Math.round(m.saida / modelos[0].saida);
-        iaModeloPreco.textContent = 'Preço: US$ ' + iaPreco(m.entrada) + ' por milhão de tokens lidos e US$ ' + iaPreco(m.saida) + ' por milhão de tokens escritos'
-          + (vezes > 1 ? ' (cerca de ' + vezes + ' vezes o Haiku 5.5).' : ' (o mais barato).');
+        const vezes = Math.round(m.saida / maisBarato.saida);
+        iaModeloPreco.textContent = 'Preço' + (m.estimado ? ' ESTIMADO (sem tabela pública confirmada; confira no faturamento do Google Cloud)' : m.familia === 'gemini' ? ' de referência (confira no faturamento do Google Cloud)' : '') + ': US$ ' + iaPreco(m.entrada) + ' por milhão de tokens lidos e US$ ' + iaPreco(m.saida) + ' por milhão de tokens escritos'
+          + (vezes > 1 ? ' (cerca de ' + vezes + ' vezes o ' + nomeBase + ').' : ' (o mais barato).');
       }
       // O modelo dos esboços: o preço dele, ou o aviso de que vale o de cima.
       const e = modelos.find(x => x.id === iaEsbocoModelo.value);
       if (!iaEsbocoModelo.value || !e) iaEsbocoPreco.textContent = m ? 'Os esboços usam o mesmo modelo de cima.' : '';
       else {
-        const vezesE = Math.round(e.saida / modelos[0].saida);
-        iaEsbocoPreco.textContent = 'Só os esboços: US$ ' + iaPreco(e.entrada) + ' por milhão de tokens lidos e US$ ' + iaPreco(e.saida) + ' por milhão de tokens escritos'
-          + (vezesE > 1 ? ' (cerca de ' + vezesE + ' vezes o Haiku 5.5).' : ' (o mais barato).');
+        const vezesE = Math.round(e.saida / maisBarato.saida);
+        iaEsbocoPreco.textContent = 'Só os esboços' + (e.estimado ? ' (preço estimado)' : '') + ': US$ ' + iaPreco(e.entrada) + ' por milhão de tokens lidos e US$ ' + iaPreco(e.saida) + ' por milhão de tokens escritos'
+          + (vezesE > 1 ? ' (cerca de ' + vezesE + ' vezes o ' + nomeBase + ').' : ' (o mais barato).');
       }
     }
+
+    // Enche um <select>; "primeira" é a opção "o mesmo de cima" dos esboços.
+    function iaPreencher(select, itens, primeira) {
+      select.textContent = '';
+      if (primeira) {
+        const igual = document.createElement('option');
+        igual.value = '';
+        igual.textContent = primeira;
+        select.appendChild(igual);
+      }
+      itens.forEach(item => {
+        const op = document.createElement('option');
+        op.value = item.id;
+        op.textContent = item.nome;
+        select.appendChild(op);
+      });
+    }
+    // Modelos só da família do provedor escolhido; o esforço mantém o que estava.
+    function iaPreencherSelects() {
+      const esforco = iaEsforco.value;
+      const esforcoEsboco = iaEsbocoEsforco.value;
+      iaPreencher(iaModelo, iaModelosDaFamilia(), '');
+      iaPreencher(iaEsforco, iaOpcoes.esforcos, '');
+      iaPreencher(iaEsbocoModelo, iaModelosDaFamilia(), 'O mesmo modelo de cima');
+      iaPreencher(iaEsbocoEsforco, iaOpcoes.esforcos, 'O mesmo esforço de cima');
+      if (esforco) iaEsforco.value = esforco;
+      iaEsbocoEsforco.value = esforcoEsboco || '';
+    }
+    // Trocar o provedor troca a lista de modelos: volta ao salvo, se for da mesma família; senão, ao de equilíbrio (o 2º da lista).
+    iaProvedor.addEventListener('change', () => {
+      iaPreencherSelects();
+      const lista = iaModelosDaFamilia();
+      const salvoServe = iaSalvo && lista.some(x => x.id === iaSalvo.modelo);
+      iaModelo.value = salvoServe ? iaSalvo.modelo : (lista[1] || lista[0] || {}).id || '';
+      iaEsbocoModelo.value = iaSalvo && lista.some(x => x.id === iaSalvo.esbocoModelo) ? iaSalvo.esbocoModelo : '';
+      document.getElementById('iaTesteResultado').textContent = '';
+      iaMostrarPreco();
+    });
 
     async function iaCarregar() {
       iaMensagem('Carregando…', false);
       const r = await postConfig({ acao: 'ia-ler', codigo: promptsCode });
       if (!r.ok) return iaMensagem(configErrorMessage(r, 'Não foi possível carregar o modelo da IA.'), true);
       iaOpcoes = r.data.opcoes;
-      [[iaProvedor, iaOpcoes.provedores, ''], [iaModelo, iaOpcoes.modelos, ''], [iaEsforco, iaOpcoes.esforcos, ''], [iaEsbocoModelo, iaOpcoes.modelos, 'O mesmo modelo de cima'], [iaEsbocoEsforco, iaOpcoes.esforcos, 'O mesmo esforço de cima']].forEach(([select, itens, primeira]) => {
-        select.textContent = '';
-        if (primeira) { // "o mesmo de cima": os esboços usam o modelo ou o esforço geral
-          const igual = document.createElement('option');
-          igual.value = '';
-          igual.textContent = primeira;
-          select.appendChild(igual);
-        }
-        itens.forEach(item => {
-          const op = document.createElement('option');
-          op.value = item.id;
-          op.textContent = item.nome;
-          select.appendChild(op);
-        });
-      });
+      iaPreencher(iaProvedor, iaOpcoes.provedores, '');
+      iaProvedor.value = r.data.config.provedor;
+      iaPreencherSelects();
       iaProvedor.value = r.data.config.provedor;
       iaModelo.value = r.data.config.modelo;
       iaEsforco.value = r.data.config.esforco;

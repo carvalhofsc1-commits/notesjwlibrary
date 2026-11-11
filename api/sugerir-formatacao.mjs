@@ -82,7 +82,7 @@ async function chamarIa(client, P, params, { schema = null, semPensar = false, t
   const formato = schema ? (fallback ? betaZodOutputFormat(schema) : zodOutputFormat(schema)) : null;
   const output_config = { ...(formato ? { format: formato } : {}), ...(aceitaEsforco(modelo) ? { effort: esforco } : {}) };
   const pensar =
-    semPensar && /haiku-5/.test(modelo) && process.env.CLAUDE_RACIOCINIO !== "on" ? { thinking: { type: "disabled" } } : {};
+    semPensar && /haiku-5|gemini/.test(modelo) && process.env.CLAUDE_RACIOCINIO !== "on" ? { thinking: { type: "disabled" } } : {};
   const corpo = { ...params, system, model: modelo, ...pensar, ...(Object.keys(output_config).length ? { output_config } : {}) };
   let saida;
   if (!fallback) {
@@ -122,7 +122,7 @@ async function chamarIa(client, P, params, { schema = null, semPensar = false, t
 // Esboços e discursos: uma chamada só, até quase o limite de 300 s da função. Uma segunda tentativa depois de um tempo esgotado nunca caberia
 // nos 300 s (e fazia a função inteira estourar sem resposta).
 const TEMPO_ESBOCO_MS = 275_000;
-const tempoIa = (P, base) => (/haiku/.test(P.ia.modelo) ? base : Math.min(170_000, base * 2));
+const tempoIa = (P, base) => (/haiku|flash/.test(P.ia.modelo) ? base : Math.min(170_000, base * 2));
 // Os textos dos prompts moram em _prompts.mjs (o administrador edita o tom e as regras pelo app).
 // Os limites de tamanho e de quantidade (textos, destaques, respostas, pedidos por hora...) são configuráveis pelo
 // administrador e chegam por P.limites (ver LIMITES em _prompts.mjs).
