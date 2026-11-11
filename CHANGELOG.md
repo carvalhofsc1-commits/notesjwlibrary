@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.79
+
+Cabeçalho de segurança do site: saiu o item `interest-cohort` (do FLoC, abandonado pelo Google), que fazia o Chrome mostrar no console o aviso “Unrecognized feature: 'interest-cohort'”. Nada muda no funcionamento.
+
 ## 6.7.78
 
 **Modelos e agentes de IA num lugar só.** Nova seção do administrador em Ajustes, **🤖 Modelos e agentes de IA**, com atalho próprio no menu lateral (só aparece com a senha de administrador salva). Ela reúne a IA de texto (de onde vem, modelos, esforço, modelo dos esboços, teste e gasto), a **conta do Google** (principal ou reserva), a **leitura em voz alta** e as **configurações do Áudio em texto**. O modelo da IA tem agora o seu próprio botão de salvar e carrega com a senha salva, sem precisar abrir a tela de prompts; a categoria que sobrou nos prompts virou **📏 Limites**.
