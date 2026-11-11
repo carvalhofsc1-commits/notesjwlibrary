@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.84
+
+Modelos e agentes de IA: os cartões **🤖 Modelo da IA de texto** e **☁️ Conta do Google (voz e transcrição)** passaram a se chamar **🤖 Produção de texto: modelo para uso geral** e **☁️ Conta do Google: escolha**.
+
 ## 6.7.83
 
 Modelos e agentes de IA: novos nomes. Os contêineres viraram **✍️ Modelos IA para texto** e **☁️ Modelos IA para voz e transcrição**; os cartões, **🎙️ Áudio em texto: modelo para transcrever e resumir**, **🔊 Leitura em voz: modelo para leitura** e **🎙️ Áudio em texto: configurações**.
