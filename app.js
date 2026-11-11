@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.93'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.94'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -13783,6 +13783,8 @@ function saveTemplatesToStorage() {
 
     // Faixa no topo da tela com o andamento, sempre à vista (o indicador do botão fica fora da tela quando a página rola).
     const aiFloating = document.getElementById('aiFloating');
+    // Tempo decorrido em minutos e segundos (00:00), no balão azul, no botão e no aviso de andamento.
+    const tempoMmSs = seconds => String(Math.floor(seconds / 60)).padStart(2, '0') + ':' + String(seconds % 60).padStart(2, '0');
     function showAiFloating(seconds, frase) {
       if (!aiFloating.classList.contains('on')) {
         const spinner = document.createElement('span');
@@ -13793,7 +13795,7 @@ function saveTemplatesToStorage() {
         aiFloating.replaceChildren(spinner, label);
         aiFloating.classList.add('on');
       }
-      document.getElementById('aiFloatingText').textContent = frase + ' ' + seconds + ' s';
+      document.getElementById('aiFloatingText').textContent = frase + ' ' + tempoMmSs(seconds);
     }
 
     // Regra: os botões "IA - Responder / Preparar / Sugerir…" do Preparar para comentar e para dirigir não aceitam clique enquanto a matéria (as perguntas)
@@ -13867,7 +13869,9 @@ function saveTemplatesToStorage() {
       spinner.className = 'ai-spinner';
       spinner.setAttribute('aria-hidden', 'true');
       button.textContent = '';
-      button.append(spinner, rotuloBotao);
+      const rotulo = document.createElement('span'); // "Consultando a IA… 00:00": o tempo corre também no botão
+      rotulo.textContent = rotuloBotao + ' ' + tempoMmSs(0);
+      button.append(spinner, rotulo);
 
       aiProgress.classList.add('on');
       aiResults.setAttribute('aria-busy', 'true');
@@ -13876,15 +13880,17 @@ function saveTemplatesToStorage() {
       const startedAt = Date.now();
       const tick = () => {
         const seconds = Math.floor((Date.now() - startedAt) / 1000);
+        const tempo = tempoMmSs(seconds);
         showAiFloating(seconds, fraseFlutuante);
+        rotulo.textContent = rotuloBotao + ' ' + tempo;
         setAiStatus(
           soSite
             ? (seconds < 12
-              ? 'Consultando o wol.jw.org… ' + seconds + ' s'
-              : 'Ainda consultando o wol.jw.org… ' + seconds + ' s. Aguarde.')
+              ? 'Consultando o wol.jw.org… ' + tempo
+              : 'Ainda consultando o wol.jw.org… ' + tempo + '. Aguarde.')
             : (seconds < 12
-              ? 'A IA está trabalhando… ' + seconds + ' s'
-              : 'Ainda trabalhando… ' + seconds + ' s (textos longos demoram mais). Aguarde.'),
+              ? 'A IA está trabalhando… ' + tempo
+              : 'Ainda trabalhando… ' + tempo + ' (textos longos demoram mais). Aguarde.'),
           false
         );
       };
