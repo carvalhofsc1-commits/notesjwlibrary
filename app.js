@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.8.05'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.8.06'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -17151,6 +17151,9 @@ function saveTemplatesToStorage() {
         cfg.ultimoEsboco = esboco;
         aiSentinelaRaw = [esboco];
         const parts = esbocoPartes(esboco);
+        // Discurso público: o cântico inicial escolhido vai logo abaixo do tema do esboço.
+        const canticoDoTema = cfg.kind === 'publico' ? canticosEscolhidos()[String(payload.numero)] : null;
+        if (canticoDoTema && parts[0]) parts[0].texto = canticoNoTexto(parts[0].texto, canticoDoTema);
         // Rodapé: o modelo de IA que elaborou o esboço e quanto tempo levou (medido no servidor).
         const rodapeIa = result.data.rodapeIa;
         if (rodapeIa && rodapeIa.modelo) {
@@ -17693,6 +17696,14 @@ function saveTemplatesToStorage() {
     // ---------- Discurso público: cântico inicial (a IA sugere de 3 a 5 pela letra; o escolhido fica guardado por tema) ----------
     const PUBLICO_CANTICOS_KEY = 'jwLibraryNoteAplicarPublicoCanticosV1';
     const canticosEscolhidos = () => { try { const o = JSON.parse(localStorage.getItem(PUBLICO_CANTICOS_KEY) || '{}'); return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; } };
+    // A linha do cântico no texto do esboço: troca a que já existe ou entra logo abaixo do tema (a primeira linha, "📜 TEMA").
+    const canticoLinha = c => '🎵 Cântico inicial: Nº ' + c.numero + ' — ' + c.titulo;
+    function canticoNoTexto(texto, c) {
+      const linha = canticoLinha(c);
+      if (/^🎵 Cântico inicial:.*$/m.test(texto)) return texto.replace(/^🎵 Cântico inicial:.*$/m, linha);
+      const quebra = texto.indexOf('\n');
+      return quebra < 0 ? texto + '\n' + linha : texto.slice(0, quebra) + '\n' + linha + texto.slice(quebra);
+    }
     function canticoMostrar(numero) {
       document.getElementById('publicoCanticoLista').textContent = '';
       const el = document.getElementById('publicoCanticoEscolhido');
@@ -17745,6 +17756,17 @@ function saveTemplatesToStorage() {
             todos[numero] = { numero: c.numero, titulo: c.titulo, em: new Date().toISOString() };
             safeSetItem(PUBLICO_CANTICOS_KEY, JSON.stringify(todos));
             canticoMostrar(numero);
+            presidenteAtualizar();
+            // O esboço deste tema já está no campo: a linha do cântico entra (ou é trocada) logo abaixo do tema.
+            if (aiLastKind === 'publico' && aiResumo && publicoTema.value === numero && /^📜 /.test(input.value)) {
+              const novo = canticoNoTexto(input.value, todos[numero]);
+              if (novo !== input.value) {
+                setInputRange(0, input.value.length, novo, { message: 'Cântico incluído no esboço.' });
+                autoGrowInputText();
+                aiResumo.texto = canticoNoTexto(aiResumo.texto, todos[numero]);
+                if (aiResumo.partes && aiResumo.partes[0]) aiResumo.partes[0].texto = canticoNoTexto(aiResumo.partes[0].texto, todos[numero]);
+              }
+            }
             aiStatusKind = cfg.kind;
             setAiStatus('✅ Cântico ' + c.numero + ' escolhido para este discurso.', false);
           });
@@ -17761,10 +17783,46 @@ function saveTemplatesToStorage() {
     }
     document.getElementById('publicoCanticoBtn').addEventListener('click', canticoSugerir);
 
-    // Gravuras e cântico aparecem com o tema escolhido.
+    // ---------- Discurso público: dados para o presidente da reunião (orador, congregação, tema e cântico) ----------
+    const ORADOR_KEY = 'jwLibraryNoteAplicarOradorV1';
+    const oradorNome = document.getElementById('publicoOradorNome');
+    const oradorCongregacao = document.getElementById('publicoOradorCongregacao');
+    try {
+      const salvo = JSON.parse(localStorage.getItem(ORADOR_KEY) || '{}');
+      oradorNome.value = (salvo && salvo.nome) || '';
+      oradorCongregacao.value = (salvo && salvo.congregacao) || '';
+    } catch (e) { /* sem localStorage: campos vazios */ }
+    function presidenteTexto() {
+      const numero = publicoTema.value;
+      const tema = publicoTemas.find(t => String(t.numero) === numero);
+      const cantico = numero ? canticosEscolhidos()[numero] : null;
+      return [
+        '*Discurso público*',
+        '👤 Orador: ' + (oradorNome.value.trim() || '(informe o nome)'),
+        '🏠 Congregação: ' + (oradorCongregacao.value.trim() || '(informe a congregação)'),
+        '🎤 Tema: ' + (tema ? 'Nº ' + tema.numero + ' — ' + tema.titulo.replace(/^[‘'“"]+|[’'”"]+$/g, '') : '(escolha o tema)'),
+        '🎵 Cântico inicial: ' + (cantico ? 'Nº ' + cantico.numero + ' — ' + cantico.titulo : '(ainda não escolhido)')
+      ].join('\n');
+    }
+    function presidenteAtualizar() {
+      document.getElementById('publicoPresidenteTexto').textContent = presidenteTexto();
+    }
+    [oradorNome, oradorCongregacao].forEach(campo => campo.addEventListener('input', () => {
+      safeSetItem(ORADOR_KEY, JSON.stringify({ nome: oradorNome.value.trim(), congregacao: oradorCongregacao.value.trim() }));
+      presidenteAtualizar();
+    }));
+    document.getElementById('publicoPresidenteCopiarBtn').addEventListener('click', event => copiarDescricaoImagem(presidenteTexto(), event.currentTarget));
+    // Abre o WhatsApp com o texto pronto; a pessoa escolhe o contato e envia (o app não envia nada sozinho).
+    document.getElementById('publicoPresidenteZapBtn').addEventListener('click', () => {
+      window.open('https://wa.me/?text=' + encodeURIComponent(presidenteTexto()), '_blank', 'noopener');
+    });
+
+    // Gravuras, cântico e dados para o presidente aparecem com o tema escolhido.
     function publicoExtrasMostrar(numero) {
       document.getElementById('publicoGravurasBox').hidden = !numero;
       document.getElementById('publicoCanticoBox').hidden = !numero;
+      document.getElementById('publicoPresidenteBox').hidden = !numero;
+      presidenteAtualizar();
       gravurasStatus.textContent = '';
       gravurasCarregar(numero);
       canticoMostrar(numero);

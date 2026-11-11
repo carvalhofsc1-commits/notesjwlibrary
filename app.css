@@ -13904,3 +13904,28 @@ button.publico-gravura-tirar {
 a.esboco-info-tema {
   text-decoration: none;
 }
+
+/* Dados para o presidente da reunião: o texto pronto para copiar ou mandar pelo WhatsApp. */
+#publicoPresidenteBox label {
+  display: block;
+  margin: 10px 0 4px;
+  font-weight: 700;
+  font-size: .9rem;
+}
+
+#publicoPresidenteBox input {
+  width: 100%;
+}
+
+.publico-presidente-texto {
+  margin: 12px 0 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--soft);
+  font: inherit;
+  font-size: .92rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

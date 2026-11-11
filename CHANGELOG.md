@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.8.06
+
+Discurso público:
+- Com o cântico inicial escolhido, o esboço elaborado (ou importado) traz logo abaixo do tema a linha **🎵 Cântico inicial: Nº X — título**. Escolher o cântico com o esboço do tema já no campo também põe (ou troca) essa linha.
+- Novo cartão **📨 Dados para o presidente da reunião**: nome e congregação do orador (guardados neste aparelho, valem para todos os temas), o tema e o cântico num texto pronto, com **📋 Copiar** e **💬 Enviar pelo WhatsApp** (abre o WhatsApp com o texto; a pessoa escolhe o contato e envia).
+
 ## 6.8.05
 
 Discurso público (e Outros esboços): no resumo do esboço escolhido, o **tema** fica em destaque, numa linha própria, maior e em negrito, acima dos detalhes (revisão, tempos, objetivo e leituras).

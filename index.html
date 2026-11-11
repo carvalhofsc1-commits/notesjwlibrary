@@ -929,6 +929,19 @@
                       <p id="publicoCanticoEscolhido" class="publico-cantico-escolhido" hidden></p>
                       <div id="publicoCanticoLista" class="publico-canticos"></div>
                     </div>
+                    <details class="publico-extra" id="publicoPresidenteBox" hidden>
+                      <summary>📨 Dados para o presidente da reunião</summary>
+                      <p class="hint">O nome e a congregação ficam guardados neste aparelho e valem para todos os temas.</p>
+                      <label for="publicoOradorNome">Nome do orador</label>
+                      <input id="publicoOradorNome" type="text" autocomplete="name" placeholder="Ex.: João da Silva">
+                      <label for="publicoOradorCongregacao">Congregação</label>
+                      <input id="publicoOradorCongregacao" type="text" autocomplete="off" placeholder="Ex.: Congregação Central">
+                      <pre id="publicoPresidenteTexto" class="publico-presidente-texto"></pre>
+                      <div class="button-row">
+                        <button id="publicoPresidenteCopiarBtn" class="secondary" type="button">📋 Copiar</button>
+                        <button id="publicoPresidenteZapBtn" type="button">💬 Enviar pelo WhatsApp</button>
+                      </div>
+                    </details>
                     <span id="publicoStatus" class="ok" role="status" aria-live="polite"></span>
                   </div>
                 </section>
