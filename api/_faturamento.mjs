@@ -36,7 +36,7 @@ export const RECURSOS = [
   { id: "texto-diario", rotulo: "Comentários do texto diário", cat: "texto", acesso: ["pesquisa"], tarefas: ["texto-diario-comentarios"] },
   { id: "dirigir", rotulo: "Preparar para dirigir (perguntas e recapitulação)", cat: "esbocos", acesso: ["dirigente"], tarefas: ["estudo-perguntas", "estudo-recap", "ebc-dirigente"] },
   { id: "esbocos", rotulo: "Esboços: Tesouros, discurso curto e outros", cat: "esbocos", acesso: ["dirigente"], tarefas: ["tesouros", "discurso", "outros"] },
-  { id: "publico", rotulo: "Esboço do discurso público (S-34)", cat: "esbocos", acesso: ["s34"], tarefas: ["publico"] },
+  { id: "publico", rotulo: "Esboço do discurso público (S-34)", cat: "esbocos", acesso: ["s34"], tarefas: ["publico", "publico-importar", "publico-canticos"] },
   { id: "leitura-biblia", rotulo: "Resumo da leitura diária da Bíblia", cat: "texto", acesso: ["resumo"], tarefas: ["leitura-biblia"] },
   { id: "audio-ia", rotulo: "Áudio em texto: correção, nomes e resumo (IA)", cat: "texto", acesso: ["texto"], tarefas: ["audio-correcao", "audio-nomes", "audio-resumo"] },
   { id: "voz", rotulo: "Leitura em voz alta", cat: "voz", acesso: ["leitura", "pesquisa"], tarefas: ["voz"] },

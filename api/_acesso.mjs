@@ -77,6 +77,8 @@ export const NIVEIS = {
   "publico-ler": "s34",
   "publico-esboco": "s34",
   publico: "s34",
+  "publico-importar": "s34",
+  "publico-canticos": "s34", // sugerir o cântico inicial do discurso público // passar para o formato do app um esboço que o orador já preparou (arquivo importado)
   versiculos: "dirigente",
   "outros-pesquisar": "dirigente",
   "outros-ler": "dirigente",

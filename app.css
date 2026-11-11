@@ -13811,3 +13811,82 @@ button.modelos-copiar {
 :root[data-theme="dark"] .bk-seletor-lista button.bk-seletor-item.publico-filtro {
   color: #86efac;
 }
+
+/* Discurso público: gravuras do esboço e sugestão do cântico inicial. */
+.publico-extra {
+  margin-top: 10px;
+}
+
+details.publico-extra {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 8px 12px;
+  background: var(--card);
+}
+
+details.publico-extra > summary {
+  cursor: pointer;
+  font-weight: 700;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.publico-gravuras {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.publico-gravura {
+  position: relative;
+}
+
+.publico-gravura img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+}
+
+button.publico-gravura-tirar {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 26px;
+  height: 26px;
+  min-height: 0;
+  padding: 0;
+  border-radius: 50%;
+  font-size: .8rem;
+  line-height: 1;
+  background: rgba(0, 0, 0, .65);
+  color: #ffffff;
+}
+
+.publico-cantico > button {
+  width: 100%;
+}
+
+.publico-cantico-escolhido {
+  margin: 8px 0 0;
+  font-weight: 700;
+}
+
+.publico-canticos .cantico-opcao {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+}
+
+.publico-canticos .cantico-opcao p {
+  margin: 6px 0;
+}
+
+.publico-canticos .cantico-trecho {
+  font-style: italic;
+  color: var(--muted);
+}

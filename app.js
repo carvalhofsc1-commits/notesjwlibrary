@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.8.02'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.8.04'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -9034,7 +9034,7 @@
     const REPORT_EMAIL = 'carvalhofsc1@gmail.com'; // o mesmo contato da página Sobre
     const MSG_SEM_CONSENTIMENTO = 'Para usar a IA e a leitura em voz alta é preciso concordar com o envio do texto. Toque no botão de novo quando quiser concordar.';
     // As tarefas do servidor que usam a IA (as outras só leem o wol.jw.org ou a Bíblia e não precisam da concordância).
-    const IA_TAREFAS = new Set(['anotacoes-formatar', 'estudo', 'estudo-lista', 'estudo-perguntas', 'texto-diario-comentarios', 'ebc', 'ebc-dirigente', 'tesouros', 'publico', 'outros', 'discurso', 'joias', 'leitura-biblia', 'sentinela']);
+    const IA_TAREFAS = new Set(['anotacoes-formatar', 'estudo', 'estudo-lista', 'estudo-perguntas', 'texto-diario-comentarios', 'ebc', 'ebc-dirigente', 'tesouros', 'publico', 'publico-importar', 'publico-canticos', 'outros', 'discurso', 'joias', 'leitura-biblia', 'sentinela']);
     let consentimentoIaSessao = false; // vale só até fechar o app quando o aparelho não deixa gravar a escolha
     let consentimentoIaEmCurso = null;
 
@@ -13931,7 +13931,7 @@ function saveTemplatesToStorage() {
         document.getElementById('ebcCarregarBtn'), document.getElementById('ebcResponderBtn'),
         document.getElementById('ebcDirCarregarBtn'), document.getElementById('ebcDirPerguntasBtn'),
         document.getElementById('tesourosCarregarBtn'), document.getElementById('tesourosEsbocoBtn'),
-        document.getElementById('discursoCarregarBtn'), document.getElementById('discursoEsbocoBtn'), document.getElementById('publicoEsbocoBtn'),
+        document.getElementById('discursoCarregarBtn'), document.getElementById('discursoEsbocoBtn'), document.getElementById('publicoEsbocoBtn'), document.getElementById('publicoImportarBtn'), document.getElementById('publicoCanticoBtn'),
         document.getElementById('outrosCarregarBtn'), document.getElementById('outrosEsbocoBtn'), document.getElementById('outrosPesquisarBtn'),
         document.getElementById('joiasCarregarBtn'), document.getElementById('joiasResponderBtn'), document.getElementById('apostilaImgCarregarBtn'),
         document.getElementById('bibliaResumirBtn'),
@@ -15573,7 +15573,7 @@ function saveTemplatesToStorage() {
     // Faz a chamada ao servidor das tarefas de estudo (lista e respostas). Devolve { ok, data, unavailable }.
     // Pedidos demorados (esboços e Preparar para dirigir): vão com um id aleatório; o servidor guarda a resposta por algumas horas. Se a conexão
     // cair no meio (no iPhone, ao sair do app ou bloquear a tela), o app busca o resultado com esse id assim que volta (api/_pedidos.mjs).
-    const TAREFAS_LONGAS = new Set(['tesouros', 'discurso', 'publico', 'outros', 'estudo-perguntas', 'ebc-dirigente', 'estudo-recap']);
+    const TAREFAS_LONGAS = new Set(['tesouros', 'discurso', 'publico', 'publico-importar', 'outros', 'estudo-perguntas', 'ebc-dirigente', 'estudo-recap']);
     const novoPedidoId = () => (window.crypto && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2));
     const esperar = ms => new Promise(ok => setTimeout(ok, ms));
     async function buscarResultadoGuardado(pedidoId, prazo) {
@@ -16786,6 +16786,7 @@ function saveTemplatesToStorage() {
       const textoNoCampo = item.textoEditado || texto; // a versão com as alterações salvas, se houver
       if (item.esbocoJson) {
         // Como um esboço recém-elaborado: vale Outra versão, Melhorar e Incluir texto(s).
+        cfg.ultimoImportado = Boolean(item.importado);
         cfg.ultimoEsboco = item.esbocoJson;
         aiSentinelaRaw = [item.esbocoJson];
         aiResumo = { texto, partes: [{ paragrafos: 'Esboço', texto }], done: false, kind: 'estudo', semBotoes: true, fonte: (cfg.dadosCarregados && cfg.dadosCarregados.titulo) || '' };
@@ -17064,8 +17065,10 @@ function saveTemplatesToStorage() {
       return partes;
     }
 
-    async function requestEsboco(cfg, mode) {
+    // extra.importar: o esboço vem de um arquivo que o orador já preparou (Discurso público → Importar): a IA só o passa para o formato do app.
+    async function requestEsboco(cfg, mode, extra = {}) {
       if (aiBusy) return setAiStatus('⏳ Aguarde: a IA ainda está trabalhando no pedido anterior.', false);
+      const importar = Boolean(extra.importar && cfg.importacao);
       // "Incluir texto(s)" refaz o esboço do próprio card; se o campo de texto já mostra outra coisa, ele é limpo como num esboço novo.
       const incluir = mode === 'incluir';
       const esbocoNoCampo = aiLastKind === cfg.kind && aiResumo && aiSentinelaRaw.length && aiSentinelaRaw[0] === cfg.ultimoEsboco;
@@ -17109,17 +17112,26 @@ function saveTemplatesToStorage() {
         ajuste: iaExtra(cfg.kind), // "Outros esboços" não tem o campo: tem os próprios (tema, ideia, ocasião…)
         ...(cfg.extraPayload ? cfg.extraPayload() : {})
       };
+      if (importar) {
+        payload.tarefa = 'publico-importar';
+        payload.texto = cfg.importacao.texto;
+      } else if (mode && mode !== 'nova' && cfg.ultimoImportado) {
+        payload.importado = true; // Melhorar e Incluir de um esboço importado: a revisão mantém o do orador e o ajusta ao S-34
+      }
+      if (cfg.kind === 'publico' && !importar && gravurasAtuais.length && gravurasTema === String(payload.numero)) {
+        payload.gravuras = gravurasAtuais.map(g => ({ media: g.media, data: g.data }));
+      }
       // Os textos que o orador marcou na lista seguem em todo pedido (a primeira elaboração, outra versão, melhorar e incluir).
-      const extras = textosExtras(cfg);
+      const extras = importar ? [] : textosExtras(cfg);
       if (extras.length) payload.textosExtras = extras;
-      if (cfg.tirados.size) payload.textosSem = [...cfg.tirados]; // os LEIA que o orador desmarcou: o esboço não os lê
+      if (cfg.tirados.size && !importar) payload.textosSem = [...cfg.tirados]; // os LEIA que o orador desmarcou: o esboço não os lê
       if (previous) {
         payload.modo = mode;
         payload.anteriores = { esboco: previous };
       }
 
       aiBusy = true;
-      setAiLoading(true, mode === 'nova' ? aiAnotherBtn : mode === 'melhorar' ? aiImproveBtn : incluir ? cfg.textosUi.incluir : cfg.esbocoBtn);
+      setAiLoading(true, importar ? document.getElementById('publicoImportarBtn') : mode === 'nova' ? aiAnotherBtn : mode === 'melhorar' ? aiImproveBtn : incluir ? cfg.textosUi.incluir : cfg.esbocoBtn);
       try {
         const result = await postStudy(payload, IA_ESPERA_MS);
         if (!result.ok) {
@@ -17138,15 +17150,20 @@ function saveTemplatesToStorage() {
         const rodapeIa = result.data.rodapeIa;
         if (rodapeIa && rodapeIa.modelo) {
           const quando = new Date().toLocaleDateString('pt-BR');
-          parts.push({ paragrafos: 'Rodapé', texto: '———\n🤖 Esboço elaborado pela IA ' + rodapeIa.modelo + ' em ' + tempoMmSs(Math.max(0, Number(rodapeIa.segundos) || 0)) + ' (' + quando + ').' });
+          const tempo = tempoMmSs(Math.max(0, Number(rodapeIa.segundos) || 0));
+          parts.push({ paragrafos: 'Rodapé', texto: '———\n' + (importar
+            ? '📥 Esboço importado de "' + cfg.importacao.arquivo + '" e organizado pela IA ' + rodapeIa.modelo + ' em ' + tempo + ' (' + quando + ').'
+            : '🤖 Esboço elaborado pela IA ' + rodapeIa.modelo + ' em ' + tempo + ' (' + quando + ').') });
         }
+        // Um esboço importado continua "do orador" no Melhorar e no Incluir; Outra versão e uma nova elaboração voltam ao normal.
+        cfg.ultimoImportado = importar || Boolean(mode && mode !== 'nova' && cfg.ultimoImportado);
         aiResumo = { texto: parts.map(part => part.texto).join('\n\n\n'), partes: parts, done: false, kind: 'estudo', semBotoes: true, fonte: result.data.titulo || '' };
         appendToMainText(aiResumo.texto);
         // O esboço é guardado e copiado inteiro, não por partes.
-        historicoSalvar({ tipo: 'esboco', titulo: esbocoNomeSalvo(cfg, result.data, payload.numero, payload.ano, payload.semana), ano: payload.ano, numSemana: payload.semana, partes: [{ paragrafos: 'Esboço', texto: aiResumo.texto }], esbocoJson: esbocoEnxuto(esboco), esbocoNumero: payload.numero, esbocoTitulo: result.data.titulo });
+        historicoSalvar({ tipo: 'esboco', titulo: esbocoNomeSalvo(cfg, result.data, payload.numero, payload.ano, payload.semana) + (cfg.ultimoImportado ? ' (importado)' : ''), ano: payload.ano, numSemana: payload.semana, partes: [{ paragrafos: 'Esboço', texto: aiResumo.texto }], esbocoJson: esbocoEnxuto(esboco), esbocoNumero: payload.numero, esbocoTitulo: result.data.titulo, ...(cfg.ultimoImportado ? { importado: true, arquivo: cfg.importacao ? cfg.importacao.arquivo : '' } : {}) });
         renderAiSuggestions();
         aiRefineBox.hidden = false;
-        setAiStatus((incluir ? '✅ Esboço refeito com os textos incluídos, no campo de texto.' : '✅ Esboço no campo de texto.') + (Array.isArray(result.data.avisos) && result.data.avisos.length ? ' ⚠️ ' + result.data.avisos.join(' ') : ''), false);
+        setAiStatus((importar ? '✅ Esboço importado e ligado ao tema ' + payload.numero + ', no campo de texto. Confira os textos marcados para leitura na lista; use Incluir texto(s), Melhorar ou Formatar como num esboço elaborado pela IA.' : incluir ? '✅ Esboço refeito com os textos incluídos, no campo de texto.' : '✅ Esboço no campo de texto.') + (Array.isArray(result.data.avisos) && result.data.avisos.length ? ' ⚠️ ' + result.data.avisos.join(' ') : ''), false);
         avisarEsbocoPronto(cfg);
       } catch (e) {
         setAiStatus(e && e.name === 'AbortError' ? 'A IA demorou demais. Tente de novo.' : 'Falha de conexão ao consultar a IA.', true);
@@ -17344,6 +17361,8 @@ function saveTemplatesToStorage() {
       });
       publicoTema.value = '';
       publicoVerBtn.hidden = true;
+      document.getElementById('publicoImportarBtn').hidden = true;
+      publicoExtrasMostrar('');
       publicoFiltrando = false;
       publicoBusca.value = '';
       publicoLimparMostrar();
@@ -17379,6 +17398,8 @@ function saveTemplatesToStorage() {
       textosLimpar(cfg);
       const numero = Number(publicoTema.value);
       publicoVerBtn.hidden = !numero; // "Ver o esboço original" só com um tema escolhido
+      document.getElementById('publicoImportarBtn').hidden = !numero; // importar um esboço preparado: também só com um tema
+      publicoExtrasMostrar(numero ? String(numero) : '');
       if (!numero) return;
       const pedido = ++publicoPedido;
       cfg.info.textContent = 'Carregando o esboço do S-34…';
@@ -17459,6 +17480,335 @@ function saveTemplatesToStorage() {
     // e notas ao orador; só com o código do dirigente, sem IA) e o mostra numa página em tela cheia dentro do app, com as letras ajustáveis
     // (A− / A+). O esboço não fica guardado no aparelho: é pedido a cada vez.
     const publicoVerBtn = document.getElementById('publicoVerBtn');
+
+    // ---------- Discurso público: importar um esboço que o orador já preparou (Word ou PDF) ----------
+    // O arquivo é lido aqui mesmo. Do Word saem também as marcas que costumam indicar os textos que o orador vai ler: **negrito**,
+    // [grifo] (realce), [sublinhado] e [cor] (letra colorida), além dos recuos e dos itens de lista; do PDF, o negrito e os títulos.
+    // A IA (api: publico-importar) passa o esboço para o formato do app sem reescrever e marca as leituras; o esboço fica ligado ao tema.
+    async function esbocoTextoDoDocx(buffer) {
+      await loadScriptOnce(BACKUP_LIBS.jszip).catch(() => { throw new Error('Sem conexão para carregar o leitor de Word. Confira a internet e tente de novo.'); });
+      let zip;
+      try { zip = await window.JSZip.loadAsync(buffer); } catch (e) { throw new Error('Não consegui abrir este arquivo: ele não parece um documento do Word (.docx).'); }
+      const principal = zip.file('word/document.xml');
+      if (!principal) throw new Error('Não consegui abrir este arquivo: ele não parece um documento do Word (.docx).');
+      const doc = new DOMParser().parseFromString((await principal.async('string')).replace(/^\uFEFF/, ''), 'application/xml');
+      if (doc.querySelector('parsererror')) throw new Error('O documento do Word está ilegível.');
+      const W = LEITURA_NS_WORD;
+      const filho = (no, nome) => (no ? [...no.childNodes].find(n => n.nodeType === 1 && n.localName === nome) : null) || null;
+      const valor = (el, nome = 'val') => (el ? el.getAttributeNS(W, nome) || el.getAttribute('w:' + nome) || '' : '');
+      const ligado = el => Boolean(el) && !['0', 'false', 'none'].includes(valor(el));
+      const linhas = [];
+      for (const p of doc.getElementsByTagNameNS(W, 'p')) {
+        const pPr = filho(p, 'pPr');
+        const numPr = filho(pPr, 'numPr');
+        let nivel = 0;
+        if (numPr) nivel = Number(valor(filho(numPr, 'ilvl'))) || 0;
+        else {
+          const ind = filho(pPr, 'ind');
+          const esquerda = Number(valor(ind, 'left') || valor(ind, 'start')) || 0;
+          nivel = Math.min(6, Math.round(esquerda / 360));
+        }
+        const pedacos = [];
+        const percorrer = no => {
+          for (const el of no.childNodes) {
+            if (el.nodeType !== 1) continue;
+            if (el.localName === 'r') {
+              const rPr = filho(el, 'rPr');
+              const realce = filho(rPr, 'highlight');
+              const sombra = filho(rPr, 'shd');
+              const cor = valor(filho(rPr, 'color')).toLowerCase();
+              const fundo = valor(sombra, 'fill').toLowerCase();
+              const fmt = {
+                b: ligado(filho(rPr, 'b')),
+                u: ligado(filho(rPr, 'u')),
+                g: (Boolean(realce) && valor(realce) !== 'none') || (Boolean(fundo) && !['auto', 'ffffff', '000000'].includes(fundo)),
+                c: Boolean(cor) && !['auto', '000000', '000'].includes(cor),
+              };
+              let texto = '';
+              for (const parte of el.childNodes) {
+                if (parte.nodeType !== 1) continue;
+                if (parte.localName === 't') texto += parte.textContent;
+                else if (['tab', 'br', 'cr'].includes(parte.localName)) texto += ' ';
+                else if (parte.localName === 'noBreakHyphen') texto += '-';
+              }
+              if (!texto) continue;
+              const ultimo = pedacos[pedacos.length - 1];
+              if (ultimo && ultimo.b === fmt.b && ultimo.u === fmt.u && ultimo.g === fmt.g && ultimo.c === fmt.c) ultimo.texto += texto;
+              else pedacos.push({ ...fmt, texto });
+            } else if (!['pPr', 'rPr', 'del', 'p'].includes(el.localName)) percorrer(el);
+          }
+        };
+        percorrer(p);
+        const corpo = pedacos.map(pd => {
+          if (!pd.texto.trim()) return pd.texto;
+          const [, antes, meio, depois] = pd.texto.match(/^(\s*)([\s\S]*?)(\s*)$/);
+          let t = meio;
+          if (pd.b) t = '**' + t + '**';
+          if (pd.c) t = '[cor]' + t + '[/cor]';
+          if (pd.u) t = '[sublinhado]' + t + '[/sublinhado]';
+          if (pd.g) t = '[grifo]' + t + '[/grifo]';
+          return antes + t + depois;
+        }).join('').replace(/\s+/g, ' ').trim();
+        if (corpo) linhas.push('  '.repeat(nivel) + (numPr ? '• ' : '') + corpo);
+      }
+      // As imagens do documento (word/media), para as gravuras do esboço (os formatos de desenho do Word, como .emf e .wmf, ficam de fora).
+      const imagens = [];
+      for (const arquivo of zip.file(/^word\/media\/.+\.(png|jpe?g|gif|bmp|webp)$/i)) {
+        try { imagens.push(await arquivo.async('blob')); } catch (e) { /* imagem ilegível */ }
+      }
+      return { texto: linhas.join('\n'), imagens };
+    }
+
+    // As imagens de um PDF (as gravuras que o orador pôs no esboço): o pdf.js entrega cada uma com os pixels ou como bitmap; viram JPEG.
+    // As pequenas (ícones, logotipos) e as repetidas em várias páginas ficam de fora.
+    async function esbocoImagensDoPdf(buffer) {
+      await loadScriptOnce(LEITURA_PDFJS.script);
+      const pdfjs = window.pdfjsLib;
+      pdfjs.GlobalWorkerOptions.workerSrc = LEITURA_PDFJS.worker;
+      const pdf = await pdfjs.getDocument({ data: new Uint8Array(buffer) }).promise;
+      const blobs = [];
+      const vistas = new Set();
+      const comPrazo = (promessa, ms) => Promise.race([promessa, new Promise(ok => setTimeout(() => ok(null), ms))]);
+      for (let n = 1; n <= Math.min(pdf.numPages, 40) && blobs.length < GRAVURAS_MAX; n++) {
+        const pagina = await pdf.getPage(n);
+        const ops = await pagina.getOperatorList();
+        for (let i = 0; i < ops.fnArray.length && blobs.length < GRAVURAS_MAX; i++) {
+          if (ops.fnArray[i] !== pdfjs.OPS.paintImageXObject) continue;
+          const nome = ops.argsArray[i] && ops.argsArray[i][0];
+          if (!nome || vistas.has(nome)) continue;
+          vistas.add(nome);
+          const img = await comPrazo(new Promise(ok => { try { (String(nome).startsWith('g_') ? pagina.commonObjs : pagina.objs).get(nome, ok); } catch (e) { ok(null); } }), 4000);
+          if (!img || !img.width || !img.height || Math.min(img.width, img.height) < 120) continue;
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          if (img.bitmap) ctx.drawImage(img.bitmap, 0, 0);
+          else if (img.data && (img.kind === 2 || img.kind === 3)) {
+            const rgba = new Uint8ClampedArray(img.width * img.height * 4);
+            if (img.kind === 3) rgba.set(img.data.subarray(0, rgba.length));
+            else for (let o = 0, d = 0; d < rgba.length; o += 3, d += 4) { rgba[d] = img.data[o]; rgba[d + 1] = img.data[o + 1]; rgba[d + 2] = img.data[o + 2]; rgba[d + 3] = 255; }
+            ctx.putImageData(new ImageData(rgba, img.width, img.height), 0, 0);
+          } else continue;
+          const blob = await new Promise(ok => canvas.toBlob(ok, 'image/jpeg', 0.85));
+          if (blob) blobs.push(blob);
+        }
+        pagina.cleanup();
+      }
+      return blobs;
+    }
+
+    // ---------- Discurso público: gravuras do esboço (até 7 por tema, guardadas no banco deste aparelho) ----------
+    // Vão como imagens anexas em todo pedido do esboço do tema (elaborar, outra versão, melhorar, incluir); a IA faz referência a elas.
+    const GRAVURAS_MAX = 7;
+    const gravurasChave = numero => 'gravuras:publico:' + numero;
+    let gravurasAtuais = [];
+    let gravurasTema = '';
+    const gravurasStatus = document.getElementById('publicoGravurasStatus');
+    async function gravurasCarregar(numero) {
+      gravurasTema = String(numero || '');
+      gravurasAtuais = [];
+      gravurasDesenhar();
+      if (!gravurasTema || !temBanco) return;
+      let lidas = null;
+      try { lidas = await bancoLer(gravurasChave(gravurasTema)); } catch (e) { lidas = null; }
+      if (gravurasTema !== String(numero || '')) return; // o tema mudou enquanto lia
+      gravurasAtuais = Array.isArray(lidas) ? lidas.slice(0, GRAVURAS_MAX) : [];
+      gravurasDesenhar();
+    }
+    async function gravurasGuardar() {
+      gravurasDesenhar();
+      if (!temBanco || !gravurasTema) return;
+      try { await bancoGravar(gravurasChave(gravurasTema), gravurasAtuais); } catch (e) { gravurasStatus.textContent = '⚠️ Não consegui guardar as gravuras neste aparelho.'; }
+    }
+    function gravurasDesenhar() {
+      const lista = document.getElementById('publicoGravurasLista');
+      lista.textContent = '';
+      gravurasAtuais.forEach(g => {
+        const caixa = document.createElement('div');
+        caixa.className = 'publico-gravura';
+        const img = document.createElement('img');
+        img.src = 'data:' + g.media + ';base64,' + g.data;
+        img.alt = g.nome || 'Gravura';
+        img.loading = 'lazy';
+        const tirar = document.createElement('button');
+        tirar.type = 'button';
+        tirar.className = 'publico-gravura-tirar';
+        tirar.textContent = '✕';
+        tirar.setAttribute('aria-label', 'Tirar esta gravura');
+        tirar.addEventListener('click', () => { gravurasAtuais = gravurasAtuais.filter(x => x.id !== g.id); gravurasStatus.textContent = ''; gravurasGuardar(); });
+        caixa.append(img, tirar);
+        lista.appendChild(caixa);
+      });
+      document.getElementById('publicoGravurasQtd').textContent = gravurasAtuais.length ? '(' + gravurasAtuais.length + '/' + GRAVURAS_MAX + ')' : '';
+      document.getElementById('publicoGravurasAddBtn').disabled = gravurasAtuais.length >= GRAVURAS_MAX;
+    }
+    // Reduz a imagem (lado maior até 1024 px, JPEG): cabe no pedido à IA e no banco do aparelho. As muito pequenas ficam de fora.
+    async function gravuraReduzir(blob) {
+      const bmp = await createImageBitmap(blob);
+      if (Math.min(bmp.width, bmp.height) < 80) { bmp.close && bmp.close(); return null; }
+      const escala = Math.min(1, 1024 / Math.max(bmp.width, bmp.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(bmp.width * escala);
+      canvas.height = Math.round(bmp.height * escala);
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+      bmp.close && bmp.close();
+      return { media: 'image/jpeg', data: canvas.toDataURL('image/jpeg', 0.78).split(',')[1] };
+    }
+    async function gravurasAdicionar(blobs, origem) {
+      const livres = GRAVURAS_MAX - gravurasAtuais.length;
+      if (livres <= 0) { gravurasStatus.textContent = 'Já há ' + GRAVURAS_MAX + ' gravuras neste tema: tire uma para pôr outra.'; return 0; }
+      let postas = 0;
+      for (const blob of blobs) {
+        if (postas >= livres) break;
+        try {
+          const g = await gravuraReduzir(blob);
+          if (!g) continue;
+          gravurasAtuais.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), nome: blob.name || '', origem, ...g });
+          postas++;
+        } catch (e) { /* imagem que o navegador não abre (ex.: formato raro) */ }
+      }
+      const sobra = blobs.length - postas;
+      gravurasStatus.textContent = postas
+        ? '✅ ' + postas + (postas === 1 ? ' gravura guardada' : ' gravuras guardadas') + (origem === 'arquivo' ? ' do arquivo' : '') + ' neste tema.' + (sobra > 0 ? ' ' + sobra + (sobra === 1 ? ' ficou' : ' ficaram') + ' de fora (limite de ' + GRAVURAS_MAX + ', ou imagem pequena demais).' : '')
+        : 'Nenhuma imagem pôde ser usada' + (blobs.length ? ' (pequenas demais ou formato não aceito).' : '.');
+      await gravurasGuardar();
+      return postas;
+    }
+    document.getElementById('publicoGravurasAddBtn').addEventListener('click', () => document.getElementById('publicoGravurasArquivo').click());
+    document.getElementById('publicoGravurasArquivo').addEventListener('change', event => {
+      const arquivos = [...event.target.files];
+      event.target.value = '';
+      if (arquivos.length) gravurasAdicionar(arquivos, 'imagem');
+    });
+
+    // ---------- Discurso público: cântico inicial (a IA sugere de 3 a 5 pela letra; o escolhido fica guardado por tema) ----------
+    const PUBLICO_CANTICOS_KEY = 'jwLibraryNoteAplicarPublicoCanticosV1';
+    const canticosEscolhidos = () => { try { const o = JSON.parse(localStorage.getItem(PUBLICO_CANTICOS_KEY) || '{}'); return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; } };
+    function canticoMostrar(numero) {
+      document.getElementById('publicoCanticoLista').textContent = '';
+      const el = document.getElementById('publicoCanticoEscolhido');
+      const escolhido = numero ? canticosEscolhidos()[numero] : null;
+      el.hidden = !escolhido;
+      if (escolhido) el.textContent = '🎵 Cântico escolhido: ' + escolhido.numero + ' · ' + escolhido.titulo;
+    }
+    async function canticoSugerir() {
+      const cfg = ESBOCOS.publico;
+      aiStatusKind = cfg.kind;
+      placeAiOutput(cfg.slot);
+      if (!publicoTema.value) return setAiStatus('Escolha primeiro o tema do discurso.', true);
+      if (aiBusy) return setAiStatus('⏳ Aguarde: a IA ainda está trabalhando no pedido anterior.', false);
+      const accessError = dirigenteAccessError();
+      if (accessError) return setAiStatus(accessError, true);
+      const numero = publicoTema.value;
+      const botao = document.getElementById('publicoCanticoBtn');
+      aiBusy = true;
+      setAiLoading(true, botao);
+      try {
+        const esboco = cfg.ultimoEsboco && Array.isArray(cfg.ultimoEsboco.pontos) ? { pontos: cfg.ultimoEsboco.pontos.map(p => ({ titulo: p.titulo })) } : null;
+        const result = await postStudy({ tarefa: 'publico-canticos', codigoDirigente: codigoDirigenteSalvo(), numero: Number(numero), esboco }, 120000);
+        if (!result.ok) {
+          if (await dirigenteRecusado(result)) return;
+          return setAiStatus(studyFailureMessage(result, 'Não consegui sugerir os cânticos agora.'), true);
+        }
+        if (publicoTema.value !== numero) return; // o tema mudou enquanto a IA pensava
+        const lista = document.getElementById('publicoCanticoLista');
+        lista.textContent = '';
+        (result.data.sugestoes || []).forEach(c => {
+          const caixa = document.createElement('div');
+          caixa.className = 'cantico-opcao';
+          const titulo = document.createElement('strong');
+          titulo.textContent = '🎵 ' + c.numero + ' · ' + c.titulo + (c.texto ? ' (' + c.texto + ')' : '');
+          const motivo = document.createElement('p');
+          motivo.textContent = c.motivo;
+          caixa.append(titulo, motivo);
+          if (c.trecho) {
+            const trecho = document.createElement('p');
+            trecho.className = 'cantico-trecho';
+            trecho.textContent = '“' + c.trecho.replace(/^[“"]+|[”"]+$/g, '') + '”';
+            caixa.appendChild(trecho);
+          }
+          const escolher = document.createElement('button');
+          escolher.type = 'button';
+          escolher.className = 'secondary';
+          escolher.textContent = '✅ Escolher este cântico';
+          escolher.addEventListener('click', () => {
+            const todos = canticosEscolhidos();
+            todos[numero] = { numero: c.numero, titulo: c.titulo, em: new Date().toISOString() };
+            safeSetItem(PUBLICO_CANTICOS_KEY, JSON.stringify(todos));
+            canticoMostrar(numero);
+            aiStatusKind = cfg.kind;
+            setAiStatus('✅ Cântico ' + c.numero + ' escolhido para este discurso.', false);
+          });
+          caixa.appendChild(escolher);
+          lista.appendChild(caixa);
+        });
+        setAiStatus('✅ ' + (result.data.sugestoes || []).length + ' sugestões de cântico, da mais adequada para a menos. Escolha uma.', false);
+      } catch (e) {
+        setAiStatus(e && e.name === 'AbortError' ? 'A IA demorou demais. Tente de novo.' : 'Falha de conexão ao consultar a IA.', true);
+      } finally {
+        aiBusy = false;
+        setAiLoading(false);
+      }
+    }
+    document.getElementById('publicoCanticoBtn').addEventListener('click', canticoSugerir);
+
+    // Gravuras e cântico aparecem com o tema escolhido.
+    function publicoExtrasMostrar(numero) {
+      document.getElementById('publicoGravurasBox').hidden = !numero;
+      document.getElementById('publicoCanticoBox').hidden = !numero;
+      gravurasStatus.textContent = '';
+      gravurasCarregar(numero);
+      canticoMostrar(numero);
+    }
+
+    const publicoImportarArquivo = document.getElementById('publicoImportarArquivo');
+    async function publicoImportar(arquivo) {
+      const cfg = ESBOCOS.publico;
+      aiStatusKind = cfg.kind;
+      placeAiOutput(cfg.slot);
+      if (!publicoTema.value) return setAiStatus('Escolha primeiro o tema a que o esboço pertence.', true);
+      if (aiBusy) return setAiStatus('⏳ Aguarde: a IA ainda está trabalhando no pedido anterior.', false);
+      const pdf = /\.pdf$/i.test(arquivo.name) || arquivo.type === 'application/pdf';
+      if (!pdf && !/\.docx$/i.test(arquivo.name)) return setAiStatus('Escolha um arquivo do Word (.docx) ou PDF.', true);
+      setAiStatus('Lendo o arquivo ' + arquivo.name + '…', false);
+      let texto = '';
+      let imagens = [];
+      try {
+        const buffer = await arquivo.arrayBuffer();
+        if (pdf) {
+          texto = (await leituraLerPdf(buffer.slice(0))).paragrafos.join('\n');
+          try { imagens = await esbocoImagensDoPdf(buffer.slice(0)); } catch (e) { imagens = []; }
+        } else {
+          const lido = await esbocoTextoDoDocx(buffer);
+          texto = lido.texto;
+          imagens = lido.imagens;
+        }
+      } catch (e) {
+        return setAiStatus((e && e.message) || 'Não consegui ler o arquivo.', true);
+      }
+      texto = texto.slice(0, 40000);
+      if (texto.replace(/\s/g, '').length < 150) return setAiStatus('O arquivo tem pouco texto para ser um esboço (ou é uma imagem escaneada, que o app não lê). Confira o arquivo.', true);
+      const tema = publicoTemas.find(t => String(t.numero) === publicoTema.value);
+      const ok = await askConfirm('Importar "' + arquivo.name + '" como o esboço do tema ' + publicoTema.value + (tema ? ' (' + tema.titulo + ')' : '') + '?\n\nA IA lê o esboço, passa-o para o formato do app sem reescrever e marca os textos que você escolheu ler. Depois ele fica salvo como um esboço deste tema.', 'Importar esboço', { ok: '📥 Importar', cancel: 'Cancelar' });
+      if (!ok) return;
+      cfg.importacao = { texto, arquivo: arquivo.name };
+      // As imagens do arquivo viram gravuras do tema (até 7), para a IA levar em conta no Melhorar.
+      if (imagens.length) {
+        document.getElementById('publicoGravurasBox').open = true;
+        await gravurasAdicionar(imagens, 'arquivo');
+      }
+      await requestEsboco(cfg, null, { importar: true });
+    }
+    document.getElementById('publicoImportarBtn').addEventListener('click', () => publicoImportarArquivo.click());
+    publicoImportarArquivo.addEventListener('change', event => {
+      const arquivo = event.target.files && event.target.files[0];
+      event.target.value = ''; // permite escolher o mesmo arquivo de novo
+      if (arquivo) publicoImportar(arquivo);
+    });
     const visor = document.getElementById('esbocoVisor');
     const visorCorpo = document.getElementById('esbocoVisorCorpo');
     const visorTitulo = document.getElementById('esbocoVisorTitulo');
@@ -19191,7 +19541,7 @@ function saveTemplatesToStorage() {
       return resultado;
     }
 
-    function historicoSalvar({ tipo, titulo, ano, numSemana, partes, esbocoJson, esbocoNumero, esbocoTitulo, refino, sub, ligar, anotId, anotModo, anotEvento, anotOrdem }) {
+    function historicoSalvar({ tipo, titulo, ano, numSemana, partes, esbocoJson, esbocoNumero, esbocoTitulo, importado, arquivo, refino, sub, ligar, anotId, anotModo, anotEvento, anotOrdem }) {
       const semSemana = tipo === 'nota';
       const item = {
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
@@ -19209,6 +19559,9 @@ function saveTemplatesToStorage() {
       if (sub) item.sub = sub; // joias: 'resumo', 'pergunta' (joia da semana), 'joias' (da leitura) ou 'instrucoes'; cada um é salvo separado
       if (esbocoNumero) item.esbocoNumero = esbocoNumero;
       if (esbocoTitulo) item.esbocoTitulo = esbocoTitulo;
+      // Discurso público importado de um arquivo do orador (o Melhorar faz a revisão que mantém o esboço dele).
+      if (importado) item.importado = true;
+      if (arquivo) item.arquivo = String(arquivo).slice(0, 200);
       // Anotações (reunião, assembleia, congresso): cada parte de cada evento tem um identificador fixo; salvar de novo atualiza a mesma entrada.
       if (anotId) {
         item.anotId = anotId;

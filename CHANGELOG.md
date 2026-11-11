@@ -2,6 +2,16 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.8.04
+
+**Discurso público: gravuras e cântico inicial.**
+- **🖼️ Gravuras do esboço** (com um tema escolhido): até 7 imagens por tema, guardadas no banco deste aparelho. As do arquivo importado (Word ou PDF) entram sozinhas, e dá para adicionar outras ou tirar. Elas vão como imagens anexas em todo pedido do esboço do tema (elaborar, outra versão, melhorar e incluir), e a IA faz referência a cada uma no ponto em que se encaixa (novo pedido editável “Esboço: gravuras do orador”).
+- **🎵 IA - Sugerir o cântico inicial**: a IA lê a letra dos 151 cânticos de “Cante de Coração Para Jeová” (lista guardada só no servidor) e sugere de 3 a 5, do mais adequado para o menos, ligados ao tema e aos pontos do discurso, cada um com o motivo e um trecho da letra. O escolhido fica guardado por tema. Novo prompt editável “Sugestão do cântico inicial do discurso público”.
+
+## 6.8.03
+
+**Discurso público: importar um esboço já preparado.** Com um tema escolhido, o botão **📥 Importar um esboço preparado (Word ou PDF)** lê o arquivo no aparelho (do Word saem também as marcas de negrito, grifo, sublinhado, cor, recuos e listas) e a IA passa o esboço para o formato do app **sem reescrever**, reconhecendo os textos que o orador escolheu ler (LEIA, grifo ou marcação diferente, “vamos ler”…), com o esboço do S-34 do tema só como referência. O esboço fica **ligado ao tema** (salvo em Pesquisas e respostas salvas, com a marca 📂 na lista) e funciona como um esboço elaborado: a lista dos textos bíblicos citados, **Incluir texto(s)**, **Formatar** e **Melhorar** — que, num esboço importado, faz uma revisão geral mantendo o que ele tem de bom e ajustando-o ao esboço original do S-34. O rodapé diz de que arquivo veio. Novo prompt editável “Esboço de discurso público importado” e o pedido “Esboço importado: melhorar”.
+
 ## 6.8.02
 
 Lista de temas do discurso público: no alto, o botão **📂 Mostrar só os com esboço salvo (N)** filtra a lista para os temas que já têm esboço elaborado pela IA; tocar de novo volta a mostrar todos. A escolha fica lembrada neste aparelho, e o botão fica preso no topo ao rolar.

@@ -914,6 +914,21 @@
                     <p id="publicoInfo" class="hint ai-hint ebc-info"></p>
                     <button id="publicoEsbocoBtn" data-codigo-ia="publico" class="ai-study-btn" type="button">✨ IA - Elaborar o esboço do discurso</button>
                     <button id="publicoVerBtn" class="ver-esboco" type="button" hidden>📄 Ver o esboço original</button>
+                    <button id="publicoImportarBtn" data-codigo-ia="publico" class="ver-esboco" type="button" hidden>📥 Importar um esboço preparado (Word ou PDF)</button>
+                    <input id="publicoImportarArquivo" type="file" accept=".docx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
+                    <details class="publico-extra" id="publicoGravurasBox" hidden>
+                      <summary>🖼️ Gravuras do esboço <span id="publicoGravurasQtd"></span></summary>
+                      <p class="hint">Até 7 imagens que você vai mostrar no discurso (as do arquivo importado entram sozinhas). A IA as leva em conta ao elaborar, melhorar e incluir textos neste tema.</p>
+                      <div id="publicoGravurasLista" class="publico-gravuras"></div>
+                      <button id="publicoGravurasAddBtn" class="secondary" type="button">➕ Adicionar gravuras</button>
+                      <input id="publicoGravurasArquivo" type="file" accept="image/*" multiple hidden>
+                      <p id="publicoGravurasStatus" class="hint" role="status" aria-live="polite"></p>
+                    </details>
+                    <div class="publico-extra publico-cantico" id="publicoCanticoBox" hidden>
+                      <button id="publicoCanticoBtn" data-codigo-ia="publico" class="secondary" type="button">🎵 IA - Sugerir o cântico inicial</button>
+                      <p id="publicoCanticoEscolhido" class="publico-cantico-escolhido" hidden></p>
+                      <div id="publicoCanticoLista" class="publico-canticos"></div>
+                    </div>
                     <span id="publicoStatus" class="ok" role="status" aria-live="polite"></span>
                   </div>
                 </section>

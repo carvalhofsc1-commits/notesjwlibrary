@@ -15,7 +15,7 @@ import { aparelhoIdLimpo, registrarUsoIa } from "./_estatisticas.mjs";
 import { mensagemSeBloqueado } from "./_acessoSite.mjs";
 import { emitirCupomVoz } from "./_vozCupom.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
-import { buscarNosLivros, buscarVerbete, buscarVersiculos, versiculosDoCapitulo, fontesConfiguradas, precarregarFontes, referenciasNoTexto, textoDeGruposBiblicos } from "./_fontes.mjs";
+import { buscarNosLivros, buscarVerbete, buscarVersiculos, versiculosDoCapitulo, fontesConfiguradas, lerCanticos, precarregarFontes, referenciasNoTexto, textoDeGruposBiblicos } from "./_fontes.mjs";
 import { lerEsboco, lerIndice, minutosDoEsboco, publicacoesDaSecao, referenciasDoPublico, s34Configurado, textoDoDiscursoPublico, textoDoEsbocoImportado, textosBiblicosDoPublico, validarEsboco } from "./_s34.mjs";
 import {
   QUADROS_EBC,
@@ -2491,7 +2491,9 @@ async function esbocoDoDiscursoPublico(res, body, P) {
   const opcoes = validarOpcoes(body.opcoes);
   const ajuste = textoLivre(body.ajuste, MAX_AJUSTE);
   const modo = body.modo === "nova" || body.modo === "melhorar" || body.modo === "incluir" ? body.modo : null;
-  const anteriores = modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(anteriorParaIa(body.anteriores)).slice(0, 12000) : "";
+  // Esboço importado (preparado pelo orador): no Melhorar a revisão mantém o dele e o ajusta ao S-34; as leituras dele valem como obrigatórias.
+  const importado = Boolean(body.importado) && Boolean(modo);
+  const anteriores = modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(anteriorParaIa(body.anteriores)).slice(0, importado ? 24000 : 12000) : "";
   const inicioPedido = Date.now();
   if (fontesConfiguradas()) precarregarFontes({ biblia: true, perspicaz: false });
 
@@ -2529,7 +2531,19 @@ async function esbocoDoDiscursoPublico(res, body, P) {
       aceitas = null;
     }
   }
-  const aEscolher = faltamLeituras > 0
+  if (importado && fontesConfiguradas()) {
+    try {
+      // As do orador (as do esboço importado), mais as que ele escolheu na lista, menos as que tirou; o S-34 vale como referência.
+      const doOrador = [];
+      for (const r of [...leiturasDoEsbocoAnterior(body.anteriores), ...extras.map((e) => e.referencia)]) doOrador.push((await leituraDaBiblia(r)).referencia);
+      permitidas = [...new Set(doOrador)].filter((r) => !tirados.has(r));
+      aceitas = null;
+    } catch (e) {
+      permitidas = null;
+      aceitas = null;
+    }
+  }
+  const aEscolher = faltamLeituras > 0 && !importado
     ? `LEITURAS A ESCOLHER: o esboço do S-34 marca ${marcadas.length} texto(s) para ler${extras.length ? ` e o orador escolheu ${extras.length}` : ""}, e o discurso precisa ter pelo menos ${minimoLeituras} leituras. ` +
       `Escolha você mais ${faltamLeituras} (ou mais, se ajudar) dentre os textos CITADOS no esboço, cujo versículo vem em "TEXTO DOS VERSÍCULOS": os que mais reforçam cada ponto, de preferência curtos e espalhados pelos pontos, ` +
       `cada um no campo "leitura" do argumento a que se liga e uma só vez. Não leia nenhum texto que o esboço não cite. Não entregue o esboço com menos de ${minimoLeituras} leituras.\n\n`
@@ -2545,8 +2559,13 @@ async function esbocoDoDiscursoPublico(res, body, P) {
     blocoDeTextosTirados(tirados, P) +
     lembreteFinal(opcoes, ajuste, P);
   if (modo && anteriores) {
-    mensagem += "\n\nESBOÇO JÁ SUGERIDO (JSON):\n" + anteriores + "\n\n" + pedidoDoModo(modo, P);
+    const pedido = importado && modo === "melhorar" ? P.frases.pedidos["Esboço importado: melhorar"] || pedidoDoModo(modo, P) : pedidoDoModo(modo, P);
+    mensagem += "\n\nESBOÇO JÁ SUGERIDO (JSON):\n" + anteriores + "\n\n" + pedido;
   }
+  // As gravuras que o orador escolheu para o tema vão como imagens anexas, antes do texto.
+  const gravuras = gravurasDoPedido(body.gravuras);
+  if (gravuras.length) mensagem += "\n\n" + String(P.frases.pedidos["Esboço: gravuras do orador"] || "").replace(/\{\{n\}\}/g, String(gravuras.length));
+  const conteudo = gravuras.length ? [...gravuras, { type: "text", text: mensagem }] : mensagem;
 
   try {
     const client = criarClienteIa({ maxRetries: 0, timeout: TEMPO_ESBOCO_MS });
@@ -2554,7 +2573,7 @@ async function esbocoDoDiscursoPublico(res, body, P) {
     const resposta = await chamarIa(
       client,
       P,
-      { max_tokens: 21000 /* o raciocínio também conta aqui; 21000 é o teto sem streaming */, system: P.sistemaDiscursoPublico, messages: [{ role: "user", content: mensagem }] },
+      { max_tokens: 21000 /* o raciocínio também conta aqui; 21000 é o teto sem streaming */, system: P.sistemaDiscursoPublico, messages: [{ role: "user", content: conteudo }] },
       { schema: SaidaDiscursoPublico, tarefa: "publico" }
     );
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
@@ -2573,8 +2592,8 @@ async function esbocoDoDiscursoPublico(res, body, P) {
       fontesDoPonto: (i) => publicacoesDaSecao(tema.secoes[i]),
       leiturasPermitidas: aceitas,
       leiturasObrigatorias: permitidas,
-      minLeituras: minimoLeituras || undefined,
-      motivoObrigatorias: "que o esboço do S-34 marca ou que você escolheu",
+      minLeituras: importado ? undefined : minimoLeituras || undefined,
+      motivoObrigatorias: importado ? "que o seu esboço lia ou que você escolheu" : "que o esboço do S-34 marca ou que você escolheu",
       leiturasProibidas: [...tirados],
     });
     // Os tempos são os do esboço do S-34 (um ponto por seção); a introdução e a conclusão cabem dentro deles.
@@ -2614,6 +2633,161 @@ async function esbocoDoDiscursoPublico(res, body, P) {
       esboco: completo ? esboco : null,
       avisos: completo ? avisos : [],
       textosBiblicos: await textosDaMateria(textosBiblicosDoPublico(tema)),
+      memoriaUsada: memoriaUsadaAgora(),
+    });
+  } catch (e) {
+    return tratarErro(e, res);
+  }
+}
+
+// Gravuras do orador (discurso público): até 7 imagens JPEG/PNG/WebP em base64, já reduzidas no aparelho (cerca de 1024 px).
+const MAX_GRAVURAS = 7;
+const MAX_BYTES_GRAVURA = 700_000; // tamanho do base64 de cada uma
+function gravurasDoPedido(lista) {
+  return (Array.isArray(lista) ? lista : [])
+    .filter((g) => g && typeof g.data === "string" && /^image\/(jpeg|png|webp)$/.test(g.media) && g.data.length <= MAX_BYTES_GRAVURA && /^[A-Za-z0-9+/=]+$/.test(g.data.slice(0, 200)))
+    .slice(0, MAX_GRAVURAS)
+    .map((g) => ({ type: "image", source: { type: "base64", media_type: g.media, data: g.data } }));
+}
+
+// ---------- Discurso público: sugerir o cântico inicial ----------
+// A lista dos 151 cânticos, com as letras, fica no Blob privado (fontes/canticos.json). A IA lê o tema, as seções do S-34 e, se houver, os pontos
+// do esboço que está no campo, e sugere de 3 a 5 cânticos cuja letra combina com o discurso, com o motivo e um trecho da letra.
+const SaidaCanticos = z.object({
+  sugestoes: z.array(z.object({ numero: z.number(), motivo: z.string(), trecho: z.string() })),
+});
+async function canticosDoPublico(res, body, P) {
+  if (!acessoDoDirigente(res, body)) return;
+  const tema = await esbocoDoTema(res, body);
+  if (!tema) return;
+  const canticos = await lerCanticos();
+  if (!canticos || !canticos.length) return erro(res, 503, "A lista dos cânticos ainda não está no servidor.");
+  const porNumero = new Map(canticos.map((c) => [c.numero, c]));
+  const esboco = body.esboco && typeof body.esboco === "object" ? body.esboco : null;
+  const pontos = esboco && Array.isArray(esboco.pontos)
+    ? esboco.pontos.slice(0, 12).map((p, i) => `${i + 1}. ${limparLinha(String((p && p.titulo) || ""), 200)}`).filter((l) => l.length > 3)
+    : [];
+  const mensagem =
+    `PEDIDO: sugira de 3 a 5 cânticos para o começo da reunião do discurso público "${tema.titulo}" (esboço S-34 nº ${tema.numero}).\n\n` +
+    "TEMA E SEÇÕES DO ESBOÇO DO S-34:\n" +
+    `Tema: ${tema.titulo}\n` +
+    (tema.notaAoOrador ? `Objetivo: ${limparLinha(tema.notaAoOrador, 600)}\n` : "") +
+    tema.secoes.map((s, i) => `Seção ${i + 1}: ${s.titulo}`).join("\n") +
+    (pontos.length ? "\n\nPONTOS DO ESBOÇO PREPARADO:\n" + pontos.join("\n") : "") +
+    "\n\nCÂNTICOS DISPONÍVEIS:\n" +
+    canticos.map((c) => `### ${c.numero}. ${c.titulo} (${c.texto}) [${c.assunto}]\n${c.letra}`).join("\n\n");
+  try {
+    const client = criarClienteIa({ maxRetries: 1, timeout: tempoIa(P, 90_000) });
+    const resposta = await chamarIa(client, P, { max_tokens: 6000, system: P.sistemaCanticos, messages: [{ role: "user", content: mensagem }] }, { schema: SaidaCanticos, tarefa: "publico-canticos" });
+    if (resposta.stop_reason === "refusal" || !resposta.parsed_output) return erro(res, 502, "A IA não conseguiu sugerir os cânticos. Tente de novo.");
+    const vistos = new Set();
+    const sugestoes = resposta.parsed_output.sugestoes
+      .map((s) => ({ ...s, numero: Math.round(Number(s.numero)) }))
+      .filter((s) => porNumero.has(s.numero) && !vistos.has(s.numero) && vistos.add(s.numero))
+      .slice(0, 5)
+      .map((s) => ({ numero: s.numero, titulo: porNumero.get(s.numero).titulo, texto: porNumero.get(s.numero).texto, motivo: limparTextoGerado(s.motivo, 500), trecho: limparTextoGerado(s.trecho, 300) }));
+    if (sugestoes.length < 3) return erro(res, 502, "A IA sugeriu poucos cânticos. Tente de novo.");
+    return res.status(200).json({ tema: tema.numero, sugestoes, memoriaUsada: memoriaUsadaAgora() });
+  } catch (e) {
+    return tratarErro(e, res);
+  }
+}
+
+// ---------- Discurso público: importar um esboço que o orador já preparou ----------
+// O app lê o arquivo (Word ou PDF) no aparelho e manda o texto com as marcas da formatação (negrito, grifo, sublinhado, cor, recuos); a IA o passa
+// para o formato dos esboços do app, sem reescrever, e marca como leitura os textos que o orador escolheu ler. O esboço do S-34 do tema vai junto,
+// como referência para a divisão em pontos. Nada fica guardado no servidor: o esboço convertido volta para o app, que o liga ao tema.
+const MAX_TEXTO_IMPORTADO = 40000;
+async function esbocoImportadoDoPublico(res, body, P) {
+  if (!acessoDoDirigente(res, body)) return;
+  const opcoes = validarOpcoes(body.opcoes);
+  const texto = textoLongo(body.texto, MAX_TEXTO_IMPORTADO);
+  if (texto.length < 150) return erro(res, 400, "O arquivo tem pouco texto para ser um esboço. Confira se escolheu o arquivo certo.");
+  const inicioPedido = Date.now();
+  if (fontesConfiguradas()) precarregarFontes({ biblia: true, perspicaz: false });
+
+  const tema = await esbocoDoTema(res, body);
+  if (!tema) return;
+  let doArquivo = [];
+  let versiculos = [];
+  if (fontesConfiguradas()) {
+    try {
+      doArquivo = await referenciasNoTexto(texto.replace(/\[\/?(?:grifo|sublinhado|cor)\]|\*\*/g, ""), { max: 60 });
+      versiculos = await buscarVersiculos(doArquivo, 40);
+    } catch (e) {
+      console.error("Esboço importado: versículos indisponíveis", e?.message);
+    }
+  }
+
+  const mensagem =
+    `PEDIDO: passe para o formato o esboço que o orador preparou para o discurso público de ${minutosDoEsboco(tema)} minutos, tema "${tema.titulo}" (esboço S-34 nº ${tema.numero}). ` +
+    "Mantenha o conteúdo dele e marque como leitura os textos que ele escolheu ler.\n" +
+    emojisDoEsboco(opcoes, P) +
+    "\n\nESBOÇO DO S-34 (só referência para a divisão em pontos e os tempos):\n" +
+    textoDoDiscursoPublico(tema, []) +
+    "\n\nESBOÇO PREPARADO PELO ORADOR (texto do arquivo, com as marcas da formatação):\n" +
+    texto +
+    (versiculos.length ? "\n\nTEXTO DOS VERSÍCULOS CITADOS NO ARQUIVO:\n" + versiculos.map((v) => `${v.referencia}: ${v.texto}`).join("\n") : "");
+
+  try {
+    const client = criarClienteIa({ maxRetries: 0, timeout: TEMPO_ESBOCO_MS });
+    const inicio = Date.now();
+    const resposta = await chamarIa(
+      client,
+      P,
+      { max_tokens: 21000, system: P.sistemaPublicoImportado, messages: [{ role: "user", content: mensagem }] },
+      { schema: SaidaDiscursoPublico, tarefa: "publico-importar" }
+    );
+    if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
+      return erro(res, 502, "A IA não conseguiu ler este esboço. Tente de novo.");
+    }
+    const mesmasSecoes = Array.isArray(resposta.parsed_output.pontos) && resposta.parsed_output.pontos.length === tema.secoes.length;
+    const { esboco, avisos } = await corpoDoEsbocoLimpo(resposta.parsed_output, {
+      emoji: opcoes.emoji,
+      temaPadrao: tema.titulo,
+      minutosMax: 60,
+      maxPontos: 12,
+      maxArgumentos: 12,
+      maxBlocosIntro: 6,
+      maxBlocosConclusao: 6,
+      fontesDoPonto: (i) => (mesmasSecoes ? publicacoesDaSecao(tema.secoes[i]) : []),
+      leiturasPermitidas: null, // o orador escolheu: vale o que ele marcou no arquivo
+      leiturasObrigatorias: null,
+    });
+    // Sem tempos no arquivo, valem os do S-34 (quando os pontos batem com as seções).
+    esboco.pontos.forEach((p, i) => {
+      if (!p.minutos && mesmasSecoes && tema.secoes[i]) p.minutos = tema.secoes[i].minutos || 0;
+    });
+    const completo = esboco.pontos.length > 0;
+    const leituras = esboco.pontos.flatMap((p) => p.desenvolvimento.map((d) => d.leitura && d.leitura.referencia).filter(Boolean));
+
+    console.log(
+      "Esboço público importado:",
+      JSON.stringify({
+        modelo: P.ia.modelo,
+        tema: tema.numero,
+        caracteres: texto.length,
+        pontos: esboco.pontos.length,
+        secoes: tema.secoes.length,
+        leituras: leituras.length,
+        citadosNoArquivo: doArquivo.length,
+        segundosIa: Math.round((Date.now() - inicio) / 100) / 10,
+        total: Math.round((Date.now() - inicioPedido) / 100) / 10,
+        entrada: resposta.usage?.input_tokens || 0,
+        saida: resposta.usage?.output_tokens || 0,
+      })
+    );
+
+    return res.status(200).json({
+      semana: "Discurso público " + tema.numero,
+      titulo: tema.titulo,
+      url: null,
+      importado: true,
+      erro: completo ? null : "A IA não encontrou os pontos do esboço neste arquivo. Confira o arquivo e tente de novo.",
+      esboco: completo ? esboco : null,
+      avisos: completo ? avisos : [],
+      // Os textos do esboço importado: os citados no arquivo e, com LEIA, os que a IA reconheceu como leitura.
+      textosBiblicos: await textosDaMateria({ todos: [...doArquivo, ...leituras], leia: leituras }),
       memoriaUsada: memoriaUsadaAgora(),
     });
   } catch (e) {
@@ -4324,7 +4498,7 @@ async function tratarPedido(req, res) {
   }
 
   // Rodapé dos esboços: o modelo que elaborou e o tempo no servidor (vai na resposta e, com ela, no resultado guardado acima).
-  if (["tesouros", "discurso", "publico", "outros"].includes(tarefa)) {
+  if (["tesouros", "discurso", "publico", "publico-importar", "outros"].includes(tarefa)) {
     const inicio = Date.now();
     const enviarComRodape = res.json.bind(res);
     res.json = (dados) => {
@@ -4406,6 +4580,8 @@ async function tratarPedido(req, res) {
   if (tarefa === "ebc-dirigente") return perguntasEbcDirigente(res, body, P);
   if (tarefa === "tesouros") return esbocoDeTesouros(res, body, P);
   if (tarefa === "publico") return esbocoDoDiscursoPublico(res, body, P);
+  if (tarefa === "publico-importar") return esbocoImportadoDoPublico(res, body, P);
+  if (tarefa === "publico-canticos") return canticosDoPublico(res, body, P);
   if (tarefa === "outros") return esbocoDeOutros(res, body, P);
   if (tarefa === "discurso") return esbocoDoDiscursoCurto(res, body, P);
   if (tarefa === "joias") return responderJoias(res, body, P);

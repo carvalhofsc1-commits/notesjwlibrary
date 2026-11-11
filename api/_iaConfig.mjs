@@ -74,7 +74,7 @@ export function validarConfigIa(entrada) {
 
 // O modelo e o esforço de uma tarefa: os de esboços e discursos (se o administrador escolheu outros) ou os gerais.
 // "estudo-perguntas" (perguntas adicionais do estudo de A Sentinela) e "ebc-dirigente" (Estudo Bíblico) são do Preparar para dirigir, que usa o mesmo modelo dos esboços.
-export const TAREFAS_DE_ESBOCOS = new Set(["tesouros", "discurso", "publico", "outros", "estudo-perguntas", "ebc-dirigente", "estudo-recap"]);
+export const TAREFAS_DE_ESBOCOS = new Set(["tesouros", "discurso", "publico", "publico-importar", "outros", "estudo-perguntas", "ebc-dirigente", "estudo-recap"]);
 export function iaDaTarefa(config, tarefa) {
   if (tarefa === "audio") return { ...config, modelo: config.audioModelo || config.modelo, esforco: config.esforco };
   if (!TAREFAS_DE_ESBOCOS.has(tarefa)) return { ...config, modelo: config.modelo, esforco: config.esforco };

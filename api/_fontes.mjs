@@ -15,6 +15,8 @@ const ARQUIVOS = {
   adoracaoPura: "fontes/adoracao_pura.txt",
   reinoDeDeus: "fontes/reino_de_deus.txt",
   principiosBiblicos: "fontes/principios_biblicos.txt",
+  // "Cante de Coração Para Jeová" (só letras): [{ numero, titulo, texto, assunto, letra }], gerado por converter_canticos_pdf.py (fora do repositório).
+  canticos: "fontes/canticos.json",
 };
 
 const MAX_VERSICULOS_POR_REFERENCIA = 10;
@@ -518,4 +520,18 @@ export function precarregarFontes({ biblia: comBiblia, perspicaz: comPerspicaz, 
   if (comBiblia) carregarBiblia().catch(() => {});
   if (comPerspicaz) carregarPerspicaz().catch(() => {});
   if (comLivros) carregarLivros().catch(() => {});
+}
+
+// Os 151 cânticos com a letra (para sugerir o cântico inicial do discurso público). null se o arquivo ainda não foi enviado ao Blob.
+let canticosGuardados = null;
+export async function lerCanticos() {
+  if (canticosGuardados) return canticosGuardados;
+  try {
+    const lista = JSON.parse(await baixar(ARQUIVOS.canticos));
+    canticosGuardados = Array.isArray(lista) ? lista.filter((c) => c && Number.isInteger(c.numero) && c.titulo && c.letra) : [];
+    return canticosGuardados;
+  } catch (e) {
+    console.error("Cânticos: arquivo indisponível", e?.message);
+    return null;
+  }
 }
