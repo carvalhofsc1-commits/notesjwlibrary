@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.8.09
+
+Importar esboço do discurso público:
+- A IA pensa menos ao passar o esboço para o formato (não precisa criar nada) e, com o Gemini, o teto de saída subiu: o Gemini 4 Carbon chegava a 16 mil tokens e 231 s e às vezes passava do limite, e o app mostrava “A IA não conseguiu ler este esboço”. Se ainda faltar espaço, a mensagem diz que o esboço é longo; a falha agora fica registrada nos logs.
+- Gravuras: importar o arquivo de novo troca as gravuras que vieram do arquivo anterior (as adicionadas à mão ficam), e uma imagem repetida não entra duas vezes.
+
 ## 6.8.08
 
 Dados para o presidente da reunião: novo campo **Cidade** do orador (guardado com o nome e a congregação), que entra no texto para copiar ou enviar pelo WhatsApp (📍 Cidade).

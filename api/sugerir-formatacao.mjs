@@ -2732,14 +2732,21 @@ async function esbocoImportadoDoPublico(res, body, P) {
   try {
     const client = criarClienteIa({ maxRetries: 0, timeout: TEMPO_ESBOCO_MS });
     const inicio = Date.now();
+    // Passar para o formato não pede raciocínio longo: com ele o Gemini 4 Carbon chegou a 16 mil tokens e 231 s (perto dos tetos), e às vezes
+    // passava do limite de saída e a resposta vinha cortada. Pensa pouco (semPensar) e, no Gemini, o teto de saída é maior (a API direta
+    // da Anthropic não aceita mais de 21 mil sem streaming).
+    const teto = provedorAtual() === "gemini" ? 40000 : 21000;
     const resposta = await chamarIa(
       client,
       P,
-      { max_tokens: 21000, system: P.sistemaPublicoImportado, messages: [{ role: "user", content: mensagem }] },
-      { schema: SaidaDiscursoPublico, tarefa: "publico-importar" }
+      { max_tokens: teto, system: P.sistemaPublicoImportado, messages: [{ role: "user", content: mensagem }] },
+      { schema: SaidaDiscursoPublico, tarefa: "publico-importar", semPensar: true }
     );
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
-      return erro(res, 502, "A IA não conseguiu ler este esboço. Tente de novo.");
+      console.error("Esboço público importado: sem resposta", JSON.stringify({ modelo: P.ia.modelo, tema: tema.numero, caracteres: texto.length, parada: resposta.stop_reason, saida: resposta.usage?.output_tokens || 0, segundos: Math.round((Date.now() - inicio) / 100) / 10 }));
+      return erro(res, 502, resposta.stop_reason === "max_tokens"
+        ? "O esboço é longo e a IA não terminou de passá-lo para o formato. Tente de novo; se continuar, escolha um modelo mais rápido para os esboços em Modelos e agentes de IA."
+        : "A IA não conseguiu ler este esboço. Tente de novo.");
     }
     const mesmasSecoes = Array.isArray(resposta.parsed_output.pontos) && resposta.parsed_output.pontos.length === tema.secoes.length;
     const { esboco, avisos } = await corpoDoEsbocoLimpo(resposta.parsed_output, {

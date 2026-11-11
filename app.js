@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.8.08'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.8.09'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -17681,6 +17681,7 @@ function saveTemplatesToStorage() {
         try {
           const g = await gravuraReduzir(blob);
           if (!g) continue;
+          if (gravurasAtuais.some(x => x.data === g.data)) continue; // a mesma imagem já está no tema
           gravurasAtuais.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), nome: blob.name || '', origem, ...g });
           postas++;
         } catch (e) { /* imagem que o navegador não abre (ex.: formato raro) */ }
@@ -17871,6 +17872,8 @@ function saveTemplatesToStorage() {
       // As imagens do arquivo viram gravuras do tema (até 7), para a IA levar em conta no Melhorar.
       if (imagens.length) {
         document.getElementById('publicoGravurasBox').open = true;
+        // Importar de novo troca as gravuras que vieram do arquivo anterior (as adicionadas à mão ficam).
+        gravurasAtuais = gravurasAtuais.filter(g => g.origem !== 'arquivo');
         await gravurasAdicionar(imagens, 'arquivo');
       }
       await requestEsboco(cfg, null, { importar: true });
