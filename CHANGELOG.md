@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.98
+
+**Pesquisas e respostas salvas num banco de dados (IndexedDB).** Antes elas ficavam no armazenamento rápido do navegador (perto de 5 MB por site), com teto de 60 itens e 1,5 milhão de caracteres: passando disso, as mais antigas eram apagadas sozinhas para caber as novas. Agora ficam no banco “notestyle-dados”, com espaço de centenas de MB, e o teto subiu para 3000 itens, sem limite de caracteres. Na primeira abertura o que já estava salvo passa sozinho para o banco. O backup inclui as pesquisas salvas e a restauração as grava direto no banco; “Apagar os dados deste aparelho” também apaga o banco. O resumo dos dados mostra o espaço do banco.
+
 ## 6.7.97
 
 **Proteção dos dados do aparelho.** O app pede ao navegador o **armazenamento persistente** (para ele não apagar os dados quando faltar espaço no aparelho). Em Ajustes → Privacidade e dados deste aparelho, o resumo mostra o **espaço usado** (de cerca de 5 MB), se o armazenamento persistente foi concedido e a data do **último backup**. Um **lembrete de backup** aparece ao abrir o app quando há dados salvos e o último backup foi há mais de 15 dias (ou nunca foi feito), com **Fazer backup** e **Depois** (volta em 3 dias); e um aviso quando o espaço passa de 80%.

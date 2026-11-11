@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.97'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.98'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -9203,7 +9203,11 @@
     }
 
     async function dadosAparelhoCatalogo() {
-      const bruto = chave => { try { return localStorage.getItem(chave); } catch (e) { return null; } };
+      // As pesquisas salvas ficam no banco (IndexedDB): o tamanho e a contagem vêm da cópia em memória.
+      const bruto = chave => {
+        if (chave === HISTORICO_KEY && temBanco) return historicoCache.length ? JSON.stringify(historicoCache) : null;
+        try { return localStorage.getItem(chave); } catch (e) { return null; }
+      };
       const json = chave => { try { return JSON.parse(bruto(chave)); } catch (e) { return null; } };
       const bytes = chave => { const valor = bruto(chave); return valor == null ? 0 : (chave.length + valor.length) * 2; }; // o navegador guarda 2 bytes por caractere
       const objeto = chave => { const o = json(chave); return o && typeof o === 'object' && !Array.isArray(o) ? o : {}; };
@@ -9344,7 +9348,7 @@
           if (grupo.apagar) await grupo.apagar();
           else if (grupo.chaves && grupo.chaves.includes(LEITURA_SALVA_KEY)) document.getElementById('leituraLimparBtn').click(); // limpa a tela e apaga o texto, a posição e as marcas
           else grupo.chaves.forEach(chave => { try { localStorage.removeItem(chave); } catch (e) { /* sem localStorage */ } });
-          if (grupo.chaves && grupo.chaves.includes(HISTORICO_KEY)) historicoRender();
+          if (grupo.chaves && grupo.chaves.includes(HISTORICO_KEY)) { historicoGravar([]); historicoRender(); }
           dadosAparelhoRender();
         });
         bloco.append(corpo, lixeira);
@@ -9353,7 +9357,13 @@
       dadosResumoEl.appendChild(linha('dados-total', 'Total guardado: ' + tamanhoLegivel(resumo.total + resumo.arquivosBytes)));
       // O armazenamento rápido do navegador (localStorage) tem perto de 5 MB por site: mostra quanto já foi usado.
       const uso = usoDoArmazenamento();
-      dadosResumoEl.appendChild(linha('dados-total' + (uso.fracao >= 0.7 ? ' warn' : ''), '📦 Pesquisas, esboços e preferências: ' + tamanhoLegivel(uso.bytes) + ' de cerca de ' + tamanhoLegivel(LIMITE_ARMAZENAMENTO) + ' (' + Math.round(uso.fracao * 100) + '%)' + (uso.fracao >= 0.7 ? '. Faça um backup e apague o que não usa mais.' : '.')));
+      dadosResumoEl.appendChild(linha('dados-total' + (uso.fracao >= 0.7 ? ' warn' : ''), '📦 Preferências, modelos e marcações: ' + tamanhoLegivel(uso.bytes) + ' de cerca de ' + tamanhoLegivel(LIMITE_ARMAZENAMENTO) + ' (' + Math.round(uso.fracao * 100) + '%)' + (uso.fracao >= 0.7 ? '. Faça um backup e apague o que não usa mais.' : '.')));
+      try {
+        if (navigator.storage && navigator.storage.estimate) {
+          const est = await navigator.storage.estimate();
+          if (est && est.quota) dadosResumoEl.appendChild(linha('dados-total', '🗄️ Banco de dados do app (pesquisas salvas, gravações e arquivos): ' + tamanhoLegivel(est.usage || 0) + ' usados de ' + tamanhoLegivel(est.quota) + ' disponíveis.'));
+        }
+      } catch (e) { /* o navegador não informa */ }
       const persistente = await armazenamentoPersistente();
       if (persistente !== null) dadosResumoEl.appendChild(linha('dados-total', persistente ? '🔒 Armazenamento persistente: concedido (o navegador não apaga os dados para liberar espaço).' : '🔓 Armazenamento persistente: não concedido pelo navegador (ele pode apagar os dados se faltar espaço no aparelho; o backup protege).'));
       const ultimo = Number(localStorage.getItem(BACKUP_ULTIMO_KEY)) || 0;
@@ -9421,7 +9431,7 @@
         return;
       }
       let temDados = false;
-      try { temDados = JSON.parse(localStorage.getItem(HISTORICO_KEY) || '[]').length > 0 || Boolean(localStorage.getItem('jwLibraryNoteAplicarAnotacoesV1')); } catch (e) { temDados = false; }
+      try { temDados = historicoLer().length > 0 || Boolean(localStorage.getItem('jwLibraryNoteAplicarAnotacoesV1')); } catch (e) { temDados = false; }
       if (!temDados) return;
       const agora = Date.now();
       const ultimo = Number(localStorage.getItem(BACKUP_ULTIMO_KEY)) || 0;
@@ -9444,6 +9454,7 @@
       if (!ok) return;
       try { localStorage.clear(); } catch (e) { /* sem localStorage */ }
       try { sessionStorage.clear(); } catch (e) { /* sem sessionStorage */ }
+      if (temBanco) await new Promise(fim => { const pedido = indexedDB.deleteDatabase(BANCO_NOME); pedido.onsuccess = pedido.onerror = pedido.onblocked = () => fim(); });
       // Nada mais pode ser gravado até a página recarregar (um salvamento automático pendente traria os dados de volta).
       Storage.prototype.setItem = function () {};
       backupState = null; // senão o navegador avisaria de alterações não gravadas ao recarregar
@@ -9477,6 +9488,8 @@
           if (typeof valor === 'string') itens[chave] = valor;
         }
       } catch (e) { /* sem localStorage */ }
+      const pesquisas = historicoLer();
+      if (pesquisas.length) itens[HISTORICO_KEY] = JSON.stringify(pesquisas); // ficam no banco, não no localStorage
       return { app: 'NoteStyle', formato: 1, versaoApp: APP_VERSION, criadoEm: new Date().toISOString(), comCodigos: Boolean(comCodigos), itens };
     }
 
@@ -9543,6 +9556,13 @@
       );
       if (!ok) return;
       try {
+        // As pesquisas salvas vão direto para o banco (podem ser maiores do que cabe no localStorage).
+        if (temBanco && itens[HISTORICO_KEY]) {
+          const lista = JSON.parse(itens[HISTORICO_KEY]);
+          await bancoGravar('historico', Array.isArray(lista) ? lista : []);
+          try { localStorage.removeItem(HISTORICO_KEY); } catch (e) { /* sem localStorage */ }
+          delete itens[HISTORICO_KEY];
+        }
         Object.entries(itens).forEach(([chave, valor]) => localStorage.setItem(chave, valor));
       } catch (e) {
         appBackupStatus.textContent = '⚠️ Não consegui gravar tudo (falta espaço no aparelho?). Nada foi recarregado; confira o que foi restaurado antes de continuar.';
@@ -18382,13 +18402,99 @@ function saveTemplatesToStorage() {
     // "Abrir" põe o texto de volta no campo de texto com os botões de copiar. Ficam as 60 mais recentes (e no máximo
     // ~1,5 milhão de caracteres, para não encher a memória do navegador); as mais antigas saem sozinhas.
     const HISTORICO_KEY = 'jwLibraryNoteAplicarHistoricoV1';
-    const HISTORICO_MAX = 60;
-    const HISTORICO_MAX_CARACTERES = 1500000;
+    // Desde a 6.7.98 as pesquisas e respostas salvas (com os esboços) ficam num banco IndexedDB ("notestyle-dados"), que tem centenas de MB:
+    // antes ficavam no localStorage (perto de 5 MB por site), com teto de 60 itens e 1,5 milhão de caracteres, e as mais antigas saíam
+    // sozinhas para caber as novas. O app lê de uma cópia em memória (as leituras continuam imediatas) e grava no banco em segundo plano.
+    // O localStorage só guarda as pesquisas quando o navegador não tem IndexedDB; um backup restaurado chega por ali e passa para o banco.
+    const HISTORICO_MAX = 3000;
+    const HISTORICO_MAX_CARACTERES = 1500000; // só sem IndexedDB (o limite do localStorage)
+    const BANCO_NOME = 'notestyle-dados';
+    const BANCO_LOJA = 'kv';
+    const temBanco = Boolean(window.indexedDB);
+    function bancoAbrir() {
+      return new Promise((ok, falha) => {
+        const pedido = indexedDB.open(BANCO_NOME, 1);
+        pedido.onupgradeneeded = () => pedido.result.createObjectStore(BANCO_LOJA);
+        pedido.onsuccess = () => ok(pedido.result);
+        pedido.onerror = () => falha(pedido.error);
+      });
+    }
+    async function bancoLer(chave) {
+      const banco = await bancoAbrir();
+      try {
+        return await new Promise((ok, falha) => {
+          const pedido = banco.transaction(BANCO_LOJA, 'readonly').objectStore(BANCO_LOJA).get(chave);
+          pedido.onsuccess = () => ok(pedido.result);
+          pedido.onerror = () => falha(pedido.error);
+        });
+      } finally { banco.close(); }
+    }
+    async function bancoGravar(chave, valor) {
+      const banco = await bancoAbrir();
+      try {
+        await new Promise((ok, falha) => {
+          const transacao = banco.transaction(BANCO_LOJA, 'readwrite');
+          transacao.objectStore(BANCO_LOJA).put(valor, chave);
+          transacao.oncomplete = () => ok();
+          transacao.onerror = () => falha(transacao.error);
+          transacao.onabort = () => falha(transacao.error);
+        });
+      } finally { banco.close(); }
+    }
+    function historicoDoLocalStorage() {
+      try {
+        const lista = JSON.parse(localStorage.getItem(HISTORICO_KEY) || '[]');
+        return Array.isArray(lista) ? lista : [];
+      } catch (e) {
+        return [];
+      }
+    }
+    let historicoCache = historicoDoLocalStorage(); // na primeira abertura (ou depois de restaurar um backup) vem daqui; depois, do banco
+    let historicoNoBanco = !temBanco;               // true depois de carregar (ou migrar) do banco; antes disso nada é gravado nele
+    let historicoGravando = false;
+    let historicoDeNovo = false;
+    async function historicoSalvarNoBanco() {
+      if (historicoGravando) { historicoDeNovo = true; return; } // grava de novo ao terminar, com a lista mais nova
+      historicoGravando = true;
+      try {
+        do {
+          historicoDeNovo = false;
+          await bancoGravar('historico', historicoCache);
+        } while (historicoDeNovo);
+      } catch (e) {
+        console.warn('Pesquisas salvas: não consegui gravar no banco', e);
+      } finally {
+        historicoGravando = false;
+      }
+    }
+    // Ao abrir: passa para o banco o que estiver no localStorage (primeira vez ou backup restaurado) ou carrega do banco.
+    async function historicoCarregarDoBanco() {
+      if (!temBanco) return;
+      try {
+        let legado = null;
+        try { legado = localStorage.getItem(HISTORICO_KEY); } catch (e) { legado = null; }
+        if (legado !== null) {
+          await bancoGravar('historico', historicoCache);
+          try { localStorage.removeItem(HISTORICO_KEY); } catch (e) { /* sem localStorage */ }
+        } else {
+          const doBanco = await bancoLer('historico');
+          historicoCache = Array.isArray(doBanco) ? doBanco : []; // o que foi "gravado" antes de carregar partia de uma lista vazia: não vale
+        }
+      } catch (e) {
+        console.warn('Pesquisas salvas: banco indisponível, continuo no localStorage', e);
+        historicoNoBanco = false;
+        return;
+      }
+      historicoNoBanco = true;
+      // As telas que já mostraram as pesquisas salvas (vazias) se atualizam.
+      try { historicoNormalizarNomes(); } catch (e) { /* ainda iniciando */ }
+      try { historicoRender(); esbocosSalvosAtualizar(); recuperarSalvasAtualizar(); studyPickers.forEach(showStudySaved); comentariosAutoTodos(); } catch (e) { /* ainda iniciando */ }
+      try { publicoNumerarSalvosEmSilencio(); } catch (e) { /* ainda iniciando */ }
+    }
 
     function historicoLer() {
       try {
-        const lista = JSON.parse(localStorage.getItem(HISTORICO_KEY) || '[]');
-        return Array.isArray(lista) ? lista.map(historicoComSemana) : [];
+        return structuredClone(historicoCache).map(historicoComSemana); // uma cópia: quem altera a lista precisa chamar historicoGravar
       } catch (e) {
         return [];
       }
@@ -18974,6 +19080,11 @@ function saveTemplatesToStorage() {
     const historicoChaveAtual = () => aiWeekYear * 100 + aiWeekNumber;
 
     function historicoGravar(lista) {
+      if (temBanco) {
+        try { historicoCache = structuredClone(lista.slice(0, HISTORICO_MAX)); } catch (e) { return false; }
+        if (historicoNoBanco) historicoSalvarNoBanco();
+        return true;
+      }
       let atual = lista.slice(0, HISTORICO_MAX);
       let liberou = false;
       while (atual.length) {
@@ -18981,6 +19092,7 @@ function saveTemplatesToStorage() {
         if (json.length <= HISTORICO_MAX_CARACTERES) {
           try {
             localStorage.setItem(HISTORICO_KEY, json);
+            historicoCache = atual;
             return true;
           } catch (e) {
             // Memória cheia: primeiro sai o que o app lê de novo no site (leituras carregadas e lista do estudo); só depois a pesquisa mais antiga.
@@ -19602,6 +19714,7 @@ function saveTemplatesToStorage() {
     historicoNormalizarNomes();
     historicoRender();
     publicoNumerarSalvosEmSilencio();
+    historicoCarregarDoBanco();
 
     // ---------- Aviso de versão nova ----------
     // Um app instalado pode ficar com a página antiga na memória. Aqui o app compara a versão que
