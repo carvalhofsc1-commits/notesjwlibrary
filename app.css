@@ -13681,3 +13681,8 @@ button.modelos-copiar {
   width: 100%;
   margin-top: 10px;
 }
+
+/* Aviso de esboço pronto (mesma barra do "Nova versão disponível"), com o botão de fechar menor. */
+.esboco-pronto-bar button.secondary {
+  padding-inline: 12px;
+}

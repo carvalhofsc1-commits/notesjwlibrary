@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.93
+
+**Esboços continuam mesmo saindo da tela.** Ao sair do app ou bloquear a tela no meio da elaboração, o iPhone cortava a espera e aparecia “Falha de conexão ao consultar a IA”, embora o servidor terminasse o esboço. Agora os pedidos demorados (esboços e Preparar para dirigir) vão com um código aleatório; o servidor guarda a resposta por algumas horas e, se a conexão cair, o app busca o resultado assim que você volta e mostra o esboço normalmente. Quando o esboço fica pronto e você está em outra tela (ou em outro app), aparece a barra **✅ O esboço ficou pronto** com o botão **Ver**, que leva até ele. Tocar em outro botão de IA enquanto o esboço é elaborado mostra “Aguarde…” em vez de não fazer nada.
+
 ## 6.7.92
 
 Definições em vigor: novo botão **📋 Copiar as definições**, que copia a tabela inteira em texto (data e hora, as três partes e uma linha por item).

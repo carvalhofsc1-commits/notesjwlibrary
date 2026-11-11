@@ -7,7 +7,8 @@ import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import { codigoDoDirigente, erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { acessoDoDirigente, codigoValido, dirigenteValido, exigirAcesso, recusarAcesso, resumoValido } from "./_acesso.mjs";
-import { iaDaTarefa, lerConfigIa, provedorAtual } from "./_iaConfig.mjs";
+import { TAREFAS_DE_ESBOCOS, iaDaTarefa, lerConfigIa, provedorAtual } from "./_iaConfig.mjs";
+import { apagarResultado, guardarResultado, idDePedidoValido, lerResultado, pedidosDisponiveis } from "./_pedidos.mjs";
 import { criarClienteIa, erroSemIa, iaDisponivel } from "./_clienteIa.mjs";
 import { blocoLicoesPara } from "./_memoria.mjs";
 import { aparelhoIdLimpo, registrarUsoIa } from "./_estatisticas.mjs";
@@ -4296,6 +4297,30 @@ async function tratarPedido(req, res) {
 
   const bloqueioSite = await mensagemSeBloqueado({ aparelhoId: body.aparelhoId, codigoAdmin: body.codigoAdmin });
   if (bloqueioSite) return erro(res, 403, bloqueioSite);
+
+  // Resultado de um pedido demorado cuja conexão caiu (ver api/_pedidos.mjs): o id aleatório de 36 caracteres é a própria chave.
+  if (tarefa === "pedido-resultado" || tarefa === "pedido-apagar") {
+    if (!idDePedidoValido(body.pedidoId) || !pedidosDisponiveis()) return erro(res, 400, "Pedido inválido.");
+    if (tarefa === "pedido-apagar") {
+      await apagarResultado(body.pedidoId);
+      return res.status(200).json({ apagado: true });
+    }
+    const guardado = await lerResultado(body.pedidoId);
+    if (!guardado) return res.status(200).json({ pronto: false });
+    return res.status(200).json({ pronto: true, status: guardado.status, resposta: guardado.dados });
+  }
+
+  // Pedidos demorados (esboços e Preparar para dirigir) com pedidoId: a resposta também é guardada ANTES de ser enviada, para o app
+  // recuperá-la se a conexão cair no meio (a função só termina depois de enviar, então a gravação não se perde).
+  if (TAREFAS_DE_ESBOCOS.has(tarefa) && idDePedidoValido(body.pedidoId) && pedidosDisponiveis()) {
+    const enviar = res.json.bind(res);
+    res.json = (dados) => {
+      guardarResultado(body.pedidoId, res.statusCode || 200, dados)
+        .catch((e) => console.error("Pedidos: não guardei o resultado", tarefa, e && e.message))
+        .finally(() => enviar(dados));
+      return res;
+    };
+  }
 
   if (typeof tarefa === "string" && /^backup-/.test(tarefa) && !exigirAcesso(res, body)) return;
   if (tarefa === "backup-campos") return lerCamposDosDocumentos(req, res);

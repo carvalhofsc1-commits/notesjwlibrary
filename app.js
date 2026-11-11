@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.92'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.93'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -15463,11 +15463,39 @@ function saveTemplatesToStorage() {
     }
 
     // Faz a chamada ao servidor das tarefas de estudo (lista e respostas). Devolve { ok, data, unavailable }.
+    // Pedidos demorados (esboços e Preparar para dirigir): vão com um id aleatório; o servidor guarda a resposta por algumas horas. Se a conexão
+    // cair no meio (no iPhone, ao sair do app ou bloquear a tela), o app busca o resultado com esse id assim que volta (api/_pedidos.mjs).
+    const TAREFAS_LONGAS = new Set(['tesouros', 'discurso', 'publico', 'outros', 'estudo-perguntas', 'ebc-dirigente', 'estudo-recap']);
+    const novoPedidoId = () => (window.crypto && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2));
+    const esperar = ms => new Promise(ok => setTimeout(ok, ms));
+    async function buscarResultadoGuardado(pedidoId, prazo) {
+      while (Date.now() < prazo) {
+        if (document.hidden) { await esperar(1500); continue; } // fora da tela não adianta perguntar: a conexão não sai
+        try {
+          const controle = new AbortController();
+          const timer = setTimeout(() => controle.abort(), 15000);
+          const resposta = await fetch(AI_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: corpoIa({ tarefa: 'pedido-resultado', pedidoId }), signal: controle.signal });
+          clearTimeout(timer);
+          const dados = await resposta.json().catch(() => null);
+          if (resposta.ok && dados && dados.pronto) {
+            fetch(AI_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: corpoIa({ tarefa: 'pedido-apagar', pedidoId }) }).catch(() => {});
+            const r = dados.resposta || null;
+            return { ok: Number(dados.status) < 400 && !!r, data: r, unavailable: false, recuperado: true };
+          }
+        } catch (e) { /* ainda sem conexão: tenta de novo */ }
+        await esperar(4000);
+      }
+      return null;
+    }
+
     async function postStudy(payload, timeoutMs) {
       // As tarefas que usam a IA pedem, uma vez, a concordância com o envio do texto (as que só leem o wol.jw.org passam direto).
       if (payload && IA_TAREFAS.has(payload.tarefa) && !(await garantirConsentimentoIa())) {
         return { ok: false, data: { erro: MSG_SEM_CONSENTIMENTO }, unavailable: false };
       }
+      const longa = Boolean(payload && TAREFAS_LONGAS.has(payload.tarefa));
+      if (longa) payload = Object.assign({}, payload, { pedidoId: novoPedidoId() });
+      const inicio = Date.now();
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeoutMs);
       try {
@@ -15484,9 +15512,51 @@ function saveTemplatesToStorage() {
         // 404 ou 501 sem mensagem do servidor = a rota não existe (site fora do ar ou app aberto fora do site publicado). Com
         // "erro" na resposta o servidor respondeu de verdade (por exemplo, "esta semana não tem discurso"): a mensagem dele vale.
         return { ok: response.ok && !!data, data, unavailable: (response.status === 404 || response.status === 501) && !(data && data.erro) };
+      } catch (e) {
+        if (!longa) throw e;
+        // A conexão caiu (ou a espera acabou): o servidor pode ter terminado; procura o resultado guardado até um pouco depois do limite dele.
+        clearTimeout(timer);
+        const recuperado = await buscarResultadoGuardado(payload.pedidoId, Math.max(inicio + timeoutMs + 30000, Date.now() + 20000));
+        if (recuperado) return recuperado;
+        throw e;
       } finally {
         clearTimeout(timer);
       }
+    }
+
+    // Aviso de que um esboço ficou pronto, quando a pessoa está em outra tela (ou voltou de outro app): a barra fica até tocar em Ver ou ✕.
+    function avisarEsbocoPronto(cfg) {
+      const boxId = Object.keys(ESBOCO_BOXES).find(id => ESBOCO_BOXES[id] === cfg.kind);
+      const caixa = boxId ? document.getElementById(boxId) : null;
+      const naTela = !document.hidden && currentScreen() === 'reunioes' && reunioesVistaAtual() === 'discursos' && caixa && caixa.open;
+      if (naTela) return;
+      const antiga = document.getElementById('esbocoProntoBar');
+      if (antiga) antiga.remove();
+      const barra = document.createElement('div');
+      barra.id = 'esbocoProntoBar';
+      barra.className = 'update-bar esboco-pronto-bar';
+      barra.setAttribute('role', 'status');
+      const texto = document.createElement('span');
+      texto.textContent = '✅ O esboço ficou pronto.';
+      const ver = document.createElement('button');
+      ver.type = 'button';
+      ver.textContent = 'Ver';
+      ver.addEventListener('click', () => {
+        barra.remove();
+        showScreen('reunioes');
+        reunioesIr('discursos');
+        if (caixa) caixa.open = true;
+        setTimeout(reunioesIrAoCampo, 150);
+      });
+      const fechar = document.createElement('button');
+      fechar.type = 'button';
+      fechar.className = 'secondary';
+      fechar.setAttribute('aria-label', 'Fechar o aviso');
+      fechar.textContent = '✕';
+      fechar.addEventListener('click', () => barra.remove());
+      barra.append(texto, ver, fechar);
+      document.body.appendChild(barra);
+      if (navigator.vibrate) navigator.vibrate(150);
     }
 
     // Acesso das funções do dirigente: só o código do dirigente (o servidor também o aceita sozinho para elas).
@@ -16887,7 +16957,7 @@ function saveTemplatesToStorage() {
     }
 
     async function requestEsboco(cfg, mode) {
-      if (aiBusy) return;
+      if (aiBusy) return setAiStatus('⏳ Aguarde: a IA ainda está trabalhando no pedido anterior.', false);
       // "Incluir texto(s)" refaz o esboço do próprio card; se o campo de texto já mostra outra coisa, ele é limpo como num esboço novo.
       const incluir = mode === 'incluir';
       const esbocoNoCampo = aiLastKind === cfg.kind && aiResumo && aiSentinelaRaw.length && aiSentinelaRaw[0] === cfg.ultimoEsboco;
@@ -16963,6 +17033,7 @@ function saveTemplatesToStorage() {
         renderAiSuggestions();
         aiRefineBox.hidden = false;
         setAiStatus((incluir ? '✅ Esboço refeito com os textos incluídos, no campo de texto.' : '✅ Esboço no campo de texto.') + (Array.isArray(result.data.avisos) && result.data.avisos.length ? ' ⚠️ ' + result.data.avisos.join(' ') : ''), false);
+        avisarEsbocoPronto(cfg);
       } catch (e) {
         setAiStatus(e && e.name === 'AbortError' ? 'A IA demorou demais. Tente de novo.' : 'Falha de conexão ao consultar a IA.', true);
       } finally {
