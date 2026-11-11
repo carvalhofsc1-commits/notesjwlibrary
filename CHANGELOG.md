@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.8.10
+
+Pedidos demorados (esboços, importação e Preparar para dirigir): quando a conexão cai no meio (tela bloqueada, outro app), o app espera você voltar, sem prazo, e então busca o resultado guardado no servidor (por até 6 horas). Antes ele só tentava até uns 5 minutos e meio depois do início: quem voltava depois disso perdia o esboço que o servidor já tinha terminado (foi o que aconteceu com uma importação que deu certo no servidor e não apareceu no app). O botão do esboço salvo agora diz quando ele foi importado: **📂 Carregar o esboço importado de "arquivo" (data)**.
+
 ## 6.8.09
 
 Importar esboço do discurso público:

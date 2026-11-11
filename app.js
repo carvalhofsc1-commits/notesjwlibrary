@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.8.09'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.8.10'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -15576,9 +15576,15 @@ function saveTemplatesToStorage() {
     const TAREFAS_LONGAS = new Set(['tesouros', 'discurso', 'publico', 'publico-importar', 'outros', 'estudo-perguntas', 'ebc-dirigente', 'estudo-recap']);
     const novoPedidoId = () => (window.crypto && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2));
     const esperar = ms => new Promise(ok => setTimeout(ok, ms));
+    // O resultado fica guardado no servidor por até 6 horas: com o app fora da tela (tela bloqueada, outro app) a busca ESPERA a pessoa voltar,
+    // sem prazo; de volta, pergunta até o prazo e sempre ao menos uma vez (antes, quem voltava depois do prazo perdia o esboço já pronto).
     async function buscarResultadoGuardado(pedidoId, prazo) {
-      while (Date.now() < prazo) {
+      const limite = Date.now() + 6 * 3600_000;
+      let respondeu = false;      // o servidor respondeu ao menos uma vez com a tela à vista
+      let semResposta = 0;        // perguntas sem resposta (sem internet) depois do prazo
+      while (Date.now() < limite) {
         if (document.hidden) { await esperar(1500); continue; } // fora da tela não adianta perguntar: a conexão não sai
+        if (Date.now() >= prazo && (respondeu || semResposta >= 8)) break;
         try {
           const controle = new AbortController();
           const timer = setTimeout(() => controle.abort(), 15000);
@@ -15590,7 +15596,10 @@ function saveTemplatesToStorage() {
             const r = dados.resposta || null;
             return { ok: Number(dados.status) < 400 && !!r, data: r, unavailable: false, recuperado: true };
           }
-        } catch (e) { /* ainda sem conexão: tenta de novo */ }
+          if (resposta.ok) respondeu = true;
+        } catch (e) {
+          if (Date.now() >= prazo) semResposta++; // ainda sem conexão: tenta de novo
+        }
         await esperar(4000);
       }
       return null;
@@ -16769,7 +16778,9 @@ function saveTemplatesToStorage() {
       if (!item) return;
       const data = new Date(item.data);
       const quando = data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' às ' + data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-      botao.textContent = '📂 Carregar o esboço já salvo (' + quando + ')';
+      botao.textContent = item.importado
+        ? '📂 Carregar o esboço importado' + (item.arquivo ? ' de "' + item.arquivo + '"' : '') + ' (' + quando + ')'
+        : '📂 Carregar o esboço já salvo (' + quando + ')';
       botao.title = total > 1 ? 'O mais recente de ' + total + ' esboços salvos deste discurso. As outras versões estão em Pesquisas e respostas salvas.' : '';
     }
 
