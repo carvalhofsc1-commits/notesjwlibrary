@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.91
+
+Modelos e agentes de IA: **✏️ Escolher contas e modelos** também fica recolhida e abre ao tocar no título, como as Definições em vigor.
+
 ## 6.7.90
 
 **Modelos e agentes de IA mais simples.** A seção ficou com duas tabelas no mesmo padrão: **📋 Definições em vigor** (recolhida) e **✏️ Escolher contas e modelos**, dividida em Contas, Texto e Voz e áudio, só com os seletores (nomes curtos, esforço junto do modelo, o modelo Gemini da transcrição só aparece quando o motor for o Gemini). Um único **💾 Salvar para todos** grava o que mudou (IA de texto e áudio, conta do Google e voz), com **🧪 Testar o texto** e **▶️ Ouvir a voz** ao lado. Os textos explicativos e os preços saíram. O que é só configuração foi para seções próprias no grupo do administrador: **🔊 Leitura em voz: configurações** (tom, altura, velocidade, referências, o que pular, instruções extras, consumo, tempo e cor) e **🎙️ Áudio em texto: configurações** (tipos de áudio e limites).
