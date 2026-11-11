@@ -26,6 +26,13 @@ const usoDaResposta = (resposta) => ({ entrada: resposta.usage?.input_tokens || 
 
 // O esforço escolhido pelo administrador (o mesmo das outras respostas da IA). Modelos antigos (Haiku 4.5, Sonnet 4.5...) não aceitam "effort".
 const esforcoDoModelo = (modelo, esforco) => (/haiku-4|sonnet-4-5|-3-/.test(modelo) ? {} : { output_config: { effort: esforco } });
+// Corrigir, resumir e sugerir nomes são tarefas mecânicas: no Gemini e no Haiku 5.5 o raciocínio fica no mínimo. No Gemini ele conta dentro
+// do teto de saída (com esforço médio, a correção de uma parte chegava cortada e dava erro): o teto ganha uma folga.
+const pensarPouco = (modelo) => (/haiku-5|gemini/.test(modelo) ? { thinking: { type: "disabled" } } : {});
+const tetoDoModelo = (modelo, base) => (/gemini/.test(modelo) ? base + 6000 : base);
+function registrarFalhaIa(tarefa, modelo, resposta) {
+  console.error("Áudio em texto: a IA não concluiu", JSON.stringify({ tarefa, modelo, parada: resposta.stop_reason, saida: resposta.usage?.output_tokens || 0 }));
+}
 
 const REGIAO = process.env.GOOGLE_STT_REGIAO || "us";
 const MODELO_STT = process.env.GOOGLE_STT_MODELO || "chirp_3";
@@ -532,11 +539,13 @@ export default async function handler(req, res) {
       const resposta = await client.messages.create({
         model: modelo,
         ...esforcoDoModelo(modelo, esforco),
-        max_tokens: 1500,
+        ...pensarPouco(modelo),
+        max_tokens: tetoDoModelo(modelo, 1500),
         system: SISTEMA_NOMES,
         messages: [{ role: "user", content: pedido }],
       });
       await registrarConsumo(corpo, { tarefa: "audio-nomes", ...usoDaResposta(resposta) });
+      if (resposta.stop_reason === "refusal" || resposta.stop_reason === "max_tokens") registrarFalhaIa("nomes", modelo, resposta);
       if (resposta.stop_reason === "refusal") return erro(res, 502, "A IA não conseguiu sugerir nomes para este texto.");
       const bruto = resposta.content.filter((b) => b.type === "text").map((b) => b.text).join("\n");
       let dados = null;
@@ -570,11 +579,13 @@ export default async function handler(req, res) {
       const resposta = await client.messages.create({
         model: modelo,
         ...esforcoDoModelo(modelo, esforco),
-        max_tokens: parcial ? 1500 : 4000,
+        ...pensarPouco(modelo),
+        max_tokens: tetoDoModelo(modelo, parcial ? 1500 : 4000),
         system: parcial ? SISTEMA_RESUMO_PARCIAL : SISTEMA_RESUMO + (documentos.length || imagens.length ? REGRAS_DOCUMENTOS : ""),
         messages: [{ role: "user", content: conteudo }],
       });
       await registrarConsumo(corpo, { tarefa: "audio-resumo", ...usoDaResposta(resposta) });
+      if (resposta.stop_reason === "refusal" || resposta.stop_reason === "max_tokens") registrarFalhaIa("resumo", modelo, resposta);
       if (resposta.stop_reason === "refusal") return erro(res, 502, "A IA não conseguiu resumir este texto.");
       const resumo = trocarCulto(
         resposta.content
@@ -601,11 +612,13 @@ export default async function handler(req, res) {
       const resposta = await client.messages.create({
         model: modelo,
         ...esforcoDoModelo(modelo, esforco),
-        max_tokens: maxTokens,
+        ...pensarPouco(modelo),
+        max_tokens: tetoDoModelo(modelo, maxTokens),
         system: parte > 1 && total > 1 ? SISTEMA_CORRECAO_CONTINUA : SISTEMA_CORRECAO,
         messages: [{ role: "user", content: montarPedidoCorrecao(texto, corpo.contexto, parte, total, antes) }],
       });
       await registrarConsumo(corpo, { tarefa: "audio-correcao", ...usoDaResposta(resposta) });
+      if (resposta.stop_reason === "refusal" || resposta.stop_reason === "max_tokens") registrarFalhaIa("correcao", modelo, resposta);
       if (resposta.stop_reason === "refusal") return erro(res, 502, "A IA não conseguiu corrigir este texto.");
       if (resposta.stop_reason === "max_tokens") return erro(res, 502, "A correção ficou grande demais para esta parte. Tente novamente.");
       const corrigido = trocarCulto(
@@ -620,7 +633,7 @@ export default async function handler(req, res) {
 
     return erro(res, 400, "Ação desconhecida.");
   } catch (e) {
-    console.error("Transcrever: falha", e?.status, e?.message);
+    console.error("Transcrever: falha", corpo && corpo.acao, e?.status, e?.message);
     if (e?.status === 403 || e?.status === 401) {
       return erro(res, 502, "O Google recusou o pedido: confira se a API Speech-to-Text está ativada e se a conta de serviço tem o papel Cliente do Cloud Speech (" + String(e.message).slice(0, 160) + ").");
     }
