@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.8.00'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.8.01'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -17224,6 +17224,14 @@ function saveTemplatesToStorage() {
     function publicoMostrarEscolhido() {
       const t = publicoTemas.find(x => String(x.numero) === publicoTema.value);
       publicoBusca.value = t ? publicoRotulo(t) : '';
+      publicoLimparMostrar();
+    }
+    // 🗑️ ao lado da seta: aparece com um tema escolhido e limpa a escolha (o campo volta vazio, como ao abrir o card).
+    const publicoLimpar = document.getElementById('publicoLimparBtn');
+    function publicoLimparMostrar() {
+      const comTema = Boolean(publicoTema.value);
+      publicoLimpar.hidden = !comTema;
+      publicoBusca.closest('.publico-campo').classList.toggle('com-tema', comTema);
     }
 
     // Os temas que já têm esboço elaborado pela IA e salvo neste aparelho (Pesquisas e respostas salvas), pelo número do tema.
@@ -17322,6 +17330,7 @@ function saveTemplatesToStorage() {
       publicoVerBtn.hidden = true;
       publicoFiltrando = false;
       publicoBusca.value = '';
+      publicoLimparMostrar();
       publicoBusca.placeholder = publicoTemas.length ? 'Digite o número ou o título' : 'Nenhum esboço importado';
     }
 
@@ -17411,6 +17420,16 @@ function saveTemplatesToStorage() {
       }
     });
     // A seta ▾ abre a lista inteira sem pedir o teclado (no celular, o teclado cobriria metade da tela).
+    publicoLimpar.addEventListener('mousedown', event => event.preventDefault());
+    publicoLimpar.addEventListener('click', () => {
+      publicoFiltrando = false;
+      publicoFechar();
+      if (publicoTema.value) {
+        publicoTema.value = '';
+        publicoTemaMudou();
+      }
+      publicoMostrarEscolhido();
+    });
     publicoSeta.addEventListener('mousedown', event => event.preventDefault());
     publicoSeta.addEventListener('click', () => {
       if (!publicoLista.hidden) return publicoFechar();

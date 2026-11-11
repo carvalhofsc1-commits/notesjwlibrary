@@ -13754,3 +13754,34 @@ button.modelos-copiar {
 .bk-seletor-lista button.bk-seletor-item:focus {
   background-image: none;
 }
+
+/* Discurso público: 🗑️ para limpar o tema escolhido, à esquerda da seta ▾ (o texto do campo dá lugar aos dois botões). */
+.publico-campo.com-tema input {
+  padding-right: 92px;
+}
+
+.publico-limpar {
+  position: absolute;
+  right: 46px;
+  top: 4px;
+  bottom: 4px;
+  width: 40px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 1rem;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.publico-limpar[hidden] {
+  display: none;
+}
+
+@media (hover: hover) {
+  .publico-limpar:hover {
+    background: var(--soft);
+  }
+}

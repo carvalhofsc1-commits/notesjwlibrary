@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.8.01
+
+Discurso público: com um tema escolhido, aparece um botão **🗑️** ao lado da seta ▾ para limpar a escolha (o campo volta vazio e as informações do tema somem).
+
 ## 6.8.00
 
 A linha da lista de temas ainda escurecia ao encostar o dedo durante a rolagem: vinha da regra geral que escurece qualquer botão ao “passar o mouse”, que no iPhone gruda no botão tocado. Essa regra agora vale só com mouse (tira o mesmo efeito grudado dos outros botões no celular), e as linhas das listas de escolha nunca recebem o escurecimento.
