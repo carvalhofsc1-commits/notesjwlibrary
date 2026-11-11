@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.8.17
+
+Discurso público: o botão **📂 Carregar o esboço já salvo** (ou **importado**) fica logo abaixo do **✨ IA - Elaborar o esboço**.
+
 ## 6.8.16
 
 Áudio em texto: **Corrigir com a IA** dava erro com o Gemini. O teto de saída de cada parte era calculado para o Claude, e no Gemini (com esforço médio) o raciocínio conta dentro dele: a resposta vinha cortada. Agora corrigir, resumir e sugerir nomes pensam pouco (são tarefas mecânicas) no Gemini e no Haiku 5.5, o teto ganha uma folga no Gemini, e as falhas ficam registradas nos logs com o motivo.

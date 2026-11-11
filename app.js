@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.8.16'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.8.17'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -17235,7 +17235,9 @@ function saveTemplatesToStorage() {
       cfg.salvoBtn.className = 'secondary ai-study-load esbocosalvo';
       cfg.salvoBtn.hidden = true;
       cfg.salvoBtn.addEventListener('click', () => esbocoSalvoCarregar(cfg));
-      cfg.info.insertAdjacentElement('beforebegin', cfg.salvoBtn); // logo abaixo do carregar (ou do tema, no discurso público)
+      cfg.info.insertAdjacentElement('beforebegin', cfg.salvoBtn); // logo abaixo do carregar
+      // No discurso público o botão do esboço salvo (ou importado) fica logo abaixo do "IA - Elaborar o esboço".
+      if (cfg.kind === 'publico' && cfg.esbocoBtn) cfg.esbocoBtn.insertAdjacentElement('afterend', cfg.salvoBtn);
       if (cfg.carregarBtn) cfg.carregarBtn.addEventListener('click', () => esbocoCarregar(cfg));
       cfg.esbocoBtn.addEventListener('click', () => requestEsboco(cfg));
     });
