@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.8.00
+
+A linha da lista de temas ainda escurecia ao encostar o dedo durante a rolagem: vinha da regra geral que escurece qualquer botão ao “passar o mouse”, que no iPhone gruda no botão tocado. Essa regra agora vale só com mouse (tira o mesmo efeito grudado dos outros botões no celular), e as linhas das listas de escolha nunca recebem o escurecimento.
+
 ## 6.7.99
 
 Lista de temas do discurso público (e as outras listas de escolha): rolar com o dedo não deixa mais uma linha marcada (o realce de “passar o mouse” agora vale só com mouse, e o toque não pinta a linha). As linhas dos temas que já têm esboço preparado ficam com **fundo verde claro** e uma faixa verde à esquerda, além da etiqueta 📂 salvo.

@@ -2770,9 +2770,12 @@
       min-height: 44px;
     }
 
-    /* Ao passar o mouse, o botão só escurece (ou clareia, no tema escuro) na própria cor, sem virar azul. */
-    button:where(:not(:disabled)):hover {
-      background-image: linear-gradient(var(--hover-veu), var(--hover-veu));
+    /* Ao passar o mouse, o botão só escurece (ou clareia, no tema escuro) na própria cor, sem virar azul. Só com mouse: no celular o
+       :hover "gruda" no botão em que o dedo encostou (ao rolar uma lista, a linha tocada ficava escura). */
+    @media (hover: hover) {
+      button:where(:not(:disabled)):hover {
+        background-image: linear-gradient(var(--hover-veu), var(--hover-veu));
+      }
     }
 
     button:focus-visible {
@@ -8347,6 +8350,7 @@
       overflow-wrap: anywhere;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent; /* rolar a lista com o dedo não pinta a linha tocada */
+      background-image: none;
       -webkit-user-select: none;
       user-select: none;
     }
@@ -13741,4 +13745,12 @@ button.modelos-copiar {
 /* Lembrete de backup (mesma barra do "Nova versão disponível"). */
 .lembrete-backup-bar button.secondary {
   padding-inline: 12px;
+}
+
+/* Linhas das listas de escolha: nunca recebem o véu escuro dos botões (nem ao tocar, nem ao rolar). */
+.bk-seletor-lista button.bk-seletor-item,
+.bk-seletor-lista button.bk-seletor-item:hover,
+.bk-seletor-lista button.bk-seletor-item:active,
+.bk-seletor-lista button.bk-seletor-item:focus {
+  background-image: none;
 }
