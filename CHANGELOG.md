@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.8.15
+
+Discurso público:
+- Títulos dos botões simplificados: **✨ IA - Elaborar o esboço**, **🎵 IA - Sugerir o cântico** e **💬 Enviar para o presidente** (com resumo do card **📨 Enviar para o presidente**).
+- Altura dos botões reduzida para um formato mais fino e compacto (38 px de altura mínima), mantendo boa legibilidade e harmonia visual na tela.
+
 ## 6.8.14
 
 Anotações e Discurso público:

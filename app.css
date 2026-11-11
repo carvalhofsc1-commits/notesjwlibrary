@@ -13978,3 +13978,57 @@ a.esboco-info-tema {
 #publicoGravurasAddBtn {
   width: 100%;
 }
+
+/* Discurso público: botões mais finos (Elaborar o esboço, Sugerir o cântico e Enviar para o presidente) */
+#publicoEsbocoBtn {
+  min-height: 38px;
+  padding: 6px 12px;
+  font-size: .9rem;
+  font-weight: 600;
+}
+
+#publicoEsbocoBtn[data-ia-nota]::after {
+  margin-top: 1px;
+  font-size: .64rem;
+}
+
+#publicoCanticoBtn {
+  min-height: 38px;
+  padding: 6px 12px;
+  font-size: .9rem;
+  font-weight: 600;
+}
+
+#publicoPresidenteBox {
+  padding: 0;
+}
+
+#publicoPresidenteBox > summary {
+  padding: 8px 12px;
+  min-height: 38px;
+  font-size: .9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+}
+
+#publicoPresidenteBox[open] > summary {
+  border-bottom: 1px solid var(--line);
+}
+
+#publicoPresidenteBox > :not(summary) {
+  margin-left: 12px;
+  margin-right: 12px;
+}
+
+#publicoPresidenteBox .button-row {
+  margin-bottom: 12px;
+}
+
+#publicoPresidenteZapBtn,
+#publicoPresidenteCopiarBtn {
+  min-height: 38px;
+  padding: 6px 12px;
+  font-size: .88rem;
+}
+
