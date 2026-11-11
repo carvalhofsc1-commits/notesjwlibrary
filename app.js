@@ -7658,7 +7658,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.80'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.81'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -13207,6 +13207,19 @@ function saveTemplatesToStorage() {
       const r = await iaSalvarModelo();
       botao.disabled = false;
       iaMensagem(r.ok ? '✅ Salvo. Vale para todos em poucos segundos.' : r.erro, !r.ok);
+    });
+    // 💾 do cartão do Áudio em texto (no contêiner do Google Cloud): salva a mesma configuração da IA, com o aviso no próprio cartão.
+    document.getElementById('iaAudioSalvarBtn').addEventListener('click', async () => {
+      const aviso = document.getElementById('iaAudioStatus');
+      if (!iaPendente()) { aviso.className = 'ok'; aviso.textContent = 'Nada foi alterado.'; return; }
+      const botao = document.getElementById('iaAudioSalvarBtn');
+      botao.disabled = true;
+      aviso.className = 'hint';
+      aviso.textContent = 'Salvando…';
+      const r = await iaSalvarModelo();
+      botao.disabled = false;
+      aviso.className = r.ok ? 'ok' : 'warn';
+      aviso.textContent = r.ok ? '✅ Salvo. Vale para todos em poucos segundos.' : r.erro;
     });
     // Seção Modelos e agentes de IA (Ajustes, só o administrador): ao abrir, carrega a IA de texto e o gasto.
     const modelosIaSection = document.getElementById('modelosIaSection');

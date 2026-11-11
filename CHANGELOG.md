@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.81
+
+Modelos e agentes de IA: o cartão **🎙️ Áudio em texto: qual IA transcreve e resume** saiu do contêiner da IA de texto e foi para o contêiner **☁️ Google Cloud: conta, voz e transcrição**, junto das outras configurações do Áudio em texto, com o seu próprio botão de salvar.
+
 ## 6.7.80
 
 **Áudio em texto: escolha do motor da transcrição e do modelo do resumo.** Em Modelos e agentes de IA, o novo cartão **🎙️ Áudio em texto: transcrição e resumo** deixa o administrador escolher o **motor da transcrição**: o Chirp 3 (Speech-to-Text do Google, o padrão) ou um **Gemini**, que ouve cada trecho de 50 segundos e o escreve (o modelo Gemini também é escolhido ali). A identificação de quem fala continua sempre no Chirp 3. O **resumo, a sugestão de nomes e a correção** podem usar um modelo próprio, ou o mesmo da IA de texto.

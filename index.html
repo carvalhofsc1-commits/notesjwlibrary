@@ -1560,17 +1560,6 @@
               <select id="iaEsbocoEsforco"></select>
             </details>
 
-            <details class="prompt-item prompt-tint-ia">
-              <summary><h3>🎙️ Áudio em texto: transcrição e resumo</h3></summary>
-              <p class="hint">A transcrição usa o Speech-to-Text do Google (Chirp 3) ou um Gemini, que ouve cada trecho de 50 segundos e o escreve. A identificação de quem fala continua sempre no Chirp 3. O resumo, a sugestão de nomes e a correção do texto usam a IA de texto: o mesmo modelo de cima ou outro, só para o Áudio em texto.</p>
-              <label for="iaAudioMotor">Motor da transcrição</label>
-              <select id="iaAudioMotor"></select>
-              <label for="iaAudioGeminiModelo">Modelo Gemini da transcrição (quando o motor for o Gemini)</label>
-              <select id="iaAudioGeminiModelo"></select>
-              <label for="iaAudioModelo">Modelo do resumo, dos nomes e da correção</label>
-              <select id="iaAudioModelo"></select>
-            </details>
-
             <div class="button-row ia-salvar-linha">
               <button id="iaSalvarBtn" type="button">💾 Salvar para todos</button>
               <span id="iaStatus" class="ok" role="status" aria-live="polite"></span>
@@ -1597,6 +1586,20 @@
             </div>
             <div class="modelos-ia-grupo" style="--grupo-cor:#0284c7">
             <h3 class="modelos-ia-titulo">☁️ Google Cloud: conta, voz e transcrição</h3>
+            <details class="prompt-item prompt-tint-ia">
+              <summary><h3>🎙️ Áudio em texto: qual IA transcreve e resume</h3></summary>
+              <p class="hint">A transcrição usa o Speech-to-Text do Google (Chirp 3) ou um Gemini, que ouve cada trecho de 50 segundos e o escreve. A identificação de quem fala continua sempre no Chirp 3. O resumo, a sugestão de nomes e a correção do texto usam a IA de texto: o mesmo modelo de cima ou outro, só para o Áudio em texto.</p>
+              <label for="iaAudioMotor">Motor da transcrição</label>
+              <select id="iaAudioMotor"></select>
+              <label for="iaAudioGeminiModelo">Modelo Gemini da transcrição (quando o motor for o Gemini)</label>
+              <select id="iaAudioGeminiModelo"></select>
+              <label for="iaAudioModelo">Modelo do resumo, dos nomes e da correção</label>
+              <select id="iaAudioModelo"></select>
+              <div class="button-row">
+                <button id="iaAudioSalvarBtn" type="button">💾 Salvar para todos</button>
+              </div>
+              <p id="iaAudioStatus" class="ok" role="status" aria-live="polite"></p>
+            </details>
             <details class="subsection so-admin" id="googleContaSection" hidden>
               <summary><span class="adm-titulo">☁️ Conta do Google (voz e transcrição)&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
               <div class="subsection-body">
