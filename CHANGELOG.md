@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.8.05
+
+Discurso público (e Outros esboços): no resumo do esboço escolhido, o **tema** fica em destaque, numa linha própria, maior e em negrito, acima dos detalhes (revisão, tempos, objetivo e leituras).
+
 ## 6.8.04
 
 **Discurso público: gravuras e cântico inicial.**

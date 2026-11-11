@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.8.04'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.8.05'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -16637,17 +16637,22 @@ function saveTemplatesToStorage() {
       // Sem título no cartão (discurso público e outros esboços), o tema vai na primeira linha das informações.
       if (!cfg.tituloEl) {
         const titulo = '✨ ' + [cfg.semSemana ? '' : dados.semana, dados.titulo].filter(Boolean).join(' · ');
+        // O tema em destaque (linha própria, maior e em negrito), acima dos detalhes do esboço.
         if (dados.url) {
           const link = document.createElement('a');
           jwlAbrirLinkDoc(link, dados.url);
+          link.className = 'esboco-info-tema';
           link.textContent = titulo;
           cfg.info.appendChild(link);
         } else {
-          cfg.info.append(titulo);
+          const tema = document.createElement('span');
+          tema.className = 'esboco-info-tema';
+          tema.textContent = titulo;
+          cfg.info.appendChild(tema);
         }
       }
       (cfg.linhasDaInfo(dados) || []).filter(Boolean).forEach((linha, i) => {
-        if (i > 0 || !cfg.tituloEl) cfg.info.append(document.createElement('br'));
+        if (i > 0) cfg.info.append(document.createElement('br'));
         cfg.info.append(linha);
       });
       imagensRender(cfg.info, dados.imagens, cfg.tituloImagens || 'Imagens da apostila');

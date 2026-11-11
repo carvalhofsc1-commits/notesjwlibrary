@@ -13890,3 +13890,17 @@ button.publico-gravura-tirar {
   font-style: italic;
   color: var(--muted);
 }
+
+/* Discurso público e Outros esboços: o tema no alto do resumo do esboço, em destaque. */
+.esboco-info-tema {
+  display: block;
+  margin: 0 0 6px;
+  font-size: 1.12rem;
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--text);
+}
+
+a.esboco-info-tema {
+  text-decoration: none;
+}
