@@ -13548,3 +13548,45 @@ button.processando:disabled { opacity: 1; cursor: progress; }
   margin: 8px 0 2px;
   font-weight: 650;
 }
+
+/* 📋 Definições em vigor (alto de Modelos e agentes de IA): tabela de duas colunas, numa moldura. */
+.modelos-resumo {
+  border: 1px solid color-mix(in srgb, var(--accent, #2563eb) 45%, var(--line));
+  border-radius: 16px;
+  padding: 2px 12px 12px;
+  margin: 4px 0 0;
+  background: color-mix(in srgb, var(--accent, #2563eb) 6%, var(--card));
+}
+
+.modelos-resumo > .modelos-ia-titulo {
+  margin: 12px 0 8px;
+  text-align: center;
+}
+
+.modelos-resumo-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .86rem;
+  background: var(--card);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.modelos-resumo-tabela th,
+.modelos-resumo-tabela td {
+  padding: 7px 8px;
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.modelos-resumo-tabela tr + tr th,
+.modelos-resumo-tabela tr + tr td {
+  border-top: 1px solid var(--line);
+}
+
+.modelos-resumo-tabela th {
+  width: 42%;
+  font-weight: 650;
+  color: var(--muted);
+}

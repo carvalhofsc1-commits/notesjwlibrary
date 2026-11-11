@@ -6712,6 +6712,7 @@
       const r = await postConfig({ acao: 'voz-salvar', codigo: vozAdminCodigo, config: vozLerFormulario() });
       if (!r.ok) return vozAdminMensagem(configErrorMessage(r, 'Não foi possível salvar agora.'), true);
       vozCache.clear(); // os áudios guardados foram feitos com as escolhas antigas
+      document.dispatchEvent(new Event('modelos-ia-mudou')); // o resumo de Modelos e agentes de IA se atualiza
       await vozCarregarRegras(true);
       try { localStorage.removeItem(VOZ_SPEED_KEY); } catch (e) { /* sem localStorage */ }
       vozVelocidade.value = vozVelocidadePerto(r.data.config.velocidade);
@@ -7658,7 +7659,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.87'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.88'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12150,6 +12151,7 @@ function saveTemplatesToStorage() {
         googleContaRender(r.data);
         fim.className = 'ok';
         fim.textContent = '✓ Agora a voz e a transcrição usam a ' + GOOGLE_CONTA_NOMES[marcada.value].toLowerCase() + '.';
+        document.dispatchEvent(new Event('modelos-ia-mudou'));
       } else {
         fim.className = 'warn';
         fim.textContent = (r.data && r.data.erro) || configErrorMessage(r, 'Não foi possível salvar agora.');
@@ -13146,6 +13148,7 @@ function saveTemplatesToStorage() {
       iaSalvo = { provedor: r.data.config.provedor, modelo: r.data.config.modelo, esforco: r.data.config.esforco, esbocoModelo: r.data.config.esbocoModelo || '', esbocoEsforco: r.data.config.esbocoEsforco || '', audioMotor: r.data.config.audioMotor || 'chirp', audioGeminiModelo: r.data.config.audioGeminiModelo || '', audioModelo: r.data.config.audioModelo || '' };
       iaMostrarPreco();
       iaNotaCarregar();
+      document.dispatchEvent(new Event('modelos-ia-mudou'));
       return { ok: true };
     }
 
@@ -13206,7 +13209,69 @@ function saveTemplatesToStorage() {
       if (!modelosIaSection.open) return;
       if (!codigoAdminAtual()) return iaMensagem('Salve a senha de administrador em 🔐 Autorização de acessos.', true);
       iaCarregar();
+      modelosResumoCarregar();
     });
+
+    // 📋 Definições em vigor: o que está SALVO no servidor (contas, modelos de texto, voz e áudio), numa tabela no alto da seção.
+    // Atualiza ao abrir a seção e depois de cada 💾 Salvar para todos dos cartões.
+    const nomeCurto = (lista, id) => { const item = (lista || []).find(x => x.id === id); return item ? String(item.nome).split(':')[0] : (id || '—'); };
+    let modelosResumoPedido = 0;
+    async function modelosResumoCarregar() {
+      const caixa = document.getElementById('modelosResumoTabela');
+      const codigo = codigoAdminAtual();
+      if (!codigo) { caixa.innerHTML = '<p class="hint">Salve a senha de administrador em 🔐 Autorização de acessos.</p>'; return; }
+      const pedido = ++modelosResumoPedido;
+      const [ia, conta, voz] = await Promise.all([
+        postConfig({ acao: 'ia-ler', codigo }),
+        postConfig({ acao: 'google-conta-ler', codigo }),
+        postConfig({ acao: 'voz-ler', codigo }),
+      ]);
+      if (pedido !== modelosResumoPedido) return; // chegou um pedido mais novo
+      const linhas = [];
+      const falhou = 'não foi possível ler agora';
+      if (ia.ok) {
+        const c = ia.data.config, o = ia.data.opcoes;
+        const esf = id => nomeCurto(o.esforcos, id).toLowerCase();
+        linhas.push(['Conta para texto', nomeCurto(o.provedores, c.provedor)]);
+        linhas.push(['Texto: uso geral', nomeCurto(o.modelos, c.modelo) + ' · esforço ' + esf(c.esforco)]);
+        linhas.push(['Texto: esboços e dirigir', (c.esbocoModelo ? nomeCurto(o.modelos, c.esbocoModelo) : 'o mesmo do uso geral') + ' · esforço ' + esf(c.esbocoEsforco || c.esforco)]);
+        linhas.push(['Áudio: transcrição', c.audioMotor === 'gemini' ? 'Gemini · ' + nomeCurto(o.modelos, c.audioGeminiModelo) : 'Chirp 3 (Speech-to-Text)']);
+        linhas.push(['Áudio: resumo, nomes e correção', c.audioModelo ? nomeCurto(o.modelos, c.audioModelo) : 'o mesmo do uso geral']);
+      } else {
+        linhas.push(['Texto e áudio', falhou]);
+      }
+      if (conta.ok) {
+        const emUso = conta.data.emUso;
+        const dados = (conta.data.contas || {})[emUso] || {};
+        linhas.splice(1, 0, ['Conta para voz e áudio', (GOOGLE_CONTA_NOMES[emUso] || emUso) + (dados.projeto ? ' · projeto ' + dados.projeto : '')]);
+      } else {
+        linhas.splice(1, 0, ['Conta para voz e áudio', falhou]);
+      }
+      if (voz.ok) {
+        const c = voz.data.config, o = voz.data.opcoes;
+        const velocidade = Number(c.velocidade) ? ' · velocidade ' + String(c.velocidade).replace('.', ',') + '×' : '';
+        linhas.splice(ia.ok ? 4 : 2, 0, ['Voz: leitura', nomeCurto(o.modelos, c.modelo) + ' · voz ' + c.voz + velocidade]);
+      } else {
+        linhas.splice(ia.ok ? 4 : 2, 0, ['Voz: leitura', falhou]);
+      }
+      const tabela = document.createElement('table');
+      tabela.className = 'modelos-resumo-tabela';
+      const corpo = document.createElement('tbody');
+      linhas.forEach(([rotulo, valor]) => {
+        const tr = document.createElement('tr');
+        const th = document.createElement('th');
+        th.scope = 'row';
+        th.textContent = rotulo;
+        const td = document.createElement('td');
+        td.textContent = valor;
+        if (valor === falhou) td.className = 'warn';
+        tr.append(th, td);
+        corpo.appendChild(tr);
+      });
+      tabela.appendChild(corpo);
+      caixa.replaceChildren(tabela);
+    }
+    document.addEventListener('modelos-ia-mudou', () => { if (modelosIaSection.open) modelosResumoCarregar(); });
 
     // Testa o provedor escolhido na tela (mesmo sem salvar): um pedido simples e um com resposta estruturada, como o app usa.
     document.getElementById('iaTestarBtn').addEventListener('click', async () => {

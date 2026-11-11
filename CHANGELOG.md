@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.88
+
+Modelos e agentes de IA: no alto da seção, no lugar do texto explicativo, a tabela **📋 Definições em vigor** resume o que está salvo no servidor: conta para texto, conta para voz e áudio, modelo de uso geral, modelo dos esboços e dirigir, voz da leitura, motor da transcrição e modelo do resumo do Áudio em texto. Ela se atualiza ao abrir a seção e depois de cada 💾 Salvar para todos.
+
 ## 6.7.87
 
 Modelos e agentes de IA: no cartão do modelo para uso geral o rótulo “Modelo” virou **Escolha o modelo**. No cartão **Leitura em voz: modelo para leitura**, a escolha do modelo, da voz e as configurações da leitura vêm primeiro; o tempo de espera e a cor do destaque (que valem só neste aparelho) foram para o fim do cartão.
