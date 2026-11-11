@@ -1534,7 +1534,7 @@
             <h3 class="modelos-ia-titulo">🔑 Definição das contas</h3>
             <details class="prompt-item prompt-tint-ia">
               <summary><h3>✍️ Conta para modelos de texto</h3></summary>
-              <label for="iaProvedor">De onde vem a IA</label>
+              <label for="iaProvedor">Escolha a conta</label>
               <select id="iaProvedor"></select>
               <p class="hint">“Anthropic” usa a chave <code>ANTHROPIC_API_KEY</code>. “Google Cloud · Gemini” e “Google Cloud · Claude” usam a Vertex AI, cobrada na conta do Google da empresa (a mesma conta de serviço da voz, sem chave nova; regiões em <code>GOOGLE_GEMINI_REGIAO</code> e <code>GOOGLE_VERTEX_REGIAO</code>, padrão “global”). Cada provedor tem a sua lista de modelos. Com o Gemini, a leitura de páginas pela IA é feita pela ferramenta de endereços do Google, e os resultados podem ser um pouco diferentes dos do Claude: teste as funções principais antes de adotar. O gasto mostrado mais abaixo é só o da Anthropic; o da Vertex aparece no faturamento do Google Cloud. Na Vertex não existe o refazer automático em outro modelo quando um filtro de segurança recusa um pedido.</p>
               <div class="button-row">
@@ -1549,10 +1549,10 @@
             <details class="prompt-item prompt-tint-ia so-admin" id="googleContaSection" hidden>
               <summary><h3>🔊 Conta para voz e áudio</h3></summary>
               <div>
-                <p class="modelos-ia-sub">☁️ Conta do Google: escolha</p>
                 <p class="hint">A leitura em voz alta e o Áudio em texto usam uma conta do Google Cloud. O app aceita duas ao mesmo tempo: a <strong>principal</strong> (variáveis <code>GOOGLE_TTS_CREDENCIAIS</code> e <code>GOOGLE_STT_BUCKET</code> na Vercel) e a de <strong>reserva</strong> (<code>GOOGLE_ALT_CREDENCIAIS</code> e <code>GOOGLE_ALT_STT_BUCKET</code>). Escolha aqui qual usar; a mudança vale para todos em poucos segundos, sem novo deploy. Uma transcrição em andamento na hora da troca pode falhar: é só tentar de novo.</p>
                 <p id="googleContaStatus" class="ok" role="status" aria-live="polite"></p>
-                <div id="googleContaLista" class="google-conta-lista"></div>
+                <label id="googleContaRotulo">Escolha a conta</label>
+                <div id="googleContaLista" class="google-conta-lista" role="radiogroup" aria-labelledby="googleContaRotulo"></div>
                 <div class="button-row">
                   <button id="googleContaSalvarBtn" type="button">💾 Salvar para todos</button>
                   <button id="googleContaAtualizarBtn" class="secondary" type="button">🔄 Recarregar</button>

@@ -13437,8 +13437,26 @@ button.processando:disabled { opacity: 1; cursor: progress; }
     /* Ajustes → Conta do Google: as duas contas como opções (a principal e a de reserva). */
     .google-conta-lista {
       display: grid;
-      gap: 8px;
-      margin: 8px 0;
+      gap: 0;
+      margin: 4px 0 8px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--card);
+      overflow: hidden;
+    }
+
+    .google-conta-lista .google-conta-item {
+      display: flex;
+      margin: 0;
+      font-weight: 400;
+      font-size: inherit;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+    }
+
+    .google-conta-lista .google-conta-item + .google-conta-item {
+      border-top: 1px solid var(--line);
     }
 
     .google-conta-item {

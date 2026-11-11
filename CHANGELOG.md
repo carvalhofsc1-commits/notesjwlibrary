@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.86
+
+Definição das contas: nos dois cartões o rótulo da escolha passou a ser **Escolha a conta**. Na conta para voz e áudio saiu o subtítulo “Conta do Google: escolha”, e as duas contas (principal e reserva) ficaram numa moldura só, com o rótulo acima dela.
+
 ## 6.7.85
 
 Modelos e agentes de IA: novo contêiner **🔑 Definição das contas**, com dois cartões: **✍️ Conta para modelos de texto** (a escolha “De onde vem a IA” e o teste) e **🔊 Conta para voz e áudio** (a Conta do Google: escolha). Em **Modelos IA para voz e transcrição**, os dois cartões do Áudio em texto ficaram juntos, depois da leitura em voz. O cartão dos esboços passou a se chamar **📜 Produção de texto: modelo para preparação de discursos e esboços e preparar para dirigir**.
