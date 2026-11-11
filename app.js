@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.96'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.97'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -9351,6 +9351,83 @@
         dadosResumoEl.appendChild(bloco);
       });
       dadosResumoEl.appendChild(linha('dados-total', 'Total guardado: ' + tamanhoLegivel(resumo.total + resumo.arquivosBytes)));
+      // O armazenamento rápido do navegador (localStorage) tem perto de 5 MB por site: mostra quanto já foi usado.
+      const uso = usoDoArmazenamento();
+      dadosResumoEl.appendChild(linha('dados-total' + (uso.fracao >= 0.7 ? ' warn' : ''), '📦 Pesquisas, esboços e preferências: ' + tamanhoLegivel(uso.bytes) + ' de cerca de ' + tamanhoLegivel(LIMITE_ARMAZENAMENTO) + ' (' + Math.round(uso.fracao * 100) + '%)' + (uso.fracao >= 0.7 ? '. Faça um backup e apague o que não usa mais.' : '.')));
+      const persistente = await armazenamentoPersistente();
+      if (persistente !== null) dadosResumoEl.appendChild(linha('dados-total', persistente ? '🔒 Armazenamento persistente: concedido (o navegador não apaga os dados para liberar espaço).' : '🔓 Armazenamento persistente: não concedido pelo navegador (ele pode apagar os dados se faltar espaço no aparelho; o backup protege).'));
+      const ultimo = Number(localStorage.getItem(BACKUP_ULTIMO_KEY)) || 0;
+      dadosResumoEl.appendChild(linha('dados-total', '💾 Último backup: ' + (ultimo ? new Date(ultimo).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : 'nenhum feito neste aparelho') + '.'));
+    }
+
+    // ---------- Proteção dos dados: espaço usado, armazenamento persistente e lembrete de backup ----------
+    const LIMITE_ARMAZENAMENTO = 5 * 1024 * 1024; // perto de 5 MB por site no Safari e no Chrome (2 bytes por caractere)
+    const BACKUP_ULTIMO_KEY = 'jwLibraryNoteAplicarUltimoBackupV1';
+    const BACKUP_ADIAR_KEY = 'jwLibraryNoteAplicarBackupAdiadoV1';
+    const BACKUP_DIAS = 15;        // sem backup há mais que isso: lembra
+    const BACKUP_ADIAR_DIAS = 3;   // "Depois": volta a lembrar em 3 dias
+    function usoDoArmazenamento() {
+      let caracteres = 0;
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const chave = localStorage.key(i);
+          caracteres += chave.length + (localStorage.getItem(chave) || '').length;
+        }
+      } catch (e) { /* sem localStorage */ }
+      const bytes = caracteres * 2;
+      return { bytes, fracao: Math.min(1, bytes / LIMITE_ARMAZENAMENTO) };
+    }
+    // null = o navegador não informa; true/false = concedido ou não.
+    async function armazenamentoPersistente() {
+      try { return navigator.storage && navigator.storage.persisted ? await navigator.storage.persisted() : null; } catch (e) { return null; }
+    }
+    // Pede ao navegador para não apagar os dados do app quando faltar espaço no aparelho (no Safari e no Chrome não aparece pergunta: ele decide sozinho).
+    async function pedirArmazenamentoPersistente() {
+      try {
+        if (navigator.storage && navigator.storage.persist && !(await navigator.storage.persisted())) await navigator.storage.persist();
+      } catch (e) { /* sem suporte */ }
+    }
+    function lembreteBackupMostrar(texto) {
+      if (document.getElementById('lembreteBackupBar')) return;
+      const barra = document.createElement('div');
+      barra.id = 'lembreteBackupBar';
+      barra.className = 'update-bar lembrete-backup-bar';
+      barra.setAttribute('role', 'status');
+      const msg = document.createElement('span');
+      msg.textContent = texto;
+      const fazer = document.createElement('button');
+      fazer.type = 'button';
+      fazer.textContent = 'Fazer backup';
+      fazer.addEventListener('click', () => {
+        barra.remove();
+        showScreen('ajustes');
+        const caixa = document.getElementById('privacidadeBox');
+        caixa.open = true;
+        setTimeout(() => document.getElementById('appBackupSalvarBtn').scrollIntoView({ block: 'center', behavior: 'smooth' }), 150);
+      });
+      const depois = document.createElement('button');
+      depois.type = 'button';
+      depois.className = 'secondary';
+      depois.textContent = 'Depois';
+      depois.addEventListener('click', () => { barra.remove(); safeSetItem(BACKUP_ADIAR_KEY, String(Date.now())); });
+      barra.append(msg, fazer, depois);
+      document.body.appendChild(barra);
+    }
+    // Ao abrir o app: lembra do backup quando há dados e o último foi há mais de 15 dias (ou nunca), e avisa quando o espaço passa de 80%.
+    function lembreteBackupConferir() {
+      const uso = usoDoArmazenamento();
+      if (uso.fracao >= 0.8) {
+        lembreteBackupMostrar('⚠️ O espaço do app está ' + Math.round(uso.fracao * 100) + '% cheio. Faça um backup e apague o que não usa mais.');
+        return;
+      }
+      let temDados = false;
+      try { temDados = JSON.parse(localStorage.getItem(HISTORICO_KEY) || '[]').length > 0 || Boolean(localStorage.getItem('jwLibraryNoteAplicarAnotacoesV1')); } catch (e) { temDados = false; }
+      if (!temDados) return;
+      const agora = Date.now();
+      const ultimo = Number(localStorage.getItem(BACKUP_ULTIMO_KEY)) || 0;
+      const adiado = Number(localStorage.getItem(BACKUP_ADIAR_KEY)) || 0;
+      if (agora - ultimo < BACKUP_DIAS * 86400000 || agora - adiado < BACKUP_ADIAR_DIAS * 86400000) return;
+      lembreteBackupMostrar(ultimo ? '💾 Seu último backup foi há ' + Math.floor((agora - ultimo) / 86400000) + ' dias.' : '💾 Você ainda não fez um backup dos seus dados.');
     }
     document.getElementById('dadosResumoBtn').addEventListener('click', dadosAparelhoRender);
     document.getElementById('privacidadeBox').addEventListener('toggle', event => { if (event.target.open) dadosAparelhoRender(); });
@@ -9437,7 +9514,12 @@
       const blob = new Blob([JSON.stringify(dados)], { type: 'application/json' });
       const nome = appbkNomeArquivo();
       const msg = await docxEntregar(blob, nome, compartilhar);
-      if (msg) appBackupStatus.textContent = msg + ' ' + appbkResumo(dados.itens) + (comCodigos ? '. Atenção: este arquivo contém os códigos e a senha.' : '.');
+      if (msg) {
+        appBackupStatus.textContent = msg + ' ' + appbkResumo(dados.itens) + (comCodigos ? '. Atenção: este arquivo contém os códigos e a senha.' : '.');
+        safeSetItem(BACKUP_ULTIMO_KEY, String(Date.now())); // o lembrete de backup volta a contar daqui
+        const barra = document.getElementById('lembreteBackupBar');
+        if (barra) barra.remove();
+      }
     }
 
     async function appbkRestaurar(arquivo) {
@@ -19661,6 +19743,8 @@ function saveTemplatesToStorage() {
 
     enableManifestWhenOnline();
     registerServiceWorker();
+    pedirArmazenamentoPersistente();
+    setTimeout(() => { try { lembreteBackupConferir(); } catch (e) { /* sem localStorage */ } }, 8000);
 
     populate();
     styleSelect.value = 'serif';

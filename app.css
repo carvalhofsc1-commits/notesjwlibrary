@@ -13722,3 +13722,8 @@ button.modelos-copiar {
 :root[data-theme="dark"] .publico-salvo {
   color: #86efac;
 }
+
+/* Lembrete de backup (mesma barra do "Nova versão disponível"). */
+.lembrete-backup-bar button.secondary {
+  padding-inline: 12px;
+}

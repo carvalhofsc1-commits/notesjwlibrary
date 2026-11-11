@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.97
+
+**Proteção dos dados do aparelho.** O app pede ao navegador o **armazenamento persistente** (para ele não apagar os dados quando faltar espaço no aparelho). Em Ajustes → Privacidade e dados deste aparelho, o resumo mostra o **espaço usado** (de cerca de 5 MB), se o armazenamento persistente foi concedido e a data do **último backup**. Um **lembrete de backup** aparece ao abrir o app quando há dados salvos e o último backup foi há mais de 15 dias (ou nunca foi feito), com **Fazer backup** e **Depois** (volta em 3 dias); e um aviso quando o espaço passa de 80%.
+
 ## 6.7.96
 
 Discurso público: na lista de temas, os que já têm esboço elaborado pela IA e salvo neste aparelho ganham a marca **📂 salvo** (com uma legenda no alto da lista).
