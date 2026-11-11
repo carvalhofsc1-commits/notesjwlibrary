@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.78
+
+**Modelos e agentes de IA num lugar só.** Nova seção do administrador em Ajustes, **🤖 Modelos e agentes de IA**, com atalho próprio no menu lateral (só aparece com a senha de administrador salva). Ela reúne a IA de texto (de onde vem, modelos, esforço, modelo dos esboços, teste e gasto), a **conta do Google** (principal ou reserva), a **leitura em voz alta** e as **configurações do Áudio em texto**. O modelo da IA tem agora o seu próprio botão de salvar e carrega com a senha salva, sem precisar abrir a tela de prompts; a categoria que sobrou nos prompts virou **📏 Limites**.
+
 ## 6.7.77
 
 **Gemini (Google Cloud) como opção de IA de texto.** A tela de prompts ganhou o provedor **Google Cloud · Gemini** (Vertex AI, na conta do Google da empresa, sem chave nova). Cada provedor mostra a sua lista de modelos: Claude (Haiku, Sonnet, Opus, Fable) para Anthropic e Vertex; Gemini 3.1 Flash Lite, 3.5 Flash, 3.1 Pro, 3.8 Flash, 4 Argon e 4 Carbon para o Gemini (os três últimos com preço estimado, por falta de tabela pública confirmada). Um adaptador converte os pedidos do app para o Gemini e a resposta de volta, incluindo respostas estruturadas, nível de raciocínio e imagens; a leitura de páginas pela IA usa a ferramenta de endereços do Gemini. O botão **Testar esta escolha** funciona para o Gemini. Região opcional em `GOOGLE_GEMINI_REGIAO` (padrão “global”). Preços do Gemini são de referência; o gasto real está no faturamento do Google Cloud.

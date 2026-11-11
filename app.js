@@ -7658,7 +7658,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.77'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.78'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -11198,7 +11198,6 @@ function saveTemplatesToStorage() {
       }
       renderPrompts(promptsState);
       setPromptsStatus('', false);
-      iaCarregar(); // repõe modelo/esforço se o administrador tinha mudado sem salvar
     }
 
     async function carregarPromptsAoAbrir() {
@@ -11284,7 +11283,7 @@ function saveTemplatesToStorage() {
 
     // Há algo para salvar: prompts, limites ou o modelo/esforço da IA (💾 Salvar para todos salva tudo de uma vez).
     function promptsTemPendencia() {
-      return promptsHasPending() || iaPendente();
+      return promptsHasPending();
     }
 
     // A mensagem aparece no alto da seção e também logo abaixo dos botões de salvar, onde o olhar está ao clicar.
@@ -11555,7 +11554,6 @@ function saveTemplatesToStorage() {
         return;
       }
       promptsCode = code;
-      iaCarregar();
       promptsLoginError.textContent = '';
       promptsLogin.hidden = true;
       promptsEditor.hidden = false;
@@ -11566,7 +11564,6 @@ function saveTemplatesToStorage() {
     // Os dois botões 💾 Salvar para todos (cartão do modelo e fim da página) ligam e desligam juntos.
     function promptsSalvarHabilitado(habilitado) {
       promptsSaveBtn.disabled = !habilitado;
-      document.getElementById('iaSalvarBtn').disabled = !habilitado;
     }
 
     async function sendPromptsAction(payload, successMessage) {
@@ -11592,13 +11589,12 @@ function saveTemplatesToStorage() {
     let salvandoParaTodos = false;
     function avisoDeSalvar(mensagem, aviso) {
       setPromptsStatus(mensagem, aviso);
-      iaMensagem(mensagem, aviso);
     }
 
     async function salvarParaTodos() {
       if (salvandoParaTodos) return;
       const textos = promptsHasPending();
-      const modelo = iaPendente();
+      const modelo = false; // o modelo da IA agora se salva em Modelos e agentes de IA (botão próprio)
       if (!textos && !modelo) return avisoDeSalvar('Nada foi alterado.', false);
       salvandoParaTodos = true;
       try {
@@ -13098,7 +13094,7 @@ function saveTemplatesToStorage() {
 
     async function iaCarregar() {
       iaMensagem('Carregando…', false);
-      const r = await postConfig({ acao: 'ia-ler', codigo: promptsCode });
+      const r = await postConfig({ acao: 'ia-ler', codigo: codigoAdminAtual() });
       if (!r.ok) return iaMensagem(configErrorMessage(r, 'Não foi possível carregar o modelo da IA.'), true);
       iaOpcoes = r.data.opcoes;
       iaPreencher(iaProvedor, iaOpcoes.provedores, '');
@@ -13124,7 +13120,7 @@ function saveTemplatesToStorage() {
 
     // Envia o modelo e o esforço escolhidos; quem chama (salvarParaTodos) mostra a mensagem.
     async function iaSalvarModelo() {
-      const r = await postConfig({ acao: 'ia-salvar', codigo: promptsCode, config: { provedor: iaProvedor.value, modelo: iaModelo.value, esforco: iaEsforco.value, esbocoModelo: iaEsbocoModelo.value, esbocoEsforco: iaEsbocoEsforco.value } });
+      const r = await postConfig({ acao: 'ia-salvar', codigo: codigoAdminAtual(), config: { provedor: iaProvedor.value, modelo: iaModelo.value, esforco: iaEsforco.value, esbocoModelo: iaEsbocoModelo.value, esbocoEsforco: iaEsbocoEsforco.value } });
       if (!r.ok) return { ok: false, erro: configErrorMessage(r, 'Não foi possível salvar agora.') };
       iaProvedor.value = r.data.config.provedor;
       iaModelo.value = r.data.config.modelo;
@@ -13139,7 +13135,7 @@ function saveTemplatesToStorage() {
 
     async function iaCarregarCusto() {
       iaCusto.textContent = 'Consultando o gasto na Anthropic…';
-      const r = await postConfig({ acao: 'ia-custo', codigo: promptsCode });
+      const r = await postConfig({ acao: 'ia-custo', codigo: codigoAdminAtual() });
       iaCusto.textContent = '';
       const paragrafo = (texto, classe) => {
         const p = document.createElement('p');
@@ -13174,7 +13170,30 @@ function saveTemplatesToStorage() {
 
     iaModelo.addEventListener('change', iaMostrarPreco);
     iaEsbocoModelo.addEventListener('change', iaMostrarPreco);
-    document.getElementById('iaSalvarBtn').addEventListener('click', salvarParaTodos);
+    // 💾 Salvar o modelo da IA (Modelos e agentes de IA): só o provedor, os modelos e o esforço.
+    document.getElementById('iaSalvarBtn').addEventListener('click', async () => {
+      if (!iaPendente()) return iaMensagem('Nada foi alterado.', false);
+      const botao = document.getElementById('iaSalvarBtn');
+      botao.disabled = true;
+      iaMensagem('Salvando…', false);
+      const r = await iaSalvarModelo();
+      botao.disabled = false;
+      iaMensagem(r.ok ? '✅ Salvo. Vale para todos em poucos segundos.' : r.erro, !r.ok);
+    });
+    // Seção Modelos e agentes de IA (Ajustes, só o administrador): ao abrir, carrega a IA de texto e o gasto.
+    const modelosIaSection = document.getElementById('modelosIaSection');
+    modelosIaSection.addEventListener('toggle', () => {
+      if (!modelosIaSection.open) return;
+      if (!codigoAdminAtual()) return iaMensagem('Salve a senha de administrador em 🔐 Autorização de acessos.', true);
+      iaCarregar();
+    });
+    // Atalho no menu lateral: abre Ajustes já nesta seção.
+    document.getElementById('menuModelosIa').addEventListener('click', () => {
+      showScreen('ajustes');
+      menuFechar();
+      if (!modelosIaSection.open) modelosIaSection.open = true;
+      setTimeout(() => modelosIaSection.scrollIntoView({ block: 'start' }), 80);
+    });
 
     // Testa o provedor escolhido na tela (mesmo sem salvar): um pedido simples e um com resposta estruturada, como o app usa.
     document.getElementById('iaTestarBtn').addEventListener('click', async () => {
@@ -13183,7 +13202,7 @@ function saveTemplatesToStorage() {
       botao.disabled = true;
       saida.className = 'hint';
       saida.textContent = 'Testando… (pode levar alguns segundos)';
-      const r = await postConfig({ acao: 'ia-testar', codigo: promptsCode, provedor: iaProvedor.value, modelo: iaModelo.value, esforco: iaEsforco.value });
+      const r = await postConfig({ acao: 'ia-testar', codigo: codigoAdminAtual(), provedor: iaProvedor.value, modelo: iaModelo.value, esforco: iaEsforco.value });
       botao.disabled = false;
       if (!r.ok) { saida.className = 'warn'; saida.textContent = configErrorMessage(r, 'Não foi possível testar agora.'); return; }
       const linha = (nome, t) => !t ? '' : nome + ': ' + (t.ok ? 'funcionou (' + (t.ms / 1000).toFixed(1).replace('.', ',') + ' s)' : 'FALHOU' + (t.status ? ' (' + t.status + ')' : '') + ' — ' + (t.erro || 'erro desconhecido'));

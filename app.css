@@ -469,6 +469,10 @@
       border-radius: 0;
     }
 
+    .app-menu-lista button[hidden] {
+      display: none;
+    }
+
     .app-menu-lista button.app-menu-consumo[hidden] {
       display: none;
     }
@@ -13486,3 +13490,18 @@ button.processando:disabled { opacity: 1; cursor: progress; }
     .faturamento-custo:empty {
       display: none;
     }
+
+/* Ajustes → Modelos e agentes de IA: os cartões da IA de texto ocupam a largura da seção; títulos separam texto de voz/transcrição. */
+.modelos-ia-body .prompt-item {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.modelos-ia-titulo {
+  margin: 18px 0 4px;
+  font-size: 1rem;
+}
+
+.modelos-ia-body > .modelos-ia-titulo:first-of-type {
+  margin-top: 10px;
+}
