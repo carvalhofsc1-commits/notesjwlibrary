@@ -6639,8 +6639,9 @@
       });
     }
 
+    let vozEscolhaSalva = null;
     function vozMostrarFormulario(opcoes, config) {
-      vozPreencherSelect(vozCampos.modelo, opcoes.modelos.map(m => [m.id, m.nome]));
+      vozPreencherSelect(vozCampos.modelo, opcoes.modelos.map(m => [m.id, String(m.nome).split(':')[0]]));
       vozCampos.voz.textContent = '';
       [['F', 'Vozes femininas'], ['M', 'Vozes masculinas']].forEach(([genero, rotulo]) => {
         const grupo = document.createElement('optgroup');
@@ -6660,6 +6661,7 @@
       vozCampos.velocidade.value = String(config.velocidade);
       ['pularRefs', 'pularFontes', 'pularParenteses', 'pularCabecalhos'].forEach(campo => { vozCampos[campo].checked = Boolean(config[campo]); });
       vozCampos.extra.value = config.extra || '';
+      vozEscolhaSalva = { modelo: config.modelo, voz: config.voz }; // o modelo e a voz como estão no servidor (tabela de Modelos e agentes de IA)
       vozAdminLogin.hidden = true;
       vozAdminForm.hidden = false;
       vozAtualizarConsumo();
@@ -6707,16 +6709,18 @@
     }
 
     async function vozAdminSalvar() {
-      if (!vozAdminCodigo) return;
+      if (!vozAdminCodigo) return false;
       vozAdminMensagem('Salvando...', false);
       const r = await postConfig({ acao: 'voz-salvar', codigo: vozAdminCodigo, config: vozLerFormulario() });
-      if (!r.ok) return vozAdminMensagem(configErrorMessage(r, 'Não foi possível salvar agora.'), true);
+      if (!r.ok) { vozAdminMensagem(configErrorMessage(r, 'Não foi possível salvar agora.'), true); return false; }
+      vozEscolhaSalva = { modelo: r.data.config.modelo, voz: r.data.config.voz };
       vozCache.clear(); // os áudios guardados foram feitos com as escolhas antigas
       document.dispatchEvent(new Event('modelos-ia-mudou')); // o resumo de Modelos e agentes de IA se atualiza
       await vozCarregarRegras(true);
       try { localStorage.removeItem(VOZ_SPEED_KEY); } catch (e) { /* sem localStorage */ }
       vozVelocidade.value = vozVelocidadePerto(r.data.config.velocidade);
       vozAdminMensagem('✅ Salvo. As novas escolhas valem para todos em poucos segundos.', false);
+      return true;
     }
 
     async function vozExemplo() {
@@ -6727,23 +6731,23 @@
       const texto = textoParaVoz(VOZ_TEXTO_EXEMPLO, config);
       const sessao = ++vozSessao;
       vozExemploTocando = true;
-      vozExemploBtn.textContent = '⏹️ Parar o exemplo';
-      vozAdminMensagem('Gerando o exemplo…', false);
+      vozExemploBtn.textContent = '⏹️ Parar';
+      iaMensagem('Gerando o exemplo…', false);
       try {
         const entrada = await vozBuscar(texto, config);
         if (sessao !== vozSessao) return;
-        vozAdminMensagem('🔊 Tocando: "' + texto + '"', false);
+        iaMensagem('🔊 Tocando: "' + texto + '"', false);
         await vozTocar(entrada);
-        if (sessao === vozSessao) vozAdminMensagem(entrada.gemini ? '✅ Exemplo com a voz Gemini.' : '✅ Exemplo com a voz Chirp 3 HD (o Gemini não respondeu ou não foi escolhido).', false);
+        if (sessao === vozSessao) iaMensagem(entrada.gemini ? '✅ Exemplo com a voz Gemini.' : '✅ Exemplo com a voz Chirp 3 HD (o Gemini não respondeu ou não foi escolhido).', false);
       } catch (e) {
-        if (sessao === vozSessao) vozAdminMensagem(e && e.message ? e.message : 'Não consegui tocar o exemplo.', true);
+        if (sessao === vozSessao) iaMensagem(e && e.message ? e.message : 'Não consegui tocar o exemplo.', true);
       } finally {
         vozExemploTocando = false;
-        vozExemploBtn.textContent = '▶️ Ouvir um exemplo';
+        vozExemploBtn.textContent = '▶️ Ouvir a voz';
       }
     }
 
-    document.getElementById('vozSalvarBtn').addEventListener('click', vozAdminSalvar);
+    document.getElementById('vozSalvarBtn').addEventListener('click', () => { vozAdminSalvar(); });
     vozExemploBtn.addEventListener('click', vozExemplo);
     // Ao abrir o painel, entra sozinho com a senha salva (ou de novo, se ela mudou).
     vozSection.addEventListener('toggle', () => {
@@ -7659,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.89'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.90'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12098,68 +12102,28 @@ function saveTemplatesToStorage() {
     }
     // ---------- Ajustes → Conta do Google (voz e transcrição): a principal ou a de reserva ----------
     const GOOGLE_CONTA_NOMES = { principal: 'Conta principal', alternativa: 'Conta de reserva' };
+    // Um seletor na tabela de Modelos e agentes de IA; a conta não configurada aparece desabilitada.
+    let googleContaSalva = null;
     function googleContaRender(d) {
-      const lista = document.getElementById('googleContaLista');
-      lista.replaceChildren();
+      const sel = document.getElementById('googleContaSelect');
+      sel.replaceChildren();
       ['principal', 'alternativa'].forEach(chave => {
         const c = (d.contas || {})[chave] || {};
-        const rotulo = document.createElement('label');
-        rotulo.className = 'google-conta-item' + (c.configurada ? '' : ' google-conta-vazia');
-        const radio = document.createElement('input');
-        radio.type = 'radio';
-        radio.name = 'googleConta';
-        radio.value = chave;
-        radio.disabled = !c.configurada;
-        radio.checked = d.escolhida === chave && Boolean(c.configurada);
-        const texto = document.createElement('span');
-        texto.className = 'google-conta-texto';
-        const nome = document.createElement('strong');
-        nome.textContent = GOOGLE_CONTA_NOMES[chave] + (d.emUso === chave ? ' · em uso agora' : '');
-        const detalhe = document.createElement('small');
-        detalhe.textContent = c.configurada
-          ? (c.email || '') + (c.projeto ? ' · projeto ' + c.projeto : '') + (c.bucket ? ' · bucket ' + c.bucket : ' · sem bucket (a transcrição de áudios longos não funciona)')
-          : 'Não configurada: crie as variáveis ' + (chave === 'principal' ? 'GOOGLE_TTS_CREDENCIAIS e GOOGLE_STT_BUCKET' : 'GOOGLE_ALT_CREDENCIAIS e GOOGLE_ALT_STT_BUCKET') + ' na Vercel e faça um novo deploy.';
-        texto.append(nome, detalhe);
-        rotulo.append(radio, texto);
-        lista.appendChild(rotulo);
+        const op = document.createElement('option');
+        op.value = chave;
+        op.disabled = !c.configurada;
+        op.textContent = GOOGLE_CONTA_NOMES[chave] + (c.configurada ? (c.projeto ? ' · ' + c.projeto : '') : ' (não configurada)');
+        sel.appendChild(op);
       });
+      sel.value = d.escolhida;
+      googleContaSalva = d.escolhida;
     }
     async function googleContaCarregar() {
-      const status = document.getElementById('googleContaStatus');
       const codigo = codigoAdminAtual();
-      if (!codigo) { status.textContent = 'Salve a senha de administrador em 🔐 Autorização de acessos.'; return; }
-      status.className = 'hint';
-      status.textContent = 'Carregando…';
+      if (!codigo) return;
       const r = await postConfig({ acao: 'google-conta-ler', codigo });
-      if (!r.ok) { status.className = 'warn'; status.textContent = (r.data && r.data.erro) || configErrorMessage(r, 'Não foi possível ler as contas agora.'); return; }
-      googleContaRender(r.data);
-      status.textContent = '';
+      if (r.ok) googleContaRender(r.data);
     }
-    async function googleContaSalvar() {
-      const fim = document.getElementById('googleContaStatusFim');
-      const codigo = codigoAdminAtual();
-      if (!codigo) { fim.className = 'warn'; fim.textContent = 'Salve a senha de administrador em 🔐 Autorização de acessos.'; return; }
-      const marcada = document.querySelector('#googleContaLista input[name="googleConta"]:checked');
-      if (!marcada) { fim.className = 'warn'; fim.textContent = 'Escolha uma das contas configuradas.'; return; }
-      const botao = document.getElementById('googleContaSalvarBtn');
-      fim.className = 'hint';
-      fim.textContent = 'Salvando…';
-      botao.disabled = true;
-      const r = await postConfig({ acao: 'google-conta-salvar', codigo, conta: marcada.value });
-      botao.disabled = false;
-      if (r.ok) {
-        googleContaRender(r.data);
-        fim.className = 'ok';
-        fim.textContent = '✓ Agora a voz e a transcrição usam a ' + GOOGLE_CONTA_NOMES[marcada.value].toLowerCase() + '.';
-        document.dispatchEvent(new Event('modelos-ia-mudou'));
-      } else {
-        fim.className = 'warn';
-        fim.textContent = (r.data && r.data.erro) || configErrorMessage(r, 'Não foi possível salvar agora.');
-      }
-    }
-    document.getElementById('googleContaSection').addEventListener('toggle', e => { if (e.target.open) googleContaCarregar(); });
-    document.getElementById('googleContaSalvarBtn').addEventListener('click', googleContaSalvar);
-    document.getElementById('googleContaAtualizarBtn').addEventListener('click', googleContaCarregar);
 
     document.getElementById('faturamentoBox').addEventListener('toggle', e => { if (e.target.open) faturamentoCarregar(); });
     document.getElementById('faturamentoSalvarBtn').addEventListener('click', faturamentoSalvar);
@@ -13038,6 +13002,7 @@ function saveTemplatesToStorage() {
     const iaFamilia = () => (iaProvedor.value === 'gemini' ? 'gemini' : 'claude');
     const iaModelosDaFamilia = () => (iaOpcoes ? iaOpcoes.modelos : []).filter(x => x.familia === iaFamilia());
     function iaMostrarPreco() {
+      if (!iaModeloPreco || !iaEsbocoPreco) return; // a tela enxuta não mostra os preços
       const modelos = iaModelosDaFamilia();
       const maisBarato = modelos[0] || { nome: '', saida: 1 };
       const nomeBase = maisBarato.nome.split(':')[0];
@@ -13078,15 +13043,17 @@ function saveTemplatesToStorage() {
     function iaPreencherSelects() {
       const esforco = iaEsforco.value;
       const esforcoEsboco = iaEsbocoEsforco.value;
-      iaPreencher(iaModelo, iaModelosDaFamilia(), '');
-      iaPreencher(iaEsforco, iaOpcoes.esforcos, '');
-      iaPreencher(iaEsbocoModelo, iaModelosDaFamilia(), 'O mesmo modelo de cima');
-      iaPreencher(iaEsbocoEsforco, iaOpcoes.esforcos, 'O mesmo esforço de cima');
+      const curto = lista => (lista || []).map(x => Object.assign({}, x, { nome: String(x.nome).split(':')[0] }));
+      const esforcos = (iaOpcoes.esforcos || []).map(x => ({ id: x.id, nome: 'Esforço ' + String(x.nome).split(':')[0].toLowerCase() }));
+      iaPreencher(iaModelo, curto(iaModelosDaFamilia()), '');
+      iaPreencher(iaEsforco, esforcos, '');
+      iaPreencher(iaEsbocoModelo, curto(iaModelosDaFamilia()), 'O mesmo do uso geral');
+      iaPreencher(iaEsbocoEsforco, esforcos, 'Esforço do uso geral');
       const motor = iaAudioMotor.value;
       const geminiAudio = iaAudioGeminiModelo.value;
-      iaPreencher(iaAudioMotor, iaOpcoes.motoresAudio || [], '');
-      iaPreencher(iaAudioGeminiModelo, (iaOpcoes.modelos || []).filter(x => x.familia === 'gemini'), '');
-      iaPreencher(iaAudioModelo, iaModelosDaFamilia(), 'O mesmo modelo de cima');
+      iaPreencher(iaAudioMotor, curto(iaOpcoes.motoresAudio), '');
+      iaPreencher(iaAudioGeminiModelo, curto((iaOpcoes.modelos || []).filter(x => x.familia === 'gemini')), '');
+      iaPreencher(iaAudioModelo, curto(iaModelosDaFamilia()), 'O mesmo do uso geral');
       if (motor) iaAudioMotor.value = motor;
       if (geminiAudio) iaAudioGeminiModelo.value = geminiAudio;
       if (esforco) iaEsforco.value = esforco;
@@ -13120,6 +13087,7 @@ function saveTemplatesToStorage() {
       iaAudioMotor.value = r.data.config.audioMotor || 'chirp';
       iaAudioGeminiModelo.value = r.data.config.audioGeminiModelo || '';
       iaAudioModelo.value = r.data.config.audioModelo || '';
+      iaAudioMostrar();
       iaSalvo = { provedor: r.data.config.provedor, modelo: r.data.config.modelo, esforco: r.data.config.esforco, esbocoModelo: r.data.config.esbocoModelo || '', esbocoEsforco: r.data.config.esbocoEsforco || '', audioMotor: r.data.config.audioMotor || 'chirp', audioGeminiModelo: r.data.config.audioGeminiModelo || '', audioModelo: r.data.config.audioModelo || '' };
       iaMostrarPreco();
       iaMensagem(r.data.armazenamento && !r.data.armazenamento.escrita ? 'O armazenamento do servidor ainda não permite salvar.' : '', true);
@@ -13145,6 +13113,7 @@ function saveTemplatesToStorage() {
       iaAudioMotor.value = r.data.config.audioMotor || 'chirp';
       iaAudioGeminiModelo.value = r.data.config.audioGeminiModelo || '';
       iaAudioModelo.value = r.data.config.audioModelo || '';
+      iaAudioMostrar();
       iaSalvo = { provedor: r.data.config.provedor, modelo: r.data.config.modelo, esforco: r.data.config.esforco, esbocoModelo: r.data.config.esbocoModelo || '', esbocoEsforco: r.data.config.esbocoEsforco || '', audioMotor: r.data.config.audioMotor || 'chirp', audioGeminiModelo: r.data.config.audioGeminiModelo || '', audioModelo: r.data.config.audioModelo || '' };
       iaMostrarPreco();
       iaNotaCarregar();
@@ -13154,54 +13123,33 @@ function saveTemplatesToStorage() {
 
     iaModelo.addEventListener('change', iaMostrarPreco);
     iaEsbocoModelo.addEventListener('change', iaMostrarPreco);
-    // 💾 Salvar o modelo da IA (Modelos e agentes de IA): só o provedor, os modelos e o esforço.
-    document.getElementById('iaSalvarBtn').addEventListener('click', async () => {
-      if (!iaPendente()) return iaMensagem('Nada foi alterado.', false);
-      const botao = document.getElementById('iaSalvarBtn');
+    // O modelo Gemini da transcrição só aparece quando o motor for o Gemini.
+    const iaAudioMostrar = () => { iaAudioGeminiModelo.hidden = iaAudioMotor.value !== 'gemini'; };
+    iaAudioMotor.addEventListener('change', iaAudioMostrar);
+    // 💾 Salvar para todos (tabela de Modelos e agentes de IA): grava só o que mudou (IA de texto e áudio, conta do Google, voz).
+    document.getElementById('modelosSalvarBtn').addEventListener('click', async () => {
+      const contaSel = document.getElementById('googleContaSelect');
+      const mudouIa = iaPendente();
+      const mudouConta = googleContaSalva !== null && Boolean(contaSel.value) && contaSel.value !== googleContaSalva;
+      const mudouVoz = Boolean(vozEscolhaSalva) && (vozCampos.modelo.value !== vozEscolhaSalva.modelo || vozCampos.voz.value !== vozEscolhaSalva.voz);
+      if (!mudouIa && !mudouConta && !mudouVoz) return iaMensagem('Nada foi alterado.', false);
+      const botao = document.getElementById('modelosSalvarBtn');
       botao.disabled = true;
       iaMensagem('Salvando…', false);
-      const r = await iaSalvarModelo();
+      const erros = [];
+      if (mudouIa) {
+        const r = await iaSalvarModelo();
+        if (!r.ok) erros.push(r.erro);
+      }
+      if (mudouConta) {
+        const r = await postConfig({ acao: 'google-conta-salvar', codigo: codigoAdminAtual(), conta: contaSel.value });
+        if (r.ok) googleContaRender(r.data);
+        else erros.push((r.data && r.data.erro) || configErrorMessage(r, 'A conta do Google não foi salva.'));
+      }
+      if (mudouVoz && !(await vozAdminSalvar())) erros.push('A voz não foi salva.');
       botao.disabled = false;
-      iaMensagem(r.ok ? '✅ Salvo. Vale para todos em poucos segundos.' : r.erro, !r.ok);
-    });
-    // 💾 do cartão Conta para modelos de texto (Definição das contas): salva o provedor junto com a configuração da IA.
-    document.getElementById('iaContaSalvarBtn').addEventListener('click', async () => {
-      const aviso = document.getElementById('iaContaStatus');
-      if (!iaPendente()) { aviso.className = 'ok'; aviso.textContent = 'Nada foi alterado.'; return; }
-      const botao = document.getElementById('iaContaSalvarBtn');
-      botao.disabled = true;
-      aviso.className = 'hint';
-      aviso.textContent = 'Salvando…';
-      const r = await iaSalvarModelo();
-      botao.disabled = false;
-      aviso.className = r.ok ? 'ok' : 'warn';
-      aviso.textContent = r.ok ? '✅ Salvo. Vale para todos em poucos segundos.' : r.erro;
-    });
-    // 💾 do cartão dos esboços: salva a mesma configuração da IA, com o aviso no próprio cartão.
-    document.getElementById('iaEsbocoSalvarBtn').addEventListener('click', async () => {
-      const aviso = document.getElementById('iaEsbocoStatus');
-      if (!iaPendente()) { aviso.className = 'ok'; aviso.textContent = 'Nada foi alterado.'; return; }
-      const botao = document.getElementById('iaEsbocoSalvarBtn');
-      botao.disabled = true;
-      aviso.className = 'hint';
-      aviso.textContent = 'Salvando…';
-      const r = await iaSalvarModelo();
-      botao.disabled = false;
-      aviso.className = r.ok ? 'ok' : 'warn';
-      aviso.textContent = r.ok ? '✅ Salvo. Vale para todos em poucos segundos.' : r.erro;
-    });
-    // 💾 do cartão do Áudio em texto (no contêiner do Google Cloud): salva a mesma configuração da IA, com o aviso no próprio cartão.
-    document.getElementById('iaAudioSalvarBtn').addEventListener('click', async () => {
-      const aviso = document.getElementById('iaAudioStatus');
-      if (!iaPendente()) { aviso.className = 'ok'; aviso.textContent = 'Nada foi alterado.'; return; }
-      const botao = document.getElementById('iaAudioSalvarBtn');
-      botao.disabled = true;
-      aviso.className = 'hint';
-      aviso.textContent = 'Salvando…';
-      const r = await iaSalvarModelo();
-      botao.disabled = false;
-      aviso.className = r.ok ? 'ok' : 'warn';
-      aviso.textContent = r.ok ? '✅ Salvo. Vale para todos em poucos segundos.' : r.erro;
+      iaMensagem(erros.length ? erros.join(' ') : '✅ Salvo. Vale para todos em poucos segundos.', erros.length > 0);
+      document.dispatchEvent(new Event('modelos-ia-mudou'));
     });
     // Seção Modelos e agentes de IA (Ajustes, só o administrador): ao abrir, carrega a IA de texto e o gasto.
     const modelosIaSection = document.getElementById('modelosIaSection');
@@ -13210,6 +13158,9 @@ function saveTemplatesToStorage() {
       if (!codigoAdminAtual()) return iaMensagem('Salve a senha de administrador em 🔐 Autorização de acessos.', true);
       iaCarregar();
       modelosResumoCarregar();
+      googleContaCarregar();
+      const codigo = senhaAdminSalva();
+      if (codigo && (vozAdminForm.hidden || codigo !== vozAdminCodigo)) vozAdminCarregar(codigo);
     });
 
     // 📋 Definições em vigor: o que está SALVO no servidor (contas, modelos de texto, voz e áudio), numa tabela no alto da seção.

@@ -1530,219 +1530,157 @@
           <summary><span class="adm-titulo">🤖 Modelos e agentes de IA&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
           <div class="subsection-body modelos-ia-body">
             <details id="modelosResumo" class="modelos-resumo">
-              <summary><h3 class="modelos-ia-titulo">📋 Definições em vigor</h3></summary>
-              <div id="modelosResumoTabela" aria-live="polite"><p class="hint">Carregando…</p></div>
-            </details>
-            <div class="modelos-ia-grupo" style="--grupo-cor:#d97706">
-            <h3 class="modelos-ia-titulo">🔑 Definição das contas</h3>
-            <details class="prompt-item prompt-tint-ia">
-              <summary><h3>✍️ Conta para modelos de texto</h3></summary>
-              <label for="iaProvedor">Escolha a conta</label>
-              <select id="iaProvedor"></select>
-              <p class="hint">“Anthropic” usa a chave <code>ANTHROPIC_API_KEY</code>. “Google Cloud · Gemini” e “Google Cloud · Claude” usam a Vertex AI, cobrada na conta do Google da empresa (a mesma conta de serviço da voz, sem chave nova; regiões em <code>GOOGLE_GEMINI_REGIAO</code> e <code>GOOGLE_VERTEX_REGIAO</code>, padrão “global”). Cada provedor tem a sua lista de modelos. Com o Gemini, a leitura de páginas pela IA é feita pela ferramenta de endereços do Google, e os resultados podem ser um pouco diferentes dos do Claude: teste as funções principais antes de adotar. O gasto mostrado mais abaixo é só o da Anthropic; o da Vertex aparece no faturamento do Google Cloud. Na Vertex não existe o refazer automático em outro modelo quando um filtro de segurança recusa um pedido.</p>
-              <div class="button-row">
-                <button id="iaTestarBtn" class="secondary" type="button">🧪 Testar esta escolha</button>
+                          <summary><h3 class="modelos-ia-titulo">📋 Definições em vigor</h3></summary>
+                          <div id="modelosResumoTabela" aria-live="polite"><p class="hint">Carregando…</p></div>
+                        </details>
+            <div class="modelos-resumo modelos-editar">
+              <h3 class="modelos-ia-titulo">✏️ Escolher contas e modelos</h3>
+              <table class="modelos-resumo-tabela modelos-editar-tabela">
+                <tbody>
+                  <tr class="modelos-resumo-secao"><th colspan="2" scope="colgroup">🔑 Contas</th></tr>
+                  <tr><th scope="row"><label for="iaProvedor">Texto</label></th><td><select id="iaProvedor"></select></td></tr>
+                  <tr><th scope="row"><label for="googleContaSelect">Voz e áudio</label></th><td><select id="googleContaSelect"></select></td></tr>
+                  <tr class="modelos-resumo-secao"><th colspan="2" scope="colgroup">✍️ Texto</th></tr>
+                  <tr><th scope="row"><label for="iaModelo">Uso geral</label></th><td><select id="iaModelo"></select><select id="iaEsforco" aria-label="Esforço do uso geral"></select></td></tr>
+                  <tr><th scope="row"><label for="iaEsbocoModelo">Esboços e dirigir</label></th><td><select id="iaEsbocoModelo"></select><select id="iaEsbocoEsforco" aria-label="Esforço dos esboços e do dirigir"></select></td></tr>
+                  <tr class="modelos-resumo-secao"><th colspan="2" scope="colgroup">🔊 Voz e áudio</th></tr>
+                  <tr><th scope="row"><label for="vozModelo">Leitura em voz</label></th><td><select id="vozModelo"></select><select id="vozVoz" aria-label="Voz da leitura"></select></td></tr>
+                  <tr><th scope="row"><label for="iaAudioMotor">Áudio: transcrição</label></th><td><select id="iaAudioMotor"></select><select id="iaAudioGeminiModelo" aria-label="Modelo Gemini da transcrição"></select></td></tr>
+                  <tr><th scope="row"><label for="iaAudioModelo">Áudio: resumo</label></th><td><select id="iaAudioModelo"></select></td></tr>
+                </tbody>
+              </table>
+              <div class="button-row modelos-editar-acoes">
+                <button id="iaTestarBtn" class="secondary" type="button">🧪 Testar o texto</button>
+                <button id="vozExemploBtn" class="secondary" type="button">▶️ Ouvir a voz</button>
               </div>
-              <p id="iaTesteResultado" class="hint" role="status" aria-live="polite"></p>
-              <div class="button-row">
-                <button id="iaContaSalvarBtn" type="button">💾 Salvar para todos</button>
-              </div>
-              <p id="iaContaStatus" class="ok" role="status" aria-live="polite"></p>
-            </details>
-            <details class="prompt-item prompt-tint-ia so-admin" id="googleContaSection" hidden>
-              <summary><h3>🔊 Conta para voz e áudio</h3></summary>
-              <div>
-                <p class="hint">A leitura em voz alta e o Áudio em texto usam uma conta do Google Cloud. O app aceita duas ao mesmo tempo: a <strong>principal</strong> (variáveis <code>GOOGLE_TTS_CREDENCIAIS</code> e <code>GOOGLE_STT_BUCKET</code> na Vercel) e a de <strong>reserva</strong> (<code>GOOGLE_ALT_CREDENCIAIS</code> e <code>GOOGLE_ALT_STT_BUCKET</code>). Escolha aqui qual usar; a mudança vale para todos em poucos segundos, sem novo deploy. Uma transcrição em andamento na hora da troca pode falhar: é só tentar de novo.</p>
-                <p id="googleContaStatus" class="ok" role="status" aria-live="polite"></p>
-                <label id="googleContaRotulo">Escolha a conta</label>
-                <div id="googleContaLista" class="google-conta-lista" role="radiogroup" aria-labelledby="googleContaRotulo"></div>
-                <div class="button-row">
-                  <button id="googleContaSalvarBtn" type="button">💾 Salvar para todos</button>
-                  <button id="googleContaAtualizarBtn" class="secondary" type="button">🔄 Recarregar</button>
-                </div>
-                <p id="googleContaStatusFim" class="ok" role="status" aria-live="polite"></p>
-              </div>
-            </details>
-            </div>
-
-            <div class="modelos-ia-grupo" style="--grupo-cor:#7c3aed">
-            <h3 class="modelos-ia-titulo">✍️ Modelos IA para texto</h3>
-            <details class="prompt-item prompt-tint-ia">
-              <summary><h3>🤖 Produção de texto: modelo para uso geral</h3></summary>
-              <p class="hint">Vale para todas as respostas da IA (estudo, perguntas do dirigente, formatação, comentários do texto diário) e para todos os usuários. Os modelos mais potentes escrevem melhor, mas demoram mais e custam mais.</p>
-              <label for="iaModelo">Escolha o modelo</label>
-              <select id="iaModelo"></select>
-              <p id="iaModeloPreco" class="hint"></p>
-              <label for="iaEsforco">Esforço (quanto a IA pensa antes de responder)</label>
-              <select id="iaEsforco"></select>
-              <div class="button-row">
-                <button id="iaSalvarBtn" type="button">💾 Salvar para todos</button>
-              </div>
+              <button id="modelosSalvarBtn" class="modelos-salvar" type="button">💾 Salvar para todos</button>
               <p id="iaStatus" class="ok" role="status" aria-live="polite"></p>
-            </details>
-
-            <details class="prompt-item prompt-tint-ia">
-              <summary><h3>📜 Produção de texto: modelo para preparação de discursos e esboços e preparar para dirigir</h3></summary>
-              <p class="hint">Escolha, se quiser, outro modelo (e esforço) só para ELABORAR o esboço (Tesouros, discurso curto, discurso público e Outros esboços) e para as respostas do Preparar para dirigir (perguntas adicionais do estudo de A Sentinela e preparação do Estudo Bíblico do dirigente). Carregar a matéria, pesquisar na biblioteca e listar os textos bíblicos não usam IA ou usam o modelo geral. Em “o mesmo de cima”, tudo isso usa o modelo e o esforço escolhidos acima, como todas as outras respostas da IA.</p>
-              <label for="iaEsbocoModelo">Modelo para discursos, esboços e dirigir</label>
-              <select id="iaEsbocoModelo"></select>
-              <p id="iaEsbocoPreco" class="hint"></p>
-              <label for="iaEsbocoEsforco">Esforço para discursos, esboços e dirigir</label>
-              <select id="iaEsbocoEsforco"></select>
-              <div class="button-row">
-                <button id="iaEsbocoSalvarBtn" type="button">💾 Salvar para todos</button>
-              </div>
-              <p id="iaEsbocoStatus" class="ok" role="status" aria-live="polite"></p>
-            </details>
-
-            </div>
-
-            <div class="modelos-ia-grupo" style="--grupo-cor:#0284c7">
-            <h3 class="modelos-ia-titulo">☁️ Modelos IA para voz e transcrição</h3>
-            <details class="subsection voz-admin so-admin" id="vozSection" hidden>
-              <summary><span class="adm-titulo">🔊 Leitura em voz: modelo para leitura&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
-              <div class="subsection-body">
-                <p class="hint">Escolhas da voz da leitura em voz alta (o texto diário, para quem tem o código de pesquisa; a tela Leitura em voz alta, para quem tem o código de leitura; e o botão 🔊 do campo de texto, que só o administrador vê). Valem para todos os usuários; só o administrador pode mudar.</p>
-
-                <div id="vozAdminLogin">
-                  <p id="vozAdminError" class="hint acesso-aviso">Para mudar a voz, salve a senha de administrador em 🔐 Autorização de acessos.</p>
-                  <button class="secondary" type="button" data-ir-acessos="senha">🔐 Abrir Autorização de acessos</button>
-                </div>
-                <div id="vozAdminForm" hidden>
-                  <label for="vozModelo">Qualidade (modelo de voz)</label>
-                  <select id="vozModelo"></select>
-                  <label for="vozVoz">Voz</label>
-                  <select id="vozVoz"></select>
-                  <div class="voz-admin-grid">
-                    <div><label for="vozTom">Tom</label><select id="vozTom"></select></div>
-                    <div><label for="vozAltura">Altura da voz</label><select id="vozAltura"></select></div>
-                  </div>
-                  <label for="vozVelocidadePadrao">Velocidade padrão</label>
-                  <select id="vozVelocidadePadrao"></select>
-                  <p class="hint">Tom, altura e instruções extras só valem nas vozes Gemini. Quem estiver ouvindo ainda pode mudar a velocidade na barra do tocador.</p>
-                  <label for="vozFormatoRefs">📖 Como ler as referências bíblicas</label>
-                  <select id="vozFormatoRefs">
-                    <option value="curta">Curta: Primeira Coríntios treze, quatro a sete</option>
-                    <option value="extenso">Por extenso: Primeira Coríntios, capítulo 13, versículos 4 a 7</option>
-                    <option value="original">Como estão escritas: 1 Cor. 13:4-7</option>
-                  </select>
-                  <p class="voz-admin-subtitulo">O que ler e o que pular</p>
-                  <div class="ai-sources">
-                    <label class="ai-check"><input type="checkbox" autocomplete="off" id="vozPularRefs"> ⏭️ Pular as referências bíblicas entre parênteses e as que vêm depois de um travessão no fim do parágrafo. Só são lidas as que fazem parte do texto corrido (ex.: "Conforme mostra Mateus 5:3, os que…") e a do texto temático do texto diário, logo depois da data.</label>
-                    <label class="ai-check"><input type="checkbox" autocomplete="off" id="vozPularFontes"> ⏭️ Pular as citações de publicações (ex.: "w24.09 21 § 6")</label>
-                    <label class="ai-check"><input type="checkbox" autocomplete="off" id="vozPularParenteses"> ⏭️ Pular o que estiver entre parênteses</label>
-                    <label class="ai-check"><input type="checkbox" autocomplete="off" id="vozPularCabecalhos"> ⏭️ Pular os cabeçalhos do app (ex.: "RESPOSTA 1.", "PERGUNTAS ADICIONAIS 2.")</label>
-                  </div>
-                  <p class="hint">Emojis, setas e símbolos nunca são lidos, e as letras formatadas são lidas como letras comuns.</p>
-                  <label for="vozExtra">Instruções extras de leitura</label>
-                  <textarea id="vozExtra" maxlength="400" placeholder='Ex.: leia "Jeová" com ênfase; faça uma pausa maior antes de cada pergunta.'></textarea>
-                  <div class="bk-row">
-                    <button id="vozExemploBtn" class="secondary" type="button">▶️ Ouvir um exemplo</button>
-                    <button id="vozSalvarBtn" type="button">💾 Salvar para todos</button>
-                  </div>
-                  <span id="vozAdminStatus" class="ok" role="status" aria-live="polite"></span>
-                  <div class="voz-consumo">
-                    <p class="voz-admin-subtitulo">📊 Consumo da voz (contado neste aparelho)</p>
-                    <div id="vozConsumo"></div>
-                    <div class="voz-admin-grid">
-                      <div><label for="vozPrecoGemini">Gemini: US$ por minuto</label><input id="vozPrecoGemini" type="number" step="0.001" min="0" inputmode="decimal"></div>
-                      <div><label for="vozPrecoChirp">Chirp: US$ por milhão de caracteres</label><input id="vozPrecoChirp" type="number" step="0.5" min="0" inputmode="decimal"></div>
-                    </div>
-                    <p class="hint">É uma estimativa com os preços de referência acima (ajuste se o Google mudar). O valor exato fica no faturamento do Google Cloud, que é atualizado com algumas horas de atraso.</p>
-                    <div class="bk-row">
-                      <a class="voz-link" href="https://console.cloud.google.com/billing" target="_blank" rel="noopener noreferrer">💳 Abrir o faturamento no Google Cloud</a>
-                      <button id="vozZerarBtn" class="secondary" type="button">🧹 Zerar a contagem</button>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="acesso-item">
-                  <label for="vozAutoEspera">⏱️ Iniciar e fechar sozinho: tempo de espera</label>
-                  <select id="vozAutoEspera">
-                    <option value="0">Não iniciar nem fechar sozinho (esperar os botões)</option>
-                    <option value="2">Aguardar 2 segundos</option>
-                    <option value="3">Aguardar 3 segundos</option>
-                    <option value="4" selected>Aguardar 4 segundos (padrão)</option>
-                    <option value="5">Aguardar 5 segundos</option>
-                    <option value="6">Aguardar 6 segundos</option>
-                    <option value="8">Aguardar 8 segundos</option>
-                    <option value="10">Aguardar 10 segundos</option>
-                  </select>
-                  <p class="hint">Espera para iniciar a leitura sozinha e para fechar sozinha a caixa de salvar o áudio (texto do dia e comentários).</p>
-                </div>
-
-                <div class="acesso-item">
-                  <label for="vozDestaqueCor">🖍️ Cor do destaque da frase lida</label>
-                  <select id="vozDestaqueCor">
-                    <option value="amarelo">Amarelo</option>
-                    <option value="laranja" selected>Laranja (padrão)</option>
-                    <option value="laranja-escuro">Laranja escuro</option>
-                    <option value="roxo">Roxo</option>
-                    <option value="azul">Azul</option>
-                  </select>
-                  <span id="vozDestaqueAmostra" class="lu lendo voz-destaque-amostra">Assim fica a frase lida</span>
-                </div>
-              </div>
-            </details>
-            <details class="prompt-item prompt-tint-ia">
-              <summary><h3>🎙️ Áudio em texto: modelo para transcrever e resumir</h3></summary>
-              <p class="hint">A transcrição usa o Speech-to-Text do Google (Chirp 3) ou um Gemini, que ouve cada trecho de 50 segundos e o escreve. A identificação de quem fala continua sempre no Chirp 3. O resumo, a sugestão de nomes e a correção do texto usam a IA de texto: o mesmo modelo de cima ou outro, só para o Áudio em texto.</p>
-              <label for="iaAudioMotor">Motor da transcrição</label>
-              <select id="iaAudioMotor"></select>
-              <label for="iaAudioGeminiModelo">Modelo Gemini da transcrição (quando o motor for o Gemini)</label>
-              <select id="iaAudioGeminiModelo"></select>
-              <label for="iaAudioModelo">Modelo do resumo, dos nomes e da correção</label>
-              <select id="iaAudioModelo"></select>
-              <div class="button-row">
-                <button id="iaAudioSalvarBtn" type="button">💾 Salvar para todos</button>
-              </div>
-              <p id="iaAudioStatus" class="ok" role="status" aria-live="polite"></p>
-            </details>
-            <details class="subsection sub-tint-3 so-admin" id="audioTiposSection" hidden>
-              <summary><span class="adm-titulo">🎙️ Áudio em texto: configurações&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
-              <div class="subsection-body">
-                <div class="audio-config-moldura">
-                <h3 class="audio-todos-titulo">🎙️ Tipos de áudio deste aparelho</h3>
-                <p class="hint">Os tipos de áudio que aparecem na tela Áudio em texto, em Informe o tipo de áudio → Tipo de áudio. Ao escolher um tipo, a descrição dele preenche o campo “Sobre o áudio”. Você pode mudar os nomes e as descrições, criar tipos novos, reordenar e apagar. Ficam salvos só neste aparelho.</p>
-                <div id="audioTiposLista"></div>
-                <div class="bk-row">
-                  <button id="audioTiposAdicionarBtn" type="button">➕ Novo tipo de áudio</button>
-                  <button id="audioTiposRestaurarBtn" class="secondary" type="button">↩️ Restaurar os tipos originais</button>
-                </div>
-                <p id="audioTiposStatus" class="ok" role="status" aria-live="polite"></p>
-                </div>
-                <div class="audio-config-moldura">
-                <h3 class="audio-todos-titulo">🌐 Tipos de áudio de todos os usuários</h3>
-                <p class="hint">Os tipos 🌐 que aparecem para todos que usam o app. Aqui você edita, reordena, apaga ou cria; nada vale para os outros até tocar em <strong>💾 Salvar para todos</strong>. Os tipos novos também podem ser criados direto na tela Áudio em texto, com a opção “➕ Novo tipo…”.</p>
-                <div id="audioTiposTodosLista"></div>
-                <div class="bk-row">
-                  <button id="audioTiposTodosAdicionarBtn" class="secondary" type="button">➕ Novo tipo para todos</button>
-                  <button id="audioTiposTodosRecarregarBtn" class="secondary" type="button">🔄 Recarregar do servidor</button>
-                  <button id="audioTiposTodosSalvarBtn" type="button">💾 Salvar para todos</button>
-                </div>
-                <p id="audioTiposTodosStatus" class="ok" role="status" aria-live="polite"></p>
-                </div>
-                <div class="audio-config-moldura">
-                <h3 class="audio-todos-titulo">⏱️ Limites do áudio</h3>
-                <p class="hint">Quanto tempo o áudio pode ter. Vale para todos os usuários depois de tocar em <strong>💾 Salvar para todos</strong>. Arquivos muito longos exigem muita memória do aparelho para serem abertos: em iPhones mais antigos o navegador pode fechar a página; se isso acontecer, reduza o valor do arquivo.</p>
-                <label for="audioLimArquivo">Arquivo escolhido na pasta do aparelho (minutos, de 5 a 180)</label>
-                <input id="audioLimArquivo" type="number" inputmode="numeric" min="5" max="180" step="1" autocomplete="off">
-                <label for="audioLimGravacao">Gravação feita ao vivo no app, soma de todas as partes (minutos, de 5 a 180)</label>
-                <input id="audioLimGravacao" type="number" inputmode="numeric" min="5" max="180" step="1" autocomplete="off">
-                <label for="audioLimPedaco">Parte da gravação ao vivo (minutos, de 1 a 60): a cada tanto tempo a gravação é salva e a próxima parte começa</label>
-                <input id="audioLimPedaco" type="number" inputmode="numeric" min="1" max="60" step="1" autocomplete="off">
-                <label for="audioLimArquivos">Quantos arquivos de áudio podem entrar na lista por vez (de 1 a 20)</label>
-                <input id="audioLimArquivos" type="number" inputmode="numeric" min="1" max="20" step="1" autocomplete="off">
-                <div class="bk-row">
-                  <button id="audioLimSalvarBtn" type="button">💾 Salvar para todos</button>
-                </div>
-                <p id="audioLimStatus" class="ok" role="status" aria-live="polite"></p>
-                </div>
-              </div>
-            </details>
+              <p id="iaTesteResultado" class="hint" role="status" aria-live="polite"></p>
             </div>
           </div>
         </details>
+        <details class="subsection voz-admin so-admin" id="vozSection" hidden>
+                      <summary><span class="adm-titulo">🔊 Leitura em voz: configurações&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
+                      <div class="subsection-body">
+                        <p class="hint">Regras da leitura em voz alta, para todos. O modelo e a voz ficam em 🤖 Modelos e agentes de IA.</p>
+
+                        <div id="vozAdminLogin">
+                          <p id="vozAdminError" class="hint acesso-aviso">Para mudar a voz, salve a senha de administrador em 🔐 Autorização de acessos.</p>
+                          <button class="secondary" type="button" data-ir-acessos="senha">🔐 Abrir Autorização de acessos</button>
+                        </div>
+                        <div id="vozAdminForm" hidden>
+                          <div class="voz-admin-grid">
+                            <div><label for="vozTom">Tom</label><select id="vozTom"></select></div>
+                            <div><label for="vozAltura">Altura da voz</label><select id="vozAltura"></select></div>
+                          </div>
+                          <label for="vozVelocidadePadrao">Velocidade padrão</label>
+                          <select id="vozVelocidadePadrao"></select>
+                          <p class="hint">Tom, altura e instruções extras só valem nas vozes Gemini. Quem estiver ouvindo ainda pode mudar a velocidade na barra do tocador.</p>
+                          <label for="vozFormatoRefs">📖 Como ler as referências bíblicas</label>
+                          <select id="vozFormatoRefs">
+                            <option value="curta">Curta: Primeira Coríntios treze, quatro a sete</option>
+                            <option value="extenso">Por extenso: Primeira Coríntios, capítulo 13, versículos 4 a 7</option>
+                            <option value="original">Como estão escritas: 1 Cor. 13:4-7</option>
+                          </select>
+                          <p class="voz-admin-subtitulo">O que ler e o que pular</p>
+                          <div class="ai-sources">
+                            <label class="ai-check"><input type="checkbox" autocomplete="off" id="vozPularRefs"> ⏭️ Pular as referências bíblicas entre parênteses e as que vêm depois de um travessão no fim do parágrafo. Só são lidas as que fazem parte do texto corrido (ex.: "Conforme mostra Mateus 5:3, os que…") e a do texto temático do texto diário, logo depois da data.</label>
+                            <label class="ai-check"><input type="checkbox" autocomplete="off" id="vozPularFontes"> ⏭️ Pular as citações de publicações (ex.: "w24.09 21 § 6")</label>
+                            <label class="ai-check"><input type="checkbox" autocomplete="off" id="vozPularParenteses"> ⏭️ Pular o que estiver entre parênteses</label>
+                            <label class="ai-check"><input type="checkbox" autocomplete="off" id="vozPularCabecalhos"> ⏭️ Pular os cabeçalhos do app (ex.: "RESPOSTA 1.", "PERGUNTAS ADICIONAIS 2.")</label>
+                          </div>
+                          <p class="hint">Emojis, setas e símbolos nunca são lidos, e as letras formatadas são lidas como letras comuns.</p>
+                          <label for="vozExtra">Instruções extras de leitura</label>
+                          <textarea id="vozExtra" maxlength="400" placeholder='Ex.: leia "Jeová" com ênfase; faça uma pausa maior antes de cada pergunta.'></textarea>
+                          <div class="bk-row">
+                            <button id="vozSalvarBtn" type="button">💾 Salvar para todos</button>
+                          </div>
+                          <span id="vozAdminStatus" class="ok" role="status" aria-live="polite"></span>
+                          <div class="voz-consumo">
+                            <p class="voz-admin-subtitulo">📊 Consumo da voz (contado neste aparelho)</p>
+                            <div id="vozConsumo"></div>
+                            <div class="voz-admin-grid">
+                              <div><label for="vozPrecoGemini">Gemini: US$ por minuto</label><input id="vozPrecoGemini" type="number" step="0.001" min="0" inputmode="decimal"></div>
+                              <div><label for="vozPrecoChirp">Chirp: US$ por milhão de caracteres</label><input id="vozPrecoChirp" type="number" step="0.5" min="0" inputmode="decimal"></div>
+                            </div>
+                            <p class="hint">É uma estimativa com os preços de referência acima (ajuste se o Google mudar). O valor exato fica no faturamento do Google Cloud, que é atualizado com algumas horas de atraso.</p>
+                            <div class="bk-row">
+                              <a class="voz-link" href="https://console.cloud.google.com/billing" target="_blank" rel="noopener noreferrer">💳 Abrir o faturamento no Google Cloud</a>
+                              <button id="vozZerarBtn" class="secondary" type="button">🧹 Zerar a contagem</button>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="acesso-item">
+                          <label for="vozAutoEspera">⏱️ Iniciar e fechar sozinho: tempo de espera</label>
+                          <select id="vozAutoEspera">
+                            <option value="0">Não iniciar nem fechar sozinho (esperar os botões)</option>
+                            <option value="2">Aguardar 2 segundos</option>
+                            <option value="3">Aguardar 3 segundos</option>
+                            <option value="4" selected>Aguardar 4 segundos (padrão)</option>
+                            <option value="5">Aguardar 5 segundos</option>
+                            <option value="6">Aguardar 6 segundos</option>
+                            <option value="8">Aguardar 8 segundos</option>
+                            <option value="10">Aguardar 10 segundos</option>
+                          </select>
+                          <p class="hint">Espera para iniciar a leitura sozinha e para fechar sozinha a caixa de salvar o áudio (texto do dia e comentários).</p>
+                        </div>
+
+                        <div class="acesso-item">
+                          <label for="vozDestaqueCor">🖍️ Cor do destaque da frase lida</label>
+                          <select id="vozDestaqueCor">
+                            <option value="amarelo">Amarelo</option>
+                            <option value="laranja" selected>Laranja (padrão)</option>
+                            <option value="laranja-escuro">Laranja escuro</option>
+                            <option value="roxo">Roxo</option>
+                            <option value="azul">Azul</option>
+                          </select>
+                          <span id="vozDestaqueAmostra" class="lu lendo voz-destaque-amostra">Assim fica a frase lida</span>
+                        </div>
+                      </div>
+                    </details>
+        <details class="subsection sub-tint-3 so-admin" id="audioTiposSection" hidden>
+                      <summary><span class="adm-titulo">🎙️ Áudio em texto: configurações&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
+                      <div class="subsection-body">
+                        <div class="audio-config-moldura">
+                        <h3 class="audio-todos-titulo">🎙️ Tipos de áudio deste aparelho</h3>
+                        <p class="hint">Os tipos de áudio que aparecem na tela Áudio em texto, em Informe o tipo de áudio → Tipo de áudio. Ao escolher um tipo, a descrição dele preenche o campo “Sobre o áudio”. Você pode mudar os nomes e as descrições, criar tipos novos, reordenar e apagar. Ficam salvos só neste aparelho.</p>
+                        <div id="audioTiposLista"></div>
+                        <div class="bk-row">
+                          <button id="audioTiposAdicionarBtn" type="button">➕ Novo tipo de áudio</button>
+                          <button id="audioTiposRestaurarBtn" class="secondary" type="button">↩️ Restaurar os tipos originais</button>
+                        </div>
+                        <p id="audioTiposStatus" class="ok" role="status" aria-live="polite"></p>
+                        </div>
+                        <div class="audio-config-moldura">
+                        <h3 class="audio-todos-titulo">🌐 Tipos de áudio de todos os usuários</h3>
+                        <p class="hint">Os tipos 🌐 que aparecem para todos que usam o app. Aqui você edita, reordena, apaga ou cria; nada vale para os outros até tocar em <strong>💾 Salvar para todos</strong>. Os tipos novos também podem ser criados direto na tela Áudio em texto, com a opção “➕ Novo tipo…”.</p>
+                        <div id="audioTiposTodosLista"></div>
+                        <div class="bk-row">
+                          <button id="audioTiposTodosAdicionarBtn" class="secondary" type="button">➕ Novo tipo para todos</button>
+                          <button id="audioTiposTodosRecarregarBtn" class="secondary" type="button">🔄 Recarregar do servidor</button>
+                          <button id="audioTiposTodosSalvarBtn" type="button">💾 Salvar para todos</button>
+                        </div>
+                        <p id="audioTiposTodosStatus" class="ok" role="status" aria-live="polite"></p>
+                        </div>
+                        <div class="audio-config-moldura">
+                        <h3 class="audio-todos-titulo">⏱️ Limites do áudio</h3>
+                        <p class="hint">Quanto tempo o áudio pode ter. Vale para todos os usuários depois de tocar em <strong>💾 Salvar para todos</strong>. Arquivos muito longos exigem muita memória do aparelho para serem abertos: em iPhones mais antigos o navegador pode fechar a página; se isso acontecer, reduza o valor do arquivo.</p>
+                        <label for="audioLimArquivo">Arquivo escolhido na pasta do aparelho (minutos, de 5 a 180)</label>
+                        <input id="audioLimArquivo" type="number" inputmode="numeric" min="5" max="180" step="1" autocomplete="off">
+                        <label for="audioLimGravacao">Gravação feita ao vivo no app, soma de todas as partes (minutos, de 5 a 180)</label>
+                        <input id="audioLimGravacao" type="number" inputmode="numeric" min="5" max="180" step="1" autocomplete="off">
+                        <label for="audioLimPedaco">Parte da gravação ao vivo (minutos, de 1 a 60): a cada tanto tempo a gravação é salva e a próxima parte começa</label>
+                        <input id="audioLimPedaco" type="number" inputmode="numeric" min="1" max="60" step="1" autocomplete="off">
+                        <label for="audioLimArquivos">Quantos arquivos de áudio podem entrar na lista por vez (de 1 a 20)</label>
+                        <input id="audioLimArquivos" type="number" inputmode="numeric" min="1" max="20" step="1" autocomplete="off">
+                        <div class="bk-row">
+                          <button id="audioLimSalvarBtn" type="button">💾 Salvar para todos</button>
+                        </div>
+                        <p id="audioLimStatus" class="ok" role="status" aria-live="polite"></p>
+                        </div>
+                      </div>
+                    </details>
         <details class="subsection sub-tint-2 so-admin" id="promptsSection" hidden>
           <summary><span class="adm-titulo">🛠️ Prompts da IA&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
           <div class="subsection-body prompts-body">

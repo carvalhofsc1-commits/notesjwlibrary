@@ -13625,3 +13625,53 @@ button.processando:disabled { opacity: 1; cursor: progress; }
   font-weight: 650;
   color: var(--muted);
 }
+
+/* ✏️ Escolher contas e modelos: a mesma tabela das Definições em vigor, com seletores no lugar dos valores. */
+.modelos-editar {
+  margin-top: 12px;
+}
+
+.modelos-editar > .modelos-ia-titulo {
+  margin: 12px 0 8px;
+  text-align: center;
+}
+
+.modelos-editar-tabela th label {
+  display: inline;
+  margin: 0;
+  font-weight: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+.modelos-editar-tabela th {
+  vertical-align: middle;
+}
+
+.modelos-editar-tabela td select {
+  width: 100%;
+  margin: 0;
+  font-size: .86rem;
+  padding: 6px 8px;
+}
+
+.modelos-editar-tabela td select + select {
+  margin-top: 6px;
+}
+
+.modelos-editar-tabela td select[hidden] {
+  display: none;
+}
+
+.modelos-editar-acoes {
+  margin-top: 10px;
+}
+
+.modelos-editar-acoes button {
+  flex: 1 1 0;
+}
+
+button.modelos-salvar {
+  width: 100%;
+  margin-top: 8px;
+}
