@@ -13785,3 +13785,29 @@ button.modelos-copiar {
     background: var(--soft);
   }
 }
+
+/* Filtro "Mostrar só os com esboço salvo" no alto da lista de temas: fica preso no topo ao rolar. */
+.bk-seletor-lista button.bk-seletor-item.publico-filtro {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  font-weight: 700;
+  font-size: .85rem;
+  color: #166534;
+  background: color-mix(in srgb, #22c55e 10%, var(--card));
+  border-bottom: 1px solid color-mix(in srgb, #22c55e 45%, var(--line));
+}
+
+.bk-seletor-lista button.bk-seletor-item.publico-filtro.ligado {
+  background: color-mix(in srgb, #22c55e 24%, var(--card));
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .bk-seletor-lista button.bk-seletor-item.publico-filtro {
+    color: #86efac;
+  }
+}
+
+:root[data-theme="dark"] .bk-seletor-lista button.bk-seletor-item.publico-filtro {
+  color: #86efac;
+}

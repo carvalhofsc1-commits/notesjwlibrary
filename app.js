@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.8.01'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.8.02'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -17240,16 +17240,32 @@ function saveTemplatesToStorage() {
       return new Set(historicoLer().filter(i => i.tipo === 'esboco' && i.esbocoNumero && String(i.titulo).startsWith(prefixo)).map(i => Number(i.esbocoNumero)));
     }
 
+    // "Só os com esboço salvo": filtro no alto da lista (fica lembrado neste aparelho).
+    const PUBLICO_SO_SALVOS_KEY = 'jwLibraryNoteAplicarPublicoSoSalvosV1';
+    let publicoSoSalvos = (() => { try { return localStorage.getItem(PUBLICO_SO_SALVOS_KEY) === '1'; } catch (e) { return false; } })();
+
     function publicoDesenhar() {
-      const lista = publicoFiltrados();
       const salvos = publicoNumerosSalvos();
+      if (!salvos.size) publicoSoSalvos = false; // sem nenhum salvo, o filtro não teria o que mostrar
+      const lista = publicoFiltrados().filter(t => !publicoSoSalvos || salvos.has(Number(t.numero)));
       publicoLista.textContent = '';
       publicoAtivo = -1;
-      if (salvos.size && lista.some(t => salvos.has(Number(t.numero)))) {
-        const legenda = document.createElement('div');
-        legenda.className = 'bk-seletor-item publico-legenda';
-        legenda.textContent = '📂 = esboço já elaborado pela IA e salvo neste aparelho';
-        publicoLista.appendChild(legenda);
+      if (salvos.size) {
+        const filtro = document.createElement('button');
+        filtro.type = 'button';
+        filtro.className = 'bk-seletor-item publico-filtro' + (publicoSoSalvos ? ' ligado' : '');
+        filtro.setAttribute('aria-pressed', publicoSoSalvos ? 'true' : 'false');
+        filtro.textContent = publicoSoSalvos
+          ? '✅ Mostrando só os ' + salvos.size + ' com esboço salvo · toque para ver todos'
+          : '📂 Mostrar só os com esboço salvo (' + salvos.size + ')';
+        filtro.addEventListener('mousedown', event => event.preventDefault()); // não tira o foco do campo (a lista continua aberta)
+        filtro.addEventListener('click', () => {
+          publicoSoSalvos = !publicoSoSalvos;
+          safeSetItem(PUBLICO_SO_SALVOS_KEY, publicoSoSalvos ? '1' : '0');
+          publicoDesenhar();
+          publicoLista.scrollTop = 0;
+        });
+        publicoLista.appendChild(filtro);
       }
       lista.forEach(t => {
         const escolhido = String(t.numero) === publicoTema.value;
@@ -17402,14 +17418,14 @@ function saveTemplatesToStorage() {
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         event.preventDefault();
         if (publicoLista.hidden) publicoAbrir();
-        const itens = [...publicoLista.querySelectorAll('button.bk-seletor-item')];
+        const itens = [...publicoLista.querySelectorAll('button.bk-seletor-item[data-numero]')];
         if (!itens.length) return;
         publicoAtivo = (publicoAtivo + (event.key === 'ArrowDown' ? 1 : -1) + itens.length) % itens.length;
         itens.forEach((el, i) => el.classList.toggle('ativo', i === publicoAtivo));
         itens[publicoAtivo].scrollIntoView({ block: 'nearest' });
       } else if (event.key === 'Enter') {
         event.preventDefault();
-        const itens = [...publicoLista.querySelectorAll('button.bk-seletor-item')];
+        const itens = [...publicoLista.querySelectorAll('button.bk-seletor-item[data-numero]')];
         const exato = itens.find(el => el.dataset.numero === publicoBusca.value.trim());
         const item = itens[publicoAtivo] || exato || (publicoFiltrando ? itens[0] : null);
         if (item) item.click();

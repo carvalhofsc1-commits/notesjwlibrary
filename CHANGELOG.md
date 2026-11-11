@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.8.02
+
+Lista de temas do discurso público: no alto, o botão **📂 Mostrar só os com esboço salvo (N)** filtra a lista para os temas que já têm esboço elaborado pela IA; tocar de novo volta a mostrar todos. A escolha fica lembrada neste aparelho, e o botão fica preso no topo ao rolar.
+
 ## 6.8.01
 
 Discurso público: com um tema escolhido, aparece um botão **🗑️** ao lado da seta ▾ para limpar a escolha (o campo volta vazio e as informações do tema somem).
