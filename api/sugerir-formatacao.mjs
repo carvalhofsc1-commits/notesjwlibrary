@@ -7,7 +7,7 @@ import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import { codigoDoDirigente, erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { acessoDoDirigente, codigoValido, dirigenteValido, exigirAcesso, recusarAcesso, resumoValido } from "./_acesso.mjs";
-import { TAREFAS_DE_ESBOCOS, iaDaTarefa, lerConfigIa, provedorAtual } from "./_iaConfig.mjs";
+import { MODELOS_IA, TAREFAS_DE_ESBOCOS, iaDaTarefa, lerConfigIa, provedorAtual } from "./_iaConfig.mjs";
 import { apagarResultado, guardarResultado, idDePedidoValido, lerResultado, pedidosDisponiveis } from "./_pedidos.mjs";
 import { criarClienteIa, erroSemIa, iaDisponivel } from "./_clienteIa.mjs";
 import { blocoLicoesPara } from "./_memoria.mjs";
@@ -98,6 +98,7 @@ async function chamarIa(client, P, params, { schema = null, semPensar = false, t
     const entrada = saida.usage?.input_tokens || 0;
     const saidaTok = saida.usage?.output_tokens || 0;
     contexto.consultasIa = (contexto.consultasIa || 0) + 1;
+    contexto.modeloIa = modelo; // para o rodapé dos esboços (o modelo que elaborou de fato)
     contexto.tokensIn = (contexto.tokensIn || 0) + entrada;
     contexto.tokensOut = (contexto.tokensOut || 0) + saidaTok;
     if (tarefa) contexto.tarefaIa = tarefa;
@@ -4319,6 +4320,20 @@ async function tratarPedido(req, res) {
         .catch((e) => console.error("Pedidos: não guardei o resultado", tarefa, e && e.message))
         .finally(() => enviar(dados));
       return res;
+    };
+  }
+
+  // Rodapé dos esboços: o modelo que elaborou e o tempo no servidor (vai na resposta e, com ela, no resultado guardado acima).
+  if (["tesouros", "discurso", "publico", "outros"].includes(tarefa)) {
+    const inicio = Date.now();
+    const enviarComRodape = res.json.bind(res);
+    res.json = (dados) => {
+      const contexto = contextoDoPedido.getStore();
+      if (dados && dados.esboco && (res.statusCode || 200) < 400 && contexto && contexto.modeloIa) {
+        const modelo = MODELOS_IA.find((m) => m.id === contexto.modeloIa);
+        dados = { ...dados, rodapeIa: { modelo: modelo ? modelo.nome.split(":")[0] : contexto.modeloIa, segundos: Math.round((Date.now() - inicio) / 1000) } };
+      }
+      return enviarComRodape(dados);
     };
   }
 

@@ -13686,3 +13686,39 @@ button.modelos-copiar {
 .esboco-pronto-bar button.secondary {
   padding-inline: 12px;
 }
+
+/* Lista de temas do discurso público: marca dos temas que já têm esboço elaborado pela IA e salvo. */
+.bk-seletor-item.publico-tem-salvo {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.publico-salvo {
+  flex: none;
+  margin-left: auto;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: .75rem;
+  font-weight: 650;
+  white-space: nowrap;
+  color: #166534;
+  background: color-mix(in srgb, #22c55e 18%, var(--card));
+  border: 1px solid color-mix(in srgb, #22c55e 45%, var(--line));
+}
+
+.bk-seletor-item.publico-legenda {
+  font-size: .78rem;
+  color: var(--muted);
+  cursor: default;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .publico-salvo {
+    color: #86efac;
+  }
+}
+
+:root[data-theme="dark"] .publico-salvo {
+  color: #86efac;
+}

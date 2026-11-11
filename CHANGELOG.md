@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.7.96
+
+Discurso público: na lista de temas, os que já têm esboço elaborado pela IA e salvo neste aparelho ganham a marca **📂 salvo** (com uma legenda no alto da lista).
+
+## 6.7.95
+
+Esboços (Tesouros, discurso curto, discurso público e Outros esboços): no rodapé, uma linha diz **qual modelo de IA elaborou o esboço e quanto tempo levou** (medido no servidor, em 00:00), com a data. Ela vai junto para o esboço salvo e para a cópia.
+
 ## 6.7.94
 
 Tempo da IA em minutos e segundos (**00:00**): no balão azul flutuante, no aviso de andamento e, agora, também no texto do botão enquanto a IA trabalha (“Consultando a IA… 01:23”).

@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.7.94'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.7.96'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -17032,6 +17032,12 @@ function saveTemplatesToStorage() {
         cfg.ultimoEsboco = esboco;
         aiSentinelaRaw = [esboco];
         const parts = esbocoPartes(esboco);
+        // Rodapé: o modelo de IA que elaborou o esboço e quanto tempo levou (medido no servidor).
+        const rodapeIa = result.data.rodapeIa;
+        if (rodapeIa && rodapeIa.modelo) {
+          const quando = new Date().toLocaleDateString('pt-BR');
+          parts.push({ paragrafos: 'Rodapé', texto: '———\n🤖 Esboço elaborado pela IA ' + rodapeIa.modelo + ' em ' + tempoMmSs(Math.max(0, Number(rodapeIa.segundos) || 0)) + ' (' + quando + ').' });
+        }
         aiResumo = { texto: parts.map(part => part.texto).join('\n\n\n'), partes: parts, done: false, kind: 'estudo', semBotoes: true, fonte: result.data.titulo || '' };
         appendToMainText(aiResumo.texto);
         // O esboço é guardado e copiado inteiro, não por partes.
@@ -17118,10 +17124,23 @@ function saveTemplatesToStorage() {
       publicoBusca.value = t ? publicoRotulo(t) : '';
     }
 
+    // Os temas que já têm esboço elaborado pela IA e salvo neste aparelho (Pesquisas e respostas salvas), pelo número do tema.
+    function publicoNumerosSalvos() {
+      const prefixo = ESBOCOS.publico.tituloHistorico + ' · ';
+      return new Set(historicoLer().filter(i => i.tipo === 'esboco' && i.esbocoNumero && String(i.titulo).startsWith(prefixo)).map(i => Number(i.esbocoNumero)));
+    }
+
     function publicoDesenhar() {
       const lista = publicoFiltrados();
+      const salvos = publicoNumerosSalvos();
       publicoLista.textContent = '';
       publicoAtivo = -1;
+      if (salvos.size && lista.some(t => salvos.has(Number(t.numero)))) {
+        const legenda = document.createElement('div');
+        legenda.className = 'bk-seletor-item publico-legenda';
+        legenda.textContent = '📂 = esboço já elaborado pela IA e salvo neste aparelho';
+        publicoLista.appendChild(legenda);
+      }
       lista.forEach(t => {
         const escolhido = String(t.numero) === publicoTema.value;
         const item = document.createElement('button');
@@ -17130,6 +17149,14 @@ function saveTemplatesToStorage() {
         item.setAttribute('role', 'option');
         item.dataset.numero = String(t.numero);
         item.textContent = (escolhido ? '✓ ' : '') + publicoRotulo(t);
+        if (salvos.has(Number(t.numero))) {
+          item.classList.add('publico-tem-salvo');
+          const marca = document.createElement('span');
+          marca.className = 'publico-salvo';
+          marca.textContent = '📂 salvo';
+          marca.title = 'Já há um esboço deste tema elaborado pela IA (Pesquisas e respostas salvas)';
+          item.appendChild(marca);
+        }
         item.addEventListener('mousedown', event => event.preventDefault()); // não tira o foco do campo
         item.addEventListener('click', () => publicoEscolher(t));
         publicoLista.appendChild(item);
