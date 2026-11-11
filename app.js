@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.8.11'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.8.12'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -14094,11 +14094,20 @@ function saveTemplatesToStorage() {
           { id: 'lugares', texto: '🗺️ Dar detalhes de localidades, lugares, cidades, nações, povos, medidas, moedas, valores etc. (Perspicaz)' },
           { id: 'profecias', texto: '🔮 Esclarecer profecias e expressões simbólicas — seção própria (cumprimento passado, presente ou futuro; Perspicaz / WOL)' }
         ]
+      },
+      // Refino da resposta/esboço: fica logo acima dos botões "Outra resposta" e "Melhorar esta resposta".
+      refino: {
+        alvo: '#aiRefineBox .ai-refine-row',
+        antes: true,
+        exemplo: 'Ex.: dê uma resposta mais curta, foque em outro aspecto ou mude as palavras.',
+        dica: 'Opcional. Valem mais que o prompt padrão ao pedir outra resposta ou melhorar esta.'
       }
     };
 
-    function iaExtraCriar(chave, { botao, exemplo, somente, linha, dica: textoDica, opcoes, opcoesDica, opcoesTitulo }) {
-      const alvo = document.getElementById(botao);
+    function iaExtraCriar(chave, { botao, alvo: alvoParam, antes, exemplo, somente, linha, dica: textoDica, opcoes, opcoesDica, opcoesTitulo }) {
+      const alvo = alvoParam
+        ? (typeof alvoParam === 'function' ? alvoParam() : typeof alvoParam === 'string' ? document.querySelector(alvoParam) : alvoParam)
+        : document.getElementById(botao);
       if (!alvo) return;
       const bloco = document.createElement('details'); // recolhida: só a linha do título; o texto digitado fica guardado enquanto o app está aberto
       bloco.className = 'imagens-box ia-extra';
@@ -14226,7 +14235,8 @@ function saveTemplatesToStorage() {
         caixa.append(marca, ' ⚡ Executar somente estas instruções (ignora o que está marcado em “O que preparar”)');
         bloco.append(caixa);
       }
-      (linha ? alvo.closest('.ai-main-row, .biblia-gerar-linha') || alvo : alvo).insertAdjacentElement('afterend', bloco);
+      if (antes) alvo.insertAdjacentElement('beforebegin', bloco);
+      else (linha ? alvo.closest('.ai-main-row, .biblia-gerar-linha') || alvo : alvo).insertAdjacentElement('afterend', bloco);
     }
     Object.entries(IA_EXTRA_CAMPOS).forEach(([chave, config]) => iaExtraCriar(chave, config));
 
@@ -14242,9 +14252,18 @@ function saveTemplatesToStorage() {
     }
 
     // O texto do campo da seção (uma linha só, sem limite na tela; o servidor aceita até 30000 caracteres); vazio se a seção não tem o campo.
-    function iaExtra(chave) {
+    // Ao refinar ("Outra resposta" ou "Melhorar"), inclui também as instruções digitadas no campo de refino (logo acima dos botões).
+    function iaExtra(chave, mode) {
       const campo = document.getElementById('iaExtra_' + chave);
-      return campo ? campo.value.replace(/\s+/g, ' ').trim().slice(0, 30000) : '';
+      const texto = campo ? campo.value.replace(/\s+/g, ' ').trim().slice(0, 30000) : '';
+      if (!mode || typeof mode !== 'string') return texto;
+      const refino = document.getElementById('iaExtra_refino');
+      const textoRefino = refino ? refino.value.replace(/\s+/g, ' ').trim().slice(0, 30000) : '';
+      if (!textoRefino) return texto;
+      if (!texto) return textoRefino;
+      if (texto === textoRefino || texto.includes(textoRefino)) return texto;
+      if (textoRefino.includes(texto)) return textoRefino;
+      return `${texto}. ${textoRefino}`.slice(0, 30000);
     }
 
     // Só mudanças feitas pelo usuário (isTrusted) contam como "já mexeu".
@@ -14687,7 +14706,7 @@ function saveTemplatesToStorage() {
 
       const options = readAiOptions(); // inclui "Incluir resumo do texto" e as consultas, como estão marcados agora
       const payload = { tarefa: 'formatar', codigo: codigoAcessoSalvo(), linhas: lines, modelos, opcoes: options };
-      const ajuste = iaExtra('formatar'); // instruções adicionais do campo da Sugerir formatação (valem mais que o prompt padrão)
+      const ajuste = iaExtra('formatar', mode); // instruções adicionais do campo da Sugerir formatação (valem mais que o prompt padrão)
       if (ajuste) payload.ajuste = ajuste;
       if (textoLongo) payload.textoLongo = true;
       if (mode && (aiRaw.length || previousSummary)) {
@@ -14898,7 +14917,7 @@ function saveTemplatesToStorage() {
       saveAiOptions();
 
       const payload = { tarefa: 'sentinela', codigo: codigoAcessoSalvo(), linhas: lines, modelos: [], opcoes: readAiOptions() };
-      const ajuste = iaExtra('sentinela'); // instruções adicionais do campo da resposta do texto colado
+      const ajuste = iaExtra('sentinela', mode); // instruções adicionais do campo da resposta do texto colado
       if (ajuste) payload.ajuste = ajuste;
       if (textoLongo) payload.textoLongo = true;
       if (previousItens) {
@@ -15829,7 +15848,7 @@ function saveTemplatesToStorage() {
         semana: aiWeekNumber,
         paragrafos: requested,
         opcoes: readAiOptions(),
-        ajuste: iaExtra('estudo')
+        ajuste: iaExtra('estudo', mode)
       };
       if (previousAnswers) {
         payload.modo = mode || 'melhorar'; // com resposta salva do parágrafo: ela é a base, a IA aproveita o que tem de bom e a resposta nova a substitui
@@ -15942,7 +15961,7 @@ function saveTemplatesToStorage() {
         semana: aiWeekNumber,
         paragrafos: requested,
         opcoes: Object.assign(readAiOptions(), refino ? refino.secoes : {}),
-        ajuste: iaExtra('dirigente')
+        ajuste: iaExtra('dirigente', mode)
       };
       if (previous) {
         payload.modo = mode;
@@ -16034,7 +16053,7 @@ function saveTemplatesToStorage() {
         semana: aiWeekNumber,
         paragrafos: 'recapitulação',
         opcoes: readAiOptions(),
-        ajuste: iaExtra('dirigente')
+        ajuste: iaExtra('dirigente', mode)
       };
       if (previousAnswers) {
         payload.modo = mode || 'melhorar';
@@ -16313,7 +16332,7 @@ function saveTemplatesToStorage() {
         semana: aiWeekNumber,
         quadros: escolhas.quadros,
         opcoes: readAiOptions(),
-        ajuste: iaExtra('ebc')
+        ajuste: iaExtra('ebc', mode)
       };
       if (previousAnswers) {
         payload.modo = mode || 'melhorar'; // com resposta salva: ela é a base e a nova a substitui
@@ -16457,7 +16476,7 @@ function saveTemplatesToStorage() {
         perguntas: pedirPerguntas,
         textosBase: pedirBase,
         opcoes: readAiOptions(),
-        ajuste: iaExtra('ebcdir')
+        ajuste: iaExtra('ebcdir', mode)
       };
       if (previous || baseAnterior.length) {
         payload.modo = mode;
@@ -17131,7 +17150,7 @@ function saveTemplatesToStorage() {
         ano: aiWeekYear,
         semana: aiWeekNumber,
         opcoes: readAiOptions(),
-        ajuste: iaExtra(cfg.kind), // "Outros esboços" não tem o campo: tem os próprios (tema, ideia, ocasião…)
+        ajuste: iaExtra(cfg.kind, mode), // "Outros esboços" não tem o campo: tem os próprios (tema, ideia, ocasião…)
         ...(cfg.extraPayload ? cfg.extraPayload() : {})
       };
       if (importar) {
@@ -18776,7 +18795,7 @@ function saveTemplatesToStorage() {
       const pedirLeitura = refino ? refino.leitura : joiasLeitura.checked;
       const pedirResumo = refino ? Boolean(refino.resumo) : joiasResumo.checked;
       const somente = refino ? Boolean(refino.somente) : iaExtraSomente('joias');
-      if (somente && !iaExtra('joias')) return setAiStatus('Escreva as instruções adicionais para usar “Executar somente estas instruções”.', true);
+      if (somente && !iaExtra('joias', mode)) return setAiStatus('Escreva as instruções adicionais para usar “Executar somente estas instruções”.', true);
       if (!somente && !pedirPergunta && !pedirLeitura && !pedirResumo) return setAiStatus('Marque a pergunta da apostila, as joias da leitura ou o resumo dos capítulos.', true);
       const accessError = studyAccessError();
       if (accessError) return setAiStatus(accessError, true);
@@ -18815,7 +18834,7 @@ function saveTemplatesToStorage() {
         resumo: pedirResumo,
         somenteAjuste: somente,
         opcoes: readAiOptions(),
-        ajuste: iaExtra('joias')
+        ajuste: iaExtra('joias', mode)
       };
       if (previousAnswers || previousOutros.length) {
         payload.modo = mode || 'melhorar'; // com resposta salva: ela é a base e a nova a substitui

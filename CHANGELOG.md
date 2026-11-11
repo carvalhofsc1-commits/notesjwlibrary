@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.8.12
+
+Instruções adicionais para a IA: novo campo logo acima dos botões **Outra resposta** e **Melhorar esta resposta** (com o mesmo formato dos outros campos de instruções), para orientar o refino da resposta ou do esboço.
+
 ## 6.8.11
 
 Gravuras do esboço: o botão **➕ Adicionar gravuras** ocupa toda a largura do cartão.

@@ -983,6 +983,10 @@
       margin-top: 14px;
     }
 
+    .ai-refine > .ia-extra {
+      margin: 0 0 10px;
+    }
+
     /* Outra resposta / Melhorar esta resposta: acima do Salvar alterações, finos e leves (os botões estão mais abaixo, em .ai-refine-row). */
     .ai-refine-row button {
       background: color-mix(in srgb, var(--brand) 6%, var(--card));
