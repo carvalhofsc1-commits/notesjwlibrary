@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.8.28
+
+Leitura em voz alta: na forma curta, a referência bíblica sai sem vírgula entre o capítulo e os versículos (“Gênesis quatro sete”, “Primeira Coríntios treze quatro a sete”, “Salmo vinte e três um”), também nos exemplos da instrução das vozes Gemini.
+
 ## 6.8.27
 
 Leitura em voz alta (vozes Gemini): a voz deixou de trocar a referência bíblica pelo conteúdo do versículo (no texto diário de Gênesis 4:7, ela dizia “mas se não voltar a fazer o bem” em vez de “Gênesis quatro, sete”). A instrução de leitura dizia “NUNCA leia referências”, pensando nas citações de publicações, e a voz entendia que devia pular também os textos bíblicos e completava com o que sabe do versículo. Agora ela manda ler exatamente as palavras recebidas, sem acrescentar nem trocar nada, e ler os textos bíblicos por extenso como estão; só as citações de publicações (como “w25.03 18 § 15”) continuam puladas.

@@ -3831,7 +3831,7 @@
     const vozJuntarComE = itens => (itens.length > 1 ? itens.slice(0, -1).join(', ') + ' e ' + itens[itens.length - 1] : itens[0]);
 
     // Referência para a voz, conforme o formato escolhido pelo administrador:
-    //  - curta:   "1 Coríntios 13:4-7" -> "Primeira Coríntios treze, quatro a sete"
+    //  - curta:   "1 Coríntios 13:4-7" -> "Primeira Coríntios treze quatro a sete" (sem vírgula entre o capítulo e os versículos)
     //  - extenso: "1 Coríntios 13:4-7" -> "Primeira Coríntios, capítulo 13, versículos 4 a 7"
     // Livros de um capítulo só vêm com capitulo null: "Judas 3" -> "Judas três" ou "Judas, versículo 3".
     function vozReferenciaFalada(nome, capitulo, versos, outros, formato) {
@@ -3850,9 +3850,9 @@
       };
       if (capitulo === null) return falado + (curta ? ' ' : ', ') + falarVersos(versos);
       if (curta) {
-        // Salmos se fala pelo número do salmo: "Salmo vinte e três, um".
+        // Salmos se fala pelo número do salmo: "Salmo vinte e três um".
         const nomeFalado = livro === 'Salmos' ? (trechos.length === 1 ? 'Salmo' : 'Salmos') : falado;
-        return nomeFalado + ' ' + trechos.map(([c, v]) => vozNumeroFalado(c) + ', ' + falarVersos(v)).join('; ');
+        return nomeFalado + ' ' + trechos.map(([c, v]) => vozNumeroFalado(c) + ' ' + falarVersos(v)).join('; ');
       }
       if (livro === 'Salmos') return (trechos.length === 1 ? 'Salmo ' : 'Salmos ') + trechos.map(([c, v]) => c + ', ' + falarVersos(v)).join('; ');
       return falado + ', ' + trechos.map(([c, v]) => 'capítulo ' + c + ', ' + falarVersos(v)).join('; ');
@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.8.27'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.8.28'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.

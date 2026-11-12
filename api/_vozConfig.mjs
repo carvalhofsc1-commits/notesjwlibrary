@@ -42,7 +42,7 @@ export const ALTURAS = [
 ];
 // As mesmas velocidades do tocador (#vozVelocidade): quem define o padrão em Ajustes escolhe entre as opções da barra de áudio.
 export const VELOCIDADES = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
-// Como ler as referências bíblicas: "Primeira Coríntios treze, quatro a sete" (curta), "…, capítulo 13, versículos 4 a 7"
+// Como ler as referências bíblicas: "Primeira Coríntios treze quatro a sete" (curta), "…, capítulo 13, versículos 4 a 7"
 // (extenso) ou como estão escritas.
 export const FORMATOS_REFS = ["curta", "extenso", "original"];
 
