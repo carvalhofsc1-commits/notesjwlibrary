@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.03
+
+Anotações: enquanto transcreve e resume, o botão **✨ Resumir as gravações** mostra o ícone girando e o tempo que já passou (“Resumindo… 00:42”); no fim, volta ao rótulo normal.
+
 ## 6.9.02
 
 Gravações das anotações:

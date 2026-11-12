@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.02'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.03'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -28961,13 +28961,37 @@ function saveTemplatesToStorage() {
         }
       });
 
+      // Enquanto transcreve e resume: o botão mostra o ícone girando e o tempo (mm:ss); no fim, volta ao rótulo de antes.
+      function botaoPensando(botao, frase) {
+        const antes = botao.textContent;
+        const inicio = Date.now();
+        const spinner = document.createElement('span');
+        spinner.className = 'ai-spinner';
+        spinner.setAttribute('aria-hidden', 'true');
+        const rotulo = document.createElement('span');
+        const tick = () => { rotulo.textContent = frase + ' ' + tempoMmSs(Math.floor((Date.now() - inicio) / 1000)); };
+        tick();
+        botao.replaceChildren(spinner, rotulo);
+        botao.classList.add('is-loading');
+        botao.setAttribute('aria-busy', 'true');
+        const timer = setInterval(tick, 1000);
+        return () => {
+          clearInterval(timer);
+          botao.classList.remove('is-loading');
+          botao.removeAttribute('aria-busy');
+          botao.textContent = antes;
+        };
+      }
+
       gravResumirTodasBtn.addEventListener('click', async () => {
         if (gravacao) return dizer('Pare a gravação antes de resumir.', true);
         gravResumirTodasBtn.disabled = true;
         gravResumoBtn.disabled = true;
+        const parar = botaoPensando(gravResumirTodasBtn, 'Resumindo…');
         try {
           await anotacoesResumirGuardadas();
         } finally {
+          parar();
           gravResumirTodasBtn.disabled = false;
           gravResumoBtn.disabled = false;
         }
