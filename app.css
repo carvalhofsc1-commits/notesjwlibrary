@@ -14309,3 +14309,9 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
 .anotacoes-voz {
   margin: 6px 0;
 }
+
+/* Visualizar o texto bíblico: ícone de olho desenhado (traço), no lugar do emoji. */
+#anotacoesBibliaVer .icone-olho {
+  display: block;
+  margin: 0 auto;
+}

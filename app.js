@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.10'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.11'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -28252,7 +28252,15 @@ function saveTemplatesToStorage() {
         const bloco = previa && previa.ref === referencia ? previa.bloco : await anotacoesBuscarBiblia(referencia);
         if (!bloco) return;
         fecharPrevia();
-        inserirNoCursor(bloco + '\n', alvoInsercao, true);
+        // Sempre com uma linha em branco antes e outra depois do texto bíblico.
+        const campo = alvoInsercao;
+        const ini = campo.selectionStart ?? campo.value.length;
+        const fim = campo.selectionEnd ?? ini;
+        const antes = campo.value.slice(0, ini);
+        const depois = campo.value.slice(fim);
+        const pre = !antes.trim() ? '' : /\n\n$/.test(antes) ? '' : /\n$/.test(antes) ? '\n' : '\n\n';
+        const pos = /^\n\n/.test(depois) ? '' : /^\n/.test(depois) ? '\n' : '\n\n';
+        inserirNoCursor(pre + bloco + pos, campo, true);
         dizerBiblia('Texto bíblico inserido.');
         // Pronto para o próximo: limpa o campo e fecha o guia.
         bibRef.value = '';

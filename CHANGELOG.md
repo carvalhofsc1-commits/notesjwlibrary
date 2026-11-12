@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.11
+
+Anotações, texto bíblico: o botão de visualizar ganhou um ícone de olho desenhado (só o contorno), no lugar do emoji realista; e o texto inserido entra sempre com **uma linha em branco antes e outra depois**.
+
 ## 6.9.10
 
 Gravação das anotações: agora é **um arquivo só**, na qualidade de voz (64 kbps, cerca de 29 MB por hora). Saiu a segunda gravação em qualidade maior que era feita ao mesmo tempo só para exportar: o 💾 Exportar salva o mesmo áudio que fica guardado no app.
