@@ -14283,3 +14283,29 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
   margin: 6px 0 0;
   font-size: .84rem;
 }
+
+/* Anotações: o 🔊 ao lado do título do campo e o tocador logo abaixo. */
+.anotacoes-texto-cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.anotacoes-texto-cab label {
+  margin: 0;
+}
+
+.anotacoes-texto-cab .anotacoes-ouvir {
+  min-height: 32px;
+  padding: 2px 12px;
+  font-size: .95rem;
+}
+
+.anotacoes-voz:empty {
+  display: none;
+}
+
+.anotacoes-voz {
+  margin: 6px 0;
+}

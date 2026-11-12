@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.09
+
+Anotações: novo botão **🔊** ao lado do título “✍️ Anotações” para **ouvir as anotações** em voz alta (com o código de leitura), por exemplo no dia seguinte, dirigindo. Abre o tocador da leitura em voz logo abaixo, com a barra de andamento, a velocidade e o salvar o áudio; tocar de novo no 🔊 para a leitura.
+
 ## 6.9.08
 
 Anotações:

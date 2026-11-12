@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.08'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.09'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -29238,6 +29238,42 @@ function saveTemplatesToStorage() {
           gravResumoBtn.disabled = false;
         }
       });
+
+      // 🔊 Ouvir as anotações (com o código de leitura): o tocador da leitura em voz abre logo abaixo do título, com a barra de andamento,
+      // a velocidade e o salvar o áudio. Lê o texto como está no campo (letras formatadas viram comuns; emojis e citações são pulados).
+      const anotOuvirBtn = document.getElementById('anotacoesOuvirBtn');
+      const anotVozEl = document.getElementById('anotacoesVozEl');
+      function anotacoesVozCfg() {
+        return {
+          lugar: anotVozEl,
+          uso: 'leitura',
+          acesso: () => (!codigoLeituraSalvo() ? 'Salve o código de leitura em Ajustes → 🔐 Autorização de acessos.' : !navigator.onLine ? 'Sem conexão com a internet.' : ''),
+          preparar: () => {
+            const bruto = removeUnicodeFormatting(texto.value || '').normalize('NFC').trim();
+            if (!bruto) return 'Não há anotações para ouvir.';
+            texto.blur(); // some o teclado do celular
+            const regras = leituraRegras(vozRegras || VOZ_REGRAS_PADRAO);
+            const unidades = [];
+            leituraEstrutura(bruto).forEach((par, pi) => par.frases.forEach(frase => {
+              const cabecalho = par.tipo !== 'texto';
+              unidades.push({ texto: frase, falado: leituraFalado(frase, cabecalho, regras), cabecalho, paragrafo: pi, el: document.createElement('span') });
+            }));
+            return unidades.some(u => u.falado) ? { unidades, desde: 0 } : 'Não há anotações para ouvir.';
+          },
+          nomeAudio: () => 'Anotações - ' + removeUnicodeFormatting(tituloDaAnotacao(60)),
+          destacar: () => {},
+          limpar: () => {}
+        };
+      }
+      anotOuvirBtn.addEventListener('click', () => {
+        if (vozBar.parentNode === anotVozEl && !vozBar.hidden && !vozPauseBtn.hidden) return vozParar(); // tocar de novo para
+        const cfg = anotacoesVozCfg();
+        vozAbrirPronto({ lugar: cfg.lugar, texto: 'Pronto para ler as anotações.', acesso: cfg.acesso, iniciar: () => leitorLer(cfg) });
+      });
+      // O ícone brilha enquanto o tocador está aberto nas anotações.
+      const anotMarcarTocando = new MutationObserver(() => anotOuvirBtn.classList.toggle('tocando', vozBar.parentNode === anotVozEl && !vozBar.hidden));
+      anotMarcarTocando.observe(vozBar, { attributes: true, attributeFilter: ['hidden'] });
+      anotMarcarTocando.observe(anotVozEl, { childList: true });
 
       texto.addEventListener('blur', salvarRascunho);
       window.addEventListener('pagehide', salvarRascunho);

@@ -249,7 +249,11 @@
           </div>
           </div>
 
-          <label for="anotacoesTexto">✍️ Anotações</label>
+          <div class="anotacoes-texto-cab">
+            <label for="anotacoesTexto">✍️ Anotações</label>
+            <button id="anotacoesOuvirBtn" data-codigo-ia="leitura" class="secondary anotacoes-ouvir" type="button" title="Ouvir as anotações em voz alta (precisa do código de leitura)" aria-label="Ouvir as anotações em voz alta">🔊</button>
+          </div>
+          <div id="anotacoesVozEl" class="anotacoes-voz"></div>
           <div class="anotacoes-fmt" role="toolbar" aria-label="Formatação rápida (selecione o trecho)">
             <button type="button" class="secondary" data-anotacoes-fmt="bold" title="Negrito" aria-label="Negrito"><strong>𝐁</strong></button>
             <button type="button" class="secondary" data-anotacoes-fmt="italic" title="Itálico" aria-label="Itálico">𝐼</button>
