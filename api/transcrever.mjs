@@ -582,6 +582,9 @@ export default async function handler(req, res) {
       let sistemaResumo = SISTEMA_RESUMO + (documentos.length || imagens.length ? REGRAS_DOCUMENTOS : "");
       let mensagemResumo = conteudo;
       if (corpo.modo === "anotacoes" && !parcial) {
+        // A pergunta de recapitulação da parte (assembleia e congresso): a IA devolve a resposta do orador numa linha própria.
+        const pergunta = typeof corpo.pergunta === "string" ? corpo.pergunta.replace(/\s+/g, " ").trim().slice(0, 600) : "";
+        if (pergunta && typeof mensagemResumo === "string") mensagemResumo += "\n\nPERGUNTA DE RECAPITULAÇÃO DESTE DISCURSO:\n" + pergunta;
         try {
           const P = await carregarPrompts();
           if (P && P.sistemaAnotacoesResumo) sistemaResumo = P.sistemaAnotacoesResumo;
@@ -592,7 +595,7 @@ export default async function handler(req, res) {
         if (fontesConfiguradas() && typeof conteudo === "string") {
           try {
             const versiculos = await buscarVersiculos(await referenciasNoTexto(texto, { max: 30, livre: true }), 25);
-            if (versiculos.length) mensagemResumo = conteudo + "\n\nTEXTO DOS VERSÍCULOS CITADOS NA GRAVAÇÃO (Tradução do Novo Mundo):\n" + versiculos.map((v) => `${v.referencia}: ${v.texto}`).join("\n");
+            if (versiculos.length) mensagemResumo += "\n\nTEXTO DOS VERSÍCULOS CITADOS NA GRAVAÇÃO (Tradução do Novo Mundo):\n" + versiculos.map((v) => `${v.referencia}: ${v.texto}`).join("\n");
           } catch (e) {
             console.error("Resumo das anotações: versículos indisponíveis", e?.message);
           }

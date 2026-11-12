@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.03'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.04'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -19111,6 +19111,13 @@ function saveTemplatesToStorage() {
         let k = 0;
         vel.textContent = '⏩ 1×';
         vel.addEventListener('click', () => { k = (k + 1) % VELS.length; audio.playbackRate = VELS[k]; vel.textContent = '⏩ ' + String(VELS[k]).replace('.', ',') + '×'; });
+        const parar = document.createElement('button');
+        parar.type = 'button';
+        parar.className = 'secondary grav-parar';
+        parar.textContent = '⏹️';
+        parar.title = 'Parar e voltar ao início';
+        parar.setAttribute('aria-label', 'Parar e voltar ao início');
+        parar.addEventListener('click', () => { audio.pause(); tocarDepois = false; try { audio.currentTime = 0; } catch (e) { /* ainda carregando */ } });
         const exportar = document.createElement('button');
         exportar.type = 'button';
         exportar.className = 'secondary';
@@ -19139,7 +19146,7 @@ function saveTemplatesToStorage() {
           if (typeof o.aoApagar === 'function') o.aoApagar(meta.id);
           gravacoesDesenhar(caixa, lista.filter(x => x !== meta.id), o);
         });
-        acoes.append(vel, exportar, apagar);
+        acoes.append(parar, vel, exportar, apagar);
         item.append(cab, audio, acoes);
         caixa.appendChild(item);
       }
@@ -28687,17 +28694,34 @@ function saveTemplatesToStorage() {
         gravarStatus.textContent = 'Resumindo…';
         const dp = dadosDaParte();
         const contexto = [dp.tema, dp.orador, dp.congregacao].filter(Boolean).join(' · ');
+        const q = ativa ? perguntaDaParte(parteAtual) : null;
         const pedido = { acao: 'resumo', modo: 'anotacoes', codigoTexto: codigoTextoSalvo(), texto: transc.slice(0, 60000), contexto };
+        if (q) pedido.pergunta = textoDaPergunta(q);
         const r = await trPost(pedido);
         if (!r.ok) {
           inserirNoCursor('\n—— Transcrição ——\n' + transc + '\n');
           gravarStatus.textContent = trMensagem(r, 'Transcrição inserida; o resumo falhou.');
           return true; // a transcrição já entrou no texto
         }
-        const resumo = (r.dados && r.dados.resumo) || '';
+        let resumo = (r.dados && r.dados.resumo) || '';
+        // A resposta do orador à pergunta de recapitulação desta parte vai para o campo da resposta (abaixo do que já houver, com desfazer).
+        const achou = q ? /^[ \t*_]*RESPOSTA DA RECAPITULA[ÇC][ÃA]O:[ \t*_]*([\s\S]+)$/im.exec(resumo) : null;
+        let respostaCopiada = false;
+        if (achou) {
+          resumo = resumo.slice(0, achou.index).replace(/\s+$/, '');
+          const resp = anotacoesResumoFormatar(achou[1].replace(/[*_]{2}/g, '')).trim();
+          if (resp && ativa && perguntaDaParte(parteAtual)) {
+            respostaAntesDaIa = respostaEl.value;
+            respostaEl.value = respostaEl.value.trim() ? respostaEl.value.replace(/\s+$/, '') + '\n\n' + resp : resp;
+            partes[donaDaPergunta(parteAtual)].resposta = respostaEl.value;
+            respDesfazer.hidden = false;
+            dizerResp('Resposta do orador copiada da gravação.');
+            respostaCopiada = true;
+          }
+        }
         const titulo = varias ? '—— Resumo das gravações ——' : '—— Resumo da gravação ——';
         inserirNoCursor('\n' + bibliaMarcasParaUnicode('**__' + titulo + '__**') + '\n\n' + anotacoesResumoFormatar(resumo) + '\n');
-        gravarStatus.textContent = 'Resumo inserido nas anotações.';
+        gravarStatus.textContent = 'Resumo inserido nas anotações.' + (respostaCopiada ? ' A resposta da pergunta de recapitulação foi copiada para o campo dela.' : '');
         salvarRascunho();
         return true;
       }

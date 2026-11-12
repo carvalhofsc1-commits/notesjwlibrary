@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.04
+
+Resumo das gravações nas anotações:
+- A IA não deixa mais de fora as **experiências** e os **relatos** contados pelo orador (pessoas reais ou personagens bíblicos), mesmo no começo de um trecho: cada um entra no ponto em que foi contado, como “Experiência:” ou “Relato bíblico:”, com a situação, o que a pessoa fez e a lição.
+- Na assembleia e no congresso, a IA recebe a **pergunta de recapitulação** da parte; se o orador respondeu a ela, a resposta é **copiada para o campo da resposta** (abaixo do que já houver, com o botão de desfazer) e não fica no resumo.
+
+Tocador das gravações guardadas: novo botão **⏹️** (parar e voltar ao início), além do tocar/pausar.
+
 ## 6.9.03
 
 Anotações: enquanto transcreve e resume, o botão **✨ Resumir as gravações** mostra o ícone girando e o tempo que já passou (“Resumindo… 00:42”); no fim, volta ao rótulo normal.

@@ -14208,3 +14208,8 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
 #anotacoesGravPronta .bk-row > #anotacoesGravDescartar2Btn {
   flex: 0 0 34px;
 }
+
+/* Tocador das gravações: o ⏹️ (parar e voltar ao início) estreito, como a lixeira. */
+.grav-acoes button.grav-parar {
+  flex: 0 0 44px;
+}
