@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.8.27
+
+Leitura em voz alta (vozes Gemini): a voz deixou de trocar a referência bíblica pelo conteúdo do versículo (no texto diário de Gênesis 4:7, ela dizia “mas se não voltar a fazer o bem” em vez de “Gênesis quatro, sete”). A instrução de leitura dizia “NUNCA leia referências”, pensando nas citações de publicações, e a voz entendia que devia pular também os textos bíblicos e completava com o que sabe do versículo. Agora ela manda ler exatamente as palavras recebidas, sem acrescentar nem trocar nada, e ler os textos bíblicos por extenso como estão; só as citações de publicações (como “w25.03 18 § 15”) continuam puladas.
+
 ## 6.8.26
 
 Acesso: o app só funciona em aparelho com **cadastro aprovado**, inclusive nos aparelhos antigos, de antes do cadastro obrigatório. Antes, o aparelho sem cadastro era liberado quando estava sem internet, quando o servidor não respondia ou quando não tinha identificação. Agora, nesses casos, só continua usando o aparelho cuja aprovação já foi confirmada pelo servidor (a confirmação fica guardada nele); os outros ficam na tela de identificação. A checagem também se repete ao voltar para o app (no máximo a cada 5 minutos), e um cadastro revogado pelo administrador volta à tela de identificação. As funções com IA, voz e transcrição já eram bloqueadas no servidor para aparelhos sem cadastro.
