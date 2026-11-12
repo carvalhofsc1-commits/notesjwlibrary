@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.12
+
+Áudio em texto: com o tipo de áudio **Discurso em uma reunião pública das Testemunhas de Jeová**, o resumo segue as **mesmas instruções do resumo das anotações** (o prompt “Resumo da gravação nas anotações”, editável na tela de prompts): tema no topo, pontos principais com o modelo IMPORTANTE e aplicações com o modelo Aplicar, textos lidos com o versículo da TNM, experiências, palavras-chave com emoji e RESUMO no fim, com a mesma formatação em negrito e itálico. O campo “Como fazer o resumo” desse tipo fica em branco (o que a pessoa escrever nele vai como instrução a mais).
+
 ## 6.9.11
 
 Anotações, texto bíblico: o botão de visualizar ganhou um ícone de olho desenhado (só o contorno), no lugar do emoji realista; e o texto inserido entra sempre com **uma linha em branco antes e outra depois**.

@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.11'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.12'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21768,6 +21768,7 @@ function saveTemplatesToStorage() {
       return partes.join(' ');
     }
     const trInstrucoes = document.getElementById('transcricaoInstrucoes');
+    const TR_INSTRUCOES_DISCURSO_ANTIGAS = 'Resumo em 3 a 5 linhas com o tema e a ideia central do discurso. Depois, os pontos principais em ordem, cada um em uma frase. Em seguida, liste os textos bíblicos citados ou lidos (livro, capítulo e versículos) e termine com a aplicação prática e o convite final do orador.';
     const TRANSCRICAO_INSTR_KEY = 'jwLibraryNoteAplicarTextoInstrucoesV1';
     // "Como fazer o resumo" começa em branco a cada abertura do app (só o tipo de áudio escolhido o preenche); o que ficou salvo nas versões antigas é apagado.
     try { localStorage.removeItem(TRANSCRICAO_INSTR_KEY); } catch (e) { /* sem localStorage */ }
@@ -21778,7 +21779,7 @@ function saveTemplatesToStorage() {
     // Ajustes → Configurações do Áudio em texto; a lista fica neste aparelho.
     const AUDIO_TIPOS_KEY = 'jwLibraryNoteAplicarAudioTiposV1';
     const AUDIO_TIPOS_PADRAO = [
-      { id: 'p-publico', nome: 'Discurso em uma reunião pública das Testemunhas de Jeová', texto: 'Discurso em uma reunião pública das Testemunhas de Jeová, feito por um orador sobre um tema bíblico, com a congregação presente. Há citações e leituras de textos da Bíblia (escreva os livros e os versículos corretamente, como em Salmo 83:18) e termos próprios, como Jeová, congregação, Reino e Betel.', instrucoes: 'Resumo em 3 a 5 linhas com o tema e a ideia central do discurso. Depois, os pontos principais em ordem, cada um em uma frase. Em seguida, liste os textos bíblicos citados ou lidos (livro, capítulo e versículos) e termine com a aplicação prática e o convite final do orador.' },
+      { id: 'p-publico', nome: 'Discurso em uma reunião pública das Testemunhas de Jeová', texto: 'Discurso em uma reunião pública das Testemunhas de Jeová, feito por um orador sobre um tema bíblico, com a congregação presente. Há citações e leituras de textos da Bíblia (escreva os livros e os versículos corretamente, como em Salmo 83:18) e termos próprios, como Jeová, congregação, Reino e Betel.', instrucoes: '' }, // o resumo deste tipo usa o prompt "Resumo da gravação nas anotações" (o mesmo da tela Anotações)
       { id: 'p-palestra', nome: 'Palestra profissional sobre tema empresarial ou administrativo', texto: 'Palestra profissional para um público de trabalho sobre um tema empresarial ou administrativo (por exemplo, gestão, liderança, finanças, processos ou vendas). Há um palestrante principal, termos técnicos, siglas e nomes de empresas ou de métodos, que devem ser escritos corretamente.', instrucoes: 'Resumo em até 5 linhas com o tema e a mensagem central da palestra. Depois, os pontos principais em tópicos, os conceitos, números e exemplos citados (com nomes, siglas e valores escritos corretamente) e, no fim, as recomendações ou ações sugeridas ao público.' },
       { id: 'p-auditoria', nome: 'Entrevista com colaborador durante uma auditoria interna', texto: 'Entrevista de um auditor com um colaborador da empresa durante uma auditoria interna. As perguntas do auditor e as respostas do colaborador tratam de processos, controles, responsabilidades, evidências e possíveis falhas ou melhorias. Destaque fatos, datas, valores e nomes de sistemas e de documentos citados.', instrucoes: 'Resumo em até 5 linhas do que foi tratado. Depois, em tópicos: processos e controles descritos, responsabilidades de cada pessoa, fatos, datas, valores, sistemas e documentos citados, possíveis falhas ou riscos apontados, e melhorias ou evidências solicitadas, com responsável e prazo quando houver. Separe o que o auditor perguntou do que o colaborador respondeu e não invente nada que não foi dito.' },
       { id: 'p-equipe', nome: 'Reunião com equipe de colaboradores', texto: 'Reunião de uma equipe de colaboradores de uma mesma área, com várias pessoas falando: alinhamento de tarefas, andamento de projetos, problemas, decisões e próximos passos. Destaque as decisões, os responsáveis e os prazos.', instrucoes: 'Resumo em até 5 linhas da reunião. Depois, três listas: (1) decisões tomadas; (2) tarefas, com o responsável e o prazo de cada uma; (3) problemas ou pendências em aberto. Termine com os próximos passos e a data da próxima reunião, se houver.' },
@@ -23737,7 +23738,11 @@ function saveTemplatesToStorage() {
       trAtualizarBotoes();
       const usouCorrigido = Boolean(trCorrigido.value.trim());
       const contexto = (trDadosTexto() + ' ' + trContexto.value).trim();
-      const instrucoes = trInstrucoes.value;
+      // Discurso em uma reunião pública: o resumo segue as mesmas instruções do resumo das anotações (prompt "Resumo da gravação nas
+      // anotações"), com a mesma formatação. As instruções antigas desse tipo, se ainda estiverem salvas no aparelho, não vão.
+      const discurso = trTipoAtual === 'p-publico';
+      const instrucoes = discurso && trInstrucoes.value.trim() === TR_INSTRUCOES_DISCURSO_ANTIGAS ? '' : trInstrucoes.value;
+      const modoResumo = discurso ? { modo: 'anotacoes' } : {};
       const anexosPayload = trDocsPayload();
       const baseMsg = usouCorrigido ? 'o texto corrigido' : 'a transcrição';
       try {
@@ -23745,7 +23750,7 @@ function saveTemplatesToStorage() {
         if (fonteResumo.length <= TRANSCRICAO_RESUMO_DIRETO) {
           trInfo.textContent = '✨ A IA está resumindo ' + baseMsg + (trDocs.length ? ' e lendo os arquivos anexados' : '') + '…';
           trResumirProgresso.querySelector('.transcricao-rodando-txt').textContent = 'A IA está resumindo…';
-          const pedido = { acao: 'resumo', codigoTexto: codigoTextoSalvo(), texto: fonteResumo, contexto, instrucoes, ...anexosPayload };
+          const pedido = { acao: 'resumo', codigoTexto: codigoTextoSalvo(), texto: fonteResumo, contexto, instrucoes, ...modoResumo, ...anexosPayload };
           if (!trPayloadCabe(pedido)) return (trInfo.textContent = 'Os anexos ficaram grandes demais para um único pedido. Tire uma ou mais imagens (ou documentos) e tente de novo.');
           const r = await trPost(pedido, trControle.signal);
           if (!r.ok) return (trInfo.textContent = trMensagem(r, 'Não foi possível resumir agora.'));
@@ -23773,6 +23778,7 @@ function saveTemplatesToStorage() {
             texto: 'RESUMOS PARCIAIS DO ÁUDIO:\n\n' + parciais.join('\n\n'),
             contexto,
             instrucoes,
+            ...modoResumo,
             ...anexosPayload
           };
           if (!trPayloadCabe(uniaoPedido)) return (trInfo.textContent = 'Os anexos ficaram grandes demais para um único pedido. Tire uma ou mais imagens (ou documentos) e tente de novo.');
@@ -23780,7 +23786,7 @@ function saveTemplatesToStorage() {
           if (!uniao.ok) return (trInfo.textContent = trMensagem(uniao, 'Não foi possível unir o resumo final.'));
           final = uniao.dados.resumo;
         }
-        trResumo.value = final;
+        trResumo.value = discurso ? resumoDiscursoFormatar(final) : final;
         const anexos = trDocs.length;
         trInfo.textContent = '✅ Resumo pronto' + (usouCorrigido ? ' (a partir do texto corrigido)' : '') + (anexos ? ' e levando em conta ' + anexos + (anexos === 1 ? ' arquivo anexado' : ' arquivos anexados') : '') + '. A IA pode errar: confira com o texto.';
       } finally {
@@ -24702,6 +24708,16 @@ function saveTemplatesToStorage() {
     }
 
     // Para copiar e para o Word: as marcas viram letras de negrito e itálico (com os acentos, que acompanham a letra como marcas combinantes).
+    // Resumo de discurso (tela Anotações e Áudio em texto, tipo "Discurso em uma reunião pública"): [IMPORTANTE] e [APLICAR] viram os modelos
+    // prontos; **negrito** e __itálico__ viram letras Unicode (o Word as volta ao normal).
+    const MODELOS_RESUMO_DISCURSO = { aplicar: '✅ 𝐀𝐩𝐥𝐢𝐜𝐚𝐫 👉 ', importante: '🎯⚡️⚡️ 𝑰𝑴𝑷𝑶𝑹𝑻𝑨𝑵𝑻𝑬 👉 ' };
+    function resumoDiscursoFormatar(t) {
+      t = String(t || '').replace(/\r\n?/g, '\n')
+        .replace(/\[IMPORTANTE\]\s*/gi, MODELOS_RESUMO_DISCURSO.importante)
+        .replace(/\[APLICAR\]\s*/gi, MODELOS_RESUMO_DISCURSO.aplicar);
+      return bibliaMarcasParaUnicode(t).replace(/\n{3,}/g, '\n\n').trim();
+    }
+
     function bibliaMarcasParaUnicode(texto) {
       let negrito = false;
       let italico = false;
@@ -28719,12 +28735,7 @@ function saveTemplatesToStorage() {
       });
 
       // O resumo vem com marcas: [IMPORTANTE]/[APLICAR] viram os modelos prontos; **negrito** e __itálico__ viram letras Unicode (o Word as volta ao normal).
-      function anotacoesResumoFormatar(t) {
-        t = String(t || '').replace(/\r\n?/g, '\n')
-          .replace(/\[IMPORTANTE\]\s*/gi, MODELOS_ANOTACAO.importante)
-          .replace(/\[APLICAR\]\s*/gi, MODELOS_ANOTACAO.aplicar);
-        return bibliaMarcasParaUnicode(t).replace(/\n{3,}/g, '\n\n').trim();
-      }
+      const anotacoesResumoFormatar = resumoDiscursoFormatar;
       function anotacoesMimeGravacao() {
         // M4A (AAC) primeiro: toca em qualquer celular e computador. O WebM (o Safari novo também grava nele) não abre no app Arquivos nem em muitos tocadores.
         return ['audio/mp4;codecs=mp4a.40.2', 'audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'].find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';

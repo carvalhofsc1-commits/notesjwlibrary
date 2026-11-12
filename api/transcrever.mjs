@@ -587,7 +587,7 @@ export default async function handler(req, res) {
         if (pergunta && typeof mensagemResumo === "string") mensagemResumo += "\n\nPERGUNTA DE RECAPITULAÇÃO DESTE DISCURSO:\n" + pergunta;
         try {
           const P = await carregarPrompts();
-          if (P && P.sistemaAnotacoesResumo) sistemaResumo = P.sistemaAnotacoesResumo;
+          if (P && P.sistemaAnotacoesResumo) sistemaResumo = P.sistemaAnotacoesResumo + (documentos.length || imagens.length ? REGRAS_DOCUMENTOS : "");
         } catch (e) {
           console.error("Resumo das anotações: prompts indisponíveis", e?.message);
         }
