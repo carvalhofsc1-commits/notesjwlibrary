@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.8.29
+
+Leitura em voz alta (vozes Gemini): a voz começou a ler a própria instrução em vez do texto. A instrução da 6.8.27 tinha ficado longa, em tópicos e cheia de frases de exemplo entre aspas, e a voz as tomava como texto a ler. Voltou a ser um parágrafo curto, sem exemplos para ler, mantendo as regras: ler exatamente o texto recebido, as referências bíblicas por extenso como estão (sem trocá-las pelo versículo) e pular as citações de publicações.
+
 ## 6.8.28
 
 Leitura em voz alta: na forma curta, a referência bíblica sai sem vírgula entre o capítulo e os versículos (“Gênesis quatro sete”, “Primeira Coríntios treze quatro a sete”, “Salmo vinte e três um”), também nos exemplos da instrução das vozes Gemini.
