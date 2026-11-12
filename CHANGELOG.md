@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.06
+
+Gravações guardadas no app: o tocador da gravação recém-feita podia ficar em branco no iPhone (o áudio lido do banco logo depois de gravado não carregava). Agora a gravação feita nesta sessão toca direto da memória; e qualquer tocador que não carregar tenta de novo sozinho e, se ainda falhar, mostra **↻ Tentar de novo** no lugar da barra.
+
 ## 6.9.05
 
 Resposta da pergunta de recapitulação no resumo das gravações: só é copiada quando o orador responde **explicitamente**. A IA só a devolve se a transcrição tiver as duas coisas: o orador anunciando a pergunta de revisão/recapitulação (“resposta à pergunta de revisão”…) e, logo depois, repetindo a pergunta, igual ou muito parecida com a do card. Ela não pode mais deduzir a resposta do conteúdo do discurso. O app também confere: sem a frase “pergunta de revisão” ou “pergunta de recapitulação” na transcrição e, logo depois, pelo menos 60% das palavras da pergunta, a resposta da IA é descartada.

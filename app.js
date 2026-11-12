@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.05'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.06'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -18990,6 +18990,7 @@ function saveTemplatesToStorage() {
     // Cada gravação fica em "gravacao:<id>" ({ blob }); a lista (sem o áudio) fica em "gravacoes:indice", para mostrar tamanhos e datas
     // sem carregar os áudios. As anotações (rascunho, partes do programa e itens salvos) guardam só os ids. Não entram no backup (.json).
     const GRAV_INDICE = 'gravacoes:indice';
+    const gravBlobsDaSessao = new Map(); // id → áudio gravado nesta sessão
     let gravFila = Promise.resolve();
     function gravacoesEmFila(trabalho) {
       const proxima = gravFila.then(trabalho, trabalho);
@@ -19007,6 +19008,7 @@ function saveTemplatesToStorage() {
       if (!temBanco || !blob || !blob.size) return null;
       const id = 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
       await bancoGravar('gravacao:' + id, { id, blob, tipo: blob.type || '' });
+      gravBlobsDaSessao.set(id, blob); // o tocador usa este (da memória): no iPhone, o áudio lido do banco logo depois de gravado às vezes não carrega
       await gravacoesEmFila(async () => {
         const lista = await gravacoesIndice();
         lista.unshift({ id, titulo: String((meta && meta.titulo) || 'Gravação').slice(0, 120), duracaoS: Math.round((meta && meta.duracaoS) || 0), bytes: blob.size, tipo: blob.type || '', criadoEm: new Date().toISOString() });
@@ -19062,7 +19064,8 @@ function saveTemplatesToStorage() {
       for (let n = 0; n < metas.length; n++) {
         const meta = metas[n];
         let reg = null;
-        try { reg = await bancoLer('gravacao:' + meta.id); } catch (e) { reg = null; }
+        if (gravBlobsDaSessao.has(meta.id)) reg = { blob: gravBlobsDaSessao.get(meta.id) };
+        else { try { reg = await bancoLer('gravacao:' + meta.id); } catch (e) { reg = null; } }
         if (caixa.dataset.v !== v) return;
         if (!reg || !reg.blob) continue;
         const item = document.createElement('div');
@@ -19101,6 +19104,36 @@ function saveTemplatesToStorage() {
           audio.pause();
         });
         audio.src = url;
+        // Se o áudio não carregar (o tocador fica em branco no iPhone), tenta de novo lendo do banco; na segunda falha, mostra "Tentar de novo".
+        const aviso = document.createElement('div');
+        aviso.className = 'grav-erro';
+        aviso.hidden = true;
+        let tentativas = 0;
+        const recarregar = async () => {
+          tentativas++;
+          let blob = null;
+          try { const r2 = await bancoLer('gravacao:' + meta.id); blob = r2 && r2.blob; } catch (e) { blob = null; }
+          if (!blob) blob = reg.blob;
+          const novaUrl = URL.createObjectURL(new Blob([blob], { type: blob.type || meta.tipo || '' }));
+          caixa._gravUrls.push(novaUrl);
+          aviso.hidden = true;
+          audio.hidden = false;
+          audio.src = novaUrl;
+          audio.load();
+        };
+        audio.addEventListener('error', () => {
+          if (tentativas < 1) { setTimeout(recarregar, 600); return; }
+          audio.hidden = true;
+          aviso.hidden = false;
+        });
+        const avisoTexto = document.createElement('span');
+        avisoTexto.textContent = 'Não consegui carregar este áudio agora.';
+        const avisoBtn = document.createElement('button');
+        avisoBtn.type = 'button';
+        avisoBtn.className = 'secondary';
+        avisoBtn.textContent = '↻ Tentar de novo';
+        avisoBtn.addEventListener('click', recarregar);
+        aviso.append(avisoTexto, avisoBtn);
         const acoes = document.createElement('div');
         acoes.className = 'grav-acoes';
         const vel = document.createElement('button');
@@ -19143,11 +19176,12 @@ function saveTemplatesToStorage() {
           if (!ok) return;
           audio.pause();
           await gravacaoApagar(meta.id);
+          gravBlobsDaSessao.delete(meta.id);
           if (typeof o.aoApagar === 'function') o.aoApagar(meta.id);
           gravacoesDesenhar(caixa, lista.filter(x => x !== meta.id), o);
         });
         acoes.append(parar, vel, exportar, apagar);
-        item.append(cab, audio, acoes);
+        item.append(cab, audio, aviso, acoes);
         caixa.appendChild(item);
       }
     }

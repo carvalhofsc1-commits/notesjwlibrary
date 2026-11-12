@@ -14213,3 +14213,23 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
 .grav-acoes button.grav-parar {
   flex: 0 0 44px;
 }
+
+/* Tocador que não carregou: aviso com "Tentar de novo" no lugar da barra. */
+.grav-erro[hidden],
+.grav-item audio[hidden] {
+  display: none;
+}
+
+.grav-erro {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .82rem;
+  color: var(--muted);
+}
+
+.grav-erro button {
+  min-height: 30px;
+  padding: 3px 10px;
+  font-size: .8rem;
+}
