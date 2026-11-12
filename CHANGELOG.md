@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.8.23
+
+Anotações: o card da **pergunta de recapitulação** (com a resposta, na anotação do discurso) ficou com fundo branco.
+
 ## 6.8.22
 
 Anotações: os cards principais passaram a se chamar **Reuniões congregacionais**, **Assembleias** e **Congressos**, e os cartões da tela ganharam fundo **roxo clarinho** (com tom próprio no tema escuro).

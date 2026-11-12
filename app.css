@@ -6086,7 +6086,7 @@
       padding: 12px;
       border: 1px solid var(--line);
       border-radius: 12px;
-      background: color-mix(in srgb, #5b7396 10%, var(--card));
+      background: var(--card); /* branco (no tema escuro, a cor dos cartões) */
     }
 
     /* Na grade do cartão (8 px entre os itens) as margens das barras somavam ao espaço: ficam os mesmos espaços do campo de anotações
