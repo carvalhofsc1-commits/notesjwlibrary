@@ -14327,3 +14327,18 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
 #transcricaoInstrucoes.transcricao-campo-travado {
   min-height: 9.5em;
 }
+
+/* Dados do áudio: o rótulo "Título ou tema" e o "mesmo do arquivo" (à direita) colados no campo. */
+#transcricaoDadosSection > .transcricao-rotulo-linha {
+  flex-wrap: nowrap;
+  align-items: flex-end;
+  margin: 8px 0 3px;
+}
+
+#transcricaoDadosSection > .transcricao-rotulo-linha .transcricao-rotulo {
+  margin: 0;
+}
+
+#transcricaoDadosSection > .transcricao-rotulo-linha .transcricao-mesmo {
+  margin: 0 0 0 auto;
+}

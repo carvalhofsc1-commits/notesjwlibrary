@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.17
+
+Áudio em texto, Dados do áudio: o rótulo **Título ou tema** e a opção **mesmo do arquivo** (alinhada à direita) ficaram na mesma linha, colados no campo do título (o limite de 120 caracteres continua escrito dentro do campo).
+
 ## 6.9.16
 
 Listas de escolha (como o Tipo de áudio): abriam no meio da lista, mesmo com a primeira opção marcada (a posição era medida pela página, não pela lista). Agora a lista de tipos de áudio abre sempre no começo (Nenhum, Novo tipo… e os tipos), e as outras listas abrem no começo ou, com outra opção marcada, mostram essa opção.
