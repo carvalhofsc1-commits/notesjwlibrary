@@ -6034,20 +6034,21 @@
     }
 
     /* Salvar e Word do discurso: no final de tudo, numa moldura própria, os dois numa linha só. */
+    /* Salvar e Word do discurso inteiro: direto na base do cartão (sem a caixa branca), com a altura dos botões de formatação. */
     .screen-anotacoes .anotacoes-final {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
-      margin-top: 16px;
-      padding: 12px;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      background: var(--card);
+      gap: 6px;
+      margin-top: 14px;
+      padding: 0;
+      border: 0;
+      background: none;
     }
 
     .screen-anotacoes .anotacoes-final button {
-      min-height: 40px;
-      font-size: .88rem;
+      min-height: 32px;
+      padding: 3px 4px;
+      font-size: .8rem;
     }
 
     /* Perguntas de recapitulação (assembleia de circuito): o aviso no programa e o campo da resposta embaixo das anotações. */

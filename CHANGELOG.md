@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.8.20
+
+Anotações: os botões **💾 Salvar** e **📄 Word** do fim da tela saíram da caixa branca e ficam direto na base cinza do cartão, mais baixos (a mesma altura dos botões de formatação).
+
 ## 6.8.19
 
 Anotações: o **resumo da gravação** de cada parte passou a ter instrução própria (prompt editável “Resumo da gravação nas anotações”): traz o conteúdo e as lições práticas da apresentação, quase sempre na terceira pessoa e às vezes na segunda (“Temos que obedecer a Jeová em tudo…”), sem narrar o que aconteceu e sem identificar quem falou (nada de “Falante 1”); demonstrações, entrevistas e dramas podem ser narrados (“Demonstração: Um irmão e sua esposa…”). O formato é RESUMO, LIÇÕES e, se houver, DEMONSTRAÇÃO. O resumo da tela Áudio em texto continua como antes.
