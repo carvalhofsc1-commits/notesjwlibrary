@@ -12,6 +12,7 @@ import { credenciais, prepararConta, tokenDeAcesso, variaveisDaConta } from "./_
 import { iaDaTarefa, lerConfigIa } from "./_iaConfig.mjs";
 import { criarClienteIa, erroSemIa, iaDisponivel } from "./_clienteIa.mjs";
 import { registrarUsoIa } from "./_estatisticas.mjs";
+import { carregarPrompts } from "./_promptsArmazenados.mjs";
 
 // Consumo do aparelho (faturamento): minutos de áudio transcritos e tokens da IA do resumo e da correção. Gravado antes de responder
 // (depois a Vercel pode congelar a função); uma falha aqui nunca derruba o pedido.
@@ -575,13 +576,24 @@ export default async function handler(req, res) {
         ? [...imagens.map((i) => ({ type: "image", source: { type: "base64", media_type: i.media, data: i.data } })), { type: "text", text: pedido }]
         : pedido;
       const { modelo, esforco } = iaDaTarefa(await lerConfigIa(), "audio");
+      // Gravação da tela Anotações (parte de reunião, assembleia ou congresso): o resumo traz o ensino e as lições, sem narrar nem citar falantes
+      // (prompt editável "Resumo da gravação nas anotações"). O Áudio em texto continua com o resumo geral.
+      let sistemaResumo = SISTEMA_RESUMO + (documentos.length || imagens.length ? REGRAS_DOCUMENTOS : "");
+      if (corpo.modo === "anotacoes" && !parcial) {
+        try {
+          const P = await carregarPrompts();
+          if (P && P.sistemaAnotacoesResumo) sistemaResumo = P.sistemaAnotacoesResumo;
+        } catch (e) {
+          console.error("Resumo das anotações: prompts indisponíveis", e?.message);
+        }
+      }
       const client = criarClienteIa({ maxRetries: 1, timeout: 120_000 });
       const resposta = await client.messages.create({
         model: modelo,
         ...esforcoDoModelo(modelo, esforco),
         ...pensarPouco(modelo),
         max_tokens: tetoDoModelo(modelo, parcial ? 1500 : 4000),
-        system: parcial ? SISTEMA_RESUMO_PARCIAL : SISTEMA_RESUMO + (documentos.length || imagens.length ? REGRAS_DOCUMENTOS : ""),
+        system: parcial ? SISTEMA_RESUMO_PARCIAL : sistemaResumo,
         messages: [{ role: "user", content: conteudo }],
       });
       await registrarConsumo(corpo, { tarefa: "audio-resumo", ...usoDaResposta(resposta) });
