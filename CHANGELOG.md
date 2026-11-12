@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.02
+
+Gravações das anotações:
+- O arquivo exportado sai em **M4A** (AAC), que toca em qualquer celular e computador; antes, o Safari novo gravava em WebM, que não abria no app Arquivos. O WebM só fica como reserva em navegador que não grave M4A.
+- Exportar salva **só o áudio**: o compartilhamento mandava também o nome como título, e o iPhone salvava um arquivo de texto à parte (valia também para o Word e o backup).
+- A cópia guardada no app subiu para **64 kbps** (cerca de 29 MB por hora), com som melhor.
+- O primeiro toque em ▶️ não tocava quando o áudio era WebM (o app ainda estava medindo a duração); agora o áudio espera e começa do início.
+
 ## 6.9.01
 
 Anotações, gravações guardadas no app:

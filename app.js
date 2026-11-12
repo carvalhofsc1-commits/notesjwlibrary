@@ -2031,7 +2031,7 @@
       if (!generated) return;
       const file = new File([generated.blob], generated.fileName, { type: 'application/octet-stream' });
       try {
-        await navigator.share({ files: [file], title: generated.fileName });
+        await navigator.share({ files: [file] }); // só o arquivo: com "title", o iPhone salva também um .txt com o nome
       } catch (e) {
         if (!e || e.name !== 'AbortError') backupDownload();
       }
@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.01'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.02'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -19076,13 +19076,30 @@ function saveTemplatesToStorage() {
         audio.preload = 'metadata';
         const url = URL.createObjectURL(reg.blob);
         caixa._gravUrls.push(url);
-        // O WebM do gravador do navegador não traz a duração: sem ela, a barra não deixa avançar. Pular para o fim faz o navegador medir.
+        // O WebM do gravador do navegador não traz a duração: sem ela, a barra não deixa avançar. Pular para o fim faz o navegador medir;
+        // se a pessoa tocar em ▶️ enquanto isso, o áudio espera o acerto e começa do início (antes, o primeiro toque não tocava).
+        let acertando = false;
+        let tocarDepois = false;
         audio.addEventListener('loadedmetadata', () => {
           if (audio.duration !== Infinity) return;
-          const voltar = () => { audio.removeEventListener('timeupdate', voltar); audio.currentTime = 0; };
+          acertando = true;
+          const voltar = () => {
+            if (audio.duration === Infinity) return;
+            audio.removeEventListener('durationchange', voltar);
+            audio.removeEventListener('timeupdate', voltar);
+            acertando = false;
+            audio.currentTime = 0;
+            if (tocarDepois) { tocarDepois = false; audio.play().catch(() => {}); }
+          };
+          audio.addEventListener('durationchange', voltar);
           audio.addEventListener('timeupdate', voltar);
           audio.currentTime = 1e101;
         }, { once: true });
+        audio.addEventListener('play', () => {
+          if (!acertando) return;
+          tocarDepois = true;
+          audio.pause();
+        });
         audio.src = url;
         const acoes = document.createElement('div');
         acoes.className = 'grav-acoes';
@@ -19745,7 +19762,7 @@ function saveTemplatesToStorage() {
       if (compartilhar) {
         const arquivoWord = new File([blob], nome, { type: blob.type });
         try {
-          await navigator.share({ files: [arquivoWord], title: nome });
+          await navigator.share({ files: [arquivoWord] }); // só o arquivo: com "title", o iPhone salva também um .txt com o nome
           return '✅ Arquivo enviado para o compartilhamento do aparelho.';
         } catch (e) {
           if (e && e.name === 'AbortError') return '';
@@ -28619,7 +28636,8 @@ function saveTemplatesToStorage() {
         return bibliaMarcasParaUnicode(t).replace(/\n{3,}/g, '\n\n').trim();
       }
       function anotacoesMimeGravacao() {
-        return ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'].find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';
+        // M4A (AAC) primeiro: toca em qualquer celular e computador. O WebM (o Safari novo também grava nele) não abre no app Arquivos nem em muitos tocadores.
+        return ['audio/mp4;codecs=mp4a.40.2', 'audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'].find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';
       }
       // Confere o código de texto e a concordância antes de mandar áudio ao servidor.
       async function anotacoesPodeEnviar() {
@@ -28763,8 +28781,8 @@ function saveTemplatesToStorage() {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
           const mime = anotacoesMimeGravacao();
-          // Voz: 32 kbps (Opus) ou 48 kbps (AAC, no iPhone), cerca de 14 a 22 MB por hora; exportar: 128 kbps.
-          const gravador = criarGravador(stream, mime, /mp4/.test(mime) ? 48000 : 32000);
+          // Voz: 64 kbps (cerca de 29 MB por hora); exportar: 128 kbps.
+          const gravador = criarGravador(stream, mime, 64000);
           if (!gravador) throw new Error('sem gravador');
           const pedacos = [];
           gravador.ondataavailable = e => { if (e.data && e.data.size) pedacos.push(e.data); };
