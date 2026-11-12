@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.8.25'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.8.26'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12639,6 +12639,7 @@ function saveTemplatesToStorage() {
           acessoSiteVerificarStatus.textContent = 'Não consegui consultar o servidor agora. Tente de novo em instantes.';
         } else if (r.data.ok || r.data.identificado) {
           acessoSiteVerificarStatus.textContent = '✅ Acesso liberado! Abrindo o NoteStyle…';
+          acessoConfirmadoGravar(id);
           acessoSiteLiberarOverlay();
           setTimeout(() => location.reload(), 600);
           return;
@@ -12665,7 +12666,12 @@ function saveTemplatesToStorage() {
       acessoSitePainelBoasVindas.hidden = true;
       acessoSitePainelForm.hidden = false;
       const form = acessoSiteForm;
-      if (st.pendente) {
+      if (st.semConexao) {
+        acessoSiteMsg.textContent = 'Não foi possível confirmar o cadastro deste aparelho agora (sem internet ou servidor indisponível). Conecte-se à internet e abra o app de novo; se ainda não tem cadastro, preencha seus dados abaixo.';
+        form.hidden = false;
+        acessoSiteCancelarBtn.hidden = false;
+        acessoSiteEnviarBtn.textContent = '💾 Salvar e continuar';
+      } else if (st.pendente) {
         acessoSiteMsg.textContent = 'Seu cadastro foi enviado e ainda está em análise. Quando for aprovado, abra o app de novo.';
         form.hidden = true;
         acessoSiteCancelarBtn.hidden = true;
@@ -12708,19 +12714,41 @@ function saveTemplatesToStorage() {
       else acessoSiteMostrarFormulario(acessoSiteUltimoEstado);
     });
 
+    // Só usa o app o aparelho com cadastro aprovado. A última confirmação do servidor fica guardada neste aparelho (ligada ao id dele):
+    // sem internet ou com o servidor fora do ar, só o aparelho já confirmado continua usando; os outros (inclusive os antigos, de antes
+    // do cadastro obrigatório) ficam na tela de identificação. A checagem se repete ao voltar para o app (no máximo a cada 5 minutos).
+    const ACESSO_OK_KEY = 'notestyleAcessoConfirmadoV1';
+    function acessoConfirmadoLocal(id) {
+      try { return Boolean(id) && localStorage.getItem(ACESSO_OK_KEY) === id; } catch (e) { return false; }
+    }
+    function acessoConfirmadoGravar(id) {
+      try { if (id) localStorage.setItem(ACESSO_OK_KEY, id); else localStorage.removeItem(ACESSO_OK_KEY); } catch (e) { /* ignore */ }
+    }
+    let acessoUltimaChecagem = 0;
     async function acessoSiteVerificarGate() {
-      if (!servidoPelaWeb() || !navigator.onLine) return;
+      if (!servidoPelaWeb() || /^(localhost|127\.0\.0\.1|\[::1\])$|\.localhost$/.test(location.hostname)) return; // testes locais não têm a API
+      acessoUltimaChecagem = Date.now();
       const id = aparelhoId();
-      if (!id) return;
+      const semServidor = () => {
+        if (acessoConfirmadoLocal(id)) acessoSiteLiberarOverlay();
+        else acessoSiteMostrarOverlay({ semConexao: true });
+      };
+      if (!id || !navigator.onLine) { semServidor(); return; }
       try {
         const r = await postConfig({ acao: 'acesso-site-estado', aparelhoId: id });
-        if (!r.ok || !r.data || !r.data.configurado || r.data.ok) {
+        if (!r.ok || !r.data) { semServidor(); return; }
+        if (!r.data.configurado || r.data.ok) {
+          if (r.data.configurado) acessoConfirmadoGravar(id);
           acessoSiteLiberarOverlay();
           return;
         }
+        acessoConfirmadoGravar('');
         acessoSiteMostrarOverlay(r.data);
-      } catch (e) { /* sem conexão: não trava o app offline */ }
+      } catch (e) { semServidor(); }
     }
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && Date.now() - acessoUltimaChecagem > 5 * 60 * 1000) acessoSiteVerificarGate();
+    });
 
     acessoSiteForm.addEventListener('submit', async e => {
       e.preventDefault();
@@ -12738,6 +12766,7 @@ function saveTemplatesToStorage() {
         return;
       }
       if (r.data && (r.data.identificado || r.data.jaAprovado)) {
+        acessoConfirmadoGravar(id);
         acessoSiteLiberarOverlay();
         return;
       }

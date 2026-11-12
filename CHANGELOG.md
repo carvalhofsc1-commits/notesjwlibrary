@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.8.26
+
+Acesso: o app só funciona em aparelho com **cadastro aprovado**, inclusive nos aparelhos antigos, de antes do cadastro obrigatório. Antes, o aparelho sem cadastro era liberado quando estava sem internet, quando o servidor não respondia ou quando não tinha identificação. Agora, nesses casos, só continua usando o aparelho cuja aprovação já foi confirmada pelo servidor (a confirmação fica guardada nele); os outros ficam na tela de identificação. A checagem também se repete ao voltar para o app (no máximo a cada 5 minutos), e um cadastro revogado pelo administrador volta à tela de identificação. As funções com IA, voz e transcrição já eram bloqueadas no servidor para aparelhos sem cadastro.
+
 ## 6.8.25
 
 Anotações: os botões **🎙️ Gravar o discurso e resumir** e **📁 Carregar gravação e resumir** ficaram do mesmo tamanho; o de carregar ganhou um azul médio.
