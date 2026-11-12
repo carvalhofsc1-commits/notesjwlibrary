@@ -14317,22 +14317,13 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
   margin: 0 auto;
 }
 
-/* Áudio em texto, tipo Discurso em reunião pública: o "Como fazer o resumo" desativado e a nota do padrão do app. */
+/* Áudio em texto, tipo Discurso em reunião pública: "Sobre o áudio" e "Como fazer o resumo" travados (só leitura), com a explicação dentro. */
 .transcricao-campo.transcricao-campo-travado {
-  opacity: .5;
+  background: var(--soft);
+  color: var(--muted);
   cursor: not-allowed;
 }
 
-.transcricao-instrucoes-nota[hidden] {
-  display: none;
-}
-
-.transcricao-instrucoes-nota {
-  margin: 6px 0 0;
-  padding: 8px 10px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--soft);
-  font-size: .84rem;
-  line-height: 1.45;
+#transcricaoInstrucoes.transcricao-campo-travado {
+  min-height: 9.5em;
 }

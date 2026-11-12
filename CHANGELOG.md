@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.15
+
+Áudio em texto, tipo **Discurso em uma reunião pública das Testemunhas de Jeová**: os campos **Sobre o áudio** e **Como fazer o resumo** ficam travados (só leitura), e a explicação de que o resumo segue o padrão do app (e onde ficam as definições) aparece **dentro** do campo Como fazer o resumo, no lugar da nota de baixo. Ao trocar de tipo, os campos voltam a funcionar.
+
 ## 6.9.14
 
 Tela de abertura: o logo do NoteStyle ficou bem maior (metade da largura do celular, até 240 px, antes 96 px), e o nome “NoteStyle” também.

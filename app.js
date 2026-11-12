@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.14'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.15'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21885,18 +21885,23 @@ function saveTemplatesToStorage() {
     window.addEventListener('resize', trCamposAjustar);
     trCamposAjustar();
     trTiposDesenhar();
-    // Discurso em uma reunião pública: o resumo segue o padrão do app (o mesmo das anotações dos discursos); o "Como fazer o resumo" fica
-    // desabilitado e vazio, com uma nota dizendo onde o padrão está.
-    const trInstrucoesNota = document.getElementById('transcricaoInstrucoesNota');
+    // Discurso em uma reunião pública: o resumo segue o padrão do app (o mesmo das anotações dos discursos). "Sobre o áudio" e "Como fazer o
+    // resumo" ficam travados (só leitura); o segundo mostra a explicação de onde o padrão está, e nada dele vai para a IA.
+    const TR_NOTA_DISCURSO = 'ℹ️ Este tipo de áudio segue o padrão do app: o resumo é feito com as mesmas definições do resumo dos discursos da tela Anotações (tema no topo, pontos principais, textos lidos, experiências e resumo final). Por isso estes campos não podem ser alterados. As definições estão em Ajustes → 🛠️ Prompts da IA → 📝 Anotações de discursos → Resumo da gravação nas anotações (área do administrador).';
     function trInstrucoesTravar() {
       const discurso = trTipoAtual === 'p-publico';
       if (discurso) {
+        trInstrucoes.value = TR_NOTA_DISCURSO;
+        trTipoUltimaInstr = TR_NOTA_DISCURSO;
+      } else if (trInstrucoes.value === TR_NOTA_DISCURSO) {
         trInstrucoes.value = '';
         trTipoUltimaInstr = '';
       }
-      trInstrucoes.disabled = discurso;
-      trInstrucoes.classList.toggle('transcricao-campo-travado', discurso);
-      trInstrucoesNota.hidden = !discurso;
+      [trContexto, trInstrucoes].forEach(campo => {
+        campo.readOnly = discurso;
+        campo.classList.toggle('transcricao-campo-travado', discurso);
+        if (discurso) campo.setAttribute('aria-readonly', 'true'); else campo.removeAttribute('aria-readonly');
+      });
     }
 
     backupSeletorLargo(trTipo, null, { vazioEscolhivel: true });
