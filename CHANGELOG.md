@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.05
+
+Resposta da pergunta de recapitulação no resumo das gravações: só é copiada quando o orador responde **explicitamente**. A IA só a devolve se a transcrição tiver as duas coisas: o orador anunciando a pergunta de revisão/recapitulação (“resposta à pergunta de revisão”…) e, logo depois, repetindo a pergunta, igual ou muito parecida com a do card. Ela não pode mais deduzir a resposta do conteúdo do discurso. O app também confere: sem a frase “pergunta de revisão” ou “pergunta de recapitulação” na transcrição e, logo depois, pelo menos 60% das palavras da pergunta, a resposta da IA é descartada.
+
 ## 6.9.04
 
 Resumo das gravações nas anotações:

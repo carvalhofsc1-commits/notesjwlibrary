@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.04'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.05'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -28689,6 +28689,21 @@ function saveTemplatesToStorage() {
         trCorrigido.value = prevCorr;
         return ok && transc ? transc : null;
       }
+      function anotacoesOradorRespondeu(transc, q) {
+        const norm = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        const t = norm(transc);
+        const comuns = new Set(['para', 'como', 'qual', 'quais', 'pode', 'podemos', 'nosso', 'nossa', 'nossos', 'nossas', 'esse', 'essa', 'isso', 'este', 'esta', 'pelo', 'pela', 'mais', 'muito', 'entre', 'sobre', 'quando', 'onde', 'porque', 'devemos', 'temos']);
+        const palavras = [...new Set(norm(q && q.texto).replace(/\([^)]*\)/g, ' ').split(/[^a-z0-9]+/).filter(w => w.length >= 4 && !comuns.has(w)))];
+        if (!palavras.length) return false;
+        const anuncio = /perguntas? (?:de )?(?:revisao|recapitulacao)/g;
+        let m;
+        while ((m = anuncio.exec(t))) {
+          const janela = t.slice(m.index, m.index + 700);
+          const achadas = palavras.filter(w => janela.includes(w)).length;
+          if (achadas / palavras.length >= 0.6) return true;
+        }
+        return false;
+      }
       // Pede o resumo da transcrição e o insere no cursor (com o título em negrito e itálico e uma linha em branco).
       async function anotacoesResumir(transc, varias) {
         gravarStatus.textContent = 'Resumindo…';
@@ -28707,7 +28722,11 @@ function saveTemplatesToStorage() {
         // A resposta do orador à pergunta de recapitulação desta parte vai para o campo da resposta (abaixo do que já houver, com desfazer).
         const achou = q ? /^[ \t*_]*RESPOSTA DA RECAPITULA[ÇC][ÃA]O:[ \t*_]*([\s\S]+)$/im.exec(resumo) : null;
         let respostaCopiada = false;
-        if (achou) {
+        // Conferência do app: a transcrição precisa anunciar a pergunta de revisão/recapitulação e, logo depois, repetir a pergunta do card
+        // (pelo menos 60% das palavras dela). Sem isso, a resposta da IA é descartada (ela pode ter deduzido do conteúdo do discurso).
+        if (achou && !anotacoesOradorRespondeu(transc, q)) {
+          resumo = resumo.slice(0, achou.index).replace(/\s+$/, '');
+        } else if (achou) {
           resumo = resumo.slice(0, achou.index).replace(/\s+$/, '');
           const resp = anotacoesResumoFormatar(achou[1].replace(/[*_]{2}/g, '')).trim();
           if (resp && ativa && perguntaDaParte(parteAtual)) {
