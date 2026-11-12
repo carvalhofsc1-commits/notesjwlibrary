@@ -286,11 +286,14 @@
               <p id="anotacoesGravInfo" class="anotacoes-grav-tempo"></p>
               <div class="bk-row">
                 <button id="anotacoesGravResumoBtn" data-codigo-ia="texto" type="button" title="Transcrever a gravação e fazer o resumo">✨ Resumo</button>
-                <button id="anotacoesGravSalvarBtn" class="secondary" type="button" title="Salvar o arquivo de áudio da gravação neste aparelho">💾 Salvar</button>
+                <button id="anotacoesGravSalvarBtn" class="secondary" type="button" title="Salvar o arquivo de áudio da gravação fora do app, em qualidade maior">💾 Exportar</button>
+                <button id="anotacoesGravConcluirBtn" class="secondary" type="button" title="Fechar; a gravação continua guardada no app">✔️ Concluir</button>
                 <button id="anotacoesGravDescartar2Btn" class="secondary" type="button" title="Descartar a gravação" aria-label="Descartar a gravação">🗑️</button>
               </div>
             </div>
             <p id="anotacoesGravarStatus" class="anotacoes-msg" role="status" aria-live="polite"></p>
+            <!-- As gravações desta anotação, guardadas no app (qualidade de voz): ouvir, exportar e apagar. -->
+            <div id="anotacoesGravacoes" class="anotacoes-gravacoes" hidden></div>
           </section>
 
           <!-- Assembleia de circuito: a pergunta de recapitulação que este discurso responde, com um campo só para a resposta. -->
@@ -1532,6 +1535,17 @@
               <div id="dadosResumo" class="dados-resumo" role="status" aria-live="polite"></div>
               <div class="bk-row">
                 <button id="dadosResumoBtn" class="secondary" type="button">↻ Atualizar o resumo</button>
+              </div>
+            </div>
+
+            <div class="acesso-item">
+              <label>🎧 Gravações guardadas no app</label>
+              <p class="hint">As gravações feitas na tela Anotações ficam guardadas neste aparelho, na qualidade de voz (cerca de 14 a 22 MB por hora), para ouvir depois na própria anotação. Não entram no backup (.json): para guardar uma gravação para sempre, exporte o arquivo. Se você apagar os dados do site ou trocar de aparelho, elas se perdem.</p>
+              <p id="gravacoesGuardadasInfo" class="hint" role="status" aria-live="polite"></p>
+              <div id="gravacoesGuardadasLista" class="anotacoes-gravacoes"></div>
+              <div class="bk-row">
+                <button id="gravacoesGuardadasBtn" class="secondary" type="button">↻ Atualizar</button>
+                <button id="gravacoesApagarTodasBtn" class="secondary" type="button" hidden>🗑️ Apagar todas</button>
               </div>
             </div>
 

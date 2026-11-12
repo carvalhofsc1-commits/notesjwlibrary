@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.8.31'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.00'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -9575,6 +9575,16 @@
     }
 
     document.getElementById('appBackupSalvarBtn').addEventListener('click', () => appbkFazer(false));
+    document.getElementById('privacidadeBox').addEventListener('toggle', e => { if (e.currentTarget.open) gravacoesAjustesPintar(); });
+    document.getElementById('gravacoesGuardadasBtn').addEventListener('click', gravacoesAjustesPintar);
+    document.getElementById('gravacoesApagarTodasBtn').addEventListener('click', async () => {
+      const lista = await gravacoesIndice();
+      if (!lista.length) return;
+      const ok = await askConfirm('Apagar TODAS as ' + lista.length + ' gravações guardadas no app? Elas não poderão ser ouvidas aqui de novo (os arquivos já exportados continuam onde estão).', 'Apagar as gravações', { ok: 'Apagar todas', cancel: 'Cancelar' });
+      if (!ok) return;
+      for (const g of lista) await gravacaoApagar(g.id);
+      gravacoesAjustesPintar();
+    });
     document.getElementById('appBackupRestaurarBtn').addEventListener('click', () => document.getElementById('appBackupArquivo').click());
     document.getElementById('appBackupArquivo').addEventListener('change', event => {
       const arquivo = event.target.files && event.target.files[0];
@@ -18963,6 +18973,181 @@ function saveTemplatesToStorage() {
         });
       } finally { banco.close(); }
     }
+    async function bancoApagar(chave) {
+      const banco = await bancoAbrir();
+      try {
+        await new Promise((ok, falha) => {
+          const transacao = banco.transaction(BANCO_LOJA, 'readwrite');
+          transacao.objectStore(BANCO_LOJA).delete(chave);
+          transacao.oncomplete = () => ok();
+          transacao.onerror = () => falha(transacao.error);
+          transacao.onabort = () => falha(transacao.error);
+        });
+      } finally { banco.close(); }
+    }
+
+    // ---------- Gravações guardadas no app (tela Anotações): o áudio na qualidade de voz, no banco deste aparelho ----------
+    // Cada gravação fica em "gravacao:<id>" ({ blob }); a lista (sem o áudio) fica em "gravacoes:indice", para mostrar tamanhos e datas
+    // sem carregar os áudios. As anotações (rascunho, partes do programa e itens salvos) guardam só os ids. Não entram no backup (.json).
+    const GRAV_INDICE = 'gravacoes:indice';
+    let gravFila = Promise.resolve();
+    function gravacoesEmFila(trabalho) {
+      const proxima = gravFila.then(trabalho, trabalho);
+      gravFila = proxima.catch(() => {});
+      return proxima;
+    }
+    async function gravacoesIndice() {
+      if (!temBanco) return [];
+      try {
+        const lista = await bancoLer(GRAV_INDICE);
+        return Array.isArray(lista) ? lista : [];
+      } catch (e) { return []; }
+    }
+    async function gravacaoGuardar(blob, meta) {
+      if (!temBanco || !blob || !blob.size) return null;
+      const id = 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      await bancoGravar('gravacao:' + id, { id, blob, tipo: blob.type || '' });
+      await gravacoesEmFila(async () => {
+        const lista = await gravacoesIndice();
+        lista.unshift({ id, titulo: String((meta && meta.titulo) || 'Gravação').slice(0, 120), duracaoS: Math.round((meta && meta.duracaoS) || 0), bytes: blob.size, tipo: blob.type || '', criadoEm: new Date().toISOString() });
+        await bancoGravar(GRAV_INDICE, lista);
+      });
+      try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) { /* ignore */ }
+      return id;
+    }
+    async function gravacaoApagar(id) {
+      if (!temBanco || !id) return;
+      try { await bancoApagar('gravacao:' + id); } catch (e) { /* já apagada */ }
+      await gravacoesEmFila(async () => {
+        const lista = await gravacoesIndice();
+        await bancoGravar(GRAV_INDICE, lista.filter(g => g.id !== id));
+      });
+    }
+    const gravacaoTamanho = bytes => (bytes >= 1073741824 ? (bytes / 1073741824).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' GB' : bytes >= 1048576 ? (bytes / 1048576).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' MB' : Math.max(1, Math.round(bytes / 1024)) + ' KB');
+    const gravacaoTempo = seg => { const s = Math.max(0, Math.round(seg || 0)); const h = Math.floor(s / 3600); const m = Math.floor((s % 3600) / 60); const r = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : String(m).padStart(2, '0')) + ':' + String(r).padStart(2, '0'); };
+
+    // Tocador das gravações (ids) dentro de "caixa": ouvir (com velocidade), exportar o arquivo e apagar. Ids que não existem mais são ignorados.
+    // opcoes: { titulo, vazio, aoApagar(id), aoMudar(lista) }
+    let gravDesenhoSeq = 0;
+    async function gravacoesDesenhar(caixa, ids, opcoes) {
+      if (!caixa) return;
+      const o = opcoes || {};
+      const lista = Array.isArray(ids) ? ids.filter(Boolean) : [];
+      const v = String(++gravDesenhoSeq);
+      caixa.dataset.v = v;
+      const indice = lista.length ? await gravacoesIndice() : [];
+      if (caixa.dataset.v !== v) return;
+      const metas = lista.map(id => indice.find(g => g.id === id)).filter(Boolean);
+      (caixa._gravUrls || []).forEach(u => URL.revokeObjectURL(u));
+      caixa._gravUrls = [];
+      caixa.textContent = '';
+      if (typeof o.aoMudar === 'function') o.aoMudar(metas);
+      if (!metas.length) {
+        if (o.vazio) {
+          const p = document.createElement('p');
+          p.className = 'hint';
+          p.textContent = o.vazio;
+          caixa.appendChild(p);
+        }
+        caixa.hidden = !o.vazio;
+        return;
+      }
+      caixa.hidden = false;
+      if (o.titulo) {
+        const h = document.createElement('h3');
+        h.className = 'anotacoes-subtitulo grav-titulo';
+        h.textContent = o.titulo;
+        caixa.appendChild(h);
+      }
+      for (let n = 0; n < metas.length; n++) {
+        const meta = metas[n];
+        let reg = null;
+        try { reg = await bancoLer('gravacao:' + meta.id); } catch (e) { reg = null; }
+        if (caixa.dataset.v !== v) return;
+        if (!reg || !reg.blob) continue;
+        const item = document.createElement('div');
+        item.className = 'grav-item';
+        const cab = document.createElement('div');
+        cab.className = 'grav-cab';
+        const quando = new Date(meta.criadoEm);
+        cab.textContent = '🎧 ' + (metas.length > 1 || o.mostrarTitulo ? (o.mostrarTitulo ? meta.titulo : 'Gravação ' + (n + 1)) + ' · ' : '') + gravacaoTempo(meta.duracaoS) + ' · ' + gravacaoTamanho(meta.bytes) + ' · ' + quando.toLocaleDateString('pt-BR') + ' ' + quando.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const audio = document.createElement('audio');
+        audio.controls = true;
+        audio.preload = 'metadata';
+        const url = URL.createObjectURL(reg.blob);
+        caixa._gravUrls.push(url);
+        // O WebM do gravador do navegador não traz a duração: sem ela, a barra não deixa avançar. Pular para o fim faz o navegador medir.
+        audio.addEventListener('loadedmetadata', () => {
+          if (audio.duration !== Infinity) return;
+          const voltar = () => { audio.removeEventListener('timeupdate', voltar); audio.currentTime = 0; };
+          audio.addEventListener('timeupdate', voltar);
+          audio.currentTime = 1e101;
+        }, { once: true });
+        audio.src = url;
+        const acoes = document.createElement('div');
+        acoes.className = 'grav-acoes';
+        const vel = document.createElement('button');
+        vel.type = 'button';
+        vel.className = 'secondary';
+        vel.title = 'Velocidade da reprodução';
+        const VELS = [1, 1.25, 1.5, 2, 0.75];
+        let k = 0;
+        vel.textContent = '⏩ 1×';
+        vel.addEventListener('click', () => { k = (k + 1) % VELS.length; audio.playbackRate = VELS[k]; vel.textContent = '⏩ ' + String(VELS[k]).replace('.', ',') + '×'; });
+        const exportar = document.createElement('button');
+        exportar.type = 'button';
+        exportar.className = 'secondary';
+        exportar.textContent = '💾 Exportar';
+        exportar.title = 'Salvar o arquivo de áudio desta gravação fora do app';
+        exportar.addEventListener('click', async () => {
+          const tipo = reg.blob.type || meta.tipo || 'audio/webm';
+          const ext = /mp4|aac|m4a/.test(tipo) ? 'm4a' : /ogg/.test(tipo) ? 'ogg' : 'webm';
+          const base = removeUnicodeFormatting(meta.titulo || 'Gravação').replace(/[\p{Extended_Pictographic}\uFE0F]/gu, '').replace(/[\\/:*?"<>|\u201C\u201D\u2018\u2019]/g, '').replace(/\s+/g, ' ').trim().slice(0, 60);
+          const nome = 'Gravação - ' + (base || 'discurso') + ' - ' + String(meta.criadoEm || '').slice(0, 10) + '.' + ext;
+          const arquivo = new File([reg.blob], nome, { type: tipo });
+          const podeCompartilhar = typeof navigator.canShare === 'function' && navigator.canShare({ files: [arquivo] });
+          try { await docxEntregar(arquivo, nome, podeCompartilhar); } catch (e) { /* cancelado */ }
+        });
+        const apagar = document.createElement('button');
+        apagar.type = 'button';
+        apagar.className = 'secondary';
+        apagar.textContent = '🗑️';
+        apagar.title = 'Apagar esta gravação do app';
+        apagar.setAttribute('aria-label', 'Apagar esta gravação do app');
+        apagar.addEventListener('click', async () => {
+          const ok = await askConfirm('Apagar esta gravação do app? Ela não poderá ser ouvida aqui de novo (um arquivo que você já exportou continua onde está).', 'Apagar a gravação', { ok: 'Apagar', cancel: 'Cancelar' });
+          if (!ok) return;
+          audio.pause();
+          await gravacaoApagar(meta.id);
+          if (typeof o.aoApagar === 'function') o.aoApagar(meta.id);
+          gravacoesDesenhar(caixa, lista.filter(x => x !== meta.id), o);
+        });
+        acoes.append(vel, exportar, apagar);
+        item.append(cab, audio, acoes);
+        caixa.appendChild(item);
+      }
+    }
+
+    // Ajustes → Privacidade: todas as gravações guardadas, com o espaço ocupado.
+    async function gravacoesAjustesPintar() {
+      const caixa = document.getElementById('gravacoesGuardadasLista');
+      const info = document.getElementById('gravacoesGuardadasInfo');
+      if (!caixa || !info) return;
+      if (!temBanco) { info.textContent = 'Este navegador não tem o banco de dados do app: as gravações não ficam guardadas.'; return; }
+      const lista = await gravacoesIndice();
+      let livre = '';
+      try {
+        if (navigator.storage && navigator.storage.estimate) {
+          const e = await navigator.storage.estimate();
+          if (e && e.quota) livre = ' O app pode usar até cerca de ' + gravacaoTamanho(e.quota) + ' neste aparelho (tudo somado, hoje ' + gravacaoTamanho(e.usage || 0) + ').';
+        }
+      } catch (e) { /* sem estimativa */ }
+      const total = lista.reduce((s, g) => s + (g.bytes || 0), 0);
+      info.textContent = (lista.length ? lista.length + (lista.length === 1 ? ' gravação' : ' gravações') + ' · ' + gravacaoTamanho(total) + '.' : 'Nenhuma gravação guardada.') + livre;
+      document.getElementById('gravacoesApagarTodasBtn').hidden = !lista.length;
+      await gravacoesDesenhar(caixa, lista.map(g => g.id), { mostrarTitulo: true, aoApagar: () => setTimeout(gravacoesAjustesPintar, 50) });
+    }
+
     function historicoDoLocalStorage() {
       try {
         const lista = JSON.parse(localStorage.getItem(HISTORICO_KEY) || '[]');
@@ -19678,7 +19863,7 @@ function saveTemplatesToStorage() {
       return resultado;
     }
 
-    function historicoSalvar({ tipo, titulo, ano, numSemana, partes, esbocoJson, esbocoNumero, esbocoTitulo, importado, arquivo, refino, sub, ligar, anotId, anotModo, anotEvento, anotOrdem }) {
+    function historicoSalvar({ tipo, titulo, ano, numSemana, partes, esbocoJson, esbocoNumero, esbocoTitulo, importado, arquivo, refino, sub, ligar, anotId, anotModo, anotEvento, anotOrdem, gravacoes }) {
       const semSemana = tipo === 'nota';
       const item = {
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
@@ -19705,6 +19890,7 @@ function saveTemplatesToStorage() {
         item.anotModo = anotModo || '';
         item.anotEvento = anotEvento || '';
         if (anotOrdem != null) item.anotOrdem = anotOrdem;
+        if (Array.isArray(gravacoes) && gravacoes.length) item.gravacoes = gravacoes.slice(0, 50); // ids das gravações guardadas no app
       }
       const anteriores = anotId ? historicoLer().filter(g => g.anotId !== anotId) : historicoLer();
       historicoGravar([item, ...historicoSemCobertas(item, anteriores)]);
@@ -19832,6 +20018,26 @@ function saveTemplatesToStorage() {
       apagar.textContent = '🗑️';
       apagar.setAttribute('aria-label', 'Apagar esta pesquisa salva');
       apagar.dataset.historicoApagar = item.id;
+      // Anotação com gravações guardadas no app: o botão 🎧 abre o tocador logo abaixo.
+      let tocador = null;
+      if (Array.isArray(item.gravacoes) && item.gravacoes.length) {
+        tocador = document.createElement('div');
+        tocador.className = 'historico-gravacoes';
+        tocador.hidden = true;
+        const ouvir = document.createElement('button');
+        ouvir.type = 'button';
+        ouvir.className = 'secondary historico-ouvir';
+        ouvir.textContent = '🎧 ' + item.gravacoes.length;
+        ouvir.title = 'Ouvir a gravação desta anotação';
+        ouvir.addEventListener('click', () => {
+          if (!tocador.hidden) { tocador.querySelectorAll('audio').forEach(a => a.pause()); tocador.hidden = true; return; }
+          gravacoesDesenhar(tocador, item.gravacoes, {
+            vazio: 'A gravação desta anotação não está mais guardada no app.',
+            aoApagar: id => historicoGravar(historicoLer().map(g => (g.id === item.id ? { ...g, gravacoes: (g.gravacoes || []).filter(x => x !== id) } : g)))
+          });
+        });
+        acoes.appendChild(ouvir);
+      }
       if (item.textoEditado) {
         const original = document.createElement('button');
         original.type = 'button';
@@ -19844,6 +20050,7 @@ function saveTemplatesToStorage() {
         acoes.append(abrir, apagar);
       }
       li.append(titulo, meta, acoes);
+      if (tocador) li.appendChild(tocador);
       return li;
     }
 
@@ -26427,6 +26634,58 @@ function saveTemplatesToStorage() {
 
       let modo = '';
       let partes = [];
+
+      // ----- Gravações guardadas no app: cada anotação (a reunião ou a parte do programa) guarda os ids das suas gravações -----
+      let gravacoesReuniao = [];
+      const anotIdAtual = () => (comPrograma() ? 'anot:' + modo + ':' + chaveAtual + ':' + parteAtual : 'anot:reuniao');
+      function gravacoesAtuais() {
+        if (comPrograma()) {
+          const p = partes[parteAtual];
+          if (!p) return [];
+          if (!Array.isArray(p.gravacoes)) p.gravacoes = [];
+          return p.gravacoes;
+        }
+        return gravacoesReuniao;
+      }
+      const gravacoesCaixa = document.getElementById('anotacoesGravacoes');
+      function pintarGravacoes() {
+        const visivel = Boolean(modo) && (!comPrograma() || ativa);
+        const ids = visivel ? gravacoesAtuais() : [];
+        const chave = (visivel ? anotIdAtual() : '') + '|' + ids.join(',');
+        if (gravacoesCaixa.dataset.chave === chave) return;
+        gravacoesCaixa.dataset.chave = chave;
+        gravacoesCaixa.querySelectorAll('audio').forEach(a => a.pause());
+        gravacoesDesenhar(gravacoesCaixa, ids, { titulo: '🎧 Gravações guardadas no app', aoApagar: tirarGravacaoDaAnotacao });
+      }
+      // A gravação sai da anotação atual, do rascunho e do item salvo (se houver).
+      function tirarGravacaoDaAnotacao(id) {
+        const lista = gravacoesAtuais();
+        const i = lista.indexOf(id);
+        if (i >= 0) lista.splice(i, 1);
+        salvarRascunho();
+        const anotId = anotIdAtual();
+        if (historicoLer().some(g => g.anotId === anotId && (g.gravacoes || []).includes(id))) {
+          historicoGravar(historicoLer().map(g => (g.anotId === anotId ? { ...g, gravacoes: (g.gravacoes || []).filter(x => x !== id) } : g)));
+          historicoRender();
+        }
+        gravacoesCaixa.dataset.chave = '';
+      }
+      function porGravacaoNaAnotacao(id) {
+        gravacoesAtuais().push(id);
+        salvarRascunho();
+        const anotId = anotIdAtual();
+        if (historicoLer().some(g => g.anotId === anotId)) {
+          historicoGravar(historicoLer().map(g => (g.anotId === anotId ? { ...g, gravacoes: [...new Set([...(g.gravacoes || []), id])] } : g)));
+          historicoRender();
+        }
+        pintarGravacoes();
+      }
+      // Dois gravadores no mesmo microfone: o de voz (leve, guardado no app) e o de qualidade maior (só para exportar o arquivo).
+      // Se o aparelho não aceitar o segundo, fica só o de voz.
+      function criarGravador(stream, mime, bps) {
+        try { return new MediaRecorder(stream, Object.assign(mime ? { mimeType: mime } : {}, { audioBitsPerSecond: bps })); } catch (e) { /* sem a taxa */ }
+        try { return new MediaRecorder(stream, mime ? { mimeType: mime } : undefined); } catch (e) { return null; }
+      }
       let parteAtual = -1;
       let programaMeta = null;
       let gravacao = null;
@@ -26960,6 +27219,7 @@ function saveTemplatesToStorage() {
           document.getElementById('anotacoesParteProx').disabled = pos < 0 || pos >= lista.length - 1;
         }
         anotacoesJwlAtualizar();
+        pintarGravacoes();
       }
       const atualizarCabecalho = atualizarVista;
 
@@ -27418,6 +27678,7 @@ function saveTemplatesToStorage() {
       });
 
       function limparCampos() {
+        gravacoesReuniao = [];
         texto.value = '';
         temaEl.value = '';
         oradorEl.value = '';
@@ -27529,7 +27790,7 @@ function saveTemplatesToStorage() {
             if (chaveAtual && partes.length) eventosSalvos[chaveAtual] = { programaMeta: { ...programaMeta, partes: [] }, partes, parteAtual, data: dataAtual, em: new Date().toISOString() };
             dados[modo] = { eventos: eventosSalvos };
           } else {
-            dados[modo] = { texto: texto.value, tema: temaEl.value, orador: oradorEl.value, congregacao: congEl.value, data: dataReuniaoEl.value, em: new Date().toISOString() };
+            dados[modo] = { texto: texto.value, tema: temaEl.value, orador: oradorEl.value, congregacao: congEl.value, data: dataReuniaoEl.value, gravacoes: gravacoesReuniao.slice(), em: new Date().toISOString() };
           }
           localStorage.setItem(ANOT_KEY, JSON.stringify(dados));
           avisarEspacoAnotacoesSeGrande();
@@ -27546,6 +27807,7 @@ function saveTemplatesToStorage() {
         oradorEl.value = d.orador || '';
         congEl.value = d.congregacao || '';
         dataReuniaoEl.value = d.data || '';
+        gravacoesReuniao = Array.isArray(d.gravacoes) ? d.gravacoes.slice() : [];
       }
 
       // Anotações já feitas neste evento (se houver), para não perder ao escolher o mesmo evento de novo.
@@ -28053,10 +28315,11 @@ function saveTemplatesToStorage() {
               dia: x.dia || '', diaTema: x.diaTema || '',
               perguntaN: velho && velho.perguntaN ? velho.perguntaN : (x.perguntaN || 0),
               resposta: velho ? velho.resposta || '' : '',
-              nota: velho ? velho.nota || '' : ''
+              nota: velho ? velho.nota || '' : '',
+              gravacoes: velho && Array.isArray(velho.gravacoes) ? velho.gravacoes : []
             };
           });
-          const orfas = partes.filter(p => !usados.has(p.docid + '|' + p.par) && ((p.nota && p.nota.trim()) || (p.resposta && p.resposta.trim()) || p.orador || p.congregacao));
+          const orfas = partes.filter(p => !usados.has(p.docid + '|' + p.par) && ((p.nota && p.nota.trim()) || (p.resposta && p.resposta.trim()) || p.orador || p.congregacao || (p.gravacoes && p.gravacoes.length)));
           orfas.forEach(p => novas.push({ ...p, secao: 'Partes que saíram do programa (com anotações)', dia: '', diaTema: '' }));
           const meta = { ...r.data, entrada, perguntas: Array.isArray(r.data.perguntas) ? r.data.perguntas : (programaMeta.perguntas || []) };
           const abertoAntes = diaAberto;
@@ -28277,12 +28540,11 @@ function saveTemplatesToStorage() {
       document.getElementById('anotacoesSalvarBtn').addEventListener('click', () => {
         if (!temConteudoAtual()) return dizer('Não há anotações para salvar.', true);
         salvarRascunho();
-        let anotId = 'anot:reuniao';
+        const anotId = anotIdAtual();
         let titulo;
         if (comPrograma()) {
           const ev = (eventos || []).find(e => e.url === chaveAtual);
           const evento = ev ? ev.titulo : ((programaMeta && programaMeta.titulo) || (MODOS[modo].tipo === 'congresso' ? 'Congresso' : 'Assembleia'));
-          anotId = 'anot:' + modo + ':' + chaveAtual + ':' + parteAtual;
           titulo = (evento + ' · ' + (dadosDaParte().tema || 'Parte ' + (parteAtual + 1))).slice(0, 100);
         } else {
           titulo = ('Reunião · ' + (temaEl.value.trim() || formatarData(dataReuniaoEl.value) || new Date().toLocaleDateString('pt-BR'))).slice(0, 100);
@@ -28293,7 +28555,7 @@ function saveTemplatesToStorage() {
           const ev = (eventos || []).find(e => e.url === chaveAtual);
           anotEvento = (ev ? ev.titulo : ((programaMeta && programaMeta.titulo) || (MODOS[modo].tipo === 'congresso' ? 'Congresso' : 'Assembleia'))) + (ev && ev.tipo === 'assembleia' && ev.grupo ? ' (' + ev.grupo + ')' : '') + (programaMeta && programaMeta.tema ? ' — ' + programaMeta.tema : '');
         }
-        const guardado = historicoSalvar({ tipo: 'nota', titulo, partes: [{ paragrafos: '', texto: textoDoDiscurso() }], ligar: false, anotId, anotModo: modo, anotEvento, anotOrdem: comPrograma() ? parteAtual : null });
+        const guardado = historicoSalvar({ tipo: 'nota', titulo, partes: [{ paragrafos: '', texto: textoDoDiscurso() }], ligar: false, anotId, anotModo: modo, anotEvento, anotOrdem: comPrograma() ? parteAtual : null, gravacoes: gravacoesAtuais().slice() });
         if (guardado) piscarBotao(document.getElementById('anotacoesSalvarBtn'), jaExistia ? '✓ Atualizado' : '✓ Salvo');
       });
       document.getElementById('anotacoesDocxBtn').addEventListener('click', async () => {
@@ -28324,7 +28586,7 @@ function saveTemplatesToStorage() {
           dizer('Anotações desta parte apagadas.');
           return;
         }
-        const ok = await askConfirm('Limpar as anotações desta tela? O rascunho local também será apagado.', 'Limpar anotações', { ok: 'Limpar', cancel: 'Cancelar' });
+        const ok = await askConfirm('Limpar as anotações desta tela? O rascunho local também será apagado.' + (gravacoesReuniao.length ? ' As gravações continuam guardadas em Ajustes → Privacidade e dados deste aparelho → Gravações guardadas no app.' : ''), 'Limpar anotações', { ok: 'Limpar', cancel: 'Cancelar' });
         if (!ok) return;
         limparCampos();
         try {
@@ -28409,7 +28671,8 @@ function saveTemplatesToStorage() {
       const ondaEl = document.getElementById('anotacoesOnda');
       const gravPausarBtn = document.getElementById('anotacoesGravPausarBtn');
       const gravResumoBtn = document.getElementById('anotacoesGravResumoBtn');
-      let gravacaoPronta = null; // { arquivo, duracaoS }: gravação parada, esperando o resumo (ou o descarte)
+      let gravacaoPronta = null; // { arquivo, duracaoS, idApp }: gravação parada, esperando o resumo (ou o descarte)
+
 
       const mmss = seg => String(Math.floor(seg / 60)).padStart(2, '0') + ':' + String(Math.floor(seg % 60)).padStart(2, '0');
       function mostrarGravacao(estado) {
@@ -28438,12 +28701,22 @@ function saveTemplatesToStorage() {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
           const mime = anotacoesMimeGravacao();
-          const gravador = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+          // Voz: 32 kbps (Opus) ou 48 kbps (AAC, no iPhone), cerca de 14 a 22 MB por hora; exportar: 128 kbps.
+          const gravador = criarGravador(stream, mime, /mp4/.test(mime) ? 48000 : 32000);
+          if (!gravador) throw new Error('sem gravador');
           const pedacos = [];
           gravador.ondataavailable = e => { if (e.data && e.data.size) pedacos.push(e.data); };
-          const g = { stream, gravador, pedacos, acumulado: 0, retomadoEm: Date.now(), pausado: false };
+          const g = { stream, gravador, pedacos, alta: null, pedacosAlta: [], acumulado: 0, retomadoEm: Date.now(), pausado: false };
           gravacao = g;
           gravador.start(1000);
+          try {
+            const alta = criarGravador(stream, mime, 128000);
+            if (alta) {
+              alta.ondataavailable = e => { if (e.data && e.data.size) g.pedacosAlta.push(e.data); };
+              alta.start(1000);
+              g.alta = alta;
+            }
+          } catch (e) { g.alta = null; /* só a qualidade de voz */ }
           gravPausarBtn.textContent = '⏸️ Pausar';
           gravarStatus.textContent = '';
           mostrarGravacao('ativa');
@@ -28461,11 +28734,13 @@ function saveTemplatesToStorage() {
         if (!g) return;
         if (!g.pausado) {
           try { g.gravador.pause(); } catch (e) { return; }
+          try { if (g.alta) g.alta.pause(); } catch (e) { /* ignore */ }
           g.acumulado += Date.now() - g.retomadoEm;
           g.pausado = true;
           gravPausarBtn.textContent = '▶️ Retomar';
         } else {
           try { g.gravador.resume(); } catch (e) { return; }
+          try { if (g.alta) g.alta.resume(); } catch (e) { /* ignore */ }
           g.retomadoEm = Date.now();
           g.pausado = false;
           gravPausarBtn.textContent = '⏸️ Pausar';
@@ -28478,23 +28753,50 @@ function saveTemplatesToStorage() {
         if (!g) return;
         const duracaoS = Math.max(1, tempoGravadoS(g));
         gravacao = null;
-        await new Promise(resolve => {
-          g.gravador.onstop = resolve;
-          try { g.gravador.requestData(); } catch (e) { /* ignore */ }
-          try { g.gravador.stop(); } catch (e) { resolve(); }
+        const parar = rec => new Promise(resolve => {
+          if (!rec || rec.state === 'inactive') return resolve();
+          rec.onstop = resolve;
+          try { rec.requestData(); } catch (e) { /* ignore */ }
+          try { rec.stop(); } catch (e) { resolve(); }
         });
+        await Promise.all([parar(g.gravador), parar(g.alta)]);
         liberarMicrofone(g);
-        if (!g.pedacos.length) {
+        if (!g.pedacos.length && !g.pedacosAlta.length) {
           mostrarGravacao('ocioso');
           gravarStatus.textContent = 'Não houve áudio gravado.';
           return;
         }
-        const tipo = (g.gravador.mimeType || 'audio/webm').split(';')[0];
+        const tipo = ((g.pedacos.length ? g.gravador : g.alta).mimeType || 'audio/webm').split(';')[0];
         const ext = /mp4|aac|m4a/.test(tipo) ? 'm4a' : /ogg/.test(tipo) ? 'ogg' : 'webm';
-        gravacaoPronta = { arquivo: new File(g.pedacos, 'Anotacao.' + ext, { type: tipo, lastModified: Date.now() }), duracaoS, ext, salvo: false };
+        const voz = new Blob(g.pedacos.length ? g.pedacos : g.pedacosAlta, { type: tipo });
+        const alta = g.pedacosAlta.length ? new File(g.pedacosAlta, 'Anotacao.' + ext, { type: tipo, lastModified: Date.now() }) : null;
+        // O arquivo para exportar e transcrever é o de qualidade maior (sem ele, o de voz).
+        gravacaoPronta = { arquivo: alta || new File([voz], 'Anotacao.' + ext, { type: tipo, lastModified: Date.now() }), duracaoS, ext, salvo: false, idApp: null };
         gravInfoEl.textContent = '✅ Gravação pronta · ' + mmss(duracaoS);
-        gravarStatus.textContent = 'Toque em Resumo para transcrever e resumir, em Salvar para guardar o arquivo de áudio, ou descarte a gravação.';
         mostrarGravacao('pronta');
+        // Guardada no app na hora, na qualidade de voz, ligada a esta anotação.
+        let id = null;
+        try { id = await gravacaoGuardar(voz, { titulo: tituloDaAnotacao(100), duracaoS }); } catch (e) { id = null; }
+        if (id) {
+          gravacaoPronta.idApp = id;
+          porGravacaoNaAnotacao(id);
+          gravarStatus.textContent = '🎧 A gravação já está guardada no app (' + gravacaoTamanho(voz.size) + ') para ouvir depois. Toque em Resumo para transcrever e resumir, em Exportar para salvar o arquivo em qualidade maior, ou em Concluir.';
+        } else {
+          gravarStatus.textContent = '⚠️ Não consegui guardar a gravação no app (o armazenamento pode estar cheio ou indisponível). Toque em Exportar para salvar o arquivo, em Resumo para transcrever, ou descarte.';
+        }
+      });
+
+      // Concluir: fecha o quadro da gravação pronta; a cópia guardada no app continua na lista 🎧.
+      document.getElementById('anotacoesGravConcluirBtn').addEventListener('click', async () => {
+        const gp = gravacaoPronta;
+        if (!gp) return;
+        if (!gp.idApp && !gp.salvo) {
+          const ok = await askConfirm('Esta gravação não foi guardada no app nem exportada. Concluir mesmo assim? Ela será perdida.', 'Concluir a gravação', { ok: 'Concluir', cancel: 'Voltar' });
+          if (!ok) return;
+        }
+        gravacaoPronta = null;
+        mostrarGravacao('ocioso');
+        gravarStatus.textContent = gp.idApp ? '🎧 Gravação guardada no app: ouça na lista abaixo.' : '';
       });
 
       // Salvar o áudio: baixa o arquivo (no iPhone, abre o compartilhar, de onde dá para guardar em Arquivos). O nome leva o tema da parte e a data.
@@ -28517,14 +28819,23 @@ function saveTemplatesToStorage() {
 
       // Descartar (durante a gravação ou depois de parada): apaga sem transcrever.
       async function descartarGravacao() {
-        const ok = await askConfirm('Descartar esta gravação? Ela será apagada e não dá para recuperar.', 'Descartar a gravação', { ok: 'Descartar', cancel: 'Continuar' });
+        const ok = await askConfirm('Descartar esta gravação? Ela será apagada (inclusive a cópia guardada no app) e não dá para recuperar.', 'Descartar a gravação', { ok: 'Descartar', cancel: 'Continuar' });
         if (!ok) return;
         if (gravacao) {
           const g = gravacao;
           gravacao = null;
-          g.gravador.onstop = null;
-          try { g.gravador.stop(); } catch (e) { /* já parado */ }
+          [g.gravador, g.alta].forEach(rec => {
+            if (!rec) return;
+            rec.onstop = null;
+            try { rec.stop(); } catch (e) { /* já parado */ }
+          });
           liberarMicrofone(g);
+        }
+        if (gravacaoPronta && gravacaoPronta.idApp) {
+          const id = gravacaoPronta.idApp;
+          await gravacaoApagar(id);
+          tirarGravacaoDaAnotacao(id);
+          pintarGravacoes();
         }
         gravacaoPronta = null;
         mostrarGravacao('ocioso');
@@ -28576,12 +28887,14 @@ function saveTemplatesToStorage() {
         try {
           const feito = await anotacoesProcessarGravacao(gravacaoPronta.arquivo, gravacaoPronta.duracaoS);
           if (feito) {
-            // O áudio só sai daqui depois de salvo; senão fica pronto para salvar (ou descartar).
+            // Já exportado: o quadro fecha. Senão fica aberto para exportar em qualidade maior (ou Concluir; a cópia de voz já está no app).
             if (gravacaoPronta.salvo) {
               gravacaoPronta = null;
               mostrarGravacao('ocioso');
+            } else if (gravacaoPronta.idApp) {
+              gravarStatus.textContent += ' A gravação está guardada no app; toque em Exportar se quiser o arquivo em qualidade maior, ou em Concluir.';
             } else {
-              gravarStatus.textContent += ' O áudio ainda não foi salvo: toque em Salvar ou descarte para gravar de novo.';
+              gravarStatus.textContent += ' O áudio ainda não foi salvo: toque em Exportar ou descarte para gravar de novo.';
             }
           }
         } finally {

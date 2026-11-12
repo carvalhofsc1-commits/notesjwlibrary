@@ -14103,3 +14103,57 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
   font-size: .6rem;
   line-height: 1.15;
 }
+
+/* Gravações guardadas no app (Anotações, itens salvos e Ajustes): o tocador de cada gravação. */
+.anotacoes-gravacoes[hidden],
+.historico-gravacoes[hidden] {
+  display: none;
+}
+
+.anotacoes-gravacoes,
+.historico-gravacoes {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.anotacoes-gravacoes .grav-titulo {
+  margin: 0;
+}
+
+.grav-item {
+  display: grid;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+}
+
+.grav-cab {
+  font-size: .82rem;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.grav-item audio {
+  width: 100%;
+  height: 36px;
+}
+
+.grav-acoes {
+  display: flex;
+  gap: 6px;
+}
+
+.grav-acoes button {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 32px;
+  padding: 3px 6px;
+  font-size: .8rem;
+}
+
+.grav-acoes button:last-child {
+  flex: 0 0 44px;
+}

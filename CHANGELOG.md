@@ -2,6 +2,16 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.00
+
+Anotações: **as gravações ficam guardadas no próprio app** para ouvir depois.
+- Ao parar uma gravação, ela é guardada **automaticamente** no banco do aparelho, na **qualidade de voz** (32 kbps; 48 kbps no iPhone), cerca de 14 a 22 MB por hora, ligada à anotação (a reunião ou a parte da assembleia/congresso).
+- Ao mesmo tempo, o app grava uma cópia em **qualidade maior** (128 kbps), que fica só na memória: é a usada no **💾 Exportar** (o antigo Salvar) e no resumo. Se o aparelho não aceitar os dois gravadores juntos, fica só a de voz.
+- Na anotação aparece **🎧 Gravações guardadas no app**, com o tocador (velocidade de 0,75× a 2×), **💾 Exportar** e **🗑️ Apagar**. O item salvo em Pesquisas e respostas salvas ganha o botão **🎧**, que abre o mesmo tocador.
+- Novo botão **✔️ Concluir** no quadro da gravação pronta: fecha o quadro e a gravação continua guardada no app. **Descartar** apaga também a cópia do app.
+- **Ajustes → Privacidade e dados deste aparelho → 🎧 Gravações guardadas no app**: a lista de todas as gravações, o espaço ocupado e o botão para apagar todas.
+- As gravações não entram no backup (.json); para guardar para sempre, exporte o arquivo.
+
 ## 6.8.31
 
 Leitura em voz alta: o rótulo pequeno da voz no botão **🔊 Ler** (ex.: “Voz Algenib · Gemini 2.5 Flash”) não vaza mais para o botão ao lado durante a leitura; quebra a linha dentro do botão.
