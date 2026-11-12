@@ -1828,8 +1828,14 @@
         desenhar();
         lista.hidden = false;
         botao.setAttribute('aria-expanded', 'true');
+        // Abre no começo da lista; com outra opção marcada (e sem "sempreDoInicio"), rola só a lista até ela. A posição é medida dentro da
+        // lista (antes, o offsetTop vinha da página e a lista abria no meio, mesmo com a primeira opção marcada).
+        lista.scrollTop = 0;
         const marcada = lista.querySelector('.selecionado');
-        if (marcada) lista.scrollTop = Math.max(0, marcada.offsetTop - 60);
+        if (marcada && !opcoes.sempreDoInicio) {
+          const dentro = marcada.getBoundingClientRect().top - lista.getBoundingClientRect().top;
+          lista.scrollTop = Math.max(0, dentro - 60);
+        }
       });
       // O código que troca opções, o "disabled" ou o valor do select de fora também atualiza o botão.
       new MutationObserver(atualizar).observe(select, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled'] });
@@ -7663,7 +7669,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.15'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.16'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21904,7 +21910,7 @@ function saveTemplatesToStorage() {
       });
     }
 
-    backupSeletorLargo(trTipo, null, { vazioEscolhivel: true });
+    backupSeletorLargo(trTipo, null, { vazioEscolhivel: true, sempreDoInicio: true }); // a lista de tipos abre sempre no começo
     trTipo.addEventListener('change', async () => {
       trTipoBotoesAtualizar();
       const tipo = audioTiposDoSeletor().find(t => t.id === trTipo.value);

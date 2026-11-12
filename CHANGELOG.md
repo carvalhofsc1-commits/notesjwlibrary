@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.16
+
+Listas de escolha (como o Tipo de áudio): abriam no meio da lista, mesmo com a primeira opção marcada (a posição era medida pela página, não pela lista). Agora a lista de tipos de áudio abre sempre no começo (Nenhum, Novo tipo… e os tipos), e as outras listas abrem no começo ou, com outra opção marcada, mostram essa opção.
+
 ## 6.9.15
 
 Áudio em texto, tipo **Discurso em uma reunião pública das Testemunhas de Jeová**: os campos **Sobre o áudio** e **Como fazer o resumo** ficam travados (só leitura), e a explicação de que o resumo segue o padrão do app (e onde ficam as definições) aparece **dentro** do campo Como fazer o resumo, no lugar da nota de baixo. Ao trocar de tipo, os campos voltam a funcionar.
