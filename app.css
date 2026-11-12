@@ -14088,3 +14088,18 @@ a.esboco-info-tema {
 .screen-anotacoes .anotacoes-gravacao #anotacoesCarregarBtn:active {
   background: #2f74b5;
 }
+
+/* Leitura: o rótulo pequeno da voz ("Voz Algenib · Gemini 2.5 Flash") fica dentro do botão Ler, quebrando a linha quando o botão é estreito. */
+.leitura-acoes .leitura-ler {
+  overflow: hidden;
+}
+
+.leitura-acoes .leitura-ler[data-ia-nota]::after {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::after {
+  font-size: .6rem;
+  line-height: 1.15;
+}
