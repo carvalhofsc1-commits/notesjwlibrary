@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.09'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.10'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -26759,8 +26759,7 @@ function saveTemplatesToStorage() {
         }
         pintarGravacoes();
       }
-      // Dois gravadores no mesmo microfone: o de voz (leve, guardado no app) e o de qualidade maior (só para exportar o arquivo).
-      // Se o aparelho não aceitar o segundo, fica só o de voz.
+      // O gravador da tela Anotações: um só, na qualidade de voz (64 kbps); se o aparelho recusar a taxa, grava na padrão dele.
       function criarGravador(stream, mime, bps) {
         try { return new MediaRecorder(stream, Object.assign(mime ? { mimeType: mime } : {}, { audioBitsPerSecond: bps })); } catch (e) { /* sem a taxa */ }
         try { return new MediaRecorder(stream, mime ? { mimeType: mime } : undefined); } catch (e) { return null; }
@@ -29034,22 +29033,14 @@ function saveTemplatesToStorage() {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
           const mime = anotacoesMimeGravacao();
-          // Voz: 64 kbps (cerca de 29 MB por hora); exportar: 128 kbps.
+          // Um gravador só, na qualidade de voz: 64 kbps (cerca de 29 MB por hora). O mesmo arquivo fica no app, é exportado e transcrito.
           const gravador = criarGravador(stream, mime, 64000);
           if (!gravador) throw new Error('sem gravador');
           const pedacos = [];
           gravador.ondataavailable = e => { if (e.data && e.data.size) pedacos.push(e.data); };
-          const g = { stream, gravador, pedacos, alta: null, pedacosAlta: [], acumulado: 0, retomadoEm: Date.now(), pausado: false };
+          const g = { stream, gravador, pedacos, acumulado: 0, retomadoEm: Date.now(), pausado: false };
           gravacao = g;
           gravador.start(1000);
-          try {
-            const alta = criarGravador(stream, mime, 128000);
-            if (alta) {
-              alta.ondataavailable = e => { if (e.data && e.data.size) g.pedacosAlta.push(e.data); };
-              alta.start(1000);
-              g.alta = alta;
-            }
-          } catch (e) { g.alta = null; /* só a qualidade de voz */ }
           gravPausarBtn.textContent = '⏸️ Pausar';
           gravarStatus.textContent = '';
           mostrarGravacao('ativa');
@@ -29067,13 +29058,11 @@ function saveTemplatesToStorage() {
         if (!g) return;
         if (!g.pausado) {
           try { g.gravador.pause(); } catch (e) { return; }
-          try { if (g.alta) g.alta.pause(); } catch (e) { /* ignore */ }
           g.acumulado += Date.now() - g.retomadoEm;
           g.pausado = true;
           gravPausarBtn.textContent = '▶️ Retomar';
         } else {
           try { g.gravador.resume(); } catch (e) { return; }
-          try { if (g.alta) g.alta.resume(); } catch (e) { /* ignore */ }
           g.retomadoEm = Date.now();
           g.pausado = false;
           gravPausarBtn.textContent = '⏸️ Pausar';
@@ -29092,19 +29081,17 @@ function saveTemplatesToStorage() {
           try { rec.requestData(); } catch (e) { /* ignore */ }
           try { rec.stop(); } catch (e) { resolve(); }
         });
-        await Promise.all([parar(g.gravador), parar(g.alta)]);
+        await parar(g.gravador);
         liberarMicrofone(g);
-        if (!g.pedacos.length && !g.pedacosAlta.length) {
+        if (!g.pedacos.length) {
           mostrarGravacao('ocioso');
           gravarStatus.textContent = 'Não houve áudio gravado.';
           return;
         }
-        const tipo = ((g.pedacos.length ? g.gravador : g.alta).mimeType || 'audio/webm').split(';')[0];
+        const tipo = (g.gravador.mimeType || 'audio/webm').split(';')[0];
         const ext = /mp4|aac|m4a/.test(tipo) ? 'm4a' : /ogg/.test(tipo) ? 'ogg' : 'webm';
-        const voz = new Blob(g.pedacos.length ? g.pedacos : g.pedacosAlta, { type: tipo });
-        const alta = g.pedacosAlta.length ? new File(g.pedacosAlta, 'Anotacao.' + ext, { type: tipo, lastModified: Date.now() }) : null;
-        // O arquivo para exportar e transcrever é o de qualidade maior (sem ele, o de voz).
-        gravacaoPronta = { arquivo: alta || new File([voz], 'Anotacao.' + ext, { type: tipo, lastModified: Date.now() }), duracaoS, ext, salvo: false, idApp: null, alvo: alvoAtual() };
+        const voz = new Blob(g.pedacos, { type: tipo });
+        gravacaoPronta = { arquivo: new File([voz], 'Anotacao.' + ext, { type: tipo, lastModified: Date.now() }), duracaoS, ext, salvo: false, idApp: null, alvo: alvoAtual() };
         gravInfoEl.textContent = '✅ Gravação pronta · ' + mmss(duracaoS);
         mostrarGravacao('pronta');
         // Guardada no app na hora, na qualidade de voz, ligada a esta anotação.
@@ -29157,11 +29144,8 @@ function saveTemplatesToStorage() {
         if (gravacao) {
           const g = gravacao;
           gravacao = null;
-          [g.gravador, g.alta].forEach(rec => {
-            if (!rec) return;
-            rec.onstop = null;
-            try { rec.stop(); } catch (e) { /* já parado */ }
-          });
+          g.gravador.onstop = null;
+          try { g.gravador.stop(); } catch (e) { /* já parado */ }
           liberarMicrofone(g);
         }
         if (gravacaoPronta && gravacaoPronta.idApp) {
@@ -29223,7 +29207,7 @@ function saveTemplatesToStorage() {
       });
 
       // Resumo da gravação pronta: vai para a fila (em segundo plano) e o quadro fecha, liberando para gravar o próximo discurso na hora.
-      // (Para ter o arquivo em qualidade maior, toque em Exportar antes do Resumo.) Sem cópia no app, o quadro fica aberto até terminar.
+      // Sem cópia no app, o quadro fica aberto até terminar.
       gravResumoBtn.addEventListener('click', async () => {
         const gp = gravacaoPronta;
         if (!gp) return;

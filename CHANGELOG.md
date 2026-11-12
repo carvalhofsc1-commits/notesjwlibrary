@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.10
+
+Gravação das anotações: agora é **um arquivo só**, na qualidade de voz (64 kbps, cerca de 29 MB por hora). Saiu a segunda gravação em qualidade maior que era feita ao mesmo tempo só para exportar: o 💾 Exportar salva o mesmo áudio que fica guardado no app.
+
 ## 6.9.09
 
 Anotações: novo botão **🔊** ao lado do título “✍️ Anotações” para **ouvir as anotações** em voz alta (com o código de leitura), por exemplo no dia seguinte, dirigindo. Abre o tocador da leitura em voz logo abaixo, com a barra de andamento, a velocidade e o salvar o áudio; tocar de novo no 🔊 para a leitura.
