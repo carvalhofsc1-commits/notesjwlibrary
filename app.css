@@ -10243,16 +10243,17 @@
       pointer-events: none;
     }
 
+    /* Logo grande na tela de abertura: metade da largura do celular (até 240 px). */
     .splash-app img {
-      width: 96px;
-      height: 96px;
-      border-radius: 20px;
+      width: min(50vw, 240px);
+      height: min(50vw, 240px);
+      border-radius: 18%;
       object-fit: contain;
     }
 
     .splash-nome {
       margin: 0;
-      font-size: 1.7rem;
+      font-size: clamp(2.4rem, 11vw, 3.4rem);
       font-weight: 700;
       letter-spacing: -.02em;
       color: var(--text);

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.14
+
+Tela de abertura: o logo do NoteStyle ficou bem maior (metade da largura do celular, até 240 px, antes 96 px), e o nome “NoteStyle” também.
+
 ## 6.9.13
 
 Áudio em texto: com o tipo **Discurso em uma reunião pública das Testemunhas de Jeová**, o campo **Como fazer o resumo** fica desativado e vazio, com uma nota explicando que o resumo segue o padrão do app (o mesmo do resumo dos discursos na tela Anotações) e onde ficam essas definições (Ajustes → Prompts da IA → Anotações de discursos → Resumo da gravação nas anotações). Ao trocar para outro tipo, o campo volta a funcionar.
