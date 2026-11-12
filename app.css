@@ -14297,10 +14297,29 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
   margin: 0;
 }
 
-.anotacoes-texto-cab .anotacoes-ouvir {
-  min-height: 32px;
-  padding: 2px 12px;
-  font-size: .95rem;
+/* Só o 🔊, sem moldura nem chave: o código de leitura continua sendo pedido ao tocar. */
+.anotacoes-texto-cab .anotacoes-ouvir,
+.anotacoes-texto-cab .anotacoes-ouvir:hover:not(:disabled) {
+  flex: 0 0 auto;
+  width: auto;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  padding: 0 2px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.anotacoes-texto-cab .anotacoes-ouvir:disabled {
+  opacity: .45;
+}
+
+.anotacoes-texto-cab .anotacoes-ouvir.tocando {
+  filter: drop-shadow(0 0 7px var(--accent));
 }
 
 .anotacoes-voz:empty {

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.18
+
+Anotações: o botão de ouvir o texto fica só com o emoji 🔊, sem moldura e sem a chave/cadeado ao lado (o código de leitura continua sendo pedido ao tocar).
+
 ## 6.9.17
 
 Áudio em texto, Dados do áudio: o rótulo **Título ou tema** e a opção **mesmo do arquivo** (alinhada à direita) ficaram na mesma linha, colados no campo do título (o limite de 120 caracteres continua escrito dentro do campo).
