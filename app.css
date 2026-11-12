@@ -14065,3 +14065,16 @@ a.esboco-info-tema {
   background: var(--anotacoes-bg);
   border-color: var(--anotacoes-border);
 }
+
+/* Anotações: "Gravar e resumir" e "Carregar gravação" lado a lado. */
+.anotacoes-gravacao .anotacoes-grav-botoes {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 6px;
+}
+
+.screen-anotacoes .anotacoes-gravacao #anotacoesCarregarBtn {
+  min-height: 36px;
+  padding: 4px 8px;
+  font-size: .84rem;
+}

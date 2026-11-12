@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.8.23'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.8.24'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -28306,6 +28306,13 @@ function saveTemplatesToStorage() {
         dizer('Anotações limpas.');
       });
 
+      // O resumo vem com marcas: [IMPORTANTE]/[APLICAR] viram os modelos prontos; **negrito** e __itálico__ viram letras Unicode (o Word as volta ao normal).
+      function anotacoesResumoFormatar(t) {
+        t = String(t || '').replace(/\r\n?/g, '\n')
+          .replace(/\[IMPORTANTE\]\s*/gi, MODELOS_ANOTACAO.importante)
+          .replace(/\[APLICAR\]\s*/gi, MODELOS_ANOTACAO.aplicar);
+        return bibliaMarcasParaUnicode(t).replace(/\n{3,}/g, '\n\n').trim();
+      }
       function anotacoesMimeGravacao() {
         return ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'].find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';
       }
@@ -28359,7 +28366,7 @@ function saveTemplatesToStorage() {
           return true; // a transcrição já entrou no texto
         }
         const resumo = (r.dados && r.dados.resumo) || '';
-        inserirNoCursor('\n—— Resumo da gravação ——\n' + resumo + '\n');
+        inserirNoCursor('\n' + bibliaMarcasParaUnicode('**__—— Resumo da gravação ——__**') + '\n\n' + anotacoesResumoFormatar(resumo) + '\n');
         gravarStatus.textContent = 'Resumo inserido nas anotações.';
         salvarRascunho();
         return true;
@@ -28496,6 +28503,43 @@ function saveTemplatesToStorage() {
       }
       document.getElementById('anotacoesGravDescartarBtn').addEventListener('click', descartarGravacao);
       document.getElementById('anotacoesGravDescartar2Btn').addEventListener('click', descartarGravacao);
+
+      // Carregar gravação: um arquivo de áudio do aparelho segue o mesmo caminho da gravação feita aqui (transcrição e resumo).
+      const carregarBtn = document.getElementById('anotacoesCarregarBtn');
+      const carregarArq = document.getElementById('anotacoesCarregarArquivo');
+      let carregando = false;
+      carregarBtn.addEventListener('click', () => {
+        if (gravacao || gravacaoPronta || carregando) return;
+        if (!codigoTextoSalvo()) {
+          gravarStatus.textContent = 'Salve o código de texto em Ajustes → 🔐 Autorização de acessos.';
+          return;
+        }
+        carregarArq.value = '';
+        carregarArq.click();
+      });
+      carregarArq.addEventListener('change', async () => {
+        const arquivo = carregarArq.files && carregarArq.files[0];
+        carregarArq.value = '';
+        if (!arquivo || carregando) return;
+        if (!/^(audio|video)\//.test(arquivo.type || '') && !/\.(mp3|m4a|aac|wav|ogg|oga|opus|webm|flac|amr|3gp|mp4|caf)$/i.test(arquivo.name)) {
+          gravarStatus.textContent = 'Escolha um arquivo de áudio.';
+          return;
+        }
+        carregando = true;
+        carregarBtn.disabled = true;
+        gravarBtn.disabled = true;
+        try {
+          gravarStatus.textContent = 'Lendo o arquivo…';
+          const duracaoS = await trDuracaoLer(arquivo);
+          await anotacoesProcessarGravacao(arquivo, duracaoS || null);
+        } catch (e) {
+          gravarStatus.textContent = 'Não foi possível processar o arquivo.';
+        } finally {
+          carregando = false;
+          carregarBtn.disabled = false;
+          gravarBtn.disabled = false;
+        }
+      });
 
       gravResumoBtn.addEventListener('click', async () => {
         if (!gravacaoPronta) return;

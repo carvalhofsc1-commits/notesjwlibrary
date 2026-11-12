@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.8.24
+
+Anotações: novo botão **📁 Carregar gravação**, ao lado de “Gravar e resumir o discurso”, para transcrever e resumir um arquivo de áudio já gravado.
+
+Resumo da gravação: o tema do discurso vem no topo, em maiúsculas e negrito; os **pontos principais** recebem o modelo **IMPORTANTE** e os pontos de **aplicação prática** o modelo **Aplicar**, com uma linha em branco entre eles; os pontos enumerados pelo orador ganham 1️⃣ 2️⃣ 3️⃣ (os outros, “•”) e emojis ilustrativos; a referência dos textos vai em negrito e o texto lido em itálico, com linha em branco antes e depois; as **perguntas de revisão** citadas pelo orador entram como “PERGUNTA DE REVISÃO:” (a pergunta em negrito e itálico) e “RESPOSTA:”. O título “Resumo da gravação” fica em negrito e itálico, seguido de uma linha em branco. No Word, o negrito e o itálico saem normais.
+
 ## 6.8.23
 
 Anotações: o card da **pergunta de recapitulação** (com a resposta, na anotação do discurso) ficou com fundo branco.

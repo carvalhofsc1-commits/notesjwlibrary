@@ -624,7 +624,7 @@ Receberá o texto das anotações. Reescreva-o com a MESMA organização e o MES
     id: "anotacoes_resumo",
     titulo: "Resumo da gravação nas anotações (tela Anotações)",
     descricao:
-      "Instruções para o resumo da gravação feita na tela Anotações (o botão de gravar de cada parte da reunião, assembleia ou congresso): o conteúdo e as lições práticas da apresentação, sem narrar o que aconteceu e sem identificar quem falou; os textos lidos com \"FOI LIDO\", a transcrição e a aplicação; os textos citados com a referência e a aplicação; um RESUMO no final.",
+      "Instruções para o resumo da gravação feita na tela Anotações (o botão de gravar de cada parte da reunião, assembleia ou congresso): o conteúdo e as lições práticas da apresentação, sem narrar o que aconteceu e sem identificar quem falou; os textos lidos com \"FOI LIDO\", a transcrição e a aplicação; os textos citados com a referência e a aplicação; as perguntas de revisão com a resposta do orador; o tema no topo, os pontos principais com o modelo IMPORTANTE e as aplicações com o modelo Aplicar; um RESUMO no final.",
     padrao: `Você resume a gravação de uma parte de uma reunião, assembleia ou congresso das Testemunhas de Jeová (discurso, palestra, entrevista, demonstração ou drama) para as anotações pessoais de quem assistiu. A transcrição foi feita por reconhecimento automático de voz: pode ter palavras erradas, pontuação imperfeita e trechos sem relação com a apresentação; às vezes traz rótulos "Falante 1:", "Falante 2:"…
 
 O QUE AS ANOTAÇÕES DEVEM SER
@@ -635,17 +635,34 @@ O QUE AS ANOTAÇÕES DEVEM SER
 - Ignore conversas paralelas, ruídos e trechos que não fazem parte da apresentação. Não invente ensinos que não estejam na gravação; se ela não tiver conteúdo da apresentação, diga isso em uma frase.
 
 TEXTOS BÍBLICOS
-- Registre SEMPRE todos os textos que o orador LEU, no ponto em que foram lidos, em linha própria, assim: FOI LIDO, a referência, um travessão e a transcrição do texto entre aspas; na linha seguinte, a aplicação que o orador fez do texto. Exemplo:
-  FOI LIDO 1 João 5:4 - "Porque todo aquele que nasceu de Deus vence o mundo. E esta é a vitória que venceu o mundo: a nossa fé."
+- Registre SEMPRE todos os textos que o orador LEU, no ponto em que foram lidos, em linha própria, com uma linha em branco antes e outra depois, assim: FOI LIDO, a referência em negrito, um travessão e a transcrição do texto entre aspas, em itálico; na linha seguinte, a aplicação que o orador fez do texto. Exemplo:
+
+  FOI LIDO **1 João 5:4** - __"Porque todo aquele que nasceu de Deus vence o mundo. E esta é a vitória que venceu o mundo: a nossa fé."__
+
   João nos incentiva a confiar em Jeová para vencer as pressões do mundo…
 - A referência segue o padrão das publicações das Testemunhas de Jeová: o nome do livro por extenso, o capítulo e os versículos (ex.: "1 João 5:4", "Provérbios 3:5, 6", "Mateus 6:33", "Salmo 37:4").
 - Para a transcrição, use o texto do versículo que vier em "TEXTO DOS VERSÍCULOS CITADOS NA GRAVAÇÃO" (Tradução do Novo Mundo), quando a referência estiver lá; senão, transcreva o que foi lido na gravação, corrigindo só os erros evidentes do reconhecimento de voz.
-- Os textos que o orador só CITOU, sem ler, entram com a referência, sem transcrição, e com o que ele disse sobre o texto e como o aplicou. Exemplo: "Texto citado: Mateus 6:33 — Buscar primeiro o Reino significa…".
+- Os textos que o orador só CITOU, sem ler, entram com a referência (em negrito), sem transcrição, e com o que ele disse sobre o texto e como o aplicou. Exemplo: "Texto citado: **Mateus 6:33** — Buscar primeiro o Reino significa…".
+
+PERGUNTAS DE REVISÃO
+- Fique atento às perguntas de revisão ou recapitulação. Quando o orador fizer referência a uma delas, escreva, em linha própria, PERGUNTA DE REVISÃO: (assim, em maiúsculas) e, na frente, a pergunta em negrito e itálico; na linha seguinte, RESPOSTA: e a resposta, conforme a resposta que o orador deu. Exemplo:
+
+  PERGUNTA DE REVISÃO: **__Como podemos vencer o mundo?__**
+  RESPOSTA: Pela fé em Jeová e em suas promessas…
 
 FORMATO
-Português do Brasil, texto simples (sem Markdown, sem asteriscos), na ordem da apresentação:
-- as lições e ideias em itens, cada um numa linha começando com "- ";
-- os textos lidos e citados, no ponto em que apareceram, como mostrado acima;
+Português do Brasil, texto simples, na ordem da apresentação. Só estas marcas (o app as converte; não use outro Markdown, como #, nem asteriscos simples):
+- **texto** = negrito; __texto__ = itálico; **__texto__** = negrito e itálico;
+- [IMPORTANTE] no começo de um ponto principal: o app coloca ali o modelo "IMPORTANTE";
+- [APLICAR] no começo de um ponto de aplicação prática: o app coloca ali o modelo "Aplicar".
+Estrutura:
+- na primeira linha, o TEMA DO DISCURSO em letras maiúsculas e negrito (ex.: **TENHA FÉ EM JEOVÁ**), seguido de uma linha em branco;
+- subtópicos em letras maiúsculas e negrito, em linha própria;
+- identifique os PONTOS PRINCIPAIS e comece cada um com [IMPORTANTE]; identifique os PONTOS DE APLICAÇÃO PRÁTICA e comece cada um com [APLICAR];
+- deixe SEMPRE uma linha em branco entre os pontos principais;
+- se o orador enumerar os pontos principais (primeiro, segundo, terceiro…), numere-os com os emojis 1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣ 6️⃣ 7️⃣ 8️⃣ 9️⃣ 🔟 (ex.: "1️⃣ [IMPORTANTE] …"); os pontos principais que não foram numerados pelo orador, mas que você percebeu no texto, começam com o marcador "• ";
+- sempre que possível e apropriado, comece as frases dos pontos principais com um emoji ilustrativo que reforce a ideia (ex.: 🙏 oração, 📖 estudo, 👨‍👩‍👧 família, 🗣️ pregação, ❤️ amor, 🛡️ proteção), sem exagero;
+- os textos lidos e citados e as perguntas de revisão, no ponto em que apareceram, como mostrado acima (com uma linha em branco antes e depois de cada texto lido);
 - DEMONSTRAÇÃO: (só se houver demonstração, entrevista ou drama) a narração curta descrita acima;
 - no final, RESUMO: um parágrafo curto com a ideia central e as principais lições. Exemplo: "RESUMO: O orador destacou a importância da humildade e da união na família e mostrou que, se colocarmos Jeová em primeiro lugar e evitarmos o que pode atrapalhar a união, como o trabalho excessivo, o entretenimento degradante e o amor ao dinheiro, seremos verdadeiramente felizes."
 
@@ -1094,7 +1111,7 @@ const MONTAGEM_PEDIDOS = `COMO O APP MONTA A MENSAGEM DE CADA PEDIDO (além do p
 - Esboço de outros discursos (grupo Preparação de discursos e esboços, tema livre): [orientação] → "PEDIDO:" (esboço de N minutos, o tempo que o orador digitou) → "EMOJIS NOS ESBOÇOS: ATIVOS ou INATIVOS" (conforme a opção de emoji das configurações) → o que o orador informou: "TEMA DO DISCURSO:", "IDEIA DO DISCURSO:", "OCASIÃO:", "TEMPO TOTAL:", "TEXTOS QUE O ORADOR PEDIU PARA LER:" (os pedidos e os marcados [LER] do esboço importado), "ESBOÇO PRONTO IMPORTADO PELO ORADOR:" (como o esboço do S-34, com "NOTA AO ORADOR (objetivo do esboço):" só quando o esboço tem nota, ou a linha "SEM NOTA AO ORADOR" quando não tem, e as marcas [LER], [DESTAQUE], [DESTAQUE MÁXIMO], [NOTA AO ORADOR] e [EM NEGRITO NO ESBOÇO], quando ele importou um; o PEDIDO acrescenta "seguindo de perto o esboço pronto" e o tempo é a soma das seções), "MATÉRIA COLADA PELO ORADOR:", "ARTIGOS DO WOL.JW.ORG LIDOS PELO SERVIDOR:" (os endereços que ele colou ou escolheu na pesquisa da biblioteca; até 5, o texto de cada um limitado) e "TEXTO DOS VERSÍCULOS:" quando a Bíblia está disponível → [os textos escolhidos na lista, "Esboço: textos escolhidos"] → [lembrete final] → [em "Outra versão", "Melhorar" e "Incluir texto(s)": "ESBOÇO JÁ SUGERIDO (JSON):" com o anterior e o pedido de "Esboço: outra versão", "Esboço: melhorar" ou "Esboço: incluir textos"].
 - Resumo da leitura diária da Bíblia (tela Leitura diária da Bíblia): [orientação] → [se houver texto já salvo: "Resumo da leitura: texto já salvo (melhorar|acrescentar seção|melhorar seção)" + o texto] → "PEDIDO:" → "Resumo da leitura: base" → ["Resumo da leitura: pedir verbetes", se fundo/personagens/lugares] → "Resumo da leitura: opções marcadas" + frases das caixas (inclui "gerar o resumo", marcada por padrão no app) → "LEITURA (versículos):" → [lembrete]. Só entram as seções das opções marcadas (RESUMO, SOBRE JEOVÁ, …, PROFECIAS E EXPRESSÕES SIMBÓLICAS). Com uma só opção e texto salvo, a IA devolve só essa seção (o app mescla). Etapa de fontes (fundo/personagens/lugares/profecias): Perspicaz + wol.jw.org → "Resumo da leitura: com fontes".
 - Joias espirituais: [orientação] → "PREFERÊNCIAS:" (as mesmas das respostas do estudo) → "PEDIDO:" com a pergunta da apostila e as joias da leitura ATIVAS ou INATIVAS → a leitura lida pelo servidor no wol.jw.org ("LEITURA DA BÍBLIA DA SEMANA:", cada capítulo com os versículos numerados e "PUBLICAÇÕES SOBRE …" com os trechos do Índice das Publicações, os mais recentes, até 12 na semana, e "VERSÍCULO DA PERGUNTA DA APOSTILA (não use nas joias)") → "PERGUNTA DA APOSTILA:" e "TRECHO DA PUBLICAÇÃO CITADA NA PERGUNTA:" → [lembrete final] → [em "Outra resposta" ou "Melhorar": "RESPOSTAS ANTERIORES (JSON)" e o pedido do botão]. Na tela, cada joia da leitura leva ACIMA do comentário o texto bíblico completo da "referencia" (copiado da Bíblia pelo servidor, a partir do capítulo lido no wol.jw.org).
-- Resumo da gravação nas anotações (tela Anotações, botão de gravar de cada parte): o áudio é transcrito pelo Google e a transcrição vai com "INFORMAÇÕES SOBRE O ÁUDIO:" (o tema, o orador e a congregação da parte) e "TRANSCRIÇÃO:"; depois, "TEXTO DOS VERSÍCULOS CITADOS NA GRAVAÇÃO (Tradução do Novo Mundo):" com os versículos que o servidor achou na transcrição (quando a Bíblia está disponível); o sistema é o prompt "Resumo da gravação nas anotações". O resumo entra nas anotações depois de "—— Resumo da gravação ——".
+- Resumo da gravação nas anotações (tela Anotações, botão de gravar de cada parte): o áudio é transcrito pelo Google e a transcrição vai com "INFORMAÇÕES SOBRE O ÁUDIO:" (o tema, o orador e a congregação da parte) e "TRANSCRIÇÃO:"; depois, "TEXTO DOS VERSÍCULOS CITADOS NA GRAVAÇÃO (Tradução do Novo Mundo):" com os versículos que o servidor achou na transcrição (quando a Bíblia está disponível); o sistema é o prompt "Resumo da gravação nas anotações". O resumo entra nas anotações depois de "—— Resumo da gravação ——" (em negrito e itálico, seguido de uma linha em branco); o app troca [IMPORTANTE] e [APLICAR] pelos modelos "IMPORTANTE" e "Aplicar" e converte **negrito** e __itálico__ em letras Unicode (no Word, viram negrito e itálico normais). O botão "Carregar gravação" faz o mesmo com um arquivo de áudio do aparelho.
 - Comentários adicionais do texto diário (tela Início): "TEXTO DIÁRIO:" com a data, o texto temático e o comentário do dia (lidos pelo servidor no wol.jw.org, sem a citação da publicação) → [em "Gerar outros": "COMENTÁRIOS JÁ SUGERIDOS" com os anteriores e o pedido de outras palavras, sem forçar outro enfoque].
 - Numeração dos parágrafos (só quando a leitura direta falha): "ENDEREÇO:" da página.
 - Aplicação dos versículos e do Perspicaz: [orientação] → "ITENS (JSON):" com o comentário, os versículos exatos e o verbete.
