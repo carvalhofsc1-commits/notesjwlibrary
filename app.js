@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.12'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.13'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21768,7 +21768,6 @@ function saveTemplatesToStorage() {
       return partes.join(' ');
     }
     const trInstrucoes = document.getElementById('transcricaoInstrucoes');
-    const TR_INSTRUCOES_DISCURSO_ANTIGAS = 'Resumo em 3 a 5 linhas com o tema e a ideia central do discurso. Depois, os pontos principais em ordem, cada um em uma frase. Em seguida, liste os textos bíblicos citados ou lidos (livro, capítulo e versículos) e termine com a aplicação prática e o convite final do orador.';
     const TRANSCRICAO_INSTR_KEY = 'jwLibraryNoteAplicarTextoInstrucoesV1';
     // "Como fazer o resumo" começa em branco a cada abertura do app (só o tipo de áudio escolhido o preenche); o que ficou salvo nas versões antigas é apagado.
     try { localStorage.removeItem(TRANSCRICAO_INSTR_KEY); } catch (e) { /* sem localStorage */ }
@@ -21886,6 +21885,20 @@ function saveTemplatesToStorage() {
     window.addEventListener('resize', trCamposAjustar);
     trCamposAjustar();
     trTiposDesenhar();
+    // Discurso em uma reunião pública: o resumo segue o padrão do app (o mesmo das anotações dos discursos); o "Como fazer o resumo" fica
+    // desabilitado e vazio, com uma nota dizendo onde o padrão está.
+    const trInstrucoesNota = document.getElementById('transcricaoInstrucoesNota');
+    function trInstrucoesTravar() {
+      const discurso = trTipoAtual === 'p-publico';
+      if (discurso) {
+        trInstrucoes.value = '';
+        trTipoUltimaInstr = '';
+      }
+      trInstrucoes.disabled = discurso;
+      trInstrucoes.classList.toggle('transcricao-campo-travado', discurso);
+      trInstrucoesNota.hidden = !discurso;
+    }
+
     backupSeletorLargo(trTipo, null, { vazioEscolhivel: true });
     trTipo.addEventListener('change', async () => {
       trTipoBotoesAtualizar();
@@ -21902,6 +21915,7 @@ function saveTemplatesToStorage() {
         trInstrucoes.value = '';
         trTipoUltimoTexto = '';
         trTipoUltimaInstr = '';
+        trInstrucoesTravar();
         return;
       }
       const atual = trContexto.value.trim();
@@ -21918,6 +21932,7 @@ function saveTemplatesToStorage() {
         trInstrucoes.value = tipo.instrucoes;
         trTipoUltimaInstr = tipo.instrucoes;
       }
+      trInstrucoesTravar();
     });
 
     // Salvar o que está nos campos como um tipo: "meu" (só neste aparelho) ou "para todos" (o administrador, no servidor).
@@ -21977,6 +21992,7 @@ function saveTemplatesToStorage() {
       trTipoUltimoTexto = texto;
       trTipoUltimaInstr = instrucoes;
       trTipoBotoesAtualizar();
+      trInstrucoesTravar();
     }
     // Com o bloco recolhido, uma linha pequena sob o título diz o que há nele: o tipo de áudio escolhido e o título dos dados do áudio.
     function trResumoLinhasAtualizar() {
@@ -22014,6 +22030,7 @@ function saveTemplatesToStorage() {
       () => {
         trTipo.value = '';
         trTipoAtual = '';
+        trInstrucoesTravar();
         trTipoNome.value = '';
         trContexto.value = '';
         trInstrucoes.value = '';
@@ -23741,7 +23758,7 @@ function saveTemplatesToStorage() {
       // Discurso em uma reunião pública: o resumo segue as mesmas instruções do resumo das anotações (prompt "Resumo da gravação nas
       // anotações"), com a mesma formatação. As instruções antigas desse tipo, se ainda estiverem salvas no aparelho, não vão.
       const discurso = trTipoAtual === 'p-publico';
-      const instrucoes = discurso && trInstrucoes.value.trim() === TR_INSTRUCOES_DISCURSO_ANTIGAS ? '' : trInstrucoes.value;
+      const instrucoes = discurso ? '' : trInstrucoes.value;
       const modoResumo = discurso ? { modo: 'anotacoes' } : {};
       const anexosPayload = trDocsPayload();
       const baseMsg = usouCorrigido ? 'o texto corrigido' : 'a transcrição';
@@ -23904,6 +23921,7 @@ function saveTemplatesToStorage() {
       trTipoUltimoTexto = '';
       trTipo.value = ''; trTipoNome.value = ''; trTipoNomeMostrar();
       trTipoAtual = '';
+      trInstrucoesTravar();
       trTipoBotoesAtualizar();
       trResumoLinhasAtualizar(); // as linhas pequenas sob os títulos dos blocos recolhidos
       trGravadaLimpar();

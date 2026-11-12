@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.13
+
+Áudio em texto: com o tipo **Discurso em uma reunião pública das Testemunhas de Jeová**, o campo **Como fazer o resumo** fica desativado e vazio, com uma nota explicando que o resumo segue o padrão do app (o mesmo do resumo dos discursos na tela Anotações) e onde ficam essas definições (Ajustes → Prompts da IA → Anotações de discursos → Resumo da gravação nas anotações). Ao trocar para outro tipo, o campo volta a funcionar.
+
 ## 6.9.12
 
 Áudio em texto: com o tipo de áudio **Discurso em uma reunião pública das Testemunhas de Jeová**, o resumo segue as **mesmas instruções do resumo das anotações** (o prompt “Resumo da gravação nas anotações”, editável na tela de prompts): tema no topo, pontos principais com o modelo IMPORTANTE e aplicações com o modelo Aplicar, textos lidos com o versículo da TNM, experiências, palavras-chave com emoji e RESUMO no fim, com a mesma formatação em negrito e itálico. O campo “Como fazer o resumo” desse tipo fica em branco (o que a pessoa escrever nele vai como instrução a mais).
