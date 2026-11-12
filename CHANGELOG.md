@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.07
+
+Resumo das gravações nas anotações: as **palavras-chave** saem sempre em MAIÚSCULAS, negrito e com um emoji antes: 📖 **TEXTO LIDO** (no lugar de “FOI LIDO”), 📌 **TEXTO CITADO**, 💬 **EXPERIÊNCIA**, 📜 **RELATO BÍBLICO**, 🎭 **DEMONSTRAÇÃO**, 🎤 **ENTREVISTA**, 🎬 **DRAMA**, ❓ **PERGUNTA DE REVISÃO**, ✅ **RESPOSTA**, 💡 **LIÇÃO** e 📝 **RESUMO**; outras palavras-chave seguem o mesmo padrão.
+
 ## 6.9.06
 
 Gravações guardadas no app: o tocador da gravação recém-feita podia ficar em branco no iPhone (o áudio lido do banco logo depois de gravado não carregava). Agora a gravação feita nesta sessão toca direto da memória; e qualquer tocador que não carregar tenta de novo sozinho e, se ainda falhar, mostra **↻ Tentar de novo** no lugar da barra.

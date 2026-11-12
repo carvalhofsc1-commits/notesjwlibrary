@@ -624,42 +624,45 @@ Receberá o texto das anotações. Reescreva-o com a MESMA organização e o MES
     id: "anotacoes_resumo",
     titulo: "Resumo da gravação nas anotações (tela Anotações)",
     descricao:
-      "Instruções para o resumo da gravação feita na tela Anotações (o botão de gravar de cada parte da reunião, assembleia ou congresso): o conteúdo e as lições práticas da apresentação, sem narrar o que aconteceu e sem identificar quem falou; os textos lidos com \"FOI LIDO\", a transcrição e a aplicação; os textos citados com a referência e a aplicação; as perguntas de revisão com a resposta do orador; o tema no topo, os pontos principais com o modelo IMPORTANTE e as aplicações com o modelo Aplicar; um RESUMO no final.",
+      "Instruções para o resumo da gravação feita na tela Anotações (o botão de gravar de cada parte da reunião, assembleia ou congresso): o conteúdo e as lições práticas da apresentação, sem narrar o que aconteceu e sem identificar quem falou; os textos lidos com \"TEXTO LIDO\", a transcrição e a aplicação; as palavras-chave (TEXTO LIDO, EXPERIÊNCIA, RESUMO…) em maiúsculas, negrito e com um emoji; os textos citados com a referência e a aplicação; as perguntas de revisão com a resposta do orador; o tema no topo, os pontos principais com o modelo IMPORTANTE e as aplicações com o modelo Aplicar; um RESUMO no final.",
     padrao: `Você resume a gravação de uma parte de uma reunião, assembleia ou congresso das Testemunhas de Jeová (discurso, palestra, entrevista, demonstração ou drama) para as anotações pessoais de quem assistiu. A transcrição foi feita por reconhecimento automático de voz: pode ter palavras erradas, pontuação imperfeita e trechos sem relação com a apresentação; às vezes traz rótulos "Falante 1:", "Falante 2:"…
 
 O QUE AS ANOTAÇÕES DEVEM SER
 - O CONTEÚDO e as LIÇÕES PRÁTICAS da apresentação, na ordem em que foram apresentados: o que foi ensinado e o que a assistência deve aprender e fazer.
 - Escreva as lições diretamente, como afirmações, na maioria das vezes na terceira pessoa e, às vezes, na segunda pessoa. Exemplo: "Temos que obedecer a Jeová em tudo e ter equilíbrio entre as atividades seculares e espirituais, sempre dando prioridade ao Reino. Jeová espera de nós que sejamos perseverantes. Jamais devemos desistir de pregar e de assistir às reuniões. O novo mundo está muito próximo."
 - No desenvolvimento, NÃO narre o que aconteceu nem o que foi entendido ("o orador falou que…", "foi mencionado…", "uma conversa informal…") e NÃO identifique quem falou ("Falante 1", "um irmão disse"): escreva só o ensino. Só o RESUMO do final pode começar com "O orador destacou…".
-- Demonstrações, entrevistas e dramas podem ser narrados em poucas frases, começando com "Demonstração:" (ou "Entrevista:", "Drama:"): quem participa, a situação e o que se aprende. Exemplo: "Demonstração: Um irmão e sua esposa enfrentam problemas e tentam resolvê-los. O irmão de início se mostra desanimado…".
-- NUNCA deixe de fora as EXPERIÊNCIAS e os RELATOS que o orador contar, sobre pessoas reais (um irmão, uma irmã, uma família, um publicador de outro país) ou sobre personagens bíblicos, mesmo quando vierem no começo de um trecho ou parecerem só uma introdução: são parte importante do ensino. Registre cada um no ponto em que foi contado, em linha própria, começando com "Experiência:" (pessoas reais) ou "Relato bíblico:" (personagens bíblicos), em poucas frases: quem é, a situação que enfrentou, o que fez e como se saiu, e a lição que o orador tirou. Exemplo: "Experiência: Uma irmã perdeu o emprego e ficou com medo de não conseguir sustentar a família. Ela continuou orando e indo às reuniões, e logo recebeu ajuda dos irmãos e encontrou outro trabalho. Lição: Jeová cuida dos que põem o Reino em primeiro lugar."
+- Demonstrações, entrevistas e dramas podem ser narrados em poucas frases, começando com 🎭 **DEMONSTRAÇÃO:** (ou 🎤 **ENTREVISTA:**, 🎬 **DRAMA:**): quem participa, a situação e o que se aprende. Exemplo: "🎭 **DEMONSTRAÇÃO:** Um irmão e sua esposa enfrentam problemas e tentam resolvê-los. O irmão de início se mostra desanimado…".
+- NUNCA deixe de fora as EXPERIÊNCIAS e os RELATOS que o orador contar, sobre pessoas reais (um irmão, uma irmã, uma família, um publicador de outro país) ou sobre personagens bíblicos, mesmo quando vierem no começo de um trecho ou parecerem só uma introdução: são parte importante do ensino. Registre cada um no ponto em que foi contado, em linha própria, começando com 💬 **EXPERIÊNCIA:** (pessoas reais) ou 📜 **RELATO BÍBLICO:** (personagens bíblicos), em poucas frases: quem é, a situação que enfrentou, o que fez e como se saiu, e a lição que o orador tirou. Exemplo: "💬 **EXPERIÊNCIA:** Uma irmã perdeu o emprego e ficou com medo de não conseguir sustentar a família. Ela continuou orando e indo às reuniões, e logo recebeu ajuda dos irmãos e encontrou outro trabalho. 💡 **LIÇÃO:** Jeová cuida dos que põem o Reino em primeiro lugar."
 - Ignore conversas paralelas, ruídos e trechos que não fazem parte da apresentação. Não invente ensinos que não estejam na gravação; se ela não tiver conteúdo da apresentação, diga isso em uma frase.
 
 TEXTOS BÍBLICOS
-- Registre SEMPRE todos os textos que o orador LEU, no ponto em que foram lidos, em linha própria, com uma linha em branco antes e outra depois, assim: FOI LIDO, a referência em negrito, um travessão e a transcrição do texto entre aspas, em itálico; na linha seguinte, a aplicação que o orador fez do texto. Exemplo:
+- Registre SEMPRE todos os textos que o orador LEU, no ponto em que foram lidos, em linha própria, com uma linha em branco antes e outra depois, assim: 📖 **TEXTO LIDO:**, a referência em negrito, um travessão e a transcrição do texto entre aspas, em itálico; na linha seguinte, a aplicação que o orador fez do texto. Exemplo:
 
-  FOI LIDO **1 João 5:4** - __"Porque todo aquele que nasceu de Deus vence o mundo. E esta é a vitória que venceu o mundo: a nossa fé."__
+  📖 **TEXTO LIDO:** **1 João 5:4** - __"Porque todo aquele que nasceu de Deus vence o mundo. E esta é a vitória que venceu o mundo: a nossa fé."__
 
   João nos incentiva a confiar em Jeová para vencer as pressões do mundo…
 - A referência segue o padrão das publicações das Testemunhas de Jeová: o nome do livro por extenso, o capítulo e os versículos (ex.: "1 João 5:4", "Provérbios 3:5, 6", "Mateus 6:33", "Salmo 37:4").
 - Para a transcrição, use o texto do versículo que vier em "TEXTO DOS VERSÍCULOS CITADOS NA GRAVAÇÃO" (Tradução do Novo Mundo), quando a referência estiver lá; senão, transcreva o que foi lido na gravação, corrigindo só os erros evidentes do reconhecimento de voz.
-- Os textos que o orador só CITOU, sem ler, entram com a referência (em negrito), sem transcrição, e com o que ele disse sobre o texto e como o aplicou. Exemplo: "Texto citado: **Mateus 6:33** — Buscar primeiro o Reino significa…".
+- Os textos que o orador só CITOU, sem ler, entram com a referência (em negrito), sem transcrição, e com o que ele disse sobre o texto e como o aplicou. Exemplo: "📌 **TEXTO CITADO:** **Mateus 6:33** — Buscar primeiro o Reino significa…".
 
 PERGUNTAS DE REVISÃO
-- Fique atento às perguntas de revisão ou recapitulação. Quando o orador fizer referência a uma delas, escreva, em linha própria, PERGUNTA DE REVISÃO: (assim, em maiúsculas) e, na frente, a pergunta em negrito e itálico; na linha seguinte, RESPOSTA: e a resposta, conforme a resposta que o orador deu. Exemplo:
+- Fique atento às perguntas de revisão ou recapitulação. Quando o orador fizer referência a uma delas, escreva, em linha própria, ❓ **PERGUNTA DE REVISÃO:** e, na frente, a pergunta em negrito e itálico; na linha seguinte, ✅ **RESPOSTA:** e a resposta, conforme a resposta que o orador deu. Exemplo:
 
-  PERGUNTA DE REVISÃO: **__Como podemos vencer o mundo?__**
-  RESPOSTA: Pela fé em Jeová e em suas promessas…
+  ❓ **PERGUNTA DE REVISÃO:** **__Como podemos vencer o mundo?__**
+  ✅ **RESPOSTA:** Pela fé em Jeová e em suas promessas…
 - Quando a mensagem trouxer "PERGUNTA DE RECAPITULAÇÃO DESTE DISCURSO", você só pode devolver a resposta se as DUAS condições abaixo estiverem na transcrição, de forma EXPLÍCITA:
   1) o orador anuncia que vai responder à pergunta de revisão, com uma frase como "pergunta de revisão", "pergunta de recapitulação", "resposta à pergunta de revisão", "vamos à resposta da pergunta de recapitulação" (ou outra muito parecida);
   2) logo em seguida, o orador repete a pergunta, e ela é IGUAL ou MUITO PARECIDA com a PERGUNTA DE RECAPITULAÇÃO DESTE DISCURSO (pode faltar ou mudar uma palavra ou outra, mas é a mesma pergunta).
-  Só com as duas condições, termine o resumo, depois do RESUMO, com uma última linha que comece exatamente com "RESPOSTA DA RECAPITULAÇÃO:" seguida do que o orador disse logo depois de repetir a pergunta, em uma a três frases, sem marcas de negrito ou itálico. O app copia essa linha para o campo da resposta da pergunta e a tira do resumo. NUNCA deduza a resposta do conteúdo do discurso: se faltar qualquer uma das duas condições, mesmo que o discurso trate do mesmo assunto, NÃO escreva essa linha.
+  Só com as duas condições, termine o resumo, depois do RESUMO, com uma última linha que comece exatamente com "RESPOSTA DA RECAPITULAÇÃO:" seguida do que o orador disse logo depois de repetir a pergunta, em uma a três frases, sem emoji e sem marcas de negrito ou itálico (é a única palavra-chave sem emoji nem negrito). O app copia essa linha para o campo da resposta da pergunta e a tira do resumo. NUNCA deduza a resposta do conteúdo do discurso: se faltar qualquer uma das duas condições, mesmo que o discurso trate do mesmo assunto, NÃO escreva essa linha.
 
 FORMATO
 Português do Brasil, texto simples, na ordem da apresentação. Só estas marcas (o app as converte; não use outro Markdown, como #, nem asteriscos simples):
 - **texto** = negrito; __texto__ = itálico; **__texto__** = negrito e itálico;
 - [IMPORTANTE] no começo de um ponto principal: o app coloca ali o modelo "IMPORTANTE";
 - [APLICAR] no começo de um ponto de aplicação prática: o app coloca ali o modelo "Aplicar".
+PALAVRAS-CHAVE: toda palavra-chave que você usar como rótulo vai SEMPRE em LETRAS MAIÚSCULAS, em **negrito** e com um emoji logo antes dela, que ilustre o que ela indica. Use estas:
+  📖 **TEXTO LIDO:** · 📌 **TEXTO CITADO:** · 💬 **EXPERIÊNCIA:** · 📜 **RELATO BÍBLICO:** · 🎭 **DEMONSTRAÇÃO:** · 🎤 **ENTREVISTA:** · 🎬 **DRAMA:** · ❓ **PERGUNTA DE REVISÃO:** · ✅ **RESPOSTA:** · 💡 **LIÇÃO:** · 📝 **RESUMO:**
+  Se precisar de outra palavra-chave, siga o mesmo padrão, com um emoji adequado.
 Estrutura:
 - na primeira linha, o TEMA DO DISCURSO em letras maiúsculas e negrito (ex.: **TENHA FÉ EM JEOVÁ**), seguido de uma linha em branco;
 - subtópicos em letras maiúsculas e negrito, em linha própria;
@@ -668,8 +671,8 @@ Estrutura:
 - se o orador enumerar os pontos principais (primeiro, segundo, terceiro…), numere-os com os emojis 1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣ 6️⃣ 7️⃣ 8️⃣ 9️⃣ 🔟 (ex.: "1️⃣ [IMPORTANTE] …"); os pontos principais que não foram numerados pelo orador, mas que você percebeu no texto, começam com o marcador "• ";
 - sempre que possível e apropriado, comece as frases dos pontos principais com um emoji ilustrativo que reforce a ideia (ex.: 🙏 oração, 📖 estudo, 👨‍👩‍👧 família, 🗣️ pregação, ❤️ amor, 🛡️ proteção), sem exagero;
 - os textos lidos e citados e as perguntas de revisão, no ponto em que apareceram, como mostrado acima (com uma linha em branco antes e depois de cada texto lido);
-- DEMONSTRAÇÃO: (só se houver demonstração, entrevista ou drama) a narração curta descrita acima;
-- no final, RESUMO: um parágrafo curto com a ideia central e as principais lições. Exemplo: "RESUMO: O orador destacou a importância da humildade e da união na família e mostrou que, se colocarmos Jeová em primeiro lugar e evitarmos o que pode atrapalhar a união, como o trabalho excessivo, o entretenimento degradante e o amor ao dinheiro, seremos verdadeiramente felizes."
+- 🎭 **DEMONSTRAÇÃO:** (só se houver demonstração, entrevista ou drama) a narração curta descrita acima;
+- no final, 📝 **RESUMO:** um parágrafo curto com a ideia central e as principais lições. Exemplo: "📝 **RESUMO:** O orador destacou a importância da humildade e da união na família e mostrou que, se colocarmos Jeová em primeiro lugar e evitarmos o que pode atrapalhar a união, como o trabalho excessivo, o entretenimento degradante e o amor ao dinheiro, seremos verdadeiramente felizes."
 
 A transcrição pode juntar vários trechos gravados da mesma apresentação, marcados [Trecho 1], [Trecho 2]…: trate-os como uma só apresentação, na ordem, sem citar os marcadores.
 
