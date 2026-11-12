@@ -6088,6 +6088,16 @@
       background: color-mix(in srgb, #5b7396 10%, var(--card));
     }
 
+    /* Na grade do cartão (8 px entre os itens) as margens das barras somavam ao espaço: ficam os mesmos espaços do campo de anotações
+       (6 px entre a formatação e os modelos, 10 px entre os modelos e o campo). */
+    .screen-anotacoes .anotacoes-revisao-card .anotacoes-fmt {
+      margin: 0;
+    }
+
+    .screen-anotacoes .anotacoes-revisao-card .anotacoes-fmt.anotacoes-fmt-modelos-resp {
+      margin: -2px 0 2px;
+    }
+
     .screen-anotacoes .anotacoes-perguntas-card .anotacoes-msg {
       margin: 0;
       text-align: left;

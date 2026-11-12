@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.8.18
+
+Anotações: na pergunta de recapitulação, os botões de formatação e os modelos (Aplicar, Importante) ficam com os mesmos espaços do campo de anotações (antes o espaço entre as barras e o campo era maior).
+
 ## 6.8.17
 
 Discurso público: o botão **📂 Carregar o esboço já salvo** (ou **importado**) fica logo abaixo do **✨ IA - Elaborar o esboço**.
