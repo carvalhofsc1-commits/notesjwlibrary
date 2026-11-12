@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.8.22
+
+Anotações: os cards principais passaram a se chamar **Reuniões congregacionais**, **Assembleias** e **Congressos**, e os cartões da tela ganharam fundo **roxo clarinho** (com tom próprio no tema escuro).
+
 ## 6.8.21
 
 Tela de prompts: nova categoria **📝 Anotações de discursos**, com os prompts da tela Anotações (formatar as anotações com IA, resumo da gravação e perguntas de recapitulação da assembleia), que saíram de Formatação de texto.

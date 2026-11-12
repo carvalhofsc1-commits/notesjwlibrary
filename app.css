@@ -14043,3 +14043,25 @@ a.esboco-info-tema {
   font-size: .88rem;
 }
 
+/* Anotações: os cartões da tela (o geral, o dos discursos do programa e o das perguntas) em roxo clarinho. */
+:root {
+  --anotacoes-bg: linear-gradient(180deg, #f5f0ff 0%, #ebe1fd 100%);
+  --anotacoes-border: #a78bfa;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --anotacoes-bg: linear-gradient(180deg, #2a2140 0%, #33284f 100%);
+    --anotacoes-border: #8b5cf6;
+  }
+}
+
+:root[data-theme="dark"] {
+  --anotacoes-bg: linear-gradient(180deg, #2a2140 0%, #33284f 100%);
+  --anotacoes-border: #8b5cf6;
+}
+
+.card.tint-5.screen-anotacoes {
+  background: var(--anotacoes-bg);
+  border-color: var(--anotacoes-border);
+}
