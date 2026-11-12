@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.08
+
+Anotações:
+- **Texto bíblico:** novo botão **👁️** (visualizar) ao lado do Inserir. Mostra o texto da referência escolhida logo abaixo do campo, com **Inserir** e **✕ Fechar**; o Inserir da barra continua inserindo direto, sem visualizar.
+- **Resumo em segundo plano:** o resumo (da gravação pronta, de “Resumir as gravações” e do arquivo carregado) entra numa fila e roda em segundo plano. Cada pedido guarda o discurso de onde saiu e o resultado vai para as anotações **daquele** discurso (e a resposta da recapitulação para o campo dele), mesmo que você já esteja em outra parte, gravando o próximo discurso ou fora da tela. Ao tocar em Resumo, o quadro da gravação fecha e já dá para gravar de novo; gravar ou trocar de parte também fecha sozinho o quadro de uma gravação já guardada no app. Uma linha mostra o andamento (ícone girando, o discurso, a etapa e o tempo) e quantos esperam na fila; o resumo agora entra no fim das anotações, sem mexer no cursor.
+
 ## 6.9.07
 
 Resumo das gravações nas anotações: as **palavras-chave** saem sempre em MAIÚSCULAS, negrito e com um emoji antes: 📖 **TEXTO LIDO** (no lugar de “FOI LIDO”), 📌 **TEXTO CITADO**, 💬 **EXPERIÊNCIA**, 📜 **RELATO BÍBLICO**, 🎭 **DEMONSTRAÇÃO**, 🎤 **ENTREVISTA**, 🎬 **DRAMA**, ❓ **PERGUNTA DE REVISÃO**, ✅ **RESPOSTA**, 💡 **LIÇÃO** e 📝 **RESUMO**; outras palavras-chave seguem o mesmo padrão.

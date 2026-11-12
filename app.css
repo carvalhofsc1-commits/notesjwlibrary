@@ -14233,3 +14233,53 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
   padding: 3px 10px;
   font-size: .8rem;
 }
+
+/* Texto bíblico: o 👁️ (visualizar) e a prévia do texto, logo abaixo do campo. */
+.anotacoes-biblia-barra {
+  grid-template-columns: minmax(0, 1fr) auto auto auto auto;
+}
+
+.anotacoes-biblia-previa[hidden] {
+  display: none;
+}
+
+.anotacoes-biblia-previa {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--soft);
+}
+
+.anotacoes-biblia-previa-texto {
+  max-height: 38vh;
+  overflow-y: auto;
+  font-size: .92rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.anotacoes-biblia-previa-acoes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.anotacoes-biblia-previa-acoes button {
+  min-height: 34px;
+  padding: 4px 8px;
+  font-size: .86rem;
+}
+
+/* Resumo em segundo plano: a linha do andamento. */
+.anotacoes-fila[hidden] {
+  display: none;
+}
+
+.anotacoes-fila {
+  margin: 6px 0 0;
+  font-size: .84rem;
+}

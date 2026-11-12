@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.07'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.08'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -26695,6 +26695,11 @@ function saveTemplatesToStorage() {
 
       // ----- Gravações guardadas no app: cada anotação (a reunião ou a parte do programa) guarda os ids das suas gravações -----
       let gravacoesReuniao = [];
+      const filaResumo = []; // pedidos de resumo esperando a vez
+      let filaRodando = null; // o pedido em andamento
+      let filaUltimo = '';
+      let filaUltimoEm = 0;
+      const filaEl = document.getElementById('anotacoesFila');
       const anotIdAtual = () => (comPrograma() ? 'anot:' + modo + ':' + chaveAtual + ':' + parteAtual : 'anot:reuniao');
       function gravacoesAtuais() {
         if (comPrograma()) {
@@ -26725,7 +26730,9 @@ function saveTemplatesToStorage() {
           aoMudar: metas => {
             gravacoesBox.hidden = !metas.length;
             gravacoesTitulo.textContent = '🎧 Gravações guardadas no app (' + metas.length + ')';
-            gravResumirTodasBtn.textContent = metas.length > 1 ? '✨ Resumir as ' + metas.length + ' gravações' : '✨ Resumir a gravação';
+            gravResumirTodasBtn.dataset.rotulo = metas.length > 1 ? '✨ Resumir as ' + metas.length + ' gravações' : '✨ Resumir a gravação';
+            gravResumirTodasBtn.dataset.estado = '';
+            filaPintar();
           }
         });
       }
@@ -27491,6 +27498,7 @@ function saveTemplatesToStorage() {
       }
 
       function abrirParteNaEscrita(i) {
+        if (gravacaoPronta && gravacaoPronta.idApp) { gravacaoPronta = null; mostrarGravacao('ocioso'); }
         parteAtual = i;
         expandida = i;
         abrirDiaDaParte(i);
@@ -28151,6 +28159,7 @@ function saveTemplatesToStorage() {
       }
 
       bibRef.addEventListener('input', () => {
+        if (previa) fecharPrevia();
         guia.aberto = Boolean(bibRef.value.trim()) || guia.aberto;
         sincronizarDoTexto();
       });
@@ -28161,6 +28170,7 @@ function saveTemplatesToStorage() {
       });
       // Lixeira: apaga o que foi digitado ou escolhido e fecha o painel.
       document.getElementById('anotacoesBibliaLimpar').addEventListener('click', () => {
+        if (previa) fecharPrevia();
         bibRef.value = '';
         guia.aberto = false;
         document.getElementById('anotacoesBibliaEscolher').setAttribute('aria-expanded', 'false');
@@ -28190,11 +28200,12 @@ function saveTemplatesToStorage() {
         if (msg && !/^Buscando/.test(msg)) tempoMsgBiblia = setTimeout(() => { el.hidden = true; el.textContent = ''; }, aviso ? 7000 : 3500);
       }
 
-      async function anotacoesInserirBiblia(ref) {
+      // Busca o texto da referência e devolve o bloco pronto para inserir (ou null, com o recado já dado).
+      async function anotacoesBuscarBiblia(ref) {
         const referencia = String(ref || '').trim();
-        if (!referencia) return dizerBiblia('Digite o livro (ex.: Jo) ou a referência (ex.: João 3:16).', true);
-        if (!codigoResumoSalvo()) return dizerBiblia('Salve o código de resumo em Ajustes → 🔐 Autorização de acessos.', true);
-        if (!navigator.onLine) return dizerBiblia('Sem conexão com a internet.', true);
+        if (!referencia) { dizerBiblia('Digite o livro (ex.: Jo) ou a referência (ex.: João 3:16).', true); return null; }
+        if (!codigoResumoSalvo()) { dizerBiblia('Salve o código de resumo em Ajustes → 🔐 Autorização de acessos.', true); return null; }
+        if (!navigator.onLine) { dizerBiblia('Sem conexão com a internet.', true); return null; }
         dizerBiblia('Buscando ' + referencia + '…');
         const r = await postStudy({ tarefa: 'anotacoes-versiculos', codigoResumo: codigoResumoSalvo(), referencias: [referencia] }, 20000);
         if (!r.ok) return dizerBiblia((r.data && r.data.erro) || 'Não consegui buscar o texto bíblico.', true);
@@ -28210,7 +28221,38 @@ function saveTemplatesToStorage() {
           .filter(v => (v.texto || '').trim())
           .map(v => estiloComAcentos(v.referencia || referencia, 'bold') + ': “' + comNumeros(v) + '”')
           .join('\n');
-        if (!bloco) return dizerBiblia('Não encontrei o texto de “' + referencia + '”.', true);
+        if (!bloco) { dizerBiblia('Não encontrei o texto de “' + referencia + '”.', true); return null; }
+        dizerBiblia('');
+        return bloco;
+      }
+      // Visualizar: mostra o texto da referência escolhida antes de inserir (o Inserir continua inserindo direto, sem visualizar).
+      const bibPrevia = document.getElementById('anotacoesBibliaPrevia');
+      const bibPreviaTexto = document.getElementById('anotacoesBibliaPreviaTexto');
+      let previa = null; // { ref, bloco }
+      function fecharPrevia() {
+        previa = null;
+        bibPrevia.hidden = true;
+        bibPreviaTexto.textContent = '';
+        posicionarListaBiblia();
+      }
+      document.getElementById('anotacoesBibliaVer').addEventListener('click', async () => {
+        const ref = bibRef.value.trim();
+        if (previa && previa.ref === ref && !bibPrevia.hidden) return fecharPrevia();
+        const bloco = await anotacoesBuscarBiblia(ref);
+        if (!bloco) return;
+        previa = { ref, bloco };
+        bibPreviaTexto.textContent = bloco;
+        bibPrevia.hidden = false;
+        posicionarListaBiblia();
+      });
+      document.getElementById('anotacoesBibliaPreviaFechar').addEventListener('click', fecharPrevia);
+      document.getElementById('anotacoesBibliaPreviaInserir').addEventListener('click', () => anotacoesInserirBiblia(previa ? previa.ref : bibRef.value));
+
+      async function anotacoesInserirBiblia(ref) {
+        const referencia = String(ref || '').trim();
+        const bloco = previa && previa.ref === referencia ? previa.bloco : await anotacoesBuscarBiblia(referencia);
+        if (!bloco) return;
+        fecharPrevia();
         inserirNoCursor(bloco + '\n', alvoInsercao, true);
         dizerBiblia('Texto bíblico inserido.');
         // Pronto para o próximo: limpa o campo e fecha o guia.
@@ -28738,87 +28780,206 @@ function saveTemplatesToStorage() {
         }
         return false;
       }
-      // Pede o resumo da transcrição e o insere no cursor (com o título em negrito e itálico e uma linha em branco).
-      async function anotacoesResumir(transc, varias) {
-        gravarStatus.textContent = 'Resumindo…';
-        const dp = dadosDaParte();
-        const contexto = [dp.tema, dp.orador, dp.congregacao].filter(Boolean).join(' · ');
+      // ----- Resumo em segundo plano: cada pedido guarda a anotação de onde saiu (o "alvo") e o resultado volta para ela, mesmo que a
+      // pessoa já esteja anotando outro discurso, gravando de novo ou fora da tela. Os pedidos rodam um de cada vez, na ordem.
+      function alvoAtual() {
         const q = ativa ? perguntaDaParte(parteAtual) : null;
-        const pedido = { acao: 'resumo', modo: 'anotacoes', codigoTexto: codigoTextoSalvo(), texto: transc.slice(0, 60000), contexto };
-        if (q) pedido.pergunta = textoDaPergunta(q);
-        const r = await trPost(pedido);
-        if (!r.ok) {
-          inserirNoCursor('\n—— Transcrição ——\n' + transc + '\n');
-          gravarStatus.textContent = trMensagem(r, 'Transcrição inserida; o resumo falhou.');
-          return true; // a transcrição já entrou no texto
-        }
-        let resumo = (r.dados && r.dados.resumo) || '';
-        // A resposta do orador à pergunta de recapitulação desta parte vai para o campo da resposta (abaixo do que já houver, com desfazer).
-        const achou = q ? /^[ \t*_]*RESPOSTA DA RECAPITULA[ÇC][ÃA]O:[ \t*_]*([\s\S]+)$/im.exec(resumo) : null;
-        let respostaCopiada = false;
-        // Conferência do app: a transcrição precisa anunciar a pergunta de revisão/recapitulação e, logo depois, repetir a pergunta do card
-        // (pelo menos 60% das palavras dela). Sem isso, a resposta da IA é descartada (ela pode ter deduzido do conteúdo do discurso).
-        if (achou && !anotacoesOradorRespondeu(transc, q)) {
-          resumo = resumo.slice(0, achou.index).replace(/\s+$/, '');
-        } else if (achou) {
-          resumo = resumo.slice(0, achou.index).replace(/\s+$/, '');
-          const resp = anotacoesResumoFormatar(achou[1].replace(/[*_]{2}/g, '')).trim();
-          if (resp && ativa && perguntaDaParte(parteAtual)) {
+        const dp = dadosDaParte();
+        return {
+          modo, programa: comPrograma(), chave: chaveAtual, parte: parteAtual,
+          dona: q ? donaDaPergunta(parteAtual) : -1, q,
+          contexto: [dp.tema, dp.orador, dp.congregacao].filter(Boolean).join(' · '),
+          titulo: tituloDaAnotacao(60)
+        };
+      }
+      const alvoAberto = a => Boolean(modo) && modo === a.modo && (a.programa ? (comPrograma() && chaveAtual === a.chave && ativa && parteAtual === a.parte) : !comPrograma());
+      const juntarTexto = (velho, novo) => (String(velho || '').trim() ? String(velho).replace(/\s+$/, '') + '\n\n' : '') + novo;
+      // Grava o resumo (e a resposta da recapitulação) na anotação do alvo: aberta na tela, em outra parte do evento aberto ou só no rascunho.
+      function entregarNaAnotacao(alvo, bloco, resp) {
+        if (alvoAberto(alvo)) {
+          texto.value = juntarTexto(texto.value, bloco);
+          guardarNota();
+          if (resp && perguntaDaParte(parteAtual)) {
             respostaAntesDaIa = respostaEl.value;
-            respostaEl.value = respostaEl.value.trim() ? respostaEl.value.replace(/\s+$/, '') + '\n\n' + resp : resp;
+            respostaEl.value = juntarTexto(respostaEl.value, resp);
             partes[donaDaPergunta(parteAtual)].resposta = respostaEl.value;
             respDesfazer.hidden = false;
             dizerResp('Resposta do orador copiada da gravação.');
-            respostaCopiada = true;
           }
+          salvarRascunho();
+          return true;
+        }
+        if (alvo.programa && modo === alvo.modo && comPrograma() && chaveAtual === alvo.chave && partes[alvo.parte]) {
+          partes[alvo.parte].nota = juntarTexto(partes[alvo.parte].nota, bloco);
+          if (resp && partes[alvo.dona]) partes[alvo.dona].resposta = juntarTexto(partes[alvo.dona].resposta, resp);
+          salvarRascunho();
+          try { pintarPartes(); atualizarVista(); } catch (e) { /* ignore */ }
+          return true;
+        }
+        try {
+          const dados = lerRascunhos();
+          if (alvo.programa) {
+            const ev = dados[alvo.modo] && dados[alvo.modo].eventos && dados[alvo.modo].eventos[alvo.chave];
+            const p = ev && Array.isArray(ev.partes) ? ev.partes[alvo.parte] : null;
+            if (!p) return false;
+            p.nota = juntarTexto(p.nota, bloco);
+            if (resp && ev.partes[alvo.dona]) ev.partes[alvo.dona].resposta = juntarTexto(ev.partes[alvo.dona].resposta, resp);
+          } else {
+            if (!dados.reuniao || typeof dados.reuniao !== 'object') dados.reuniao = {};
+            dados.reuniao.texto = juntarTexto(dados.reuniao.texto, bloco);
+          }
+          localStorage.setItem(ANOT_KEY, JSON.stringify(dados));
+          return true;
+        } catch (e) { return false; }
+      }
+      // Pede o resumo da transcrição e o entrega na anotação do alvo (título em negrito e itálico, depois uma linha em branco).
+      async function anotacoesResumir(transc, varias, alvo) {
+        const pedido = { acao: 'resumo', modo: 'anotacoes', codigoTexto: codigoTextoSalvo(), texto: transc.slice(0, 60000), contexto: alvo.contexto };
+        if (alvo.q) pedido.pergunta = textoDaPergunta(alvo.q);
+        const r = await trPost(pedido);
+        if (!r.ok) {
+          const ok = entregarNaAnotacao(alvo, '—— Transcrição ——\n' + transc, '');
+          return { ok, falhaResumo: trMensagem(r, 'o resumo falhou') };
+        }
+        let resumo = (r.dados && r.dados.resumo) || '';
+        // A resposta do orador à pergunta de recapitulação vai para o campo da resposta. Conferência do app: a transcrição precisa anunciar a
+        // pergunta de revisão/recapitulação e, logo depois, repetir a pergunta do card (pelo menos 60% das palavras); senão, é descartada.
+        const achou = alvo.q ? /^[ \t*_]*RESPOSTA DA RECAPITULA[ÇC][ÃA]O:[ \t*_]*([\s\S]+)$/im.exec(resumo) : null;
+        let resp = '';
+        if (achou) {
+          resumo = resumo.slice(0, achou.index).replace(/\s+$/, '');
+          if (anotacoesOradorRespondeu(transc, alvo.q)) resp = anotacoesResumoFormatar(achou[1].replace(/[*_]{2}/g, '')).trim();
         }
         const titulo = varias ? '—— Resumo das gravações ——' : '—— Resumo da gravação ——';
-        inserirNoCursor('\n' + bibliaMarcasParaUnicode('**__' + titulo + '__**') + '\n\n' + anotacoesResumoFormatar(resumo) + '\n');
-        gravarStatus.textContent = 'Resumo inserido nas anotações.' + (respostaCopiada ? ' A resposta da pergunta de recapitulação foi copiada para o campo dela.' : '');
-        salvarRascunho();
+        const ok = entregarNaAnotacao(alvo, bibliaMarcasParaUnicode('**__' + titulo + '__**') + '\n\n' + anotacoesResumoFormatar(resumo), resp);
+        return { ok, resposta: Boolean(resp) };
+      }
+      function mensagemFinal(alvo, res) {
+        const nome = '«' + (alvo.titulo || 'Anotações') + '»';
+        if (!res.ok) return '⚠️ Não encontrei a anotação de ' + nome + ' para colocar o resumo.';
+        if (res.falhaResumo) return '⚠️ ' + nome + ': ' + res.falhaResumo + '; a transcrição foi colocada nas anotações.';
+        return '✅ Resumo de ' + nome + ' colocado nas anotações' + (res.resposta ? ', com a resposta da pergunta de recapitulação' : '') + '.';
+      }
+      // Pedido de uma gravação (a recém-gravada ou um arquivo carregado).
+      function pedidoUmaGravacao(arquivo, duracaoS, alvo) {
+        return {
+          alvo, tipo: 'uma',
+          async executar(job) {
+            job.fase = 'Transcrevendo';
+            const transc = await anotacoesTranscrever(arquivo, duracaoS);
+            if (!transc) return '⚠️ Não foi possível transcrever a gravação de «' + alvo.titulo + '».';
+            job.fase = 'Resumindo';
+            return mensagemFinal(alvo, await anotacoesResumir(transc, false, alvo));
+          }
+        };
+      }
+      // Pedido de todas as gravações guardadas de uma anotação, na ordem, num resumo só.
+      function pedidoTodasGravacoes(idsDaAnotacao, alvo) {
+        return {
+          alvo, tipo: 'todas',
+          async executar(job) {
+            const indice = await gravacoesIndice();
+            const ids = idsDaAnotacao.filter(id => indice.some(g => g.id === id)); // as apagadas ficam de fora
+            const trechos = [];
+            let falhas = 0;
+            for (let i = 0; i < ids.length; i++) {
+              job.fase = ids.length > 1 ? 'Transcrevendo ' + (i + 1) + ' de ' + ids.length : 'Transcrevendo';
+              let reg = null;
+              try { reg = await bancoLer('gravacao:' + ids[i]); } catch (e) { reg = null; }
+              if (!reg || !reg.blob) { falhas++; continue; }
+              const meta = indice.find(g => g.id === ids[i]) || {};
+              const tipo = reg.blob.type || meta.tipo || 'audio/webm';
+              const ext = /mp4|aac|m4a/.test(tipo) ? 'm4a' : /ogg/.test(tipo) ? 'ogg' : /wav/.test(tipo) ? 'wav' : 'webm';
+              const arquivo = new File([reg.blob], 'Gravacao-' + (i + 1) + '.' + ext, { type: tipo, lastModified: Date.now() });
+              const t = await anotacoesTranscrever(arquivo, meta.duracaoS || null);
+              if (t) trechos.push(ids.length > 1 ? '[Trecho ' + (i + 1) + ']\n' + t : t);
+              else falhas++;
+            }
+            if (!trechos.length) return '⚠️ Não foi possível transcrever as gravações de «' + alvo.titulo + '».';
+            job.fase = 'Resumindo';
+            const msg = mensagemFinal(alvo, await anotacoesResumir(trechos.join('\n\n'), trechos.length > 1, alvo));
+            return msg + (falhas ? (falhas === 1 ? ' (1 gravação não pôde ser transcrita.)' : ' (' + falhas + ' gravações não puderam ser transcritas.)') : '');
+          }
+        };
+      }
+      async function filaAdicionar(job) {
+        if (!(await anotacoesPodeEnviar())) return false;
+        filaResumo.push(job);
+        filaPintar();
+        if (!filaRodando) filaRodar();
         return true;
       }
-      async function anotacoesProcessarGravacao(arquivo, duracaoS) {
-        if (!(await anotacoesPodeEnviar())) return;
-        gravarStatus.textContent = 'Transcrevendo a gravação…';
-        const transc = await anotacoesTranscrever(arquivo, duracaoS);
-        if (!transc) {
-          gravarStatus.textContent = 'Não foi possível transcrever esta gravação.';
-          return;
+      async function filaRodar() {
+        while (filaResumo.length) {
+          const job = filaResumo.shift();
+          filaRodando = job;
+          job.inicio = Date.now();
+          job.fase = 'Começando';
+          filaPintar();
+          let msg = '';
+          try { msg = await job.executar(job); } catch (e) { msg = '⚠️ O resumo de «' + job.alvo.titulo + '» falhou.'; }
+          filaRodando = null;
+          filaUltimo = msg;
+          filaUltimoEm = Date.now();
+          filaPintar();
         }
-        return anotacoesResumir(transc, false);
       }
-      // Resumir depois: todas as gravações guardadas desta anotação, na ordem em que foram feitas, num resumo só.
-      async function anotacoesResumirGuardadas() {
-        const indice = await gravacoesIndice();
-        // Só as que ainda estão guardadas (as apagadas em Ajustes saem da anotação aqui).
-        const lista = gravacoesAtuais();
-        const ids = lista.filter(id => indice.some(g => g.id === id));
-        if (ids.length !== lista.length) { lista.splice(0, lista.length, ...ids); salvarRascunho(); }
-        if (!ids.length) return;
-        if (!(await anotacoesPodeEnviar())) return;
-        const trechos = [];
-        let falhas = 0;
-        for (let i = 0; i < ids.length; i++) {
-          gravarStatus.textContent = ids.length > 1 ? 'Transcrevendo a gravação ' + (i + 1) + ' de ' + ids.length + '…' : 'Transcrevendo a gravação…';
-          let reg = null;
-          try { reg = await bancoLer('gravacao:' + ids[i]); } catch (e) { reg = null; }
-          if (!reg || !reg.blob) { falhas++; continue; }
-          const meta = indice.find(g => g.id === ids[i]) || {};
-          const tipo = reg.blob.type || meta.tipo || 'audio/webm';
-          const ext = /mp4|aac|m4a/.test(tipo) ? 'm4a' : /ogg/.test(tipo) ? 'ogg' : /wav/.test(tipo) ? 'wav' : 'webm';
-          const arquivo = new File([reg.blob], 'Gravacao-' + (i + 1) + '.' + ext, { type: tipo, lastModified: Date.now() });
-          const t = await anotacoesTranscrever(arquivo, meta.duracaoS || null);
-          if (t) trechos.push(ids.length > 1 ? '[Trecho ' + (i + 1) + ']\n' + t : t);
-          else falhas++;
+      // A linha do andamento (ícone girando e tempo) e o botão Resumir as gravações da anotação aberta.
+      function filaPintar() {
+        if (!filaEl) return;
+        const job = filaRodando;
+        let chave;
+        if (job) {
+          const seg = Math.floor((Date.now() - job.inicio) / 1000);
+          chave = 'r|' + job.alvo.titulo + '|' + job.fase + '|' + seg + '|' + filaResumo.length;
+          if (filaEl.dataset.chave !== chave) {
+            const giro = document.createElement('span');
+            giro.className = 'ai-spinner';
+            giro.setAttribute('aria-hidden', 'true');
+            const t = document.createElement('span');
+            t.textContent = '«' + job.alvo.titulo + '» — ' + job.fase + '… ' + tempoMmSs(seg) + (filaResumo.length ? ' · mais ' + filaResumo.length + ' na fila' : '');
+            filaEl.replaceChildren(giro, t);
+          }
+          filaEl.hidden = false;
+        } else if (filaUltimo && Date.now() - filaUltimoEm < 20000) {
+          chave = 'u|' + filaUltimo;
+          if (filaEl.dataset.chave !== chave) filaEl.textContent = filaUltimo;
+          filaEl.hidden = false;
+        } else {
+          chave = '';
+          filaEl.hidden = true;
         }
-        if (!trechos.length) {
-          gravarStatus.textContent = 'Não foi possível transcrever as gravações.';
-          return;
+        filaEl.dataset.chave = chave;
+        // Botão da anotação aberta: girando enquanto um pedido dela roda; "Na fila" se ainda espera.
+        const btn = gravResumirTodasBtn;
+        if (!btn) return;
+        const rodandoAqui = job && alvoAberto(job.alvo);
+        const esperandoAqui = filaResumo.some(j => alvoAberto(j.alvo));
+        let bchave;
+        if (rodandoAqui) {
+          const seg = Math.floor((Date.now() - job.inicio) / 1000);
+          bchave = 'r' + seg;
+          if (btn.dataset.estado !== bchave) {
+            const giro = document.createElement('span');
+            giro.className = 'ai-spinner';
+            giro.setAttribute('aria-hidden', 'true');
+            const t = document.createElement('span');
+            t.textContent = 'Resumindo… ' + tempoMmSs(seg);
+            btn.replaceChildren(giro, t);
+          }
+          btn.disabled = true;
+        } else if (esperandoAqui) {
+          bchave = 'f';
+          if (btn.dataset.estado !== bchave) btn.textContent = '⏳ Na fila para resumir';
+          btn.disabled = true;
+        } else {
+          bchave = 'n|' + (btn.dataset.rotulo || '');
+          if (btn.dataset.estado !== bchave) btn.textContent = btn.dataset.rotulo || '✨ Resumir as gravações';
+          btn.disabled = false;
         }
-        await anotacoesResumir(trechos.join('\n\n'), trechos.length > 1);
-        if (falhas) gravarStatus.textContent += falhas === 1 ? ' (1 gravação não pôde ser transcrita.)' : ' (' + falhas + ' gravações não puderam ser transcritas.)';
+        btn.dataset.estado = bchave;
       }
+      setInterval(filaPintar, 1000);
       // ----- Gravação do discurso: tudo num quadro só. Gravar → (pausar, parar ou descartar) → gravação pronta → Fazer o resumo ou descartar -----
       const gravOciosoEl = document.getElementById('anotacoesGravOcioso');
       const gravAtivaEl = document.getElementById('anotacoesGravAtiva');
@@ -28845,8 +29006,23 @@ function saveTemplatesToStorage() {
         try { g.stream.getTracks().forEach(t => t.stop()); } catch (e) { /* já parado */ }
       }
 
+      // Quadro da gravação pronta: já guardada no app, fecha sozinho ao gravar de novo ou trocar de parte (a cópia de voz fica na anotação dela).
+      async function fecharGravacaoPronta(perguntar) {
+        const gp = gravacaoPronta;
+        if (!gp) return true;
+        if (!gp.idApp && !gp.salvo) {
+          if (!perguntar) return false;
+          const ok = await askConfirm('A gravação anterior não foi guardada no app nem exportada. Continuar mesmo assim? Ela será perdida.', 'Gravação anterior', { ok: 'Continuar', cancel: 'Voltar' });
+          if (!ok) return false;
+        }
+        gravacaoPronta = null;
+        mostrarGravacao('ocioso');
+        return true;
+      }
+
       gravarBtn.addEventListener('click', async () => {
-        if (gravacao || gravacaoPronta) return;
+        if (gravacao) return;
+        if (gravacaoPronta && !(await fecharGravacaoPronta(true))) return;
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
           gravarStatus.textContent = 'Este aparelho não permite gravar aqui. Use Áudio em texto.';
           return;
@@ -28928,7 +29104,7 @@ function saveTemplatesToStorage() {
         const voz = new Blob(g.pedacos.length ? g.pedacos : g.pedacosAlta, { type: tipo });
         const alta = g.pedacosAlta.length ? new File(g.pedacosAlta, 'Anotacao.' + ext, { type: tipo, lastModified: Date.now() }) : null;
         // O arquivo para exportar e transcrever é o de qualidade maior (sem ele, o de voz).
-        gravacaoPronta = { arquivo: alta || new File([voz], 'Anotacao.' + ext, { type: tipo, lastModified: Date.now() }), duracaoS, ext, salvo: false, idApp: null };
+        gravacaoPronta = { arquivo: alta || new File([voz], 'Anotacao.' + ext, { type: tipo, lastModified: Date.now() }), duracaoS, ext, salvo: false, idApp: null, alvo: alvoAtual() };
         gravInfoEl.textContent = '✅ Gravação pronta · ' + mmss(duracaoS);
         mostrarGravacao('pronta');
         // Guardada no app na hora, na qualidade de voz, ligada a esta anotação.
@@ -29006,7 +29182,7 @@ function saveTemplatesToStorage() {
       const carregarArq = document.getElementById('anotacoesCarregarArquivo');
       let carregando = false;
       carregarBtn.addEventListener('click', () => {
-        if (gravacao || gravacaoPronta || carregando) return;
+        if (gravacao || carregando) return;
         if (!codigoTextoSalvo()) {
           gravarStatus.textContent = 'Salve o código de texto em Ajustes → 🔐 Autorização de acessos.';
           return;
@@ -29024,71 +29200,39 @@ function saveTemplatesToStorage() {
         }
         carregando = true;
         carregarBtn.disabled = true;
-        gravarBtn.disabled = true;
         try {
           gravarStatus.textContent = 'Lendo o arquivo…';
+          const alvo = alvoAtual();
           const duracaoS = await trDuracaoLer(arquivo);
-          await anotacoesProcessarGravacao(arquivo, duracaoS || null);
+          gravarStatus.textContent = '';
+          await filaAdicionar(pedidoUmaGravacao(arquivo, duracaoS || null, alvo));
         } catch (e) {
           gravarStatus.textContent = 'Não foi possível processar o arquivo.';
         } finally {
           carregando = false;
           carregarBtn.disabled = false;
-          gravarBtn.disabled = false;
         }
       });
-
-      // Enquanto transcreve e resume: o botão mostra o ícone girando e o tempo (mm:ss); no fim, volta ao rótulo de antes.
-      function botaoPensando(botao, frase) {
-        const antes = botao.textContent;
-        const inicio = Date.now();
-        const spinner = document.createElement('span');
-        spinner.className = 'ai-spinner';
-        spinner.setAttribute('aria-hidden', 'true');
-        const rotulo = document.createElement('span');
-        const tick = () => { rotulo.textContent = frase + ' ' + tempoMmSs(Math.floor((Date.now() - inicio) / 1000)); };
-        tick();
-        botao.replaceChildren(spinner, rotulo);
-        botao.classList.add('is-loading');
-        botao.setAttribute('aria-busy', 'true');
-        const timer = setInterval(tick, 1000);
-        return () => {
-          clearInterval(timer);
-          botao.classList.remove('is-loading');
-          botao.removeAttribute('aria-busy');
-          botao.textContent = antes;
-        };
-      }
 
       gravResumirTodasBtn.addEventListener('click', async () => {
-        if (gravacao) return dizer('Pare a gravação antes de resumir.', true);
+        const ids = gravacoesAtuais().slice();
+        if (!ids.length) return;
         gravResumirTodasBtn.disabled = true;
-        gravResumoBtn.disabled = true;
-        const parar = botaoPensando(gravResumirTodasBtn, 'Resumindo…');
-        try {
-          await anotacoesResumirGuardadas();
-        } finally {
-          parar();
-          gravResumirTodasBtn.disabled = false;
-          gravResumoBtn.disabled = false;
-        }
+        await filaAdicionar(pedidoTodasGravacoes(ids, alvoAtual()));
+        filaPintar();
       });
 
+      // Resumo da gravação pronta: vai para a fila (em segundo plano) e o quadro fecha, liberando para gravar o próximo discurso na hora.
+      // (Para ter o arquivo em qualidade maior, toque em Exportar antes do Resumo.) Sem cópia no app, o quadro fica aberto até terminar.
       gravResumoBtn.addEventListener('click', async () => {
-        if (!gravacaoPronta) return;
+        const gp = gravacaoPronta;
+        if (!gp) return;
         gravResumoBtn.disabled = true;
         try {
-          const feito = await anotacoesProcessarGravacao(gravacaoPronta.arquivo, gravacaoPronta.duracaoS);
-          if (feito) {
-            // Já exportado: o quadro fecha. Senão fica aberto para exportar em qualidade maior (ou Concluir; a cópia de voz já está no app).
-            if (gravacaoPronta.salvo) {
-              gravacaoPronta = null;
-              mostrarGravacao('ocioso');
-            } else if (gravacaoPronta.idApp) {
-              // fica aberto para Exportar (qualidade maior) ou Concluir
-            } else {
-              gravarStatus.textContent += ' O áudio ainda não foi salvo: toque em Exportar ou descarte para gravar de novo.';
-            }
+          const ok = await filaAdicionar(pedidoUmaGravacao(gp.arquivo, gp.duracaoS, gp.alvo || alvoAtual()));
+          if (ok && (gp.idApp || gp.salvo) && gravacaoPronta === gp) {
+            gravacaoPronta = null;
+            mostrarGravacao('ocioso');
           }
         } finally {
           gravResumoBtn.disabled = false;
