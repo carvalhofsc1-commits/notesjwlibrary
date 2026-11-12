@@ -292,8 +292,14 @@
               </div>
             </div>
             <p id="anotacoesGravarStatus" class="anotacoes-msg" role="status" aria-live="polite"></p>
-            <!-- As gravações desta anotação, guardadas no app (qualidade de voz): ouvir, exportar e apagar. -->
-            <div id="anotacoesGravacoes" class="anotacoes-gravacoes" hidden></div>
+            <!-- As gravações desta anotação, guardadas no app (qualidade de voz): card recolhível com o resumo de todas, ouvir, exportar e apagar. -->
+            <details id="anotacoesGravacoesBox" class="anotacoes-gravacoes-box" hidden>
+              <summary id="anotacoesGravacoesTitulo">🎧 Gravações guardadas no app</summary>
+              <div class="anotacoes-gravacoes-corpo">
+                <button id="anotacoesGravResumirTodasBtn" data-codigo-ia="texto" type="button" title="Transcrever todas as gravações desta anotação, na ordem, e inserir um resumo só">✨ Resumir as gravações</button>
+                <div id="anotacoesGravacoes" class="anotacoes-gravacoes"></div>
+              </div>
+            </details>
           </section>
 
           <!-- Assembleia de circuito: a pergunta de recapitulação que este discurso responde, com um campo só para a resposta. -->

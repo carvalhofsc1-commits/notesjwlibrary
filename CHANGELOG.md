@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.01
+
+Anotações, gravações guardadas no app:
+- As gravações ficam num **card recolhível** (“🎧 Gravações guardadas no app (n)”), que só aparece quando a anotação tem gravação e sempre começa fechado. Várias gravações da mesma parte (os pontos altos de uma palestra, por exemplo) ficam uma abaixo da outra.
+- Novo botão **✨ Resumir as gravações**, dentro do card: transcreve todas as gravações da anotação, na ordem, e insere **um resumo só** (“Resumo das gravações”). Dá para resumir depois, não só ao parar a gravação.
+- O quadro da gravação pronta não mostra mais o texto explicativo, e os botões Resumo, Exportar e Concluir ficaram do mesmo tamanho, sem o rótulo encostar na borda.
+
 ## 6.9.00
 
 Anotações: **as gravações ficam guardadas no próprio app** para ouvir depois.

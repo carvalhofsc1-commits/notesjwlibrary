@@ -7663,7 +7663,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.00'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.01'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -26647,15 +26647,29 @@ function saveTemplatesToStorage() {
         }
         return gravacoesReuniao;
       }
+      // Card recolhível (sempre começa fechado), só quando a anotação tem gravação guardada.
       const gravacoesCaixa = document.getElementById('anotacoesGravacoes');
+      const gravacoesBox = document.getElementById('anotacoesGravacoesBox');
+      const gravacoesTitulo = document.getElementById('anotacoesGravacoesTitulo');
+      const gravResumirTodasBtn = document.getElementById('anotacoesGravResumirTodasBtn');
       function pintarGravacoes() {
         const visivel = Boolean(modo) && (!comPrograma() || ativa);
         const ids = visivel ? gravacoesAtuais() : [];
-        const chave = (visivel ? anotIdAtual() : '') + '|' + ids.join(',');
+        const anot = visivel ? anotIdAtual() : '';
+        const chave = anot + '|' + ids.join(',');
         if (gravacoesCaixa.dataset.chave === chave) return;
         gravacoesCaixa.dataset.chave = chave;
+        if (gravacoesBox.dataset.anot !== anot) { gravacoesBox.open = false; gravacoesBox.dataset.anot = anot; }
         gravacoesCaixa.querySelectorAll('audio').forEach(a => a.pause());
-        gravacoesDesenhar(gravacoesCaixa, ids, { titulo: '🎧 Gravações guardadas no app', aoApagar: tirarGravacaoDaAnotacao });
+        if (!ids.length) gravacoesBox.hidden = true;
+        gravacoesDesenhar(gravacoesCaixa, ids, {
+          aoApagar: tirarGravacaoDaAnotacao,
+          aoMudar: metas => {
+            gravacoesBox.hidden = !metas.length;
+            gravacoesTitulo.textContent = '🎧 Gravações guardadas no app (' + metas.length + ')';
+            gravResumirTodasBtn.textContent = metas.length > 1 ? '✨ Resumir as ' + metas.length + ' gravações' : '✨ Resumir a gravação';
+          }
+        });
       }
       // A gravação sai da anotação atual, do rascunho e do item salvo (se houver).
       function tirarGravacaoDaAnotacao(id) {
@@ -28607,26 +28621,32 @@ function saveTemplatesToStorage() {
       function anotacoesMimeGravacao() {
         return ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'].find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';
       }
-      async function anotacoesProcessarGravacao(arquivo, duracaoS) {
+      // Confere o código de texto e a concordância antes de mandar áudio ao servidor.
+      async function anotacoesPodeEnviar() {
         if (!codigoTextoSalvo()) {
           gravarStatus.textContent = 'Salve o código de texto em Ajustes → 🔐 Autorização de acessos.';
-          return;
+          return false;
         }
         if (!(await trConsentimento())) {
           gravarStatus.textContent = 'Nada foi enviado.';
-          return;
+          return false;
         }
+        return true;
+      }
+      // Transcreve um áudio pelo mesmo caminho do Áudio em texto, sem mexer no que estiver aberto lá. Devolve o texto (ou null).
+      async function anotacoesTranscrever(arquivo, duracaoS) {
         const prevTexto = trTexto.value;
         const prevResumo = trResumo.value;
         const prevCorr = trCorrigido.value;
         trTexto.value = '';
         trResumo.value = '';
         trCorrigido.value = '';
-        gravarStatus.textContent = 'Transcrevendo a gravação…';
         const item = trListaAdicionar(arquivo, { gravado: true, duracaoS, forcar: true });
         if (!item) {
-          gravarStatus.textContent = 'Não foi possível preparar a gravação.';
-          return;
+          trTexto.value = prevTexto;
+          trResumo.value = prevResumo;
+          trCorrigido.value = prevCorr;
+          return null;
         }
         trControle = new AbortController();
         let ok = false;
@@ -28642,14 +28662,14 @@ function saveTemplatesToStorage() {
         trTexto.value = prevTexto;
         trResumo.value = prevResumo;
         trCorrigido.value = prevCorr;
-        if (!ok || !transc) {
-          gravarStatus.textContent = 'Não foi possível transcrever esta gravação.';
-          return;
-        }
+        return ok && transc ? transc : null;
+      }
+      // Pede o resumo da transcrição e o insere no cursor (com o título em negrito e itálico e uma linha em branco).
+      async function anotacoesResumir(transc, varias) {
         gravarStatus.textContent = 'Resumindo…';
         const dp = dadosDaParte();
         const contexto = [dp.tema, dp.orador, dp.congregacao].filter(Boolean).join(' · ');
-        const pedido = { acao: 'resumo', modo: 'anotacoes', codigoTexto: codigoTextoSalvo(), texto: transc.slice(0, 12000), contexto };
+        const pedido = { acao: 'resumo', modo: 'anotacoes', codigoTexto: codigoTextoSalvo(), texto: transc.slice(0, 60000), contexto };
         const r = await trPost(pedido);
         if (!r.ok) {
           inserirNoCursor('\n—— Transcrição ——\n' + transc + '\n');
@@ -28657,10 +28677,52 @@ function saveTemplatesToStorage() {
           return true; // a transcrição já entrou no texto
         }
         const resumo = (r.dados && r.dados.resumo) || '';
-        inserirNoCursor('\n' + bibliaMarcasParaUnicode('**__—— Resumo da gravação ——__**') + '\n\n' + anotacoesResumoFormatar(resumo) + '\n');
+        const titulo = varias ? '—— Resumo das gravações ——' : '—— Resumo da gravação ——';
+        inserirNoCursor('\n' + bibliaMarcasParaUnicode('**__' + titulo + '__**') + '\n\n' + anotacoesResumoFormatar(resumo) + '\n');
         gravarStatus.textContent = 'Resumo inserido nas anotações.';
         salvarRascunho();
         return true;
+      }
+      async function anotacoesProcessarGravacao(arquivo, duracaoS) {
+        if (!(await anotacoesPodeEnviar())) return;
+        gravarStatus.textContent = 'Transcrevendo a gravação…';
+        const transc = await anotacoesTranscrever(arquivo, duracaoS);
+        if (!transc) {
+          gravarStatus.textContent = 'Não foi possível transcrever esta gravação.';
+          return;
+        }
+        return anotacoesResumir(transc, false);
+      }
+      // Resumir depois: todas as gravações guardadas desta anotação, na ordem em que foram feitas, num resumo só.
+      async function anotacoesResumirGuardadas() {
+        const indice = await gravacoesIndice();
+        // Só as que ainda estão guardadas (as apagadas em Ajustes saem da anotação aqui).
+        const lista = gravacoesAtuais();
+        const ids = lista.filter(id => indice.some(g => g.id === id));
+        if (ids.length !== lista.length) { lista.splice(0, lista.length, ...ids); salvarRascunho(); }
+        if (!ids.length) return;
+        if (!(await anotacoesPodeEnviar())) return;
+        const trechos = [];
+        let falhas = 0;
+        for (let i = 0; i < ids.length; i++) {
+          gravarStatus.textContent = ids.length > 1 ? 'Transcrevendo a gravação ' + (i + 1) + ' de ' + ids.length + '…' : 'Transcrevendo a gravação…';
+          let reg = null;
+          try { reg = await bancoLer('gravacao:' + ids[i]); } catch (e) { reg = null; }
+          if (!reg || !reg.blob) { falhas++; continue; }
+          const meta = indice.find(g => g.id === ids[i]) || {};
+          const tipo = reg.blob.type || meta.tipo || 'audio/webm';
+          const ext = /mp4|aac|m4a/.test(tipo) ? 'm4a' : /ogg/.test(tipo) ? 'ogg' : /wav/.test(tipo) ? 'wav' : 'webm';
+          const arquivo = new File([reg.blob], 'Gravacao-' + (i + 1) + '.' + ext, { type: tipo, lastModified: Date.now() });
+          const t = await anotacoesTranscrever(arquivo, meta.duracaoS || null);
+          if (t) trechos.push(ids.length > 1 ? '[Trecho ' + (i + 1) + ']\n' + t : t);
+          else falhas++;
+        }
+        if (!trechos.length) {
+          gravarStatus.textContent = 'Não foi possível transcrever as gravações.';
+          return;
+        }
+        await anotacoesResumir(trechos.join('\n\n'), trechos.length > 1);
+        if (falhas) gravarStatus.textContent += falhas === 1 ? ' (1 gravação não pôde ser transcrita.)' : ' (' + falhas + ' gravações não puderam ser transcritas.)';
       }
       // ----- Gravação do discurso: tudo num quadro só. Gravar → (pausar, parar ou descartar) → gravação pronta → Fazer o resumo ou descartar -----
       const gravOciosoEl = document.getElementById('anotacoesGravOcioso');
@@ -28780,7 +28842,7 @@ function saveTemplatesToStorage() {
         if (id) {
           gravacaoPronta.idApp = id;
           porGravacaoNaAnotacao(id);
-          gravarStatus.textContent = '🎧 A gravação já está guardada no app (' + gravacaoTamanho(voz.size) + ') para ouvir depois. Toque em Resumo para transcrever e resumir, em Exportar para salvar o arquivo em qualidade maior, ou em Concluir.';
+          gravarStatus.textContent = '';
         } else {
           gravarStatus.textContent = '⚠️ Não consegui guardar a gravação no app (o armazenamento pode estar cheio ou indisponível). Toque em Exportar para salvar o arquivo, em Resumo para transcrever, ou descarte.';
         }
@@ -28796,7 +28858,7 @@ function saveTemplatesToStorage() {
         }
         gravacaoPronta = null;
         mostrarGravacao('ocioso');
-        gravarStatus.textContent = gp.idApp ? '🎧 Gravação guardada no app: ouça na lista abaixo.' : '';
+        gravarStatus.textContent = '';
       });
 
       // Salvar o áudio: baixa o arquivo (no iPhone, abre o compartilhar, de onde dá para guardar em Arquivos). O nome leva o tema da parte e a data.
@@ -28881,6 +28943,18 @@ function saveTemplatesToStorage() {
         }
       });
 
+      gravResumirTodasBtn.addEventListener('click', async () => {
+        if (gravacao) return dizer('Pare a gravação antes de resumir.', true);
+        gravResumirTodasBtn.disabled = true;
+        gravResumoBtn.disabled = true;
+        try {
+          await anotacoesResumirGuardadas();
+        } finally {
+          gravResumirTodasBtn.disabled = false;
+          gravResumoBtn.disabled = false;
+        }
+      });
+
       gravResumoBtn.addEventListener('click', async () => {
         if (!gravacaoPronta) return;
         gravResumoBtn.disabled = true;
@@ -28892,7 +28966,7 @@ function saveTemplatesToStorage() {
               gravacaoPronta = null;
               mostrarGravacao('ocioso');
             } else if (gravacaoPronta.idApp) {
-              gravarStatus.textContent += ' A gravação está guardada no app; toque em Exportar se quiser o arquivo em qualidade maior, ou em Concluir.';
+              // fica aberto para Exportar (qualidade maior) ou Concluir
             } else {
               gravarStatus.textContent += ' O áudio ainda não foi salvo: toque em Exportar ou descarte para gravar de novo.';
             }

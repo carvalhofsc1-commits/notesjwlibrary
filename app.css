@@ -14157,3 +14157,54 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
 .grav-acoes button:last-child {
   flex: 0 0 44px;
 }
+
+/* Gravação pronta: Resumo, Exportar e Concluir do mesmo tamanho e a lixeira estreita, sem o rótulo encostar na borda. */
+#anotacoesGravPronta .bk-row {
+  display: flex;
+  gap: 4px;
+}
+
+#anotacoesGravPronta .bk-row > button {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 34px;
+  padding: 3px 4px;
+  font-size: .75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Gravações guardadas: card recolhível. */
+.anotacoes-gravacoes-box[hidden] {
+  display: none;
+}
+
+.anotacoes-gravacoes-box {
+  margin-top: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+}
+
+.anotacoes-gravacoes-box > summary {
+  padding: 9px 12px;
+  font-size: .9rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.anotacoes-gravacoes-corpo {
+  padding: 0 10px 10px;
+}
+
+#anotacoesGravResumirTodasBtn {
+  width: 100%;
+  min-height: 34px;
+  padding: 4px 10px;
+  font-size: .84rem;
+}
+
+#anotacoesGravPronta .bk-row > #anotacoesGravDescartar2Btn {
+  flex: 0 0 34px;
+}
