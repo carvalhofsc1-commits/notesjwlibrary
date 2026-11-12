@@ -14069,12 +14069,22 @@ a.esboco-info-tema {
 /* Anotações: "Gravar e resumir" e "Carregar gravação" lado a lado. */
 .anotacoes-gravacao .anotacoes-grav-botoes {
   display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
 }
 
+/* "Carregar gravação e resumir": azul médio, do mesmo tamanho do botão de gravar. */
 .screen-anotacoes .anotacoes-gravacao #anotacoesCarregarBtn {
+  width: 100%;
   min-height: 36px;
-  padding: 4px 8px;
+  padding: 4px 10px;
   font-size: .84rem;
+  border-color: #2b6cb0;
+  background: #3b82c4;
+  color: #fff;
+}
+
+.screen-anotacoes .anotacoes-gravacao #anotacoesCarregarBtn:hover,
+.screen-anotacoes .anotacoes-gravacao #anotacoesCarregarBtn:active {
+  background: #2f74b5;
 }

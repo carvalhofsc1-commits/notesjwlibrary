@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.8.25
+
+Anotações: os botões **🎙️ Gravar o discurso e resumir** e **📁 Carregar gravação e resumir** ficaram do mesmo tamanho; o de carregar ganhou um azul médio.
+
 ## 6.8.24
 
 Anotações: novo botão **📁 Carregar gravação**, ao lado de “Gravar e resumir o discurso”, para transcrever e resumir um arquivo de áudio já gravado.
