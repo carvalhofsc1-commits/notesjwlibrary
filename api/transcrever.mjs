@@ -13,6 +13,7 @@ import { iaDaTarefa, lerConfigIa } from "./_iaConfig.mjs";
 import { criarClienteIa, erroSemIa, iaDisponivel } from "./_clienteIa.mjs";
 import { registrarUsoIa } from "./_estatisticas.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
+import { buscarVersiculos, fontesConfiguradas, referenciasNoTexto } from "./_fontes.mjs";
 
 // Consumo do aparelho (faturamento): minutos de áudio transcritos e tokens da IA do resumo e da correção. Gravado antes de responder
 // (depois a Vercel pode congelar a função); uma falha aqui nunca derruba o pedido.
@@ -579,12 +580,22 @@ export default async function handler(req, res) {
       // Gravação da tela Anotações (parte de reunião, assembleia ou congresso): o resumo traz o ensino e as lições, sem narrar nem citar falantes
       // (prompt editável "Resumo da gravação nas anotações"). O Áudio em texto continua com o resumo geral.
       let sistemaResumo = SISTEMA_RESUMO + (documentos.length || imagens.length ? REGRAS_DOCUMENTOS : "");
+      let mensagemResumo = conteudo;
       if (corpo.modo === "anotacoes" && !parcial) {
         try {
           const P = await carregarPrompts();
           if (P && P.sistemaAnotacoesResumo) sistemaResumo = P.sistemaAnotacoesResumo;
         } catch (e) {
           console.error("Resumo das anotações: prompts indisponíveis", e?.message);
+        }
+        // Os versículos citados na transcrição, como a Tradução do Novo Mundo os escreve: a IA copia daqui o texto dos que foram LIDOS.
+        if (fontesConfiguradas() && typeof conteudo === "string") {
+          try {
+            const versiculos = await buscarVersiculos(await referenciasNoTexto(texto, { max: 30, livre: true }), 25);
+            if (versiculos.length) mensagemResumo = conteudo + "\n\nTEXTO DOS VERSÍCULOS CITADOS NA GRAVAÇÃO (Tradução do Novo Mundo):\n" + versiculos.map((v) => `${v.referencia}: ${v.texto}`).join("\n");
+          } catch (e) {
+            console.error("Resumo das anotações: versículos indisponíveis", e?.message);
+          }
         }
       }
       const client = criarClienteIa({ maxRetries: 1, timeout: 120_000 });
@@ -594,7 +605,7 @@ export default async function handler(req, res) {
         ...pensarPouco(modelo),
         max_tokens: tetoDoModelo(modelo, parcial ? 1500 : 4000),
         system: parcial ? SISTEMA_RESUMO_PARCIAL : sistemaResumo,
-        messages: [{ role: "user", content: conteudo }],
+        messages: [{ role: "user", content: mensagemResumo }],
       });
       await registrarConsumo(corpo, { tarefa: "audio-resumo", ...usoDaResposta(resposta) });
       if (resposta.stop_reason === "refusal" || resposta.stop_reason === "max_tokens") registrarFalhaIa("resumo", modelo, resposta);

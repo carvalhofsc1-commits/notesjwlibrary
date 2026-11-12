@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.8.21
+
+Tela de prompts: nova categoria **📝 Anotações de discursos**, com os prompts da tela Anotações (formatar as anotações com IA, resumo da gravação e perguntas de recapitulação da assembleia), que saíram de Formatação de texto.
+
+Resumo da gravação nas anotações: os textos **lidos** pelo orador entram sempre como **FOI LIDO** + referência no padrão das publicações (ex.: “FOI LIDO 1 João 5:4 - …”), com a transcrição do texto e, na linha seguinte, a aplicação que o orador fez; os textos só **citados** entram com a referência, sem transcrição, e com o que foi dito e como foi aplicado. No final vem um **RESUMO** (ex.: “O orador destacou a importância da humildade…”). O servidor manda junto o texto dos versículos citados na gravação (Tradução do Novo Mundo), para a transcrição sair exata.
+
 ## 6.8.20
 
 Anotações: os botões **💾 Salvar** e **📄 Word** do fim da tela saíram da caixa branca e ficam direto na base cinza do cartão, mais baixos (a mesma altura dos botões de formatação).
