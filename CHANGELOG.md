@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.8.30
+
+Leitura em voz alta (vozes Gemini): a voz ainda falava um trecho da instrução (“faça as perguntas soarem como perguntas”) antes do texto. A instrução de leitura virou uma descrição curta do estilo da voz, sem ordens nem regras: “Narração em português do Brasil, natural e clara, de quem lê um texto em voz alta numa reunião da congregação, com entonação de pergunta nas perguntas e pausas curtas entre as ideias.” As regras saíram porque o app já faz esse trabalho antes de enviar o texto: tira as citações de publicações e escreve as referências bíblicas por extenso.
+
 ## 6.8.29
 
 Leitura em voz alta (vozes Gemini): a voz começou a ler a própria instrução em vez do texto. A instrução da 6.8.27 tinha ficado longa, em tópicos e cheia de frases de exemplo entre aspas, e a voz as tomava como texto a ler. Voltou a ser um parágrafo curto, sem exemplos para ler, mantendo as regras: ler exatamente o texto recebido, as referências bíblicas por extenso como estão (sem trocá-las pelo versículo) e pular as citações de publicações.
