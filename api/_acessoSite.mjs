@@ -1,15 +1,26 @@
-// Cadastro obrigatório de cada aparelho + opção de exigir aprovação do administrador.
+// Cadastro obrigatório de cada aparelho: todo cadastro novo fica pendente até o administrador aprovar.
+// Também guarda créditos (R$) e códigos personalizados por recurso de cada usuário.
 // Dados no Vercel Blob PRIVADO: "estatisticas/acesso-site.json".
-// Todo aparelho (inclusive o do administrador) precisa se identificar uma vez.
-// Com "restringir" ligado, o cadastro fica pendente até o administrador aprovar.
 // ACESSO_SITE_DIR (só testes locais) troca o Blob por uma pasta.
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { get, put } from "@vercel/blob";
-import { textosIguais } from "./_comum.mjs";
+import { codigoDoDirigente, textosIguais } from "./_comum.mjs";
 import { aparelhoIdLimpo, mapaPerfilAparelhos } from "./_estatisticas.mjs";
 
 const NOME = "estatisticas/acesso-site.json";
 const MAX_PEDIDOS = 500;
+
+// Recursos que o administrador libera com código personalizado (os mesmos da Autorização de acessos).
+export const RECURSOS_CODIGO = [
+  { id: "pesquisa", nome: "Pesquisa" },
+  { id: "dirigente", nome: "Dirigente" },
+  { id: "leitura", nome: "Leitura" },
+  { id: "texto", nome: "Áudio em texto" },
+  { id: "resumo", nome: "Resumo da Bíblia" },
+  { id: "s34", nome: "S-34" },
+];
+const RECURSO_IDS = new Set(RECURSOS_CODIGO.map((r) => r.id));
+const PREFIXO_CODIGO = { pesquisa: "PES", dirigente: "DIR", leitura: "LEI", texto: "AUD", resumo: "RES", s34: "S34" };
 
 export function acessoSiteConfigurado() {
   return Boolean(process.env.BLOB_READ_WRITE_TOKEN || process.env.ACESSO_SITE_DIR || process.env.ESTATISTICAS_DIR);
@@ -20,7 +31,89 @@ function agoraIso() {
 }
 
 function vazio() {
-  return { versao: 1, atualizadoEm: agoraIso(), restringir: false, pedidos: [], aprovados: {} };
+  // restringir fica sempre ligado: cadastros novos só entram depois da aprovação.
+  return { versao: 2, atualizadoEm: agoraIso(), restringir: true, pedidos: [], aprovados: {} };
+}
+
+function creditosDe(registro) {
+  const n = Number(registro && registro.creditos);
+  return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : 0;
+}
+
+function codigosDe(registro) {
+  const bruto = registro && registro.codigos && typeof registro.codigos === "object" ? registro.codigos : {};
+  const out = {};
+  for (const id of RECURSO_IDS) {
+    const c = bruto[id];
+    if (!c || typeof c !== "object") continue;
+    const codigo = String(c.codigo || "").trim();
+    if (!codigo) continue;
+    out[id] = {
+      codigo,
+      ativo: c.ativo !== false,
+      criadoEm: c.criadoEm || "",
+      expiradoEm: c.expiradoEm || "",
+    };
+  }
+  return out;
+}
+
+function gerarCodigoTexto(recurso) {
+  const pref = PREFIXO_CODIGO[recurso] || "NS";
+  const corpo = randomBytes(5).toString("base64url").replace(/[^A-Za-z0-9]/g, "").slice(0, 8).toUpperCase();
+  return `NS-${pref}-${corpo}`;
+}
+
+// Cache curto dos códigos personalizados ativos: permite conferência síncrona nas APIs de IA.
+let cacheCodigos = { em: 0, mapa: new Map() }; // codigoLower -> { recurso, aparelhoId }
+
+function invalidarCacheCodigos() {
+  cacheCodigos = { em: 0, mapa: new Map() };
+}
+
+function montarCacheCodigos(dados) {
+  const mapa = new Map();
+  for (const [aparelhoId, reg] of Object.entries((dados && dados.aprovados) || {})) {
+    const codigos = codigosDe(reg);
+    for (const [recurso, c] of Object.entries(codigos)) {
+      if (!c.ativo || !c.codigo) continue;
+      mapa.set(c.codigo.trim().toLowerCase(), { recurso, aparelhoId });
+    }
+  }
+  cacheCodigos = { em: Date.now(), mapa };
+}
+
+export async function prepararCodigosPessoais() {
+  if (!acessoSiteConfigurado()) return;
+  if (Date.now() - cacheCodigos.em < 15_000) return;
+  const dados = (await lerBruto()) || vazio();
+  montarCacheCodigos(dados);
+}
+
+// Confere se o código informado é o personalizado ativo deste aparelho para o recurso.
+export function codigoPessoalSync(recurso, codigo, aparelhoId) {
+  const id = aparelhoIdLimpo(aparelhoId);
+  const chave = String(codigo || "").trim().toLowerCase();
+  if (!id || !chave || !RECURSO_IDS.has(recurso)) return false;
+  const e = cacheCodigos.mapa.get(chave);
+  return Boolean(e && e.recurso === recurso && e.aparelhoId === id);
+}
+
+function codigoGlobalDoRecurso(recurso) {
+  if (recurso === "pesquisa") return process.env.CODIGO_ESTUDO || "";
+  if (recurso === "dirigente") return codigoDoDirigente() || "";
+  if (recurso === "leitura") return process.env.CODIGO_LEITURA || "";
+  if (recurso === "texto") return process.env.CODIGO_TEXTO || "";
+  if (recurso === "resumo") return process.env.CODIGO_RESUMO || "";
+  if (recurso === "s34") return process.env.CODIGO_S34 || "";
+  return "";
+}
+
+// Aceita o código global do servidor ou o personalizado deste aparelho.
+export function recursoCodigoValido(recurso, codigo, aparelhoId) {
+  const global = codigoGlobalDoRecurso(recurso);
+  if (global && textosIguais(codigo, global)) return true;
+  return codigoPessoalSync(recurso, codigo, aparelhoId);
 }
 
 async function lerBruto() {
@@ -75,8 +168,10 @@ async function comDados(mutar) {
     const dados = (await lerBruto()) || vazio();
     if (!Array.isArray(dados.pedidos)) dados.pedidos = [];
     if (!dados.aprovados || typeof dados.aprovados !== "object") dados.aprovados = {};
+    dados.restringir = true; // padrão permanente: cadastros novos pedem aprovação
     const resultado = (await mutar(dados)) || null;
     await gravarBruto(dados);
+    invalidarCacheCodigos();
     return resultado;
   });
 }
@@ -202,6 +297,8 @@ function identidadeDe(a) {
     telefone: telefoneFormatado(a && a.telefone),
     aprovadoEm: a.aprovadoEm || "",
     pedidoId: a.pedidoId || "",
+    creditos: creditosDe(a),
+    codigos: codigosDe(a),
   };
 }
 
@@ -285,30 +382,31 @@ function gravarIdentidade(dados, id, campos, { pedidoId = "", statusPedido = "ap
   return pedido;
 }
 
-// Estado para o aparelho (público): cadastro obrigatório; com restrição, pode ficar pendente.
+// Estado para o aparelho (público): cadastro obrigatório; novos ficam pendentes até a aprovação.
 export async function estadoAcessoSite({ aparelhoId } = {}) {
   if (!acessoSiteConfigurado()) {
-    return { configurado: false, restringir: false, ok: true };
+    return { configurado: false, restringir: true, ok: true };
   }
   const dados = (await lerBruto()) || vazio();
-  const restringir = Boolean(dados.restringir);
+  montarCacheCodigos(dados);
   const id = aparelhoIdLimpo(aparelhoId);
   if (id && dados.aprovados[id]) {
     const cadastro = identidadeDe(dados.aprovados[id]);
     return {
       configurado: true,
-      restringir,
+      restringir: true,
       ok: true,
       identificado: true,
       nome: cadastro.nomeCompleto,
       cadastro,
+      creditos: cadastro.creditos,
     };
   }
   const pendente = id ? dados.pedidos.find((p) => p.aparelhoId === id && p.status === "pendente") : null;
   const recusado = id ? [...dados.pedidos].reverse().find((p) => p.aparelhoId === id && p.status === "recusado") : null;
   return {
     configurado: true,
-    restringir,
+    restringir: true,
     ok: false,
     precisaCadastro: true,
     pendente: Boolean(pendente),
@@ -317,12 +415,25 @@ export async function estadoAcessoSite({ aparelhoId } = {}) {
 }
 
 // Usado pelas APIs: devolve null se pode seguir, ou mensagem de erro.
-export async function mensagemSeBloqueado({ aparelhoId } = {}) {
+export async function mensagemSeBloqueado({ aparelhoId, codigoAdmin } = {}) {
+  if (codigoAdmin && textosIguais(codigoAdmin, process.env.CODIGO_ADMIN)) return null;
   const e = await estadoAcessoSite({ aparelhoId });
   if (!e.configurado || e.ok) return null;
   if (e.pendente) return "Seu cadastro ainda está em análise. Quando for aprovado, abra o app de novo.";
   if (e.recusado) return "O cadastro deste aparelho foi recusado. Se precisar, envie um novo cadastro pelo formulário.";
   return "É preciso se identificar para usar o NoteStyle. Preencha o formulário de cadastro.";
+}
+
+// Sem créditos, as APIs de IA recusam (administrador com senha no pedido passa).
+export async function mensagemSeSemCredito({ aparelhoId, codigoAdmin } = {}) {
+  if (codigoAdmin && textosIguais(codigoAdmin, process.env.CODIGO_ADMIN)) return null;
+  if (!acessoSiteConfigurado()) return null;
+  const id = aparelhoIdLimpo(aparelhoId);
+  if (!id) return null;
+  const dados = (await lerBruto()) || vazio();
+  if (!dados.aprovados[id]) return null; // quem ainda não cadastrou já é barrado pelo gate do site
+  if (creditosDe(dados.aprovados[id]) > 0) return null;
+  return "Seus créditos de IA acabaram. Peça ao administrador para carregar mais créditos.";
 }
 
 export async function pedirAcessoSite(corpo) {
@@ -336,12 +447,8 @@ export async function pedirAcessoSite(corpo) {
     if (dados.aprovados[id]) return { ok: true, jaAprovado: true, identificado: true, cadastro: identidadeDe(dados.aprovados[id]) };
     const aberto = dados.pedidos.find((p) => p.aparelhoId === id && p.status === "pendente");
     if (aberto) return { ok: true, pendente: true, id: aberto.id };
-    if (dados.restringir) {
-      const pedido = gravarIdentidade(dados, id, campos, { statusPedido: "pendente" });
-      return { ok: true, pendente: true, id: pedido.id };
-    }
-    const pedido = gravarIdentidade(dados, id, campos, { statusPedido: "aprovado" });
-    return { ok: true, identificado: true, id: pedido.id, cadastro: identidadeDe(dados.aprovados[id]) };
+    const pedido = gravarIdentidade(dados, id, campos, { statusPedido: "pendente" });
+    return { ok: true, pendente: true, id: pedido.id };
   });
 }
 
@@ -362,6 +469,8 @@ export async function atualizarCadastroSite(corpo) {
       pedidoId: anterior.pedidoId || "",
       aprovadoEm: anterior.aprovadoEm || agoraIso(),
       atualizadoEm: agoraIso(),
+      creditos: creditosDe(anterior),
+      codigos: codigosDe(anterior),
     });
     return { ok: true, atualizado: true, cadastro: identidadeDe(dados.aprovados[id]) };
   });
@@ -390,21 +499,23 @@ export async function lerAcessoSiteAdmin() {
     };
   });
   aprovados.sort((a, b) => String(b.aprovadoEm).localeCompare(String(a.aprovadoEm)));
+  montarCacheCodigos(dados);
   return {
     configurado: true,
-    restringir: Boolean(dados.restringir),
+    restringir: true,
     atualizadoEm: dados.atualizadoEm || "",
     pendentes,
     recentes,
     aprovados: aprovados.slice(0, 100),
+    recursosCodigo: RECURSOS_CODIGO,
   };
 }
 
-// Liga/desliga a exigência de aprovação do administrador nos cadastros novos.
-export async function definirRestricaoSite(ligada) {
+// Mantida por compatibilidade: a aprovação de cadastros novos é sempre o padrão.
+export async function definirRestricaoSite() {
   return comDados((dados) => {
-    dados.restringir = Boolean(ligada);
-    return { restringir: dados.restringir, avos: 0 };
+    dados.restringir = true;
+    return { restringir: true, avos: 0 };
   });
 }
 
@@ -433,7 +544,7 @@ export async function decidirPedidoSite({ id, aprovar, codigoAdmin }) {
           congregacao: p.congregacao,
           comoConheceu: p.comoConheceu,
         },
-        { pedidoId: p.id, aprovadoEm: p.decididoEm }
+        { pedidoId: p.id, aprovadoEm: p.decididoEm, creditos: 0, codigos: {} }
       );
     }
     return { ok: true, pedido: pedidoPublico(p) };
@@ -449,4 +560,106 @@ export async function revogarAcessoSite({ aparelhoId, codigoAdmin }) {
     delete dados.aprovados[id];
     return { ok: true };
   });
+}
+
+// Soma créditos em R$ ao usuário (valor positivo). O saldo não fica negativo ao creditar.
+export async function creditarUsuario({ aparelhoId, valor, codigoAdmin }) {
+  if (!textosIguais(codigoAdmin, process.env.CODIGO_ADMIN)) return { erro: "Código de administrador incorreto." };
+  const id = aparelhoIdLimpo(aparelhoId);
+  if (!id) return { erro: "Aparelho inválido." };
+  const n = Number(String(valor ?? "").replace(",", "."));
+  if (!Number.isFinite(n) || n <= 0 || n > 100000) return { erro: "Informe um valor em reais maior que zero." };
+  const soma = Math.round(n * 100) / 100;
+  return comDados((dados) => {
+    const reg = dados.aprovados[id];
+    if (!reg) return { erro: "Este aparelho não está na lista de identificados." };
+    reg.creditos = Math.round((creditosDe(reg) + soma) * 100) / 100;
+    reg.creditosAtualizadoEm = agoraIso();
+    return { ok: true, creditos: reg.creditos, aparelhoId: id };
+  });
+}
+
+export async function gerarCodigoUsuario({ aparelhoId, recurso, codigoAdmin }) {
+  if (!textosIguais(codigoAdmin, process.env.CODIGO_ADMIN)) return { erro: "Código de administrador incorreto." };
+  const id = aparelhoIdLimpo(aparelhoId);
+  const rec = String(recurso || "").trim();
+  if (!id) return { erro: "Aparelho inválido." };
+  if (!RECURSO_IDS.has(rec)) return { erro: "Recurso inválido." };
+  return comDados((dados) => {
+    const reg = dados.aprovados[id];
+    if (!reg) return { erro: "Este aparelho não está na lista de identificados." };
+    if (!reg.codigos || typeof reg.codigos !== "object") reg.codigos = {};
+    // Garante unicidade entre todos os usuários ativos.
+    let codigo = "";
+    for (let i = 0; i < 12; i++) {
+      const candidato = gerarCodigoTexto(rec);
+      let usado = false;
+      for (const [outroId, outro] of Object.entries(dados.aprovados)) {
+        const c = codigosDe(outro)[rec];
+        if (c && c.ativo && textosIguais(c.codigo, candidato) && outroId !== id) {
+          usado = true;
+          break;
+        }
+      }
+      if (!usado) {
+        codigo = candidato;
+        break;
+      }
+    }
+    if (!codigo) return { erro: "Não foi possível gerar um código agora. Tente de novo." };
+    reg.codigos[rec] = { codigo, ativo: true, criadoEm: agoraIso(), expiradoEm: "" };
+    return { ok: true, recurso: rec, codigo, aparelhoId: id, codigos: codigosDe(reg) };
+  });
+}
+
+export async function expirarCodigoUsuario({ aparelhoId, recurso, codigoAdmin }) {
+  if (!textosIguais(codigoAdmin, process.env.CODIGO_ADMIN)) return { erro: "Código de administrador incorreto." };
+  const id = aparelhoIdLimpo(aparelhoId);
+  const rec = String(recurso || "").trim();
+  if (!id) return { erro: "Aparelho inválido." };
+  if (!RECURSO_IDS.has(rec)) return { erro: "Recurso inválido." };
+  return comDados((dados) => {
+    const reg = dados.aprovados[id];
+    if (!reg) return { erro: "Este aparelho não está na lista de identificados." };
+    if (!reg.codigos || typeof reg.codigos !== "object" || !reg.codigos[rec] || !reg.codigos[rec].codigo) {
+      return { erro: "Este usuário ainda não tem código deste recurso." };
+    }
+    reg.codigos[rec] = {
+      ...reg.codigos[rec],
+      ativo: false,
+      expiradoEm: agoraIso(),
+    };
+    return { ok: true, recurso: rec, aparelhoId: id, codigos: codigosDe(reg) };
+  });
+}
+
+// Desconta do saldo o valor do uso (mesmos preços do faturamento). Fire-and-forget das APIs de IA.
+export async function debitarCreditosUso({ aparelhoId, tarefa, entrada, saida, caracteres, segundos }) {
+  const id = aparelhoIdLimpo(aparelhoId);
+  if (!id || !acessoSiteConfigurado()) return;
+  try {
+    // Import dinâmico evita dependência circular com api/_faturamento.mjs.
+    const { lerConfigFaturamento, RECURSOS, valorDoUso } = await import("./_faturamento.mjs");
+    const nome = String(tarefa || "").trim();
+    const recurso = RECURSOS.find((x) => x.tarefas.includes(nome));
+    const cat = recurso ? recurso.cat : "texto";
+    const config = await lerConfigFaturamento();
+    const uso = {
+      in: Math.max(0, Math.floor(Number(entrada) || 0)),
+      out: Math.max(0, Math.floor(Number(saida) || 0)),
+      car: Math.max(0, Math.floor(Number(caracteres) || 0)),
+      seg: Math.max(0, Math.round(Number(segundos) || 0)),
+    };
+    const valor = Math.round(valorDoUso(cat, uso, config.precos) * 100) / 100;
+    if (valor <= 0) return;
+    await comDados((dados) => {
+      const reg = dados.aprovados[id];
+      if (!reg) return null;
+      reg.creditos = Math.max(0, Math.round((creditosDe(reg) - valor) * 100) / 100);
+      reg.creditosAtualizadoEm = agoraIso();
+      return { ok: true, creditos: reg.creditos, debitado: valor };
+    });
+  } catch (e) {
+    console.error("Créditos: débito falhou", e && e.message);
+  }
 }

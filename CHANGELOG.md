@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.21
+
+Administração de usuários: remove o texto explicativo do topo, a opção de exigir aprovação e os botões Aplicar/Atualizar (aprovação de cadastros novos passa a ser o padrão). No card do usuário, some “como conheceu”. Cada usuário ganha **créditos em R$** (o administrador credita; o uso de IA debita pelos preços do faturamento; sem saldo a IA fica bloqueada) e **códigos personalizados** por recurso (o administrador gera e pode expirar; o código só vale naquele aparelho; os códigos globais antigos continuam sendo aceitos).
+
+## 6.9.20
+
+Ajustes: a seção do administrador **Acesso ao site** passa a se chamar **Administração de usuários**.
+
 ## 6.9.19
 
 Anotações: o ícone 🔊 do campo de texto sobe um pouco, para não ficar colado nos botões • Lista / 1. Lista.

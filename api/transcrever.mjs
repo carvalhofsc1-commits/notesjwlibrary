@@ -6,7 +6,7 @@
 //    (roles/speech.client) no projeto; o projeto é o do próprio JSON (project_id) ou GOOGLE_PROJECT_ID.
 //  - GOOGLE_STT_REGIAO: região do Chirp 3 (padrão "us"; o chirp_3 só existe em "us" e "eu").
 import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
-import { mensagemSeBloqueado } from "./_acessoSite.mjs";
+import { debitarCreditosUso, mensagemSeBloqueado, mensagemSeSemCredito, prepararCodigosPessoais, recursoCodigoValido } from "./_acessoSite.mjs";
 import { createHash, createSign, randomBytes } from "node:crypto";
 import { credenciais, prepararConta, tokenDeAcesso, variaveisDaConta } from "./_googleToken.mjs";
 import { iaDaTarefa, lerConfigIa } from "./_iaConfig.mjs";
@@ -19,7 +19,9 @@ import { buscarVersiculos, fontesConfiguradas, referenciasNoTexto } from "./_fon
 // (depois a Vercel pode congelar a função); uma falha aqui nunca derruba o pedido.
 async function registrarConsumo(corpo, dados) {
   try {
-    await registrarUsoIa({ aparelhoId: corpo.aparelhoId, consultas: 1, ...dados });
+    const uso = { aparelhoId: corpo.aparelhoId, consultas: 1, ...dados };
+    await registrarUsoIa(uso);
+    await debitarCreditosUso(uso);
   } catch (e) {
     console.error("Transcrever: falha ao gravar o uso", e && e.message);
   }
@@ -437,12 +439,16 @@ export default async function handler(req, res) {
     return erro(res, 405, "Método não permitido.");
   }
   if (!origemPermitida(req.headers.origin)) return erro(res, 403, "Origem não permitida.");
-  if (!process.env.CODIGO_TEXTO) return erro(res, 503, "O código de texto ainda não está configurado no servidor.");
-
   const corpo = req.body && typeof req.body === "object" ? req.body : {};
+  await prepararCodigosPessoais();
   const bloqueioSite = await mensagemSeBloqueado({ aparelhoId: corpo.aparelhoId, codigoAdmin: corpo.codigoAdmin });
   if (bloqueioSite) return erro(res, 403, bloqueioSite);
-  if (!textosIguais(corpo.codigoTexto, process.env.CODIGO_TEXTO)) return erro(res, 403, "Código de texto inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
+  const bloqueioCredito = await mensagemSeSemCredito({ aparelhoId: corpo.aparelhoId, codigoAdmin: corpo.codigoAdmin });
+  if (bloqueioCredito) return erro(res, 403, bloqueioCredito);
+  if (!recursoCodigoValido("texto", corpo.codigoTexto, corpo.aparelhoId)) {
+    if (!process.env.CODIGO_TEXTO) return erro(res, 503, "O código de texto ainda não está configurado no servidor.");
+    return erro(res, 403, "Código de texto inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
+  }
   const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "desconhecido";
   await prepararConta(); // a conta do Google escolhida pelo administrador (a outra fica de reserva)
 

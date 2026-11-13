@@ -9,7 +9,7 @@
 //  - GOOGLE_TTS_API_KEY: a chave de API, que basta para a voz Chirp 3 HD (a reserva).
 // Modelo, voz, tom, altura e instruções extras vêm da configuração do administrador (api/_vozConfig.mjs).
 import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
-import { mensagemSeBloqueado } from "./_acessoSite.mjs";
+import { debitarCreditosUso, mensagemSeBloqueado, mensagemSeSemCredito, prepararCodigosPessoais, recursoCodigoValido } from "./_acessoSite.mjs";
 import { registrarUsoIa } from "./_estatisticas.mjs";
 import { credenciais, prepararConta, tokenDeAcesso, variaveisDaConta } from "./_googleToken.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
@@ -81,11 +81,13 @@ export default async function handler(req, res) {
   const chaveApi = variaveisDaConta().apiKey;
   const temChave = Boolean(chaveApi);
   if (!temChave && !credenciais()) return erro(res, 503, "A leitura em voz alta ainda não está configurada no servidor.");
-  if (!process.env.CODIGO_ESTUDO) return erro(res, 503, "O código de pesquisa ainda não está configurado no servidor.");
 
   const body = req.body && typeof req.body === "object" ? req.body : {};
+  await prepararCodigosPessoais();
   const bloqueioSite = await mensagemSeBloqueado({ aparelhoId: body.aparelhoId, codigoAdmin: body.codigoAdmin });
   if (bloqueioSite) return erro(res, 403, bloqueioSite);
+  const bloqueioCredito = await mensagemSeSemCredito({ aparelhoId: body.aparelhoId, codigoAdmin: body.codigoAdmin });
+  if (bloqueioCredito) return erro(res, 403, bloqueioCredito);
   // Quem pode pedir o quê:
   //  - o exemplo do painel do administrador usa as escolhas ainda não salvas: só com a senha de administrador;
   //  - uso "texto-diario": código de pesquisa + cupom HMAC (origem coberta pelo texto do dia ou pelos comentários);
@@ -99,10 +101,12 @@ export default async function handler(req, res) {
   const exemplo = Boolean(body.exemplo && administrador);
   if (!exemplo) {
     if (uso === "texto-diario") {
-      if (!textosIguais(body.codigo, process.env.CODIGO_ESTUDO)) return erro(res, 403, "Código de pesquisa inválido.");
+      if (!recursoCodigoValido("pesquisa", body.codigo, body.aparelhoId)) return erro(res, 403, "Código de pesquisa inválido.");
     } else if (uso === "leitura") {
-      if (!process.env.CODIGO_LEITURA) return erro(res, 503, "O código de leitura ainda não está configurado no servidor.");
-      if (!textosIguais(body.codigoLeitura, process.env.CODIGO_LEITURA)) return erro(res, 403, "Código de leitura inválido.");
+      if (!recursoCodigoValido("leitura", body.codigoLeitura, body.aparelhoId)) {
+        if (!process.env.CODIGO_LEITURA) return erro(res, 503, "O código de leitura ainda não está configurado no servidor.");
+        return erro(res, 403, "Código de leitura inválido.");
+      }
     } else if (!administrador) {
       return erro(res, 403, "A leitura em voz alta do campo de texto é só para o administrador.");
     }
@@ -187,7 +191,9 @@ export default async function handler(req, res) {
   // depois a Vercel pode congelar a função.
   if (!exemplo) {
     try {
-      await registrarUsoIa({ aparelhoId: body.aparelhoId, tarefa: "voz", caracteres: texto.length, consultas: 1 });
+      const usoVoz = { aparelhoId: body.aparelhoId, tarefa: "voz", caracteres: texto.length, consultas: 1 };
+      await registrarUsoIa(usoVoz);
+      await debitarCreditosUso(usoVoz);
     } catch (e) {
       console.error("Voz: falha ao gravar o uso", e && e.message);
     }

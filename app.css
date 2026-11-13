@@ -10537,6 +10537,45 @@
       margin-top: 8px;
     }
 
+    .acesso-site-creditos,
+    .acesso-site-codigos {
+      margin-top: 10px;
+      font-size: .88rem;
+    }
+
+    .acesso-site-creditar-linha,
+    .acesso-site-codigo-linha {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .acesso-site-creditar-valor {
+      width: 7.5rem;
+      min-height: 34px;
+      padding: 4px 8px;
+      font: inherit;
+    }
+
+    .acesso-site-codigo-nome {
+      min-width: 7.5rem;
+      font-weight: 600;
+    }
+
+    .acesso-site-codigo-valor {
+      font-size: .82rem;
+      word-break: break-all;
+    }
+
+    .acesso-site-creditar-linha button,
+    .acesso-site-codigo-linha button {
+      min-height: 34px;
+      padding: 4px 10px;
+      font-size: .82rem;
+    }
+
     .estatisticas-resumo,
     .estatisticas-dias,
     .estatisticas-lista {

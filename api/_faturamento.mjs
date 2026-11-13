@@ -4,7 +4,6 @@
 //  - IA de texto e esboços: reais por 1 milhão de tokens, com um preço para a entrada e outro para a saída.
 //  - Leitura em voz alta: reais por 1.000 caracteres lidos.
 //  - Áudio em texto (transcrição): reais por minuto de áudio.
-import { codigoDoDirigente, textosIguais } from "./_comum.mjs";
 import { gravarItem, lerItem } from "./_armazem.mjs";
 import { consumoDoAparelho, mesDe } from "./_estatisticas.mjs";
 import { MODELOS_IA, iaDaTarefa, lerConfigIa } from "./_iaConfig.mjs";
@@ -161,17 +160,20 @@ export function valorDoUso(cat, uso, precos) {
   return (uso.in / 1e6) * (p.entrada || 0) + (uso.out / 1e6) * (p.saida || 0);
 }
 
-// Quais códigos o aparelho informou e o servidor confere (nada é gravado).
-export function acessosDoPedido(corpo) {
+// Quais códigos o aparelho informou e o servidor confere (global ou personalizado do aparelho).
+export async function acessosDoPedido(corpo) {
   const b = corpo && typeof corpo === "object" ? corpo : {};
-  const dirigente = Boolean(codigoDoDirigente()) && textosIguais(b.codigoDirigente, codigoDoDirigente());
+  const { prepararCodigosPessoais, recursoCodigoValido } = await import("./_acessoSite.mjs");
+  await prepararCodigosPessoais();
+  const id = b.aparelhoId;
+  const dirigente = recursoCodigoValido("dirigente", b.codigoDirigente, id);
   return {
-    pesquisa: Boolean(process.env.CODIGO_ESTUDO) && textosIguais(b.codigo, process.env.CODIGO_ESTUDO),
+    pesquisa: recursoCodigoValido("pesquisa", b.codigo, id),
     dirigente,
-    s34: dirigente && Boolean(process.env.CODIGO_S34) && textosIguais(b.codigoS34, process.env.CODIGO_S34),
-    resumo: Boolean(process.env.CODIGO_RESUMO) && textosIguais(b.codigoResumo, process.env.CODIGO_RESUMO),
-    leitura: Boolean(process.env.CODIGO_LEITURA) && textosIguais(b.codigoLeitura, process.env.CODIGO_LEITURA),
-    texto: Boolean(process.env.CODIGO_TEXTO) && textosIguais(b.codigoTexto, process.env.CODIGO_TEXTO),
+    s34: dirigente && recursoCodigoValido("s34", b.codigoS34, id),
+    resumo: recursoCodigoValido("resumo", b.codigoResumo, id),
+    leitura: recursoCodigoValido("leitura", b.codigoLeitura, id),
+    texto: recursoCodigoValido("texto", b.codigoTexto, id),
   };
 }
 
@@ -179,8 +181,11 @@ export async function consumoDoUsuario(corpo) {
   const pedido = corpo && typeof corpo.mes === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(corpo.mes) ? corpo.mes : "";
   const atual = mesDe(new Date().toISOString());
   const mes = pedido || atual;
-  const [{ porTarefa, meses }, config] = await Promise.all([consumoDoAparelho(corpo.aparelhoId, mes), lerConfigFaturamento()]);
-  const acessos = acessosDoPedido(corpo);
+  const [{ porTarefa, meses }, config, acessos] = await Promise.all([
+    consumoDoAparelho(corpo.aparelhoId, mes),
+    lerConfigFaturamento(),
+    acessosDoPedido(corpo),
+  ]);
   const conhecidas = new Set(RECURSOS.flatMap((r) => r.tarefas));
   const recursos = [];
   for (const r of RECURSOS) {
@@ -194,11 +199,20 @@ export async function consumoDoUsuario(corpo) {
   const total = arredondar(recursos.reduce((n, r) => n + r.valor, 0));
   const mesesLista = [...new Set([atual, ...meses])].sort().reverse();
   const pix = config.pix;
+  let creditos = null;
+  try {
+    const { estadoAcessoSite } = await import("./_acessoSite.mjs");
+    const est = await estadoAcessoSite({ aparelhoId: corpo.aparelhoId });
+    if (est && est.configurado && est.identificado) creditos = Number(est.creditos) || 0;
+  } catch {
+    // sem cadastro/créditos: a tela de consumo segue só com o faturamento do mês
+  }
   return {
     mes,
     meses: mesesLista,
     recursos,
     total,
+    creditos,
     categorias: CATEGORIAS.map(({ id, nome, unidade }) => ({ id, nome, unidade, preco: config.precos[id] })),
     pix: {
       configurado: Boolean(pix.chave),

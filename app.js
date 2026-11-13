@@ -7669,7 +7669,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.19'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.21'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -11969,14 +11969,16 @@ function saveTemplatesToStorage() {
       consumoListaEl.replaceChildren();
       const cats = {};
       (d.categorias || []).forEach(c => { cats[c.id] = c; });
+      const saldoTxt = d.creditos == null ? '' : 'Saldo de créditos: ' + consumoReais(d.creditos) + (d.creditos <= 0 ? ' (IA pausada até o administrador carregar mais).' : '.');
       if (!d.recursos.length) {
         consumoListaEl.hidden = true;
-        consumoTotalEl.hidden = true;
+        consumoTotalEl.hidden = !saldoTxt;
+        if (saldoTxt) consumoTotalEl.textContent = saldoTxt;
         consumoStatus.className = 'hint';
         consumoStatus.textContent = 'Nenhum recurso de IA liberado neste aparelho. Informe seus códigos em 🔐 Autorização de acessos.';
       } else {
         consumoStatus.className = 'ok';
-        consumoStatus.textContent = '';
+        consumoStatus.textContent = saldoTxt;
         d.recursos.forEach(r => {
           const item = document.createElement('div');
           item.className = 'consumo-item';
@@ -11996,7 +11998,7 @@ function saveTemplatesToStorage() {
           consumoListaEl.appendChild(item);
         });
         consumoListaEl.hidden = false;
-        consumoTotalEl.textContent = 'Total de ' + consumoMesNome(d.mes) + ': ' + consumoReais(d.total);
+        consumoTotalEl.textContent = 'Total de ' + consumoMesNome(d.mes) + ': ' + consumoReais(d.total) + (saldoTxt ? ' · ' + saldoTxt : '');
         consumoTotalEl.hidden = false;
       }
       consumoPixRender();
@@ -12478,9 +12480,17 @@ function saveTemplatesToStorage() {
 
     const acessoSiteSection = document.getElementById('acessoSiteSection');
     const acessoSiteStatus = document.getElementById('acessoSiteStatus');
-    const acessoSiteRestringir = document.getElementById('acessoSiteRestringir');
     const acessoSitePedidos = document.getElementById('acessoSitePedidos');
     const acessoSiteAprovados = document.getElementById('acessoSiteAprovados');
+    const acessoSiteRecursosCodigo = [
+      { id: 'pesquisa', nome: 'Pesquisa' },
+      { id: 'dirigente', nome: 'Dirigente' },
+      { id: 'leitura', nome: 'Leitura' },
+      { id: 'texto', nome: 'Áudio em texto' },
+      { id: 'resumo', nome: 'Resumo da Bíblia' },
+      { id: 's34', nome: 'S-34' }
+    ];
+    const acessoSiteReais = n => (Number(n) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     const acessoSiteOverlay = document.getElementById('acessoSiteOverlay');
     const acessoSitePainelForm = document.getElementById('acessoSitePainelForm');
     const acessoSitePainelBoasVindas = document.getElementById('acessoSitePainelBoasVindas');
@@ -12503,14 +12513,11 @@ function saveTemplatesToStorage() {
     function acessoSiteRenderAdmin(acesso, aviso) {
       if (!acesso || !acesso.configurado) {
         acessoSiteStatus.textContent = 'O controle de acesso ainda não está configurado no servidor (falta o Blob privado).';
-        acessoSiteRestringir.checked = false;
         acessoSitePedidos.innerHTML = '';
         acessoSiteAprovados.innerHTML = '';
         return;
       }
-      acessoSiteRestringir.checked = Boolean(acesso.restringir);
-      acessoSiteStatus.textContent = (aviso || '') + (acesso.atualizadoEm ? 'Atualizado em ' + estatisticasQuando(acesso.atualizadoEm) + '.' : 'Pronto.') +
-        (acesso.restringir ? ' Cadastros novos precisam da sua aprovação.' : ' Cadastro libera o acesso na hora.');
+      acessoSiteStatus.textContent = (aviso || '') + (acesso.atualizadoEm ? 'Atualizado em ' + estatisticasQuando(acesso.atualizadoEm) + '.' : 'Pronto.');
       const pendentes = Array.isArray(acesso.pendentes) ? acesso.pendentes : [];
       acessoSitePedidos.innerHTML = pendentes.length
         ? pendentes.map(p =>
@@ -12526,6 +12533,7 @@ function saveTemplatesToStorage() {
           '</div></div>'
         ).join('')
         : '<p class="hint">Nenhum cadastro pendente.</p>';
+      const recursosLista = Array.isArray(acesso.recursosCodigo) && acesso.recursosCodigo.length ? acesso.recursosCodigo : acessoSiteRecursosCodigo;
       const aprovados = Array.isArray(acesso.aprovados) ? acesso.aprovados : [];
       acessoSiteAprovados.innerHTML = aprovados.length
         ? aprovados.map(a => {
@@ -12533,11 +12541,28 @@ function saveTemplatesToStorage() {
           const cidade = a.cidadeEstado || [a.cidade, a.estado].filter(Boolean).join(', ');
           const nivel = a.nivel === 'admin' ? 'Administrador' : 'Normal';
           const especiais = estatisticasListaRecursos(a.recursos);
+          const idCompleto = a.aparelhoIdCompleto || '';
+          const creditos = Number(a.creditos) || 0;
+          const codigos = a.codigos && typeof a.codigos === 'object' ? a.codigos : {};
           const resumo = [
             acessoSiteEscapar(nome),
             a.idade ? acessoSiteEscapar(a.idade) + ' anos' : '',
-            cidade ? acessoSiteEscapar(cidade) : ''
+            cidade ? acessoSiteEscapar(cidade) : '',
+            '💳 ' + acessoSiteReais(creditos)
           ].filter(Boolean).join(' · ');
+          const linhasCodigo = recursosLista.map(r => {
+            const c = codigos[r.id];
+            const ativo = c && c.ativo && c.codigo;
+            return '<div class="acesso-site-codigo-linha" data-recurso="' + acessoSiteEscapar(r.id) + '">' +
+              '<span class="acesso-site-codigo-nome">' + acessoSiteEscapar(r.nome) + '</span>' +
+              (ativo
+                ? '<code class="acesso-site-codigo-valor">' + acessoSiteEscapar(c.codigo) + '</code>' +
+                  '<button type="button" class="secondary acesso-site-copiar-codigo" data-codigo="' + acessoSiteEscapar(c.codigo) + '" title="Copiar código">📋</button>' +
+                  '<button type="button" class="secondary acesso-site-expirar-codigo" data-aparelho="' + acessoSiteEscapar(idCompleto) + '" data-recurso="' + acessoSiteEscapar(r.id) + '">Expirar</button>'
+                : '<span class="hint">sem código ativo</span>' +
+                  '<button type="button" class="secondary acesso-site-gerar-codigo" data-aparelho="' + acessoSiteEscapar(idCompleto) + '" data-recurso="' + acessoSiteEscapar(r.id) + '">Gerar</button>') +
+              '</div>';
+          }).join('');
           return '<details class="acesso-site-item">' +
           '<summary class="acesso-site-resumo">' + resumo + '</summary>' +
           '<div class="acesso-site-detalhe">' +
@@ -12545,12 +12570,18 @@ function saveTemplatesToStorage() {
           'Nível: <strong>' + nivel + '</strong>' +
           (a.telefone ? '<br>Telefone: ' + acessoSiteEscapar(a.telefone) : '') +
           (a.congregacao ? '<br>Congregação: ' + acessoSiteEscapar(a.congregacao) : '') +
-          (a.comoConheceu ? '<br>Como conheceu: ' + acessoSiteEscapar(a.comoConheceu) : '') +
           '<br>Recursos especiais: ' + (especiais.length ? acessoSiteEscapar(especiais.join(', ')) : 'nenhum código salvo neste aparelho') +
           '<br>Aparelho ' + acessoSiteEscapar(a.aparelhoId) + '… · ' + estatisticasQuando(a.aprovadoEm) +
           '</span>' +
+          '<div class="acesso-site-creditos">' +
+          '<strong>Créditos:</strong> ' + acessoSiteReais(creditos) +
+          '<div class="acesso-site-creditar-linha">' +
+          '<input type="text" inputmode="decimal" class="acesso-site-creditar-valor" placeholder="R$ 0,00" aria-label="Valor a creditar">' +
+          '<button type="button" class="acesso-site-creditar" data-aparelho="' + acessoSiteEscapar(idCompleto) + '">💳 Creditar</button>' +
+          '</div></div>' +
+          '<div class="acesso-site-codigos"><strong>Códigos personalizados</strong>' + linhasCodigo + '</div>' +
           '<div class="button-row">' +
-          '<button type="button" class="secondary acesso-site-revogar" data-aparelho="' + acessoSiteEscapar(a.aparelhoIdCompleto || '') + '">🗑️ Revogar</button>' +
+          '<button type="button" class="secondary acesso-site-revogar" data-aparelho="' + acessoSiteEscapar(idCompleto) + '">🗑️ Revogar</button>' +
           '</div></div></details>';
         }).join('')
         : '<p class="hint">Ninguém se identificou ainda.</p>';
@@ -12572,29 +12603,7 @@ function saveTemplatesToStorage() {
       acessoSiteRenderAdmin(r.data.acesso);
     }
 
-    document.getElementById('acessoSiteAtualizarBtn').addEventListener('click', acessoSiteCarregarAdmin);
     acessoSiteSection.addEventListener('toggle', () => { if (acessoSiteSection.open) acessoSiteCarregarAdmin(); });
-
-    document.getElementById('acessoSiteSalvarRestricaoBtn').addEventListener('click', async () => {
-      const codigo = codigoAdminAtual();
-      if (!codigo) return;
-      const ligar = acessoSiteRestringir.checked;
-      if (ligar) {
-        const ok = await askConfirm(
-          'Exigir sua aprovação em cada cadastro novo?\n\nQuem ainda não se identificou continua vendo o formulário. Depois de enviar, só usa o app quando você aprovar.',
-          'Exigir aprovação'
-        );
-        if (!ok) { acessoSiteRestringir.checked = false; return; }
-      }
-      acessoSiteStatus.textContent = 'Salvando…';
-      const r = await postConfig({ acao: 'acesso-site-restringir', codigo, restringir: ligar });
-      if (!r.ok) {
-        acessoSiteStatus.textContent = (r.data && r.data.erro) || 'Não foi possível salvar.';
-        acessoSiteRestringir.checked = !ligar;
-        return;
-      }
-      acessoSiteRenderAdmin(r.data.acesso, ligar ? 'Aprovação ligada. ' : 'Aprovação desligada. ');
-    });
 
     acessoSitePedidos.addEventListener('click', async e => {
       const btn = e.target.closest('button[data-id]');
@@ -12612,10 +12621,61 @@ function saveTemplatesToStorage() {
     });
 
     acessoSiteAprovados.addEventListener('click', async e => {
-      const btn = e.target.closest('button.acesso-site-revogar');
-      if (!btn || !btn.dataset.aparelho) return;
       const codigo = codigoAdminAtual();
       if (!codigo) return;
+      const copiar = e.target.closest('button.acesso-site-copiar-codigo');
+      if (copiar && copiar.dataset.codigo) {
+        try {
+          await navigator.clipboard.writeText(copiar.dataset.codigo);
+          acessoSiteStatus.textContent = 'Código copiado.';
+        } catch (err) {
+          acessoSiteStatus.textContent = 'Não foi possível copiar. Selecione o código e copie manualmente.';
+        }
+        return;
+      }
+      const creditar = e.target.closest('button.acesso-site-creditar');
+      if (creditar && creditar.dataset.aparelho) {
+        const campo = creditar.parentElement && creditar.parentElement.querySelector('.acesso-site-creditar-valor');
+        const valor = campo ? campo.value.trim() : '';
+        if (!valor) {
+          acessoSiteStatus.textContent = 'Informe o valor em reais para creditar.';
+          if (campo) campo.focus();
+          return;
+        }
+        acessoSiteStatus.textContent = 'Creditando…';
+        const r = await postConfig({ acao: 'acesso-site-creditar', codigo, aparelhoId: creditar.dataset.aparelho, valor });
+        if (!r.ok) {
+          acessoSiteStatus.textContent = (r.data && r.data.erro) || 'Não foi possível creditar.';
+          return;
+        }
+        acessoSiteRenderAdmin(r.data.acesso, 'Créditos atualizados: ' + acessoSiteReais(r.data.creditos) + '. ');
+        return;
+      }
+      const gerar = e.target.closest('button.acesso-site-gerar-codigo');
+      if (gerar && gerar.dataset.aparelho && gerar.dataset.recurso) {
+        acessoSiteStatus.textContent = 'Gerando código…';
+        const r = await postConfig({ acao: 'acesso-site-gerar-codigo', codigo, aparelhoId: gerar.dataset.aparelho, recurso: gerar.dataset.recurso });
+        if (!r.ok) {
+          acessoSiteStatus.textContent = (r.data && r.data.erro) || 'Não foi possível gerar o código.';
+          return;
+        }
+        acessoSiteRenderAdmin(r.data.acesso, 'Código gerado: ' + (r.data.codigoGerado || '') + '. ');
+        return;
+      }
+      const expirar = e.target.closest('button.acesso-site-expirar-codigo');
+      if (expirar && expirar.dataset.aparelho && expirar.dataset.recurso) {
+        if (!(await askConfirm('Expirar este código personalizado? O usuário precisará de um novo código gerado por você.', 'Expirar código'))) return;
+        acessoSiteStatus.textContent = 'Expirando…';
+        const r = await postConfig({ acao: 'acesso-site-expirar-codigo', codigo, aparelhoId: expirar.dataset.aparelho, recurso: expirar.dataset.recurso });
+        if (!r.ok) {
+          acessoSiteStatus.textContent = (r.data && r.data.erro) || 'Não foi possível expirar o código.';
+          return;
+        }
+        acessoSiteRenderAdmin(r.data.acesso, 'Código expirado. ');
+        return;
+      }
+      const btn = e.target.closest('button.acesso-site-revogar');
+      if (!btn || !btn.dataset.aparelho) return;
       if (!(await askConfirm('Revogar a identificação deste aparelho? Na próxima abertura ele precisará se cadastrar de novo.', 'Revogar identificação'))) return;
       const r = await postConfig({ acao: 'acesso-site-revogar', codigo, aparelhoId: btn.dataset.aparelho });
       if (!r.ok) {
@@ -21334,7 +21394,8 @@ function saveTemplatesToStorage() {
         return a.campo.focus();
       }
       acessoStatus(tipo, 'Conferindo no servidor…', false);
-      const r = await postConfig({ acao: a.acao, codigo: valor });
+      // aparelhoId: códigos personalizados só valem no aparelho para o qual o administrador os gerou.
+      const r = await postConfig({ acao: a.acao, codigo: valor, aparelhoId: aparelhoId() });
       // Recusado pelo servidor: não salva. Sem servidor (sem internet ou fora do site publicado): salva avisando.
       if (r.status === 403 || r.status === 429) return acessoStatus(tipo, configErrorMessage(r, 'Não foi aceito.') + ' Nada foi salvo.', true);
       safeSetItem(a.chave, valor);

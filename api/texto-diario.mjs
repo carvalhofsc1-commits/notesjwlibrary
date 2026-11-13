@@ -1,8 +1,8 @@
 // Texto diário da tela Início: o app manda a data do aparelho (o dia de quem lê, não o do servidor) e recebe a data por
 // extenso, o texto temático, o comentário e a citação da publicação, lidos no wol.jw.org (api/_wol.mjs). Exige o código
 // de acesso da IA, para o servidor não virar uma passagem aberta para o conteúdo do site.
-import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
-import { mensagemSeBloqueado } from "./_acessoSite.mjs";
+import { erro, origemPermitida } from "./_comum.mjs";
+import { mensagemSeBloqueado, prepararCodigosPessoais, recursoCodigoValido } from "./_acessoSite.mjs";
 import { emitirCupomVoz } from "./_vozCupom.mjs";
 import { lerTextoDiario } from "./_wol.mjs";
 
@@ -26,12 +26,14 @@ export default async function handler(req, res) {
     return erro(res, 405, "Método não permitido.");
   }
   if (!origemPermitida(req.headers.origin)) return erro(res, 403, "Origem não permitida.");
-  if (!process.env.CODIGO_ESTUDO) return erro(res, 503, "O código de pesquisa ainda não está configurado no servidor.");
-
   const body = req.body && typeof req.body === "object" ? req.body : {};
+  await prepararCodigosPessoais();
   const bloqueioSite = await mensagemSeBloqueado({ aparelhoId: body.aparelhoId, codigoAdmin: body.codigoAdmin });
   if (bloqueioSite) return erro(res, 403, bloqueioSite);
-  if (!textosIguais(body.codigo, process.env.CODIGO_ESTUDO)) return erro(res, 403, "Código de pesquisa inválido.");
+  if (!recursoCodigoValido("pesquisa", body.codigo, body.aparelhoId)) {
+    if (!process.env.CODIGO_ESTUDO) return erro(res, 503, "O código de pesquisa ainda não está configurado no servidor.");
+    return erro(res, 403, "Código de pesquisa inválido.");
+  }
 
   const m = typeof body.data === "string" ? body.data.match(/^(\d{4})-(\d{2})-(\d{2})$/) : null;
   const [ano, mes, dia] = m ? m.slice(1).map(Number) : [];

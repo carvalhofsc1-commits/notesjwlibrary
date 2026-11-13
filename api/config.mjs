@@ -14,11 +14,16 @@ import { consumoDoUsuario, custosDeReferencia, gravarConfigFaturamento, lerConfi
 import {
   acessoSiteConfigurado,
   atualizarCadastroSite,
+  creditarUsuario,
   decidirPedidoSite,
   definirRestricaoSite,
   estadoAcessoSite,
+  expirarCodigoUsuario,
+  gerarCodigoUsuario,
   lerAcessoSiteAdmin,
   pedirAcessoSite,
+  prepararCodigosPessoais,
+  recursoCodigoValido,
   revogarAcessoSite,
 } from "./_acessoSite.mjs";
 import { apagarEsboco, gravarEsbocos, gravarTemas, lerIndice, lerTemas, s34Configurado, temasDoTexto } from "./_s34.mjs";
@@ -288,65 +293,40 @@ export default async function handler(req, res) {
     const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "desconhecido";
     if (bloqueado(ip)) return erro(res, 429, "Muitas tentativas erradas. Tente novamente mais tarde.");
 
-    // Confere o código de pesquisa (CODIGO_ESTUDO) quando ele é salvo em Ajustes → Autorização de acessos.
+    // Confere código global ou personalizado deste aparelho (Administração de usuários).
+    await prepararCodigosPessoais();
+    const conferirRecurso = (recurso, mensagem503, mensagem403) => {
+      if (recursoCodigoValido(recurso, corpo.codigo, corpo.aparelhoId)) return res.status(200).json({ ok: true });
+      const globalOk = Boolean(
+        recurso === "pesquisa" ? process.env.CODIGO_ESTUDO
+          : recurso === "leitura" ? process.env.CODIGO_LEITURA
+            : recurso === "s34" ? process.env.CODIGO_S34
+              : recurso === "texto" ? process.env.CODIGO_TEXTO
+                : recurso === "resumo" ? process.env.CODIGO_RESUMO
+                  : recurso === "dirigente" ? codigoDoDirigente()
+                    : ""
+      );
+      if (!globalOk) return erro(res, 503, mensagem503);
+      registrarErro(ip);
+      return erro(res, 403, mensagem403);
+    };
     if (acao === "codigo-conferir") {
-      if (!process.env.CODIGO_ESTUDO) return erro(res, 503, "O código de pesquisa ainda não está configurado no servidor.");
-      if (!textosIguais(corpo.codigo, process.env.CODIGO_ESTUDO)) {
-        registrarErro(ip);
-        return erro(res, 403, "Código de pesquisa incorreto.");
-      }
-      return res.status(200).json({ ok: true });
+      return conferirRecurso("pesquisa", "O código de pesquisa ainda não está configurado no servidor.", "Código de pesquisa incorreto.");
     }
-
-    // Confere o código de leitura (CODIGO_LEITURA) quando ele é salvo em Ajustes: libera a tela Leitura em voz alta (api/voz.mjs, uso "leitura").
     if (acao === "leitura-conferir") {
-      if (!process.env.CODIGO_LEITURA) return erro(res, 503, "O código de leitura ainda não está configurado no servidor.");
-      if (!textosIguais(corpo.codigo, process.env.CODIGO_LEITURA)) {
-        registrarErro(ip);
-        return erro(res, 403, "Código de leitura incorreto.");
-      }
-      return res.status(200).json({ ok: true });
+      return conferirRecurso("leitura", "O código de leitura ainda não está configurado no servidor.", "Código de leitura incorreto.");
     }
-
-    // Confere o código do S-34 (CODIGO_S34) quando ele é salvo em Ajustes: libera a seção Discurso público - lista de temas (api/_acesso.mjs, nível "s34").
     if (acao === "s34-conferir") {
-      if (!process.env.CODIGO_S34) return erro(res, 503, "O código do S-34 ainda não está configurado no servidor.");
-      if (!textosIguais(corpo.codigo, process.env.CODIGO_S34)) {
-        registrarErro(ip);
-        return erro(res, 403, "Código do S-34 incorreto.");
-      }
-      return res.status(200).json({ ok: true });
+      return conferirRecurso("s34", "O código do S-34 ainda não está configurado no servidor.", "Código do S-34 incorreto.");
     }
-
-    // Confere o código de texto (CODIGO_TEXTO) quando ele é salvo em Ajustes: libera a tela Áudio em texto (api/transcrever.mjs).
     if (acao === "texto-conferir") {
-      if (!process.env.CODIGO_TEXTO) return erro(res, 503, "O código de texto ainda não está configurado no servidor.");
-      if (!textosIguais(corpo.codigo, process.env.CODIGO_TEXTO)) {
-        registrarErro(ip);
-        return erro(res, 403, "Código de texto incorreto.");
-      }
-      return res.status(200).json({ ok: true });
+      return conferirRecurso("texto", "O código de texto ainda não está configurado no servidor.", "Código de texto incorreto.");
     }
-
-    // Confere o código de resumo (CODIGO_RESUMO) quando ele é salvo em Ajustes: libera o botão Gerar resumo da Leitura diária da Bíblia (api/sugerir-formatacao.mjs).
     if (acao === "resumo-conferir") {
-      if (!process.env.CODIGO_RESUMO) return erro(res, 503, "O código de resumo ainda não está configurado no servidor.");
-      if (!textosIguais(corpo.codigo, process.env.CODIGO_RESUMO)) {
-        registrarErro(ip);
-        return erro(res, 403, "Código de resumo incorreto.");
-      }
-      return res.status(200).json({ ok: true });
+      return conferirRecurso("resumo", "O código de resumo ainda não está configurado no servidor.", "Código de resumo incorreto.");
     }
-
-    // Confere o código do dirigente (CODIGO_DIRIGENTE; sem a variável, o código de pesquisa) quando ele é salvo em Ajustes.
     if (acao === "dirigente-conferir") {
-      const esperado = codigoDoDirigente();
-      if (!esperado) return erro(res, 503, "O código do dirigente ainda não está configurado no servidor.");
-      if (!textosIguais(corpo.codigo, esperado)) {
-        registrarErro(ip);
-        return erro(res, 403, "Código do dirigente incorreto.");
-      }
-      return res.status(200).json({ ok: true });
+      return conferirRecurso("dirigente", "O código do dirigente ainda não está configurado no servidor.", "Código do dirigente incorreto.");
     }
 
     // Daqui em diante, só o administrador.
@@ -546,6 +526,30 @@ export default async function handler(req, res) {
         return erro(res, 503, "O armazenamento privado (Blob) ainda não está configurado no servidor para o controle de acesso.");
       }
       const r = await revogarAcessoSite({ aparelhoId: corpo.aparelhoId, codigoAdmin: corpo.codigo });
+      if (r && r.erro) return erro(res, 400, r.erro);
+      return res.status(200).json({ ok: true, acesso: await lerAcessoSiteAdmin() });
+    }
+    if (acao === "acesso-site-creditar") {
+      if (!acessoSiteConfigurado()) {
+        return erro(res, 503, "O armazenamento privado (Blob) ainda não está configurado no servidor para o controle de acesso.");
+      }
+      const r = await creditarUsuario({ aparelhoId: corpo.aparelhoId, valor: corpo.valor, codigoAdmin: corpo.codigo });
+      if (r && r.erro) return erro(res, 400, r.erro);
+      return res.status(200).json({ ok: true, creditos: r.creditos, acesso: await lerAcessoSiteAdmin() });
+    }
+    if (acao === "acesso-site-gerar-codigo") {
+      if (!acessoSiteConfigurado()) {
+        return erro(res, 503, "O armazenamento privado (Blob) ainda não está configurado no servidor para o controle de acesso.");
+      }
+      const r = await gerarCodigoUsuario({ aparelhoId: corpo.aparelhoId, recurso: corpo.recurso, codigoAdmin: corpo.codigo });
+      if (r && r.erro) return erro(res, 400, r.erro);
+      return res.status(200).json({ ok: true, recurso: r.recurso, codigoGerado: r.codigo, acesso: await lerAcessoSiteAdmin() });
+    }
+    if (acao === "acesso-site-expirar-codigo") {
+      if (!acessoSiteConfigurado()) {
+        return erro(res, 503, "O armazenamento privado (Blob) ainda não está configurado no servidor para o controle de acesso.");
+      }
+      const r = await expirarCodigoUsuario({ aparelhoId: corpo.aparelhoId, recurso: corpo.recurso, codigoAdmin: corpo.codigo });
       if (r && r.erro) return erro(res, 400, r.erro);
       return res.status(200).json({ ok: true, acesso: await lerAcessoSiteAdmin() });
     }

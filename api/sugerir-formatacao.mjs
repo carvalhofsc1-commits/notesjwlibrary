@@ -12,7 +12,7 @@ import { apagarResultado, guardarResultado, idDePedidoValido, lerResultado, pedi
 import { criarClienteIa, erroSemIa, iaDisponivel } from "./_clienteIa.mjs";
 import { blocoLicoesPara } from "./_memoria.mjs";
 import { aparelhoIdLimpo, registrarUsoIa } from "./_estatisticas.mjs";
-import { mensagemSeBloqueado } from "./_acessoSite.mjs";
+import { debitarCreditosUso, mensagemSeBloqueado, mensagemSeSemCredito, prepararCodigosPessoais } from "./_acessoSite.mjs";
 import { emitirCupomVoz } from "./_vozCupom.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
 import { buscarNosLivros, buscarVerbete, buscarVersiculos, versiculosDoCapitulo, fontesConfiguradas, lerCanticos, precarregarFontes, referenciasNoTexto, textoDeGruposBiblicos } from "./_fontes.mjs";
@@ -104,13 +104,15 @@ async function chamarIa(client, P, params, { schema = null, semPensar = false, t
     if (tarefa) contexto.tarefaIa = tarefa;
     if (contexto.aparelhoId) {
       try {
-        await registrarUsoIa({
+        const uso = {
           aparelhoId: contexto.aparelhoId,
           tarefa: contexto.tarefaIa || tarefa || "ia",
           entrada,
           saida: saidaTok,
           consultas: 1,
-        });
+        };
+        await registrarUsoIa(uso);
+        await debitarCreditosUso(uso);
       } catch (e) {
         console.error("Estatísticas: falha ao gravar uso da IA", e && e.message);
       }
@@ -1108,8 +1110,10 @@ function numerosDosParagrafos(texto) {
 // opcoesDirigente.dirigente: a recapitulação pedida no Preparar para dirigir (tarefa "estudo-recap"): o código do dirigente já foi conferido, sem o de pesquisa.
 async function responderEstudo(res, body, P, opcoesDirigente = {}) {
   if (!opcoesDirigente.dirigente) {
-    if (!process.env.CODIGO_ESTUDO) return erro(res, 503, "A leitura do estudo ainda não está configurada no servidor.");
-    if (!codigoValido(body.codigo)) return erro(res, 403, "Código de pesquisa inválido.");
+    if (!codigoValido(body.codigo, body.aparelhoId)) {
+      if (!process.env.CODIGO_ESTUDO) return erro(res, 503, "A leitura do estudo ainda não está configurada no servidor.");
+      return erro(res, 403, "Código de pesquisa inválido.");
+    }
   }
 
   const url = urlDoEstudo(body);
@@ -1288,7 +1292,7 @@ const SaidaPerguntas = z.object({
 async function sugerirPerguntas(res, body, P) {
   if (!codigoDoDirigente()) return erro(res, 503, "O código do dirigente ainda não está configurado no servidor.");
   // As perguntas adicionais para o dirigente pedem só o código do dirigente.
-  if (!dirigenteValido(body.codigoDirigente)) return erro(res, 403, "Código do dirigente inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
+  if (!dirigenteValido(body.codigoDirigente, body.aparelhoId)) return erro(res, 403, "Código do dirigente inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
 
   const url = urlDoEstudo(body);
   if (!url) return erro(res, 400, "Número ou link do artigo inválido. Use o número de 7 dígitos (ex.: 2026521) ou o link do wol.jw.org.");
@@ -1456,11 +1460,11 @@ const SaidaEbc = z.object({
 // Lê o capítulo da semana pedida; devolve o capítulo ou responde com o erro (e devolve null).
 // autorizado = o chamador já conferiu o código (o do dirigente, nas tarefas dele); senão vale o código de pesquisa.
 async function capituloEbc(res, body, autorizado = false) {
-  if (!autorizado && !process.env.CODIGO_ESTUDO) {
-    erro(res, 503, "A leitura do estudo ainda não está configurada no servidor.");
-    return null;
-  }
-  if (!autorizado && !codigoValido(body.codigo)) {
+  if (!autorizado && !codigoValido(body.codigo, body.aparelhoId)) {
+    if (!process.env.CODIGO_ESTUDO) {
+      erro(res, 503, "A leitura do estudo ainda não está configurada no servidor.");
+      return null;
+    }
     erro(res, 403, "Código de pesquisa inválido.");
     return null;
   }
@@ -1484,7 +1488,7 @@ async function capituloEbc(res, body, autorizado = false) {
 // O que o app mostra ao carregar: a matéria, o título e quantas perguntas há em cada quadro.
 async function lerEbc(res, body) {
   // O cartão dos comentários lê com o código de pesquisa; o do dirigente, com o do dirigente.
-  const autorizado = codigoValido(body.codigo) || dirigenteValido(body.codigoDirigente);
+  const autorizado = codigoValido(body.codigo, body.aparelhoId) || dirigenteValido(body.codigoDirigente, body.aparelhoId);
   if (!autorizado) return recusarAcesso(res, body);
   const capitulo = await capituloEbc(res, body, true);
   if (!capitulo) return;
@@ -1646,7 +1650,7 @@ const mesmaPergunta = (a, b) => Boolean(a && b && (a === b || (Math.min(a.length
 
 async function perguntasEbcDirigente(res, body, P) {
   if (!codigoDoDirigente()) return erro(res, 503, "O código do dirigente ainda não está configurado no servidor.");
-  if (!dirigenteValido(body.codigoDirigente)) return erro(res, 403, "Código do dirigente inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
+  if (!dirigenteValido(body.codigoDirigente, body.aparelhoId)) return erro(res, 403, "Código do dirigente inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
   const opcoes = validarOpcoes(body.opcoes);
   const ajuste = textoLivre(body.ajuste, MAX_AJUSTE);
   const modo = body.modo === "nova" || body.modo === "melhorar" ? body.modo : null;
@@ -3383,11 +3387,11 @@ async function versiculoDaJoia(capitulo, referencia) {
 }
 
 async function leituraJoias(res, body) {
-  if (!process.env.CODIGO_ESTUDO) {
-    erro(res, 503, "A leitura do estudo ainda não está configurada no servidor.");
-    return null;
-  }
-  if (!codigoValido(body.codigo)) {
+  if (!codigoValido(body.codigo, body.aparelhoId)) {
+    if (!process.env.CODIGO_ESTUDO) {
+      erro(res, 503, "A leitura do estudo ainda não está configurada no servidor.");
+      return null;
+    }
     erro(res, 403, "Código de pesquisa inválido.");
     return null;
   }
@@ -3424,7 +3428,7 @@ async function lerJoiasDaSemana(res, body) {
 
 // Todas as imagens da apostila Vida e Ministério da semana (descrição e legenda), mesmo as de partes que o app não trata. Só lê o wol.jw.org.
 async function lerImagensDaApostilaSemana(res, body) {
-  const autorizado = codigoValido(body.codigo) || dirigenteValido(body.codigoDirigente);
+  const autorizado = codigoValido(body.codigo, body.aparelhoId) || dirigenteValido(body.codigoDirigente, body.aparelhoId);
   if (!autorizado) return recusarAcesso(res, body);
   const url = urlDoEstudo({ ano: body.ano, semana: body.semana });
   if (!url) return erro(res, 400, "Semana inválida.");
@@ -3951,8 +3955,10 @@ async function completarResumosLeituraComFontes(outros, P, ajuste = "", blocoOpc
 // O texto de um capítulo, versículo por versículo, para o player da Leitura diária da Bíblia mostrar o versículo em andamento.
 // Sem IA: só lê a Bíblia das fontes. Exige o código de resumo, como o resumo dos capítulos.
 async function textoDoCapituloBiblia(res, body) {
-  if (!process.env.CODIGO_RESUMO) return erro(res, 503, "O código de resumo ainda não está configurado no servidor.");
-  if (!resumoValido(body.codigoResumo)) return erro(res, 403, "Código de resumo inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
+  if (!resumoValido(body.codigoResumo, body.aparelhoId)) {
+    if (!process.env.CODIGO_RESUMO) return erro(res, 503, "O código de resumo ainda não está configurado no servidor.");
+    return erro(res, 403, "Código de resumo inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
+  }
   if (!fontesConfiguradas()) return erro(res, 503, "A consulta às fontes ainda não está configurada no servidor.");
   const livro = typeof body.livro === "string" ? body.livro.trim().slice(0, 40) : "";
   if (!livro) return erro(res, 400, "Informe o livro e o capítulo.");
@@ -3966,8 +3972,10 @@ async function textoDoCapituloBiblia(res, body) {
 }
 
 async function resumirLeituraBiblia(res, body, P) {
-  if (!process.env.CODIGO_RESUMO) return erro(res, 503, "O código de resumo ainda não está configurado no servidor.");
-  if (!resumoValido(body.codigoResumo)) return erro(res, 403, "Código de resumo inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
+  if (!resumoValido(body.codigoResumo, body.aparelhoId)) {
+    if (!process.env.CODIGO_RESUMO) return erro(res, 503, "O código de resumo ainda não está configurado no servidor.");
+    return erro(res, 403, "Código de resumo inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
+  }
   if (!fontesConfiguradas()) return erro(res, 503, "A consulta às fontes ainda não está configurada no servidor.");
 
   const refs = (Array.isArray(body.refs) ? body.refs : [])
@@ -4142,8 +4150,10 @@ function emojiDoComentario(valor) {
 }
 
 async function comentariosDoTextoDiario(res, body, P) {
-  if (!process.env.CODIGO_ESTUDO) return erro(res, 503, "O código de pesquisa ainda não está configurado no servidor.");
-  if (!codigoValido(body.codigo)) return erro(res, 403, "Código de pesquisa inválido.");
+  if (!codigoValido(body.codigo, body.aparelhoId)) {
+    if (!process.env.CODIGO_ESTUDO) return erro(res, 503, "O código de pesquisa ainda não está configurado no servidor.");
+    return erro(res, 403, "Código de pesquisa inválido.");
+  }
   const m = typeof body.data === "string" ? body.data.match(/^(\d{4})-(\d{2})-(\d{2})$/) : null;
   if (!m) return erro(res, 400, "Data inválida.");
 
@@ -4298,11 +4308,11 @@ async function textoDosParagrafosDoEstudo(res, body) {
 }
 
 async function tentarListaNoSite(res, body) {
-  if (!process.env.CODIGO_ESTUDO) {
-    erro(res, 503, "A leitura do estudo ainda não está configurada no servidor.");
-    return true;
-  }
-  if (!codigoValido(body.codigo) && !dirigenteValido(body.codigoDirigente)) {
+  if (!codigoValido(body.codigo, body.aparelhoId) && !dirigenteValido(body.codigoDirigente, body.aparelhoId)) {
+    if (!process.env.CODIGO_ESTUDO && !codigoDoDirigente()) {
+      erro(res, 503, "A leitura do estudo ainda não está configurada no servidor.");
+      return true;
+    }
     recusarAcesso(res, body);
     return true;
   }
@@ -4326,8 +4336,10 @@ async function tentarListaNoSite(res, body) {
 }
 
 async function listarParagrafos(res, body, P) {
-  if (!process.env.CODIGO_ESTUDO) return erro(res, 503, "A leitura do estudo ainda não está configurada no servidor.");
-  if (!codigoValido(body.codigo) && !dirigenteValido(body.codigoDirigente)) return recusarAcesso(res, body);
+  if (!codigoValido(body.codigo, body.aparelhoId) && !dirigenteValido(body.codigoDirigente, body.aparelhoId)) {
+    if (!process.env.CODIGO_ESTUDO && !codigoDoDirigente()) return erro(res, 503, "A leitura do estudo ainda não está configurada no servidor.");
+    return recusarAcesso(res, body);
+  }
 
   const url = urlDoEstudo(body);
   if (!url) return erro(res, 400, "Número ou link do artigo inválido. Use o número de 7 dígitos (ex.: 2026521) ou o link do wol.jw.org.");
@@ -4403,7 +4415,7 @@ function excedeuLimiteBackup(ip) {
 
 async function lerCamposDosDocumentos(req, res) {
   const body = req.body || {};
-  if (!(codigoValido(body.codigo) || dirigenteValido(body.codigoDirigente))) return recusarAcesso(res, body);
+  if (!(codigoValido(body.codigo, body.aparelhoId) || dirigenteValido(body.codigoDirigente, body.aparelhoId))) return recusarAcesso(res, body);
   const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "desconhecido";
   if (excedeuLimiteBackup(ip)) return erro(res, 429, "Muitas consultas. Tente novamente em alguns minutos.");
   const ids = [...new Set((Array.isArray(body.documentos) ? body.documentos : []).map((d) => String(d).trim()).filter((d) => /^\d{6,12}$/.test(d)))].slice(0, 10);
@@ -4426,7 +4438,7 @@ async function lerCamposDosDocumentos(req, res) {
 // Em que semana cada artigo de estudo (A Sentinela) é estudado: o app manda só os números dos documentos e a edição de cada um.
 async function lerSemanasDosDocumentos(req, res) {
   const body = req.body || {};
-  if (!(codigoValido(body.codigo) || dirigenteValido(body.codigoDirigente))) return recusarAcesso(res, body);
+  if (!(codigoValido(body.codigo, body.aparelhoId) || dirigenteValido(body.codigoDirigente, body.aparelhoId))) return recusarAcesso(res, body);
   const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "desconhecido";
   if (excedeuLimiteBackup(ip)) return erro(res, 429, "Muitas consultas. Tente novamente em alguns minutos.");
   const vistos = new Set();
@@ -4448,7 +4460,7 @@ async function lerSemanasDosDocumentos(req, res) {
 // ainda não estão no backup.
 async function lerPublicacoesDaSemana(req, res) {
   const body = req.body || {};
-  if (!(codigoValido(body.codigo) || dirigenteValido(body.codigoDirigente))) return recusarAcesso(res, body);
+  if (!(codigoValido(body.codigo, body.aparelhoId) || dirigenteValido(body.codigoDirigente, body.aparelhoId))) return recusarAcesso(res, body);
   const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "desconhecido";
   if (excedeuLimiteBackup(ip)) return erro(res, 429, "Muitas consultas. Tente novamente em alguns minutos.");
   const ano = Number(body.ano);
@@ -4494,8 +4506,11 @@ async function tratarPedido(req, res) {
   const tarefa = body.tarefa;
   const ip = ipDoPedido(req);
 
+  await prepararCodigosPessoais();
   const bloqueioSite = await mensagemSeBloqueado({ aparelhoId: body.aparelhoId, codigoAdmin: body.codigoAdmin });
   if (bloqueioSite) return erro(res, 403, bloqueioSite);
+  const bloqueioCredito = await mensagemSeSemCredito({ aparelhoId: body.aparelhoId, codigoAdmin: body.codigoAdmin });
+  if (bloqueioCredito) return erro(res, 403, bloqueioCredito);
 
   // Resultado de um pedido demorado cuja conexão caiu (ver api/_pedidos.mjs): o id aleatório de 36 caracteres é a própria chave.
   if (tarefa === "pedido-resultado" || tarefa === "pedido-apagar") {
