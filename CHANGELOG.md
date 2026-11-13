@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.30
+
+Outros esboços: o botão "Ler a matéria e listar os textos bíblicos" passa a sumir de fato depois que o card de textos aparece (o CSS de `.ai-study-load` impedia o `hidden`).
+
 ## 6.9.29
 
 Preparação de discursos: o botão "Carregar o esboço já salvo" fica depois de "IA - Elaborar o esboço do discurso".

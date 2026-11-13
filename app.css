@@ -2026,6 +2026,11 @@
       min-height: 44px;
     }
 
+    /* display:block acima anula o [hidden] nativo; força sumir quando o JS marca hidden. */
+    .ai-study-load[hidden] {
+      display: none;
+    }
+
     .ai-study-picker {
       display: flex;
       align-items: flex-end;
