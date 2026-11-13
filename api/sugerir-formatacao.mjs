@@ -2871,12 +2871,20 @@ function dadosDoOutros(body) {
   };
 }
 
-// As leituras marcadas [Leia …] do esboço importado (como a Bíblia as escreve) e os textos que ele só cita.
+// As leituras marcadas [Leia …] do esboço importado (como a Bíblia as escreve) e os textos que ele cita.
+// Além das marcas e das citações entre parênteses (referenciasDoPublico), varre o corpo inteiro do esboço: esboços
+// especiais / locais costumam trazer dezenas de textos no texto dos itens, sem "[Leia …]" nem parênteses.
 async function referenciasDaBase(d) {
   if (!d.esbocoBase) return { marcadas: [], citadas: [] };
   const { leituras, citadas } = referenciasDoPublico(d.esbocoBase);
   const marcadas = fontesConfiguradas() ? [...new Set(await Promise.all(leituras.map(async (r) => (await leituraDaBiblia(r)).referencia)))] : leituras;
-  return { marcadas, citadas };
+  const noCorpo = await referenciasNoTexto(textoDoEsbocoImportado(d.esbocoBase), { max: 60, livre: true });
+  const marcadasSet = new Set(marcadas);
+  const citadasSet = new Set(citadas.filter((r) => !marcadasSet.has(r)));
+  for (const r of noCorpo) {
+    if (!marcadasSet.has(r)) citadasSet.add(r);
+  }
+  return { marcadas, citadas: [...citadasSet] };
 }
 
 // Lê os artigos do wol.jw.org: { artigos: [{ titulo, url, texto, referencias }], falhas: [endereço que não deu para ler] }.
@@ -2934,7 +2942,8 @@ function acertarMinutos(esboco, total) {
 
 // O resumo do que o servidor leu (o mesmo em "outros-ler" e depois da elaboração do esboço), para a tela.
 async function resumoDoOutros(d, { artigos, falhas, pedidos, daBase }) {
-  const naMateria = await referenciasNoTexto(d.materia, { max: 40 });
+  // livre:true reconhece abreviações e maiúsculas/minúsculas variadas na matéria colada.
+  const naMateria = await referenciasNoTexto(d.materia, { max: 60, livre: true });
   const base = d.esbocoBase ? { titulo: d.esbocoBase.titulo, minutos: minutosDoEsboco(d.esbocoBase), secoes: d.esbocoBase.secoes.length, leituras: daBase.marcadas } : null;
   return {
     semana: "",
@@ -3013,7 +3022,7 @@ async function esbocoDeOutros(res, body, P) {
   if (fontesConfiguradas()) precarregarFontes({ biblia: true, perspicaz: false });
 
   const [{ artigos, falhas }, pedidos, extras, daBase] = await Promise.all([artigosDoOutros(d), textosPedidosDoOutros(d), textosExtrasDoPedido(body), referenciasDaBase(d)]);
-  const naMateria = await referenciasNoTexto(d.materia, { max: 40 });
+  const naMateria = await referenciasNoTexto(d.materia, { max: 60, livre: true });
   const tirados = await textosTiradosDoPedido(body); // os textos que o orador tirou da lista (mesmo os marcados "Leia" do esboço importado)
   const doEsbocoAnterior = modo ? leiturasDoEsbocoAnterior(body.anteriores) : [];
   const base = d.esbocoBase;

@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.32
+
+Outros esboços: "Ler a matéria…" passa a listar também os textos bíblicos citados no corpo do esboço importado (não só "[Leia …]" e citações entre parênteses) e reconhece melhor as referências na matéria colada.
+
+## 6.9.31
+
+Outros esboços: o resumo após ler a matéria deixa de repetir os dados do esboço importado (já mostrados no card "Esboço pronto como base").
+
 ## 6.9.30
 
 Outros esboços: o botão "Ler a matéria e listar os textos bíblicos" passa a sumir de fato depois que o card de textos aparece (o CSS de `.ai-study-load` impedia o `hidden`).

@@ -7669,7 +7669,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.30'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.32'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -16768,10 +16768,10 @@ function saveTemplatesToStorage() {
         validar: () => outrosValidar(),
         validarLer: () => (outrosTemMateria() ? '' : 'Informe a matéria (um texto colado, artigos do wol.jw.org ou um esboço importado) ou os textos bíblicos que quer ler.'),
         // O tempo, os artigos que o servidor leu (e os que não deu para ler), os textos que o orador pediu e os que não foram reconhecidos.
+        // O resumo do esboço importado já aparece no card "Esboço pronto como base" — não repetir aqui.
         linhasDaInfo: dados => soComConteudo(
           dados.minutos + ' min' + (dados.artigos && dados.artigos.length ? ' · ' + dados.artigos.length + (dados.artigos.length === 1 ? ' artigo lido: ' : ' artigos lidos: ') + dados.artigos.map(a => '“' + a.titulo + '”').join('; ') : '') + (dados.materia ? ' · matéria colada: ' + dados.materia + ' caracteres' : ''),
           dados.falhas && dados.falhas.length ? '⚠️ Não consegui ler: ' + dados.falhas.join('; ') : '',
-          dados.base ? 'esboço importado: “' + dados.base.titulo.replace(/^[‘'“"]+|[’'”"]+$/g, '') + '” · ' + dados.base.minutos + ' min · ' + dados.base.secoes + (dados.base.secoes === 1 ? ' seção' : ' seções') + ' · ' + (dados.base.leituras.length ? 'leituras marcadas: ' + dados.base.leituras.join('; ') : 'sem leituras marcadas') : '',
           dados.avisoTextos ? '⚠️ ' + dados.avisoTextos : '',
           dados.pedidos && dados.pedidos.length ? 'textos para ler: ' + dados.pedidos.join('; ') : ''
         )
