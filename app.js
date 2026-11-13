@@ -7669,7 +7669,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.23'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.24'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12553,36 +12553,50 @@ function saveTemplatesToStorage() {
             cidade ? acessoSiteEscapar(cidade) : '',
             '💳 ' + acessoSiteReais(creditos)
           ].filter(Boolean).join(' · ');
+          const linhaCadastro = (rotulo, valor) =>
+            '<div class="acesso-site-dado"><span class="acesso-site-dado-rotulo">' + acessoSiteEscapar(rotulo) + '</span>' +
+            '<span class="acesso-site-dado-valor">' + valor + '</span></div>';
           const linhasCodigo = recursosLista.map(r => {
             const c = codigos[r.id];
             const ativo = c && c.ativo && c.codigo;
-            return '<div class="acesso-site-codigo-linha" data-recurso="' + acessoSiteEscapar(r.id) + '">' +
-              '<span class="acesso-site-codigo-nome">' + acessoSiteEscapar(r.nome) + '</span>' +
+            return '<tr data-recurso="' + acessoSiteEscapar(r.id) + '">' +
+              '<th scope="row">' + acessoSiteEscapar(r.nome) + '</th>' +
+              '<td class="acesso-site-codigo-cel">' +
               (ativo
-                ? '<code class="acesso-site-codigo-valor">' + acessoSiteEscapar(c.codigo) + '</code>' +
-                  '<button type="button" class="secondary acesso-site-copiar-codigo" data-codigo="' + acessoSiteEscapar(c.codigo) + '" title="Copiar código">📋</button>' +
+                ? '<code class="acesso-site-codigo-valor">' + acessoSiteEscapar(c.codigo) + '</code>'
+                : '<span class="hint">sem código ativo</span>') +
+              '</td>' +
+              '<td class="acesso-site-codigo-acoes">' +
+              (ativo
+                ? '<button type="button" class="secondary acesso-site-copiar-codigo" data-codigo="' + acessoSiteEscapar(c.codigo) + '" title="Copiar código">📋</button>' +
                   '<button type="button" class="secondary acesso-site-expirar-codigo" data-aparelho="' + acessoSiteEscapar(idCompleto) + '" data-recurso="' + acessoSiteEscapar(r.id) + '">Expirar</button>'
-                : '<span class="hint">sem código ativo</span>' +
-                  '<button type="button" class="secondary acesso-site-gerar-codigo" data-aparelho="' + acessoSiteEscapar(idCompleto) + '" data-recurso="' + acessoSiteEscapar(r.id) + '">Gerar</button>') +
-              '</div>';
+                : '<button type="button" class="secondary acesso-site-gerar-codigo" data-aparelho="' + acessoSiteEscapar(idCompleto) + '" data-recurso="' + acessoSiteEscapar(r.id) + '">Gerar</button>') +
+              '</td></tr>';
           }).join('');
           return '<details class="acesso-site-item" data-aparelho="' + acessoSiteEscapar(idCompleto) + '"' + aberto + '>' +
           '<summary class="acesso-site-resumo">' + resumo + '</summary>' +
           '<div class="acesso-site-detalhe">' +
-          '<span class="hint">' +
-          'Nível: <strong>' + nivel + '</strong>' +
-          (a.telefone ? '<br>Telefone: ' + acessoSiteEscapar(a.telefone) : '') +
-          (a.congregacao ? '<br>Congregação: ' + acessoSiteEscapar(a.congregacao) : '') +
-          '<br>Recursos especiais: ' + (especiais.length ? acessoSiteEscapar(especiais.join(', ')) : 'nenhum código salvo neste aparelho') +
-          '<br>Aparelho ' + acessoSiteEscapar(a.aparelhoId) + '… · ' + estatisticasQuando(a.aprovadoEm) +
-          '</span>' +
+          '<div class="acesso-site-tabela-dados" role="table" aria-label="Dados do cadastro">' +
+          linhaCadastro('Nível', '<strong>' + nivel + '</strong>') +
+          (a.telefone ? linhaCadastro('Telefone', acessoSiteEscapar(a.telefone)) : '') +
+          (a.congregacao ? linhaCadastro('Congregação', acessoSiteEscapar(a.congregacao)) : '') +
+          linhaCadastro('Recursos especiais', especiais.length ? acessoSiteEscapar(especiais.join(', ')) : 'nenhum código salvo neste aparelho') +
+          linhaCadastro('Aparelho', acessoSiteEscapar(a.aparelhoId) + '… · ' + estatisticasQuando(a.aprovadoEm)) +
+          '</div>' +
           '<div class="acesso-site-creditos">' +
-          '<strong>Créditos:</strong> ' + acessoSiteReais(creditos) +
+          '<div class="acesso-site-tabela-dados" role="table" aria-label="Créditos">' +
+          linhaCadastro('Créditos', '<strong>' + acessoSiteReais(creditos) + '</strong>') +
+          '</div>' +
           '<div class="acesso-site-creditar-linha">' +
           '<input type="text" inputmode="decimal" class="acesso-site-creditar-valor" placeholder="R$ 0,00" aria-label="Valor a creditar">' +
           '<button type="button" class="acesso-site-creditar" data-aparelho="' + acessoSiteEscapar(idCompleto) + '">💳 Creditar</button>' +
           '</div></div>' +
-          '<div class="acesso-site-codigos"><strong>Códigos personalizados</strong>' + linhasCodigo + '</div>' +
+          '<div class="acesso-site-codigos">' +
+          '<strong class="acesso-site-codigos-titulo">Códigos personalizados</strong>' +
+          '<div class="acesso-site-tabela-wrap">' +
+          '<table class="acesso-site-tabela-codigos">' +
+          '<thead><tr><th scope="col">Recurso</th><th scope="col">Código</th><th scope="col">Ações</th></tr></thead>' +
+          '<tbody>' + linhasCodigo + '</tbody></table></div></div>' +
           '<div class="button-row">' +
           '<button type="button" class="secondary acesso-site-revogar" data-aparelho="' + acessoSiteEscapar(idCompleto) + '">🗑️ Revogar</button>' +
           '</div></div></details>';

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.24
+
+Administração de usuários: ícone 👥 no título da seção; dados do cadastro e códigos personalizados em layout de tabela (rótulo/valor e recurso/código/ações).
+
 ## 6.9.23
 
 Administração de usuários: ao gerar/creditar/expirar código, o card do usuário permanece aberto (antes fechava ao redesenhar a lista) e o clique no botão não fecha o painel.
