@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.35
+
+Outros esboços: o tema do esboço importado aparece só no campo "Tema do discurso" (some do resumo do bloco, do seletor e do status da importação).
+
 ## 6.9.34
 
 Outros esboços: o tema do esboço importado deixa de se repetir abaixo do seletor e no resumo após ler a matéria.

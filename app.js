@@ -7669,7 +7669,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.34'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.35'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -18506,7 +18506,8 @@ function saveTemplatesToStorage() {
       if (artigos) itens.push(artigos + (artigos === 1 ? ' artigo' : ' artigos'));
       document.getElementById('outrosMateriaResumo').textContent = '📚 Ocasião, textos, matéria e pesquisa (opcional)' + (itens.length ? ' · ' + itens.join(', ') : '');
       const base = outrosBaseAtual();
-      document.getElementById('outrosBaseResumo').textContent = '📥 Esboço pronto como base (opcional, só neste aparelho)' + (base ? ' · ' + base.titulo : '');
+      // O tema do esboço importado aparece só em "Tema do discurso" — o resumo do bloco não o repete.
+      document.getElementById('outrosBaseResumo').textContent = '📥 Esboço pronto como base (opcional, só neste aparelho)' + (base ? ' · em uso' : '');
       esbocoSalvoAtualizar(ESBOCOS.outros); // com esboço importado como base, já pode haver uma versão preparada e salva
     }
 
@@ -18630,6 +18631,12 @@ function saveTemplatesToStorage() {
 
     const outrosBaseTotal = base => base.esboco.secoes.reduce((n, sc) => n + (sc.minutos || 0), 0);
     const outrosBaseLeituras = base => [...new Set(base.esboco.secoes.flatMap(sc => sc.itens.flatMap(item => item.leituras || [])))];
+    // Rótulo curto no seletor: o tema longo fica só no campo "Tema do discurso".
+    const outrosBaseRotulo = (b, i) => {
+      const min = outrosBaseTotal(b) + ' min';
+      const secoes = b.esboco.secoes.length + (b.esboco.secoes.length === 1 ? ' seção' : ' seções');
+      return outrosBases.length > 1 ? (i + 1) + ' · ' + min + ' · ' + secoes : min + ' · ' + secoes;
+    };
 
     // A lista, as informações do esboço escolhido e o campo de tempo (que passa a valer a soma das seções dele).
     function outrosBaseMostrar() {
@@ -18640,20 +18647,21 @@ function saveTemplatesToStorage() {
       nenhum.value = '';
       nenhum.textContent = outrosBases.length ? 'Nenhum (usar só a matéria)' : 'Nenhum esboço importado';
       outrosBaseSelect.appendChild(nenhum);
-      outrosBases.forEach(b => {
+      outrosBases.forEach((b, i) => {
         const opcao = document.createElement('option');
         opcao.value = b.id;
-        opcao.textContent = b.titulo.replace(/^[‘'“"]+|[’'”"]+$/g, '') + ' · ' + outrosBaseTotal(b) + ' min';
+        opcao.textContent = outrosBaseRotulo(b, i);
         outrosBaseSelect.appendChild(opcao);
       });
       outrosBaseSelect.value = outrosBaseId;
       const info = document.getElementById('outrosBaseInfo');
       info.textContent = '';
       if (atual) {
-        // O título já está no seletor "Esboço a usar": aqui só o que ele não mostra (seções, arquivo, objetivo, leituras).
+        // Sem o tema aqui (já está em "Tema do discurso"): só tempo, seções, arquivo curto, objetivo e leituras.
         const leituras = outrosBaseLeituras(atual);
+        const arquivoCurto = atual.arquivo ? (atual.arquivo.length <= 28 ? atual.arquivo : 'arquivo .docx') : '';
         const linhas = [
-          '📥 ' + outrosBaseTotal(atual) + ' min · ' + atual.esboco.secoes.length + (atual.esboco.secoes.length === 1 ? ' seção' : ' seções') + (atual.arquivo ? ' · arquivo ' + atual.arquivo : ''),
+          '📥 ' + outrosBaseTotal(atual) + ' min · ' + atual.esboco.secoes.length + (atual.esboco.secoes.length === 1 ? ' seção' : ' seções') + (arquivoCurto ? ' · ' + arquivoCurto : ''),
           atual.esboco.notaAoOrador ? 'objetivo: ' + atual.esboco.notaAoOrador : '',
           leituras.length ? 'leituras marcadas: ' + leituras.join('; ') : 'sem leituras marcadas: a IA escolhe os textos (ou você os escolhe na lista, depois de ler a matéria)'
         ].filter(Boolean);
@@ -18663,14 +18671,15 @@ function saveTemplatesToStorage() {
       document.getElementById('outrosBaseApagarBtn').hidden = !atual;
       outrosCamposEl.minutos.disabled = Boolean(atual);
       if (atual) outrosCamposEl.minutos.value = String(Math.max(3, Math.min(60, outrosBaseTotal(atual) || 30)));
-      outrosCamposEl.tema.placeholder = atual ? atual.titulo : 'Ex.: Como enfrentar a ansiedade';
+      outrosCamposEl.tema.placeholder = 'Ex.: Como enfrentar a ansiedade';
       outrosAtualizarResumo();
     }
 
     function outrosBaseEscolher(id) {
       outrosBaseId = id;
       const atual = outrosBaseAtual();
-      if (atual && !outrosCamposEl.tema.value.trim()) outrosCamposEl.tema.value = atual.titulo.replace(/^[‘'“"]+|[’'”"]+$/g, '');
+      // Um único lugar para o tema na tela: o campo "Tema do discurso".
+      if (atual) outrosCamposEl.tema.value = atual.titulo.replace(/^[‘'“"]+|[’'”"]+$/g, '');
       outrosZerarLeitura();
       outrosBaseMostrar();
       outrosSalvarRascunho();
@@ -18690,12 +18699,12 @@ function saveTemplatesToStorage() {
           const esboco = resultado.esboco;
           const chave = JSON.stringify({ ...esboco, arquivo: '', arquivoModificado: '' });
           const repetido = outrosBases.find(b => JSON.stringify({ ...b.esboco, arquivo: '', arquivoModificado: '' }) === chave);
-          if (repetido) { escolhido = repetido.id; mensagens.push('Já estava importado: ' + repetido.titulo + '.'); continue; }
+          if (repetido) { escolhido = repetido.id; mensagens.push('Já estava importado.'); continue; }
           const item = { id: 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), titulo: esboco.titulo, importadoEm: new Date().toISOString(), arquivo: arquivoDocx.name, esboco };
           outrosBases.unshift(item);
           escolhido = item.id;
           const leituras = outrosBaseLeituras(item).length;
-          mensagens.push('✅ ' + esboco.titulo + ' (' + outrosBaseTotal(item) + ' min, ' + esboco.secoes.length + ' seções, ' + (leituras ? leituras + (leituras === 1 ? ' leitura marcada' : ' leituras marcadas') : 'sem leituras marcadas') + ').' + (resultado.avisos.length ? ' Avisos: ' + resultado.avisos.join(' ') : ''));
+          mensagens.push('✅ Esboço importado (' + outrosBaseTotal(item) + ' min, ' + esboco.secoes.length + ' seções, ' + (leituras ? leituras + (leituras === 1 ? ' leitura marcada' : ' leituras marcadas') : 'sem leituras marcadas') + ').' + (resultado.avisos.length ? ' Avisos: ' + resultado.avisos.join(' ') : ''));
         }
         outrosBases = outrosBases.slice(0, OUTROS_MAX_BASES);
         if (escolhido) { outrosBaseGuardar(); outrosBaseEscolher(escolhido); } else outrosBaseMostrar();
