@@ -481,8 +481,18 @@ export async function lerAcessoSiteAdmin() {
   const perfis = await mapaPerfilAparelhos();
   const pendentes = dados.pedidos.filter((p) => p.status === "pendente").map(pedidoPublico);
   const recentes = dados.pedidos.filter((p) => p.status !== "pendente").slice(0, 40).map(pedidoPublico);
-  const aprovados = Object.entries(dados.aprovados || {}).map(([aparelhoId, a]) => {
+  const ids = Object.keys(dados.aprovados || {});
+  let consumos = {};
+  try {
+    const { mapaConsumoAdmin } = await import("./_faturamento.mjs");
+    consumos = await mapaConsumoAdmin(ids);
+  } catch {
+    consumos = {};
+  }
+  const aprovados = ids.map((aparelhoId) => {
+    const a = dados.aprovados[aparelhoId];
     const perfil = perfis[aparelhoId] || {};
+    const consumo = consumos[aparelhoId] || { mes: "", recursos: [], total: 0 };
     return {
       aparelhoId: aparelhoId.slice(0, 8),
       aparelhoIdCompleto: aparelhoId,
@@ -496,6 +506,7 @@ export async function lerAcessoSiteAdmin() {
         resumo: false,
         s34: false,
       },
+      consumo,
     };
   });
   aprovados.sort((a, b) => String(b.aprovadoEm).localeCompare(String(a.aprovadoEm)));

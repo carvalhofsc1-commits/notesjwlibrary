@@ -7669,7 +7669,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.25'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.26'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12573,6 +12573,24 @@ function saveTemplatesToStorage() {
                 : '<button type="button" class="secondary acesso-site-gerar-codigo" data-aparelho="' + acessoSiteEscapar(idCompleto) + '" data-recurso="' + acessoSiteEscapar(r.id) + '">Gerar</button>') +
               '</td></tr>';
           }).join('');
+          const consumo = a.consumo && typeof a.consumo === 'object' ? a.consumo : { mes: '', recursos: [], total: 0 };
+          const consumoRecursos = Array.isArray(consumo.recursos) ? consumo.recursos : [];
+          const consumoTotal = Number(consumo.total) || 0;
+          const mesNome = consumo.mes ? consumoMesNome(consumo.mes) : 'este mês';
+          const linhasConsumo = consumoRecursos.length
+            ? consumoRecursos.map(r =>
+              '<tr>' +
+              '<th scope="row">' + acessoSiteEscapar(r.rotulo) + '</th>' +
+              '<td>' + acessoSiteEscapar((r.consultas ? r.consultas + (r.consultas === 1 ? ' uso · ' : ' usos · ') : '') + consumoUsoTexto(r)) + '</td>' +
+              '<td class="acesso-site-consumo-valor">' + acessoSiteEscapar(acessoSiteReais(r.valor)) + '</td>' +
+              '</tr>'
+            ).join('') +
+            '<tr class="acesso-site-consumo-total">' +
+            '<th scope="row">Total do mês</th>' +
+            '<td></td>' +
+            '<td class="acesso-site-consumo-valor">' + acessoSiteEscapar(acessoSiteReais(consumoTotal)) + '</td>' +
+            '</tr>'
+            : '<tr><td colspan="3" class="hint">Nenhum consumo de IA em ' + acessoSiteEscapar(mesNome) + '.</td></tr>';
           return '<details class="acesso-site-item" data-aparelho="' + acessoSiteEscapar(idCompleto) + '"' + aberto + '>' +
           '<summary class="acesso-site-resumo">' + resumo + '</summary>' +
           '<div class="acesso-site-detalhe">' +
@@ -12585,12 +12603,18 @@ function saveTemplatesToStorage() {
           '</div>' +
           '<div class="acesso-site-creditos">' +
           '<div class="acesso-site-tabela-dados" role="table" aria-label="Créditos">' +
-          linhaCadastro('Créditos', '<strong>' + acessoSiteReais(creditos) + '</strong>') +
+          linhaCadastro('Saldo restante', '<strong>' + acessoSiteReais(creditos) + '</strong>') +
           '</div>' +
           '<div class="acesso-site-creditar-linha">' +
           '<input type="text" inputmode="decimal" class="acesso-site-creditar-valor" placeholder="R$ 0,00" aria-label="Valor a creditar">' +
           '<button type="button" class="acesso-site-creditar" data-aparelho="' + acessoSiteEscapar(idCompleto) + '">💳 Creditar</button>' +
           '</div></div>' +
+          '<div class="acesso-site-consumo">' +
+          '<strong class="acesso-site-codigos-titulo">Consumo em ' + acessoSiteEscapar(mesNome) + '</strong>' +
+          '<div class="acesso-site-tabela-wrap">' +
+          '<table class="acesso-site-tabela-codigos acesso-site-tabela-consumo">' +
+          '<thead><tr><th scope="col">Recurso</th><th scope="col">Uso</th><th scope="col">Valor</th></tr></thead>' +
+          '<tbody>' + linhasConsumo + '</tbody></table></div></div>' +
           '<div class="acesso-site-codigos">' +
           '<strong class="acesso-site-codigos-titulo">Códigos personalizados</strong>' +
           '<div class="acesso-site-tabela-wrap">' +

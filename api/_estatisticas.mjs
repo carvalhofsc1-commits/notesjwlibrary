@@ -297,6 +297,25 @@ export async function consumoDoAparelho(aparelhoId, mes) {
   };
 }
 
+// Vários aparelhos de uma vez (Administração de usuários): uma leitura só do Blob.
+export async function mapaConsumoBrutoDoMes(aparelhoIds, mes) {
+  const out = {};
+  const ids = Array.isArray(aparelhoIds) ? aparelhoIds : [];
+  if (!ids.length || !estatisticasConfiguradas()) return out;
+  try {
+    const dados = (await lerBruto()) || vazio();
+    for (const bruto of ids) {
+      const id = aparelhoIdLimpo(bruto);
+      if (!id) continue;
+      const meses = (dados.aparelhos && dados.aparelhos[id] && dados.aparelhos[id].meses) || {};
+      out[id] = (meses[mes] && meses[mes].porTarefa) || {};
+    }
+  } catch {
+    // sem estatísticas: mapa vazio
+  }
+  return out;
+}
+
 function somarDias(dias, chave) {
   return Object.values(dias || {}).reduce((n, d) => n + (Number(d[chave]) || 0), 0);
 }

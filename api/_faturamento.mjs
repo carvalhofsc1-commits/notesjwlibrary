@@ -5,7 +5,7 @@
 //  - Leitura em voz alta: reais por 1.000 caracteres lidos.
 //  - Áudio em texto (transcrição): reais por minuto de áudio.
 import { gravarItem, lerItem } from "./_armazem.mjs";
-import { consumoDoAparelho, mesDe } from "./_estatisticas.mjs";
+import { consumoDoAparelho, mapaConsumoBrutoDoMes, mesDe } from "./_estatisticas.mjs";
 import { MODELOS_IA, iaDaTarefa, lerConfigIa } from "./_iaConfig.mjs";
 import { MODELOS_VOZ, lerConfigVoz } from "./_vozConfig.mjs";
 
@@ -177,6 +177,59 @@ export async function acessosDoPedido(corpo) {
   };
 }
 
+// Monta a lista de recursos usados a partir do porTarefa do mês (só o que teve uso).
+export function consumoDePorTarefa(porTarefa, precos, { soComUso = true, acessos = null } = {}) {
+  const conhecidas = new Set(RECURSOS.flatMap((r) => r.tarefas));
+  const recursos = [];
+  for (const r of RECURSOS) {
+    const uso = somar(r.tarefas, porTarefa || {});
+    if (soComUso && !uso.n) continue;
+    if (acessos && !r.acesso.some((a) => acessos[a]) && !uso.n) continue;
+    recursos.push({
+      id: r.id,
+      rotulo: r.rotulo,
+      categoria: r.cat,
+      consultas: uso.n,
+      entrada: uso.in,
+      saida: uso.out,
+      caracteres: uso.car,
+      segundos: uso.seg,
+      valor: arredondar(valorDoUso(r.cat, uso, precos)),
+    });
+  }
+  const resto = somar(Object.keys(porTarefa || {}).filter((t) => !conhecidas.has(t)), porTarefa || {});
+  if (resto.n) {
+    recursos.push({
+      id: OUTROS.id,
+      rotulo: OUTROS.rotulo,
+      categoria: OUTROS.cat,
+      consultas: resto.n,
+      entrada: resto.in,
+      saida: resto.out,
+      caracteres: resto.car,
+      segundos: resto.seg,
+      valor: arredondar(valorDoUso(OUTROS.cat, resto, precos)),
+    });
+  }
+  const total = arredondar(recursos.reduce((n, r) => n + r.valor, 0));
+  return { recursos, total };
+}
+
+// Administração de usuários: consumo do mês atual de vários aparelhos (uma leitura de estatísticas + preços).
+export async function mapaConsumoAdmin(aparelhoIds) {
+  const mes = mesDe(new Date().toISOString());
+  const config = await lerConfigFaturamento();
+  const bruto = await mapaConsumoBrutoDoMes(aparelhoIds, mes);
+  const out = {};
+  for (const brutoId of aparelhoIds || []) {
+    const id = String(brutoId || "");
+    if (!id) continue;
+    const { recursos, total } = consumoDePorTarefa(bruto[id] || {}, config.precos, { soComUso: true });
+    out[id] = { mes, recursos, total };
+  }
+  return out;
+}
+
 export async function consumoDoUsuario(corpo) {
   const pedido = corpo && typeof corpo.mes === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(corpo.mes) ? corpo.mes : "";
   const atual = mesDe(new Date().toISOString());
@@ -186,17 +239,7 @@ export async function consumoDoUsuario(corpo) {
     lerConfigFaturamento(),
     acessosDoPedido(corpo),
   ]);
-  const conhecidas = new Set(RECURSOS.flatMap((r) => r.tarefas));
-  const recursos = [];
-  for (const r of RECURSOS) {
-    const uso = somar(r.tarefas, porTarefa);
-    // Aparece quem tem acesso (código válido) e também quem já usou no mês (o código pode ter sido trocado depois).
-    if (!r.acesso.some((a) => acessos[a]) && !uso.n) continue;
-    recursos.push({ id: r.id, rotulo: r.rotulo, categoria: r.cat, consultas: uso.n, entrada: uso.in, saida: uso.out, caracteres: uso.car, segundos: uso.seg, valor: valorDoUso(r.cat, uso, config.precos) });
-  }
-  const resto = somar(Object.keys(porTarefa).filter((t) => !conhecidas.has(t)), porTarefa);
-  if (resto.n) recursos.push({ id: OUTROS.id, rotulo: OUTROS.rotulo, categoria: OUTROS.cat, consultas: resto.n, entrada: resto.in, saida: resto.out, caracteres: resto.car, segundos: resto.seg, valor: valorDoUso(OUTROS.cat, resto, config.precos) });
-  const total = arredondar(recursos.reduce((n, r) => n + r.valor, 0));
+  const { recursos, total } = consumoDePorTarefa(porTarefa, config.precos, { soComUso: false, acessos });
   const mesesLista = [...new Set([atual, ...meses])].sort().reverse();
   const pix = config.pix;
   let creditos = null;

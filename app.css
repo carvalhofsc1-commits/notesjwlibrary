@@ -10576,9 +10576,22 @@
     }
 
     .acesso-site-creditos,
-    .acesso-site-codigos {
+    .acesso-site-codigos,
+    .acesso-site-consumo {
       margin-top: 12px;
       font-size: .88rem;
+    }
+
+    .acesso-site-consumo-valor {
+      text-align: right;
+      white-space: nowrap;
+      font-weight: 700;
+    }
+
+    .acesso-site-consumo-total th,
+    .acesso-site-consumo-total td {
+      border-top: 2px solid var(--line);
+      font-weight: 700;
     }
 
     .acesso-site-codigos-titulo {
