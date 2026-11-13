@@ -10566,12 +10566,13 @@
 
     .acesso-site-dado-rotulo {
       color: var(--muted);
-      font-weight: 600;
+      font-weight: 400;
     }
 
     .acesso-site-dado-valor {
       min-width: 0;
       word-break: break-word;
+      font-weight: 700;
     }
 
     .acesso-site-creditos,

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.25
+
+Administração de usuários: nos dados pessoais do card, o valor fica em negrito e o rótulo em peso normal.
+
 ## 6.9.24
 
 Administração de usuários: ícone 👥 no título da seção; dados do cadastro e códigos personalizados em layout de tabela (rótulo/valor e recurso/código/ações).
