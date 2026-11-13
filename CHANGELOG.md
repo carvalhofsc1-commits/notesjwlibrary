@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.19
+
+Anotações: o ícone 🔊 do campo de texto sobe um pouco, para não ficar colado nos botões • Lista / 1. Lista.
+
 ## 6.9.18
 
 Anotações: o botão de ouvir o texto fica só com o emoji 🔊, sem moldura e sem a chave/cadeado ao lado (o código de leitura continua sendo pedido ao tocar).

@@ -14297,7 +14297,8 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
   margin: 0;
 }
 
-/* Só o 🔊, sem moldura nem chave: o código de leitura continua sendo pedido ao tocar. */
+/* Só o 🔊, sem moldura nem chave: o código de leitura continua sendo pedido ao tocar.
+   Um pouco mais alto para não ficar colado nos botões • Lista / 1. Lista logo abaixo. */
 .anotacoes-texto-cab .anotacoes-ouvir,
 .anotacoes-texto-cab .anotacoes-ouvir:hover:not(:disabled) {
   flex: 0 0 auto;
@@ -14309,7 +14310,7 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
   border: 0;
   background: transparent;
   box-shadow: none;
-  transform: none;
+  transform: translateY(-4px);
   font-size: 1.35rem;
   line-height: 1;
 }
