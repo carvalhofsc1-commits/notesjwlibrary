@@ -1430,6 +1430,14 @@
       min-height: 0;
     }
 
+    /* Matéria colada: altura acompanha o texto (JS ajusta); overflow:hidden evita rolagem interna fantasma na medida. */
+    #outrosMateria {
+      min-height: 96px;
+      overflow: hidden;
+      resize: none;
+      field-sizing: content;
+    }
+
     .outros-form .ai-study-load {
       margin-top: 10px;
     }

@@ -7669,7 +7669,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.32'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.34'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -16824,7 +16824,8 @@ function saveTemplatesToStorage() {
       iaTravasAtualizar();
       if (!dados || !dados.titulo) return;
       // Sem título no cartão (discurso público e outros esboços), o tema vai na primeira linha das informações.
-      if (!cfg.tituloEl) {
+      // Outros esboços com base importada: o tema já está no seletor / card da base — não repetir aqui.
+      if (!cfg.tituloEl && !(cfg.kind === 'outros' && dados.base)) {
         const titulo = '✨ ' + [cfg.semSemana ? '' : dados.semana, dados.titulo].filter(Boolean).join(' · ');
         // O tema em destaque (linha própria, maior e em negrito), acima dos detalhes do esboço.
         if (dados.url) {
@@ -18451,6 +18452,21 @@ function saveTemplatesToStorage() {
     const outrosResultados = document.getElementById('outrosResultados');
     const outrosPesquisarBtn = document.getElementById('outrosPesquisarBtn');
 
+    // O campo "Matéria" cresce com o texto (sem rolagem interna pequena): ao digitar/colar, ao abrir o bloco e ao redimensionar a tela.
+    function outrosMateriaCrescer() {
+      const campo = outrosCamposEl.materia;
+      if (!campo.getClientRects().length) return; // bloco fechado ou outra tela: a medida daria zero
+      const pagina = document.scrollingElement || document.documentElement;
+      const rolagem = pagina.scrollTop;
+      campo.style.height = 'auto';
+      const moldura = campo.offsetHeight - campo.clientHeight;
+      campo.style.height = Math.max(96, campo.scrollHeight + moldura) + 'px';
+      if (pagina.scrollTop !== rolagem) pagina.scrollTop = rolagem;
+    }
+    outrosCamposEl.materia.addEventListener('input', outrosMateriaCrescer);
+    outrosMateriaBox.addEventListener('toggle', () => { if (outrosMateriaBox.open) requestAnimationFrame(outrosMateriaCrescer); });
+    window.addEventListener('resize', outrosMateriaCrescer);
+
     const outrosEnderecos = () => [...new Set(outrosCamposEl.artigos.value.split(/\s+/).map(e => e.trim()).filter(Boolean))];
     const outrosTemMateria = () => Boolean(outrosCamposEl.materia.value.trim() || outrosCamposEl.textos.value.trim() || outrosEnderecos().length || outrosBaseAtual());
     // O esboço importado vai ao servidor sem o nome do arquivo.
@@ -18513,6 +18529,7 @@ function saveTemplatesToStorage() {
     } catch (e) { /* sem localStorage: os campos começam vazios */ }
     document.getElementById('outrosBaseBox').open = Boolean(outrosBaseId);
     outrosAtualizarResumo();
+    if (outrosMateriaBox.open) requestAnimationFrame(outrosMateriaCrescer);
 
     // A caixa dos artigos e as marcas dos resultados da pesquisa andam juntas.
     function outrosMarcarResultados() {
@@ -18633,9 +18650,10 @@ function saveTemplatesToStorage() {
       const info = document.getElementById('outrosBaseInfo');
       info.textContent = '';
       if (atual) {
+        // O título já está no seletor "Esboço a usar": aqui só o que ele não mostra (seções, arquivo, objetivo, leituras).
         const leituras = outrosBaseLeituras(atual);
         const linhas = [
-          '📥 ' + atual.titulo + ' · ' + outrosBaseTotal(atual) + ' min · ' + atual.esboco.secoes.length + (atual.esboco.secoes.length === 1 ? ' seção' : ' seções') + (atual.arquivo ? ' · arquivo ' + atual.arquivo : ''),
+          '📥 ' + outrosBaseTotal(atual) + ' min · ' + atual.esboco.secoes.length + (atual.esboco.secoes.length === 1 ? ' seção' : ' seções') + (atual.arquivo ? ' · arquivo ' + atual.arquivo : ''),
           atual.esboco.notaAoOrador ? 'objetivo: ' + atual.esboco.notaAoOrador : '',
           leituras.length ? 'leituras marcadas: ' + leituras.join('; ') : 'sem leituras marcadas: a IA escolhe os textos (ou você os escolhe na lista, depois de ler a matéria)'
         ].filter(Boolean);
@@ -18722,6 +18740,7 @@ function saveTemplatesToStorage() {
       outrosBaseMostrar();
       outrosZerarLeitura();
       outrosSalvarRascunho();
+      outrosMateriaCrescer();
       aiStatusKind = 'outros';
       setAiStatus('', false);
     });

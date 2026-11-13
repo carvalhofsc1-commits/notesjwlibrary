@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.34
+
+Outros esboços: o tema do esboço importado deixa de se repetir abaixo do seletor e no resumo após ler a matéria.
+
+## 6.9.33
+
+Outros esboços: o campo "Matéria: cole aqui um texto ou anotações" cresce com o tamanho do texto.
+
 ## 6.9.32
 
 Outros esboços: "Ler a matéria…" passa a listar também os textos bíblicos citados no corpo do esboço importado (não só "[Leia …]" e citações entre parênteses) e reconhece melhor as referências na matéria colada.
