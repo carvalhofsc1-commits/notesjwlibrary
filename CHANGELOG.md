@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.29
+
+Preparação de discursos: o botão "Carregar o esboço já salvo" fica depois de "IA - Elaborar o esboço do discurso".
+
 ## 6.9.28
 
 Outros esboços: o botão "Ler a matéria e listar os textos bíblicos" fica abaixo do resumo do esboço; some depois que os textos bíblicos aparecem e volta ao carregar um esboço novo.
