@@ -10482,28 +10482,46 @@
       font-size: .9rem;
     }
 
+    /* Evita que tabelas/códigos alarguem a tela inteira em Ajustes. */
+    #acessoSiteSection,
+    #acessoSiteSection .subsection-body,
+    #acessoSiteSection .prompt-item {
+      max-width: 100%;
+      min-width: 0;
+      overflow-x: hidden;
+    }
+
     .acesso-site-lista {
       display: grid;
       gap: 8px;
       margin: 8px 0;
+      max-width: 100%;
+      min-width: 0;
     }
 
     .acesso-site-item {
       border: 1px solid var(--line);
       border-radius: 10px;
-      padding: 8px 12px;
+      padding: 8px 10px;
       background: var(--card);
       font-size: .9rem;
+      max-width: 100%;
+      min-width: 0;
+      overflow: hidden;
+      box-sizing: border-box;
     }
 
     .acesso-site-item > summary.acesso-site-resumo {
       cursor: pointer;
       list-style: none;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 8px;
       font-weight: 600;
       line-height: 1.35;
+      min-width: 0;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     .acesso-site-item > summary.acesso-site-resumo::-webkit-details-marker {
@@ -10516,6 +10534,7 @@
       color: var(--muted, #888);
       font-weight: 400;
       transition: transform .15s ease;
+      margin-top: .15em;
     }
 
     .acesso-site-item[open] > summary.acesso-site-resumo::before {
@@ -10526,6 +10545,9 @@
       margin-top: 8px;
       padding-top: 8px;
       border-top: 1px solid var(--line);
+      max-width: 100%;
+      min-width: 0;
+      overflow: hidden;
     }
 
     .acesso-site-item .hint {
@@ -10545,11 +10567,12 @@
       border-radius: 8px;
       overflow: hidden;
       font-size: .86rem;
+      max-width: 100%;
     }
 
     .acesso-site-dado {
       display: grid;
-      grid-template-columns: 7.5rem 1fr;
+      grid-template-columns: minmax(5.5rem, 7rem) minmax(0, 1fr);
       gap: 8px;
       padding: 7px 10px;
       border-top: 1px solid var(--line);
@@ -10571,6 +10594,7 @@
 
     .acesso-site-dado-valor {
       min-width: 0;
+      overflow-wrap: anywhere;
       word-break: break-word;
       font-weight: 700;
     }
@@ -10580,11 +10604,12 @@
     .acesso-site-consumo {
       margin-top: 12px;
       font-size: .88rem;
+      max-width: 100%;
+      min-width: 0;
     }
 
     .acesso-site-consumo-valor {
       text-align: right;
-      white-space: nowrap;
       font-weight: 700;
     }
 
@@ -10605,24 +10630,34 @@
       align-items: center;
       gap: 6px;
       margin-top: 8px;
+      max-width: 100%;
     }
 
     .acesso-site-creditar-valor {
       width: 7.5rem;
+      max-width: 100%;
       min-height: 34px;
       padding: 4px 8px;
       font: inherit;
+      box-sizing: border-box;
     }
 
     .acesso-site-tabela-wrap {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
       overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
       border: 1px solid var(--line);
       border-radius: 8px;
+      box-sizing: border-box;
     }
 
     .acesso-site-tabela-codigos {
       width: 100%;
+      max-width: 100%;
       border-collapse: collapse;
+      table-layout: fixed;
       font-size: .84rem;
     }
 
@@ -10632,6 +10667,8 @@
       text-align: left;
       vertical-align: middle;
       border-top: 1px solid var(--line);
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     .acesso-site-tabela-codigos thead th {
@@ -10639,7 +10676,6 @@
       color: var(--muted);
       font-weight: 700;
       border-top: 0;
-      white-space: nowrap;
     }
 
     .acesso-site-tabela-codigos tbody tr:nth-child(even) {
@@ -10648,22 +10684,21 @@
 
     .acesso-site-tabela-codigos th[scope="row"] {
       font-weight: 600;
-      white-space: nowrap;
-      width: 1%;
+      width: 28%;
     }
 
     .acesso-site-codigo-cel {
-      min-width: 8rem;
+      width: 42%;
     }
 
     .acesso-site-codigo-valor {
       font-size: .82rem;
+      overflow-wrap: anywhere;
       word-break: break-all;
     }
 
     .acesso-site-codigo-acoes {
-      white-space: nowrap;
-      width: 1%;
+      width: 30%;
     }
 
     .acesso-site-creditar-linha button,
@@ -10671,17 +10706,23 @@
       min-height: 34px;
       padding: 4px 10px;
       font-size: .82rem;
-      margin-right: 4px;
+      margin: 0 4px 4px 0;
+      max-width: 100%;
     }
 
     .acesso-site-codigo-acoes button:last-child {
       margin-right: 0;
     }
 
-    @media (max-width: 420px) {
+    /* No celular: empilha recurso / código / ações para não estourar a largura. */
+    @media (max-width: 640px) {
       .acesso-site-dado {
         grid-template-columns: 1fr;
         gap: 2px;
+      }
+
+      .acesso-site-tabela-codigos {
+        table-layout: auto;
       }
 
       .acesso-site-tabela-codigos thead {
@@ -10695,6 +10736,8 @@
       .acesso-site-tabela-codigos td {
         display: block;
         width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
       }
 
       .acesso-site-tabela-codigos tr {
@@ -10712,8 +10755,15 @@
         padding: 2px 0;
       }
 
-      .acesso-site-codigo-acoes {
+      .acesso-site-codigo-acoes,
+      .acesso-site-consumo-valor {
         margin-top: 4px;
+        text-align: left;
+        width: 100%;
+      }
+
+      .acesso-site-consumo-total td:empty {
+        display: none;
       }
     }
 

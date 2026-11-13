@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.27
+
+Administração de usuários: no celular, os campos e tabelas do card do usuário deixam de extrapolar a largura da tela (conteúdo empilhado e contido).
+
 ## 6.9.26
 
 Administração de usuários: no card de cada usuário, mostra o consumo do mês por tipo de recurso (uso e valor) e o **saldo restante** de créditos.
