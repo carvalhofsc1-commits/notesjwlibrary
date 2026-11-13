@@ -534,7 +534,7 @@ export default async function handler(req, res) {
         return erro(res, 503, "O armazenamento privado (Blob) ainda não está configurado no servidor para o controle de acesso.");
       }
       const r = await creditarUsuario({ aparelhoId: corpo.aparelhoId, valor: corpo.valor, codigoAdmin: corpo.codigo });
-      if (r && r.erro) return erro(res, 400, r.erro);
+      if (!r || r.erro) return erro(res, 400, (r && r.erro) || "Não foi possível creditar agora.");
       return res.status(200).json({ ok: true, creditos: r.creditos, acesso: await lerAcessoSiteAdmin() });
     }
     if (acao === "acesso-site-gerar-codigo") {
@@ -542,7 +542,7 @@ export default async function handler(req, res) {
         return erro(res, 503, "O armazenamento privado (Blob) ainda não está configurado no servidor para o controle de acesso.");
       }
       const r = await gerarCodigoUsuario({ aparelhoId: corpo.aparelhoId, recurso: corpo.recurso, codigoAdmin: corpo.codigo });
-      if (r && r.erro) return erro(res, 400, r.erro);
+      if (!r || r.erro) return erro(res, 400, (r && r.erro) || "Não foi possível gerar o código agora.");
       return res.status(200).json({ ok: true, recurso: r.recurso, codigoGerado: r.codigo, acesso: await lerAcessoSiteAdmin() });
     }
     if (acao === "acesso-site-expirar-codigo") {
@@ -550,7 +550,7 @@ export default async function handler(req, res) {
         return erro(res, 503, "O armazenamento privado (Blob) ainda não está configurado no servidor para o controle de acesso.");
       }
       const r = await expirarCodigoUsuario({ aparelhoId: corpo.aparelhoId, recurso: corpo.recurso, codigoAdmin: corpo.codigo });
-      if (r && r.erro) return erro(res, 400, r.erro);
+      if (!r || r.erro) return erro(res, 400, (r && r.erro) || "Não foi possível expirar o código agora.");
       return res.status(200).json({ ok: true, acesso: await lerAcessoSiteAdmin() });
     }
 

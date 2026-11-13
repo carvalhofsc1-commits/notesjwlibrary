@@ -7669,7 +7669,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.21'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.23'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12147,10 +12147,7 @@ function saveTemplatesToStorage() {
     }
     function faturamentoCustosRender() {
       const c = faturamentoCustos;
-      const info = document.getElementById('fatDolarInfo');
       if (!c) return;
-      info.textContent = c.dolarDoDia ? 'Cotação de hoje: ' + fatReais(c.dolarDoDia) + ' por dólar. As contas de custo abaixo usam a cotação ' + (fatLerNumero('fatDolar') ? 'digitada: ' + fatReais(fatDolar()) + '.' : 'de hoje.')
-        : 'Não consegui a cotação de hoje; as contas usam ' + fatReais(fatDolar()) + ' por dólar. Digite a cotação para ajustar.';
       const r = fatCustosEmReais();
       const usd = n => 'US$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
       const texto = (id, mod, a, b) => { document.getElementById(id).textContent = 'Custo hoje (' + mod + '): ' + fatReais(a) + ' de entrada e ' + fatReais(b) + ' de saída por 1 milhão de tokens (' + usd(a / fatDolar()) + ' e ' + usd(b / fatDolar()) + ').'; };
@@ -12510,7 +12507,7 @@ function saveTemplatesToStorage() {
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    function acessoSiteRenderAdmin(acesso, aviso) {
+    function acessoSiteRenderAdmin(acesso, aviso, opts) {
       if (!acesso || !acesso.configurado) {
         acessoSiteStatus.textContent = 'O controle de acesso ainda não está configurado no servidor (falta o Blob privado).';
         acessoSitePedidos.innerHTML = '';
@@ -12533,6 +12530,11 @@ function saveTemplatesToStorage() {
           '</div></div>'
         ).join('')
         : '<p class="hint">Nenhum cadastro pendente.</p>';
+      // Mantém abertos os cards que já estavam (ou o que acabou de ser alterado), senão o Gerar/Creditar fecha o card ao redesenhar.
+      const manterAbertos = new Set(opts && opts.manterAbertos ? opts.manterAbertos : []);
+      acessoSiteAprovados.querySelectorAll('details.acesso-site-item[open][data-aparelho]').forEach(el => {
+        if (el.dataset.aparelho) manterAbertos.add(el.dataset.aparelho);
+      });
       const recursosLista = Array.isArray(acesso.recursosCodigo) && acesso.recursosCodigo.length ? acesso.recursosCodigo : acessoSiteRecursosCodigo;
       const aprovados = Array.isArray(acesso.aprovados) ? acesso.aprovados : [];
       acessoSiteAprovados.innerHTML = aprovados.length
@@ -12544,6 +12546,7 @@ function saveTemplatesToStorage() {
           const idCompleto = a.aparelhoIdCompleto || '';
           const creditos = Number(a.creditos) || 0;
           const codigos = a.codigos && typeof a.codigos === 'object' ? a.codigos : {};
+          const aberto = manterAbertos.has(idCompleto) ? ' open' : '';
           const resumo = [
             acessoSiteEscapar(nome),
             a.idade ? acessoSiteEscapar(a.idade) + ' anos' : '',
@@ -12563,7 +12566,7 @@ function saveTemplatesToStorage() {
                   '<button type="button" class="secondary acesso-site-gerar-codigo" data-aparelho="' + acessoSiteEscapar(idCompleto) + '" data-recurso="' + acessoSiteEscapar(r.id) + '">Gerar</button>') +
               '</div>';
           }).join('');
-          return '<details class="acesso-site-item">' +
+          return '<details class="acesso-site-item" data-aparelho="' + acessoSiteEscapar(idCompleto) + '"' + aberto + '>' +
           '<summary class="acesso-site-resumo">' + resumo + '</summary>' +
           '<div class="acesso-site-detalhe">' +
           '<span class="hint">' +
@@ -12585,6 +12588,9 @@ function saveTemplatesToStorage() {
           '</div></div></details>';
         }).join('')
         : '<p class="hint">Ninguém se identificou ainda.</p>';
+      // Garante que a lista "Usuários identificados" continue aberta depois de Gerar/Creditar/Expirar.
+      const caixaUsuarios = acessoSiteAprovados.closest('details');
+      if (caixaUsuarios) caixaUsuarios.open = true;
     }
 
     async function acessoSiteCarregarAdmin() {
@@ -12621,8 +12627,14 @@ function saveTemplatesToStorage() {
     });
 
     acessoSiteAprovados.addEventListener('click', async e => {
+      // Clique em botão dentro do card não pode fechar o <details> (nem o da lista "Usuários identificados").
+      const acaoBtn = e.target.closest('button');
+      if (acaoBtn) e.stopPropagation();
       const codigo = codigoAdminAtual();
-      if (!codigo) return;
+      if (!codigo) {
+        if (acaoBtn) acessoSiteStatus.textContent = 'Salve a senha de administrador em Autorização de acessos.';
+        return;
+      }
       const copiar = e.target.closest('button.acesso-site-copiar-codigo');
       if (copiar && copiar.dataset.codigo) {
         try {
@@ -12645,10 +12657,10 @@ function saveTemplatesToStorage() {
         acessoSiteStatus.textContent = 'Creditando…';
         const r = await postConfig({ acao: 'acesso-site-creditar', codigo, aparelhoId: creditar.dataset.aparelho, valor });
         if (!r.ok) {
-          acessoSiteStatus.textContent = (r.data && r.data.erro) || 'Não foi possível creditar.';
+          acessoSiteStatus.textContent = (r.data && r.data.erro) || configErrorMessage(r, 'Não foi possível creditar.');
           return;
         }
-        acessoSiteRenderAdmin(r.data.acesso, 'Créditos atualizados: ' + acessoSiteReais(r.data.creditos) + '. ');
+        acessoSiteRenderAdmin(r.data.acesso, 'Créditos atualizados: ' + acessoSiteReais(r.data.creditos) + '. ', { manterAbertos: [creditar.dataset.aparelho] });
         return;
       }
       const gerar = e.target.closest('button.acesso-site-gerar-codigo');
@@ -12656,10 +12668,10 @@ function saveTemplatesToStorage() {
         acessoSiteStatus.textContent = 'Gerando código…';
         const r = await postConfig({ acao: 'acesso-site-gerar-codigo', codigo, aparelhoId: gerar.dataset.aparelho, recurso: gerar.dataset.recurso });
         if (!r.ok) {
-          acessoSiteStatus.textContent = (r.data && r.data.erro) || 'Não foi possível gerar o código.';
+          acessoSiteStatus.textContent = (r.data && r.data.erro) || configErrorMessage(r, 'Não foi possível gerar o código.');
           return;
         }
-        acessoSiteRenderAdmin(r.data.acesso, 'Código gerado: ' + (r.data.codigoGerado || '') + '. ');
+        acessoSiteRenderAdmin(r.data.acesso, 'Código gerado: ' + (r.data.codigoGerado || '') + '. ', { manterAbertos: [gerar.dataset.aparelho] });
         return;
       }
       const expirar = e.target.closest('button.acesso-site-expirar-codigo');
@@ -12668,10 +12680,10 @@ function saveTemplatesToStorage() {
         acessoSiteStatus.textContent = 'Expirando…';
         const r = await postConfig({ acao: 'acesso-site-expirar-codigo', codigo, aparelhoId: expirar.dataset.aparelho, recurso: expirar.dataset.recurso });
         if (!r.ok) {
-          acessoSiteStatus.textContent = (r.data && r.data.erro) || 'Não foi possível expirar o código.';
+          acessoSiteStatus.textContent = (r.data && r.data.erro) || configErrorMessage(r, 'Não foi possível expirar o código.');
           return;
         }
-        acessoSiteRenderAdmin(r.data.acesso, 'Código expirado. ');
+        acessoSiteRenderAdmin(r.data.acesso, 'Código expirado. ', { manterAbertos: [expirar.dataset.aparelho] });
         return;
       }
       const btn = e.target.closest('button.acesso-site-revogar');
@@ -12679,7 +12691,7 @@ function saveTemplatesToStorage() {
       if (!(await askConfirm('Revogar a identificação deste aparelho? Na próxima abertura ele precisará se cadastrar de novo.', 'Revogar identificação'))) return;
       const r = await postConfig({ acao: 'acesso-site-revogar', codigo, aparelhoId: btn.dataset.aparelho });
       if (!r.ok) {
-        acessoSiteStatus.textContent = (r.data && r.data.erro) || 'Não foi possível revogar.';
+        acessoSiteStatus.textContent = (r.data && r.data.erro) || configErrorMessage(r, 'Não foi possível revogar.');
         return;
       }
       acessoSiteRenderAdmin(r.data.acesso, 'Identificação revogada. ');
