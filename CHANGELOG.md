@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.28
+
+Outros esboços: o botão "Ler a matéria e listar os textos bíblicos" fica abaixo do resumo do esboço; some depois que os textos bíblicos aparecem e volta ao carregar um esboço novo.
+
 ## 6.9.27
 
 Administração de usuários: no celular, os campos e tabelas do card do usuário deixam de extrapolar a largura da tela (conteúdo empilhado e contido).

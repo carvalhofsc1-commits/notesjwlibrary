@@ -7669,7 +7669,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.27'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.28'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -17045,12 +17045,23 @@ function saveTemplatesToStorage() {
       lista.className = 'textos-lista';
       corpo.append(dica, acoes, lista);
       caixa.append(resumo, corpo);
-      const ancoragem = (cfg.kind === 'publico' && document.getElementById('publicoVerBtn')) || cfg.info;
+      // Outros esboços: o card de textos fica logo abaixo do botão "Ler a matéria…" (que por sua vez fica abaixo do resumo).
+      const ancoragem = (cfg.kind === 'publico' && document.getElementById('publicoVerBtn'))
+        || (cfg.kind === 'outros' && cfg.carregarBtn)
+        || cfg.info;
       ancoragem.insertAdjacentElement('afterend', caixa);
       cfg.textosUi = { caixa, resumo, dica, incluir, limpar, lista };
       cfg.tirados = new Set(); // os textos LEIA que o orador desmarcou (não entram no esboço)
       limpar.addEventListener('click', () => { cfg.marcados.clear(); cfg.tirados.clear(); textosAtualizarMarcas(cfg); }); // limpar também devolve os LEIA
       incluir.addEventListener('click', () => requestEsboco(cfg, 'incluir'));
+    }
+
+    // Outros esboços: com a lista de textos já na tela, o botão "Ler a matéria…" some; volta ao limpar ou carregar um esboço novo.
+    function outrosCarregarBtnAtualizar(cfg) {
+      if (cfg.kind !== 'outros' || !cfg.carregarBtn) return;
+      const textosNaTela = Boolean(cfg.textos && cfg.textos.length && cfg.textosUi && !cfg.textosUi.caixa.hidden);
+      cfg.carregarBtn.hidden = textosNaTela;
+      // Só o hidden controla a visibilidade; o disabled durante a consulta fica a cargo do setAiLoading.
     }
 
     // Começa de novo (semana ou tema trocado): sem lista, sem marcação e sem o esboço anterior.
@@ -17063,6 +17074,7 @@ function saveTemplatesToStorage() {
       cfg.itensUi = [];
       cfg.textosUi.lista.textContent = '';
       cfg.textosUi.caixa.hidden = true;
+      outrosCarregarBtnAtualizar(cfg);
     }
 
     // A lista do servidor. Se for a mesma que já está na tela, nada se refaz (as marcas e os "Ver texto" abertos ficam).
@@ -17113,6 +17125,7 @@ function saveTemplatesToStorage() {
       }
       cfg.textosUi.caixa.hidden = !cfg.textos.length;
       textosAtualizarMarcas(cfg);
+      outrosCarregarBtnAtualizar(cfg);
     }
 
     // As etiquetas, os contadores e os botões, conforme o que está marcado e o que o esboço atual já lê.
