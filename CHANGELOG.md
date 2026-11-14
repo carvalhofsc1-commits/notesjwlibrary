@@ -2,6 +2,15 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.45
+
+Outros esboços:
+- **Esboço da organização no passo 1:** o card para anexar o esboço da organização passou para o passo 1, antes dos campos. Com um esboço em uso, o **tema**, a **ideia (o objetivo, quando o esboço tem a nota ao orador)** e o **tempo** saem dele, e o passo 1 já fica completo (os passos 2 a 4 abrem). O tema e a ideia continuam editáveis, e o app não apaga o que você escreveu.
+- **Pesquisa obrigatória na wol:** sem esboço da organização e sem artigos informados, ao elaborar o esboço o app **pesquisa sozinho na wol.jw.org** com o tema e a ideia e usa até 3 dos melhores resultados como base dos argumentos.
+- **Matérias citadas pelo esboço:** com esboço da organização que cita publicações, o app as **procura na wol.jw.org**, seção por seção (até 4 seções e 6 matérias): a publicação citada, quando a pesquisa a acha pela data e pelas páginas; senão, a matéria mais próxima do assunto da seção. A IA usa esse texto para enriquecer os itens, sem mudar a estrutura do esboço.
+- **A pesquisa na wol só acha o que tem todas as palavras na mesma frase:** uma frase inteira (como o tema e a ideia juntos, que a 6.9.40 passou a usar) quase nunca acha nada. Agora a pesquisa (a automática e o botão “Pesquisar na biblioteca online”, quando o campo de pesquisa está vazio) usa **poucas palavras-chave** do tema e da ideia (3, depois 2, depois 1) e mostra a consulta usada. O que você digita no campo de pesquisa continua indo como está, e só se não achar nada o app tenta com palavras-chave dele.
+- Depois da elaboração, os **avisos** dizem o que foi pesquisado ou consultado na wol (ou que nada foi achado). As instruções da IA (tela de prompts) explicam as duas situações.
+
 ## 6.9.44
 
 Outros esboços: os campos do **passo 1 são obrigatórios** (tema, ideia e tempo). Enquanto faltar algum, os **passos 2 a 4 ficam bloqueados e recolhidos**: só os títulos aparecem, apagados e com um cadeado, e o passo 1 diz o que falta. A elaboração também confere a ideia do discurso (pelo menos 8 letras) e o tema (pelo menos 4), mesmo com esboço da organização.

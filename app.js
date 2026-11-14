@@ -7669,7 +7669,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.44'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.45'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -18539,6 +18539,7 @@ function saveTemplatesToStorage() {
       }
     } catch (e) { /* sem localStorage: nenhum esboço importado */ }
     const outrosBaseAtual = () => outrosBases.find(b => b.id === outrosBaseId) || null;
+    let outrosIdeiaAuto = ''; // a ideia que o app pôs no campo a partir do objetivo do esboço da organização
     let outrosTemaAuto = ''; // o tema que o app pôs no campo a partir de um esboço importado (para não apagar o que o orador escreveu)
     const outrosCamposEl = {
       tema: document.getElementById('outrosTema'),
@@ -18593,7 +18594,7 @@ function saveTemplatesToStorage() {
     function outrosValidar() {
       const base = outrosBaseAtual();
       if (outrosCamposEl.tema.value.trim().length < 4) return 'Escreva o tema do discurso.';
-      if (outrosCamposEl.ideia.value.trim().length < 8) return 'Escreva a ideia do discurso (o que você quer alcançar).';
+      if (!base && outrosCamposEl.ideia.value.trim().length < 8) return 'Escreva a ideia do discurso (o que você quer alcançar).';
       const minutos = Number(outrosCamposEl.minutos.value);
       if (!base && (!Number.isFinite(minutos) || minutos < 3 || minutos > 60)) return 'O tempo do discurso deve ficar entre 3 e 60 minutos.';
       if (outrosEnderecos().length > OUTROS_MAX_ARTIGOS) return 'Use no máximo ' + OUTROS_MAX_ARTIGOS + ' artigos do wol.jw.org.';
@@ -18605,9 +18606,11 @@ function saveTemplatesToStorage() {
     function outrosFaltaDoPasso1() {
       const falta = [];
       if (outrosCamposEl.tema.value.trim().length < 4) falta.push('tema');
+      // Com o esboço da organização, a ideia (o objetivo) e o tempo saem dele; sem ele, os três são obrigatórios.
+      if (outrosBaseAtual()) return falta;
       if (outrosCamposEl.ideia.value.trim().length < 8) falta.push('ideia');
       const minutos = Number(outrosCamposEl.minutos.value);
-      if (!outrosBaseAtual() && !(Number.isFinite(minutos) && minutos >= 3 && minutos <= 60)) falta.push('tempo (3 a 60 minutos)');
+      if (!(Number.isFinite(minutos) && minutos >= 3 && minutos <= 60)) falta.push('tempo (3 a 60 minutos)');
       return falta;
     }
     function outrosPassosAtualizar() {
@@ -18619,9 +18622,14 @@ function saveTemplatesToStorage() {
         titulo.classList.toggle('bloqueado', !liberado);
         titulo.querySelector('.outros-passo-cadeado').hidden = liberado;
       });
-      document.getElementById('outrosPasso1Ajuda').textContent = liberado
-        ? '✅ Passo 1 completo. Os passos 2 a 4 estão liberados.'
-        : 'Tema, ideia e tempo são obrigatórios: preenchidos, liberam os passos 2 a 4. Falta: ' + falta.join(', ') + '.';
+      const comBase = Boolean(outrosBaseAtual());
+      document.getElementById('outrosPasso1Ajuda').textContent = comBase
+        ? '✅ Esboço da organização em uso: o tema, a ideia e o tempo saem dele (você pode ajustar o tema e a ideia). Os passos 2 a 4 estão liberados.'
+        : liberado
+          ? '✅ Passo 1 completo. Os passos 2 a 4 estão liberados.'
+          : 'Anexe o esboço da organização (o tema, a ideia e o tempo saem dele) ou preencha o tema, a ideia e o tempo, que são obrigatórios. Falta: ' + falta.join(', ') + '.';
+      document.getElementById('outrosTemaObrig').textContent = comBase ? '(vem do esboço da organização)' : '(obrigatório)';
+      document.getElementById('outrosIdeiaObrig').textContent = comBase ? '(vem do esboço da organização; opcional)' : '(obrigatório)';
     }
     // Diz, antes do botão, de onde ele tira os textos bíblicos: só do que a pessoa informou nesta tela (não do esboço que a IA já elaborou).
     function outrosFonteAtualizar() {
@@ -18840,6 +18848,8 @@ function saveTemplatesToStorage() {
       // O tema que está no campo veio de um esboço importado (e não foi escrito pelo orador)?
       const temaAgora = outrosCamposEl.tema.value.trim();
       const temaDeBase = Boolean(temaAgora) && (temaAgora === outrosTemaAuto || outrosBases.some(b => outrosTituloLimpo(b) === temaAgora));
+      const ideiaAgora = outrosCamposEl.ideia.value.trim();
+      const ideiaDeBase = Boolean(ideiaAgora) && (ideiaAgora === outrosIdeiaAuto || outrosBases.some(b => (b.esboco.notaAoOrador || '').trim() === ideiaAgora));
       outrosBaseId = id;
       const atual = outrosBaseAtual();
       // Um único lugar para o tema na tela: o campo "Tema do discurso". O tema do esboço escolhido entra nele, mas sem apagar um tema que o
@@ -18852,6 +18862,20 @@ function saveTemplatesToStorage() {
       } else if (temaDeBase) {
         outrosCamposEl.tema.value = '';
         outrosTemaAuto = '';
+      }
+      // A ideia (o objetivo) do esboço da organização, quando ele tem a nota ao orador; sem apagar a que o orador escreveu.
+      if (atual) {
+        const objetivo = String(atual.esboco.notaAoOrador || '').replace(/\s+/g, ' ').trim().slice(0, 1500);
+        if (objetivo && (!ideiaAgora || ideiaDeBase)) {
+          outrosCamposEl.ideia.value = objetivo;
+          outrosIdeiaAuto = objetivo;
+        } else if (!objetivo && ideiaDeBase) {
+          outrosCamposEl.ideia.value = '';
+          outrosIdeiaAuto = '';
+        }
+      } else if (ideiaDeBase) {
+        outrosCamposEl.ideia.value = '';
+        outrosIdeiaAuto = '';
       }
       outrosZerarLeitura();
       outrosBaseMostrar();

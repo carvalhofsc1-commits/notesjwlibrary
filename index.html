@@ -1014,15 +1014,28 @@
                   <div class="ai-study outros-form">
                     <p class="outros-passo"><span class="outros-passo-n" aria-hidden="true">1</span> Dados do discurso</p>
                     <p id="outrosPasso1Ajuda" class="hint outros-passo-ajuda"></p>
-                    <label for="outrosTema">Tema do discurso <span class="opc">(obrigatório)</span></label>
+                    <details class="textos-box outros-materia" id="outrosBaseBox">
+                      <summary id="outrosBaseResumo">📥 Utilizar um esboço fornecido pela organização como base (opcional)</summary>
+                      <div class="textos-corpo">
+                        <p class="hint ai-hint">Se a organização forneceu um esboço (.docx) para este discurso, importe-o aqui: o tema, a ideia (o objetivo) e o tempo saem dele, e a IA o segue. Se ele cita outras publicações, o app as consulta na wol.jw.org. O esboço fica guardado só neste aparelho.</p>
+                        <input id="outrosBaseArquivo" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple hidden>
+                        <button id="outrosBaseImportarBtn" class="secondary ai-study-load" type="button">📥 Importar esboço (.docx)</button>
+                        <span id="outrosBaseStatus" class="ok" role="status" aria-live="polite"></span>
+                        <div id="outrosBaseLista" class="outros-base-lista" role="radiogroup" aria-label="Esboço fornecido pela organização a usar" hidden></div>
+                        <p id="outrosBaseInfo" class="hint ai-hint ebc-info"></p>
+                        <button id="outrosBaseVerBtn" class="ver-esboco" type="button" hidden>📄 Ver o esboço original</button>
+                        <button id="outrosBaseApagarBtn" class="secondary ai-study-load" type="button" hidden>🗑️ Apagar este esboço importado</button>
+                      </div>
+                    </details>
+                    <label for="outrosTema">Tema do discurso <span id="outrosTemaObrig" class="opc">(obrigatório)</span></label>
                     <input id="outrosTema" type="text" maxlength="200" autocomplete="off" placeholder="Ex.: Como enfrentar a ansiedade">
-                    <label for="outrosIdeia">Ideia do discurso (o que você quer alcançar) <span class="opc">(obrigatório)</span></label>
+                    <label for="outrosIdeia">Ideia do discurso (o que você quer alcançar) <span id="outrosIdeiaObrig" class="opc">(obrigatório)</span></label>
                     <textarea id="outrosIdeia" rows="3" maxlength="1500" placeholder="Ex.: Mostrar que Jeová cuida de nós e que a oração traz paz."></textarea>
                     <label id="outrosMinutosRotulo" for="outrosMinutos">Tempo do discurso (minutos) <span class="opc">(obrigatório)</span></label>
                     <input id="outrosMinutos" class="outros-minutos" type="number" inputmode="numeric" min="3" max="60" value="30">
                     <p class="outros-passo" id="outrosPasso2Titulo"><span class="outros-passo-n" aria-hidden="true">2</span> Material de apoio (opcional) <span class="outros-passo-cadeado" hidden>🔒 bloqueado</span></p>
                     <div id="outrosCorpo2" class="outros-passo-corpo" hidden>
-                    <p class="hint outros-passo-ajuda">Tudo aqui é opcional. Quanto mais material você informar, mais o esboço sai do que você trouxe; sem nada, a IA usa só a Bíblia e o que você escreveu no passo 1.</p>
+                    <p class="hint outros-passo-ajuda">Tudo aqui é opcional. Quanto mais material você informar, mais o esboço sai do que você trouxe. Se você não trouxer esboço da organização nem artigos da wol, o app pesquisa sozinho na wol.jw.org com o tema e a ideia e usa os melhores resultados.</p>
                     <label for="outrosOcasiao">Ocasião <span class="opc">(opcional)</span></label>
                     <input id="outrosOcasiao" type="text" maxlength="120" autocomplete="off" placeholder="Ex.: visita do superintendente de circuito">
                     <label for="outrosTextos">Textos bíblicos que quer ler <span class="opc">(opcional)</span></label>
@@ -1040,19 +1053,6 @@
                         <div id="outrosResultados" class="outros-resultados" hidden></div>
                       </div>
                     </details>
-                    <details class="textos-box outros-materia" id="outrosBaseBox">
-                      <summary id="outrosBaseResumo">📥 Utilizar um esboço fornecido pela organização como base (opcional)</summary>
-                      <div class="textos-corpo">
-                        <p class="hint ai-hint">Se a organização forneceu um esboço (.docx) para este discurso, importe-o aqui: a IA o segue e você ajusta só o que quiser. Ele fica guardado só neste aparelho.</p>
-                        <input id="outrosBaseArquivo" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple hidden>
-                        <button id="outrosBaseImportarBtn" class="secondary ai-study-load" type="button">📥 Importar esboço (.docx)</button>
-                        <span id="outrosBaseStatus" class="ok" role="status" aria-live="polite"></span>
-                        <div id="outrosBaseLista" class="outros-base-lista" role="radiogroup" aria-label="Esboço fornecido pela organização a usar" hidden></div>
-                        <p id="outrosBaseInfo" class="hint ai-hint ebc-info"></p>
-                        <button id="outrosBaseVerBtn" class="ver-esboco" type="button" hidden>📄 Ver o esboço original</button>
-                        <button id="outrosBaseApagarBtn" class="secondary ai-study-load" type="button" hidden>🗑️ Apagar este esboço importado</button>
-                      </div>
-                    </details>
                     </div>
                     <p class="outros-passo" id="outrosPasso3Titulo"><span class="outros-passo-n" aria-hidden="true">3</span> Listar os textos bíblicos do material (opcional) <span class="outros-passo-cadeado" hidden>🔒 bloqueado</span></p>
                     <div id="outrosCorpo3" class="outros-passo-corpo" hidden>
@@ -1062,7 +1062,7 @@
                     </div>
                     <p class="outros-passo" id="outrosPasso4Titulo"><span class="outros-passo-n" aria-hidden="true">4</span> Elaborar o esboço <span class="outros-passo-cadeado" hidden>🔒 bloqueado</span></p>
                     <div id="outrosPasso4" class="outros-passo-corpo" hidden>
-                    <p class="hint outros-passo-ajuda">A IA monta o esboço no campo de texto, abaixo. Se este tema já tem um esboço salvo, o botão 📂 que aparece depois do de elaborar o recarrega, sem gastar IA.</p>
+                    <p class="hint outros-passo-ajuda">A IA monta o esboço no campo de texto, abaixo, com a Bíblia e a matéria da wol.jw.org (a que você informou, a que o app pesquisar por você ou a das publicações que o esboço da organização cita). Se este tema já tem um esboço salvo, o botão 📂 que aparece depois do de elaborar o recarrega, sem gastar IA.</p>
                     <button id="outrosEsbocoBtn" data-codigo-ia="dirigente" class="ai-study-btn" type="button">✨ IA - Elaborar o esboço do discurso</button>
                     </div>
                     <span id="outrosStatus" class="ok" role="status" aria-live="polite"></span>

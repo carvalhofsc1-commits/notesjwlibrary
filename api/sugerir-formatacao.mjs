@@ -15,6 +15,7 @@ import { aparelhoIdLimpo, registrarUsoIa } from "./_estatisticas.mjs";
 import { debitarCreditosUso, mensagemSeBloqueado, mensagemSeSemCredito, prepararCodigosPessoais } from "./_acessoSite.mjs";
 import { emitirCupomVoz } from "./_vozCupom.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
+import { materiasAutomaticas, pesquisarPorPalavras } from "./_materiasWol.mjs";
 import { buscarNosLivros, buscarVerbete, buscarVersiculos, versiculosDoCapitulo, fontesConfiguradas, lerCanticos, precarregarFontes, referenciasNoTexto, textoDeGruposBiblicos } from "./_fontes.mjs";
 import { lerEsboco, lerIndice, minutosDoEsboco, publicacoesDaSecao, referenciasDoPublico, s34Configurado, textoDoDiscursoPublico, textoDoEsbocoImportado, textosBiblicosDoPublico, validarEsboco } from "./_s34.mjs";
 import {
@@ -2972,12 +2973,21 @@ async function resumoDoOutros(d, { artigos, falhas, pedidos, daBase }) {
 // A pesquisa do tema na biblioteca online (wol.jw.org): os resultados vão para a tela e o orador escolhe os que a IA vai ler.
 async function pesquisarOutros(res, body) {
   if (!acessoDoDirigente(res, body)) return;
-  // O campo de pesquisa, se tiver texto; senão, o tema e a ideia do discurso juntos (100 caracteres de cada, para a ideia não se perder).
-  const consulta = limparLinha(body.consulta, 200) || limparLinha([limparLinha(body.tema, 100), limparLinha(body.ideia, 100)].filter(Boolean).join(" "), 200);
+  // O campo de pesquisa, se tiver texto; senão, o tema e a ideia do discurso.
+  const digitada = limparLinha(body.consulta, 200);
+  const consulta = digitada || limparLinha([limparLinha(body.tema, 100), limparLinha(body.ideia, 100)].filter(Boolean).join(" "), 200);
   if (consulta.length < 8) return erro(res, 400, "Escreva o tema e a ideia do discurso (ou as palavras da pesquisa) com pelo menos 8 letras.");
   try {
-    const resultados = await pesquisarNoWol(consulta, 9000, 8);
-    return res.status(200).json({ consulta, resultados });
+    // O que o orador digitou vai como está (ele escolheu as palavras). A wol só acha o que tem todas as palavras na mesma frase: se não achar
+    // nada (ou se a consulta veio do tema e da ideia, que são frases longas), pesquisa com poucas palavras-chave deles.
+    let resultados = digitada ? await pesquisarNoWol(digitada, 9000, 8) : [];
+    let usada = digitada;
+    if (!resultados.length) {
+      const porPalavras = await pesquisarPorPalavras(digitada ? [digitada] : [limparLinha(body.tema, 200), limparLinha(body.ideia, 200)], { timeoutMs: 9000, maximo: 8, minimo: 3 });
+      resultados = porPalavras.resultados;
+      usada = porPalavras.consulta || consulta;
+    }
+    return res.status(200).json({ consulta: usada, resultados });
   } catch (e) {
     console.error("Outros esboços: pesquisa no wol falhou", e?.name, e?.message);
     return erro(res, 502, "Não consegui pesquisar na biblioteca agora. Tente de novo em instantes.");
@@ -2997,7 +3007,7 @@ async function lerOutros(res, body) {
 
 // A mensagem dos dados do orador (a ordem e os rótulos estão na descrição da montagem, em _prompts.mjs). "pedidos" são todos os textos que a
 // IA lê: os que o orador pediu e os marcados "Leia" do esboço importado.
-function textoDoOutros(d, { pedidos, sugeridas, artigos, versiculos }) {
+function textoDoOutros(d, { pedidos, sugeridas, artigos, automaticas = { artigos: [], origem: "" }, versiculos }) {
   const partes = [`TEMA DO DISCURSO: ${d.tema}`, `IDEIA DO DISCURSO: ${d.ideia || "o orador não informou; use o tema."}`];
   if (d.ocasiao) partes.push(`OCASIÃO: ${d.ocasiao}`);
   partes.push(`TEMPO TOTAL: ${d.minutos} minutos`);
@@ -3009,6 +3019,13 @@ function textoDoOutros(d, { pedidos, sugeridas, artigos, versiculos }) {
   if (d.materia) partes.push("MATÉRIA COLADA PELO ORADOR:\n" + d.materia);
   if (artigos.length) {
     partes.push("ARTIGOS DO WOL.JW.ORG LIDOS PELO SERVIDOR:\n" + artigos.map((a, i) => `[${i + 1}] ${a.titulo || "(sem título)"}\n${a.texto}`).join("\n\n"));
+  }
+  // As matérias que o servidor foi buscar sozinho na wol (ver api/_materiasWol.mjs).
+  if (automaticas.artigos.length) {
+    const rotulo = automaticas.origem === "citacoes"
+      ? "MATÉRIAS COMPLEMENTARES DA WOL.JW.ORG (o servidor as consultou porque o esboço pronto cita publicações; use-as para enriquecer os itens e os argumentos da seção correspondente, sem mudar a estrutura do esboço):"
+      : "MATÉRIAS DA WOL.JW.ORG PESQUISADAS PELO SERVIDOR (por tema e ideia, porque o orador não trouxe esboço pronto nem artigos; use-as como base dos argumentos e das ideias):";
+    partes.push(rotulo + "\n" + automaticas.artigos.map((a, i) => `[${i + 1}] ${a.titulo || "(sem título)"}\n${a.texto}`).join("\n\n"));
   }
   if (versiculos.length) partes.push("TEXTO DOS VERSÍCULOS:\n" + versiculos.map((v) => `${v.referencia}: ${v.texto}`).join("\n"));
   return partes.join("\n\n");
@@ -3026,7 +3043,10 @@ async function esbocoDeOutros(res, body, P) {
   const inicioPedido = Date.now();
   if (fontesConfiguradas()) precarregarFontes({ biblia: true, perspicaz: false });
 
-  const [{ artigos, falhas }, pedidos, extras, daBase] = await Promise.all([artigosDoOutros(d), textosPedidosDoOutros(d), textosExtrasDoPedido(body), referenciasDaBase(d)]);
+  // Pesquisa obrigatória na wol: sem esboço da organização nem artigos do orador, pelo tema e pela ideia; com esboço que cita publicações, por elas.
+  const buscaAutomatica = materiasAutomaticas(d).then(async (auto) => ({ auto, lidas: (await artigosDoOutros({ artigos: auto.enderecos })).artigos }));
+  const [{ artigos: artigosDoOrador, falhas }, pedidos, extras, daBase, { auto, lidas: artigosAuto }] = await Promise.all([artigosDoOutros(d), textosPedidosDoOutros(d), textosExtrasDoPedido(body), referenciasDaBase(d), buscaAutomatica]);
+  const artigos = [...artigosDoOrador, ...artigosAuto]; // para os versículos, as fontes e o resumo da tela
   const naMateria = await referenciasNoTexto(d.materia, { max: 60, livre: true });
   const tirados = await textosTiradosDoPedido(body); // os textos que o orador tirou da lista (mesmo os marcados "Leia" do esboço importado)
   const doEsbocoAnterior = modo ? leiturasDoEsbocoAnterior(body.anteriores) : [];
@@ -3052,7 +3072,7 @@ async function esbocoDeOutros(res, body, P) {
     blocoOrientacao(opcoes, ajuste, P) +
     `PEDIDO: elabore o esboço de um discurso de ${d.minutos} minutos, tema "${d.tema}"${base ? ", seguindo de perto o esboço pronto importado pelo orador" : ""}.\n` +
     emojisDoEsboco(opcoes, P) + "\n\n" +
-    textoDoOutros(d, { pedidos: aLer, sugeridas, artigos, versiculos }) +
+    textoDoOutros(d, { pedidos: aLer, sugeridas, artigos: artigosDoOrador, automaticas: { artigos: artigosAuto, origem: auto.origem }, versiculos }) +
     blocoDeTextosEscolhidos(extras, P) +
     blocoDeTextosTirados(tirados, P) +
     lembreteFinal(opcoes, ajuste, P);
@@ -3105,6 +3125,9 @@ async function esbocoDeOutros(res, body, P) {
     }
     const completo = esboco.pontos.length > 0 && esboco.introducao.blocos.length > 0 && esboco.conclusao.blocos.length > 0;
     if (falhas.length) avisos.push(`Não consegui ler ${falhas.length === 1 ? "um artigo" : falhas.length + " artigos"} do wol.jw.org; o esboço não os usa.`);
+    // O que o servidor pesquisou sozinho na wol (sem esboço nem artigos, ou por causa das publicações que o esboço cita).
+    if (auto.origem && !artigosAuto.length && auto.enderecos.length) avisos.push("Achei matérias na wol.jw.org, mas não consegui lê-las agora: o esboço não as usa.");
+    else avisos.push(...auto.avisos);
 
     console.log(
       "Esboço de outro discurso:",
@@ -3112,7 +3135,8 @@ async function esbocoDeOutros(res, body, P) {
         modelo: P.ia.modelo,
         minutos: d.minutos,
         materia: d.materia.length,
-        artigos: artigos.length,
+        artigos: artigosDoOrador.length,
+        artigosAuto: { origem: auto.origem || null, lidas: artigosAuto.length },
         falhas: falhas.length,
         pedidos: pedidos.length,
         esbocoImportado: base ? { secoes: base.secoes.length, marcadas: daBase.marcadas.length } : null,
