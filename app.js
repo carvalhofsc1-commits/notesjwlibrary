@@ -7669,7 +7669,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.39'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.40'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -18550,7 +18550,7 @@ function saveTemplatesToStorage() {
       artigos: document.getElementById('outrosArtigos'),
       consulta: document.getElementById('outrosConsulta')
     };
-    const outrosMateriaBox = document.getElementById('outrosMateriaBox');
+    const outrosPesquisaBox = document.getElementById('outrosPesquisaBox');
     const outrosResultados = document.getElementById('outrosResultados');
     const outrosPesquisarBtn = document.getElementById('outrosPesquisarBtn');
 
@@ -18566,7 +18566,6 @@ function saveTemplatesToStorage() {
       if (pagina.scrollTop !== rolagem) pagina.scrollTop = rolagem;
     }
     outrosCamposEl.materia.addEventListener('input', outrosMateriaCrescer);
-    outrosMateriaBox.addEventListener('toggle', () => { if (outrosMateriaBox.open) requestAnimationFrame(outrosMateriaCrescer); });
     window.addEventListener('resize', outrosMateriaCrescer);
     // Ao aparecer na tela (a tela Reuniões aberta depois, ou o card aberto): mede de novo. Sem isto, a matéria salva de outro dia ficava
     // cortada em 96 px, sem rolagem (o campo não rola por dentro), até a pessoa digitar algo.
@@ -18600,16 +18599,8 @@ function saveTemplatesToStorage() {
       return '';
     }
 
-    // O resumo do bloco opcional mostra o que há dentro dele (com o bloco fechado, o orador sabe que a matéria está lá).
     outrosCamposEl.tema.addEventListener('input', () => esbocoSalvoAtualizar(ESBOCOS.outros));
     function outrosAtualizarResumo() {
-      const itens = [];
-      if (outrosCamposEl.ocasiao.value.trim()) itens.push('ocasião');
-      if (outrosCamposEl.textos.value.trim()) itens.push('textos');
-      if (outrosCamposEl.materia.value.trim()) itens.push('matéria colada');
-      const artigos = outrosEnderecos().length;
-      if (artigos) itens.push(artigos + (artigos === 1 ? ' artigo' : ' artigos'));
-      document.getElementById('outrosMateriaResumo').textContent = '📚 Ocasião, textos, matéria e pesquisa (opcional)' + (itens.length ? ' · ' + itens.join(', ') : '');
       const base = outrosBaseAtual();
       // O tema do esboço importado aparece só em "Tema do discurso" — o resumo do bloco não o repete.
       document.getElementById('outrosBaseResumo').textContent = '📥 Utilizar um esboço fornecido pela organização como base (opcional)' +
@@ -18630,14 +18621,13 @@ function saveTemplatesToStorage() {
       if (salvo && typeof salvo === 'object') {
         Object.entries(outrosCamposEl).forEach(([nome, el]) => { if (typeof salvo[nome] === 'string') el.value = salvo[nome]; });
         if (!outrosCamposEl.minutos.value) outrosCamposEl.minutos.value = '30';
-        outrosMateriaBox.open = Boolean(outrosCamposEl.ocasiao.value || outrosCamposEl.textos.value || outrosCamposEl.materia.value || outrosCamposEl.artigos.value);
         const baseSalva = typeof salvo.baseId === 'string' ? (outrosBaseRemapa[salvo.baseId] || salvo.baseId) : '';
         if (baseSalva && outrosBases.some(b => b.id === baseSalva)) outrosBaseId = baseSalva;
       }
     } catch (e) { /* sem localStorage: os campos começam vazios */ }
     document.getElementById('outrosBaseBox').open = Boolean(outrosBaseId);
     outrosAtualizarResumo();
-    if (outrosMateriaBox.open) requestAnimationFrame(outrosMateriaCrescer);
+    requestAnimationFrame(outrosMateriaCrescer);
 
     // A caixa dos artigos e as marcas dos resultados da pesquisa andam juntas.
     function outrosMarcarResultados() {
@@ -18697,16 +18687,18 @@ function saveTemplatesToStorage() {
       outrosMarcarResultados();
     }
 
+    // O que a pesquisa usa: o campo de pesquisa, se tiver texto; senão, o tema e a ideia do discurso juntos (o servidor corta em 200 caracteres).
+    const outrosConsultaTexto = () => outrosCamposEl.consulta.value.trim() || [outrosCamposEl.tema.value, outrosCamposEl.ideia.value].map(t => t.replace(/\s+/g, ' ').trim().slice(0, 100)).filter(Boolean).join(' ');
     async function outrosPesquisar() {
       if (aiBusy) return;
       aiStatusKind = 'outros';
       const accessError = dirigenteAccessError();
       if (accessError) return setAiStatus(accessError, true);
-      if ((outrosCamposEl.consulta.value.trim() || outrosCamposEl.tema.value.trim()).length < 8) return setAiStatus('Escreva o tema (ou as palavras da pesquisa) com pelo menos 8 letras.', true);
+      if (outrosConsultaTexto().length < 8) return setAiStatus('Escreva o tema e a ideia do discurso (ou as palavras da pesquisa) com pelo menos 8 letras.', true);
       aiBusy = true;
       setAiLoading(true, outrosPesquisarBtn, 'site');
       try {
-        const result = await postStudy({ tarefa: 'outros-pesquisar', codigoDirigente: codigoDirigenteSalvo(), tema: outrosCamposEl.tema.value.trim(), consulta: outrosCamposEl.consulta.value.trim() }, 60000);
+        const result = await postStudy({ tarefa: 'outros-pesquisar', codigoDirigente: codigoDirigenteSalvo(), tema: outrosCamposEl.tema.value.trim(), ideia: outrosCamposEl.ideia.value.trim(), consulta: outrosCamposEl.consulta.value.trim() }, 60000);
         if (!result.ok) {
           if (await dirigenteRecusado(result)) return;
           return setAiStatus(studyFailureMessage(result, 'Não consegui pesquisar na biblioteca agora.'), true);

@@ -2972,8 +2972,9 @@ async function resumoDoOutros(d, { artigos, falhas, pedidos, daBase }) {
 // A pesquisa do tema na biblioteca online (wol.jw.org): os resultados vão para a tela e o orador escolhe os que a IA vai ler.
 async function pesquisarOutros(res, body) {
   if (!acessoDoDirigente(res, body)) return;
-  const consulta = limparLinha(body.consulta, 200) || limparLinha(body.tema, 200);
-  if (consulta.length < 8) return erro(res, 400, "Escreva o tema (ou as palavras da pesquisa) com pelo menos 8 letras.");
+  // O campo de pesquisa, se tiver texto; senão, o tema e a ideia do discurso juntos (100 caracteres de cada, para a ideia não se perder).
+  const consulta = limparLinha(body.consulta, 200) || limparLinha([limparLinha(body.tema, 100), limparLinha(body.ideia, 100)].filter(Boolean).join(" "), 200);
+  if (consulta.length < 8) return erro(res, 400, "Escreva o tema e a ideia do discurso (ou as palavras da pesquisa) com pelo menos 8 letras.");
   try {
     const resultados = await pesquisarNoWol(consulta, 9000, 8);
     return res.status(200).json({ consulta, resultados });

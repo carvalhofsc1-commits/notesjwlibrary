@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.40
+
+Outros esboços:
+- A **pesquisa na biblioteca** usa o campo de pesquisa, se tiver texto; senão, o **tema e a ideia do discurso** juntos (antes, só o tema). Cada um entra com até 100 caracteres, para a ideia não se perder quando o tema é longo.
+- O card “Ocasião, textos, matéria e pesquisa” **saiu**: Ocasião, Textos bíblicos que quer ler e Matéria ficam no mesmo nível do Tema, da Ideia e do Tempo; os Artigos do wol.jw.org ficam logo abaixo da pesquisa, onde caem os resultados marcados.
+- O campo de pesquisa e o botão **Pesquisar na biblioteca online** ganharam um **card só deles** (“🔎 Pesquisar na biblioteca online”), com os resultados dentro.
+
 ## 6.9.39
 
 Outros esboços (necessidades locais, eventos especiais): tela mais clara.

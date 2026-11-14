@@ -1018,23 +1018,23 @@
                     <textarea id="outrosIdeia" rows="3" maxlength="1500" placeholder="Ex.: Mostrar que Jeová cuida de nós e que a oração traz paz."></textarea>
                     <label id="outrosMinutosRotulo" for="outrosMinutos">Tempo do discurso (minutos)</label>
                     <input id="outrosMinutos" class="outros-minutos" type="number" inputmode="numeric" min="3" max="60" value="30">
-                    <details class="textos-box outros-materia" id="outrosMateriaBox">
-                      <summary id="outrosMateriaResumo">📚 Ocasião, textos, matéria e pesquisa (opcional)</summary>
+                    <label for="outrosOcasiao">Ocasião <span class="opc">(opcional)</span></label>
+                    <input id="outrosOcasiao" type="text" maxlength="120" autocomplete="off" placeholder="Ex.: visita do superintendente de circuito">
+                    <label for="outrosTextos">Textos bíblicos que quer ler <span class="opc">(opcional)</span></label>
+                    <input id="outrosTextos" type="text" maxlength="600" autocomplete="off" placeholder="Ex.: Mateus 6:33; Salmo 37:10, 11">
+                    <label for="outrosMateria">Matéria: cole aqui um texto ou anotações <span class="opc">(opcional)</span></label>
+                    <textarea id="outrosMateria" rows="5" maxlength="12000" placeholder="O esboço sai desse material. Sem matéria, a IA usa só a Bíblia e o que você informou."></textarea>
+                    <details class="textos-box outros-materia" id="outrosPesquisaBox">
+                      <summary id="outrosPesquisaResumo">🔎 Pesquisar na biblioteca online (opcional)</summary>
                       <div class="textos-corpo">
-                        <label for="outrosOcasiao">Ocasião</label>
-                        <input id="outrosOcasiao" type="text" maxlength="120" autocomplete="off" placeholder="Ex.: visita do superintendente de circuito">
-                        <label for="outrosTextos">Textos bíblicos que quer ler</label>
-                        <input id="outrosTextos" type="text" maxlength="600" autocomplete="off" placeholder="Ex.: Mateus 6:33; Salmo 37:10, 11">
-                        <label for="outrosMateria">Matéria: cole aqui um texto ou anotações</label>
-                        <textarea id="outrosMateria" rows="5" maxlength="12000" placeholder="O esboço sai desse material. Sem matéria, a IA usa só a Bíblia e o que você informou."></textarea>
-                        <label for="outrosArtigos">Artigos do wol.jw.org (um endereço por linha, até 5)</label>
-                        <textarea id="outrosArtigos" rows="3" placeholder="https://wol.jw.org/pt/wol/d/r5/lp-t/…"></textarea>
-                        <label for="outrosConsulta">Pesquisar na biblioteca (se ficar vazio, usa o tema)</label>
+                        <label for="outrosConsulta">Pesquisar na biblioteca (se ficar vazio, usa o tema e a ideia do discurso)</label>
                         <input id="outrosConsulta" type="search" maxlength="200" autocomplete="off" placeholder="Palavras para pesquisar no wol.jw.org">
                         <button id="outrosPesquisarBtn" class="secondary ai-study-load" type="button">🔎 Pesquisar na biblioteca online</button>
                         <div id="outrosResultados" class="outros-resultados" hidden></div>
                       </div>
                     </details>
+                    <label for="outrosArtigos">Artigos do wol.jw.org (um endereço por linha, até 5; os marcados na pesquisa entram aqui) <span class="opc">(opcional)</span></label>
+                    <textarea id="outrosArtigos" rows="3" placeholder="https://wol.jw.org/pt/wol/d/r5/lp-t/…"></textarea>
                     <details class="textos-box outros-materia" id="outrosBaseBox">
                       <summary id="outrosBaseResumo">📥 Utilizar um esboço fornecido pela organização como base (opcional)</summary>
                       <div class="textos-corpo">
