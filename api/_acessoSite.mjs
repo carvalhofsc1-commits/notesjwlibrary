@@ -20,6 +20,7 @@ export const RECURSOS_CODIGO = [
   { id: "s34", nome: "S-34" },
 ];
 const RECURSO_IDS = new Set(RECURSOS_CODIGO.map((r) => r.id));
+export const CREDITO_BOAS_VINDAS = 100; // R$ que cada usuário recebe ao ter o cadastro aprovado
 const PREFIXO_CODIGO = { pesquisa: "PES", dirigente: "DIR", leitura: "LEI", texto: "AUD", resumo: "RES", s34: "S34" };
 
 export function acessoSiteConfigurado() {
@@ -318,6 +319,7 @@ function identidadeDe(a) {
     aprovadoEm: a.aprovadoEm || "",
     pedidoId: a.pedidoId || "",
     creditos: creditosDe(a),
+    creditoBoasVindas: Number(a.creditoBoasVindas) > 0 ? Number(a.creditoBoasVindas) : 0, // o app avisa uma vez (só nos aprovados com o crédito)
     codigos: codigosDe(a),
   };
 }
@@ -492,6 +494,7 @@ export async function atualizarCadastroSite(corpo) {
       aprovadoEm: anterior.aprovadoEm || agoraIso(),
       atualizadoEm: agoraIso(),
       creditos: creditosDe(anterior),
+      ...(anterior.creditoBoasVindas ? { creditoBoasVindas: anterior.creditoBoasVindas } : {}),
       codigos: codigosDe(anterior),
     });
     return { ok: true, atualizado: true, cadastro: identidadeDe(dados.aprovados[id]) };
@@ -577,7 +580,8 @@ export async function decidirPedidoSite({ id, aprovar, codigoAdmin }) {
           congregacao: p.congregacao,
           comoConheceu: p.comoConheceu,
         },
-        { pedidoId: p.id, aprovadoEm: p.decididoEm, creditos: 0, codigos: {} }
+        // Crédito de boas-vindas: todo usuário aprovado começa com R$ 100,00 (o app avisa uma vez, na primeira abertura depois da aprovação).
+        { pedidoId: p.id, aprovadoEm: p.decididoEm, creditos: CREDITO_BOAS_VINDAS, creditoBoasVindas: CREDITO_BOAS_VINDAS, codigos: {} }
       );
     }
     return { ok: true, pedido: pedidoPublico(p) };

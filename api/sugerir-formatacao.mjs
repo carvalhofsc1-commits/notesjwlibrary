@@ -245,6 +245,10 @@ const TAREFAS_SEM_IA = new Set([
   "backup-semana",
 ]);
 
+// Também gratuitas (não usam a IA), embora fiquem fora da lista acima: o texto do capítulo da Bíblia, a lista dos parágrafos do estudo
+// (lida no site; só se falhar a IA entra, e aí o saldo é conferido) e buscar ou apagar o resultado de um pedido já feito.
+const TAREFAS_GRATUITAS = new Set(["biblia-texto", "estudo-lista", "pedido-resultado", "pedido-apagar"]);
+
 const INTENSIDADES = ["poucas", "moderada", "muitas"];
 const TAMANHOS_RESUMO = ["curto", "medio", "detalhado"];
 // Nome de cada tamanho nas partes editáveis ("Tamanho do resumo: médio", "Tamanho da resposta: médio").
@@ -4518,9 +4522,11 @@ async function tratarPedido(req, res) {
   await prepararCodigosPessoais();
   const bloqueioSite = await mensagemSeBloqueado({ aparelhoId: body.aparelhoId, codigoAdmin: body.codigoAdmin });
   if (bloqueioSite) return erro(res, 403, bloqueioSite);
-  // Buscar (ou apagar) o resultado de um pedido já feito não pede saldo: o pedido foi cobrado quando rodou, e o saldo pode ter zerado com ele.
-  const soResultado = tarefa === "pedido-resultado" || tarefa === "pedido-apagar";
-  const bloqueioCredito = soResultado ? null : await mensagemSeSemCredito({ aparelhoId: body.aparelhoId, codigoAdmin: body.codigoAdmin });
+  // Sem saldo, só a IA fica bloqueada. As tarefas gratuitas (leituras do wol.jw.org, do S-34 e da Bíblia, a pesquisa na biblioteca, o
+  // backup e buscar o resultado de um pedido já cobrado) continuam funcionando. A lista do estudo confere o saldo só se precisar da IA.
+  const semCredito = () => mensagemSeSemCredito({ aparelhoId: body.aparelhoId, codigoAdmin: body.codigoAdmin });
+  const gratuita = TAREFAS_SEM_IA.has(tarefa) || TAREFAS_GRATUITAS.has(tarefa) || (typeof tarefa === "string" && /^backup-/.test(tarefa));
+  const bloqueioCredito = gratuita ? null : await semCredito();
   if (bloqueioCredito) return erro(res, 403, bloqueioCredito);
 
   // Resultado de um pedido demorado cuja conexão caiu (ver api/_pedidos.mjs): o id aleatório de 36 caracteres é a própria chave.
@@ -4597,6 +4603,8 @@ async function tratarPedido(req, res) {
     if (!exigirAcesso(res, body)) return;
     if (excedeuLimiteBackup(ip)) return erro(res, 429, "Muitas consultas. Tente novamente em alguns minutos.");
     if (await tentarListaNoSite(res, body)) return;
+    const semSaldo = await semCredito(); // a leitura direta falhou: daqui em diante é a IA, que pede saldo
+    if (semSaldo) return erro(res, 403, semSaldo);
     if (!(await iaDisponivel())) {
       return erro(res, 503, "Não consegui ler o artigo no wol.jw.org agora, e o recurso de IA ainda não está configurado para tentar de outro jeito.");
     }

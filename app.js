@@ -7670,7 +7670,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.36'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.37'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12696,7 +12696,7 @@ function saveTemplatesToStorage() {
         acessoSiteStatus.textContent = (r.data && r.data.erro) || 'Não foi possível decidir o cadastro.';
         return;
       }
-      acessoSiteRenderAdmin(r.data.acesso, aprovar ? 'Cadastro aprovado. ' : 'Cadastro recusado. ');
+      acessoSiteRenderAdmin(r.data.acesso, aprovar ? 'Cadastro aprovado, com R$ 100,00 de crédito de boas-vindas (o usuário é avisado ao abrir o app). ' : 'Cadastro recusado. ');
     });
 
     acessoSiteAprovados.addEventListener('click', async e => {
@@ -12892,6 +12892,21 @@ function saveTemplatesToStorage() {
     function acessoConfirmadoGravar(id) {
       try { if (id) localStorage.setItem(ACESSO_OK_KEY, id); else localStorage.removeItem(ACESSO_OK_KEY); } catch (e) { /* ignore */ }
     }
+    // Boas-vindas: na primeira abertura depois da aprovação, o usuário fica sabendo do crédito inicial (uma vez por aparelho).
+    const ACESSO_BOAS_VINDAS_KEY = 'notestyleBoasVindasV1';
+    function acessoBoasVindasAvisar(id, estado) {
+      const valor = Number(estado && estado.cadastro && estado.cadastro.creditoBoasVindas) || 0;
+      if (!id || !valor || !estado.identificado) return;
+      try { if (localStorage.getItem(ACESSO_BOAS_VINDAS_KEY) === id) return; } catch (e) { return; }
+      safeSetItem(ACESSO_BOAS_VINDAS_KEY, id);
+      const reais = valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      const primeiroNome = String(estado.cadastro.nome || '').split(' ')[0];
+      setTimeout(() => showAlert(
+        'Olá' + (primeiroNome ? ', ' + primeiroNome : '') + '! Seu cadastro foi aprovado e você ganhou ' + reais + ' de crédito de boas-vindas para usar os recursos de IA do NoteStyle (respostas, esboços, resumos, leitura em voz alta e áudio em texto).\n\n' +
+        'O saldo é descontado conforme o uso. Para acompanhar, veja Menu → Ajustes → Consumo de IA e faturamento.',
+        '🎉 Bem-vindo ao NoteStyle!'
+      ), 700);
+    }
     let acessoUltimaChecagem = 0;
     async function acessoSiteVerificarGate() {
       if (!servidoPelaWeb() || /^(localhost|127\.0\.0\.1|\[::1\])$|\.localhost$/.test(location.hostname)) return; // testes locais não têm a API
@@ -12908,6 +12923,7 @@ function saveTemplatesToStorage() {
         if (!r.data.configurado || r.data.ok) {
           if (r.data.configurado) acessoConfirmadoGravar(id);
           acessoSiteLiberarOverlay();
+          acessoBoasVindasAvisar(id, r.data);
           return;
         }
         acessoConfirmadoGravar('');

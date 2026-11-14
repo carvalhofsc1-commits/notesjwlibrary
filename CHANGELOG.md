@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.37
+
+Créditos de IA:
+- **Crédito de boas-vindas:** todo usuário aprovado começa com **R$ 100,00** de crédito. Na primeira abertura do app depois da aprovação, ele recebe uma mensagem de boas-vindas avisando do crédito e de onde acompanhar o saldo (uma vez por aparelho). Na Administração de usuários, a aprovação avisa que o crédito foi dado.
+- **Tarefas gratuitas liberadas sem saldo:** sem créditos, só o que usa a IA fica bloqueado. Continuam funcionando as leituras do wol.jw.org (matéria dos discursos, estudo, apostila, joias, imagens), do S-34 e da Bíblia (versículos e texto dos capítulos), a pesquisa na biblioteca, o backup e a recuperação de um pedido já feito. A lista de parágrafos do estudo só confere o saldo se a leitura no site falhar e precisar da IA.
+
 ## 6.9.36
 
 Revisão geral das mudanças das versões 6.9.18 a 6.9.35.
