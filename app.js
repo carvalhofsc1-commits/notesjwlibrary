@@ -1816,7 +1816,8 @@
       };
       const atualizar = () => {
         const escolhida = select.selectedOptions[0];
-        botao.textContent = escolhida ? escolhida.textContent : '';
+        // data-rotulo-curto: o que o botão fechado mostra quando a opção da lista tem um texto mais longo (ex.: o tema do esboço importado).
+        botao.textContent = escolhida ? (escolhida.dataset.rotuloCurto || escolhida.textContent) : '';
         botao.classList.toggle('vazio', !select.value);
         botao.disabled = select.disabled;
         if (select.disabled) fechar();
@@ -7669,7 +7670,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.35'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.36'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12551,8 +12552,11 @@ function saveTemplatesToStorage() {
             acessoSiteEscapar(nome),
             a.idade ? acessoSiteEscapar(a.idade) + ' anos' : '',
             cidade ? acessoSiteEscapar(cidade) : '',
-            '💳 ' + acessoSiteReais(creditos)
+            // Sem saldo, a IA deste usuário está pausada: fica em destaque na lista (o administrador usa a IA com a senha, sem saldo).
+            '<span class="acesso-site-saldo' + (creditos > 0 || a.nivel === 'admin' ? '' : ' zerado') + '">💳 ' + acessoSiteReais(creditos) + (creditos > 0 || a.nivel === 'admin' ? '' : ' · sem saldo') + '</span>'
           ].filter(Boolean).join(' · ');
+          const busca = [nome, cidade, a.congregacao, a.telefone, String(a.telefone || '').replace(/\D/g, '')].filter(Boolean).join(' ').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+          const foneZap = String(a.telefone || '').replace(/\D/g, '');
           const linhaCadastro = (rotulo, valor) =>
             '<div class="acesso-site-dado"><span class="acesso-site-dado-rotulo">' + acessoSiteEscapar(rotulo) + '</span>' +
             '<span class="acesso-site-dado-valor">' + valor + '</span></div>';
@@ -12569,6 +12573,11 @@ function saveTemplatesToStorage() {
               '<td class="acesso-site-codigo-acoes">' +
               (ativo
                 ? '<button type="button" class="secondary acesso-site-copiar-codigo" data-codigo="' + acessoSiteEscapar(c.codigo) + '" title="Copiar código">📋</button>' +
+                  // Enviar o código pelo WhatsApp, para o telefone do cadastro, com a instrução de onde informar.
+                  (foneZap.length >= 10
+                    ? '<a class="acesso-site-zap-codigo" target="_blank" rel="noopener" title="Enviar o código pelo WhatsApp" aria-label="Enviar o código pelo WhatsApp" href="https://wa.me/55' + foneZap + '?text=' +
+                      encodeURIComponent('NoteStyle: seu código de ' + r.nome + ' é ' + c.codigo + '\n\nInforme em Menu → Ajustes → 🔐 Autorização de acessos. Ele vale só no seu aparelho.') + '">📲</a>'
+                    : '') +
                   '<button type="button" class="secondary acesso-site-expirar-codigo" data-aparelho="' + acessoSiteEscapar(idCompleto) + '" data-recurso="' + acessoSiteEscapar(r.id) + '">Expirar</button>'
                 : '<button type="button" class="secondary acesso-site-gerar-codigo" data-aparelho="' + acessoSiteEscapar(idCompleto) + '" data-recurso="' + acessoSiteEscapar(r.id) + '">Gerar</button>') +
               '</td></tr>';
@@ -12591,7 +12600,7 @@ function saveTemplatesToStorage() {
             '<td class="acesso-site-consumo-valor">' + acessoSiteEscapar(acessoSiteReais(consumoTotal)) + '</td>' +
             '</tr>'
             : '<tr><td colspan="3" class="hint">Nenhum consumo de IA em ' + acessoSiteEscapar(mesNome) + '.</td></tr>';
-          return '<details class="acesso-site-item" data-aparelho="' + acessoSiteEscapar(idCompleto) + '"' + aberto + '>' +
+          return '<details class="acesso-site-item" data-aparelho="' + acessoSiteEscapar(idCompleto) + '" data-busca="' + acessoSiteEscapar(busca) + '" data-nome="' + acessoSiteEscapar(nome) + '" data-saldo="' + creditos + '"' + aberto + '>' +
           '<summary class="acesso-site-resumo">' + resumo + '</summary>' +
           '<div class="acesso-site-detalhe">' +
           '<div class="acesso-site-tabela-dados" role="table" aria-label="Dados do cadastro">' +
@@ -12606,7 +12615,7 @@ function saveTemplatesToStorage() {
           linhaCadastro('Saldo restante', '<strong>' + acessoSiteReais(creditos) + '</strong>') +
           '</div>' +
           '<div class="acesso-site-creditar-linha">' +
-          '<input type="text" inputmode="decimal" class="acesso-site-creditar-valor" placeholder="R$ 0,00" aria-label="Valor a creditar">' +
+          '<input type="text" inputmode="decimal" class="acesso-site-creditar-valor" placeholder="Ex.: 10,00" title="Valor em reais a somar ao saldo (um valor negativo, como -5,00, corrige um lançamento)" aria-label="Valor a creditar">' +
           '<button type="button" class="acesso-site-creditar" data-aparelho="' + acessoSiteEscapar(idCompleto) + '">💳 Creditar</button>' +
           '</div></div>' +
           '<div class="acesso-site-consumo">' +
@@ -12626,10 +12635,36 @@ function saveTemplatesToStorage() {
           '</div></div></details>';
         }).join('')
         : '<p class="hint">Ninguém se identificou ainda.</p>';
-      // Garante que a lista "Usuários identificados" continue aberta depois de Gerar/Creditar/Expirar.
+      // A lista "Usuários identificados" continua aberta depois de Gerar/Creditar/Expirar (ao abrir a seção, fica como estava).
       const caixaUsuarios = acessoSiteAprovados.closest('details');
-      if (caixaUsuarios) caixaUsuarios.open = true;
+      if (caixaUsuarios && opts && opts.manterAbertos) caixaUsuarios.open = true;
+      // Quantidades nos títulos, o total de saldo e a busca (a partir de 6 usuários).
+      document.getElementById('acessoSitePedidosQtd').textContent = pendentes.length ? '(' + pendentes.length + ')' : '';
+      document.getElementById('acessoSiteAprovadosQtd').textContent = aprovados.length ? '(' + aprovados.length + ')' : '';
+      const totais = document.getElementById('acessoSiteTotais');
+      const comuns = aprovados.filter(a => a.nivel !== 'admin');
+      const semSaldo = comuns.filter(a => !(Number(a.creditos) > 0)).length;
+      totais.hidden = !aprovados.length;
+      totais.textContent = 'Saldo somado dos usuários: ' + acessoSiteReais(comuns.reduce((s, a) => s + (Number(a.creditos) || 0), 0)) +
+        (semSaldo ? ' · ' + semSaldo + (semSaldo === 1 ? ' usuário sem saldo (IA pausada)' : ' usuários sem saldo (IA pausada)') : '') + '.';
+      acessoSiteFiltro.hidden = aprovados.length < 6;
+      if (acessoSiteFiltro.hidden) acessoSiteFiltro.value = '';
+      acessoSiteFiltrar();
     }
+
+    const acessoSiteFiltro = document.getElementById('acessoSiteFiltro');
+    function acessoSiteFiltrar() {
+      const termo = acessoSiteFiltro.value.trim().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+      acessoSiteAprovados.querySelectorAll('details.acesso-site-item').forEach(el => { el.hidden = Boolean(termo) && !(el.dataset.busca || '').includes(termo); });
+    }
+    acessoSiteFiltro.addEventListener('input', acessoSiteFiltrar);
+    // Enter no valor credita (sem precisar tocar no botão).
+    acessoSiteAprovados.addEventListener('keydown', e => {
+      if (e.key !== 'Enter' || !e.target.classList.contains('acesso-site-creditar-valor')) return;
+      e.preventDefault();
+      const botao = e.target.parentElement.querySelector('.acesso-site-creditar');
+      if (botao) botao.click();
+    });
 
     async function acessoSiteCarregarAdmin() {
       const codigo = codigoAdminAtual();
@@ -12692,6 +12727,8 @@ function saveTemplatesToStorage() {
           if (campo) campo.focus();
           return;
         }
+        // Valor negativo corrige um lançamento errado: pede confirmação.
+        if (/^\s*(r\$\s*)?-/i.test(valor) && !(await askConfirm('Tirar ' + valor.replace(/^\s*(r\$\s*)?-\s*/i, 'R$ ') + ' do saldo deste usuário? (Use para corrigir um crédito lançado errado; o saldo não fica abaixo de zero.)', 'Corrigir o saldo', { ok: 'Tirar do saldo', cancel: 'Cancelar' }))) return;
         acessoSiteStatus.textContent = 'Creditando…';
         const r = await postConfig({ acao: 'acesso-site-creditar', codigo, aparelhoId: creditar.dataset.aparelho, valor });
         if (!r.ok) {
@@ -12726,7 +12763,12 @@ function saveTemplatesToStorage() {
       }
       const btn = e.target.closest('button.acesso-site-revogar');
       if (!btn || !btn.dataset.aparelho) return;
-      if (!(await askConfirm('Revogar a identificação deste aparelho? Na próxima abertura ele precisará se cadastrar de novo.', 'Revogar identificação'))) return;
+      // Revogar apaga o cadastro inteiro: o saldo e os códigos personalizados vão junto (o aviso diz quanto se perde).
+      const cartao = btn.closest('details.acesso-site-item');
+      const saldoDoCartao = cartao ? Number(cartao.dataset.saldo) || 0 : 0;
+      const temCodigo = Boolean(cartao && cartao.querySelector('.acesso-site-codigo-valor'));
+      const perdas = [saldoDoCartao > 0 ? 'o saldo de ' + acessoSiteReais(saldoDoCartao) : '', temCodigo ? 'os códigos personalizados' : ''].filter(Boolean).join(' e ');
+      if (!(await askConfirm('Revogar a identificação de ' + ((cartao && cartao.dataset.nome) || 'este aparelho') + '? Na próxima abertura ele precisará se cadastrar de novo.' + (perdas ? '\n\nVocê também vai apagar ' + perdas + ' deste usuário.' : ''), 'Revogar identificação'))) return;
       const r = await postConfig({ acao: 'acesso-site-revogar', codigo, aparelhoId: btn.dataset.aparelho });
       if (!r.ok) {
         acessoSiteStatus.textContent = (r.data && r.data.erro) || configErrorMessage(r, 'Não foi possível revogar.');
@@ -17061,7 +17103,13 @@ function saveTemplatesToStorage() {
     function outrosCarregarBtnAtualizar(cfg) {
       if (cfg.kind !== 'outros' || !cfg.carregarBtn) return;
       const textosNaTela = Boolean(cfg.textos && cfg.textos.length && cfg.textosUi && !cfg.textosUi.caixa.hidden);
-      cfg.carregarBtn.hidden = textosNaTela;
+      // Se a matéria, os textos pedidos ou os artigos mudaram depois da leitura (cfg.leituraVelha), o botão volta, para ler de novo
+      // (antes ele sumia de vez e só o "Limpar os campos" o trazia de volta).
+      const lerDeNovo = textosNaTela && Boolean(cfg.leituraVelha);
+      cfg.carregarBtn.hidden = textosNaTela && !lerDeNovo;
+      const rotulo = lerDeNovo ? '↻ Ler a matéria de novo (você mudou a matéria)' : '📋 Ler a matéria e listar os textos bíblicos';
+      if (cfg.carregarBtn.dataset.label) cfg.carregarBtn.dataset.label = rotulo; // consultando: o rótulo volta ao fim (setAiLoading)
+      else cfg.carregarBtn.textContent = rotulo;
       // Só o hidden controla a visibilidade; o disabled durante a consulta fica a cargo do setAiLoading.
     }
 
@@ -17075,12 +17123,14 @@ function saveTemplatesToStorage() {
       cfg.itensUi = [];
       cfg.textosUi.lista.textContent = '';
       cfg.textosUi.caixa.hidden = true;
+      cfg.leituraVelha = false;
       outrosCarregarBtnAtualizar(cfg);
     }
 
     // A lista do servidor. Se for a mesma que já está na tela, nada se refaz (as marcas e os "Ver texto" abertos ficam).
     function textosAtualizarLista(cfg, lista) {
       const nova = Array.isArray(lista) ? lista.filter(t => t && t.referencia) : [];
+      cfg.leituraVelha = false; // a lista acabou de vir do servidor
       const assinatura = nova.map(t => t.referencia + (t.leia ? '*' : '')).join('|');
       if (assinatura !== cfg.textosAssinatura) {
         cfg.textosAssinatura = assinatura;
@@ -18438,6 +18488,8 @@ function saveTemplatesToStorage() {
       if (Array.isArray(guardadas)) outrosBases = guardadas.filter(b => b && b.id && b.esboco && Array.isArray(b.esboco.secoes)).slice(0, OUTROS_MAX_BASES);
     } catch (e) { /* sem localStorage: nenhum esboço importado */ }
     const outrosBaseAtual = () => outrosBases.find(b => b.id === outrosBaseId) || null;
+    const outrosTituloLimpo = b => String(b.titulo || '').replace(/^[‘'“"]+|[’'”"]+$/g, '');
+    let outrosTemaAuto = ''; // o tema que o app pôs no campo a partir de um esboço importado (para não apagar o que o orador escreveu)
     const outrosCamposEl = {
       tema: document.getElementById('outrosTema'),
       ideia: document.getElementById('outrosIdeia'),
@@ -18466,6 +18518,9 @@ function saveTemplatesToStorage() {
     outrosCamposEl.materia.addEventListener('input', outrosMateriaCrescer);
     outrosMateriaBox.addEventListener('toggle', () => { if (outrosMateriaBox.open) requestAnimationFrame(outrosMateriaCrescer); });
     window.addEventListener('resize', outrosMateriaCrescer);
+    // Ao aparecer na tela (a tela Reuniões aberta depois, ou o card aberto): mede de novo. Sem isto, a matéria salva de outro dia ficava
+    // cortada em 96 px, sem rolagem (o campo não rola por dentro), até a pessoa digitar algo.
+    if (window.IntersectionObserver) new IntersectionObserver(entradas => { if (entradas.some(e => e.isIntersecting)) outrosMateriaCrescer(); }).observe(outrosCamposEl.materia);
 
     const outrosEnderecos = () => [...new Set(outrosCamposEl.artigos.value.split(/\s+/).map(e => e.trim()).filter(Boolean))];
     const outrosTemMateria = () => Boolean(outrosCamposEl.materia.value.trim() || outrosCamposEl.textos.value.trim() || outrosEnderecos().length || outrosBaseAtual());
@@ -18537,7 +18592,18 @@ function saveTemplatesToStorage() {
       const enderecos = new Set(outrosEnderecos());
       outrosResultados.querySelectorAll('input[type="checkbox"]').forEach(caixa => { caixa.checked = enderecos.has(caixa.value); });
     }
-    Object.values(outrosCamposEl).forEach(el => el.addEventListener('input', () => { outrosSalvarRascunho(); if (el === outrosCamposEl.artigos) outrosMarcarResultados(); }));
+    // A matéria, os textos pedidos ou os artigos mudaram depois de "Ler a matéria": a lista na tela ficou velha e o botão de ler volta.
+    function outrosLeituraMudou() {
+      const cfg = ESBOCOS.outros;
+      if (!cfg.textos || !cfg.textos.length) return;
+      cfg.leituraVelha = true;
+      outrosCarregarBtnAtualizar(cfg);
+    }
+    Object.values(outrosCamposEl).forEach(el => el.addEventListener('input', () => {
+      outrosSalvarRascunho();
+      if (el === outrosCamposEl.artigos) outrosMarcarResultados();
+      if (el === outrosCamposEl.materia || el === outrosCamposEl.textos || el === outrosCamposEl.artigos) outrosLeituraMudou();
+    }));
 
     function outrosMostrarResultados(lista) {
       outrosResultados.textContent = '';
@@ -18571,6 +18637,7 @@ function saveTemplatesToStorage() {
           }
           outrosCamposEl.artigos.value = atuais.join('\n');
           outrosSalvarRascunho();
+          outrosLeituraMudou();
         });
         outrosResultados.appendChild(rotulo);
       });
@@ -18650,7 +18717,9 @@ function saveTemplatesToStorage() {
       outrosBases.forEach((b, i) => {
         const opcao = document.createElement('option');
         opcao.value = b.id;
-        opcao.textContent = outrosBaseRotulo(b, i);
+        // Na lista aberta, o tema (sem ele não dá para saber qual é qual, com mais de um esboço importado); no botão fechado, só o rótulo curto.
+        opcao.textContent = outrosTituloLimpo(b) + ' · ' + outrosBaseTotal(b) + ' min';
+        opcao.dataset.rotuloCurto = outrosBaseRotulo(b, i);
         outrosBaseSelect.appendChild(opcao);
       });
       outrosBaseSelect.value = outrosBaseId;
@@ -18676,10 +18745,22 @@ function saveTemplatesToStorage() {
     }
 
     function outrosBaseEscolher(id) {
+      // O tema que está no campo veio de um esboço importado (e não foi escrito pelo orador)?
+      const temaAgora = outrosCamposEl.tema.value.trim();
+      const temaDeBase = Boolean(temaAgora) && (temaAgora === outrosTemaAuto || outrosBases.some(b => outrosTituloLimpo(b) === temaAgora));
       outrosBaseId = id;
       const atual = outrosBaseAtual();
-      // Um único lugar para o tema na tela: o campo "Tema do discurso".
-      if (atual) outrosCamposEl.tema.value = atual.titulo.replace(/^[‘'“"]+|[’'”"]+$/g, '');
+      // Um único lugar para o tema na tela: o campo "Tema do discurso". O tema do esboço escolhido entra nele, mas sem apagar um tema que o
+      // orador escreveu; e, ao tirar o esboço (Nenhum ou apagar), o tema que tinha vindo dele sai junto.
+      if (atual) {
+        if (!temaAgora || temaDeBase) {
+          outrosCamposEl.tema.value = outrosTituloLimpo(atual);
+          outrosTemaAuto = outrosCamposEl.tema.value;
+        }
+      } else if (temaDeBase) {
+        outrosCamposEl.tema.value = '';
+        outrosTemaAuto = '';
+      }
       outrosZerarLeitura();
       outrosBaseMostrar();
       outrosSalvarRascunho();

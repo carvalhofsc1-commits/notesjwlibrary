@@ -1890,12 +1890,14 @@
             <p id="acessoSiteStatus" class="ok" role="status" aria-live="polite"></p>
 
             <details class="prompt-item prompt-tint-codigo" open>
-              <summary><h3>📝 Cadastros pendentes</h3></summary>
+              <summary><h3>📝 Cadastros pendentes <span id="acessoSitePedidosQtd" class="acesso-site-qtd"></span></h3></summary>
               <div id="acessoSitePedidos" class="acesso-site-lista"></div>
             </details>
 
             <details class="prompt-item prompt-tint-codigo">
-              <summary><h3>✅ Usuários identificados</h3></summary>
+              <summary><h3>✅ Usuários identificados <span id="acessoSiteAprovadosQtd" class="acesso-site-qtd"></span></h3></summary>
+              <p id="acessoSiteTotais" class="hint acesso-site-totais" hidden></p>
+              <input id="acessoSiteFiltro" class="acesso-site-filtro" type="search" autocomplete="off" spellcheck="false" placeholder="🔎 Procurar por nome, cidade, congregação ou telefone" aria-label="Procurar usuário" hidden>
               <div id="acessoSiteAprovados" class="acesso-site-lista"></div>
             </details>
 

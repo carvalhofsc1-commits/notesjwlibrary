@@ -4518,7 +4518,9 @@ async function tratarPedido(req, res) {
   await prepararCodigosPessoais();
   const bloqueioSite = await mensagemSeBloqueado({ aparelhoId: body.aparelhoId, codigoAdmin: body.codigoAdmin });
   if (bloqueioSite) return erro(res, 403, bloqueioSite);
-  const bloqueioCredito = await mensagemSeSemCredito({ aparelhoId: body.aparelhoId, codigoAdmin: body.codigoAdmin });
+  // Buscar (ou apagar) o resultado de um pedido já feito não pede saldo: o pedido foi cobrado quando rodou, e o saldo pode ter zerado com ele.
+  const soResultado = tarefa === "pedido-resultado" || tarefa === "pedido-apagar";
+  const bloqueioCredito = soResultado ? null : await mensagemSeSemCredito({ aparelhoId: body.aparelhoId, codigoAdmin: body.codigoAdmin });
   if (bloqueioCredito) return erro(res, 403, bloqueioCredito);
 
   // Resultado de um pedido demorado cuja conexão caiu (ver api/_pedidos.mjs): o id aleatório de 36 caracteres é a própria chave.

@@ -14605,3 +14605,49 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
 #transcricaoDadosSection > .transcricao-rotulo-linha .transcricao-mesmo {
   margin: 0 0 0 auto;
 }
+
+/* Administração de usuários: quantidades nos títulos, total de saldo, busca, saldo zerado em destaque e o envio do código pelo WhatsApp. */
+.acesso-site-qtd {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.acesso-site-totais[hidden],
+.acesso-site-filtro[hidden],
+.acesso-site-lista > .acesso-site-item[hidden] {
+  display: none;
+}
+
+.acesso-site-totais {
+  margin: 6px 0 0;
+}
+
+.acesso-site-filtro {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 36px;
+  margin-top: 8px;
+  padding: 4px 10px;
+  font: inherit;
+  font-size: .9rem;
+}
+
+.acesso-site-saldo.zerado {
+  color: #dc2626;
+}
+
+.acesso-site-zap-codigo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  min-width: 38px;
+  margin: 0 4px 4px 0;
+  padding: 4px 8px;
+  box-sizing: border-box;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  text-decoration: none;
+  font-size: .9rem;
+  vertical-align: middle;
+}

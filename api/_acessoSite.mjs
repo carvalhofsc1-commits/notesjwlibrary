@@ -35,9 +35,19 @@ function vazio() {
   return { versao: 2, atualizadoEm: agoraIso(), restringir: true, pedidos: [], aprovados: {} };
 }
 
+// O saldo é guardado com 4 casas (décimos de milésimo de real): cada uso de IA costuma custar frações de centavo, e arredondar cada
+// débito para centavos cobrava a mais (ou deixava de cobrar) a cada pedido. Na tela o saldo aparece com 2 casas.
+const arredondarSaldo = (n) => Math.round(n * 10000) / 10000;
 function creditosDe(registro) {
   const n = Number(registro && registro.creditos);
-  return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : 0;
+  return Number.isFinite(n) && n > 0 ? arredondarSaldo(n) : 0;
+}
+
+// "R$ 1.234,56", "10,5", "10.5" ou "-5" → número (NaN se não der para entender).
+function valorEmReais(valor) {
+  let s = String(valor ?? "").replace(/r\$/gi, "").replace(/\s/g, "");
+  if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
+  return s ? Number(s) : NaN;
 }
 
 function codigosDe(registro) {
@@ -67,10 +77,6 @@ function gerarCodigoTexto(recurso) {
 // Cache curto dos códigos personalizados ativos: permite conferência síncrona nas APIs de IA.
 let cacheCodigos = { em: 0, mapa: new Map() }; // codigoLower -> { recurso, aparelhoId }
 
-function invalidarCacheCodigos() {
-  cacheCodigos = { em: 0, mapa: new Map() };
-}
-
 function montarCacheCodigos(dados) {
   const mapa = new Map();
   for (const [aparelhoId, reg] of Object.entries((dados && dados.aprovados) || {})) {
@@ -83,11 +89,25 @@ function montarCacheCodigos(dados) {
   cacheCodigos = { em: Date.now(), mapa };
 }
 
+// Leitura recente do cadastro (até 5 s), para as conferências de cada pedido de IA (cadastro aprovado, saldo e códigos pessoais) não lerem
+// o Blob três vezes por pedido: a leitura em voz, por exemplo, faz vários pedidos seguidos. Quem grava (comDados) já atualiza esta cópia.
+let cacheDados = { em: 0, dados: null };
+function guardarRecente(dados) {
+  cacheDados = { em: Date.now(), dados };
+  montarCacheCodigos(dados);
+}
+async function lerRecente() {
+  if (cacheDados.dados && Date.now() - cacheDados.em < 5_000) return cacheDados.dados;
+  const dados = (await lerBruto()) || vazio();
+  if (!Array.isArray(dados.pedidos)) dados.pedidos = [];
+  if (!dados.aprovados || typeof dados.aprovados !== "object") dados.aprovados = {};
+  guardarRecente(dados);
+  return dados;
+}
+
 export async function prepararCodigosPessoais() {
   if (!acessoSiteConfigurado()) return;
-  if (Date.now() - cacheCodigos.em < 15_000) return;
-  const dados = (await lerBruto()) || vazio();
-  montarCacheCodigos(dados);
+  await lerRecente();
 }
 
 // Confere se o código informado é o personalizado ativo deste aparelho para o recurso.
@@ -171,7 +191,7 @@ async function comDados(mutar) {
     dados.restringir = true; // padrão permanente: cadastros novos pedem aprovação
     const resultado = (await mutar(dados)) || null;
     await gravarBruto(dados);
-    invalidarCacheCodigos();
+    guardarRecente(dados); // as conferências seguintes já veem o que acabou de ser gravado (saldo, códigos, aprovações)
     return resultado;
   });
 }
@@ -383,15 +403,17 @@ function gravarIdentidade(dados, id, campos, { pedidoId = "", statusPedido = "ap
 }
 
 // Estado para o aparelho (público): cadastro obrigatório; novos ficam pendentes até a aprovação.
-export async function estadoAcessoSite({ aparelhoId } = {}) {
+// recente: aceita a leitura dos últimos segundos (conferência de cada pedido de IA); sem ela, lê o Blob na hora (tela de abertura e "Verificar").
+export async function estadoAcessoSite({ aparelhoId, recente = false } = {}) {
   if (!acessoSiteConfigurado()) {
     return { configurado: false, restringir: true, ok: true };
   }
-  const dados = (await lerBruto()) || vazio();
-  montarCacheCodigos(dados);
+  if (!recente) cacheDados = { em: 0, dados: null };
+  const dados = await lerRecente();
   const id = aparelhoIdLimpo(aparelhoId);
   if (id && dados.aprovados[id]) {
-    const cadastro = identidadeDe(dados.aprovados[id]);
+    // Os códigos personalizados não vão nesta resposta pública (só o administrador os vê, na Administração de usuários).
+    const { codigos, ...cadastro } = identidadeDe(dados.aprovados[id]);
     return {
       configurado: true,
       restringir: true,
@@ -417,7 +439,7 @@ export async function estadoAcessoSite({ aparelhoId } = {}) {
 // Usado pelas APIs: devolve null se pode seguir, ou mensagem de erro.
 export async function mensagemSeBloqueado({ aparelhoId, codigoAdmin } = {}) {
   if (codigoAdmin && textosIguais(codigoAdmin, process.env.CODIGO_ADMIN)) return null;
-  const e = await estadoAcessoSite({ aparelhoId });
+  const e = await estadoAcessoSite({ aparelhoId, recente: true });
   if (!e.configurado || e.ok) return null;
   if (e.pendente) return "Seu cadastro ainda está em análise. Quando for aprovado, abra o app de novo.";
   if (e.recusado) return "O cadastro deste aparelho foi recusado. Se precisar, envie um novo cadastro pelo formulário.";
@@ -430,7 +452,7 @@ export async function mensagemSeSemCredito({ aparelhoId, codigoAdmin } = {}) {
   if (!acessoSiteConfigurado()) return null;
   const id = aparelhoIdLimpo(aparelhoId);
   if (!id) return null;
-  const dados = (await lerBruto()) || vazio();
+  const dados = await lerRecente();
   if (!dados.aprovados[id]) return null; // quem ainda não cadastrou já é barrado pelo gate do site
   if (creditosDe(dados.aprovados[id]) > 0) return null;
   return "Seus créditos de IA acabaram. Peça ao administrador para carregar mais créditos.";
@@ -578,13 +600,14 @@ export async function creditarUsuario({ aparelhoId, valor, codigoAdmin }) {
   if (!textosIguais(codigoAdmin, process.env.CODIGO_ADMIN)) return { erro: "Código de administrador incorreto." };
   const id = aparelhoIdLimpo(aparelhoId);
   if (!id) return { erro: "Aparelho inválido." };
-  const n = Number(String(valor ?? "").replace(",", "."));
-  if (!Number.isFinite(n) || n <= 0 || n > 100000) return { erro: "Informe um valor em reais maior que zero." };
+  // Valor positivo credita; negativo corrige um lançamento errado (o saldo nunca fica abaixo de zero).
+  const n = valorEmReais(valor);
+  if (!Number.isFinite(n) || n === 0 || Math.abs(n) > 100000) return { erro: "Informe um valor em reais, por exemplo 10,00 (ou -5,00 para corrigir um lançamento)." };
   const soma = Math.round(n * 100) / 100;
   return comDados((dados) => {
     const reg = dados.aprovados[id];
     if (!reg) return { erro: "Este aparelho não está na lista de identificados." };
-    reg.creditos = Math.round((creditosDe(reg) + soma) * 100) / 100;
+    reg.creditos = Math.max(0, arredondarSaldo(creditosDe(reg) + soma));
     reg.creditosAtualizadoEm = agoraIso();
     return { ok: true, creditos: reg.creditos, aparelhoId: id };
   });
@@ -661,12 +684,12 @@ export async function debitarCreditosUso({ aparelhoId, tarefa, entrada, saida, c
       car: Math.max(0, Math.floor(Number(caracteres) || 0)),
       seg: Math.max(0, Math.round(Number(segundos) || 0)),
     };
-    const valor = Math.round(valorDoUso(cat, uso, config.precos) * 100) / 100;
+    const valor = arredondarSaldo(valorDoUso(cat, uso, config.precos));
     if (valor <= 0) return;
     await comDados((dados) => {
       const reg = dados.aprovados[id];
       if (!reg) return null;
-      reg.creditos = Math.max(0, Math.round((creditosDe(reg) - valor) * 100) / 100);
+      reg.creditos = Math.max(0, arredondarSaldo(creditosDe(reg) - valor));
       reg.creditosAtualizadoEm = agoraIso();
       return { ok: true, creditos: reg.creditos, debitado: valor };
     });

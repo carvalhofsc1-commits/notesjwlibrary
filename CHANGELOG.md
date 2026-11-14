@@ -2,6 +2,29 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.36
+
+Revisão geral das mudanças das versões 6.9.18 a 6.9.35.
+
+Outros esboços (necessidades locais, eventos especiais):
+- O botão **Ler a matéria e listar os textos bíblicos** sumia de vez depois da primeira leitura: quem colava mais matéria, mudava os textos pedidos ou marcava outro artigo não tinha como ler de novo (só com “Limpar os campos”). Agora, ao mudar a matéria, os textos ou os artigos, ele volta como **↻ Ler a matéria de novo**.
+- Escolher um esboço importado **apagava o tema** que o orador tinha escrito. Agora o tema do esboço só entra no campo se ele estiver vazio ou com o tema de outro esboço importado; e, ao tirar o esboço (Nenhum ou apagar), o tema que tinha vindo dele sai junto.
+- Com mais de um esboço importado, a lista mostrava só “1 · 30 min · 3 seções”, “2 · 30 min · 3 seções”: não dava para saber qual era qual. A lista aberta volta a mostrar o tema de cada um; o botão fechado continua só com o rótulo curto.
+- O campo **Matéria** com um texto salvo de outro dia aparecia cortado em poucas linhas, sem rolagem, até a pessoa digitar algo. Agora ele se ajusta ao aparecer na tela.
+
+Administração de usuários:
+- O saldo de créditos passa a ser guardado com 4 casas decimais: cada uso de IA custa frações de centavo, e arredondar cada débito para centavos cobrava a mais (ou não cobrava). Na tela continua com 2 casas.
+- Creditar aceita “R$ 10,00”, “1.234,56” e Enter no campo; um valor negativo (ex.: -5,00) corrige um lançamento errado, com confirmação.
+- Revogar avisa o saldo e os códigos que serão apagados junto com o cadastro.
+- Lista de usuários: quantidade nos títulos, saldo somado e quantos estão sem saldo, “sem saldo” em destaque no card e campo de busca (a partir de 6 usuários).
+- Botão **📲** ao lado de cada código: envia o código pelo WhatsApp para o telefone do cadastro, com a instrução de onde informar.
+- A lista “Usuários identificados” não abre mais sozinha ao entrar na seção.
+
+Servidor:
+- Cada pedido de IA lia o cadastro no armazenamento até três vezes (cadastro aprovado, saldo e códigos pessoais); agora usa uma leitura só, válida por 5 segundos (a leitura em voz faz vários pedidos seguidos).
+- Buscar o resultado de um pedido demorado não é mais barrado por falta de saldo (o pedido já foi cobrado quando rodou).
+- Os códigos personalizados deixam de ir na resposta pública do estado do cadastro.
+
 ## 6.9.35
 
 Outros esboços: o tema do esboço importado aparece só no campo "Tema do discurso" (some do resumo do bloco, do seletor e do status da importação).
