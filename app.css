@@ -14726,3 +14726,41 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
 .outros-fonte {
   margin: 12px 0 0;
 }
+
+/* Outros esboços: os passos numerados (1 dados, 2 material de apoio, 3 listar os textos, 4 elaborar). */
+.outros-passo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 20px 0 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: .95rem;
+  font-weight: 800;
+}
+
+.outros-form > .outros-passo:first-child,
+.outros-form > .outros-passo:first-of-type {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.outros-passo-n {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: .85rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.outros-passo-ajuda {
+  margin: 0 0 6px;
+}

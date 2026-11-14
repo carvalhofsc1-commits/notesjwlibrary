@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.42
+
+Outros esboços: a tela ganhou **passos numerados**, cada um com um título e um número: **1 · Dados do discurso** (tema, ideia e tempo), **2 · Material de apoio (opcional)** (ocasião, textos, matéria, artigos, pesquisa na biblioteca e esboço da organização), **3 · Listar os textos bíblicos do material (opcional)** e **4 · Elaborar o esboço**, com uma linha de ajuda nos passos 2 e 4.
+
 ## 6.9.41
 
 Outros esboços:
