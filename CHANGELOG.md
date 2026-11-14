@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.43
+
+Outros esboços:
+- O **passo 4 (Elaborar o esboço)** fica escondido até o **tema** estar preenchido (ou um esboço da organização escolhido, que traz o tema); o passo 1 avisa disso.
+- O campo da pesquisa se chama **“Pesquisar matérias relacionadas com o tema na wol (opcional)”**; a dica de que, vazio, ele usa o tema e a ideia do discurso passou para dentro do campo.
+
 ## 6.9.42
 
 Outros esboços: a tela ganhou **passos numerados**, cada um com um título e um número: **1 · Dados do discurso** (tema, ideia e tempo), **2 · Material de apoio (opcional)** (ocasião, textos, matéria, artigos, pesquisa na biblioteca e esboço da organização), **3 · Listar os textos bíblicos do material (opcional)** e **4 · Elaborar o esboço**, com uma linha de ajuda nos passos 2 e 4.

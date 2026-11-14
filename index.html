@@ -1013,6 +1013,7 @@
                 <section class="sent-option sent-option-site">
                   <div class="ai-study outros-form">
                     <p class="outros-passo"><span class="outros-passo-n" aria-hidden="true">1</span> Dados do discurso</p>
+                    <p class="hint outros-passo-ajuda">Comece pelo tema: com ele preenchido, aparece o passo 4, para elaborar o esboço.</p>
                     <label for="outrosTema">Tema do discurso</label>
                     <input id="outrosTema" type="text" maxlength="200" autocomplete="off" placeholder="Ex.: Como enfrentar a ansiedade">
                     <label for="outrosIdeia">Ideia do discurso (o que você quer alcançar)</label>
@@ -1032,8 +1033,8 @@
                     <details class="textos-box outros-materia" id="outrosPesquisaBox">
                       <summary id="outrosPesquisaResumo">🔎 Pesquisar na biblioteca online (opcional)</summary>
                       <div class="textos-corpo">
-                        <label for="outrosConsulta">Pesquisar na biblioteca (se ficar vazio, usa o tema e a ideia do discurso)</label>
-                        <input id="outrosConsulta" type="search" maxlength="200" autocomplete="off" placeholder="Palavras para pesquisar no wol.jw.org">
+                        <label for="outrosConsulta">Pesquisar matérias relacionadas com o tema na wol (opcional)</label>
+                        <input id="outrosConsulta" type="search" maxlength="200" autocomplete="off" placeholder="Vazio: usa o tema e a ideia do discurso">
                         <button id="outrosPesquisarBtn" class="secondary ai-study-load" type="button">🔎 Pesquisar na biblioteca online</button>
                         <div id="outrosResultados" class="outros-resultados" hidden></div>
                       </div>
@@ -1055,9 +1056,11 @@
                     <p id="outrosInfo" class="hint ai-hint ebc-info"></p>
                     <p id="outrosCarregarFonte" class="hint ai-hint outros-fonte"></p>
                     <button id="outrosCarregarBtn" class="secondary ai-study-load" type="button">📋 Listar os textos bíblicos do material informado</button>
+                    <div id="outrosPasso4" hidden>
                     <p class="outros-passo"><span class="outros-passo-n" aria-hidden="true">4</span> Elaborar o esboço</p>
                     <p class="hint outros-passo-ajuda">A IA monta o esboço no campo de texto, abaixo. Se este tema já tem um esboço salvo, o botão 📂 que aparece depois do de elaborar o recarrega, sem gastar IA.</p>
                     <button id="outrosEsbocoBtn" data-codigo-ia="dirigente" class="ai-study-btn" type="button">✨ IA - Elaborar o esboço do discurso</button>
+                    </div>
                     <span id="outrosStatus" class="ok" role="status" aria-live="polite"></span>
                     <button id="outrosLimparBtn" class="secondary ai-study-load outros-limpar" type="button">🧹 Limpar os campos deste card</button>
                   </div>
