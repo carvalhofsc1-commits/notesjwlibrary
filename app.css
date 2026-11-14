@@ -7442,7 +7442,7 @@
       --atalho-borda: var(--tint3-border);
     }
 
-    .atalhos-grid .atalho:is([data-atalho="publico"], [data-atalho="tesouros"], [data-atalho="outros"]) {
+    .atalhos-grid .atalho:is([data-atalho="publico"], [data-atalho="tesouros"]) {
       --atalho-fundo: #fef3c7;
       --atalho-fundo: color-mix(in srgb, #f59e0b 22%, var(--card));
       --atalho-borda: #f59e0b;

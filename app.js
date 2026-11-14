@@ -7697,7 +7697,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.49'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.50'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21946,7 +21946,7 @@ function saveTemplatesToStorage() {
       travarAtalho('discursos', motivoDirigir);
       // Página 2 dos atalhos: cada um leva a uma ferramenta de um grupo e segue o código do grupo dela (o discurso público também o do S-34).
       ['sentinela', 'joias', 'ebc'].forEach(nome => travarAtalho(nome, pesquisa ? '' : 'pesquisa'));
-      ['tesouros', 'outros'].forEach(nome => travarAtalho(nome, motivoDirigir));
+      travarAtalho('tesouros', motivoDirigir);
       travarAtalho('publico', motivoDirigir || (s34 ? '' : 's34'));
       // Texto diário (tela Início): o cartão fica bloqueado, menos o link para o wol.jw.org, que vale sempre.
       const texto = document.getElementById('textoDiarioCard');
@@ -24682,8 +24682,7 @@ function saveTemplatesToStorage() {
       joias: { vista: 'comentarios', caixa: 'joiasBox' },
       ebc: { vista: 'comentarios', caixa: 'ebcBox' },
       publico: { vista: 'discursos', caixa: 'publicoBox' },
-      tesouros: { vista: 'discursos', caixa: 'tesourosBox' },
-      outros: { vista: 'discursos', caixa: 'outrosBox' }
+      tesouros: { vista: 'discursos', caixa: 'tesourosBox' }
     };
     document.querySelectorAll('[data-atalho]').forEach(botao => {
       botao.addEventListener('click', () => {

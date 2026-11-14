@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.50
+
+Início, página 2 dos atalhos: o atalho **Outros esboços** foi trocado por **Ajustes** (abre a tela de Ajustes). Os esboços continuam na tela Reuniões → Discursos.
+
 ## 6.9.49
 
 - **Comentários do texto diário com a IA dos esboços:** a geração dos comentários adicionais passa a usar o mesmo modelo e esforço dos discursos e das perguntas do dirigente (Ajustes → Modelos e agentes de IA, linha “Esboços, dirigir e texto diário”). A nota sob o botão também mostra esse modelo.
