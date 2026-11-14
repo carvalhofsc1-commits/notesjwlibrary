@@ -7669,7 +7669,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.45'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.46'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -18795,12 +18795,12 @@ function saveTemplatesToStorage() {
       if (!atual) outrosBaseId = '';
       outrosBaseLista.textContent = '';
       outrosBaseLista.hidden = !outrosBases.length;
-      const opcoes = [{ id: '', titulo: 'Não usar esboço pronto (só a matéria)', meta: '' }, ...outrosBases.map(b => ({
+      const opcoes = [...outrosBases.map(b => ({
         id: b.id,
         titulo: outrosTituloLimpo(b),
         meta: [outrosBaseTotal(b) + ' min', outrosBaseSecoes(b), b.arquivo || '', b.importadoEm ? 'importado em ' + new Date(b.importadoEm).toLocaleDateString('pt-BR') : ''].filter(Boolean).join(' · ')
       }))];
-      if (outrosBases.length) opcoes.forEach(o => {
+      opcoes.forEach(o => {
         const rotulo = document.createElement('label');
         rotulo.className = 'ai-check outros-base-item' + (o.id === outrosBaseId ? ' marcado' : '');
         const radio = document.createElement('input');
@@ -18930,7 +18930,7 @@ function saveTemplatesToStorage() {
       if (!(await askConfirm('Apagar o esboço importado "' + atual.titulo + '" deste aparelho? Não dá para desfazer (é só importar o arquivo de novo).', 'Apagar esboço importado'))) return;
       outrosBases = outrosBases.filter(b => b.id !== atual.id);
       outrosBaseGuardar();
-      outrosBaseEscolher('');
+      outrosBaseEscolher(outrosBases.length ? outrosBases[0].id : ''); // apagado, passa a valer o próximo importado (se houver)
       outrosBaseDizer('Esboço importado apagado deste aparelho.', false);
     });
     outrosBaseMostrar();

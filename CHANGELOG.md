@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.46
+
+Outros esboços: saiu a opção **“Não usar esboço pronto (só a matéria)”** da lista de esboços da organização. Importar um esboço é querer usá-lo; para deixar de usar, basta **apagá-lo** (o botão “Apagar este esboço importado”; apagado, passa a valer o próximo importado, se houver). O texto de ajuda do card diz isso.
+
 ## 6.9.45
 
 Outros esboços:
