@@ -1889,6 +1889,15 @@
           <div class="subsection-body">
             <p id="acessoSiteStatus" class="ok" role="status" aria-live="polite"></p>
 
+            <div class="acesso-site-boasvindas">
+              <label for="acessoSiteBoasVindas">🎁 Crédito de boas-vindas (R$)</label>
+              <div class="acesso-site-creditar-linha">
+                <input id="acessoSiteBoasVindas" type="text" inputmode="decimal" autocomplete="off" placeholder="Ex.: 100,00" title="Valor que cada cadastro aprovado daqui para frente recebe. 0 = sem crédito.">
+                <button id="acessoSiteBoasVindasBtn" type="button">💾 Salvar</button>
+              </div>
+              <p class="hint">Vale para os próximos cadastros aprovados (quem já foi aprovado não muda). 0 = sem crédito.</p>
+            </div>
+
             <details class="prompt-item prompt-tint-codigo" open>
               <summary><h3>📝 Cadastros pendentes <span id="acessoSitePedidosQtd" class="acesso-site-qtd"></span></h3></summary>
               <div id="acessoSitePedidos" class="acesso-site-lista"></div>

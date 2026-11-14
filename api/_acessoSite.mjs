@@ -20,7 +20,7 @@ export const RECURSOS_CODIGO = [
   { id: "s34", nome: "S-34" },
 ];
 const RECURSO_IDS = new Set(RECURSOS_CODIGO.map((r) => r.id));
-export const CREDITO_BOAS_VINDAS = 100; // R$ que cada usuário recebe ao ter o cadastro aprovado
+export const CREDITO_BOAS_VINDAS_PADRAO = 100; // R$ que cada usuário recebe ao ter o cadastro aprovado, se o administrador não definir outro valor
 const PREFIXO_CODIGO = { pesquisa: "PES", dirigente: "DIR", leitura: "LEI", texto: "AUD", resumo: "RES", s34: "S34" };
 
 export function acessoSiteConfigurado() {
@@ -39,6 +39,11 @@ function vazio() {
 // O saldo é guardado com 4 casas (décimos de milésimo de real): cada uso de IA costuma custar frações de centavo, e arredondar cada
 // débito para centavos cobrava a mais (ou deixava de cobrar) a cada pedido. Na tela o saldo aparece com 2 casas.
 const arredondarSaldo = (n) => Math.round(n * 10000) / 10000;
+// O valor do crédito de boas-vindas que o administrador definiu (guardado junto do cadastro); sem definição, o padrão. Zero é válido (sem crédito).
+function boasVindasDe(dados) {
+  const n = Number(dados && dados.creditoBoasVindas);
+  return dados && dados.creditoBoasVindas != null && Number.isFinite(n) && n >= 0 ? arredondarSaldo(n) : CREDITO_BOAS_VINDAS_PADRAO;
+}
 function creditosDe(registro) {
   const n = Number(registro && registro.creditos);
   return Number.isFinite(n) && n > 0 ? arredondarSaldo(n) : 0;
@@ -544,6 +549,7 @@ export async function lerAcessoSiteAdmin() {
     recentes,
     aprovados: aprovados.slice(0, 100),
     recursosCodigo: RECURSOS_CODIGO,
+    creditoBoasVindas: boasVindasDe(dados),
   };
 }
 
@@ -566,6 +572,7 @@ export async function decidirPedidoSite({ id, aprovar, codigoAdmin }) {
     p.status = aprovar ? "aprovado" : "recusado";
     p.decididoEm = agoraIso();
     if (aprovar) {
+      const boasVindas = boasVindasDe(dados); // o valor definido pelo administrador na hora da aprovação
       dados.aprovados[p.aparelhoId] = registroDeCampos(
         {
           nome: p.nome,
@@ -581,10 +588,21 @@ export async function decidirPedidoSite({ id, aprovar, codigoAdmin }) {
           comoConheceu: p.comoConheceu,
         },
         // Crédito de boas-vindas: todo usuário aprovado começa com R$ 100,00 (o app avisa uma vez, na primeira abertura depois da aprovação).
-        { pedidoId: p.id, aprovadoEm: p.decididoEm, creditos: CREDITO_BOAS_VINDAS, creditoBoasVindas: CREDITO_BOAS_VINDAS, codigos: {} }
+        { pedidoId: p.id, aprovadoEm: p.decididoEm, creditos: boasVindas, ...(boasVindas > 0 ? { creditoBoasVindas: boasVindas } : {}), codigos: {} }
       );
     }
     return { ok: true, pedido: pedidoPublico(p) };
+  });
+}
+
+// Define o crédito de boas-vindas (R$) dos próximos cadastros aprovados (0 = sem crédito). Quem já foi aprovado não muda.
+export async function definirCreditoBoasVindas({ valor, codigoAdmin }) {
+  if (!textosIguais(codigoAdmin, process.env.CODIGO_ADMIN)) return { erro: "Código de administrador incorreto." };
+  const n = valorEmReais(valor);
+  if (!Number.isFinite(n) || n < 0 || n > 100000) return { erro: "Informe um valor em reais entre 0 e 100.000 (0 = sem crédito de boas-vindas)." };
+  return comDados((dados) => {
+    dados.creditoBoasVindas = arredondarSaldo(n);
+    return { ok: true, creditoBoasVindas: dados.creditoBoasVindas };
   });
 }
 

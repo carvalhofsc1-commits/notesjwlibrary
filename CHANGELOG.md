@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.38
+
+Administração de usuários: o **crédito de boas-vindas** agora é configurável. Um campo “🎁 Crédito de boas-vindas (R$)” no alto da seção define quanto cada cadastro aprovado daqui para frente recebe (padrão R$ 100,00; 0 = sem crédito). Quem já foi aprovado não muda; a mensagem de boas-vindas ao usuário mostra o valor que ele recebeu (e não aparece se o crédito for zero).
+
 ## 6.9.37
 
 Créditos de IA:

@@ -7670,7 +7670,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.37'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.38'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12488,6 +12488,8 @@ function saveTemplatesToStorage() {
       { id: 'resumo', nome: 'Resumo da Bíblia' },
       { id: 's34', nome: 'S-34' }
     ];
+    let acessoSiteBoasVindas = 100; // o crédito de boas-vindas definido pelo administrador (R$)
+    const acessoSiteBoasVindasCampo = document.getElementById('acessoSiteBoasVindas');
     const acessoSiteReais = n => (Number(n) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     const acessoSiteOverlay = document.getElementById('acessoSiteOverlay');
     const acessoSitePainelForm = document.getElementById('acessoSitePainelForm');
@@ -12516,6 +12518,9 @@ function saveTemplatesToStorage() {
         return;
       }
       acessoSiteStatus.textContent = (aviso || '') + (acesso.atualizadoEm ? 'Atualizado em ' + estatisticasQuando(acesso.atualizadoEm) + '.' : 'Pronto.');
+      acessoSiteBoasVindas = Number(acesso.creditoBoasVindas);
+      if (!Number.isFinite(acessoSiteBoasVindas)) acessoSiteBoasVindas = 100;
+      if (document.activeElement !== acessoSiteBoasVindasCampo) acessoSiteBoasVindasCampo.value = acessoSiteBoasVindas.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       const pendentes = Array.isArray(acesso.pendentes) ? acesso.pendentes : [];
       acessoSitePedidos.innerHTML = pendentes.length
         ? pendentes.map(p =>
@@ -12684,6 +12689,21 @@ function saveTemplatesToStorage() {
 
     acessoSiteSection.addEventListener('toggle', () => { if (acessoSiteSection.open) acessoSiteCarregarAdmin(); });
 
+    // Salvar o crédito de boas-vindas (também com Enter no campo).
+    async function acessoSiteSalvarBoasVindas() {
+      const codigo = codigoAdminAtual();
+      if (!codigo) return;
+      const valor = acessoSiteBoasVindasCampo.value.trim();
+      if (!valor) { acessoSiteStatus.textContent = 'Informe o valor em reais (0 = sem crédito de boas-vindas).'; acessoSiteBoasVindasCampo.focus(); return; }
+      acessoSiteStatus.textContent = 'Salvando…';
+      const r = await postConfig({ acao: 'acesso-site-boas-vindas', codigo, valor });
+      if (!r.ok) { acessoSiteStatus.textContent = (r.data && r.data.erro) || configErrorMessage(r, 'Não foi possível salvar o valor.'); return; }
+      acessoSiteBoasVindasCampo.blur();
+      acessoSiteRenderAdmin(r.data.acesso, 'Crédito de boas-vindas: ' + acessoSiteReais(r.data.creditoBoasVindas) + ' para os próximos cadastros aprovados. ');
+    }
+    document.getElementById('acessoSiteBoasVindasBtn').addEventListener('click', acessoSiteSalvarBoasVindas);
+    acessoSiteBoasVindasCampo.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); acessoSiteSalvarBoasVindas(); } });
+
     acessoSitePedidos.addEventListener('click', async e => {
       const btn = e.target.closest('button[data-id]');
       if (!btn) return;
@@ -12696,7 +12716,7 @@ function saveTemplatesToStorage() {
         acessoSiteStatus.textContent = (r.data && r.data.erro) || 'Não foi possível decidir o cadastro.';
         return;
       }
-      acessoSiteRenderAdmin(r.data.acesso, aprovar ? 'Cadastro aprovado, com R$ 100,00 de crédito de boas-vindas (o usuário é avisado ao abrir o app). ' : 'Cadastro recusado. ');
+      acessoSiteRenderAdmin(r.data.acesso, aprovar ? 'Cadastro aprovado' + (acessoSiteBoasVindas > 0 ? ', com ' + acessoSiteReais(acessoSiteBoasVindas) + ' de crédito de boas-vindas (o usuário é avisado ao abrir o app). ' : ' (sem crédito de boas-vindas). ') : 'Cadastro recusado. ');
     });
 
     acessoSiteAprovados.addEventListener('click', async e => {

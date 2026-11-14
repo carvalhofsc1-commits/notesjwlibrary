@@ -15,6 +15,7 @@ import {
   acessoSiteConfigurado,
   atualizarCadastroSite,
   creditarUsuario,
+  definirCreditoBoasVindas,
   decidirPedidoSite,
   definirRestricaoSite,
   estadoAcessoSite,
@@ -505,6 +506,15 @@ export default async function handler(req, res) {
         return erro(res, 503, "O armazenamento privado (Blob) ainda não está configurado no servidor para o controle de acesso.");
       }
       return res.status(200).json({ acesso: await lerAcessoSiteAdmin() });
+    }
+    // Crédito de boas-vindas (R$) que cada cadastro aprovado daqui para frente recebe.
+    if (acao === "acesso-site-boas-vindas") {
+      if (!acessoSiteConfigurado()) {
+        return erro(res, 503, "O armazenamento privado (Blob) ainda não está configurado no servidor para o controle de acesso.");
+      }
+      const r = await definirCreditoBoasVindas({ valor: corpo.valor, codigoAdmin: corpo.codigo });
+      if (!r || r.erro) return erro(res, 400, (r && r.erro) || "Não foi possível salvar o valor agora.");
+      return res.status(200).json({ ok: true, creditoBoasVindas: r.creditoBoasVindas, acesso: await lerAcessoSiteAdmin() });
     }
     if (acao === "acesso-site-restringir") {
       if (!acessoSiteConfigurado()) {
