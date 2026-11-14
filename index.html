@@ -1013,14 +1013,15 @@
                 <section class="sent-option sent-option-site">
                   <div class="ai-study outros-form">
                     <p class="outros-passo"><span class="outros-passo-n" aria-hidden="true">1</span> Dados do discurso</p>
-                    <p class="hint outros-passo-ajuda">Comece pelo tema: com ele preenchido, aparece o passo 4, para elaborar o esboço.</p>
-                    <label for="outrosTema">Tema do discurso</label>
+                    <p id="outrosPasso1Ajuda" class="hint outros-passo-ajuda"></p>
+                    <label for="outrosTema">Tema do discurso <span class="opc">(obrigatório)</span></label>
                     <input id="outrosTema" type="text" maxlength="200" autocomplete="off" placeholder="Ex.: Como enfrentar a ansiedade">
-                    <label for="outrosIdeia">Ideia do discurso (o que você quer alcançar)</label>
+                    <label for="outrosIdeia">Ideia do discurso (o que você quer alcançar) <span class="opc">(obrigatório)</span></label>
                     <textarea id="outrosIdeia" rows="3" maxlength="1500" placeholder="Ex.: Mostrar que Jeová cuida de nós e que a oração traz paz."></textarea>
-                    <label id="outrosMinutosRotulo" for="outrosMinutos">Tempo do discurso (minutos)</label>
+                    <label id="outrosMinutosRotulo" for="outrosMinutos">Tempo do discurso (minutos) <span class="opc">(obrigatório)</span></label>
                     <input id="outrosMinutos" class="outros-minutos" type="number" inputmode="numeric" min="3" max="60" value="30">
-                    <p class="outros-passo"><span class="outros-passo-n" aria-hidden="true">2</span> Material de apoio (opcional)</p>
+                    <p class="outros-passo" id="outrosPasso2Titulo"><span class="outros-passo-n" aria-hidden="true">2</span> Material de apoio (opcional) <span class="outros-passo-cadeado" hidden>🔒 bloqueado</span></p>
+                    <div id="outrosCorpo2" class="outros-passo-corpo" hidden>
                     <p class="hint outros-passo-ajuda">Tudo aqui é opcional. Quanto mais material você informar, mais o esboço sai do que você trouxe; sem nada, a IA usa só a Bíblia e o que você escreveu no passo 1.</p>
                     <label for="outrosOcasiao">Ocasião <span class="opc">(opcional)</span></label>
                     <input id="outrosOcasiao" type="text" maxlength="120" autocomplete="off" placeholder="Ex.: visita do superintendente de circuito">
@@ -1052,12 +1053,15 @@
                         <button id="outrosBaseApagarBtn" class="secondary ai-study-load" type="button" hidden>🗑️ Apagar este esboço importado</button>
                       </div>
                     </details>
-                    <p class="outros-passo"><span class="outros-passo-n" aria-hidden="true">3</span> Listar os textos bíblicos do material (opcional)</p>
+                    </div>
+                    <p class="outros-passo" id="outrosPasso3Titulo"><span class="outros-passo-n" aria-hidden="true">3</span> Listar os textos bíblicos do material (opcional) <span class="outros-passo-cadeado" hidden>🔒 bloqueado</span></p>
+                    <div id="outrosCorpo3" class="outros-passo-corpo" hidden>
                     <p id="outrosInfo" class="hint ai-hint ebc-info"></p>
                     <p id="outrosCarregarFonte" class="hint ai-hint outros-fonte"></p>
                     <button id="outrosCarregarBtn" class="secondary ai-study-load" type="button">📋 Listar os textos bíblicos do material informado</button>
-                    <div id="outrosPasso4" hidden>
-                    <p class="outros-passo"><span class="outros-passo-n" aria-hidden="true">4</span> Elaborar o esboço</p>
+                    </div>
+                    <p class="outros-passo" id="outrosPasso4Titulo"><span class="outros-passo-n" aria-hidden="true">4</span> Elaborar o esboço <span class="outros-passo-cadeado" hidden>🔒 bloqueado</span></p>
+                    <div id="outrosPasso4" class="outros-passo-corpo" hidden>
                     <p class="hint outros-passo-ajuda">A IA monta o esboço no campo de texto, abaixo. Se este tema já tem um esboço salvo, o botão 📂 que aparece depois do de elaborar o recarrega, sem gastar IA.</p>
                     <button id="outrosEsbocoBtn" data-codigo-ia="dirigente" class="ai-study-btn" type="button">✨ IA - Elaborar o esboço do discurso</button>
                     </div>

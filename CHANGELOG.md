@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.44
+
+Outros esboços: os campos do **passo 1 são obrigatórios** (tema, ideia e tempo). Enquanto faltar algum, os **passos 2 a 4 ficam bloqueados e recolhidos**: só os títulos aparecem, apagados e com um cadeado, e o passo 1 diz o que falta. A elaboração também confere a ideia do discurso (pelo menos 8 letras) e o tema (pelo menos 4), mesmo com esboço da organização.
+
 ## 6.9.43
 
 Outros esboços:

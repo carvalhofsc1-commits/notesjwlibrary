@@ -7669,7 +7669,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.43'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.44'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -18592,7 +18592,8 @@ function saveTemplatesToStorage() {
 
     function outrosValidar() {
       const base = outrosBaseAtual();
-      if (outrosCamposEl.tema.value.trim().length < 4 && !base) return 'Escreva o tema do discurso.';
+      if (outrosCamposEl.tema.value.trim().length < 4) return 'Escreva o tema do discurso.';
+      if (outrosCamposEl.ideia.value.trim().length < 8) return 'Escreva a ideia do discurso (o que você quer alcançar).';
       const minutos = Number(outrosCamposEl.minutos.value);
       if (!base && (!Number.isFinite(minutos) || minutos < 3 || minutos > 60)) return 'O tempo do discurso deve ficar entre 3 e 60 minutos.';
       if (outrosEnderecos().length > OUTROS_MAX_ARTIGOS) return 'Use no máximo ' + OUTROS_MAX_ARTIGOS + ' artigos do wol.jw.org.';
@@ -18600,6 +18601,28 @@ function saveTemplatesToStorage() {
     }
 
     outrosCamposEl.tema.addEventListener('input', () => esbocoSalvoAtualizar(ESBOCOS.outros));
+    // Passo 1 obrigatório (tema, ideia e tempo): sem ele, os passos 2 a 4 ficam bloqueados e recolhidos (só os títulos, com o cadeado).
+    function outrosFaltaDoPasso1() {
+      const falta = [];
+      if (outrosCamposEl.tema.value.trim().length < 4) falta.push('tema');
+      if (outrosCamposEl.ideia.value.trim().length < 8) falta.push('ideia');
+      const minutos = Number(outrosCamposEl.minutos.value);
+      if (!outrosBaseAtual() && !(Number.isFinite(minutos) && minutos >= 3 && minutos <= 60)) falta.push('tempo (3 a 60 minutos)');
+      return falta;
+    }
+    function outrosPassosAtualizar() {
+      const falta = outrosFaltaDoPasso1();
+      const liberado = !falta.length;
+      [2, 3, 4].forEach(n => {
+        document.getElementById(n === 4 ? 'outrosPasso4' : 'outrosCorpo' + n).hidden = !liberado;
+        const titulo = document.getElementById('outrosPasso' + n + 'Titulo');
+        titulo.classList.toggle('bloqueado', !liberado);
+        titulo.querySelector('.outros-passo-cadeado').hidden = liberado;
+      });
+      document.getElementById('outrosPasso1Ajuda').textContent = liberado
+        ? '✅ Passo 1 completo. Os passos 2 a 4 estão liberados.'
+        : 'Tema, ideia e tempo são obrigatórios: preenchidos, liberam os passos 2 a 4. Falta: ' + falta.join(', ') + '.';
+    }
     // Diz, antes do botão, de onde ele tira os textos bíblicos: só do que a pessoa informou nesta tela (não do esboço que a IA já elaborou).
     function outrosFonteAtualizar() {
       const itens = [];
@@ -18614,8 +18637,7 @@ function saveTemplatesToStorage() {
     }
     function outrosAtualizarResumo() {
       outrosFonteAtualizar();
-      // O passo 4 (elaborar o esboço) só aparece com o tema preenchido (ou com um esboço da organização, que traz o tema).
-      document.getElementById('outrosPasso4').hidden = !(outrosCamposEl.tema.value.trim().length >= 4 || outrosBaseAtual());
+      outrosPassosAtualizar();
       const base = outrosBaseAtual();
       // O tema do esboço importado aparece só em "Tema do discurso" — o resumo do bloco não o repete.
       document.getElementById('outrosBaseResumo').textContent = '📥 Utilizar um esboço fornecido pela organização como base (opcional)' +
@@ -18806,7 +18828,9 @@ function saveTemplatesToStorage() {
       document.getElementById('outrosBaseVerBtn').hidden = !atual; // "Ver o esboço original" só com um esboço importado escolhido
       document.getElementById('outrosBaseApagarBtn').hidden = !atual;
       outrosCamposEl.minutos.disabled = Boolean(atual);
-      document.getElementById('outrosMinutosRotulo').textContent = atual ? 'Tempo do discurso (definido pelo esboço da organização)' : 'Tempo do discurso (minutos)';
+      const rotuloTempo = document.getElementById('outrosMinutosRotulo');
+      rotuloTempo.textContent = atual ? 'Tempo do discurso (definido pelo esboço da organização)' : 'Tempo do discurso (minutos) ';
+      if (!atual) { const obrig = document.createElement('span'); obrig.className = 'opc'; obrig.textContent = '(obrigatório)'; rotuloTempo.appendChild(obrig); }
       if (atual) outrosCamposEl.minutos.value = String(Math.max(3, Math.min(60, outrosBaseTotal(atual) || 30)));
       outrosCamposEl.tema.placeholder = 'Ex.: Como enfrentar a ansiedade';
       outrosAtualizarResumo();

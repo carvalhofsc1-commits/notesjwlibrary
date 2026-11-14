@@ -14764,3 +14764,20 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
 .outros-passo-ajuda {
   margin: 0 0 6px;
 }
+
+/* Outros esboços: passo bloqueado (o passo 1 ainda não está completo): só o título, apagado, com o cadeado. */
+.outros-passo.bloqueado {
+  opacity: .55;
+}
+
+.outros-passo-cadeado {
+  margin-left: auto;
+  font-size: .78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.outros-passo-cadeado[hidden],
+.outros-passo-corpo[hidden] {
+  display: none;
+}
