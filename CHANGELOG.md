@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.48
+
+Outros esboços: o campo **Tema do discurso** mostra o tema **inteiro, em negrito**, sem cortar: deixou de ser uma linha que rolava para o lado e passou a crescer em linhas conforme o texto (continua sem Enter; uma quebra de linha colada vira espaço).
+
+## 6.9.47
+
+Outros esboços: os campos **Ideia do discurso** e **Matéria** se adaptam ao tamanho do texto, crescendo para mostrar tudo (antes só a Matéria; a Ideia tinha uma caixa fixa com rolagem). Também se ajustam ao colar um texto grande, ao preencher a ideia a partir do esboço da organização, ao liberar o passo 2 e ao girar ou redimensionar a tela.
+
 ## 6.9.46
 
 Outros esboços: saiu a opção **“Não usar esboço pronto (só a matéria)”** da lista de esboços da organização. Importar um esboço é querer usá-lo; para deixar de usar, basta **apagá-lo** (o botão “Apagar este esboço importado”; apagado, passa a valer o próximo importado, se houver). O texto de ajuda do card diz isso.

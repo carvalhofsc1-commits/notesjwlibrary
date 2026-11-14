@@ -7669,7 +7669,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.46'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.48'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -18555,22 +18555,32 @@ function saveTemplatesToStorage() {
     const outrosResultados = document.getElementById('outrosResultados');
     const outrosPesquisarBtn = document.getElementById('outrosPesquisarBtn');
 
-    // O campo "Matéria" cresce com o texto (sem rolagem interna pequena): ao digitar/colar, ao abrir o bloco e ao redimensionar a tela.
-    function outrosMateriaCrescer() {
-      const campo = outrosCamposEl.materia;
+    // Os campos "Ideia do discurso" e "Matéria" crescem com o texto (sem rolagem interna): ao digitar/colar, ao preencher por código (o objetivo do
+    // esboço da organização), ao liberar o passo e ao redimensionar a tela. Altura mínima de cada um no CSS (#outrosIdeia e #outrosMateria).
+    function outrosCrescer(campo) {
       if (!campo.getClientRects().length) return; // bloco fechado ou outra tela: a medida daria zero
       const pagina = document.scrollingElement || document.documentElement;
       const rolagem = pagina.scrollTop;
       campo.style.height = 'auto';
       const moldura = campo.offsetHeight - campo.clientHeight;
-      campo.style.height = Math.max(96, campo.scrollHeight + moldura) + 'px';
+      campo.style.height = Math.max(parseFloat(getComputedStyle(campo).minHeight) || 0, campo.scrollHeight + moldura) + 'px';
       if (pagina.scrollTop !== rolagem) pagina.scrollTop = rolagem;
     }
-    outrosCamposEl.materia.addEventListener('input', outrosMateriaCrescer);
-    window.addEventListener('resize', outrosMateriaCrescer);
-    // Ao aparecer na tela (a tela Reuniões aberta depois, ou o card aberto): mede de novo. Sem isto, a matéria salva de outro dia ficava
-    // cortada em 96 px, sem rolagem (o campo não rola por dentro), até a pessoa digitar algo.
-    if (window.IntersectionObserver) new IntersectionObserver(entradas => { if (entradas.some(e => e.isIntersecting)) outrosMateriaCrescer(); }).observe(outrosCamposEl.materia);
+    const outrosCrescerTodos = () => { outrosCrescer(outrosCamposEl.tema); outrosCrescer(outrosCamposEl.ideia); outrosCrescer(outrosCamposEl.materia); };
+    const outrosMateriaCrescer = outrosCrescerTodos; // nome antigo, usado pelos outros trechos
+    // O tema é uma caixa de uma linha que cresce (um título longo não fica cortado): sem Enter, e a quebra de linha colada vira espaço.
+    outrosCamposEl.tema.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
+    outrosCamposEl.tema.addEventListener('input', () => {
+      if (/[\r\n]/.test(outrosCamposEl.tema.value)) outrosCamposEl.tema.value = outrosCamposEl.tema.value.replace(/\s*[\r\n]+\s*/g, ' ');
+    });
+    [outrosCamposEl.tema, outrosCamposEl.ideia, outrosCamposEl.materia].forEach(campo => campo.addEventListener('input', () => outrosCrescer(campo)));
+    window.addEventListener('resize', outrosCrescerTodos);
+    // Ao aparecer na tela (a tela Reuniões aberta depois, ou o passo liberado): mede de novo. Sem isto, o texto salvo de outro dia ficava
+    // cortado na altura mínima, sem rolagem (o campo não rola por dentro), até a pessoa digitar algo.
+    if (window.IntersectionObserver) {
+      const observador = new IntersectionObserver(entradas => entradas.forEach(e => { if (e.isIntersecting) outrosCrescer(e.target); }));
+      [outrosCamposEl.tema, outrosCamposEl.ideia, outrosCamposEl.materia].forEach(campo => observador.observe(campo));
+    }
 
     const outrosEnderecos = () => [...new Set(outrosCamposEl.artigos.value.split(/\s+/).map(e => e.trim()).filter(Boolean))];
     const outrosTemMateria = () => Boolean(outrosCamposEl.materia.value.trim() || outrosCamposEl.textos.value.trim() || outrosEnderecos().length || outrosBaseAtual());
@@ -18628,6 +18638,7 @@ function saveTemplatesToStorage() {
         : liberado
           ? '✅ Passo 1 completo. Os passos 2 a 4 estão liberados.'
           : 'Anexe o esboço da organização (o tema, a ideia e o tempo saem dele) ou preencha o tema, a ideia e o tempo, que são obrigatórios. Falta: ' + falta.join(', ') + '.';
+      if (liberado) requestAnimationFrame(outrosCrescerTodos); // o passo 2 (matéria) acabou de aparecer: mede de novo
       document.getElementById('outrosTemaObrig').textContent = comBase ? '(vem do esboço da organização)' : '(obrigatório)';
       document.getElementById('outrosIdeiaObrig').textContent = comBase ? '(vem do esboço da organização; opcional)' : '(obrigatório)';
     }
@@ -18877,6 +18888,7 @@ function saveTemplatesToStorage() {
         outrosCamposEl.ideia.value = '';
         outrosIdeiaAuto = '';
       }
+      outrosCrescerTodos();
       outrosZerarLeitura();
       outrosBaseMostrar();
       outrosSalvarRascunho();
