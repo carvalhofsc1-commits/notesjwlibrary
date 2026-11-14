@@ -1016,22 +1016,8 @@
                     <input id="outrosTema" type="text" maxlength="200" autocomplete="off" placeholder="Ex.: Como enfrentar a ansiedade">
                     <label for="outrosIdeia">Ideia do discurso (o que você quer alcançar)</label>
                     <textarea id="outrosIdeia" rows="3" maxlength="1500" placeholder="Ex.: Mostrar que Jeová cuida de nós e que a oração traz paz."></textarea>
-                    <label for="outrosMinutos">Tempo do discurso (minutos)</label>
+                    <label id="outrosMinutosRotulo" for="outrosMinutos">Tempo do discurso (minutos)</label>
                     <input id="outrosMinutos" class="outros-minutos" type="number" inputmode="numeric" min="3" max="60" value="30">
-                    <details class="textos-box outros-materia" id="outrosBaseBox">
-                      <summary id="outrosBaseResumo">📥 Esboço pronto como base (opcional, só neste aparelho)</summary>
-                      <div class="textos-corpo">
-                        <p class="hint ai-hint">Importe um esboço .docx no molde dos esboços do S-34.</p>
-                        <input id="outrosBaseArquivo" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple hidden>
-                        <button id="outrosBaseImportarBtn" class="secondary ai-study-load" type="button">📥 Importar esboço (.docx)</button>
-                        <span id="outrosBaseStatus" class="ok" role="status" aria-live="polite"></span>
-                        <label for="outrosBaseSelect">Esboço a usar</label>
-                        <select id="outrosBaseSelect"><option value="">Nenhum (usar só a matéria)</option></select>
-                        <p id="outrosBaseInfo" class="hint ai-hint ebc-info"></p>
-                        <button id="outrosBaseVerBtn" class="ver-esboco" type="button" hidden>📄 Ver o esboço original</button>
-                        <button id="outrosBaseApagarBtn" class="secondary ai-study-load" type="button" hidden>🗑️ Apagar este esboço importado</button>
-                      </div>
-                    </details>
                     <details class="textos-box outros-materia" id="outrosMateriaBox">
                       <summary id="outrosMateriaResumo">📚 Ocasião, textos, matéria e pesquisa (opcional)</summary>
                       <div class="textos-corpo">
@@ -1047,6 +1033,19 @@
                         <input id="outrosConsulta" type="search" maxlength="200" autocomplete="off" placeholder="Palavras para pesquisar no wol.jw.org">
                         <button id="outrosPesquisarBtn" class="secondary ai-study-load" type="button">🔎 Pesquisar na biblioteca online</button>
                         <div id="outrosResultados" class="outros-resultados" hidden></div>
+                      </div>
+                    </details>
+                    <details class="textos-box outros-materia" id="outrosBaseBox">
+                      <summary id="outrosBaseResumo">📥 Utilizar um esboço fornecido pela organização como base (opcional)</summary>
+                      <div class="textos-corpo">
+                        <p class="hint ai-hint">Se a organização forneceu um esboço (.docx) para este discurso, importe-o aqui: a IA o segue e você ajusta só o que quiser. Ele fica guardado só neste aparelho.</p>
+                        <input id="outrosBaseArquivo" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple hidden>
+                        <button id="outrosBaseImportarBtn" class="secondary ai-study-load" type="button">📥 Importar esboço (.docx)</button>
+                        <span id="outrosBaseStatus" class="ok" role="status" aria-live="polite"></span>
+                        <div id="outrosBaseLista" class="outros-base-lista" role="radiogroup" aria-label="Esboço fornecido pela organização a usar" hidden></div>
+                        <p id="outrosBaseInfo" class="hint ai-hint ebc-info"></p>
+                        <button id="outrosBaseVerBtn" class="ver-esboco" type="button" hidden>📄 Ver o esboço original</button>
+                        <button id="outrosBaseApagarBtn" class="secondary ai-study-load" type="button" hidden>🗑️ Apagar este esboço importado</button>
                       </div>
                     </details>
                     <p id="outrosInfo" class="hint ai-hint ebc-info"></p>

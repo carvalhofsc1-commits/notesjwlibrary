@@ -1816,8 +1816,7 @@
       };
       const atualizar = () => {
         const escolhida = select.selectedOptions[0];
-        // data-rotulo-curto: o que o botão fechado mostra quando a opção da lista tem um texto mais longo (ex.: o tema do esboço importado).
-        botao.textContent = escolhida ? (escolhida.dataset.rotuloCurto || escolhida.textContent) : '';
+        botao.textContent = escolhida ? escolhida.textContent : '';
         botao.classList.toggle('vazio', !select.value);
         botao.disabled = select.disabled;
         if (select.disabled) fechar();
@@ -7670,7 +7669,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.38'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.39'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -16847,8 +16846,9 @@ function saveTemplatesToStorage() {
         validarLer: () => (outrosTemMateria() ? '' : 'Informe a matéria (um texto colado, artigos do wol.jw.org ou um esboço importado) ou os textos bíblicos que quer ler.'),
         // O tempo, os artigos que o servidor leu (e os que não deu para ler), os textos que o orador pediu e os que não foram reconhecidos.
         // O resumo do esboço importado já aparece no card "Esboço pronto como base" — não repetir aqui.
+        // O tempo não entra aqui (já está no campo "Tempo do discurso").
         linhasDaInfo: dados => soComConteudo(
-          dados.minutos + ' min' + (dados.artigos && dados.artigos.length ? ' · ' + dados.artigos.length + (dados.artigos.length === 1 ? ' artigo lido: ' : ' artigos lidos: ') + dados.artigos.map(a => '“' + a.titulo + '”').join('; ') : '') + (dados.materia ? ' · matéria colada: ' + dados.materia + ' caracteres' : ''),
+          [dados.artigos && dados.artigos.length ? dados.artigos.length + (dados.artigos.length === 1 ? ' artigo lido: ' : ' artigos lidos: ') + dados.artigos.map(a => '“' + a.titulo + '”').join('; ') : '', dados.materia ? 'matéria colada: ' + dados.materia + ' caracteres' : ''].filter(Boolean).join(' · '),
           dados.falhas && dados.falhas.length ? '⚠️ Não consegui ler: ' + dados.falhas.join('; ') : '',
           dados.avisoTextos ? '⚠️ ' + dados.avisoTextos : '',
           dados.pedidos && dados.pedidos.length ? 'textos para ler: ' + dados.pedidos.join('; ') : ''
@@ -18519,12 +18519,26 @@ function saveTemplatesToStorage() {
     const OUTROS_MAX_BASES = 20;
     let outrosBases = [];
     let outrosBaseId = '';
+    // O título sem emoji nem aspas na ponta (um .docx exportado pelo próprio app traz "📜 TÍTULO"): é o que vale para o tema e para comparar.
+    const outrosTituloLimpo = b => String(b.titulo || '').replace(/^[\s\p{Extended_Pictographic}\uFE0F\u200D‘'“"]+/u, '').replace(/[\s’'”"]+$/u, '');
+    // Dois esboços importados são o mesmo se têm o mesmo conteúdo (o título sem emoji e sem diferença de maiúsculas; o arquivo não conta).
+    const outrosChaveBase = esboco => JSON.stringify({ ...esboco, titulo: outrosTituloLimpo(esboco).toLowerCase().replace(/\s+/g, ' '), arquivo: '', arquivoModificado: '' });
+    const outrosBaseRemapa = {}; // id de um esboço repetido que saiu → id do que ficou
     try {
       const guardadas = JSON.parse(localStorage.getItem(OUTROS_BASES_KEY) || '[]');
-      if (Array.isArray(guardadas)) outrosBases = guardadas.filter(b => b && b.id && b.esboco && Array.isArray(b.esboco.secoes)).slice(0, OUTROS_MAX_BASES);
+      if (Array.isArray(guardadas)) {
+        const validas = guardadas.filter(b => b && b.id && b.esboco && Array.isArray(b.esboco.secoes));
+        const vistos = new Map();
+        validas.forEach(b => { // os mais novos vêm primeiro: ficam esses
+          const chave = outrosChaveBase(b.esboco);
+          if (vistos.has(chave)) outrosBaseRemapa[b.id] = vistos.get(chave);
+          else { vistos.set(chave, b.id); outrosBases.push(b); }
+        });
+        outrosBases = outrosBases.slice(0, OUTROS_MAX_BASES);
+        if (outrosBases.length !== validas.length) safeSetItem(OUTROS_BASES_KEY, JSON.stringify(outrosBases)); // a lista sem os repetidos
+      }
     } catch (e) { /* sem localStorage: nenhum esboço importado */ }
     const outrosBaseAtual = () => outrosBases.find(b => b.id === outrosBaseId) || null;
-    const outrosTituloLimpo = b => String(b.titulo || '').replace(/^[‘'“"]+|[’'”"]+$/g, '');
     let outrosTemaAuto = ''; // o tema que o app pôs no campo a partir de um esboço importado (para não apagar o que o orador escreveu)
     const outrosCamposEl = {
       tema: document.getElementById('outrosTema'),
@@ -18598,7 +18612,8 @@ function saveTemplatesToStorage() {
       document.getElementById('outrosMateriaResumo').textContent = '📚 Ocasião, textos, matéria e pesquisa (opcional)' + (itens.length ? ' · ' + itens.join(', ') : '');
       const base = outrosBaseAtual();
       // O tema do esboço importado aparece só em "Tema do discurso" — o resumo do bloco não o repete.
-      document.getElementById('outrosBaseResumo').textContent = '📥 Esboço pronto como base (opcional, só neste aparelho)' + (base ? ' · em uso' : '');
+      document.getElementById('outrosBaseResumo').textContent = '📥 Utilizar um esboço fornecido pela organização como base (opcional)' +
+        (base ? ' · em uso' : outrosBases.length ? ' · ' + outrosBases.length + (outrosBases.length === 1 ? ' importado' : ' importados') + ', nenhum em uso' : '');
       esbocoSalvoAtualizar(ESBOCOS.outros); // com esboço importado como base, já pode haver uma versão preparada e salva
     }
 
@@ -18616,7 +18631,8 @@ function saveTemplatesToStorage() {
         Object.entries(outrosCamposEl).forEach(([nome, el]) => { if (typeof salvo[nome] === 'string') el.value = salvo[nome]; });
         if (!outrosCamposEl.minutos.value) outrosCamposEl.minutos.value = '30';
         outrosMateriaBox.open = Boolean(outrosCamposEl.ocasiao.value || outrosCamposEl.textos.value || outrosCamposEl.materia.value || outrosCamposEl.artigos.value);
-        if (typeof salvo.baseId === 'string' && outrosBases.some(b => b.id === salvo.baseId)) outrosBaseId = salvo.baseId;
+        const baseSalva = typeof salvo.baseId === 'string' ? (outrosBaseRemapa[salvo.baseId] || salvo.baseId) : '';
+        if (baseSalva && outrosBases.some(b => b.id === baseSalva)) outrosBaseId = baseSalva;
       }
     } catch (e) { /* sem localStorage: os campos começam vazios */ }
     document.getElementById('outrosBaseBox').open = Boolean(outrosBaseId);
@@ -18719,8 +18735,7 @@ function saveTemplatesToStorage() {
     // ---------- Esboço pronto importado (só neste aparelho) ----------
     // O .docx (no molde dos esboços do S-34) é lido aqui mesmo, com o leitor do S-34 (modo livre: sem número de tema), e fica guardado no
     // localStorage deste aparelho; vai ao servidor só no pedido da IA, junto com o resto, e lá não é guardado.
-    const outrosBaseSelect = document.getElementById('outrosBaseSelect');
-    backupSeletorLargo(outrosBaseSelect, null, { vazioEscolhivel: true });
+    const outrosBaseLista = document.getElementById('outrosBaseLista');
     const outrosBaseStatus = document.getElementById('outrosBaseStatus');
 
     function outrosBaseDizer(texto, aviso) {
@@ -18734,39 +18749,48 @@ function saveTemplatesToStorage() {
 
     const outrosBaseTotal = base => base.esboco.secoes.reduce((n, sc) => n + (sc.minutos || 0), 0);
     const outrosBaseLeituras = base => [...new Set(base.esboco.secoes.flatMap(sc => sc.itens.flatMap(item => item.leituras || [])))];
-    // Rótulo curto no seletor: o tema longo fica só no campo "Tema do discurso".
-    const outrosBaseRotulo = (b, i) => {
-      const min = outrosBaseTotal(b) + ' min';
-      const secoes = b.esboco.secoes.length + (b.esboco.secoes.length === 1 ? ' seção' : ' seções');
-      return outrosBases.length > 1 ? (i + 1) + ' · ' + min + ' · ' + secoes : min + ' · ' + secoes;
-    };
+    const outrosBaseSecoes = b => b.esboco.secoes.length + (b.esboco.secoes.length === 1 ? ' seção' : ' seções');
 
-    // A lista, as informações do esboço escolhido e o campo de tempo (que passa a valer a soma das seções dele).
+    // A lista de esboços importados, sempre à vista (uma opção marcada de cada vez), as informações do esboço escolhido e o campo de tempo
+    // (que passa a valer a soma das seções dele).
     function outrosBaseMostrar() {
       const atual = outrosBaseAtual();
       if (!atual) outrosBaseId = '';
-      outrosBaseSelect.textContent = '';
-      const nenhum = document.createElement('option');
-      nenhum.value = '';
-      nenhum.textContent = outrosBases.length ? 'Nenhum (usar só a matéria)' : 'Nenhum esboço importado';
-      outrosBaseSelect.appendChild(nenhum);
-      outrosBases.forEach((b, i) => {
-        const opcao = document.createElement('option');
-        opcao.value = b.id;
-        // Na lista aberta, o tema (sem ele não dá para saber qual é qual, com mais de um esboço importado); no botão fechado, só o rótulo curto.
-        opcao.textContent = outrosTituloLimpo(b) + ' · ' + outrosBaseTotal(b) + ' min';
-        opcao.dataset.rotuloCurto = outrosBaseRotulo(b, i);
-        outrosBaseSelect.appendChild(opcao);
+      outrosBaseLista.textContent = '';
+      outrosBaseLista.hidden = !outrosBases.length;
+      const opcoes = [{ id: '', titulo: 'Não usar esboço pronto (só a matéria)', meta: '' }, ...outrosBases.map(b => ({
+        id: b.id,
+        titulo: outrosTituloLimpo(b),
+        meta: [outrosBaseTotal(b) + ' min', outrosBaseSecoes(b), b.arquivo || '', b.importadoEm ? 'importado em ' + new Date(b.importadoEm).toLocaleDateString('pt-BR') : ''].filter(Boolean).join(' · ')
+      }))];
+      if (outrosBases.length) opcoes.forEach(o => {
+        const rotulo = document.createElement('label');
+        rotulo.className = 'ai-check outros-base-item' + (o.id === outrosBaseId ? ' marcado' : '');
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'outrosBaseEscolhida';
+        radio.value = o.id;
+        radio.checked = o.id === outrosBaseId;
+        radio.addEventListener('change', () => { if (radio.checked) outrosBaseEscolher(o.id); });
+        const texto = document.createElement('span');
+        texto.className = 'outros-base-texto';
+        const titulo = document.createElement('strong');
+        titulo.textContent = o.titulo;
+        texto.appendChild(titulo);
+        if (o.meta) {
+          const meta = document.createElement('small');
+          meta.textContent = o.meta;
+          texto.appendChild(meta);
+        }
+        rotulo.append(radio, texto);
+        outrosBaseLista.appendChild(rotulo);
       });
-      outrosBaseSelect.value = outrosBaseId;
       const info = document.getElementById('outrosBaseInfo');
       info.textContent = '';
       if (atual) {
-        // Sem o tema aqui (já está em "Tema do discurso"): só tempo, seções, arquivo curto, objetivo e leituras.
+        // Só o que a lista não mostra: o objetivo e as leituras (o tema está em "Tema do discurso"; tempo, seções e arquivo, na opção marcada).
         const leituras = outrosBaseLeituras(atual);
-        const arquivoCurto = atual.arquivo ? (atual.arquivo.length <= 28 ? atual.arquivo : 'arquivo .docx') : '';
         const linhas = [
-          '📥 ' + outrosBaseTotal(atual) + ' min · ' + atual.esboco.secoes.length + (atual.esboco.secoes.length === 1 ? ' seção' : ' seções') + (arquivoCurto ? ' · ' + arquivoCurto : ''),
           atual.esboco.notaAoOrador ? 'objetivo: ' + atual.esboco.notaAoOrador : '',
           leituras.length ? 'leituras marcadas: ' + leituras.join('; ') : 'sem leituras marcadas: a IA escolhe os textos (ou você os escolhe na lista, depois de ler a matéria)'
         ].filter(Boolean);
@@ -18775,6 +18799,7 @@ function saveTemplatesToStorage() {
       document.getElementById('outrosBaseVerBtn').hidden = !atual; // "Ver o esboço original" só com um esboço importado escolhido
       document.getElementById('outrosBaseApagarBtn').hidden = !atual;
       outrosCamposEl.minutos.disabled = Boolean(atual);
+      document.getElementById('outrosMinutosRotulo').textContent = atual ? 'Tempo do discurso (definido pelo esboço da organização)' : 'Tempo do discurso (minutos)';
       if (atual) outrosCamposEl.minutos.value = String(Math.max(3, Math.min(60, outrosBaseTotal(atual) || 30)));
       outrosCamposEl.tema.placeholder = 'Ex.: Como enfrentar a ansiedade';
       outrosAtualizarResumo();
@@ -18814,8 +18839,8 @@ function saveTemplatesToStorage() {
           const resultado = await s34LerDocx(window.JSZip, arquivoDocx.name, new Uint8Array(await arquivoDocx.arrayBuffer()), arquivoDocx.lastModified, true);
           if (resultado.erro) { mensagens.push('⚠️ ' + arquivoDocx.name + ': ' + resultado.erro + '.'); continue; }
           const esboco = resultado.esboco;
-          const chave = JSON.stringify({ ...esboco, arquivo: '', arquivoModificado: '' });
-          const repetido = outrosBases.find(b => JSON.stringify({ ...b.esboco, arquivo: '', arquivoModificado: '' }) === chave);
+          const chave = outrosChaveBase(esboco);
+          const repetido = outrosBases.find(b => outrosChaveBase(b.esboco) === chave);
           if (repetido) { escolhido = repetido.id; mensagens.push('Já estava importado.'); continue; }
           const item = { id: 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), titulo: esboco.titulo, importadoEm: new Date().toISOString(), arquivo: arquivoDocx.name, esboco };
           outrosBases.unshift(item);
@@ -18837,7 +18862,6 @@ function saveTemplatesToStorage() {
       event.target.value = ''; // permite escolher o mesmo arquivo de novo
       if (arquivos.length) outrosBaseImportar(arquivos);
     });
-    outrosBaseSelect.addEventListener('change', () => outrosBaseEscolher(outrosBaseSelect.value));
     // O esboço importado já está neste aparelho: abre na mesma página do Discurso público, sem pedir nada ao servidor.
     document.getElementById('outrosBaseVerBtn').addEventListener('click', () => {
       const atual = outrosBaseAtual();

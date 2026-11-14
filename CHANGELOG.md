@@ -2,6 +2,16 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.39
+
+Outros esboços (necessidades locais, eventos especiais): tela mais clara.
+- O card **“Ocasião, textos, matéria e pesquisa”** vem logo depois do tempo do discurso, acima do card do esboço da organização.
+- O card do esboço importado passou a se chamar **“Utilizar um esboço fornecido pela organização como base (opcional)”**; o resumo dele diz “em uso” ou “nenhum em uso”, e o texto de ajuda explica para que serve.
+- **Esboços importados em lista**, sempre à vista, com uma opção marcada de cada vez (“Não usar esboço pronto (só a matéria)” e os esboços, cada um com tema, tempo, seções, arquivo e data da importação). No lugar da caixa de seleção, que mostrava “Nenhum” duas vezes (no botão e no primeiro item da lista) e parecia marcar “Nenhum” mesmo com o esboço da organização à vista.
+- **Esboços repetidos:** o mesmo esboço importado duas vezes (por exemplo, o original e o que o próprio app exportou, com 📜 e letras maiúsculas no título) aparecia duplicado na lista, com o tema repetido. Agora são reconhecidos como o mesmo (sem considerar o emoji nem as maiúsculas do título), e os repetidos que já estavam guardados saem sozinhos, ficando o mais novo.
+- O título do esboço importado entra no campo “Tema do discurso” sem o emoji.
+- O quadro de resumo depois de “Ler a matéria” não repete mais o tempo (“14 min”) que já está no campo “Tempo do discurso”; com esboço da organização, o rótulo do tempo avisa que ele vem do esboço.
+
 ## 6.9.38
 
 Administração de usuários: o **crédito de boas-vindas** agora é configurável. Um campo “🎁 Crédito de boas-vindas (R$)” no alto da seção define quanto cada cadastro aprovado daqui para frente recebe (padrão R$ 100,00; 0 = sem crédito). Quem já foi aprovado não muda; a mensagem de boas-vindas ao usuário mostra o valor que ele recebeu (e não aparece se o crédito for zero).

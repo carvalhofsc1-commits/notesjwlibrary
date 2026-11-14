@@ -14675,3 +14675,49 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
 .acesso-site-boasvindas .hint {
   margin: 4px 0 0;
 }
+
+/* Outros esboços: a lista de esboços da organização importados, sempre à vista, com uma opção marcada. */
+.outros-base-lista {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0 6px;
+}
+
+.outros-base-lista[hidden] {
+  display: none;
+}
+
+.outros-base-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  cursor: pointer;
+}
+
+.outros-base-item.marcado {
+  border-color: var(--accent);
+  background: var(--soft);
+}
+
+.outros-base-item input {
+  flex: 0 0 auto;
+  margin: 3px 0 0;
+}
+
+.outros-base-texto {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  font-size: .9rem;
+  overflow-wrap: anywhere;
+}
+
+.outros-base-texto small {
+  color: var(--muted);
+  font-size: .78rem;
+}
