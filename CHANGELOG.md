@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.41
+
+Outros esboços:
+- Os **Artigos do wol.jw.org** voltaram para junto dos outros campos (depois da Matéria, antes do card da pesquisa).
+- O botão “Ler a matéria e listar os textos bíblicos” virou **“Listar os textos bíblicos do material informado”**, e uma frase logo acima diz **de onde ele tira os textos**, conforme o que está preenchido: os textos bíblicos pedidos, a matéria colada, os artigos do wol.jw.org e o esboço da organização (e que ele não usa a IA). O esboço que a IA já elaborou no campo de texto não entra. O resultado também ficou com nome mais claro: “Textos bíblicos encontrados no material”.
+
 ## 6.9.40
 
 Outros esboços:

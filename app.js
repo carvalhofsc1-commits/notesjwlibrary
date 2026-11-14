@@ -7669,7 +7669,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.40'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.41'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -16843,7 +16843,7 @@ function saveTemplatesToStorage() {
         falhaLer: 'Não consegui ler a matéria agora.',
         extraPayload: () => outrosCampos(),
         validar: () => outrosValidar(),
-        validarLer: () => (outrosTemMateria() ? '' : 'Informe a matéria (um texto colado, artigos do wol.jw.org ou um esboço importado) ou os textos bíblicos que quer ler.'),
+        validarLer: () => (outrosTemMateria() ? '' : 'Informe algum material: textos bíblicos, matéria colada, artigos do wol.jw.org ou um esboço da organização.'),
         // O tempo, os artigos que o servidor leu (e os que não deu para ler), os textos que o orador pediu e os que não foram reconhecidos.
         // O resumo do esboço importado já aparece no card "Esboço pronto como base" — não repetir aqui.
         // O tempo não entra aqui (já está no campo "Tempo do discurso").
@@ -17143,7 +17143,7 @@ function saveTemplatesToStorage() {
       // (antes ele sumia de vez e só o "Limpar os campos" o trazia de volta).
       const lerDeNovo = textosNaTela && Boolean(cfg.leituraVelha);
       cfg.carregarBtn.hidden = textosNaTela && !lerDeNovo;
-      const rotulo = lerDeNovo ? '↻ Ler a matéria de novo (você mudou a matéria)' : '📋 Ler a matéria e listar os textos bíblicos';
+      const rotulo = lerDeNovo ? '↻ Listar de novo (você mudou o material)' : '📋 Listar os textos bíblicos do material informado';
       if (cfg.carregarBtn.dataset.label) cfg.carregarBtn.dataset.label = rotulo; // consultando: o rótulo volta ao fim (setAiLoading)
       else cfg.carregarBtn.textContent = rotulo;
       // Só o hidden controla a visibilidade; o disabled durante a consulta fica a cargo do setAiLoading.
@@ -17245,7 +17245,7 @@ function saveTemplatesToStorage() {
       });
       const nLeia = [...leia].filter(ref => !cfg.tirados.has(ref)).length;
       const nMarcados = cfg.marcados.size;
-      ui.resumo.textContent = '📖 Textos bíblicos da matéria (' + cfg.textos.length + ')' + (nLeia ? ' · ' + nLeia + ' com LEIA' : '') + (nMarcados ? ' · ' + nMarcados + (nMarcados === 1 ? ' marcado' : ' marcados') : '');
+      ui.resumo.textContent = (cfg.kind === 'outros' ? '📖 Textos bíblicos encontrados no material (' : '📖 Textos bíblicos da matéria (') + cfg.textos.length + ')' + (nLeia ? ' · ' + nLeia + ' com LEIA' : '') + (nMarcados ? ' · ' + nMarcados + (nMarcados === 1 ? ' marcado' : ' marcados') : '');
       ui.dica.textContent = temEsboco
         ? 'Marque mais textos para ler e toque em Incluir: a IA refaz o esboço com eles, mantendo o resto.'
         : 'Marque os textos que quer ler além dos que a IA indicar: o esboço já sai com eles. Os marcados com LEIA entram sozinhos; desmarque um deles para tirá-lo do esboço.';
@@ -17272,7 +17272,7 @@ function saveTemplatesToStorage() {
         }
         esbocoMostrarInfo(cfg, result.data);
         if (!cfg.semSemana) carregadoGuardar(cfg.kind, result.data); // os discursos da semana ficam guardados (o público e o de tema livre não dependem da semana)
-        setAiStatus(cfg.validarLer ? '✅ Matéria lida: confira os textos bíblicos abaixo.' : '✅ Discurso da semana carregado.', false);
+        setAiStatus(cfg.validarLer ? '✅ Textos bíblicos listados: confira e marque abaixo os que quer ler.' : '✅ Discurso da semana carregado.', false);
       } catch (e) {
         setAiStatus(e && e.name === 'AbortError' ? 'O site demorou demais. Tente de novo.' : 'Falha de conexão ao ler o discurso.', true);
       } finally {
@@ -18600,7 +18600,20 @@ function saveTemplatesToStorage() {
     }
 
     outrosCamposEl.tema.addEventListener('input', () => esbocoSalvoAtualizar(ESBOCOS.outros));
+    // Diz, antes do botão, de onde ele tira os textos bíblicos: só do que a pessoa informou nesta tela (não do esboço que a IA já elaborou).
+    function outrosFonteAtualizar() {
+      const itens = [];
+      if (outrosCamposEl.textos.value.trim()) itens.push('os textos bíblicos que você pediu');
+      if (outrosCamposEl.materia.value.trim()) itens.push('a matéria colada');
+      const artigos = outrosEnderecos().length;
+      if (artigos) itens.push(artigos === 1 ? '1 artigo do wol.jw.org' : artigos + ' artigos do wol.jw.org');
+      if (outrosBaseAtual()) itens.push('o esboço da organização');
+      document.getElementById('outrosCarregarFonte').textContent = itens.length
+        ? 'Vai procurar os textos bíblicos em: ' + itens.join(', ') + '. Você marca depois os que quer ler no discurso (não usa a IA).'
+        : 'Preencha Textos bíblicos, Matéria, Artigos ou escolha um esboço da organização; o botão lista os textos bíblicos encontrados nesse material, para você marcar os que quer ler (não usa a IA).';
+    }
     function outrosAtualizarResumo() {
+      outrosFonteAtualizar();
       const base = outrosBaseAtual();
       // O tema do esboço importado aparece só em "Tema do discurso" — o resumo do bloco não o repete.
       document.getElementById('outrosBaseResumo').textContent = '📥 Utilizar um esboço fornecido pela organização como base (opcional)' +

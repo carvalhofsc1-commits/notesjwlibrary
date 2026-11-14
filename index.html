@@ -1024,6 +1024,8 @@
                     <input id="outrosTextos" type="text" maxlength="600" autocomplete="off" placeholder="Ex.: Mateus 6:33; Salmo 37:10, 11">
                     <label for="outrosMateria">Matéria: cole aqui um texto ou anotações <span class="opc">(opcional)</span></label>
                     <textarea id="outrosMateria" rows="5" maxlength="12000" placeholder="O esboço sai desse material. Sem matéria, a IA usa só a Bíblia e o que você informou."></textarea>
+                    <label for="outrosArtigos">Artigos do wol.jw.org (um endereço por linha, até 5; os marcados na pesquisa entram aqui) <span class="opc">(opcional)</span></label>
+                    <textarea id="outrosArtigos" rows="3" placeholder="https://wol.jw.org/pt/wol/d/r5/lp-t/…"></textarea>
                     <details class="textos-box outros-materia" id="outrosPesquisaBox">
                       <summary id="outrosPesquisaResumo">🔎 Pesquisar na biblioteca online (opcional)</summary>
                       <div class="textos-corpo">
@@ -1033,8 +1035,6 @@
                         <div id="outrosResultados" class="outros-resultados" hidden></div>
                       </div>
                     </details>
-                    <label for="outrosArtigos">Artigos do wol.jw.org (um endereço por linha, até 5; os marcados na pesquisa entram aqui) <span class="opc">(opcional)</span></label>
-                    <textarea id="outrosArtigos" rows="3" placeholder="https://wol.jw.org/pt/wol/d/r5/lp-t/…"></textarea>
                     <details class="textos-box outros-materia" id="outrosBaseBox">
                       <summary id="outrosBaseResumo">📥 Utilizar um esboço fornecido pela organização como base (opcional)</summary>
                       <div class="textos-corpo">
@@ -1049,7 +1049,8 @@
                       </div>
                     </details>
                     <p id="outrosInfo" class="hint ai-hint ebc-info"></p>
-                    <button id="outrosCarregarBtn" class="secondary ai-study-load" type="button">📋 Ler a matéria e listar os textos bíblicos</button>
+                    <p id="outrosCarregarFonte" class="hint ai-hint outros-fonte"></p>
+                    <button id="outrosCarregarBtn" class="secondary ai-study-load" type="button">📋 Listar os textos bíblicos do material informado</button>
                     <button id="outrosEsbocoBtn" data-codigo-ia="dirigente" class="ai-study-btn" type="button">✨ IA - Elaborar o esboço do discurso</button>
                     <span id="outrosStatus" class="ok" role="status" aria-live="polite"></span>
                     <button id="outrosLimparBtn" class="secondary ai-study-load outros-limpar" type="button">🧹 Limpar os campos deste card</button>

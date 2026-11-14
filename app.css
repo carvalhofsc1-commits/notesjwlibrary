@@ -14721,3 +14721,8 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
   color: var(--muted);
   font-size: .78rem;
 }
+
+/* Outros esboços: a frase que diz de onde o botão tira os textos bíblicos. */
+.outros-fonte {
+  margin: 12px 0 0;
+}
