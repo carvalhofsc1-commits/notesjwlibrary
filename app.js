@@ -149,6 +149,34 @@
     }
     window.addEventListener('resize', inicioAjustarAltura);
 
+    // Atalhos do Início em duas páginas de 8: passa-se o dedo para o lado (rolagem horizontal com encaixe, nativa) ou toca-se nas setas e nos pontos.
+    (function atalhosPaginar() {
+      const caixa = document.getElementById('atalhosPaginas');
+      const ant = document.getElementById('atalhosAnt');
+      const prox = document.getElementById('atalhosProx');
+      const pontos = [...document.querySelectorAll('#atalhosNav .atalhos-ponto')];
+      const paginas = [...caixa.children];
+      if (!caixa || !paginas.length) return;
+      const atual = () => Math.max(0, Math.min(paginas.length - 1, Math.round(caixa.scrollLeft / Math.max(1, caixa.clientWidth))));
+      const pintar = () => {
+        const n = atual();
+        pontos.forEach((p, i) => { if (i === n) p.setAttribute('aria-current', 'true'); else p.removeAttribute('aria-current'); });
+        ant.disabled = n === 0;
+        prox.disabled = n === paginas.length - 1;
+        paginas.forEach((p, i) => { p.inert = i !== n; }); // os atalhos da página que não está à vista saem da ordem do Tab
+      };
+      const ir = n => {
+        const i = Math.max(0, Math.min(paginas.length - 1, n));
+        caixa.scrollTo({ left: i * caixa.clientWidth, behavior: 'smooth' });
+      };
+      caixa.addEventListener('scroll', pintar, { passive: true });
+      ant.addEventListener('click', () => ir(atual() - 1));
+      prox.addEventListener('click', () => ir(atual() + 1));
+      pontos.forEach((p, i) => p.addEventListener('click', () => ir(i)));
+      window.addEventListener('resize', () => { caixa.scrollLeft = atual() * caixa.clientWidth; pintar(); });
+      pintar();
+    })();
+
     // Logo: o nome "NoteStyle" fica com a mesma largura do slogan logo abaixo dele (a fonte varia de aparelho para aparelho, então a medida é feita na tela).
     function logoAjustar() {
       const nome = document.querySelector('.brand-title h1');
@@ -3720,7 +3748,7 @@
     // do botão, mas não o atributo). "geral" = modelo e esforço gerais; "esbocos" = os da Preparação de discursos e esboços (e do Preparar para dirigir); "modelo" = só o modelo
     // (o áudio em texto não usa o esforço escolhido).
     const IA_NOTA_BOTOES = {
-      aiSuggestBtn: 'geral', aiSentinelaBtn: 'geral', aiStudyBtn: 'geral', aiStudyQuestionsBtn: 'esbocos', tdGerarBtn: 'geral',
+      aiSuggestBtn: 'geral', aiSentinelaBtn: 'geral', aiStudyBtn: 'geral', aiStudyQuestionsBtn: 'esbocos', tdGerarBtn: 'esbocos',
       joiasResponderBtn: 'geral', bibliaResumirBtn: 'geral', ebcResponderBtn: 'geral', ebcDirPerguntasBtn: 'esbocos',
       tesourosEsbocoBtn: 'esbocos', discursoEsbocoBtn: 'esbocos', publicoEsbocoBtn: 'esbocos', outrosEsbocoBtn: 'esbocos',
       transcricaoCorrigirBtn: 'geral', transcricaoResumirBtn: 'geral',
@@ -7669,7 +7697,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.48'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.49'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -13527,7 +13555,7 @@ function saveTemplatesToStorage() {
       }
       if (cIa) {
         texto.push(['Uso geral', nomeCurto(oIa.modelos, cIa.modelo) + ' · esforço ' + esf(cIa.esforco)]);
-        texto.push(['Esboços e dirigir', (cIa.esbocoModelo ? nomeCurto(oIa.modelos, cIa.esbocoModelo) : 'o mesmo do uso geral') + ' · esforço ' + esf(cIa.esbocoEsforco || cIa.esforco)]);
+        texto.push(['Esboços, dirigir e texto diário', (cIa.esbocoModelo ? nomeCurto(oIa.modelos, cIa.esbocoModelo) : 'o mesmo do uso geral') + ' · esforço ' + esf(cIa.esbocoEsforco || cIa.esforco)]);
       } else {
         texto.push(['Modelos de texto', falhou]);
       }
@@ -21486,10 +21514,62 @@ function saveTemplatesToStorage() {
       return { unidades: tdIaLeituraEstado.unidades, desde: 0 };
     }
 
+    // Opção "Gerar e ler os comentários adicionais automaticamente": guardada neste aparelho; só vale quando a pessoa pede a leitura do texto.
+    const tdOpComentarios = document.getElementById('tdOpComentarios');
+    const TD_AUTO_CHAVE = 'ns-td-comentarios-auto';
+    try { tdOpComentarios.checked = localStorage.getItem(TD_AUTO_CHAVE) === '1'; } catch (e) { /* sem armazenamento */ }
+    tdOpComentarios.addEventListener('change', () => { try { localStorage.setItem(TD_AUTO_CHAVE, tdOpComentarios.checked ? '1' : '0'); } catch (e) { /* sem armazenamento */ } });
+    let tdAutoToken = 0; // muda quando a pessoa começa outra leitura (do texto ou dos comentários): a rotina automática desiste
+
+    function tdComentariosCfg(cupom) {
+      return {
+        lugar: td.vozIa,
+        uso: 'texto-diario',
+        fecharOferta: true,
+        acesso: studyAccessError,
+        vozExtra: { data: tdTexto.data, vozCupom: cupom },
+        preparar: tdIaLeituraPreparar,
+        nomeAudio: () => 'Comentários do texto diário - ' + (tdTexto ? tdTexto.titulo : ''),
+        destacar: indice => tdLeituraDestacarEm(tdIaLeituraEstado, indice),
+        limpar: () => tdLeituraDestacarEm(tdIaLeituraEstado, -1)
+      };
+    }
+
+    // Depois do texto do dia: se os comentários adicionais ainda não existem, fala "Aguarde... gerando comentários", gera e lê os comentários.
+    async function tdAutoComentarios(token) {
+      const data = tdTexto && tdTexto.data;
+      if (!data) return;
+      const vale = () => token === tdAutoToken && tdTexto && tdTexto.data === data;
+      const aviso = texto => { td.iaStatus.textContent = texto; };
+      if (!codigoLeituraSalvo()) return aviso('Para ler os comentários em voz alta, salve o código de leitura em Ajustes → Autorização de acessos.');
+      if (!navigator.onLine) return aviso('Sem conexão com a internet.');
+      if (td.detalhe.hidden) td.abrir.click(); // abre o card para os comentários aparecerem na tela
+      if (!(tdIaCache.get(data) || []).length) {
+        const gerar = tdGerarComentarios(false);
+        const falou = await bibliaLerAteOFim({
+          lugar: td.vozIa, uso: 'texto-diario', acesso: studyAccessError,
+          vozExtra: { data, vozCupom: tdVozCupom },
+          preparar: () => ({ unidades: [{ falado: 'Aguarde... gerando comentários', origem: tdTexto ? tdTexto.titulo : '', paragrafo: 0 }], desde: 0 }),
+          nomeAudio: () => 'Aviso', destacar: () => {}, limpar: () => {}
+        });
+        await gerar;
+        if (!falou || !vale()) return; // a pessoa parou o aviso (ou mudou de dia/leitura): os comentários ficam gerados, mas não são lidos
+      }
+      if (!vale()) return;
+      const lista = tdIaCache.get(data) || [];
+      const cupom = tdIaVozCupons.get(data) || '';
+      if (!lista.length) return; // não gerou: o motivo está no aviso dos comentários
+      if (!cupom) return aviso('Gere os comentários de novo (ou recupere um salvamento recente) para poder ouvi-los.');
+      td.ia.open = true;
+      const cfg = tdComentariosCfg(cupom);
+      await leitorLer(cfg);
+    }
+
     td.ouvirTopoBtn.addEventListener('click', () => {
       if (!tdTexto) return;
       if (vozBar.parentNode === td.vozTopo && !vozBar.hidden && !vozPauseBtn.hidden) return vozParar();
       if (!tdVozCupom) return showAlert('Recarregue o texto do dia para poder ouvi-lo.', 'Leitura em voz alta');
+      const token = ++tdAutoToken;
       const cfg = {
         lugar: td.vozTopo,
         uso: 'texto-diario',
@@ -21501,7 +21581,13 @@ function saveTemplatesToStorage() {
         destacar: tdLeituraDestacar,
         limpar: () => tdLeituraDestacar(-1)
       };
-      vozAbrirPronto({ lugar: cfg.lugar, texto: 'Pronto para ler o texto do dia.', acesso: cfg.acesso, iniciar: () => leitorLer(cfg) });
+      const comAuto = tdOpComentarios.checked;
+      vozAbrirPronto({
+        lugar: cfg.lugar, texto: 'Pronto para ler o texto do dia.', acesso: cfg.acesso,
+        iniciar: () => comAuto
+          ? bibliaLerAteOFim(cfg).then(fim => { if (fim && token === tdAutoToken) return tdAutoComentarios(token); })
+          : leitorLer(cfg)
+      });
     });
     // O ícone fica destacado enquanto o tocador está no topo e aberto.
     const tdMarcarTocando = new MutationObserver(() => td.ouvirTopoBtn.classList.toggle('tocando', vozBar.parentNode === td.vozTopo && !vozBar.hidden));
@@ -21512,17 +21598,8 @@ function saveTemplatesToStorage() {
       if (vozBar.parentNode === td.vozIa && !vozBar.hidden && !vozPauseBtn.hidden) return vozParar();
       const cupomIa = tdIaVozCupons.get(tdTexto.data) || '';
       if (!cupomIa) return showAlert('Gere os comentários de novo (ou recupere um salvamento recente) para poder ouvi-los.', 'Leitura em voz alta');
-      const cfg = {
-        lugar: td.vozIa,
-        uso: 'texto-diario',
-        fecharOferta: true,
-        acesso: studyAccessError,
-        vozExtra: { data: tdTexto.data, vozCupom: cupomIa },
-        preparar: tdIaLeituraPreparar,
-        nomeAudio: () => 'Comentários do texto diário - ' + (tdTexto ? tdTexto.titulo : ''),
-        destacar: indice => tdLeituraDestacarEm(tdIaLeituraEstado, indice),
-        limpar: () => tdLeituraDestacarEm(tdIaLeituraEstado, -1)
-      };
+      tdAutoToken++; // a pessoa pediu os comentários: a rotina automática (se estava em andamento) desiste
+      const cfg = tdComentariosCfg(cupomIa);
       vozAbrirPronto({ lugar: cfg.lugar, texto: 'Pronto para ler os comentários.', acesso: cfg.acesso, iniciar: () => leitorLer(cfg) });
     });
     // O botão fica com contorno enquanto o tocador está nos comentários e aberto.
@@ -21867,6 +21944,10 @@ function saveTemplatesToStorage() {
       if (!codigoLeituraSalvo() && currentScreen() === 'leitura') showScreen('inicio'); // código apagado com a tela aberta: volta ao Início
       travarAtalho('dirigir', motivoDirigir);
       travarAtalho('discursos', motivoDirigir);
+      // Página 2 dos atalhos: cada um leva a uma ferramenta de um grupo e segue o código do grupo dela (o discurso público também o do S-34).
+      ['sentinela', 'joias', 'ebc'].forEach(nome => travarAtalho(nome, pesquisa ? '' : 'pesquisa'));
+      ['tesouros', 'outros'].forEach(nome => travarAtalho(nome, motivoDirigir));
+      travarAtalho('publico', motivoDirigir || (s34 ? '' : 's34'));
       // Texto diário (tela Início): o cartão fica bloqueado, menos o link para o wol.jw.org, que vale sempre.
       const texto = document.getElementById('textoDiarioCard');
       texto.classList.toggle('card-desabilitado', !pesquisa);
@@ -24595,9 +24676,26 @@ function saveTemplatesToStorage() {
     }
 
     // Atalhos (Início, menus): abrem a tela Reuniões já na página pedida; os outros abrem a tela do mesmo nome.
+    // Atalhos da página 2 do Início que levam direto a uma ferramenta de um grupo: abrem a página do grupo com a ferramenta já aberta.
+    const ATALHOS_FERRAMENTAS = {
+      sentinela: { vista: 'comentarios', caixa: 'sentinelaBox' },
+      joias: { vista: 'comentarios', caixa: 'joiasBox' },
+      ebc: { vista: 'comentarios', caixa: 'ebcBox' },
+      publico: { vista: 'discursos', caixa: 'publicoBox' },
+      tesouros: { vista: 'discursos', caixa: 'tesourosBox' },
+      outros: { vista: 'discursos', caixa: 'outrosBox' }
+    };
     document.querySelectorAll('[data-atalho]').forEach(botao => {
       botao.addEventListener('click', () => {
         const destino = botao.dataset.atalho;
+        const ferramenta = ATALHOS_FERRAMENTAS[destino];
+        if (ferramenta) {
+          showScreen('reunioes');
+          reunioesRecolherOpcoes(ferramenta.vista);
+          reunioesIr(ferramenta.vista);
+          document.getElementById(ferramenta.caixa).open = true;
+          return;
+        }
         if (!REUNIOES_VISTAS[destino]) return showScreen(destino);
         showScreen('reunioes');
         if (destino === 'historico') historicoRecolher();

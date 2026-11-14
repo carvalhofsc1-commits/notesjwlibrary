@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.49
+
+- **Comentários do texto diário com a IA dos esboços:** a geração dos comentários adicionais passa a usar o mesmo modelo e esforço dos discursos e das perguntas do dirigente (Ajustes → Modelos e agentes de IA, linha “Esboços, dirigir e texto diário”). A nota sob o botão também mostra esse modelo.
+- **Ler os comentários automaticamente:** no fim do card do texto diário, uma opção discreta (“⚙️ Instruções adicionais de áudio”) liga “Gerar e ler os comentários adicionais automaticamente”. Ligada, só quando você pede a leitura do texto (🔊) o app, ao terminar, fala “Aguarde... gerando comentários”, gera e lê os comentários (se já estão na tela, só os lê). Nada é gerado sem você pedir a leitura; pedir outra leitura cancela a rotina.
+- **Início em duas páginas:** os atalhos ganharam a página 2, com 8 novos (Formatar, A Sentinela, Joias espirituais, Estudo Bíblico, Discurso público, Tesouros da Palavra, Outros esboços e Pesquisas salvas). Passe o dedo para o lado, ou use as setas e os pontos embaixo, para trocar de página. Os atalhos da ferramenta abrem a página do grupo já com ela aberta e seguem o mesmo bloqueio por código.
+
 ## 6.9.48
 
 Outros esboços: o campo **Tema do discurso** mostra o tema **inteiro, em negrito**, sem cortar: deixou de ser uma linha que rolava para o lado e passou a crescer em linhas conforme o texto (continua sem Enter; uma quebra de linha colada vira espaço).

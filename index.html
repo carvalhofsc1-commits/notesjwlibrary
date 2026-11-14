@@ -131,13 +131,21 @@
             <a id="tdLink" class="td-atalho td-atalho-wol" href="https://wol.jw.org/pt/wol/h/r5/lp-t" target="_blank" rel="noopener noreferrer">🔗 WOL</a>
             <a id="tdJwl" class="td-atalho td-atalho-jwl" hidden>📖 JW Library</a>
           </div>
+          <details id="tdOpcoes" class="bp-opcoes td-opcoes">
+            <summary>⚙️ Instruções adicionais de áudio</summary>
+            <div class="bp-opcoes-corpo">
+              <label class="ai-check"><input id="tdOpComentarios" type="checkbox"> 💬 Gerar e ler os comentários adicionais automaticamente</label>
+              <p class="hint">Quando você pedir para ouvir o texto diário (🔊), depois dele o app fala “Aguarde... gerando comentários”, gera os comentários adicionais e os lê em voz alta (precisa do código de pesquisa e do código de leitura, em Ajustes). Se os comentários do dia já estão na tela, só os lê. Nada é gerado sem você pedir a leitura.</p>
+            </div>
+          </details>
         </div>
         <p id="tdStatus" class="hint td-status" role="status" aria-live="polite"></p>
         <button id="tdHojeBtn" class="secondary td-hoje" type="button" hidden>↩️ Voltar para hoje</button>
       </section>
 
       <section class="card tint-6 atalhos-card" aria-label="Atalhos">
-        <div class="atalhos-grid">
+        <div class="atalhos-paginas" id="atalhosPaginas">
+        <div class="atalhos-grid" id="atalhosPagina1" role="group" aria-label="Atalhos, página 1 de 2">
           <button type="button" class="atalho" data-atalho="anotacoes"><span class="atalho-icone" aria-hidden="true">📝</span><span class="atalho-nome">Anotações</span><span class="atalho-desc">Reuniões, assembleias e congressos</span></button>
           <button type="button" class="atalho" data-atalho="backup"><span class="atalho-icone" aria-hidden="true">📦</span><span class="atalho-nome">Backup do JW Library</span><span class="atalho-desc">Notas, marcações e exportação</span></button>
           <button type="button" class="atalho" data-atalho="biblia"><span class="atalho-icone" aria-hidden="true">📚</span><span class="atalho-nome">Leitura diária da Bíblia</span><span class="atalho-desc">Programa anual e resumo dos capítulos</span><span class="atalho-barra" id="bibliaAtalhoBarra" aria-hidden="true"><span></span></span></button>
@@ -146,6 +154,23 @@
           <button type="button" class="atalho" data-atalho="discursos"><span class="atalho-icone" aria-hidden="true">📜</span><span class="atalho-nome">Discursos</span><span class="atalho-desc">Ajuda na preparação de discursos e esboços</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="leitura"><span class="atalho-icone" aria-hidden="true">🔊</span><span class="atalho-nome">Leitura em voz</span><span class="atalho-desc">Ouvir um PDF, um Word ou um texto colado</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="transcricao"><span class="atalho-icone" aria-hidden="true">🎙️</span><span class="atalho-nome">Áudio em texto</span><span class="atalho-desc">Transcrever um áudio e resumir com a IA</span><span class="atalho-trava" hidden></span></button>
+        </div>
+        <div class="atalhos-grid" id="atalhosPagina2" role="group" aria-label="Atalhos, página 2 de 2">
+          <button type="button" class="atalho" data-atalho="formatar"><span class="atalho-icone" aria-hidden="true">✨</span><span class="atalho-nome">Formatar</span><span class="atalho-desc">Organizar e formatar o texto com a IA</span></button>
+          <button type="button" class="atalho" data-atalho="sentinela"><span class="atalho-icone" aria-hidden="true">📰</span><span class="atalho-nome">A Sentinela</span><span class="atalho-desc">Respostas e comentários do estudo</span><span class="atalho-trava" hidden></span></button>
+          <button type="button" class="atalho" data-atalho="joias"><span class="atalho-icone" aria-hidden="true">💎</span><span class="atalho-nome">Joias espirituais</span><span class="atalho-desc">Leitura da semana e comentários</span><span class="atalho-trava" hidden></span></button>
+          <button type="button" class="atalho" data-atalho="ebc"><span class="atalho-icone" aria-hidden="true">📘</span><span class="atalho-nome">Estudo Bíblico</span><span class="atalho-desc">Respostas do estudo de congregação</span><span class="atalho-trava" hidden></span></button>
+          <button type="button" class="atalho" data-atalho="publico"><span class="atalho-icone" aria-hidden="true">🏛️</span><span class="atalho-nome">Discurso público</span><span class="atalho-desc">Esboços, gravuras e cântico</span><span class="atalho-trava" hidden></span></button>
+          <button type="button" class="atalho" data-atalho="tesouros"><span class="atalho-icone" aria-hidden="true">🗝️</span><span class="atalho-nome">Tesouros da Palavra</span><span class="atalho-desc">Esboço do discurso da apostila</span><span class="atalho-trava" hidden></span></button>
+          <button type="button" class="atalho" data-atalho="outros"><span class="atalho-icone" aria-hidden="true">🖋️</span><span class="atalho-nome">Outros esboços</span><span class="atalho-desc">Tema livre ou esboço importado</span><span class="atalho-trava" hidden></span></button>
+          <button type="button" class="atalho" data-atalho="historico"><span class="atalho-icone" aria-hidden="true">🗂️</span><span class="atalho-nome">Pesquisas salvas</span><span class="atalho-desc">Respostas e pesquisas guardadas</span></button>
+        </div>
+        </div>
+        <div class="atalhos-nav" id="atalhosNav">
+          <button type="button" class="atalhos-seta" id="atalhosAnt" aria-label="Página anterior dos atalhos">‹</button>
+          <button type="button" class="atalhos-ponto" data-pagina="1" aria-label="Atalhos, página 1" aria-current="true"></button>
+          <button type="button" class="atalhos-ponto" data-pagina="2" aria-label="Atalhos, página 2"></button>
+          <button type="button" class="atalhos-seta" id="atalhosProx" aria-label="Próxima página dos atalhos">›</button>
         </div>
       </section>
     </div>
@@ -1625,7 +1650,7 @@
                   <tr><th scope="row"><label for="googleContaSelect">Voz e áudio</label></th><td><select id="googleContaSelect"></select></td></tr>
                   <tr class="modelos-resumo-secao"><th colspan="2" scope="colgroup">✍️ Texto</th></tr>
                   <tr><th scope="row"><label for="iaModelo">Uso geral</label></th><td><select id="iaModelo"></select><select id="iaEsforco" aria-label="Esforço do uso geral"></select></td></tr>
-                  <tr><th scope="row"><label for="iaEsbocoModelo">Esboços e dirigir</label></th><td><select id="iaEsbocoModelo"></select><select id="iaEsbocoEsforco" aria-label="Esforço dos esboços e do dirigir"></select></td></tr>
+                  <tr><th scope="row"><label for="iaEsbocoModelo">Esboços, dirigir e texto diário</label></th><td><select id="iaEsbocoModelo"></select><select id="iaEsbocoEsforco" aria-label="Esforço dos esboços e do dirigir"></select></td></tr>
                   <tr class="modelos-resumo-secao"><th colspan="2" scope="colgroup">🔊 Voz e áudio</th></tr>
                   <tr><th scope="row"><label for="vozModelo">Leitura em voz</label></th><td><select id="vozModelo"></select><select id="vozVoz" aria-label="Voz da leitura"></select></td></tr>
                   <tr><th scope="row"><label for="iaAudioMotor">Áudio: transcrição</label></th><td><select id="iaAudioMotor"></select><select id="iaAudioGeminiModelo" aria-label="Modelo Gemini da transcrição"></select></td></tr>

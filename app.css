@@ -6970,6 +6970,86 @@
       grid-auto-rows: 1fr;
     }
 
+    /* Atalhos do Início em duas páginas: uma faixa que rola para o lado, com encaixe página a página (passar o dedo troca de página). */
+    .atalhos-card .atalhos-paginas {
+      flex: 1 1 auto;
+      display: flex;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      overscroll-behavior-x: contain;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .atalhos-card .atalhos-paginas::-webkit-scrollbar {
+      display: none;
+    }
+
+    .atalhos-card .atalhos-paginas > .atalhos-grid {
+      flex: 0 0 100%;
+      min-width: 0;
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+      box-sizing: border-box;
+      padding: 0 1px 6px; /* a sombra dos botões não é cortada pela faixa */
+    }
+
+    .atalhos-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      margin-top: 6px;
+      min-height: 28px;
+    }
+
+    .atalhos-ponto {
+      width: 10px;
+      height: 10px;
+      min-width: 0;
+      min-height: 0;
+      padding: 0;
+      border-radius: 50%;
+      border: 1px solid var(--muted);
+      background: transparent;
+      box-shadow: none;
+      transform: none;
+      position: relative;
+    }
+
+    .atalhos-ponto::after { /* área de toque maior que o ponto */
+      content: "";
+      position: absolute;
+      inset: -10px;
+    }
+
+    .atalhos-ponto[aria-current="true"] {
+      background: var(--muted);
+    }
+
+    .atalhos-seta,
+    .atalhos-seta:hover {
+      width: 32px;
+      height: 28px;
+      min-width: 0;
+      min-height: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 1.5rem;
+      line-height: 1;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .atalhos-seta:disabled {
+      opacity: .25;
+      cursor: default;
+    }
+
     /* Rótulo do cartão: centralizado e separado do resto por uma linha (a mesma cor da que separa o comentário). */
     .td-titulo-linha {
       display: flex;
@@ -7354,6 +7434,18 @@
     .atalhos-grid .atalho[data-atalho="leitura"] {
       --atalho-fundo: var(--rosa-bg);
       --atalho-borda: var(--rosa-border);
+    }
+
+    /* Página 2: cada atalho leva a cor do grupo da ferramenta que abre (comentar = roxo, discursos = âmbar). */
+    .atalhos-grid .atalho:is([data-atalho="sentinela"], [data-atalho="joias"], [data-atalho="ebc"]) {
+      --atalho-fundo: var(--tint3-bg);
+      --atalho-borda: var(--tint3-border);
+    }
+
+    .atalhos-grid .atalho:is([data-atalho="publico"], [data-atalho="tesouros"], [data-atalho="outros"]) {
+      --atalho-fundo: #fef3c7;
+      --atalho-fundo: color-mix(in srgb, #f59e0b 22%, var(--card));
+      --atalho-borda: #f59e0b;
     }
 
     /* Sem o código do dirigente, o atalho aparece desabilitado: cinza, borda tracejada, ícone sem cor e um cadeado. */
