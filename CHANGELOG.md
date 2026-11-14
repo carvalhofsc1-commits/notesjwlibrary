@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.51
+
+Início: ao abrir ou tocar em Início, os atalhos sempre voltam à **página 1** (antes ficava na página 2 se ela era a última vista).
+
 ## 6.9.50
 
 Início, página 2 dos atalhos: o atalho **Outros esboços** foi trocado por **Ajustes** (abre a tela de Ajustes). Os esboços continuam na tela Reuniões → Discursos.

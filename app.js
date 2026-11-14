@@ -109,6 +109,10 @@
       // O texto pode ter mudado enquanto o campo estava escondido: mede de novo a altura quando a tela aparece.
       requestAnimationFrame(() => {
         try { autoGrowInputText(); } catch (e) { /* ainda iniciando */ }
+        if (screen === 'inicio') { // o Início sempre abre na página 1 dos atalhos
+          const faixa = document.getElementById('atalhosPaginas');
+          if (faixa && faixa.scrollLeft) { faixa.style.scrollBehavior = 'auto'; faixa.scrollLeft = 0; faixa.style.scrollBehavior = ''; }
+        }
         inicioAjustarAltura();
         reunioesAjustarHub();
         reunioesTituloAjustar();
@@ -7697,7 +7701,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.50'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.51'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
