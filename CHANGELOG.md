@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.62
+
+Início: ao tocar no botão **Início** (ou voltar a ele), o **texto diário abre recolhido** (se estava aberto, fecha) e os atalhos ficam na **página 1**.
+
 ## 6.9.61
 
 O card **📒 Extrato de créditos e consumo** também ganhou moldura em destaque, em **azul** (o Pix é verde), com halo suave e leve fundo azul.
