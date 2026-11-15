@@ -14869,6 +14869,18 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
   color: #dc2626;
 }
 
+/* Card "Adicionar crédito por Pix": moldura verde em destaque (e um leve fundo verde), para ele chamar a atenção dentro de Consumo. */
+#pixCredito {
+  border: 2px solid #16a34a;
+  border-radius: 12px;
+  background: color-mix(in srgb, #16a34a 8%, var(--card));
+  box-shadow: 0 0 0 3px color-mix(in srgb, #16a34a 22%, transparent);
+}
+
+#pixCredito[open] {
+  border-color: #15803d;
+}
+
 /* Crédito por Pix (Ajustes → Consumo): o valor e o botão ocupam a largura toda; o QR code fica centralizado. */
 .pix-credito-linha {
   display: flex;

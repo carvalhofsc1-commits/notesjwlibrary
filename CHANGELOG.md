@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.60
+
+O card **⚡ Adicionar crédito por Pix** ganhou uma **moldura verde em destaque** (borda de 2 px, halo suave e um leve fundo verde; mais escura quando aberto), para se destacar dentro de Consumo de IA e faturamento.
+
 ## 6.9.59
 
 Texto diário: os **comentários adicionais são salvos automaticamente** neste aparelho assim que são gerados (incluindo “Gerar outros”), valendo até o fim do dia. Ao reabrir o app ou voltar ao dia, eles já aparecem, sem gerar de novo. Por isso saíram os botões **💾 Salvar** e **📂 Recuperar comentários salvos**. **🗑️ Limpar** agora apaga também a cópia salva (senão os comentários voltariam ao reabrir). Comentários de um dia que já passou não são guardados.
