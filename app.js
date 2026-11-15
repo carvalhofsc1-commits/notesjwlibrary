@@ -7701,7 +7701,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.58'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.59'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -21330,8 +21330,6 @@ function saveTemplatesToStorage() {
       iaCopiarBtn: document.getElementById('tdIaCopiarBtn'),
       iaOutrosBtn: document.getElementById('tdIaOutrosBtn'),
       iaLimparBtn: document.getElementById('tdIaLimparBtn'),
-      iaSalvarBtn: document.getElementById('tdIaSalvarBtn'),
-      recuperarBtn: document.getElementById('tdRecuperarBtn'),
       iaQtd: document.getElementById('tdIaQtd')
     };
     const tdCache = new Map(); // "2026-10-20" -> texto do servidor
@@ -21366,8 +21364,8 @@ function saveTemplatesToStorage() {
     const tdTextoParaOuvir = t => [t.titulo, t.tema, ...t.comentario].filter(Boolean).join('\n');
     const tdComentariosEmTexto = lista => lista.map(c => (c.emoji || '💡') + ' ' + (c.ponto ? c.ponto + '\n' : '') + c.comentario).join('\n\n');
 
-    // Comentários salvos (💾 Salvar): ficam neste aparelho, por dia do texto, e só valem para aquele dia. Quando o dia
-    // passa, são apagados (a limpeza roda ao abrir o app, ao salvar, ao recuperar e ao voltar ao app noutro dia).
+    // Comentários salvos (automaticamente, ao gerar): ficam neste aparelho, por dia do texto, e só valem para aquele dia. Quando o dia
+    // passa, são apagados (a limpeza roda ao abrir o app, ao salvar e ao voltar ao app noutro dia).
     // Formato: { "2026-10-20": { salvoEm: "2026-10-20T17:05:00.000Z", comentarios: [{ ponto, comentario }] } }
     const TD_SALVOS_KEY = 'jwLibraryNoteAplicarTextoDiarioComentariosV1';
 
@@ -21395,19 +21393,32 @@ function saveTemplatesToStorage() {
       return salvos;
     }
 
-    // "20/10, às 17:05" (quando o salvamento foi feito).
-    function tdQuandoSalvo(salvoEm) {
-      const d = new Date(salvoEm);
-      return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' às ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    // Salva neste aparelho os comentários do dia (sem o usuário pedir): valem só até o fim daquele dia. Devolve true se gravou.
+    function tdIaSalvarAuto(data) {
+      const comentarios = tdIaCache.get(data) || [];
+      if (!comentarios.length || data < tdChave(tdHoje())) return false; // um dia que já passou não guarda nada
+      const salvos = tdSalvosLer();
+      salvos[data] = { salvoEm: new Date().toISOString(), comentarios, vozCupom: tdIaVozCupons.get(data) || '' };
+      tdSalvosGravar(salvos);
+      return Boolean(tdSalvosLer()[data]);
+    }
+    function tdIaApagarSalvo(data) {
+      const salvos = tdSalvosLer();
+      if (salvos[data]) { delete salvos[data]; tdSalvosGravar(salvos); }
     }
 
     // Comentários adicionais da IA do dia mostrado (guardados nesta sessão; voltar ao dia não gasta outro pedido).
     function tdIaMostrar() {
       if (vozBar.parentNode === td.vozIa && !vozBar.hidden) vozParar(); // a lista vai ser remontada: a leitura dela para
+      // Os comentários gerados são salvos sozinhos até o fim do dia: ao reabrir o app (ou voltar ao dia), voltam à tela sem gerar de novo.
+      if (tdTexto && !(tdIaCache.get(tdTexto.data) || []).length) {
+        const salvo = tdSalvosLer()[tdTexto.data];
+        if (salvo) {
+          tdIaCache.set(tdTexto.data, salvo.comentarios);
+          if (salvo.vozCupom) tdIaVozCupons.set(tdTexto.data, salvo.vozCupom);
+        }
+      }
       const lista = (tdTexto && tdIaCache.get(tdTexto.data)) || [];
-      const salvo = tdTexto ? tdSalvosLer()[tdTexto.data] : null;
-      td.recuperarBtn.hidden = !salvo || lista.length > 0;
-      if (salvo) td.recuperarBtn.textContent = '📂 Recuperar comentários salvos (' + salvo.comentarios.length + ')';
       td.iaLista.textContent = '';
       lista.forEach(c => {
         const item = document.createElement('li');
@@ -21469,7 +21480,11 @@ function saveTemplatesToStorage() {
         if (typeof result.data.vozCupom === 'string' && result.data.vozCupom) tdIaVozCupons.set(data, result.data.vozCupom);
         else tdIaVozCupons.delete(data);
         td.ia.open = true;
-        if (tdTexto && tdTexto.data === data) tdIaMostrar();
+        const salvou = tdIaSalvarAuto(data); // salvo sozinho, até o fim do dia
+        if (tdTexto && tdTexto.data === data) {
+          tdIaMostrar();
+          if (salvou) td.iaStatus.textContent = '💾 Comentários salvos automaticamente neste aparelho até o fim do dia.';
+        }
       } catch (e) {
         td.iaStatus.textContent = e && e.name === 'AbortError' ? 'A IA demorou demais. Tente de novo.' : 'Falha de conexão ao consultar a IA.';
       } finally {
@@ -21790,48 +21805,14 @@ function saveTemplatesToStorage() {
     tdIaMarcarTocando.observe(td.vozIa, { childList: true });
     td.gerarBtn.addEventListener('click', () => tdGerarComentarios(false));
     td.iaOutrosBtn.addEventListener('click', () => tdGerarComentarios(true));
-    // Limpar tira os comentários da tela. Se este dia tem comentários salvos, a cópia salva continua (📂 Recuperar); senão, para
-    // vê-los de novo é preciso gerar outra vez. Para só escondê-los, basta tocar no título deles.
+    // Limpar apaga os comentários da tela e também a cópia salva sozinha (senão voltariam ao reabrir). Para só escondê-los, basta tocar no título deles.
     td.iaLimparBtn.addEventListener('click', async () => {
       if (!tdTexto || aiBusy) return;
-      const salvo = tdSalvosLer()[tdTexto.data];
-      const aviso = salvo
-        ? 'Tirar os comentários adicionais da tela? A cópia que você salvou continua guardada para recuperar até o fim do dia. Para só escondê-los, toque no título "Comentários adicionais".'
-        : 'Apagar os comentários adicionais deste dia? Para vê-los de novo, será preciso gerar outra vez (ou salve-os antes, com 💾 Salvar). Para só escondê-los, toque no título "Comentários adicionais".';
-      if (!(await askConfirm(aviso, 'Limpar os comentários'))) return;
+      if (!(await askConfirm('Apagar os comentários adicionais deste dia? Eles são salvos sozinhos até o fim do dia; apagando, para vê-los de novo será preciso gerar outra vez. Para só escondê-los, toque no título "Comentários adicionais".', 'Limpar os comentários'))) return;
       tdIaCache.delete(tdTexto.data);
       tdIaVozCupons.delete(tdTexto.data);
+      tdIaApagarSalvo(tdTexto.data);
       tdIaMostrar();
-    });
-    // 💾 Salvar guarda neste aparelho os comentários que estão na tela, só para este dia (no dia seguinte são apagados).
-    // Salvar de novo troca o que estava salvo. Dá para gerar outros e, depois, recuperar o conjunto salvo.
-    td.iaSalvarBtn.addEventListener('click', () => {
-      const comentarios = (tdTexto && tdIaCache.get(tdTexto.data)) || [];
-      if (!comentarios.length) return;
-      if (tdTexto.data < tdChave(tdHoje())) {
-        td.iaStatus.textContent = 'Comentários de um dia que já passou não ficam salvos: eles valem só até o fim do próprio dia.';
-        return;
-      }
-      const salvos = tdSalvosLer();
-      salvos[tdTexto.data] = { salvoEm: new Date().toISOString(), comentarios, vozCupom: tdIaVozCupons.get(tdTexto.data) || '' };
-      tdSalvosGravar(salvos);
-      const gravado = tdSalvosLer()[tdTexto.data];
-      td.iaStatus.textContent = gravado
-        ? '💾 Comentários salvos neste aparelho. Valem até o fim deste dia; no dia seguinte são apagados.'
-        : 'Não consegui salvar neste aparelho (sem espaço ou armazenamento bloqueado).';
-    });
-    // 📂 Recuperar põe de volta na tela os comentários salvos deste dia.
-    td.recuperarBtn.addEventListener('click', () => {
-      if (!tdTexto) return;
-      const salvo = tdSalvosLer()[tdTexto.data];
-      if (!salvo) return tdIaMostrar();
-      tdIaCache.set(tdTexto.data, salvo.comentarios);
-      if (salvo.vozCupom) tdIaVozCupons.set(tdTexto.data, salvo.vozCupom);
-      else tdIaVozCupons.delete(tdTexto.data);
-      td.ia.open = true;
-      tdIaMostrar();
-      const quando = tdQuandoSalvo(salvo.salvoEm);
-      td.iaStatus.textContent = '📂 Comentários salvos' + (quando ? ' em ' + quando : '') + ' recuperados.';
     });
     td.iaCopiarBtn.addEventListener('click', async () => {
       const comentarios = (tdTexto && tdIaCache.get(tdTexto.data)) || [];
