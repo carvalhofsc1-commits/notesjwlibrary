@@ -7701,7 +7701,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.56'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.57'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12210,6 +12210,7 @@ function saveTemplatesToStorage() {
         pixCredito.status.className = 'ok';
         pixCredito.status.textContent = '✅ Pix confirmado! ' + consumoReais(r.data.valor) + ' creditados. Seu saldo agora é ' + consumoReais(r.data.creditos) + '.';
         consumoCarregar(consumoMesEl.value);
+        if (extrato.secao.open) extratoCarregar();
       } else if (estado === 'expirado' || estado === 'recusado') {
         pixCreditoAtual = null; pixCreditoGuardar(); pixCreditoMostrar();
         pixCredito.status.className = 'warn';
@@ -12270,6 +12271,113 @@ function saveTemplatesToStorage() {
     consumoSection.addEventListener('toggle', () => { if (consumoSection.open) pixCreditoPreparar(); });
     // Voltando do app do banco para o NoteStyle: confere na hora.
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && pixCreditoAtual) pixCreditoConferir(false); });
+
+    // ---- Extrato de créditos e consumo (Ajustes): saldo inicial, créditos e cada consumo, do mais antigo para o mais novo. ----
+    const extrato = {
+      secao: document.getElementById('extratoSection'),
+      periodo: document.getElementById('extratoPeriodo'),
+      status: document.getElementById('extratoStatus'),
+      resumo: document.getElementById('extratoResumo'),
+      lista: document.getElementById('extratoLista')
+    };
+    let extratoDados = null;
+    const extratoReais = n => (Number(n) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 4 });
+    const extratoMes = iso => new Date(iso).toLocaleString('sv-SE', { timeZone: 'America/Sao_Paulo' }).slice(0, 7);
+    const extratoQuando = iso => new Date(iso).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+    function extratoLinha(classe, titulo, detalhe, valor, saldo) {
+      const linha = document.createElement('div');
+      linha.className = 'extrato-linha ' + classe;
+      const esquerda = document.createElement('div');
+      esquerda.className = 'extrato-desc';
+      const t = document.createElement('strong');
+      t.textContent = titulo;
+      esquerda.appendChild(t);
+      if (detalhe) { const d = document.createElement('small'); d.textContent = detalhe; esquerda.appendChild(d); }
+      const direita = document.createElement('div');
+      direita.className = 'extrato-valores';
+      if (valor != null) { const v = document.createElement('span'); v.className = 'extrato-valor'; v.textContent = (valor > 0 ? '+ ' : '− ') + extratoReais(Math.abs(valor)); direita.appendChild(v); }
+      const s = document.createElement('small');
+      s.textContent = 'saldo ' + extratoReais(saldo);
+      direita.appendChild(s);
+      linha.append(esquerda, direita);
+      return linha;
+    }
+    function extratoRender() {
+      const d = extratoDados;
+      if (!d) return;
+      const todos = d.movimentos || [];
+      const meses = [...new Set(todos.map(m => extratoMes(m.em)))].sort().reverse();
+      const escolhido = extrato.periodo.value || '';
+      extrato.periodo.replaceChildren();
+      const opTudo = document.createElement('option');
+      opTudo.value = '';
+      opTudo.textContent = 'Todo o período';
+      extrato.periodo.appendChild(opTudo);
+      meses.forEach(m => { const o = document.createElement('option'); o.value = m; o.textContent = consumoMesNome(m); extrato.periodo.appendChild(o); });
+      extrato.periodo.value = meses.includes(escolhido) ? escolhido : '';
+      const mes = extrato.periodo.value;
+      let inicial = d.inicial;
+      let itens = todos;
+      if (mes) {
+        const antes = todos.filter(m => extratoMes(m.em) < mes);
+        if (antes.length) inicial = antes[antes.length - 1].saldo;
+        itens = todos.filter(m => extratoMes(m.em) === mes);
+      }
+      extrato.lista.replaceChildren();
+      const detalheInicial = mes ? 'No início de ' + consumoMesNome(mes)
+        : (d.comHistoricoAnterior ? 'Saldo em ' + extratoQuando(d.desde).slice(0, 8) + ', quando o extrato começou (o que veio antes não foi detalhado)' : 'Início da conta');
+      extrato.lista.appendChild(extratoLinha('extrato-inicial', 'Saldo inicial', detalheInicial, null, inicial));
+      let creditos = 0, consumo = 0;
+      itens.forEach(m => {
+        if (m.tipo === 'consumo') consumo += -m.valor; else creditos += m.valor; // créditos: líquido de ajustes do administrador
+        extrato.lista.appendChild(extratoLinha(m.valor > 0 ? 'extrato-credito' : 'extrato-consumo', m.rotulo, extratoQuando(m.em), m.valor, m.saldo));
+      });
+      const fim = itens.length ? itens[itens.length - 1].saldo : inicial;
+      if (!itens.length) {
+        const vazio = document.createElement('p');
+        vazio.className = 'hint';
+        vazio.textContent = mes ? 'Nenhum movimento neste período.' : 'Ainda não há movimentos. Os créditos e os consumos de IA aparecem aqui a partir de agora.';
+        extrato.lista.appendChild(vazio);
+      }
+      extrato.lista.hidden = false;
+      extrato.resumo.textContent = '';
+      [['Créditos', (creditos < 0 ? '− ' : '+ ') + extratoReais(Math.abs(creditos))], ['Consumo', '− ' + extratoReais(consumo)], [mes ? 'Saldo no fim do período' : 'Saldo atual', extratoReais(mes ? fim : d.saldo)]].forEach(([r, v]) => {
+        const caixa = document.createElement('div');
+        const rotulo = document.createElement('small');
+        rotulo.textContent = r;
+        const valor = document.createElement('strong');
+        valor.textContent = v;
+        caixa.append(rotulo, valor);
+        extrato.resumo.appendChild(caixa);
+      });
+      extrato.resumo.hidden = false;
+    }
+    async function extratoCarregar() {
+      if (!navigator.onLine || !servidoPelaWeb()) {
+        extrato.status.className = 'hint';
+        extrato.status.textContent = 'O extrato só aparece com internet, no site publicado (notestyle.com.br).';
+        return;
+      }
+      extrato.status.className = 'hint';
+      extrato.status.textContent = 'Carregando…';
+      const r = await postConfig({ acao: 'extrato-meu', aparelhoId: aparelhoId() });
+      if (!r.ok) {
+        extrato.status.className = 'warn';
+        extrato.status.textContent = (r.data && r.data.erro) || configErrorMessage(r, 'Não foi possível ler o extrato agora.');
+        return;
+      }
+      extrato.status.textContent = '';
+      extratoDados = r.data;
+      extratoRender();
+    }
+    extrato.secao.addEventListener('toggle', () => { if (extrato.secao.open) extratoCarregar(); });
+    extrato.periodo.addEventListener('change', extratoRender);
+    document.getElementById('extratoAtualizarBtn').addEventListener('click', extratoCarregar);
+    document.getElementById('consumoExtratoBtn').addEventListener('click', () => {
+      extrato.secao.open = true;
+      extratoCarregar();
+      setTimeout(() => extrato.secao.scrollIntoView({ block: 'start' }), 80);
+    });
 
     // Administrador: preços por categoria e a chave PIX.
     const faturamentoStatus = document.getElementById('faturamentoStatus');

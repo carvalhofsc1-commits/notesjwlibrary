@@ -1276,6 +1276,7 @@
             <p id="consumoStatus" class="ok" role="status" aria-live="polite"></p>
             <div id="consumoLista" class="consumo-lista" hidden></div>
             <p id="consumoTotal" class="consumo-total" hidden></p>
+            <button id="consumoExtratoBtn" class="secondary" type="button">📒 Ver extrato (créditos e consumo por solicitação)</button>
             <details class="prompt-item" id="pixCredito" hidden>
               <summary><h3>⚡ Adicionar crédito por Pix</h3></summary>
               <p class="hint">Informe o valor, pague o Pix gerado e o crédito entra sozinho no seu saldo, em poucos segundos (sem enviar comprovante). O Pix vale por 30 minutos.</p>
@@ -1307,6 +1308,20 @@
                 <p id="consumoPixStatus" class="ok" role="status" aria-live="polite"></p>
               </div>
             </details>
+          </div>
+        </details>
+        <details class="subsection sub-tint-5" id="extratoSection">
+          <summary>📒 Extrato de créditos e consumo</summary>
+          <div class="subsection-body">
+            <p class="hint">Todos os movimentos do seu saldo, do mais antigo para o mais novo: o saldo inicial, os créditos (boas-vindas, Pix e lançamentos do administrador) e cada consumo de IA, com o recurso que usou, o valor e o saldo que restou.</p>
+            <div class="consumo-mes">
+              <label for="extratoPeriodo">Período</label>
+              <select id="extratoPeriodo" autocomplete="off"></select>
+              <button id="extratoAtualizarBtn" class="secondary" type="button" title="Atualizar o extrato" aria-label="Atualizar o extrato">🔄</button>
+            </div>
+            <p id="extratoStatus" class="hint" role="status" aria-live="polite"></p>
+            <div id="extratoResumo" class="extrato-resumo" hidden></div>
+            <div id="extratoLista" class="extrato-lista" hidden></div>
           </div>
         </details>
         <details class="subsection sub-tint-6" id="aiSection">

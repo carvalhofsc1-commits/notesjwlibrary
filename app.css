@@ -14775,6 +14775,95 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
   vertical-align: middle;
 }
 
+/* Extrato de créditos e consumo (Ajustes): resumo em três blocos e uma lista de movimentos, do mais antigo para o mais novo. */
+.extrato-resumo {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.extrato-resumo > div {
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  text-align: center;
+  min-width: 0;
+}
+
+.extrato-resumo small {
+  display: block;
+  color: var(--muted);
+  font-size: .72rem;
+}
+
+.extrato-resumo strong {
+  display: block;
+  font-size: .9rem;
+  overflow-wrap: anywhere;
+}
+
+.extrato-lista {
+  display: grid;
+  gap: 6px;
+}
+
+.extrato-linha {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-left-width: 4px;
+  border-radius: 8px;
+  min-width: 0;
+}
+
+.extrato-desc {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.extrato-desc small,
+.extrato-valores small {
+  display: block;
+  color: var(--muted);
+  font-size: .75rem;
+}
+
+.extrato-valores {
+  flex: 0 0 auto;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.extrato-valor {
+  display: block;
+  font-weight: 800;
+}
+
+.extrato-inicial {
+  border-left-color: var(--muted);
+  background: var(--card);
+}
+
+.extrato-credito {
+  border-left-color: #16a34a;
+}
+
+.extrato-credito .extrato-valor {
+  color: #16a34a;
+}
+
+.extrato-consumo {
+  border-left-color: #dc2626;
+}
+
+.extrato-consumo .extrato-valor {
+  color: #dc2626;
+}
+
 /* Crédito por Pix (Ajustes → Consumo): o valor e o botão ocupam a largura toda; o QR code fica centralizado. */
 .pix-credito-linha {
   display: flex;

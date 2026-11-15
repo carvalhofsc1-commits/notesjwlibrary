@@ -20,6 +20,7 @@ import {
   definirRestricaoSite,
   estadoAcessoSite,
   expirarCodigoUsuario,
+  extratoDoUsuario,
   gerarCodigoUsuario,
   lerAcessoSiteAdmin,
   pedirAcessoSite,
@@ -267,6 +268,14 @@ export default async function handler(req, res) {
         console.error("Faturamento: falhou", e && e.message);
         return erro(res, 502, "Não consegui ler o consumo agora. Tente de novo.");
       }
+    }
+
+    // Pública (Ajustes → Extrato): o extrato de créditos e consumo do próprio aparelho (saldo inicial, créditos, consumo por solicitação e saldo).
+    if (acao === "extrato-meu") {
+      if (!acessoSiteConfigurado()) return erro(res, 503, "O armazenamento privado (Blob) ainda não está configurado no servidor.");
+      const r = await extratoDoUsuario({ aparelhoId: corpo.aparelhoId });
+      if (r && r.erro) return erro(res, 404, r.erro);
+      return res.status(200).json(r);
     }
 
     // Pública: o aparelho pergunta se o site está restrito e se ele já foi aprovado / tem pedido pendente.

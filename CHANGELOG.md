@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.57
+
+**Extrato de créditos e consumo.** Nova seção em Ajustes, **📒 Extrato de créditos e consumo** (também pelo botão “Ver extrato” em Consumo de IA e faturamento), que mostra, do mais antigo para o mais novo: o **saldo inicial**, os **créditos** (boas-vindas, Pix e lançamentos do administrador), cada **consumo de IA por solicitação** (com o recurso que consumiu e o valor) e o **saldo depois de cada movimento**. Resumo no topo (créditos, consumo e saldo) e filtro por mês.
+
+- O servidor passou a registrar cada movimento no cadastro do usuário (últimos 400; ao passar disso, o saldo do mais antigo vira o inicial). Quem já existia começa o extrato com o saldo do dia da atualização (o que veio antes não foi detalhado e a tela avisa).
+- Correção: atualizar os dados do cadastro (Meus dados) não apaga mais o histórico de Pix e o extrato.
+
 ## 6.9.56
 
 **Crédito por Pix com confirmação automática (Mercado Pago).** Em Ajustes → Consumo de IA e faturamento, nova opção **⚡ Adicionar crédito por Pix**: o usuário informa o valor, o app mostra o QR code e o copia e cola, e o crédito entra sozinho no saldo quando o pagamento cai (sem comprovante). Só aparece quando o servidor está configurado.

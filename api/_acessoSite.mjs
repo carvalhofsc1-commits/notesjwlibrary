@@ -49,6 +49,50 @@ function creditosDe(registro) {
   return Number.isFinite(n) && n > 0 ? arredondarSaldo(n) : 0;
 }
 
+// Extrato do usuário: cada movimento do saldo (crédito ou consumo) fica registrado no cadastro dele, com o saldo depois do movimento.
+// "extratoInicial" é o saldo antes do primeiro movimento guardado (para quem já existia antes do extrato, o saldo do dia em que ele começou:
+// "extratoDesde"). Guarda os últimos MAX_EXTRATO movimentos; ao passar disso, o mais antigo sai e o saldo dele vira o inicial.
+const MAX_EXTRATO = 400;
+// delta > 0 credita; delta < 0 debita (o saldo nunca fica abaixo de zero). Devolve o valor realmente lançado (0 = nada mudou, nada é registrado).
+function lancarExtrato(reg, { tipo, rotulo, delta }) {
+  const antes = creditosDe(reg);
+  const depois = Math.max(0, arredondarSaldo(antes + delta));
+  const efetivo = arredondarSaldo(depois - antes);
+  reg.creditos = depois;
+  reg.creditosAtualizadoEm = agoraIso();
+  if (efetivo === 0) return 0;
+  if (!Array.isArray(reg.extrato)) {
+    reg.extrato = [];
+    reg.extratoInicial = antes;
+    reg.extratoDesde = agoraIso();
+  }
+  reg.extrato.push({ em: agoraIso(), tipo, rotulo, valor: efetivo, saldo: depois });
+  if (reg.extrato.length > MAX_EXTRATO) {
+    const fora = reg.extrato.splice(0, reg.extrato.length - MAX_EXTRATO);
+    reg.extratoInicial = fora[fora.length - 1].saldo;
+  }
+  return efetivo;
+}
+
+// O extrato do próprio aparelho (público, pelo aparelhoId): saldo inicial, movimentos em ordem de data e saldo atual.
+export async function extratoDoUsuario({ aparelhoId } = {}) {
+  const id = aparelhoIdLimpo(aparelhoId);
+  if (!id || !acessoSiteConfigurado()) return { erro: "Aparelho inválido." };
+  cacheDados = { em: 0, dados: null };
+  const dados = await lerRecente();
+  const reg = dados.aprovados[id];
+  if (!reg) return { erro: "Este aparelho ainda não está identificado." };
+  const movimentos = Array.isArray(reg.extrato) ? reg.extrato : [];
+  return {
+    ok: true,
+    saldo: creditosDe(reg),
+    inicial: movimentos.length || reg.extratoInicial != null ? arredondarSaldo(Number(reg.extratoInicial) || 0) : creditosDe(reg),
+    desde: reg.extratoDesde || reg.aprovadoEm || "",
+    comHistoricoAnterior: Boolean(reg.extratoDesde && reg.extratoInicial > 0),
+    movimentos: movimentos.map((m) => ({ em: m.em, tipo: m.tipo, rotulo: m.rotulo, valor: m.valor, saldo: m.saldo })),
+  };
+}
+
 // "R$ 1.234,56", "10,5", "10.5" ou "-5" → número (NaN se não der para entender).
 function valorEmReais(valor) {
   let s = String(valor ?? "").replace(/r\$/gi, "").replace(/\s/g, "");
@@ -501,6 +545,10 @@ export async function atualizarCadastroSite(corpo) {
       creditos: creditosDe(anterior),
       ...(anterior.creditoBoasVindas ? { creditoBoasVindas: anterior.creditoBoasVindas } : {}),
       codigos: codigosDe(anterior),
+      // O extrato e os Pix creditados fazem parte do cadastro: atualizar os dados pessoais não pode apagá-los.
+      ...(Array.isArray(anterior.extrato) ? { extrato: anterior.extrato, extratoInicial: anterior.extratoInicial, extratoDesde: anterior.extratoDesde } : {}),
+      ...(Array.isArray(anterior.pixHistorico) ? { pixHistorico: anterior.pixHistorico } : {}),
+      ...(anterior.creditosAtualizadoEm ? { creditosAtualizadoEm: anterior.creditosAtualizadoEm } : {}),
     });
     return { ok: true, atualizado: true, cadastro: identidadeDe(dados.aprovados[id]) };
   });
@@ -588,8 +636,14 @@ export async function decidirPedidoSite({ id, aprovar, codigoAdmin }) {
           comoConheceu: p.comoConheceu,
         },
         // Crédito de boas-vindas: todo usuário aprovado começa com R$ 100,00 (o app avisa uma vez, na primeira abertura depois da aprovação).
-        { pedidoId: p.id, aprovadoEm: p.decididoEm, creditos: boasVindas, ...(boasVindas > 0 ? { creditoBoasVindas: boasVindas } : {}), codigos: {} }
+        { pedidoId: p.id, aprovadoEm: p.decididoEm, creditos: 0, ...(boasVindas > 0 ? { creditoBoasVindas: boasVindas } : {}), codigos: {} }
       );
+      // O extrato começa com saldo zero e o crédito de boas-vindas como primeiro movimento.
+      const novo = dados.aprovados[p.aparelhoId];
+      novo.extrato = [];
+      novo.extratoInicial = 0;
+      novo.extratoDesde = p.decididoEm;
+      lancarExtrato(novo, { tipo: "credito", rotulo: "Crédito de boas-vindas", delta: boasVindas });
     }
     return { ok: true, pedido: pedidoPublico(p) };
   });
@@ -629,8 +683,7 @@ export async function creditarUsuario({ aparelhoId, valor, codigoAdmin }) {
   return comDados((dados) => {
     const reg = dados.aprovados[id];
     if (!reg) return { erro: "Este aparelho não está na lista de identificados." };
-    reg.creditos = Math.max(0, arredondarSaldo(creditosDe(reg) + soma));
-    reg.creditosAtualizadoEm = agoraIso();
+    lancarExtrato(reg, { tipo: soma > 0 ? "credito" : "ajuste", rotulo: soma > 0 ? "Crédito lançado pelo administrador" : "Correção lançada pelo administrador", delta: soma });
     return { ok: true, creditos: reg.creditos, aparelhoId: id };
   });
 }
@@ -657,8 +710,7 @@ export async function creditarPagamentoPix({ aparelhoId, pagamentoId, valor }) {
     if (!reg) return { erro: "Este aparelho não está na lista de identificados." };
     if (!dados.pixPagamentos || typeof dados.pixPagamentos !== "object") dados.pixPagamentos = {};
     if (dados.pixPagamentos[pag]) return { ok: true, jaCreditado: true, creditos: creditosDe(reg), valor: dados.pixPagamentos[pag].valor };
-    reg.creditos = Math.max(0, arredondarSaldo(creditosDe(reg) + soma));
-    reg.creditosAtualizadoEm = agoraIso();
+    lancarExtrato(reg, { tipo: "credito", rotulo: "Crédito por Pix", delta: soma });
     dados.pixPagamentos[pag] = { aparelhoId: id, valor: soma, em: agoraIso() };
     const chaves = Object.keys(dados.pixPagamentos);
     if (chaves.length > MAX_PIX_GUARDADOS) chaves.slice(0, chaves.length - MAX_PIX_GUARDADOS).forEach((k) => delete dados.pixPagamentos[k]);
@@ -745,8 +797,7 @@ export async function debitarCreditosUso({ aparelhoId, tarefa, entrada, saida, c
     await comDados((dados) => {
       const reg = dados.aprovados[id];
       if (!reg) return null;
-      reg.creditos = Math.max(0, arredondarSaldo(creditosDe(reg) - valor));
-      reg.creditosAtualizadoEm = agoraIso();
+      lancarExtrato(reg, { tipo: "consumo", rotulo: recurso ? recurso.rotulo : "Outros usos de IA", delta: -valor });
       return { ok: true, creditos: reg.creditos, debitado: valor };
     });
   } catch (e) {
