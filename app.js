@@ -7710,7 +7710,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.65'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.66'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -29412,33 +29412,38 @@ function saveTemplatesToStorage() {
       }
       // Transcreve um áudio pelo mesmo caminho do Áudio em texto, sem mexer no que estiver aberto lá. Devolve o texto (ou null).
       async function anotacoesTranscrever(arquivo, duracaoS) {
+        // Se a tela Áudio em texto estiver transcrevendo algo seu, espera ela terminar (as duas usam o mesmo motor e os mesmos campos).
+        while (trControle) await new Promise(r => setTimeout(r, 2000));
         const prevTexto = trTexto.value;
         const prevResumo = trResumo.value;
         const prevCorr = trCorrigido.value;
         trTexto.value = '';
         trResumo.value = '';
         trCorrigido.value = '';
-        const item = trListaAdicionar(arquivo, { gravado: true, duracaoS, forcar: true });
-        if (!item) {
+        let item = null;
+        let ok = false;
+        let transc = '';
+        try {
+          item = trListaAdicionar(arquivo, { gravado: true, duracaoS, forcar: true });
+          if (!item) return null;
+          trControle = new AbortController();
+          try {
+            ok = await trTranscreverItem(item);
+          } finally {
+            trControle = null;
+          }
+          transc = trTexto.value.trim();
+        } finally {
+          // Mesmo se a transcrição falhar no meio, o que estava aberto na tela Áudio em texto volta como estava.
+          if (item) {
+            trLista = trLista.filter(x => x !== item);
+            try { trPcmLiberar(item); trItemBdApagar(item); } catch (e) { /* ignore */ }
+            try { trListaRender(); trAtualizarBotoes(); } catch (e) { /* ignore */ }
+          }
           trTexto.value = prevTexto;
           trResumo.value = prevResumo;
           trCorrigido.value = prevCorr;
-          return null;
         }
-        trControle = new AbortController();
-        let ok = false;
-        try {
-          ok = await trTranscreverItem(item);
-        } finally {
-          trControle = null;
-        }
-        const transc = trTexto.value.trim();
-        trLista = trLista.filter(x => x !== item);
-        try { trPcmLiberar(item); trItemBdApagar(item); } catch (e) { /* ignore */ }
-        try { trListaRender(); trAtualizarBotoes(); } catch (e) { /* ignore */ }
-        trTexto.value = prevTexto;
-        trResumo.value = prevResumo;
-        trCorrigido.value = prevCorr;
         return ok && transc ? transc : null;
       }
       function anotacoesOradorRespondeu(transc, q) {
@@ -29458,17 +29463,27 @@ function saveTemplatesToStorage() {
       }
       // ----- Resumo em segundo plano: cada pedido guarda a anotação de onde saiu (o "alvo") e o resultado volta para ela, mesmo que a
       // pessoa já esteja anotando outro discurso, gravando de novo ou fora da tela. Os pedidos rodam um de cada vez, na ordem.
+      // A parte é reconhecida pela identidade (documento, parágrafo e tema), não só pela posição: se o programa for atualizado enquanto o resumo
+      // está na fila (as partes podem mudar de lugar), o resumo continua indo para o discurso certo.
+      const idDaParte = p => (p ? [p.docid || '', p.par || '', semMarcador(p.tema || '').trim()].join('|') : '');
+      function indiceDoAlvo(lista, id, indice) {
+        if (!Array.isArray(lista)) return -1;
+        if (!id) return lista[indice] ? indice : -1;
+        if (lista[indice] && idDaParte(lista[indice]) === id) return indice;
+        return lista.findIndex(p => idDaParte(p) === id);
+      }
       function alvoAtual() {
         const q = ativa ? perguntaDaParte(parteAtual) : null;
         const dp = dadosDaParte();
+        const dona = q ? donaDaPergunta(parteAtual) : -1;
         return {
-          modo, programa: comPrograma(), chave: chaveAtual, parte: parteAtual,
-          dona: q ? donaDaPergunta(parteAtual) : -1, q,
+          modo, programa: comPrograma(), chave: chaveAtual, parte: parteAtual, parteId: comPrograma() ? idDaParte(partes[parteAtual]) : '',
+          dona, donaId: dona >= 0 ? idDaParte(partes[dona]) : '', q,
           contexto: [dp.tema, dp.orador, dp.congregacao].filter(Boolean).join(' · '),
           titulo: tituloDaAnotacao(60)
         };
       }
-      const alvoAberto = a => Boolean(modo) && modo === a.modo && (a.programa ? (comPrograma() && chaveAtual === a.chave && ativa && parteAtual === a.parte) : !comPrograma());
+      const alvoAberto = a => Boolean(modo) && modo === a.modo && (a.programa ? (comPrograma() && chaveAtual === a.chave && ativa && indiceDoAlvo(partes, a.parteId, a.parte) === parteAtual) : !comPrograma());
       const juntarTexto = (velho, novo) => (String(velho || '').trim() ? String(velho).replace(/\s+$/, '') + '\n\n' : '') + novo;
       // Grava o resumo (e a resposta da recapitulação) na anotação do alvo: aberta na tela, em outra parte do evento aberto ou só no rascunho.
       function entregarNaAnotacao(alvo, bloco, resp) {
@@ -29485,9 +29500,11 @@ function saveTemplatesToStorage() {
           salvarRascunho();
           return true;
         }
-        if (alvo.programa && modo === alvo.modo && comPrograma() && chaveAtual === alvo.chave && partes[alvo.parte]) {
-          partes[alvo.parte].nota = juntarTexto(partes[alvo.parte].nota, bloco);
-          if (resp && partes[alvo.dona]) partes[alvo.dona].resposta = juntarTexto(partes[alvo.dona].resposta, resp);
+        const ip = alvo.programa ? indiceDoAlvo(partes, alvo.parteId, alvo.parte) : -1;
+        if (alvo.programa && modo === alvo.modo && comPrograma() && chaveAtual === alvo.chave && ip >= 0) {
+          partes[ip].nota = juntarTexto(partes[ip].nota, bloco);
+          const id = alvo.dona >= 0 ? indiceDoAlvo(partes, alvo.donaId, alvo.dona) : -1;
+          if (resp && partes[id]) partes[id].resposta = juntarTexto(partes[id].resposta, resp);
           salvarRascunho();
           try { pintarPartes(); atualizarVista(); } catch (e) { /* ignore */ }
           return true;
@@ -29496,10 +29513,12 @@ function saveTemplatesToStorage() {
           const dados = lerRascunhos();
           if (alvo.programa) {
             const ev = dados[alvo.modo] && dados[alvo.modo].eventos && dados[alvo.modo].eventos[alvo.chave];
-            const p = ev && Array.isArray(ev.partes) ? ev.partes[alvo.parte] : null;
+            const ipr = ev ? indiceDoAlvo(ev.partes, alvo.parteId, alvo.parte) : -1;
+            const p = ipr >= 0 ? ev.partes[ipr] : null;
             if (!p) return false;
             p.nota = juntarTexto(p.nota, bloco);
-            if (resp && ev.partes[alvo.dona]) ev.partes[alvo.dona].resposta = juntarTexto(ev.partes[alvo.dona].resposta, resp);
+            const idr = alvo.dona >= 0 ? indiceDoAlvo(ev.partes, alvo.donaId, alvo.dona) : -1;
+            if (resp && ev.partes[idr]) ev.partes[idr].resposta = juntarTexto(ev.partes[idr].resposta, resp);
           } else {
             if (!dados.reuniao || typeof dados.reuniao !== 'object') dados.reuniao = {};
             dados.reuniao.texto = juntarTexto(dados.reuniao.texto, bloco);
@@ -29679,8 +29698,52 @@ function saveTemplatesToStorage() {
       function liberarMicrofone(g) {
         clearInterval(g.timer);
         trOndaParar(g);
+        if (g.tirarTrack) g.tirarTrack();
+        try { if (g.lock) { const l = g.lock; g.lock = null; l.release(); } } catch (e) { /* já liberada */ }
         try { g.stream.getTracks().forEach(t => t.stop()); } catch (e) { /* já parado */ }
       }
+
+      // Discursos longos (assembleia e congresso): a tela fica ligada enquanto grava, porque com a tela bloqueada o celular costuma cortar o microfone.
+      async function anotTelaLigada(g) {
+        if (!navigator.wakeLock || document.visibilityState !== 'visible' || gravacao !== g || g.lock) return;
+        try {
+          const lock = await navigator.wakeLock.request('screen');
+          if (gravacao !== g) { lock.release(); return; }
+          g.lock = lock;
+          lock.addEventListener('release', () => {
+            if (g.lock === lock) g.lock = null;
+            if (gravacao === g && document.visibilityState === 'visible') setTimeout(() => anotTelaLigada(g), 400);
+          });
+        } catch (e) { /* sem tela sempre ligada neste aparelho */ }
+      }
+      // Microfone interrompido (ligação, outro app usando o microfone, erro do gravador): avisa na hora, em vez de o relógio seguir contando em silêncio.
+      function anotAvisarMic(g, mudo) {
+        if (gravacao !== g) return;
+        g.interrompido = mudo;
+        gravarStatus.textContent = mudo ? '⚠️ O microfone foi interrompido (ligação, outro app ou tela bloqueada). Se não voltar, toque em ⏹️ Parar para guardar o que já foi gravado.' : '';
+      }
+      function anotVigiarMic(g) {
+        const track = g.stream && g.stream.getAudioTracks()[0];
+        if (!track) return;
+        const mudo = () => anotAvisarMic(g, true);
+        const volta = () => anotAvisarMic(g, false);
+        track.addEventListener('mute', mudo);
+        track.addEventListener('unmute', volta);
+        track.addEventListener('ended', mudo);
+        g.gravador.onerror = mudo;
+        g.tirarTrack = () => { track.removeEventListener('mute', mudo); track.removeEventListener('unmute', volta); track.removeEventListener('ended', mudo); };
+      }
+      document.addEventListener('visibilitychange', () => {
+        const g = gravacao;
+        if (!g) return;
+        if (document.visibilityState === 'visible') {
+          anotTelaLigada(g);
+          const track = g.stream && g.stream.getAudioTracks()[0];
+          if (track && track.readyState === 'ended') anotAvisarMic(g, true);
+        } else {
+          try { if (g.gravador.state === 'recording') g.gravador.requestData(); } catch (e) { /* ignore */ }
+        }
+      });
 
       // Quadro da gravação pronta: já guardada no app, fecha sozinho ao gravar de novo ou trocar de parte (a cópia de voz fica na anotação dela).
       async function fecharGravacaoPronta(perguntar) {
@@ -29721,10 +29784,12 @@ function saveTemplatesToStorage() {
           gravPausarBtn.textContent = '⏸️ Pausar';
           gravarStatus.textContent = '';
           mostrarGravacao('ativa');
-          const atualizar = () => { gravTempoEl.textContent = (g.pausado ? '⏸️ Pausado ' : '🔴 Gravando ') + mmss(tempoGravadoS(g)); };
+          const atualizar = () => { gravTempoEl.textContent = (g.interrompido ? '⚠️ Microfone interrompido ' : g.pausado ? '⏸️ Pausado ' : '🔴 Gravando ') + mmss(tempoGravadoS(g)); };
           atualizar();
           g.timer = setInterval(atualizar, 500);
           trOndaIniciar(g, ondaEl); // o gráfico de barras do Áudio em texto, em versão reduzida
+          anotVigiarMic(g);
+          anotTelaLigada(g);
         } catch (e) {
           gravarStatus.textContent = 'Não consegui acessar o microfone.';
         }

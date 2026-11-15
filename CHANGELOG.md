@@ -2,6 +2,15 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.66
+
+Revisão da tela Anotações (assembleia e congresso), com correções na gravação e no resumo em segundo plano:
+
+- **Resumo sempre no discurso certo:** o resumo na fila passou a reconhecer o discurso pela identidade (documento, parágrafo e tema), não só pela posição. Antes, se o programa fosse **atualizado** enquanto um resumo estava na fila, as partes podiam mudar de lugar e o resumo cair no discurso errado.
+- **Tela sempre ligada durante a gravação:** com a tela bloqueada o celular costuma cortar o microfone no meio de um discurso longo; agora a tela fica ligada enquanto grava (onde o aparelho permite).
+- **Aviso de microfone interrompido:** se uma ligação, outro app ou um erro do gravador cortar o microfone, o quadro mostra “⚠️ Microfone interrompido” e orienta a tocar em Parar para guardar o que já foi gravado (antes o relógio seguia contando em silêncio).
+- **Áudio em texto protegido:** se a transcrição de uma gravação das Anotações falhasse no meio, o texto que estava aberto na tela Áudio em texto se perdia; agora volta sempre como estava. E, se essa tela estiver transcrevendo algo, o resumo das Anotações espera a vez dela.
+
 ## 6.9.65
 
 Início: o atalho **Extrato** agora **abre** o card **Consumo de IA e faturamento** (na 6.9.64 só levava até ele, fechado). Os campos de dentro (consumo detalhado, Pix e Extrato) continuam recolhidos.
