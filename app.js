@@ -7710,7 +7710,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.64'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.65'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12321,9 +12321,12 @@ function saveTemplatesToStorage() {
     extrato.secao.addEventListener('toggle', () => { if (extrato.secao.open) extratoCarregar(); });
     extrato.periodo.addEventListener('change', extratoRender);
     document.getElementById('extratoAtualizarBtn').addEventListener('click', extratoCarregar);
-    // Atalho do Início: leva a Ajustes, até o card Consumo de IA e faturamento, que (como o extrato dentro dele) fica sempre recolhido: quem quiser abre.
+    // Atalho do Início: leva a Ajustes e abre o card Consumo de IA e faturamento; os campos de dentro (consumo detalhado, Pix e Extrato) ficam recolhidos.
     function extratoAbrir() {
       showScreen('ajustes');
+      consumoSection.open = true;
+      extrato.secao.open = false;
+      consumoResumoBox.open = false;
       setTimeout(() => consumoSection.scrollIntoView({ block: 'start' }), 120);
     }
 

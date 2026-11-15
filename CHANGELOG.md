@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.65
+
+Início: o atalho **Extrato** agora **abre** o card **Consumo de IA e faturamento** (na 6.9.64 só levava até ele, fechado). Os campos de dentro (consumo detalhado, Pix e Extrato) continuam recolhidos.
+
 ## 6.9.64
 
 - **Recolhidos sempre:** o card **Consumo de IA e faturamento** e o **Extrato** dentro dele abrem sempre recolhidos ao entrar em Ajustes e ao abrir o card, inclusive pelo atalho **Extrato** da tela inicial (que agora só leva até o card, sem abri-lo).
