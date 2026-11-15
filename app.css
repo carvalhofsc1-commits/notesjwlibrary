@@ -14745,6 +14745,32 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
   vertical-align: middle;
 }
 
+/* Administração de usuários: o campo do valor de crédito e o botão (boas-vindas e creditar por usuário) ocupam a largura toda, lado a lado. */
+.acesso-site-creditar-linha {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.acesso-site-creditar-linha input,
+.acesso-site-boasvindas .acesso-site-creditar-linha input,
+.acesso-site-creditar-valor {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  max-width: none;
+}
+
+.acesso-site-creditar-linha button,
+.acesso-site-boasvindas .acesso-site-creditar-linha button {
+  flex: 0 0 auto;
+  margin: 0;
+  white-space: nowrap;
+}
+
 /* Administração de usuários: o crédito de boas-vindas configurável. */
 .acesso-site-boasvindas {
   margin: 8px 0 10px;

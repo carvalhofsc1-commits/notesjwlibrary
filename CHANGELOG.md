@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.53
+
+Administração de usuários: o campo do valor de crédito e o botão (**Salvar** do crédito de boas-vindas e **Creditar** de cada usuário) agora ocupam a largura toda, lado a lado: o campo estica e o botão fica ao lado.
+
 ## 6.9.52
 
 Início, página 2 dos atalhos: o atalho **Tesouros da Palavra** foi trocado por **Outros esboços** (abre a página Discursos já com Outros esboços aberto). Tesouros continua em Reuniões → Discursos.
