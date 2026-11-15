@@ -7701,7 +7701,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.53'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.54'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12587,10 +12587,12 @@ function saveTemplatesToStorage() {
           const resumo = [
             acessoSiteEscapar(nome),
             a.idade ? acessoSiteEscapar(a.idade) + ' anos' : '',
-            cidade ? acessoSiteEscapar(cidade) : '',
-            // Sem saldo, a IA deste usuário está pausada: fica em destaque na lista (o administrador usa a IA com a senha, sem saldo).
-            '<span class="acesso-site-saldo' + (creditos > 0 || a.nivel === 'admin' ? '' : ' zerado') + '">💳 ' + acessoSiteReais(creditos) + (creditos > 0 || a.nivel === 'admin' ? '' : ' · sem saldo') + '</span>'
+            cidade ? acessoSiteEscapar(cidade) : ''
           ].filter(Boolean).join(' · ');
+          // Sem saldo, a IA deste usuário está pausada: fica em destaque na lista (o administrador usa a IA com a senha, sem saldo).
+          // O saldo é um bloco à parte, à direita e sem quebra de linha (o valor nunca se parte); o nome e os dados ocupam o resto.
+          const resumoHtml = '<span class="acesso-site-resumo-info">' + resumo + '</span>' +
+            '<span class="acesso-site-saldo' + (creditos > 0 || a.nivel === 'admin' ? '' : ' zerado') + '">💳 ' + acessoSiteReais(creditos) + (creditos > 0 || a.nivel === 'admin' ? '' : ' · sem saldo') + '</span>';
           const busca = [nome, cidade, a.congregacao, a.telefone, String(a.telefone || '').replace(/\D/g, '')].filter(Boolean).join(' ').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
           const foneZap = String(a.telefone || '').replace(/\D/g, '');
           const linhaCadastro = (rotulo, valor) =>
@@ -12637,7 +12639,7 @@ function saveTemplatesToStorage() {
             '</tr>'
             : '<tr><td colspan="3" class="hint">Nenhum consumo de IA em ' + acessoSiteEscapar(mesNome) + '.</td></tr>';
           return '<details class="acesso-site-item" data-aparelho="' + acessoSiteEscapar(idCompleto) + '" data-busca="' + acessoSiteEscapar(busca) + '" data-nome="' + acessoSiteEscapar(nome) + '" data-saldo="' + creditos + '"' + aberto + '>' +
-          '<summary class="acesso-site-resumo">' + resumo + '</summary>' +
+          '<summary class="acesso-site-resumo">' + resumoHtml + '</summary>' +
           '<div class="acesso-site-detalhe">' +
           '<div class="acesso-site-tabela-dados" role="table" aria-label="Dados do cadastro">' +
           linhaCadastro('Nível', '<strong>' + nivel + '</strong>') +

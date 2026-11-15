@@ -14729,6 +14729,21 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
   color: #dc2626;
 }
 
+/* Lista de usuários: o nome e os dados ocupam o espaço que sobra (e quebram em linhas); o saldo fica à direita, inteiro, sem quebrar o valor. */
+.acesso-site-item > summary.acesso-site-resumo .acesso-site-resumo-info {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.acesso-site-item > summary.acesso-site-resumo .acesso-site-saldo {
+  flex: 0 0 auto;
+  margin-left: auto;
+  white-space: nowrap;
+  text-align: right;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
 .acesso-site-zap-codigo {
   display: inline-flex;
   align-items: center;

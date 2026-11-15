@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.54
+
+Administração de usuários, lista “Usuários identificados”: o **saldo** (💳 R$ 0,00) deixou de quebrar em duas linhas (“R$ 0,0 / 0”). Ele fica numa coluna própria, à direita e sempre inteiro; o nome e os dados (idade, cidade) ocupam o espaço restante e quebram em linhas sem espremer o valor.
+
 ## 6.9.53
 
 Administração de usuários: o campo do valor de crédito e o botão (**Salvar** do crédito de boas-vindas e **Creditar** de cada usuário) agora ocupam a largura toda, lado a lado: o campo estica e o botão fica ao lado.
