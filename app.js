@@ -7710,7 +7710,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.66'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.67'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -28195,10 +28195,28 @@ function saveTemplatesToStorage() {
         const lista = iniciaveis();
         const pos = lista.indexOf(parteAtual) + delta;
         if (!ativa || pos < 0 || pos >= lista.length) return;
-        if (gravacao) return dizer('Pare a gravação antes de mudar de parte.', true);
+        if (gravacao) {
+          if (!opAvancar.checked) return dizer('Pare a gravação antes de mudar de parte (ou ligue “Avançar gravando” nas opções adicionais da gravação).', true);
+          return avancarGravando(lista[pos]);
+        }
         guardarNota();
         abrirParteNaEscrita(lista[pos]);
         salvarRascunho();
+      }
+      // Avançar gravando: para e guarda a gravação deste discurso (resumindo, se a opção estiver ligada), abre o outro e já começa a gravá-lo.
+      let avancando = false;
+      async function avancarGravando(i) {
+        if (avancando) return;
+        avancando = true;
+        try {
+          await pararGravacao();
+          guardarNota();
+          abrirParteNaEscrita(i);
+          salvarRascunho();
+          await iniciarGravacao();
+        } finally {
+          avancando = false;
+        }
       }
       document.getElementById('anotacoesParteAnt').addEventListener('click', () => mudarParte(-1));
       document.getElementById('anotacoesParteProx').addEventListener('click', () => mudarParte(1));
@@ -29741,7 +29759,9 @@ function saveTemplatesToStorage() {
           const track = g.stream && g.stream.getAudioTracks()[0];
           if (track && track.readyState === 'ended') anotAvisarMic(g, true);
         } else {
+          // Saindo do app: pede o que está no buffer e salva já a cópia provisória (o celular pode fechar o app a qualquer momento).
           try { if (g.gravador.state === 'recording') g.gravador.requestData(); } catch (e) { /* ignore */ }
+          setTimeout(() => recSalvarPedacos(g), 300);
         }
       });
 
@@ -29759,7 +29779,100 @@ function saveTemplatesToStorage() {
         return true;
       }
 
-      gravarBtn.addEventListener('click', async () => {
+      // Opções adicionais da gravação (guardadas neste aparelho; as duas vêm ligadas por padrão).
+      const opAutoResumo = document.getElementById('anotacoesOpAutoResumo');
+      const opAvancar = document.getElementById('anotacoesOpAvancar');
+      [[opAutoResumo, 'ns-anot-auto-resumo'], [opAvancar, 'ns-anot-avancar']].forEach(([caixa, chave]) => {
+        let v = null;
+        try { v = localStorage.getItem(chave); } catch (e) { /* sem armazenamento */ }
+        caixa.checked = v !== '0';
+        caixa.addEventListener('change', () => { try { localStorage.setItem(chave, caixa.checked ? '1' : '0'); } catch (e) { /* sem armazenamento */ } });
+      });
+
+      // ----- Gravação salva aos poucos: a cada 15 s (e ao sair do app) os pedaços novos vão para o banco do aparelho; se o app fechar no meio,
+      // na próxima abertura a gravação é montada de novo e guardada nas gravações do discurso. Ao parar ou descartar, essa cópia provisória é apagada.
+      const REC_META = 'anotgrav:meta';
+      const REC_PARTE = n => 'anotgrav:parte:' + n;
+      async function recSalvarPedacos(g) {
+        if (!temBanco || g.recOcupado || g.encerrada) return;
+        g.recOcupado = true;
+        try {
+          const novos = g.pedacos.slice(g.recSalvos);
+          if (novos.length) {
+            const tipo = (g.gravador.mimeType || 'audio/webm').split(';')[0];
+            await bancoGravar(REC_PARTE(g.recN), { blob: new Blob(novos, { type: tipo }) });
+            g.recN++;
+            g.recSalvos += novos.length;
+            if (!g.encerrada) await bancoGravar(REC_META, { n: g.recN, alvo: g.alvo, tipo, duracaoS: tempoGravadoS(g), em: new Date().toISOString() });
+          }
+        } catch (e) { /* sem espaço: a gravação continua na memória */ } finally {
+          g.recOcupado = false;
+        }
+      }
+      async function recLimpar() {
+        if (!temBanco) return;
+        try {
+          const m = await bancoLer(REC_META);
+          await bancoApagar(REC_META);
+          for (let i = 0; i < ((m && m.n) || 0) + 2; i++) await bancoApagar(REC_PARTE(i));
+        } catch (e) { /* nada a apagar */ }
+      }
+      async function recEncerrar(g) {
+        g.encerrada = true;
+        clearInterval(g.recTimer);
+        for (let k = 0; k < 50 && g.recOcupado; k++) await new Promise(r => setTimeout(r, 100));
+        await recLimpar();
+      }
+      // A gravação vai para a anotação de onde saiu (aberta, outra parte do evento aberto ou só no rascunho).
+      function porGravacaoNoAlvo(alvo, id) {
+        if (!alvo) return false;
+        if (alvoAberto(alvo)) { porGravacaoNaAnotacao(id); return true; }
+        const ip = alvo.programa ? indiceDoAlvo(partes, alvo.parteId, alvo.parte) : -1;
+        if (alvo.programa && modo === alvo.modo && comPrograma() && chaveAtual === alvo.chave && ip >= 0) {
+          if (!Array.isArray(partes[ip].gravacoes)) partes[ip].gravacoes = [];
+          partes[ip].gravacoes.push(id);
+          salvarRascunho();
+          return true;
+        }
+        try {
+          const dados = lerRascunhos();
+          if (alvo.programa) {
+            const ev = dados[alvo.modo] && dados[alvo.modo].eventos && dados[alvo.modo].eventos[alvo.chave];
+            const ipr = ev ? indiceDoAlvo(ev.partes, alvo.parteId, alvo.parte) : -1;
+            if (ipr < 0) return false;
+            ev.partes[ipr].gravacoes = [...(ev.partes[ipr].gravacoes || []), id];
+          } else {
+            if (!dados.reuniao || typeof dados.reuniao !== 'object') dados.reuniao = {};
+            dados.reuniao.gravacoes = [...(dados.reuniao.gravacoes || []), id];
+          }
+          localStorage.setItem(ANOT_KEY, JSON.stringify(dados));
+          return true;
+        } catch (e) { return false; }
+      }
+      (async function recRecuperar() {
+        if (!temBanco) return;
+        let m = null;
+        try { m = await bancoLer(REC_META); } catch (e) { return; }
+        if (!m || !m.n) return;
+        const blobs = [];
+        for (let i = 0; i < m.n; i++) {
+          try { const r = await bancoLer(REC_PARTE(i)); if (r && r.blob) blobs.push(r.blob); } catch (e) { /* pedaço perdido */ }
+        }
+        if (!blobs.length) { await recLimpar(); return; }
+        const voz = new Blob(blobs, { type: m.tipo || 'audio/webm' });
+        const titulo = (m.alvo && m.alvo.titulo) || 'Gravação recuperada';
+        let id = null;
+        try { id = await gravacaoGuardar(voz, { titulo, duracaoS: m.duracaoS || null }); } catch (e) { id = null; }
+        if (!id) return; // tenta de novo na próxima abertura
+        const ligada = porGravacaoNoAlvo(m.alvo, id);
+        await recLimpar();
+        gravarStatus.textContent = '♻️ Recuperei uma gravação interrompida de «' + titulo + '» (' + mmss(m.duracaoS || 0) + ')' +
+          (ligada ? ': ela está nas gravações desse discurso (🎧), pronta para resumir.' : ': ela está em Ajustes → Privacidade e dados → Gravações guardadas no app.');
+        pintarGravacoes();
+      })();
+
+      gravarBtn.addEventListener('click', () => iniciarGravacao());
+      async function iniciarGravacao() {
         if (gravacao) return;
         if (gravacaoPronta && !(await fecharGravacaoPronta(true))) return;
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
@@ -29778,9 +29891,12 @@ function saveTemplatesToStorage() {
           if (!gravador) throw new Error('sem gravador');
           const pedacos = [];
           gravador.ondataavailable = e => { if (e.data && e.data.size) pedacos.push(e.data); };
-          const g = { stream, gravador, pedacos, acumulado: 0, retomadoEm: Date.now(), pausado: false };
+          // O alvo (o discurso de onde a gravação saiu) é anotado no início: é para ele que a gravação e o resumo vão.
+          const g = { stream, gravador, pedacos, acumulado: 0, retomadoEm: Date.now(), pausado: false, alvo: alvoAtual(), recN: 0, recSalvos: 0 };
           gravacao = g;
+          await recLimpar();
           gravador.start(1000);
+          g.recTimer = setInterval(() => recSalvarPedacos(g), 15000);
           gravPausarBtn.textContent = '⏸️ Pausar';
           gravarStatus.textContent = '';
           mostrarGravacao('ativa');
@@ -29793,7 +29909,7 @@ function saveTemplatesToStorage() {
         } catch (e) {
           gravarStatus.textContent = 'Não consegui acessar o microfone.';
         }
-      });
+      }
 
       gravPausarBtn.addEventListener('click', () => {
         const g = gravacao;
@@ -29811,12 +29927,14 @@ function saveTemplatesToStorage() {
         }
       });
 
-      // Parar: encerra a gravação e a deixa pronta; o resumo é pedido à parte.
-      document.getElementById('anotacoesGravPararBtn').addEventListener('click', async () => {
+      // Parar: encerra a gravação e a deixa pronta; o resumo é pedido à parte (ou já vai para a fila, com a opção "resumo automático").
+      document.getElementById('anotacoesGravPararBtn').addEventListener('click', () => pararGravacao());
+      async function pararGravacao() {
         const g = gravacao;
         if (!g) return;
         const duracaoS = Math.max(1, tempoGravadoS(g));
         gravacao = null;
+        clearInterval(g.recTimer);
         const parar = rec => new Promise(resolve => {
           if (!rec || rec.state === 'inactive') return resolve();
           rec.onstop = resolve;
@@ -29826,6 +29944,7 @@ function saveTemplatesToStorage() {
         await parar(g.gravador);
         liberarMicrofone(g);
         if (!g.pedacos.length) {
+          await recEncerrar(g);
           mostrarGravacao('ocioso');
           gravarStatus.textContent = 'Não houve áudio gravado.';
           return;
@@ -29833,20 +29952,31 @@ function saveTemplatesToStorage() {
         const tipo = (g.gravador.mimeType || 'audio/webm').split(';')[0];
         const ext = /mp4|aac|m4a/.test(tipo) ? 'm4a' : /ogg/.test(tipo) ? 'ogg' : 'webm';
         const voz = new Blob(g.pedacos, { type: tipo });
-        gravacaoPronta = { arquivo: new File([voz], 'Anotacao.' + ext, { type: tipo, lastModified: Date.now() }), duracaoS, ext, salvo: false, idApp: null, alvo: alvoAtual() };
+        const gp = { arquivo: new File([voz], 'Anotacao.' + ext, { type: tipo, lastModified: Date.now() }), duracaoS, ext, salvo: false, idApp: null, alvo: g.alvo || alvoAtual() };
+        gravacaoPronta = gp;
         gravInfoEl.textContent = '✅ Gravação pronta · ' + mmss(duracaoS);
         mostrarGravacao('pronta');
-        // Guardada no app na hora, na qualidade de voz, ligada a esta anotação.
+        // Guardada no app na hora, na qualidade de voz, ligada ao discurso de onde saiu.
         let id = null;
-        try { id = await gravacaoGuardar(voz, { titulo: tituloDaAnotacao(100), duracaoS }); } catch (e) { id = null; }
+        try { id = await gravacaoGuardar(voz, { titulo: (gp.alvo && gp.alvo.titulo) || tituloDaAnotacao(100), duracaoS }); } catch (e) { id = null; }
         if (id) {
-          gravacaoPronta.idApp = id;
-          porGravacaoNaAnotacao(id);
+          gp.idApp = id;
+          porGravacaoNoAlvo(gp.alvo, id);
           gravarStatus.textContent = '';
+          await recEncerrar(g); // guardada de vez: a cópia provisória sai
         } else {
           gravarStatus.textContent = '⚠️ Não consegui guardar a gravação no app (o armazenamento pode estar cheio ou indisponível). Toque em Exportar para salvar o arquivo, em Resumo para transcrever, ou descarte.';
         }
-      });
+        // Resumo automático: a gravação já vai para a fila e o quadro fecha (só se ela ficou guardada; senão o quadro fica para exportar).
+        if (opAutoResumo.checked && gravacaoPronta === gp) {
+          const ok = await filaAdicionar(pedidoUmaGravacao(gp.arquivo, gp.duracaoS, gp.alvo));
+          if (ok && gp.idApp && gravacaoPronta === gp) {
+            gravacaoPronta = null;
+            mostrarGravacao('ocioso');
+          }
+        }
+        return gp;
+      }
 
       // Concluir: fecha o quadro da gravação pronta; a cópia guardada no app continua na lista 🎧.
       document.getElementById('anotacoesGravConcluirBtn').addEventListener('click', async () => {
@@ -29889,6 +30019,7 @@ function saveTemplatesToStorage() {
           g.gravador.onstop = null;
           try { g.gravador.stop(); } catch (e) { /* já parado */ }
           liberarMicrofone(g);
+          await recEncerrar(g);
         }
         if (gravacaoPronta && gravacaoPronta.idApp) {
           const id = gravacaoPronta.idApp;
@@ -29898,6 +30029,7 @@ function saveTemplatesToStorage() {
         }
         gravacaoPronta = null;
         mostrarGravacao('ocioso');
+        await recLimpar(); // a cópia provisória (se ainda houver) também sai
         gravarStatus.textContent = 'Gravação descartada.';
       }
       document.getElementById('anotacoesGravDescartarBtn').addEventListener('click', descartarGravacao);

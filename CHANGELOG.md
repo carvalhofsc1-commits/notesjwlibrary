@@ -2,6 +2,15 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.67
+
+Anotações: **opções adicionais da gravação** (⚙️, discretas no fim do quadro da gravação, guardadas no aparelho e **ligadas por padrão**):
+
+- **✨ Resumo automático ao parar:** ao tocar em ⏹️ Parar, a gravação é guardada no discurso e o resumo já vai para a fila; o quadro fecha. Desligada, vale o botão ✨ Resumo, como antes.
+- **⏭️ Avançar gravando:** as setas ◀ ▶ do discurso passam a funcionar durante a gravação: a gravação do discurso atual é parada e guardada nele (e resumida, com a opção acima) e a do próximo começa sozinha. Desligada, continua o aviso “Pare a gravação antes de mudar de parte”.
+- **🛟 Gravação salva aos poucos (sempre):** a cada 15 segundos, e ao sair do app, o que foi gravado vai para o banco do aparelho. Se o app fechar no meio de um discurso, na próxima abertura a gravação é recuperada e guardada nas gravações do discurso de onde saiu, pronta para resumir.
+- O discurso de cada gravação passou a ser anotado **no início** da gravação (antes, no fim).
+
 ## 6.9.66
 
 Revisão da tela Anotações (assembleia e congresso), com correções na gravação e no resumo em segundo plano:
