@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.61
+
+O card **📒 Extrato de créditos e consumo** também ganhou moldura em destaque, em **azul** (o Pix é verde), com halo suave e leve fundo azul.
+
 ## 6.9.60
 
 O card **⚡ Adicionar crédito por Pix** ganhou uma **moldura verde em destaque** (borda de 2 px, halo suave e um leve fundo verde; mais escura quando aberto), para se destacar dentro de Consumo de IA e faturamento.

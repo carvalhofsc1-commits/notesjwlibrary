@@ -14881,6 +14881,18 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
   border-color: #15803d;
 }
 
+/* Card "Extrato de créditos e consumo": moldura azul em destaque (outra cor, para não se confundir com o verde do Pix). */
+#extratoSection {
+  border: 2px solid #2563eb;
+  border-radius: 12px;
+  background: color-mix(in srgb, #2563eb 8%, var(--card));
+  box-shadow: 0 0 0 3px color-mix(in srgb, #2563eb 22%, transparent);
+}
+
+#extratoSection[open] {
+  border-color: #1d4ed8;
+}
+
 /* Crédito por Pix (Ajustes → Consumo): o valor e o botão ocupam a largura toda; o QR code fica centralizado. */
 .pix-credito-linha {
   display: flex;
