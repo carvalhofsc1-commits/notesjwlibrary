@@ -98,6 +98,9 @@
       if (changed && currentScreen() === 'leitura') leituraAoSair(); // saindo da tela Leitura, a leitura em voz alta para
       if (changed && currentScreen() === 'biblia') bibliaVideoParar(); // saindo da Leitura da Bíblia, o vídeo de introdução para
       document.body.dataset.screen = screen;
+      if (screen === 'ajustes') { // o card Consumo de IA e faturamento e o Extrato dentro dele sempre abrem recolhidos
+        ['extratoSection', 'consumoResumoBox', 'consumoSection'].forEach(id => { const el = document.getElementById(id); if (el) el.open = false; });
+      }
       if (screen !== 'formatar') formatarVoltar = null;
       formatarVoltarPintar();
       editorOpcoesPosicionar();
@@ -7707,7 +7710,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.63'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.64'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12090,7 +12093,7 @@ function saveTemplatesToStorage() {
       consumoRender(r.data);
     }
     // Ao abrir o card, o consumo detalhado sempre começa recolhido (só o campo de total e saldo aparece).
-    consumoSection.addEventListener('toggle', () => { if (consumoSection.open) { consumoResumoBox.open = false; consumoCarregar(consumoMesEl.value); } });
+    consumoSection.addEventListener('toggle', () => { if (consumoSection.open) { consumoResumoBox.open = false; extrato.secao.open = false; consumoCarregar(consumoMesEl.value); } });
     consumoMesEl.addEventListener('change', () => consumoCarregar(consumoMesEl.value));
     document.getElementById('consumoAtualizarBtn').addEventListener('click', () => consumoCarregar(consumoMesEl.value));
 
@@ -12318,13 +12321,10 @@ function saveTemplatesToStorage() {
     extrato.secao.addEventListener('toggle', () => { if (extrato.secao.open) extratoCarregar(); });
     extrato.periodo.addEventListener('change', extratoRender);
     document.getElementById('extratoAtualizarBtn').addEventListener('click', extratoCarregar);
-    // Atalho do Início: abre Ajustes → Consumo de IA e faturamento → Extrato, já carregado.
+    // Atalho do Início: leva a Ajustes, até o card Consumo de IA e faturamento, que (como o extrato dentro dele) fica sempre recolhido: quem quiser abre.
     function extratoAbrir() {
       showScreen('ajustes');
-      consumoSection.open = true;
-      extrato.secao.open = true;
-      extratoCarregar();
-      setTimeout(() => extrato.secao.scrollIntoView({ block: 'start' }), 120);
+      setTimeout(() => consumoSection.scrollIntoView({ block: 'start' }), 120);
     }
 
     // Administrador: preços por categoria e a chave PIX.

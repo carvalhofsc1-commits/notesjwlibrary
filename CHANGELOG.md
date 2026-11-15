@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.64
+
+- **Recolhidos sempre:** o card **Consumo de IA e faturamento** e o **Extrato** dentro dele abrem sempre recolhidos ao entrar em Ajustes e ao abrir o card, inclusive pelo atalho **Extrato** da tela inicial (que agora só leva até o card, sem abri-lo).
+- **Nova ordem:** o campo **Total do mês · Saldo de créditos** fica logo abaixo da escolha do mês.
+- **Texto de ajuda** sob o seletor de mês reduzido à primeira frase: “O que você usou de IA no mês, em cada recurso liberado pelos seus códigos, e o valor a pagar.”
+
 ## 6.9.63
 
 Consumo de IA e faturamento: em **primeiro lugar** agora fica o campo **Total do mês · Saldo de créditos**. O **consumo detalhado** (recurso por recurso, com uso, preço e valor) abre ao tocar nesse campo (seta ▸ / ▾) e **sempre começa recolhido** ao abrir o card. O seletor de mês, o aviso de ajuda, o Pix e o extrato vêm depois.
