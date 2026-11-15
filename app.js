@@ -7701,7 +7701,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.57'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.58'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -11962,10 +11962,6 @@ function saveTemplatesToStorage() {
     const consumoStatus = document.getElementById('consumoStatus');
     const consumoListaEl = document.getElementById('consumoLista');
     const consumoTotalEl = document.getElementById('consumoTotal');
-    const consumoPixEl = document.getElementById('consumoPix');
-    const consumoPixAviso = document.getElementById('consumoPixAviso');
-    const consumoPixCorpo = document.getElementById('consumoPixCorpo');
-    const consumoPixStatus = document.getElementById('consumoPixStatus');
     let consumoDados = null;
     const consumoReais = n => (Number(n) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     const consumoNum = n => (Number(n) || 0).toLocaleString('pt-BR');
@@ -12033,61 +12029,6 @@ function saveTemplatesToStorage() {
         consumoTotalEl.textContent = 'Total de ' + consumoMesNome(d.mes) + ': ' + consumoReais(d.total) + (saldoTxt ? ' · ' + saldoTxt : '');
         consumoTotalEl.hidden = false;
       }
-      consumoPixRender();
-    }
-    function consumoPixRender() {
-      const d = consumoDados;
-      const pix = d && d.pix;
-      if (!pix || !pix.configurado) {
-        consumoPixAviso.hidden = false;
-        consumoPixAviso.textContent = 'O administrador ainda não cadastrou a chave PIX.';
-        consumoPixCorpo.hidden = true;
-        return;
-      }
-      consumoPixAviso.hidden = true;
-      consumoPixCorpo.hidden = false;
-      document.getElementById('consumoPixDados').textContent = 'Chave PIX: ' + pix.chave + (pix.nome ? ' · ' + pix.nome : '') + (pix.cidade ? ' (' + pix.cidade + ')' : '');
-      const temValor = d.total >= 0.01;
-      const linha = document.getElementById('consumoPixValorLinha');
-      linha.hidden = !temValor;
-      document.getElementById('consumoPixValorTexto').textContent = 'Incluir o valor do mês (' + consumoReais(d.total) + ') no QR code';
-      consumoPixDesenhar();
-    }
-    function consumoPixCodigo() {
-      const d = consumoDados;
-      if (!d || !d.pix) return '';
-      const comValor = d.total >= 0.01 && document.getElementById('consumoPixComValor').checked;
-      return comValor ? d.pix.codigo : d.pix.codigoLivre;
-    }
-    async function consumoPixDesenhar() {
-      const codigo = consumoPixCodigo();
-      const canvas = document.getElementById('consumoPixQr');
-      if (!codigo) return;
-      try {
-        await loadScriptOnce('vendor/qrcode.min.js');
-        const qr = window.qrcode(0, 'M');
-        qr.addData(codigo);
-        qr.make();
-        const n = qr.getModuleCount();
-        const cel = 6;
-        const margem = 2;
-        canvas.width = canvas.height = (n + margem * 2) * cel;
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#000';
-        for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) ctx.fillRect((c + margem) * cel, (r + margem) * cel, cel, cel);
-      } catch (e) {
-        consumoPixStatus.textContent = 'Não consegui desenhar o QR code agora. Use o código copia e cola.';
-      }
-    }
-    async function consumoCopiar(texto, aviso) {
-      try {
-        await navigator.clipboard.writeText(texto);
-        consumoPixStatus.textContent = aviso;
-      } catch (e) {
-        consumoPixStatus.textContent = 'Não consegui copiar. Selecione e copie manualmente.';
-      }
     }
     // Os códigos salvos só servem para o servidor saber a que recursos o aparelho tem acesso.
     function consumoPedido(mes) {
@@ -12144,10 +12085,6 @@ function saveTemplatesToStorage() {
     consumoSection.addEventListener('toggle', () => { if (consumoSection.open) consumoCarregar(consumoMesEl.value); });
     consumoMesEl.addEventListener('change', () => consumoCarregar(consumoMesEl.value));
     document.getElementById('consumoAtualizarBtn').addEventListener('click', () => consumoCarregar(consumoMesEl.value));
-    consumoPixEl.addEventListener('toggle', () => { if (consumoPixEl.open) consumoPixDesenhar(); });
-    document.getElementById('consumoPixComValor').addEventListener('change', consumoPixDesenhar);
-    document.getElementById('consumoPixCopiarCodigo').addEventListener('click', () => consumoCopiar(consumoPixCodigo(), 'Código PIX copiado. No app do banco, escolha PIX → Copia e Cola.'));
-    document.getElementById('consumoPixCopiarChave').addEventListener('click', () => consumoCopiar((consumoDados && consumoDados.pix && consumoDados.pix.chave) || '', 'Chave PIX copiada.'));
 
     // ---- Crédito por Pix (Mercado Pago): o servidor gera o Pix e confere o pagamento; o app só mostra o QR e pergunta se já caiu. ----
     const PIX_PENDENTE_CHAVE = 'ns-pix-pendente';
@@ -12373,11 +12310,14 @@ function saveTemplatesToStorage() {
     extrato.secao.addEventListener('toggle', () => { if (extrato.secao.open) extratoCarregar(); });
     extrato.periodo.addEventListener('change', extratoRender);
     document.getElementById('extratoAtualizarBtn').addEventListener('click', extratoCarregar);
-    document.getElementById('consumoExtratoBtn').addEventListener('click', () => {
+    // Atalho do Início: abre Ajustes → Consumo de IA e faturamento → Extrato, já carregado.
+    function extratoAbrir() {
+      showScreen('ajustes');
+      consumoSection.open = true;
       extrato.secao.open = true;
       extratoCarregar();
-      setTimeout(() => extrato.secao.scrollIntoView({ block: 'start' }), 80);
-    });
+      setTimeout(() => extrato.secao.scrollIntoView({ block: 'start' }), 120);
+    }
 
     // Administrador: preços por categoria e a chave PIX.
     const faturamentoStatus = document.getElementById('faturamentoStatus');
@@ -22189,7 +22129,6 @@ function saveTemplatesToStorage() {
       // Página 2 dos atalhos: cada um leva a uma ferramenta de um grupo e segue o código do grupo dela (o discurso público também o do S-34).
       ['sentinela', 'joias', 'ebc'].forEach(nome => travarAtalho(nome, pesquisa ? '' : 'pesquisa'));
       travarAtalho('outros', motivoDirigir);
-      travarAtalho('publico', motivoDirigir || (s34 ? '' : 's34'));
       // Texto diário (tela Início): o cartão fica bloqueado, menos o link para o wol.jw.org, que vale sempre.
       const texto = document.getElementById('textoDiarioCard');
       texto.classList.toggle('card-desabilitado', !pesquisa);
@@ -24923,12 +24862,12 @@ function saveTemplatesToStorage() {
       sentinela: { vista: 'comentarios', caixa: 'sentinelaBox' },
       joias: { vista: 'comentarios', caixa: 'joiasBox' },
       ebc: { vista: 'comentarios', caixa: 'ebcBox' },
-      publico: { vista: 'discursos', caixa: 'publicoBox' },
       outros: { vista: 'discursos', caixa: 'outrosBox' }
     };
     document.querySelectorAll('[data-atalho]').forEach(botao => {
       botao.addEventListener('click', () => {
         const destino = botao.dataset.atalho;
+        if (destino === 'extrato') return extratoAbrir();
         const ferramenta = ATALHOS_FERRAMENTAS[destino];
         if (ferramenta) {
           showScreen('reunioes');

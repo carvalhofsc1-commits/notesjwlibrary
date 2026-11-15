@@ -160,7 +160,7 @@
           <button type="button" class="atalho" data-atalho="sentinela"><span class="atalho-icone" aria-hidden="true">📰</span><span class="atalho-nome">A Sentinela</span><span class="atalho-desc">Respostas e comentários do estudo</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="joias"><span class="atalho-icone" aria-hidden="true">💎</span><span class="atalho-nome">Joias espirituais</span><span class="atalho-desc">Leitura da semana e comentários</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="ebc"><span class="atalho-icone" aria-hidden="true">📘</span><span class="atalho-nome">Estudo Bíblico</span><span class="atalho-desc">Respostas do estudo de congregação</span><span class="atalho-trava" hidden></span></button>
-          <button type="button" class="atalho" data-atalho="publico"><span class="atalho-icone" aria-hidden="true">🏛️</span><span class="atalho-nome">Discurso público</span><span class="atalho-desc">Esboços, gravuras e cântico</span><span class="atalho-trava" hidden></span></button>
+          <button type="button" class="atalho" data-atalho="extrato"><span class="atalho-icone" aria-hidden="true">📒</span><span class="atalho-nome">Extrato</span><span class="atalho-desc">Créditos, consumo de IA e saldo</span></button>
           <button type="button" class="atalho" data-atalho="outros"><span class="atalho-icone" aria-hidden="true">🖋️</span><span class="atalho-nome">Outros esboços</span><span class="atalho-desc">Tema livre ou esboço importado</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="ajustes"><span class="atalho-icone" aria-hidden="true">⚙️</span><span class="atalho-nome">Ajustes</span><span class="atalho-desc">Códigos, vozes, IA e preferências</span></button>
           <button type="button" class="atalho" data-atalho="historico"><span class="atalho-icone" aria-hidden="true">🗂️</span><span class="atalho-nome">Pesquisas salvas</span><span class="atalho-desc">Respostas e pesquisas guardadas</span></button>
@@ -1276,7 +1276,6 @@
             <p id="consumoStatus" class="ok" role="status" aria-live="polite"></p>
             <div id="consumoLista" class="consumo-lista" hidden></div>
             <p id="consumoTotal" class="consumo-total" hidden></p>
-            <button id="consumoExtratoBtn" class="secondary" type="button">📒 Ver extrato (créditos e consumo por solicitação)</button>
             <details class="prompt-item" id="pixCredito" hidden>
               <summary><h3>⚡ Adicionar crédito por Pix</h3></summary>
               <p class="hint">Informe o valor, pague o Pix gerado e o crédito entra sozinho no seu saldo, em poucos segundos (sem enviar comprovante). O Pix vale por 30 minutos.</p>
@@ -1294,34 +1293,18 @@
               </div>
               <p id="pixCreditoStatus" class="ok" role="status" aria-live="polite"></p>
             </details>
-            <details class="prompt-item" id="consumoPix">
-              <summary><h3>💠 Pagar com PIX</h3></summary>
-              <p id="consumoPixAviso" class="hint" hidden></p>
-              <div id="consumoPixCorpo" class="consumo-pix" hidden>
-                <p class="hint" id="consumoPixDados"></p>
-                <label class="ai-check" id="consumoPixValorLinha"><input type="checkbox" id="consumoPixComValor" checked autocomplete="off"> <span id="consumoPixValorTexto">Incluir o valor do mês no QR code</span></label>
-                <canvas id="consumoPixQr" class="consumo-pix-qr" width="10" height="10" aria-label="QR code do PIX"></canvas>
-                <div class="button-row">
-                  <button id="consumoPixCopiarCodigo" class="secondary" type="button">📋 Copiar código PIX (copia e cola)</button>
-                  <button id="consumoPixCopiarChave" class="secondary" type="button">🔑 Copiar a chave</button>
-                </div>
-                <p id="consumoPixStatus" class="ok" role="status" aria-live="polite"></p>
+            <details class="prompt-item" id="extratoSection">
+              <summary><h3>📒 Extrato de créditos e consumo</h3></summary>
+              <p class="hint">Todos os movimentos do seu saldo, do mais antigo para o mais novo: o saldo inicial, os créditos (boas-vindas, Pix e lançamentos do administrador) e cada consumo de IA, com o recurso que usou, o valor e o saldo que restou.</p>
+              <div class="consumo-mes">
+                <label for="extratoPeriodo">Período</label>
+                <select id="extratoPeriodo" autocomplete="off"></select>
+                <button id="extratoAtualizarBtn" class="secondary" type="button" title="Atualizar o extrato" aria-label="Atualizar o extrato">🔄</button>
               </div>
+              <p id="extratoStatus" class="hint" role="status" aria-live="polite"></p>
+              <div id="extratoResumo" class="extrato-resumo" hidden></div>
+              <div id="extratoLista" class="extrato-lista" hidden></div>
             </details>
-          </div>
-        </details>
-        <details class="subsection sub-tint-5" id="extratoSection">
-          <summary>📒 Extrato de créditos e consumo</summary>
-          <div class="subsection-body">
-            <p class="hint">Todos os movimentos do seu saldo, do mais antigo para o mais novo: o saldo inicial, os créditos (boas-vindas, Pix e lançamentos do administrador) e cada consumo de IA, com o recurso que usou, o valor e o saldo que restou.</p>
-            <div class="consumo-mes">
-              <label for="extratoPeriodo">Período</label>
-              <select id="extratoPeriodo" autocomplete="off"></select>
-              <button id="extratoAtualizarBtn" class="secondary" type="button" title="Atualizar o extrato" aria-label="Atualizar o extrato">🔄</button>
-            </div>
-            <p id="extratoStatus" class="hint" role="status" aria-live="polite"></p>
-            <div id="extratoResumo" class="extrato-resumo" hidden></div>
-            <div id="extratoLista" class="extrato-lista" hidden></div>
           </div>
         </details>
         <details class="subsection sub-tint-6" id="aiSection">

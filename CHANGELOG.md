@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.58
+
+- **Sai a opção “💠 Pagar com PIX”** (a chave e o QR code fixos) de Consumo de IA e faturamento: fica só **⚡ Adicionar crédito por Pix**, com confirmação automática.
+- **O extrato saiu do card próprio** de Ajustes e ficou **dentro de Consumo de IA e faturamento** (“📒 Extrato de créditos e consumo”); o botão “Ver extrato” deixou de existir.
+- **Início, página 2:** o atalho **Discurso público** foi trocado por **Extrato**, que abre Ajustes → Consumo de IA e faturamento → Extrato, já carregado. (Discurso público continua em Reuniões → Discursos.)
+
 ## 6.9.57
 
 **Extrato de créditos e consumo.** Nova seção em Ajustes, **📒 Extrato de créditos e consumo** (também pelo botão “Ver extrato” em Consumo de IA e faturamento), que mostra, do mais antigo para o mais novo: o **saldo inicial**, os **créditos** (boas-vindas, Pix e lançamentos do administrador), cada **consumo de IA por solicitação** (com o recurso que consumiu e o valor) e o **saldo depois de cada movimento**. Resumo no topo (créditos, consumo e saldo) e filtro por mês.
