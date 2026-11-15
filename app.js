@@ -7701,7 +7701,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.55'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.56'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12148,6 +12148,128 @@ function saveTemplatesToStorage() {
     document.getElementById('consumoPixComValor').addEventListener('change', consumoPixDesenhar);
     document.getElementById('consumoPixCopiarCodigo').addEventListener('click', () => consumoCopiar(consumoPixCodigo(), 'Código PIX copiado. No app do banco, escolha PIX → Copia e Cola.'));
     document.getElementById('consumoPixCopiarChave').addEventListener('click', () => consumoCopiar((consumoDados && consumoDados.pix && consumoDados.pix.chave) || '', 'Chave PIX copiada.'));
+
+    // ---- Crédito por Pix (Mercado Pago): o servidor gera o Pix e confere o pagamento; o app só mostra o QR e pergunta se já caiu. ----
+    const PIX_PENDENTE_CHAVE = 'ns-pix-pendente';
+    const pixCredito = {
+      caixa: document.getElementById('pixCredito'),
+      valor: document.getElementById('pixCreditoValor'),
+      gerarBtn: document.getElementById('pixCreditoGerarBtn'),
+      pagar: document.getElementById('pixCreditoPagar'),
+      valorTxt: document.getElementById('pixCreditoValorTxt'),
+      qr: document.getElementById('pixCreditoQr'),
+      copiarBtn: document.getElementById('pixCreditoCopiarBtn'),
+      conferirBtn: document.getElementById('pixCreditoConferirBtn'),
+      status: document.getElementById('pixCreditoStatus')
+    };
+    let pixCreditoAtual = null; // { pagamentoId, codigo, qrBase64, valor, ate }
+    let pixCreditoTimer = 0;
+    let pixCreditoDisponivel = null; // null = ainda não perguntou ao servidor
+    async function pixCreditoPost(corpo) {
+      try {
+        const resposta = await fetch('/api/mercadopago', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ aparelhoId: aparelhoId(), ...corpo }) });
+        let data = null;
+        try { data = await resposta.json(); } catch (e) { /* sem JSON */ }
+        return { ok: resposta.ok && !!data, status: resposta.status, data };
+      } catch (e) { return { ok: false, status: 0, data: null }; }
+    }
+    function pixCreditoGuardar() {
+      try { if (pixCreditoAtual) localStorage.setItem(PIX_PENDENTE_CHAVE, JSON.stringify(pixCreditoAtual)); else localStorage.removeItem(PIX_PENDENTE_CHAVE); } catch (e) { /* sem armazenamento */ }
+    }
+    function pixCreditoParar() { clearInterval(pixCreditoTimer); pixCreditoTimer = 0; }
+    function pixCreditoMostrar() {
+      const p = pixCreditoAtual;
+      pixCreditoParar();
+      pixCredito.pagar.hidden = !p;
+      if (!p) return;
+      pixCredito.valorTxt.textContent = 'Pague ' + consumoReais(p.valor) + ' com o QR code ou o copia e cola. Esta tela confere sozinha e credita assim que o pagamento cair.';
+      pixCredito.qr.src = p.qrBase64 ? 'data:image/png;base64,' + p.qrBase64 : '';
+      pixCredito.qr.hidden = !p.qrBase64;
+      pixCreditoTimer = setInterval(() => pixCreditoConferir(false), 5000);
+    }
+    async function pixCreditoConferir(manual) {
+      const p = pixCreditoAtual;
+      if (!p) return;
+      if (Date.now() > p.ate) {
+        pixCreditoAtual = null; pixCreditoGuardar(); pixCreditoMostrar();
+        pixCredito.status.className = 'warn';
+        pixCredito.status.textContent = 'Este Pix expirou. Gere outro para adicionar crédito.';
+        return;
+      }
+      if (document.visibilityState !== 'visible' && !manual) return;
+      const r = await pixCreditoPost({ acao: 'consultar', pagamentoId: p.pagamentoId });
+      if (pixCreditoAtual !== p) return;
+      if (!r.ok) {
+        if (manual) { pixCredito.status.className = 'warn'; pixCredito.status.textContent = (r.data && r.data.erro) || 'Não consegui conferir agora. Tente de novo.'; }
+        return;
+      }
+      const estado = r.data.estado;
+      if (estado === 'aprovado') {
+        pixCreditoAtual = null; pixCreditoGuardar(); pixCreditoMostrar();
+        pixCredito.valor.value = '';
+        pixCredito.status.className = 'ok';
+        pixCredito.status.textContent = '✅ Pix confirmado! ' + consumoReais(r.data.valor) + ' creditados. Seu saldo agora é ' + consumoReais(r.data.creditos) + '.';
+        consumoCarregar(consumoMesEl.value);
+      } else if (estado === 'expirado' || estado === 'recusado') {
+        pixCreditoAtual = null; pixCreditoGuardar(); pixCreditoMostrar();
+        pixCredito.status.className = 'warn';
+        pixCredito.status.textContent = estado === 'expirado' ? 'Este Pix expirou ou foi cancelado. Gere outro.' : 'O pagamento não foi aprovado. Gere outro Pix.';
+      } else if (manual) {
+        pixCredito.status.className = 'hint';
+        pixCredito.status.textContent = 'Ainda não recebi o pagamento. Assim que cair, o crédito entra sozinho.';
+      }
+    }
+    // Só mostra a opção se o servidor está configurado para receber (token do Mercado Pago) e o aparelho é de um usuário identificado.
+    async function pixCreditoPreparar() {
+      if (!navigator.onLine || !servidoPelaWeb()) { pixCredito.caixa.hidden = true; return; }
+      if (pixCreditoDisponivel === null) {
+        const r = await pixCreditoPost({ acao: 'estado' });
+        pixCreditoDisponivel = Boolean(r.ok && r.data && r.data.configurado);
+      }
+      pixCredito.caixa.hidden = !pixCreditoDisponivel;
+      if (pixCreditoDisponivel && !pixCreditoAtual) {
+        try {
+          const guardado = JSON.parse(localStorage.getItem(PIX_PENDENTE_CHAVE) || 'null');
+          if (guardado && guardado.pagamentoId && Date.now() < guardado.ate) { pixCreditoAtual = guardado; pixCreditoMostrar(); pixCreditoConferir(false); }
+          else if (guardado) { localStorage.removeItem(PIX_PENDENTE_CHAVE); }
+        } catch (e) { /* sem armazenamento */ }
+      }
+    }
+    pixCredito.gerarBtn.addEventListener('click', async () => {
+      const texto = pixCredito.valor.value.trim();
+      if (!texto) { pixCredito.status.className = 'warn'; pixCredito.status.textContent = 'Informe o valor do crédito em reais, por exemplo 20,00.'; pixCredito.valor.focus(); return; }
+      pixCredito.gerarBtn.disabled = true;
+      pixCredito.status.className = 'hint';
+      pixCredito.status.textContent = 'Gerando o Pix…';
+      const r = await pixCreditoPost({ acao: 'criar', valor: texto });
+      pixCredito.gerarBtn.disabled = false;
+      if (!r.ok) {
+        pixCredito.status.className = 'warn';
+        pixCredito.status.textContent = (r.data && r.data.erro) || 'Não consegui gerar o Pix agora. Confira a internet e tente de novo.';
+        return;
+      }
+      pixCreditoAtual = { pagamentoId: r.data.pagamentoId, codigo: r.data.codigo, qrBase64: r.data.qrBase64, valor: r.data.valor, ate: Date.now() + (r.data.minutos || 30) * 60000 };
+      pixCreditoGuardar();
+      pixCreditoMostrar();
+      pixCredito.status.className = 'ok';
+      pixCredito.status.textContent = 'Pix gerado. Assim que você pagar, o crédito entra sozinho.';
+    });
+    pixCredito.valor.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); pixCredito.gerarBtn.click(); } });
+    pixCredito.copiarBtn.addEventListener('click', async () => {
+      if (!pixCreditoAtual) return;
+      try {
+        await navigator.clipboard.writeText(pixCreditoAtual.codigo);
+        pixCredito.status.className = 'ok';
+        pixCredito.status.textContent = 'Código Pix copiado. No app do banco, escolha Pix → Copia e Cola.';
+      } catch (e) {
+        pixCredito.status.className = 'warn';
+        pixCredito.status.textContent = 'Não consegui copiar. Use o QR code.';
+      }
+    });
+    pixCredito.conferirBtn.addEventListener('click', () => pixCreditoConferir(true));
+    consumoSection.addEventListener('toggle', () => { if (consumoSection.open) pixCreditoPreparar(); });
+    // Voltando do app do banco para o NoteStyle: confere na hora.
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && pixCreditoAtual) pixCreditoConferir(false); });
 
     // Administrador: preços por categoria e a chave PIX.
     const faturamentoStatus = document.getElementById('faturamentoStatus');

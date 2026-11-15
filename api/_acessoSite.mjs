@@ -635,6 +635,40 @@ export async function creditarUsuario({ aparelhoId, valor, codigoAdmin }) {
   });
 }
 
+// O aparelho está na lista de usuários identificados (aprovados)? Só eles podem comprar crédito.
+export async function aparelhoIdentificado(aparelhoId) {
+  const id = aparelhoIdLimpo(aparelhoId);
+  if (!id || !acessoSiteConfigurado()) return false;
+  cacheDados = { em: 0, dados: null };
+  const dados = await lerRecente();
+  return Boolean(dados.aprovados[id]);
+}
+
+// Credita um pagamento Pix já confirmado no Mercado Pago. Cada pagamento (pelo número dele) só credita UMA vez, mesmo que o aviso (webhook) e a
+// consulta do aplicativo cheguem juntos: a conferência e a gravação acontecem na mesma fila. Guarda os últimos pagamentos para dar o extrato.
+const MAX_PIX_GUARDADOS = 3000;
+export async function creditarPagamentoPix({ aparelhoId, pagamentoId, valor }) {
+  const id = aparelhoIdLimpo(aparelhoId);
+  const pag = String(pagamentoId || "").trim();
+  const soma = Math.round(Number(valor) * 100) / 100;
+  if (!id || !/^\d{3,20}$/.test(pag) || !Number.isFinite(soma) || soma <= 0 || soma > 100000) return { erro: "Pagamento inválido." };
+  return comDados((dados) => {
+    const reg = dados.aprovados[id];
+    if (!reg) return { erro: "Este aparelho não está na lista de identificados." };
+    if (!dados.pixPagamentos || typeof dados.pixPagamentos !== "object") dados.pixPagamentos = {};
+    if (dados.pixPagamentos[pag]) return { ok: true, jaCreditado: true, creditos: creditosDe(reg), valor: dados.pixPagamentos[pag].valor };
+    reg.creditos = Math.max(0, arredondarSaldo(creditosDe(reg) + soma));
+    reg.creditosAtualizadoEm = agoraIso();
+    dados.pixPagamentos[pag] = { aparelhoId: id, valor: soma, em: agoraIso() };
+    const chaves = Object.keys(dados.pixPagamentos);
+    if (chaves.length > MAX_PIX_GUARDADOS) chaves.slice(0, chaves.length - MAX_PIX_GUARDADOS).forEach((k) => delete dados.pixPagamentos[k]);
+    if (!Array.isArray(reg.pixHistorico)) reg.pixHistorico = [];
+    reg.pixHistorico.push({ pagamentoId: pag, valor: soma, em: agoraIso() });
+    if (reg.pixHistorico.length > 30) reg.pixHistorico = reg.pixHistorico.slice(-30);
+    return { ok: true, jaCreditado: false, creditos: reg.creditos, valor: soma };
+  });
+}
+
 export async function gerarCodigoUsuario({ aparelhoId, recurso, codigoAdmin }) {
   if (!textosIguais(codigoAdmin, process.env.CODIGO_ADMIN)) return { erro: "Código de administrador incorreto." };
   const id = aparelhoIdLimpo(aparelhoId);

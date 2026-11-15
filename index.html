@@ -1276,6 +1276,23 @@
             <p id="consumoStatus" class="ok" role="status" aria-live="polite"></p>
             <div id="consumoLista" class="consumo-lista" hidden></div>
             <p id="consumoTotal" class="consumo-total" hidden></p>
+            <details class="prompt-item" id="pixCredito" hidden>
+              <summary><h3>⚡ Adicionar crédito por Pix</h3></summary>
+              <p class="hint">Informe o valor, pague o Pix gerado e o crédito entra sozinho no seu saldo, em poucos segundos (sem enviar comprovante). O Pix vale por 30 minutos.</p>
+              <div class="pix-credito-linha">
+                <input id="pixCreditoValor" type="text" inputmode="decimal" autocomplete="off" placeholder="Valor em R$, ex.: 20,00" aria-label="Valor do crédito em reais">
+                <button id="pixCreditoGerarBtn" type="button">⚡ Gerar Pix</button>
+              </div>
+              <div id="pixCreditoPagar" class="consumo-pix" hidden>
+                <p id="pixCreditoValorTxt" class="hint"></p>
+                <img id="pixCreditoQr" class="consumo-pix-qr" alt="QR code do Pix para pagar" width="220" height="220">
+                <div class="button-row">
+                  <button id="pixCreditoCopiarBtn" class="secondary" type="button">📋 Copiar código Pix (copia e cola)</button>
+                  <button id="pixCreditoConferirBtn" class="secondary" type="button">🔄 Já paguei: conferir</button>
+                </div>
+              </div>
+              <p id="pixCreditoStatus" class="ok" role="status" aria-live="polite"></p>
+            </details>
             <details class="prompt-item" id="consumoPix">
               <summary><h3>💠 Pagar com PIX</h3></summary>
               <p id="consumoPixAviso" class="hint" hidden></p>

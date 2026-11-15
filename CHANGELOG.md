@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.56
+
+**Crédito por Pix com confirmação automática (Mercado Pago).** Em Ajustes → Consumo de IA e faturamento, nova opção **⚡ Adicionar crédito por Pix**: o usuário informa o valor, o app mostra o QR code e o copia e cola, e o crédito entra sozinho no saldo quando o pagamento cai (sem comprovante). Só aparece quando o servidor está configurado.
+
+- **Segurança:** o servidor nunca confia no aplicativo nem no aviso: antes de creditar, lê o pagamento direto na API do Mercado Pago e só credita se estiver aprovado, for Pix em reais e a referência for de um usuário identificado. Cada pagamento credita **uma vez só** (mesmo com o aviso e a conferência juntos). Valor de R$ 1,00 a R$ 500,00; Pix válido por 30 minutos.
+- **Novos arquivos:** `api/mercadopago.mjs` (criar e consultar), `api/mercadopago-webhook.mjs` (aviso do Mercado Pago) e `api/_mercadopago.mjs`.
+- **Para ativar na Vercel:** variáveis `MERCADOPAGO_ACCESS_TOKEN` (obrigatória) e `MERCADOPAGO_WEBHOOK_SECRET`; webhook `https://www.notestyle.com.br/api/mercadopago-webhook` com o evento Pagamentos.
+
 ## 6.9.55
 
 Administração de usuários: cada usuário mostra, já na lista, o **saldo** e, logo abaixo, o **consumo de IA do mês em R$** (o total da tabela de consumo que já existia dentro do card; nenhuma tabela nova nem mudança no servidor). Dentro do card, a seção de créditos agora traz **Consumo de IA no mês** e **Saldo restante** juntos, acima do campo de creditar. A linha de totais da lista soma o **consumo do mês** e o saldo dos usuários.

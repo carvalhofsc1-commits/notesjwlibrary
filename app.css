@@ -14775,6 +14775,42 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
   vertical-align: middle;
 }
 
+/* Crédito por Pix (Ajustes → Consumo): o valor e o botão ocupam a largura toda; o QR code fica centralizado. */
+.pix-credito-linha {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+  margin: 8px 0;
+}
+
+.pix-credito-linha input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 40px;
+  padding: 4px 10px;
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.pix-credito-linha button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+#pixCreditoQr {
+  display: block;
+  width: 220px;
+  height: 220px;
+  max-width: 100%;
+  margin: 8px auto;
+  background: #fff;
+  padding: 8px;
+  box-sizing: border-box;
+  border-radius: 8px;
+}
+
 /* Administração de usuários: o campo do valor de crédito e o botão (boas-vindas e creditar por usuário) ocupam a largura toda, lado a lado. */
 .acesso-site-creditar-linha {
   display: flex;
