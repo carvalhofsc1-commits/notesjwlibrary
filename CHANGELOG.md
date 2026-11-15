@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.55
+
+Administração de usuários: cada usuário mostra, já na lista, o **saldo** e, logo abaixo, o **consumo de IA do mês em R$** (o total da tabela de consumo que já existia dentro do card; nenhuma tabela nova nem mudança no servidor). Dentro do card, a seção de créditos agora traz **Consumo de IA no mês** e **Saldo restante** juntos, acima do campo de creditar. A linha de totais da lista soma o **consumo do mês** e o saldo dos usuários.
+
 ## 6.9.54
 
 Administração de usuários, lista “Usuários identificados”: o **saldo** (💳 R$ 0,00) deixou de quebrar em duas linhas (“R$ 0,0 / 0”). Ele fica numa coluna própria, à direita e sempre inteiro; o nome e os dados (idade, cidade) ocupam o espaço restante e quebram em linhas sem espremer o valor.

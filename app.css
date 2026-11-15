@@ -14735,6 +14735,21 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
   min-width: 0;
 }
 
+.acesso-site-saldo-valor,
+.acesso-site-saldo-consumo {
+  display: block;
+}
+
+.acesso-site-saldo-consumo {
+  font-size: .72rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.acesso-site-saldo.zerado .acesso-site-saldo-consumo {
+  color: inherit;
+}
+
 .acesso-site-item > summary.acesso-site-resumo .acesso-site-saldo {
   flex: 0 0 auto;
   margin-left: auto;

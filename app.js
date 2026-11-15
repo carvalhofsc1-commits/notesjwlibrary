@@ -7701,7 +7701,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.54'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.55'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -12591,8 +12591,12 @@ function saveTemplatesToStorage() {
           ].filter(Boolean).join(' · ');
           // Sem saldo, a IA deste usuário está pausada: fica em destaque na lista (o administrador usa a IA com a senha, sem saldo).
           // O saldo é um bloco à parte, à direita e sem quebra de linha (o valor nunca se parte); o nome e os dados ocupam o resto.
+          // Sob o saldo, o consumo de IA do mês (a mesma tabela de consumo que está dentro do card, aqui só o total) para ver tudo sem abrir cada usuário.
+          const consumoMes = Number(a.consumo && a.consumo.total) || 0;
           const resumoHtml = '<span class="acesso-site-resumo-info">' + resumo + '</span>' +
-            '<span class="acesso-site-saldo' + (creditos > 0 || a.nivel === 'admin' ? '' : ' zerado') + '">💳 ' + acessoSiteReais(creditos) + (creditos > 0 || a.nivel === 'admin' ? '' : ' · sem saldo') + '</span>';
+            '<span class="acesso-site-saldo' + (creditos > 0 || a.nivel === 'admin' ? '' : ' zerado') + '">' +
+            '<span class="acesso-site-saldo-valor">💳 ' + acessoSiteReais(creditos) + '</span>' +
+            '<small class="acesso-site-saldo-consumo">consumo ' + acessoSiteReais(consumoMes) + (creditos > 0 || a.nivel === 'admin' ? '' : ' · sem saldo') + '</small></span>';
           const busca = [nome, cidade, a.congregacao, a.telefone, String(a.telefone || '').replace(/\D/g, '')].filter(Boolean).join(' ').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
           const foneZap = String(a.telefone || '').replace(/\D/g, '');
           const linhaCadastro = (rotulo, valor) =>
@@ -12650,6 +12654,7 @@ function saveTemplatesToStorage() {
           '</div>' +
           '<div class="acesso-site-creditos">' +
           '<div class="acesso-site-tabela-dados" role="table" aria-label="Créditos">' +
+          linhaCadastro('Consumo de IA em ' + mesNome, '<strong>' + acessoSiteReais(consumoTotal) + '</strong>') +
           linhaCadastro('Saldo restante', '<strong>' + acessoSiteReais(creditos) + '</strong>') +
           '</div>' +
           '<div class="acesso-site-creditar-linha">' +
@@ -12683,7 +12688,8 @@ function saveTemplatesToStorage() {
       const comuns = aprovados.filter(a => a.nivel !== 'admin');
       const semSaldo = comuns.filter(a => !(Number(a.creditos) > 0)).length;
       totais.hidden = !aprovados.length;
-      totais.textContent = 'Saldo somado dos usuários: ' + acessoSiteReais(comuns.reduce((s, a) => s + (Number(a.creditos) || 0), 0)) +
+      totais.textContent = 'Consumo de IA no mês: ' + acessoSiteReais(comuns.reduce((s, a) => s + (Number(a.consumo && a.consumo.total) || 0), 0)) +
+        ' · saldo somado dos usuários: ' + acessoSiteReais(comuns.reduce((s, a) => s + (Number(a.creditos) || 0), 0)) +
         (semSaldo ? ' · ' + semSaldo + (semSaldo === 1 ? ' usuário sem saldo (IA pausada)' : ' usuários sem saldo (IA pausada)') : '') + '.';
       acessoSiteFiltro.hidden = aprovados.length < 6;
       if (acessoSiteFiltro.hidden) acessoSiteFiltro.value = '';
