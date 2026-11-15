@@ -7710,7 +7710,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.67'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.68'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -8072,6 +8072,18 @@
         return word
           .toLocaleLowerCase('pt-BR')
           .replace(/(^|[\-–—/([{“"'])\p{L}/gu, match => match.toLocaleUpperCase('pt-BR'));
+      }).join('');
+    }
+
+    // MAIÚSCULAS sem perder a formatação: as letras em negrito, itálico ou grifo (letras Unicode) viram maiúsculas no mesmo estilo.
+    function maiusculasComEstilo(text) {
+      if (!reverseUnicodeStyleMap) reverseUnicodeStyleMap = buildReverseUnicodeStyleMap();
+      return [...String(text || '')].map(ch => {
+        const estilo = reverseUnicodeStyleMap.get(ch);
+        if (!estilo) return ch.toLocaleUpperCase('pt-BR');
+        const simples = removeUnicodeFormatting(ch);
+        const maiuscula = simples.toLocaleUpperCase('pt-BR');
+        return maiuscula === simples ? ch : convertTextWithStyle(maiuscula, estilo);
       }).join('');
     }
 
@@ -29175,14 +29187,39 @@ function saveTemplatesToStorage() {
         });
       });
 
+      // Números 1️⃣ a 7️⃣: entram onde está o cursor (no começo de uma linha nova), no campo da anotação ou da resposta.
+      document.querySelectorAll('[data-anotacoes-num]').forEach(btn => {
+        btn.addEventListener('mousedown', e => e.preventDefault()); // o campo não perde o cursor (nem o teclado some) ao tocar no botão
+        btn.addEventListener('click', () => {
+          const campo = btn.closest('.anotacoes-fmt-resp-nums') ? respostaEl : texto;
+          inserirNoCursor(btn.dataset.anotacoesNum + ' ', campo, true);
+        });
+      });
       document.querySelectorAll('[data-anotacoes-fmt]').forEach(btn => {
         btn.addEventListener('click', () => {
           const naResposta = Boolean(btn.closest('.anotacoes-fmt-resp'));
           const campo = naResposta ? respostaEl : texto;
           const dizerFmt = naResposta ? dizerResp : dizer;
           const acao = btn.dataset.anotacoesFmt;
-          const ini = campo.selectionStart || 0;
-          const fim = campo.selectionEnd || 0;
+          let ini = campo.selectionStart || 0;
+          let fim = campo.selectionEnd || 0;
+          // MAIÚSCULAS: o trecho selecionado ou, sem seleção, o texto todo do campo (com confirmação, porque não há como voltar).
+          if (acao === 'upper') {
+            if (!campo.value.trim()) return dizerFmt('Não há texto para passar para maiúsculas.', true);
+            const aplicar = () => {
+              if (ini === fim) { ini = 0; fim = campo.value.length; }
+              const novoUp = maiusculasComEstilo(campo.value.slice(ini, fim));
+              campo.value = campo.value.slice(0, ini) + novoUp + campo.value.slice(fim);
+              campo.focus();
+              campo.setSelectionRange(ini, ini + novoUp.length);
+              if (naResposta) campo.dispatchEvent(new Event('input', { bubbles: true }));
+              else { guardarNota(); agendarRascunho(); }
+              dizerFmt('');
+            };
+            if (ini !== fim) return aplicar();
+            askConfirm('Passar todo o texto ' + (naResposta ? 'da resposta' : 'das anotações') + ' para MAIÚSCULAS? Para mudar só um trecho, selecione-o antes.', 'Maiúsculas', { ok: 'Passar tudo', cancel: 'Cancelar' }).then(ok => { if (ok) aplicar(); });
+            return;
+          }
           if (ini === fim && (acao === 'bold' || acao === 'italic' || acao === 'hl')) {
             return dizerFmt('Selecione o trecho para formatar.', true);
           }

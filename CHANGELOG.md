@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.68
+
+Anotações (campo das anotações e campo da resposta da recapitulação):
+
+- **Números 1️⃣ a 7️⃣:** uma linha de botões logo abaixo de Negrito/Itálico; cada um insere o número no cursor, no começo de uma linha nova (o teclado não fecha ao tocar).
+- **AA (maiúsculas):** passa o trecho selecionado para MAIÚSCULAS; sem seleção, passa o texto todo do campo (com confirmação). Letras em negrito, itálico ou grifo continuam no mesmo estilo.
+
 ## 6.9.67
 
 Anotações: **opções adicionais da gravação** (⚙️, discretas no fim do quadro da gravação, guardadas no aparelho e **ligadas por padrão**):
