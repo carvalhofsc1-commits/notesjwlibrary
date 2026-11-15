@@ -13777,8 +13777,32 @@ button.processando:disabled { opacity: 1; cursor: progress; }
       line-height: 1.35;
     }
 
-    .consumo-total {
+    /* O campo de total e saldo é o título de um bloco que abre o consumo detalhado (seta ▸ / ▾ no fim). */
+    .consumo-resumo {
       margin: 6px 0 10px;
+    }
+
+    .consumo-resumo > summary {
+      list-style: none;
+      cursor: pointer;
+    }
+
+    .consumo-resumo > summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .consumo-resumo > summary .consumo-total::after {
+      content: " ▸";
+      color: var(--muted);
+    }
+
+    .consumo-resumo[open] > summary .consumo-total::after {
+      content: " ▾";
+    }
+
+    .consumo-total {
+      display: block;
+      margin: 0;
       padding: 10px 12px;
       border-radius: 12px;
       border: 2px solid var(--accent, #3b82f6);

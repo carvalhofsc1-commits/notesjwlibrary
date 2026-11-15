@@ -1265,15 +1265,17 @@
         <details class="subsection sub-tint-5" id="consumoSection">
           <summary>💳 Consumo de IA e faturamento</summary>
           <div class="subsection-body">
-            <p class="hint">O que você usou de IA no mês, em cada recurso liberado pelos seus códigos, e o valor a pagar. O consumo é contado por aparelho, a partir do momento em que esta função foi ativada.</p>
+            <details class="consumo-resumo" id="consumoResumoBox">
+              <summary><span id="consumoTotal" class="consumo-total">Carregando…</span></summary>
+              <div id="consumoLista" class="consumo-lista" hidden></div>
+            </details>
             <div class="consumo-mes">
               <label for="consumoMes">Mês</label>
               <select id="consumoMes" autocomplete="off"></select>
               <button id="consumoAtualizarBtn" class="secondary" type="button" title="Atualizar o consumo" aria-label="Atualizar o consumo">🔄</button>
             </div>
             <p id="consumoStatus" class="ok" role="status" aria-live="polite"></p>
-            <div id="consumoLista" class="consumo-lista" hidden></div>
-            <p id="consumoTotal" class="consumo-total" hidden></p>
+            <p class="hint">Toque no campo de total e saldo para ver o consumo detalhado, recurso por recurso, com o valor a pagar. O consumo é contado por aparelho, a partir do momento em que esta função foi ativada.</p>
             <details class="prompt-item" id="pixCredito" hidden>
               <summary><h3>⚡ Adicionar crédito por Pix</h3></summary>
               <p class="hint">Informe o valor, pague o Pix gerado e o crédito entra sozinho no seu saldo, em poucos segundos (sem enviar comprovante). O Pix vale por 30 minutos.</p>

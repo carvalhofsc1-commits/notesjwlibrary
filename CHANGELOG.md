@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.63
+
+Consumo de IA e faturamento: em **primeiro lugar** agora fica o campo **Total do mês · Saldo de créditos**. O **consumo detalhado** (recurso por recurso, com uso, preço e valor) abre ao tocar nesse campo (seta ▸ / ▾) e **sempre começa recolhido** ao abrir o card. O seletor de mês, o aviso de ajuda, o Pix e o extrato vêm depois.
+
 ## 6.9.62
 
 Início: ao tocar no botão **Início** (ou voltar a ele), o **texto diário abre recolhido** (se estava aberto, fecha) e os atalhos ficam na **página 1**.

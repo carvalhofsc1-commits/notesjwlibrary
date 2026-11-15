@@ -7707,7 +7707,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.62'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.63'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -11968,6 +11968,7 @@ function saveTemplatesToStorage() {
     const consumoStatus = document.getElementById('consumoStatus');
     const consumoListaEl = document.getElementById('consumoLista');
     const consumoTotalEl = document.getElementById('consumoTotal');
+    const consumoResumoBox = document.getElementById('consumoResumoBox');
     let consumoDados = null;
     const consumoReais = n => (Number(n) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     const consumoNum = n => (Number(n) || 0).toLocaleString('pt-BR');
@@ -12003,16 +12004,18 @@ function saveTemplatesToStorage() {
       consumoListaEl.replaceChildren();
       const cats = {};
       (d.categorias || []).forEach(c => { cats[c.id] = c; });
-      const saldoTxt = d.creditos == null ? '' : 'Saldo de créditos: ' + consumoReais(d.creditos) + (d.creditos <= 0 ? ' (IA pausada até o administrador carregar mais).' : '.');
+      const saldoTxt = d.creditos == null ? '' : 'Saldo de créditos: ' + consumoReais(d.creditos) + (d.creditos <= 0 ? ' (IA pausada até o administrador carregar mais)' : '');
+      // Em primeiro lugar fica o campo "Total do mês · Saldo de créditos"; tocar nele abre (ou fecha) o consumo detalhado por recurso.
+      const totalTxt = d.recursos.length ? 'Total de ' + consumoMesNome(d.mes) + ': ' + consumoReais(d.total) : '';
+      consumoTotalEl.textContent = [totalTxt, saldoTxt].filter(Boolean).join(' · ') || 'Sem consumo neste mês';
       if (!d.recursos.length) {
         consumoListaEl.hidden = true;
-        consumoTotalEl.hidden = !saldoTxt;
-        if (saldoTxt) consumoTotalEl.textContent = saldoTxt;
+        consumoResumoBox.open = false;
         consumoStatus.className = 'hint';
         consumoStatus.textContent = 'Nenhum recurso de IA liberado neste aparelho. Informe seus códigos em 🔐 Autorização de acessos.';
       } else {
         consumoStatus.className = 'ok';
-        consumoStatus.textContent = saldoTxt;
+        consumoStatus.textContent = '';
         d.recursos.forEach(r => {
           const item = document.createElement('div');
           item.className = 'consumo-item';
@@ -12032,8 +12035,6 @@ function saveTemplatesToStorage() {
           consumoListaEl.appendChild(item);
         });
         consumoListaEl.hidden = false;
-        consumoTotalEl.textContent = 'Total de ' + consumoMesNome(d.mes) + ': ' + consumoReais(d.total) + (saldoTxt ? ' · ' + saldoTxt : '');
-        consumoTotalEl.hidden = false;
       }
     }
     // Os códigos salvos só servem para o servidor saber a que recursos o aparelho tem acesso.
@@ -12088,7 +12089,8 @@ function saveTemplatesToStorage() {
       }
       consumoRender(r.data);
     }
-    consumoSection.addEventListener('toggle', () => { if (consumoSection.open) consumoCarregar(consumoMesEl.value); });
+    // Ao abrir o card, o consumo detalhado sempre começa recolhido (só o campo de total e saldo aparece).
+    consumoSection.addEventListener('toggle', () => { if (consumoSection.open) { consumoResumoBox.open = false; consumoCarregar(consumoMesEl.value); } });
     consumoMesEl.addEventListener('change', () => consumoCarregar(consumoMesEl.value));
     document.getElementById('consumoAtualizarBtn').addEventListener('click', () => consumoCarregar(consumoMesEl.value));
 
