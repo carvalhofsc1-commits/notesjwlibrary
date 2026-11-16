@@ -219,14 +219,33 @@
       const nav = document.getElementById('appNav');
       const vv = window.visualViewport;
       if (!nav || !vv) return;
+      // Medido num iPhone (iOS 18.7): altura de referência 894, área visível 826 começando 68 abaixo; a barra ficava no fundo dos 826 e sobrava um vão
+      // de 68 embaixo dela (que cresce até o meio da tela em certos momentos). A conta compara o fundo da barra (sem o deslocamento já aplicado) com o
+      // fundo da área visível (topo + altura) e desce a barra exatamente essa diferença. Com o teclado aberto (escrevendo) não mexe.
+      let aplicado = 0;
+      const computador = window.matchMedia('(min-width: 980px)');
       const ajustar = () => {
-        if (getComputedStyle(nav).position !== 'fixed') { nav.style.transform = ''; return; } // computador: a barra fica no alto
-        const desloc = Math.round(vv.offsetTop + vv.height - window.innerHeight);
-        nav.style.transform = desloc > 1 ? 'translate3d(0, ' + desloc + 'px, 0)' : '';
+        const pos = getComputedStyle(nav).position;
+        const campo = document.activeElement;
+        const escrevendo = campo && (campo.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(campo.tagName));
+        let desloc = 0;
+        if (!computador.matches && (pos === 'fixed' || pos === 'sticky') && !escrevendo) {
+          const base = nav.getBoundingClientRect().bottom - aplicado;
+          desloc = Math.round(vv.offsetTop + vv.height - base);
+          if (desloc < 2 || desloc > 600) desloc = 0;
+        }
+        if (desloc !== aplicado) {
+          aplicado = desloc;
+          nav.style.transform = desloc ? 'translate3d(0, ' + desloc + 'px, 0)' : '';
+        }
       };
-      vv.addEventListener('resize', ajustar);
-      vv.addEventListener('scroll', ajustar);
-      window.addEventListener('resize', ajustar);
+      let pedido = 0;
+      const ajustarLogo = () => { if (!pedido) pedido = requestAnimationFrame(() => { pedido = 0; ajustar(); }); };
+      vv.addEventListener('resize', ajustarLogo);
+      vv.addEventListener('scroll', ajustarLogo);
+      window.addEventListener('resize', ajustarLogo);
+      window.addEventListener('scroll', ajustarLogo, { passive: true });
+      setInterval(ajustar, 1000); // confere de vez em quando (o iPhone nem sempre avisa quando muda a área visível)
       document.addEventListener('focusout', () => setTimeout(() => {
         const campo = document.activeElement;
         const escrevendo = campo && (campo.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(campo.tagName));
@@ -7792,7 +7811,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.77'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.78'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
