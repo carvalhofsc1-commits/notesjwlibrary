@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.90
+
+- Anotações (gravação): quando o microfone cai (no iPhone acontece ao trocar de tela ou voltar de outro app), a gravação continua sozinha. O trecho gravado até ali fica guardado nas gravações do discurso, o novo começa na hora, o relógio segue e, no resumo, todos os trechos vão juntos, na ordem. O sistema confere a cada meio segundo se o gravador parou, se o microfone foi encerrado, se ficou mudo por mais de 3 s ou se o áudio parou de chegar há 6 s.
+- Fora da tela Anotações aparece um aviso vermelho "🔴 Gravando 00:00 · Voltar" acima da barra de baixo; tocar nele volta para a gravação.
+- Descartar apaga também os trechos guardados nas quedas do microfone.
+
 ## 6.9.89
 
 - Barra de baixo (iPhone): quando ela fica abaixo do fim da área visível (escondida), a correção também a puxa para cima, até o fim da área visível (antes só descia).

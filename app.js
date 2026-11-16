@@ -7835,7 +7835,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.89'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.90'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -29989,6 +29989,12 @@ function saveTemplatesToStorage() {
         };
       }
       // Pedido de todas as gravações guardadas de uma anotação, na ordem, num resumo só.
+      // Resumo da gravação pronta: com trechos de antes de uma queda do microfone (já guardados), vão todos juntos, na ordem.
+      function pedidoDaPronta(gp) {
+        const alvo = gp.alvo || alvoAtual();
+        if (gp.trechos && gp.trechos.length && gp.idApp) return pedidoTodasGravacoes([...gp.trechos, gp.idApp], alvo);
+        return pedidoUmaGravacao(gp.arquivo, gp.duracaoS, alvo);
+      }
       function pedidoTodasGravacoes(idsDaAnotacao, alvo) {
         return {
           alvo, tipo: 'todas',
@@ -30142,6 +30148,7 @@ function saveTemplatesToStorage() {
       // Microfone interrompido (ligação, outro app usando o microfone, erro do gravador): avisa na hora, em vez de o relógio seguir contando em silêncio.
       function anotAvisarMic(g, mudo) {
         if (gravacao !== g) return;
+        if (mudo && !g.interrompido) g.mudoDesde = Date.now();
         g.interrompido = mudo;
         gravarStatus.textContent = mudo ? '⚠️ O microfone foi interrompido (ligação, outro app ou tela bloqueada). Se não voltar, toque em ⏹️ Parar para guardar o que já foi gravado.' : '';
       }
@@ -30150,19 +30157,135 @@ function saveTemplatesToStorage() {
         if (!track) return;
         const mudo = () => anotAvisarMic(g, true);
         const volta = () => anotAvisarMic(g, false);
+        // Microfone encerrado ou erro do gravador: avisa e já tenta retomar (com o app à vista; fora dele, ao voltar).
+        const caiu = () => { anotAvisarMic(g, true); if (document.visibilityState === 'visible') anotRetomarMic(g); };
         track.addEventListener('mute', mudo);
         track.addEventListener('unmute', volta);
-        track.addEventListener('ended', mudo);
-        g.gravador.onerror = mudo;
-        g.tirarTrack = () => { track.removeEventListener('mute', mudo); track.removeEventListener('unmute', volta); track.removeEventListener('ended', mudo); };
+        track.addEventListener('ended', caiu);
+        g.gravador.onerror = caiu;
+        g.tirarTrack = () => { track.removeEventListener('mute', mudo); track.removeEventListener('unmute', volta); track.removeEventListener('ended', caiu); };
       }
+
+      // O microfone caiu (no iPhone isso acontece ao trocar de tela, ao tocar outro áudio ou ao voltar de outro app): o trecho gravado até ali
+      // é guardado nas gravações do discurso e a gravação continua num trecho novo, com o mesmo relógio. No resumo, os trechos vão juntos.
+      const anotEspera = ms => new Promise(r => setTimeout(r, ms));
+      async function anotRetomarMic(g) {
+        if (gravacao !== g || g.retomando || g.pausado) return;
+        if (g.ultimaRetomada && Date.now() - g.ultimaRetomada < 8000) return;
+        g.retomando = true;
+        g.ultimaRetomada = Date.now();
+        g.acumulado += Date.now() - g.retomadoEm; // o relógio não conta o tempo sem microfone
+        g.retomadoEm = Date.now();
+        gravarStatus.textContent = '⚠️ O microfone foi interrompido. Retomando a gravação…';
+        try {
+          const velho = g.gravador;
+          await new Promise(resolve => {
+            if (!velho || velho.state === 'inactive') return resolve();
+            velho.onstop = resolve;
+            try { velho.requestData(); } catch (e) { /* ignore */ }
+            try { velho.stop(); } catch (e) { resolve(); }
+            setTimeout(resolve, 2500);
+          });
+          if (g.tirarTrack) g.tirarTrack();
+          trOndaParar(g);
+          try { g.stream.getTracks().forEach(t => t.stop()); } catch (e) { /* já parado */ }
+          if (g.pedacos.length) {
+            const tipo = ((velho && velho.mimeType) || 'audio/webm').split(';')[0];
+            const voz = new Blob(g.pedacos, { type: tipo });
+            const duracaoS = Math.max(1, tempoGravadoS(g) - g.trechoInicioS);
+            const titulo = ((g.alvo && g.alvo.titulo) || tituloDaAnotacao(100)) + ' (parte ' + (g.trechos.length + 1) + ')';
+            let id = null;
+            try { id = await gravacaoGuardar(voz, { titulo, duracaoS }); } catch (e) { id = null; }
+            if (id) {
+              g.trechos.push(id);
+              porGravacaoNoAlvo(g.alvo, id);
+              try { pintarGravacoes(); } catch (e) { /* lista fechada */ }
+            } else {
+              g.soltos.push({ voz, duracaoS, titulo }); // sem espaço no banco agora: tenta guardar de novo ao parar
+            }
+          }
+          for (let k = 0; k < 50 && g.recOcupado; k++) await anotEspera(100);
+          await recLimpar();
+          g.recN = 0;
+          g.recSalvos = 0;
+          const q = anotQualidadeAudio();
+          let stream;
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({
+              audio: { echoCancellation: q.tratamento, noiseSuppression: q.tratamento, autoGainControl: q.tratamento, channelCount: 1, sampleRate: 48000 },
+            });
+          } catch (e) {
+            stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          }
+          if (gravacao !== g) { stream.getTracks().forEach(t => t.stop()); return; }
+          const gravador = criarGravador(stream, anotacoesMimeGravacao(), q.bps);
+          if (!gravador) throw new Error('sem gravador');
+          const pedacos = [];
+          gravador.ondataavailable = e => { if (e.data && e.data.size) { pedacos.push(e.data); g.ultimoDadoEm = Date.now(); } };
+          g.stream = stream;
+          g.gravador = gravador;
+          g.pedacos = pedacos;
+          g.trechoInicioS = tempoGravadoS(g);
+          g.ultimoDadoEm = Date.now();
+          gravador.start(1000);
+          g.retomadoEm = Date.now();
+          trOndaIniciar(g, ondaEl);
+          anotVigiarMic(g);
+          anotAvisarMic(g, false);
+          gravarStatus.textContent = '🔁 O microfone foi interrompido e a gravação continuou. O trecho anterior ficou guardado nas gravações deste discurso e entra junto no resumo.';
+        } catch (e) {
+          if (gravacao === g) gravarStatus.textContent = '⚠️ Não consegui retomar o microfone. Toque em ⏹️ Parar para guardar o que já foi gravado e grave de novo.';
+        } finally {
+          g.retomando = false;
+        }
+      }
+      // Confere a saúde da gravação (a cada meio segundo, junto com o relógio): gravador parado sem ninguém pedir, microfone encerrado,
+      // mudo por mais de 3 s ou sem áudio chegando há 6 s, com o app à vista há pelo menos 2 s → retoma.
+      function anotConferirMic(g) {
+        if (gravacao !== g || g.pausado || g.retomando || document.visibilityState !== 'visible') return;
+        if (Date.now() - (g.visivelDesde || 0) < 2000) return;
+        const track = g.stream && g.stream.getAudioTracks()[0];
+        const parado = !g.gravador || g.gravador.state === 'inactive';
+        const encerrado = !track || track.readyState === 'ended';
+        const mudoMuito = g.interrompido && g.mudoDesde && Date.now() - g.mudoDesde > 3000;
+        const semDados = g.gravador && g.gravador.state === 'recording' && Date.now() - (g.ultimoDadoEm || 0) > 6000;
+        if (parado || encerrado || mudoMuito || semDados) anotRetomarMic(g);
+      }
+
+      // Fora da tela Anotações, um aviso com o relógio mostra que a gravação continua; tocar nele volta para ela.
+      const gravAvisoEl = document.createElement('button');
+      gravAvisoEl.type = 'button';
+      gravAvisoEl.className = 'anot-grav-aviso';
+      gravAvisoEl.hidden = true;
+      gravAvisoEl.setAttribute('aria-label', 'Gravação em andamento: voltar para Anotações');
+      gravAvisoEl.addEventListener('click', () => showScreen('anotacoes'));
+      document.body.appendChild(gravAvisoEl);
+      function gravAvisoPintar() {
+        const g = gravacao;
+        const mostrar = Boolean(g) && document.body.dataset.screen !== 'anotacoes';
+        gravAvisoEl.hidden = !mostrar;
+        if (!mostrar) return;
+        gravAvisoEl.textContent = (g.interrompido || g.retomando ? '⚠️ Microfone interrompido ' : g.pausado ? '⏸️ Pausado ' : '🔴 Gravando ') + mmss(tempoGravadoS(g)) + ' · Voltar';
+        const nav = document.getElementById('appNav');
+        const r = nav && nav.getClientRects().length ? nav.getBoundingClientRect() : null;
+        const alto = window.visualViewport ? window.visualViewport.height + window.visualViewport.offsetTop : window.innerHeight;
+        const base = r && r.top < alto && r.top > alto / 2 ? alto - r.top : 0; // só a barra de baixo (no computador ela fica em cima)
+        gravAvisoEl.style.bottom = Math.round(Math.max(0, base) + 10) + 'px';
+      }
+      new MutationObserver(() => {
+        gravAvisoPintar();
+        if (gravacao && document.body.dataset.screen === 'anotacoes') setTimeout(() => anotConferirMic(gravacao), 2100);
+      }).observe(document.body, { attributes: true, attributeFilter: ['data-screen'] });
       document.addEventListener('visibilitychange', () => {
         const g = gravacao;
         if (!g) return;
         if (document.visibilityState === 'visible') {
+          g.visivelDesde = Date.now();
           anotTelaLigada(g);
+          if (g.onda && g.onda.ctx && g.onda.ctx.state === 'suspended') g.onda.ctx.resume().catch(() => {});
           const track = g.stream && g.stream.getAudioTracks()[0];
           if (track && track.readyState === 'ended') anotAvisarMic(g, true);
+          setTimeout(() => anotConferirMic(g), 2100);
         } else {
           // Saindo do app: pede o que está no buffer e salva já a cópia provisória (o celular pode fechar o app a qualquer momento).
           try { if (g.gravador.state === 'recording') g.gravador.requestData(); } catch (e) { /* ignore */ }
@@ -30199,7 +30322,7 @@ function saveTemplatesToStorage() {
       const REC_META = 'anotgrav:meta';
       const REC_PARTE = n => 'anotgrav:parte:' + n;
       async function recSalvarPedacos(g) {
-        if (!temBanco || g.recOcupado || g.encerrada) return;
+        if (!temBanco || g.recOcupado || g.encerrada || g.retomando) return;
         g.recOcupado = true;
         try {
           const novos = g.pedacos.slice(g.recSalvos);
@@ -30304,9 +30427,11 @@ function saveTemplatesToStorage() {
           const gravador = criarGravador(stream, mime, q.bps);
           if (!gravador) throw new Error('sem gravador');
           const pedacos = [];
-          gravador.ondataavailable = e => { if (e.data && e.data.size) pedacos.push(e.data); };
           // O alvo (o discurso de onde a gravação saiu) é anotado no início: é para ele que a gravação e o resumo vão.
-          const g = { stream, gravador, pedacos, acumulado: 0, retomadoEm: Date.now(), pausado: false, alvo: alvoAtual(), recN: 0, recSalvos: 0 };
+          // trechos: gravações já guardadas quando o microfone caiu e a gravação foi retomada (ver anotRetomarMic).
+          const g = { stream, gravador, pedacos, acumulado: 0, retomadoEm: Date.now(), pausado: false, alvo: alvoAtual(), recN: 0, recSalvos: 0,
+            trechos: [], soltos: [], trechoInicioS: 0, ultimoDadoEm: Date.now(), visivelDesde: Date.now() };
+          gravador.ondataavailable = e => { if (e.data && e.data.size) { pedacos.push(e.data); g.ultimoDadoEm = Date.now(); } };
           gravacao = g;
           await recLimpar();
           gravador.start(1000);
@@ -30314,7 +30439,11 @@ function saveTemplatesToStorage() {
           gravPausarBtn.textContent = '⏸️ Pausar';
           gravarStatus.textContent = '';
           mostrarGravacao('ativa');
-          const atualizar = () => { gravTempoEl.textContent = (g.interrompido ? '⚠️ Microfone interrompido ' : g.pausado ? '⏸️ Pausado ' : '🔴 Gravando ') + mmss(tempoGravadoS(g)); };
+          const atualizar = () => {
+            gravTempoEl.textContent = (g.interrompido ? '⚠️ Microfone interrompido ' : g.pausado ? '⏸️ Pausado ' : '🔴 Gravando ') + mmss(tempoGravadoS(g));
+            gravAvisoPintar();
+            anotConferirMic(g);
+          };
           atualizar();
           g.timer = setInterval(atualizar, 500);
           trOndaIniciar(g, ondaEl); // o gráfico de barras do Áudio em texto, em versão reduzida
@@ -30346,9 +30475,19 @@ function saveTemplatesToStorage() {
       async function pararGravacao() {
         const g = gravacao;
         if (!g) return;
-        const duracaoS = Math.max(1, tempoGravadoS(g));
+        for (let k = 0; k < 60 && g.retomando; k++) await anotEspera(100); // retomando o microfone: espera o trecho novo começar
+        if (gravacao !== g) return;
+        const duracaoS = Math.max(1, tempoGravadoS(g) - (g.trechoInicioS || 0));
         gravacao = null;
+        gravAvisoPintar();
         clearInterval(g.recTimer);
+        // Trechos que não couberam no banco quando o microfone caiu: tenta guardar de novo.
+        for (const s of (g.soltos || [])) {
+          let idS = null;
+          try { idS = await gravacaoGuardar(s.voz, { titulo: s.titulo, duracaoS: s.duracaoS }); } catch (e) { idS = null; }
+          if (idS) { g.trechos.push(idS); porGravacaoNoAlvo(g.alvo, idS); }
+        }
+        g.soltos = [];
         const parar = rec => new Promise(resolve => {
           if (!rec || rec.state === 'inactive') return resolve();
           rec.onstop = resolve;
@@ -30360,19 +30499,27 @@ function saveTemplatesToStorage() {
         if (!g.pedacos.length) {
           await recEncerrar(g);
           mostrarGravacao('ocioso');
-          gravarStatus.textContent = 'Não houve áudio gravado.';
+          if (!g.trechos.length) {
+            gravarStatus.textContent = 'Não houve áudio gravado.';
+            return;
+          }
+          // Só os trechos de antes da última queda do microfone têm áudio: eles já estão guardados no discurso.
+          try { pintarGravacoes(); } catch (e) { /* lista fechada */ }
+          gravarStatus.textContent = '✅ A gravação ficou guardada em ' + g.trechos.length + (g.trechos.length > 1 ? ' trechos' : ' trecho') + ' nas gravações deste discurso (🎧).';
+          if (opAutoResumo.checked) await filaAdicionar(pedidoTodasGravacoes(g.trechos.slice(), g.alvo || alvoAtual()));
           return;
         }
         const tipo = (g.gravador.mimeType || 'audio/webm').split(';')[0];
         const ext = /mp4|aac|m4a/.test(tipo) ? 'm4a' : /ogg/.test(tipo) ? 'ogg' : 'webm';
         const voz = new Blob(g.pedacos, { type: tipo });
-        const gp = { arquivo: new File([voz], 'Anotacao.' + ext, { type: tipo, lastModified: Date.now() }), duracaoS, ext, salvo: false, idApp: null, alvo: g.alvo || alvoAtual() };
+        const gp = { arquivo: new File([voz], 'Anotacao.' + ext, { type: tipo, lastModified: Date.now() }), duracaoS, ext, salvo: false, idApp: null, alvo: g.alvo || alvoAtual(), trechos: g.trechos.slice() };
         gravacaoPronta = gp;
-        gravInfoEl.textContent = '✅ Gravação pronta · ' + mmss(duracaoS);
+        gravInfoEl.textContent = '✅ Gravação pronta · ' + mmss(duracaoS) + (gp.trechos.length ? ' (+ ' + gp.trechos.length + (gp.trechos.length > 1 ? ' trechos anteriores)' : ' trecho anterior)') : '');
         mostrarGravacao('pronta');
         // Guardada no app na hora, na qualidade de voz, ligada ao discurso de onde saiu.
         let id = null;
-        try { id = await gravacaoGuardar(voz, { titulo: (gp.alvo && gp.alvo.titulo) || tituloDaAnotacao(100), duracaoS }); } catch (e) { id = null; }
+        const tituloFinal = ((gp.alvo && gp.alvo.titulo) || tituloDaAnotacao(100)) + (gp.trechos.length ? ' (parte ' + (gp.trechos.length + 1) + ')' : '');
+        try { id = await gravacaoGuardar(voz, { titulo: tituloFinal, duracaoS }); } catch (e) { id = null; }
         if (id) {
           gp.idApp = id;
           porGravacaoNoAlvo(gp.alvo, id);
@@ -30383,7 +30530,7 @@ function saveTemplatesToStorage() {
         }
         // Resumo automático: a gravação já vai para a fila e o quadro fecha (só se ela ficou guardada; senão o quadro fica para exportar).
         if (opAutoResumo.checked && gravacaoPronta === gp) {
-          const ok = await filaAdicionar(pedidoUmaGravacao(gp.arquivo, gp.duracaoS, gp.alvo));
+          const ok = await filaAdicionar(pedidoDaPronta(gp));
           if (ok && gp.idApp && gravacaoPronta === gp) {
             gravacaoPronta = null;
             mostrarGravacao('ocioso');
@@ -30427,20 +30574,26 @@ function saveTemplatesToStorage() {
       async function descartarGravacao() {
         const ok = await askConfirm('Descartar esta gravação? Ela será apagada (inclusive a cópia guardada no app) e não dá para recuperar.', 'Descartar a gravação', { ok: 'Descartar', cancel: 'Continuar' });
         if (!ok) return;
+        let trechos = [];
         if (gravacao) {
           const g = gravacao;
+          for (let k = 0; k < 60 && g.retomando; k++) await anotEspera(100);
           gravacao = null;
+          gravAvisoPintar();
+          trechos = g.trechos || [];
           g.gravador.onstop = null;
           try { g.gravador.stop(); } catch (e) { /* já parado */ }
           liberarMicrofone(g);
           await recEncerrar(g);
         }
-        if (gravacaoPronta && gravacaoPronta.idApp) {
-          const id = gravacaoPronta.idApp;
+        if (gravacaoPronta) trechos = trechos.concat(gravacaoPronta.trechos || []);
+        if (gravacaoPronta && gravacaoPronta.idApp) trechos.push(gravacaoPronta.idApp);
+        // Os trechos guardados quando o microfone caiu também saem.
+        for (const id of trechos) {
           await gravacaoApagar(id);
           tirarGravacaoDaAnotacao(id);
-          pintarGravacoes();
         }
+        if (trechos.length) pintarGravacoes();
         gravacaoPronta = null;
         mostrarGravacao('ocioso');
         await recLimpar(); // a cópia provisória (se ainda houver) também sai
@@ -30501,7 +30654,7 @@ function saveTemplatesToStorage() {
         if (!gp) return;
         gravResumoBtn.disabled = true;
         try {
-          const ok = await filaAdicionar(pedidoUmaGravacao(gp.arquivo, gp.duracaoS, gp.alvo || alvoAtual()));
+          const ok = await filaAdicionar(pedidoDaPronta(gp));
           if (ok && (gp.idApp || gp.salvo) && gravacaoPronta === gp) {
             gravacaoPronta = null;
             mostrarGravacao('ocioso');
