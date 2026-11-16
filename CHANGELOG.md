@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.80
+
+- Barra de baixo (iPhone): no quique do fim ou do começo da página a correção da 6.9.78 não age mais, então a barra não é empurrada para fora da tela. Quadro de diagnóstico mantido por enquanto.
+
 ## 6.9.79
 
 Anotações: os botões de formatação da **resposta da recapitulação** ficaram alinhados como os das anotações (as linhas não se sobrepõem mais e “1. Lista” não quebra em duas linhas), e as molduras de formatação ficaram com menos espaço antes e depois.

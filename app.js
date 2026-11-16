@@ -228,8 +228,12 @@
         const pos = getComputedStyle(nav).position;
         const campo = document.activeElement;
         const escrevendo = campo && (campo.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(campo.tagName));
+        // Quique do fim (ou do começo) da página: a rolagem passa do limite e o iOS conta esse excesso no topo da área visível; sem esta trava a barra
+        // descia além da tela (medido: rolagem 917 de 869, topo 48, barra empurrada 98). No quique a barra acompanha a página sozinha.
+        const rolMax = Math.max(0, (document.scrollingElement || document.documentElement).scrollHeight - window.innerHeight);
+        const quicando = window.scrollY > rolMax + 1 || window.scrollY < -1;
         let desloc = 0;
-        if (!computador.matches && (pos === 'fixed' || pos === 'sticky') && !escrevendo) {
+        if (!computador.matches && (pos === 'fixed' || pos === 'sticky') && !escrevendo && !quicando) {
           const base = nav.getBoundingClientRect().bottom - aplicado;
           desloc = Math.round(vv.offsetTop + vv.height - base);
           if (desloc < 2 || desloc > 600) desloc = 0;
@@ -7811,7 +7815,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.79'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.80'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
