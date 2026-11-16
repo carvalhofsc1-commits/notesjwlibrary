@@ -1,7 +1,7 @@
 // Áudio em texto: o app corta o áudio (no aparelho) em trechos de até ~50 s, em PCM 16 kHz mono, e manda até 3 trechos em paralelo; o servidor
 // pede a transcrição à API Speech-to-Text V2 do Google Cloud (modelo chirp_3, pt-BR, região "us") e devolve o texto. A correção (opcional) e o
 // resumo usam a IA (Claude): o resumo prefere o texto corrigido, se houver; senão, a transcrição bruta. Textos longos: resumo em fatias + união final.
-// Nada do áudio nem do texto é gravado aqui. Acesso: o código de texto (CODIGO_TEXTO), conferido neste servidor a cada pedido.
+// O áudio nunca é gravado aqui; o texto só quando o app pede para guardar a transcrição na íntegra (gravações das Anotações, api/_transcricoes.mjs). Acesso: o código de texto (CODIGO_TEXTO), conferido neste servidor a cada pedido.
 //  - GOOGLE_TTS_CREDENCIAIS: a conta de serviço do Google (a mesma da leitura em voz alta). Ela precisa do papel "Cliente do Cloud Speech"
 //    (roles/speech.client) no projeto; o projeto é o do próprio JSON (project_id) ou GOOGLE_PROJECT_ID.
 //  - GOOGLE_STT_REGIAO: região do Chirp 3 (padrão "us"; o chirp_3 só existe em "us" e "eu").
@@ -14,6 +14,7 @@ import { criarClienteIa, erroSemIa, iaDisponivel } from "./_clienteIa.mjs";
 import { registrarUsoIa } from "./_estatisticas.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
 import { buscarVersiculos, fontesConfiguradas, referenciasNoTexto } from "./_fontes.mjs";
+import { apagarTranscricao, lerTranscricao, listarTranscricoes, salvarTranscricao, transcricoesConfiguradas } from "./_transcricoes.mjs";
 
 // Consumo do aparelho (faturamento): minutos de áudio transcritos e tokens da IA do resumo e da correção. Gravado antes de responder
 // (depois a Vercel pode congelar a função); uma falha aqui nunca derruba o pedido.
@@ -88,7 +89,7 @@ function imagensDoPedido(valor) {
   return saida;
 }
 
-const contagens = { trecho: new Map(), resumo: new Map(), correcao: new Map(), lote: new Map(), nomes: new Map() };
+const contagens = { trecho: new Map(), resumo: new Map(), correcao: new Map(), lote: new Map(), nomes: new Map(), "transc-salvar": new Map() };
 const LIMITE_NOMES_POR_HORA = 40;
 function excedeu(tipo, ip, limite) {
   const agora = Date.now();
@@ -443,11 +444,33 @@ export default async function handler(req, res) {
   await prepararCodigosPessoais();
   const bloqueioSite = await mensagemSeBloqueado({ aparelhoId: corpo.aparelhoId, codigoAdmin: corpo.codigoAdmin });
   if (bloqueioSite) return erro(res, 403, bloqueioSite);
-  const bloqueioCredito = await mensagemSeSemCredito({ aparelhoId: corpo.aparelhoId, codigoAdmin: corpo.codigoAdmin });
+  // Guardar, listar, ler e apagar as transcrições salvas não gasta crédito: só a transcrição e a IA são conferidas.
+  const soArquivo = /^transcric(ao|oes)-(salvar|listar|ler|apagar)$/.test(String(corpo.acao || ""));
+  const bloqueioCredito = soArquivo ? "" : await mensagemSeSemCredito({ aparelhoId: corpo.aparelhoId, codigoAdmin: corpo.codigoAdmin });
   if (bloqueioCredito) return erro(res, 403, bloqueioCredito);
   if (!recursoCodigoValido("texto", corpo.codigoTexto, corpo.aparelhoId)) {
     if (!process.env.CODIGO_TEXTO) return erro(res, 503, "O código de texto ainda não está configurado no servidor.");
     return erro(res, 403, "Código de texto inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
+  }
+  if (soArquivo) {
+    if (!transcricoesConfiguradas()) return erro(res, 503, "O armazenamento das transcrições não está configurado no servidor.");
+    const ipArq = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "desconhecido";
+    try {
+      if (corpo.acao === "transcricao-salvar") {
+        if (excedeu("transc-salvar", ipArq, 60)) return erro(res, 429, "Muitas transcrições salvas nesta hora. Tente novamente mais tarde.");
+        const item = await salvarTranscricao({ aparelhoId: corpo.aparelhoId, titulo: corpo.titulo, texto: corpo.texto, duracaoS: corpo.duracaoS });
+        return res.status(200).json({ item });
+      }
+      if (corpo.acao === "transcricoes-listar") return res.status(200).json({ itens: await listarTranscricoes({ aparelhoId: corpo.aparelhoId }) });
+      if (corpo.acao === "transcricao-ler") {
+        const item = await lerTranscricao({ aparelhoId: corpo.aparelhoId, id: corpo.id });
+        return item ? res.status(200).json({ item }) : erro(res, 404, "Transcrição não encontrada no servidor.");
+      }
+      return res.status(200).json({ apagado: await apagarTranscricao({ aparelhoId: corpo.aparelhoId, id: corpo.id }) });
+    } catch (e) {
+      console.error("Transcrições salvas: falha", corpo.acao, e && e.message);
+      return erro(res, e && e.status === 400 ? 400 : 500, e && e.status === 400 ? e.message : "Não consegui acessar as transcrições salvas no servidor.");
+    }
   }
   const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "desconhecido";
   await prepararConta(); // a conta do Google escolhida pelo administrador (a outra fica de reserva)

@@ -7815,7 +7815,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.80'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.81'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -13879,98 +13879,41 @@ function saveTemplatesToStorage() {
       if (!modelosIaSection.open) return;
       if (!codigoAdminAtual()) return iaMensagem('Salve a senha de administrador em 🔐 Autorização de acessos.', true);
       iaCarregar();
-      modelosResumoCarregar();
       googleContaCarregar();
       const codigo = senhaAdminSalva();
       if (codigo && (vozAdminForm.hidden || codigo !== vozAdminCodigo)) vozAdminCarregar(codigo);
     });
 
-    // 📋 Definições em vigor: o que está SALVO no servidor (contas, modelos de texto, voz e áudio), numa tabela no alto da seção.
-    // Atualiza ao abrir a seção e depois de cada 💾 Salvar para todos dos cartões.
-    const nomeCurto = (lista, id) => { const item = (lista || []).find(x => x.id === id); return item ? String(item.nome).split(':')[0] : (id || '—'); };
-    let modelosResumoPedido = 0;
-    async function modelosResumoCarregar() {
-      const caixa = document.getElementById('modelosResumoTabela');
-      const codigo = codigoAdminAtual();
-      if (!codigo) { caixa.innerHTML = '<p class="hint">Salve a senha de administrador em 🔐 Autorização de acessos.</p>'; return; }
-      const pedido = ++modelosResumoPedido;
-      const [ia, conta, voz] = await Promise.all([
-        postConfig({ acao: 'ia-ler', codigo }),
-        postConfig({ acao: 'google-conta-ler', codigo }),
-        postConfig({ acao: 'voz-ler', codigo }),
-      ]);
-      if (pedido !== modelosResumoPedido) return; // chegou um pedido mais novo
-      // Três partes: Contas, Texto, Voz e áudio.
-      const falhou = 'não foi possível ler agora';
-      const contas = [], texto = [], vozAudio = [];
-      const cIa = ia.ok ? ia.data.config : null, oIa = ia.ok ? ia.data.opcoes : null;
-      const esf = id => nomeCurto(oIa.esforcos, id).toLowerCase();
-      contas.push(['Conta para texto', cIa ? nomeCurto(oIa.provedores, cIa.provedor) : falhou]);
-      if (conta.ok) {
-        const emUso = conta.data.emUso;
-        const dados = (conta.data.contas || {})[emUso] || {};
-        contas.push(['Conta para voz e áudio', (GOOGLE_CONTA_NOMES[emUso] || emUso) + (dados.projeto ? ' · projeto ' + dados.projeto : '')]);
-      } else {
-        contas.push(['Conta para voz e áudio', falhou]);
-      }
-      if (cIa) {
-        texto.push(['Uso geral', nomeCurto(oIa.modelos, cIa.modelo) + ' · esforço ' + esf(cIa.esforco)]);
-        texto.push(['Esboços, dirigir e texto diário', (cIa.esbocoModelo ? nomeCurto(oIa.modelos, cIa.esbocoModelo) : 'o mesmo do uso geral') + ' · esforço ' + esf(cIa.esbocoEsforco || cIa.esforco)]);
-      } else {
-        texto.push(['Modelos de texto', falhou]);
-      }
-      if (voz.ok) {
-        const c = voz.data.config, o = voz.data.opcoes;
-        const velocidade = Number(c.velocidade) ? ' · velocidade ' + String(c.velocidade).replace('.', ',') + '×' : '';
-        vozAudio.push(['Leitura em voz', nomeCurto(o.modelos, c.modelo) + ' · voz ' + c.voz + velocidade]);
-      } else {
-        vozAudio.push(['Leitura em voz', falhou]);
-      }
-      if (cIa) {
-        vozAudio.push(['Áudio: transcrição', cIa.audioMotor === 'gemini' ? 'Gemini · ' + nomeCurto(oIa.modelos, cIa.audioGeminiModelo) : 'Chirp 3 (Speech-to-Text)']);
-        vozAudio.push(['Áudio: resumo, nomes e correção', cIa.audioModelo ? nomeCurto(oIa.modelos, cIa.audioModelo) : 'o mesmo do uso geral']);
-      } else {
-        vozAudio.push(['Áudio em texto', falhou]);
-      }
-      const tabela = document.createElement('table');
-      tabela.className = 'modelos-resumo-tabela';
-      const corpo = document.createElement('tbody');
-      [['🔑 Contas', contas], ['✍️ Texto', texto], ['🔊 Voz e áudio', vozAudio]].forEach(([titulo, linhas]) => {
-        const cab = document.createElement('tr');
-        cab.className = 'modelos-resumo-secao';
-        const thCab = document.createElement('th');
-        thCab.colSpan = 2;
-        thCab.scope = 'colgroup';
-        thCab.textContent = titulo;
-        cab.appendChild(thCab);
-        corpo.appendChild(cab);
-        linhas.forEach(([rotulo, valor]) => {
-          const tr = document.createElement('tr');
-          const th = document.createElement('th');
-          th.scope = 'row';
-          th.textContent = rotulo;
-          const td = document.createElement('td');
-          td.textContent = valor;
-          if (valor === falhou) td.className = 'warn';
-          tr.append(th, td);
-          corpo.appendChild(tr);
-        });
+    // ✏️ Escolher contas e modelos: o seletor nativo corta o nome da opção numa linha; aqui o nome escolhido aparece inteiro, quebrando a
+    // linha como numa tabela, e o seletor (transparente) fica por cima dele para continuar abrindo a lista ao toque.
+    (function seletoresQuebrados() {
+      const tabela = document.querySelector('.modelos-editar-tabela');
+      if (!tabela) return;
+      const pares = [...tabela.querySelectorAll('td select')].map(sel => {
+        const caixa = document.createElement('span');
+        caixa.className = 'sel-quebra';
+        const rotulo = document.createElement('span');
+        rotulo.className = 'sel-quebra-texto';
+        rotulo.setAttribute('aria-hidden', 'true');
+        sel.parentNode.insertBefore(caixa, sel);
+        caixa.append(rotulo, sel);
+        return { sel, caixa, rotulo };
       });
-      tabela.appendChild(corpo);
-      caixa.replaceChildren(tabela);
-    }
-    document.addEventListener('modelos-ia-mudou', () => { if (modelosIaSection.open) modelosResumoCarregar(); });
-    // 📋 Copiar as definições: a tabela em texto simples (título de cada parte e uma linha por item).
-    document.getElementById('modelosResumoCopiarBtn').addEventListener('click', event => {
-      const linhas = [...document.querySelectorAll('#modelosResumoTabela tr')];
-      if (!linhas.length) return;
-      const partes = ['NoteStyle · Definições em vigor (' + new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) + ')'];
-      linhas.forEach(tr => {
-        if (tr.classList.contains('modelos-resumo-secao')) partes.push('', tr.textContent.trim());
-        else partes.push('• ' + tr.cells[0].textContent.trim() + ': ' + tr.cells[1].textContent.trim());
+      const atualizar = () => pares.forEach(({ sel, caixa, rotulo }) => {
+        const op = sel.options[sel.selectedIndex];
+        const t = op ? op.textContent.trim() : '—';
+        if (rotulo.textContent !== t) rotulo.textContent = t;
+        if (caixa.hidden !== sel.hidden) caixa.hidden = sel.hidden;
+        caixa.classList.toggle('desabilitado', sel.disabled);
       });
-      copiarDescricaoImagem(partes.join('\n'), event.currentTarget);
-    });
+      pares.forEach(({ sel }) => {
+        sel.addEventListener('change', atualizar);
+        new MutationObserver(atualizar).observe(sel, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'disabled'] });
+      });
+      // O valor também muda por código (ao carregar do servidor), sem evento: confere de tempos em tempos enquanto a seção está aberta.
+      setInterval(() => { if (modelosIaSection.open) atualizar(); }, 600);
+      atualizar();
+    })();
 
     // Testa o provedor escolhido na tela (mesmo sem salvar): um pedido simples e um com resposta estruturada, como o app usa.
     document.getElementById('iaTestarBtn').addEventListener('click', async () => {
@@ -27600,7 +27543,35 @@ function saveTemplatesToStorage() {
         }
         pintarGravacoes();
       }
-      // O gravador da tela Anotações: um só, na qualidade de voz (64 kbps); se o aparelho recusar a taxa, grava na padrão dele.
+      // O gravador da tela Anotações: um só, na taxa escolhida em Ajustes (padrão 128 kbps); se o aparelho recusar a taxa, grava na padrão dele.
+      function anotQualidadeAudio() {
+        let bps = 128000;
+        let tratamento = false;
+        try {
+          const v = Number(localStorage.getItem('ns-anot-audio-bps'));
+          if ([64000, 96000, 128000, 192000].includes(v)) bps = v;
+          tratamento = localStorage.getItem('ns-anot-audio-tratamento') === '1';
+        } catch (e) { /* padrão */ }
+        return { bps, tratamento };
+      }
+      (function anotQualidadeAjustes() {
+        const sel = document.getElementById('anotQualidadeAudio');
+        const trat = document.getElementById('anotTratamentoVoz');
+        const st = document.getElementById('anotQualidadeStatus');
+        if (!sel || !trat) return;
+        const q = anotQualidadeAudio();
+        sel.value = String(q.bps);
+        trat.checked = q.tratamento;
+        const salvar = () => {
+          try {
+            localStorage.setItem('ns-anot-audio-bps', sel.value);
+            localStorage.setItem('ns-anot-audio-tratamento', trat.checked ? '1' : '0');
+            if (st) st.textContent = '✓ Salvo. Vale a partir da próxima gravação.';
+          } catch (e) { if (st) st.textContent = 'Não consegui salvar neste aparelho.'; }
+        };
+        sel.addEventListener('change', salvar);
+        trat.addEventListener('change', salvar);
+      })();
       function criarGravador(stream, mime, bps) {
         try { return new MediaRecorder(stream, Object.assign(mime ? { mimeType: mime } : {}, { audioBitsPerSecond: bps })); } catch (e) { /* sem a taxa */ }
         try { return new MediaRecorder(stream, mime ? { mimeType: mime } : undefined); } catch (e) { return null; }
@@ -29646,6 +29617,179 @@ function saveTemplatesToStorage() {
         }
         return ok && transc ? transc : null;
       }
+      // ----- Transcrições na íntegra: cada gravação transcrita é guardada inteira neste aparelho (IndexedDB) e no servidor (Blob privado). -----
+      // Índice local: 'transc:indice' = [{ id, titulo, em, duracaoS, caracteres, nuvem }] (mais recente primeiro); texto em 'transc:<id>'.
+      // "nuvem" é o id da cópia no servidor (vazio enquanto não foi enviada; o envio é tentado de novo ao abrir a lista).
+      const transcBox = document.getElementById('anotacoesTranscricoesBox');
+      const transcLista = document.getElementById('anotacoesTranscricoes');
+      const transcStatus = document.getElementById('anotacoesTranscricoesStatus');
+      const transcTitulo = document.getElementById('anotacoesTranscricoesTitulo');
+      const TRANSC_MAX = 200;
+      const campoNotas = texto; // o campo das anotações (dentro das funções abaixo, "texto" é o da transcrição)
+      async function transcIndice() {
+        try { const v = await bancoLer('transc:indice'); return Array.isArray(v) ? v : []; } catch (e) { return []; }
+      }
+      async function transcGravarIndice(lista) {
+        try { await bancoGravar('transc:indice', lista.slice(0, TRANSC_MAX)); } catch (e) { /* ignore */ }
+      }
+      async function transcEnviar(item, texto) {
+        const r = await trPost({ acao: 'transcricao-salvar', codigoTexto: codigoTextoSalvo(), titulo: item.titulo, texto, duracaoS: item.duracaoS });
+        return r.ok && r.dados && r.dados.item ? r.dados.item.id : '';
+      }
+      async function guardarTranscricao(alvo, texto, duracaoS) {
+        const quando = new Date();
+        const item = {
+          id: 'l' + quando.getTime().toString(36) + Math.random().toString(36).slice(2, 6),
+          titulo: (alvo && alvo.titulo) || 'Gravação',
+          em: quando.toISOString(),
+          duracaoS: Math.round(Number(duracaoS) || 0) || null,
+          caracteres: texto.length,
+          nuvem: '',
+        };
+        try { await bancoGravar('transc:' + item.id, texto); } catch (e) { /* sem espaço: fica só no servidor */ }
+        const lista = await transcIndice();
+        lista.unshift(item);
+        const sobra = lista.splice(TRANSC_MAX);
+        for (const v of sobra) { try { await bancoApagar('transc:' + v.id); } catch (e) { /* ignore */ } }
+        await transcGravarIndice(lista);
+        try { item.nuvem = await transcEnviar(item, texto); } catch (e) { item.nuvem = ''; }
+        if (item.nuvem) {
+          const atual = await transcIndice();
+          const achado = atual.find(x => x.id === item.id);
+          if (achado) { achado.nuvem = item.nuvem; await transcGravarIndice(atual); }
+        }
+        if (transcBox && transcBox.open) transcPintar();
+        else transcContar();
+      }
+      async function transcContar() {
+        if (!transcTitulo) return;
+        const n = (await transcIndice()).length;
+        transcTitulo.textContent = '📜 Transcrições na íntegra' + (n ? ' (' + n + ')' : '');
+      }
+      async function transcTexto(item) {
+        let texto = null;
+        try { texto = await bancoLer('transc:' + item.id); } catch (e) { texto = null; }
+        if (typeof texto === 'string') return texto;
+        if (!item.nuvem) return null;
+        const r = await trPost({ acao: 'transcricao-ler', codigoTexto: codigoTextoSalvo(), id: item.nuvem });
+        texto = r.ok && r.dados && r.dados.item ? r.dados.item.texto : null;
+        if (typeof texto === 'string') { try { await bancoGravar('transc:' + item.id, texto); } catch (e) { /* ignore */ } }
+        return texto;
+      }
+      const transcData = iso => { try { return new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } };
+      async function transcPintar() {
+        if (!transcLista) return;
+        const lista = await transcIndice();
+        transcContar();
+        if (!lista.length) {
+          const vazio = document.createElement('p');
+          vazio.className = 'hint';
+          vazio.textContent = 'Nenhuma transcrição guardada ainda. Elas aparecem aqui depois de cada resumo de gravação.';
+          transcLista.replaceChildren(vazio);
+          return;
+        }
+        transcLista.replaceChildren(...lista.map(item => {
+          const linha = document.createElement('details');
+          linha.className = 'anotacoes-transcricao';
+          const cab = document.createElement('summary');
+          const nome = document.createElement('span');
+          nome.className = 'anotacoes-transcricao-nome';
+          nome.textContent = item.titulo;
+          const info = document.createElement('small');
+          info.textContent = [transcData(item.em), item.duracaoS ? mmss(item.duracaoS) : '', item.nuvem ? '☁️' : '⏳ só no aparelho'].filter(Boolean).join(' · ');
+          cab.append(nome, info);
+          const corpo = document.createElement('div');
+          corpo.className = 'anotacoes-transcricao-corpo';
+          linha.append(cab, corpo);
+          linha.addEventListener('toggle', async () => {
+            if (!linha.open || corpo.dataset.carregado) return;
+            corpo.textContent = 'Carregando…';
+            const texto = await transcTexto(item);
+            corpo.dataset.carregado = '1';
+            if (texto === null) { corpo.textContent = 'Não encontrei o texto desta transcrição.'; return; }
+            const area = document.createElement('textarea');
+            area.readOnly = true;
+            area.rows = 10;
+            area.value = texto;
+            const botoes = document.createElement('div');
+            botoes.className = 'bk-row';
+            const copiar = document.createElement('button');
+            copiar.type = 'button';
+            copiar.className = 'secondary';
+            copiar.textContent = '📋 Copiar';
+            copiar.addEventListener('click', async () => {
+              try { await navigator.clipboard.writeText(texto); piscarBotao(copiar, '📋 Copiar'); } catch (e) { area.select(); }
+            });
+            const inserir = document.createElement('button');
+            inserir.type = 'button';
+            inserir.className = 'secondary';
+            inserir.textContent = '📝 Pôr nas anotações';
+            inserir.title = 'Acrescentar esta transcrição às anotações abertas';
+            inserir.addEventListener('click', () => {
+              campoNotas.value = juntarTexto(campoNotas.value, '—— Transcrição ——\n' + texto);
+              guardarNota();
+              salvarRascunho();
+              piscarBotao(inserir, '📝 Pôr nas anotações');
+            });
+            const apagar = document.createElement('button');
+            apagar.type = 'button';
+            apagar.className = 'secondary';
+            apagar.textContent = '🗑️';
+            apagar.title = 'Apagar esta transcrição (do aparelho e do servidor)';
+            apagar.setAttribute('aria-label', 'Apagar esta transcrição');
+            apagar.addEventListener('click', async () => {
+              if (!confirm('Apagar a transcrição «' + item.titulo + '» deste aparelho e do servidor?')) return;
+              if (item.nuvem) {
+                const r = await trPost({ acao: 'transcricao-apagar', codigoTexto: codigoTextoSalvo(), id: item.nuvem });
+                if (!r.ok) { transcStatus.textContent = trMensagem(r, 'Não consegui apagar no servidor. Tente de novo.'); return; }
+              }
+              try { await bancoApagar('transc:' + item.id); } catch (e) { /* ignore */ }
+              await transcGravarIndice((await transcIndice()).filter(x => x.id !== item.id));
+              transcStatus.textContent = '';
+              transcPintar();
+            });
+            botoes.append(copiar, inserir, apagar);
+            corpo.replaceChildren(area, botoes);
+          });
+          return linha;
+        }));
+      }
+      // Ao abrir a lista: envia ao servidor as que ficaram só no aparelho (sem internet na hora, por exemplo).
+      async function transcReenviar() {
+        const lista = await transcIndice();
+        const faltam = lista.filter(x => !x.nuvem);
+        if (!faltam.length || !codigoTextoSalvo()) return;
+        let mudou = false;
+        for (const item of faltam) {
+          let texto = null;
+          try { texto = await bancoLer('transc:' + item.id); } catch (e) { texto = null; }
+          if (typeof texto !== 'string') continue;
+          const id = await transcEnviar(item, texto).catch(() => '');
+          if (id) { item.nuvem = id; mudou = true; }
+        }
+        if (mudou) { await transcGravarIndice(lista); transcPintar(); }
+      }
+      if (transcBox) {
+        transcBox.addEventListener('toggle', () => { if (transcBox.open) { transcStatus.textContent = ''; transcPintar().then(transcReenviar); } });
+        transcContar();
+      }
+      const transcBuscarBtn = document.getElementById('anotacoesTranscricoesBuscarBtn');
+      if (transcBuscarBtn) transcBuscarBtn.addEventListener('click', async () => {
+        if (!codigoTextoSalvo()) { transcStatus.textContent = 'Salve o código de texto em Ajustes → 🔐 Autorização de acessos.'; return; }
+        transcStatus.textContent = 'Buscando no servidor…';
+        const r = await trPost({ acao: 'transcricoes-listar', codigoTexto: codigoTextoSalvo() });
+        if (!r.ok) { transcStatus.textContent = trMensagem(r, 'Não consegui ler as transcrições do servidor.'); return; }
+        const remotos = Array.isArray(r.dados.itens) ? r.dados.itens : [];
+        const lista = await transcIndice();
+        const conhecidos = new Set(lista.map(x => x.nuvem).filter(Boolean));
+        const novos = remotos.filter(x => x && x.id && !conhecidos.has(x.id)).map(x => ({
+          id: 'n' + x.id, titulo: x.titulo || 'Gravação', em: x.em || '', duracaoS: x.duracaoS || null, caracteres: x.caracteres || 0, nuvem: x.id,
+        }));
+        const junta = lista.concat(novos).sort((a, b) => String(b.em).localeCompare(String(a.em)));
+        await transcGravarIndice(junta);
+        transcStatus.textContent = novos.length ? (novos.length === 1 ? '1 transcrição trazida do servidor.' : novos.length + ' transcrições trazidas do servidor.') : 'Nada novo no servidor: todas já estão aqui.';
+        transcPintar();
+      });
       function anotacoesOradorRespondeu(transc, q) {
         const norm = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
         const t = norm(transc);
@@ -29763,6 +29907,8 @@ function saveTemplatesToStorage() {
             job.fase = 'Transcrevendo';
             const transc = await anotacoesTranscrever(arquivo, duracaoS);
             if (!transc) return '⚠️ Não foi possível transcrever a gravação de «' + alvo.titulo + '».';
+            job.fase = 'Guardando a transcrição';
+            await guardarTranscricao(alvo, transc, duracaoS).catch(() => {});
             job.fase = 'Resumindo';
             return mensagemFinal(alvo, await anotacoesResumir(transc, false, alvo));
           }
@@ -29791,6 +29937,9 @@ function saveTemplatesToStorage() {
               else falhas++;
             }
             if (!trechos.length) return '⚠️ Não foi possível transcrever as gravações de «' + alvo.titulo + '».';
+            job.fase = 'Guardando a transcrição';
+            const somaS = ids.reduce((s, id) => s + ((indice.find(g => g.id === id) || {}).duracaoS || 0), 0);
+            await guardarTranscricao(alvo, trechos.join('\n\n'), somaS).catch(() => {});
             job.fase = 'Resumindo';
             const msg = mensagemFinal(alvo, await anotacoesResumir(trechos.join('\n\n'), trechos.length > 1, alvo));
             return msg + (falhas ? (falhas === 1 ? ' (1 gravação não pôde ser transcrita.)' : ' (' + falhas + ' gravações não puderam ser transcritas.)') : '');
@@ -30066,10 +30215,19 @@ function saveTemplatesToStorage() {
           return;
         }
         try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          // Qualidade escolhida em Ajustes → Áudio em texto: configurações (padrão: 128 kbps, sem o tratamento de voz de ligação, que abafa a voz).
+          const q = anotQualidadeAudio();
+          let stream;
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({
+              audio: { echoCancellation: q.tratamento, noiseSuppression: q.tratamento, autoGainControl: q.tratamento, channelCount: 1, sampleRate: 48000 },
+            });
+          } catch (e) {
+            stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          }
           const mime = anotacoesMimeGravacao();
-          // Um gravador só, na qualidade de voz: 64 kbps (cerca de 29 MB por hora). O mesmo arquivo fica no app, é exportado e transcrito.
-          const gravador = criarGravador(stream, mime, 64000);
+          // Um gravador só. O mesmo arquivo fica no app, é exportado e transcrito.
+          const gravador = criarGravador(stream, mime, q.bps);
           if (!gravador) throw new Error('sem gravador');
           const pedacos = [];
           gravador.ondataavailable = e => { if (e.data && e.data.size) pedacos.push(e.data); };

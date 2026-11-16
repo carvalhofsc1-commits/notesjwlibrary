@@ -358,6 +358,16 @@
                 <div id="anotacoesGravacoes" class="anotacoes-gravacoes"></div>
               </div>
             </details>
+            <!-- As transcrições na íntegra de cada gravação resumida: guardadas neste aparelho e no servidor. -->
+            <details id="anotacoesTranscricoesBox" class="anotacoes-gravacoes-box">
+              <summary id="anotacoesTranscricoesTitulo">📜 Transcrições na íntegra</summary>
+              <div class="anotacoes-gravacoes-corpo">
+                <p class="hint">O texto completo de cada gravação transcrita fica guardado neste aparelho e no servidor (☁️), para ler, copiar ou recuperar depois.</p>
+                <button id="anotacoesTranscricoesBuscarBtn" class="secondary" type="button" title="Trazer do servidor as transcrições que não estão neste aparelho">☁️ Buscar no servidor</button>
+                <div id="anotacoesTranscricoes" class="anotacoes-transcricoes"></div>
+                <p id="anotacoesTranscricoesStatus" class="anotacoes-msg" role="status" aria-live="polite"></p>
+              </div>
+            </details>
             <!-- Opções adicionais da gravação (discretas, guardadas neste aparelho). -->
             <details id="anotacoesGravOpcoes" class="bp-opcoes anotacoes-grav-opcoes">
               <summary>⚙️ Opções adicionais da gravação</summary>
@@ -1658,7 +1668,7 @@
 
             <div class="acesso-item">
               <label>🎧 Gravações guardadas no app</label>
-              <p class="hint">As gravações feitas na tela Anotações ficam guardadas neste aparelho, na qualidade de voz (cerca de 29 MB por hora), para ouvir depois na própria anotação. Não entram no backup (.json): para guardar uma gravação para sempre, exporte o arquivo. Se você apagar os dados do site ou trocar de aparelho, elas se perdem.</p>
+              <p class="hint">As gravações feitas na tela Anotações ficam guardadas neste aparelho, na qualidade escolhida em Áudio em texto: configurações (na Alta, cerca de 58 MB por hora), para ouvir depois na própria anotação. Não entram no backup (.json): para guardar uma gravação para sempre, exporte o arquivo. Se você apagar os dados do site ou trocar de aparelho, elas se perdem.</p>
               <p id="gravacoesGuardadasInfo" class="hint" role="status" aria-live="polite"></p>
               <div id="gravacoesGuardadasLista" class="anotacoes-gravacoes"></div>
               <div class="bk-row">
@@ -1696,11 +1706,6 @@
         <details class="subsection sub-tint-2 so-admin" id="modelosIaSection" hidden>
           <summary><span class="adm-titulo">🤖 Modelos e agentes de IA&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
           <div class="subsection-body modelos-ia-body">
-            <details id="modelosResumo" class="modelos-resumo">
-                          <summary><h3 class="modelos-ia-titulo">📋 Definições em vigor</h3></summary>
-                          <div id="modelosResumoTabela" aria-live="polite"><p class="hint">Carregando…</p></div>
-                          <button id="modelosResumoCopiarBtn" class="secondary modelos-copiar" type="button">📋 Copiar as definições</button>
-                        </details>
             <details class="modelos-resumo modelos-editar">
               <summary><h3 class="modelos-ia-titulo">✏️ Escolher contas e modelos</h3></summary>
               <table class="modelos-resumo-tabela modelos-editar-tabela">
@@ -1810,6 +1815,20 @@
         <details class="subsection sub-tint-3 so-admin" id="audioTiposSection" hidden>
                       <summary><span class="adm-titulo">🎙️ Áudio em texto: configurações&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
                       <div class="subsection-body">
+                        <div class="audio-config-moldura">
+                        <h3 class="audio-todos-titulo">🎚️ Qualidade da gravação nas Anotações</h3>
+                        <p class="hint">Vale para o botão 🎙️ Gravar das Anotações, neste aparelho. Quanto maior a qualidade, maior o arquivo guardado no app.</p>
+                        <label for="anotQualidadeAudio">Qualidade do áudio</label>
+                        <select id="anotQualidadeAudio">
+                          <option value="64000">Voz (64 kbps, cerca de 29 MB por hora)</option>
+                          <option value="96000">Boa (96 kbps, cerca de 43 MB por hora)</option>
+                          <option value="128000">Alta (128 kbps, cerca de 58 MB por hora)</option>
+                          <option value="192000">Máxima (192 kbps, cerca de 86 MB por hora)</option>
+                        </select>
+                        <label class="ai-check"><input id="anotTratamentoVoz" type="checkbox"> Tratamento de voz do aparelho (corta eco e ruído)</label>
+                        <p class="hint">Desligado (recomendado), o microfone grava o som natural do salão, com mais clareza. Ligado, o aparelho filtra eco e ruído como numa ligação, o que costuma abafar e “metalizar” a voz de quem fala longe.</p>
+                        <p id="anotQualidadeStatus" class="ok" role="status" aria-live="polite"></p>
+                        </div>
                         <div class="audio-config-moldura">
                         <h3 class="audio-todos-titulo">🎙️ Tipos de áudio deste aparelho</h3>
                         <p class="hint">Os tipos de áudio que aparecem na tela Áudio em texto, em Informe o tipo de áudio → Tipo de áudio. Ao escolher um tipo, a descrição dele preenche o campo “Sobre o áudio”. Você pode mudar os nomes e as descrições, criar tipos novos, reordenar e apagar. Ficam salvos só neste aparelho.</p>

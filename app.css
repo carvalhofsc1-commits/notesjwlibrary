@@ -5427,13 +5427,59 @@
     }
 
     .anotacoes-orador-box > summary {
-      display: inline-block;
+      display: block;
       cursor: pointer;
       list-style: none;
-      padding: 2px 8px;
-      border-radius: 999px;
+      padding: 2px 10px;
+      line-height: 1.35;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--accent) 7%, transparent);
       font-size: .8rem;
       color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .anotacoes-transcricoes {
+      display: grid;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .anotacoes-transcricao {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 6px 10px;
+    }
+
+    .anotacoes-transcricao > summary {
+      cursor: pointer;
+      display: grid;
+      gap: 2px;
+    }
+
+    .anotacoes-transcricao-nome {
+      font-weight: 700;
+      font-size: .88rem;
+    }
+
+    .anotacoes-transcricao > summary small {
+      color: var(--muted);
+      font-size: .76rem;
+    }
+
+    .anotacoes-transcricao-corpo {
+      display: grid;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .anotacoes-transcricao-corpo textarea {
+      width: 100%;
+      box-sizing: border-box;
+      font-size: .85rem;
     }
 
     .anotacoes-orador-box > summary::-webkit-details-marker {
@@ -14234,6 +14280,56 @@ button.processando:disabled { opacity: 1; cursor: progress; }
   margin: 0;
   font-size: .86rem;
   padding: 6px 8px;
+}
+
+/* O nome da opção escolhida aparece inteiro (quebrando a linha); o seletor fica transparente por cima, para abrir a lista ao toque. */
+.modelos-editar-tabela .sel-quebra {
+  position: relative;
+  display: block;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  padding: 6px 26px 6px 8px;
+  font-size: .86rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.modelos-editar-tabela .sel-quebra::after {
+  content: '▾';
+  position: absolute;
+  right: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.modelos-editar-tabela .sel-quebra + .sel-quebra {
+  margin-top: 6px;
+}
+
+.modelos-editar-tabela .sel-quebra[hidden] {
+  display: none;
+}
+
+.modelos-editar-tabela .sel-quebra.desabilitado {
+  opacity: .6;
+}
+
+.modelos-editar-tabela .sel-quebra:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.modelos-editar-tabela .sel-quebra > select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
 }
 
 .modelos-editar-tabela td select + select {

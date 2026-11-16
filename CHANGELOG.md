@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.81
+
+- Anotações: o nome do orador fica num card fininho, da largura da página.
+- Anotações: a transcrição na íntegra de cada gravação resumida é guardada no aparelho e no servidor (Blob privado, por aparelho; `api/_transcricoes.mjs`, ações `transcricao-salvar`, `transcricoes-listar`, `transcricao-ler` e `transcricao-apagar` em `api/transcrever.mjs`, sem gastar crédito). Card "📜 Transcrições na íntegra" com ler, copiar, pôr nas anotações, apagar e buscar no servidor; as que não subiram são reenviadas ao abrir a lista.
+- Ajustes → Áudio em texto: configurações: novo card "🎚️ Qualidade da gravação nas Anotações" (64, 96, 128 ou 192 kbps; padrão 128) e opção do tratamento de voz do aparelho (padrão desligado; antes o microfone gravava com eco/ruído/ganho automático de ligação, a 64 kbps).
+- Ajustes → Modelos e agentes de IA: card "Definições em vigor" removido; em "Escolher contas e modelos" o nome da opção escolhida aparece inteiro, quebrando a linha.
+
 ## 6.9.80
 
 - Barra de baixo (iPhone): no quique do fim ou do começo da página a correção da 6.9.78 não age mais, então a barra não é empurrada para fora da tela. Quadro de diagnóstico mantido por enquanto.
