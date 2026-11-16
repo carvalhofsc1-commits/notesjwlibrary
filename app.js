@@ -4757,9 +4757,13 @@
     // ---- Texto → parágrafos e frases ----
     // "Jer. 45:5", "p. ex." e "3.5" não encerram a frase.
     function leituraFrases(paragrafo) {
+      // Ponto que não termina frase: abreviação seguida de minúscula ou número, número decimal ("6.7") e ponto colado entre letras
+      // (endereços como "jw.org"). Sem esta última, "jw.org" era cortado em duas frases e remontado como "jw. org" (e a leitura do
+      // texto diário parava ali, porque o trecho deixava de bater com o texto autorizado).
       const protegido = paragrafo
         .replace(/(\p{L}{1,4})\.(\s+[\d\p{Ll}])/gu, '$1\u0001$2')
-        .replace(/(\d)\.(\d)/g, '$1\u0001$2');
+        .replace(/(\d)\.(\d)/g, '$1\u0001$2')
+        .replace(/([\p{L}\d])\.(?=[\p{L}\d])/gu, '$1\u0001');
       const partes = protegido.match(/[^.!?…]+[.!?…]+[*"”’')\]]*|[^.!?…]+$/g) || [protegido];
       return partes.map(p => p.replace(/\u0001/g, '.').trim()).filter(Boolean);
     }
@@ -7710,7 +7714,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.68'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.69'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.

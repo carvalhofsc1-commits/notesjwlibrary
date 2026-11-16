@@ -42,6 +42,9 @@ function origemCoberta(origem, textos) {
   if (!o) return false;
   const corpus = normalizarParaCupom(textos.join("\n"));
   if (corpus.includes(o)) return true;
+  // Diferença só de espaços (o app pode remontar as frases com um espaço a mais, como "jw. org" no lugar de "jw.org"): continua coberto.
+  const semEspaco = (s) => s.replace(/\s+/g, "");
+  if (semEspaco(o).length >= 8 && semEspaco(corpus).includes(semEspaco(o))) return true;
   // Parte cortada: a origem da unidade inteira ainda precisa estar no corpus.
   return textos.some((t) => {
     const n = normalizarParaCupom(t);

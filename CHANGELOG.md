@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.69
+
+Correção: a **leitura em voz alta do texto diário parava** no meio (“Esse trecho não faz parte do texto do dia…”) quando o texto tinha um endereço como **jw.org**. O app cortava a frase no ponto de “jw.org” e a remontava como “jw. org”, e o trecho deixava de bater com o texto autorizado. Agora um ponto colado entre letras ou números não divide a frase (vale também para a tela Leitura em voz alta), e o servidor aceita diferenças só de espaços.
+
 ## 6.9.68
 
 Anotações (campo das anotações e campo da resposta da recapitulação):
