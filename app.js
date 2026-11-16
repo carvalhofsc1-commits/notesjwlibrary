@@ -138,7 +138,8 @@
       const estilo = el => getComputedStyle(el);
       const definir = () => {
         grade.style.minHeight = '0px';
-        const embaixo = parseFloat(estilo(document.body).paddingBottom) + parseFloat(estilo(grade.parentElement).paddingBottom) + parseFloat(estilo(grade).marginBottom);
+        const navNoFluxo = navStickyAtivo() ? document.getElementById('appNav').offsetHeight : 0; // iPhone: a barra ocupa espaço no fim da página
+        const embaixo = parseFloat(estilo(document.body).paddingBottom) + parseFloat(estilo(grade.parentElement).paddingBottom) + parseFloat(estilo(grade).marginBottom) + navNoFluxo;
         const topo = grade.getBoundingClientRect().top + window.scrollY;
         grade.style.minHeight = Math.max(0, Math.floor(window.innerHeight - topo - embaixo)) + 'px';
       };
@@ -188,6 +189,26 @@
       pontos.forEach((p, i) => p.addEventListener('click', () => ir(i)));
       window.addEventListener('resize', () => { caixa.scrollLeft = atual() * caixa.clientWidth; pintar(); });
       pintar();
+    })();
+
+    // iPhone/iPad (tela de celular ou tablet): a barra de baixo vira "sticky" no fim da página (veja html.nav-sticky em app.css), porque no iOS 26
+    // as barras "fixed" são desenhadas fora do lugar ao rolar. Para isso ela passa a ser o último item da página; no computador (barra no alto)
+    // ela volta ao lugar de antes, acima do conteúdo.
+    function navStickyAtivo() { return document.documentElement.classList.contains('nav-sticky'); }
+    (function navStickyNoIos() {
+      const nav = document.getElementById('appNav');
+      const main = document.querySelector('body > main');
+      const ios = (window.CSS && CSS.supports && CSS.supports('-webkit-touch-callout', 'none')) || /iPad|iPhone|iPod/.test(navigator.userAgent);
+      if (!nav || !main || !ios) return;
+      const telaEstreita = window.matchMedia('(max-width: 979px)');
+      const aplicar = () => {
+        const ligar = telaEstreita.matches;
+        document.documentElement.classList.toggle('nav-sticky', ligar);
+        if (ligar && nav.nextElementSibling !== null) document.body.appendChild(nav);
+        else if (!ligar && nav.nextElementSibling !== main) document.body.insertBefore(nav, main);
+      };
+      aplicar();
+      if (telaEstreita.addEventListener) telaEstreita.addEventListener('change', () => { aplicar(); try { inicioAjustarAltura(); } catch (e) { /* ainda iniciando */ } });
     })();
 
     // Barra de baixo no iPhone: depois que o teclado fecha, o iOS às vezes deixa a área de referência das barras fixas deslocada e a barra
@@ -7771,7 +7792,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.72'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.73'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -25019,7 +25040,7 @@ function saveTemplatesToStorage() {
       try {
         const main = card.closest('main');
         const estilo = el => getComputedStyle(el);
-        const embaixo = parseFloat(estilo(document.body).paddingBottom) + (main ? parseFloat(estilo(main).paddingBottom) : 0);
+        const embaixo = parseFloat(estilo(document.body).paddingBottom) + (main ? parseFloat(estilo(main).paddingBottom) : 0) + (navStickyAtivo() ? document.getElementById('appNav').offsetHeight : 0);
         const topo = card.getBoundingClientRect().top + window.scrollY;
         const folga = window.innerHeight - topo - embaixo - card.offsetHeight; // com os botões do tamanho do conteúdo
         if (folga <= 0) return;

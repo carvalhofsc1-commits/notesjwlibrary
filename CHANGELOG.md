@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.73
+
+Correção (iPhone/iPad, iOS 26): a barra de baixo **continuava subindo para o meio da tela** ao rolar, mesmo longe do fim da página (o elástico não era a causa). No iOS 26 as barras “fixas” (`position: fixed`) são desenhadas fora do lugar, sem que o app consiga medir o erro. Agora, no iPhone e no iPad, a barra deixou de ser “fixa” e passou a ser **“grudada” no fim da página** (`position: sticky`), que anda junto com a rolagem e não tem essa falha; o corpo da página ocupa a altura da tela, para a barra ficar embaixo mesmo com pouco conteúdo. No computador e no Android nada muda.
+
 ## 6.9.72
 
 Correção (iPhone, iOS 26): a **barra de baixo subia para o meio da tela ao rolar até o fim** de uma página longa. É uma falha do próprio iOS 26 (relatada como corrigida no 26.1): puxar a página além do fim (o “elástico”) arrasta a barra fixa. Agora o elástico fica desligado **só no fim da página**; no topo ele continua, e o puxar para atualizar do Início também. Campos e listas que rolam por dentro e os gestos para o lado (páginas dos atalhos) não mudam.

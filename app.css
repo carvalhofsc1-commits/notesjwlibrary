@@ -7945,6 +7945,31 @@
       padding-bottom: calc(72px + var(--nav-fundo));
     }
 
+    /* iPhone/iPad (classe posta pelo app): a barra de baixo deixa de ser "fixed" e vira "sticky", grudada no fim da página. No iOS 26 as barras
+       "fixed" são desenhadas fora do lugar (a barra subia para o meio da tela ao rolar); as "sticky" andam junto com a rolagem e não têm a falha.
+       O corpo vira uma coluna da altura da tela, para a barra ficar embaixo mesmo numa tela com pouco conteúdo. */
+    html.nav-sticky body {
+      padding-bottom: 0;
+      min-height: 100svh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    html.nav-sticky body > main {
+      flex: 1 0 auto;
+    }
+
+    html.nav-sticky .app-nav {
+      position: sticky;
+      left: auto;
+      right: auto;
+      bottom: 0;
+      margin-top: auto;
+      -webkit-transform: none;
+      transform: none;
+      will-change: auto;
+    }
+
     /* iPhone: a barra fixa de baixo fica na sua própria camada de composição para ficar presa à base. O "elástico" da rolagem (overscroll) voltou
        na 6.3.17: antes ele era desligado aqui (overscroll-behavior-y: none). */
 
