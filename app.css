@@ -5421,9 +5421,21 @@
     }
 
     /* Orador e congregação dentro da anotação: recolhido, só uma linha discreta ("🎤 Nome · Congregação"); aberto, os dois campos. */
+    /* O card fininho é o próprio quadro: ao abrir, os campos do orador ficam dentro dele. */
     .anotacoes-orador-box {
       margin: 2px 0 8px;
       text-align: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--accent) 7%, transparent);
+    }
+
+    .anotacoes-orador-box[open] {
+      padding-bottom: 10px;
+    }
+
+    .anotacoes-orador-box[open] > .anotacoes-orador-campos {
+      padding: 0 10px;
     }
 
     .anotacoes-orador-box > summary {
@@ -5432,9 +5444,6 @@
       list-style: none;
       padding: 2px 10px;
       line-height: 1.35;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: color-mix(in srgb, var(--accent) 7%, transparent);
       font-size: .8rem;
       color: var(--muted);
       white-space: nowrap;

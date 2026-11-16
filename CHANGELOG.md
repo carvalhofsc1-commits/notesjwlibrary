@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.83
+
+- Anotações: os campos do orador e da congregação abrem dentro do próprio card fininho do orador.
+
 ## 6.9.82
 
 - Ajustes → Modelos e agentes de IA: os ajustes (contas, modelos, testar, salvar) ficam direto no card principal, sem o card interno "Escolher contas e modelos".
