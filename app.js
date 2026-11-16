@@ -7792,7 +7792,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.74'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.75'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -28220,7 +28220,7 @@ function saveTemplatesToStorage() {
           if (quemParte) {
             const quem = document.createElement('small');
             quem.className = 'anotacoes-parte-quem';
-            quem.textContent = '🎤 ' + quemParte;
+            quem.textContent = '🧑‍💼 ' + quemParte;
             corpo.appendChild(quem);
           }
           // Tocar no discurso abre direto a tela de anotações dele (o orador e a congregação são informados lá dentro).
@@ -28242,7 +28242,7 @@ function saveTemplatesToStorage() {
         if (document.activeElement !== oradorIn) oradorIn.value = p.orador || '';
         if (document.activeElement !== congIn) congIn.value = p.congregacao || '';
         const quem = [p.orador, p.congregacao].filter(Boolean).join(' · ');
-        oradorResumo.textContent = quem ? '🎤 ' + quem : '🎤 Informe o orador e a congregação';
+        oradorResumo.textContent = quem ? '🧑‍💼 ' + quem : '🧑‍💼 Informe o orador e a congregação';
         oradorBox.classList.toggle('preenchido', Boolean(quem));
         if (abrirSeVazio) oradorBox.open = !p.orador;
       }

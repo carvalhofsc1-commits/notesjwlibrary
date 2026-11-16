@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.75
+
+Anotações: a linha do orador (e o campo para informar orador e congregação) usa o ícone 🧑‍💼 (pessoa de terno e gravata) no lugar do microfone, também no programa.
+
 ## 6.9.74
 
 Anotações (assembleia e congresso):
