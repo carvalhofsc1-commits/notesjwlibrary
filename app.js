@@ -7815,7 +7815,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.83'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.84'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -28079,7 +28079,7 @@ function saveTemplatesToStorage() {
         document.getElementById('anotacoesProgramaCards').hidden = !programa || vista !== 'programa'; // o 2º e o 3º contêiner: discursos e perguntas
         document.getElementById('anotacoesProgramaCardsTitulo').textContent = '📋 Programa d' + (ehCongresso() ? 'o congresso' : 'a assembleia');
         progTitulo.hidden = !programa || vista === 'escolha' || !programaMeta;
-        verNotasBtn.hidden = !temNotas();
+        if (verNotasBtn) verNotasBtn.hidden = !temNotas();
         document.getElementById('anotacoesExportarNotas').hidden = !temNotas();
         escritaEl.hidden = programa && !ativa;
         cabParteEl.hidden = !ativa;
@@ -28091,7 +28091,7 @@ function saveTemplatesToStorage() {
         const naTelaDoPrograma = programa && vista === 'programa';
         document.getElementById('anotacoesTrocarTopo').hidden = !naTelaDoPrograma; // Trocar de evento: no topo da tela do programa
         topoEl.toggleAttribute('data-troca', naTelaDoPrograma);
-        document.querySelector('.anotacoes-programa-acoes').hidden = !temNotas(); // sem anotações, os botões Ver e Exportar não aparecem e a linha some
+        document.querySelector('.anotacoes-programa-acoes').hidden = !temNotas(); // sem anotações, o botão Exportar (no fim do programa) não aparece e a linha some
         pintarRevisao();
         pintarAvisoPerguntas();
         if (ativa) {
@@ -28428,7 +28428,7 @@ function saveTemplatesToStorage() {
         irPara('escolha');
       });
       // Ver anotações: abre a primeira parte (na ordem do programa) que já tem anotação.
-      verNotasBtn.addEventListener('click', () => {
+      if (verNotasBtn) verNotasBtn.addEventListener('click', () => {
         const achada = indicesComAnotacao()[0];
         if (achada === undefined) return;
         iniciarAnotacao(ehInfo(partes[achada]) ? achada + 1 : achada);
@@ -29223,7 +29223,8 @@ function saveTemplatesToStorage() {
       // Atualizar programa: busca o programa de novo na WOL e junta com o que já existe (anotações, orador, congregação e respostas ficam).
       // Partes que saíram do programa mas têm conteúdo não se perdem: vão para o fim, numa seção à parte.
       const atualizarProgramaBtn = document.getElementById('anotacoesAtualizarPrograma');
-      atualizarProgramaBtn.addEventListener('click', async () => {
+      // (O botão saiu da tela na 6.9.84; o código fica para quando ele voltar.)
+      if (atualizarProgramaBtn) atualizarProgramaBtn.addEventListener('click', async () => {
         const entrada = (programaMeta && programaMeta.entrada) || (/^https?:/.test(chaveAtual) ? chaveAtual : '');
         if (!entrada) return dizerProg('Este programa foi aberto antes desta versão: escolha-o de novo na lista para poder atualizá-lo.', true);
         if (!navigator.onLine) return dizerProg('Sem conexão com a internet.', true);

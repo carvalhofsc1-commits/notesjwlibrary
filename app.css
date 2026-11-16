@@ -5843,6 +5843,38 @@
       white-space: normal;
     }
 
+    /* Exportar anotações: no fim da lista dos discursos, na largura toda. */
+    .screen-anotacoes .anotacoes-programa-acoes.anotacoes-programa-acoes-fim {
+      margin: 10px 0 0;
+    }
+
+    .screen-anotacoes .anotacoes-programa-acoes-fim button {
+      font-size: .86rem;
+    }
+
+    /* Perguntas de recapitulação: recolhível (fechada ao abrir a tela), com a seta como nos outros cards. */
+    .anotacoes-perguntas-box > summary {
+      cursor: pointer;
+      list-style: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .anotacoes-perguntas-box > summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .anotacoes-perguntas-box > summary::before {
+      content: '▸';
+      display: inline-block;
+      margin-right: 6px;
+      color: var(--muted);
+      transition: transform .15s ease;
+    }
+
+    .anotacoes-perguntas-box[open] > summary::before {
+      transform: rotate(90deg);
+    }
+
     /* Iniciar anotação e, ao lado, a lixeira que limpa o orador e a congregação. */
     .anotacoes-parte-botoes {
       display: flex;

@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.84
+
+- Anotações (programa): saíram os botões "Ver anotações" e "Atualizar programa"; "Exportar anotações" foi para o fim da lista dos discursos.
+- Anotações (programa): "Perguntas de recapitulação" ficou recolhível, fechada por padrão.
+
 ## 6.9.83
 
 - Anotações: os campos do orador e da congregação abrem dentro do próprio card fininho do orador.

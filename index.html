@@ -437,20 +437,20 @@
     <div id="anotacoesProgramaCards" class="anotacoes-programa-cards" hidden>
       <h3 id="anotacoesProgramaCardsTitulo" class="anotacoes-subtitulo screen-anotacoes">📋 Programa da assembleia</h3>
       <section class="card tint-5 screen-anotacoes anotacoes-cartao-extra" id="anotacoesCardDiscursos" data-modo="">
-        <div class="anotacoes-programa-acoes">
-          <button id="anotacoesVerNotas" class="anotacoes-ver-notas" type="button" hidden>✍️ Ver anotações</button>
-          <button id="anotacoesAtualizarPrograma" class="secondary anotacoes-atualizar" type="button" title="Buscar o programa de novo na WOL, sem perder anotações, orador nem congregação">🔄 Atualizar programa</button>
+        <div id="anotacoesPartes" class="anotacoes-partes"></div>
+        <div class="anotacoes-programa-acoes anotacoes-programa-acoes-fim">
           <button id="anotacoesExportarNotas" class="secondary anotacoes-exportar" type="button" title="Gera um Word com as anotações de todos os discursos deste evento" hidden>📄 Exportar anotações</button>
         </div>
-        <div id="anotacoesPartes" class="anotacoes-partes"></div>
       </section>
       <div id="anotacoesPerguntas" class="screen-anotacoes" hidden>
-        <h3 class="anotacoes-subtitulo screen-anotacoes">❓ Perguntas de recapitulação</h3>
-        <section class="card tint-5 screen-anotacoes anotacoes-cartao-extra anotacoes-perguntas" data-modo="">
-          <ol id="anotacoesPerguntasLista" class="anotacoes-perguntas-lista"></ol>
-          <p id="anotacoesPerguntasTexto" class="anotacoes-msg" role="status" aria-live="polite"></p>
-          <button id="anotacoesPerguntasIa" data-codigo-ia="pesquisa" class="secondary" type="button" title="A IA organiza qual pergunta de recapitulação vai em cada discurso" hidden>🤖 Organizar as perguntas com a IA</button>
-        </section>
+        <details id="anotacoesPerguntasBox" class="anotacoes-perguntas-box">
+          <summary class="anotacoes-subtitulo screen-anotacoes">❓ Perguntas de recapitulação</summary>
+          <section class="card tint-5 screen-anotacoes anotacoes-cartao-extra anotacoes-perguntas" data-modo="">
+            <ol id="anotacoesPerguntasLista" class="anotacoes-perguntas-lista"></ol>
+            <p id="anotacoesPerguntasTexto" class="anotacoes-msg" role="status" aria-live="polite"></p>
+            <button id="anotacoesPerguntasIa" data-codigo-ia="pesquisa" class="secondary" type="button" title="A IA organiza qual pergunta de recapitulação vai em cada discurso" hidden>🤖 Organizar as perguntas com a IA</button>
+          </section>
+        </details>
       </div>
     </div>
 
