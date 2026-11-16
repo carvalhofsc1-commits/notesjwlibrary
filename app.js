@@ -190,6 +190,31 @@
       pintar();
     })();
 
+    // Barra de baixo no iPhone: depois que o teclado fecha, o iOS às vezes deixa a área de referência das barras fixas deslocada e a barra
+    // "flutua" no meio da tela, com o conteúdo aparecendo embaixo dela. Aqui a barra acompanha a área visível de verdade (visualViewport): se o
+    // fundo visível estiver abaixo do fundo da área de referência, a barra desce essa diferença. Ao sair de um campo, o app também pede ao
+    // iOS que refaça o cálculo (rolando para o mesmo lugar). Com tudo normal a diferença é zero e nada muda.
+    (function navAcompanharTela() {
+      const nav = document.getElementById('appNav');
+      const vv = window.visualViewport;
+      if (!nav || !vv) return;
+      const ajustar = () => {
+        if (getComputedStyle(nav).position !== 'fixed') { nav.style.transform = ''; return; } // computador: a barra fica no alto
+        const desloc = Math.round(vv.offsetTop + vv.height - window.innerHeight);
+        nav.style.transform = desloc > 1 ? 'translate3d(0, ' + desloc + 'px, 0)' : '';
+      };
+      vv.addEventListener('resize', ajustar);
+      vv.addEventListener('scroll', ajustar);
+      window.addEventListener('resize', ajustar);
+      document.addEventListener('focusout', () => setTimeout(() => {
+        const campo = document.activeElement;
+        const escrevendo = campo && (campo.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(campo.tagName));
+        if (!escrevendo) window.scrollTo(window.scrollX, window.scrollY);
+        ajustar();
+      }, 350));
+      ajustar();
+    })();
+
     // Logo: o nome "NoteStyle" fica com a mesma largura do slogan logo abaixo dele (a fonte varia de aparelho para aparelho, então a medida é feita na tela).
     function logoAjustar() {
       const nome = document.querySelector('.brand-title h1');
@@ -7714,7 +7739,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.69'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.70'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
