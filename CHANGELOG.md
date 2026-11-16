@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.89
+
+- Barra de baixo (iPhone): quando ela fica abaixo do fim da área visível (escondida), a correção também a puxa para cima, até o fim da área visível (antes só descia).
+- Diagnóstico (tocar na versão no Menu): registra as 3 últimas vezes em que a barra saiu da área visível, com as medidas do momento.
+
 ## 6.9.88
 
 - Anotações: os campos das anotações e da resposta da recapitulação crescem com o texto, como o campo da tela Formatar (a altura mínima continua como piso), inclusive quando o texto muda por código (trocar de discurso, resumo, formatação).

@@ -236,11 +236,31 @@
         if (!computador.matches && (pos === 'fixed' || pos === 'sticky') && !escrevendo && !quicando) {
           const base = nav.getBoundingClientRect().bottom - aplicado;
           desloc = Math.round(vv.offsetTop + vv.height - base);
-          if (desloc < 2 || desloc > 600) desloc = 0;
+          // Também para cima: se a barra ficou abaixo do fim da área visível (escondida atrás da barra do sistema), ela sobe até o fim da área visível.
+          if (Math.abs(desloc) < 2 || desloc > 600 || desloc < -300) desloc = 0;
         }
         if (desloc !== aplicado) {
           aplicado = desloc;
           nav.style.transform = desloc ? 'translate3d(0, ' + desloc + 'px, 0)' : '';
+        }
+        // Diagnóstico: se a barra ficar fora da área visível (sumida), guarda as medidas do momento (as 3 últimas) para o quadro da versão.
+        if (!computador.matches && !escrevendo && nav.getClientRects().length) {
+          const r = nav.getBoundingClientRect();
+          const fundoVisivel = vv.offsetTop + vv.height;
+          if (r.top > fundoVisivel - 8 || r.bottom < vv.offsetTop + 8) {
+            const agora = Date.now();
+            if (agora - (ajustar.ultimoSumico || 0) > 5000) {
+              ajustar.ultimoSumico = agora;
+              const t = new Date().toLocaleTimeString('pt-BR');
+              const linha = t + ' · tela ' + (location.hash || '-') + ' · barra ' + Math.round(r.top) + '–' + Math.round(r.bottom) + ' · vv ' + Math.round(vv.offsetTop) + '+' + Math.round(vv.height) +
+                ' · inner ' + window.innerHeight + ' · rol ' + Math.round(window.scrollY) + '/' + rolMax + ' · desl ' + aplicado + ' · ' + pos;
+              try {
+                const lista = JSON.parse(localStorage.getItem('ns-diag-barra-sumiu') || '[]');
+                lista.unshift(linha);
+                localStorage.setItem('ns-diag-barra-sumiu', JSON.stringify(lista.slice(0, 3)));
+              } catch (e) { /* ignore */ }
+            }
+          }
         }
       };
       let pedido = 0;
@@ -7815,7 +7835,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.88'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.89'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -7840,7 +7860,11 @@
           'rolagem: ' + Math.round(window.scrollY) + ' de ' + Math.round(document.documentElement.scrollHeight - window.innerHeight),
           'barra: topo ' + Math.round(r.top) + ' · fundo ' + Math.round(r.bottom) + ' · ' + getComputedStyle(nav).position + (nav.style.transform ? ' · ' + nav.style.transform : ''),
           'sticky: ' + (document.documentElement.classList.contains('nav-sticky') ? 'sim' : 'não') + ' · foco: ' + foco
-        ].join('\n');
+        ].concat((() => {
+          let lista = [];
+          try { lista = JSON.parse(localStorage.getItem('ns-diag-barra-sumiu') || '[]'); } catch (e) { lista = []; }
+          return lista.length ? ['— barra sumiu (últimas vezes):'].concat(lista) : ['— barra sumiu: nenhuma vez registrada'];
+        })()).join('\n');
       };
       const fechar = () => { clearInterval(timer); if (painel) painel.remove(); painel = null; };
       versaoEl.style.cursor = 'pointer';
