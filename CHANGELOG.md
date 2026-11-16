@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.76
+
+Anotações: a moldura **🎨 Formatação** ficou mais afastada do título “Anotações” (acima) e do campo de texto (abaixo).
+
 ## 6.9.75
 
 Anotações: a linha do orador (e o campo para informar orador e congregação) usa o ícone 🧑‍💼 (pessoa de terno e gravata) no lugar do microfone, também no programa.

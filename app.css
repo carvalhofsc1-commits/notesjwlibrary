@@ -5364,7 +5364,7 @@
 
     /* Moldura recolhível dos botões de formatação (anotações e resposta). */
     .anotacoes-fmt-box {
-      margin: 0 0 10px;
+      margin: 10px 0 16px; /* afastada do título "Anotações" (acima) e do campo de texto (abaixo) */
       padding: 6px 8px 0;
       border: 1px solid var(--line);
       border-radius: 12px;
