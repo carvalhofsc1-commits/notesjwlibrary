@@ -7815,7 +7815,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.87'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.88'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -27787,6 +27787,37 @@ function saveTemplatesToStorage() {
       const temNotas = () => indicesComAnotacao().length > 0;
       const revisaoEl = document.getElementById('anotacoesRevisao');
       const respostaEl = document.getElementById('anotacoesResposta');
+      // Os campos das anotações e da resposta crescem com o texto (como o campo da tela Formatar); a altura mínima do CSS continua como piso.
+      // O texto muda por digitação e também por código (trocar de discurso, resumo da gravação, formatação): o "value" desses dois campos
+      // foi embrulhado para recalcular a altura a cada mudança, e o campo também é medido quando aparece na tela ou muda de largura.
+      (function camposQueCrescem() {
+        const desc = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
+        const crescer = el => {
+          if (!el.getClientRects().length) return;
+          const pagina = document.scrollingElement || document.documentElement;
+          const rolagem = pagina.scrollTop;
+          el.style.height = 'auto';
+          const moldura = el.offsetHeight - el.clientHeight;
+          el.style.height = (el.scrollHeight + moldura) + 'px';
+          if (pagina.scrollTop !== rolagem) pagina.scrollTop = rolagem;
+        };
+        [texto, respostaEl].forEach(el => {
+          if (!el || !desc) return;
+          let pedido = 0;
+          const agendar = () => { cancelAnimationFrame(pedido); pedido = requestAnimationFrame(() => crescer(el)); };
+          Object.defineProperty(el, 'value', {
+            configurable: true,
+            get() { return desc.get.call(this); },
+            set(v) { desc.set.call(this, v); agendar(); },
+          });
+          el.addEventListener('input', () => crescer(el));
+          let largura = 0;
+          if (window.ResizeObserver) new ResizeObserver(entradas => {
+            const w = Math.round(entradas[0].contentRect.width);
+            if (w && w !== largura) { largura = w; agendar(); }
+          }).observe(el);
+        });
+      })();
       const perguntasBox = document.getElementById('anotacoesPerguntas');
       const perguntasTexto = document.getElementById('anotacoesPerguntasTexto');
       const perguntasLista = document.getElementById('anotacoesPerguntasLista');

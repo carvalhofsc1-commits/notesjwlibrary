@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.88
+
+- Anotações: os campos das anotações e da resposta da recapitulação crescem com o texto, como o campo da tela Formatar (a altura mínima continua como piso), inclusive quando o texto muda por código (trocar de discurso, resumo, formatação).
+
 ## 6.9.87
 
 - Anotações: card do orador um pouco afastado do card do tema.
