@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.77
+
+Diagnóstico da barra de baixo (iPhone): tocar no texto da versão, no fim do Menu, abre um quadrinho no alto da tela com as medidas que o aparelho informa ao vivo (tamanho da tela, área visível, rolagem e posição da barra). Serve para achar a causa da barra que sobe para o meio da tela; tocar no quadrinho o fecha.
+
 ## 6.9.76
 
 Anotações: a moldura **🎨 Formatação** ficou mais afastada do título “Anotações” (acima) e do campo de texto (abaixo).

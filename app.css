@@ -5362,6 +5362,23 @@
       line-height: 1;
     }
 
+    /* Diagnóstico da barra de baixo (tocar na versão, no fim do Menu). */
+    .diag-barra {
+      position: fixed;
+      top: 64px;
+      left: 8px;
+      right: 8px;
+      z-index: 4000;
+      margin: 0;
+      padding: 8px 10px;
+      border: 2px solid #f59e0b;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, .85);
+      color: #fde68a;
+      font: 12px/1.35 ui-monospace, Menlo, monospace;
+      white-space: pre-wrap;
+    }
+
     /* Moldura recolhível dos botões de formatação (anotações e resposta). */
     .anotacoes-fmt-box {
       margin: 10px 0 16px; /* afastada do título "Anotações" (acima) e do campo de texto (abaixo) */

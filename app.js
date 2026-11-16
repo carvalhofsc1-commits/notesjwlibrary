@@ -7792,9 +7792,47 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.76'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.77'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
+
+    // Diagnóstico da barra de baixo (tocar no texto da versão, no fim do Menu): um quadrinho no alto da tela mostra, ao vivo, as medidas que o
+    // aparelho informa (tamanho da tela, área visível, rolagem e onde a barra está). Serve para achar a causa da barra que sobe no iPhone.
+    // Tocar no quadrinho o fecha.
+    (function diagnosticoBarra() {
+      const versaoEl = document.getElementById('menuVersao');
+      let painel = null;
+      let timer = 0;
+      const pintar = () => {
+        const vv = window.visualViewport;
+        const nav = document.getElementById('appNav');
+        const r = nav.getBoundingClientRect();
+        const ios = (navigator.userAgent.match(/OS (\d+)[_.](\d+)/) || []).slice(1).join('.');
+        const foco = document.activeElement && document.activeElement !== document.body ? document.activeElement.tagName : '-';
+        painel.textContent = [
+          'v' + APP_VERSION + ' · iOS ' + (ios || '?') + ' · app instalado: ' + (navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches) ? 'sim' : 'não'),
+          'tela (screen): ' + screen.width + '×' + screen.height,
+          'innerHeight: ' + window.innerHeight + ' · clientHeight: ' + document.documentElement.clientHeight,
+          'visível (vv): altura ' + (vv ? Math.round(vv.height) : '-') + ' · topo ' + (vv ? Math.round(vv.offsetTop) : '-') + ' · pageTop ' + (vv ? Math.round(vv.pageTop) : '-'),
+          'rolagem: ' + Math.round(window.scrollY) + ' de ' + Math.round(document.documentElement.scrollHeight - window.innerHeight),
+          'barra: topo ' + Math.round(r.top) + ' · fundo ' + Math.round(r.bottom) + ' · ' + getComputedStyle(nav).position + (nav.style.transform ? ' · ' + nav.style.transform : ''),
+          'sticky: ' + (document.documentElement.classList.contains('nav-sticky') ? 'sim' : 'não') + ' · foco: ' + foco
+        ].join('\n');
+      };
+      const fechar = () => { clearInterval(timer); if (painel) painel.remove(); painel = null; };
+      versaoEl.style.cursor = 'pointer';
+      versaoEl.title = 'Tocar para ver o diagnóstico da barra de baixo';
+      versaoEl.addEventListener('click', () => {
+        if (painel) return fechar();
+        painel = document.createElement('pre');
+        painel.className = 'diag-barra';
+        painel.addEventListener('click', fechar);
+        document.body.appendChild(painel);
+        pintar();
+        timer = setInterval(() => { if (painel) pintar(); }, 300);
+        try { menuFechar(); } catch (e) { /* menu já fechado */ }
+      });
+    })();
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
     document.addEventListener('gesturestart', event => event.preventDefault());
 
