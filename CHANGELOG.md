@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.85
+
+- Anotações (programa): "Registre a data da sua assembleia" passou a "Registre os dados da sua assembleia" (ou do congresso), com os campos Data, Cidade e Local; cidade e local ficam guardados com o evento e aparecem na linha de resumo.
+
 ## 6.9.84
 
 - Anotações (programa): saíram os botões "Ver anotações" e "Atualizar programa"; "Exportar anotações" foi para o fim da lista dos discursos.

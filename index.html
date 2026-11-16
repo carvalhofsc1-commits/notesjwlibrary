@@ -213,9 +213,14 @@
           </div>
           <div id="anotacoesProgramaVista" hidden>
             <details class="anotacoes-data">
-              <summary id="anotacoesDataRotulo">📅 Registre a data do seu evento</summary>
+              <summary id="anotacoesDataRotulo">📅 Registre os dados do seu evento</summary>
               <div class="anotacoes-data-corpo">
-                <input id="anotacoesData" type="date" aria-labelledby="anotacoesDataRotulo">
+                <label for="anotacoesData">Data</label>
+                <input id="anotacoesData" type="date">
+                <label for="anotacoesCidade">Cidade</label>
+                <input id="anotacoesCidade" type="text" autocomplete="address-level2" placeholder="Cidade do evento">
+                <label for="anotacoesLocal">Local</label>
+                <input id="anotacoesLocal" type="text" placeholder="Salão de Assembleias, endereço…">
                 <p id="anotacoesDataInfo" class="anotacoes-msg" role="status" aria-live="polite"></p>
               </div>
             </details>

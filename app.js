@@ -7815,7 +7815,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.84'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.85'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -27683,6 +27683,8 @@ function saveTemplatesToStorage() {
       let dataAtual = ''; // data do evento escolhido (AAAA-MM-DD); no congresso, o primeiro dia (sexta-feira)
       const dataEl = document.getElementById('anotacoesData');
       const dataInfoEl = document.getElementById('anotacoesDataInfo');
+      const cidadeEl = document.getElementById('anotacoesCidade'); // cidade e local do evento: guardados no programa salvo (programaMeta)
+      const localEl = document.getElementById('anotacoesLocal');
       const dataReuniaoEl = document.getElementById('anotacoesDataReuniao');
       const DIAS_SEMANA = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
 
@@ -27717,8 +27719,11 @@ function saveTemplatesToStorage() {
       }
       function mostrarData(aviso, mantemAberto) {
         dataEl.value = dataAtual || '';
-        document.getElementById('anotacoesDataRotulo').textContent = ehCongresso() ? '📅 Registre a data do seu congresso (primeiro dia, sexta-feira)' : '📅 Registre a data da sua assembleia';
-        dataInfoEl.textContent = aviso || textoDaData();
+        cidadeEl.value = (programaMeta && programaMeta.cidade) || '';
+        localEl.value = (programaMeta && programaMeta.local) || '';
+        document.getElementById('anotacoesDataRotulo').textContent = ehCongresso() ? '📅 Registre os dados do seu congresso' : '📅 Registre os dados da sua assembleia';
+        dataEl.title = ehCongresso() ? 'O primeiro dia do congresso (sexta-feira)' : '';
+        dataInfoEl.textContent = aviso || [textoDaData(), cidadeEl.value.trim(), localEl.value.trim()].filter(Boolean).join(' · ');
         dataInfoEl.className = 'anotacoes-msg';
         // Sem data, o campo fica aberto até ela ser informada; com data, fica sempre recolhido (a pessoa pode abri-lo quando quiser).
         // Logo depois de escolher a data o campo NÃO fecha na hora (no iPhone isso derrubava o calendário aberto); ele recolhe quando o campo perde o foco.
@@ -28351,7 +28356,20 @@ function saveTemplatesToStorage() {
       document.getElementById('anotacoesParteAnt').addEventListener('click', () => mudarParte(-1));
       document.getElementById('anotacoesParteProx').addEventListener('click', () => mudarParte(1));
 
-      dataEl.addEventListener('blur', () => { if (dataAtual) setTimeout(() => { if (dataAtual && document.activeElement !== dataEl) document.querySelector('.anotacoes-data').open = false; }, 250); });
+      // Recolhe o campo quando o foco sai dele (data, cidade e local), se a data já estiver informada.
+      const caixaDados = document.querySelector('.anotacoes-data');
+      [dataEl, cidadeEl, localEl].forEach(el => el.addEventListener('blur', () => {
+        if (dataAtual) setTimeout(() => { if (dataAtual && !caixaDados.contains(document.activeElement)) caixaDados.open = false; }, 250);
+      }));
+      [['cidade', cidadeEl], ['local', localEl]].forEach(([campo, el]) => {
+        el.addEventListener('input', () => {
+          if (!programaMeta) return;
+          programaMeta[campo] = el.value.trim();
+          dataInfoEl.textContent = [textoDaData(), cidadeEl.value.trim(), localEl.value.trim()].filter(Boolean).join(' · ');
+          dataInfoEl.className = 'anotacoes-msg';
+          salvarRascunho();
+        });
+      });
       dataEl.addEventListener('change', () => {
         const d = lerData(dataEl.value);
         if (!dataEl.value) { dataAtual = ''; mostrarData(); salvarRascunho(); return; }

@@ -6227,6 +6227,18 @@
 
     .anotacoes-data-corpo {
       padding: 2px 0 0;
+      display: grid;
+      gap: 4px;
+    }
+
+    .anotacoes-data-corpo label {
+      margin: 6px 0 0;
+      font-size: .85rem;
+      font-weight: 700;
+    }
+
+    .anotacoes-data-corpo label:first-child {
+      margin-top: 0;
     }
 
     .anotacoes-data-corpo .anotacoes-msg {
