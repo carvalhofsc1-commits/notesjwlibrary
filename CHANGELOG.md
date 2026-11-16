@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.74
+
+Anotações (assembleia e congresso):
+
+- **Tocar no discurso abre direto a anotação.** No programa, o toque no tema não abre mais o quadro de orador/congregação: vai direto para a tela de anotações do discurso.
+- **Orador e congregação dentro da anotação:** um campo logo abaixo do tema do discurso. Fica **aberto enquanto o orador não for informado**; depois de preenchido, **recolhe sozinho** e mostra só uma linha discreta (“🎤 Nome · Congregação”), que reabre ao tocar (ou ao tocar no card do tema). No programa, o orador aparece pequeno embaixo do tema.
+- **Botões de formatação numa moldura recolhível** (“🎨 Formatação”), nas anotações e na resposta da recapitulação; aberta ou recolhida, a escolha fica guardada no aparelho.
+
 ## 6.9.73
 
 Correção (iPhone/iPad, iOS 26): a barra de baixo **continuava subindo para o meio da tela** ao rolar, mesmo longe do fim da página (o elástico não era a causa). No iOS 26 as barras “fixas” (`position: fixed`) são desenhadas fora do lugar, sem que o app consiga medir o erro. Agora, no iPhone e no iPad, a barra deixou de ser “fixa” e passou a ser **“grudada” no fim da página** (`position: sticky`), que anda junto com a rolagem e não tem essa falha; o corpo da página ocupa a altura da tela, para a barra ficar embaixo mesmo com pouco conteúdo. No computador e no Android nada muda.

@@ -7792,7 +7792,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.73'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.74'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -28065,10 +28065,9 @@ function saveTemplatesToStorage() {
         if (ativa) {
           const d = dadosDaParte();
           preencherLinhaTema(document.getElementById('anotacoesCabTema'), partes[parteAtual], 'Sem tema', tituloDaSerie(parteAtual));
-          const quem = [d.orador, d.congregacao].filter(Boolean).join(' · ');
-          const quemEl = document.getElementById('anotacoesCabOrador');
-          quemEl.textContent = quem;
-          quemEl.hidden = !quem;
+          // O orador e a congregação ficam no campo próprio logo abaixo (recolhido, mostra só "🎤 Nome · Congregação"): no card do tema não se repetem.
+          document.getElementById('anotacoesCabOrador').hidden = true;
+          pintarOrador(false);
           const lista = iniciaveis();
           const pos = lista.indexOf(parteAtual);
           const pa = partes[parteAtual] || {};
@@ -28216,65 +28215,57 @@ function saveTemplatesToStorage() {
             marca.textContent = '✍️';
             btn.appendChild(marca);
           }
-          btn.addEventListener('click', () => {
-            expandida = expandida === i ? -1 : i;
-            pintarPartes();
-            if (expandida === i) {
-              const alvo = partesEl.querySelector('.anotacoes-parte[aria-expanded="true"]');
-              if (alvo && alvo.scrollIntoView) alvo.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-            }
-          });
-          item.appendChild(btn);
-          if (i === expandida) {
-            const extra = document.createElement('div');
-            extra.className = 'anotacoes-parte-extra';
-            const camposDaParte = [];
-            [['Orador', 'orador', 'Nome do orador', 'name'], ['Congregação', 'congregacao', 'Congregação do orador', 'organization']].forEach(([rotuloCampo, chave, dica, auto]) => {
-              const label = document.createElement('label');
-              label.textContent = rotuloCampo;
-              const campo = document.createElement('input');
-              campo.type = 'text';
-              campo.autocomplete = auto;
-              campo.placeholder = dica;
-              campo.value = p[chave] || '';
-              campo.addEventListener('input', () => {
-                p[chave] = campo.value.trim();
-                item.classList.toggle('preenchida', preenchidaDaParte(i));
-                agendarRascunho();
-              });
-              label.appendChild(campo);
-              extra.appendChild(label);
-              camposDaParte.push([chave, campo]);
-            });
-            const botoes = document.createElement('div');
-            botoes.className = 'anotacoes-parte-botoes';
-            const iniciar = document.createElement('button');
-            iniciar.type = 'button';
-            iniciar.className = 'anotacoes-iniciar';
-            iniciar.textContent = parteTemConteudoEscrito(i) ? '✍️ Continuar a anotação' : '✍️ Iniciar anotação';
-            iniciar.addEventListener('click', () => iniciarAnotacao(i));
-            // Lixeira: limpa o orador e a congregação desta parte.
-            const lixeira = document.createElement('button');
-            lixeira.type = 'button';
-            lixeira.className = 'secondary anotacoes-lixeira-parte';
-            lixeira.title = 'Limpar o orador e a congregação';
-            lixeira.setAttribute('aria-label', 'Limpar o orador e a congregação');
-            lixeira.textContent = '🗑️';
-            lixeira.addEventListener('click', () => {
-              camposDaParte.forEach(([chave, campo]) => { p[chave] = ''; campo.value = ''; });
-              item.classList.toggle('preenchida', preenchidaDaParte(i));
-              if (ativa && i === parteAtual) atualizarVista();
-              agendarRascunho();
-              if (camposDaParte[0]) camposDaParte[0][1].focus();
-            });
-            botoes.append(iniciar, lixeira);
-            extra.appendChild(botoes);
-            item.appendChild(extra);
+          // O orador e a congregação (quando informados, dentro da anotação) aparecem discretos embaixo do tema.
+          const quemParte = [p.orador, p.congregacao].filter(Boolean).join(' · ');
+          if (quemParte) {
+            const quem = document.createElement('small');
+            quem.className = 'anotacoes-parte-quem';
+            quem.textContent = '🎤 ' + quemParte;
+            corpo.appendChild(quem);
           }
+          // Tocar no discurso abre direto a tela de anotações dele (o orador e a congregação são informados lá dentro).
+          btn.addEventListener('click', () => iniciarAnotacao(i));
+          item.appendChild(btn);
           partesEl.appendChild(item);
         });
         atualizarVista();
       }
+
+      // ----- Orador e congregação da parte, dentro da anotação: aberto enquanto o orador não for informado; preenchido, recolhe sozinho -----
+      const oradorBox = document.getElementById('anotacoesOradorBox');
+      const oradorResumo = document.getElementById('anotacoesOradorResumo');
+      const oradorIn = document.getElementById('anotacoesParteOrador');
+      const congIn = document.getElementById('anotacoesParteCongregacao');
+      function pintarOrador(abrirSeVazio) {
+        const p = ativa ? partes[parteAtual] : null;
+        if (!p) return;
+        if (document.activeElement !== oradorIn) oradorIn.value = p.orador || '';
+        if (document.activeElement !== congIn) congIn.value = p.congregacao || '';
+        const quem = [p.orador, p.congregacao].filter(Boolean).join(' · ');
+        oradorResumo.textContent = quem ? '🎤 ' + quem : '🎤 Informe o orador e a congregação';
+        oradorBox.classList.toggle('preenchido', Boolean(quem));
+        if (abrirSeVazio) oradorBox.open = !p.orador;
+      }
+      [[oradorIn, 'orador'], [congIn, 'congregacao']].forEach(([campo, chave]) => {
+        campo.addEventListener('input', () => {
+          const p = ativa ? partes[parteAtual] : null;
+          if (!p) return;
+          p[chave] = campo.value.trim();
+          pintarOrador(false);
+          agendarRascunho();
+        });
+        campo.addEventListener('keydown', e => {
+          if (e.key !== 'Enter') return;
+          e.preventDefault();
+          if (campo === oradorIn) congIn.focus(); else campo.blur();
+        });
+      });
+      // Saindo do campo (para a anotação, por exemplo) com o orador informado, o quadro recolhe e fica só a linha discreta.
+      oradorBox.addEventListener('focusout', () => setTimeout(() => {
+        const p = ativa ? partes[parteAtual] : null;
+        if (p && p.orador && !oradorBox.contains(document.activeElement)) oradorBox.open = false;
+        try { pintarPartes(); } catch (e) { /* ignore */ }
+      }, 200));
 
       function abrirParteNaEscrita(i) {
         if (gravacaoPronta && gravacaoPronta.idApp) { gravacaoPronta = null; mostrarGravacao('ocioso'); }
@@ -28285,6 +28276,7 @@ function saveTemplatesToStorage() {
         respostaEl.dataset.dono = '';
         vista = 'anotando';
         pintarPartes();
+        pintarOrador(true); // primeira vez (ou orador ainda não informado): o campo do orador já abre
         gravarStatus.textContent = '';
         dizer((partes[i] && partes[i].nota) ? 'Anotação em andamento carregada.' : '');
       }
@@ -28378,20 +28370,11 @@ function saveTemplatesToStorage() {
       document.getElementById('anotacoesProgramaTopo').addEventListener('click', voltar);
       // Tocar no card do tema e do orador leva ao programa, com esta parte aberta no lugar de editar o orador e a congregação.
       const cabCentro = document.querySelector('.anotacoes-cab-centro');
+      // Tocar no card do tema abre (ou fecha) o campo do orador e da congregação, ali mesmo, sem sair da anotação.
       function editarOradorDaParte() {
         if (!ativa) return;
-        if (gravacao) return dizer('Pare a gravação antes de sair desta tela.', true);
-        guardarNota();
-        salvarRascunho();
-        expandida = parteAtual;
-        abrirDiaDaParte(parteAtual);
-        vista = 'programa';
-        pintarPartes();
-        window.scrollTo({ top: 0 });
-        const alvo = partesEl.querySelector('.anotacoes-parte[aria-expanded="true"]');
-        if (alvo && alvo.scrollIntoView) alvo.scrollIntoView({ block: 'center' });
-        const campo = partesEl.querySelector('.anotacoes-parte-extra input');
-        if (campo) campo.focus({ preventScroll: true });
+        oradorBox.open = !oradorBox.open;
+        if (oradorBox.open) oradorIn.focus({ preventScroll: true });
       }
       cabCentro.addEventListener('click', editarOradorDaParte);
       // O tema do evento (entre as duas linhas coloridas) abre o programa do evento no JW Library.
@@ -29282,6 +29265,12 @@ function saveTemplatesToStorage() {
         });
       });
 
+      // Moldura recolhível dos botões de formatação (anotações e resposta): aberta ou recolhida, a escolha fica guardada neste aparelho.
+      document.querySelectorAll('[data-fmt-box]').forEach((caixa, n) => {
+        const chave = 'ns-anot-fmt-aberta-' + n;
+        try { const v = localStorage.getItem(chave); if (v !== null) caixa.open = v === '1'; } catch (e) { /* sem armazenamento */ }
+        caixa.addEventListener('toggle', () => { try { localStorage.setItem(chave, caixa.open ? '1' : '0'); } catch (e) { /* sem armazenamento */ } });
+      });
       // Números 1️⃣ a 7️⃣: entram onde está o cursor (no começo de uma linha nova), no campo da anotação ou da resposta.
       document.querySelectorAll('[data-anotacoes-num]').forEach(btn => {
         btn.addEventListener('mousedown', e => e.preventDefault()); // o campo não perde o cursor (nem o teclado some) ao tocar no botão

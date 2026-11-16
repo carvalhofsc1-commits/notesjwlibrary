@@ -239,13 +239,21 @@
           <div id="anotacoesCabParte" class="anotacoes-cab-parte" hidden>
             <div class="ai-week anotacoes-cab sent-option-site">
               <button id="anotacoesParteAnt" class="secondary ai-week-nav" type="button" aria-label="Parte anterior" title="Parte anterior">◀</button>
-              <div class="ai-week-link anotacoes-cab-centro" role="button" tabindex="0" title="Tocar para editar o orador e a congregação desta parte">
+              <div class="ai-week-link anotacoes-cab-centro" role="button" tabindex="0" title="Tocar para abrir o orador e a congregação desta parte">
                 <span id="anotacoesCabTema" class="anotacoes-cab-tema"></span>
                 <small id="anotacoesCabOrador" class="anotacoes-cab-orador" hidden></small>
               </div>
               <button id="anotacoesParteProx" class="secondary ai-week-nav" type="button" aria-label="Próxima parte" title="Próxima parte">▶</button>
             </div>
             <p id="anotacoesCabPos" class="anotacoes-cab-pos"></p>
+            <!-- Orador e congregação desta parte: aberto enquanto o orador não for informado; depois fica recolhido, bem discreto. -->
+            <details id="anotacoesOradorBox" class="anotacoes-orador-box">
+              <summary id="anotacoesOradorResumo">🎤 Informe o orador e a congregação</summary>
+              <div class="anotacoes-orador-campos">
+                <label>Orador <input id="anotacoesParteOrador" type="text" autocomplete="name" placeholder="Nome do orador"></label>
+                <label>Congregação <input id="anotacoesParteCongregacao" type="text" autocomplete="organization" placeholder="Congregação do orador"></label>
+              </div>
+            </details>
           </div>
           <!-- Texto bíblico: digite a referência (ou escolha livro e versículos) e o texto entra onde está o cursor. -->
           <div id="anotacoesBibliaBloco">
@@ -277,6 +285,8 @@
             <button id="anotacoesOuvirBtn" class="anotacoes-ouvir" type="button" title="Ouvir as anotações em voz alta (precisa do código de leitura)" aria-label="Ouvir as anotações em voz alta">🔊</button>
           </div>
           <div id="anotacoesVozEl" class="anotacoes-voz"></div>
+          <details class="anotacoes-fmt-box" data-fmt-box open>
+          <summary>🎨 Formatação</summary>
           <div class="anotacoes-fmt" role="toolbar" aria-label="Formatação rápida (selecione o trecho)">
             <button type="button" class="secondary" data-anotacoes-fmt="bold" title="Negrito" aria-label="Negrito"><strong>𝐁</strong></button>
             <button type="button" class="secondary" data-anotacoes-fmt="italic" title="Itálico" aria-label="Itálico">𝐼</button>
@@ -298,6 +308,7 @@
             <button type="button" class="secondary" data-anotacoes-modelo="aplicar" title="Inserir o modelo Aplicar onde está o cursor">✅ 𝐀𝐩𝐥𝐢𝐜𝐚𝐫 👉</button>
             <button type="button" class="secondary" data-anotacoes-modelo="importante" title="Inserir o modelo Importante onde está o cursor">🎯⚡️⚡️ 𝑰𝑴𝑷𝑶𝑹𝑻𝑨𝑵𝑻𝑬 👉</button>
           </div>
+          </details>
           <textarea id="anotacoesTexto" class="anotacoes-texto" rows="16" placeholder="Escreva suas anotações aqui…"></textarea>
           <!-- Botões das anotações do discurso, logo abaixo da moldura do campo: copiar, formatar com IA e a lixeira (só o ícone); embaixo, o JW Library. -->
           <div class="anotacoes-acoes-campo">
@@ -365,6 +376,8 @@
             <h3 class="anotacoes-subtitulo">❓ Pergunta de recapitulação</h3>
             <div class="anotacoes-revisao-card">
               <p id="anotacoesRevisaoPergunta" class="anotacoes-revisao-pergunta"></p>
+              <details class="anotacoes-fmt-box" data-fmt-box open>
+              <summary>🎨 Formatação</summary>
               <div class="anotacoes-fmt anotacoes-fmt-resp" role="toolbar" aria-label="Formatação rápida da resposta (selecione o trecho)">
                 <button type="button" class="secondary" data-anotacoes-fmt="bold" title="Negrito" aria-label="Negrito"><strong>𝐁</strong></button>
                 <button type="button" class="secondary" data-anotacoes-fmt="italic" title="Itálico" aria-label="Itálico">𝐼</button>
@@ -386,6 +399,7 @@
                 <button type="button" class="secondary" data-anotacoes-modelo="aplicar" title="Inserir o modelo Aplicar onde está o cursor">✅ 𝐀𝐩𝐥𝐢𝐜𝐚𝐫 👉</button>
                 <button type="button" class="secondary" data-anotacoes-modelo="importante" title="Inserir o modelo Importante onde está o cursor">🎯⚡️⚡️ 𝑰𝑴𝑷𝑶𝑹𝑻𝑨𝑵𝑻𝑬 👉</button>
               </div>
+              </details>
               <textarea id="anotacoesResposta" class="anotacoes-resposta" rows="4" aria-label="Resposta à pergunta de recapitulação" placeholder="Escreva aqui a resposta a esta pergunta…"></textarea>
               <!-- Botões da resposta (só da resposta), na mesma ordem dos das anotações: copiar, formatar com IA, lixeira; embaixo, o JW Library. -->
               <div class="anotacoes-acoes-campo">
