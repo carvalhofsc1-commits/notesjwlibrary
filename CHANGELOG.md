@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.87
+
+- Anotações: card do orador um pouco afastado do card do tema.
+
 ## 6.9.86
 
 - Anotações → Transcrições na íntegra: botão "☁️ Buscar no servidor" um pouco mais abaixo e na largura toda.
