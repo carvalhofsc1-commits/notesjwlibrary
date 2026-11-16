@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.86
+
+- Anotações → Transcrições na íntegra: botão "☁️ Buscar no servidor" um pouco mais abaixo e na largura toda.
+- Anotações: o horário, a seção e o número da parte ("10:00 · Manhã · Parte 1 de 12") passaram para dentro do card do tema, logo abaixo dele.
+
 ## 6.9.85
 
 - Anotações (programa): "Registre a data da sua assembleia" passou a "Registre os dados da sua assembleia" (ou do congresso), com os campos Data, Cidade e Local; cidade e local ficam guardados com o evento e aparecem na linha de resumo.

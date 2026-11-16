@@ -5451,6 +5451,12 @@
       text-overflow: ellipsis;
     }
 
+    #anotacoesTranscricoesBuscarBtn {
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+    }
+
     .anotacoes-transcricoes {
       display: grid;
       gap: 6px;
@@ -5996,11 +6002,23 @@
       display: none;
     }
 
+    /* Horário, seção e número da parte: dentro do card do tema, logo abaixo dele, discreto. */
     .anotacoes-cab-pos {
-      margin: 4px 0 0;
+      display: block;
+      max-width: 100%;
+      margin: 2px 0 0;
       color: var(--muted);
-      font-size: .86rem;
+      font-size: .72rem;
+      font-weight: 500;
+      line-height: 1.2;
       text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .anotacoes-cab-pos:empty {
+      display: none;
     }
 
     /* Lista do programa: tema e texto temático na mesma linha, até duas linhas. */
