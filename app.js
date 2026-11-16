@@ -7739,7 +7739,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.70'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.71'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
@@ -8107,6 +8107,8 @@
     // MAIÚSCULAS sem perder a formatação: as letras em negrito, itálico ou grifo (letras Unicode) viram maiúsculas no mesmo estilo.
     function maiusculasComEstilo(text) {
       if (!reverseUnicodeStyleMap) reverseUnicodeStyleMap = buildReverseUnicodeStyleMap();
+      // Conserta de passagem um emoji de número que ficou estragado ("𝟏□": dígito em negrito + moldura): o dígito volta ao comum.
+      text = consertarKeycaps(text);
       return [...String(text || '')].map(ch => {
         const estilo = reverseUnicodeStyleMap.get(ch);
         if (!estilo) return ch.toLocaleUpperCase('pt-BR');
@@ -8451,10 +8453,20 @@
     // Troca só o alfabeto do texto: desestiliza as letras Unicode e reestiliza na fonte
     // escolhida. Não mexe em emojis nem em marcadores de modelo — apagá-los é tarefa
     // exclusiva do botão "Remover" (removeFormattingFromSelection).
+    // Emojis de número (1️⃣, #️⃣, *️⃣) são o caractere comum + FE0F + 20E3: o caractere precisa ficar comum, senão o iPhone mostra "𝟏□".
+    const ehBaseDeKeycap = (lista, i) => /^[0-9#*]$/.test(lista[i]) && /^[️⃣]$/.test(lista[i + 1] || '');
+    // Conserta emojis de número já estragados por uma formatação antiga: o dígito em negrito/itálico antes da moldura volta a ser o comum.
+    function consertarKeycaps(texto) {
+      return String(texto || '').replace(/(\S)(️?⃣)/gu, (m, c) => {
+        const simples = removeUnicodeFormatting(c);
+        return simples !== c && /^[0-9#*]$/.test(simples) ? simples + '️⃣' : m;
+      });
+    }
     function convertTextWithStyle(text, styleId) {
       const style = styles.find(s => s.id === styleId) || styles[0];
       const plainText = removeUnicodeFormatting(text);
-      return [...plainText].map(ch => convertChar(ch, style)).join('');
+      const lista = [...plainText];
+      return lista.map((ch, i) => (ehBaseDeKeycap(lista, i) ? ch : convertChar(ch, style))).join('');
     }
 
     function replaceSelectionWith(replacement, message = '') {
@@ -27773,7 +27785,7 @@ function saveTemplatesToStorage() {
         document.getElementById('anotacoesRevisaoPergunta').textContent = textoDaPergunta(q);
         const dono = donaDaPergunta(parteAtual);
         if (respostaEl.dataset.dono !== String(dono)) {
-          respostaEl.value = partes[dono].resposta || '';
+          respostaEl.value = consertarKeycaps(partes[dono].resposta || '');
           respostaEl.dataset.dono = String(dono);
           respDesfazer.hidden = true;
           respostaAntesDaIa = null;
@@ -28216,7 +28228,7 @@ function saveTemplatesToStorage() {
         parteAtual = i;
         expandida = i;
         abrirDiaDaParte(i);
-        texto.value = (partes[i] && partes[i].nota) || '';
+        texto.value = consertarKeycaps((partes[i] && partes[i].nota) || ''); // conserta "𝟏□" de anotações antigas
         respostaEl.dataset.dono = '';
         vista = 'anotando';
         pintarPartes();
@@ -28614,7 +28626,7 @@ function saveTemplatesToStorage() {
       function carregarRascunho() {
         const d = lerRascunhos()[modo];
         if (!d) return;
-        texto.value = d.texto || '';
+        texto.value = consertarKeycaps(d.texto || '');
         temaEl.value = d.tema || '';
         oradorEl.value = d.orador || '';
         congEl.value = d.congregacao || '';
@@ -28917,7 +28929,8 @@ function saveTemplatesToStorage() {
       // Negrito ou itálico Unicode que mantém os acentos: as letras viram as do estilo e os acentos (decompostos) seguem colados nelas.
       function estiloComAcentos(texto, id) {
         const estilo = styles.find(x => x.id === id) || styles[0];
-        return [...removeUnicodeFormatting(String(texto || '')).normalize('NFD')].map(ch => (/\p{M}/u.test(ch) ? ch : convertChar(ch, estilo))).join('');
+        const lista = [...removeUnicodeFormatting(String(texto || '')).normalize('NFD')];
+        return lista.map((ch, i) => (/\p{M}/u.test(ch) || ehBaseDeKeycap(lista, i) ? ch : convertChar(ch, estilo))).join('');
       }
 
       // Recado do texto bíblico: aparece dentro da barra (logo abaixo do campo "Livro"), onde está a atenção de quem digita, e some sozinho.

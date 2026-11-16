@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.71
+
+Correção: um **emoji de número (1️⃣ a 7️⃣) num trecho em negrito, itálico ou grifo virava “1□”** no iPhone (o dígito passava para negrito e o aparelho não desenha a moldura em volta dele). Agora as formatações deixam os emojis de número intactos, e as anotações já estragadas são consertadas sozinhas ao abrir o discurso (e ao passar para maiúsculas).
+
 ## 6.9.70
 
 Correção (iPhone): a **barra de baixo** (Início, Anotações, Leitura…) às vezes ficava **flutuando no meio da tela** depois de fechar o teclado (visto na tela Gravar), com o conteúdo aparecendo embaixo dela. Agora a barra acompanha a área visível de verdade e, ao sair de um campo, o app pede ao iPhone que refaça o cálculo da tela. Com a tela normal, nada muda.
