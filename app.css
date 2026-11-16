@@ -5380,8 +5380,24 @@
     }
 
     /* Moldura recolhível dos botões de formatação (anotações e resposta). */
+    /* Dentro da moldura, as linhas de botões têm o mesmo espaçamento nas anotações e na resposta (sem as margens negativas de antes, que
+       faziam as linhas da resposta se sobreporem), e os rótulos não quebram em duas linhas (“1. Lista”). */
+    details.anotacoes-fmt-box > .anotacoes-fmt {
+      margin: 0 0 6px;
+      gap: 6px;
+    }
+
+    details.anotacoes-fmt-box > .anotacoes-fmt button {
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: clip;
+      padding-left: 2px;
+      padding-right: 2px;
+    }
+
     .anotacoes-fmt-box {
-      margin: 10px 0 16px; /* afastada do título "Anotações" (acima) e do campo de texto (abaixo) */
+      margin: 6px 0 10px; /* um pouco afastada do título "Anotações" (acima) e do campo de texto (abaixo) */
       padding: 6px 8px 0;
       border: 1px solid var(--line);
       border-radius: 12px;
@@ -6219,12 +6235,20 @@
 
     /* Na grade do cartão (8 px entre os itens) as margens das barras somavam ao espaço: ficam os mesmos espaços do campo de anotações
        (6 px entre a formatação e os modelos, 10 px entre os modelos e o campo). */
-    .screen-anotacoes .anotacoes-revisao-card .anotacoes-fmt {
+    /* No cartão da resposta o espaço entre os itens já vem do próprio cartão (8 px): a moldura não soma margem própria. */
+    .screen-anotacoes .anotacoes-revisao-card details.anotacoes-fmt-box {
       margin: 0;
     }
 
+    /* No cartão da resposta (mais estreito), a letra dos modelos prontos é um pouco menor, para “IMPORTANTE” caber inteiro. */
+    .screen-anotacoes .anotacoes-revisao-card details.anotacoes-fmt-box .anotacoes-fmt-modelos button {
+      font-size: .74rem;
+    }
+
+    /* Resposta da recapitulação: as linhas de botões com o mesmo espaço entre si que as das anotações (6 px). */
+    .screen-anotacoes .anotacoes-revisao-card .anotacoes-fmt,
     .screen-anotacoes .anotacoes-revisao-card .anotacoes-fmt.anotacoes-fmt-modelos-resp {
-      margin: -2px 0 2px;
+      margin: 0 0 6px;
     }
 
     .screen-anotacoes .anotacoes-perguntas-card .anotacoes-msg {

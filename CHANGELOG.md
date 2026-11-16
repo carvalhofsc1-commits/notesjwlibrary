@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.79
+
+Anotações: os botões de formatação da **resposta da recapitulação** ficaram alinhados como os das anotações (as linhas não se sobrepõem mais e “1. Lista” não quebra em duas linhas), e as molduras de formatação ficaram com menos espaço antes e depois.
+
 ## 6.9.78
 
 Correção (iPhone): a barra de baixo descolando da base. O diagnóstico num iPhone com **iOS 18.7** mostrou a causa: o aparelho às vezes desloca a área visível (altura de referência 894, área visível 826 começando 68 abaixo) e a barra fica presa ao fundo errado, com um vão embaixo que, em certos momentos, cresce até o meio da tela. A compensação agora compara o fundo da barra com o **fundo da área visível de verdade** e desce a barra exatamente a diferença (ao rolar, ao mudar a área visível e a cada segundo); com o teclado aberto não mexe. A conta antiga comparava com a altura de referência e dava zero nesse caso.
