@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.72
+
+Correção (iPhone, iOS 26): a **barra de baixo subia para o meio da tela ao rolar até o fim** de uma página longa. É uma falha do próprio iOS 26 (relatada como corrigida no 26.1): puxar a página além do fim (o “elástico”) arrasta a barra fixa. Agora o elástico fica desligado **só no fim da página**; no topo ele continua, e o puxar para atualizar do Início também. Campos e listas que rolam por dentro e os gestos para o lado (páginas dos atalhos) não mudam.
+
 ## 6.9.71
 
 Correção: um **emoji de número (1️⃣ a 7️⃣) num trecho em negrito, itálico ou grifo virava “1□”** no iPhone (o dígito passava para negrito e o aparelho não desenha a moldura em volta dele). Agora as formatações deixam os emojis de número intactos, e as anotações já estragadas são consertadas sozinhas ao abrir o discurso (e ao passar para maiúsculas).

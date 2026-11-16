@@ -215,6 +215,38 @@
       ajustar();
     })();
 
+    // Sem o "elástico" no FIM da página (só no celular): no iPhone com iOS 26, puxar a página além do fim arrasta a barra fixa de baixo para o meio da
+    // tela (falha do próprio iOS). O elástico do topo continua (e, com ele, o puxar para atualizar do Início). Não atrapalha campos e listas que rolam
+    // por dentro (enquanto eles ainda têm o que rolar) nem os gestos para o lado (as páginas dos atalhos).
+    (function semElasticoNoFim() {
+      if (!('ontouchstart' in window)) return;
+      let x0 = null;
+      let y0 = null;
+      let interno = null;
+      const rolavelDentro = el => {
+        for (let n = el; n && n !== document.body && n !== document.documentElement; n = n.parentElement) {
+          if (n.scrollHeight > n.clientHeight + 1 && /(auto|scroll)/.test(getComputedStyle(n).overflowY)) return n;
+        }
+        return null;
+      };
+      document.addEventListener('touchstart', e => {
+        if (e.touches.length !== 1) { y0 = null; return; }
+        x0 = e.touches[0].clientX;
+        y0 = e.touches[0].clientY;
+        interno = rolavelDentro(e.target);
+      }, { passive: true });
+      document.addEventListener('touchmove', e => {
+        if (y0 === null || !e.cancelable || e.touches.length !== 1) return;
+        const dx = e.touches[0].clientX - x0;
+        const dy = e.touches[0].clientY - y0; // negativo: o dedo sobe (a página rola para baixo)
+        if (dy >= 0 || Math.abs(dx) > Math.abs(dy)) return;
+        const pag = document.scrollingElement || document.documentElement;
+        if (pag.scrollTop + window.innerHeight < pag.scrollHeight - 1) return; // ainda não chegou ao fim
+        if (interno && interno.scrollTop + interno.clientHeight < interno.scrollHeight - 1) return; // o campo ou a lista ainda rola por dentro
+        e.preventDefault();
+      }, { passive: false });
+    })();
+
     // Logo: o nome "NoteStyle" fica com a mesma largura do slogan logo abaixo dele (a fonte varia de aparelho para aparelho, então a medida é feita na tela).
     function logoAjustar() {
       const nome = document.querySelector('.brand-title h1');
@@ -7739,7 +7771,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.71'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.72'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
     // O Safari do iPhone ignora user-scalable=no; este evento impede o zoom por gesto de pinça.
