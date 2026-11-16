@@ -14255,7 +14255,7 @@ button.processando:disabled { opacity: 1; cursor: progress; }
 
 /* ✏️ Escolher contas e modelos: a mesma tabela das Definições em vigor, com seletores no lugar dos valores. */
 .modelos-editar {
-  margin-top: 12px;
+  margin-top: 4px;
 }
 
 .modelos-editar > .modelos-ia-titulo {
