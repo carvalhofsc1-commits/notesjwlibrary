@@ -15559,3 +15559,237 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
     .anotacoes-bloco.anotacoes-detalhes { padding: 6px 12px; }
     .anotacoes-bloco.anotacoes-detalhes > summary { padding: 0; font-size: 0.95rem; line-height: 1.3; }
     .anotacoes-bloco.anotacoes-detalhes[open] { padding-bottom: 12px; }
+
+/* ---------- Assistente de pesquisas (tela "pesquisa") ----------
+   Tela leve: um cartão claro, blocos em cards finos, botões no padrão fino. A resposta mostra negrito e itálico de verdade e as fontes
+   numeradas no fim (publicação, página, parágrafo e links para o wol.jw.org e o JW Library). */
+body:not([data-screen="pesquisa"]) .screen-pesquisa,
+body[data-screen="pesquisa"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-ajustes, .screen-leitura, .screen-transcricao, .screen-biblia, .screen-anotacoes) {
+  display: none !important;
+}
+.card.pesq-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: none;
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+}
+.pesq-titulo {
+  margin: 0;
+  font-size: 1.15rem;
+}
+.pesq-abas {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.pesq-abas .pesq-aba {
+  min-height: 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: .88rem;
+  font-weight: 600;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+.pesq-abas .pesq-aba[aria-selected="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.pesq-abas .pesq-aba small {
+  font-weight: 400;
+  font-size: .72rem;
+  opacity: .8;
+}
+.pesq-bloco {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  background: color-mix(in srgb, var(--card) 92%, var(--accent) 8%);
+}
+.pesq-bloco[hidden] { display: none; }
+.pesq-rotulo {
+  display: block;
+  font-weight: 700;
+  font-size: .9rem;
+  margin: 0 0 4px;
+}
+.pesq-rotulo + .pesq-campo + .pesq-rotulo,
+.pesq-campo + .pesq-rotulo { margin-top: 10px; }
+.pesq-opcional {
+  font-weight: 400;
+  color: var(--muted);
+  font-size: .82rem;
+}
+.pesq-campo {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 2.6em;
+  font: inherit;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--field, var(--card));
+  color: var(--text);
+}
+.pesq-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+button.pesq-fino {
+  min-height: 0;
+  padding: 7px 14px;
+  font-size: .9rem;
+  font-weight: 600;
+  border-radius: 999px;
+}
+.pesq-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 0;
+  font-size: .9rem;
+  color: var(--text);
+}
+.pesq-status[hidden] { display: none; }
+.pesq-status.aviso { color: var(--danger); }
+.pesq-status .transcricao-giro { width: 16px; height: 16px; border-width: 2px; }
+
+/* Resultado */
+.pesq-resultado { background: var(--card); }
+.pesq-res-titulo {
+  margin: 0 0 2px;
+  font-size: 1.15rem;
+  line-height: 1.3;
+}
+.pesq-res-meta {
+  margin: 0 0 10px;
+  font-size: .8rem;
+  color: var(--muted);
+}
+.pesq-res-corpo { line-height: 1.55; }
+.pesq-res-corpo p { margin: 0 0 10px; }
+.pesq-res-corpo h4 {
+  margin: 16px 0 6px;
+  font-size: 1rem;
+}
+.pesq-res-corpo .pesq-intro { font-size: 1.02rem; }
+.pesq-res-corpo .pesq-conclusao {
+  border-left: 3px solid var(--accent);
+  padding-left: 10px;
+  margin-top: 14px;
+}
+.pesq-ref {
+  font-size: .72em;
+  line-height: 0;
+  margin-left: 1px;
+}
+.pesq-ref a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 700;
+}
+.pesq-fontes-bloco {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.pesq-fontes-bloco[hidden] { display: none; }
+.pesq-fontes-titulo {
+  margin: 0 0 6px;
+  font-size: .95rem;
+}
+.pesq-fontes {
+  margin: 0;
+  padding-left: 1.5em;
+  font-size: .86rem;
+  line-height: 1.45;
+}
+.pesq-fontes li { margin: 0 0 8px; scroll-margin-top: calc(var(--topbar-h, 60px) + 10px); }
+.pesq-fontes li:target { background: color-mix(in srgb, var(--accent) 12%, transparent); border-radius: 6px; }
+.pesq-fonte-links {
+  display: inline-flex;
+  gap: 10px;
+  margin-left: 6px;
+  white-space: nowrap;
+}
+.pesq-fonte-links a {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+  font-size: .82rem;
+}
+
+/* Pesquisas salvas */
+.pesq-salvas > summary {
+  cursor: pointer;
+  font-weight: 700;
+  font-size: .92rem;
+}
+.pesq-salvas-lista {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.pesq-salvas-lista li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  padding: 4px 4px 4px 10px;
+}
+.pesq-salvas-lista .pesq-salva-abrir {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  text-align: left;
+  background: transparent;
+  color: var(--text);
+  padding: 6px 0;
+  font-weight: 600;
+  font-size: .9rem;
+}
+.pesq-salvas-lista .pesq-salva-abrir small {
+  display: block;
+  font-weight: 400;
+  color: var(--muted);
+  font-size: .76rem;
+}
+.pesq-salvas-lista .pesq-salva-apagar {
+  min-height: 0;
+  padding: 4px 8px;
+  background: transparent;
+  color: var(--muted);
+  border: 0;
+}
+
+/* Ajustes → Modelos e agentes de IA: a lista de sites da busca na internet */
+.pesq-sites-bloco { margin: 12px 0 4px; }
+.pesq-sites-rotulo { font-weight: 700; display: block; margin-bottom: 2px; }
+.pesq-sites {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: .88rem;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--field, var(--card));
+  color: var(--text);
+  resize: vertical;
+  margin: 4px 0 8px;
+}
+.pesq-fontes li { transition: background-color .4s; }
+.pesq-fontes li.pesq-fonte-destaque { background: color-mix(in srgb, var(--accent) 16%, transparent); border-radius: 6px; }
+/* Página 3 dos atalhos (ainda com um só atalho): as mesmas 4 linhas das outras páginas, para o botão ter o tamanho dos outros. */
+.atalhos-card .atalhos-paginas > #atalhosPagina3 { grid-template-rows: repeat(4, minmax(0, 1fr)); }

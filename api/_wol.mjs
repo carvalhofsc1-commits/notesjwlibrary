@@ -2172,3 +2172,131 @@ export async function listarProgramas({ timeoutMs = 10000, forcar = false } = {}
   programasLidos = { quando: Date.now(), itens };
   return itens;
 }
+
+/// ---------- Assistente de pesquisas ----------
+// A pesquisa de um assunto no wol.jw.org devolve, para cada matéria encontrada, o parágrafo exato: a publicação, a edição, a página e o
+// número do parágrafo, com o texto dele (e o seguinte, para dar contexto). O resultado da busca nem sempre diz qual parágrafo achou: o artigo
+// é aberto com a mesma busca (o wol marca as palavras achadas com <span class="mk">) e vale o parágrafo com mais palavras da consulta. A página
+// vem das marcas de página do artigo (pageNum) que ficam antes do parágrafo; o número, do data-pnum. Com isso a resposta da IA cita as fontes
+// com precisão, sem depender dela.
+const docsDaPesquisa = new Map(); // url do documento (com a busca) -> { quando, html }
+
+async function documentoDaPesquisa(url, timeoutMs) {
+  const guardado = docsDaPesquisa.get(url);
+  if (guardado && Date.now() - guardado.quando < VALIDADE_MS) return guardado.html;
+  const html = await baixar(url, timeoutMs);
+  docsDaPesquisa.set(url, { quando: Date.now(), html });
+  if (docsDaPesquisa.size > 60) docsDaPesquisa.delete(docsDaPesquisa.keys().next().value);
+  return html;
+}
+
+// "ws15 15/9 págs. 15-20 - A Sentinela (Fácil de Ler) — 2015" -> { codigo: "ws15 15/9", publicacao: "A Sentinela (Fácil de Ler)", ano: 2015 }
+function referenciaDaBusca(ref) {
+  const texto = String(ref || "");
+  const [antes, ...depois] = texto.split(" - ");
+  const resto = depois.join(" - ");
+  const ano = Number((resto.match(/—\s*(\d{4})\s*$/) || [])[1]) || Number((texto.match(/\b((?:19|20)\d{2})\b/) || [])[1]) || null;
+  return {
+    codigo: antes.replace(/\s*p[áa]gs?\.\s*[\d\s,–-]+$/i, "").trim(),
+    publicacao: resto.replace(/\s*—\s*\d{4}\s*$/, "").replace(/\s*\([a-z0-9-]{1,8}\)\s*$/, "").trim() || antes.trim(),
+    ano,
+  };
+}
+
+// Pesquisa a consulta no wol (palavras no mesmo parágrafo; se vier pouco, no mesmo documento) e devolve até "maximo" achados:
+// [{ docId, consulta, titulo, codigo, publicacao, ano }]. Ficam os 16 primeiros da ordem do site (os de mais ocorrências) e, deles, os mais
+// novos. Fora: a apostila Vida e Ministério, o glossário e as publicações de antes de 1990.
+export async function pesquisarParagrafosNoWol(consulta, timeoutMs, maximo = 8) {
+  const q = String(consulta || "").replace(/[“”"]/g, "").replace(/[?!.]+$/, "").trim().slice(0, 200);
+  if (q.length < 3) return [];
+  const buscar = async (proximidade) => {
+    const url = `${BASE}/pt/wol/s/r5/lp-t?q=${encodeURIComponent(q)}&p=${proximidade}&r=occ&st=a`;
+    const html = (await baixar(url, timeoutMs)).replace(/&lrm;/g, "");
+    return html
+      .split('<ul class="results resultContentDocument">')
+      .slice(1)
+      .map((bloco) => {
+        const cabeca = bloco.match(/<a class="lnk" href="\/pt\/wol\/d\/r5\/lp-t\/(\d+)[^"]*"[^>]*>([\s\S]*?)<\/a>/);
+        if (!cabeca) return null;
+        const ref = textoDe((bloco.match(/<li class="ref">([\s\S]*?)<\/li>/) || [])[1] || "");
+        return { docId: cabeca[1], consulta: q, proximidade, titulo: textoDe(cabeca[2]).replace(/­/g, ""), ...referenciaDaBusca(ref) };
+      })
+      // Fora também os índices (Guia de Pesquisa, Índice das Publicações): só listam referências, não explicam.
+      .filter((r) => r && !/^(?:mwb\d*|nwtstg|rsg\d*|dx\d*)\b/i.test(r.codigo) && !/^(?:guia de pesquisa|[íi]ndice)/i.test(r.publicacao) && !(r.ano && r.ano < 1990));
+  };
+  let achados = (await buscar("par")).slice(0, 16);
+  if (achados.length < 4) {
+    const vistos = new Set(achados.map((r) => r.docId));
+    achados = achados.concat((await buscar("doc")).filter((r) => !vistos.has(r.docId)).slice(0, 16 - achados.length));
+  }
+  achados = achados.map((r, i) => ({ r, i })).sort((a, b) => (b.r.ano || 0) - (a.r.ano || 0) || a.i - b.i).map(({ r }) => r);
+  // O Examine as Escrituras (um documento por mês, com um texto por dia) aparece muito: no máximo 2 por consulta, para sobrar lugar às matérias.
+  let textosDiarios = 0;
+  achados = achados.filter((r) => !/^es\d/.test(r.codigo) || ++textosDiarios <= 2);
+  return achados.slice(0, maximo);
+}
+
+// O parágrafo achado na pesquisa, lido no artigo: { titulo, pagina, paragrafos, pid, texto, url }. Vale o elemento com mais palavras
+// diferentes da consulta marcadas; se for a pergunta de um parágrafo (class "qu"), vale o parágrafo (ou parágrafos) que ela pergunta; senão,
+// o parágrafo e o seguinte (contexto). null = não deu para ler.
+export async function paragrafoDaPesquisa(achado, timeoutMs, maxCaracteres = 1600) {
+  const url = `${BASE}/pt/wol/d/r5/lp-t/${achado.docId}`;
+  const html = await documentoDaPesquisa(`${url}?q=${encodeURIComponent(achado.consulta || "")}&p=${achado.proximidade || "par"}`, timeoutMs);
+  const titulo = (textoDe((html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/) || [])[1] || "") || achado.titulo).replace(/­/g, "");
+  const elementos = [...html.matchAll(/<(p|h2|h3|h4)\b([^>]*\bdata-pid="(\d+)"[^>]*)>([\s\S]*?)<\/\1>/g)].map((m) => ({
+    pid: Number(m[3]),
+    atributos: m[2],
+    conteudo: m[4],
+    posicao: m.index,
+  }));
+  if (!elementos.length) return null;
+  const pergunta = (e) => /\bclass="qu\b/.test(e.atributos);
+  // Pontos de cada elemento: palavras diferentes marcadas (as de 3 letras ou mais valem; "os", "de" quase não contam) e, no empate, o total.
+  let melhor = -1;
+  let pontosMelhor = 0;
+  elementos.forEach((e, i) => {
+    const marcadas = [...e.conteudo.matchAll(/<span class="mk">([\s\S]*?)<\/span>/g)].map((m) => semAcento(textoDe(m[1])));
+    if (!marcadas.length) return;
+    const diferentes = new Set(marcadas.filter((w) => w.length >= 3));
+    const pontos = diferentes.size * 100 + Math.min(marcadas.length, 50) + (pergunta(e) ? 0 : 1);
+    if (pontos > pontosMelhor) {
+      pontosMelhor = pontos;
+      melhor = i;
+    }
+  });
+  if (melhor < 0) melhor = elementos.findIndex((e) => !pergunta(e) && textoDe(e.conteudo).length > 120);
+  if (melhor < 0) return null;
+  let escolhidos;
+  if (pergunta(elementos[melhor])) {
+    const id = String(elementos[melhor].pid);
+    escolhidos = elementos.filter((e) => {
+      const rel = (e.atributos.match(/data-rel-pid="\[([^\]]*)\]"/) || [])[1];
+      return rel && rel.split(",").map((x) => x.trim()).includes(id);
+    });
+    if (!escolhidos.length) escolhidos = elementos.slice(melhor + 1, melhor + 2);
+  } else {
+    escolhidos = [elementos[melhor]];
+    const proximo = elementos[melhor + 1];
+    if (proximo && textoDe(proximo.conteudo).length > 60 && !pergunta(proximo) && !/^h/.test(proximo.conteudo)) escolhidos.push(proximo);
+  }
+  if (!escolhidos.length) return null;
+  // A página: a última marca de página antes do primeiro parágrafo escolhido (ou dentro dele, logo no começo).
+  const antes = html.slice(0, escolhidos[0].posicao + 300);
+  const marcas = [...antes.matchAll(/class="pageNum"[^>]*data-no="(\d+)"/g)];
+  const pagina = marcas.length ? Number(marcas[marcas.length - 1][1]) : null;
+  const numeros = escolhidos.map((e) => (e.conteudo.match(/data-pnum="(\d+)"/) || [])[1]).filter(Boolean);
+  const texto = escolhidos.map((e) => textoDe(e.conteudo).replace(/­/g, "")).filter(Boolean).join("\n").slice(0, maxCaracteres);
+  const primeiroPid = escolhidos[0].pid;
+  const ultimoPid = escolhidos[escolhidos.length - 1].pid;
+  // Destaque no wol: do primeiro ao último parágrafo escolhido, se estiverem juntos (um quadro no meio deixa só o primeiro).
+  const fimDestaque = (ultimoPid >= primeiroPid && ultimoPid - primeiroPid <= 3 ? ultimoPid : primeiroPid) + 1;
+  if (!texto) return null;
+  return {
+    titulo,
+    pagina,
+    paragrafos: numeros.length ? (numeros.length > 1 ? `${numeros[0]}-${numeros[numeros.length - 1]}` : numeros[0]) : "",
+    pid: escolhidos[0].pid,
+    texto,
+    url: `${url}#h=${primeiroPid}:0-${fimDestaque}:0`,
+  };
+}

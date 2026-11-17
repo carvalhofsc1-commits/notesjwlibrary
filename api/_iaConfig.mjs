@@ -69,20 +69,64 @@ export function validarConfigIa(entrada) {
     audioGeminiModelo: MODELOS_IA.some((m) => m.id === c.audioGeminiModelo && m.familia === "gemini") ? c.audioGeminiModelo : MODELO_PADRAO_GEMINI,
     audioModelo: daFamilia(c.audioModelo) ? c.audioModelo : "",
     esbocoEsforco: ESFORCOS_IA.some((e) => e.id === c.esbocoEsforco) ? c.esbocoEsforco : "",
+    // Assistente de pesquisas: cada etapa tem o seu modelo, de qualquer família (Gemini ou Claude), independente do provedor do uso geral.
+    // Os padrões são todos Gemini: o Claude (chave da Anthropic) só entra se o administrador escolher.
+    pesquisaModelo: modeloConhecido(c.pesquisaModelo) ? c.pesquisaModelo : PADRAO_PESQUISA.pesquisaModelo,
+    pesquisaWebModelo: modeloConhecido(c.pesquisaWebModelo) ? c.pesquisaWebModelo : PADRAO_PESQUISA.pesquisaWebModelo,
+    pesquisaRespostaModelo: modeloConhecido(c.pesquisaRespostaModelo) ? c.pesquisaRespostaModelo : PADRAO_PESQUISA.pesquisaRespostaModelo,
+    pesquisaRespostaEsforco: ESFORCOS_IA.some((e) => e.id === c.pesquisaRespostaEsforco) ? c.pesquisaRespostaEsforco : PADRAO_PESQUISA.pesquisaRespostaEsforco,
+    pesquisaVideoModelo: modeloConhecido(c.pesquisaVideoModelo) ? c.pesquisaVideoModelo : PADRAO_PESQUISA.pesquisaVideoModelo,
+    pesquisaSites: sitesValidos(c.pesquisaSites),
   };
 }
+
+// ---------- Assistente de pesquisas ----------
+const modeloConhecido = (id) => MODELOS_IA.some((m) => m.id === id);
+export const PADRAO_PESQUISA = {
+  pesquisaModelo: "gemini-3.5-flash", // buscas e relevância (leve)
+  pesquisaWebModelo: "gemini-3.5-flash", // busca na internet
+  pesquisaRespostaModelo: "gemini-3.1-pro-preview", // compilação da resposta final
+  pesquisaRespostaEsforco: "medium",
+  pesquisaVideoModelo: "gemini-3.5-flash", // transcrição e resumo de vídeo
+};
+// Sites de preferência na busca na internet (a IA dá preferência a eles; o que vier de outros sites também entra, com a fonte identificada).
+export const SITES_PESQUISA_PADRAO = [
+  "pt.wikipedia.org", "britannica.com", "un.org", "who.int", "paho.org", "unicef.org", "fao.org", "wfp.org", "unhcr.org",
+  "ibge.gov.br", "gov.br", "usgs.gov", "g1.globo.com", "cnnbrasil.com.br", "bbc.com", "reuters.com", "apnews.com", "nationalgeographic.com", "scielo.br",
+];
+function sitesValidos(lista) {
+  if (!Array.isArray(lista)) return [...SITES_PESQUISA_PADRAO];
+  const limpos = [];
+  for (const item of lista) {
+    const s = String(item || "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/+$/, "");
+    if (s.length >= 4 && s.length <= 80 && /^[a-z0-9-]+(\.[a-z0-9-]+)+(\/[^\s]*)?$/.test(s) && !limpos.includes(s)) limpos.push(s);
+    if (limpos.length >= 40) break;
+  }
+  return limpos;
+}
+// O provedor que atende um modelo: o Gemini pela conta do Google; o Claude pelo provedor do uso geral (Anthropic ou Vertex) ou, se o uso geral
+// for o Gemini, pela API direta da Anthropic.
+export function provedorDoModelo(config, modelo) {
+  const m = MODELOS_IA.find((x) => x.id === modelo);
+  if (m && m.familia === "gemini") return "gemini";
+  return config.provedor === "vertex" ? "vertex" : "anthropic";
+}
+export const TAREFAS_DE_PESQUISA = new Set(["pesquisa-coletar", "pesquisa"]);
 
 // O modelo e o esforço de uma tarefa: os de esboços e discursos (se o administrador escolheu outros) ou os gerais.
 // "estudo-perguntas" (perguntas adicionais do estudo de A Sentinela) e "ebc-dirigente" (Estudo Bíblico) são do Preparar para dirigir, que usa o mesmo modelo dos esboços; "texto-diario-comentarios" (comentários adicionais do texto diário) também.
 export const TAREFAS_DE_ESBOCOS = new Set(["tesouros", "discurso", "publico", "publico-importar", "outros", "estudo-perguntas", "ebc-dirigente", "estudo-recap", "texto-diario-comentarios"]);
 export function iaDaTarefa(config, tarefa) {
   if (tarefa === "audio") return { ...config, modelo: config.audioModelo || config.modelo, esforco: config.esforco };
+  // Assistente de pesquisas: o modelo de cada etapa e o provedor que o atende (provedorTarefa).
+  if (tarefa === "pesquisa-coletar") return { ...config, modelo: config.pesquisaModelo, esforco: "low", provedorTarefa: provedorDoModelo(config, config.pesquisaModelo) };
+  if (tarefa === "pesquisa") return { ...config, modelo: config.pesquisaRespostaModelo, esforco: config.pesquisaRespostaEsforco, provedorTarefa: provedorDoModelo(config, config.pesquisaRespostaModelo) };
   if (!TAREFAS_DE_ESBOCOS.has(tarefa)) return { ...config, modelo: config.modelo, esforco: config.esforco };
   return { ...config, modelo: config.esbocoModelo || config.modelo, esforco: config.esbocoEsforco || config.esforco };
 }
 
 export function opcoesIa() {
-  return { modelos: MODELOS_IA, esforcos: ESFORCOS_IA, provedores: PROVEDORES_IA, motoresAudio: MOTORES_AUDIO };
+  return { modelos: MODELOS_IA, esforcos: ESFORCOS_IA, provedores: PROVEDORES_IA, motoresAudio: MOTORES_AUDIO, sitesPadrao: SITES_PESQUISA_PADRAO };
 }
 
 let cache = null;

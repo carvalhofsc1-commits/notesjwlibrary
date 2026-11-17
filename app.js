@@ -3,7 +3,7 @@
     // É um app só: a tela escolhida (guardada no endereço, ex.: #reunioes) mostra os blocos dela e esconde os outros.
     // Formatar e Reuniões dividem o mesmo campo de texto. O app sempre abre no Início; ao recarregar a página, o endereço
     // mantém a tela em que se estava.
-    const APP_SCREENS = ['inicio', 'formatar', 'reunioes', 'backup', 'ajustes', 'leitura', 'transcricao', 'biblia', 'anotacoes']; // "leitura" = voz alta; "biblia" = leitura diária; "anotacoes" = reunião/assembleia/congresso
+    const APP_SCREENS = ['inicio', 'formatar', 'reunioes', 'backup', 'ajustes', 'leitura', 'transcricao', 'biblia', 'anotacoes', 'pesquisa']; // "leitura" = voz alta; "biblia" = leitura diária; "anotacoes" = reunião/assembleia/congresso; "pesquisa" = Assistente de pesquisas
     try { localStorage.removeItem('jwLibraryNoteAplicarScreenV1'); } catch (e) { /* a tela não é mais guardada */ }
 
     function currentScreen() {
@@ -7869,7 +7869,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.07'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.08'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -9307,7 +9307,7 @@
     const REPORT_EMAIL = 'carvalhofsc1@gmail.com'; // o mesmo contato da página Sobre
     const MSG_SEM_CONSENTIMENTO = 'Para usar a IA e a leitura em voz alta é preciso concordar com o envio do texto. Toque no botão de novo quando quiser concordar.';
     // As tarefas do servidor que usam a IA (as outras só leem o wol.jw.org ou a Bíblia e não precisam da concordância).
-    const IA_TAREFAS = new Set(['anotacoes-formatar', 'estudo', 'estudo-lista', 'estudo-perguntas', 'texto-diario-comentarios', 'ebc', 'consideracao', 'nvc', 'nvc-transcricao', 'ebc-dirigente', 'tesouros', 'publico', 'publico-importar', 'publico-canticos', 'outros', 'discurso', 'joias', 'leitura-biblia', 'sentinela']);
+    const IA_TAREFAS = new Set(['pesquisa-coletar', 'pesquisa', 'anotacoes-formatar','estudo', 'estudo-lista', 'estudo-perguntas', 'texto-diario-comentarios', 'ebc', 'consideracao', 'nvc', 'nvc-transcricao', 'ebc-dirigente', 'tesouros', 'publico', 'publico-importar', 'publico-canticos', 'outros', 'discurso', 'joias', 'leitura-biblia', 'sentinela']);
     let consentimentoIaSessao = false; // vale só até fechar o app quando o aparelho não deixa gravar a escolha
     let consentimentoIaEmCurso = null;
 
@@ -12090,7 +12090,7 @@ function saveTemplatesToStorage() {
       'leitura-biblia': 'Leitura bíblica', 'biblia-texto': 'Texto bíblico',
       'outros-pesquisar': 'Pesquisar', 'publico-esboco': 'Esboço S-34',
       versiculos: 'Versículos', 'anotacoes-versiculos': 'Bíblia (anotações)', 'anotacoes-formatar': 'Formatar anotações (IA)',
-      'programa-pub': 'Programa (assembleia)', voz: 'Voz', ia: 'IA'
+      'programa-pub': 'Programa (assembleia)', 'pesquisa-coletar': 'Pesquisa (buscas)', pesquisa: 'Pesquisa (resposta)', voz: 'Voz', ia: 'IA'
     };
     function estatisticasNomeTarefa(chave) {
       return ESTAT_TAREFA_NOME[chave] || String(chave || 'IA');
@@ -13754,6 +13754,30 @@ function saveTemplatesToStorage() {
     const iaModeloPreco = document.getElementById('iaModeloPreco');
     const iaStatus = document.getElementById('iaStatus');
     let iaOpcoes = null;
+    // Assistente de pesquisas: um modelo por etapa, de qualquer família (Gemini ou Claude), e os sites de preferência da busca na internet.
+    const IA_PESQUISA_CAMPOS = ['pesquisaModelo', 'pesquisaWebModelo', 'pesquisaRespostaModelo', 'pesquisaRespostaEsforco', 'pesquisaVideoModelo'];
+    const iaPesquisaSelect = campo => document.getElementById('ia' + campo.charAt(0).toUpperCase() + campo.slice(1));
+    const iaPesquisaSites = document.getElementById('iaPesquisaSites');
+    const iaSitesDoCampo = () => iaPesquisaSites.value.split(/[\n,;]+/).map(s => s.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/+$/, '')).filter(Boolean);
+    function iaPesquisaPreencher() {
+      const curto = lista => (lista || []).map(x => Object.assign({}, x, { nome: String(x.nome).split(':')[0] }));
+      const esforcos = (iaOpcoes.esforcos || []).map(x => ({ id: x.id, nome: 'Esforço ' + String(x.nome).split(':')[0].toLowerCase() }));
+      IA_PESQUISA_CAMPOS.forEach(campo => {
+        const sel = iaPesquisaSelect(campo);
+        const valor = sel.value;
+        iaPreencher(sel, campo === 'pesquisaRespostaEsforco' ? esforcos : curto(iaOpcoes.modelos), '');
+        if (valor) sel.value = valor;
+      });
+    }
+    function iaPesquisaMostrar(config) {
+      IA_PESQUISA_CAMPOS.forEach(campo => { if (config[campo]) iaPesquisaSelect(campo).value = config[campo]; });
+      iaPesquisaSites.value = (Array.isArray(config.pesquisaSites) ? config.pesquisaSites : []).join('\n');
+    }
+    const iaPesquisaDaTela = () => Object.assign(Object.fromEntries(IA_PESQUISA_CAMPOS.map(campo => [campo, iaPesquisaSelect(campo).value])), { pesquisaSites: iaSitesDoCampo() });
+    const iaPesquisaSalvoDe = config => JSON.stringify(Object.assign(Object.fromEntries(IA_PESQUISA_CAMPOS.map(campo => [campo, config[campo] || ''])), { pesquisaSites: config.pesquisaSites || [] }));
+    document.getElementById('iaPesquisaSitesPadraoBtn').addEventListener('click', () => {
+      if (iaOpcoes && Array.isArray(iaOpcoes.sitesPadrao)) iaPesquisaSites.value = iaOpcoes.sitesPadrao.join('\n');
+    });
     const iaDolares = valor => 'US$ ' + Number(valor || 0).toFixed(2).replace('.', ',');
     const iaPreco = valor => String(valor).replace('.', ',');
 
@@ -13820,6 +13844,7 @@ function saveTemplatesToStorage() {
       iaPreencher(iaAudioModelo, curto(iaModelosDaFamilia()), 'O mesmo do uso geral');
       if (motor) iaAudioMotor.value = motor;
       if (geminiAudio) iaAudioGeminiModelo.value = geminiAudio;
+      iaPesquisaPreencher();
       if (esforco) iaEsforco.value = esforco;
       iaEsbocoEsforco.value = esforcoEsboco || '';
     }
@@ -13852,7 +13877,8 @@ function saveTemplatesToStorage() {
       iaAudioGeminiModelo.value = r.data.config.audioGeminiModelo || '';
       iaAudioModelo.value = r.data.config.audioModelo || '';
       iaAudioMostrar();
-      iaSalvo = { provedor: r.data.config.provedor, modelo: r.data.config.modelo, esforco: r.data.config.esforco, esbocoModelo: r.data.config.esbocoModelo || '', esbocoEsforco: r.data.config.esbocoEsforco || '', audioMotor: r.data.config.audioMotor || 'chirp', audioGeminiModelo: r.data.config.audioGeminiModelo || '', audioModelo: r.data.config.audioModelo || '' };
+      iaPesquisaMostrar(r.data.config);
+      iaSalvo = { provedor: r.data.config.provedor, modelo: r.data.config.modelo, esforco: r.data.config.esforco, esbocoModelo: r.data.config.esbocoModelo || '', esbocoEsforco: r.data.config.esbocoEsforco || '', audioMotor: r.data.config.audioMotor || 'chirp', audioGeminiModelo: r.data.config.audioGeminiModelo || '', audioModelo: r.data.config.audioModelo || '', pesquisa: iaPesquisaSalvoDe(r.data.config) };
       iaMostrarPreco();
       iaMensagem(r.data.armazenamento && !r.data.armazenamento.escrita ? 'O armazenamento do servidor ainda não permite salvar.' : '', true);
     }
@@ -13862,13 +13888,15 @@ function saveTemplatesToStorage() {
     function iaPendente() {
       return Boolean(iaSalvo && iaOpcoes && (iaProvedor.value !== iaSalvo.provedor || iaModelo.value !== iaSalvo.modelo || iaEsforco.value !== iaSalvo.esforco
         || iaEsbocoModelo.value !== iaSalvo.esbocoModelo || iaEsbocoEsforco.value !== iaSalvo.esbocoEsforco
-        || iaAudioMotor.value !== iaSalvo.audioMotor || iaAudioGeminiModelo.value !== iaSalvo.audioGeminiModelo || iaAudioModelo.value !== iaSalvo.audioModelo));
+        || iaAudioMotor.value !== iaSalvo.audioMotor || iaAudioGeminiModelo.value !== iaSalvo.audioGeminiModelo || iaAudioModelo.value !== iaSalvo.audioModelo
+        || iaPesquisaSalvoDe(iaPesquisaDaTela()) !== iaSalvo.pesquisa));
     }
 
     // Envia o modelo e o esforço escolhidos; quem chama (salvarParaTodos) mostra a mensagem.
     async function iaSalvarModelo() {
-      const r = await postConfig({ acao: 'ia-salvar', codigo: codigoAdminAtual(), config: { provedor: iaProvedor.value, modelo: iaModelo.value, esforco: iaEsforco.value, esbocoModelo: iaEsbocoModelo.value, esbocoEsforco: iaEsbocoEsforco.value, audioMotor: iaAudioMotor.value, audioGeminiModelo: iaAudioGeminiModelo.value, audioModelo: iaAudioModelo.value } });
+      const r = await postConfig({ acao: 'ia-salvar', codigo: codigoAdminAtual(), config: Object.assign({ provedor: iaProvedor.value, modelo: iaModelo.value, esforco: iaEsforco.value, esbocoModelo: iaEsbocoModelo.value, esbocoEsforco: iaEsbocoEsforco.value, audioMotor: iaAudioMotor.value, audioGeminiModelo: iaAudioGeminiModelo.value, audioModelo: iaAudioModelo.value }, iaPesquisaDaTela()) });
       if (!r.ok) return { ok: false, erro: configErrorMessage(r, 'Não foi possível salvar agora.') };
+      iaPesquisaMostrar(r.data.config);
       iaProvedor.value = r.data.config.provedor;
       iaModelo.value = r.data.config.modelo;
       iaEsforco.value = r.data.config.esforco;
@@ -13878,7 +13906,7 @@ function saveTemplatesToStorage() {
       iaAudioGeminiModelo.value = r.data.config.audioGeminiModelo || '';
       iaAudioModelo.value = r.data.config.audioModelo || '';
       iaAudioMostrar();
-      iaSalvo = { provedor: r.data.config.provedor, modelo: r.data.config.modelo, esforco: r.data.config.esforco, esbocoModelo: r.data.config.esbocoModelo || '', esbocoEsforco: r.data.config.esbocoEsforco || '', audioMotor: r.data.config.audioMotor || 'chirp', audioGeminiModelo: r.data.config.audioGeminiModelo || '', audioModelo: r.data.config.audioModelo || '' };
+      iaSalvo = { provedor: r.data.config.provedor, modelo: r.data.config.modelo, esforco: r.data.config.esforco, esbocoModelo: r.data.config.esbocoModelo || '', esbocoEsforco: r.data.config.esbocoEsforco || '', audioMotor: r.data.config.audioMotor || 'chirp', audioGeminiModelo: r.data.config.audioGeminiModelo || '', audioModelo: r.data.config.audioModelo || '', pesquisa: iaPesquisaSalvoDe(r.data.config) };
       iaMostrarPreco();
       iaNotaCarregar();
       document.dispatchEvent(new Event('modelos-ia-mudou'));
@@ -16223,7 +16251,7 @@ function saveTemplatesToStorage() {
     // Faz a chamada ao servidor das tarefas de estudo (lista e respostas). Devolve { ok, data, unavailable }.
     // Pedidos demorados (esboços e Preparar para dirigir): vão com um id aleatório; o servidor guarda a resposta por algumas horas. Se a conexão
     // cair no meio (no iPhone, ao sair do app ou bloquear a tela), o app busca o resultado com esse id assim que volta (api/_pedidos.mjs).
-    const TAREFAS_LONGAS = new Set(['tesouros', 'discurso', 'publico', 'publico-importar', 'outros', 'estudo-perguntas', 'ebc-dirigente', 'estudo-recap']);
+    const TAREFAS_LONGAS = new Set(['pesquisa', 'tesouros','discurso', 'publico', 'publico-importar', 'outros', 'estudo-perguntas', 'ebc-dirigente', 'estudo-recap']);
     const novoPedidoId = () => (window.crypto && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2));
     const esperar = ms => new Promise(ok => setTimeout(ok, ms));
     // O resultado fica guardado no servidor por até 6 horas: com o app fora da tela (tela bloqueada, outro app) a busca ESPERA a pessoa voltar,
@@ -22500,6 +22528,7 @@ function saveTemplatesToStorage() {
       { onde: '.atalhos-grid [data-atalho="discursos"] .atalho-nome', codigo: 'dirigente' },
       { onde: '.atalhos-grid [data-atalho="leitura"] .atalho-nome', codigo: 'leitura' },
       { onde: '.atalhos-grid [data-atalho="transcricao"] .atalho-nome', codigo: 'texto' },
+      { onde: '.atalhos-grid [data-atalho="pesquisa"] .atalho-nome', codigo: 'pesquisa' },
       { onde: '#grupoComentarios .reunioes-subtitle', codigo: 'pesquisa' },
       { onde: '#grupoDirigir .reunioes-subtitle', codigo: 'dirigente' },
       { onde: '#grupoDiscursos .reunioes-subtitle', codigo: 'dirigente' },
@@ -22570,6 +22599,10 @@ function saveTemplatesToStorage() {
       // Formatar → Opções com IA (formatação e texto colado): só com o código de pesquisa; sem ele, fica cinza e não abre.
       travarGrupo('opcoesIaBox', pesquisa ? '' : 'pesquisa');
       travarAtalho('comentarios', pesquisa ? '' : 'pesquisa');
+      travarAtalho('pesquisa', pesquisa ? '' : 'pesquisa'); // Assistente de pesquisas: só com o código de pesquisa
+      const menuPesquisa = document.querySelector('#appMenu [data-menu-ir="pesquisa"]');
+      if (menuPesquisa) menuPesquisa.disabled = !pesquisa;
+      if (!pesquisa && currentScreen() === 'pesquisa') showScreen('inicio'); // código apagado com a tela aberta: volta ao Início
       travarAtalho('leitura', codigoLeituraSalvo() ? '' : 'leitura');
       travarAtalho('transcricao', codigoTextoSalvo() ? '' : 'texto');
       if (!codigoTextoSalvo() && currentScreen() === 'transcricao') showScreen('inicio'); // código apagado com a tela aberta: volta ao Início
@@ -31033,5 +31066,294 @@ function saveTemplatesToStorage() {
 
       texto.addEventListener('blur', salvarRascunho);
       window.addEventListener('pagehide', salvarRascunho);
+    })();
+
+    // ---------- Assistente de pesquisas (tela "pesquisa") ----------
+    // Etapa 1 ("pesquisa-coletar"): o servidor acha as fontes (wol.jw.org, Estudo Perspicaz e livros do servidor), cada uma com publicação, página e
+    // parágrafo. Etapa 2 ("pesquisa"): a IA da resposta final escreve a pesquisa só com essas fontes, citando cada uma por [F1], [F2]…; o app troca
+    // os identificadores por números (na ordem em que aparecem) e monta a lista de fontes no fim. As pesquisas salvas ficam no banco do aparelho.
+    (function assistenteDePesquisas() {
+      const $ = id => document.getElementById(id);
+      const campoAssunto = $('pesquisaAssunto');
+      const campoContexto = $('pesquisaContexto');
+      const botao = $('pesquisaBtn');
+      const cancelarBtn = $('pesquisaCancelarBtn');
+      const statusEl = $('pesquisaStatus');
+      const resultadoEl = $('pesquisaResultado');
+      const avisoEl = $('pesquisaResAviso');
+      const salvasBox = $('pesquisaSalvasBox');
+      const SALVAS_CHAVE = 'pesquisas:lista';
+      const SALVAS_MAX = 200;
+      let atual = null; // { id, assunto, contexto, resultado, fontes }
+      let pedido = 0; // cada pesquisa tem um número; Cancelar faz a resposta de uma pesquisa antiga ser ignorada
+      let salvas = [];
+
+      function dizer(el, texto, { girando = false, aviso = false } = {}) {
+        el.textContent = '';
+        el.classList.toggle('aviso', aviso);
+        el.hidden = !texto;
+        if (!texto) return;
+        if (girando) {
+          const giro = document.createElement('span');
+          giro.className = 'transcricao-giro';
+          giro.setAttribute('aria-hidden', 'true');
+          el.appendChild(giro);
+        }
+        el.appendChild(document.createTextNode(texto));
+      }
+      const escapar = t => String(t || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+      const erroDe = (r, padrao) => (r && r.unavailable ? 'O servidor não está disponível agora. Tente de novo em instantes.' : (r && r.data && r.data.erro) || padrao);
+
+      // [F3], [F1][F3] ou [F1, F3]: os números das fontes, na ordem; identificador desconhecido sai.
+      const MARCA_FONTES = /\s*\[\s*(F\d{1,2}(?:\s*[,;]\s*F?\d{1,2})*)\s*\]/gi;
+      const numerosDaMarca = (lista, numeros) => lista.split(/\s*[,;]\s*/).map(x => numeros.get('F' + x.replace(/\D/g, ''))).filter(Boolean);
+      // **negrito** e __itálico__ viram negrito e itálico de verdade; [F3] vira o número da fonte, em sobrescrito.
+      function htmlDoTexto(texto, numeros) {
+        return escapar(texto)
+          .replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>')
+          .replace(/__([^_]+?)__/g, '<em>$1</em>')
+          .replace(MARCA_FONTES, (t, lista) => numerosDaMarca(lista, numeros).map(n => '<sup class="pesq-ref"><a href="#" data-pesq-fonte="' + n + '">' + n + '</a></sup>').join(''));
+      }
+      // O mesmo texto para colar em mensagens: *negrito* e _itálico_ (como no WhatsApp) e [n] no lugar de cada fonte.
+      function textoSimples(texto, numeros) {
+        return String(texto || '')
+          .replace(/\*\*([^*]+?)\*\*/g, '*$1*')
+          .replace(/__([^_]+?)__/g, '_$1_')
+          .replace(MARCA_FONTES, (t, lista) => numerosDaMarca(lista, numeros).map(n => ' [' + n + ']').join(''));
+      }
+
+      // Uma fonte em uma linha: { texto, wol, jwl }.
+      function descricaoDaFonte(f) {
+        if (f.tipo === 'perspicaz') return { texto: 'Estudo Perspicaz das Escrituras' + (f.codigo ? ', volume ' + f.codigo.replace(/\D/g, '') : '') + ' — verbete “' + f.titulo + '”', wol: '', jwl: '' };
+        if (f.tipo === 'livro') return { texto: f.publicacao + ' (livro)', wol: '', jwl: '' };
+        const partes = [f.publicacao + (f.codigo ? ' (' + f.codigo + ')' : '')];
+        if (f.titulo && f.titulo !== f.publicacao) partes.push('“' + f.titulo + '”');
+        if (f.pagina) partes.push('p. ' + f.pagina);
+        if (f.paragrafos) partes.push('§ ' + f.paragrafos);
+        return { texto: partes.join(', '), wol: f.url || '', jwl: f.docId ? jwlLinkPorId(f.docId, f.pid) : '' };
+      }
+
+      const dataPorExtenso = iso => {
+        const d = iso ? new Date(iso) : new Date();
+        return isNaN(d) ? '' : d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
+      };
+
+      // Os números das fontes: na ordem em que a resposta as cita.
+      function numerosDe(pesquisa) {
+        const numeros = new Map();
+        (pesquisa.resultado.fontesUsadas || []).forEach(id => { if (!numeros.has(id)) numeros.set(id, numeros.size + 1); });
+        return numeros;
+      }
+
+      function mostrar(pesquisa) {
+        const r = pesquisa.resultado;
+        const numeros = numerosDe(pesquisa);
+        $('pesquisaResTitulo').textContent = r.titulo || pesquisa.assunto;
+        $('pesquisaResMeta').textContent = ['📅 ' + dataPorExtenso(r.data), r.modelo ? '🤖 ' + r.modelo : '', numeros.size ? '📚 ' + numeros.size + (numeros.size === 1 ? ' fonte' : ' fontes') : ''].filter(Boolean).join(' · ');
+        const corpo = [];
+        if (r.introducao) corpo.push('<p class="pesq-intro">' + htmlDoTexto(r.introducao, numeros) + '</p>');
+        (r.secoes || []).forEach(s => {
+          corpo.push('<h4>' + (s.emoji ? escapar(s.emoji) + ' ' : '') + escapar(s.titulo) + '</h4>');
+          (s.paragrafos || []).forEach(p => corpo.push('<p>' + htmlDoTexto(p, numeros) + '</p>'));
+        });
+        if (r.conclusao) corpo.push('<p class="pesq-conclusao">' + htmlDoTexto(r.conclusao, numeros) + '</p>');
+        $('pesquisaResCorpo').innerHTML = corpo.join('');
+        const lista = $('pesquisaResFontes');
+        lista.textContent = '';
+        const porId = new Map((pesquisa.fontes || []).map(f => [f.id, f]));
+        [...numeros.keys()].forEach((id, i) => {
+          const f = porId.get(id);
+          if (!f) return;
+          const d = descricaoDaFonte(f);
+          const li = document.createElement('li');
+          li.id = 'pesqFonte' + (i + 1);
+          li.appendChild(document.createTextNode(d.texto));
+          if (d.wol || d.jwl) {
+            const links = document.createElement('span');
+            links.className = 'pesq-fonte-links';
+            [[d.wol, '🔗 wol'], [d.jwl, '📖 JW Library']].forEach(([href, rotulo]) => {
+              if (!href) return;
+              const a = document.createElement('a');
+              a.href = href;
+              a.textContent = rotulo;
+              if (/^https:/.test(href)) { a.target = '_blank'; a.rel = 'noopener noreferrer'; }
+              links.appendChild(a);
+            });
+            li.appendChild(links);
+          }
+          lista.appendChild(li);
+        });
+        $('pesquisaResFontesBloco').hidden = !lista.children.length;
+        $('pesquisaSalvarBtn').textContent = pesquisa.id ? '✅ Salva' : '💾 Salvar';
+        $('pesquisaSalvarBtn').disabled = Boolean(pesquisa.id);
+        dizer(avisoEl, '');
+        resultadoEl.hidden = false;
+      }
+
+      // Tocar no número da fonte rola até ela na lista (sem mexer no endereço, que guarda a tela do app).
+      $('pesquisaResCorpo').addEventListener('click', e => {
+        const a = e.target.closest('a[data-pesq-fonte]');
+        if (!a) return;
+        e.preventDefault();
+        const li = $('pesqFonte' + a.dataset.pesqFonte);
+        if (!li) return;
+        li.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        li.classList.add('pesq-fonte-destaque');
+        setTimeout(() => li.classList.remove('pesq-fonte-destaque'), 1600);
+      });
+
+      function ocupado(sim) {
+        botao.disabled = sim;
+        cancelarBtn.hidden = !sim;
+        campoAssunto.readOnly = sim;
+        campoContexto.readOnly = sim;
+      }
+
+      async function pesquisar() {
+        const assunto = campoAssunto.value.replace(/\s+/g, ' ').trim();
+        const contexto = campoContexto.value.replace(/\s+/g, ' ').trim();
+        if (assunto.length < 3) {
+          dizer(statusEl, 'Escreva o que você quer pesquisar.', { aviso: true });
+          campoAssunto.focus();
+          return;
+        }
+        if (!codigoAcessoSalvo()) return dizer(statusEl, 'Salve o código de pesquisa em Ajustes → 🔐 Autorização de acessos.', { aviso: true });
+        const meu = ++pedido;
+        ocupado(true);
+        try {
+          dizer(statusEl, 'Procurando no wol.jw.org, no Estudo Perspicaz e nos livros…', { girando: true });
+          let r = await postStudy({ tarefa: 'pesquisa-coletar', assunto, contexto }, 90000);
+          if (meu !== pedido) return;
+          if (!r.ok) return dizer(statusEl, erroDe(r, 'Não consegui pesquisar agora. Tente de novo.'), { aviso: true });
+          const fontes = Array.isArray(r.data.fontes) ? r.data.fontes : [];
+          dizer(statusEl, 'Encontrei ' + fontes.length + (fontes.length === 1 ? ' fonte' : ' fontes') + '. A IA está escrevendo a resposta… (pode levar até 2 minutos)', { girando: true });
+          r = await postStudy({ tarefa: 'pesquisa', assunto, contexto, fontes }, 285000);
+          if (meu !== pedido) return;
+          if (!r.ok) return dizer(statusEl, erroDe(r, 'A IA não conseguiu escrever a pesquisa. Tente de novo.'), { aviso: true });
+          // As fontes guardadas com a pesquisa: só as citadas, sem o trecho (o texto das matérias não precisa ficar no aparelho).
+          const usadas = new Set(r.data.fontesUsadas || []);
+          atual = { id: null, assunto, contexto, resultado: r.data, fontes: fontes.filter(f => usadas.has(f.id)).map(({ texto, ...resto }) => resto) };
+          mostrar(atual);
+          dizer(statusEl, '');
+          requestAnimationFrame(() => resultadoEl.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+        } catch (e) {
+          if (meu === pedido) dizer(statusEl, 'Sem conexão com o servidor. Confira a internet e tente de novo.', { aviso: true });
+        } finally {
+          if (meu === pedido) ocupado(false);
+        }
+      }
+      botao.addEventListener('click', pesquisar);
+      cancelarBtn.addEventListener('click', () => {
+        pedido++;
+        ocupado(false);
+        dizer(statusEl, 'Pesquisa cancelada.');
+      });
+
+      // Copiar: com negrito e itálico (para colar no Word, no e-mail…) e, para mensagens, em texto simples com *negrito* e _itálico_.
+      $('pesquisaCopiarBtn').addEventListener('click', async () => {
+        if (!atual) return;
+        const r = atual.resultado;
+        const numeros = numerosDe(atual);
+        const linhas = [r.titulo || atual.assunto, '', ...(r.introducao ? [textoSimples(r.introducao, numeros), ''] : [])];
+        (r.secoes || []).forEach(s => {
+          linhas.push((s.emoji ? s.emoji + ' ' : '') + '*' + s.titulo + '*');
+          (s.paragrafos || []).forEach(p => linhas.push(textoSimples(p, numeros)));
+          linhas.push('');
+        });
+        if (r.conclusao) linhas.push(textoSimples(r.conclusao, numeros), '');
+        const fontes = [...$('pesquisaResFontes').children].map((li, i) => '[' + (i + 1) + '] ' + li.firstChild.textContent);
+        if (fontes.length) linhas.push('📚 Fontes', ...fontes);
+        const simples = linhas.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+        const html = '<h2>' + escapar(r.titulo || atual.assunto) + '</h2>' + $('pesquisaResCorpo').innerHTML.replace(/<a href="#" data-pesq-fonte="\d+">(\d+)<\/a>/g, '$1') +
+          (fontes.length ? '<h3>📚 Fontes</h3><ol>' + fontes.map(f => '<li>' + escapar(f.replace(/^\[\d+\] /, '')) + '</li>').join('') + '</ol>' : '');
+        try {
+          if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
+            await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }), 'text/plain': new Blob([simples], { type: 'text/plain' }) })]);
+          } else await navigator.clipboard.writeText(simples);
+          dizer(avisoEl, '📋 Pesquisa copiada.');
+        } catch (e) {
+          dizer(avisoEl, 'Não consegui copiar neste aparelho.', { aviso: true });
+        }
+      });
+
+      $('pesquisaLimparBtn').addEventListener('click', () => {
+        atual = null;
+        resultadoEl.hidden = true;
+        $('pesquisaResCorpo').textContent = '';
+        $('pesquisaResFontes').textContent = '';
+        campoAssunto.value = '';
+        campoContexto.value = '';
+        dizer(statusEl, '');
+        campoAssunto.focus();
+      });
+
+      // ---------- Pesquisas salvas (banco do aparelho) ----------
+      async function salvasCarregar() {
+        if (!temBanco) return;
+        try {
+          const lista = await bancoLer(SALVAS_CHAVE);
+          salvas = Array.isArray(lista) ? lista : [];
+        } catch (e) { salvas = []; }
+        salvasPintar();
+      }
+      async function salvasGravar() {
+        if (!temBanco) throw new Error('sem banco');
+        await bancoGravar(SALVAS_CHAVE, salvas.slice(0, SALVAS_MAX));
+      }
+      function salvasPintar() {
+        const lista = $('pesquisaSalvasLista');
+        lista.textContent = '';
+        salvas.forEach(item => {
+          const li = document.createElement('li');
+          const abrir = document.createElement('button');
+          abrir.type = 'button';
+          abrir.className = 'pesq-salva-abrir';
+          abrir.textContent = (item.resultado && item.resultado.titulo) || item.assunto;
+          const quando = document.createElement('small');
+          quando.textContent = dataPorExtenso(item.resultado && item.resultado.data) + (item.resultado && item.resultado.modelo ? ' · ' + item.resultado.modelo : '');
+          abrir.appendChild(quando);
+          abrir.addEventListener('click', () => {
+            atual = item;
+            campoAssunto.value = item.assunto || '';
+            campoContexto.value = item.contexto || '';
+            dizer(statusEl, '');
+            mostrar(item);
+            requestAnimationFrame(() => resultadoEl.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+          });
+          const apagar = document.createElement('button');
+          apagar.type = 'button';
+          apagar.className = 'pesq-salva-apagar';
+          apagar.textContent = '🗑️';
+          apagar.title = 'Apagar esta pesquisa salva';
+          apagar.setAttribute('aria-label', 'Apagar a pesquisa salva ' + abrir.firstChild.textContent);
+          apagar.addEventListener('click', async () => {
+            if (!(await askConfirm('Apagar esta pesquisa salva deste aparelho?', 'Apagar pesquisa'))) return;
+            salvas = salvas.filter(x => x.id !== item.id);
+            try { await salvasGravar(); } catch (e) { /* fica só na memória até a próxima vez */ }
+            if (atual && atual.id === item.id) { atual = Object.assign({}, atual, { id: null }); mostrar(atual); }
+            salvasPintar();
+          });
+          li.append(abrir, apagar);
+          lista.appendChild(li);
+        });
+        $('pesquisaSalvasQtd').textContent = salvas.length ? '(' + salvas.length + ')' : '';
+        $('pesquisaSalvasVazio').hidden = salvas.length > 0;
+      }
+      $('pesquisaSalvarBtn').addEventListener('click', async () => {
+        if (!atual || atual.id) return;
+        const item = Object.assign({}, atual, { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6) });
+        salvas = [item, ...salvas].slice(0, SALVAS_MAX);
+        try {
+          await salvasGravar();
+          atual = item;
+          mostrar(atual);
+          salvasPintar();
+          dizer(avisoEl, '✅ Pesquisa salva neste aparelho (🗂️ Pesquisas salvas, logo abaixo).');
+        } catch (e) {
+          salvas = salvas.filter(x => x.id !== item.id);
+          dizer(avisoEl, 'Não consegui salvar neste aparelho.', { aviso: true });
+        }
+      });
+      salvasCarregar();
     })();
 

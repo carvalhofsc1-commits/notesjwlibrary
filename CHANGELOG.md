@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.08
+
+- Novo: 🔎 Assistente de pesquisas (fase 2 do plano), com atalho no Início (página 3 dos atalhos) e item no menu; só com o código de pesquisa. Aba Assunto: o usuário escreve o assunto e, se quiser, o contexto ou foco. A IA da pesquisa (leve) prepara as buscas; o servidor pesquisa no wol.jw.org (cada matéria é aberta com a busca, para achar o parágrafo exato, a página e o número dele; ficam fora a apostila, os índices e as publicações de antes de 1990, com prioridade para as mais novas), nos verbetes do Estudo Perspicaz e nos livros do servidor (Princípios Bíblicos e os outros). A IA da resposta final escreve a pesquisa só com essas fontes (título, introdução, seções com emoji, aplicações práticas e conclusão), com negrito e itálico de verdade e cada informação ligada à fonte por um número; no fim, a lista de fontes com publicação, edição, título, página e parágrafo e os links para o wol.jw.org e o JW Library. Mostra a data e o agente de IA usado. Botões finos: Copiar (com formatação, e em texto simples com *negrito* e _itálico_ para mensagens), Salvar (no banco deste aparelho, em "🗂️ Pesquisas salvas", logo abaixo) e Limpar. As abas Texto bíblico e Vídeo aparecem como "em breve".
+- Ajustes → Modelos e agentes de IA: nova seção "🔎 Assistente de pesquisas" com o modelo de cada etapa (Pesquisa/buscas, Busca na internet, Resposta final com o esforço, Vídeo), de qualquer família, independente do provedor do uso geral; padrões todos Gemini (3.5 Flash nas etapas leves e 3.1 Pro com esforço médio na resposta final), o Claude só se o administrador escolher. Lista editável de sites de preferência da busca na internet (um por linha, com "Voltar à lista padrão"). Salvar a configuração agora grava por cima da atual (um campo que a tela não mandar não volta ao padrão).
+- Servidor: tarefas pesquisa-coletar e pesquisa (código de pesquisa; novo recurso "Assistente de pesquisas" no faturamento); a resposta final é guardada para ser recuperada se a conexão cair. Prompts novos na categoria "🔎 ASSISTENTE DE PESQUISAS" (buscas e resposta final) e os dois formatos fixos.
+
 ## 6.10.07
 
 - Anotações → Reuniões congregacionais: o card "👤 Tema, orador e congregação" abre sempre recolhido e ficou mais fino (menos espaço em cima e embaixo, título um pouco menor).

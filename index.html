@@ -54,6 +54,7 @@
       <button type="button" data-menu-ir="leitura"><span aria-hidden="true">🔊</span> Leitura em voz</button>
       <button type="button" data-menu-ir="reunioes"><span aria-hidden="true">📅</span> Reuniões</button>
       <button type="button" data-menu-ir="transcricao"><span aria-hidden="true">🎙️</span> Áudio em texto</button>
+      <button type="button" data-menu-ir="pesquisa"><span aria-hidden="true">🔎</span> Assistente de pesquisas</button>
       <button type="button" data-menu-ir="backup"><span aria-hidden="true">📦</span> Backup JW</button>
       <button type="button" data-menu-atalho="historico"><span aria-hidden="true">🗂️</span> Pesquisas salvas</button>
       <button type="button" data-menu-ir="ajustes"><span aria-hidden="true">⚙️</span> Ajustes</button>
@@ -143,7 +144,7 @@
 
       <section class="card tint-6 atalhos-card" aria-label="Atalhos">
         <div class="atalhos-paginas" id="atalhosPaginas">
-        <div class="atalhos-grid" id="atalhosPagina1" role="group" aria-label="Atalhos, página 1 de 2">
+        <div class="atalhos-grid" id="atalhosPagina1" role="group" aria-label="Atalhos, página 1 de 3">
           <button type="button" class="atalho" data-atalho="anotacoes"><span class="atalho-icone" aria-hidden="true">📝</span><span class="atalho-nome">Anotações</span><span class="atalho-desc">Reuniões, assembleias e congressos</span></button>
           <button type="button" class="atalho" data-atalho="backup"><span class="atalho-icone" aria-hidden="true">📦</span><span class="atalho-nome">Backup do JW Library</span><span class="atalho-desc">Notas, marcações e exportação</span></button>
           <button type="button" class="atalho" data-atalho="biblia"><span class="atalho-icone" aria-hidden="true">📚</span><span class="atalho-nome">Leitura diária da Bíblia</span><span class="atalho-desc">Programa anual e resumo dos capítulos</span><span class="atalho-barra" id="bibliaAtalhoBarra" aria-hidden="true"><span></span></span></button>
@@ -153,7 +154,7 @@
           <button type="button" class="atalho" data-atalho="leitura"><span class="atalho-icone" aria-hidden="true">🔊</span><span class="atalho-nome">Leitura em voz</span><span class="atalho-desc">Ouvir um PDF, um Word ou um texto colado</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="transcricao"><span class="atalho-icone" aria-hidden="true">🎙️</span><span class="atalho-nome">Áudio em texto</span><span class="atalho-desc">Transcrever um áudio e resumir com a IA</span><span class="atalho-trava" hidden></span></button>
         </div>
-        <div class="atalhos-grid" id="atalhosPagina2" role="group" aria-label="Atalhos, página 2 de 2">
+        <div class="atalhos-grid" id="atalhosPagina2" role="group" aria-label="Atalhos, página 2 de 3">
           <button type="button" class="atalho" data-atalho="formatar"><span class="atalho-icone" aria-hidden="true">✨</span><span class="atalho-nome">Formatar</span><span class="atalho-desc">Organizar e formatar o texto com a IA</span></button>
           <button type="button" class="atalho" data-atalho="sentinela"><span class="atalho-icone" aria-hidden="true">📰</span><span class="atalho-nome">A Sentinela</span><span class="atalho-desc">Respostas e comentários do estudo</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="joias"><span class="atalho-icone" aria-hidden="true">💎</span><span class="atalho-nome">Joias espirituais</span><span class="atalho-desc">Leitura da semana e comentários</span><span class="atalho-trava" hidden></span></button>
@@ -163,11 +164,15 @@
           <button type="button" class="atalho" data-atalho="ajustes"><span class="atalho-icone" aria-hidden="true">⚙️</span><span class="atalho-nome">Ajustes</span><span class="atalho-desc">Códigos, vozes, IA e preferências</span></button>
           <button type="button" class="atalho" data-atalho="historico"><span class="atalho-icone" aria-hidden="true">🗂️</span><span class="atalho-nome">Pesquisas salvas</span><span class="atalho-desc">Respostas e pesquisas guardadas</span></button>
         </div>
+        <div class="atalhos-grid" id="atalhosPagina3" role="group" aria-label="Atalhos, página 3 de 3">
+          <button type="button" class="atalho" data-atalho="pesquisa"><span class="atalho-icone" aria-hidden="true">🔎</span><span class="atalho-nome">Assistente de pesquisas</span><span class="atalho-desc">Pesquisar um assunto no wol.jw.org com a IA</span><span class="atalho-trava" hidden></span></button>
+        </div>
         </div>
         <div class="atalhos-nav" id="atalhosNav">
           <button type="button" class="atalhos-seta" id="atalhosAnt" aria-label="Página anterior dos atalhos">‹</button>
           <button type="button" class="atalhos-ponto" data-pagina="1" aria-label="Atalhos, página 1" aria-current="true"></button>
           <button type="button" class="atalhos-ponto" data-pagina="2" aria-label="Atalhos, página 2"></button>
+          <button type="button" class="atalhos-ponto" data-pagina="3" aria-label="Atalhos, página 3"></button>
           <button type="button" class="atalhos-seta" id="atalhosProx" aria-label="Próxima página dos atalhos">›</button>
         </div>
       </section>
@@ -1788,8 +1793,19 @@
                   <tr><th scope="row"><label for="vozModelo">Leitura em voz</label></th><td><select id="vozModelo"></select><select id="vozVoz" aria-label="Voz da leitura"></select></td></tr>
                   <tr><th scope="row"><label for="iaAudioMotor">Áudio: transcrição</label></th><td><select id="iaAudioMotor"></select><select id="iaAudioGeminiModelo" aria-label="Modelo Gemini da transcrição"></select></td></tr>
                   <tr><th scope="row"><label for="iaAudioModelo">Áudio: resumo</label></th><td><select id="iaAudioModelo"></select></td></tr>
+                  <tr class="modelos-resumo-secao"><th colspan="2" scope="colgroup">🔎 Assistente de pesquisas</th></tr>
+                  <tr><th scope="row"><label for="iaPesquisaModelo">Pesquisa (buscas)</label></th><td><select id="iaPesquisaModelo"></select></td></tr>
+                  <tr><th scope="row"><label for="iaPesquisaWebModelo">Busca na internet</label></th><td><select id="iaPesquisaWebModelo"></select></td></tr>
+                  <tr><th scope="row"><label for="iaPesquisaRespostaModelo">Resposta final</label></th><td><select id="iaPesquisaRespostaModelo"></select><select id="iaPesquisaRespostaEsforco" aria-label="Esforço da resposta final da pesquisa"></select></td></tr>
+                  <tr><th scope="row"><label for="iaPesquisaVideoModelo">Vídeo: transcrição e resumo</label></th><td><select id="iaPesquisaVideoModelo"></select></td></tr>
                 </tbody>
               </table>
+              <div class="pesq-sites-bloco">
+                <label for="iaPesquisaSites" class="pesq-sites-rotulo">🌐 Sites de preferência na busca na internet</label>
+                <p class="hint">Um por linha. A IA dá preferência a eles; o que vier de outros sites também entra, sempre com a fonte identificada, e o usuário decide se leva em conta.</p>
+                <textarea id="iaPesquisaSites" class="pesq-sites" rows="6" spellcheck="false" autocomplete="off"></textarea>
+                <button id="iaPesquisaSitesPadraoBtn" class="secondary pesq-fino" type="button">↩️ Voltar à lista padrão</button>
+              </div>
               <div class="button-row modelos-editar-acoes">
                 <button id="iaTestarBtn" class="secondary" type="button">🧪 Testar o texto</button>
                 <button id="vozExemploBtn" class="secondary" type="button">▶️ Ouvir a voz</button>
@@ -2579,6 +2595,51 @@
           <p class="hint">Guarde também o backup original: restaurar um backup no JW Library substitui todos os dados do aparelho.</p>
         </div>
       </div>
+    </section>
+
+    <!-- Assistente de pesquisas: pesquisa um assunto no wol.jw.org, no Estudo Perspicaz e nos livros do servidor; a IA escreve a resposta só com
+         as fontes encontradas (publicação, página e parágrafo). No fim do <main> para não mudar a contagem das cores dos outros cartões. -->
+    <section id="pesquisaCard" class="card pesq-card screen-pesquisa" aria-labelledby="pesquisaTitulo">
+      <h2 id="pesquisaTitulo" class="pesq-titulo"><span aria-hidden="true">🔎</span> Assistente de pesquisas</h2>
+      <div class="pesq-abas" role="tablist" aria-label="Tipo de pesquisa">
+        <button type="button" role="tab" class="pesq-aba" data-pesq-aba="assunto" aria-selected="true">💡 Assunto</button>
+        <button type="button" role="tab" class="pesq-aba" data-pesq-aba="texto" aria-selected="false" disabled>📖 Texto bíblico <small>em breve</small></button>
+        <button type="button" role="tab" class="pesq-aba" data-pesq-aba="video" aria-selected="false" disabled>🎬 Vídeo <small>em breve</small></button>
+      </div>
+
+      <div class="pesq-bloco" id="pesquisaAssuntoBloco">
+        <label for="pesquisaAssunto" class="pesq-rotulo">O que você quer pesquisar?</label>
+        <textarea id="pesquisaAssunto" class="pesq-campo" rows="2" maxlength="300" spellcheck="true" placeholder="Ex.: como lidar com a ansiedade"></textarea>
+        <label for="pesquisaContexto" class="pesq-rotulo">Contexto ou foco <span class="pesq-opcional">(opcional)</span></label>
+        <textarea id="pesquisaContexto" class="pesq-campo" rows="2" maxlength="800" spellcheck="true" placeholder="Ex.: para animar um irmão que perdeu o emprego"></textarea>
+        <div class="pesq-acoes">
+          <button id="pesquisaBtn" data-codigo-ia="pesquisa" class="pesq-fino pesq-principal" type="button">🔎 Pesquisar</button>
+          <button id="pesquisaCancelarBtn" class="secondary pesq-fino" type="button" hidden>⏹️ Cancelar</button>
+        </div>
+        <p id="pesquisaStatus" class="pesq-status" role="status" aria-live="polite" hidden></p>
+      </div>
+
+      <article id="pesquisaResultado" class="pesq-bloco pesq-resultado" hidden>
+        <h3 id="pesquisaResTitulo" class="pesq-res-titulo"></h3>
+        <p id="pesquisaResMeta" class="pesq-res-meta"></p>
+        <div id="pesquisaResCorpo" class="pesq-res-corpo"></div>
+        <div id="pesquisaResFontesBloco" class="pesq-fontes-bloco">
+          <h4 class="pesq-fontes-titulo">📚 Fontes</h4>
+          <ol id="pesquisaResFontes" class="pesq-fontes"></ol>
+        </div>
+        <div class="pesq-acoes">
+          <button id="pesquisaCopiarBtn" class="secondary pesq-fino" type="button">📋 Copiar</button>
+          <button id="pesquisaSalvarBtn" class="secondary pesq-fino" type="button">💾 Salvar</button>
+          <button id="pesquisaLimparBtn" class="secondary pesq-fino" type="button">🗑️ Limpar</button>
+        </div>
+        <p id="pesquisaResAviso" class="pesq-status" role="status" aria-live="polite" hidden></p>
+      </article>
+
+      <details id="pesquisaSalvasBox" class="pesq-bloco pesq-salvas">
+        <summary>🗂️ Pesquisas salvas <span id="pesquisaSalvasQtd" class="pesq-opcional"></span></summary>
+        <ul id="pesquisaSalvasLista" class="pesq-salvas-lista"></ul>
+        <p id="pesquisaSalvasVazio" class="hint">Nenhuma pesquisa salva neste aparelho.</p>
+      </details>
     </section>
 
   </main>

@@ -471,7 +471,9 @@ export default async function handler(req, res) {
 
     if (acao === "ia-salvar") {
       if (!exigirEscrita(res)) return;
-      return res.status(200).json({ config: await gravarConfigIa(corpo.config) });
+      // Por cima da configuração atual: um campo que a tela não mandou (ex.: app antigo, sem os modelos da pesquisa) não volta ao padrão.
+      const novo = corpo.config && typeof corpo.config === "object" && !Array.isArray(corpo.config) ? corpo.config : {};
+      return res.status(200).json({ config: await gravarConfigIa({ ...(await lerConfigIa()), ...novo }) });
     }
 
     // Teste de um provedor da IA (Anthropic ou Vertex) com o modelo e o esforço dados, sem salvar nada.

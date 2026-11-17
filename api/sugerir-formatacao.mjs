@@ -38,6 +38,8 @@ import {
   lerTesouros,
   lerTextoDiario,
   pesquisarNoWol,
+  pesquisarParagrafosNoWol,
+  paragrafoDaPesquisa,
   referenciasDeTesouros,
   referenciasDoDiscursoCurto,
   semanasDosEstudos,
@@ -1735,6 +1737,191 @@ async function formatarTranscricaoVideo(res, body, P) {
     transcricoesFormatadas.set(chave, { quando: Date.now(), secoes });
     if (transcricoesFormatadas.size > 50) transcricoesFormatadas.delete(transcricoesFormatadas.keys().next().value);
     return res.status(200).json({ titulo: v.titulo, secoes });
+  } catch (e) {
+    return tratarErro(e, res);
+  }
+}
+
+// ---------- Assistente de pesquisas ----------
+// Duas etapas. "pesquisa-coletar": a IA da pesquisa (leve) escolhe as buscas; o servidor pesquisa no wol.jw.org (cada matéria aberta com a busca,
+// para achar o parágrafo, a página e o número dele), nos verbetes do Perspicaz e nos livros do servidor, e devolve as fontes ao app.
+// "pesquisa": a IA da resposta final escreve a pesquisa só com as fontes (que o app manda de volta), citando cada uma por [F1], [F2]…
+// Cada etapa tem o seu modelo, de qualquer família (P.ia.provedorTarefa diz quem atende).
+const SaidaConsultasPesquisa = z.object({ consultas: z.array(z.string()), verbetes: z.array(z.string()), livros: z.string() });
+const SaidaPesquisa = z.object({
+  titulo: z.string(),
+  introducao: z.string(),
+  secoes: z.array(z.object({ titulo: z.string(), emoji: z.string().nullable(), paragrafos: z.array(z.string()) })),
+  conclusao: z.string().nullable(),
+});
+const MAX_FONTES_PESQUISA = 24;
+const nomeDoModelo = (id) => {
+  const m = MODELOS_IA.find((x) => x.id === id);
+  return m ? m.nome.split(":")[0] : id;
+};
+
+async function coletarPesquisa(res, body, P) {
+  const assunto = textoLivre(body.assunto, 300);
+  const contexto = textoLivre(body.contexto, 800);
+  if (assunto.length < 3) return erro(res, 400, "Escreva o assunto da pesquisa.");
+  precarregarFontes({ perspicaz: true, livros: true });
+
+  let consultas = [assunto];
+  let verbetes = [];
+  let consultaLivros = (assunto + " " + contexto).trim();
+  try {
+    const client = criarClienteIa({ maxRetries: 1, timeout: 45_000 }, P.ia.provedorTarefa);
+    const r = await chamarIa(
+      client,
+      P,
+      { max_tokens: 3000, system: P.sistemaPesquisaConsultas, messages: [{ role: "user", content: `ASSUNTO: ${assunto}` + (contexto ? `\nCONTEXTO: ${contexto}` : "") }] },
+      { schema: SaidaConsultasPesquisa, semPensar: true, tarefa: "pesquisa-coletar" }
+    );
+    const o = r.parsed_output;
+    if (o) {
+      const limpas = o.consultas.map((q) => limparLinha(q, 80).replace(/["“”]/g, "")).filter((q) => q.length >= 3);
+      if (limpas.length) consultas = [...new Set(limpas)].slice(0, 4);
+      verbetes = o.verbetes.map((v) => limparLinha(v, 60)).filter(Boolean).slice(0, 3);
+      if (o.livros && o.livros.trim().length >= 3) consultaLivros = limparLinha(o.livros, 200);
+    }
+  } catch (e) {
+    console.error("Pesquisa: buscas da IA indisponíveis; segue com o assunto", e?.status, e?.message);
+  }
+
+  try {
+    // wol.jw.org: os achados de cada busca, intercalados (o 1º de cada, depois o 2º…), sem repetir o documento; até 14 matérias.
+    const listas = await Promise.all(consultas.map((q) => pesquisarParagrafosNoWol(q, 9000, 6).catch(() => [])));
+    const achados = [];
+    const vistos = new Set();
+    for (let i = 0; i < 6; i++) {
+      for (const lista of listas) {
+        const a = lista[i];
+        if (a && !vistos.has(a.docId) && achados.length < 14) {
+          vistos.add(a.docId);
+          achados.push(a);
+        }
+      }
+    }
+    const [lidos, verbetesLidos, trechosLivros] = await Promise.all([
+      Promise.all(achados.map((a) => paragrafoDaPesquisa(a, 9000).then((p) => (p ? { a, p } : null)).catch(() => null))),
+      fontesConfiguradas() ? Promise.all(verbetes.slice(0, 2).map((v) => buscarVerbete([v]).catch(() => null))) : [],
+      fontesConfiguradas() ? buscarNosLivros(consultaLivros, { max: 3, maxChars: 1400 }).catch(() => []) : [],
+    ]);
+
+    const fontes = [];
+    const vistosVerbete = new Set();
+    for (const v of verbetesLidos) {
+      if (!v || vistosVerbete.has(v.verbete)) continue;
+      vistosVerbete.add(v.verbete);
+      fontes.push({ tipo: "perspicaz", publicacao: "Estudo Perspicaz das Escrituras", codigo: `it-${v.volume}`, ano: null, titulo: v.verbete, pagina: null, paragrafos: "", texto: v.trecho.slice(0, 2000), url: "" });
+    }
+    for (const t of trechosLivros) {
+      fontes.push({ tipo: "livro", publicacao: t.livro, codigo: "", ano: null, titulo: "", pagina: null, paragrafos: "", texto: t.trecho, url: "" });
+    }
+    for (const item of lidos) {
+      if (!item) continue;
+      const { a, p } = item;
+      fontes.push({ tipo: "wol", publicacao: a.publicacao, codigo: a.codigo, ano: a.ano, titulo: p.titulo || a.titulo, pagina: p.pagina, paragrafos: p.paragrafos, texto: p.texto, url: p.url, docId: a.docId, pid: p.pid });
+    }
+    fontes.forEach((f, i) => (f.id = "F" + (i + 1)));
+    console.log("Pesquisa (coletar):", JSON.stringify({ modelo: P.ia.modelo, consultas, verbetes, wol: lidos.filter(Boolean).length, perspicaz: vistosVerbete.size, livros: trechosLivros.length }));
+    if (!fontes.length) return erro(res, 404, "Não encontrei matérias sobre esse assunto no wol.jw.org nem nos arquivos. Tente outras palavras.");
+    return res.status(200).json({ consultas, verbetes, fontes });
+  } catch (e) {
+    console.error("Pesquisa: falha ao coletar as fontes", e?.name, e?.message);
+    return erro(res, 502, "Não consegui pesquisar no wol.jw.org agora. Tente de novo em instantes.");
+  }
+}
+
+// As fontes que o app manda de volta (as mesmas da etapa 1, talvez só as marcadas): só campos conhecidos e tamanhos limitados.
+function fontesDaPesquisa(lista) {
+  if (!Array.isArray(lista)) return [];
+  const fontes = [];
+  for (const f of lista.slice(0, MAX_FONTES_PESQUISA)) {
+    if (!f || typeof f !== "object") continue;
+    const id = String(f.id || "");
+    const texto = String(f.texto || "").trim().slice(0, 2200);
+    if (!/^F\d{1,2}$/.test(id) || texto.length < 20 || fontes.some((x) => x.id === id)) continue;
+    const url = typeof f.url === "string" && /^https:\/\/wol\.jw\.org\/[^\s"<>]*$/.test(f.url) ? f.url : "";
+    fontes.push({
+      id,
+      tipo: ["wol", "perspicaz", "livro"].includes(f.tipo) ? f.tipo : "wol",
+      publicacao: limparLinha(String(f.publicacao || ""), 120),
+      codigo: limparLinha(String(f.codigo || ""), 40),
+      ano: Number.isInteger(f.ano) && f.ano > 1800 && f.ano < 2200 ? f.ano : null,
+      titulo: limparLinha(String(f.titulo || ""), 200),
+      pagina: Number.isInteger(f.pagina) && f.pagina > 0 && f.pagina < 5000 ? f.pagina : null,
+      paragrafos: limparLinha(String(f.paragrafos || ""), 20),
+      texto,
+      url,
+    });
+  }
+  return fontes;
+}
+
+function cabecalhoDaFonte(f) {
+  if (f.tipo === "perspicaz") return `${f.publicacao}${f.codigo ? ` (${f.codigo})` : ""}, verbete "${f.titulo}"`;
+  if (f.tipo === "livro") return `Livro "${f.publicacao}"`;
+  return [f.publicacao + (f.codigo ? ` (${f.codigo})` : ""), f.ano ? String(f.ano) : "", f.titulo ? `"${f.titulo}"` : "", f.pagina ? `p. ${f.pagina}` : "", f.paragrafos ? `par. ${f.paragrafos}` : ""].filter(Boolean).join(", ");
+}
+
+async function responderPesquisa(res, body, P) {
+  const assunto = textoLivre(body.assunto, 300);
+  const contexto = textoLivre(body.contexto, 800);
+  if (assunto.length < 3) return erro(res, 400, "Escreva o assunto da pesquisa.");
+  const fontes = fontesDaPesquisa(body.fontes);
+  if (!fontes.length) return erro(res, 400, "Nenhuma fonte foi escolhida para a pesquisa.");
+  const hoje = new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", day: "numeric", month: "long", year: "numeric" });
+  const mensagem =
+    `DATA DA PESQUISA: ${hoje}\nASSUNTO: ${assunto}` +
+    (contexto ? `\nCONTEXTO: ${contexto}` : "") +
+    "\n\nFONTES ENCONTRADAS (use só estas e cite cada informação pelo identificador entre colchetes):\n\n" +
+    fontes.map((f) => `[${f.id}] ${cabecalhoDaFonte(f)}\n${f.texto}`).join("\n\n");
+  try {
+    const client = criarClienteIa({ maxRetries: 0, timeout: 240_000 }, P.ia.provedorTarefa);
+    const inicio = Date.now();
+    const resposta = await chamarIa(
+      client,
+      P,
+      { max_tokens: P.ia.provedorTarefa === "gemini" ? 32000 : 16000, system: P.sistemaPesquisa, messages: [{ role: "user", content: mensagem }] },
+      { schema: SaidaPesquisa, tarefa: "pesquisa" }
+    );
+    if (resposta.stop_reason === "refusal" || !resposta.parsed_output) return erro(res, 502, "A IA não conseguiu escrever a pesquisa. Tente de novo.");
+    const validos = new Set(fontes.map((f) => f.id));
+    const usadas = [];
+    // [F1, F3] e [F1][F3] viram [F1][F3]; identificador que não veio no pedido sai.
+    const limpar = (texto, max) =>
+      String(texto || "")
+        .replace(/\[\s*(F\d{1,2}(?:\s*[,;]\s*F?\d{1,2})*)\s*\]/gi, (todo, lista) =>
+          lista
+            .split(/\s*[,;]\s*/)
+            .map((x) => "F" + x.replace(/\D/g, ""))
+            .filter((x) => validos.has(x))
+            .map((x) => {
+              if (!usadas.includes(x)) usadas.push(x);
+              return `[${x}]`;
+            })
+            .join("")
+        )
+        .replace(/[ \t]+([.,;:!?])/g, "$1")
+        .trim()
+        .slice(0, max);
+    const o = resposta.parsed_output;
+    const resultado = {
+      titulo: limparLinha(o.titulo, 160),
+      introducao: limpar(o.introducao, 3000),
+      secoes: o.secoes
+        .map((s) => ({ titulo: limparLinha(s.titulo, 120), emoji: s.emoji ? limparLinha(s.emoji, 8) : "", paragrafos: s.paragrafos.map((p) => limpar(p, 4000)).filter(Boolean) }))
+        .filter((s) => s.titulo && s.paragrafos.length)
+        .slice(0, 10),
+      conclusao: o.conclusao ? limpar(o.conclusao, 2000) : "",
+      fontesUsadas: usadas,
+      modelo: nomeDoModelo(P.ia.modelo),
+      data: new Date().toISOString(),
+    };
+    console.log("Pesquisa (resposta):", JSON.stringify({ modelo: P.ia.modelo, fontes: fontes.length, usadas: usadas.length, secoes: resultado.secoes.length, segundosIa: Math.round((Date.now() - inicio) / 100) / 10, entrada: resposta.usage?.input_tokens || 0, saida: resposta.usage?.output_tokens || 0 }));
+    if (!resultado.secoes.length) return erro(res, 502, "A IA não conseguiu escrever a pesquisa. Tente de novo.");
+    return res.status(200).json(resultado);
   } catch (e) {
     return tratarErro(e, res);
   }
@@ -4777,7 +4964,7 @@ async function tratarPedido(req, res) {
 
   // Pedidos demorados (esboços e Preparar para dirigir) com pedidoId: a resposta também é guardada ANTES de ser enviada, para o app
   // recuperá-la se a conexão cair no meio (a função só termina depois de enviar, então a gravação não se perde).
-  if (TAREFAS_DE_ESBOCOS.has(tarefa) && idDePedidoValido(body.pedidoId) && pedidosDisponiveis()) {
+  if ((TAREFAS_DE_ESBOCOS.has(tarefa) || tarefa === "pesquisa") && idDePedidoValido(body.pedidoId) && pedidosDisponiveis()) {
     const enviar = res.json.bind(res);
     res.json = (dados) => {
       guardarResultado(body.pedidoId, res.statusCode || 200, dados)
@@ -4873,6 +5060,8 @@ async function tratarPedido(req, res) {
   if (tarefa === "ebc") return responderEbc(res, body, P);
   if (tarefa === "consideracao" || tarefa === "nvc") return responderParte(res, body, P, tarefa);
   if (tarefa === "nvc-transcricao") return formatarTranscricaoVideo(res, body, P);
+  if (tarefa === "pesquisa-coletar") return coletarPesquisa(res, body, P);
+  if (tarefa === "pesquisa") return responderPesquisa(res, body, P);
   if (tarefa === "ebc-dirigente") return perguntasEbcDirigente(res, body, P);
   if (tarefa === "tesouros") return esbocoDeTesouros(res, body, P);
   if (tarefa === "publico") return esbocoDoDiscursoPublico(res, body, P);
