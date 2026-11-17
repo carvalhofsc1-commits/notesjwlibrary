@@ -40,6 +40,10 @@ import {
   pesquisarNoWol,
   pesquisarParagrafosNoWol,
   paragrafoDaPesquisa,
+  topicosDoGuiaPara,
+  entradasDoGuia,
+  faixaDoDocumento,
+  paragrafosPorNumero,
   referenciasDeTesouros,
   referenciasDoDiscursoCurto,
   semanasDosEstudos,
@@ -1754,7 +1758,17 @@ const SaidaPesquisa = z.object({
   secoes: z.array(z.object({ titulo: z.string(), emoji: z.string().nullable(), paragrafos: z.array(z.string()) })),
   conclusao: z.string().nullable(),
 });
-const MAX_FONTES_PESQUISA = 24;
+const MAX_FONTES_PESQUISA = 30;
+// O nome da publicação pela citação do Guia de Pesquisa ("w22.04", "wp23 N.° 1", "g 3/12", "ijwbq artigo 189"…).
+const PUBLICACOES_POR_SIGLA = [
+  [/^wp\d/i, "A Sentinela (Público)"], [/^ws\d/i, "A Sentinela (Fácil de Ler)"], [/^w\d/i, "A Sentinela"], [/^g\d|^g\s/i, "Despertai!"],
+  [/^ijwbq/i, "Perguntas Bíblicas Respondidas (jw.org)"], [/^ijwbv/i, "Textos Bíblicos Explicados (jw.org)"], [/^ijwyp/i, "Os Jovens Perguntam (jw.org)"],
+  [/^ijwfq/i, "Perguntas Frequentes (jw.org)"], [/^ijw/i, "jw.org"], [/^mrt/i, "Artigos do jw.org"], [/^lff/i, "Seja Feliz para Sempre!"], [/^lfb/i, "Lições da Bíblia"],
+  [/^nwt/i, "Tradução do Novo Mundo"], [/^it-\d/i, "Estudo Perspicaz das Escrituras"], [/^cl\b/i, "Achegue-se a Jeová"], [/^cf\b/i, "“Venha Ser Meu Seguidor”"],
+  [/^lv\b/i, "“Continuem no Amor de Deus”"], [/^jy\b/i, "Jesus — o Caminho, a Verdade e a Vida"], [/^rj\b/i, "Volte para Jeová"], [/^yp\d/i, "Os Jovens Perguntam"],
+  [/^bhs\b/i, "O Que a Bíblia Realmente Ensina?"], [/^ia\b/i, "Imite a Sua Fé"], [/^kr\b/i, "O Reino de Deus Já Governa!"], [/^rr\b/i, "A Adoração Pura de Jeová"],
+];
+const publicacaoDoCodigo = (codigo) => (PUBLICACOES_POR_SIGLA.find(([re]) => re.test(codigo)) || [null, "Publicação das Testemunhas de Jeová"])[1];
 const nomeDoModelo = (id) => {
   const m = MODELOS_IA.find((x) => x.id === id);
   return m ? m.nome.split(":")[0] : id;
@@ -1789,10 +1803,48 @@ async function coletarPesquisa(res, body, P) {
   }
 
   try {
+    // Guia de Pesquisa (jw.org): os tópicos do assunto e, deles, até 8 artigos (intercalando os tópicos, na ordem do Guia, no máximo 3 por
+    // subtítulo); cada um lido no wol (a faixa de parágrafos indicada pelo Guia ou, sem ela, o parágrafo com mais palavras da busca).
+    const doGuia = await (async () => {
+      try {
+        const topicos = await topicosDoGuiaPara([assunto, ...consultas], 9000, 2);
+        const listasGuia = await Promise.all(topicos.map((t) => entradasDoGuia(t, 9000).then((e) => e.map((x) => ({ ...x, topico: t.nome }))).catch(() => [])));
+        const escolhidas = [];
+        const porSubtitulo = new Map();
+        const docs = new Set();
+        for (let i = 0; i < 40 && escolhidas.length < 8; i++) {
+          for (const lista of listasGuia) {
+            const e = lista[i];
+            if (!e || docs.has(e.docId) || escolhidas.length >= 8) continue;
+            const chave = e.topico + "|" + e.subtitulo;
+            if ((porSubtitulo.get(chave) || 0) >= 3) continue;
+            porSubtitulo.set(chave, (porSubtitulo.get(chave) || 0) + 1);
+            docs.add(e.docId);
+            escolhidas.push(e);
+          }
+        }
+        const lidas = await Promise.all(
+          escolhidas.map((e) =>
+            (async () => {
+              if (e.de) return faixaDoDocumento(e.docId, e.de, e.ate, 9000);
+              const porNumero = e.parDe ? await paragrafosPorNumero(e.docId, e.parDe, e.parAte, 9000) : null;
+              return porNumero || paragrafoDaPesquisa({ docId: e.docId, consulta: consultas[0] || assunto, proximidade: "par", titulo: e.titulo }, 9000);
+            })()
+              .then((p) => (p ? { e, p } : null))
+              .catch(() => null)
+          )
+        );
+        return { topicos: topicos.map((t) => t.nome), lidas: lidas.filter(Boolean) };
+      } catch (e) {
+        console.error("Pesquisa: Guia de Pesquisa indisponível", e?.message);
+        return { topicos: [], lidas: [] };
+      }
+    })();
+
     // wol.jw.org: os achados de cada busca, intercalados (o 1º de cada, depois o 2º…), sem repetir o documento; até 14 matérias.
     const listas = await Promise.all(consultas.map((q) => pesquisarParagrafosNoWol(q, 9000, 6).catch(() => [])));
     const achados = [];
-    const vistos = new Set();
+    const vistos = new Set(doGuia.lidas.map(({ e }) => e.docId));
     for (let i = 0; i < 6; i++) {
       for (const lista of listas) {
         const a = lista[i];
@@ -1818,13 +1870,17 @@ async function coletarPesquisa(res, body, P) {
     for (const t of trechosLivros) {
       fontes.push({ tipo: "livro", publicacao: t.livro, codigo: "", ano: null, titulo: "", pagina: null, paragrafos: "", texto: t.trecho, url: "" });
     }
+    for (const { e, p } of doGuia.lidas) {
+      const codigo = e.codigo.replace(/\s*(?:p[áa]gs?|pars?)\.\s.*$/i, "").trim(); // "w19.11 pág. 15 par. 7" -> "w19.11" (página e parágrafo vêm à parte)
+      fontes.push({ tipo: "wol", guia: [e.topico, e.subtitulo].filter(Boolean).join(" › "), publicacao: publicacaoDoCodigo(codigo), codigo, ano: e.ano, titulo: p.titulo || e.titulo, pagina: p.pagina, paragrafos: p.paragrafos, texto: p.texto, url: p.url, docId: e.docId, pid: p.pid });
+    }
     for (const item of lidos) {
       if (!item) continue;
       const { a, p } = item;
       fontes.push({ tipo: "wol", publicacao: a.publicacao, codigo: a.codigo, ano: a.ano, titulo: p.titulo || a.titulo, pagina: p.pagina, paragrafos: p.paragrafos, texto: p.texto, url: p.url, docId: a.docId, pid: p.pid });
     }
     fontes.forEach((f, i) => (f.id = "F" + (i + 1)));
-    console.log("Pesquisa (coletar):", JSON.stringify({ modelo: P.ia.modelo, consultas, verbetes, wol: lidos.filter(Boolean).length, perspicaz: vistosVerbete.size, livros: trechosLivros.length }));
+    console.log("Pesquisa (coletar):", JSON.stringify({ modelo: P.ia.modelo, consultas, verbetes, guia: doGuia.topicos, doGuia: doGuia.lidas.length, wol: lidos.filter(Boolean).length, perspicaz: vistosVerbete.size, livros: trechosLivros.length }));
     if (!fontes.length) return erro(res, 404, "Não encontrei matérias sobre esse assunto no wol.jw.org nem nos arquivos. Tente outras palavras.");
     return res.status(200).json({ consultas, verbetes, fontes });
   } catch (e) {
@@ -1852,6 +1908,7 @@ function fontesDaPesquisa(lista) {
       titulo: limparLinha(String(f.titulo || ""), 200),
       pagina: Number.isInteger(f.pagina) && f.pagina > 0 && f.pagina < 5000 ? f.pagina : null,
       paragrafos: limparLinha(String(f.paragrafos || ""), 20),
+      guia: limparLinha(String(f.guia || ""), 160),
       texto,
       url,
     });
@@ -1862,7 +1919,7 @@ function fontesDaPesquisa(lista) {
 function cabecalhoDaFonte(f) {
   if (f.tipo === "perspicaz") return `${f.publicacao}${f.codigo ? ` (${f.codigo})` : ""}, verbete "${f.titulo}"`;
   if (f.tipo === "livro") return `Livro "${f.publicacao}"`;
-  return [f.publicacao + (f.codigo ? ` (${f.codigo})` : ""), f.ano ? String(f.ano) : "", f.titulo ? `"${f.titulo}"` : "", f.pagina ? `p. ${f.pagina}` : "", f.paragrafos ? `par. ${f.paragrafos}` : ""].filter(Boolean).join(", ");
+  return [f.publicacao + (f.codigo ? ` (${f.codigo})` : ""), f.ano ? String(f.ano) : "", f.titulo ? `"${f.titulo}"` : "", f.pagina ? `p. ${f.pagina}` : "", f.paragrafos ? `par. ${f.paragrafos}` : "", f.guia ? `indicada no Guia de Pesquisa (tópico ${f.guia})` : ""].filter(Boolean).join(", ");
 }
 
 async function responderPesquisa(res, body, P) {

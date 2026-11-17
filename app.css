@@ -15822,3 +15822,37 @@ button.pesq-fino {
   overflow: hidden;
   min-height: 0;
 }
+/* Fontes da pesquisa: o nome de um livro do servidor é um botão discreto que mostra o trecho usado; a marca do Guia de Pesquisa vai embaixo. */
+.pesq-fontes .pesq-fonte-livro {
+  min-height: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.pesq-fontes .pesq-fonte-livro::after { content: " ▾"; font-size: .8em; }
+.pesq-fontes .pesq-fonte-livro[aria-expanded="true"]::after { content: " ▴"; }
+.pesq-fonte-texto {
+  margin: 6px 0 4px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  font-size: .84rem;
+  line-height: 1.5;
+}
+.pesq-fonte-texto[hidden] { display: none; }
+.pesq-fonte-texto p { margin: 0 0 6px; }
+.pesq-fonte-texto p:last-child { margin-bottom: 0; }
+.pesq-fonte-guia {
+  display: block;
+  color: var(--muted);
+  font-size: .76rem;
+  margin-top: 1px;
+}

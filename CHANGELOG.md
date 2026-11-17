@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.12
+
+- Assistente de pesquisas: o Guia de Pesquisa para Testemunhas de Jeová (o atualizado, do jw.org) entrou como fonte primária. O servidor acha os tópicos do assunto (até 2, ex.: "Ansiedade", "Perdão (perdoar outros)") e lê no wol os artigos que o Guia indica (até 8, intercalando os tópicos, na ordem do Guia, no máximo 3 por subtítulo): a faixa de parágrafos que o Guia marca, os parágrafos pelo número da citação ("pág. 15 par. 7") ou, sem isso, o parágrafo com mais palavras da busca. Fora os vídeos, as ligações "Veja", a apostila e as publicações de antes de 1990. Nas fontes, essas matérias levam a marca "📑 Indicada no Guia de Pesquisa: tópico › subtítulo", e a IA dá preferência a elas. Lista de tópicos e páginas guardadas por 24 h na instância.
+- Assistente de pesquisas: nas fontes, o nome de um livro do servidor (Estudo Perspicaz, Princípios Bíblicos, Adoração Pura, Reino de Deus) abre e fecha o trecho inteiro usado na pesquisa; esse trecho fica guardado com a pesquisa salva (as matérias do wol continuam só com o link).
+
 ## 6.10.11
 
 - Assistente de pesquisas: durante a pesquisa, além do ícone girando, um contador de tempo (⏱️ 0:42) conta desde o toque em Pesquisar, nas duas etapas.

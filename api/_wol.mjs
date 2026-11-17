@@ -2300,3 +2300,132 @@ export async function paragrafoDaPesquisa(achado, timeoutMs, maxCaracteres = 160
     url: `${url}#h=${primeiroPid}:0-${fimDestaque}:0`,
   };
 }
+
+// ---------- Guia de Pesquisa para Testemunhas de Jeová (jw.org) ----------
+// O Guia de Pesquisa atualizado fica no jw.org (o do wol, edição 2019, parou no tempo): uma página por tópico ("Ansiedade", "Perdão (perdoar
+// outros)"…), com subtítulos ("Como lidar", "Informações para jovens"…) e, em cada um, os artigos recomendados, dos mais novos para os mais
+// antigos. Cada artigo traz o número do documento no wol (data-page-id="mid2022360" = /pt/wol/d/r5/lp-t/2022360), às vezes a faixa exata de
+// parágrafos (data-highlightrange="p43-p48") e a citação ("w22.04 págs. 2-3"). O servidor acha os tópicos do assunto e lê no wol os parágrafos
+// de cada artigo indicado: são as fontes mais certeiras da pesquisa.
+const BASE_JW = "https://www.jw.org";
+const CAMINHO_GUIA = "/pt/biblioteca/indices/guia-de-pesquisa/";
+let topicosGuia = null; // { quando, lista: [{ nome, url, palavras }] }
+const paginasGuia = new Map(); // url do tópico -> { quando, entradas }
+const VALIDADE_GUIA_MS = 24 * 3600 * 1000;
+const PALAVRAS_FRACAS = new Set("como para sobre entre quando onde porque pelos pelas pela pelo dos das nos nas uma umas uns com sem que mais muito outros outras".split(" "));
+
+const raizes = (texto) =>
+  semAcento(String(texto || ""))
+    .replace(/[^a-z0-9]+/g, " ")
+    .split(" ")
+    .filter((w) => w.length >= 4 && !PALAVRAS_FRACAS.has(w))
+    .map((w) => w.slice(0, 6));
+
+export async function topicosDoGuia(timeoutMs) {
+  if (topicosGuia && Date.now() - topicosGuia.quando < VALIDADE_GUIA_MS) return topicosGuia.lista;
+  const html = await baixar(BASE_JW + CAMINHO_GUIA, timeoutMs);
+  const vistos = new Set();
+  const lista = [];
+  for (const m of html.matchAll(/href="(\/pt\/biblioteca\/indices\/guia-de-pesquisa\/[^"#?]+?)\/?"[^>]*>\s*([^<]+?)\s*<\/a>/g)) {
+    const url = BASE_JW + m[1] + "/";
+    const nome = textoDe(m[2]);
+    if (!nome || vistos.has(url) || url === BASE_JW + CAMINHO_GUIA) continue;
+    vistos.add(url);
+    lista.push({ nome, url, palavras: [...new Set(raizes(nome))] });
+  }
+  if (lista.length) topicosGuia = { quando: Date.now(), lista };
+  return lista;
+}
+
+// Os tópicos do Guia que combinam com o assunto e as buscas (até "maximo"): os que têm todas as palavras na consulta vêm primeiro (os de mais
+// palavras, mais específicos, antes); depois os que têm pelo menos metade.
+export async function topicosDoGuiaPara(textos, timeoutMs, maximo = 2) {
+  const consulta = new Set(textos.flatMap(raizes));
+  if (!consulta.size) return [];
+  const lista = await topicosDoGuia(timeoutMs);
+  return lista
+    .map((t) => {
+      const achadas = t.palavras.filter((w) => consulta.has(w)).length;
+      return { t, achadas, parte: t.palavras.length ? achadas / t.palavras.length : 0 };
+    })
+    .filter((x) => x.achadas && x.parte >= 0.5)
+    .sort((a, b) => b.parte - a.parte || b.achadas - a.achadas || a.t.nome.length - b.t.nome.length)
+    .slice(0, maximo)
+    .map((x) => ({ nome: x.t.nome, url: x.t.url }));
+}
+
+// Os artigos de um tópico, na ordem da página: [{ subtitulo, titulo, docId, de, ate, codigo, ano }]. Ficam fora os vídeos (sem documento no
+// wol), a apostila Vida e Ministério e as publicações de antes de 1990.
+export async function entradasDoGuia(topico, timeoutMs) {
+  const guardado = paginasGuia.get(topico.url);
+  if (guardado && Date.now() - guardado.quando < VALIDADE_GUIA_MS) return guardado.entradas;
+  const html = await baixar(topico.url, timeoutMs);
+  const entradas = [];
+  let subtitulo = "";
+  const marcas = /<summary\b[^>]*>([\s\S]*?)<\/summary>|<a\b([^>]*\bdata-page-id="mid(\d+)"[^>]*)>([\s\S]*?)<\/a>/g;
+  for (const m of html.matchAll(marcas)) {
+    if (m[1] !== undefined) {
+      subtitulo = textoDe(m[1]);
+      continue;
+    }
+    // A citação (<em>) vem logo depois do link, antes do próximo link (senão seria a do artigo seguinte).
+    let depois = html.slice(m.index + m[0].length, m.index + m[0].length + 700);
+    const proximoLink = depois.search(/<a\b/);
+    if (proximoLink >= 0) depois = depois.slice(0, proximoLink);
+    const codigo = textoDe((depois.match(/<em>([\s\S]*?)<\/em>/) || [])[1] || "");
+    const faixa = m[2].match(/data-highlightrange=['"]p(\d+)-p(\d+)['"]/);
+    // Os parágrafos pelo número, quando a citação os traz ("w19.11 pág. 15 par. 7", "cl cap. 21 pars. 6-8").
+    const pars = codigo.match(/\bpars?\.\s*(\d+)(?:\s*[-–]\s*(\d+))?/i);
+    const aa = (codigo.match(/^[a-z-]+?(\d{2})\b/i) || codigo.match(/^g\s+\d{1,2}\/(\d{2})\b/i) || [])[1];
+    const ano = aa ? (Number(aa) > 50 ? 1900 : 2000) + Number(aa) : null;
+    // Sem citação = "Veja: …" (ligação para outro tópico do Guia), não é artigo.
+    if (!codigo || /^mwb/i.test(codigo) || (ano && ano < 1990)) continue;
+    entradas.push({
+      subtitulo,
+      titulo: textoDe(m[4]),
+      docId: m[3],
+      de: faixa ? Number(faixa[1]) : null,
+      ate: faixa ? Number(faixa[2]) : null,
+      parDe: pars ? Number(pars[1]) : null,
+      parAte: pars ? Number(pars[2] || pars[1]) : null,
+      codigo,
+      ano,
+    });
+  }
+  paginasGuia.set(topico.url, { quando: Date.now(), entradas });
+  if (paginasGuia.size > 80) paginasGuia.delete(paginasGuia.keys().next().value);
+  return entradas;
+}
+
+// Os parágrafos de número parDe..parAte (data-pnum) de um documento do wol, como faixaDoDocumento. null = não achou esses números.
+export async function paragrafosPorNumero(docId, parDe, parAte, timeoutMs) {
+  const html = await documentoDaPesquisa(`${BASE}/pt/wol/d/r5/lp-t/${docId}`, timeoutMs);
+  const pids = [...html.matchAll(/<p\b[^>]*\bdata-pid="(\d+)"[^>]*>(?:(?!<\/p>)[\s\S])*?data-pnum="(\d+)"/g)]
+    .filter((m) => Number(m[2]) >= parDe && Number(m[2]) <= parAte)
+    .map((m) => Number(m[1]));
+  if (!pids.length) return null;
+  return faixaDoDocumento(docId, Math.min(...pids), Math.max(...pids), timeoutMs, 2200);
+}
+
+// Os parágrafos de uma faixa (de..ate) de um documento do wol: { titulo, pagina, paragrafos, pid, texto, url }, como paragrafoDaPesquisa.
+export async function faixaDoDocumento(docId, de, ate, timeoutMs, maxCaracteres = 1600) {
+  const url = `${BASE}/pt/wol/d/r5/lp-t/${docId}`;
+  const html = await documentoDaPesquisa(url, timeoutMs);
+  const titulo = textoDe((html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/) || [])[1] || "").replace(/­/g, "");
+  const escolhidos = [...html.matchAll(/<(p|h2|h3|h4)\b([^>]*\bdata-pid="(\d+)"[^>]*)>([\s\S]*?)<\/\1>/g)]
+    .map((m) => ({ pid: Number(m[3]), atributos: m[2], conteudo: m[4], posicao: m.index }))
+    .filter((e) => e.pid >= de && e.pid <= ate && !/\bclass="qu\b/.test(e.atributos));
+  if (!escolhidos.length) return null;
+  const marcasPagina = [...html.slice(0, escolhidos[0].posicao + 300).matchAll(/class="pageNum"[^>]*data-no="(\d+)"/g)];
+  const numeros = escolhidos.map((e) => (e.conteudo.match(/data-pnum="(\d+)"/) || [])[1]).filter(Boolean);
+  const texto = escolhidos.map((e) => textoDe(e.conteudo).replace(/­/g, "")).filter(Boolean).join("\n").slice(0, maxCaracteres);
+  if (!texto) return null;
+  return {
+    titulo,
+    pagina: marcasPagina.length ? Number(marcasPagina[marcasPagina.length - 1][1]) : null,
+    paragrafos: numeros.length ? (numeros.length > 1 ? `${numeros[0]}-${numeros[numeros.length - 1]}` : numeros[0]) : "",
+    pid: escolhidos[0].pid,
+    texto,
+    url: `${url}#h=${de}:0-${ate + 1}:0`,
+  };
+}

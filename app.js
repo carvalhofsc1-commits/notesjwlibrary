@@ -7876,7 +7876,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.11'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.12'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -31210,7 +31210,27 @@ function saveTemplatesToStorage() {
           const d = descricaoDaFonte(f);
           const li = document.createElement('li');
           li.id = 'pesqFonte' + (i + 1);
-          li.appendChild(document.createTextNode(d.texto));
+          // Livros do servidor (Perspicaz, Princípios, Adoração Pura, Reino de Deus): tocar no nome mostra o trecho inteiro usado na pesquisa.
+          if (f.tipo !== 'wol' && f.texto) {
+            const nome = document.createElement('button');
+            nome.type = 'button';
+            nome.className = 'pesq-fonte-livro';
+            nome.setAttribute('aria-expanded', 'false');
+            nome.textContent = d.texto;
+            const conteudo = document.createElement('div');
+            conteudo.className = 'pesq-fonte-texto';
+            conteudo.hidden = true;
+            String(f.texto).split(/\n+/).map(t => t.trim()).filter(Boolean).forEach(t => {
+              const p = document.createElement('p');
+              p.textContent = t;
+              conteudo.appendChild(p);
+            });
+            nome.addEventListener('click', () => {
+              conteudo.hidden = !conteudo.hidden;
+              nome.setAttribute('aria-expanded', String(!conteudo.hidden));
+            });
+            li.append(nome, conteudo);
+          } else li.appendChild(document.createTextNode(d.texto));
           if (d.wol || d.jwl) {
             const links = document.createElement('span');
             links.className = 'pesq-fonte-links';
@@ -31222,7 +31242,13 @@ function saveTemplatesToStorage() {
               if (/^https:/.test(href)) { a.target = '_blank'; a.rel = 'noopener noreferrer'; }
               links.appendChild(a);
             });
-            li.appendChild(links);
+            li.insertBefore(links, li.querySelector('.pesq-fonte-texto'));
+          }
+          if (f.guia) {
+            const guia = document.createElement('small');
+            guia.className = 'pesq-fonte-guia';
+            guia.textContent = '📑 Indicada no Guia de Pesquisa: ' + f.guia;
+            li.appendChild(guia);
           }
           lista.appendChild(li);
         });
@@ -31274,9 +31300,10 @@ function saveTemplatesToStorage() {
           r = await postStudy({ tarefa: 'pesquisa', codigo: codigoAcessoSalvo(), assunto, contexto, fontes }, 285000);
           if (meu !== pedido) return;
           if (!r.ok) return dizer(statusEl, erroDe(r, 'A IA não conseguiu escrever a pesquisa. Tente de novo.'), { aviso: true });
-          // As fontes guardadas com a pesquisa: só as citadas, sem o trecho (o texto das matérias não precisa ficar no aparelho).
+          // As fontes guardadas com a pesquisa: só as citadas. O trecho fica só nas dos livros do servidor (para mostrar ao tocar no nome); as
+          // matérias do wol têm o link.
           const usadas = new Set(r.data.fontesUsadas || []);
-          atual = { id: null, assunto, contexto, resultado: r.data, fontes: fontes.filter(f => usadas.has(f.id)).map(({ texto, ...resto }) => resto) };
+          atual = { id: null, assunto, contexto, resultado: r.data, fontes: fontes.filter(f => usadas.has(f.id)).map(f => (f.tipo === 'wol' ? (({ texto, ...resto }) => resto)(f) : f)) };
           mostrar(atual);
           dizer(statusEl, '');
           requestAnimationFrame(() => resultadoEl.scrollIntoView({ behavior: 'smooth', block: 'start' }));
