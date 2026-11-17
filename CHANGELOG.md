@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.93
+
+- Formatar → Outras opções → Modelos prontos e personalizados: tocar num modelo sempre o insere no texto original, na posição do cursor. Antes, se o campo tinha perdido o foco (no celular, sempre perde ao tocar no botão), o toque abria o modelo para edição em Ajustes.
+
 ## 6.9.92
 
 - Barra de baixo (iPhone): removida a correção para cima da 6.9.89. Com o topo 0 e a área visível informada com 826 (a tela mostrava os 894), a barra era puxada 68 para cima e ficava travada no alto, com conteúdo embaixo dela. Agora a barra só desce, como na 6.9.80.

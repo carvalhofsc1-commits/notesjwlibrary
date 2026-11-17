@@ -7839,7 +7839,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.92'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.93'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -10034,30 +10034,13 @@ function saveTemplatesToStorage() {
         btn.querySelector('.template-card-content').textContent = tpl.content;
         btn.querySelector('.category-chip').textContent = getTemplateCategoryList(tpl).join(' • ');
         btn.addEventListener('mousedown', event => event.preventDefault());
-        btn.title = (tpl.name || 'Modelo') + ' — clique para inserir no texto original, ou carregar para edição se o texto original não estiver em uso';
+        btn.title = (tpl.name || 'Modelo') + ' — toque para inserir no texto original (no ponto do cursor)';
+        // Sempre insere no texto original: o campo guarda a posição do cursor mesmo sem o foco (no celular, tocar no botão tira o foco do campo,
+        // e antes o toque abria o modelo para edição em Ajustes). Para editar modelos: Ajustes → editor de modelos.
         btn.addEventListener('click', () => {
-          if (document.activeElement === input) {
-            applyTemplateToInput(tpl);
-            templateStatus.className = 'ok';
-            templateStatus.textContent = 'Modelo inserido no texto original.';
-            return;
-          }
-
-          const editorSubsection = document.getElementById('editorSubsection');
-          // Abre toda a cadeia de seções até o editor (ele fica em Ajustes, dentro de "Configurações gerais do app").
-          showScreen('ajustes', { keepScroll: true });
-          if (editorSubsection) {
-            for (let box = editorSubsection.parentElement.closest('details'); box; box = box.parentElement.closest('details')) box.open = true;
-          }
-          if (editorSubsection) editorSubsection.open = true;
-          if (editorSubsection) editorSubsection.scrollIntoView({ block: 'start' });
-
-          templateModoEdicao = 'alterar';
-          templateSelect.value = tpl.id;
-          loadSelectedTemplateIntoEditor();
-
+          applyTemplateToInput(tpl);
           templateStatus.className = 'ok';
-          templateStatus.textContent = 'Modelo carregado para edição.';
+          templateStatus.textContent = 'Modelo inserido no texto original.';
         });
         templatesBox.appendChild(btn);
       });
