@@ -2651,11 +2651,27 @@
       </div>
 
       <div class="pesq-acao-bloco">
+        <label class="pesq-opcao"><input type="checkbox" id="pesquisaEscolherFontes"> Quero escolher as fontes antes da resposta</label>
         <div class="pesq-acoes">
           <button id="pesquisaBtn" data-codigo-ia="pesquisa" class="pesq-fino pesq-principal" type="button">🔎 Pesquisar</button>
           <button id="pesquisaCancelarBtn" class="secondary pesq-fino" type="button" hidden>⏹️ Cancelar</button>
         </div>
         <p id="pesquisaStatus" class="pesq-status" role="status" aria-live="polite" hidden></p>
+      </div>
+
+      <!-- Escolha das fontes (só com "Quero escolher as fontes" marcado): as fontes encontradas, cada uma com caixinha, marca e trecho. -->
+      <div id="pesquisaEscolhaBloco" class="pesq-bloco pesq-escolha" hidden>
+        <h3 class="pesq-escolha-titulo">📚 Fontes encontradas <span id="pesquisaEscolhaQtd" class="pesq-opcional"></span></h3>
+        <p class="pesq-dica">Desmarque o que achar menos relevante; a resposta usa só as fontes marcadas.</p>
+        <div class="pesq-acoes pesq-acoes-res">
+          <button id="pesquisaEscolhaTodasBtn" class="secondary pesq-fino" type="button">☑️ Marcar todas</button>
+          <button id="pesquisaEscolhaNenhumaBtn" class="secondary pesq-fino" type="button">⬜ Desmarcar todas</button>
+        </div>
+        <ul id="pesquisaEscolhaLista" class="pesq-escolha-lista"></ul>
+        <div class="pesq-acoes pesq-acoes-res">
+          <button id="pesquisaEscolhaElaborarBtn" class="pesq-fino" type="button">✍️ Elaborar a resposta</button>
+          <button id="pesquisaEscolhaCancelarBtn" class="secondary pesq-fino pesq-icone" type="button" title="Cancelar a pesquisa" aria-label="Cancelar a pesquisa">✕</button>
+        </div>
       </div>
 
       <article id="pesquisaResultado" class="pesq-bloco pesq-resultado" hidden>

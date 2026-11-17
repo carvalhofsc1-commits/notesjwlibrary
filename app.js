@@ -7876,7 +7876,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.15'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.16'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -31576,32 +31576,152 @@ function saveTemplatesToStorage() {
           ? { modo: 'texto', referencia: biblico.referencia, livro: biblico.livro, capitulo: biblico.capitulo, versos: biblico.versos, textoBiblico: textoCorrido(biblico), palavras }
           : {};
         const meu = ++pedido;
+        fecharEscolha();
         ocupado(true);
         relogioLigar();
+        let esperaEscolha = false;
         try {
           andamento(biblico ? 'Lendo as notas de estudo e as publicações sobre ' + biblico.referencia + '…' : 'Procurando no wol.jw.org, no Estudo Perspicaz e nos livros…');
-          let r = await postStudy(Object.assign({ tarefa: 'pesquisa-coletar', codigo: codigoAcessoSalvo(), assunto, contexto }, extra), 90000);
+          const r = await postStudy(Object.assign({ tarefa: 'pesquisa-coletar', codigo: codigoAcessoSalvo(), assunto, contexto }, extra), 90000);
           if (meu !== pedido) return;
           if (!r.ok) return dizer(statusEl, erroDe(r, 'Não consegui pesquisar agora. Tente de novo.'), { aviso: true });
           const fontes = Array.isArray(r.data.fontes) ? r.data.fontes : [];
-          andamento('Encontrei ' + fontes.length + (fontes.length === 1 ? ' fonte' : ' fontes') + '. A IA está escrevendo a resposta… (pode levar até 2 minutos)');
-          r = await postStudy(Object.assign({ tarefa: 'pesquisa', codigo: codigoAcessoSalvo(), assunto, contexto, fontes }, extra), 285000);
-          if (meu !== pedido) return;
-          if (!r.ok) return dizer(statusEl, erroDe(r, 'A IA não conseguiu escrever a pesquisa. Tente de novo.'), { aviso: true });
-          // As fontes guardadas com a pesquisa: só as citadas. O trecho fica só nas dos livros do servidor (para mostrar ao tocar no nome); as
-          // matérias do wol têm o link.
-          const usadas = new Set(r.data.fontesUsadas || []);
-          atual = { id: null, assunto, contexto, resultado: r.data, fontes: fontes.filter(f => usadas.has(f.id)).map(f => (f.tipo === 'wol' ? (({ texto, ...resto }) => resto)(f) : f)) };
-          if (biblico) atual.biblico = { referencia: biblico.referencia, versiculos: biblico.versiculos, livro: biblico.livro, capitulo: biblico.capitulo, versos: biblico.versos, palavras };
-          mostrar(atual);
-          dizer(statusEl, '');
-          requestAnimationFrame(() => resultadoEl.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+          const ctx = { meu, assunto, contexto, extra, fontes, biblico, palavras };
+          // "Quero escolher as fontes": mostra a lista com as caixinhas e espera o toque em "Elaborar a resposta".
+          if (escolherFontes.checked && fontes.length) {
+            esperaEscolha = true;
+            mostrarEscolha(ctx);
+            dizer(statusEl, '');
+            return;
+          }
+          await escreverResposta(ctx, fontes);
         } catch (e) {
           if (meu === pedido) dizer(statusEl, 'Sem conexão com o servidor. Confira a internet e tente de novo.', { aviso: true });
         } finally {
-          if (meu === pedido) { ocupado(false); relogioDesligar(); }
+          if (meu === pedido || esperaEscolha) { ocupado(false); relogioDesligar(); }
         }
       }
+
+      // Etapa 2: a IA da resposta final escreve a pesquisa com as fontes (todas, ou só as marcadas pelo usuário).
+      async function escreverResposta(ctx, fontes) {
+        const { meu, assunto, contexto, extra, biblico, palavras } = ctx;
+        andamento((fontes.length === 1 ? '1 fonte' : fontes.length + ' fontes') + '. A IA está escrevendo a resposta… (pode levar até 2 minutos)');
+        const r = await postStudy(Object.assign({ tarefa: 'pesquisa', codigo: codigoAcessoSalvo(), assunto, contexto, fontes }, extra), 285000);
+        if (meu !== pedido) return;
+        if (!r.ok) return dizer(statusEl, erroDe(r, 'A IA não conseguiu escrever a pesquisa. Tente de novo.'), { aviso: true });
+        // As fontes guardadas com a pesquisa: só as citadas. O trecho fica só nas dos livros do servidor (para mostrar ao tocar no nome); as
+        // matérias do wol têm o link.
+        const usadas = new Set(r.data.fontesUsadas || []);
+        atual = { id: null, assunto, contexto, resultado: r.data, fontes: fontes.filter(f => usadas.has(f.id)).map(f => (f.tipo === 'wol' ? (({ texto, ...resto }) => resto)(f) : f)) };
+        if (biblico) atual.biblico = { referencia: biblico.referencia, versiculos: biblico.versiculos, livro: biblico.livro, capitulo: biblico.capitulo, versos: biblico.versos, palavras };
+        mostrar(atual);
+        dizer(statusEl, '');
+        requestAnimationFrame(() => resultadoEl.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+      }
+
+      // ---------- Escolha das fontes pelo usuário (opção "Quero escolher as fontes", desmarcada por padrão) ----------
+      // Cada fonte encontrada aparece com a publicação, a marca do Guia ou do Índice, um trecho (tocar abre o trecho inteiro) e uma caixinha
+      // marcada; o usuário desmarca o que achar menos relevante e toca em "Elaborar a resposta".
+      const escolherFontes = $('pesquisaEscolherFontes');
+      try { escolherFontes.checked = localStorage.getItem('ns-pesq-escolher') === '1'; } catch (e) { /* sem armazenamento */ }
+      escolherFontes.addEventListener('change', () => { try { localStorage.setItem('ns-pesq-escolher', escolherFontes.checked ? '1' : '0'); } catch (e) { /* sem armazenamento */ } });
+      let escolha = null; // o contexto da pesquisa que espera a escolha
+      function fecharEscolha() {
+        escolha = null;
+        $('pesquisaEscolhaBloco').hidden = true;
+        $('pesquisaEscolhaLista').textContent = '';
+      }
+      function contarEscolha() {
+        const n = $('pesquisaEscolhaLista').querySelectorAll('input:checked').length;
+        $('pesquisaEscolhaElaborarBtn').textContent = '✍️ Elaborar a resposta (' + n + (n === 1 ? ' fonte)' : ' fontes)');
+        $('pesquisaEscolhaElaborarBtn').disabled = !n;
+      }
+      function mostrarEscolha(ctx) {
+        escolha = ctx;
+        const lista = $('pesquisaEscolhaLista');
+        lista.textContent = '';
+        ctx.fontes.forEach(f => {
+          const d = descricaoDaFonte(f);
+          const li = document.createElement('li');
+          const rotulo = document.createElement('label');
+          rotulo.className = 'pesq-escolha-item';
+          const caixa = document.createElement('input');
+          caixa.type = 'checkbox';
+          caixa.checked = true;
+          caixa.value = f.id;
+          caixa.addEventListener('change', contarEscolha);
+          const corpo = document.createElement('span');
+          corpo.className = 'pesq-escolha-corpo';
+          const nome = document.createElement('strong');
+          nome.textContent = d.texto;
+          corpo.appendChild(nome);
+          const marca = f.notas ? '📖 Notas de estudo do versículo' : f.guia ? '📑 Guia de Pesquisa: ' + f.guia : f.indice ? '🗂️ Índice das Publicações: ' + f.indice : f.tipo === 'wol' ? '🔎 Pesquisa no wol.jw.org' : '📚 Livro do servidor';
+          const m = document.createElement('small');
+          m.className = 'pesq-fonte-guia';
+          m.textContent = marca;
+          corpo.appendChild(m);
+          rotulo.append(caixa, corpo);
+          li.appendChild(rotulo);
+          // O trecho: as primeiras linhas; "ver tudo" mostra o trecho inteiro que vai para a IA.
+          const trecho = String(f.texto || '').replace(/\s+/g, ' ').trim();
+          if (trecho) {
+            const t = document.createElement('p');
+            t.className = 'pesq-escolha-trecho';
+            const curto = trecho.length > 240 ? trecho.slice(0, trecho.lastIndexOf(' ', 240)) + '…' : trecho;
+            t.textContent = curto;
+            li.appendChild(t);
+            if (curto !== trecho) {
+              const mais = document.createElement('button');
+              mais.type = 'button';
+              mais.className = 'pesq-escolha-mais';
+              mais.textContent = 'ver tudo';
+              mais.addEventListener('click', () => {
+                const aberto = mais.textContent === 'ver menos';
+                t.textContent = aberto ? curto : trecho;
+                mais.textContent = aberto ? 'ver tudo' : 'ver menos';
+              });
+              li.appendChild(mais);
+            }
+          }
+          if (d.wol) {
+            const a = document.createElement('a');
+            a.href = d.wol;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.className = 'pesq-escolha-link';
+            a.textContent = '🔗 wol';
+            li.appendChild(a);
+          }
+          lista.appendChild(li);
+        });
+        $('pesquisaEscolhaQtd').textContent = '(' + ctx.fontes.length + ')';
+        contarEscolha();
+        $('pesquisaEscolhaBloco').hidden = false;
+        requestAnimationFrame(() => $('pesquisaEscolhaBloco').scrollIntoView({ behavior: 'smooth', block: 'start' }));
+      }
+      ['Todas', 'Nenhuma'].forEach(qual => $('pesquisaEscolha' + qual + 'Btn').addEventListener('click', () => {
+        $('pesquisaEscolhaLista').querySelectorAll('input').forEach(c => { c.checked = qual === 'Todas'; });
+        contarEscolha();
+      }));
+      $('pesquisaEscolhaElaborarBtn').addEventListener('click', async () => {
+        if (!escolha) return;
+        const marcadas = new Set([...$('pesquisaEscolhaLista').querySelectorAll('input:checked')].map(c => c.value));
+        const fontes = escolha.fontes.filter(f => marcadas.has(f.id));
+        if (!fontes.length) return;
+        const ctx = Object.assign({}, escolha, { meu: ++pedido });
+        fecharEscolha();
+        ocupado(true);
+        relogioLigar();
+        try {
+          await escreverResposta(ctx, fontes);
+        } catch (e) {
+          if (ctx.meu === pedido) dizer(statusEl, 'Sem conexão com o servidor. Confira a internet e tente de novo.', { aviso: true });
+        } finally {
+          if (ctx.meu === pedido) { ocupado(false); relogioDesligar(); }
+        }
+      });
+      $('pesquisaEscolhaCancelarBtn').addEventListener('click', () => { fecharEscolha(); dizer(statusEl, 'Pesquisa cancelada.'); });
+
       botao.addEventListener('click', pesquisar);
       cancelarBtn.addEventListener('click', () => {
         pedido++;

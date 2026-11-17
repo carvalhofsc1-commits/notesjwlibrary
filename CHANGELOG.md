@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.16
+
+- Assistente de pesquisas, fase 4: opção "Quero escolher as fontes antes da resposta" (sobre o botão Pesquisar, desmarcada por padrão e lembrada neste aparelho). Marcada, depois da busca aparece o card "📚 Fontes encontradas": cada fonte com uma caixinha marcada, a publicação, a marca de onde veio (notas de estudo do versículo, Guia de Pesquisa, Índice das Publicações, pesquisa no wol ou livro do servidor), as primeiras linhas do trecho ("ver tudo" mostra o trecho inteiro que vai para a IA) e o link do wol; Marcar todas / Desmarcar todas; "✍️ Elaborar a resposta (N fontes)" manda à IA só as marcadas; ✕ cancela. Desmarcada, a IA decide sozinha com todas as fontes, como antes.
+
 ## 6.10.15
 
 - Assistente de pesquisas, fase 3: a aba 📖 Texto bíblico está pronta. O texto é escolhido como nas Anotações: digita-se o livro (com sugestões) ou toca-se em 📚 para escolher livro › capítulo › versículos (toque escolhe ou tira; toque longo faz o trecho corrido); 👁️ mostra o texto (Tradução do Novo Mundo, com os números dos versículos) e o botão 📖 JW Library abre o trecho no app; "Usar este texto" fixa o texto no card (✏️ Trocar o texto volta à escolha). Depois, até 3 palavras ou frases-chave (o campo seguinte aparece quando o anterior é preenchido) e o assunto ou contexto, ambos opcionais. Busca do texto com o código de pesquisa (tarefa pesquisa-versiculos, sem IA).

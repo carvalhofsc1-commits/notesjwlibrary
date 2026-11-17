@@ -15906,3 +15906,29 @@ a.pesq-link-botao {
 .pesq-acao-bloco .pesq-acoes { margin-top: 0; }
 .pesq-res-corpo .pesq-res-texto { margin: 0 0 12px; }
 .pesq-res-corpo .pesq-res-texto p { margin: 0 0 4px; }
+/* Escolha das fontes da pesquisa: a opção sobre o botão Pesquisar e a lista com caixinhas, marca e trecho de cada fonte. */
+.pesq-opcao { display: flex; align-items: center; gap: 8px; font-size: .88rem; margin: 0 0 8px; cursor: pointer; }
+.pesq-opcao input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
+.pesq-escolha { background: var(--card); }
+.pesq-escolha-titulo { margin: 0 0 4px; font-size: 1rem; }
+.pesq-escolha-lista { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
+.pesq-escolha-lista > li { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+.pesq-escolha-item { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+.pesq-escolha-item input { flex: none; width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--accent); }
+.pesq-escolha-corpo { display: grid; gap: 1px; font-size: .86rem; line-height: 1.35; min-width: 0; }
+.pesq-escolha-trecho { margin: 6px 0 0 28px; font-size: .82rem; line-height: 1.45; color: var(--text); opacity: .85; }
+.pesq-escolha-mais, .pesq-escolha-link {
+  margin: 4px 12px 0 28px;
+  min-height: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--accent);
+  font: inherit;
+  font-size: .8rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+.pesq-escolha-mais + .pesq-escolha-link { margin-left: 0; }
+.pesq-escolha .pesq-acoes { margin-top: 10px; }
