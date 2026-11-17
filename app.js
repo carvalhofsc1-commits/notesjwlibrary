@@ -7839,7 +7839,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.97'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.98'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -16979,10 +16979,6 @@ function saveTemplatesToStorage() {
         jwlBotaoDoDocumento(consideracaoTitulo, dados.url);
         consideracaoInfo.append(dados.partes.map(p => p.texto).join(' '));
         imagensRender(consideracaoInfo, dados.imagens, 'Imagem da parte');
-        const exec = document.createElement('p');
-        exec.className = 'consideracao-pergunta';
-        exec.textContent = '📋 A IA executa a instrução da parte (com a matéria citada) e responde às perguntas:';
-        consideracaoPerguntasEl.appendChild(exec);
         let n = 0;
         dados.partes.forEach(p => (p.perguntas || []).forEach(q => {
           const linha = document.createElement('p');
@@ -25159,7 +25155,7 @@ function saveTemplatesToStorage() {
     function reunioesRecolherOpcoes(vista) {
       if (vista !== 'comentarios') return;
       const grupo = document.getElementById(REUNIOES_VISTAS[vista].caixa);
-      grupo.querySelectorAll(':scope > details.subsection').forEach(caixa => { caixa.open = false; });
+      ferramentasDoGrupo(grupo).forEach(caixa => { caixa.open = false; });
       reunioesSincronizarAbertas(grupo);
     }
 
@@ -25315,13 +25311,17 @@ function saveTemplatesToStorage() {
     // Uma opção de cada vez: ao abrir uma opção de um grupo (Estudo de A Sentinela, Estudo Bíblico, Joias, Tesouros…), as outras do grupo se escondem
     // (o CSS faz isso quando o grupo tem a classe "tem-aberto"); ao recolher, elas voltam. Ao abrir, a opção é trazida para a tela (as de cima
     // somem e o texto sobe).
+    // As ferramentas de um grupo: as filhas diretas e as que ficam nos contêineres dele (em Preparar para comentar: reunião de meio de semana e do final de semana).
+    function ferramentasDoGrupo(grupo) {
+      return [...grupo.querySelectorAll(':scope > details.subsection, :scope > .comentarios-bloco > details.subsection')];
+    }
     function reunioesSincronizarAbertas(grupo) {
-      grupo.classList.toggle('tem-aberto', [...grupo.children].some(c => c.matches('details.subsection') && c.open));
+      grupo.classList.toggle('tem-aberto', ferramentasDoGrupo(grupo).some(c => c.open));
     }
     document.addEventListener('toggle', event => {
       const caixa = event.target;
-      if (!(caixa instanceof HTMLDetailsElement) || !caixa.matches('.reunioes-grupo > details.subsection')) return;
-      reunioesSincronizarAbertas(caixa.parentElement);
+      if (!(caixa instanceof HTMLDetailsElement) || !caixa.matches('.reunioes-grupo > details.subsection, .reunioes-grupo > .comentarios-bloco > details.subsection')) return;
+      reunioesSincronizarAbertas(caixa.closest('.reunioes-grupo'));
       if (caixa.open) {
         requestAnimationFrame(() => caixa.querySelector(':scope > summary').scrollIntoView({ block: 'nearest' }));
       }
@@ -25347,10 +25347,10 @@ function saveTemplatesToStorage() {
     // Dentro da página de um grupo, só uma ferramenta fica aberta de cada vez (abrir uma fecha as outras e leva até ela).
     GRUPOS_REUNIOES.forEach(id => {
       const grupo = document.getElementById(id);
-      grupo.querySelectorAll(':scope > details.subsection').forEach(caixa => {
+      ferramentasDoGrupo(grupo).forEach(caixa => {
         caixa.addEventListener('toggle', () => {
           if (!caixa.open) return;
-          grupo.querySelectorAll(':scope > details.subsection').forEach(outra => { if (outra !== caixa) outra.open = false; });
+          ferramentasDoGrupo(grupo).forEach(outra => { if (outra !== caixa) outra.open = false; });
           requestAnimationFrame(() => caixa.scrollIntoView({ block: 'start', behavior: 'smooth' }));
         });
       });

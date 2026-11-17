@@ -788,174 +788,180 @@
             <summary><h2 class="reunioes-title">📅 Preparação para as reuniões</h2></summary>
           <details class="section-accordion reunioes-grupo" id="grupoComentarios">
             <summary><span class="grupo-icone" aria-hidden="true">✋</span><div><h3 class="reunioes-subtitle">Preparar para comentar</h3><span class="grupo-desc">Tesouros, Estudo Bíblico e A Sentinela</span><span class="grupo-trava" hidden></span></div></summary>
-            <details class="subsection joias-subsection" id="joiasBox">
-              <summary>💎 Tesouros da Palavra de Deus</summary>
-              <div class="subsection-body">
-                <section class="sent-option sent-option-site">
-                  <h3 id="joiasTitulo" class="study-aguardando">Aguardando carregar matéria da semana</h3>
-                  <div class="ai-study">
-                    <button id="joiasCarregarBtn" class="secondary ai-study-load" type="button">📋 Carregar matéria da semana</button>
-                    <p id="joiasInfo" class="hint ai-hint ebc-info"></p>
-                    <div class="dirigente-secoes">
-                      <p class="dirigente-secoes-titulo">O que preparar</p>
-                      <div class="ai-sources">
-                        <label class="ai-check"><input type="checkbox" autocomplete="off" id="joiasPergunta" checked> ❓ Resposta à joia da semana da apostila</label>
-                        <label class="ai-check"><input type="checkbox" autocomplete="off" id="joiasLeitura" checked> <span>💎 Joias da leitura: até <span id="joiasQtd">2</span> por capítulo</span></label>
-                        <label class="ai-check"><input type="checkbox" autocomplete="off" id="joiasResumo"> 📚 Resumo de cada capítulo da leitura da semana</label>
+            <!-- Reunião de meio de semana (Vida e Ministério) e reunião do fim de semana (A Sentinela), cada uma no seu contêiner. -->
+            <div class="comentarios-bloco" id="comentariosMeioSemana">
+              <h3 class="comentarios-bloco-titulo">📅 Reunião de meio de semana</h3>
+              <details class="subsection joias-subsection" id="joiasBox">
+                <summary>💎 Tesouros da Palavra de Deus</summary>
+                <div class="subsection-body">
+                  <section class="sent-option sent-option-site">
+                    <h3 id="joiasTitulo" class="study-aguardando">Aguardando carregar matéria da semana</h3>
+                    <div class="ai-study">
+                      <button id="joiasCarregarBtn" class="secondary ai-study-load" type="button">📋 Carregar matéria da semana</button>
+                      <p id="joiasInfo" class="hint ai-hint ebc-info"></p>
+                      <div class="dirigente-secoes">
+                        <p class="dirigente-secoes-titulo">O que preparar</p>
+                        <div class="ai-sources">
+                          <label class="ai-check"><input type="checkbox" autocomplete="off" id="joiasPergunta" checked> ❓ Resposta à joia da semana da apostila</label>
+                          <label class="ai-check"><input type="checkbox" autocomplete="off" id="joiasLeitura" checked> <span>💎 Joias da leitura: até <span id="joiasQtd">2</span> por capítulo</span></label>
+                          <label class="ai-check"><input type="checkbox" autocomplete="off" id="joiasResumo"> 📚 Resumo de cada capítulo da leitura da semana</label>
+                        </div>
                       </div>
-                    </div>
-                    <div id="joiasSalva" class="study-salva" hidden>
-                      <p></p>
-                      <button type="button" class="secondary">📂 Recuperar a resposta salva</button>
-                    </div>
-                    <button id="joiasResponderBtn" data-codigo-ia="pesquisa" class="ai-study-btn" type="button">💎 IA - Preparar opção selecionada</button>
-                  </div>
-                </section>
-
-                <details class="imagens-box textos-biblicos-box">
-                  <summary>📖 Textos bíblicos nas respostas</summary>
-                  <div class="ai-sources">
-                    <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Transcrever o texto, citar na resposta, explicar e aplicar</label>
-                    <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="transcreverSemCitar"> 📜 Transcrever o texto sem citar na resposta, explicar e aplicar</label>
-                    <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citarTextos"> 🔖 Só citar 1 ou 2 textos na resposta, sem transcrever</label>
-                    <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="explicarTextos"> 💬 Explicar e aplicar os textos, sem transcrever nem citar na resposta</label>
-                  </div>
-                </details>
-
-                <div class="status-fim"><span id="joiasStatus" class="ok" role="status" aria-live="polite"></span></div>
-
-                <div id="joiasOutputSlot"></div>
-              </div>
-            </details>
-            <!-- Sempre visível; nas semanas sem a parte de "Consideração" (ex.: "O que você diria?") mostra um aviso e o botão da IA fica travado. -->
-            <details class="subsection ebc-subsection" id="consideracaoBox">
-              <summary>🗣️ Faça seu melhor no ministério</summary>
-              <div class="subsection-body">
-                <section class="sent-option sent-option-site">
-                  <h3 id="consideracaoTitulo" class="study-aguardando">Aguardando carregar matéria da semana</h3>
-                  <div class="ai-study">
-                    <button id="consideracaoCarregarBtn" class="secondary ai-study-load" type="button">📋 Carregar matéria da semana</button>
-                    <p id="consideracaoInfo" class="hint ai-hint ebc-info"></p>
-                    <div id="consideracaoPerguntas" class="consideracao-perguntas"></div>
-                    <button id="consideracaoResponderBtn" data-codigo-ia="pesquisa" class="ai-study-btn" type="button">💬 IA - Responder às perguntas</button>
-                  </div>
-                </section>
-
-                <details class="imagens-box textos-biblicos-box">
-                  <summary>📖 Textos bíblicos nas respostas</summary>
-                  <div class="ai-sources">
-                    <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Transcrever o texto, citar na resposta, explicar e aplicar</label>
-                    <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="transcreverSemCitar"> 📜 Transcrever o texto sem citar na resposta, explicar e aplicar</label>
-                    <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citarTextos"> 🔖 Só citar 1 ou 2 textos na resposta, sem transcrever</label>
-                    <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="explicarTextos"> 💬 Explicar e aplicar os textos, sem transcrever nem citar na resposta</label>
-                  </div>
-                </details>
-
-                <div class="status-fim"><span id="consideracaoStatus" class="ok" role="status" aria-live="polite"></span></div>
-
-                <div id="consideracaoOutputSlot"></div>
-              </div>
-            </details>
-            <details class="subsection ebc-subsection" id="ebcBox">
-              <summary>📚 Estudo Bíblico</summary>
-              <div class="subsection-body">
-                <section class="sent-option sent-option-site">
-                  <h3 id="ebcTitulo" class="study-aguardando">Aguardando carregar matéria da semana</h3>
-                  <div class="ai-study">
-                    <button id="ebcCarregarBtn" class="secondary ai-study-load" type="button">📋 Carregar matéria da semana</button>
-                    <p id="ebcInfo" class="hint ai-hint ebc-info"></p>
-                    <div class="dirigente-secoes">
-                      <p class="dirigente-secoes-titulo">Quadros para responder</p>
-                      <div class="ai-sources">
-                        <label class="ai-check"><input type="checkbox" autocomplete="off" data-ebc-quadro="considerar" checked> 🤔 Para considerar</label>
-                        <label class="ai-check"><input type="checkbox" autocomplete="off" data-ebc-quadro="analise" checked> 🔍 Analise mais a fundo</label>
-                        <label class="ai-check"><input type="checkbox" autocomplete="off" data-ebc-quadro="medite" checked> 💭 Medite no que aprendeu</label>
-                        <label class="ai-check"><input type="checkbox" autocomplete="off" data-ebc-quadro="quadro" checked> 🧩 Pense no quadro completo</label>
+                      <div id="joiasSalva" class="study-salva" hidden>
+                        <p></p>
+                        <button type="button" class="secondary">📂 Recuperar a resposta salva</button>
                       </div>
+                      <button id="joiasResponderBtn" data-codigo-ia="pesquisa" class="ai-study-btn" type="button">💎 IA - Preparar opção selecionada</button>
                     </div>
-                    <div id="ebcSalva" class="study-salva" hidden>
-                      <p></p>
-                      <button type="button" class="secondary">📂 Recuperar a resposta salva</button>
+                  </section>
+
+                  <details class="imagens-box textos-biblicos-box">
+                    <summary>📖 Textos bíblicos nas respostas</summary>
+                    <div class="ai-sources">
+                      <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Transcrever o texto, citar na resposta, explicar e aplicar</label>
+                      <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="transcreverSemCitar"> 📜 Transcrever o texto sem citar na resposta, explicar e aplicar</label>
+                      <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citarTextos"> 🔖 Só citar 1 ou 2 textos na resposta, sem transcrever</label>
+                      <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="explicarTextos"> 💬 Explicar e aplicar os textos, sem transcrever nem citar na resposta</label>
                     </div>
-                    <button id="ebcResponderBtn" data-codigo-ia="pesquisa" class="ai-study-btn" type="button">💬 IA - Responder às perguntas</button>
-                  </div>
-                </section>
+                  </details>
 
-                <details class="imagens-box textos-biblicos-box">
-                  <summary>📖 Textos bíblicos nas respostas</summary>
-                  <div class="ai-sources">
-                    <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Transcrever o texto, citar na resposta, explicar e aplicar</label>
-                    <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="transcreverSemCitar"> 📜 Transcrever o texto sem citar na resposta, explicar e aplicar</label>
-                    <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citarTextos"> 🔖 Só citar 1 ou 2 textos na resposta, sem transcrever</label>
-                    <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="explicarTextos"> 💬 Explicar e aplicar os textos, sem transcrever nem citar na resposta</label>
-                  </div>
-                </details>
+                  <div class="status-fim"><span id="joiasStatus" class="ok" role="status" aria-live="polite"></span></div>
 
-                <div class="status-fim"><span id="ebcStatus" class="ok" role="status" aria-live="polite"></span></div>
-
-                <div id="ebcOutputSlot"></div>
-              </div>
-            </details>
-            <details class="subsection sentinela-subsection" id="sentinelaBox">
-              <summary>📖 Estudo de A Sentinela</summary>
-              <div class="subsection-body">
-
-            <section class="sent-option sent-option-site">
-              <h3 id="aiStudyTitulo" class="study-aguardando">Aguardando carregar matéria da semana</h3>
-              <div class="ai-study">
-                <button id="aiStudyLoadBtn" class="secondary ai-study-load" type="button">📋 Carregar matéria da semana</button>
-                <div class="ai-study-picker">
-                  <button id="aiParaPrev" class="secondary ai-week-nav" type="button" aria-label="Parágrafos anteriores">◀</button>
-                  <div class="ai-study-input">
-                    <label for="aiStudyParagraphs">Parágrafos <span id="aiStudyInfo" class="study-opcao"></span></label>
-                    <input autocomplete="off" id="aiStudyParagraphs" type="text" value="1" placeholder="Ex.: 3, 1-4 ou recapitulação">
-                  </div>
-                  <button id="aiParaNext" class="secondary ai-week-nav" type="button" aria-label="Próximos parágrafos">▶</button>
+                  <div id="joiasOutputSlot"></div>
                 </div>
-                <div id="aiStudyPergunta" class="study-pergunta" aria-live="polite"></div>
-                <div id="aiStudySalva" class="study-salva" hidden>
-                  <p></p>
-                  <button type="button" class="secondary">📂 Recuperar a resposta salva</button>
+              </details>
+              <!-- Sempre visível; nas semanas sem a parte de "Consideração" (ex.: "O que você diria?") mostra um aviso e o botão da IA fica travado. -->
+              <details class="subsection ebc-subsection" id="consideracaoBox">
+                <summary>🗣️ Faça seu melhor no ministério</summary>
+                <div class="subsection-body">
+                  <section class="sent-option sent-option-site">
+                    <h3 id="consideracaoTitulo" class="study-aguardando">Aguardando carregar matéria da semana</h3>
+                    <div class="ai-study">
+                      <button id="consideracaoCarregarBtn" class="secondary ai-study-load" type="button">📋 Carregar matéria da semana</button>
+                      <p id="consideracaoInfo" class="hint ai-hint ebc-info"></p>
+                      <div id="consideracaoPerguntas" class="consideracao-perguntas"></div>
+                      <button id="consideracaoResponderBtn" data-codigo-ia="pesquisa" class="ai-study-btn" type="button">💬 IA - Responder às perguntas</button>
+                    </div>
+                  </section>
+
+                  <details class="imagens-box textos-biblicos-box">
+                    <summary>📖 Textos bíblicos nas respostas</summary>
+                    <div class="ai-sources">
+                      <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Transcrever o texto, citar na resposta, explicar e aplicar</label>
+                      <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="transcreverSemCitar"> 📜 Transcrever o texto sem citar na resposta, explicar e aplicar</label>
+                      <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citarTextos"> 🔖 Só citar 1 ou 2 textos na resposta, sem transcrever</label>
+                      <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="explicarTextos"> 💬 Explicar e aplicar os textos, sem transcrever nem citar na resposta</label>
+                    </div>
+                  </details>
+
+                  <div class="status-fim"><span id="consideracaoStatus" class="ok" role="status" aria-live="polite"></span></div>
+
+                  <div id="consideracaoOutputSlot"></div>
                 </div>
-                <span id="aiStudyStatus" class="ok" role="status" aria-live="polite"></span>
-                <div id="aiStudyArticleBox" hidden>
-                  <label for="aiStudyArticle">Não achei o artigo sozinho. Cole o número ou o link dele:</label>
-                  <input autocomplete="off" id="aiStudyArticle" type="text" inputmode="url" placeholder="Ex.: 2026521">
+              </details>
+              <details class="subsection ebc-subsection" id="ebcBox">
+                <summary>📚 Estudo Bíblico</summary>
+                <div class="subsection-body">
+                  <section class="sent-option sent-option-site">
+                    <h3 id="ebcTitulo" class="study-aguardando">Aguardando carregar matéria da semana</h3>
+                    <div class="ai-study">
+                      <button id="ebcCarregarBtn" class="secondary ai-study-load" type="button">📋 Carregar matéria da semana</button>
+                      <p id="ebcInfo" class="hint ai-hint ebc-info"></p>
+                      <div class="dirigente-secoes">
+                        <p class="dirigente-secoes-titulo">Quadros para responder</p>
+                        <div class="ai-sources">
+                          <label class="ai-check"><input type="checkbox" autocomplete="off" data-ebc-quadro="considerar" checked> 🤔 Para considerar</label>
+                          <label class="ai-check"><input type="checkbox" autocomplete="off" data-ebc-quadro="analise" checked> 🔍 Analise mais a fundo</label>
+                          <label class="ai-check"><input type="checkbox" autocomplete="off" data-ebc-quadro="medite" checked> 💭 Medite no que aprendeu</label>
+                          <label class="ai-check"><input type="checkbox" autocomplete="off" data-ebc-quadro="quadro" checked> 🧩 Pense no quadro completo</label>
+                        </div>
+                      </div>
+                      <div id="ebcSalva" class="study-salva" hidden>
+                        <p></p>
+                        <button type="button" class="secondary">📂 Recuperar a resposta salva</button>
+                      </div>
+                      <button id="ebcResponderBtn" data-codigo-ia="pesquisa" class="ai-study-btn" type="button">💬 IA - Responder às perguntas</button>
+                    </div>
+                  </section>
+
+                  <details class="imagens-box textos-biblicos-box">
+                    <summary>📖 Textos bíblicos nas respostas</summary>
+                    <div class="ai-sources">
+                      <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Transcrever o texto, citar na resposta, explicar e aplicar</label>
+                      <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="transcreverSemCitar"> 📜 Transcrever o texto sem citar na resposta, explicar e aplicar</label>
+                      <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citarTextos"> 🔖 Só citar 1 ou 2 textos na resposta, sem transcrever</label>
+                      <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="explicarTextos"> 💬 Explicar e aplicar os textos, sem transcrever nem citar na resposta</label>
+                    </div>
+                  </details>
+
+                  <div class="status-fim"><span id="ebcStatus" class="ok" role="status" aria-live="polite"></span></div>
+
+                  <div id="ebcOutputSlot"></div>
                 </div>
-                <button id="aiStudyBtn" data-codigo-ia="pesquisa" class="ai-study-btn" type="button">🌐 IA - Responder resumidamente a pergunta do parágrafo selecionado</button>
-              </div>
-            </section>
+              </details>
+              <details class="subsection apostila-img-subsection" id="apostilaImgBox">
+                <summary>🖼️ Imagens da apostila</summary>
+                <div class="subsection-body">
+                  <section class="sent-option sent-option-site">
+                    <h3 id="apostilaImgTitulo" class="study-aguardando">Aguardando carregar imagens</h3>
+                    <div class="ai-study">
+                      <button id="apostilaImgCarregarBtn" class="secondary ai-study-load" type="button">📋 Carregar imagens</button>
+                      <p id="apostilaImgInfo" class="hint ai-hint ebc-info"></p>
+                      <div id="apostilaImgLista" class="apostila-img-lista"></div>
+                      <span id="apostilaImgStatus" class="ok" role="status" aria-live="polite"></span>
+                    </div>
+                  </section>
+                </div>
+              </details>
+            </div>
+            <div class="comentarios-bloco" id="comentariosFimSemana">
+              <h3 class="comentarios-bloco-titulo">📖 Reunião do final de semana</h3>
+              <details class="subsection sentinela-subsection" id="sentinelaBox">
+                <summary>📖 Estudo de A Sentinela</summary>
+                <div class="subsection-body">
 
-            <details class="imagens-box textos-biblicos-box" id="textosBiblicosBox">
-              <summary>📖 Textos bíblicos nas respostas</summary>
-              <div class="ai-sources">
-                <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Transcrever o texto, citar na resposta, explicar e aplicar</label>
-                <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="transcreverSemCitar"> 📜 Transcrever o texto sem citar na resposta, explicar e aplicar</label>
-                <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citarTextos"> 🔖 Só citar 1 ou 2 textos na resposta, sem transcrever</label>
-                <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="explicarTextos"> 💬 Explicar e aplicar os textos, sem transcrever nem citar na resposta</label>
-              </div>
-            </details>
-
-            <div class="status-fim"><span id="aiStudyAnswerStatus" class="ok" role="status" aria-live="polite"></span></div>
-
-            <div id="sentinelaOutputSlot"></div>
-              </div>
-            </details>
-
-            <details class="subsection apostila-img-subsection" id="apostilaImgBox">
-              <summary>🖼️ Imagens da apostila</summary>
-              <div class="subsection-body">
-                <section class="sent-option sent-option-site">
-                  <h3 id="apostilaImgTitulo" class="study-aguardando">Aguardando carregar imagens</h3>
-                  <div class="ai-study">
-                    <button id="apostilaImgCarregarBtn" class="secondary ai-study-load" type="button">📋 Carregar imagens</button>
-                    <p id="apostilaImgInfo" class="hint ai-hint ebc-info"></p>
-                    <div id="apostilaImgLista" class="apostila-img-lista"></div>
-                    <span id="apostilaImgStatus" class="ok" role="status" aria-live="polite"></span>
+              <section class="sent-option sent-option-site">
+                <h3 id="aiStudyTitulo" class="study-aguardando">Aguardando carregar matéria da semana</h3>
+                <div class="ai-study">
+                  <button id="aiStudyLoadBtn" class="secondary ai-study-load" type="button">📋 Carregar matéria da semana</button>
+                  <div class="ai-study-picker">
+                    <button id="aiParaPrev" class="secondary ai-week-nav" type="button" aria-label="Parágrafos anteriores">◀</button>
+                    <div class="ai-study-input">
+                      <label for="aiStudyParagraphs">Parágrafos <span id="aiStudyInfo" class="study-opcao"></span></label>
+                      <input autocomplete="off" id="aiStudyParagraphs" type="text" value="1" placeholder="Ex.: 3, 1-4 ou recapitulação">
+                    </div>
+                    <button id="aiParaNext" class="secondary ai-week-nav" type="button" aria-label="Próximos parágrafos">▶</button>
                   </div>
-                </section>
-              </div>
-            </details>
+                  <div id="aiStudyPergunta" class="study-pergunta" aria-live="polite"></div>
+                  <div id="aiStudySalva" class="study-salva" hidden>
+                    <p></p>
+                    <button type="button" class="secondary">📂 Recuperar a resposta salva</button>
+                  </div>
+                  <span id="aiStudyStatus" class="ok" role="status" aria-live="polite"></span>
+                  <div id="aiStudyArticleBox" hidden>
+                    <label for="aiStudyArticle">Não achei o artigo sozinho. Cole o número ou o link dele:</label>
+                    <input autocomplete="off" id="aiStudyArticle" type="text" inputmode="url" placeholder="Ex.: 2026521">
+                  </div>
+                  <button id="aiStudyBtn" data-codigo-ia="pesquisa" class="ai-study-btn" type="button">🌐 IA - Responder resumidamente a pergunta do parágrafo selecionado</button>
+                </div>
+              </section>
+
+              <details class="imagens-box textos-biblicos-box" id="textosBiblicosBox">
+                <summary>📖 Textos bíblicos nas respostas</summary>
+                <div class="ai-sources">
+                  <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Transcrever o texto, citar na resposta, explicar e aplicar</label>
+                  <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="transcreverSemCitar"> 📜 Transcrever o texto sem citar na resposta, explicar e aplicar</label>
+                  <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citarTextos"> 🔖 Só citar 1 ou 2 textos na resposta, sem transcrever</label>
+                  <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="explicarTextos"> 💬 Explicar e aplicar os textos, sem transcrever nem citar na resposta</label>
+                </div>
+              </details>
+
+              <div class="status-fim"><span id="aiStudyAnswerStatus" class="ok" role="status" aria-live="polite"></span></div>
+
+              <div id="sentinelaOutputSlot"></div>
+                </div>
+              </details>
+            </div>
           </details>
           <details class="section-accordion reunioes-grupo" id="grupoDirigir">
             <summary><span class="grupo-icone" aria-hidden="true">🎤</span><div><h3 class="reunioes-subtitle">Preparar para dirigir</h3><span class="grupo-desc">Perguntas para dirigir os estudos</span><span class="grupo-trava" hidden></span></div></summary>

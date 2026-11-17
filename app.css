@@ -9490,43 +9490,43 @@
     }
 
     /* Ferramentas dentro dos grupos (A Sentinela, Joias, Estudo Bíblico…): sem espaço em branco entre o título da ferramenta e o que vem logo abaixo. */
-    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos)>details.subsection[open]>summary {
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos, .comentarios-bloco)>details.subsection[open]>summary {
       padding-bottom: 4px;
     }
 
-    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos)>details.subsection>.subsection-body {
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos, .comentarios-bloco)>details.subsection>.subsection-body {
       padding-top: 0;
     }
 
-    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos)>details.subsection>.subsection-body>.sent-option.sent-option-site:first-child {
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos, .comentarios-bloco)>details.subsection>.subsection-body>.sent-option.sent-option-site:first-child {
       margin-top: 0;
     }
 
-    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos)>details.subsection>.subsection-body>.sent-option.sent-option-site:first-child>h3 {
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos, .comentarios-bloco)>details.subsection>.subsection-body>.sent-option.sent-option-site:first-child>h3 {
       margin-top: 0;
     }
 
     /* Título da ferramenta (A Sentinela, Joias, Estudo Bíblico…): faixa de cor própria, para parecer uma opção que se abre, linha separando-o dos
        dados quando aberto e seta maior (como nos cards do Áudio em texto). */
-    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos)>details.subsection>summary {
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos, .comentarios-bloco)>details.subsection>summary {
       background: color-mix(in srgb, var(--g-cor) 24%, var(--card));
       padding: 12px 14px;
     }
-    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos)>details.subsection[open]>summary {
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos, .comentarios-bloco)>details.subsection[open]>summary {
       padding-bottom: 12px;
       border-bottom: 2px solid var(--g-cor);
     }
-    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos)>details.subsection>summary::after {
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos, .comentarios-bloco)>details.subsection>summary::after {
       font-size: 1.7rem;
       line-height: 1;
       font-weight: 700;
       color: var(--g-cor);
     }
-    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos)>details.subsection>.subsection-body {
+    :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos, .comentarios-bloco)>details.subsection>.subsection-body {
       padding-top: 12px;
     }
     @media (hover: hover) {
-      :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos)>details.subsection>summary:hover {
+      :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos, .comentarios-bloco)>details.subsection>summary:hover {
         background: color-mix(in srgb, var(--g-cor) 32%, var(--card));
       }
     }
@@ -15480,3 +15480,24 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
     .consideracao-perguntas:empty { display: none; }
     .consideracao-perguntas { margin: 8px 0 10px; }
     .consideracao-pergunta { margin: 4px 0; font-size: 0.92rem; line-height: 1.4; }
+
+    /* Preparar para comentar: as ferramentas em dois contêineres, reunião de meio de semana e reunião do final de semana. */
+    .comentarios-bloco {
+      border: 2px solid var(--g-borda, #c084fc);
+      border-radius: 14px;
+      padding: 10px;
+      background: color-mix(in srgb, var(--g-cor, #a855f7) 4%, var(--card));
+    }
+    .comentarios-bloco + .comentarios-bloco { margin-top: 14px; }
+    .comentarios-bloco > * + * { margin-top: 10px; }
+    .comentarios-bloco-titulo {
+      margin: 2px 4px 0;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--g-texto, var(--text));
+    }
+    :root[data-theme="dark"] .comentarios-bloco-titulo { color: var(--text); }
+    @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .comentarios-bloco-titulo { color: var(--text); } }
+    /* Com uma ferramenta aberta, as outras somem; o contêiner que fica sem nenhuma aberta também. */
+    .reunioes-grupo.tem-aberto>.comentarios-bloco>details.subsection:not([open]) { display: none; }
+    .reunioes-grupo.tem-aberto>.comentarios-bloco:not(:has(>details.subsection[open])) { display: none; }

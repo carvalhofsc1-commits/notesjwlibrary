@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.98
+
+- Preparar para comentar: as ferramentas ficam em dois contêineres com título — "📅 Reunião de meio de semana" (Tesouros, Faça seu melhor no ministério, Estudo Bíblico e Imagens da apostila) e "📖 Reunião do final de semana" (Estudo de A Sentinela). Com uma ferramenta aberta, as outras e o contêiner sem nenhuma aberta somem, como antes.
+- Faça seu melhor no ministério: saiu a frase "A IA executa a instrução da parte…" antes das perguntas.
+
 ## 6.9.97
 
 - Preparar para comentar: o card "Faça seu melhor no ministério" fica sempre na tela. Nas semanas sem a parte de consideração, mostra "Esta semana não tem consideração" com a explicação (como o discurso curto), e o botão da IA fica travado; o Recarregar continua disponível.
