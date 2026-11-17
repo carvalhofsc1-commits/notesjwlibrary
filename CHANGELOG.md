@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.10
+
+- Assistente de pesquisas: corrigido "Código de pesquisa inválido" mesmo com o código salvo (o app não mandava o código nos pedidos da pesquisa).
+- Assistente de pesquisas: as abas Assunto, Texto bíblico e Vídeo ficam sempre numa linha só, dividindo a largura (o "em breve" vai embaixo, pequeno); o botão Pesquisar ocupa a largura toda do card.
+
 ## 6.10.09
 
 - Início → atalhos: saiu o atalho do Estudo Bíblico (continua em Comentários → Preparar para comentar). O 🔎 Assistente de pesquisas foi para a página 1, no lugar do Backup do JW Library, que passou para a página 2 (no lugar do Estudo Bíblico). A página 3 dos atalhos deixou de existir: voltam a ser duas páginas de 8.

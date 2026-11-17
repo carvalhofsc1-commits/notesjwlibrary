@@ -15791,3 +15791,20 @@ button.pesq-fino {
 }
 .pesq-fontes li { transition: background-color .4s; }
 .pesq-fontes li.pesq-fonte-destaque { background: color-mix(in srgb, var(--accent) 16%, transparent); border-radius: 6px; }
+/* Abas do Assistente de pesquisas sempre numa linha só: dividem a largura (o "em breve" vai embaixo, pequeno) e encolhem no celular. */
+.pesq-abas { flex-wrap: nowrap; }
+.pesq-abas .pesq-aba {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 6px 4px;
+  font-size: clamp(.74rem, 3.3vw, .88rem);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+.pesq-abas .pesq-aba small { display: block; font-size: .68rem; }
+/* O botão Pesquisar ocupa a largura toda (o Cancelar vem embaixo, enquanto a pesquisa roda). */
+.pesq-acoes > .pesq-principal,
+.pesq-acoes > #pesquisaCancelarBtn { flex: 1 1 100%; }

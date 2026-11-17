@@ -7869,7 +7869,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.09'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.10'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -31223,12 +31223,12 @@ function saveTemplatesToStorage() {
         ocupado(true);
         try {
           dizer(statusEl, 'Procurando no wol.jw.org, no Estudo Perspicaz e nos livros…', { girando: true });
-          let r = await postStudy({ tarefa: 'pesquisa-coletar', assunto, contexto }, 90000);
+          let r = await postStudy({ tarefa: 'pesquisa-coletar', codigo: codigoAcessoSalvo(), assunto, contexto }, 90000);
           if (meu !== pedido) return;
           if (!r.ok) return dizer(statusEl, erroDe(r, 'Não consegui pesquisar agora. Tente de novo.'), { aviso: true });
           const fontes = Array.isArray(r.data.fontes) ? r.data.fontes : [];
           dizer(statusEl, 'Encontrei ' + fontes.length + (fontes.length === 1 ? ' fonte' : ' fontes') + '. A IA está escrevendo a resposta… (pode levar até 2 minutos)', { girando: true });
-          r = await postStudy({ tarefa: 'pesquisa', assunto, contexto, fontes }, 285000);
+          r = await postStudy({ tarefa: 'pesquisa', codigo: codigoAcessoSalvo(), assunto, contexto, fontes }, 285000);
           if (meu !== pedido) return;
           if (!r.ok) return dizer(statusEl, erroDe(r, 'A IA não conseguiu escrever a pesquisa. Tente de novo.'), { aviso: true });
           // As fontes guardadas com a pesquisa: só as citadas, sem o trecho (o texto das matérias não precisa ficar no aparelho).
