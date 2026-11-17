@@ -859,6 +859,35 @@
                   <div id="consideracaoOutputSlot"></div>
                 </div>
               </details>
+              <!-- Nossa vida cristã: a parte com vídeo e perguntas (quase toda semana). O servidor lê o texto da fala do vídeo publicado pelo jw.org. -->
+              <details class="subsection ebc-subsection" id="nvcBox">
+                <summary>🎬 Nossa vida cristã</summary>
+                <div class="subsection-body">
+                  <section class="sent-option sent-option-site">
+                    <h3 id="nvcTitulo" class="study-aguardando">Aguardando carregar matéria da semana</h3>
+                    <div class="ai-study">
+                      <button id="nvcCarregarBtn" class="secondary ai-study-load" type="button">📋 Carregar matéria da semana</button>
+                      <p id="nvcInfo" class="hint ai-hint ebc-info"></p>
+                      <div id="nvcPerguntas" class="consideracao-perguntas"></div>
+                      <button id="nvcResponderBtn" data-codigo-ia="pesquisa" class="ai-study-btn" type="button">💬 IA - Resumir o vídeo e responder às perguntas</button>
+                    </div>
+                  </section>
+
+                  <details class="imagens-box textos-biblicos-box">
+                    <summary>📖 Textos bíblicos nas respostas</summary>
+                    <div class="ai-sources">
+                      <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="consultarBiblia"> 📖 Transcrever o texto, citar na resposta, explicar e aplicar</label>
+                      <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="transcreverSemCitar"> 📜 Transcrever o texto sem citar na resposta, explicar e aplicar</label>
+                      <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="citarTextos"> 🔖 Só citar 1 ou 2 textos na resposta, sem transcrever</label>
+                      <label class="ai-check"><input type="checkbox" autocomplete="off" data-ai-opt="explicarTextos"> 💬 Explicar e aplicar os textos, sem transcrever nem citar na resposta</label>
+                    </div>
+                  </details>
+
+                  <div class="status-fim"><span id="nvcStatus" class="ok" role="status" aria-live="polite"></span></div>
+
+                  <div id="nvcOutputSlot"></div>
+                </div>
+              </details>
               <details class="subsection apostila-img-subsection" id="apostilaImgBox">
                 <summary>🖼️ Imagens da apostila</summary>
                 <div class="subsection-body">

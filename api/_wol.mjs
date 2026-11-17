@@ -1201,7 +1201,7 @@ export async function lerConsideracoes(urlReuniao, { timeoutMs = 8000 } = {}) {
 // A matéria citada na instrução (ex.: "lmd lição 1 ponto 4b"): o trecho indicado (os parágrafos da faixa do link) e a lição inteira, para o
 // contexto (o ponto sozinho costuma ser uma frase). null se não der para ler.
 const MAX_CARACTERES_LICAO_INTEIRA = 9000;
-async function lerLicaoComContexto(citado, timeoutMs) {
+async function lerLicaoComContexto(citado, timeoutMs, maxCaracteres = MAX_CARACTERES_LICAO_INTEIRA) {
   const destino = await resolverCitacao(citado.caminho, timeoutMs);
   if (!destino) return null;
   const html = await baixar(destino.url, timeoutMs);
@@ -1223,21 +1223,224 @@ async function lerLicaoComContexto(citado, timeoutMs) {
     citacao: citado.citacao,
     titulo,
     trecho: indicadas.join("\n"),
-    texto: todas.join("\n").slice(0, MAX_CARACTERES_LICAO_INTEIRA),
+    texto: todas.join("\n").slice(0, maxCaracteres),
     referencias: referenciasDe(brutos.join(" ")).slice(0, 40),
   };
 }
 
 // A lista do que a IA deve responder, com os identificadores: em cada parte, primeiro a instrução ([Instrução], para executar o que ela
 // pede, como o resumo de um ponto da brochura) e depois as perguntas ([Pergunta 1], [Pergunta 2]…, numeradas em todas as partes).
+// Na Nossa vida cristã, a parte com vídeo ganha também o [Resumo do vídeo] (feito com o texto da fala do vídeo), entre a instrução e as perguntas.
 export function perguntasDasConsideracoes(dados) {
   const lista = [];
   let n = 0;
+  const comVideo = dados.itens.filter((i) => i.video && i.video.texto).length;
+  let nVideo = 0;
   dados.itens.forEach((item, k) => {
     lista.push({ id: dados.itens.length > 1 ? `Instrução ${k + 1}` : "Instrução", instrucao: true, pergunta: item.texto, pid: item.pidInstrucao, parte: k });
+    if (item.video && item.video.texto) {
+      nVideo++;
+      lista.push({ id: comVideo > 1 ? `Resumo do vídeo ${nVideo}` : "Resumo do vídeo", resumoVideo: true, pergunta: `Vídeo "${item.video.titulo || "da parte"}"`, pid: item.pidVideo || item.pidInstrucao, parte: k });
+    }
     item.perguntas.forEach((q) => lista.push({ id: `Pergunta ${++n}`, instrucao: false, pergunta: q.pergunta, pid: q.pid, parte: k }));
   });
   return lista;
+}
+
+// ---------- Nossa vida cristã: partes com vídeo e perguntas ----------
+// Quase toda semana a seção traz uma consideração com um vídeo ("Mostre o VÍDEO Ajudar os Inativos. Depois, pergunte: …"). O servidor lê a
+// parte (matéria, imagem, perguntas, publicações citadas) e o TEXTO DA FALA DO VÍDEO, que o jw.org publica pronto: o arquivo "AIVTT" (legenda
+// em português gerada pelo jw.org) da lista de arquivos do vídeo ou, na falta dele, a legenda comum. Sem texto publicado, a IA responde com a
+// matéria e a imagem (e avisa). Ficam de fora o cântico, o Estudo bíblico de congregação e os comentários finais.
+const nossasVidasCristas = new Map(); // url da página de reuniões -> { quando, dados }
+const MAX_CARACTERES_VIDEO = 24000;
+
+// O vídeo citado num trecho da apostila: { pub, issue, track } ou { docid, track } ou { lank }; null se não houver.
+function videoDoTrecho(html) {
+  const dv = html.match(/data-video="webpubvid:\/\/\?([^"]+)"/);
+  if (dv) {
+    const q = new URLSearchParams(decodificar(dv[1]));
+    if (q.get("pub")) return { pub: q.get("pub"), issue: q.get("issue") || "", track: q.get("track") || "", docid: q.get("docid") || "" };
+    if (q.get("docid")) return { docid: q.get("docid"), track: q.get("track") || "" };
+  }
+  const lank = (decodificar(html).match(/[?&]lank=([A-Za-z0-9_-]+)/) || [])[1];
+  if (lank) {
+    const p = lank.match(/^pub-([a-z0-9]+)_(?:(\d+)_)?(\d+)_VIDEO$/i);
+    if (p) return { pub: p[1], issue: p[2] || "", track: p[3], lank };
+    const d = lank.match(/^docid-(\d+)_(\d+)_VIDEO$/i);
+    if (d) return { docid: d[1], track: d[2], lank };
+    return { lank };
+  }
+  return null;
+}
+
+// WebVTT -> texto corrido (sem os tempos, sem linhas repetidas seguidas).
+function textoDoVtt(vtt) {
+  const linhas = [];
+  for (const bruta of String(vtt || "").split(/\r?\n/)) {
+    const l = decodificar(bruta.replace(/<[^>]+>/g, "")).trim();
+    if (!l || /^WEBVTT/.test(l) || /-->/.test(l) || /^\d+$/.test(l) || /^(NOTE|STYLE|REGION)\b/.test(l)) continue;
+    if (linhas[linhas.length - 1] !== l) linhas.push(l);
+  }
+  return linhas.join("\n");
+}
+
+async function baixarJson(url, timeoutMs) {
+  const r = await fetch(url, { headers: { "User-Agent": AGENTE }, signal: AbortSignal.timeout(timeoutMs) });
+  if (!r.ok) return null;
+  return r.json();
+}
+
+// O texto da fala do vídeo: { titulo, duracaoS, texto, fonte } (texto vazio se o jw.org não publicou nenhum).
+export async function lerTextoDoVideo(video, { timeoutMs = 8000 } = {}) {
+  let titulo = "";
+  let duracaoS = 0;
+  let urlTexto = "";
+  let fonte = "";
+  try {
+    if (video.pub || video.docid) {
+      const q = video.pub
+        ? `pub=${encodeURIComponent(video.pub)}${video.issue ? `&issue=${encodeURIComponent(video.issue)}` : ""}`
+        : `docid=${encodeURIComponent(video.docid)}`;
+      const dados = await baixarJson(`https://b.jw-cdn.org/apis/pub-media/GETPUBMEDIALINKS?output=json&${q}${video.track ? `&track=${encodeURIComponent(video.track)}` : ""}&langwritten=T&alllangs=0&txtCMSLang=T`, timeoutMs);
+      const arquivos = (dados && dados.files && dados.files.T) || {};
+      const mp4 = (arquivos.MP4 || [])[0];
+      if (mp4) { titulo = mp4.title || ""; duracaoS = Math.round(mp4.duration || 0); }
+      const ai = (arquivos.AIVTT || [])[0];
+      if (ai && ai.file && ai.file.url) { urlTexto = ai.file.url; fonte = "texto da fala publicado pelo jw.org"; }
+      if (!urlTexto) {
+        const comLegenda = Object.values(arquivos).flat().find((f) => f && f.subtitles && f.subtitles.url);
+        if (comLegenda) { urlTexto = comLegenda.subtitles.url; fonte = "legenda do vídeo"; }
+      }
+    }
+    if (!urlTexto) {
+      const lank = video.lank || (video.pub ? `pub-${video.pub}_${video.issue ? video.issue + "_" : ""}${video.track}_VIDEO` : video.docid ? `docid-${video.docid}_${video.track || 1}_VIDEO` : "");
+      if (lank) {
+        const m = await baixarJson(`https://b.jw-cdn.org/apis/mediator/v1/media-items/T/${encodeURIComponent(lank)}?clientType=www`, timeoutMs);
+        const item = m && m.media && m.media[0];
+        if (item) {
+          titulo = titulo || item.title || "";
+          duracaoS = duracaoS || Math.round(item.duration || 0);
+          const comLegenda = (item.files || []).find((f) => f.subtitles && f.subtitles.url);
+          if (comLegenda) { urlTexto = comLegenda.subtitles.url; fonte = "legenda do vídeo"; }
+        }
+      }
+    }
+    const texto = urlTexto ? textoDoVtt(await (await fetch(urlTexto, { headers: { "User-Agent": AGENTE }, signal: AbortSignal.timeout(timeoutMs) })).text()).slice(0, MAX_CARACTERES_VIDEO) : "";
+    return { titulo, duracaoS, texto, fonte: texto ? fonte : "" };
+  } catch {
+    return { titulo, duracaoS, texto: "", fonte: "" };
+  }
+}
+
+// As partes da Nossa vida cristã com perguntas ou vídeo (sem o cântico, o Estudo bíblico de congregação e os comentários finais).
+export function nossaVidaCristaDaApostila(html) {
+  const secao = [...html.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2>/g)].find((m) => /nossa vida crista/.test(semAcento(textoDe(m[1]))));
+  if (!secao) return [];
+  const resto = html.slice(secao.index + secao[0].length);
+  const fimSecao = resto.search(/<h2\b/);
+  const bloco = fimSecao >= 0 ? resto.slice(0, fimSecao) : resto;
+  const itens = [...bloco.matchAll(/<h3\b[^>]*>([\s\S]*?)<\/h3>/g)];
+  const lista = [];
+  for (let i = 0; i < itens.length; i++) {
+    const tituloH3 = textoDe(itens[i][1]);
+    const nome = semAcento(tituloH3);
+    if (/^cantico\b|estudo biblico de congregacao|comentarios finais/.test(nome.replace(/^\d+\.\s*/, ""))) continue;
+    // Até o próximo h3 ou o fim do conteúdo da apostila (o que vem depois do último item é a página, não a apostila).
+    let corpo = bloco.slice(itens[i].index + itens[i][0].length, i + 1 < itens.length ? itens[i + 1].index : undefined);
+    const fimDoc = corpo.search(/<!--\s*Root element of lightbox|id="questionContainer"/);
+    if (fimDoc >= 0) corpo = corpo.slice(0, fimDoc);
+    const semListas = corpo.replace(/<li\b[\s\S]*?<\/li>/g, "");
+    const paragrafos = [...semListas.matchAll(/<p\b[^>]*data-pid="(\d+)"[^>]*>([\s\S]*?)<\/p>/g)].map(([, pid, p]) => ({ pid, texto: textoDe(p), html: p })).filter((p) => p.texto);
+    const perguntas = [...corpo.matchAll(/<li\b[^>]*>\s*<p\b[^>]*data-pid="(\d+)"[^>]*>([\s\S]*?)<\/p>/g)].map(([, pid, p]) => ({ pid, pergunta: textoDe(p) })).filter((q) => q.pergunta).slice(0, 12);
+    const video = videoDoTrecho(corpo);
+    if (!perguntas.length && !video) continue;
+    const pVideo = paragrafos.find((p) => videoDoTrecho(p.html));
+    const minutos = Number(((paragrafos[0] && paragrafos[0].texto) || "").match(/^\(\s*(\d+)\s*min\)/)?.[1]) || null;
+    const citadas = [...corpo.matchAll(/<a\b[^>]*href="(\/pt\/wol\/pc\/[^"]+)"[^>]*>([\s\S]*?)<\/a>/g)].map(([, caminho, rotulo]) => ({ caminho, citacao: textoDe(rotulo) })).filter((c) => !/^c[aâ]ntico/i.test(c.citacao)).slice(0, 2);
+    const imagens = [...corpo.matchAll(/<figure\b[^>]*>([\s\S]*?)<\/figure>/g)].map(([, interno]) => {
+      const img = interno.match(/<img\b[^>]*>/);
+      return {
+        src: img ? (img[0].match(/\bsrc="([^"]+)"/) || [])[1] || "" : "",
+        pequena: img ? (img[0].match(/\bdata-img-small-src="([^"]+)"/) || [])[1] || "" : "",
+        descricao: img ? textoDe((img[0].match(/\balt="([^"]*)"/) || [])[1] || "").slice(0, 700) : "",
+        legenda: textoDe((interno.match(/<figcaption\b[^>]*>([\s\S]*?)<\/figcaption>/) || [])[1] || "").slice(0, 400),
+      };
+    }).filter((f) => f.src || f.descricao || f.legenda);
+    lista.push({
+      titulo: tituloH3.replace(/^\d+\.\s*/, ""),
+      numero: Number((tituloH3.match(/^(\d+)\./) || [])[1]) || null,
+      minutos,
+      texto: paragrafos.map((p) => p.texto).join("\n"),
+      pidInstrucao: (pVideo || paragrafos[0] || {}).pid || null,
+      pidVideo: pVideo ? pVideo.pid : null,
+      perguntas,
+      referencias: referenciasDe(corpo),
+      imagens,
+      citadas,
+      videoRef: video,
+    });
+  }
+  return lista;
+}
+
+// A Nossa vida cristã da semana: { semana, url, docId, itens } com o texto do vídeo, as publicações citadas e as imagens em base64.
+export async function lerNossaVidaCrista(urlReuniao, { timeoutMs = 8000 } = {}) {
+  const guardado = nossasVidasCristas.get(urlReuniao);
+  if (guardado && Date.now() - guardado.quando < VALIDADE_MS) return guardado.dados;
+  const apostila = idDaApostilaNaReuniao(await baixar(urlReuniao, timeoutMs));
+  if (!apostila) return null;
+  const url = `${BASE}/pt/wol/d/r5/lp-t/${apostila}`;
+  const html = await baixar(url, timeoutMs);
+  const itens = nossaVidaCristaDaApostila(html);
+  let restantes = MAX_IMAGENS_CONSIDERACAO;
+  for (const item of itens) {
+    item.video = item.videoRef ? await lerTextoDoVideo(item.videoRef, { timeoutMs }) : null;
+    item.citadasLidas = [];
+    for (const c of item.citadas) {
+      const lida = await lerLicaoComContexto(c, timeoutMs, 6000).catch(() => null);
+      if (lida) item.citadasLidas.push(lida);
+    }
+    for (const img of item.imagens) {
+      if (restantes <= 0) break;
+      img.arquivo = (await imagemEmBase64(img.src, timeoutMs)) || (await imagemEmBase64(img.pequena, timeoutMs));
+      if (img.arquivo) restantes--;
+    }
+  }
+  const dados = { semana: leituraDaApostila(html).semana, url, docId: apostila, itens };
+  nossasVidasCristas.set(urlReuniao, { quando: Date.now(), dados });
+  if (nossasVidasCristas.size > 20) nossasVidasCristas.delete(nossasVidasCristas.keys().next().value);
+  return dados;
+}
+
+// Texto da Nossa vida cristã para a IA: cada parte (tema, matéria, imagens, publicações citadas, o texto da fala do vídeo) e o que responder.
+export function textoDaNossaVidaCrista(dados, versiculos = []) {
+  const partes = [`SEMANA: ${dados.semana || "(não informada)"} (apostila Vida e Ministério, seção Nossa vida cristã)`];
+  const lista = perguntasDasConsideracoes(dados);
+  let nImagem = 0;
+  dados.itens.forEach((item, k) => {
+    const doItem = lista.filter((q) => q.parte === k);
+    const instrucao = doItem.find((q) => q.instrucao);
+    const resumo = doItem.find((q) => q.resumoVideo);
+    const bloco = [`PARTE${item.numero ? ` ${item.numero}` : ""}: ${item.titulo}${item.minutos ? ` (${item.minutos} min)` : ""}`, `[${instrucao.id}] MATÉRIA E INSTRUÇÃO DA APOSTILA (execute o que ela pede):\n${item.texto}`];
+    item.imagens.forEach((img) => {
+      nImagem++;
+      bloco.push(`IMAGEM ${nImagem}${img.arquivo ? " (anexa a este pedido, na mesma ordem)" : " (não anexada)"}: ${[img.descricao && `descrição do site: ${img.descricao}`, img.legenda && `legenda: ${img.legenda}`].filter(Boolean).join(" | ") || "(sem descrição)"}`);
+    });
+    if (item.video) {
+      const v = item.video;
+      const cab = `VÍDEO DA PARTE: "${v.titulo || "(sem título)"}"${v.duracaoS ? ` (${Math.floor(v.duracaoS / 60)} min ${v.duracaoS % 60} s)` : ""}`;
+      bloco.push(v.texto ? `${cab}${resumo ? ` — resuma em [${resumo.id}]` : ""}\nTEXTO DA FALA DO VÍDEO (${v.fonte}; sem as cenas sem fala):\n${v.texto}` : `${cab}\nTEXTO DA FALA DO VÍDEO: não disponível (o jw.org não publicou texto deste vídeo). Responda com a matéria e as imagens e diga, na resposta que depender do vídeo, que ela foi feita sem o conteúdo do vídeo.`);
+    }
+    item.citadasLidas.forEach((l) => {
+      bloco.push(`PUBLICAÇÃO CITADA NA PARTE (${l.citacao}${l.titulo ? ` — "${l.titulo}"` : ""}):${l.trecho ? `\nTRECHO INDICADO:\n${l.trecho}` : ""}\nCONTEXTO (as linhas com >>> são o trecho indicado):\n${l.texto}`);
+    });
+    const perguntas = doItem.filter((q) => !q.instrucao && !q.resumoVideo);
+    bloco.push("PERGUNTAS:\n" + (perguntas.length ? perguntas.map((q) => `[${q.id}] ${q.pergunta}`).join("\n") : "(nenhuma)"));
+    partes.push(bloco.join("\n"));
+  });
+  if (versiculos.length) partes.push(`TEXTO DOS VERSÍCULOS:\n${versiculos.map((v) => `${v.referencia}: ${v.texto}`).join("\n")}`);
+  return partes.join("\n\n");
 }
 
 // Texto da "Consideração" para a IA: a semana, cada item (tema, instrução da apostila, lição lida, imagens) e as perguntas com o identificador.

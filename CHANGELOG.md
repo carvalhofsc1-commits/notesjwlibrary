@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.04
+
+- Preparar para comentar → Reunião de meio de semana: novo card "🎬 Nossa vida cristã", depois de Faça seu melhor no ministério. Lê a parte da seção com vídeo e perguntas (ex.: "Mostre o VÍDEO Ajudar os Inativos. Depois, pergunte: …"): matéria, imagem, publicações citadas e o TEXTO DA FALA DO VÍDEO, que o jw.org publica pronto (arquivo AIVTT da lista de arquivos do vídeo ou, na falta, a legenda) — sem transcrever áudio. O card mostra o vídeo (título, duração, se há texto) e as perguntas; sem a parte, mostra o aviso.
+- "💬 IA - Resumir o vídeo e responder às perguntas": no modelo do Estudo Bíblico — instrução da parte, "🎬 RESUMO DO VÍDEO" e as respostas baseadas no vídeo, na matéria e na imagem (enviada à IA), com copiar e JW Library. A resposta fica salva e volta ao abrir o card. Sem texto do vídeo, a IA responde com a matéria e a imagem e avisa.
+- Faça seu melhor no ministério e Nossa vida cristã passaram a usar o mesmo código (no app e no servidor). Servidor: tarefas nvc-ler (sem IA) e nvc (código de pesquisa; conta no recurso do Estudo Bíblico). Prompt novo "Respostas da Nossa vida cristã (parte com vídeo)" e o formato fixo.
+
 ## 6.10.03
 
 - Barra de baixo (iPhone), estado "topo preso" (offsetTop 68 com pageTop = rolagem): nesse estado o iOS corta o que é fixo abaixo de 826 (descida, a barra ficava cortada; sem descer, flutuava 68 acima do fim). Agora o app primeiro pede ao iOS que refaça a conta (rola 1 px e volta, no máximo a cada 4 s); se continuar preso, a barra sai da camada fixa e fica na própria página, no fim da área visível (atualizada a cada rolagem), com o espaço dela reservado no fim da página. Quando o estado passa, volta ao normal.
