@@ -7839,7 +7839,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.01'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.02'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -15929,7 +15929,7 @@ function saveTemplatesToStorage() {
     const comentariosLigadoSalvo = () => {
       if (!historicoLigado || historicoLigado.base !== input.value) return false;
       const item = historicoLer().find(i => i.id === historicoLigado.id);
-      return Boolean(item) && ['sentinela', 'ebc', 'joias', 'dirigente', 'ebc-dirigente'].includes(item.tipo);
+      return Boolean(item) && ['sentinela', 'ebc', 'consideracao', 'joias', 'dirigente', 'ebc-dirigente'].includes(item.tipo);
     };
 
     async function comentariosAutoAplicar(alvo) {
@@ -16035,12 +16035,27 @@ function saveTemplatesToStorage() {
       });
     }
 
+    // Faça seu melhor no ministério (consideração): a resposta salva desta semana aparece sozinha ao abrir o card, como no Estudo Bíblico.
+    function comentariosAutoConsideracao() {
+      const atual = historicoChaveAtual();
+      const item = historicoLer().find(i => i.tipo === 'consideracao' && historicoChave(i) === atual);
+      if (!item) return comentariosAutoAplicar(null);
+      return comentariosAutoAplicar({
+        chave: 'consid:' + item.id,
+        ids: [item.id],
+        slot: document.getElementById('consideracaoOutputSlot'),
+        status: 'consideracao',
+        mensagem: 'Resposta salva · Faça seu melhor no ministério · ' + historicoQuando(item),
+        abrir: () => historicoAbrir(item.id, undefined, undefined, { silencioso: true })
+      });
+    }
+
     // Só quando a matéria está aberta na página Comentários de Reuniões (nas outras telas o campo de texto é de outra coisa).
     function comentariosAutoTodos() {
       if (currentScreen() !== 'reunioes') return;
       const caixa = document.getElementById(comentariosFoco);
       if (!caixa || !caixa.open || caixa.offsetParent === null) return;
-      const rodar = { sentinelaBox: comentariosAutoSentinela, ebcBox: comentariosAutoEbc, joiasBox: comentariosAutoJoias, apostilaImgBox: () => comentariosAutoAplicar(null), dirigenteBox: comentariosAutoDirigente, ebcDirBox: comentariosAutoEbcDir }[comentariosFoco];
+      const rodar = { sentinelaBox: comentariosAutoSentinela, ebcBox: comentariosAutoEbc, consideracaoBox: comentariosAutoConsideracao, joiasBox: comentariosAutoJoias, apostilaImgBox: () => comentariosAutoAplicar(null), dirigenteBox: comentariosAutoDirigente, ebcDirBox: comentariosAutoEbcDir }[comentariosFoco];
       if (rodar) rodar().catch(() => {});
     }
     // Imagens da apostila: não usam o campo de texto, então o cartão Texto original some por completo (e a resposta que estava nele sai).
@@ -16050,7 +16065,7 @@ function saveTemplatesToStorage() {
     }
     // De qual das matérias é a resposta que está no campo: a que apareceu sozinha ou a gerada/aberta e ainda ligada à pesquisa salva.
     function comentariosDono() {
-      const porChave = { 'sent:': 'sentinelaBox', 'ebc:': 'ebcBox', 'joias:': 'joiasBox', 'dir:': 'dirigenteBox', 'ebcdir:': 'ebcDirBox' };
+      const porChave = { 'sent:': 'sentinelaBox', 'ebc:': 'ebcBox', 'consid:': 'consideracaoBox', 'joias:': 'joiasBox', 'dir:': 'dirigenteBox', 'ebcdir:': 'ebcDirBox' };
       const achou = Object.keys(porChave).find(p => comentariosAuto.chave.startsWith(p));
       if (achou) return porChave[achou];
       const item = historicoLigado && historicoLer().find(i => i.id === historicoLigado.id);
@@ -20794,7 +20809,7 @@ function saveTemplatesToStorage() {
     }
     function historicoSemCobertas(novo, lista) {
       const recapDirigente = novo.tipo === 'dirigente' && (novo.partes || []).some(p => isRecapText(p.paragrafos));
-      if (!['sentinela', 'ebc', 'joias'].includes(novo.tipo) && !recapDirigente) return lista;
+      if (!['sentinela', 'ebc', 'consideracao', 'joias'].includes(novo.tipo) && !recapDirigente) return lista;
       const cobertas = new Set((novo.partes || []).flatMap(p => historicoChavesDaParte(novo, p)));
       if (!cobertas.size) return lista;
       const resultado = [];

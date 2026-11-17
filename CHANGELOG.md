@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.02
+
+- Faça seu melhor no ministério: a resposta salva da semana volta sozinha ao abrir o card (como no Estudo Bíblico), com a linha "💾 Resposta salva · … · data". Gerar de novo na mesma semana substitui a resposta salva anterior (antes ficavam várias). Ao fechar o card, a resposta sai do campo, como nas outras matérias.
+
 ## 6.10.01
 
 - Preparar para comentar: ao abrir uma ferramenta (Tesouros, Estudo Bíblico, A Sentinela…), o contêiner dela (Reunião de meio de semana / do final de semana) deixa de aparecer como card — sem borda, fundo, espaço interno nem título —, e a ferramenta ocupa a largura toda. Ao fechar, o contêiner volta.
