@@ -3935,6 +3935,13 @@
         if (!d || !d.modelo) return b.removeAttribute('data-ia-nota');
         b.setAttribute('data-ia-nota', 'Modelo: ' + d.modelo + (tipo !== 'modelo' && d.esforco ? ' · esforço: ' + d.esforco.toLowerCase() : ''));
       });
+      // Assistente de pesquisas: as duas IAs (a das buscas e a da resposta final), uma por linha.
+      const pesquisaBtn = document.getElementById('pesquisaBtn');
+      const p = iaNotaDados && iaNotaDados.pesquisa;
+      if (pesquisaBtn) {
+        if (p && p.busca && p.resposta) pesquisaBtn.setAttribute('data-ia-nota', 'Pesquisa: ' + p.busca + '\nResposta: ' + p.resposta + (p.esforco ? ' · esforço ' + p.esforco.toLowerCase() : ''));
+        else pesquisaBtn.removeAttribute('data-ia-nota');
+      }
     }
 
     async function iaNotaCarregar() {
@@ -3942,7 +3949,7 @@
       try {
         const r = await postConfig({ acao: 'ia-publica' });
         if (r.ok && r.data && r.data.geral) {
-          iaNotaDados = { geral: r.data.geral, esbocos: r.data.esbocos || r.data.geral };
+          iaNotaDados = { geral: r.data.geral, esbocos: r.data.esbocos || r.data.geral, pesquisa: r.data.pesquisa || null };
           try { localStorage.setItem('ns-ia-nota', JSON.stringify(iaNotaDados)); } catch (e) { /* sem armazenamento */ }
           iaNotaAplicar();
         }
@@ -7869,7 +7876,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.10'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.11'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -31102,8 +31109,43 @@ function saveTemplatesToStorage() {
         }
         el.appendChild(document.createTextNode(texto));
       }
+      // Contador de tempo durante a pesquisa: "⏱️ 0:42" ao lado da mensagem (conta desde o toque em Pesquisar, nas duas etapas).
+      let relogioInicio = 0;
+      let relogioTimer = null;
+      const relogioTexto = () => {
+        const s = Math.max(0, Math.floor((Date.now() - relogioInicio) / 1000));
+        return '⏱️ ' + Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+      };
+      function andamento(texto) {
+        dizer(statusEl, texto, { girando: true });
+        const tempo = document.createElement('span');
+        tempo.className = 'pesq-tempo';
+        tempo.textContent = relogioTexto();
+        statusEl.appendChild(tempo);
+      }
+      function relogioLigar() {
+        relogioInicio = Date.now();
+        clearInterval(relogioTimer);
+        relogioTimer = setInterval(() => {
+          const tempo = statusEl.querySelector('.pesq-tempo');
+          if (tempo) tempo.textContent = relogioTexto();
+        }, 1000);
+      }
+      const relogioDesligar = () => { clearInterval(relogioTimer); relogioTimer = null; };
+
+      // Os campos crescem com o texto digitado (sem barra de rolagem).
+      function crescer(campo) {
+        campo.style.height = 'auto';
+        campo.style.height = (campo.scrollHeight + 2) + 'px';
+      }
+      [campoAssunto, campoContexto].forEach(campo => campo.addEventListener('input', () => crescer(campo)));
+      const crescerCampos = () => [campoAssunto, campoContexto].forEach(crescer);
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) requestAnimationFrame(crescerCampos); });
+      window.addEventListener('resize', () => { if (currentScreen() === 'pesquisa') crescerCampos(); });
+      new MutationObserver(() => { if (currentScreen() === 'pesquisa') requestAnimationFrame(crescerCampos); }).observe(document.body, { attributes: true, attributeFilter: ['data-screen'] });
+
       const escapar = t => String(t || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-      const erroDe = (r, padrao) => (r && r.unavailable ? 'O servidor não está disponível agora. Tente de novo em instantes.' : (r && r.data && r.data.erro) || padrao);
+      const erroDe =(r, padrao) => (r && r.unavailable ? 'O servidor não está disponível agora. Tente de novo em instantes.' : (r && r.data && r.data.erro) || padrao);
 
       // [F3], [F1][F3] ou [F1, F3]: os números das fontes, na ordem; identificador desconhecido sai.
       const MARCA_FONTES = /\s*\[\s*(F\d{1,2}(?:\s*[,;]\s*F?\d{1,2})*)\s*\]/gi;
@@ -31221,13 +31263,14 @@ function saveTemplatesToStorage() {
         if (!codigoAcessoSalvo()) return dizer(statusEl, 'Salve o código de pesquisa em Ajustes → 🔐 Autorização de acessos.', { aviso: true });
         const meu = ++pedido;
         ocupado(true);
+        relogioLigar();
         try {
-          dizer(statusEl, 'Procurando no wol.jw.org, no Estudo Perspicaz e nos livros…', { girando: true });
+          andamento('Procurando no wol.jw.org, no Estudo Perspicaz e nos livros…');
           let r = await postStudy({ tarefa: 'pesquisa-coletar', codigo: codigoAcessoSalvo(), assunto, contexto }, 90000);
           if (meu !== pedido) return;
           if (!r.ok) return dizer(statusEl, erroDe(r, 'Não consegui pesquisar agora. Tente de novo.'), { aviso: true });
           const fontes = Array.isArray(r.data.fontes) ? r.data.fontes : [];
-          dizer(statusEl, 'Encontrei ' + fontes.length + (fontes.length === 1 ? ' fonte' : ' fontes') + '. A IA está escrevendo a resposta… (pode levar até 2 minutos)', { girando: true });
+          andamento('Encontrei ' + fontes.length + (fontes.length === 1 ? ' fonte' : ' fontes') + '. A IA está escrevendo a resposta… (pode levar até 2 minutos)');
           r = await postStudy({ tarefa: 'pesquisa', codigo: codigoAcessoSalvo(), assunto, contexto, fontes }, 285000);
           if (meu !== pedido) return;
           if (!r.ok) return dizer(statusEl, erroDe(r, 'A IA não conseguiu escrever a pesquisa. Tente de novo.'), { aviso: true });
@@ -31240,13 +31283,14 @@ function saveTemplatesToStorage() {
         } catch (e) {
           if (meu === pedido) dizer(statusEl, 'Sem conexão com o servidor. Confira a internet e tente de novo.', { aviso: true });
         } finally {
-          if (meu === pedido) ocupado(false);
+          if (meu === pedido) { ocupado(false); relogioDesligar(); }
         }
       }
       botao.addEventListener('click', pesquisar);
       cancelarBtn.addEventListener('click', () => {
         pedido++;
         ocupado(false);
+        relogioDesligar();
         dizer(statusEl, 'Pesquisa cancelada.');
       });
 
@@ -31284,6 +31328,7 @@ function saveTemplatesToStorage() {
         $('pesquisaResFontes').textContent = '';
         campoAssunto.value = '';
         campoContexto.value = '';
+        crescerCampos();
         dizer(statusEl, '');
         campoAssunto.focus();
       });
@@ -31317,6 +31362,7 @@ function saveTemplatesToStorage() {
             atual = item;
             campoAssunto.value = item.assunto || '';
             campoContexto.value = item.contexto || '';
+            crescerCampos();
             dizer(statusEl, '');
             mostrar(item);
             requestAnimationFrame(() => resultadoEl.scrollIntoView({ behavior: 'smooth', block: 'start' }));

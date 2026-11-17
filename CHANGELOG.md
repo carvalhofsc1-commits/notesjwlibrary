@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.11
+
+- Assistente de pesquisas: durante a pesquisa, além do ícone girando, um contador de tempo (⏱️ 0:42) conta desde o toque em Pesquisar, nas duas etapas.
+- Assistente de pesquisas: o botão Pesquisar mostra, em letra pequena, a IA da pesquisa (buscas) e a da resposta final, com o esforço (o servidor informa os modelos escolhidos em Ajustes, pela leitura pública ia-publica).
+- Assistente de pesquisas: os campos "O que você quer pesquisar?" e "Contexto ou foco" começam com uma linha e crescem com o texto digitado, sem barra de rolagem.
+
 ## 6.10.10
 
 - Assistente de pesquisas: corrigido "Código de pesquisa inválido" mesmo com o código salvo (o app não mandava o código nos pedidos da pesquisa).

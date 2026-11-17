@@ -233,6 +233,8 @@ export default async function handler(req, res) {
       return res.status(200).json({
         geral: { modelo: curto(modelos, cfg.modelo), esforco: curto(esforcos, cfg.esforco) },
         esbocos: { modelo: curto(modelos, cfg.esbocoModelo || cfg.modelo), esforco: curto(esforcos, cfg.esbocoEsforco || cfg.esforco) },
+        // Assistente de pesquisas: a IA das buscas e a da resposta final (nomes curtos, para a nota sob o botão Pesquisar).
+        pesquisa: { busca: curto(modelos, cfg.pesquisaModelo), resposta: curto(modelos, cfg.pesquisaRespostaModelo), esforco: curto(esforcos, cfg.pesquisaRespostaEsforco) },
       });
     }
 

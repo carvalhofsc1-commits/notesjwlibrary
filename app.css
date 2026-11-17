@@ -15808,3 +15808,17 @@ button.pesq-fino {
 /* O botão Pesquisar ocupa a largura toda (o Cancelar vem embaixo, enquanto a pesquisa roda). */
 .pesq-acoes > .pesq-principal,
 .pesq-acoes > #pesquisaCancelarBtn { flex: 1 1 100%; }
+/* Assistente de pesquisas: as duas IAs sob o título do botão Pesquisar (uma por linha), o contador de tempo e os campos que crescem com o texto. */
+#pesquisaBtn[data-ia-nota]::after { white-space: pre-line; }
+.pesq-status .pesq-tempo {
+  margin-left: auto;
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  font-size: .85rem;
+  color: var(--muted);
+}
+.pesq-campo {
+  resize: none;
+  overflow: hidden;
+  min-height: 0;
+}
