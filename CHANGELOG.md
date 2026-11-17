@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.35
+
+- Assistente de pesquisas, aba Vídeo: a caixinha "🗣️ Procurar também no que é falado nos vídeos" só aparece depois de escolher uma seção específica e não fica mais deformada no celular (a regra geral de 44 px de altura dos campos esticava a caixinha; agora ela fica com 18 px, ao lado do texto, e a dica vai na linha de baixo).
+
 ## 6.10.34
 
 - Corrigido: a caixinha "🗣️ Procurar também no que é falado nos vídeos" não aparecia na aba Vídeo (ao abrir a aba, o app escondia as opções da pesquisa comum — internet e escolha das fontes — e a escondia junto, por ter o mesmo estilo). Agora só as opções de baixo somem na aba Vídeo.

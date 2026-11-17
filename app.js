@@ -7876,7 +7876,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.34'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.35'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -32014,6 +32014,8 @@ function saveTemplatesToStorage() {
         const pode = Boolean(sel.value) && (!s || s.total <= max);
         caixa.disabled = !pode;
         if (!pode) caixa.checked = false;
+        // A caixinha só aparece depois de escolher uma seção específica.
+        caixa.closest('label').hidden = !sel.value;
         dica.textContent = !sel.value ? '(escolha uma seção)' : pode ? '(mais demorado: lê as legendas dos ' + (s ? s.total : '') + ' vídeos)' : '(seção grande demais: escolha uma subseção com até ' + max + ' vídeos)';
       }
       $('pesquisaVideosSecao').addEventListener('change', secaoMudou);
