@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.05
+
+- Nossa vida cristã: a transcrição do vídeo (o texto da fala publicado pelo jw.org) fica no card, num quadro discreto "Transcrição do vídeo" — título pequeno, fino e cinza, recolhido por padrão, logo abaixo da linha do vídeo. O servidor passou a mandar o texto na leitura da parte; o que foi lido antes desta versão é lido de novo sozinho.
+
 ## 6.10.04
 
 - Preparar para comentar → Reunião de meio de semana: novo card "🎬 Nossa vida cristã", depois de Faça seu melhor no ministério. Lê a parte da seção com vídeo e perguntas (ex.: "Mostre o VÍDEO Ajudar os Inativos. Depois, pergunte: …"): matéria, imagem, publicações citadas e o TEXTO DA FALA DO VÍDEO, que o jw.org publica pronto (arquivo AIVTT da lista de arquivos do vídeo ou, na falta, a legenda) — sem transcrever áudio. O card mostra o vídeo (título, duração, se há texto) e as perguntas; sem a parte, mostra o aviso.

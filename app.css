@@ -15526,3 +15526,27 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
       flex: 0 0 auto;
       height: var(--nav-abs-h, 0px);
     }
+
+    /* Nossa vida cristã: a transcrição do vídeo, num card discreto e recolhido */
+    .video-transcricao {
+      margin: 6px 0 10px;
+      border: 1px solid color-mix(in srgb, var(--text) 15%, transparent);
+      border-radius: 8px;
+      background: transparent;
+    }
+    .video-transcricao > summary {
+      padding: 4px 10px;
+      font-size: 0.8rem;
+      font-weight: 400;
+      color: var(--muted, color-mix(in srgb, var(--text) 60%, transparent));
+      cursor: pointer;
+      list-style-position: inside;
+    }
+    .video-transcricao-texto {
+      padding: 4px 10px 10px;
+      font-size: 0.88rem;
+      line-height: 1.45;
+      white-space: pre-line;
+      max-height: 50vh;
+      overflow-y: auto;
+    }

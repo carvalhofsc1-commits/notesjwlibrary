@@ -1688,7 +1688,8 @@ async function lerParteDaSemana(res, body, cfg) {
     url: dados.url,
     partes: dados.itens.map((i) => ({
       numero: i.numero, titulo: i.titulo, minutos: i.minutos, texto: i.texto, perguntas: i.perguntas.map((q) => q.pergunta), imagens: i.imagens.length,
-      video: i.video ? { titulo: i.video.titulo, duracaoS: i.video.duracaoS, temTexto: Boolean(i.video.texto) } : null,
+      // O texto da fala vai junto para o card "Transcrição do vídeo" (recolhido) do app.
+      video: i.video ? { titulo: i.video.titulo, duracaoS: i.video.duracaoS, temTexto: Boolean(i.video.texto), texto: i.video.texto || "", fonte: i.video.fonte || "" } : null,
     })),
     imagens: dados.itens.flatMap((i) => i.imagens.map((img) => ({ descricao: img.descricao, legenda: img.legenda, item: i.titulo }))),
   });

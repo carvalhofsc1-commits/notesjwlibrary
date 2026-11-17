@@ -7869,7 +7869,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.04'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.05'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -17047,6 +17047,18 @@ function saveTemplatesToStorage() {
             if (p.video) {
               const dur = p.video.duracaoS ? ' (' + Math.max(1, Math.round(p.video.duracaoS / 60)) + ' min)' : '';
               linha('🎬 Vídeo: ' + (p.video.titulo ? '“' + p.video.titulo + '”' : 'da parte') + dur + (p.video.temTexto ? ' · texto da fala disponível ✅' : ' · ⚠️ o jw.org não publicou o texto deste vídeo (a IA responde com a matéria e a imagem)'), 'consideracao-video');
+              // A transcrição (o texto da fala publicado pelo jw.org) num card discreto, recolhido.
+              if (p.video.texto) {
+                const caixa = document.createElement('details');
+                caixa.className = 'video-transcricao';
+                const resumo = document.createElement('summary');
+                resumo.textContent = 'Transcrição do vídeo';
+                const corpo = document.createElement('div');
+                corpo.className = 'video-transcricao-texto';
+                corpo.textContent = p.video.texto;
+                caixa.append(resumo, corpo);
+                perguntasEl.appendChild(caixa);
+              }
             }
             (p.perguntas || []).forEach(q => linha('❓ ' + q));
           });
@@ -17076,7 +17088,10 @@ function saveTemplatesToStorage() {
       // Pergunta ao servidor se a semana tem a parte (sem IA; uma vez por semana e por abertura do app, guardada como as outras leituras).
       async function verificar() {
         const chave = aiWeekYear + '-' + aiWeekNumber;
-        if (carregadoDe(cfg.tipo) || verificando === chave || !codigoAcessoSalvo() || !navigator.onLine) return;
+        const guardado = carregadoDe(cfg.tipo);
+        // Lido antes da 6.10.05 (sem o texto do vídeo, que o card de transcrição usa): lê de novo.
+        const semTranscricao = guardado && Array.isArray(guardado.partes) && guardado.partes.some(p => p.video && p.video.temTexto && !p.video.texto);
+        if ((guardado && !semTranscricao) || verificando === chave || !codigoAcessoSalvo() || !navigator.onLine) return;
         verificando = chave;
         try {
           const result = await postStudy({ tarefa: cfg.tarefaLer, codigo: codigoAcessoSalvo(), ano: aiWeekYear, semana: aiWeekNumber }, 60000);
