@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.00
+
+- Preparar para comentar → Reunião de meio de semana: o Estudo Bíblico passou para depois de Imagens da apostila (ordem: Tesouros, Faça seu melhor no ministério, Imagens da apostila, Estudo Bíblico).
+
 ## 6.9.99
 
 - Faça seu melhor no ministério: saiu a mensagem laranja "Esta semana não tem a parte de consideração." que aparecia embaixo ao recarregar uma semana sem a parte e ficava na tela mesmo depois de ir para uma semana com consideração (o aviso já fica no próprio card). Ao trocar de semana, a mensagem de status do card é limpa.
