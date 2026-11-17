@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.94
+
+- Preparar para comentar → novo card "🗣️ Faça seu melhor no ministério": aparece só nas semanas em que essa seção da apostila tem uma parte de "Consideração" (ex.: "6. O que você diria?"). Ao abrir Preparar para comentar, o app pergunta ao servidor (leitura sem IA, guardada por semana) e mostra o card com a parte, a instrução e as perguntas.
+- "💬 IA - Responder às perguntas": respostas no mesmo modelo do Estudo Bíblico (mesmas opções de tamanho, formatação e textos bíblicos, Outra resposta e Melhorar, botão de copiar e do JW Library em cada uma), cada uma com a pergunta acima. O servidor lê a lição citada (lmd) e manda à IA a própria imagem da parte: quando a pergunta fala da imagem, a resposta sai do que ela mostra.
+- Servidor: tarefas consideracao-ler (sem IA) e consideracao (código de pesquisa; conta no recurso do Estudo Bíblico). Prompt novo "Respostas da consideração de Faça seu melhor no ministério" (editável, na categoria Comentários) e o formato fixo correspondente.
+
 ## 6.9.93
 
 - Formatar → Outras opções → Modelos prontos e personalizados: tocar num modelo sempre o insere no texto original, na posição do cursor. Antes, se o campo tinha perdido o foco (no celular, sempre perde ao tocar no botão), o toque abria o modelo para edição em Ajustes.

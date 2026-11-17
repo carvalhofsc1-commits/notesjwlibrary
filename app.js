@@ -3887,7 +3887,7 @@
     // (o áudio em texto não usa o esforço escolhido).
     const IA_NOTA_BOTOES = {
       aiSuggestBtn: 'geral', aiSentinelaBtn: 'geral', aiStudyBtn: 'geral', aiStudyQuestionsBtn: 'esbocos', tdGerarBtn: 'esbocos',
-      joiasResponderBtn: 'geral', bibliaResumirBtn: 'geral', ebcResponderBtn: 'geral', ebcDirPerguntasBtn: 'esbocos',
+      joiasResponderBtn: 'geral', bibliaResumirBtn: 'geral', ebcResponderBtn: 'geral', consideracaoResponderBtn: 'geral', ebcDirPerguntasBtn: 'esbocos',
       tesourosEsbocoBtn: 'esbocos', discursoEsbocoBtn: 'esbocos', publicoEsbocoBtn: 'esbocos', outrosEsbocoBtn: 'esbocos',
       transcricaoCorrigirBtn: 'geral', transcricaoResumirBtn: 'geral',
       transcricaoIniciarBtn: '=Reconhecimento de voz: Google Chirp 3' // texto fixo (a transcrição é do Google, não da IA de texto); o botão Ler é preenchido por vozInfoMostrar
@@ -7839,7 +7839,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.93'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.94'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -9276,7 +9276,7 @@
     const REPORT_EMAIL = 'carvalhofsc1@gmail.com'; // o mesmo contato da página Sobre
     const MSG_SEM_CONSENTIMENTO = 'Para usar a IA e a leitura em voz alta é preciso concordar com o envio do texto. Toque no botão de novo quando quiser concordar.';
     // As tarefas do servidor que usam a IA (as outras só leem o wol.jw.org ou a Bíblia e não precisam da concordância).
-    const IA_TAREFAS = new Set(['anotacoes-formatar', 'estudo', 'estudo-lista', 'estudo-perguntas', 'texto-diario-comentarios', 'ebc', 'ebc-dirigente', 'tesouros', 'publico', 'publico-importar', 'publico-canticos', 'outros', 'discurso', 'joias', 'leitura-biblia', 'sentinela']);
+    const IA_TAREFAS = new Set(['anotacoes-formatar', 'estudo', 'estudo-lista', 'estudo-perguntas', 'texto-diario-comentarios', 'ebc', 'consideracao', 'ebc-dirigente', 'tesouros', 'publico', 'publico-importar', 'publico-canticos', 'outros', 'discurso', 'joias', 'leitura-biblia', 'sentinela']);
     let consentimentoIaSessao = false; // vale só até fechar o app quando o aparelho não deixa gravar a escolha
     let consentimentoIaEmCurso = null;
 
@@ -9470,7 +9470,7 @@
 
       const carregados = objeto(CARREGADOS_KEY);
       const estudos = objeto(AI_STUDY_CACHE_KEY);
-      const rotulosCarregados = { ebc: 'Estudo Bíblico', joias: 'Joias', imagens: 'Imagens da apostila', tesouros: 'Tesouros', discurso: 'Discurso curto' };
+      const rotulosCarregados = { ebc: 'Estudo Bíblico', consideracao: 'Consideração (ministério)', joias: 'Joias', imagens: 'Imagens da apostila', tesouros: 'Tesouros', discurso: 'Discurso curto' };
       const porTipo = {};
       Object.keys(carregados).forEach(chave => { const tipo = chave.split('|')[0]; porTipo[tipo] = (porTipo[tipo] || 0) + 1; });
       const detalheCarregados = Object.keys(porTipo).map(tipo => (rotulosCarregados[tipo] || tipo) + ': ' + porTipo[tipo]);
@@ -12053,7 +12053,7 @@ function saveTemplatesToStorage() {
     const ESTAT_TAREFA_NOME = {
       formatar: 'Formatar', sentinela: 'Sentinela', estudo: 'Estudo bíblico',
       'estudo-perguntas': 'Perguntas do estudo', 'estudo-recap': 'Recapitulação',
-      ebc: 'EBC', 'ebc-dirigente': 'EBC dirigente', tesouros: 'Tesouros',
+      ebc: 'EBC', consideracao: 'Consideração', 'consideracao-ler': 'Consideração (ler)', 'ebc-dirigente': 'EBC dirigente', tesouros: 'Tesouros',
       discurso: 'Discurso', publico: 'Discurso público', outros: 'Outros',
       joias: 'Joias', 'texto-diario-comentarios': 'Texto diário',
       'leitura-biblia': 'Leitura bíblica', 'biblia-texto': 'Texto bíblico',
@@ -14405,12 +14405,13 @@ function saveTemplatesToStorage() {
     let studyListCard = 'comentarios'; // card do último "Carregar os parágrafos": 'comentarios' ou 'dirigente'
 
     function aiStatusElements() {
-      return [aiStatus, aiStudyAnswerStatus, aiStudyStatus, leaderAnswerStatus, leaderStudyStatus, document.getElementById('ebcStatus'), document.getElementById('joiasStatus'), document.getElementById('apostilaImgStatus'), document.getElementById('ebcDirStatus'), document.getElementById('tesourosStatus'), document.getElementById('discursoStatus'), document.getElementById('publicoStatus'), document.getElementById('outrosStatus'), document.getElementById('bibliaResumoStatus')];
+      return [aiStatus, aiStudyAnswerStatus, aiStudyStatus, leaderAnswerStatus, leaderStudyStatus, document.getElementById('ebcStatus'), document.getElementById('consideracaoStatus'), document.getElementById('joiasStatus'), document.getElementById('apostilaImgStatus'), document.getElementById('ebcDirStatus'), document.getElementById('tesourosStatus'), document.getElementById('discursoStatus'), document.getElementById('publicoStatus'), document.getElementById('outrosStatus'), document.getElementById('bibliaResumoStatus')];
     }
 
     function aiStatusElement() {
       return aiStatusKind === 'estudo' ? aiStudyAnswerStatus
         : aiStatusKind === 'ebc' ? document.getElementById('ebcStatus')
+        : aiStatusKind === 'consideracao' ? document.getElementById('consideracaoStatus')
           : aiStatusKind === 'ebcdir' ? document.getElementById('ebcDirStatus')
           : aiStatusKind === 'tesouros' ? document.getElementById('tesourosStatus')
           : aiStatusKind === 'discurso' ? document.getElementById('discursoStatus')
@@ -14482,6 +14483,7 @@ function saveTemplatesToStorage() {
       ['aiStudyQuestionsBtn', () => Boolean(aiStudy)],
       ['joiasResponderBtn', () => joiasCarregado()],
       ['ebcResponderBtn', () => ebcCarregado('ebcTitulo')],
+      ['consideracaoResponderBtn', () => ebcCarregado('consideracaoTitulo')],
       ['ebcDirPerguntasBtn', () => ebcCarregado('ebcDirTitulo')],
       ['tesourosEsbocoBtn', () => Boolean(ESBOCOS.tesouros.dadosCarregados)],
       ['discursoEsbocoBtn', () => Boolean(ESBOCOS.discurso.dadosCarregados)]
@@ -14503,6 +14505,7 @@ function saveTemplatesToStorage() {
       const all = [aiSuggestBtn, aiSentinelaBtn, aiStudyBtn, aiStudyQuestionsBtn, aiStudyLoadBtn, leaderStudyLoadBtn, aiAnotherBtn, aiImproveBtn,
         document.getElementById('tdGerarBtn'), document.getElementById('tdIaOutrosBtn'),
         document.getElementById('ebcCarregarBtn'), document.getElementById('ebcResponderBtn'),
+        document.getElementById('consideracaoCarregarBtn'), document.getElementById('consideracaoResponderBtn'),
         document.getElementById('ebcDirCarregarBtn'), document.getElementById('ebcDirPerguntasBtn'),
         document.getElementById('tesourosCarregarBtn'), document.getElementById('tesourosEsbocoBtn'),
         document.getElementById('discursoCarregarBtn'), document.getElementById('discursoEsbocoBtn'), document.getElementById('publicoEsbocoBtn'), document.getElementById('publicoImportarBtn'), document.getElementById('publicoCanticoBtn'),
@@ -14648,6 +14651,7 @@ function saveTemplatesToStorage() {
       estudo: { botao: 'aiStudyBtn', exemplo: 'Ex.: explique também como o parágrafo se aplica à família, ou dê uma resposta mais curta.' },
       joias: { botao: 'joiasResponderBtn', exemplo: 'Ex.: explique e aplique Jeremias 45:5 para quem se sente desanimado.', somente: true },
       ebc: { botao: 'ebcResponderBtn', exemplo: 'Ex.: responda com mais detalhes ao quadro "Medite no que aprendeu".' },
+      consideracao: { botao: 'consideracaoResponderBtn', exemplo: 'Ex.: sugira uma pergunta de abertura mais curta e um texto bíblico sobre a família.' },
       dirigente: { botao: 'aiStudyQuestionsBtn', exemplo: 'Ex.: sugira perguntas voltadas aos jovens, ou sobre o texto de 1 Pedro 5:2.' },
       ebcdir: { botao: 'ebcDirPerguntasBtn', exemplo: 'Ex.: elabore as perguntas sobre a atitude de Raabe e como imitá-la hoje.' },
       publico: { botao: 'publicoEsbocoBtn', antes: true, exemplo: 'Ex.: use uma ilustração do dia a dia e destaque a aplicação para os jovens.' },
@@ -16050,7 +16054,7 @@ function saveTemplatesToStorage() {
       const achou = Object.keys(porChave).find(p => comentariosAuto.chave.startsWith(p));
       if (achou) return porChave[achou];
       const item = historicoLigado && historicoLer().find(i => i.id === historicoLigado.id);
-      return item ? ({ sentinela: 'sentinelaBox', ebc: 'ebcBox', joias: 'joiasBox', dirigente: 'dirigenteBox', 'ebc-dirigente': 'ebcDirBox' }[item.tipo] || '') : '';
+      return item ? ({ sentinela: 'sentinelaBox', ebc: 'ebcBox', consideracao: 'consideracaoBox', joias: 'joiasBox', dirigente: 'dirigenteBox', 'ebc-dirigente': 'ebcDirBox' }[item.tipo] || '') : '';
     }
     // Recolher uma matéria recolhe também o campo de texto: a resposta dela sai e, sem nenhuma matéria aberta, o cartão Texto original some.
     function comentariosAoRecolher(id) {
@@ -16061,11 +16065,11 @@ function saveTemplatesToStorage() {
         updateAiControls();
         comentariosAuto = { chave: '', texto: '', ids: [] };
       }
-      if (!['sentinelaBox', 'ebcBox', 'joiasBox', 'apostilaImgBox', 'dirigenteBox', 'ebcDirBox'].some(b => document.getElementById(b).open)) document.body.classList.remove('texto-chegou');
+      if (!['sentinelaBox', 'ebcBox', 'consideracaoBox', 'joiasBox', 'apostilaImgBox', 'dirigenteBox', 'ebcDirBox'].some(b => document.getElementById(b).open)) document.body.classList.remove('texto-chegou');
       studyPickers.forEach(showStudySaved);
       recuperarSalvasAtualizar();
     }
-    ['sentinelaBox', 'ebcBox', 'joiasBox', 'apostilaImgBox', 'dirigenteBox', 'ebcDirBox'].forEach(id => document.getElementById(id).addEventListener('toggle', event => {
+    ['sentinelaBox', 'ebcBox', 'consideracaoBox', 'joiasBox', 'apostilaImgBox', 'dirigenteBox', 'ebcDirBox'].forEach(id => document.getElementById(id).addEventListener('toggle', event => {
       if (event.target.open) {
         comentariosFoco = id;
         comentariosAutoTodos();
@@ -16683,6 +16687,7 @@ function saveTemplatesToStorage() {
         : aiLastKind === 'dirigente' ? requestStudyQuestions(mode)
         : aiLastKind === 'dirigente-recap' ? requestRecapDirigente(mode)
         : aiLastKind === 'ebc' ? requestEbcAnswers(mode)
+        : aiLastKind === 'consideracao' ? requestConsideracao(mode)
           : aiLastKind === 'ebcdir' ? requestEbcDirigente(mode)
           : aiLastKind === 'tesouros' ? requestTesouros(mode)
           : aiLastKind === 'discurso' ? requestDiscursoCurto(mode)
@@ -16944,6 +16949,184 @@ function saveTemplatesToStorage() {
 
     ebcCarregarBtn.addEventListener('click', ebcCarregar);
     ebcResponderBtn.addEventListener('click', () => requestEbcAnswers());
+
+    // ---------- Faça seu melhor no ministério: a parte de "Consideração" (Preparar para comentar) ----------
+    // Só algumas semanas têm, nessa seção da apostila, um item "Consideração" com perguntas para a assistência (ex.: "6. O que você diria?",
+    // com uma imagem). O card fica escondido e aparece quando a semana tem esse item: ao abrir Preparar para comentar, o app pergunta ao servidor
+    // (leitura sem IA, guardada por semana, como as outras). A IA responde às perguntas como no Estudo Bíblico; quando a pergunta fala da imagem,
+    // o servidor manda a própria imagem e a resposta sai do que ela mostra.
+    const consideracaoBox = document.getElementById('consideracaoBox');
+    const consideracaoInfo = document.getElementById('consideracaoInfo');
+    const consideracaoTitulo = document.getElementById('consideracaoTitulo');
+    const consideracaoPerguntasEl = document.getElementById('consideracaoPerguntas');
+    const consideracaoCarregarBtn = document.getElementById('consideracaoCarregarBtn');
+    const consideracaoResponderBtn = document.getElementById('consideracaoResponderBtn');
+    const consideracaoOutputSlot = document.getElementById('consideracaoOutputSlot');
+    let consideracaoVerificando = '';
+
+    function consideracaoMostrar(dados) {
+      const tem = Boolean(dados && Array.isArray(dados.partes) && dados.partes.length);
+      consideracaoBox.hidden = !tem;
+      consideracaoTitulo.textContent = '';
+      consideracaoInfo.textContent = '';
+      consideracaoPerguntasEl.textContent = '';
+      imagensRender(consideracaoInfo, null);
+      if (tem) {
+        const link = document.createElement('a');
+        jwlAbrirLinkDoc(link, dados.url);
+        link.textContent = dados.partes.map(p => (p.numero ? p.numero + '. ' : '') + p.titulo + (p.minutos ? ' (' + p.minutos + ' min)' : '')).join(' · ');
+        consideracaoTitulo.appendChild(link);
+        jwlBotaoDoDocumento(consideracaoTitulo, dados.url);
+        consideracaoInfo.append(dados.partes.map(p => p.texto).join(' '));
+        imagensRender(consideracaoInfo, dados.imagens, 'Imagem da parte');
+        let n = 0;
+        dados.partes.forEach(p => (p.perguntas || []).forEach(q => {
+          const linha = document.createElement('p');
+          linha.className = 'consideracao-pergunta';
+          linha.textContent = '❓ ' + q;
+          linha.dataset.n = String(++n);
+          consideracaoPerguntasEl.appendChild(linha);
+        }));
+      } else {
+        consideracaoTitulo.textContent = 'Aguardando carregar matéria da semana';
+      }
+      consideracaoTitulo.classList.toggle('study-tema', tem);
+      consideracaoTitulo.classList.toggle('study-aguardando', !tem);
+      const rotulo = tem ? '↻ Recarregar matéria da semana' : '📋 Carregar matéria da semana';
+      if (consideracaoCarregarBtn.dataset.label) consideracaoCarregarBtn.dataset.label = rotulo;
+      else consideracaoCarregarBtn.textContent = rotulo;
+      iaTravasAtualizar();
+    }
+
+    // Semana trocada (ou app aberto): usa o que já foi lido desta semana; sem leitura guardada, o card fica escondido até a verificação.
+    function consideracaoSemanaMudou() {
+      consideracaoMostrar(carregadoDe('consideracao'));
+      const grupo = document.getElementById('grupoComentarios');
+      if (grupo && grupo.open) consideracaoVerificar();
+    }
+
+    // Pergunta ao servidor se a semana tem a parte de consideração (sem IA; uma vez por semana e por abertura do app, guardada como as outras leituras).
+    async function consideracaoVerificar() {
+      const chave = aiWeekYear + '-' + aiWeekNumber;
+      if (carregadoDe('consideracao') || consideracaoVerificando === chave || !codigoAcessoSalvo() || !navigator.onLine) return;
+      consideracaoVerificando = chave;
+      try {
+        const result = await postStudy({ tarefa: 'consideracao-ler', codigo: codigoAcessoSalvo(), ano: aiWeekYear, semana: aiWeekNumber }, 60000);
+        if (!result.ok || !result.data) { consideracaoVerificando = ''; return; }
+        if (chave !== aiWeekYear + '-' + aiWeekNumber) { consideracaoVerificando = ''; return; } // a semana mudou no meio: a nova verifica de novo
+        carregadoGuardar('consideracao', result.data);
+        consideracaoMostrar(result.data);
+      } catch (e) {
+        consideracaoVerificando = ''; // tenta de novo na próxima abertura
+      }
+    }
+    document.getElementById('grupoComentarios').addEventListener('toggle', event => { if (event.target.open) consideracaoVerificar(); });
+
+    async function consideracaoCarregar() {
+      if (aiBusy) return;
+      aiStatusKind = 'consideracao';
+      const accessError = studyAccessError();
+      if (accessError) return setAiStatus(accessError, true);
+      aiBusy = true;
+      setAiLoading(true, consideracaoCarregarBtn, 'site');
+      try {
+        const result = await postStudy({ tarefa: 'consideracao-ler', codigo: codigoAcessoSalvo(), ano: aiWeekYear, semana: aiWeekNumber }, 60000);
+        if (!result.ok) return setAiStatus(studyFailureMessage(result, 'Não consegui ler a apostila agora.'), true);
+        carregadoGuardar('consideracao', result.data);
+        consideracaoMostrar(result.data);
+        consideracaoBox.hidden = false; // quem tocou em Recarregar continua vendo o card, mesmo se a parte sumiu
+        setAiStatus(result.data.partes && result.data.partes.length ? '✅ Parte da semana carregada.' : 'Esta semana não tem a parte de consideração.', !(result.data.partes && result.data.partes.length));
+      } catch (e) {
+        setAiStatus(e && e.name === 'AbortError' ? 'O site demorou demais. Tente de novo.' : 'Falha de conexão ao ler a apostila.', true);
+      } finally {
+        aiBusy = false;
+        setAiLoading(false);
+      }
+    }
+
+    // Cada resposta vem com a pergunta da apostila logo acima: ❓ PERGUNTA n 👉 texto da pergunta.
+    function consideracaoPartes(itens, perguntas) {
+      const negrito = text => {
+        const styleId = aiStyleIdFor('negrito');
+        return styleId ? convertTextWithStyle(text, styleId) : text;
+      };
+      return buildSentinelaParts(itens).map(parte => {
+        const q = (perguntas || []).find(p => p.id === parte.paragrafos);
+        const resposta = parte.paragrafos ? parte.texto.replace(parte.paragrafos + '. ', '') : parte.texto;
+        return { ...parte, texto: q ? '❓ ' + negrito(q.id.toUpperCase()) + ' 👉 ' + q.pergunta + '\n\n' + resposta : resposta };
+      });
+    }
+
+    let consideracaoPerguntasUltimas = [];
+    async function requestConsideracao(mode) {
+      if (aiBusy) return;
+      aiLastKind = 'consideracao';
+      aiStatusKind = 'consideracao';
+      placeAiOutput(consideracaoOutputSlot);
+      const accessError = studyAccessError();
+      if (accessError) return setAiStatus(accessError, true);
+
+      if (mode) {
+        if (!(await confirmAiRestore())) return;
+        if (aiAppliedAny) restoreAiBaseText();
+      } else {
+        aiSentinelaRaw = [];
+        aiAppliedAny = false;
+        if (input.value) {
+          setInputRange(0, input.value.length, '', { message: 'Campo de texto limpo para as novas respostas.' });
+          autoGrowInputText();
+        }
+      }
+
+      aiResults.textContent = '';
+      aiSuggestions = [];
+      aiRaw = [];
+      const previousAnswers = mode && aiSentinelaRaw.length ? aiSentinelaRaw.slice() : null;
+      aiResumo = null;
+      updateAiControls();
+      if (!aiAppliedAny) aiBaseText = input.value;
+      saveAiOptions();
+
+      const payload = {
+        tarefa: 'consideracao',
+        codigo: codigoAcessoSalvo(),
+        ano: aiWeekYear,
+        semana: aiWeekNumber,
+        opcoes: readAiOptions(),
+        ajuste: iaExtra('consideracao', mode)
+      };
+      if (previousAnswers) {
+        payload.modo = mode;
+        payload.anteriores = { itens: previousAnswers };
+      }
+
+      aiBusy = true;
+      setAiLoading(true, mode === 'nova' ? aiAnotherBtn : mode === 'melhorar' ? aiImproveBtn : consideracaoResponderBtn);
+      try {
+        const result = await postStudy(payload, IA_ESPERA_MS);
+        if (!result.ok) return setAiStatus(studyFailureMessage(result, 'Não foi possível responder às perguntas agora.'), true);
+        aiSentinelaRaw = Array.isArray(result.data.itens) ? result.data.itens : [];
+        if (!aiSentinelaRaw.length) return setAiStatus(result.data.erro || 'A IA não respondeu às perguntas. Tente de novo.', true);
+        if (Array.isArray(result.data.perguntas)) consideracaoPerguntasUltimas = result.data.perguntas;
+
+        const parts = consideracaoPartes(aiSentinelaRaw, consideracaoPerguntasUltimas);
+        aiResumo = { texto: parts.map(part => part.texto).join('\n\n\n'), partes: parts, done: false, kind: 'estudo', fonte: result.data.titulo || '' };
+        appendToMainText(aiResumo.texto);
+        aiRefino = { kind: 'consideracao' };
+        historicoSalvar({ tipo: 'consideracao', titulo: '🗣️ Faça seu melhor no ministério' + (result.data.titulo ? ' · ' + result.data.titulo : ''), ano: payload.ano, numSemana: payload.semana, partes: parts });
+        renderAiSuggestions();
+        aiRefineBox.hidden = false;
+        setAiStatus('✅ Respostas no campo de texto, cada uma com o botão de copiar.', false);
+      } catch (e) {
+        setAiStatus(e && e.name === 'AbortError' ? 'A IA demorou demais. Tente de novo.' : 'Falha de conexão ao consultar a IA.', true);
+      } finally {
+        aiBusy = false;
+        setAiLoading(false);
+      }
+    }
+
+    consideracaoCarregarBtn.addEventListener('click', consideracaoCarregar);
+    consideracaoResponderBtn.addEventListener('click', () => requestConsideracao());
 
     // ---------- Estudo Bíblico de Congregação: perguntas adicionais para o dirigente ----------
     // Grupo "Preparação para dirigir" (só com o código do dirigente). O servidor lê o capítulo da semana com as perguntas
@@ -20677,7 +20860,7 @@ function saveTemplatesToStorage() {
       { id: 'textos', titulo: '📝 Textos', cor: '#0ea5e9', tipos: ['nota'], semSemana: true },
       // Anotações salvas na tela Anotações (têm "anotId"): reuniões e, por evento, assembleias e congressos.
       { id: 'anotacoes', titulo: '🗒️ Anotações', cor: '#6366f1', tipos: [], semSemana: true, anotacoes: true },
-      { id: 'comentarios', titulo: '✋ Comentários', cor: '#a855f7', tipos: ['colado', 'sentinela', 'ebc', 'joias'] },
+      { id: 'comentarios', titulo: '✋ Comentários', cor: '#a855f7', tipos: ['colado', 'sentinela', 'ebc', 'consideracao', 'joias'] },
       { id: 'dirigentes', titulo: '🎤 Dirigentes', cor: '#14b8a6', tipos: ['dirigente', 'ebc-dirigente'], soDirigente: true },
       { id: 'esbocos', titulo: '📜 Esboços', cor: '#f59e0b', tipos: ['esboco'], soDirigente: true }
     ];
@@ -21192,7 +21375,7 @@ function saveTemplatesToStorage() {
       weekParts('today').forEach(btn => { btn.hidden = aiWeekOffset === 0; });
     }
 
-    const changeWeek = offset => { aiWeekOffset = offset; renderAiWeek(); refreshStudyPicker(); ebcSemanaMudou(); esbocosSemanaMudou(); joiasSemanaMudou(); apostilaImgSemanaMudou(); historicoRender(); };
+    const changeWeek = offset => { aiWeekOffset = offset; renderAiWeek(); refreshStudyPicker(); ebcSemanaMudou(); consideracaoSemanaMudou(); esbocosSemanaMudou(); joiasSemanaMudou(); apostilaImgSemanaMudou(); historicoRender(); };
     weekParts('today').forEach(btn => btn.addEventListener('click', () => changeWeek(0)));
     weekParts('prev').forEach(btn => btn.addEventListener('click', () => changeWeek(aiWeekOffset - 1)));
     weekParts('next').forEach(btn => btn.addEventListener('click', () => changeWeek(aiWeekOffset + 1)));
@@ -21204,6 +21387,7 @@ function saveTemplatesToStorage() {
     refreshStudyPicker();
     // O que já foi carregado nesta semana (Estudo Bíblico, joias, imagens e discursos da apostila) aparece sem recarregar.
     ebcSemanaMudou();
+    consideracaoSemanaMudou();
     esbocosSemanaMudou();
     joiasSemanaMudou();
     apostilaImgSemanaMudou();

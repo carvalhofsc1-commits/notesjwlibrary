@@ -15475,3 +15475,8 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
       cursor: pointer;
     }
     .anot-grav-aviso[hidden] { display: none; }
+
+    /* Faça seu melhor no ministério (consideração): as perguntas da apostila, antes do botão da IA */
+    .consideracao-perguntas:empty { display: none; }
+    .consideracao-perguntas { margin: 8px 0 10px; }
+    .consideracao-pergunta { margin: 4px 0; font-size: 0.92rem; line-height: 1.4; }

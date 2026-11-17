@@ -1100,6 +1100,123 @@ export async function lerDiscursoCurto(urlReuniao, { timeoutMs = 8000 } = {}) {
   return discurso;
 }
 
+// ---------- "Consideração" de Faça seu melhor no ministério ----------
+// Algumas semanas trazem nessa seção um item "Consideração" (ex.: "6. O que você diria?" — "(5 min) Consideração. DE CASA EM CASA. Faça um
+// resumo da lmd lição 1 ponto 4b. Mostre a imagem. Depois, pergunte:"), com uma imagem e perguntas em lista, cada uma com a caixa "Sua
+// resposta". O app responde a essas perguntas como no Estudo Bíblico; quando elas falam da imagem, a IA recebe a própria imagem.
+const consideracoes = new Map(); // url da página de reuniões -> { quando, dados }
+const MAX_IMAGENS_CONSIDERACAO = 3;
+const MAX_BYTES_IMAGEM = 3_000_000;
+
+// Os itens "Consideração" no HTML da apostila (sem a lição lida nem as imagens baixadas); [] se a semana não tem nenhum.
+export function consideracoesDaApostila(html) {
+  const secao = [...html.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2>/g)].find((m) => /faca seu melhor no ministerio/.test(semAcento(textoDe(m[1]))));
+  if (!secao) return [];
+  const resto = html.slice(secao.index + secao[0].length);
+  const fimSecao = resto.search(/<h2\b/);
+  const bloco = fimSecao >= 0 ? resto.slice(0, fimSecao) : resto;
+  const itens = [...bloco.matchAll(/<h3\b[^>]*>([\s\S]*?)<\/h3>/g)];
+  const lista = [];
+  for (let i = 0; i < itens.length; i++) {
+    const tituloH3 = textoDe(itens[i][1]);
+    const corpo = bloco.slice(itens[i].index + itens[i][0].length, i + 1 < itens.length ? itens[i + 1].index : undefined);
+    const primeiro = corpo.match(/<p\b[^>]*>(\s*\(\s*\d+\s*min\)[\s\S]*?)<\/p>/);
+    if (!primeiro) continue;
+    const texto = textoDe(primeiro[1]);
+    if (!/^\(\s*\d+\s*min\)\s*consideracao\b/.test(semAcento(texto))) continue;
+    const minutos = Number((texto.match(/^\(\s*(\d+)\s*min\)/) || [])[1]) || null;
+    const links = [...primeiro[1].matchAll(/<a\b[^>]*href="(\/pt\/wol\/pc\/[^"]+)"[^>]*>([\s\S]*?)<\/a>/g)].map(([, caminho, rotulo]) => ({ caminho, citacao: textoDe(rotulo) }));
+    // As perguntas: cada <li> com o parágrafo (data-pid = o "par" do JW Library); sem lista, os parágrafos seguintes que terminam em "?".
+    const depois = corpo.slice(primeiro.index + primeiro[0].length);
+    let perguntas = [...depois.matchAll(/<li\b[^>]*>\s*<p\b[^>]*data-pid="(\d+)"[^>]*>([\s\S]*?)<\/p>/g)].map(([, pid, p]) => ({ pid, pergunta: textoDe(p) }));
+    if (!perguntas.length) {
+      perguntas = [...depois.matchAll(/<p\b[^>]*data-pid="(\d+)"[^>]*>([\s\S]*?)<\/p>/g)].map(([, pid, p]) => ({ pid, pergunta: textoDe(p) })).filter((q) => /\?\s*$/.test(q.pergunta));
+    }
+    perguntas = perguntas.filter((q) => q.pergunta).slice(0, 12);
+    if (!perguntas.length) continue;
+    const imagens = [...corpo.matchAll(/<figure\b[^>]*>([\s\S]*?)<\/figure>/g)].map(([, interno]) => {
+      const img = interno.match(/<img\b[^>]*>/);
+      const src = img ? (img[0].match(/\bsrc="([^"]+)"/) || [])[1] || "" : "";
+      const pequena = img ? (img[0].match(/\bdata-img-small-src="([^"]+)"/) || [])[1] || "" : "";
+      const descricao = img ? textoDe((img[0].match(/\balt="([^"]*)"/) || [])[1] || "").slice(0, 700) : "";
+      const legenda = textoDe((interno.match(/<figcaption\b[^>]*>([\s\S]*?)<\/figcaption>/) || [])[1] || "").slice(0, 400);
+      return { src, pequena, descricao, legenda };
+    }).filter((f) => f.src || f.descricao || f.legenda);
+    lista.push({
+      titulo: tituloH3.replace(/^\d+\.\s*/, ""),
+      numero: Number((tituloH3.match(/^(\d+)\./) || [])[1]) || null,
+      minutos,
+      texto,
+      licao: links[0] || null,
+      perguntas,
+      referencias: referenciasDe(corpo),
+      imagens,
+    });
+  }
+  return lista;
+}
+
+// Baixa uma imagem do wol.jw.org e a devolve em base64 (para a IA ver); null se não der.
+async function imagemEmBase64(caminho, timeoutMs) {
+  if (!caminho || !/^\/pt\/wol\//.test(caminho)) return null;
+  try {
+    const resposta = await fetch(BASE + caminho, { headers: { "User-Agent": AGENTE }, redirect: "follow", signal: AbortSignal.timeout(timeoutMs) });
+    if (!resposta.ok) return null;
+    const tipo = String(resposta.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+    if (!/^image\/(jpeg|png|webp|gif)$/.test(tipo)) return null;
+    const bytes = Buffer.from(await resposta.arrayBuffer());
+    if (!bytes.length || bytes.length > MAX_BYTES_IMAGEM) return null;
+    return { media: tipo, data: bytes.toString("base64") };
+  } catch {
+    return null;
+  }
+}
+
+// A "Consideração" da semana: { semana, url, docId, itens: [...] } com a lição citada (lmd) lida e as imagens em base64. itens vazio = a semana
+// não tem esse item (null = não achou a apostila).
+export async function lerConsideracoes(urlReuniao, { timeoutMs = 8000 } = {}) {
+  const guardado = consideracoes.get(urlReuniao);
+  if (guardado && Date.now() - guardado.quando < VALIDADE_MS) return guardado.dados;
+  const apostila = idDaApostilaNaReuniao(await baixar(urlReuniao, timeoutMs));
+  if (!apostila) return null;
+  const url = `${BASE}/pt/wol/d/r5/lp-t/${apostila}`;
+  const html = await baixar(url, timeoutMs);
+  const itens = consideracoesDaApostila(html);
+  let restantes = MAX_IMAGENS_CONSIDERACAO;
+  for (const item of itens) {
+    item.licaoLida = item.licao ? await lerDocumentoCitado(item.licao, timeoutMs, MAX_CARACTERES_LICAO).catch(() => null) : null;
+    for (const img of item.imagens) {
+      if (restantes <= 0) break;
+      img.arquivo = (await imagemEmBase64(img.src, timeoutMs)) || (await imagemEmBase64(img.pequena, timeoutMs));
+      if (img.arquivo) restantes--;
+    }
+  }
+  const dados = { semana: leituraDaApostila(html).semana, url, docId: apostila, itens };
+  consideracoes.set(urlReuniao, { quando: Date.now(), dados });
+  if (consideracoes.size > 20) consideracoes.delete(consideracoes.keys().next().value);
+  return dados;
+}
+
+// Texto da "Consideração" para a IA: a semana, cada item (tema, instrução da apostila, lição lida, imagens) e as perguntas com o identificador.
+export function textoDasConsideracoes(dados, versiculos = []) {
+  const partes = [`SEMANA: ${dados.semana || "(não informada)"} (apostila Vida e Ministério, seção Faça seu melhor no ministério)`];
+  let n = 0;
+  let nImagem = 0;
+  dados.itens.forEach((item) => {
+    const bloco = [`PARTE${item.numero ? ` ${item.numero}` : ""}: ${item.titulo}${item.minutos ? ` (${item.minutos} min)` : ""}`, `INSTRUÇÃO DA APOSTILA: ${item.texto}`];
+    item.imagens.forEach((img) => {
+      nImagem++;
+      bloco.push(`IMAGEM ${nImagem}${img.arquivo ? " (anexa a este pedido, na mesma ordem)" : " (não anexada)"}: ${[img.descricao && `descrição do site: ${img.descricao}`, img.legenda && `legenda: ${img.legenda}`].filter(Boolean).join(" | ") || "(sem descrição)"}`);
+    });
+    if (item.licaoLida) bloco.push(`LIÇÃO CITADA (${item.licaoLida.citacao}${item.licaoLida.titulo ? ` — "${item.licaoLida.titulo}"` : ""}, brochura Ame as Pessoas — Faça Discípulos):\n${item.licaoLida.texto}`);
+    else if (item.licao) bloco.push(`LIÇÃO CITADA: ${item.licao.citacao} (o texto não pôde ser lido).`);
+    bloco.push("PERGUNTAS:\n" + item.perguntas.map((q) => `[Pergunta ${++n}] ${q.pergunta}`).join("\n"));
+    partes.push(bloco.join("\n"));
+  });
+  if (versiculos.length) partes.push(`TEXTO DOS VERSÍCULOS:\n${versiculos.map((v) => `${v.referencia}: ${v.texto}`).join("\n")}`);
+  return partes.join("\n\n");
+}
+
 // As referências bíblicas para buscar o texto: as indicadas na apostila (e no ponto do apêndice) ou, com um artigo como fonte, as dele.
 export function referenciasDoDiscursoCurto(discurso) {
   if (discurso.referencias.length) return discurso.referencias;

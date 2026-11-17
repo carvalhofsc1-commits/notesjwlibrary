@@ -29,6 +29,8 @@ import {
   lerEstudoDireto,
   lerImagensDaApostila,
   lerDiscursoCurto,
+  lerConsideracoes,
+  textoDasConsideracoes,
   lerJoias,
   lerTesouros,
   lerTextoDiario,
@@ -227,6 +229,7 @@ async function carregarPromptsEIa(tarefa = "") {
 // Tarefas que só leem o wol.jw.org, o Blob do S-34 ou os arquivos da Bíblia: não chamam a Anthropic.
 const TAREFAS_SEM_IA = new Set([
   "ebc-ler",
+  "consideracao-ler",
   "tesouros-ler",
   "publico-lista",
   "publico-ler",
@@ -1621,6 +1624,134 @@ async function responderEbc(res, body, P) {
       url: capitulo.url,
       erro: itens.length ? null : "A IA não respondeu às perguntas. Tente de novo.",
       aviso,
+      itens: itensFinais,
+      memoriaUsada,
+    });
+  } catch (e) {
+    return tratarErro(e, res);
+  }
+}
+
+// ---------- "Consideração" de Faça seu melhor no ministério (Preparar para comentar) ----------
+// Algumas semanas trazem um item "Consideração" com perguntas para a assistência (ex.: "O que você diria?", com uma imagem). O servidor lê o
+// item na apostila (com a lição citada e a imagem) e a IA responde às perguntas como no Estudo Bíblico (mesmo formato e opções); quando a
+// pergunta fala da imagem, a IA recebe a própria imagem e responde com base no que ela mostra.
+
+async function consideracoesDaSemana(res, body) {
+  const url = urlDoEstudo({ ano: body.ano, semana: body.semana });
+  if (!url) {
+    erro(res, 400, "Semana inválida.");
+    return null;
+  }
+  try {
+    const dados = await lerConsideracoes(url);
+    if (!dados) erro(res, 404, "Não encontrei a apostila dessa semana.");
+    return dados;
+  } catch (e) {
+    console.error("Consideração: leitura falhou", e?.name, e?.message);
+    erro(res, 502, "Não consegui ler a apostila no wol.jw.org agora. Tente de novo em instantes.");
+    return null;
+  }
+}
+
+// O que o app mostra ao carregar (e para saber se a semana tem o item): as partes, com o tema, o tempo e as perguntas. partes vazio = não tem.
+async function lerConsideracaoDaSemana(res, body) {
+  const autorizado = codigoValido(body.codigo, body.aparelhoId) || dirigenteValido(body.codigoDirigente, body.aparelhoId);
+  if (!autorizado) return recusarAcesso(res, body);
+  const dados = await consideracoesDaSemana(res, body);
+  if (!dados) return;
+  return res.status(200).json({
+    semana: dados.semana,
+    url: dados.url,
+    partes: dados.itens.map((i) => ({ numero: i.numero, titulo: i.titulo, minutos: i.minutos, texto: i.texto, perguntas: i.perguntas.map((q) => q.pergunta), imagens: i.imagens.length })),
+    imagens: dados.itens.flatMap((i) => i.imagens.map((img) => ({ descricao: img.descricao, legenda: img.legenda, item: i.titulo }))),
+  });
+}
+
+async function responderConsideracao(res, body, P) {
+  const opcoes = validarOpcoes(body.opcoes);
+  if (consultaPedida(opcoes) && !fontesConfiguradas()) return erro(res, 503, "A consulta às fontes ainda não está configurada no servidor.");
+  precarregarFontes({ biblia: true, perspicaz: opcoes.consultarPerspicaz });
+  const ajuste = textoLivre(body.ajuste, MAX_AJUSTE);
+  const sep = modoSeparacao(opcoes, ajuste);
+  const modo = body.modo === "nova" || body.modo === "melhorar" ? body.modo : null;
+  const anteriores = modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(body.anteriores).slice(0, 12000) : "";
+
+  const dados = await consideracoesDaSemana(res, body);
+  if (!dados) return;
+  if (!dados.itens.length) return erro(res, 404, "Esta semana não tem a parte de consideração na seção Faça seu melhor no ministério.");
+  const perguntas = dados.itens.flatMap((i) => i.perguntas).map((q, n) => ({ ...q, id: "Pergunta " + (n + 1) }));
+
+  let versiculos = [];
+  const referencias = [...new Set(dados.itens.flatMap((i) => [...i.referencias, ...((i.licaoLida && i.licaoLida.referencias) || [])]))];
+  if (fontesConfiguradas() && referencias.length) {
+    try {
+      versiculos = await buscarVersiculos(referencias, 10);
+    } catch (e) {
+      console.error("Consideração: versículos indisponíveis", e?.message);
+    }
+  }
+  const imagens = dados.itens.flatMap((i) => i.imagens).filter((img) => img.arquivo).map((img) => ({ type: "image", source: { type: "base64", media_type: img.arquivo.media, data: img.arquivo.data } }));
+
+  let mensagem =
+    blocoOrientacao(opcoes, ajuste, P) +
+    preferenciasDaResposta(opcoes, P, sep) +
+    "\n\n" +
+    textoDasConsideracoes(dados, versiculos) +
+    (await blocoLivros(P, perguntas.map((p) => p.pergunta).join(" "))) +
+    lembreteFinal(opcoes, ajuste, P);
+  if (modo && anteriores) {
+    mensagem += "\n\nRESPOSTAS ANTERIORES (JSON):\n" + anteriores + "\n\n" + P.frases.pedidos[modo === "nova" ? "Respostas: outra sugestão" : "Respostas: melhorar"];
+  }
+
+  try {
+    const client = criarClienteIa({ maxRetries: 1, timeout: tempoIa(P, 120_000) });
+    const inicio = Date.now();
+    const resposta = await chamarIa(
+      client,
+      P,
+      { max_tokens: 12000 /* o raciocínio também conta aqui */, system: P.sistemaConsideracao, messages: [{ role: "user", content: imagens.length ? [...imagens, { type: "text", text: mensagem }] : mensagem }] },
+      { schema: SaidaEbc, tarefa: "consideracao" }
+    );
+    if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
+      return erro(res, 502, "A IA não conseguiu gerar as respostas desta parte.");
+    }
+    const permitidos = estilosDe(opcoes);
+    const porId = new Map();
+    for (const i of resposta.parsed_output.itens) {
+      const id = limparLinha(String(i.pergunta).replace(/[[\]]/g, ""), 30);
+      const pergunta = perguntas.find((p) => p.id.toLowerCase() === id.toLowerCase());
+      if (!pergunta || porId.has(pergunta.id)) continue;
+      const item = montarItem({ ...i, paragrafos: pergunta.id, referencias: [], textosRelevantes: i.textosRelevantes || [] }, opcoes, permitidos, P.limites, sep);
+      if (!item.resposta) continue;
+      porId.set(pergunta.id, item);
+    }
+    const itens = perguntas.map((p) => porId.get(p.id)).filter(Boolean);
+    console.log(
+      "Consideração:",
+      JSON.stringify({
+        modelo: P.ia.modelo,
+        semana: dados.semana,
+        pedidas: perguntas.length,
+        respondidas: itens.length,
+        imagens: imagens.length,
+        versiculos: versiculos.length,
+        segundosIa: Math.round((Date.now() - inicio) / 100) / 10,
+        entrada: resposta.usage?.input_tokens || 0,
+        saida: resposta.usage?.output_tokens || 0,
+      })
+    );
+    const memoriaUsada = memoriaUsadaAgora();
+    const itensFinais = await finalizarItens(itens, opcoes, P, blocoOrientacao(opcoes, ajuste, P));
+    for (const i of itensFinais) {
+      const pergunta = perguntas.find((p) => p.id === i.paragrafos);
+      if (pergunta && pergunta.pid && dados.docId) i.jwl = { docid: dados.docId, par: pergunta.pid };
+    }
+    return res.status(200).json({
+      titulo: dados.itens.map((i) => i.titulo).join(" · "),
+      url: dados.url,
+      perguntas: perguntas.map((p) => ({ id: p.id, pergunta: p.pergunta })),
+      erro: itens.length ? null : "A IA não respondeu às perguntas. Tente de novo.",
       itens: itensFinais,
       memoriaUsada,
     });
@@ -4602,6 +4733,7 @@ async function tratarPedido(req, res) {
     if (!exigirAcesso(res, body)) return;
     if (excedeuLimiteBackup(ip)) return erro(res, 429, "Muitas consultas. Tente novamente em alguns minutos.");
     if (tarefa === "ebc-ler") return lerEbc(res, body);
+    if (tarefa === "consideracao-ler") return lerConsideracaoDaSemana(res, body);
     if (tarefa === "tesouros-ler") return lerTesourosDaSemana(res, body);
     if (tarefa === "publico-lista") return listarTemasPublicos(res, body);
     if (tarefa === "publico-ler") return lerTemaPublico(res, body);
@@ -4660,6 +4792,7 @@ async function tratarPedido(req, res) {
   if (tarefa === "anotacoes-formatar") return formatarAnotacoes(res, body, P);
   if (tarefa === "anotacoes-perguntas") return atribuirPerguntas(res, body, P);
   if (tarefa === "ebc") return responderEbc(res, body, P);
+  if (tarefa === "consideracao") return responderConsideracao(res, body, P);
   if (tarefa === "ebc-dirigente") return perguntasEbcDirigente(res, body, P);
   if (tarefa === "tesouros") return esbocoDeTesouros(res, body, P);
   if (tarefa === "publico") return esbocoDoDiscursoPublico(res, body, P);

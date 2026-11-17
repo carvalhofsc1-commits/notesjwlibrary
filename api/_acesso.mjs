@@ -54,6 +54,7 @@ export const NIVEIS = {
   estudo: "pesquisa",
   "texto-diario-comentarios": "pesquisa",
   ebc: "pesquisa",
+  consideracao: "pesquisa", // "Consideração" de Faça seu melhor no ministério (Preparar para comentar)
   joias: "pesquisa",
   "joias-ler": "pesquisa",
   // Código de resumo (só o resumo dos capítulos da Leitura diária da Bíblia)
@@ -63,6 +64,7 @@ export const NIVEIS = {
   "estudo-lista": "pesquisa-ou-dirigente",
   "estudo-paragrafos": "pesquisa-ou-dirigente", // o texto dos parágrafos de uma pergunta (sem IA)
   "ebc-ler": "pesquisa-ou-dirigente",
+  "consideracao-ler": "pesquisa-ou-dirigente",
   "apostila-imagens": "pesquisa-ou-dirigente",
   "backup-campos": "pesquisa-ou-dirigente",
   "backup-semanas": "pesquisa-ou-dirigente",
