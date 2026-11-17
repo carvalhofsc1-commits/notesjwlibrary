@@ -7876,7 +7876,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.33'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.34'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -31159,7 +31159,8 @@ function saveTemplatesToStorage() {
         $('pesquisaTextoBloco').hidden = aba !== 'texto';
         $('pesquisaVideoBloco').hidden = aba !== 'video';
         // No vídeo não há busca de fontes: as opções da internet e da escolha das fontes somem.
-        document.querySelectorAll('#pesquisaCard .pesq-opcao').forEach(l => { l.hidden = aba === 'video'; });
+        // Só as opções de baixo (internet e escolha das fontes); a caixinha "Procurar também no que é falado" é da própria aba Vídeo.
+        document.querySelectorAll('#pesquisaCard .pesq-acao-bloco .pesq-opcao').forEach(l => { l.hidden = aba === 'video'; });
         botao.textContent = aba === 'video' ? '🎬 Transcrever e resumir o vídeo' : '🔎 Pesquisar';
         requestAnimationFrame(crescerCampos);
       }
@@ -31922,10 +31923,90 @@ function saveTemplatesToStorage() {
           sel.appendChild(grupo);
         });
         if ([...sel.options].some(o => o.value === atual)) sel.value = atual;
+        painelSecoesPintar();
         secaoMudou();
       }
+
+      // O painel das seções (no lugar da lista nativa, que não aceita cores nem títulos): "Todas as seções" e, para cada seção principal, um
+      // título com emoji e fundo suave na cor da seção, e as subseções em linhas com traços discretos e o número de vídeos à direita.
+      const SECAO_VISUAL = {
+        'De Nosso Estúdio': ['🎙️', 265], 'Crianças': ['🧸', 35], 'Adolescentes': ['🎒', 290], 'Família': ['👨‍👩‍👧', 15],
+        'Programas e Eventos': ['🎪', 320], 'Nossas Atividades': ['🛠️', 45], 'Nossas Reuniões e Obra de Pregação': ['🗣️', 175],
+        'Nossa Organização': ['🏢', 200], 'A Bíblia': ['📜', 30], 'Produções Especiais': ['🎬', 350], 'Séries': ['🎞️', 255],
+        'Músicas': ['🎵', 300], 'Entrevistas e Casos Reais': ['🎤', 10]
+      };
+      const visualDaSecao = nome => SECAO_VISUAL[nome] || ['📁', (nome.length * 37) % 360];
+      function painelSecoesPintar() {
+        const painel = $('pesquisaVideosSecoesPainel');
+        const atual = $('pesquisaVideosSecao').value;
+        painel.textContent = '';
+        const linha = (rotulo, valor, total, classe) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'pesq-secao-linha ' + (classe || '');
+          b.setAttribute('role', 'option');
+          b.setAttribute('aria-selected', String(valor === atual));
+          const nome = document.createElement('span');
+          nome.textContent = rotulo;
+          b.appendChild(nome);
+          if (total) {
+            const n = document.createElement('span');
+            n.className = 'pesq-secao-total';
+            n.textContent = total + (total === 1 ? ' vídeo' : ' vídeos');
+            b.appendChild(n);
+          }
+          b.addEventListener('click', () => {
+            $('pesquisaVideosSecao').value = valor;
+            secaoMudou();
+            painelSecoesAbrir(false);
+            painelSecoesPintar();
+          });
+          return b;
+        };
+        painel.appendChild(linha('🌐 Todas as seções', '', 0, 'pesq-secao-todas'));
+        const lista = (secoesVideos && secoesVideos.secoes) || [];
+        lista.filter(s => !s.caminho.includes(' › ')).forEach(principal => {
+          const [emoji, matiz] = visualDaSecao(principal.caminho);
+          const grupo = document.createElement('div');
+          grupo.className = 'pesq-secao-grupo';
+          grupo.style.setProperty('--secao-cor', 'hsl(' + matiz + ' 70% 50%)');
+          grupo.appendChild(linha(emoji + ' ' + principal.caminho, principal.caminho, principal.total, 'pesq-secao-titulo'));
+          lista.filter(s => s.caminho.startsWith(principal.caminho + ' › ') && s.caminho.split(' › ').length === 2)
+            .forEach(sub => grupo.appendChild(linha(sub.caminho.split(' › ')[1], sub.caminho, sub.total, 'pesq-secao-sub')));
+          painel.appendChild(grupo);
+        });
+        if (!lista.length) {
+          const aviso = document.createElement('p');
+          aviso.className = 'pesq-dica';
+          aviso.textContent = 'Carregando as seções do jw.org…';
+          painel.appendChild(aviso);
+        }
+      }
+      function painelSecoesAbrir(abrir) {
+        $('pesquisaVideosSecoesPainel').hidden = !abrir;
+        $('pesquisaVideosSecaoBtn').setAttribute('aria-expanded', String(abrir));
+        if (abrir) {
+          secoesCarregar();
+          const marcada = $('pesquisaVideosSecoesPainel').querySelector('[aria-selected="true"]');
+          if (marcada) marcada.scrollIntoView({ block: 'nearest' });
+        }
+      }
+      $('pesquisaVideosSecaoBtn').addEventListener('click', () => {
+        const abrir = $('pesquisaVideosSecoesPainel').hidden;
+        if (abrir) painelSecoesPintar();
+        painelSecoesAbrir(abrir);
+      });
+      // Tocar fora do painel o fecha.
+      document.addEventListener('click', e => {
+        if ($('pesquisaVideosSecoesPainel').hidden) return;
+        if (!e.target.closest('#pesquisaVideosSecoesPainel, #pesquisaVideosSecaoBtn')) painelSecoesAbrir(false);
+      });
+
       function secaoMudou() {
         const sel = $('pesquisaVideosSecao');
+        // O botão mostra a seção escolhida, com o emoji da seção principal.
+        const principal = sel.value.split(' › ')[0];
+        $('pesquisaVideosSecaoBtn').querySelector('.pesq-secao-botao-texto').textContent = sel.value ? visualDaSecao(principal)[0] + ' ' + sel.value : '🌐 Todas as seções';
         const caixa = $('pesquisaVideosFalas');
         const dica = document.querySelector('.pesq-opcao-falas .pesq-opcional');
         const s = ((secoesVideos && secoesVideos.secoes) || []).find(x => x.caminho === sel.value);

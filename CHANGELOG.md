@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.34
+
+- Corrigido: a caixinha "🗣️ Procurar também no que é falado nos vídeos" não aparecia na aba Vídeo (ao abrir a aba, o app escondia as opções da pesquisa comum — internet e escolha das fontes — e a escondia junto, por ter o mesmo estilo). Agora só as opções de baixo somem na aba Vídeo.
+- Aba Vídeo, campo Seção: no lugar da lista nativa (toda branca), um botão que mostra a seção escolhida (com o emoji da seção) e abre um painel em forma de tabela: "🌐 Todas as seções" e cada seção principal com emoji (📜 A Bíblia, 🎒 Adolescentes, 🧸 Crianças, 🎙️ De Nosso Estúdio, 🎤 Entrevistas e Casos Reais, 👨‍👩‍👧 Família, 🎵 Músicas, 🏢 Nossa Organização, 🛠️ Nossas Atividades, 🗣️ Nossas Reuniões e Obra de Pregação, 🎬 Produções Especiais, 🎪 Programas e Eventos, 🎞️ Séries), título em destaque e fundo suave na cor dela; as subseções em linhas com traços discretos e o número de vídeos à direita; a escolhida marcada. Tocar fora fecha o painel.
+- O ícone que reabre a lista de vídeos voltou a ser a setinha curva ↩️.
+
 ## 6.10.33
 
 - Assistente de pesquisas, aba Vídeo: ao tocar em "✅ Usar este vídeo", a lista de vídeos se fecha. O botão largo "↩️ Escolher outro vídeo da lista" virou o ícone 🎞️ à direita do campo do link (aparece quando há uma lista guardada), que abre a lista de novo (com o vídeo em uso marcado) e, tocado outra vez, a fecha. Uma busca nova mostra a lista aberta.

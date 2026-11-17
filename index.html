@@ -2667,9 +2667,12 @@
           <label for="pesquisaVideosAssunto" class="pesq-rotulo">🔍 Procurar um vídeo por assunto</label>
           <!-- Seção (opcional): limita a busca aos vídeos de uma seção do jw.org; com uma seção escolhida, dá para procurar também no que é
                falado nos vídeos (as legendas), o que é mais demorado. -->
-          <select id="pesquisaVideosSecao" class="pesq-campo pesq-videos-secao" aria-label="Seção dos vídeos">
+          <!-- O <select> (escondido) guarda o valor; quem aparece é o botão e o painel próprio, com títulos, emojis e cores por seção. -->
+          <select id="pesquisaVideosSecao" class="pesq-videos-secao-valor" aria-hidden="true" tabindex="-1">
             <option value="">Todas as seções</option>
           </select>
+          <button id="pesquisaVideosSecaoBtn" class="secondary pesq-secao-botao" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="pesquisaVideosSecoesPainel"><span class="pesq-secao-botao-texto">🌐 Todas as seções</span><span aria-hidden="true">▾</span></button>
+          <div id="pesquisaVideosSecoesPainel" class="pesq-secoes-painel" role="listbox" aria-label="Seções dos vídeos" hidden></div>
           <label class="pesq-opcao pesq-opcao-falas"><input type="checkbox" id="pesquisaVideosFalas" disabled> 🗣️ Procurar também no que é falado nos vídeos <span class="pesq-opcional">(escolha uma seção)</span></label>
           <div class="pesq-ref-linha">
             <input id="pesquisaVideosAssunto" class="pesq-campo" type="text" maxlength="300" autocomplete="off" spellcheck="true" placeholder="Ex.: ansiedade, casamento, perdão">
@@ -2681,7 +2684,7 @@
         <label for="pesquisaVideoLink" class="pesq-rotulo">Link do vídeo do jw.org</label>
         <div class="pesq-ref-linha">
           <input id="pesquisaVideoLink" class="pesq-campo" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Cole o link (no vídeo: Compartilhar → Copiar link)">
-          <button id="pesquisaVideosVoltarBtn" class="secondary pesq-fino pesq-icone" type="button" title="Escolher outro vídeo da lista" aria-label="Escolher outro vídeo da lista" aria-expanded="false" hidden>🎞️</button>
+          <button id="pesquisaVideosVoltarBtn" class="secondary pesq-fino pesq-icone" type="button" title="Escolher outro vídeo da lista" aria-label="Escolher outro vídeo da lista" aria-expanded="false" hidden>↩️</button>
         </div>
         <label for="pesquisaVideoContexto" class="pesq-rotulo">O que você quer saber do vídeo? <span class="pesq-opcional">(opcional)</span></label>
         <textarea id="pesquisaVideoContexto" class="pesq-campo" rows="1" maxlength="800" spellcheck="true" placeholder="Ex.: que conselhos o vídeo dá para ajudar um inativo"></textarea>

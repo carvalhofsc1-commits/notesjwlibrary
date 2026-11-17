@@ -16010,7 +16010,7 @@ a.pesq-videos-jw { display: flex; width: 100%; box-sizing: border-box; margin: 0
 /* Assistente de pesquisas com cor própria (laranja terracota) nos botões principais, na aba selecionada e nas caixinhas: nem azul nem verde
    (pedido do usuário). O mesmo tom nos dois temas: o texto branco fica legível nele. */
 .card.pesq-card { --pesq-cor: #c2410c; }
-.card.pesq-card button:not(.secondary):not(.pesq-aba):not(.pesq-fonte-livro):not(.pesq-escolha-mais):not(.pesq-salva-abrir):not(.pesq-salva-apagar) {
+.card.pesq-card button:not(.secondary):not(.pesq-aba):not(.pesq-fonte-livro):not(.pesq-escolha-mais):not(.pesq-salva-abrir):not(.pesq-salva-apagar):not(.pesq-secao-linha) {
   background-color: var(--pesq-cor);
   color: #ffffff;
 }
@@ -16027,3 +16027,67 @@ a.pesq-videos-jw { display: flex; width: 100%; box-sizing: border-box; margin: 0
 .pesq-ref-linha > .pesq-campo { flex: 1 1 auto; min-width: 0; }
 .pesq-ref-linha > #pesquisaVideosVoltarBtn[hidden], .pesq-videos-lista[hidden] { display: none; }
 #pesquisaVideosVoltarBtn[aria-expanded="true"] { background: color-mix(in srgb, var(--pesq-cor, #c2410c) 15%, var(--neutral)); }
+/* Seção dos vídeos: o botão (no lugar da lista nativa) e o painel em forma de tabela — cada seção principal com emoji, título em destaque e
+   fundo suave na cor dela; as subseções em linhas com traços discretos e o número de vídeos à direita; a escolhida em destaque. */
+.pesq-videos-secao-valor { display: none; }
+.pesq-secao-botao {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 0;
+  padding: 8px 12px;
+  margin: 0 0 6px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: .9rem;
+  text-align: left;
+}
+.pesq-secao-botao-texto { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pesq-secoes-painel {
+  margin: 0 0 8px;
+  max-height: 60vh;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+}
+.pesq-secoes-painel[hidden] { display: none; }
+.pesq-secao-grupo {
+  background: color-mix(in srgb, var(--secao-cor) 10%, var(--card));
+  border-top: 1px solid var(--line);
+}
+.pesq-secao-linha {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 0;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: .88rem;
+  font-weight: 400;
+  text-align: left;
+}
+.pesq-secao-linha + .pesq-secao-linha { border-top: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
+.pesq-secao-linha.pesq-secao-todas { font-weight: 700; }
+.pesq-secao-linha.pesq-secao-titulo {
+  font-weight: 700;
+  font-size: .92rem;
+  background: color-mix(in srgb, var(--secao-cor) 20%, var(--card));
+  border-left: 4px solid var(--secao-cor);
+}
+.pesq-secao-linha.pesq-secao-sub { padding-left: 30px; }
+.pesq-secao-total { flex: none; font-size: .76rem; color: var(--muted); font-weight: 400; }
+.pesq-secao-linha[aria-selected="true"] {
+  background: color-mix(in srgb, var(--pesq-cor, #c2410c) 18%, var(--card));
+  box-shadow: inset 4px 0 0 var(--pesq-cor, #c2410c);
+  font-weight: 700;
+}
