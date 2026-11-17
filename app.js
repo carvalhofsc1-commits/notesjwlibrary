@@ -7869,7 +7869,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.08'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.09'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -22514,6 +22514,7 @@ function saveTemplatesToStorage() {
 
     function travarAtalho(nome, motivo) {
       const atalho = document.querySelector('.atalhos-grid [data-atalho="' + nome + '"]');
+      if (!atalho) return; // atalho que saiu do Início: nada a travar
       const trava = atalho.querySelector('.atalho-trava');
       atalho.disabled = Boolean(motivo);
       trava.hidden = !motivo;
@@ -22612,7 +22613,7 @@ function saveTemplatesToStorage() {
       travarAtalho('dirigir', motivoDirigir);
       travarAtalho('discursos', motivoDirigir);
       // Página 2 dos atalhos: cada um leva a uma ferramenta de um grupo e segue o código do grupo dela (o discurso público também o do S-34).
-      ['sentinela', 'joias', 'ebc'].forEach(nome => travarAtalho(nome, pesquisa ? '' : 'pesquisa'));
+      ['sentinela', 'joias'].forEach(nome => travarAtalho(nome, pesquisa ? '' : 'pesquisa'));
       travarAtalho('outros', motivoDirigir);
       // Texto diário (tela Início): o cartão fica bloqueado, menos o link para o wol.jw.org, que vale sempre.
       const texto = document.getElementById('textoDiarioCard');

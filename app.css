@@ -15791,5 +15791,3 @@ button.pesq-fino {
 }
 .pesq-fontes li { transition: background-color .4s; }
 .pesq-fontes li.pesq-fonte-destaque { background: color-mix(in srgb, var(--accent) 16%, transparent); border-radius: 6px; }
-/* Página 3 dos atalhos (ainda com um só atalho): as mesmas 4 linhas das outras páginas, para o botão ter o tamanho dos outros. */
-.atalhos-card .atalhos-paginas > #atalhosPagina3 { grid-template-rows: repeat(4, minmax(0, 1fr)); }

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.09
+
+- Início → atalhos: saiu o atalho do Estudo Bíblico (continua em Comentários → Preparar para comentar). O 🔎 Assistente de pesquisas foi para a página 1, no lugar do Backup do JW Library, que passou para a página 2 (no lugar do Estudo Bíblico). A página 3 dos atalhos deixou de existir: voltam a ser duas páginas de 8.
+
 ## 6.10.08
 
 - Novo: 🔎 Assistente de pesquisas (fase 2 do plano), com atalho no Início (página 3 dos atalhos) e item no menu; só com o código de pesquisa. Aba Assunto: o usuário escreve o assunto e, se quiser, o contexto ou foco. A IA da pesquisa (leve) prepara as buscas; o servidor pesquisa no wol.jw.org (cada matéria é aberta com a busca, para achar o parágrafo exato, a página e o número dele; ficam fora a apostila, os índices e as publicações de antes de 1990, com prioridade para as mais novas), nos verbetes do Estudo Perspicaz e nos livros do servidor (Princípios Bíblicos e os outros). A IA da resposta final escreve a pesquisa só com essas fontes (título, introdução, seções com emoji, aplicações práticas e conclusão), com negrito e itálico de verdade e cada informação ligada à fonte por um número; no fim, a lista de fontes com publicação, edição, título, página e parágrafo e os links para o wol.jw.org e o JW Library. Mostra a data e o agente de IA usado. Botões finos: Copiar (com formatação, e em texto simples com *negrito* e _itálico_ para mensagens), Salvar (no banco deste aparelho, em "🗂️ Pesquisas salvas", logo abaixo) e Limpar. As abas Texto bíblico e Vídeo aparecem como "em breve".
