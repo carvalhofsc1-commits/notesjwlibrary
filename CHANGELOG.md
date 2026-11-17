@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.28
+
+- Assistente de pesquisas, aba Vídeo: saiu o atalho experimental "🧪 Vídeos no JW Library" (no teste do usuário, o navegador do iPhone não entregou o endereço jwlibrary:/// ao app e mostrou "Não é possível acessar esse site"); fica só "🎬 Abrir os vídeos do jw.org". O botão "📖 JW Library" de cada vídeo (sugestões e fonte do resumo) passou a usar o link exatamente como o JW Library o compartilha (https://www.jw.org/finder?srcid=jwlshare&wtlocale=T&lank=…), que no celular com o app instalado abre o vídeo nele, numa aba nova.
+
 ## 6.10.27
 
 - Assistente de pesquisas, aba Vídeo: cada vídeo sugerido pela busca por assunto ganhou o botão "📖 JW Library", que abre o vídeo no app pelo mesmo código que o JW Library usa ao compartilhar (lank=pub-… ou lank=docid-…); o "▶️ Assistir" virou "▶️ jw.org". O vídeo usado como fonte do resumo também tem o link do JW Library na lista de fontes. Na lista de sugestões, "✅ Usar este vídeo" ocupa a linha inteira e os dois links ficam embaixo, lado a lado.

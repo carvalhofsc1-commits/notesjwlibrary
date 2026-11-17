@@ -7876,7 +7876,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.27'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.28'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -31738,12 +31738,13 @@ function saveTemplatesToStorage() {
       // "▶️ Assistir" (abre no jw.org). A última busca (assunto e lista) fica guardada neste aparelho e volta ao abrir o app; depois de usar um
       // vídeo, "↩️ Escolher outro vídeo da lista" (sob o campo do link) reabre a lista, com o vídeo em uso marcado.
       const VIDEOS_CHAVE = 'ns-pesq-videos';
-      // O mesmo vídeo no app JW Library: o código "lank" do link (o mesmo que o app usa ao compartilhar um vídeo).
+      // O mesmo vídeo no app JW Library: o link exatamente como o JW Library o compartilha (https://www.jw.org/finder?srcid=jwlshare&…&lank=…);
+      // no celular com o app instalado, o sistema abre o vídeo nele (o endereço jwlibrary:/// não é entregue ao app pelo navegador do iPhone).
       function jwlDoVideo(link) {
         let texto = String(link || '');
         try { texto = decodeURIComponent(texto); } catch (e) { /* fica como veio */ }
         const lank = (texto.match(/\b(pub-[a-z0-9][a-z0-9-]*?(?:_\d+)?_(?:\d+|x)_VIDEO|docid-\d+_\d+_VIDEO)\b/i) || [])[1];
-        return lank ? 'jwlibrary:///finder?srcid=jwlshare&wtlocale=T&lank=' + encodeURIComponent(lank) : '';
+        return lank ? 'https://www.jw.org/finder?srcid=jwlshare&wtlocale=T&lank=' + encodeURIComponent(lank) : '';
       }
       let videosBusca = null; // { assunto, videos }
       function videosGuardar() {
@@ -31802,6 +31803,8 @@ function saveTemplatesToStorage() {
             const app = document.createElement('a');
             app.className = 'secondary pesq-fino pesq-link-botao';
             app.href = jwl;
+            app.target = '_blank';
+            app.rel = 'noopener noreferrer';
             app.textContent = '📖 JW Library';
             app.title = 'Assistir no app JW Library';
             acoes.appendChild(app);
