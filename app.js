@@ -7869,7 +7869,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.06'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.07'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -29004,6 +29004,7 @@ function saveTemplatesToStorage() {
         workspace.hidden = false;
         tituloEl.textContent = info.titulo;
         detalhesEl.hidden = info.programa; // tema/orador/congregação ficam nos campos só na reunião; nas outras vão em cada parte
+        detalhesEl.open = false; // o card Tema, orador e congregação sempre abre recolhido
         if (info.programa) programaRotuloEl.textContent = '📋 Selecione ' + (nome === 'congresso' ? 'o congresso' : 'a assembleia') + ' que você está assistindo';
         limparCampos(); // os campos de outro modo não passam para este
         if (info.programa) {

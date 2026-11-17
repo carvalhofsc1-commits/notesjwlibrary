@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.07
+
+- Anotações → Reuniões congregacionais: o card "👤 Tema, orador e congregação" abre sempre recolhido e ficou mais fino (menos espaço em cima e embaixo, título um pouco menor).
+
 ## 6.10.06
 
 - Nossa vida cristã → Transcrição do vídeo: o texto vem em parágrafos, separados pelas pausas do vídeo (trocas de cena, pelos tempos da legenda), em vez de tudo emendado. Ao abrir o quadro (uma vez por semana), a IA divide a fala em seções com título e emoji e marca negrito, itálico e MAIÚSCULAS, sem mudar as palavras (o servidor confere se pelo menos 90% das palavras continuam lá); o app mostra com negrito e itálico de verdade (HTML, sem letras Unicode) e guarda neste aparelho. Sem conexão ou se falhar, fica o texto em parágrafos.
