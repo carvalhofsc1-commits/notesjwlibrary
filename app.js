@@ -7839,7 +7839,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.96'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.97'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -16952,8 +16952,8 @@ function saveTemplatesToStorage() {
 
     // ---------- Faça seu melhor no ministério: a parte de "Consideração" (Preparar para comentar) ----------
     // Só algumas semanas têm, nessa seção da apostila, um item "Consideração" com perguntas para a assistência (ex.: "6. O que você diria?",
-    // com uma imagem). O card fica escondido e aparece quando a semana tem esse item: ao abrir Preparar para comentar, o app pergunta ao servidor
-    // (leitura sem IA, guardada por semana, como as outras). A IA responde às perguntas como no Estudo Bíblico; quando a pergunta fala da imagem,
+    // com uma imagem). O card fica sempre na tela: ao abrir Preparar para comentar, o app pergunta ao servidor (leitura sem IA, guardada por
+    // semana, como as outras) e, se a semana não tem esse item, o card mostra o aviso e o botão da IA fica travado. A IA responde às perguntas como no Estudo Bíblico; quando a pergunta fala da imagem,
     // o servidor manda a própria imagem e a resposta sai do que ela mostra.
     const consideracaoBox = document.getElementById('consideracaoBox');
     const consideracaoInfo = document.getElementById('consideracaoInfo');
@@ -16966,7 +16966,7 @@ function saveTemplatesToStorage() {
 
     function consideracaoMostrar(dados) {
       const tem = Boolean(dados && Array.isArray(dados.partes) && dados.partes.length);
-      consideracaoBox.hidden = !tem;
+      const semParte = Boolean(dados) && !tem; // já lida e sem a parte: o card fica com o aviso
       consideracaoTitulo.textContent = '';
       consideracaoInfo.textContent = '';
       consideracaoPerguntasEl.textContent = '';
@@ -16991,18 +16991,21 @@ function saveTemplatesToStorage() {
           linha.dataset.n = String(++n);
           consideracaoPerguntasEl.appendChild(linha);
         }));
+      } else if (semParte) {
+        consideracaoTitulo.textContent = 'Esta semana não tem consideração';
+        consideracaoInfo.textContent = 'Esta semana não tem a parte de consideração na seção Faça seu melhor no ministério da apostila (algumas semanas só têm conversas, demonstrações ou discurso).';
       } else {
         consideracaoTitulo.textContent = 'Aguardando carregar matéria da semana';
       }
       consideracaoTitulo.classList.toggle('study-tema', tem);
       consideracaoTitulo.classList.toggle('study-aguardando', !tem);
-      const rotulo = tem ? '↻ Recarregar matéria da semana' : '📋 Carregar matéria da semana';
+      const rotulo = tem || semParte ? '↻ Recarregar matéria da semana' : '📋 Carregar matéria da semana';
       if (consideracaoCarregarBtn.dataset.label) consideracaoCarregarBtn.dataset.label = rotulo;
       else consideracaoCarregarBtn.textContent = rotulo;
       iaTravasAtualizar();
     }
 
-    // Semana trocada (ou app aberto): usa o que já foi lido desta semana; sem leitura guardada, o card fica escondido até a verificação.
+    // Semana trocada (ou app aberto): usa o que já foi lido desta semana; sem leitura guardada, "Aguardando carregar" até a verificação.
     function consideracaoSemanaMudou() {
       consideracaoMostrar(carregadoDe('consideracao'));
       const grupo = document.getElementById('grupoComentarios');
@@ -17038,7 +17041,6 @@ function saveTemplatesToStorage() {
         if (!result.ok) return setAiStatus(studyFailureMessage(result, 'Não consegui ler a apostila agora.'), true);
         carregadoGuardar('consideracao', result.data);
         consideracaoMostrar(result.data);
-        consideracaoBox.hidden = false; // quem tocou em Recarregar continua vendo o card, mesmo se a parte sumiu
         setAiStatus(result.data.partes && result.data.partes.length ? '✅ Parte da semana carregada.' : 'Esta semana não tem a parte de consideração.', !(result.data.partes && result.data.partes.length));
       } catch (e) {
         setAiStatus(e && e.name === 'AbortError' ? 'O site demorou demais. Tente de novo.' : 'Falha de conexão ao ler a apostila.', true);

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.97
+
+- Preparar para comentar: o card "Faça seu melhor no ministério" fica sempre na tela. Nas semanas sem a parte de consideração, mostra "Esta semana não tem consideração" com a explicação (como o discurso curto), e o botão da IA fica travado; o Recarregar continua disponível.
+
 ## 6.9.96
 
 - Preparar para comentar: nova ordem dos cards — Tesouros da Palavra de Deus, Faça seu melhor no ministério (quando a semana tiver a consideração), Estudo Bíblico e Estudo de A Sentinela (Imagens da apostila continua no fim). A descrição do grupo acompanha a ordem.
