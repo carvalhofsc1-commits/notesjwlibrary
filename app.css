@@ -16106,8 +16106,11 @@ a.pesq-videos-jw { display: flex; width: 100%; box-sizing: border-box; margin: 0
   font-weight: 700;
 }
 /* Anotações · Reunião: discursos e considerações da Vida e Ministério (semana, lista de temas). */
-.anot-vm { margin: 10px 0 4px; padding: 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); display: grid; gap: 8px; min-width: 0; }
-.anot-vm-rotulo { font-weight: 700; font-size: .92rem; }
+.anot-vm { margin: 10px 0 4px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); min-width: 0; }
+.anot-vm-rotulo { font-weight: 700; font-size: .92rem; cursor: pointer; }
+.anot-vm-corpo { display: grid; gap: 8px; margin-top: 8px; min-width: 0; }
+@keyframes anotTemaPreenchido { from { box-shadow: 0 0 0 3px var(--accent); } to { box-shadow: 0 0 0 0 transparent; } }
+.anot-tema-preenchido { animation: anotTemaPreenchido 1.6s ease-out; }
 .anot-vm-semana { display: flex; align-items: center; gap: 8px; }
 .anot-vm-semana .anot-vm-seta { flex: 0 0 auto; width: 40px; min-height: 34px; padding: 4px 0; }
 .anot-vm-semana-nome { flex: 1 1 auto; min-width: 0; text-align: center; font-weight: 600; font-size: .9rem; }

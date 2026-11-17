@@ -232,8 +232,9 @@
           <label for="anotacoesDataReuniao">Data</label>
           <input id="anotacoesDataReuniao" type="date">
           <!-- Discursos e considerações da Vida e Ministério: escolher a semana, listar os temas e tocar num deles para preencher o Tema / parte. -->
-          <div class="anot-vm">
-            <span class="anot-vm-rotulo">📋 Partes da Vida e Ministério</span>
+          <details id="anotVmBox" class="anot-vm">
+            <summary class="anot-vm-rotulo">📋 Partes da Vida e Ministério</summary>
+            <div class="anot-vm-corpo">
             <div class="anot-vm-semana">
               <button id="anotVmAnterior" class="secondary anot-vm-seta" type="button" aria-label="Semana anterior">◀</button>
               <span id="anotVmSemana" class="anot-vm-semana-nome" aria-live="polite"></span>
@@ -242,7 +243,8 @@
             <button id="anotVmCarregar" class="secondary anot-vm-carregar" type="button">📥 Carregar discursos e considerações</button>
             <p id="anotVmStatus" class="hint" hidden></p>
             <div id="anotVmLista" class="anot-vm-lista"></div>
-          </div>
+            </div>
+          </details>
           <label for="anotacoesTema">Tema / parte</label>
           <input id="anotacoesTema" type="text" autocomplete="off" placeholder="Tema do discurso ou da parte">
           <label for="anotacoesOrador">Orador</label>

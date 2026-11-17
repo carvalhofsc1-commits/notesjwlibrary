@@ -7876,7 +7876,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.39'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.40'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -28108,6 +28108,7 @@ function saveTemplatesToStorage() {
       }
       function vmLimpar() {
         vmSegunda = null;
+        document.getElementById('anotVmBox').open = false;
         document.getElementById('anotVmLista').textContent = '';
         vmDizer('');
         vmSemanaPintar();
@@ -28142,6 +28143,12 @@ function saveTemplatesToStorage() {
             temaEl.dispatchEvent(new Event('input', { bubbles: true }));
             lista.querySelectorAll('.anot-vm-parte').forEach(x => x.classList.toggle('escolhida', x === b));
             vmDizer('✅ Tema preenchido: ' + p.titulo);
+            // O card recolhe e a tela vai até o campo Tema / parte, que pisca para mostrar o tema preenchido.
+            document.getElementById('anotVmBox').open = false;
+            temaEl.classList.remove('anot-tema-preenchido');
+            void temaEl.offsetWidth;
+            temaEl.classList.add('anot-tema-preenchido');
+            temaEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
           });
           lista.appendChild(b);
         });

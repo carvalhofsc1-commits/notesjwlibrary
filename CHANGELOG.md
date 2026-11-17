@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.40
+
+- Anotações · Reunião: o card "📋 Partes da Vida e Ministério" fica recolhível (abre recolhido). Ao tocar num tema, o card recolhe e a tela vai até o campo Tema / parte, que pisca para mostrar o tema preenchido.
+
 ## 6.10.39
 
 - Anotações · Reunião: no quadro "Tema, orador e congregação", novo bloco "📋 Partes da Vida e Ministério". Escolha a semana nas setas (começa na semana da Data, ou na atual; mudar a Data muda a semana), toque em "Carregar discursos e considerações" e toque num tema para preencher Tema / parte. Lista: o discurso dos Tesouros, os discursos e considerações de Faça seu melhor e Nossa vida cristã (inclui Necessidades locais) e o Estudo bíblico de congregação, com o tipo, o tempo e a seção. Servidor: tarefa "anotacoes-partes-semana" (sem código, só lê os títulos da apostila no wol.jw.org; `partesDaApostila`/`lerPartesDaApostila` em `_wol.mjs`).
