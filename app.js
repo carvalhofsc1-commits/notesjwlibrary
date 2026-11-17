@@ -232,10 +232,13 @@
         // descia além da tela (medido: rolagem 917 de 869, topo 48, barra empurrada 98). No quique a barra acompanha a página sozinha.
         const rolMax = Math.max(0, (document.scrollingElement || document.documentElement).scrollHeight - window.innerHeight);
         const quicando = window.scrollY > rolMax + 1 || window.scrollY < -1;
+        // Topo da área visível: o iOS às vezes deixa o offsetTop "preso" (medido: topo 68 com pageTop = rolagem, ou seja, deslocamento real 0);
+        // descer a barra esses 68 a cortava embaixo. Vale o menor entre o offsetTop e o que o pageTop indica (pageTop − rolagem).
+        const topoVv = Number.isFinite(vv.pageTop) ? Math.max(0, Math.min(vv.offsetTop, vv.pageTop - window.scrollY)) : vv.offsetTop;
         let desloc = 0;
         if (!computador.matches && (pos === 'fixed' || pos === 'sticky') && !escrevendo && !quicando) {
           const base = nav.getBoundingClientRect().bottom - aplicado;
-          desloc = Math.round(vv.offsetTop + vv.height - base);
+          desloc = Math.round(topoVv + vv.height - base);
           // Também para cima: se a barra ficou abaixo do fim da área visível (escondida atrás da barra do sistema), ela sobe até o fim da área visível.
           if (Math.abs(desloc) < 2 || desloc > 600 || desloc < -300) desloc = 0;
         }
@@ -246,8 +249,8 @@
         // Diagnóstico: se a barra ficar fora da área visível (sumida), guarda as medidas do momento (as 3 últimas) para o quadro da versão.
         if (!computador.matches && !escrevendo && nav.getClientRects().length) {
           const r = nav.getBoundingClientRect();
-          const fundoVisivel = vv.offsetTop + vv.height;
-          if (r.top > fundoVisivel - 8 || r.bottom < vv.offsetTop + 8) {
+          const fundoVisivel = topoVv + vv.height;
+          if (r.top > fundoVisivel - 8 || r.bottom < topoVv + 8) {
             const agora = Date.now();
             if (agora - (ajustar.ultimoSumico || 0) > 5000) {
               ajustar.ultimoSumico = agora;
@@ -7835,7 +7838,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.90'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.91'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -7856,7 +7859,7 @@
           'v' + APP_VERSION + ' · iOS ' + (ios || '?') + ' · app instalado: ' + (navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches) ? 'sim' : 'não'),
           'tela (screen): ' + screen.width + '×' + screen.height,
           'innerHeight: ' + window.innerHeight + ' · clientHeight: ' + document.documentElement.clientHeight,
-          'visível (vv): altura ' + (vv ? Math.round(vv.height) : '-') + ' · topo ' + (vv ? Math.round(vv.offsetTop) : '-') + ' · pageTop ' + (vv ? Math.round(vv.pageTop) : '-'),
+          'visível (vv): altura ' + (vv ? Math.round(vv.height) : '-') + ' · topo ' + (vv ? Math.round(vv.offsetTop) : '-') + ' · pageTop ' + (vv ? Math.round(vv.pageTop) : '-') + ' · topo usado ' + (vv ? Math.round(Math.max(0, Math.min(vv.offsetTop, vv.pageTop - window.scrollY))) : '-'),
           'rolagem: ' + Math.round(window.scrollY) + ' de ' + Math.round(document.documentElement.scrollHeight - window.innerHeight),
           'barra: topo ' + Math.round(r.top) + ' · fundo ' + Math.round(r.bottom) + ' · ' + getComputedStyle(nav).position + (nav.style.transform ? ' · ' + nav.style.transform : ''),
           'sticky: ' + (document.documentElement.classList.contains('nav-sticky') ? 'sim' : 'não') + ' · foco: ' + foco

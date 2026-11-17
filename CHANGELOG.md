@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.91
+
+- Barra de baixo (iPhone): o iOS às vezes informa o topo da área visível "preso" em 68 enquanto o pageTop mostra deslocamento zero; a barra descia 68 e ficava cortada embaixo. Agora vale o menor entre os dois (offsetTop e pageTop − rolagem). O diagnóstico mostra o "topo usado".
+
 ## 6.9.90
 
 - Anotações (gravação): quando o microfone cai (no iPhone acontece ao trocar de tela ou voltar de outro app), a gravação continua sozinha. O trecho gravado até ali fica guardado nas gravações do discurso, o novo começa na hora, o relógio segue e, no resumo, todos os trechos vão juntos, na ordem. O sistema confere a cada meio segundo se o gravador parou, se o microfone foi encerrado, se ficou mudo por mais de 3 s ou se o áudio parou de chegar há 6 s.
