@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.03
+
+- Barra de baixo (iPhone), estado "topo preso" (offsetTop 68 com pageTop = rolagem): nesse estado o iOS corta o que é fixo abaixo de 826 (descida, a barra ficava cortada; sem descer, flutuava 68 acima do fim). Agora o app primeiro pede ao iOS que refaça a conta (rola 1 px e volta, no máximo a cada 4 s); se continuar preso, a barra sai da camada fixa e fica na própria página, no fim da área visível (atualizada a cada rolagem), com o espaço dela reservado no fim da página. Quando o estado passa, volta ao normal.
+- Diagnóstico: linha "ajuste:" com o modo da barra (normal ou na página), quantos recálculos foram pedidos e quantas vezes ela foi para a página.
+
 ## 6.10.02
 
 - Faça seu melhor no ministério: a resposta salva da semana volta sozinha ao abrir o card (como no Estudo Bíblico), com a linha "💾 Resposta salva · … · data". Gerar de novo na mesma semana substitui a resposta salva anterior (antes ficavam várias). Ao fechar o card, a resposta sai do campo, como nas outras matérias.

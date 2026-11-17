@@ -15510,3 +15510,19 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
     }
     .reunioes-grupo.tem-aberto>.comentarios-bloco>.comentarios-bloco-titulo { display: none; }
     .reunioes-grupo.tem-aberto>.comentarios-bloco>details.subsection { margin-top: 0; }
+
+    /* iPhone com o "topo preso" (offsetTop 68 com pageTop = rolagem): a barra sai da camada fixa e fica na própria página, no fim da área visível
+       (o app atualiza o "top" a cada rolagem). O espaço que ela ocupava no fim da página continua reservado (body::after). */
+    html.nav-sticky .app-nav.nav-abs {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: auto;
+      margin-top: 0;
+    }
+    html.nav-sticky body:has(> .app-nav.nav-abs)::after {
+      content: '';
+      display: block;
+      flex: 0 0 auto;
+      height: var(--nav-abs-h, 0px);
+    }

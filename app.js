@@ -235,6 +235,35 @@
         // Topo da área visível: o iOS às vezes deixa o offsetTop "preso" (medido: topo 68 com pageTop = rolagem, ou seja, deslocamento real 0);
         // descer a barra esses 68 a cortava embaixo. Vale o menor entre o offsetTop e o que o pageTop indica (pageTop − rolagem).
         const topoVv = Number.isFinite(vv.pageTop) ? Math.max(0, Math.min(vv.offsetTop, vv.pageTop - window.scrollY)) : vv.offsetTop;
+        // "Topo preso" (medido no iPhone, 6.9.90 e 6.10.01): offsetTop 68 com pageTop = rolagem. Nesse estado o iOS corta o que é fixo/sticky abaixo de
+        // 826 (a barra descida 68 aparecia cortada) e, sem descer, ela flutua 68 acima do fim da tela. Primeiro o app pede ao iOS que refaça a conta
+        // (rola 1 px e volta); se continuar preso, a barra sai da camada fixa e fica na própria página, no fim da área visível (aí o corte não vale).
+        const preso = !computador.matches && document.documentElement.classList.contains('nav-sticky') && !escrevendo && !quicando &&
+          vv.offsetTop > 2 && Number.isFinite(vv.pageTop) && Math.abs(vv.pageTop - window.scrollY) < 2;
+        if (preso) {
+          const agora = Date.now();
+          if (!ajustar.cutucadoEm || agora - ajustar.cutucadoEm > 4000) {
+            ajustar.cutucadoEm = agora;
+            ajustar.cutucadas = (ajustar.cutucadas || 0) + 1;
+            const y = window.scrollY;
+            window.scrollTo(window.scrollX, y + (y >= rolMax ? -1 : 1));
+            requestAnimationFrame(() => window.scrollTo(window.scrollX, y));
+          }
+          if (agora - ajustar.cutucadoEm > 600 || nav.classList.contains('nav-abs')) {
+            if (!nav.classList.contains('nav-abs')) {
+              document.body.style.setProperty('--nav-abs-h', nav.offsetHeight + 'px');
+              nav.classList.add('nav-abs');
+              ajustar.absolutas = (ajustar.absolutas || 0) + 1;
+            }
+            if (aplicado) { aplicado = 0; nav.style.transform = ''; }
+            nav.style.top = Math.round(window.scrollY + window.innerHeight - nav.offsetHeight) + 'px';
+          }
+          return;
+        }
+        if (nav.classList.contains('nav-abs')) {
+          nav.classList.remove('nav-abs');
+          nav.style.top = '';
+        }
         let desloc = 0;
         if (!computador.matches && (pos === 'fixed' || pos === 'sticky') && !escrevendo && !quicando) {
           const base = nav.getBoundingClientRect().bottom - aplicado;
@@ -274,6 +303,7 @@
       window.addEventListener('resize', ajustarLogo);
       window.addEventListener('scroll', ajustarLogo, { passive: true });
       setInterval(ajustar, 1000); // confere de vez em quando (o iPhone nem sempre avisa quando muda a área visível)
+      window.navAjusteInfo = () => (nav.classList.contains('nav-abs') ? 'na página (topo preso)' : 'normal') + ' · recálculos pedidos ' + (ajustar.cutucadas || 0) + ' · vezes na página ' + (ajustar.absolutas || 0);
       document.addEventListener('focusout', () => setTimeout(() => {
         const campo = document.activeElement;
         const escrevendo = campo && (campo.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(campo.tagName));
@@ -7839,7 +7869,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.02'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.03'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -7863,7 +7893,8 @@
           'visível (vv): altura ' + (vv ? Math.round(vv.height) : '-') + ' · topo ' + (vv ? Math.round(vv.offsetTop) : '-') + ' · pageTop ' + (vv ? Math.round(vv.pageTop) : '-') + ' · topo usado ' + (vv ? Math.round(Math.max(0, Math.min(vv.offsetTop, vv.pageTop - window.scrollY))) : '-'),
           'rolagem: ' + Math.round(window.scrollY) + ' de ' + Math.round(document.documentElement.scrollHeight - window.innerHeight),
           'barra: topo ' + Math.round(r.top) + ' · fundo ' + Math.round(r.bottom) + ' · ' + getComputedStyle(nav).position + (nav.style.transform ? ' · ' + nav.style.transform : ''),
-          'sticky: ' + (document.documentElement.classList.contains('nav-sticky') ? 'sim' : 'não') + ' · foco: ' + foco
+          'sticky: ' + (document.documentElement.classList.contains('nav-sticky') ? 'sim' : 'não') + ' · foco: ' + foco,
+          'ajuste: ' + (typeof window.navAjusteInfo === 'function' ? window.navAjusteInfo() : '-')
         ].concat((() => {
           let lista = [];
           try { lista = JSON.parse(localStorage.getItem('ns-diag-barra-sumiu') || '[]'); } catch (e) { lista = []; }
