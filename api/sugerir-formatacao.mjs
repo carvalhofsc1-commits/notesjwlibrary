@@ -55,6 +55,10 @@ import {
   menorMp4DoVideo,
   catalogoDeVideos,
   videosPorPalavras,
+  secoesDosVideos,
+  videosDaSecao,
+  videosPorFalas,
+  MAX_VIDEOS_FALAS,
   lerTextoDoVideo,
   referenciasDeTesouros,
   referenciasDoDiscursoCurto,
@@ -259,6 +263,7 @@ const TAREFAS_SEM_IA = new Set([
   "versiculos",
   "anotacoes-versiculos",
   "pesquisa-versiculos",
+  "pesquisa-videos-secoes",
   "programa-pub",
   "programas-lista",
   "estudo-paragrafos",
@@ -1865,9 +1870,22 @@ async function pesquisarVideo(res, body, P) {
 // cada um ajuda. Sem a IA, ficam os 5 primeiros da busca por palavras.
 const SaidaVideosSugeridos = z.object({ videos: z.array(z.object({ codigo: z.string(), motivo: z.string() })) });
 const MAX_VIDEOS_SUGERIDOS = 20;
+// As seções dos vídeos (para o campo "Seção" da busca): [{ caminho, total }]. Só lê o catálogo público (sem IA).
+async function secoesDeVideos(res) {
+  try {
+    const catalogo = await catalogoDeVideos(12000);
+    return res.status(200).json({ secoes: secoesDosVideos(catalogo), maxFalas: MAX_VIDEOS_FALAS });
+  } catch (e) {
+    console.error("Vídeos: seções indisponíveis", e?.message);
+    return erro(res, 502, "Não consegui consultar as seções de vídeos do jw.org agora.");
+  }
+}
+
 async function sugerirVideos(res, body, P) {
   const assunto = textoLivre(body.assunto, 300);
   if (assunto.length < 3) return erro(res, 400, "Escreva o assunto do vídeo que você procura.");
+  const secao = textoLivre(body.secao, 200);
+  const nasFalas = body.falas === true && Boolean(secao);
   try {
     const client = criarClienteIa({ maxRetries: 1, timeout: 45_000 }, P.ia.provedorTarefa);
     let palavras = [assunto];
@@ -1877,15 +1895,36 @@ async function sugerirVideos(res, body, P) {
     } catch (e) {
       console.error("Vídeos: buscas da IA indisponíveis; segue com o assunto", e?.message);
     }
-    const catalogo = await catalogoDeVideos(12000);
-    const candidatos = videosPorPalavras(catalogo, palavras, 60);
-    if (!candidatos.length) return erro(res, 404, "Não encontrei vídeos sobre esse assunto. Tente outras palavras.");
+    const catalogoTodo = await catalogoDeVideos(12000);
+    // Com uma seção escolhida, a busca fica só nos vídeos dela.
+    const catalogo = videosDaSecao(catalogoTodo, secao);
+    if (secao && !catalogo.length) return erro(res, 404, "Não encontrei vídeos nessa seção.");
+    if (nasFalas && catalogo.length > MAX_VIDEOS_FALAS) return erro(res, 400, `Essa seção tem ${catalogo.length} vídeos. Para procurar no que é falado, escolha uma seção com até ${MAX_VIDEOS_FALAS} vídeos (uma subseção).`);
+    let candidatos = videosPorPalavras(catalogo, palavras, 60);
+    // "Procurar também no que é falado": as legendas dos vídeos da seção; os que falam do assunto entram primeiro, com os trechos e os tempos.
+    let comFala = new Map();
+    if (nasFalas) {
+      const doFalado = await videosPorFalas(catalogo, palavras, 9000);
+      comFala = new Map(doFalado.map((v) => [v.lank, v]));
+      const doTitulo = new Map(candidatos.map((v) => [v.lank, v]));
+      candidatos = [
+        ...doFalado.map((v) => ({ ...v, raras: Math.max(1, (doTitulo.get(v.lank) || {}).raras || 0) })),
+        ...candidatos.filter((v) => !comFala.has(v.lank)),
+      ].slice(0, 60);
+    }
+    if (!candidatos.length) return erro(res, 404, nasFalas ? "Não encontrei esse assunto nos títulos nem no que é falado nos vídeos dessa seção." : "Não encontrei vídeos sobre esse assunto. Tente outras palavras.");
     // Não há número fixo de sugestões: entram TODOS os vídeos relevantes (até MAX_VIDEOS_SUGERIDOS, para a lista não ficar enorme).
     // Sem a IA: os da busca que têm alguma palavra rara no título (ou, se nenhum tiver, os 5 primeiros).
     const comRaras = candidatos.filter((v) => v.raras > 0);
     let escolhidos = (comRaras.length ? comRaras.slice(0, MAX_VIDEOS_SUGERIDOS) : candidatos.slice(0, 5)).map((v) => ({ ...v, motivo: "" }));
     try {
-      const lista = candidatos.map((v, i) => `[V${i + 1}] "${v.titulo}" (${v.duracao}; ${v.categoria})`).join("\n");
+      // Com a busca nas falas, cada vídeo que fala do assunto leva o trecho da fala (com o tempo), para a IA julgar pelo conteúdo e não só pelo título.
+      const lista = candidatos
+        .map((v, i) => {
+          const fala = comFala.get(v.lank);
+          return `[V${i + 1}] "${v.titulo}" (${v.duracao}; ${v.categoria})` + (fala ? ` — FALA DO VÍDEO: ${fala.trechos.map((t) => `aos ${t.tempo}: "${t.texto}"`).join(" | ")}` : "");
+        })
+        .join("\n");
       const r = await chamarIa(client, P, { max_tokens: 3000, system: P.sistemaVideosSugerir, messages: [{ role: "user", content: `ASSUNTO: ${assunto}\n\nVÍDEOS DO JW.ORG:\n${lista}` }] }, { schema: SaidaVideosSugeridos, semPensar: true, tarefa: "pesquisa-videos" });
       const o = r.parsed_output;
       if (o && o.videos.length) {
@@ -1910,9 +1949,9 @@ async function sugerirVideos(res, body, P) {
         escolhidos.push({ ...v, motivo: "" });
       }
     }
-    console.log("Pesquisa (vídeos sugeridos):", JSON.stringify({ assunto, palavras: palavras.length, catalogo: catalogo.length, candidatos: candidatos.length, escolhidos: escolhidos.length }));
+    console.log("Pesquisa (vídeos sugeridos):", JSON.stringify({ secao: secao || "todas", nasFalas, comFala: comFala.size, assunto, palavras: palavras.length, catalogo: catalogo.length, candidatos: candidatos.length, escolhidos: escolhidos.length }));
     return res.status(200).json({
-      videos: escolhidos.map((v) => ({ titulo: v.titulo, duracao: v.duracao, categoria: v.categoria, publicado: v.publicado || "", motivo: v.motivo, link: `https://www.jw.org/finder?srcid=share&wtlocale=T&lank=${encodeURIComponent(v.lank)}` })),
+      videos: escolhidos.map((v) => ({ titulo: v.titulo, duracao: v.duracao, categoria: v.categoria, publicado: v.publicado || "", motivo: v.motivo, trechos: (comFala.get(v.lank) || {}).trechos || [], link: `https://www.jw.org/finder?srcid=share&wtlocale=T&lank=${encodeURIComponent(v.lank)}` })),
     });
   } catch (e) {
     console.error("Vídeos: falha ao sugerir", e?.name, e?.message);
@@ -5436,6 +5475,7 @@ async function tratarPedido(req, res) {
     if (tarefa === "versiculos") return textosDosVersiculos(res, body);
     if (tarefa === "anotacoes-versiculos") return textosDosVersiculosAnotacoes(res, body);
     if (tarefa === "pesquisa-versiculos") return textosDosVersiculosAnotacoes(res, body); // Assistente de pesquisas, aba Texto bíblico (código de pesquisa)
+    if (tarefa === "pesquisa-videos-secoes") return secoesDeVideos(res); // Assistente de pesquisas, aba Vídeo: as seções do catálogo
     if (tarefa === "programa-pub") return lerProgramaPub(res, body);
     if (tarefa === "programas-lista") return listaDeProgramas(res, body);
     if (tarefa === "outros-pesquisar") return pesquisarOutros(res, body);

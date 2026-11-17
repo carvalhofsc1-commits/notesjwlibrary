@@ -7876,7 +7876,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.31'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.32'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -31802,6 +31802,15 @@ function saveTemplatesToStorage() {
             motivo.textContent = v.motivo;
             li.appendChild(motivo);
           }
+          // Busca no que é falado: os trechos da fala com o tempo em que aparecem.
+          (v.trechos || []).forEach(t => {
+            const fala = document.createElement('p');
+            fala.className = 'pesq-video-fala';
+            const tempo = document.createElement('b');
+            tempo.textContent = '🗣️ ' + t.tempo + ' ';
+            fala.append(tempo, document.createTextNode('“' + t.texto + '”'));
+            li.appendChild(fala);
+          });
           const acoes = document.createElement('div');
           acoes.className = 'pesq-acoes pesq-acoes-res';
           const usar = document.createElement('button');
@@ -31844,15 +31853,18 @@ function saveTemplatesToStorage() {
         const status = $('pesquisaVideosStatus');
         if (assunto.length < 3) { dizer(status, 'Escreva o assunto do vídeo que você procura.', { aviso: true }); campo.focus(); return; }
         if (!codigoAcessoSalvo()) return dizer(status, 'Salve o código de pesquisa em Ajustes → 🔐 Autorização de acessos.', { aviso: true });
+        const secao = $('pesquisaVideosSecao').value;
+        const falas = Boolean(secao) && $('pesquisaVideosFalas').checked;
         $('pesquisaVideosBtn').disabled = true;
-        dizer(status, 'Procurando vídeos no jw.org…', { girando: true });
+        dizer(status, falas ? 'Lendo o que é falado nos vídeos de “' + secao + '”… (pode levar alguns segundos)' : 'Procurando vídeos no jw.org…', { girando: true });
         try {
-          const r = await postStudy({ tarefa: 'pesquisa-videos', codigo: codigoAcessoSalvo(), assunto }, 60000);
+          const r = await postStudy({ tarefa: 'pesquisa-videos', codigo: codigoAcessoSalvo(), assunto, secao, falas }, 120000);
           if (!r.ok) return dizer(status, erroDe(r, 'Não consegui procurar os vídeos agora.'), { aviso: true });
           const videos = (r.data && r.data.videos) || [];
           if (!videos.length) return dizer(status, 'Nenhum vídeo encontrado sobre esse assunto. Tente outras palavras.', { aviso: true });
-          dizer(status, videos.length === 1 ? '1 vídeo encontrado.' : videos.length + ' vídeos encontrados.');
-          videosBusca = { assunto, videos };
+          const comFala = videos.filter(v => (v.trechos || []).length).length;
+          dizer(status, (videos.length === 1 ? '1 vídeo encontrado' : videos.length + ' vídeos encontrados') + (falas ? ' (' + comFala + ' com o assunto no que é falado)' : '') + '.');
+          videosBusca = { assunto, videos, secao, falas };
           videosGuardar();
           videosPintar();
           videosVoltarPintar();
@@ -31871,12 +31883,83 @@ function saveTemplatesToStorage() {
       });
       // O link mudou à mão: a marca "Em uso" e o botão de voltar acompanham.
       $('pesquisaVideoLink').addEventListener('input', () => { if (videosBusca) { videosPintar(); videosVoltarPintar(); } });
+      // ---------- Seção dos vídeos ----------
+      // As seções do catálogo do jw.org (seção principal e subseções, com o número de vídeos), lidas do servidor ao abrir a aba Vídeo e guardadas
+      // neste aparelho por 24 h. "Procurar também no que é falado" só vale com uma seção de até maxFalas vídeos (o servidor lê as legendas dela).
+      const SECOES_CHAVE = 'ns-pesq-secoes';
+      let secoesVideos = null; // { quando, secoes: [{ caminho, total }], maxFalas }
+      function secoesPintar() {
+        const sel = $('pesquisaVideosSecao');
+        const atual = sel.value || (videosBusca && videosBusca.secao) || '';
+        sel.textContent = '';
+        const todas = document.createElement('option');
+        todas.value = '';
+        todas.textContent = 'Todas as seções';
+        sel.appendChild(todas);
+        const lista = (secoesVideos && secoesVideos.secoes) || [];
+        lista.filter(s => !s.caminho.includes(' › ')).forEach(principal => {
+          const grupo = document.createElement('optgroup');
+          grupo.label = principal.caminho;
+          const op = document.createElement('option');
+          op.value = principal.caminho;
+          op.textContent = principal.caminho + ' — todas (' + principal.total + ')';
+          grupo.appendChild(op);
+          lista.filter(s => s.caminho.startsWith(principal.caminho + ' › ') && s.caminho.split(' › ').length === 2).forEach(sub => {
+            const o = document.createElement('option');
+            o.value = sub.caminho;
+            o.textContent = sub.caminho.split(' › ')[1] + ' (' + sub.total + ')';
+            grupo.appendChild(o);
+          });
+          sel.appendChild(grupo);
+        });
+        if ([...sel.options].some(o => o.value === atual)) sel.value = atual;
+        secaoMudou();
+      }
+      function secaoMudou() {
+        const sel = $('pesquisaVideosSecao');
+        const caixa = $('pesquisaVideosFalas');
+        const dica = document.querySelector('.pesq-opcao-falas .pesq-opcional');
+        const s = ((secoesVideos && secoesVideos.secoes) || []).find(x => x.caminho === sel.value);
+        const max = (secoesVideos && secoesVideos.maxFalas) || 80;
+        const pode = Boolean(sel.value) && (!s || s.total <= max);
+        caixa.disabled = !pode;
+        if (!pode) caixa.checked = false;
+        dica.textContent = !sel.value ? '(escolha uma seção)' : pode ? '(mais demorado: lê as legendas dos ' + (s ? s.total : '') + ' vídeos)' : '(seção grande demais: escolha uma subseção com até ' + max + ' vídeos)';
+      }
+      $('pesquisaVideosSecao').addEventListener('change', secaoMudou);
+      async function secoesCarregar() {
+        if (secoesVideos && Date.now() - secoesVideos.quando < 24 * 3600 * 1000) return;
+        try {
+          const guardadas = JSON.parse(localStorage.getItem(SECOES_CHAVE) || 'null');
+          if (guardadas && Array.isArray(guardadas.secoes) && Date.now() - guardadas.quando < 24 * 3600 * 1000) { secoesVideos = guardadas; secoesPintar(); return; }
+        } catch (e) { /* nada guardado */ }
+        if (!codigoAcessoSalvo()) return;
+        try {
+          const r = await postStudy({ tarefa: 'pesquisa-videos-secoes', codigo: codigoAcessoSalvo() }, 30000);
+          if (!r.ok || !r.data || !Array.isArray(r.data.secoes)) return;
+          secoesVideos = { quando: Date.now(), secoes: r.data.secoes, maxFalas: r.data.maxFalas || 80 };
+          try { localStorage.setItem(SECOES_CHAVE, JSON.stringify(secoesVideos)); } catch (e) { /* sem armazenamento */ }
+          secoesPintar();
+        } catch (e) { /* sem conexão: fica "Todas as seções" */ }
+      }
+      document.querySelector('.pesq-aba[data-pesq-aba="video"]').addEventListener('click', () => { secoesCarregar(); });
+
       // A última busca de vídeos volta ao abrir o app.
       try {
         const guardada = JSON.parse(localStorage.getItem(VIDEOS_CHAVE) || 'null');
         if (guardada && Array.isArray(guardada.videos) && guardada.videos.length) {
-          videosBusca = { assunto: String(guardada.assunto || ''), videos: guardada.videos.slice(0, 20) };
+          videosBusca = { assunto: String(guardada.assunto || ''), videos: guardada.videos.slice(0, 20), secao: String(guardada.secao || ''), falas: guardada.falas === true };
           $('pesquisaVideosAssunto').value = videosBusca.assunto;
+          if (videosBusca.secao) {
+            // A seção da última busca volta junto (a lista de seções completa chega ao abrir a aba Vídeo).
+            const o = document.createElement('option');
+            o.value = videosBusca.secao;
+            o.textContent = videosBusca.secao;
+            $('pesquisaVideosSecao').appendChild(o);
+            $('pesquisaVideosSecao').value = videosBusca.secao;
+            secaoMudou();
+            $('pesquisaVideosFalas').checked = videosBusca.falas && !$('pesquisaVideosFalas').disabled;
+          }
           videosPintar();
           videosVoltarPintar();
         }

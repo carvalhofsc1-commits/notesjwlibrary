@@ -2665,6 +2665,12 @@
         <!-- Procurar um vídeo por assunto: o servidor consulta o catálogo de vídeos do jw.org e a IA sugere os que tratam do assunto. -->
         <div id="pesquisaVideosBusca" class="pesq-videos-busca">
           <label for="pesquisaVideosAssunto" class="pesq-rotulo">🔍 Procurar um vídeo por assunto</label>
+          <!-- Seção (opcional): limita a busca aos vídeos de uma seção do jw.org; com uma seção escolhida, dá para procurar também no que é
+               falado nos vídeos (as legendas), o que é mais demorado. -->
+          <select id="pesquisaVideosSecao" class="pesq-campo pesq-videos-secao" aria-label="Seção dos vídeos">
+            <option value="">Todas as seções</option>
+          </select>
+          <label class="pesq-opcao pesq-opcao-falas"><input type="checkbox" id="pesquisaVideosFalas" disabled> 🗣️ Procurar também no que é falado nos vídeos <span class="pesq-opcional">(escolha uma seção)</span></label>
           <div class="pesq-ref-linha">
             <input id="pesquisaVideosAssunto" class="pesq-campo" type="text" maxlength="300" autocomplete="off" spellcheck="true" placeholder="Ex.: ansiedade, casamento, perdão">
             <button id="pesquisaVideosBtn" data-codigo-ia="pesquisa" class="pesq-fino pesq-icone" type="button" title="Sugerir vídeos sobre o assunto" aria-label="Sugerir vídeos sobre o assunto">🔍</button>

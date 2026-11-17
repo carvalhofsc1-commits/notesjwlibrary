@@ -1309,6 +1309,13 @@ async function baixarJson(url, timeoutMs) {
 
 // O texto da fala do vídeo: { titulo, duracaoS, texto, fonte } (texto vazio se o jw.org não publicou nenhum).
 export async function lerTextoDoVideo(video, { timeoutMs = 8000 } = {}) {
+  const a = await legendaDoVideo(video, timeoutMs);
+  const texto = a.vtt ? textoDoVtt(a.vtt).slice(0, MAX_CARACTERES_VIDEO) : "";
+  return { titulo: a.titulo, duracaoS: a.duracaoS, texto, fonte: texto ? a.fonte : "" };
+}
+
+// A legenda do vídeo (WebVTT, com os tempos): { titulo, duracaoS, vtt, fonte } — vtt vazio se o jw.org não publicou nenhuma.
+export async function legendaDoVideo(video, timeoutMs = 8000) {
   let titulo = "";
   let duracaoS = 0;
   let urlTexto = "";
@@ -1342,10 +1349,10 @@ export async function lerTextoDoVideo(video, { timeoutMs = 8000 } = {}) {
         }
       }
     }
-    const texto = urlTexto ? textoDoVtt(await (await fetch(urlTexto, { headers: { "User-Agent": AGENTE }, signal: AbortSignal.timeout(timeoutMs) })).text()).slice(0, MAX_CARACTERES_VIDEO) : "";
-    return { titulo, duracaoS, texto, fonte: texto ? fonte : "" };
+    const vtt = urlTexto ? await (await fetch(urlTexto, { headers: { "User-Agent": AGENTE }, signal: AbortSignal.timeout(timeoutMs) })).text() : "";
+    return { titulo, duracaoS, vtt, fonte: vtt ? fonte : "" };
   } catch {
-    return { titulo, duracaoS, texto: "", fonte: "" };
+    return { titulo, duracaoS, vtt: "", fonte: "" };
   }
 }
 
@@ -2745,4 +2752,90 @@ export function videosPorPalavras(lista, palavras, maximo = 40) {
     .filter((x) => x.pontos > 0)
     .sort((a, b) => b.pontos - a.pontos)
     .slice(0, maximo);
+}
+
+// ---------- Vídeos: seções do catálogo e busca no que é falado (legendas) ----------
+// As seções vêm do caminho de categorias de cada vídeo ("Família › Namoro e Casamento"): a seção principal e cada subseção, com o número de
+// vídeos. A busca nas falas lê as legendas dos vídeos de UMA seção (até MAX_VIDEOS_FALAS), guardadas por 24 h na instância, e devolve os
+// trechos com o tempo em que as palavras aparecem.
+export const MAX_VIDEOS_FALAS = 80;
+const falasLidas = new Map(); // lank -> { quando, falas: [{ inicio, texto }] }
+
+export function secoesDosVideos(lista) {
+  const contagem = new Map();
+  for (const v of lista) {
+    const partes = String(v.categoria || "").split(" › ").filter(Boolean);
+    for (let i = 1; i <= partes.length; i++) {
+      const caminho = partes.slice(0, i).join(" › ");
+      contagem.set(caminho, (contagem.get(caminho) || 0) + 1);
+    }
+  }
+  return [...contagem.entries()].map(([caminho, total]) => ({ caminho, total })).sort((a, b) => a.caminho.localeCompare(b.caminho, "pt"));
+}
+
+export const videosDaSecao = (lista, secao) => (secao ? lista.filter((v) => v.categoria === secao || String(v.categoria).startsWith(secao + " › ")) : lista);
+
+// As falas da legenda de um vídeo: [{ inicio (s), texto }], sem repetições seguidas. [] = sem legenda publicada.
+export async function falasDoVideo(lank, timeoutMs = 9000) {
+  const guardado = falasLidas.get(lank);
+  if (guardado && Date.now() - guardado.quando < VALIDADE_GUIA_MS) return guardado.falas;
+  const video = videoDoEndereco("https://www.jw.org/finder?lank=" + lank);
+  if (!video) return [];
+  const { vtt } = await legendaDoVideo(video, timeoutMs);
+  const falas = [];
+  let ultima = "";
+  for (const bloco of String(vtt || "").replace(/\r/g, "").split(/\n\s*\n/)) {
+    const linhas = bloco.split("\n");
+    const iTempo = linhas.findIndex((l) => /-->/.test(l));
+    if (iTempo < 0) continue;
+    const t = linhas[iTempo].match(/((?:\d+:)?\d+:\d+(?:\.\d+)?)\s*-->/);
+    const texto = linhas.slice(iTempo + 1).map((l) => decodificar(l.replace(/<[^>]+>/g, "")).trim()).filter(Boolean).join(" ");
+    if (!texto || texto === ultima) continue;
+    ultima = texto;
+    falas.push({ inicio: t ? Math.round(segundosVtt(t[1])) : 0, texto });
+  }
+  falasLidas.set(lank, { quando: Date.now(), falas });
+  if (falasLidas.size > 500) falasLidas.delete(falasLidas.keys().next().value);
+  return falas;
+}
+
+// Procura as buscas nas falas de cada vídeo: [{ ...video, pontosFala, trechos: [{ tempo: "3:25", texto }] }] dos que têm alguma palavra rara
+// da busca na fala, do que mais fala do assunto para o que menos fala. Lê as legendas de 10 em 10, para não sobrecarregar o jw.org.
+export async function videosPorFalas(videos, palavras, timeoutMs = 9000) {
+  const buscas = palavras.map((p) => [...new Set(raizes(p))].filter((t) => !GENERICAS.has(t))).filter((b) => b.length);
+  if (!buscas.length) return [];
+  const todas = [];
+  for (let i = 0; i < videos.length; i += 10) {
+    const lote = videos.slice(i, i + 10);
+    todas.push(...(await Promise.all(lote.map((v) => falasDoVideo(v.lank, timeoutMs).then((falas) => ({ v, falas })).catch(() => ({ v, falas: [] }))))));
+  }
+  const mmss = (s) => Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+  const achados = [];
+  for (const { v, falas } of todas) {
+    if (!falas.length) continue;
+    const marcadas = [];
+    falas.forEach((f, i) => {
+      const r = new Set(raizes(f.texto));
+      let pontos = 0;
+      for (const b of buscas) {
+        const tem = b.filter((t) => r.has(t)).length;
+        if (tem) pontos += tem === b.length ? 2 * tem : tem;
+      }
+      if (pontos) marcadas.push({ i, pontos });
+    });
+    if (!marcadas.length) continue;
+    const pontosFala = marcadas.reduce((s, m) => s + m.pontos, 0);
+    // Os 2 trechos com mais palavras da busca (sem repetir trechos vizinhos), com a fala de antes e a de depois para dar contexto.
+    const trechos = [];
+    const usados = new Set();
+    for (const m of [...marcadas].sort((a, b) => b.pontos - a.pontos)) {
+      if (trechos.length >= 2 || [m.i - 1, m.i, m.i + 1].some((j) => usados.has(j))) continue;
+      usados.add(m.i);
+      const texto = [falas[m.i - 1], falas[m.i], falas[m.i + 1]].filter(Boolean).map((f) => f.texto).join(" ").slice(0, 320);
+      trechos.push({ tempo: mmss(falas[m.i].inicio), texto });
+    }
+    trechos.sort((a, b) => falas.findIndex((f) => mmss(f.inicio) === a.tempo) - falas.findIndex((f) => mmss(f.inicio) === b.tempo));
+    achados.push({ ...v, pontosFala, trechos });
+  }
+  return achados.sort((a, b) => b.pontosFala - a.pontosFala);
 }

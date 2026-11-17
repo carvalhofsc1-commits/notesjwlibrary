@@ -62,6 +62,7 @@ export const NIVEIS = {
   "pesquisa-versiculos": "pesquisa", // Assistente de pesquisas: o texto do versículo escolhido (sem IA)
   "pesquisa-video": "pesquisa", // Assistente de pesquisas: vídeo do jw.org (transcrição e resumo)
   "pesquisa-videos": "pesquisa", // Assistente de pesquisas: sugerir vídeos do jw.org por assunto
+  "pesquisa-videos-secoes": "pesquisa", // Assistente de pesquisas: as seções de vídeos do jw.org (sem IA)
   joias: "pesquisa",
   "joias-ler": "pesquisa",
   // Código de resumo (só o resumo dos capítulos da Leitura diária da Bíblia)

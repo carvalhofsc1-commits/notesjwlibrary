@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.32
+
+- Assistente de pesquisas, "Procurar um vídeo por assunto": campo "Seção" com as seções e subseções de vídeos do jw.org e o número de vídeos de cada uma (lidas do catálogo ao abrir a aba Vídeo e guardadas no aparelho por 24 h; tarefa pesquisa-videos-secoes, sem IA). Com uma seção escolhida, a busca fica só nos vídeos dela.
+- Nova caixinha "🗣️ Procurar também no que é falado nos vídeos", que vale com uma seção de até 80 vídeos (escolher uma subseção quando a seção é maior): o servidor lê as legendas dos vídeos da seção (de 10 em 10, guardadas 24 h na instância), procura as palavras no que é falado e põe primeiro os vídeos que falam do assunto, com os 2 trechos da fala de mais destaque e o tempo em que aparecem ("🗣️ 4:25 “…”"). A IA recebe os trechos e julga pelo conteúdo, não só pelo título, e diz no motivo o que é dito e quando. Com legendas de verdade, os 62 vídeos da seção Família foram lidos em menos de 4 segundos. A busca guardada volta com a seção e a caixinha.
+
 ## 6.10.31
 
 - Assistente de pesquisas: o mês e o ano aparecem nas listas. Nos vídeos sugeridos, a data de publicação do vídeo no jw.org ("📅 julho de 2025 · ⏱️ 5:54 · Família"; o catálogo traz a data de todos os vídeos). Nas fontes das publicações (tela, escolha das fontes, prévia e Word), a edição tirada da citação: "w22.04" → abril de 2022, "w23 novembro" → novembro de 2023, "ws15 15/9" → setembro de 2015, "g 3/12" → março de 2012, revistas numeradas ("wp23.1", "g16.2") → N.º 1 de 2023; sem mês na citação, o ano; livros e artigos do site (cl, ijwbq…) ficam sem data.
