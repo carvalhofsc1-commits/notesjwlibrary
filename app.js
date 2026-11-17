@@ -7876,7 +7876,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.20'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.21'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -9314,7 +9314,7 @@
     const REPORT_EMAIL = 'carvalhofsc1@gmail.com'; // o mesmo contato da página Sobre
     const MSG_SEM_CONSENTIMENTO = 'Para usar a IA e a leitura em voz alta é preciso concordar com o envio do texto. Toque no botão de novo quando quiser concordar.';
     // As tarefas do servidor que usam a IA (as outras só leem o wol.jw.org ou a Bíblia e não precisam da concordância).
-    const IA_TAREFAS = new Set(['pesquisa-coletar', 'pesquisa', 'pesquisa-video','anotacoes-formatar','estudo', 'estudo-lista', 'estudo-perguntas', 'texto-diario-comentarios', 'ebc', 'consideracao', 'nvc', 'nvc-transcricao', 'ebc-dirigente', 'tesouros', 'publico', 'publico-importar', 'publico-canticos', 'outros', 'discurso', 'joias', 'leitura-biblia', 'sentinela']);
+    const IA_TAREFAS = new Set(['pesquisa-coletar', 'pesquisa', 'pesquisa-video', 'pesquisa-videos', 'anotacoes-formatar','estudo', 'estudo-lista', 'estudo-perguntas', 'texto-diario-comentarios', 'ebc', 'consideracao', 'nvc', 'nvc-transcricao', 'ebc-dirigente', 'tesouros', 'publico', 'publico-importar', 'publico-canticos', 'outros', 'discurso', 'joias', 'leitura-biblia', 'sentinela']);
     let consentimentoIaSessao = false; // vale só até fechar o app quando o aparelho não deixa gravar a escolha
     let consentimentoIaEmCurso = null;
 
@@ -12097,7 +12097,7 @@ function saveTemplatesToStorage() {
       'leitura-biblia': 'Leitura bíblica', 'biblia-texto': 'Texto bíblico',
       'outros-pesquisar': 'Pesquisar', 'publico-esboco': 'Esboço S-34',
       versiculos: 'Versículos', 'anotacoes-versiculos': 'Bíblia (anotações)', 'anotacoes-formatar': 'Formatar anotações (IA)',
-      'programa-pub': 'Programa (assembleia)', 'pesquisa-coletar': 'Pesquisa (buscas)', pesquisa: 'Pesquisa (resposta)', 'pesquisa-internet': 'Pesquisa (internet)', 'pesquisa-video': 'Pesquisa (vídeo)', voz: 'Voz', ia: 'IA'
+      'programa-pub': 'Programa (assembleia)', 'pesquisa-coletar': 'Pesquisa (buscas)', pesquisa: 'Pesquisa (resposta)', 'pesquisa-internet': 'Pesquisa (internet)', 'pesquisa-video': 'Pesquisa (vídeo)', 'pesquisa-videos': 'Pesquisa (sugerir vídeos)', voz: 'Voz', ia: 'IA'
     };
     function estatisticasNomeTarefa(chave) {
       return ESTAT_TAREFA_NOME[chave] || String(chave || 'IA');
@@ -31733,6 +31733,69 @@ function saveTemplatesToStorage() {
           if (meu === pedido) { ocupado(false); relogioDesligar(); }
         }
       }
+
+      // Procurar um vídeo por assunto: até 5 sugestões do catálogo do jw.org, cada uma com o motivo, "Usar este vídeo" (põe o link no campo) e
+      // "▶️ Assistir" (abre no jw.org).
+      async function sugerirVideos() {
+        const campo = $('pesquisaVideosAssunto');
+        const assunto = campo.value.replace(/\s+/g, ' ').trim();
+        const status = $('pesquisaVideosStatus');
+        const lista = $('pesquisaVideosLista');
+        if (assunto.length < 3) { dizer(status, 'Escreva o assunto do vídeo que você procura.', { aviso: true }); campo.focus(); return; }
+        if (!codigoAcessoSalvo()) return dizer(status, 'Salve o código de pesquisa em Ajustes → 🔐 Autorização de acessos.', { aviso: true });
+        lista.textContent = '';
+        $('pesquisaVideosBtn').disabled = true;
+        dizer(status, 'Procurando vídeos no jw.org…', { girando: true });
+        try {
+          const r = await postStudy({ tarefa: 'pesquisa-videos', codigo: codigoAcessoSalvo(), assunto }, 60000);
+          if (!r.ok) return dizer(status, erroDe(r, 'Não consegui procurar os vídeos agora.'), { aviso: true });
+          const videos = (r.data && r.data.videos) || [];
+          if (!videos.length) return dizer(status, 'Nenhum vídeo encontrado sobre esse assunto. Tente outras palavras.', { aviso: true });
+          dizer(status, '');
+          videos.forEach(v => {
+            const li = document.createElement('li');
+            const titulo = document.createElement('strong');
+            titulo.textContent = v.titulo;
+            const info = document.createElement('small');
+            info.className = 'pesq-fonte-guia';
+            info.textContent = [v.duracao ? '⏱️ ' + v.duracao : '', v.categoria].filter(Boolean).join(' · ');
+            li.append(titulo, info);
+            if (v.motivo) {
+              const motivo = document.createElement('p');
+              motivo.className = 'pesq-escolha-trecho';
+              motivo.textContent = v.motivo;
+              li.appendChild(motivo);
+            }
+            const acoes = document.createElement('div');
+            acoes.className = 'pesq-acoes pesq-acoes-res';
+            const usar = document.createElement('button');
+            usar.type = 'button';
+            usar.className = 'pesq-fino';
+            usar.textContent = '✅ Usar este vídeo';
+            usar.addEventListener('click', () => {
+              $('pesquisaVideoLink').value = v.link;
+              $('pesquisaVideosBusca').open = false;
+              dizer(statusEl, '🎬 Vídeo escolhido: ' + v.titulo + '. Toque em "Resumir o vídeo".');
+              $('pesquisaVideoLink').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+            const ver = document.createElement('a');
+            ver.className = 'secondary pesq-fino pesq-link-botao';
+            ver.href = v.link;
+            ver.target = '_blank';
+            ver.rel = 'noopener noreferrer';
+            ver.textContent = '▶️ Assistir';
+            acoes.append(usar, ver);
+            li.appendChild(acoes);
+            lista.appendChild(li);
+          });
+        } catch (e) {
+          dizer(status, 'Sem conexão com o servidor. Confira a internet e tente de novo.', { aviso: true });
+        } finally {
+          $('pesquisaVideosBtn').disabled = false;
+        }
+      }
+      $('pesquisaVideosBtn').addEventListener('click', sugerirVideos);
+      $('pesquisaVideosAssunto').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sugerirVideos(); } });
 
       async function pesquisar() {
         if (aba === 'video') return resumirVideo();

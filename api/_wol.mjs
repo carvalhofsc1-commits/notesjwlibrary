@@ -2675,3 +2675,47 @@ export async function menorMp4DoVideo(video, { timeoutMs = 8000, maxBytes = 18_0
     return null;
   }
 }
+
+// ---------- Catálogo de vídeos do jw.org (para sugerir vídeos por assunto) ----------
+// O mesmo serviço público que o app já usa para ler os vídeos (mediator): as categorias de "Vídeos" (VideoOnDemand) e, em cada uma, as
+// subcategorias com os vídeos (título, código "lank", duração). Lido uma vez e guardado por 24 h na instância: [{ lank, titulo, duracao, categoria }].
+const URL_MEDIATOR = "https://b.jw-cdn.org/apis/mediator/v1/categories/T";
+let catalogoVideos = null; // { quando, lista }
+
+export async function catalogoDeVideos(timeoutMs = 12000) {
+  if (catalogoVideos && Date.now() - catalogoVideos.quando < VALIDADE_GUIA_MS) return catalogoVideos.lista;
+  const raiz = await baixarJson(`${URL_MEDIATOR}/VideoOnDemand?detailed=0&clientType=www`, timeoutMs);
+  const chaves = ((raiz && raiz.category && raiz.category.subcategories) || []).map((s) => s.key).filter((k) => k && !/AudioDescriptions/i.test(k));
+  const porLank = new Map();
+  const percorrer = (cat, caminho) => {
+    const nome = [caminho, cat.name].filter(Boolean).join(" › ");
+    for (const m of cat.media || []) {
+      const lank = m.languageAgnosticNaturalKey || m.naturalKey;
+      if (!lank || porLank.has(lank) || !/_VIDEO$/i.test(lank)) continue;
+      porLank.set(lank, { lank, titulo: String(m.title || "").trim(), duracao: m.durationFormattedHHMM || "", categoria: nome });
+    }
+    for (const s of cat.subcategories || []) percorrer(s, nome);
+  };
+  const categorias = await Promise.all(chaves.map((k) => baixarJson(`${URL_MEDIATOR}/${encodeURIComponent(k)}?detailed=1&clientType=www`, timeoutMs).catch(() => null)));
+  for (const c of categorias) if (c && c.category) percorrer(c.category, "");
+  const lista = [...porLank.values()].filter((v) => v.titulo);
+  if (lista.length) catalogoVideos = { quando: Date.now(), lista };
+  return lista;
+}
+
+// Os vídeos do catálogo que mais combinam com as palavras (no título valem mais que na categoria): até "maximo".
+export function videosPorPalavras(lista, palavras, maximo = 40) {
+  const termos = [...new Set(palavras.flatMap((p) => raizes(p)))];
+  if (!termos.length) return [];
+  return lista
+    .map((v) => {
+      const titulo = new Set(raizes(v.titulo));
+      const categoria = new Set(raizes(v.categoria));
+      const pontos = termos.reduce((s, t) => s + (titulo.has(t) ? 3 : 0) + (categoria.has(t) ? 1 : 0), 0);
+      return { v, pontos };
+    })
+    .filter((x) => x.pontos > 0)
+    .sort((a, b) => b.pontos - a.pontos)
+    .slice(0, maximo)
+    .map((x) => x.v);
+}

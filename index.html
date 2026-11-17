@@ -2659,6 +2659,17 @@
       <!-- Aba Vídeo: o link de um vídeo do jw.org; o app pega o texto da fala (a legenda publicada) ou a IA ouve o vídeo, e a IA faz o resumo, os
            pontos principais e a transcrição em seções. -->
       <div class="pesq-bloco" id="pesquisaVideoBloco" hidden>
+        <a class="secondary pesq-fino pesq-link-botao pesq-videos-jw" href="https://www.jw.org/finder?srcid=share&docid=1011214&wtlocale=T" target="_blank" rel="noopener noreferrer">🎬 Abrir os vídeos do jw.org</a>
+        <!-- Procurar um vídeo por assunto: o servidor consulta o catálogo de vídeos do jw.org e a IA sugere os que tratam do assunto. -->
+        <details id="pesquisaVideosBusca" class="pesq-videos-busca">
+          <summary>🔍 Procurar um vídeo por assunto</summary>
+          <div class="pesq-ref-linha">
+            <input id="pesquisaVideosAssunto" class="pesq-campo" type="text" maxlength="300" autocomplete="off" spellcheck="true" placeholder="Ex.: ansiedade, casamento, perdão">
+            <button id="pesquisaVideosBtn" data-codigo-ia="pesquisa" class="pesq-fino pesq-icone" type="button" title="Sugerir vídeos sobre o assunto" aria-label="Sugerir vídeos sobre o assunto">🔍</button>
+          </div>
+          <p id="pesquisaVideosStatus" class="pesq-status" role="status" aria-live="polite" hidden></p>
+          <ul id="pesquisaVideosLista" class="pesq-videos-lista"></ul>
+        </details>
         <label for="pesquisaVideoLink" class="pesq-rotulo">Link do vídeo do jw.org</label>
         <input id="pesquisaVideoLink" class="pesq-campo" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Cole o link (no vídeo: Compartilhar → Copiar link)">
         <label for="pesquisaVideoContexto" class="pesq-rotulo">O que você quer saber do vídeo? <span class="pesq-opcional">(opcional)</span></label>

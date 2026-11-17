@@ -53,6 +53,8 @@ import {
   notasDeEstudo,
   videoDoEndereco,
   menorMp4DoVideo,
+  catalogoDeVideos,
+  videosPorPalavras,
   lerTextoDoVideo,
   referenciasDeTesouros,
   referenciasDoDiscursoCurto,
@@ -1854,6 +1856,53 @@ async function pesquisarVideo(res, body, P) {
     });
   } catch (e) {
     return tratarErro(e, res);
+  }
+}
+
+// ---------- Assistente de pesquisas: sugerir vídeos do jw.org por assunto (aba Vídeo) ----------
+// O catálogo público de vídeos do jw.org (guardado 24 h); a IA da pesquisa (leve) transforma o assunto em buscas (o mesmo prompt das buscas da
+// pesquisa), o servidor separa até 40 vídeos cujos títulos e categorias combinam e a mesma IA escolhe até 5, dizendo em uma frase por que
+// cada um ajuda. Sem a IA, ficam os 5 primeiros da busca por palavras.
+const SaidaVideosSugeridos = z.object({ videos: z.array(z.object({ codigo: z.string(), motivo: z.string() })) });
+async function sugerirVideos(res, body, P) {
+  const assunto = textoLivre(body.assunto, 300);
+  if (assunto.length < 3) return erro(res, 400, "Escreva o assunto do vídeo que você procura.");
+  try {
+    const client = criarClienteIa({ maxRetries: 1, timeout: 45_000 }, P.ia.provedorTarefa);
+    let palavras = [assunto];
+    try {
+      const r = await chamarIa(client, P, { max_tokens: 3000, system: P.sistemaPesquisaConsultas, messages: [{ role: "user", content: `ASSUNTO: ${assunto}` }] }, { schema: SaidaConsultasPesquisa, semPensar: true, tarefa: "pesquisa-videos" });
+      if (r.parsed_output) palavras = [assunto, ...r.parsed_output.consultas, ...r.parsed_output.verbetes].map((p) => limparLinha(p, 80)).filter(Boolean);
+    } catch (e) {
+      console.error("Vídeos: buscas da IA indisponíveis; segue com o assunto", e?.message);
+    }
+    const catalogo = await catalogoDeVideos(12000);
+    const candidatos = videosPorPalavras(catalogo, palavras, 40);
+    if (!candidatos.length) return erro(res, 404, "Não encontrei vídeos sobre esse assunto. Tente outras palavras.");
+    let escolhidos = candidatos.slice(0, 5).map((v) => ({ ...v, motivo: "" }));
+    try {
+      const lista = candidatos.map((v, i) => `[V${i + 1}] "${v.titulo}" (${v.duracao}; ${v.categoria})`).join("\n");
+      const r = await chamarIa(client, P, { max_tokens: 3000, system: P.sistemaVideosSugerir, messages: [{ role: "user", content: `ASSUNTO: ${assunto}\n\nVÍDEOS DO JW.ORG:\n${lista}` }] }, { schema: SaidaVideosSugeridos, semPensar: true, tarefa: "pesquisa-videos" });
+      const o = r.parsed_output;
+      if (o && o.videos.length) {
+        const vistos = new Set();
+        const daIa = o.videos
+          .map((x) => ({ v: candidatos[Number(String(x.codigo).replace(/\D/g, "")) - 1], motivo: limparLinha(x.motivo, 300) }))
+          .filter((x) => x.v && !vistos.has(x.v.lank) && vistos.add(x.v.lank))
+          .slice(0, 5)
+          .map((x) => ({ ...x.v, motivo: x.motivo }));
+        if (daIa.length) escolhidos = daIa;
+      }
+    } catch (e) {
+      console.error("Vídeos: escolha da IA indisponível; ficam os da busca", e?.message);
+    }
+    console.log("Pesquisa (vídeos sugeridos):", JSON.stringify({ assunto, palavras: palavras.length, catalogo: catalogo.length, candidatos: candidatos.length, escolhidos: escolhidos.length }));
+    return res.status(200).json({
+      videos: escolhidos.map((v) => ({ titulo: v.titulo, duracao: v.duracao, categoria: v.categoria, motivo: v.motivo, link: `https://www.jw.org/finder?srcid=share&wtlocale=T&lank=${encodeURIComponent(v.lank)}` })),
+    });
+  } catch (e) {
+    console.error("Vídeos: falha ao sugerir", e?.name, e?.message);
+    return erro(res, 502, "Não consegui consultar os vídeos do jw.org agora. Tente de novo em instantes.");
   }
 }
 
@@ -5430,6 +5479,7 @@ async function tratarPedido(req, res) {
   if (tarefa === "pesquisa-coletar") return coletarPesquisa(res, body, P);
   if (tarefa === "pesquisa") return responderPesquisa(res, body, P);
   if (tarefa === "pesquisa-video") return pesquisarVideo(res, body, P);
+  if (tarefa === "pesquisa-videos") return sugerirVideos(res, body, P);
   if (tarefa === "ebc-dirigente") return perguntasEbcDirigente(res, body, P);
   if (tarefa === "tesouros") return esbocoDeTesouros(res, body, P);
   if (tarefa === "publico") return esbocoDoDiscursoPublico(res, body, P);

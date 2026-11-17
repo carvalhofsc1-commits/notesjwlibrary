@@ -15980,3 +15980,13 @@ a.pesq-link-botao {
 .pesq-transcricao h5 { margin: 12px 0 4px; font-size: .92rem; }
 .pesq-transcricao p { font-size: .9rem; }
 .pq-doc .pq-doc-transc { font-size: .91em; }
+/* Aba Vídeo: o atalho para os vídeos do jw.org e a busca de vídeos por assunto (sugestões com motivo, Usar e Assistir). */
+a.pesq-videos-jw { display: flex; width: 100%; box-sizing: border-box; margin: 0 0 10px; }
+.pesq-videos-busca { margin: 0 0 12px; border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; background: var(--card); }
+.pesq-videos-busca > summary { cursor: pointer; font-weight: 600; font-size: .9rem; }
+.pesq-videos-busca[open] > summary { margin-bottom: 8px; }
+.pesq-videos-busca .pesq-ref-linha .pesq-campo { flex: 1 1 auto; min-width: 0; }
+.pesq-videos-lista { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
+.pesq-videos-lista > li { display: grid; gap: 2px; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font-size: .88rem; }
+.pesq-videos-lista .pesq-escolha-trecho { margin: 4px 0 0; }
+.pesq-videos-lista .pesq-acoes { margin-top: 6px; }
