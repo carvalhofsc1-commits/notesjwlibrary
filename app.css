@@ -15994,3 +15994,7 @@ a.pesq-videos-jw { display: flex; width: 100%; box-sizing: border-box; margin: 0
 @media (max-width: 640px) {
   .pesq-editar-linha > #pesquisaEditarBtn { flex: 1 1 100%; width: 100%; }
 }
+/* Busca de vídeos: o botão de voltar à lista (sob o campo do link) e o vídeo em uso marcado na lista. */
+.pesq-videos-voltar { width: 100%; margin-top: 6px; white-space: normal; text-align: center; }
+.pesq-videos-voltar[hidden] { display: none; }
+.pesq-videos-lista > li.pesq-video-em-uso { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }

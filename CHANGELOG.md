@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.25
+
+- Assistente de pesquisas, aba Vídeo: a busca de vídeos por assunto não se perde mais. A última busca (assunto e lista) fica guardada neste aparelho e volta ao abrir o app; depois de "Usar este vídeo", aparece sob o campo do link o botão "↩️ Escolher outro vídeo da lista “assunto” (N)", que reabre a lista; o vídeo em uso fica marcado ("✅ Em uso", com a borda em destaque) e a marca acompanha o link do campo. A busca mostra quantos vídeos foram encontrados.
+
 ## 6.10.24
 
 - Assistente de pesquisas: no celular, o botão "✏️ Editar o texto" do resultado ocupa a largura do card; na linha de informações do resultado, o agente de IA aparece com ✨ (o símbolo dos botões de IA do app) em vez do 🤖.

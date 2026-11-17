@@ -7876,7 +7876,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.24'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.25'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -31734,16 +31734,71 @@ function saveTemplatesToStorage() {
         }
       }
 
-      // Procurar um vídeo por assunto: até 5 sugestões do catálogo do jw.org, cada uma com o motivo, "Usar este vídeo" (põe o link no campo) e
-      // "▶️ Assistir" (abre no jw.org).
+      // Procurar um vídeo por assunto: as sugestões do catálogo do jw.org, cada uma com o motivo, "Usar este vídeo" (põe o link no campo) e
+      // "▶️ Assistir" (abre no jw.org). A última busca (assunto e lista) fica guardada neste aparelho e volta ao abrir o app; depois de usar um
+      // vídeo, "↩️ Escolher outro vídeo da lista" (sob o campo do link) reabre a lista, com o vídeo em uso marcado.
+      const VIDEOS_CHAVE = 'ns-pesq-videos';
+      let videosBusca = null; // { assunto, videos }
+      function videosGuardar() {
+        try { localStorage.setItem(VIDEOS_CHAVE, JSON.stringify(videosBusca)); } catch (e) { /* sem armazenamento: vale só nesta sessão */ }
+      }
+      function videosVoltarPintar() {
+        const n = videosBusca && videosBusca.videos ? videosBusca.videos.length : 0;
+        const voltar = $('pesquisaVideosVoltarBtn');
+        voltar.hidden = !n || $('pesquisaVideosBusca').open;
+        voltar.textContent = '↩️ Escolher outro vídeo da lista “' + (videosBusca ? videosBusca.assunto : '') + '” (' + n + ')';
+      }
+      function videosPintar() {
+        const lista = $('pesquisaVideosLista');
+        lista.textContent = '';
+        const emUso = $('pesquisaVideoLink').value.trim();
+        ((videosBusca && videosBusca.videos) || []).forEach(v => {
+          const usando = emUso && emUso === v.link;
+          const li = document.createElement('li');
+          li.classList.toggle('pesq-video-em-uso', Boolean(usando));
+          const titulo = document.createElement('strong');
+          titulo.textContent = v.titulo;
+          const info = document.createElement('small');
+          info.className = 'pesq-fonte-guia';
+          info.textContent = [v.duracao ? '⏱️ ' + v.duracao : '', v.categoria].filter(Boolean).join(' · ');
+          li.append(titulo, info);
+          if (v.motivo) {
+            const motivo = document.createElement('p');
+            motivo.className = 'pesq-escolha-trecho';
+            motivo.textContent = v.motivo;
+            li.appendChild(motivo);
+          }
+          const acoes = document.createElement('div');
+          acoes.className = 'pesq-acoes pesq-acoes-res';
+          const usar = document.createElement('button');
+          usar.type = 'button';
+          usar.className = usando ? 'secondary pesq-fino' : 'pesq-fino';
+          usar.textContent = usando ? '✅ Em uso' : '✅ Usar este vídeo';
+          usar.addEventListener('click', () => {
+            $('pesquisaVideoLink').value = v.link;
+            $('pesquisaVideosBusca').open = false;
+            videosPintar();
+            videosVoltarPintar();
+            dizer(statusEl, '🎬 Vídeo escolhido: ' + v.titulo + '. Toque em "Resumir o vídeo".');
+            $('pesquisaVideoLink').scrollIntoView({ behavior: 'smooth', block: 'center' });
+          });
+          const ver = document.createElement('a');
+          ver.className = 'secondary pesq-fino pesq-link-botao';
+          ver.href = v.link;
+          ver.target = '_blank';
+          ver.rel = 'noopener noreferrer';
+          ver.textContent = '▶️ Assistir';
+          acoes.append(usar, ver);
+          li.appendChild(acoes);
+          lista.appendChild(li);
+        });
+      }
       async function sugerirVideos() {
         const campo = $('pesquisaVideosAssunto');
         const assunto = campo.value.replace(/\s+/g, ' ').trim();
         const status = $('pesquisaVideosStatus');
-        const lista = $('pesquisaVideosLista');
         if (assunto.length < 3) { dizer(status, 'Escreva o assunto do vídeo que você procura.', { aviso: true }); campo.focus(); return; }
         if (!codigoAcessoSalvo()) return dizer(status, 'Salve o código de pesquisa em Ajustes → 🔐 Autorização de acessos.', { aviso: true });
-        lista.textContent = '';
         $('pesquisaVideosBtn').disabled = true;
         dizer(status, 'Procurando vídeos no jw.org…', { girando: true });
         try {
@@ -31751,43 +31806,11 @@ function saveTemplatesToStorage() {
           if (!r.ok) return dizer(status, erroDe(r, 'Não consegui procurar os vídeos agora.'), { aviso: true });
           const videos = (r.data && r.data.videos) || [];
           if (!videos.length) return dizer(status, 'Nenhum vídeo encontrado sobre esse assunto. Tente outras palavras.', { aviso: true });
-          dizer(status, '');
-          videos.forEach(v => {
-            const li = document.createElement('li');
-            const titulo = document.createElement('strong');
-            titulo.textContent = v.titulo;
-            const info = document.createElement('small');
-            info.className = 'pesq-fonte-guia';
-            info.textContent = [v.duracao ? '⏱️ ' + v.duracao : '', v.categoria].filter(Boolean).join(' · ');
-            li.append(titulo, info);
-            if (v.motivo) {
-              const motivo = document.createElement('p');
-              motivo.className = 'pesq-escolha-trecho';
-              motivo.textContent = v.motivo;
-              li.appendChild(motivo);
-            }
-            const acoes = document.createElement('div');
-            acoes.className = 'pesq-acoes pesq-acoes-res';
-            const usar = document.createElement('button');
-            usar.type = 'button';
-            usar.className = 'pesq-fino';
-            usar.textContent = '✅ Usar este vídeo';
-            usar.addEventListener('click', () => {
-              $('pesquisaVideoLink').value = v.link;
-              $('pesquisaVideosBusca').open = false;
-              dizer(statusEl, '🎬 Vídeo escolhido: ' + v.titulo + '. Toque em "Resumir o vídeo".');
-              $('pesquisaVideoLink').scrollIntoView({ behavior: 'smooth', block: 'center' });
-            });
-            const ver = document.createElement('a');
-            ver.className = 'secondary pesq-fino pesq-link-botao';
-            ver.href = v.link;
-            ver.target = '_blank';
-            ver.rel = 'noopener noreferrer';
-            ver.textContent = '▶️ Assistir';
-            acoes.append(usar, ver);
-            li.appendChild(acoes);
-            lista.appendChild(li);
-          });
+          dizer(status, videos.length === 1 ? '1 vídeo encontrado.' : videos.length + ' vídeos encontrados.');
+          videosBusca = { assunto, videos };
+          videosGuardar();
+          videosPintar();
+          videosVoltarPintar();
         } catch (e) {
           dizer(status, 'Sem conexão com o servidor. Confira a internet e tente de novo.', { aviso: true });
         } finally {
@@ -31796,6 +31819,26 @@ function saveTemplatesToStorage() {
       }
       $('pesquisaVideosBtn').addEventListener('click', sugerirVideos);
       $('pesquisaVideosAssunto').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sugerirVideos(); } });
+      $('pesquisaVideosVoltarBtn').addEventListener('click', () => {
+        const busca = $('pesquisaVideosBusca');
+        busca.open = true;
+        videosPintar();
+        videosVoltarPintar();
+        busca.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      $('pesquisaVideosBusca').addEventListener('toggle', videosVoltarPintar);
+      // O link mudou à mão: a marca "Em uso" acompanha.
+      $('pesquisaVideoLink').addEventListener('input', () => { if (videosBusca) videosPintar(); });
+      // A última busca de vídeos volta ao abrir o app.
+      try {
+        const guardada = JSON.parse(localStorage.getItem(VIDEOS_CHAVE) || 'null');
+        if (guardada && Array.isArray(guardada.videos) && guardada.videos.length) {
+          videosBusca = { assunto: String(guardada.assunto || ''), videos: guardada.videos.slice(0, 20) };
+          $('pesquisaVideosAssunto').value = videosBusca.assunto;
+          videosPintar();
+          videosVoltarPintar();
+        }
+      } catch (e) { /* nada guardado */ }
 
       async function pesquisar() {
         if (aba === 'video') return resumirVideo();
