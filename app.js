@@ -7839,7 +7839,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.98'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.99'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -17003,6 +17003,8 @@ function saveTemplatesToStorage() {
 
     // Semana trocada (ou app aberto): usa o que já foi lido desta semana; sem leitura guardada, "Aguardando carregar" até a verificação.
     function consideracaoSemanaMudou() {
+      const status = document.getElementById('consideracaoStatus');
+      if (status) status.textContent = ''; // a mensagem da semana anterior não vale para a nova
       consideracaoMostrar(carregadoDe('consideracao'));
       const grupo = document.getElementById('grupoComentarios');
       if (grupo && grupo.open) consideracaoVerificar();
@@ -17037,7 +17039,8 @@ function saveTemplatesToStorage() {
         if (!result.ok) return setAiStatus(studyFailureMessage(result, 'Não consegui ler a apostila agora.'), true);
         carregadoGuardar('consideracao', result.data);
         consideracaoMostrar(result.data);
-        setAiStatus(result.data.partes && result.data.partes.length ? '✅ Parte da semana carregada.' : 'Esta semana não tem a parte de consideração.', !(result.data.partes && result.data.partes.length));
+        // Sem a parte, o aviso já fica no próprio card (título e explicação): nada de mensagem de status, que ficava na tela ao trocar de semana.
+        setAiStatus(result.data.partes && result.data.partes.length ? '✅ Parte da semana carregada.' : '', false);
       } catch (e) {
         setAiStatus(e && e.name === 'AbortError' ? 'O site demorou demais. Tente de novo.' : 'Falha de conexão ao ler a apostila.', true);
       } finally {

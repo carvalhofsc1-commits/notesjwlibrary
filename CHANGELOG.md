@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.99
+
+- Faça seu melhor no ministério: saiu a mensagem laranja "Esta semana não tem a parte de consideração." que aparecia embaixo ao recarregar uma semana sem a parte e ficava na tela mesmo depois de ir para uma semana com consideração (o aviso já fica no próprio card). Ao trocar de semana, a mensagem de status do card é limpa.
+
 ## 6.9.98
 
 - Preparar para comentar: as ferramentas ficam em dois contêineres com título — "📅 Reunião de meio de semana" (Tesouros, Faça seu melhor no ministério, Estudo Bíblico e Imagens da apostila) e "📖 Reunião do final de semana" (Estudo de A Sentinela). Com uma ferramenta aberta, as outras e o contêiner sem nenhuma aberta somem, como antes.
