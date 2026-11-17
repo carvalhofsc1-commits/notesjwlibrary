@@ -239,8 +239,9 @@
         if (!computador.matches && (pos === 'fixed' || pos === 'sticky') && !escrevendo && !quicando) {
           const base = nav.getBoundingClientRect().bottom - aplicado;
           desloc = Math.round(topoVv + vv.height - base);
-          // Também para cima: se a barra ficou abaixo do fim da área visível (escondida atrás da barra do sistema), ela sobe até o fim da área visível.
-          if (Math.abs(desloc) < 2 || desloc > 600 || desloc < -300) desloc = 0;
+          // Só para baixo. Subir a barra (6.9.89) a deixava travada no alto: o iOS informa a área visível com 826 de altura quando na tela
+          // aparecem os 894 inteiros (medido: topo 0, pageTop = rolagem, barra puxada −68 com conteúdo à mostra embaixo dela).
+          if (desloc < 2 || desloc > 600) desloc = 0;
         }
         if (desloc !== aplicado) {
           aplicado = desloc;
@@ -7838,7 +7839,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.91'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.92'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 

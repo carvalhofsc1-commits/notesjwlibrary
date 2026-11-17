@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.92
+
+- Barra de baixo (iPhone): removida a correção para cima da 6.9.89. Com o topo 0 e a área visível informada com 826 (a tela mostrava os 894), a barra era puxada 68 para cima e ficava travada no alto, com conteúdo embaixo dela. Agora a barra só desce, como na 6.9.80.
+
 ## 6.9.91
 
 - Barra de baixo (iPhone): o iOS às vezes informa o topo da área visível "preso" em 68 enquanto o pageTop mostra deslocamento zero; a barra descia 68 e ficava cortada embaixo. Agora vale o menor entre os dois (offsetTop e pageTop − rolagem). O diagnóstico mostra o "topo usado".
