@@ -16007,9 +16007,9 @@ a.pesq-videos-jw { display: flex; width: 100%; box-sizing: border-box; margin: 0
 /* Os blocos do card da pesquisa nunca passam da largura dele (itens de grade crescem até o conteúdo sem isso); os atalhos quebram a linha. */
 .card.pesq-card > * { min-width: 0; }
 .pesq-videos-atalhos > a.pesq-link-botao { white-space: normal; text-align: center; line-height: 1.2; }
-/* Assistente de pesquisas com cor própria (verde-azulado) nos botões principais, na aba selecionada e nas caixinhas, para não ser o azul
-   do resto do app. O mesmo tom nos dois temas: o texto branco fica legível nele. */
-.card.pesq-card { --pesq-cor: #0f766e; }
+/* Assistente de pesquisas com cor própria (laranja terracota) nos botões principais, na aba selecionada e nas caixinhas: nem azul nem verde
+   (pedido do usuário). O mesmo tom nos dois temas: o texto branco fica legível nele. */
+.card.pesq-card { --pesq-cor: #c2410c; }
 .card.pesq-card button:not(.secondary):not(.pesq-aba):not(.pesq-fonte-livro):not(.pesq-escolha-mais):not(.pesq-salva-abrir):not(.pesq-salva-apagar) {
   background-color: var(--pesq-cor);
   color: #ffffff;

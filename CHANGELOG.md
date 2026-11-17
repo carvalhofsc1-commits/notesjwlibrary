@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.30
+
+- Assistente de pesquisas: a cor própria dos botões principais, da aba selecionada e das caixinhas passou do verde-azulado para laranja terracota (#c2410c) — nem azul nem verde, a pedido do usuário.
+
 ## 6.10.29
 
 - Assistente de pesquisas com cor própria: os botões principais (Pesquisar, Transcrever e resumir o vídeo, 🔍, Usar este vídeo, Usar este texto, Elaborar a resposta…), a aba selecionada e as caixinhas usam verde-azulado (#0f766e), em vez do azul do resto do app.
