@@ -15950,3 +15950,19 @@ a.pesq-link-botao {
 .pq-doc .pesq-ref { color: #2563eb; font-weight: 700; }
 .pq-doc .pesq-ref + .pesq-ref::before { color: #2563eb; }
 .pq-doc .pesq-vnum { color: #2563eb; }
+/* Edição do resultado da pesquisa: o botão ✏️ no alto, a barra de formatação (padrão das Anotações) e o texto editável com a borda tracejada. */
+.pesq-editar-linha { display: flex; justify-content: flex-end; margin: -4px 0 8px; }
+.pesq-fmt-box[hidden] { display: none; }
+.pesq-fmt-box .anotacoes-fmt:not(.anotacoes-fmt-nums):not(.anotacoes-fmt-modelos) { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.pesq-fmt-box .anotacoes-fmt-modelos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.pesq-fmt-box button { min-height: 36px; font-size: .86rem; }
+.pesq-editando .pesq-res-corpo,
+.pesq-editando .pesq-res-titulo {
+  outline: 2px dashed color-mix(in srgb, var(--accent) 60%, transparent);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+.pesq-editando .pesq-res-corpo { min-height: 4em; }
+.pesq-res-corpo mark, .pesq-res-corpo .pesq-mark { background: #fff59d; color: inherit; padding: 0 2px; border-radius: 2px; }
+.pesq-res-corpo ul, .pesq-res-corpo ol { margin: 0 0 10px; padding-left: 1.4em; }
+.pq-doc mark { background: #fff59d; color: inherit; }

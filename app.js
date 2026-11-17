@@ -7876,7 +7876,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.18'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.19'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -31425,17 +31425,21 @@ function saveTemplatesToStorage() {
       const MARCA_FONTES = /\s*\[\s*(F\d{1,2}(?:\s*[,;]\s*F?\d{1,2})*)\s*\]/gi;
       const numerosDaMarca = (lista, numeros) => lista.split(/\s*[,;]\s*/).map(x => numeros.get('F' + x.replace(/\D/g, ''))).filter(Boolean);
       // **negrito** e __itálico__ viram negrito e itálico de verdade; [F3] vira o número da fonte, em sobrescrito.
+      // ==grifo== (da edição) vira o fundo amarelo; cada número de fonte guarda o identificador dela (data-fid), para a edição não o perder.
+      const idDoNumero = (numeros, n) => [...numeros.entries()].find(([, v]) => v === n)?.[0] || '';
       function htmlDoTexto(texto, numeros) {
         return escapar(texto)
           .replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>')
           .replace(/__([^_]+?)__/g, '<em>$1</em>')
-          .replace(MARCA_FONTES, (t, lista) => numerosDaMarca(lista, numeros).map(n => '<sup class="pesq-ref"><a href="#" data-pesq-fonte="' + n + '">' + n + '</a></sup>').join(''));
+          .replace(/==([^=]+?)==/g, '<mark>$1</mark>')
+          .replace(MARCA_FONTES, (t, lista) => numerosDaMarca(lista, numeros).map(n => '<sup class="pesq-ref" contenteditable="false" data-fid="' + idDoNumero(numeros, n) + '"><a href="#" data-pesq-fonte="' + n + '">' + n + '</a></sup>').join(''));
       }
       // O mesmo texto para colar em mensagens: *negrito* e _itálico_ (como no WhatsApp) e [n] no lugar de cada fonte.
       function textoSimples(texto, numeros) {
         return String(texto || '')
           .replace(/\*\*([^*]+?)\*\*/g, '*$1*')
           .replace(/__([^_]+?)__/g, '_$1_')
+          .replace(/==([^=]+?)==/g, '$1')
           .replace(MARCA_FONTES, (t, lista) => numerosDaMarca(lista, numeros).map(n => ' [' + n + ']').join(''));
       }
 
@@ -31464,6 +31468,7 @@ function saveTemplatesToStorage() {
       }
 
       function mostrar(pesquisa) {
+        if (editando) editarLigar(false); // outra pesquisa (nova ou salva) na tela: a edição em curso fecha
         const r = pesquisa.resultado;
         const numeros = numerosDe(pesquisa);
         $('pesquisaResTitulo').textContent = r.titulo || pesquisa.assunto;
@@ -31549,6 +31554,113 @@ function saveTemplatesToStorage() {
         li.classList.add('pesq-fonte-destaque');
         setTimeout(() => li.classList.remove('pesq-fonte-destaque'), 1600);
       });
+
+      // ---------- Edição do resultado (✏️ Editar o texto) ----------
+      // O título e o corpo ficam editáveis e aparece a barra de formatação (o padrão das Anotações). Em "Concluir", o texto editado volta para a
+      // pesquisa: negrito, itálico e grifo viram as marcas **, __ e ==; os números das fontes, os identificadores [F3]; os títulos de seção (h4)
+      // abrem uma seção nova; listas viram parágrafos com "• " ou "1. ". Cópia, Word e pesquisa salva passam a usar o texto editado.
+      const corpoEl = $('pesquisaResCorpo');
+      const tituloEl = $('pesquisaResTitulo');
+      let editando = false;
+      function marcasDe(no) {
+        if (no.nodeType === 3) return no.nodeValue.replace(/ /g, ' ');
+        if (no.nodeType !== 1) return '';
+        const tag = no.tagName.toLowerCase();
+        if (tag === 'sup' && no.dataset.fid) return ' [' + no.dataset.fid + ']';
+        if (tag === 'br') return ' ';
+        const dentro = [...no.childNodes].map(marcasDe).join('');
+        if (!dentro.trim()) return dentro;
+        const negrito = tag === 'b' || tag === 'strong' || /bold|[6-9]00/.test(no.style ? no.style.fontWeight : '');
+        const italico = tag === 'i' || tag === 'em' || (no.style && no.style.fontStyle === 'italic');
+        let t = dentro;
+        if (tag === 'mark') t = '==' + t.trim() + '==';
+        if (italico) t = '__' + t.trim() + '__';
+        if (negrito) t = '**' + t.trim() + '**';
+        return t === dentro ? t : (/^\s/.test(dentro) ? ' ' : '') + t + (/\s$/.test(dentro) ? ' ' : '');
+      }
+      const limparMarcas = t => t.replace(/\s+/g, ' ').replace(/\*\*\s*\*\*|__\s*__|==\s*==/g, '').replace(/\s+([.,;:!?])/g, '$1').trim();
+      function estruturaDoCorpo() {
+        const r = { introducao: '', secoes: [], conclusao: '' };
+        let secao = null;
+        const intro = [];
+        const juntar = texto => {
+          if (!texto) return;
+          if (secao) secao.paragrafos.push(texto); else intro.push(texto);
+        };
+        [...corpoEl.childNodes].forEach(no => {
+          if (no.nodeType === 3) return juntar(limparMarcas(no.nodeValue));
+          if (no.nodeType !== 1 || no.classList.contains('pesq-res-texto')) return; // o texto bíblico não é editado aqui
+          const tag = no.tagName.toLowerCase();
+          if (/^h[1-6]$/.test(tag)) {
+            const titulo = limparMarcas(no.textContent);
+            if (!titulo) return;
+            const m = titulo.match(/^(\p{Extended_Pictographic}[️‍\p{Extended_Pictographic}]*)\s*(.*)$/u);
+            secao = { titulo: m ? m[2] || titulo : titulo, emoji: m ? m[1] : '', paragrafos: [] };
+            r.secoes.push(secao);
+            return;
+          }
+          if (tag === 'ul' || tag === 'ol') {
+            [...no.children].forEach((li, i) => juntar((tag === 'ol' ? (i + 1) + '. ' : '• ') + limparMarcas(marcasDe(li))));
+            return;
+          }
+          const texto = limparMarcas(marcasDe(no));
+          if (no.classList.contains('pesq-conclusao')) r.conclusao = texto;
+          else if (no.classList.contains('pesq-intro') && !secao) intro.unshift(texto);
+          else juntar(texto);
+        });
+        r.introducao = intro.filter(Boolean).join(' ');
+        r.secoes = r.secoes.filter(s => s.paragrafos.length || s.titulo);
+        return r;
+      }
+      function editarLigar(ligar) {
+        editando = ligar;
+        corpoEl.contentEditable = ligar ? 'true' : 'false';
+        tituloEl.contentEditable = ligar ? 'true' : 'false';
+        $('pesquisaFmtBox').hidden = !ligar;
+        $('pesquisaEditarBtn').textContent = ligar ? '✅ Concluir a edição' : '✏️ Editar o texto';
+        resultadoEl.classList.toggle('pesq-editando', ligar);
+        ['pesquisaCopiarBtn', 'pesquisaWordBtn', 'pesquisaSalvarBtn'].forEach(id => { $(id).disabled = ligar || (id === 'pesquisaSalvarBtn' && atual && atual.id); });
+        if (ligar) corpoEl.focus();
+      }
+      async function editarConcluir() {
+        if (!atual) return editarLigar(false);
+        const nova = estruturaDoCorpo();
+        const usadas = [];
+        [nova.introducao, ...nova.secoes.flatMap(s => s.paragrafos), nova.conclusao].join(' ').replace(/\[(F\d{1,2})\]/g, (t, id) => { if (!usadas.includes(id)) usadas.push(id); return t; });
+        atual.resultado = Object.assign({}, atual.resultado, { titulo: limparMarcas(tituloEl.textContent) || atual.resultado.titulo, introducao: nova.introducao, secoes: nova.secoes, conclusao: nova.conclusao, fontesUsadas: usadas, editado: true });
+        editarLigar(false);
+        mostrar(atual);
+        // Pesquisa já salva: a versão editada substitui a salva.
+        if (atual.id) {
+          salvas = salvas.map(x => (x.id === atual.id ? atual : x));
+          try { await salvasGravar(); salvasPintar(); dizer(avisoEl, '✅ Edição guardada na pesquisa salva.'); } catch (e) { dizer(avisoEl, 'A edição vale nesta tela, mas não consegui guardá-la na pesquisa salva.', { aviso: true }); }
+        } else dizer(avisoEl, '✅ Edição concluída. Toque em 💾 para salvar a pesquisa com ela.');
+      }
+      $('pesquisaEditarBtn').addEventListener('click', () => (editando ? editarConcluir() : editarLigar(true)));
+      // A barra: o botão não tira o foco do texto (senão a seleção some antes do comando).
+      $('pesquisaFmtBox').addEventListener('mousedown', e => { if (e.target.closest('button')) e.preventDefault(); });
+      $('pesquisaFmtBox').addEventListener('click', e => {
+        const b = e.target.closest('button');
+        if (!b || !editando) return;
+        const sel = window.getSelection();
+        const dentro = sel.rangeCount && corpoEl.contains(sel.getRangeAt(0).commonAncestorContainer);
+        if (!dentro) corpoEl.focus();
+        const fmt = b.dataset.pesqFmt;
+        if (fmt === 'bold' || fmt === 'italic') document.execCommand(fmt);
+        else if (fmt === 'ul') document.execCommand('insertUnorderedList');
+        else if (fmt === 'ol') document.execCommand('insertOrderedList');
+        else if (fmt === 'upper' && sel.rangeCount && !sel.isCollapsed) document.execCommand('insertText', false, sel.toString().toUpperCase());
+        else if (fmt === 'hl' && sel.rangeCount && !sel.isCollapsed) {
+          const faixa = sel.getRangeAt(0);
+          const mark = document.createElement('mark');
+          mark.appendChild(faixa.extractContents());
+          faixa.insertNode(mark);
+          sel.removeAllRanges();
+        } else if (b.dataset.pesqNum) document.execCommand('insertText', false, b.dataset.pesqNum + ' ');
+        else if (b.dataset.pesqModelo) document.execCommand('insertHTML', false, b.dataset.pesqModelo === 'aplicar' ? '✅ <b>Aplicar</b> 👉&nbsp;' : '🎯⚡️⚡️ <b><i>IMPORTANTE</i></b> 👉&nbsp;');
+      });
+      // Enter no título não quebra a linha.
+      tituloEl.addEventListener('keydown', e => { if (e.key === 'Enter' && editando) { e.preventDefault(); corpoEl.focus(); } });
 
       function ocupado(sim) {
         botao.disabled = sim;
@@ -31772,7 +31884,7 @@ function saveTemplatesToStorage() {
 
       // 📝 Word: a pesquisa num arquivo .docx com negrito e itálico de verdade (sem letras Unicode), os números das fontes em sobrescrito, a data, o
       // agente de IA e, no topo, o nome do app pequeno e discreto, separado por uma linha (só no arquivo; na tela ele não aparece).
-      const docxRunsBase = (texto, f, sz, cor) => docxRuns(texto, f, sz, cor); // o docxRuns do app (dentro de docxDaPesquisa ele ganha a escala)
+      const docxRunsBase = (texto, f, sz, cor, fundo) => docxRuns(texto, f, sz, cor, fundo); // o docxRuns do app (dentro de docxDaPesquisa ele ganha a escala)
       // escala: o tamanho da letra escolhido na prévia (A− / A+); 1 = 11 pt no corpo do texto.
       function docxDaPesquisa(pesquisa, escala = 1) {
         const r = pesquisa.resultado;
@@ -31780,17 +31892,20 @@ function saveTemplatesToStorage() {
         const cinza = '6B7280';
         const corRef = '2563EB';
         const tam = sz => Math.max(12, Math.round(sz * escala));
-        const docxRuns = (texto, f, sz, cor) => docxRunsBase(texto, f, sz ? tam(sz) : sz, cor);
+        const docxRuns = (texto, f, sz, cor, fundo) => docxRunsBase(texto, f, sz ? tam(sz) : sz, cor, fundo);
         const p = (props, runs) => '<w:p>' + (props ? '<w:pPr>' + props + '</w:pPr>' : '') + runs + '</w:p>';
         const espaco = (antes, depois) => '<w:spacing w:before="' + antes + '" w:after="' + depois + '" w:line="300" w:lineRule="auto"/>';
         const ref = n => '<w:r><w:rPr><w:b/><w:color w:val="' + corRef + '"/><w:sz w:val="' + tam(16) + '"/><w:vertAlign w:val="superscript"/></w:rPr><w:t>' + n + '</w:t></w:r>';
         // **negrito**, __itálico__ e [F3] (vira o número da fonte em sobrescrito) em trechos do Word.
-        const runsDoTexto = (texto, base, sz) => String(texto || '').split(/(\*\*[^*]+?\*\*|__[^_]+?__|\s*\[\s*F\d{1,2}(?:\s*[,;]\s*F?\d{1,2})*\s*\])/i).map(parte => {
+        // ==grifo== sai com o fundo amarelo (sombreado do Word).
+        const runsDoTexto = (texto, base, sz) => String(texto || '').split(/(\*\*[^*]+?\*\*|__[^_]+?__|==[^=]+?==|\s*\[\s*F\d{1,2}(?:\s*[,;]\s*F?\d{1,2})*\s*\])/i).map(parte => {
           if (!parte) return '';
           const marca = parte.match(/^\s*\[\s*(F\d{1,2}(?:\s*[,;]\s*F?\d{1,2})*)\s*\]$/i);
           if (marca) return numerosDaMarca(marca[1], numeros).map(ref).join(ref(','));
-          if (/^\*\*[\s\S]+\*\*$/.test(parte)) return docxRuns(parte.slice(2, -2), base + 'b', sz);
-          if (/^__[\s\S]+__$/.test(parte)) return docxRuns(parte.slice(2, -2), base + 'i', sz);
+          // Negrito e itálico juntos (**__…__**): o de dentro também vale.
+          if (/^\*\*[\s\S]+\*\*$/.test(parte)) return runsDoTexto(parte.slice(2, -2), base.includes('b') ? base : base + 'b', sz);
+          if (/^__[\s\S]+__$/.test(parte)) return runsDoTexto(parte.slice(2, -2), base.includes('i') ? base : base + 'i', sz);
+          if (/^==[\s\S]+==$/.test(parte)) return docxRuns(parte.slice(2, -2), base, sz, '', 'FFF59D');
           return docxRuns(parte, base, sz);
         }).join('');
         const partes = [];
@@ -31900,6 +32015,7 @@ function saveTemplatesToStorage() {
       });
 
       $('pesquisaLimparBtn').addEventListener('click', () => {
+        if (editando) editarLigar(false);
         atual = null;
         resultadoEl.hidden = true;
         $('pesquisaResCorpo').textContent = '';

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.19
+
+- Assistente de pesquisas, fase 5: botão "✏️ Editar o texto" no resultado. O título e o texto ficam editáveis e aparece a barra "🎨 Formatação", no padrão da tela de Anotações: 𝐁 negrito, 𝐼 itálico, Grifo (fundo amarelo), • Lista, 1. Lista, AA (maiúsculas no trecho), os números 1️⃣ a 7️⃣ e os modelos prontos ✅ Aplicar 👉 e 🎯⚡️⚡️ IMPORTANTE 👉. A formatação é de verdade (sem letras Unicode), porque vai para o Word: o grifo sai com o fundo amarelo no arquivo. Os números das fontes ficam protegidos (não se apagam ao editar o texto em volta). "✅ Concluir a edição" passa o texto editado para a pesquisa (títulos de seção abrem uma seção nova; listas viram parágrafos com • ou 1.): a cópia, a prévia, o Word e a lista de fontes usam a versão editada, e a pesquisa já salva é atualizada.
+
 ## 6.10.18
 
 - Assistente de pesquisas: corrigido — as fontes da internet não chegavam à IA. A busca na internet funcionava (no registro do servidor, a pesquisa do Dia dos Pais achou 6 páginas), mas elas vinham no fim da lista e o limite de 30 fontes as cortava quando o wol já trazia mais de 30. Agora as páginas da internet (até 6) têm o lugar garantido, no servidor e na coleta, e o que sobra das publicações sai do fim da lista (a pesquisa no wol, a menos certeira). A regra fixa das fontes da internet também diz que, quando o assunto ou o contexto pede um fato histórico ou atual (como a origem de uma data comemorativa), esse ponto é respondido na seção 🌐 Informações complementares.

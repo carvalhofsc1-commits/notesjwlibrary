@@ -2684,6 +2684,35 @@
       <article id="pesquisaResultado" class="pesq-bloco pesq-resultado" hidden>
         <h3 id="pesquisaResTitulo" class="pesq-res-titulo"></h3>
         <p id="pesquisaResMeta" class="pesq-res-meta"></p>
+        <!-- Edição do resultado: o texto fica editável e aparece a barra de formatação (o mesmo padrão das Anotações, com negrito e itálico de
+             verdade, que vão para o Word). "Concluir" guarda as mudanças na pesquisa (cópia, Word e pesquisa salva). -->
+        <div class="pesq-editar-linha">
+          <button id="pesquisaEditarBtn" class="secondary pesq-fino" type="button">✏️ Editar o texto</button>
+        </div>
+        <details id="pesquisaFmtBox" class="anotacoes-fmt-box pesq-fmt-box" open hidden>
+          <summary>🎨 Formatação</summary>
+          <div class="anotacoes-fmt" role="toolbar" aria-label="Formatação (selecione o trecho)">
+            <button type="button" class="secondary" data-pesq-fmt="bold" title="Negrito" aria-label="Negrito"><strong>B</strong></button>
+            <button type="button" class="secondary" data-pesq-fmt="italic" title="Itálico" aria-label="Itálico"><em>I</em></button>
+            <button type="button" class="secondary" data-pesq-fmt="hl" title="Grifo (fundo amarelo, também no Word)" aria-label="Grifo">Grifo</button>
+            <button type="button" class="secondary" data-pesq-fmt="ul" title="Lista com marcadores" aria-label="Lista com marcadores">• Lista</button>
+            <button type="button" class="secondary" data-pesq-fmt="ol" title="Lista numerada" aria-label="Lista numerada">1. Lista</button>
+            <button type="button" class="secondary" data-pesq-fmt="upper" title="MAIÚSCULAS no trecho selecionado" aria-label="Passar para maiúsculas">AA</button>
+          </div>
+          <div class="anotacoes-fmt anotacoes-fmt-nums" role="toolbar" aria-label="Números 1 a 7 (entram no cursor)">
+            <button type="button" class="secondary" data-pesq-num="1️⃣" aria-label="Inserir 1">1️⃣</button>
+            <button type="button" class="secondary" data-pesq-num="2️⃣" aria-label="Inserir 2">2️⃣</button>
+            <button type="button" class="secondary" data-pesq-num="3️⃣" aria-label="Inserir 3">3️⃣</button>
+            <button type="button" class="secondary" data-pesq-num="4️⃣" aria-label="Inserir 4">4️⃣</button>
+            <button type="button" class="secondary" data-pesq-num="5️⃣" aria-label="Inserir 5">5️⃣</button>
+            <button type="button" class="secondary" data-pesq-num="6️⃣" aria-label="Inserir 6">6️⃣</button>
+            <button type="button" class="secondary" data-pesq-num="7️⃣" aria-label="Inserir 7">7️⃣</button>
+          </div>
+          <div class="anotacoes-fmt anotacoes-fmt-modelos" role="toolbar" aria-label="Modelos prontos">
+            <button type="button" class="secondary" data-pesq-modelo="aplicar" title="Inserir o modelo Aplicar onde está o cursor">✅ <b>Aplicar</b> 👉</button>
+            <button type="button" class="secondary" data-pesq-modelo="importante" title="Inserir o modelo Importante onde está o cursor">🎯⚡️⚡️ <b><i>IMPORTANTE</i></b> 👉</button>
+          </div>
+        </details>
         <div id="pesquisaResCorpo" class="pesq-res-corpo"></div>
         <div id="pesquisaResFontesBloco" class="pesq-fontes-bloco">
           <h4 class="pesq-fontes-titulo">📚 Fontes</h4>
