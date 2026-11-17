@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.37
+
+- Assistente de pesquisas: "Buscar também na internet" e "Quero escolher as fontes" ficam dentro do quadro recolhível "⚙️ Opções adicionais de pesquisa" (título no padrão dos botões finos). Com o quadro fechado, o título mostra quantas opções estão ligadas. Na aba Vídeo o quadro some.
+
 ## 6.10.36
 
 - Assistente de pesquisas, aba Vídeo: "Procurar também no que é falado nos vídeos" passa a funcionar em qualquer seção (o limite subiu de 80 para 700 vídeos). Medido: 110 vídeos em ~5 s; a maior seção (Programas e Eventos, 676 vídeos) em ~38 s. Seções como "De Nosso Estúdio › Discursos" (110 vídeos, sem subseções) ficavam bloqueadas.

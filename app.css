@@ -16021,6 +16021,16 @@ a.pesq-videos-jw { display: flex; width: 100%; box-sizing: border-box; margin: 0
 .pesq-videos-secao { margin: 0 0 6px; }
 .pesq-opcao input { flex: 0 0 18px; min-height: 0; padding: 0; }
 .pesq-opcao-falas { margin: 0 0 8px; align-items: flex-start; }
+/* Opções adicionais de pesquisa: quadro recolhível com o título no padrão dos botões finos. */
+.pesq-opcoes-box { margin: 0 0 8px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); }
+.pesq-opcoes-box[open] { border-radius: 12px; }
+.pesq-opcoes-box[hidden] { display: none; }
+.pesq-opcoes-box > summary { cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 0; padding: 6px 12px; font-size: .86rem; font-weight: 600; }
+.pesq-opcoes-box > summary::-webkit-details-marker { display: none; }
+.pesq-opcoes-box > summary::after { content: "▾"; font-size: .8em; opacity: .7; transition: transform .2s; }
+.pesq-opcoes-box[open] > summary::after { transform: rotate(180deg); }
+.pesq-opcoes-box[open] > summary { border-bottom: 1px solid var(--line); }
+.pesq-opcoes-corpo { padding: 8px 12px 2px; }
 .pesq-opcao-falas input { margin-top: 2px; }
 .pesq-opcao-texto { flex: 1 1 auto; min-width: 0; line-height: 1.35; }
 .pesq-opcao-falas .pesq-opcional { display: block; }

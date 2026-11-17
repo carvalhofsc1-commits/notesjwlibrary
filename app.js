@@ -7876,7 +7876,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.36'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.37'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -31160,7 +31160,7 @@ function saveTemplatesToStorage() {
         $('pesquisaVideoBloco').hidden = aba !== 'video';
         // No vídeo não há busca de fontes: as opções da internet e da escolha das fontes somem.
         // Só as opções de baixo (internet e escolha das fontes); a caixinha "Procurar também no que é falado" é da própria aba Vídeo.
-        document.querySelectorAll('#pesquisaCard .pesq-acao-bloco .pesq-opcao').forEach(l => { l.hidden = aba === 'video'; });
+        $('pesquisaOpcoesBox').hidden = aba === 'video';
         botao.textContent = aba === 'video' ? '🎬 Transcrever e resumir o vídeo' : '🔎 Pesquisar';
         requestAnimationFrame(crescerCampos);
       }
@@ -32139,6 +32139,14 @@ function saveTemplatesToStorage() {
       const escolherFontes = $('pesquisaEscolherFontes');
       try { escolherFontes.checked = localStorage.getItem('ns-pesq-escolher') === '1'; } catch (e) { /* sem armazenamento */ }
       escolherFontes.addEventListener('change', () => { try { localStorage.setItem('ns-pesq-escolher', escolherFontes.checked ? '1' : '0'); } catch (e) { /* sem armazenamento */ } });
+      // Opções adicionais (quadro recolhível): o título mostra quantas estão ligadas, para não esquecer uma opção marcada com o quadro fechado.
+      function opcoesContar() {
+        const n = [buscarInternet, escolherFontes].filter(c => c.checked).length;
+        $('pesquisaOpcoesQtd').textContent = n ? '(' + n + (n === 1 ? ' ligada)' : ' ligadas)') : '';
+      }
+      buscarInternet.addEventListener('change', opcoesContar);
+      escolherFontes.addEventListener('change', opcoesContar);
+      opcoesContar();
       let escolha = null; // o contexto da pesquisa que espera a escolha
       function fecharEscolha() {
         escolha = null;
