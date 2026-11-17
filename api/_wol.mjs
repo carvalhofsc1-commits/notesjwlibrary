@@ -2314,6 +2314,9 @@ const paginasGuia = new Map(); // url do tópico -> { quando, entradas }
 const VALIDADE_GUIA_MS = 24 * 3600 * 1000;
 const PALAVRAS_FRACAS = new Set("como para sobre entre quando onde porque pelos pelas pela pelo dos das nos nas uma umas uns com sem que mais muito outros outras".split(" "));
 
+// Palavras comuns demais para escolher sozinhas um tópico do Guia ou um assunto do Índice ("prioridades na vida" não é sobre "Vida dupla").
+const GENERICAS = new Set(["vida", "deus", "jeova", "biblia", "biblic", "cristao", "crista", "cristae", "pessoa", "mundo", "coisas", "tempo", "dia", "parte"]);
+
 const raizes = (texto) =>
   semAcento(String(texto || ""))
     .replace(/[^a-z0-9]+/g, " ")
@@ -2346,9 +2349,10 @@ export async function topicosDoGuiaPara(textos, timeoutMs, maximo = 2) {
   return lista
     .map((t) => {
       const achadas = t.palavras.filter((w) => consulta.has(w)).length;
-      return { t, achadas, parte: t.palavras.length ? achadas / t.palavras.length : 0 };
+      const fortes = t.palavras.filter((w) => consulta.has(w) && !GENERICAS.has(w)).length;
+      return { t, achadas, fortes, parte: t.palavras.length ? achadas / t.palavras.length : 0 };
     })
-    .filter((x) => x.achadas && x.parte >= 0.5)
+    .filter((x) => x.fortes && x.parte >= 0.5)
     .sort((a, b) => b.parte - a.parte || b.achadas - a.achadas || a.t.nome.length - b.t.nome.length)
     .slice(0, maximo)
     .map((x) => ({ nome: x.t.nome, url: x.t.url }));
@@ -2430,6 +2434,21 @@ export async function faixaDoDocumento(docId, de, ate, timeoutMs, maxCaracteres 
   };
 }
 
+// "it-2 79, 425, 428" vem em três links ("it-2 79", "425", "428"): cada número solto continua a citação anterior e herda a sigla e o ano.
+// Uso: lista.map(continuarCitacao()) (guarda a última citação completa entre as chamadas).
+function continuarCitacao() {
+  let anterior = null;
+  return (c) => {
+    if (/^[\d\s,–-]+$/.test(c.citacao) && anterior) {
+      const completa = { ...c, citacao: anterior.citacao.replace(/\s[\d\s,–-]+$/, "") + " " + c.citacao, ano: anterior.ano };
+      anterior = completa;
+      return completa;
+    }
+    anterior = c;
+    return c;
+  };
+}
+
 // ---------- Siglas das publicações (lista oficial do wol) ----------
 // A tabela "Abreviações das publicações" do Índice das Publicações: sigla -> nome. Lida no wol e guardada por 24 h na instância.
 const URL_SIGLAS = `${BASE}/pt/wol/d/r5/lp-t/1200270068`;
@@ -2497,9 +2516,10 @@ export async function assuntosDoIndicePara(textos, timeoutMs, maximo = 2) {
     .flat()
     .map((t) => {
       const achadas = t.palavras.filter((w) => consulta.has(w)).length;
-      return { t, achadas, parte: t.palavras.length ? achadas / t.palavras.length : 0 };
+      const fortes = t.palavras.filter((w) => consulta.has(w) && !GENERICAS.has(w)).length;
+      return { t, achadas, fortes, parte: t.palavras.length ? achadas / t.palavras.length : 0 };
     })
-    .filter((x) => x.achadas && x.parte >= 0.5)
+    .filter((x) => x.fortes && x.parte >= 0.5)
     .sort((a, b) => b.parte - a.parte || b.achadas - a.achadas || a.t.nome.length - b.t.nome.length)
     .slice(0, maximo)
     .map((x) => ({ nome: x.t.nome, docId: x.t.docId }));
@@ -2524,7 +2544,7 @@ export async function entradasDoIndice(assunto, timeoutMs) {
         return { caminho, citacao, ano: aa ? (Number(aa) > 50 ? 1900 : 2000) + Number(aa) : null };
       })
       // "w15 1/7 3, 6-7" vem em dois links: o segundo ("6-7") continua o primeiro e herda a publicação e o ano.
-      .map((c, i, todas) => (/^[\d\s,–-]+$/.test(c.citacao) && i > 0 ? { ...c, citacao: todas[i - 1].citacao.replace(/\s[\d\s,–-]+$/, "") + " " + c.citacao, ano: todas[i - 1].ano } : c))
+      .map(continuarCitacao())
       .filter((c) => !/^mwb/i.test(c.citacao) && !(c.ano && c.ano < 1990));
     if (citacoes.length) entradas.push({ rotulo, citacoes });
   }
@@ -2541,4 +2561,72 @@ export async function trechoDaCitacaoDoIndice(caminho, timeoutMs) {
   if (!docId) return null;
   const lido = await faixaDoDocumento(docId, destino.de, Math.min(destino.ate, destino.de + 6), timeoutMs, 1800);
   return lido ? { ...lido, docId } : null;
+}
+
+// ---------- Pesquisa de um texto bíblico (página de pesquisa de cada versículo no wol) ----------
+// Na Bíblia de estudo do wol (/pt/wol/b/r5/lp-t/nwtsty/<livro>/<capítulo>), cada versículo (<span id="v43-3-16-1">) começa com o link da
+// página de pesquisa dele (/pt/wol/dx/…). Essa página tem cartões: o do Índice das Publicações 1991-2026 (pub-dx86-26), com as citações
+// (links /wol/pc/) que comentam o versículo, e o das notas de estudo da Tradução do Novo Mundo (pub-nwtsty), cujo link já traz a faixa de
+// parágrafos das notas daquele versículo. Juntos dão o entendimento atual e as aplicações já publicadas.
+const capitulosLidos = new Map(); // "livro/cap" -> { quando, html }
+const paginasDoVersiculo = new Map(); // "livro/cap/verso" -> { quando, pagina }
+
+async function capituloDeEstudo(livro, capitulo, timeoutMs) {
+  const chave = livro + "/" + capitulo;
+  const guardado = capitulosLidos.get(chave);
+  if (guardado && Date.now() - guardado.quando < VALIDADE_GUIA_MS) return guardado.html;
+  const html = await baixar(`${BASE}/pt/wol/b/r5/lp-t/nwtsty/${livro}/${capitulo}`, timeoutMs);
+  capitulosLidos.set(chave, { quando: Date.now(), html });
+  if (capitulosLidos.size > 30) capitulosLidos.delete(capitulosLidos.keys().next().value);
+  return html;
+}
+
+// { notas: { caminho } | null, citacoes: [{ caminho, citacao, ano }] } de um versículo. null = não achou a página de pesquisa.
+export async function pesquisaDoVersiculo(livro, capitulo, verso, timeoutMs) {
+  const chave = `${livro}/${capitulo}/${verso}`;
+  const guardado = paginasDoVersiculo.get(chave);
+  if (guardado && Date.now() - guardado.quando < VALIDADE_GUIA_MS) return guardado.pagina;
+  const cap = await capituloDeEstudo(livro, capitulo, timeoutMs);
+  const inicio = cap.indexOf(`id="v${livro}-${capitulo}-${verso}-1"`);
+  if (inicio < 0) return null;
+  const dx = (cap.slice(inicio, inicio + 600).match(/href="(\/pt\/wol\/dx\/r5\/lp-t\/[\d/]+)"/) || [])[1];
+  if (!dx) return null;
+  const html = (await baixar(BASE + dx, timeoutMs)).replace(/&#x3D;/g, "=");
+  let notas = null;
+  const citacoes = [];
+  for (const bloco of html.split('class="linkCard"').slice(1)) {
+    const simbolo = (bloco.match(/data-pub-symbol="([^"]+)"/) || [])[1] || "";
+    if (/^nwtsty$/i.test(simbolo) && !notas) {
+      const link = (bloco.match(/href="(\/pt\/wol\/d\/r5\/lp-t\/\d+#h=[^"]+)"/) || [])[1];
+      if (link) notas = { caminho: link };
+    }
+    // O Índice das Publicações mais recente (dx86-26; o número final muda a cada ano): as citações vêm no resultado logo depois do cartão.
+    if (/^dx\d+-\d+$/i.test(simbolo) && !citacoes.length) {
+      const resultado = bloco.slice(bloco.indexOf('class="result"'));
+      for (const [, caminho, rot] of resultado.matchAll(/<a\b[^>]*href="(\/pt\/wol\/pc\/[^"]+)"[^>]*>([\s\S]*?)<\/a>/g)) {
+        const citacao = textoDe(rot).replace(/[;,]\s*$/, "").trim();
+        const aa = (citacao.match(/^[a-z-]+?(\d{2})\b/i) || citacao.match(/^g\s+\d{1,2}\/(\d{2})\b/i) || [])[1];
+        citacoes.push({ caminho, citacao, ano: aa ? (Number(aa) > 50 ? 1900 : 2000) + Number(aa) : null });
+      }
+    }
+  }
+  // "w15 1/7 3, 6-7" vem em dois links: o segundo continua o primeiro e herda a publicação e o ano.
+  const completas = citacoes
+    .map(continuarCitacao())
+    .filter((c) => !/^mwb/i.test(c.citacao) && !(c.ano && c.ano < 1990));
+  const pagina = { notas, citacoes: completas };
+  paginasDoVersiculo.set(chave, { quando: Date.now(), pagina });
+  if (paginasDoVersiculo.size > 200) paginasDoVersiculo.delete(paginasDoVersiculo.keys().next().value);
+  return pagina;
+}
+
+// As notas de estudo de um versículo (o link do cartão já traz a faixa de parágrafos): como faixaDoDocumento, com o docId.
+export async function notasDeEstudo(caminho, timeoutMs) {
+  const m = String(caminho || "").match(/\/lp-t\/(\d+)#h=(\d+):\d+-(\d+):(\d+)/);
+  if (!m) return null;
+  const de = Number(m[2]);
+  let ate = Number(m[3]);
+  if (Number(m[4]) === 0 && ate > de) ate -= 1;
+  const lido = await faixaDoDocumento(m[1], de, Math.min(ate, de + 8), timeoutMs, 3000);
+  return lido ? { ...lido, docId: m[1] } : null;
 }

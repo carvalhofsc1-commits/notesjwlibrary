@@ -59,6 +59,7 @@ export const NIVEIS = {
   "nvc-transcricao": "pesquisa", // a transcrição do vídeo formatada pela IA
   "pesquisa-coletar": "pesquisa", // Assistente de pesquisas: buscas (IA leve) e leitura das fontes
   pesquisa: "pesquisa", // Assistente de pesquisas: resposta final
+  "pesquisa-versiculos": "pesquisa", // Assistente de pesquisas: o texto do versículo escolhido (sem IA)
   joias: "pesquisa",
   "joias-ler": "pesquisa",
   // Código de resumo (só o resumo dos capítulos da Leitura diária da Bíblia)

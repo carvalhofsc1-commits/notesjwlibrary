@@ -2598,7 +2598,7 @@
       <h2 id="pesquisaTitulo" class="pesq-titulo"><span aria-hidden="true">🔎</span> Assistente de pesquisas</h2>
       <div class="pesq-abas" role="tablist" aria-label="Tipo de pesquisa">
         <button type="button" role="tab" class="pesq-aba" data-pesq-aba="assunto" aria-selected="true">💡 Assunto</button>
-        <button type="button" role="tab" class="pesq-aba" data-pesq-aba="texto" aria-selected="false" disabled>📖 Texto bíblico <small>em breve</small></button>
+        <button type="button" role="tab" class="pesq-aba" data-pesq-aba="texto" aria-selected="false">📖 Texto bíblico</button>
         <button type="button" role="tab" class="pesq-aba" data-pesq-aba="video" aria-selected="false" disabled>🎬 Vídeo <small>em breve</small></button>
       </div>
 
@@ -2607,6 +2607,50 @@
         <textarea id="pesquisaAssunto" class="pesq-campo" rows="1" maxlength="300" spellcheck="true" placeholder="Ex.: como lidar com a ansiedade"></textarea>
         <label for="pesquisaContexto" class="pesq-rotulo">Contexto ou foco <span class="pesq-opcional">(opcional)</span></label>
         <textarea id="pesquisaContexto" class="pesq-campo" rows="1" maxlength="800" spellcheck="true" placeholder="Ex.: para animar um irmão que perdeu o emprego"></textarea>
+      </div>
+
+      <!-- Aba Texto bíblico: o mesmo jeito de escolher o texto das Anotações (digita o livro ou escolhe livro › capítulo › versículos), vê o texto
+           antes, abre no JW Library e confirma; depois, até 3 palavras-chave (o campo seguinte aparece quando o anterior é preenchido) e o contexto. -->
+      <div class="pesq-bloco" id="pesquisaTextoBloco" hidden>
+        <label for="pesquisaRef" class="pesq-rotulo">Texto bíblico</label>
+        <div class="pesq-ref-linha">
+          <input id="pesquisaRef" class="pesq-campo pesq-ref" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Livro (ex.: Mateus 6:33)">
+          <button id="pesquisaRefVerBtn" class="secondary pesq-fino pesq-icone" type="button" title="Ver o texto antes de usar" aria-label="Ver o texto antes de usar">👁️</button>
+          <button id="pesquisaRefEscolherBtn" class="secondary pesq-fino pesq-icone" type="button" title="Escolher livro, capítulo e versículos" aria-label="Escolher livro, capítulo e versículos" aria-expanded="false">📚</button>
+          <button id="pesquisaRefLimparBtn" class="secondary pesq-fino pesq-icone" type="button" title="Limpar o texto bíblico" aria-label="Limpar o texto bíblico">🗑️</button>
+        </div>
+        <div id="pesquisaRefPick" class="anotacoes-biblia-pick pesq-pick" hidden>
+          <div id="pesquisaRefTrilha" class="anotacoes-trilha"></div>
+          <p id="pesquisaRefDica" class="pesq-dica" hidden>Toque nos versículos que quer (pode pular: 2, 4, 6). Para um trecho corrido, toque no primeiro e segure o último.</p>
+          <div id="pesquisaRefOpcoes" class="anotacoes-opcoes"></div>
+          <button id="pesquisaRefPickVerBtn" class="pesq-fino pesq-principal" type="button" hidden>👁️ Ver o texto</button>
+        </div>
+        <p id="pesquisaRefMsg" class="pesq-status" role="status" aria-live="polite" hidden></p>
+        <div id="pesquisaRefPrevia" class="pesq-previa" hidden>
+          <div id="pesquisaRefPreviaTexto" class="pesq-previa-texto"></div>
+          <div class="pesq-acoes pesq-acoes-res">
+            <button id="pesquisaRefUsarBtn" class="pesq-fino" type="button">✅ Usar este texto</button>
+            <a id="pesquisaRefJwl" class="secondary pesq-fino pesq-link-botao" href="#" hidden>📖 JW Library</a>
+          </div>
+        </div>
+        <div id="pesquisaRefEscolhido" class="pesq-escolhido" hidden>
+          <div id="pesquisaRefEscolhidoTexto" class="pesq-previa-texto"></div>
+          <div class="pesq-acoes pesq-acoes-res">
+            <button id="pesquisaRefTrocarBtn" class="secondary pesq-fino" type="button">✏️ Trocar o texto</button>
+            <a id="pesquisaRefEscolhidoJwl" class="secondary pesq-fino pesq-link-botao" href="#" hidden>📖 JW Library</a>
+          </div>
+        </div>
+        <label class="pesq-rotulo" for="pesquisaPalavra1">Palavras ou frases-chave <span class="pesq-opcional">(opcional, até 3)</span></label>
+        <div class="pesq-palavras">
+          <input id="pesquisaPalavra1" class="pesq-campo pesq-palavra" type="text" maxlength="80" autocomplete="off" placeholder="Ex.: buscar primeiro o Reino">
+          <input id="pesquisaPalavra2" class="pesq-campo pesq-palavra" type="text" maxlength="80" autocomplete="off" placeholder="Outra palavra ou frase (opcional)" aria-label="Segunda palavra ou frase-chave" hidden>
+          <input id="pesquisaPalavra3" class="pesq-campo pesq-palavra" type="text" maxlength="80" autocomplete="off" placeholder="Mais uma (opcional)" aria-label="Terceira palavra ou frase-chave" hidden>
+        </div>
+        <label for="pesquisaTextoContexto" class="pesq-rotulo">Assunto ou contexto da pesquisa <span class="pesq-opcional">(opcional)</span></label>
+        <textarea id="pesquisaTextoContexto" class="pesq-campo" rows="1" maxlength="800" spellcheck="true" placeholder="Ex.: para um discurso sobre prioridades"></textarea>
+      </div>
+
+      <div class="pesq-acao-bloco">
         <div class="pesq-acoes">
           <button id="pesquisaBtn" data-codigo-ia="pesquisa" class="pesq-fino pesq-principal" type="button">🔎 Pesquisar</button>
           <button id="pesquisaCancelarBtn" class="secondary pesq-fino" type="button" hidden>⏹️ Cancelar</button>

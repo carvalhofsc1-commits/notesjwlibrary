@@ -49,6 +49,8 @@ import {
   trechoDaCitacaoDoIndice,
   siglasDasPublicacoes,
   siglasPossiveis,
+  pesquisaDoVersiculo,
+  notasDeEstudo,
   referenciasDeTesouros,
   referenciasDoDiscursoCurto,
   semanasDosEstudos,
@@ -251,6 +253,7 @@ const TAREFAS_SEM_IA = new Set([
   "publico-esboco",
   "versiculos",
   "anotacoes-versiculos",
+  "pesquisa-versiculos",
   "programa-pub",
   "programas-lista",
   "estudo-paragrafos",
@@ -1779,21 +1782,42 @@ const nomeDoModelo = (id) => {
   return m ? m.nome.split(":")[0] : id;
 };
 
-async function coletarPesquisa(res, body, P) {
-  const assunto = textoLivre(body.assunto, 300);
-  const contexto = textoLivre(body.contexto, 800);
-  if (assunto.length < 3) return erro(res, 400, "Escreva o assunto da pesquisa.");
-  precarregarFontes({ perspicaz: true, livros: true });
+// O texto bíblico pedido na aba Texto bíblico: { referencia, texto, livro, capitulo, versos, palavras } ou null (pedido inválido).
+function textoBiblicoDoPedido(body) {
+  const livro = Number(body.livro);
+  const capitulo = Number(body.capitulo);
+  const referencia = limparLinha(String(body.referencia || ""), 80);
+  if (!Number.isInteger(livro) || livro < 1 || livro > 66 || !Number.isInteger(capitulo) || capitulo < 1 || capitulo > 150 || !referencia) return null;
+  const versos = [...new Set((Array.isArray(body.versos) ? body.versos : []).map(Number).filter((v) => Number.isInteger(v) && v >= 1 && v <= 176))].sort((a, b) => a - b).slice(0, 40);
+  const palavras = (Array.isArray(body.palavras) ? body.palavras : []).map((p) => limparLinha(String(p || ""), 80)).filter(Boolean).slice(0, 3);
+  return { referencia, texto: String(body.textoBiblico || "").replace(/\s+/g, " ").trim().slice(0, 4000), livro, capitulo, versos, palavras };
+}
 
-  let consultas = [assunto];
+async function coletarPesquisa(res, body, P) {
+  const biblico = body.modo === "texto" ? textoBiblicoDoPedido(body) : null;
+  if (body.modo === "texto" && !biblico) return erro(res, 400, "Escolha o texto bíblico da pesquisa.");
+  const contexto = textoLivre(body.contexto, 800);
+  // Na aba Texto bíblico, o "assunto" das buscas são as palavras-chave e o contexto (o texto inteiro traria palavras demais).
+  const assunto = biblico ? textoLivre([...biblico.palavras, contexto].filter(Boolean).join(", "), 300) : textoLivre(body.assunto, 300);
+  if (!biblico && assunto.length < 3) return erro(res, 400, "Escreva o assunto da pesquisa.");
+  precarregarFontes({ perspicaz: true, livros: true });
+  // Quantas fontes de cada lugar: no texto bíblico, as do próprio versículo vêm primeiro e as do assunto só completam.
+  const limite = biblico ? { guia: 4, indice: 4, wol: 6 } : { guia: 8, indice: 8, wol: 14 };
+
+  let consultas = assunto ? [assunto] : [];
   let verbetes = [];
-  let consultaLivros = (assunto + " " + contexto).trim();
+  let consultaLivros = (biblico ? [biblico.texto, assunto].join(" ") : assunto + " " + contexto).trim();
   try {
     const client = criarClienteIa({ maxRetries: 1, timeout: 45_000 }, P.ia.provedorTarefa);
+    const pedido = biblico
+      ? `TEXTO BÍBLICO: ${biblico.referencia}${biblico.texto ? ` — "${biblico.texto.slice(0, 1500)}"` : ""}` +
+        (biblico.palavras.length ? `\nPALAVRAS-CHAVE (o ponto do texto que o usuário quer focar): ${biblico.palavras.join("; ")}` : "") +
+        (contexto ? `\nCONTEXTO: ${contexto}` : "")
+      : `ASSUNTO: ${assunto}` + (contexto ? `\nCONTEXTO: ${contexto}` : "");
     const r = await chamarIa(
       client,
       P,
-      { max_tokens: 3000, system: P.sistemaPesquisaConsultas, messages: [{ role: "user", content: `ASSUNTO: ${assunto}` + (contexto ? `\nCONTEXTO: ${contexto}` : "") }] },
+      { max_tokens: 3000, system: P.sistemaPesquisaConsultas, messages: [{ role: "user", content: pedido }] },
       { schema: SaidaConsultasPesquisa, semPensar: true, tarefa: "pesquisa-coletar" }
     );
     const o = r.parsed_output;
@@ -1808,19 +1832,63 @@ async function coletarPesquisa(res, body, P) {
   }
 
   try {
+    // Texto bíblico: para cada versículo (até 6), a página de pesquisa do wol: as notas de estudo da Tradução do Novo Mundo e as citações do
+    // Índice das Publicações 1991-2026 que comentam o versículo (até 10, intercalando os versículos, as mais recentes primeiro; no máximo 2 do
+    // Perspicaz e 2 trechos do mesmo artigo).
+    const doVersiculo = await (async () => {
+      if (!biblico) return { notas: [], lidas: [] };
+      try {
+        const versos = (biblico.versos.length ? biblico.versos : [1]).slice(0, 6);
+        const paginas = await Promise.all(versos.map((v) => pesquisaDoVersiculo(biblico.livro, biblico.capitulo, v, 9000).then((p) => (p ? { v, ...p } : null)).catch(() => null)));
+        const caminhosNotas = [...new Set(paginas.filter((p) => p && p.notas).map((p) => p.notas.caminho))].slice(0, 4);
+        const ordenadas = paginas.filter(Boolean).map((p) =>
+          p.citacoes.map((c, i) => ({ ...c, verso: p.v, pontos: (c.ano || 2012) - i * 0.3 })).sort((a, b) => b.pontos - a.pontos)
+        );
+        const escolhidas = [];
+        const chaves = new Set();
+        let doPerspicaz = 0;
+        for (let i = 0; i < 30 && escolhidas.length < 10; i++) {
+          for (const lista of ordenadas) {
+            const c = lista[i];
+            if (!c || escolhidas.length >= 10) continue;
+            const chave = c.citacao.split(/\s+/).slice(0, 2).join(" ");
+            if (chaves.has(chave) || (/^it-\d/i.test(c.citacao) && doPerspicaz >= 2)) continue;
+            if (/^it-\d/i.test(c.citacao)) doPerspicaz++;
+            chaves.add(chave);
+            escolhidas.push(c);
+          }
+        }
+        const [notas, lidasBrutas] = await Promise.all([
+          Promise.all(caminhosNotas.map((c) => notasDeEstudo(c, 9000).catch(() => null))),
+          Promise.all(escolhidas.map((c) => trechoDaCitacaoDoIndice(c.caminho, 9000).then((p) => (p ? { c, p } : null)).catch(() => null))),
+        ]);
+        const porDoc = new Map();
+        const lidas = lidasBrutas.filter((x) => {
+          if (!x) return false;
+          porDoc.set(x.p.docId, (porDoc.get(x.p.docId) || 0) + 1);
+          return porDoc.get(x.p.docId) <= 2;
+        });
+        return { notas: notas.filter(Boolean), lidas };
+      } catch (e) {
+        console.error("Pesquisa: página do versículo indisponível", e?.message);
+        return { notas: [], lidas: [] };
+      }
+    })();
+    const docsDoVersiculo = new Set(doVersiculo.lidas.map(({ p }) => p.docId));
+
     // Guia de Pesquisa (jw.org): os tópicos do assunto e, deles, até 8 artigos (intercalando os tópicos, na ordem do Guia, no máximo 3 por
     // subtítulo); cada um lido no wol (a faixa de parágrafos indicada pelo Guia ou, sem ela, o parágrafo com mais palavras da busca).
     const doGuia = await (async () => {
       try {
-        const topicos = await topicosDoGuiaPara([assunto, ...consultas], 9000, 2);
+        const topicos = await topicosDoGuiaPara([assunto, ...consultas].filter(Boolean), 9000, 2);
         const listasGuia = await Promise.all(topicos.map((t) => entradasDoGuia(t, 9000).then((e) => e.map((x) => ({ ...x, topico: t.nome }))).catch(() => [])));
         const escolhidas = [];
         const porSubtitulo = new Map();
-        const docs = new Set();
-        for (let i = 0; i < 40 && escolhidas.length < 8; i++) {
+        const docs = new Set(docsDoVersiculo);
+        for (let i = 0; i < 40 && escolhidas.length < limite.guia; i++) {
           for (const lista of listasGuia) {
             const e = lista[i];
-            if (!e || docs.has(e.docId) || escolhidas.length >= 8) continue;
+            if (!e || docs.has(e.docId) || escolhidas.length >= limite.guia) continue;
             const chave = e.topico + "|" + e.subtitulo;
             if ((porSubtitulo.get(chave) || 0) >= 3) continue;
             porSubtitulo.set(chave, (porSubtitulo.get(chave) || 0) + 1);
@@ -1850,7 +1918,7 @@ async function coletarPesquisa(res, body, P) {
     // combinam com o assunto, o contexto e as buscas (no empate, as mais recentes), sem repetir artigos do Guia. O Perspicaz (it-) já vem à parte.
     const doIndice = await (async () => {
       try {
-        const textosConsulta = [assunto, contexto, ...consultas];
+        const textosConsulta = [assunto, contexto, ...consultas].filter(Boolean);
         const assuntos = await assuntosDoIndicePara(textosConsulta, 9000, 2);
         const listasIndice = await Promise.all(assuntos.map((a) => entradasDoIndice(a, 9000).then((e) => e.map((x) => ({ ...x, assunto: a.nome }))).catch(() => [])));
         const termos = new Set(textosConsulta.flatMap((t) => palavrasDe(t).filter((w) => w.length >= 4).map((w) => w.slice(0, 6))));
@@ -1873,7 +1941,7 @@ async function coletarPesquisa(res, body, P) {
           escolhidas.push(c);
           if (escolhidas.length >= 10) break;
         }
-        const docsGuia = new Set(doGuia.lidas.map(({ e }) => e.docId));
+        const docsGuia = new Set([...doGuia.lidas.map(({ e }) => e.docId), ...docsDoVersiculo]);
         const porDoc = new Map(); // no máximo 2 trechos do mesmo artigo
         const lidas = (await Promise.all(escolhidas.map((c) => trechoDaCitacaoDoIndice(c.caminho, 9000).then((p) => (p ? { c, p } : null)).catch(() => null))))
           .filter((x) => {
@@ -1881,7 +1949,7 @@ async function coletarPesquisa(res, body, P) {
             porDoc.set(x.p.docId, (porDoc.get(x.p.docId) || 0) + 1);
             return porDoc.get(x.p.docId) <= 2;
           })
-          .slice(0, 8);
+          .slice(0, limite.indice);
         return { assuntos: assuntos.map((a) => a.nome), lidas };
       } catch (e) {
         console.error("Pesquisa: Índice das Publicações indisponível", e?.message);
@@ -1892,11 +1960,11 @@ async function coletarPesquisa(res, body, P) {
     // wol.jw.org: os achados de cada busca, intercalados (o 1º de cada, depois o 2º…), sem repetir o documento; até 14 matérias.
     const listas = await Promise.all(consultas.map((q) => pesquisarParagrafosNoWol(q, 9000, 6).catch(() => [])));
     const achados = [];
-    const vistos = new Set([...doGuia.lidas.map(({ e }) => e.docId), ...doIndice.lidas.map(({ p }) => p.docId)]);
+    const vistos = new Set([...doGuia.lidas.map(({ e }) => e.docId), ...doIndice.lidas.map(({ p }) => p.docId), ...docsDoVersiculo]);
     for (let i = 0; i < 6; i++) {
       for (const lista of listas) {
         const a = lista[i];
-        if (a && !vistos.has(a.docId) && achados.length < 14) {
+        if (a && !vistos.has(a.docId) && achados.length < limite.wol) {
           vistos.add(a.docId);
           achados.push(a);
         }
@@ -1909,6 +1977,17 @@ async function coletarPesquisa(res, body, P) {
     ]);
 
     const fontes = [];
+    const siglas = await siglasDasPublicacoes(6000).catch(() => new Map());
+    const nomeDaSigla = (codigo) => siglasPossiveis(codigo).map((s) => siglas.get(s)).find(Boolean) || publicacaoDoCodigo(codigo);
+    // Texto bíblico: primeiro as notas de estudo e as citações do Índice para o versículo.
+    for (const n of doVersiculo.notas) {
+      fontes.push({ tipo: "wol", notas: true, publicacao: "Tradução do Novo Mundo (Edição de Estudo)", codigo: "", ano: null, titulo: n.titulo, pagina: null, paragrafos: "", texto: n.texto, url: n.url, docId: n.docId, pid: n.pid });
+    }
+    for (const { c, p } of doVersiculo.lidas) {
+      // "w24.08 2-6" -> "w24.08" (a página vem à parte); "ijwbq artigo 120" e "lff lição 15" ficam inteiros.
+      const codigo = /artigos?|li[çc][õo]es?|cap\.|parte/i.test(c.citacao) ? c.citacao : c.citacao.replace(/\s+[\d\s,–-]+$/, "").trim();
+      fontes.push({ tipo: "wol", indice: `texto bíblico ${biblico.referencia.replace(/:.*$/, "")}:${c.verso}`, publicacao: nomeDaSigla(codigo), codigo, ano: c.ano, titulo: p.titulo, pagina: p.pagina, paragrafos: p.paragrafos, texto: p.texto, url: p.url, docId: p.docId, pid: p.pid });
+    }
     const vistosVerbete = new Set();
     for (const v of verbetesLidos) {
       if (!v || vistosVerbete.has(v.verbete)) continue;
@@ -1918,8 +1997,6 @@ async function coletarPesquisa(res, body, P) {
     for (const t of trechosLivros) {
       fontes.push({ tipo: "livro", publicacao: t.livro, codigo: "", ano: null, titulo: "", pagina: null, paragrafos: "", texto: t.trecho, url: "" });
     }
-    const siglas = await siglasDasPublicacoes(6000).catch(() => new Map());
-    const nomeDaSigla = (codigo) => siglasPossiveis(codigo).map((s) => siglas.get(s)).find(Boolean) || publicacaoDoCodigo(codigo);
     for (const { e, p } of doGuia.lidas) {
       const codigo = e.codigo.replace(/\s*(?:p[áa]gs?|pars?)\.\s.*$/i, "").trim(); // "w19.11 pág. 15 par. 7" -> "w19.11" (página e parágrafo vêm à parte)
       fontes.push({ tipo: "wol", guia: [e.topico, e.subtitulo].filter(Boolean).join(" › "), publicacao: nomeDaSigla(codigo), codigo, ano: e.ano, titulo: p.titulo || e.titulo, pagina: p.pagina, paragrafos: p.paragrafos, texto: p.texto, url: p.url, docId: e.docId, pid: p.pid });
@@ -1934,7 +2011,7 @@ async function coletarPesquisa(res, body, P) {
       fontes.push({ tipo: "wol", publicacao: a.publicacao, codigo: a.codigo, ano: a.ano, titulo: p.titulo || a.titulo, pagina: p.pagina, paragrafos: p.paragrafos, texto: p.texto, url: p.url, docId: a.docId, pid: p.pid });
     }
     fontes.forEach((f, i) => (f.id = "F" + (i + 1)));
-    console.log("Pesquisa (coletar):", JSON.stringify({ modelo: P.ia.modelo, consultas, verbetes, guia: doGuia.topicos, doGuia: doGuia.lidas.length, indice: doIndice.assuntos, doIndice: doIndice.lidas.length, wol: lidos.filter(Boolean).length, perspicaz: vistosVerbete.size, livros: trechosLivros.length }));
+    console.log("Pesquisa (coletar):", JSON.stringify({ modelo: P.ia.modelo, modo: biblico ? "texto" : "assunto", referencia: biblico ? biblico.referencia : undefined, notas: doVersiculo.notas.length, doVersiculo: doVersiculo.lidas.length, consultas, verbetes, guia: doGuia.topicos, doGuia: doGuia.lidas.length, indice: doIndice.assuntos, doIndice: doIndice.lidas.length, wol: lidos.filter(Boolean).length, perspicaz: vistosVerbete.size, livros: trechosLivros.length }));
     if (!fontes.length) return erro(res, 404, "Não encontrei matérias sobre esse assunto no wol.jw.org nem nos arquivos. Tente outras palavras.");
     return res.status(200).json({ consultas, verbetes, fontes });
   } catch (e) {
@@ -1978,14 +2055,21 @@ function cabecalhoDaFonte(f) {
 }
 
 async function responderPesquisa(res, body, P) {
+  const biblico = body.modo === "texto" ? textoBiblicoDoPedido(body) : null;
+  if (body.modo === "texto" && !biblico) return erro(res, 400, "Escolha o texto bíblico da pesquisa.");
   const assunto = textoLivre(body.assunto, 300);
   const contexto = textoLivre(body.contexto, 800);
-  if (assunto.length < 3) return erro(res, 400, "Escreva o assunto da pesquisa.");
+  if (!biblico && assunto.length < 3) return erro(res, 400, "Escreva o assunto da pesquisa.");
   const fontes = fontesDaPesquisa(body.fontes);
   if (!fontes.length) return erro(res, 400, "Nenhuma fonte foi escolhida para a pesquisa.");
   const hoje = new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", day: "numeric", month: "long", year: "numeric" });
+  const cabecalho = biblico
+    ? `TEXTO BÍBLICO: ${biblico.referencia}` +
+      (biblico.texto ? `\n"${biblico.texto}"` : "") +
+      (biblico.palavras.length ? `\nPALAVRAS-CHAVE (o ponto do texto que o usuário quer focar): ${biblico.palavras.join("; ")}` : "")
+    : `ASSUNTO: ${assunto}`;
   const mensagem =
-    `DATA DA PESQUISA: ${hoje}\nASSUNTO: ${assunto}` +
+    `DATA DA PESQUISA: ${hoje}\n${cabecalho}` +
     (contexto ? `\nCONTEXTO: ${contexto}` : "") +
     "\n\nFONTES ENCONTRADAS (use só estas e cite cada informação pelo identificador entre colchetes):\n\n" +
     fontes.map((f) => `[${f.id}] ${cabecalhoDaFonte(f)}\n${f.texto}`).join("\n\n");
@@ -1995,7 +2079,7 @@ async function responderPesquisa(res, body, P) {
     const resposta = await chamarIa(
       client,
       P,
-      { max_tokens: P.ia.provedorTarefa === "gemini" ? 32000 : 16000, system: P.sistemaPesquisa, messages: [{ role: "user", content: mensagem }] },
+      { max_tokens: P.ia.provedorTarefa === "gemini" ? 32000 : 16000, system: biblico ? P.sistemaPesquisaTexto : P.sistemaPesquisa, messages: [{ role: "user", content: mensagem }] },
       { schema: SaidaPesquisa, tarefa: "pesquisa" }
     );
     if (resposta.stop_reason === "refusal" || !resposta.parsed_output) return erro(res, 502, "A IA não conseguiu escrever a pesquisa. Tente de novo.");
@@ -5118,6 +5202,7 @@ async function tratarPedido(req, res) {
     if (tarefa === "publico-esboco") return verEsbocoPublico(res, body);
     if (tarefa === "versiculos") return textosDosVersiculos(res, body);
     if (tarefa === "anotacoes-versiculos") return textosDosVersiculosAnotacoes(res, body);
+    if (tarefa === "pesquisa-versiculos") return textosDosVersiculosAnotacoes(res, body); // Assistente de pesquisas, aba Texto bíblico (código de pesquisa)
     if (tarefa === "programa-pub") return lerProgramaPub(res, body);
     if (tarefa === "programas-lista") return listaDeProgramas(res, body);
     if (tarefa === "outros-pesquisar") return pesquisarOutros(res, body);

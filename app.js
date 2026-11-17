@@ -7876,7 +7876,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.14'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.15'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -31138,14 +31138,286 @@ function saveTemplatesToStorage() {
         campo.style.height = 'auto';
         campo.style.height = (campo.scrollHeight + 2) + 'px';
       }
-      [campoAssunto, campoContexto].forEach(campo => campo.addEventListener('input', () => crescer(campo)));
-      const crescerCampos = () => [campoAssunto, campoContexto].forEach(crescer);
+      const campoTextoContexto = $('pesquisaTextoContexto');
+      [campoAssunto, campoContexto, campoTextoContexto].forEach(campo => campo.addEventListener('input', () => crescer(campo)));
+      const crescerCampos = () => [campoAssunto, campoContexto, campoTextoContexto].forEach(campo => { if (campo.offsetParent) crescer(campo); });
       document.addEventListener('visibilitychange', () => { if (!document.hidden) requestAnimationFrame(crescerCampos); });
       window.addEventListener('resize', () => { if (currentScreen() === 'pesquisa') crescerCampos(); });
       new MutationObserver(() => { if (currentScreen() === 'pesquisa') requestAnimationFrame(crescerCampos); }).observe(document.body, { attributes: true, attributeFilter: ['data-screen'] });
 
       const escapar = t => String(t || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-      const erroDe =(r, padrao) => (r && r.unavailable ? 'O servidor não está disponível agora. Tente de novo em instantes.' : (r && r.data && r.data.erro) || padrao);
+
+      // ---------- Abas: Assunto e Texto bíblico ----------
+      let aba = 'assunto';
+      function trocarAba(nova) {
+        aba = nova === 'texto' ? 'texto' : 'assunto';
+        document.querySelectorAll('#pesquisaCard .pesq-aba').forEach(b => b.setAttribute('aria-selected', String(b.dataset.pesqAba === aba)));
+        $('pesquisaAssuntoBloco').hidden = aba !== 'assunto';
+        $('pesquisaTextoBloco').hidden = aba !== 'texto';
+        requestAnimationFrame(crescerCampos);
+      }
+      document.querySelectorAll('#pesquisaCard .pesq-aba').forEach(b => b.addEventListener('click', () => { if (!b.disabled) trocarAba(b.dataset.pesqAba); }));
+
+      // ---------- Aba Texto bíblico: escolher o texto (o mesmo jeito das Anotações) ----------
+      // Digita o livro (as sugestões aparecem) ou toca em 📚 para escolher livro › capítulo › versículos (toque escolhe ou tira; toque longo faz o
+      // trecho corrido). 👁️ mostra o texto, com o botão do JW Library; "Usar este texto" confirma (o texto fica no card, pronto para a pesquisa).
+      const refCampo = $('pesquisaRef');
+      const pick = $('pesquisaRefPick');
+      const trilhaEl = $('pesquisaRefTrilha');
+      const opcoesEl = $('pesquisaRefOpcoes');
+      const guia = { livro: '', cap: 0, sel: new Set(), inicio: 0, aberto: false };
+      let previaRef = null; // { referencia, versiculos, livro, capitulo, versos }
+      let escolhido = null; // o mesmo, depois de "Usar este texto"
+      const semAcentosRef = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+      const capitulosDoLivro = livro => (window.BIBLIA_VERSICULOS || [])[BIBLIA_LIVROS.indexOf(livro)] || [];
+      function livrosPorPrefixo(texto) {
+        const t = semAcentosRef(texto).replace(/^([1-3])\s*/, '$1 ').trim();
+        if (!t) return BIBLIA_LIVROS.slice();
+        const temNumero = /^[1-3] /.test(t);
+        return BIBLIA_LIVROS.filter(l => {
+          const n = semAcentosRef(l);
+          const palavras = n.split(' ').filter((w, k) => !(k === 0 && /^[1-3]$/.test(w)));
+          return n.startsWith(t) || (!temNumero && palavras.some(w => w.startsWith(t)));
+        });
+      }
+      function versosDoTexto(texto) {
+        const s = new Set();
+        String(texto || '').split(/[,.;]/).forEach(p => {
+          const f = p.match(/(\d{1,3})\s*[-–—]\s*(\d{1,3})/);
+          if (f) { for (let n = Number(f[1]); n <= Number(f[2]) && n < 200; n++) s.add(n); return; }
+          const u = p.match(/\d{1,3}/);
+          if (u) s.add(Number(u[0]));
+        });
+        return s;
+      }
+      function versosEmTexto(conjunto) {
+        const grupos = [];
+        [...conjunto].sort((a, b) => a - b).forEach(n => {
+          const g = grupos[grupos.length - 1];
+          if (g && n === g[1] + 1) g[1] = n; else grupos.push([n, n]);
+        });
+        return grupos.map(([a, b]) => (a === b ? String(a) : b === a + 1 ? a + ', ' + b : a + '-' + b)).join(', ');
+      }
+      function referenciaDoGuia() {
+        if (!guia.livro) return refCampo.value;
+        if (!guia.cap) return guia.livro + ' ';
+        const um = capitulosDoLivro(guia.livro).length === 1;
+        const versos = versosEmTexto(guia.sel);
+        return guia.livro + ' ' + guia.cap + (versos || !um ? ':' : '') + versos;
+      }
+      // Lê o que está digitado e decide em que passo o seletor está (livro, capítulo ou versículos).
+      function sincronizarDoTexto() {
+        const bruto = refCampo.value;
+        const m = bruto.match(/^\s*((?:[1-3]\s*)?\p{L}[\p{L}\s.]*?)\s*(?:(\d{1,3})\s*(?::\s*([\d\s,.;\-–—]*))?)?\s*$/u);
+        guia.livro = '';
+        guia.cap = 0;
+        guia.sel = new Set();
+        if (m) {
+          const candidatos = livrosPorPrefixo(m[1]);
+          const digitado = m[1].trim().toLowerCase();
+          const livro = candidatos.length === 1 ? candidatos[0]
+            : (candidatos.find(c => c.toLowerCase() === digitado) || (m[2] ? candidatos.find(c => semAcentosRef(c) === semAcentosRef(m[1])) : null));
+          if (livro) {
+            const caps = capitulosDoLivro(livro);
+            if (m[2] && Number(m[2]) >= 1 && Number(m[2]) <= caps.length) {
+              guia.livro = livro;
+              guia.cap = Number(m[2]);
+              guia.sel = versosDoTexto(m[3] || '');
+            } else if (!m[2] && semAcentosRef(m[1]) === semAcentosRef(livro)) {
+              guia.livro = livro;
+              if (caps.length === 1) guia.cap = 1;
+            }
+          }
+        }
+        if (!guia.sel.has(guia.inicio)) guia.inicio = 0;
+        pintarGuia(m ? m[1] : bruto);
+      }
+      function botaoGuia(rotulo, aoTocar, classe, titulo) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = classe || 'secondary';
+        b.textContent = rotulo;
+        if (titulo) b.title = titulo;
+        b.addEventListener('click', aoTocar);
+        return b;
+      }
+      function pintarGuia(filtroLivro) {
+        pick.hidden = !guia.aberto;
+        $('pesquisaRefEscolherBtn').setAttribute('aria-expanded', String(guia.aberto));
+        trilhaEl.replaceChildren();
+        opcoesEl.replaceChildren();
+        $('pesquisaRefDica').hidden = true;
+        $('pesquisaRefPickVerBtn').hidden = true;
+        if (!guia.aberto) return;
+        if (guia.livro) {
+          trilhaEl.appendChild(botaoGuia('📖 ' + guia.livro, () => { refCampo.value = ''; sincronizarDoTexto(); refCampo.focus(); }, 'anotacoes-trilha-btn', 'Trocar de livro'));
+          if (guia.cap && capitulosDoLivro(guia.livro).length > 1) trilhaEl.appendChild(botaoGuia('Cap. ' + guia.cap, () => { guia.cap = 0; guia.sel = new Set(); refCampo.value = referenciaDoGuia(); pintarGuia(''); }, 'anotacoes-trilha-btn', 'Trocar de capítulo'));
+        }
+        if (!guia.livro) {
+          const lista = livrosPorPrefixo(filtroLivro);
+          if (!lista.length) {
+            const p = document.createElement('p');
+            p.className = 'pesq-dica';
+            p.textContent = 'Nenhum livro começa com “' + String(filtroLivro || '').trim() + '”.';
+            opcoesEl.appendChild(p);
+            return;
+          }
+          const livrosNT = new Set(BIBLIA_GRUPOS_LIVROS.slice(7).flatMap(g => g.livros));
+          const MATIZ_SECAO = { pentateuco: 28, conquista: 135, reis: 55, volta: 190, poesia: 330, maiores: 270, menores: 355, evangelhos: 215, atos: 165, paulo: 300, gerais: 90, apocalipse: 0 };
+          [['📜 Escrituras Hebraicas', l => !livrosNT.has(l)], ['🕊️ Escrituras Gregas Cristãs', l => livrosNT.has(l)]].forEach(([titulo, neste]) => {
+            const livros = lista.filter(neste);
+            if (!livros.length) return;
+            const caixa = document.createElement('div');
+            caixa.className = 'anotacoes-testamento';
+            const cab = document.createElement('p');
+            cab.className = 'anotacoes-testamento-titulo';
+            const forte = document.createElement('strong');
+            forte.textContent = titulo;
+            cab.appendChild(forte);
+            const grade = document.createElement('div');
+            grade.className = 'anotacoes-grade anotacoes-grade-livros';
+            livros.forEach(livro => {
+              const b = botaoGuia(livro, () => { refCampo.value = livro + (capitulosDoLivro(livro).length === 1 ? ' 1:' : ' '); sincronizarDoTexto(); }, 'secondary anotacoes-opcao');
+              const g = BIBLIA_GRUPOS_LIVROS.find(x => x.livros.includes(livro));
+              if (g) {
+                b.style.background = 'color-mix(in srgb, hsl(' + MATIZ_SECAO[g.id] + ' 78% 56%) ' + (livro === 'Salmos' ? 36 : 17) + '%, var(--card))';
+                b.title = g.nome;
+              }
+              grade.appendChild(b);
+            });
+            caixa.append(cab, grade);
+            opcoesEl.appendChild(caixa);
+          });
+          return;
+        }
+        const caps = capitulosDoLivro(guia.livro);
+        if (!guia.cap) {
+          const grade = document.createElement('div');
+          grade.className = 'anotacoes-grade anotacoes-grade-numeros';
+          caps.forEach((qtd, i) => grade.appendChild(botaoGuia(String(i + 1), () => { guia.cap = i + 1; guia.sel = new Set(); refCampo.value = referenciaDoGuia(); pintarGuia(''); }, 'secondary anotacoes-opcao', qtd + ' versículos')));
+          opcoesEl.appendChild(grade);
+          return;
+        }
+        $('pesquisaRefDica').hidden = false;
+        const grade = document.createElement('div');
+        grade.className = 'anotacoes-grade anotacoes-grade-numeros';
+        for (let n = 1; n <= (caps[guia.cap - 1] || 0); n++) {
+          const b = botaoVersiculo(n);
+          if (guia.sel.has(n)) b.setAttribute('aria-pressed', 'true');
+          if (guia.inicio === n) b.classList.add('inicio');
+          grade.appendChild(b);
+        }
+        opcoesEl.appendChild(grade);
+        $('pesquisaRefPickVerBtn').hidden = !guia.sel.size;
+      }
+      // Versículo: toque liga e desliga; toque longo (ou Shift+clique) escolhe o trecho corrido desde o último tocado.
+      function botaoVersiculo(n) {
+        const b = botaoGuia(String(n), () => {}, 'secondary anotacoes-opcao anotacoes-versiculo');
+        let tempo = null;
+        let longo = false;
+        const cancelar = () => { clearTimeout(tempo); tempo = null; };
+        b.addEventListener('pointerdown', () => { longo = false; cancelar(); tempo = setTimeout(() => { longo = true; tocarVersiculo(n, true); }, 450); });
+        ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => b.addEventListener(ev, cancelar));
+        b.addEventListener('contextmenu', e => e.preventDefault());
+        b.addEventListener('click', e => { if (longo) { longo = false; return; } tocarVersiculo(n, e.shiftKey); });
+        return b;
+      }
+      function tocarVersiculo(n, corrido) {
+        if (corrido && guia.inicio && guia.inicio !== n) {
+          for (let v = Math.min(guia.inicio, n); v <= Math.max(guia.inicio, n); v++) guia.sel.add(v);
+          guia.inicio = n;
+        } else if (guia.sel.has(n)) {
+          guia.sel.delete(n);
+          guia.inicio = 0;
+        } else {
+          guia.sel.add(n);
+          guia.inicio = n;
+        }
+        refCampo.value = referenciaDoGuia();
+        pintarGuia('');
+      }
+      function fecharPrevia() {
+        previaRef = null;
+        $('pesquisaRefPrevia').hidden = true;
+        $('pesquisaRefPreviaTexto').textContent = '';
+      }
+      refCampo.addEventListener('input', () => { fecharPrevia(); guia.aberto = Boolean(refCampo.value.trim()) || guia.aberto; sincronizarDoTexto(); });
+      refCampo.addEventListener('focus', () => { if (!guia.aberto && !refCampo.value.trim()) return; guia.aberto = true; sincronizarDoTexto(); });
+      refCampo.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); verTexto(); } });
+      $('pesquisaRefEscolherBtn').addEventListener('click', () => { guia.aberto = !guia.aberto; sincronizarDoTexto(); });
+      $('pesquisaRefLimparBtn').addEventListener('click', () => { refCampo.value = ''; guia.aberto = false; fecharPrevia(); sincronizarDoTexto(); dizer($('pesquisaRefMsg'), ''); });
+      $('pesquisaRefVerBtn').addEventListener('click', () => verTexto());
+      $('pesquisaRefPickVerBtn').addEventListener('click', () => verTexto());
+
+      // O endereço do JW Library para a referência: o primeiro versículo (ou o trecho corrido: BBCCCVVV-BBCCCVVV).
+      function jwlDoTexto(t) {
+        if (!t || !t.livro || !t.capitulo) return '';
+        const cod = v => String(t.livro).padStart(2, '0') + String(t.capitulo).padStart(3, '0') + String(v).padStart(3, '0');
+        const vs = t.versos.length ? t.versos : [1];
+        const corrido = vs.length > 1 && vs[vs.length - 1] - vs[0] === vs.length - 1;
+        return 'jwlibrary:///finder?bible=' + cod(vs[0]) + (corrido ? '-' + cod(vs[vs.length - 1]) : '') + '&wtlocale=T';
+      }
+      // O texto dos versículos em HTML: a referência em negrito e o texto entre aspas; [n] vira o número do versículo, pequeno e em destaque.
+      function htmlDosVersiculos(t) {
+        return t.versiculos.map(v => '<p><strong>' + escapar(v.referencia || t.referencia) + ':</strong> “' +
+          escapar(String(v.textoNumerado || v.texto || '').trim()).replace(/\[(\d{1,3}(?::\d{1,3})?)\]\s*/g, '<span class="pesq-vnum">$1</span>') + '”</p>').join('');
+      }
+      const textoCorrido = t => t.versiculos.map(v => String(v.texto || '').trim()).join(' ');
+      async function verTexto() {
+        const msg = $('pesquisaRefMsg');
+        sincronizarDoTexto();
+        const referencia = referenciaDoGuia().trim();
+        if (!guia.livro || !guia.cap) return dizer(msg, 'Escolha o livro, o capítulo e os versículos (ex.: Mateus 6:33).', { aviso: true });
+        if (!codigoAcessoSalvo()) return dizer(msg, 'Salve o código de pesquisa em Ajustes → 🔐 Autorização de acessos.', { aviso: true });
+        dizer(msg, 'Buscando ' + referencia + '…', { girando: true });
+        let r;
+        try {
+          r = await postStudy({ tarefa: 'pesquisa-versiculos', codigo: codigoAcessoSalvo(), referencias: [referencia] }, 20000);
+        } catch (e) {
+          return dizer(msg, 'Sem conexão com o servidor. Confira a internet e tente de novo.', { aviso: true });
+        }
+        if (!r.ok) return dizer(msg, erroDe(r, 'Não consegui buscar o texto bíblico.'), { aviso: true });
+        const lista = ((r.data && r.data.versiculos) || []).filter(v => String(v.texto || '').trim());
+        if (!lista.length) return dizer(msg, 'Não encontrei o texto de “' + referencia + '”. Confira o livro, o capítulo e os versículos.', { aviso: true });
+        dizer(msg, '');
+        previaRef = { referencia, versiculos: lista, livro: BIBLIA_LIVROS.indexOf(guia.livro) + 1, capitulo: guia.cap, versos: [...guia.sel].sort((a, b) => a - b) };
+        $('pesquisaRefPreviaTexto').innerHTML = htmlDosVersiculos(previaRef);
+        const jwl = jwlDoTexto(previaRef);
+        $('pesquisaRefJwl').href = jwl || '#';
+        $('pesquisaRefJwl').hidden = !jwl;
+        $('pesquisaRefPrevia').hidden = false;
+        guia.aberto = false;
+        pintarGuia('');
+      }
+      function mostrarEscolhido() {
+        $('pesquisaRefEscolhido').hidden = !escolhido;
+        $('pesquisaRefEscolhidoTexto').innerHTML = escolhido ? htmlDosVersiculos(escolhido) : '';
+        const jwl = escolhido ? jwlDoTexto(escolhido) : '';
+        $('pesquisaRefEscolhidoJwl').href = jwl || '#';
+        $('pesquisaRefEscolhidoJwl').hidden = !jwl;
+        // Com o texto escolhido, a linha de busca some (volta com "Trocar o texto").
+        refCampo.parentElement.hidden = Boolean(escolhido);
+        document.querySelector('label[for="pesquisaRef"]').hidden = Boolean(escolhido);
+      }
+      $('pesquisaRefUsarBtn').addEventListener('click', () => {
+        if (!previaRef) return;
+        escolhido = previaRef;
+        fecharPrevia();
+        mostrarEscolhido();
+      });
+      $('pesquisaRefTrocarBtn').addEventListener('click', () => {
+        escolhido = null;
+        mostrarEscolhido();
+        refCampo.focus();
+      });
+      // Palavras-chave: o campo seguinte aparece quando o anterior tem texto (no máximo 3).
+      const camposPalavra = [1, 2, 3].map(n => $('pesquisaPalavra' + n));
+      function pintarPalavras() {
+        camposPalavra.forEach((c, i) => { if (i > 0) c.hidden = !camposPalavra[i - 1].value.trim() && !c.value.trim(); });
+      }
+      camposPalavra.forEach(c => c.addEventListener('input', pintarPalavras));
+      const palavrasDaTela = () => camposPalavra.map(c => c.value.replace(/\s+/g, ' ').trim()).filter(Boolean);
+      const erroDe = (r, padrao) => (r && r.unavailable ? 'O servidor não está disponível agora. Tente de novo em instantes.' : (r && r.data && r.data.erro) || padrao);
 
       // [F3], [F1][F3] ou [F1, F3]: os números das fontes, na ordem; identificador desconhecido sai.
       const MARCA_FONTES = /\s*\[\s*(F\d{1,2}(?:\s*[,;]\s*F?\d{1,2})*)\s*\]/gi;
@@ -31194,6 +31466,7 @@ function saveTemplatesToStorage() {
         $('pesquisaResTitulo').textContent = r.titulo || pesquisa.assunto;
         $('pesquisaResMeta').textContent = ['📅 ' + dataPorExtenso(r.data), r.modelo ? '🤖 ' + r.modelo : '', numeros.size ? '📚 ' + numeros.size + (numeros.size === 1 ? ' fonte' : ' fontes') : ''].filter(Boolean).join(' · ');
         const corpo = [];
+        if (pesquisa.biblico && (pesquisa.biblico.versiculos || []).length) corpo.push('<div class="pesq-escolhido pesq-res-texto"><div class="pesq-previa-texto">' + htmlDosVersiculos(pesquisa.biblico) + '</div></div>');
         if (r.introducao) corpo.push('<p class="pesq-intro">' + htmlDoTexto(r.introducao, numeros) + '</p>');
         (r.secoes || []).forEach(s => {
           corpo.push('<h4>' + (s.emoji ? escapar(s.emoji) + ' ' : '') + escapar(s.titulo) + '</h4>');
@@ -31282,31 +31555,44 @@ function saveTemplatesToStorage() {
       }
 
       async function pesquisar() {
-        const assunto = campoAssunto.value.replace(/\s+/g, ' ').trim();
-        const contexto = campoContexto.value.replace(/\s+/g, ' ').trim();
-        if (assunto.length < 3) {
+        const texto = aba === 'texto';
+        const contexto = (texto ? campoTextoContexto : campoContexto).value.replace(/\s+/g, ' ').trim();
+        const palavras = texto ? palavrasDaTela() : [];
+        // Aba Texto bíblico: o texto confirmado (ou o que está na prévia); o "assunto" que vai junto é a referência, para os títulos e o Word.
+        const biblico = texto ? escolhido || previaRef : null;
+        const assunto = texto ? (biblico ? biblico.referencia : '') : campoAssunto.value.replace(/\s+/g, ' ').trim();
+        if (texto && !biblico) {
+          dizer(statusEl, 'Escolha o texto bíblico e toque em "Usar este texto".', { aviso: true });
+          refCampo.focus();
+          return;
+        }
+        if (!texto && assunto.length < 3) {
           dizer(statusEl, 'Escreva o que você quer pesquisar.', { aviso: true });
           campoAssunto.focus();
           return;
         }
         if (!codigoAcessoSalvo()) return dizer(statusEl, 'Salve o código de pesquisa em Ajustes → 🔐 Autorização de acessos.', { aviso: true });
+        const extra = biblico
+          ? { modo: 'texto', referencia: biblico.referencia, livro: biblico.livro, capitulo: biblico.capitulo, versos: biblico.versos, textoBiblico: textoCorrido(biblico), palavras }
+          : {};
         const meu = ++pedido;
         ocupado(true);
         relogioLigar();
         try {
-          andamento('Procurando no wol.jw.org, no Estudo Perspicaz e nos livros…');
-          let r = await postStudy({ tarefa: 'pesquisa-coletar', codigo: codigoAcessoSalvo(), assunto, contexto }, 90000);
+          andamento(biblico ? 'Lendo as notas de estudo e as publicações sobre ' + biblico.referencia + '…' : 'Procurando no wol.jw.org, no Estudo Perspicaz e nos livros…');
+          let r = await postStudy(Object.assign({ tarefa: 'pesquisa-coletar', codigo: codigoAcessoSalvo(), assunto, contexto }, extra), 90000);
           if (meu !== pedido) return;
           if (!r.ok) return dizer(statusEl, erroDe(r, 'Não consegui pesquisar agora. Tente de novo.'), { aviso: true });
           const fontes = Array.isArray(r.data.fontes) ? r.data.fontes : [];
           andamento('Encontrei ' + fontes.length + (fontes.length === 1 ? ' fonte' : ' fontes') + '. A IA está escrevendo a resposta… (pode levar até 2 minutos)');
-          r = await postStudy({ tarefa: 'pesquisa', codigo: codigoAcessoSalvo(), assunto, contexto, fontes }, 285000);
+          r = await postStudy(Object.assign({ tarefa: 'pesquisa', codigo: codigoAcessoSalvo(), assunto, contexto, fontes }, extra), 285000);
           if (meu !== pedido) return;
           if (!r.ok) return dizer(statusEl, erroDe(r, 'A IA não conseguiu escrever a pesquisa. Tente de novo.'), { aviso: true });
           // As fontes guardadas com a pesquisa: só as citadas. O trecho fica só nas dos livros do servidor (para mostrar ao tocar no nome); as
           // matérias do wol têm o link.
           const usadas = new Set(r.data.fontesUsadas || []);
           atual = { id: null, assunto, contexto, resultado: r.data, fontes: fontes.filter(f => usadas.has(f.id)).map(f => (f.tipo === 'wol' ? (({ texto, ...resto }) => resto)(f) : f)) };
+          if (biblico) atual.biblico = { referencia: biblico.referencia, versiculos: biblico.versiculos, livro: biblico.livro, capitulo: biblico.capitulo, versos: biblico.versos, palavras };
           mostrar(atual);
           dizer(statusEl, '');
           requestAnimationFrame(() => resultadoEl.scrollIntoView({ behavior: 'smooth', block: 'start' }));
@@ -31376,8 +31662,20 @@ function saveTemplatesToStorage() {
         partes.push(p(espaco(0, 80), docxRuns(r.titulo || pesquisa.assunto, 'b', 36)));
         const meta = ['Pesquisa feita em ' + dataPorExtenso(r.data), r.modelo ? 'Agente de IA: ' + r.modelo : ''].filter(Boolean).join(' · ');
         partes.push(p(espaco(0, 60), docxRuns(meta, '', 18, cinza)));
-        partes.push(p(espaco(0, pesquisa.contexto ? 40 : 240), docxRuns('Assunto: ', 'b', 18, cinza) + docxRuns(pesquisa.assunto, '', 18, cinza)));
-        if (pesquisa.contexto) partes.push(p(espaco(0, 240), docxRuns('Contexto: ', 'b', 18, cinza) + docxRuns(pesquisa.contexto, '', 18, cinza)));
+        const b = pesquisa.biblico;
+        if (b) {
+          // Texto bíblico: a referência, as palavras-chave e o contexto; depois o texto, em itálico, numa faixa com a linha de destaque.
+          partes.push(p(espaco(0, 40), docxRuns('Texto bíblico: ', 'b', 18, cinza) + docxRuns(b.referencia, '', 18, cinza)));
+          if (b.palavras && b.palavras.length) partes.push(p(espaco(0, 40), docxRuns('Palavras-chave: ', 'b', 18, cinza) + docxRuns(b.palavras.join('; '), '', 18, cinza)));
+          if (pesquisa.contexto) partes.push(p(espaco(0, 40), docxRuns('Contexto: ', 'b', 18, cinza) + docxRuns(pesquisa.contexto, '', 18, cinza)));
+          (b.versiculos || []).forEach((v, i, todos) => {
+            const corpoV = String(v.textoNumerado || v.texto || '').trim().split(/\[(\d{1,3}(?::\d{1,3})?)\]\s*/).map((t, k) => (k % 2 ? ref(t) : t ? docxRuns(t, 'i', 22) : '')).join('');
+            partes.push(p('<w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="' + corRef + '"/></w:pBdr><w:ind w:left="240"/>' + espaco(i ? 0 : 160, i === todos.length - 1 ? 240 : 60), docxRuns((v.referencia || b.referencia) + ': ', 'b', 22) + docxRuns('“', 'i', 22) + corpoV + docxRuns('”', 'i', 22)));
+          });
+        } else {
+          partes.push(p(espaco(0, pesquisa.contexto ? 40 : 240), docxRuns('Assunto: ', 'b', 18, cinza) + docxRuns(pesquisa.assunto, '', 18, cinza)));
+          if (pesquisa.contexto) partes.push(p(espaco(0, 240), docxRuns('Contexto: ', 'b', 18, cinza) + docxRuns(pesquisa.contexto, '', 18, cinza)));
+        }
         if (r.introducao) partes.push(p(espaco(0, 160), runsDoTexto(r.introducao, '', 24)));
         (r.secoes || []).forEach(s => {
           partes.push(p('<w:keepNext/>' + espaco(240, 100), docxRuns((s.emoji ? s.emoji + ' ' : '') + s.titulo, 'b', 28)));
@@ -31407,7 +31705,7 @@ function saveTemplatesToStorage() {
         try {
           const titulo = atual.resultado.titulo || atual.assunto;
           const blob = await docxPacote(docxDaPesquisa(atual), titulo);
-          const nome = 'Pesquisa - ' + (removeUnicodeFormatting(titulo).replace(DOCX_EMOJI, ' ').replace(/[\\/:*?"<>|“”‘’]/g, '').replace(/\s+/g, ' ').trim().slice(0, 80) || 'NoteStyle') + '.docx';
+          const nome = 'Pesquisa - ' + (removeUnicodeFormatting(titulo).replace(/(\d):(\d)/g, '$1.$2').replace(DOCX_EMOJI, ' ').replace(/[\\/:*?"<>|“”‘’]/g, '').replace(/\s+/g, ' ').trim().slice(0, 80) || 'NoteStyle') + '.docx';
           // No celular, abre o compartilhamento (WhatsApp, e-mail, Arquivos…); no computador, baixa o arquivo.
           let compartilhar = false;
           try { compartilhar = Boolean(navigator.canShare && navigator.canShare({ files: [new File(['x'], 'x.docx', { type: blob.type })] }) && /android|iphone|ipad|ipod/i.test(navigator.userAgent)); } catch (e) { /* sem compartilhamento */ }
@@ -31427,9 +31725,19 @@ function saveTemplatesToStorage() {
         $('pesquisaResFontes').textContent = '';
         campoAssunto.value = '';
         campoContexto.value = '';
+        // Aba Texto bíblico: o texto escolhido, as palavras-chave e o contexto também.
+        escolhido = null;
+        fecharPrevia();
+        mostrarEscolhido();
+        refCampo.value = '';
+        guia.aberto = false;
+        sincronizarDoTexto();
+        camposPalavra.forEach(c => { c.value = ''; });
+        pintarPalavras();
+        campoTextoContexto.value = '';
         crescerCampos();
         dizer(statusEl, '');
-        campoAssunto.focus();
+        (aba === 'texto' ? refCampo : campoAssunto).focus();
       });
 
       // ---------- Pesquisas salvas (banco do aparelho) ----------
@@ -31459,8 +31767,20 @@ function saveTemplatesToStorage() {
           abrir.appendChild(quando);
           abrir.addEventListener('click', () => {
             atual = item;
-            campoAssunto.value = item.assunto || '';
-            campoContexto.value = item.contexto || '';
+            if (item.biblico) {
+              // Pesquisa de um texto bíblico: volta para a aba Texto bíblico com o texto, as palavras-chave e o contexto dela.
+              trocarAba('texto');
+              escolhido = Object.assign({}, item.biblico);
+              fecharPrevia();
+              mostrarEscolhido();
+              camposPalavra.forEach((c, i) => { c.value = (item.biblico.palavras || [])[i] || ''; });
+              pintarPalavras();
+              campoTextoContexto.value = item.contexto || '';
+            } else {
+              trocarAba('assunto');
+              campoAssunto.value = item.assunto || '';
+              campoContexto.value = item.contexto || '';
+            }
             crescerCampos();
             dizer(statusEl, '');
             mostrar(item);

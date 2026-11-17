@@ -15861,3 +15861,48 @@ button.pesq-fino {
 .pesq-acoes-res > button { flex: 1 1 0; min-width: 0; white-space: nowrap; }
 .pesq-acoes-res > button.pesq-icone { flex: 0 0 auto; min-width: 46px; padding-left: 10px; padding-right: 10px; }
 .pesq-ref + .pesq-ref::before { content: ","; color: var(--accent); font-weight: 700; }
+/* Aba Texto bíblico do Assistente de pesquisas: a linha da referência (campo + 3 ícones), o seletor (o mesmo visual das Anotações), a
+   prévia do texto, o texto escolhido e as palavras-chave. */
+.pesq-card { --anot-cor: var(--accent); }
+.pesq-ref-linha { display: flex; gap: 6px; align-items: stretch; }
+.pesq-ref-linha .pesq-ref { flex: 1 1 auto; min-width: 0; }
+.pesq-ref-linha > button.pesq-icone { flex: 0 0 auto; min-width: 42px; padding: 6px 8px; border-radius: 10px; }
+.pesq-pick { margin: 8px 0 0; }
+.pesq-pick .anotacoes-trilha-btn { min-height: 32px; padding: 4px 10px; font-size: .8rem; }
+.pesq-pick .anotacoes-opcao { min-height: 38px; font-size: .86rem; }
+.pesq-pick .pesq-principal { width: 100%; }
+.pesq-dica { margin: 0; font-size: .82rem; color: var(--muted); }
+.pesq-dica[hidden], .pesq-previa[hidden], .pesq-escolhido[hidden], .pesq-palavra[hidden], .pesq-link-botao[hidden], .pesq-pick [hidden] { display: none; }
+.pesq-previa, .pesq-escolhido {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--card);
+}
+.pesq-escolhido { border-left: 4px solid var(--accent); }
+.pesq-previa-texto { line-height: 1.5; font-size: .95rem; }
+.pesq-previa-texto p { margin: 0 0 6px; }
+.pesq-previa-texto .pesq-vnum { font-weight: 700; font-size: .78em; color: var(--accent); margin-right: 2px; }
+.pesq-previa .pesq-acoes, .pesq-escolhido .pesq-acoes { margin-top: 8px; }
+a.pesq-link-botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  border: 1px solid var(--muted);
+  background: var(--neutral);
+  color: var(--neutral-text);
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: .9rem;
+  flex: 1 1 0;
+  min-width: 0;
+  white-space: nowrap;
+}
+.pesq-palavras { display: grid; gap: 6px; }
+.pesq-acao-bloco { padding: 0 2px; }
+.pesq-acao-bloco .pesq-acoes { margin-top: 0; }
+.pesq-res-corpo .pesq-res-texto { margin: 0 0 12px; }
+.pesq-res-corpo .pesq-res-texto p { margin: 0 0 4px; }

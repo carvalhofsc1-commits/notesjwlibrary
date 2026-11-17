@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.15
+
+- Assistente de pesquisas, fase 3: a aba 📖 Texto bíblico está pronta. O texto é escolhido como nas Anotações: digita-se o livro (com sugestões) ou toca-se em 📚 para escolher livro › capítulo › versículos (toque escolhe ou tira; toque longo faz o trecho corrido); 👁️ mostra o texto (Tradução do Novo Mundo, com os números dos versículos) e o botão 📖 JW Library abre o trecho no app; "Usar este texto" fixa o texto no card (✏️ Trocar o texto volta à escolha). Depois, até 3 palavras ou frases-chave (o campo seguinte aparece quando o anterior é preenchido) e o assunto ou contexto, ambos opcionais. Busca do texto com o código de pesquisa (tarefa pesquisa-versiculos, sem IA).
+- Servidor: no modo Texto bíblico, para cada versículo (até 6) o servidor lê a página de pesquisa do wol: as notas de estudo da Tradução do Novo Mundo (o entendimento atual) e as citações do Índice das Publicações 1991-2026 para o versículo (até 10, intercalando os versículos, as mais recentes primeiro, no máximo 2 do Perspicaz e 2 trechos do mesmo artigo). O Guia de Pesquisa, o Índice de assuntos e a pesquisa no wol completam (até 4, 4 e 6), com as palavras-chave e o contexto. Prompt novo "Assistente de pesquisas: resposta sobre um texto bíblico" (entendimento mais atualizado, aplicações práticas já publicadas e foco nas palavras-chave e no contexto). Palavras comuns demais ("vida", "Deus"…) não escolhem sozinhas um tópico do Guia ou um assunto do Índice. Corrigida a sigla perdida em citações com vários números ("it-2 79, 425, 428").
+- A resposta (na tela e no Word) começa pelo texto bíblico, numa faixa com a linha de destaque; o Word traz também o texto bíblico, as palavras-chave e o contexto no cabeçalho. A pesquisa salva reabre na aba Texto bíblico com o texto, as palavras-chave e o contexto.
+
 ## 6.10.14
 
 - Assistente de pesquisas: novo botão 📝 Word, que gera a pesquisa num arquivo .docx com negrito e itálico de verdade (sem letras Unicode), os números das fontes em sobrescrito, o título, a data da pesquisa, o agente de IA, o assunto e o contexto, as seções com emoji, a conclusão destacada e a lista de fontes (com a marca do Guia de Pesquisa ou do Índice e o endereço no wol.jw.org); no topo, o nome NoteStyle pequeno e discreto, separado por uma linha (só no arquivo). No celular abre o compartilhamento; no computador, baixa o arquivo.
