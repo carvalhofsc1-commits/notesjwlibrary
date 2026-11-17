@@ -1147,6 +1147,7 @@ export function consideracoesDaApostila(html) {
       numero: Number((tituloH3.match(/^(\d+)\./) || [])[1]) || null,
       minutos,
       texto,
+      pidInstrucao: (primeiro[0].match(/data-pid="(\d+)"/) || [])[1] || null,
       licao: links[0] || null,
       perguntas,
       referencias: referenciasDe(corpo),
@@ -1184,7 +1185,7 @@ export async function lerConsideracoes(urlReuniao, { timeoutMs = 8000 } = {}) {
   const itens = consideracoesDaApostila(html);
   let restantes = MAX_IMAGENS_CONSIDERACAO;
   for (const item of itens) {
-    item.licaoLida = item.licao ? await lerDocumentoCitado(item.licao, timeoutMs, MAX_CARACTERES_LICAO).catch(() => null) : null;
+    item.licaoLida = item.licao ? await lerLicaoComContexto(item.licao, timeoutMs).catch(() => null) : null;
     for (const img of item.imagens) {
       if (restantes <= 0) break;
       img.arquivo = (await imagemEmBase64(img.src, timeoutMs)) || (await imagemEmBase64(img.pequena, timeoutMs));
@@ -1197,20 +1198,68 @@ export async function lerConsideracoes(urlReuniao, { timeoutMs = 8000 } = {}) {
   return dados;
 }
 
+// A matéria citada na instrução (ex.: "lmd lição 1 ponto 4b"): o trecho indicado (os parágrafos da faixa do link) e a lição inteira, para o
+// contexto (o ponto sozinho costuma ser uma frase). null se não der para ler.
+const MAX_CARACTERES_LICAO_INTEIRA = 9000;
+async function lerLicaoComContexto(citado, timeoutMs) {
+  const destino = await resolverCitacao(citado.caminho, timeoutMs);
+  if (!destino) return null;
+  const html = await baixar(destino.url, timeoutMs);
+  const titulo = textoDe((html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/) || [])[1] || "");
+  const todas = [];
+  const indicadas = [];
+  const brutos = [];
+  for (const [, , pid, conteudo] of html.matchAll(/<(p|h2|h3)\b[^>]*data-pid="(\d+)"[^>]*>([\s\S]*?)<\/\1>/g)) {
+    const texto = textoDe(conteudo);
+    if (!texto) continue;
+    const n = Number(pid);
+    const naFaixa = destino.de !== null && n >= destino.de && n <= destino.ate;
+    todas.push(naFaixa ? `>>> ${texto}` : texto);
+    if (naFaixa) indicadas.push(texto);
+    brutos.push(conteudo);
+  }
+  if (!todas.length) return null;
+  return {
+    citacao: citado.citacao,
+    titulo,
+    trecho: indicadas.join("\n"),
+    texto: todas.join("\n").slice(0, MAX_CARACTERES_LICAO_INTEIRA),
+    referencias: referenciasDe(brutos.join(" ")).slice(0, 40),
+  };
+}
+
+// A lista do que a IA deve responder, com os identificadores: em cada parte, primeiro a instrução ([Instrução], para executar o que ela
+// pede, como o resumo de um ponto da brochura) e depois as perguntas ([Pergunta 1], [Pergunta 2]…, numeradas em todas as partes).
+export function perguntasDasConsideracoes(dados) {
+  const lista = [];
+  let n = 0;
+  dados.itens.forEach((item, k) => {
+    lista.push({ id: dados.itens.length > 1 ? `Instrução ${k + 1}` : "Instrução", instrucao: true, pergunta: item.texto, pid: item.pidInstrucao, parte: k });
+    item.perguntas.forEach((q) => lista.push({ id: `Pergunta ${++n}`, instrucao: false, pergunta: q.pergunta, pid: q.pid, parte: k }));
+  });
+  return lista;
+}
+
 // Texto da "Consideração" para a IA: a semana, cada item (tema, instrução da apostila, lição lida, imagens) e as perguntas com o identificador.
 export function textoDasConsideracoes(dados, versiculos = []) {
   const partes = [`SEMANA: ${dados.semana || "(não informada)"} (apostila Vida e Ministério, seção Faça seu melhor no ministério)`];
-  let n = 0;
+  const lista = perguntasDasConsideracoes(dados);
   let nImagem = 0;
-  dados.itens.forEach((item) => {
-    const bloco = [`PARTE${item.numero ? ` ${item.numero}` : ""}: ${item.titulo}${item.minutos ? ` (${item.minutos} min)` : ""}`, `INSTRUÇÃO DA APOSTILA: ${item.texto}`];
+  dados.itens.forEach((item, k) => {
+    const doItem = lista.filter((q) => q.parte === k);
+    const instrucao = doItem.find((q) => q.instrucao);
+    const bloco = [`PARTE${item.numero ? ` ${item.numero}` : ""}: ${item.titulo}${item.minutos ? ` (${item.minutos} min)` : ""}`, `[${instrucao.id}] INSTRUÇÃO DA APOSTILA (execute o que ela pede): ${item.texto}`];
     item.imagens.forEach((img) => {
       nImagem++;
       bloco.push(`IMAGEM ${nImagem}${img.arquivo ? " (anexa a este pedido, na mesma ordem)" : " (não anexada)"}: ${[img.descricao && `descrição do site: ${img.descricao}`, img.legenda && `legenda: ${img.legenda}`].filter(Boolean).join(" | ") || "(sem descrição)"}`);
     });
-    if (item.licaoLida) bloco.push(`LIÇÃO CITADA (${item.licaoLida.citacao}${item.licaoLida.titulo ? ` — "${item.licaoLida.titulo}"` : ""}, brochura Ame as Pessoas — Faça Discípulos):\n${item.licaoLida.texto}`);
-    else if (item.licao) bloco.push(`LIÇÃO CITADA: ${item.licao.citacao} (o texto não pôde ser lido).`);
-    bloco.push("PERGUNTAS:\n" + item.perguntas.map((q) => `[Pergunta ${++n}] ${q.pergunta}`).join("\n"));
+    if (item.licaoLida) {
+      const l = item.licaoLida;
+      bloco.push(`MATÉRIA CITADA NA INSTRUÇÃO (${l.citacao}${l.titulo ? ` — "${l.titulo}"` : ""}, brochura Ame as Pessoas — Faça Discípulos):`);
+      if (l.trecho) bloco.push(`TRECHO INDICADO (o ponto citado; base principal do que a instrução pede):\n${l.trecho}`);
+      bloco.push(`LIÇÃO INTEIRA, PARA O CONTEXTO (as linhas com >>> são o trecho indicado):\n${l.texto}`);
+    } else if (item.licao) bloco.push(`MATÉRIA CITADA NA INSTRUÇÃO: ${item.licao.citacao} (o texto não pôde ser lido).`);
+    bloco.push("PERGUNTAS:\n" + doItem.filter((q) => !q.instrucao).map((q) => `[${q.id}] ${q.pergunta}`).join("\n"));
     partes.push(bloco.join("\n"));
   });
   if (versiculos.length) partes.push(`TEXTO DOS VERSÍCULOS:\n${versiculos.map((v) => `${v.referencia}: ${v.texto}`).join("\n")}`);

@@ -31,6 +31,7 @@ import {
   lerDiscursoCurto,
   lerConsideracoes,
   textoDasConsideracoes,
+  perguntasDasConsideracoes,
   lerJoias,
   lerTesouros,
   lerTextoDiario,
@@ -1680,7 +1681,8 @@ async function responderConsideracao(res, body, P) {
   const dados = await consideracoesDaSemana(res, body);
   if (!dados) return;
   if (!dados.itens.length) return erro(res, 404, "Esta semana não tem a parte de consideração na seção Faça seu melhor no ministério.");
-  const perguntas = dados.itens.flatMap((i) => i.perguntas).map((q, n) => ({ ...q, id: "Pergunta " + (n + 1) }));
+  // A instrução de cada parte ([Instrução]) entra como o primeiro item: a IA executa o que ela pede (ex.: o resumo do ponto da brochura).
+  const perguntas = perguntasDasConsideracoes(dados);
 
   let versiculos = [];
   const referencias = [...new Set(dados.itens.flatMap((i) => [...i.referencias, ...((i.licaoLida && i.licaoLida.referencias) || [])]))];
@@ -1750,7 +1752,7 @@ async function responderConsideracao(res, body, P) {
     return res.status(200).json({
       titulo: dados.itens.map((i) => i.titulo).join(" · "),
       url: dados.url,
-      perguntas: perguntas.map((p) => ({ id: p.id, pergunta: p.pergunta })),
+      perguntas: perguntas.map((p) => ({ id: p.id, pergunta: p.pergunta, instrucao: p.instrucao })),
       erro: itens.length ? null : "A IA não respondeu às perguntas. Tente de novo.",
       itens: itensFinais,
       memoriaUsada,

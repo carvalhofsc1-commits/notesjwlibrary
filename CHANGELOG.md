@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.95
+
+- Faça seu melhor no ministério (consideração): a IA também executa a instrução da parte (ex.: "Faça um resumo da lmd lição 1 ponto 4b" → o resumo do ponto), num item próprio antes das perguntas ("📋 INSTRUÇÃO DA PARTE 👉 …").
+- A matéria citada vai inteira para a IA: o trecho indicado (o ponto) e a lição toda, para o contexto (com o ponto marcado). O resumo e as respostas levam em conta a matéria citada e o restante da parte (tipo de testemunho, imagem e as outras perguntas). Prompt e formato atualizados.
+
 ## 6.9.94
 
 - Preparar para comentar → novo card "🗣️ Faça seu melhor no ministério": aparece só nas semanas em que essa seção da apostila tem uma parte de "Consideração" (ex.: "6. O que você diria?"). Ao abrir Preparar para comentar, o app pergunta ao servidor (leitura sem IA, guardada por semana) e mostra o card com a parte, a instrução e as perguntas.

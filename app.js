@@ -7839,7 +7839,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.9.94'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.9.95'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -16979,6 +16979,10 @@ function saveTemplatesToStorage() {
         jwlBotaoDoDocumento(consideracaoTitulo, dados.url);
         consideracaoInfo.append(dados.partes.map(p => p.texto).join(' '));
         imagensRender(consideracaoInfo, dados.imagens, 'Imagem da parte');
+        const exec = document.createElement('p');
+        exec.className = 'consideracao-pergunta';
+        exec.textContent = '📋 A IA executa a instrução da parte (com a matéria citada) e responde às perguntas:';
+        consideracaoPerguntasEl.appendChild(exec);
         let n = 0;
         dados.partes.forEach(p => (p.perguntas || []).forEach(q => {
           const linha = document.createElement('p');
@@ -17053,7 +17057,11 @@ function saveTemplatesToStorage() {
       return buildSentinelaParts(itens).map(parte => {
         const q = (perguntas || []).find(p => p.id === parte.paragrafos);
         const resposta = parte.paragrafos ? parte.texto.replace(parte.paragrafos + '. ', '') : parte.texto;
-        return { ...parte, texto: q ? '❓ ' + negrito(q.id.toUpperCase()) + ' 👉 ' + q.pergunta + '\n\n' + resposta : resposta };
+        // A instrução da parte (executada pela IA, ex.: o resumo do ponto da brochura) vem antes das perguntas, com a instrução da apostila acima.
+        const cabeca = !q ? '' : q.instrucao || /^instru/i.test(q.id)
+          ? '📋 ' + q.id.replace(/^Instrução/i, 'INSTRUÇÃO DA PARTE') + ' 👉 ' + q.pergunta + '\n\n' // sem negrito: as letras em negrito perdem o Ç e o Ã
+          : '❓ ' + negrito(q.id.toUpperCase()) + ' 👉 ' + q.pergunta + '\n\n';
+        return { ...parte, texto: cabeca + resposta };
       });
     }
 
