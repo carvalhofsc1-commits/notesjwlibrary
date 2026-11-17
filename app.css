@@ -15501,3 +15501,12 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
     /* Com uma ferramenta aberta, as outras somem; o contêiner que fica sem nenhuma aberta também. */
     .reunioes-grupo.tem-aberto>.comentarios-bloco>details.subsection:not([open]) { display: none; }
     .reunioes-grupo.tem-aberto>.comentarios-bloco:not(:has(>details.subsection[open])) { display: none; }
+    /* Ferramenta aberta (ex.: Tesouros): o contêiner dela some como card (sem borda, fundo, espaço nem título), para sobrar espaço aos campos. */
+    .reunioes-grupo.tem-aberto>.comentarios-bloco {
+      border: 0;
+      border-radius: 0;
+      padding: 0;
+      background: transparent;
+    }
+    .reunioes-grupo.tem-aberto>.comentarios-bloco>.comentarios-bloco-titulo { display: none; }
+    .reunioes-grupo.tem-aberto>.comentarios-bloco>details.subsection { margin-top: 0; }
