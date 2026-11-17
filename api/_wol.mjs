@@ -1265,7 +1265,7 @@ function videoDoTrecho(html) {
   }
   const lank = (decodificar(html).match(/[?&]lank=([A-Za-z0-9_-]+)/) || [])[1];
   if (lank) {
-    const p = lank.match(/^pub-([a-z0-9]+)_(?:(\d+)_)?(\d+)_VIDEO$/i);
+    const p = lank.match(/^pub-([a-z0-9][a-z0-9-]*?)_(?:(\d+)_)?(\d+)_VIDEO$/i);
     if (p) return { pub: p[1], issue: p[2] || "", track: p[3], lank };
     const d = lank.match(/^docid-(\d+)_(\d+)_VIDEO$/i);
     if (d) return { docid: d[1], track: d[2], lank };
@@ -2643,9 +2643,12 @@ export function videoDoEndereco(endereco) {
     // endereço com % solto: fica como veio
   }
   if (!/(^|\/\/|\.)jw\.org\b|jw-cdn\.org/i.test(texto) && !/^(pub|docid)-/i.test(texto)) return null;
-  const lank = (texto.match(/\b(pub-[a-z0-9]+(?:_\d+)?_\d+_VIDEO|docid-\d+_\d+_VIDEO)\b/i) || [])[1];
+  // O código da publicação pode ter hífen (pub-jwb-128_7_VIDEO, pub-jwbvod25-12_3_VIDEO).
+  // Alguns vídeos não têm número de faixa (pub-wys_x_VIDEO): vão só pelo código, lidos no mediator.
+  const lank = (texto.match(/\b(pub-[a-z0-9][a-z0-9-]*?(?:_\d+)?_(?:\d+|x)_VIDEO|docid-\d+_\d+_VIDEO)\b/i) || [])[1];
   if (!lank) return null;
-  const p = lank.match(/^pub-([a-z0-9]+)_(?:(\d+)_)?(\d+)_VIDEO$/i);
+  if (/_x_VIDEO$/i.test(lank)) return { lank };
+  const p = lank.match(/^pub-([a-z0-9][a-z0-9-]*?)_(?:(\d+)_)?(\d+)_VIDEO$/i);
   if (p) return { pub: p[1], issue: p[2] || "", track: p[3], lank };
   const d = lank.match(/^docid-(\d+)_(\d+)_VIDEO$/i);
   return d ? { docid: d[1], track: d[2], lank } : null;

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.22
+
+- Assistente de pesquisas, aba Vídeo: corrigido "Cole o link de um vídeo do jw.org" com um link certo. O servidor só reconhecia códigos de vídeo sem hífen (pub-jwbai_…), e muitos vídeos têm hífen no código (pub-jwb-128_7_VIDEO, a maior parte dos programas do JW Broadcasting) ou não têm número de faixa (pub-wys_x_VIDEO, lidos pelo mediator). Agora os 3.051 vídeos do catálogo do jw.org são reconhecidos (conferido com o catálogo inteiro). A mesma correção vale para os vídeos citados na Nossa vida cristã.
+
 ## 6.10.21
 
 - Assistente de pesquisas, aba Vídeo: atalho "🎬 Abrir os vídeos do jw.org" (a página de vídeos do site, numa aba nova).
