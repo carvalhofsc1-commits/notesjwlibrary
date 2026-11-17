@@ -7876,7 +7876,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.13'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.14'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -31254,7 +31254,9 @@ function saveTemplatesToStorage() {
           lista.appendChild(li);
         });
         $('pesquisaResFontesBloco').hidden = !lista.children.length;
-        $('pesquisaSalvarBtn').textContent = pesquisa.id ? '✅ Salva' : '💾 Salvar';
+        $('pesquisaSalvarBtn').textContent = pesquisa.id ? '✅' : '💾';
+        $('pesquisaSalvarBtn').setAttribute('aria-label', pesquisa.id ? 'Pesquisa já salva neste aparelho' : 'Salvar a pesquisa neste aparelho');
+        $('pesquisaSalvarBtn').title = pesquisa.id ? 'Pesquisa já salva neste aparelho' : 'Salvar a pesquisa neste aparelho';
         $('pesquisaSalvarBtn').disabled = Boolean(pesquisa.id);
         dizer(avisoEl, '');
         resultadoEl.hidden = false;
@@ -31346,6 +31348,75 @@ function saveTemplatesToStorage() {
           dizer(avisoEl, '📋 Pesquisa copiada.');
         } catch (e) {
           dizer(avisoEl, 'Não consegui copiar neste aparelho.', { aviso: true });
+        }
+      });
+
+      // 📝 Word: a pesquisa num arquivo .docx com negrito e itálico de verdade (sem letras Unicode), os números das fontes em sobrescrito, a data, o
+      // agente de IA e, no topo, o nome do app pequeno e discreto, separado por uma linha (só no arquivo; na tela ele não aparece).
+      function docxDaPesquisa(pesquisa) {
+        const r = pesquisa.resultado;
+        const numeros = numerosDe(pesquisa);
+        const cinza = '6B7280';
+        const corRef = '2563EB';
+        const p = (props, runs) => '<w:p>' + (props ? '<w:pPr>' + props + '</w:pPr>' : '') + runs + '</w:p>';
+        const espaco = (antes, depois) => '<w:spacing w:before="' + antes + '" w:after="' + depois + '" w:line="300" w:lineRule="auto"/>';
+        const ref = n => '<w:r><w:rPr><w:b/><w:color w:val="' + corRef + '"/><w:sz w:val="16"/><w:vertAlign w:val="superscript"/></w:rPr><w:t>' + n + '</w:t></w:r>';
+        // **negrito**, __itálico__ e [F3] (vira o número da fonte em sobrescrito) em trechos do Word.
+        const runsDoTexto = (texto, base, sz) => String(texto || '').split(/(\*\*[^*]+?\*\*|__[^_]+?__|\s*\[\s*F\d{1,2}(?:\s*[,;]\s*F?\d{1,2})*\s*\])/i).map(parte => {
+          if (!parte) return '';
+          const marca = parte.match(/^\s*\[\s*(F\d{1,2}(?:\s*[,;]\s*F?\d{1,2})*)\s*\]$/i);
+          if (marca) return numerosDaMarca(marca[1], numeros).map(ref).join(ref(','));
+          if (/^\*\*[\s\S]+\*\*$/.test(parte)) return docxRuns(parte.slice(2, -2), base + 'b', sz);
+          if (/^__[\s\S]+__$/.test(parte)) return docxRuns(parte.slice(2, -2), base + 'i', sz);
+          return docxRuns(parte, base, sz);
+        }).join('');
+        const partes = [];
+        // Cabeçalho discreto: NoteStyle, com uma linha embaixo.
+        partes.push(p('<w:pBdr><w:bottom w:val="single" w:sz="4" w:space="4" w:color="D1D5DB"/></w:pBdr>' + espaco(0, 240), docxRuns('NoteStyle', 'b', 16, '9CA3AF')));
+        partes.push(p(espaco(0, 80), docxRuns(r.titulo || pesquisa.assunto, 'b', 36)));
+        const meta = ['Pesquisa feita em ' + dataPorExtenso(r.data), r.modelo ? 'Agente de IA: ' + r.modelo : ''].filter(Boolean).join(' · ');
+        partes.push(p(espaco(0, 60), docxRuns(meta, '', 18, cinza)));
+        partes.push(p(espaco(0, pesquisa.contexto ? 40 : 240), docxRuns('Assunto: ', 'b', 18, cinza) + docxRuns(pesquisa.assunto, '', 18, cinza)));
+        if (pesquisa.contexto) partes.push(p(espaco(0, 240), docxRuns('Contexto: ', 'b', 18, cinza) + docxRuns(pesquisa.contexto, '', 18, cinza)));
+        if (r.introducao) partes.push(p(espaco(0, 160), runsDoTexto(r.introducao, '', 24)));
+        (r.secoes || []).forEach(s => {
+          partes.push(p('<w:keepNext/>' + espaco(240, 100), docxRuns((s.emoji ? s.emoji + ' ' : '') + s.titulo, 'b', 28)));
+          (s.paragrafos || []).forEach(t => partes.push(p(espaco(0, 140), runsDoTexto(t, '', 22))));
+        });
+        if (r.conclusao) partes.push(p('<w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="' + corRef + '"/></w:pBdr><w:ind w:left="240"/>' + espaco(200, 200), runsDoTexto(r.conclusao, 'i', 22)));
+        // Fontes numeradas: a descrição, a marca do Guia de Pesquisa ou do Índice e o endereço no wol.jw.org.
+        const porId = new Map((pesquisa.fontes || []).map(f => [f.id, f]));
+        const fontes = [...numeros.keys()].map(id => porId.get(id)).filter(Boolean);
+        if (fontes.length) {
+          partes.push(p('<w:keepNext/><w:pBdr><w:top w:val="single" w:sz="4" w:space="6" w:color="D1D5DB"/></w:pBdr>' + espaco(320, 100), docxRuns('📚 Fontes', 'b', 24)));
+          fontes.forEach((f, i) => {
+            const d = descricaoDaFonte(f);
+            let runs = docxRuns((i + 1) + '. ', 'b', 18) + docxRuns(d.texto, '', 18);
+            if (f.guia) runs += docxRuns(' — indicada no Guia de Pesquisa: ' + f.guia, 'i', 16, cinza);
+            if (f.indice) runs += docxRuns(' — indicada no Índice das Publicações: ' + f.indice, 'i', 16, cinza);
+            if (d.wol) runs += '<w:r><w:br/></w:r>' + docxRuns(d.wol, '', 16, corRef);
+            partes.push(p('<w:ind w:left="300" w:hanging="300"/>' + espaco(0, 80), runs));
+          });
+        }
+        return partes.join('');
+      }
+      $('pesquisaWordBtn').addEventListener('click', async () => {
+        if (!atual) return;
+        const botao = $('pesquisaWordBtn');
+        botao.disabled = true;
+        try {
+          const titulo = atual.resultado.titulo || atual.assunto;
+          const blob = await docxPacote(docxDaPesquisa(atual), titulo);
+          const nome = 'Pesquisa - ' + (removeUnicodeFormatting(titulo).replace(DOCX_EMOJI, ' ').replace(/[\\/:*?"<>|“”‘’]/g, '').replace(/\s+/g, ' ').trim().slice(0, 80) || 'NoteStyle') + '.docx';
+          // No celular, abre o compartilhamento (WhatsApp, e-mail, Arquivos…); no computador, baixa o arquivo.
+          let compartilhar = false;
+          try { compartilhar = Boolean(navigator.canShare && navigator.canShare({ files: [new File(['x'], 'x.docx', { type: blob.type })] }) && /android|iphone|ipad|ipod/i.test(navigator.userAgent)); } catch (e) { /* sem compartilhamento */ }
+          const msg = await docxEntregar(blob, nome, compartilhar);
+          if (msg) dizer(avisoEl, msg);
+        } catch (e) {
+          dizer(avisoEl, 'Não consegui gerar o arquivo Word agora.', { aviso: true });
+        } finally {
+          botao.disabled = false;
         }
       });
 

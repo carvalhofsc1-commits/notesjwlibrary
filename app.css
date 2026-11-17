@@ -15856,3 +15856,8 @@ button.pesq-fino {
   font-size: .76rem;
   margin-top: 1px;
 }
+/* Botões do resultado da pesquisa: os quatro numa linha só, ocupando a largura; Copiar e Word dividem o espaço, Salvar e Limpar só com o ícone. */
+.pesq-acoes.pesq-acoes-res { flex-wrap: nowrap; }
+.pesq-acoes-res > button { flex: 1 1 0; min-width: 0; white-space: nowrap; }
+.pesq-acoes-res > button.pesq-icone { flex: 0 0 auto; min-width: 46px; padding-left: 10px; padding-right: 10px; }
+.pesq-ref + .pesq-ref::before { content: ","; color: var(--accent); font-weight: 700; }

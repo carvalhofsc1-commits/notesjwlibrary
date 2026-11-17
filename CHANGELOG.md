@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.14
+
+- Assistente de pesquisas: novo botão 📝 Word, que gera a pesquisa num arquivo .docx com negrito e itálico de verdade (sem letras Unicode), os números das fontes em sobrescrito, o título, a data da pesquisa, o agente de IA, o assunto e o contexto, as seções com emoji, a conclusão destacada e a lista de fontes (com a marca do Guia de Pesquisa ou do Índice e o endereço no wol.jw.org); no topo, o nome NoteStyle pequeno e discreto, separado por uma linha (só no arquivo). No celular abre o compartilhamento; no computador, baixa o arquivo.
+- Assistente de pesquisas: os botões do resultado ficam os quatro numa linha só, ocupando a largura: Copiar e Word dividem o espaço; Salvar (💾, vira ✅ depois de salvo) e Limpar (🗑️) só com o ícone. Duas fontes seguidas aparecem com vírgula entre os números.
+
 ## 6.10.13
 
 - Assistente de pesquisas: o Índice das Publicações da Torre de Vigia 1991-2026 (índice de assuntos, no wol) entrou como fonte primária, junto com o Guia de Pesquisa. O servidor lê só as letras iniciais das palavras da pesquisa, acha os assuntos (até 2), escolhe as citações dos subtópicos que mais combinam com o assunto, o contexto e as buscas (as mais recentes no empate; "casos reais" e histórias de vida um pouco abaixo; sem o Perspicaz, que já vem à parte, sem a apostila e sem publicações de antes de 1990) e lê o trecho exato de cada citação (até 8, no máximo 2 do mesmo artigo, sem repetir os do Guia). Nas fontes: "🗂️ Indicada no Índice das Publicações: assunto › subtópico"; a IA dá preferência a elas e às do Guia.
