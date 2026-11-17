@@ -56,6 +56,7 @@ export const NIVEIS = {
   ebc: "pesquisa",
   consideracao: "pesquisa", // "Consideração" de Faça seu melhor no ministério (Preparar para comentar)
   nvc: "pesquisa", // Nossa vida cristã: parte com vídeo e perguntas (Preparar para comentar)
+  "nvc-transcricao": "pesquisa", // a transcrição do vídeo formatada pela IA
   joias: "pesquisa",
   "joias-ler": "pesquisa",
   // Código de resumo (só o resumo dos capítulos da Leitura diária da Bíblia)

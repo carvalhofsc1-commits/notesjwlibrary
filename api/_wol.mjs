@@ -1274,15 +1274,31 @@ function videoDoTrecho(html) {
   return null;
 }
 
-// WebVTT -> texto corrido (sem os tempos, sem linhas repetidas seguidas).
+// WebVTT -> texto em parágrafos (sem os tempos, sem falas repetidas seguidas). Uma pausa de 2,5 s ou mais entre duas falas (troca de cena)
+// começa outro parágrafo; um parágrafo muito longo também é quebrado no fim de uma frase.
+const segundosVtt = (t) => t.split(":").reduce((s, p) => s * 60 + Number(p), 0);
 function textoDoVtt(vtt) {
-  const linhas = [];
-  for (const bruta of String(vtt || "").split(/\r?\n/)) {
-    const l = decodificar(bruta.replace(/<[^>]+>/g, "")).trim();
-    if (!l || /^WEBVTT/.test(l) || /-->/.test(l) || /^\d+$/.test(l) || /^(NOTE|STYLE|REGION)\b/.test(l)) continue;
-    if (linhas[linhas.length - 1] !== l) linhas.push(l);
+  const paragrafos = [];
+  let atual = [];
+  let fimAnterior = null;
+  let ultima = "";
+  const fechar = () => { if (atual.length) paragrafos.push(atual.join(" ")); atual = []; };
+  for (const bloco of String(vtt || "").replace(/\r/g, "").split(/\n\s*\n/)) {
+    const linhas = bloco.split("\n");
+    const iTempo = linhas.findIndex((l) => /-->/.test(l));
+    if (iTempo < 0) continue;
+    const tempos = linhas[iTempo].match(/((?:\d+:)?\d+:\d+(?:\.\d+)?)\s*-->\s*((?:\d+:)?\d+:\d+(?:\.\d+)?)/);
+    const fala = linhas.slice(iTempo + 1).map((l) => decodificar(l.replace(/<[^>]+>/g, "")).trim()).filter(Boolean).join(" ");
+    if (!fala || fala === ultima) continue;
+    ultima = fala;
+    const inicio = tempos ? segundosVtt(tempos[1]) : null;
+    if (fimAnterior !== null && inicio !== null && inicio - fimAnterior >= 2.5) fechar();
+    else if (atual.join(" ").length > 650 && /[.!?…"”]$/.test(atual[atual.length - 1] || "")) fechar();
+    atual.push(fala);
+    fimAnterior = tempos ? segundosVtt(tempos[2]) : fimAnterior;
   }
-  return linhas.join("\n");
+  fechar();
+  return paragrafos.join("\n\n");
 }
 
 async function baixarJson(url, timeoutMs) {

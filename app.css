@@ -15550,3 +15550,7 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
       max-height: 50vh;
       overflow-y: auto;
     }
+    .video-transcricao-texto p { margin: 0 0 8px; }
+    .video-transcricao-secao + .video-transcricao-secao { margin-top: 12px; }
+    .video-transcricao-titulo { font-weight: 700; font-size: 0.86rem; letter-spacing: 0.02em; margin: 4px 0 6px !important; }
+    .video-transcricao-aviso { font-size: 0.8rem; color: var(--muted); }

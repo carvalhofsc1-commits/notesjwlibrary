@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.06
+
+- Nossa vida cristã → Transcrição do vídeo: o texto vem em parágrafos, separados pelas pausas do vídeo (trocas de cena, pelos tempos da legenda), em vez de tudo emendado. Ao abrir o quadro (uma vez por semana), a IA divide a fala em seções com título e emoji e marca negrito, itálico e MAIÚSCULAS, sem mudar as palavras (o servidor confere se pelo menos 90% das palavras continuam lá); o app mostra com negrito e itálico de verdade (HTML, sem letras Unicode) e guarda neste aparelho. Sem conexão ou se falhar, fica o texto em parágrafos.
+- Servidor: tarefa nvc-transcricao (código de pesquisa; conta no recurso do Estudo Bíblico), guardada por 7 dias na instância. Prompt novo "Transcrição do vídeo da Nossa vida cristã (formatação)" e o formato fixo.
+
 ## 6.10.05
 
 - Nossa vida cristã: a transcrição do vídeo (o texto da fala publicado pelo jw.org) fica no card, num quadro discreto "Transcrição do vídeo" — título pequeno, fino e cinza, recolhido por padrão, logo abaixo da linha do vídeo. O servidor passou a mandar o texto na leitura da parte; o que foi lido antes desta versão é lido de novo sozinho.

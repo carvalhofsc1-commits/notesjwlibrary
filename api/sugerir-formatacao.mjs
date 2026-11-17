@@ -1689,10 +1689,55 @@ async function lerParteDaSemana(res, body, cfg) {
     partes: dados.itens.map((i) => ({
       numero: i.numero, titulo: i.titulo, minutos: i.minutos, texto: i.texto, perguntas: i.perguntas.map((q) => q.pergunta), imagens: i.imagens.length,
       // O texto da fala vai junto para o card "Transcrição do vídeo" (recolhido) do app.
-      video: i.video ? { titulo: i.video.titulo, duracaoS: i.video.duracaoS, temTexto: Boolean(i.video.texto), texto: i.video.texto || "", fonte: i.video.fonte || "" } : null,
+      video: i.video ? { titulo: i.video.titulo, duracaoS: i.video.duracaoS, temTexto: Boolean(i.video.texto), texto: i.video.texto || "", fonte: i.video.fonte || "", paragrafos: true } : null,
     })),
     imagens: dados.itens.flatMap((i) => i.imagens.map((img) => ({ descricao: img.descricao, legenda: img.legenda, item: i.titulo }))),
   });
+}
+
+// ---------- Nossa vida cristã: a transcrição do vídeo formatada ----------
+// A IA divide o texto da fala do vídeo em seções (título e emoji) e marca **negrito**, __itálico__ e palavras em MAIÚSCULAS, sem mudar as
+// palavras. O app mostra com negrito e itálico de verdade (HTML) e guarda no aparelho. Guardada também aqui (por instância) para não pagar duas vezes.
+const SaidaTranscricaoVideo = z.object({
+  secoes: z.array(z.object({ titulo: z.string(), emoji: z.string().nullable(), paragrafos: z.array(z.string()) })),
+});
+const transcricoesFormatadas = new Map(); // título + começo do texto -> { quando, secoes }
+
+const palavrasDe = (t) => String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().split(" ").filter(Boolean);
+
+async function formatarTranscricaoVideo(res, body, P) {
+  const dados = await parteDaSemana(res, body, PARTES_APOSTILA.nvc);
+  if (!dados) return;
+  const item = dados.itens.find((i) => i.video && i.video.texto);
+  if (!item) return erro(res, 404, "Esta semana não tem o texto de um vídeo na Nossa vida cristã.");
+  const v = item.video;
+  const chave = (v.titulo || "") + "|" + v.texto.slice(0, 200);
+  const guardada = transcricoesFormatadas.get(chave);
+  if (guardada && Date.now() - guardada.quando < 7 * 24 * 3600 * 1000) return res.status(200).json({ titulo: v.titulo, secoes: guardada.secoes });
+
+  const mensagem =
+    `VÍDEO: "${v.titulo || "(sem título)"}" (Nossa vida cristã, parte "${item.titulo}")\n` +
+    `ASSUNTO DA PARTE (para entender o contexto; não entra na transcrição):\n${item.texto.slice(0, 1500)}\n\n` +
+    `TRANSCRIÇÃO DO VÍDEO (parágrafos separados pelas pausas do vídeo):\n${v.texto}`;
+  try {
+    const client = criarClienteIa({ maxRetries: 1, timeout: tempoIa(P, 120_000) });
+    const resposta = await chamarIa(client, P, { max_tokens: 14000, system: P.sistemaTranscricaoVideo, messages: [{ role: "user", content: mensagem }] }, { schema: SaidaTranscricaoVideo, tarefa: "nvc-transcricao" });
+    if (resposta.stop_reason === "refusal" || !resposta.parsed_output) return erro(res, 502, "A IA não conseguiu formatar a transcrição.");
+    const secoes = resposta.parsed_output.secoes
+      .map((s) => ({ titulo: limparLinha(s.titulo, 120), emoji: s.emoji ? limparLinha(s.emoji, 8) : "", paragrafos: s.paragrafos.map((p) => String(p || "").trim().slice(0, 4000)).filter(Boolean) }))
+      .filter((s) => s.paragrafos.length);
+    // Fidelidade: as palavras da fala têm de estar quase todas lá (a IA só formata). Se faltar muito, o app fica com o texto simples.
+    const originais = palavrasDe(v.texto);
+    const formatadas = new Set(palavrasDe(secoes.flatMap((s) => s.paragrafos).join(" ")));
+    const cobertura = originais.length ? originais.filter((w) => formatadas.has(w)).length / originais.length : 0;
+    console.log("Transcrição do vídeo:", JSON.stringify({ modelo: P.ia.modelo, titulo: v.titulo, secoes: secoes.length, cobertura: Math.round(cobertura * 100) / 100, entrada: resposta.usage?.input_tokens || 0, saida: resposta.usage?.output_tokens || 0 }));
+    if (!secoes.length || cobertura < 0.9) return erro(res, 502, "A formatação da IA deixou partes da fala de fora; ficou o texto simples. Tente de novo.");
+    transcricoesFormatadas.set(chave, { quando: Date.now(), secoes });
+    if (transcricoesFormatadas.size > 50) transcricoesFormatadas.delete(transcricoesFormatadas.keys().next().value);
+    return res.status(200).json({ titulo: v.titulo, secoes });
+  } catch (e) {
+    return tratarErro(e, res);
+  }
 }
 
 async function responderParte(res, body, P, tarefa) {
@@ -4827,6 +4872,7 @@ async function tratarPedido(req, res) {
   if (tarefa === "anotacoes-perguntas") return atribuirPerguntas(res, body, P);
   if (tarefa === "ebc") return responderEbc(res, body, P);
   if (tarefa === "consideracao" || tarefa === "nvc") return responderParte(res, body, P, tarefa);
+  if (tarefa === "nvc-transcricao") return formatarTranscricaoVideo(res, body, P);
   if (tarefa === "ebc-dirigente") return perguntasEbcDirigente(res, body, P);
   if (tarefa === "tesouros") return esbocoDeTesouros(res, body, P);
   if (tarefa === "publico") return esbocoDoDiscursoPublico(res, body, P);

@@ -7869,7 +7869,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.05'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.06'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -9307,7 +9307,7 @@
     const REPORT_EMAIL = 'carvalhofsc1@gmail.com'; // o mesmo contato da página Sobre
     const MSG_SEM_CONSENTIMENTO = 'Para usar a IA e a leitura em voz alta é preciso concordar com o envio do texto. Toque no botão de novo quando quiser concordar.';
     // As tarefas do servidor que usam a IA (as outras só leem o wol.jw.org ou a Bíblia e não precisam da concordância).
-    const IA_TAREFAS = new Set(['anotacoes-formatar', 'estudo', 'estudo-lista', 'estudo-perguntas', 'texto-diario-comentarios', 'ebc', 'consideracao', 'nvc', 'ebc-dirigente', 'tesouros', 'publico', 'publico-importar', 'publico-canticos', 'outros', 'discurso', 'joias', 'leitura-biblia', 'sentinela']);
+    const IA_TAREFAS = new Set(['anotacoes-formatar', 'estudo', 'estudo-lista', 'estudo-perguntas', 'texto-diario-comentarios', 'ebc', 'consideracao', 'nvc', 'nvc-transcricao', 'ebc-dirigente', 'tesouros', 'publico', 'publico-importar', 'publico-canticos', 'outros', 'discurso', 'joias', 'leitura-biblia', 'sentinela']);
     let consentimentoIaSessao = false; // vale só até fechar o app quando o aparelho não deixa gravar a escolha
     let consentimentoIaEmCurso = null;
 
@@ -9501,7 +9501,7 @@
 
       const carregados = objeto(CARREGADOS_KEY);
       const estudos = objeto(AI_STUDY_CACHE_KEY);
-      const rotulosCarregados = { ebc: 'Estudo Bíblico', consideracao: 'Consideração (ministério)', nvc: 'Nossa vida cristã', joias: 'Joias', imagens: 'Imagens da apostila', tesouros: 'Tesouros', discurso: 'Discurso curto' };
+      const rotulosCarregados = { ebc: 'Estudo Bíblico', consideracao: 'Consideração (ministério)', nvc: 'Nossa vida cristã', 'nvc-transc': 'Transcrição do vídeo', joias: 'Joias', imagens: 'Imagens da apostila', tesouros: 'Tesouros', discurso: 'Discurso curto' };
       const porTipo = {};
       Object.keys(carregados).forEach(chave => { const tipo = chave.split('|')[0]; porTipo[tipo] = (porTipo[tipo] || 0) + 1; });
       const detalheCarregados = Object.keys(porTipo).map(tipo => (rotulosCarregados[tipo] || tipo) + ': ' + porTipo[tipo]);
@@ -12084,7 +12084,7 @@ function saveTemplatesToStorage() {
     const ESTAT_TAREFA_NOME = {
       formatar: 'Formatar', sentinela: 'Sentinela', estudo: 'Estudo bíblico',
       'estudo-perguntas': 'Perguntas do estudo', 'estudo-recap': 'Recapitulação',
-      ebc: 'EBC', consideracao: 'Consideração', 'consideracao-ler': 'Consideração (ler)', nvc: 'Nossa vida cristã', 'nvc-ler': 'Nossa vida cristã (ler)','ebc-dirigente': 'EBC dirigente', tesouros: 'Tesouros',
+      ebc: 'EBC', consideracao: 'Consideração', 'consideracao-ler': 'Consideração (ler)', nvc: 'Nossa vida cristã', 'nvc-ler': 'Nossa vida cristã (ler)', 'nvc-transcricao': 'Transcrição do vídeo', 'ebc-dirigente': 'EBC dirigente', tesouros: 'Tesouros',
       discurso: 'Discurso', publico: 'Discurso público', outros: 'Outros',
       joias: 'Joias', 'texto-diario-comentarios': 'Texto diário',
       'leitura-biblia': 'Leitura bíblica', 'biblia-texto': 'Texto bíblico',
@@ -17010,6 +17010,48 @@ function saveTemplatesToStorage() {
     // que o jw.org publica. Os dois cards ficam sempre na tela: ao abrir Preparar para comentar, o app pergunta ao servidor (leitura sem IA, guardada
     // por semana, como as outras) e, se a semana não tem a parte, o card mostra o aviso e o botão da IA fica travado. A IA executa a instrução, resume
     // o vídeo e responde às perguntas como no Estudo Bíblico; quando a pergunta fala da imagem, o servidor manda a própria imagem.
+    // Transcrição do vídeo (Nossa vida cristã): primeiro em parágrafos (separados pelas pausas do vídeo); ao abrir o quadro, a IA a divide em
+    // seções com título e emoji e marca **negrito** e __itálico__, que viram negrito e itálico de verdade (HTML, sem letras Unicode). A versão
+    // formatada fica guardada neste aparelho (por semana), para não pedir de novo.
+    function transcricaoInline(texto) {
+      const esc = String(texto).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      return esc.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>').replace(/__([^_]+?)__/g, '<em>$1</em>');
+    }
+    function transcricaoMostrar(corpo, video) {
+      const guardada = carregadoDe('nvc-transc');
+      if (guardada && guardada.titulo === (video.titulo || '') && Array.isArray(guardada.secoes) && guardada.secoes.length) {
+        corpo.innerHTML = guardada.secoes.map(s =>
+          '<div class="video-transcricao-secao"><p class="video-transcricao-titulo">' + transcricaoInline((s.emoji ? s.emoji + ' ' : '') + String(s.titulo || '').toUpperCase()) + '</p>' +
+          (s.paragrafos || []).map(t => '<p>' + transcricaoInline(t) + '</p>').join('') + '</div>').join('');
+        corpo.dataset.formatada = '1';
+        return;
+      }
+      corpo.innerHTML = String(video.texto || '').split(/\n\s*\n/).map(t => '<p>' + transcricaoInline(t.replace(/\n/g, ' ')) + '</p>').join('');
+      delete corpo.dataset.formatada;
+    }
+    let transcricaoPedindo = false;
+    async function transcricaoFormatar(corpo, video) {
+      if (corpo.dataset.formatada || transcricaoPedindo || !codigoAcessoSalvo() || !navigator.onLine) return;
+      transcricaoPedindo = true;
+      const aviso = document.createElement('p');
+      aviso.className = 'video-transcricao-aviso';
+      aviso.textContent = '✨ Formatando a transcrição…';
+      corpo.prepend(aviso);
+      try {
+        const result = await postStudy({ tarefa: 'nvc-transcricao', codigo: codigoAcessoSalvo(), ano: aiWeekYear, semana: aiWeekNumber }, IA_ESPERA_MS);
+        if (result.ok && result.data && Array.isArray(result.data.secoes) && result.data.secoes.length) {
+          carregadoGuardar('nvc-transc', { titulo: video.titulo || '', secoes: result.data.secoes });
+          transcricaoMostrar(corpo, video);
+          return;
+        }
+        aviso.textContent = 'Não consegui formatar agora (fica o texto simples). Feche e abra de novo para tentar.';
+      } catch (e) {
+        aviso.textContent = 'Não consegui formatar agora (fica o texto simples). Feche e abra de novo para tentar.';
+      } finally {
+        transcricaoPedindo = false;
+      }
+    }
+
     function criarParteApostila(cfg) {
       const el = sufixo => document.getElementById(cfg.prefixo + sufixo);
       const tituloEl = el('Titulo');
@@ -17055,9 +17097,10 @@ function saveTemplatesToStorage() {
                 resumo.textContent = 'Transcrição do vídeo';
                 const corpo = document.createElement('div');
                 corpo.className = 'video-transcricao-texto';
-                corpo.textContent = p.video.texto;
                 caixa.append(resumo, corpo);
                 perguntasEl.appendChild(caixa);
+                transcricaoMostrar(corpo, p.video);
+                caixa.addEventListener('toggle', () => { if (caixa.open) transcricaoFormatar(corpo, p.video); });
               }
             }
             (p.perguntas || []).forEach(q => linha('❓ ' + q));
@@ -17090,7 +17133,7 @@ function saveTemplatesToStorage() {
         const chave = aiWeekYear + '-' + aiWeekNumber;
         const guardado = carregadoDe(cfg.tipo);
         // Lido antes da 6.10.05 (sem o texto do vídeo, que o card de transcrição usa): lê de novo.
-        const semTranscricao = guardado && Array.isArray(guardado.partes) && guardado.partes.some(p => p.video && p.video.temTexto && !p.video.texto);
+        const semTranscricao = guardado && Array.isArray(guardado.partes) && guardado.partes.some(p => p.video && p.video.temTexto && (!p.video.texto || !p.video.paragrafos)); // 6.10.06: o texto vem em parágrafos
         if ((guardado && !semTranscricao) || verificando === chave || !codigoAcessoSalvo() || !navigator.onLine) return;
         verificando = chave;
         try {

@@ -30,7 +30,7 @@ export const PRECOS_PADRAO = {
 export const RECURSOS = [
   { id: "formatar", rotulo: "Formatar com IA (Formatar e Anotações)", cat: "texto", acesso: ["pesquisa"], tarefas: ["formatar", "aplicacao", "anotacoes-formatar", "anotacoes-perguntas"] },
   { id: "sentinela", rotulo: "A Sentinela (comentários do estudo)", cat: "texto", acesso: ["pesquisa"], tarefas: ["sentinela", "estudo"] },
-  { id: "ebc", rotulo: "Estudo Bíblico, consideração (ministério) e Nossa vida cristã", cat: "texto", acesso: ["pesquisa"], tarefas: ["ebc", "consideracao", "nvc"] },
+  { id: "ebc", rotulo: "Estudo Bíblico, consideração (ministério) e Nossa vida cristã", cat: "texto", acesso: ["pesquisa"], tarefas: ["ebc", "consideracao", "nvc", "nvc-transcricao"] },
   { id: "joias", rotulo: "Joias espirituais", cat: "texto", acesso: ["pesquisa"], tarefas: ["joias"] },
   { id: "texto-diario", rotulo: "Comentários do texto diário", cat: "texto", acesso: ["pesquisa"], tarefas: ["texto-diario-comentarios"] },
   { id: "dirigir", rotulo: "Preparar para dirigir (perguntas e recapitulação)", cat: "esbocos", acesso: ["dirigente"], tarefas: ["estudo-perguntas", "estudo-recap", "ebc-dirigente"] },
