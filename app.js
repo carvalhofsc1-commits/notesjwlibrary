@@ -7876,7 +7876,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.19'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.20'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -9314,7 +9314,7 @@
     const REPORT_EMAIL = 'carvalhofsc1@gmail.com'; // o mesmo contato da página Sobre
     const MSG_SEM_CONSENTIMENTO = 'Para usar a IA e a leitura em voz alta é preciso concordar com o envio do texto. Toque no botão de novo quando quiser concordar.';
     // As tarefas do servidor que usam a IA (as outras só leem o wol.jw.org ou a Bíblia e não precisam da concordância).
-    const IA_TAREFAS = new Set(['pesquisa-coletar', 'pesquisa', 'anotacoes-formatar','estudo', 'estudo-lista', 'estudo-perguntas', 'texto-diario-comentarios', 'ebc', 'consideracao', 'nvc', 'nvc-transcricao', 'ebc-dirigente', 'tesouros', 'publico', 'publico-importar', 'publico-canticos', 'outros', 'discurso', 'joias', 'leitura-biblia', 'sentinela']);
+    const IA_TAREFAS = new Set(['pesquisa-coletar', 'pesquisa', 'pesquisa-video','anotacoes-formatar','estudo', 'estudo-lista', 'estudo-perguntas', 'texto-diario-comentarios', 'ebc', 'consideracao', 'nvc', 'nvc-transcricao', 'ebc-dirigente', 'tesouros', 'publico', 'publico-importar', 'publico-canticos', 'outros', 'discurso', 'joias', 'leitura-biblia', 'sentinela']);
     let consentimentoIaSessao = false; // vale só até fechar o app quando o aparelho não deixa gravar a escolha
     let consentimentoIaEmCurso = null;
 
@@ -12097,7 +12097,7 @@ function saveTemplatesToStorage() {
       'leitura-biblia': 'Leitura bíblica', 'biblia-texto': 'Texto bíblico',
       'outros-pesquisar': 'Pesquisar', 'publico-esboco': 'Esboço S-34',
       versiculos: 'Versículos', 'anotacoes-versiculos': 'Bíblia (anotações)', 'anotacoes-formatar': 'Formatar anotações (IA)',
-      'programa-pub': 'Programa (assembleia)', 'pesquisa-coletar': 'Pesquisa (buscas)', pesquisa: 'Pesquisa (resposta)', 'pesquisa-internet': 'Pesquisa (internet)', voz: 'Voz', ia: 'IA'
+      'programa-pub': 'Programa (assembleia)', 'pesquisa-coletar': 'Pesquisa (buscas)', pesquisa: 'Pesquisa (resposta)', 'pesquisa-internet': 'Pesquisa (internet)', 'pesquisa-video': 'Pesquisa (vídeo)', voz: 'Voz', ia: 'IA'
     };
     function estatisticasNomeTarefa(chave) {
       return ESTAT_TAREFA_NOME[chave] || String(chave || 'IA');
@@ -16258,7 +16258,7 @@ function saveTemplatesToStorage() {
     // Faz a chamada ao servidor das tarefas de estudo (lista e respostas). Devolve { ok, data, unavailable }.
     // Pedidos demorados (esboços e Preparar para dirigir): vão com um id aleatório; o servidor guarda a resposta por algumas horas. Se a conexão
     // cair no meio (no iPhone, ao sair do app ou bloquear a tela), o app busca o resultado com esse id assim que volta (api/_pedidos.mjs).
-    const TAREFAS_LONGAS = new Set(['pesquisa', 'tesouros','discurso', 'publico', 'publico-importar', 'outros', 'estudo-perguntas', 'ebc-dirigente', 'estudo-recap']);
+    const TAREFAS_LONGAS = new Set(['pesquisa', 'pesquisa-video', 'tesouros', 'discurso', 'publico', 'publico-importar', 'outros', 'estudo-perguntas', 'ebc-dirigente', 'estudo-recap']);
     const novoPedidoId = () => (window.crypto && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2));
     const esperar = ms => new Promise(ok => setTimeout(ok, ms));
     // O resultado fica guardado no servidor por até 6 horas: com o app fora da tela (tela bloqueada, outro app) a busca ESPERA a pessoa voltar,
@@ -31141,8 +31141,9 @@ function saveTemplatesToStorage() {
         campo.style.height = (campo.scrollHeight + 2) + 'px';
       }
       const campoTextoContexto = $('pesquisaTextoContexto');
-      [campoAssunto, campoContexto, campoTextoContexto].forEach(campo => campo.addEventListener('input', () => crescer(campo)));
-      const crescerCampos = () => [campoAssunto, campoContexto, campoTextoContexto].forEach(campo => { if (campo.offsetParent) crescer(campo); });
+      const campoVideoContexto = $('pesquisaVideoContexto');
+      [campoAssunto, campoContexto, campoTextoContexto, campoVideoContexto].forEach(campo => campo.addEventListener('input', () => crescer(campo)));
+      const crescerCampos = () => [campoAssunto, campoContexto, campoTextoContexto, campoVideoContexto].forEach(campo => { if (campo.offsetParent) crescer(campo); });
       document.addEventListener('visibilitychange', () => { if (!document.hidden) requestAnimationFrame(crescerCampos); });
       window.addEventListener('resize', () => { if (currentScreen() === 'pesquisa') crescerCampos(); });
       new MutationObserver(() => { if (currentScreen() === 'pesquisa') requestAnimationFrame(crescerCampos); }).observe(document.body, { attributes: true, attributeFilter: ['data-screen'] });
@@ -31152,10 +31153,14 @@ function saveTemplatesToStorage() {
       // ---------- Abas: Assunto e Texto bíblico ----------
       let aba = 'assunto';
       function trocarAba(nova) {
-        aba = nova === 'texto' ? 'texto' : 'assunto';
+        aba = ['texto', 'video'].includes(nova) ? nova : 'assunto';
         document.querySelectorAll('#pesquisaCard .pesq-aba').forEach(b => b.setAttribute('aria-selected', String(b.dataset.pesqAba === aba)));
         $('pesquisaAssuntoBloco').hidden = aba !== 'assunto';
         $('pesquisaTextoBloco').hidden = aba !== 'texto';
+        $('pesquisaVideoBloco').hidden = aba !== 'video';
+        // No vídeo não há busca de fontes: as opções da internet e da escolha das fontes somem.
+        document.querySelectorAll('#pesquisaCard .pesq-opcao').forEach(l => { l.hidden = aba === 'video'; });
+        botao.textContent = aba === 'video' ? '🎬 Resumir o vídeo' : '🔎 Pesquisar';
         requestAnimationFrame(crescerCampos);
       }
       document.querySelectorAll('#pesquisaCard .pesq-aba').forEach(b => b.addEventListener('click', () => { if (!b.disabled) trocarAba(b.dataset.pesqAba); }));
@@ -31448,6 +31453,10 @@ function saveTemplatesToStorage() {
         if (f.tipo === 'perspicaz') return { texto: 'Estudo Perspicaz das Escrituras' + (f.codigo ? ', volume ' + f.codigo.replace(/\D/g, '') : '') + ' — verbete “' + f.titulo + '”', wol: '', jwl: '' };
         if (f.tipo === 'livro') return { texto: f.publicacao + ' (livro)', wol: '', jwl: '' };
         if (f.tipo === 'web') return { texto: '🌐 ' + f.publicacao + (f.titulo ? ' — “' + f.titulo + '”' : ''), wol: f.url || '', jwl: '', rotuloLink: '🔗 abrir' };
+        if (f.tipo === 'video') {
+          const dur = f.duracaoS ? ' (' + Math.floor(f.duracaoS / 60) + ' min ' + String(f.duracaoS % 60).padStart(2, '0') + ' s)' : '';
+          return { texto: '🎬 Vídeo do jw.org: “' + (f.titulo || 'vídeo') + '”' + dur + (f.origem ? ' — ' + f.origem : ''), wol: f.url || '', jwl: '', rotuloLink: '🔗 jw.org' };
+        }
         const partes = [f.publicacao + (f.codigo ? ' (' + f.codigo + ')' : '')];
         if (f.titulo && f.titulo !== f.publicacao) partes.push('“' + f.titulo + '”');
         if (f.pagina) partes.push('p. ' + f.pagina);
@@ -31481,6 +31490,11 @@ function saveTemplatesToStorage() {
           (s.paragrafos || []).forEach(p => corpo.push('<p>' + htmlDoTexto(p, numeros) + '</p>'));
         });
         if (r.conclusao) corpo.push('<p class="pesq-conclusao">' + htmlDoTexto(r.conclusao, numeros) + '</p>');
+        // Vídeo: a transcrição em seções, num quadro recolhido (não entra na edição do texto).
+        if ((r.transcricao || []).length) {
+          corpo.push('<details class="pesq-transcricao" contenteditable="false"><summary>🎬 Transcrição do vídeo</summary>' +
+            r.transcricao.map(s => '<h5>' + (s.emoji ? escapar(s.emoji) + ' ' : '') + escapar(s.titulo) + '</h5>' + (s.paragrafos || []).map(p => '<p>' + htmlDoTexto(p, numeros) + '</p>').join('')).join('') + '</details>');
+        }
         $('pesquisaResCorpo').innerHTML = corpo.join('');
         const lista = $('pesquisaResFontes');
         lista.textContent = '';
@@ -31589,7 +31603,7 @@ function saveTemplatesToStorage() {
         };
         [...corpoEl.childNodes].forEach(no => {
           if (no.nodeType === 3) return juntar(limparMarcas(no.nodeValue));
-          if (no.nodeType !== 1 || no.classList.contains('pesq-res-texto')) return; // o texto bíblico não é editado aqui
+          if (no.nodeType !== 1 || no.classList.contains('pesq-res-texto') || no.classList.contains('pesq-transcricao')) return; // o texto bíblico e a transcrição do vídeo não são editados aqui
           const tag = no.tagName.toLowerCase();
           if (/^h[1-6]$/.test(tag)) {
             const titulo = limparMarcas(no.textContent);
@@ -31627,6 +31641,7 @@ function saveTemplatesToStorage() {
         const nova = estruturaDoCorpo();
         const usadas = [];
         [nova.introducao, ...nova.secoes.flatMap(s => s.paragrafos), nova.conclusao].join(' ').replace(/\[(F\d{1,2})\]/g, (t, id) => { if (!usadas.includes(id)) usadas.push(id); return t; });
+        (atual.fontes || []).filter(f => f.tipo === 'video').forEach(f => { if (!usadas.includes(f.id)) usadas.push(f.id); }); // o vídeo é a fonte do resumo inteiro
         atual.resultado = Object.assign({}, atual.resultado, { titulo: limparMarcas(tituloEl.textContent) || atual.resultado.titulo, introducao: nova.introducao, secoes: nova.secoes, conclusao: nova.conclusao, fontesUsadas: usadas, editado: true });
         editarLigar(false);
         mostrar(atual);
@@ -31669,7 +31684,58 @@ function saveTemplatesToStorage() {
         campoContexto.readOnly = sim;
       }
 
+      // Aba Vídeo: o servidor lê o vídeo pelo link e a IA faz o resumo, os pontos principais e a transcrição em seções. O resultado entra no mesmo
+      // card das pesquisas (com cópia, Word, edição e salvar): o resumo é a introdução, os pontos são uma seção e a transcrição fica num quadro
+      // recolhido; a fonte é o próprio vídeo.
+      async function resumirVideo() {
+        const link = $('pesquisaVideoLink').value.trim();
+        const contexto = campoVideoContexto.value.replace(/\s+/g, ' ').trim();
+        if (!/jw\.org|jw-cdn\.org/i.test(link)) {
+          dizer(statusEl, 'Cole o link de um vídeo do jw.org (no vídeo, toque em Compartilhar → Copiar link).', { aviso: true });
+          $('pesquisaVideoLink').focus();
+          return;
+        }
+        if (!codigoAcessoSalvo()) return dizer(statusEl, 'Salve o código de pesquisa em Ajustes → 🔐 Autorização de acessos.', { aviso: true });
+        const meu = ++pedido;
+        fecharEscolha();
+        ocupado(true);
+        relogioLigar();
+        try {
+          andamento('Lendo o vídeo e preparando o resumo… (pode levar até 2 minutos)');
+          const r = await postStudy({ tarefa: 'pesquisa-video', codigo: codigoAcessoSalvo(), link, contexto }, 285000);
+          if (meu !== pedido) return;
+          if (!r.ok) return dizer(statusEl, erroDe(r, 'Não consegui resumir o vídeo agora. Tente de novo.'), { aviso: true });
+          const d = r.data;
+          atual = {
+            id: null,
+            assunto: d.titulo || 'Vídeo',
+            contexto,
+            video: { link },
+            resultado: {
+              titulo: d.titulo || (d.video && d.video.titulo) || 'Vídeo',
+              introducao: d.resumo || '',
+              secoes: d.pontos && d.pontos.length ? [{ titulo: 'Pontos principais', emoji: '📌', paragrafos: d.pontos.map(p => '• ' + p) }] : [],
+              conclusao: '',
+              transcricao: d.transcricao || [],
+              fontesUsadas: ['F1'],
+              modelo: d.modelo,
+              data: d.data,
+            },
+            fontes: [{ id: 'F1', tipo: 'video', publicacao: 'Vídeo do jw.org', titulo: (d.video && d.video.titulo) || d.titulo || '', url: link, duracaoS: (d.video && d.video.duracaoS) || 0, origem: (d.video && d.video.fonte) || '' }],
+          };
+          mostrar(atual);
+          dizer(statusEl, '');
+          if (d.video && d.video.ouvido) dizer(avisoEl, '🎧 Este vídeo não tem legenda publicada: a transcrição foi feita pela IA, que ouviu o vídeo.');
+          requestAnimationFrame(() => resultadoEl.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+        } catch (e) {
+          if (meu === pedido) dizer(statusEl, 'Sem conexão com o servidor. Confira a internet e tente de novo.', { aviso: true });
+        } finally {
+          if (meu === pedido) { ocupado(false); relogioDesligar(); }
+        }
+      }
+
       async function pesquisar() {
+        if (aba === 'video') return resumirVideo();
         const texto = aba === 'texto';
         const contexto = (texto ? campoTextoContexto : campoContexto).value.replace(/\s+/g, ' ').trim();
         const palavras = texto ? palavrasDaTela() : [];
@@ -31867,6 +31933,10 @@ function saveTemplatesToStorage() {
           linhas.push('');
         });
         if (r.conclusao) linhas.push(textoSimples(r.conclusao, numeros), '');
+        if ((r.transcricao || []).length) {
+          linhas.push('🎬 *Transcrição do vídeo*');
+          r.transcricao.forEach(s => { linhas.push((s.emoji ? s.emoji + ' ' : '') + '*' + s.titulo + '*'); (s.paragrafos || []).forEach(p => linhas.push(textoSimples(p, numeros))); linhas.push(''); });
+        }
         const fontes = [...$('pesquisaResFontes').children].map((li, i) => '[' + (i + 1) + '] ' + li.firstChild.textContent);
         if (fontes.length) linhas.push('📚 Fontes', ...fontes);
         const simples = linhas.join('\n').replace(/\n{3,}/g, '\n\n').trim();
@@ -31925,8 +31995,8 @@ function saveTemplatesToStorage() {
             partes.push(p('<w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="' + corRef + '"/></w:pBdr><w:ind w:left="240"/>' + espaco(i ? 0 : 160, i === todos.length - 1 ? 240 : 60), docxRuns((v.referencia || b.referencia) + ': ', 'b', 22) + docxRuns('“', 'i', 22) + corpoV + docxRuns('”', 'i', 22)));
           });
         } else {
-          partes.push(p(espaco(0, pesquisa.contexto ? 40 : 240), docxRuns('Assunto: ', 'b', 18, cinza) + docxRuns(pesquisa.assunto, '', 18, cinza)));
-          if (pesquisa.contexto) partes.push(p(espaco(0, 240), docxRuns('Contexto: ', 'b', 18, cinza) + docxRuns(pesquisa.contexto, '', 18, cinza)));
+          partes.push(p(espaco(0, pesquisa.contexto ? 40 : 240), docxRuns(pesquisa.video ? 'Vídeo: ' : 'Assunto: ', 'b', 18, cinza) + docxRuns(pesquisa.assunto, '', 18, cinza)));
+          if (pesquisa.contexto) partes.push(p(espaco(0, 240), docxRuns(pesquisa.video ? 'Pergunta: ' : 'Contexto: ', 'b', 18, cinza) + docxRuns(pesquisa.contexto, '', 18, cinza)));
         }
         if (r.introducao) partes.push(p(espaco(0, 160), runsDoTexto(r.introducao, '', 24)));
         (r.secoes || []).forEach(s => {
@@ -31934,6 +32004,14 @@ function saveTemplatesToStorage() {
           (s.paragrafos || []).forEach(t => partes.push(p(espaco(0, 140), runsDoTexto(t, '', 22))));
         });
         if (r.conclusao) partes.push(p('<w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="' + corRef + '"/></w:pBdr><w:ind w:left="240"/>' + espaco(200, 200), runsDoTexto(r.conclusao, 'i', 22)));
+        // Vídeo: a transcrição inteira, em seções, depois do resumo e dos pontos.
+        if ((r.transcricao || []).length) {
+          partes.push(p('<w:keepNext/><w:pBdr><w:top w:val="single" w:sz="4" w:space="6" w:color="D1D5DB"/></w:pBdr>' + espaco(320, 100), docxRuns('🎬 Transcrição do vídeo', 'b', 26)));
+          r.transcricao.forEach(s => {
+            partes.push(p('<w:keepNext/>' + espaco(160, 60), docxRuns((s.emoji ? s.emoji + ' ' : '') + s.titulo, 'b', 22)));
+            (s.paragrafos || []).forEach(t => partes.push(p(espaco(0, 100), runsDoTexto(t, '', 20))));
+          });
+        }
         // Fontes numeradas: a descrição, a marca do Guia de Pesquisa ou do Índice e o endereço no wol.jw.org.
         const porId = new Map((pesquisa.fontes || []).map(f => [f.id, f]));
         const fontes = [...numeros.keys()].map(id => porId.get(id)).filter(Boolean);
@@ -31977,8 +32055,8 @@ function saveTemplatesToStorage() {
           if (pesquisa.contexto) html.push(linhaMeta('Contexto:', pesquisa.contexto));
           html.push('<div class="pq-doc-faixa">' + htmlDosVersiculos(b) + '</div>');
         } else {
-          html.push(linhaMeta('Assunto:', pesquisa.assunto));
-          if (pesquisa.contexto) html.push(linhaMeta('Contexto:', pesquisa.contexto));
+          html.push(linhaMeta(pesquisa.video ? 'Vídeo:' : 'Assunto:', pesquisa.assunto));
+          if (pesquisa.contexto) html.push(linhaMeta(pesquisa.video ? 'Pergunta:' : 'Contexto:', pesquisa.contexto));
         }
         const comRef = t => htmlDoTexto(t, numeros).replace(/<a href="#" data-pesq-fonte="\d+">(\d+)<\/a>/g, '$1');
         if (r.introducao) html.push('<p class="pq-doc-intro">' + comRef(r.introducao) + '</p>');
@@ -31987,6 +32065,13 @@ function saveTemplatesToStorage() {
           (s.paragrafos || []).forEach(t => html.push('<p class="pq-doc-p">' + comRef(t) + '</p>'));
         });
         if (r.conclusao) html.push('<p class="pq-doc-faixa pq-doc-conclusao">' + comRef(r.conclusao) + '</p>');
+        if ((r.transcricao || []).length) {
+          html.push('<p class="pq-doc-fontes-titulo">🎬 Transcrição do vídeo</p>');
+          r.transcricao.forEach(s => {
+            html.push('<p class="pq-doc-p"><b>' + (s.emoji ? escapar(s.emoji) + ' ' : '') + escapar(s.titulo) + '</b></p>');
+            (s.paragrafos || []).forEach(t => html.push('<p class="pq-doc-p pq-doc-transc">' + comRef(t) + '</p>'));
+          });
+        }
         const porId = new Map((pesquisa.fontes || []).map(f => [f.id, f]));
         const fontes = [...numeros.keys()].map(id => porId.get(id)).filter(Boolean);
         if (fontes.length) {
@@ -32032,9 +32117,11 @@ function saveTemplatesToStorage() {
         camposPalavra.forEach(c => { c.value = ''; });
         pintarPalavras();
         campoTextoContexto.value = '';
+        $('pesquisaVideoLink').value = '';
+        campoVideoContexto.value = '';
         crescerCampos();
         dizer(statusEl, '');
-        (aba === 'texto' ? refCampo : campoAssunto).focus();
+        (aba === 'texto' ? refCampo : aba === 'video' ? $('pesquisaVideoLink') : campoAssunto).focus();
       });
 
       // ---------- Pesquisas salvas (banco do aparelho) ----------
@@ -32064,7 +32151,12 @@ function saveTemplatesToStorage() {
           abrir.appendChild(quando);
           abrir.addEventListener('click', () => {
             atual = item;
-            if (item.biblico) {
+            if (item.video) {
+              // Resumo de vídeo: volta para a aba Vídeo com o link e a pergunta.
+              trocarAba('video');
+              $('pesquisaVideoLink').value = item.video.link || '';
+              campoVideoContexto.value = item.contexto || '';
+            } else if (item.biblico) {
               // Pesquisa de um texto bíblico: volta para a aba Texto bíblico com o texto, as palavras-chave e o contexto dela.
               trocarAba('texto');
               escolhido = Object.assign({}, item.biblico);

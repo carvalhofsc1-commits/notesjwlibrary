@@ -2630,3 +2630,48 @@ export async function notasDeEstudo(caminho, timeoutMs) {
   const lido = await faixaDoDocumento(m[1], de, Math.min(ate, de + 8), timeoutMs, 3000);
   return lido ? { ...lido, docId: m[1] } : null;
 }
+
+// ---------- Assistente de pesquisas: vídeo do jw.org pelo link ----------
+// O link de compartilhar do jw.org traz o código do vídeo ("lank"): pub-jwbai_201511_1_VIDEO (publicação, edição e faixa) ou
+// docid-702017124_1_VIDEO. Ele aparece no ?lank=, no ?item= ou no fim do endereço da página de vídeos (#pt/mediaitems/…/pub-…_VIDEO).
+// null = o endereço não é de um vídeo do jw.org.
+export function videoDoEndereco(endereco) {
+  let texto = String(endereco || "").trim();
+  try {
+    texto = decodeURIComponent(texto);
+  } catch {
+    // endereço com % solto: fica como veio
+  }
+  if (!/(^|\/\/|\.)jw\.org\b|jw-cdn\.org/i.test(texto) && !/^(pub|docid)-/i.test(texto)) return null;
+  const lank = (texto.match(/\b(pub-[a-z0-9]+(?:_\d+)?_\d+_VIDEO|docid-\d+_\d+_VIDEO)\b/i) || [])[1];
+  if (!lank) return null;
+  const p = lank.match(/^pub-([a-z0-9]+)_(?:(\d+)_)?(\d+)_VIDEO$/i);
+  if (p) return { pub: p[1], issue: p[2] || "", track: p[3], lank };
+  const d = lank.match(/^docid-(\d+)_(\d+)_VIDEO$/i);
+  return d ? { docid: d[1], track: d[2], lank } : null;
+}
+
+// O menor arquivo MP4 do vídeo (para a IA ouvir quando não há legenda): { url, tamanho, titulo, duracaoS } ou null. Só até maxBytes.
+export async function menorMp4DoVideo(video, { timeoutMs = 8000, maxBytes = 18_000_000 } = {}) {
+  try {
+    let arquivos = [];
+    let titulo = "";
+    if (video.pub || video.docid) {
+      const q = video.pub ? `pub=${encodeURIComponent(video.pub)}${video.issue ? `&issue=${encodeURIComponent(video.issue)}` : ""}` : `docid=${encodeURIComponent(video.docid)}`;
+      const dados = await baixarJson(`https://b.jw-cdn.org/apis/pub-media/GETPUBMEDIALINKS?output=json&${q}${video.track ? `&track=${encodeURIComponent(video.track)}` : ""}&langwritten=T&alllangs=0&txtCMSLang=T`, timeoutMs);
+      arquivos = ((dados && dados.files && dados.files.T && dados.files.T.MP4) || []).map((f) => ({ url: f.file && f.file.url, tamanho: f.filesize || 0, titulo: f.title || "", duracaoS: Math.round(f.duration || 0) }));
+    }
+    if (!arquivos.length && video.lank) {
+      const m = await baixarJson(`https://b.jw-cdn.org/apis/mediator/v1/media-items/T/${encodeURIComponent(video.lank)}?clientType=www`, timeoutMs);
+      const item = m && m.media && m.media[0];
+      if (item) {
+        titulo = item.title || "";
+        arquivos = (item.files || []).map((f) => ({ url: f.progressiveDownloadURL, tamanho: f.filesize || 0, titulo, duracaoS: Math.round(item.duration || 0) }));
+      }
+    }
+    const validos = arquivos.filter((f) => f.url && f.tamanho > 0 && f.tamanho <= maxBytes).sort((a, b) => a.tamanho - b.tamanho);
+    return validos[0] || null;
+  } catch {
+    return null;
+  }
+}

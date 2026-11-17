@@ -15966,3 +15966,17 @@ a.pesq-link-botao {
 .pesq-res-corpo mark, .pesq-res-corpo .pesq-mark { background: #fff59d; color: inherit; padding: 0 2px; border-radius: 2px; }
 .pesq-res-corpo ul, .pesq-res-corpo ol { margin: 0 0 10px; padding-left: 1.4em; }
 .pq-doc mark { background: #fff59d; color: inherit; }
+/* Aba Vídeo: as opções da busca somem; a transcrição fica num quadro recolhido no resultado (como na Nossa vida cristã). */
+.pesq-opcao[hidden] { display: none; }
+.pesq-transcricao {
+  margin: 14px 0 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 6px 10px;
+  background: color-mix(in srgb, var(--card) 85%, var(--accent) 5%);
+}
+.pesq-transcricao > summary { cursor: pointer; font-weight: 600; font-size: .9rem; color: var(--muted); }
+.pesq-transcricao[open] > summary { margin-bottom: 6px; }
+.pesq-transcricao h5 { margin: 12px 0 4px; font-size: .92rem; }
+.pesq-transcricao p { font-size: .9rem; }
+.pq-doc .pq-doc-transc { font-size: .91em; }

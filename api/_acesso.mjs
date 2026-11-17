@@ -60,6 +60,7 @@ export const NIVEIS = {
   "pesquisa-coletar": "pesquisa", // Assistente de pesquisas: buscas (IA leve) e leitura das fontes
   pesquisa: "pesquisa", // Assistente de pesquisas: resposta final
   "pesquisa-versiculos": "pesquisa", // Assistente de pesquisas: o texto do versículo escolhido (sem IA)
+  "pesquisa-video": "pesquisa", // Assistente de pesquisas: vídeo do jw.org (transcrição e resumo)
   joias: "pesquisa",
   "joias-ler": "pesquisa",
   // Código de resumo (só o resumo dos capítulos da Leitura diária da Bíblia)

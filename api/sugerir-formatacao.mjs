@@ -51,6 +51,9 @@ import {
   siglasPossiveis,
   pesquisaDoVersiculo,
   notasDeEstudo,
+  videoDoEndereco,
+  menorMp4DoVideo,
+  lerTextoDoVideo,
   referenciasDeTesouros,
   referenciasDoDiscursoCurto,
   semanasDosEstudos,
@@ -1781,6 +1784,78 @@ const nomeDoModelo = (id) => {
   const m = MODELOS_IA.find((x) => x.id === id);
   return m ? m.nome.split(":")[0] : id;
 };
+
+// ---------- Assistente de pesquisas: vídeo do jw.org (aba Vídeo) ----------
+// O usuário cola o link do vídeo. O servidor pega o texto da fala que o jw.org publica (legenda AIVTT ou a comum); sem ele, e com um modelo
+// Gemini escolhido para o vídeo, manda o menor arquivo do vídeo (até 12 MB) para a IA ouvir e transcrever. Depois a IA do vídeo faz o resumo,
+// os pontos principais e a transcrição em seções (sem mudar as palavras; o servidor confere se pelo menos 85% delas continuam lá).
+const SaidaVideoPesquisa = z.object({
+  titulo: z.string(),
+  resumo: z.string(),
+  pontos: z.array(z.string()),
+  secoes: z.array(z.object({ titulo: z.string(), emoji: z.string().nullable(), paragrafos: z.array(z.string()) })),
+});
+async function pesquisarVideo(res, body, P) {
+  const link = String(body.link || "").trim().slice(0, 1000);
+  const video = videoDoEndereco(link);
+  if (!video) return erro(res, 400, "Cole o link de um vídeo do jw.org (no vídeo, toque em Compartilhar → Copiar link).");
+  const contexto = textoLivre(body.contexto, 800);
+  const modelo = P.ia.pesquisaVideoModelo;
+  const provedor = provedorDoModelo(P.ia, modelo);
+  const Pv = { ...P, ia: { ...P.ia, modelo, esforco: "low", provedorTarefa: provedor } };
+  try {
+    let lido = await lerTextoDoVideo(video, { timeoutMs: 12000 });
+    let fonte = lido.fonte;
+    let ouvido = false;
+    if (!lido.texto) {
+      if (provedor !== "gemini") return erro(res, 422, "Este vídeo não tem o texto da fala publicado pelo jw.org. Para a IA ouvir o vídeo, escolha um modelo Gemini em Ajustes → Modelos e agentes de IA → Vídeo.");
+      const mp4 = await menorMp4DoVideo(video, { timeoutMs: 12000, maxBytes: 12_000_000 });
+      if (!mp4) return erro(res, 422, "Este vídeo não tem o texto da fala publicado pelo jw.org e é grande demais para a IA ouvir.");
+      const bytes = Buffer.from(await (await fetch(mp4.url, { signal: AbortSignal.timeout(60_000) })).arrayBuffer());
+      const ouvinte = criarClienteIa({ maxRetries: 0, timeout: 150_000 }, "gemini");
+      const r = await chamarIa(
+        ouvinte,
+        Pv,
+        { max_tokens: 16000, system: P.sistemaVideoOuvir, messages: [{ role: "user", content: [{ type: "audio", source: { type: "base64", media_type: "video/mp4", data: bytes.toString("base64") } }, { type: "text", text: `Transcreva a fala deste vídeo${mp4.titulo ? ` ("${mp4.titulo}")` : ""}.` }] }] },
+        { semPensar: true, tarefa: "pesquisa-video" }
+      );
+      const texto = String((r.content && r.content[0] && r.content[0].text) || "").trim().slice(0, 24000);
+      if (!texto) return erro(res, 502, "A IA não conseguiu transcrever o vídeo. Tente de novo.");
+      lido = { titulo: lido.titulo || mp4.titulo, duracaoS: lido.duracaoS || mp4.duracaoS, texto };
+      fonte = "transcrição feita pela IA (o vídeo não tem legenda publicada)";
+      ouvido = true;
+    }
+    const minutos = lido.duracaoS ? ` (${Math.floor(lido.duracaoS / 60)} min ${String(lido.duracaoS % 60).padStart(2, "0")} s)` : "";
+    const mensagem =
+      `VÍDEO: "${lido.titulo || "(sem título)"}"${minutos}\n` +
+      (contexto ? `O QUE O USUÁRIO QUER SABER DO VÍDEO: ${contexto}\n` : "") +
+      `\nTRANSCRIÇÃO (${fonte}; parágrafos separados pelas pausas do vídeo):\n${lido.texto}`;
+    const client = criarClienteIa({ maxRetries: 1, timeout: 180_000 }, provedor);
+    const r = await chamarIa(client, Pv, { max_tokens: provedor === "gemini" ? 32000 : 16000, system: P.sistemaVideoPesquisa, messages: [{ role: "user", content: mensagem }] }, { schema: SaidaVideoPesquisa, tarefa: "pesquisa-video" });
+    if (r.stop_reason === "refusal" || !r.parsed_output) return erro(res, 502, "A IA não conseguiu resumir o vídeo. Tente de novo.");
+    const o = r.parsed_output;
+    let transcricao = o.secoes
+      .map((s) => ({ titulo: limparLinha(s.titulo, 120), emoji: s.emoji ? limparLinha(s.emoji, 8) : "", paragrafos: s.paragrafos.map((p) => String(p || "").trim().slice(0, 4000)).filter(Boolean) }))
+      .filter((s) => s.paragrafos.length);
+    // Fidelidade: a transcrição em seções precisa trazer quase toda a fala; senão fica o texto simples, em parágrafos.
+    const originais = palavrasDe(lido.texto);
+    const formatadas = new Set(palavrasDe(transcricao.flatMap((s) => s.paragrafos).join(" ")));
+    const cobertura = originais.length ? originais.filter((w) => formatadas.has(w)).length / originais.length : 0;
+    if (!transcricao.length || cobertura < 0.85) transcricao = [{ titulo: "Transcrição", emoji: "🎬", paragrafos: lido.texto.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean) }];
+    console.log("Pesquisa (vídeo):", JSON.stringify({ modelo, titulo: lido.titulo, ouvido, chars: lido.texto.length, secoes: transcricao.length, cobertura: Math.round(cobertura * 100) / 100, entrada: r.usage?.input_tokens || 0, saida: r.usage?.output_tokens || 0 }));
+    return res.status(200).json({
+      titulo: limparLinha(o.titulo || lido.titulo, 160),
+      resumo: String(o.resumo || "").trim().slice(0, 3000),
+      pontos: o.pontos.map((p) => String(p || "").trim().slice(0, 1000)).filter(Boolean).slice(0, 15),
+      transcricao,
+      video: { titulo: lido.titulo || "", duracaoS: lido.duracaoS || 0, fonte, link, ouvido },
+      modelo: nomeDoModelo(modelo),
+      data: new Date().toISOString(),
+    });
+  } catch (e) {
+    return tratarErro(e, res);
+  }
+}
 
 // ---------- Busca na internet (opcional, desmarcada por padrão) ----------
 // Roda com o modelo escolhido em Ajustes para a "Busca na internet" (Gemini: busca do Google; Claude: a busca na web da Anthropic). A lista de
@@ -5255,7 +5330,7 @@ async function tratarPedido(req, res) {
 
   // Pedidos demorados (esboços e Preparar para dirigir) com pedidoId: a resposta também é guardada ANTES de ser enviada, para o app
   // recuperá-la se a conexão cair no meio (a função só termina depois de enviar, então a gravação não se perde).
-  if ((TAREFAS_DE_ESBOCOS.has(tarefa) || tarefa === "pesquisa") && idDePedidoValido(body.pedidoId) && pedidosDisponiveis()) {
+  if ((TAREFAS_DE_ESBOCOS.has(tarefa) || tarefa === "pesquisa" || tarefa === "pesquisa-video") && idDePedidoValido(body.pedidoId) && pedidosDisponiveis()) {
     const enviar = res.json.bind(res);
     res.json = (dados) => {
       guardarResultado(body.pedidoId, res.statusCode || 200, dados)
@@ -5354,6 +5429,7 @@ async function tratarPedido(req, res) {
   if (tarefa === "nvc-transcricao") return formatarTranscricaoVideo(res, body, P);
   if (tarefa === "pesquisa-coletar") return coletarPesquisa(res, body, P);
   if (tarefa === "pesquisa") return responderPesquisa(res, body, P);
+  if (tarefa === "pesquisa-video") return pesquisarVideo(res, body, P);
   if (tarefa === "ebc-dirigente") return perguntasEbcDirigente(res, body, P);
   if (tarefa === "tesouros") return esbocoDeTesouros(res, body, P);
   if (tarefa === "publico") return esbocoDoDiscursoPublico(res, body, P);

@@ -2605,7 +2605,7 @@
       <div class="pesq-abas" role="tablist" aria-label="Tipo de pesquisa">
         <button type="button" role="tab" class="pesq-aba" data-pesq-aba="assunto" aria-selected="true">💡 Assunto</button>
         <button type="button" role="tab" class="pesq-aba" data-pesq-aba="texto" aria-selected="false">📖 Texto bíblico</button>
-        <button type="button" role="tab" class="pesq-aba" data-pesq-aba="video" aria-selected="false" disabled>🎬 Vídeo <small>em breve</small></button>
+        <button type="button" role="tab" class="pesq-aba" data-pesq-aba="video" aria-selected="false">🎬 Vídeo</button>
       </div>
 
       <div class="pesq-bloco" id="pesquisaAssuntoBloco">
@@ -2654,6 +2654,15 @@
         </div>
         <label for="pesquisaTextoContexto" class="pesq-rotulo">Assunto ou contexto da pesquisa <span class="pesq-opcional">(opcional)</span></label>
         <textarea id="pesquisaTextoContexto" class="pesq-campo" rows="1" maxlength="800" spellcheck="true" placeholder="Ex.: para um discurso sobre prioridades"></textarea>
+      </div>
+
+      <!-- Aba Vídeo: o link de um vídeo do jw.org; o app pega o texto da fala (a legenda publicada) ou a IA ouve o vídeo, e a IA faz o resumo, os
+           pontos principais e a transcrição em seções. -->
+      <div class="pesq-bloco" id="pesquisaVideoBloco" hidden>
+        <label for="pesquisaVideoLink" class="pesq-rotulo">Link do vídeo do jw.org</label>
+        <input id="pesquisaVideoLink" class="pesq-campo" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Cole o link (no vídeo: Compartilhar → Copiar link)">
+        <label for="pesquisaVideoContexto" class="pesq-rotulo">O que você quer saber do vídeo? <span class="pesq-opcional">(opcional)</span></label>
+        <textarea id="pesquisaVideoContexto" class="pesq-campo" rows="1" maxlength="800" spellcheck="true" placeholder="Ex.: que conselhos o vídeo dá para ajudar um inativo"></textarea>
       </div>
 
       <div class="pesq-acao-bloco">
