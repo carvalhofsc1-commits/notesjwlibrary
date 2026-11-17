@@ -7876,7 +7876,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.41'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.42'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -17052,8 +17052,12 @@ function saveTemplatesToStorage() {
       const esc = String(texto).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       return esc.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>').replace(/__([^_]+?)__/g, '<em>$1</em>');
     }
+    // A formatada também fica na memória (por semana): se o armazenamento do aparelho estiver cheio e a gravação falhar, ela aparece do mesmo jeito.
+    const transcricoesNaMemoria = new Map();
     function transcricaoMostrar(corpo, video) {
-      const guardada = carregadoDe('nvc-transc');
+      const chaveMem = aiWeekYear + '-' + aiWeekNumber + '|' + (video.titulo || '');
+      const doAparelho = carregadoDe('nvc-transc');
+      const guardada = doAparelho && doAparelho.titulo === (video.titulo || '') ? doAparelho : transcricoesNaMemoria.get(chaveMem);
       if (guardada && guardada.titulo === (video.titulo || '') && Array.isArray(guardada.secoes) && guardada.secoes.length) {
         corpo.innerHTML = guardada.secoes.map(s =>
           '<div class="video-transcricao-secao"><p class="video-transcricao-titulo">' + transcricaoInline((s.emoji ? s.emoji + ' ' : '') + String(s.titulo || '').toUpperCase()) + '</p>' +
@@ -17075,7 +17079,9 @@ function saveTemplatesToStorage() {
       try {
         const result = await postStudy({ tarefa: 'nvc-transcricao', codigo: codigoAcessoSalvo(), ano: aiWeekYear, semana: aiWeekNumber }, IA_ESPERA_MS);
         if (result.ok && result.data && Array.isArray(result.data.secoes) && result.data.secoes.length) {
-          carregadoGuardar('nvc-transc', { titulo: video.titulo || '', secoes: result.data.secoes });
+          const formatada = { titulo: video.titulo || '', secoes: result.data.secoes };
+          transcricoesNaMemoria.set(aiWeekYear + '-' + aiWeekNumber + '|' + formatada.titulo, formatada);
+          carregadoGuardar('nvc-transc', formatada);
           transcricaoMostrar(corpo, video);
           return;
         }

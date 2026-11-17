@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.42
+
+- Nossa vida cristã: a transcrição do vídeo formatada pela IA (seções com emoji, negrito e itálico) aparecia como texto simples quando a gravação no aparelho falhava (armazenamento cheio): a tela só mostrava o que lia de volta do localStorage. Agora a formatada também fica na memória (por semana) e aparece mesmo se a gravação falhar.
+
 ## 6.10.41
 
 - Anotações · Reunião: o campo Data fica mais fino (36 px de altura em vez de 46 px).
