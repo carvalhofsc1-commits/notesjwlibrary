@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.41
+
+- Anotações · Reunião: o campo Data fica mais fino (36 px de altura em vez de 46 px).
+
 ## 6.10.40
 
 - Anotações · Reunião: o card "📋 Partes da Vida e Ministério" fica recolhível (abre recolhido). Ao tocar num tema, o card recolhe e a tela vai até o campo Tema / parte, que pisca para mostrar o tema preenchido.
