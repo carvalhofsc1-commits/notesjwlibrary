@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.9.96
+
+- Preparar para comentar: nova ordem dos cards — Tesouros da Palavra de Deus, Faça seu melhor no ministério (quando a semana tiver a consideração), Estudo Bíblico e Estudo de A Sentinela (Imagens da apostila continua no fim). A descrição do grupo acompanha a ordem.
+
 ## 6.9.95
 
 - Faça seu melhor no ministério (consideração): a IA também executa a instrução da parte (ex.: "Faça um resumo da lmd lição 1 ponto 4b" → o resumo do ponto), num item próprio antes das perguntas ("📋 INSTRUÇÃO DA PARTE 👉 …").
