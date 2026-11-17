@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.36
+
+- Assistente de pesquisas, aba Vídeo: "Procurar também no que é falado nos vídeos" passa a funcionar em qualquer seção (o limite subiu de 80 para 700 vídeos). Medido: 110 vídeos em ~5 s; a maior seção (Programas e Eventos, 676 vídeos) em ~38 s. Seções como "De Nosso Estúdio › Discursos" (110 vídeos, sem subseções) ficavam bloqueadas.
+
 ## 6.10.35
 
 - Assistente de pesquisas, aba Vídeo: a caixinha "🗣️ Procurar também no que é falado nos vídeos" só aparece depois de escolher uma seção específica e não fica mais deformada no celular (a regra geral de 44 px de altura dos campos esticava a caixinha; agora ela fica com 18 px, ao lado do texto, e a dica vai na linha de baixo).

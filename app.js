@@ -7876,7 +7876,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.35'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.36'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -31863,7 +31863,7 @@ function saveTemplatesToStorage() {
         const secao = $('pesquisaVideosSecao').value;
         const falas = Boolean(secao) && $('pesquisaVideosFalas').checked;
         $('pesquisaVideosBtn').disabled = true;
-        dizer(status, falas ? 'Lendo o que é falado nos vídeos de “' + secao + '”… (pode levar alguns segundos)' : 'Procurando vídeos no jw.org…', { girando: true });
+        dizer(status, falas ? 'Lendo o que é falado nos vídeos de “' + secao + '”… (seções grandes podem levar até 1 minuto)' : 'Procurando vídeos no jw.org…', { girando: true });
         try {
           const r = await postStudy({ tarefa: 'pesquisa-videos', codigo: codigoAcessoSalvo(), assunto, secao, falas }, 120000);
           if (!r.ok) return dizer(status, erroDe(r, 'Não consegui procurar os vídeos agora.'), { aviso: true });
@@ -32010,7 +32010,7 @@ function saveTemplatesToStorage() {
         const caixa = $('pesquisaVideosFalas');
         const dica = document.querySelector('.pesq-opcao-falas .pesq-opcional');
         const s = ((secoesVideos && secoesVideos.secoes) || []).find(x => x.caminho === sel.value);
-        const max = (secoesVideos && secoesVideos.maxFalas) || 80;
+        const max = Math.max((secoesVideos && secoesVideos.maxFalas) || 0, 700);
         const pode = Boolean(sel.value) && (!s || s.total <= max);
         caixa.disabled = !pode;
         if (!pode) caixa.checked = false;

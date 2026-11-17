@@ -2758,7 +2758,8 @@ export function videosPorPalavras(lista, palavras, maximo = 40) {
 // As seções vêm do caminho de categorias de cada vídeo ("Família › Namoro e Casamento"): a seção principal e cada subseção, com o número de
 // vídeos. A busca nas falas lê as legendas dos vídeos de UMA seção (até MAX_VIDEOS_FALAS), guardadas por 24 h na instância, e devolve os
 // trechos com o tempo em que as palavras aparecem.
-export const MAX_VIDEOS_FALAS = 80;
+// Medido em 2026-11-17: 110 vídeos em ~5 s e a maior seção (Programas e Eventos, 676 vídeos) em ~38 s. Assim qualquer seção pode ser lida.
+export const MAX_VIDEOS_FALAS = 700;
 const falasLidas = new Map(); // lank -> { quando, falas: [{ inicio, texto }] }
 
 export function secoesDosVideos(lista) {
