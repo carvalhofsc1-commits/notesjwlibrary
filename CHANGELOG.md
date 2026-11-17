@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.24
+
+- Assistente de pesquisas: no celular, o botão "✏️ Editar o texto" do resultado ocupa a largura do card; na linha de informações do resultado, o agente de IA aparece com ✨ (o símbolo dos botões de IA do app) em vez do 🤖.
+
 ## 6.10.23
 
 - Assistente de pesquisas, "Procurar um vídeo por assunto": sem número fixo de sugestões — entram todos os vídeos relevantes (podem ser menos ou mais de 5; no máximo 20, para a lista não ficar enorme). A IA é orientada a marcar todos os relevantes, inclusive os de temas ligados ao assunto (para "grande tribulação": Armagedom, últimos dias, Babilônia, a Grande), e os vídeos com uma palavra rara do próprio assunto digitado no título entram sempre, depois dos dela.

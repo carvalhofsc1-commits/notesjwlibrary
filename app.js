@@ -7876,7 +7876,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.23'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.24'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -31481,7 +31481,7 @@ function saveTemplatesToStorage() {
         const r = pesquisa.resultado;
         const numeros = numerosDe(pesquisa);
         $('pesquisaResTitulo').textContent = r.titulo || pesquisa.assunto;
-        $('pesquisaResMeta').textContent = ['📅 ' + dataPorExtenso(r.data), r.modelo ? '🤖 ' + r.modelo : '', numeros.size ? '📚 ' + numeros.size + (numeros.size === 1 ? ' fonte' : ' fontes') : ''].filter(Boolean).join(' · ');
+        $('pesquisaResMeta').textContent = ['📅 ' + dataPorExtenso(r.data), r.modelo ? '✨ ' + r.modelo : '', numeros.size ? '📚 ' + numeros.size + (numeros.size === 1 ? ' fonte' : ' fontes') : ''].filter(Boolean).join(' · ');
         const corpo = [];
         if (pesquisa.biblico && (pesquisa.biblico.versiculos || []).length) corpo.push('<div class="pesq-escolhido pesq-res-texto"><div class="pesq-previa-texto">' + htmlDosVersiculos(pesquisa.biblico) + '</div></div>');
         if (r.introducao) corpo.push('<p class="pesq-intro">' + htmlDoTexto(r.introducao, numeros) + '</p>');
