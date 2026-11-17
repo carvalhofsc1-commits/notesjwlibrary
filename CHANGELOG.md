@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.13
+
+- Assistente de pesquisas: o Índice das Publicações da Torre de Vigia 1991-2026 (índice de assuntos, no wol) entrou como fonte primária, junto com o Guia de Pesquisa. O servidor lê só as letras iniciais das palavras da pesquisa, acha os assuntos (até 2), escolhe as citações dos subtópicos que mais combinam com o assunto, o contexto e as buscas (as mais recentes no empate; "casos reais" e histórias de vida um pouco abaixo; sem o Perspicaz, que já vem à parte, sem a apostila e sem publicações de antes de 1990) e lê o trecho exato de cada citação (até 8, no máximo 2 do mesmo artigo, sem repetir os do Guia). Nas fontes: "🗂️ Indicada no Índice das Publicações: assunto › subtópico"; a IA dá preferência a elas e às do Guia.
+- Assistente de pesquisas: o nome das publicações vem da lista oficial de abreviações do wol (102 siglas, lida e guardada por 24 h; ex.: w = A Sentinela (edição de estudo), scl = Princípios Bíblicos para a Vida Cristã), com a lista interna como reserva.
+
 ## 6.10.12
 
 - Assistente de pesquisas: o Guia de Pesquisa para Testemunhas de Jeová (o atualizado, do jw.org) entrou como fonte primária. O servidor acha os tópicos do assunto (até 2, ex.: "Ansiedade", "Perdão (perdoar outros)") e lê no wol os artigos que o Guia indica (até 8, intercalando os tópicos, na ordem do Guia, no máximo 3 por subtítulo): a faixa de parágrafos que o Guia marca, os parágrafos pelo número da citação ("pág. 15 par. 7") ou, sem isso, o parágrafo com mais palavras da busca. Fora os vídeos, as ligações "Veja", a apostila e as publicações de antes de 1990. Nas fontes, essas matérias levam a marca "📑 Indicada no Guia de Pesquisa: tópico › subtítulo", e a IA dá preferência a elas. Lista de tópicos e páginas guardadas por 24 h na instância.

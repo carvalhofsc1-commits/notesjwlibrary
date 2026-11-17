@@ -2429,3 +2429,116 @@ export async function faixaDoDocumento(docId, de, ate, timeoutMs, maxCaracteres 
     url: `${url}#h=${de}:0-${ate + 1}:0`,
   };
 }
+
+// ---------- Siglas das publicações (lista oficial do wol) ----------
+// A tabela "Abreviações das publicações" do Índice das Publicações: sigla -> nome. Lida no wol e guardada por 24 h na instância.
+const URL_SIGLAS = `${BASE}/pt/wol/d/r5/lp-t/1200270068`;
+let siglasLidas = null; // { quando, mapa: Map(sigla -> nome) }
+
+export async function siglasDasPublicacoes(timeoutMs) {
+  if (siglasLidas && Date.now() - siglasLidas.quando < VALIDADE_GUIA_MS) return siglasLidas.mapa;
+  const html = await baixar(URL_SIGLAS, timeoutMs);
+  const mapa = new Map();
+  for (const [, linha] of html.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/g)) {
+    const celulas = [...linha.matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/g)].map((m) => textoDe(m[1]).replace(/ /g, " "));
+    if (celulas.length < 3 || !/^[a-z][a-z0-9-]*$/i.test(celulas[0])) continue;
+    const [sigla, curto, completo, tipo = ""] = celulas;
+    // Periódicos: o nome curto ("A Sentinela (edição de estudo)"); os outros: o nome completo, sem os anos das edições.
+    const semAnos = completo.replace(/\s*\([^)]*\d{4}[^)]*\)\s*$/, "").trim();
+    const nome = /peri[óo]dico/i.test(tipo) && curto && curto !== "—" ? curto : semAnos || curto;
+    if (nome && nome !== "—") mapa.set(sigla.toLowerCase(), nome);
+  }
+  if (mapa.size) siglasLidas = { quando: Date.now(), mapa };
+  return mapa;
+}
+
+// As siglas possíveis de uma citação: "w22.04" -> "w", "wp23.1" -> "wp", "it-1 145" -> "it-1", "yp1" -> "yp1", "g 3/12" -> "g".
+export function siglasPossiveis(codigo) {
+  const primeira = String(codigo || "").trim().split(/\s+/)[0].toLowerCase();
+  const opcoes = [primeira, primeira.replace(/[.\d]+$/, ""), primeira.replace(/\d.*$/, "")];
+  return [...new Set(opcoes.filter(Boolean))];
+}
+
+// ---------- Índice das Publicações da Torre de Vigia 1991-2026: índice de assuntos ----------
+// Uma página por letra (lista dos assuntos, cada um com o seu documento) e um documento por assunto, com subtópicos (parágrafos "su" e,
+// dentro deles, "sv") e as citações (links /wol/pc/ que levam ao trecho exato). O servidor acha o assunto, escolhe as citações dos
+// subtópicos que mais combinam com a pesquisa (as mais recentes primeiro) e lê os parágrafos de cada uma.
+const URL_INDICE = `${BASE}/pt/wol/library/r5/lp-t/todas-as-publica%C3%A7%C3%B5es/%C3%ADndice/%C3%ADndice-de-publica%C3%A7%C3%B5es/%C3%ADndice-1991-2026/%C3%ADndice-de-assuntos`;
+const letrasIndice = new Map(); // letra -> { quando, lista: [{ nome, docId, palavras }] }
+const assuntosIndice = new Map(); // docId -> { quando, entradas }
+
+async function assuntosDaLetra(letra, timeoutMs) {
+  const guardado = letrasIndice.get(letra);
+  if (guardado && Date.now() - guardado.quando < VALIDADE_GUIA_MS) return guardado.lista;
+  const html = await baixar(`${URL_INDICE}/${letra}`, timeoutMs);
+  const lista = [];
+  const vistos = new Set();
+  for (const m of html.matchAll(/<a\b[^>]*href="\/pt\/wol\/d\/r5\/lp-t\/(\d+)"[^>]*>([\s\S]*?)<\/a>/g)) {
+    const nome = textoDe(m[2]);
+    if (!nome || vistos.has(m[1])) continue;
+    vistos.add(m[1]);
+    lista.push({ nome, docId: m[1], palavras: [...new Set(raizes(nome))] });
+  }
+  if (lista.length) {
+    letrasIndice.set(letra, { quando: Date.now(), lista });
+    if (letrasIndice.size > 26) letrasIndice.delete(letrasIndice.keys().next().value);
+  }
+  return lista;
+}
+
+// Os assuntos do índice que combinam com os textos (até "maximo"), como topicosDoGuiaPara. Só lê as letras iniciais das palavras da consulta.
+export async function assuntosDoIndicePara(textos, timeoutMs, maximo = 2) {
+  const palavras = textos.flatMap((t) => semAcento(String(t || "")).replace(/[^a-z0-9]+/g, " ").split(" ")).filter((w) => w.length >= 4 && !PALAVRAS_FRACAS.has(w));
+  const consulta = new Set(palavras.map((w) => w.slice(0, 6)));
+  const letras = [...new Set(palavras.map((w) => w[0]).filter((l) => /[a-z]/.test(l)))].slice(0, 4);
+  if (!consulta.size || !letras.length) return [];
+  const listas = await Promise.all(letras.map((l) => assuntosDaLetra(l, timeoutMs).catch(() => [])));
+  return listas
+    .flat()
+    .map((t) => {
+      const achadas = t.palavras.filter((w) => consulta.has(w)).length;
+      return { t, achadas, parte: t.palavras.length ? achadas / t.palavras.length : 0 };
+    })
+    .filter((x) => x.achadas && x.parte >= 0.5)
+    .sort((a, b) => b.parte - a.parte || b.achadas - a.achadas || a.t.nome.length - b.t.nome.length)
+    .slice(0, maximo)
+    .map((x) => ({ nome: x.t.nome, docId: x.t.docId }));
+}
+
+// Os subtópicos de um assunto: [{ rotulo, citacoes: [{ caminho, citacao, ano }] }]. Um "sv" fica com o rótulo do "su" acima ("casos reais ›
+// crise econômica"). Fora a apostila Vida e Ministério e as publicações de antes de 1990.
+export async function entradasDoIndice(assunto, timeoutMs) {
+  const guardado = assuntosIndice.get(assunto.docId);
+  if (guardado && Date.now() - guardado.quando < VALIDADE_GUIA_MS) return guardado.entradas;
+  const html = await baixar(`${BASE}/pt/wol/d/r5/lp-t/${assunto.docId}`, timeoutMs);
+  const entradas = [];
+  let pai = "";
+  for (const [, classe, conteudo] of html.matchAll(/<p\b[^>]*class="(su|sv|sw)"[^>]*>([\s\S]*?)<\/p>/g)) {
+    const rotuloProprio = textoDe(conteudo.replace(/<a\b[\s\S]*$/, "")).replace(/:\s*$/, "").trim();
+    if (classe === "su") pai = rotuloProprio;
+    const rotulo = classe === "su" ? rotuloProprio : [pai, rotuloProprio].filter(Boolean).join(" › ");
+    const citacoes = [...conteudo.matchAll(/<a\b[^>]*href="(\/pt\/wol\/pc\/[^"]+)"[^>]*>([\s\S]*?)<\/a>/g)]
+      .map(([, caminho, rot]) => {
+        const citacao = textoDe(rot).replace(/[;,]\s*$/, "").trim();
+        const aa = (citacao.match(/^[a-z-]+?(\d{2})\b/i) || citacao.match(/^g\s+\d{1,2}\/(\d{2})\b/i) || [])[1];
+        return { caminho, citacao, ano: aa ? (Number(aa) > 50 ? 1900 : 2000) + Number(aa) : null };
+      })
+      // "w15 1/7 3, 6-7" vem em dois links: o segundo ("6-7") continua o primeiro e herda a publicação e o ano.
+      .map((c, i, todas) => (/^[\d\s,–-]+$/.test(c.citacao) && i > 0 ? { ...c, citacao: todas[i - 1].citacao.replace(/\s[\d\s,–-]+$/, "") + " " + c.citacao, ano: todas[i - 1].ano } : c))
+      .filter((c) => !/^mwb/i.test(c.citacao) && !(c.ano && c.ano < 1990));
+    if (citacoes.length) entradas.push({ rotulo, citacoes });
+  }
+  assuntosIndice.set(assunto.docId, { quando: Date.now(), entradas });
+  if (assuntosIndice.size > 80) assuntosIndice.delete(assuntosIndice.keys().next().value);
+  return entradas;
+}
+
+// O trecho de uma citação do índice (/wol/pc/…): o artigo e a faixa de parágrafos do redirecionamento (no máximo 7). null = não deu para ler.
+export async function trechoDaCitacaoDoIndice(caminho, timeoutMs) {
+  const destino = await resolverCitacao(caminho, timeoutMs);
+  if (!destino || destino.de === null) return null;
+  const docId = (destino.url.match(/\/lp-t\/(\d+)/) || [])[1];
+  if (!docId) return null;
+  const lido = await faixaDoDocumento(docId, destino.de, Math.min(destino.ate, destino.de + 6), timeoutMs, 1800);
+  return lido ? { ...lido, docId } : null;
+}

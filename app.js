@@ -7876,7 +7876,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.12'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.13'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -31244,12 +31244,13 @@ function saveTemplatesToStorage() {
             });
             li.insertBefore(links, li.querySelector('.pesq-fonte-texto'));
           }
-          if (f.guia) {
-            const guia = document.createElement('small');
-            guia.className = 'pesq-fonte-guia';
-            guia.textContent = '📑 Indicada no Guia de Pesquisa: ' + f.guia;
-            li.appendChild(guia);
-          }
+          [[f.guia, '📑 Indicada no Guia de Pesquisa: '], [f.indice, '🗂️ Indicada no Índice das Publicações: ']].forEach(([valor, rotulo]) => {
+            if (!valor) return;
+            const marca = document.createElement('small');
+            marca.className = 'pesq-fonte-guia';
+            marca.textContent = rotulo + valor;
+            li.appendChild(marca);
+          });
           lista.appendChild(li);
         });
         $('pesquisaResFontesBloco').hidden = !lista.children.length;

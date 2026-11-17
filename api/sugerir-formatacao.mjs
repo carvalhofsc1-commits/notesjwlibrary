@@ -44,6 +44,11 @@ import {
   entradasDoGuia,
   faixaDoDocumento,
   paragrafosPorNumero,
+  assuntosDoIndicePara,
+  entradasDoIndice,
+  trechoDaCitacaoDoIndice,
+  siglasDasPublicacoes,
+  siglasPossiveis,
   referenciasDeTesouros,
   referenciasDoDiscursoCurto,
   semanasDosEstudos,
@@ -1841,10 +1846,53 @@ async function coletarPesquisa(res, body, P) {
       }
     })();
 
+    // Índice das Publicações 1991-2026 (índice de assuntos): os assuntos da pesquisa (até 2) e, deles, até 8 citações dos subtópicos que mais
+    // combinam com o assunto, o contexto e as buscas (no empate, as mais recentes), sem repetir artigos do Guia. O Perspicaz (it-) já vem à parte.
+    const doIndice = await (async () => {
+      try {
+        const textosConsulta = [assunto, contexto, ...consultas];
+        const assuntos = await assuntosDoIndicePara(textosConsulta, 9000, 2);
+        const listasIndice = await Promise.all(assuntos.map((a) => entradasDoIndice(a, 9000).then((e) => e.map((x) => ({ ...x, assunto: a.nome }))).catch(() => [])));
+        const termos = new Set(textosConsulta.flatMap((t) => palavrasDe(t).filter((w) => w.length >= 4).map((w) => w.slice(0, 6))));
+        const candidatas = [];
+        for (const entrada of listasIndice.flat()) {
+          const casa = palavrasDe(entrada.rotulo).filter((w) => w.length >= 4 && termos.has(w.slice(0, 6))).length;
+          const experiencia = /^casos reais|hist[óo]ria de vida/i.test(entrada.rotulo) ? -1 : 0;
+          entrada.citacoes.forEach((c, i) => {
+            if (/^it-\d/i.test(c.citacao)) return;
+            candidatas.push({ ...c, assunto: entrada.assunto, rotulo: entrada.rotulo, pontos: casa * 30 + experiencia * 10 + (c.ano ? (c.ano - 1990) / 2 : 6) - i * 0.5 });
+          });
+        }
+        candidatas.sort((a, b) => b.pontos - a.pontos);
+        const escolhidas = [];
+        const chaves = new Set();
+        for (const c of candidatas) {
+          const chave = c.citacao.split(/\s+/).slice(0, 2).join(" "); // mesma edição (ex.: "w15 1/7") só uma vez
+          if (chaves.has(chave)) continue;
+          chaves.add(chave);
+          escolhidas.push(c);
+          if (escolhidas.length >= 10) break;
+        }
+        const docsGuia = new Set(doGuia.lidas.map(({ e }) => e.docId));
+        const porDoc = new Map(); // no máximo 2 trechos do mesmo artigo
+        const lidas = (await Promise.all(escolhidas.map((c) => trechoDaCitacaoDoIndice(c.caminho, 9000).then((p) => (p ? { c, p } : null)).catch(() => null))))
+          .filter((x) => {
+            if (!x || docsGuia.has(x.p.docId)) return false;
+            porDoc.set(x.p.docId, (porDoc.get(x.p.docId) || 0) + 1);
+            return porDoc.get(x.p.docId) <= 2;
+          })
+          .slice(0, 8);
+        return { assuntos: assuntos.map((a) => a.nome), lidas };
+      } catch (e) {
+        console.error("Pesquisa: Índice das Publicações indisponível", e?.message);
+        return { assuntos: [], lidas: [] };
+      }
+    })();
+
     // wol.jw.org: os achados de cada busca, intercalados (o 1º de cada, depois o 2º…), sem repetir o documento; até 14 matérias.
     const listas = await Promise.all(consultas.map((q) => pesquisarParagrafosNoWol(q, 9000, 6).catch(() => [])));
     const achados = [];
-    const vistos = new Set(doGuia.lidas.map(({ e }) => e.docId));
+    const vistos = new Set([...doGuia.lidas.map(({ e }) => e.docId), ...doIndice.lidas.map(({ p }) => p.docId)]);
     for (let i = 0; i < 6; i++) {
       for (const lista of listas) {
         const a = lista[i];
@@ -1870,9 +1918,15 @@ async function coletarPesquisa(res, body, P) {
     for (const t of trechosLivros) {
       fontes.push({ tipo: "livro", publicacao: t.livro, codigo: "", ano: null, titulo: "", pagina: null, paragrafos: "", texto: t.trecho, url: "" });
     }
+    const siglas = await siglasDasPublicacoes(6000).catch(() => new Map());
+    const nomeDaSigla = (codigo) => siglasPossiveis(codigo).map((s) => siglas.get(s)).find(Boolean) || publicacaoDoCodigo(codigo);
     for (const { e, p } of doGuia.lidas) {
       const codigo = e.codigo.replace(/\s*(?:p[áa]gs?|pars?)\.\s.*$/i, "").trim(); // "w19.11 pág. 15 par. 7" -> "w19.11" (página e parágrafo vêm à parte)
-      fontes.push({ tipo: "wol", guia: [e.topico, e.subtitulo].filter(Boolean).join(" › "), publicacao: publicacaoDoCodigo(codigo), codigo, ano: e.ano, titulo: p.titulo || e.titulo, pagina: p.pagina, paragrafos: p.paragrafos, texto: p.texto, url: p.url, docId: e.docId, pid: p.pid });
+      fontes.push({ tipo: "wol", guia: [e.topico, e.subtitulo].filter(Boolean).join(" › "), publicacao: nomeDaSigla(codigo), codigo, ano: e.ano, titulo: p.titulo || e.titulo, pagina: p.pagina, paragrafos: p.paragrafos, texto: p.texto, url: p.url, docId: e.docId, pid: p.pid });
+    }
+    for (const { c, p } of doIndice.lidas) {
+      const codigo = c.citacao.replace(/\s+[\d\s,–-]+$/, "").trim(); // "w19.11 15" -> "w19.11" (a página vem à parte)
+      fontes.push({ tipo: "wol", indice: [c.assunto, c.rotulo].filter(Boolean).join(" › "), publicacao: nomeDaSigla(codigo), codigo, ano: c.ano, titulo: p.titulo, pagina: p.pagina, paragrafos: p.paragrafos, texto: p.texto, url: p.url, docId: p.docId, pid: p.pid });
     }
     for (const item of lidos) {
       if (!item) continue;
@@ -1880,7 +1934,7 @@ async function coletarPesquisa(res, body, P) {
       fontes.push({ tipo: "wol", publicacao: a.publicacao, codigo: a.codigo, ano: a.ano, titulo: p.titulo || a.titulo, pagina: p.pagina, paragrafos: p.paragrafos, texto: p.texto, url: p.url, docId: a.docId, pid: p.pid });
     }
     fontes.forEach((f, i) => (f.id = "F" + (i + 1)));
-    console.log("Pesquisa (coletar):", JSON.stringify({ modelo: P.ia.modelo, consultas, verbetes, guia: doGuia.topicos, doGuia: doGuia.lidas.length, wol: lidos.filter(Boolean).length, perspicaz: vistosVerbete.size, livros: trechosLivros.length }));
+    console.log("Pesquisa (coletar):", JSON.stringify({ modelo: P.ia.modelo, consultas, verbetes, guia: doGuia.topicos, doGuia: doGuia.lidas.length, indice: doIndice.assuntos, doIndice: doIndice.lidas.length, wol: lidos.filter(Boolean).length, perspicaz: vistosVerbete.size, livros: trechosLivros.length }));
     if (!fontes.length) return erro(res, 404, "Não encontrei matérias sobre esse assunto no wol.jw.org nem nos arquivos. Tente outras palavras.");
     return res.status(200).json({ consultas, verbetes, fontes });
   } catch (e) {
@@ -1909,6 +1963,7 @@ function fontesDaPesquisa(lista) {
       pagina: Number.isInteger(f.pagina) && f.pagina > 0 && f.pagina < 5000 ? f.pagina : null,
       paragrafos: limparLinha(String(f.paragrafos || ""), 20),
       guia: limparLinha(String(f.guia || ""), 160),
+      indice: limparLinha(String(f.indice || ""), 200),
       texto,
       url,
     });
@@ -1919,7 +1974,7 @@ function fontesDaPesquisa(lista) {
 function cabecalhoDaFonte(f) {
   if (f.tipo === "perspicaz") return `${f.publicacao}${f.codigo ? ` (${f.codigo})` : ""}, verbete "${f.titulo}"`;
   if (f.tipo === "livro") return `Livro "${f.publicacao}"`;
-  return [f.publicacao + (f.codigo ? ` (${f.codigo})` : ""), f.ano ? String(f.ano) : "", f.titulo ? `"${f.titulo}"` : "", f.pagina ? `p. ${f.pagina}` : "", f.paragrafos ? `par. ${f.paragrafos}` : "", f.guia ? `indicada no Guia de Pesquisa (tópico ${f.guia})` : ""].filter(Boolean).join(", ");
+  return [f.publicacao + (f.codigo ? ` (${f.codigo})` : ""), f.ano ? String(f.ano) : "", f.titulo ? `"${f.titulo}"` : "", f.pagina ? `p. ${f.pagina}` : "", f.paragrafos ? `par. ${f.paragrafos}` : "", f.guia ? `indicada no Guia de Pesquisa (tópico ${f.guia})` : "", f.indice ? `indicada no Índice das Publicações (assunto ${f.indice})` : ""].filter(Boolean).join(", ");
 }
 
 async function responderPesquisa(res, body, P) {
