@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.33
+
+- Assistente de pesquisas, aba Vídeo: ao tocar em "✅ Usar este vídeo", a lista de vídeos se fecha. O botão largo "↩️ Escolher outro vídeo da lista" virou o ícone 🎞️ à direita do campo do link (aparece quando há uma lista guardada), que abre a lista de novo (com o vídeo em uso marcado) e, tocado outra vez, a fecha. Uma busca nova mostra a lista aberta.
+
 ## 6.10.32
 
 - Assistente de pesquisas, "Procurar um vídeo por assunto": campo "Seção" com as seções e subseções de vídeos do jw.org e o número de vídeos de cada uma (lidas do catálogo ao abrir a aba Vídeo e guardadas no aparelho por 24 h; tarefa pesquisa-videos-secoes, sem IA). Com uma seção escolhida, a busca fica só nos vídeos dela.

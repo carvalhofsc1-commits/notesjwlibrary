@@ -2679,8 +2679,10 @@
           <ul id="pesquisaVideosLista" class="pesq-videos-lista"></ul>
         </div>
         <label for="pesquisaVideoLink" class="pesq-rotulo">Link do vídeo do jw.org</label>
-        <input id="pesquisaVideoLink" class="pesq-campo" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Cole o link (no vídeo: Compartilhar → Copiar link)">
-        <button id="pesquisaVideosVoltarBtn" class="secondary pesq-fino pesq-videos-voltar" type="button" hidden>↩️ Escolher outro vídeo da lista</button>
+        <div class="pesq-ref-linha">
+          <input id="pesquisaVideoLink" class="pesq-campo" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Cole o link (no vídeo: Compartilhar → Copiar link)">
+          <button id="pesquisaVideosVoltarBtn" class="secondary pesq-fino pesq-icone" type="button" title="Escolher outro vídeo da lista" aria-label="Escolher outro vídeo da lista" aria-expanded="false" hidden>🎞️</button>
+        </div>
         <label for="pesquisaVideoContexto" class="pesq-rotulo">O que você quer saber do vídeo? <span class="pesq-opcional">(opcional)</span></label>
         <textarea id="pesquisaVideoContexto" class="pesq-campo" rows="1" maxlength="800" spellcheck="true" placeholder="Ex.: que conselhos o vídeo dá para ajudar um inativo"></textarea>
       </div>

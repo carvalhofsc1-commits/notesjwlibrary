@@ -16023,3 +16023,7 @@ a.pesq-videos-jw { display: flex; width: 100%; box-sizing: border-box; margin: 0
 .pesq-opcao-falas input:disabled + * , .pesq-opcao-falas:has(input:disabled) { opacity: .7; }
 .pesq-video-fala { margin: 4px 0 0; font-size: .82rem; line-height: 1.45; padding-left: 8px; border-left: 2px solid var(--pesq-cor, #c2410c); }
 .pesq-video-fala b { color: var(--pesq-cor, #c2410c); }
+/* Campo do link do vídeo com o ícone 🎞️ à direita (abre e fecha a lista de vídeos); a lista fechada some. */
+.pesq-ref-linha > .pesq-campo { flex: 1 1 auto; min-width: 0; }
+.pesq-ref-linha > #pesquisaVideosVoltarBtn[hidden], .pesq-videos-lista[hidden] { display: none; }
+#pesquisaVideosVoltarBtn[aria-expanded="true"] { background: color-mix(in srgb, var(--pesq-cor, #c2410c) 15%, var(--neutral)); }

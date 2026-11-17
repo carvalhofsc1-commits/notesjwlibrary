@@ -7876,7 +7876,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.32'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.33'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -31776,11 +31776,16 @@ function saveTemplatesToStorage() {
       function videosGuardar() {
         try { localStorage.setItem(VIDEOS_CHAVE, JSON.stringify(videosBusca)); } catch (e) { /* sem armazenamento: vale só nesta sessão */ }
       }
+      // A lista fecha ao escolher um vídeo; o ícone 🎞️ à direita do campo do link (com uma lista guardada) abre e fecha a lista.
+      let listaFechada = false;
       function videosVoltarPintar() {
         const n = videosBusca && videosBusca.videos ? videosBusca.videos.length : 0;
         const voltar = $('pesquisaVideosVoltarBtn');
-        voltar.hidden = !n || !$('pesquisaVideoLink').value.trim(); // aparece depois de escolher um vídeo da lista
-        voltar.textContent = '↩️ Escolher outro vídeo da lista “' + (videosBusca ? videosBusca.assunto : '') + '” (' + n + ')';
+        voltar.hidden = !n;
+        voltar.title = (listaFechada ? 'Escolher outro vídeo da lista' : 'Fechar a lista') + ' “' + (videosBusca ? videosBusca.assunto : '') + '” (' + n + (n === 1 ? ' vídeo)' : ' vídeos)');
+        voltar.setAttribute('aria-label', voltar.title);
+        voltar.setAttribute('aria-expanded', String(!listaFechada));
+        $('pesquisaVideosLista').hidden = listaFechada;
       }
       function videosPintar() {
         const lista = $('pesquisaVideosLista');
@@ -31819,6 +31824,7 @@ function saveTemplatesToStorage() {
           usar.textContent = usando ? '✅ Em uso' : '✅ Usar este vídeo';
           usar.addEventListener('click', () => {
             $('pesquisaVideoLink').value = v.link;
+            listaFechada = true; // escolhido o vídeo, a lista fecha (o ícone 🎞️ a abre de novo)
             videosPintar();
             videosVoltarPintar();
             dizer(statusEl, '🎬 Vídeo escolhido: ' + v.titulo + '. Toque em "Transcrever e resumir o vídeo".');
@@ -31865,6 +31871,7 @@ function saveTemplatesToStorage() {
           const comFala = videos.filter(v => (v.trechos || []).length).length;
           dizer(status, (videos.length === 1 ? '1 vídeo encontrado' : videos.length + ' vídeos encontrados') + (falas ? ' (' + comFala + ' com o assunto no que é falado)' : '') + '.');
           videosBusca = { assunto, videos, secao, falas };
+          listaFechada = false; // busca nova: a lista aparece
           videosGuardar();
           videosPintar();
           videosVoltarPintar();
@@ -31876,10 +31883,12 @@ function saveTemplatesToStorage() {
       }
       $('pesquisaVideosBtn').addEventListener('click', sugerirVideos);
       $('pesquisaVideosAssunto').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sugerirVideos(); } });
-      // A lista fica sempre à vista (acima do campo do link): o botão só rola a tela de volta até ela.
+      // O ícone 🎞️ abre a lista (e rola até ela) ou a fecha.
       $('pesquisaVideosVoltarBtn').addEventListener('click', () => {
+        listaFechada = !listaFechada;
         videosPintar();
-        $('pesquisaVideosBusca').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        videosVoltarPintar();
+        if (!listaFechada) $('pesquisaVideosBusca').scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
       // O link mudou à mão: a marca "Em uso" e o botão de voltar acompanham.
       $('pesquisaVideoLink').addEventListener('input', () => { if (videosBusca) { videosPintar(); videosVoltarPintar(); } });
