@@ -7876,7 +7876,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.17'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.18'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -19119,7 +19119,9 @@ function saveTemplatesToStorage() {
         const doc = visorModo === 'texto' ? visorDoc : null;
         const nome = doc ? doc.nome : docxNomeDoEsboco(visorEsboco);
         const titulo = nome.replace(/\.docx$/, '');
+        // doc.pesquisa: a resposta do Assistente de pesquisas (o corpo do arquivo vem de lá, com o tamanho de letra escolhido aqui).
         const blob = !doc ? await docxGerarEsboco(visorEsboco, visorZoom, titulo)
+          : doc.pesquisa ? await docxPacote(window.pesquisaDocxCorpo(doc.pesquisa, visorZoom), titulo)
           : doc.modelo ? await docxGerarLeitura(doc.modelo, titulo, visorZoom) : await docxGerar(doc.texto, titulo, doc.acentos, visorZoom);
         const mensagem = await docxEntregar(blob, nome, compartilhar);
         visorDizer(mensagem);
@@ -31770,14 +31772,18 @@ function saveTemplatesToStorage() {
 
       // 📝 Word: a pesquisa num arquivo .docx com negrito e itálico de verdade (sem letras Unicode), os números das fontes em sobrescrito, a data, o
       // agente de IA e, no topo, o nome do app pequeno e discreto, separado por uma linha (só no arquivo; na tela ele não aparece).
-      function docxDaPesquisa(pesquisa) {
+      const docxRunsBase = (texto, f, sz, cor) => docxRuns(texto, f, sz, cor); // o docxRuns do app (dentro de docxDaPesquisa ele ganha a escala)
+      // escala: o tamanho da letra escolhido na prévia (A− / A+); 1 = 11 pt no corpo do texto.
+      function docxDaPesquisa(pesquisa, escala = 1) {
         const r = pesquisa.resultado;
         const numeros = numerosDe(pesquisa);
         const cinza = '6B7280';
         const corRef = '2563EB';
+        const tam = sz => Math.max(12, Math.round(sz * escala));
+        const docxRuns = (texto, f, sz, cor) => docxRunsBase(texto, f, sz ? tam(sz) : sz, cor);
         const p = (props, runs) => '<w:p>' + (props ? '<w:pPr>' + props + '</w:pPr>' : '') + runs + '</w:p>';
         const espaco = (antes, depois) => '<w:spacing w:before="' + antes + '" w:after="' + depois + '" w:line="300" w:lineRule="auto"/>';
-        const ref = n => '<w:r><w:rPr><w:b/><w:color w:val="' + corRef + '"/><w:sz w:val="16"/><w:vertAlign w:val="superscript"/></w:rPr><w:t>' + n + '</w:t></w:r>';
+        const ref = n => '<w:r><w:rPr><w:b/><w:color w:val="' + corRef + '"/><w:sz w:val="' + tam(16) + '"/><w:vertAlign w:val="superscript"/></w:rPr><w:t>' + n + '</w:t></w:r>';
         // **negrito**, __itálico__ e [F3] (vira o número da fonte em sobrescrito) em trechos do Word.
         const runsDoTexto = (texto, base, sz) => String(texto || '').split(/(\*\*[^*]+?\*\*|__[^_]+?__|\s*\[\s*F\d{1,2}(?:\s*[,;]\s*F?\d{1,2})*\s*\])/i).map(parte => {
           if (!parte) return '';
@@ -31830,24 +31836,67 @@ function saveTemplatesToStorage() {
         }
         return partes.join('');
       }
-      $('pesquisaWordBtn').addEventListener('click', async () => {
-        if (!atual) return;
-        const botao = $('pesquisaWordBtn');
-        botao.disabled = true;
-        try {
-          const titulo = atual.resultado.titulo || atual.assunto;
-          const blob = await docxPacote(docxDaPesquisa(atual), titulo);
-          const nome = 'Pesquisa - ' + (removeUnicodeFormatting(titulo).replace(/(\d):(\d)/g, '$1.$2').replace(DOCX_EMOJI, ' ').replace(/[\\/:*?"<>|“”‘’]/g, '').replace(/\s+/g, ' ').trim().slice(0, 80) || 'NoteStyle') + '.docx';
-          // No celular, abre o compartilhamento (WhatsApp, e-mail, Arquivos…); no computador, baixa o arquivo.
-          let compartilhar = false;
-          try { compartilhar = Boolean(navigator.canShare && navigator.canShare({ files: [new File(['x'], 'x.docx', { type: blob.type })] }) && /android|iphone|ipad|ipod/i.test(navigator.userAgent)); } catch (e) { /* sem compartilhamento */ }
-          const msg = await docxEntregar(blob, nome, compartilhar);
-          if (msg) dizer(avisoEl, msg);
-        } catch (e) {
-          dizer(avisoEl, 'Não consegui gerar o arquivo Word agora.', { aviso: true });
-        } finally {
-          botao.disabled = false;
+      // O visor (a página em tela cheia dos esboços) chama esta função para gerar o arquivo com o tamanho de letra escolhido.
+      window.pesquisaDocxCorpo = docxDaPesquisa;
+
+      // A prévia da página no padrão do Word (a mesma página em tela cheia dos esboços): o que o arquivo vai ter, na mesma ordem e com as
+      // proporções do arquivo (o tamanho segue A− e A+). Exportar e Compartilhar ficam no alto da página.
+      function previaDaPesquisa(pesquisa) {
+        const r = pesquisa.resultado;
+        const numeros = numerosDe(pesquisa);
+        const raiz = document.createDocumentFragment();
+        const dica = document.createElement('p');
+        dica.className = 'visor-dica';
+        dica.textContent = 'Prévia aproximada: no Word a página é A4, com margens de 1 cm, e as linhas podem quebrar em outros pontos. Use A− e A+ para o tamanho da letra e finalize em Exportar para Word.';
+        const folha = document.createElement('article');
+        folha.className = 'visor-folha doc pq-doc';
+        const html = [];
+        html.push('<p class="pq-doc-marca">NoteStyle</p>');
+        html.push('<p class="pq-doc-titulo">' + escapar(r.titulo || pesquisa.assunto) + '</p>');
+        html.push('<p class="pq-doc-meta">' + escapar(['Pesquisa feita em ' + dataPorExtenso(r.data), r.modelo ? 'Agente de IA: ' + r.modelo : ''].filter(Boolean).join(' · ')) + '</p>');
+        const b = pesquisa.biblico;
+        const linhaMeta = (rotulo, valor) => '<p class="pq-doc-meta"><b>' + escapar(rotulo) + '</b> ' + escapar(valor) + '</p>';
+        if (b) {
+          html.push(linhaMeta('Texto bíblico:', b.referencia));
+          if (b.palavras && b.palavras.length) html.push(linhaMeta('Palavras-chave:', b.palavras.join('; ')));
+          if (pesquisa.contexto) html.push(linhaMeta('Contexto:', pesquisa.contexto));
+          html.push('<div class="pq-doc-faixa">' + htmlDosVersiculos(b) + '</div>');
+        } else {
+          html.push(linhaMeta('Assunto:', pesquisa.assunto));
+          if (pesquisa.contexto) html.push(linhaMeta('Contexto:', pesquisa.contexto));
         }
+        const comRef = t => htmlDoTexto(t, numeros).replace(/<a href="#" data-pesq-fonte="\d+">(\d+)<\/a>/g, '$1');
+        if (r.introducao) html.push('<p class="pq-doc-intro">' + comRef(r.introducao) + '</p>');
+        (r.secoes || []).forEach(s => {
+          html.push('<p class="pq-doc-secao">' + (s.emoji ? escapar(s.emoji) + ' ' : '') + escapar(s.titulo) + '</p>');
+          (s.paragrafos || []).forEach(t => html.push('<p class="pq-doc-p">' + comRef(t) + '</p>'));
+        });
+        if (r.conclusao) html.push('<p class="pq-doc-faixa pq-doc-conclusao">' + comRef(r.conclusao) + '</p>');
+        const porId = new Map((pesquisa.fontes || []).map(f => [f.id, f]));
+        const fontes = [...numeros.keys()].map(id => porId.get(id)).filter(Boolean);
+        if (fontes.length) {
+          html.push('<p class="pq-doc-fontes-titulo">📚 Fontes</p>');
+          fontes.forEach((f, i) => {
+            const d = descricaoDaFonte(f);
+            const marcas = [f.guia ? 'indicada no Guia de Pesquisa: ' + f.guia : '', f.indice ? 'indicada no Índice das Publicações: ' + f.indice : '', f.tipo === 'web' ? 'fonte externa (internet)' : ''].filter(Boolean);
+            html.push('<p class="pq-doc-fonte"><b>' + (i + 1) + '.</b> ' + escapar(d.texto) + (marcas.length ? ' <i class="pq-doc-cinza">— ' + escapar(marcas.join(' — ')) + '</i>' : '') + (d.wol ? '<br><span class="pq-doc-url">' + escapar(d.wol) + '</span>' : '') + '</p>');
+          });
+        }
+        folha.innerHTML = html.join('');
+        raiz.append(dica, folha);
+        return raiz;
+      }
+
+      const nomeDoWord = pesquisa => 'Pesquisa - ' + (removeUnicodeFormatting(pesquisa.resultado.titulo || pesquisa.assunto).replace(/(\d):(\d)/g, '$1.$2').replace(DOCX_EMOJI, ' ').replace(/[\\/:*?"<>|“”‘’]/g, '').replace(/\s+/g, ' ').trim().slice(0, 80) || 'NoteStyle') + '.docx';
+      // 📝 Word: abre a prévia (como nos esboços); de lá, Exportar para Word ou Compartilhar geram o arquivo.
+      $('pesquisaWordBtn').addEventListener('click', () => {
+        if (!atual || !visor.hidden) return;
+        visorAbrir('Prévia do documento Word', $('pesquisaWordBtn'), 'texto');
+        visorDoc = { pesquisa: atual, nome: nomeDoWord(atual), externo: true };
+        visorBotoesDeExportar();
+        visorTitulo.textContent = 'Prévia do documento Word · ' + visorDoc.nome.replace(/\.docx$/, '');
+        visorCorpo.replaceChildren(previaDaPesquisa(atual));
+        visorCorpo.scrollTop = 0;
       });
 
       $('pesquisaLimparBtn').addEventListener('click', () => {

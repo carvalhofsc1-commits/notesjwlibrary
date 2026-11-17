@@ -15932,3 +15932,21 @@ a.pesq-link-botao {
 }
 .pesq-escolha-mais + .pesq-escolha-link { margin-left: 0; }
 .pesq-escolha .pesq-acoes { margin-top: 10px; }
+/* Prévia do Word da pesquisa (no visor dos esboços): as proporções do arquivo, em relação aos 11 pt do corpo (o tamanho segue A− e A+). */
+.pq-doc p { margin: 0 0 .55em; overflow-wrap: anywhere; }
+.pq-doc .pq-doc-marca { font-size: .727em; font-weight: 700; color: #9ca3af; padding-bottom: .35em; border-bottom: 1px solid #d1d5db; margin-bottom: 1em; }
+.pq-doc .pq-doc-titulo { font-size: 1.636em; font-weight: 700; line-height: 1.2; margin-bottom: .25em; }
+.pq-doc .pq-doc-meta { font-size: .818em; color: #6b7280; margin-bottom: .2em; }
+.pq-doc .pq-doc-faixa { border-left: 3px solid #2563eb; padding-left: .7em; margin: .8em 0 1em; }
+.pq-doc .pq-doc-faixa p { margin: 0 0 .3em; font-style: italic; }
+.pq-doc .pq-doc-faixa p strong { font-style: normal; }
+.pq-doc .pq-doc-intro { font-size: 1.09em; margin-top: .8em; }
+.pq-doc .pq-doc-secao { font-size: 1.27em; font-weight: 700; margin: 1em 0 .4em; }
+.pq-doc .pq-doc-conclusao { font-style: italic; }
+.pq-doc .pq-doc-fontes-titulo { font-size: 1.09em; font-weight: 700; border-top: 1px solid #d1d5db; padding-top: .5em; margin-top: 1.4em; }
+.pq-doc .pq-doc-fonte { font-size: .818em; padding-left: 1.2em; text-indent: -1.2em; margin-bottom: .35em; }
+.pq-doc .pq-doc-cinza { color: #6b7280; }
+.pq-doc .pq-doc-url { color: #2563eb; font-size: .9em; }
+.pq-doc .pesq-ref { color: #2563eb; font-weight: 700; }
+.pq-doc .pesq-ref + .pesq-ref::before { color: #2563eb; }
+.pq-doc .pesq-vnum { color: #2563eb; }

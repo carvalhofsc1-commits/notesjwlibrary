@@ -2094,7 +2094,11 @@ async function coletarPesquisa(res, body, P) {
     }
     // Por último, as páginas da internet (com o site identificado): a resposta as usa só na seção de informações complementares.
     const daInternet = await internet;
-    for (const w of daInternet || []) fontes.push({ tipo: "web", publicacao: w.site, codigo: "", ano: null, titulo: w.titulo, pagina: null, paragrafos: "", texto: w.texto, url: w.url });
+    // O limite de fontes (MAX_FONTES_PESQUISA) vale para tudo junto: as da internet têm o lugar garantido, e o que sobra das publicações sai do
+    // fim da lista (a pesquisa no wol, a menos certeira). Antes, as da internet vinham por último e eram cortadas quando o wol já enchia a lista.
+    const paginasWeb = (daInternet || []).slice(0, 6);
+    fontes.splice(Math.max(0, MAX_FONTES_PESQUISA - paginasWeb.length));
+    for (const w of paginasWeb) fontes.push({ tipo: "web", publicacao: w.site, codigo: "", ano: null, titulo: w.titulo, pagina: null, paragrafos: "", texto: w.texto, url: w.url });
     fontes.forEach((f, i) => (f.id = "F" + (i + 1)));
     console.log("Pesquisa (coletar):", JSON.stringify({ modelo: P.ia.modelo, internet: body.internet === true ? (daInternet ? daInternet.length : "falhou") : "não", modo: biblico ? "texto" : "assunto", referencia: biblico ? biblico.referencia : undefined, notas: doVersiculo.notas.length, doVersiculo: doVersiculo.lidas.length, consultas, verbetes, guia: doGuia.topicos, doGuia: doGuia.lidas.length, indice: doIndice.assuntos, doIndice: doIndice.lidas.length, wol: lidos.filter(Boolean).length, perspicaz: vistosVerbete.size, livros: trechosLivros.length }));
     if (!fontes.length) return erro(res, 404, "Não encontrei matérias sobre esse assunto no wol.jw.org nem nos arquivos. Tente outras palavras.");
@@ -2106,10 +2110,13 @@ async function coletarPesquisa(res, body, P) {
 }
 
 // As fontes que o app manda de volta (as mesmas da etapa 1, talvez só as marcadas): só campos conhecidos e tamanhos limitados.
-function fontesDaPesquisa(lista) {
+export function fontesDaPesquisa(lista) {
   if (!Array.isArray(lista)) return [];
   const fontes = [];
-  for (const f of lista.slice(0, MAX_FONTES_PESQUISA)) {
+  // As da internet (até 6) sempre entram; as publicações completam até o limite.
+  const web = lista.filter((f) => f && f.tipo === "web").slice(0, 6);
+  const publicacoes = lista.filter((f) => f && f.tipo !== "web").slice(0, MAX_FONTES_PESQUISA - web.length);
+  for (const f of [...publicacoes, ...web]) {
     if (!f || typeof f !== "object") continue;
     const id = String(f.id || "");
     const texto = String(f.texto || "").trim().slice(0, 2200);
