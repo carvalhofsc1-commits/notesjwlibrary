@@ -7876,7 +7876,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.30'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.31'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -31448,6 +31448,31 @@ function saveTemplatesToStorage() {
           .replace(MARCA_FONTES, (t, lista) => numerosDaMarca(lista, numeros).map(n => ' [' + n + ']').join(''));
       }
 
+      // ---------- Mês e ano das publicações e dos vídeos ----------
+      const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+      const anoDe = aa => (Number(aa) > 50 ? 1900 : 2000) + Number(aa);
+      // "2025-07" → "julho de 2025".
+      function mesAnoDeData(iso) {
+        const m = String(iso || '').match(/^(\d{4})-(\d{2})/);
+        return m && Number(m[2]) >= 1 && Number(m[2]) <= 12 ? MESES[Number(m[2]) - 1] + ' de ' + m[1] : '';
+      }
+      // A edição pela citação: "w22.04" → "abril de 2022"; "w23 novembro" → "novembro de 2023"; "ws15 15/9" e "w08 15/11" → "setembro de
+      // 2015"; "g 3/12" → "março de 2012"; "wp23.1", "wp23 N.° 1", "g16.2" (revistas numeradas) → "N.º 1 de 2023"; sem nada disso, o ano.
+      function edicaoDaPublicacao(codigo, ano) {
+        const c = String(codigo || '').trim();
+        let m = c.match(/^(w|ws)(\d{2})\.(\d{1,2})\b/i);
+        if (m && Number(m[3]) >= 1 && Number(m[3]) <= 12) return MESES[Number(m[3]) - 1] + ' de ' + anoDe(m[2]);
+        m = c.match(/^(wp|g)(\d{2})\.(\d{1,2})\b/i) || c.match(/^(wp|g)(\d{2})\s+N\.?\s*[°º]?\s*(\d{1,2})\b/i);
+        if (m) return 'N.º ' + Number(m[3]) + ' de ' + anoDe(m[2]);
+        m = c.match(/^[a-z]+(\d{2})\s+(janeiro|fevereiro|março|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\b/i);
+        if (m) return m[2].toLowerCase().replace('marco', 'março') + ' de ' + anoDe(m[1]);
+        m = c.match(/^[a-z]+(\d{2})\s+\d{1,2}\/(\d{1,2})\b/i);
+        if (m && Number(m[2]) >= 1 && Number(m[2]) <= 12) return MESES[Number(m[2]) - 1] + ' de ' + anoDe(m[1]);
+        m = c.match(/^g\s+(\d{1,2})\/(\d{2})\b/i);
+        if (m && Number(m[1]) >= 1 && Number(m[1]) <= 12) return MESES[Number(m[1]) - 1] + ' de ' + anoDe(m[2]);
+        return ano ? String(ano) : '';
+      }
+
       // Uma fonte em uma linha: { texto, wol, jwl }.
       function descricaoDaFonte(f) {
         if (f.tipo === 'perspicaz') return { texto: 'Estudo Perspicaz das Escrituras' + (f.codigo ? ', volume ' + f.codigo.replace(/\D/g, '') : '') + ' — verbete “' + f.titulo + '”', wol: '', jwl: '' };
@@ -31457,7 +31482,8 @@ function saveTemplatesToStorage() {
           const dur = f.duracaoS ? ' (' + Math.floor(f.duracaoS / 60) + ' min ' + String(f.duracaoS % 60).padStart(2, '0') + ' s)' : '';
           return { texto: '🎬 Vídeo do jw.org: “' + (f.titulo || 'vídeo') + '”' + dur + (f.origem ? ' — ' + f.origem : ''), wol: f.url || '', jwl: jwlDoVideo(f.url), rotuloLink: '🔗 jw.org' };
         }
-        const partes = [f.publicacao + (f.codigo ? ' (' + f.codigo + ')' : '')];
+        const edicao = edicaoDaPublicacao(f.codigo, f.ano);
+        const partes = [f.publicacao + (edicao ? ', ' + edicao : '') + (f.codigo ? ' (' + f.codigo + ')' : '')];
         if (f.titulo && f.titulo !== f.publicacao) partes.push('“' + f.titulo + '”');
         if (f.pagina) partes.push('p. ' + f.pagina);
         if (f.paragrafos) partes.push('§ ' + f.paragrafos);
@@ -31768,7 +31794,7 @@ function saveTemplatesToStorage() {
           titulo.textContent = v.titulo;
           const info = document.createElement('small');
           info.className = 'pesq-fonte-guia';
-          info.textContent = [v.duracao ? '⏱️ ' + v.duracao : '', v.categoria].filter(Boolean).join(' · ');
+          info.textContent = [v.publicado ? '📅 ' + mesAnoDeData(v.publicado) : '', v.duracao ? '⏱️ ' + v.duracao : '', v.categoria].filter(Boolean).join(' · ');
           li.append(titulo, info);
           if (v.motivo) {
             const motivo = document.createElement('p');

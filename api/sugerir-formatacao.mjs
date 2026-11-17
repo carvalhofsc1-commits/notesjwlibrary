@@ -1912,7 +1912,7 @@ async function sugerirVideos(res, body, P) {
     }
     console.log("Pesquisa (vídeos sugeridos):", JSON.stringify({ assunto, palavras: palavras.length, catalogo: catalogo.length, candidatos: candidatos.length, escolhidos: escolhidos.length }));
     return res.status(200).json({
-      videos: escolhidos.map((v) => ({ titulo: v.titulo, duracao: v.duracao, categoria: v.categoria, motivo: v.motivo, link: `https://www.jw.org/finder?srcid=share&wtlocale=T&lank=${encodeURIComponent(v.lank)}` })),
+      videos: escolhidos.map((v) => ({ titulo: v.titulo, duracao: v.duracao, categoria: v.categoria, publicado: v.publicado || "", motivo: v.motivo, link: `https://www.jw.org/finder?srcid=share&wtlocale=T&lank=${encodeURIComponent(v.lank)}` })),
     });
   } catch (e) {
     console.error("Vídeos: falha ao sugerir", e?.name, e?.message);

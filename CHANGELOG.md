@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.31
+
+- Assistente de pesquisas: o mês e o ano aparecem nas listas. Nos vídeos sugeridos, a data de publicação do vídeo no jw.org ("📅 julho de 2025 · ⏱️ 5:54 · Família"; o catálogo traz a data de todos os vídeos). Nas fontes das publicações (tela, escolha das fontes, prévia e Word), a edição tirada da citação: "w22.04" → abril de 2022, "w23 novembro" → novembro de 2023, "ws15 15/9" → setembro de 2015, "g 3/12" → março de 2012, revistas numeradas ("wp23.1", "g16.2") → N.º 1 de 2023; sem mês na citação, o ano; livros e artigos do site (cl, ijwbq…) ficam sem data.
+
 ## 6.10.30
 
 - Assistente de pesquisas: a cor própria dos botões principais, da aba selecionada e das caixinhas passou do verde-azulado para laranja terracota (#c2410c) — nem azul nem verde, a pedido do usuário.

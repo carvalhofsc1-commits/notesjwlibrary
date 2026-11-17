@@ -2696,7 +2696,7 @@ export async function catalogoDeVideos(timeoutMs = 12000) {
     for (const m of cat.media || []) {
       const lank = m.languageAgnosticNaturalKey || m.naturalKey;
       if (!lank || porLank.has(lank) || !/_VIDEO$/i.test(lank)) continue;
-      porLank.set(lank, { lank, titulo: String(m.title || "").trim(), duracao: m.durationFormattedHHMM || "", categoria: nome });
+      porLank.set(lank, { lank, titulo: String(m.title || "").trim(), duracao: m.durationFormattedHHMM || "", categoria: nome, publicado: /^\d{4}-\d{2}/.test(m.firstPublished || "") ? m.firstPublished.slice(0, 7) : "" });
     }
     for (const s of cat.subcategories || []) percorrer(s, nome);
   };
