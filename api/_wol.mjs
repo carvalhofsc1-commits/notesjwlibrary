@@ -2315,7 +2315,8 @@ const VALIDADE_GUIA_MS = 24 * 3600 * 1000;
 const PALAVRAS_FRACAS = new Set("como para sobre entre quando onde porque pelos pelas pela pelo dos das nos nas uma umas uns com sem que mais muito outros outras".split(" "));
 
 // Palavras comuns demais para escolher sozinhas um tópico do Guia ou um assunto do Índice ("prioridades na vida" não é sobre "Vida dupla").
-const GENERICAS = new Set(["vida", "deus", "jeova", "biblia", "biblic", "cristao", "crista", "cristae", "pessoa", "mundo", "coisas", "tempo", "dia", "parte"]);
+// Também os adjetivos comuns ("grande" está em muitos títulos de vídeo: "grande privilégio", "Grande Instrutor"…).
+const GENERICAS = new Set(["vida", "deus", "jeova", "biblia", "biblic", "cristao", "crista", "cristae", "pessoa", "mundo", "coisas", "tempo", "dia", "parte", "grande", "pequen", "novo", "nova", "novos", "novas", "maior", "melhor", "muito", "muitos", "todos", "todas"]);
 
 const raizes = (texto) =>
   semAcento(String(texto || ""))
@@ -2706,19 +2707,42 @@ export async function catalogoDeVideos(timeoutMs = 12000) {
   return lista;
 }
 
-// Os vídeos do catálogo que mais combinam com as palavras (no título valem mais que na categoria): até "maximo".
+// Os vídeos do catálogo que mais combinam com as buscas: até "maximo", com os pontos de cada um ({ ...video, pontos }).
+// Cada palavra vale pelo quanto é rara nos títulos do catálogo (em "grande tribulação", "grande" aparece em dezenas de títulos e quase não
+// conta; "tribulação" decide). No título vale 3 vezes mais que na categoria, e um título com TODAS as palavras de uma busca vale o dobro.
+const raridadeDosTitulos = new WeakMap(); // lista do catálogo -> { n, df: Map(raiz -> nº de títulos com ela) }
+function raridade(lista) {
+  let r = raridadeDosTitulos.get(lista);
+  if (!r) {
+    const df = new Map();
+    for (const v of lista) for (const t of new Set(raizes(v.titulo))) df.set(t, (df.get(t) || 0) + 1);
+    r = { n: lista.length, df };
+    raridadeDosTitulos.set(lista, r);
+  }
+  return r;
+}
 export function videosPorPalavras(lista, palavras, maximo = 40) {
-  const termos = [...new Set(palavras.flatMap((p) => raizes(p)))];
-  if (!termos.length) return [];
+  const buscas = palavras.map((p) => [...new Set(raizes(p))]).filter((b) => b.length);
+  if (!buscas.length) return [];
+  const { n, df } = raridade(lista);
+  // Palavras genéricas (GENERICAS) valem um quinto.
+  const peso = (t) => Math.log(1 + n / (1 + (df.get(t) || 0))) * (GENERICAS.has(t) ? 0.2 : 1);
   return lista
     .map((v) => {
       const titulo = new Set(raizes(v.titulo));
       const categoria = new Set(raizes(v.categoria));
-      const pontos = termos.reduce((s, t) => s + (titulo.has(t) ? 3 : 0) + (categoria.has(t) ? 1 : 0), 0);
-      return { v, pontos };
+      let pontos = 0;
+      let raras = 0; // palavras da busca no título que aparecem em poucos títulos do catálogo (até 1%): sinal de que o vídeo é mesmo do assunto
+      for (const b of buscas) {
+        const noTitulo = b.filter((t) => titulo.has(t));
+        raras += noTitulo.filter((t) => !GENERICAS.has(t) && (df.get(t) || 0) <= Math.max(5, n * 0.01)).length;
+        let p = noTitulo.reduce((s, t) => s + 3 * peso(t), 0) + b.filter((t) => categoria.has(t)).reduce((s, t) => s + peso(t), 0);
+        if (b.length > 1 && noTitulo.length === b.length) p *= 2;
+        pontos += p;
+      }
+      return { ...v, pontos, raras };
     })
     .filter((x) => x.pontos > 0)
     .sort((a, b) => b.pontos - a.pontos)
-    .slice(0, maximo)
-    .map((x) => x.v);
+    .slice(0, maximo);
 }

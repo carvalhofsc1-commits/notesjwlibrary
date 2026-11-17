@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.23
+
+- Assistente de pesquisas, "Procurar um vídeo por assunto": sem número fixo de sugestões — entram todos os vídeos relevantes (podem ser menos ou mais de 5; no máximo 20, para a lista não ficar enorme). A IA é orientada a marcar todos os relevantes, inclusive os de temas ligados ao assunto (para "grande tribulação": Armagedom, últimos dias, Babilônia, a Grande), e os vídeos com uma palavra rara do próprio assunto digitado no título entram sempre, depois dos dela.
+- A busca no catálogo ficou mais estável: cada palavra vale pelo quanto é rara nos títulos dos vídeos (em "grande tribulação", "grande" quase não conta e "tribulação" decide), adjetivos comuns ("grande", "novo", "maior"…) valem pouco, um título com todas as palavras de uma busca vale o dobro e a IA recebe até 60 candidatos (eram 40). Antes, a palavra "grande" enchia a lista de vídeos sem relação ("grande privilégio", "Grande Instrutor") e o resultado mudava muito de uma busca para outra (5 vídeos numa, 2 na seguinte).
+
 ## 6.10.22
 
 - Assistente de pesquisas, aba Vídeo: corrigido "Cole o link de um vídeo do jw.org" com um link certo. O servidor só reconhecia códigos de vídeo sem hífen (pub-jwbai_…), e muitos vídeos têm hífen no código (pub-jwb-128_7_VIDEO, a maior parte dos programas do JW Broadcasting) ou não têm número de faixa (pub-wys_x_VIDEO, lidos pelo mediator). Agora os 3.051 vídeos do catálogo do jw.org são reconhecidos (conferido com o catálogo inteiro). A mesma correção vale para os vídeos citados na Nossa vida cristã.

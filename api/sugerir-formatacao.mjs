@@ -1864,6 +1864,7 @@ async function pesquisarVideo(res, body, P) {
 // pesquisa), o servidor separa até 40 vídeos cujos títulos e categorias combinam e a mesma IA escolhe até 5, dizendo em uma frase por que
 // cada um ajuda. Sem a IA, ficam os 5 primeiros da busca por palavras.
 const SaidaVideosSugeridos = z.object({ videos: z.array(z.object({ codigo: z.string(), motivo: z.string() })) });
+const MAX_VIDEOS_SUGERIDOS = 20;
 async function sugerirVideos(res, body, P) {
   const assunto = textoLivre(body.assunto, 300);
   if (assunto.length < 3) return erro(res, 400, "Escreva o assunto do vídeo que você procura.");
@@ -1877,9 +1878,12 @@ async function sugerirVideos(res, body, P) {
       console.error("Vídeos: buscas da IA indisponíveis; segue com o assunto", e?.message);
     }
     const catalogo = await catalogoDeVideos(12000);
-    const candidatos = videosPorPalavras(catalogo, palavras, 40);
+    const candidatos = videosPorPalavras(catalogo, palavras, 60);
     if (!candidatos.length) return erro(res, 404, "Não encontrei vídeos sobre esse assunto. Tente outras palavras.");
-    let escolhidos = candidatos.slice(0, 5).map((v) => ({ ...v, motivo: "" }));
+    // Não há número fixo de sugestões: entram TODOS os vídeos relevantes (até MAX_VIDEOS_SUGERIDOS, para a lista não ficar enorme).
+    // Sem a IA: os da busca que têm alguma palavra rara no título (ou, se nenhum tiver, os 5 primeiros).
+    const comRaras = candidatos.filter((v) => v.raras > 0);
+    let escolhidos = (comRaras.length ? comRaras.slice(0, MAX_VIDEOS_SUGERIDOS) : candidatos.slice(0, 5)).map((v) => ({ ...v, motivo: "" }));
     try {
       const lista = candidatos.map((v, i) => `[V${i + 1}] "${v.titulo}" (${v.duracao}; ${v.categoria})`).join("\n");
       const r = await chamarIa(client, P, { max_tokens: 3000, system: P.sistemaVideosSugerir, messages: [{ role: "user", content: `ASSUNTO: ${assunto}\n\nVÍDEOS DO JW.ORG:\n${lista}` }] }, { schema: SaidaVideosSugeridos, semPensar: true, tarefa: "pesquisa-videos" });
@@ -1889,12 +1893,22 @@ async function sugerirVideos(res, body, P) {
         const daIa = o.videos
           .map((x) => ({ v: candidatos[Number(String(x.codigo).replace(/\D/g, "")) - 1], motivo: limparLinha(x.motivo, 300) }))
           .filter((x) => x.v && !vistos.has(x.v.lank) && vistos.add(x.v.lank))
-          .slice(0, 5)
+          .slice(0, MAX_VIDEOS_SUGERIDOS)
           .map((x) => ({ ...x.v, motivo: x.motivo }));
         if (daIa.length) escolhidos = daIa;
       }
     } catch (e) {
       console.error("Vídeos: escolha da IA indisponível; ficam os da busca", e?.message);
+    }
+    // Os vídeos que têm no título uma palavra rara do PRÓPRIO assunto digitado (não das buscas que a IA gerou, que trazem ruído como "ataques
+    // terroristas") e que a IA não citou também entram, depois dos dela (sem o motivo): assim nenhum vídeo claramente do assunto fica de fora.
+    const ja = new Set(escolhidos.map((v) => v.lank));
+    for (const v of videosPorPalavras(catalogo, [assunto], 60)) {
+      if (escolhidos.length >= MAX_VIDEOS_SUGERIDOS) break;
+      if (!ja.has(v.lank) && v.raras > 0) {
+        ja.add(v.lank);
+        escolhidos.push({ ...v, motivo: "" });
+      }
     }
     console.log("Pesquisa (vídeos sugeridos):", JSON.stringify({ assunto, palavras: palavras.length, catalogo: catalogo.length, candidatos: candidatos.length, escolhidos: escolhidos.length }));
     return res.status(200).json({
