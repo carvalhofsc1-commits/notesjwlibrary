@@ -7876,7 +7876,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.25'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.26'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -18168,7 +18168,7 @@ function saveTemplatesToStorage() {
           const tempo = tempoMmSs(Math.max(0, Number(rodapeIa.segundos) || 0));
           parts.push({ paragrafos: 'Rodapé', texto: '———\n' + (importar
             ? '📥 Esboço importado de "' + cfg.importacao.arquivo + '" e organizado pela IA ' + rodapeIa.modelo + ' em ' + tempo + ' (' + quando + ').'
-            : '🤖 Esboço elaborado pela IA ' + rodapeIa.modelo + ' em ' + tempo + ' (' + quando + ').') });
+            : '✨ Esboço elaborado pela IA ' + rodapeIa.modelo + ' em ' + tempo + ' (' + quando + ').') });
         }
         // Um esboço importado continua "do orador" no Melhorar e no Incluir; Outra versão e uma nova elaboração voltam ao normal.
         cfg.ultimoImportado = importar || Boolean(mode && mode !== 'nova' && cfg.ultimoImportado);
@@ -28446,7 +28446,7 @@ function saveTemplatesToStorage() {
         });
         perguntasBtn.hidden = completo && !porIa;
         perguntasBtn.disabled = atribuindoPerguntas;
-        perguntasBtn.textContent = porIa || completo ? '🤖 Organizar de novo com a IA' : '🤖 Organizar as perguntas com a IA';
+        perguntasBtn.textContent = porIa || completo ? '✨ Organizar de novo com a IA' : '✨ Organizar as perguntas com a IA';
       }
       // A IA organiza (só quando a ordem automática não bate, ou a pedido): o servidor confere os números que ela devolve.
       async function atribuirPerguntasIa() {
@@ -31160,7 +31160,7 @@ function saveTemplatesToStorage() {
         $('pesquisaVideoBloco').hidden = aba !== 'video';
         // No vídeo não há busca de fontes: as opções da internet e da escolha das fontes somem.
         document.querySelectorAll('#pesquisaCard .pesq-opcao').forEach(l => { l.hidden = aba === 'video'; });
-        botao.textContent = aba === 'video' ? '🎬 Resumir o vídeo' : '🔎 Pesquisar';
+        botao.textContent = aba === 'video' ? '🎬 Transcrever e resumir o vídeo' : '🔎 Pesquisar';
         requestAnimationFrame(crescerCampos);
       }
       document.querySelectorAll('#pesquisaCard .pesq-aba').forEach(b => b.addEventListener('click', () => { if (!b.disabled) trocarAba(b.dataset.pesqAba); }));
@@ -31779,7 +31779,7 @@ function saveTemplatesToStorage() {
             $('pesquisaVideosBusca').open = false;
             videosPintar();
             videosVoltarPintar();
-            dizer(statusEl, '🎬 Vídeo escolhido: ' + v.titulo + '. Toque em "Resumir o vídeo".');
+            dizer(statusEl, '🎬 Vídeo escolhido: ' + v.titulo + '. Toque em "Transcrever e resumir o vídeo".');
             $('pesquisaVideoLink').scrollIntoView({ behavior: 'smooth', block: 'center' });
           });
           const ver = document.createElement('a');

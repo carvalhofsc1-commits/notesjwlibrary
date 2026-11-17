@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.26
+
+- O 🤖 deu lugar ao ✨ em todo o app: card "✨ Opções com IA" (Formatar), "✨ Modelos e agentes de IA" (Ajustes, e a dica da Leitura em voz que cita esse card), botão "✨ Organizar as perguntas com a IA" (Anotações), rodapé "✨ Esboço elaborado pela IA…" dos esboços e o título "✨ Sobre as respostas da IA" na página Sobre. O 🤖 continua só como emoji para inserir no texto (lista de caracteres).
+- Assistente de pesquisas, aba Vídeo: o botão passou a se chamar "🎬 Transcrever e resumir o vídeo".
+
 ## 6.10.25
 
 - Assistente de pesquisas, aba Vídeo: a busca de vídeos por assunto não se perde mais. A última busca (assunto e lista) fica guardada neste aparelho e volta ao abrir o app; depois de "Usar este vídeo", aparece sob o campo do link o botão "↩️ Escolher outro vídeo da lista “assunto” (N)", que reabre a lista; o vídeo em uso fica marcado ("✅ Em uso", com a borda em destaque) e a marca acompanha o link do campo. A busca mostra quantos vídeos foram encontrados.
