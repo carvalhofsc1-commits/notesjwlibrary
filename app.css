@@ -16105,3 +16105,18 @@ a.pesq-videos-jw { display: flex; width: 100%; box-sizing: border-box; margin: 0
   box-shadow: inset 4px 0 0 var(--pesq-cor, #c2410c);
   font-weight: 700;
 }
+/* Anotações · Reunião: discursos e considerações da Vida e Ministério (semana, lista de temas). */
+.anot-vm { margin: 10px 0 4px; padding: 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); display: grid; gap: 8px; min-width: 0; }
+.anot-vm-rotulo { font-weight: 700; font-size: .92rem; }
+.anot-vm-semana { display: flex; align-items: center; gap: 8px; }
+.anot-vm-semana .anot-vm-seta { flex: 0 0 auto; width: 40px; min-height: 34px; padding: 4px 0; }
+.anot-vm-semana-nome { flex: 1 1 auto; min-width: 0; text-align: center; font-weight: 600; font-size: .9rem; }
+.anot-vm .anot-vm-carregar { min-height: 34px; padding: 6px 12px; border-radius: 999px; font-size: .88rem; }
+.anot-vm .hint { margin: 0; }
+.anot-vm .hint.aviso { color: var(--danger, #b91c1c); }
+.anot-vm-lista { display: grid; gap: 6px; }
+.anot-vm-lista:empty { display: none; }
+.anot-vm .anot-vm-parte { display: grid; gap: 2px; text-align: left; width: 100%; min-height: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg, transparent); color: inherit; font: inherit; cursor: pointer; }
+.anot-vm-parte-titulo { font-weight: 600; font-size: .92rem; line-height: 1.3; overflow-wrap: anywhere; }
+.anot-vm-parte small { font-size: .78rem; opacity: .75; }
+.anot-vm .anot-vm-parte.escolhida { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }

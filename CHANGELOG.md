@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.39
+
+- Anotações · Reunião: no quadro "Tema, orador e congregação", novo bloco "📋 Partes da Vida e Ministério". Escolha a semana nas setas (começa na semana da Data, ou na atual; mudar a Data muda a semana), toque em "Carregar discursos e considerações" e toque num tema para preencher Tema / parte. Lista: o discurso dos Tesouros, os discursos e considerações de Faça seu melhor e Nossa vida cristã (inclui Necessidades locais) e o Estudo bíblico de congregação, com o tipo, o tempo e a seção. Servidor: tarefa "anotacoes-partes-semana" (sem código, só lê os títulos da apostila no wol.jw.org; `partesDaApostila`/`lerPartesDaApostila` em `_wol.mjs`).
+
 ## 6.10.38
 
 - Assistente de pesquisas: mesmo com "Buscar também na internet" marcada, a internet só é usada quando parte do assunto não está nas publicações do jw.org (fundo histórico, evidências arqueológicas, dados estatísticos ou científicos, mesmo que não pedidos, se enriquecerem a resposta). Assuntos puramente espirituais nunca vão para a internet. Quem decide é a primeira etapa da IA (campos "internet" e "internetBusca" das buscas; regra fixa no formato, visível na tela de prompts), que também diz o que procurar; a busca na internet procura só esses dados. Quando a internet é dispensada, um aviso sob o resultado explica.

@@ -99,6 +99,8 @@ export const NIVEIS = {
   // Anotações: programa da assembleia/congresso (pub-media + WOL) sem código; textos bíblicos com o de resumo
   "programa-pub": "publico",
   "programas-lista": "publico",
+  "anotacoes-partes-semana": "publico", // Anotações · Reunião: temas dos discursos e considerações da Vida e Ministério da semana
+
   // Formatar as anotações com IA (tela Anotações): código de pesquisa, como a formatação da tela Formatar
   "anotacoes-formatar": "pesquisa",
   // Perguntas de recapitulação da assembleia: a IA só organiza (atribui) as perguntas aos discursos quando a ordem não bate

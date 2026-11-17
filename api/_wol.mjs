@@ -1175,6 +1175,58 @@ async function imagemEmBase64(caminho, timeoutMs) {
 
 // A "Consideração" da semana: { semana, url, docId, itens: [...] } com a lição citada (lmd) lida e as imagens em base64. itens vazio = a semana
 // não tem esse item (null = não achou a apostila).
+// Anotações · Reunião: os discursos e as considerações da reunião Vida e Ministério da semana. Cada item numerado da apostila ("1. Tema") com o
+// tempo e o tipo: o 1º dos Tesouros é sempre um discurso; nos outros, a instrução começa com "Discurso" ou "Consideração"; "Necessidades
+// locais" é discurso; o Estudo bíblico de congregação também entra. Leitura da Bíblia, Joias e as demonstrações ficam de fora.
+export function partesDaApostila(html) {
+  const secoes = [...html.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2>/g)].map((m) => ({ inicio: m.index, nome: textoDe(m[1]) }));
+  const secaoDe = (pos) => {
+    let nome = "";
+    for (const s of secoes) if (s.inicio < pos) nome = s.nome;
+    return nome;
+  };
+  const itens = [...html.matchAll(/<h3\b[^>]*>([\s\S]*?)<\/h3>/g)];
+  const partes = [];
+  for (let i = 0; i < itens.length; i++) {
+    const tituloH3 = textoDe(itens[i][1]);
+    const num = tituloH3.match(/^(\d+)\.\s*(.+)$/);
+    if (!num) continue;
+    const titulo = num[2].trim();
+    const corpo = html.slice(itens[i].index + itens[i][0].length, i + 1 < itens.length ? itens[i + 1].index : undefined);
+    const p = corpo.match(/<p\b[^>]*>([\s\S]*?)<\/p>/);
+    const instrucao = p ? textoDe(p[1]) : "";
+    const minutos = Number((instrucao.match(/^\(\s*(\d+)\s*min\)/) || [])[1]) || null;
+    const depois = semAcento(instrucao.replace(/^\(\s*\d+\s*min\)\s*/, ""));
+    const secao = secaoDe(itens[i].index);
+    const s = semAcento(secao);
+    const t = semAcento(titulo);
+    let tipo = "";
+    if (/estudo biblico de congregacao/.test(t)) tipo = "Estudo bíblico";
+    else if (/joias espirituais|leitura da biblia/.test(t)) tipo = "";
+    else if (/^discurso\b/.test(depois) || /necessidades locais/.test(t)) tipo = "Discurso";
+    else if (/^consideracao\b/.test(depois)) tipo = "Consideração";
+    else if (/tesouros/.test(s) && !partes.some((x) => /tesouros/.test(semAcento(x.secao)))) tipo = "Discurso";
+    if (!tipo) continue;
+    const nomeSecao = /tesouros/.test(s) ? "Tesouros da Palavra de Deus" : /faca seu melhor/.test(s) ? "Faça Seu Melhor no Ministério" : /nossa vida crista/.test(s) ? "Nossa Vida Cristã" : secao;
+    partes.push({ numero: Number(num[1]), titulo, tipo, minutos, secao: nomeSecao });
+  }
+  return partes;
+}
+
+const partesLidas = new Map(); // url da reunião -> { quando, dados }
+export async function lerPartesDaApostila(urlReuniao, { timeoutMs = 8000 } = {}) {
+  const guardado = partesLidas.get(urlReuniao);
+  if (guardado && Date.now() - guardado.quando < VALIDADE_MS) return guardado.dados;
+  const apostila = idDaApostilaNaReuniao(await baixar(urlReuniao, timeoutMs));
+  if (!apostila) return null;
+  const html = await baixar(`${BASE}/pt/wol/d/r5/lp-t/${apostila}`, timeoutMs);
+  const { semana, leitura } = leituraDaApostila(html);
+  const dados = { semana, leitura: leitura ? leitura.rotulo : "", partes: partesDaApostila(html) };
+  partesLidas.set(urlReuniao, { quando: Date.now(), dados });
+  if (partesLidas.size > 30) partesLidas.delete(partesLidas.keys().next().value);
+  return dados;
+}
+
 export async function lerConsideracoes(urlReuniao, { timeoutMs = 8000 } = {}) {
   const guardado = consideracoes.get(urlReuniao);
   if (guardado && Date.now() - guardado.quando < VALIDADE_MS) return guardado.dados;

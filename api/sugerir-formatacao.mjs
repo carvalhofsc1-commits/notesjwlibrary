@@ -30,6 +30,7 @@ import {
   lerImagensDaApostila,
   lerDiscursoCurto,
   lerConsideracoes,
+  lerPartesDaApostila,
   textoDasConsideracoes,
   perguntasDasConsideracoes,
   lerNossaVidaCrista,
@@ -266,6 +267,7 @@ const TAREFAS_SEM_IA = new Set([
   "pesquisa-videos-secoes",
   "programa-pub",
   "programas-lista",
+  "anotacoes-partes-semana",
   "estudo-paragrafos",
   "outros-pesquisar",
   "outros-ler",
@@ -1698,6 +1700,21 @@ async function parteDaSemana(res, body, cfg) {
     console.error(cfg.nome + ": leitura falhou", e?.name, e?.message);
     erro(res, 502, "Não consegui ler a apostila no wol.jw.org agora. Tente de novo em instantes.");
     return null;
+  }
+}
+
+// Anotações · Reunião: os discursos e as considerações da reunião Vida e Ministério da semana (só os temas, o tipo e o tempo), para preencher
+// o campo Tema / parte. Sem código: só lê os títulos da apostila no wol.jw.org.
+async function partesDaSemanaParaAnotacoes(res, body) {
+  const url = urlDoEstudo({ ano: body.ano, semana: body.semana });
+  if (!url) return erro(res, 400, "Semana inválida.");
+  try {
+    const dados = await lerPartesDaApostila(url);
+    if (!dados) return erro(res, 404, "Não encontrei a apostila dessa semana no wol.jw.org.");
+    return res.status(200).json(dados);
+  } catch (e) {
+    console.error("Anotações: partes da semana falharam", e?.name, e?.message);
+    return erro(res, 502, "Não consegui ler a apostila no wol.jw.org agora. Tente de novo em instantes.");
   }
 }
 
@@ -5487,6 +5504,7 @@ async function tratarPedido(req, res) {
     if (tarefa === "pesquisa-videos-secoes") return secoesDeVideos(res); // Assistente de pesquisas, aba Vídeo: as seções do catálogo
     if (tarefa === "programa-pub") return lerProgramaPub(res, body);
     if (tarefa === "programas-lista") return listaDeProgramas(res, body);
+    if (tarefa === "anotacoes-partes-semana") return partesDaSemanaParaAnotacoes(res, body);
     if (tarefa === "outros-pesquisar") return pesquisarOutros(res, body);
     if (tarefa === "outros-ler") return lerOutros(res, body);
     if (tarefa === "discurso-ler") return lerDiscursoCurtoDaSemana(res, body);

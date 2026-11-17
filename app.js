@@ -7876,7 +7876,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.38'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.39'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -28089,6 +28089,87 @@ function saveTemplatesToStorage() {
       const lerData = iso => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12) : null; };
       const somarDias = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n, 12);
       const doisDig = n => String(n).padStart(2, '0');
+
+      // ---------- Reunião: discursos e considerações da Vida e Ministério ----------
+      // Escolhe a semana (começa na semana da Data, ou na atual), lê os temas na apostila (servidor, sem código) e, ao tocar num tema, preenche
+      // o campo Tema / parte. A lista fica guardada por semana enquanto a tela está aberta.
+      let vmSegunda = null; // segunda-feira da semana escolhida
+      const vmGuardadas = new Map(); // "ano-semana" -> dados
+      const segundaDe = d => { const s = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12); s.setDate(s.getDate() - ((s.getDay() + 6) % 7)); return s; };
+      function vmSemanaPintar() {
+        if (!vmSegunda) vmSegunda = segundaDe(lerData(dataReuniaoEl.value) || new Date());
+        document.getElementById('anotVmSemana').textContent = rotuloDaSemana(vmSegunda);
+      }
+      function vmDizer(msg, aviso) {
+        const el = document.getElementById('anotVmStatus');
+        el.textContent = msg || '';
+        el.hidden = !msg;
+        el.classList.toggle('aviso', Boolean(aviso));
+      }
+      function vmLimpar() {
+        vmSegunda = null;
+        document.getElementById('anotVmLista').textContent = '';
+        vmDizer('');
+        vmSemanaPintar();
+      }
+      function vmMudarSemana(n) {
+        vmSemanaPintar();
+        vmSegunda = somarDias(vmSegunda, 7 * n);
+        vmSemanaPintar();
+        document.getElementById('anotVmLista').textContent = '';
+        vmDizer('');
+        const [ano, semana] = isoYearWeek(vmSegunda);
+        if (vmGuardadas.has(ano + '-' + semana)) vmPintar(vmGuardadas.get(ano + '-' + semana));
+      }
+      function vmPintar(dados) {
+        const lista = document.getElementById('anotVmLista');
+        lista.textContent = '';
+        if (!dados.partes.length) return vmDizer('Não encontrei discursos nem considerações nesta semana.', true);
+        vmDizer((dados.leitura ? '📖 ' + dados.leitura + ' · ' : '') + 'Toque num tema para colocá-lo em Tema / parte.');
+        dados.partes.forEach(p => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'anot-vm-parte';
+          b.classList.toggle('escolhida', temaEl.value.trim() === p.titulo);
+          const t = document.createElement('span');
+          t.className = 'anot-vm-parte-titulo';
+          t.textContent = p.numero + '. ' + p.titulo;
+          const info = document.createElement('small');
+          info.textContent = [p.tipo === 'Discurso' ? '🎤 Discurso' : p.tipo === 'Consideração' ? '💬 Consideração' : '📘 ' + p.tipo, p.minutos ? p.minutos + ' min' : '', p.secao].filter(Boolean).join(' · ');
+          b.append(t, info);
+          b.addEventListener('click', () => {
+            temaEl.value = p.titulo;
+            temaEl.dispatchEvent(new Event('input', { bubbles: true }));
+            lista.querySelectorAll('.anot-vm-parte').forEach(x => x.classList.toggle('escolhida', x === b));
+            vmDizer('✅ Tema preenchido: ' + p.titulo);
+          });
+          lista.appendChild(b);
+        });
+      }
+      async function vmCarregar() {
+        vmSemanaPintar();
+        const [ano, semana] = isoYearWeek(vmSegunda);
+        const chave = ano + '-' + semana;
+        if (vmGuardadas.has(chave)) return vmPintar(vmGuardadas.get(chave));
+        const btn = document.getElementById('anotVmCarregar');
+        btn.disabled = true;
+        vmDizer('Lendo a apostila da semana no wol.jw.org…');
+        try {
+          const r = await postStudy({ tarefa: 'anotacoes-partes-semana', ano, semana }, 30000);
+          if (!r.ok || !r.data || !Array.isArray(r.data.partes)) return vmDizer((r.data && r.data.erro) ||'Não consegui carregar as partes desta semana. Tente de novo.', true);
+          vmGuardadas.set(chave, r.data);
+          vmPintar(r.data);
+        } catch (e) {
+          vmDizer('Não consegui carregar as partes desta semana. Verifique a conexão.', true);
+        } finally {
+          btn.disabled = false;
+        }
+      }
+      document.getElementById('anotVmAnterior').addEventListener('click', () => vmMudarSemana(-1));
+      document.getElementById('anotVmProxima').addEventListener('click', () => vmMudarSemana(1));
+      document.getElementById('anotVmCarregar').addEventListener('click', vmCarregar);
+      // Mudar a Data leva a escolha para a semana dela.
+      dataReuniaoEl.addEventListener('change', () => { const d = lerData(dataReuniaoEl.value); if (d) { vmSegunda = null; vmMudarSemana(0); } });
       function formatarData(iso) {
         const d = lerData(iso);
         return d ? doisDig(d.getDate()) + '/' + doisDig(d.getMonth() + 1) + '/' + d.getFullYear() : '';
@@ -29029,6 +29110,7 @@ function saveTemplatesToStorage() {
         diaAberto = '';
         dataAtual = '';
         dataReuniaoEl.value = '';
+        vmLimpar();
         vista = 'escolha';
         ativa = false;
         expandida = -1;
@@ -29063,6 +29145,7 @@ function saveTemplatesToStorage() {
           }
         } else {
           carregarRascunho();
+          vmLimpar(); // a semana das partes da Vida e Ministério segue a Data guardada
         }
         atualizarVista();
         window.scrollTo({ top: 0 });
