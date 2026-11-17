@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.29
+
+- Assistente de pesquisas com cor própria: os botões principais (Pesquisar, Transcrever e resumir o vídeo, 🔍, Usar este vídeo, Usar este texto, Elaborar a resposta…), a aba selecionada e as caixinhas usam verde-azulado (#0f766e), em vez do azul do resto do app.
+- Aba Vídeo: "🔍 Procurar um vídeo por assunto" fica sempre à vista (não é mais um quadro recolhido), como o campo da aba Assunto; a lista de vídeos continua à vista depois de usar um, e "↩️ Escolher outro vídeo da lista" (sob o campo do link) rola a tela de volta até ela. Limpar a pesquisa mantém a lista de vídeos.
+
 ## 6.10.28
 
 - Assistente de pesquisas, aba Vídeo: saiu o atalho experimental "🧪 Vídeos no JW Library" (no teste do usuário, o navegador do iPhone não entregou o endereço jwlibrary:/// ao app e mostrou "Não é possível acessar esse site"); fica só "🎬 Abrir os vídeos do jw.org". O botão "📖 JW Library" de cada vídeo (sugestões e fonte do resumo) passou a usar o link exatamente como o JW Library o compartilha (https://www.jw.org/finder?srcid=jwlshare&wtlocale=T&lank=…), que no celular com o app instalado abre o vídeo nele, numa aba nova.

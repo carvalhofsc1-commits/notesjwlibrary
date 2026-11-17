@@ -7876,7 +7876,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.28'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.29'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -31753,7 +31753,7 @@ function saveTemplatesToStorage() {
       function videosVoltarPintar() {
         const n = videosBusca && videosBusca.videos ? videosBusca.videos.length : 0;
         const voltar = $('pesquisaVideosVoltarBtn');
-        voltar.hidden = !n || $('pesquisaVideosBusca').open;
+        voltar.hidden = !n || !$('pesquisaVideoLink').value.trim(); // aparece depois de escolher um vídeo da lista
         voltar.textContent = '↩️ Escolher outro vídeo da lista “' + (videosBusca ? videosBusca.assunto : '') + '” (' + n + ')';
       }
       function videosPintar() {
@@ -31784,7 +31784,6 @@ function saveTemplatesToStorage() {
           usar.textContent = usando ? '✅ Em uso' : '✅ Usar este vídeo';
           usar.addEventListener('click', () => {
             $('pesquisaVideoLink').value = v.link;
-            $('pesquisaVideosBusca').open = false;
             videosPintar();
             videosVoltarPintar();
             dizer(statusEl, '🎬 Vídeo escolhido: ' + v.titulo + '. Toque em "Transcrever e resumir o vídeo".');
@@ -31839,16 +31838,13 @@ function saveTemplatesToStorage() {
       }
       $('pesquisaVideosBtn').addEventListener('click', sugerirVideos);
       $('pesquisaVideosAssunto').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sugerirVideos(); } });
+      // A lista fica sempre à vista (acima do campo do link): o botão só rola a tela de volta até ela.
       $('pesquisaVideosVoltarBtn').addEventListener('click', () => {
-        const busca = $('pesquisaVideosBusca');
-        busca.open = true;
         videosPintar();
-        videosVoltarPintar();
-        busca.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        $('pesquisaVideosBusca').scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
-      $('pesquisaVideosBusca').addEventListener('toggle', videosVoltarPintar);
-      // O link mudou à mão: a marca "Em uso" acompanha.
-      $('pesquisaVideoLink').addEventListener('input', () => { if (videosBusca) videosPintar(); });
+      // O link mudou à mão: a marca "Em uso" e o botão de voltar acompanham.
+      $('pesquisaVideoLink').addEventListener('input', () => { if (videosBusca) { videosPintar(); videosVoltarPintar(); } });
       // A última busca de vídeos volta ao abrir o app.
       try {
         const guardada = JSON.parse(localStorage.getItem(VIDEOS_CHAVE) || 'null');
@@ -32245,6 +32241,7 @@ function saveTemplatesToStorage() {
         campoTextoContexto.value = '';
         $('pesquisaVideoLink').value = '';
         campoVideoContexto.value = '';
+        if (videosBusca) { videosPintar(); videosVoltarPintar(); } // a lista de vídeos continua; só some a marca "Em uso"
         crescerCampos();
         dizer(statusEl, '');
         (aba === 'texto' ? refCampo : aba === 'video' ? $('pesquisaVideoLink') : campoAssunto).focus();
