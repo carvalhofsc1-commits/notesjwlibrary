@@ -80,8 +80,14 @@ function corpoGemini(p) {
     generationConfig: geracao,
   };
   if (sistema) corpo.systemInstruction = { parts: [{ text: sistema }] };
-  // A leitura de páginas pela IA (web_fetch da Anthropic) vira a ferramenta de leitura de endereços do Gemini.
-  if (Array.isArray(p.tools) && p.tools.some((t) => t && /web_fetch/.test(t.type || t.name || ""))) corpo.tools = [{ urlContext: {} }];
+  // A leitura de páginas pela IA (web_fetch da Anthropic) vira a ferramenta de leitura de endereços do Gemini; a busca na web (web_search),
+  // a busca do Google (googleSearch), com as fontes em groundingMetadata.
+  if (Array.isArray(p.tools)) {
+    const ferramentas = [];
+    if (p.tools.some((t) => t && /web_fetch/.test(t.type || t.name || ""))) ferramentas.push({ urlContext: {} });
+    if (p.tools.some((t) => t && /web_search/.test(t.type || t.name || ""))) ferramentas.push({ googleSearch: {} });
+    if (ferramentas.length) corpo.tools = ferramentas;
+  }
   return corpo;
 }
 
@@ -103,6 +109,8 @@ function respostaDaAnthropic(d, formato) {
     usage: { input_tokens: um.promptTokenCount || 0, output_tokens: (um.candidatesTokenCount || 0) + pensou, output_tokens_details: { thinking_tokens: pensou } },
   };
   if (formato && typeof formato.parse === "function") r.parsed_output = parada === "end_turn" && texto ? formato.parse(texto) : null;
+  // Busca do Google: as páginas usadas (groundingChunks) e que trecho da resposta veio de cada uma (groundingSupports).
+  if (cand && cand.groundingMetadata) r.grounding = cand.groundingMetadata;
   return r;
 }
 

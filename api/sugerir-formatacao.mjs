@@ -7,7 +7,7 @@ import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import { codigoDoDirigente, erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { acessoDoDirigente, codigoValido, dirigenteValido, exigirAcesso, recusarAcesso, resumoValido } from "./_acesso.mjs";
-import { MODELOS_IA, TAREFAS_DE_ESBOCOS, iaDaTarefa, lerConfigIa, provedorAtual } from "./_iaConfig.mjs";
+import { MODELOS_IA, TAREFAS_DE_ESBOCOS, iaDaTarefa, lerConfigIa, provedorAtual, provedorDoModelo } from "./_iaConfig.mjs";
 import { apagarResultado, guardarResultado, idDePedidoValido, lerResultado, pedidosDisponiveis } from "./_pedidos.mjs";
 import { criarClienteIa, erroSemIa, iaDisponivel } from "./_clienteIa.mjs";
 import { blocoLicoesPara } from "./_memoria.mjs";
@@ -1782,6 +1782,69 @@ const nomeDoModelo = (id) => {
   return m ? m.nome.split(":")[0] : id;
 };
 
+// ---------- Busca na internet (opcional, desmarcada por padrão) ----------
+// Roda com o modelo escolhido em Ajustes para a "Busca na internet" (Gemini: busca do Google; Claude: a busca na web da Anthropic). A lista de
+// sites confiáveis vai como PREFERÊNCIA no pedido, não como filtro: o que vier de outros sites também entra, sempre com o site e o endereço
+// identificados, e o usuário decide se leva em conta. Devolve [{ site, titulo, url, texto }] (até 6 páginas).
+const dominioDe = (url) => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+};
+async function buscarNaInternet({ pedido, P }) {
+  const modelo = P.ia.pesquisaWebModelo;
+  const provedor = provedorDoModelo(P.ia, modelo);
+  const Pweb = { ...P, ia: { ...P.ia, modelo, esforco: "low", provedorTarefa: provedor } };
+  const sites = (P.ia.pesquisaSites || []).slice(0, 40);
+  const system = P.sistemaPesquisaInternet + (sites.length ? `\n\nSITES DE PREFERÊNCIA (dê preferência a eles, sem deixar de usar outros sites confiáveis): ${sites.join(", ")}` : "");
+  const client = criarClienteIa({ maxRetries: 1, timeout: 60_000 }, provedor);
+  const ferramenta = provedor === "gemini" ? { type: "web_search", name: "web_search" } : { type: "web_search_20250305", name: "web_search", max_uses: 4 };
+  let mensagens = [{ role: "user", content: pedido }];
+  let resposta = null;
+  // A busca da Anthropic pode parar no meio ("pause_turn"): continua até 3 vezes com o que já veio.
+  for (let volta = 0; volta < 3; volta++) {
+    resposta = await chamarIa(client, Pweb, { max_tokens: 4000, system, messages: mensagens, tools: [ferramenta] }, { semPensar: true, tarefa: volta ? "" : "pesquisa-internet" });
+    if (resposta.stop_reason !== "pause_turn") break;
+    mensagens = [...mensagens, { role: "assistant", content: resposta.content }];
+  }
+  return fontesDaBuscaNaWeb(resposta);
+}
+
+// As páginas de uma resposta com busca na web: [{ site, titulo, url, texto }] (até 6). Exportada para os testes.
+export function fontesDaBuscaNaWeb(resposta) {
+  const porUrl = new Map();
+  const juntar = (url, titulo, trecho) => {
+    if (!url || !/^https?:\/\//.test(url) || !trecho) return;
+    const item = porUrl.get(url) || { url, titulo: titulo || "", trechos: [] };
+    if (!item.trechos.includes(trecho)) item.trechos.push(trecho);
+    if (!item.titulo && titulo) item.titulo = titulo;
+    porUrl.set(url, item);
+  };
+  if (resposta.grounding) {
+    // Gemini: cada página (groundingChunks) com os trechos da resposta que vieram dela (groundingSupports).
+    const chunks = resposta.grounding.groundingChunks || [];
+    for (const s of resposta.grounding.groundingSupports || []) {
+      const texto = s.segment && s.segment.text ? String(s.segment.text).trim() : "";
+      for (const i of s.groundingChunkIndices || []) {
+        const web = chunks[i] && chunks[i].web;
+        if (web) juntar(web.uri, web.title, texto);
+      }
+    }
+  } else {
+    // Claude: os trechos citados de cada página (citations do tipo web_search_result_location).
+    for (const b of resposta.content || []) {
+      if (b.type !== "text" || !Array.isArray(b.citations)) continue;
+      for (const c of b.citations) if (c.type === "web_search_result_location") juntar(c.url, c.title, [String(b.text || "").trim(), c.cited_text ? `"${String(c.cited_text).trim()}"` : ""].filter(Boolean).join(" "));
+    }
+  }
+  return [...porUrl.values()].slice(0, 6).map((p) => {
+    const site = /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(p.titulo) ? p.titulo.replace(/^www\./, "") : dominioDe(p.url);
+    return { site, titulo: p.titulo && p.titulo !== site ? limparLinha(p.titulo, 200) : "", url: p.url.slice(0, 1500), texto: p.trechos.join(" ").replace(/\s+/g, " ").slice(0, 1600) };
+  });
+}
+
 // O texto bíblico pedido na aba Texto bíblico: { referencia, texto, livro, capitulo, versos, palavras } ou null (pedido inválido).
 function textoBiblicoDoPedido(body) {
   const livro = Number(body.livro);
@@ -1830,6 +1893,25 @@ async function coletarPesquisa(res, body, P) {
   } catch (e) {
     console.error("Pesquisa: buscas da IA indisponíveis; segue com o assunto", e?.status, e?.message);
   }
+
+  // Busca na internet (só se o usuário marcou): roda junto com a coleta no wol.
+  const internet =
+    body.internet === true
+      ? buscarNaInternet({
+          P,
+          pedido: biblico
+            ? `Pesquise na internet informações complementares e confiáveis (contexto histórico, arqueologia, costumes da época, dados atuais e oficiais) ligadas a ${biblico.referencia}` +
+              (biblico.palavras.length ? `, com foco em: ${biblico.palavras.join("; ")}` : "") +
+              (contexto ? `. Contexto: ${contexto}` : "") +
+              "."
+            : `Pesquise na internet informações complementares e confiáveis (históricas, estatísticas oficiais, relatórios de órgãos oficiais, notícias recentes) sobre: ${assunto}` +
+              (contexto ? `. Contexto: ${contexto}` : "") +
+              ".",
+        }).catch((e) => {
+          console.error("Pesquisa: busca na internet falhou", e?.status, e?.message);
+          return null;
+        })
+      : Promise.resolve([]);
 
   try {
     // Texto bíblico: para cada versículo (até 6), a página de pesquisa do wol: as notas de estudo da Tradução do Novo Mundo e as citações do
@@ -2010,10 +2092,13 @@ async function coletarPesquisa(res, body, P) {
       const { a, p } = item;
       fontes.push({ tipo: "wol", publicacao: a.publicacao, codigo: a.codigo, ano: a.ano, titulo: p.titulo || a.titulo, pagina: p.pagina, paragrafos: p.paragrafos, texto: p.texto, url: p.url, docId: a.docId, pid: p.pid });
     }
+    // Por último, as páginas da internet (com o site identificado): a resposta as usa só na seção de informações complementares.
+    const daInternet = await internet;
+    for (const w of daInternet || []) fontes.push({ tipo: "web", publicacao: w.site, codigo: "", ano: null, titulo: w.titulo, pagina: null, paragrafos: "", texto: w.texto, url: w.url });
     fontes.forEach((f, i) => (f.id = "F" + (i + 1)));
-    console.log("Pesquisa (coletar):", JSON.stringify({ modelo: P.ia.modelo, modo: biblico ? "texto" : "assunto", referencia: biblico ? biblico.referencia : undefined, notas: doVersiculo.notas.length, doVersiculo: doVersiculo.lidas.length, consultas, verbetes, guia: doGuia.topicos, doGuia: doGuia.lidas.length, indice: doIndice.assuntos, doIndice: doIndice.lidas.length, wol: lidos.filter(Boolean).length, perspicaz: vistosVerbete.size, livros: trechosLivros.length }));
+    console.log("Pesquisa (coletar):", JSON.stringify({ modelo: P.ia.modelo, internet: body.internet === true ? (daInternet ? daInternet.length : "falhou") : "não", modo: biblico ? "texto" : "assunto", referencia: biblico ? biblico.referencia : undefined, notas: doVersiculo.notas.length, doVersiculo: doVersiculo.lidas.length, consultas, verbetes, guia: doGuia.topicos, doGuia: doGuia.lidas.length, indice: doIndice.assuntos, doIndice: doIndice.lidas.length, wol: lidos.filter(Boolean).length, perspicaz: vistosVerbete.size, livros: trechosLivros.length }));
     if (!fontes.length) return erro(res, 404, "Não encontrei matérias sobre esse assunto no wol.jw.org nem nos arquivos. Tente outras palavras.");
-    return res.status(200).json({ consultas, verbetes, fontes });
+    return res.status(200).json({ consultas, verbetes, fontes, internet: body.internet === true ? (daInternet ? daInternet.length : -1) : undefined });
   } catch (e) {
     console.error("Pesquisa: falha ao coletar as fontes", e?.name, e?.message);
     return erro(res, 502, "Não consegui pesquisar no wol.jw.org agora. Tente de novo em instantes.");
@@ -2029,10 +2114,12 @@ function fontesDaPesquisa(lista) {
     const id = String(f.id || "");
     const texto = String(f.texto || "").trim().slice(0, 2200);
     if (!/^F\d{1,2}$/.test(id) || texto.length < 20 || fontes.some((x) => x.id === id)) continue;
-    const url = typeof f.url === "string" && /^https:\/\/wol\.jw\.org\/[^\s"<>]*$/.test(f.url) ? f.url : "";
+    const tipo = ["wol", "perspicaz", "livro", "web"].includes(f.tipo) ? f.tipo : "wol";
+    // Endereços: do wol.jw.org nas matérias; de qualquer site (http/https) nas páginas da internet.
+    const url = typeof f.url === "string" && (tipo === "web" ? /^https?:\/\/[^\s"<>]{4,1500}$/ : /^https:\/\/wol\.jw\.org\/[^\s"<>]*$/).test(f.url) ? f.url : "";
     fontes.push({
       id,
-      tipo: ["wol", "perspicaz", "livro"].includes(f.tipo) ? f.tipo : "wol",
+      tipo,
       publicacao: limparLinha(String(f.publicacao || ""), 120),
       codigo: limparLinha(String(f.codigo || ""), 40),
       ano: Number.isInteger(f.ano) && f.ano > 1800 && f.ano < 2200 ? f.ano : null,
@@ -2051,6 +2138,7 @@ function fontesDaPesquisa(lista) {
 function cabecalhoDaFonte(f) {
   if (f.tipo === "perspicaz") return `${f.publicacao}${f.codigo ? ` (${f.codigo})` : ""}, verbete "${f.titulo}"`;
   if (f.tipo === "livro") return `Livro "${f.publicacao}"`;
+  if (f.tipo === "web") return `INTERNET (fonte externa, não é publicação das Testemunhas de Jeová): site ${f.publicacao}${f.titulo ? `, "${f.titulo}"` : ""}`;
   return [f.publicacao + (f.codigo ? ` (${f.codigo})` : ""), f.ano ? String(f.ano) : "", f.titulo ? `"${f.titulo}"` : "", f.pagina ? `p. ${f.pagina}` : "", f.paragrafos ? `par. ${f.paragrafos}` : "", f.guia ? `indicada no Guia de Pesquisa (tópico ${f.guia})` : "", f.indice ? `indicada no Índice das Publicações (assunto ${f.indice})` : ""].filter(Boolean).join(", ");
 }
 

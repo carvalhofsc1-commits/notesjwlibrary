@@ -7876,7 +7876,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.16'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.17'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -12097,7 +12097,7 @@ function saveTemplatesToStorage() {
       'leitura-biblia': 'Leitura bíblica', 'biblia-texto': 'Texto bíblico',
       'outros-pesquisar': 'Pesquisar', 'publico-esboco': 'Esboço S-34',
       versiculos: 'Versículos', 'anotacoes-versiculos': 'Bíblia (anotações)', 'anotacoes-formatar': 'Formatar anotações (IA)',
-      'programa-pub': 'Programa (assembleia)', 'pesquisa-coletar': 'Pesquisa (buscas)', pesquisa: 'Pesquisa (resposta)', voz: 'Voz', ia: 'IA'
+      'programa-pub': 'Programa (assembleia)', 'pesquisa-coletar': 'Pesquisa (buscas)', pesquisa: 'Pesquisa (resposta)', 'pesquisa-internet': 'Pesquisa (internet)', voz: 'Voz', ia: 'IA'
     };
     function estatisticasNomeTarefa(chave) {
       return ESTAT_TAREFA_NOME[chave] || String(chave || 'IA');
@@ -31441,6 +31441,7 @@ function saveTemplatesToStorage() {
       function descricaoDaFonte(f) {
         if (f.tipo === 'perspicaz') return { texto: 'Estudo Perspicaz das Escrituras' + (f.codigo ? ', volume ' + f.codigo.replace(/\D/g, '') : '') + ' — verbete “' + f.titulo + '”', wol: '', jwl: '' };
         if (f.tipo === 'livro') return { texto: f.publicacao + ' (livro)', wol: '', jwl: '' };
+        if (f.tipo === 'web') return { texto: '🌐 ' + f.publicacao + (f.titulo ? ' — “' + f.titulo + '”' : ''), wol: f.url || '', jwl: '', rotuloLink: '🔗 abrir' };
         const partes = [f.publicacao + (f.codigo ? ' (' + f.codigo + ')' : '')];
         if (f.titulo && f.titulo !== f.publicacao) partes.push('“' + f.titulo + '”');
         if (f.pagina) partes.push('p. ' + f.pagina);
@@ -31507,7 +31508,7 @@ function saveTemplatesToStorage() {
           if (d.wol || d.jwl) {
             const links = document.createElement('span');
             links.className = 'pesq-fonte-links';
-            [[d.wol, '🔗 wol'], [d.jwl, '📖 JW Library']].forEach(([href, rotulo]) => {
+            [[d.wol, d.rotuloLink || '🔗 wol'], [d.jwl, '📖 JW Library']].forEach(([href, rotulo]) => {
               if (!href) return;
               const a = document.createElement('a');
               a.href = href;
@@ -31517,7 +31518,7 @@ function saveTemplatesToStorage() {
             });
             li.insertBefore(links, li.querySelector('.pesq-fonte-texto'));
           }
-          [[f.guia, '📑 Indicada no Guia de Pesquisa: '], [f.indice, '🗂️ Indicada no Índice das Publicações: ']].forEach(([valor, rotulo]) => {
+          [[f.guia, '📑 Indicada no Guia de Pesquisa: '], [f.indice, '🗂️ Indicada no Índice das Publicações: '], [f.tipo === 'web' ? 'não é publicação das Testemunhas de Jeová' : '', '🌐 Fonte externa (internet): ']].forEach(([valor, rotulo]) => {
             if (!valor) return;
             const marca = document.createElement('small');
             marca.className = 'pesq-fonte-guia';
@@ -31582,10 +31583,14 @@ function saveTemplatesToStorage() {
         let esperaEscolha = false;
         try {
           andamento(biblico ? 'Lendo as notas de estudo e as publicações sobre ' + biblico.referencia + '…' : 'Procurando no wol.jw.org, no Estudo Perspicaz e nos livros…');
-          const r = await postStudy(Object.assign({ tarefa: 'pesquisa-coletar', codigo: codigoAcessoSalvo(), assunto, contexto }, extra), 90000);
+          const comInternet = buscarInternet.checked;
+          if (comInternet) andamento((biblico ? 'Lendo as publicações sobre ' + biblico.referencia : 'Procurando no wol.jw.org e nos livros') + ' e pesquisando na internet…');
+          const r = await postStudy(Object.assign({ tarefa: 'pesquisa-coletar', codigo: codigoAcessoSalvo(), assunto, contexto, internet: comInternet }, extra), 120000);
           if (meu !== pedido) return;
           if (!r.ok) return dizer(statusEl, erroDe(r, 'Não consegui pesquisar agora. Tente de novo.'), { aviso: true });
           const fontes = Array.isArray(r.data.fontes) ? r.data.fontes : [];
+          // A busca na internet falhou ou não achou nada: a pesquisa segue só com as publicações, e o aviso fica sob o resultado.
+          avisoInternet = comInternet && r.data.internet === -1 ? '🌐 A busca na internet não funcionou agora; a pesquisa usou só as publicações.' : comInternet && r.data.internet === 0 ? '🌐 A busca na internet não encontrou páginas sobre o assunto.' : '';
           const ctx = { meu, assunto, contexto, extra, fontes, biblico, palavras };
           // "Quero escolher as fontes": mostra a lista com as caixinhas e espera o toque em "Elaborar a resposta".
           if (escolherFontes.checked && fontes.length) {
@@ -31612,12 +31617,18 @@ function saveTemplatesToStorage() {
         // As fontes guardadas com a pesquisa: só as citadas. O trecho fica só nas dos livros do servidor (para mostrar ao tocar no nome); as
         // matérias do wol têm o link.
         const usadas = new Set(r.data.fontesUsadas || []);
-        atual = { id: null, assunto, contexto, resultado: r.data, fontes: fontes.filter(f => usadas.has(f.id)).map(f => (f.tipo === 'wol' ? (({ texto, ...resto }) => resto)(f) : f)) };
+        atual = { id: null, assunto, contexto, resultado: r.data, fontes: fontes.filter(f => usadas.has(f.id)).map(f => (f.tipo === 'wol' || f.tipo === 'web' ? (({ texto, ...resto }) => resto)(f) : f)) };
         if (biblico) atual.biblico = { referencia: biblico.referencia, versiculos: biblico.versiculos, livro: biblico.livro, capitulo: biblico.capitulo, versos: biblico.versos, palavras };
         mostrar(atual);
         dizer(statusEl, '');
+        if (avisoInternet) dizer(avisoEl, avisoInternet);
         requestAnimationFrame(() => resultadoEl.scrollIntoView({ behavior: 'smooth', block: 'start' }));
       }
+      let avisoInternet = '';
+      // 🌐 Buscar também na internet: desmarcada por padrão e lembrada neste aparelho.
+      const buscarInternet = $('pesquisaInternet');
+      try { buscarInternet.checked = localStorage.getItem('ns-pesq-internet') === '1'; } catch (e) { /* sem armazenamento */ }
+      buscarInternet.addEventListener('change', () => { try { localStorage.setItem('ns-pesq-internet', buscarInternet.checked ? '1' : '0'); } catch (e) { /* sem armazenamento */ } });
 
       // ---------- Escolha das fontes pelo usuário (opção "Quero escolher as fontes", desmarcada por padrão) ----------
       // Cada fonte encontrada aparece com a publicação, a marca do Guia ou do Índice, um trecho (tocar abre o trecho inteiro) e uma caixinha
@@ -31655,7 +31666,7 @@ function saveTemplatesToStorage() {
           const nome = document.createElement('strong');
           nome.textContent = d.texto;
           corpo.appendChild(nome);
-          const marca = f.notas ? '📖 Notas de estudo do versículo' : f.guia ? '📑 Guia de Pesquisa: ' + f.guia : f.indice ? '🗂️ Índice das Publicações: ' + f.indice : f.tipo === 'wol' ? '🔎 Pesquisa no wol.jw.org' : '📚 Livro do servidor';
+          const marca = f.notas ? '📖 Notas de estudo do versículo' : f.guia ? '📑 Guia de Pesquisa: ' + f.guia : f.indice ? '🗂️ Índice das Publicações: ' + f.indice : f.tipo === 'web' ? '🌐 Internet (fonte externa, não é publicação das Testemunhas de Jeová)' : f.tipo === 'wol' ? '🔎 Pesquisa no wol.jw.org' : '📚 Livro do servidor';
           const m = document.createElement('small');
           m.className = 'pesq-fonte-guia';
           m.textContent = marca;
@@ -31689,7 +31700,7 @@ function saveTemplatesToStorage() {
             a.target = '_blank';
             a.rel = 'noopener noreferrer';
             a.className = 'pesq-escolha-link';
-            a.textContent = '🔗 wol';
+            a.textContent = d.rotuloLink || '🔗 wol';
             li.appendChild(a);
           }
           lista.appendChild(li);
@@ -31811,6 +31822,7 @@ function saveTemplatesToStorage() {
             const d = descricaoDaFonte(f);
             let runs = docxRuns((i + 1) + '. ', 'b', 18) + docxRuns(d.texto, '', 18);
             if (f.guia) runs += docxRuns(' — indicada no Guia de Pesquisa: ' + f.guia, 'i', 16, cinza);
+            if (f.tipo === 'web') runs += docxRuns(' — fonte externa (internet)', 'i', 16, cinza);
             if (f.indice) runs += docxRuns(' — indicada no Índice das Publicações: ' + f.indice, 'i', 16, cinza);
             if (d.wol) runs += '<w:r><w:br/></w:r>' + docxRuns(d.wol, '', 16, corRef);
             partes.push(p('<w:ind w:left="300" w:hanging="300"/>' + espaco(0, 80), runs));

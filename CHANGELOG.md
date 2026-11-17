@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.17
+
+- Ajustes gerais: novo card "📝 Formatação das notas JW", com os cards "🗂️ Gerenciar modelos e categorias" e "😀 Caracteres, ícones e emoticons" dentro dele.
+- Assistente de pesquisas, fase 6: opção "🌐 Buscar também na internet (fontes externas confiáveis)", desmarcada por padrão e lembrada neste aparelho. Marcada, junto com a busca no wol o servidor pesquisa na internet com a IA da busca na internet (Ajustes → Modelos e agentes de IA; Gemini: busca do Google; Claude: busca na web), com a lista de sites de Ajustes como preferência (não como filtro): dados históricos, estatísticas oficiais, relatórios e notícias. Cada página vira uma fonte com o site, o título e o endereço (até 6), por último na lista, marcada "🌐 Fonte externa (internet): não é publicação das Testemunhas de Jeová"; na escolha das fontes dá para desmarcá-las. Regra fixa nova: a IA usa as fontes da internet só numa seção final "🌐 Informações complementares", nunca para explicar a Bíblia. Se a busca falhar ou não achar nada, a pesquisa segue só com as publicações e um aviso aparece sob o resultado. Prompt novo "Assistente de pesquisas: busca na internet"; a tarefa pesquisa-internet conta no recurso do Assistente de pesquisas.
+
 ## 6.10.16
 
 - Assistente de pesquisas, fase 4: opção "Quero escolher as fontes antes da resposta" (sobre o botão Pesquisar, desmarcada por padrão e lembrada neste aparelho). Marcada, depois da busca aparece o card "📚 Fontes encontradas": cada fonte com uma caixinha marcada, a publicação, a marca de onde veio (notas de estudo do versículo, Guia de Pesquisa, Índice das Publicações, pesquisa no wol ou livro do servidor), as primeiras linhas do trecho ("ver tudo" mostra o trecho inteiro que vai para a IA) e o link do wol; Marcar todas / Desmarcar todas; "✍️ Elaborar a resposta (N fontes)" manda à IA só as marcadas; ✕ cancela. Desmarcada, a IA decide sozinha com todas as fontes, como antes.
