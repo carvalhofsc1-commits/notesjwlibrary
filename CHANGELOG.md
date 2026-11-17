@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.27
+
+- Assistente de pesquisas, aba Vídeo: cada vídeo sugerido pela busca por assunto ganhou o botão "📖 JW Library", que abre o vídeo no app pelo mesmo código que o JW Library usa ao compartilhar (lank=pub-… ou lank=docid-…); o "▶️ Assistir" virou "▶️ jw.org". O vídeo usado como fonte do resumo também tem o link do JW Library na lista de fontes. Na lista de sugestões, "✅ Usar este vídeo" ocupa a linha inteira e os dois links ficam embaixo, lado a lado.
+- Atalho experimental "🧪 Vídeos no JW Library", ao lado de "🎬 Vídeos do jw.org": endereço provável da seção de vídeos do app (não há endereço documentado); fica se abrir a aba Vídeo do JW Library.
+- Corrigido: na aba Vídeo, a página rolava para o lado no celular (a linha dos atalhos alargava o card); os blocos do card não passam mais da largura dele.
+
 ## 6.10.26
 
 - O 🤖 deu lugar ao ✨ em todo o app: card "✨ Opções com IA" (Formatar), "✨ Modelos e agentes de IA" (Ajustes, e a dica da Leitura em voz que cita esse card), botão "✨ Organizar as perguntas com a IA" (Anotações), rodapé "✨ Esboço elaborado pela IA…" dos esboços e o título "✨ Sobre as respostas da IA" na página Sobre. O 🤖 continua só como emoji para inserir no texto (lista de caracteres).

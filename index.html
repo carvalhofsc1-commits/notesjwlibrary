@@ -2659,7 +2659,11 @@
       <!-- Aba Vídeo: o link de um vídeo do jw.org; o app pega o texto da fala (a legenda publicada) ou a IA ouve o vídeo, e a IA faz o resumo, os
            pontos principais e a transcrição em seções. -->
       <div class="pesq-bloco" id="pesquisaVideoBloco" hidden>
-        <a class="secondary pesq-fino pesq-link-botao pesq-videos-jw" href="https://www.jw.org/finder?srcid=share&docid=1011214&wtlocale=T" target="_blank" rel="noopener noreferrer">🎬 Abrir os vídeos do jw.org</a>
+        <div class="pesq-acoes pesq-acoes-res pesq-videos-atalhos">
+          <a class="secondary pesq-fino pesq-link-botao" href="https://www.jw.org/finder?srcid=share&docid=1011214&wtlocale=T" target="_blank" rel="noopener noreferrer">🎬 Vídeos do jw.org</a>
+          <!-- Experimental: endereço provável da tela de vídeos do JW Library (não há endereço documentado); fica se abrir a aba Vídeo do app. -->
+          <a class="secondary pesq-fino pesq-link-botao" href="jwlibrary:///finder?srcid=jwlshare&wtlocale=T&category=VideoOnDemand" title="Teste: abrir a seção de vídeos no app JW Library">🧪 Vídeos no JW Library</a>
+        </div>
         <!-- Procurar um vídeo por assunto: o servidor consulta o catálogo de vídeos do jw.org e a IA sugere os que tratam do assunto. -->
         <details id="pesquisaVideosBusca" class="pesq-videos-busca">
           <summary>🔍 Procurar um vídeo por assunto</summary>

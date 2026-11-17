@@ -15998,3 +15998,12 @@ a.pesq-videos-jw { display: flex; width: 100%; box-sizing: border-box; margin: 0
 .pesq-videos-voltar { width: 100%; margin-top: 6px; white-space: normal; text-align: center; }
 .pesq-videos-voltar[hidden] { display: none; }
 .pesq-videos-lista > li.pesq-video-em-uso { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+/* Aba Vídeo: os dois atalhos (jw.org e JW Library) lado a lado; na lista de sugestões, os três botões dividem a linha. */
+.pesq-videos-atalhos { margin: 0 0 10px; }
+.pesq-videos-lista .pesq-acoes.pesq-acoes-res { flex-wrap: wrap; }
+.pesq-videos-lista .pesq-acoes-res > * { flex: 1 1 0; min-width: 0; font-size: .86rem; }
+.pesq-videos-lista .pesq-acoes-res > button:first-child { flex: 1 1 100%; }
+.pesq-videos-lista > li { min-width: 0; overflow-wrap: anywhere; }
+/* Os blocos do card da pesquisa nunca passam da largura dele (itens de grade crescem até o conteúdo sem isso); os atalhos quebram a linha. */
+.card.pesq-card > * { min-width: 0; }
+.pesq-videos-atalhos > a.pesq-link-botao { white-space: normal; text-align: center; line-height: 1.2; }
