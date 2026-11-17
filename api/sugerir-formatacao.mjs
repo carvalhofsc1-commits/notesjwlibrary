@@ -1769,7 +1769,7 @@ async function formatarTranscricaoVideo(res, body, P) {
 // para achar o parágrafo, a página e o número dele), nos verbetes do Perspicaz e nos livros do servidor, e devolve as fontes ao app.
 // "pesquisa": a IA da resposta final escreve a pesquisa só com as fontes (que o app manda de volta), citando cada uma por [F1], [F2]…
 // Cada etapa tem o seu modelo, de qualquer família (P.ia.provedorTarefa diz quem atende).
-const SaidaConsultasPesquisa = z.object({ consultas: z.array(z.string()), verbetes: z.array(z.string()), livros: z.string() });
+const SaidaConsultasPesquisa = z.object({ consultas: z.array(z.string()), verbetes: z.array(z.string()), livros: z.string(), internet: z.boolean(), internetBusca: z.string() });
 const SaidaPesquisa = z.object({
   titulo: z.string(),
   introducao: z.string(),
@@ -2047,6 +2047,8 @@ async function coletarPesquisa(res, body, P) {
   let consultas = assunto ? [assunto] : [];
   let verbetes = [];
   let consultaLivros = (biblico ? [biblico.texto, assunto].join(" ") : assunto + " " + contexto).trim();
+  let precisaInternet = false;
+  let buscaInternet = "";
   try {
     const client = criarClienteIa({ maxRetries: 1, timeout: 45_000 }, P.ia.provedorTarefa);
     const pedido = biblico
@@ -2066,22 +2068,29 @@ async function coletarPesquisa(res, body, P) {
       if (limpas.length) consultas = [...new Set(limpas)].slice(0, 4);
       verbetes = o.verbetes.map((v) => limparLinha(v, 60)).filter(Boolean).slice(0, 3);
       if (o.livros && o.livros.trim().length >= 3) consultaLivros = limparLinha(o.livros, 200);
+      // A IA decide se a internet faz falta (fundo histórico, arqueologia, dados estatísticos ou científicos que as publicações não trazem) e o
+      // que procurar lá. Assuntos puramente espirituais nunca vão para a internet, mesmo com a caixinha marcada.
+      precisaInternet = o.internet === true;
+      buscaInternet = limparLinha(o.internetBusca || "", 300);
     }
   } catch (e) {
     console.error("Pesquisa: buscas da IA indisponíveis; segue com o assunto", e?.status, e?.message);
   }
 
-  // Busca na internet (só se o usuário marcou): roda junto com a coleta no wol.
+  // Busca na internet: só se o usuário marcou E a IA viu que parte do assunto não está nas publicações do jw.org. Roda junto com a coleta no wol.
+  const dispensouInternet = body.internet === true && !precisaInternet;
   const internet =
-    body.internet === true
+    body.internet === true && precisaInternet
       ? buscarNaInternet({
           P,
           pedido: biblico
-            ? `Pesquise na internet informações complementares e confiáveis (contexto histórico, arqueologia, costumes da época, dados atuais e oficiais) ligadas a ${biblico.referencia}` +
-              (biblico.palavras.length ? `, com foco em: ${biblico.palavras.join("; ")}` : "") +
+            ? `Pesquise na internet só os dados que as publicações das Testemunhas de Jeová não trazem (fundo histórico, arqueologia, costumes da época, dados estatísticos ou científicos) ligados a ${biblico.referencia}` +
+              (buscaInternet ? `. O que procurar: ${buscaInternet}` : "") +
+              (biblico.palavras.length ? `. Foco: ${biblico.palavras.join("; ")}` : "") +
               (contexto ? `. Contexto: ${contexto}` : "") +
               "."
-            : `Pesquise na internet informações complementares e confiáveis (históricas, estatísticas oficiais, relatórios de órgãos oficiais, notícias recentes) sobre: ${assunto}` +
+            : `Pesquise na internet só os dados que as publicações das Testemunhas de Jeová não trazem (fundo histórico, arqueologia, dados estatísticos ou científicos) sobre: ${assunto}` +
+              (buscaInternet ? `. O que procurar: ${buscaInternet}` : "") +
               (contexto ? `. Contexto: ${contexto}` : "") +
               ".",
         }).catch((e) => {
@@ -2277,9 +2286,9 @@ async function coletarPesquisa(res, body, P) {
     fontes.splice(Math.max(0, MAX_FONTES_PESQUISA - paginasWeb.length));
     for (const w of paginasWeb) fontes.push({ tipo: "web", publicacao: w.site, codigo: "", ano: null, titulo: w.titulo, pagina: null, paragrafos: "", texto: w.texto, url: w.url });
     fontes.forEach((f, i) => (f.id = "F" + (i + 1)));
-    console.log("Pesquisa (coletar):", JSON.stringify({ modelo: P.ia.modelo, internet: body.internet === true ? (daInternet ? daInternet.length : "falhou") : "não", modo: biblico ? "texto" : "assunto", referencia: biblico ? biblico.referencia : undefined, notas: doVersiculo.notas.length, doVersiculo: doVersiculo.lidas.length, consultas, verbetes, guia: doGuia.topicos, doGuia: doGuia.lidas.length, indice: doIndice.assuntos, doIndice: doIndice.lidas.length, wol: lidos.filter(Boolean).length, perspicaz: vistosVerbete.size, livros: trechosLivros.length }));
+    console.log("Pesquisa (coletar):", JSON.stringify({ modelo: P.ia.modelo, internet: body.internet === true ? (dispensouInternet ? "dispensada" : daInternet ? daInternet.length : "falhou") : "não", buscaInternet: precisaInternet ? buscaInternet : undefined, modo: biblico ? "texto" : "assunto", referencia: biblico ? biblico.referencia : undefined, notas: doVersiculo.notas.length, doVersiculo: doVersiculo.lidas.length, consultas, verbetes, guia: doGuia.topicos, doGuia: doGuia.lidas.length, indice: doIndice.assuntos, doIndice: doIndice.lidas.length, wol: lidos.filter(Boolean).length, perspicaz: vistosVerbete.size, livros: trechosLivros.length }));
     if (!fontes.length) return erro(res, 404, "Não encontrei matérias sobre esse assunto no wol.jw.org nem nos arquivos. Tente outras palavras.");
-    return res.status(200).json({ consultas, verbetes, fontes, internet: body.internet === true ? (daInternet ? daInternet.length : -1) : undefined });
+    return res.status(200).json({ consultas, verbetes, fontes, internet: body.internet === true ? (daInternet ? daInternet.length : -1) : undefined, internetDispensada: dispensouInternet || undefined });
   } catch (e) {
     console.error("Pesquisa: falha ao coletar as fontes", e?.name, e?.message);
     return erro(res, 502, "Não consegui pesquisar no wol.jw.org agora. Tente de novo em instantes.");

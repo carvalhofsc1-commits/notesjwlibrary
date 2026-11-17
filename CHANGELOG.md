@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.38
+
+- Assistente de pesquisas: mesmo com "Buscar também na internet" marcada, a internet só é usada quando parte do assunto não está nas publicações do jw.org (fundo histórico, evidências arqueológicas, dados estatísticos ou científicos, mesmo que não pedidos, se enriquecerem a resposta). Assuntos puramente espirituais nunca vão para a internet. Quem decide é a primeira etapa da IA (campos "internet" e "internetBusca" das buscas; regra fixa no formato, visível na tela de prompts), que também diz o que procurar; a busca na internet procura só esses dados. Quando a internet é dispensada, um aviso sob o resultado explica.
+
 ## 6.10.37
 
 - Assistente de pesquisas: "Buscar também na internet" e "Quero escolher as fontes" ficam dentro do quadro recolhível "⚙️ Opções adicionais de pesquisa" (título no padrão dos botões finos). Com o quadro fechado, o título mostra quantas opções estão ligadas. Na aba Vídeo o quadro some.

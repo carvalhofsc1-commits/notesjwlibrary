@@ -7876,7 +7876,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.37'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.38'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -32093,7 +32093,7 @@ function saveTemplatesToStorage() {
           if (!r.ok) return dizer(statusEl, erroDe(r, 'Não consegui pesquisar agora. Tente de novo.'), { aviso: true });
           const fontes = Array.isArray(r.data.fontes) ? r.data.fontes : [];
           // A busca na internet falhou ou não achou nada: a pesquisa segue só com as publicações, e o aviso fica sob o resultado.
-          avisoInternet = comInternet && r.data.internet === -1 ? '🌐 A busca na internet não funcionou agora; a pesquisa usou só as publicações.' : comInternet && r.data.internet === 0 ? '🌐 A busca na internet não encontrou páginas sobre o assunto.' : '';
+          avisoInternet = comInternet && r.data.internetDispensada ? '🌐 Não foi preciso buscar na internet: o assunto está coberto pelas publicações do jw.org (a internet só entra para fundo histórico, arqueologia ou dados estatísticos).' : comInternet && r.data.internet === -1 ? '🌐 A busca na internet não funcionou agora; a pesquisa usou só as publicações.' : comInternet && r.data.internet === 0 ? '🌐 A busca na internet não encontrou páginas sobre o assunto.' : '';
           const ctx = { meu, assunto, contexto, extra, fontes, biblico, palavras };
           // "Quero escolher as fontes": mostra a lista com as caixinhas e espera o toque em "Elaborar a resposta".
           if (escolherFontes.checked && fontes.length) {
