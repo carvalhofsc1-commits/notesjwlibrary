@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.83
+
+- Início: o atalho Extrato troca o 📒 pelo 💰 (saldo e consumo).
+
 ## 6.10.82
 
 - Início: a descrição do atalho Assistente de pesquisas passa a ser "Pesquisar um assunto, texto ou vídeo no wol.jw.org com auxílio da IA".
