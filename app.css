@@ -16150,3 +16150,9 @@ a.pesq-videos-jw { display: flex; width: 100%; box-sizing: border-box; margin: 0
 .atalhos-card .atalhos-grid .atalho:disabled,
 .atalhos-card .atalhos-grid .atalho:disabled:hover { background: var(--card); }
 .atalhos-card .atalho-icone { zoom: 1.2; }
+
+/* 6.10.50: os atalhos do Início e o cartão do texto diário em cinza claro (no escuro, um cinza discreto sobre a cor dos cartões) */
+:root { --inicio-cinza: #f1f2f4; --inicio-cinza: color-mix(in srgb, #9ca3af 14%, var(--card)); }
+.atalhos-card .atalhos-grid .atalho,
+.atalhos-card .atalhos-grid .atalho:hover,
+.card.td-card { background: var(--inicio-cinza); }

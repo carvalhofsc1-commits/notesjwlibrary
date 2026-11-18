@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.50
+
+- Início: os botões de atalho passam do roxo suave ao cinza claro, e o cartão do texto diário ganha o mesmo cinza (no escuro, um cinza discreto).
+
 ## 6.10.49
 
 - Início: os botões de atalho ganham um fundo roxo suave (no escuro, roxo discreto) e os ícones ficam uns 20% maiores.
