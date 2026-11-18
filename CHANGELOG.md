@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.54
+
+- Botões de ver o texto (Assistente de pesquisas) e de mostrar código ou senha (Ajustes → Acessos): o emoji do olho realista vira o olho só de linhas, o mesmo do botão Visualizar das Anotações; ao mostrar o código, o olho aparece riscado (no lugar do 🙈).
+
 ## 6.10.53
 
 - Menos cor em todo o app: fundos só branco ou o cinza bem claro da tela Início. Os cards de escolha (Anotações, Reuniões, Bíblia e demais menus), a barra da semana, os títulos de grupos e subseções e os botões passam a cinza claro; a cor fica só na moldura fina e no texto. Os avisos de atenção seguem em laranja claro.

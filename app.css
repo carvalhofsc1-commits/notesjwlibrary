@@ -16364,3 +16364,7 @@ button:is(#sv#sv, #anotacoesGravarBtn, #undoTopBtn, #undoBtn, .anot-grav-aviso, 
 /* Texto legível nos dois temas para os botões que tinham fundo amarelo ou laranja próprio. */
 :is(#sv#sv, .screen-reunioes button.secondary:not(.ai-study-load), .ai-week-today) { color: var(--text); border: 1px solid var(--sv-cinza-bd); }
 :is(#sv#sv, #tesourosCarregarBtn, #discursoCarregarBtn, #outrosBaseImportarBtn, #outrosBaseApagarBtn, #outrosPesquisarBtn, #outrosCarregarBtn, #outrosLimparBtn, .screen-reunioes .ai-study-load:not([id])) { color: var(--sv-lar-tx); border: 1px solid var(--sv-lar-bd); }
+
+/* 6.10.54: o olho só de linhas em todos os botões de ver/mostrar (sem o emoji realista) */
+.icone-olho { vertical-align: -3px; flex: 0 0 auto; }
+:is(.acesso-ver, #pesquisaRefVerBtn) .icone-olho { display: block; margin: 0 auto; }
