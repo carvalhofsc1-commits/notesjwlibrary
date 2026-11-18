@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.73
+
+- Leitura da Bíblia · resumo do capítulo: na seção SOBRE JEOVÁ, a qualidade que abre cada parágrafo (ex.: "(v. 8) justiça: …") sai em negrito e numa cor própria (laranja-escuro; claro no tema escuro).
+
 ## 6.10.72
 
 - Assistente de pesquisas · Vídeo: "Procurar também no que é falado" passa para baixo do campo de busca (antes do link do vídeo).

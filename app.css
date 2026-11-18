@@ -16470,3 +16470,8 @@ details > summary.seta-padrao { list-style: none; }
 details > summary.seta-padrao::-webkit-details-marker { display: none; }
 details > summary.seta-padrao::before { content: '▾'; display: inline-block; margin-right: 6px; color: var(--muted); font-size: .85em; transition: transform .15s ease; }
 details[open] > summary.seta-padrao::before { transform: rotate(180deg); }
+
+/* 6.10.73: Leitura da Bíblia · resumo, seção SOBRE JEOVÁ — a qualidade que abre cada parágrafo, em negrito e na cor da seção (âmbar). */
+.biblia-resumo-leitura strong.br-qualidade { color: #c2410c; font-weight: 800; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .biblia-resumo-leitura strong.br-qualidade { color: #fdba74; } }
+:root[data-theme="dark"] .biblia-resumo-leitura strong.br-qualidade { color: #fdba74; }

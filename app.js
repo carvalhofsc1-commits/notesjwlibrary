@@ -7902,7 +7902,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.10.72'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.73'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -27162,7 +27162,7 @@ function saveTemplatesToStorage() {
           if (!ficha) return;
           let no = document.createTextNode(ficha);
           if (estado.italico) { const em = document.createElement('em'); em.appendChild(no); no = em; }
-          if (estado.negrito || estado.nome) { const forte = document.createElement('strong'); if (estado.nome) forte.className = 'br-nome'; forte.appendChild(no); no = forte; }
+          if (estado.negrito || estado.nome) { const forte = document.createElement('strong'); if (estado.nome) forte.className = estado.nomeClasse || 'br-nome'; forte.appendChild(no); no = forte; }
           span.appendChild(no);
         });
       });
@@ -27198,7 +27198,14 @@ function saveTemplatesToStorage() {
           const m = frases[0].match(/^((?:\p{Extended_Pictographic}[\uFE0F\u200D\p{Emoji_Modifier}\p{Extended_Pictographic}]*\s*)*)([^\s:.,;()*_%][^:.,;()*_%]{0,48}?):(\s.*)?$/u);
           if (m) frases[0] = m[1] + '%%' + m[2].trim() + '%%:' + (m[3] || '');
         }
-        const estado = { negrito: false, italico: false, nome: false };
+        // SOBRE JEOVÁ (6.10.73): a qualidade que abre cada parágrafo ("(v. 8) justiça: o capítulo destaca…") sai em negrito e numa cor própria
+        // (âmbar, a cor da seção). Vale com a marca do versículo antes ou depois da qualidade e com ou sem negrito em volta dela.
+        const qualidade = !titulo && !cabecalhoGeral && !fonte && par.tipo === 'texto' && secao === 'SOBRE JEOVÁ';
+        if (qualidade) {
+          const m = frases[0].match(/^((?:\p{Extended_Pictographic}[️‍\p{Emoji_Modifier}\p{Extended_Pictographic}]*\s*)*(?:[-•]\s*)?(?:\(\s*vv?\.[^)]*\)\s*)?)(?:\*\*)?([^\s:.,;()*_%][^:.,;()*_%]{0,40}?)(?:\*\*)?(\s*\(\s*vv?\.[^)]*\))?:(\s.*)?$/u);
+          if (m) frases[0] = m[1] + '%%' + m[2].trim() + '%%' + (m[3] || '') + ':' + (m[4] || '');
+        }
+        const estado = { negrito: false, italico: false, nome: false, nomeClasse: qualidade ? 'br-qualidade' : '' };
         frases.forEach((frase, k) => {
           if (k) p.appendChild(document.createTextNode(' '));
           const span = document.createElement('span');
