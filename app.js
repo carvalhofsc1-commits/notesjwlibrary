@@ -7902,7 +7902,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.10.73'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.74'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -8012,7 +8012,7 @@
       { id: 'emoji-transportes', name: 'Transportes', text: `🚂 🚃 🚄 🚅 🚆 🚇 🚈 🚉 🚊 🚝 🚞 🚋 🚌 🚍 🚎 🚐 🚑 🚒 🚓 🚔 🚕 🚖 🚗 🚘 🚙 🛻 🚚 🚛 🚜 🏎️ 🏍️ 🛵 🦽 🦼 🛺 🚲 🛴 🛹 🛼 🚏 🛣️ 🛤️ 🛢️ ⛽ 🛞 🚨 🚥 🚦 🛑 🚧 ⚓ 🛟 ⛵ 🛶 🚤 🛳️ ⛴️ 🛥️ 🚢 ✈️ 🛩️ 🛫 🛬 🪂 💺 🚁 🚟 🚠 🚡 🛰️ 🚀 🛸` },
       { id: 'emoji-tempo', name: 'Relógios e clima', text: `⌛ ⏳ ⌚ ⏰ ⏱️ ⏲️ 🕰️ 🕛 🕧 🕐 🕜 🕑 🕝 🕒 🕞 🕓 🕟 🕔 🕠 🕕 🕡 🕖 🕢 🕗 🕣 🕘 🕤 🕙 🕥 🕚 🕦 🌑 🌒 🌓 🌔 🌕 🌖 🌗 🌘 🌙 🌚 🌛 🌜 🌡️ ☀️ 🌝 🌞 🪐 ⭐ 🌟 🌠 🌌 ☁️ ⛅ ⛈️ 🌤️ 🌥️ 🌦️ 🌧️ 🌨️ 🌩️ 🌪️ 🌫️ 🌬️ 🌀 🌈 🌂 ☂️ ☔ ⛱️ ⚡ ❄️ ☃️ ⛄ ☄️ 🔥 💧 🌊` },
       { id: 'emoji-festas', name: 'Festas e prêmios', text: `🎃 🎄 🎆 🎇 🧨 ✨ 🎈 🎉 🎊 🎋 🎍 🎎 🎏 🎐 🎑 🧧 🎀 🎁 🎗️ 🎟️ 🎫 🎖️ 🏆 🏅 🥇 🥈 🥉` },
-      { id: 'emoji-esportes', name: 'Esportes e jogos', text: `⚽ ⚾ 🥎 🏀 🏐 🏈 🏉 🎾 🥏 🎳 🏏 🏑 🏒 🥍 🏓 🏸 🥊 🥋 🥅 ⛳ ⛸️ 🎣 🤿 🎽 🎿 🛷 🥌 🎯 🪀 🪁 🔫 🎱 🔮 🪄 🎮 🕹️ 🎰 🎲 🧩 🧸 🪅 🪩 🪆 ♠️ ♥️ ♦️ ♣️ ♟️ 🃏 🀄 🎴` },
+      { id: 'emoji-esportes', name: 'Esportes e jogos', text: `⚽ ⚾ 🥎 🏀 🏐 🏈 🏉 🎾 🥏 🎳 🏏 🏑 🏒 🥍 🏓 🏸 🥊 🥋 🥅 ⛳ ⛸️ 🎣 🤿 🎽 🎿 🛷 🥌 🎯 🪀 🪁 🔫 🎱 🪄 🎮 🕹️ 🎰 🎲 🧩 🧸 🪅 🪩 🪆 ♠️ ♥️ ♦️ ♣️ ♟️ 🃏 🀄 🎴` },
       { id: 'emoji-artes', name: 'Artes e artesanato', text: `🎭 🖼️ 🎨 🧵 🪡 🧶 🪢` },
       { id: 'emoji-roupas', name: 'Roupas e acessórios', text: `👓 🕶️ 🥽 🥼 🦺 👔 👕 👖 🧣 🧤 🧥 🧦 👗 👘 🥻 🩱 🩲 🩳 👙 👚 🪭 👛 👜 👝 🛍️ 🎒 🩴 👞 👟 🥾 🥿 👠 👡 🩰 👢 🪮 👑 👒 🎩 🎓 🧢 🪖 ⛑️ 📿 💄 💍 💎` },
       { id: 'emoji-musica', name: 'Som e música', text: `🔇 🔈 🔉 🔊 📢 📣 📯 🔔 🔕 🎼 🎵 🎶 🎙️ 🎚️ 🎛️ 🎤 🎧 📻 🎷 🪗 🎸 🎹 🎺 🎻 🪕 🥁 🪘 🪇 🪈 🪉` },
@@ -14820,7 +14820,7 @@ function saveTemplatesToStorage() {
           { id: 'fundo', texto: '🏛️ Explicar o fundo histórico dos acontecimentos (Perspicaz / WOL)' },
           { id: 'personagens', texto: '👤 Detalhar resumidamente a história dos personagens bíblicos conhecidos citados (Perspicaz)' },
           { id: 'lugares', texto: '🗺️ Dar detalhes de localidades, lugares, cidades, nações, povos, medidas, moedas, valores etc. (Perspicaz)' },
-          { id: 'profecias', texto: '🔮 Esclarecer profecias e expressões simbólicas — seção própria (cumprimento passado, presente ou futuro; Perspicaz / WOL)' }
+          { id: 'profecias', texto: '📯 Esclarecer profecias e expressões simbólicas — seção própria (cumprimento passado, presente ou futuro; Perspicaz / WOL)' }
         ]
       },
       // Refino da resposta/esboço: fica logo acima dos botões "Outra resposta" e "Melhorar esta resposta".
@@ -25892,7 +25892,7 @@ function saveTemplatesToStorage() {
       'FUNDO HISTÓRICO': '🏛️',
       'PERSONAGENS': '👤',
       'LUGARES E INFORMAÇÕES GERAIS': '📍',
-      'PROFECIAS E EXPRESSÕES SIMBÓLICAS': '🔮'
+      'PROFECIAS E EXPRESSÕES SIMBÓLICAS': '📯' // nunca a bola de cristal (adivinhação): a trombeta que anuncia
     };
     const BIBLIA_EMOJI_INICIO = /^(?:\p{Extended_Pictographic}[\uFE0F\u200D\p{Emoji_Modifier}\p{Extended_Pictographic}]*\s*)+/u;
 
@@ -27177,7 +27177,8 @@ function saveTemplatesToStorage() {
       bibliaResumoDestaque = -1;
       let secao = '';
       // Cor e negrito são para títulos e destaques (trechos curtos): um negrito comprido (um parágrafo ou várias frases) é só texto normal.
-      const textoVista = bibliaNormalizarParagrafosResumo(bibliaResumoTexto.value.split('\n').map(linha => linha.replace(/\*\*([^*\n]{100,}?)\*\*/g, '$1').replace(/__([^_\n]{100,}?)__/g, '$1')).join('\n'));
+      // A bola de cristal (adivinhação) nunca aparece: nos resumos antigos ela vira a trombeta 📯 (6.10.74).
+      const textoVista = bibliaNormalizarParagrafosResumo(bibliaResumoTexto.value.replace(/🔮/gu, '📯').split('\n').map(linha => linha.replace(/\*\*([^*\n]{100,}?)\*\*/g, '$1').replace(/__([^_\n]{100,}?)__/g, '$1')).join('\n'));
       leituraEstrutura(textoVista).forEach((par, pi) => {
         const plano = par.frases.join(' ').replace(/\*\*|__|%%/g, '');
         // O título da seção vale com ou sem negrito em volta (a IA às vezes o destaca) e com ":" ou "." no fim; aí a linha toda em negrito seria lida como subtítulo.
@@ -27516,7 +27517,7 @@ function saveTemplatesToStorage() {
       { id: 'atos', matiz: 165, nome: 'Atos', icone: '🌍', livros: ['Atos'] },
       { id: 'paulo', matiz: 300, nome: 'Cartas de Paulo', icone: '✉️', livros: ['Romanos', '1 Coríntios', '2 Coríntios', 'Gálatas', 'Efésios', 'Filipenses', 'Colossenses', '1 Tessalonicenses', '2 Tessalonicenses', '1 Timóteo', '2 Timóteo', 'Tito', 'Filêmon', 'Hebreus'] },
       { id: 'gerais', matiz: 90, nome: 'Outras cartas', icone: '📨', livros: ['Tiago', '1 Pedro', '2 Pedro', '1 João', '2 João', '3 João', 'Judas'] },
-      { id: 'apocalipse', matiz: 0, nome: 'Apocalipse', icone: '🔮', livros: ['Apocalipse'] }
+      { id: 'apocalipse', matiz: 0, nome: 'Apocalipse', icone: '👑', livros: ['Apocalipse'] }
     ];
     // Cor de fundo suave de cada livro: um matiz por grupo, com tom e intensidade um pouco diferentes de um livro para o outro.
     function bibliaCorLivro(livro) {

@@ -4830,7 +4830,7 @@ const EMOJI_PADRAO_SECAO_RESUMO_LEITURA = {
   "FUNDO HISTÓRICO": "🏛️",
   PERSONAGENS: "👤",
   "LUGARES E INFORMAÇÕES GERAIS": "📍",
-  "PROFECIAS E EXPRESSÕES SIMBÓLICAS": "🔮",
+  "PROFECIAS E EXPRESSÕES SIMBÓLICAS": "📯",
 };
 const TITULO_POR_CHAVE_RESUMO_LEITURA = new Map(Object.values(SECAO_UNICA_RESUMO_LEITURA).map((t) => [chaveDeBusca(t), t]));
 const ABREVIACOES_RESUMO_LEITURA = new Set(["v", "vv", "vol", "vols", "pág", "págs", "pag", "pags", "cap", "caps", "cf", "ex", "nº", "séc", "aprox", "ss", "pp"]);
@@ -4907,6 +4907,8 @@ function organizarSecaoResumoLeitura(secao, paragrafos, emojiAtivo) {
 }
 
 function organizarResumoLeitura(texto, emojiAtivo) {
+  // A bola de cristal (adivinhação) nunca vai no resumo, mesmo que um prompt editado a peça: vira a trombeta 📯 (6.10.74).
+  texto = String(texto || "").replace(/🔮/gu, "📯");
   const saida = [];
   let secao = "";
   let corpo = [];
