@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.64
+
+- Assistente de pesquisas · Vídeo: a lista dos vídeos de uma seção não aparece mais abaixo. No painel das seções, uma seção ou subseção de até 150 vídeos (marcada com ›) abre, dentro do próprio painel, a lista dos vídeos dela (com a duração), "Procurar na seção toda" e "Voltar às seções". Tocando num vídeo, só o card dele é montado abaixo, com "Usar este vídeo", "Assistir", JW Library e "Limpar o vídeo".
+- Os cards de vídeo das pesquisas ganham "▶️ Assistir": o mesmo player das introduções aos livros da Bíblia, dentro do app (qualidade à escolha, link do jw.org no topo). O player passou a ser um só para qualquer vídeo do jw.org; um vídeo por vez, e ele para ao sair da tela.
+
 ## 6.10.63
 
 - Assistente de pesquisas · Vídeo: ao escolher uma seção (ex.: A Bíblia › Criação), a lista dos vídeos dela aparece logo abaixo, cada um com "Usar este vídeo", jw.org e JW Library, para escolher um vídeo direto; quem não sabe o vídeo ainda escreve o assunto e procura só nessa seção. Seções com mais de 150 vídeos pedem uma subseção para listar. Nova tarefa do servidor "pesquisa-videos-da-secao" (sem IA, com o código de pesquisa).

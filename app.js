@@ -96,7 +96,7 @@
       const changed = screen !== currentScreen();
       if (changed) document.body.classList.remove('texto-chegou');
       if (changed && currentScreen() === 'leitura') leituraAoSair(); // saindo da tela Leitura, a leitura em voz alta para
-      if (changed && currentScreen() === 'biblia') bibliaVideoParar(); // saindo da Leitura da Bíblia, o vídeo de introdução para
+      if (changed && (currentScreen() === 'biblia' || currentScreen() === 'pesquisa')) bibliaVideoParar(); // saindo da Bíblia ou das Pesquisas, o vídeo que estiver tocando para
       document.body.dataset.screen = screen;
       if (screen === 'ajustes') { // o card Consumo de IA e faturamento e o Extrato dentro dele sempre abrem recolhidos
         ['extratoSection', 'consumoResumoBox', 'consumoSection'].forEach(id => { const el = document.getElementById(id); if (el) el.open = false; });
@@ -7879,7 +7879,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.10.63'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.64'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26633,28 +26633,31 @@ function saveTemplatesToStorage() {
     // com a qualidade à escolha (360p de início, para poupar dados) e um link para abrir a página do vídeo no jw.org.
     const BIBLIA_VIDEO_API = 'https://b.jw-cdn.org/apis/mediator/v1/media-items/T/';
     const BIBLIA_VIDEO_Q_KEY = 'jwLibraryNoteAplicarBibliaVideoQV1';
-    const bibliaVideosDados = new Map(); // livro -> Promise<{ lank, titulo, arquivos: [{ label, url }], poster } | null>
+    // Desde a 6.10.64 o mesmo player toca qualquer vídeo do jw.org pelo código do vídeo (lank): as introduções da Bíblia e os vídeos do
+    // Assistente de pesquisas. Um vídeo por vez no app inteiro (bibliaVideoAberto / bibliaVideoParar).
+    const videosDadosPorLank = new Map(); // lank -> Promise<{ lank, titulo, arquivos: [{ label, url }], poster } | null>
     let bibliaVideoAberto = null; // { caixa, video }
     function bibliaVideoLank(livro) {
       const n = BIBLIA_LIVROS.indexOf(livro) + 1;
       return n ? 'pub-nwtsv_' + (n * 10) + '_VIDEO' : '';
     }
-    function bibliaVideoDados(livro) {
-      if (!bibliaVideosDados.has(livro)) {
-        const lank = bibliaVideoLank(livro);
-        const p = !lank ? Promise.resolve(null) : fetch(BIBLIA_VIDEO_API + lank).then(r => { if (!r.ok) throw new Error('sem vídeo'); return r.json(); }).then(j => {
+    function videoDadosPorLank(lank, tituloPadrao) {
+      if (!lank) return Promise.resolve(null);
+      if (!videosDadosPorLank.has(lank)) {
+        const p = fetch(BIBLIA_VIDEO_API + encodeURIComponent(lank)).then(r => { if (!r.ok) throw new Error('sem vídeo'); return r.json(); }).then(j => {
           const m = (j.media || [])[0];
           const arquivos = ((m && m.files) || []).filter(f => f && f.progressiveDownloadURL && /mp4/i.test(f.mimetype || 'video/mp4')).map(f => ({ label: String(f.label || ''), url: f.progressiveDownloadURL }));
           if (!m || !arquivos.length) return null;
           const imgs = m.images || {};
           const poster = ((imgs.wss || imgs.lsr || {}).md) || ((imgs.wss || imgs.lsr || {}).sm) || '';
-          return { lank, titulo: m.title || ('Introdução a ' + livro), arquivos, poster };
+          return { lank, titulo: m.title || tituloPadrao || '', arquivos, poster };
         });
-        p.catch(() => bibliaVideosDados.delete(livro)); // numa falha tenta de novo no próximo toque
-        bibliaVideosDados.set(livro, p);
+        p.catch(() => videosDadosPorLank.delete(lank)); // numa falha tenta de novo no próximo toque
+        videosDadosPorLank.set(lank, p);
       }
-      return bibliaVideosDados.get(livro);
+      return videosDadosPorLank.get(lank);
     }
+    function bibliaVideoDados(livro) { return videoDadosPorLank(bibliaVideoLank(livro), 'Introdução a ' + livro); }
     function bibliaVideoParar() {
       if (!bibliaVideoAberto) return;
       const { caixa, video } = bibliaVideoAberto;
@@ -26664,14 +26667,16 @@ function saveTemplatesToStorage() {
       const btn = caixa.parentElement && caixa.parentElement.querySelector('.biblia-video-btn');
       if (btn) btn.setAttribute('aria-expanded', 'false');
     }
-    function bibliaVideoCriar(livro) {
+    function bibliaVideoCriar(livro) { return videoTocadorCriar(bibliaVideoLank(livro), '🎬 Vídeo: introdução ao livro', 'Introdução a ' + livro); }
+    // O botão que abre e fecha o player (com a qualidade à escolha e o link do jw.org) e a caixa do player, logo abaixo dele.
+    function videoTocadorCriar(lank, rotulo, tituloPadrao) {
       const linha = document.createElement('div');
       linha.className = 'biblia-video';
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'secondary biblia-video-btn';
       btn.setAttribute('aria-expanded', 'false');
-      btn.textContent = '🎬 Vídeo: introdução ao livro';
+      btn.textContent = rotulo;
       const caixa = document.createElement('div');
       caixa.className = 'biblia-video-caixa';
       caixa.hidden = true;
@@ -26703,7 +26708,7 @@ function saveTemplatesToStorage() {
         btn.setAttribute('aria-expanded', 'true');
         bibliaVideoAberto = { caixa, video };
         msg.textContent = 'Carregando o vídeo…';
-        try { dados = await bibliaVideoDados(livro); } catch (e) { dados = null; }
+        try { dados = await videoDadosPorLank(lank, tituloPadrao); } catch (e) { dados = null; }
         if (!bibliaVideoAberto || bibliaVideoAberto.caixa !== caixa) return; // fechou enquanto carregava
         if (!dados) { msg.textContent = 'Não consegui carregar o vídeo agora. Confira a conexão e tente de novo.'; return; }
         msg.textContent = '';
@@ -31982,6 +31987,7 @@ function saveTemplatesToStorage() {
       }
       function videosPintar() {
         const lista = $('pesquisaVideosLista');
+        if (bibliaVideoAberto && lista.contains(bibliaVideoAberto.caixa)) bibliaVideoParar(); // a lista vai ser refeita: o vídeo tocando nela para
         lista.textContent = '';
         const emUso = $('pesquisaVideoLink').value.trim();
         ((videosBusca && videosBusca.videos) || []).forEach(v => {
@@ -32023,14 +32029,23 @@ function saveTemplatesToStorage() {
             dizer(statusEl, '🎬 Vídeo escolhido: ' + v.titulo + '. Toque em "Transcrever e resumir o vídeo".');
             $('pesquisaVideoLink').scrollIntoView({ behavior: 'smooth', block: 'center' });
           });
-          const ver = document.createElement('a');
-          ver.className = 'secondary pesq-fino pesq-link-botao';
-          ver.href = v.link;
-          ver.target = '_blank';
-          ver.rel = 'noopener noreferrer';
-          ver.textContent = '▶️ jw.org';
-          ver.title = 'Assistir no jw.org';
-          acoes.append(usar, ver);
+          acoes.append(usar);
+          // ▶️ Assistir: o mesmo player das introduções da Bíblia, dentro do app (qualidade à escolha e o link do jw.org no topo do player).
+          const lank = (String(v.link).match(/[?&]lank=([^&]+)/) || [])[1];
+          let tocador = null;
+          if (lank) {
+            tocador = videoTocadorCriar(decodeURIComponent(lank), '▶️ Assistir', v.titulo);
+            tocador.classList.add('pesq-video-tocador');
+          } else {
+            const ver = document.createElement('a');
+            ver.className = 'secondary pesq-fino pesq-link-botao';
+            ver.href = v.link;
+            ver.target = '_blank';
+            ver.rel = 'noopener noreferrer';
+            ver.textContent = '▶️ jw.org';
+            ver.title = 'Assistir no jw.org';
+            acoes.append(ver);
+          }
           const jwl = jwlDoVideo(v.link);
           if (jwl) {
             const app = document.createElement('a');
@@ -32042,7 +32057,20 @@ function saveTemplatesToStorage() {
             app.title = 'Assistir no app JW Library';
             acoes.appendChild(app);
           }
+          // Vídeo escolhido na lista de uma seção: dá para limpá-lo (o card some).
+          if (videosBusca.escolhido) {
+            const limpar = document.createElement('button');
+            limpar.type = 'button';
+            limpar.className = 'secondary pesq-fino limpar-btn';
+            limpar.textContent = '🗑️ Limpar o vídeo';
+            limpar.addEventListener('click', () => {
+              if (emUso && emUso === v.link) $('pesquisaVideoLink').value = '';
+              videosLimparBusca();
+            });
+            acoes.appendChild(limpar);
+          }
           li.appendChild(acoes);
+          if (tocador) li.appendChild(tocador);
           lista.appendChild(li);
         });
       }
@@ -32079,9 +32107,7 @@ function saveTemplatesToStorage() {
       // O ícone 🎞️ abre a lista (e rola até ela) ou a fecha.
       // 🗑️ Limpar a busca de vídeos: o assunto, a lista mostrada e a lista guardada no aparelho (o link e a pergunta do vídeo ficam).
       $('pesquisaVideosLimparBtn').addEventListener('click', () => {
-        videosBusca = null;
-        listaFechada = false;
-        try { localStorage.removeItem(VIDEOS_CHAVE); } catch (e) { /* sem armazenamento */ }
+        videosLimparBusca();
         $('pesquisaVideosAssunto').value = '';
         // A seção volta para "Todas as seções" (e a caixinha de procurar no que é falado some com ela).
         $('pesquisaVideosSecao').value = '';
@@ -32144,14 +32170,110 @@ function saveTemplatesToStorage() {
         'Músicas': ['🎵', 300], 'Entrevistas e Casos Reais': ['🎤', 10]
       };
       const visualDaSecao = nome => SECAO_VISUAL[nome] || ['📁', (nome.length * 37) % 360];
+      // Uma seção (ou subseção) de até MAX_LISTA_SECAO vídeos abre, dentro do próprio painel, a lista dos vídeos dela: tocar num vídeo monta
+      // só o card dele abaixo (Usar este vídeo, Assistir, JW Library, Limpar); "Procurar na seção toda" escolhe a seção para a busca por assunto.
+      // Seções maiores são escolhidas direto (como antes). A lista vem do servidor (sem IA) e fica guardada enquanto o app está aberto.
+      const MAX_LISTA_SECAO = 150;
+      let painelSecaoAberta = null; // o caminho da seção com a lista de vídeos aberta no painel
+      const videosDaSecaoCache = new Map(); // caminho -> { total, videos } | { erro }
+      function secaoEscolher(valor) {
+        $('pesquisaVideosSecao').value = valor;
+        secaoMudou();
+        painelSecaoAberta = null;
+        painelSecoesAbrir(false);
+        painelSecoesPintar();
+        // "Todas as seções" tira o card de um vídeo escolhido numa seção.
+        if (!valor && videosBusca && videosBusca.daSecao) videosLimparBusca();
+      }
+      async function painelSecaoCarregar(caminho) {
+        if (videosDaSecaoCache.has(caminho)) return;
+        try {
+          const r = await postStudy({ tarefa: 'pesquisa-videos-da-secao', codigo: codigoAcessoSalvo(), secao: caminho }, 30000);
+          videosDaSecaoCache.set(caminho, r.ok && r.data ? { total: r.data.total || 0, videos: r.data.videos || [] } : { erro: erroDe(r, 'Não consegui ler os vídeos dessa seção agora.') });
+        } catch (e) {
+          videosDaSecaoCache.set(caminho, { erro: 'Sem conexão com o servidor. Confira a internet e tente de novo.' });
+        }
+        if (painelSecaoAberta === caminho) painelSecoesPintar();
+        if (videosDaSecaoCache.get(caminho).erro) videosDaSecaoCache.delete(caminho); // numa falha, tenta de novo ao abrir outra vez
+      }
+      function videoDaSecaoEscolher(v, caminho) {
+        $('pesquisaVideosSecao').value = caminho;
+        secaoMudou();
+        painelSecaoAberta = null;
+        painelSecoesAbrir(false);
+        painelSecoesPintar();
+        videosBusca = { assunto: '', videos: [v], secao: caminho, falas: false, daSecao: true, escolhido: true };
+        listaFechada = false;
+        videosGuardar();
+        videosPintar();
+        videosVoltarPintar();
+        dizer($('pesquisaVideosStatus'), '');
+        requestAnimationFrame(() => $('pesquisaVideosLista').scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
+      }
+      function painelSecaoListaPintar(painel, caminho) {
+        const principal = caminho.split(' › ')[0];
+        const [emoji, matiz] = visualDaSecao(principal);
+        const cab = (texto, classe, fn) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'pesq-secao-linha ' + classe;
+          b.textContent = texto;
+          b.addEventListener('click', e => { e.stopPropagation(); fn(); });
+          return b;
+        };
+        painel.appendChild(cab('◀ Voltar às seções', 'pesq-secao-voltar', () => { painelSecaoAberta = null; painelSecoesPintar(); }));
+        const grupo = document.createElement('div');
+        grupo.className = 'pesq-secao-grupo';
+        grupo.style.setProperty('--secao-cor', 'hsl(' + matiz + ' 70% 50%)');
+        const titulo = document.createElement('p');
+        titulo.className = 'pesq-secao-linha pesq-secao-titulo pesq-secao-cab';
+        titulo.textContent = emoji + ' ' + caminho;
+        grupo.appendChild(titulo);
+        const dados = videosDaSecaoCache.get(caminho);
+        const s = ((secoesVideos && secoesVideos.secoes) || []).find(x => x.caminho === caminho);
+        const total = (dados && dados.total) || (s && s.total) || 0;
+        grupo.appendChild(cab('🔎 Procurar na seção toda' + (total ? ' (' + total + (total === 1 ? ' vídeo)' : ' vídeos)') : ''), 'pesq-secao-toda', () => secaoEscolher(caminho)));
+        if (!dados) {
+          const p = document.createElement('p');
+          p.className = 'pesq-dica';
+          p.textContent = 'Carregando os vídeos…';
+          grupo.appendChild(p);
+        } else if (dados.erro) {
+          const p = document.createElement('p');
+          p.className = 'pesq-dica';
+          p.textContent = dados.erro;
+          grupo.appendChild(p);
+        } else {
+          dados.videos.forEach(v => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'pesq-secao-linha pesq-secao-video';
+            b.setAttribute('role', 'option');
+            const nome = document.createElement('span');
+            nome.textContent = '🎬 ' + v.titulo;
+            b.appendChild(nome);
+            if (v.duracao) {
+              const d = document.createElement('span');
+              d.className = 'pesq-secao-total';
+              d.textContent = v.duracao;
+              b.appendChild(d);
+            }
+            b.addEventListener('click', e => { e.stopPropagation(); videoDaSecaoEscolher(v, caminho); });
+            grupo.appendChild(b);
+          });
+        }
+        painel.appendChild(grupo);
+      }
       function painelSecoesPintar() {
         const painel = $('pesquisaVideosSecoesPainel');
         const atual = $('pesquisaVideosSecao').value;
         painel.textContent = '';
+        if (painelSecaoAberta) { painelSecaoListaPintar(painel, painelSecaoAberta); return; }
         const linha = (rotulo, valor, total, classe) => {
           const b = document.createElement('button');
           b.type = 'button';
           b.className = 'pesq-secao-linha ' + (classe || '');
+          if (valor && total && total <= MAX_LISTA_SECAO) b.classList.add('pesq-secao-abre'); // a seta › mostra que abre a lista dos vídeos
           b.setAttribute('role', 'option');
           b.setAttribute('aria-selected', String(valor === atual));
           const nome = document.createElement('span');
@@ -32163,12 +32285,17 @@ function saveTemplatesToStorage() {
             n.textContent = total + (total === 1 ? ' vídeo' : ' vídeos');
             b.appendChild(n);
           }
-          b.addEventListener('click', () => {
-            $('pesquisaVideosSecao').value = valor;
-            secaoMudou();
-            painelSecoesAbrir(false);
-            painelSecoesPintar();
-            secaoListar(valor); // a lista dos vídeos da seção aparece para escolher um direto
+          b.addEventListener('click', e => {
+            // Seção de até MAX_LISTA_SECAO vídeos: abre a lista dos vídeos dela no painel. Maior (ou "Todas as seções"): escolhe direto.
+            if (valor && total && total <= MAX_LISTA_SECAO && codigoAcessoSalvo()) {
+              e.stopPropagation();
+              painelSecaoAberta = valor;
+              painelSecoesPintar();
+              $('pesquisaVideosSecoesPainel').scrollTop = 0;
+              painelSecaoCarregar(valor);
+              return;
+            }
+            secaoEscolher(valor);
           });
           return b;
         };
@@ -32202,7 +32329,7 @@ function saveTemplatesToStorage() {
       }
       $('pesquisaVideosSecaoBtn').addEventListener('click', () => {
         const abrir = $('pesquisaVideosSecoesPainel').hidden;
-        if (abrir) painelSecoesPintar();
+        if (abrir) { painelSecaoAberta = null; painelSecoesPintar(); } // abre sempre na lista de seções
         painelSecoesAbrir(abrir);
       });
       // Tocar fora do painel o fecha.
@@ -32228,47 +32355,14 @@ function saveTemplatesToStorage() {
         dica.textContent = !sel.value ? '(escolha uma seção)' : pode ? '(mais demorado: lê as legendas dos ' + (s ? s.total : '') + ' vídeos)' : '(seção grande demais: escolha uma subseção com até ' + max + ' vídeos)';
       }
       $('pesquisaVideosSecao').addEventListener('change', secaoMudou);
-      // Ao escolher uma seção, os vídeos dela aparecem na lista (no lugar dos resultados), cada um com "Usar este vídeo": quem já sabe o vídeo
-      // escolhe direto; quem não sabe escreve o assunto e procura só nessa seção. Seções grandes demais (o servidor diz o limite) não são listadas.
-      // "Todas as seções" tira a lista da seção (uma busca por assunto já feita continua).
-      async function secaoListar(secao) {
-        const status = $('pesquisaVideosStatus');
-        if (!secao) {
-          if (videosBusca && videosBusca.daSecao) {
-            videosBusca = null;
-            try { localStorage.removeItem(VIDEOS_CHAVE); } catch (e) { /* sem armazenamento */ }
-            videosPintar();
-            videosVoltarPintar();
-          }
-          dizer(status, '');
-          return;
-        }
-        if (!codigoAcessoSalvo()) return dizer(status, 'Salve o código de pesquisa em Ajustes → 🔐 Autorização de acessos.', { aviso: true });
-        // A lista de outra seção sai antes (não fica na tela se a nova for grande demais para listar).
-        if (videosBusca && videosBusca.daSecao && videosBusca.secao !== secao) {
-          videosBusca = null;
-          try { localStorage.removeItem(VIDEOS_CHAVE); } catch (e) { /* sem armazenamento */ }
-          videosPintar();
-          videosVoltarPintar();
-        }
-        dizer(status, 'Carregando os vídeos de “' + secao + '”…', { girando: true });
-        try {
-          const r = await postStudy({ tarefa: 'pesquisa-videos-da-secao', codigo: codigoAcessoSalvo(), secao }, 30000);
-          if ($('pesquisaVideosSecao').value !== secao) return; // a seção mudou enquanto carregava
-          if (!r.ok) return dizer(status, erroDe(r, 'Não consegui ler os vídeos dessa seção agora.'), { aviso: true });
-          const d = r.data || {};
-          if (!(d.videos || []).length) {
-            return dizer(status, 'Esta seção tem ' + (d.total || 'muitos') + ' vídeos, demais para listar: escolha uma subseção (até ' + (d.max || 150) + ' vídeos) para ver a lista, ou escreva um assunto para procurar nela.');
-          }
-          videosBusca = { assunto: '', videos: d.videos, secao, falas: false, daSecao: true };
-          listaFechada = false;
-          videosGuardar();
-          videosPintar();
-          videosVoltarPintar();
-          dizer(status, (d.total === 1 ? '1 vídeo' : d.total + ' vídeos') + ' nesta seção. Toque em “Usar este vídeo” ou escreva um assunto para procurar só nesta seção.');
-        } catch (e) {
-          dizer(status, 'Sem conexão com o servidor. Confira a internet e tente de novo.', { aviso: true });
-        }
+      // Tira o card do vídeo escolhido (ou a lista da última busca) da tela e do aparelho; o vídeo que estiver tocando para.
+      function videosLimparBusca() {
+        bibliaVideoParar();
+        videosBusca = null;
+        listaFechada = false;
+        try { localStorage.removeItem(VIDEOS_CHAVE); } catch (e) { /* sem armazenamento */ }
+        videosPintar();
+        videosVoltarPintar();
       }
       async function secoesCarregar() {
         if (secoesVideos && Date.now() - secoesVideos.quando < 24 * 3600 * 1000) return;
@@ -32292,7 +32386,7 @@ function saveTemplatesToStorage() {
         const guardada = JSON.parse(localStorage.getItem(VIDEOS_CHAVE) || 'null');
         if (guardada && Array.isArray(guardada.videos) && guardada.videos.length) {
           const daSecao = guardada.daSecao === true; // a lista de uma seção inteira (até 150) volta inteira; a de uma busca, até 20
-          videosBusca = { assunto: String(guardada.assunto || ''), videos: guardada.videos.slice(0, daSecao ? 150 : 20), secao: String(guardada.secao || ''), falas: guardada.falas === true, daSecao };
+          videosBusca = { assunto: String(guardada.assunto || ''), videos: guardada.videos.slice(0, daSecao ? 150 : 20), secao: String(guardada.secao || ''), falas: guardada.falas === true, daSecao, escolhido: guardada.escolhido === true };
           $('pesquisaVideosAssunto').value = videosBusca.assunto;
           if (videosBusca.secao) {
             // A seção da última busca volta junto (a lista de seções completa chega ao abrir a aba Vídeo).
