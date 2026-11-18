@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.57
+
+- Assistente de pesquisas · Vídeo: os cards do retorno da busca de vídeos ficam com fundo cinza claro (os botões Usar este vídeo e jw.org ficam brancos para destacar; o JW Library segue roxo claro).
+
 ## 6.10.56
 
 - Botões padronizados em todo o app: os que pedem texto à IA (pesquisa, resumo, respostas, esboços, formatação, correção, sugestões) com o mesmo azul claro, letra azul-escuro e moldura azul; os de gravação de áudio (gravar, pausar, parar, concluir, carregar gravação) em vermelho claro; os de limpar, descartar e apagar também em vermelho claro.

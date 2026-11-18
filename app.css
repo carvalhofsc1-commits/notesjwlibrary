@@ -16412,3 +16412,7 @@ button:is(#sv#sv, #anotacoesGravarBtn, #undoTopBtn, #undoBtn, .anot-grav-aviso, 
   [id^="acessoApagar"], #historicoLimparBtn, #gravacoesApagarTodasBtn, #memoriaApagarTudoBtn, #outrosBaseApagarBtn):hover:not(:disabled) {
   background: var(--rv-bg); background-image: none; color: var(--rv-tx); border: 1px solid var(--rv-bd);
 }
+
+/* 6.10.57: os cards do retorno da busca de vídeos em cinza claro (os botões dentro ficam brancos, menos o JW Library). */
+:is(#sv#sv, .pesq-videos-lista > li) { background: var(--inicio-cinza); }
+:is(#sv#sv#sv, .pesq-videos-lista > li button, .pesq-videos-lista > li a.secondary:not(.jwl-botao)) { background: var(--card); }
