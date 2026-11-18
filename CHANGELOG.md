@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.48
+
+- Início: os botões de atalho ficam sem cor de fundo (brancos no claro, a cor normal dos cartões no escuro); a borda colorida de cada um continua.
+
 ## 6.10.47
 
 - Início: os cartões do texto do dia e dos atalhos ficam brancos, sem as cores (roxo e azul); no tema escuro, na cor normal dos cartões.

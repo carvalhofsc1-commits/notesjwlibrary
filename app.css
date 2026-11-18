@@ -16138,3 +16138,7 @@ a.pesq-videos-jw { display: flex; width: 100%; box-sizing: border-box; margin: 0
 /* 6.10.47: os cartões do Início sem cor (brancos no claro, a cor normal dos cartões no escuro); vence a cor por posição (.card:nth-of-type) */
 .card.td-card,
 .card.atalhos-card { background: var(--card); border-color: var(--line); }
+
+/* 6.10.48: os botões de atalho do Início sem cor de fundo (brancos no claro, a cor dos cartões no escuro); a borda colorida de cada um continua */
+.atalhos-card .atalhos-grid .atalho,
+.atalhos-card .atalhos-grid .atalho:hover { background: var(--card); }
