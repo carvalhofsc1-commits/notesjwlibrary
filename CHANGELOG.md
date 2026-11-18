@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.58
+
+- Assistente de pesquisas: rótulos e campos com espaço entre si (os rótulos depois da linha do texto bíblico e das palavras-chave ficavam colados); o campo do texto bíblico volta ao tamanho de letra dos outros (usava por engano a classe das referências sobrescritas) e fica na mesma altura dos botões ao lado.
+
 ## 6.10.57
 
 - Assistente de pesquisas · Vídeo: os cards do retorno da busca de vídeos ficam com fundo cinza claro (os botões Usar este vídeo e jw.org ficam brancos para destacar; o JW Library segue roxo claro).

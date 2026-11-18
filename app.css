@@ -16416,3 +16416,13 @@ button:is(#sv#sv, #anotacoesGravarBtn, #undoTopBtn, #undoBtn, .anot-grav-aviso, 
 /* 6.10.57: os cards do retorno da busca de vídeos em cinza claro (os botões dentro ficam brancos, menos o JW Library). */
 :is(#sv#sv, .pesq-videos-lista > li) { background: var(--inicio-cinza); }
 :is(#sv#sv#sv, .pesq-videos-lista > li button, .pesq-videos-lista > li a.secondary:not(.jwl-botao)) { background: var(--card); }
+
+/* 6.10.58: Assistente de pesquisas — respiro entre os rótulos e os campos. Todo rótulo que não é o primeiro do bloco ganha espaço acima
+   (antes só os que vinham logo depois de um campo; depois da linha do texto bíblico ou das palavras-chave ficavam colados). O campo do texto
+   bíblico usa a classe .pesq-ref, que também é a das referências sobrescritas (letra pequena e sem altura de linha): volta ao normal. */
+.pesq-bloco .pesq-rotulo { margin: 0 0 6px; line-height: 1.3; }
+.pesq-bloco .pesq-rotulo:not(:first-child) { margin-top: 16px; }
+.pesq-bloco > .pesq-ref-linha + .pesq-rotulo, .pesq-bloco > .pesq-palavras + .pesq-rotulo { margin-top: 16px; }
+input.pesq-campo.pesq-ref { font-size: inherit; line-height: 1.3; margin-left: 0; }
+.pesq-ref-linha > .pesq-campo, .pesq-ref-linha > button.pesq-icone { min-height: 44px; }
+.pesq-bloco > :is(.pesq-pick, .pesq-status, .pesq-previa, .pesq-escolhido):not([hidden]) { margin-top: 8px; }
