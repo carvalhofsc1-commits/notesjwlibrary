@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.61
+
+- Assistente de pesquisas · Vídeo: a lixeira da busca de vídeos também volta a seção para "Todas as seções" (e desmarca a busca no que é falado).
+
 ## 6.10.60
 
 - Barra de baixo: o botão 🔊 Leitura dá lugar ao 🔎 Pesquisas (Assistente de pesquisas), bloqueado sem o código de pesquisa como o atalho do Início. O Assistente de leitura em voz continua no Início e no menu.
