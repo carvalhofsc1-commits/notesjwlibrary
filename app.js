@@ -7898,7 +7898,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.10.78'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.79'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -12543,7 +12543,7 @@ function saveTemplatesToStorage() {
         const t = document.createElement('strong');
         t.textContent = g.rotulo;
         const q = document.createElement('small');
-        q.textContent = vezes(g.qtd) + ' · ' + vezes(g.dias.size).replace('vez', 'dia').replace('vezes', 'dias');
+        q.textContent = vezes(g.qtd) + ' · ' + g.dias.size + (g.dias.size === 1 ? ' dia' : ' dias');
         nome.append(t, q);
         const v = document.createElement('span');
         v.className = 'extrato-valor';
@@ -12566,7 +12566,18 @@ function saveTemplatesToStorage() {
         extrato.lista.appendChild(caixa);
       });
       const fim = itens.length ? itens[itens.length - 1].saldo : inicial;
-      if (itens.length) extrato.lista.appendChild(extratoLinha('extrato-inicial', mes ? 'Saldo no fim do período' : 'Saldo atual', '', null, mes ? fim : d.saldo));
+      // O saldo, no fim da lista, em destaque (valor grande, em negrito): 6.10.79.
+      if (itens.length) {
+        const linhaSaldo = document.createElement('div');
+        linhaSaldo.className = 'extrato-linha extrato-saldo-final';
+        const rotulo = document.createElement('strong');
+        rotulo.textContent = mes ? 'Saldo no fim do período' : 'Saldo atual';
+        const valor = document.createElement('span');
+        valor.className = 'extrato-saldo-valor';
+        valor.textContent = extratoReais(mes ? fim : d.saldo);
+        linhaSaldo.append(rotulo, valor);
+        extrato.lista.appendChild(linhaSaldo);
+      }
       if (!itens.length) {
         const vazio = document.createElement('p');
         vazio.className = 'hint';

@@ -16493,3 +16493,8 @@ body[data-screen="salvas"] #secaoHistorico { display: block !important; margin: 
 .salvas-topo h2 { margin: 0; font-size: 1.15rem; line-height: 1.25; }
 /* 6.10.77: o nome da tela Formatar, no topo do cartão do campo de texto. */
 .formatar-titulo { margin: 0 0 12px; padding-bottom: 10px; font-size: 1.15rem; line-height: 1.25; border-bottom: 3px solid var(--sv-azul-bd); }
+
+/* 6.10.79: Extrato — a linha do saldo, no fim, em destaque (valor grande e em negrito, moldura azul). */
+.extrato-linha.extrato-saldo-final { align-items: center; padding: 12px 14px; border: 2px solid var(--sv-azul-bd); border-left-width: 6px; background: var(--sv-azul-bg); }
+.extrato-saldo-final strong { font-size: 1.05rem; }
+.extrato-saldo-valor { flex: 0 0 auto; font-size: 1.45rem; font-weight: 800; color: var(--sv-azul-tx); white-space: nowrap; font-variant-numeric: tabular-nums; }

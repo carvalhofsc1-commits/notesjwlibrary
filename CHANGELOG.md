@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.79
+
+- Extrato de créditos e consumo: a linha do saldo, no fim, fica em destaque (valor grande e em negrito, numa faixa com moldura azul). Corrigido "3 diaes" para "3 dias" nos subtotais.
+
 ## 6.10.78
 
 - Texto diário · leitura em voz alta com os comentários adicionais automáticos: o aviso passa a ser "Aguarde" [pausa] "gerando comentários adicionais" (duas falas seguidas, que fazem a pausa), no lugar de "Aguarde... gerando comentários".
