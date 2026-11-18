@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.77
+
+- Atalho Extrato: o card Extrato de créditos e consumo já abre expandido.
+- Modelos e agentes de IA: o resumo do capítulo da Leitura da Bíblia (tarefa leitura-biblia) entra no grupo "Esboços, dirigir, texto diário e resumo do capítulo" e usa o mesmo modelo mais avançado; no faturamento, passa a ser cobrado no preço dessa categoria.
+- Pesquisas e respostas salvas sai da tela Reuniões e vira uma tela própria (com ◀ Voltar para a tela de onde se veio), aberta pelo atalho do Início e pelo menu.
+- Formatar passa a se chamar "Formatar notas JW Library" no atalho do Início, no menu lateral e no título da própria tela.
+
 ## 6.10.76
 
 - Leitura da Bíblia · resumo: a seção PROFECIAS E EXPRESSÕES SIMBÓLICAS passa da corneta 📯 (difícil de reconhecer) para a trombeta 🎺, no título, nos itens, na opção e nas instruções da IA; os resumos já salvos (com 🔮 ou 📯) mostram 🎺.

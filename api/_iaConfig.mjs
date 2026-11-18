@@ -115,7 +115,8 @@ export const TAREFAS_DE_PESQUISA = new Set(["pesquisa-coletar", "pesquisa"]);
 
 // O modelo e o esforço de uma tarefa: os de esboços e discursos (se o administrador escolheu outros) ou os gerais.
 // "estudo-perguntas" (perguntas adicionais do estudo de A Sentinela) e "ebc-dirigente" (Estudo Bíblico) são do Preparar para dirigir, que usa o mesmo modelo dos esboços; "texto-diario-comentarios" (comentários adicionais do texto diário) também.
-export const TAREFAS_DE_ESBOCOS = new Set(["tesouros", "discurso", "publico", "publico-importar", "outros", "estudo-perguntas", "ebc-dirigente", "estudo-recap", "texto-diario-comentarios"]);
+// "leitura-biblia" (resumo do capítulo da Leitura diária da Bíblia) entrou na 6.10.77: usa o mesmo modelo mais avançado.
+export const TAREFAS_DE_ESBOCOS = new Set(["tesouros", "discurso", "publico", "publico-importar", "outros", "estudo-perguntas", "ebc-dirigente", "estudo-recap", "texto-diario-comentarios", "leitura-biblia"]);
 export function iaDaTarefa(config, tarefa) {
   if (tarefa === "audio") return { ...config, modelo: config.audioModelo || config.modelo, esforco: config.esforco };
   // Assistente de pesquisas: o modelo de cada etapa e o provedor que o atende (provedorTarefa).

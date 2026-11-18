@@ -3,18 +3,18 @@
     // É um app só: a tela escolhida (guardada no endereço, ex.: #reunioes) mostra os blocos dela e esconde os outros.
     // Formatar e Reuniões dividem o mesmo campo de texto. O app sempre abre no Início; ao recarregar a página, o endereço
     // mantém a tela em que se estava.
-    const APP_SCREENS = ['inicio', 'formatar', 'reunioes', 'backup', 'ajustes', 'leitura', 'transcricao', 'biblia', 'anotacoes', 'pesquisa']; // "leitura" = voz alta; "biblia" = leitura diária; "anotacoes" = reunião/assembleia/congresso; "pesquisa" = Assistente de pesquisas
+    const APP_SCREENS = ['inicio', 'formatar', 'reunioes', 'backup', 'ajustes', 'leitura', 'transcricao', 'biblia', 'anotacoes', 'pesquisa', 'salvas']; // "leitura" = voz alta; "biblia" = leitura diária; "anotacoes" = reunião/assembleia/congresso; "pesquisa" = Assistente de pesquisas
     try { localStorage.removeItem('jwLibraryNoteAplicarScreenV1'); } catch (e) { /* a tela não é mais guardada */ }
 
     function currentScreen() {
       return document.body.dataset.screen || 'inicio';
     }
 
-    // Marca na barra de baixo o botão da tela aberta. Pesquisas e respostas salvas é uma página da tela Reuniões: com ela aberta, marca o botão
-    // Pesquisas e não o Reuniões.
+    // Marca na barra de baixo o botão da tela aberta. Pesquisas e respostas salvas é uma tela própria (desde a 6.10.77), sem botão na barra:
+    // no menu lateral, marca o item dela.
     function navMarcar() {
       const tela = currentScreen();
-      const historico = tela === 'reunioes' && reunioesVistaAtual() === 'historico';
+      const historico = tela === 'salvas';
       document.querySelectorAll('#appNav button[data-screen-target]').forEach(btn => {
         const atual = btn.dataset.screenTarget === tela && !historico;
         if (atual) btn.setAttribute('aria-current', 'page');
@@ -386,11 +386,7 @@
       btn.addEventListener('click', () => {
         const destino = btn.dataset.menuAtalho;
         menuFechar();
-        if (destino === 'historico') {
-          showScreen('reunioes');
-          if (typeof historicoRecolher === 'function') historicoRecolher();
-          if (typeof reunioesIr === 'function') reunioesIr('historico');
-        }
+        if (destino === 'historico') salvasAbrir();
       });
     });
     // O endereço index.html#privacidade (atalho da página Sobre) abre Ajustes já com o card Privacidade e dados deste aparelho aberto.
@@ -3921,7 +3917,7 @@
     // (o áudio em texto não usa o esforço escolhido).
     const IA_NOTA_BOTOES = {
       aiSuggestBtn: 'geral', aiSentinelaBtn: 'geral', aiStudyBtn: 'geral', aiStudyQuestionsBtn: 'esbocos', tdGerarBtn: 'esbocos',
-      joiasResponderBtn: 'geral', bibliaResumirBtn: 'geral', ebcResponderBtn: 'geral', consideracaoResponderBtn: 'geral', nvcResponderBtn: 'geral', ebcDirPerguntasBtn: 'esbocos',
+      joiasResponderBtn: 'geral', bibliaResumirBtn: 'esbocos', ebcResponderBtn: 'geral', consideracaoResponderBtn: 'geral', nvcResponderBtn: 'geral', ebcDirPerguntasBtn: 'esbocos',
       tesourosEsbocoBtn: 'esbocos', discursoEsbocoBtn: 'esbocos', publicoEsbocoBtn: 'esbocos', outrosEsbocoBtn: 'esbocos',
       transcricaoCorrigirBtn: 'geral', transcricaoResumirBtn: 'geral',
       transcricaoIniciarBtn: '=Reconhecimento de voz: Google Chirp 3' // texto fixo (a transcrição é do Google, não da IA de texto); o botão Ler é preenchido por vozInfoMostrar
@@ -7902,7 +7898,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.10.76'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.77'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -12335,7 +12331,8 @@ function saveTemplatesToStorage() {
       consumoRender(r.data);
     }
     // Ao abrir o card, o consumo detalhado sempre começa recolhido (só o campo de total e saldo aparece).
-    consumoSection.addEventListener('toggle', () => { if (consumoSection.open) { consumoResumoBox.open = false; extrato.secao.open = false; consumoCarregar(consumoMesEl.value); } });
+    // Ao abrir o card, os de dentro começam recolhidos; pelo atalho Extrato (modo so-consumo), o Extrato fica aberto.
+    consumoSection.addEventListener('toggle', () => { if (consumoSection.open) { consumoResumoBox.open = false; extrato.secao.open = document.body.classList.contains('so-consumo'); consumoCarregar(consumoMesEl.value); } });
     consumoMesEl.addEventListener('change', () => consumoCarregar(consumoMesEl.value));
     document.getElementById('consumoAtualizarBtn').addEventListener('click', () => consumoCarregar(consumoMesEl.value));
 
@@ -12620,7 +12617,7 @@ function saveTemplatesToStorage() {
       document.body.classList.add('so-consumo');
       document.getElementById('consumoVoltarBarra').hidden = false;
       consumoSection.open = true;
-      extrato.secao.open = false;
+      extrato.secao.open = true; // o Extrato de créditos e consumo já abre expandido (e carrega pelo evento toggle)
       consumoResumoBox.open = false;
       window.scrollTo(0, 0);
     }
@@ -21034,7 +21031,7 @@ function saveTemplatesToStorage() {
     document.getElementById('exportarDocxBtn').addEventListener('click', event => docxPreviaAbrir(event.currentTarget));
     document.getElementById('salvarTextoBtn').addEventListener('click', async () => {
       const guardado = await historicoSalvarNota(input.value, 'Texto do Formatar', 'O texto do campo Formatar será guardado em Pesquisas e respostas salvas → Textos, com o nome que você escolher.');
-      if (guardado) await showAlert('Texto salvo como «' + guardado.titulo + '». Para reabrir: Reuniões → Pesquisas e respostas salvas → Textos.', 'Texto salvo');
+      if (guardado) await showAlert('Texto salvo como «' + guardado.titulo + '». Para reabrir: Início → Pesquisas salvas → Textos.', 'Texto salvo');
     });
     document.getElementById('exportarCompartilharBtn').addEventListener('click', event => docxPreviaAbrir(event.currentTarget));
     // Compartilhar só aparece onde o aparelho aceita compartilhar arquivos (celulares).
@@ -25399,9 +25396,18 @@ function saveTemplatesToStorage() {
     const REUNIOES_VISTAS = {
       comentarios: { caixa: 'grupoComentarios', titulo: '✋ Preparar para comentar' },
       dirigir: { caixa: 'grupoDirigir', titulo: '🎤 Preparar para dirigir' },
-      discursos: { caixa: 'grupoDiscursos', titulo: '📜 Preparação de discursos e esboços' },
-      historico: { caixa: 'secaoHistorico', titulo: '🗂️ Pesquisas e respostas salvas' }
+      discursos: { caixa: 'grupoDiscursos', titulo: '📜 Preparação de discursos e esboços' }
     };
+
+    // Pesquisas e respostas salvas: tela própria (6.10.77). Abre com as categorias recolhidas; o ◀ Voltar leva à tela de onde se veio.
+    let salvasDe = 'inicio';
+    function salvasAbrir() {
+      const tela = currentScreen();
+      if (tela !== 'salvas') salvasDe = tela;
+      if (typeof historicoRecolher === 'function') historicoRecolher();
+      showScreen('salvas');
+    }
+    document.getElementById('salvasVoltar').addEventListener('click', () => showScreen(salvasDe && salvasDe !== 'salvas' ? salvasDe : 'inicio'));
 
     function reunioesVistaAtual() { return document.body.dataset.reunioes || 'hub'; }
 
@@ -25426,6 +25432,7 @@ function saveTemplatesToStorage() {
       botao.addEventListener('click', () => {
         const destino = botao.dataset.atalho;
         if (destino === 'extrato') return extratoAbrir();
+        if (destino === 'historico') return salvasAbrir();
         const ferramenta = ATALHOS_FERRAMENTAS[destino];
         if (ferramenta) {
           showScreen('reunioes');
@@ -25436,7 +25443,6 @@ function saveTemplatesToStorage() {
         }
         if (!REUNIOES_VISTAS[destino]) return showScreen(destino);
         showScreen('reunioes');
-        if (destino === 'historico') historicoRecolher();
         reunioesRecolherOpcoes(destino);
         reunioesIr(destino);
       });
@@ -25448,8 +25454,7 @@ function saveTemplatesToStorage() {
       if (document.body.dataset.reunioes !== destino) document.body.classList.remove('texto-chegou'); // cada página começa sem o cartão do Texto original
       document.body.dataset.reunioes = destino;
       GRUPOS_REUNIOES.forEach(id => { document.getElementById(id).open = destino !== 'hub' && REUNIOES_VISTAS[destino].caixa === id; });
-      document.getElementById('secaoReunioes').open = destino !== 'historico'; // na tela principal o resumo dela fica escondido
-      document.getElementById('secaoHistorico').open = destino === 'historico';
+      document.getElementById('secaoReunioes').open = true; // na tela principal o resumo dela fica escondido (pelo CSS)
       if (destino !== 'hub') {
         // O título começa com um emoji: ele vai num <span> à parte, maior que o texto.
         const tituloPagina = document.getElementById('reunioesTitulo');
@@ -25532,6 +25537,7 @@ function saveTemplatesToStorage() {
       if (!elemento || !elemento.closest) return;
       const dono = elemento.closest('#grupoComentarios, #grupoDirigir, #grupoDiscursos, #secaoHistorico');
       if (!dono) return;
+      if (dono.id === 'secaoHistorico') { if (currentScreen() !== 'salvas') salvasAbrir(); return; } // tela própria desde a 6.10.77
       const vista = Object.keys(REUNIOES_VISTAS).find(v => REUNIOES_VISTAS[v].caixa === dono.id);
       if (vista && reunioesVistaAtual() !== vista) reunioesIr(vista, { keepScroll: true });
     }
@@ -25589,7 +25595,6 @@ function saveTemplatesToStorage() {
       caixa.querySelector(':scope > summary').addEventListener('click', event => {
         event.preventDefault();
         if (caixa.classList.contains('grupo-desabilitado')) return;
-        if (vista === 'historico') historicoRecolher();
         reunioesRecolherOpcoes(vista);
         reunioesIr(vista);
       });

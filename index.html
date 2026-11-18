@@ -48,7 +48,7 @@
       <p class="app-menu-secao">Menu principal</p>
       <button type="button" data-menu-ir="inicio"><span aria-hidden="true">🏠</span> Início</button>
       <button type="button" data-menu-ir="anotacoes"><span aria-hidden="true">📝</span> Anotações</button>
-      <button type="button" data-menu-ir="formatar"><span aria-hidden="true">✍️</span> Formatar</button>
+      <button type="button" data-menu-ir="formatar"><span aria-hidden="true">✍️</span> Formatar notas JW Library</button>
       <button type="button" data-menu-ir="biblia"><span aria-hidden="true">📚</span> Leitura diária da Bíblia</button>
       <button type="button" data-menu-ir="leitura"><span aria-hidden="true">🔊</span> Assistente de leitura em voz</button>
       <button type="button" data-menu-ir="reunioes"><span aria-hidden="true">📅</span> Reuniões</button>
@@ -154,7 +154,7 @@
           <button type="button" class="atalho" data-atalho="transcricao"><span class="atalho-icone" aria-hidden="true">🎙️</span><span class="atalho-nome">Áudio em texto</span><span class="atalho-desc">Transcrever um áudio e resumir com a IA</span><span class="atalho-trava" hidden></span></button>
         </div>
         <div class="atalhos-grid" id="atalhosPagina2" role="group" aria-label="Atalhos, página 2 de 2">
-          <button type="button" class="atalho" data-atalho="formatar"><span class="atalho-icone" aria-hidden="true">✨</span><span class="atalho-nome">Formatar</span><span class="atalho-desc">Organizar e formatar o texto com a IA</span></button>
+          <button type="button" class="atalho" data-atalho="formatar"><span class="atalho-icone" aria-hidden="true">✨</span><span class="atalho-nome">Formatar notas JW Library</span><span class="atalho-desc">Organizar e formatar o texto com a IA</span></button>
           <button type="button" class="atalho" data-atalho="sentinela"><span class="atalho-icone" aria-hidden="true">📰</span><span class="atalho-nome">A Sentinela</span><span class="atalho-desc">Respostas e comentários do estudo</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="joias"><span class="atalho-icone" aria-hidden="true">💎</span><span class="atalho-nome">Joias espirituais</span><span class="atalho-desc">Leitura da semana e comentários</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="backup"><span class="atalho-icone" aria-hidden="true">📦</span><span class="atalho-nome">Backup do JW Library</span><span class="atalho-desc">Notas, marcações e exportação</span></button>
@@ -474,6 +474,8 @@
 
     <div class="single-grid">
       <section class="card screen-editor">
+        <!-- O nome da tela Formatar (6.10.77): só aparece nela (o cartão do campo de texto também é usado na tela Reuniões). -->
+        <h2 class="formatar-titulo screen-formatar"><span aria-hidden="true">✍️</span> Formatar notas JW Library</h2>
         <div class="card-title-row">
           <h2>📝 1. Texto original</h2>
           <div class="top-text-actions" role="group" aria-label="Desfazer, limpar e copiar o texto">
@@ -1234,16 +1236,23 @@
             </details>
           </details>
           </details>
-
-          <!-- Pesquisas e respostas salvas: cada resultado da IA fica guardado neste aparelho e pode ser reaberto depois. -->
-          <details class="section-accordion reunioes-secao historico-secao" id="secaoHistorico">
-            <summary><span class="grupo-icone" aria-hidden="true">🗂️</span><h2 class="reunioes-title">Pesquisas e respostas salvas<span class="grupo-desc">Respostas da IA e textos salvos</span></h2></summary>
-            <h3 class="historico-cabecalho">Pesquisas da semana e textos salvos</h3>
-            <p class="hint historico-dica">As respostas das reuniões seguem a semana escolhida no alto. Os <strong>textos salvos</strong> (campo Formatar e Áudio em texto) aparecem sempre, sem depender da semana.</p>
-            <div id="historicoLista"></div>
-            <button id="historicoLimparBtn" class="secondary historico-limpar" type="button">🗑️ Apagar as pesquisas das semanas anteriores</button>
-          </details>
         </div>
+      </section>
+
+      <!-- Pesquisas e respostas salvas (tela própria desde a 6.10.77; antes era uma página da tela Reuniões): cada resultado da IA, de qualquer
+           parte do app, fica guardado neste aparelho e pode ser reaberto depois. Abre pelo atalho do Início e pelo menu. -->
+      <section class="card salvas-card screen-salvas" id="salvasCard" aria-labelledby="salvasTitulo">
+        <div class="salvas-topo">
+          <button id="salvasVoltar" class="secondary" type="button">◀ Voltar</button>
+          <h2 id="salvasTitulo"><span aria-hidden="true">🗂️</span> Pesquisas e respostas salvas</h2>
+        </div>
+        <details class="historico-secao" id="secaoHistorico" open>
+          <summary hidden>Pesquisas e respostas salvas</summary>
+          <h3 class="historico-cabecalho">Pesquisas da semana e textos salvos</h3>
+          <p class="hint historico-dica">As respostas das reuniões seguem a semana escolhida na tela Reuniões. Os <strong>textos salvos</strong> (campo Formatar, Áudio em texto, Anotações e resumos da Bíblia) aparecem sempre, sem depender da semana.</p>
+          <div id="historicoLista"></div>
+          <button id="historicoLimparBtn" class="secondary historico-limpar" type="button">🗑️ Apagar as pesquisas das semanas anteriores</button>
+        </details>
       </section>
 
     </div>
@@ -1805,7 +1814,7 @@
                   <tr><th scope="row"><label for="googleContaSelect">Voz e áudio</label></th><td><select id="googleContaSelect"></select></td></tr>
                   <tr class="modelos-resumo-secao"><th colspan="2" scope="colgroup">✍️ Texto</th></tr>
                   <tr><th scope="row"><label for="iaModelo">Uso geral</label></th><td><select id="iaModelo"></select><select id="iaEsforco" aria-label="Esforço do uso geral"></select></td></tr>
-                  <tr><th scope="row"><label for="iaEsbocoModelo">Esboços, dirigir e texto diário</label></th><td><select id="iaEsbocoModelo"></select><select id="iaEsbocoEsforco" aria-label="Esforço dos esboços e do dirigir"></select></td></tr>
+                  <tr><th scope="row"><label for="iaEsbocoModelo">Esboços, dirigir, texto diário e resumo do capítulo</label></th><td><select id="iaEsbocoModelo"></select><select id="iaEsbocoEsforco" aria-label="Esforço dos esboços e do dirigir"></select></td></tr>
                   <tr class="modelos-resumo-secao"><th colspan="2" scope="colgroup">🔊 Voz e áudio</th></tr>
                   <tr><th scope="row"><label for="vozModelo">Assistente de leitura em voz</label></th><td><select id="vozModelo"></select><select id="vozVoz" aria-label="Voz da leitura"></select></td></tr>
                   <tr><th scope="row"><label for="iaAudioMotor">Áudio: transcrição</label></th><td><select id="iaAudioMotor"></select><select id="iaAudioGeminiModelo" aria-label="Modelo Gemini da transcrição"></select></td></tr>

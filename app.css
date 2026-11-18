@@ -16480,3 +16480,16 @@ details[open] > summary.seta-padrao::before { transform: rotate(180deg); }
 .screen-anotacoes .anotacoes-parte-item:not(.preenchida):not(.aberta) .anotacoes-parte,
 .screen-anotacoes .anotacoes-parte-item:not(.preenchida):not(.aberta) .anotacoes-parte:where(:not(:disabled)):hover,
 .screen-anotacoes .anotacoes-parte-item:not(.preenchida):not(.aberta) .anotacoes-parte.secondary:hover { background-color: var(--inicio-cinza); background-image: none; }
+
+/* 6.10.77: Pesquisas e respostas salvas em tela própria (antes, página da tela Reuniões). */
+body:not([data-screen="salvas"]) .screen-salvas,
+body[data-screen="salvas"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-ajustes, .screen-leitura, .screen-transcricao, .screen-biblia, .screen-anotacoes, .screen-pesquisa) {
+  display: none !important;
+}
+body[data-screen="salvas"] #secaoHistorico { display: block !important; margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; }
+#secaoHistorico > summary { display: none !important; }
+.salvas-topo { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; margin: 0 0 12px; padding-bottom: 10px; border-bottom: 3px solid var(--sv-azul-bd); }
+.salvas-topo button { width: auto; min-height: 38px; padding: 0 14px; margin: 0; }
+.salvas-topo h2 { margin: 0; font-size: 1.15rem; line-height: 1.25; }
+/* 6.10.77: o nome da tela Formatar, no topo do cartão do campo de texto. */
+.formatar-titulo { margin: 0 0 12px; padding-bottom: 10px; font-size: 1.15rem; line-height: 1.25; border-bottom: 3px solid var(--sv-azul-bd); }

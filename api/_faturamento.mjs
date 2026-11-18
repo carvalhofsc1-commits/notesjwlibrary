@@ -37,7 +37,8 @@ export const RECURSOS = [
   { id: "dirigir", rotulo: "Preparar para dirigir (perguntas e recapitulação)", cat: "esbocos", acesso: ["dirigente"], tarefas: ["estudo-perguntas", "estudo-recap", "ebc-dirigente"] },
   { id: "esbocos", rotulo: "Esboços: Tesouros, discurso curto e outros", cat: "esbocos", acesso: ["dirigente"], tarefas: ["tesouros", "discurso", "outros"] },
   { id: "publico", rotulo: "Esboço do discurso público (S-34)", cat: "esbocos", acesso: ["s34"], tarefas: ["publico", "publico-importar", "publico-canticos"] },
-  { id: "leitura-biblia", rotulo: "Resumo da leitura diária da Bíblia", cat: "texto", acesso: ["resumo"], tarefas: ["leitura-biblia"] },
+  // Desde a 6.10.77 o resumo usa o modelo dos esboços (o mais avançado): cobrado no preço dessa categoria.
+  { id: "leitura-biblia", rotulo: "Resumo da leitura diária da Bíblia", cat: "esbocos", acesso: ["resumo"], tarefas: ["leitura-biblia"] },
   { id: "audio-ia", rotulo: "Áudio em texto: correção, nomes e resumo (IA)", cat: "texto", acesso: ["texto"], tarefas: ["audio-correcao", "audio-nomes", "audio-resumo"] },
   { id: "voz", rotulo: "Assistente de leitura em voz", cat: "voz", acesso: ["leitura", "pesquisa"], tarefas: ["voz"] },
   { id: "audio", rotulo: "Áudio em texto: transcrição", cat: "audio", acesso: ["texto"], tarefas: ["audio"] },
