@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.56
+
+- Botões padronizados em todo o app: os que pedem texto à IA (pesquisa, resumo, respostas, esboços, formatação, correção, sugestões) com o mesmo azul claro, letra azul-escuro e moldura azul; os de gravação de áudio (gravar, pausar, parar, concluir, carregar gravação) em vermelho claro; os de limpar, descartar e apagar também em vermelho claro.
+
 ## 6.10.55
 
 - Todos os botões de atalho para o JW Library (cartões das reuniões, texto diário, respostas, imagens da apostila, Anotações, Leitura da Bíblia e Assistente de pesquisas) ficam em roxo claro com a letra roxo-escuro; no cartão de Tesouros a letra aparecia quase apagada.

@@ -16379,3 +16379,36 @@ button:is(#sv#sv, #anotacoesGravarBtn, #undoTopBtn, #undoBtn, .anot-grav-aviso, 
   background: var(--jwl-bg); background-image: none; color: var(--jwl-tx); border: 1px solid var(--jwl-bd); opacity: 1;
 }
 :is(#sv#sv#sv, .td-atalho-jwl, .anotacoes-jwl, .answer-jwl-btn, .study-imagem-jwl, .bp-jwl, #pesquisaRefJwl, #pesquisaRefEscolhidoJwl, .jwl-botao) * { color: inherit; }
+
+/* 6.10.56: três padrões de botão em todo o app.
+   IA (pede texto à IA: pesquisa, resumo, respostas, esboços, formatação, correção, sugestões): azul claro, letra azul-escuro, moldura azul.
+   Gravação de áudio: vermelho claro. Limpar, descartar e apagar: vermelho claro. */
+:root { --ia-bg: #e6f0fd; --ia-tx: #1e3a8a; --ia-bd: #60a5fa; --rv-bg: #fdeaea; --rv-tx: #991b1b; --rv-bd: #f87171; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ia-bg: #1e3a5f; --ia-tx: #dbeafe; --ia-bd: #3b82f6; --rv-bg: #4a2228; --rv-tx: #fee2e2; --rv-bd: #ef4444; } }
+:root[data-theme="dark"] { --ia-bg: #1e3a5f; --ia-tx: #dbeafe; --ia-bd: #3b82f6; --rv-bg: #4a2228; --rv-tx: #fee2e2; --rv-bd: #ef4444; }
+
+:is(#sv#sv#sv, .ai-study-btn, .ai-main-btn, #tdGerarBtn, #tdIaOutrosBtn, #anotacoesIaBtn, #anotacoesRespIa, #anotacoesPerguntasIa, #anotacoesGravResumoBtn,
+  #anotacoesGravResumirTodasBtn, #aiSuggestBtn, #aiSentinelaBtn, #aiAnotherBtn, #aiImproveBtn, #publicoCanticoBtn, #outrosPesquisarBtn, #bibliaResumirBtn,
+  #transcricaoNomesSugerirBtn, #transcricaoCorrigirBtn, #transcricaoResumirBtn, #transcricaoIniciarBtn, #pesquisaBtn, #pesquisaEscolhaElaborarBtn),
+:is(#sv#sv#sv, .ai-study-btn, .ai-main-btn, #tdGerarBtn, #tdIaOutrosBtn, #anotacoesIaBtn, #anotacoesRespIa, #anotacoesPerguntasIa, #anotacoesGravResumoBtn,
+  #anotacoesGravResumirTodasBtn, #aiSuggestBtn, #aiSentinelaBtn, #aiAnotherBtn, #aiImproveBtn, #publicoCanticoBtn, #outrosPesquisarBtn, #bibliaResumirBtn,
+  #transcricaoNomesSugerirBtn, #transcricaoCorrigirBtn, #transcricaoResumirBtn, #transcricaoIniciarBtn, #pesquisaBtn, #pesquisaEscolhaElaborarBtn):hover:not(:disabled) {
+  background: var(--ia-bg); background-image: none; color: var(--ia-tx); border: 1px solid var(--ia-bd);
+}
+
+:is(#sv#sv#sv, #anotacoesGravarBtn, #anotacoesCarregarBtn, #anotacoesGravPausarBtn, #anotacoesGravPararBtn, #anotacoesGravConcluirBtn, #transcricaoGravarBtn,
+  #transcricaoGravPausarBtn, #transcricaoGravPararBtn, .grav-parar, .anot-grav-aviso),
+:is(#sv#sv#sv, #anotacoesGravarBtn, #anotacoesCarregarBtn, #anotacoesGravPausarBtn, #anotacoesGravPararBtn, #anotacoesGravConcluirBtn, #transcricaoGravarBtn,
+  #transcricaoGravPausarBtn, #transcricaoGravPararBtn, .grav-parar, .anot-grav-aviso):hover:not(:disabled),
+:is(#sv#sv#sv, #tdIaLimparBtn, #anotacoesBibliaLimpar, #anotacoesLimparBtn, #anotacoesGravDescartarBtn, #anotacoesGravDescartar2Btn, #anotacoesRespLimpar,
+  #clearTopBtn, #clearBtn, .ia-extra-limpar, #publicoLimparBtn, #outrosLimparBtn, #clearCustomSymbolsBtn, #leituraLimparBtn, #leituraBuscaLimpar,
+  #transcricaoArquivoLimparBtn, #transcricaoGravDescartarBtn, #transcricaoTipoLimparBtn, #transcricaoDadosLimparBtn, #transcricaoDocsLimparBtn,
+  #pesquisaRefLimparBtn, #pesquisaLimparBtn, .anotacoes-lixeira, .limpar-btn, .danger, .bk-danger, .historico-apagar, .tr-lista-descartar,
+  [id^="acessoApagar"], #historicoLimparBtn, #gravacoesApagarTodasBtn, #memoriaApagarTudoBtn, #outrosBaseApagarBtn),
+:is(#sv#sv#sv, #tdIaLimparBtn, #anotacoesBibliaLimpar, #anotacoesLimparBtn, #anotacoesGravDescartarBtn, #anotacoesGravDescartar2Btn, #anotacoesRespLimpar,
+  #clearTopBtn, #clearBtn, .ia-extra-limpar, #publicoLimparBtn, #outrosLimparBtn, #clearCustomSymbolsBtn, #leituraLimparBtn, #leituraBuscaLimpar,
+  #transcricaoArquivoLimparBtn, #transcricaoGravDescartarBtn, #transcricaoTipoLimparBtn, #transcricaoDadosLimparBtn, #transcricaoDocsLimparBtn,
+  #pesquisaRefLimparBtn, #pesquisaLimparBtn, .anotacoes-lixeira, .limpar-btn, .danger, .bk-danger, .historico-apagar, .tr-lista-descartar,
+  [id^="acessoApagar"], #historicoLimparBtn, #gravacoesApagarTodasBtn, #memoriaApagarTudoBtn, #outrosBaseApagarBtn):hover:not(:disabled) {
+  background: var(--rv-bg); background-image: none; color: var(--rv-tx); border: 1px solid var(--rv-bd);
+}
