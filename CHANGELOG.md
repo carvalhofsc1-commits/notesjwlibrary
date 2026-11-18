@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.62
+
+- Assistente de pesquisas · Vídeo: o botão "Abrir os vídeos do jw.org" passa a se chamar "Abrir a seção de vídeos do jw.org".
+
 ## 6.10.61
 
 - Assistente de pesquisas · Vídeo: a lixeira da busca de vídeos também volta a seção para "Todas as seções" (e desmarca a busca no que é falado).
