@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.47
+
+- Início: os cartões do texto do dia e dos atalhos ficam brancos, sem as cores (roxo e azul); no tema escuro, na cor normal dos cartões.
+
 ## 6.10.46
 
 - Início: o cartão dos atalhos deixa o verde-água (tint-6) e passa ao azul (tint-1), no claro e no escuro.

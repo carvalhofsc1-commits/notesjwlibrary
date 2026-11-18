@@ -16134,3 +16134,7 @@ a.pesq-videos-jw { display: flex; width: 100%; box-sizing: border-box; margin: 0
 
 /* 6.10.46: o cartão dos atalhos do Início em azul (não mais verde-água) */
 .card.tint-1 { background: var(--tint1-bg); border-color: var(--tint1-border); }
+
+/* 6.10.47: os cartões do Início sem cor (brancos no claro, a cor normal dos cartões no escuro); vence a cor por posição (.card:nth-of-type) */
+.card.td-card,
+.card.atalhos-card { background: var(--card); border-color: var(--line); }
