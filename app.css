@@ -16125,3 +16125,7 @@ a.pesq-videos-jw { display: flex; width: 100%; box-sizing: border-box; margin: 0
 .anot-vm .anot-vm-parte.escolhida { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
 /* Anotações · Reunião: campo Data mais fino. */
 .anotacoes-detalhes #anotacoesDataReuniao { min-height: 0; height: 36px; padding: 4px 10px; font-size: .92rem; line-height: 1.2; }
+
+/* 6.10.44: o logo do NoteStyle na ponta direita da linha "NoteStyle" da prévia do Word da pesquisa */
+.pq-doc .pq-doc-marca { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pq-doc .pq-doc-marca img { width: 3em; height: 3em; flex: 0 0 auto; object-fit: contain; }

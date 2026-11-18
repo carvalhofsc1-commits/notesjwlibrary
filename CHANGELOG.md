@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.44
+
+- Pesquisa · Word: o logo do NoteStyle fica na ponta direita da linha "NoteStyle" do topo do documento (no arquivo e na prévia), porque o visualizador do iPhone não mostra o cabeçalho do Word. Nesse documento o cabeçalho com o logo deixa de ir, para não repetir.
+
 ## 6.10.43
 
 - Exportar para Word: o logo do NoteStyle aparece no cabeçalho do documento, do lado direito (1,3 cm), em todas as páginas.
