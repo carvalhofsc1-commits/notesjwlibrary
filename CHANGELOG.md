@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.75
+
+- Anotações: os cards com os temas dos discursos (programa da reunião, assembleia ou congresso) ficam com fundo cinza claro; os que já têm anotações e o card aberto mantêm a cor própria.
+
 ## 6.10.74
 
 - Leitura da Bíblia · resumo: a seção PROFECIAS E EXPRESSÕES SIMBÓLICAS deixa a bola de cristal (adivinhação, que Jeová detesta) e passa à trombeta 📯, no título, nos itens, na opção do resumo e nas instruções da IA; o servidor troca a bola de cristal mesmo que um prompt editado a peça, e os resumos já salvos mostram a trombeta. O grupo de Apocalipse (Bíblia por seções) passa de 🔮 a 👑, e a bola de cristal sai da lista de emojis.

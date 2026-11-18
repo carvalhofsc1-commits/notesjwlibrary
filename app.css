@@ -16475,3 +16475,8 @@ details[open] > summary.seta-padrao::before { transform: rotate(180deg); }
 .biblia-resumo-leitura strong.br-qualidade { color: #c2410c; font-weight: 800; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .biblia-resumo-leitura strong.br-qualidade { color: #fdba74; } }
 :root[data-theme="dark"] .biblia-resumo-leitura strong.br-qualidade { color: #fdba74; }
+
+/* 6.10.75: Anotações — os cards com os temas dos discursos ficam com fundo cinza claro (os com anotações e o aberto mantêm a cor própria). */
+.screen-anotacoes .anotacoes-parte-item:not(.preenchida):not(.aberta) .anotacoes-parte,
+.screen-anotacoes .anotacoes-parte-item:not(.preenchida):not(.aberta) .anotacoes-parte:where(:not(:disabled)):hover,
+.screen-anotacoes .anotacoes-parte-item:not(.preenchida):not(.aberta) .anotacoes-parte.secondary:hover { background-color: var(--inicio-cinza); background-image: none; }
