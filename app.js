@@ -98,6 +98,10 @@
       if (changed && currentScreen() === 'leitura') leituraAoSair(); // saindo da tela Leitura, a leitura em voz alta para
       if (changed && (currentScreen() === 'biblia' || currentScreen() === 'pesquisa')) bibliaVideoParar(); // saindo da Bíblia ou das Pesquisas, o vídeo que estiver tocando para
       document.body.dataset.screen = screen;
+      // O modo "só o Consumo" (atalho Extrato) vale só até a próxima troca de tela; extratoAbrir o liga de novo logo depois.
+      document.body.classList.remove('so-consumo');
+      const consumoVoltar = document.getElementById('consumoVoltarBarra');
+      if (consumoVoltar) consumoVoltar.hidden = true;
       if (screen === 'ajustes') { // o card Consumo de IA e faturamento e o Extrato dentro dele sempre abrem recolhidos
         ['extratoSection', 'consumoResumoBox', 'consumoSection'].forEach(id => { const el = document.getElementById(id); if (el) el.open = false; });
       }
@@ -7876,6 +7880,20 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
+    // Setas dos cards recolhíveis (6.10.72): os títulos que usam a seta nativa do navegador (▶, que vira ▼ ao abrir) ganham a classe
+    // .seta-padrao, e o CSS a troca pela seta do app: ▾ recolhido e ▴ aberto. Vale também para os cards criados depois (observador).
+    (function setasPadrao() {
+      const marcar = () => {
+        document.querySelectorAll('details > summary:not(.seta-padrao)').forEach(s => {
+          const cs = getComputedStyle(s);
+          if (cs.display === 'list-item' && cs.listStyleType !== 'none') s.classList.add('seta-padrao');
+        });
+      };
+      let pendente = false;
+      const agendar = () => { if (!pendente) { pendente = true; requestAnimationFrame(() => { pendente = false; marcar(); }); } };
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', marcar); else marcar();
+      new MutationObserver(agendar).observe(document.documentElement, { childList: true, subtree: true });
+    })();
     // A IA às vezes marca o itálico com um sublinhado só (_texto_, do Markdown) em vez de dois (__texto__, o do app): o "_" aparecia na tela
     // (transcrições de vídeo, respostas). Aqui o simples vira duplo, só quando cerca palavras (não mexe em nomes_com_sublinhado).
     function italicoDuplo(texto) {
@@ -7884,7 +7902,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.10.71'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.72'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -12594,14 +12612,19 @@ function saveTemplatesToStorage() {
     extrato.secao.addEventListener('toggle', () => { if (extrato.secao.open) extratoCarregar(); });
     extrato.periodo.addEventListener('change', extratoRender);
     document.getElementById('extratoAtualizarBtn').addEventListener('click', extratoCarregar);
-    // Atalho do Início: leva a Ajustes e abre o card Consumo de IA e faturamento; os campos de dentro (consumo detalhado, Pix e Extrato) ficam recolhidos.
+    // Atalho do Início: abre o card Consumo de IA e faturamento numa tela só dele (Ajustes sem as outras opções, classe so-consumo no body),
+    // com o botão Voltar no topo (volta ao Início). Os campos de dentro (consumo detalhado, Extrato e Pix) ficam recolhidos. Sair de Ajustes
+    // (ou abrir Ajustes por outro caminho) desfaz o modo.
     function extratoAbrir() {
       showScreen('ajustes');
+      document.body.classList.add('so-consumo');
+      document.getElementById('consumoVoltarBarra').hidden = false;
       consumoSection.open = true;
       extrato.secao.open = false;
       consumoResumoBox.open = false;
-      setTimeout(() => consumoSection.scrollIntoView({ block: 'start' }), 120);
+      window.scrollTo(0, 0);
     }
+    document.getElementById('consumoVoltarBtn').addEventListener('click', () => showScreen('inicio'));
 
     // Administrador: preços por categoria e a chave PIX.
     const faturamentoStatus = document.getElementById('faturamentoStatus');

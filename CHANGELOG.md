@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.72
+
+- Assistente de pesquisas · Vídeo: "Procurar também no que é falado" passa para baixo do campo de busca (antes do link do vídeo).
+- Setas dos cards recolhíveis em todo o app: recolhido, a seta aponta para baixo (▾); aberto, para cima (▴). Os cards com a seta nativa do navegador (▶) também passam a esse padrão.
+- Atalho Extrato do Início: abre o card Consumo de IA e faturamento numa tela só dele (sem as outras opções de Ajustes), com o botão ◀ Voltar no topo.
+- Consumo de IA e faturamento: o Extrato de créditos e consumo vem antes do Adicionar crédito por Pix.
+- Ajustes: "Administração de usuários" passa a se chamar "Adm. de usuários e custos de IA".
+
 ## 6.10.71
 
 - Início: removido o gesto de puxar a tela para baixo para atualizar (app instalado). Para atualizar o app, ficam o aviso "Nova versão disponível · Recarregar" e o menu.

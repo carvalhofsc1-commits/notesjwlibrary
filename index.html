@@ -100,7 +100,7 @@
         <div class="td-topo">
           <button id="tdAnterior" class="secondary td-nav" type="button" aria-label="Dia anterior">◀</button>
           <button id="tdAbrir" class="td-abrir" type="button" aria-expanded="false" aria-controls="tdDetalhe">
-            <span class="td-data"><span aria-hidden="true">📅</span> <span id="tdData">Texto diário</span> <span class="td-seta" aria-hidden="true">›</span></span>
+            <span class="td-data"><span aria-hidden="true">📅</span> <span id="tdData">Texto diário</span> <span class="td-seta" aria-hidden="true">▾</span></span>
             <span id="tdTema" class="td-tema">Carregando o texto do dia…</span>
           </button>
           <button id="tdProximo" class="secondary td-nav" type="button" aria-label="Próximo dia">▶</button>
@@ -1248,6 +1248,8 @@
 
     </div>
 
+    <!-- Atalho Extrato do Início (6.10.72): Ajustes mostra só o card Consumo de IA e faturamento, com este Voltar (volta ao Início). -->
+    <div id="consumoVoltarBarra" class="voltar-barra consumo-voltar-barra screen-ajustes" hidden><button id="consumoVoltarBtn" type="button" class="secondary">◀ Voltar</button></div>
     <!-- Tela Ajustes: as categorias ficam direto na página (sem um cartão recolhível em volta). -->
     <div class="ajustes-lista screen-ajustes" id="settingsCard">
         <!-- Os ajustes de todos os usuários ficam num contêiner (os do administrador, em outro, mais abaixo). -->
@@ -1413,6 +1415,19 @@
             </details>
             <p id="consumoStatus" class="ok" role="status" aria-live="polite"></p>
             <p class="hint">O que você usou de IA no mês, em cada recurso liberado pelos seus códigos, e o valor a pagar.</p>
+            <!-- Desde a 6.10.72 o Extrato vem antes do Pix. -->
+            <details class="prompt-item" id="extratoSection">
+              <summary><h3>📒 Extrato de créditos e consumo</h3></summary>
+              <p class="hint">Os movimentos do seu saldo no período: o saldo inicial, os créditos (boas-vindas, Pix e lançamentos do administrador) e o consumo de IA somado por recurso. Toque num recurso para ver o subtotal de cada dia.</p>
+              <div class="consumo-mes">
+                <label for="extratoPeriodo">Período</label>
+                <select id="extratoPeriodo" autocomplete="off"></select>
+                <button id="extratoAtualizarBtn" class="secondary" type="button" title="Atualizar o extrato" aria-label="Atualizar o extrato">🔄</button>
+              </div>
+              <p id="extratoStatus" class="hint" role="status" aria-live="polite"></p>
+              <div id="extratoResumo" class="extrato-resumo" hidden></div>
+              <div id="extratoLista" class="extrato-lista" hidden></div>
+            </details>
             <details class="prompt-item" id="pixCredito" hidden>
               <summary><h3>⚡ Adicionar crédito por Pix</h3></summary>
               <p class="hint">Informe o valor, pague o Pix gerado e o crédito entra sozinho no seu saldo, em poucos segundos (sem enviar comprovante). O Pix vale por 30 minutos.</p>
@@ -1429,18 +1444,6 @@
                 </div>
               </div>
               <p id="pixCreditoStatus" class="ok" role="status" aria-live="polite"></p>
-            </details>
-            <details class="prompt-item" id="extratoSection">
-              <summary><h3>📒 Extrato de créditos e consumo</h3></summary>
-              <p class="hint">Os movimentos do seu saldo no período: o saldo inicial, os créditos (boas-vindas, Pix e lançamentos do administrador) e o consumo de IA somado por recurso. Toque num recurso para ver o subtotal de cada dia.</p>
-              <div class="consumo-mes">
-                <label for="extratoPeriodo">Período</label>
-                <select id="extratoPeriodo" autocomplete="off"></select>
-                <button id="extratoAtualizarBtn" class="secondary" type="button" title="Atualizar o extrato" aria-label="Atualizar o extrato">🔄</button>
-              </div>
-              <p id="extratoStatus" class="hint" role="status" aria-live="polite"></p>
-              <div id="extratoResumo" class="extrato-resumo" hidden></div>
-              <div id="extratoLista" class="extrato-lista" hidden></div>
             </details>
           </div>
         </details>
@@ -2100,7 +2103,7 @@
           </div>
         </details>
         <details class="subsection sub-tint-4 so-admin" id="acessoSiteSection" hidden>
-          <summary><span class="adm-titulo">👥 Administração de usuários&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
+          <summary><span class="adm-titulo">👥 Adm. de usuários e custos de IA&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
           <div class="subsection-body">
             <p id="acessoSiteStatus" class="ok" role="status" aria-live="polite"></p>
 
@@ -2686,12 +2689,13 @@
           </select>
           <button id="pesquisaVideosSecaoBtn" class="secondary pesq-secao-botao" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="pesquisaVideosSecoesPainel"><span class="pesq-secao-botao-texto">🌐 Todas as seções</span><span aria-hidden="true">▾</span></button>
           <div id="pesquisaVideosSecoesPainel" class="pesq-secoes-painel" role="listbox" aria-label="Seções dos vídeos" hidden></div>
-          <label class="pesq-opcao pesq-opcao-falas" hidden><input type="checkbox" id="pesquisaVideosFalas" disabled><span class="pesq-opcao-texto">🗣️ Procurar também no que é falado nos vídeos <span class="pesq-opcional">(escolha uma seção)</span></span></label>
           <div class="pesq-ref-linha">
             <input id="pesquisaVideosAssunto" class="pesq-campo" type="text" maxlength="300" autocomplete="off" spellcheck="true" placeholder="Ex.: ansiedade, casamento, perdão">
             <button id="pesquisaVideosBtn" data-codigo-ia="pesquisa" class="pesq-fino pesq-icone" type="button" title="Sugerir vídeos sobre o assunto" aria-label="Sugerir vídeos sobre o assunto">🔍</button>
             <button id="pesquisaVideosLimparBtn" class="secondary pesq-fino pesq-icone limpar-btn" type="button" title="Limpar a busca e a lista de vídeos" aria-label="Limpar a busca e a lista de vídeos" hidden>🗑️</button>
           </div>
+          <!-- Abaixo do campo da busca (desde a 6.10.72): procurar também no que é falado (só com uma seção escolhida). -->
+          <label class="pesq-opcao pesq-opcao-falas" hidden><input type="checkbox" id="pesquisaVideosFalas" disabled><span class="pesq-opcao-texto">🗣️ Procurar também no que é falado nos vídeos <span class="pesq-opcional">(escolha uma seção)</span></span></label>
           <p id="pesquisaVideosStatus" class="pesq-status" role="status" aria-live="polite" hidden></p>
           <ul id="pesquisaVideosLista" class="pesq-videos-lista"></ul>
         </div>

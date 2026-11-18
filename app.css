@@ -16443,3 +16443,30 @@ input.pesq-campo.pesq-ref { font-size: inherit; line-height: 1.3; margin-left: 0
 .pesq-secao-grupo > .pesq-dica { margin: 0; padding: 10px 12px; }
 .pesq-video-tocador { margin: 6px 0 0; }
 .pesq-video-tocador .biblia-video-btn { min-height: 38px; font-size: .86rem; }
+
+/* 6.10.72: atalho Extrato — a tela Ajustes mostra só o card Consumo de IA e faturamento, com o Voltar no topo. */
+body[data-screen="ajustes"] .consumo-voltar-barra:not([hidden]) { display: block; }
+body.so-consumo #settingsCard > :not(#ajustesGrupoGeral),
+body.so-consumo #ajustesGrupoGeral > :not(#consumoSection),
+body.so-consumo #appVersionTexto,
+body.so-consumo .about-link-row { display: none !important; }
+body.so-consumo #consumoSection > summary { pointer-events: none; } /* o card fica aberto: é a tela toda */
+
+/* ===================== 6.10.72: SETAS DOS CARDS RECOLHÍVEIS =====================
+   Em todo o app: recolhido, a seta aponta para baixo (▾); aberto, para cima (▴ — a mesma seta virada). Antes: › / ▸ recolhido e ▾ aberto. */
+.historico-cat>summary::after, .historico-anot-grupo>summary::after, details.subsection>summary::after, .backup-ajuda>summary::after,
+.backup-conteudo>summary::after, .biblia-modo>summary::after, .modelos-resumo>summary::after, .anotacoes-perguntas-box>summary::before,
+.bk-node>summary::before, .acesso-site-item>summary.acesso-site-resumo::before, .extrato-grupo>summary::after { content: '▾'; transform: none; }
+.historico-cat[open]>summary::after, .historico-anot-grupo[open]>summary::after, details.subsection[open]>summary::after, .backup-ajuda[open]>summary::after,
+.backup-conteudo[open]>summary::after, .biblia-modo[open]>summary::after, .modelos-resumo[open]>summary::after, .anotacoes-perguntas-box[open]>summary::before,
+.bk-node[open]>summary::before, .acesso-site-item[open]>summary.acesso-site-resumo::before, .extrato-grupo[open]>summary::after { content: '▾'; transform: rotate(180deg); }
+details.prompt-item>summary::after, details.prompt-cat>summary::after, .td-ia:not([open])>.td-ia-titulo::after { content: '▾'; }
+details.prompt-item[open]>summary::after, details.prompt-cat[open]>summary::after, .td-ia[open]>.td-ia-titulo::after { content: '▴'; }
+.td-abrir[aria-expanded="true"] .td-seta { transform: rotate(180deg); }
+.biblia-prog-toggle.fechado .biblia-prog-seta { transform: none; }
+.biblia-prog-toggle:not(.fechado) .biblia-prog-seta { transform: rotate(180deg); }
+/* Os cards com a seta nativa do navegador (▶ ao lado do título): o app marca com .seta-padrao e troca pela seta ▾/▴. */
+details > summary.seta-padrao { list-style: none; }
+details > summary.seta-padrao::-webkit-details-marker { display: none; }
+details > summary.seta-padrao::before { content: '▾'; display: inline-block; margin-right: 6px; color: var(--muted); font-size: .85em; transition: transform .15s ease; }
+details[open] > summary.seta-padrao::before { transform: rotate(180deg); }
