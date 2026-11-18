@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.67
+
+- Assistente de pesquisas · Novidades: fixos no topo, nesta ordem, o último Boletim do Corpo Governante (só enquanto tiver até 15 dias de publicado; depois entra na ordem de data) e o último programa mensal (sempre). Os demais seguem do mais novo para o mais antigo.
+
 ## 6.10.66
 
 - Assistente de pesquisas · Vídeo: nova seção "🆕 Novidades", a primeira da lista, com os 40 vídeos de publicação mais recente no jw.org (do mais novo para o mais antigo). Abre a lista no painel como as outras e também serve para procurar por assunto só nos lançamentos; os vídeos continuam nas suas seções.

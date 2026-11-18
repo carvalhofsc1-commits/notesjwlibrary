@@ -2829,7 +2829,18 @@ const falasLidas = new Map(); // lank -> { quando, falas: [{ inicio, texto }] }
 // mais novo para o mais antigo). Os vídeos continuam também nas suas seções.
 export const SECAO_NOVIDADES = "Novidades";
 const MAX_NOVIDADES = 40;
-const novidadesDe = (lista) => lista.filter((v) => v.publicadoEm).sort((a, b) => b.publicadoEm.localeCompare(a.publicadoEm)).slice(0, MAX_NOVIDADES);
+// Fixos no topo, nesta ordem: o último Boletim do Corpo Governante, se publicado nos últimos 15 dias (depois disso entra na ordem de data), e
+// o último programa mensal (JW Broadcasting, seção Programas Mensais), sempre. Os demais seguem do mais novo para o mais antigo.
+const BOLETIM_FIXO_MS = 15 * 24 * 3600 * 1000;
+function novidadesDe(lista) {
+  const porData = lista.filter((v) => v.publicadoEm).sort((a, b) => b.publicadoEm.localeCompare(a.publicadoEm));
+  const boletim = porData.find((v) => /^Boletim do Corpo Governante/i.test(v.titulo));
+  const fixos = [];
+  if (boletim && Date.now() - Date.parse(boletim.publicadoEm) <= BOLETIM_FIXO_MS) fixos.push(boletim);
+  const programa = porData.find((v) => (v.categorias || [v.categoria]).some((c) => /Programas Mensais/i.test(c)));
+  if (programa) fixos.push(programa);
+  return [...fixos, ...porData.filter((v) => !fixos.includes(v))].slice(0, MAX_NOVIDADES);
+}
 
 export function secoesDosVideos(lista) {
   return [{ caminho: SECAO_NOVIDADES, total: novidadesDe(lista).length }, ...secoesDoCatalogo(lista)];
