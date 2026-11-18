@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.82
+
+- Início: a descrição do atalho Assistente de pesquisas passa a ser "Pesquisar um assunto, texto ou vídeo no wol.jw.org com auxílio da IA".
+
 ## 6.10.81
 
 - Anotações · Transcrições na íntegra: o botão "Pôr nas anotações" aparecia cortado; os três botões (Copiar, Pôr nas anotações e a lixeira) ficam numa grade com espaço para o texto inteiro, e a lixeira passa ao vermelho claro dos botões de apagar.
