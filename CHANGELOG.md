@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.86
+
+- Aviso de versão nova: os botões "Atualizar agora" e "Depois" ocupam a largura toda do aviso, lado a lado.
+
 ## 6.10.85
 
 - Extrato de créditos e consumo: retirada a nota sobre a diferença para o total do mês (só fazia sentido em novembro de 2026). O agrupamento dos consumos e o limite de 1000 movimentos continuam.
