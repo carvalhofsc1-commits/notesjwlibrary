@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.60
+
+- Barra de baixo: o botão 🔊 Leitura dá lugar ao 🔎 Pesquisas (Assistente de pesquisas), bloqueado sem o código de pesquisa como o atalho do Início. O Assistente de leitura em voz continua no Início e no menu.
+
 ## 6.10.59
 
 - Assistente de pesquisas · Texto bíblico: o botão "Trocar o texto" passa a se chamar "🗑️ Excluir o texto" (vermelho claro, como os de limpar) e, além de tirar o texto escolhido, limpa o campo; a lixeira ao lado do campo também apaga o texto escolhido. Vídeo: nova lixeira ao lado da lupa da busca, que limpa o assunto e a lista de vídeos (também a guardada no aparelho). As etiquetas do livro e do capítulo na escolha guiada saem do laranja forte para o cinza claro.
