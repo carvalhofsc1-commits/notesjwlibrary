@@ -7879,7 +7879,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.10.64'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.65'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -32130,7 +32130,7 @@ function saveTemplatesToStorage() {
       // ---------- Seção dos vídeos ----------
       // As seções do catálogo do jw.org (seção principal e subseções, com o número de vídeos), lidas do servidor ao abrir a aba Vídeo e guardadas
       // neste aparelho por 24 h. "Procurar também no que é falado" só vale com uma seção de até maxFalas vídeos (o servidor lê as legendas dela).
-      const SECOES_CHAVE = 'ns-pesq-secoes';
+      const SECOES_CHAVE = 'ns-pesq-secoes-v2'; // v2 (6.10.65): a contagem passou a incluir os vídeos que estão em mais de uma seção
       let secoesVideos = null; // { quando, secoes: [{ caminho, total }], maxFalas }
       function secoesPintar() {
         const sel = $('pesquisaVideosSecao');
@@ -32365,10 +32365,10 @@ function saveTemplatesToStorage() {
         videosVoltarPintar();
       }
       async function secoesCarregar() {
-        if (secoesVideos && Date.now() - secoesVideos.quando < 24 * 3600 * 1000) return;
+        if (secoesVideos && Date.now() - secoesVideos.quando < 6 * 3600 * 1000) return; // 6 h (antes 24 h), como o catálogo no servidor
         try {
           const guardadas = JSON.parse(localStorage.getItem(SECOES_CHAVE) || 'null');
-          if (guardadas && Array.isArray(guardadas.secoes) && Date.now() - guardadas.quando < 24 * 3600 * 1000) { secoesVideos = guardadas; secoesPintar(); return; }
+          if (guardadas && Array.isArray(guardadas.secoes) && Date.now() - guardadas.quando < 6 * 3600 * 1000) { secoesVideos = guardadas; secoesPintar(); return; }
         } catch (e) { /* nada guardado */ }
         if (!codigoAcessoSalvo()) return;
         try {

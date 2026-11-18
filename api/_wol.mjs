@@ -2745,8 +2745,10 @@ export async function menorMp4DoVideo(video, { timeoutMs = 8000, maxBytes = 18_0
 const URL_MEDIATOR = "https://b.jw-cdn.org/apis/mediator/v1/categories/T";
 let catalogoVideos = null; // { quando, lista }
 
+// O catálogo vale 6 h (antes 24 h): vídeos novos, como o programa do mês, aparecem no mesmo dia.
+const VALIDADE_CATALOGO_MS = 6 * 3600 * 1000;
 export async function catalogoDeVideos(timeoutMs = 12000) {
-  if (catalogoVideos && Date.now() - catalogoVideos.quando < VALIDADE_GUIA_MS) return catalogoVideos.lista;
+  if (catalogoVideos && Date.now() - catalogoVideos.quando < VALIDADE_CATALOGO_MS) return catalogoVideos.lista;
   const raiz = await baixarJson(`${URL_MEDIATOR}/VideoOnDemand?detailed=0&clientType=www`, timeoutMs);
   const chaves = ((raiz && raiz.category && raiz.category.subcategories) || []).map((s) => s.key).filter((k) => k && !/AudioDescriptions/i.test(k));
   const porLank = new Map();
@@ -2754,8 +2756,16 @@ export async function catalogoDeVideos(timeoutMs = 12000) {
     const nome = [caminho, cat.name].filter(Boolean).join(" › ");
     for (const m of cat.media || []) {
       const lank = m.languageAgnosticNaturalKey || m.naturalKey;
-      if (!lank || porLank.has(lank) || !/_VIDEO$/i.test(lank)) continue;
-      porLank.set(lank, { lank, titulo: String(m.title || "").trim(), duracao: m.durationFormattedHHMM || "", categoria: nome, publicado: /^\d{4}-\d{2}/.test(m.firstPublished || "") ? m.firstPublished.slice(0, 7) : "" });
+      if (!lank || !/_VIDEO$/i.test(lank)) continue;
+      // O mesmo vídeo pode estar em várias seções (o programa do mês fica em "Vídeos em Destaque" e em "Programas Mensais"): vale em todas.
+      // A seção mostrada (categoria) é a primeira que não é de destaque, que muda todo mês.
+      const ja = porLank.get(lank);
+      if (ja) {
+        if (!ja.categorias.includes(nome)) ja.categorias.push(nome);
+        if (/Destaque/i.test(ja.categoria) && !/Destaque/i.test(nome)) ja.categoria = nome;
+        continue;
+      }
+      porLank.set(lank, { lank, titulo: String(m.title || "").trim(), duracao: m.durationFormattedHHMM || "", categoria: nome, categorias: [nome], publicado: /^\d{4}-\d{2}/.test(m.firstPublished || "") ? m.firstPublished.slice(0, 7) : "" });
     }
     for (const s of cat.subcategories || []) percorrer(s, nome);
   };
@@ -2817,16 +2827,19 @@ const falasLidas = new Map(); // lank -> { quando, falas: [{ inicio, texto }] }
 export function secoesDosVideos(lista) {
   const contagem = new Map();
   for (const v of lista) {
-    const partes = String(v.categoria || "").split(" › ").filter(Boolean);
-    for (let i = 1; i <= partes.length; i++) {
-      const caminho = partes.slice(0, i).join(" › ");
-      contagem.set(caminho, (contagem.get(caminho) || 0) + 1);
+    // Cada vídeo conta uma vez em cada seção (e seção principal) em que aparece.
+    const caminhos = new Set();
+    for (const cat of v.categorias || [v.categoria]) {
+      const partes = String(cat || "").split(" › ").filter(Boolean);
+      for (let i = 1; i <= partes.length; i++) caminhos.add(partes.slice(0, i).join(" › "));
     }
+    for (const caminho of caminhos) contagem.set(caminho, (contagem.get(caminho) || 0) + 1);
   }
   return [...contagem.entries()].map(([caminho, total]) => ({ caminho, total })).sort((a, b) => a.caminho.localeCompare(b.caminho, "pt"));
 }
 
-export const videosDaSecao = (lista, secao) => (secao ? lista.filter((v) => v.categoria === secao || String(v.categoria).startsWith(secao + " › ")) : lista);
+export const videosDaSecao = (lista, secao) =>
+  secao ? lista.filter((v) => (v.categorias || [v.categoria]).some((c) => c === secao || String(c).startsWith(secao + " › "))) : lista;
 
 // As falas da legenda de um vídeo: [{ inicio (s), texto }], sem repetições seguidas. [] = sem legenda publicada.
 export async function falasDoVideo(lank, timeoutMs = 9000) {

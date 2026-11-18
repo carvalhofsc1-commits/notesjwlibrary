@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.65
+
+- Assistente de pesquisas · Vídeo: o programa mensal de novembro de 2026 não aparecia em "De Nosso Estúdio › Programas Mensais" porque está também em "Vídeos em Destaque" e o catálogo guardava cada vídeo numa só seção (a primeira lida). Agora um vídeo vale em todas as seções em que aparece (a seção mostrada no card é a que não é de destaque). O catálogo de vídeos passa a valer 6 h (antes 24 h), no servidor e no aparelho, para vídeos novos aparecerem no mesmo dia.
+
 ## 6.10.64
 
 - Assistente de pesquisas · Vídeo: a lista dos vídeos de uma seção não aparece mais abaixo. No painel das seções, uma seção ou subseção de até 150 vídeos (marcada com ›) abre, dentro do próprio painel, a lista dos vídeos dela (com a duração), "Procurar na seção toda" e "Voltar às seções". Tocando num vídeo, só o card dele é montado abaixo, com "Usar este vídeo", "Assistir", JW Library e "Limpar o vídeo".
