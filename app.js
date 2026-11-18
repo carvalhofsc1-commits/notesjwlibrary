@@ -314,7 +314,7 @@
     })();
 
     // Sem o "elástico" no FIM da página (só no celular): no iPhone com iOS 26, puxar a página além do fim arrasta a barra fixa de baixo para o meio da
-    // tela (falha do próprio iOS). O elástico do topo continua (e, com ele, o puxar para atualizar do Início). Não atrapalha campos e listas que rolam
+    // tela (falha do próprio iOS). O elástico do topo continua. Não atrapalha campos e listas que rolam
     // por dentro (enquanto eles ainda têm o que rolar) nem os gestos para o lado (as páginas dos atalhos).
     (function semElasticoNoFim() {
       if (!('ontouchstart' in window)) return;
@@ -7884,7 +7884,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.10.70'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.71'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -21836,67 +21836,8 @@ function saveTemplatesToStorage() {
     autoCheckOnlineDefaultsOnStart();
     loadPublicLimits();
 
-    // ---------- Puxar a tela para baixo para atualizar ----------
-    // No navegador comum o gesto já existe. No app instalado na tela inicial (iPhone e Android) ele não existe, então o
-    // app faz o seu: no topo da página, puxar para baixo e soltar recarrega o app mantendo o texto digitado (como em
-    // "Atualizar agora"). Não vale começando dentro de um campo de texto nem enquanto a IA está trabalhando.
-    (function setupPullToRefresh() {
-      const installed = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
-      if (!installed || !('ontouchstart' in window)) return;
-
-      const box = document.getElementById('pullRefresh');
-      const label = document.getElementById('pullRefreshText');
-      const THRESHOLD = 90;
-      let startY = null;
-      let distance = 0;
-
-      const reset = () => {
-        startY = null;
-        distance = 0;
-        box.classList.remove('ready');
-        box.style.transition = 'opacity .2s ease, transform .2s ease';
-        box.style.opacity = '0';
-        box.style.transform = 'translate(-50%, -60px)';
-      };
-
-      window.addEventListener('touchstart', event => {
-        if (event.touches.length !== 1 || window.scrollY > 0 || aiBusy) return;
-        if (currentScreen() !== 'inicio') return; // o gesto de puxar para atualizar só vale na tela Início (nas outras, um puxão sem querer perdia texto e rolagem)
-        if (event.target.closest('textarea, input, select, [contenteditable="true"]')) return;
-        // Dentro de uma página ou janela por cima do app (o esboço original, a prévia do Word, as confirmações) o gesto de rolar não atualiza o
-        // app: a tela de trás pode estar no topo e o gesto de voltar a rolar para cima recarregaria o app, fechando a página sozinha.
-        if (event.target.closest('[role="dialog"]')) return;
-        startY = event.touches[0].clientY;
-        distance = 0;
-      }, { passive: true });
-
-      window.addEventListener('touchmove', event => {
-        if (startY === null) return;
-        if (window.scrollY > 0) return reset();
-        distance = Math.max(0, event.touches[0].clientY - startY);
-        if (distance < 12) return;
-        const ready = distance >= THRESHOLD;
-        box.classList.toggle('ready', ready);
-        label.textContent = ready ? 'Solte para atualizar' : 'Puxe para atualizar';
-        box.style.transition = 'none';
-        box.style.opacity = String(Math.min(1, distance / THRESHOLD));
-        box.style.transform = 'translate(-50%, ' + Math.min(0, distance * 0.6 - 60) + 'px)';
-      }, { passive: true });
-
-      window.addEventListener('touchend', () => {
-        if (startY === null) return;
-        if (distance >= THRESHOLD && !aiBusy) {
-          label.textContent = 'Atualizando…';
-          box.style.opacity = '1';
-          box.style.transform = 'translate(-50%, 0)';
-          applyUpdate(); // guarda o texto digitado e recarrega
-          return;
-        }
-        reset();
-      }, { passive: true });
-
-      window.addEventListener('touchcancel', reset, { passive: true });
-    })();
+    // Puxar a tela para baixo para atualizar: removido na 6.10.71 (a pedido; valia só na tela Início do app instalado). Para atualizar o
+    // app ficam o aviso "Nova versão disponível · Recarregar" e o menu.
 
     // Depois de "Atualizar agora", devolve ao campo o texto que estava digitado.
     try {
