@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.63
+
+- Assistente de pesquisas · Vídeo: ao escolher uma seção (ex.: A Bíblia › Criação), a lista dos vídeos dela aparece logo abaixo, cada um com "Usar este vídeo", jw.org e JW Library, para escolher um vídeo direto; quem não sabe o vídeo ainda escreve o assunto e procura só nessa seção. Seções com mais de 150 vídeos pedem uma subseção para listar. Nova tarefa do servidor "pesquisa-videos-da-secao" (sem IA, com o código de pesquisa).
+
 ## 6.10.62
 
 - Assistente de pesquisas · Vídeo: o botão "Abrir os vídeos do jw.org" passa a se chamar "Abrir a seção de vídeos do jw.org".

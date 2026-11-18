@@ -265,6 +265,7 @@ const TAREFAS_SEM_IA = new Set([
   "anotacoes-versiculos",
   "pesquisa-versiculos",
   "pesquisa-videos-secoes",
+  "pesquisa-videos-da-secao",
   "programa-pub",
   "programas-lista",
   "anotacoes-partes-semana",
@@ -1895,6 +1896,27 @@ async function secoesDeVideos(res) {
   } catch (e) {
     console.error("Vídeos: seções indisponíveis", e?.message);
     return erro(res, 502, "Não consegui consultar as seções de vídeos do jw.org agora.");
+  }
+}
+
+// Os vídeos de uma seção do catálogo (sem IA), na ordem do jw.org: ao escolher a seção na aba Vídeo, a lista aparece para escolher um vídeo
+// direto. Seções grandes (mais de MAX_VIDEOS_LISTA_SECAO) não são listadas: o app pede para escolher uma subseção.
+const MAX_VIDEOS_LISTA_SECAO = 150;
+async function videosDaSecaoParaLista(res, body) {
+  const secao = textoLivre(body.secao, 200);
+  if (!secao) return erro(res, 400, "Escolha uma seção.");
+  try {
+    const lista = videosDaSecao(await catalogoDeVideos(12000), secao);
+    if (!lista.length) return erro(res, 404, "Não encontrei vídeos nessa seção.");
+    if (lista.length > MAX_VIDEOS_LISTA_SECAO) return res.status(200).json({ total: lista.length, max: MAX_VIDEOS_LISTA_SECAO, videos: [] });
+    return res.status(200).json({
+      total: lista.length,
+      max: MAX_VIDEOS_LISTA_SECAO,
+      videos: lista.map((v) => ({ titulo: v.titulo, duracao: v.duracao, categoria: v.categoria, publicado: v.publicado || "", motivo: "", trechos: [], link: `https://www.jw.org/finder?srcid=share&wtlocale=T&lank=${encodeURIComponent(v.lank)}` })),
+    });
+  } catch (e) {
+    console.error("Vídeos: lista da seção indisponível", e?.message);
+    return erro(res, 502, "Não consegui ler os vídeos dessa seção agora.");
   }
 }
 
@@ -5502,6 +5524,7 @@ async function tratarPedido(req, res) {
     if (tarefa === "anotacoes-versiculos") return textosDosVersiculosAnotacoes(res, body);
     if (tarefa === "pesquisa-versiculos") return textosDosVersiculosAnotacoes(res, body); // Assistente de pesquisas, aba Texto bíblico (código de pesquisa)
     if (tarefa === "pesquisa-videos-secoes") return secoesDeVideos(res); // Assistente de pesquisas, aba Vídeo: as seções do catálogo
+    if (tarefa === "pesquisa-videos-da-secao") return videosDaSecaoParaLista(res, body); // aba Vídeo: os vídeos de uma seção, para escolher um direto
     if (tarefa === "programa-pub") return lerProgramaPub(res, body);
     if (tarefa === "programas-lista") return listaDeProgramas(res, body);
     if (tarefa === "anotacoes-partes-semana") return partesDaSemanaParaAnotacoes(res, body);

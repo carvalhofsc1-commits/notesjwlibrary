@@ -7879,7 +7879,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.10.62'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.63'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -31975,7 +31975,7 @@ function saveTemplatesToStorage() {
         const voltar = $('pesquisaVideosVoltarBtn');
         voltar.hidden = !n;
         $('pesquisaVideosLimparBtn').hidden = !n && !$('pesquisaVideosAssunto').value.trim(); // a lixeira só aparece com algo para limpar
-        voltar.title = (listaFechada ? 'Escolher outro vídeo da lista' : 'Fechar a lista') + ' “' + (videosBusca ? videosBusca.assunto : '') + '” (' + n + (n === 1 ? ' vídeo)' : ' vídeos)');
+        voltar.title = (listaFechada ? 'Escolher outro vídeo da lista' : 'Fechar a lista') + ' “' + (videosBusca ? (videosBusca.daSecao ? videosBusca.secao : videosBusca.assunto) : '') + '” (' + n + (n === 1 ? ' vídeo)' : ' vídeos)');
         voltar.setAttribute('aria-label', voltar.title);
         voltar.setAttribute('aria-expanded', String(!listaFechada));
         $('pesquisaVideosLista').hidden = listaFechada;
@@ -32168,6 +32168,7 @@ function saveTemplatesToStorage() {
             secaoMudou();
             painelSecoesAbrir(false);
             painelSecoesPintar();
+            secaoListar(valor); // a lista dos vídeos da seção aparece para escolher um direto
           });
           return b;
         };
@@ -32227,6 +32228,48 @@ function saveTemplatesToStorage() {
         dica.textContent = !sel.value ? '(escolha uma seção)' : pode ? '(mais demorado: lê as legendas dos ' + (s ? s.total : '') + ' vídeos)' : '(seção grande demais: escolha uma subseção com até ' + max + ' vídeos)';
       }
       $('pesquisaVideosSecao').addEventListener('change', secaoMudou);
+      // Ao escolher uma seção, os vídeos dela aparecem na lista (no lugar dos resultados), cada um com "Usar este vídeo": quem já sabe o vídeo
+      // escolhe direto; quem não sabe escreve o assunto e procura só nessa seção. Seções grandes demais (o servidor diz o limite) não são listadas.
+      // "Todas as seções" tira a lista da seção (uma busca por assunto já feita continua).
+      async function secaoListar(secao) {
+        const status = $('pesquisaVideosStatus');
+        if (!secao) {
+          if (videosBusca && videosBusca.daSecao) {
+            videosBusca = null;
+            try { localStorage.removeItem(VIDEOS_CHAVE); } catch (e) { /* sem armazenamento */ }
+            videosPintar();
+            videosVoltarPintar();
+          }
+          dizer(status, '');
+          return;
+        }
+        if (!codigoAcessoSalvo()) return dizer(status, 'Salve o código de pesquisa em Ajustes → 🔐 Autorização de acessos.', { aviso: true });
+        // A lista de outra seção sai antes (não fica na tela se a nova for grande demais para listar).
+        if (videosBusca && videosBusca.daSecao && videosBusca.secao !== secao) {
+          videosBusca = null;
+          try { localStorage.removeItem(VIDEOS_CHAVE); } catch (e) { /* sem armazenamento */ }
+          videosPintar();
+          videosVoltarPintar();
+        }
+        dizer(status, 'Carregando os vídeos de “' + secao + '”…', { girando: true });
+        try {
+          const r = await postStudy({ tarefa: 'pesquisa-videos-da-secao', codigo: codigoAcessoSalvo(), secao }, 30000);
+          if ($('pesquisaVideosSecao').value !== secao) return; // a seção mudou enquanto carregava
+          if (!r.ok) return dizer(status, erroDe(r, 'Não consegui ler os vídeos dessa seção agora.'), { aviso: true });
+          const d = r.data || {};
+          if (!(d.videos || []).length) {
+            return dizer(status, 'Esta seção tem ' + (d.total || 'muitos') + ' vídeos, demais para listar: escolha uma subseção (até ' + (d.max || 150) + ' vídeos) para ver a lista, ou escreva um assunto para procurar nela.');
+          }
+          videosBusca = { assunto: '', videos: d.videos, secao, falas: false, daSecao: true };
+          listaFechada = false;
+          videosGuardar();
+          videosPintar();
+          videosVoltarPintar();
+          dizer(status, (d.total === 1 ? '1 vídeo' : d.total + ' vídeos') + ' nesta seção. Toque em “Usar este vídeo” ou escreva um assunto para procurar só nesta seção.');
+        } catch (e) {
+          dizer(status, 'Sem conexão com o servidor. Confira a internet e tente de novo.', { aviso: true });
+        }
+      }
       async function secoesCarregar() {
         if (secoesVideos && Date.now() - secoesVideos.quando < 24 * 3600 * 1000) return;
         try {
@@ -32248,7 +32291,8 @@ function saveTemplatesToStorage() {
       try {
         const guardada = JSON.parse(localStorage.getItem(VIDEOS_CHAVE) || 'null');
         if (guardada && Array.isArray(guardada.videos) && guardada.videos.length) {
-          videosBusca = { assunto: String(guardada.assunto || ''), videos: guardada.videos.slice(0, 20), secao: String(guardada.secao || ''), falas: guardada.falas === true };
+          const daSecao = guardada.daSecao === true; // a lista de uma seção inteira (até 150) volta inteira; a de uma busca, até 20
+          videosBusca = { assunto: String(guardada.assunto || ''), videos: guardada.videos.slice(0, daSecao ? 150 : 20), secao: String(guardada.secao || ''), falas: guardada.falas === true, daSecao };
           $('pesquisaVideosAssunto').value = videosBusca.assunto;
           if (videosBusca.secao) {
             // A seção da última busca volta junto (a lista de seções completa chega ao abrir a aba Vídeo).
