@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.66
+
+- Assistente de pesquisas · Vídeo: nova seção "🆕 Novidades", a primeira da lista, com os 40 vídeos de publicação mais recente no jw.org (do mais novo para o mais antigo). Abre a lista no painel como as outras e também serve para procurar por assunto só nos lançamentos; os vídeos continuam nas suas seções.
+
 ## 6.10.65
 
 - Assistente de pesquisas · Vídeo: o programa mensal de novembro de 2026 não aparecia em "De Nosso Estúdio › Programas Mensais" porque está também em "Vídeos em Destaque" e o catálogo guardava cada vídeo numa só seção (a primeira lida). Agora um vídeo vale em todas as seções em que aparece (a seção mostrada no card é a que não é de destaque). O catálogo de vídeos passa a valer 6 h (antes 24 h), no servidor e no aparelho, para vídeos novos aparecerem no mesmo dia.

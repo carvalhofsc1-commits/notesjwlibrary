@@ -2765,7 +2765,8 @@ export async function catalogoDeVideos(timeoutMs = 12000) {
         if (/Destaque/i.test(ja.categoria) && !/Destaque/i.test(nome)) ja.categoria = nome;
         continue;
       }
-      porLank.set(lank, { lank, titulo: String(m.title || "").trim(), duracao: m.durationFormattedHHMM || "", categoria: nome, categorias: [nome], publicado: /^\d{4}-\d{2}/.test(m.firstPublished || "") ? m.firstPublished.slice(0, 7) : "" });
+      const em = /^\d{4}-\d{2}/.test(m.firstPublished || "") ? String(m.firstPublished) : "";
+      porLank.set(lank, { lank, titulo: String(m.title || "").trim(), duracao: m.durationFormattedHHMM || "", categoria: nome, categorias: [nome], publicado: em.slice(0, 7), publicadoEm: em });
     }
     for (const s of cat.subcategories || []) percorrer(s, nome);
   };
@@ -2824,7 +2825,16 @@ export function videosPorPalavras(lista, palavras, maximo = 40) {
 export const MAX_VIDEOS_FALAS = 700;
 const falasLidas = new Map(); // lank -> { quando, falas: [{ inicio, texto }] }
 
+// "Novidades": uma seção a mais, a primeira da lista, com os lançamentos (os MAX_NOVIDADES vídeos de publicação mais recente no jw.org, do
+// mais novo para o mais antigo). Os vídeos continuam também nas suas seções.
+export const SECAO_NOVIDADES = "Novidades";
+const MAX_NOVIDADES = 40;
+const novidadesDe = (lista) => lista.filter((v) => v.publicadoEm).sort((a, b) => b.publicadoEm.localeCompare(a.publicadoEm)).slice(0, MAX_NOVIDADES);
+
 export function secoesDosVideos(lista) {
+  return [{ caminho: SECAO_NOVIDADES, total: novidadesDe(lista).length }, ...secoesDoCatalogo(lista)];
+}
+function secoesDoCatalogo(lista) {
   const contagem = new Map();
   for (const v of lista) {
     // Cada vídeo conta uma vez em cada seção (e seção principal) em que aparece.
@@ -2839,7 +2849,9 @@ export function secoesDosVideos(lista) {
 }
 
 export const videosDaSecao = (lista, secao) =>
-  secao ? lista.filter((v) => (v.categorias || [v.categoria]).some((c) => c === secao || String(c).startsWith(secao + " › "))) : lista;
+  !secao ? lista
+  : secao === SECAO_NOVIDADES ? novidadesDe(lista)
+  : lista.filter((v) => (v.categorias || [v.categoria]).some((c) => c === secao || String(c).startsWith(secao + " › ")));
 
 // As falas da legenda de um vídeo: [{ inicio (s), texto }], sem repetições seguidas. [] = sem legenda publicada.
 export async function falasDoVideo(lank, timeoutMs = 9000) {
