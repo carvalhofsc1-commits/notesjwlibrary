@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.76
+
+- Leitura da Bíblia · resumo: a seção PROFECIAS E EXPRESSÕES SIMBÓLICAS passa da corneta 📯 (difícil de reconhecer) para a trombeta 🎺, no título, nos itens, na opção e nas instruções da IA; os resumos já salvos (com 🔮 ou 📯) mostram 🎺.
+
 ## 6.10.75
 
 - Anotações: os cards com os temas dos discursos (programa da reunião, assembleia ou congresso) ficam com fundo cinza claro; os que já têm anotações e o card aberto mantêm a cor própria.
