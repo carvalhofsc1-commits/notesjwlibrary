@@ -16142,3 +16142,11 @@ a.pesq-videos-jw { display: flex; width: 100%; box-sizing: border-box; margin: 0
 /* 6.10.48: os botões de atalho do Início sem cor de fundo (brancos no claro, a cor dos cartões no escuro); a borda colorida de cada um continua */
 .atalhos-card .atalhos-grid .atalho,
 .atalhos-card .atalhos-grid .atalho:hover { background: var(--card); }
+
+/* 6.10.49: os atalhos do Início com fundo roxo suave (no escuro, um roxo discreto sobre a cor dos cartões) e os ícones uns 20% maiores
+   em todos os tamanhos de tela e níveis de aperto (zoom acompanha o tamanho que cada regra já define). */
+.atalhos-card .atalhos-grid .atalho,
+.atalhos-card .atalhos-grid .atalho:hover { background: #f5efff; background: color-mix(in srgb, #a855f7 12%, var(--card)); }
+.atalhos-card .atalhos-grid .atalho:disabled,
+.atalhos-card .atalhos-grid .atalho:disabled:hover { background: var(--card); }
+.atalhos-card .atalho-icone { zoom: 1.2; }

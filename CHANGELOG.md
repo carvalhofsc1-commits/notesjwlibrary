@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.49
+
+- Início: os botões de atalho ganham um fundo roxo suave (no escuro, roxo discreto) e os ícones ficam uns 20% maiores.
+
 ## 6.10.48
 
 - Início: os botões de atalho ficam sem cor de fundo (brancos no claro, a cor normal dos cartões no escuro); a borda colorida de cada um continua.
