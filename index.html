@@ -51,7 +51,7 @@
       <button type="button" data-menu-ir="anotacoes"><span aria-hidden="true">📝</span> Anotações</button>
       <button type="button" data-menu-ir="formatar"><span aria-hidden="true">✍️</span> Formatar</button>
       <button type="button" data-menu-ir="biblia"><span aria-hidden="true">📚</span> Leitura diária da Bíblia</button>
-      <button type="button" data-menu-ir="leitura"><span aria-hidden="true">🔊</span> Leitura em voz</button>
+      <button type="button" data-menu-ir="leitura"><span aria-hidden="true">🔊</span> Assistente de leitura em voz</button>
       <button type="button" data-menu-ir="reunioes"><span aria-hidden="true">📅</span> Reuniões</button>
       <button type="button" data-menu-ir="transcricao"><span aria-hidden="true">🎙️</span> Áudio em texto</button>
       <button type="button" data-menu-ir="pesquisa"><span aria-hidden="true">🔎</span> Assistente de pesquisas</button>
@@ -80,7 +80,7 @@
   <nav id="appNav" class="app-nav" aria-label="Telas do app">
     <button type="button" data-screen-target="inicio"><span class="nav-icon" aria-hidden="true">🏠</span><span>Início</span></button>
     <button type="button" data-screen-target="anotacoes" title="Anotações de reuniões, assembleias e congressos"><span class="nav-icon" aria-hidden="true">📝</span><span>Anotações</span></button>
-    <button id="navLeitura" type="button" data-screen-target="leitura" title="Leitura em voz"><span class="nav-icon" aria-hidden="true">🔊</span><span>Leitura</span></button>
+    <button id="navLeitura" type="button" data-screen-target="leitura" title="Assistente de leitura em voz"><span class="nav-icon" aria-hidden="true">🔊</span><span>Leitura</span></button>
     <button type="button" data-screen-target="reunioes"><span class="nav-icon" aria-hidden="true">📅</span><span>Reuniões</span></button>
     <button id="navTranscricao" type="button" data-screen-target="transcricao" title="Áudio em texto"><span class="nav-icon" aria-hidden="true">🎙️</span><span>Gravar</span></button>
     <button type="button" data-screen-target="biblia" title="Leitura diária da Bíblia"><span class="nav-icon" aria-hidden="true">📚</span><span>Bíblia</span></button>
@@ -151,7 +151,7 @@
           <button type="button" class="atalho" data-atalho="comentarios"><span class="atalho-icone" aria-hidden="true">✋</span><span class="atalho-nome">Comentários</span><span class="atalho-desc">Ajuda na preparação para comentar</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="dirigir"><span class="atalho-icone" aria-hidden="true">🎤</span><span class="atalho-nome">Dirigentes</span><span class="atalho-desc">Ajuda na preparação para dirigir</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="discursos"><span class="atalho-icone" aria-hidden="true">📜</span><span class="atalho-nome">Discursos</span><span class="atalho-desc">Ajuda na preparação de discursos e esboços</span><span class="atalho-trava" hidden></span></button>
-          <button type="button" class="atalho" data-atalho="leitura"><span class="atalho-icone" aria-hidden="true">🔊</span><span class="atalho-nome">Leitura em voz</span><span class="atalho-desc">Ouvir um PDF, um Word ou um texto colado</span><span class="atalho-trava" hidden></span></button>
+          <button type="button" class="atalho" data-atalho="leitura"><span class="atalho-icone" aria-hidden="true">🔊</span><span class="atalho-nome">Assistente de leitura em voz</span><span class="atalho-desc">Ouvir um PDF, um Word ou um texto colado</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="transcricao"><span class="atalho-icone" aria-hidden="true">🎙️</span><span class="atalho-nome">Áudio em texto</span><span class="atalho-desc">Transcrever um áudio e resumir com a IA</span><span class="atalho-trava" hidden></span></button>
         </div>
         <div class="atalhos-grid" id="atalhosPagina2" role="group" aria-label="Atalhos, página 2 de 2">
@@ -1290,7 +1290,7 @@
 
             <div class="acesso-item">
               <label for="leituraCode">🔊 Código de leitura</label>
-              <p class="hint">Libera a Leitura em voz alta da tela Início: importar um PDF ou um Word, ou colar um texto, e ouvi-lo com a frase lida em destaque. Sem ele, esse atalho fica desabilitado neste aparelho.</p>
+              <p class="hint">Libera o Assistente de leitura em voz da tela Início: importar um PDF ou um Word, ou colar um texto, e ouvi-lo com a frase lida em destaque. Sem ele, esse atalho fica desabilitado neste aparelho.</p>
               <div class="acesso-linha">
                 <input autocomplete="off" id="leituraCode" type="password" maxlength="100" placeholder="Código de leitura">
                 <button id="acessoVerLeitura" class="secondary acesso-ver" type="button" aria-label="Mostrar o código" aria-pressed="false">👁️</button>
@@ -1433,7 +1433,7 @@
             </details>
             <details class="prompt-item" id="extratoSection">
               <summary><h3>📒 Extrato de créditos e consumo</h3></summary>
-              <p class="hint">Todos os movimentos do seu saldo, do mais antigo para o mais novo: o saldo inicial, os créditos (boas-vindas, Pix e lançamentos do administrador) e cada consumo de IA, com o recurso que usou, o valor e o saldo que restou.</p>
+              <p class="hint">Os movimentos do seu saldo no período: o saldo inicial, os créditos (boas-vindas, Pix e lançamentos do administrador) e o consumo de IA somado por recurso. Toque num recurso para ver o subtotal de cada dia.</p>
               <div class="consumo-mes">
                 <label for="extratoPeriodo">Período</label>
                 <select id="extratoPeriodo" autocomplete="off"></select>
@@ -1805,7 +1805,7 @@
                   <tr><th scope="row"><label for="iaModelo">Uso geral</label></th><td><select id="iaModelo"></select><select id="iaEsforco" aria-label="Esforço do uso geral"></select></td></tr>
                   <tr><th scope="row"><label for="iaEsbocoModelo">Esboços, dirigir e texto diário</label></th><td><select id="iaEsbocoModelo"></select><select id="iaEsbocoEsforco" aria-label="Esforço dos esboços e do dirigir"></select></td></tr>
                   <tr class="modelos-resumo-secao"><th colspan="2" scope="colgroup">🔊 Voz e áudio</th></tr>
-                  <tr><th scope="row"><label for="vozModelo">Leitura em voz</label></th><td><select id="vozModelo"></select><select id="vozVoz" aria-label="Voz da leitura"></select></td></tr>
+                  <tr><th scope="row"><label for="vozModelo">Assistente de leitura em voz</label></th><td><select id="vozModelo"></select><select id="vozVoz" aria-label="Voz da leitura"></select></td></tr>
                   <tr><th scope="row"><label for="iaAudioMotor">Áudio: transcrição</label></th><td><select id="iaAudioMotor"></select><select id="iaAudioGeminiModelo" aria-label="Modelo Gemini da transcrição"></select></td></tr>
                   <tr><th scope="row"><label for="iaAudioModelo">Áudio: resumo</label></th><td><select id="iaAudioModelo"></select></td></tr>
                   <tr class="modelos-resumo-secao"><th colspan="2" scope="colgroup">🔎 Assistente de pesquisas</th></tr>
@@ -1832,7 +1832,7 @@
           </div>
         </details>
         <details class="subsection voz-admin so-admin" id="vozSection" hidden>
-                      <summary><span class="adm-titulo">🔊 Leitura em voz: configurações&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
+                      <summary><span class="adm-titulo">🔊 Assistente de leitura em voz: configurações&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
                       <div class="subsection-body">
                         <p class="hint">Regras da leitura em voz alta, para todos. O modelo e a voz ficam em ✨ Modelos e agentes de IA.</p>
 
@@ -2033,7 +2033,7 @@
 
           <details class="prompt-item prompt-tint-codigo">
             <summary><h3>🔊 Código de leitura (anotação)</h3></summary>
-            <p class="hint">Anotação só sua, para não esquecer o código de leitura (tela Leitura em voz alta). O código que vale de verdade é o da variável <strong>CODIGO_LEITURA</strong> na Vercel.</p>
+            <p class="hint">Anotação só sua, para não esquecer o código de leitura (tela Assistente de leitura em voz). O código que vale de verdade é o da variável <strong>CODIGO_LEITURA</strong> na Vercel.</p>
             <div class="admin-code-row">
               <input id="adminCodeLeituraNote" type="text" maxlength="500" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Anote aqui o código de leitura">
               <button id="adminCodeLeituraCopyBtn" class="secondary" type="button">📋 Copiar</button>
@@ -2161,7 +2161,7 @@
                 <label for="fatEsbocosSaida">Esboços e discursos (a IA mais cara) · saída (R$ por 1 mi tokens)</label>
                 <input id="fatEsbocosSaida" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00">
                 <p id="fatCustoEsbocos" class="faturamento-custo"></p>
-                <label for="fatVoz">Leitura em voz alta (R$ por 1.000 caracteres)</label>
+                <label for="fatVoz">Assistente de leitura em voz (R$ por 1.000 caracteres)</label>
                 <input id="fatVoz" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00">
                 <p id="fatCustoVoz" class="faturamento-custo"></p>
                 <label for="fatAudio">Áudio em texto (R$ por minuto de áudio)</label>
@@ -2280,11 +2280,11 @@
       </div>
     </div>
 
-    <!-- Tela Leitura em voz alta (atalho do Início): importar PDF ou Word, ou colar um texto, e ouvir com a frase lida destacada. É um <div> (não uma
+    <!-- Tela Assistente de leitura em voz (atalho do Início): importar PDF ou Word, ou colar um texto, e ouvir com a frase lida destacada. É um <div> (não uma
          <section>) para não mexer na contagem que dá a cor dos outros cartões (.card:nth-of-type). -->
     <div id="leituraCard" class="card tint-rosa screen-leitura">
       <div class="leitura-topo">
-        <h2><span aria-hidden="true">🔊</span> Leitura em voz alta</h2>
+        <h2><span aria-hidden="true">🔊</span> Assistente de leitura em voz</h2>
       </div>
       <details class="leitura-dica">
         <summary>ℹ️ Como funciona</summary>

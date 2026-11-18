@@ -2,7 +2,7 @@
 // mais a chave PIX (e o código "copia e cola" do PIX, que o app transforma em QR code).
 // Preços e PIX ficam no Global Config (chave "faturamento_config"). Valores em reais.
 //  - IA de texto e esboços: reais por 1 milhão de tokens, com um preço para a entrada e outro para a saída.
-//  - Leitura em voz alta: reais por 1.000 caracteres lidos.
+//  - Assistente de leitura em voz: reais por 1.000 caracteres lidos.
 //  - Áudio em texto (transcrição): reais por minuto de áudio.
 import { gravarItem, lerItem } from "./_armazem.mjs";
 import { consumoDoAparelho, mapaConsumoBrutoDoMes, mesDe } from "./_estatisticas.mjs";
@@ -15,7 +15,7 @@ const VALIDADE_MS = 20_000;
 export const CATEGORIAS = [
   { id: "texto", nome: "IA de texto", unidade: "1 milhão de tokens", campos: ["entrada", "saida"] },
   { id: "esbocos", nome: "Esboços e discursos (a IA mais cara)", unidade: "1 milhão de tokens", campos: ["entrada", "saida"] },
-  { id: "voz", nome: "Leitura em voz alta", unidade: "1.000 caracteres", campos: ["mil"] },
+  { id: "voz", nome: "Assistente de leitura em voz", unidade: "1.000 caracteres", campos: ["mil"] },
   { id: "audio", nome: "Áudio em texto (transcrição)", unidade: "minuto de áudio", campos: ["minuto"] },
 ];
 
@@ -39,7 +39,7 @@ export const RECURSOS = [
   { id: "publico", rotulo: "Esboço do discurso público (S-34)", cat: "esbocos", acesso: ["s34"], tarefas: ["publico", "publico-importar", "publico-canticos"] },
   { id: "leitura-biblia", rotulo: "Resumo da leitura diária da Bíblia", cat: "texto", acesso: ["resumo"], tarefas: ["leitura-biblia"] },
   { id: "audio-ia", rotulo: "Áudio em texto: correção, nomes e resumo (IA)", cat: "texto", acesso: ["texto"], tarefas: ["audio-correcao", "audio-nomes", "audio-resumo"] },
-  { id: "voz", rotulo: "Leitura em voz alta", cat: "voz", acesso: ["leitura", "pesquisa"], tarefas: ["voz"] },
+  { id: "voz", rotulo: "Assistente de leitura em voz", cat: "voz", acesso: ["leitura", "pesquisa"], tarefas: ["voz"] },
   { id: "audio", rotulo: "Áudio em texto: transcrição", cat: "audio", acesso: ["texto"], tarefas: ["audio"] },
 ];
 const OUTROS = { id: "outros", rotulo: "Outros usos de IA", cat: "texto" };

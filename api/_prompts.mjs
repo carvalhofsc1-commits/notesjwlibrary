@@ -898,9 +898,9 @@ Regras:
   },
   {
     id: "leitura_voz",
-    titulo: "Leitura em voz alta (como a voz do Google deve ler)",
+    titulo: "Assistente de leitura em voz (como a voz do Google deve ler)",
     descricao: "Base da instrução enviada às vozes Gemini a cada leitura do botão 🔊 Ouvir. Depois dela o app junta a frase do tom e da altura escolhidos e as instruções extras do administrador (parte \"Tom, altura e instruções da voz\"). Mantenha CURTA e só com o estilo da voz: a voz Gemini às vezes fala em voz alta frases da instrução (ordens, regras, exemplos entre aspas). O que não deve ser lido (citações de publicações, parênteses, referências puladas) o app já tira do texto antes de enviar, e as referências bíblicas já vão por extenso.",
-    padrao: `Narração em português do Brasil, natural e clara, de quem lê um texto em voz alta numa reunião da congregação, com entonação de pergunta nas perguntas e pausas curtas entre as ideias.`,
+    padrao: `Narração em português do Brasil, natural e clara, de quem lê um texto em voz alta numa reunião da congregação, com entonação de pergunta nas perguntas e pausas curtas entre as ideias. Símbolos de formatação ficam em silêncio.`,
   },
   // ---------- Frases que o app junta em cada pedido, conforme as caixas marcadas ----------
   // Cada item começa com o nome entre colchetes; o servidor procura o item pelo nome. Item apagado = volta o padrão.
@@ -908,7 +908,7 @@ Regras:
     id: "frases_voz",
     titulo: "Tom, altura e instruções da voz (leitura em voz alta)",
     descricao:
-      "Frases juntadas à instrução \"Leitura em voz alta\" conforme o tom e a altura escolhidos no menu de voz (Ajustes) e as instruções extras do administrador. Só valem nas vozes Gemini. Edite só o texto depois do nome entre colchetes; não mude o nome. Marcador trocado pelo app: {{texto}} (as instruções extras).",
+      "Frases juntadas à instrução \"Assistente de leitura em voz\" conforme o tom e a altura escolhidos no menu de voz (Ajustes) e as instruções extras do administrador. Só valem nas vozes Gemini. Edite só o texto depois do nome entre colchetes; não mude o nome. Marcador trocado pelo app: {{texto}} (as instruções extras).",
     itens: [
       ["Tom: calmo e respeitoso", "Use um tom calmo, caloroso e respeitoso."],
       ["Tom: caloroso e animado", "Use um tom caloroso e animado, com entusiasmo moderado, sem exagero."],
@@ -1312,7 +1312,7 @@ const MONTAGEM_PEDIDOS = `COMO O APP MONTA A MENSAGEM DE CADA PEDIDO (além do p
 - Comentários adicionais do texto diário (tela Início): "TEXTO DIÁRIO:" com a data, o texto temático e o comentário do dia (lidos pelo servidor no wol.jw.org, sem a citação da publicação) → [em "Gerar outros": "COMENTÁRIOS JÁ SUGERIDOS" com os anteriores e o pedido de outras palavras, sem forçar outro enfoque].
 - Numeração dos parágrafos (só quando a leitura direta falha): "ENDEREÇO:" da página.
 - Aplicação dos versículos e do Perspicaz: [orientação] → "ITENS (JSON):" com o comentário, os versículos exatos e o verbete.
-- Leitura em voz alta (botão 🔊 Ouvir, voz do Google): o texto do campo (ou o trecho selecionado) em letras comuns, sem emojis e símbolos, com as regras do menu de voz (referências bíblicas na forma curta, por extenso ou como escritas; puladas, se marcado, as entre parênteses e as depois de travessão no fim do parágrafo, menos a do texto temático do texto diário; citações de publicações, parênteses e cabeçalhos pulados), dividido em partes que crescem de uns 150 até 1.500 caracteres, com duas preparadas à frente. Nas vozes Gemini, cada parte vai com a instrução "Leitura em voz alta" + a frase do tom + a da altura + as instruções extras do administrador. A voz Chirp 3 HD recebe só o texto.`;
+- Assistente de leitura em voz (botão 🔊 Ouvir, voz do Google): o texto do campo (ou o trecho selecionado) em letras comuns, sem emojis e símbolos, com as regras do menu de voz (referências bíblicas na forma curta, por extenso ou como escritas; puladas, se marcado, as entre parênteses e as depois de travessão no fim do parágrafo, menos a do texto temático do texto diário; citações de publicações, parênteses e cabeçalhos pulados), dividido em partes que crescem de uns 150 até 1.500 caracteres, com duas preparadas à frente. Nas vozes Gemini, cada parte vai com a instrução "Assistente de leitura em voz" + a frase do tom + a da altura + as instruções extras do administrador. A voz Chirp 3 HD recebe só o texto.`;
 
 export function travadosDe(limites) {
   return [

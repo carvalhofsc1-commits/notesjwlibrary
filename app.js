@@ -7876,7 +7876,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.51'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.52'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -9520,7 +9520,7 @@
       if (leituraGravada && typeof leituraGravada.texto === 'string' && leituraGravada.texto.trim()) {
         const marcasGravadas = json(LEITURA_MARCAS_KEY);
         const qtdMarcas = Array.isArray(marcasGravadas) ? marcasGravadas.length : 0;
-        adicionar('🔊', 'Texto da Leitura em voz alta (para continuar depois)', [LEITURA_SALVA_KEY, LEITURA_POSICAO_KEY, LEITURA_MARCAS_KEY], 1, ['texto', 'textos'],
+        adicionar('🔊', 'Texto do Assistente de leitura em voz (para continuar depois)', [LEITURA_SALVA_KEY, LEITURA_POSICAO_KEY, LEITURA_MARCAS_KEY], 1, ['texto', 'textos'],
           [String(leituraGravada.info || '').replace(/^📄\s*/, ''), qtdMarcas ? qtdMarcas + (qtdMarcas === 1 ? ' trecho marcado' : ' trechos marcados') : ''].filter(Boolean).join(' · '), [leituraGravada.gravadoEm]);
       }
 
@@ -12492,11 +12492,58 @@ function saveTemplatesToStorage() {
         : (d.comHistoricoAnterior ? 'Saldo em ' + extratoQuando(d.desde).slice(0, 8) + ', quando o extrato começou (o que veio antes não foi detalhado)' : 'Início da conta');
       extrato.lista.appendChild(extratoLinha('extrato-inicial', 'Saldo inicial', detalheInicial, null, inicial));
       let creditos = 0, consumo = 0;
+      // Em vez de uma linha por movimento (a lista ficava sem fim), um subtotal por categoria (o recurso de IA ou o tipo de crédito),
+      // do maior para o menor; tocando, abre os subtotais de cada dia, do mais novo para o mais antigo.
+      const grupos = new Map();
       itens.forEach(m => {
         if (m.tipo === 'consumo') consumo += -m.valor; else creditos += m.valor; // créditos: líquido de ajustes do administrador
-        extrato.lista.appendChild(extratoLinha(m.valor > 0 ? 'extrato-credito' : 'extrato-consumo', m.rotulo, extratoQuando(m.em), m.valor, m.saldo));
+        const ehConsumo = m.tipo === 'consumo';
+        const chave = (ehConsumo ? 'c|' : 'r|') + (m.rotulo || 'Outros');
+        if (!grupos.has(chave)) grupos.set(chave, { rotulo: m.rotulo || 'Outros', consumo: ehConsumo, total: 0, qtd: 0, dias: new Map() });
+        const g = grupos.get(chave);
+        g.total += m.valor;
+        g.qtd++;
+        const dia = new Date(m.em).toLocaleString('sv-SE', { timeZone: 'America/Sao_Paulo' }).slice(0, 10);
+        const d = g.dias.get(dia) || { total: 0, qtd: 0 };
+        d.total += m.valor;
+        d.qtd++;
+        g.dias.set(dia, d);
+      });
+      const vezes = n => n + (n === 1 ? ' vez' : ' vezes');
+      const sinal = v => (v > 0 ? '+ ' : '− ') + extratoReais(Math.abs(v));
+      [...grupos.values()].sort((a, b) => (a.consumo === b.consumo ? Math.abs(b.total) - Math.abs(a.total) : a.consumo ? 1 : -1)).forEach(g => {
+        const caixa = document.createElement('details');
+        caixa.className = 'extrato-grupo ' + (g.total > 0 ? 'extrato-credito' : 'extrato-consumo');
+        const sum = document.createElement('summary');
+        const nome = document.createElement('span');
+        nome.className = 'extrato-grupo-nome';
+        const t = document.createElement('strong');
+        t.textContent = g.rotulo;
+        const q = document.createElement('small');
+        q.textContent = vezes(g.qtd) + ' · ' + vezes(g.dias.size).replace('vez', 'dia').replace('vezes', 'dias');
+        nome.append(t, q);
+        const v = document.createElement('span');
+        v.className = 'extrato-valor';
+        v.textContent = sinal(g.total);
+        sum.append(nome, v);
+        const dias = document.createElement('div');
+        dias.className = 'extrato-dias';
+        [...g.dias.entries()].sort((a, b) => b[0].localeCompare(a[0])).forEach(([dia, d]) => {
+          const linha = document.createElement('div');
+          linha.className = 'extrato-dia';
+          const rot = document.createElement('span');
+          rot.textContent = dia.slice(8, 10) + '/' + dia.slice(5, 7) + '/' + dia.slice(2, 4) + ' · ' + vezes(d.qtd);
+          const val = document.createElement('span');
+          val.className = 'extrato-dia-valor';
+          val.textContent = sinal(d.total);
+          linha.append(rot, val);
+          dias.appendChild(linha);
+        });
+        caixa.append(sum, dias);
+        extrato.lista.appendChild(caixa);
       });
       const fim = itens.length ? itens[itens.length - 1].saldo : inicial;
+      if (itens.length) extrato.lista.appendChild(extratoLinha('extrato-inicial', mes ? 'Saldo no fim do período' : 'Saldo atual', '', null, mes ? fim : d.saldo));
       if (!itens.length) {
         const vazio = document.createElement('p');
         vazio.className = 'hint';
@@ -12505,7 +12552,9 @@ function saveTemplatesToStorage() {
       }
       extrato.lista.hidden = false;
       extrato.resumo.textContent = '';
-      [['Créditos', (creditos < 0 ? '− ' : '+ ') + extratoReais(Math.abs(creditos))], ['Consumo', '− ' + extratoReais(consumo)], [mes ? 'Saldo no fim do período' : 'Saldo atual', extratoReais(mes ? fim : d.saldo)]].forEach(([r, v]) => {
+      // No resumo, centavos (2 casas): com 4 casas o valor quebrava em duas linhas nas três caixas lado a lado.
+      const reais2 = n => (Number(n) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      [['Créditos', (creditos < 0 ? '− ' : '+ ') + reais2(Math.abs(creditos))], ['Consumo', '− ' + reais2(consumo)], [mes ? 'Saldo no fim' : 'Saldo atual', reais2(mes ? fim : d.saldo)]].forEach(([r, v]) => {
         const caixa = document.createElement('div');
         const rotulo = document.createElement('small');
         rotulo.textContent = r;

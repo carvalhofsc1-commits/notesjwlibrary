@@ -55,6 +55,16 @@ async function sintetizar(corpo, token, chaveApi) {
   return dados.audioContent;
 }
 
+// O texto como a voz recebe: sem sublinhados, asteriscos, == (grifo), #, ~, crases e barras verticais, que as vozes liam em voz alta.
+export function paraFalar(texto) {
+  return String(texto || "")
+    .replace(/[_*~`#|]+/g, " ")
+    .replace(/={2,}/g, " ")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/ +([.,;:!?…)])/g, "$1")
+    .trim();
+}
+
 // Instrução de leitura do Gemini: a base editável ("Leitura em voz alta") + tom + altura + instruções extras.
 function instrucaoDeLeitura(P, c) {
   const frases = P.frases.voz;
@@ -133,7 +143,11 @@ export default async function handler(req, res) {
   if (!exemplo && typeof body.voz === "string" && VOZES.some((v) => v.nome === body.voz)) config = { ...config, voz: body.voz };
   const modelo = MODELOS_VOZ.find((m) => m.id === config.modelo) || MODELOS_VOZ[0];
   const vozChirp = `pt-BR-Chirp3-HD-${config.voz}`;
-  const pedidoChirp = { input: { text: texto }, voice: { languageCode: "pt-BR", name: vozChirp }, audioConfig: { audioEncoding: "MP3" } };
+  // Símbolos de formatação nunca são lidos (a voz falava "underscore" nos __itálicos__, "asterisco" nos **negritos**): viram espaço.
+  // Fica depois da conferência do cupom do texto diário, que compara o texto como o app mandou.
+  const falado = paraFalar(texto);
+  if (!falado) return erro(res, 400, "Não há texto para ler.");
+  const pedidoChirp = { input: { text: falado }, voice: { languageCode: "pt-BR", name: vozChirp }, audioConfig: { audioEncoding: "MP3" } };
   const inicio = Date.now();
   let audio = null;
   let usada = vozChirp;
@@ -154,7 +168,7 @@ export default async function handler(req, res) {
       const P = await carregarPrompts();
       audio = await sintetizar(
         {
-          input: { text: texto, prompt: instrucaoDeLeitura(P, config) },
+          input: { text: falado, prompt: instrucaoDeLeitura(P, config) },
           voice: { languageCode: "pt-BR", name: config.voz, modelName: modelo.modelo },
           audioConfig: { audioEncoding: "MP3" },
         },

@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.52
+
+- Leitura em voz (todo o app): o servidor tira sublinhados, asteriscos, == e outros símbolos de formatação antes de mandar o texto à voz (ela lia "underscore"); a instrução padrão da voz também diz que símbolos ficam em silêncio.
+- O recurso passa a se chamar "Assistente de leitura em voz" (menu, atalho, tela, Ajustes, extrato, Sobre e Privacidade).
+- Extrato de créditos e consumo: o resumo mostra centavos e não quebra mais os valores; a linha do período fica alinhada; em vez de uma linha por consumo, um subtotal por recurso (e por tipo de crédito) que, tocado, abre os subtotais de cada dia; no fim, o saldo atual.
+- Novo padrão visual suave em todo o app: só branco, cinza claro, azul claro, roxo claro, vermelho claro e laranja claro, com molduras finas na cor forte. Botões fortes viram claros (padrão cinza claro; esboços e pesquisas laranja; comentários e Sentinela roxo; dirigente e escolhas marcadas azul; gravar, desfazer e apagar vermelho). Verde e verde-água saem (viram azul ou cinza), inclusive nas mensagens de "pronto". Subseções e quadros com fundos chapados e claros.
+
 ## 6.10.51
 
 - Todas as telas: os cartões ficam sem matiz (brancos no claro, a cor normal dos cartões no escuro); o do texto diário segue cinza claro. Os botões principais (antes azuis) passam a cinza-grafite (#4b5563; no escuro #64748b).

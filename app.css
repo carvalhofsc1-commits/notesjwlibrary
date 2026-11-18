@@ -16164,3 +16164,159 @@ html body .card:not(.td-card) { background: var(--card); border-color: var(--lin
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --btn-azul: #64748b; } }
 :root[data-theme="dark"] { --btn-azul: #64748b; }
 .card.tint-5.screen-anotacoes { background: var(--card); border-color: var(--line); }
+
+/* 6.10.52: extrato — resumo sem quebrar os valores, linha do período alinhada e subtotais por categoria (com os dias ao abrir) */
+.consumo-mes select,
+.consumo-mes button { margin: 0; height: 44px; min-height: 44px; }
+.extrato-resumo > div { padding: 8px 4px; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
+.extrato-resumo strong { font-size: clamp(.78rem, 3.4vw, .95rem); white-space: nowrap; overflow-wrap: normal; font-variant-numeric: tabular-nums; }
+.extrato-linha .extrato-desc { flex: 1 1 auto; }
+.extrato-grupo { border: 1px solid var(--line); border-left-width: 4px; border-radius: 8px; background: var(--card); }
+.extrato-grupo > summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; cursor: pointer; list-style: none; }
+.extrato-grupo > summary::-webkit-details-marker { display: none; }
+.extrato-grupo > summary::after { content: '▸'; color: var(--muted); font-size: .8rem; flex: 0 0 auto; }
+.extrato-grupo[open] > summary::after { content: '▾'; }
+.extrato-grupo-nome { flex: 1 1 auto; min-width: 0; }
+.extrato-grupo-nome strong { display: block; overflow-wrap: anywhere; }
+.extrato-grupo-nome small { display: block; color: var(--muted); font-size: .75rem; }
+.extrato-grupo .extrato-valor { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.extrato-dias { display: grid; gap: 2px; padding: 0 10px 8px; border-top: 1px dashed var(--line); }
+.extrato-dia { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; font-size: .88rem; border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent); }
+.extrato-dia:last-child { border-bottom: 0; }
+.extrato-dia-valor { white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--muted); font-weight: 700; }
+
+/* ===================== 6.10.52: PADRÃO VISUAL SUAVE =====================
+   Poucas cores, todas claras: branco, cinza claro, azul claro, roxo claro, vermelho claro e laranja claro. A cor forte só aparece
+   em molduras finas (como na tela Início). No tema escuro, os mesmos matizes ficam discretos sobre a cor dos cartões.
+   Os seletores com :is(#sv#sv, …) ganham a força de dois ids, para valer sobre as regras antigas de cada botão. */
+:root {
+  --sv-cinza-bg: #eef0f3; --sv-cinza-tx: #1f2937; --sv-cinza-bd: #9ca3af;
+  --sv-azul-bg: #e6f0fd;  --sv-azul-tx: #1e3a8a;  --sv-azul-bd: #60a5fa;
+  --sv-roxo-bg: #f1eafd;  --sv-roxo-tx: #4c1d95;  --sv-roxo-bd: #a78bfa;
+  --sv-verm-bg: #fdeaea;  --sv-verm-tx: #991b1b;  --sv-verm-bd: #f87171;
+  --sv-lar-bg: #ffefe2;   --sv-lar-tx: #9a3412;   --sv-lar-bd: #fb923c;
+  --btn-azul: var(--sv-cinza-bg);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --sv-cinza-bg: #334155; --sv-cinza-tx: #e5e7eb; --sv-cinza-bd: #64748b;
+    --sv-azul-bg: #1e3a5f;  --sv-azul-tx: #dbeafe;  --sv-azul-bd: #3b82f6;
+    --sv-roxo-bg: #3b2a5c;  --sv-roxo-tx: #ede9fe;  --sv-roxo-bd: #8b5cf6;
+    --sv-verm-bg: #4a2228;  --sv-verm-tx: #fee2e2;  --sv-verm-bd: #ef4444;
+    --sv-lar-bg: #4a2e1c;   --sv-lar-tx: #ffedd5;   --sv-lar-bd: #f97316;
+    --btn-azul: var(--sv-cinza-bg);
+  }
+}
+:root[data-theme="dark"] {
+  --sv-cinza-bg: #334155; --sv-cinza-tx: #e5e7eb; --sv-cinza-bd: #64748b;
+  --sv-azul-bg: #1e3a5f;  --sv-azul-tx: #dbeafe;  --sv-azul-bd: #3b82f6;
+  --sv-roxo-bg: #3b2a5c;  --sv-roxo-tx: #ede9fe;  --sv-roxo-bd: #8b5cf6;
+  --sv-verm-bg: #4a2228;  --sv-verm-tx: #fee2e2;  --sv-verm-bd: #ef4444;
+  --sv-lar-bg: #4a2e1c;   --sv-lar-tx: #ffedd5;   --sv-lar-bd: #f97316;
+  --btn-azul: var(--sv-cinza-bg);
+}
+
+/* Botão padrão: cinza claro, texto escuro e moldura fina. */
+button { color: var(--sv-cinza-tx); border: 1px solid var(--sv-cinza-bd); }
+button.secondary { background: var(--card); color: var(--sv-cinza-tx); border: 1px solid var(--sv-cinza-bd); }
+button.secondary:hover { background: var(--sv-cinza-bg); }
+button.danger, button.danger:hover { background: var(--sv-verm-bg); color: var(--sv-verm-tx); border: 1px solid var(--sv-verm-bd); }
+
+/* Laranja claro: esboços e Assistente de pesquisas. */
+button:is(#sv#sv, .ai-study-btn, .pesq-fino),
+button:is(#sv#sv, .ai-study-btn, .pesq-fino):hover:not(:disabled),
+.pesq-abas .pesq-aba:is(#sv#sv, [aria-selected="true"]) {
+  background: var(--sv-lar-bg); color: var(--sv-lar-tx); border: 1px solid var(--sv-lar-bd);
+}
+
+/* Roxo claro: comentários, Sentinela, texto diário e JW Library. */
+button:is(#sv#sv, .td-gerar, .anotacoes-jwl, .ai-sentinela-btn, #joiasCarregarBtn, #joiasResponderBtn, #consideracaoCarregarBtn, #consideracaoResponderBtn,
+  #nvcCarregarBtn, #nvcResponderBtn, #apostilaImgCarregarBtn, #ebcCarregarBtn, #ebcResponderBtn, #aiStudyLoadBtn, #aiStudyBtn),
+button:is(#sv#sv, .td-gerar, .anotacoes-jwl, .ai-sentinela-btn, #joiasCarregarBtn, #joiasResponderBtn, #consideracaoCarregarBtn, #consideracaoResponderBtn,
+  #nvcCarregarBtn, #nvcResponderBtn, #apostilaImgCarregarBtn, #ebcCarregarBtn, #ebcResponderBtn, #aiStudyLoadBtn, #aiStudyBtn):hover:not(:disabled) {
+  background: var(--sv-roxo-bg); color: var(--sv-roxo-tx); border: 1px solid var(--sv-roxo-bd);
+}
+
+/* Azul claro: dirigentes, carregar gravação e as escolhas marcadas (tema, modo, abas). */
+button:is(#sv#sv, #leaderStudyLoadBtn, #aiStudyQuestionsBtn, #ebcDirCarregarBtn, #ebcDirPerguntasBtn, #anotacoesCarregarBtn),
+button:is(#sv#sv, #leaderStudyLoadBtn, #aiStudyQuestionsBtn, #ebcDirCarregarBtn, #ebcDirPerguntasBtn, #anotacoesCarregarBtn):hover:not(:disabled),
+:is(#sv#sv, .theme-btn.active, .modelo-modos button[aria-pressed="true"], .merge-etiquetas-corpo .bk-row button[aria-pressed="true"],
+  .anotacoes-modo-btn[aria-pressed="true"], .anotacoes-opcao[aria-pressed="true"]) {
+  background: var(--sv-azul-bg); color: var(--sv-azul-tx); border: 1px solid var(--sv-azul-bd);
+}
+
+/* Vermelho claro: gravar, desfazer e avisos de gravação. */
+button:is(#sv#sv, #anotacoesGravarBtn, #undoTopBtn, #undoBtn, .anot-grav-aviso, .danger),
+button:is(#sv#sv, #anotacoesGravarBtn, #undoTopBtn, #undoBtn, .anot-grav-aviso, .danger):hover:not(:disabled) {
+  background: var(--sv-verm-bg); color: var(--sv-verm-tx); border: 1px solid var(--sv-verm-bd);
+}
+
+/* Ao passar o mouse, um véu leve sobre a cor clara (sem trocar de cor). */
+@media (hover: hover) {
+  button:is(#sv#sv, .ai-study-btn, .pesq-fino, .td-gerar, .anotacoes-jwl, .ai-sentinela-btn, .danger):hover:not(:disabled) { filter: brightness(.97); }
+}
+
+/* Botões de opção: sem verde nem verde-água (passam a azul claro). */
+:is(#sv#sv, .btn-green, .btn-teal, .btn-sky) { background: var(--sv-azul-bg); color: var(--sv-azul-tx); }
+
+/* Extrato e Pix: o verde dos créditos vira azul. */
+.extrato-credito { border-left-color: #3b82f6; }
+.extrato-credito .extrato-valor { color: #2563eb; }
+
+/* Matizes de base (subseções, grupos e quadros) refeitos no padrão suave: verde vira cinza, verde-água vira azul; todos chapados e claros. */
+:root {
+  --tint1-bg: #eef4fd; --tint1-border: #60a5fa;
+  --tint2-bg: #f4f5f7; --tint2-border: #9ca3af;
+  --tint3-bg: #f5f0fd; --tint3-border: #a78bfa;
+  --tint4-bg: #fff4ea; --tint4-border: #fb923c;
+  --tint5-bg: #f4f5f7; --tint5-border: #94a3b8;
+  --tint6-bg: #eef4fd; --tint6-border: #60a5fa;
+  --rosa-bg: #fdf0f0;  --rosa-border: #f87171;
+  --success: #1d4ed8;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --tint1-bg: #1f2d44; --tint1-border: #3b82f6;
+    --tint2-bg: #273244; --tint2-border: #64748b;
+    --tint3-bg: #2b2540; --tint3-border: #8b5cf6;
+    --tint4-bg: #36291f; --tint4-border: #f97316;
+    --tint5-bg: #273244; --tint5-border: #64748b;
+    --tint6-bg: #1f2d44; --tint6-border: #3b82f6;
+    --rosa-bg: #3a2228;  --rosa-border: #ef4444;
+    --success: #93c5fd;
+  }
+}
+:root[data-theme="dark"] {
+  --tint1-bg: #1f2d44; --tint1-border: #3b82f6;
+  --tint2-bg: #273244; --tint2-border: #64748b;
+  --tint3-bg: #2b2540; --tint3-border: #8b5cf6;
+  --tint4-bg: #36291f; --tint4-border: #f97316;
+  --tint5-bg: #273244; --tint5-border: #64748b;
+  --tint6-bg: #1f2d44; --tint6-border: #3b82f6;
+  --rosa-bg: #3a2228;  --rosa-border: #ef4444;
+  --success: #93c5fd;
+}
+
+/* Mensagens de "pronto": azul em vez de verde. */
+:is(#sv#sv, .ok) { color: var(--success); }
+
+/* Azul claro (antes verde ou verde-água): botões e campos. */
+:is(#sv#sv, #copyBtn, .icon-action.font, .ai-week-nav, #leaderStudyParagraphs, .ia-extra-limpar, #backupMergeBtn, #aiFloating, .outros-passo-n, #acessoSiteZapAdmin),
+:is(#sv#sv, #copyBtn, .icon-action.font, .ai-week-nav, .ia-extra-limpar, #backupMergeBtn, #acessoSiteZapAdmin):hover:not(:disabled) {
+  background: var(--sv-azul-bg); color: var(--sv-azul-tx); border: 1px solid var(--sv-azul-bd);
+}
+/* Quadros com fundo claro e moldura fina azul. */
+:is(#sv#sv, #opcoesIaBox, #opcoesIaBox > summary, .historico-secao, .prompt-tint-codigo, #leaderStudySalva, #ebcDirSalva, #acessoSitePendente, #pixCredito, #dirigenteBox > summary, #ebcDirBox > summary) {
+  background: var(--sv-azul-bg); border-color: var(--sv-azul-bd);
+}
+/* Só a moldura (era verde-água ou verde). */
+:is(#sv#sv, .dirigente-subsection, .ebc-subsection, .imagens-box, .ai-check, .dirigente-secoes, textarea[id^="iaExtra_"], #backupSoNovosBox) {
+  border-color: var(--sv-azul-bd);
+}
+/* Roxo claro (antes roxo forte): atalho do JW Library no texto diário. */
+:is(#sv#sv, #tdJwl) { background: var(--sv-roxo-bg); color: var(--sv-roxo-tx); border: 1px solid var(--sv-roxo-bd); }
+/* Anotações: o atalho Congresso deixa o verde (azul claro). */
+.atalhos-grid .atalho[data-anotacoes-modo="congresso"] { --atalho-fundo: var(--sv-azul-bg); --atalho-borda: var(--sv-azul-bd); }
+/* Início: as bordas verdes ou verde-água de alguns atalhos passam a azul. */
+.atalhos-grid .atalho[data-atalho="pesquisa"], .atalhos-grid .atalho[data-atalho="biblia"], .atalhos-grid .atalho[data-atalho="ajustes"],
+.atalhos-grid .atalho[data-atalho="extrato"], .atalhos-grid .atalho[data-atalho="historico"], .atalhos-grid .atalho[data-atalho="dirigir"] { --atalho-borda: var(--sv-azul-bd); }
