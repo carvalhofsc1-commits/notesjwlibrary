@@ -16368,3 +16368,14 @@ button:is(#sv#sv, #anotacoesGravarBtn, #undoTopBtn, #undoBtn, .anot-grav-aviso, 
 /* 6.10.54: o olho só de linhas em todos os botões de ver/mostrar (sem o emoji realista) */
 .icone-olho { vertical-align: -3px; flex: 0 0 auto; }
 :is(.acesso-ver, #pesquisaRefVerBtn) .icone-olho { display: block; margin: 0 auto; }
+
+/* 6.10.55: todos os botões de atalho para o JW Library em roxo claro, com a letra roxo-escuro (no escuro, roxo discreto e letra clara). */
+:root { --jwl-bg: #f1eafd; --jwl-tx: #4c1d95; --jwl-bd: #a78bfa; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --jwl-bg: #3b2a5c; --jwl-tx: #ede9fe; --jwl-bd: #8b5cf6; } }
+:root[data-theme="dark"] { --jwl-bg: #3b2a5c; --jwl-tx: #ede9fe; --jwl-bd: #8b5cf6; }
+:is(#sv#sv#sv, .td-atalho-jwl, .anotacoes-jwl, .answer-jwl-btn, .study-imagem-jwl, .bp-jwl, #pesquisaRefJwl, #pesquisaRefEscolhidoJwl, .jwl-botao),
+:is(#sv#sv#sv, .td-atalho-jwl, .anotacoes-jwl, .answer-jwl-btn, .study-imagem-jwl, .bp-jwl, #pesquisaRefJwl, #pesquisaRefEscolhidoJwl, .jwl-botao):hover,
+:is(#sv#sv#sv, .td-atalho-jwl, .anotacoes-jwl, .answer-jwl-btn, .study-imagem-jwl, .bp-jwl, #pesquisaRefJwl, #pesquisaRefEscolhidoJwl, .jwl-botao):visited {
+  background: var(--jwl-bg); background-image: none; color: var(--jwl-tx); border: 1px solid var(--jwl-bd); opacity: 1;
+}
+:is(#sv#sv#sv, .td-atalho-jwl, .anotacoes-jwl, .answer-jwl-btn, .study-imagem-jwl, .bp-jwl, #pesquisaRefJwl, #pesquisaRefEscolhidoJwl, .jwl-botao) * { color: inherit; }

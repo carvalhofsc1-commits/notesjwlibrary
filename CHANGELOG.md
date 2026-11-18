@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.55
+
+- Todos os botões de atalho para o JW Library (cartões das reuniões, texto diário, respostas, imagens da apostila, Anotações, Leitura da Bíblia e Assistente de pesquisas) ficam em roxo claro com a letra roxo-escuro; no cartão de Tesouros a letra aparecia quase apagada.
+
 ## 6.10.54
 
 - Botões de ver o texto (Assistente de pesquisas) e de mostrar código ou senha (Ajustes → Acessos): o emoji do olho realista vira o olho só de linhas, o mesmo do botão Visualizar das Anotações; ao mostrar o código, o olho aparece riscado (no lugar do 🙈).
