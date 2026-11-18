@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.45
+
+- Pesquisa · Word: o nome NoteStyle do topo do documento fica maior (14 pt em vez de 8 pt, cinza mais escuro), em proporção com o logo, no arquivo e na prévia.
+
 ## 6.10.44
 
 - Pesquisa · Word: o logo do NoteStyle fica na ponta direita da linha "NoteStyle" do topo do documento (no arquivo e na prévia), porque o visualizador do iPhone não mostra o cabeçalho do Word. Nesse documento o cabeçalho com o logo deixa de ir, para não repetir.

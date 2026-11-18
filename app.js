@@ -7876,7 +7876,7 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
-    const APP_VERSION = '6.10.44'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.45'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -32443,7 +32443,7 @@ function saveTemplatesToStorage() {
         }).join('');
         const partes = [];
         // Cabeçalho discreto: NoteStyle à esquerda e o logo na ponta direita (tabulação à direita na largura útil da página), com uma linha embaixo.
-        partes.push(p('<w:pBdr><w:bottom w:val="single" w:sz="4" w:space="4" w:color="D1D5DB"/></w:pBdr><w:tabs><w:tab w:val="right" w:pos="10772"/></w:tabs>' + espaco(0, 240), docxRuns('NoteStyle', 'b', 16, '9CA3AF') + '<w:r><w:tab/></w:r>' + DOCX_LOGO_MARCA));
+        partes.push(p('<w:pBdr><w:bottom w:val="single" w:sz="4" w:space="4" w:color="D1D5DB"/></w:pBdr><w:tabs><w:tab w:val="right" w:pos="10772"/></w:tabs>' + espaco(0, 240), docxRuns('NoteStyle', 'b', 28, '6B7280') + '<w:r><w:tab/></w:r>' + DOCX_LOGO_MARCA));
         partes.push(p(espaco(0, 80), docxRuns(r.titulo || pesquisa.assunto, 'b', 36)));
         const meta = ['Pesquisa feita em ' + dataPorExtenso(r.data), r.modelo ? 'Agente de IA: ' + r.modelo : ''].filter(Boolean).join(' · ');
         partes.push(p(espaco(0, 60), docxRuns(meta, '', 18, cinza)));
