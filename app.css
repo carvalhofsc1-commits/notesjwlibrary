@@ -16131,3 +16131,6 @@ a.pesq-videos-jw { display: flex; width: 100%; box-sizing: border-box; margin: 0
 .pq-doc .pq-doc-marca img { width: 3em; height: 3em; flex: 0 0 auto; object-fit: contain; }
 /* 6.10.45: o nome NoteStyle maior, em proporção com o logo (14 pt no Word) */
 .pq-doc .pq-doc-marca span { font-size: 1.75em; color: #6b7280; line-height: 1.1; }
+
+/* 6.10.46: o cartão dos atalhos do Início em azul (não mais verde-água) */
+.card.tint-1 { background: var(--tint1-bg); border-color: var(--tint1-border); }

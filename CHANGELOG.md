@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.46
+
+- Início: o cartão dos atalhos deixa o verde-água (tint-6) e passa ao azul (tint-1), no claro e no escuro.
+
 ## 6.10.45
 
 - Pesquisa · Word: o nome NoteStyle do topo do documento fica maior (14 pt em vez de 8 pt, cinza mais escuro), em proporção com o logo, no arquivo e na prévia.
