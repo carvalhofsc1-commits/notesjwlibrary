@@ -1866,6 +1866,35 @@ function coberturaDe(texto, secoes) {
 }
 const secaoSimples = (texto, titulo = "Transcrição") => ({ titulo, emoji: "🎬", paragrafos: texto.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean) });
 
+// A legenda do jw.org não traz a leitura dos textos bíblicos (o versículo aparece escrito na tela): "Por favor, abra sua Bíblia em Hebreus 6:10.
+// Diz assim:" e a legenda pula para depois da leitura. Quando um parágrafo termina com dois-pontos e cita um texto pouco antes, o servidor põe
+// logo depois o versículo da Tradução do Novo Mundo, entre aspas e com a referência (se o texto já não vier na fala). Devolve { texto, inseridos }.
+async function completarLeiturasDoVideo(texto) {
+  const paragrafos = texto.split(/\n{2,}/);
+  const saida = [];
+  let inseridos = 0;
+  const palavras = (s) => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean);
+  for (let i = 0; i < paragrafos.length; i++) {
+    const p = paragrafos[i];
+    saida.push(p);
+    if (!/:\s*$/.test(p.trim())) continue;
+    try {
+      const refs = await referenciasNoTexto(p.slice(-300));
+      if (!refs.length) continue;
+      const [v] = await buscarVersiculos([refs[refs.length - 1]], 1);
+      if (!v || !v.texto) continue;
+      // Já lido na fala (as primeiras palavras do versículo aparecem no parágrafo seguinte): não repete.
+      const inicio = palavras(v.texto).slice(0, 6).join(" ");
+      if (inicio && palavras(paragrafos[i + 1] || "").join(" ").includes(inicio)) continue;
+      saida.push(`“${v.texto}” (${v.referencia})`);
+      inseridos++;
+    } catch {
+      /* sem a Bíblia agora: segue sem a leitura */
+    }
+  }
+  return { texto: saida.join("\n\n"), inseridos };
+}
+
 async function pesquisarVideo(res, body, P) {
   const link = String(body.link || "").trim().slice(0, 1000);
   const video = videoDoEndereco(link);
@@ -1895,6 +1924,16 @@ async function pesquisarVideo(res, body, P) {
       lido = { titulo: lido.titulo || mp4.titulo, duracaoS: lido.duracaoS || mp4.duracaoS, texto };
       fonte = "transcrição feita pela IA (o vídeo não tem legenda publicada)";
       ouvido = true;
+    }
+    // Leituras de textos bíblicos que a legenda não traz: completadas com a Tradução do Novo Mundo.
+    let leituras = 0;
+    if (!ouvido) {
+      const c = await completarLeiturasDoVideo(lido.texto);
+      if (c.inseridos) {
+        lido = { ...lido, texto: c.texto };
+        leituras = c.inseridos;
+        fonte += `; as leituras dos textos bíblicos, que a legenda não traz, foram completadas com a Tradução do Novo Mundo (${leituras})`;
+      }
     }
     const minutos = lido.duracaoS ? ` (${Math.floor(lido.duracaoS / 60)} min ${String(lido.duracaoS % 60).padStart(2, "0")} s)` : "";
     const mensagem =
@@ -1948,7 +1987,7 @@ async function pesquisarVideo(res, body, P) {
       });
       cobertura = coberturas.length ? Math.min(...coberturas) : 0;
     }
-    console.log("Pesquisa (vídeo):", JSON.stringify({ modelo, titulo: lido.titulo, ouvido, chars: lido.texto.length, partes, secoes: transcricao.length, cobertura: Math.round(cobertura * 100) / 100, entrada: uso.entrada, saida: uso.saida }));
+    console.log("Pesquisa (vídeo):", JSON.stringify({ modelo, titulo: lido.titulo, ouvido, chars: lido.texto.length, partes, leituras, secoes: transcricao.length, cobertura: Math.round(cobertura * 100) / 100, entrada: uso.entrada, saida: uso.saida }));
     return res.status(200).json({
       titulo: limparLinha(o.titulo || lido.titulo, 160),
       resumo: String(o.resumo || "").trim().slice(0, 3000),

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.70
+
+- Assistente de pesquisas · Vídeo: a legenda do jw.org não traz a leitura dos textos bíblicos (o versículo aparece escrito na tela), e a transcrição pulava a leitura ("abra sua Bíblia em Hebreus 6:10. Diz assim:" e já seguia). Agora, quando um parágrafo termina com dois-pontos logo depois de citar um texto, o servidor põe em seguida o versículo da Tradução do Novo Mundo, entre aspas e com a referência (se ele já não vier na fala). Vale para vídeos com legenda (não para os transcritos pela IA). No JW Broadcasting de novembro, 5 leituras.
+
 ## 6.10.69
 
 - Assistente de pesquisas · Vídeo: a transcrição de vídeos longos saía pela metade porque o texto da fala era cortado em 24 mil caracteres (o JW Broadcasting de novembro tem 41,6 mil). Agora o texto vem inteiro (até 160 mil caracteres); acima de 26 mil, a IA faz o resumo e os pontos com o texto todo e a transcrição em seções por partes de até 18 mil caracteres, ao mesmo tempo, juntadas na ordem. Parte que a IA não devolver inteira fica em texto simples, para nada da fala se perder.
