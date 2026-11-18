@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.51
+
+- Todas as telas: os cartões ficam sem matiz (brancos no claro, a cor normal dos cartões no escuro); o do texto diário segue cinza claro. Os botões principais (antes azuis) passam a cinza-grafite (#4b5563; no escuro #64748b).
+
 ## 6.10.50
 
 - Início: os botões de atalho passam do roxo suave ao cinza claro, e o cartão do texto diário ganha o mesmo cinza (no escuro, um cinza discreto).

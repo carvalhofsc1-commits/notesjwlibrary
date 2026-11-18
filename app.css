@@ -16156,3 +16156,11 @@ a.pesq-videos-jw { display: flex; width: 100%; box-sizing: border-box; margin: 0
 .atalhos-card .atalhos-grid .atalho,
 .atalhos-card .atalhos-grid .atalho:hover,
 .card.td-card { background: var(--inicio-cinza); }
+
+/* 6.10.51: todos os cartões das telas sem matiz (brancos no claro, a cor normal dos cartões no escuro); o do texto diário segue cinza.
+   Os botões principais (o azul padrão) passam a cinza. */
+html body .card:not(.td-card) { background: var(--card); border-color: var(--line); }
+:root { --btn-azul: #4b5563; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --btn-azul: #64748b; } }
+:root[data-theme="dark"] { --btn-azul: #64748b; }
+.card.tint-5.screen-anotacoes { background: var(--card); border-color: var(--line); }
