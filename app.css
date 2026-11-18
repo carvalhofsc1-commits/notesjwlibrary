@@ -16320,3 +16320,47 @@ button:is(#sv#sv, #anotacoesGravarBtn, #undoTopBtn, #undoBtn, .anot-grav-aviso, 
 /* Início: as bordas verdes ou verde-água de alguns atalhos passam a azul. */
 .atalhos-grid .atalho[data-atalho="pesquisa"], .atalhos-grid .atalho[data-atalho="biblia"], .atalhos-grid .atalho[data-atalho="ajustes"],
 .atalhos-grid .atalho[data-atalho="extrato"], .atalhos-grid .atalho[data-atalho="historico"], .atalhos-grid .atalho[data-atalho="dirigir"] { --atalho-borda: var(--sv-azul-bd); }
+
+/* ===================== 6.10.53: MENOS COR =====================
+   Fundos só branco ou cinza bem claro (o mesmo cinza da tela Início); a cor fica na moldura fina e no texto.
+   Os botões suaves (--sv-*) passam a ter fundo cinza, com a moldura e o texto no matiz de cada função. */
+:root { --sv-cinza-bg: var(--inicio-cinza); --sv-azul-bg: var(--inicio-cinza); --sv-roxo-bg: var(--inicio-cinza); --sv-verm-bg: var(--inicio-cinza); --sv-lar-bg: var(--inicio-cinza);
+  --tint1-bg: var(--inicio-cinza); --tint2-bg: var(--inicio-cinza); --tint3-bg: var(--inicio-cinza); --tint4-bg: var(--inicio-cinza); --tint5-bg: var(--inicio-cinza); --tint6-bg: var(--inicio-cinza); --rosa-bg: var(--inicio-cinza);
+  --btn-azul: var(--inicio-cinza); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --sv-cinza-bg: var(--inicio-cinza); --sv-azul-bg: var(--inicio-cinza); --sv-roxo-bg: var(--inicio-cinza); --sv-verm-bg: var(--inicio-cinza); --sv-lar-bg: var(--inicio-cinza);
+  --tint1-bg: var(--inicio-cinza); --tint2-bg: var(--inicio-cinza); --tint3-bg: var(--inicio-cinza); --tint4-bg: var(--inicio-cinza); --tint5-bg: var(--inicio-cinza); --tint6-bg: var(--inicio-cinza); --rosa-bg: var(--inicio-cinza);
+  --btn-azul: var(--inicio-cinza); } }
+:root[data-theme="dark"] { --sv-cinza-bg: var(--inicio-cinza); --sv-azul-bg: var(--inicio-cinza); --sv-roxo-bg: var(--inicio-cinza); --sv-verm-bg: var(--inicio-cinza); --sv-lar-bg: var(--inicio-cinza);
+  --tint1-bg: var(--inicio-cinza); --tint2-bg: var(--inicio-cinza); --tint3-bg: var(--inicio-cinza); --tint4-bg: var(--inicio-cinza); --tint5-bg: var(--inicio-cinza); --tint6-bg: var(--inicio-cinza); --rosa-bg: var(--inicio-cinza);
+  --btn-azul: var(--inicio-cinza); }
+
+/* Cards de escolha (Início, Anotações, Reuniões e os demais menus): cinza bem claro, com a moldura colorida. */
+:is(#sv#sv, .atalhos-grid .atalho, .reunioes-grupo > summary, .historico-secao > summary, .biblia-secao-btn, .biblia-modo > summary, .biblia-grupo > summary),
+:is(#sv#sv, .atalhos-grid .atalho, .reunioes-grupo > summary, .biblia-secao-btn):hover:not(:disabled) {
+  background: var(--inicio-cinza); background-image: none;
+}
+
+/* Quadros, grupos e subseções: branco (o conteúdo) ou cinza (o título). */
+:is(#sv#sv, details.subsection, details.reunioes-grupo, details.section-accordion, .comentarios-bloco, .prompt-item, .prompt-cat, .pesq-bloco, .backup-save,
+  .biblia-modo, .biblia-grupo, #opcoesIaBox, .historico-secao, .prompt-tint-codigo, .study-salva, #pixCredito, #acessoSitePendente, .voz-bar,
+  .anotacoes-biblia-previa, .ai-colado, .template-modo, .faturamento-custo, .transcricao-gravacao, .quick-emojis, #preview, .backup-so-novos) {
+  background: var(--card); background-image: none;
+}
+:is(#sv#sv, details.subsection > summary, details.section-accordion > summary, .prompt-item > summary, .prompt-cat > summary, #opcoesIaBox > summary, #dirigenteBox > summary, #ebcDirBox > summary) {
+  background: var(--inicio-cinza); background-image: none;
+}
+
+/* Barra da semana e botões de ação com fundo colorido próprio: cinza. */
+:is(#sv#sv, .ai-week-link, .ai-week-nav, .ai-week-today, .anotacoes-cab-centro, .td-atalho, .leitura-ler, #leituraArquivoBtn, #transcricaoArquivoBtn,
+  .transcricao-arquivo-limpar, #backupOpenBtn, #backupNewBtn, #backupMesclarGoBtn, .biblia-continuar, .biblia-prog-toggle, .icon-action, .option-btn,
+  .symbol-btn.favorite, button.letter, .ia-extra-limpar, th),
+:is(#sv#sv, .ai-week-nav, .ai-week-today, .leitura-ler, .icon-action, .option-btn, .symbol-btn.favorite, button.letter):hover:not(:disabled) {
+  background: var(--inicio-cinza); background-image: none;
+}
+:is(#sv#sv, .screen-reunioes button.secondary, .ai-study-load, .btn-orange, .btn-slate, .btn-blue, .btn-purple, .historico-cat > summary, .transcricao-conteiner > summary,
+  .screen-transcricao details > summary),
+:is(#sv#sv, .screen-reunioes button.secondary, .ai-study-load, .btn-orange, .btn-slate, .btn-blue, .btn-purple):hover:not(:disabled) { background: var(--inicio-cinza); background-image: none; }
+:is(#sv#sv, .historico-cat, .publico-presidente-texto, .transcricao-area, .biblia-resumo-caixa) { background: var(--card); background-image: none; }
+/* Texto legível nos dois temas para os botões que tinham fundo amarelo ou laranja próprio. */
+:is(#sv#sv, .screen-reunioes button.secondary:not(.ai-study-load), .ai-week-today) { color: var(--text); border: 1px solid var(--sv-cinza-bd); }
+:is(#sv#sv, #tesourosCarregarBtn, #discursoCarregarBtn, #outrosBaseImportarBtn, #outrosBaseApagarBtn, #outrosPesquisarBtn, #outrosCarregarBtn, #outrosLimparBtn, .screen-reunioes .ai-study-load:not([id])) { color: var(--sv-lar-tx); border: 1px solid var(--sv-lar-bd); }

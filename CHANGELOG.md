@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.53
+
+- Menos cor em todo o app: fundos só branco ou o cinza bem claro da tela Início. Os cards de escolha (Anotações, Reuniões, Bíblia e demais menus), a barra da semana, os títulos de grupos e subseções e os botões passam a cinza claro; a cor fica só na moldura fina e no texto. Os avisos de atenção seguem em laranja claro.
+
 ## 6.10.52
 
 - Leitura em voz (todo o app): o servidor tira sublinhados, asteriscos, == e outros símbolos de formatação antes de mandar o texto à voz (ela lia "underscore"); a instrução padrão da voz também diz que símbolos ficam em silêncio.
