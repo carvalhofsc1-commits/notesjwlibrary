@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.84
+
+- Extrato de créditos e consumo: nota que explica por que o consumo do extrato pode ser menor que o "Total" do mês (o extrato só registra o que foi descontado do saldo desde que começou; o total do mês conta todo o uso de IA do mês, inclusive o de antes do saldo existir, em 12/11, e do extrato, em 15/11).
+- Servidor: consumos seguidos do mesmo recurso em até 30 minutos viram um movimento só no extrato (com a quantidade de vezes), e o limite sobe de 400 para 1000 movimentos; antes, a transcrição de áudio lançava um movimento por trecho de 50 s e os mais antigos sumiriam em poucos dias.
+
 ## 6.10.83
 
 - Início: o atalho Extrato troca o 📒 pelo 💰 (saldo e consumo).

@@ -52,7 +52,10 @@ function creditosDe(registro) {
 // Extrato do usuário: cada movimento do saldo (crédito ou consumo) fica registrado no cadastro dele, com o saldo depois do movimento.
 // "extratoInicial" é o saldo antes do primeiro movimento guardado (para quem já existia antes do extrato, o saldo do dia em que ele começou:
 // "extratoDesde"). Guarda os últimos MAX_EXTRATO movimentos; ao passar disso, o mais antigo sai e o saldo dele vira o inicial.
-const MAX_EXTRATO = 400;
+// 6.10.84: 1000 (antes 400) e consumos seguidos do mesmo recurso, em até 30 minutos, viram um movimento só (com "qtd"): a transcrição de
+// áudio lançava um movimento por trecho de 50 s e o extrato perderia os mais antigos em poucos dias.
+const MAX_EXTRATO = 1000;
+const JUNTAR_CONSUMO_MS = 30 * 60 * 1000;
 // delta > 0 credita; delta < 0 debita (o saldo nunca fica abaixo de zero). Devolve o valor realmente lançado (0 = nada mudou, nada é registrado).
 function lancarExtrato(reg, { tipo, rotulo, delta }) {
   const antes = creditosDe(reg);
@@ -65,6 +68,14 @@ function lancarExtrato(reg, { tipo, rotulo, delta }) {
     reg.extrato = [];
     reg.extratoInicial = antes;
     reg.extratoDesde = agoraIso();
+  }
+  const ultimo = reg.extrato[reg.extrato.length - 1];
+  if (tipo === "consumo" && ultimo && ultimo.tipo === "consumo" && ultimo.rotulo === rotulo && Date.now() - Date.parse(ultimo.em) <= JUNTAR_CONSUMO_MS) {
+    ultimo.valor = arredondarSaldo(ultimo.valor + efetivo);
+    ultimo.saldo = depois;
+    ultimo.em = agoraIso();
+    ultimo.qtd = (Number(ultimo.qtd) || 1) + 1;
+    return efetivo;
   }
   reg.extrato.push({ em: agoraIso(), tipo, rotulo, valor: efetivo, saldo: depois });
   if (reg.extrato.length > MAX_EXTRATO) {
@@ -89,7 +100,7 @@ export async function extratoDoUsuario({ aparelhoId } = {}) {
     inicial: movimentos.length || reg.extratoInicial != null ? arredondarSaldo(Number(reg.extratoInicial) || 0) : creditosDe(reg),
     desde: reg.extratoDesde || reg.aprovadoEm || "",
     comHistoricoAnterior: Boolean(reg.extratoDesde && reg.extratoInicial > 0),
-    movimentos: movimentos.map((m) => ({ em: m.em, tipo: m.tipo, rotulo: m.rotulo, valor: m.valor, saldo: m.saldo })),
+    movimentos: movimentos.map((m) => ({ em: m.em, tipo: m.tipo, rotulo: m.rotulo, valor: m.valor, saldo: m.saldo, qtd: Number(m.qtd) || 1 })),
   };
 }
 
