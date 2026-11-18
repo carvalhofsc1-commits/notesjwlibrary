@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.78
+
+- Texto diário · leitura em voz alta com os comentários adicionais automáticos: o aviso passa a ser "Aguarde" [pausa] "gerando comentários adicionais" (duas falas seguidas, que fazem a pausa), no lugar de "Aguarde... gerando comentários".
+
 ## 6.10.77
 
 - Atalho Extrato: o card Extrato de créditos e consumo já abre expandido.
