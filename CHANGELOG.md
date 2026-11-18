@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.68
+
+- Itálico com sublinhado simples: a IA às vezes marca o itálico como _texto_ (Markdown) em vez de __texto__, e o "_" aparecia na transcrição de vídeos e nas respostas. Agora o app converte o simples em itálico de verdade na tela, ao copiar e no Word (Assistente de pesquisas e transcrição de Nossa vida cristã), sem mexer em nomes_com_sublinhado.
+
 ## 6.10.67
 
 - Assistente de pesquisas · Novidades: fixos no topo, nesta ordem, o último Boletim do Corpo Governante (só enquanto tiver até 15 dias de publicado; depois entra na ordem de data) e o último programa mensal (sempre). Os demais seguem do mais novo para o mais antigo.

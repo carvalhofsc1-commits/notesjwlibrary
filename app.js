@@ -7876,10 +7876,15 @@
     const DEFAULT_TEMPLATE_CATEGORY = 'REUNIÕES';
     const LEGACY_DEFAULT_TEMPLATE_CATEGORY = 'Destaques';
     const DESTAQUES_CATEGORY_NAME = 'DESTAQUES';
+    // A IA às vezes marca o itálico com um sublinhado só (_texto_, do Markdown) em vez de dois (__texto__, o do app): o "_" aparecia na tela
+    // (transcrições de vídeo, respostas). Aqui o simples vira duplo, só quando cerca palavras (não mexe em nomes_com_sublinhado).
+    function italicoDuplo(texto) {
+      return String(texto || '').replace(/(^|[^\p{L}\p{N}_])_(?!_)([^_\n]*?[^_\s])_(?![\p{L}\p{N}_])/gu, '$1__$2__');
+    }
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.10.67'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.68'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -17101,7 +17106,7 @@ function saveTemplatesToStorage() {
     // seções com título e emoji e marca **negrito** e __itálico__, que viram negrito e itálico de verdade (HTML, sem letras Unicode). A versão
     // formatada fica guardada neste aparelho (por semana), para não pedir de novo.
     function transcricaoInline(texto) {
-      const esc = String(texto).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const esc = italicoDuplo(texto).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       return esc.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>').replace(/__([^_]+?)__/g, '<em>$1</em>');
     }
     // A formatada também fica na memória (por semana): se o armazenamento do aparelho estiver cheio e a gravação falhar, ela aparece do mesmo jeito.
@@ -31630,7 +31635,7 @@ function saveTemplatesToStorage() {
       // ==grifo== (da edição) vira o fundo amarelo; cada número de fonte guarda o identificador dela (data-fid), para a edição não o perder.
       const idDoNumero = (numeros, n) => [...numeros.entries()].find(([, v]) => v === n)?.[0] || '';
       function htmlDoTexto(texto, numeros) {
-        return escapar(texto)
+        return escapar(italicoDuplo(texto))
           .replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>')
           .replace(/__([^_]+?)__/g, '<em>$1</em>')
           .replace(/==([^=]+?)==/g, '<mark>$1</mark>')
@@ -31638,7 +31643,7 @@ function saveTemplatesToStorage() {
       }
       // O mesmo texto para colar em mensagens: *negrito* e _itálico_ (como no WhatsApp) e [n] no lugar de cada fonte.
       function textoSimples(texto, numeros) {
-        return String(texto || '')
+        return italicoDuplo(texto)
           .replace(/\*\*([^*]+?)\*\*/g, '*$1*')
           .replace(/__([^_]+?)__/g, '_$1_')
           .replace(/==([^=]+?)==/g, '$1')
@@ -32646,7 +32651,7 @@ function saveTemplatesToStorage() {
         const ref = n => '<w:r><w:rPr><w:b/><w:color w:val="' + corRef + '"/><w:sz w:val="' + tam(16) + '"/><w:vertAlign w:val="superscript"/></w:rPr><w:t>' + n + '</w:t></w:r>';
         // **negrito**, __itálico__ e [F3] (vira o número da fonte em sobrescrito) em trechos do Word.
         // ==grifo== sai com o fundo amarelo (sombreado do Word).
-        const runsDoTexto = (texto, base, sz) => String(texto || '').split(/(\*\*[^*]+?\*\*|__[^_]+?__|==[^=]+?==|\s*\[\s*F\d{1,2}(?:\s*[,;]\s*F?\d{1,2})*\s*\])/i).map(parte => {
+        const runsDoTexto = (texto, base, sz) => italicoDuplo(texto).split(/(\*\*[^*]+?\*\*|__[^_]+?__|==[^=]+?==|\s*\[\s*F\d{1,2}(?:\s*[,;]\s*F?\d{1,2})*\s*\])/i).map(parte => {
           if (!parte) return '';
           const marca = parte.match(/^\s*\[\s*(F\d{1,2}(?:\s*[,;]\s*F?\d{1,2})*)\s*\]$/i);
           if (marca) return numerosDaMarca(marca[1], numeros).map(ref).join(ref(','));
