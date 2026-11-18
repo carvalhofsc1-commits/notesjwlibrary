@@ -16505,6 +16505,3 @@ body[data-screen="salvas"] #secaoHistorico { display: block !important; margin: 
 /* 6.10.81: Anotações · Transcrições na íntegra — Copiar, "Pôr nas anotações" (com espaço para o texto inteiro) e a lixeira numa grade. */
 .anot-transc-botoes { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.7fr) 48px; gap: 6px; margin: 0; }
 .anot-transc-botoes > button { width: 100%; min-width: 0; margin: 0; padding: 8px 6px; font-size: .88rem; line-height: 1.2; white-space: normal; text-align: center; }
-/* 6.10.84: a nota que explica a diferença entre o consumo do extrato e o total do mês. */
-.extrato-nota { margin: 4px 0 8px; font-size: .8rem; }
-.extrato-nota[hidden] { display: none; }

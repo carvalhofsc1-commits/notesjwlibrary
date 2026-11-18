@@ -7898,7 +7898,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.10.84'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.85'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -12599,19 +12599,6 @@ function saveTemplatesToStorage() {
         extrato.resumo.appendChild(caixa);
       });
       extrato.resumo.hidden = false;
-      // Por que o consumo daqui pode ser menor que o "Total do mês" lá em cima (6.10.84): o extrato só registra o que foi descontado do saldo
-      // desde que ele começou; o total do mês conta todo o uso de IA do mês, inclusive o de antes dessa data.
-      let nota = document.getElementById('extratoNota');
-      if (!nota) {
-        nota = document.createElement('p');
-        nota.id = 'extratoNota';
-        nota.className = 'hint extrato-nota';
-        extrato.resumo.insertAdjacentElement('afterend', nota);
-      }
-      const desdeMes = d.desde ? extratoMes(d.desde) : '';
-      const mostrarNota = Boolean(d.desde) && (!mes || mes === desdeMes);
-      nota.hidden = !mostrarNota;
-      if (mostrarNota) nota.textContent = 'ℹ️ O extrato registra o que foi descontado do saldo a partir de ' + extratoQuando(d.desde).slice(0, 8) + '. O “Total” do mês, acima, conta todo o uso de IA do mês, inclusive o de antes dessa data, que não aparece aqui; por isso ele pode ser maior que o consumo do extrato.';
     }
     async function extratoCarregar() {
       if (!navigator.onLine || !servidoPelaWeb()) {

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.85
+
+- Extrato de créditos e consumo: retirada a nota sobre a diferença para o total do mês (só fazia sentido em novembro de 2026). O agrupamento dos consumos e o limite de 1000 movimentos continuam.
+
 ## 6.10.84
 
 - Extrato de créditos e consumo: nota que explica por que o consumo do extrato pode ser menor que o "Total" do mês (o extrato só registra o que foi descontado do saldo desde que começou; o total do mês conta todo o uso de IA do mês, inclusive o de antes do saldo existir, em 12/11, e do extrato, em 15/11).
