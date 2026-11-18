@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.81
+
+- Anotações · Transcrições na íntegra: o botão "Pôr nas anotações" aparecia cortado; os três botões (Copiar, Pôr nas anotações e a lixeira) ficam numa grade com espaço para o texto inteiro, e a lixeira passa ao vermelho claro dos botões de apagar.
+
 ## 6.10.80
 
 - Assistente de pesquisas: os cards de entrada das abas Assunto ("O que você quer pesquisar?"), Texto bíblico e Vídeo ficam com fundo cinza claro; os campos continuam brancos.

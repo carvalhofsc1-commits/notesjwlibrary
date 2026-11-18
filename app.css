@@ -16501,3 +16501,7 @@ body[data-screen="salvas"] #secaoHistorico { display: block !important; margin: 
 
 /* 6.10.80: Assistente de pesquisas — os cards de entrada das abas Assunto ("O que você quer pesquisar?"), Texto bíblico e Vídeo com fundo cinza claro; os campos continuam brancos. */
 :is(#sv#sv, #pesquisaAssuntoBloco, #pesquisaTextoBloco, #pesquisaVideoBloco) { background: var(--inicio-cinza); }
+
+/* 6.10.81: Anotações · Transcrições na íntegra — Copiar, "Pôr nas anotações" (com espaço para o texto inteiro) e a lixeira numa grade. */
+.anot-transc-botoes { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.7fr) 48px; gap: 6px; margin: 0; }
+.anot-transc-botoes > button { width: 100%; min-width: 0; margin: 0; padding: 8px 6px; font-size: .88rem; line-height: 1.2; white-space: normal; text-align: center; }
