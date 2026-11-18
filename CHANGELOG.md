@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.80
+
+- Assistente de pesquisas: os cards de entrada das abas Assunto ("O que você quer pesquisar?"), Texto bíblico e Vídeo ficam com fundo cinza claro; os campos continuam brancos.
+
 ## 6.10.79
 
 - Extrato de créditos e consumo: a linha do saldo, no fim, fica em destaque (valor grande e em negrito, numa faixa com moldura azul). Corrigido "3 diaes" para "3 dias" nos subtotais.

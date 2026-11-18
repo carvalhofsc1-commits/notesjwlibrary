@@ -16498,3 +16498,6 @@ body[data-screen="salvas"] #secaoHistorico { display: block !important; margin: 
 .extrato-linha.extrato-saldo-final { align-items: center; padding: 12px 14px; border: 2px solid var(--sv-azul-bd); border-left-width: 6px; background: var(--sv-azul-bg); }
 .extrato-saldo-final strong { font-size: 1.05rem; }
 .extrato-saldo-valor { flex: 0 0 auto; font-size: 1.45rem; font-weight: 800; color: var(--sv-azul-tx); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* 6.10.80: Assistente de pesquisas — os cards de entrada das abas Assunto ("O que você quer pesquisar?"), Texto bíblico e Vídeo com fundo cinza claro; os campos continuam brancos. */
+:is(#sv#sv, #pesquisaAssuntoBloco, #pesquisaTextoBloco, #pesquisaVideoBloco) { background: var(--inicio-cinza); }
