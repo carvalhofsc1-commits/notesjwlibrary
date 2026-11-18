@@ -1360,9 +1360,10 @@ async function baixarJson(url, timeoutMs) {
 }
 
 // O texto da fala do vídeo: { titulo, duracaoS, texto, fonte } (texto vazio se o jw.org não publicou nenhum).
-export async function lerTextoDoVideo(video, { timeoutMs = 8000 } = {}) {
+// maxCaracteres: o corte do texto (24 mil nas partes da apostila; o Assistente de pesquisas pede mais, para vídeos de 1 a 2 horas).
+export async function lerTextoDoVideo(video, { timeoutMs = 8000, maxCaracteres = MAX_CARACTERES_VIDEO } = {}) {
   const a = await legendaDoVideo(video, timeoutMs);
-  const texto = a.vtt ? textoDoVtt(a.vtt).slice(0, MAX_CARACTERES_VIDEO) : "";
+  const texto = a.vtt ? textoDoVtt(a.vtt).slice(0, maxCaracteres) : "";
   return { titulo: a.titulo, duracaoS: a.duracaoS, texto, fonte: texto ? a.fonte : "" };
 }
 

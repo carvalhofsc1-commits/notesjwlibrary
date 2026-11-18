@@ -1820,6 +1820,52 @@ const SaidaVideoPesquisa = z.object({
   pontos: z.array(z.string()),
   secoes: z.array(z.object({ titulo: z.string(), emoji: z.string().nullable(), paragrafos: z.array(z.string()) })),
 });
+// Vídeos longos (programas mensais, formaturas de Gileade: 1 a 2 horas, 50 a 120 mil caracteres): antes o texto era cortado em 24 mil e a
+// transcrição saía pela metade. Agora o texto vem inteiro (até MAX_TEXTO_VIDEO_PESQUISA); acima de LIMITE_VIDEO_UMA_VEZ, a IA faz o resumo e os
+// pontos com o texto todo (só esses campos) e a transcrição em seções por partes de ~PARTE_VIDEO caracteres, em paralelo, juntadas na ordem.
+const MAX_TEXTO_VIDEO_PESQUISA = 160000;
+const LIMITE_VIDEO_UMA_VEZ = 26000;
+const PARTE_VIDEO = 18000;
+const SaidaVideoResumo = z.object({ titulo: z.string(), resumo: z.string(), pontos: z.array(z.string()) });
+const SaidaVideoSecoes = z.object({ secoes: z.array(z.object({ titulo: z.string(), emoji: z.string().nullable(), paragrafos: z.array(z.string()) })) });
+// Divide o texto em partes de até "tamanho" caracteres, sempre no fim de um parágrafo (ou de uma frase, se o parágrafo for enorme).
+function partesDoTexto(texto, tamanho) {
+  const paragrafos = texto.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  const partes = [];
+  let atual = "";
+  // Parágrafo maior que a parte: cortado no último ponto (ou espaço) antes do limite, sem perder nenhum trecho.
+  const cortar = (p) => {
+    const out = [];
+    let s = p;
+    while (s.length > tamanho) {
+      let i = s.lastIndexOf(". ", tamanho);
+      if (i < tamanho * 0.5) i = s.lastIndexOf(" ", tamanho);
+      if (i <= 0) i = tamanho - 1;
+      out.push(s.slice(0, i + 1).trim());
+      s = s.slice(i + 1);
+    }
+    if (s.trim()) out.push(s.trim());
+    return out;
+  };
+  for (const p of paragrafos.flatMap((p) => (p.length > tamanho ? cortar(p) : [p]))) {
+    if (atual && atual.length + p.length + 2 > tamanho) { partes.push(atual); atual = ""; }
+    atual = atual ? atual + "\n\n" + p : p;
+  }
+  if (atual) partes.push(atual);
+  return partes;
+}
+const limparSecoes = (secoes) =>
+  secoes
+    .map((s) => ({ titulo: limparLinha(s.titulo, 120), emoji: s.emoji ? limparLinha(s.emoji, 8) : "", paragrafos: s.paragrafos.map((p) => String(p || "").trim().slice(0, 4000)).filter(Boolean) }))
+    .filter((s) => s.paragrafos.length);
+// Que parte das palavras da fala aparece na transcrição em seções (1 = todas).
+function coberturaDe(texto, secoes) {
+  const originais = palavrasDe(texto);
+  const formatadas = new Set(palavrasDe(secoes.flatMap((s) => s.paragrafos).join(" ")));
+  return originais.length ? originais.filter((w) => formatadas.has(w)).length / originais.length : 0;
+}
+const secaoSimples = (texto, titulo = "Transcrição") => ({ titulo, emoji: "🎬", paragrafos: texto.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean) });
+
 async function pesquisarVideo(res, body, P) {
   const link = String(body.link || "").trim().slice(0, 1000);
   const video = videoDoEndereco(link);
@@ -1829,7 +1875,7 @@ async function pesquisarVideo(res, body, P) {
   const provedor = provedorDoModelo(P.ia, modelo);
   const Pv = { ...P, ia: { ...P.ia, modelo, esforco: "low", provedorTarefa: provedor } };
   try {
-    let lido = await lerTextoDoVideo(video, { timeoutMs: 12000 });
+    let lido = await lerTextoDoVideo(video, { timeoutMs: 12000, maxCaracteres: MAX_TEXTO_VIDEO_PESQUISA });
     let fonte = lido.fonte;
     let ouvido = false;
     if (!lido.texto) {
@@ -1856,18 +1902,53 @@ async function pesquisarVideo(res, body, P) {
       (contexto ? `O QUE O USUÁRIO QUER SABER DO VÍDEO: ${contexto}\n` : "") +
       `\nTRANSCRIÇÃO (${fonte}; parágrafos separados pelas pausas do vídeo):\n${lido.texto}`;
     const client = criarClienteIa({ maxRetries: 1, timeout: 180_000 }, provedor);
-    const r = await chamarIa(client, Pv, { max_tokens: provedor === "gemini" ? 32000 : 16000, system: P.sistemaVideoPesquisa, messages: [{ role: "user", content: mensagem }] }, { schema: SaidaVideoPesquisa, tarefa: "pesquisa-video" });
-    if (r.stop_reason === "refusal" || !r.parsed_output) return erro(res, 502, "A IA não conseguiu resumir o vídeo. Tente de novo.");
-    const o = r.parsed_output;
-    let transcricao = o.secoes
-      .map((s) => ({ titulo: limparLinha(s.titulo, 120), emoji: s.emoji ? limparLinha(s.emoji, 8) : "", paragrafos: s.paragrafos.map((p) => String(p || "").trim().slice(0, 4000)).filter(Boolean) }))
-      .filter((s) => s.paragrafos.length);
-    // Fidelidade: a transcrição em seções precisa trazer quase toda a fala; senão fica o texto simples, em parágrafos.
-    const originais = palavrasDe(lido.texto);
-    const formatadas = new Set(palavrasDe(transcricao.flatMap((s) => s.paragrafos).join(" ")));
-    const cobertura = originais.length ? originais.filter((w) => formatadas.has(w)).length / originais.length : 0;
-    if (!transcricao.length || cobertura < 0.85) transcricao = [{ titulo: "Transcrição", emoji: "🎬", paragrafos: lido.texto.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean) }];
-    console.log("Pesquisa (vídeo):", JSON.stringify({ modelo, titulo: lido.titulo, ouvido, chars: lido.texto.length, secoes: transcricao.length, cobertura: Math.round(cobertura * 100) / 100, entrada: r.usage?.input_tokens || 0, saida: r.usage?.output_tokens || 0 }));
+    const maxSaida = provedor === "gemini" ? 32000 : 16000;
+    let o;
+    let transcricao;
+    let cobertura;
+    let uso = { entrada: 0, saida: 0 };
+    const somar = (r) => { uso.entrada += r.usage?.input_tokens || 0; uso.saida += r.usage?.output_tokens || 0; };
+    let partes = 1;
+    if (lido.texto.length <= LIMITE_VIDEO_UMA_VEZ) {
+      const r = await chamarIa(client, Pv, { max_tokens: maxSaida, system: P.sistemaVideoPesquisa, messages: [{ role: "user", content: mensagem }] }, { schema: SaidaVideoPesquisa, tarefa: "pesquisa-video" });
+      if (r.stop_reason === "refusal" || !r.parsed_output) return erro(res, 502, "A IA não conseguiu resumir o vídeo. Tente de novo.");
+      somar(r);
+      o = r.parsed_output;
+      transcricao = limparSecoes(o.secoes);
+      // Fidelidade: a transcrição em seções precisa trazer quase toda a fala; senão fica o texto simples, em parágrafos.
+      cobertura = coberturaDe(lido.texto, transcricao);
+      if (!transcricao.length || cobertura < 0.85) transcricao = [secaoSimples(lido.texto)];
+    } else {
+      // Vídeo longo: o resumo e os pontos com o texto todo; a transcrição em seções por partes, ao mesmo tempo. Cada parte que a IA não
+      // devolver inteira (menos de 85% das palavras) fica em texto simples, para nada da fala se perder.
+      const blocos = partesDoTexto(lido.texto, PARTE_VIDEO);
+      partes = blocos.length;
+      const cabecalho = `VÍDEO: "${lido.titulo || "(sem título)"}"${minutos}\n`;
+      const [rResumo, ...rPartes] = await Promise.all([
+        chamarIa(client, Pv, { max_tokens: 4000, system: P.sistemaVideoPesquisa, messages: [{ role: "user", content: mensagem }] }, { schema: SaidaVideoResumo, tarefa: "pesquisa-video" }).catch((e) => ({ erro: e })),
+        ...blocos.map((b, i) =>
+          chamarIa(client, Pv, { max_tokens: maxSaida, system: P.sistemaVideoPesquisa, messages: [{ role: "user", content: `${cabecalho}\nTRANSCRIÇÃO — PARTE ${i + 1} DE ${blocos.length} (${fonte}; parágrafos separados pelas pausas do vídeo):\n${b}` }] }, { schema: SaidaVideoSecoes, tarefa: "pesquisa-video" }).catch((e) => ({ erro: e }))
+        ),
+      ]);
+      if (rResumo.erro || !rResumo.parsed_output) {
+        if (rResumo.erro) throw rResumo.erro;
+        return erro(res, 502, "A IA não conseguiu resumir o vídeo. Tente de novo.");
+      }
+      somar(rResumo);
+      o = rResumo.parsed_output;
+      transcricao = [];
+      const coberturas = [];
+      blocos.forEach((b, i) => {
+        const r = rPartes[i];
+        if (!r.erro) somar(r);
+        const secoes = !r.erro && r.parsed_output ? limparSecoes(r.parsed_output.secoes) : [];
+        const c = secoes.length ? coberturaDe(b, secoes) : 0;
+        coberturas.push(Math.round(c * 100) / 100);
+        transcricao.push(...(secoes.length && c >= 0.85 ? secoes : [secaoSimples(b, `Transcrição (parte ${i + 1})`)]));
+      });
+      cobertura = coberturas.length ? Math.min(...coberturas) : 0;
+    }
+    console.log("Pesquisa (vídeo):", JSON.stringify({ modelo, titulo: lido.titulo, ouvido, chars: lido.texto.length, partes, secoes: transcricao.length, cobertura: Math.round(cobertura * 100) / 100, entrada: uso.entrada, saida: uso.saida }));
     return res.status(200).json({
       titulo: limparLinha(o.titulo || lido.titulo, 160),
       resumo: String(o.resumo || "").trim().slice(0, 3000),

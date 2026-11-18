@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.69
+
+- Assistente de pesquisas · Vídeo: a transcrição de vídeos longos saía pela metade porque o texto da fala era cortado em 24 mil caracteres (o JW Broadcasting de novembro tem 41,6 mil). Agora o texto vem inteiro (até 160 mil caracteres); acima de 26 mil, a IA faz o resumo e os pontos com o texto todo e a transcrição em seções por partes de até 18 mil caracteres, ao mesmo tempo, juntadas na ordem. Parte que a IA não devolver inteira fica em texto simples, para nada da fala se perder.
+
 ## 6.10.68
 
 - Itálico com sublinhado simples: a IA às vezes marca o itálico como _texto_ (Markdown) em vez de __texto__, e o "_" aparecia na transcrição de vídeos e nas respostas. Agora o app converte o simples em itálico de verdade na tela, ao copiar e no Word (Assistente de pesquisas e transcrição de Nossa vida cristã), sem mexer em nomes_com_sublinhado.
