@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.59
+
+- Assistente de pesquisas · Texto bíblico: o botão "Trocar o texto" passa a se chamar "🗑️ Excluir o texto" (vermelho claro, como os de limpar) e, além de tirar o texto escolhido, limpa o campo; a lixeira ao lado do campo também apaga o texto escolhido. Vídeo: nova lixeira ao lado da lupa da busca, que limpa o assunto e a lista de vídeos (também a guardada no aparelho). As etiquetas do livro e do capítulo na escolha guiada saem do laranja forte para o cinza claro.
+
 ## 6.10.58
 
 - Assistente de pesquisas: rótulos e campos com espaço entre si (os rótulos depois da linha do texto bíblico e das palavras-chave ficavam colados); o campo do texto bíblico volta ao tamanho de letra dos outros (usava por engano a classe das referências sobrescritas) e fica na mesma altura dos botões ao lado.

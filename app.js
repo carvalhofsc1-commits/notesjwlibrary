@@ -7879,7 +7879,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.10.58'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.59'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -31537,7 +31537,8 @@ function saveTemplatesToStorage() {
       refCampo.addEventListener('focus', () => { if (!guia.aberto && !refCampo.value.trim()) return; guia.aberto = true; sincronizarDoTexto(); });
       refCampo.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); verTexto(); } });
       $('pesquisaRefEscolherBtn').addEventListener('click', () => { guia.aberto = !guia.aberto; sincronizarDoTexto(); });
-      $('pesquisaRefLimparBtn').addEventListener('click', () => { refCampo.value = ''; guia.aberto = false; fecharPrevia(); sincronizarDoTexto(); dizer($('pesquisaRefMsg'), ''); });
+      // Limpar: o campo, a escolha guiada, a prévia e também o texto já escolhido (o quadro "texto escolhido" abaixo some).
+      $('pesquisaRefLimparBtn').addEventListener('click', () => { refCampo.value = ''; guia.aberto = false; fecharPrevia(); escolhido = null; mostrarEscolhido(); sincronizarDoTexto(); dizer($('pesquisaRefMsg'), ''); });
       $('pesquisaRefVerBtn').addEventListener('click', () => verTexto());
       $('pesquisaRefPickVerBtn').addEventListener('click', () => verTexto());
 
@@ -31597,9 +31598,15 @@ function saveTemplatesToStorage() {
         fecharPrevia();
         mostrarEscolhido();
       });
+      // "Excluir o texto": tira o texto escolhido e limpa o campo (a linha de busca volta vazia).
       $('pesquisaRefTrocarBtn').addEventListener('click', () => {
         escolhido = null;
+        refCampo.value = '';
+        guia.aberto = false;
+        fecharPrevia();
         mostrarEscolhido();
+        sincronizarDoTexto();
+        dizer($('pesquisaRefMsg'), '');
         refCampo.focus();
       });
       // Palavras-chave: o campo seguinte aparece quando o anterior tem texto (no máximo 3).
@@ -31967,6 +31974,7 @@ function saveTemplatesToStorage() {
         const n = videosBusca && videosBusca.videos ? videosBusca.videos.length : 0;
         const voltar = $('pesquisaVideosVoltarBtn');
         voltar.hidden = !n;
+        $('pesquisaVideosLimparBtn').hidden = !n && !$('pesquisaVideosAssunto').value.trim(); // a lixeira só aparece com algo para limpar
         voltar.title = (listaFechada ? 'Escolher outro vídeo da lista' : 'Fechar a lista') + ' “' + (videosBusca ? videosBusca.assunto : '') + '” (' + n + (n === 1 ? ' vídeo)' : ' vídeos)');
         voltar.setAttribute('aria-label', voltar.title);
         voltar.setAttribute('aria-expanded', String(!listaFechada));
@@ -32069,6 +32077,18 @@ function saveTemplatesToStorage() {
       $('pesquisaVideosBtn').addEventListener('click', sugerirVideos);
       $('pesquisaVideosAssunto').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sugerirVideos(); } });
       // O ícone 🎞️ abre a lista (e rola até ela) ou a fecha.
+      // 🗑️ Limpar a busca de vídeos: o assunto, a lista mostrada e a lista guardada no aparelho (o link e a pergunta do vídeo ficam).
+      $('pesquisaVideosLimparBtn').addEventListener('click', () => {
+        videosBusca = null;
+        listaFechada = false;
+        try { localStorage.removeItem(VIDEOS_CHAVE); } catch (e) { /* sem armazenamento */ }
+        $('pesquisaVideosAssunto').value = '';
+        dizer($('pesquisaVideosStatus'), '');
+        videosPintar();
+        videosVoltarPintar();
+        $('pesquisaVideosAssunto').focus();
+      });
+      $('pesquisaVideosAssunto').addEventListener('input', () => videosVoltarPintar());
       $('pesquisaVideosVoltarBtn').addEventListener('click', () => {
         listaFechada = !listaFechada;
         videosPintar();

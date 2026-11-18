@@ -16426,3 +16426,8 @@ button:is(#sv#sv, #anotacoesGravarBtn, #undoTopBtn, #undoBtn, .anot-grav-aviso, 
 input.pesq-campo.pesq-ref { font-size: inherit; line-height: 1.3; margin-left: 0; }
 .pesq-ref-linha > .pesq-campo, .pesq-ref-linha > button.pesq-icone { min-height: 44px; }
 .pesq-bloco > :is(.pesq-pick, .pesq-status, .pesq-previa, .pesq-escolhido):not([hidden]) { margin-top: 8px; }
+
+/* 6.10.59: as etiquetas do caminho escolhido (livro › capítulo) no padrão: cinza claro, letra escura e moldura fina (estavam laranja forte). */
+:is(#sv#sv#sv, .anotacoes-trilha-btn), :is(#sv#sv#sv, .anotacoes-trilha-btn):hover:not(:disabled) {
+  background: var(--inicio-cinza); background-image: none; color: var(--text); border: 1px solid var(--sv-cinza-bd);
+}
