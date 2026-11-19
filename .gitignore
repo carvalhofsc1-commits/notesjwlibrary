@@ -6,3 +6,6 @@ lojas/
 avaliacao/casos.json
 avaliacao/resultados/
 .dados-local/
+
+# Cache local do Firebase CLI
+.firebase/
