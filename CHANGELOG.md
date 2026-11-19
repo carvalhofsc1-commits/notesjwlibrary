@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.99
+
+- Virada para o Google Cloud: a marca `<meta name="notestyle-api">` (index.html e sobre.html) passa a ter o endereço do Cloud Run no `content`. A partir daqui o app, em qualquer endereço (Vercel, Firebase ou Cloud Run), usa a API e os dados do Google Cloud. Antes disso, os dados da Vercel foram copiados de novo para o bucket (16 arquivos e 17 configurações, sem falhas).
+
 ## 6.10.98
 
 - Áudio em texto: o reconhecimento de voz às vezes entrava em laço em trechos com silêncio ou ruído e repetia a última frase até o limite ("Sei lá. Sei lá. Sei lá…"). Agora o servidor junta numa só a frase (ou expressão curta) repetida 3 vezes ou mais em sequência; repetições naturais de 2 vezes ("Muito bem, muito bem") ficam. Vale para o Chirp 3 e para o Gemini; na transcrição pelo Gemini, a instrução também pede para não repetir a última frase em silêncio, música ou ruído.
