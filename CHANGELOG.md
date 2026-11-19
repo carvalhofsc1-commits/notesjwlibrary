@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.96
+
+- Pesquisa da IA: 14 publicações novas entram como fontes de consulta (junto com Bíblia, Perspicaz, Adoração Pura, Reino de Deus e Princípios Bíblicos): Raciocínios, Glossário da TNM, Introdução e Apêndices A–C da Bíblia de Estudo, Guia de Pesquisa, Abreviaturas, S-38, Manual da Escola, Perguntas Bíblicas Respondidas, Perguntas Frequentes sobre as TJ, Beneficie-se da Escola e Organizados. Se algum arquivo ainda não estiver no armazenamento, a busca segue com os demais (`Promise.allSettled`). Ferramentas: `epub-para-txt.mjs`, `preparar-fontes-novas.mjs` e `subir-fontes.mjs` (Vercel Blob + Google Cloud Storage).
+
 ## 6.10.95
 
 - Texto diário: a opção "💬 Gerar e ler os comentários adicionais automaticamente" (depois da leitura do texto) vem ligada por padrão para quem começa a usar o app. Quem já usava (aparelho com cadastro confirmado) e nunca mexeu nela continua com ela desligada; a escolha fica gravada na primeira abertura.

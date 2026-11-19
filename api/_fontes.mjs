@@ -15,6 +15,21 @@ const ARQUIVOS = {
   adoracaoPura: "fontes/adoracao_pura.txt",
   reinoDeDeus: "fontes/reino_de_deus.txt",
   principiosBiblicos: "fontes/principios_biblicos.txt",
+  // Publicações adicionais (consulta da IA; arquivos privados em fontes/).
+  raciocinios: "fontes/raciocinios.txt",
+  glossarioNwt: "fontes/glossario_nwt.txt",
+  introducaoBibliaEstudo: "fontes/introducao_biblia_estudo.txt",
+  apendiceABibliaEstudo: "fontes/apendice_a_biblia_estudo.txt",
+  apendiceBBibliaEstudo: "fontes/apendice_b_biblia_estudo.txt",
+  apendiceCBibliaEstudo: "fontes/apendice_c_biblia_estudo.txt",
+  guiaDePesquisa: "fontes/guia_de_pesquisa.txt",
+  abreviacoesPublicacoes: "fontes/abreviacoes_publicacoes.txt",
+  s38InstrucoesReuniao: "fontes/s38_instrucoes_reuniao_vida_e_ministerio.txt",
+  manualEscolaMinisterio: "fontes/manual_escola_ministerio.txt",
+  perguntasBiblicasRespondidas: "fontes/perguntas_biblicas_respondidas.txt",
+  perguntasFrequentesTj: "fontes/perguntas_frequentes_tj.txt",
+  beneficieEscola: "fontes/beneficie_escola.txt",
+  organizados: "fontes/organizados.txt",
   // "Cante de Coração Para Jeová" (só letras): [{ numero, titulo, texto, assunto, letra }], gerado por converter_canticos_pdf.py (fora do repositório).
   canticos: "fontes/canticos.json",
 };
@@ -459,6 +474,20 @@ const LIVROS = [
   { chave: "adoracaoPura", nome: "A Adoração Pura de Jeová É Restaurada!" },
   { chave: "reinoDeDeus", nome: "O Reino de Deus Já Governa!" },
   { chave: "principiosBiblicos", nome: "Princípios Bíblicos para a Vida Cristã" },
+  { chave: "raciocinios", nome: "Raciocínios à Base das Escrituras" },
+  { chave: "glossarioNwt", nome: "Glossário da Tradução do Novo Mundo" },
+  { chave: "introducaoBibliaEstudo", nome: "Introdução — Bíblia de Estudo (Tradução do Novo Mundo)" },
+  { chave: "apendiceABibliaEstudo", nome: "Apêndice A — Bíblia de Estudo" },
+  { chave: "apendiceBBibliaEstudo", nome: "Apêndice B — Bíblia de Estudo" },
+  { chave: "apendiceCBibliaEstudo", nome: "Apêndice C — Bíblia de Estudo" },
+  { chave: "guiaDePesquisa", nome: "Guia de Pesquisa para Testemunhas de Jeová" },
+  { chave: "abreviacoesPublicacoes", nome: "Abreviaturas dos Títulos das Publicações" },
+  { chave: "s38InstrucoesReuniao", nome: "Instruções para a Reunião Vida e Ministério (S-38)" },
+  { chave: "manualEscolaMinisterio", nome: "Manual da Escola do Ministério Teocrático" },
+  { chave: "perguntasBiblicasRespondidas", nome: "Perguntas Bíblicas Respondidas" },
+  { chave: "perguntasFrequentesTj", nome: "Perguntas Frequentes sobre as Testemunhas de Jeová" },
+  { chave: "beneficieEscola", nome: "Beneficie-se da Escola do Ministério Teocrático" },
+  { chave: "organizados", nome: "Organizados para Fazer a Vontade de Jeová" },
 ];
 const PALAVRAS_COMUNS = new Set("a o as os um uma de do da dos das em no na nos nas por para com sem sobre entre que se e ou mas como mais muito ao aos ela ele eles elas seu sua seus suas nao ja foi ser sao era tem ter isso este esta esse essa aquele quando onde qual quais".split(" "));
 let livros = null; // Promise<{ paragrafos: [{ livro, texto, palavras: Set }], df: Map }>
@@ -469,11 +498,16 @@ function palavrasDe(texto) {
 
 function carregarLivros() {
   if (!livros) {
-    livros = Promise.all(LIVROS.map((l) => baixar(ARQUIVOS[l.chave]))).then((conteudos) => {
+    // allSettled: se um arquivo ainda não estiver no armazenamento, os demais continuam disponíveis.
+    livros = Promise.allSettled(LIVROS.map((l) => baixar(ARQUIVOS[l.chave]))).then((resultados) => {
       const paragrafos = [];
       const df = new Map();
-      conteudos.forEach((conteudo, i) => {
-        for (const bruto of conteudo.split(/\r?\n\s*\r?\n/)) {
+      resultados.forEach((resultado, i) => {
+        if (resultado.status !== "fulfilled") {
+          console.error(`Fonte indisponível (${LIVROS[i].chave}): ${ARQUIVOS[LIVROS[i].chave]}`, resultado.reason?.message || resultado.reason);
+          return;
+        }
+        for (const bruto of resultado.value.split(/\r?\n\s*\r?\n/)) {
           const texto = bruto.replace(/\s+/g, " ").trim();
           if (texto.length < 80 || (texto.length < 200 && /\?$/.test(texto))) continue; // fora: sobras de quadro e perguntas soltas
           const palavras = new Set(palavrasDe(texto));

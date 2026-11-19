@@ -6,6 +6,17 @@ lojas/
 avaliacao/casos.json
 avaliacao/resultados/
 .dados-local/
+raciocinios.txt
+guia-de-pesquisa.txt
+glossario-nwt.txt
+introducao-biblia-estudo.txt
+apendice-a-biblia-estudo.txt
+apendice-b-biblia-estudo.txt
+apendice-c-biblia-estudo.txt
+abreviacoes-publicacoes.txt
+manual-escola-ministerio.txt
+perguntas-biblicas-respondidas.txt
+perguntas-frequentes-tj.txt
 
 # Cache local do Firebase CLI
 .firebase/
