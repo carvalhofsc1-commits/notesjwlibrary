@@ -1,4 +1,4 @@
-{
+﻿{
   "hosting": {
     "public": ".",
     "ignore": [
@@ -17,6 +17,7 @@
       "lojas/**",
       "avaliacao/**",
       "ferramentas/**",
+      "scripts/**",
       "server.mjs",
       "Dockerfile",
       "cloudbuild.yaml",

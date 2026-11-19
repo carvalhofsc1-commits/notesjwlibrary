@@ -510,9 +510,15 @@ function carregarLivros() {
         for (const bruto of resultado.value.split(/\r?\n\s*\r?\n/)) {
           const texto = bruto.replace(/\s+/g, " ").trim();
           if (texto.length < 80 || (texto.length < 200 && /\?$/.test(texto))) continue; // fora: sobras de quadro e perguntas soltas
-          const palavras = new Set(palavrasDe(texto));
+          const sequencia = palavrasDe(texto);
+          const palavras = new Set(sequencia);
           for (const w of palavras) df.set(w, (df.get(w) || 0) + 1);
-          paragrafos.push({ livro: LIVROS[i].nome, texto, palavras });
+          // Pares de palavras seguidas ("conselheiro assistente"), para premiar o parágrafo que traz a expressão inteira (6.10.97);
+          // os do começo (título da seção + primeira frase) contam à parte.
+          const pares = new Set();
+          for (let k = 1; k < sequencia.length; k++) pares.add(sequencia[k - 1] + " " + sequencia[k]);
+          const paresInicio = new Set(sequencia.slice(0, 12).map((w, k, s) => (k ? s[k - 1] + " " + w : "")).filter(Boolean));
+          paragrafos.push({ livro: LIVROS[i].nome, texto, palavras, pares, paresInicio });
         }
       });
       return { paragrafos, df };
@@ -533,14 +539,26 @@ export async function buscarNosLivros(consulta, { max = 4, maxChars = 1500 } = {
   const termos = todos.map((t) => [t, peso(t)]).filter(([, p]) => p > 0).sort((a, b) => b[1] - a[1]).slice(0, 14).map(([t]) => t);
   if (!termos.length) return [];
   const pesos = termos.map(peso);
+  // Expressões da consulta (pares de palavras seguidas, na ordem digitada): "conselheiro assistente", "vida ministerio"…
+  const seqConsulta = palavrasDe(consulta);
+  const paresConsulta = [...new Set(seqConsulta.slice(1).map((w, k) => seqConsulta[k] + " " + w))]
+    .map((par) => [par, par.split(" ").reduce((s, w) => s + peso(w), 0)])
+    .filter(([, p]) => p > 0);
   const pontuados = [];
   for (const p of paragrafos) {
     let pontos = 0;
     let achadas = 0;
     termos.forEach((t, i) => { if (p.palavras.has(t) && pesos[i]) { pontos += pesos[i]; achadas++; } });
-    if (achadas >= Math.min(2, termos.length)) pontuados.push({ p, pontos: pontos * (1 + achadas / termos.length) });
+    if (achadas < Math.min(2, termos.length)) continue;
+    pontos *= 1 + achadas / termos.length;
+    // A expressão inteira vale mais; no começo do parágrafo (título da seção ou primeira frase), mais ainda: é o parágrafo que trata do assunto.
+    for (const [par, p2] of paresConsulta) {
+      if (p.paresInicio.has(par)) pontos += p2 * 3;
+      else if (p.pares.has(par)) pontos += p2 * 0.6;
+    }
+    pontuados.push({ p, pontos });
   }
-  pontuados.sort((a, b) => b.pontos - a.pontos);
+  pontuados.sort((a, b) => b.pontos - a.pontos || a.p.texto.length - b.p.texto.length);
   return pontuados.slice(0, max).map(({ p }) => {
     let trecho = p.texto;
     if (trecho.length > maxChars) { const corte = trecho.lastIndexOf(". ", maxChars); trecho = trecho.slice(0, corte > 300 ? corte + 1 : maxChars); }

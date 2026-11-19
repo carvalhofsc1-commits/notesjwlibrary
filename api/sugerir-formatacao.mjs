@@ -2226,7 +2226,8 @@ async function coletarPesquisa(res, body, P) {
       const limpas = o.consultas.map((q) => limparLinha(q, 80).replace(/["“”]/g, "")).filter((q) => q.length >= 3);
       if (limpas.length) consultas = [...new Set(limpas)].slice(0, 4);
       verbetes = o.verbetes.map((v) => limparLinha(v, 60)).filter(Boolean).slice(0, 3);
-      if (o.livros && o.livros.trim().length >= 3) consultaLivros = limparLinha(o.livros, 200);
+      // As palavras do usuário ficam na frente (6.10.97): a expressão que ele digitou ("conselheiro assistente") pesa na busca dos livros.
+      if (o.livros && o.livros.trim().length >= 3) consultaLivros = limparLinha((biblico ? "" : assunto + " ") + o.livros, 320);
       // A IA decide se a internet faz falta (fundo histórico, arqueologia, dados estatísticos ou científicos que as publicações não trazem) e o
       // que procurar lá. Assuntos puramente espirituais nunca vão para a internet, mesmo com a caixinha marcada.
       precisaInternet = o.internet === true;
@@ -2400,7 +2401,7 @@ async function coletarPesquisa(res, body, P) {
     const [lidos, verbetesLidos, trechosLivros] = await Promise.all([
       Promise.all(achados.map((a) => paragrafoDaPesquisa(a, 9000).then((p) => (p ? { a, p } : null)).catch(() => null))),
       fontesConfiguradas() ? Promise.all(verbetes.slice(0, 2).map((v) => buscarVerbete([v]).catch(() => null))) : [],
-      fontesConfiguradas() ? buscarNosLivros(consultaLivros, { max: 3, maxChars: 1400 }).catch(() => []) : [],
+      fontesConfiguradas() ? buscarNosLivros(consultaLivros, { max: 4, maxChars: 1400 }).catch(() => []) : [],
     ]);
 
     const fontes = [];
@@ -2511,6 +2512,7 @@ async function responderPesquisa(res, body, P) {
   const mensagem =
     `DATA DA PESQUISA: ${hoje}\n${cabecalho}` +
     (contexto ? `\nCONTEXTO: ${contexto}` : "") +
+    (!biblico && body.direta === true ? "\nRESPOSTA DIRETA: sim" : "") + // opção "Resposta direta" (6.10.97)
     "\n\nFONTES ENCONTRADAS (use só estas e cite cada informação pelo identificador entre colchetes):\n\n" +
     fontes.map((f) => `[${f.id}] ${cabecalhoDaFonte(f)}\n${f.texto}`).join("\n\n");
   try {

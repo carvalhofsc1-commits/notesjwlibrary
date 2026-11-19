@@ -1266,6 +1266,13 @@ const REGRA_FONTES_PRIORIDADE = `FONTES: PRIORIDADE E ATUALIDADE (regra fixa, va
 2. Nas pesquisas no wol.jw.org, a prioridade TOTAL é das matérias e publicações MAIS RECENTES: havendo mais de uma sobre o assunto, use a mais nova. Entendimentos, explicações e expressões atualizados prevalecem sobre os de publicações mais antigas; se uma publicação antiga divergir de uma recente, siga a recente. Procure sempre a informação mais atual disponível.
 3. O que não estiver nas fontes do pedido não se inventa: deixe de fora ou diga que não encontrou.`;
 
+// Pergunta específica (ex.: "qual é a função do conselheiro assistente") pede resposta direta, sem florear (6.10.97). O app pode forçar com
+// a opção "Resposta direta" (linha "RESPOSTA DIRETA: sim" na mensagem).
+const REGRA_RESPOSTA_DIRETA = `RESPOSTA DIRETA PARA PERGUNTAS ESPECÍFICAS:
+- Antes de escrever, decida se o ASSUNTO é uma pergunta específica e objetiva (uma função, uma regra, um procedimento, uma definição, um dado, "quem", "quando", "quanto", "como se faz") ou um tema amplo para estudo ou discurso.
+- Pergunta específica, ou quando a mensagem trouxer "RESPOSTA DIRETA: sim": responda direto ao que foi perguntado, em poucos parágrafos curtos. Comece pela resposta na primeira frase. Use primeiro a fonte que trata exatamente do assunto (instruções da organização, como o S-38 e o livro Organizados, valem acima de artigos gerais) e traga os detalhes concretos que ela dá (quem faz, a quem, em que situações, o que inclui), sem resumir a ponto de perder esses detalhes. NÃO acrescente introdução, princípios bíblicos, lições, aplicações, ilustrações nem conclusão, a menos que o usuário peça no CONTEXTO. Pode usar uma ou duas seções, ou nenhuma, se a resposta for curta.
+- Tema amplo: siga o formato completo da resposta.`;
+
 const FORMATO_PESQUISA_CONSULTAS = `FORMATO DAS BUSCAS DO ASSISTENTE DE PESQUISAS (saída estruturada): {"consultas": ["..."], "verbetes": ["..."], "livros": "...", "internet": true ou false, "internetBusca": "..."}. Só letras normais, sem aspas, operadores nem pontuação no fim.
 
 REGRA FIXA DA INTERNET: "internet" só é true quando o assunto, ou uma parte da resposta, NÃO pode ser encontrado nas publicações do jw.org — em geral fundo histórico, evidências arqueológicas, dados estatísticos ou científicos, mesmo que não tenham sido pedidos explicitamente, quando ajudarem a entender ou enriquecer a resposta. Assunto puramente espiritual (ensinos bíblicos, qualidades cristãs, profecias, conselhos para a vida cristã, reuniões, pregação) é SEMPRE false. Com true, "internetBusca" diz em uma frase só os dados a procurar na internet (sem a parte espiritual); com false, "internetBusca" é "".`;
@@ -1335,6 +1342,7 @@ export function travadosDe(limites) {
   { id: "formato_videos_sugeridos", titulo: "Formato dos vídeos sugeridos por assunto (aba Vídeo)", texto: FORMATO_VIDEOS_SUGERIDOS },
   { id: "formato_pesquisa_video", titulo: "Formato do vídeo do Assistente de pesquisas (resumo, pontos e transcrição)", texto: FORMATO_PESQUISA_VIDEO },
   { id: "regra_fontes_internet", titulo: "Assistente de pesquisas: fontes da internet só em \"Informações complementares\"", texto: REGRA_FONTES_INTERNET },
+  { id: "regra_resposta_direta", titulo: "Assistente de pesquisas: resposta direta para perguntas específicas", texto: REGRA_RESPOSTA_DIRETA },
   { id: "formato_ebc_dirigente", titulo: "Formato das perguntas adicionais do Estudo Bíblico para o dirigente", texto: FORMATO_EBC_DIRIGENTE },
   { id: "regra_leitura_sem_adiantar", titulo: "Textos nos esboços: leitura sem adiantar o texto lido; e referência aos textos não lidos quando a explicação depender deles", texto: REGRA_LEITURA_SEM_ADIANTAR },
   { id: "formato_tesouros", titulo: "Formato do esboço do discurso de Tesouros da Palavra de Deus", texto: FORMATO_TESOUROS },
@@ -1416,7 +1424,7 @@ export function montarPrompts(overrides, limitesArmazenados) {
     sistemaNossaVidaCrista: texto("nossa_vida_crista") + "\n\n" + [texto("regras_resposta"), texto("voz")].join("\n\n") + "\n\n" + contexto + "\n\n" + VOCABULARIO_FIXO + "\n\n" + REGRA_FONTES_PRIORIDADE + "\n\n" + PRIORIDADE_ORIENTACAO + "\n\n" + FORMATO_NOSSA_VIDA_CRISTA,
     sistemaTranscricaoVideo: texto("transcricao_video") + "\n\n" + VOCABULARIO_FIXO + "\n\n" + FORMATO_TRANSCRICAO_VIDEO,
     sistemaPesquisaConsultas: texto("pesquisa_consultas") + "\n\n" + FORMATO_PESQUISA_CONSULTAS,
-    sistemaPesquisa: texto("pesquisa_resposta") + "\n\n" + VOCABULARIO_FIXO + "\n\n" + REGRA_FONTES_PRIORIDADE + "\n\n" + REGRA_FONTES_INTERNET + "\n\n" + FORMATO_PESQUISA,
+    sistemaPesquisa: texto("pesquisa_resposta") + "\n\n" + VOCABULARIO_FIXO + "\n\n" + REGRA_FONTES_PRIORIDADE + "\n\n" + REGRA_FONTES_INTERNET + "\n\n" + REGRA_RESPOSTA_DIRETA + "\n\n" + FORMATO_PESQUISA,
     sistemaPesquisaTexto: texto("pesquisa_texto") + "\n\n" + VOCABULARIO_FIXO + "\n\n" + REGRA_FONTES_PRIORIDADE + "\n\n" + REGRA_FONTES_INTERNET + "\n\n" + FORMATO_PESQUISA,
     sistemaPesquisaInternet: texto("pesquisa_internet") + "\n\n" + VOCABULARIO_FIXO,
     sistemaVideoPesquisa: texto("pesquisa_video") + "\n\n" + VOCABULARIO_FIXO + "\n\n" + FORMATO_PESQUISA_VIDEO,

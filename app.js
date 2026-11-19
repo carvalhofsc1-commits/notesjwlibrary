@@ -7917,7 +7917,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.10.96'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.97'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -32515,7 +32515,7 @@ function saveTemplatesToStorage() {
       async function escreverResposta(ctx, fontes) {
         const { meu, assunto, contexto, extra, biblico, palavras } = ctx;
         andamento((fontes.length === 1 ? '1 fonte' : fontes.length + ' fontes') + '. A IA está escrevendo a resposta… (pode levar até 2 minutos)');
-        const r = await postStudy(Object.assign({ tarefa: 'pesquisa', codigo: codigoAcessoSalvo(), assunto, contexto, fontes }, extra), 285000);
+        const r = await postStudy(Object.assign({ tarefa: 'pesquisa', codigo: codigoAcessoSalvo(), assunto, contexto, fontes, direta: $('pesquisaDireta').checked }, extra), 285000);
         if (meu !== pedido) return;
         if (!r.ok) return dizer(statusEl, erroDe(r, 'A IA não conseguiu escrever a pesquisa. Tente de novo.'), { aviso: true });
         // As fontes guardadas com a pesquisa: só as citadas. O trecho fica só nas dos livros do servidor (para mostrar ao tocar no nome); as
@@ -32540,13 +32540,19 @@ function saveTemplatesToStorage() {
       const escolherFontes = $('pesquisaEscolherFontes');
       try { escolherFontes.checked = localStorage.getItem('ns-pesq-escolher') === '1'; } catch (e) { /* sem armazenamento */ }
       escolherFontes.addEventListener('change', () => { try { localStorage.setItem('ns-pesq-escolher', escolherFontes.checked ? '1' : '0'); } catch (e) { /* sem armazenamento */ } });
+      // 🎯 Resposta direta (6.10.97): só responde ao que foi perguntado, sem introdução, princípios, lições nem aplicações. Desmarcada por padrão
+      // (perguntas específicas já recebem resposta direta pela regra da IA) e lembrada neste aparelho.
+      const respostaDireta = $('pesquisaDireta');
+      try { respostaDireta.checked = localStorage.getItem('ns-pesq-direta') === '1'; } catch (e) { /* sem armazenamento */ }
+      respostaDireta.addEventListener('change', () => { try { localStorage.setItem('ns-pesq-direta', respostaDireta.checked ? '1' : '0'); } catch (e) { /* sem armazenamento */ } });
       // Opções adicionais (quadro recolhível): o título mostra quantas estão ligadas, para não esquecer uma opção marcada com o quadro fechado.
       function opcoesContar() {
-        const n = [buscarInternet, escolherFontes].filter(c => c.checked).length;
+        const n = [buscarInternet, escolherFontes, respostaDireta].filter(c => c.checked).length;
         $('pesquisaOpcoesQtd').textContent = n ? '(' + n + (n === 1 ? ' ligada)' : ' ligadas)') : '';
       }
       buscarInternet.addEventListener('change', opcoesContar);
       escolherFontes.addEventListener('change', opcoesContar);
+      respostaDireta.addEventListener('change', opcoesContar);
       opcoesContar();
       let escolha = null; // o contexto da pesquisa que espera a escolha
       function fecharEscolha() {

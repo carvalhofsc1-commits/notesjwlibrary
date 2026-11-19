@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.97
+
+- Assistente de pesquisas, resposta direta: nova regra fixa da IA (visível na tela de prompts, "resposta direta para perguntas específicas"). Pergunta específica (uma função, regra, procedimento, definição) recebe resposta direta, começando pela resposta, com os detalhes concretos da fonte que trata do assunto (instruções da organização, como o S-38, acima de artigos gerais), sem introdução, princípios, lições e aplicações. Nova opção "🎯 Resposta direta" em Opções adicionais de pesquisa para forçar esse modo (lembrada no aparelho).
+- Busca nos livros do servidor: o parágrafo que traz a expressão inteira da consulta ("conselheiro assistente") ganha pontos, mais ainda quando ela está no título da seção ou no começo do parágrafo; as palavras digitadas pelo usuário ficam sempre na consulta dos livros; a pesquisa recebe até 4 trechos (antes 3). Teste com o S-38: o parágrafo 26 (conselheiro assistente) entra entre os primeiros.
+
 ## 6.10.96
 
 - Pesquisa da IA: 14 publicações novas entram como fontes de consulta (junto com Bíblia, Perspicaz, Adoração Pura, Reino de Deus e Princípios Bíblicos): Raciocínios, Glossário da TNM, Introdução e Apêndices A–C da Bíblia de Estudo, Guia de Pesquisa, Abreviaturas, S-38, Manual da Escola, Perguntas Bíblicas Respondidas, Perguntas Frequentes sobre as TJ, Beneficie-se da Escola e Organizados. Se algum arquivo ainda não estiver no armazenamento, a busca segue com os demais (`Promise.allSettled`). Ferramentas: `epub-para-txt.mjs`, `preparar-fontes-novas.mjs` e `subir-fontes.mjs` (Vercel Blob + Google Cloud Storage).
