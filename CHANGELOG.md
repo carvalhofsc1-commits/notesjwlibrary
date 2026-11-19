@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.95
+
+- Texto diário: a opção "💬 Gerar e ler os comentários adicionais automaticamente" (depois da leitura do texto) vem ligada por padrão para quem começa a usar o app. Quem já usava (aparelho com cadastro confirmado) e nunca mexeu nela continua com ela desligada; a escolha fica gravada na primeira abertura.
+
 ## 6.10.94
 
 - Senha de administrador libera tudo: com ela salva em Autorização de acessos, todas as funções (pesquisa, dirigente, leitura em voz alta, resumo, S-34 e texto) ficam habilitadas sem os códigos de cada uma. O app usa a senha no lugar do código que faltar e o servidor (`recursoCodigoValido`) aceita a senha de administrador como código de qualquer função. Os campos de código continuam mostrando só o que foi digitado neles; sem código, aparece "🛡️ Liberado pela senha de administrador". As conferências periódicas dos códigos olham só os códigos digitados.

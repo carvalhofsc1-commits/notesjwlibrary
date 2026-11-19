@@ -7917,7 +7917,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.10.94'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.95'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -22340,7 +22340,16 @@ function saveTemplatesToStorage() {
     // Opção "Gerar e ler os comentários adicionais automaticamente": guardada neste aparelho; só vale quando a pessoa pede a leitura do texto.
     const tdOpComentarios = document.getElementById('tdOpComentarios');
     const TD_AUTO_CHAVE = 'ns-td-comentarios-auto';
-    try { tdOpComentarios.checked = localStorage.getItem(TD_AUTO_CHAVE) === '1'; } catch (e) { /* sem armazenamento */ }
+    // Ligada por padrão para quem chega agora (6.10.95). Quem já usava o app (aparelho com cadastro confirmado antes) e nunca mexeu na opção
+    // continua com ela desligada, como estava; a escolha fica gravada na primeira abertura para não mudar depois.
+    try {
+      let auto = localStorage.getItem(TD_AUTO_CHAVE);
+      if (auto === null) {
+        auto = localStorage.getItem(ACESSO_OK_KEY) ? '0' : '1';
+        localStorage.setItem(TD_AUTO_CHAVE, auto);
+      }
+      tdOpComentarios.checked = auto === '1';
+    } catch (e) { tdOpComentarios.checked = true; /* sem armazenamento: vale o padrão dos novos */ }
     tdOpComentarios.addEventListener('change', () => { try { localStorage.setItem(TD_AUTO_CHAVE, tdOpComentarios.checked ? '1' : '0'); } catch (e) { /* sem armazenamento */ } });
     let tdAutoToken = 0; // muda quando a pessoa começa outra leitura (do texto ou dos comentários): a rotina automática desiste
 
