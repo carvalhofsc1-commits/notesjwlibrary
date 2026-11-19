@@ -7917,7 +7917,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.10.93'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.94'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -14838,17 +14838,17 @@ function saveTemplatesToStorage() {
       // Leitura diária da Bíblia: o campo fica abaixo do botão Gerar resumo, na área do resumo.
       biblia: {
         botao: 'bibliaResumirBtn', linha: true, exemplo: 'Ex.: destaque os acontecimentos mais importantes, ou faça um resumo mais curto.', dica: '',
-        // Primeira opção (resumo) vem marcada por padrão; dá para desmarcar e pedir só outra seção.
+        // Todas as opções vêm marcadas por padrão (6.10.94); dá para desmarcar e pedir só algumas seções.
         opcoesTitulo: 'Opções para a IA',
-        opcoesDica: 'Marque o que deseja. “Gerar o resumo do capítulo” vem marcado por padrão (pode desmarcar). Com várias opções, o texto sai em seções (RESUMO, SOBRE JEOVÁ, etc.). Fundo, personagens, lugares e profecias: Perspicaz e, se preciso, wol.jw.org. Se já houver texto salvo, a IA o usa como base.',
+        opcoesDica: 'Marque o que deseja. Todas as opções vêm marcadas por padrão (pode desmarcar). Com várias opções, o texto sai em seções (RESUMO, SOBRE JEOVÁ, etc.). Fundo, personagens, lugares e profecias: Perspicaz e, se preciso, wol.jw.org. Se já houver texto salvo, a IA o usa como base.',
         opcoes: [
           { id: 'resumo', texto: '📚 Gerar o resumo do capítulo', padrao: true },
-          { id: 'ensina', texto: '🌟 O que este capítulo me ensina sobre Jeová e as suas qualidades' },
-          { id: 'aplicacoes', texto: '🛠️ Encontrar aplicações práticas para a vida real' },
-          { id: 'fundo', texto: '🏛️ Explicar o fundo histórico dos acontecimentos (Perspicaz / WOL)' },
-          { id: 'personagens', texto: '👤 Detalhar resumidamente a história dos personagens bíblicos conhecidos citados (Perspicaz)' },
-          { id: 'lugares', texto: '🗺️ Dar detalhes de localidades, lugares, cidades, nações, povos, medidas, moedas, valores etc. (Perspicaz)' },
-          { id: 'profecias', texto: '🎺 Esclarecer profecias e expressões simbólicas — seção própria (cumprimento passado, presente ou futuro; Perspicaz / WOL)' }
+          { id: 'ensina', texto: '🌟 O que este capítulo me ensina sobre Jeová e as suas qualidades', padrao: true },
+          { id: 'aplicacoes', texto: '🛠️ Encontrar aplicações práticas para a vida real', padrao: true },
+          { id: 'fundo', texto: '🏛️ Explicar o fundo histórico dos acontecimentos (Perspicaz / WOL)', padrao: true },
+          { id: 'personagens', texto: '👤 Detalhar resumidamente a história dos personagens bíblicos conhecidos citados (Perspicaz)', padrao: true },
+          { id: 'lugares', texto: '🗺️ Dar detalhes de localidades, lugares, cidades, nações, povos, medidas, moedas, valores etc. (Perspicaz)', padrao: true },
+          { id: 'profecias', texto: '🎺 Esclarecer profecias e expressões simbólicas — seção própria (cumprimento passado, presente ou futuro; Perspicaz / WOL)', padrao: true }
         ]
       },
       // Refino da resposta/esboço: fica logo acima dos botões "Outra resposta" e "Melhorar esta resposta".
@@ -14944,6 +14944,19 @@ function saveTemplatesToStorage() {
               localStorage.setItem('jwLibraryNoteAplicarBibliaProfeciasPadraoV1', '1');
               salvas = [...salvas, 'profecias'];
               localStorage.setItem(chaveSalva, JSON.stringify(salvas));
+            }
+          } catch (e) { /* sem armazenamento */ }
+        }
+        // Leitura diária (6.10.94): uma vez, todas as opções passam a vir marcadas também nas preferências já salvas — o usuário pode desmarcar depois.
+        // Sem preferência salva, a marca é gravada já na primeira vez: assim o que o usuário desmarcar depois não volta a ser marcado.
+        if (chave === 'biblia') {
+          try {
+            if (localStorage.getItem('jwLibraryNoteAplicarBibliaTodasPadraoV1') === null) {
+              localStorage.setItem('jwLibraryNoteAplicarBibliaTodasPadraoV1', '1');
+              if (Array.isArray(salvas)) {
+                salvas = opcoes.map(o => o.id);
+                localStorage.setItem(chaveSalva, JSON.stringify(salvas));
+              }
             }
           } catch (e) { /* sem armazenamento */ }
         }
@@ -22460,27 +22473,20 @@ function saveTemplatesToStorage() {
     // O código de pesquisa (IA das reuniões e texto diário, com a leitura dele em voz alta), o do dirigente e a senha de administrador ficam num lugar só:
     // informados uma vez, conferidos no servidor e salvos neste aparelho. O resto do app lê daqui (codigoAcessoSalvo e
     // senhaAdminSalva) e não pede mais nenhum código em outros lugares.
-    function codigoAcessoSalvo() {
-      try { return (localStorage.getItem('jwLibraryNoteAplicarStudyCodeV1') || '').trim(); } catch (e) { return ''; }
+    // O que está gravado neste aparelho para cada código (só o que foi digitado no campo dele).
+    function acessoGravado(chave) {
+      try { return (localStorage.getItem(chave) || '').trim(); } catch (e) { return ''; }
     }
-    function senhaAdminSalva() {
-      try { return (localStorage.getItem('jwLibraryNoteAplicarAdminSenhaV1') || '').trim(); } catch (e) { return ''; }
-    }
-    function codigoTextoSalvo() {
-      try { return (localStorage.getItem('jwLibraryNoteAplicarTextoCodeV1') || '').trim(); } catch (e) { return ''; }
-    }
-    function codigoResumoSalvo() {
-      try { return (localStorage.getItem('jwLibraryNoteAplicarResumoCodeV1') || '').trim(); } catch (e) { return ''; }
-    }
-    function codigoLeituraSalvo() {
-      try { return (localStorage.getItem('jwLibraryNoteAplicarLeituraCodeV1') || '').trim(); } catch (e) { return ''; }
-    }
-    function codigoS34Salvo() {
-      try { return (localStorage.getItem('jwLibraryNoteAplicarS34CodeV1') || '').trim(); } catch (e) { return ''; }
-    }
-    function codigoDirigenteSalvo() {
-      try { return (localStorage.getItem('jwLibraryNoteAplicarDirigenteCodeV1') || '').trim(); } catch (e) { return ''; }
-    }
+    function senhaAdminSalva() { return acessoGravado('jwLibraryNoteAplicarAdminSenhaV1'); }
+    // O código usado por cada função: o do campo dela ou, sem ele, a senha de administrador, que libera todas as funções (6.10.94; o servidor
+    // aceita a senha de administrador no lugar de qualquer código).
+    function acessoOuAdmin(chave) { return acessoGravado(chave) || senhaAdminSalva(); } // função (não const): é chamada antes desta linha na abertura do app
+    function codigoAcessoSalvo() { return acessoOuAdmin('jwLibraryNoteAplicarStudyCodeV1'); }
+    function codigoTextoSalvo() { return acessoOuAdmin('jwLibraryNoteAplicarTextoCodeV1'); }
+    function codigoResumoSalvo() { return acessoOuAdmin('jwLibraryNoteAplicarResumoCodeV1'); }
+    function codigoLeituraSalvo() { return acessoOuAdmin('jwLibraryNoteAplicarLeituraCodeV1'); }
+    function codigoS34Salvo() { return acessoOuAdmin('jwLibraryNoteAplicarS34CodeV1'); }
+    function codigoDirigenteSalvo() { return acessoOuAdmin('jwLibraryNoteAplicarDirigenteCodeV1'); }
 
     // Abre Ajustes → Autorização de acessos com o cursor no campo pedido ('codigo', 'dirigente' ou 'senha').
     function abrirAcessos(campo) {
@@ -22535,10 +22541,13 @@ function saveTemplatesToStorage() {
       acessos[tipo].status.classList.toggle('acesso-aviso', Boolean(aviso));
     }
 
+    // O campo mostra só o código digitado nele (nunca a senha de administrador); sem código, a senha de administrador salva já libera a função.
     function acessoSituacao(tipo) {
       const a = acessos[tipo];
-      a.campo.value = a.salvo();
-      acessoStatus(tipo, a.salvo() ? '✅ Salvo neste aparelho.' : 'Ainda não informado.', !a.salvo());
+      const gravado = acessoGravado(a.chave);
+      a.campo.value = gravado;
+      const peloAdmin = !gravado && tipo !== 'senha' && Boolean(senhaAdminSalva());
+      acessoStatus(tipo, gravado ? '✅ Salvo neste aparelho.' : peloAdmin ? '🛡️ Liberado pela senha de administrador.' : 'Ainda não informado.', !gravado && !peloAdmin);
     }
 
     async function acessoSalvar(tipo) {
@@ -22561,7 +22570,7 @@ function saveTemplatesToStorage() {
 
     async function acessoApagar(tipo) {
       const a = acessos[tipo];
-      if (!a.salvo()) return acessoSituacao(tipo);
+      if (!acessoGravado(a.chave)) return acessoSituacao(tipo);
       if (!(await askConfirm(a.nome + ' será apagado(a) deste aparelho. Para usar de novo os recursos que dependem dele(a), será preciso informar outra vez. Continuar?', 'Apagar deste aparelho'))) return;
       try { localStorage.removeItem(a.chave); } catch (e) { /* sem localStorage */ }
       acessoSituacao(tipo);
@@ -22590,7 +22599,11 @@ function saveTemplatesToStorage() {
         if (!admin && el.open) el.open = false;
       });
     }
-    document.addEventListener('acesso-salvo', event => { if (event.detail === 'senha') ajustesAdminAtualizar(); });
+    document.addEventListener('acesso-salvo', event => {
+      if (event.detail !== 'senha') return;
+      ajustesAdminAtualizar();
+      Object.keys(acessos).forEach(tipo => { if (tipo !== 'senha') acessoSituacao(tipo); }); // "Liberado pela senha de administrador" aparece ou some
+    });
     ajustesAdminAtualizar();
 
     // Botões "🔐 Abrir Autorização de acessos" dos avisos (voz).
@@ -22755,21 +22768,22 @@ function saveTemplatesToStorage() {
         if (grupo.classList.contains('grupo-desabilitado')) event.preventDefault();
       });
     });
-    document.addEventListener('acesso-salvo', event => { if (event.detail === 'codigo' || event.detail === 'dirigente' || event.detail === 'leitura' || event.detail === 'texto' || event.detail === 's34' || event.detail === 'resumo') acessosAtualizar(); });
+    document.addEventListener('acesso-salvo', event => { if (event.detail === 'codigo' || event.detail === 'dirigente' || event.detail === 'leitura' || event.detail === 'texto' || event.detail === 's34' || event.detail === 'resumo' || event.detail === 'senha') acessosAtualizar(); });
     acessosAtualizar();
 
     // O código do dirigente salvo pode deixar de valer (o administrador trocou a variável no servidor). O app confere com o
     // servidor ao abrir e ao voltar a ele (no máximo de 10 em 10 minutos); se o servidor recusar (403), apaga o código salvo e
     // esconde as opções. Sem conexão ou com erro do servidor, nada muda. Só apaga na recusa: assim não sobram tentativas
     // erradas repetidas (o servidor bloqueia o IP depois de várias).
+    // As conferências abaixo olham só o código digitado no campo (6.10.94): a senha de administrador, que libera tudo, fica de fora delas.
     let dirigenteConferidoEm = 0;
     async function dirigenteVerificar(forcar) {
-      const codigo = codigoDirigenteSalvo();
+      const codigo = acessoGravado('jwLibraryNoteAplicarDirigenteCodeV1');
       if (!codigo || !navigator.onLine) return;
       if (!forcar && Date.now() - dirigenteConferidoEm < 10 * 60 * 1000) return;
       dirigenteConferidoEm = Date.now();
       const r = await postConfig({ acao: 'dirigente-conferir', codigo });
-      if (r.status === 403 && codigoDirigenteSalvo() === codigo) dirigenteInvalido();
+      if (r.status === 403 && acessoGravado('jwLibraryNoteAplicarDirigenteCodeV1') === codigo) dirigenteInvalido();
     }
 
     function dirigenteInvalido() {
@@ -22784,12 +22798,12 @@ function saveTemplatesToStorage() {
     // dirigente. Só apaga se o servidor recusar (403); sem conexão ou com erro do servidor, nada muda.
     let leituraCodigoConferidoEm = 0;
     async function leituraCodigoVerificar(forcar) {
-      const codigo = codigoLeituraSalvo();
+      const codigo = acessoGravado('jwLibraryNoteAplicarLeituraCodeV1');
       if (!codigo || !navigator.onLine) return;
       if (!forcar && Date.now() - leituraCodigoConferidoEm < 10 * 60 * 1000) return;
       leituraCodigoConferidoEm = Date.now();
       const r = await postConfig({ acao: 'leitura-conferir', codigo });
-      if (r.status === 403 && codigoLeituraSalvo() === codigo) {
+      if (r.status === 403 && acessoGravado('jwLibraryNoteAplicarLeituraCodeV1') === codigo) {
         try { localStorage.removeItem('jwLibraryNoteAplicarLeituraCodeV1'); } catch (e) { /* sem localStorage */ }
         acessoSituacao('leitura');
         acessoStatus('leitura', 'O código de leitura que estava salvo não vale mais. Informe o novo código.', true);
@@ -22801,12 +22815,12 @@ function saveTemplatesToStorage() {
     // O código de resumo salvo também pode deixar de valer (variável CODIGO_RESUMO trocada no servidor): mesma conferência, só apaga se o servidor recusar (403).
     let resumoCodigoConferidoEm = 0;
     async function resumoCodigoVerificar(forcar) {
-      const codigo = codigoResumoSalvo();
+      const codigo = acessoGravado('jwLibraryNoteAplicarResumoCodeV1');
       if (!codigo || !navigator.onLine) return;
       if (!forcar && Date.now() - resumoCodigoConferidoEm < 10 * 60 * 1000) return;
       resumoCodigoConferidoEm = Date.now();
       const r = await postConfig({ acao: 'resumo-conferir', codigo });
-      if (r.status === 403 && codigoResumoSalvo() === codigo) {
+      if (r.status === 403 && acessoGravado('jwLibraryNoteAplicarResumoCodeV1') === codigo) {
         try { localStorage.removeItem('jwLibraryNoteAplicarResumoCodeV1'); } catch (e) { /* sem localStorage */ }
         acessoSituacao('resumo');
         acessoStatus('resumo', 'O código de resumo que estava salvo não vale mais. Informe o novo código.', true);
@@ -22818,12 +22832,12 @@ function saveTemplatesToStorage() {
     // O código de texto salvo também pode deixar de valer (variável CODIGO_TEXTO trocada no servidor): mesma conferência, só apaga se o servidor recusar (403).
     let textoCodigoConferidoEm = 0;
     async function textoCodigoVerificar(forcar) {
-      const codigo = codigoTextoSalvo();
+      const codigo = acessoGravado('jwLibraryNoteAplicarTextoCodeV1');
       if (!codigo || !navigator.onLine) return;
       if (!forcar && Date.now() - textoCodigoConferidoEm < 10 * 60 * 1000) return;
       textoCodigoConferidoEm = Date.now();
       const r = await postConfig({ acao: 'texto-conferir', codigo });
-      if (r.status === 403 && codigoTextoSalvo() === codigo) {
+      if (r.status === 403 && acessoGravado('jwLibraryNoteAplicarTextoCodeV1') === codigo) {
         try { localStorage.removeItem('jwLibraryNoteAplicarTextoCodeV1'); } catch (e) { /* sem localStorage */ }
         acessoSituacao('texto');
         acessoStatus('texto', 'O código de texto que estava salvo não vale mais. Informe o novo código.', true);
@@ -22834,7 +22848,7 @@ function saveTemplatesToStorage() {
 
     // O código do S-34 salvo também pode deixar de valer (variável CODIGO_S34 trocada no servidor): mesma conferência, só apaga se o servidor recusar (403).
     function s34CodigoInvalido() {
-      if (!codigoS34Salvo()) return;
+      if (!acessoGravado('jwLibraryNoteAplicarS34CodeV1')) return;
       try { localStorage.removeItem('jwLibraryNoteAplicarS34CodeV1'); } catch (e) { /* sem localStorage */ }
       acessoSituacao('s34');
       acessoStatus('s34', 'O código do S-34 que estava salvo não vale mais. Informe o novo código.', true);
@@ -22842,12 +22856,12 @@ function saveTemplatesToStorage() {
     }
     let s34CodigoConferidoEm = 0;
     async function s34CodigoVerificar(forcar) {
-      const codigo = codigoS34Salvo();
+      const codigo = acessoGravado('jwLibraryNoteAplicarS34CodeV1');
       if (!codigo || !navigator.onLine) return;
       if (!forcar && Date.now() - s34CodigoConferidoEm < 10 * 60 * 1000) return;
       s34CodigoConferidoEm = Date.now();
       const r = await postConfig({ acao: 's34-conferir', codigo });
-      if (r.status === 403 && codigoS34Salvo() === codigo) s34CodigoInvalido();
+      if (r.status === 403 && acessoGravado('jwLibraryNoteAplicarS34CodeV1') === codigo) s34CodigoInvalido();
     }
     s34CodigoVerificar(true);
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { dirigenteVerificar(false); leituraCodigoVerificar(false); resumoCodigoVerificar(false); textoCodigoVerificar(false); s34CodigoVerificar(false); } });
@@ -27410,7 +27424,7 @@ function saveTemplatesToStorage() {
       bibliaSelecionarPorCapId(alvo.cap.id, 'secoes');
     }
 
-    document.addEventListener('acesso-salvo', event => { if (event.detail === 'resumo') bibliaResumoSincronizar(); });
+    document.addEventListener('acesso-salvo', event => { if (event.detail === 'resumo' || event.detail === 'senha') bibliaResumoSincronizar(); });
 
     // Depois de gerar o resumo, um botão flutuante leva até o texto (some sozinho ou ao tocar).
     function bibliaAvisoOcultar() {

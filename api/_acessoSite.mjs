@@ -192,6 +192,8 @@ function codigoGlobalDoRecurso(recurso) {
 
 // Aceita o código global do servidor ou o personalizado deste aparelho.
 export function recursoCodigoValido(recurso, codigo, aparelhoId) {
+  // A senha de administrador libera todas as funções, sem depender do código de cada uma (6.10.94).
+  if (process.env.CODIGO_ADMIN && textosIguais(codigo, process.env.CODIGO_ADMIN)) return true;
   const global = codigoGlobalDoRecurso(recurso);
   if (global && textosIguais(codigo, global)) return true;
   return codigoPessoalSync(recurso, codigo, aparelhoId);

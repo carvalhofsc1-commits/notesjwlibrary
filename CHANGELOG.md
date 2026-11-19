@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.94
+
+- Senha de administrador libera tudo: com ela salva em Autorização de acessos, todas as funções (pesquisa, dirigente, leitura em voz alta, resumo, S-34 e texto) ficam habilitadas sem os códigos de cada uma. O app usa a senha no lugar do código que faltar e o servidor (`recursoCodigoValido`) aceita a senha de administrador como código de qualquer função. Os campos de código continuam mostrando só o que foi digitado neles; sem código, aparece "🛡️ Liberado pela senha de administrador". As conferências periódicas dos códigos olham só os códigos digitados.
+- Leitura da Bíblia: todas as opções do resumo (resumo, Sobre Jeová, aplicações, fundo histórico, personagens, lugares e profecias) vêm marcadas por padrão. Nas preferências já salvas, todas são marcadas uma vez; o que o usuário desmarcar depois fica desmarcado.
+
 ## 6.10.93
 
 - Migração (teste no Firebase antes da virada): a marca `<meta name="notestyle-api">` (index.html e sobre.html) ganhou `data-firebase` com o endereço do Cloud Run. Com o `content` vazio, só os endereços de teste do Firebase (`*.web.app`, `*.firebaseapp.com`) chamam a API no Cloud Run; o site na Vercel (`www.notestyle.com.br`) continua com a própria API até a virada, quando o `content` recebe o endereço. No Cloud Run, `ORIGENS_PERMITIDAS` passou a incluir `notestyle-512212.web.app` e `notestyle-512212.firebaseapp.com`.
