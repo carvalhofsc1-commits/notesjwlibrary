@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.00
+
+- Computador (tela a partir de 1180 px): os atalhos das telas (Início, Anotações, Pesquisas, Reuniões, Gravar, Bíblia e Menu) passam para o centro da barra do topo, sem cartão próprio, e a marca NoteStyle vai para o lado direito da barra; o botão ☰ continua à esquerda. Só CSS (bloco no fim do app.css). Entre 980 e 1179 px continua como antes (atalhos num cartão logo abaixo da barra) e no celular eles seguem embaixo.
+- Leitura em voz alta: a conta que mantém a frase lida à vista só desconta a barra dos atalhos quando ela está embaixo (no computador ela fica em cima).
+
 ## 6.10.99
 
 - Virada para o Google Cloud: a marca `<meta name="notestyle-api">` (index.html e sobre.html) passa a ter o endereço do Cloud Run no `content`. A partir daqui o app, em qualquer endereço (Vercel, Firebase ou Cloud Run), usa a API e os dados do Google Cloud. Antes disso, os dados da Vercel foram copiados de novo para o bucket (16 arquivos e 17 configurações, sem falhas).

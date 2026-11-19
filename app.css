@@ -16509,3 +16509,37 @@ body[data-screen="salvas"] #secaoHistorico { display: block !important; margin: 
 /* 6.10.86: aviso de versão nova — os botões Atualizar agora e Depois ocupam a largura toda, lado a lado. */
 .update-banner-actions { flex: 1 1 100%; display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 8px; width: 100%; }
 .update-banner-actions > button { width: 100%; min-width: 0; margin: 0; }
+
+/* 6.11.00: computador (tela a partir de 1180 px) — os atalhos das telas ficam no centro da barra do topo e a marca NoteStyle vai para o lado
+   direito dela; o botão ☰ continua à esquerda. A barra dos atalhos fica fixa no alto, por cima da barra do topo, sem fundo nem moldura
+   próprios. Entre 980 e 1179 px continua como antes (atalhos num cartão logo abaixo da barra), e no celular eles seguem embaixo. */
+@media (min-width: 1180px) {
+  html:not(.nav-sticky) header.app-topbar { min-height: 56px; padding-top: 0; padding-bottom: 0; }
+  html:not(.nav-sticky) header.app-topbar::after { display: none; }
+  html:not(.nav-sticky) .brand-title { justify-content: flex-end; }
+  html:not(.nav-sticky) .app-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: auto;
+    width: max-content;
+    max-width: none;
+    height: 55px;
+    margin: 0 auto;
+    padding: 0;
+    grid-template-columns: repeat(7, auto);
+    align-content: center;
+    gap: 4px;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    -webkit-transform: none;
+    transform: none;
+    will-change: auto;
+  }
+  html:not(.nav-sticky) .app-nav button,
+  html:not(.nav-sticky) .app-nav button:hover { min-height: 40px; padding: 4px 12px; gap: 7px; font-size: .88rem; }
+  html:not(.nav-sticky) .app-nav .nav-icon { font-size: 1.1rem; }
+}
