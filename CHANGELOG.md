@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.98
+
+- Áudio em texto: o reconhecimento de voz às vezes entrava em laço em trechos com silêncio ou ruído e repetia a última frase até o limite ("Sei lá. Sei lá. Sei lá…"). Agora o servidor junta numa só a frase (ou expressão curta) repetida 3 vezes ou mais em sequência; repetições naturais de 2 vezes ("Muito bem, muito bem") ficam. Vale para o Chirp 3 e para o Gemini; na transcrição pelo Gemini, a instrução também pede para não repetir a última frase em silêncio, música ou ruído.
+
 ## 6.10.97
 
 - Assistente de pesquisas, resposta direta: nova regra fixa da IA (visível na tela de prompts, "resposta direta para perguntas específicas"). Pergunta específica (uma função, regra, procedimento, definição) recebe resposta direta, começando pela resposta, com os detalhes concretos da fonte que trata do assunto (instruções da organização, como o S-38, acima de artigos gerais), sem introdução, princípios, lições e aplicações. Nova opção "🎯 Resposta direta" em Opções adicionais de pesquisa para forçar esse modo (lembrada no aparelho).

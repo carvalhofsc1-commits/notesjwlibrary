@@ -124,7 +124,28 @@ function wavDoPcm(base64) {
 }
 const SISTEMA_TRANSCRICAO_GEMINI =
   "Você transcreve áudio em português do Brasil. Escreva exatamente o que é falado, palavra por palavra, com pontuação e letras maiúsculas corretas. " +
-  "Não resuma, não traduza, não comente, não acrescente títulos nem nomes de falantes. Se não houver fala, devolva o texto vazio.";
+  "Não resuma, não traduza, não comente, não acrescente títulos nem nomes de falantes. Se não houver fala, devolva o texto vazio. " +
+  "Em silêncio, música ou ruído, não escreva nada e não repita a última frase: escreva uma frase repetida só se ela foi mesmo dita de novo.";
+
+// Laço de repetição (6.10.98): em trechos com silêncio ou ruído, o reconhecimento às vezes repete a última frase até o limite ("Sei lá. Sei lá.
+// Sei lá…"). A mesma frase (ou expressão curta) seguida de si mesma 3 vezes ou mais fica uma vez só. Repetições de 2 vezes, comuns na fala, ficam.
+function semRepeticoes(texto) {
+  let t = String(texto || "");
+  // Frases inteiras iguais em sequência (ignorando maiúsculas e pontuação).
+  const frases = t.split(/(?<=[.!?…])\s+/);
+  const chave = (f) => f.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+  const saida = [];
+  for (let i = 0; i < frases.length; ) {
+    let j = i + 1;
+    while (j < frases.length && chave(frases[j]) && chave(frases[j]) === chave(frases[i])) j++;
+    saida.push(...(j - i >= 3 ? [frases[i]] : frases.slice(i, j)));
+    i = j;
+  }
+  t = saida.join(" ");
+  // Expressões curtas repetidas sem ponto entre elas ("sei lá sei lá sei lá…").
+  t = t.replace(/(\b[\p{L}\p{N}][\p{L}\p{N}' ]{1,59}?)(?:[\s,;]+\1\b){2,}/giu, "$1");
+  return t.replace(/\s+/g, " ").trim();
+}
 async function reconhecerComGemini(audioBase64, modelo) {
   const client = criarClienteIa({ maxRetries: 1, timeout: 60_000 }, "gemini");
   const resposta = await client.messages.create({
@@ -482,7 +503,7 @@ export default async function handler(req, res) {
       if (!audio || audio.length > MAX_AUDIO_BASE64) return erro(res, 400, "Trecho de áudio inválido ou grande demais.");
       if (excedeu("trecho", ip, LIMITE_TRECHOS_POR_HORA)) return erro(res, 429, "Muitos trechos transcritos nesta hora. Tente novamente mais tarde.");
       const cfg = await lerConfigIa();
-      const texto = cfg.audioMotor === "gemini" ? await reconhecerComGemini(audio, cfg.audioGeminiModelo) : await reconhecer(audio);
+      const texto = semRepeticoes(cfg.audioMotor === "gemini" ? await reconhecerComGemini(audio, cfg.audioGeminiModelo) : await reconhecer(audio));
       await registrarConsumo(corpo, { tarefa: "audio", segundos: (audio.length * 0.75) / 32000 });
       return res.status(200).json({ texto });
     }
