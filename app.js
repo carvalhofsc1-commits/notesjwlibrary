@@ -229,6 +229,9 @@
     // "flutua" no meio da tela, com o conteúdo aparecendo embaixo dela. Aqui a barra acompanha a área visível de verdade (visualViewport): se o
     // fundo visível estiver abaixo do fundo da área de referência, a barra desce essa diferença. Ao sair de um campo, o app também pede ao
     // iOS que refaça o cálculo (rolando para o mesmo lugar). Com tudo normal a diferença é zero e nada muda.
+    // Até quando (Date.now()) uma rolagem suave pedida pelo app (a tela acompanhando a frase lida) está em andamento. Nesse tempo o ajuste da barra
+    // do iPhone não "cutuca" a rolagem (rolar 1 px e voltar): a cutucada interrompia a rolagem suave no meio e a frase lida ficava fora da tela (6.10.90).
+    let rolagemDoAppAte = 0;
     (function navAcompanharTela() {
       const nav = document.getElementById('appNav');
       const vv = window.visualViewport;
@@ -256,7 +259,7 @@
           vv.offsetTop > 2 && Number.isFinite(vv.pageTop) && Math.abs(vv.pageTop - window.scrollY) < 2;
         if (preso) {
           const agora = Date.now();
-          if (!ajustar.cutucadoEm || agora - ajustar.cutucadoEm > 4000) {
+          if ((!ajustar.cutucadoEm || agora - ajustar.cutucadoEm > 4000) && agora > rolagemDoAppAte) {
             ajustar.cutucadoEm = agora;
             ajustar.cutucadas = (ajustar.cutucadas || 0) + 1;
             const y = window.scrollY;
@@ -3912,13 +3915,16 @@
 
     async function vozCarregarRegras(forcar) {
       if (vozRegras && !forcar) return vozRegras;
+      // Só guarda a resposta boa do servidor (6.10.90). Antes, uma falha (sem internet, servidor recusando ou aparelho ainda sem cadastro aprovado)
+      // deixava os padrões guardados até fechar o app, e a voz passava a ler as referências depois do travessão e entre parênteses.
       try {
         const r = await postConfig({ acao: 'voz-publica' });
-        vozRegras = Object.assign({}, VOZ_REGRAS_PADRAO, r.ok && r.data && r.data.voz ? r.data.voz : {});
-      } catch (e) {
-        vozRegras = Object.assign({}, VOZ_REGRAS_PADRAO);
-      }
-      return vozRegras;
+        if (r.ok && r.data && r.data.voz) {
+          vozRegras = Object.assign({}, VOZ_REGRAS_PADRAO, r.data.voz);
+          return vozRegras;
+        }
+      } catch (e) { /* sem resposta: usa o que já tinha ou os padrões, e tenta de novo na próxima leitura */ }
+      return vozRegras || Object.assign({}, VOZ_REGRAS_PADRAO);
     }
 
     // ---------- Modelo e esforço sob os botões da IA ----------
@@ -7908,7 +7914,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.10.89'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.90'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -22186,14 +22192,28 @@ function saveTemplatesToStorage() {
       if (!u.el.getClientRects().length) return; // com o texto fechado, não há o que mostrar
       if (!leitorPodeSeguir()) return; // o usuário está mexendo na tela: ela fica com ele (volta a seguir a leitura depois de alguns segundos)
       // A barra do topo e a de baixo cobrem parte da janela: a frase lida precisa ficar na parte realmente visível (no meio dela, se não estiver).
-      const barraTopo = document.querySelector('.app-topbar, header');
-      const barraBase = document.getElementById('appNav');
-      const livreTopo = barraTopo ? Math.max(0, barraTopo.getBoundingClientRect().bottom) + 12 : 12;
-      const livreBase = innerHeight - (barraBase ? Math.max(0, innerHeight - barraBase.getBoundingClientRect().top) : 0) - 12;
-      const r = u.el.getBoundingClientRect();
-      if (r.top >= livreTopo && r.bottom <= livreBase) return;
-      const rolar = (window.scrollY || document.documentElement.scrollTop) + (r.top + r.bottom) / 2 - (livreTopo + livreBase) / 2;
-      window.scrollTo({ top: r.height > livreBase - livreTopo ? (window.scrollY || 0) + r.top - livreTopo : Math.max(0, rolar), behavior: 'smooth' });
+      // Devolve a rolagem que a põe lá, ou null se ela já está à vista.
+      const destino = () => {
+        const barraTopo = document.querySelector('.app-topbar, header');
+        const barraBase = document.getElementById('appNav');
+        const livreTopo = barraTopo ? Math.max(0, barraTopo.getBoundingClientRect().bottom) + 12 : 12;
+        const livreBase = innerHeight - (barraBase ? Math.max(0, innerHeight - barraBase.getBoundingClientRect().top) : 0) - 12;
+        const r = u.el.getBoundingClientRect();
+        if (r.top >= livreTopo && r.bottom <= livreBase) return null;
+        const y = window.scrollY || document.documentElement.scrollTop || 0;
+        return r.height > livreBase - livreTopo ? y + r.top - livreTopo : Math.max(0, y + (r.top + r.bottom) / 2 - (livreTopo + livreBase) / 2);
+      };
+      const alvo = destino();
+      if (alvo === null) return;
+      rolagemDoAppAte = Date.now() + 1500;
+      window.scrollTo({ top: alvo, behavior: 'smooth' });
+      // Conferência (6.10.90): se a rolagem suave foi interrompida (no iPhone acontecia) e a frase continua fora da tela, a tela vai direto até ela.
+      clearTimeout(estado.conferir);
+      estado.conferir = setTimeout(() => {
+        if (estado.destaque !== indice || !u.el.isConnected || !u.el.getClientRects().length || !leitorPodeSeguir()) return;
+        const ainda = destino();
+        if (ainda !== null) window.scrollTo({ top: ainda, behavior: 'auto' });
+      }, 1000);
     }
 
     // Casa as frases mostradas de cada linha ({ el, texto, falado }) com as faladas e devolve as unidades da leitura. Linha com `inteira` é uma
@@ -27275,7 +27295,7 @@ function saveTemplatesToStorage() {
       const u = bibliaResumoUnidades[indice];
       if (!u) return;
       u.el.classList.add('lendo');
-      if (leitorPodeSeguir()) u.el.scrollIntoView({ block: 'center', behavior: 'smooth' }); // se o usuário está mexendo na tela, ela fica com ele
+      if (leitorPodeSeguir()) { rolagemDoAppAte = Date.now() + 1500; u.el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } // se o usuário está mexendo na tela, ela fica com ele
     }
 
     function bibliaResumoCfg() {

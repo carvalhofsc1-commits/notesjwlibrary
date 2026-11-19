@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.90
+
+- Leitura em voz alta: as regras de leitura do administrador (pular as referências depois do travessão e entre parênteses) só ficam guardadas quando o servidor responde. Antes, uma falha na primeira consulta (por exemplo, com o aparelho ainda sem cadastro aprovado) deixava os padrões até fechar o app, e a voz lia "— Heb. 11:1, 6." no fim do texto diário.
+- Texto diário (e leitura da Bíblia): a tela volta a acompanhar a frase lida no iPhone. O ajuste da barra de baixo do iPhone "cutucava" a rolagem e interrompia a rolagem suave no meio; agora ele espera a rolagem do app terminar, e se a frase ainda ficar fora da tela, a tela vai direto até ela.
+
 ## 6.10.89
 
 - Migração para o Google Cloud: script `ferramentas/aprovar-cadastro.mjs`, que lista os cadastros pendentes de um servidor (padrão: o endereço do Cloud Run) e aprova ou recusa pelo terminal, com a senha de administrador digitada sem aparecer na tela. Serve para o endereço novo, onde o aparelho fica na tela de cadastro e não chega em Ajustes.
