@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.92
+
+- Firebase Hosting (`firebase.json`): a regra que deixava de fora todos os arquivos ocultos (`**/.*`) também tirava a pasta `.well-known` (o `assetlinks.json` do app Android). Agora os ocultos sigilosos são listados um a um (`.env*`, `.git`, `.claude`, `.dados-local`, `.vercel`, `*ignore`) e a `.well-known` é publicada. Conferido por simulação com a mesma biblioteca do Firebase: 62 arquivos, só os do site.
+
 ## 6.10.91
 
 - Google Cloud (`server.mjs`): a pesquisa (e os esboços) gravam o resultado antes de enviar, e o envio sai logo depois de a função terminar. O servidor fechava a resposta vazia nesse intervalo ("A IA não conseguiu escrever a pesquisa") e depois caía ao tentar enviar. Agora ele espera o envio (até 2 minutos), como a Vercel, e uma segunda resposta é só ignorada, sem derrubar o servidor.
