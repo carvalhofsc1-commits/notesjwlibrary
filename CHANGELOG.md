@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.91
+
+- Google Cloud (`server.mjs`): a pesquisa (e os esboços) gravam o resultado antes de enviar, e o envio sai logo depois de a função terminar. O servidor fechava a resposta vazia nesse intervalo ("A IA não conseguiu escrever a pesquisa") e depois caía ao tentar enviar. Agora ele espera o envio (até 2 minutos), como a Vercel, e uma segunda resposta é só ignorada, sem derrubar o servidor.
+
 ## 6.10.90
 
 - Leitura em voz alta: as regras de leitura do administrador (pular as referências depois do travessão e entre parênteses) só ficam guardadas quando o servidor responde. Antes, uma falha na primeira consulta (por exemplo, com o aparelho ainda sem cadastro aprovado) deixava os padrões até fechar o app, e a voz lia "— Heb. 11:1, 6." no fim do texto diário.

@@ -147,12 +147,20 @@ function interpretarCorpo(bruto, tipo) {
 
 function prepararResposta(res) {
   res.status = (codigo) => { res.statusCode = codigo; return res; };
+  // Resposta já enviada: não tenta de novo (lançar o erro aqui, numa promessa solta, derrubava o servidor inteiro).
+  const jaEnviada = () => {
+    if (!res.headersSent && !res.writableEnded) return false;
+    console.error("Servidor: resposta enviada duas vezes (a segunda foi ignorada)");
+    return true;
+  };
   res.json = (dados) => {
+    if (jaEnviada()) return res;
     if (!res.getHeader("Content-Type")) res.setHeader("Content-Type", "application/json; charset=utf-8");
     res.end(JSON.stringify(dados));
     return res;
   };
   res.send = (dados) => {
+    if (jaEnviada()) return res;
     if (dados !== null && typeof dados === "object" && !Buffer.isBuffer(dados)) return res.json(dados);
     if (!res.getHeader("Content-Type")) res.setHeader("Content-Type", Buffer.isBuffer(dados) ? "application/octet-stream" : "text/plain; charset=utf-8");
     res.end(dados);
@@ -196,7 +204,17 @@ async function servirApi(req, res, url) {
   }
   try {
     await handler(req, res);
-    if (!res.writableEnded) res.end();
+    // Como na Vercel, a resposta pode sair um pouco depois de a função terminar (ex.: a pesquisa e os esboços gravam o resultado antes de
+    // enviar). Espera o envio por até 2 minutos e só então fecha, para a conexão não ficar presa (6.10.91).
+    if (!res.writableEnded) {
+      await new Promise((pronto) => {
+        const limite = setTimeout(pronto, 120_000);
+        const fim = () => { clearTimeout(limite); pronto(); };
+        res.once("finish", fim);
+        res.once("close", fim);
+      });
+      if (!res.writableEnded) res.end();
+    }
   } catch (e) {
     console.error(`API ${nome}: erro não tratado`, e && (e.stack || e.message));
     if (!res.headersSent) res.status(500).json({ erro: "Erro interno do servidor." });
