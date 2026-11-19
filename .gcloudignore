@@ -1,0 +1,11 @@
+# O que não vai para o Google Cloud em "gcloud run deploy --source ." (6.10.87).
+.git
+.gitignore
+.claude
+.vercel
+.env*
+.dados-local
+node_modules
+lojas
+avaliacao
+ferramentas

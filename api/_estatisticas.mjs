@@ -2,7 +2,7 @@
 // Cada aparelho tem um UUID anônimo enviado pelo navegador. Visitas (ping) e consultas/tokens da IA
 // ficam num JSON no Vercel Blob PRIVADO: "estatisticas/uso.json".
 // ESTÁTISTICAS_DIR (só testes locais) troca o Blob por uma pasta.
-import { get, put } from "@vercel/blob";
+import { blobConfigurado, get, put } from "./_blob.mjs";
 
 const NOME = "estatisticas/uso.json";
 const MAX_APARELHOS = 3000;
@@ -10,7 +10,7 @@ const MAX_DIAS = 120;
 const ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export function estatisticasConfiguradas() {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN || process.env.ESTATISTICAS_DIR);
+  return Boolean(blobConfigurado() || process.env.ESTATISTICAS_DIR);
 }
 
 export function aparelhoIdLimpo(valor) {
@@ -343,7 +343,7 @@ async function nomesDosAparelhos() {
       } catch {
         bruto = null;
       }
-    } else if (process.env.BLOB_READ_WRITE_TOKEN) {
+    } else if (blobConfigurado()) {
       const resultado = await get("estatisticas/acesso-site.json", {
         access: "private",
         token: process.env.BLOB_READ_WRITE_TOKEN,

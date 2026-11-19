@@ -2,7 +2,7 @@
 // fontes e do S-34, variável BLOB_READ_WRITE_TOKEN). O app manda um "pedidoId" aleatório junto com o pedido; se a conexão cair no meio
 // (no iPhone, ao sair do app ou bloquear a tela, a espera é cortada, mas o servidor continua e termina o esboço), o app pergunta pelo
 // resultado com esse id quando volta e mostra o esboço normalmente. O arquivo começa com "_" para a Vercel não publicá-lo como rota.
-import { del, get, list, put } from "@vercel/blob";
+import { blobConfigurado, del, get, list, put } from "./_blob.mjs";
 
 const PASTA = "pedidos/";
 const VALIDADE_MS = 6 * 3600_000; // os resultados que ninguém buscou são apagados depois de 6 horas
@@ -11,7 +11,7 @@ const emTeste = () => process.env.ARMAZEM_TESTE === "memoria";
 const token = () => process.env.BLOB_READ_WRITE_TOKEN;
 
 export const idDePedidoValido = (id) => typeof id === "string" && /^[A-Za-z0-9-]{16,64}$/.test(id);
-export const pedidosDisponiveis = () => emTeste() || Boolean(token());
+export const pedidosDisponiveis = () => emTeste() || blobConfigurado();
 
 export async function guardarResultado(id, status, dados) {
   const registro = { status, dados, em: Date.now() };

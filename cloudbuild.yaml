@@ -1,0 +1,24 @@
+# Publicação automática no Google Cloud a cada push na main (6.10.87): monta o contêiner, publica a API no Cloud Run
+# (mantendo as variáveis e segredos já configurados no serviço) e publica o site no Firebase Hosting.
+# A conta de serviço do Cloud Build precisa das funções: Administrador do Cloud Run, Usuário da conta de serviço e Administrador do Firebase Hosting.
+steps:
+  - id: montar
+    name: gcr.io/cloud-builders/docker
+    args: ["build", "-t", "${_IMAGEM}", "."]
+  - id: enviar
+    name: gcr.io/cloud-builders/docker
+    args: ["push", "${_IMAGEM}"]
+  - id: api
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: gcloud
+    args: ["run", "deploy", "notestyle", "--image", "${_IMAGEM}", "--region", "southamerica-east1", "--quiet"]
+  - id: site
+    name: node:24-slim
+    entrypoint: npx
+    args: ["--yes", "firebase-tools@14", "deploy", "--only", "hosting", "--project", "${PROJECT_ID}", "--non-interactive"]
+substitutions:
+  _IMAGEM: southamerica-east1-docker.pkg.dev/${PROJECT_ID}/notestyle/app:${SHORT_SHA}
+images:
+  - ${_IMAGEM}
+options:
+  logging: CLOUD_LOGGING_ONLY

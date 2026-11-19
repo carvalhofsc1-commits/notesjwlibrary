@@ -7,10 +7,10 @@
 //
 // S34_DIR (só para testes no computador) troca o Blob por uma pasta local.
 import { createHash } from "node:crypto";
-import { get, put, del } from "@vercel/blob";
+import { blobConfigurado, get, put, del } from "./_blob.mjs";
 
 export function s34Configurado() {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN || process.env.S34_DIR);
+  return Boolean(blobConfigurado() || process.env.S34_DIR);
 }
 
 const nomeDoEsboco = (numero) => `${String(numero).padStart(3, "0")}.json`;

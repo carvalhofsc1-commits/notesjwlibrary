@@ -8,7 +8,11 @@ export function origemPermitida(origin) {
     // Só o domínio próprio (com HTTPS) e, para testes na máquina do desenvolvedor, localhost. Os endereços *.vercel.app (antigos e de
     // prévia) não valem mais: se algum ainda abrir a página, a API recusa os pedidos.
     if (hostname === "localhost" || hostname === "127.0.0.1") return true;
-    return protocol === "https:" && (hostname === "notestyle.com.br" || hostname === "www.notestyle.com.br");
+    if (protocol !== "https:") return false;
+    if (hostname === "notestyle.com.br" || hostname === "www.notestyle.com.br") return true;
+    // Endereços extras, só por configuração (desde a 6.10.87, para a migração ao Google Cloud): ORIGENS_PERMITIDAS com os nomes separados
+    // por vírgula, ex.: "notestyle-xxxxx-rj.a.run.app,notestyle-512212.web.app".
+    return String(process.env.ORIGENS_PERMITIDAS || "").split(",").map((s) => s.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "")).filter(Boolean).includes(hostname.toLowerCase());
   } catch {
     return false;
   }

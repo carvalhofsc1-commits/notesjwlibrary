@@ -11,7 +11,7 @@ import { randomUUID } from "node:crypto";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
-import { del, get, put } from "@vercel/blob";
+import { blobConfigurado, del, get, put } from "./_blob.mjs";
 import { lerConfigIa, provedorAtual } from "./_iaConfig.mjs";
 import { criarClienteIa, iaDisponivel } from "./_clienteIa.mjs";
 
@@ -22,7 +22,7 @@ const MAX_LICOES_NO_PROMPT = 8;
 const TIPOS_ALTERACAO = ["sentido_da_pergunta", "enfoque", "tom", "tamanho", "estrutura", "vocabulario", "fidelidade_a_fonte", "formatacao", "outro"];
 
 export function memoriaConfigurada() {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN || process.env.MEMORIA_DIR);
+  return Boolean(blobConfigurado() || process.env.MEMORIA_DIR);
 }
 
 // A lição guarda o tipo do histórico (ex.: sentinela, esboco) ou o nome da tarefa da API; o pedido traz a tarefa da API.

@@ -11,7 +11,9 @@ const API = "https://api.mercadopago.com";
 export const PIX_MINIMO = 1;
 export const PIX_MAXIMO = 500;
 const MINUTOS_VALIDADE = 30;
-const URL_AVISO = "https://www.notestyle.com.br/api/mercadopago-webhook";
+// Endereço do aviso (webhook) que vai em cada Pix. No Google Cloud (6.10.87) o site fica no Firebase e a API no Cloud Run:
+// lá a variável MERCADOPAGO_URL_AVISO traz "https://<endereço do Cloud Run>/api/mercadopago-webhook".
+const URL_AVISO = process.env.MERCADOPAGO_URL_AVISO || "https://www.notestyle.com.br/api/mercadopago-webhook";
 const PREFIXO_REFERENCIA = "ns-";
 
 export function mercadoPagoConfigurado() {

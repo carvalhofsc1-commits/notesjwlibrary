@@ -5,19 +5,28 @@
 //  - Escrita: API da Vercel, com um token em VERCEL_API_TOKEN (e VERCEL_TEAM_ID, porque o projeto é de uma equipe).
 // Sem nada disso configurado o app continua funcionando com os textos e arquivos que acompanham o código.
 // ARMAZEM_TESTE=memoria troca tudo por um Map em memória (só para testes locais).
+// Desde a 6.10.87, com HOSPEDAGEM=gcp (Google Cloud) ou HOSPEDAGEM=local (testes), cada chave vira um arquivo JSON
+// "config/armazem/<chave>.json" no mesmo armazenamento dos arquivos privados (api/_blob.mjs), com um cache curto em memória.
+import { blobConfigurado, get as blobGet, put as blobPut } from "./_blob.mjs";
 
 const memoria = new Map();
 const emTeste = () => process.env.ARMAZEM_TESTE === "memoria";
+const noBlob = () => ["gcp", "local"].includes(String(process.env.HOSPEDAGEM || "").toLowerCase());
+const arquivoDaChave = (chave) => `config/armazem/${encodeURIComponent(chave)}.json`;
+const cacheBlob = new Map(); // chave -> { em, valor }
+const VALIDADE_CACHE_MS = 15_000;
 
 function conexao() {
   return process.env.GLOBAL_CONFIG || process.env.EDGE_CONFIG || "";
 }
 
 export function leituraDisponivel() {
+  if (noBlob()) return blobConfigurado();
   return emTeste() || Boolean(conexao());
 }
 
 export function escritaDisponivel() {
+  if (noBlob()) return blobConfigurado();
   return emTeste() || Boolean(conexao() && process.env.VERCEL_API_TOKEN);
 }
 
@@ -29,6 +38,19 @@ function idDoArmazenamento() {
 // Devolve o valor guardado ou null (inclusive quando o armazenamento não está configurado ou falha).
 export async function lerItem(chave) {
   if (emTeste()) return memoria.has(chave) ? memoria.get(chave) : null;
+  if (noBlob()) {
+    const guardado = cacheBlob.get(chave);
+    if (guardado && Date.now() - guardado.em < VALIDADE_CACHE_MS) return guardado.valor;
+    try {
+      const r = await blobGet(arquivoDaChave(chave), { access: "private", useCache: false });
+      const valor = r && r.statusCode === 200 ? JSON.parse(await new Response(r.stream).text()) : null;
+      cacheBlob.set(chave, { em: Date.now(), valor });
+      return valor;
+    } catch (e) {
+      console.error("Falha ao ler a configuração no armazenamento:", e && e.message);
+      return null;
+    }
+  }
 
   const texto = conexao();
   if (!texto) return null;
@@ -52,6 +74,11 @@ export async function lerItem(chave) {
 export async function gravarItem(chave, valor) {
   if (emTeste()) {
     memoria.set(chave, valor);
+    return;
+  }
+  if (noBlob()) {
+    await blobPut(arquivoDaChave(chave), JSON.stringify(valor), { access: "private", contentType: "application/json", allowOverwrite: true, addRandomSuffix: false, cacheControlMaxAge: 0 });
+    cacheBlob.set(chave, { em: Date.now(), valor });
     return;
   }
 
@@ -102,6 +129,7 @@ export async function gravarItem(chave, valor) {
 // Resumo, sem segredos, do que o token de escrita enxerga: dono, escopos, função na equipe e se vê o armazenamento.
 // Serve para entender uma recusa de permissão ao gravar; só é mostrado ao administrador, na mensagem de erro.
 export async function diagnosticar() {
+  if (noBlob()) return `armazenamento ${process.env.HOSPEDAGEM} (${blobConfigurado() ? "configurado" : "sem GCS_BUCKET"})`;
   const token = process.env.VERCEL_API_TOKEN;
   const id = idDoArmazenamento();
   const equipe = process.env.VERCEL_TEAM_ID;

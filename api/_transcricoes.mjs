@@ -5,7 +5,7 @@
 // <aparelho> é um resumo (SHA-256) do identificador do aparelho: o identificador em si não aparece no caminho.
 // TRANSCRICOES_DIR (só para testes no computador) troca o Blob por uma pasta local.
 import { createHash, randomUUID } from "node:crypto";
-import { del, get, put } from "@vercel/blob";
+import { blobConfigurado, del, get, put } from "./_blob.mjs";
 
 const MAX_ITENS = 200;
 const MAX_TEXTO = 400_000; // caracteres (várias horas de fala)
@@ -14,7 +14,7 @@ const ID_VALIDO = /^[0-9a-f-]{36}$/;
 const APARELHO_VALIDO = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export function transcricoesConfiguradas() {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN || process.env.TRANSCRICOES_DIR);
+  return Boolean(blobConfigurado() || process.env.TRANSCRICOES_DIR);
 }
 
 function pasta(aparelhoId) {

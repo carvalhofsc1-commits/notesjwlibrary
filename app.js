@@ -1,4 +1,14 @@
 
+    // Endereço da API (6.10.87, migração ao Google Cloud): vazio = a API do próprio site (/api/…, como na Vercel). Com o site no Firebase Hosting,
+    // a marca <meta name="notestyle-api"> do index.html traz o endereço do Cloud Run, e o app chama a API lá (o servidor libera o CORS).
+    const API_BASE = (() => {
+      const marca = document.querySelector('meta[name="notestyle-api"]');
+      const valor = marca ? String(marca.content || '').trim().replace(/\/+$/, '') : '';
+      if (!valor || !/^https:\/\//i.test(valor)) return '';
+      try { return new URL(valor).origin === location.origin ? '' : valor; } catch (e) { return ''; }
+    })();
+    const apiUrl = caminho => API_BASE + caminho;
+
     // ---------- Telas: Início, Formatar, Reuniões, Backup e Ajustes ----------
     // É um app só: a tela escolhida (guardada no endereço, ex.: #reunioes) mostra os blocos dela e esconde os outros.
     // Formatar e Reuniões dividem o mesmo campo de texto. O app sempre abre no Início; ao recarregar a página, o endereço
@@ -3834,7 +3844,7 @@
     // O texto do campo (ou o trecho selecionado) vira letras comuns, sem emojis e símbolos, e vai em partes ao servidor,
     // que pede o áudio à voz do Google (api/voz.mjs). As partes tocam em sequência; a seguinte já é pedida enquanto a
     // atual toca. O áudio de cada parte fica guardado nesta sessão: ouvir de novo não gasta créditos.
-    const VOZ_ENDPOINT = '/api/voz';
+    const VOZ_ENDPOINT = apiUrl('/api/voz');
     const VOZ_SPEED_KEY = 'jwLibraryNoteAplicarVozVelocidadeV1';
     const VOZ_ESPERA_KEY = 'jwLibraryNoteAplicarVozEsperaV1';
     function vozTempoEsperaPadrao() {
@@ -7898,7 +7908,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.10.86'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.87'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -11473,7 +11483,7 @@ function saveTemplatesToStorage() {
     templateCategoryFilter.addEventListener('change', renderTemplates);
 
     // ---------- Administrador: chamadas ao servidor e página de prompts da IA ----------
-    const CONFIG_ENDPOINT = '/api/config';
+    const CONFIG_ENDPOINT = apiUrl('/api/config');
     // Identificador anônimo deste aparelho (estatísticas de acesso e uso da IA). Sem nome; só separa um celular do outro.
     const APARELHO_ID_KEY = 'jwLibraryNoteAplicarAparelhoIdV1';
     function aparelhoId() {
@@ -12354,7 +12364,7 @@ function saveTemplatesToStorage() {
     let pixCreditoDisponivel = null; // null = ainda não perguntou ao servidor
     async function pixCreditoPost(corpo) {
       try {
-        const resposta = await fetch('/api/mercadopago', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ aparelhoId: aparelhoId(), ...corpo }) });
+        const resposta = await fetch(apiUrl('/api/mercadopago'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ aparelhoId: aparelhoId(), ...corpo }) });
         let data = null;
         try { data = await resposta.json(); } catch (e) { /* sem JSON */ }
         return { ok: resposta.ok && !!data, status: resposta.status, data };
@@ -14455,7 +14465,7 @@ function saveTemplatesToStorage() {
     const aiSection = document.getElementById('aiSection');
     const aiInstruction = document.getElementById('aiInstruction');
     const aiOptionInputs = Array.from(document.querySelectorAll('[data-ai-opt]'));
-    const AI_ENDPOINT = '/api/sugerir-formatacao';
+    const AI_ENDPOINT = apiUrl('/api/sugerir-formatacao');
     // Com a senha de administrador salva no aparelho, o pedido a leva junto: só assim o servidor usa a memória de lições do piloto.
     function corpoIa(payload) {
       const admin = senhaAdminSalva();
@@ -21887,7 +21897,7 @@ function saveTemplatesToStorage() {
     // O texto do dia (pelo calendário deste aparelho) vem do wol.jw.org pelo servidor (api/texto-diario.mjs), com o código
     // de acesso. Como no JW Library, aparecem a data e o texto temático; um toque abre o comentário, com os botões de
     // ouvir tudo e de levar o texto para o campo de texto. Os textos já vistos ficam só na memória desta sessão.
-    const TD_ENDPOINT = '/api/texto-diario';
+    const TD_ENDPOINT = apiUrl('/api/texto-diario');
     const td = {
       abrir: document.getElementById('tdAbrir'),
       data: document.getElementById('tdData'),
@@ -23847,7 +23857,7 @@ function saveTemplatesToStorage() {
         if (trAparelho) corpo.aparelhoId = trAparelho;
         const trAdmin = senhaAdminSalva();
         if (trAdmin) corpo.codigoAdmin = trAdmin;
-        const resposta = await fetch('/api/transcrever', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo), signal: sinal });
+        const resposta = await fetch(apiUrl('/api/transcrever'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo), signal: sinal });
         let dados = null;
         try { dados = await resposta.json(); } catch (e) { /* resposta sem JSON */ }
         return { ok: resposta.ok && Boolean(dados), status: resposta.status, dados };

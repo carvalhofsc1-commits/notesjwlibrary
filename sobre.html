@@ -3,6 +3,8 @@
 
 <head>
   <meta charset="utf-8">
+  <!-- Endereço da API (vazio = a do próprio site). Na virada para o Google Cloud recebe o endereço do Cloud Run (ex.: https://notestyle-xxxxx-rj.a.run.app). -->
+  <meta name="notestyle-api" content="">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Sobre — NoteStyle</title>
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -422,7 +424,7 @@
     <img src="icon-header.png?v=3" alt="" class="about-logo" width="512" height="512" decoding="async">
     <h1 class="about-name">Note<span class="brand-accent">Style</span></h1>
     <p class="about-site"><a href="https://www.notestyle.com.br">www.notestyle.com.br</a></p>
-    <span class="pill">v6.10.86</span>
+    <span class="pill">v6.10.87</span>
 
     <p class="about-text">O NoteStyle ajuda você a preparar notas, reuniões e o estudo pessoal: acompanha a leitura
       diária da Bíblia (com o áudio dos capítulos), formata textos com destaques, apoia a preparação de comentários,
@@ -623,13 +625,20 @@
 
       // "Convidar alguém" só aparece para usuário cadastrado (o administrador também precisa estar cadastrado). O servidor diz se este aparelho está identificado;
       // sem conexão vale o último resultado guardado aqui.
+      // Endereço da API (6.10.87): o mesmo do app (marca <meta name="notestyle-api">; vazio = a API do próprio site).
+      var apiConfig = (function () {
+        var marca = document.querySelector('meta[name="notestyle-api"]');
+        var valor = marca ? String(marca.content || '').trim().replace(/\/+$/, '') : '';
+        if (!valor || !/^https:\/\//i.test(valor)) return '/api/config';
+        try { return new URL(valor).origin === location.origin ? '/api/config' : valor + '/api/config'; } catch (e) { return '/api/config'; }
+      })();
       var CHAVE_CADASTRADO = 'jwLibraryNoteSobreCadastradoV1';
       function mostrarConvite(sim) { secao.hidden = !sim; }
       mostrarConvite(guardado(CHAVE_CADASTRADO) === '1');
       (function () {
         var id = guardado('jwLibraryNoteAplicarAparelhoIdV1');
         if (!id) return;
-        fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ acao: 'acesso-site-estado', aparelhoId: id }) })
+        fetch(apiConfig, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ acao: 'acesso-site-estado', aparelhoId: id }) })
           .then(function (r) { return r.ok ? r.json() : null; })
           .then(function (d) {
             if (!d) return;
@@ -650,7 +659,7 @@
       }
       function liberar() { pronto = true; salvarBtn.disabled = false; restaurarBtn.disabled = false; }
       function chamar(corpo) {
-        return fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) })
+        return fetch(apiConfig, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) })
           .then(function (r) {
             return r.json().catch(function () { return null; }).then(function (dados) { return { ok: r.ok && !!dados, status: r.status, dados: dados }; });
           });

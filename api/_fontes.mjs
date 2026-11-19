@@ -6,7 +6,7 @@
 // pedidos. Cada instância do servidor baixa um arquivo uma vez e guarda o índice em memória, então a busca de um
 // versículo ou de um verbete leva milissegundos (antes a IA abria os arquivos num ambiente de execução de código, o
 // que levava dezenas de segundos).
-import { get } from "@vercel/blob";
+import { blobConfigurado, get } from "./_blob.mjs";
 
 const ARQUIVOS = {
   biblia: "fontes/biblia.txt",
@@ -24,7 +24,7 @@ const MAX_CHARS_VERSICULOS = 1200;
 const MAX_CHARS_TRECHO_VERBETE = 2500;
 
 export function fontesConfiguradas() {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN || process.env.FONTES_DIR);
+  return Boolean(blobConfigurado() || process.env.FONTES_DIR);
 }
 
 const textos = new Map(); // caminho -> Promise<string>

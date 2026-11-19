@@ -1,0 +1,9 @@
+.git
+.claude
+.vercel
+.env*
+.dados-local
+node_modules
+lojas
+avaliacao
+ferramentas

@@ -3,7 +3,7 @@
 // Dados no Vercel Blob PRIVADO: "estatisticas/acesso-site.json".
 // ACESSO_SITE_DIR (só testes locais) troca o Blob por uma pasta.
 import { randomBytes, randomUUID } from "node:crypto";
-import { get, put } from "@vercel/blob";
+import { blobConfigurado, get, put } from "./_blob.mjs";
 import { codigoDoDirigente, textosIguais } from "./_comum.mjs";
 import { aparelhoIdLimpo, mapaPerfilAparelhos } from "./_estatisticas.mjs";
 
@@ -24,7 +24,7 @@ export const CREDITO_BOAS_VINDAS_PADRAO = 100; // R$ que cada usuário recebe ao
 const PREFIXO_CODIGO = { pesquisa: "PES", dirigente: "DIR", leitura: "LEI", texto: "AUD", resumo: "RES", s34: "S34" };
 
 export function acessoSiteConfigurado() {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN || process.env.ACESSO_SITE_DIR || process.env.ESTATISTICAS_DIR);
+  return Boolean(blobConfigurado() || process.env.ACESSO_SITE_DIR || process.env.ESTATISTICAS_DIR);
 }
 
 function agoraIso() {
