@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.93
+
+- Migração (teste no Firebase antes da virada): a marca `<meta name="notestyle-api">` (index.html e sobre.html) ganhou `data-firebase` com o endereço do Cloud Run. Com o `content` vazio, só os endereços de teste do Firebase (`*.web.app`, `*.firebaseapp.com`) chamam a API no Cloud Run; o site na Vercel (`www.notestyle.com.br`) continua com a própria API até a virada, quando o `content` recebe o endereço. No Cloud Run, `ORIGENS_PERMITIDAS` passou a incluir `notestyle-512212.web.app` e `notestyle-512212.firebaseapp.com`.
+
 ## 6.10.92
 
 - Firebase Hosting (`firebase.json`): a regra que deixava de fora todos os arquivos ocultos (`**/.*`) também tirava a pasta `.well-known` (o `assetlinks.json` do app Android). Agora os ocultos sigilosos são listados um a um (`.env*`, `.git`, `.claude`, `.dados-local`, `.vercel`, `*ignore`) e a `.well-known` é publicada. Conferido por simulação com a mesma biblioteca do Firebase: 62 arquivos, só os do site.

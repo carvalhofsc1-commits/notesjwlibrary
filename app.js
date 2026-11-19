@@ -1,9 +1,12 @@
 
     // Endereço da API (6.10.87, migração ao Google Cloud): vazio = a API do próprio site (/api/…, como na Vercel). Com o site no Firebase Hosting,
     // a marca <meta name="notestyle-api"> do index.html traz o endereço do Cloud Run, e o app chama a API lá (o servidor libera o CORS).
+    // Antes da virada do domínio (6.10.93): com o content vazio, os endereços de teste do Firebase (*.web.app, *.firebaseapp.com) usam o
+    // data-firebase da marca; o site na Vercel continua com a própria API. Na virada, o content recebe o endereço do Cloud Run.
     const API_BASE = (() => {
       const marca = document.querySelector('meta[name="notestyle-api"]');
-      const valor = marca ? String(marca.content || '').trim().replace(/\/+$/, '') : '';
+      const testeFirebase = /\.(web\.app|firebaseapp\.com)$/i.test(location.hostname);
+      const valor = marca ? String(marca.content || (testeFirebase ? marca.dataset.firebase : '') || '').trim().replace(/\/+$/, '') : '';
       if (!valor || !/^https:\/\//i.test(valor)) return '';
       try { return new URL(valor).origin === location.origin ? '' : valor; } catch (e) { return ''; }
     })();
@@ -7914,7 +7917,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.10.92'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.10.93'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 

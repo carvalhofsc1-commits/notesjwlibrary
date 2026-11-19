@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <!-- Endereço da API (vazio = a do próprio site). Na virada para o Google Cloud recebe o endereço do Cloud Run (ex.: https://notestyle-xxxxx-rj.a.run.app). -->
-  <meta name="notestyle-api" content="">
+  <meta name="notestyle-api" content="" data-firebase="https://notestyle-102438360.southamerica-east1.run.app">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Sobre — NoteStyle</title>
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -424,7 +424,7 @@
     <img src="icon-header.png?v=3" alt="" class="about-logo" width="512" height="512" decoding="async">
     <h1 class="about-name">Note<span class="brand-accent">Style</span></h1>
     <p class="about-site"><a href="https://www.notestyle.com.br">www.notestyle.com.br</a></p>
-    <span class="pill">v6.10.92</span>
+    <span class="pill">v6.10.93</span>
 
     <p class="about-text">O NoteStyle ajuda você a preparar notas, reuniões e o estudo pessoal: acompanha a leitura
       diária da Bíblia (com o áudio dos capítulos), formata textos com destaques, apoia a preparação de comentários,
@@ -628,7 +628,8 @@
       // Endereço da API (6.10.87): o mesmo do app (marca <meta name="notestyle-api">; vazio = a API do próprio site).
       var apiConfig = (function () {
         var marca = document.querySelector('meta[name="notestyle-api"]');
-        var valor = marca ? String(marca.content || '').trim().replace(/\/+$/, '') : '';
+        var testeFirebase = /\.(web\.app|firebaseapp\.com)$/i.test(location.hostname); // 6.10.93: como no app, antes da virada
+        var valor = marca ? String(marca.content || (testeFirebase ? marca.getAttribute('data-firebase') : '') || '').trim().replace(/\/+$/, '') : '';
         if (!valor || !/^https:\/\//i.test(valor)) return '/api/config';
         try { return new URL(valor).origin === location.origin ? '/api/config' : valor + '/api/config'; } catch (e) { return '/api/config'; }
       })();
