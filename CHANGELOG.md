@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.89
+
+- Migração para o Google Cloud: script `ferramentas/aprovar-cadastro.mjs`, que lista os cadastros pendentes de um servidor (padrão: o endereço do Cloud Run) e aprova ou recusa pelo terminal, com a senha de administrador digitada sem aparecer na tela. Serve para o endereço novo, onde o aparelho fica na tela de cadastro e não chega em Ajustes.
+
 ## 6.10.88
 
 - Migração para o Google Cloud: script `ferramentas/criar-segredos.mjs`, que lê um arquivo local `.env.segredos` (fora do Git) e cria ou atualiza os segredos no Secret Manager pelo gcloud, sem mostrar os valores, e no fim mostra a linha `--set-secrets` pronta para a publicação no Cloud Run.
