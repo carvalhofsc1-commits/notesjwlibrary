@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.01
+
+- Computador (tela a partir de 1180 px): sai o atalho Menu do centro da barra do topo, porque o mesmo menu já abre pelo ☰ à esquerda. Ficam seis atalhos (Início, Anotações, Pesquisas, Reuniões, Gravar e Bíblia). Abaixo de 1180 px e no celular o atalho Menu continua.
+
 ## 6.11.00
 
 - Computador (tela a partir de 1180 px): os atalhos das telas (Início, Anotações, Pesquisas, Reuniões, Gravar, Bíblia e Menu) passam para o centro da barra do topo, sem cartão próprio, e a marca NoteStyle vai para o lado direito da barra; o botão ☰ continua à esquerda. Só CSS (bloco no fim do app.css). Entre 980 e 1179 px continua como antes (atalhos num cartão logo abaixo da barra) e no celular eles seguem embaixo.

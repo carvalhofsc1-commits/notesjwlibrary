@@ -16528,7 +16528,7 @@ body[data-screen="salvas"] #secaoHistorico { display: block !important; margin: 
     height: 55px;
     margin: 0 auto;
     padding: 0;
-    grid-template-columns: repeat(7, auto);
+    grid-template-columns: repeat(6, auto);
     align-content: center;
     gap: 4px;
     background: transparent;
@@ -16542,4 +16542,6 @@ body[data-screen="salvas"] #secaoHistorico { display: block !important; margin: 
   html:not(.nav-sticky) .app-nav button,
   html:not(.nav-sticky) .app-nav button:hover { min-height: 40px; padding: 4px 12px; gap: 7px; font-size: .88rem; }
   html:not(.nav-sticky) .app-nav .nav-icon { font-size: 1.1rem; }
+  /* 6.11.01: sem o atalho Menu no centro da barra — o mesmo menu já abre pelo ☰ à esquerda. */
+  html:not(.nav-sticky) #navMenuBtn { display: none; }
 }
