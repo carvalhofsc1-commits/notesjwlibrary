@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.10.88
+
+- Migração para o Google Cloud: script `ferramentas/criar-segredos.mjs`, que lê um arquivo local `.env.segredos` (fora do Git) e cria ou atualiza os segredos no Secret Manager pelo gcloud, sem mostrar os valores, e no fim mostra a linha `--set-secrets` pronta para a publicação no Cloud Run.
+
 ## 6.10.87
 
 - Preparação da migração para o Google Cloud (sem mudar nada na Vercel): `server.mjs` (servidor do Cloud Run: site com os cabeçalhos de segurança, compactação e ETag; `/api/<nome>` chamando os mesmos handlers, com `req.body`/`req.query` como na Vercel; CORS para as origens permitidas); `api/_blob.mjs` (get/put/list/del do Vercel Blob, do Cloud Storage com `HOSPEDAGEM=gcp` ou de uma pasta com `HOSPEDAGEM=local`), usado pelos 7 módulos de arquivos; `api/_armazem.mjs` guarda as configurações do administrador em `config/armazem/<chave>.json` no bucket com `HOSPEDAGEM=gcp`; `origemPermitida` aceita endereços extras em `ORIGENS_PERMITIDAS`; o app e a página Sobre chamam a API no endereço da marca `<meta name="notestyle-api">` (vazia = o próprio site, como hoje); Dockerfile, .gcloudignore, .dockerignore, .vercelignore, firebase.json, .firebaserc e cloudbuild.yaml; scripts `ferramentas/migrar-blob.mjs` e `ferramentas/migrar-config.mjs`; dependência `@google-cloud/storage`; o endereço do aviso do Mercado Pago passa a poder vir de `MERCADOPAGO_URL_AVISO` (padrão: o atual).
