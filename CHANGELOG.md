@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.04
+
+- Início: o atalho Adoração em Família fica no lugar de Joias espirituais (página 2); Joias passa para a página 3.
+- Adoração em Família: o cadastro da família (formação, membros, circunstâncias e atividades) fica num bloco recolhível no topo, que abre sempre fechado; duração, assunto e o botão de preparar as opções ficam à vista.
+
 ## 6.11.03
 
 - Adoração em Família no celular: a tela não estoura mais a largura (rolagem horizontal). As caixas de marcar e a grade dos membros passam a caber na tela; o topo e os campos se adaptam melhor em aparelhos estreitos.

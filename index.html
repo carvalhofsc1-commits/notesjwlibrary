@@ -159,16 +159,16 @@
         <div class="atalhos-grid" id="atalhosPagina2" role="group" aria-label="Atalhos, página 2 de 3">
           <button type="button" class="atalho" data-atalho="formatar"><span class="atalho-icone" aria-hidden="true">✨</span><span class="atalho-nome">Formatar notas JW Library</span><span class="atalho-desc">Organizar e formatar o texto com a IA</span></button>
           <button type="button" class="atalho" data-atalho="sentinela"><span class="atalho-icone" aria-hidden="true">📰</span><span class="atalho-nome">A Sentinela</span><span class="atalho-desc">Respostas e comentários do estudo</span><span class="atalho-trava" hidden></span></button>
-          <button type="button" class="atalho" data-atalho="joias"><span class="atalho-icone" aria-hidden="true">💎</span><span class="atalho-nome">Joias espirituais</span><span class="atalho-desc">Leitura da semana e comentários</span><span class="atalho-trava" hidden></span></button>
+          <button type="button" class="atalho" data-atalho="familia"><span class="atalho-icone" aria-hidden="true">👨‍👩‍👧</span><span class="atalho-nome">Adoração em Família</span><span class="atalho-desc">3 opções para a noite da família</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="backup"><span class="atalho-icone" aria-hidden="true">📦</span><span class="atalho-nome">Backup do JW Library</span><span class="atalho-desc">Notas, marcações e exportação</span></button>
           <button type="button" class="atalho" data-atalho="extrato"><span class="atalho-icone" aria-hidden="true">💰</span><span class="atalho-nome">Extrato</span><span class="atalho-desc">Créditos, consumo de IA e saldo</span></button>
           <button type="button" class="atalho" data-atalho="outros"><span class="atalho-icone" aria-hidden="true">🖋️</span><span class="atalho-nome">Outros esboços</span><span class="atalho-desc">Tema livre ou esboço importado</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="ajustes"><span class="atalho-icone" aria-hidden="true">⚙️</span><span class="atalho-nome">Ajustes</span><span class="atalho-desc">Códigos, vozes, IA e preferências</span></button>
           <button type="button" class="atalho" data-atalho="historico"><span class="atalho-icone" aria-hidden="true">🗂️</span><span class="atalho-nome">Pesquisas salvas</span><span class="atalho-desc">Respostas e pesquisas guardadas</span></button>
         </div>
-        <!-- Página 3 (6.11.02): Adoração em Família, liberada pelo código de pesquisa. -->
+        <!-- Página 3: Joias espirituais (trocou de lugar com Adoração em Família na 6.11.04). -->
         <div class="atalhos-grid" id="atalhosPagina3" role="group" aria-label="Atalhos, página 3 de 3">
-          <button type="button" class="atalho" data-atalho="familia"><span class="atalho-icone" aria-hidden="true">👨‍👩‍👧</span><span class="atalho-nome">Adoração em Família</span><span class="atalho-desc">3 opções para a noite da família</span><span class="atalho-trava" hidden></span></button>
+          <button type="button" class="atalho" data-atalho="joias"><span class="atalho-icone" aria-hidden="true">💎</span><span class="atalho-nome">Joias espirituais</span><span class="atalho-desc">Leitura da semana e comentários</span><span class="atalho-trava" hidden></span></button>
         </div>
         </div>
         <div class="atalhos-nav" id="atalhosNav">
@@ -2818,61 +2818,69 @@
       </div>
       <p class="hint">Prepare a noite da família: o perfil fica só neste aparelho (apelidos e ano de nascimento; a idade é calculada na hora). A IA monta 3 opções completas, com partes, textos, vídeos e cânticos.</p>
 
-      <div class="fam-bloco">
-        <h3 class="fam-bloco-titulo">🏠 Formação da família</h3>
-        <label class="fam-rotulo" for="familiaFormacao">Como é a família</label>
-        <select id="familiaFormacao" class="fam-campo">
-          <option value="">Escolha…</option>
-          <option value="Casal com filhos">Casal com filhos</option>
-          <option value="Casal sem filhos">Casal sem filhos</option>
-          <option value="Família monoparental">Família monoparental</option>
-          <option value="Quem mora sozinho">Quem mora sozinho (estudo pessoal)</option>
-          <option value="Família com avós ou outros">Família com avós ou outros</option>
-        </select>
-        <label class="fam-rotulo" for="familiaAnosCasados">Anos de casados <span class="opc">(opcional)</span></label>
-        <input id="familiaAnosCasados" class="fam-campo fam-campo-curto" type="number" inputmode="numeric" min="0" max="80" placeholder="Ex.: 12" autocomplete="off">
-      </div>
+      <details id="familiaPerfilBox" class="fam-perfil-box">
+        <summary>
+          <span class="fam-perfil-titulo">👤 Cadastro da família</span>
+          <span id="familiaPerfilResumo" class="fam-perfil-resumo"></span>
+        </summary>
+        <div class="fam-perfil-corpo">
+          <div class="fam-bloco">
+            <h3 class="fam-bloco-titulo">🏠 Formação da família</h3>
+            <label class="fam-rotulo" for="familiaFormacao">Como é a família</label>
+            <select id="familiaFormacao" class="fam-campo">
+              <option value="">Escolha…</option>
+              <option value="Casal com filhos">Casal com filhos</option>
+              <option value="Casal sem filhos">Casal sem filhos</option>
+              <option value="Família monoparental">Família monoparental</option>
+              <option value="Quem mora sozinho">Quem mora sozinho (estudo pessoal)</option>
+              <option value="Família com avós ou outros">Família com avós ou outros</option>
+            </select>
+            <label class="fam-rotulo" for="familiaAnosCasados">Anos de casados <span class="opc">(opcional)</span></label>
+            <input id="familiaAnosCasados" class="fam-campo fam-campo-curto" type="number" inputmode="numeric" min="0" max="80" placeholder="Ex.: 12" autocomplete="off">
+          </div>
 
-      <div class="fam-bloco">
-        <h3 class="fam-bloco-titulo">👤 Membros <span class="opc">(apelido, papel e ano de nascimento)</span></h3>
-        <p class="hint fam-dica">Use só apelidos (ex.: Pai, Ana, Pedrinho). O app calcula a idade e nunca envia a data de nascimento.</p>
-        <div id="familiaMembros" class="fam-membros"></div>
-        <button id="familiaMembroAdd" class="secondary fam-fino" type="button">➕ Adicionar membro</button>
-      </div>
+          <div class="fam-bloco">
+            <h3 class="fam-bloco-titulo">👤 Membros <span class="opc">(apelido, papel e ano de nascimento)</span></h3>
+            <p class="hint fam-dica">Use só apelidos (ex.: Pai, Ana, Pedrinho). O app calcula a idade e nunca envia a data de nascimento.</p>
+            <div id="familiaMembros" class="fam-membros"></div>
+            <button id="familiaMembroAdd" class="secondary fam-fino" type="button">➕ Adicionar membro</button>
+          </div>
 
-      <div class="fam-bloco">
-        <h3 class="fam-bloco-titulo">💛 Circunstâncias <span class="opc">(opcional; trate com tato)</span></h3>
-        <p class="hint fam-dica">Marque só o que ajudar a adaptar a noite. Nada disso fica no servidor.</p>
-        <div id="familiaCircunstancias" class="fam-checks" role="group" aria-label="Circunstâncias">
-          <label class="fam-check"><input type="checkbox" value="Ansiedade ou desânimo"><span>Ansiedade ou desânimo</span></label>
-          <label class="fam-check"><input type="checkbox" value="Bullying ou dificuldades na escola"><span>Bullying ou dificuldades na escola</span></label>
-          <label class="fam-check"><input type="checkbox" value="Doença na família"><span>Doença na família</span></label>
-          <label class="fam-check"><input type="checkbox" value="Luto"><span>Luto</span></label>
-          <label class="fam-check"><input type="checkbox" value="Dificuldades financeiras"><span>Dificuldades financeiras</span></label>
-          <label class="fam-check"><input type="checkbox" value="Problemas no casamento"><span>Problemas no casamento</span></label>
-          <label class="fam-check"><input type="checkbox" value="Parente que não serve a Jeová"><span>Parente que não serve a Jeová</span></label>
-          <label class="fam-check"><input type="checkbox" value="Filho adolescente"><span>Filho adolescente</span></label>
-          <label class="fam-check"><input type="checkbox" value="Criança pequena"><span>Criança pequena</span></label>
+          <div class="fam-bloco">
+            <h3 class="fam-bloco-titulo">💛 Circunstâncias <span class="opc">(opcional; trate com tato)</span></h3>
+            <p class="hint fam-dica">Marque só o que ajudar a adaptar a noite. Nada disso fica no servidor.</p>
+            <div id="familiaCircunstancias" class="fam-checks" role="group" aria-label="Circunstâncias">
+              <label class="fam-check"><input type="checkbox" value="Ansiedade ou desânimo"><span>Ansiedade ou desânimo</span></label>
+              <label class="fam-check"><input type="checkbox" value="Bullying ou dificuldades na escola"><span>Bullying ou dificuldades na escola</span></label>
+              <label class="fam-check"><input type="checkbox" value="Doença na família"><span>Doença na família</span></label>
+              <label class="fam-check"><input type="checkbox" value="Luto"><span>Luto</span></label>
+              <label class="fam-check"><input type="checkbox" value="Dificuldades financeiras"><span>Dificuldades financeiras</span></label>
+              <label class="fam-check"><input type="checkbox" value="Problemas no casamento"><span>Problemas no casamento</span></label>
+              <label class="fam-check"><input type="checkbox" value="Parente que não serve a Jeová"><span>Parente que não serve a Jeová</span></label>
+              <label class="fam-check"><input type="checkbox" value="Filho adolescente"><span>Filho adolescente</span></label>
+              <label class="fam-check"><input type="checkbox" value="Criança pequena"><span>Criança pequena</span></label>
+            </div>
+            <label class="fam-rotulo" for="familiaOutrasCirc">Outras circunstâncias <span class="opc">(opcional)</span></label>
+            <textarea id="familiaOutrasCirc" class="fam-campo" rows="2" maxlength="500" spellcheck="true" placeholder="Ex.: mudança recente, pressão no trabalho…"></textarea>
+          </div>
+
+          <div class="fam-bloco">
+            <h3 class="fam-bloco-titulo">🎨 Atividades que a família aceita</h3>
+            <p class="hint fam-dica">Cântico, oração, leitura da Bíblia e conversa sempre podem entrar. Marque o que mais a família gosta.</p>
+            <div id="familiaAtividades" class="fam-checks" role="group" aria-label="Atividades">
+              <label class="fam-check"><input type="checkbox" value="Dramatização ou encenação" checked><span>Dramatização ou encenação</span></label>
+              <label class="fam-check"><input type="checkbox" value="Desenho ou artesanato" checked><span>Desenho ou artesanato</span></label>
+              <label class="fam-check"><input type="checkbox" value="Jogos ou adivinhas" checked><span>Jogos ou adivinhas</span></label>
+              <label class="fam-check"><input type="checkbox" value="Vídeo do jw.org" checked><span>Vídeo do jw.org</span></label>
+              <label class="fam-check"><input type="checkbox" value="Estudo pessoal" checked><span>Estudo pessoal</span></label>
+              <label class="fam-check"><input type="checkbox" value="Preparação para as reuniões" checked><span>Preparação para as reuniões</span></label>
+              <label class="fam-check"><input type="checkbox" value="Treino dos cânticos" checked><span>Treino dos cânticos</span></label>
+              <label class="fam-check"><input type="checkbox" value="Caminhada ou atividade ao ar livre"><span>Caminhada ou atividade ao ar livre</span></label>
+              <label class="fam-check"><input type="checkbox" value="Cozinhar juntos"><span>Cozinhar juntos</span></label>
+            </div>
+          </div>
         </div>
-        <label class="fam-rotulo" for="familiaOutrasCirc">Outras circunstâncias <span class="opc">(opcional)</span></label>
-        <textarea id="familiaOutrasCirc" class="fam-campo" rows="2" maxlength="500" spellcheck="true" placeholder="Ex.: mudança recente, pressão no trabalho…"></textarea>
-      </div>
-
-      <div class="fam-bloco">
-        <h3 class="fam-bloco-titulo">🎨 Atividades que a família aceita</h3>
-        <p class="hint fam-dica">Cântico, oração, leitura da Bíblia e conversa sempre podem entrar. Marque o que mais a família gosta.</p>
-        <div id="familiaAtividades" class="fam-checks" role="group" aria-label="Atividades">
-          <label class="fam-check"><input type="checkbox" value="Dramatização ou encenação" checked><span>Dramatização ou encenação</span></label>
-          <label class="fam-check"><input type="checkbox" value="Desenho ou artesanato" checked><span>Desenho ou artesanato</span></label>
-          <label class="fam-check"><input type="checkbox" value="Jogos ou adivinhas" checked><span>Jogos ou adivinhas</span></label>
-          <label class="fam-check"><input type="checkbox" value="Vídeo do jw.org" checked><span>Vídeo do jw.org</span></label>
-          <label class="fam-check"><input type="checkbox" value="Estudo pessoal" checked><span>Estudo pessoal</span></label>
-          <label class="fam-check"><input type="checkbox" value="Preparação para as reuniões" checked><span>Preparação para as reuniões</span></label>
-          <label class="fam-check"><input type="checkbox" value="Treino dos cânticos" checked><span>Treino dos cânticos</span></label>
-          <label class="fam-check"><input type="checkbox" value="Caminhada ou atividade ao ar livre"><span>Caminhada ou atividade ao ar livre</span></label>
-          <label class="fam-check"><input type="checkbox" value="Cozinhar juntos"><span>Cozinhar juntos</span></label>
-        </div>
-      </div>
+      </details>
 
       <div class="fam-bloco">
         <h3 class="fam-bloco-titulo">⏱️ Duração e assunto</h3>

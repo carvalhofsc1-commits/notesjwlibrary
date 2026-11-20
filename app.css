@@ -16577,6 +16577,55 @@ body[data-screen="familia"] :is(.screen-inicio, .screen-editor, .screen-formatar
 }
 .fam-topo button { width: auto; min-height: 38px; padding: 0 14px; margin: 0; justify-self: start; }
 .fam-titulo { margin: 0; font-size: 1.15rem; line-height: 1.25; min-width: 0; overflow-wrap: anywhere; }
+/* Cadastro da família: bloco recolhível no topo (abre sempre fechado ao entrar na tela). */
+.fam-perfil-box {
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.fam-perfil-box > summary {
+  cursor: pointer;
+  list-style: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px 10px;
+  min-height: 44px;
+  padding: 10px 12px;
+  font-size: .95rem;
+  font-weight: 600;
+}
+.fam-perfil-box > summary::-webkit-details-marker { display: none; }
+.fam-perfil-box > summary::after {
+  content: "▾";
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  font-size: .85em;
+  opacity: .7;
+  transition: transform .2s;
+}
+.fam-perfil-box[open] > summary::after { transform: rotate(180deg); }
+.fam-perfil-box[open] > summary { border-bottom: 1px solid var(--line); }
+.fam-perfil-titulo { min-width: 0; overflow-wrap: anywhere; }
+.fam-perfil-resumo {
+  grid-column: 1;
+  font-size: .82rem;
+  font-weight: 500;
+  color: var(--muted, #666);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.fam-perfil-resumo:empty { display: none; }
+.fam-perfil-corpo {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+  min-width: 0;
+}
 .fam-bloco {
   display: grid;
   gap: 8px;
