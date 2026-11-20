@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.08
+
+- Adoração em Família: a escolha de cânticos passa para dentro de "Atividades que a família aceita", separada em "Cântico inicial" e "Cântico final".
+
 ## 6.11.07
 
 - Adoração em Família: desmarcar todas as atividades extras passa a ficar salvo ao reabrir o app; na primeira abertura (com o cadastro da família recolhido), o resumo do cabeçalho já aparece preenchido; o perfil entra separado em Ajustes → O que está guardado neste aparelho; rótulo de Circunstâncias simplificado para "(opcional)" sem a frase auxiliar e com 6 novas opções (desânimo espiritual, falta de ânimo para estudos e revisitas, falta de ânimo para ministério, equilíbrio em entretenimento, equilíbrio no trabalho e comunicação na família); opção para incluir ou não cânticos inicial e final, e abertura sem designar quem fará a oração inicial.

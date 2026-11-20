@@ -2646,16 +2646,21 @@ function perfilDaFamilia(body) {
     .filter((m) => m.apelido || m.papel)
     .slice(0, MAX_MEMBROS_FAMILIA);
   const anos = body.anosCasados;
+  const atividades = textosDaLista(body.atividades, 20, 80);
+  const legadoAmbos = Boolean(body.canticosInicioFim);
+  const canticoInicial = Boolean(body.canticoInicial) || legadoAmbos || atividades.some((a) => /^c[aâ]ntico\s+inicial$/i.test(a));
+  const canticoFinal = Boolean(body.canticoFinal) || legadoAmbos || atividades.some((a) => /^c[aâ]ntico\s+final$/i.test(a));
   return {
     formacao: textoLivre(body.formacao, 80),
     membros,
     anosCasados: Number.isInteger(anos) && anos >= 0 && anos <= 80 ? anos : null,
     circunstancias: textosDaLista(body.circunstancias, 20, 80),
     outrasCircunstancias: textoLivre(body.outrasCircunstancias, 500),
-    atividades: textosDaLista(body.atividades, 20, 80),
+    atividades,
     duracao: DURACOES_ADORACAO.includes(Number(body.duracao)) ? Number(body.duracao) : 45,
     assunto: textoLivre(body.assunto, 300),
-    canticosInicioFim: Boolean(body.canticosInicioFim),
+    canticoInicial,
+    canticoFinal,
   };
 }
 
@@ -2703,7 +2708,8 @@ async function responderAdoracaoFamilia(res, body, P) {
   if (!perfil.formacao && !perfil.membros.length) return erro(res, 400, "Descreva a família: a formação e os membros.");
   precarregarFontes({ biblia: true });
   const consulta = perfil.assunto.length >= 8 ? perfil.assunto : perfil.assunto ? perfil.assunto + " família" : "";
-  const usaCanticos = perfil.canticosInicioFim || perfil.atividades.some((a) => /c[aâ]ntico/i.test(a));
+  const usaCanticos = perfil.canticoInicial || perfil.canticoFinal || perfil.atividades.some((a) => /c[aâ]ntico/i.test(a));
+  const atividadesGerais = perfil.atividades.filter((a) => !/^c[aâ]ntico\s+(inicial|final)$/i.test(a));
   const [canticos, catalogo, materias] = await Promise.all([
     usaCanticos ? lerCanticos().catch(() => null) : Promise.resolve(null),
     catalogoDeVideos(12000).catch(() => []),
@@ -2721,8 +2727,9 @@ async function responderAdoracaoFamilia(res, body, P) {
     `MEMBROS (apelido, papel e idade):\n${membros || "- não informados"}\n` +
     (perfil.anosCasados !== null ? `ANOS DE CASADOS: ${perfil.anosCasados}\n` : "") +
     (circunstancias.length ? `CIRCUNSTÂNCIAS QUE O CHEFE QUIS INFORMAR (trate com tato, nunca exponha ninguém):\n${circunstancias.map((c) => `- ${c}`).join("\n")}\n` : "") +
-    `ATIVIDADES QUE A FAMÍLIA ACEITA (além de oração, leitura da Bíblia e conversa): ${perfil.atividades.length ? perfil.atividades.join("; ") : "só essas"}\n` +
-    `CÂNTICOS INICIAL E FINAL: ${perfil.canticosInicioFim ? "SIM (inclua cântico na abertura e no encerramento)" : "NÃO (não inclua cântico inicial nem final)"}\n` +
+    `ATIVIDADES QUE A FAMÍLIA ACEITA (além de oração, leitura da Bíblia e conversa): ${atividadesGerais.length ? atividadesGerais.join("; ") : "só essas"}\n` +
+    `CÂNTICO INICIAL: ${perfil.canticoInicial ? "SIM (inclua cântico na abertura)" : "NÃO (não inclua cântico na abertura)"}\n` +
+    `CÂNTICO FINAL: ${perfil.canticoFinal ? "SIM (inclua cântico no encerramento)" : "NÃO (não inclua cântico no encerramento)"}\n` +
     `DURAÇÃO TOTAL: ${perfil.duracao} minutos\n` +
     `ASSUNTO PEDIDO PARA ESTA SEMANA: ${perfil.assunto || "nenhum (escolha 3 assuntos bem diferentes, que sirvam para esta família)"}\n` +
     (materias.length
@@ -2793,7 +2800,9 @@ async function responderAdoracaoFamilia(res, body, P) {
         const nome = linha(p.nome, 80);
         if (!nome) continue;
         const ehOracaoInicial = (idxParte === 0 && /oraç[aã]o/i.test(nome)) || /oraç[aã]o\s+inicial/i.test(nome);
-        const bloquearCantico = !perfil.canticosInicioFim && (idxParte === 0 || idxParte === partesBrutas.length - 1) && !/treino/i.test(nome);
+        const bloquearInicial = !perfil.canticoInicial && idxParte === 0 && !/treino/i.test(nome);
+        const bloquearFinal = !perfil.canticoFinal && idxParte === partesBrutas.length - 1 && idxParte > 0 && !/treino/i.test(nome);
+        const bloquearCantico = bloquearInicial || bloquearFinal;
         partes.push({
           nome,
           minutos: Math.min(120, Math.max(1, Math.round(Number(p.minutos) || 0))),
