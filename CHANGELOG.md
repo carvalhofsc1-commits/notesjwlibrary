@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.09
+
+- Adoração em Família: quando a opção "Vídeo do jw.org" está marcada nas atividades da família, a IA passa a incluir obrigatoriamente pelo menos um vídeo em cada uma das 3 opções de programação.
+
 ## 6.11.08
 
 - Adoração em Família: a escolha de cânticos passa para dentro de "Atividades que a família aceita", separada em "Cântico inicial" e "Cântico final".

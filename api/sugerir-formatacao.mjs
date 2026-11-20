@@ -2650,6 +2650,7 @@ function perfilDaFamilia(body) {
   const legadoAmbos = Boolean(body.canticosInicioFim);
   const canticoInicial = Boolean(body.canticoInicial) || legadoAmbos || atividades.some((a) => /^c[aâ]ntico\s+inicial$/i.test(a));
   const canticoFinal = Boolean(body.canticoFinal) || legadoAmbos || atividades.some((a) => /^c[aâ]ntico\s+final$/i.test(a));
+  const incluirVideo = atividades.some((a) => /v[ií]deo/i.test(a));
   return {
     formacao: textoLivre(body.formacao, 80),
     membros,
@@ -2661,6 +2662,7 @@ function perfilDaFamilia(body) {
     assunto: textoLivre(body.assunto, 300),
     canticoInicial,
     canticoFinal,
+    incluirVideo,
   };
 }
 
@@ -2712,7 +2714,7 @@ async function responderAdoracaoFamilia(res, body, P) {
   const atividadesGerais = perfil.atividades.filter((a) => !/^c[aâ]ntico\s+(inicial|final)$/i.test(a));
   const [canticos, catalogo, materias] = await Promise.all([
     usaCanticos ? lerCanticos().catch(() => null) : Promise.resolve(null),
-    catalogoDeVideos(12000).catch(() => []),
+    perfil.incluirVideo ? catalogoDeVideos(12000).catch(() => []) : Promise.resolve([]),
     consulta ? pesquisarNoWol(consulta, 8000, 6).catch(() => []) : [],
   ]);
   const videos = videosParaAFamilia(catalogo || [], perfil);
@@ -2730,6 +2732,13 @@ async function responderAdoracaoFamilia(res, body, P) {
     `ATIVIDADES QUE A FAMÍLIA ACEITA (além de oração, leitura da Bíblia e conversa): ${atividadesGerais.length ? atividadesGerais.join("; ") : "só essas"}\n` +
     `CÂNTICO INICIAL: ${perfil.canticoInicial ? "SIM (inclua cântico na abertura)" : "NÃO (não inclua cântico na abertura)"}\n` +
     `CÂNTICO FINAL: ${perfil.canticoFinal ? "SIM (inclua cântico no encerramento)" : "NÃO (não inclua cântico no encerramento)"}\n` +
+    `VÍDEO DO JW.ORG: ${
+      perfil.incluirVideo
+        ? videos.length
+          ? 'OBRIGATÓRIO em TODAS as 3 opções (em CADA uma das 3 opções, inclua obrigatoriamente pelo menos 1 vídeo da lista abaixo no campo "videos" de uma das partes, pelo identificador ex.: "V3", levando a duração dele em conta nos minutos da parte)'
+          : 'marcado, mas a lista de vídeos não está disponível agora (deixe "videos" vazio)'
+        : 'NÃO (opção desmarcada; deixe "videos" vazio [] em todas as partes)'
+    }\n` +
     `DURAÇÃO TOTAL: ${perfil.duracao} minutos\n` +
     `ASSUNTO PEDIDO PARA ESTA SEMANA: ${perfil.assunto || "nenhum (escolha 3 assuntos bem diferentes, que sirvam para esta família)"}\n` +
     (materias.length
@@ -2740,9 +2749,11 @@ async function responderAdoracaoFamilia(res, body, P) {
       : canticos && canticos.length
         ? `\nCÂNTICOS DISPONÍVEIS (número. título [assunto]):\n${canticos.map((c) => `${c.numero}. ${c.titulo}${c.assunto ? ` [${c.assunto}]` : ""}`).join("\n")}\n`
         : `\nCÂNTICOS: a lista não está disponível agora. Deixe "canticos" vazio e, na descrição, fale de um cântico à escolha da família.\n`) +
-    (videos.length
-      ? `\nVÍDEOS DO JW.ORG DISPONÍVEIS (cite pelo identificador, ex.: "V3"):\n${videos.map((v, i) => `[V${i + 1}] "${v.titulo}" (${[v.duracao, v.categoria, (v.publicado || "").slice(0, 4)].filter(Boolean).join("; ")})`).join("\n")}\n`
-      : `\nVÍDEOS: a lista não está disponível agora. Deixe "videos" vazio em todas as partes.\n`);
+    (!perfil.incluirVideo
+      ? `\nVÍDEOS: a opção de vídeo está desmarcada. Deixe "videos" vazio ([]) em todas as partes.\n`
+      : videos.length
+        ? `\nVÍDEOS DO JW.ORG DISPONÍVEIS (OBRIGATÓRIO incluir pelo menos 1 vídeo em CADA uma das 3 opções, citando pelo identificador no campo "videos", ex.: "V3"; de preferência escolha vídeos diferentes entre as 3 opções):\n${videos.map((v, i) => `[V${i + 1}] "${v.titulo}" (${[v.duracao, v.categoria, (v.publicado || "").slice(0, 4)].filter(Boolean).join("; ")})`).join("\n")}\n`
+        : `\nVÍDEOS: a lista não está disponível agora. Deixe "videos" vazio em todas as partes.\n`);
   try {
     const client = criarClienteIa({ maxRetries: 0, timeout: 240_000 }, P.ia.provedorTarefa);
     const inicio = Date.now();
@@ -2809,13 +2820,23 @@ async function responderAdoracaoFamilia(res, body, P) {
           responsavel: ehOracaoInicial ? "" : linha(p.responsavel, 40),
           descricao: limparTextoGerado(p.descricao, 1500),
           textos: await textosDe(p.textos),
-          videos: semRepetir((p.videos || []).map(videoDe), (v) => v.link).slice(0, 3),
+          videos: perfil.incluirVideo ? semRepetir((p.videos || []).map(videoDe), (v) => v.link).slice(0, 3) : [],
           canticos: bloquearCantico ? [] : semRepetir((p.canticos || []).map((n) => porNumero.get(Math.round(Number(n)))), (c) => c.numero).slice(0, 3).map((c) => ({ numero: c.numero, titulo: c.titulo })),
           publicacoes: semRepetir((p.publicacoes || []).map(publicacaoDe), (x) => x.titulo.toLowerCase()).slice(0, 4),
           perguntas: (p.perguntas || []).map((q) => limparTextoGerado(q, 300)).filter(Boolean).slice(0, 5),
         });
       }
       if (!partes.length) continue;
+      if (perfil.incluirVideo && videos.length && !partes.some((p) => p.videos.length)) {
+        for (const p of partes) {
+          const citados = [...String(p.descricao || "").matchAll(/\[?V\s*(\d{1,3})\]?(?![\p{L}\d])/gi)].map((m) => videoDe(m[0]));
+          const achados = semRepetir(citados, (v) => v.link).slice(0, 3);
+          if (achados.length) {
+            p.videos = achados;
+            break;
+          }
+        }
+      }
       opcoes.push({
         titulo: linha(o.titulo, 120) || `Opção ${opcoes.length + 1}`,
         emoji: emojiDoComentario(o.emoji),
