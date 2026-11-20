@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.05
+
+- Mensagem de erro da IA: quando o teto de gastos (spend cap) do Google Cloud no Vertex AI / Gemini está ativo, o app avisa isso de forma clara (antes aparecia só "Não foi possível obter sugestões agora").
+
 ## 6.11.04
 
 - Início: o atalho Adoração em Família fica no lugar de Joias espirituais (página 2); Joias passa para a página 3.

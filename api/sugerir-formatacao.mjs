@@ -887,6 +887,15 @@ function tratarErro(e, res) {
   if (e instanceof Anthropic.APIError && e.status === 400 && /usage limits/i.test(String(e.message))) {
     return erro(res, 429, "O limite mensal de gastos da IA foi atingido. As sugestões voltam no próximo mês.");
   }
+  // Teto de gastos do Google Cloud (Budgets → Spend cap) no Vertex AI / Gemini: a API responde 403 na hora.
+  if (e && (e.status === 403 || /403/.test(String(e.message))) && /spend\s*cap/i.test(String(e.message))) {
+    console.error("Teto de gastos do Google Cloud (Vertex AI) atingido:", e?.message);
+    return erro(
+      res,
+      429,
+      "O teto de gastos da IA no Google Cloud (Vertex AI / Gemini) foi atingido. Em Faturamento → Orçamentos e alertas, libere (Lift) o spend cap do serviço aiplatform.googleapis.com ou aumente o valor; depois de alguns minutos a IA volta a responder."
+    );
+  }
   if (
     e &&
     (e.name === "TimeoutError" ||
