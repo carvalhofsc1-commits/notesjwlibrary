@@ -2816,7 +2816,7 @@
         <button id="familiaVoltar" class="secondary" type="button">◀ Voltar</button>
         <h2 id="familiaTitulo" class="fam-titulo"><span aria-hidden="true">👨‍👩‍👧</span> Adoração em Família</h2>
       </div>
-      <p class="hint">Prepare a noite da família: o perfil fica só neste aparelho (apelidos e ano de nascimento; a idade é calculada na hora). A IA monta 3 opções completas, com partes, textos, vídeos e cânticos.</p>
+      <p class="hint">Prepare a noite da família: o perfil fica só neste aparelho (apelidos e ano de nascimento; a idade é calculada na hora). A IA monta 3 opções completas, com partes, textos, vídeos e, se quiser, cânticos.</p>
 
       <details id="familiaPerfilBox" class="fam-perfil-box">
         <summary>
@@ -2847,10 +2847,15 @@
           </div>
 
           <div class="fam-bloco">
-            <h3 class="fam-bloco-titulo">💛 Circunstâncias <span class="opc">(opcional; trate com tato)</span></h3>
-            <p class="hint fam-dica">Marque só o que ajudar a adaptar a noite. Nada disso fica no servidor.</p>
+            <h3 class="fam-bloco-titulo">💛 Circunstâncias <span class="opc">(opcional)</span></h3>
             <div id="familiaCircunstancias" class="fam-checks" role="group" aria-label="Circunstâncias">
               <label class="fam-check"><input type="checkbox" value="Ansiedade ou desânimo"><span>Ansiedade ou desânimo</span></label>
+              <label class="fam-check"><input type="checkbox" value="Desânimo espiritual"><span>Desânimo espiritual</span></label>
+              <label class="fam-check"><input type="checkbox" value="Falta de ânimo para estudos e revisitas"><span>Falta de ânimo para estudos e revisitas</span></label>
+              <label class="fam-check"><input type="checkbox" value="Falta de ânimo para ministério"><span>Falta de ânimo para ministério</span></label>
+              <label class="fam-check"><input type="checkbox" value="Equilíbrio em entretenimento"><span>Equilíbrio em entretenimento</span></label>
+              <label class="fam-check"><input type="checkbox" value="Equilíbrio no trabalho"><span>Equilíbrio no trabalho</span></label>
+              <label class="fam-check"><input type="checkbox" value="Comunicação na família"><span>Comunicação na família</span></label>
               <label class="fam-check"><input type="checkbox" value="Bullying ou dificuldades na escola"><span>Bullying ou dificuldades na escola</span></label>
               <label class="fam-check"><input type="checkbox" value="Doença na família"><span>Doença na família</span></label>
               <label class="fam-check"><input type="checkbox" value="Luto"><span>Luto</span></label>
@@ -2866,7 +2871,7 @@
 
           <div class="fam-bloco">
             <h3 class="fam-bloco-titulo">🎨 Atividades que a família aceita</h3>
-            <p class="hint fam-dica">Cântico, oração, leitura da Bíblia e conversa sempre podem entrar. Marque o que mais a família gosta.</p>
+            <p class="hint fam-dica">Oração, leitura da Bíblia e conversa sempre podem entrar. Marque o que mais a família gosta.</p>
             <div id="familiaAtividades" class="fam-checks" role="group" aria-label="Atividades">
               <label class="fam-check"><input type="checkbox" value="Dramatização ou encenação" checked><span>Dramatização ou encenação</span></label>
               <label class="fam-check"><input type="checkbox" value="Desenho ou artesanato" checked><span>Desenho ou artesanato</span></label>
@@ -2893,6 +2898,7 @@
         </select>
         <label class="fam-rotulo" for="familiaAssunto">Assunto desta semana <span class="opc">(opcional)</span></label>
         <textarea id="familiaAssunto" class="fam-campo" rows="2" maxlength="300" spellcheck="true" placeholder="Ex.: o perdão; a oração; o relato do filho pródigo. Vazio = 3 assuntos bem diferentes."></textarea>
+        <label class="fam-check"><input id="familiaCanticos" type="checkbox"><span>🎵 Incluir cânticos inicial e final <span class="opc">(opcional)</span></span></label>
       </div>
 
       <div class="fam-acoes">

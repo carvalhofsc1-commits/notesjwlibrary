@@ -128,6 +128,7 @@ async function chamarIa(client, P, params, { schema = null, semPensar = false, t
     const saidaTok = saida.usage?.output_tokens || 0;
     contexto.consultasIa = (contexto.consultasIa || 0) + 1;
     contexto.modeloIa = modelo; // para o rodapé dos esboços (o modelo que elaborou de fato)
+    contexto.provedorIa = P.ia.provedorTarefa || provedorAtual();
     contexto.tokensIn = (contexto.tokensIn || 0) + entrada;
     contexto.tokensOut = (contexto.tokensOut || 0) + saidaTok;
     if (tarefa) contexto.tarefaIa = tarefa;
@@ -880,21 +881,23 @@ const SaidaSentinela = z.object({
   ),
 });
 
+function mensagemTetoDeGastos(conta) {
+  return `O teto de gastos da IA na conta atual (${conta}) foi atingido. Você pode informar o administrador sobre a situação. Também há a opção de trocar para uma conta que ainda tenha limite de gastos (opção que só o administrador pode fazer).`;
+}
+
 function tratarErro(e, res) {
   if (e instanceof Anthropic.RateLimitError) {
     return erro(res, 429, "Limite de uso da IA atingido. Tente novamente mais tarde.");
   }
   if (e instanceof Anthropic.APIError && e.status === 400 && /usage limits/i.test(String(e.message))) {
-    return erro(res, 429, "O limite mensal de gastos da IA foi atingido. As sugestões voltam no próximo mês.");
+    return erro(res, 429, mensagemTetoDeGastos("Anthropic · Claude"));
   }
   // Teto de gastos do Google Cloud (Budgets → Spend cap) no Vertex AI / Gemini: a API responde 403 na hora.
   if (e && (e.status === 403 || /403/.test(String(e.message))) && /spend\s*cap/i.test(String(e.message))) {
     console.error("Teto de gastos do Google Cloud (Vertex AI) atingido:", e?.message);
-    return erro(
-      res,
-      429,
-      "O teto de gastos da IA no Google Cloud (Vertex AI / Gemini) foi atingido. Em Faturamento → Orçamentos e alertas, libere (Lift) o spend cap do serviço aiplatform.googleapis.com ou aumente o valor; depois de alguns minutos a IA volta a responder."
-    );
+    const prov = contextoDoPedido.getStore()?.provedorIa;
+    const conta = prov === "gemini" ? "Google Cloud · Gemini" : prov === "vertex" ? "Google Cloud · Claude / Vertex AI" : "Google Cloud (Vertex AI / Gemini)";
+    return erro(res, 429, mensagemTetoDeGastos(conta));
   }
   if (
     e &&
@@ -2590,7 +2593,7 @@ const SaidaAdoracaoFamilia = z.object({
         z.object({
           nome: z.string(),
           minutos: z.number(),
-          responsavel: z.string(),
+          responsavel: z.string().nullable(),
           descricao: z.string(),
           textos: z.array(z.string()),
           videos: z.array(z.string()),
@@ -2619,7 +2622,7 @@ const SECOES_VIDEOS_FAMILIA = {
 };
 // Onde procurar os vídeos das circunstâncias (bullying, luto, doença…): só nas seções ligadas à família e à vida prática, para palavras como
 // "escola" não trazerem as escolas teocráticas.
-const SECOES_CIRCUNSTANCIAS = ["Família", "Crianças", "Adolescentes", "Entrevistas e Casos Reais", "A Bíblia › Como Aplicar Princípios Bíblicos", "Séries › Vida de Adolescente", "Séries › O Que Outros Jovens Dizem", "Séries › Como Ser Feliz no Casamento?", "Séries › Seja Feliz para Sempre! — Vídeos", "Séries › Sara e Jade"];
+const SECOES_CIRCUNSTANCIAS = ["Família", "Crianças", "Adolescentes", "Entrevistas e Casos Reais", "Nossas Reuniões e Obra de Pregação", "A Bíblia › Como Aplicar Princípios Bíblicos", "Séries › Vida de Adolescente", "Séries › O Que Outros Jovens Dizem", "Séries › Como Ser Feliz no Casamento?", "Séries › Seja Feliz para Sempre! — Vídeos", "Séries › Sara e Jade"];
 const MAX_VIDEOS_FAMILIA = 300;
 
 // Uma lista de textos curtos do pedido (circunstâncias, atividades): limpos, sem repetir e dentro dos limites.
@@ -2652,6 +2655,7 @@ function perfilDaFamilia(body) {
     atividades: textosDaLista(body.atividades, 20, 80),
     duracao: DURACOES_ADORACAO.includes(Number(body.duracao)) ? Number(body.duracao) : 45,
     assunto: textoLivre(body.assunto, 300),
+    canticosInicioFim: Boolean(body.canticosInicioFim),
   };
 }
 
@@ -2699,8 +2703,9 @@ async function responderAdoracaoFamilia(res, body, P) {
   if (!perfil.formacao && !perfil.membros.length) return erro(res, 400, "Descreva a família: a formação e os membros.");
   precarregarFontes({ biblia: true });
   const consulta = perfil.assunto.length >= 8 ? perfil.assunto : perfil.assunto ? perfil.assunto + " família" : "";
+  const usaCanticos = perfil.canticosInicioFim || perfil.atividades.some((a) => /c[aâ]ntico/i.test(a));
   const [canticos, catalogo, materias] = await Promise.all([
-    lerCanticos().catch(() => null),
+    usaCanticos ? lerCanticos().catch(() => null) : Promise.resolve(null),
     catalogoDeVideos(12000).catch(() => []),
     consulta ? pesquisarNoWol(consulta, 8000, 6).catch(() => []) : [],
   ]);
@@ -2716,15 +2721,18 @@ async function responderAdoracaoFamilia(res, body, P) {
     `MEMBROS (apelido, papel e idade):\n${membros || "- não informados"}\n` +
     (perfil.anosCasados !== null ? `ANOS DE CASADOS: ${perfil.anosCasados}\n` : "") +
     (circunstancias.length ? `CIRCUNSTÂNCIAS QUE O CHEFE QUIS INFORMAR (trate com tato, nunca exponha ninguém):\n${circunstancias.map((c) => `- ${c}`).join("\n")}\n` : "") +
-    `ATIVIDADES QUE A FAMÍLIA ACEITA (além de cântico, oração, leitura da Bíblia e conversa): ${perfil.atividades.length ? perfil.atividades.join("; ") : "só essas"}\n` +
+    `ATIVIDADES QUE A FAMÍLIA ACEITA (além de oração, leitura da Bíblia e conversa): ${perfil.atividades.length ? perfil.atividades.join("; ") : "só essas"}\n` +
+    `CÂNTICOS INICIAL E FINAL: ${perfil.canticosInicioFim ? "SIM (inclua cântico na abertura e no encerramento)" : "NÃO (não inclua cântico inicial nem final)"}\n` +
     `DURAÇÃO TOTAL: ${perfil.duracao} minutos\n` +
     `ASSUNTO PEDIDO PARA ESTA SEMANA: ${perfil.assunto || "nenhum (escolha 3 assuntos bem diferentes, que sirvam para esta família)"}\n` +
     (materias.length
       ? `\nMATÉRIAS DO WOL.JW.ORG SOBRE O ASSUNTO (cite pelo identificador, ex.: "P2"):\n${materias.map((m, i) => `[P${i + 1}] "${m.titulo}" (${m.rotulo}) — ${m.trecho.slice(0, 300)}`).join("\n")}\n`
       : "") +
-    (canticos && canticos.length
-      ? `\nCÂNTICOS DISPONÍVEIS (número. título [assunto]):\n${canticos.map((c) => `${c.numero}. ${c.titulo}${c.assunto ? ` [${c.assunto}]` : ""}`).join("\n")}\n`
-      : `\nCÂNTICOS: a lista não está disponível agora. Deixe "canticos" vazio e, na descrição, fale de um cântico à escolha da família.\n`) +
+    (!usaCanticos
+      ? `\nCÂNTICOS: o chefe optou por não incluir cânticos. Deixe "canticos" vazio ([]) em todas as partes.\n`
+      : canticos && canticos.length
+        ? `\nCÂNTICOS DISPONÍVEIS (número. título [assunto]):\n${canticos.map((c) => `${c.numero}. ${c.titulo}${c.assunto ? ` [${c.assunto}]` : ""}`).join("\n")}\n`
+        : `\nCÂNTICOS: a lista não está disponível agora. Deixe "canticos" vazio e, na descrição, fale de um cântico à escolha da família.\n`) +
     (videos.length
       ? `\nVÍDEOS DO JW.ORG DISPONÍVEIS (cite pelo identificador, ex.: "V3"):\n${videos.map((v, i) => `[V${i + 1}] "${v.titulo}" (${[v.duracao, v.categoria, (v.publicado || "").slice(0, 4)].filter(Boolean).join("; ")})`).join("\n")}\n`
       : `\nVÍDEOS: a lista não está disponível agora. Deixe "videos" vazio em todas as partes.\n`);
@@ -2779,17 +2787,21 @@ async function responderAdoracaoFamilia(res, body, P) {
     const opcoes = [];
     for (const o of resposta.parsed_output.opcoes.slice(0, 3)) {
       const partes = [];
-      for (const p of (o.partes || []).slice(0, 10)) {
+      const partesBrutas = (o.partes || []).slice(0, 10);
+      for (let idxParte = 0; idxParte < partesBrutas.length; idxParte++) {
+        const p = partesBrutas[idxParte];
         const nome = linha(p.nome, 80);
         if (!nome) continue;
+        const ehOracaoInicial = (idxParte === 0 && /oraç[aã]o/i.test(nome)) || /oraç[aã]o\s+inicial/i.test(nome);
+        const bloquearCantico = !perfil.canticosInicioFim && (idxParte === 0 || idxParte === partesBrutas.length - 1) && !/treino/i.test(nome);
         partes.push({
           nome,
           minutos: Math.min(120, Math.max(1, Math.round(Number(p.minutos) || 0))),
-          responsavel: linha(p.responsavel, 40),
+          responsavel: ehOracaoInicial ? "" : linha(p.responsavel, 40),
           descricao: limparTextoGerado(p.descricao, 1500),
           textos: await textosDe(p.textos),
           videos: semRepetir((p.videos || []).map(videoDe), (v) => v.link).slice(0, 3),
-          canticos: semRepetir((p.canticos || []).map((n) => porNumero.get(Math.round(Number(n)))), (c) => c.numero).slice(0, 3).map((c) => ({ numero: c.numero, titulo: c.titulo })),
+          canticos: bloquearCantico ? [] : semRepetir((p.canticos || []).map((n) => porNumero.get(Math.round(Number(n)))), (c) => c.numero).slice(0, 3).map((c) => ({ numero: c.numero, titulo: c.titulo })),
           publicacoes: semRepetir((p.publicacoes || []).map(publicacaoDe), (x) => x.titulo.toLowerCase()).slice(0, 4),
           perguntas: (p.perguntas || []).map((q) => limparTextoGerado(q, 300)).filter(Boolean).slice(0, 5),
         });
@@ -2803,7 +2815,10 @@ async function responderAdoracaoFamilia(res, body, P) {
         partes,
         duracaoTotal: partes.reduce((s, p) => s + p.minutos, 0),
         preparacao: (o.preparacao || []).map((t) => limparTextoGerado(t, 300)).filter(Boolean).slice(0, 8),
-        tarefas: (o.tarefas || []).map((t) => ({ membro: linha(t.membro, 40), tarefa: limparTextoGerado(t.tarefa, 400) })).filter((t) => t.tarefa).slice(0, 10),
+        tarefas: (o.tarefas || [])
+          .map((t) => ({ membro: linha(t.membro, 40), tarefa: limparTextoGerado(t.tarefa, 400) }))
+          .filter((t) => t.tarefa && !/fazer a oraç[aã]o inicial|^oraç[aã]o inicial$/i.test(t.tarefa))
+          .slice(0, 10),
         dicaParaOChefe: o.dicaParaOChefe ? limparTextoGerado(o.dicaParaOChefe, 800) : "",
       });
     }

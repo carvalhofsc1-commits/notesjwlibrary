@@ -710,6 +710,12 @@ export default async function handler(req, res) {
     return erro(res, 400, "Ação desconhecida.");
   } catch (e) {
     console.error("Transcrever: falha", corpo && corpo.acao, e?.status, e?.message);
+    if (e && (e.status === 403 || /403/.test(String(e.message))) && /spend\s*cap/i.test(String(e.message))) {
+      return erro(res, 429, "O teto de gastos da IA na conta atual (Google Cloud · Vertex AI / Gemini) foi atingido. Você pode informar o administrador sobre a situação. Também há a opção de trocar para uma conta que ainda tenha limite de gastos (opção que só o administrador pode fazer).");
+    }
+    if (e && e.status === 400 && /usage limits/i.test(String(e.message))) {
+      return erro(res, 429, "O teto de gastos da IA na conta atual (Anthropic · Claude) foi atingido. Você pode informar o administrador sobre a situação. Também há a opção de trocar para uma conta que ainda tenha limite de gastos (opção que só o administrador pode fazer).");
+    }
     if (e?.status === 403 || e?.status === 401) {
       return erro(res, 502, "O Google recusou o pedido: confira se a API Speech-to-Text está ativada e se a conta de serviço tem o papel Cliente do Cloud Speech (" + String(e.message).slice(0, 160) + ").");
     }

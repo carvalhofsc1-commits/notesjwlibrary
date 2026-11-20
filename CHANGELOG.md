@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.07
+
+- Adoração em Família: desmarcar todas as atividades extras passa a ficar salvo ao reabrir o app; na primeira abertura (com o cadastro da família recolhido), o resumo do cabeçalho já aparece preenchido; o perfil entra separado em Ajustes → O que está guardado neste aparelho; rótulo de Circunstâncias simplificado para "(opcional)" sem a frase auxiliar e com 6 novas opções (desânimo espiritual, falta de ânimo para estudos e revisitas, falta de ânimo para ministério, equilíbrio em entretenimento, equilíbrio no trabalho e comunicação na família); opção para incluir ou não cânticos inicial e final, e abertura sem designar quem fará a oração inicial.
+- Política de Privacidade (v2.2) e página Sobre: incluída a Adoração em Família e atualizada a versão exibida em Sobre.
+- Mensagem de teto de gastos da IA: texto mais curto (informa a conta atual atingida, orienta que o usuário pode avisar o administrador e lembra a opção de trocar para outra conta com limite disponível, exclusiva do administrador), exibido em letras vermelhas com moldura ao redor e sem negrito.
+
 ## 6.11.06
 
 - Adoração em Família: passa a usar o modelo e o provedor gerais de Ajustes (Anthropic / Claude ou Gemini), e não mais o modelo da resposta das pesquisas (que costuma ser Gemini). Trocar para Claude em Modelos e agentes de IA passa a valer nesta tela.

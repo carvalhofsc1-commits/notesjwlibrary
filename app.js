@@ -7921,7 +7921,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.06'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.07'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -9609,6 +9609,34 @@
       });
       adicionar('📝', 'Anotações (reunião, assembleia e congresso)', [ANOTACOES_DADOS_KEY, ANOTACOES_PROG_KEY], nAnotItens || (bruto(ANOTACOES_DADOS_KEY) || bruto(ANOTACOES_PROG_KEY) ? 1 : 0), ['item', 'itens'],
         bruto(ANOTACOES_PROG_KEY) ? 'com lista de programas da WOL' : '', datasAnot);
+
+      const FAMILIA_DADOS_KEY = 'jwLibraryNoteAplicarFamiliaPerfilV1';
+      const famDados = objeto(FAMILIA_DADOS_KEY);
+      const nFamMembros = Array.isArray(famDados.membros) ? famDados.membros.length : 0;
+      if (bruto(FAMILIA_DADOS_KEY)) {
+        usadas.add(FAMILIA_DADOS_KEY);
+        grupos.push({
+          icone: '👨‍👩‍👧',
+          nome: 'Perfil da Adoração em Família',
+          texto: nFamMembros ? nFamMembros + (nFamMembros === 1 ? ' membro' : ' membros') : '1 perfil',
+          bytes: bytes(FAMILIA_DADOS_KEY),
+          periodo: '',
+          detalhe: famDados.formacao || '',
+          chaves: [FAMILIA_DADOS_KEY],
+          apagar: async () => {
+            try { localStorage.removeItem(FAMILIA_DADOS_KEY); } catch (e) { /* sem localStorage */ }
+            familiaFormacaoEl.value = '';
+            familiaAnosCasadosEl.value = '';
+            familiaOutrasCircEl.value = '';
+            familiaAssuntoEl.value = '';
+            familiaDuracaoEl.value = '45';
+            if (familiaCanticosEl) familiaCanticosEl.checked = false;
+            document.querySelectorAll('#familiaCircunstancias input[type="checkbox"], #familiaAtividades input[type="checkbox"]').forEach(el => { el.checked = el.defaultChecked; });
+            familiaMembrosEl.innerHTML = '';
+            familiaPerfilCarregar();
+          }
+        });
+      }
 
       const codigos = [['jwLibraryNoteAplicarStudyCodeV1', 'código de pesquisa'], ['jwLibraryNoteAplicarDirigenteCodeV1', 'código do dirigente'], ['jwLibraryNoteAplicarAdminSenhaV1', 'senha de administrador']].filter(([chave]) => bruto(chave));
       adicionar('🔑', 'Códigos e senha', codigos.map(([chave]) => chave), codigos.length, ['salvo', 'salvos'], codigos.map(([, nome]) => nome).join(' · '), []);
@@ -14604,14 +14632,23 @@ function saveTemplatesToStorage() {
               : aiStatus;
     }
 
+    const ehErroTeto = msg => /teto de gastos da IA/i.test(String(msg || ''));
+
     function setAiStatus(message, isWarning) {
       const target = aiStatusElement();
       aiStatusElements().forEach(el => {
-        if (el !== target) el.textContent = '';
+        if (el !== target) { el.textContent = ''; el.classList.remove('msg-teto'); }
       });
       target.textContent = message;
-      target.className = isWarning ? 'warn' : 'ok';
+      target.className = (isWarning ? 'warn' : 'ok') + (isWarning && ehErroTeto(message) ? ' msg-teto' : '');
     }
+
+    ['tdIaStatus', 'transcricaoInfo', 'transcricaoNomesInfo'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && typeof MutationObserver === 'function') {
+        new MutationObserver(() => el.classList.toggle('msg-teto', ehErroTeto(el.textContent))).observe(el, { childList: true, characterData: true, subtree: true });
+      }
+    });
 
     // Lista "Todas" + as categorias de modelos atuais, mantendo a escolha salva (ou voltando a "Todas" se ela sumiu).
     function renderAiCategoryOptions(selected) {
@@ -25501,6 +25538,7 @@ function saveTemplatesToStorage() {
     const familiaOutrasCircEl = document.getElementById('familiaOutrasCirc');
     const familiaDuracaoEl = document.getElementById('familiaDuracao');
     const familiaAssuntoEl = document.getElementById('familiaAssunto');
+    const familiaCanticosEl = document.getElementById('familiaCanticos');
     const familiaStatusEl = document.getElementById('familiaStatus');
     const familiaResultadoEl = document.getElementById('familiaResultado');
     const familiaGerarBtn = document.getElementById('familiaGerarBtn');
@@ -25583,7 +25621,8 @@ function saveTemplatesToStorage() {
         outrasCircunstancias: (familiaOutrasCircEl.value || '').trim().slice(0, 500),
         atividades: familiaChecksLidos(document.getElementById('familiaAtividades')),
         duracao: Number(familiaDuracaoEl.value) || 45,
-        assunto: (familiaAssuntoEl.value || '').trim().slice(0, 300)
+        assunto: (familiaAssuntoEl.value || '').trim().slice(0, 300),
+        canticosInicioFim: Boolean(familiaCanticosEl && familiaCanticosEl.checked)
       };
     }
 
@@ -25607,17 +25646,20 @@ function saveTemplatesToStorage() {
       let salvo = null;
       try { salvo = JSON.parse(localStorage.getItem(FAMILIA_PERFIL_KEY) || 'null'); } catch (e) { salvo = null; }
       if (!salvo || typeof salvo !== 'object') {
+        if (familiaCanticosEl) familiaCanticosEl.checked = false;
         familiaMembroAdd({ papel: 'Pai' });
         familiaMembroAdd({ papel: 'Mãe' });
+        familiaPerfilResumoPintar();
         return;
       }
       if (salvo.formacao) familiaFormacaoEl.value = salvo.formacao;
       if (salvo.anosCasados != null) familiaAnosCasadosEl.value = String(salvo.anosCasados);
       familiaChecksMarcar(document.getElementById('familiaCircunstancias'), salvo.circunstancias);
       if (typeof salvo.outrasCircunstancias === 'string') familiaOutrasCircEl.value = salvo.outrasCircunstancias;
-      if (Array.isArray(salvo.atividades) && salvo.atividades.length) familiaChecksMarcar(document.getElementById('familiaAtividades'), salvo.atividades);
+      if (Array.isArray(salvo.atividades)) familiaChecksMarcar(document.getElementById('familiaAtividades'), salvo.atividades);
       if ([30, 45, 60, 90].includes(Number(salvo.duracao))) familiaDuracaoEl.value = String(salvo.duracao);
       if (typeof salvo.assunto === 'string') familiaAssuntoEl.value = salvo.assunto;
+      if (familiaCanticosEl) familiaCanticosEl.checked = Boolean(salvo.canticosInicioFim);
       familiaMembrosEl.innerHTML = '';
       const membros = Array.isArray(salvo.membros) && salvo.membros.length ? salvo.membros.slice(0, 12) : [{ papel: 'Pai' }, { papel: 'Mãe' }];
       membros.forEach(familiaMembroAdd);
@@ -25625,10 +25667,10 @@ function saveTemplatesToStorage() {
     }
 
     function familiaStatus(msg, tipo) {
-      if (!msg) { familiaStatusEl.hidden = true; familiaStatusEl.textContent = ''; return; }
+      if (!msg) { familiaStatusEl.hidden = true; familiaStatusEl.textContent = ''; familiaStatusEl.className = 'fam-status'; return; }
       familiaStatusEl.hidden = false;
       familiaStatusEl.textContent = msg;
-      familiaStatusEl.className = 'fam-status' + (tipo === 'erro' ? ' erro' : tipo === 'ok' ? ' ok' : '');
+      familiaStatusEl.className = 'fam-status' + (tipo === 'erro' ? ' erro' : tipo === 'ok' ? ' ok' : '') + (tipo === 'erro' && ehErroTeto(msg) ? ' msg-teto' : '');
     }
 
     function familiaPayloadDe(perfil) {
@@ -25646,7 +25688,8 @@ function saveTemplatesToStorage() {
         outrasCircunstancias: perfil.outrasCircunstancias,
         atividades: perfil.atividades,
         duracao: perfil.duracao,
-        assunto: perfil.assunto
+        assunto: perfil.assunto,
+        canticosInicioFim: Boolean(perfil.canticosInicioFim)
       };
     }
 
@@ -25892,7 +25935,7 @@ function saveTemplatesToStorage() {
       familiaLimparBtn.hidden = true;
       familiaStatus('');
     });
-    [familiaFormacaoEl, familiaAnosCasadosEl, familiaDuracaoEl].forEach(el => el.addEventListener('change', familiaPerfilSalvar));
+    [familiaFormacaoEl, familiaAnosCasadosEl, familiaDuracaoEl, familiaCanticosEl].forEach(el => { if (el) el.addEventListener('change', familiaPerfilSalvar); });
     [familiaOutrasCircEl, familiaAssuntoEl].forEach(el => el.addEventListener('input', () => { clearTimeout(el._t); el._t = setTimeout(familiaPerfilSalvar, 400); }));
     document.getElementById('familiaCircunstancias').addEventListener('change', familiaPerfilSalvar);
     document.getElementById('familiaAtividades').addEventListener('change', familiaPerfilSalvar);
@@ -28550,7 +28593,7 @@ function saveTemplatesToStorage() {
       // Só os avisos (o que falhou ou falta fazer) aparecem; as mensagens sobre o que deu certo não: o resultado já se vê na tela.
       function dizer(msg, aviso) {
         statusEl.textContent = aviso ? (msg || '') : '';
-        statusEl.className = 'anotacoes-msg' + (aviso ? ' warn' : '');
+        statusEl.className = 'anotacoes-msg' + (aviso ? ' warn' : '') + (aviso && ehErroTeto(msg) ? ' msg-teto' : '');
       }
       // Confirmação discreta no próprio botão (✓ por um instante), no lugar de uma frase.
       function piscarBotao(botao, rotulo) {
@@ -28973,7 +29016,7 @@ function saveTemplatesToStorage() {
       const respDesfazer = document.getElementById('anotacoesRespDesfazer');
       const respIaBtn = document.getElementById('anotacoesRespIa');
       let respostaAntesDaIa = null;
-      const dizerResp = (msg, aviso) => { respStatus.textContent = msg || ''; respStatus.className = 'anotacoes-msg' + (aviso ? ' warn' : ''); };
+      const dizerResp = (msg, aviso) => { respStatus.textContent = msg || ''; respStatus.className = 'anotacoes-msg' + (aviso ? ' warn' : '') + (aviso && ehErroTeto(msg) ? ' msg-teto' : ''); };
       respostaEl.addEventListener('input', () => {
         respDesfazer.hidden = true;
         respostaAntesDaIa = null;
@@ -31761,6 +31804,7 @@ function saveTemplatesToStorage() {
       function dizer(el, texto, { girando = false, aviso = false } = {}) {
         el.textContent = '';
         el.classList.toggle('aviso', aviso);
+        el.classList.toggle('msg-teto', Boolean(aviso && ehErroTeto(texto)));
         el.hidden = !texto;
         if (!texto) return;
         if (girando) {
