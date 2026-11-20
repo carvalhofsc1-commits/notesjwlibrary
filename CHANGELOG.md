@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.10
+
+- Barra de navegação: o botão 🎙️ Gravar dá lugar ao 👨‍👩‍👧 Família (Adoração em Família), bloqueado sem o código de pesquisa como o atalho do Início. Áudio em texto continua no Início e no menu.
+
 ## 6.11.09
 
 - Adoração em Família: quando a opção "Vídeo do jw.org" está marcada nas atividades da família, a IA passa a incluir obrigatoriamente pelo menos um vídeo em cada uma das 3 opções de programação.
