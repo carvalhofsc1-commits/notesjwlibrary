@@ -16546,8 +16546,9 @@ body[data-screen="salvas"] #secaoHistorico { display: block !important; margin: 
   html:not(.nav-sticky) #navMenuBtn { display: none; }
 }
 
-/* ---------- Adoração em Família (6.11.02) ----------
-   Tela própria (atalho do Início e menu), liberada pelo código de pesquisa. Perfil só no aparelho; a IA devolve 3 opções. */
+/* ---------- Adoração em Família (6.11.02 / 6.11.03) ----------
+   Tela própria (atalho do Início e menu), liberada pelo código de pesquisa. Perfil só no aparelho; a IA devolve 3 opções.
+   6.11.03: no celular, as caixas de marcar e a grade dos membros não estouram a largura (antes rolava a tela para o lado). */
 body:not([data-screen="familia"]) .screen-familia,
 body[data-screen="familia"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-ajustes, .screen-leitura, .screen-transcricao, .screen-biblia, .screen-anotacoes, .screen-pesquisa, .screen-salvas) {
   display: none !important;
@@ -16559,6 +16560,10 @@ body[data-screen="familia"] :is(.screen-inicio, .screen-editor, .screen-formatar
   padding: 14px;
   display: grid;
   gap: 12px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: clip;
 }
 .fam-topo {
   display: grid;
@@ -16568,9 +16573,10 @@ body[data-screen="familia"] :is(.screen-inicio, .screen-editor, .screen-formatar
   margin: 0 0 2px;
   padding-bottom: 10px;
   border-bottom: 3px solid var(--sv-azul-bd);
+  min-width: 0;
 }
-.fam-topo button { width: auto; min-height: 38px; padding: 0 14px; margin: 0; }
-.fam-titulo { margin: 0; font-size: 1.15rem; line-height: 1.25; }
+.fam-topo button { width: auto; min-height: 38px; padding: 0 14px; margin: 0; justify-self: start; }
+.fam-titulo { margin: 0; font-size: 1.15rem; line-height: 1.25; min-width: 0; overflow-wrap: anywhere; }
 .fam-bloco {
   display: grid;
   gap: 8px;
@@ -16578,12 +16584,17 @@ body[data-screen="familia"] :is(.screen-inicio, .screen-editor, .screen-formatar
   background: var(--inicio-cinza);
   border: 1px solid var(--line);
   border-radius: 10px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
-.fam-bloco-titulo { margin: 0; font-size: 1rem; line-height: 1.3; }
+.fam-bloco-titulo { margin: 0; font-size: 1rem; line-height: 1.3; overflow-wrap: anywhere; }
 .fam-dica { margin: 0; }
-.fam-rotulo { margin: 4px 0 0; font-size: .92rem; font-weight: 600; }
+.fam-rotulo { display: block; margin: 4px 0 0; font-size: .92rem; font-weight: 600; }
 .fam-campo {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
   min-height: 40px;
   padding: 8px 10px;
@@ -16592,67 +16603,95 @@ body[data-screen="familia"] :is(.screen-inicio, .screen-editor, .screen-formatar
   background: var(--card);
   color: inherit;
   font: inherit;
+  font-size: 16px;
   resize: vertical;
 }
-.fam-campo-curto { max-width: 220px; }
+textarea.fam-campo {
+  min-height: 64px;
+  height: auto;
+}
+.fam-campo-curto { max-width: min(220px, 100%); }
 .fam-checks {
   display: grid;
   gap: 6px;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+  min-width: 0;
+  max-width: 100%;
 }
 .fam-check {
-  display: flex;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
   gap: 8px;
   margin: 0;
-  padding: 6px 8px;
+  padding: 8px 10px;
   border-radius: 8px;
   background: var(--card);
   border: 1px solid var(--line);
   font-size: .92rem;
-  line-height: 1.3;
+  font-weight: 500;
+  line-height: 1.35;
   cursor: pointer;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
-.fam-check input { margin: 2px 0 0; flex: 0 0 auto; }
-.fam-membros { display: grid; gap: 8px; }
+.fam-check input[type="checkbox"] {
+  margin: 2px 0 0;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  max-height: 18px;
+  padding: 0;
+  flex: none;
+}
+.fam-check span { min-width: 0; overflow-wrap: anywhere; }
+.fam-membros { display: grid; gap: 8px; min-width: 0; }
 .fam-membro {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, .7fr) 40px;
+  grid-template-columns: minmax(0, 1fr) 40px;
+  grid-template-areas:
+    "apelido tirar"
+    "papel papel"
+    "ano ano";
   gap: 6px;
   align-items: center;
+  min-width: 0;
+  max-width: 100%;
 }
-.fam-membro .fam-campo { min-height: 38px; }
+.fam-membro .fam-apelido { grid-area: apelido; min-width: 0; }
+.fam-membro .fam-papel { grid-area: papel; min-width: 0; }
+.fam-membro .fam-ano { grid-area: ano; min-width: 0; }
+.fam-membro .fam-campo { min-height: 40px; }
 .fam-membro-tirar {
+  grid-area: tirar;
   width: 40px;
-  min-height: 38px;
+  min-width: 40px;
+  max-width: 40px;
+  min-height: 40px;
   padding: 0;
   margin: 0;
   justify-self: stretch;
 }
-@media (max-width: 560px) {
+@media (min-width: 640px) {
   .fam-membro {
-    grid-template-columns: minmax(0, 1fr) 40px;
-    grid-template-areas:
-      "apelido tirar"
-      "papel papel"
-      "ano ano";
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, .75fr) 40px;
+    grid-template-areas: "apelido papel ano tirar";
   }
-  .fam-membro .fam-apelido { grid-area: apelido; }
-  .fam-membro .fam-papel { grid-area: papel; }
-  .fam-membro .fam-ano { grid-area: ano; }
-  .fam-membro-tirar { grid-area: tirar; }
 }
-.fam-acoes { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.fam-acoes { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-width: 0; }
 .fam-fino {
+  width: auto;
   min-height: 40px;
   padding: 8px 14px;
   margin: 0;
   font-size: .95rem;
   line-height: 1.2;
 }
-.fam-principal { flex: 1 1 auto; min-width: 160px; }
-.fam-status { margin: 0; font-size: .92rem; }
-.fam-resultado { display: grid; gap: 14px; }
+.fam-principal { flex: 1 1 auto; min-width: min(100%, 160px); }
+.fam-status { margin: 0; font-size: .92rem; overflow-wrap: anywhere; }
+.fam-resultado { display: grid; gap: 14px; min-width: 0; }
 .fam-opcao {
   display: grid;
   gap: 10px;
@@ -16661,6 +16700,10 @@ body[data-screen="familia"] :is(.screen-inicio, .screen-editor, .screen-formatar
   border-left: 5px solid var(--sv-azul-bd);
   border-radius: 10px;
   background: var(--card);
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
 }
 .fam-opcao-topo {
   display: flex;
@@ -16669,8 +16712,9 @@ body[data-screen="familia"] :is(.screen-inicio, .screen-editor, .screen-formatar
   gap: 8px 12px;
   padding-bottom: 8px;
   border-bottom: 1px solid var(--line);
+  min-width: 0;
 }
-.fam-opcao-titulo { margin: 0; font-size: 1.08rem; line-height: 1.3; flex: 1 1 auto; }
+.fam-opcao-titulo { margin: 0; font-size: 1.08rem; line-height: 1.3; flex: 1 1 auto; min-width: 0; }
 .fam-opcao-meta { margin: 0; font-size: .88rem; color: var(--muted, #666); }
 .fam-opcao-resumo, .fam-opcao-objetivo { margin: 0; font-size: .95rem; line-height: 1.45; }
 .fam-opcao-objetivo strong { font-weight: 700; }
@@ -16681,6 +16725,7 @@ body[data-screen="familia"] :is(.screen-inicio, .screen-editor, .screen-formatar
   border-radius: 8px;
   background: var(--inicio-cinza);
   border: 1px solid var(--line);
+  min-width: 0;
 }
 .fam-parte-topo {
   display: flex;
@@ -16690,10 +16735,10 @@ body[data-screen="familia"] :is(.screen-inicio, .screen-editor, .screen-formatar
 }
 .fam-parte-nome { margin: 0; font-size: .98rem; font-weight: 700; }
 .fam-parte-min, .fam-parte-resp { margin: 0; font-size: .85rem; color: var(--muted, #666); }
-.fam-parte-desc { margin: 0; font-size: .92rem; line-height: 1.45; white-space: pre-wrap; }
-.fam-lista { margin: 0; padding-left: 1.2em; font-size: .9rem; line-height: 1.4; }
+.fam-parte-desc { margin: 0; font-size: .92rem; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+.fam-lista { margin: 0; padding-left: 1.2em; font-size: .9rem; line-height: 1.4; overflow-wrap: anywhere; }
 .fam-lista li { margin: 0 0 4px; }
-.fam-lista a { color: var(--sv-azul-tx, #1a5fb4); }
+.fam-lista a { color: var(--sv-azul-tx, #1a5fb4); overflow-wrap: anywhere; }
 .fam-secao-titulo { margin: 4px 0 0; font-size: .88rem; font-weight: 700; }
 .fam-dica-chefe {
   margin: 0;
@@ -16703,5 +16748,13 @@ body[data-screen="familia"] :is(.screen-inicio, .screen-editor, .screen-formatar
   border-left: 4px solid var(--sv-azul-bd);
   font-size: .92rem;
   line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 .fam-opcao-acoes { display: flex; flex-wrap: wrap; gap: 6px; }
+@media (max-width: 420px) {
+  .fam-topo { grid-template-columns: 1fr; gap: 8px; }
+  .fam-titulo { font-size: 1.05rem; }
+  .fam-checks { grid-template-columns: 1fr; }
+  .fam-campo-curto { max-width: 100%; }
+  .fam-principal { flex: 1 1 100%; }
+}

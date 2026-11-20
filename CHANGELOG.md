@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.03
+
+- Adoração em Família no celular: a tela não estoura mais a largura (rolagem horizontal). As caixas de marcar e a grade dos membros passam a caber na tela; o topo e os campos se adaptam melhor em aparelhos estreitos.
+
 ## 6.11.02
 
 - Adoração em Família: nova tela (atalho na página 3 do Início e item no menu), liberada pelo código de pesquisa. O perfil da família fica só no aparelho (formação, apelidos, papéis, ano de nascimento → idade calculada na hora, circunstâncias, atividades, duração e assunto). A IA (a mesma da resposta final das pesquisas) prepara 3 opções completas, com partes, textos bíblicos, vídeos do jw.org, cânticos, publicações, perguntas, preparação, tarefas e dica para o chefe. Dá para copiar cada opção.
