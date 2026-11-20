@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.06
+
+- Adoração em Família: passa a usar o modelo e o provedor gerais de Ajustes (Anthropic / Claude ou Gemini), e não mais o modelo da resposta das pesquisas (que costuma ser Gemini). Trocar para Claude em Modelos e agentes de IA passa a valer nesta tela.
+
 ## 6.11.05
 
 - Mensagem de erro da IA: quando o teto de gastos (spend cap) do Google Cloud no Vertex AI / Gemini está ativo, o app avisa isso de forma clara (antes aparecia só "Não foi possível obter sugestões agora").

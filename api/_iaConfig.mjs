@@ -121,8 +121,13 @@ export function iaDaTarefa(config, tarefa) {
   if (tarefa === "audio") return { ...config, modelo: config.audioModelo || config.modelo, esforco: config.esforco };
   // Assistente de pesquisas: o modelo de cada etapa e o provedor que o atende (provedorTarefa).
   if (tarefa === "pesquisa-coletar" || tarefa === "pesquisa-videos") return { ...config, modelo: config.pesquisaModelo, esforco: "low", provedorTarefa: provedorDoModelo(config, config.pesquisaModelo) };
-  // A Adoração em Família (6.11.02) usa o mesmo modelo e esforço da resposta das pesquisas (Ajustes → Modelos e agentes de IA).
-  if (tarefa === "pesquisa" || tarefa === "adoracao-familia") return { ...config, modelo: config.pesquisaRespostaModelo, esforco: config.pesquisaRespostaEsforco, provedorTarefa: provedorDoModelo(config, config.pesquisaRespostaModelo) };
+  if (tarefa === "pesquisa") return { ...config, modelo: config.pesquisaRespostaModelo, esforco: config.pesquisaRespostaEsforco, provedorTarefa: provedorDoModelo(config, config.pesquisaRespostaModelo) };
+  // Adoração em Família (6.11.06): usa o modelo e o provedor gerais (Ajustes → Modelos e agentes de IA), não o da resposta das pesquisas
+  // (que costuma ser Gemini e continua independente). Assim, trocar para Claude / Anthropic passa a valer nesta tela.
+  if (tarefa === "adoracao-familia") {
+    const modelo = config.modelo;
+    return { ...config, modelo, esforco: config.esforco, provedorTarefa: provedorDoModelo(config, modelo) };
+  }
   if (!TAREFAS_DE_ESBOCOS.has(tarefa)) return { ...config, modelo: config.modelo, esforco: config.esforco };
   return { ...config, modelo: config.esbocoModelo || config.modelo, esforco: config.esbocoEsforco || config.esforco };
 }
