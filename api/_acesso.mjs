@@ -66,6 +66,7 @@ export const NIVEIS = {
   "pesquisa-videos-da-secao": "pesquisa", // Assistente de pesquisas: os vídeos de uma seção, para escolher um direto (sem IA)
   joias: "pesquisa",
   "joias-ler": "pesquisa",
+  "adoracao-familia": "pesquisa", // Adoração em Família: 3 opções de programação para a noite da família
   // Código de resumo (só o resumo dos capítulos da Leitura diária da Bíblia)
   "leitura-biblia": "resumo",
   "biblia-texto": "resumo",

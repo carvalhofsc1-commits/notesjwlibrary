@@ -56,6 +56,7 @@
       <button type="button" data-menu-ir="reunioes"><span aria-hidden="true">📅</span> Reuniões</button>
       <button type="button" data-menu-ir="transcricao"><span aria-hidden="true">🎙️</span> Áudio em texto</button>
       <button type="button" data-menu-ir="pesquisa"><span aria-hidden="true">🔎</span> Assistente de pesquisas</button>
+      <button type="button" data-menu-ir="familia"><span aria-hidden="true">👨‍👩‍👧</span> Adoração em Família</button>
       <button type="button" data-menu-ir="backup"><span aria-hidden="true">📦</span> Backup JW</button>
       <button type="button" data-menu-atalho="historico"><span aria-hidden="true">🗂️</span> Pesquisas salvas</button>
       <button type="button" data-menu-ir="ajustes"><span aria-hidden="true">⚙️</span> Ajustes</button>
@@ -145,7 +146,7 @@
 
       <section class="card atalhos-card" aria-label="Atalhos">
         <div class="atalhos-paginas" id="atalhosPaginas">
-        <div class="atalhos-grid" id="atalhosPagina1" role="group" aria-label="Atalhos, página 1 de 2">
+        <div class="atalhos-grid" id="atalhosPagina1" role="group" aria-label="Atalhos, página 1 de 3">
           <button type="button" class="atalho" data-atalho="anotacoes"><span class="atalho-icone" aria-hidden="true">📝</span><span class="atalho-nome">Anotações</span><span class="atalho-desc">Reuniões, assembleias e congressos</span></button>
           <button type="button" class="atalho" data-atalho="pesquisa"><span class="atalho-icone" aria-hidden="true">🔎</span><span class="atalho-nome">Assistente de pesquisas</span><span class="atalho-desc">Pesquisar um assunto, texto ou vídeo no wol.jw.org com auxílio da IA</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="biblia"><span class="atalho-icone" aria-hidden="true">📚</span><span class="atalho-nome">Leitura diária da Bíblia</span><span class="atalho-desc">Programa anual e resumo dos capítulos</span><span class="atalho-barra" id="bibliaAtalhoBarra" aria-hidden="true"><span></span></span></button>
@@ -155,7 +156,7 @@
           <button type="button" class="atalho" data-atalho="leitura"><span class="atalho-icone" aria-hidden="true">🔊</span><span class="atalho-nome">Assistente de leitura em voz</span><span class="atalho-desc">Ouvir um PDF, um Word ou um texto colado</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="transcricao"><span class="atalho-icone" aria-hidden="true">🎙️</span><span class="atalho-nome">Áudio em texto</span><span class="atalho-desc">Transcrever um áudio e resumir com a IA</span><span class="atalho-trava" hidden></span></button>
         </div>
-        <div class="atalhos-grid" id="atalhosPagina2" role="group" aria-label="Atalhos, página 2 de 2">
+        <div class="atalhos-grid" id="atalhosPagina2" role="group" aria-label="Atalhos, página 2 de 3">
           <button type="button" class="atalho" data-atalho="formatar"><span class="atalho-icone" aria-hidden="true">✨</span><span class="atalho-nome">Formatar notas JW Library</span><span class="atalho-desc">Organizar e formatar o texto com a IA</span></button>
           <button type="button" class="atalho" data-atalho="sentinela"><span class="atalho-icone" aria-hidden="true">📰</span><span class="atalho-nome">A Sentinela</span><span class="atalho-desc">Respostas e comentários do estudo</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="joias"><span class="atalho-icone" aria-hidden="true">💎</span><span class="atalho-nome">Joias espirituais</span><span class="atalho-desc">Leitura da semana e comentários</span><span class="atalho-trava" hidden></span></button>
@@ -165,11 +166,17 @@
           <button type="button" class="atalho" data-atalho="ajustes"><span class="atalho-icone" aria-hidden="true">⚙️</span><span class="atalho-nome">Ajustes</span><span class="atalho-desc">Códigos, vozes, IA e preferências</span></button>
           <button type="button" class="atalho" data-atalho="historico"><span class="atalho-icone" aria-hidden="true">🗂️</span><span class="atalho-nome">Pesquisas salvas</span><span class="atalho-desc">Respostas e pesquisas guardadas</span></button>
         </div>
+        <!-- Página 3 (6.11.02): Adoração em Família, liberada pelo código de pesquisa. -->
+        <div class="atalhos-grid" id="atalhosPagina3" role="group" aria-label="Atalhos, página 3 de 3">
+          <button type="button" class="atalho" data-atalho="familia"><span class="atalho-icone" aria-hidden="true">👨‍👩‍👧</span><span class="atalho-nome">Adoração em Família</span><span class="atalho-desc">3 opções para a noite da família</span><span class="atalho-trava" hidden></span></button>
+        </div>
         </div>
         <div class="atalhos-nav" id="atalhosNav">
           <button type="button" class="atalhos-seta" id="atalhosAnt" aria-label="Página anterior dos atalhos">‹</button>
           <button type="button" class="atalhos-ponto" data-pagina="1" aria-label="Atalhos, página 1" aria-current="true"></button>
-          <button type="button" class="atalhos-ponto" data-pagina="2" aria-label="Atalhos, página 2"></button>          <button type="button" class="atalhos-seta" id="atalhosProx" aria-label="Próxima página dos atalhos">›</button>
+          <button type="button" class="atalhos-ponto" data-pagina="2" aria-label="Atalhos, página 2"></button>
+          <button type="button" class="atalhos-ponto" data-pagina="3" aria-label="Atalhos, página 3"></button>
+          <button type="button" class="atalhos-seta" id="atalhosProx" aria-label="Próxima página dos atalhos">›</button>
         </div>
       </section>
     </div>
@@ -2801,6 +2808,93 @@
         <ul id="pesquisaSalvasLista" class="pesq-salvas-lista"></ul>
         <p id="pesquisaSalvasVazio" class="hint">Nenhuma pesquisa salva neste aparelho.</p>
       </details>
+    </section>
+
+    <!-- Adoração em Família (6.11.02): 3 opções de programação; liberada pelo código de pesquisa; perfil só neste aparelho. -->
+    <section id="familiaCard" class="card fam-card screen-familia" aria-labelledby="familiaTitulo">
+      <div class="fam-topo">
+        <button id="familiaVoltar" class="secondary" type="button">◀ Voltar</button>
+        <h2 id="familiaTitulo" class="fam-titulo"><span aria-hidden="true">👨‍👩‍👧</span> Adoração em Família</h2>
+      </div>
+      <p class="hint">Prepare a noite da família: o perfil fica só neste aparelho (apelidos e ano de nascimento; a idade é calculada na hora). A IA monta 3 opções completas, com partes, textos, vídeos e cânticos.</p>
+
+      <div class="fam-bloco">
+        <h3 class="fam-bloco-titulo">🏠 Formação da família</h3>
+        <label class="fam-rotulo" for="familiaFormacao">Como é a família</label>
+        <select id="familiaFormacao" class="fam-campo">
+          <option value="">Escolha…</option>
+          <option value="Casal com filhos">Casal com filhos</option>
+          <option value="Casal sem filhos">Casal sem filhos</option>
+          <option value="Família monoparental">Família monoparental</option>
+          <option value="Quem mora sozinho">Quem mora sozinho (estudo pessoal)</option>
+          <option value="Família com avós ou outros">Família com avós ou outros</option>
+        </select>
+        <label class="fam-rotulo" for="familiaAnosCasados">Anos de casados <span class="opc">(opcional)</span></label>
+        <input id="familiaAnosCasados" class="fam-campo fam-campo-curto" type="number" inputmode="numeric" min="0" max="80" placeholder="Ex.: 12" autocomplete="off">
+      </div>
+
+      <div class="fam-bloco">
+        <h3 class="fam-bloco-titulo">👤 Membros <span class="opc">(apelido, papel e ano de nascimento)</span></h3>
+        <p class="hint fam-dica">Use só apelidos (ex.: Pai, Ana, Pedrinho). O app calcula a idade e nunca envia a data de nascimento.</p>
+        <div id="familiaMembros" class="fam-membros"></div>
+        <button id="familiaMembroAdd" class="secondary fam-fino" type="button">➕ Adicionar membro</button>
+      </div>
+
+      <div class="fam-bloco">
+        <h3 class="fam-bloco-titulo">💛 Circunstâncias <span class="opc">(opcional; trate com tato)</span></h3>
+        <p class="hint fam-dica">Marque só o que ajudar a adaptar a noite. Nada disso fica no servidor.</p>
+        <div id="familiaCircunstancias" class="fam-checks" role="group" aria-label="Circunstâncias">
+          <label class="fam-check"><input type="checkbox" value="Ansiedade ou desânimo"> Ansiedade ou desânimo</label>
+          <label class="fam-check"><input type="checkbox" value="Bullying ou dificuldades na escola"> Bullying ou dificuldades na escola</label>
+          <label class="fam-check"><input type="checkbox" value="Doença na família"> Doença na família</label>
+          <label class="fam-check"><input type="checkbox" value="Luto"> Luto</label>
+          <label class="fam-check"><input type="checkbox" value="Dificuldades financeiras"> Dificuldades financeiras</label>
+          <label class="fam-check"><input type="checkbox" value="Problemas no casamento"> Problemas no casamento</label>
+          <label class="fam-check"><input type="checkbox" value="Parente que não serve a Jeová"> Parente que não serve a Jeová</label>
+          <label class="fam-check"><input type="checkbox" value="Filho adolescente"> Filho adolescente</label>
+          <label class="fam-check"><input type="checkbox" value="Criança pequena"> Criança pequena</label>
+        </div>
+        <label class="fam-rotulo" for="familiaOutrasCirc">Outras circunstâncias <span class="opc">(opcional)</span></label>
+        <textarea id="familiaOutrasCirc" class="fam-campo" rows="2" maxlength="500" spellcheck="true" placeholder="Ex.: mudança recente, pressão no trabalho…"></textarea>
+      </div>
+
+      <div class="fam-bloco">
+        <h3 class="fam-bloco-titulo">🎨 Atividades que a família aceita</h3>
+        <p class="hint fam-dica">Cântico, oração, leitura da Bíblia e conversa sempre podem entrar. Marque o que mais a família gosta.</p>
+        <div id="familiaAtividades" class="fam-checks" role="group" aria-label="Atividades">
+          <label class="fam-check"><input type="checkbox" value="Dramatização ou encenação" checked> Dramatização ou encenação</label>
+          <label class="fam-check"><input type="checkbox" value="Desenho ou artesanato" checked> Desenho ou artesanato</label>
+          <label class="fam-check"><input type="checkbox" value="Jogos ou adivinhas" checked> Jogos ou adivinhas</label>
+          <label class="fam-check"><input type="checkbox" value="Vídeo do jw.org" checked> Vídeo do jw.org</label>
+          <label class="fam-check"><input type="checkbox" value="Estudo pessoal" checked> Estudo pessoal</label>
+          <label class="fam-check"><input type="checkbox" value="Preparação para as reuniões" checked> Preparação para as reuniões</label>
+          <label class="fam-check"><input type="checkbox" value="Treino dos cânticos" checked> Treino dos cânticos</label>
+          <label class="fam-check"><input type="checkbox" value="Caminhada ou atividade ao ar livre"> Caminhada ou atividade ao ar livre</label>
+          <label class="fam-check"><input type="checkbox" value="Cozinhar juntos"> Cozinhar juntos</label>
+        </div>
+      </div>
+
+      <div class="fam-bloco">
+        <h3 class="fam-bloco-titulo">⏱️ Duração e assunto</h3>
+        <label class="fam-rotulo" for="familiaDuracao">Duração total</label>
+        <select id="familiaDuracao" class="fam-campo fam-campo-curto">
+          <option value="30">30 minutos</option>
+          <option value="45" selected>45 minutos</option>
+          <option value="60">60 minutos</option>
+          <option value="90">90 minutos</option>
+        </select>
+        <label class="fam-rotulo" for="familiaAssunto">Assunto desta semana <span class="opc">(opcional)</span></label>
+        <textarea id="familiaAssunto" class="fam-campo" rows="2" maxlength="300" spellcheck="true" placeholder="Ex.: o perdão; a oração; o relato do filho pródigo. Vazio = 3 assuntos bem diferentes."></textarea>
+      </div>
+
+      <div class="fam-acoes">
+        <button id="familiaGerarBtn" data-codigo-ia="pesquisa" class="fam-fino fam-principal" type="button">✨ Preparar 3 opções</button>
+        <button id="familiaCancelarBtn" class="secondary fam-fino" type="button" hidden>⏹️ Cancelar</button>
+        <button id="familiaLimparBtn" class="secondary fam-fino limpar-btn" type="button" title="Limpar as opções geradas" aria-label="Limpar as opções geradas" hidden>🗑️</button>
+      </div>
+      <p id="familiaStatus" class="fam-status" role="status" aria-live="polite" hidden></p>
+
+      <div id="familiaResultado" class="fam-resultado" hidden></div>
     </section>
 
   </main>

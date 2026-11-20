@@ -15564,7 +15564,7 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
    Tela leve: um cartão claro, blocos em cards finos, botões no padrão fino. A resposta mostra negrito e itálico de verdade e as fontes
    numeradas no fim (publicação, página, parágrafo e links para o wol.jw.org e o JW Library). */
 body:not([data-screen="pesquisa"]) .screen-pesquisa,
-body[data-screen="pesquisa"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-ajustes, .screen-leitura, .screen-transcricao, .screen-biblia, .screen-anotacoes) {
+body[data-screen="pesquisa"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-ajustes, .screen-leitura, .screen-transcricao, .screen-biblia, .screen-anotacoes, .screen-familia) {
   display: none !important;
 }
 .card.pesq-card {
@@ -16483,7 +16483,7 @@ details[open] > summary.seta-padrao::before { transform: rotate(180deg); }
 
 /* 6.10.77: Pesquisas e respostas salvas em tela própria (antes, página da tela Reuniões). */
 body:not([data-screen="salvas"]) .screen-salvas,
-body[data-screen="salvas"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-ajustes, .screen-leitura, .screen-transcricao, .screen-biblia, .screen-anotacoes, .screen-pesquisa) {
+body[data-screen="salvas"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-ajustes, .screen-leitura, .screen-transcricao, .screen-biblia, .screen-anotacoes, .screen-pesquisa, .screen-familia) {
   display: none !important;
 }
 body[data-screen="salvas"] #secaoHistorico { display: block !important; margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; }
@@ -16545,3 +16545,163 @@ body[data-screen="salvas"] #secaoHistorico { display: block !important; margin: 
   /* 6.11.01: sem o atalho Menu no centro da barra — o mesmo menu já abre pelo ☰ à esquerda. */
   html:not(.nav-sticky) #navMenuBtn { display: none; }
 }
+
+/* ---------- Adoração em Família (6.11.02) ----------
+   Tela própria (atalho do Início e menu), liberada pelo código de pesquisa. Perfil só no aparelho; a IA devolve 3 opções. */
+body:not([data-screen="familia"]) .screen-familia,
+body[data-screen="familia"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-ajustes, .screen-leitura, .screen-transcricao, .screen-biblia, .screen-anotacoes, .screen-pesquisa, .screen-salvas) {
+  display: none !important;
+}
+.card.fam-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: none;
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+}
+.fam-topo {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 2px;
+  padding-bottom: 10px;
+  border-bottom: 3px solid var(--sv-azul-bd);
+}
+.fam-topo button { width: auto; min-height: 38px; padding: 0 14px; margin: 0; }
+.fam-titulo { margin: 0; font-size: 1.15rem; line-height: 1.25; }
+.fam-bloco {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  background: var(--inicio-cinza);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.fam-bloco-titulo { margin: 0; font-size: 1rem; line-height: 1.3; }
+.fam-dica { margin: 0; }
+.fam-rotulo { margin: 4px 0 0; font-size: .92rem; font-weight: 600; }
+.fam-campo {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  color: inherit;
+  font: inherit;
+  resize: vertical;
+}
+.fam-campo-curto { max-width: 220px; }
+.fam-checks {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+.fam-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  font-size: .92rem;
+  line-height: 1.3;
+  cursor: pointer;
+}
+.fam-check input { margin: 2px 0 0; flex: 0 0 auto; }
+.fam-membros { display: grid; gap: 8px; }
+.fam-membro {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, .7fr) 40px;
+  gap: 6px;
+  align-items: center;
+}
+.fam-membro .fam-campo { min-height: 38px; }
+.fam-membro-tirar {
+  width: 40px;
+  min-height: 38px;
+  padding: 0;
+  margin: 0;
+  justify-self: stretch;
+}
+@media (max-width: 560px) {
+  .fam-membro {
+    grid-template-columns: minmax(0, 1fr) 40px;
+    grid-template-areas:
+      "apelido tirar"
+      "papel papel"
+      "ano ano";
+  }
+  .fam-membro .fam-apelido { grid-area: apelido; }
+  .fam-membro .fam-papel { grid-area: papel; }
+  .fam-membro .fam-ano { grid-area: ano; }
+  .fam-membro-tirar { grid-area: tirar; }
+}
+.fam-acoes { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.fam-fino {
+  min-height: 40px;
+  padding: 8px 14px;
+  margin: 0;
+  font-size: .95rem;
+  line-height: 1.2;
+}
+.fam-principal { flex: 1 1 auto; min-width: 160px; }
+.fam-status { margin: 0; font-size: .92rem; }
+.fam-resultado { display: grid; gap: 14px; }
+.fam-opcao {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--sv-azul-bd);
+  border-radius: 10px;
+  background: var(--card);
+}
+.fam-opcao-topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+.fam-opcao-titulo { margin: 0; font-size: 1.08rem; line-height: 1.3; flex: 1 1 auto; }
+.fam-opcao-meta { margin: 0; font-size: .88rem; color: var(--muted, #666); }
+.fam-opcao-resumo, .fam-opcao-objetivo { margin: 0; font-size: .95rem; line-height: 1.45; }
+.fam-opcao-objetivo strong { font-weight: 700; }
+.fam-parte {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--inicio-cinza);
+  border: 1px solid var(--line);
+}
+.fam-parte-topo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: baseline;
+}
+.fam-parte-nome { margin: 0; font-size: .98rem; font-weight: 700; }
+.fam-parte-min, .fam-parte-resp { margin: 0; font-size: .85rem; color: var(--muted, #666); }
+.fam-parte-desc { margin: 0; font-size: .92rem; line-height: 1.45; white-space: pre-wrap; }
+.fam-lista { margin: 0; padding-left: 1.2em; font-size: .9rem; line-height: 1.4; }
+.fam-lista li { margin: 0 0 4px; }
+.fam-lista a { color: var(--sv-azul-tx, #1a5fb4); }
+.fam-secao-titulo { margin: 4px 0 0; font-size: .88rem; font-weight: 700; }
+.fam-dica-chefe {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--sv-azul-bg, #e8f0fe);
+  border-left: 4px solid var(--sv-azul-bd);
+  font-size: .92rem;
+  line-height: 1.45;
+}
+.fam-opcao-acoes { display: flex; flex-wrap: wrap; gap: 6px; }

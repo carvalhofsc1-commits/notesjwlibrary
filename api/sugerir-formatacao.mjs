@@ -2565,6 +2565,248 @@ async function responderPesquisa(res, body, P) {
   }
 }
 
+// ---------- Adoração em Família (6.11.02) ----------
+// A tela Adoração em Família (atalho do Início e menu, liberada pelo código de pesquisa) manda o perfil da família: só apelidos, papéis e
+// idades (calculadas no aparelho), as circunstâncias e as atividades marcadas, a duração e o assunto da semana (opcional). O servidor junta as
+// matérias do wol.jw.org sobre o assunto, os cânticos e os vídeos do jw.org que combinam com a família, e a IA (a mesma da resposta final das
+// pesquisas) prepara 3 opções completas. Nada do perfil fica guardado no servidor nem vai para o log.
+const SaidaAdoracaoFamilia = z.object({
+  opcoes: z.array(
+    z.object({
+      titulo: z.string(),
+      emoji: z.string().nullable(),
+      resumo: z.string(),
+      objetivo: z.string(),
+      partes: z.array(
+        z.object({
+          nome: z.string(),
+          minutos: z.number(),
+          responsavel: z.string(),
+          descricao: z.string(),
+          textos: z.array(z.string()),
+          videos: z.array(z.string()),
+          canticos: z.array(z.number()),
+          publicacoes: z.array(z.string()),
+          perguntas: z.array(z.string()),
+        })
+      ),
+      preparacao: z.array(z.string()),
+      tarefas: z.array(z.object({ membro: z.string(), tarefa: z.string() })),
+      dicaParaOChefe: z.string().nullable(),
+    })
+  ),
+});
+const DURACOES_ADORACAO = [30, 45, 60, 90];
+const MAX_MEMBROS_FAMILIA = 12;
+// As seções do catálogo de vídeos (nomes conferidos no catálogo em 2026-11-20), com quantos vídeos de cada (os mais novos), que entram
+// conforme a família: as de família e de relatos da Bíblia sempre; a série do casamento quando há um casal; as de crianças com alguém de até
+// 12 anos; as de adolescentes com alguém de 13 a 19; as adorações matinais quando não há criança (estudo pessoal, casal, adolescentes).
+const SECOES_VIDEOS_FAMILIA = {
+  sempre: [["Família", 65], ["A Bíblia › Relatos da Bíblia", 20], ["Produções Especiais › Tempos Bíblicos", 15], ["A Bíblia › Criação", 10]],
+  casal: [["Séries › Como Ser Feliz no Casamento?", 10]],
+  criancas: [["Crianças › Lições em vídeo", 40], ["Séries › Teve um Projeto?", 10], ["Séries › Sara e Jade", 10], ["Séries › Vamos Aprender com os Amigos de Jeová", 11], ["Crianças › Produções Especiais", 5], ["Crianças › Músicas", 15]],
+  adolescentes: [["Adolescentes", 50], ["Séries › Vida de Adolescente", 10], ["Séries › O Que Outros Jovens Dizem", 10]],
+  semCriancas: [["Programas e Eventos › Adorações Matinais", 25]],
+};
+// Onde procurar os vídeos das circunstâncias (bullying, luto, doença…): só nas seções ligadas à família e à vida prática, para palavras como
+// "escola" não trazerem as escolas teocráticas.
+const SECOES_CIRCUNSTANCIAS = ["Família", "Crianças", "Adolescentes", "Entrevistas e Casos Reais", "A Bíblia › Como Aplicar Princípios Bíblicos", "Séries › Vida de Adolescente", "Séries › O Que Outros Jovens Dizem", "Séries › Como Ser Feliz no Casamento?", "Séries › Seja Feliz para Sempre! — Vídeos", "Séries › Sara e Jade"];
+const MAX_VIDEOS_FAMILIA = 300;
+
+// Uma lista de textos curtos do pedido (circunstâncias, atividades): limpos, sem repetir e dentro dos limites.
+function textosDaLista(valor, maxItens, maxChars) {
+  if (!Array.isArray(valor)) return [];
+  const vistos = new Set();
+  return valor
+    .map((v) => textoLivre(v, maxChars))
+    .filter((v) => v && !vistos.has(v.toLowerCase()) && vistos.add(v.toLowerCase()))
+    .slice(0, maxItens);
+}
+
+function perfilDaFamilia(body) {
+  const membros = (Array.isArray(body.membros) ? body.membros : [])
+    .filter((m) => m && typeof m === "object")
+    .map((m) => ({
+      apelido: textoLivre(m.apelido, 30),
+      papel: textoLivre(m.papel, 30),
+      idade: Number.isInteger(m.idade) && m.idade >= 0 && m.idade <= 120 ? m.idade : null,
+    }))
+    .filter((m) => m.apelido || m.papel)
+    .slice(0, MAX_MEMBROS_FAMILIA);
+  const anos = body.anosCasados;
+  return {
+    formacao: textoLivre(body.formacao, 80),
+    membros,
+    anosCasados: Number.isInteger(anos) && anos >= 0 && anos <= 80 ? anos : null,
+    circunstancias: textosDaLista(body.circunstancias, 20, 80),
+    outrasCircunstancias: textoLivre(body.outrasCircunstancias, 500),
+    atividades: textosDaLista(body.atividades, 20, 80),
+    duracao: DURACOES_ADORACAO.includes(Number(body.duracao)) ? Number(body.duracao) : 45,
+    assunto: textoLivre(body.assunto, 300),
+  };
+}
+
+// Os vídeos que a IA pode sugerir: primeiro os que combinam com o assunto (no catálogo todo) e com as circunstâncias (só nas seções de
+// SECOES_CIRCUNSTANCIAS), com alguma palavra rara no título; depois os das seções da família (os mais novos de cada uma), sem repetir e até
+// MAX_VIDEOS_FAMILIA.
+function videosParaAFamilia(catalogo, perfil) {
+  if (!catalogo.length) return [];
+  const idades = perfil.membros.map((m) => m.idade).filter((i) => i !== null);
+  const papeis = perfil.membros.map((m) => m.papel.toLowerCase());
+  const casal = /casal|casad/i.test(perfil.formacao) || papeis.includes("marido") || papeis.includes("esposa") || (papeis.includes("pai") && papeis.includes("mãe"));
+  const criancas = idades.some((i) => i <= 12);
+  const secoes = [
+    ...SECOES_VIDEOS_FAMILIA.sempre,
+    ...(casal ? SECOES_VIDEOS_FAMILIA.casal : []),
+    ...(criancas ? SECOES_VIDEOS_FAMILIA.criancas : SECOES_VIDEOS_FAMILIA.semCriancas),
+    ...(idades.some((i) => i >= 13 && i <= 19) ? SECOES_VIDEOS_FAMILIA.adolescentes : []),
+  ];
+  const escolhidos = [];
+  const vistos = new Set();
+  const incluir = (v) => {
+    if (v && escolhidos.length < MAX_VIDEOS_FAMILIA && !vistos.has(v.lank)) {
+      vistos.add(v.lank);
+      escolhidos.push(v);
+    }
+  };
+  if (perfil.assunto) videosPorPalavras(catalogo, [perfil.assunto], 25).filter((v) => v.raras > 0).forEach(incluir);
+  const circunstancias = [...perfil.circunstancias, perfil.outrasCircunstancias].filter(Boolean);
+  if (circunstancias.length) {
+    const daVida = catalogo.filter((v) => (v.categorias || [v.categoria]).some((c) => SECOES_CIRCUNSTANCIAS.some((s) => c === s || String(c).startsWith(s + " › "))));
+    videosPorPalavras(daVida, circunstancias, 25).filter((v) => v.raras > 0).forEach(incluir);
+  }
+  for (const [secao, maximo] of secoes) {
+    videosDaSecao(catalogo, secao)
+      .slice()
+      .sort((a, b) => String(b.publicadoEm || "").localeCompare(String(a.publicadoEm || "")))
+      .slice(0, maximo)
+      .forEach(incluir);
+  }
+  return escolhidos;
+}
+
+async function responderAdoracaoFamilia(res, body, P) {
+  const perfil = perfilDaFamilia(body);
+  if (!perfil.formacao && !perfil.membros.length) return erro(res, 400, "Descreva a família: a formação e os membros.");
+  precarregarFontes({ biblia: true });
+  const consulta = perfil.assunto.length >= 8 ? perfil.assunto : perfil.assunto ? perfil.assunto + " família" : "";
+  const [canticos, catalogo, materias] = await Promise.all([
+    lerCanticos().catch(() => null),
+    catalogoDeVideos(12000).catch(() => []),
+    consulta ? pesquisarNoWol(consulta, 8000, 6).catch(() => []) : [],
+  ]);
+  const videos = videosParaAFamilia(catalogo || [], perfil);
+  const hoje = new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const membros = perfil.membros
+    .map((m) => `- ${m.apelido || "(sem apelido)"} — ${m.papel || "membro da família"}${m.idade !== null ? `, ${m.idade} ${m.idade === 1 ? "ano" : "anos"}` : ""}`)
+    .join("\n");
+  const circunstancias = [...perfil.circunstancias, perfil.outrasCircunstancias].filter(Boolean);
+  const mensagem =
+    `DATA: ${hoje}\n` +
+    `FORMAÇÃO DA FAMÍLIA: ${perfil.formacao || "não informada"}\n` +
+    `MEMBROS (apelido, papel e idade):\n${membros || "- não informados"}\n` +
+    (perfil.anosCasados !== null ? `ANOS DE CASADOS: ${perfil.anosCasados}\n` : "") +
+    (circunstancias.length ? `CIRCUNSTÂNCIAS QUE O CHEFE QUIS INFORMAR (trate com tato, nunca exponha ninguém):\n${circunstancias.map((c) => `- ${c}`).join("\n")}\n` : "") +
+    `ATIVIDADES QUE A FAMÍLIA ACEITA (além de cântico, oração, leitura da Bíblia e conversa): ${perfil.atividades.length ? perfil.atividades.join("; ") : "só essas"}\n` +
+    `DURAÇÃO TOTAL: ${perfil.duracao} minutos\n` +
+    `ASSUNTO PEDIDO PARA ESTA SEMANA: ${perfil.assunto || "nenhum (escolha 3 assuntos bem diferentes, que sirvam para esta família)"}\n` +
+    (materias.length
+      ? `\nMATÉRIAS DO WOL.JW.ORG SOBRE O ASSUNTO (cite pelo identificador, ex.: "P2"):\n${materias.map((m, i) => `[P${i + 1}] "${m.titulo}" (${m.rotulo}) — ${m.trecho.slice(0, 300)}`).join("\n")}\n`
+      : "") +
+    (canticos && canticos.length
+      ? `\nCÂNTICOS DISPONÍVEIS (número. título [assunto]):\n${canticos.map((c) => `${c.numero}. ${c.titulo}${c.assunto ? ` [${c.assunto}]` : ""}`).join("\n")}\n`
+      : `\nCÂNTICOS: a lista não está disponível agora. Deixe "canticos" vazio e, na descrição, fale de um cântico à escolha da família.\n`) +
+    (videos.length
+      ? `\nVÍDEOS DO JW.ORG DISPONÍVEIS (cite pelo identificador, ex.: "V3"):\n${videos.map((v, i) => `[V${i + 1}] "${v.titulo}" (${[v.duracao, v.categoria, (v.publicado || "").slice(0, 4)].filter(Boolean).join("; ")})`).join("\n")}\n`
+      : `\nVÍDEOS: a lista não está disponível agora. Deixe "videos" vazio em todas as partes.\n`);
+  try {
+    const client = criarClienteIa({ maxRetries: 0, timeout: 240_000 }, P.ia.provedorTarefa);
+    const inicio = Date.now();
+    const resposta = await chamarIa(
+      client,
+      P,
+      { max_tokens: P.ia.provedorTarefa === "gemini" ? 32000 : 16000, system: P.sistemaAdoracaoFamilia, messages: [{ role: "user", content: mensagem }] },
+      { schema: SaidaAdoracaoFamilia, tarefa: "adoracao-familia" }
+    );
+    if (resposta.stop_reason === "refusal" || !resposta.parsed_output) return erro(res, 502, "A IA não conseguiu preparar as opções. Tente de novo.");
+    const linha = (v, max) => limparLinha(semCulto(semGotica(typeof v === "string" ? v : "")), max);
+    const porNumero = new Map((canticos || []).map((c) => [c.numero, c]));
+    // Textos bíblicos: cada referência conferida na Bíblia do servidor (com o texto); a que não for achada fica só com a referência.
+    const comBiblia = fontesConfiguradas();
+    const textosDe = async (refs) => {
+      const saida = [];
+      const vistas = new Set();
+      for (const bruta of (Array.isArray(refs) ? refs : []).slice(0, 6)) {
+        if (saida.length >= 4) break;
+        const ref = linha(bruta, 60);
+        if (!ref) continue;
+        const achado = comBiblia ? (await buscarVersiculos([ref], 1).catch(() => []))[0] : null;
+        const referencia = achado ? achado.referencia : ref;
+        if (vistas.has(referencia)) continue;
+        vistas.add(referencia);
+        saida.push({ referencia, texto: achado ? limparLinha(achado.texto, 2500) : "" });
+      }
+      return saida;
+    };
+    // "V3" (ou "[V3]", "V3 - título") -> o vídeo da lista enviada; o resto sai.
+    const videoDe = (codigo) => {
+      const m = String(codigo || "").match(/V\s*(\d{1,3})/i);
+      const v = m ? videos[Number(m[1]) - 1] : null;
+      return v ? { titulo: v.titulo, duracao: v.duracao || "", link: `https://www.jw.org/finder?srcid=share&wtlocale=T&lank=${encodeURIComponent(v.lank)}` } : null;
+    };
+    // "P2" -> a matéria do wol.jw.org enviada (título, publicação e endereço); um nome de publicação escrito pela IA fica como veio, sem endereço.
+    const publicacaoDe = (valor) => {
+      const texto = linha(valor, 200);
+      if (!texto) return null;
+      const m = texto.match(/^\[?P\s*(\d{1,2})\]?(?![\p{L}\d])/iu);
+      const materia = m ? materias[Number(m[1]) - 1] : null;
+      if (m && !materia) return null;
+      return materia ? { titulo: limparLinha(materia.titulo, 200), fonte: limparLinha(materia.rotulo, 120), url: materia.url } : { titulo: texto, fonte: "", url: "" };
+    };
+    const semRepetir = (lista, chave) => {
+      const vistos = new Set();
+      return lista.filter((x) => x && !vistos.has(chave(x)) && vistos.add(chave(x)));
+    };
+    const opcoes = [];
+    for (const o of resposta.parsed_output.opcoes.slice(0, 3)) {
+      const partes = [];
+      for (const p of (o.partes || []).slice(0, 10)) {
+        const nome = linha(p.nome, 80);
+        if (!nome) continue;
+        partes.push({
+          nome,
+          minutos: Math.min(120, Math.max(1, Math.round(Number(p.minutos) || 0))),
+          responsavel: linha(p.responsavel, 40),
+          descricao: limparTextoGerado(p.descricao, 1500),
+          textos: await textosDe(p.textos),
+          videos: semRepetir((p.videos || []).map(videoDe), (v) => v.link).slice(0, 3),
+          canticos: semRepetir((p.canticos || []).map((n) => porNumero.get(Math.round(Number(n)))), (c) => c.numero).slice(0, 3).map((c) => ({ numero: c.numero, titulo: c.titulo })),
+          publicacoes: semRepetir((p.publicacoes || []).map(publicacaoDe), (x) => x.titulo.toLowerCase()).slice(0, 4),
+          perguntas: (p.perguntas || []).map((q) => limparTextoGerado(q, 300)).filter(Boolean).slice(0, 5),
+        });
+      }
+      if (!partes.length) continue;
+      opcoes.push({
+        titulo: linha(o.titulo, 120) || `Opção ${opcoes.length + 1}`,
+        emoji: emojiDoComentario(o.emoji),
+        resumo: limparTextoGerado(o.resumo, 600),
+        objetivo: limparTextoGerado(o.objetivo, 400),
+        partes,
+        duracaoTotal: partes.reduce((s, p) => s + p.minutos, 0),
+        preparacao: (o.preparacao || []).map((t) => limparTextoGerado(t, 300)).filter(Boolean).slice(0, 8),
+        tarefas: (o.tarefas || []).map((t) => ({ membro: linha(t.membro, 40), tarefa: limparTextoGerado(t.tarefa, 400) })).filter((t) => t.tarefa).slice(0, 10),
+        dicaParaOChefe: o.dicaParaOChefe ? limparTextoGerado(o.dicaParaOChefe, 800) : "",
+      });
+    }
+    // Sem dados pessoais no log: só as contagens.
+    console.log("Adoração em Família:", JSON.stringify({ modelo: P.ia.modelo, membros: perfil.membros.length, assunto: Boolean(perfil.assunto), duracao: perfil.duracao, videos: videos.length, canticos: canticos ? canticos.length : 0, materias: materias.length, opcoes: opcoes.length, segundosIa: Math.round((Date.now() - inicio) / 100) / 10, entrada: resposta.usage?.input_tokens || 0, saida: resposta.usage?.output_tokens || 0 }));
+    if (!opcoes.length) return erro(res, 502, "A IA não conseguiu preparar as opções. Tente de novo.");
+    return res.status(200).json({ opcoes, duracao: perfil.duracao, assunto: perfil.assunto, modelo: nomeDoModelo(P.ia.modelo), data: new Date().toISOString() });
+  } catch (e) {
+    return tratarErro(e, res);
+  }
+}
+
 async function responderParte(res, body, P, tarefa) {
   const cfg = PARTES_APOSTILA[tarefa];
   const opcoes = validarOpcoes(body.opcoes);
@@ -5604,7 +5846,7 @@ async function tratarPedido(req, res) {
 
   // Pedidos demorados (esboços e Preparar para dirigir) com pedidoId: a resposta também é guardada ANTES de ser enviada, para o app
   // recuperá-la se a conexão cair no meio (a função só termina depois de enviar, então a gravação não se perde).
-  if ((TAREFAS_DE_ESBOCOS.has(tarefa) || tarefa === "pesquisa" || tarefa === "pesquisa-video") && idDePedidoValido(body.pedidoId) && pedidosDisponiveis()) {
+  if ((TAREFAS_DE_ESBOCOS.has(tarefa) || tarefa === "pesquisa" || tarefa === "pesquisa-video" || tarefa === "adoracao-familia") && idDePedidoValido(body.pedidoId) && pedidosDisponiveis()) {
     const enviar = res.json.bind(res);
     res.json = (dados) => {
       guardarResultado(body.pedidoId, res.statusCode || 200, dados)
@@ -5706,6 +5948,7 @@ async function tratarPedido(req, res) {
   if (tarefa === "nvc-transcricao") return formatarTranscricaoVideo(res, body, P);
   if (tarefa === "pesquisa-coletar") return coletarPesquisa(res, body, P);
   if (tarefa === "pesquisa") return responderPesquisa(res, body, P);
+  if (tarefa === "adoracao-familia") return responderAdoracaoFamilia(res, body, P); // Adoração em Família (código de pesquisa)
   if (tarefa === "pesquisa-video") return pesquisarVideo(res, body, P);
   if (tarefa === "pesquisa-videos") return sugerirVideos(res, body, P);
   if (tarefa === "ebc-dirigente") return perguntasEbcDirigente(res, body, P);

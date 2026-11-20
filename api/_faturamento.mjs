@@ -34,6 +34,7 @@ export const RECURSOS = [
   { id: "pesquisa", rotulo: "Assistente de pesquisas", cat: "texto", acesso: ["pesquisa"], tarefas: ["pesquisa-coletar", "pesquisa", "pesquisa-internet", "pesquisa-video", "pesquisa-videos"] },
   { id: "joias", rotulo: "Joias espirituais", cat: "texto", acesso: ["pesquisa"], tarefas: ["joias"] },
   { id: "texto-diario", rotulo: "Comentários do texto diário", cat: "texto", acesso: ["pesquisa"], tarefas: ["texto-diario-comentarios"] },
+  { id: "adoracao-familia", rotulo: "Adoração em Família", cat: "texto", acesso: ["pesquisa"], tarefas: ["adoracao-familia"] },
   { id: "dirigir", rotulo: "Preparar para dirigir (perguntas e recapitulação)", cat: "esbocos", acesso: ["dirigente"], tarefas: ["estudo-perguntas", "estudo-recap", "ebc-dirigente"] },
   { id: "esbocos", rotulo: "Esboços: Tesouros, discurso curto e outros", cat: "esbocos", acesso: ["dirigente"], tarefas: ["tesouros", "discurso", "outros"] },
   { id: "publico", rotulo: "Esboço do discurso público (S-34)", cat: "esbocos", acesso: ["s34"], tarefas: ["publico", "publico-importar", "publico-canticos"] },

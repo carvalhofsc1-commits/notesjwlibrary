@@ -16,7 +16,7 @@
     // É um app só: a tela escolhida (guardada no endereço, ex.: #reunioes) mostra os blocos dela e esconde os outros.
     // Formatar e Reuniões dividem o mesmo campo de texto. O app sempre abre no Início; ao recarregar a página, o endereço
     // mantém a tela em que se estava.
-    const APP_SCREENS = ['inicio', 'formatar', 'reunioes', 'backup', 'ajustes', 'leitura', 'transcricao', 'biblia', 'anotacoes', 'pesquisa', 'salvas']; // "leitura" = voz alta; "biblia" = leitura diária; "anotacoes" = reunião/assembleia/congresso; "pesquisa" = Assistente de pesquisas
+    const APP_SCREENS = ['inicio', 'formatar', 'reunioes', 'backup', 'ajustes', 'leitura', 'transcricao', 'biblia', 'anotacoes', 'pesquisa', 'salvas', 'familia']; // "leitura" = voz alta; "biblia" = leitura diária; "anotacoes" = reunião/assembleia/congresso; "pesquisa" = Assistente de pesquisas; "familia" = Adoração em Família
     try { localStorage.removeItem('jwLibraryNoteAplicarScreenV1'); } catch (e) { /* a tela não é mais guardada */ }
 
     function currentScreen() {
@@ -7917,7 +7917,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.01'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.02'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -9355,7 +9355,7 @@
     const REPORT_EMAIL = 'carvalhofsc1@gmail.com'; // o mesmo contato da página Sobre
     const MSG_SEM_CONSENTIMENTO = 'Para usar a IA e a leitura em voz alta é preciso concordar com o envio do texto. Toque no botão de novo quando quiser concordar.';
     // As tarefas do servidor que usam a IA (as outras só leem o wol.jw.org ou a Bíblia e não precisam da concordância).
-    const IA_TAREFAS = new Set(['pesquisa-coletar', 'pesquisa', 'pesquisa-video', 'pesquisa-videos', 'anotacoes-formatar','estudo', 'estudo-lista', 'estudo-perguntas', 'texto-diario-comentarios', 'ebc', 'consideracao', 'nvc', 'nvc-transcricao', 'ebc-dirigente', 'tesouros', 'publico', 'publico-importar', 'publico-canticos', 'outros', 'discurso', 'joias', 'leitura-biblia', 'sentinela']);
+    const IA_TAREFAS = new Set(['pesquisa-coletar', 'pesquisa', 'pesquisa-video', 'pesquisa-videos', 'adoracao-familia', 'anotacoes-formatar','estudo', 'estudo-lista', 'estudo-perguntas', 'texto-diario-comentarios', 'ebc', 'consideracao', 'nvc', 'nvc-transcricao', 'ebc-dirigente', 'tesouros', 'publico', 'publico-importar', 'publico-canticos', 'outros', 'discurso', 'joias', 'leitura-biblia', 'sentinela']);
     let consentimentoIaSessao = false; // vale só até fechar o app quando o aparelho não deixa gravar a escolha
     let consentimentoIaEmCurso = null;
 
@@ -16379,7 +16379,7 @@ function saveTemplatesToStorage() {
     // Faz a chamada ao servidor das tarefas de estudo (lista e respostas). Devolve { ok, data, unavailable }.
     // Pedidos demorados (esboços e Preparar para dirigir): vão com um id aleatório; o servidor guarda a resposta por algumas horas. Se a conexão
     // cair no meio (no iPhone, ao sair do app ou bloquear a tela), o app busca o resultado com esse id assim que volta (api/_pedidos.mjs).
-    const TAREFAS_LONGAS = new Set(['pesquisa', 'pesquisa-video', 'tesouros', 'discurso', 'publico', 'publico-importar', 'outros', 'estudo-perguntas', 'ebc-dirigente', 'estudo-recap']);
+    const TAREFAS_LONGAS = new Set(['pesquisa', 'pesquisa-video', 'adoracao-familia', 'tesouros', 'discurso', 'publico', 'publico-importar', 'outros', 'estudo-perguntas', 'ebc-dirigente', 'estudo-recap']);
     const novoPedidoId = () => (window.crypto && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2));
     const esperar = ms => new Promise(ok => setTimeout(ok, ms));
     // O resultado fica guardado no servidor por até 6 horas: com o app fora da tela (tela bloqueada, outro app) a busca ESPERA a pessoa voltar,
@@ -22671,6 +22671,8 @@ function saveTemplatesToStorage() {
       { onde: '.atalhos-grid [data-atalho="leitura"] .atalho-nome', codigo: 'leitura' },
       { onde: '.atalhos-grid [data-atalho="transcricao"] .atalho-nome', codigo: 'texto' },
       { onde: '.atalhos-grid [data-atalho="pesquisa"] .atalho-nome', codigo: 'pesquisa' },
+      { onde: '.atalhos-grid [data-atalho="familia"] .atalho-nome', codigo: 'pesquisa' },
+      { onde: '#familiaTitulo', codigo: 'pesquisa' },
       { onde: '#grupoComentarios .reunioes-subtitle', codigo: 'pesquisa' },
       { onde: '#grupoDirigir .reunioes-subtitle', codigo: 'dirigente' },
       { onde: '#grupoDiscursos .reunioes-subtitle', codigo: 'dirigente' },
@@ -22742,9 +22744,12 @@ function saveTemplatesToStorage() {
       travarGrupo('opcoesIaBox', pesquisa ? '' : 'pesquisa');
       travarAtalho('comentarios', pesquisa ? '' : 'pesquisa');
       travarAtalho('pesquisa', pesquisa ? '' : 'pesquisa'); // Assistente de pesquisas: só com o código de pesquisa
+      travarAtalho('familia', pesquisa ? '' : 'pesquisa'); // Adoração em Família: mesmo código de pesquisa
       const menuPesquisa = document.querySelector('#appMenu [data-menu-ir="pesquisa"]');
       if (menuPesquisa) menuPesquisa.disabled = !pesquisa;
-      if (!pesquisa && currentScreen() === 'pesquisa') showScreen('inicio'); // código apagado com a tela aberta: volta ao Início
+      const menuFamilia = document.querySelector('#appMenu [data-menu-ir="familia"]');
+      if (menuFamilia) menuFamilia.disabled = !pesquisa;
+      if (!pesquisa && (currentScreen() === 'pesquisa' || currentScreen() === 'familia')) showScreen('inicio'); // código apagado com a tela aberta: volta ao Início
       travarAtalho('leitura', codigoLeituraSalvo() ? '' : 'leitura');
       travarAtalho('transcricao', codigoTextoSalvo() ? '' : 'texto');
       if (!codigoTextoSalvo() && currentScreen() === 'transcricao') showScreen('inicio'); // código apagado com a tela aberta: volta ao Início
@@ -25481,6 +25486,400 @@ function saveTemplatesToStorage() {
       showScreen('salvas');
     }
     document.getElementById('salvasVoltar').addEventListener('click', () => showScreen(salvasDe && salvasDe !== 'salvas' ? salvasDe : 'inicio'));
+
+    // ---------- Adoração em Família (6.11.02) ----------
+    // Perfil só neste aparelho (apelido + ano de nascimento → idade na hora do pedido). A IA (mesma da resposta final das pesquisas) devolve 3 opções.
+    const FAMILIA_PERFIL_KEY = 'jwLibraryNoteAplicarFamiliaPerfilV1';
+    const FAMILIA_PAPEIS = ['Pai', 'Mãe', 'Marido', 'Esposa', 'Filho', 'Filha', 'Avô', 'Avó', 'Irmão', 'Irmã', 'Outro'];
+    const familiaMembrosEl = document.getElementById('familiaMembros');
+    const familiaFormacaoEl = document.getElementById('familiaFormacao');
+    const familiaAnosCasadosEl = document.getElementById('familiaAnosCasados');
+    const familiaOutrasCircEl = document.getElementById('familiaOutrasCirc');
+    const familiaDuracaoEl = document.getElementById('familiaDuracao');
+    const familiaAssuntoEl = document.getElementById('familiaAssunto');
+    const familiaStatusEl = document.getElementById('familiaStatus');
+    const familiaResultadoEl = document.getElementById('familiaResultado');
+    const familiaGerarBtn = document.getElementById('familiaGerarBtn');
+    const familiaCancelarBtn = document.getElementById('familiaCancelarBtn');
+    const familiaLimparBtn = document.getElementById('familiaLimparBtn');
+    let familiaPedido = 0;
+    let familiaOpcoes = null;
+
+    function familiaEscapar(texto) {
+      return String(texto == null ? '' : texto)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function familiaIdadeDe(ano) {
+      const n = Number(ano);
+      if (!Number.isInteger(n) || n < 1900 || n > new Date().getFullYear()) return null;
+      const idade = new Date().getFullYear() - n;
+      return idade >= 0 && idade <= 120 ? idade : null;
+    }
+
+    function familiaAnoOpcoesHtml(selecionado) {
+      const agora = new Date().getFullYear();
+      let html = '<option value="">Ano nasc.</option>';
+      for (let a = agora; a >= agora - 120; a--) {
+        html += '<option value="' + a + '"' + (String(selecionado) === String(a) ? ' selected' : '') + '>' + a + '</option>';
+      }
+      return html;
+    }
+
+    function familiaPapelOpcoesHtml(selecionado) {
+      const lista = FAMILIA_PAPEIS.slice();
+      if (selecionado && !lista.includes(selecionado)) lista.push(selecionado);
+      return '<option value="">Papel…</option>' + lista.map(p => '<option value="' + familiaEscapar(p) + '"' + (selecionado === p ? ' selected' : '') + '>' + familiaEscapar(p) + '</option>').join('');
+    }
+
+    function familiaMembroLinha(dados) {
+      const m = dados || {};
+      const linha = document.createElement('div');
+      linha.className = 'fam-membro';
+      linha.innerHTML =
+        '<input class="fam-campo fam-apelido" type="text" maxlength="30" autocomplete="off" spellcheck="false" placeholder="Apelido" value="' + familiaEscapar(m.apelido || '') + '">' +
+        '<select class="fam-campo fam-papel" aria-label="Papel">' + familiaPapelOpcoesHtml(m.papel || '') + '</select>' +
+        '<select class="fam-campo fam-ano" aria-label="Ano de nascimento">' + familiaAnoOpcoesHtml(m.anoNascimento) + '</select>' +
+        '<button class="secondary fam-membro-tirar" type="button" title="Remover membro" aria-label="Remover membro">🗑️</button>';
+      linha.querySelector('.fam-membro-tirar').addEventListener('click', () => {
+        linha.remove();
+        if (!familiaMembrosEl.children.length) familiaMembroAdd();
+        familiaPerfilSalvar();
+      });
+      linha.querySelectorAll('input, select').forEach(el => el.addEventListener('change', familiaPerfilSalvar));
+      linha.querySelector('.fam-apelido').addEventListener('input', () => { clearTimeout(linha._t); linha._t = setTimeout(familiaPerfilSalvar, 400); });
+      return linha;
+    }
+
+    function familiaMembroAdd(dados) {
+      familiaMembrosEl.appendChild(familiaMembroLinha(dados));
+    }
+
+    function familiaChecksLidos(caixa) {
+      return Array.from(caixa.querySelectorAll('input[type="checkbox"]:checked')).map(el => el.value);
+    }
+
+    function familiaChecksMarcar(caixa, valores) {
+      const set = new Set((valores || []).map(String));
+      caixa.querySelectorAll('input[type="checkbox"]').forEach(el => { el.checked = set.has(el.value); });
+    }
+
+    function familiaPerfilLerTela() {
+      const membros = Array.from(familiaMembrosEl.querySelectorAll('.fam-membro')).map(linha => ({
+        apelido: (linha.querySelector('.fam-apelido').value || '').trim().slice(0, 30),
+        papel: linha.querySelector('.fam-papel').value || '',
+        anoNascimento: Number(linha.querySelector('.fam-ano').value) || null
+      })).filter(m => m.apelido || m.papel || m.anoNascimento);
+      const anos = Number(familiaAnosCasadosEl.value);
+      return {
+        formacao: familiaFormacaoEl.value || '',
+        anosCasados: Number.isInteger(anos) && anos >= 0 && anos <= 80 ? anos : null,
+        membros,
+        circunstancias: familiaChecksLidos(document.getElementById('familiaCircunstancias')),
+        outrasCircunstancias: (familiaOutrasCircEl.value || '').trim().slice(0, 500),
+        atividades: familiaChecksLidos(document.getElementById('familiaAtividades')),
+        duracao: Number(familiaDuracaoEl.value) || 45,
+        assunto: (familiaAssuntoEl.value || '').trim().slice(0, 300)
+      };
+    }
+
+    function familiaPerfilSalvar() {
+      try { localStorage.setItem(FAMILIA_PERFIL_KEY, JSON.stringify(familiaPerfilLerTela())); } catch (e) { /* sem localStorage */ }
+    }
+
+    function familiaPerfilCarregar() {
+      let salvo = null;
+      try { salvo = JSON.parse(localStorage.getItem(FAMILIA_PERFIL_KEY) || 'null'); } catch (e) { salvo = null; }
+      if (!salvo || typeof salvo !== 'object') {
+        familiaMembroAdd({ papel: 'Pai' });
+        familiaMembroAdd({ papel: 'Mãe' });
+        return;
+      }
+      if (salvo.formacao) familiaFormacaoEl.value = salvo.formacao;
+      if (salvo.anosCasados != null) familiaAnosCasadosEl.value = String(salvo.anosCasados);
+      familiaChecksMarcar(document.getElementById('familiaCircunstancias'), salvo.circunstancias);
+      if (typeof salvo.outrasCircunstancias === 'string') familiaOutrasCircEl.value = salvo.outrasCircunstancias;
+      if (Array.isArray(salvo.atividades) && salvo.atividades.length) familiaChecksMarcar(document.getElementById('familiaAtividades'), salvo.atividades);
+      if ([30, 45, 60, 90].includes(Number(salvo.duracao))) familiaDuracaoEl.value = String(salvo.duracao);
+      if (typeof salvo.assunto === 'string') familiaAssuntoEl.value = salvo.assunto;
+      familiaMembrosEl.innerHTML = '';
+      const membros = Array.isArray(salvo.membros) && salvo.membros.length ? salvo.membros.slice(0, 12) : [{ papel: 'Pai' }, { papel: 'Mãe' }];
+      membros.forEach(familiaMembroAdd);
+    }
+
+    function familiaStatus(msg, tipo) {
+      if (!msg) { familiaStatusEl.hidden = true; familiaStatusEl.textContent = ''; return; }
+      familiaStatusEl.hidden = false;
+      familiaStatusEl.textContent = msg;
+      familiaStatusEl.className = 'fam-status' + (tipo === 'erro' ? ' erro' : tipo === 'ok' ? ' ok' : '');
+    }
+
+    function familiaPayloadDe(perfil) {
+      return {
+        tarefa: 'adoracao-familia',
+        codigo: codigoAcessoSalvo(),
+        formacao: perfil.formacao,
+        anosCasados: perfil.anosCasados,
+        membros: perfil.membros.map(m => ({
+          apelido: m.apelido,
+          papel: m.papel,
+          idade: familiaIdadeDe(m.anoNascimento)
+        })),
+        circunstancias: perfil.circunstancias,
+        outrasCircunstancias: perfil.outrasCircunstancias,
+        atividades: perfil.atividades,
+        duracao: perfil.duracao,
+        assunto: perfil.assunto
+      };
+    }
+
+    function familiaTextoDaOpcao(op) {
+      const linhas = [];
+      linhas.push((op.emoji ? op.emoji + ' ' : '') + (op.titulo || 'Opção'));
+      if (op.duracaoTotal) linhas.push('Duração: ' + op.duracaoTotal + ' min');
+      if (op.resumo) linhas.push('', op.resumo);
+      if (op.objetivo) linhas.push('', 'Objetivo: ' + op.objetivo);
+      (op.partes || []).forEach((p, i) => {
+        linhas.push('', (i + 1) + '. ' + (p.nome || 'Parte') + (p.minutos ? ' (' + p.minutos + ' min)' : '') + (p.responsavel ? ' — ' + p.responsavel : ''));
+        if (p.descricao) linhas.push(p.descricao);
+        (p.textos || []).forEach(t => {
+          linhas.push('📖 ' + (t.referencia || ''));
+          if (t.texto) linhas.push(t.texto);
+        });
+        (p.videos || []).forEach(v => linhas.push('🎬 ' + (v.titulo || '') + (v.duracao ? ' (' + v.duracao + ')' : '') + (v.link ? ' — ' + v.link : '')));
+        (p.canticos || []).forEach(c => linhas.push('🎵 Cântico ' + c.numero + (c.titulo ? ' — ' + c.titulo : '')));
+        (p.publicacoes || []).forEach(pub => linhas.push('📚 ' + [pub.titulo, pub.fonte].filter(Boolean).join(' · ') + (pub.url ? ' — ' + pub.url : '')));
+        (p.perguntas || []).forEach(q => linhas.push('❓ ' + q));
+      });
+      if ((op.preparacao || []).length) {
+        linhas.push('', 'Preparação:');
+        op.preparacao.forEach(t => linhas.push('• ' + t));
+      }
+      if ((op.tarefas || []).length) {
+        linhas.push('', 'Tarefas:');
+        op.tarefas.forEach(t => linhas.push('• ' + (t.membro ? t.membro + ': ' : '') + (t.tarefa || '')));
+      }
+      if (op.dicaParaOChefe) linhas.push('', 'Dica para o chefe: ' + op.dicaParaOChefe);
+      return linhas.join('\n');
+    }
+
+    function familiaRenderOpcoes(opcoes) {
+      familiaResultadoEl.innerHTML = '';
+      familiaOpcoes = opcoes;
+      opcoes.forEach((op, idx) => {
+        const card = document.createElement('article');
+        card.className = 'fam-opcao';
+        const topo = document.createElement('div');
+        topo.className = 'fam-opcao-topo';
+        const h = document.createElement('h3');
+        h.className = 'fam-opcao-titulo';
+        h.textContent = (op.emoji ? op.emoji + ' ' : '') + (op.titulo || ('Opção ' + (idx + 1)));
+        const meta = document.createElement('p');
+        meta.className = 'fam-opcao-meta';
+        meta.textContent = 'Opção ' + (idx + 1) + (op.duracaoTotal ? ' · ' + op.duracaoTotal + ' min' : '');
+        topo.append(h, meta);
+        card.appendChild(topo);
+        if (op.resumo) {
+          const p = document.createElement('p');
+          p.className = 'fam-opcao-resumo';
+          p.textContent = op.resumo;
+          card.appendChild(p);
+        }
+        if (op.objetivo) {
+          const p = document.createElement('p');
+          p.className = 'fam-opcao-objetivo';
+          p.innerHTML = '<strong>Objetivo:</strong> ' + familiaEscapar(op.objetivo);
+          card.appendChild(p);
+        }
+        (op.partes || []).forEach(parte => {
+          const bloco = document.createElement('div');
+          bloco.className = 'fam-parte';
+          const pt = document.createElement('div');
+          pt.className = 'fam-parte-topo';
+          const nome = document.createElement('p');
+          nome.className = 'fam-parte-nome';
+          nome.textContent = parte.nome || 'Parte';
+          pt.appendChild(nome);
+          if (parte.minutos) {
+            const min = document.createElement('p');
+            min.className = 'fam-parte-min';
+            min.textContent = parte.minutos + ' min';
+            pt.appendChild(min);
+          }
+          if (parte.responsavel) {
+            const resp = document.createElement('p');
+            resp.className = 'fam-parte-resp';
+            resp.textContent = parte.responsavel;
+            pt.appendChild(resp);
+          }
+          bloco.appendChild(pt);
+          if (parte.descricao) {
+            const d = document.createElement('p');
+            d.className = 'fam-parte-desc';
+            d.textContent = parte.descricao;
+            bloco.appendChild(d);
+          }
+          const addLista = (titulo, itens, montar) => {
+            if (!itens || !itens.length) return;
+            const t = document.createElement('p');
+            t.className = 'fam-secao-titulo';
+            t.textContent = titulo;
+            const ul = document.createElement('ul');
+            ul.className = 'fam-lista';
+            itens.forEach(item => {
+              const li = document.createElement('li');
+              montar(li, item);
+              ul.appendChild(li);
+            });
+            bloco.append(t, ul);
+          };
+          addLista('📖 Textos', parte.textos, (li, t) => {
+            li.textContent = t.referencia || '';
+            if (t.texto) {
+              const span = document.createElement('span');
+              span.textContent = ' — ' + t.texto;
+              li.appendChild(span);
+            }
+          });
+          addLista('🎬 Vídeos', parte.videos, (li, v) => {
+            if (v.link) {
+              const a = document.createElement('a');
+              a.href = v.link;
+              a.target = '_blank';
+              a.rel = 'noopener noreferrer';
+              a.textContent = (v.titulo || 'Vídeo') + (v.duracao ? ' (' + v.duracao + ')' : '');
+              li.appendChild(a);
+            } else li.textContent = v.titulo || 'Vídeo';
+          });
+          addLista('🎵 Cânticos', parte.canticos, (li, c) => { li.textContent = 'Cântico ' + c.numero + (c.titulo ? ' — ' + c.titulo : ''); });
+          addLista('📚 Publicações', parte.publicacoes, (li, pub) => {
+            const rotulo = [pub.titulo, pub.fonte].filter(Boolean).join(' · ');
+            if (pub.url) {
+              const a = document.createElement('a');
+              a.href = pub.url;
+              a.target = '_blank';
+              a.rel = 'noopener noreferrer';
+              a.textContent = rotulo || pub.url;
+              li.appendChild(a);
+            } else li.textContent = rotulo;
+          });
+          addLista('❓ Perguntas', parte.perguntas, (li, q) => { li.textContent = q; });
+          card.appendChild(bloco);
+        });
+        if ((op.preparacao || []).length) {
+          const t = document.createElement('p');
+          t.className = 'fam-secao-titulo';
+          t.textContent = '📋 Preparação';
+          const ul = document.createElement('ul');
+          ul.className = 'fam-lista';
+          op.preparacao.forEach(item => { const li = document.createElement('li'); li.textContent = item; ul.appendChild(li); });
+          card.append(t, ul);
+        }
+        if ((op.tarefas || []).length) {
+          const t = document.createElement('p');
+          t.className = 'fam-secao-titulo';
+          t.textContent = '✅ Tarefas';
+          const ul = document.createElement('ul');
+          ul.className = 'fam-lista';
+          op.tarefas.forEach(item => {
+            const li = document.createElement('li');
+            li.textContent = (item.membro ? item.membro + ': ' : '') + (item.tarefa || '');
+            ul.appendChild(li);
+          });
+          card.append(t, ul);
+        }
+        if (op.dicaParaOChefe) {
+          const dica = document.createElement('p');
+          dica.className = 'fam-dica-chefe';
+          dica.textContent = '💡 ' + op.dicaParaOChefe;
+          card.appendChild(dica);
+        }
+        const acoes = document.createElement('div');
+        acoes.className = 'fam-opcao-acoes';
+        const copiar = document.createElement('button');
+        copiar.type = 'button';
+        copiar.className = 'secondary fam-fino';
+        copiar.textContent = '📋 Copiar esta opção';
+        copiar.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(familiaTextoDaOpcao(op));
+            copiar.textContent = '✅ Copiado';
+            setTimeout(() => { copiar.textContent = '📋 Copiar esta opção'; }, 1600);
+          } catch (e) {
+            familiaStatus('Não consegui copiar. Selecione o texto e copie manualmente.', 'erro');
+          }
+        });
+        acoes.appendChild(copiar);
+        card.appendChild(acoes);
+        familiaResultadoEl.appendChild(card);
+      });
+      familiaResultadoEl.hidden = !opcoes.length;
+      familiaLimparBtn.hidden = !opcoes.length;
+    }
+
+    async function familiaGerar() {
+      if (!codigoAcessoSalvo()) {
+        familiaStatus('Salve o código de pesquisa em Ajustes → 🔐 Autorização de acessos.', 'erro');
+        return;
+      }
+      familiaPerfilSalvar();
+      const perfil = familiaPerfilLerTela();
+      if (!perfil.formacao && !perfil.membros.some(m => m.apelido || m.papel)) {
+        familiaStatus('Descreva a família: a formação ou pelo menos um membro.', 'erro');
+        return;
+      }
+      const pedido = ++familiaPedido;
+      familiaGerarBtn.disabled = true;
+      familiaCancelarBtn.hidden = false;
+      familiaStatus('Preparando as 3 opções… pode levar um minuto.');
+      try {
+        const result = await postStudy(familiaPayloadDe(perfil), IA_ESPERA_MS);
+        if (pedido !== familiaPedido) return;
+        if (!result.ok) {
+          familiaStatus((result.data && result.data.erro) || (result.unavailable ? 'Serviço indisponível no momento.' : 'Não consegui preparar as opções. Tente de novo.'), 'erro');
+          return;
+        }
+        const opcoes = Array.isArray(result.data.opcoes) ? result.data.opcoes : [];
+        if (!opcoes.length) {
+          familiaStatus('A IA não devolveu opções. Tente de novo.', 'erro');
+          return;
+        }
+        familiaRenderOpcoes(opcoes);
+        const modelo = result.data.modelo ? ' · ' + result.data.modelo : '';
+        familiaStatus('Pronto: ' + opcoes.length + ' opções' + modelo + '.', 'ok');
+        familiaResultadoEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (e) {
+        if (pedido !== familiaPedido) return;
+        familiaStatus('Não consegui preparar as opções. Confira a conexão e tente de novo.', 'erro');
+      } finally {
+        if (pedido === familiaPedido) {
+          familiaGerarBtn.disabled = false;
+          familiaCancelarBtn.hidden = true;
+        }
+      }
+    }
+
+    document.getElementById('familiaVoltar').addEventListener('click', () => showScreen('inicio'));
+    document.getElementById('familiaMembroAdd').addEventListener('click', () => { familiaMembroAdd(); familiaPerfilSalvar(); });
+    familiaGerarBtn.addEventListener('click', familiaGerar);
+    familiaCancelarBtn.addEventListener('click', () => {
+      familiaPedido++;
+      familiaStatus('Cancelado.');
+      familiaGerarBtn.disabled = false;
+      familiaCancelarBtn.hidden = true;
+    });
+    familiaLimparBtn.addEventListener('click', () => {
+      familiaOpcoes = null;
+      familiaResultadoEl.innerHTML = '';
+      familiaResultadoEl.hidden = true;
+      familiaLimparBtn.hidden = true;
+      familiaStatus('');
+    });
+    [familiaFormacaoEl, familiaAnosCasadosEl, familiaDuracaoEl].forEach(el => el.addEventListener('change', familiaPerfilSalvar));
+    [familiaOutrasCircEl, familiaAssuntoEl].forEach(el => el.addEventListener('input', () => { clearTimeout(el._t); el._t = setTimeout(familiaPerfilSalvar, 400); }));
+    document.getElementById('familiaCircunstancias').addEventListener('change', familiaPerfilSalvar);
+    document.getElementById('familiaAtividades').addEventListener('change', familiaPerfilSalvar);
+    familiaPerfilCarregar();
 
     function reunioesVistaAtual() { return document.body.dataset.reunioes || 'hub'; }
 

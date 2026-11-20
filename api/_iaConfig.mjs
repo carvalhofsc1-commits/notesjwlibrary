@@ -121,7 +121,8 @@ export function iaDaTarefa(config, tarefa) {
   if (tarefa === "audio") return { ...config, modelo: config.audioModelo || config.modelo, esforco: config.esforco };
   // Assistente de pesquisas: o modelo de cada etapa e o provedor que o atende (provedorTarefa).
   if (tarefa === "pesquisa-coletar" || tarefa === "pesquisa-videos") return { ...config, modelo: config.pesquisaModelo, esforco: "low", provedorTarefa: provedorDoModelo(config, config.pesquisaModelo) };
-  if (tarefa === "pesquisa") return { ...config, modelo: config.pesquisaRespostaModelo, esforco: config.pesquisaRespostaEsforco, provedorTarefa: provedorDoModelo(config, config.pesquisaRespostaModelo) };
+  // A Adoração em Família (6.11.02) usa o mesmo modelo e esforço da resposta das pesquisas (Ajustes → Modelos e agentes de IA).
+  if (tarefa === "pesquisa" || tarefa === "adoracao-familia") return { ...config, modelo: config.pesquisaRespostaModelo, esforco: config.pesquisaRespostaEsforco, provedorTarefa: provedorDoModelo(config, config.pesquisaRespostaModelo) };
   if (!TAREFAS_DE_ESBOCOS.has(tarefa)) return { ...config, modelo: config.modelo, esforco: config.esforco };
   return { ...config, modelo: config.esbocoModelo || config.modelo, esforco: config.esbocoEsforco || config.esforco };
 }

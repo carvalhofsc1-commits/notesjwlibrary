@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.02
+
+- Adoração em Família: nova tela (atalho na página 3 do Início e item no menu), liberada pelo código de pesquisa. O perfil da família fica só no aparelho (formação, apelidos, papéis, ano de nascimento → idade calculada na hora, circunstâncias, atividades, duração e assunto). A IA (a mesma da resposta final das pesquisas) prepara 3 opções completas, com partes, textos bíblicos, vídeos do jw.org, cânticos, publicações, perguntas, preparação, tarefas e dica para o chefe. Dá para copiar cada opção.
+
 ## 6.11.01
 
 - Computador (tela a partir de 1180 px): sai o atalho Menu do centro da barra do topo, porque o mesmo menu já abre pelo ☰ à esquerda. Ficam seis atalhos (Início, Anotações, Pesquisas, Reuniões, Gravar e Bíblia). Abaixo de 1180 px e no celular o atalho Menu continua.
