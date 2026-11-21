@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.33
+
+- Adoração em Família: o bloco recolhível do topo, antes "Cadastro da família", agora se chama **Família e definições gerais**, porque guarda também circunstâncias e atividades aceitas, não só o cadastro.
+
 ## 6.11.32
 
 - Adoração em Família: o privilégio digitado como "Comulter" passou a ser **Commuter** (nome em inglês), na lista do cadastro e na lista aceita pelo servidor.
