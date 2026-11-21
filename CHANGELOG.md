@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.61
+
+- **Considerações para o serviço de campo:**
+  1. A seção **Lembretes para o dirigente** foi **abolida** (campo, parte do esboço e regra do prompt). A "Dica para o dirigente" do topo continua.
+  2. **Pergunta obrigatória:** toda consideração leva pelo menos uma pergunta para a assistência, baseada no texto lido (antes ou depois da leitura) ou feita depois da explicação de um ponto importante da matéria. Se a IA não trouxer nenhuma, o app avisa ("ficou sem uma pergunta… use Melhorar").
+  3. **Referência obrigatória à brochura Ame as Pessoas (lmd)**, mesmo quando a matéria escolhida não é dela: 1 ou 2 frases curtas no fim (parte "❤️ Ame as Pessoas"), mostrando como um ponto da brochura concorda com o ponto considerado ou como um lembrete curto, sempre citando a lição ("lmd lição N, Nome"). O servidor garante uma lição do lmd na mensagem (a que mais combina com o assunto), mesmo com a caixa do lmd desmarcada; se a IA não citar uma lição da mensagem, entra só a referência ("Veja também a brochura Ame as Pessoas: lmd lição N, Nome"), sem dizer o que a lição ensina. A lição citada entra na lista de fontes.
+
 ## 6.11.60
 
 - **Considerações para o serviço de campo — esboço bem menor e no formato próprio** (regras registradas só para esta consideração, no prompt "Considerações para o serviço de campo", que o administrador vê e edita na tela de prompts):

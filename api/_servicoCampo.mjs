@@ -238,6 +238,35 @@ export async function licoesQueCombinam(consulta, { lmd = true, th = true, max =
   }
 }
 
+// 6.11.61: toda consideração faz referência à brochura Ame as Pessoas (lmd). Se nenhuma lição dela combinou com o assunto, entra a que mais se
+// aproxima (a primeira, no empate), para a IA ter sempre uma lição da brochura para citar.
+export async function garantirLicaoLmd(consulta, licoes) {
+  if (licoes.some((l) => l.sigla === "lmd")) return licoes;
+  try {
+    const lista = await licoesDaBrochura("ameAsPessoas");
+    if (!lista || !lista.length) return licoes;
+    const raizes = raizesDe(consulta);
+    const melhor = lista
+      .map((l) => ({ l, n: pontuar(raizes, l.nome) * 3 + pontuar(raizes, l.texto) }))
+      .sort((a, b) => b.n - a.n || a.l.licao - b.l.licao)[0].l;
+    return [...licoes, { sigla: melhor.sigla, licao: melhor.licao, nome: melhor.nome, texto: cortar(melhor.texto, 900) }];
+  } catch (e) {
+    console.error("Serviço de campo: lição do lmd indisponível", e?.message);
+    return licoes;
+  }
+}
+
+// A frase da brochura vale se citar uma das lições do lmd que foram na mensagem ("lmd lição 3"); senão, vai só a referência (sem dizer o que a
+// lição ensina, para não inventar). Devolve { texto, citada } — texto "" quando não há lição do lmd.
+export function brochuraDaConsideracao(texto, licoesLmd) {
+  const limpo = linha(texto, 400);
+  if (!licoesLmd.length) return { texto: "", citada: null };
+  const citada = licoesLmd.find((l) => new RegExp(`lmd\\s*(?:li[cç][aã]o|lic\\.?)\\s*${l.licao}(?!\\d)`, "i").test(limpo));
+  if (limpo && citada) return { texto: limpo, citada };
+  const l = licoesLmd[0];
+  return { texto: `Veja também a brochura Ame as Pessoas: lmd lição ${l.licao}, ${l.nome}.`, citada: l };
+}
+
 export async function trechosBe(consulta) {
   try {
     return await buscarNosLivros(consulta, { max: 2, maxChars: 700, livros: [nomeDoLivro("beneficieEscola")] });

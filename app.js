@@ -7931,7 +7931,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.60'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.61'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -18449,10 +18449,9 @@ function saveTemplatesToStorage() {
       });
       const fim = esboco.conclusao;
       if (!fim || (fim.blocos && fim.blocos.length)) partes.push({ paragrafos: 'Conclusão', texto: montar([subtitulo(fim.titulo, fim.minutos)], falas(fim.blocos)) });
-      // Lembretes finais SÓ para o dirigente (não são falados ao grupo): uma parte à parte, no fim.
-      if (Array.isArray(esboco.lembretes) && esboco.lembretes.length) {
-        partes.push({ paragrafos: 'Lembretes do dirigente', texto: ['🧑‍🏫 ' + negrito(maiusculas('Lembretes para o dirigente')) + ' (não são falados ao grupo)', ...esboco.lembretes.map(l => '• ' + comPerguntas(l))].join('\n\n') });
-      }
+      // Considerações para o serviço de campo (6.11.61): a referência à brochura Ame as Pessoas, que vai em toda consideração (um ponto da brochura
+      // que concorda com o ponto considerado ou um lembrete curto no fim), sempre com a lição citada.
+      if (esboco.brochura) partes.push({ paragrafos: 'Ame as Pessoas', texto: '❤️ ' + negrito('Ame as Pessoas') + ' 👉 ' + comPerguntas(esboco.brochura) });
       return partes;
     }
 

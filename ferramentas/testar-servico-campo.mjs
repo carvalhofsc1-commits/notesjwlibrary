@@ -283,7 +283,7 @@ if (comFontes) {
         { titulo: "Um segundo ângulo", minutos: 3, fonte: "lmd lição 1, Interesse pelas pessoas", aplicacao: null, ilustracao: null, transicao: "", desenvolvimento: [{ argumento: "Imite Jesus na conversa com a samaritana.", ideias: [], leitura: null }] },
         { titulo: "Um terceiro que sobra", minutos: 1, fonte: "w99.01, § 2", aplicacao: null, ilustracao: null, transicao: "", desenvolvimento: [{ argumento: "Algo mais.", ideias: [], leitura: null }] },
       ],
-      lembretes: ["Lembrar os publicadores de levar as publicações.", "Formar as duplas com consideração.", "", "Entregar o território."],
+      brochura: "Isso concorda com o que vimos na brochura Ame as Pessoas, lmd lição 1, Interesse pelas pessoas: o amor nos leva a olhar os interesses dos outros.",
       dicaDirigente: "Tenha o território já separado.",
     };
     const r = await chamar({ tarefa: "campo", data: "2026-11-21", minutos: 7, tipos: ["publico"], assunto: "interesse pelas pessoas", evitar: "Boas maneiras na porta", recentes: ["Boas maneiras na porta"], fontes: fontesSemRede });
@@ -308,17 +308,34 @@ if (comFontes) {
     assert.equal(esboco.pontos[0].ilustracao, "Como um amigo que se lembra do nome de todos.");
     const fontesCitadas = esboco.pontos.flatMap((x) => x.fontes || []);
     assert.ok(!fontesCitadas.some((x) => /w24\.05|w99/.test(x)), `fontes: ${fontesCitadas}`);
-    assert.deepEqual(esboco.lembretes, ["Lembrar os publicadores de levar as publicações.", "Formar as duplas com consideração.", "Entregar o território."]);
+    assert.ok(!("lembretes" in esboco), "a seção de lembretes do dirigente foi abolida");
+    assert.match(esboco.brochura, /lmd lição 1, Interesse pelas pessoas/, "a referência ao Ame as Pessoas vai em toda consideração");
+    assert.ok(esboco.fontes.some((x) => /^lmd lição 1/.test(x)), `fontes: ${esboco.fontes}`);
+    assert.ok(!("lembretes" in esboco), "a seção de lembretes do dirigente foi abolida");
+    assert.ok(!r.corpo.avisos.some((a) => /sem uma pergunta/.test(a)), "a consideração tem pergunta (O que Paulo recomendou?)");
     assert.equal(esboco.dicaDirigente, "Tenha o território já separado.");
     assert.equal(esboco.paragrafoW24, null);
     assert.ok(Array.isArray(esboco.fontes));
+  });
+
+  teste("handler campo: sem citar o lmd, entra só a referência; sem pergunta, avisa", async () => {
+    respostaDaIa = {
+      tema: "Sem pergunta", objetivo: "",
+      pontos: [{ titulo: "Aplicar", minutos: 5, fonte: "", aplicacao: null, ilustracao: null, transicao: "", desenvolvimento: [{ argumento: "", ideias: [], leitura: { referencia: "Filipenses 2:4", introducao: "", destaque: "Olhe também os interesses dos outros." } }, { argumento: "Hoje, escute mais.", ideias: [], leitura: null }] }],
+      brochura: "A brochura diz algo importante sobre ouvir.", dicaDirigente: "",
+    };
+    const r = await chamar({ tarefa: "campo", data: "2026-11-21", assunto: "interesse pelas pessoas", fontes: { ...fontesSemRede, lmd: false } });
+    assert.equal(r.statusCode, 200, JSON.stringify(r.corpo));
+    assert.match(r.corpo.esboco.brochura, /^Veja também a brochura Ame as Pessoas: lmd lição \d+, /, r.corpo.esboco.brochura);
+    assert.ok(r.corpo.avisos.some((a) => /sem uma pergunta/.test(a)), "avisa quando não há pergunta");
+    assert.ok(r.corpo.esboco.fontes.some((x) => /^lmd lição \d+/.test(x)), "o lmd entra na lista de fontes mesmo com a caixa desmarcada");
   });
 
   teste("handler campo: sem leitura bíblica a consideração não vale", async () => {
     respostaDaIa = {
       tema: "Sem texto", objetivo: "",
       pontos: [{ titulo: "Só aplicações", minutos: 5, fonte: "", aplicacao: null, ilustracao: null, transicao: "", desenvolvimento: [{ argumento: "Uma aplicação.", ideias: [], leitura: null }] }],
-      lembretes: [], dicaDirigente: "",
+      brochura: "", dicaDirigente: "",
     };
     const r = await chamar({ tarefa: "campo", data: "2026-11-21", fontes: fontesSemRede });
     assert.equal(r.statusCode, 200);

@@ -26,7 +26,9 @@ import {
   dataCurta,
   dataPorExtenso,
   escolherParagrafoW24,
+  brochuraDaConsideracao,
   fonteDoPonto,
+  garantirLicaoLmd,
   licoesQueCombinam,
   listaDeFontes,
   nomesDosTipos,
@@ -4825,7 +4827,9 @@ const SaidaCampo = z.object({
   tema: z.string(),
   objetivo: z.string(),
   pontos: z.array(pontoDoEsboco().extend({ fonte: z.string() })),
-  lembretes: z.array(z.string()),
+  // 6.11.61: toda consideração faz referência à brochura Ame as Pessoas (lmd): um ponto da brochura que concorda com o ponto considerado
+  // ou um lembrete curto no fim, sempre citando a lição ("lmd lição N, Nome"). Os lembretes finais do dirigente foram abolidos.
+  brochura: z.string(),
   dicaDirigente: z.string(),
 });
 const SaidaCampoAssuntos = z.object({
@@ -4851,7 +4855,8 @@ async function fontesDoCampo(d, { timeoutMs = 9000 } = {}) {
   const paragrafo = escolha ? escolha.paragrafo : null;
   const consulta = consultaDoCampo(d, paragrafo);
   const [licoes, extras, be] = await Promise.all([
-    d.fontes.lmd || d.fontes.th ? licoesQueCombinam(consulta, { lmd: d.fontes.lmd, th: d.fontes.th, max: 3 }) : [],
+    // O lmd (Ame as Pessoas) entra sempre: toda consideração faz referência a essa brochura (a caixa só vale para o th).
+    licoesQueCombinam(consulta, { lmd: true, th: d.fontes.th, max: 3 }).then((l) => garantirLicaoLmd(consulta, l)),
     d.fontes.artigos.length ? complementares(consulta, { max: 2, timeoutMs, codigos: d.fontes.artigos }) : { artigos: [], naoAchados: [] },
     d.fontes.be ? trechosBe(consulta) : [],
   ]);
@@ -4940,14 +4945,19 @@ async function esbocoDeCampo(res, body, P) {
       exatos.map((e, i) => ({ i, resto: e - Math.floor(e) })).sort((a, b) => b.resto - a.resto).forEach(({ i }) => { if (sobra-- > 0) minutos[i]++; });
       corpo.pontos.forEach((p, i) => { p.minutos = minutos[i]; });
     }
-    const citado = JSON.stringify(bruto);
+    // A referência à brochura Ame as Pessoas (obrigatória em toda consideração): a frase da IA, se citar uma lição do lmd da mensagem; senão, só a referência.
+    const brochura = brochuraDaConsideracao(bruto.brochura, f.licoes.filter((l) => l.sigla === "lmd"));
+    const citado = JSON.stringify(bruto) + " " + brochura.texto;
     const esboco = {
       ...corpo,
       fontes: listaDeFontes(f, citado),
       paragrafoW24: f.paragrafo ? f.paragrafo.numero : null,
-      lembretes: (Array.isArray(bruto.lembretes) ? bruto.lembretes : []).map((x) => limparTextoGerado(x, 220)).filter(Boolean).slice(0, 5),
+      brochura: brochura.texto,
       dicaDirigente: limparTextoGerado(bruto.dicaDirigente, 500),
     };
+    // Toda consideração leva uma pergunta para a assistência (baseada no texto lido ou depois da explicação de um ponto importante).
+    const falas = esboco.pontos.flatMap((p) => [p.ilustracao, ...p.desenvolvimento.flatMap((x) => [x.argumento, ...(x.ideias || []), x.leitura && x.leitura.introducao, x.leitura && x.leitura.destaque])]);
+    if (!falas.some((x) => typeof x === "string" && x.includes("?"))) avisos.push('A consideração ficou sem uma pergunta para a assistência. Use "Melhorar" para pedir uma.');
     if (f.paragrafo && !corpo.pontos.some((p) => p.fontes.some((x) => /w24\.05/i.test(x)))) {
       avisos.push(`O esboço não cita "w24.05, § ${f.paragrafo.numero}" em nenhum ponto. Use "Melhorar" para pedir a citação.`);
     }
