@@ -2647,7 +2647,7 @@ const campoCsv = (v) => {
 const DURACOES_ADORACAO = [30, 45, 60, 90];
 const MAX_MEMBROS_FAMILIA = 12;
 const SITUACOES_FAMILIA = ["Batizado", "Publicador não batizado", "Removido", "Descrente", "Estudante"];
-const PRIVILEGIOS_FAMILIA = ["Pioneiro regular", "Pioneiro auxiliar", "Pioneiro especial", "Ancião", "Servo ministerial", "Serviço de Betel", "Superintendente viajante", "Voluntário a distância", "Comulter", "Tempo integral especial"];
+const PRIVILEGIOS_FAMILIA = ["Pioneiro regular", "Pioneiro auxiliar", "Pioneiro especial", "Ancião", "Servo ministerial", "Serviço de Betel", "Superintendente viajante", "Voluntário a distância", "Commuter", "Tempo integral especial"];
 // As seções do catálogo de vídeos (nomes conferidos no catálogo em 2026-11-20), com quantos vídeos de cada (os mais novos), que entram
 // conforme a família: as de família e de relatos da Bíblia sempre; a série do casamento quando há um casal; as de crianças com alguém de até
 // 12 anos; as de adolescentes com alguém de 13 a 19; as adorações matinais quando não há criança (estudo pessoal, casal, adolescentes).

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.32
+
+- Adoração em Família: o privilégio digitado como "Comulter" passou a ser **Commuter** (nome em inglês), na lista do cadastro e na lista aceita pelo servidor.
+
 ## 6.11.31
 
 - Tela inicial: o atalho **Joias espirituais** saiu dos atalhos. Como era o único da página 3, a página 3 e o seu ponto de navegação também saíram, e os atalhos ficam em duas páginas de 8. As joias continuam disponíveis em Reuniões → Comentários (e em Pesquisas salvas).
