@@ -1,3 +1,5 @@
+import { guiaLocalTopicos, artigosDoTopicoDoGuia } from "./_fontes.mjs";
+
 // Leitura do estudo de A Sentinela direto no wol.jw.org pelo próprio servidor (sem a IA ler a página inteira).
 // O arquivo começa com "_" para a Vercel não publicá-lo como rota.
 //
@@ -2460,6 +2462,65 @@ export async function entradasDoGuia(topico, timeoutMs) {
   paginasGuia.set(topico.url, { quando: Date.now(), entradas });
   if (paginasGuia.size > 80) paginasGuia.delete(paginasGuia.keys().next().value);
   return entradas;
+}
+
+// ---------- Guia de Pesquisa lido do arquivo do servidor (o jw.org barra o servidor) ----------
+// Os tópicos e os artigos vêm do arquivo (fontes/guia_de_pesquisa.txt, veja _fontes.mjs); aqui se escolhe o tópico e se acha o artigo no wol
+// pelo título (busca da frase exata). Daí em diante é igual ao Guia online: faixa de parágrafos, parágrafos pelo número ou o melhor parágrafo.
+export async function topicosDoGuiaDoArquivoPara(textos, maximo = 2) {
+  const consulta = new Set(textos.flatMap(raizes));
+  if (!consulta.size) return [];
+  const lista = await guiaLocalTopicos();
+  return lista
+    .map((t) => {
+      t.palavras = t.palavras || [...new Set(raizes(t.nome))];
+      const achadas = t.palavras.filter((w) => consulta.has(w)).length;
+      const fortes = t.palavras.filter((w) => consulta.has(w) && !GENERICAS.has(w)).length;
+      return { t, achadas, fortes, parte: t.palavras.length ? achadas / t.palavras.length : 0 };
+    })
+    .filter((x) => x.fortes && x.parte >= 0.5 && artigosDoTopicoDoGuia(x.t).length) // tópico só de "Veja: …" não tem artigos
+    .sort((a, b) => b.parte - a.parte || b.achadas - a.achadas || a.t.nome.length - b.t.nome.length)
+    .slice(0, maximo)
+    .map((x) => x.t);
+}
+
+const docsDoGuia = new Map(); // "título|ano" -> { quando, docId }
+const igualTitulo = (a, b) => semAcento(a).replace(/[^a-z0-9]+/g, " ").trim() === semAcento(b).replace(/[^a-z0-9]+/g, " ").trim();
+
+// O documento do wol de um artigo do Guia (pelo título e, se o código trouxer, o ano): docId ou null.
+export async function docDoArtigoDoGuia(artigo, timeoutMs) {
+  const chave = `${artigo.titulo}|${artigo.ano || ""}`;
+  const guardado = docsDoGuia.get(chave);
+  if (guardado && Date.now() - guardado.quando < VALIDADE_GUIA_MS) return guardado.docId;
+  let docId = null;
+  // O título que o Guia traz às vezes vem com palavras do subtítulo na frente ("Irmãos na fé “Chame os anciãos”"): se a frase inteira não
+  // acha, tenta de novo sem as 1 a 4 primeiras palavras (no máximo 5 buscas por artigo).
+  const palavras = artigo.titulo.replace(/[“”"‘’:;|—–]/g, " ").replace(/[?!.…]+$/, "").trim().split(/\s+/);
+  const tentativas = [0, 1, 2, 3, 4].filter((n) => palavras.length - n >= (n ? 3 : 1)).map((n) => palavras.slice(n).join(" ").slice(0, 150));
+  for (const frase of tentativas) {
+    try {
+      const url = `${BASE}/pt/wol/s/r5/lp-t?q=${encodeURIComponent('"' + frase + '"')}&p=par&r=occ&st=a`;
+      const html = (await baixar(url, timeoutMs)).replace(/&lrm;/g, "");
+      const achados = html
+        .split('<ul class="results resultContentDocument">')
+        .slice(1)
+        .map((bloco) => {
+          const cabeca = bloco.match(/<a class="lnk" href="\/pt\/wol\/d\/r5\/lp-t\/(\d+)[^"]*"[^>]*>([\s\S]*?)<\/a>/);
+          if (!cabeca) return null;
+          const ref = textoDe((bloco.match(/<li class="ref">([\s\S]*?)<\/li>/) || [])[1] || "");
+          return { docId: cabeca[1], titulo: textoDe(cabeca[2]).replace(/­/g, ""), ...referenciaDaBusca(ref) };
+        })
+        .filter(Boolean)
+        .slice(0, 10);
+      const certo = achados.find((r) => igualTitulo(r.titulo, frase) && (!artigo.ano || !r.ano || r.ano === artigo.ano)) || achados.find((r) => igualTitulo(r.titulo, frase));
+      if (certo) { docId = certo.docId; break; }
+    } catch {
+      break; // o wol não respondeu: não adianta insistir
+    }
+  }
+  docsDoGuia.set(chave, { quando: Date.now(), docId });
+  if (docsDoGuia.size > 400) docsDoGuia.delete(docsDoGuia.keys().next().value);
+  return docId;
 }
 
 // Os parágrafos de número parDe..parAte (data-pnum) de um documento do wol, como faixaDoDocumento. null = não achou esses números.

@@ -566,6 +566,77 @@ export async function buscarNosLivros(consulta, { max = 4, maxChars = 1500 } = {
   });
 }
 
+// ---------- Guia de Pesquisa (arquivo do servidor) ----------
+// O Guia de Pesquisa para Testemunhas de Jeová em texto (fontes/guia_de_pesquisa.txt): uma linha por tópico ("ANSIEDADE. Veja: …" e blocos
+// "### Subtítulo título código págs. 2-3 título código…"). O jw.org barra o servidor, então o Guia não pode mais ser lido de lá; daqui saem os
+// tópicos e, de cada um, os artigos (título, código da publicação e páginas/parágrafos). O wol é quem entrega o texto (veja _wol.mjs).
+let guiaLocal = null; // Promise<[{ nome, texto }]>
+
+function lerTopicosDoGuia(texto) {
+  const topicos = [];
+  let atual = null;
+  const cabecalho = /^([A-ZÀ-Ý0-9][A-ZÀ-Ý0-9 ,'’“”()\-:/.·ªº]*?)\.(?: (.*))?$/;
+  for (const linha of texto.replace(/[⁠­]/g, "").split(/\r?\n/)) {
+    if (!linha.trim() || linha.startsWith("## ")) continue; // as linhas "## 5:14 …" são o índice de textos bíblicos
+    const m = linha.startsWith("###") ? null : linha.match(cabecalho);
+    if (m && /[A-ZÀ-Ý]{2}/.test(m[1]) && m[1] === m[1].toUpperCase()) {
+      if ((m[2] || "").startsWith("##")) { atual = null; continue; } // "TIAGO. ## 1:1 …": começa a seção de versículos do livro
+      atual = { nome: m[1], texto: m[2] || "" };
+      topicos.push(atual);
+      continue;
+    }
+    if (atual) atual.texto += "\n" + linha;
+  }
+  return topicos;
+}
+
+export function guiaLocalTopicos() {
+  if (!fontesConfiguradas()) return Promise.resolve([]);
+  if (!guiaLocal) {
+    guiaLocal = baixar(ARQUIVOS.guiaDePesquisa).then(lerTopicosDoGuia);
+    guiaLocal.catch(() => (guiaLocal = null));
+  }
+  return guiaLocal;
+}
+
+// Códigos que não são artigo para ler no wol: apostila Vida e Ministério, Bíblia, Perspicaz, Raciocínios, índices e outros.
+const NAO_ARTIGO_GUIA = /^(?:mwb\d*|nwt\w*|si|rs|scl|it|dx\d*|es\d*|km|yb\d*|kl|od|ia|bh|bhs|fy|rsg\d*)$/i;
+const SUBTITULOS_DO_GUIA = /^(?:Informações gerais|Como lidar|Ajudar outros|Ajuda de outros|Experiências pessoais|Personagens da Bíblia|Vida cristã|Lições|Profecias|Membros da família|Exatidão da Bíblia e arqueologia|Tempos bíblicos|Mapas e geografia|Títulos e funções|História das Testemunhas de Jeová|Orientações para a congregação|Cronologia|Costumes|Mostrar a outros|Reuniões|Pregação|Casamento)\s+/i;
+const LOCALIZADOR_DO_GUIA = /(?<![\p{L}\d.\-])([a-z]{1,6}(?:-\d)?(?:\d{2}(?:\.\d{2})?)?(?:\s\d{1,2}\/\d{1,2})?(?:\sN\.°\s?\d+)?)\s+((?:págs?\.\s*\d+(?:\s*[-–]\s*\d+)?(?:,\s*\d+(?:[-–]\d+)?)*|artigo\s+\d+|lição\s+\d+|cap\.\s*\d+))((?:\s+pars?\.\s*\d+(?:\s*[-–]\s*\d+)?(?:,\s*\d+(?:[-–]\d+)?)*)?)(?:\s+pontos?\s+[\d–-]+)?/gu;
+
+// Os artigos de um tópico, na ordem do Guia: [{ subtitulo, titulo, codigo, ano, parDe, parAte }].
+export function artigosDoTopicoDoGuia(topico) {
+  if (topico.artigos) return topico.artigos;
+  const artigos = [];
+  const vistos = new Set();
+  for (const parte of String(topico.texto || "").split(/(?:^|\s)###\s+/).slice(1)) {
+    const subtitulo = (parte.match(SUBTITULOS_DO_GUIA) || [""])[0].trim() || parte.split(/\s+/).slice(0, 2).join(" ");
+    let texto = parte
+      .replace(/it-\d\s+“[^”]*”(?:\s+n\.º\s*[\d\sn.º–-]+)?(?:\s+pars?\.\s*[\d\s,–-]+)?/g, " ") // verbetes do Perspicaz: o servidor já os lê à parte
+      .replace(/\s+/g, " ");
+    texto = texto.replace(SUBTITULOS_DO_GUIA, "").replace(SUBTITULOS_DO_GUIA, ""); // até dois níveis ("Vida cristã Casamento")
+    let ultimo = 0;
+    for (const m of texto.matchAll(LOCALIZADOR_DO_GUIA)) {
+      let titulo = texto.slice(ultimo, m.index);
+      ultimo = m.index + m[0].length;
+      const codigo = m[1].trim();
+      if (NAO_ARTIGO_GUIA.test((codigo.match(/^[a-z]+/i) || [""])[0])) continue;
+      titulo = titulo.replace(/^.*\S\.v\s+/, "").replace(/^\d+\s*\|?\s*/, "").replace(/^[\s|]+/, "").trim(); // sem o vídeo anterior (código ".v") e sem o número da lista
+      if (titulo.length < 6 || titulo.length > 170 || /^veja:/i.test(titulo)) continue;
+      const aa = (codigo.match(/^[a-z-]+?(\d{2})\b/i) || codigo.match(/^g\s+\d{1,2}\/(\d{2})\b/i) || [])[1];
+      const ano = aa ? (Number(aa) > 50 ? 1900 : 2000) + Number(aa) : null;
+      if (ano && ano < 1990) continue;
+      const chave = codigo + "|" + m[2] + "|" + m[3];
+      if (vistos.has(chave)) continue;
+      vistos.add(chave);
+      const pars = String(m[3] || "").match(/(\d+)(?:\s*[-–]\s*(\d+))?/);
+      artigos.push({ subtitulo, titulo, codigo: `${codigo} ${m[2]}${m[3] || ""}`.trim(), ano, parDe: pars ? Number(pars[1]) : null, parAte: pars ? Number(pars[2] || pars[1]) : null });
+    }
+  }
+  topico.artigos = artigos;
+  return artigos;
+}
+
 // Começa a baixar os arquivos enquanto a IA ainda escreve a resposta, para a busca não esperar o download depois.
 export function precarregarFontes({ biblia: comBiblia, perspicaz: comPerspicaz, livros: comLivros }) {
   if (!fontesConfiguradas()) return;

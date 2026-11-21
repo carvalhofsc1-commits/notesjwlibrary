@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.43
+
+- Pesquisas: o passo do **Guia de Pesquisa** voltou a funcionar em produção. O jw.org barra o servidor do Cloud Run (responde com uma página de verificação), então o Guia online vinha sempre vazio. Agora o servidor usa o arquivo `fontes/guia_de_pesquisa.txt`: acha o tópico do assunto (ex.: ANSIEDADE), lê os artigos que o Guia indica (título, publicação, páginas e parágrafos) e acha cada um no wol pela busca da frase exata do título (se o título veio com palavras do subtítulo na frente, tenta de novo sem elas). Depois é como antes: a faixa de parágrafos indicada ou, sem ela, o parágrafo que mais combina com a pesquisa. Ficam de fora a apostila Vida e Ministério, a Bíblia, o Perspicaz e os livros de consulta (o Perspicaz já entra à parte). O Guia online (jw.org) fica só como reserva, para quem rodar fora do Cloud Run.
+
 ## 6.11.42
 
 - Assistente de pesquisas: os cards principais — **O que você quer pesquisar?** (aba Assunto), **Texto bíblico** e **Procurar um vídeo por assunto** (aba Vídeo) — ganharam fundo **azul claro** com moldura azul fina.

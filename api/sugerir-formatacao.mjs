@@ -16,7 +16,7 @@ import { debitarCreditosUso, mensagemSeBloqueado, mensagemSeSemCredito, preparar
 import { emitirCupomVoz } from "./_vozCupom.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
 import { materiasAutomaticas, pesquisarPorPalavras } from "./_materiasWol.mjs";
-import { buscarNosLivros, buscarVerbete, buscarVersiculos, versiculosDoCapitulo, fontesConfiguradas, lerCanticos, precarregarFontes, referenciasNoTexto, textoDeGruposBiblicos } from "./_fontes.mjs";
+import { artigosDoTopicoDoGuia, buscarNosLivros, buscarVerbete, buscarVersiculos, versiculosDoCapitulo, fontesConfiguradas, lerCanticos, precarregarFontes, referenciasNoTexto, textoDeGruposBiblicos } from "./_fontes.mjs";
 import { lerEsboco, lerIndice, minutosDoEsboco, publicacoesDaSecao, referenciasDoPublico, s34Configurado, textoDoDiscursoPublico, textoDoEsbocoImportado, textosBiblicosDoPublico, validarEsboco } from "./_s34.mjs";
 import {
   QUADROS_EBC,
@@ -53,6 +53,8 @@ import {
   pesquisaDoVersiculo,
   citacoesNovasDaSentinela,
   buscaNovaNaSentinela,
+  topicosDoGuiaDoArquivoPara,
+  docDoArtigoDoGuia,
   notasDeEstudo,
   videoDoEndereco,
   menorMp4DoVideo,
@@ -2334,25 +2336,52 @@ async function coletarPesquisa(res, body, P) {
     })();
     const docsDoVersiculo = new Set(doVersiculo.lidas.map(({ p }) => p.docId));
 
-    // Guia de Pesquisa (jw.org): os tópicos do assunto e, deles, até 8 artigos (intercalando os tópicos, na ordem do Guia, no máximo 3 por
+    // Guia de Pesquisa (arquivo do servidor; jw.org só como reserva): os tópicos do assunto e, deles, até 8 artigos (intercalando os tópicos, na ordem do Guia, no máximo 3 por
     // subtítulo); cada um lido no wol (a faixa de parágrafos indicada pelo Guia ou, sem ela, o parágrafo com mais palavras da busca).
     const doGuia = await (async () => {
       try {
-        const topicos = await topicosDoGuiaPara([assunto, ...consultas].filter(Boolean), 9000, 2);
-        const listasGuia = await Promise.all(topicos.map((t) => entradasDoGuia(t, 9000).then((e) => e.map((x) => ({ ...x, topico: t.nome }))).catch(() => [])));
+        const textosGuia = [assunto, ...consultas].filter(Boolean);
+        // O Guia vem do arquivo do servidor (o jw.org barra o servidor): o tópico e os artigos saem do arquivo e cada artigo é achado no wol pelo
+        // título. Só se o arquivo não estiver no servidor ou não tiver o assunto, tenta o Guia online (jw.org), que funciona fora do Cloud Run.
+        let topicos = [];
+        let listasGuia = [];
+        let doArquivo = false;
+        try {
+          const dosArquivo = await topicosDoGuiaDoArquivoPara(textosGuia, 2);
+          if (dosArquivo.length) {
+            topicos = dosArquivo;
+            listasGuia = dosArquivo.map((t) => artigosDoTopicoDoGuia(t).map((x) => ({ ...x, topico: t.nome })));
+            doArquivo = true;
+          }
+        } catch (e) {
+          console.error("Pesquisa: Guia do arquivo indisponível", e?.message);
+        }
+        if (!doArquivo) {
+          topicos = await topicosDoGuiaPara(textosGuia, 9000, 2);
+          listasGuia = await Promise.all(topicos.map((t) => entradasDoGuia(t, 9000).then((e) => e.map((x) => ({ ...x, topico: t.nome }))).catch(() => [])));
+        }
         const escolhidas = [];
         const porSubtitulo = new Map();
         const docs = new Set(docsDoVersiculo);
-        for (let i = 0; i < 40 && escolhidas.length < limite.guia; i++) {
+        // Do arquivo, o documento só se sabe depois de achar o artigo no wol: escolhe alguns a mais e corta depois.
+        const alvoEscolha = doArquivo ? limite.guia + 4 : limite.guia;
+        for (let i = 0; i < 40 && escolhidas.length < alvoEscolha; i++) {
           for (const lista of listasGuia) {
             const e = lista[i];
-            if (!e || docs.has(e.docId) || escolhidas.length >= limite.guia) continue;
+            if (!e || (e.docId && docs.has(e.docId)) || escolhidas.length >= alvoEscolha) continue;
             const chave = e.topico + "|" + e.subtitulo;
             if ((porSubtitulo.get(chave) || 0) >= 3) continue;
             porSubtitulo.set(chave, (porSubtitulo.get(chave) || 0) + 1);
-            docs.add(e.docId);
+            if (e.docId) docs.add(e.docId);
             escolhidas.push(e);
           }
+        }
+        if (doArquivo) {
+          await Promise.all(escolhidas.map(async (e) => { e.docId = await docDoArtigoDoGuia(e, 9000).catch(() => null); }));
+          const vistosDoc = new Set(docsDoVersiculo);
+          const comDoc = escolhidas.filter((e) => e.docId && !vistosDoc.has(e.docId) && vistosDoc.add(e.docId));
+          escolhidas.length = 0;
+          escolhidas.push(...comDoc.slice(0, limite.guia));
         }
         const lidas = await Promise.all(
           escolhidas.map((e) =>
