@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.56
+
+- **Considerações para o serviço de campo — fontes:** as fontes agora ficam num contêiner próprio, **sempre recolhido** ("📚 Fontes do esboço", com o resumo de quantas estão marcadas). Cada artigo de A Sentinela da lista tem a sua **caixa individual** (os 8 complementares, além de w24.05 e das brochuras lmd e th e do be), com **Marcar todas / Desmarcar todas**. A caixa nova **🔎 Pesquisar outras fontes** busca no wol.jw.org as matérias **mais novas** que tratam do assunto (sem anuários, índices, texto diário nem apostila) e traz o melhor parágrafo de até 2 delas. O servidor só lê os artigos que estão marcados. O app antigo (com `sentinela: false`) continua valendo.
+- **Adoração compartilhada — áudio e vídeo na tela de quem dirige e de quem participa:**
+  - cada texto bíblico da parte ganha **🔊 Ouvir os versículos**, que toca **só os versículos pedidos** do áudio da jw.org (o áudio informa em que segundo começa cada versículo) e um link **↗ Áudio no jw.org** direto para esse trecho (`#t=início,fim`);
+  - cada vídeo ganha o link **↗ jw.org**, o botão **▶️ Reproduzir aqui** (o player aparece abaixo) e, logo abaixo, um **cartão fino e recolhido com a transcrição** (a legenda publicada). Nova ação do servidor, `video`: vale com o código da sessão, só para partes já liberadas (o dirigente vê todas); guardada 6 h por vídeo.
+- **Adoração compartilhada — reabrir e apagar:** o painel 🔗 Compartilhar de uma programação que já tem código **mostra o código de novo** (antes oferecia criar outro): **▶️ Abrir como dirigente**, copiar, compartilhar o link e **🗑️ apagar o compartilhamento** (o código deixa de valer, a sessão sai do servidor e o painel volta à criação, para criar outro código). Na tela da Adoração em Família, o novo bloco **👑 Adorações que eu dirijo** lista as sessões deste aparelho (com o tempo que falta) para **Reabrir como dirigente**, copiar o código ou o link e apagar. A lista de adorações recentes de Participar também ganhou a lixeira nas que o aparelho dirige. Os botões dessas linhas ocupam a largura toda.
+
 ## 6.11.55
 
 - Considerações para o serviço de campo, correção dos artigos de referência:

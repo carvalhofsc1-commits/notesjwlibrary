@@ -7,7 +7,7 @@
 //   do servidor;
 // - os dados do pedido, conferidos.
 // Nada aqui inventa conteúdo: o que não for achado fica de fora (e o título que não for achado na wol vai para o registro).
-import { docDoArtigoDoGuia, paragrafosDoDocumento } from "./_wol.mjs";
+import { docDoArtigoDoGuia, paragrafosDoDocumento, pesquisarMateriasNovasNoWol, paragrafoDaPesquisa } from "./_wol.mjs";
 import { licoesDaBrochura, buscarNosLivros, nomeDoLivro } from "./_fontes.mjs";
 
 const DIA_MS = 24 * 60 * 60 * 1000;
@@ -162,10 +162,10 @@ export function candidatosW24({ consulta = "", usados = [], paragrafos = [], n =
 // ---------- Artigos complementares ----------
 // Até "max" artigos que combinam com o assunto: nota = palavras do título × 2 + o melhor parágrafo; no empate, o mais novo. De cada
 // um vão os 2 parágrafos que mais combinam, com o número (para o esboço citar o parágrafo).
-export function escolherComplementares(consulta, docs, { max = 2 } = {}) {
+export function escolherComplementares(consulta, docs, { max = 2, lista = COMPLEMENTARES } = {}) {
   const raizes = raizesDe(consulta);
   if (!raizes.length) return [];
-  return COMPLEMENTARES.map((artigo, ordem) => {
+  return lista.map((artigo, ordem) => {
     const doc = docs[ordem];
     if (!doc) return null;
     const pars = doc.paragrafos
@@ -181,12 +181,32 @@ export function escolherComplementares(consulta, docs, { max = 2 } = {}) {
     .map((x) => ({ codigo: x.artigo.codigo, titulo: x.doc.titulo || x.artigo.titulo, url: x.doc.url, paragrafos: x.paragrafos }));
 }
 
-export async function complementares(consulta, { max = 2, timeoutMs = 9000 } = {}) {
-  const docs = await Promise.all(COMPLEMENTARES.map((a) => artigoDoWol(a, timeoutMs)));
+// "codigos": só os artigos marcados na tela (6.11.56: cada artigo tem a sua caixa); sem a lista, todos.
+export async function complementares(consulta, { max = 2, timeoutMs = 9000, codigos = null } = {}) {
+  const lista = codigos ? COMPLEMENTARES.filter((a) => codigos.includes(a.codigo)) : COMPLEMENTARES;
+  const docs = await Promise.all(lista.map((a) => artigoDoWol(a, timeoutMs)));
   return {
-    artigos: escolherComplementares(consulta, docs, { max }),
-    naoAchados: COMPLEMENTARES.filter((_, i) => !docs[i]).map((a) => a.codigo),
+    artigos: escolherComplementares(consulta, docs, { max, lista }),
+    naoAchados: lista.filter((_, i) => !docs[i]).map((a) => a.codigo),
   };
+}
+
+// 6.11.56 — "Pesquisar outras fontes": busca a consulta no wol.jw.org (outras edições de A Sentinela e outras publicações sobre o ministério)
+// e traz o melhor parágrafo de até "max" matérias que NÃO sejam as já listadas (o artigo de maio de 2024 e os complementares). Cada uma
+// vira um "artigo" no mesmo formato dos complementares, com o código da publicação para o esboço citar.
+export async function outrasFontes(consulta, { max = 2, timeoutMs = 9000 } = {}) {
+  try {
+    const conhecidos = new Set([W24.docId, ...COMPLEMENTARES.map((a) => a.docId)].filter(Boolean).map(String));
+    const achados = (await pesquisarMateriasNovasNoWol(consulta.slice(0, 180), timeoutMs, 10)).filter((a) => !conhecidos.has(String(a.docId)));
+    const lidos = await Promise.all(achados.slice(0, max + 2).map((a) => paragrafoDaPesquisa(a, timeoutMs).then((p) => (p ? { a, p } : null)).catch(() => null)));
+    return lidos
+      .filter(Boolean)
+      .slice(0, max)
+      .map(({ a, p }) => ({ codigo: a.codigo || a.publicacao, titulo: p.titulo || a.titulo, url: p.url, paragrafos: [{ numero: p.paragrafos || "", texto: cortar(p.texto, 900) }] }));
+  } catch (e) {
+    console.error("Serviço de campo: pesquisa em outras fontes falhou", e?.message);
+    return [];
+  }
 }
 
 // ---------- Brochuras e Beneficie-se ----------
@@ -239,6 +259,9 @@ export function dadosDoCampo(body) {
   const tipos = Array.isArray(b.tipos) ? [...new Set(b.tipos.filter((t) => TIPOS_DE_PREGACAO.some((x) => x.id === t)))] : [];
   const f = b.fontes && typeof b.fontes === "object" ? b.fontes : {};
   const marcada = (k) => f[k] !== false; // todas marcadas por padrão
+  // Cada artigo de A Sentinela tem a sua caixa (6.11.56). "sentinela: false" (versões antigas do app) desmarca todos de uma vez.
+  const art = f.artigos && typeof f.artigos === "object" ? f.artigos : {};
+  const artigos = COMPLEMENTARES.filter((a) => f.sentinela !== false && art[a.codigo] !== false).map((a) => a.codigo);
   return {
     data: dataValida ? b.data : hojeNoBrasil(),
     aposReuniao: b.aposReuniao === true,
@@ -247,7 +270,7 @@ export function dadosDoCampo(body) {
     campanha: linha(b.campanha, 200),
     publico: linha(b.publico, 200),
     assunto: linha(b.assunto, 200),
-    fontes: { w24: marcada("w24"), lmd: marcada("lmd"), th: marcada("th"), sentinela: marcada("sentinela"), be: marcada("be") },
+    fontes: { w24: marcada("w24"), lmd: marcada("lmd"), th: marcada("th"), be: marcada("be"), outros: marcada("outros"), artigos },
     usados: [...new Set((Array.isArray(b.usados) ? b.usados : []).map(Number).filter((n) => Number.isInteger(n) && n > 0 && n < 200))].slice(0, 200),
     recentes: (Array.isArray(b.recentes) ? b.recentes : []).map((t) => linha(t, 160)).filter(Boolean).slice(0, 5),
     evitar: linha(b.evitar, 200),

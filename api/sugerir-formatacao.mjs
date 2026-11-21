@@ -30,6 +30,7 @@ import {
   licoesQueCombinam,
   listaDeFontes,
   nomesDosTipos,
+  outrasFontes,
   paragrafosW24,
   siglasPermitidas,
   textoDasFontesDoCampo,
@@ -4848,10 +4849,12 @@ async function fontesDoCampo(d, { timeoutMs = 9000 } = {}) {
   const consulta = consultaDoCampo(d, paragrafo);
   const [licoes, extras, be] = await Promise.all([
     d.fontes.lmd || d.fontes.th ? licoesQueCombinam(consulta, { lmd: d.fontes.lmd, th: d.fontes.th, max: 3 }) : [],
-    d.fontes.sentinela ? complementares(consulta, { max: 2, timeoutMs }) : { artigos: [], naoAchados: [] },
+    d.fontes.artigos.length ? complementares(consulta, { max: 2, timeoutMs, codigos: d.fontes.artigos }) : { artigos: [], naoAchados: [] },
     d.fontes.be ? trechosBe(consulta) : [],
   ]);
-  return { w24, paragrafo, reiniciou: !!(escolha && escolha.reiniciou), licoes, artigos: extras.artigos, naoAchados: extras.naoAchados, be, consulta };
+  // "Pesquisar outras fontes" (outros artigos e outras publicações no wol): até 2, além dos artigos marcados.
+  const outros = d.fontes.outros ? await outrasFontes(consulta, { max: 2, timeoutMs }) : [];
+  return { w24, paragrafo, reiniciou: !!(escolha && escolha.reiniciou), licoes, artigos: [...extras.artigos, ...outros], naoAchados: extras.naoAchados, be, consulta };
 }
 
 async function esbocoDeCampo(res, body, P) {

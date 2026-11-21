@@ -14,6 +14,7 @@ import { createHash, randomBytes, randomInt } from "node:crypto";
 import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { blobConfigurado, del, get, list, put } from "./_blob.mjs";
 import { mensagemSeBloqueado, prepararCodigosPessoais, recursoCodigoValido } from "./_acessoSite.mjs";
+import { lerTextoDoVideo, playerDoVideo, videoDoEndereco } from "./_wol.mjs";
 
 const PASTA = "familia-sessoes/";
 const ALFABETO = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"; // sem 0/O e 1/I/L, que se confundem
@@ -127,6 +128,25 @@ function estadoPublico(e) {
 }
 // O dirigente recebe também a lista de quem entrou; a versão dele inclui a quantidade de participantes (muda quando alguém entra).
 const versaoDe = (e, qtd) => (qtd == null ? String(e.versao || 0) : `${e.versao || 0}.${qtd}`);
+
+// ---------- Vídeo da parte: o MP4 para tocar e a transcrição (legenda publicada), guardados 6 h por vídeo ----------
+const videosGuardados = new Map(); // lank -> { quando, dados }
+const VALIDADE_VIDEO_MS = 6 * 60 * 60 * 1000;
+export async function dadosDoVideo(link) {
+  const video = videoDoEndereco(link);
+  if (!video) return null;
+  const guardado = videosGuardados.get(video.lank);
+  if (guardado && Date.now() - guardado.quando < VALIDADE_VIDEO_MS) return guardado.dados;
+  const [lido, player] = await Promise.all([
+    lerTextoDoVideo(video, { timeoutMs: 12000, maxCaracteres: 30000 }).catch(() => null),
+    playerDoVideo(video, { timeoutMs: 12000 }).catch(() => null),
+  ]);
+  if (!player && !(lido && lido.texto)) return null; // nada para mostrar: o app volta ao link do jw.org (sem guardar a falha)
+  const dados = { titulo: (lido && lido.titulo) || "", mp4: player ? player.mp4 : "", poster: player ? player.poster : "", texto: lido ? lido.texto : "", fonte: lido ? lido.fonte : "" };
+  videosGuardados.set(video.lank, { quando: Date.now(), dados });
+  if (videosGuardados.size > 60) videosGuardados.delete(videosGuardados.keys().next().value);
+  return dados;
+}
 
 // ---------- A programação recebida: só os campos conhecidos, com limites; as respostas dos jogos saem para respostas.json ----------
 function limparPrograma(op) {
@@ -306,6 +326,20 @@ export default async function handler(req, res) {
       const r = { versao, estado: estadoPublico(estado), agora: Date.now() };
       if (dirigente) r.participantes = await lerParticipantes(cod);
       return res.status(200).json(r);
+    }
+
+    // ----- video (6.11.56): o vídeo de uma parte para tocar na tela da adoração, com a transcrição (a legenda publicada). Vale para quem tem o
+    // código da sessão, e só para partes que o dirigente já liberou (o dirigente vê todas). Guardado 6 h na instância, por vídeo. -----
+    if (acao === "video") {
+      const parte = Number(corpo.parte);
+      const indice = Number(corpo.video);
+      const programa = await lerJson(caminho(cod, "programa.json"));
+      const v = programa && Number.isInteger(parte) && Number.isInteger(indice) && programa.partes && programa.partes[parte] && (programa.partes[parte].videos || [])[indice];
+      if (!v || !v.link) return erro(res, 404, "Esse vídeo não está nesta programação.");
+      if (!(estado.liberadas || []).includes(parte) && !(await ehDirigente())) return erro(res, 403, "Esta parte ainda não foi liberada pelo dirigente.");
+      const dados = await dadosDoVideo(v.link);
+      if (!dados) return erro(res, 502, "Não consegui abrir o vídeo agora. Use o link para assistir no jw.org.");
+      return res.status(200).json(dados);
     }
 
     // ----- assumir: troca o código do dirigente (passado por quem dirige) por uma chave nova neste aparelho -----

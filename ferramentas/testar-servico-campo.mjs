@@ -85,7 +85,7 @@ teste("dadosDoCampo: padrões e limites", () => {
   assert.equal(d.minutos, 5);
   assert.deepEqual(d.tipos, ["casa"]);
   assert.equal(d.aposReuniao, false);
-  assert.deepEqual(d.fontes, { w24: true, lmd: true, th: true, sentinela: true, be: true });
+  assert.deepEqual(d.fontes, { w24: true, lmd: true, th: true, be: true, outros: true, artigos: ["w26.09", "w26.03", "w25.03", "w23.02", "w22.11", "w21.10", "w21.07", "w18.10"] });
   const e = campo.dadosDoCampo({ minutos: 9, tipos: ["xyz"], data: "2026-13-45", usados: [3, "4", 0, -1, 3, "a", 2.5], recentes: ["a", "", "b", "c", "d", "e", "f"], fontes: { be: false }, aposReuniao: true });
   assert.equal(e.minutos, 5);
   assert.deepEqual(e.tipos, ["casa"]);
@@ -93,6 +93,11 @@ teste("dadosDoCampo: padrões e limites", () => {
   assert.deepEqual(e.usados, [3, 4]);
   assert.equal(e.recentes.length, 5);
   assert.equal(e.fontes.be, false);
+  // 6.11.56: cada artigo de A Sentinela tem a sua caixa; desmarcar um tira só ele, e "sentinela: false" (app antigo) tira todos.
+  const so = campo.dadosDoCampo({ fontes: { artigos: { "w26.03": false, "w18.10": false }, outros: false } });
+  assert.deepEqual(so.fontes.artigos, ["w26.09", "w25.03", "w23.02", "w22.11", "w21.10", "w21.07"]);
+  assert.equal(so.fontes.outros, false);
+  assert.deepEqual(campo.dadosDoCampo({ fontes: { sentinela: false } }).fontes.artigos, []);
   assert.equal(e.aposReuniao, true);
   assert.equal(campo.dadosDoCampo({ minutos: "7" }).minutos, 7);
   assert.deepEqual(campo.dadosDoCampo({ tipos: ["publico", "rural", "publico"] }).tipos, ["publico", "rural"]);
@@ -263,7 +268,7 @@ if (comFontes) {
     titulo, minutos: 2, fonte, aplicacao: null, ilustracao: null, transicao: "E agora...",
     desenvolvimento: [{ argumento: "Um argumento.", ideias: ["Uma ideia."], leitura }],
   });
-  const fontesSemRede = { w24: false, sentinela: false, lmd: true, th: true, be: true };
+  const fontesSemRede = { w24: false, outros: false, artigos: Object.fromEntries(campo.COMPLEMENTARES.map((a) => [a.codigo, false])), lmd: true, th: true, be: true };
 
   teste("handler campo: mensagem, limpeza e resposta", async () => {
     respostaDaIa = {

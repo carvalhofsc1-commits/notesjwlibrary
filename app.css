@@ -17093,7 +17093,7 @@ body.fam-tela-grande .fam-sessao-grande-barra { display: flex; position: fixed; 
 /* 6.11.52: REGRA — numa linha de botões, os botões sempre ocupam a largura toda (nada de sobrar espaço vazio ao lado).
    Na Adoração em Família (e telas da Adoração compartilhada): os botões crescem para preencher cada linha; o botão principal ocupa a
    linha inteira; a lixeira (só ícone) fica com a largura fixa e o botão ao lado dela cresce. */
-.fam-acoes > :is(button, a) { flex: 1 1 140px; min-width: 0; justify-content: center; text-align: center; }
+.fam-acoes > :is(button, a) { flex: 1 1 108px; min-width: 0; justify-content: center; text-align: center; align-self: stretch; }
 .fam-acoes > .fam-principal { flex: 1 1 100%; }
 .fam-acoes > .limpar-btn { flex: 0 0 52px; min-width: 52px; }
 
@@ -17121,3 +17121,30 @@ body.fam-tela-grande .fam-sessao-grande-barra { display: flex; position: fixed; 
 }
 .campo-assuntos .campo-assunto small { color: var(--muted); font-size: .82rem; font-weight: 400; line-height: 1.35; }
 .campo-assuntos .campo-assunto[aria-pressed="true"] { border-color: #60a5fa; box-shadow: inset 0 0 0 1px #60a5fa; background: color-mix(in srgb, #60a5fa 10%, var(--card)); }
+
+/* 6.11.56: contêiner das fontes do esboço da consideração para o serviço de campo (sempre recolhido). */
+.campo-fontes-box { border: 1px solid var(--line, #cbd5e1); border-radius: 10px; padding: 0 10px 10px; margin: 8px 0; min-width: 0; background: var(--card); }
+.campo-fontes-box > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-weight: 600; }
+.campo-fontes-box .fam-acoes-dupla { margin-top: 8px; }
+
+/* 6.11.56: o código da adoração e as listas de sessões: os botões ocupam a linha toda (regra dos botões), a lixeira fica fixa. */
+.fam-sessao-criada .fam-acoes { width: 100%; justify-content: stretch; }
+.fam-sessao-itens { display: grid; gap: 10px; min-width: 0; }
+.fam-sessao-item { display: grid; gap: 6px; min-width: 0; padding: 8px; border: 1px solid var(--line, #cbd5e1); border-radius: 10px; background: var(--inicio-cinza); }
+.fam-sessao-item-nome { margin: 0; font-weight: 600; font-size: .92rem; overflow-wrap: anywhere; }
+.fam-sessao-recente-linha { width: 100%; flex-wrap: nowrap; }
+.fam-sessao-recente-linha > .fam-sessao-recente { flex: 1 1 auto; min-width: 0; white-space: normal; }
+.fam-dirigindo-box[hidden] { display: none; }
+
+/* 6.11.56: áudio dos versículos e vídeo com transcrição na tela da adoração (dirigente e participantes). */
+.fam-audio-linha { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; min-width: 0; }
+.fam-audio-linha > :is(button, a) { flex: 1 1 140px; min-width: 0; justify-content: center; text-align: center; }
+.fam-audio-btn[aria-pressed="true"] { border-color: #60a5fa; background: color-mix(in srgb, #60a5fa 18%, var(--card)); }
+.fam-video-vivo { display: grid; gap: 6px; margin-top: 6px; min-width: 0; }
+.fam-video-vivo > .fam-video-tocar { width: 100%; }
+.fam-video-palco { min-width: 0; font-size: .9rem; }
+.fam-video-player { display: block; width: 100%; max-height: 60vh; border-radius: 10px; background: #000; }
+.fam-video-transc { border: 1px solid var(--line, #cbd5e1); border-radius: 8px; background: var(--card); min-width: 0; }
+.fam-video-transc > summary { cursor: pointer; min-height: 34px; display: flex; align-items: center; padding: 0 10px; font-size: .85rem; font-weight: 600; }
+.fam-video-texto { padding: 4px 10px 10px; max-height: 260px; overflow-y: auto; white-space: pre-wrap; font-size: .9rem; line-height: 1.5; overflow-wrap: anywhere; }
+body.fam-tela-grande .fam-video-texto { font-size: 1.05em; max-height: 50vh; }

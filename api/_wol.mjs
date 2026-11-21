@@ -2298,6 +2298,28 @@ export async function pesquisarParagrafosNoWol(consulta, timeoutMs, maximo = 8) 
   return achados.slice(0, maximo);
 }
 
+// As matérias MAIS NOVAS do wol que tratam da consulta (6.11.56, "Pesquisar outras fontes" do esboço do serviço de campo): a busca no mesmo
+// documento, da edição mais nova para a mais antiga (a ordem por ocorrências traz só Anuários). Fora, por padrão, o que não é matéria para
+// o ministério: anuários, índices, o texto diário, a apostila, o Perspicaz, a Bíblia e os glossários.
+export async function pesquisarMateriasNovasNoWol(consulta, timeoutMs, maximo = 8, { excluir = /^(?:yb|dx|rsg|es\d|mwb|it-|rbi|nwt|g\s*\d|lmd|th\b)/i } = {}) {
+  const q = String(consulta || "").replace(/[“”"]/g, "").replace(/[?!.]+$/, "").trim().slice(0, 200);
+  if (q.length < 3) return [];
+  const url = `${BASE}/pt/wol/s/r5/lp-t?q=${encodeURIComponent(q)}&p=doc&r=newest&st=a`;
+  const html = (await baixar(url, timeoutMs)).replace(/&lrm;/g, "");
+  const vistos = new Set();
+  return html
+    .split('<ul class="results resultContentDocument">')
+    .slice(1)
+    .map((bloco) => {
+      const cabeca = bloco.match(/<a class="lnk" href="\/pt\/wol\/d\/r5\/lp-t\/(\d+)[^"]*"[^>]*>([\s\S]*?)<\/a>/);
+      if (!cabeca) return null;
+      const ref = textoDe((bloco.match(/<li class="ref">([\s\S]*?)<\/li>/) || [])[1] || "");
+      return { docId: cabeca[1], consulta: q, proximidade: "doc", titulo: textoDe(cabeca[2]).replace(/­/g, ""), ...referenciaDaBusca(ref) };
+    })
+    .filter((r) => r && !excluir.test(r.codigo) && !/^(?:guia de pesquisa|[íi]ndice)/i.test(r.publicacao) && !(r.ano && r.ano < 1990) && !vistos.has(r.docId) && vistos.add(r.docId))
+    .slice(0, maximo);
+}
+
 // O parágrafo achado na pesquisa, lido no artigo: { titulo, pagina, paragrafos, pid, texto, url }. Vale o elemento com mais palavras
 // diferentes da consulta marcadas; se for a pergunta de um parágrafo (class "qu"), vale o parágrafo (ou parágrafos) que ela pergunta; senão,
 // o parágrafo e o seguinte (contexto). null = não deu para ler.
@@ -2968,6 +2990,37 @@ export async function menorMp4DoVideo(video, { timeoutMs = 8000, maxBytes = 18_0
     }
     const validos = arquivos.filter((f) => f.url && f.tamanho > 0 && f.tamanho <= maxBytes).sort((a, b) => a.tamanho - b.tamanho);
     return validos[0] || null;
+  } catch {
+    return null;
+  }
+}
+
+// O vídeo para tocar no navegador (6.11.56): o MP4 de 360p (ou o que houver mais perto) e a imagem de capa, do mesmo serviço público do jw.org
+// que dá os arquivos (o navegador toca direto do endereço do jw-cdn.org). null = não achou.
+export async function playerDoVideo(video, { timeoutMs = 8000 } = {}) {
+  const ordemDeQualidade = (rotulo) => { const n = parseInt(rotulo, 10); return Number.isFinite(n) ? Math.abs(n - 360) : 9999; };
+  const melhor = (arquivos) => arquivos.filter((f) => f.url && /^https:\/\//.test(f.url)).sort((a, b) => ordemDeQualidade(a.rotulo) - ordemDeQualidade(b.rotulo) || (a.tamanho || 0) - (b.tamanho || 0))[0] || null;
+  try {
+    let arquivos = [];
+    let poster = "";
+    if (video.pub || video.docid) {
+      const q = video.pub ? `pub=${encodeURIComponent(video.pub)}${video.issue ? `&issue=${encodeURIComponent(video.issue)}` : ""}` : `docid=${encodeURIComponent(video.docid)}`;
+      const dados = await baixarJson(`https://b.jw-cdn.org/apis/pub-media/GETPUBMEDIALINKS?output=json&${q}${video.track ? `&track=${encodeURIComponent(video.track)}` : ""}&langwritten=T&alllangs=0&txtCMSLang=T`, timeoutMs);
+      arquivos = ((dados && dados.files && dados.files.T && dados.files.T.MP4) || []).map((f) => ({ url: f.file && f.file.url, tamanho: f.filesize || 0, rotulo: f.label || "" }));
+      const capa = dados && dados.files && dados.files.T && dados.files.T.MP4 && dados.files.T.MP4[0] && dados.files.T.MP4[0].trackImage;
+      poster = (capa && capa.url) || "";
+    }
+    if (!arquivos.length && video.lank) {
+      const m = await baixarJson(`https://b.jw-cdn.org/apis/mediator/v1/media-items/T/${encodeURIComponent(video.lank)}?clientType=www`, timeoutMs);
+      const item = m && m.media && m.media[0];
+      if (item) {
+        arquivos = (item.files || []).map((f) => ({ url: f.progressiveDownloadURL, tamanho: f.filesize || 0, rotulo: f.label || "" }));
+        const imgs = item.images || {};
+        poster = (imgs.wss && (imgs.wss.md || imgs.wss.sm)) || (imgs.lss && (imgs.lss.md || imgs.lss.sm)) || "";
+      }
+    }
+    const f = melhor(arquivos);
+    return f ? { mp4: f.url, poster: /^https:\/\//.test(poster) ? poster : "", qualidade: f.rotulo } : null;
   } catch {
     return null;
   }

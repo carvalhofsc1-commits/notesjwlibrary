@@ -1278,14 +1278,36 @@
                     <input id="campoPublico" class="fam-campo" type="text" maxlength="200" autocomplete="off" placeholder="Ex.: há publicadores novos e jovens no grupo">
                     <label for="campoAssunto">Assunto <span class="opc">(opcional: vazio, a IA escolhe um assunto prático para o dia)</span></label>
                     <input id="campoAssunto" class="fam-campo" type="text" maxlength="200" autocomplete="off" placeholder="Ex.: como iniciar uma conversa no carrinho">
-                    <p class="fam-rotulo">Fontes preferidas</p>
-                    <div class="fam-checks" role="group" aria-label="Fontes preferidas">
-                      <label class="fam-check"><input type="checkbox" name="campoFonte" value="w24" checked> <span>📰 A Sentinela de maio de 2024 (“Deixe o amor motivar você a pregar”)</span></label>
-                      <label class="fam-check"><input type="checkbox" name="campoFonte" value="lmd" checked> <span>❤️ Ame as Pessoas — Faça Discípulos (lmd)</span></label>
-                      <label class="fam-check"><input type="checkbox" name="campoFonte" value="th" checked> <span>🎓 Melhore Sua Leitura e Seu Ensino (th)</span></label>
-                      <label class="fam-check"><input type="checkbox" name="campoFonte" value="sentinela" checked> <span>📚 Outros artigos de A Sentinela sobre o ministério</span></label>
-                      <label class="fam-check"><input type="checkbox" name="campoFonte" value="be" checked> <span>📘 Beneficie-se (be)</span></label>
-                    </div>
+                    <!-- 6.11.56: as fontes ficam num contêiner próprio, sempre recolhido; cada artigo de A Sentinela tem a sua caixa. -->
+                    <details class="campo-fontes-box" id="campoFontesBox">
+                      <summary>📚 Fontes do esboço <span id="campoFontesQtd" class="opc"></span></summary>
+                      <p class="hint fam-dica">Marque de onde a IA pode tirar a matéria. Em cada fonte, ela usa o trecho que mais combina com o assunto.</p>
+                      <div class="fam-checks" role="group" aria-label="Fontes principais">
+                        <label class="fam-check"><input type="checkbox" name="campoFonte" value="w24" checked> <span>📰 A Sentinela de maio de 2024 (“Deixe o amor motivar você a pregar”): fonte prioritária</span></label>
+                        <label class="fam-check"><input type="checkbox" name="campoFonte" value="lmd" checked> <span>❤️ Ame as Pessoas — Faça Discípulos (lmd)</span></label>
+                        <label class="fam-check"><input type="checkbox" name="campoFonte" value="th" checked> <span>🎓 Melhore Sua Leitura e Seu Ensino (th)</span></label>
+                        <label class="fam-check"><input type="checkbox" name="campoFonte" value="be" checked> <span>📘 Beneficie-se (be)</span></label>
+                      </div>
+                      <p class="fam-rotulo">Artigos de A Sentinela sobre o ministério</p>
+                      <div class="fam-checks" role="group" aria-label="Artigos de A Sentinela">
+                        <label class="fam-check"><input type="checkbox" name="campoArtigo" value="w26.09" checked> <span>w setembro/2026: Seja rápido em ajudar quem mostra interesse nas boas novas</span></label>
+                        <label class="fam-check"><input type="checkbox" name="campoArtigo" value="w26.03" checked> <span>w março/2026: Como melhorar nossa arte de ensino</span></label>
+                        <label class="fam-check"><input type="checkbox" name="campoArtigo" value="w25.03" checked> <span>w março/2025: Imite o zelo de Jesus na pregação</span></label>
+                        <label class="fam-check"><input type="checkbox" name="campoArtigo" value="w23.02" checked> <span>w fevereiro/2023: Mantenham os sentidos, sejam vigilantes!</span></label>
+                        <label class="fam-check"><input type="checkbox" name="campoArtigo" value="w22.11" checked> <span>w novembro/2022: Como Jeová nos ajuda a cumprir nosso ministério?</span></label>
+                        <label class="fam-check"><input type="checkbox" name="campoArtigo" value="w21.10" checked> <span>w outubro/2021: Não desista!</span></label>
+                        <label class="fam-check"><input type="checkbox" name="campoArtigo" value="w21.07" checked> <span>w julho/2021: Você pode ajudar no trabalho de fazer discípulos?</span></label>
+                        <label class="fam-check"><input type="checkbox" name="campoArtigo" value="w18.10" checked> <span>w outubro/2018: Ensine a verdade</span></label>
+                      </div>
+                      <p class="fam-rotulo">Pesquisar além da lista</p>
+                      <div class="fam-checks" role="group" aria-label="Outras fontes">
+                        <label class="fam-check"><input type="checkbox" name="campoFonte" value="outros" checked> <span>🔎 Pesquisar outras fontes: outros artigos e publicações no wol.jw.org</span></label>
+                      </div>
+                      <div class="fam-acoes-dupla">
+                        <button id="campoFontesTodas" class="secondary fam-fino" type="button">Marcar todas</button>
+                        <button id="campoFontesNenhuma" class="secondary fam-fino" type="button">Desmarcar todas</button>
+                      </div>
+                    </details>
                     <p id="campoInfo" class="hint ai-hint ebc-info"></p>
                     <button id="campoSugerirBtn" data-codigo-ia="dirigente" class="secondary ai-study-load" type="button">💡 Sugerir 3 assuntos</button>
                     <div id="campoAssuntos" class="campo-assuntos" role="group" aria-label="Assuntos sugeridos (toque em um para usar)" hidden></div>
@@ -2902,6 +2924,12 @@
       </div>
       <p class="hint"><strong>Peça sugestões para a noite de adoração em família.</strong> A IA leva em conta as informações repassadas sobre a sua família (cadastradas por você) e monta 1 ou 2 opções completas (você escolhe), com partes, textos, vídeos e, se quiser, cânticos.</p>
       <button id="familiaParticiparBtn" type="button" class="secondary fam-fino fam-participar-btn">🔗 Participar de uma adoração com código</button>
+      <!-- 6.11.56: as adorações que este aparelho dirige (com a chave do dirigente): reabrir, copiar o código ou o link e apagar o compartilhamento. -->
+      <details id="familiaDirigindoBox" class="fam-jogos-box fam-dirigindo-box" hidden>
+        <summary>👑 Adorações que eu dirijo <span id="familiaDirigindoQtd" class="opc"></span></summary>
+        <p class="hint fam-dica">Se fechou a adoração sem querer, toque em Reabrir como dirigente. Para criar outro código, apague o compartilhamento (🗑️) e compartilhe de novo.</p>
+        <div id="familiaDirigindoLista" class="fam-sessao-itens"></div>
+      </details>
 
       <!-- 6.11.35: o card abre numa vista exclusiva (só ele na tela); esta barra só aparece nessa vista. -->
       <div id="familiaPerfilTopo" class="fam-topo fam-perfil-topo" hidden>

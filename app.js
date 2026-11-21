@@ -121,6 +121,7 @@
         ['extratoSection', 'consumoResumoBox', 'consumoSection'].forEach(id => { const el = document.getElementById(id); if (el) el.open = false; });
       }
       if (screen === 'familia') { // cadastro da família: sempre recolhido ao abrir a tela (e fora da vista exclusiva)
+        try { familiaDirigindoPintar(); } catch (e) { /* ainda iniciando: a lista se pinta quando o código da Adoração compartilhada carrega */ } // as adorações que este aparelho dirige
         if (typeof familiaPerfilVista === 'function') familiaPerfilVista(false, { semRolar: true });
         else { const perfil = document.getElementById('familiaPerfilBox'); if (perfil) perfil.open = false; }
       }
@@ -7930,7 +7931,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.55'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.56'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -18575,7 +18576,10 @@ function saveTemplatesToStorage() {
         campanha: document.getElementById('campoCampanha').value.trim(),
         publico: document.getElementById('campoPublico').value.trim(),
         assunto: document.getElementById('campoAssunto').value.trim(),
-        fontes: Object.fromEntries(['w24', 'lmd', 'th', 'sentinela', 'be'].map(k => [k, fontesMarcadas.has(k)])),
+        fontes: {
+          ...Object.fromEntries(['w24', 'lmd', 'th', 'be', 'outros'].map(k => [k, fontesMarcadas.has(k)])),
+          artigos: Object.fromEntries([...document.querySelectorAll('input[name="campoArtigo"]')].map(c => [c.value, c.checked]))
+        },
         usados: [...new Set(salvos.map(item => Number(item.esbocoJson.paragrafoW24)).filter(n => Number.isInteger(n) && n > 0))],
         recentes: [...new Set(salvos.map(item => String(item.esbocoJson.tema || '').trim()).filter(Boolean))].slice(0, 5),
         ...(campoEvitar ? { evitar: campoEvitar } : {})
@@ -18658,6 +18662,18 @@ function saveTemplatesToStorage() {
     document.getElementById('campoData').addEventListener('change', campoDiaAtualizar);
     document.getElementById('campoSugerirBtn').addEventListener('click', campoSugerir);
     document.getElementById('campoRefazerBtn').addEventListener('click', campoRefazer);
+    // Fontes do esboço (6.11.56): contêiner sempre recolhido ao abrir o card, com o resumo do que está marcado no título.
+    const campoFontesCaixas = () => [...document.querySelectorAll('#campoFontesBox input[type="checkbox"]')];
+    function campoFontesResumo() {
+      const caixas = campoFontesCaixas();
+      const n = caixas.filter(c => c.checked).length;
+      document.getElementById('campoFontesQtd').textContent = '(' + n + ' de ' + caixas.length + ' marcadas)';
+    }
+    campoFontesCaixas().forEach(c => c.addEventListener('change', campoFontesResumo));
+    document.getElementById('campoFontesTodas').addEventListener('click', () => { campoFontesCaixas().forEach(c => { c.checked = true; }); campoFontesResumo(); });
+    document.getElementById('campoFontesNenhuma').addEventListener('click', () => { campoFontesCaixas().forEach(c => { c.checked = false; }); campoFontesResumo(); });
+    document.getElementById('campoBox').addEventListener('toggle', e => { if (e.target.id === 'campoBox' && e.target.open) document.getElementById('campoFontesBox').open = false; });
+    campoFontesResumo();
     Object.values(ESBOCOS).forEach(cfg => {
       cfg.textos = [];
       cfg.textosAssinatura = '';
@@ -26377,7 +26393,7 @@ function saveTemplatesToStorage() {
 
     // Uma parte da programação: nome, tempo, responsável, descrição, textos, vídeos, cânticos, publicações, perguntas, jogo e transição.
     // jogoMontar (opcional): monta a caixa do jogo de outro jeito (a Adoração compartilhada esconde as respostas até o dirigente revelar).
-    function familiaParteMontar(parte, jogoMontar) {
+    function familiaParteMontar(parte, jogoMontar, aoVivo) {
       const bloco = document.createElement('div');
       bloco.className = 'fam-parte';
       const pt = document.createElement('div');
@@ -26412,13 +26428,14 @@ function saveTemplatesToStorage() {
         t.textContent = titulo;
         const ul = document.createElement('ul');
         ul.className = 'fam-lista';
-        itens.forEach(item => {
+        itens.forEach((item, idx) => {
           const li = document.createElement('li');
-          montar(li, item);
+          montar(li, item, idx);
           ul.appendChild(li);
         });
         bloco.append(t, ul);
       };
+      // aoVivo (Adoração compartilhada, 6.11.56): { texto(li, t), video(li, v, indice) } acrescentam o áudio dos versículos e o vídeo com a transcrição.
       addLista('📖 Textos', parte.textos, (li, t) => {
         li.textContent = t.referencia || '';
         if (t.texto) {
@@ -26426,16 +26443,18 @@ function saveTemplatesToStorage() {
           span.textContent = ' — ' + t.texto;
           li.appendChild(span);
         }
+        if (aoVivo && aoVivo.texto) aoVivo.texto(li, t);
       });
-      addLista('🎬 Vídeos', parte.videos, (li, v) => {
+      addLista('🎬 Vídeos', parte.videos, (li, v, idx) => {
         if (v.link) {
           const a = document.createElement('a');
           a.href = v.link;
           a.target = '_blank';
           a.rel = 'noopener noreferrer';
-          a.textContent = (v.titulo || 'Vídeo') + (v.duracao ? ' (' + v.duracao + ')' : '');
+          a.textContent = (v.titulo || 'Vídeo') + (v.duracao ? ' (' + v.duracao + ')' : '') + (aoVivo && aoVivo.video ? ' ↗ jw.org' : '');
           li.appendChild(a);
         } else li.textContent = v.titulo || 'Vídeo';
+        if (aoVivo && aoVivo.video) aoVivo.video(li, v, idx);
       });
       addLista('🎵 Cânticos', parte.canticos, (li, c) => { li.textContent = 'Cântico ' + c.numero + (c.titulo ? ' — ' + c.titulo : ''); });
       addLista('📚 Publicações', parte.publicacoes, (li, pub) => {
@@ -26856,10 +26875,34 @@ function saveTemplatesToStorage() {
       if (!(await familiaCopiar(texto + '\n' + link, botao, '✅ Convite copiado'))) familiaStatus('Não consegui copiar. Passe o código ' + cod + ' aos participantes.', 'erro');
     }
 
-    // O resultado: o código grande e os botões de copiar, compartilhar e abrir como dirigente.
-    function familiaSessaoCodigoMontar(cod, titulo) {
+    // As sessões que ESTE aparelho dirige (têm a chave do dirigente), da mais recente para a mais antiga.
+    function familiaSessoesDoDirigente() {
+      const dados = familiaSessoesLer();
+      return Object.keys(dados).filter(cod => dados[cod].chave).sort((a, b) => (dados[b].em || 0) - (dados[a].em || 0)).map(cod => Object.assign({ cod }, dados[cod]));
+    }
+    // A sessão que já foi criada a partir desta programação (pelo id da programação salva ou, nas recém-geradas, pelo título).
+    function familiaSessaoDaProgramacao(progId, titulo) {
+      return familiaSessoesDoDirigente().find(s => (progId ? s.progId === progId : !s.progId && s.titulo === titulo)) || null;
+    }
+    // 🗑️ Apagar o compartilhamento: encerra a sessão no servidor (o código deixa de valer) e tira do aparelho. 404 = já não existia.
+    async function familiaSessaoApagar(cod) {
+      const guardada = familiaSessoesLer()[cod] || {};
+      if (!(await askConfirm('Apagar este compartilhamento? O código ' + cod + ' deixa de valer e quem estiver na adoração é desconectado. Você poderá criar outro, com um código diferente.', 'Apagar compartilhamento'))) return false;
+      const r = await familiaSessaoPedir({ acao: 'encerrar', sessao: cod, chave: guardada.chave || '' });
+      if (!r.ok && r.status !== 404) { familiaStatus(r.erro || 'Não consegui apagar o compartilhamento agora. Tente de novo.', 'erro'); return false; }
+      familiaSessaoGuardar(cod, null);
+      familiaPaineisAbertos.forEach((p, k) => { if (p.dataset.sessao === cod) familiaPaineisAbertos.delete(k); });
+      if (participar.cod === cod) { participarLimpar(); if (currentScreen() === 'participar') { participarRecentesPintar(); participarVista('entrada'); } }
+      familiaDirigindoPintar();
+      return true;
+    }
+
+    // O resultado: o código grande e os botões: abrir como dirigente (de novo, quantas vezes precisar), copiar, compartilhar e apagar.
+    // aoApagar: o que fazer depois de apagar (o painel volta à criação, para criar outro código).
+    function familiaSessaoCodigoMontar(cod, titulo, aoApagar) {
       const caixa = document.createElement('div');
       caixa.className = 'fam-sessao-criada';
+      caixa.dataset.sessao = cod;
       const rotulo = document.createElement('p');
       rotulo.className = 'fam-sessao-rotulo';
       rotulo.textContent = 'Código da adoração';
@@ -26869,26 +26912,34 @@ function saveTemplatesToStorage() {
       codigo.setAttribute('aria-label', 'Código ' + cod.split('').join(' '));
       const dica = document.createElement('p');
       dica.className = 'hint fam-dica';
-      dica.textContent = 'Passe o código (ou o link) aos participantes. Eles entram em Participar de uma adoração, sem precisar do código de pesquisa. O código vale até 48 horas sem uso.';
+      dica.textContent = 'Passe o código (ou o link) aos participantes. Eles entram em Participar de uma adoração, sem precisar do código de pesquisa. O código vale até 48 horas sem uso. Se fechar a adoração sem querer, toque em Abrir como dirigente de novo.';
       const acoes = document.createElement('div');
       acoes.className = 'fam-acoes';
-      const copiar = document.createElement('button');
-      copiar.type = 'button';
-      copiar.className = 'secondary fam-fino';
-      copiar.textContent = '📋 Copiar código';
-      copiar.addEventListener('click', async () => { if (!(await familiaCopiar(cod, copiar))) familiaStatus('Não consegui copiar. O código é ' + cod + '.', 'erro'); });
-      const link = document.createElement('button');
-      link.type = 'button';
-      link.className = 'secondary fam-fino';
-      link.textContent = '📤 Compartilhar link';
-      link.addEventListener('click', () => familiaSessaoCompartilharLink(cod, titulo, link));
-      acoes.append(copiar, link);
       const abrir = document.createElement('button');
       abrir.type = 'button';
       abrir.className = 'fam-fino fam-principal';
       abrir.textContent = '▶️ Abrir como dirigente';
       abrir.addEventListener('click', () => participarAbrir(cod));
-      acoes.appendChild(abrir);
+      const copiar = document.createElement('button');
+      copiar.type = 'button';
+      copiar.className = 'secondary fam-fino';
+      copiar.textContent = '📋 Copiar';
+      copiar.title = 'Copiar o código da adoração';
+      copiar.addEventListener('click', async () => { if (!(await familiaCopiar(cod, copiar))) familiaStatus('Não consegui copiar. O código é ' + cod + '.', 'erro'); });
+      const link = document.createElement('button');
+      link.type = 'button';
+      link.className = 'secondary fam-fino';
+      link.textContent = '📤 Link';
+      link.title = 'Compartilhar o link da adoração';
+      link.addEventListener('click', () => familiaSessaoCompartilharLink(cod, titulo, link));
+      const apagar = document.createElement('button');
+      apagar.type = 'button';
+      apagar.className = 'secondary fam-fino limpar-btn';
+      apagar.textContent = '🗑️';
+      apagar.title = 'Apagar este compartilhamento (o código deixa de valer)';
+      apagar.setAttribute('aria-label', 'Apagar este compartilhamento');
+      apagar.addEventListener('click', async () => { if (await familiaSessaoApagar(cod) && aoApagar) aoApagar(); });
+      acoes.append(abrir, copiar, link, apagar);
       caixa.append(rotulo, codigo, dica, acoes);
       return caixa;
     }
@@ -26952,54 +27003,69 @@ function saveTemplatesToStorage() {
       return { el, ler: () => lista.slice() };
     }
 
-    // 🔗 Compartilhar: abre (ou fecha) o painel dentro do cartão; nele o dirigente confere os nomes e cria a sessão.
-    // A lista de Programações salvas é redesenhada sempre que as pesquisas salvas mudam: o painel aberto (com o código já criado)
-    // fica guardado pelo id da programação e volta ao cartão novo.
+    // 🔗 Compartilhar: abre (ou fecha) o painel dentro do cartão. Se a programação já tem um código, o painel mostra o código (com Abrir como
+    // dirigente, Copiar, Compartilhar link e a lixeira); senão, o dirigente confere os nomes e cria a sessão. Apagar o compartilhamento
+    // volta à criação, para criar outro código.
+    // A lista de Programações salvas é redesenhada sempre que as pesquisas salvas mudam: o painel aberto fica guardado pelo id da
+    // programação e volta ao cartão novo.
     const familiaPaineisAbertos = new Map();
     function familiaCompartilharAbrir(op, onde, botao, chave) {
       const aberto = onde.querySelector(':scope > .fam-sessao-painel');
       if (aberto) { aberto.remove(); botao.setAttribute('aria-expanded', 'false'); if (chave) familiaPaineisAbertos.delete(chave); return; }
       botao.setAttribute('aria-expanded', 'true');
+      const titulo = (op.emoji ? op.emoji + ' ' : '') + (op.titulo || 'Adoração em Família');
       const painel = document.createElement('div');
       painel.className = 'fam-sessao-painel';
       const t = document.createElement('p');
       t.className = 'fam-secao-titulo';
       t.textContent = '🔗 Compartilhar esta programação';
-      const dica = document.createElement('p');
-      dica.className = 'hint fam-dica';
-      dica.textContent = 'Cada participante acompanha no próprio celular, e você libera as partes uma a uma. Os nomes abaixo (do cadastro da família e dos convidados) aparecem para cada um escolher o seu e servem para o sorteio. Use só apelidos.';
-      const editor = familiaNomesEditor(familiaNomesDoCadastro());
-      const acoes = document.createElement('div');
-      acoes.className = 'fam-acoes';
-      const criar = document.createElement('button');
-      criar.type = 'button';
-      criar.className = 'fam-fino fam-principal';
-      criar.textContent = '🔗 Criar o código da adoração';
-      const status = document.createElement('p');
-      status.className = 'fam-status';
-      status.setAttribute('role', 'status');
-      status.hidden = true;
-      criar.addEventListener('click', async () => {
-        const codigo = codigoAcessoSalvo();
-        if (!codigo) { status.hidden = false; status.className = 'fam-status erro'; status.textContent = 'Para compartilhar, informe o código de pesquisa em Ajustes → 🔐 Autorização de acessos.'; return; }
-        criar.disabled = true;
-        criar.textContent = '⏳ Criando…';
+
+      const desenharCriacao = () => {
+        painel.dataset.sessao = '';
+        const dica = document.createElement('p');
+        dica.className = 'hint fam-dica';
+        dica.textContent = 'Cada participante acompanha no próprio celular, e você libera as partes uma a uma. Os nomes abaixo (do cadastro da família e dos convidados) aparecem para cada um escolher o seu e servem para o sorteio. Use só apelidos.';
+        const editor = familiaNomesEditor(familiaNomesDoCadastro());
+        const acoes = document.createElement('div');
+        acoes.className = 'fam-acoes';
+        const criar = document.createElement('button');
+        criar.type = 'button';
+        criar.className = 'fam-fino fam-principal';
+        criar.textContent = '🔗 Criar o código da adoração';
+        const status = document.createElement('p');
+        status.className = 'fam-status';
+        status.setAttribute('role', 'status');
         status.hidden = true;
-        const r = await familiaSessaoPedir({ acao: 'criar', programa: familiaProgramaParaCompartilhar(op), nomes: editor.ler(), codigo });
-        if (!r.ok || !r.data.sessao) {
-          criar.disabled = false;
-          criar.textContent = '🔗 Criar o código da adoração';
-          status.hidden = false;
-          status.className = 'fam-status erro';
-          status.textContent = r.erro || 'Não consegui criar a sessão.';
-          return;
-        }
-        const titulo = (op.emoji ? op.emoji + ' ' : '') + (op.titulo || 'Adoração em Família');
-        familiaSessaoGuardar(r.data.sessao, { chave: r.data.chave, titulo });
-        painel.replaceChildren(t, familiaSessaoCodigoMontar(r.data.sessao, titulo));
-      });
-      acoes.appendChild(criar);
-      painel.append(t, dica, editor.el, acoes, status);
+        criar.addEventListener('click', async () => {
+          const codigo = codigoAcessoSalvo();
+          if (!codigo) { status.hidden = false; status.className = 'fam-status erro'; status.textContent = 'Para compartilhar, informe o código de pesquisa em Ajustes → 🔐 Autorização de acessos.'; return; }
+          criar.disabled = true;
+          criar.textContent = '⏳ Criando…';
+          status.hidden = true;
+          const r = await familiaSessaoPedir({ acao: 'criar', programa: familiaProgramaParaCompartilhar(op), nomes: editor.ler(), codigo });
+          if (!r.ok || !r.data.sessao) {
+            criar.disabled = false;
+            criar.textContent = '🔗 Criar o código da adoração';
+            status.hidden = false;
+            status.className = 'fam-status erro';
+            status.textContent = r.erro || 'Não consegui criar a sessão.';
+            return;
+          }
+          familiaSessaoGuardar(r.data.sessao, { chave: r.data.chave, titulo, progId: chave || '' });
+          desenharCodigo(r.data.sessao);
+          familiaDirigindoPintar();
+        });
+        acoes.appendChild(criar);
+        painel.replaceChildren(t, dica, editor.el, acoes, status);
+      };
+      const desenharCodigo = (cod) => {
+        painel.dataset.sessao = cod;
+        painel.replaceChildren(t, familiaSessaoCodigoMontar(cod, titulo, desenharCriacao));
+      };
+
+      const existente = familiaSessaoDaProgramacao(chave, titulo);
+      if (existente) desenharCodigo(existente.cod);
+      else desenharCriacao();
       onde.appendChild(painel);
       if (chave) familiaPaineisAbertos.set(chave, painel);
       requestAnimationFrame(() => painel.scrollIntoView({ block: 'nearest', behavior: 'smooth' }));
@@ -27016,6 +27082,55 @@ function saveTemplatesToStorage() {
       if (painel) { b.setAttribute('aria-expanded', 'true'); setTimeout(() => onde.appendChild(painel), 0); } // o cartão ainda está sendo montado
       return b;
     }
+
+    // 👑 Adorações que este aparelho dirige (6.11.56): ficam na tela da Adoração em Família, para reabrir como dirigente (se a tela foi fechada
+    // sem querer), copiar o código ou o link e apagar o compartilhamento. As vencidas (48 h) e as apagadas somem da lista.
+    function familiaDirigindoPintar() {
+      const box = document.getElementById('familiaDirigindoBox');
+      const corpo = document.getElementById('familiaDirigindoLista');
+      if (!box || !corpo) return;
+      const itens = familiaSessoesDoDirigente();
+      box.hidden = !itens.length;
+      document.getElementById('familiaDirigindoQtd').textContent = itens.length ? '(' + itens.length + ')' : '';
+      corpo.textContent = '';
+      itens.forEach(s => {
+        const cartao = document.createElement('div');
+        cartao.className = 'fam-sessao-item';
+        const nome = document.createElement('p');
+        nome.className = 'fam-sessao-item-nome';
+        const horas = Math.max(0, Math.ceil((FAMILIA_SESSAO_VALIDADE_MS - (Date.now() - (Number(s.em) || 0))) / 3600000));
+        nome.textContent = (s.titulo || 'Adoração em Família') + ' · código ' + s.cod + ' · vale até ~' + horas + ' h sem uso';
+        const acoes = document.createElement('div');
+        acoes.className = 'fam-acoes';
+        const abrir = document.createElement('button');
+        abrir.type = 'button';
+        abrir.className = 'fam-fino fam-principal';
+        abrir.textContent = '▶️ Reabrir como dirigente';
+        abrir.addEventListener('click', () => participarAbrir(s.cod));
+        const copiar = document.createElement('button');
+        copiar.type = 'button';
+        copiar.className = 'secondary fam-fino';
+        copiar.textContent = '📋 Copiar';
+        copiar.title = 'Copiar o código da adoração';
+        copiar.addEventListener('click', async () => { if (!(await familiaCopiar(s.cod, copiar))) familiaStatus('Não consegui copiar. O código é ' + s.cod + '.', 'erro'); });
+        const link = document.createElement('button');
+        link.type = 'button';
+        link.className = 'secondary fam-fino';
+        link.textContent = '📤 Link';
+        link.addEventListener('click', () => familiaSessaoCompartilharLink(s.cod, s.titulo, link));
+        const apagar = document.createElement('button');
+        apagar.type = 'button';
+        apagar.className = 'secondary fam-fino limpar-btn';
+        apagar.textContent = '🗑️';
+        apagar.title = 'Apagar este compartilhamento (o código deixa de valer)';
+        apagar.setAttribute('aria-label', 'Apagar este compartilhamento');
+        apagar.addEventListener('click', () => familiaSessaoApagar(s.cod));
+        acoes.append(abrir, copiar, link, apagar);
+        cartao.append(nome, acoes);
+        corpo.appendChild(cartao);
+      });
+    }
+    familiaDirigindoPintar();
 
     // ---- Adoração em família ao vivo (6.11.49): a tela Participar ----
     // Os participantes entram só com o código da sessão (não precisam do código de pesquisa) e escolhem o nome; a programação aparece
@@ -27064,6 +27179,7 @@ function saveTemplatesToStorage() {
     }
     function participarLimpar() {
       participarParar();
+      try { participarAudioParar(); document.querySelectorAll('#participarSessao video').forEach(v => v.pause()); } catch (e) { /* ainda iniciando */ }
       clearInterval(participar.cronTimer);
       participar.cronTimer = 0;
       participarTelaGrande(false);
@@ -27107,12 +27223,25 @@ function saveTemplatesToStorage() {
       t.textContent = 'Adorações recentes neste aparelho';
       participarEls.recentes.appendChild(t);
       cods.forEach(cod => {
+        const linha = document.createElement('div');
+        linha.className = 'fam-acoes fam-sessao-recente-linha';
         const b = document.createElement('button');
         b.type = 'button';
         b.className = 'secondary fam-fino fam-sessao-recente';
-        b.textContent = (dados[cod].titulo || 'Adoração em Família') + ' · ' + cod + (dados[cod].chave ? ' · 👑 você dirige' : '');
+        b.textContent = (dados[cod].titulo || 'Adoração em Família') + ' · ' + cod + (dados[cod].chave ? ' · 👑 você dirige (toque para reabrir)' : '');
         b.addEventListener('click', () => participarAbrir(cod));
-        participarEls.recentes.appendChild(b);
+        linha.appendChild(b);
+        if (dados[cod].chave) { // quem dirige também pode apagar o compartilhamento (criar outro código depois)
+          const apagar = document.createElement('button');
+          apagar.type = 'button';
+          apagar.className = 'secondary fam-fino limpar-btn';
+          apagar.textContent = '🗑️';
+          apagar.title = 'Apagar este compartilhamento (o código deixa de valer)';
+          apagar.setAttribute('aria-label', 'Apagar este compartilhamento');
+          apagar.addEventListener('click', async () => { if (await familiaSessaoApagar(cod)) participarRecentesPintar(); });
+          linha.appendChild(apagar);
+        }
+        participarEls.recentes.appendChild(linha);
       });
     }
 
@@ -27193,6 +27322,208 @@ function saveTemplatesToStorage() {
       try { localStorage.setItem(PARTICIPAR_NOME_KEY, nome); } catch (e) { /* sem localStorage */ }
       participarEntrar(participar.nomeCod, nome);
     }
+
+    // ---- Áudio dos textos bíblicos e vídeos com transcrição, na tela da adoração (6.11.56) ----
+    // Para dirigente e participantes. Texto bíblico: cada trecho citado ganha um botão 🔊 que toca SÓ os versículos pedidos, do áudio da jw.org
+    // (o mesmo que a leitura da Bíblia usa: o áudio informa em que segundo começa cada versículo) e um link direto para o áudio no jw.org.
+    // Vídeo: link do jw.org, ▶️ para tocar aqui e um cartão fino recolhido com a transcrição (a legenda publicada) logo abaixo.
+    const participarAudio = { el: null, botao: null, fim: Infinity, rotulo: '' };
+    const participarVideosCache = new Map(); // "COD|parte|vídeo" -> dados do servidor
+    // "1 Coríntios 13:4-7" ou "Mateus 24:14; 28:19, 20" -> [{ livro, n, cap, ini, fim, rotulo }] (versículos em sequência viram um trecho só).
+    function participarRefsDoTexto(referencia) {
+      const refs = vozReferencias();
+      const re = new RegExp(refs.regex.source, refs.regex.flags);
+      const trechos = [];
+      let m;
+      while ((m = re.exec(String(referencia || '')))) {
+        const livro = refs.comAcento.get(vozChave(m[1])) || refs.semAcento.get(vozChaveSemAcento(m[1]));
+        const n = BIBLIA_LIVROS.indexOf(livro) + 1;
+        if (!n) continue;
+        const pares = [[m[2], m[3]]];
+        String(m[4] || '').split(';').map(s => s.trim()).filter(Boolean).forEach(s => { const x = s.match(/^(\d{1,3}):(.+)$/); if (x) pares.push([x[1], x[2]]); });
+        pares.forEach(([cap, versos]) => {
+          const faixas = String(versos).split(',').map(v => v.trim()).filter(Boolean)
+            .map(v => { const p = v.split(/\s*[-–]\s*/).map(Number); return [p[0], p[1] || p[0]]; })
+            .filter(f => f[0] > 0 && f[1] >= f[0]).sort((a, b) => a[0] - b[0]);
+          const juntas = [];
+          faixas.forEach(f => { const u = juntas[juntas.length - 1]; if (u && f[0] <= u[1] + 1) u[1] = Math.max(u[1], f[1]); else juntas.push([f[0], f[1]]); });
+          juntas.forEach(([ini, fim]) => trechos.push({ livro, n, cap: Number(cap), ini, fim, rotulo: livro + ' ' + cap + ':' + (ini === fim ? ini : ini + '-' + fim) }));
+        });
+      }
+      return trechos;
+    }
+    // Onde o áudio do capítulo começa e termina para os versículos pedidos: { url, ini, fim } (fim Infinity = até o fim do capítulo; sem marcas,
+    // o capítulo inteiro, com inteiro: true) ou null.
+    function participarAudioDoTrecho(mapa, t) {
+      const url = mapa.get(t.cap);
+      if (!url) return null;
+      const marcas = (mapa.marcas && mapa.marcas.get(t.cap)) || [];
+      const comeco = marcas.filter(x => x.v === t.ini).map(x => x.t).sort((a, b) => a - b)[0];
+      if (comeco === undefined) return { url, ini: 0, fim: Infinity, inteiro: true };
+      const depois = marcas.filter(x => x.v > t.fim && x.t > comeco).map(x => x.t);
+      return { url, ini: comeco, fim: depois.length ? Math.min(...depois) : Infinity };
+    }
+    function participarAudioParar() {
+      if (participarAudio.el) participarAudio.el.pause();
+      if (participarAudio.botao) { participarAudio.botao.textContent = participarAudio.rotulo; participarAudio.botao.setAttribute('aria-pressed', 'false'); }
+      participarAudio.botao = null;
+    }
+    function participarAudioTocar(t, botao) {
+      if (participarAudio.botao === botao) { participarAudioParar(); return; }
+      participarAudioParar();
+      document.querySelectorAll('#participarSessao video').forEach(v => v.pause());
+      participarAudio.rotulo = botao.dataset.rotulo || botao.textContent;
+      participarAudio.botao = botao;
+      botao.setAttribute('aria-pressed', 'true');
+      botao.textContent = '⏳ Carregando…';
+      const falhou = () => {
+        if (participarAudio.botao !== botao) return;
+        participarAudioParar();
+        botao.textContent = '⚠️ Áudio indisponível';
+        setTimeout(() => { botao.textContent = botao.dataset.rotulo; }, 2600);
+      };
+      const tocar = mapa => {
+        if (participarAudio.botao !== botao) return; // parou ou tocou outro enquanto carregava
+        const d = participarAudioDoTrecho(mapa, t);
+        if (!d) { falhou(); return; }
+        if (!participarAudio.el) {
+          const el = new Audio();
+          el.preload = 'auto';
+          el.addEventListener('timeupdate', () => { if (el.currentTime >= participarAudio.fim - 0.15) participarAudioParar(); });
+          el.addEventListener('ended', participarAudioParar);
+          el.addEventListener('error', falhou);
+          participarAudio.el = el;
+        }
+        const el = participarAudio.el;
+        participarAudio.fim = d.fim;
+        el.src = d.url;
+        const ir = () => { try { el.currentTime = d.ini; } catch (e) { /* ainda sem duração */ } };
+        el.addEventListener('loadedmetadata', ir, { once: true });
+        const p = el.play();
+        if (p && p.catch) p.catch(falhou);
+        botao.textContent = '⏹️ Parar';
+      };
+      // Com o áudio do livro já consultado (antes do toque), toca no mesmo instante (o iPhone só deixa tocar dentro do toque).
+      const pronto = (bibliaAudioLivros.get(t.livro) || {}).done;
+      if (pronto) tocar(pronto);
+      else bibliaAudioUrls(t.livro).then(tocar, falhou);
+    }
+    // Os botões de cada texto da parte: um 🔊 por trecho citado e o link direto para o áudio.
+    function participarTextoMidia(li, texto) {
+      const trechos = participarRefsDoTexto(texto.referencia);
+      if (!trechos.length) return;
+      const linha = document.createElement('div');
+      linha.className = 'fam-audio-linha';
+      trechos.forEach(t => {
+        const botao = document.createElement('button');
+        botao.type = 'button';
+        botao.className = 'secondary fam-fino fam-audio-btn';
+        botao.dataset.rotulo = trechos.length > 1 ? '🔊 Ouvir ' + t.rotulo : '🔊 Ouvir os versículos';
+        botao.textContent = botao.dataset.rotulo;
+        botao.title = 'Toca só ' + t.rotulo + ' (áudio da jw.org)';
+        botao.setAttribute('aria-pressed', 'false');
+        botao.addEventListener('click', () => participarAudioTocar(t, botao));
+        const link = document.createElement('a');
+        link.className = 'secondary fam-fino fam-link-botao fam-audio-link';
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = '↗ Áudio no jw.org';
+        link.hidden = true;
+        linha.append(botao, link);
+        // Já deixa o endereço do áudio pronto (também para tocar sem espera) e mostra o link direto, com o trecho marcado (#t=início,fim).
+        bibliaAudioUrls(t.livro).then(mapa => {
+          const d = participarAudioDoTrecho(mapa, t);
+          if (!d) return;
+          link.href = d.url + (d.inteiro ? '' : '#t=' + d.ini.toFixed(1) + (Number.isFinite(d.fim) ? ',' + d.fim.toFixed(1) : ''));
+          link.hidden = false;
+        }, () => { /* sem áudio agora: o botão avisa ao tocar */ });
+      });
+      li.appendChild(linha);
+    }
+    async function participarVideoDados(i, k) {
+      const chave = participar.cod + '|' + i + '|' + k;
+      if (participarVideosCache.has(chave)) return participarVideosCache.get(chave);
+      const corpo = { acao: 'video', sessao: participar.cod, parte: i, video: k };
+      if (participar.dirigente) corpo.chave = participar.chave;
+      const r = await familiaSessaoPedir(corpo);
+      if (!r.ok) return { erro: r.erro || 'Não consegui abrir o vídeo agora.' };
+      participarVideosCache.set(chave, r.data);
+      return r.data;
+    }
+    // Cada vídeo da parte: ▶️ Reproduzir aqui (o player aparece abaixo) e, logo abaixo, o cartão fino e recolhido da transcrição.
+    function participarVideoMidia(li, v, k, i) {
+      if (!v.link) return;
+      const caixa = document.createElement('div');
+      caixa.className = 'fam-video-vivo';
+      const botao = document.createElement('button');
+      botao.type = 'button';
+      botao.className = 'secondary fam-fino fam-video-tocar';
+      botao.textContent = '▶️ Reproduzir aqui';
+      const palco = document.createElement('div');
+      palco.className = 'fam-video-palco';
+      palco.hidden = true;
+      const transc = document.createElement('details');
+      transc.className = 'fam-video-transc';
+      const resumo = document.createElement('summary');
+      resumo.textContent = '📝 Transcrição do vídeo';
+      const texto = document.createElement('div');
+      texto.className = 'fam-video-texto';
+      texto.textContent = 'Abra para carregar a transcrição.';
+      transc.append(resumo, texto);
+      let carregada = false;
+      const preencher = d => {
+        carregada = true;
+        texto.textContent = d.erro ? d.erro : (d.texto || 'Este vídeo não tem transcrição publicada.');
+      };
+      const carregarTexto = async () => {
+        if (carregada) return;
+        texto.textContent = '⏳ Carregando a transcrição…';
+        preencher(await participarVideoDados(i, k));
+      };
+      transc.addEventListener('toggle', () => { if (transc.open) carregarTexto(); });
+      let tocando = false;
+      botao.addEventListener('click', async () => {
+        if (tocando) { // fechar o vídeo
+          palco.textContent = '';
+          palco.hidden = true;
+          tocando = false;
+          botao.textContent = '▶️ Reproduzir aqui';
+          return;
+        }
+        participarAudioParar();
+        botao.disabled = true;
+        botao.textContent = '⏳ Abrindo o vídeo…';
+        const d = await participarVideoDados(i, k);
+        botao.disabled = false;
+        if (!d || d.erro || !d.mp4) {
+          botao.textContent = '▶️ Reproduzir aqui';
+          palco.hidden = false;
+          palco.textContent = (d && d.erro) || 'Não consegui tocar aqui. Use o link ↗ jw.org para assistir.';
+          if (d && !d.erro && d.texto && !carregada) preencher(d);
+          return;
+        }
+        document.querySelectorAll('#participarSessao video').forEach(x => x.pause());
+        const video = document.createElement('video');
+        video.controls = true;
+        video.playsInline = true;
+        video.preload = 'metadata';
+        video.src = d.mp4;
+        if (d.poster) video.poster = d.poster;
+        video.className = 'fam-video-player';
+        palco.textContent = '';
+        palco.appendChild(video);
+        palco.hidden = false;
+        tocando = true;
+        botao.textContent = '✕ Fechar o vídeo';
+        if (!carregada) preencher(d);
+        const p = video.play();
+        if (p && p.catch) p.catch(() => { /* o navegador pediu um toque no ▶ do player */ });
+      });
+      caixa.append(botao, palco, transc);
+      li.appendChild(caixa);
+    }
+    // Os dois ganchos que familiaParteMontar usa na tela da adoração, para a parte i.
+    const participarMidia = i => ({ texto: (li, t) => participarTextoMidia(li, t), video: (li, v, k) => participarVideoMidia(li, v, k, i) });
 
     // ---- A sessão na tela: cabeçalho, painel do dirigente e uma seção por parte ----
     function participarMontar() {
@@ -27331,7 +27662,7 @@ function saveTemplatesToStorage() {
       if (!s) return;
       if (abrir && !s.montada) {
         // O conteúdo só é montado na primeira vez que a parte abre.
-        s.dentro.appendChild(familiaParteMontar(participar.programa.partes[i], j => participarJogoMontar(j, i)));
+        s.dentro.appendChild(familiaParteMontar(participar.programa.partes[i], j => participarJogoMontar(j, i), participarMidia(i)));
         s.montada = true;
       }
       s.aberta = abrir;
