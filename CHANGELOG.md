@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.57
+
+- **Considerações para o serviço de campo — alinhamentos e tamanhos:**
+  - A caixa **"Logo depois de uma reunião"** estava em bloco (a regra dos rótulos do formulário vencia a das caixas de marcar) e o texto passava por cima da moldura; voltou a ser uma caixa de marcar de verdade, com a mesma altura mínima (44 px) e o texto centralizado.
+  - **Data da saída** e **Duração**: no celular os dois rótulos reservam duas linhas e os campos começam na mesma linha; os dois têm a mesma altura (40 px). O campo de data do iPhone era mais alto e centralizava o texto: agora segue o padrão dos outros campos (altura, texto à esquerda).
+  - O botão **Sugerir 3 assuntos** ganhou um respiro acima (antes colava na última caixa).
+  - Nas linhas de dois campos (data/duração, dia/horário da adoração, duração/quantas sugestões) todos os campos têm 40 px, e o **Dia da adoração** e o **Horário** do cadastro da família ficam alinhados no celular.
+
 ## 6.11.56
 
 - **Considerações para o serviço de campo — fontes:** as fontes agora ficam num contêiner próprio, **sempre recolhido** ("📚 Fontes do esboço", com o resumo de quantas estão marcadas). Cada artigo de A Sentinela da lista tem a sua **caixa individual** (os 8 complementares, além de w24.05 e das brochuras lmd e th e do be), com **Marcar todas / Desmarcar todas**. A caixa nova **🔎 Pesquisar outras fontes** busca no wol.jw.org as matérias **mais novas** que tratam do assunto (sem anuários, índices, texto diário nem apostila) e traz o melhor parágrafo de até 2 delas. O servidor só lê os artigos que estão marcados. O app antigo (com `sentinela: false`) continua valendo.

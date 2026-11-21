@@ -17099,11 +17099,32 @@ body.fam-tela-grande .fam-sessao-grande-barra { display: flex; position: fixed; 
 
 /* 6.11.54: Considerações para o serviço de campo. Reaproveita os campos e as caixas de marcar da Adoração em Família (.fam-campo,
    .fam-checks, .fam-check); os botões ocupam a linha toda (como os outros esboços). Assuntos sugeridos: um por linha, título e resumo. */
-.campo-form > label,
+.campo-form > label:not(.fam-check),
 .campo-form > .fam-rotulo { display: block; margin: 12px 0 4px; }
 .campo-form .fam-linha-dupla { margin-top: 10px; }
 .campo-form .fam-meia > label { margin: 0; }
-.campo-form .campo-check-unica { margin-top: 10px; }
+/* 6.11.57: a caixa "Logo depois de uma reunião" voltou a ser uma caixa de marcar de verdade (a regra dos rótulos a deixava em bloco e o texto
+   passava por cima da moldura); as caixas ficam todas com a mesma altura mínima e o texto centralizado na vertical. */
+.campo-form .campo-check-unica { margin-top: 10px; display: grid; }
+.campo-form .fam-check { align-items: center; min-height: 44px; }
+.campo-form .fam-check input[type="checkbox"] { margin: 0; }
+/* Data, hora e listas: todos com a mesma altura e o texto à esquerda (no iPhone o campo de data é mais alto e centraliza o texto). */
+.fam-linha-dupla .fam-campo { height: 40px; min-height: 40px; } /* a mesma altura dos outros campos de uma linha (40 px) */
+/* Dia e horário da adoração (cadastro): no celular os rótulos reservam duas linhas, e os campos começam juntos. */
+@media (max-width: 520px) {
+  .fam-linha-fim > .fam-meia { align-content: end; }
+  .fam-linha-fim > .fam-meia > label { min-height: 2.5em; display: flex; flex-wrap: wrap; align-items: flex-end; column-gap: 4px; line-height: 1.25; }
+}
+input[type="date"].fam-campo { -webkit-appearance: none; appearance: none; display: block; width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; line-height: 22px; text-align: left; }
+input[type="date"].fam-campo::-webkit-date-and-time-value { text-align: left; min-height: 1.4em; }
+input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; padding: 0; }
+/* Celular: os rótulos do par (Data da saída + dia / Duração) reservam duas linhas e ficam colados nos campos, que assim começam na mesma linha. */
+@media (max-width: 520px) {
+  .campo-form .fam-linha-dupla { align-items: end; }
+  .campo-form .fam-meia { align-content: end; }
+  .campo-form .fam-meia > label { min-height: 2.5em; display: flex; flex-wrap: wrap; align-items: flex-end; column-gap: 4px; line-height: 1.25; }
+}
+.campo-form #campoSugerirBtn { margin-top: 14px; }
 .campo-form .fam-checks { margin-top: 2px; }
 .campo-form #campoInfo:empty { display: none; }
 .campo-assuntos { display: grid; gap: 6px; margin-top: 8px; min-width: 0; }
