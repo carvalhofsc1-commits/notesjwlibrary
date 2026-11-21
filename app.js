@@ -7921,7 +7921,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.16'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.17'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -25638,15 +25638,53 @@ function saveTemplatesToStorage() {
       return '<option value="">Papel…</option>' + lista.map(p => '<option value="' + familiaEscapar(p) + '"' + (selecionado === p ? ' selected' : '') + '>' + familiaEscapar(p) + '</option>').join('');
     }
 
+    // Situação espiritual (só "Descrente" não pede o ano; nas outras o ano tem o rótulo da situação) e privilégios de cada membro (6.11.17).
+    const FAMILIA_SITUACOES = {
+      'Batizado': 'Ano do batismo',
+      'Publicador não batizado': 'Publicador desde o ano',
+      'Removido': 'Ano em que foi removido',
+      'Descrente': '',
+      'Estudante': 'Estuda a Bíblia desde o ano'
+    };
+    const FAMILIA_PRIVILEGIOS = ['Pioneiro regular', 'Pioneiro auxiliar', 'Pioneiro especial', 'Ancião', 'Servo ministerial', 'Serviço de Betel', 'Superintendente viajante', 'Voluntário a distância', 'Comulter', 'Tempo integral especial'];
+
+    function familiaSituacaoOpcoesHtml(selecionada) {
+      return '<option value="">Situação espiritual…</option>' + Object.keys(FAMILIA_SITUACOES).map(s => '<option value="' + familiaEscapar(s) + '"' + (selecionada === s ? ' selected' : '') + '>' + familiaEscapar(s) + '</option>').join('');
+    }
+
     function familiaMembroLinha(dados) {
       const m = dados || {};
       const linha = document.createElement('div');
       linha.className = 'fam-membro';
+      const marcados = new Set(Array.isArray(m.privilegios) ? m.privilegios : []);
       linha.innerHTML =
         '<input class="fam-campo fam-apelido" type="text" maxlength="30" autocomplete="off" spellcheck="false" placeholder="Apelido" value="' + familiaEscapar(m.apelido || '') + '">' +
         '<select class="fam-campo fam-papel" aria-label="Papel">' + familiaPapelOpcoesHtml(m.papel || '') + '</select>' +
         '<select class="fam-campo fam-ano" aria-label="Ano de nascimento">' + familiaAnoOpcoesHtml(m.anoNascimento) + '</select>' +
+        '<select class="fam-campo fam-situacao" aria-label="Situação espiritual">' + familiaSituacaoOpcoesHtml(m.situacao || '') + '</select>' +
+        '<select class="fam-campo fam-ano-sit" aria-label="Ano da situação espiritual" hidden>' + familiaAnoOpcoesHtml(m.anoSituacao) + '</select>' +
+        '<details class="fam-priv"><summary>🎖️ Privilégios</summary><div class="fam-checks fam-priv-lista">' +
+        FAMILIA_PRIVILEGIOS.map(p => '<label class="fam-check"><input type="checkbox" value="' + familiaEscapar(p) + '"' + (marcados.has(p) ? ' checked' : '') + '><span>' + familiaEscapar(p) + '</span></label>').join('') +
+        '</div></details>' +
         '<button class="secondary fam-membro-tirar" type="button" title="Remover membro" aria-label="Remover membro">🗑️</button>';
+      // O ano da situação só aparece quando há situação diferente de Descrente; o rótulo (primeira opção) diz de que ano se trata.
+      const selSituacao = linha.querySelector('.fam-situacao');
+      const selAnoSit = linha.querySelector('.fam-ano-sit');
+      const priv = linha.querySelector('.fam-priv');
+      const ajustarSituacao = () => {
+        const rotulo = FAMILIA_SITUACOES[selSituacao.value];
+        selAnoSit.hidden = !rotulo;
+        if (!rotulo) selAnoSit.value = '';
+        else selAnoSit.options[0].textContent = rotulo;
+      };
+      const contarPrivilegios = () => {
+        const n = priv.querySelectorAll('input:checked').length;
+        priv.querySelector('summary').textContent = '🎖️ Privilégios' + (n ? ' (' + n + ')' : '');
+      };
+      selSituacao.addEventListener('change', ajustarSituacao);
+      priv.addEventListener('change', contarPrivilegios);
+      ajustarSituacao();
+      contarPrivilegios();
       linha.querySelector('.fam-membro-tirar').addEventListener('click', () => {
         linha.remove();
         if (!familiaMembrosEl.children.length) familiaMembroAdd();
@@ -25674,7 +25712,10 @@ function saveTemplatesToStorage() {
       const membros = Array.from(familiaMembrosEl.querySelectorAll('.fam-membro')).map(linha => ({
         apelido: (linha.querySelector('.fam-apelido').value || '').trim().slice(0, 30),
         papel: linha.querySelector('.fam-papel').value || '',
-        anoNascimento: Number(linha.querySelector('.fam-ano').value) || null
+        anoNascimento: Number(linha.querySelector('.fam-ano').value) || null,
+        situacao: linha.querySelector('.fam-situacao').value || '',
+        anoSituacao: Number(linha.querySelector('.fam-ano-sit').value) || null,
+        privilegios: Array.from(linha.querySelectorAll('.fam-priv input:checked')).map(el => el.value)
       })).filter(m => m.apelido || m.papel || m.anoNascimento);
       const anos = Number(familiaAnosCasadosEl.value);
       return {
@@ -25755,7 +25796,10 @@ function saveTemplatesToStorage() {
         membros: perfil.membros.map(m => ({
           apelido: m.apelido,
           papel: m.papel,
-          idade: familiaIdadeDe(m.anoNascimento)
+          idade: familiaIdadeDe(m.anoNascimento),
+          situacao: m.situacao,
+          anoSituacao: m.anoSituacao,
+          privilegios: m.privilegios
         })),
         circunstancias: perfil.circunstancias,
         outrasCircunstancias: perfil.outrasCircunstancias,

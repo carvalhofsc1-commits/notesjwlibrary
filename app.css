@@ -16717,7 +16717,10 @@ textarea.fam-campo {
   grid-template-areas:
     "apelido tirar"
     "papel papel"
-    "ano ano";
+    "ano ano"
+    "situacao situacao"
+    "anosit anosit"
+    "priv priv";
   gap: 6px;
   align-items: center;
   min-width: 0;
@@ -16761,9 +16764,19 @@ textarea.fam-campo {
 @media (min-width: 640px) {
   .fam-membro {
     grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, .75fr) 40px;
-    grid-template-areas: "apelido papel ano tirar";
+    grid-template-areas:
+      "apelido papel ano tirar"
+      "situacao anosit anosit anosit"
+      "priv priv priv priv";
   }
 }
+/* Situação espiritual, ano e privilégios de cada membro (6.11.17). */
+.fam-membro .fam-situacao { grid-area: situacao; min-width: 0; }
+.fam-membro .fam-ano-sit { grid-area: anosit; min-width: 0; }
+.fam-membro .fam-ano-sit[hidden] { display: none; }
+.fam-membro .fam-priv { grid-area: priv; min-width: 0; border: 1px solid var(--line, #cbd5e1); border-radius: 10px; padding: 0 10px; }
+.fam-membro .fam-priv > summary { cursor: pointer; min-height: 40px; display: flex; align-items: center; font-size: .95rem; font-weight: 600; }
+.fam-membro .fam-priv-lista { padding: 0 0 10px; }
 .fam-acoes { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-width: 0; }
 .fam-fino {
   width: auto;

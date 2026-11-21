@@ -2610,6 +2610,8 @@ const SaidaAdoracaoFamilia = z.object({
 });
 const DURACOES_ADORACAO = [30, 45, 60, 90];
 const MAX_MEMBROS_FAMILIA = 12;
+const SITUACOES_FAMILIA = ["Batizado", "Publicador não batizado", "Removido", "Descrente", "Estudante"];
+const PRIVILEGIOS_FAMILIA = ["Pioneiro regular", "Pioneiro auxiliar", "Pioneiro especial", "Ancião", "Servo ministerial", "Serviço de Betel", "Superintendente viajante", "Voluntário a distância", "Comulter", "Tempo integral especial"];
 // As seções do catálogo de vídeos (nomes conferidos no catálogo em 2026-11-20), com quantos vídeos de cada (os mais novos), que entram
 // conforme a família: as de família e de relatos da Bíblia sempre; a série do casamento quando há um casal; as de crianças com alguém de até
 // 12 anos; as de adolescentes com alguém de 13 a 19; as adorações matinais quando não há criança (estudo pessoal, casal, adolescentes).
@@ -2642,6 +2644,10 @@ function perfilDaFamilia(body) {
       apelido: textoLivre(m.apelido, 30),
       papel: textoLivre(m.papel, 30),
       idade: Number.isInteger(m.idade) && m.idade >= 0 && m.idade <= 120 ? m.idade : null,
+      // Situação espiritual e privilégios (6.11.17): só valores da lista; o ano não vale para "Descrente".
+      situacao: SITUACOES_FAMILIA.includes(m.situacao) ? m.situacao : "",
+      anoSituacao: m.situacao !== "Descrente" && Number.isInteger(m.anoSituacao) && m.anoSituacao >= 1900 && m.anoSituacao <= new Date().getFullYear() ? m.anoSituacao : null,
+      privilegios: (Array.isArray(m.privilegios) ? m.privilegios : []).filter((p, i, l) => PRIVILEGIOS_FAMILIA.includes(p) && l.indexOf(p) === i),
     }))
     .filter((m) => m.apelido || m.papel)
     .slice(0, MAX_MEMBROS_FAMILIA);
@@ -2722,7 +2728,12 @@ async function responderAdoracaoFamilia(res, body, P) {
   const videos = videosParaAFamilia(catalogo || [], perfil);
   const hoje = new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const membros = perfil.membros
-    .map((m) => `- ${m.apelido || "(sem apelido)"} — ${m.papel || "membro da família"}${m.idade !== null ? `, ${m.idade} ${m.idade === 1 ? "ano" : "anos"}` : ""}`)
+    .map(
+      (m) =>
+        `- ${m.apelido || "(sem apelido)"} — ${m.papel || "membro da família"}${m.idade !== null ? `, ${m.idade} ${m.idade === 1 ? "ano" : "anos"}` : ""}` +
+        (m.situacao ? `; situação espiritual: ${m.situacao}${m.anoSituacao ? ` (desde ${m.anoSituacao})` : ""}` : "") +
+        (m.privilegios.length ? `; privilégios de serviço: ${m.privilegios.join(", ")}` : "")
+    )
     .join("\n");
   const circunstancias = [...perfil.circunstancias, perfil.outrasCircunstancias].filter(Boolean);
   const qtd = perfil.quantidade;
@@ -2731,7 +2742,10 @@ async function responderAdoracaoFamilia(res, body, P) {
     `DATA: ${hoje}\n` +
     `QUANTIDADE DE OPÇÕES: prepare EXATAMENTE ${qtd} ${qtd === 1 ? "opção" : "opções"} (onde as instruções falarem em 3 opções, vale ${qtd}).\n` +
     `FORMAÇÃO DA FAMÍLIA: ${perfil.formacao || "não informada"}\n` +
-    `MEMBROS (apelido, papel e idade):\n${membros || "- não informados"}\n` +
+    `MEMBROS (apelido, papel, idade, situação espiritual e privilégios):\n${membros || "- não informados"}\n` +
+    (perfil.membros.some((m) => m.situacao || m.privilegios.length)
+      ? `USO DA SITUAÇÃO ESPIRITUAL E DOS PRIVILÉGIOS: adapte as partes e as tarefas a cada um (quem é batizado ou tem privilégios pode conduzir ou ajudar mais; publicador não batizado e estudante podem ser incentivados com carinho, sem pressão; "Removido" e "Descrente" pedem muito tato: nunca exponha, cobre ou designe parte que o constranja, e não os cite nas tarefas de forma que os diferencie dos demais). Nunca escreva a situação espiritual de ninguém no texto das opções.\n`
+      : "") +
     (perfil.anosCasados !== null ? `ANOS DE CASADOS: ${perfil.anosCasados}\n` : "") +
     (circunstancias.length ? `CIRCUNSTÂNCIAS QUE O CHEFE QUIS INFORMAR (trate com tato, nunca exponha ninguém):\n${circunstancias.map((c) => `- ${c}`).join("\n")}\n` : "") +
     `ATIVIDADES QUE A FAMÍLIA ACEITA (além de oração, leitura da Bíblia e conversa): ${atividadesGerais.length ? atividadesGerais.join("; ") : "só essas"}\n` +

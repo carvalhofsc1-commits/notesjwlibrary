@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.17
+
+- Adoração em Família, 👤 Membros: cada membro ganha **Situação espiritual** (Batizado, Publicador não batizado, Removido, Descrente, Estudante) e **Privilégios** (vários podem ser marcados: Pioneiro regular, Pioneiro auxiliar, Pioneiro especial, Ancião, Servo ministerial, Serviço de Betel, Superintendente viajante, Voluntário a distância, Comulter, Tempo integral especial). Só "Descrente" não pede o ano; nas outras aparece um campo de ano com o rótulo da situação (ano do batismo, publicador desde, ano em que foi removido, estuda a Bíblia desde). Tudo fica só no aparelho e é enviado à IA, que adapta as partes e as tarefas (com tato com Removido e Descrente, sem escrever a situação de ninguém nas opções); o servidor só aceita valores dessas listas.
+
 ## 6.11.16
 
 - Adoração em Família: a opção "Família monoparental" do tipo de família passa a se chamar "Mãe ou pai sozinho" (quem já tinha a escolha salva continua com ela, com o nome novo). Duração total e Quantas sugestões dividem a mesma linha no card "Duração e assunto".
