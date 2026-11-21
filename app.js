@@ -7921,7 +7921,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.22'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.23'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -19339,6 +19339,7 @@ function saveTemplatesToStorage() {
         // doc.pesquisa: a resposta do Assistente de pesquisas (o corpo do arquivo vem de lá, com o tamanho de letra escolhido aqui).
         const blob = !doc ? await docxGerarEsboco(visorEsboco, visorZoom, titulo)
           : doc.pesquisa ? await docxPacote(window.pesquisaDocxCorpo(doc.pesquisa, visorZoom), titulo)
+          : doc.familia ? await docxPacote(window.familiaDocxCorpo(doc.familia, visorZoom), titulo)
           : doc.modelo ? await docxGerarLeitura(doc.modelo, titulo, visorZoom) : await docxGerar(doc.texto, titulo, doc.acentos, visorZoom);
         const mensagem = await docxEntregar(blob, nome, compartilhar);
         visorDizer(mensagem);
@@ -25841,6 +25842,99 @@ function saveTemplatesToStorage() {
       return linhas.join('\n');
     }
 
+    // ---- Word da Adoração em Família (6.11.23): a opção (ou a programação montada) num arquivo .docx, com a prévia da página como nos esboços ----
+    const familiaNomeDoWord = op => 'Adoração em Família - ' + (removeUnicodeFormatting(op.titulo || 'programação').replace(DOCX_EMOJI, ' ').replace(/[\\/:*?"<>|“”‘’]/g, '').replace(/\s+/g, ' ').trim().slice(0, 80) || 'programação') + '.docx';
+
+    // escala: o tamanho da letra escolhido na prévia (A− / A+); 1 = 11 pt no corpo do texto.
+    function familiaDocxCorpo(op, escala = 1) {
+      const tam = sz => Math.max(12, Math.round(sz * escala));
+      const cinza = '6B7280';
+      const corRef = '2563EB';
+      const runs = (texto, f, sz, cor) => docxRuns(texto, f, tam(sz), cor);
+      const p = (props, r) => '<w:p>' + (props ? '<w:pPr>' + props + '</w:pPr>' : '') + r + '</w:p>';
+      const espaco = (antes, depois) => '<w:spacing w:before="' + antes + '" w:after="' + depois + '" w:line="300" w:lineRule="auto"/>';
+      const item = (r, nivel) => p('<w:ind w:left="' + (300 + (nivel || 0) * 300) + '" w:hanging="200"/>' + espaco(0, 60), runs('• ', 'b', 22) + r);
+      const partes = [];
+      partes.push(p('<w:pBdr><w:bottom w:val="single" w:sz="4" w:space="4" w:color="D1D5DB"/></w:pBdr><w:tabs><w:tab w:val="right" w:pos="10772"/></w:tabs>' + espaco(0, 240), docxRuns('NoteStyle', 'b', 28, cinza) + '<w:r><w:tab/></w:r>' + DOCX_LOGO_MARCA));
+      partes.push(p(espaco(0, 80), runs((op.emoji ? op.emoji + ' ' : '') + (op.titulo || 'Adoração em Família'), 'b', 36)));
+      partes.push(p(espaco(0, 160), runs(['Adoração em Família', op.duracaoTotal ? op.duracaoTotal + ' min' : '', 'Preparada em ' + new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })].filter(Boolean).join(' · '), '', 18, cinza)));
+      if (op.resumo) partes.push(p(espaco(0, 120), runs(op.resumo, '', 22)));
+      if (op.objetivo) partes.push(p(espaco(0, 160), runs('Objetivo: ', 'b', 22) + runs(op.objetivo, '', 22)));
+      (op.partes || []).forEach((parte, i) => {
+        const cab = (i + 1) + '. ' + (parte.nome || 'Parte') + (parte.minutos ? ' (' + parte.minutos + ' min)' : '') + (parte.responsavel ? ' — ' + parte.responsavel : '');
+        partes.push(p('<w:keepNext/>' + espaco(240, 80), runs(cab, 'b', 26)));
+        if (parte.descricao) partes.push(p(espaco(0, 100), runs(parte.descricao, '', 22)));
+        (parte.textos || []).forEach(t => partes.push(item(runs(t.referencia || '', 'b', 22) + (t.texto ? runs(' — ' + t.texto, 'i', 22) : ''))));
+        (parte.videos || []).forEach(v => partes.push(item(runs('🎬 ' + (v.titulo || 'Vídeo') + (v.duracao ? ' (' + v.duracao + ')' : ''), '', 22) + (v.link ? runs(' — ' + v.link, '', 18, corRef) : ''))));
+        (parte.canticos || []).forEach(c => partes.push(item(runs('🎵 Cântico ' + c.numero + (c.titulo ? ' — ' + c.titulo : ''), '', 22))));
+        (parte.publicacoes || []).forEach(pub => partes.push(item(runs('📚 ' + [pub.titulo, pub.fonte].filter(Boolean).join(' · '), '', 22) + (pub.url ? runs(' — ' + pub.url, '', 18, corRef) : ''))));
+        (parte.perguntas || []).forEach(q => partes.push(item(runs('❓ ' + q, '', 22))));
+        if (parte.transicao) partes.push(p('<w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="' + corRef + '"/></w:pBdr><w:ind w:left="240"/>' + espaco(60, 100), runs('➡️ Transição: ' + parte.transicao, 'i', 22)));
+      });
+      if ((op.preparacao || []).length) {
+        partes.push(p('<w:keepNext/>' + espaco(280, 80), runs('📋 Preparação', 'b', 26)));
+        op.preparacao.forEach(t => partes.push(item(runs(t, '', 22))));
+      }
+      if ((op.tarefas || []).length) {
+        partes.push(p('<w:keepNext/>' + espaco(280, 80), runs('✅ Tarefas', 'b', 26)));
+        op.tarefas.forEach(t => partes.push(item(runs((t.membro ? t.membro + ': ' : '') + (t.tarefa || ''), '', 22))));
+      }
+      if (op.dicaParaOChefe) partes.push(p('<w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="F59E0B"/></w:pBdr><w:ind w:left="240"/>' + espaco(280, 100), runs('💡 ' + op.dicaParaOChefe, 'i', 22)));
+      return partes.join('');
+    }
+    window.familiaDocxCorpo = familiaDocxCorpo;
+
+    // A prévia da página no padrão do Word (a mesma página em tela cheia dos esboços); Exportar e Compartilhar ficam no alto da página.
+    function familiaPreviaWord(op) {
+      const raiz = document.createDocumentFragment();
+      const dica = document.createElement('p');
+      dica.className = 'visor-dica';
+      dica.textContent = 'Prévia aproximada: no Word a página é A4, com margens de 1 cm, e as linhas podem quebrar em outros pontos. Use A− e A+ para o tamanho da letra e finalize em Exportar para Word.';
+      const folha = document.createElement('article');
+      folha.className = 'visor-folha doc pq-doc';
+      const e = familiaEscapar;
+      const html = [];
+      html.push('<p class="pq-doc-marca"><span>NoteStyle</span><img src="icon-header.png?v=3" alt="" width="40" height="40" decoding="async"></p>');
+      html.push('<p class="pq-doc-titulo">' + e((op.emoji ? op.emoji + ' ' : '') + (op.titulo || 'Adoração em Família')) + '</p>');
+      html.push('<p class="pq-doc-meta">' + e(['Adoração em Família', op.duracaoTotal ? op.duracaoTotal + ' min' : '', 'Preparada em ' + new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })].filter(Boolean).join(' · ')) + '</p>');
+      if (op.resumo) html.push('<p class="pq-doc-intro">' + e(op.resumo) + '</p>');
+      if (op.objetivo) html.push('<p class="pq-doc-p"><b>Objetivo:</b> ' + e(op.objetivo) + '</p>');
+      (op.partes || []).forEach((parte, i) => {
+        html.push('<p class="pq-doc-secao">' + e((i + 1) + '. ' + (parte.nome || 'Parte') + (parte.minutos ? ' (' + parte.minutos + ' min)' : '') + (parte.responsavel ? ' — ' + parte.responsavel : '')) + '</p>');
+        if (parte.descricao) html.push('<p class="pq-doc-p">' + e(parte.descricao) + '</p>');
+        const li = t => html.push('<p class="pq-doc-fonte">• ' + t + '</p>');
+        (parte.textos || []).forEach(t => li('<b>' + e(t.referencia || '') + '</b>' + (t.texto ? ' — <i>' + e(t.texto) + '</i>' : '')));
+        (parte.videos || []).forEach(v => li('🎬 ' + e((v.titulo || 'Vídeo') + (v.duracao ? ' (' + v.duracao + ')' : '')) + (v.link ? '<br><span class="pq-doc-url">' + e(v.link) + '</span>' : '')));
+        (parte.canticos || []).forEach(c => li('🎵 ' + e('Cântico ' + c.numero + (c.titulo ? ' — ' + c.titulo : ''))));
+        (parte.publicacoes || []).forEach(pub => li('📚 ' + e([pub.titulo, pub.fonte].filter(Boolean).join(' · ')) + (pub.url ? '<br><span class="pq-doc-url">' + e(pub.url) + '</span>' : '')));
+        (parte.perguntas || []).forEach(q => li('❓ ' + e(q)));
+        if (parte.transicao) html.push('<p class="pq-doc-faixa pq-doc-conclusao">➡️ Transição: ' + e(parte.transicao) + '</p>');
+      });
+      if ((op.preparacao || []).length) {
+        html.push('<p class="pq-doc-fontes-titulo">📋 Preparação</p>');
+        op.preparacao.forEach(t => html.push('<p class="pq-doc-fonte">• ' + e(t) + '</p>'));
+      }
+      if ((op.tarefas || []).length) {
+        html.push('<p class="pq-doc-fontes-titulo">✅ Tarefas</p>');
+        op.tarefas.forEach(t => html.push('<p class="pq-doc-fonte">• ' + e((t.membro ? t.membro + ': ' : '') + (t.tarefa || '')) + '</p>'));
+      }
+      if (op.dicaParaOChefe) html.push('<p class="pq-doc-faixa pq-doc-conclusao">💡 ' + e(op.dicaParaOChefe) + '</p>');
+      folha.innerHTML = html.join('');
+      raiz.append(dica, folha);
+      return raiz;
+    }
+
+    // 📝 Word: abre a prévia (como nos esboços e nas pesquisas); de lá, Exportar para Word ou Compartilhar geram o arquivo.
+    function familiaAbrirWord(op, botao) {
+      if (!visor.hidden) return;
+      visorAbrir('Prévia do documento Word', botao, 'texto');
+      visorDoc = { familia: op, nome: familiaNomeDoWord(op), externo: true };
+      visorBotoesDeExportar();
+      visorTitulo.textContent = 'Prévia do documento Word · ' + visorDoc.nome.replace(/\.docx$/, '');
+      visorCorpo.replaceChildren(familiaPreviaWord(op));
+      visorCorpo.scrollTop = 0;
+    }
+
     function familiaRenderOpcoes(opcoes) {
       familiaResultadoEl.innerHTML = '';
       familiaOpcoes = opcoes;
@@ -26002,6 +26096,13 @@ function saveTemplatesToStorage() {
           }
         });
         acoes.appendChild(copiar);
+        const word = document.createElement('button');
+        word.type = 'button';
+        word.className = 'secondary fam-fino';
+        word.textContent = '📝 Word';
+        word.title = 'Ver a prévia no formato do Word e exportar o arquivo';
+        word.addEventListener('click', () => familiaAbrirWord(op, word));
+        acoes.appendChild(word);
         if (cfg && cfg.ajustar) {
           // ✨ Ajustar com a IA: a IA só escreve as transições entre as partes escolhidas (e melhora descrições, se precisar).
           const ajustar = document.createElement('button');
@@ -26106,7 +26207,7 @@ function saveTemplatesToStorage() {
       gerar.textContent = '✅ Gerar minha programação';
       const limpar = document.createElement('button');
       limpar.type = 'button';
-      limpar.className = 'secondary fam-fino';
+      limpar.className = 'secondary fam-fino fam-mescla-limpar'; // largura da página
       limpar.textContent = '🧹 Desmarcar tudo';
       acoes.append(gerar, limpar);
       painel.append(dica, total, acoes);

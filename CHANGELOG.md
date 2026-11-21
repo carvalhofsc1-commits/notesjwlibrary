@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.23
+
+- Adoração em Família: ao lado de "📋 Copiar esta opção", novo botão **📝 Word** em cada opção e na "Minha programação". Ele abre a prévia da página no formato do Word (a mesma tela cheia dos esboços e das pesquisas, com A− e A+ para o tamanho da letra); de lá, "Exportar para Word" ou "Compartilhar" geram o arquivo "Adoração em Família - título.docx", com o logo, o título, o resumo e o objetivo, as partes (minutos e responsável, descrição, textos bíblicos, vídeos com o link, cânticos, publicações, perguntas e as transições da IA), a preparação, as tarefas e a dica.
+- Na montagem da própria programação, o botão "🧹 Desmarcar tudo" ocupa a largura da página.
+
 ## 6.11.22
 
 - Tela inicial: o atalho Adoração em Família vai para a página 1 dos atalhos, no lugar de Discursos, que passa para a página 2 (os dois trocaram de lugar).

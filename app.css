@@ -16783,6 +16783,7 @@ textarea.fam-campo {
 .fam-mescla-total.passou { border-color: #dc2626; color: #b91c1c; }
 .fam-mescla-total.exato { border-color: #2563eb; color: #1d4ed8; }
 .fam-mescla-resultado { display: grid; gap: 10px; min-width: 0; }
+.fam-mescla-painel .fam-acoes > .fam-mescla-limpar { flex: 1 1 100%; width: 100%; }
 /* Situação espiritual, ano e privilégios de cada membro (6.11.17). */
 .fam-membro .fam-situacao { grid-area: situacao; min-width: 0; }
 .fam-membro .fam-ano-sit { grid-area: anosit; min-width: 0; }
