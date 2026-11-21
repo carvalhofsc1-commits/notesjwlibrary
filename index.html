@@ -1240,6 +1240,63 @@
                 <div id="outrosOutputSlot"></div>
               </div>
             </details>
+            <!-- 6.11.54: Considerações para o serviço de campo (a consideração que o dirigente faz antes de sair para pregar). Todos os campos têm
+                 valor padrão: dá para preparar o esboço só tocando em "Preparar esboço". -->
+            <details class="subsection ebc-subsection" id="campoBox">
+              <summary>🚶 Considerações para o serviço de campo</summary>
+              <div class="subsection-body">
+                <section class="sent-option sent-option-site">
+                  <div class="ai-study campo-form">
+                    <p class="hint ai-hint">Esboço breve (de 5 a 7 minutos) para a reunião para o serviço de campo, com incentivo e instrução prática para a pregação do dia. Fontes: a Bíblia, A Sentinela de maio de 2024 e as brochuras Ame as Pessoas e Melhore Sua Leitura e Seu Ensino. Todos os campos já vêm preenchidos: é só preparar.</p>
+                    <div class="fam-linha-dupla fam-linha-fim">
+                      <div class="fam-meia">
+                        <label for="campoData">Data da saída <span id="campoDiaSemana" class="opc"></span></label>
+                        <input id="campoData" class="fam-campo" type="date" autocomplete="off">
+                      </div>
+                      <div class="fam-meia">
+                        <label for="campoMinutos">Duração</label>
+                        <select id="campoMinutos" class="fam-campo">
+                          <option value="5" selected>5 minutos</option>
+                          <option value="6">6 minutos</option>
+                          <option value="7">7 minutos</option>
+                        </select>
+                      </div>
+                    </div>
+                    <label class="fam-check campo-check-unica"><input id="campoAposReuniao" type="checkbox" autocomplete="off"> <span>⏱️ Logo depois de uma reunião (a consideração fica mais curta)</span></label>
+                    <p class="fam-rotulo">Tipo de pregação</p>
+                    <div class="fam-checks" role="group" aria-label="Tipo de pregação">
+                      <label class="fam-check"><input type="checkbox" name="campoTipo" value="casa" checked> <span>🏠 Casa em casa</span></label>
+                      <label class="fam-check"><input type="checkbox" name="campoTipo" value="publico"> <span>🛒 Testemunho público (carrinho, ruas, praças, pontos de ônibus)</span></label>
+                      <label class="fam-check"><input type="checkbox" name="campoTipo" value="revisitas"> <span>📖 Revisitas e estudos</span></label>
+                      <label class="fam-check"><input type="checkbox" name="campoTipo" value="cartas"> <span>✉️ Cartas e telefone</span></label>
+                      <label class="fam-check"><input type="checkbox" name="campoTipo" value="rural"> <span>🌾 Território rural</span></label>
+                      <label class="fam-check"><input type="checkbox" name="campoTipo" value="informal"> <span>💬 Testemunho informal</span></label>
+                    </div>
+                    <label for="campoCampanha">Campanha ou destaque do mês <span class="opc">(opcional)</span></label>
+                    <input id="campoCampanha" class="fam-campo" type="text" maxlength="200" autocomplete="off" placeholder="Ex.: convite para a Celebração">
+                    <label for="campoPublico">Público <span class="opc">(opcional)</span></label>
+                    <input id="campoPublico" class="fam-campo" type="text" maxlength="200" autocomplete="off" placeholder="Ex.: há publicadores novos e jovens no grupo">
+                    <label for="campoAssunto">Assunto <span class="opc">(opcional: vazio, a IA escolhe um assunto prático para o dia)</span></label>
+                    <input id="campoAssunto" class="fam-campo" type="text" maxlength="200" autocomplete="off" placeholder="Ex.: como iniciar uma conversa no carrinho">
+                    <p class="fam-rotulo">Fontes preferidas</p>
+                    <div class="fam-checks" role="group" aria-label="Fontes preferidas">
+                      <label class="fam-check"><input type="checkbox" name="campoFonte" value="w24" checked> <span>📰 A Sentinela de maio de 2024 (“Deixe o amor motivar você a pregar”)</span></label>
+                      <label class="fam-check"><input type="checkbox" name="campoFonte" value="lmd" checked> <span>❤️ Ame as Pessoas — Faça Discípulos (lmd)</span></label>
+                      <label class="fam-check"><input type="checkbox" name="campoFonte" value="th" checked> <span>🎓 Melhore Sua Leitura e Seu Ensino (th)</span></label>
+                      <label class="fam-check"><input type="checkbox" name="campoFonte" value="sentinela" checked> <span>📚 Outros artigos de A Sentinela sobre o ministério</span></label>
+                      <label class="fam-check"><input type="checkbox" name="campoFonte" value="be" checked> <span>📘 Beneficie-se (be)</span></label>
+                    </div>
+                    <p id="campoInfo" class="hint ai-hint ebc-info"></p>
+                    <button id="campoSugerirBtn" data-codigo-ia="dirigente" class="secondary ai-study-load" type="button">💡 Sugerir 3 assuntos</button>
+                    <div id="campoAssuntos" class="campo-assuntos" role="group" aria-label="Assuntos sugeridos (toque em um para usar)" hidden></div>
+                    <button id="campoEsbocoBtn" data-codigo-ia="dirigente" class="ai-study-btn" type="button">✨ Preparar esboço</button>
+                    <button id="campoRefazerBtn" data-codigo-ia="dirigente" class="secondary ai-study-load" type="button" hidden>✨ Refazer com outro assunto</button>
+                    <span id="campoStatus" class="ok" role="status" aria-live="polite"></span>
+                  </div>
+                </section>
+                <div id="campoOutputSlot"></div>
+              </div>
+            </details>
           </details>
           </details>
         </div>

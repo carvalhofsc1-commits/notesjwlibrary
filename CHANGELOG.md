@@ -2,6 +2,16 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.54
+
+- Considerações para o serviço de campo, fase 2 (tela):
+  - Novo cartão **🚶 Considerações para o serviço de campo** em Reuniões → Preparação de discursos e esboços, com o mesmo acesso dos outros esboços (código do dirigente).
+  - Campos, todos com valor padrão para preparar rápido: data da saída (hoje, com o dia da semana ao lado), duração (5, 6 ou 7 minutos; padrão 5), "logo depois de uma reunião", tipo de pregação (casa em casa marcado; dá para marcar mais de um), campanha do mês, público e assunto (opcionais) e as fontes preferidas (todas marcadas).
+  - **💡 Sugerir 3 assuntos**: a IA propõe 3 assuntos curtos (com o parágrafo de A Sentinela de maio de 2024 de cada um); tocar num deles o põe no campo Assunto.
+  - **✨ Preparar esboço**: o esboço vai para o campo de texto (com 📋 Copiar, 📝 Word, Outra versão e Melhorar, como os outros esboços), com a fonte de cada ponto e a dica para o dirigente, e fica salvo sozinho em Pesquisas salvas → Esboços.
+  - **✨ Refazer com outro assunto**: um esboço novo, sobre um assunto diferente do atual.
+  - O rodízio dos parágrafos de w24.05 e a variação dos assuntos saem das considerações já salvas neste aparelho.
+
 ## 6.11.53
 
 - Considerações para o serviço de campo, fase 1 (servidor):

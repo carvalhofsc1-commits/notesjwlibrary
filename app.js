@@ -7930,7 +7930,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.53'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.54'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -9368,7 +9368,7 @@
     const REPORT_EMAIL = 'carvalhofsc1@gmail.com'; // o mesmo contato da página Sobre
     const MSG_SEM_CONSENTIMENTO = 'Para usar a IA e a leitura em voz alta é preciso concordar com o envio do texto. Toque no botão de novo quando quiser concordar.';
     // As tarefas do servidor que usam a IA (as outras só leem o wol.jw.org ou a Bíblia e não precisam da concordância).
-    const IA_TAREFAS = new Set(['pesquisa-coletar', 'pesquisa', 'pesquisa-video', 'pesquisa-videos', 'adoracao-familia', 'anotacoes-formatar','estudo', 'estudo-lista', 'estudo-perguntas', 'texto-diario-comentarios', 'ebc', 'consideracao', 'nvc', 'nvc-transcricao', 'ebc-dirigente', 'tesouros', 'publico', 'publico-importar', 'publico-canticos', 'outros', 'discurso', 'joias', 'leitura-biblia', 'sentinela']);
+    const IA_TAREFAS = new Set(['pesquisa-coletar', 'pesquisa', 'pesquisa-video', 'pesquisa-videos', 'adoracao-familia', 'anotacoes-formatar','estudo', 'estudo-lista', 'estudo-perguntas', 'texto-diario-comentarios', 'ebc', 'consideracao', 'nvc', 'nvc-transcricao', 'ebc-dirigente', 'tesouros', 'publico', 'publico-importar', 'publico-canticos', 'outros', 'campo', 'campo-assuntos', 'discurso', 'joias', 'leitura-biblia', 'sentinela']);
     let consentimentoIaSessao = false; // vale só até fechar o app quando o aparelho não deixa gravar a escolha
     let consentimentoIaEmCurso = null;
 
@@ -12246,7 +12246,7 @@ function saveTemplatesToStorage() {
       formatar: 'Formatar', sentinela: 'Sentinela', estudo: 'Estudo bíblico',
       'estudo-perguntas': 'Perguntas do estudo', 'estudo-recap': 'Recapitulação',
       ebc: 'EBC', consideracao: 'Consideração', 'consideracao-ler': 'Consideração (ler)', nvc: 'Nossa vida cristã', 'nvc-ler': 'Nossa vida cristã (ler)', 'nvc-transcricao': 'Transcrição do vídeo', 'ebc-dirigente': 'EBC dirigente', tesouros: 'Tesouros',
-      discurso: 'Discurso', publico: 'Discurso público', outros: 'Outros',
+      discurso: 'Discurso', publico: 'Discurso público', outros: 'Outros', campo: 'Serviço de campo', 'campo-assuntos': 'Serviço de campo (assuntos)',
       joias: 'Joias', 'texto-diario-comentarios': 'Texto diário',
       'leitura-biblia': 'Leitura bíblica', 'biblia-texto': 'Texto bíblico',
       'outros-pesquisar': 'Pesquisar', 'publico-esboco': 'Esboço S-34',
@@ -14749,7 +14749,7 @@ function saveTemplatesToStorage() {
       }
     }
 
-    let aiLastKind = 'format'; // último pedido feito: 'format', 'sentinela', 'estudo', 'ebc', 'ebcdir', 'joias', 'tesouros', 'discurso', 'publico' ou 'outros' (define o que "Outra sugestão/Melhorar" refazem)
+    let aiLastKind = 'format'; // último pedido feito: 'format', 'sentinela', 'estudo', 'ebc', 'ebcdir', 'joias', 'tesouros', 'discurso', 'publico', 'outros' ou 'campo' (define o que "Outra sugestão/Melhorar" refazem)
     let aiSentinelaRaw = [];  // itens crus das respostas da Sentinela, reenviados ao refinar
     let aiRaw = [];           // resposta crua da IA, reenviada ao pedir "outra" ou "melhorar"
     let aiBaseText = '';      // texto antes de qualquer sugestão ser aplicada (para desfazer)
@@ -14772,7 +14772,7 @@ function saveTemplatesToStorage() {
     let studyListCard = 'comentarios'; // card do último "Carregar os parágrafos": 'comentarios' ou 'dirigente'
 
     function aiStatusElements() {
-      return [aiStatus, aiStudyAnswerStatus, aiStudyStatus, leaderAnswerStatus, leaderStudyStatus, document.getElementById('ebcStatus'), document.getElementById('consideracaoStatus'), document.getElementById('nvcStatus'), document.getElementById('joiasStatus'), document.getElementById('apostilaImgStatus'), document.getElementById('ebcDirStatus'), document.getElementById('tesourosStatus'), document.getElementById('discursoStatus'), document.getElementById('publicoStatus'), document.getElementById('outrosStatus'), document.getElementById('bibliaResumoStatus')];
+      return [aiStatus, aiStudyAnswerStatus, aiStudyStatus, leaderAnswerStatus, leaderStudyStatus, document.getElementById('ebcStatus'), document.getElementById('consideracaoStatus'), document.getElementById('nvcStatus'), document.getElementById('joiasStatus'), document.getElementById('apostilaImgStatus'), document.getElementById('ebcDirStatus'), document.getElementById('tesourosStatus'), document.getElementById('discursoStatus'), document.getElementById('publicoStatus'), document.getElementById('outrosStatus'), document.getElementById('campoStatus'), document.getElementById('bibliaResumoStatus')];
     }
 
     function aiStatusElement() {
@@ -14785,6 +14785,7 @@ function saveTemplatesToStorage() {
           : aiStatusKind === 'discurso' ? document.getElementById('discursoStatus')
           : aiStatusKind === 'publico' ? document.getElementById('publicoStatus')
           : aiStatusKind === 'outros' ? document.getElementById('outrosStatus')
+          : aiStatusKind === 'campo' ? document.getElementById('campoStatus')
           : aiStatusKind === 'apostilaimg' ? document.getElementById('apostilaImgStatus')
           : aiStatusKind === 'joias' ? document.getElementById('joiasStatus')
           : aiStatusKind === 'biblia' ? document.getElementById('bibliaResumoStatus')
@@ -14889,6 +14890,7 @@ function saveTemplatesToStorage() {
         document.getElementById('tesourosCarregarBtn'), document.getElementById('tesourosEsbocoBtn'),
         document.getElementById('discursoCarregarBtn'), document.getElementById('discursoEsbocoBtn'), document.getElementById('publicoEsbocoBtn'), document.getElementById('publicoImportarBtn'), document.getElementById('publicoCanticoBtn'),
         document.getElementById('outrosCarregarBtn'), document.getElementById('outrosEsbocoBtn'), document.getElementById('outrosPesquisarBtn'),
+        document.getElementById('campoEsbocoBtn'), document.getElementById('campoSugerirBtn'), document.getElementById('campoRefazerBtn'),
         document.getElementById('joiasCarregarBtn'), document.getElementById('joiasResponderBtn'), document.getElementById('apostilaImgCarregarBtn'),
         document.getElementById('bibliaResumirBtn'),
         ...(typeof ESBOCOS === 'undefined' ? [] : Object.values(ESBOCOS).map(cfg => cfg.textosUi && cfg.textosUi.incluir).filter(Boolean))].filter(Boolean);
@@ -16581,7 +16583,7 @@ function saveTemplatesToStorage() {
     // Faz a chamada ao servidor das tarefas de estudo (lista e respostas). Devolve { ok, data, unavailable }.
     // Pedidos demorados (esboços e Preparar para dirigir): vão com um id aleatório; o servidor guarda a resposta por algumas horas. Se a conexão
     // cair no meio (no iPhone, ao sair do app ou bloquear a tela), o app busca o resultado com esse id assim que volta (api/_pedidos.mjs).
-    const TAREFAS_LONGAS = new Set(['pesquisa', 'pesquisa-video', 'adoracao-familia', 'tesouros', 'discurso', 'publico', 'publico-importar', 'outros', 'estudo-perguntas', 'ebc-dirigente', 'estudo-recap']);
+    const TAREFAS_LONGAS = new Set(['pesquisa', 'pesquisa-video', 'adoracao-familia', 'tesouros', 'discurso', 'publico', 'publico-importar', 'outros', 'campo', 'estudo-perguntas', 'ebc-dirigente', 'estudo-recap']);
     const novoPedidoId = () => (window.crypto && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2));
     const esperar = ms => new Promise(ok => setTimeout(ok, ms));
     // O resultado fica guardado no servidor por até 6 horas: com o app fora da tela (tela bloqueada, outro app) a busca ESPERA a pessoa voltar,
@@ -17105,6 +17107,7 @@ function saveTemplatesToStorage() {
           : aiLastKind === 'discurso' ? requestDiscursoCurto(mode)
           : aiLastKind === 'publico' ? requestEsboco(ESBOCOS.publico, mode)
           : aiLastKind === 'outros' ? requestEsboco(ESBOCOS.outros, mode)
+          : aiLastKind === 'campo' ? requestEsboco(ESBOCOS.campo, mode)
           : aiLastKind === 'joias' ? requestJoias(mode)
           : aiLastKind === 'sentinela' ? requestSentinelaAnswers(mode)
             : requestAiSuggestions(mode)
@@ -17897,6 +17900,30 @@ function saveTemplatesToStorage() {
           dados.avisoTextos ? '⚠️ ' + dados.avisoTextos : '',
           dados.pedidos && dados.pedidos.length ? 'textos para ler: ' + dados.pedidos.join('; ') : ''
         )
+      },
+      // Considerações para o serviço de campo (6.11.54): não depende da semana; os campos do card (data, duração, tipo de pregação, fontes…)
+      // vão ao servidor, que lê A Sentinela de maio de 2024 no wol.jw.org (com o rodízio dos parágrafos já usados) e as brochuras lmd e th.
+      campo: {
+        kind: 'campo',
+        tarefa: 'campo',
+        semSemana: true,
+        atualizaInfo: true,
+        info: document.getElementById('campoInfo'),
+        carregarBtn: null,
+        esbocoBtn: document.getElementById('campoEsbocoBtn'),
+        slot: document.getElementById('campoOutputSlot'),
+        tituloHistorico: '🚶 Considerações para o serviço de campo',
+        falhaLer: 'Não consegui preparar a consideração agora.',
+        extraPayload: () => campoCampos(),
+        validar: () => '',
+        // Nas pesquisas salvas: "🚶 Considerações para o serviço de campo · sáb 21/11 · w24.05 § 3 - tema do esboço".
+        nomeSalvo: dados => ESBOCOS.campo.tituloHistorico + ' · ' + String(dados.titulo).replace(/^Serviço de campo · /, '') + (dados.esboco && dados.esboco.tema ? ' - ' + dados.esboco.tema : ''),
+        // A duração (e se é logo depois de uma reunião) e as fontes que o esboço usou.
+        linhasDaInfo: dados => soComConteudo(
+          (dados.minutos ? dados.minutos + ' min' : '') + (document.getElementById('campoAposReuniao').checked ? ' · logo depois de uma reunião' : ''),
+          dados.esboco && Array.isArray(dados.esboco.fontes) && dados.esboco.fontes.length ? 'fontes: ' + dados.esboco.fontes.join('; ') : ''
+        ),
+        depois: () => { document.getElementById('campoRefazerBtn').hidden = false; }
       }
     };
 
@@ -17999,6 +18026,7 @@ function saveTemplatesToStorage() {
     // semana ("19 a 25 de outubro - título").
     function esbocoNomeSalvo(cfg, dados, numero, ano, semana) {
       if (!dados || !dados.titulo) return cfg.tituloHistorico;
+      if (cfg.nomeSalvo) return cfg.nomeSalvo(dados);
       const antes = cfg.semSemana ? (numero ? 'Nº ' + numero + ' - ' : '') : (ano && semana ? rotuloDaSemanaIso(ano, semana) + ' - ' : '');
       return cfg.tituloHistorico + ' · ' + antes + dados.titulo;
     }
@@ -18031,6 +18059,8 @@ function saveTemplatesToStorage() {
 
     function esbocoSalvoDe(cfg) {
       if (cfg.kind === 'outros') return esbocoSalvoDeOutros(cfg);
+      if (cfg.kind === 'campo') return { item: null, total: 0 }; // cada saída tem o seu esboço: os anteriores ficam em Pesquisas salvas → Esboços
+
       const dados = cfg.dadosCarregados;
       if (!dados) return { item: null, total: 0 };
       const antigo = esbocoNomeAntigo(cfg, dados);
@@ -18385,6 +18415,8 @@ function saveTemplatesToStorage() {
       if (esboco.objetivo) quadro.push('🧭 ' + negrito('Objetivo') + ' 👉 ' + esboco.objetivo);
       if (esboco.licao) quadro.push('🎓 Lição do th (' + esboco.licao.citacao + (esboco.licao.titulo ? ': ' + esboco.licao.titulo : '') + ') 👉 ' + esboco.licao.dica);
       if (Array.isArray(esboco.fontes) && esboco.fontes.length) quadro.push('📚 Fontes 👉 ' + esboco.fontes.join('; '));
+      // Considerações para o serviço de campo: uma dica prática para quem dirige (horário, grupos, território…).
+      if (esboco.dicaDirigente) quadro.push('🧑‍🏫 ' + negrito('Dica para o dirigente') + ' 👉 ' + esboco.dicaDirigente);
       const partes = [{
         paragrafos: 'Tema',
         texto: ['📜 ' + negrito(maiusculas(esboco.tema)), ...quadro].join('\n\n')
@@ -18509,6 +18541,7 @@ function saveTemplatesToStorage() {
         aiRefineBox.hidden = false;
         setAiStatus((importar ? '✅ Esboço importado e ligado ao tema ' + payload.numero + ', no campo de texto. Confira os textos marcados para leitura na lista; use Incluir texto(s), Melhorar ou Formatar como num esboço elaborado pela IA.' : incluir ? '✅ Esboço refeito com os textos incluídos, no campo de texto.' : '✅ Esboço no campo de texto.') + (Array.isArray(result.data.avisos) && result.data.avisos.length ? ' ⚠️ ' + result.data.avisos.join(' ') : ''), false);
         avisarEsbocoPronto(cfg);
+        if (cfg.depois) cfg.depois(esboco);
       } catch (e) {
         setAiStatus(e && e.name === 'AbortError' ? 'A IA demorou demais. Tente de novo.' : 'Falha de conexão ao consultar a IA.', true);
       } finally {
@@ -18520,6 +18553,111 @@ function saveTemplatesToStorage() {
 
     const requestTesouros = mode => requestEsboco(ESBOCOS.tesouros, mode);
     const requestDiscursoCurto = mode => requestEsboco(ESBOCOS.discurso, mode);
+
+    // ---------- Considerações para o serviço de campo (6.11.54) ----------
+    // Os campos do card no formato do servidor (tarefas "campo" e "campo-assuntos"). Do histórico (Pesquisas salvas → Esboços) saem os
+    // parágrafos de w24.05 já usados (o rodízio: o servidor escolhe um que ainda não foi considerado) e os temas das 5 últimas considerações
+    // (para variar o assunto). "Refazer com outro assunto" manda também o tema do esboço atual em "evitar".
+    let campoEvitar = '';
+    const campoDataLocal = (d = new Date()) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    function campoSalvos() {
+      return historicoLer().filter(item => item.tipo === 'esboco' && String(item.titulo).startsWith(ESBOCOS.campo.tituloHistorico) && item.esbocoJson);
+    }
+    function campoCampos() {
+      const marcados = nome => [...document.querySelectorAll('input[name="' + nome + '"]:checked')].map(c => c.value);
+      const fontesMarcadas = new Set(marcados('campoFonte'));
+      const salvos = campoSalvos();
+      return {
+        data: document.getElementById('campoData').value || campoDataLocal(),
+        aposReuniao: document.getElementById('campoAposReuniao').checked,
+        minutos: Math.min(7, Math.max(5, Number(document.getElementById('campoMinutos').value) || 5)),
+        tipos: marcados('campoTipo'),
+        campanha: document.getElementById('campoCampanha').value.trim(),
+        publico: document.getElementById('campoPublico').value.trim(),
+        assunto: document.getElementById('campoAssunto').value.trim(),
+        fontes: Object.fromEntries(['w24', 'lmd', 'th', 'sentinela', 'be'].map(k => [k, fontesMarcadas.has(k)])),
+        usados: [...new Set(salvos.map(item => Number(item.esbocoJson.paragrafoW24)).filter(n => Number.isInteger(n) && n > 0))],
+        recentes: [...new Set(salvos.map(item => String(item.esbocoJson.tema || '').trim()).filter(Boolean))].slice(0, 5),
+        ...(campoEvitar ? { evitar: campoEvitar } : {})
+      };
+    }
+
+    // O dia da semana ao lado da data ("sábado"), para conferir o dia da saída.
+    function campoDiaAtualizar() {
+      const valor = document.getElementById('campoData').value;
+      const dia = /^\d{4}-\d{2}-\d{2}$/.test(valor) ? new Date(valor + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long' }) : '';
+      document.getElementById('campoDiaSemana').textContent = dia ? '(' + dia + ')' : '';
+    }
+
+    // "Sugerir 3 assuntos": a IA propõe 3 assuntos curtos (cada um ligado a um parágrafo de w24.05 ainda não usado); tocar num deles o põe no
+    // campo Assunto. Não gera o esboço nem mexe no campo de texto.
+    async function campoSugerir() {
+      const botao = document.getElementById('campoSugerirBtn');
+      const lista = document.getElementById('campoAssuntos');
+      if (aiBusy) return setAiStatus('⏳ Aguarde: a IA ainda está trabalhando no pedido anterior.', false);
+      aiStatusKind = 'campo';
+      const erroAcesso = dirigenteAccessError();
+      if (erroAcesso) return setAiStatus(erroAcesso, true);
+      aiBusy = true;
+      setAiLoading(true, botao);
+      try {
+        const result = await postStudy({ tarefa: 'campo-assuntos', codigoDirigente: codigoDirigenteSalvo(), ...campoCampos() }, IA_ESPERA_MS);
+        if (!result.ok) {
+          if (await dirigenteRecusado(result)) return;
+          return setAiStatus(studyFailureMessage(result, 'Não foi possível sugerir assuntos agora.'), true);
+        }
+        const assuntos = Array.isArray(result.data.assuntos) ? result.data.assuntos.filter(a => a && a.titulo) : [];
+        if (!assuntos.length) return setAiStatus('A IA não sugeriu assuntos. Tente de novo.', true);
+        lista.textContent = '';
+        assuntos.forEach(a => {
+          const opcao = document.createElement('button');
+          opcao.type = 'button';
+          opcao.className = 'secondary ai-study-load campo-assunto';
+          opcao.setAttribute('aria-pressed', 'false');
+          const titulo = document.createElement('strong');
+          titulo.textContent = a.titulo;
+          opcao.appendChild(titulo);
+          if (a.resumo || a.paragrafoW24) {
+            const resumo = document.createElement('small');
+            resumo.textContent = [a.resumo, a.paragrafoW24 ? 'w24.05 § ' + a.paragrafoW24 : ''].filter(Boolean).join(' · ');
+            opcao.appendChild(resumo);
+          }
+          opcao.addEventListener('click', () => {
+            document.getElementById('campoAssunto').value = a.titulo;
+            lista.querySelectorAll('.campo-assunto').forEach(b => b.setAttribute('aria-pressed', String(b === opcao)));
+            aiStatusKind = 'campo';
+            setAiStatus('✅ Assunto escolhido. Toque em ✨ Preparar esboço.', false);
+          });
+          lista.appendChild(opcao);
+        });
+        lista.hidden = false;
+        setAiStatus('💡 Toque num dos assuntos para usá-lo no esboço.', false);
+      } catch (e) {
+        setAiStatus(e && e.name === 'AbortError' ? 'A IA demorou demais. Tente de novo.' : 'Falha de conexão ao consultar a IA.', true);
+      } finally {
+        aiBusy = false;
+        setAiLoading(false);
+      }
+    }
+
+    // "Refazer com outro assunto": um esboço novo (não uma "Outra versão"), com o campo Assunto vazio e o tema do esboço atual em "evitar".
+    function campoRefazer() {
+      if (aiBusy) return setAiStatus('⏳ Aguarde: a IA ainda está trabalhando no pedido anterior.', false);
+      const atual = ESBOCOS.campo.ultimoEsboco;
+      document.getElementById('campoAssunto').value = '';
+      document.getElementById('campoAssuntos').querySelectorAll('.campo-assunto').forEach(b => b.setAttribute('aria-pressed', 'false'));
+      campoEvitar = (atual && atual.tema) || '';
+      const pedido = requestEsboco(ESBOCOS.campo); // os campos (com "evitar") são lidos antes da primeira espera
+      campoEvitar = '';
+      return pedido;
+    }
+
+    document.getElementById('campoData').value = campoDataLocal();
+    campoDiaAtualizar();
+    document.getElementById('campoData').addEventListener('input', campoDiaAtualizar);
+    document.getElementById('campoData').addEventListener('change', campoDiaAtualizar);
+    document.getElementById('campoSugerirBtn').addEventListener('click', campoSugerir);
+    document.getElementById('campoRefazerBtn').addEventListener('click', campoRefazer);
     Object.values(ESBOCOS).forEach(cfg => {
       cfg.textos = [];
       cfg.textosAssinatura = '';
@@ -18542,7 +18680,7 @@ function saveTemplatesToStorage() {
 
     // Recolher o card de um esboço (ou o grupo inteiro) recolhe também o que é dele: o esboço sai do campo de texto e, sem nenhum card de discursos aberto,
     // o cartão Texto original some (como já acontece nos cards de Comentários).
-    const ESBOCO_BOXES = { tesourosBox: 'tesouros', discursoBox: 'discurso', publicoBox: 'publico', outrosBox: 'outros' };
+    const ESBOCO_BOXES = { tesourosBox: 'tesouros', discursoBox: 'discurso', publicoBox: 'publico', outrosBox: 'outros', campoBox: 'campo' };
     function esbocosAoRecolher(idFechado) {
       const grupo = document.getElementById('grupoDiscursos');
       const abertos = Object.keys(ESBOCO_BOXES).filter(id => grupo.open && document.getElementById(id).open);
@@ -22932,7 +23070,7 @@ function saveTemplatesToStorage() {
         resumo: Boolean(codigoResumoSalvo()),
         leitura: Boolean(codigoLeituraSalvo())
       };
-      const doDirigente = ['dirigente', 'dirigente-recap', 'ebcdir', 'tesouros', 'discurso', 'outros'].includes(aiLastKind);
+      const doDirigente = ['dirigente', 'dirigente-recap', 'ebcdir', 'tesouros', 'discurso', 'outros', 'campo'].includes(aiLastKind);
       tem.refino = aiLastKind === 'publico' ? tem.publico : (doDirigente ? tem.dirigente : tem.pesquisa);
       document.querySelectorAll('[data-codigo-ia]').forEach(botao => {
         const chave = tem[botao.dataset.codigoIa];
