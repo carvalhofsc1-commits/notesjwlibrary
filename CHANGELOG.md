@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.37
+
+- Leitura da Bíblia: o card do capítulo que está sendo lido (com Lido, Marcar aqui, player e botões) ganhou **fundo amarelo claro**. No tema escuro o amarelo se mistura com o fundo escuro.
+- Leitura da Bíblia: o card **Continuar de onde parou** ganhou **fundo vermelho claro** (uma regra de cores cinzas o deixava sem cor).
+
 ## 6.11.36
 
 - Adoração em Família: o card **Informar convidados** também abre numa **vista exclusiva** (só ele na tela), com **◀ Voltar** no topo e **✔ Concluir e voltar** no fim, igual ao card Família e definições gerais. Os dois usam a mesma regra: só um deles aberto por vez, e ao voltar a tela fica como estava.

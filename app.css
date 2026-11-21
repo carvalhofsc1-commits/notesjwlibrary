@@ -13764,7 +13764,7 @@ body.biblia-resumo-aberto { overflow: hidden; }
   padding: 10px;
   border: 1px solid color-mix(in srgb, var(--brand) 45%, var(--line));
   border-radius: 14px;
-  background: var(--card);
+  background: color-mix(in srgb, #fde047 20%, var(--card)); /* 6.11.37: fundo amarelo claro no card do capítulo lido (no tema escuro mistura com o escuro) */
 }
 .biblia-painel[hidden] { display: none; }
 .biblia-painel-topo { display: flex; align-items: center; gap: 8px; margin: 0 -10px 10px; padding: 0 10px 10px; border-bottom: 1px solid color-mix(in srgb, var(--brand) 45%, var(--line)); } /* uma linha separa o cabeçalho (capítulo e setas) do resto do painel */
@@ -16367,6 +16367,9 @@ button:is(#sv#sv, #anotacoesGravarBtn, #undoTopBtn, #undoBtn, .anot-grav-aviso, 
 :is(#sv#sv, .ai-week-nav, .ai-week-today, .leitura-ler, .icon-action, .option-btn, .symbol-btn.favorite, button.letter):hover:not(:disabled) {
   background: var(--inicio-cinza); background-image: none;
 }
+/* 6.11.37: o card "Continuar de onde parou" volta a ter fundo vermelho claro (a regra cinza acima o apagava). */
+#bibliaContinuarBtn#bibliaContinuarBtn { background: color-mix(in srgb, #dc2626 14%, var(--card)); background-image: none; }
+#bibliaContinuarBtn#bibliaContinuarBtn:hover:not(:disabled) { background: color-mix(in srgb, #dc2626 24%, var(--card)); }
 :is(#sv#sv, .screen-reunioes button.secondary, .ai-study-load, .btn-orange, .btn-slate, .btn-blue, .btn-purple, .historico-cat > summary, .transcricao-conteiner > summary,
   .screen-transcricao details > summary),
 :is(#sv#sv, .screen-reunioes button.secondary, .ai-study-load, .btn-orange, .btn-slate, .btn-blue, .btn-purple):hover:not(:disabled) { background: var(--inicio-cinza); background-image: none; }
