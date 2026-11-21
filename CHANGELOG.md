@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.65
+
+- **Considerações para o serviço de campo — "Sugerir outros 3 assuntos" não repete mais os mesmos.** A causa: a escolha dos 3 parágrafos de w24.05 que servem de base aos assuntos era sempre a mesma (só os parágrafos das considerações *salvas* saíam da escolha) e a IA não sabia o que já tinha sugerido, por isso voltavam os mesmos assuntos com pequenas variações. Agora:
+  - o app guarda o que já foi sugerido enquanto está aberto e manda de volta os títulos e os parágrafos a cada nova rodada;
+  - o servidor tira dos candidatos os parágrafos já sugeridos (como os das considerações salvas): cada rodada traz parágrafos novos (com 16 parágrafos, são mais de 5 rodadas diferentes);
+  - quando os parágrafos novos acabam, o que falta vem de **lições sorteadas** das brochuras Ame as Pessoas e Melhore Sua Leitura (o sorteio muda a cada rodada);
+  - a IA recebe "JÁ SUGERIDOS NESTA SESSÃO" e a ordem de trazer assuntos realmente novos (outro texto bíblico, outro ponto, outra aplicação), nunca os mesmos reescritos com outras palavras (regra também no prompt dos assuntos).
+
 ## 6.11.64
 
 - Considerações para o serviço de campo:

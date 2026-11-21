@@ -29,6 +29,7 @@ import {
   brochuraDaConsideracao,
   fonteDoPonto,
   garantirLicaoLmd,
+  licoesParaAssuntos,
   licoesQueCombinam,
   listaDeFontes,
   nomesDosTipos,
@@ -5011,15 +5012,27 @@ async function sugerirAssuntosCampo(res, body, P) {
   if (!acessoDoDirigente(res, body)) return;
   const d = dadosDoCampo(body);
   const w24 = d.fontes.w24 ? await paragrafosW24(9000) : null;
-  const candidatos = w24 ? candidatosW24({ consulta: [nomesDosTipos(d.tipos).join(" "), d.campanha, d.publico].join(" "), usados: d.usados, paragrafos: w24.paragrafos, n: 3 }) : [];
+  // 6.11.65: os parágrafos que já viraram sugestão nesta sessão (parSugeridos) saem dos candidatos, como os das considerações salvas: a cada
+  // "Sugerir outros 3 assuntos" os candidatos são outros. Quando os parágrafos acabam, o que falta vem de lições sorteadas das brochuras.
+  const candidatosPar = w24 ? candidatosW24({ consulta: [nomesDosTipos(d.tipos).join(" "), d.campanha, d.publico].join(" "), usados: [...d.usados, ...d.parSugeridos], paragrafos: w24.paragrafos, n: 3 }) : [];
+  const jaSugeridoPar = new Set([...d.usados, ...d.parSugeridos]);
+  const candidatos = candidatosPar.filter((p) => !jaSugeridoPar.has(p.numero)); // com o rodízio reiniciado (todos usados), não entram
+  const licoes = await licoesParaAssuntos(3 - candidatos.length, { excluirNomes: d.jaSugeridos });
   const mensagem =
-    "PEDIDO: sugira 3 assuntos curtos e práticos, bem diferentes entre si, para a consideração para o serviço de campo de hoje.\n\n" +
+    "PEDIDO: sugira 3 assuntos curtos e práticos, bem diferentes entre si, para a consideração para o serviço de campo de hoje." +
+    (d.jaSugeridos.length ? " Esta é uma NOVA rodada: os assuntos precisam ser realmente novos (outro texto bíblico, outro ponto da matéria, outra aplicação), nunca os de JÁ SUGERIDOS nem uma variação leve deles." : "") +
+    "\n\n" +
     textoDosDadosDoCampo(d) +
     (candidatos.length
       ? `\n\nPARÁGRAFOS DE A SENTINELA DE MAIO DE 2024, "${W24.titulo}" (um assunto para cada parágrafo, com o número em "paragrafoW24"):\n` +
         candidatos.map((p) => `§ ${p.numero}${p.subtitulo ? ` (subtítulo: ${p.subtitulo})` : ""}: ${p.texto}`).join("\n\n")
-      : "\n\nSEM PARÁGRAFOS DE w24.05: proponha os assuntos com base nas regras do prompt; \"paragrafoW24\" é null.") +
-    (d.recentes.length ? "\n\nCONSIDERAÇÕES RECENTES (não repita):\n" + d.recentes.map((t) => `- ${t}`).join("\n") : "");
+      : "\n\nSEM PARÁGRAFOS NOVOS DE w24.05 (os outros já foram usados ou sugeridos): \"paragrafoW24\" é null nos assuntos que não vierem de um parágrafo.") +
+    (licoes.length
+      ? "\n\nLIÇÕES DAS BROCHURAS (um assunto para cada lição, com \"paragrafoW24\" null; cite a lição no resumo, ex.: \"lmd lição 3, Seja natural\"):\n" +
+        licoes.map((l) => `[${l.sigla} lição ${l.licao}, ${l.nome}] ${l.texto}`).join("\n\n")
+      : "") +
+    (d.recentes.length ? "\n\nCONSIDERAÇÕES RECENTES (não repita):\n" + d.recentes.map((t) => `- ${t}`).join("\n") : "") +
+    (d.jaSugeridos.length ? "\n\nJÁ SUGERIDOS NESTA SESSÃO (não repita, nem com pequenas variações):\n" + d.jaSugeridos.map((t) => `- ${t}`).join("\n") : "");
   try {
     const client = criarClienteIa({ maxRetries: 0, timeout: 60_000 });
     const resposta = await chamarIa(
@@ -5035,7 +5048,8 @@ async function sugerirAssuntosCampo(res, body, P) {
         titulo: limparTextoGerado(a.titulo, 120),
         resumo: limparTextoGerado(a.resumo, 300),
         // O parágrafo só vale se for um dos candidatos; senão, o candidato da mesma posição.
-        paragrafoW24: numeros.includes(a.paragrafoW24) ? a.paragrafoW24 : numeros[i] ?? null,
+        // (Com lições das brochuras entre os candidatos, o assunto que não citar um parágrafo fica sem parágrafo.)
+        paragrafoW24: numeros.includes(a.paragrafoW24) ? a.paragrafoW24 : numeros.length >= 3 ? numeros[i] ?? null : null,
       }))
       .filter((a) => a.titulo)
       .slice(0, 3);

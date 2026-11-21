@@ -7931,7 +7931,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.64'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.65'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -18580,6 +18580,7 @@ function saveTemplatesToStorage() {
     // parágrafos de w24.05 já usados (o rodízio: o servidor escolhe um que ainda não foi considerado) e os temas das 5 últimas considerações
     // (para variar o assunto). "Refazer com outro assunto" manda também o tema do esboço atual em "evitar".
     let campoEvitar = '';
+    const campoSugeridos = []; // os assuntos já sugeridos enquanto o app está aberto: [{ titulo, paragrafoW24 }]
     const campoDataLocal = (d = new Date()) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
     function campoSalvos() {
       return historicoLer().filter(item => item.tipo === 'esboco' && String(item.titulo).startsWith(ESBOCOS.campo.tituloHistorico) && item.esbocoJson);
@@ -18678,7 +18679,12 @@ function saveTemplatesToStorage() {
       aiBusy = true;
       setAiLoading(true, botao);
       try {
-        const result = await postStudy({ tarefa: 'campo-assuntos', codigoDirigente: codigoDirigenteSalvo(), ...campoCampos() }, IA_ESPERA_MS);
+        // Os assuntos e os parágrafos já sugeridos (nesta abertura do app) vão de volta, para cada rodada trazer assuntos realmente novos.
+        const result = await postStudy({
+          tarefa: 'campo-assuntos', codigoDirigente: codigoDirigenteSalvo(), ...campoCampos(),
+          jaSugeridos: campoSugeridos.map(s => s.titulo).slice(-30),
+          parSugeridos: [...new Set(campoSugeridos.map(s => s.paragrafoW24).filter(Boolean))]
+        }, IA_ESPERA_MS);
         if (!result.ok) {
           if (await dirigenteRecusado(result)) return;
           return setAiStatus(studyFailureMessage(result, 'Não foi possível sugerir assuntos agora.'), true);
@@ -18686,6 +18692,8 @@ function saveTemplatesToStorage() {
         const assuntos = Array.isArray(result.data.assuntos) ? result.data.assuntos.filter(a => a && a.titulo) : [];
         if (!assuntos.length) return setAiStatus('A IA não sugeriu assuntos. Tente de novo.', true);
         lista.textContent = '';
+        campoSugeridos.push(...assuntos.map(a => ({ titulo: a.titulo, paragrafoW24: a.paragrafoW24 || null })));
+        if (campoSugeridos.length > 60) campoSugeridos.splice(0, campoSugeridos.length - 60);
         assuntos.forEach(a => {
           const opcao = document.createElement('button');
           opcao.type = 'button';

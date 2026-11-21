@@ -267,6 +267,22 @@ export function brochuraDaConsideracao(texto, licoesLmd) {
   return { texto: `Veja também a brochura Ame as Pessoas: lmd lição ${l.licao}, ${l.nome}.`, citada: l };
 }
 
+// Lições das brochuras (lmd e th) sorteadas, para completar os candidatos de "Sugerir assuntos" quando os parágrafos de w24.05 já foram todos
+// sugeridos ou usados: [{ sigla, licao, nome, texto }] (o texto curto). Sorteio (não a ordem fixa) para os assuntos não saírem sempre os mesmos.
+export async function licoesParaAssuntos(n, { excluirNomes = [] } = {}) {
+  if (n <= 0) return [];
+  try {
+    const listas = await Promise.all([licoesDaBrochura("ameAsPessoas"), licoesDaBrochura("melhoreLeitura")]);
+    const jaFalou = excluirNomes.map((t) => semAcento(t));
+    const todas = listas.flat().filter((l) => l && l.nome && !jaFalou.some((t) => t.includes(semAcento(l.nome))));
+    for (let i = todas.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [todas[i], todas[j]] = [todas[j], todas[i]]; }
+    return todas.slice(0, n).map((l) => ({ sigla: l.sigla, licao: l.licao, nome: l.nome, texto: cortar(l.texto, 500) }));
+  } catch (e) {
+    console.error("Serviço de campo: lições para os assuntos indisponíveis", e?.message);
+    return [];
+  }
+}
+
 export async function trechosBe(consulta) {
   try {
     return await buscarNosLivros(consulta, { max: 2, maxChars: 700, livros: [nomeDoLivro("beneficieEscola")] });
@@ -300,6 +316,9 @@ export function dadosDoCampo(body) {
     assunto: linha(b.assunto, 200),
     fontes: { w24: marcada("w24"), lmd: marcada("lmd"), th: marcada("th"), be: marcada("be"), outros: marcada("outros"), artigos },
     usados: [...new Set((Array.isArray(b.usados) ? b.usados : []).map(Number).filter((n) => Number.isInteger(n) && n > 0 && n < 200))].slice(0, 200),
+    // "Sugerir assuntos" repetido (6.11.65): o que o app já sugeriu nesta sessão (títulos e parágrafos de w24.05), para não voltar com os mesmos.
+    jaSugeridos: (Array.isArray(b.jaSugeridos) ? b.jaSugeridos : []).map((t) => linha(t, 160)).filter(Boolean).slice(0, 40),
+    parSugeridos: [...new Set((Array.isArray(b.parSugeridos) ? b.parSugeridos : []).map(Number).filter((n) => Number.isInteger(n) && n > 0 && n < 200))].slice(0, 100),
     recentes: (Array.isArray(b.recentes) ? b.recentes : []).map((t) => linha(t, 160)).filter(Boolean).slice(0, 5),
     evitar: linha(b.evitar, 200),
   };

@@ -351,6 +351,29 @@ if (comFontes) {
     assert.ok(pedidos.at(-1).system.includes("FORMATO DOS ASSUNTOS SUGERIDOS"));
   });
 
+  // 6.11.65: "Sugerir outros 3 assuntos" não pode voltar com os mesmos. A 2ª rodada leva os já sugeridos (títulos e parágrafos) e a IA é avisada.
+  teste("handler campo-assuntos: nova rodada leva os já sugeridos e lições sorteadas", async () => {
+    respostaDaIa = { assuntos: [1, 2, 3].map((n) => ({ titulo: `Novo ${n}`, resumo: "Resumo.", paragrafoW24: null })) };
+    const r1 = await chamar({ tarefa: "campo-assuntos", fontes: fontesSemRede });
+    assert.equal(r1.statusCode, 200, JSON.stringify(r1.corpo));
+    const m1 = pedidos.at(-1).messages[0].content;
+    assert.ok(!m1.includes("JÁ SUGERIDOS NESTA SESSÃO"), "na 1ª rodada não há lista de já sugeridos");
+    assert.ok(m1.includes("LIÇÕES DAS BROCHURAS (um assunto para cada lição"), "sem parágrafos de w24.05, as lições sorteadas completam os 3");
+    const r2 = await chamar({ tarefa: "campo-assuntos", fontes: fontesSemRede, jaSugeridos: ["Interesse sincero", "Boas maneiras na porta"], parSugeridos: [3, 5] });
+    assert.equal(r2.statusCode, 200);
+    const m2 = pedidos.at(-1).messages[0].content;
+    assert.ok(m2.includes("JÁ SUGERIDOS NESTA SESSÃO") && m2.includes("- Interesse sincero") && m2.includes("- Boas maneiras na porta"));
+    assert.ok(m2.includes("NOVA rodada"));
+    assert.ok(pedidos.at(-1).system.includes("NUNCA repita um assunto já sugerido"));
+    // as lições sorteadas mudam de uma rodada para outra (não é sempre a mesma ordem)
+    const sorteios = new Set();
+    for (let k = 0; k < 6; k++) {
+      await chamar({ tarefa: "campo-assuntos", fontes: fontesSemRede });
+      sorteios.add((pedidos.at(-1).messages[0].content.match(/\[(?:lmd|th) lição \d+/g) || []).join("|"));
+    }
+    assert.ok(sorteios.size > 1, "as lições sorteadas deveriam variar entre rodadas");
+  });
+
   teste("handler campo: sem o código do dirigente, recusa", async () => {
     const r = await chamar({ tarefa: "campo", codigoDirigente: "errado" });
     assert.equal(r.statusCode, 403);
@@ -367,6 +390,17 @@ if (comWol) {
     const r = await campo.complementares("pregação alegria amor", { max: 2, timeoutMs: 15000 });
     console.log("   artigos não achados no wol:", r.naoAchados.join(", ") || "nenhum");
     assert.ok(r.artigos.length > 0);
+  });
+  // 6.11.65: os parágrafos já sugeridos saem dos candidatos (cada rodada traz parágrafos novos, sem repetir).
+  teste("wol: candidatos de w24.05 não repetem os já sugeridos", async () => {
+    const w = await campo.paragrafosW24(15000);
+    const vistos = new Set();
+    for (let rodada = 0; rodada < 5; rodada++) {
+      const c = campo.candidatosW24({ consulta: "casa em casa", usados: [...vistos], paragrafos: w.paragrafos, n: 3 });
+      assert.ok(c.length > 0, `rodada ${rodada}: sem candidatos`);
+      for (const p of c) { assert.ok(!vistos.has(p.numero), `rodada ${rodada}: § ${p.numero} repetiu`); vistos.add(p.numero); }
+    }
+    assert.ok(vistos.size >= 15, `parágrafos distintos em 5 rodadas: ${vistos.size}`);
   });
   teste("wol: os 9 artigos de referência são achados pelo docId", async () => {
     const todos = [campo.W24, ...campo.COMPLEMENTARES];
