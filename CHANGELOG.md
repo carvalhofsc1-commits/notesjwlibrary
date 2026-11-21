@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.16
+
+- Adoração em Família: a opção "Família monoparental" do tipo de família passa a se chamar "Mãe ou pai sozinho" (quem já tinha a escolha salva continua com ela, com o nome novo). Duração total e Quantas sugestões dividem a mesma linha no card "Duração e assunto".
+
 ## 6.11.15
 
 - Adoração em Família: os campos de texto (apelido de cada membro, anos de casados, outras circunstâncias e assunto) têm o botão 🗑️ para limpar o campo (aparece só quando há texto), e as caixas de texto crescem e encolhem conforme o conteúdo.

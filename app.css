@@ -16670,6 +16670,10 @@ textarea.fam-campo {
   height: auto;
 }
 .fam-campo-curto { max-width: min(220px, 100%); }
+/* Duração e quantidade de sugestões dividem a mesma linha (6.11.16). */
+.fam-linha-dupla { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; min-width: 0; }
+.fam-meia { display: grid; gap: 4px; min-width: 0; align-content: start; }
+.fam-meia > .fam-campo-curto { max-width: 100%; }
 .fam-checks {
   display: grid;
   gap: 6px;

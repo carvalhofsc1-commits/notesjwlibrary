@@ -2832,7 +2832,7 @@
               <option value="">Escolha…</option>
               <option value="Casal com filhos">Casal com filhos</option>
               <option value="Casal sem filhos">Casal sem filhos</option>
-              <option value="Família monoparental">Família monoparental</option>
+              <option value="Mãe ou pai sozinho">Mãe ou pai sozinho</option>
               <option value="Quem mora sozinho">Quem mora sozinho (estudo pessoal)</option>
               <option value="Família com avós ou outros">Família com avós ou outros</option>
             </select>
@@ -2892,18 +2892,24 @@
 
       <div class="fam-bloco">
         <h3 class="fam-bloco-titulo">⏱️ Duração e assunto</h3>
-        <label class="fam-rotulo" for="familiaDuracao">Duração total</label>
-        <select id="familiaDuracao" class="fam-campo fam-campo-curto">
-          <option value="30">30 minutos</option>
-          <option value="45" selected>45 minutos</option>
-          <option value="60">60 minutos</option>
-          <option value="90">90 minutos</option>
-        </select>
-        <label class="fam-rotulo" for="familiaQuantidade">Quantas sugestões</label>
-        <select id="familiaQuantidade" class="fam-campo fam-campo-curto">
-          <option value="1">1 sugestão</option>
-          <option value="2" selected>2 sugestões</option>
-        </select>
+        <div class="fam-linha-dupla">
+          <div class="fam-meia">
+            <label class="fam-rotulo" for="familiaDuracao">Duração total</label>
+            <select id="familiaDuracao" class="fam-campo fam-campo-curto">
+              <option value="30">30 minutos</option>
+              <option value="45" selected>45 minutos</option>
+              <option value="60">60 minutos</option>
+              <option value="90">90 minutos</option>
+            </select>
+          </div>
+          <div class="fam-meia">
+            <label class="fam-rotulo" for="familiaQuantidade">Quantas sugestões</label>
+            <select id="familiaQuantidade" class="fam-campo fam-campo-curto">
+              <option value="1">1 sugestão</option>
+              <option value="2" selected>2 sugestões</option>
+            </select>
+          </div>
+        </div>
         <label class="fam-rotulo" for="familiaAssunto">Assunto desta semana <span class="opc">(opcional)</span></label>
         <textarea id="familiaAssunto" class="fam-campo" rows="1" maxlength="300" spellcheck="true" placeholder="Ex.: o perdão; a oração; o relato do filho pródigo. Vazio = assuntos bem diferentes."></textarea>
       </div>
