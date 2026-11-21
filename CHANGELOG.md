@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.39
+
+- Pesquisas (texto bíblico): agora entram as edições de estudo de **A Sentinela mais novas**, lidas direto no jw.org (de 2 meses atrás até 6 meses à frente). O Índice das Publicações e a pesquisa do wol chegam meses depois (em novembro de 2026 o wol ainda não tinha a Sentinela de fevereiro de 2027), por isso uma pesquisa sobre Atos 3:21 não trazia o artigo "O maior restabelecimento de todos". O servidor acha os parágrafos que citam o versículo (pelo código do versículo no link do jw.org), junto com o parágrafo seguinte, e coloca a fonte logo depois das notas de estudo. A regra de prioridade ao mais recente também cita as edições futuras já publicadas. Fontes do jw.org passam a abrir pelo link.
+
 ## 6.11.38
 
 - Adoração em Família: o bloco **Formação da família** (dentro de Família e definições gerais) passou a se chamar **Dados da família** e ganhou os campos **Dia da adoração** (segunda a domingo) e **Horário**, para guardar quando a família faz a adoração. Ficam só neste aparelho, aparecem no resumo do card (ex.: "Quarta às 19:30") e não vão para a IA.

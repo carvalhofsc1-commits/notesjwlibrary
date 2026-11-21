@@ -51,6 +51,7 @@ import {
   siglasDasPublicacoes,
   siglasPossiveis,
   pesquisaDoVersiculo,
+  citacoesNovasDaSentinela,
   notasDeEstudo,
   videoDoEndereco,
   menorMp4DoVideo,
@@ -2271,6 +2272,16 @@ async function coletarPesquisa(res, body, P) {
         })
       : Promise.resolve([]);
 
+  // Texto bíblico: as edições de estudo de A Sentinela mais novas (no jw.org, antes de chegarem ao wol e ao Índice) que citam o versículo.
+  const novasDoJw = biblico
+    ? Promise.all((biblico.versos.length ? biblico.versos : [1]).slice(0, 6).map((v) => citacoesNovasDaSentinela(biblico.livro, biblico.capitulo, v).catch(() => [])))
+        .then((listas) => {
+          const vistas = new Set();
+          return listas.flat().filter((n) => !vistas.has(n.url) && vistas.add(n.url)).sort((a, b) => b.ano - a.ano || b.codigo.localeCompare(a.codigo)).slice(0, 3);
+        })
+        .catch(() => [])
+    : Promise.resolve([]);
+
   try {
     // Texto bíblico: para cada versículo (até 6), a página de pesquisa do wol: as notas de estudo da Tradução do Novo Mundo e as citações do
     // Índice das Publicações 1991-2026 que comentam o versículo (até 10, intercalando os versículos, as mais recentes primeiro; no máximo 2 do
@@ -2423,6 +2434,12 @@ async function coletarPesquisa(res, body, P) {
     for (const n of doVersiculo.notas) {
       fontes.push({ tipo: "wol", notas: true, publicacao: "Tradução do Novo Mundo (Edição de Estudo)", codigo: "", ano: null, titulo: n.titulo, pagina: null, paragrafos: "", texto: n.texto, url: n.url, docId: n.docId, pid: n.pid });
     }
+    // As edições de estudo mais novas (jw.org) que citam o versículo vêm logo depois das notas de estudo: a pesquisa dá prioridade ao mais recente.
+    const titulosJaLidos = new Set([...doVersiculo.lidas.map(({ p }) => p.titulo), ...doGuia.lidas.map(({ e, p }) => p.titulo || e.titulo), ...doIndice.lidas.map(({ p }) => p.titulo), ...lidos.filter(Boolean).map(({ a, p }) => p.titulo || a.titulo)].map((t) => String(t || "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim()));
+    const novasJw = (await novasDoJw).filter((n) => !titulosJaLidos.has(n.titulo.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim()));
+    for (const n of novasJw) {
+      fontes.push({ tipo: "wol", indice: "", guia: "", publicacao: n.publicacao, codigo: n.codigo, ano: n.ano, titulo: n.titulo, pagina: null, paragrafos: n.paragrafos, texto: n.texto, url: n.url, novidade: true });
+    }
     for (const { c, p } of doVersiculo.lidas) {
       // "w24.08 2-6" -> "w24.08" (a página vem à parte); "ijwbq artigo 120" e "lff lição 15" ficam inteiros.
       const codigo = /artigos?|li[çc][õo]es?|cap\.|parte/i.test(c.citacao) ? c.citacao : c.citacao.replace(/\s+[\d\s,–-]+$/, "").trim();
@@ -2481,7 +2498,7 @@ export function fontesDaPesquisa(lista) {
     if (!/^F\d{1,2}$/.test(id) || texto.length < 20 || fontes.some((x) => x.id === id)) continue;
     const tipo = ["wol", "perspicaz", "livro", "web"].includes(f.tipo) ? f.tipo : "wol";
     // Endereços: do wol.jw.org nas matérias; de qualquer site (http/https) nas páginas da internet.
-    const url = typeof f.url === "string" && (tipo === "web" ? /^https?:\/\/[^\s"<>]{4,1500}$/ : /^https:\/\/wol\.jw\.org\/[^\s"<>]*$/).test(f.url) ? f.url : "";
+    const url = typeof f.url === "string" && (tipo === "web" ? /^https?:\/\/[^\s"<>]{4,1500}$/ : /^https:\/\/(?:wol|www)\.jw\.org\/[^\s"<>]*$/).test(f.url) ? f.url : "";
     fontes.push({
       id,
       tipo,

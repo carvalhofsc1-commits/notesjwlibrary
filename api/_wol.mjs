@@ -2681,6 +2681,108 @@ export async function pesquisaDoVersiculo(livro, capitulo, verso, timeoutMs) {
   return pagina;
 }
 
+// ---------- Texto bíblico: as edições novas de A Sentinela (estudo) que ainda não estão no wol nem no Índice ----------
+// O Índice das Publicações (dx91-26) e a pesquisa do wol chegam alguns meses depois da publicação: a edição de estudo de fevereiro já está no
+// jw.org em novembro, mas não no wol. Aqui o servidor lê no jw.org as edições de estudo de 2 meses atrás até 6 meses à frente e traz os
+// parágrafos que citam o versículo (o link do versículo no jw.org traz data-targetverses="LLCCCVVV": livro, capítulo e versículo).
+const MESES_SENTINELA = ["janeiro", "fevereiro", "marco", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+const NOMES_MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+const edicoesSentinela = new Map(); // "mes-ano" -> { quando, artigos: [url] | null }
+const artigosSentinela = new Map(); // url -> { quando, artigo: { titulo, paragrafos: [{ n, texto, versos: [início, fim][] }] } | null }
+const VALIDADE_SENTINELA_MS = 6 * 3600 * 1000;
+
+async function edicaoDeEstudo(mes, ano, timeoutMs) {
+  const chave = `${mes}-${ano}`;
+  const guardado = edicoesSentinela.get(chave);
+  if (guardado && Date.now() - guardado.quando < VALIDADE_SENTINELA_MS) return guardado.artigos;
+  let artigos = null;
+  for (const slug of [MESES_SENTINELA[mes], mes === 2 ? "mar%C3%A7o" : null]) { // março: o jw.org usa um dos dois nomes
+    if (!slug) continue;
+    const base = `/pt/biblioteca/revistas/sentinela-estudo-${slug}-${ano}/`;
+    try {
+      const html = await baixar(BASE_JW + base, timeoutMs);
+      const links = [...new Set([...html.matchAll(new RegExp(`href="(${base.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}[^"/#?]+/)"`, "g"))].map((m) => m[1]))];
+      artigos = links.filter((l) => !/perguntas-dos-leitores/i.test(l)).map((l) => BASE_JW + l); // as Perguntas dos Leitores não são artigo de estudo
+      if (artigos.length) break;
+    } catch {
+      // edição ainda não publicada (404) ou site fora do ar
+    }
+  }
+  edicoesSentinela.set(chave, { quando: Date.now(), artigos });
+  if (edicoesSentinela.size > 40) edicoesSentinela.delete(edicoesSentinela.keys().next().value);
+  return artigos;
+}
+
+async function artigoDeEstudo(url, timeoutMs) {
+  const guardado = artigosSentinela.get(url);
+  if (guardado && Date.now() - guardado.quando < VALIDADE_SENTINELA_MS) return guardado.artigo;
+  let artigo = null;
+  try {
+    const html = await baixar(url, timeoutMs);
+    const titulo = textoDe((html.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || "").replace(/\s*\|.*$/, "");
+    const paragrafos = [];
+    for (const [, atributos, conteudo] of html.matchAll(/<p\b([^>]*\bdata-pid="\d+"[^>]*)>([\s\S]*?)<\/p>/g)) {
+      if (/class="[^"]*\b(qu|pubRefs|themeScrp|contextTtl)\b/.test(atributos)) continue; // perguntas do estudo, referências e texto-tema
+      const n = Number((conteudo.match(/data-pnum="(\d+)"/) || [])[1]) || null;
+      const versos = [...conteudo.matchAll(/data-targetverses="([\d,\-–]+)"/g)].flatMap((m) =>
+        m[1].split(",").map((faixa) => {
+          const [a, b] = faixa.split(/[-–]/);
+          return [Number(a), Number(b || a)];
+        })
+      );
+      const texto = textoDe(conteudo.replace(/<span class="parNum[^>]*>[\s\S]*?<\/span>/g, " "));
+      if (texto.length > 40) paragrafos.push({ n, texto, versos });
+    }
+    if (titulo && paragrafos.length) artigo = { titulo, paragrafos };
+  } catch {
+    // artigo indisponível agora
+  }
+  artigosSentinela.set(url, { quando: Date.now(), artigo });
+  if (artigosSentinela.size > 120) artigosSentinela.delete(artigosSentinela.keys().next().value);
+  return artigo;
+}
+
+// Os parágrafos que citam o versículo nas edições de estudo novas, da edição mais nova para a mais antiga:
+// [{ titulo, publicacao, codigo, ano, paragrafos: "1, 2", texto, url }]. Vazio se nada novo cita o versículo (ou o jw.org não respondeu).
+export async function citacoesNovasDaSentinela(livro, capitulo, verso, { timeoutMs = 9000, hoje = new Date(), max = 3 } = {}) {
+  const alvo = livro * 1_000_000 + capitulo * 1000 + verso;
+  const meses = [];
+  for (let d = -2; d <= 6; d++) {
+    const data = new Date(Date.UTC(hoje.getUTCFullYear(), hoje.getUTCMonth() + d, 1));
+    meses.push({ mes: data.getUTCMonth(), ano: data.getUTCFullYear() });
+  }
+  const edicoes = await Promise.all(meses.map(({ mes, ano }) => edicaoDeEstudo(mes, ano, timeoutMs).then((artigos) => ({ mes, ano, artigos }))));
+  const achados = [];
+  await Promise.all(
+    edicoes
+      .filter((e) => e.artigos && e.artigos.length)
+      .flatMap((e) => e.artigos.map((url) => ({ e, url })))
+      .map(async ({ e, url }) => {
+        const artigo = await artigoDeEstudo(url, timeoutMs);
+        if (!artigo) return;
+        // Os parágrafos que citam o versículo (até 2) e, de cada um, o seguinte, que costuma explicar o texto citado.
+        const indices = [];
+        artigo.paragrafos.forEach((p, i) => {
+          if (indices.length < 4 && p.versos.some(([a, b]) => alvo >= a && alvo <= b)) for (const j of [i, i + 1]) if (j < artigo.paragrafos.length && !indices.includes(j)) indices.push(j);
+        });
+        const citam = indices.sort((x, y) => x - y).map((i) => artigo.paragrafos[i]);
+        if (!citam.length) return;
+        const mm = String(e.mes + 1).padStart(2, "0");
+        achados.push({
+          ordem: e.ano * 12 + e.mes,
+          titulo: artigo.titulo,
+          publicacao: `A Sentinela (Estudo), ${NOMES_MESES[e.mes]} de ${e.ano}`,
+          codigo: `w${String(e.ano).slice(2)}.${mm}`,
+          ano: e.ano,
+          paragrafos: citam.map((p) => p.n).filter(Boolean).join(", "),
+          texto: citam.map((p) => p.texto).join("\n").slice(0, 1800),
+          url,
+        });
+      })
+  );
+  return achados.sort((a, b) => b.ordem - a.ordem).slice(0, max).map(({ ordem, ...resto }) => resto);
+}
+
 // As notas de estudo de um versículo (o link do cartão já traz a faixa de parágrafos): como faixaDoDocumento, com o docId.
 export async function notasDeEstudo(caminho, timeoutMs) {
   const m = String(caminho || "").match(/\/lp-t\/(\d+)#h=(\d+):\d+-(\d+):(\d+)/);
