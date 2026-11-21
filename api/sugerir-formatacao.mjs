@@ -52,6 +52,7 @@ import {
   siglasPossiveis,
   pesquisaDoVersiculo,
   citacoesNovasDaSentinela,
+  buscaNovaNaSentinela,
   notasDeEstudo,
   videoDoEndereco,
   menorMp4DoVideo,
@@ -2273,14 +2274,20 @@ async function coletarPesquisa(res, body, P) {
       : Promise.resolve([]);
 
   // Texto bíblico: as edições de estudo de A Sentinela mais novas (no jw.org, antes de chegarem ao wol e ao Índice) que citam o versículo.
-  const novasDoJw = biblico
-    ? Promise.all((biblico.versos.length ? biblico.versos : [1]).slice(0, 6).map((v) => citacoesNovasDaSentinela(biblico.livro, biblico.capitulo, v).catch(() => [])))
-        .then((listas) => {
-          const vistas = new Set();
-          return listas.flat().filter((n) => !vistas.has(n.url) && vistas.add(n.url)).sort((a, b) => b.ano - a.ano || b.codigo.localeCompare(a.codigo)).slice(0, 3);
-        })
-        .catch(() => [])
-    : Promise.resolve([]);
+  // E, em qualquer pesquisa (texto ou assunto), as que mais combinam com as palavras da pesquisa (mesma busca por palavras do wol, nos artigos novos).
+  const novasDoJw = Promise.all([
+    biblico
+      ? Promise.all((biblico.versos.length ? biblico.versos : [1]).slice(0, 6).map((v) => citacoesNovasDaSentinela(biblico.livro, biblico.capitulo, v).catch(() => []))).then((l) => l.flat())
+      : [],
+    buscaNovaNaSentinela([assunto, contexto, ...consultas].filter(Boolean)).catch(() => []),
+  ])
+    .then(([citam, palavras]) => {
+      const vistas = new Set();
+      const porData = (a, b) => b.ano - a.ano || b.codigo.localeCompare(a.codigo);
+      // Primeiro as que citam o versículo (da mais nova para a mais antiga), depois as achadas pelas palavras; no máximo 3 no total.
+      return [...citam.sort(porData), ...palavras].filter((n) => !vistas.has(n.url) && vistas.add(n.url)).slice(0, 3);
+    })
+    .catch(() => []);
 
   try {
     // Texto bíblico: para cada versículo (até 6), a página de pesquisa do wol: as notas de estudo da Tradução do Novo Mundo e as citações do

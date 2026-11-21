@@ -6266,7 +6266,7 @@
     /* Botões de cada campo de texto (anotações e resposta), bem finos, logo abaixo da moldura do campo: copiar, formatar com IA e a lixeira (só o ícone). */
     .screen-anotacoes .anotacoes-acoes-campo {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 2.6rem;
+      grid-template-columns: minmax(0, .8fr) minmax(0, 1.4fr) 2.6rem; /* 6.11.40: o do meio (🔑 ✨ Formatar com IA) é o mais largo */
       gap: 6px;
       margin-top: 8px;
     }
@@ -6279,6 +6279,8 @@
       line-height: 1.1;
       white-space: nowrap;
     }
+    /* Com o 🔑 (código ainda não informado) o texto do botão da IA não cabe numa linha em celular estreito: quebra em duas linhas em vez de vazar. */
+    .screen-anotacoes .anotacoes-acoes-campo .anotacoes-ia { white-space: normal; overflow-wrap: anywhere; }
 
     /* O botão do JW Library pega a largura toda, logo abaixo dos três. */
     .screen-anotacoes .anotacoes-jwl.anotacoes-jwl-largo {
@@ -16687,7 +16689,11 @@ textarea.fam-campo {
 .fam-campo-curto { max-width: min(220px, 100%); }
 /* Duração e quantidade de sugestões dividem a mesma linha (6.11.16). */
 .fam-linha-dupla { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; min-width: 0; }
-.fam-meia { display: grid; gap: 4px; min-width: 0; align-content: start; }
+.fam-meia { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; min-width: 0; align-content: start; }
+/* 6.11.40: o campo de hora do iPhone tem largura própria e vazava da coluna; aqui ele segue a coluna, com a mesma altura dos outros campos. */
+.fam-linha-dupla.fam-linha-fim { align-items: end; } /* rótulos de 1 e de 2 linhas: os campos ficam alinhados embaixo */
+input[type="time"].fam-campo { -webkit-appearance: none; appearance: none; display: block; width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; min-height: 40px; text-align: left; }
+input[type="time"].fam-campo::-webkit-date-and-time-value { text-align: left; min-height: 1.2em; }
 .fam-meia > .fam-campo-curto { max-width: 100%; }
 .fam-checks {
   display: grid;

@@ -2744,42 +2744,85 @@ async function artigoDeEstudo(url, timeoutMs) {
 
 // Os parágrafos que citam o versículo nas edições de estudo novas, da edição mais nova para a mais antiga:
 // [{ titulo, publicacao, codigo, ano, paragrafos: "1, 2", texto, url }]. Vazio se nada novo cita o versículo (ou o jw.org não respondeu).
-export async function citacoesNovasDaSentinela(livro, capitulo, verso, { timeoutMs = 9000, hoje = new Date(), max = 3 } = {}) {
-  const alvo = livro * 1_000_000 + capitulo * 1000 + verso;
+// Os artigos das edições de estudo novas (de 2 meses atrás a 6 meses à frente) já lidos: [{ mes, ano, url, artigo }].
+async function artigosNovosDaSentinela(timeoutMs, hoje) {
   const meses = [];
   for (let d = -2; d <= 6; d++) {
     const data = new Date(Date.UTC(hoje.getUTCFullYear(), hoje.getUTCMonth() + d, 1));
     meses.push({ mes: data.getUTCMonth(), ano: data.getUTCFullYear() });
   }
   const edicoes = await Promise.all(meses.map(({ mes, ano }) => edicaoDeEstudo(mes, ano, timeoutMs).then((artigos) => ({ mes, ano, artigos }))));
-  const achados = [];
-  await Promise.all(
+  const lidos = await Promise.all(
     edicoes
       .filter((e) => e.artigos && e.artigos.length)
       .flatMap((e) => e.artigos.map((url) => ({ e, url })))
-      .map(async ({ e, url }) => {
-        const artigo = await artigoDeEstudo(url, timeoutMs);
-        if (!artigo) return;
-        // Os parágrafos que citam o versículo (até 2) e, de cada um, o seguinte, que costuma explicar o texto citado.
-        const indices = [];
-        artigo.paragrafos.forEach((p, i) => {
-          if (indices.length < 4 && p.versos.some(([a, b]) => alvo >= a && alvo <= b)) for (const j of [i, i + 1]) if (j < artigo.paragrafos.length && !indices.includes(j)) indices.push(j);
-        });
-        const citam = indices.sort((x, y) => x - y).map((i) => artigo.paragrafos[i]);
-        if (!citam.length) return;
-        const mm = String(e.mes + 1).padStart(2, "0");
-        achados.push({
-          ordem: e.ano * 12 + e.mes,
-          titulo: artigo.titulo,
-          publicacao: `A Sentinela (Estudo), ${NOMES_MESES[e.mes]} de ${e.ano}`,
-          codigo: `w${String(e.ano).slice(2)}.${mm}`,
-          ano: e.ano,
-          paragrafos: citam.map((p) => p.n).filter(Boolean).join(", "),
-          texto: citam.map((p) => p.texto).join("\n").slice(0, 1800),
-          url,
-        });
-      })
+      .map(async ({ e, url }) => ({ mes: e.mes, ano: e.ano, url, artigo: await artigoDeEstudo(url, timeoutMs) }))
   );
+  return lidos.filter((x) => x.artigo);
+}
+
+const dadosDaEdicao = (e) => ({
+  ordem: e.ano * 12 + e.mes,
+  publicacao: `A Sentinela (Estudo), ${NOMES_MESES[e.mes]} de ${e.ano}`,
+  codigo: `w${String(e.ano).slice(2)}.${String(e.mes + 1).padStart(2, "0")}`,
+  ano: e.ano,
+});
+
+// Assunto (palavras): nos mesmos artigos novos, o parágrafo que mais combina com as palavras da pesquisa (e o seguinte), como a busca
+// do wol faria. Só vale um parágrafo que traga pelo menos 2 palavras diferentes da pesquisa (ou 1, se a pesquisa só tiver 1 palavra útil).
+// [{ titulo, publicacao, codigo, ano, paragrafos, texto, url, pontos }], os mais certeiros primeiro (no empate, o mais novo).
+export async function buscaNovaNaSentinela(textos, { timeoutMs = 9000, hoje = new Date(), max = 3 } = {}) {
+  const termos = [...new Set((Array.isArray(textos) ? textos : [textos]).flatMap((t) => raizes(t)).filter((r) => !GENERICAS.has(r)))];
+  if (!termos.length) return [];
+  const exigidos = Math.min(2, termos.length);
+  const lidos = await artigosNovosDaSentinela(timeoutMs, hoje);
+  const achados = [];
+  for (const { mes, ano, url, artigo } of lidos) {
+    let melhor = null;
+    artigo.paragrafos.forEach((p, i) => {
+      const nos = new Set(raizes(p.texto));
+      const casam = termos.filter((t) => nos.has(t)).length;
+      if (casam >= exigidos && (!melhor || casam > melhor.casam)) melhor = { casam, i };
+    });
+    if (!melhor) continue;
+    const titulo = new Set(raizes(artigo.titulo));
+    const casaTitulo = termos.filter((t) => titulo.has(t)).length;
+    const escolhidos = [artigo.paragrafos[melhor.i], artigo.paragrafos[melhor.i + 1]].filter(Boolean);
+    achados.push({
+      ...dadosDaEdicao({ mes, ano }),
+      titulo: artigo.titulo,
+      paragrafos: escolhidos.map((p) => p.n).filter(Boolean).join(", "),
+      texto: escolhidos.map((p) => p.texto).join("\n").slice(0, 1800),
+      url,
+      pontos: melhor.casam + casaTitulo * 2,
+    });
+  }
+  return achados
+    .filter((a) => a.pontos >= 2) // com uma palavra só, só vale se ela estiver também no título do artigo
+    .sort((a, b) => b.pontos - a.pontos || b.ordem - a.ordem)
+    .slice(0, max)
+    .map(({ ordem, ...resto }) => resto);
+}
+
+export async function citacoesNovasDaSentinela(livro, capitulo, verso, { timeoutMs = 9000, hoje = new Date(), max = 3 } = {}) {
+  const alvo = livro * 1_000_000 + capitulo * 1000 + verso;
+  const achados = [];
+  for (const { mes, ano, url, artigo } of await artigosNovosDaSentinela(timeoutMs, hoje)) {
+    // Os parágrafos que citam o versículo (até 2) e, de cada um, o seguinte, que costuma explicar o texto citado.
+    const indices = [];
+    artigo.paragrafos.forEach((p, i) => {
+      if (indices.length < 4 && p.versos.some(([a, b]) => alvo >= a && alvo <= b)) for (const j of [i, i + 1]) if (j < artigo.paragrafos.length && !indices.includes(j)) indices.push(j);
+    });
+    const citam = indices.sort((x, y) => x - y).map((i) => artigo.paragrafos[i]);
+    if (!citam.length) continue;
+    achados.push({
+      ...dadosDaEdicao({ mes, ano }),
+      titulo: artigo.titulo,
+      paragrafos: citam.map((p) => p.n).filter(Boolean).join(", "),
+      texto: citam.map((p) => p.texto).join("\n").slice(0, 1800),
+      url,
+    });
+  }
   return achados.sort((a, b) => b.ordem - a.ordem).slice(0, max).map(({ ordem, ...resto }) => resto);
 }
 

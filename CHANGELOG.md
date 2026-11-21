@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.40
+
+- Adoração em Família: o campo **Horário** (hora) vazava para fora do cartão no iPhone (o campo de hora do iOS tem largura própria). Agora ele segue a largura da coluna, com a mesma altura dos outros campos, e o **Dia** e o **Horário** ficam alinhados embaixo mesmo quando o rótulo de um quebra em duas linhas.
+- Anotações: o botão **🔑 ✨ Formatar com IA** (com a chave do código ainda não informado) estourava a largura em celular estreito. A coluna dele ficou maior que a do Copiar e o texto quebra em duas linhas, em vez de vazar.
+- Pesquisas (qualquer tipo, texto bíblico ou assunto): além das que citam o versículo, entram as **edições novas de A Sentinela achadas pelas palavras da pesquisa**. O servidor lê os artigos novos do jw.org e traz o parágrafo que mais combina (e o seguinte), com no mínimo 2 palavras da pesquisa no mesmo parágrafo (ou 1 palavra, se ela estiver também no título). No máximo 3 fontes novas por pesquisa, as que citam o versículo primeiro.
+
 ## 6.11.39
 
 - Pesquisas (texto bíblico): agora entram as edições de estudo de **A Sentinela mais novas**, lidas direto no jw.org (de 2 meses atrás até 6 meses à frente). O Índice das Publicações e a pesquisa do wol chegam meses depois (em novembro de 2026 o wol ainda não tinha a Sentinela de fevereiro de 2027), por isso uma pesquisa sobre Atos 3:21 não trazia o artigo "O maior restabelecimento de todos". O servidor acha os parágrafos que citam o versículo (pelo código do versículo no link do jw.org), junto com o parágrafo seguinte, e coloca a fonte logo depois das notas de estudo. A regra de prioridade ao mais recente também cita as edições futuras já publicadas. Fontes do jw.org passam a abrir pelo link.
