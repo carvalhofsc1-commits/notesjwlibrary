@@ -16771,6 +16771,16 @@ textarea.fam-campo {
   }
 }
 .fam-parte-transicao { margin: 6px 0 0; padding: 6px 10px; border-left: 3px solid #3b82f6; font-style: italic; overflow-wrap: anywhere; }
+/* Programações salvas na tela Adoração em Família (6.11.25): card recolhível fino. */
+.fam-salvas { border: 1px solid var(--line, #cbd5e1); border-radius: 10px; padding: 0 10px; min-width: 0; }
+.fam-salvas > summary { cursor: pointer; min-height: 40px; display: flex; align-items: center; gap: 6px; font-weight: 600; }
+.fam-salvas-lista { display: grid; gap: 10px; padding: 0 0 10px; min-width: 0; }
+.fam-salva { display: grid; gap: 6px; min-width: 0; padding: 8px 10px; border: 1.5px solid #3b82f6; border-radius: 12px; }
+.fam-salva-titulo { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+.fam-salva-op { display: grid; gap: 4px; min-width: 0; padding-top: 4px; }
+.fam-salva-tema { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.fam-salva .fam-lista { margin: 0; padding-left: 1.2em; }
+.fam-salva .fam-lista li { overflow-wrap: anywhere; }
 /* Jogos aceitos, jogo pronto de cada parte e tema do FunPlayB (6.11.24). */
 .fam-jogos-box { border: 1px solid var(--line, #cbd5e1); border-radius: 10px; padding: 0 10px 10px; margin-top: 8px; min-width: 0; }
 .fam-jogos-box > summary { cursor: pointer; min-height: 40px; display: flex; align-items: center; gap: 6px; font-weight: 600; }

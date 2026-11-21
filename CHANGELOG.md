@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.25
+
+- Adoração em Família: abaixo do botão da IA, novo card recolhível e fino **"📂 Programações salvas (n)"**. Ao abrir, lista todas as programações já salvas (as preparadas pela IA e as montadas por você), da mais recente para a mais antiga, cada uma com o tema (emoji e título), o tempo total, o número de atividades, um resumo do assunto e a lista das atividades, cada uma com os minutos e um resumo curto (e o jogo, quando houver). "📂 Abrir na tela" traz a programação de volta com todos os detalhes (copiar, Word, jogos, FunPlayB) e "🗑️" apaga. A lista se atualiza sozinha ao salvar ou apagar (também em Pesquisas salvas).
+
 ## 6.11.24
 
 - Adoração em Família, jogos: em "Atividades que a família aceita" há a caixa **🎲 Jogos aceitos**, com 17 tipos para marcar (Quem sou eu?, Show do milhão bíblico, Abreviações bíblicas como "Os 12 A de C", Mímica, Verdadeiro ou falso, Ordem dos acontecimentos, Quem disse isso?, Jogo da memória, Caça ao tesouro, Charadas, Bingo, Complete o versículo, Forca, Cruzadas e caça-palavras, Pictionary bíblico e dois do FunPlayB), mais "Marcar todos", "Desmarcar todos" e a opção "Pode usar papel e lápis". Vale quando "Jogos ou adivinhas" está marcado; a escolha fica salva no aparelho.

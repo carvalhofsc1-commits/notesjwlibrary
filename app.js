@@ -7921,7 +7921,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.24'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.25'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -21452,6 +21452,7 @@ function saveTemplatesToStorage() {
     }
 
     function historicoRender() {
+      setTimeout(() => { try { familiaSalvasRender(); } catch (e) { /* tela ainda iniciando */ } }, 0); // a lista da tela Adoração em Família acompanha
       // As perguntas do dirigente só aparecem aqui com o código do dirigente salvo neste aparelho.
       const comDirigente = Boolean(codigoDirigenteSalvo());
       const todas = historicoLer().filter(item => comDirigente || !historicoCategoriaDe(item).soDirigente);
@@ -26230,6 +26231,96 @@ function saveTemplatesToStorage() {
         return card;
     }
 
+    // ---- Programações salvas na tela Adoração em Família (6.11.25): tema, tempo e as atividades de cada uma, com um resumo curto de cada atividade ----
+    function familiaResumoCurto(texto, max = 140) {
+      const s = String(texto || '').replace(/\s+/g, ' ').trim();
+      if (!s) return '';
+      const primeira = (s.match(/^.*?[.!?](\s|$)/) || [s])[0].trim();
+      return primeira.length > max ? primeira.slice(0, max - 1).replace(/\s+\S*$/, '') + '…' : primeira;
+    }
+
+    function familiaSalvasRender() {
+      const lista = document.getElementById('familiaSalvasLista');
+      const qtd = document.getElementById('familiaSalvasQtd');
+      if (!lista || !qtd) return;
+      const itens = historicoLer().filter(i => i.tipo === 'familia' && Array.isArray(i.familiaOpcoes) && i.familiaOpcoes.length).sort((a, b) => String(b.data).localeCompare(String(a.data)));
+      qtd.textContent = itens.length ? '(' + itens.length + ')' : '(nenhuma ainda)';
+      lista.textContent = '';
+      if (!itens.length) {
+        const vazio = document.createElement('p');
+        vazio.className = 'hint fam-dica';
+        vazio.textContent = 'As programações que a IA preparar (e as que você montar e salvar) ficam guardadas aqui, neste aparelho.';
+        lista.appendChild(vazio);
+        return;
+      }
+      itens.forEach(item => {
+        const art = document.createElement('article');
+        art.className = 'fam-salva';
+        const h = document.createElement('p');
+        h.className = 'fam-salva-titulo';
+        h.textContent = item.titulo;
+        const quando = new Date(item.data);
+        const meta = document.createElement('p');
+        meta.className = 'fam-opcao-meta';
+        meta.textContent = 'Salva em ' + quando.toLocaleDateString('pt-BR') + ' às ' + quando.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        art.append(h, meta);
+        item.familiaOpcoes.forEach((op, i) => {
+          const bloco = document.createElement('div');
+          bloco.className = 'fam-salva-op';
+          const tema = document.createElement('p');
+          tema.className = 'fam-salva-tema';
+          const partes = op.partes || [];
+          const minutos = Number(op.duracaoTotal) || partes.reduce((s, p) => s + (Number(p.minutos) || 0), 0);
+          tema.textContent = (item.familiaOpcoes.length > 1 ? 'Opção ' + (i + 1) + ' · ' : '') + (op.emoji ? op.emoji + ' ' : '') + (op.titulo || 'Programação') + ' · ⏱️ ' + minutos + ' min · ' + partes.length + (partes.length === 1 ? ' atividade' : ' atividades');
+          bloco.appendChild(tema);
+          const assunto = familiaResumoCurto(op.resumo || op.objetivo, 200);
+          if (assunto) {
+            const r = document.createElement('p');
+            r.className = 'fam-parte-desc';
+            r.textContent = assunto;
+            bloco.appendChild(r);
+          }
+          const ul = document.createElement('ul');
+          ul.className = 'fam-lista';
+          partes.forEach(p => {
+            const li = document.createElement('li');
+            const nome = document.createElement('strong');
+            nome.textContent = (p.nome || 'Atividade') + (p.minutos ? ' (' + p.minutos + ' min)' : '');
+            li.appendChild(nome);
+            const resumo = familiaResumoCurto(p.descricao);
+            const jogo = p.jogo && p.jogo.nome ? ' 🎲 ' + p.jogo.nome : '';
+            if (resumo || jogo) li.appendChild(document.createTextNode(' — ' + resumo + jogo));
+            ul.appendChild(li);
+          });
+          bloco.appendChild(ul);
+          art.appendChild(bloco);
+        });
+        const acoes = document.createElement('div');
+        acoes.className = 'fam-acoes';
+        const abrir = document.createElement('button');
+        abrir.type = 'button';
+        abrir.className = 'fam-fino fam-principal';
+        abrir.textContent = '📂 Abrir na tela';
+        abrir.addEventListener('click', async () => {
+          if (await historicoAbrir(item.id)) document.getElementById('familiaSalvasBox').open = false;
+        });
+        const apagar = document.createElement('button');
+        apagar.type = 'button';
+        apagar.className = 'secondary fam-fino limpar-btn';
+        apagar.textContent = '🗑️';
+        apagar.title = 'Apagar esta programação salva';
+        apagar.setAttribute('aria-label', 'Apagar esta programação salva');
+        apagar.addEventListener('click', async () => {
+          if (!(await askConfirm('Apagar esta programação salva deste aparelho?', 'Apagar programação'))) return;
+          historicoGravar(historicoLer().filter(g => g.id !== item.id));
+          historicoRender();
+        });
+        acoes.append(abrir, apagar);
+        art.appendChild(acoes);
+        lista.appendChild(art);
+      });
+    }
+
     // O tema personalizado do FunPlayB: copiar as perguntas (CSV pronto para o módulo de importação) e abrir o jogo.
     function familiaFunplaybPainel(f) {
       const caixa = document.createElement('div');
@@ -26561,6 +26652,8 @@ function saveTemplatesToStorage() {
     document.getElementById('familiaJogosTodos').addEventListener('click', () => { familiaJogosEl.querySelectorAll('input').forEach(el => { el.checked = true; }); familiaJogosAtualizar(); familiaPerfilSalvar(); });
     document.getElementById('familiaJogosNenhum').addEventListener('click', () => { familiaJogosEl.querySelectorAll('input').forEach(el => { el.checked = false; }); familiaJogosAtualizar(); familiaPerfilSalvar(); });
     familiaPerfilCarregar();
+    familiaSalvasRender();
+    document.getElementById('familiaSalvasBox').addEventListener('toggle', () => { if (document.getElementById('familiaSalvasBox').open) familiaSalvasRender(); });
     familiaJogosAtualizar();
     familiaBotaoRotuloAtualizar();
 
