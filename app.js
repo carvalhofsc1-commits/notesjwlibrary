@@ -7921,7 +7921,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.45'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.46'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26000,10 +26000,54 @@ function saveTemplatesToStorage() {
       const curto = String(j.tipo || '').replace(/\s*\(.*$/, '').trim();
       return curto && curto.toLowerCase() !== String(j.nome || '').toLowerCase() ? ' · ' + curto : '';
     }
+    // Rodadas do jogo (6.11.46): { pergunta, resposta, referencia } separadas, para a resposta poder ficar escondida (Adoração compartilhada).
+    // As programações novas já vêm com "rodadas" do servidor; nas antigas (só "itens", pergunta e resposta no mesmo texto) a separação é feita
+    // aqui, pelos mesmos sinais que o servidor usa: "Resposta:"/"R:", " = ", "(Verdadeiro — Gn 6:14)" ou o último travessão. Só nos jogos de
+    // pergunta e resposta; memória, bingo, mímica e desenho continuam como itens. O que não der para separar continua em "itens".
+    const FAMILIA_JOGOS_COM_RESPOSTA = /quem sou|show do milh|abrevia|verdadeiro|quem disse|charada|adivinha|complete|torta/i;
+    function familiaSepararRodada(texto) {
+      const t = String(texto || '').replace(/\s+/g, ' ').trim();
+      if (!t) return null;
+      let m;
+      let pergunta = '';
+      let resposta = '';
+      if ((m = t.match(/^(.*?)(\s*[([]\s*|\s+)(?:Resposta|Resp\.?|R)\s*:\s*(.+)$/i)) && m[1].length >= 2) { pergunta = m[1]; resposta = /[([]/.test(m[2]) ? m[3].replace(/[)\]]\s*\.?$/, '') : m[3]; }
+      else if ((m = t.match(/^(.+?)\s*\(((?:Verdadeiro|Falso|V|F)\b[^()]*)\)\s*\.?$/i))) { pergunta = m[1]; resposta = m[2]; }
+      else if ((m = t.match(/^(.+?)\s+=\s+(.+)$/))) { pergunta = m[1]; resposta = m[2]; }
+      else if ((m = t.match(/^(.+)\s+[—–]\s+(.+)$/))) { pergunta = m[1]; resposta = m[2]; }
+      else return null;
+      pergunta = pergunta.replace(/[\s—–:;,-]+$/, '').trim();
+      resposta = resposta.trim();
+      let referencia = '';
+      const ref1 = resposta.match(/^(.*?)\s*\(([^()]*\d+:\d+[^()]*)\)\s*\.?$/);
+      const ref2 = resposta.match(/^(.+?)\s*[—–-]\s*((?:[1-3]\s?)?\p{Lu}[\p{L}.]*(?:\s\p{L}+)?\s\d+:\d+[\d:,\s–-]*)\.?$/u);
+      if (ref1 && ref1[1]) { resposta = ref1[1].trim(); referencia = ref1[2].trim(); }
+      else if (ref2) { resposta = ref2[1].trim(); referencia = ref2[2].trim(); }
+      resposta = resposta.replace(/[\s—–;,-]+$/, '').trim();
+      return pergunta.length >= 2 && resposta ? { pergunta, resposta, referencia } : null;
+    }
+    // { rodadas, itens } de um jogo: as rodadas salvas ou, nas programações antigas, separadas dos itens.
+    function familiaConteudoDoJogo(j) {
+      if (!j) return { rodadas: [], itens: [] };
+      const itens = Array.isArray(j.itens) ? j.itens.filter(Boolean) : [];
+      if (Array.isArray(j.rodadas) && j.rodadas.length) return { rodadas: j.rodadas.filter(r => r && r.pergunta), itens };
+      if (!FAMILIA_JOGOS_COM_RESPOSTA.test((j.tipo || '') + ' ' + (j.nome || ''))) return { rodadas: [], itens };
+      const rodadas = [];
+      const sobra = [];
+      itens.forEach(t => { const r = familiaSepararRodada(t); if (r) rodadas.push(r); else sobra.push(t); });
+      return { rodadas, itens: sobra };
+    }
+    window.familiaConteudoDoJogo = familiaConteudoDoJogo; // usado também pela Adoração compartilhada
+    const familiaRodadaTexto = r => r.pergunta + ' → Resposta: ' + r.resposta + (r.referencia ? ' (' + r.referencia + ')' : '');
+    // O conteúdo do jogo como lista de textos (rodadas com a resposta e, depois, os itens sem resposta), para a tela, a cópia e o Word.
+    function familiaJogoTextos(j) {
+      const c = familiaConteudoDoJogo(j);
+      return c.rodadas.map(familiaRodadaTexto).concat(c.itens);
+    }
     function familiaJogoLinhas(j) {
       const l = ['🎲 Jogo: ' + j.nome + familiaTipoJogo(j), j.comoJogar];
       if (j.material) l.push('✏️ Material: ' + j.material);
-      (j.itens || []).forEach((t, i) => l.push((i + 1) + ') ' + t));
+      familiaJogoTextos(j).forEach((t, i) => l.push((i + 1) + ') ' + t));
       return l;
     }
     const FUNPLAYB_ENDERECO = 'https://jogo-perguntas-app.vercel.app';
@@ -26092,7 +26136,7 @@ function saveTemplatesToStorage() {
           partes.push(p('<w:keepNext/><w:pBdr><w:bottom w:val="single" w:sz="4" w:space="2" w:color="D1D5DB"/></w:pBdr>' + espaco(240, 80), runs((i + 1) + '. ' + j.nome + familiaTipoJogo(j), 'b', 26)));
           partes.push(p(espaco(0, 80), runs('Como jogar: ', 'b', 22) + runs(j.comoJogar, '', 22)));
           if (j.material) partes.push(p(espaco(0, 80), runs('✏️ Material: ', 'b', 22) + runs(j.material, '', 22)));
-          (j.itens || []).forEach((t, k) => partes.push(p('<w:ind w:left="360" w:hanging="360"/>' + espaco(0, 60), runs((k + 1) + ') ', 'b', 22) + runs(t, '', 22))));
+          familiaJogoTextos(j).forEach((t, k) => partes.push(p('<w:ind w:left="360" w:hanging="360"/>' + espaco(0, 60), runs((k + 1) + ') ', 'b', 22) + runs(t, '', 22))));
         });
         if (op.funplayb) {
           const f = op.funplayb;
@@ -26148,7 +26192,7 @@ function saveTemplatesToStorage() {
           html.push('<p class="pq-doc-secao">' + e((i + 1) + '. ' + j.nome + familiaTipoJogo(j)) + '</p>');
           html.push('<p class="pq-doc-p"><b>Como jogar:</b> ' + e(j.comoJogar) + '</p>');
           if (j.material) html.push('<p class="pq-doc-p"><b>✏️ Material:</b> ' + e(j.material) + '</p>');
-          (j.itens || []).forEach((t, k) => html.push('<p class="pq-doc-fonte"><b>' + (k + 1) + ')</b> ' + e(t) + '</p>'));
+          familiaJogoTextos(j).forEach((t, k) => html.push('<p class="pq-doc-fonte"><b>' + (k + 1) + ')</b> ' + e(t) + '</p>'));
         });
         if (op.funplayb) {
           const f = op.funplayb;
@@ -26300,15 +26344,16 @@ function saveTemplatesToStorage() {
               mj.textContent = '✏️ Material: ' + j.material;
               caixaJogo.appendChild(mj);
             }
-            if ((j.itens || []).length) {
+            const textosJogo = familiaJogoTextos(j);
+            if (textosJogo.length) {
               const det = document.createElement('details');
               det.className = 'fam-jogo-itens';
               det.open = true;
               const sm = document.createElement('summary');
-              sm.textContent = 'Material pronto para jogar (' + j.itens.length + ')';
+              sm.textContent = 'Material pronto para jogar (' + textosJogo.length + ')';
               const ol = document.createElement('ol');
               ol.className = 'fam-lista';
-              j.itens.forEach(t => { const li = document.createElement('li'); li.textContent = t; ol.appendChild(li); });
+              textosJogo.forEach(t => { const li = document.createElement('li'); li.textContent = t; ol.appendChild(li); });
               det.append(sm, ol);
               caixaJogo.appendChild(det);
             }

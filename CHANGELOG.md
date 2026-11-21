@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.46
+
+- Adoração em Família, jogos: nos jogos de **pergunta e resposta** (Quem sou eu?, Show do milhão, Abreviações, Verdadeiro ou falso, Quem disse isso?, Charadas, Complete o versículo, Torta na cara), cada rodada passa a vir **separada**, no campo novo `jogo.rodadas: [{ pergunta, resposta, referencia }]`: a pergunta sem a resposta, a resposta e o texto bíblico que a confirma. É a base para a futura Adoração compartilhada, em que a resposta fica escondida até o dirigente revelar. Os demais jogos (memória, bingo, mímica, desenho…) continuam em `itens`.
+  - O formato da IA e o prompt pedem as rodadas separadas. Se a IA não separar, o servidor separa os itens (`separarRodada`) pelos sinais "Resposta:"/"R:", " = ", "(Verdadeiro — …)" ou o último travessão.
+  - As programações salvas antes desta versão são separadas no app pela mesma regra (`familiaConteudoDoJogo`). Na tela, na cópia e no Word, cada rodada aparece como "pergunta → Resposta: … (referência)".
+
 ## 6.11.45
 
 - Ajustes → Prompts de IA (só administrador), categoria **🧰 DIVERSOS**: novo cartão **📝 Código de resumo (anotação)** (igual aos de pesquisa, dirigente, leitura, texto e S-34: campo, 📋 Copiar e 💾 Salvar anotação; o código que vale é o da variável `CODIGO_RESUMO` no servidor). O **contador** da categoria estava fixo em 2 e agora mostra os cartões de verdade (8) e se atualiza sozinho quando a lista muda.

@@ -2654,7 +2654,18 @@ const SaidaAdoracaoFamilia = z.object({
           publicacoes: z.array(z.string()),
           perguntas: z.array(z.string()),
           // Jogo da parte, todo PRONTO para jogar (6.11.24): regras, material e o conteúdo (rodadas, perguntas, personagens, abreviações…).
-          jogo: z.object({ tipo: z.string(), nome: z.string(), comoJogar: z.string(), material: z.string().nullable(), itens: z.array(z.string()) }).nullable(),
+          // 6.11.46: nos jogos de pergunta e resposta, cada rodada vem separada (pergunta, resposta e referência), para a resposta poder ficar
+          // escondida até ser revelada; "itens" fica com o conteúdo sem resposta (cartela do bingo, pares da memória, cenas da mímica…).
+          jogo: z
+            .object({
+              tipo: z.string(),
+              nome: z.string(),
+              comoJogar: z.string(),
+              material: z.string().nullable(),
+              rodadas: z.array(z.object({ pergunta: z.string(), resposta: z.string(), referencia: z.string() })),
+              itens: z.array(z.string()),
+            })
+            .nullable(),
         })
       ),
       preparacao: z.array(z.string()),
@@ -2693,6 +2704,34 @@ const JOGOS_FAMILIA = [
   "FunPlayB: tema personalizado (20 perguntas para importar)",
 ];
 const JOGO_FUNPLAYB_PERSONALIZADO = JOGOS_FAMILIA[JOGOS_FAMILIA.length - 1];
+
+// Jogos de pergunta e resposta (as rodadas podem esconder a resposta); memória, bingo, mímica e desenho não entram.
+// A mesma regra e a mesma separação estão no app (familiaConteudoDoJogo), para as programações salvas antes da 6.11.46.
+const JOGOS_COM_RESPOSTA = /quem sou|show do milh|abrevia|verdadeiro|quem disse|charada|adivinha|complete|torta/i;
+// "Os 12 A de C = Os doze apóstolos de Cristo" -> { pergunta: "Os 12 A de C", resposta: "Os doze apóstolos de Cristo", referencia: "" }.
+// null = o texto não traz uma resposta separável.
+export function separarRodada(texto) {
+  const t = String(texto || "").replace(/\s+/g, " ").trim();
+  if (!t) return null;
+  let m;
+  let pergunta = "";
+  let resposta = "";
+  // "… Resposta: X" ou "… (Resposta: X)": o parêntese de fora só sai quando a resposta começou com ele.
+  if ((m = t.match(/^(.*?)(\s*[([]\s*|\s+)(?:Resposta|Resp\.?|R)\s*:\s*(.+)$/i)) && m[1].length >= 2) [pergunta, resposta] = [m[1], /[([]/.test(m[2]) ? m[3].replace(/[)\]]\s*\.?$/, "") : m[3]];
+  else if ((m = t.match(/^(.+?)\s*\(((?:Verdadeiro|Falso|V|F)\b[^()]*)\)\s*\.?$/i))) [pergunta, resposta] = [m[1], m[2]];
+  else if ((m = t.match(/^(.+?)\s+=\s+(.+)$/))) [pergunta, resposta] = [m[1], m[2]];
+  else if ((m = t.match(/^(.+)\s+[—–]\s+(.+)$/))) [pergunta, resposta] = [m[1], m[2]];
+  else return null;
+  pergunta = pergunta.replace(/[\s—–:;,-]+$/, "").trim();
+  resposta = resposta.trim();
+  let referencia = "";
+  const ref1 = resposta.match(/^(.*?)\s*\(([^()]*\d+:\d+[^()]*)\)\s*\.?$/);
+  const ref2 = resposta.match(/^(.+?)\s*[—–-]\s*((?:[1-3]\s?)?\p{Lu}[\p{L}.]*(?:\s\p{L}+)?\s\d+:\d+[\d:,\s–-]*)\.?$/u);
+  if (ref1 && ref1[1]) [resposta, referencia] = [ref1[1].trim(), ref1[2].trim()];
+  else if (ref2) [resposta, referencia] = [ref2[1].trim(), ref2[2].trim()];
+  resposta = resposta.replace(/[\s—–;,-]+$/, "").trim();
+  return pergunta.length >= 2 && resposta ? { pergunta, resposta, referencia } : null;
+}
 const CABECALHO_FUNPLAYB = "tema;enunciado;opcao_a;opcao_b;opcao_c;opcao_d;resposta_correta;dificuldade;referencia";
 const campoCsv = (v) => {
   const t = String(v == null ? "" : v).replace(/\s+/g, " ").trim();
@@ -2947,7 +2986,7 @@ async function responderAdoracaoFamilia(res, body, P) {
     (perfil.jogos.length
       ? `JOGOS ACEITOS PELA FAMÍLIA (use SÓ estes tipos): ${perfil.jogos.join("; ")}\n` +
         `PAPEL E LÁPIS NOS JOGOS: ${perfil.jogoPapel ? "podem ser usados (opcionalmente)" : "NÃO usar papel nem lápis"}\n` +
-        `JOGO OBRIGATÓRIO: em CADA opção, inclua pelo menos UMA parte com jogo, preenchendo o campo "jogo" TODO PRONTO para jogar (regras curtas, material e o conteúdo completo em "itens": as rodadas, perguntas com respostas, personagens com dicas, abreviações com a resposta etc., conforme o tipo). Escolha jogos diferentes entre as opções, ligados ao assunto e adequados às idades. Só dados bem conhecidos, nada difícil demais nem inventado.\n` +
+        `JOGO OBRIGATÓRIO: em CADA opção, inclua pelo menos UMA parte com jogo, preenchendo o campo "jogo" TODO PRONTO para jogar (regras curtas, material e o conteúdo completo: nos jogos de pergunta e resposta, cada rodada em "rodadas" com a pergunta SEM a resposta, a resposta e a referência separadas; nos demais, em "itens"). Escolha jogos diferentes entre as opções, ligados ao assunto e adequados às idades. Só dados bem conhecidos, nada difícil demais nem inventado.\n` +
         (perfil.jogos.includes(JOGO_FUNPLAYB_PERSONALIZADO)
           ? `FUNPLAYB PERSONALIZADO: se uma opção usar o jogo "${JOGO_FUNPLAYB_PERSONALIZADO}", preencha nessa opção (em UMA só das opções) o campo "funplayb" com o tema e EXATAMENTE 20 perguntas de múltipla escolha sobre o assunto (enunciado até 250 caracteres; cada alternativa até 100; "resposta" a, b, c ou d, variando a posição da certa; "dificuldade" facil, medio ou dificil; "referencia" com o livro, capítulo e versículo da Bíblia ou da publicação e um trecho entre aspas, até 500 caracteres; "tema" até 40 caracteres). Nas outras opções, funplayb = null.\n`
           : `FUNPLAYB PERSONALIZADO: não usar (funplayb = null em todas as opções).\n`)
@@ -3020,9 +3059,24 @@ async function responderAdoracaoFamilia(res, body, P) {
       if (!perfil.jogos.length || !j || typeof j !== "object") return null;
       const nomeJogo = linha(j.nome, 80);
       const comoJogar = limparTextoGerado(j.comoJogar, 1200);
-      const itens = (Array.isArray(j.itens) ? j.itens : []).map((t) => limparTextoGerado(t, 500)).filter(Boolean).slice(0, 25);
+      let itens = (Array.isArray(j.itens) ? j.itens : []).map((t) => limparTextoGerado(t, 500)).filter(Boolean).slice(0, 25);
       if (!nomeJogo || !comoJogar) return null;
-      return { tipo: linha(j.tipo, 80), nome: nomeJogo, comoJogar, material: perfil.jogoPapel || !/papel|l[aá]pis|caneta/i.test(String(j.material || "")) ? limparTextoGerado(j.material, 300) : "", itens };
+      // Rodadas (pergunta, resposta e referência separadas). Se a IA não as separou num jogo de pergunta e resposta, o servidor separa os
+      // itens pelos sinais de sempre ("Resposta:", " = ", "(Verdadeiro — …)", travessão); o que não der para separar continua em "itens".
+      let rodadas = (Array.isArray(j.rodadas) ? j.rodadas : [])
+        .map((r) => (r && typeof r === "object" ? { pergunta: limparTextoGerado(r.pergunta, 400), resposta: limparTextoGerado(r.resposta, 300), referencia: linha(r.referencia, 120) } : null))
+        .filter((r) => r && r.pergunta && r.resposta)
+        .slice(0, 25);
+      if (!rodadas.length && JOGOS_COM_RESPOSTA.test(`${j.tipo || ""} ${j.nome || ""}`)) {
+        const sobra = [];
+        for (const t of itens) {
+          const r = separarRodada(t);
+          if (r) rodadas.push(r);
+          else sobra.push(t);
+        }
+        itens = sobra;
+      }
+      return { tipo: linha(j.tipo, 80), nome: nomeJogo, comoJogar, material: perfil.jogoPapel || !/papel|l[aá]pis|caneta/i.test(String(j.material || "")) ? limparTextoGerado(j.material, 300) : "", rodadas, itens };
     };
     // O tema do FunPlayB: cada pergunta confere os limites do módulo de importação (senão sai); o CSV sai pronto para colar.
     const funplaybDe = (f) => {
