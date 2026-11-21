@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.11
+
+- Limpeza depois da migração para o Google Cloud (a Vercel foi desligada): o armazenamento (`api/_blob.mjs` e `api/_armazem.mjs`) usa só o Cloud Storage (e a pasta local nos testes); saíram o `@vercel/blob`, o Global Config e a API da Vercel. Removidos `vercel.json`, `.vercelignore`, a pasta `.vercel` e os scripts de cópia da Vercel (`migrar-blob.mjs`, `migrar-config.mjs`). `ferramentas/subir-fontes.mjs` envia só para o bucket. A pasta `scripts/` dos extratores das publicações foi para `ferramentas/extratores/` (fora do site e do servidor).
+- Textos: a Política de Privacidade (versão 2.3) e a página Sobre passam a citar o Google Cloud (servidores em São Paulo) como hospedagem, no lugar da Vercel; as dicas dos códigos de acesso falam em "servidor". README reescrito para a hospedagem atual.
+
 ## 6.11.10
 
 - Barra de navegação: o botão 🎙️ Gravar dá lugar ao 👨‍👩‍👧 Família (Adoração em Família), bloqueado sem o código de pesquisa como o atalho do Início. Áudio em texto continua no Início e no menu.

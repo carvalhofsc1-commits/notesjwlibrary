@@ -79,7 +79,7 @@
     <div class="topo">
       <img src="icon-header.png?v=3" alt="" width="512" height="512" decoding="async">
       <h1>Política de Privacidade</h1>
-      <p class="atualizacao">NoteStyle · Versão 2.2 · Última atualização: 20 de novembro de 2026</p>
+      <p class="atualizacao">NoteStyle · Versão 2.3 · Última atualização: 20 de novembro de 2026</p>
     </div>
 
     <section class="resumo">
@@ -115,7 +115,7 @@
     <p><strong>Finalidade:</strong> fazer o aplicativo funcionar e lembrar das suas escolhas. <strong>Base legal:</strong> execução do serviço que você pediu (LGPD, art. 7º, V). Esses dados ficam sob o seu controle e podem ser apagados a qualquer momento (item 8).</p>
 
     <h3>2.2 Cadastro e estatísticas de acesso</h3>
-    <p>Para liberar o uso do site, o NoteStyle pede um <strong>cadastro por aparelho</strong>. São enviados ao servidor e guardados num armazenamento privado (Vercel Blob):</p>
+    <p>Para liberar o uso do site, o NoteStyle pede um <strong>cadastro por aparelho</strong>. São enviados ao servidor e guardados num armazenamento privado (Google Cloud Storage, em servidores no Brasil):</p>
     <ul>
       <li><strong>dados do cadastro:</strong> nome, sobrenome, telefone de contato, mês e ano de nascimento (usados só para calcular a idade aproximada), cidade, estado (UF), congregação e como você conheceu o aplicativo;</li>
       <li><strong>identificador do aparelho:</strong> um código gerado no navegador (UUID), salvo localmente e enviado junto aos pedidos, para ligar o cadastro e as estatísticas àquele aparelho;</li>
@@ -207,7 +207,7 @@
 
     <p><strong>Backup e restauração do app:</strong> em Ajustes → Privacidade e dados deste aparelho, o botão “Fazer backup” grava <strong>no seu aparelho</strong> um arquivo (.json) com o que o app guardou nele (pesquisas e respostas salvas, marcações e resumos da leitura da Bíblia, esboços importados, modelos, favoritos e preferências), e “Restaurar um backup” o lê de volta. O arquivo é gerado e lido <strong>no aparelho</strong>: o NoteStyle não o recebe. <strong>Os códigos de acesso e a senha só entram nele se você marcar a caixa correspondente</strong>; nesse caso o arquivo passa a ter dados sensíveis, e você deve guardá-lo com cuidado, pois quem o tiver poderá usar esses códigos. Para onde o arquivo vai depois (nuvem, e-mail, outro aparelho) é escolha sua.</p>
 
-    <p><strong>Lições das correções (piloto):</strong> é um recurso <strong>exclusivo do administrador</strong>, desligado por padrão e não disponível para os demais usuários. Quando o administrador o usa, a IA compara o texto que ela escreveu com o texto corrigido e o servidor guarda, num armazenamento privado da Vercel (Blob), apenas a <strong>lição</strong>: o tipo da mudança, o que mudou, o provável motivo e uma regra curta e geral, escrita sem nomes, números ou frases dos textos. Os textos originais e corrigidos <strong>não são guardados</strong>. Mudanças só de digitação ou de conteúdo pessoal não geram lição. As lições ativas podem ser acrescentadas, como orientação de estilo, aos pedidos de IA feitos <strong>apenas pelo administrador</strong>; as respostas dos demais usuários não as recebem. O administrador pode ver, desativar e apagar cada lição, ou todas, em Ajustes → Prompts da IA. As lições não identificam nem se relacionam a nenhum usuário. Se um dia esse recurso for aberto a outros usuários, esta política será atualizada antes, com aviso no aplicativo e consentimento próprio.</p>
+    <p><strong>Lições das correções (piloto):</strong> é um recurso <strong>exclusivo do administrador</strong>, desligado por padrão e não disponível para os demais usuários. Quando o administrador o usa, a IA compara o texto que ela escreveu com o texto corrigido e o servidor guarda, num armazenamento privado do Google Cloud (Cloud Storage), apenas a <strong>lição</strong>: o tipo da mudança, o que mudou, o provável motivo e uma regra curta e geral, escrita sem nomes, números ou frases dos textos. Os textos originais e corrigidos <strong>não são guardados</strong>. Mudanças só de digitação ou de conteúdo pessoal não geram lição. As lições ativas podem ser acrescentadas, como orientação de estilo, aos pedidos de IA feitos <strong>apenas pelo administrador</strong>; as respostas dos demais usuários não as recebem. O administrador pode ver, desativar e apagar cada lição, ou todas, em Ajustes → Prompts da IA. As lições não identificam nem se relacionam a nenhum usuário. Se um dia esse recurso for aberto a outros usuários, esta política será atualizada antes, com aviso no aplicativo e consentimento próprio.</p>
 
     <p><strong>Áudio em texto:</strong> o áudio pode conter a voz e o conteúdo de conversas de outras pessoas. Use só gravações que você tem direito de usar e <strong>avise as pessoas</strong> antes de gravá-las ou transcrevê-las; o NoteStyle não identifica quem fala. Antes do primeiro uso, o aplicativo pede a sua concordância específica (botão “Concordo”), que fica salva só no aparelho e pode ser retirada em Ajustes → Privacidade e dados deste aparelho. O microfone só é usado quando você toca em “Gravar um áudio agora” (o navegador pede a sua permissão) e a gravação fica só no aparelho até você parar; o app não a guarda, e você pode salvá-la no aparelho se quiser. O áudio é decodificado e cortado no seu aparelho; o arquivo inteiro não é enviado, apenas os trechos, e trechos em silêncio não são enviados. O Google trata o áudio conforme a sua própria política. Os documentos e imagens que você anexa em “Documentos relacionados” são lidos no seu aparelho e só são enviados à IA quando você pede o resumo; o app não os guarda.</p>
 
@@ -235,19 +235,19 @@
     <h2>5. Com quem os dados são compartilhados</h2>
     <p>Só com os prestadores de serviço que realizam o trabalho pedido, na condição de operadores, e apenas durante o uso do recurso:</p>
     <ul>
-      <li><strong>Vercel Inc.</strong> (EUA) — hospedagem do aplicativo e das funções do servidor. <a href="https://vercel.com/legal/privacy-policy" rel="noopener noreferrer">Política de privacidade</a>.</li>
+      <li><strong>Google LLC</strong> (Google Cloud: Cloud Run, Cloud Storage e Firebase Hosting, em São Paulo, Brasil) — hospedagem do aplicativo e das funções do servidor, e armazenamento privado dos dados do servidor. <a href="https://policies.google.com/privacy" rel="noopener noreferrer">Política de privacidade</a>.</li>
       <li><strong>Anthropic PBC</strong> (EUA) — IA (Claude), que gera as sugestões e respostas a partir do texto enviado. <a href="https://www.anthropic.com/legal/privacy" rel="noopener noreferrer">Política de privacidade</a>.</li>
       <li><strong>Google LLC</strong> (EUA) — leitura em voz alta (Google Cloud Text-to-Speech) e transcrição de áudio em texto (Google Cloud Speech-to-Text). <a href="https://policies.google.com/privacy" rel="noopener noreferrer">Política de privacidade</a>.</li>
       <li><strong>wol.jw.org</strong> (Biblioteca on-line) — site consultado pelo nosso servidor. Os pedidos a ele saem do servidor do NoteStyle, não do seu aparelho; o seu endereço IP não é repassado. A exceção é o <strong>áudio da Bíblia</strong> (item 2.4), que o seu aparelho obtém direto dos servidores de mídia da jw.org.</li>
     </ul>
-    <p>Esses prestadores têm suas próprias políticas e podem manter registros pelo prazo que definirem. Como os servidores ficam fora do Brasil, ocorre transferência internacional de dados, que realizamos com base no seu consentimento específico e destacado ao usar o recurso e na necessidade de execução do serviço pedido (LGPD, art. 33).</p>
+    <p>Esses prestadores têm suas próprias políticas e podem manter registros pelo prazo que definirem. Como alguns prestadores (a IA da Anthropic e os serviços de voz do Google) ficam fora do Brasil, ocorre transferência internacional de dados, que realizamos com base no seu consentimento específico e destacado ao usar o recurso e na necessidade de execução do serviço pedido (LGPD, art. 33).</p>
     <p>Também podemos divulgar informações se uma lei ou ordem judicial exigir.</p>
 
     <h2>6. Por quanto tempo guardamos</h2>
     <ul>
       <li><strong>No aparelho:</strong> até você apagar (limpando os dados do aplicativo ou do navegador, ou removendo o aplicativo).</li>
       <li><strong>No servidor do NoteStyle:</strong> o conteúdo dos pedidos de IA/voz é processado na hora e não é gravado como texto. Ficam guardados: o <strong>cadastro e as estatísticas</strong> do item 2.2 (até o administrador revogar o aparelho ou atender a um pedido de exclusão); as configurações do administrador (instruções da IA, limites e escolhas de voz); e, se o administrador usar o piloto de aprendizado com correções, as lições do item 2.3 (regras curtas e gerais, sem os textos), até ele apagá-las.</li>
-      <li><strong>Nos prestadores (Vercel, Anthropic, Google):</strong> pelo prazo previsto em suas respectivas políticas.</li>
+      <li><strong>Nos prestadores (Google, Anthropic):</strong> pelo prazo previsto em suas respectivas políticas.</li>
     </ul>
 
     <h2>7. Segurança</h2>

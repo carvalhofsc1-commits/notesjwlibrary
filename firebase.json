@@ -10,7 +10,6 @@
       ".git/**",
       ".claude/**",
       ".dados-local/**",
-      ".vercel/**",
       ".firebase/**",
       "**/node_modules/**",
       "api/**",
@@ -21,7 +20,6 @@
       "server.mjs",
       "Dockerfile",
       "cloudbuild.yaml",
-      "vercel.json",
       "package.json",
       "package-lock.json"
     ],

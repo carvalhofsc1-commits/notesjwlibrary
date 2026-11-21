@@ -1,9 +1,0 @@
-# Arquivos da hospedagem no Google Cloud (6.10.87): não fazem parte do site na Vercel.
-server.mjs
-Dockerfile
-.dockerignore
-.gcloudignore
-cloudbuild.yaml
-firebase.json
-.firebaserc
-ferramentas

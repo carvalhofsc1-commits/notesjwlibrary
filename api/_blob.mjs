@@ -1,21 +1,18 @@
 // Armazenamento dos arquivos privados do servidor (Bíblia e Perspicaz, transcrições, estatísticas, pedidos, memória da IA, S-34,
-// cadastros, créditos e extrato), com as mesmas funções do @vercel/blob que o app usa: get, put, list e del.
-// Onde fica, conforme a variável HOSPEDAGEM (desde a 6.10.87, para a migração ao Google Cloud):
-//  - (vazia): Vercel Blob privado, como sempre (BLOB_READ_WRITE_TOKEN);
-//  - "gcp": um bucket do Cloud Storage (GCS_BUCKET), com a identidade do Cloud Run (sem chave);
+// cadastros, créditos e extrato), com as funções get, put, list e del.
+// Onde fica, conforme a variável HOSPEDAGEM:
+//  - "gcp" (Cloud Run): um bucket do Cloud Storage (GCS_BUCKET), com a identidade do Cloud Run (sem chave);
 //  - "local": uma pasta no computador (DADOS_DIR, padrão .dados-local), só para testes.
-// O "_" no nome impede a Vercel de publicar este arquivo como rota.
-import * as vercelBlob from "@vercel/blob";
+// Sem HOSPEDAGEM vale "gcp". O "_" no nome mantém este arquivo fora das rotas públicas (/api/<nome>).
 import { mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, join, relative, sep } from "node:path";
 
-const modo = () => String(process.env.HOSPEDAGEM || "").toLowerCase();
+const modo = () => (String(process.env.HOSPEDAGEM || "").toLowerCase() === "local" ? "local" : "gcp");
 
-// Se há armazenamento de arquivos configurado (os módulos usavam só BLOB_READ_WRITE_TOKEN para saber).
+// Se há armazenamento de arquivos configurado.
 export function blobConfigurado() {
-  if (modo() === "gcp") return Boolean(process.env.GCS_BUCKET);
   if (modo() === "local") return true;
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+  return Boolean(process.env.GCS_BUCKET);
 }
 
 // ---------- Google Cloud Storage ----------
@@ -60,7 +57,6 @@ export async function get(caminho, opcoes = {}) {
       throw e;
     }
   }
-  return vercelBlob.get(caminho, opcoes);
 }
 
 // put(caminho, conteúdo, opções) — sempre sobrescreve, sem sufixo aleatório (como os módulos pedem).
@@ -81,7 +77,6 @@ export async function put(caminho, conteudo, opcoes = {}) {
     await writeFile(arquivo, conteudo);
     return { pathname: nome, url: nome };
   }
-  return vercelBlob.put(caminho, conteudo, opcoes);
 }
 
 // list({ prefix, limit }) → { blobs: [{ pathname, url, uploadedAt, size }], hasMore }.
@@ -115,7 +110,6 @@ export async function list(opcoes = {}) {
     await percorrer(raiz);
     return { blobs: blobs.slice(0, limite), hasMore: blobs.length > limite };
   }
-  return vercelBlob.list(opcoes);
 }
 
 // del(caminho ou endereço, ou uma lista deles). Arquivo que não existe é ignorado.
@@ -130,5 +124,4 @@ export async function del(alvos, opcoes = {}) {
     await Promise.all(lista.map((a) => rm(caminhoLocal(nomeDe(a)), { force: true })));
     return;
   }
-  return vercelBlob.del(alvos, opcoes);
 }

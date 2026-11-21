@@ -36,8 +36,8 @@ const TIPOS = {
 const COMPACTAVEIS = new Set([".html", ".js", ".mjs", ".css", ".json", ".webmanifest", ".md", ".txt", ".xml", ".svg"]);
 
 // O que nunca é servido como arquivo do site (código do servidor, ferramentas, documentos internos, dependências).
-const PASTAS_PROIBIDAS = new Set(["api", "node_modules", "lojas", "avaliacao", "ferramentas", ".git", ".claude", ".vercel", ".dados-local"]);
-const ARQUIVOS_PROIBIDOS = new Set(["server.mjs", "dockerfile", "cloudbuild.yaml", "package.json", "package-lock.json", "firebase.json", ".firebaserc", "vercel.json", ".gcloudignore", ".dockerignore", ".vercelignore", ".gitignore"]);
+const PASTAS_PROIBIDAS = new Set(["api", "node_modules", "lojas", "avaliacao", "ferramentas", ".git", ".claude", ".dados-local"]);
+const ARQUIVOS_PROIBIDOS = new Set(["server.mjs", "dockerfile", "cloudbuild.yaml", "package.json", "package-lock.json", "firebase.json", ".firebaserc", ".gcloudignore", ".dockerignore", ".gitignore"]);
 
 function proibido(relativo) {
   const partes = relativo.split("/").filter(Boolean);
@@ -244,4 +244,4 @@ const servidor = createServer(async (req, res) => {
 servidor.requestTimeout = 0;
 servidor.headersTimeout = 65_000;
 servidor.keepAliveTimeout = 61_000;
-servidor.listen(PORTA, () => console.log(`NoteStyle ouvindo na porta ${PORTA} (HOSPEDAGEM=${process.env.HOSPEDAGEM || "vercel"})`));
+servidor.listen(PORTA, () => console.log(`NoteStyle ouvindo na porta ${PORTA} (HOSPEDAGEM=${process.env.HOSPEDAGEM || "gcp"})`));
