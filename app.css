@@ -17125,6 +17125,10 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
   .campo-form .fam-meia > label { min-height: 2.5em; display: flex; flex-wrap: wrap; align-items: flex-end; column-gap: 4px; line-height: 1.25; }
 }
 .campo-form #campoSugerirBtn { margin-top: 14px; }
+/* 6.11.59: os botões da pilha (Sugerir, Preparar esboço e Refazer com outro assunto) com o mesmo respiro entre eles (o Refazer colava no Preparar). */
+.campo-form #campoEsbocoBtn { margin-top: 12px; }
+.campo-form #campoRefazerBtn { margin-top: 12px; }
+.campo-form #campoRefazerBtn[hidden] { display: none; }
 .campo-form .fam-checks { margin-top: 2px; }
 .campo-form #campoInfo:empty { display: none; }
 .campo-assuntos { display: grid; gap: 6px; margin-top: 8px; min-width: 0; }

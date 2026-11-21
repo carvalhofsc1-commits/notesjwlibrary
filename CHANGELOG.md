@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.59
+
+- Considerações para o serviço de campo:
+  - o botão **✨ Preparar esboço** passa a mostrar, embaixo do título, o **modelo e o esforço da IA** que vai escrever (o mesmo dos outros esboços, ex.: "Modelo: … · esforço: …");
+  - depois da primeira sugestão, o botão **💡 Sugerir 3 assuntos** passa a se chamar **💡 Sugerir outros 3 assuntos**;
+  - o botão **Refazer com outro assunto** estava colado no **Preparar esboço**: os três botões da pilha ficam agora com 12 px de espaço entre eles.
+
 ## 6.11.58
 
 - Considerações para o serviço de campo: removida a opção **"Logo depois de uma reunião"**. Saiu da tela, do pedido enviado ao servidor, da linha de informações do esboço e dos textos dos prompts; a duração (5, 6 ou 7 minutos) é a única que define o tamanho do esboço.
