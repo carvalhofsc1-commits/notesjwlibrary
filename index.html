@@ -2020,7 +2020,7 @@
           <div id="promptsList"></div>
 
           <details class="prompt-cat" id="catDiversos" style="--cat-cor:#64748b">
-            <summary><h2>🧰 DIVERSOS</h2><span class="prompt-cat-qtd" aria-label="2 itens">2</span></summary>
+            <summary><h2>🧰 DIVERSOS</h2><span class="prompt-cat-qtd" id="catDiversosQtd" aria-label="8 itens">8</span></summary>
             <div class="prompt-cat-corpo">
           <details class="prompt-item prompt-tint-codigo">
             <summary><h3>🔑 Código de pesquisa (anotação)</h3></summary>
@@ -2084,6 +2084,19 @@
             <div class="button-row">
               <button id="adminCodeS34SaveBtn" type="button">💾 Salvar anotação</button>
               <span id="adminCodeS34Status" class="ok" role="status" aria-live="polite"></span>
+            </div>
+          </details>
+
+          <details class="prompt-item prompt-tint-codigo">
+            <summary><h3>📝 Código de resumo (anotação)</h3></summary>
+            <p class="hint">Anotação só sua, para não esquecer o código de resumo (resumos da leitura da Bíblia e outros resumos feitos pela IA). O código que vale de verdade é o da variável <strong>CODIGO_RESUMO</strong> no servidor.</p>
+            <div class="admin-code-row">
+              <input id="adminCodeResumoNote" type="text" maxlength="500" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Anote aqui o código de resumo">
+              <button id="adminCodeResumoCopyBtn" class="secondary" type="button">📋 Copiar</button>
+            </div>
+            <div class="button-row">
+              <button id="adminCodeResumoSaveBtn" type="button">💾 Salvar anotação</button>
+              <span id="adminCodeResumoStatus" class="ok" role="status" aria-live="polite"></span>
             </div>
           </details>
 

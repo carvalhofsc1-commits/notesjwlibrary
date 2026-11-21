@@ -7921,7 +7921,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.44'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.45'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -11694,6 +11694,9 @@ function saveTemplatesToStorage() {
       adminCodeS34Note.value = '';
       delete adminCodeS34Note.dataset.loaded;
       adminCodeS34Status.textContent = '';
+      adminCodeResumoNote.value = '';
+      delete adminCodeResumoNote.dataset.loaded;
+      adminCodeResumoStatus.textContent = '';
       promptsEditor.querySelectorAll('details').forEach(card => { card.open = false; });
       promptsAbrindo = true;
       promptsSection.setAttribute('aria-busy', 'true');
@@ -11947,6 +11950,14 @@ function saveTemplatesToStorage() {
         adminCodeS34Note.value = typeof state.anotacaoS34 === 'string' ? state.anotacaoS34 : '';
         adminCodeS34Note.dataset.loaded = '1';
       }
+      if (!adminCodeResumoNote.dataset.loaded) {
+        adminCodeResumoNote.value = typeof state.anotacaoResumo === 'string' ? state.anotacaoResumo : '';
+        adminCodeResumoNote.dataset.loaded = '1';
+      }
+      // O contador de DIVERSOS acompanha os cartões que ele tem (antes ficava um número fixo e desatualizado).
+      const diversosQtd = document.getElementById('catDiversosQtd');
+      const diversosN = document.querySelectorAll('#catDiversos > .prompt-cat-corpo > .prompt-item').length;
+      if (diversosQtd) { diversosQtd.textContent = String(diversosN); diversosQtd.setAttribute('aria-label', diversosN + (diversosN === 1 ? ' item' : ' itens')); }
       renderLimits(state);
 
       promptsAgrupadas(state).forEach(({ cat, partes }) => {
@@ -13751,6 +13762,8 @@ function saveTemplatesToStorage() {
     const adminCodeTextoStatus = document.getElementById('adminCodeTextoStatus');
     const adminCodeS34Note = document.getElementById('adminCodeS34Note');
     const adminCodeS34Status = document.getElementById('adminCodeS34Status');
+    const adminCodeResumoNote = document.getElementById('adminCodeResumoNote');
+    const adminCodeResumoStatus = document.getElementById('adminCodeResumoStatus');
 
     function setAdminCodeStatus(message, isWarning) {
       adminCodeStatus.className = isWarning ? 'warn' : 'ok';
@@ -13889,6 +13902,34 @@ function saveTemplatesToStorage() {
       adminCodeS34Note.value = result.data.anotacao || '';
       if (promptsState) promptsState.anotacaoS34 = adminCodeS34Note.value;
       setAdminCodeS34Status('✅ Anotação salva.', false);
+    });
+
+    // ---------- Anotação do código de resumo (igual às outras; 6.11.45) ----------
+    function setAdminCodeResumoStatus(message, isWarning) {
+      adminCodeResumoStatus.className = isWarning ? 'warn' : 'ok';
+      adminCodeResumoStatus.textContent = message;
+    }
+
+    document.getElementById('adminCodeResumoCopyBtn').addEventListener('click', async () => {
+      const text = adminCodeResumoNote.value.trim();
+      if (!text) return setAdminCodeResumoStatus('O campo está vazio.', true);
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (e) {
+        adminCodeResumoNote.focus();
+        adminCodeResumoNote.select();
+        try { document.execCommand('copy'); } catch (e2) { return setAdminCodeResumoStatus('Não foi possível copiar. Selecione e copie manualmente.', true); }
+      }
+      setAdminCodeResumoStatus('✅ Código copiado.', false);
+    });
+
+    document.getElementById('adminCodeResumoSaveBtn').addEventListener('click', async () => {
+      setAdminCodeResumoStatus('Salvando...', false);
+      const result = await postConfig({ acao: 'anotacao-resumo-salvar', codigo: promptsCode, anotacao: adminCodeResumoNote.value });
+      if (!result.ok) return setAdminCodeResumoStatus(configErrorMessage(result, 'Não foi possível salvar agora.'), true);
+      adminCodeResumoNote.value = result.data.anotacao || '';
+      if (promptsState) promptsState.anotacaoResumo = adminCodeResumoNote.value;
+      setAdminCodeResumoStatus('✅ Anotação salva.', false);
     });
 
     async function copyAllPrompts() {

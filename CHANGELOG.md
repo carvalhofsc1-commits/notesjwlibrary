@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.45
+
+- Ajustes → Prompts de IA (só administrador), categoria **🧰 DIVERSOS**: novo cartão **📝 Código de resumo (anotação)** (igual aos de pesquisa, dirigente, leitura, texto e S-34: campo, 📋 Copiar e 💾 Salvar anotação; o código que vale é o da variável `CODIGO_RESUMO` no servidor). O **contador** da categoria estava fixo em 2 e agora mostra os cartões de verdade (8) e se atualiza sozinho quando a lista muda.
+
 ## 6.11.44
 
 - Ajustes (só administrador): nova seção **📚 Arquivos do servidor e edições**, junto das Lições das correções. Uma tabela com todos os arquivos de consulta guardados no servidor (`fontes/`): nome da publicação, **edição** (anotação sua, guardada no servidor; os arquivos não trazem a edição escrita), **o que o app lê no próprio conteúdo** (no Guia de Pesquisa, a Sentinela e a apostila mais novas citadas, ex.: w26.12; na Introdução da Bíblia de Estudo, os anos dos direitos autorais; nos demais, o ano mais recente citado no texto, aproximado), tamanho e **data de envio ao servidor**. Mostra também arquivos que o código espera e ainda não foram enviados. Ações novas do servidor: `fontes-inventario` e `fontes-anotar`.

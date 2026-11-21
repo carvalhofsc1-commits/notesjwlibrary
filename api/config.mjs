@@ -39,6 +39,7 @@ const CHAVE_ANOTACAO_DIRIGENTE = "anotacao_dirigente"; // a mesma ideia, para o 
 const CHAVE_ANOTACAO_LEITURA = "anotacao_leitura"; // e para o código de leitura (variável CODIGO_LEITURA)
 const CHAVE_ANOTACAO_TEXTO = "anotacao_texto"; // e para o código de texto (variável CODIGO_TEXTO)
 const CHAVE_ANOTACAO_S34 = "anotacao_s34"; // e para o código do S-34 (variável CODIGO_S34)
+const CHAVE_ANOTACAO_RESUMO = "anotacao_resumo"; // e para o código de resumo (variável CODIGO_RESUMO)
 const MAX_CHARS_ANOTACAO = 500;
 // Texto do convite para o app (página Sobre): o administrador o escreve e ele vale para todos; vazio = vale o texto original do app.
 const CHAVE_CONVITE = "convite_texto";
@@ -129,6 +130,7 @@ async function estadoDosPrompts() {
     anotacaoLeitura: await lerAnotacao(CHAVE_ANOTACAO_LEITURA),
     anotacaoTexto: await lerAnotacao(CHAVE_ANOTACAO_TEXTO),
     anotacaoS34: await lerAnotacao(CHAVE_ANOTACAO_S34),
+    anotacaoResumo: await lerAnotacao(CHAVE_ANOTACAO_RESUMO),
   };
 }
 
@@ -667,6 +669,13 @@ export default async function handler(req, res) {
       if (!exigirEscrita(res)) return;
       const texto = typeof corpo.anotacao === "string" ? corpo.anotacao.trim().slice(0, MAX_CHARS_ANOTACAO) : "";
       await gravarItem(CHAVE_ANOTACAO_S34, texto);
+      return res.status(200).json({ ok: true, anotacao: texto });
+    }
+
+    if (acao === "anotacao-resumo-salvar") {
+      if (!exigirEscrita(res)) return;
+      const texto = typeof corpo.anotacao === "string" ? corpo.anotacao.trim().slice(0, MAX_CHARS_ANOTACAO) : "";
+      await gravarItem(CHAVE_ANOTACAO_RESUMO, texto);
       return res.status(200).json({ ok: true, anotacao: texto });
     }
 
