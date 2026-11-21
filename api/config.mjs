@@ -6,7 +6,7 @@ import { CATEGORIAS, LIMITES, PARTES, aplicarLimites, categoriaDaParte, limitesP
 import { esquecerCache, gravarAlteracoes, gravarLimites, lerAlteracoes, lerAnterior, lerLimites } from "./_promptsArmazenados.mjs";
 import { configPublicaVoz, gravarConfigVoz, lerConfigVoz, opcoesVoz } from "./_vozConfig.mjs";
 import { gravarConfigIa, lerConfigIa, lerCustoIa, opcoesIa, PROVEDORES_IA } from "./_iaConfig.mjs";
-import { testarIa } from "./_clienteIa.mjs";
+import { modelosDisponiveis, testarIa } from "./_clienteIa.mjs";
 import { descreverContas, gravarContaEscolhida } from "./_googleToken.mjs";
 import { acrescentarLicao, alterarLicao, analisarCorrecao, apagarLicao, apagarTudo, ligarMemoria, lerMemoria, memoriaConfigurada } from "./_memoria.mjs";
 import { estatisticasConfiguradas, registrarPing, resumoEstatisticas } from "./_estatisticas.mjs";
@@ -485,6 +485,12 @@ export default async function handler(req, res) {
       const provedor = PROVEDORES_IA.some((p) => p.id === corpo.provedor) ? corpo.provedor : cfg.provedor;
       const modelo = typeof corpo.modelo === "string" && corpo.modelo ? corpo.modelo : cfg.modelo;
       return res.status(200).json(await testarIa(provedor, modelo, typeof corpo.esforco === "string" ? corpo.esforco : cfg.esforco));
+    }
+
+    // Quais modelos a conta ativa consegue usar com o provedor escolhido na tela (a tela só lista esses).
+    if (acao === "ia-disponiveis") {
+      const provedor = PROVEDORES_IA.some((p) => p.id === corpo.provedor) ? corpo.provedor : (await lerConfigIa()).provedor;
+      return res.status(200).json(await modelosDisponiveis(provedor, opcoesIa().modelos, corpo.forcar === true));
     }
 
     // Gasto do mês com a IA de texto, pela Cost API da Anthropic (precisa de ANTHROPIC_ADMIN_KEY).

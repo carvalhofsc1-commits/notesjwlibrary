@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.14
+
+- Modelos e agentes de IA: as listas de modelos mostram só o que a conta ativa consegue usar. O servidor (`ia-disponiveis`) manda um pedido mínimo a cada modelo, pelo provedor que o atenderia (Gemini pela conta do Google; Claude pela API da Anthropic ou pelo Google Cloud/Vertex, conforme o provedor escolhido na tela) e a tela esconde os que a conta não tem (404, 403 ou aviso de modelo indisponível); falha de rede ou limite de uso não esconde nada. O resultado fica guardado 30 minutos; confere de novo ao abrir a seção, ao trocar o provedor e depois de salvar (conta do Google ou provedor mudados). Um modelo já salvo que a conta não oferece continua na lista, marcado "(indisponível nesta conta)".
+- Adoração em Família: moldura fina azul em volta dos campos de cada membro da família.
+
 ## 6.11.13
 
 - Modelos e agentes de IA: nova linha "Adoração em Família" (seção ✍️ Texto), com modelo e esforço só dela. O modelo pode ser de qualquer família (Claude ou Gemini); o provedor é o do modelo escolhido (o Gemini pela conta do Google; o Claude pelo provedor do uso geral, ou pela API da Anthropic se o geral for Gemini). "O mesmo do uso geral" e "Esforço do uso geral" (padrão) mantêm o comportamento anterior. A nota sob o botão "Preparar 3 opções" mostra esse modelo.

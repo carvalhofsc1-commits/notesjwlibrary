@@ -16718,6 +16718,11 @@ textarea.fam-campo {
   align-items: center;
   min-width: 0;
   max-width: 100%;
+  /* Moldura fina e forte em volta dos campos de cada membro (6.11.14). */
+  box-sizing: border-box;
+  padding: 10px;
+  border: 1.5px solid #3b82f6;
+  border-radius: 12px;
 }
 .fam-membro .fam-apelido { grid-area: apelido; min-width: 0; }
 .fam-membro .fam-papel { grid-area: papel; min-width: 0; }

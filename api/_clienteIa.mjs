@@ -186,6 +186,44 @@ export const erroSemIa = () =>
     ? "O recurso de IA ainda não está configurado no servidor."
     : "A IA pelo Google Cloud ainda não está configurada no servidor (conta de serviço do Google).";
 
+// Quais modelos a conta ativa realmente consegue usar (6.11.14). Cada modelo recebe um pedido mínimo, pelo provedor que o atenderia:
+// o Gemini pela conta do Google; o Claude pela API da Anthropic ou, com o provedor "vertex", pelo Google Cloud. Só conta como indisponível
+// quando o provedor diz que o modelo não existe ou que a conta não tem acesso (404, 403 ou 400 com essa mensagem); falha de rede, limite
+// de uso ou erro do servidor não tiram o modelo da lista. O resultado fica guardado por 30 minutos (por provedor e conta do Google).
+const guardadosDisponiveis = new Map();
+const MOTIVO_INDISPONIVEL = /not.?found|not.?available|unavailable|not enabled|no access|does not have access|permission|unsupported model|invalid model|publisher model/i;
+export async function modelosDisponiveis(provedorTela, modelos, forcar = false) {
+  const claudePor = provedorTela === "vertex" ? "vertex" : "anthropic";
+  const configurado = (p) => (p === "anthropic" ? Boolean(process.env.ANTHROPIC_API_KEY) : Boolean(contaVertex()));
+  const chave = `${claudePor}|${contaVertex() || "-"}`;
+  const guardado = guardadosDisponiveis.get(chave);
+  if (!forcar && guardado && Date.now() - guardado.em < 30 * 60 * 1000) return guardado.valor;
+  const verificar = async (m) => {
+    const prov = m.familia === "gemini" ? "gemini" : claudePor;
+    if (prov !== "gemini" && !configurado(prov)) return { id: m.id, ok: false, motivo: "provedor não configurado" };
+    if (prov === "gemini" && !contaVertex()) return { id: m.id, ok: false, motivo: "conta do Google não configurada" };
+    try {
+      const client = criarClienteIa({ maxRetries: 0, timeout: 25_000 }, prov);
+      await client.messages.create({ model: m.id, max_tokens: 16, messages: [{ role: "user", content: "Responda apenas: ok" }] });
+      return { id: m.id, ok: true };
+    } catch (e) {
+      const status = e && e.status;
+      const texto = String((e && e.message) || "");
+      const nega = status === 404 || status === 403 || (status === 400 && MOTIVO_INDISPONIVEL.test(texto));
+      return { id: m.id, ok: !nega, motivo: nega ? texto.slice(0, 160) : undefined };
+    }
+  };
+  const resultados = await Promise.all(modelos.map(verificar));
+  const valor = {
+    provedor: provedorTela,
+    disponiveis: resultados.filter((r) => r.ok).map((r) => r.id),
+    indisponiveis: resultados.filter((r) => !r.ok).map((r) => ({ id: r.id, motivo: r.motivo || "" })),
+    verificadoEm: new Date().toISOString(),
+  };
+  guardadosDisponiveis.set(chave, { valor, em: Date.now() });
+  return valor;
+}
+
 // Teste do administrador: um pedido simples e um com resposta estruturada (como o app usa), no provedor e modelo dados.
 export async function testarIa(provedor, modelo, esforco) {
   const semEsforco = /haiku-4|sonnet-4-5|-3-/.test(modelo);

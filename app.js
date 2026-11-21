@@ -7921,7 +7921,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.13'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.14'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -13913,8 +13913,8 @@ function saveTemplatesToStorage() {
       IA_PESQUISA_CAMPOS.forEach(campo => {
         const sel = iaPesquisaSelect(campo);
         const valor = sel.value;
-        iaPreencher(sel, campo === 'pesquisaRespostaEsforco' ? esforcos : curto(iaOpcoes.modelos), '');
-        if (valor) sel.value = valor;
+        iaPreencher(sel, campo === 'pesquisaRespostaEsforco' ? esforcos : curto(iaModelosOk()), '');
+        if (valor) iaDefinir(sel, valor);
       });
     }
     function iaPesquisaMostrar(config) {
@@ -13936,7 +13936,39 @@ function saveTemplatesToStorage() {
 
     // Os modelos da família do provedor escolhido: Claude (Anthropic direta ou Vertex) ou Gemini (Google Cloud).
     const iaFamilia = () => (iaProvedor.value === 'gemini' ? 'gemini' : 'claude');
-    const iaModelosDaFamilia = () => (iaOpcoes ? iaOpcoes.modelos : []).filter(x => x.familia === iaFamilia());
+    // Só os modelos que a conta ativa consegue usar (6.11.14): o servidor testa cada um (ia-disponiveis); até a resposta chegar, ou se o
+    // provedor não estiver configurado, a lista fica completa.
+    let iaDisponiveis = null; // Set de ids ou null
+    const iaModelosOk = () => (iaOpcoes ? iaOpcoes.modelos : []).filter(x => !iaDisponiveis || iaDisponiveis.has(x.id));
+    const iaModelosDaFamilia = () => iaModelosOk().filter(x => x.familia === iaFamilia());
+    // Define o valor de um seletor de modelo; um modelo salvo que a conta não oferece fica na lista, marcado, para não ser trocado sem aviso.
+    function iaDefinir(select, valor) {
+      if (valor && ![...select.options].some(o => o.value === valor)) {
+        const op = document.createElement('option');
+        op.value = valor;
+        const m = iaOpcoes && iaOpcoes.modelos.find(x => x.id === valor);
+        op.textContent = (m ? String(m.nome).split(':')[0] : valor) + ' (indisponível nesta conta)';
+        select.appendChild(op);
+      }
+      select.value = valor || '';
+    }
+    const iaSelectsDeModelo = () => [iaModelo, iaEsbocoModelo, iaFamiliaModelo, iaAudioModelo, iaAudioGeminiModelo, ...IA_PESQUISA_CAMPOS.filter(c => c !== 'pesquisaRespostaEsforco').map(iaPesquisaSelect)];
+    let iaDisponiveisPedido = 0;
+    async function iaCarregarDisponiveis(forcar) {
+      if (!iaOpcoes) return;
+      const meu = ++iaDisponiveisPedido;
+      const provedor = iaProvedor.value;
+      iaDisponiveis = null; // enquanto confere: lista completa
+      const r = await postConfig({ acao: 'ia-disponiveis', codigo: codigoAdminAtual(), provedor, forcar: Boolean(forcar) });
+      if (meu !== iaDisponiveisPedido || !r.ok || !r.data || !Array.isArray(r.data.disponiveis)) return;
+      // Nada disponível (provedor sem configuração): não esconde tudo; mostra a lista completa e avisa.
+      if (!r.data.disponiveis.length) { iaMensagem('Nenhum modelo respondeu com este provedor/conta. Confira a configuração no servidor.', true); return; }
+      iaDisponiveis = new Set(r.data.disponiveis);
+      const valores = iaSelectsDeModelo().map(s => s.value);
+      iaPreencherSelects();
+      iaSelectsDeModelo().forEach((s, i) => iaDefinir(s, valores[i]));
+      iaMostrarPreco();
+    }
     function iaMostrarPreco() {
       if (!iaModeloPreco || !iaEsbocoPreco) return; // a tela enxuta não mostra os preços
       const modelos = iaModelosDaFamilia();
@@ -13987,14 +14019,14 @@ function saveTemplatesToStorage() {
       iaPreencher(iaEsbocoEsforco, esforcos, 'Esforço do uso geral');
       const familiaModelo = iaFamiliaModelo.value;
       const familiaEsforco = iaFamiliaEsforco.value;
-      iaPreencher(iaFamiliaModelo, curto(iaOpcoes.modelos), 'O mesmo do uso geral');
+      iaPreencher(iaFamiliaModelo, curto(iaModelosOk()), 'O mesmo do uso geral');
       iaPreencher(iaFamiliaEsforco, esforcos, 'Esforço do uso geral');
       iaFamiliaModelo.value = familiaModelo || '';
       iaFamiliaEsforco.value = familiaEsforco || '';
       const motor = iaAudioMotor.value;
       const geminiAudio = iaAudioGeminiModelo.value;
       iaPreencher(iaAudioMotor, curto(iaOpcoes.motoresAudio), '');
-      iaPreencher(iaAudioGeminiModelo, curto((iaOpcoes.modelos || []).filter(x => x.familia === 'gemini')), '');
+      iaPreencher(iaAudioGeminiModelo, curto(iaModelosOk().filter(x => x.familia === 'gemini')), '');
       iaPreencher(iaAudioModelo, curto(iaModelosDaFamilia()), 'O mesmo do uso geral');
       if (motor) iaAudioMotor.value = motor;
       if (geminiAudio) iaAudioGeminiModelo.value = geminiAudio;
@@ -14004,6 +14036,7 @@ function saveTemplatesToStorage() {
     }
     // Trocar o provedor troca a lista de modelos: volta ao salvo, se for da mesma família; senão, ao de equilíbrio (o 2º da lista).
     iaProvedor.addEventListener('change', () => {
+      iaDisponiveis = null; // a lista de outro provedor não vale: completa até o servidor conferir de novo
       iaPreencherSelects();
       const lista = iaModelosDaFamilia();
       const salvoServe = iaSalvo && lista.some(x => x.id === iaSalvo.modelo);
@@ -14012,6 +14045,7 @@ function saveTemplatesToStorage() {
       iaAudioModelo.value = iaSalvo && lista.some(x => x.id === iaSalvo.audioModelo) ? iaSalvo.audioModelo : '';
       document.getElementById('iaTesteResultado').textContent = '';
       iaMostrarPreco();
+      iaCarregarDisponiveis(false);
     });
 
     async function iaCarregar() {
@@ -14037,6 +14071,7 @@ function saveTemplatesToStorage() {
       iaSalvo = { provedor: r.data.config.provedor, modelo: r.data.config.modelo, esforco: r.data.config.esforco, esbocoModelo: r.data.config.esbocoModelo || '', esbocoEsforco: r.data.config.esbocoEsforco || '', familiaModelo: r.data.config.familiaModelo || '', familiaEsforco: r.data.config.familiaEsforco || '', audioMotor: r.data.config.audioMotor || 'chirp', audioGeminiModelo: r.data.config.audioGeminiModelo || '', audioModelo: r.data.config.audioModelo || '', pesquisa: iaPesquisaSalvoDe(r.data.config) };
       iaMostrarPreco();
       iaMensagem(r.data.armazenamento && !r.data.armazenamento.escrita ? 'O armazenamento do servidor ainda não permite salvar.' : '', true);
+      iaCarregarDisponiveis(false); // em seguida: tira da lista o que a conta ativa não oferece
     }
 
     // Modelo e esforço como estão salvos no servidor (para saber se a escolha na tela mudou).
@@ -14074,6 +14109,8 @@ function saveTemplatesToStorage() {
 
     iaModelo.addEventListener('change', iaMostrarPreco);
     iaEsbocoModelo.addEventListener('change', iaMostrarPreco);
+    // Salvou (a conta do Google ou o provedor pode ter mudado): confere de novo, sem usar a lista guardada.
+    document.addEventListener('modelos-ia-mudou', () => { if (iaOpcoes && modelosIaSection.open) iaCarregarDisponiveis(true); });
     // O modelo Gemini da transcrição só aparece quando o motor for o Gemini.
     const iaAudioMostrar = () => { iaAudioGeminiModelo.hidden = iaAudioMotor.value !== 'gemini'; };
     iaAudioMotor.addEventListener('change', iaAudioMostrar);
