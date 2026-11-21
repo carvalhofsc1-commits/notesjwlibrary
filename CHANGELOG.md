@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.30
+
+- Adoração em Família, card "Informar convidados": novo seletor **"Como é a família convidada"**, com as mesmas opções do cadastro da família (casal com filhos, casal sem filhos, mãe ou pai sozinho, quem mora sozinho, família com avós ou outros), junto com o campo de texto "Informação da família convidada". Os dois vão para a IA ("tipo da família convidada" e "informação sobre a família convidada"), aparecem no resumo do card e ficam salvos só no aparelho.
+
 ## 6.11.29
 
 - Adoração em Família, instrução para a IA: ela **pode (opcionalmente) levar em conta a situação espiritual e os privilégios** dos membros e dos convidados ao preparar as sugestões, especialmente havendo crianças (quem é batizado ou tem privilégios pode conduzir ou ajudar os menores; quem está começando é incentivado sem pressão; com Removido e Descrente, muito tato, sem expor e sem escrever a situação de ninguém no texto). Está no prompt editável "Adoração em Família" (tela de prompts) e no pedido enviado.

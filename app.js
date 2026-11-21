@@ -7921,7 +7921,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.29'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.30'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -9633,6 +9633,7 @@
             document.querySelectorAll('#familiaCircunstancias input[type="checkbox"], #familiaAtividades input[type="checkbox"], #familiaJogos input[type="checkbox"], #familiaJogoPapel').forEach(el => { el.checked = el.defaultChecked; });
             familiaMembrosEl.innerHTML = '';
             familiaConvidadosEl.innerHTML = '';
+            document.getElementById('familiaConvidadosFormacao').value = '';
             document.getElementById('familiaConvidadosFamilia').value = '';
             document.getElementById('familiaConvidadosNotas').value = '';
             familiaPerfilCarregar();
@@ -25761,6 +25762,7 @@ function saveTemplatesToStorage() {
         anosCasados: Number.isInteger(anos) && anos >= 0 && anos <= 80 ? anos : null,
         membros,
         convidados: {
+          formacao: document.getElementById('familiaConvidadosFormacao').value || '',
           familia: (document.getElementById('familiaConvidadosFamilia').value || '').trim().slice(0, 200),
           anotacoes: (document.getElementById('familiaConvidadosNotas').value || '').trim().slice(0, 800),
           membros: convidadosMembros
@@ -25795,7 +25797,7 @@ function saveTemplatesToStorage() {
       if (convEl) {
         const c = perfil.convidados;
         const n = c.membros.length;
-        convEl.textContent = [c.familia, n ? n + (n === 1 ? ' convidado' : ' convidados') : ''].filter(Boolean).join(' · ');
+        convEl.textContent = [c.formacao, c.familia, n ? n + (n === 1 ? ' convidado' : ' convidados') : ''].filter(Boolean).join(' · ');
       }
     }
 
@@ -25833,6 +25835,7 @@ function saveTemplatesToStorage() {
       membros.forEach(familiaMembroAdd);
       // Convidados: os salvos e, depois deles, uma linha vazia para o próximo.
       const conv = salvo.convidados && typeof salvo.convidados === 'object' ? salvo.convidados : {};
+      document.getElementById('familiaConvidadosFormacao').value = typeof conv.formacao === 'string' ? conv.formacao : '';
       document.getElementById('familiaConvidadosFamilia').value = typeof conv.familia === 'string' ? conv.familia : '';
       document.getElementById('familiaConvidadosNotas').value = typeof conv.anotacoes === 'string' ? conv.anotacoes : '';
       familiaConvidadosEl.innerHTML = '';
@@ -25864,6 +25867,7 @@ function saveTemplatesToStorage() {
         })),
         // Convidados (6.11.29): como os membros (a idade é calculada aqui; o ano de nascimento nunca é enviado).
         convidados: {
+          formacao: perfil.convidados.formacao,
           familia: perfil.convidados.familia,
           anotacoes: perfil.convidados.anotacoes,
           membros: perfil.convidados.membros.map(m => ({
@@ -26727,7 +26731,7 @@ function saveTemplatesToStorage() {
       familiaLimparBtn.hidden = true;
       familiaStatus('');
     });
-    [familiaFormacaoEl, familiaAnosCasadosEl, familiaDuracaoEl, familiaQuantidadeEl].forEach(el => el.addEventListener('change', familiaPerfilSalvar));
+    [familiaFormacaoEl, familiaAnosCasadosEl, familiaDuracaoEl, familiaQuantidadeEl, document.getElementById('familiaConvidadosFormacao')].forEach(el => el.addEventListener('change', familiaPerfilSalvar));
     familiaQuantidadeEl.addEventListener('change', familiaBotaoRotuloAtualizar);
     [familiaOutrasCircEl, familiaAssuntoEl].forEach(el => el.addEventListener('input', () => { clearTimeout(el._t); el._t = setTimeout(familiaPerfilSalvar, 400); }));
     document.getElementById('familiaCircunstancias').addEventListener('change', familiaPerfilSalvar);

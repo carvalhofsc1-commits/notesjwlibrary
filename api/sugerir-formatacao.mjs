@@ -2699,6 +2699,7 @@ function perfilDaFamilia(body) {
   // Convidados (6.11.29): como os membros; a IA os leva em conta, mas não lhes designa tarefas.
   const cv = body.convidados && typeof body.convidados === "object" ? body.convidados : {};
   const convidados = {
+    formacao: textoLivre(cv.formacao, 80),
     familia: textoLivre(cv.familia, 200),
     anotacoes: textoLivre(cv.anotacoes, 800),
     membros: (Array.isArray(cv.membros) ? cv.membros : [])
@@ -2858,7 +2859,7 @@ async function responderAdoracaoFamilia(res, body, P) {
   const hoje = new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const membros = perfil.membros.map((m) => descricaoDaPessoa(m, "membro da família")).join("\n");
   const cv = perfil.convidados;
-  const temConvidados = cv.membros.length > 0 || Boolean(cv.familia) || Boolean(cv.anotacoes);
+  const temConvidados = cv.membros.length > 0 || Boolean(cv.formacao) || Boolean(cv.familia) || Boolean(cv.anotacoes);
   const circunstancias = [...perfil.circunstancias, perfil.outrasCircunstancias].filter(Boolean);
   const qtd = perfil.quantidade;
   const todas = qtd === 1 ? "a opção" : `TODAS as ${qtd} opções`;
@@ -2870,6 +2871,7 @@ async function responderAdoracaoFamilia(res, body, P) {
     (temConvidados
       ? `CONVIDADOS NA NOITE (visitas: podem participar, mas NÃO lhes designe tarefas; adapte as partes e os jogos à presença deles, às idades e à situação deles):\n` +
         (cv.membros.length ? `${cv.membros.map((m) => descricaoDaPessoa(m, "convidado")).join("\n")}\n` : "") +
+        (cv.formacao ? `TIPO DA FAMÍLIA CONVIDADA: ${cv.formacao}\n` : "") +
         (cv.familia ? `INFORMAÇÃO SOBRE A FAMÍLIA CONVIDADA: ${cv.familia}\n` : "") +
         (cv.anotacoes ? `ANOTAÇÕES DO CHEFE SOBRE OS CONVIDADOS (trate com tato): ${cv.anotacoes}\n` : "")
       : "") +
