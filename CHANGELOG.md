@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.28
+
+- Adoração em Família, programações salvas: **cada opção vira uma programação independente**. Ao preparar 2 opções, o app salva duas programações ("… · Opção 1" e "… · Opção 2"), e o card "📂 Programações salvas (n)" conta e lista cada uma separadamente, cada uma com a própria moldura, tema, tempo, resumo, atividades, "📂 Abrir esta programação" e 🗑️ (apagar só aquela). As programações salvas antes com duas opções são divididas em duas, automaticamente, uma única vez. Pesquisas salvas → Adoração em Família passa a mostrar uma entrada por opção.
+- Substitui os contêineres por opção dentro de uma programação (6.11.27).
+
 ## 6.11.27
 
 - Adoração em Família, programações salvas: cada opção fica num contêiner separado (com a própria moldura), com o tema, o tempo, o resumo e as atividades, e o seu botão "📂 Abrir só a opção N", que traz só aquela opção de volta para a tela. Quando a programação salva tem duas opções, o botão "📂 Abrir as 2 opções (para montar a sua)" continua trazendo as duas, com a montagem da própria programação; o 🗑️ apaga a programação inteira.

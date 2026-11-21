@@ -7921,7 +7921,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.27'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.28'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -21653,8 +21653,9 @@ function saveTemplatesToStorage() {
       // Adoração em Família: as 3 opções voltam à tela Família (não vão para o campo de texto).
       if (item.tipo === 'familia') {
         if (!Array.isArray(item.familiaOpcoes) || !item.familiaOpcoes.length) return false;
-        familiaRenderOpcoes(item.familiaOpcoes);
-        familiaStatus('Opções salvas em ' + new Date(item.data).toLocaleDateString('pt-BR') + '.', 'ok');
+        const numeroSalvo = (String(item.titulo).match(/ · Opção (\d)$/) || [])[1]; // programação salva de uma opção: mantém o número original
+        familiaRenderOpcoes(item.familiaOpcoes, numeroSalvo && item.familiaOpcoes.length === 1 ? [Number(numeroSalvo)] : undefined);
+        familiaStatus('Programação salva em ' + new Date(item.data).toLocaleDateString('pt-BR') + '.', 'ok');
         if (!silencioso) {
           showScreen('familia');
           requestAnimationFrame(() => familiaResultadoEl.scrollIntoView({ block: 'start', behavior: 'smooth' }));
@@ -26240,21 +26241,45 @@ function saveTemplatesToStorage() {
       return primeira.length > max ? primeira.slice(0, max - 1).replace(/\s+\S*$/, '') + '…' : primeira;
     }
 
+    // Cada opção é uma programação salva independente (6.11.28): programações salvas antes com duas opções são divididas em duas, uma vez.
+    function familiaSalvasDividir() {
+      const lista = historicoLer();
+      if (!lista.some(i => i.tipo === 'familia' && Array.isArray(i.familiaOpcoes) && i.familiaOpcoes.length > 1)) return;
+      const nova = [];
+      lista.forEach(item => {
+        if (item.tipo !== 'familia' || !Array.isArray(item.familiaOpcoes) || item.familiaOpcoes.length < 2) { nova.push(item); return; }
+        const base = new Date(item.data).getTime() || Date.now();
+        item.familiaOpcoes.forEach((op, i) => {
+          nova.push({
+            ...item,
+            id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + i,
+            titulo: item.titulo + ' · Opção ' + (i + 1),
+            data: new Date(base - i).toISOString(), // a opção 1 fica logo acima da 2 na lista
+            familiaOpcoes: [op],
+            partes: [{ paragrafos: 'Opção ' + (i + 1), texto: familiaTextoDaOpcao(op) }]
+          });
+        });
+      });
+      historicoGravar(nova);
+    }
+
     function familiaSalvasRender() {
       const lista = document.getElementById('familiaSalvasLista');
       const qtd = document.getElementById('familiaSalvasQtd');
       if (!lista || !qtd) return;
+      familiaSalvasDividir();
       const itens = historicoLer().filter(i => i.tipo === 'familia' && Array.isArray(i.familiaOpcoes) && i.familiaOpcoes.length).sort((a, b) => String(b.data).localeCompare(String(a.data)));
       qtd.textContent = itens.length ? '(' + itens.length + ')' : '(nenhuma ainda)';
       lista.textContent = '';
       if (!itens.length) {
         const vazio = document.createElement('p');
         vazio.className = 'hint fam-dica';
-        vazio.textContent = 'As programações que a IA preparar (e as que você montar e salvar) ficam guardadas aqui, neste aparelho.';
+        vazio.textContent = 'As programações que a IA preparar (cada opção é guardada como uma programação) e as que você montar e salvar ficam aqui, neste aparelho.';
         lista.appendChild(vazio);
         return;
       }
       itens.forEach(item => {
+        const op = item.familiaOpcoes[0];
         const art = document.createElement('article');
         art.className = 'fam-salva';
         const h = document.createElement('p');
@@ -26264,59 +26289,43 @@ function saveTemplatesToStorage() {
         const meta = document.createElement('p');
         meta.className = 'fam-opcao-meta';
         meta.textContent = 'Salva em ' + quando.toLocaleDateString('pt-BR') + ' às ' + quando.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        art.append(h, meta);
-        item.familiaOpcoes.forEach((op, i) => {
-          const bloco = document.createElement('div');
-          bloco.className = 'fam-salva-op';
-          const tema = document.createElement('p');
-          tema.className = 'fam-salva-tema';
-          const partes = op.partes || [];
-          const minutos = Number(op.duracaoTotal) || partes.reduce((s, p) => s + (Number(p.minutos) || 0), 0);
-          tema.textContent = (item.familiaOpcoes.length > 1 ? 'Opção ' + (i + 1) + ' · ' : '') + (op.emoji ? op.emoji + ' ' : '') + (op.titulo || 'Programação') + ' · ⏱️ ' + minutos + ' min · ' + partes.length + (partes.length === 1 ? ' atividade' : ' atividades');
-          bloco.appendChild(tema);
-          const assunto = familiaResumoCurto(op.resumo || op.objetivo, 200);
-          if (assunto) {
-            const r = document.createElement('p');
-            r.className = 'fam-parte-desc';
-            r.textContent = assunto;
-            bloco.appendChild(r);
-          }
-          const ul = document.createElement('ul');
-          ul.className = 'fam-lista';
-          partes.forEach(p => {
-            const li = document.createElement('li');
-            const nome = document.createElement('strong');
-            nome.textContent = (p.nome || 'Atividade') + (p.minutos ? ' (' + p.minutos + ' min)' : '');
-            li.appendChild(nome);
-            const resumo = familiaResumoCurto(p.descricao);
-            const jogo = p.jogo && p.jogo.nome ? ' 🎲 ' + p.jogo.nome : '';
-            if (resumo || jogo) li.appendChild(document.createTextNode(' — ' + resumo + jogo));
-            ul.appendChild(li);
-          });
-          bloco.appendChild(ul);
-          // Cada opção é escolhida sozinha: o botão traz só esta opção de volta para a tela.
-          const abrirOpcao = document.createElement('button');
-          abrirOpcao.type = 'button';
-          abrirOpcao.className = 'secondary fam-fino fam-salva-abrir-op';
-          abrirOpcao.textContent = item.familiaOpcoes.length > 1 ? '📂 Abrir só a opção ' + (i + 1) : '📂 Abrir esta programação';
-          abrirOpcao.addEventListener('click', () => {
-            familiaRenderOpcoes([op], [i + 1]);
-            familiaStatus('Programação salva em ' + quando.toLocaleDateString('pt-BR') + (item.familiaOpcoes.length > 1 ? ' (opção ' + (i + 1) + ')' : '') + '.', 'ok');
-            document.getElementById('familiaSalvasBox').open = false;
-            requestAnimationFrame(() => familiaResultadoEl.scrollIntoView({ block: 'start', behavior: 'smooth' }));
-          });
-          bloco.appendChild(abrirOpcao);
-          art.appendChild(bloco);
+        const tema = document.createElement('p');
+        tema.className = 'fam-salva-tema';
+        const partes = op.partes || [];
+        const minutos = Number(op.duracaoTotal) || partes.reduce((s, p) => s + (Number(p.minutos) || 0), 0);
+        tema.textContent = (op.emoji ? op.emoji + ' ' : '') + (op.titulo || 'Programação') + ' · ⏱️ ' + minutos + ' min · ' + partes.length + (partes.length === 1 ? ' atividade' : ' atividades');
+        art.append(h, meta, tema);
+        const assunto = familiaResumoCurto(op.resumo || op.objetivo, 200);
+        if (assunto) {
+          const r = document.createElement('p');
+          r.className = 'fam-parte-desc';
+          r.textContent = assunto;
+          art.appendChild(r);
+        }
+        const ul = document.createElement('ul');
+        ul.className = 'fam-lista';
+        partes.forEach(p => {
+          const li = document.createElement('li');
+          const nome = document.createElement('strong');
+          nome.textContent = (p.nome || 'Atividade') + (p.minutos ? ' (' + p.minutos + ' min)' : '');
+          li.appendChild(nome);
+          const resumo = familiaResumoCurto(p.descricao);
+          const jogo = p.jogo && p.jogo.nome ? ' 🎲 ' + p.jogo.nome : '';
+          if (resumo || jogo) li.appendChild(document.createTextNode(' — ' + resumo + jogo));
+          ul.appendChild(li);
         });
+        art.appendChild(ul);
         const acoes = document.createElement('div');
         acoes.className = 'fam-acoes';
         const abrir = document.createElement('button');
         abrir.type = 'button';
         abrir.className = 'fam-fino fam-principal';
-        abrir.textContent = '📂 Abrir as ' + item.familiaOpcoes.length + ' opções (para montar a sua)';
-        abrir.hidden = item.familiaOpcoes.length < 2;
+        abrir.textContent = '📂 Abrir esta programação';
         abrir.addEventListener('click', async () => {
-          if (await historicoAbrir(item.id)) document.getElementById('familiaSalvasBox').open = false;
+          if (await historicoAbrir(item.id)) {
+            document.getElementById('familiaSalvasBox').open = false;
+            requestAnimationFrame(() => familiaResultadoEl.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+          }
         });
         const apagar = document.createElement('button');
         apagar.type = 'button';
@@ -26574,19 +26583,23 @@ function saveTemplatesToStorage() {
         familiaRenderOpcoes(opcoes);
         const modelo = result.data.modelo ? ' · ' + result.data.modelo : '';
         const tempoTotal = familiaRelogioTexto();
-        // Guarda as 3 opções em Pesquisas e respostas salvas, na categoria Adoração em Família (sem mexer no campo de texto).
-        let salva = null;
+        // Guarda cada opção como uma programação independente em Pesquisas e respostas salvas, na categoria Adoração em Família (sem mexer no campo
+        // de texto). Da última para a primeira, para a opção 1 ficar acima da 2 na lista.
+        let salvas = 0;
         try {
           const quando = new Date();
-          salva = historicoSalvar({
-            tipo: 'familia',
-            titulo: 'Adoração em Família · ' + quando.toLocaleDateString('pt-BR') + ' ' + quando.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + (perfil.assunto ? ' · ' + perfil.assunto.slice(0, 60) : ''),
-            partes: opcoes.map((op, i) => ({ paragrafos: 'Opção ' + (i + 1), texto: familiaTextoDaOpcao(op) })),
-            familiaOpcoes: opcoes,
-            ligar: false
-          });
+          const base = 'Adoração em Família · ' + quando.toLocaleDateString('pt-BR') + ' ' + quando.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + (perfil.assunto ? ' · ' + perfil.assunto.slice(0, 60) : '');
+          for (let i = opcoes.length - 1; i >= 0; i--) {
+            if (historicoSalvar({
+              tipo: 'familia',
+              titulo: base + (opcoes.length > 1 ? ' · Opção ' + (i + 1) : ''),
+              partes: [{ paragrafos: 'Opção ' + (i + 1), texto: familiaTextoDaOpcao(opcoes[i]) }],
+              familiaOpcoes: [opcoes[i]],
+              ligar: false
+            })) salvas++;
+          }
         } catch (e) { /* o app segue sem salvar */ }
-        familiaStatus('Pronto: ' + familiaOpcoesTexto(opcoes.length) + modelo + ' · ' + tempoTotal + (salva ? ' · 📂 salvas em Pesquisas salvas → Adoração em Família' : '') + '.', 'ok');
+        familiaStatus('Pronto: ' + familiaOpcoesTexto(opcoes.length) + modelo + ' · ' + tempoTotal + (salvas ? ' · 📂 ' + (salvas === 1 ? 'salva' : salvas + ' programações salvas') + ' em Programações salvas' : '') + '.', 'ok');
         familiaResultadoEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
       } catch (e) {
         if (pedido !== familiaPedido) return;
