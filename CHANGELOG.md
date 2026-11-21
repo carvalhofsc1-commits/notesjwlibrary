@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.55
+
+- Considerações para o serviço de campo, correção dos artigos de referência:
+  - O artigo "Mantenham os sentidos, sejam vigilantes!" é de A Sentinela de fevereiro de 2023 (w23.02), não de 2026: corrigido na lista.
+  - Os 9 artigos de referência (w24.05 e os 8 complementares) agora têm o número do documento no wol.jw.org (docId) fixo no código e são lidos direto por ele; a busca pelo título fica só de reserva (se o título lido não bater com o da lista).
+  - "Não desista!" (w21.10, págs. 24-28), que a busca não achava por ser uma frase comum demais, agora é achado. O teste com o wol confere os 9 artigos: 9 de 9 achados.
+
 ## 6.11.54
 
 - Considerações para o serviço de campo, fase 2 (tela):

@@ -14,19 +14,22 @@ const DIA_MS = 24 * 60 * 60 * 1000;
 const HORA_MS = 60 * 60 * 1000;
 
 // A fonte principal. A edição de A Sentinela e o título exato (o título no wol termina com "!", que a busca ignora).
-export const W24 = { codigo: "w24.05", ano: 2024, titulo: "Deixe o amor motivar você a pregar" };
+// "docId" (6.11.55): o número do documento no wol.jw.org (https://wol.jw.org/pt/wol/d/r5/lp-t/<docId>), achado uma vez navegando
+// pela edição; é lido direto, e a busca pelo título fica só de reserva (se o docId mudar ou o título lido não bater).
+export const W24 = { codigo: "w24.05", ano: 2024, docId: 2024406, titulo: "Deixe o amor motivar você a pregar" };
 
 // Os artigos complementares, do mais novo para o mais antigo (no empate, vale o mais novo). "edicao" só quando o título é curto e
 // comum demais para ser achado sem ela (a busca do wol confere o começo da referência, ex.: "w18 outubro págs. 11-16").
+// "Não desista!" (w21.10, págs. 24-28) não é achado pela busca (a frase é comum demais): só o docId o acha.
 export const COMPLEMENTARES = [
-  { codigo: "w26.09", ano: 2026, titulo: "Seja rápido em ajudar quem mostra interesse nas boas novas" },
-  { codigo: "w26.03", ano: 2026, titulo: "Como melhorar nossa arte de ensino" },
-  { codigo: "w26.02", ano: 2026, titulo: "Mantenham os sentidos e sejam vigilantes" },
-  { codigo: "w25.03", ano: 2025, titulo: "Imite o zelo de Jesus na pregação" },
-  { codigo: "w22.11", ano: 2022, titulo: "Como Jeová nos ajuda a cumprir nosso ministério?" },
-  { codigo: "w21.10", ano: 2021, titulo: "Não desista" },
-  { codigo: "w21.07", ano: 2021, titulo: "Você pode ajudar no trabalho de fazer discípulos?" },
-  { codigo: "w18.10", ano: 2018, edicao: "w18 outubro", titulo: "Ensine a verdade" },
+  { codigo: "w26.09", ano: 2026, docId: 2025566, titulo: "Seja rápido em ajudar quem mostra interesse nas boas novas" },
+  { codigo: "w26.03", ano: 2026, docId: 2026320, titulo: "Como melhorar nossa arte de ensino" },
+  { codigo: "w25.03", ano: 2025, docId: 2025322, titulo: "Imite o zelo de Jesus na pregação" },
+  { codigo: "w23.02", ano: 2023, docId: 2023285, titulo: "Mantenham os sentidos, sejam vigilantes" },
+  { codigo: "w22.11", ano: 2022, docId: 2022640, titulo: "Como Jeová nos ajuda a cumprir nosso ministério?" },
+  { codigo: "w21.10", ano: 2021, docId: 2021605, edicao: "w21 outubro", titulo: "Não desista" },
+  { codigo: "w21.07", ano: 2021, docId: 2021480, titulo: "Você pode ajudar no trabalho de fazer discípulos?" },
+  { codigo: "w18.10", ano: 2018, docId: 2018604, edicao: "w18 outubro", titulo: "Ensine a verdade" },
 ];
 
 // Os tipos de pregação da tela (o app manda os ids).
@@ -69,19 +72,35 @@ const cortar = (texto, max) => {
 const linha = (v, max) => (typeof v === "string" ? v.replace(/[\u0000-\u001f\u007f]+/g, " ").replace(/\s+/g, " ").trim().slice(0, max) : "");
 
 // ---------- Artigos no wol.jw.org ----------
-// Cada artigo (o principal e os complementares) é achado pelo título exato e lido parágrafo por parágrafo; fica guardado 24 horas
-// (o que não foi achado, 1 hora, para não repetir a busca a cada pedido). O título não achado vai para o registro uma vez.
+// Cada artigo (o principal e os complementares) é lido pelo docId fixo (6.11.55) e, se não der, achado pelo título exato; é lido
+// parágrafo por parágrafo e fica guardado 24 horas (o que não foi achado, 1 hora, para não repetir a busca a cada pedido). O título
+// não achado vai para o registro uma vez.
 const artigosGuardados = new Map(); // codigo -> { quando, dados }
 const naoAchadosAvisados = new Set();
+// O título lido no docId tem de bater com o da lista (sem acentos, pontuação e "!"; o da lista pode ser só o começo), para que um
+// docId errado não traga outro artigo.
+const soLetras = (t) => semAcento(t).replace(/[^a-z0-9]+/g, " ").trim();
+export const tituloBate = (lido, esperado) => {
+  const a = soLetras(lido);
+  const b = soLetras(esperado);
+  return !!a && !!b && (a === b || a.startsWith(b + " "));
+};
 export async function artigoDoWol(artigo, timeoutMs = 9000) {
   const guardado = artigosGuardados.get(artigo.codigo);
   if (guardado && Date.now() - guardado.quando < (guardado.dados ? DIA_MS : HORA_MS)) return guardado.dados;
   let dados = null;
   let falhou = false;
   try {
-    const docId = await docDoArtigoDoGuia({ titulo: artigo.titulo, ano: artigo.ano, ...(artigo.edicao ? { edicao: artigo.edicao } : {}) }, timeoutMs);
-    const doc = docId ? await paragrafosDoDocumento(docId, timeoutMs) : null;
-    if (doc && doc.paragrafos.length) dados = { ...doc, docId };
+    if (artigo.docId) {
+      const doc = await paragrafosDoDocumento(artigo.docId, timeoutMs).catch(() => null);
+      if (doc && doc.paragrafos.length && tituloBate(doc.titulo, artigo.titulo)) dados = { ...doc, docId: artigo.docId };
+      else console.log(`Serviço de campo: docId ${artigo.docId} não confere com ${artigo.codigo}; tentando pelo título`);
+    }
+    if (!dados) {
+      const docId = await docDoArtigoDoGuia({ titulo: artigo.titulo, ano: artigo.ano, ...(artigo.edicao ? { edicao: artigo.edicao } : {}) }, timeoutMs);
+      const doc = docId ? await paragrafosDoDocumento(docId, timeoutMs) : null;
+      if (doc && doc.paragrafos.length) dados = { ...doc, docId };
+    }
   } catch (e) {
     falhou = true; // o wol não respondeu: tenta de novo no próximo pedido
     console.error("Serviço de campo: wol indisponível", artigo.codigo, e?.name, e?.message);

@@ -149,6 +149,22 @@ teste("escolherComplementares: no empate, o mais novo", () => {
   assert.deepEqual(campo.escolherComplementares("xilofone", campo.COMPLEMENTARES.map(() => null)), []);
 });
 
+teste("artigos de referência: docId fixo e w23.02 no lugar de w26.02", () => {
+  const todos = [campo.W24, ...campo.COMPLEMENTARES];
+  assert.equal(todos.length, 9);
+  assert.ok(todos.every((a) => Number.isInteger(a.docId) && a.docId > 2000000), "todo artigo tem docId");
+  assert.equal(new Set(todos.map((a) => a.docId)).size, 9);
+  const w23 = campo.COMPLEMENTARES.find((a) => a.codigo === "w23.02");
+  assert.ok(w23 && w23.ano === 2023 && w23.docId === 2023285);
+  assert.ok(!todos.some((a) => a.codigo === "w26.02"));
+  assert.equal(campo.COMPLEMENTARES.find((a) => a.codigo === "w21.10").docId, 2021605);
+  // O título lido no docId tem de bater (sem "!", aspas e acentos); outro artigo não passa.
+  assert.ok(campo.tituloBate("“Mantenham os sentidos, sejam vigilantes!”", w23.titulo));
+  assert.ok(campo.tituloBate("Não desista!", "Nao desista"));
+  assert.ok(!campo.tituloBate("Reconstruindo sua amizade com Jeová", "Não desista"));
+  assert.ok(!campo.tituloBate("", "Não desista"));
+});
+
 teste("escolherLicoes: a melhor de cada brochura primeiro", () => {
   const lmd = [
     { sigla: "lmd", licao: 1, nome: "Interesse pelas pessoas", texto: "mostre interesse" },
@@ -307,6 +323,19 @@ if (comWol) {
     const r = await campo.complementares("pregação alegria amor", { max: 2, timeoutMs: 15000 });
     console.log("   artigos não achados no wol:", r.naoAchados.join(", ") || "nenhum");
     assert.ok(r.artigos.length > 0);
+  });
+  teste("wol: os 9 artigos de referência são achados pelo docId", async () => {
+    const todos = [campo.W24, ...campo.COMPLEMENTARES];
+    const lidos = [];
+    for (const a of todos) {
+      const d = await campo.artigoDoWol(a, 15000);
+      lidos.push(d);
+      console.log(`   ${a.codigo} docId ${a.docId}:`, d ? `"${d.titulo}" (${d.paragrafos.length} §§, docId lido ${d.docId})` : "NÃO ACHADO");
+    }
+    const achados = lidos.filter(Boolean).length;
+    console.log(`   ${achados} de ${todos.length} artigos achados`);
+    assert.equal(achados, todos.length);
+    assert.ok(lidos.every((d, i) => d.docId === todos[i].docId), "todos lidos pelo docId fixo");
   });
 }
 
