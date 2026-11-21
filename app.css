@@ -16777,7 +16777,9 @@ textarea.fam-campo {
 .fam-salvas-lista { display: grid; gap: 10px; padding: 0 0 10px; min-width: 0; }
 .fam-salva { display: grid; gap: 6px; min-width: 0; padding: 8px 10px; border: 1.5px solid #3b82f6; border-radius: 12px; }
 .fam-salva-titulo { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
-.fam-salva-op { display: grid; gap: 4px; min-width: 0; padding-top: 4px; }
+/* Cada opção salva num contêiner próprio, para ser vista e escolhida separadamente. */
+.fam-salva-op { display: grid; gap: 4px; min-width: 0; padding: 8px 10px; border: 1px solid var(--line, #cbd5e1); border-radius: 10px; background: color-mix(in srgb, #3b82f6 6%, transparent); }
+.fam-salva-abrir-op { width: 100%; margin: 4px 0 0; }
 .fam-salva-tema { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
 .fam-salva .fam-lista { margin: 0; padding-left: 1.2em; }
 .fam-salva .fam-lista li { overflow-wrap: anywhere; }

@@ -7921,7 +7921,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.26'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.27'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -25997,12 +25997,13 @@ function saveTemplatesToStorage() {
       visorCorpo.scrollTop = 0;
     }
 
-    function familiaRenderOpcoes(opcoes) {
+    // numeros (opcional): o número de cada opção, quando só algumas voltam à tela (ex.: abrir só a opção 2 de uma programação salva).
+    function familiaRenderOpcoes(opcoes, numeros) {
       familiaResultadoEl.innerHTML = '';
       familiaOpcoes = opcoes;
       // Com duas opções, o usuário pode montar a própria programação marcando as partes que quiser de cada uma.
       if (opcoes.length > 1) familiaResultadoEl.appendChild(familiaMesclaMontar(opcoes));
-      opcoes.forEach((op, idx) => familiaResultadoEl.appendChild(familiaMontarCard(op, idx, 'Opção ' + (idx + 1) + (op.duracaoTotal ? ' · ' + op.duracaoTotal + ' min' : ''))));
+      opcoes.forEach((op, idx) => familiaResultadoEl.appendChild(familiaMontarCard(op, idx, 'Opção ' + ((numeros && numeros[idx]) || idx + 1) + (op.duracaoTotal ? ' · ' + op.duracaoTotal + ' min' : ''))));
       familiaResultadoEl.hidden = !opcoes.length;
       familiaLimparBtn.hidden = !opcoes.length;
     }
@@ -26293,6 +26294,18 @@ function saveTemplatesToStorage() {
             ul.appendChild(li);
           });
           bloco.appendChild(ul);
+          // Cada opção é escolhida sozinha: o botão traz só esta opção de volta para a tela.
+          const abrirOpcao = document.createElement('button');
+          abrirOpcao.type = 'button';
+          abrirOpcao.className = 'secondary fam-fino fam-salva-abrir-op';
+          abrirOpcao.textContent = item.familiaOpcoes.length > 1 ? '📂 Abrir só a opção ' + (i + 1) : '📂 Abrir esta programação';
+          abrirOpcao.addEventListener('click', () => {
+            familiaRenderOpcoes([op], [i + 1]);
+            familiaStatus('Programação salva em ' + quando.toLocaleDateString('pt-BR') + (item.familiaOpcoes.length > 1 ? ' (opção ' + (i + 1) + ')' : '') + '.', 'ok');
+            document.getElementById('familiaSalvasBox').open = false;
+            requestAnimationFrame(() => familiaResultadoEl.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+          });
+          bloco.appendChild(abrirOpcao);
           art.appendChild(bloco);
         });
         const acoes = document.createElement('div');
@@ -26300,7 +26313,8 @@ function saveTemplatesToStorage() {
         const abrir = document.createElement('button');
         abrir.type = 'button';
         abrir.className = 'fam-fino fam-principal';
-        abrir.textContent = '📂 Abrir na tela';
+        abrir.textContent = '📂 Abrir as ' + item.familiaOpcoes.length + ' opções (para montar a sua)';
+        abrir.hidden = item.familiaOpcoes.length < 2;
         abrir.addEventListener('click', async () => {
           if (await historicoAbrir(item.id)) document.getElementById('familiaSalvasBox').open = false;
         });

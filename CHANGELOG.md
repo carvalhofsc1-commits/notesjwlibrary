@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.27
+
+- Adoração em Família, programações salvas: cada opção fica num contêiner separado (com a própria moldura), com o tema, o tempo, o resumo e as atividades, e o seu botão "📂 Abrir só a opção N", que traz só aquela opção de volta para a tela. Quando a programação salva tem duas opções, o botão "📂 Abrir as 2 opções (para montar a sua)" continua trazendo as duas, com a montagem da própria programação; o 🗑️ apaga a programação inteira.
+
 ## 6.11.26
 
 - Adoração em Família, caixa "Jogos aceitos": o fim da caixa foi alinhado. A opção "Pode usar papel e lápis" ocupa a largura da lista, com a caixa de marcar centralizada no texto, e "Marcar todos" e "Desmarcar todos" dividem a linha em duas colunas de mesmo tamanho, alinhadas com a lista.
