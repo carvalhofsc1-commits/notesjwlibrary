@@ -2815,6 +2815,12 @@
       </div>
       <p class="hint"><strong>Peça sugestões para a noite de adoração em família.</strong> A IA leva em conta as informações repassadas sobre a sua família (cadastradas por você) e monta 1 ou 2 opções completas (você escolhe), com partes, textos, vídeos e, se quiser, cânticos.</p>
 
+      <!-- 6.11.35: o card abre numa vista exclusiva (só ele na tela); esta barra só aparece nessa vista. -->
+      <div id="familiaPerfilTopo" class="fam-topo fam-perfil-topo" hidden>
+        <button id="familiaPerfilVoltar" class="secondary" type="button">◀ Voltar</button>
+        <h2 class="fam-titulo"><span aria-hidden="true">👤</span> Família e definições gerais</h2>
+      </div>
+
       <details id="familiaPerfilBox" class="fam-perfil-box">
         <summary>
           <span class="fam-perfil-titulo">👤 Família e definições gerais</span>
@@ -2915,6 +2921,7 @@
               </div>
             </details>
           </div>
+          <button id="familiaPerfilConcluir" class="secondary fam-perfil-concluir" type="button">✔ Concluir e voltar</button>
         </div>
       </details>
 

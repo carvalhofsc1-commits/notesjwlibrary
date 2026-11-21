@@ -118,9 +118,9 @@
       if (screen === 'ajustes') { // o card Consumo de IA e faturamento e o Extrato dentro dele sempre abrem recolhidos
         ['extratoSection', 'consumoResumoBox', 'consumoSection'].forEach(id => { const el = document.getElementById(id); if (el) el.open = false; });
       }
-      if (screen === 'familia') { // cadastro da família: sempre recolhido ao abrir a tela
-        const perfil = document.getElementById('familiaPerfilBox');
-        if (perfil) perfil.open = false;
+      if (screen === 'familia') { // cadastro da família: sempre recolhido ao abrir a tela (e fora da vista exclusiva)
+        if (typeof familiaPerfilVista === 'function') familiaPerfilVista(false, { semRolar: true });
+        else { const perfil = document.getElementById('familiaPerfilBox'); if (perfil) perfil.open = false; }
       }
       if (screen !== 'formatar') formatarVoltar = null;
       formatarVoltarPintar();
@@ -7921,7 +7921,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.34'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.35'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26715,6 +26715,25 @@ function saveTemplatesToStorage() {
     }
 
     document.getElementById('familiaVoltar').addEventListener('click', () => showScreen('inicio'));
+    // "Família e definições gerais" (6.11.35): tocar no card abre uma vista exclusiva (só o cadastro, com Voltar); sair devolve a tela como estava.
+    let familiaPerfilRolagem = 0;
+    function familiaPerfilVista(abrir, opcoes) {
+      const card = document.getElementById('familiaCard');
+      const caixa = document.getElementById('familiaPerfilBox');
+      const topo = document.getElementById('familiaPerfilTopo');
+      if (!card || !caixa || !topo) return;
+      const ja = card.classList.contains('fam-vista-perfil');
+      if (abrir && !ja) familiaPerfilRolagem = window.scrollY;
+      card.classList.toggle('fam-vista-perfil', !!abrir);
+      topo.hidden = !abrir;
+      caixa.open = !!abrir;
+      if (abrir) window.scrollTo(0, 0);
+      else if (ja && !(opcoes && opcoes.semRolar)) requestAnimationFrame(() => window.scrollTo(0, familiaPerfilRolagem || 0));
+    }
+    window.familiaPerfilVista = familiaPerfilVista;
+    document.querySelector('#familiaPerfilBox > summary').addEventListener('click', ev => { ev.preventDefault(); familiaPerfilVista(true); });
+    document.getElementById('familiaPerfilVoltar').addEventListener('click', () => familiaPerfilVista(false));
+    document.getElementById('familiaPerfilConcluir').addEventListener('click', () => familiaPerfilVista(false));
     document.getElementById('familiaMembroAdd').addEventListener('click', () => { familiaMembroAdd(); familiaPerfilSalvar(); });
     familiaGerarBtn.addEventListener('click', familiaGerar);
     familiaCancelarBtn.addEventListener('click', () => {
