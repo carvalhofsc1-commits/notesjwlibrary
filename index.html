@@ -1248,8 +1248,6 @@
                 <section class="sent-option sent-option-site">
                   <div class="ai-study campo-form">
                     <p class="hint ai-hint">Consideração de 5 minutos para a reunião para o serviço de campo: começa pela leitura de um texto bíblico, segue com as aplicações para a pregação do dia, inclui uma pergunta para a assistência e uma referência à brochura Ame as Pessoas. Todos os campos já vêm preenchidos: é só preparar.</p>
-                    <label for="campoData">Data da saída <span id="campoDiaSemana" class="opc"></span></label>
-                    <input id="campoData" class="fam-campo" type="date" autocomplete="off">
                     <!-- 6.11.62: o tipo de pregação num contêiner azul claro; campanha, público, assunto e fontes noutro, amarelo claro (as fontes em vermelho claro). -->
                     <div class="campo-bloco campo-bloco-azul" id="campoTipoBloco">
                     <p class="fam-rotulo">Tipo de pregação</p>
@@ -1308,6 +1306,12 @@
                     <span id="campoStatus" class="ok" role="status" aria-live="polite"></span>
                   </div>
                 </section>
+                <!-- 6.11.64: as considerações já salvas no app, com a data e os pontos principais; o card sempre abre recolhido. -->
+                <details class="campo-salvas-box" id="campoSalvasBox">
+                  <summary>🗂️ Considerações já salvas <span id="campoSalvasQtd" class="opc"></span></summary>
+                  <p class="hint fam-dica">As considerações que você preparou ficam guardadas neste aparelho (também em Pesquisas salvas → Esboços). Aqui você vê o que cada uma abrangeu, para não repetir.</p>
+                  <div id="campoSalvasLista" class="campo-salvas-lista"></div>
+                </details>
                 <div id="campoOutputSlot"></div>
               </div>
             </details>

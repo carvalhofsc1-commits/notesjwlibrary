@@ -7931,7 +7931,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.63'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.64'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -18589,7 +18589,7 @@ function saveTemplatesToStorage() {
       const fontesMarcadas = new Set(marcados('campoFonte'));
       const salvos = campoSalvos();
       return {
-        data: document.getElementById('campoData').value || campoDataLocal(),
+        data: campoDataLocal(), // a data da saída é sempre a da elaboração do esboço (hoje)
         minutos: 5, // a consideração é sempre de 5 minutos
         tipos: marcados('campoTipo'),
         campanha: document.getElementById('campoCampanha').value.trim(),
@@ -18605,11 +18605,65 @@ function saveTemplatesToStorage() {
       };
     }
 
-    // O dia da semana ao lado da data ("sábado"), para conferir o dia da saída.
-    function campoDiaAtualizar() {
-      const valor = document.getElementById('campoData').value;
-      const dia = /^\d{4}-\d{2}-\d{2}$/.test(valor) ? new Date(valor + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long' }) : '';
-      document.getElementById('campoDiaSemana').textContent = dia ? '(' + dia + ')' : '';
+    // 🗂️ Considerações já salvas (6.11.64): um card sempre recolhido que lista as do histórico (as mais novas primeiro), com a data e o que cada uma
+    // abrangeu: o tema, os textos lidos, os pontos e as aplicações, o parágrafo de w24.05 e a lição do Ame as Pessoas. "Abrir" a leva ao campo de texto.
+    function campoSalvasRender() {
+      const lista = document.getElementById('campoSalvasLista');
+      const qtd = document.getElementById('campoSalvasQtd');
+      if (!lista || !qtd) return;
+      const itens = campoSalvos().sort((a, b) => String(b.data).localeCompare(String(a.data)));
+      qtd.textContent = itens.length ? '(' + itens.length + ')' : '(nenhuma ainda)';
+      lista.textContent = '';
+      if (!itens.length) {
+        const vazio = document.createElement('p');
+        vazio.className = 'hint fam-dica';
+        vazio.textContent = 'Nenhuma consideração salva ainda. Cada esboço que você preparar fica guardado aqui.';
+        lista.appendChild(vazio);
+        return;
+      }
+      const curto = (t, n) => { const s = String(t || '').replace(/\s+/g, ' ').trim(); return s.length > n ? s.slice(0, n - 1).trimEnd() + '…' : s; };
+      itens.forEach(item => {
+        const e = item.esbocoJson || {};
+        const art = document.createElement('article');
+        art.className = 'campo-salva';
+        const quando = new Date(item.data);
+        const dataTxt = Number.isNaN(quando.getTime()) ? '' : quando.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
+        const cab = document.createElement('p');
+        cab.className = 'campo-salva-data';
+        cab.textContent = '📅 ' + dataTxt;
+        const tema = document.createElement('p');
+        tema.className = 'campo-salva-tema';
+        tema.textContent = e.tema || 'Consideração para o serviço de campo';
+        art.append(cab, tema);
+        const linhas = [];
+        const pontos = Array.isArray(e.pontos) ? e.pontos : [];
+        const leituras = [...new Set(pontos.flatMap(p => (p.desenvolvimento || []).map(d => d.leitura && d.leitura.referencia).filter(Boolean)))];
+        if (leituras.length) linhas.push('📖 Textos lidos: ' + leituras.join('; '));
+        pontos.forEach(p => {
+          if (p.titulo) linhas.push('📌 ' + curto(p.titulo, 120));
+          (p.desenvolvimento || []).forEach(d => {
+            if (d.argumento) linhas.push('   • ' + curto(d.argumento, 130));
+            (d.ideias || []).forEach(i => linhas.push('      ◦ ' + curto(i, 110)));
+          });
+        });
+        const lmd = String(e.brochura || '').match(/lmd\s+lição\s+\d+(?:,\s*[^.:;]+)?/i);
+        const fontes = [e.paragrafoW24 ? 'w24.05, § ' + e.paragrafoW24 : '', lmd ? lmd[0] : ''].filter(Boolean);
+        if (fontes.length) linhas.push('📚 ' + fontes.join(' · '));
+        const corpo = document.createElement('p');
+        corpo.className = 'campo-salva-pontos';
+        corpo.textContent = linhas.join('\n');
+        art.appendChild(corpo);
+        const acoes = document.createElement('div');
+        acoes.className = 'fam-acoes';
+        const abrir = document.createElement('button');
+        abrir.type = 'button';
+        abrir.className = 'secondary fam-fino fam-principal';
+        abrir.textContent = '📂 Abrir esta consideração';
+        abrir.addEventListener('click', () => historicoAbrir(item.id));
+        acoes.appendChild(abrir);
+        art.appendChild(acoes);
+        lista.appendChild(art);
+      });
     }
 
     // "Sugerir 3 assuntos": a IA propõe 3 assuntos curtos (cada um ligado a um parágrafo de w24.05 ainda não usado); tocar num deles o põe no
@@ -18676,10 +18730,6 @@ function saveTemplatesToStorage() {
       return pedido;
     }
 
-    document.getElementById('campoData').value = campoDataLocal();
-    campoDiaAtualizar();
-    document.getElementById('campoData').addEventListener('input', campoDiaAtualizar);
-    document.getElementById('campoData').addEventListener('change', campoDiaAtualizar);
     document.getElementById('campoSugerirBtn').addEventListener('click', campoSugerir);
     document.getElementById('campoRefazerBtn').addEventListener('click', campoRefazer);
     // Fontes do esboço (6.11.56): contêiner sempre recolhido ao abrir o card, com o resumo do que está marcado no título.
@@ -18692,7 +18742,15 @@ function saveTemplatesToStorage() {
     campoFontesCaixas().forEach(c => c.addEventListener('change', campoFontesResumo));
     document.getElementById('campoFontesTodas').addEventListener('click', () => { campoFontesCaixas().forEach(c => { c.checked = true; }); campoFontesResumo(); });
     document.getElementById('campoFontesNenhuma').addEventListener('click', () => { campoFontesCaixas().forEach(c => { c.checked = false; }); campoFontesResumo(); });
-    document.getElementById('campoBox').addEventListener('toggle', e => { if (e.target.id === 'campoBox' && e.target.open) document.getElementById('campoFontesBox').open = false; });
+    // Ao abrir o card, as fontes e a lista das salvas começam sempre recolhidas; a lista se atualiza ao ser aberta e sempre que o histórico muda.
+    document.getElementById('campoBox').addEventListener('toggle', e => {
+      if (e.target.id !== 'campoBox' || !e.target.open) return;
+      document.getElementById('campoFontesBox').open = false;
+      document.getElementById('campoSalvasBox').open = false;
+      campoSalvasRender(); // a quantidade no título já vem certa, com o card recolhido
+    });
+    document.getElementById('campoSalvasBox').addEventListener('toggle', e => { if (e.target.open) campoSalvasRender(); });
+    campoSalvasRender();
     campoFontesResumo();
     Object.values(ESBOCOS).forEach(cfg => {
       cfg.textos = [];
@@ -21739,6 +21797,7 @@ function saveTemplatesToStorage() {
 
     function historicoRender() {
       setTimeout(() => { try { familiaSalvasRender(); } catch (e) { /* tela ainda iniciando */ } }, 0); // a lista da tela Adoração em Família acompanha
+      setTimeout(() => { try { campoSalvasRender(); } catch (e) { /* tela ainda iniciando */ } }, 0); // e a das Considerações para o serviço de campo
       // As perguntas do dirigente só aparecem aqui com o código do dirigente salvo neste aparelho.
       const comDirigente = Boolean(codigoDirigenteSalvo());
       const todas = historicoLer().filter(item => comDirigente || !historicoCategoriaDe(item).soDirigente);

@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.64
+
+- Considerações para o serviço de campo:
+  - novo card **🗂️ Considerações já salvas**, **sempre recolhido** (também ao reabrir o card principal), que lista as do histórico, das mais novas para as mais antigas, com a **data** e o que cada uma abrangeu: o tema, os textos lidos, os pontos e as aplicações, o parágrafo de w24.05 e a lição do Ame as Pessoas. O botão **Abrir esta consideração** a leva ao campo de texto. A lista acompanha as mudanças no histórico.
+  - saiu o campo **Data da saída**: a data é sempre a do dia em que o esboço é elaborado (o título salvo e o pedido usam a data de hoje).
+
 ## 6.11.63
 
 - Considerações para o serviço de campo: no esboço, **cada ponto principal fica separado por uma linha em branco** (a pergunta, cada aplicação e o comentário depois da leitura), em vez de as aplicações ficarem coladas umas nas outras. Só nesta consideração; os outros esboços mantêm as ideias coladas ao argumento, como no modelo.

@@ -17125,6 +17125,15 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
   .campo-form .fam-meia > label { min-height: 2.5em; display: flex; flex-wrap: wrap; align-items: flex-end; column-gap: 4px; line-height: 1.25; }
 }
 .campo-form #campoSugerirBtn { margin-top: 14px; }
+/* 6.11.64: o card das considerações já salvas (sempre recolhido). */
+.campo-salvas-box { border: 1px solid var(--line, #cbd5e1); border-radius: 10px; padding: 0 10px 10px; margin: 12px 0; min-width: 0; background: var(--card); }
+.campo-salvas-box > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-weight: 600; }
+.campo-salvas-lista { display: grid; gap: 10px; min-width: 0; }
+.campo-salva { display: grid; gap: 6px; min-width: 0; padding: 10px; border: 1px solid var(--line, #cbd5e1); border-radius: 10px; background: var(--inicio-cinza); }
+.campo-salva p { margin: 0; }
+.campo-salva-data { font-size: .82rem; color: var(--muted, #666); }
+.campo-salva-tema { font-weight: 700; overflow-wrap: anywhere; }
+.campo-salva-pontos { white-space: pre-wrap; font-size: .88rem; line-height: 1.45; overflow-wrap: anywhere; }
 /* 6.11.62: contêineres do formulário: tipo de pregação em azul claro; campanha, público, assunto e fontes em amarelo claro; as fontes em
    vermelho claro dentro do amarelo. Cores diretas (os tokens --sv-*-bg viraram cinza no padrão suave). */
 .campo-form .campo-bloco { border: 1px solid; border-radius: 12px; padding: 4px 12px 12px; margin-top: 14px; min-width: 0; box-sizing: border-box; }
