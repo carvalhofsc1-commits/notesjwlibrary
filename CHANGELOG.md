@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.31
+
+- Tela inicial: o atalho **Joias espirituais** saiu dos atalhos. Como era o único da página 3, a página 3 e o seu ponto de navegação também saíram, e os atalhos ficam em duas páginas de 8. As joias continuam disponíveis em Reuniões → Comentários (e em Pesquisas salvas).
+
 ## 6.11.30
 
 - Adoração em Família, card "Informar convidados": novo seletor **"Como é a família convidada"**, com as mesmas opções do cadastro da família (casal com filhos, casal sem filhos, mãe ou pai sozinho, quem mora sozinho, família com avós ou outros), junto com o campo de texto "Informação da família convidada". Os dois vão para a IA ("tipo da família convidada" e "informação sobre a família convidada"), aparecem no resumo do card e ficam salvos só no aparelho.
