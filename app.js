@@ -3939,7 +3939,7 @@
     // do botão, mas não o atributo). "geral" = modelo e esforço gerais; "esbocos" = os da Preparação de discursos e esboços (e do Preparar para dirigir); "modelo" = só o modelo
     // (o áudio em texto não usa o esforço escolhido).
     const IA_NOTA_BOTOES = {
-      familiaGerarBtn: 'geral', aiSuggestBtn: 'geral', aiSentinelaBtn: 'geral', aiStudyBtn: 'geral', aiStudyQuestionsBtn: 'esbocos', tdGerarBtn: 'esbocos',
+      familiaGerarBtn: 'familia', aiSuggestBtn: 'geral', aiSentinelaBtn: 'geral', aiStudyBtn: 'geral', aiStudyQuestionsBtn: 'esbocos', tdGerarBtn: 'esbocos',
       joiasResponderBtn: 'geral', bibliaResumirBtn: 'esbocos', ebcResponderBtn: 'geral', consideracaoResponderBtn: 'geral', nvcResponderBtn: 'geral', ebcDirPerguntasBtn: 'esbocos',
       tesourosEsbocoBtn: 'esbocos', discursoEsbocoBtn: 'esbocos', publicoEsbocoBtn: 'esbocos', outrosEsbocoBtn: 'esbocos',
       transcricaoCorrigirBtn: 'geral', transcricaoResumirBtn: 'geral',
@@ -3954,7 +3954,7 @@
         if (!b) return;
         const tipo = IA_NOTA_BOTOES[id];
         if (tipo.charAt(0) === '=') return b.setAttribute('data-ia-nota', tipo.slice(1));
-        const d = iaNotaDados && iaNotaDados[tipo === 'esbocos' ? 'esbocos' : 'geral'];
+        const d = iaNotaDados && (iaNotaDados[tipo === 'esbocos' ? 'esbocos' : tipo === 'familia' ? 'familia' : 'geral'] || (tipo === 'familia' ? iaNotaDados.geral : null));
         if (!d || !d.modelo) return b.removeAttribute('data-ia-nota');
         b.setAttribute('data-ia-nota', 'Modelo: ' + d.modelo + (tipo !== 'modelo' && d.esforco ? ' · esforço: ' + d.esforco.toLowerCase() : ''));
       });
@@ -3972,7 +3972,7 @@
       try {
         const r = await postConfig({ acao: 'ia-publica' });
         if (r.ok && r.data && r.data.geral) {
-          iaNotaDados = { geral: r.data.geral, esbocos: r.data.esbocos || r.data.geral, pesquisa: r.data.pesquisa || null };
+          iaNotaDados = { geral: r.data.geral, esbocos: r.data.esbocos || r.data.geral, familia: r.data.familia || r.data.geral, pesquisa: r.data.pesquisa || null };
           try { localStorage.setItem('ns-ia-nota', JSON.stringify(iaNotaDados)); } catch (e) { /* sem armazenamento */ }
           iaNotaAplicar();
         }
@@ -7921,7 +7921,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.12'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.13'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -13897,6 +13897,8 @@ function saveTemplatesToStorage() {
     const iaEsbocoModelo = document.getElementById('iaEsbocoModelo'); // modelo e esforço só da Preparação de discursos e esboços ('' = os de cima)
     const iaEsbocoEsforco = document.getElementById('iaEsbocoEsforco');
     const iaEsbocoPreco = document.getElementById('iaEsbocoPreco');
+    const iaFamiliaModelo = document.getElementById('iaFamiliaModelo'); // modelo e esforço só da Adoração em Família, de qualquer família ('' = os do uso geral)
+    const iaFamiliaEsforco = document.getElementById('iaFamiliaEsforco');
     const iaModeloPreco = document.getElementById('iaModeloPreco');
     const iaStatus = document.getElementById('iaStatus');
     let iaOpcoes = null;
@@ -13983,6 +13985,12 @@ function saveTemplatesToStorage() {
       iaPreencher(iaEsforco, esforcos, '');
       iaPreencher(iaEsbocoModelo, curto(iaModelosDaFamilia()), 'O mesmo do uso geral');
       iaPreencher(iaEsbocoEsforco, esforcos, 'Esforço do uso geral');
+      const familiaModelo = iaFamiliaModelo.value;
+      const familiaEsforco = iaFamiliaEsforco.value;
+      iaPreencher(iaFamiliaModelo, curto(iaOpcoes.modelos), 'O mesmo do uso geral');
+      iaPreencher(iaFamiliaEsforco, esforcos, 'Esforço do uso geral');
+      iaFamiliaModelo.value = familiaModelo || '';
+      iaFamiliaEsforco.value = familiaEsforco || '';
       const motor = iaAudioMotor.value;
       const geminiAudio = iaAudioGeminiModelo.value;
       iaPreencher(iaAudioMotor, curto(iaOpcoes.motoresAudio), '');
@@ -14019,12 +14027,14 @@ function saveTemplatesToStorage() {
       iaEsforco.value = r.data.config.esforco;
       iaEsbocoModelo.value = r.data.config.esbocoModelo || '';
       iaEsbocoEsforco.value = r.data.config.esbocoEsforco || '';
+      iaFamiliaModelo.value = r.data.config.familiaModelo || '';
+      iaFamiliaEsforco.value = r.data.config.familiaEsforco || '';
       iaAudioMotor.value = r.data.config.audioMotor || 'chirp';
       iaAudioGeminiModelo.value = r.data.config.audioGeminiModelo || '';
       iaAudioModelo.value = r.data.config.audioModelo || '';
       iaAudioMostrar();
       iaPesquisaMostrar(r.data.config);
-      iaSalvo = { provedor: r.data.config.provedor, modelo: r.data.config.modelo, esforco: r.data.config.esforco, esbocoModelo: r.data.config.esbocoModelo || '', esbocoEsforco: r.data.config.esbocoEsforco || '', audioMotor: r.data.config.audioMotor || 'chirp', audioGeminiModelo: r.data.config.audioGeminiModelo || '', audioModelo: r.data.config.audioModelo || '', pesquisa: iaPesquisaSalvoDe(r.data.config) };
+      iaSalvo = { provedor: r.data.config.provedor, modelo: r.data.config.modelo, esforco: r.data.config.esforco, esbocoModelo: r.data.config.esbocoModelo || '', esbocoEsforco: r.data.config.esbocoEsforco || '', familiaModelo: r.data.config.familiaModelo || '', familiaEsforco: r.data.config.familiaEsforco || '', audioMotor: r.data.config.audioMotor || 'chirp', audioGeminiModelo: r.data.config.audioGeminiModelo || '', audioModelo: r.data.config.audioModelo || '', pesquisa: iaPesquisaSalvoDe(r.data.config) };
       iaMostrarPreco();
       iaMensagem(r.data.armazenamento && !r.data.armazenamento.escrita ? 'O armazenamento do servidor ainda não permite salvar.' : '', true);
     }
@@ -14034,13 +14044,14 @@ function saveTemplatesToStorage() {
     function iaPendente() {
       return Boolean(iaSalvo && iaOpcoes && (iaProvedor.value !== iaSalvo.provedor || iaModelo.value !== iaSalvo.modelo || iaEsforco.value !== iaSalvo.esforco
         || iaEsbocoModelo.value !== iaSalvo.esbocoModelo || iaEsbocoEsforco.value !== iaSalvo.esbocoEsforco
+        || iaFamiliaModelo.value !== iaSalvo.familiaModelo || iaFamiliaEsforco.value !== iaSalvo.familiaEsforco
         || iaAudioMotor.value !== iaSalvo.audioMotor || iaAudioGeminiModelo.value !== iaSalvo.audioGeminiModelo || iaAudioModelo.value !== iaSalvo.audioModelo
         || iaPesquisaSalvoDe(iaPesquisaDaTela()) !== iaSalvo.pesquisa));
     }
 
     // Envia o modelo e o esforço escolhidos; quem chama (salvarParaTodos) mostra a mensagem.
     async function iaSalvarModelo() {
-      const r = await postConfig({ acao: 'ia-salvar', codigo: codigoAdminAtual(), config: Object.assign({ provedor: iaProvedor.value, modelo: iaModelo.value, esforco: iaEsforco.value, esbocoModelo: iaEsbocoModelo.value, esbocoEsforco: iaEsbocoEsforco.value, audioMotor: iaAudioMotor.value, audioGeminiModelo: iaAudioGeminiModelo.value, audioModelo: iaAudioModelo.value }, iaPesquisaDaTela()) });
+      const r = await postConfig({ acao: 'ia-salvar', codigo: codigoAdminAtual(), config: Object.assign({ provedor: iaProvedor.value, modelo: iaModelo.value, esforco: iaEsforco.value, esbocoModelo: iaEsbocoModelo.value, esbocoEsforco: iaEsbocoEsforco.value, familiaModelo: iaFamiliaModelo.value, familiaEsforco: iaFamiliaEsforco.value, audioMotor: iaAudioMotor.value, audioGeminiModelo: iaAudioGeminiModelo.value, audioModelo: iaAudioModelo.value }, iaPesquisaDaTela()) });
       if (!r.ok) return { ok: false, erro: configErrorMessage(r, 'Não foi possível salvar agora.') };
       iaPesquisaMostrar(r.data.config);
       iaProvedor.value = r.data.config.provedor;
@@ -14048,11 +14059,13 @@ function saveTemplatesToStorage() {
       iaEsforco.value = r.data.config.esforco;
       iaEsbocoModelo.value = r.data.config.esbocoModelo || '';
       iaEsbocoEsforco.value = r.data.config.esbocoEsforco || '';
+      iaFamiliaModelo.value = r.data.config.familiaModelo || '';
+      iaFamiliaEsforco.value = r.data.config.familiaEsforco || '';
       iaAudioMotor.value = r.data.config.audioMotor || 'chirp';
       iaAudioGeminiModelo.value = r.data.config.audioGeminiModelo || '';
       iaAudioModelo.value = r.data.config.audioModelo || '';
       iaAudioMostrar();
-      iaSalvo = { provedor: r.data.config.provedor, modelo: r.data.config.modelo, esforco: r.data.config.esforco, esbocoModelo: r.data.config.esbocoModelo || '', esbocoEsforco: r.data.config.esbocoEsforco || '', audioMotor: r.data.config.audioMotor || 'chirp', audioGeminiModelo: r.data.config.audioGeminiModelo || '', audioModelo: r.data.config.audioModelo || '', pesquisa: iaPesquisaSalvoDe(r.data.config) };
+      iaSalvo = { provedor: r.data.config.provedor, modelo: r.data.config.modelo, esforco: r.data.config.esforco, esbocoModelo: r.data.config.esbocoModelo || '', esbocoEsforco: r.data.config.esbocoEsforco || '', familiaModelo: r.data.config.familiaModelo || '', familiaEsforco: r.data.config.familiaEsforco || '', audioMotor: r.data.config.audioMotor || 'chirp', audioGeminiModelo: r.data.config.audioGeminiModelo || '', audioModelo: r.data.config.audioModelo || '', pesquisa: iaPesquisaSalvoDe(r.data.config) };
       iaMostrarPreco();
       iaNotaCarregar();
       document.dispatchEvent(new Event('modelos-ia-mudou'));

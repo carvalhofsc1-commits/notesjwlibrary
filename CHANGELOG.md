@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.13
+
+- Modelos e agentes de IA: nova linha "Adoração em Família" (seção ✍️ Texto), com modelo e esforço só dela. O modelo pode ser de qualquer família (Claude ou Gemini); o provedor é o do modelo escolhido (o Gemini pela conta do Google; o Claude pelo provedor do uso geral, ou pela API da Anthropic se o geral for Gemini). "O mesmo do uso geral" e "Esforço do uso geral" (padrão) mantêm o comportamento anterior. A nota sob o botão "Preparar 3 opções" mostra esse modelo.
+
 ## 6.11.12
 
 - Adoração em Família: o botão "Preparar 3 opções" mostra o modelo da IA sob o título (como os outros botões da IA) e, enquanto prepara, um relógio "⏳ Preparando… ⏱️ 0:42" no próprio botão e na mensagem de andamento; no fim a mensagem traz o modelo e o tempo total.

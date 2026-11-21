@@ -77,6 +77,9 @@ export function validarConfigIa(entrada) {
     pesquisaRespostaEsforco: ESFORCOS_IA.some((e) => e.id === c.pesquisaRespostaEsforco) ? c.pesquisaRespostaEsforco : PADRAO_PESQUISA.pesquisaRespostaEsforco,
     pesquisaVideoModelo: modeloConhecido(c.pesquisaVideoModelo) ? c.pesquisaVideoModelo : PADRAO_PESQUISA.pesquisaVideoModelo,
     pesquisaSites: sitesValidos(c.pesquisaSites),
+    // Adoração em Família (6.11.13): modelo (de qualquer família) e esforço só dela; vazio ("") = os do uso geral.
+    familiaModelo: modeloConhecido(c.familiaModelo) ? c.familiaModelo : "",
+    familiaEsforco: ESFORCOS_IA.some((e) => e.id === c.familiaEsforco) ? c.familiaEsforco : "",
   };
 }
 
@@ -122,11 +125,11 @@ export function iaDaTarefa(config, tarefa) {
   // Assistente de pesquisas: o modelo de cada etapa e o provedor que o atende (provedorTarefa).
   if (tarefa === "pesquisa-coletar" || tarefa === "pesquisa-videos") return { ...config, modelo: config.pesquisaModelo, esforco: "low", provedorTarefa: provedorDoModelo(config, config.pesquisaModelo) };
   if (tarefa === "pesquisa") return { ...config, modelo: config.pesquisaRespostaModelo, esforco: config.pesquisaRespostaEsforco, provedorTarefa: provedorDoModelo(config, config.pesquisaRespostaModelo) };
-  // Adoração em Família (6.11.06): usa o modelo e o provedor gerais (Ajustes → Modelos e agentes de IA), não o da resposta das pesquisas
-  // (que costuma ser Gemini e continua independente). Assim, trocar para Claude / Anthropic passa a valer nesta tela.
+  // Adoração em Família: modelo e esforço próprios (Ajustes → Modelos e agentes de IA → Adoração em Família); sem escolha própria
+  // ("O mesmo do uso geral"), usa o modelo, o esforço e o provedor gerais, não os da resposta das pesquisas.
   if (tarefa === "adoracao-familia") {
-    const modelo = config.modelo;
-    return { ...config, modelo, esforco: config.esforco, provedorTarefa: provedorDoModelo(config, modelo) };
+    const modelo = config.familiaModelo || config.modelo;
+    return { ...config, modelo, esforco: config.familiaEsforco || config.esforco, provedorTarefa: provedorDoModelo(config, modelo) };
   }
   if (!TAREFAS_DE_ESBOCOS.has(tarefa)) return { ...config, modelo: config.modelo, esforco: config.esforco };
   return { ...config, modelo: config.esbocoModelo || config.modelo, esforco: config.esbocoEsforco || config.esforco };
