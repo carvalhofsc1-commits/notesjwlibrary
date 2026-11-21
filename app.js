@@ -7931,7 +7931,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.59'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.60'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -18403,6 +18403,18 @@ function saveTemplatesToStorage() {
         const ideias = (item.ideias || []).map(ideia => '    ◦ ' + comPerguntas(ideia));
         const l = item.leitura;
         const argumento = comPerguntas(item.argumento);
+        // Considerações para o serviço de campo (6.11.60): a leitura abre o ponto, sem argumento antes. Se houver uma frase curta para chamar a
+        // atenção para o texto, ela vem antes da leitura; depois, o comentário e as ideias.
+        if (!item.argumento && l) {
+          const blocos = [];
+          if (l.introducao) blocos.push('• ' + comPerguntas(l.introducao));
+          blocos.push(leitura(l));
+          const depois = [];
+          if (l.destaque) depois.push('    ◦ ' + comPerguntas(l.destaque));
+          depois.push(...ideias);
+          if (depois.length) blocos.push(depois.join('\n'));
+          return blocos;
+        }
         if (!l) return ['• ' + argumento + (ideias.length ? '\n' + ideias.join('\n') : '')];
         if (l.introducao) ideias.push('    ◦ ' + comPerguntas(l.introducao));
         const blocos = ['• ' + argumento + (ideias.length ? '\n' + ideias.join('\n') : ''), leitura(l)];
@@ -18423,8 +18435,9 @@ function saveTemplatesToStorage() {
         texto: ['📜 ' + negrito(maiusculas(esboco.tema)), ...quadro].join('\n\n')
       }];
 
+      // As considerações para o serviço de campo não têm introdução nem conclusão (blocos vazios): a parte só entra quando tem fala.
       const intro = esboco.introducao;
-      partes.push({ paragrafos: 'Introdução', texto: montar([subtitulo(intro.titulo, intro.minutos)], falas(intro.blocos)) });
+      if (!intro || (intro.blocos && intro.blocos.length)) partes.push({ paragrafos: 'Introdução', texto: montar([subtitulo(intro.titulo, intro.minutos)], falas(intro.blocos)) });
       esboco.pontos.forEach((ponto, i) => {
         const cabecalho = [subtitulo(ponto.titulo, ponto.minutos)];
         if (ponto.fontes && ponto.fontes.length) cabecalho.push('📚 Fonte: ' + ponto.fontes.join('; '));
@@ -18435,7 +18448,11 @@ function saveTemplatesToStorage() {
         partes.push({ paragrafos: 'Ponto ' + (i + 1), texto: montar(cabecalho, blocos) });
       });
       const fim = esboco.conclusao;
-      partes.push({ paragrafos: 'Conclusão', texto: montar([subtitulo(fim.titulo, fim.minutos)], falas(fim.blocos)) });
+      if (!fim || (fim.blocos && fim.blocos.length)) partes.push({ paragrafos: 'Conclusão', texto: montar([subtitulo(fim.titulo, fim.minutos)], falas(fim.blocos)) });
+      // Lembretes finais SÓ para o dirigente (não são falados ao grupo): uma parte à parte, no fim.
+      if (Array.isArray(esboco.lembretes) && esboco.lembretes.length) {
+        partes.push({ paragrafos: 'Lembretes do dirigente', texto: ['🧑‍🏫 ' + negrito(maiusculas('Lembretes para o dirigente')) + ' (não são falados ao grupo)', ...esboco.lembretes.map(l => '• ' + comPerguntas(l))].join('\n\n') });
+      }
       return partes;
     }
 
@@ -18570,7 +18587,7 @@ function saveTemplatesToStorage() {
       const salvos = campoSalvos();
       return {
         data: document.getElementById('campoData').value || campoDataLocal(),
-        minutos: Math.min(7, Math.max(5, Number(document.getElementById('campoMinutos').value) || 5)),
+        minutos: 5, // a consideração é sempre de 5 minutos
         tipos: marcados('campoTipo'),
         campanha: document.getElementById('campoCampanha').value.trim(),
         publico: document.getElementById('campoPublico').value.trim(),

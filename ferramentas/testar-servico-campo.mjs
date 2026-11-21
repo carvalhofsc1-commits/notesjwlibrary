@@ -84,9 +84,8 @@ teste("dadosDoCampo: padrões e limites", () => {
   assert.match(d.data, /^\d{4}-\d{2}-\d{2}$/);
   assert.equal(d.minutos, 5);
   assert.deepEqual(d.tipos, ["casa"]);
-  assert.equal(d.aposReuniao, false);
   assert.deepEqual(d.fontes, { w24: true, lmd: true, th: true, be: true, outros: true, artigos: ["w26.09", "w26.03", "w25.03", "w23.02", "w22.11", "w21.10", "w21.07", "w18.10"] });
-  const e = campo.dadosDoCampo({ minutos: 9, tipos: ["xyz"], data: "2026-13-45", usados: [3, "4", 0, -1, 3, "a", 2.5], recentes: ["a", "", "b", "c", "d", "e", "f"], fontes: { be: false }, aposReuniao: true });
+  const e = campo.dadosDoCampo({ minutos: 9, tipos: ["xyz"], data: "2026-13-45", usados: [3, "4", 0, -1, 3, "a", 2.5], recentes: ["a", "", "b", "c", "d", "e", "f"], fontes: { be: false } });
   assert.equal(e.minutos, 5);
   assert.deepEqual(e.tipos, ["casa"]);
   assert.notEqual(e.data, "2026-13-45");
@@ -98,8 +97,7 @@ teste("dadosDoCampo: padrões e limites", () => {
   assert.deepEqual(so.fontes.artigos, ["w26.09", "w25.03", "w23.02", "w22.11", "w21.10", "w21.07"]);
   assert.equal(so.fontes.outros, false);
   assert.deepEqual(campo.dadosDoCampo({ fontes: { sentinela: false } }).fontes.artigos, []);
-  assert.equal(e.aposReuniao, true);
-  assert.equal(campo.dadosDoCampo({ minutos: "7" }).minutos, 7);
+  assert.equal(campo.dadosDoCampo({ minutos: "7" }).minutos, 5); // 6.11.60: sempre 5 minutos
   assert.deepEqual(campo.dadosDoCampo({ tipos: ["publico", "rural", "publico"] }).tipos, ["publico", "rural"]);
 });
 
@@ -213,7 +211,7 @@ teste("textoDasFontesDoCampo e listaDeFontes", () => {
 // ---------- Prompts ----------
 teste("prompts: sistemaCampo e sistemaCampoAssuntos com o formato; partes e travados", () => {
   const P = prompts.montarPrompts({});
-  assert.ok(P.sistemaCampo.includes("FORMATO DO ESBOÇO DAS CONSIDERAÇÕES PARA O SERVIÇO DE CAMPO"));
+  assert.ok(P.sistemaCampo.includes("FORMATO DA CONSIDERAÇÃO PARA O SERVIÇO DE CAMPO"));
   assert.ok(P.sistemaCampo.includes("dicaDirigente"));
   assert.ok(P.sistemaCampo.includes("VOCABULÁRIO"));
   assert.ok(P.sistemaCampo.includes("texto diário"));
@@ -271,38 +269,62 @@ if (comFontes) {
   const fontesSemRede = { w24: false, outros: false, artigos: Object.fromEntries(campo.COMPLEMENTARES.map((a) => [a.codigo, false])), lmd: true, th: true, be: true };
 
   teste("handler campo: mensagem, limpeza e resposta", async () => {
+    // 6.11.60: sem introdução nem conclusão; a leitura abre o primeiro ponto (argumento vazio); lembretes só do dirigente; sempre 5 minutos.
     respostaDaIa = {
-      tema: "Interesse sincero pelas pessoas", objetivo: "Mostrar interesse hoje.", aplicacao: "Ouvir mais.",
-      introducao: { titulo: "Quem está do outro lado da porta?", minutos: 1, blocos: [{ texto: "Pense na última conversa que você teve na pregação.", lista: [] }] },
+      tema: "Interesse sincero pelas pessoas", objetivo: "Mostrar interesse hoje.",
       pontos: [
-        ponto("Jeová se interessa pelas pessoas", "w24.05, § 3", { referencia: "Filipenses 2:4", introducao: "O que Paulo recomendou?", destaque: "Vimos no texto que..." }),
-        ponto("Ouça antes de falar", "lmd lição 1, Interesse pelas pessoas"),
-        ponto("Uma frase-modelo para hoje", ""),
-        ponto("Um quarto ponto que sobra", "w99.01, § 2"),
+        {
+          titulo: "Jeová se interessa pelas pessoas", minutos: 3, fonte: "w24.05, § 3", aplicacao: null, ilustracao: "Como um amigo que se lembra do nome de todos.", transicao: "",
+          desenvolvimento: [
+            { argumento: "", ideias: [], leitura: { referencia: "Filipenses 2:4", introducao: "O que Paulo recomendou?", destaque: "Vimos no texto que..." } },
+            { argumento: "Hoje, pergunte pelo morador antes de falar da mensagem.", ideias: ["Faça uma pergunta sobre a rua.", "Escute até o fim."], leitura: null },
+          ],
+        },
+        { titulo: "Um segundo ângulo", minutos: 3, fonte: "lmd lição 1, Interesse pelas pessoas", aplicacao: null, ilustracao: null, transicao: "", desenvolvimento: [{ argumento: "Imite Jesus na conversa com a samaritana.", ideias: [], leitura: null }] },
+        { titulo: "Um terceiro que sobra", minutos: 1, fonte: "w99.01, § 2", aplicacao: null, ilustracao: null, transicao: "", desenvolvimento: [{ argumento: "Algo mais.", ideias: [], leitura: null }] },
       ],
-      conclusao: { titulo: "Vamos com interesse", minutos: 2, blocos: [{ texto: "Portanto, esteja determinado a ouvir.", lista: ["As duplas", "O território"] }] },
+      lembretes: ["Lembrar os publicadores de levar as publicações.", "Formar as duplas com consideração.", "", "Entregar o território."],
       dicaDirigente: "Tenha o território já separado.",
     };
-    const r = await chamar({ tarefa: "campo", data: "2026-11-21", minutos: 6, tipos: ["publico"], assunto: "interesse pelas pessoas", evitar: "Boas maneiras na porta", recentes: ["Boas maneiras na porta"], fontes: fontesSemRede });
+    const r = await chamar({ tarefa: "campo", data: "2026-11-21", minutos: 7, tipos: ["publico"], assunto: "interesse pelas pessoas", evitar: "Boas maneiras na porta", recentes: ["Boas maneiras na porta"], fontes: fontesSemRede });
     assert.equal(r.statusCode, 200, JSON.stringify(r.corpo));
     const p = pedidos.at(-1);
-    assert.ok(p.system.includes("FORMATO DO ESBOÇO DAS CONSIDERAÇÕES PARA O SERVIÇO DE CAMPO"));
+    assert.ok(p.system.includes("FORMATO DA CONSIDERAÇÃO PARA O SERVIÇO DE CAMPO"));
+    assert.ok(p.system.includes("NUNCA mencione horário"), "o prompt proíbe horário (manhã, tarde, noite)");
+    assert.ok(!p.system.includes("PRINCÍPIOS PARA ELABORAR UM ESBOÇO"), "os princípios gerais (introdução e conclusão) não valem aqui");
     const msg = p.messages[0].content;
-    for (const t of ["DURAÇÃO: 6 minutos", "TIPO DE PREGAÇÃO: ", "ASSUNTO PEDIDO PELO DIRIGENTE: interesse pelas pessoas", "EVITAR:", "LIÇÕES DAS BROCHURAS", "CONSIDERAÇÕES RECENTES", "sábado, 21 de novembro de 2026"]) assert.ok(msg.includes(t), t);
+    for (const t of ["DURAÇÃO: 5 minutos", "TIPO DE PREGAÇÃO: ", "ASSUNTO PEDIDO PELO DIRIGENTE: interesse pelas pessoas", "EVITAR:", "LIÇÕES DAS BROCHURAS", "CONSIDERAÇÕES RECENTES", "sábado, 21 de novembro de 2026"]) assert.ok(msg.includes(t), t);
     assert.ok(!msg.includes("A SENTINELA DE MAIO DE 2024"), "w24.05 desmarcada não pode ir");
+    assert.ok(!/LOGO DEPOIS DE UMA REUNIÃO/i.test(msg), "a opção removida não vai mais na mensagem");
     const { esboco, titulo, minutos } = r.corpo;
-    assert.equal(minutos, 6);
+    assert.equal(minutos, 5, "sempre 5 minutos, mesmo pedindo 7");
     assert.match(titulo, /^Serviço de campo · sáb 21\/11$/);
-    assert.ok(esboco.pontos.length <= 3, `pontos: ${esboco.pontos.length}`);
-    const soma = esboco.introducao.minutos + esboco.conclusao.minutos + esboco.pontos.reduce((s, x) => s + x.minutos, 0);
-    assert.equal(soma, 6);
+    assert.ok(esboco.pontos.length <= 2, `pontos: ${esboco.pontos.length}`);
+    assert.equal(esboco.introducao.blocos.length, 0); assert.equal(esboco.conclusao.blocos.length, 0);
+    assert.equal(esboco.pontos.reduce((s, x) => s + x.minutos, 0), 5, "os 5 minutos se repartem só entre os pontos");
+    // a leitura abre o primeiro ponto: argumento vazio e leitura preenchida, com o texto exato da Bíblia
+    const abre = esboco.pontos[0].desenvolvimento[0];
+    assert.equal(abre.argumento, ""); assert.ok(abre.leitura && /Filipenses 2:4/.test(abre.leitura.referencia));
+    assert.equal(esboco.pontos[0].ilustracao, "Como um amigo que se lembra do nome de todos.");
     const fontesCitadas = esboco.pontos.flatMap((x) => x.fontes || []);
     assert.ok(!fontesCitadas.some((x) => /w24\.05|w99/.test(x)), `fontes: ${fontesCitadas}`);
+    assert.deepEqual(esboco.lembretes, ["Lembrar os publicadores de levar as publicações.", "Formar as duplas com consideração.", "Entregar o território."]);
     assert.equal(esboco.dicaDirigente, "Tenha o território já separado.");
     assert.equal(esboco.paragrafoW24, null);
     assert.ok(Array.isArray(esboco.fontes));
   });
 
+  teste("handler campo: sem leitura bíblica a consideração não vale", async () => {
+    respostaDaIa = {
+      tema: "Sem texto", objetivo: "",
+      pontos: [{ titulo: "Só aplicações", minutos: 5, fonte: "", aplicacao: null, ilustracao: null, transicao: "", desenvolvimento: [{ argumento: "Uma aplicação.", ideias: [], leitura: null }] }],
+      lembretes: [], dicaDirigente: "",
+    };
+    const r = await chamar({ tarefa: "campo", data: "2026-11-21", fontes: fontesSemRede });
+    assert.equal(r.statusCode, 200);
+    assert.ok(r.corpo.erro && /texto bíblico/.test(r.corpo.erro), String(r.corpo.erro));
+    assert.equal(r.corpo.esboco, null);
+  });
   teste("handler campo-assuntos: 3 assuntos, sem parágrafo inventado", async () => {
     respostaDaIa = { assuntos: [1, 2, 3].map((n) => ({ titulo: `Assunto ${n}`, resumo: "Resumo.", paragrafoW24: 99 })) };
     const r = await chamar({ tarefa: "campo-assuntos", fontes: fontesSemRede });

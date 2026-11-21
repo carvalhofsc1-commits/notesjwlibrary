@@ -2,6 +2,19 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.60
+
+- **Considerações para o serviço de campo — esboço bem menor e no formato próprio** (regras registradas só para esta consideração, no prompt "Considerações para o serviço de campo", que o administrador vê e edita na tela de prompts):
+  1. **Nunca menciona horário** (manhã, tarde, noite): a saída de campo pode ser a qualquer hora.
+  2. **Sem introdução nem conclusão** do esboço-padrão: os princípios gerais de esboço deixaram de entrar nesta tarefa.
+  3. **Lembretes finais só para o dirigente** (ex.: "Lembrar os publicadores de…"): ficam numa parte à parte no fim, "Lembretes para o dirigente (não são falados ao grupo)", e não fazem parte do que se fala à assistência.
+  4. **Sempre baseada num texto bíblico, que abre a consideração**: a leitura é o primeiro item. Pode haver UMA frase curta antes, para chamar a atenção para o texto, ou começar direto na leitura.
+  5. **Depois da leitura**, as aplicações: um raciocínio da matéria escolhida e as aplicações à pregação do dia; um segundo texto, se for preciso, para reforçar ou concluir o ponto (no máximo 2 leituras).
+  6. **Ilustração simples** só se for muito apropriada (opcional).
+  7. **Exemplos de personagens bíblicos** (Jesus, apóstolos e evangelizadores do primeiro século, profetas…) são bem-vindos.
+  8. **Sempre 5 minutos**: saiu o seletor de duração da tela; o servidor ignora qualquer outro valor.
+- O esboço agora tem 1 ponto (no máximo 2) com a leitura abrindo o ponto, em vez de introdução, 3 pontos e conclusão. Se a IA não trouxer uma leitura bíblica, o app avisa e não mostra o esboço. O "Sugerir 3 assuntos" também passa a propor assuntos apoiados num texto bíblico e sem horário.
+
 ## 6.11.59
 
 - Considerações para o serviço de campo:

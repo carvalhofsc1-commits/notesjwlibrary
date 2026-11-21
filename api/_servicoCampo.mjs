@@ -255,7 +255,7 @@ function hojeNoBrasil() {
 export function dadosDoCampo(body) {
   const b = body && typeof body === "object" ? body : {};
   const dataValida = typeof b.data === "string" && /^\d{4}-\d{2}-\d{2}$/.test(b.data) && !Number.isNaN(Date.parse(b.data + "T12:00:00Z"));
-  const minutos = [5, 6, 7].includes(Number(b.minutos)) ? Number(b.minutos) : 5; // nunca mais de 7
+  const minutos = 5; // a consideração é sempre de 5 minutos (6.11.60); o app não manda mais a duração
   const tipos = Array.isArray(b.tipos) ? [...new Set(b.tipos.filter((t) => TIPOS_DE_PREGACAO.some((x) => x.id === t)))] : [];
   const f = b.fontes && typeof b.fontes === "object" ? b.fontes : {};
   const marcada = (k) => f[k] !== false; // todas marcadas por padrão
@@ -264,7 +264,6 @@ export function dadosDoCampo(body) {
   const artigos = COMPLEMENTARES.filter((a) => f.sentinela !== false && art[a.codigo] !== false).map((a) => a.codigo);
   return {
     data: dataValida ? b.data : hojeNoBrasil(),
-    aposReuniao: b.aposReuniao === true,
     minutos,
     tipos: tipos.length ? tipos : ["casa"],
     campanha: linha(b.campanha, 200),

@@ -3598,7 +3598,7 @@ async function corpoDoEsbocoLimpo(saidaBruta, o) {
             leitura: referencia ? { referencia, introducao: frase(l.introducao, 400), destaque: frase(l.destaque, 500) } : null,
           };
         })
-        .filter((d) => d.argumento)
+        .filter((d) => d.argumento || (o.argumentoOpcional && d.leitura))
         .slice(0, o.maxArgumentos),
       aplicacao: limparTextoGerado(p.aplicacao, 400) || null,
       ilustracao: limparTextoGerado(p.ilustracao, 400) || null,
@@ -4819,9 +4819,13 @@ async function esbocoDeOutros(res, body, P) {
 // As fontes (w24.05 com o rodízio dos parágrafos, as lições do lmd e do th, os artigos complementares e o be) vêm de _servicoCampo.mjs.
 // Mesma estrutura dos outros esboços; cada ponto traz a fonte que a IA usou (só vale se citar uma fonte da mensagem) e o esboço inteiro,
 // uma dica para o dirigente.
+// 6.11.60: a consideração é curta (5 minutos) e NÃO tem introdução nem conclusão: começa com a leitura de um texto bíblico (no primeiro
+// argumento do primeiro ponto, com "argumento" vazio), segue com as aplicações, e os lembretes finais são só para o dirigente.
 const SaidaCampo = z.object({
-  ...corpoDoEsboco(),
+  tema: z.string(),
+  objetivo: z.string(),
   pontos: z.array(pontoDoEsboco().extend({ fonte: z.string() })),
+  lembretes: z.array(z.string()),
   dicaDirigente: z.string(),
 });
 const SaidaCampoAssuntos = z.object({
@@ -4883,7 +4887,7 @@ async function esbocoDeCampo(res, body, P) {
     : `ASSUNTO: o dirigente não escolheu; tire um assunto prático para hoje do parágrafo de w24.05 abaixo${f.paragrafo ? "" : " (ou, sem ele, das outras fontes)"}, ligado ao tipo de pregação.`;
   let mensagem =
     blocoOrientacao(opcoes, ajuste, P) +
-    `PEDIDO: elabore o esboço da consideração para o serviço de campo de ${d.minutos} minutos${d.aposReuniao ? ", logo depois de uma reunião (mais curta)" : ""}.\n` +
+    `PEDIDO: elabore a consideração para o serviço de campo (sempre ${d.minutos} minutos), começando pela leitura de um texto bíblico, sem introdução nem conclusão, com os lembretes finais só para o dirigente.\n` +
     emojisDoEsboco(opcoes, P) + "\n\n" +
     textoDosDadosDoCampo(d) + "\n\n" +
     assunto +
@@ -4912,23 +4916,36 @@ async function esbocoDeCampo(res, body, P) {
     const { esboco: corpo, avisos } = await corpoDoEsbocoLimpo(bruto, {
       emoji: opcoes.emoji,
       temaPadrao: d.assunto || "Considerações para o serviço de campo",
-      minutosMax: 7,
-      maxPontos: 3,
-      maxArgumentos: 3,
-      maxBlocosIntro: 2,
-      maxBlocosConclusao: 3,
+      minutosMax: 5,
+      maxPontos: 2,
+      maxArgumentos: 4,
+      argumentoOpcional: true, // o primeiro argumento é só a leitura (sem frase antes)
+      maxBlocosIntro: 0,
+      maxBlocosConclusao: 0,
       fontesDoPonto: (i) => {
         const fonte = fonteDoPonto(pontosBrutos[i] && pontosBrutos[i].fonte, siglas);
         return fonte ? [fonte] : [];
       },
       maxLeituras: 2,
     });
-    acertarMinutos(corpo, d.minutos);
+    // Sem introdução nem conclusão: os 5 minutos se repartem só entre os pontos (o do primeiro, que traz a leitura, não fica menor que os outros).
+    corpo.introducao.minutos = 0;
+    corpo.conclusao.minutos = 0;
+    {
+      const pesos = corpo.pontos.map((p) => Math.max(1, p.minutos || 1));
+      const somaPesos = pesos.reduce((n, p) => n + p, 0) || 1;
+      const exatos = pesos.map((p) => (p * d.minutos) / somaPesos);
+      const minutos = exatos.map(Math.floor);
+      let sobra = d.minutos - minutos.reduce((n, m) => n + m, 0);
+      exatos.map((e, i) => ({ i, resto: e - Math.floor(e) })).sort((a, b) => b.resto - a.resto).forEach(({ i }) => { if (sobra-- > 0) minutos[i]++; });
+      corpo.pontos.forEach((p, i) => { p.minutos = minutos[i]; });
+    }
     const citado = JSON.stringify(bruto);
     const esboco = {
       ...corpo,
       fontes: listaDeFontes(f, citado),
       paragrafoW24: f.paragrafo ? f.paragrafo.numero : null,
+      lembretes: (Array.isArray(bruto.lembretes) ? bruto.lembretes : []).map((x) => limparTextoGerado(x, 220)).filter(Boolean).slice(0, 5),
       dicaDirigente: limparTextoGerado(bruto.dicaDirigente, 500),
     };
     if (f.paragrafo && !corpo.pontos.some((p) => p.fontes.some((x) => /w24\.05/i.test(x)))) {
@@ -4936,7 +4953,8 @@ async function esbocoDeCampo(res, body, P) {
     }
     if (d.fontes.w24 && !f.w24) avisos.push("Não consegui ler A Sentinela de maio de 2024 no wol.jw.org agora: o esboço usou as outras fontes.");
     if (f.reiniciou) avisos.push("Todos os parágrafos de w24.05 já tinham sido usados: o rodízio recomeçou.");
-    const completo = esboco.pontos.length > 0 && esboco.introducao.blocos.length > 0 && esboco.conclusao.blocos.length > 0;
+    // Completo = tem ponto e a consideração se apoia num texto bíblico lido (a leitura abre o primeiro ponto).
+    const completo = esboco.pontos.length > 0 && esboco.pontos[0].desenvolvimento.some((x) => x.leitura);
     const leituras = esboco.pontos.flatMap((p) => p.desenvolvimento.map((x) => x.leitura).filter(Boolean)).map((l) => l.referencia);
 
     console.log(
@@ -4944,7 +4962,6 @@ async function esbocoDeCampo(res, body, P) {
       JSON.stringify({
         modelo: P.ia.modelo,
         minutos: d.minutos,
-        aposReuniao: d.aposReuniao,
         tipos: d.tipos,
         assunto: !!d.assunto,
         paragrafoW24: esboco.paragrafoW24,
@@ -4967,7 +4984,7 @@ async function esbocoDeCampo(res, body, P) {
       titulo: `Serviço de campo · ${dataCurta(d.data)}${esboco.paragrafoW24 ? ` · w24.05 § ${esboco.paragrafoW24}` : ""}`,
       url: null,
       minutos: d.minutos,
-      erro: completo ? null : "A IA não montou o esboço completo (introdução, pontos e conclusão). Tente de novo.",
+      erro: completo ? null : "A IA não montou a consideração (ela precisa se basear na leitura de um texto bíblico). Tente de novo.",
       esboco: completo ? esboco : null,
       avisos: completo ? avisos : [],
       textosBiblicos: completo ? await textosDaMateria({ todos: leituras, leia: leituras }) : [],
