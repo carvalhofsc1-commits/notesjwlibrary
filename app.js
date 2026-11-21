@@ -7931,7 +7931,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.62'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.63'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -18399,6 +18399,10 @@ function saveTemplatesToStorage() {
       const leitura = leia => '➜ 🟡 📖 ' + negrito('LEIA') + ' ' + negrito(leia.referencia) + (leia.texto ? ': “' + textoDaLeitura(leia) + '”' : '');
       // Como no modelo de esboço: argumentos "•" e, recuadas, as ideias que os desenvolvem. Quando há leitura, a fala que prepara o
       // texto fecha as ideias, o aviso LEIA vem entre linhas em branco e a fala que destaca o texto vem logo depois.
+      // Considerações para o serviço de campo (6.11.63): cada ponto principal (o argumento e cada ideia que o desenvolve) fica separado por uma
+      // linha em branco; nos outros esboços as ideias seguem coladas ao argumento, como no modelo.
+      const campo = Object.prototype.hasOwnProperty.call(esboco, 'paragrafoW24');
+      const entre = campo ? '\n\n' : '\n';
       const argumentos = itens => itens.flatMap(item => {
         const ideias = (item.ideias || []).map(ideia => '    ◦ ' + comPerguntas(ideia));
         const l = item.leitura;
@@ -18412,12 +18416,12 @@ function saveTemplatesToStorage() {
           const depois = [];
           if (l.destaque) depois.push('    ◦ ' + comPerguntas(l.destaque));
           depois.push(...ideias);
-          if (depois.length) blocos.push(depois.join('\n'));
+          if (depois.length) blocos.push(depois.join(entre));
           return blocos;
         }
-        if (!l) return ['• ' + argumento + (ideias.length ? '\n' + ideias.join('\n') : '')];
+        if (!l) return ['• ' + argumento + (ideias.length ? entre + ideias.join(entre) : '')];
         if (l.introducao) ideias.push('    ◦ ' + comPerguntas(l.introducao));
-        const blocos = ['• ' + argumento + (ideias.length ? '\n' + ideias.join('\n') : ''), leitura(l)];
+        const blocos = ['• ' + argumento + (ideias.length ? entre + ideias.join(entre) : ''), leitura(l)];
         if (l.destaque) blocos.push('    ◦ ' + comPerguntas(l.destaque));
         return blocos;
       });

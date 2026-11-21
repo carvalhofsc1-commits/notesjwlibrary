@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.63
+
+- Considerações para o serviço de campo: no esboço, **cada ponto principal fica separado por uma linha em branco** (a pergunta, cada aplicação e o comentário depois da leitura), em vez de as aplicações ficarem coladas umas nas outras. Só nesta consideração; os outros esboços mantêm as ideias coladas ao argumento, como no modelo.
+
 ## 6.11.62
 
 - Considerações para o serviço de campo — o formulário em contêineres coloridos:
