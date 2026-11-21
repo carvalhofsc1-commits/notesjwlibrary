@@ -7930,7 +7930,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.49'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.50'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26905,7 +26905,7 @@ function saveTemplatesToStorage() {
       sessao: document.getElementById('participarSessao'),
       status: document.getElementById('participarStatus')
     };
-    const participarVazio = () => ({ cod: '', chave: '', programa: null, dirigente: false, participanteId: '', nome: '', versao: '', estado: null, participantes: [], extras: null, offset: 0, secoes: [], dir: null, semConexao: false });
+    const participarVazio = () => ({ cod: '', chave: '', programa: null, dirigente: false, participanteId: '', nome: '', versao: '', estado: null, participantes: [], extras: null, offset: 0, secoes: [], dir: null, semConexao: false, jogos: new Map() });
     const participar = Object.assign(participarVazio(), { timer: 0, consultando: false, fila: Promise.resolve(), voltarPara: 'inicio', nomeCod: '' });
 
     const participarCodigoLimpo = v => String(v || '').toUpperCase().replace(/[^0-9A-Z]/g, '');
@@ -27198,6 +27198,7 @@ function saveTemplatesToStorage() {
         const s = participar.secoes[e.atual];
         if (s) setTimeout(() => s.sec.scrollIntoView({ block: 'start', behavior: 'smooth' }), 120);
       }
+      participar.jogos.forEach((_, i) => participarJogoPintar(i));
       participarDirigentePintar();
     }
 
@@ -27316,7 +27317,9 @@ function saveTemplatesToStorage() {
       return det;
     }
 
-    // O jogo na sessão: as perguntas (com a referência) e o material sem resposta; as respostas não vêm do servidor.
+    // O jogo na sessão (6.11.50): as perguntas (com a referência) e o material sem resposta. A resposta de cada rodada só chega do
+    // servidor depois que o dirigente toca em 👁️ Revelar resposta (nem o aparelho do dirigente a recebe antes). 🎲 Sortear quem responde:
+    // o dirigente sorteia entre quem entrou ou entre os nomes informados; todos veem o nome, com uma animação curta.
     function participarJogoMontar(j, parteIdx) {
       const caixa = document.createElement('div');
       caixa.className = 'fam-jogo fam-sessao-jogo';
@@ -27340,13 +27343,56 @@ function saveTemplatesToStorage() {
         a.textContent = '🎮 Abrir o FunPlayB';
         caixa.appendChild(a);
       }
+      const ref = { rodadas: [], sorteio: null, nome: null, ultimoN: null };
+      // Sorteio: o nome sorteado aparece para todos; os botões, só para o dirigente.
+      const sorteio = document.createElement('div');
+      sorteio.className = 'fam-sessao-sorteio';
+      const nome = document.createElement('p');
+      nome.className = 'fam-sessao-sorteado';
+      nome.setAttribute('aria-live', 'polite');
+      nome.hidden = true;
+      sorteio.appendChild(nome);
+      if (participar.dirigente) {
+        const botoes = document.createElement('div');
+        botoes.className = 'fam-sessao-sorteio-botoes';
+        const sortear = (fonte, texto) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'secondary fam-fino';
+          b.textContent = texto;
+          b.addEventListener('click', () => participarAcao({ acao: 'sortear', fonte, parte: parteIdx }, b));
+          botoes.appendChild(b);
+        };
+        sortear('participantes', '🎲 Sortear entre quem entrou');
+        if ((participar.programa.nomes || []).length) sortear('nomes', '🎲 Sortear entre os nomes');
+        sorteio.appendChild(botoes);
+      }
+      caixa.appendChild(sorteio);
+      ref.sorteio = sorteio;
+      ref.nome = nome;
       const rodadas = j.rodadas || [];
       if (rodadas.length) {
         const ol = document.createElement('ol');
         ol.className = 'fam-lista fam-sessao-rodadas';
-        rodadas.forEach(r => {
+        rodadas.forEach((r, k) => {
           const li = document.createElement('li');
-          li.textContent = r.pergunta + (r.referencia ? ' (' + r.referencia + ')' : '');
+          const perg = document.createElement('p');
+          perg.className = 'fam-sessao-pergunta';
+          perg.textContent = r.pergunta + (r.referencia ? ' (' + r.referencia + ')' : '');
+          const resp = document.createElement('p');
+          resp.className = 'fam-sessao-resposta escondida';
+          resp.textContent = '🙈 Resposta escondida';
+          li.append(perg, resp);
+          let btn = null;
+          if (participar.dirigente) {
+            btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'secondary fam-fino fam-sessao-revelar';
+            btn.textContent = '👁️ Revelar resposta';
+            btn.addEventListener('click', () => participarAcao({ acao: 'revelar', parte: parteIdx, rodada: k }, btn));
+            li.appendChild(btn);
+          }
+          ref.rodadas.push({ resp, btn });
           ol.appendChild(li);
         });
         caixa.appendChild(ol);
@@ -27363,7 +27409,37 @@ function saveTemplatesToStorage() {
         det.append(sm, ol);
         caixa.appendChild(det);
       }
+      participar.jogos.set(parteIdx, ref);
+      participarJogoPintar(parteIdx, true);
       return caixa;
+    }
+
+    // Respostas reveladas e o nome sorteado, a cada mudança do estado.
+    function participarJogoPintar(i, montando) {
+      const ref = participar.jogos.get(i);
+      const e = participar.estado;
+      if (!ref || !e) return;
+      const rev = (e.reveladas && e.reveladas[i]) || {};
+      ref.rodadas.forEach((r, k) => {
+        const txt = rev[k];
+        const revelada = txt != null && txt !== '';
+        r.resp.classList.toggle('escondida', !revelada);
+        r.resp.classList.toggle('revelada', revelada);
+        r.resp.textContent = revelada ? '💡 Resposta: ' + txt : '🙈 Resposta escondida';
+        if (r.btn) r.btn.hidden = revelada;
+      });
+      const s = e.sorteio;
+      const vale = s && s.nome && (s.parte == null || s.parte === i);
+      ref.nome.hidden = !vale;
+      if (!vale) return;
+      ref.nome.textContent = '🎲 Vez de: ' + s.nome;
+      if (!montando && ref.ultimoN != null && s.n !== ref.ultimoN) {
+        // Animação curta só quando sai um sorteio novo (reinicia a animação).
+        ref.nome.classList.remove('novo');
+        void ref.nome.offsetWidth;
+        ref.nome.classList.add('novo');
+      }
+      ref.ultimoN = s.n;
     }
 
     // As ações do dirigente vão uma de cada vez (a próxima espera a anterior), para o estado não voltar atrás.

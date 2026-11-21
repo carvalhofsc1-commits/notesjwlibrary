@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.50
+
+- Adoração em Família compartilhada, fase 4 (jogo ao vivo): na seção do jogo, cada rodada mostra a pergunta (com a referência) e **🙈 Resposta escondida** para todos, inclusive para o dirigente.
+  - O dirigente toca em **👁️ Revelar resposta**, rodada por rodada; só então o servidor envia aquela resposta, e ela aparece para todos com animação suave. As outras continuam fora do aparelho.
+  - **🎲 Sortear entre quem entrou** e **🎲 Sortear entre os nomes** (os nomes informados ao compartilhar): todos veem "🎲 Vez de: nome", com uma animação curta; a mesma pessoa não sai duas vezes seguidas.
+  - O material sem resposta (cartela, pares, cenas) aparece normalmente; o FunPlayB continua com o botão para abrir o jogo e, no aparelho do dirigente, o CSV para copiar.
+
 ## 6.11.49
 
 - Adoração em Família compartilhada, fase 3 (tela **Participar**): nova tela "🔗 Adoração em família ao vivo", aberta pelo menu (**Participar de uma adoração**), pelo botão na tela de Adoração em Família e pelo link `#participar=CÓDIGO` (o código já vem preenchido e é validado sozinho; o endereço passa a mostrar só `#participar`).

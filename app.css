@@ -17054,3 +17054,20 @@ body[data-screen="participar"] :is(.screen-inicio, .screen-editor, .screen-forma
 @media (prefers-reduced-motion: reduce) {
   .fam-sessao-corpo, .fam-sessao-corpo-dentro, .fam-sessao-secao { transition: none; }
 }
+
+/* ---- 6.11.50: jogo ao vivo (sorteio e respostas reveladas pelo dirigente) ---- */
+.fam-sessao-sorteio { display: grid; gap: 6px; margin: 6px 0 10px; }
+.fam-sessao-sorteio-botoes { display: flex; flex-wrap: wrap; gap: 6px; }
+.fam-sessao-sorteado { margin: 0; padding: 8px 12px; border-radius: 10px; background: #fdf6e7; border: 1px solid #f0dfb8; color: #6a4f12; font-weight: 600; font-size: 1.08em; text-align: center; }
+.fam-sessao-sorteado.novo { animation: fam-sorteio .7s ease-out; }
+@keyframes fam-sorteio { 0% { transform: scale(.85); opacity: 0; } 55% { transform: scale(1.06); opacity: 1; } 100% { transform: scale(1); } }
+.fam-sessao-rodadas li { margin: 6px 0 10px; }
+.fam-sessao-pergunta { margin: 0 0 4px; }
+.fam-sessao-resposta { margin: 0 0 4px; font-size: .92em; padding: 4px 10px; border-radius: 8px; display: inline-block; }
+.fam-sessao-resposta.escondida { color: #7a8194; background: #f4f5f8; border: 1px dashed #d5d9e2; }
+.fam-sessao-resposta.revelada { color: #2d4f86; background: #eef4fd; border: 1px solid #cddcf3; animation: fam-revelar .4s ease-out; }
+@keyframes fam-revelar { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+.fam-sessao-revelar { display: block; margin-top: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  .fam-sessao-sorteado.novo, .fam-sessao-resposta.revelada { animation: none; }
+}
