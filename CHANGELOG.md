@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.26
+
+- Adoração em Família, caixa "Jogos aceitos": o fim da caixa foi alinhado. A opção "Pode usar papel e lápis" ocupa a largura da lista, com a caixa de marcar centralizada no texto, e "Marcar todos" e "Desmarcar todos" dividem a linha em duas colunas de mesmo tamanho, alinhadas com a lista.
+
 ## 6.11.25
 
 - Adoração em Família: abaixo do botão da IA, novo card recolhível e fino **"📂 Programações salvas (n)"**. Ao abrir, lista todas as programações já salvas (as preparadas pela IA e as montadas por você), da mais recente para a mais antiga, cada uma com o tema (emoji e título), o tempo total, o número de atividades, um resumo do assunto e a lista das atividades, cada uma com os minutos e um resumo curto (e o jogo, quando houver). "📂 Abrir na tela" traz a programação de volta com todos os detalhes (copiar, Word, jogos, FunPlayB) e "🗑️" apaga. A lista se atualiza sozinha ao salvar ou apagar (também em Pesquisas salvas).

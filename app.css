@@ -16785,7 +16785,12 @@ textarea.fam-campo {
 .fam-jogos-box { border: 1px solid var(--line, #cbd5e1); border-radius: 10px; padding: 0 10px 10px; margin-top: 8px; min-width: 0; }
 .fam-jogos-box > summary { cursor: pointer; min-height: 40px; display: flex; align-items: center; gap: 6px; font-weight: 600; }
 .fam-jogos-box .fam-checks.fam-desligado { opacity: .5; }
-.fam-jogo-papel { margin-top: 8px; }
+/* Rodapé da caixa de jogos alinhado: a opção do papel na largura da lista e os dois botões em duas colunas iguais. */
+.fam-jogos-rodape { display: grid; gap: 8px; margin-top: 8px; min-width: 0; width: 100%; box-sizing: border-box; }
+.fam-jogos-rodape .fam-jogo-papel { margin: 0; width: 100%; align-items: center; }
+.fam-jogos-rodape .fam-jogo-papel input[type="checkbox"] { margin: 0; }
+.fam-acoes-dupla { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; min-width: 0; width: 100%; }
+.fam-acoes-dupla > .fam-fino { width: 100%; min-width: 0; margin: 0; }
 .fam-jogo, .fam-funplayb { display: grid; gap: 6px; min-width: 0; margin-top: 8px; padding: 8px 10px; border-left: 3px solid #f59e0b; border-radius: 6px; background: color-mix(in srgb, #f59e0b 8%, transparent); }
 .fam-funplayb { border-left-color: #3b82f6; background: color-mix(in srgb, #3b82f6 8%, transparent); margin-top: 10px; }
 .fam-jogo-itens > summary { cursor: pointer; font-weight: 600; min-height: 36px; display: flex; align-items: center; }
