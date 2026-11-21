@@ -2600,14 +2600,50 @@ const SaidaAdoracaoFamilia = z.object({
           canticos: z.array(z.number()),
           publicacoes: z.array(z.string()),
           perguntas: z.array(z.string()),
+          // Jogo da parte, todo PRONTO para jogar (6.11.24): regras, material e o conteúdo (rodadas, perguntas, personagens, abreviações…).
+          jogo: z.object({ tipo: z.string(), nome: z.string(), comoJogar: z.string(), material: z.string().nullable(), itens: z.array(z.string()) }).nullable(),
         })
       ),
       preparacao: z.array(z.string()),
       tarefas: z.array(z.object({ membro: z.string(), tarefa: z.string() })),
       dicaParaOChefe: z.string().nullable(),
+      // Tema personalizado do FunPlayB (só quando o jogo "FunPlayB: tema personalizado" for usado): perguntas para importar no jogo.
+      funplayb: z
+        .object({
+          tema: z.string(),
+          perguntas: z.array(z.object({ enunciado: z.string(), opcaoA: z.string(), opcaoB: z.string(), opcaoC: z.string(), opcaoD: z.string(), resposta: z.string(), dificuldade: z.string(), referencia: z.string() })),
+        })
+        .nullable(),
     })
   ),
 });
+
+// Os tipos de jogo que o usuário pode aceitar (os mesmos textos da tela) e o formato de importação do FunPlayB (CSV com ";").
+const JOGOS_FAMILIA = [
+  "Quem sou eu? (personagens bíblicos)",
+  "Show do milhão bíblico (perguntas de múltipla escolha)",
+  "Abreviações bíblicas (ex.: Os 12 A de C)",
+  "Mímica de personagens e cenas",
+  "Verdadeiro ou falso",
+  "Ordem dos acontecimentos",
+  "Quem disse isso? (frases da Bíblia)",
+  "Jogo da memória (pares de cartas)",
+  "Caça ao tesouro bíblico (pistas pela casa)",
+  "Charadas e adivinhas bíblicas",
+  "Bingo bíblico",
+  "Complete o versículo",
+  "Forca bíblica (papel e lápis)",
+  "Palavras cruzadas ou caça-palavras (papel e lápis)",
+  "Desenho e adivinhação (Pictionary bíblico)",
+  "FunPlayB: jogar um tema de perguntas",
+  "FunPlayB: tema personalizado (20 perguntas para importar)",
+];
+const JOGO_FUNPLAYB_PERSONALIZADO = JOGOS_FAMILIA[JOGOS_FAMILIA.length - 1];
+const CABECALHO_FUNPLAYB = "tema;enunciado;opcao_a;opcao_b;opcao_c;opcao_d;resposta_correta;dificuldade;referencia";
+const campoCsv = (v) => {
+  const t = String(v == null ? "" : v).replace(/\s+/g, " ").trim();
+  return /[;"]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
+};
 const DURACOES_ADORACAO = [30, 45, 60, 90];
 const MAX_MEMBROS_FAMILIA = 12;
 const SITUACOES_FAMILIA = ["Batizado", "Publicador não batizado", "Removido", "Descrente", "Estudante"];
@@ -2657,7 +2693,11 @@ function perfilDaFamilia(body) {
   const canticoInicial = Boolean(body.canticoInicial) || legadoAmbos || atividades.some((a) => /^c[aâ]ntico\s+inicial$/i.test(a));
   const canticoFinal = Boolean(body.canticoFinal) || legadoAmbos || atividades.some((a) => /^c[aâ]ntico\s+final$/i.test(a));
   const incluirVideo = atividades.some((a) => /v[ií]deo/i.test(a));
+  // Jogos (6.11.24): com "Jogos ou adivinhas" marcado, só os tipos aceitos (lista da tela); sem nenhum marcado, sem jogos.
+  const jogos = atividades.some((a) => /^jogos?\b/i.test(a)) ? (Array.isArray(body.jogos) ? body.jogos : []).filter((j, i, l) => JOGOS_FAMILIA.includes(j) && l.indexOf(j) === i) : [];
   return {
+    jogos,
+    jogoPapel: body.jogoPapel !== false,
     formacao: textoLivre(body.formacao, 80),
     membros,
     anosCasados: Number.isInteger(anos) && anos >= 0 && anos <= 80 ? anos : null,
@@ -2826,6 +2866,14 @@ async function responderAdoracaoFamilia(res, body, P) {
           : 'marcado, mas a lista de vídeos não está disponível agora (deixe "videos" vazio)'
         : 'NÃO (opção desmarcada; deixe "videos" vazio [] em todas as partes)'
     }\n` +
+    (perfil.jogos.length
+      ? `JOGOS ACEITOS PELA FAMÍLIA (use SÓ estes tipos): ${perfil.jogos.join("; ")}\n` +
+        `PAPEL E LÁPIS NOS JOGOS: ${perfil.jogoPapel ? "podem ser usados (opcionalmente)" : "NÃO usar papel nem lápis"}\n` +
+        `JOGO OBRIGATÓRIO: em CADA opção, inclua pelo menos UMA parte com jogo, preenchendo o campo "jogo" TODO PRONTO para jogar (regras curtas, material e o conteúdo completo em "itens": as rodadas, perguntas com respostas, personagens com dicas, abreviações com a resposta etc., conforme o tipo). Escolha jogos diferentes entre as opções, ligados ao assunto e adequados às idades. Só dados bem conhecidos, nada difícil demais nem inventado.\n` +
+        (perfil.jogos.includes(JOGO_FUNPLAYB_PERSONALIZADO)
+          ? `FUNPLAYB PERSONALIZADO: se uma opção usar o jogo "${JOGO_FUNPLAYB_PERSONALIZADO}", preencha nessa opção (em UMA só das opções) o campo "funplayb" com o tema e EXATAMENTE 20 perguntas de múltipla escolha sobre o assunto (enunciado até 250 caracteres; cada alternativa até 100; "resposta" a, b, c ou d, variando a posição da certa; "dificuldade" facil, medio ou dificil; "referencia" com o livro, capítulo e versículo da Bíblia ou da publicação e um trecho entre aspas, até 500 caracteres; "tema" até 40 caracteres). Nas outras opções, funplayb = null.\n`
+          : `FUNPLAYB PERSONALIZADO: não usar (funplayb = null em todas as opções).\n`)
+      : `JOGOS: NÃO (nenhum tipo de jogo aceito; deixe "jogo" = null em todas as partes e funplayb = null).\n`) +
     `DURAÇÃO TOTAL: ${perfil.duracao} minutos\n` +
     `ASSUNTO PEDIDO PARA ESTA SEMANA: ${perfil.assunto || (qtd === 1 ? "nenhum (escolha o assunto que melhor sirva para esta família)" : `nenhum (escolha ${qtd} assuntos bem diferentes, que sirvam para esta família)`)}\n` +
     (materias.length
@@ -2889,6 +2937,36 @@ async function responderAdoracaoFamilia(res, body, P) {
       const vistos = new Set();
       return lista.filter((x) => x && !vistos.has(chave(x)) && vistos.add(chave(x)));
     };
+    // O jogo da parte: só com tipos aceitos; o texto é limpo e limitado (regras, material e até 25 itens prontos).
+    const jogoDe = (j) => {
+      if (!perfil.jogos.length || !j || typeof j !== "object") return null;
+      const nomeJogo = linha(j.nome, 80);
+      const comoJogar = limparTextoGerado(j.comoJogar, 1200);
+      const itens = (Array.isArray(j.itens) ? j.itens : []).map((t) => limparTextoGerado(t, 500)).filter(Boolean).slice(0, 25);
+      if (!nomeJogo || !comoJogar) return null;
+      return { tipo: linha(j.tipo, 80), nome: nomeJogo, comoJogar, material: perfil.jogoPapel || !/papel|l[aá]pis|caneta/i.test(String(j.material || "")) ? limparTextoGerado(j.material, 300) : "", itens };
+    };
+    // O tema do FunPlayB: cada pergunta confere os limites do módulo de importação (senão sai); o CSV sai pronto para colar.
+    const funplaybDe = (f) => {
+      if (!perfil.jogos.includes(JOGO_FUNPLAYB_PERSONALIZADO) || !f || typeof f !== "object") return null;
+      const tema = linha(f.tema, 40);
+      if (!tema) return null;
+      const letras = ["a", "b", "c", "d"];
+      const perguntas = [];
+      for (const q of Array.isArray(f.perguntas) ? f.perguntas : []) {
+        const enunciado = linha(q.enunciado, 250);
+        const alternativas = [q.opcaoA, q.opcaoB, q.opcaoC, q.opcaoD].map((x) => linha(x, 100));
+        const resp = String(q.resposta || "").trim().toLowerCase().slice(0, 1);
+        const dif = String(q.dificuldade || "").toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
+        const referencia = linha(q.referencia, 500);
+        if (!enunciado || alternativas.some((x) => !x) || !letras.includes(resp) || !referencia) continue;
+        perguntas.push({ enunciado, opcaoA: alternativas[0], opcaoB: alternativas[1], opcaoC: alternativas[2], opcaoD: alternativas[3], resposta: resp, dificuldade: dif.includes("dific") ? "dificil" : dif.includes("medi") ? "medio" : "facil", referencia });
+        if (perguntas.length >= 20) break;
+      }
+      if (perguntas.length < 5) return null;
+      const csv = [CABECALHO_FUNPLAYB, ...perguntas.map((q) => [tema, q.enunciado, q.opcaoA, q.opcaoB, q.opcaoC, q.opcaoD, q.resposta, q.dificuldade, q.referencia].map(campoCsv).join(";"))].join("\n");
+      return { tema, perguntas, csv };
+    };
     const opcoes = [];
     for (const o of resposta.parsed_output.opcoes.slice(0, perfil.quantidade)) {
       const partes = [];
@@ -2911,6 +2989,7 @@ async function responderAdoracaoFamilia(res, body, P) {
           canticos: bloquearCantico ? [] : semRepetir((p.canticos || []).map((n) => porNumero.get(Math.round(Number(n)))), (c) => c.numero).slice(0, 3).map((c) => ({ numero: c.numero, titulo: c.titulo })),
           publicacoes: semRepetir((p.publicacoes || []).map(publicacaoDe), (x) => x.titulo.toLowerCase()).slice(0, 4),
           perguntas: (p.perguntas || []).map((q) => limparTextoGerado(q, 300)).filter(Boolean).slice(0, 5),
+          jogo: jogoDe(p.jogo),
         });
       }
       if (!partes.length) continue;
@@ -2937,6 +3016,7 @@ async function responderAdoracaoFamilia(res, body, P) {
           .filter((t) => t.tarefa && !/fazer a oraç[aã]o inicial|^oraç[aã]o inicial$/i.test(t.tarefa))
           .slice(0, 10),
         dicaParaOChefe: o.dicaParaOChefe ? limparTextoGerado(o.dicaParaOChefe, 800) : "",
+        funplayb: funplaybDe(o.funplayb),
       });
     }
     // Sem dados pessoais no log: só as contagens.

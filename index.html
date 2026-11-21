@@ -2886,6 +2886,35 @@
               <label class="fam-check"><input type="checkbox" value="Caminhada ou atividade ao ar livre"><span>Caminhada ou atividade ao ar livre</span></label>
               <label class="fam-check"><input type="checkbox" value="Cozinhar juntos"><span>Cozinhar juntos</span></label>
             </div>
+            <!-- Jogos aceitos (6.11.24): vale quando "Jogos ou adivinhas" está marcado; a IA entrega o jogo escolhido pronto (regras, material e conteúdo). -->
+            <details id="familiaJogosBox" class="fam-jogos-box">
+              <summary>🎲 Jogos aceitos <span id="familiaJogosQtd" class="opc"></span></summary>
+              <p class="hint fam-dica">Marque os tipos de jogo que a família gosta. A IA escolhe entre eles e já traz o jogo pronto (regras, material e perguntas, personagens ou abreviações). Vale quando “Jogos ou adivinhas” está marcado acima.</p>
+              <div id="familiaJogos" class="fam-checks" role="group" aria-label="Jogos aceitos">
+                <label class="fam-check"><input type="checkbox" value="Quem sou eu? (personagens bíblicos)" checked><span>Quem sou eu? (personagens bíblicos)</span></label>
+                <label class="fam-check"><input type="checkbox" value="Show do milhão bíblico (perguntas de múltipla escolha)" checked><span>Show do milhão bíblico (perguntas de múltipla escolha)</span></label>
+                <label class="fam-check"><input type="checkbox" value="Abreviações bíblicas (ex.: Os 12 A de C)" checked><span>Abreviações bíblicas (ex.: Os 12 A de C)</span></label>
+                <label class="fam-check"><input type="checkbox" value="Mímica de personagens e cenas" checked><span>Mímica de personagens e cenas</span></label>
+                <label class="fam-check"><input type="checkbox" value="Verdadeiro ou falso" checked><span>Verdadeiro ou falso</span></label>
+                <label class="fam-check"><input type="checkbox" value="Ordem dos acontecimentos" checked><span>Ordem dos acontecimentos</span></label>
+                <label class="fam-check"><input type="checkbox" value="Quem disse isso? (frases da Bíblia)" checked><span>Quem disse isso? (frases da Bíblia)</span></label>
+                <label class="fam-check"><input type="checkbox" value="Jogo da memória (pares de cartas)" checked><span>Jogo da memória (pares de cartas)</span></label>
+                <label class="fam-check"><input type="checkbox" value="Caça ao tesouro bíblico (pistas pela casa)" checked><span>Caça ao tesouro bíblico (pistas pela casa)</span></label>
+                <label class="fam-check"><input type="checkbox" value="Charadas e adivinhas bíblicas" checked><span>Charadas e adivinhas bíblicas</span></label>
+                <label class="fam-check"><input type="checkbox" value="Bingo bíblico" checked><span>Bingo bíblico</span></label>
+                <label class="fam-check"><input type="checkbox" value="Complete o versículo" checked><span>Complete o versículo</span></label>
+                <label class="fam-check"><input type="checkbox" value="Forca bíblica (papel e lápis)" checked><span>Forca bíblica (papel e lápis)</span></label>
+                <label class="fam-check"><input type="checkbox" value="Palavras cruzadas ou caça-palavras (papel e lápis)" checked><span>Palavras cruzadas ou caça-palavras (papel e lápis)</span></label>
+                <label class="fam-check"><input type="checkbox" value="Desenho e adivinhação (Pictionary bíblico)" checked><span>Desenho e adivinhação (Pictionary bíblico)</span></label>
+                <label class="fam-check"><input type="checkbox" value="FunPlayB: jogar um tema de perguntas" checked><span>🎮 FunPlayB: jogar um tema de perguntas</span></label>
+                <label class="fam-check"><input type="checkbox" value="FunPlayB: tema personalizado (20 perguntas para importar)" checked><span>🎮 FunPlayB: tema personalizado (20 perguntas para importar)</span></label>
+              </div>
+              <label class="fam-check fam-jogo-papel"><input id="familiaJogoPapel" type="checkbox" checked><span>✏️ Pode usar papel e lápis (ou caneta) nos jogos</span></label>
+              <div class="fam-acoes">
+                <button id="familiaJogosTodos" class="secondary fam-fino" type="button">Marcar todos</button>
+                <button id="familiaJogosNenhum" class="secondary fam-fino" type="button">Desmarcar todos</button>
+              </div>
+            </details>
           </div>
         </div>
       </details>

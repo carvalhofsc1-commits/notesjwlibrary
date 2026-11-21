@@ -7921,7 +7921,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.23'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.24'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -9630,7 +9630,7 @@
             familiaOutrasCircEl.value = '';
             familiaAssuntoEl.value = '';
             familiaDuracaoEl.value = '45';
-            document.querySelectorAll('#familiaCircunstancias input[type="checkbox"], #familiaAtividades input[type="checkbox"]').forEach(el => { el.checked = el.defaultChecked; });
+            document.querySelectorAll('#familiaCircunstancias input[type="checkbox"], #familiaAtividades input[type="checkbox"], #familiaJogos input[type="checkbox"], #familiaJogoPapel').forEach(el => { el.checked = el.defaultChecked; });
             familiaMembrosEl.innerHTML = '';
             familiaPerfilCarregar();
           }
@@ -25726,6 +25726,8 @@ function saveTemplatesToStorage() {
         circunstancias: familiaChecksLidos(document.getElementById('familiaCircunstancias')),
         outrasCircunstancias: (familiaOutrasCircEl.value || '').trim().slice(0, 500),
         atividades: familiaChecksLidos(document.getElementById('familiaAtividades')),
+        jogos: familiaChecksLidos(document.getElementById('familiaJogos')),
+        jogoPapel: document.getElementById('familiaJogoPapel').checked,
         duracao: Number(familiaDuracaoEl.value) || 45,
         quantidade: Number(familiaQuantidadeEl.value) === 1 ? 1 : 2,
         assunto: (familiaAssuntoEl.value || '').trim().slice(0, 300)
@@ -25772,6 +25774,8 @@ function saveTemplatesToStorage() {
         const ativ = salvo.canticosInicioFim ? salvo.atividades.concat(['Cântico inicial', 'Cântico final']) : salvo.atividades;
         familiaChecksMarcar(document.getElementById('familiaAtividades'), ativ);
       }
+      if (Array.isArray(salvo.jogos)) familiaChecksMarcar(document.getElementById('familiaJogos'), salvo.jogos); // sem escolha salva: todos marcados (o padrão)
+      document.getElementById('familiaJogoPapel').checked = salvo.jogoPapel !== false;
       if ([30, 45, 60, 90].includes(Number(salvo.duracao))) familiaDuracaoEl.value = String(salvo.duracao);
       familiaQuantidadeEl.value = Number(salvo.quantidade) === 1 ? '1' : '2'; // sem escolha salva (ou antiga, de 3 opções): 2
       if (typeof salvo.assunto === 'string') familiaAssuntoEl.value = salvo.assunto;
@@ -25805,11 +25809,28 @@ function saveTemplatesToStorage() {
         circunstancias: perfil.circunstancias,
         outrasCircunstancias: perfil.outrasCircunstancias,
         atividades: perfil.atividades,
+        jogos: perfil.jogos,
+        jogoPapel: perfil.jogoPapel,
         duracao: perfil.duracao,
         quantidade: perfil.quantidade,
         assunto: perfil.assunto
       };
     }
+
+    // Jogos (6.11.24): as linhas de texto de um jogo pronto (nome, regras, material e o conteúdo numerado).
+    // O tipo do jogo sem o exemplo entre parênteses ("Abreviações bíblicas (ex.: Os 12 A de C)" -> " · Abreviações bíblicas"); vazio se repete o nome.
+    function familiaTipoJogo(j) {
+      const curto = String(j.tipo || '').replace(/\s*\(.*$/, '').trim();
+      return curto && curto.toLowerCase() !== String(j.nome || '').toLowerCase() ? ' · ' + curto : '';
+    }
+    function familiaJogoLinhas(j) {
+      const l = ['🎲 Jogo: ' + j.nome + familiaTipoJogo(j), j.comoJogar];
+      if (j.material) l.push('✏️ Material: ' + j.material);
+      (j.itens || []).forEach((t, i) => l.push((i + 1) + ') ' + t));
+      return l;
+    }
+    const FUNPLAYB_ENDERECO = 'https://jogo-perguntas-app.vercel.app';
+    const familiaTemJogoFunplayb = op => (op.partes || []).some(p => p.jogo && /funplayb/i.test((p.jogo.tipo || '') + ' ' + (p.jogo.nome || '')));
 
     function familiaTextoDaOpcao(op) {
       const linhas = [];
@@ -25828,8 +25849,12 @@ function saveTemplatesToStorage() {
         (p.canticos || []).forEach(c => linhas.push('🎵 Cântico ' + c.numero + (c.titulo ? ' — ' + c.titulo : '')));
         (p.publicacoes || []).forEach(pub => linhas.push('📚 ' + [pub.titulo, pub.fonte].filter(Boolean).join(' · ') + (pub.url ? ' — ' + pub.url : '')));
         (p.perguntas || []).forEach(q => linhas.push('❓ ' + q));
+        if (p.jogo) linhas.push('', ...familiaJogoLinhas(p.jogo));
         if (p.transicao) linhas.push('➡️ Transição: ' + p.transicao);
       });
+      if (op.funplayb) {
+        linhas.push('', '🎮 Tema para o FunPlayB: ' + op.funplayb.tema + ' (' + op.funplayb.perguntas.length + ' perguntas). Para jogar: copie o texto abaixo, abra o FunPlayB (' + FUNPLAYB_ENDERECO + ') e cole no módulo de importação de perguntas.', op.funplayb.csv);
+      }
       if ((op.preparacao || []).length) {
         linhas.push('', 'Preparação:');
         op.preparacao.forEach(t => linhas.push('• ' + t));
@@ -25869,6 +25894,7 @@ function saveTemplatesToStorage() {
         (parte.canticos || []).forEach(c => partes.push(item(runs('🎵 Cântico ' + c.numero + (c.titulo ? ' — ' + c.titulo : ''), '', 22))));
         (parte.publicacoes || []).forEach(pub => partes.push(item(runs('📚 ' + [pub.titulo, pub.fonte].filter(Boolean).join(' · '), '', 22) + (pub.url ? runs(' — ' + pub.url, '', 18, corRef) : ''))));
         (parte.perguntas || []).forEach(q => partes.push(item(runs('❓ ' + q, '', 22))));
+        if (parte.jogo) partes.push(p('<w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="F59E0B"/></w:pBdr><w:ind w:left="240"/>' + espaco(60, 100), runs('🎲 Jogo: ' + parte.jogo.nome, 'b', 22) + runs(' — o material pronto está no fim do documento (Material dos jogos).', 'i', 20, cinza)));
         if (parte.transicao) partes.push(p('<w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="' + corRef + '"/></w:pBdr><w:ind w:left="240"/>' + espaco(60, 100), runs('➡️ Transição: ' + parte.transicao, 'i', 22)));
       });
       if ((op.preparacao || []).length) {
@@ -25880,6 +25906,24 @@ function saveTemplatesToStorage() {
         op.tarefas.forEach(t => partes.push(item(runs((t.membro ? t.membro + ': ' : '') + (t.tarefa || ''), '', 22))));
       }
       if (op.dicaParaOChefe) partes.push(p('<w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="F59E0B"/></w:pBdr><w:ind w:left="240"/>' + espaco(280, 100), runs('💡 ' + op.dicaParaOChefe, 'i', 22)));
+      // Material dos jogos: uma parte separada, em página nova, com cada jogo pronto para imprimir ou ler em voz alta.
+      const jogos = (op.partes || []).filter(x => x.jogo).map(x => x.jogo);
+      if (jogos.length || op.funplayb) {
+        partes.push('<w:p><w:r><w:br w:type="page"/></w:r></w:p>');
+        partes.push(p(espaco(0, 160), runs('🎲 Material dos jogos', 'b', 32)));
+        jogos.forEach((j, i) => {
+          partes.push(p('<w:keepNext/><w:pBdr><w:bottom w:val="single" w:sz="4" w:space="2" w:color="D1D5DB"/></w:pBdr>' + espaco(240, 80), runs((i + 1) + '. ' + j.nome + familiaTipoJogo(j), 'b', 26)));
+          partes.push(p(espaco(0, 80), runs('Como jogar: ', 'b', 22) + runs(j.comoJogar, '', 22)));
+          if (j.material) partes.push(p(espaco(0, 80), runs('✏️ Material: ', 'b', 22) + runs(j.material, '', 22)));
+          (j.itens || []).forEach((t, k) => partes.push(p('<w:ind w:left="360" w:hanging="360"/>' + espaco(0, 60), runs((k + 1) + ') ', 'b', 22) + runs(t, '', 22))));
+        });
+        if (op.funplayb) {
+          const f = op.funplayb;
+          partes.push(p('<w:keepNext/><w:pBdr><w:bottom w:val="single" w:sz="4" w:space="2" w:color="D1D5DB"/></w:pBdr>' + espaco(300, 80), runs('🎮 Tema para o FunPlayB: ' + f.tema + ' (' + f.perguntas.length + ' perguntas)', 'b', 26)));
+          partes.push(p(espaco(0, 100), runs('Para jogar: copie as perguntas no NoteStyle (botão “Copiar perguntas para o FunPlayB”), abra o FunPlayB (' + FUNPLAYB_ENDERECO + ') e cole no módulo de importação de perguntas.', 'i', 20, cinza)));
+          f.perguntas.forEach((q, k) => partes.push(p('<w:ind w:left="360" w:hanging="360"/>' + espaco(0, 60), runs((k + 1) + ') ' + q.enunciado + ' ', 'b', 20) + runs('A) ' + q.opcaoA + '  B) ' + q.opcaoB + '  C) ' + q.opcaoC + '  D) ' + q.opcaoD + '  → ', '', 20) + runs(q.resposta.toUpperCase(), 'b', 20))));
+        }
+      }
       return partes.join('');
     }
     window.familiaDocxCorpo = familiaDocxCorpo;
@@ -25908,6 +25952,7 @@ function saveTemplatesToStorage() {
         (parte.canticos || []).forEach(c => li('🎵 ' + e('Cântico ' + c.numero + (c.titulo ? ' — ' + c.titulo : ''))));
         (parte.publicacoes || []).forEach(pub => li('📚 ' + e([pub.titulo, pub.fonte].filter(Boolean).join(' · ')) + (pub.url ? '<br><span class="pq-doc-url">' + e(pub.url) + '</span>' : '')));
         (parte.perguntas || []).forEach(q => li('❓ ' + e(q)));
+        if (parte.jogo) html.push('<p class="pq-doc-faixa pq-doc-conclusao"><b>🎲 Jogo: ' + e(parte.jogo.nome) + '</b> — o material pronto está no fim do documento (Material dos jogos).</p>');
         if (parte.transicao) html.push('<p class="pq-doc-faixa pq-doc-conclusao">➡️ Transição: ' + e(parte.transicao) + '</p>');
       });
       if ((op.preparacao || []).length) {
@@ -25919,6 +25964,22 @@ function saveTemplatesToStorage() {
         op.tarefas.forEach(t => html.push('<p class="pq-doc-fonte">• ' + e((t.membro ? t.membro + ': ' : '') + (t.tarefa || '')) + '</p>'));
       }
       if (op.dicaParaOChefe) html.push('<p class="pq-doc-faixa pq-doc-conclusao">💡 ' + e(op.dicaParaOChefe) + '</p>');
+      const jogosDoc = (op.partes || []).filter(x => x.jogo).map(x => x.jogo);
+      if (jogosDoc.length || op.funplayb) {
+        html.push('<p class="pq-doc-titulo" style="margin-top:2em">🎲 Material dos jogos <span class="pq-doc-cinza">(página nova no Word)</span></p>');
+        jogosDoc.forEach((j, i) => {
+          html.push('<p class="pq-doc-secao">' + e((i + 1) + '. ' + j.nome + familiaTipoJogo(j)) + '</p>');
+          html.push('<p class="pq-doc-p"><b>Como jogar:</b> ' + e(j.comoJogar) + '</p>');
+          if (j.material) html.push('<p class="pq-doc-p"><b>✏️ Material:</b> ' + e(j.material) + '</p>');
+          (j.itens || []).forEach((t, k) => html.push('<p class="pq-doc-fonte"><b>' + (k + 1) + ')</b> ' + e(t) + '</p>'));
+        });
+        if (op.funplayb) {
+          const f = op.funplayb;
+          html.push('<p class="pq-doc-secao">🎮 Tema para o FunPlayB: ' + e(f.tema) + ' (' + f.perguntas.length + ' perguntas)</p>');
+          html.push('<p class="pq-doc-p"><i>Para jogar: copie as perguntas no NoteStyle, abra o FunPlayB e cole no módulo de importação de perguntas.</i></p>');
+          f.perguntas.forEach((q, k) => html.push('<p class="pq-doc-fonte"><b>' + (k + 1) + ') ' + e(q.enunciado) + '</b> A) ' + e(q.opcaoA) + ' B) ' + e(q.opcaoB) + ' C) ' + e(q.opcaoC) + ' D) ' + e(q.opcaoD) + ' → <b>' + e(q.resposta.toUpperCase()) + '</b></p>'));
+        }
+      }
       folha.innerHTML = html.join('');
       raiz.append(dica, folha);
       return raiz;
@@ -26044,6 +26105,37 @@ function saveTemplatesToStorage() {
             } else li.textContent = rotulo;
           });
           addLista('❓ Perguntas', parte.perguntas, (li, q) => { li.textContent = q; });
+          if (parte.jogo) {
+            const j = parte.jogo;
+            const caixaJogo = document.createElement('div');
+            caixaJogo.className = 'fam-jogo';
+            const tj = document.createElement('p');
+            tj.className = 'fam-secao-titulo';
+            tj.textContent = '🎲 Jogo: ' + j.nome + familiaTipoJogo(j);
+            const rj = document.createElement('p');
+            rj.className = 'fam-parte-desc';
+            rj.textContent = j.comoJogar;
+            caixaJogo.append(tj, rj);
+            if (j.material) {
+              const mj = document.createElement('p');
+              mj.className = 'fam-parte-desc';
+              mj.textContent = '✏️ Material: ' + j.material;
+              caixaJogo.appendChild(mj);
+            }
+            if ((j.itens || []).length) {
+              const det = document.createElement('details');
+              det.className = 'fam-jogo-itens';
+              det.open = true;
+              const sm = document.createElement('summary');
+              sm.textContent = 'Material pronto para jogar (' + j.itens.length + ')';
+              const ol = document.createElement('ol');
+              ol.className = 'fam-lista';
+              j.itens.forEach(t => { const li = document.createElement('li'); li.textContent = t; ol.appendChild(li); });
+              det.append(sm, ol);
+              caixaJogo.appendChild(det);
+            }
+            bloco.appendChild(caixaJogo);
+          }
           if (parte.transicao) {
             const tr = document.createElement('p');
             tr.className = 'fam-parte-transicao';
@@ -26052,6 +26144,7 @@ function saveTemplatesToStorage() {
           }
           card.appendChild(bloco);
         });
+        if (op.funplayb) card.appendChild(familiaFunplaybPainel(op.funplayb));
         if ((op.preparacao || []).length) {
           const t = document.createElement('p');
           t.className = 'fam-secao-titulo';
@@ -26135,6 +26228,54 @@ function saveTemplatesToStorage() {
         }
         card.appendChild(acoes);
         return card;
+    }
+
+    // O tema personalizado do FunPlayB: copiar as perguntas (CSV pronto para o módulo de importação) e abrir o jogo.
+    function familiaFunplaybPainel(f) {
+      const caixa = document.createElement('div');
+      caixa.className = 'fam-funplayb';
+      const t = document.createElement('p');
+      t.className = 'fam-secao-titulo';
+      t.textContent = '🎮 Tema para o FunPlayB: ' + f.tema + ' (' + f.perguntas.length + ' perguntas)';
+      const d = document.createElement('p');
+      d.className = 'fam-parte-desc';
+      d.textContent = 'Toque em “Copiar perguntas”, abra o FunPlayB e cole no módulo de importação de perguntas. O tema entra pronto para jogar.';
+      const acoes = document.createElement('div');
+      acoes.className = 'fam-acoes';
+      const copiar = document.createElement('button');
+      copiar.type = 'button';
+      copiar.className = 'fam-fino fam-principal';
+      copiar.textContent = '📋 Copiar perguntas para o FunPlayB';
+      copiar.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(f.csv);
+          copiar.textContent = '✅ Copiadas';
+          setTimeout(() => { copiar.textContent = '📋 Copiar perguntas para o FunPlayB'; }, 1800);
+        } catch (e) {
+          familiaStatus('Não consegui copiar. Abra a lista abaixo, selecione o texto e copie manualmente.', 'erro');
+        }
+      });
+      const abrir = document.createElement('a');
+      abrir.className = 'secondary fam-fino fam-link-botao';
+      abrir.href = FUNPLAYB_ENDERECO;
+      abrir.target = '_blank';
+      abrir.rel = 'noopener noreferrer';
+      abrir.textContent = '🎮 Abrir o FunPlayB';
+      acoes.append(copiar, abrir);
+      const det = document.createElement('details');
+      det.className = 'fam-jogo-itens';
+      const sm = document.createElement('summary');
+      sm.textContent = 'Ver as perguntas';
+      const ol = document.createElement('ol');
+      ol.className = 'fam-lista';
+      f.perguntas.forEach(q => {
+        const li = document.createElement('li');
+        li.textContent = q.enunciado + ' A) ' + q.opcaoA + ' B) ' + q.opcaoB + ' C) ' + q.opcaoC + ' D) ' + q.opcaoD + ' → ' + q.resposta.toUpperCase();
+        ol.appendChild(li);
+      });
+      det.append(sm, ol);
+      caixa.append(t, d, acoes, det);
+      return caixa;
     }
 
     // ---- Montar a minha programação: marca as partes das duas opções; o tempo previsto é somado a cada marcação (6.11.19) ----
@@ -26239,7 +26380,9 @@ function saveTemplatesToStorage() {
           partes,
           preparacao: unicos([...usadas].sort().flatMap(i => opcoes[i].preparacao || [])),
           tarefas,
-          dicaParaOChefe: ''
+          dicaParaOChefe: '',
+          // O tema do FunPlayB vai junto quando a programação usa o jogo do FunPlayB de uma opção que o trouxe.
+          funplayb: ([...usadas].sort().map(i => opcoes[i]).find(o => o.funplayb && partes.some(p => (o.partes || []).includes(p)) && familiaTemJogoFunplayb({ partes: partes.filter(p => (o.partes || []).includes(p)) })) || {}).funplayb || null
         };
         mostrarFinal(final, soma);
         resultado.firstChild.scrollIntoView({ block: 'start', behavior: 'smooth' });
@@ -26404,7 +26547,21 @@ function saveTemplatesToStorage() {
     [familiaOutrasCircEl, familiaAssuntoEl].forEach(el => el.addEventListener('input', () => { clearTimeout(el._t); el._t = setTimeout(familiaPerfilSalvar, 400); }));
     document.getElementById('familiaCircunstancias').addEventListener('change', familiaPerfilSalvar);
     document.getElementById('familiaAtividades').addEventListener('change', familiaPerfilSalvar);
+    // Jogos aceitos (6.11.24): salva ao marcar; o título mostra quantos estão marcados; a lista só vale com "Jogos ou adivinhas" marcado.
+    const familiaJogosEl = document.getElementById('familiaJogos');
+    const familiaJogosAtualizar = () => {
+      const n = familiaJogosEl.querySelectorAll('input:checked').length;
+      const ativo = Array.from(document.querySelectorAll('#familiaAtividades input:checked')).some(el => /^jogos?\b/i.test(el.value));
+      document.getElementById('familiaJogosQtd').textContent = ativo ? '(' + n + ')' : '(desligado: marque “Jogos ou adivinhas”)';
+      familiaJogosEl.classList.toggle('fam-desligado', !ativo);
+    };
+    familiaJogosEl.addEventListener('change', () => { familiaJogosAtualizar(); familiaPerfilSalvar(); });
+    document.getElementById('familiaJogoPapel').addEventListener('change', familiaPerfilSalvar);
+    document.getElementById('familiaAtividades').addEventListener('change', familiaJogosAtualizar);
+    document.getElementById('familiaJogosTodos').addEventListener('click', () => { familiaJogosEl.querySelectorAll('input').forEach(el => { el.checked = true; }); familiaJogosAtualizar(); familiaPerfilSalvar(); });
+    document.getElementById('familiaJogosNenhum').addEventListener('click', () => { familiaJogosEl.querySelectorAll('input').forEach(el => { el.checked = false; }); familiaJogosAtualizar(); familiaPerfilSalvar(); });
     familiaPerfilCarregar();
+    familiaJogosAtualizar();
     familiaBotaoRotuloAtualizar();
 
     // Campos de texto (apelidos, anos de casados, outras circunstâncias e assunto): ganham o botão 🗑️ para limpar o campo (aparece só com texto)

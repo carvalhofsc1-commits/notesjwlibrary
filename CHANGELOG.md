@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.24
+
+- Adoração em Família, jogos: em "Atividades que a família aceita" há a caixa **🎲 Jogos aceitos**, com 17 tipos para marcar (Quem sou eu?, Show do milhão bíblico, Abreviações bíblicas como "Os 12 A de C", Mímica, Verdadeiro ou falso, Ordem dos acontecimentos, Quem disse isso?, Jogo da memória, Caça ao tesouro, Charadas, Bingo, Complete o versículo, Forca, Cruzadas e caça-palavras, Pictionary bíblico e dois do FunPlayB), mais "Marcar todos", "Desmarcar todos" e a opção "Pode usar papel e lápis". Vale quando "Jogos ou adivinhas" está marcado; a escolha fica salva no aparelho.
+- Com jogos aceitos, a IA inclui em cada opção pelo menos uma parte com jogo e o entrega **pronto**: nome, regras, material e o conteúdo completo (rodadas, perguntas com a resposta, personagens com dicas, abreviações com o significado…), só com fatos bíblicos bem conhecidos e adequados às idades. Na tela, cada jogo aparece na própria parte; no Word, a parte mostra o nome e o **material fica numa seção separada ("Material dos jogos"), em página nova**; "Copiar" leva tudo.
+- **FunPlayB**: o jogo "jogar um tema de perguntas" manda abrir o FunPlayB; o jogo "tema personalizado" faz a IA criar um tema com **20 perguntas no formato de importação do FunPlayB** (CSV com ";": tema, enunciado, alternativas A a D, resposta, dificuldade e referência, respeitando os limites do módulo; pergunta fora dos limites é descartada pelo servidor). O cartão ganha "📋 Copiar perguntas para o FunPlayB" (cola direto no módulo de importação), "🎮 Abrir o FunPlayB" e a lista das perguntas; o Word também traz as perguntas com as respostas.
+- A instrução da IA (tela de prompts, "Adoração em Família") e o formato técnico foram atualizados.
+
 ## 6.11.23
 
 - Adoração em Família: ao lado de "📋 Copiar esta opção", novo botão **📝 Word** em cada opção e na "Minha programação". Ele abre a prévia da página no formato do Word (a mesma tela cheia dos esboços e das pesquisas, com A− e A+ para o tamanho da letra); de lá, "Exportar para Word" ou "Compartilhar" geram o arquivo "Adoração em Família - título.docx", com o logo, o título, o resumo e o objetivo, as partes (minutos e responsável, descrição, textos bíblicos, vídeos com o link, cânticos, publicações, perguntas e as transições da IA), a preparação, as tarefas e a dica.
