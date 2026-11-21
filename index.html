@@ -159,7 +159,7 @@
         <div class="atalhos-grid" id="atalhosPagina2" role="group" aria-label="Atalhos, página 2 de 3">
           <button type="button" class="atalho" data-atalho="formatar"><span class="atalho-icone" aria-hidden="true">✨</span><span class="atalho-nome">Formatar notas JW Library</span><span class="atalho-desc">Organizar e formatar o texto com a IA</span></button>
           <button type="button" class="atalho" data-atalho="sentinela"><span class="atalho-icone" aria-hidden="true">📰</span><span class="atalho-nome">A Sentinela</span><span class="atalho-desc">Respostas e comentários do estudo</span><span class="atalho-trava" hidden></span></button>
-          <button type="button" class="atalho" data-atalho="familia"><span class="atalho-icone" aria-hidden="true">👨‍👩‍👧</span><span class="atalho-nome">Adoração em Família</span><span class="atalho-desc">3 opções para a noite da família</span><span class="atalho-trava" hidden></span></button>
+          <button type="button" class="atalho" data-atalho="familia"><span class="atalho-icone" aria-hidden="true">👨‍👩‍👧</span><span class="atalho-nome">Adoração em Família</span><span class="atalho-desc">Opções para a noite da família</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="backup"><span class="atalho-icone" aria-hidden="true">📦</span><span class="atalho-nome">Backup do JW Library</span><span class="atalho-desc">Notas, marcações e exportação</span></button>
           <button type="button" class="atalho" data-atalho="extrato"><span class="atalho-icone" aria-hidden="true">💰</span><span class="atalho-nome">Extrato</span><span class="atalho-desc">Créditos, consumo de IA e saldo</span></button>
           <button type="button" class="atalho" data-atalho="outros"><span class="atalho-icone" aria-hidden="true">🖋️</span><span class="atalho-nome">Outros esboços</span><span class="atalho-desc">Tema livre ou esboço importado</span><span class="atalho-trava" hidden></span></button>
@@ -2817,7 +2817,7 @@
         <button id="familiaVoltar" class="secondary" type="button">◀ Voltar</button>
         <h2 id="familiaTitulo" class="fam-titulo"><span aria-hidden="true">👨‍👩‍👧</span> Adoração em Família</h2>
       </div>
-      <p class="hint">Prepare a noite da família: o perfil fica só neste aparelho (apelidos e ano de nascimento; a idade é calculada na hora). A IA monta 3 opções completas, com partes, textos, vídeos e, se quiser, cânticos.</p>
+      <p class="hint">Prepare a noite da família: o perfil fica só neste aparelho (apelidos e ano de nascimento; a idade é calculada na hora). A IA monta 1 ou 2 opções completas (você escolhe), com partes, textos, vídeos e, se quiser, cânticos.</p>
 
       <details id="familiaPerfilBox" class="fam-perfil-box">
         <summary>
@@ -2867,7 +2867,7 @@
               <label class="fam-check"><input type="checkbox" value="Criança pequena"><span>Criança pequena</span></label>
             </div>
             <label class="fam-rotulo" for="familiaOutrasCirc">Outras circunstâncias <span class="opc">(opcional)</span></label>
-            <textarea id="familiaOutrasCirc" class="fam-campo" rows="2" maxlength="500" spellcheck="true" placeholder="Ex.: mudança recente, pressão no trabalho…"></textarea>
+            <textarea id="familiaOutrasCirc" class="fam-campo" rows="1" maxlength="500" spellcheck="true" placeholder="Ex.: mudança recente, pressão no trabalho…"></textarea>
           </div>
 
           <div class="fam-bloco">
@@ -2899,12 +2899,17 @@
           <option value="60">60 minutos</option>
           <option value="90">90 minutos</option>
         </select>
+        <label class="fam-rotulo" for="familiaQuantidade">Quantas sugestões</label>
+        <select id="familiaQuantidade" class="fam-campo fam-campo-curto">
+          <option value="1">1 sugestão</option>
+          <option value="2" selected>2 sugestões</option>
+        </select>
         <label class="fam-rotulo" for="familiaAssunto">Assunto desta semana <span class="opc">(opcional)</span></label>
-        <textarea id="familiaAssunto" class="fam-campo" rows="2" maxlength="300" spellcheck="true" placeholder="Ex.: o perdão; a oração; o relato do filho pródigo. Vazio = 3 assuntos bem diferentes."></textarea>
+        <textarea id="familiaAssunto" class="fam-campo" rows="1" maxlength="300" spellcheck="true" placeholder="Ex.: o perdão; a oração; o relato do filho pródigo. Vazio = assuntos bem diferentes."></textarea>
       </div>
 
       <div class="fam-acoes">
-        <button id="familiaGerarBtn" data-codigo-ia="pesquisa" class="fam-fino fam-principal" type="button">✨ Preparar 3 opções</button>
+        <button id="familiaGerarBtn" data-codigo-ia="pesquisa" class="fam-fino fam-principal" type="button">✨ Preparar 2 opções</button>
         <button id="familiaCancelarBtn" class="secondary fam-fino" type="button" hidden>⏹️ Cancelar</button>
         <button id="familiaLimparBtn" class="secondary fam-fino limpar-btn" type="button" title="Limpar as opções geradas" aria-label="Limpar as opções geradas" hidden>🗑️</button>
       </div>

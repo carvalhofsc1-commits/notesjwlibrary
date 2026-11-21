@@ -7921,7 +7921,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.14'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.15'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -25601,6 +25601,7 @@ function saveTemplatesToStorage() {
     const familiaAnosCasadosEl = document.getElementById('familiaAnosCasados');
     const familiaOutrasCircEl = document.getElementById('familiaOutrasCirc');
     const familiaDuracaoEl = document.getElementById('familiaDuracao');
+    const familiaQuantidadeEl = document.getElementById('familiaQuantidade'); // quantas sugestões: 1 ou 2 (padrão 2)
     const familiaAssuntoEl = document.getElementById('familiaAssunto');
     const familiaStatusEl = document.getElementById('familiaStatus');
     const familiaResultadoEl = document.getElementById('familiaResultado');
@@ -25684,8 +25685,15 @@ function saveTemplatesToStorage() {
         outrasCircunstancias: (familiaOutrasCircEl.value || '').trim().slice(0, 500),
         atividades: familiaChecksLidos(document.getElementById('familiaAtividades')),
         duracao: Number(familiaDuracaoEl.value) || 45,
+        quantidade: Number(familiaQuantidadeEl.value) === 1 ? 1 : 2,
         assunto: (familiaAssuntoEl.value || '').trim().slice(0, 300)
       };
+    }
+    const familiaOpcoesTexto = n => n + (n === 1 ? ' opção' : ' opções');
+    // O botão diz quantas opções vai preparar (enquanto prepara, o relógio assume o texto e o devolve depois).
+    function familiaBotaoRotuloAtualizar() {
+      if (familiaGerarBtn.dataset.rotulo) return;
+      familiaGerarBtn.textContent = '✨ Preparar ' + familiaOpcoesTexto(Number(familiaQuantidadeEl.value) === 1 ? 1 : 2);
     }
 
     function familiaPerfilResumoPintar() {
@@ -25708,6 +25716,7 @@ function saveTemplatesToStorage() {
       let salvo = null;
       try { salvo = JSON.parse(localStorage.getItem(FAMILIA_PERFIL_KEY) || 'null'); } catch (e) { salvo = null; }
       if (!salvo || typeof salvo !== 'object') {
+        familiaQuantidadeEl.value = '2';
         familiaMembroAdd({ papel: 'Pai' });
         familiaMembroAdd({ papel: 'Mãe' });
         familiaPerfilResumoPintar();
@@ -25722,6 +25731,7 @@ function saveTemplatesToStorage() {
         familiaChecksMarcar(document.getElementById('familiaAtividades'), ativ);
       }
       if ([30, 45, 60, 90].includes(Number(salvo.duracao))) familiaDuracaoEl.value = String(salvo.duracao);
+      familiaQuantidadeEl.value = Number(salvo.quantidade) === 1 ? '1' : '2'; // sem escolha salva (ou antiga, de 3 opções): 2
       if (typeof salvo.assunto === 'string') familiaAssuntoEl.value = salvo.assunto;
       familiaMembrosEl.innerHTML = '';
       const membros = Array.isArray(salvo.membros) && salvo.membros.length ? salvo.membros.slice(0, 12) : [{ papel: 'Pai' }, { papel: 'Mãe' }];
@@ -25751,6 +25761,7 @@ function saveTemplatesToStorage() {
         outrasCircunstancias: perfil.outrasCircunstancias,
         atividades: perfil.atividades,
         duracao: perfil.duracao,
+        quantidade: perfil.quantidade,
         assunto: perfil.assunto
       };
     }
@@ -25953,6 +25964,7 @@ function saveTemplatesToStorage() {
       const pedido = ++familiaPedido;
       familiaGerarBtn.disabled = true;
       familiaCancelarBtn.hidden = false;
+      familiaQtdPedida = perfil.quantidade;
       familiaRelogioLigar();
       try {
         const result = await postStudy(familiaPayloadDe(perfil), IA_ESPERA_MS);
@@ -25981,7 +25993,7 @@ function saveTemplatesToStorage() {
             ligar: false
           });
         } catch (e) { /* o app segue sem salvar */ }
-        familiaStatus('Pronto: ' + opcoes.length + ' opções' + modelo + ' · ' + tempoTotal + (salva ? ' · 📂 salvas em Pesquisas salvas → Adoração em Família' : '') + '.', 'ok');
+        familiaStatus('Pronto: ' + familiaOpcoesTexto(opcoes.length) + modelo + ' · ' + tempoTotal + (salva ? ' · 📂 salvas em Pesquisas salvas → Adoração em Família' : '') + '.', 'ok');
         familiaResultadoEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
       } catch (e) {
         if (pedido !== familiaPedido) return;
@@ -25996,6 +26008,7 @@ function saveTemplatesToStorage() {
     }
 
     // Relógio do preparo (6.11.12): "⏱️ 0:42" no botão e na mensagem de andamento, contando desde o toque em Preparar.
+    let familiaQtdPedida = 2;
     let familiaRelogioInicio = 0;
     let familiaRelogioTimer = null;
     let familiaBotaoRotulo = '';
@@ -26006,7 +26019,7 @@ function saveTemplatesToStorage() {
     function familiaRelogioPintar() {
       const tempo = familiaRelogioTexto();
       familiaGerarBtn.textContent = '⏳ Preparando… ' + tempo;
-      familiaStatus('Preparando as 3 opções… ' + tempo + ' (pode levar um minuto ou mais)');
+      familiaStatus('Preparando ' + (familiaQtdPedida === 1 ? 'a opção' : 'as ' + familiaQtdPedida + ' opções') + '… ' + tempo + ' (pode levar um minuto ou mais)');
     }
     function familiaRelogioLigar() {
       clearInterval(familiaRelogioTimer);
@@ -26041,11 +26054,57 @@ function saveTemplatesToStorage() {
       familiaLimparBtn.hidden = true;
       familiaStatus('');
     });
-    [familiaFormacaoEl, familiaAnosCasadosEl, familiaDuracaoEl].forEach(el => el.addEventListener('change', familiaPerfilSalvar));
+    [familiaFormacaoEl, familiaAnosCasadosEl, familiaDuracaoEl, familiaQuantidadeEl].forEach(el => el.addEventListener('change', familiaPerfilSalvar));
+    familiaQuantidadeEl.addEventListener('change', familiaBotaoRotuloAtualizar);
     [familiaOutrasCircEl, familiaAssuntoEl].forEach(el => el.addEventListener('input', () => { clearTimeout(el._t); el._t = setTimeout(familiaPerfilSalvar, 400); }));
     document.getElementById('familiaCircunstancias').addEventListener('change', familiaPerfilSalvar);
     document.getElementById('familiaAtividades').addEventListener('change', familiaPerfilSalvar);
     familiaPerfilCarregar();
+    familiaBotaoRotuloAtualizar();
+
+    // Campos de texto (apelidos, anos de casados, outras circunstâncias e assunto): ganham o botão 🗑️ para limpar o campo (aparece só com texto)
+    // e, nas caixas de texto, a altura acompanha o conteúdo (6.11.15).
+    function familiaCrescer(campo) {
+      if (campo.tagName !== 'TEXTAREA' || !campo.offsetParent) return;
+      campo.style.height = 'auto';
+      campo.style.height = (campo.scrollHeight + 2) + 'px';
+    }
+    function familiaCampoLimpavel(campo, nome) {
+      if (!campo || campo.closest('.fam-limpavel')) return;
+      const caixa = document.createElement('div');
+      caixa.className = 'fam-limpavel' + (campo.classList.contains('fam-apelido') ? ' fam-apelido-caixa' : '');
+      campo.parentNode.insertBefore(caixa, campo);
+      const botao = document.createElement('button');
+      botao.type = 'button';
+      botao.className = 'secondary fam-limpar-campo';
+      botao.textContent = '🗑️';
+      botao.title = 'Limpar ' + nome;
+      botao.setAttribute('aria-label', 'Limpar ' + nome);
+      caixa.append(campo, botao);
+      const atualizar = () => { botao.hidden = !campo.value; familiaCrescer(campo); };
+      campo.addEventListener('input', atualizar);
+      campo.addEventListener('change', atualizar);
+      botao.addEventListener('click', () => {
+        campo.value = '';
+        campo.dispatchEvent(new Event('input', { bubbles: true }));
+        campo.dispatchEvent(new Event('change', { bubbles: true }));
+        campo.focus();
+      });
+      atualizar();
+    }
+    familiaCampoLimpavel(familiaAnosCasadosEl, 'os anos de casados');
+    familiaCampoLimpavel(familiaOutrasCircEl, 'as outras circunstâncias');
+    familiaCampoLimpavel(familiaAssuntoEl, 'o assunto');
+    const familiaApelidosLimpaveis = () => familiaMembrosEl.querySelectorAll('.fam-apelido').forEach(el => familiaCampoLimpavel(el, 'o apelido'));
+    familiaApelidosLimpaveis();
+    // Membros adicionados depois (botão ➕ ou ao recarregar o perfil): o mesmo tratamento.
+    new MutationObserver(familiaApelidosLimpaveis).observe(familiaMembrosEl, { childList: true });
+    // As caixas escondidas (cadastro recolhido, tela fechada) não têm altura: ajusta de novo ao abrir e ao redimensionar a tela.
+    const familiaAjustarAlturas = () => [familiaOutrasCircEl, familiaAssuntoEl].forEach(familiaCrescer);
+    document.getElementById('familiaPerfilBox').addEventListener('toggle', () => requestAnimationFrame(familiaAjustarAlturas));
+    window.addEventListener('resize', familiaAjustarAlturas);
+    window.addEventListener('hashchange', () => setTimeout(familiaAjustarAlturas, 120));
+    setTimeout(familiaAjustarAlturas, 400);
 
     function reunioesVistaAtual() { return document.body.dataset.reunioes || 'hub'; }
 

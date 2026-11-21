@@ -2659,6 +2659,8 @@ function perfilDaFamilia(body) {
     outrasCircunstancias: textoLivre(body.outrasCircunstancias, 500),
     atividades,
     duracao: DURACOES_ADORACAO.includes(Number(body.duracao)) ? Number(body.duracao) : 45,
+    // Quantas sugestões preparar (6.11.15): 1 ou 2; qualquer outro valor vale 2 (o padrão).
+    quantidade: Number(body.quantidade) === 1 ? 1 : 2,
     assunto: textoLivre(body.assunto, 300),
     canticoInicial,
     canticoFinal,
@@ -2723,8 +2725,11 @@ async function responderAdoracaoFamilia(res, body, P) {
     .map((m) => `- ${m.apelido || "(sem apelido)"} — ${m.papel || "membro da família"}${m.idade !== null ? `, ${m.idade} ${m.idade === 1 ? "ano" : "anos"}` : ""}`)
     .join("\n");
   const circunstancias = [...perfil.circunstancias, perfil.outrasCircunstancias].filter(Boolean);
+  const qtd = perfil.quantidade;
+  const todas = qtd === 1 ? "a opção" : `TODAS as ${qtd} opções`;
   const mensagem =
     `DATA: ${hoje}\n` +
+    `QUANTIDADE DE OPÇÕES: prepare EXATAMENTE ${qtd} ${qtd === 1 ? "opção" : "opções"} (onde as instruções falarem em 3 opções, vale ${qtd}).\n` +
     `FORMAÇÃO DA FAMÍLIA: ${perfil.formacao || "não informada"}\n` +
     `MEMBROS (apelido, papel e idade):\n${membros || "- não informados"}\n` +
     (perfil.anosCasados !== null ? `ANOS DE CASADOS: ${perfil.anosCasados}\n` : "") +
@@ -2735,12 +2740,12 @@ async function responderAdoracaoFamilia(res, body, P) {
     `VÍDEO DO JW.ORG: ${
       perfil.incluirVideo
         ? videos.length
-          ? 'OBRIGATÓRIO em TODAS as 3 opções (em CADA uma das 3 opções, inclua obrigatoriamente pelo menos 1 vídeo da lista abaixo no campo "videos" de uma das partes, pelo identificador ex.: "V3", levando a duração dele em conta nos minutos da parte)'
+          ? `OBRIGATÓRIO em ${todas} (em CADA opção, inclua obrigatoriamente pelo menos 1 vídeo da lista abaixo no campo "videos" de uma das partes, pelo identificador ex.: "V3", levando a duração dele em conta nos minutos da parte)`
           : 'marcado, mas a lista de vídeos não está disponível agora (deixe "videos" vazio)'
         : 'NÃO (opção desmarcada; deixe "videos" vazio [] em todas as partes)'
     }\n` +
     `DURAÇÃO TOTAL: ${perfil.duracao} minutos\n` +
-    `ASSUNTO PEDIDO PARA ESTA SEMANA: ${perfil.assunto || "nenhum (escolha 3 assuntos bem diferentes, que sirvam para esta família)"}\n` +
+    `ASSUNTO PEDIDO PARA ESTA SEMANA: ${perfil.assunto || (qtd === 1 ? "nenhum (escolha o assunto que melhor sirva para esta família)" : `nenhum (escolha ${qtd} assuntos bem diferentes, que sirvam para esta família)`)}\n` +
     (materias.length
       ? `\nMATÉRIAS DO WOL.JW.ORG SOBRE O ASSUNTO (cite pelo identificador, ex.: "P2"):\n${materias.map((m, i) => `[P${i + 1}] "${m.titulo}" (${m.rotulo}) — ${m.trecho.slice(0, 300)}`).join("\n")}\n`
       : "") +
@@ -2752,7 +2757,7 @@ async function responderAdoracaoFamilia(res, body, P) {
     (!perfil.incluirVideo
       ? `\nVÍDEOS: a opção de vídeo está desmarcada. Deixe "videos" vazio ([]) em todas as partes.\n`
       : videos.length
-        ? `\nVÍDEOS DO JW.ORG DISPONÍVEIS (OBRIGATÓRIO incluir pelo menos 1 vídeo em CADA uma das 3 opções, citando pelo identificador no campo "videos", ex.: "V3"; de preferência escolha vídeos diferentes entre as 3 opções):\n${videos.map((v, i) => `[V${i + 1}] "${v.titulo}" (${[v.duracao, v.categoria, (v.publicado || "").slice(0, 4)].filter(Boolean).join("; ")})`).join("\n")}\n`
+        ? `\nVÍDEOS DO JW.ORG DISPONÍVEIS (OBRIGATÓRIO incluir pelo menos 1 vídeo em CADA opção, citando pelo identificador no campo "videos", ex.: "V3"${qtd > 1 ? "; de preferência escolha vídeos diferentes entre as opções" : ""}):\n${videos.map((v, i) => `[V${i + 1}] "${v.titulo}" (${[v.duracao, v.categoria, (v.publicado || "").slice(0, 4)].filter(Boolean).join("; ")})`).join("\n")}\n`
         : `\nVÍDEOS: a lista não está disponível agora. Deixe "videos" vazio em todas as partes.\n`);
   try {
     const client = criarClienteIa({ maxRetries: 0, timeout: 240_000 }, P.ia.provedorTarefa);
@@ -2803,7 +2808,7 @@ async function responderAdoracaoFamilia(res, body, P) {
       return lista.filter((x) => x && !vistos.has(chave(x)) && vistos.add(chave(x)));
     };
     const opcoes = [];
-    for (const o of resposta.parsed_output.opcoes.slice(0, 3)) {
+    for (const o of resposta.parsed_output.opcoes.slice(0, perfil.quantidade)) {
       const partes = [];
       const partesBrutas = (o.partes || []).slice(0, 10);
       for (let idxParte = 0; idxParte < partesBrutas.length; idxParte++) {

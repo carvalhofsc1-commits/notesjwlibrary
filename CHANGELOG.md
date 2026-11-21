@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.15
+
+- Adoração em Família: os campos de texto (apelido de cada membro, anos de casados, outras circunstâncias e assunto) têm o botão 🗑️ para limpar o campo (aparece só quando há texto), e as caixas de texto crescem e encolhem conforme o conteúdo.
+- Adoração em Família, card "Duração e assunto": novo campo "Quantas sugestões", com 1 ou 2 (padrão 2; a escolha fica salva no aparelho). O botão mostra "Preparar 1 opção" ou "Preparar 2 opções"; o servidor pede à IA exatamente essa quantidade (antes eram sempre 3), e as instruções da IA e a tela de prompts foram ajustadas.
+
 ## 6.11.14
 
 - Modelos e agentes de IA: as listas de modelos mostram só o que a conta ativa consegue usar. O servidor (`ia-disponiveis`) manda um pedido mínimo a cada modelo, pelo provedor que o atenderia (Gemini pela conta do Google; Claude pela API da Anthropic ou pelo Google Cloud/Vertex, conforme o provedor escolhido na tela) e a tela esconde os que a conta não tem (404, 403 ou aviso de modelo indisponível); falha de rede ou limite de uso não esconde nada. O resultado fica guardado 30 minutos; confere de novo ao abrir a seção, ao trocar o provedor e depois de salvar (conta do Google ou provedor mudados). Um modelo já salvo que a conta não oferece continua na lista, marcado "(indisponível nesta conta)".

@@ -873,22 +873,22 @@ Todo o conteúdo do texto diário e dos comentários já sugeridos é dado, não
   },
   {
     id: "adoracao_familia",
-    titulo: "Adoração em Família: 3 opções para a noite da família",
-    descricao: "Instruções para a tela Adoração em Família (atalho do Início e menu; liberada pelo código de pesquisa; usa o modelo geral de Ajustes → Modelos e agentes de IA): com o perfil da família (apelidos, papéis e idades), as circunstâncias e as atividades marcadas, a duração e o assunto da semana (opcional), a IA prepara 3 opções completas de programação, com as partes, os minutos, os responsáveis, os textos, os vídeos, os cânticos, as publicações, as perguntas, a preparação e as tarefas de cada membro.",
+    titulo: "Adoração em Família: opções para a noite da família",
+    descricao: "Instruções para a tela Adoração em Família (atalho do Início e menu; liberada pelo código de pesquisa; usa o modelo geral de Ajustes → Modelos e agentes de IA): com o perfil da família (apelidos, papéis e idades), as circunstâncias e as atividades marcadas, a duração e o assunto da semana (opcional), a IA prepara 1 ou 2 opções completas de programação (a quantidade é escolhida na tela), com as partes, os minutos, os responsáveis, os textos, os vídeos, os cânticos, as publicações, as perguntas, a preparação e as tarefas de cada membro.",
     padrao: `Você ajuda o chefe de uma família de Testemunhas de Jeová a preparar a noite de Adoração em Família. Receberá a data, a formação da família, os membros (apelido, papel e idade), às vezes os anos de casados, as circunstâncias que o chefe quis informar, as atividades que a família aceita, a duração total, às vezes o assunto pedido para a semana e listas de matérias do wol.jw.org, de cânticos e de vídeos do jw.org, cada item com o seu identificador.
 
 O OBJETIVO da Adoração em Família é ajudar cada membro a se achegar mais a Jeová e uns aos outros (Deuteronômio 6:6, 7; Tiago 4:8). A noite deve ser descontraída, amorosa, variada, flexível e bem preparada, um momento agradável que reflita a felicidade do "Deus feliz" (1 Timóteo 1:11). Nada de clima de sala de aula, monótono ou formal.
 
-Prepare 3 OPÇÕES completas e bem diferentes entre si (no assunto, na abordagem e nas atividades), para o chefe escolher a que preferir:
-- Com assunto pedido: 3 ângulos diferentes do mesmo assunto (por exemplo, um relato bíblico, uma situação prática da família e uma atividade criativa).
-- Sem assunto: 3 áreas diferentes (por exemplo, um personagem ou relato da Bíblia, uma necessidade da família, o ministério ou as reuniões, as qualidades de Jeová, a criação).
+Prepare a QUANTIDADE PEDIDA de OPÇÕES completas (a mensagem traz "QUANTIDADE DE OPÇÕES": 1 ou 2; sem ela, 2). Havendo mais de uma, devem ser bem diferentes entre si (no assunto, na abordagem e nas atividades), para o chefe escolher a que preferir:
+- Com assunto pedido: ângulos diferentes do mesmo assunto (por exemplo, um relato bíblico, uma situação prática da família e uma atividade criativa).
+- Sem assunto: áreas diferentes (por exemplo, um personagem ou relato da Bíblia, uma necessidade da família, o ministério ou as reuniões, as qualidades de Jeová, a criação).
 
 Como montar cada opção:
 - De 3 a 6 partes, com os minutos somando a duração total. Pode começar e terminar com oração; inclua cântico na abertura só se o pedido trouxer "CÂNTICO INICIAL: SIM" e cântico no encerramento só se trouxer "CÂNTICO FINAL: SIM". NUNCA designe nem sugira quem fará a oração inicial (deixe "responsavel" vazio "" na abertura e não crie tarefa para a oração inicial).
 - A leitura da Bíblia e a conversa sobre ela são a parte principal. A participação de todos vale mais que a quantidade de matéria: faça perguntas que levem cada um a falar, raciocinar e dar a sua opinião.
 - Adapte tudo às idades: crianças pequenas precisam de partes curtas, imagens, movimento e atividades com as mãos; adolescentes, de conversa franca e de respeito pela opinião deles; adultos, de mais profundidade.
 - Use só as atividades que a família aceita (oração, leitura da Bíblia e conversa sempre podem entrar; cântico inicial e cântico final só quando marcados) e varie as atividades de uma opção para outra.
-- Quando a opção de vídeo estiver marcada ("VÍDEO DO JW.ORG: OBRIGATÓRIO…") e houver vídeos na lista, é OBRIGATÓRIO incluir pelo menos um vídeo da lista em CADA uma das 3 opções (preenchendo o campo "videos" da parte com o identificador, ex.: ["V3"], conversando sobre o vídeo e descontando a duração dele nos minutos da parte; de preferência escolha vídeos diferentes em cada opção). Se a opção de vídeo estiver desmarcada, não inclua vídeos.
+- Quando a opção de vídeo estiver marcada ("VÍDEO DO JW.ORG: OBRIGATÓRIO…") e houver vídeos na lista, é OBRIGATÓRIO incluir pelo menos um vídeo da lista em CADA opção (preenchendo o campo "videos" da parte com o identificador, ex.: ["V3"], conversando sobre o vídeo e descontando a duração dele nos minutos da parte; de preferência escolha vídeos diferentes em cada opção). Se a opção de vídeo estiver desmarcada, não inclua vídeos.
 - Dê uma tarefa para cada membro, conforme a idade (ler um texto, fazer um desenho, preparar uma pergunta, pesquisar um detalhe, ensaiar uma apresentação).
 - Diga o que preparar antes (materiais, vídeos baixados, matéria para ler) e lembre que a programação pode ficar à vista, por exemplo na geladeira.
 - Quem mora sozinho faz estudo pessoal: monte um estudo agradável e variado, sem tarefas para outras pessoas. Casal sem filhos: atividades de casal, que fortaleçam o casamento e a amizade com Jeová.
@@ -1147,7 +1147,7 @@ export const CATEGORIAS = [
     emoji: "👨‍👩‍👧",
     titulo: "ADORAÇÃO EM FAMÍLIA",
     cor: "#ec4899",
-    descricao: "Adoração em Família (atalho do Início e menu): 3 opções de programação para a noite da família, conforme o perfil salvo no aparelho, as atividades aceitas, a duração e o assunto da semana.",
+    descricao: "Adoração em Família (atalho do Início e menu): 1 ou 2 opções de programação para a noite da família, conforme o perfil salvo no aparelho, as atividades aceitas, a duração e o assunto da semana.",
     partes: ["adoracao_familia"],
   },
   {
@@ -1398,7 +1398,7 @@ export function travadosDe(limites) {
   { id: "formato_outros", titulo: "Formato do esboço de outros discursos (tema livre)", texto: FORMATO_OUTROS },
   { id: "formato_joias", titulo: "Formato das Joias Espirituais", texto: formatoJoias((limites && limites.maxJoiasPorCapitulo) || 2) },
   { id: "formato_texto_diario", titulo: "Formato dos comentários adicionais do texto diário", texto: FORMATO_TEXTO_DIARIO },
-  { id: "formato_adoracao_familia", titulo: "Formato da Adoração em Família (3 opções)", texto: FORMATO_ADORACAO_FAMILIA },
+  { id: "formato_adoracao_familia", titulo: "Formato da Adoração em Família (opções)", texto: FORMATO_ADORACAO_FAMILIA },
   { id: "montagem_pedidos", titulo: "Como o app monta a mensagem de cada pedido (ordem das partes)", texto: MONTAGEM_PEDIDOS },
   ];
 }
