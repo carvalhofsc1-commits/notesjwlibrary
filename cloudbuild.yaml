@@ -9,10 +9,13 @@ steps:
     name: gcr.io/cloud-builders/docker
     args: ["push", "${_IMAGEM}"]
   - id: api
+    waitFor: ["enviar"]
     name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
     entrypoint: gcloud
     args: ["run", "deploy", "notestyle", "--image", "${_IMAGEM}", "--region", "southamerica-east1", "--quiet"]
+  # O site (arquivos estáticos) não depende do contêiner: sai logo no começo, em paralelo, e o aviso de versão nova chega ao app mais cedo.
   - id: site
+    waitFor: ["-"]
     name: node:24-slim
     entrypoint: npx
     args: ["--yes", "firebase-tools@14", "deploy", "--only", "hosting", "--project", "${PROJECT_ID}", "--non-interactive"]
