@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.62
+
+- Considerações para o serviço de campo — o formulário em contêineres coloridos:
+  1. **Tipo de pregação** num contêiner de fundo **azul claro**.
+  2. **Campanha ou destaque do mês, Público, Assunto e Fontes** noutro contêiner de fundo **amarelo claro**; o contêiner **Fontes do esboço** (sempre recolhido) fica com fundo **vermelho claro**, dentro do amarelo.
+  Os campos de texto e as caixas de marcar continuam brancos. O texto de apresentação do card também foi atualizado (sem os lembretes do dirigente; com a pergunta e a referência ao Ame as Pessoas).
+
 ## 6.11.61
 
 - **Considerações para o serviço de campo:**

@@ -1247,9 +1247,11 @@
               <div class="subsection-body">
                 <section class="sent-option sent-option-site">
                   <div class="ai-study campo-form">
-                    <p class="hint ai-hint">Consideração de 5 minutos para a reunião para o serviço de campo: começa pela leitura de um texto bíblico, segue com as aplicações para a pregação do dia e traz os lembretes só para o dirigente. Todos os campos já vêm preenchidos: é só preparar.</p>
+                    <p class="hint ai-hint">Consideração de 5 minutos para a reunião para o serviço de campo: começa pela leitura de um texto bíblico, segue com as aplicações para a pregação do dia, inclui uma pergunta para a assistência e uma referência à brochura Ame as Pessoas. Todos os campos já vêm preenchidos: é só preparar.</p>
                     <label for="campoData">Data da saída <span id="campoDiaSemana" class="opc"></span></label>
                     <input id="campoData" class="fam-campo" type="date" autocomplete="off">
+                    <!-- 6.11.62: o tipo de pregação num contêiner azul claro; campanha, público, assunto e fontes noutro, amarelo claro (as fontes em vermelho claro). -->
+                    <div class="campo-bloco campo-bloco-azul" id="campoTipoBloco">
                     <p class="fam-rotulo">Tipo de pregação</p>
                     <div class="fam-checks" role="group" aria-label="Tipo de pregação">
                       <label class="fam-check"><input type="checkbox" name="campoTipo" value="casa" checked> <span>🏠 Casa em casa</span></label>
@@ -1259,6 +1261,8 @@
                       <label class="fam-check"><input type="checkbox" name="campoTipo" value="rural"> <span>🌾 Território rural</span></label>
                       <label class="fam-check"><input type="checkbox" name="campoTipo" value="informal"> <span>💬 Testemunho informal</span></label>
                     </div>
+                    </div>
+                    <div class="campo-bloco campo-bloco-amarelo" id="campoTemaBloco">
                     <label for="campoCampanha">Campanha ou destaque do mês <span class="opc">(opcional)</span></label>
                     <input id="campoCampanha" class="fam-campo" type="text" maxlength="200" autocomplete="off" placeholder="Ex.: convite para a Celebração">
                     <label for="campoPublico">Público <span class="opc">(opcional)</span></label>
@@ -1295,6 +1299,7 @@
                         <button id="campoFontesNenhuma" class="secondary fam-fino" type="button">Desmarcar todas</button>
                       </div>
                     </details>
+                    </div>
                     <p id="campoInfo" class="hint ai-hint ebc-info"></p>
                     <button id="campoSugerirBtn" data-codigo-ia="dirigente" class="secondary ai-study-load" type="button">💡 Sugerir 3 assuntos</button>
                     <div id="campoAssuntos" class="campo-assuntos" role="group" aria-label="Assuntos sugeridos (toque em um para usar)" hidden></div>

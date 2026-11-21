@@ -17125,6 +17125,17 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
   .campo-form .fam-meia > label { min-height: 2.5em; display: flex; flex-wrap: wrap; align-items: flex-end; column-gap: 4px; line-height: 1.25; }
 }
 .campo-form #campoSugerirBtn { margin-top: 14px; }
+/* 6.11.62: contêineres do formulário: tipo de pregação em azul claro; campanha, público, assunto e fontes em amarelo claro; as fontes em
+   vermelho claro dentro do amarelo. Cores diretas (os tokens --sv-*-bg viraram cinza no padrão suave). */
+.campo-form .campo-bloco { border: 1px solid; border-radius: 12px; padding: 4px 12px 12px; margin-top: 14px; min-width: 0; box-sizing: border-box; }
+.campo-form .campo-bloco > :first-child { margin-top: 8px; }
+.campo-form .campo-bloco > label,
+.campo-form .campo-bloco > .fam-rotulo { display: block; margin: 12px 0 4px; }
+.campo-form .campo-bloco > label:first-child,
+.campo-form .campo-bloco > .fam-rotulo:first-child { margin-top: 8px; }
+#campoBox .campo-bloco-azul { background: color-mix(in srgb, #60a5fa 15%, var(--card)); border-color: #60a5fa; }
+#campoBox .campo-bloco-amarelo { background: color-mix(in srgb, #fde047 22%, var(--card)); border-color: #eab308; }
+#campoBox .campo-bloco-amarelo > details.campo-fontes-box { background: color-mix(in srgb, #f87171 16%, var(--card)); border-color: #ef4444; margin-top: 14px; }
 /* 6.11.59: os botões da pilha (Sugerir, Preparar esboço e Refazer com outro assunto) com o mesmo respiro entre eles (o Refazer colava no Preparar). */
 .campo-form #campoEsbocoBtn { margin-top: 12px; }
 .campo-form #campoRefazerBtn { margin-top: 12px; }
