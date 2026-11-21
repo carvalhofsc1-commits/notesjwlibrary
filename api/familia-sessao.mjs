@@ -326,7 +326,7 @@ export default async function handler(req, res) {
 
     // ----- Daqui em diante, só o dirigente -----
     if (!(await exigirDirigente())) return;
-    const programa = ["liberar", "bloquear", "revelar", "sortear"].includes(acao) ? await lerJson(caminho(cod, "programa.json")) : null;
+    const programa = ["liberar", "bloquear", "revelar", "sortear", "cronometro"].includes(acao) ? await lerJson(caminho(cod, "programa.json")) : null;
     const parteValida = (i) => programa && Number.isInteger(i) && i >= 0 && i < programa.partes.length;
 
     if (acao === "liberar" || acao === "bloquear") {
@@ -364,6 +364,24 @@ export default async function handler(req, res) {
       const nome = opcoes[randomInt(opcoes.length)];
       return gravarEstado((e) => {
         e.sorteio = { nome, em: Date.now(), n: ((e.sorteio && e.sorteio.n) || 0) + 1, parte: Number.isInteger(Number(corpo.parte)) ? Number(corpo.parte) : null };
+      });
+    }
+
+    if (acao === "cronometro") {
+      // Cronômetro da parte (6.11.51): o servidor guarda só o início e o tempo restante; cada aparelho conta os segundos sozinho,
+      // acertando o relógio pela hora do servidor (agora).
+      const parte = Number(corpo.parte);
+      const comando = String(corpo.comando || "");
+      if (!parteValida(parte)) return erro(res, 400, "Parte inválida.");
+      if (!["iniciar", "pausar", "zerar"].includes(comando)) return erro(res, 400, "Comando do cronômetro inválido.");
+      const totalMs = Math.min(180, Math.max(1, Math.round(Number(programa.partes[parte].minutos) || 5))) * 60000;
+      return gravarEstado((e) => {
+        const agora = Date.now();
+        const c = e.cronometro && e.cronometro.parte === parte ? e.cronometro : { parte, totalMs, restanteMs: totalMs, inicio: null, rodando: false };
+        if (comando === "iniciar" && !c.rodando) Object.assign(c, { inicio: agora, rodando: true });
+        else if (comando === "pausar" && c.rodando) Object.assign(c, { restanteMs: c.restanteMs - (agora - c.inicio), inicio: null, rodando: false });
+        else if (comando === "zerar") Object.assign(c, { restanteMs: c.totalMs, inicio: null, rodando: false });
+        e.cronometro = c;
       });
     }
 

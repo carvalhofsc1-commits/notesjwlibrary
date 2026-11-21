@@ -146,6 +146,21 @@ try {
   const blo = await chamar({ acao: "bloquear", sessao, chave, parte: 2 });
   assert.deepEqual(blo.dados.estado.liberadas, []); assert.equal(blo.dados.estado.atual, null); passo("voltar a bloquear");
 
+  // Cronômetro da parte (6.11.51)
+  const c1 = await chamar({ acao: "cronometro", sessao, chave, parte: 1, comando: "iniciar" });
+  assert.equal(c1.status, 200);
+  assert.deepEqual([c1.dados.estado.cronometro.parte, c1.dados.estado.cronometro.totalMs, c1.dados.estado.cronometro.rodando], [1, 600000, true]);
+  await new Promise((r) => setTimeout(r, 40));
+  const c2 = await chamar({ acao: "cronometro", sessao, chave, parte: 1, comando: "pausar" });
+  assert.equal(c2.dados.estado.cronometro.rodando, false);
+  assert.ok(c2.dados.estado.cronometro.restanteMs < 600000 && c2.dados.estado.cronometro.restanteMs > 590000);
+  const c3 = await chamar({ acao: "cronometro", sessao, chave, parte: 1, comando: "zerar" });
+  assert.equal(c3.dados.estado.cronometro.restanteMs, 600000);
+  assert.equal((await chamar({ acao: "cronometro", sessao, parte: 1, comando: "iniciar" })).status, 403);
+  assert.equal((await chamar({ acao: "cronometro", sessao, chave, parte: 9, comando: "iniciar" })).status, 400);
+  assert.equal((await chamar({ acao: "estado", sessao })).dados.estado.cronometro.parte, 1);
+  passo("cronômetro da parte: iniciar, pausar e zerar, só o dirigente, e todos veem no estado");
+
   // Passar a direção
   const pd = await chamar({ acao: "passar-direcao", sessao, chave });
   assert.match(pd.dados.codigoDirigente, /^[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{8}$/);

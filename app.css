@@ -17071,3 +17071,21 @@ body[data-screen="participar"] :is(.screen-inicio, .screen-editor, .screen-forma
 @media (prefers-reduced-motion: reduce) {
   .fam-sessao-sorteado.novo, .fam-sessao-resposta.revelada { animation: none; }
 }
+
+/* ---- 6.11.51: cronômetro da parte e modo tela grande ---- */
+.fam-sessao-cron-linha { margin: 6px 0; padding: 6px 12px; border-radius: 10px; background: #f3f7fd; border: 1px solid #d6e2f3; color: #2d4f86; font-weight: 600; font-variant-numeric: tabular-nums; display: inline-block; }
+.fam-sessao-cron-linha.pausado { color: #5b6478; background: #f6f7f9; border-color: #e1e5ec; }
+.fam-sessao-cron-linha.esgotado, .fam-sessao-cron.esgotado { color: #9a4a12; background: #fdf1e6; border-color: #f2d3b5; }
+.fam-sessao-cron { font-size: .82em; font-variant-numeric: tabular-nums; padding: 2px 8px; border-radius: 999px; background: #f3f7fd; border: 1px solid #d6e2f3; color: #2d4f86; }
+.fam-sessao-grande-btn { display: block; margin: 6px 0; }
+.fam-sessao-cron-ctrl { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.fam-sessao-cron-rotulo { font-size: .92em; color: #44506a; margin-right: 4px; }
+.fam-sessao-grande-barra { display: none; }
+body.fam-tela-grande :is(.app-topbar, #appNav) { display: none !important; }
+body.fam-tela-grande #participarCard { font-size: 1.35rem; max-width: none; width: auto; margin: 0; border: 0; box-shadow: none; min-height: 100vh; padding-bottom: 80px; }
+body.fam-tela-grande #participarCard :is(.fam-topo, .fam-sessao-dirigente, .fam-sessao-secao-acoes, .fam-dica, .fam-sessao-grande-btn, .fam-sessao-aviso) { display: none !important; }
+body.fam-tela-grande .fam-sessao-secao.bloqueada { display: none; }
+body.fam-tela-grande .fam-sessao-cron-linha { display: block; font-size: 1.9em; text-align: center; }
+body.fam-tela-grande .fam-sessao-cron-linha[hidden] { display: none !important; }
+body.fam-tela-grande .fam-sessao-sorteado { font-size: 1.6em; }
+body.fam-tela-grande .fam-sessao-grande-barra { display: flex; position: fixed; right: 12px; bottom: 12px; gap: 8px; z-index: 60; }

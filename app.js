@@ -7930,7 +7930,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.50'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.51'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26905,8 +26905,8 @@ function saveTemplatesToStorage() {
       sessao: document.getElementById('participarSessao'),
       status: document.getElementById('participarStatus')
     };
-    const participarVazio = () => ({ cod: '', chave: '', programa: null, dirigente: false, participanteId: '', nome: '', versao: '', estado: null, participantes: [], extras: null, offset: 0, secoes: [], dir: null, semConexao: false, jogos: new Map() });
-    const participar = Object.assign(participarVazio(), { timer: 0, consultando: false, fila: Promise.resolve(), voltarPara: 'inicio', nomeCod: '' });
+    const participarVazio = () => ({ cod: '', chave: '', programa: null, dirigente: false, participanteId: '', nome: '', versao: '', estado: null, participantes: [], extras: null, offset: 0, secoes: [], dir: null, semConexao: false, jogos: new Map(), cron: null });
+    const participar = Object.assign(participarVazio(), { timer: 0, cronTimer: 0, consultando: false, fila: Promise.resolve(), voltarPara: 'inicio', nomeCod: '' });
 
     const participarCodigoLimpo = v => String(v || '').toUpperCase().replace(/[^0-9A-Z]/g, '');
     const participarCodigoValido = c => /^[2-9A-HJKMNP-Z]{6}$/.test(c);
@@ -26926,6 +26926,9 @@ function saveTemplatesToStorage() {
     }
     function participarLimpar() {
       participarParar();
+      clearInterval(participar.cronTimer);
+      participar.cronTimer = 0;
+      participarTelaGrande(false);
       Object.assign(participar, participarVazio());
       participarEls.sessao.textContent = '';
     }
@@ -27066,7 +27069,19 @@ function saveTemplatesToStorage() {
       const meta = document.createElement('p');
       meta.className = 'fam-opcao-meta';
       meta.textContent = 'Código ' + participar.cod + ' · ' + (participar.dirigente ? '👑 Você dirige esta adoração' : 'Você entrou como ' + participar.nome);
-      cab.append(h, meta);
+      // ⏱️ O cronômetro da parte (6.11.51), visível para todos, e o 📺 modo tela grande (TV ou notebook).
+      const cron = document.createElement('p');
+      cron.className = 'fam-sessao-cron-linha';
+      cron.setAttribute('role', 'timer');
+      cron.hidden = true;
+      const grande = document.createElement('button');
+      grande.type = 'button';
+      grande.className = 'secondary fam-fino fam-sessao-grande-btn';
+      grande.textContent = '📺 Tela grande';
+      grande.title = 'Mostra só as partes liberadas, com letra grande (para a TV ou o notebook)';
+      grande.addEventListener('click', () => participarTelaGrande(!document.body.classList.contains('fam-tela-grande')));
+      participar.cron = { linha: cron };
+      cab.append(h, meta, cron, grande);
       if (p.resumo) {
         const r = document.createElement('p');
         r.className = 'fam-opcao-resumo';
@@ -27108,7 +27123,10 @@ function saveTemplatesToStorage() {
         const min = document.createElement('span');
         min.className = 'fam-sessao-secao-min';
         min.textContent = parte.minutos ? parte.minutos + ' min' : '';
-        lado.append(agora, min);
+        const cronParte = document.createElement('span');
+        cronParte.className = 'fam-sessao-cron';
+        cronParte.hidden = true;
+        lado.append(agora, cronParte, min);
         topo.append(icone, nome, lado);
         const aviso = document.createElement('p');
         aviso.className = 'fam-sessao-aviso';
@@ -27121,7 +27139,7 @@ function saveTemplatesToStorage() {
         dentro.className = 'fam-sessao-corpo-dentro';
         corpo.appendChild(dentro);
         sec.append(topo, aviso, corpo);
-        const s = { sec, topo, icone, agora, aviso, corpo, dentro, acao: null, montada: false, aberta: false };
+        const s = { sec, topo, icone, agora, cron: cronParte, min, aviso, corpo, dentro, acao: null, montada: false, aberta: false };
         if (participar.dirigente) {
           const acoes = document.createElement('div');
           acoes.className = 'fam-sessao-secao-acoes';
@@ -27138,6 +27156,36 @@ function saveTemplatesToStorage() {
         return s;
       });
       caixa.appendChild(lista);
+      // A barra da tela grande: sair e, para o dirigente, ir para a próxima parte sem sair da tela grande.
+      const barra = document.createElement('div');
+      barra.className = 'fam-sessao-grande-barra';
+      if (participar.dirigente) {
+        const prox = document.createElement('button');
+        prox.type = 'button';
+        prox.className = 'fam-fino fam-principal';
+        prox.textContent = '⏭️ Próxima';
+        prox.addEventListener('click', () => { if (participar.dir && !participar.dir.proxima.disabled) participar.dir.proxima.click(); });
+        barra.appendChild(prox);
+      }
+      const sair = document.createElement('button');
+      sair.type = 'button';
+      sair.className = 'secondary fam-fino';
+      sair.textContent = '✕ Sair da tela grande';
+      sair.addEventListener('click', () => participarTelaGrande(false));
+      barra.appendChild(sair);
+      caixa.appendChild(barra);
+    }
+
+    // 📺 Tela grande: letra maior, sem as barras do app e só as partes liberadas; tenta a tela cheia quando o aparelho deixa.
+    function participarTelaGrande(sim) {
+      const tinha = document.body.classList.contains('fam-tela-grande');
+      document.body.classList.toggle('fam-tela-grande', sim);
+      const btn = participarEls.sessao.querySelector('.fam-sessao-grande-btn');
+      if (btn) btn.textContent = sim ? '✕ Sair da tela grande' : '📺 Tela grande';
+      try {
+        if (sim && !tinha && document.documentElement.requestFullscreen && !document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+        else if (!sim && tinha && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+      } catch (e) { /* sem tela cheia neste aparelho: a tela grande vale do mesmo jeito */ }
     }
 
     function participarSecaoAbrir(i, abrir) {
@@ -27200,6 +27248,58 @@ function saveTemplatesToStorage() {
       }
       participar.jogos.forEach((_, i) => participarJogoPintar(i));
       participarDirigentePintar();
+      participarCronPintar();
+    }
+
+    // ---- ⏱️ Cronômetro da parte: o servidor guarda o início e o restante; aqui o tempo corre a cada segundo, pela hora do servidor ----
+    function participarTempo(ms) {
+      const neg = ms < 0;
+      const seg = neg ? Math.floor(-ms / 1000) : Math.ceil(ms / 1000);
+      return (neg ? '+' : '') + String(Math.floor(seg / 60)).padStart(2, '0') + ':' + String(seg % 60).padStart(2, '0');
+    }
+    const participarRestante = c => (c.rodando ? c.restanteMs - (Date.now() + participar.offset - c.inicio) : c.restanteMs);
+    function participarCronPintar() {
+      const e = participar.estado;
+      if (!e || !participar.programa) return;
+      const c = e.cronometro && Number.isInteger(e.cronometro.parte) ? e.cronometro : null;
+      const partes = participar.programa.partes || [];
+      const resto = c ? participarRestante(c) : 0;
+      const esgotado = Boolean(c) && resto < 0;
+      const tempo = c ? participarTempo(resto) : '';
+      if (participar.cron) {
+        const l = participar.cron.linha;
+        l.hidden = !c;
+        if (c) {
+          const parte = partes[c.parte] || {};
+          l.textContent = (esgotado ? '⏰ Tempo esgotado · ' : '⏱️ ') + (c.parte + 1) + '. ' + (parte.nome || 'Parte') + ' · ' + tempo + (c.rodando ? '' : c.restanteMs < c.totalMs ? ' (pausado)' : '');
+          l.classList.toggle('esgotado', esgotado);
+          l.classList.toggle('pausado', !c.rodando);
+        }
+      }
+      participar.secoes.forEach((s, i) => {
+        const aqui = Boolean(c) && c.parte === i;
+        s.cron.hidden = !aqui;
+        s.min.hidden = aqui;
+        if (aqui) { s.cron.textContent = '⏱️ ' + tempo; s.cron.classList.toggle('esgotado', esgotado); }
+      });
+      const d = participar.dir && participar.dir.cron;
+      if (d) {
+        const atual = Number.isInteger(e.atual) ? e.atual : null;
+        const doAtual = Boolean(c) && atual !== null && c.parte === atual;
+        d.rotulo.textContent = atual === null ? '⏱️ Cronômetro: libere uma parte para usar.' : '⏱️ Cronômetro da parte ' + (atual + 1) + ' (' + (Math.round(Number(partes[atual].minutos)) || 5) + ' min)';
+        d.iniciar.hidden = atual === null || (doAtual && c.rodando);
+        d.iniciar.textContent = doAtual && c.restanteMs < c.totalMs ? '▶️ Continuar' : '▶️ Iniciar';
+        d.pausar.hidden = !(doAtual && c.rodando);
+        d.zerar.hidden = !(doAtual && (c.rodando || c.restanteMs < c.totalMs));
+      }
+      // O segundo a segundo só corre com o cronômetro andando (e para ao sair da tela, em participarLimpar).
+      if (c && c.rodando && !participar.cronTimer) participar.cronTimer = setInterval(participarCronPintar, 1000);
+      else if (!(c && c.rodando) && participar.cronTimer) { clearInterval(participar.cronTimer); participar.cronTimer = 0; }
+    }
+    function participarCronComando(comando, botao) {
+      const atual = participar.estado && participar.estado.atual;
+      if (!Number.isInteger(atual)) return;
+      participarAcao({ acao: 'cronometro', parte: atual, comando }, botao);
     }
 
     // ---- Painel do dirigente: quem entrou, ir para a próxima, passar o código, passar a direção e encerrar ----
@@ -27260,10 +27360,26 @@ function saveTemplatesToStorage() {
         direcao.replaceChildren(rotulo, cod, dica, copiar);
         direcao.hidden = false;
       });
-      painel.append(t, quem, acoes, direcao);
+      const cron = document.createElement('div');
+      cron.className = 'fam-sessao-cron-ctrl';
+      const rotuloCron = document.createElement('span');
+      rotuloCron.className = 'fam-sessao-cron-rotulo';
+      const botaoCron = (texto, comando) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'secondary fam-fino';
+        b.textContent = texto;
+        b.addEventListener('click', () => participarCronComando(comando, b));
+        return b;
+      };
+      const iniciar = botaoCron('▶️ Iniciar', 'iniciar');
+      const pausar = botaoCron('⏸️ Pausar', 'pausar');
+      const zerar = botaoCron('↺ Zerar', 'zerar');
+      cron.append(rotuloCron, iniciar, pausar, zerar);
+      painel.append(t, quem, acoes, cron, direcao);
       const extras = participarExtrasMontar();
       if (extras) painel.appendChild(extras);
-      participar.dir = { quem, proxima };
+      participar.dir = { quem, proxima, cron: { rotulo: rotuloCron, iniciar, pausar, zerar } };
       return painel;
     }
 

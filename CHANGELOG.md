@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.51
+
+- Adoração em Família compartilhada, fase 5 (cronômetro e tela grande):
+  - **⏱️ Cronômetro da parte**: o dirigente inicia, pausa, continua ou zera o tempo da parte atual (os minutos previstos dela); todos veem o tempo correndo no topo da tela e na própria parte. Passando do tempo, aparece **⏰ Tempo esgotado** com os minutos a mais, em tom suave. O servidor guarda só o início e o restante (ação `cronometro`); cada aparelho conta os segundos acertado pela hora do servidor.
+  - **📺 Tela grande** (TV ou notebook): letra maior, sem as barras do app, só as partes liberadas e o cronômetro em destaque; tenta a tela cheia quando o aparelho deixa. O dirigente tem **⏭️ Próxima** na barra da tela grande. Sair da tela (ou da adoração) desliga o modo.
+  - O placar do jogo ficou de fora nesta versão.
+
 ## 6.11.50
 
 - Adoração em Família compartilhada, fase 4 (jogo ao vivo): na seção do jogo, cada rodada mostra a pergunta (com a referência) e **🙈 Resposta escondida** para todos, inclusive para o dirigente.
