@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.49
+
+- Adoração em Família compartilhada, fase 3 (tela **Participar**): nova tela "🔗 Adoração em família ao vivo", aberta pelo menu (**Participar de uma adoração**), pelo botão na tela de Adoração em Família e pelo link `#participar=CÓDIGO` (o código já vem preenchido e é validado sozinho; o endereço passa a mostrar só `#participar`).
+  - Participar exige só o código da sessão (não o código de pesquisa). Depois do código, o participante toca no seu nome (os nomes informados pelo dirigente) ou escreve um apelido; o nome fica guardado no aparelho.
+  - A programação aparece em seções, uma por parte, todas recolhidas e bloqueadas (🔒) até o dirigente liberar; liberada, a parte abre para todos com animação suave e fica marcada como **▶ Agora**.
+  - Dirigente (▶️ Abrir como dirigente ou adorações recentes): **▶️ Começar / ⏭️ Próxima**, **🔓 Liberar / 🔒 Voltar a bloquear** em cada parte, lista de quem entrou, **📤 Passar o código**, **🔁 Passar a direção** (código do dirigente de 8 caracteres para outro aparelho, em "Dirigir de outro aparelho") e **⏹️ Encerrar**. Preparação, tarefas, dica e FunPlayB ficam só no aparelho do dirigente.
+  - Atualização ao vivo por consulta a cada 4,5 s, só com a tela aberta e visível; para ao sair da tela ou esconder a página. As respostas dos jogos continuam fora da tela.
+
 ## 6.11.48
 
 - Adoração em Família compartilhada, fase 2 (compartilhar): botão **🔗 Compartilhar** no cartão de cada opção gerada e de cada programação salva.

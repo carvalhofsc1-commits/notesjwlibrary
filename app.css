@@ -17009,3 +17009,48 @@ input[type="time"].fam-campo::-webkit-date-and-time-value { text-align: left; mi
 .fam-sessao-chip-x:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, transparent); }
 .fam-sessao-add { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; min-width: 0; }
 .fam-sessao-add input { min-width: 0; }
+/* ---- 6.11.49: adoração em família ao vivo (tela Participar) ---- */
+body:not([data-screen="participar"]) .screen-participar,
+body[data-screen="participar"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-ajustes, .screen-leitura, .screen-transcricao, .screen-biblia, .screen-anotacoes, .screen-pesquisa, .screen-salvas, .screen-familia) { display: none !important; }
+#participarCard [hidden] { display: none !important; }
+#participarCard label { display: block; margin: 10px 0 4px; font-weight: 600; }
+.fam-participar-btn { margin: 4px 0 10px; }
+.fam-sessao-campo-codigo { font-family: ui-monospace, Consolas, monospace; letter-spacing: .18em; text-transform: uppercase; text-align: center; font-size: 1.15em; }
+.fam-sessao-recentes { display: grid; gap: 6px; margin-top: 12px; }
+.fam-sessao-recente { text-align: left; justify-content: flex-start; }
+.fam-sessao-assumir { margin-top: 14px; border: 1px solid #dde3ee; border-radius: 10px; padding: 8px 12px; background: #fafbfd; }
+.fam-sessao-assumir summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; }
+.fam-sessao-assumir-campos { display: grid; gap: 8px; margin-top: 6px; }
+.fam-sessao-chip-nome { border-radius: 999px; padding: 6px 14px; }
+#participarNomes { margin: 8px 0 10px; }
+#participarNomeVoltar { margin-top: 10px; }
+.fam-sessao-cabeca { margin-bottom: 8px; }
+.fam-sessao-dirigente { background: #f3f7fd; border: 1px solid #d6e2f3; border-radius: 12px; padding: 10px 12px; margin: 8px 0 12px; display: grid; gap: 8px; }
+.fam-sessao-dirigente .fam-acoes { display: flex; flex-wrap: wrap; gap: 6px; }
+.fam-sessao-quem { margin: 0; font-size: .92em; color: #44506a; }
+.fam-sessao-codigo-dir { letter-spacing: .14em; }
+.fam-sessao-secoes { display: grid; gap: 8px; }
+.fam-sessao-secao { border: 1px solid #e1e5ec; border-radius: 12px; background: #fff; overflow: hidden; transition: border-color .3s, background-color .3s; }
+.fam-sessao-secao.bloqueada { background: #f6f7f9; }
+.fam-sessao-secao.bloqueada .fam-sessao-secao-nome { color: #6b7385; }
+.fam-sessao-secao.atual { border-color: #8fb1e3; box-shadow: 0 0 0 1px #c9daf3; }
+.fam-sessao-secao-topo { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 8px 12px; background: transparent; border: 0; color: inherit; text-align: left; font: inherit; cursor: pointer; box-shadow: none; }
+.fam-sessao-secao-topo:hover { background: rgba(120, 140, 180, .06); }
+.fam-sessao-secao-nome { font-weight: 600; }
+.fam-sessao-secao-lado { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.fam-sessao-secao-min { font-size: .85em; color: #6b7385; }
+.fam-sessao-agora { font-size: .78em; padding: 2px 8px; border-radius: 999px; background: #e3edfb; color: #2d5592; border: 1px solid #c3d6f2; }
+.fam-sessao-corpo { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .4s ease; }
+.fam-sessao-secao.aberta > .fam-sessao-corpo { grid-template-rows: 1fr; }
+.fam-sessao-corpo-dentro { min-height: 0; overflow: hidden; opacity: 0; transition: opacity .4s ease; }
+.fam-sessao-secao.aberta .fam-sessao-corpo-dentro { opacity: 1; }
+.fam-sessao-secao .fam-parte-topo { display: none; }
+.fam-sessao-secao .fam-parte { background: transparent; border: 0; padding: 0 12px 12px; margin: 0; }
+.fam-sessao-aviso { margin: 0 12px 10px; font-size: .9em; color: #6b7385; }
+.fam-sessao-secao-acoes { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 10px; }
+.fam-sessao-extras { border-top: 1px solid #d6e2f3; padding-top: 8px; }
+.fam-sessao-extras summary { cursor: pointer; }
+.fam-sessao-rodadas li { margin: 4px 0; }
+@media (prefers-reduced-motion: reduce) {
+  .fam-sessao-corpo, .fam-sessao-corpo-dentro, .fam-sessao-secao { transition: none; }
+}

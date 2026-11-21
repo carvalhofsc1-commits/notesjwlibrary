@@ -16,7 +16,7 @@
     // É um app só: a tela escolhida (guardada no endereço, ex.: #reunioes) mostra os blocos dela e esconde os outros.
     // Formatar e Reuniões dividem o mesmo campo de texto. O app sempre abre no Início; ao recarregar a página, o endereço
     // mantém a tela em que se estava.
-    const APP_SCREENS = ['inicio', 'formatar', 'reunioes', 'backup', 'ajustes', 'leitura', 'transcricao', 'biblia', 'anotacoes', 'pesquisa', 'salvas', 'familia']; // "leitura" = voz alta; "biblia" = leitura diária; "anotacoes" = reunião/assembleia/congresso; "pesquisa" = Assistente de pesquisas; "familia" = Adoração em Família
+    const APP_SCREENS = ['inicio', 'formatar', 'reunioes', 'backup', 'ajustes', 'leitura', 'transcricao', 'biblia', 'anotacoes', 'pesquisa', 'salvas', 'familia', 'participar']; // "leitura" = voz alta; "biblia" = leitura diária; "anotacoes" = reunião/assembleia/congresso; "pesquisa" = Assistente de pesquisas; "familia" = Adoração em Família
     try { localStorage.removeItem('jwLibraryNoteAplicarScreenV1'); } catch (e) { /* a tela não é mais guardada */ }
 
     function currentScreen() {
@@ -106,7 +106,9 @@
 
     function showScreen(name, options) {
       const screen = APP_SCREENS.includes(name) ? name : 'inicio';
-      const changed = screen !== currentScreen();
+      const anterior = currentScreen();
+      const changed = screen !== anterior;
+      if (changed && anterior === 'participar') { try { participarAoSair(); } catch (e) { /* ainda iniciando */ } } // saindo da adoração ao vivo, a consulta periódica para
       if (changed) document.body.classList.remove('texto-chegou');
       if (changed && currentScreen() === 'leitura') leituraAoSair(); // saindo da tela Leitura, a leitura em voz alta para
       if (changed && (currentScreen() === 'biblia' || currentScreen() === 'pesquisa')) bibliaVideoParar(); // saindo da Bíblia ou das Pesquisas, o vídeo que estiver tocando para
@@ -129,6 +131,7 @@
       menuFechar();
       navMarcar();
       if (location.hash !== '#' + screen) history.replaceState(null, '', '#' + screen);
+      if (changed && screen === 'participar') { try { participarAoEntrar(anterior); } catch (e) { /* ainda iniciando: o código da tela chama ao carregar */ } }
       if (changed && !(options && options.keepScroll)) window.scrollTo(0, 0);
       // O texto pode ter mudado enquanto o campo estava escondido: mede de novo a altura quando a tela aparece.
       requestAnimationFrame(() => {
@@ -420,12 +423,18 @@
       }
       return true;
     }
+    // O link de uma adoração ao vivo (#participar=CÓDIGO, 6.11.49): o código fica depois do #, fora dos registros do servidor.
+    const participarDoEndereco = () => { const m = location.hash.match(/^#participar=([0-9A-Za-z-]{1,12})$/); return m ? m[1] : ''; };
+    const participarInicial = participarDoEndereco();
     window.addEventListener('hashchange', () => {
       if (abrirPrivacidadePeloEndereco()) return;
+      const cod = participarDoEndereco();
+      if (cod) { participarAbrir(cod); return; }
       const name = location.hash.slice(1);
       if (APP_SCREENS.includes(name)) showScreen(name, { keepScroll: true });
     });
-    if (!abrirPrivacidadePeloEndereco()) showScreen(location.hash.slice(1), { keepScroll: true });
+    if (participarInicial) showScreen('participar', { keepScroll: true });
+    else if (!abrirPrivacidadePeloEndereco()) showScreen(location.hash.slice(1), { keepScroll: true });
 
     // ---------- Backup do JW Library (leitura) ----------
     // O arquivo .jwlibrary é um ZIP com o manifest.json e o banco userData.db (SQLite). Tudo é lido neste aparelho, com
@@ -7921,7 +7930,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.48'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.49'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26736,14 +26745,12 @@ function saveTemplatesToStorage() {
       link.textContent = '📤 Compartilhar link';
       link.addEventListener('click', () => familiaSessaoCompartilharLink(cod, titulo, link));
       acoes.append(copiar, link);
-      if (typeof participarAbrir === 'function') {
-        const abrir = document.createElement('button');
-        abrir.type = 'button';
-        abrir.className = 'fam-fino fam-principal';
-        abrir.textContent = '▶️ Abrir como dirigente';
-        abrir.addEventListener('click', () => participarAbrir(cod));
-        acoes.appendChild(abrir);
-      }
+      const abrir = document.createElement('button');
+      abrir.type = 'button';
+      abrir.className = 'fam-fino fam-principal';
+      abrir.textContent = '▶️ Abrir como dirigente';
+      abrir.addEventListener('click', () => participarAbrir(cod));
+      acoes.appendChild(abrir);
       caixa.append(rotulo, codigo, dica, acoes);
       return caixa;
     }
@@ -26871,6 +26878,613 @@ function saveTemplatesToStorage() {
       if (painel) { b.setAttribute('aria-expanded', 'true'); setTimeout(() => onde.appendChild(painel), 0); } // o cartão ainda está sendo montado
       return b;
     }
+
+    // ---- Adoração em família ao vivo (6.11.49): a tela Participar ----
+    // Os participantes entram só com o código da sessão (não precisam do código de pesquisa) e escolhem o nome; a programação aparece
+    // em seções, uma por parte, todas recolhidas e bloqueadas até o dirigente liberar. A tela consulta o estado a cada 4,5 s, só enquanto
+    // está aberta e visível (o servidor responde só { versao } quando nada mudou). Sem WebSocket: o Cloud Run escala para zero e pode
+    // ter várias instâncias.
+    const PARTICIPAR_NOME_KEY = 'nsFamiliaSessaoNomeV1'; // o último nome usado, para a próxima vez (só o apelido)
+    const PARTICIPAR_INTERVALO_MS = 4500;
+    const participarEls = {
+      voltar: document.getElementById('participarVoltar'),
+      entrada: document.getElementById('participarEntrada'),
+      codigo: document.getElementById('participarCodigo'),
+      entrarBtn: document.getElementById('participarEntrarBtn'),
+      recentes: document.getElementById('participarRecentes'),
+      assumirBox: document.getElementById('participarAssumirBox'),
+      assumirSessao: document.getElementById('participarAssumirSessao'),
+      assumirCodigo: document.getElementById('participarAssumirCodigo'),
+      assumirBtn: document.getElementById('participarAssumirBtn'),
+      nomePasso: document.getElementById('participarNomePasso'),
+      nomeTitulo: document.getElementById('participarNomeTitulo'),
+      nomes: document.getElementById('participarNomes'),
+      nome: document.getElementById('participarNome'),
+      nomeBtn: document.getElementById('participarNomeBtn'),
+      nomeVoltar: document.getElementById('participarNomeVoltar'),
+      sessao: document.getElementById('participarSessao'),
+      status: document.getElementById('participarStatus')
+    };
+    const participarVazio = () => ({ cod: '', chave: '', programa: null, dirigente: false, participanteId: '', nome: '', versao: '', estado: null, participantes: [], extras: null, offset: 0, secoes: [], dir: null, semConexao: false });
+    const participar = Object.assign(participarVazio(), { timer: 0, consultando: false, fila: Promise.resolve(), voltarPara: 'inicio', nomeCod: '' });
+
+    const participarCodigoLimpo = v => String(v || '').toUpperCase().replace(/[^0-9A-Z]/g, '');
+    const participarCodigoValido = c => /^[2-9A-HJKMNP-Z]{6}$/.test(c);
+    function participarStatus(msg, tipo) {
+      participarEls.status.hidden = !msg;
+      participarEls.status.className = 'fam-status' + (tipo ? ' ' + tipo : '');
+      participarEls.status.textContent = msg || '';
+    }
+    function participarVista(qual) {
+      participarEls.entrada.hidden = qual !== 'entrada';
+      participarEls.nomePasso.hidden = qual !== 'nome';
+      participarEls.sessao.hidden = qual !== 'sessao';
+    }
+    function participarParar() {
+      clearTimeout(participar.timer);
+      participar.timer = 0;
+    }
+    function participarLimpar() {
+      participarParar();
+      Object.assign(participar, participarVazio());
+      participarEls.sessao.textContent = '';
+    }
+
+    // Chamadas por showScreen ao entrar e ao sair da tela (ao sair, a consulta periódica para).
+    function participarAoEntrar(anterior) {
+      if (anterior && anterior !== 'participar') participar.voltarPara = anterior;
+      if (participar.programa) { participarAgendar(0); return; }
+      participarRecentesPintar();
+      participarVista(participarEls.nomePasso.hidden ? 'entrada' : 'nome');
+    }
+    function participarAoSair() {
+      participarLimpar();
+      participarStatus('');
+      participarVista('entrada');
+    }
+
+    // Abre a tela (pelo menu, pelo link #participar=CÓDIGO ou pelo ▶️ Abrir como dirigente) e, com o código, entra direto.
+    function participarAbrir(cod) {
+      const c = participarCodigoLimpo(cod);
+      if (participar.programa && participar.cod === c && currentScreen() === 'participar') return; // já está nesta adoração
+      if (currentScreen() === 'participar') participarAoSair();
+      else showScreen('participar');
+      if (!c) return;
+      participarEls.codigo.value = c;
+      if (participarCodigoValido(c)) participarEntrar(c);
+      else participarStatus('O código da adoração tem 6 letras e números (sem 0, O, 1, I e L).', 'erro');
+    }
+
+    function participarRecentesPintar() {
+      const dados = familiaSessoesLer();
+      const cods = Object.keys(dados).sort((a, b) => (dados[b].em || 0) - (dados[a].em || 0)).slice(0, 6);
+      participarEls.recentes.textContent = '';
+      participarEls.recentes.hidden = !cods.length;
+      if (!cods.length) return;
+      const t = document.createElement('p');
+      t.className = 'fam-secao-titulo';
+      t.textContent = 'Adorações recentes neste aparelho';
+      participarEls.recentes.appendChild(t);
+      cods.forEach(cod => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'secondary fam-fino fam-sessao-recente';
+        b.textContent = (dados[cod].titulo || 'Adoração em Família') + ' · ' + cod + (dados[cod].chave ? ' · 👑 você dirige' : '');
+        b.addEventListener('click', () => participarAbrir(cod));
+        participarEls.recentes.appendChild(b);
+      });
+    }
+
+    function participarOcupado(sim) {
+      [participarEls.entrarBtn, participarEls.nomeBtn, participarEls.assumirBtn].forEach(b => { b.disabled = sim; });
+    }
+
+    // Entrar: com a chave guardada, como dirigente; sem nome (e sem ter entrado antes), o servidor só confere o código e pede o nome.
+    async function participarEntrar(cod, nome) {
+      const guardada = familiaSessoesLer()[cod] || {};
+      const corpo = { acao: 'entrar', sessao: cod };
+      if (guardada.chave) corpo.chave = guardada.chave;
+      const nomeUsado = nome || (!guardada.chave && guardada.participanteId && guardada.nome) || '';
+      if (nomeUsado) {
+        corpo.nome = nomeUsado;
+        if (guardada.participanteId) corpo.participanteId = guardada.participanteId;
+      }
+      participarOcupado(true);
+      participarStatus('⏳ Entrando…');
+      let r = await familiaSessaoPedir(corpo);
+      if (!r.ok && r.status === 403 && corpo.chave) {
+        // A chave deste aparelho não vale para esta adoração: entra como participante.
+        familiaSessaoGuardar(cod, { chave: '' });
+        delete corpo.chave;
+        r = await familiaSessaoPedir(corpo);
+      }
+      participarOcupado(false);
+      if (currentScreen() !== 'participar') return; // saiu da tela enquanto esperava
+      if (!r.ok) {
+        if (r.status === 404) familiaSessaoGuardar(cod, null);
+        participarStatus(r.erro || 'Não consegui entrar.', 'erro');
+        participarRecentesPintar();
+        participarVista('entrada');
+        return;
+      }
+      const d = r.data;
+      if (d.precisaNome) {
+        participarStatus('');
+        participarNomePedir(cod, d);
+        return;
+      }
+      participarLimpar();
+      Object.assign(participar, {
+        cod, chave: d.dirigente ? guardada.chave : '', programa: d.programa, dirigente: Boolean(d.dirigente), participanteId: d.participanteId || '',
+        nome: nomeUsado, participantes: d.participantes || [], extras: d.extras || null
+      });
+      const titulo = (d.programa.emoji ? d.programa.emoji + ' ' : '') + (d.programa.titulo || 'Adoração em Família');
+      familiaSessaoGuardar(cod, Object.assign({ titulo }, d.dirigente ? {} : { participanteId: d.participanteId, nome: nomeUsado }));
+      participarStatus('');
+      participarMontar();
+      participarAplicar(d);
+      participarVista('sessao');
+      participarAgendar();
+    }
+
+    // O passo do nome: os nomes informados pelo dirigente (toque para escolher) ou um apelido escrito; o nome fica guardado no aparelho.
+    function participarNomePedir(cod, d) {
+      participar.nomeCod = cod;
+      participarEls.nomeTitulo.textContent = '🔗 ' + (d.emoji ? d.emoji + ' ' : '') + (d.titulo || 'Adoração em Família') + ' · ' + cod;
+      participarEls.nomes.textContent = '';
+      (d.nomes || []).forEach(n => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'secondary fam-fino fam-sessao-chip-nome';
+        b.textContent = n;
+        b.addEventListener('click', () => { participarEls.nome.value = n; participarNomeConfirmar(); });
+        participarEls.nomes.appendChild(b);
+      });
+      participarEls.nomes.hidden = !(d.nomes || []).length;
+      let salvo = '';
+      try { salvo = localStorage.getItem(PARTICIPAR_NOME_KEY) || ''; } catch (e) { salvo = ''; }
+      if (!participarEls.nome.value) participarEls.nome.value = salvo;
+      participarVista('nome');
+    }
+    function participarNomeConfirmar() {
+      const nome = participarEls.nome.value.replace(/\s+/g, ' ').trim().slice(0, 40);
+      if (!nome) { participarStatus('Escreva o seu nome ou apelido (só o apelido; nada de dados pessoais).', 'erro'); participarEls.nome.focus(); return; }
+      try { localStorage.setItem(PARTICIPAR_NOME_KEY, nome); } catch (e) { /* sem localStorage */ }
+      participarEntrar(participar.nomeCod, nome);
+    }
+
+    // ---- A sessão na tela: cabeçalho, painel do dirigente e uma seção por parte ----
+    function participarMontar() {
+      const p = participar.programa;
+      const caixa = participarEls.sessao;
+      caixa.textContent = '';
+      const cab = document.createElement('div');
+      cab.className = 'fam-sessao-cabeca';
+      const h = document.createElement('h3');
+      h.className = 'fam-opcao-titulo';
+      h.textContent = (p.emoji ? p.emoji + ' ' : '') + (p.titulo || 'Adoração em Família');
+      const meta = document.createElement('p');
+      meta.className = 'fam-opcao-meta';
+      meta.textContent = 'Código ' + participar.cod + ' · ' + (participar.dirigente ? '👑 Você dirige esta adoração' : 'Você entrou como ' + participar.nome);
+      cab.append(h, meta);
+      if (p.resumo) {
+        const r = document.createElement('p');
+        r.className = 'fam-opcao-resumo';
+        r.textContent = p.resumo;
+        cab.appendChild(r);
+      }
+      caixa.appendChild(cab);
+      if (participar.dirigente) caixa.appendChild(participarDirigenteMontar());
+      else {
+        const dica = document.createElement('p');
+        dica.className = 'hint fam-dica';
+        dica.textContent = 'As partes se abrem aqui quando o dirigente liberar. Deixe esta tela aberta.';
+        caixa.appendChild(dica);
+      }
+      const lista = document.createElement('div');
+      lista.className = 'fam-sessao-secoes';
+      participar.secoes = (p.partes || []).map((parte, i) => {
+        const sec = document.createElement('section');
+        sec.className = 'fam-sessao-secao bloqueada';
+        sec.dataset.parte = String(i);
+        const topo = document.createElement('button');
+        topo.type = 'button';
+        topo.className = 'fam-sessao-secao-topo';
+        topo.setAttribute('aria-expanded', 'false');
+        topo.setAttribute('aria-controls', 'participarParte' + i);
+        const icone = document.createElement('span');
+        icone.className = 'fam-sessao-icone';
+        icone.setAttribute('aria-hidden', 'true');
+        icone.textContent = '🔒';
+        const nome = document.createElement('span');
+        nome.className = 'fam-sessao-secao-nome';
+        nome.textContent = (i + 1) + '. ' + (parte.nome || 'Parte') + (parte.responsavel ? ' — ' + parte.responsavel : '');
+        const lado = document.createElement('span');
+        lado.className = 'fam-sessao-secao-lado';
+        const agora = document.createElement('span');
+        agora.className = 'fam-sessao-agora';
+        agora.textContent = '▶ Agora';
+        agora.hidden = true;
+        const min = document.createElement('span');
+        min.className = 'fam-sessao-secao-min';
+        min.textContent = parte.minutos ? parte.minutos + ' min' : '';
+        lado.append(agora, min);
+        topo.append(icone, nome, lado);
+        const aviso = document.createElement('p');
+        aviso.className = 'fam-sessao-aviso';
+        aviso.textContent = '🔒 Aguardando o dirigente liberar esta parte.';
+        aviso.hidden = true;
+        const corpo = document.createElement('div');
+        corpo.className = 'fam-sessao-corpo';
+        corpo.id = 'participarParte' + i;
+        const dentro = document.createElement('div');
+        dentro.className = 'fam-sessao-corpo-dentro';
+        corpo.appendChild(dentro);
+        sec.append(topo, aviso, corpo);
+        const s = { sec, topo, icone, agora, aviso, corpo, dentro, acao: null, montada: false, aberta: false };
+        if (participar.dirigente) {
+          const acoes = document.createElement('div');
+          acoes.className = 'fam-sessao-secao-acoes';
+          const acao = document.createElement('button');
+          acao.type = 'button';
+          acao.className = 'secondary fam-fino';
+          acao.addEventListener('click', () => participarAcao({ acao: acao.dataset.acao, parte: i }, acao));
+          acoes.appendChild(acao);
+          sec.appendChild(acoes);
+          s.acao = acao;
+        }
+        topo.addEventListener('click', () => participarSecaoAlternar(i));
+        lista.appendChild(sec);
+        return s;
+      });
+      caixa.appendChild(lista);
+    }
+
+    function participarSecaoAbrir(i, abrir) {
+      const s = participar.secoes[i];
+      if (!s) return;
+      if (abrir && !s.montada) {
+        // O conteúdo só é montado na primeira vez que a parte abre.
+        s.dentro.appendChild(familiaParteMontar(participar.programa.partes[i], j => participarJogoMontar(j, i)));
+        s.montada = true;
+      }
+      s.aberta = abrir;
+      s.sec.classList.toggle('aberta', abrir);
+      s.topo.setAttribute('aria-expanded', String(abrir));
+      if (abrir) s.aviso.hidden = true;
+    }
+    const participarLiberadas = () => new Set((participar.estado && participar.estado.liberadas) || []);
+    function participarSecaoAlternar(i) {
+      const s = participar.secoes[i];
+      const liberada = participarLiberadas().has(i);
+      if (!liberada && !participar.dirigente) { s.aviso.hidden = !s.aviso.hidden; return; }
+      participarSecaoAbrir(i, !s.aberta); // o dirigente pode ver uma parte bloqueada antes de liberar (só no aparelho dele)
+    }
+
+    // Aplica uma resposta do servidor (entrar, estado ou uma ação do dirigente).
+    function participarAplicar(d) {
+      if (!d) return;
+      if (d.versao != null) participar.versao = String(d.versao);
+      if (Number(d.agora)) participar.offset = Number(d.agora) - Date.now();
+      if (Array.isArray(d.participantes)) participar.participantes = d.participantes;
+      if (d.estado) {
+        const antes = participar.estado;
+        participar.estado = d.estado;
+        participarEstadoPintar(antes);
+      } else if (Array.isArray(d.participantes)) participarDirigentePintar();
+    }
+
+    function participarEstadoPintar(antes) {
+      const e = participar.estado;
+      const lib = participarLiberadas();
+      const antesLib = new Set((antes && antes.liberadas) || []);
+      participar.secoes.forEach((s, i) => {
+        const l = lib.has(i);
+        s.sec.classList.toggle('bloqueada', !l);
+        s.sec.classList.toggle('liberada', l);
+        s.icone.textContent = l ? '📖' : '🔒';
+        const atual = l && e.atual === i;
+        s.sec.classList.toggle('atual', atual);
+        s.agora.hidden = !atual;
+        if (l && !antesLib.has(i)) participarSecaoAbrir(i, true); // liberada agora (ou já liberada ao entrar): abre para todos
+        else if (!l && s.aberta && (!participar.dirigente || antesLib.has(i))) participarSecaoAbrir(i, false); // bloqueada de novo
+        if (s.acao) {
+          s.acao.dataset.acao = l ? 'bloquear' : 'liberar';
+          s.acao.textContent = l ? '🔒 Voltar a bloquear' : '🔓 Liberar para todos';
+        }
+      });
+      // O participante acompanha: a parte que acabou de ser liberada como atual rola para a vista.
+      if (!participar.dirigente && antes && Number.isInteger(e.atual) && e.atual !== antes.atual && lib.has(e.atual) && !antesLib.has(e.atual)) {
+        const s = participar.secoes[e.atual];
+        if (s) setTimeout(() => s.sec.scrollIntoView({ block: 'start', behavior: 'smooth' }), 120);
+      }
+      participarDirigentePintar();
+    }
+
+    // ---- Painel do dirigente: quem entrou, ir para a próxima, passar o código, passar a direção e encerrar ----
+    function participarDirigenteMontar() {
+      const painel = document.createElement('div');
+      painel.className = 'fam-sessao-dirigente';
+      const t = document.createElement('p');
+      t.className = 'fam-secao-titulo';
+      t.textContent = '👑 Controles do dirigente';
+      const quem = document.createElement('p');
+      quem.className = 'fam-sessao-quem';
+      const acoes = document.createElement('div');
+      acoes.className = 'fam-acoes';
+      const proxima = document.createElement('button');
+      proxima.type = 'button';
+      proxima.className = 'fam-fino fam-principal';
+      proxima.addEventListener('click', () => {
+        const i = participarProximaParte();
+        if (i != null) participarAcao({ acao: 'liberar', parte: i }, proxima);
+      });
+      const codigo = document.createElement('button');
+      codigo.type = 'button';
+      codigo.className = 'secondary fam-fino';
+      codigo.textContent = '📤 Passar o código';
+      codigo.addEventListener('click', () => familiaSessaoCompartilharLink(participar.cod, participar.programa.titulo, codigo));
+      const passar = document.createElement('button');
+      passar.type = 'button';
+      passar.className = 'secondary fam-fino';
+      passar.textContent = '🔁 Passar a direção';
+      passar.title = 'Gera um código do dirigente para dirigir de outro aparelho';
+      const encerrar = document.createElement('button');
+      encerrar.type = 'button';
+      encerrar.className = 'secondary fam-fino limpar-btn';
+      encerrar.textContent = '⏹️ Encerrar';
+      encerrar.addEventListener('click', participarEncerrar);
+      acoes.append(proxima, codigo, passar, encerrar);
+      const direcao = document.createElement('div');
+      direcao.className = 'fam-sessao-criada fam-sessao-direcao';
+      direcao.hidden = true;
+      passar.addEventListener('click', async () => {
+        const d = await participarAcao({ acao: 'passar-direcao' }, passar);
+        if (!d || !d.codigoDirigente) return;
+        const ate = new Date(d.validoAte).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const rotulo = document.createElement('p');
+        rotulo.className = 'fam-sessao-rotulo';
+        rotulo.textContent = 'Código do dirigente (só você vê)';
+        const cod = document.createElement('p');
+        cod.className = 'fam-sessao-codigo fam-sessao-codigo-dir';
+        cod.textContent = d.codigoDirigente;
+        const dica = document.createElement('p');
+        dica.className = 'hint fam-dica';
+        dica.textContent = 'No outro aparelho: Participar de uma adoração → 🔁 Dirigir de outro aparelho, com o código da adoração (' + participar.cod + ') e este código. Vale até ' + ate + ' e uma vez só. Este aparelho continua dirigindo também.';
+        const copiar = document.createElement('button');
+        copiar.type = 'button';
+        copiar.className = 'secondary fam-fino';
+        copiar.textContent = '📋 Copiar';
+        copiar.addEventListener('click', () => familiaCopiar(d.codigoDirigente, copiar));
+        direcao.replaceChildren(rotulo, cod, dica, copiar);
+        direcao.hidden = false;
+      });
+      painel.append(t, quem, acoes, direcao);
+      const extras = participarExtrasMontar();
+      if (extras) painel.appendChild(extras);
+      participar.dir = { quem, proxima };
+      return painel;
+    }
+
+    // A próxima parte: a seguinte à atual (liberar uma parte já liberada só a torna a atual).
+    function participarProximaParte() {
+      const n = (participar.programa.partes || []).length;
+      const atual = participar.estado && Number.isInteger(participar.estado.atual) ? participar.estado.atual : -1;
+      return atual + 1 < n ? atual + 1 : null;
+    }
+
+    function participarDirigentePintar() {
+      if (!participar.dirigente || !participar.dir) return;
+      const lista = participar.participantes || [];
+      participar.dir.quem.textContent = lista.length ? '👥 Entraram (' + lista.length + '): ' + lista.map(p => p.nome).join(', ') : '👥 Ninguém entrou ainda. Passe o código ' + participar.cod + ' aos participantes.';
+      const i = participarProximaParte();
+      const parte = i != null ? participar.programa.partes[i] : null;
+      participar.dir.proxima.disabled = i == null;
+      participar.dir.proxima.textContent = i == null ? '✔ Última parte' : (i === 0 && !participarLiberadas().size ? '▶️ Começar: ' : '⏭️ Próxima: ') + (i + 1) + '. ' + (parte.nome || 'Parte');
+    }
+
+    // Preparação, tarefas, dica e o FunPlayB: só no aparelho do dirigente (o servidor só manda os extras com a chave).
+    function participarExtrasMontar() {
+      const x = participar.extras;
+      if (!x) return null;
+      const temAlgo = (x.preparacao || []).length || (x.tarefas || []).length || x.dicaParaOChefe || x.funplayb;
+      if (!temAlgo) return null;
+      const det = document.createElement('details');
+      det.className = 'fam-sessao-extras';
+      const sm = document.createElement('summary');
+      sm.textContent = '🔐 Só para o dirigente: preparação, tarefas e dica';
+      det.appendChild(sm);
+      const lista = (titulo, itens, texto) => {
+        if (!itens || !itens.length) return;
+        const t = document.createElement('p');
+        t.className = 'fam-secao-titulo';
+        t.textContent = titulo;
+        const ul = document.createElement('ul');
+        ul.className = 'fam-lista';
+        itens.forEach(item => { const li = document.createElement('li'); li.textContent = texto(item); ul.appendChild(li); });
+        det.append(t, ul);
+      };
+      lista('📋 Preparação', x.preparacao, t => t);
+      lista('✅ Tarefas', x.tarefas, t => (t.membro ? t.membro + ': ' : '') + (t.tarefa || ''));
+      if (x.dicaParaOChefe) {
+        const dica = document.createElement('p');
+        dica.className = 'fam-dica-chefe';
+        dica.textContent = '💡 ' + x.dicaParaOChefe;
+        det.appendChild(dica);
+      }
+      if (x.funplayb && Array.isArray(x.funplayb.perguntas) && x.funplayb.csv) det.appendChild(familiaFunplaybPainel(x.funplayb));
+      return det;
+    }
+
+    // O jogo na sessão: as perguntas (com a referência) e o material sem resposta; as respostas não vêm do servidor.
+    function participarJogoMontar(j, parteIdx) {
+      const caixa = document.createElement('div');
+      caixa.className = 'fam-jogo fam-sessao-jogo';
+      caixa.dataset.parte = String(parteIdx);
+      const t = document.createElement('p');
+      t.className = 'fam-secao-titulo';
+      t.textContent = '🎲 Jogo: ' + (j.nome || 'Jogo') + familiaTipoJogo(j);
+      caixa.appendChild(t);
+      [j.comoJogar, j.material ? '✏️ Material: ' + j.material : ''].filter(Boolean).forEach(txt => {
+        const p = document.createElement('p');
+        p.className = 'fam-parte-desc';
+        p.textContent = txt;
+        caixa.appendChild(p);
+      });
+      if (/funplayb/i.test((j.tipo || '') + ' ' + (j.nome || ''))) {
+        const a = document.createElement('a');
+        a.className = 'secondary fam-fino fam-link-botao';
+        a.href = FUNPLAYB_ENDERECO;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.textContent = '🎮 Abrir o FunPlayB';
+        caixa.appendChild(a);
+      }
+      const rodadas = j.rodadas || [];
+      if (rodadas.length) {
+        const ol = document.createElement('ol');
+        ol.className = 'fam-lista fam-sessao-rodadas';
+        rodadas.forEach(r => {
+          const li = document.createElement('li');
+          li.textContent = r.pergunta + (r.referencia ? ' (' + r.referencia + ')' : '');
+          ol.appendChild(li);
+        });
+        caixa.appendChild(ol);
+      }
+      if ((j.itens || []).length) {
+        const det = document.createElement('details');
+        det.className = 'fam-jogo-itens';
+        det.open = true;
+        const sm = document.createElement('summary');
+        sm.textContent = 'Material para jogar (' + j.itens.length + ')';
+        const ol = document.createElement('ol');
+        ol.className = 'fam-lista';
+        j.itens.forEach(txt => { const li = document.createElement('li'); li.textContent = txt; ol.appendChild(li); });
+        det.append(sm, ol);
+        caixa.appendChild(det);
+      }
+      return caixa;
+    }
+
+    // As ações do dirigente vão uma de cada vez (a próxima espera a anterior), para o estado não voltar atrás.
+    function participarAcao(corpo, botao) {
+      const tarefa = participar.fila.then(async () => {
+        if (!participar.dirigente || !participar.cod) return null;
+        const cod = participar.cod;
+        if (botao) botao.disabled = true;
+        const r = await familiaSessaoPedir(Object.assign({ sessao: cod, chave: participar.chave }, corpo));
+        if (botao) botao.disabled = false;
+        if (cod !== participar.cod) return null;
+        if (!r.ok) {
+          if (r.status === 404) participarEncerrada();
+          else participarStatus(r.erro || 'Não consegui falar com o servidor.', 'erro');
+          return null;
+        }
+        participarStatus('');
+        participarAplicar(r.data);
+        return r.data;
+      });
+      participar.fila = tarefa.catch(() => null);
+      return tarefa;
+    }
+
+    async function participarEncerrar() {
+      if (!(await askConfirm('Encerrar a adoração para todos? A sessão é apagada do servidor e o código ' + participar.cod + ' deixa de valer.', 'Encerrar adoração'))) return;
+      const cod = participar.cod;
+      const d = await participarAcao({ acao: 'encerrar' });
+      if (!d) return;
+      familiaSessaoGuardar(cod, null);
+      participarLimpar();
+      participarRecentesPintar();
+      participarVista('entrada');
+      participarStatus('Adoração encerrada. Obrigado por dirigir!', 'ok');
+    }
+
+    // A sessão não existe mais (encerrada pelo dirigente ou vencida).
+    function participarEncerrada() {
+      const cod = participar.cod;
+      if (cod) familiaSessaoGuardar(cod, null);
+      participarLimpar();
+      participarRecentesPintar();
+      participarVista('entrada');
+      participarStatus('Esta adoração terminou (o dirigente encerrou ou ela venceu).', 'ok');
+    }
+
+    // ---- Consulta periódica: só com a tela Participar aberta e a página visível ----
+    function participarAgendar(ms = PARTICIPAR_INTERVALO_MS) {
+      participarParar();
+      if (!participar.cod || !participar.programa || currentScreen() !== 'participar' || document.visibilityState !== 'visible') return;
+      participar.timer = setTimeout(participarConsultar, ms);
+    }
+    async function participarConsultar() {
+      participar.timer = 0;
+      if (participar.consultando || !participar.cod) return;
+      const cod = participar.cod;
+      participar.consultando = true;
+      const corpo = { acao: 'estado', sessao: cod, versao: participar.versao };
+      if (participar.dirigente) corpo.chave = participar.chave;
+      let r;
+      try { r = await familiaSessaoPedir(corpo); } finally { participar.consultando = false; }
+      if (cod !== participar.cod) return; // saiu ou trocou de adoração enquanto esperava
+      if (r.ok) {
+        if (participar.semConexao) { participar.semConexao = false; participarStatus(''); }
+        participarAplicar(r.data);
+      } else if (r.status === 404) {
+        participarEncerrada();
+        return;
+      } else {
+        participar.semConexao = true;
+        participarStatus('⚠️ ' + (r.erro || 'Sem conexão com o servidor.') + ' Tentando de novo…', 'erro');
+      }
+      participarAgendar();
+    }
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') participarAgendar(0);
+      else participarParar();
+    });
+
+    // ---- Eventos da tela ----
+    participarEls.voltar.addEventListener('click', () => {
+      const destino = participar.voltarPara;
+      showScreen(APP_SCREENS.includes(destino) && destino !== 'participar' && !(destino === 'familia' && !codigoAcessoSalvo()) ? destino : 'inicio');
+    });
+    participarEls.codigo.addEventListener('input', () => {
+      const c = participarCodigoLimpo(participarEls.codigo.value).slice(0, 6);
+      if (participarEls.codigo.value !== c) participarEls.codigo.value = c;
+    });
+    const participarEntrarDoCampo = () => {
+      const c = participarCodigoLimpo(participarEls.codigo.value);
+      if (!participarCodigoValido(c)) { participarStatus('O código da adoração tem 6 letras e números (sem 0, O, 1, I e L).', 'erro'); return; }
+      participarEntrar(c);
+    };
+    participarEls.entrarBtn.addEventListener('click', participarEntrarDoCampo);
+    participarEls.codigo.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); participarEntrarDoCampo(); } });
+    participarEls.nomeBtn.addEventListener('click', participarNomeConfirmar);
+    participarEls.nome.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); participarNomeConfirmar(); } });
+    participarEls.nomeVoltar.addEventListener('click', () => { participarStatus(''); participarRecentesPintar(); participarVista('entrada'); });
+    [participarEls.assumirSessao, participarEls.assumirCodigo].forEach((campo, k) => campo.addEventListener('input', () => {
+      const c = participarCodigoLimpo(campo.value).slice(0, k ? 8 : 6);
+      if (campo.value !== c) campo.value = c;
+    }));
+    // 🔁 Dirigir de outro aparelho: troca o código do dirigente (8 caracteres, vale 15 min e uma vez só) por uma chave neste aparelho.
+    participarEls.assumirBtn.addEventListener('click', async () => {
+      const cod = participarCodigoLimpo(participarEls.assumirSessao.value);
+      const codigoDirigente = participarCodigoLimpo(participarEls.assumirCodigo.value);
+      if (!participarCodigoValido(cod) || codigoDirigente.length !== 8) { participarStatus('Informe o código da adoração (6 caracteres) e o código do dirigente (8 caracteres).', 'erro'); return; }
+      participarOcupado(true);
+      const r = await familiaSessaoPedir({ acao: 'assumir', sessao: cod, codigoDirigente });
+      participarOcupado(false);
+      if (!r.ok || !r.data.chave) { participarStatus(r.erro || 'Não consegui assumir a direção.', 'erro'); return; }
+      familiaSessaoGuardar(cod, { chave: r.data.chave });
+      participarEls.assumirCodigo.value = '';
+      participarEls.assumirBox.open = false;
+      participarEntrar(cod);
+    });
+    const familiaParticiparBtn = document.getElementById('familiaParticiparBtn');
+    if (familiaParticiparBtn) familiaParticiparBtn.addEventListener('click', () => participarAbrir(''));
+    // Aberta pelo endereço (#participar ou #participar=CÓDIGO) antes de esta parte do app carregar.
+    if (participarInicial) participarAbrir(participarInicial);
+    else if (currentScreen() === 'participar') participarAoEntrar();
 
     // ---- Montar a minha programação: marca as partes das duas opções; o tempo previsto é somado a cada marcação (6.11.19) ----
     function familiaMesclaMontar(opcoes) {
