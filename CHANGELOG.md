@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.22
+
+- Tela inicial: o atalho Adoração em Família vai para a página 1 dos atalhos, no lugar de Discursos, que passa para a página 2 (os dois trocaram de lugar).
+
 ## 6.11.21
 
 - Adoração em Família: novo texto de abertura da tela, com a primeira frase em negrito: "**Peça sugestões para a noite de adoração em família.** A IA leva em conta as informações repassadas sobre a sua família (cadastradas por você) e monta 1 ou 2 opções completas (você escolhe), com partes, textos, vídeos e, se quiser, cânticos."
