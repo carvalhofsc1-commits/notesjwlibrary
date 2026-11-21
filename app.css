@@ -16522,6 +16522,16 @@ body[data-screen="salvas"] #secaoHistorico { display: block !important; margin: 
    6.11.42: o fundo deixou de ser cinza claro e passou a azul claro (a regra com a moldura azul está mais acima, junto das cores suaves). */
 :is(#sv#sv, #pesquisaAssuntoBloco, #pesquisaTextoBloco, #pesquisaVideoBloco) { background: color-mix(in srgb, #60a5fa 15%, var(--card)); } /* o token --sv-azul-bg virou cinza nas cores suaves: azul direto aqui */
 
+/* 6.11.44: tabela dos arquivos do servidor (Ajustes, só administrador): rola para o lado no celular. */
+.fontes-rolagem { overflow-x: auto; max-width: 100%; margin: 8px 0; border: 1px solid var(--line); border-radius: 10px; }
+.fontes-tabela { border-collapse: collapse; width: 100%; min-width: 640px; font-size: .84rem; }
+.fontes-tabela th, .fontes-tabela td { padding: 7px 9px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.fontes-tabela thead th { background: var(--inicio-cinza); font-size: .8rem; position: sticky; top: 0; }
+.fontes-tabela tbody tr:last-child td { border-bottom: 0; }
+.fontes-tabela td input { width: 100%; min-width: 120px; box-sizing: border-box; min-height: 34px; padding: 4px 8px; font-size: .84rem; }
+.fontes-arquivo { margin-top: 2px; font-size: .72rem; color: var(--muted, #666); overflow-wrap: anywhere; }
+.fontes-ausente { opacity: .65; }
+
 /* 6.10.81: Anotações · Transcrições na íntegra — Copiar, "Pôr nas anotações" (com espaço para o texto inteiro) e a lixeira numa grade. */
 .anot-transc-botoes { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.7fr) 48px; gap: 6px; margin: 0; }
 .anot-transc-botoes > button { width: 100%; min-width: 0; margin: 0; padding: 8px 6px; font-size: .88rem; line-height: 1.2; white-space: normal; text-align: center; }

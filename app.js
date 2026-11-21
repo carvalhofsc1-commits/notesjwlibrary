@@ -7921,7 +7921,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.43'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.44'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -12147,6 +12147,62 @@ function saveTemplatesToStorage() {
     document.getElementById('memoriaApagarTudoBtn').addEventListener('click', async () => {
       if (await askConfirm('Apagar TODAS as lições guardadas na memória? Não dá para desfazer.', 'Apagar todas')) memoriaAcao({ acao: 'memoria-apagar-tudo' });
     });
+
+    // ---------- Arquivos do servidor e edições (só administrador; 6.11.44) ----------
+    const fontesStatus = document.getElementById('fontesStatus');
+    const fontesCorpo = document.getElementById('fontesCorpo');
+    const fontesBytes = n => (n == null ? '—' : n >= 1048576 ? (n / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB');
+    const fontesQuando = iso => {
+      const d = iso ? new Date(iso) : null;
+      return d && !Number.isNaN(d.getTime()) ? d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+    };
+    function fontesRender(arquivos) {
+      fontesCorpo.innerHTML = '';
+      let total = 0;
+      arquivos.forEach(a => {
+        total += a.tamanho || 0;
+        const tr = document.createElement('tr');
+        if (!a.noServidor) tr.className = 'fontes-ausente';
+        const nome = document.createElement('td');
+        const forte = document.createElement('strong');
+        forte.textContent = a.nome;
+        const arq = document.createElement('div');
+        arq.className = 'fontes-arquivo';
+        arq.textContent = a.caminho + (a.noServidor ? '' : ' (ainda não enviado)');
+        nome.append(forte, arq);
+        const ed = document.createElement('td');
+        const campo = document.createElement('input');
+        campo.type = 'text';
+        campo.maxLength = 120;
+        campo.value = a.edicao || '';
+        campo.placeholder = 'Ex.: 2026/03';
+        campo.autocomplete = 'off';
+        campo.setAttribute('aria-label', 'Edição de ' + a.nome);
+        campo.addEventListener('change', async () => {
+          const r = await postConfig({ codigo: promptsCode, acao: 'fontes-anotar', caminho: a.caminho, edicao: campo.value });
+          fontesStatus.textContent = r.ok ? '✔ Edição de “' + a.nome + '” guardada.' : ((r.data && r.data.erro) || 'Não foi possível guardar agora.');
+        });
+        ed.appendChild(campo);
+        const det = document.createElement('td');
+        det.textContent = a.detectado || '—';
+        const tam = document.createElement('td');
+        tam.textContent = fontesBytes(a.tamanho);
+        const env = document.createElement('td');
+        env.textContent = fontesQuando(a.enviadoEm);
+        tr.append(nome, ed, det, tam, env);
+        fontesCorpo.appendChild(tr);
+      });
+      fontesStatus.textContent = arquivos.length + (arquivos.length === 1 ? ' arquivo' : ' arquivos') + ' · ' + fontesBytes(total) + ' no total.';
+    }
+    async function fontesCarregar() {
+      if (!promptsCode) return;
+      fontesStatus.textContent = 'Lendo os arquivos do servidor… (na primeira vez demora alguns segundos)';
+      const r = await postConfig({ codigo: promptsCode, acao: 'fontes-inventario' });
+      if (!r.ok) { fontesStatus.textContent = (r.data && r.data.erro) || 'Não foi possível ler os arquivos agora.'; return; }
+      fontesRender(Array.isArray(r.data.arquivos) ? r.data.arquivos : []);
+    }
+    document.getElementById('fontesBox').addEventListener('toggle', e => { if (e.target.open) fontesCarregar(); });
+    document.getElementById('fontesAtualizarBtn').addEventListener('click', fontesCarregar);
 
     // ---------- Estatísticas de acesso e IA (só administrador) ----------
     const estatisticasStatus = document.getElementById('estatisticasStatus');

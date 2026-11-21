@@ -2,6 +2,7 @@
 // Tudo o que muda dados exige o CODIGO_ADMIN, conferido aqui no servidor. A leitura dos modelos padrão é pública.
 import { codigoDoDirigente, erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { diagnosticar, escritaDisponivel, leituraDisponivel, lerItem, gravarItem } from "./_armazem.mjs";
+import { inventarioDasFontes } from "./_fontes.mjs";
 import { CATEGORIAS, LIMITES, PARTES, aplicarLimites, categoriaDaParte, limitesPublicos, travadosDe, validarAlteracoes, validarLimites } from "./_prompts.mjs";
 import { esquecerCache, gravarAlteracoes, gravarLimites, lerAlteracoes, lerAnterior, lerLimites } from "./_promptsArmazenados.mjs";
 import { configPublicaVoz, gravarConfigVoz, lerConfigVoz, opcoesVoz } from "./_vozConfig.mjs";
@@ -355,6 +356,26 @@ export default async function handler(req, res) {
 
     if (acao === "prompts-ler") {
       return res.status(200).json(await estadoDosPrompts());
+    }
+
+    // Arquivos de consulta guardados no servidor (fontes/): nome, tamanho, data de envio, o que se lê da edição no conteúdo e a edição anotada pelo administrador.
+    if (acao === "fontes-inventario") {
+      const [arquivos, edicoes] = await Promise.all([inventarioDasFontes(), lerItem("fontes-edicoes")]);
+      const anotadas = edicoes && typeof edicoes === "object" ? edicoes : {};
+      return res.status(200).json({ arquivos: arquivos.map((a) => ({ ...a, edicao: String(anotadas[a.caminho] || "") })) });
+    }
+
+    if (acao === "fontes-anotar") {
+      if (!exigirEscrita(res)) return;
+      const caminho = String(corpo.caminho || "");
+      if (!/^fontes\/[A-Za-z0-9_.\-]{1,120}$/.test(caminho)) return erro(res, 400, "Arquivo desconhecido.");
+      const edicao = String(corpo.edicao || "").replace(/\s+/g, " ").trim().slice(0, 120);
+      const atuais = (await lerItem("fontes-edicoes")) || {};
+      const novas = { ...(typeof atuais === "object" ? atuais : {}) };
+      if (edicao) novas[caminho] = edicao;
+      else delete novas[caminho];
+      await gravarItem("fontes-edicoes", novas);
+      return res.status(200).json({ ok: true, caminho, edicao });
     }
 
     if (acao === "prompts-salvar") {

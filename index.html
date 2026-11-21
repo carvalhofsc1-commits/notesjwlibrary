@@ -2099,6 +2099,22 @@
             </div>
           </details>
 
+          <!-- 6.11.44: tabela dos arquivos de consulta guardados no servidor (fontes/), com a data de envio e a edição de cada um. -->
+          <details class="prompt-item prompt-tint-codigo" id="fontesBox">
+            <summary><h3>📚 Arquivos do servidor e edições</h3></summary>
+            <p class="hint">Todos os arquivos de consulta que a IA lê no servidor (Bíblia, Perspicaz, livros, Guia de Pesquisa…). <strong>Enviado em</strong> é a data em que o arquivo foi gravado no servidor. <strong>Edição</strong> é uma anotação sua (os arquivos não trazem a edição escrita): escreva o ano/mês ou a edição da publicação que você enviou (ex.: “edição de estudo 2026”, “2024/03”) e ela fica guardada. <strong>No conteúdo</strong> é o que o app consegue ler dentro do arquivo (ex.: a Sentinela mais nova citada no Guia), uma pista para saber se está atualizado.</p>
+            <p id="fontesStatus" class="ok" role="status" aria-live="polite"></p>
+            <div class="fontes-rolagem">
+              <table class="fontes-tabela">
+                <thead><tr><th>Publicação</th><th>Edição (sua anotação)</th><th>No conteúdo</th><th>Tamanho</th><th>Enviado em</th></tr></thead>
+                <tbody id="fontesCorpo"></tbody>
+              </table>
+            </div>
+            <div class="button-row">
+              <button id="fontesAtualizarBtn" class="secondary" type="button">🔄 Atualizar a lista</button>
+            </div>
+          </details>
+
             </div>
           </details>
 

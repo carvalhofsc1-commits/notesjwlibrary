@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.44
+
+- Ajustes (só administrador): nova seção **📚 Arquivos do servidor e edições**, junto das Lições das correções. Uma tabela com todos os arquivos de consulta guardados no servidor (`fontes/`): nome da publicação, **edição** (anotação sua, guardada no servidor; os arquivos não trazem a edição escrita), **o que o app lê no próprio conteúdo** (no Guia de Pesquisa, a Sentinela e a apostila mais novas citadas, ex.: w26.12; na Introdução da Bíblia de Estudo, os anos dos direitos autorais; nos demais, o ano mais recente citado no texto, aproximado), tamanho e **data de envio ao servidor**. Mostra também arquivos que o código espera e ainda não foram enviados. Ações novas do servidor: `fontes-inventario` e `fontes-anotar`.
+
 ## 6.11.43
 
 - Pesquisas: o passo do **Guia de Pesquisa** voltou a funcionar em produção. O jw.org barra o servidor do Cloud Run (responde com uma página de verificação), então o Guia online vinha sempre vazio. Agora o servidor usa o arquivo `fontes/guia_de_pesquisa.txt`: acha o tópico do assunto (ex.: ANSIEDADE), lê os artigos que o Guia indica (título, publicação, páginas e parágrafos) e acha cada um no wol pela busca da frase exata do título (se o título veio com palavras do subtítulo na frente, tenta de novo sem elas). Depois é como antes: a faixa de parágrafos indicada ou, sem ela, o parágrafo que mais combina com a pesquisa. Ficam de fora a apostila Vida e Ministério, a Bíblia, o Perspicaz e os livros de consulta (o Perspicaz já entra à parte). O Guia online (jw.org) fica só como reserva, para quem rodar fora do Cloud Run.

@@ -637,6 +637,109 @@ export function artigosDoTopicoDoGuia(topico) {
   return artigos;
 }
 
+// ---------- Inventário dos arquivos de consulta (página do administrador em Ajustes) ----------
+// Para cada arquivo de fontes/: nome da publicação, tamanho, data de envio ao servidor e o que dá para ler no próprio conteúdo sobre a edição
+// (a Sentinela mais nova citada no Guia, o ano dos direitos autorais, o ano mais recente citado). A edição "de verdade" é anotada pelo
+// administrador (config "fontes-edicoes"), porque os arquivos não trazem a edição escrita.
+const NOMES_DAS_FONTES = {
+  biblia: "Bíblia — Tradução do Novo Mundo (texto dos versículos)",
+  perspicaz_v1: "Estudo Perspicaz das Escrituras, volume 1 (it-1)",
+  perspicaz_v2: "Estudo Perspicaz das Escrituras, volume 2 (it-2)",
+  adoracao_pura: "A Adoração Pura de Jeová É Restaurada! (rr)",
+  reino_de_deus: "O Reino de Deus Já Governa! (kr)",
+  principios_biblicos: "Princípios Bíblicos para a Vida Cristã (lvs)",
+  raciocinios: "Raciocínios à Base das Escrituras (rs)",
+  glossario_nwt: "Glossário da Tradução do Novo Mundo",
+  introducao_biblia_estudo: "Introdução — Bíblia de Estudo (nwtsty)",
+  apendice_a_biblia_estudo: "Apêndice A — Bíblia de Estudo",
+  apendice_b_biblia_estudo: "Apêndice B — Bíblia de Estudo",
+  apendice_c_biblia_estudo: "Apêndice C — Bíblia de Estudo",
+  guia_de_pesquisa: "Guia de Pesquisa para Testemunhas de Jeová",
+  abreviacoes_publicacoes: "Abreviaturas dos Títulos das Publicações",
+  s38_instrucoes_reuniao_vida_e_ministerio: "Instruções para a Reunião Vida e Ministério (S-38)",
+  manual_escola_ministerio: "Manual da Escola do Ministério Teocrático",
+  perguntas_biblicas_respondidas: "Perguntas Bíblicas Respondidas",
+  perguntas_frequentes_tj: "Perguntas Frequentes sobre as Testemunhas de Jeová",
+  beneficie_escola: "Beneficie-se da Escola do Ministério Teocrático",
+  organizados: "Organizados para Fazer a Vontade de Jeová (od)",
+  canticos: "Cante de Coração Para Jeová (letras dos cânticos)",
+};
+const MESES_PT = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+const detectadoCache = new Map(); // caminho -> { atualizado, texto }
+
+// A edição mais nova entre os códigos "w26.12" do texto, como "w26.12 (dezembro de 2026)".
+function maisNovoCodigo(texto, simbolo) {
+  let melhor = null;
+  for (const m of texto.matchAll(new RegExp(`(?<![A-Za-z0-9])${simbolo}(\\d{2})\\.(\\d{2})(?!\\d)`, "g"))) {
+    const ano = 2000 + Number(m[1]);
+    const mes = Number(m[2]);
+    if (mes < 1 || mes > 12 || ano > new Date().getFullYear() + 2) continue;
+    if (!melhor || ano * 12 + mes > melhor.ano * 12 + melhor.mes) melhor = { ano, mes, codigo: `${simbolo}${m[1]}.${m[2]}` };
+  }
+  return melhor ? `${melhor.codigo} (${MESES_PT[melhor.mes - 1]} de ${melhor.ano})` : "";
+}
+
+function detectarEdicao(chave, texto) {
+  const partes = [];
+  if (chave === "guia_de_pesquisa") {
+    const w = maisNovoCodigo(texto, "w");
+    const mwb = maisNovoCodigo(texto, "mwb");
+    if (w) partes.push("A Sentinela mais nova citada: " + w);
+    if (mwb) partes.push("Apostila mais nova citada: " + mwb);
+  }
+  const direitos = (texto.match(/©\s*((?:19|20)\d{2}(?:\s*,\s*(?:19|20)\d{2})*)/) || [])[1];
+  if (direitos) partes.push("Direitos autorais: " + direitos.replace(/\s+/g, " "));
+  if (!partes.length) {
+    // Sem nada mais claro: o ano mais recente que o texto cita (aproximado; vale como pista).
+    const anos = [...texto.matchAll(/(?<!\d)((?:19|20)\d{2})(?!\d)/g)].map((m) => Number(m[1])).filter((a) => a >= 1950 && a <= new Date().getFullYear() + 1);
+    if (anos.length >= 2) partes.push("Ano mais recente citado no texto: " + Math.max(...anos) + " (aproximado)");
+  }
+  return partes.join(" · ");
+}
+
+// [{ caminho, chave, nome, tamanho, enviadoEm, detectado }] de todos os arquivos de fontes/ (mais as que estão no código e ainda não foram enviadas).
+export async function inventarioDasFontes() {
+  const { list } = await import("./_blob.mjs");
+  const noServidor = new Map();
+  try {
+    const r = await list({ prefix: "fontes/", limit: 500 });
+    for (const b of r.blobs || []) noServidor.set(b.pathname, b);
+  } catch (e) {
+    console.error("Inventário das fontes: não consegui listar o armazenamento", e?.message);
+  }
+  const itens = [];
+  const caminhosCodigo = new Map(Object.entries(ARQUIVOS).map(([chave, caminho]) => [caminho, chave]));
+  const todos = new Set([...noServidor.keys(), ...caminhosCodigo.keys()]);
+  for (const caminho of [...todos].sort()) {
+    const arquivo = noServidor.get(caminho);
+    const nomeArquivo = caminho.split("/").pop().replace(/\.[a-z]+$/i, "");
+    let detectado = "";
+    if (arquivo) {
+      const atualizado = new Date(arquivo.uploadedAt).getTime();
+      const guardado = detectadoCache.get(caminho);
+      if (guardado && guardado.atualizado === atualizado) detectado = guardado.texto;
+      else {
+        try {
+          const conteudo = await baixar(caminho);
+          detectado = caminho.endsWith(".json")
+            ? (() => { try { const j = JSON.parse(conteudo); return Array.isArray(j) ? `${j.length} cânticos` : ""; } catch { return ""; } })()
+            : detectarEdicao(nomeArquivo, conteudo);
+        } catch { detectado = ""; }
+        detectadoCache.set(caminho, { atualizado, texto: detectado });
+      }
+    }
+    itens.push({
+      caminho,
+      nome: NOMES_DAS_FONTES[nomeArquivo] || nomeArquivo,
+      tamanho: arquivo ? arquivo.size : null,
+      enviadoEm: arquivo ? new Date(arquivo.uploadedAt).toISOString() : null,
+      noServidor: Boolean(arquivo),
+      detectado,
+    });
+  }
+  return itens;
+}
+
 // Começa a baixar os arquivos enquanto a IA ainda escreve a resposta, para a busca não esperar o download depois.
 export function precarregarFontes({ biblia: comBiblia, perspicaz: comPerspicaz, livros: comLivros }) {
   if (!fontesConfiguradas()) return;
