@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.21
+
+- Adoração em Família: novo texto de abertura da tela, com a primeira frase em negrito: "**Peça sugestões para a noite de adoração em família.** A IA leva em conta as informações repassadas sobre a sua família (cadastradas por você) e monta 1 ou 2 opções completas (você escolhe), com partes, textos, vídeos e, se quiser, cânticos."
+
 ## 6.11.20
 
 - Adoração em Família, ✨ Ajustar com a IA: o cartão "Minha programação" ganha o botão que pede à IA para finalizar o conjunto sem mexer no que você escolheu. A IA não troca, tira, reordena nem acrescenta partes, e não muda minutos, textos, vídeos nem cânticos; só escreve a transição entre as partes (➡️ Transição, na abertura, entre uma parte e outra e no encerramento), melhora a descrição de uma parte se ela precisar encaixar com as vizinhas e dá uma dica de condução (avisando se o tempo total passa ou sobra). Usa o modelo e o esforço da Adoração em Família (Ajustes → Modelos e agentes de IA) e o mesmo código de pesquisa; o servidor devolve só esses textos, e o app os junta à programação. O botão mostra o relógio enquanto trabalha e dá para ajustar de novo. A instrução da IA é nova na tela de prompts (grupo Adoração em Família: "ajuste da programação montada pelo usuário").
