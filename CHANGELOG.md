@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.18
+
+- Adoração em Família: o apelido do membro deixa de ter lixeira própria (ficava com duas lixeiras na linha; resta só a que remove o membro). A lixeira dos campos de texto (anos de casados, outras circunstâncias e assunto) fica sempre visível, esmaecida enquanto o campo está vazio, em vez de aparecer só com texto.
+
 ## 6.11.17
 
 - Adoração em Família, 👤 Membros: cada membro ganha **Situação espiritual** (Batizado, Publicador não batizado, Removido, Descrente, Estudante) e **Privilégios** (vários podem ser marcados: Pioneiro regular, Pioneiro auxiliar, Pioneiro especial, Ancião, Servo ministerial, Serviço de Betel, Superintendente viajante, Voluntário a distância, Comulter, Tempo integral especial). Só "Descrente" não pede o ano; nas outras aparece um campo de ano com o rótulo da situação (ano do batismo, publicador desde, ano em que foi removido, estuda a Bíblia desde). Tudo fica só no aparelho e é enviado à IA, que adapta as partes e as tarefas (com tato com Removido e Descrente, sem escrever a situação de ninguém nas opções); o servidor só aceita valores dessas listas.

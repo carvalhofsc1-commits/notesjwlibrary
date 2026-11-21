@@ -16744,7 +16744,7 @@ textarea.fam-campo {
   padding: 0;
   margin: 0;
 }
-.fam-limpar-campo[hidden] { display: none; }
+.fam-limpar-campo.vazio { opacity: .5; }
 .fam-limpavel > .fam-campo-curto { flex: 0 1 12em; }
 .fam-membro .fam-apelido-caixa { grid-area: apelido; min-width: 0; }
 .fam-membro .fam-apelido { grid-area: apelido; min-width: 0; }

@@ -7921,7 +7921,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.17'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.18'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26125,7 +26125,7 @@ function saveTemplatesToStorage() {
       botao.title = 'Limpar ' + nome;
       botao.setAttribute('aria-label', 'Limpar ' + nome);
       caixa.append(campo, botao);
-      const atualizar = () => { botao.hidden = !campo.value; familiaCrescer(campo); };
+      const atualizar = () => { botao.classList.toggle('vazio', !campo.value); familiaCrescer(campo); }; // sempre visível; esmaecido sem texto
       campo.addEventListener('input', atualizar);
       campo.addEventListener('change', atualizar);
       botao.addEventListener('click', () => {
@@ -26139,10 +26139,7 @@ function saveTemplatesToStorage() {
     familiaCampoLimpavel(familiaAnosCasadosEl, 'os anos de casados');
     familiaCampoLimpavel(familiaOutrasCircEl, 'as outras circunstâncias');
     familiaCampoLimpavel(familiaAssuntoEl, 'o assunto');
-    const familiaApelidosLimpaveis = () => familiaMembrosEl.querySelectorAll('.fam-apelido').forEach(el => familiaCampoLimpavel(el, 'o apelido'));
-    familiaApelidosLimpaveis();
-    // Membros adicionados depois (botão ➕ ou ao recarregar o perfil): o mesmo tratamento.
-    new MutationObserver(familiaApelidosLimpaveis).observe(familiaMembrosEl, { childList: true });
+    // O apelido não tem lixeira própria (a do membro já remove a linha toda); basta apagar o texto.
     // As caixas escondidas (cadastro recolhido, tela fechada) não têm altura: ajusta de novo ao abrir e ao redimensionar a tela.
     const familiaAjustarAlturas = () => [familiaOutrasCircEl, familiaAssuntoEl].forEach(familiaCrescer);
     document.getElementById('familiaPerfilBox').addEventListener('toggle', () => requestAnimationFrame(familiaAjustarAlturas));
