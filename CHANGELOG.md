@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.34
+
+- Adoração em Família: novo jogo **Torta na cara** em "Jogos aceitos" (perguntas bíblicas fáceis; quem erra recebe, de brincadeira, uma "torta" de chantilly ou espuma de barbear, só se topar). A IA entrega 10 perguntas com resposta, o material e os cuidados (olhos, alergias, crianças pequenas). Entrou antes dos jogos do FunPlayB, que seguem como os últimos da lista.
+
 ## 6.11.33
 
 - Adoração em Família: o bloco recolhível do topo, antes "Cadastro da família", agora se chama **Família e definições gerais**, porque guarda também circunstâncias e atividades aceitas, não só o cadastro.

@@ -2635,6 +2635,7 @@ const JOGOS_FAMILIA = [
   "Forca bíblica (papel e lápis)",
   "Palavras cruzadas ou caça-palavras (papel e lápis)",
   "Desenho e adivinhação (Pictionary bíblico)",
+  "Torta na cara (perguntas bíblicas, quem erra leva a torta)",
   "FunPlayB: jogar um tema de perguntas",
   "FunPlayB: tema personalizado (20 perguntas para importar)",
 ];
