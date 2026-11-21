@@ -9483,6 +9483,16 @@
       --g-texto: #422006;
     }
 
+    .historico-cat[data-cat="familia"] {
+      --g-cor: #e11d48;
+      --g-forte: #be123c;
+      --g-forte-h: #9f1239;
+      --g-suave: #ffe4e6;
+      --g-suave-h: #fecdd3;
+      --g-borda: #fb7185;
+      --g-texto: #881337;
+    }
+
     :is(#grupoComentarios, #grupoDirigir, #grupoDiscursos) details.subsection {
       background: var(--card);
       background: color-mix(in srgb, var(--g-cor) 10%, var(--card));

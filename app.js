@@ -3939,7 +3939,7 @@
     // do botão, mas não o atributo). "geral" = modelo e esforço gerais; "esbocos" = os da Preparação de discursos e esboços (e do Preparar para dirigir); "modelo" = só o modelo
     // (o áudio em texto não usa o esforço escolhido).
     const IA_NOTA_BOTOES = {
-      aiSuggestBtn: 'geral', aiSentinelaBtn: 'geral', aiStudyBtn: 'geral', aiStudyQuestionsBtn: 'esbocos', tdGerarBtn: 'esbocos',
+      familiaGerarBtn: 'geral', aiSuggestBtn: 'geral', aiSentinelaBtn: 'geral', aiStudyBtn: 'geral', aiStudyQuestionsBtn: 'esbocos', tdGerarBtn: 'esbocos',
       joiasResponderBtn: 'geral', bibliaResumirBtn: 'esbocos', ebcResponderBtn: 'geral', consideracaoResponderBtn: 'geral', nvcResponderBtn: 'geral', ebcDirPerguntasBtn: 'esbocos',
       tesourosEsbocoBtn: 'esbocos', discursoEsbocoBtn: 'esbocos', publicoEsbocoBtn: 'esbocos', outrosEsbocoBtn: 'esbocos',
       transcricaoCorrigirBtn: 'geral', transcricaoResumirBtn: 'geral',
@@ -7921,7 +7921,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.11'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.12'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -20545,7 +20545,7 @@ function saveTemplatesToStorage() {
     // referem, logo depois do tipo ("💎 Joias espirituais · 19 a 25 de outubro - JEREMIAS 45-46"). Os esboços já trazem a semana ou o
     // número do tema no próprio nome, e o texto colado não tem semana de matéria.
     function historicoTituloExibido(item) {
-      if (item.tipo === 'esboco' || item.tipo === 'colado' || item.tipo === 'nota' || !item.ano || !item.numSemana) return item.titulo;
+      if (item.tipo === 'esboco' || item.tipo === 'colado' || item.tipo === 'nota' || item.tipo === 'familia' || !item.ano || !item.numSemana) return item.titulo;
       const rotulo = rotuloDaSemanaIso(item.ano, item.numSemana);
       const partes = String(item.titulo).split(' · ');
       if (partes.length === 1) return item.titulo + ' · ' + rotulo;
@@ -21205,8 +21205,8 @@ function saveTemplatesToStorage() {
       return resultado;
     }
 
-    function historicoSalvar({ tipo, titulo, ano, numSemana, partes, esbocoJson, esbocoNumero, esbocoTitulo, importado, arquivo, refino, sub, ligar, anotId, anotModo, anotEvento, anotOrdem, gravacoes }) {
-      const semSemana = tipo === 'nota';
+    function historicoSalvar({ tipo, titulo, ano, numSemana, partes, esbocoJson, esbocoNumero, esbocoTitulo, importado, arquivo, refino, sub, ligar, anotId, anotModo, anotEvento, anotOrdem, gravacoes, familiaOpcoes }) {
+      const semSemana = tipo === 'nota' || tipo === 'familia';
       const item = {
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
         tipo,
@@ -21218,6 +21218,8 @@ function saveTemplatesToStorage() {
       };
       // Esboços: o JSON (para continuar com Outra versão, Melhorar e Incluir texto(s) depois de abrir o esboço salvo) e o número do tema do S-34.
       if (esbocoJson) item.esbocoJson = esbocoJson;
+      // Adoração em Família: as opções como a IA devolveu (abrir a pesquisa salva as mostra de novo na tela Família).
+      if (familiaOpcoes) item.familiaOpcoes = familiaOpcoes;
       // Respostas do estudo: os itens crus da IA e o contexto do pedido (para Outra resposta e Melhorar depois de reabrir a pesquisa salva).
       if (refino) item.refino = refino;
       if (sub) item.sub = sub; // joias: 'resumo', 'pergunta' (joia da semana), 'joias' (da leitura) ou 'instrucoes'; cada um é salvo separado
@@ -21257,9 +21259,11 @@ function saveTemplatesToStorage() {
       { id: 'anotacoes', titulo: '🗒️ Anotações', cor: '#6366f1', tipos: [], semSemana: true, anotacoes: true },
       { id: 'comentarios', titulo: '✋ Comentários', cor: '#a855f7', tipos: ['colado', 'sentinela', 'ebc', 'consideracao', 'nvc', 'joias'] },
       { id: 'dirigentes', titulo: '🎤 Dirigentes', cor: '#14b8a6', tipos: ['dirigente', 'ebc-dirigente'], soDirigente: true },
-      { id: 'esbocos', titulo: '📜 Esboços', cor: '#f59e0b', tipos: ['esboco'], soDirigente: true }
+      { id: 'esbocos', titulo: '📜 Esboços', cor: '#f59e0b', tipos: ['esboco'], soDirigente: true },
+      // Adoração em Família (6.11.12): as 3 opções de cada preparo; não dependem da semana escolhida.
+      { id: 'familia', titulo: '👨‍👩‍👧 Adoração em Família', cor: '#e11d48', tipos: ['familia'], semSemana: true, familia: true }
     ];
-    const historicoAbertas = { textos: false, anotacoes: false, comentarios: false, dirigentes: false, esbocos: false }; // lembra quais estão abertas ao refazer a lista
+    const historicoAbertas = { textos: false, anotacoes: false, comentarios: false, dirigentes: false, esbocos: false, familia: false }; // lembra quais estão abertas ao refazer a lista
     // Ao abrir a página Pesquisas e respostas salvas (pelo botão da barra, pelo atalho ou pelo botão da tela Reuniões), todas as categorias começam recolhidas.
     function historicoRecolher() {
       Object.keys(historicoAbertas).forEach(id => { historicoAbertas[id] = false; });
@@ -21347,7 +21351,7 @@ function saveTemplatesToStorage() {
       const data = new Date(item.data);
       const quando = data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' às ' + data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       const respostas = (item.partes || []).length;
-      meta.textContent = 'Salva em ' + quando + (respostas > 1 ? ' · ' + respostas + (item.tipo === 'esboco' ? ' partes' : ' respostas') : '') + (item.textoEditado ? ' · ✏️ com alterações suas' : '');
+      meta.textContent = 'Salva em ' + quando + (respostas > 1 ? ' · ' + respostas + (item.tipo === 'esboco' ? ' partes' : item.tipo === 'familia' ? ' opções' : ' respostas') : '') + (item.textoEditado ? ' · ✏️ com alterações suas' : '');
       const acoes = document.createElement('div');
       acoes.className = 'historico-acoes';
       const abrir = document.createElement('button');
@@ -21444,7 +21448,7 @@ function saveTemplatesToStorage() {
         } else {
           const vazio = document.createElement('p');
           vazio.className = 'historico-vazio';
-          vazio.textContent = cat.anotacoes ? 'Nenhuma anotação salva ainda. Use 💾 Salvar na tela Anotações.' : cat.semSemana ? 'Nenhum texto salvo ainda.' : 'Nenhuma pesquisa salva desta semana.';
+          vazio.textContent = cat.anotacoes ? 'Nenhuma anotação salva ainda. Use 💾 Salvar na tela Anotações.' : cat.familia ? 'Nenhuma Adoração em Família salva ainda. Elas são salvas aqui quando a IA prepara as 3 opções.' : cat.semSemana ? 'Nenhum texto salvo ainda.' : 'Nenhuma pesquisa salva desta semana.';
           box.appendChild(vazio);
         }
         holder.appendChild(box);
@@ -21594,6 +21598,17 @@ function saveTemplatesToStorage() {
       const silencioso = Boolean(opcoes && opcoes.silencioso); // a resposta salva que aparece sozinha: sem perguntar, sem trocar de tela
       const item = historicoLer().find(i => i.id === id);
       if (!item) { historicoRender(); return false; }
+      // Adoração em Família: as 3 opções voltam à tela Família (não vão para o campo de texto).
+      if (item.tipo === 'familia') {
+        if (!Array.isArray(item.familiaOpcoes) || !item.familiaOpcoes.length) return false;
+        familiaRenderOpcoes(item.familiaOpcoes);
+        familiaStatus('Opções salvas em ' + new Date(item.data).toLocaleDateString('pt-BR') + '.', 'ok');
+        if (!silencioso) {
+          showScreen('familia');
+          requestAnimationFrame(() => familiaResultadoEl.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+        }
+        return true;
+      }
       if (aiBusy) return false;
       const aviso = item.tipo === 'nota'
         ? 'O texto do campo Formatar será trocado por este texto salvo (dá para desfazer). Continuar?'
@@ -25888,7 +25903,7 @@ function saveTemplatesToStorage() {
       const pedido = ++familiaPedido;
       familiaGerarBtn.disabled = true;
       familiaCancelarBtn.hidden = false;
-      familiaStatus('Preparando as 3 opções… pode levar um minuto.');
+      familiaRelogioLigar();
       try {
         const result = await postStudy(familiaPayloadDe(perfil), IA_ESPERA_MS);
         if (pedido !== familiaPedido) return;
@@ -25903,16 +25918,59 @@ function saveTemplatesToStorage() {
         }
         familiaRenderOpcoes(opcoes);
         const modelo = result.data.modelo ? ' · ' + result.data.modelo : '';
-        familiaStatus('Pronto: ' + opcoes.length + ' opções' + modelo + '.', 'ok');
+        const tempoTotal = familiaRelogioTexto();
+        // Guarda as 3 opções em Pesquisas e respostas salvas, na categoria Adoração em Família (sem mexer no campo de texto).
+        let salva = null;
+        try {
+          const quando = new Date();
+          salva = historicoSalvar({
+            tipo: 'familia',
+            titulo: 'Adoração em Família · ' + quando.toLocaleDateString('pt-BR') + ' ' + quando.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + (perfil.assunto ? ' · ' + perfil.assunto.slice(0, 60) : ''),
+            partes: opcoes.map((op, i) => ({ paragrafos: 'Opção ' + (i + 1), texto: familiaTextoDaOpcao(op) })),
+            familiaOpcoes: opcoes,
+            ligar: false
+          });
+        } catch (e) { /* o app segue sem salvar */ }
+        familiaStatus('Pronto: ' + opcoes.length + ' opções' + modelo + ' · ' + tempoTotal + (salva ? ' · 📂 salvas em Pesquisas salvas → Adoração em Família' : '') + '.', 'ok');
         familiaResultadoEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
       } catch (e) {
         if (pedido !== familiaPedido) return;
         familiaStatus('Não consegui preparar as opções. Confira a conexão e tente de novo.', 'erro');
       } finally {
         if (pedido === familiaPedido) {
+          familiaRelogioDesligar();
           familiaGerarBtn.disabled = false;
           familiaCancelarBtn.hidden = true;
         }
+      }
+    }
+
+    // Relógio do preparo (6.11.12): "⏱️ 0:42" no botão e na mensagem de andamento, contando desde o toque em Preparar.
+    let familiaRelogioInicio = 0;
+    let familiaRelogioTimer = null;
+    let familiaBotaoRotulo = '';
+    function familiaRelogioTexto() {
+      const s = Math.max(0, Math.floor((Date.now() - familiaRelogioInicio) / 1000));
+      return '⏱️ ' + Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+    }
+    function familiaRelogioPintar() {
+      const tempo = familiaRelogioTexto();
+      familiaGerarBtn.textContent = '⏳ Preparando… ' + tempo;
+      familiaStatus('Preparando as 3 opções… ' + tempo + ' (pode levar um minuto ou mais)');
+    }
+    function familiaRelogioLigar() {
+      clearInterval(familiaRelogioTimer);
+      if (!familiaGerarBtn.dataset.rotulo) familiaGerarBtn.dataset.rotulo = familiaGerarBtn.textContent;
+      familiaRelogioInicio = Date.now();
+      familiaRelogioPintar();
+      familiaRelogioTimer = setInterval(familiaRelogioPintar, 1000);
+    }
+    function familiaRelogioDesligar() {
+      clearInterval(familiaRelogioTimer);
+      familiaRelogioTimer = null;
+      if (familiaGerarBtn.dataset.rotulo) {
+        familiaGerarBtn.textContent = familiaGerarBtn.dataset.rotulo;
+        delete familiaGerarBtn.dataset.rotulo;
       }
     }
 
@@ -25921,6 +25979,7 @@ function saveTemplatesToStorage() {
     familiaGerarBtn.addEventListener('click', familiaGerar);
     familiaCancelarBtn.addEventListener('click', () => {
       familiaPedido++;
+      familiaRelogioDesligar();
       familiaStatus('Cancelado.');
       familiaGerarBtn.disabled = false;
       familiaCancelarBtn.hidden = true;

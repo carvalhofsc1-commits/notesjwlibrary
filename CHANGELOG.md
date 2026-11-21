@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.12
+
+- Adoração em Família: o botão "Preparar 3 opções" mostra o modelo da IA sob o título (como os outros botões da IA) e, enquanto prepara, um relógio "⏳ Preparando… ⏱️ 0:42" no próprio botão e na mensagem de andamento; no fim a mensagem traz o modelo e o tempo total.
+- As 3 opções geradas são salvas sozinhas em Pesquisas salvas, numa categoria própria "👨‍👩‍👧 Adoração em Família" (não depende da semana escolhida). Abrir uma delas mostra as 3 opções de volta na tela Família; dá para apagar como as outras.
+
 ## 6.11.11
 
 - Limpeza depois da migração para o Google Cloud (a Vercel foi desligada): o armazenamento (`api/_blob.mjs` e `api/_armazem.mjs`) usa só o Cloud Storage (e a pasta local nos testes); saíram o `@vercel/blob`, o Global Config e a API da Vercel. Removidos `vercel.json`, `.vercelignore`, a pasta `.vercel` e os scripts de cópia da Vercel (`migrar-blob.mjs`, `migrar-config.mjs`). `ferramentas/subir-fontes.mjs` envia só para o bucket. A pasta `scripts/` dos extratores das publicações foi para `ferramentas/extratores/` (fora do site e do servidor).
