@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.38
+
+- Adoração em Família: o bloco **Formação da família** (dentro de Família e definições gerais) passou a se chamar **Dados da família** e ganhou os campos **Dia da adoração** (segunda a domingo) e **Horário**, para guardar quando a família faz a adoração. Ficam só neste aparelho, aparecem no resumo do card (ex.: "Quarta às 19:30") e não vão para a IA.
+
 ## 6.11.37
 
 - Leitura da Bíblia: o card do capítulo que está sendo lido (com Lido, Marcar aqui, player e botões) ganhou **fundo amarelo claro**. No tema escuro o amarelo se mistura com o fundo escuro.

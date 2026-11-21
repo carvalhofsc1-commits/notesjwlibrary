@@ -7921,7 +7921,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.37'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.38'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -9627,6 +9627,8 @@
             try { localStorage.removeItem(FAMILIA_DADOS_KEY); } catch (e) { /* sem localStorage */ }
             familiaFormacaoEl.value = '';
             familiaAnosCasadosEl.value = '';
+            document.getElementById('familiaDiaSemana').value = '';
+            document.getElementById('familiaHorario').value = '';
             familiaOutrasCircEl.value = '';
             familiaAssuntoEl.value = '';
             familiaDuracaoEl.value = '45';
@@ -25760,6 +25762,8 @@ function saveTemplatesToStorage() {
       return {
         formacao: familiaFormacaoEl.value || '',
         anosCasados: Number.isInteger(anos) && anos >= 0 && anos <= 80 ? anos : null,
+        diaAdoracao: document.getElementById('familiaDiaSemana').value || '', // dia e horário combinados (só guardados no aparelho)
+        horaAdoracao: /^\d{2}:\d{2}$/.test(document.getElementById('familiaHorario').value) ? document.getElementById('familiaHorario').value : '',
         membros,
         convidados: {
           formacao: document.getElementById('familiaConvidadosFormacao').value || '',
@@ -25792,6 +25796,7 @@ function saveTemplatesToStorage() {
       const partes = [];
       if (perfil.formacao) partes.push(perfil.formacao);
       if (nomes.length) partes.push(nomes.length === 1 ? nomes[0] : nomes.length + ' membros');
+      if (perfil.diaAdoracao || perfil.horaAdoracao) partes.push([perfil.diaAdoracao.replace('-feira', ''), perfil.horaAdoracao].filter(Boolean).join(' às '));
       resumoEl.textContent = partes.join(' · ');
       const convEl = document.getElementById('familiaConvidadosResumo');
       if (convEl) {
@@ -25819,6 +25824,8 @@ function saveTemplatesToStorage() {
       }
       if (salvo.formacao) familiaFormacaoEl.value = salvo.formacao === 'Família monoparental' ? 'Mãe ou pai sozinho' : salvo.formacao; // o nome antigo da opção
       if (salvo.anosCasados != null) familiaAnosCasadosEl.value = String(salvo.anosCasados);
+      if (typeof salvo.diaAdoracao === 'string') document.getElementById('familiaDiaSemana').value = salvo.diaAdoracao;
+      if (typeof salvo.horaAdoracao === 'string') document.getElementById('familiaHorario').value = salvo.horaAdoracao;
       familiaChecksMarcar(document.getElementById('familiaCircunstancias'), salvo.circunstancias);
       if (typeof salvo.outrasCircunstancias === 'string') familiaOutrasCircEl.value = salvo.outrasCircunstancias;
       if (Array.isArray(salvo.atividades)) {
@@ -26758,7 +26765,7 @@ function saveTemplatesToStorage() {
       familiaLimparBtn.hidden = true;
       familiaStatus('');
     });
-    [familiaFormacaoEl, familiaAnosCasadosEl, familiaDuracaoEl, familiaQuantidadeEl, document.getElementById('familiaConvidadosFormacao')].forEach(el => el.addEventListener('change', familiaPerfilSalvar));
+    [familiaFormacaoEl, familiaAnosCasadosEl, document.getElementById('familiaDiaSemana'), document.getElementById('familiaHorario'), familiaDuracaoEl, familiaQuantidadeEl, document.getElementById('familiaConvidadosFormacao')].forEach(el => el.addEventListener('change', familiaPerfilSalvar));
     familiaQuantidadeEl.addEventListener('change', familiaBotaoRotuloAtualizar);
     [familiaOutrasCircEl, familiaAssuntoEl].forEach(el => el.addEventListener('input', () => { clearTimeout(el._t); el._t = setTimeout(familiaPerfilSalvar, 400); }));
     document.getElementById('familiaCircunstancias').addEventListener('change', familiaPerfilSalvar);

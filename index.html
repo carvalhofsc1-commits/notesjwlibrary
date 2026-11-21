@@ -2828,7 +2828,7 @@
         </summary>
         <div class="fam-perfil-corpo">
           <div class="fam-bloco">
-            <h3 class="fam-bloco-titulo">🏠 Formação da família</h3>
+            <h3 class="fam-bloco-titulo">🏠 Dados da família</h3>
             <label class="fam-rotulo" for="familiaFormacao">Como é a família</label>
             <select id="familiaFormacao" class="fam-campo">
               <option value="">Escolha…</option>
@@ -2840,6 +2840,26 @@
             </select>
             <label class="fam-rotulo" for="familiaAnosCasados">Anos de casados <span class="opc">(opcional)</span></label>
             <input id="familiaAnosCasados" class="fam-campo fam-campo-curto" type="number" inputmode="numeric" min="0" max="80" placeholder="Ex.: 12" autocomplete="off">
+            <!-- 6.11.38: dia e horário combinados para a adoração em família (só neste aparelho). -->
+            <div class="fam-linha-dupla">
+              <div class="fam-meia">
+                <label class="fam-rotulo" for="familiaDiaSemana">Dia da adoração <span class="opc">(opcional)</span></label>
+                <select id="familiaDiaSemana" class="fam-campo fam-campo-curto">
+                  <option value="">Escolha…</option>
+                  <option value="Segunda-feira">Segunda-feira</option>
+                  <option value="Terça-feira">Terça-feira</option>
+                  <option value="Quarta-feira">Quarta-feira</option>
+                  <option value="Quinta-feira">Quinta-feira</option>
+                  <option value="Sexta-feira">Sexta-feira</option>
+                  <option value="Sábado">Sábado</option>
+                  <option value="Domingo">Domingo</option>
+                </select>
+              </div>
+              <div class="fam-meia">
+                <label class="fam-rotulo" for="familiaHorario">Horário <span class="opc">(opcional)</span></label>
+                <input id="familiaHorario" class="fam-campo fam-campo-curto" type="time">
+              </div>
+            </div>
           </div>
 
           <div class="fam-bloco">
