@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.66
+
+- **Adoração compartilhada (tela Participar / dirigente) legível e sem aperto.**
+  - No tema escuro, os cards das partes, o painel do dirigente, o cronômetro, as respostas e o sorteado usavam cores claras fixas e o texto ficava quase invisível; agora todas as cores seguem o tema (contraste conferido: texto 11,9:1, link 6,3:1, minutos 5,7:1).
+  - Controles do dirigente: Passar o código e Passar a direção dividem a linha meio a meio e Encerrar ocupa a linha inteira (antes era uma coluna de 52 px com o texto na vertical).
+  - Cronômetro: o rótulo ocupa a linha e Iniciar, Pausar e Zerar dividem a linha seguinte, sem cortar nada na direita.
+  - Medido a 375 px: linhas de botões preenchem 100% da largura do card, sem rolagem horizontal.
+
 ## 6.11.65
 
 - **Considerações para o serviço de campo — "Sugerir outros 3 assuntos" não repete mais os mesmos.** A causa: a escolha dos 3 parágrafos de w24.05 que servem de base aos assuntos era sempre a mesma (só os parágrafos das considerações *salvas* saíam da escolha) e a IA não sabia o que já tinha sugerido, por isso voltavam os mesmos assuntos com pequenas variações. Agora:

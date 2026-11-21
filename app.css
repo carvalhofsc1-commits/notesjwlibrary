@@ -17097,6 +17097,36 @@ body.fam-tela-grande .fam-sessao-grande-barra { display: flex; position: fixed; 
 .fam-acoes > .fam-principal { flex: 1 1 100%; }
 .fam-acoes > .limpar-btn { flex: 0 0 52px; min-width: 52px; }
 
+/* 6.11.66: tela compartilhada legível no tema escuro (cores seguem o tema) e controles do dirigente sem aperto. */
+.fam-sessao-dirigente { background: color-mix(in srgb, var(--accent) 9%, var(--card)); border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); color: var(--text); }
+.fam-sessao-quem, .fam-sessao-cron-rotulo { color: var(--text); }
+.fam-sessao-secao { background: var(--card); color: var(--text); border-color: var(--line); }
+.fam-sessao-secao.bloqueada { background: color-mix(in srgb, var(--muted) 12%, var(--card)); }
+.fam-sessao-secao.bloqueada .fam-sessao-secao-nome, .fam-sessao-secao-min, .fam-sessao-aviso { color: var(--muted); }
+.fam-sessao-secao.atual { border-color: var(--accent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent); }
+.fam-sessao-agora, .fam-sessao-cron, .fam-sessao-cron-linha { background: color-mix(in srgb, var(--accent) 16%, var(--card)); color: var(--text); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.fam-sessao-cron-linha.pausado { background: color-mix(in srgb, var(--muted) 14%, var(--card)); color: var(--text); border-color: var(--line); }
+.fam-sessao-cron-linha.esgotado, .fam-sessao-cron.esgotado { background: color-mix(in srgb, #f59e0b 20%, var(--card)); color: var(--text); border-color: color-mix(in srgb, #f59e0b 55%, var(--line)); }
+.fam-sessao-extras { border-top-color: color-mix(in srgb, var(--accent) 35%, var(--line)); color: var(--text); }
+.fam-sessao-sorteado { background: color-mix(in srgb, #f59e0b 18%, var(--card)); border-color: color-mix(in srgb, #f59e0b 50%, var(--line)); color: var(--text); }
+.fam-sessao-resposta.escondida { background: color-mix(in srgb, var(--muted) 12%, var(--card)); border-color: var(--line); color: var(--muted); }
+.fam-sessao-resposta.revelada { background: color-mix(in srgb, var(--accent) 16%, var(--card)); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); color: var(--text); }
+.fam-sessao-assumir { background: color-mix(in srgb, var(--muted) 8%, var(--card)); border-color: var(--line); color: var(--text); }
+.fam-sessao-secao a, .fam-sessao-corpo-dentro a { color: color-mix(in srgb, var(--accent) 60%, var(--text)); overflow-wrap: anywhere; }
+.fam-sessao-corpo-dentro, .fam-sessao-corpo-dentro p, .fam-sessao-corpo-dentro li { color: var(--text); overflow-wrap: anywhere; }
+.fam-sessao-secao-topo { color: var(--text); }
+.fam-sessao-secao-topo { grid-template-columns: auto minmax(0, 1fr) auto; }
+.fam-sessao-secao-nome { overflow-wrap: anywhere; min-width: 0; }
+.fam-sessao-secao-lado { white-space: normal; flex-wrap: wrap; justify-content: flex-end; }
+/* Controles do dirigente: Passar o código e Passar a direção 50/50; Encerrar na linha inteira. */
+.fam-sessao-dirigente .fam-acoes > :is(button, a) { flex: 1 1 calc(50% - 6px); min-width: 0; white-space: normal; }
+.fam-sessao-dirigente .fam-acoes > .fam-principal, .fam-sessao-dirigente .fam-acoes > .limpar-btn { flex: 1 1 100%; min-width: 0; }
+/* Cronômetro: o rótulo ocupa a linha e os três botões dividem a linha seguinte. */
+.fam-sessao-cron-ctrl { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.fam-sessao-cron-ctrl > .fam-sessao-cron-rotulo { flex: 1 1 100%; margin: 0; }
+.fam-sessao-cron-ctrl > button { flex: 1 1 0; min-width: 0; padding-left: 6px; padding-right: 6px; white-space: nowrap; }
+.fam-sessao-secao-acoes > :is(button, a) { flex: 1 1 140px; min-width: 0; }
+
 /* 6.11.54: Considerações para o serviço de campo. Reaproveita os campos e as caixas de marcar da Adoração em Família (.fam-campo,
    .fam-checks, .fam-check); os botões ocupam a linha toda (como os outros esboços). Assuntos sugeridos: um por linha, título e resumo. */
 .campo-form > label:not(.fam-check),
