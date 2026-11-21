@@ -2713,7 +2713,75 @@ function videosParaAFamilia(catalogo, perfil) {
   return escolhidos;
 }
 
+// Ajuste da programação que o usuário montou marcando partes das duas opções (6.11.20): a IA só escreve a transição entre as partes e,
+// se precisar, melhora a descrição de cada uma. O servidor devolve só esses textos; o app os junta à programação dele (textos bíblicos,
+// vídeos e cânticos não passam por aqui de volta).
+const SaidaAjusteFamilia = z.object({
+  partes: z.array(z.object({ indice: z.number(), transicao: z.string().nullable(), descricao: z.string().nullable() })),
+  dicaParaOChefe: z.string().nullable(),
+});
+
+async function ajustarProgramaFamilia(res, body, P) {
+  const perfil = perfilDaFamilia(body);
+  const prog = body.programa && typeof body.programa === "object" ? body.programa : {};
+  const partes = (Array.isArray(prog.partes) ? prog.partes : [])
+    .filter((p) => p && typeof p === "object")
+    .slice(0, 12)
+    .map((p) => ({
+      nome: textoLivre(p.nome, 120),
+      minutos: Number.isFinite(Number(p.minutos)) ? Math.max(0, Math.min(300, Math.round(Number(p.minutos)))) : 0,
+      responsavel: textoLivre(p.responsavel, 60),
+      descricao: textoLivre(p.descricao, 1500),
+      textos: textosDaLista(p.textos, 4, 80),
+      videos: textosDaLista(p.videos, 3, 160),
+      canticos: textosDaLista(p.canticos, 3, 120),
+    }));
+  if (partes.length < 2) return erro(res, 400, "Marque pelo menos duas partes para ajustar a programação.");
+  const membros = perfil.membros
+    .map((m) => `- ${m.apelido || "(sem apelido)"} — ${m.papel || "membro da família"}${m.idade !== null ? `, ${m.idade} anos` : ""}`)
+    .join("\n");
+  const soma = partes.reduce((s, p) => s + p.minutos, 0);
+  const mensagem =
+    `FORMAÇÃO DA FAMÍLIA: ${perfil.formacao || "não informada"}\n` +
+    `MEMBROS:\n${membros || "- não informados"}\n` +
+    (perfil.circunstancias.length || perfil.outrasCircunstancias ? `CIRCUNSTÂNCIAS (trate com tato): ${[...perfil.circunstancias, perfil.outrasCircunstancias].filter(Boolean).join("; ")}\n` : "") +
+    `DURAÇÃO TOTAL PREVISTA: ${perfil.duracao} minutos; SOMA DAS PARTES ESCOLHIDAS: ${soma} minutos\n\n` +
+    `PARTES NA ORDEM ESCOLHIDA (indice, nome, minutos, responsável, descrição, textos, vídeos, cânticos):\n` +
+    partes
+      .map(
+        (p, i) =>
+          `[${i}] ${p.nome} — ${p.minutos} min${p.responsavel ? ` — ${p.responsavel}` : ""}\n  Descrição: ${p.descricao || "(sem descrição)"}` +
+          (p.textos.length ? `\n  Textos: ${p.textos.join("; ")}` : "") +
+          (p.videos.length ? `\n  Vídeos: ${p.videos.join("; ")}` : "") +
+          (p.canticos.length ? `\n  Cânticos: ${p.canticos.join("; ")}` : "")
+      )
+      .join("\n");
+  try {
+    const client = criarClienteIa({ maxRetries: 0, timeout: 120_000 }, P.ia.provedorTarefa);
+    const inicio = Date.now();
+    const resposta = await chamarIa(
+      client,
+      P,
+      { max_tokens: P.ia.provedorTarefa === "gemini" ? 16000 : 8000, system: P.sistemaAdoracaoFamiliaAjuste, messages: [{ role: "user", content: mensagem }] },
+      { schema: SaidaAjusteFamilia, tarefa: "adoracao-familia" }
+    );
+    if (resposta.stop_reason === "refusal" || !resposta.parsed_output) return erro(res, 502, "A IA não conseguiu ajustar a programação. Tente de novo.");
+    const linha = (v, max) => limparLinha(semCulto(semGotica(typeof v === "string" ? v : "")), max);
+    const saida = partes.map(() => ({ transicao: "", descricao: "" }));
+    for (const a of resposta.parsed_output.partes) {
+      const i = Number.isInteger(a.indice) ? a.indice : -1;
+      if (i < 0 || i >= saida.length) continue;
+      saida[i] = { transicao: linha(a.transicao, 400), descricao: linha(a.descricao, 1500) };
+    }
+    console.log("Adoração em Família (ajuste):", JSON.stringify({ modelo: P.ia.modelo, partes: partes.length, segundosIa: Math.round((Date.now() - inicio) / 100) / 10, entrada: resposta.usage?.input_tokens || 0, saida: resposta.usage?.output_tokens || 0 }));
+    return res.status(200).json({ partes: saida, dicaParaOChefe: linha(resposta.parsed_output.dicaParaOChefe, 600), modelo: nomeDoModelo(P.ia.modelo), data: new Date().toISOString() });
+  } catch (e) {
+    return tratarErro(e, res);
+  }
+}
+
 async function responderAdoracaoFamilia(res, body, P) {
+  if (body.programa) return ajustarProgramaFamilia(res, body, P);
   const perfil = perfilDaFamilia(body);
   if (!perfil.formacao && !perfil.membros.length) return erro(res, 400, "Descreva a família: a formação e os membros.");
   precarregarFontes({ biblia: true });

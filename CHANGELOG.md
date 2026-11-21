@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.20
+
+- Adoração em Família, ✨ Ajustar com a IA: o cartão "Minha programação" ganha o botão que pede à IA para finalizar o conjunto sem mexer no que você escolheu. A IA não troca, tira, reordena nem acrescenta partes, e não muda minutos, textos, vídeos nem cânticos; só escreve a transição entre as partes (➡️ Transição, na abertura, entre uma parte e outra e no encerramento), melhora a descrição de uma parte se ela precisar encaixar com as vizinhas e dá uma dica de condução (avisando se o tempo total passa ou sobra). Usa o modelo e o esforço da Adoração em Família (Ajustes → Modelos e agentes de IA) e o mesmo código de pesquisa; o servidor devolve só esses textos, e o app os junta à programação. O botão mostra o relógio enquanto trabalha e dá para ajustar de novo. A instrução da IA é nova na tela de prompts (grupo Adoração em Família: "ajuste da programação montada pelo usuário").
+- Atalho da tela inicial: "Sugestões para a noite de adoração em família" (antes, "Opções para a noite da família"). Botão da barra inferior: "Adoração" (antes, "Família").
+
 ## 6.11.19
 
 - Adoração em Família, montar a própria programação: as duas opções continuam sendo geradas separadas, e agora há o botão "🧩 Montar minha programação com partes das duas opções". Ele abre uma lista com todas as partes das duas opções, cada uma com caixa de marcação; o tempo previsto é somado a cada marcação ("⏱️ Previsto: 38 min de 45 min · faltam 7 min", em vermelho quando passa do tempo), e um número mostra a posição de cada parte, na ordem em que foi marcada. "✅ Gerar minha programação" monta o programa final (feito no aparelho, sem gastar a IA) com as partes escolhidas, a preparação e as tarefas das opções usadas, com copiar e "💾 Salvar em Pesquisas salvas" (categoria Adoração em Família). Só aparece quando há duas opções.

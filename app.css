@@ -16770,6 +16770,7 @@ textarea.fam-campo {
       "priv priv priv priv";
   }
 }
+.fam-parte-transicao { margin: 6px 0 0; padding: 6px 10px; border-left: 3px solid #3b82f6; font-style: italic; overflow-wrap: anywhere; }
 /* Montar a minha programação com partes das duas opções (6.11.19). */
 .fam-mescla { display: grid; gap: 10px; min-width: 0; }
 .fam-mescla-painel { display: grid; gap: 8px; min-width: 0; border: 1.5px solid #3b82f6; border-radius: 12px; padding: 10px; }

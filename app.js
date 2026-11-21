@@ -7921,7 +7921,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.19'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.20'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -25827,6 +25827,7 @@ function saveTemplatesToStorage() {
         (p.canticos || []).forEach(c => linhas.push('🎵 Cântico ' + c.numero + (c.titulo ? ' — ' + c.titulo : '')));
         (p.publicacoes || []).forEach(pub => linhas.push('📚 ' + [pub.titulo, pub.fonte].filter(Boolean).join(' · ') + (pub.url ? ' — ' + pub.url : '')));
         (p.perguntas || []).forEach(q => linhas.push('❓ ' + q));
+        if (p.transicao) linhas.push('➡️ Transição: ' + p.transicao);
       });
       if ((op.preparacao || []).length) {
         linhas.push('', 'Preparação:');
@@ -25949,6 +25950,12 @@ function saveTemplatesToStorage() {
             } else li.textContent = rotulo;
           });
           addLista('❓ Perguntas', parte.perguntas, (li, q) => { li.textContent = q; });
+          if (parte.transicao) {
+            const tr = document.createElement('p');
+            tr.className = 'fam-parte-transicao';
+            tr.textContent = '➡️ Transição: ' + parte.transicao;
+            bloco.appendChild(tr);
+          }
           card.appendChild(bloco);
         });
         if ((op.preparacao || []).length) {
@@ -25995,6 +26002,17 @@ function saveTemplatesToStorage() {
           }
         });
         acoes.appendChild(copiar);
+        if (cfg && cfg.ajustar) {
+          // ✨ Ajustar com a IA: a IA só escreve as transições entre as partes escolhidas (e melhora descrições, se precisar).
+          const ajustar = document.createElement('button');
+          ajustar.type = 'button';
+          ajustar.className = 'secondary fam-fino fam-ajustar-ia';
+          ajustar.textContent = op.ajustada ? '✨ Ajustar de novo com a IA' : '✨ Ajustar com a IA';
+          const nota = familiaGerarBtn.getAttribute('data-ia-nota');
+          if (nota) ajustar.setAttribute('data-ia-nota', nota);
+          ajustar.addEventListener('click', () => cfg.ajustar(ajustar));
+          acoes.appendChild(ajustar);
+        }
         if (cfg && cfg.salvar) {
           const salvar = document.createElement('button');
           salvar.type = 'button';
@@ -26122,10 +26140,55 @@ function saveTemplatesToStorage() {
           tarefas,
           dicaParaOChefe: ''
         };
-        resultado.textContent = '';
-        resultado.appendChild(familiaMontarCard(final, 0, 'Montada por você · ' + soma + ' min' + (alvo ? ' (de ' + alvo + ')' : ''), { salvar: true }));
+        mostrarFinal(final, soma);
         resultado.firstChild.scrollIntoView({ block: 'start', behavior: 'smooth' });
       });
+      // O cartão da programação montada, com copiar, salvar e ajustar com a IA (6.11.20).
+      const mostrarFinal = (final, soma) => {
+        resultado.textContent = '';
+        resultado.appendChild(familiaMontarCard(final, 0, (final.ajustada ? 'Montada por você e ajustada pela IA · ' : 'Montada por você · ') + soma + ' min' + (alvo ? ' (de ' + alvo + ')' : ''), {
+          salvar: true,
+          ajustar: async botao => {
+            if (!codigoAcessoSalvo()) return familiaStatus('Salve o código de pesquisa em Ajustes → 🔐 Autorização de acessos.', 'erro');
+            const perfil = familiaPerfilLerTela();
+            const payload = Object.assign(familiaPayloadDe(perfil), {
+              programa: {
+                partes: final.partes.map(p => ({
+                  nome: p.nome, minutos: p.minutos, responsavel: p.responsavel, descricao: p.descricao,
+                  textos: (p.textos || []).map(t => t.referencia),
+                  videos: (p.videos || []).map(v => v.titulo),
+                  canticos: (p.canticos || []).map(c => 'Cântico ' + c.numero + (c.titulo ? ' — ' + c.titulo : ''))
+                }))
+              }
+            });
+            const rotuloOriginal = botao.textContent;
+            const inicio = Date.now();
+            const pintar = () => { const s = Math.floor((Date.now() - inicio) / 1000); botao.textContent = '⏳ Ajustando… ⏱️ ' + Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+            document.querySelectorAll('.fam-ajustar-ia').forEach(b => { b.disabled = true; });
+            pintar();
+            const relogio = setInterval(pintar, 1000);
+            try {
+              const r = await postStudy(payload, IA_ESPERA_MS);
+              if (!r.ok || !r.data || !Array.isArray(r.data.partes)) {
+                familiaStatus((r.data && r.data.erro) || 'Não consegui ajustar a programação. Tente de novo.', 'erro');
+                return;
+              }
+              const ajustado = Object.assign({}, final, {
+                ajustada: true,
+                partes: final.partes.map((p, i) => Object.assign({}, p, { transicao: (r.data.partes[i] && r.data.partes[i].transicao) || '', descricao: (r.data.partes[i] && r.data.partes[i].descricao) || p.descricao })),
+                dicaParaOChefe: r.data.dicaParaOChefe || ''
+              });
+              familiaStatus('Programação ajustada' + (r.data.modelo ? ' · ' + r.data.modelo : '') + '.', 'ok');
+              mostrarFinal(ajustado, soma);
+            } catch (e) {
+              familiaStatus('Não consegui ajustar a programação. Confira a conexão e tente de novo.', 'erro');
+            } finally {
+              clearInterval(relogio);
+              document.querySelectorAll('.fam-ajustar-ia').forEach(b => { b.disabled = false; if (b === botao) b.textContent = rotuloOriginal; });
+            }
+          }
+        }));
+      };
       atualizar();
       caixa.append(abrir, painel, resultado);
       return caixa;
