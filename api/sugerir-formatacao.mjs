@@ -4832,7 +4832,6 @@ const SaidaCampoAssuntos = z.object({
 function textoDosDadosDoCampo(d) {
   const partes = [
     `DATA DA SAÍDA: ${dataPorExtenso(d.data)}`,
-    `LOGO DEPOIS DE UMA REUNIÃO: ${d.aposReuniao ? "sim (a consideração fica mais curta e direta)" : "não"}`,
     `DURAÇÃO: ${d.minutos} minutos (nunca mais que isso)`,
     `TIPO DE PREGAÇÃO: ${nomesDosTipos(d.tipos).join("; ")}`,
   ];

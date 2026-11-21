@@ -7931,7 +7931,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.57'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.58'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -17919,9 +17919,9 @@ function saveTemplatesToStorage() {
         validar: () => '',
         // Nas pesquisas salvas: "🚶 Considerações para o serviço de campo · sáb 21/11 · w24.05 § 3 - tema do esboço".
         nomeSalvo: dados => ESBOCOS.campo.tituloHistorico + ' · ' + String(dados.titulo).replace(/^Serviço de campo · /, '') + (dados.esboco && dados.esboco.tema ? ' - ' + dados.esboco.tema : ''),
-        // A duração (e se é logo depois de uma reunião) e as fontes que o esboço usou.
+        // A duração e as fontes que o esboço usou.
         linhasDaInfo: dados => soComConteudo(
-          (dados.minutos ? dados.minutos + ' min' : '') + (document.getElementById('campoAposReuniao').checked ? ' · logo depois de uma reunião' : ''),
+          dados.minutos ? dados.minutos + ' min' : '',
           dados.esboco && Array.isArray(dados.esboco.fontes) && dados.esboco.fontes.length ? 'fontes: ' + dados.esboco.fontes.join('; ') : ''
         ),
         depois: () => { document.getElementById('campoRefazerBtn').hidden = false; }
@@ -18570,7 +18570,6 @@ function saveTemplatesToStorage() {
       const salvos = campoSalvos();
       return {
         data: document.getElementById('campoData').value || campoDataLocal(),
-        aposReuniao: document.getElementById('campoAposReuniao').checked,
         minutos: Math.min(7, Math.max(5, Number(document.getElementById('campoMinutos').value) || 5)),
         tipos: marcados('campoTipo'),
         campanha: document.getElementById('campoCampanha').value.trim(),

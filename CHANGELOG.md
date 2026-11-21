@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.58
+
+- Considerações para o serviço de campo: removida a opção **"Logo depois de uma reunião"**. Saiu da tela, do pedido enviado ao servidor, da linha de informações do esboço e dos textos dos prompts; a duração (5, 6 ou 7 minutos) é a única que define o tamanho do esboço.
+
 ## 6.11.57
 
 - **Considerações para o serviço de campo — alinhamentos e tamanhos:**
