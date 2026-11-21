@@ -91,7 +91,9 @@ try {
   assert.ok(!("extras" in p1.dados) && !("participantes" in p1.dados)); passo("participantes entram sem receber respostas, extras do dirigente nem a lista");
   const volta = await chamar({ acao: "entrar", sessao, nome: "Aninha", participanteId: p1.dados.participanteId });
   assert.equal(volta.dados.participanteId, p1.dados.participanteId); passo("voltar com o mesmo id não duplica o participante");
-  assert.equal((await chamar({ acao: "entrar", sessao, nome: "   " })).status, 400); passo("entrar sem nome recusado");
+  const semNome = await chamar({ acao: "entrar", sessao, nome: "   " });
+  assert.equal(semNome.dados.precisaNome, true); assert.ok(!semNome.dados.participanteId && !semNome.dados.programa);
+  assert.deepEqual(semNome.dados.nomes, nomes); passo("sem nome, só confere o código e devolve os nomes para escolher (não entra)");
   const semCad = await chamar({ acao: "entrar", sessao, nome: "Visita", aparelhoId: "aparelho-sem-cadastro-123" }, undefined, true);
   assert.equal(semCad.status, 403); assert.match(semCad.dados.erro, /cadastro|identificar/i); passo("aparelho sem o acesso normal ao app não entra");
 
@@ -99,7 +101,7 @@ try {
   const e1 = await chamar({ acao: "estado", sessao, versao: "" });
   semResposta(e1.dados, "estado");
   const e2 = await chamar({ acao: "estado", sessao, versao: e1.dados.versao });
-  assert.deepEqual(Object.keys(e2.dados), ["versao"]); passo("estado sem mudança devolve só { versao }");
+  assert.deepEqual(Object.keys(e2.dados), ["versao", "agora"]); passo("estado sem mudança devolve só { versao } (e a hora do servidor)");
 
   // Dirigente
   const d = await chamar({ acao: "entrar", sessao, chave });

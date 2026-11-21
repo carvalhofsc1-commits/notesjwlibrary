@@ -16954,3 +16954,58 @@ input[type="time"].fam-campo::-webkit-date-and-time-value { text-align: left; mi
   .fam-campo-curto { max-width: 100%; }
   .fam-principal { flex: 1 1 100%; }
 }
+/* ---- Adoração compartilhada (6.11.48): painel de compartilhar, código grande e lista de nomes ---- */
+.fam-sessao-painel {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--sv-azul-bd);
+  border-radius: 10px;
+  background: var(--sv-azul-bg, #eef4fd);
+  min-width: 0;
+}
+.fam-sessao-criada { display: grid; gap: 6px; justify-items: center; text-align: center; min-width: 0; }
+.fam-sessao-criada .fam-acoes { justify-content: center; }
+.fam-sessao-rotulo { margin: 0; font-size: .85rem; color: var(--muted, #666); }
+.fam-sessao-codigo {
+  margin: 0;
+  padding: 6px 16px;
+  font: 700 2.1rem/1.1 ui-monospace, "Cascadia Mono", Consolas, monospace;
+  letter-spacing: .28em;
+  padding-left: calc(16px + .28em);
+  color: var(--text);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  user-select: all;
+}
+.fam-sessao-nomes { display: grid; gap: 6px; min-width: 0; }
+.fam-sessao-chips { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.fam-sessao-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 4px 3px 10px;
+  font-size: .9rem;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  overflow-wrap: anywhere;
+}
+.fam-sessao-chip-x {
+  min-width: 0;
+  min-height: 0;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  font-size: .75rem;
+  line-height: 1;
+  color: var(--muted, #666);
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  box-shadow: none;
+}
+.fam-sessao-chip-x:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, transparent); }
+.fam-sessao-add { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; min-width: 0; }
+.fam-sessao-add input { min-width: 0; }

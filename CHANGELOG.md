@@ -2,6 +2,15 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.48
+
+- Adoração em Família compartilhada, fase 2 (compartilhar): botão **🔗 Compartilhar** no cartão de cada opção gerada e de cada programação salva.
+  - O painel traz a lista de nomes já preenchida com os apelidos do cadastro da família e dos convidados; o dirigente tira (✕) ou acrescenta nomes (até 20, 40 caracteres cada) antes de criar a sessão.
+  - **🔗 Criar o código da adoração** envia a programação (com as rodadas dos jogos já separadas, também nas programações salvas antes da 6.11.46) e mostra o código grande, com **📋 Copiar código** e **📤 Compartilhar link** (Web Share API quando existe; senão copia o convite com o link `#participar=CÓDIGO`).
+  - O painel aberto (com o código criado) continua no cartão quando a lista de Programações salvas é redesenhada.
+  - A chave do dirigente fica só neste aparelho (`nsFamiliaSessoesV1`); criar exige o código de pesquisa, como a Adoração em Família.
+  - Servidor: `entrar` sem nome devolve `precisaNome` (com os nomes informados) sem registrar ninguém; as respostas trazem `agora` (hora do servidor, para o cronômetro).
+
 ## 6.11.47
 
 - Adoração em Família compartilhada, fase 1 (servidor): rota nova **`/api/familia-sessao`** para compartilhar uma programação por código e acompanhá-la ao vivo, com o dirigente liberando as partes.

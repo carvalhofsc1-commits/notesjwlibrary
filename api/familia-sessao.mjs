@@ -261,7 +261,7 @@ export default async function handler(req, res) {
       estado.atualizadoEm = Date.now();
       await gravarJson(caminho(cod, "estado.json"), estado);
       const qtd = await contarParticipantes(cod);
-      return res.status(200).json({ versao: versaoDe(estado, qtd), estado: estadoPublico(estado), participantes: await lerParticipantes(cod) });
+      return res.status(200).json({ versao: versaoDe(estado, qtd), estado: estadoPublico(estado), participantes: await lerParticipantes(cod), agora: Date.now() });
     };
 
     // ----- entrar: a programação sem respostas, o estado e o id do participante (o dirigente pode entrar sem nome) -----
@@ -285,8 +285,11 @@ export default async function handler(req, res) {
           participanteId = randomBytes(12).toString("base64url");
         }
         await gravarJson(caminho(cod, `participantes/${participanteId}.json`), { id: participanteId, nome, entrouEm: existente ? existente.entrouEm : Date.now() });
-      } else if (!dirigente) return erro(res, 400, "Escreva seu nome ou apelido.");
-      const resposta = { sessao: cod, programa, participanteId, dirigente };
+      } else if (!dirigente) {
+        // Sem nome: só confere o código e devolve o título e os nomes informados, para a pessoa escolher o dela (não entra ainda).
+        return res.status(200).json({ sessao: cod, precisaNome: true, titulo: programa.titulo, emoji: programa.emoji, nomes: programa.nomes || [] });
+      }
+      const resposta = { sessao: cod, programa, participanteId, dirigente, agora: Date.now() };
       if (dirigente) {
         const qtd = await contarParticipantes(cod);
         Object.assign(resposta, { versao: versaoDe(estado, qtd), estado: estadoPublico(estado), participantes: await lerParticipantes(cod), extras: segredo.extras || null });
@@ -299,8 +302,8 @@ export default async function handler(req, res) {
       const dirigente = await ehDirigente();
       const qtd = dirigente ? await contarParticipantes(cod) : null;
       const versao = versaoDe(estado, qtd);
-      if (String(corpo.versao || "") === versao) return res.status(200).json({ versao });
-      const r = { versao, estado: estadoPublico(estado) };
+      if (String(corpo.versao || "") === versao) return res.status(200).json({ versao, agora: Date.now() });
+      const r = { versao, estado: estadoPublico(estado), agora: Date.now() };
       if (dirigente) r.participantes = await lerParticipantes(cod);
       return res.status(200).json(r);
     }
