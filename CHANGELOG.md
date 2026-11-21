@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.42
+
+- Assistente de pesquisas: os cards principais — **O que você quer pesquisar?** (aba Assunto), **Texto bíblico** e **Procurar um vídeo por assunto** (aba Vídeo) — ganharam fundo **azul claro** com moldura azul fina.
+- Registro (log) das pesquisas passou a dizer quantas fontes novas da Sentinela (jw.org) entraram (`sentinelaNova`).
+
 ## 6.11.41
 
 - Pesquisas: as **Perguntas dos Leitores** das edições novas de A Sentinela agora também são lidas (antes eram deixadas de fora por engano). Foi o caso de Tiago 5:14, 15, cujo novo entendimento está na Sentinela de fevereiro de 2027. Quando um parágrafo cita o versículo, entram também os 2 seguintes (que explicam), e o limite do trecho subiu para 2200 caracteres.

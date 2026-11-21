@@ -16358,6 +16358,10 @@ button:is(#sv#sv, #anotacoesGravarBtn, #undoTopBtn, #undoBtn, .anot-grav-aviso, 
   .anotacoes-biblia-previa, .ai-colado, .template-modo, .faturamento-custo, .transcricao-gravacao, .quick-emojis, #preview, .backup-so-novos) {
   background: var(--card); background-image: none;
 }
+/* 6.11.42: no Assistente de pesquisas, os cards principais (O que você quer pesquisar?, Texto bíblico e Procurar um vídeo por assunto) em azul claro. */
+#pesquisaCard #pesquisaAssuntoBloco, #pesquisaCard #pesquisaTextoBloco, #pesquisaCard #pesquisaVideoBloco {
+  background: color-mix(in srgb, #60a5fa 15%, var(--card)); background-image: none; border: 1px solid var(--sv-azul-bd);
+}
 :is(#sv#sv, details.subsection > summary, details.section-accordion > summary, .prompt-item > summary, .prompt-cat > summary, #opcoesIaBox > summary, #dirigenteBox > summary, #ebcDirBox > summary) {
   background: var(--inicio-cinza); background-image: none;
 }
@@ -16514,8 +16518,9 @@ body[data-screen="salvas"] #secaoHistorico { display: block !important; margin: 
 .extrato-saldo-final strong { font-size: 1.05rem; }
 .extrato-saldo-valor { flex: 0 0 auto; font-size: 1.45rem; font-weight: 800; color: var(--sv-azul-tx); white-space: nowrap; font-variant-numeric: tabular-nums; }
 
-/* 6.10.80: Assistente de pesquisas — os cards de entrada das abas Assunto ("O que você quer pesquisar?"), Texto bíblico e Vídeo com fundo cinza claro; os campos continuam brancos. */
-:is(#sv#sv, #pesquisaAssuntoBloco, #pesquisaTextoBloco, #pesquisaVideoBloco) { background: var(--inicio-cinza); }
+/* 6.10.80: Assistente de pesquisas — os cards de entrada das abas Assunto ("O que você quer pesquisar?"), Texto bíblico e Vídeo; os campos continuam brancos.
+   6.11.42: o fundo deixou de ser cinza claro e passou a azul claro (a regra com a moldura azul está mais acima, junto das cores suaves). */
+:is(#sv#sv, #pesquisaAssuntoBloco, #pesquisaTextoBloco, #pesquisaVideoBloco) { background: color-mix(in srgb, #60a5fa 15%, var(--card)); } /* o token --sv-azul-bg virou cinza nas cores suaves: azul direto aqui */
 
 /* 6.10.81: Anotações · Transcrições na íntegra — Copiar, "Pôr nas anotações" (com espaço para o texto inteiro) e a lixeira numa grade. */
 .anot-transc-botoes { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.7fr) 48px; gap: 6px; margin: 0; }
