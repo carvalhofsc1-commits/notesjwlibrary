@@ -2921,6 +2921,25 @@
         </div>
       </details>
 
+      <!-- Convidados (6.11.29): campos como os dos membros; ao preencher um convidado, abre o próximo. Só neste aparelho. -->
+      <details id="familiaConvidadosBox" class="fam-perfil-box">
+        <summary>
+          <span class="fam-perfil-titulo">🤝 Informar convidados <span class="opc">(opcional)</span></span>
+          <span id="familiaConvidadosResumo" class="fam-perfil-resumo"></span>
+        </summary>
+        <div class="fam-perfil-corpo">
+          <div class="fam-bloco">
+            <p class="hint fam-dica">Se vai receber convidados na noite, informe quem são. A IA leva em conta as idades, a situação espiritual e os privilégios deles ao sugerir as partes (sem designar tarefas aos convidados). Ao preencher um convidado, o campo do próximo aparece.</p>
+            <label class="fam-rotulo" for="familiaConvidadosFamilia">Informação da família convidada <span class="opc">(opcional)</span></label>
+            <input id="familiaConvidadosFamilia" class="fam-campo" type="text" maxlength="200" autocomplete="off" spellcheck="true" placeholder="Ex.: família Silva, casal com dois filhos pequenos">
+            <h3 class="fam-bloco-titulo">👥 Convidados <span class="opc">(apelido, relação, ano de nascimento, situação espiritual e privilégios)</span></h3>
+            <div id="familiaConvidados" class="fam-membros"></div>
+            <label class="fam-rotulo" for="familiaConvidadosNotas">Anotações gerais sobre os convidados <span class="opc">(opcional)</span></label>
+            <textarea id="familiaConvidadosNotas" class="fam-campo" rows="1" maxlength="800" spellcheck="true" placeholder="Ex.: visita pela primeira vez; a criança gosta de desenhar; evitar assuntos de saúde…"></textarea>
+          </div>
+        </div>
+      </details>
+
       <div class="fam-bloco">
         <h3 class="fam-bloco-titulo">⏱️ Duração e assunto</h3>
         <div class="fam-linha-dupla">

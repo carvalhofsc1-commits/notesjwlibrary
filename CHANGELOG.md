@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.29
+
+- Adoração em Família, instrução para a IA: ela **pode (opcionalmente) levar em conta a situação espiritual e os privilégios** dos membros e dos convidados ao preparar as sugestões, especialmente havendo crianças (quem é batizado ou tem privilégios pode conduzir ou ajudar os menores; quem está começando é incentivado sem pressão; com Removido e Descrente, muito tato, sem expor e sem escrever a situação de ninguém no texto). Está no prompt editável "Adoração em Família" (tela de prompts) e no pedido enviado.
+- Novo card **"🤝 Informar convidados"**, logo abaixo de "Cadastro da família". Ao expandir: "Informação da família convidada" (texto), a lista de convidados com os mesmos campos dos membros (apelido, relação com a família, ano de nascimento, situação espiritual com o ano e privilégios) e "Anotações gerais sobre os convidados". **Ao preencher um convidado, o campo do próximo abre sozinho** (até 12). Tudo fica só no aparelho (e entra no "Apagar" de Privacidade e dados); o ano de nascimento nunca é enviado, só a idade. A IA leva os convidados em conta (idades, situação, anotações, vídeos para crianças) mas **não lhes designa tarefas**.
+
 ## 6.11.28
 
 - Adoração em Família, programações salvas: **cada opção vira uma programação independente**. Ao preparar 2 opções, o app salva duas programações ("… · Opção 1" e "… · Opção 2"), e o card "📂 Programações salvas (n)" conta e lista cada uma separadamente, cada uma com a própria moldura, tema, tempo, resumo, atividades, "📂 Abrir esta programação" e 🗑️ (apagar só aquela). As programações salvas antes com duas opções são divididas em duas, automaticamente, uma única vez. Pesquisas salvas → Adoração em Família passa a mostrar uma entrada por opção.

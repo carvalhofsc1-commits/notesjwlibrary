@@ -2673,20 +2673,40 @@ function textosDaLista(valor, maxItens, maxChars) {
     .slice(0, maxItens);
 }
 
+// Um membro (ou convidado) do pedido, só com valores conferidos.
+function pessoaDaFamilia(m) {
+  return {
+    apelido: textoLivre(m.apelido, 30),
+    papel: textoLivre(m.papel, 30),
+    idade: Number.isInteger(m.idade) && m.idade >= 0 && m.idade <= 120 ? m.idade : null,
+    // Situação espiritual e privilégios (6.11.17): só valores da lista; o ano não vale para "Descrente".
+    situacao: SITUACOES_FAMILIA.includes(m.situacao) ? m.situacao : "",
+    anoSituacao: m.situacao !== "Descrente" && Number.isInteger(m.anoSituacao) && m.anoSituacao >= 1900 && m.anoSituacao <= new Date().getFullYear() ? m.anoSituacao : null,
+    privilegios: (Array.isArray(m.privilegios) ? m.privilegios : []).filter((p, i, l) => PRIVILEGIOS_FAMILIA.includes(p) && l.indexOf(p) === i),
+  };
+}
+const descricaoDaPessoa = (m, padrao) =>
+  `- ${m.apelido || "(sem apelido)"} — ${m.papel || padrao}${m.idade !== null ? `, ${m.idade} ${m.idade === 1 ? "ano" : "anos"}` : ""}` +
+  (m.situacao ? `; situação espiritual: ${m.situacao}${m.anoSituacao ? ` (desde ${m.anoSituacao})` : ""}` : "") +
+  (m.privilegios.length ? `; privilégios de serviço: ${m.privilegios.join(", ")}` : "");
+
 function perfilDaFamilia(body) {
   const membros = (Array.isArray(body.membros) ? body.membros : [])
     .filter((m) => m && typeof m === "object")
-    .map((m) => ({
-      apelido: textoLivre(m.apelido, 30),
-      papel: textoLivre(m.papel, 30),
-      idade: Number.isInteger(m.idade) && m.idade >= 0 && m.idade <= 120 ? m.idade : null,
-      // Situação espiritual e privilégios (6.11.17): só valores da lista; o ano não vale para "Descrente".
-      situacao: SITUACOES_FAMILIA.includes(m.situacao) ? m.situacao : "",
-      anoSituacao: m.situacao !== "Descrente" && Number.isInteger(m.anoSituacao) && m.anoSituacao >= 1900 && m.anoSituacao <= new Date().getFullYear() ? m.anoSituacao : null,
-      privilegios: (Array.isArray(m.privilegios) ? m.privilegios : []).filter((p, i, l) => PRIVILEGIOS_FAMILIA.includes(p) && l.indexOf(p) === i),
-    }))
+    .map(pessoaDaFamilia)
     .filter((m) => m.apelido || m.papel)
     .slice(0, MAX_MEMBROS_FAMILIA);
+  // Convidados (6.11.29): como os membros; a IA os leva em conta, mas não lhes designa tarefas.
+  const cv = body.convidados && typeof body.convidados === "object" ? body.convidados : {};
+  const convidados = {
+    familia: textoLivre(cv.familia, 200),
+    anotacoes: textoLivre(cv.anotacoes, 800),
+    membros: (Array.isArray(cv.membros) ? cv.membros : [])
+      .filter((m) => m && typeof m === "object")
+      .map(pessoaDaFamilia)
+      .filter((m) => m.apelido || m.papel || m.idade !== null || m.situacao)
+      .slice(0, MAX_MEMBROS_FAMILIA),
+  };
   const anos = body.anosCasados;
   const atividades = textosDaLista(body.atividades, 20, 80);
   const legadoAmbos = Boolean(body.canticosInicioFim);
@@ -2700,6 +2720,7 @@ function perfilDaFamilia(body) {
     jogoPapel: body.jogoPapel !== false,
     formacao: textoLivre(body.formacao, 80),
     membros,
+    convidados,
     anosCasados: Number.isInteger(anos) && anos >= 0 && anos <= 80 ? anos : null,
     circunstancias: textosDaLista(body.circunstancias, 20, 80),
     outrasCircunstancias: textoLivre(body.outrasCircunstancias, 500),
@@ -2719,7 +2740,7 @@ function perfilDaFamilia(body) {
 // MAX_VIDEOS_FAMILIA.
 function videosParaAFamilia(catalogo, perfil) {
   if (!catalogo.length) return [];
-  const idades = perfil.membros.map((m) => m.idade).filter((i) => i !== null);
+  const idades = [...perfil.membros, ...perfil.convidados.membros].map((m) => m.idade).filter((i) => i !== null); // os convidados também contam (crianças, adolescentes)
   const papeis = perfil.membros.map((m) => m.papel.toLowerCase());
   const casal = /casal|casad/i.test(perfil.formacao) || papeis.includes("marido") || papeis.includes("esposa") || (papeis.includes("pai") && papeis.includes("mãe"));
   const criancas = idades.some((i) => i <= 12);
@@ -2835,14 +2856,9 @@ async function responderAdoracaoFamilia(res, body, P) {
   ]);
   const videos = videosParaAFamilia(catalogo || [], perfil);
   const hoje = new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long", day: "numeric", month: "long", year: "numeric" });
-  const membros = perfil.membros
-    .map(
-      (m) =>
-        `- ${m.apelido || "(sem apelido)"} — ${m.papel || "membro da família"}${m.idade !== null ? `, ${m.idade} ${m.idade === 1 ? "ano" : "anos"}` : ""}` +
-        (m.situacao ? `; situação espiritual: ${m.situacao}${m.anoSituacao ? ` (desde ${m.anoSituacao})` : ""}` : "") +
-        (m.privilegios.length ? `; privilégios de serviço: ${m.privilegios.join(", ")}` : "")
-    )
-    .join("\n");
+  const membros = perfil.membros.map((m) => descricaoDaPessoa(m, "membro da família")).join("\n");
+  const cv = perfil.convidados;
+  const temConvidados = cv.membros.length > 0 || Boolean(cv.familia) || Boolean(cv.anotacoes);
   const circunstancias = [...perfil.circunstancias, perfil.outrasCircunstancias].filter(Boolean);
   const qtd = perfil.quantidade;
   const todas = qtd === 1 ? "a opção" : `TODAS as ${qtd} opções`;
@@ -2851,8 +2867,14 @@ async function responderAdoracaoFamilia(res, body, P) {
     `QUANTIDADE DE OPÇÕES: prepare EXATAMENTE ${qtd} ${qtd === 1 ? "opção" : "opções"} (onde as instruções falarem em 3 opções, vale ${qtd}).\n` +
     `FORMAÇÃO DA FAMÍLIA: ${perfil.formacao || "não informada"}\n` +
     `MEMBROS (apelido, papel, idade, situação espiritual e privilégios):\n${membros || "- não informados"}\n` +
-    (perfil.membros.some((m) => m.situacao || m.privilegios.length)
-      ? `USO DA SITUAÇÃO ESPIRITUAL E DOS PRIVILÉGIOS: adapte as partes e as tarefas a cada um (quem é batizado ou tem privilégios pode conduzir ou ajudar mais; publicador não batizado e estudante podem ser incentivados com carinho, sem pressão; "Removido" e "Descrente" pedem muito tato: nunca exponha, cobre ou designe parte que o constranja, e não os cite nas tarefas de forma que os diferencie dos demais). Nunca escreva a situação espiritual de ninguém no texto das opções.\n`
+    (temConvidados
+      ? `CONVIDADOS NA NOITE (visitas: podem participar, mas NÃO lhes designe tarefas; adapte as partes e os jogos à presença deles, às idades e à situação deles):\n` +
+        (cv.membros.length ? `${cv.membros.map((m) => descricaoDaPessoa(m, "convidado")).join("\n")}\n` : "") +
+        (cv.familia ? `INFORMAÇÃO SOBRE A FAMÍLIA CONVIDADA: ${cv.familia}\n` : "") +
+        (cv.anotacoes ? `ANOTAÇÕES DO CHEFE SOBRE OS CONVIDADOS (trate com tato): ${cv.anotacoes}\n` : "")
+      : "") +
+    (perfil.membros.some((m) => m.situacao || m.privilegios.length) || cv.membros.some((m) => m.situacao || m.privilegios.length)
+      ? `USO OPCIONAL DA SITUAÇÃO ESPIRITUAL E DOS PRIVILÉGIOS (dos membros e dos convidados): leve em conta quando ajudar, principalmente havendo CRIANÇAS (por exemplo, quem é batizado ou tem privilégios pode conduzir ou ajudar mais, e os que estão começando, como o publicador não batizado e o estudante da Bíblia, podem ser incentivados com carinho e sem pressão; para as crianças, escolha atividades e exemplos que valorizem o bom exemplo dos mais experientes). "Removido" e "Descrente" pedem muito tato: nunca exponha, cobre ou designe parte que constranja, e não os diferencie dos demais nas tarefas. Nunca escreva a situação espiritual ou os privilégios de ninguém no texto das opções. Se não ajudar, ignore.\n`
       : "") +
     (perfil.anosCasados !== null ? `ANOS DE CASADOS: ${perfil.anosCasados}\n` : "") +
     (circunstancias.length ? `CIRCUNSTÂNCIAS QUE O CHEFE QUIS INFORMAR (trate com tato, nunca exponha ninguém):\n${circunstancias.map((c) => `- ${c}`).join("\n")}\n` : "") +

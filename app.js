@@ -7921,7 +7921,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.28'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.29'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -9632,6 +9632,9 @@
             familiaDuracaoEl.value = '45';
             document.querySelectorAll('#familiaCircunstancias input[type="checkbox"], #familiaAtividades input[type="checkbox"], #familiaJogos input[type="checkbox"], #familiaJogoPapel').forEach(el => { el.checked = el.defaultChecked; });
             familiaMembrosEl.innerHTML = '';
+            familiaConvidadosEl.innerHTML = '';
+            document.getElementById('familiaConvidadosFamilia').value = '';
+            document.getElementById('familiaConvidadosNotas').value = '';
             familiaPerfilCarregar();
           }
         });
@@ -25635,8 +25638,12 @@ function saveTemplatesToStorage() {
       return html;
     }
 
-    function familiaPapelOpcoesHtml(selecionado) {
-      const lista = FAMILIA_PAPEIS.slice();
+    // A relação dos convidados com a família (6.11.29).
+    const FAMILIA_PAPEIS_CONVIDADO = ['Convidado', 'Amigo', 'Amiga', 'Irmão da congregação', 'Irmã da congregação', 'Parente', 'Vizinho', 'Estudante da Bíblia', 'Criança convidada', 'Outro'];
+    const familiaConvidadosEl = document.getElementById('familiaConvidados');
+
+    function familiaPapelOpcoesHtml(selecionado, papeis) {
+      const lista = (papeis || FAMILIA_PAPEIS).slice();
       if (selecionado && !lista.includes(selecionado)) lista.push(selecionado);
       return '<option value="">Papel…</option>' + lista.map(p => '<option value="' + familiaEscapar(p) + '"' + (selecionado === p ? ' selected' : '') + '>' + familiaEscapar(p) + '</option>').join('');
     }
@@ -25655,21 +25662,23 @@ function saveTemplatesToStorage() {
       return '<option value="">Situação espiritual…</option>' + Object.keys(FAMILIA_SITUACOES).map(s => '<option value="' + familiaEscapar(s) + '"' + (selecionada === s ? ' selected' : '') + '>' + familiaEscapar(s) + '</option>').join('');
     }
 
-    function familiaMembroLinha(dados) {
+    // convidado: a linha do cadastro dos convidados (relações próprias; ao preencher a última, abre a seguinte).
+    function familiaMembroLinha(dados, convidado) {
       const m = dados || {};
+      const caixa = convidado ? familiaConvidadosEl : familiaMembrosEl;
       const linha = document.createElement('div');
       linha.className = 'fam-membro';
       const marcados = new Set(Array.isArray(m.privilegios) ? m.privilegios : []);
       linha.innerHTML =
         '<input class="fam-campo fam-apelido" type="text" maxlength="30" autocomplete="off" spellcheck="false" placeholder="Apelido" value="' + familiaEscapar(m.apelido || '') + '">' +
-        '<select class="fam-campo fam-papel" aria-label="Papel">' + familiaPapelOpcoesHtml(m.papel || '') + '</select>' +
+        '<select class="fam-campo fam-papel" aria-label="' + (convidado ? 'Relação com a família' : 'Papel') + '">' + familiaPapelOpcoesHtml(m.papel || '', convidado ? FAMILIA_PAPEIS_CONVIDADO : null).replace('Papel…', convidado ? 'Relação…' : 'Papel…') + '</select>' +
         '<select class="fam-campo fam-ano" aria-label="Ano de nascimento">' + familiaAnoOpcoesHtml(m.anoNascimento) + '</select>' +
         '<select class="fam-campo fam-situacao" aria-label="Situação espiritual">' + familiaSituacaoOpcoesHtml(m.situacao || '') + '</select>' +
         '<select class="fam-campo fam-ano-sit" aria-label="Ano da situação espiritual" hidden>' + familiaAnoOpcoesHtml(m.anoSituacao) + '</select>' +
         '<details class="fam-priv"><summary>🎖️ Privilégios</summary><div class="fam-checks fam-priv-lista">' +
         FAMILIA_PRIVILEGIOS.map(p => '<label class="fam-check"><input type="checkbox" value="' + familiaEscapar(p) + '"' + (marcados.has(p) ? ' checked' : '') + '><span>' + familiaEscapar(p) + '</span></label>').join('') +
         '</div></details>' +
-        '<button class="secondary fam-membro-tirar" type="button" title="Remover membro" aria-label="Remover membro">🗑️</button>';
+        '<button class="secondary fam-membro-tirar" type="button" title="' + (convidado ? 'Remover convidado' : 'Remover membro') + '" aria-label="' + (convidado ? 'Remover convidado' : 'Remover membro') + '">🗑️</button>';
       // O ano da situação só aparece quando há situação diferente de Descrente; o rótulo (primeira opção) diz de que ano se trata.
       const selSituacao = linha.querySelector('.fam-situacao');
       const selAnoSit = linha.querySelector('.fam-ano-sit');
@@ -25690,16 +25699,48 @@ function saveTemplatesToStorage() {
       contarPrivilegios();
       linha.querySelector('.fam-membro-tirar').addEventListener('click', () => {
         linha.remove();
-        if (!familiaMembrosEl.children.length) familiaMembroAdd();
+        if (!caixa.children.length) (convidado ? familiaConvidadoAdd : familiaMembroAdd)();
+        if (convidado) familiaConvidadosProximo();
         familiaPerfilSalvar();
       });
-      linha.querySelectorAll('input, select').forEach(el => el.addEventListener('change', familiaPerfilSalvar));
-      linha.querySelector('.fam-apelido').addEventListener('input', () => { clearTimeout(linha._t); linha._t = setTimeout(familiaPerfilSalvar, 400); });
+      linha.querySelectorAll('input, select').forEach(el => el.addEventListener('change', () => { if (convidado) familiaConvidadosProximo(); familiaPerfilSalvar(); }));
+      linha.querySelector('.fam-apelido').addEventListener('input', () => {
+        if (convidado) familiaConvidadosProximo();
+        clearTimeout(linha._t);
+        linha._t = setTimeout(familiaPerfilSalvar, 400);
+      });
       return linha;
     }
 
     function familiaMembroAdd(dados) {
       familiaMembrosEl.appendChild(familiaMembroLinha(dados));
+    }
+    function familiaConvidadoAdd(dados) {
+      familiaConvidadosEl.appendChild(familiaMembroLinha(dados, true));
+    }
+
+    // Uma linha (membro ou convidado) lida como dados.
+    function familiaLinhaLida(linha) {
+      return {
+        apelido: (linha.querySelector('.fam-apelido').value || '').trim().slice(0, 30),
+        papel: linha.querySelector('.fam-papel').value || '',
+        anoNascimento: Number(linha.querySelector('.fam-ano').value) || null,
+        situacao: linha.querySelector('.fam-situacao').value || '',
+        anoSituacao: Number(linha.querySelector('.fam-ano-sit').value) || null,
+        privilegios: Array.from(linha.querySelectorAll('.fam-priv input:checked')).map(el => el.value)
+      };
+    }
+    const familiaLinhaPreenchida = m => Boolean(m.apelido || m.papel || m.anoNascimento || m.situacao || m.privilegios.length);
+
+    // Convidados: ao preencher o último campo de convidado, abre o próximo (até 12), e linhas vazias sobrando no fim são recolhidas, deixando uma.
+    function familiaConvidadosProximo() {
+      const linhas = Array.from(familiaConvidadosEl.querySelectorAll('.fam-membro'));
+      if (!linhas.length) { familiaConvidadoAdd(); return; }
+      const ultima = linhas[linhas.length - 1];
+      if (familiaLinhaPreenchida(familiaLinhaLida(ultima)) && linhas.length < 12) familiaConvidadoAdd();
+      // Sobras vazias no fim (depois de apagar o texto de um convidado): fica só uma linha vazia.
+      const todas = Array.from(familiaConvidadosEl.querySelectorAll('.fam-membro'));
+      while (todas.length > 1 && !familiaLinhaPreenchida(familiaLinhaLida(todas[todas.length - 1])) && !familiaLinhaPreenchida(familiaLinhaLida(todas[todas.length - 2]))) todas.pop().remove();
     }
 
     function familiaChecksLidos(caixa) {
@@ -25712,19 +25753,18 @@ function saveTemplatesToStorage() {
     }
 
     function familiaPerfilLerTela() {
-      const membros = Array.from(familiaMembrosEl.querySelectorAll('.fam-membro')).map(linha => ({
-        apelido: (linha.querySelector('.fam-apelido').value || '').trim().slice(0, 30),
-        papel: linha.querySelector('.fam-papel').value || '',
-        anoNascimento: Number(linha.querySelector('.fam-ano').value) || null,
-        situacao: linha.querySelector('.fam-situacao').value || '',
-        anoSituacao: Number(linha.querySelector('.fam-ano-sit').value) || null,
-        privilegios: Array.from(linha.querySelectorAll('.fam-priv input:checked')).map(el => el.value)
-      })).filter(m => m.apelido || m.papel || m.anoNascimento);
+      const membros = Array.from(familiaMembrosEl.querySelectorAll('.fam-membro')).map(familiaLinhaLida).filter(m => m.apelido || m.papel || m.anoNascimento);
+      const convidadosMembros = Array.from(familiaConvidadosEl.querySelectorAll('.fam-membro')).map(familiaLinhaLida).filter(familiaLinhaPreenchida);
       const anos = Number(familiaAnosCasadosEl.value);
       return {
         formacao: familiaFormacaoEl.value || '',
         anosCasados: Number.isInteger(anos) && anos >= 0 && anos <= 80 ? anos : null,
         membros,
+        convidados: {
+          familia: (document.getElementById('familiaConvidadosFamilia').value || '').trim().slice(0, 200),
+          anotacoes: (document.getElementById('familiaConvidadosNotas').value || '').trim().slice(0, 800),
+          membros: convidadosMembros
+        },
         circunstancias: familiaChecksLidos(document.getElementById('familiaCircunstancias')),
         outrasCircunstancias: (familiaOutrasCircEl.value || '').trim().slice(0, 500),
         atividades: familiaChecksLidos(document.getElementById('familiaAtividades')),
@@ -25751,6 +25791,12 @@ function saveTemplatesToStorage() {
       if (perfil.formacao) partes.push(perfil.formacao);
       if (nomes.length) partes.push(nomes.length === 1 ? nomes[0] : nomes.length + ' membros');
       resumoEl.textContent = partes.join(' · ');
+      const convEl = document.getElementById('familiaConvidadosResumo');
+      if (convEl) {
+        const c = perfil.convidados;
+        const n = c.membros.length;
+        convEl.textContent = [c.familia, n ? n + (n === 1 ? ' convidado' : ' convidados') : ''].filter(Boolean).join(' · ');
+      }
     }
 
     function familiaPerfilSalvar() {
@@ -25765,6 +25811,7 @@ function saveTemplatesToStorage() {
         familiaQuantidadeEl.value = '2';
         familiaMembroAdd({ papel: 'Pai' });
         familiaMembroAdd({ papel: 'Mãe' });
+        familiaConvidadoAdd();
         familiaPerfilResumoPintar();
         return;
       }
@@ -25784,6 +25831,13 @@ function saveTemplatesToStorage() {
       familiaMembrosEl.innerHTML = '';
       const membros = Array.isArray(salvo.membros) && salvo.membros.length ? salvo.membros.slice(0, 12) : [{ papel: 'Pai' }, { papel: 'Mãe' }];
       membros.forEach(familiaMembroAdd);
+      // Convidados: os salvos e, depois deles, uma linha vazia para o próximo.
+      const conv = salvo.convidados && typeof salvo.convidados === 'object' ? salvo.convidados : {};
+      document.getElementById('familiaConvidadosFamilia').value = typeof conv.familia === 'string' ? conv.familia : '';
+      document.getElementById('familiaConvidadosNotas').value = typeof conv.anotacoes === 'string' ? conv.anotacoes : '';
+      familiaConvidadosEl.innerHTML = '';
+      (Array.isArray(conv.membros) ? conv.membros.slice(0, 12) : []).forEach(familiaConvidadoAdd);
+      familiaConvidadosProximo();
       familiaPerfilResumoPintar();
     }
 
@@ -25808,6 +25862,19 @@ function saveTemplatesToStorage() {
           anoSituacao: m.anoSituacao,
           privilegios: m.privilegios
         })),
+        // Convidados (6.11.29): como os membros (a idade é calculada aqui; o ano de nascimento nunca é enviado).
+        convidados: {
+          familia: perfil.convidados.familia,
+          anotacoes: perfil.convidados.anotacoes,
+          membros: perfil.convidados.membros.map(m => ({
+            apelido: m.apelido,
+            papel: m.papel,
+            idade: familiaIdadeDe(m.anoNascimento),
+            situacao: m.situacao,
+            anoSituacao: m.anoSituacao,
+            privilegios: m.privilegios
+          }))
+        },
         circunstancias: perfil.circunstancias,
         outrasCircunstancias: perfil.outrasCircunstancias,
         atividades: perfil.atividades,
@@ -26717,10 +26784,16 @@ function saveTemplatesToStorage() {
     familiaCampoLimpavel(familiaAnosCasadosEl, 'os anos de casados');
     familiaCampoLimpavel(familiaOutrasCircEl, 'as outras circunstâncias');
     familiaCampoLimpavel(familiaAssuntoEl, 'o assunto');
+    const familiaConvFamiliaEl = document.getElementById('familiaConvidadosFamilia');
+    const familiaConvNotasEl = document.getElementById('familiaConvidadosNotas');
+    familiaCampoLimpavel(familiaConvFamiliaEl, 'a informação da família convidada');
+    familiaCampoLimpavel(familiaConvNotasEl, 'as anotações sobre os convidados');
+    [familiaConvFamiliaEl, familiaConvNotasEl].forEach(el => el.addEventListener('input', () => { clearTimeout(el._t); el._t = setTimeout(familiaPerfilSalvar, 400); }));
     // O apelido não tem lixeira própria (a do membro já remove a linha toda); basta apagar o texto.
     // As caixas escondidas (cadastro recolhido, tela fechada) não têm altura: ajusta de novo ao abrir e ao redimensionar a tela.
-    const familiaAjustarAlturas = () => [familiaOutrasCircEl, familiaAssuntoEl].forEach(familiaCrescer);
+    const familiaAjustarAlturas = () => [familiaOutrasCircEl, familiaAssuntoEl, familiaConvNotasEl].forEach(familiaCrescer);
     document.getElementById('familiaPerfilBox').addEventListener('toggle', () => requestAnimationFrame(familiaAjustarAlturas));
+    document.getElementById('familiaConvidadosBox').addEventListener('toggle', () => requestAnimationFrame(familiaAjustarAlturas));
     window.addEventListener('resize', familiaAjustarAlturas);
     window.addEventListener('hashchange', () => setTimeout(familiaAjustarAlturas, 120));
     setTimeout(familiaAjustarAlturas, 400);
