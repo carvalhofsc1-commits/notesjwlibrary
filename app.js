@@ -7921,7 +7921,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.18'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.19'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -25843,7 +25843,15 @@ function saveTemplatesToStorage() {
     function familiaRenderOpcoes(opcoes) {
       familiaResultadoEl.innerHTML = '';
       familiaOpcoes = opcoes;
-      opcoes.forEach((op, idx) => {
+      // Com duas opções, o usuário pode montar a própria programação marcando as partes que quiser de cada uma.
+      if (opcoes.length > 1) familiaResultadoEl.appendChild(familiaMesclaMontar(opcoes));
+      opcoes.forEach((op, idx) => familiaResultadoEl.appendChild(familiaMontarCard(op, idx, 'Opção ' + (idx + 1) + (op.duracaoTotal ? ' · ' + op.duracaoTotal + ' min' : ''))));
+      familiaResultadoEl.hidden = !opcoes.length;
+      familiaLimparBtn.hidden = !opcoes.length;
+    }
+
+    // O cartão de uma opção (ou da programação montada pelo usuário, com cfg.salvar: ganha o botão de salvar).
+    function familiaMontarCard(op, idx, metaTexto, cfg) {
         const card = document.createElement('article');
         card.className = 'fam-opcao';
         const topo = document.createElement('div');
@@ -25853,7 +25861,7 @@ function saveTemplatesToStorage() {
         h.textContent = (op.emoji ? op.emoji + ' ' : '') + (op.titulo || ('Opção ' + (idx + 1)));
         const meta = document.createElement('p');
         meta.className = 'fam-opcao-meta';
-        meta.textContent = 'Opção ' + (idx + 1) + (op.duracaoTotal ? ' · ' + op.duracaoTotal + ' min' : '');
+        meta.textContent = metaTexto;
         topo.append(h, meta);
         card.appendChild(topo);
         if (op.resumo) {
@@ -25987,11 +25995,140 @@ function saveTemplatesToStorage() {
           }
         });
         acoes.appendChild(copiar);
+        if (cfg && cfg.salvar) {
+          const salvar = document.createElement('button');
+          salvar.type = 'button';
+          salvar.className = 'secondary fam-fino';
+          salvar.textContent = '💾 Salvar em Pesquisas salvas';
+          salvar.addEventListener('click', () => {
+            const quando = new Date();
+            const item = historicoSalvar({
+              tipo: 'familia',
+              titulo: 'Adoração em Família · Minha programação · ' + quando.toLocaleDateString('pt-BR') + ' ' + quando.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+              partes: [{ paragrafos: 'Minha programação', texto: familiaTextoDaOpcao(op) }],
+              familiaOpcoes: [op],
+              ligar: false
+            });
+            salvar.textContent = item ? '✅ Salva' : '⚠️ Não coube na memória';
+            salvar.disabled = Boolean(item);
+          });
+          acoes.appendChild(salvar);
+        }
         card.appendChild(acoes);
-        familiaResultadoEl.appendChild(card);
+        return card;
+    }
+
+    // ---- Montar a minha programação: marca as partes das duas opções; o tempo previsto é somado a cada marcação (6.11.19) ----
+    function familiaMesclaMontar(opcoes) {
+      const caixa = document.createElement('div');
+      caixa.className = 'fam-mescla';
+      const alvo = Number(opcoes[0] && opcoes[0].duracaoTotal) || Number(familiaDuracaoEl.value) || 45;
+      const abrir = document.createElement('button');
+      abrir.type = 'button';
+      abrir.className = 'secondary fam-fino fam-mescla-abrir';
+      abrir.textContent = '🧩 Montar minha programação com partes das duas opções';
+      const painel = document.createElement('div');
+      painel.className = 'fam-mescla-painel';
+      painel.hidden = true;
+      const dica = document.createElement('p');
+      dica.className = 'hint fam-dica';
+      dica.textContent = 'Marque as partes que quiser, de qualquer uma das opções. A ordem da marcação é a ordem da programação (o número mostra a posição).';
+      const total = document.createElement('p');
+      total.className = 'fam-mescla-total';
+      total.setAttribute('role', 'status');
+      total.setAttribute('aria-live', 'polite');
+      const resultado = document.createElement('div');
+      resultado.className = 'fam-mescla-resultado';
+      const marcadas = []; // chaves "opção:parte", na ordem em que foram marcadas
+      const marcas = new Map(); // chave -> { cx, num }
+      const minutosDe = chave => { const [i, j] = chave.split(':').map(Number); return Number(opcoes[i].partes[j].minutos) || 0; };
+      const atualizar = () => {
+        const soma = marcadas.reduce((s, k) => s + minutosDe(k), 0);
+        const dif = soma - alvo;
+        total.className = 'fam-mescla-total' + (dif > 0 ? ' passou' : soma === alvo ? ' exato' : '');
+        total.textContent = '⏱️ Previsto: ' + soma + ' min de ' + alvo + ' min · ' + marcadas.length + (marcadas.length === 1 ? ' parte' : ' partes') +
+          (!marcadas.length ? '' : dif > 0 ? ' · passa ' + dif + ' min' : dif === 0 ? ' · fecha o tempo certinho' : ' · faltam ' + (-dif) + ' min');
+        marcas.forEach((m, k) => { const pos = marcadas.indexOf(k); m.num.textContent = pos >= 0 ? String(pos + 1) : ''; m.num.hidden = pos < 0; });
+        gerar.disabled = !marcadas.length;
+      };
+      opcoes.forEach((op, i) => {
+        const grupo = document.createElement('div');
+        grupo.className = 'fam-mescla-grupo';
+        const titulo = document.createElement('p');
+        titulo.className = 'fam-secao-titulo';
+        titulo.textContent = 'Opção ' + (i + 1) + ' · ' + (op.emoji ? op.emoji + ' ' : '') + (op.titulo || '');
+        grupo.appendChild(titulo);
+        (op.partes || []).forEach((parte, j) => {
+          const chave = i + ':' + j;
+          const rotulo = document.createElement('label');
+          rotulo.className = 'fam-check fam-mescla-parte';
+          const cx = document.createElement('input');
+          cx.type = 'checkbox';
+          const num = document.createElement('span');
+          num.className = 'fam-mescla-num';
+          num.hidden = true;
+          const texto = document.createElement('span');
+          texto.textContent = (parte.nome || 'Parte') + (parte.minutos ? ' · ' + parte.minutos + ' min' : '') + (parte.responsavel ? ' · ' + parte.responsavel : '');
+          rotulo.append(cx, num, texto);
+          cx.addEventListener('change', () => {
+            if (cx.checked) marcadas.push(chave);
+            else marcadas.splice(marcadas.indexOf(chave), 1);
+            atualizar();
+          });
+          marcas.set(chave, { cx, num });
+          grupo.appendChild(rotulo);
+        });
+        painel.appendChild(grupo);
       });
-      familiaResultadoEl.hidden = !opcoes.length;
-      familiaLimparBtn.hidden = !opcoes.length;
+      const acoes = document.createElement('div');
+      acoes.className = 'fam-acoes';
+      const gerar = document.createElement('button');
+      gerar.type = 'button';
+      gerar.className = 'fam-fino fam-principal';
+      gerar.textContent = '✅ Gerar minha programação';
+      const limpar = document.createElement('button');
+      limpar.type = 'button';
+      limpar.className = 'secondary fam-fino';
+      limpar.textContent = '🧹 Desmarcar tudo';
+      acoes.append(gerar, limpar);
+      painel.append(dica, total, acoes);
+      abrir.addEventListener('click', () => {
+        painel.hidden = !painel.hidden;
+        abrir.textContent = painel.hidden ? '🧩 Montar minha programação com partes das duas opções' : '🧩 Fechar a montagem';
+        if (!painel.hidden) painel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      });
+      limpar.addEventListener('click', () => {
+        marcadas.length = 0;
+        marcas.forEach(m => { m.cx.checked = false; });
+        resultado.textContent = '';
+        atualizar();
+      });
+      gerar.addEventListener('click', () => {
+        const usadas = new Set(marcadas.map(k => Number(k.split(':')[0])));
+        const unicos = (lista) => [...new Set(lista.map(t => String(t).trim()).filter(Boolean))];
+        const partes = marcadas.map(k => { const [i, j] = k.split(':').map(Number); return opcoes[i].partes[j]; });
+        const soma = partes.reduce((s, p) => s + (Number(p.minutos) || 0), 0);
+        const tarefas = [];
+        const vistas = new Set();
+        [...usadas].sort().forEach(i => (opcoes[i].tarefas || []).forEach(t => { const c = (t.membro || '') + '|' + (t.tarefa || ''); if (!vistas.has(c)) { vistas.add(c); tarefas.push(t); } }));
+        const final = {
+          emoji: '🧩',
+          titulo: 'Minha programação',
+          duracaoTotal: soma,
+          resumo: 'Montada por você com partes ' + ([...usadas].sort().length > 1 ? 'das duas opções' : 'da opção ' + ([...usadas][0] + 1)) + '.',
+          objetivo: '',
+          partes,
+          preparacao: unicos([...usadas].sort().flatMap(i => opcoes[i].preparacao || [])),
+          tarefas,
+          dicaParaOChefe: ''
+        };
+        resultado.textContent = '';
+        resultado.appendChild(familiaMontarCard(final, 0, 'Montada por você · ' + soma + ' min' + (alvo ? ' (de ' + alvo + ')' : ''), { salvar: true }));
+        resultado.firstChild.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      });
+      atualizar();
+      caixa.append(abrir, painel, resultado);
+      return caixa;
     }
 
     async function familiaGerar() {

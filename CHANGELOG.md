@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.19
+
+- Adoração em Família, montar a própria programação: as duas opções continuam sendo geradas separadas, e agora há o botão "🧩 Montar minha programação com partes das duas opções". Ele abre uma lista com todas as partes das duas opções, cada uma com caixa de marcação; o tempo previsto é somado a cada marcação ("⏱️ Previsto: 38 min de 45 min · faltam 7 min", em vermelho quando passa do tempo), e um número mostra a posição de cada parte, na ordem em que foi marcada. "✅ Gerar minha programação" monta o programa final (feito no aparelho, sem gastar a IA) com as partes escolhidas, a preparação e as tarefas das opções usadas, com copiar e "💾 Salvar em Pesquisas salvas" (categoria Adoração em Família). Só aparece quando há duas opções.
+
 ## 6.11.18
 
 - Adoração em Família: o apelido do membro deixa de ter lixeira própria (ficava com duas lixeiras na linha; resta só a que remove o membro). A lixeira dos campos de texto (anos de casados, outras circunstâncias e assunto) fica sempre visível, esmaecida enquanto o campo está vazio, em vez de aparecer só com texto.
