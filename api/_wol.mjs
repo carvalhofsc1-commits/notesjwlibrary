@@ -2702,7 +2702,7 @@ async function edicaoDeEstudo(mes, ano, timeoutMs) {
     try {
       const html = await baixar(BASE_JW + base, timeoutMs);
       const links = [...new Set([...html.matchAll(new RegExp(`href="(${base.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}[^"/#?]+/)"`, "g"))].map((m) => m[1]))];
-      artigos = links.filter((l) => !/perguntas-dos-leitores/i.test(l)).map((l) => BASE_JW + l); // as Perguntas dos Leitores não são artigo de estudo
+      artigos = links.map((l) => BASE_JW + l); // inclui as Perguntas dos Leitores (trazem entendimentos novos de textos)
       if (artigos.length) break;
     } catch {
       // edição ainda não publicada (404) ou site fora do ar
@@ -2808,10 +2808,14 @@ export async function citacoesNovasDaSentinela(livro, capitulo, verso, { timeout
   const alvo = livro * 1_000_000 + capitulo * 1000 + verso;
   const achados = [];
   for (const { mes, ano, url, artigo } of await artigosNovosDaSentinela(timeoutMs, hoje)) {
-    // Os parágrafos que citam o versículo (até 2) e, de cada um, o seguinte, que costuma explicar o texto citado.
+    // Os parágrafos que citam o versículo (até 2) e, de cada um, os 2 seguintes, que costumam explicar o texto citado.
     const indices = [];
+    let achou = 0;
     artigo.paragrafos.forEach((p, i) => {
-      if (indices.length < 4 && p.versos.some(([a, b]) => alvo >= a && alvo <= b)) for (const j of [i, i + 1]) if (j < artigo.paragrafos.length && !indices.includes(j)) indices.push(j);
+      if (achou < 2 && p.versos.some(([a, b]) => alvo >= a && alvo <= b)) {
+        achou++;
+        for (const j of [i, i + 1, i + 2]) if (j < artigo.paragrafos.length && !indices.includes(j)) indices.push(j);
+      }
     });
     const citam = indices.sort((x, y) => x - y).map((i) => artigo.paragrafos[i]);
     if (!citam.length) continue;
@@ -2819,7 +2823,7 @@ export async function citacoesNovasDaSentinela(livro, capitulo, verso, { timeout
       ...dadosDaEdicao({ mes, ano }),
       titulo: artigo.titulo,
       paragrafos: citam.map((p) => p.n).filter(Boolean).join(", "),
-      texto: citam.map((p) => p.texto).join("\n").slice(0, 1800),
+      texto: citam.map((p) => p.texto).join("\n").slice(0, 2200),
       url,
     });
   }

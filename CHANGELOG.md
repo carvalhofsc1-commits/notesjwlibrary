@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.41
+
+- Pesquisas: as **Perguntas dos Leitores** das edições novas de A Sentinela agora também são lidas (antes eram deixadas de fora por engano). Foi o caso de Tiago 5:14, 15, cujo novo entendimento está na Sentinela de fevereiro de 2027. Quando um parágrafo cita o versículo, entram também os 2 seguintes (que explicam), e o limite do trecho subiu para 2200 caracteres.
+
 ## 6.11.40
 
 - Adoração em Família: o campo **Horário** (hora) vazava para fora do cartão no iPhone (o campo de hora do iOS tem largura própria). Agora ele segue a largura da coluna, com a mesma altura dos outros campos, e o **Dia** e o **Horário** ficam alinhados embaixo mesmo quando o rótulo de um quebra em duas linhas.
