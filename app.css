@@ -16622,14 +16622,17 @@ body[data-screen="familia"] :is(.screen-inicio, .screen-editor, .screen-formatar
 .fam-perfil-box[open] > summary { border-bottom: 1px solid var(--line); }
 .fam-perfil-titulo { min-width: 0; overflow-wrap: anywhere; }
 /* 6.11.35: "Família e definições gerais" abre numa vista exclusiva: some tudo da tela, menos a barra Voltar e o corpo do cadastro. */
-#familiaPerfilBox > summary::after { content: "›"; font-size: 1.3em; }
-#familiaPerfilBox[open] > summary::after { transform: none; }
-#familiaCard.fam-vista-perfil > :not(#familiaPerfilTopo):not(#familiaPerfilBox) { display: none !important; }
-#familiaCard.fam-vista-perfil #familiaPerfilBox { border: 0; background: transparent; }
-#familiaCard.fam-vista-perfil #familiaPerfilBox > summary { display: none; }
+#familiaPerfilBox > summary::after, #familiaConvidadosBox > summary::after { content: "›"; font-size: 1.3em; }
+#familiaPerfilBox[open] > summary::after, #familiaConvidadosBox[open] > summary::after { transform: none; }
+/* 6.11.36: o mesmo vale para "Informar convidados"; data-vista no cartão diz qual dos dois está aberto (perfil ou convidados). */
+#familiaCard[data-vista] > :not(.fam-perfil-topo):not(.fam-perfil-box) { display: none !important; }
+#familiaCard[data-vista="perfil"] > #familiaConvidadosBox,
+#familiaCard[data-vista="convidados"] > #familiaPerfilBox { display: none !important; }
+#familiaCard[data-vista] > .fam-perfil-box { border: 0; background: transparent; }
+#familiaCard[data-vista] > .fam-perfil-box > summary { display: none; }
 .fam-perfil-topo[hidden] { display: none; }
-#familiaPerfilConcluir { display: none; }
-#familiaCard.fam-vista-perfil #familiaPerfilConcluir { display: block; width: 100%; }
+.fam-perfil-concluir { display: none; }
+#familiaCard[data-vista] .fam-perfil-concluir { display: block; width: 100%; }
 .fam-perfil-resumo {
   grid-column: 1;
   font-size: .82rem;

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.36
+
+- Adoração em Família: o card **Informar convidados** também abre numa **vista exclusiva** (só ele na tela), com **◀ Voltar** no topo e **✔ Concluir e voltar** no fim, igual ao card Família e definições gerais. Os dois usam a mesma regra: só um deles aberto por vez, e ao voltar a tela fica como estava.
+
 ## 6.11.35
 
 - Adoração em Família: o card **Família e definições gerais** agora abre numa **vista exclusiva** (só o cadastro na tela, sem os demais cards), com **◀ Voltar** no topo e **✔ Concluir e voltar** no fim. Ao voltar, a tela fica como estava (mesma rolagem). O card trocou a setinha ▾ por › para mostrar que abre outra tela.

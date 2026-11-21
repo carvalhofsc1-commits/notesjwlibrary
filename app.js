@@ -7921,7 +7921,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.35'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.36'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26716,24 +26716,32 @@ function saveTemplatesToStorage() {
 
     document.getElementById('familiaVoltar').addEventListener('click', () => showScreen('inicio'));
     // "Família e definições gerais" (6.11.35): tocar no card abre uma vista exclusiva (só o cadastro, com Voltar); sair devolve a tela como estava.
-    let familiaPerfilRolagem = 0;
-    function familiaPerfilVista(abrir, opcoes) {
+    // 6.11.36: o mesmo para "Informar convidados". qual = 'perfil' | 'convidados' (abre essa vista) | null (volta à tela normal, com tudo recolhido).
+    var familiaPerfilRolagem = 0; // var e função: showScreen chama familiaVista antes destas linhas rodarem
+    function familiaVistasIds() { return { perfil: ['familiaPerfilBox', 'familiaPerfilTopo'], convidados: ['familiaConvidadosBox', 'familiaConvidadosTopo'] }; }
+    function familiaVista(qual, opcoes) {
       const card = document.getElementById('familiaCard');
-      const caixa = document.getElementById('familiaPerfilBox');
-      const topo = document.getElementById('familiaPerfilTopo');
-      if (!card || !caixa || !topo) return;
-      const ja = card.classList.contains('fam-vista-perfil');
-      if (abrir && !ja) familiaPerfilRolagem = window.scrollY;
-      card.classList.toggle('fam-vista-perfil', !!abrir);
-      topo.hidden = !abrir;
-      caixa.open = !!abrir;
-      if (abrir) window.scrollTo(0, 0);
+      if (!card) return;
+      const ja = card.hasAttribute('data-vista');
+      if (qual && !ja) familiaPerfilRolagem = window.scrollY;
+      if (qual) card.setAttribute('data-vista', qual); else card.removeAttribute('data-vista');
+      const vistas = familiaVistasIds();
+      Object.keys(vistas).forEach(k => {
+        const caixa = document.getElementById(vistas[k][0]);
+        const topo = document.getElementById(vistas[k][1]);
+        if (caixa) caixa.open = k === qual;
+        if (topo) topo.hidden = k !== qual;
+      });
+      if (qual) window.scrollTo(0, 0);
       else if (ja && !(opcoes && opcoes.semRolar)) requestAnimationFrame(() => window.scrollTo(0, familiaPerfilRolagem || 0));
     }
-    window.familiaPerfilVista = familiaPerfilVista;
-    document.querySelector('#familiaPerfilBox > summary').addEventListener('click', ev => { ev.preventDefault(); familiaPerfilVista(true); });
-    document.getElementById('familiaPerfilVoltar').addEventListener('click', () => familiaPerfilVista(false));
-    document.getElementById('familiaPerfilConcluir').addEventListener('click', () => familiaPerfilVista(false));
+    function familiaPerfilVista(abrir, opcoes) { familiaVista(abrir ? 'perfil' : null, opcoes); } // função (não const): showScreen a chama antes desta linha rodar
+    Object.entries(familiaVistasIds()).forEach(([k, ids]) => {
+      const prefixo = k === 'perfil' ? 'familiaPerfil' : 'familiaConvidados';
+      document.querySelector('#' + ids[0] + ' > summary').addEventListener('click', ev => { ev.preventDefault(); familiaVista(k); });
+      document.getElementById(prefixo + 'Voltar').addEventListener('click', () => familiaVista(null));
+      document.getElementById(prefixo + 'Concluir').addEventListener('click', () => familiaVista(null));
+    });
     document.getElementById('familiaMembroAdd').addEventListener('click', () => { familiaMembroAdd(); familiaPerfilSalvar(); });
     familiaGerarBtn.addEventListener('click', familiaGerar);
     familiaCancelarBtn.addEventListener('click', () => {
