@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.47
+
+- Adoração em Família compartilhada, fase 1 (servidor): rota nova **`/api/familia-sessao`** para compartilhar uma programação por código e acompanhá-la ao vivo, com o dirigente liberando as partes.
+  - Ações: `criar` (exige o código de pesquisa ou a senha de administrador; devolve o código de 6 caracteres, sem 0/O e 1/I/L, e a chave do dirigente), `entrar` (só o código da sessão e o acesso normal ao app; devolve a programação sem respostas, o estado e o id do participante), `estado` (só `{ versao }` quando nada mudou), `liberar`, `bloquear`, `sortear` (sem repetir a pessoa em seguida), `revelar` (uma resposta por vez), `passar-direcao`/`assumir` (código do dirigente de 8 caracteres, vale 15 min e uma vez só) e `encerrar`.
+  - Arquivos em `familia-sessoes/<código>/`: `programa.json` (sem respostas), `respostas.json` (só o servidor lê; a chave do dirigente fica só como hash SHA-256), `estado.json` e um arquivo por participante. A sessão vence com 48 horas sem uso e é apagada na próxima vez que alguém a acessa ou quando outra é criada.
+  - Segurança: origem permitida, limite de tentativas erradas por IP, programação até 200 mil caracteres, nomes até 40 caracteres, até 20 participantes.
+  - Teste local sem rede: `node ferramentas/testar-familia-sessao.mjs` (HOSPEDAGEM=local numa pasta temporária).
+
 ## 6.11.46
 
 - Adoração em Família, jogos: nos jogos de **pergunta e resposta** (Quem sou eu?, Show do milhão, Abreviações, Verdadeiro ou falso, Quem disse isso?, Charadas, Complete o versículo, Torta na cara), cada rodada passa a vir **separada**, no campo novo `jogo.rodadas: [{ pergunta, resposta, referencia }]`: a pergunta sem a resposta, a resposta e o texto bíblico que a confirma. É a base para a futura Adoração compartilhada, em que a resposta fica escondida até o dirigente revelar. Os demais jogos (memória, bingo, mímica, desenho…) continuam em `itens`.
