@@ -36,7 +36,7 @@ export const RECURSOS = [
   { id: "texto-diario", rotulo: "Comentários do texto diário", cat: "texto", acesso: ["pesquisa"], tarefas: ["texto-diario-comentarios"] },
   { id: "adoracao-familia", rotulo: "Adoração em Família", cat: "texto", acesso: ["pesquisa"], tarefas: ["adoracao-familia"] },
   { id: "dirigir", rotulo: "Preparar para dirigir (perguntas e recapitulação)", cat: "esbocos", acesso: ["dirigente"], tarefas: ["estudo-perguntas", "estudo-recap", "ebc-dirigente"] },
-  { id: "esbocos", rotulo: "Esboços: Tesouros, discurso curto e outros", cat: "esbocos", acesso: ["dirigente"], tarefas: ["tesouros", "discurso", "outros"] },
+  { id: "esbocos", rotulo: "Esboços: Tesouros, discurso curto, outros e serviço de campo", cat: "esbocos", acesso: ["dirigente"], tarefas: ["tesouros", "discurso", "outros", "campo", "campo-assuntos"] },
   { id: "publico", rotulo: "Esboço do discurso público (S-34)", cat: "esbocos", acesso: ["s34"], tarefas: ["publico", "publico-importar", "publico-canticos"] },
   // Desde a 6.10.77 o resumo usa o modelo dos esboços (o mais avançado): cobrado no preço dessa categoria.
   { id: "leitura-biblia", rotulo: "Resumo da leitura diária da Bíblia", cat: "esbocos", acesso: ["resumo"], tarefas: ["leitura-biblia"] },

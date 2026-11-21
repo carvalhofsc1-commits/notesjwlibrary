@@ -30,6 +30,9 @@ const ARQUIVOS = {
   perguntasFrequentesTj: "fontes/perguntas_frequentes_tj.txt",
   beneficieEscola: "fontes/beneficie_escola.txt",
   organizados: "fontes/organizados.txt",
+  // Brochuras do ministério (6.11.53): usadas nas considerações para o serviço de campo (e na busca dos livros).
+  ameAsPessoas: "fontes/ame_as_pessoas.txt",
+  melhoreLeitura: "fontes/melhore_leitura_ensino.txt",
   // "Cante de Coração Para Jeová" (só letras): [{ numero, titulo, texto, assunto, letra }], gerado por converter_canticos_pdf.py (fora do repositório).
   canticos: "fontes/canticos.json",
 };
@@ -488,7 +491,18 @@ const LIVROS = [
   { chave: "perguntasFrequentesTj", nome: "Perguntas Frequentes sobre as Testemunhas de Jeová" },
   { chave: "beneficieEscola", nome: "Beneficie-se da Escola do Ministério Teocrático" },
   { chave: "organizados", nome: "Organizados para Fazer a Vontade de Jeová" },
+  { chave: "ameAsPessoas", nome: "Ame as Pessoas — Faça Discípulos (lmd)" },
+  { chave: "melhoreLeitura", nome: "Melhore Sua Leitura e Seu Ensino (th)" },
 ];
+
+// O nome de um livro da busca pela chave (ex.: "beneficieEscola"), para filtrar os resultados de buscarNosLivros.
+export function nomeDoLivro(chave) {
+  return (LIVROS.find((l) => l.chave === chave) || {}).nome || "";
+}
+
+// A primeira linha de alguns arquivos é o cabeçalho da edição ("AME AS PESSOAS — FAÇA DISCÍPULOS (lmd). Edição de maio de 2023 · ©…"):
+// não é matéria e fica fora da busca.
+const CABECALHO_DA_EDICAO = /^[^\n]{0,140}\([a-z0-9-]{1,8}\)\.\s+Edição de /;
 const PALAVRAS_COMUNS = new Set("a o as os um uma de do da dos das em no na nos nas por para com sem sobre entre que se e ou mas como mais muito ao aos ela ele eles elas seu sua seus suas nao ja foi ser sao era tem ter isso este esta esse essa aquele quando onde qual quais".split(" "));
 let livros = null; // Promise<{ paragrafos: [{ livro, texto, palavras: Set }], df: Map }>
 
@@ -510,6 +524,7 @@ function carregarLivros() {
         for (const bruto of resultado.value.split(/\r?\n\s*\r?\n/)) {
           const texto = bruto.replace(/\s+/g, " ").trim();
           if (texto.length < 80 || (texto.length < 200 && /\?$/.test(texto))) continue; // fora: sobras de quadro e perguntas soltas
+          if (CABECALHO_DA_EDICAO.test(texto)) continue;
           const sequencia = palavrasDe(texto);
           const palavras = new Set(sequencia);
           for (const w of palavras) df.set(w, (df.get(w) || 0) + 1);
@@ -528,8 +543,8 @@ function carregarLivros() {
   return livros;
 }
 
-// Os parágrafos dos livros que mais combinam com a consulta: [{ livro, trecho }].
-export async function buscarNosLivros(consulta, { max = 4, maxChars = 1500 } = {}) {
+// Os parágrafos dos livros que mais combinam com a consulta: [{ livro, trecho }]. "livros" (nomes, opcional) limita a busca a esses livros.
+export async function buscarNosLivros(consulta, { max = 4, maxChars = 1500, livros: soEstes = null } = {}) {
   const todos = [...new Set(palavrasDe(consulta))];
   if (!todos.length || !fontesConfiguradas()) return [];
   const { paragrafos, df } = await carregarLivros();
@@ -546,6 +561,7 @@ export async function buscarNosLivros(consulta, { max = 4, maxChars = 1500 } = {
     .filter(([, p]) => p > 0);
   const pontuados = [];
   for (const p of paragrafos) {
+    if (soEstes && !soEstes.includes(p.livro)) continue;
     let pontos = 0;
     let achadas = 0;
     termos.forEach((t, i) => { if (p.palavras.has(t) && pesos[i]) { pontos += pesos[i]; achadas++; } });
@@ -564,6 +580,94 @@ export async function buscarNosLivros(consulta, { max = 4, maxChars = 1500 } = {
     if (trecho.length > maxChars) { const corte = trecho.lastIndexOf(". ", maxChars); trecho = trecho.slice(0, corte > 300 ? corte + 1 : maxChars); }
     return { livro: p.livro, trecho };
   });
+}
+
+// ---------- Brochuras do ministério, lição por lição (6.11.53) ----------
+// Ame as Pessoas — Faça Discípulos (lmd) e Melhore Sua Leitura e Seu Ensino (th), para as considerações para o serviço de campo citarem a
+// lição pelo número e pelo nome. O índice do começo do arquivo dá os números e os nomes ("Interesse pelas pessoas 1" no lmd; "1 Comece bem"
+// no th); no corpo, cada lição começa numa linha com o nome (no th, com o número na frente; às vezes o nome vem cortado, "9 Use desenhos,",
+// ou sem o número). A lição vai até a próxima (ou até um título em letras espaçadas, "A P Ê N D I C E A", "R E G I S T R E…").
+const BROCHURAS = {
+  ameAsPessoas: { sigla: "lmd", numeroNoFim: true },
+  melhoreLeitura: { sigla: "th", numeroNoFim: false },
+};
+const licoesGuardadas = new Map(); // chave -> Promise<[{ sigla, licao, nome, texto }]>
+
+export function separarLicoes(conteudo, { sigla = "", numeroNoFim = false } = {}) {
+  const linhas = String(conteudo || "").split(/\r?\n/).map((l) => l.replace(/\s+/g, " ").trim()).filter(Boolean);
+  const formato = numeroNoFim ? /^(.{3,90}?) (\d{1,2})$/ : /^(\d{1,2}) (.{3,90})$/;
+  // O índice: as linhas "nome número" (ou "número nome") com os números em sequência, desde 1.
+  const indice = [];
+  let fimDoIndice = -1;
+  for (let i = 0; i < linhas.length && i - Math.max(fimDoIndice, 0) < 40; i++) {
+    const m = linhas[i].match(formato);
+    if (!m) continue;
+    const numero = Number(numeroNoFim ? m[2] : m[1]);
+    const nome = numeroNoFim ? m[1] : m[2];
+    if (numero === indice.length + 1) {
+      indice.push({ licao: numero, nome });
+      fimDoIndice = i;
+    } else if (numero === 1 && indice.length) break; // voltou ao 1: é o corpo
+  }
+  if (!indice.length) return [];
+  const prefixoDoNome = (linha, licao) => {
+    const sem = linha.replace(new RegExp(`^${licao}\\s+`), "");
+    if (sem.length > 90) return "";
+    return normalizar(sem);
+  };
+  const ehTituloEspacado = (linha) => /^(?:\S{1,2} ){3,}\S{1,2}$/.test(linha);
+  // O começo de cada lição no corpo, em ordem.
+  const inicios = [];
+  let desde = fimDoIndice + 1;
+  for (const item of indice) {
+    const nome = normalizar(item.nome);
+    let achou = -1;
+    for (let i = desde; i < linhas.length; i++) {
+      const p = prefixoDoNome(linhas[i], item.licao);
+      if (p.length >= 6 && nome.startsWith(p) && (p === nome || linhas[i].startsWith(item.licao + " "))) { achou = i; break; }
+      if (p === nome) { achou = i; break; }
+    }
+    inicios.push(achou);
+    if (achou >= 0) desde = achou + 1;
+  }
+  const licoes = [];
+  indice.forEach((item, k) => {
+    const inicio = inicios[k];
+    if (inicio < 0) return;
+    let fim = linhas.length;
+    const proximo = inicios.slice(k + 1).find((x) => x > inicio);
+    if (proximo !== undefined) fim = proximo;
+    // No lmd, antes do nome da lição vêm a seção ("INICIANDO CONVERSAS") e o texto-base: são da lição seguinte.
+    if (numeroNoFim && proximo !== undefined) {
+      for (let j = proximo - 1; j > inicio && j >= proximo - 2; j--) {
+        if (linhas[j] === linhas[j].toUpperCase() && /[A-ZÀ-Ý]{4}/.test(linhas[j])) { fim = j; break; }
+      }
+    }
+    // No th, quando o nome da próxima lição vem cortado, o resto dele aparece numa linha logo antes ("você leu o texto"): não é desta lição.
+    const nomeSeguinte = proximo !== undefined ? normalizar(indice[inicios.indexOf(proximo)]?.nome || "") : "";
+    const corpo = [];
+    for (let i = inicio + 1; i < fim; i++) {
+      const l = linhas[i].replace(/\s+\($/, "");
+      if (ehTituloEspacado(l)) break;
+      if (/^LEITURA E ENSINO \d+/.test(l) || l === "(") continue; // rodapés de página e sobras
+      if (i >= fim - 3 && nomeSeguinte && l.length < 40 && nomeSeguinte.endsWith(normalizar(l))) continue;
+      corpo.push(l);
+    }
+    licoes.push({ sigla, licao: item.licao, nome: item.nome.replace(/[,\s]+$/, ""), texto: corpo.join("\n") });
+  });
+  return licoes;
+}
+
+// As lições de uma brochura (chave "ameAsPessoas" ou "melhoreLeitura"): [{ sigla, licao, nome, texto }]. [] se o arquivo não estiver disponível.
+export function licoesDaBrochura(chave) {
+  const config = BROCHURAS[chave];
+  if (!config || !fontesConfiguradas()) return Promise.resolve([]);
+  if (!licoesGuardadas.has(chave)) {
+    const promessa = baixar(ARQUIVOS[chave]).then((conteudo) => separarLicoes(conteudo, config));
+    promessa.catch(() => licoesGuardadas.delete(chave));
+    licoesGuardadas.set(chave, promessa);
+  }
+  return licoesGuardadas.get(chave);
 }
 
 // ---------- Guia de Pesquisa (arquivo do servidor) ----------
@@ -662,6 +766,8 @@ const NOMES_DAS_FONTES = {
   perguntas_frequentes_tj: "Perguntas Frequentes sobre as Testemunhas de Jeová",
   beneficie_escola: "Beneficie-se da Escola do Ministério Teocrático",
   organizados: "Organizados para Fazer a Vontade de Jeová (od)",
+  ame_as_pessoas: "Ame as Pessoas — Faça Discípulos (lmd)",
+  melhore_leitura_ensino: "Melhore Sua Leitura e Seu Ensino (th)",
   canticos: "Cante de Coração Para Jeová (letras dos cânticos)",
 };
 const MESES_PT = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];

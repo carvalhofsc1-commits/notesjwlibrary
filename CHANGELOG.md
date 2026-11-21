@@ -2,6 +2,16 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.53
+
+- Considerações para o serviço de campo, fase 1 (servidor):
+  - Nova tarefa **campo** no servidor: o esboço da consideração da reunião para o serviço de campo, de 5 a 7 minutos (mais curta logo depois de uma reunião), ligado ao tipo de pregação do dia, com o mesmo formato e a mesma limpeza dos outros esboços (no máximo 3 pontos, 1 texto lido no primeiro ponto, a soma dos minutos igual à duração), a fonte de cada ponto e uma dica para o dirigente.
+  - **A Sentinela de maio de 2024** ("Deixe o amor motivar você a pregar"), lida no wol.jw.org, é a fonte prioritária: cada esboço usa um parágrafo, em rodízio (os já usados nas considerações salvas ficam para depois; com assunto, vale o parágrafo que mais combina).
+  - As brochuras **Ame as Pessoas (lmd)** e **Melhore Sua Leitura e Seu Ensino (th)** entram nos arquivos do servidor, lição por lição (número e nome), junto com o **Beneficie-se** e outros artigos de A Sentinela sobre o ministério, lidos no wol.jw.org. O ponto só mostra a fonte que veio de verdade no pedido; o texto diário nunca é usado.
+  - Nova tarefa **campo-assuntos** (botão "Sugerir 3 assuntos" da fase 2): 3 assuntos curtos, um para cada parágrafo ainda não usado de w24.05.
+  - Prompts novos e editáveis em **Esboços e discursos**: "Considerações para o serviço de campo" e "sugerir 3 assuntos" (os formatos ficam só para leitura). As duas tarefas usam o modelo e o esforço dos esboços.
+  - Teste do servidor: `node ferramentas/testar-servico-campo.mjs` (com `--wol`, lê também o wol.jw.org).
+
 ## 6.11.52
 
 - Adoração em Família: os botões das linhas de ações passam a **ocupar sempre a largura toda**. No cartão da programação salva, "📂 Abrir esta programação" ocupa a linha inteira e "🔗 Compartilhar" cresce até a lixeira, que fica com a largura fixa. Antes sobrava um espaço vazio ao lado. Vale para todas as linhas `.fam-acoes`, inclusive as da Adoração compartilhada.

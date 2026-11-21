@@ -16,6 +16,25 @@ import { debitarCreditosUso, mensagemSeBloqueado, mensagemSeSemCredito, preparar
 import { emitirCupomVoz } from "./_vozCupom.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
 import { materiasAutomaticas, pesquisarPorPalavras } from "./_materiasWol.mjs";
+import {
+  TEXTOS_DAS_REGRAS,
+  W24,
+  candidatosW24,
+  complementares,
+  consultaDoCampo,
+  dadosDoCampo,
+  dataCurta,
+  dataPorExtenso,
+  escolherParagrafoW24,
+  fonteDoPonto,
+  licoesQueCombinam,
+  listaDeFontes,
+  nomesDosTipos,
+  paragrafosW24,
+  siglasPermitidas,
+  textoDasFontesDoCampo,
+  trechosBe,
+} from "./_servicoCampo.mjs";
 import { artigosDoTopicoDoGuia, buscarNosLivros, buscarVerbete, buscarVersiculos, versiculosDoCapitulo, fontesConfiguradas, lerCanticos, precarregarFontes, referenciasNoTexto, textoDeGruposBiblicos } from "./_fontes.mjs";
 import { lerEsboco, lerIndice, minutosDoEsboco, publicacoesDaSecao, referenciasDoPublico, s34Configurado, textoDoDiscursoPublico, textoDoEsbocoImportado, textosBiblicosDoPublico, validarEsboco } from "./_s34.mjs";
 import {
@@ -4794,6 +4813,210 @@ async function esbocoDeOutros(res, body, P) {
   }
 }
 
+// ---------- Considerações para o serviço de campo (6.11.53) ----------
+// O esboço da reunião para o serviço de campo (a consideração antes de sair para pregar): de 5 a 7 minutos, ligado à pregação do dia.
+// As fontes (w24.05 com o rodízio dos parágrafos, as lições do lmd e do th, os artigos complementares e o be) vêm de _servicoCampo.mjs.
+// Mesma estrutura dos outros esboços; cada ponto traz a fonte que a IA usou (só vale se citar uma fonte da mensagem) e o esboço inteiro,
+// uma dica para o dirigente.
+const SaidaCampo = z.object({
+  ...corpoDoEsboco(),
+  pontos: z.array(pontoDoEsboco().extend({ fonte: z.string() })),
+  dicaDirigente: z.string(),
+});
+const SaidaCampoAssuntos = z.object({
+  assuntos: z.array(z.object({ titulo: z.string(), resumo: z.string(), paragrafoW24: z.number().nullable() })),
+});
+
+// Os dados do pedido, em linhas, para a IA (os rótulos estão na descrição da montagem, em _prompts.mjs).
+function textoDosDadosDoCampo(d) {
+  const partes = [
+    `DATA DA SAÍDA: ${dataPorExtenso(d.data)}`,
+    `LOGO DEPOIS DE UMA REUNIÃO: ${d.aposReuniao ? "sim (a consideração fica mais curta e direta)" : "não"}`,
+    `DURAÇÃO: ${d.minutos} minutos (nunca mais que isso)`,
+    `TIPO DE PREGAÇÃO: ${nomesDosTipos(d.tipos).join("; ")}`,
+  ];
+  if (d.campanha) partes.push(`CAMPANHA OU DESTAQUE DO MÊS: ${d.campanha}`);
+  if (d.publico) partes.push(`PÚBLICO: ${d.publico}`);
+  return partes.join("\n");
+}
+
+// Junta as fontes do esboço (wol e arquivos do servidor) conforme as caixas marcadas. Nada aqui chama a IA.
+async function fontesDoCampo(d, { timeoutMs = 9000 } = {}) {
+  const w24 = d.fontes.w24 ? await paragrafosW24(timeoutMs) : null;
+  const escolha = w24 ? escolherParagrafoW24({ consulta: d.assunto, usados: d.usados, paragrafos: w24.paragrafos }) : null;
+  const paragrafo = escolha ? escolha.paragrafo : null;
+  const consulta = consultaDoCampo(d, paragrafo);
+  const [licoes, extras, be] = await Promise.all([
+    d.fontes.lmd || d.fontes.th ? licoesQueCombinam(consulta, { lmd: d.fontes.lmd, th: d.fontes.th, max: 3 }) : [],
+    d.fontes.sentinela ? complementares(consulta, { max: 2, timeoutMs }) : { artigos: [], naoAchados: [] },
+    d.fontes.be ? trechosBe(consulta) : [],
+  ]);
+  return { w24, paragrafo, reiniciou: !!(escolha && escolha.reiniciou), licoes, artigos: extras.artigos, naoAchados: extras.naoAchados, be, consulta };
+}
+
+async function esbocoDeCampo(res, body, P) {
+  if (!acessoDoDirigente(res, body)) return;
+  const d = dadosDoCampo(body);
+  const opcoes = validarOpcoes(body.opcoes);
+  const ajuste = textoLivre(body.ajuste, MAX_AJUSTE);
+  const modo = body.modo === "nova" || body.modo === "melhorar" ? body.modo : null;
+  const anteriores = modo && body.anteriores && typeof body.anteriores === "object" ? JSON.stringify(anteriorParaIa(body.anteriores)).slice(0, 12000) : "";
+  const inicioPedido = Date.now();
+  if (fontesConfiguradas()) precarregarFontes({ biblia: true, perspicaz: false });
+
+  const f = await fontesDoCampo(d);
+  const textoFontes = textoDasFontesDoCampo(f);
+  let versiculos = [];
+  if (fontesConfiguradas()) {
+    try {
+      const citados = await referenciasNoTexto(textoFontes, { max: 30, livre: true });
+      versiculos = await buscarVersiculos([...TEXTOS_DAS_REGRAS, ...citados], 24);
+    } catch (e) {
+      console.error("Serviço de campo: versículos indisponíveis", e?.message);
+    }
+  }
+
+  const assunto = d.assunto
+    ? `ASSUNTO PEDIDO PELO DIRIGENTE: ${d.assunto}`
+    : `ASSUNTO: o dirigente não escolheu; tire um assunto prático para hoje do parágrafo de w24.05 abaixo${f.paragrafo ? "" : " (ou, sem ele, das outras fontes)"}, ligado ao tipo de pregação.`;
+  let mensagem =
+    blocoOrientacao(opcoes, ajuste, P) +
+    `PEDIDO: elabore o esboço da consideração para o serviço de campo de ${d.minutos} minutos${d.aposReuniao ? ", logo depois de uma reunião (mais curta)" : ""}.\n` +
+    emojisDoEsboco(opcoes, P) + "\n\n" +
+    textoDosDadosDoCampo(d) + "\n\n" +
+    assunto +
+    (d.evitar ? `\n\nEVITAR: o esboço anterior foi sobre "${d.evitar}"; escolha outro assunto.` : "") +
+    (textoFontes ? "\n\n" + textoFontes : "") +
+    (d.recentes.length ? "\n\nCONSIDERAÇÕES RECENTES (varie o assunto):\n" + d.recentes.map((t) => `- ${t}`).join("\n") : "") +
+    (versiculos.length ? "\n\nTEXTO DOS VERSÍCULOS:\n" + versiculos.map((v) => `${v.referencia}: ${v.texto}`).join("\n") : "") +
+    lembreteFinal(opcoes, ajuste, P);
+  if (modo && anteriores) mensagem += "\n\nESBOÇO JÁ SUGERIDO (JSON):\n" + anteriores + "\n\n" + pedidoDoModo(modo, P);
+
+  try {
+    const client = criarClienteIa({ maxRetries: 0, timeout: TEMPO_ESBOCO_MS });
+    const inicio = Date.now();
+    const resposta = await chamarIa(
+      client,
+      P,
+      { max_tokens: tetoTokensEsboco(), system: P.sistemaCampo, messages: [{ role: "user", content: mensagem }] },
+      { schema: SaidaCampo, tarefa: "campo" }
+    );
+    if (resposta.stop_reason === "refusal" || !resposta.parsed_output) {
+      return erro(res, 502, "A IA não conseguiu elaborar a consideração para o serviço de campo.");
+    }
+    const bruto = resposta.parsed_output;
+    const siglas = siglasPermitidas(f);
+    const pontosBrutos = Array.isArray(bruto.pontos) ? bruto.pontos : [];
+    const { esboco: corpo, avisos } = await corpoDoEsbocoLimpo(bruto, {
+      emoji: opcoes.emoji,
+      temaPadrao: d.assunto || "Considerações para o serviço de campo",
+      minutosMax: 7,
+      maxPontos: 3,
+      maxArgumentos: 3,
+      maxBlocosIntro: 2,
+      maxBlocosConclusao: 3,
+      fontesDoPonto: (i) => {
+        const fonte = fonteDoPonto(pontosBrutos[i] && pontosBrutos[i].fonte, siglas);
+        return fonte ? [fonte] : [];
+      },
+      maxLeituras: 2,
+    });
+    acertarMinutos(corpo, d.minutos);
+    const citado = JSON.stringify(bruto);
+    const esboco = {
+      ...corpo,
+      fontes: listaDeFontes(f, citado),
+      paragrafoW24: f.paragrafo ? f.paragrafo.numero : null,
+      dicaDirigente: limparTextoGerado(bruto.dicaDirigente, 500),
+    };
+    if (f.paragrafo && !corpo.pontos.some((p) => p.fontes.some((x) => /w24\.05/i.test(x)))) {
+      avisos.push(`O esboço não cita "w24.05, § ${f.paragrafo.numero}" em nenhum ponto. Use "Melhorar" para pedir a citação.`);
+    }
+    if (d.fontes.w24 && !f.w24) avisos.push("Não consegui ler A Sentinela de maio de 2024 no wol.jw.org agora: o esboço usou as outras fontes.");
+    if (f.reiniciou) avisos.push("Todos os parágrafos de w24.05 já tinham sido usados: o rodízio recomeçou.");
+    const completo = esboco.pontos.length > 0 && esboco.introducao.blocos.length > 0 && esboco.conclusao.blocos.length > 0;
+    const leituras = esboco.pontos.flatMap((p) => p.desenvolvimento.map((x) => x.leitura).filter(Boolean)).map((l) => l.referencia);
+
+    console.log(
+      "Esboço do serviço de campo:",
+      JSON.stringify({
+        modelo: P.ia.modelo,
+        minutos: d.minutos,
+        aposReuniao: d.aposReuniao,
+        tipos: d.tipos,
+        assunto: !!d.assunto,
+        paragrafoW24: esboco.paragrafoW24,
+        licoes: f.licoes.map((l) => `${l.sigla} ${l.licao}`),
+        artigos: f.artigos.map((a) => a.codigo),
+        naoAchados: f.naoAchados,
+        be: f.be.length,
+        pontos: esboco.pontos.length,
+        leituras: leituras.length,
+        versiculos: versiculos.length,
+        segundosIa: Math.round((Date.now() - inicio) / 100) / 10,
+        total: Math.round((Date.now() - inicioPedido) / 100) / 10,
+        entrada: resposta.usage?.input_tokens || 0,
+        saida: resposta.usage?.output_tokens || 0,
+      })
+    );
+
+    return res.status(200).json({
+      semana: "",
+      titulo: `Serviço de campo · ${dataCurta(d.data)}${esboco.paragrafoW24 ? ` · w24.05 § ${esboco.paragrafoW24}` : ""}`,
+      url: null,
+      minutos: d.minutos,
+      erro: completo ? null : "A IA não montou o esboço completo (introdução, pontos e conclusão). Tente de novo.",
+      esboco: completo ? esboco : null,
+      avisos: completo ? avisos : [],
+      textosBiblicos: completo ? await textosDaMateria({ todos: leituras, leia: leituras }) : [],
+      memoriaUsada: memoriaUsadaAgora(),
+    });
+  } catch (e) {
+    return tratarErro(e, res);
+  }
+}
+
+// "Sugerir 3 assuntos": 3 parágrafos candidatos de w24.05 (os não usados, os que combinam com o tipo de pregação e a campanha) e a
+// IA propõe um assunto curto para cada um. Sem w24.05 (caixa desmarcada ou wol fora do ar), a IA propõe com as regras do prompt.
+async function sugerirAssuntosCampo(res, body, P) {
+  if (!acessoDoDirigente(res, body)) return;
+  const d = dadosDoCampo(body);
+  const w24 = d.fontes.w24 ? await paragrafosW24(9000) : null;
+  const candidatos = w24 ? candidatosW24({ consulta: [nomesDosTipos(d.tipos).join(" "), d.campanha, d.publico].join(" "), usados: d.usados, paragrafos: w24.paragrafos, n: 3 }) : [];
+  const mensagem =
+    "PEDIDO: sugira 3 assuntos curtos e práticos, bem diferentes entre si, para a consideração para o serviço de campo de hoje.\n\n" +
+    textoDosDadosDoCampo(d) +
+    (candidatos.length
+      ? `\n\nPARÁGRAFOS DE A SENTINELA DE MAIO DE 2024, "${W24.titulo}" (um assunto para cada parágrafo, com o número em "paragrafoW24"):\n` +
+        candidatos.map((p) => `§ ${p.numero}${p.subtitulo ? ` (subtítulo: ${p.subtitulo})` : ""}: ${p.texto}`).join("\n\n")
+      : "\n\nSEM PARÁGRAFOS DE w24.05: proponha os assuntos com base nas regras do prompt; \"paragrafoW24\" é null.") +
+    (d.recentes.length ? "\n\nCONSIDERAÇÕES RECENTES (não repita):\n" + d.recentes.map((t) => `- ${t}`).join("\n") : "");
+  try {
+    const client = criarClienteIa({ maxRetries: 0, timeout: 60_000 });
+    const resposta = await chamarIa(
+      client,
+      P,
+      { max_tokens: 3000, system: P.sistemaCampoAssuntos, messages: [{ role: "user", content: mensagem }] },
+      { schema: SaidaCampoAssuntos, semPensar: true, tarefa: "campo-assuntos" }
+    );
+    if (resposta.stop_reason === "refusal" || !resposta.parsed_output) return erro(res, 502, "A IA não conseguiu sugerir assuntos agora.");
+    const numeros = candidatos.map((p) => p.numero);
+    const assuntos = (Array.isArray(resposta.parsed_output.assuntos) ? resposta.parsed_output.assuntos : [])
+      .map((a, i) => ({
+        titulo: limparTextoGerado(a.titulo, 120),
+        resumo: limparTextoGerado(a.resumo, 300),
+        // O parágrafo só vale se for um dos candidatos; senão, o candidato da mesma posição.
+        paragrafoW24: numeros.includes(a.paragrafoW24) ? a.paragrafoW24 : numeros[i] ?? null,
+      }))
+      .filter((a) => a.titulo)
+      .slice(0, 3);
+    if (!assuntos.length) return erro(res, 502, "A IA não conseguiu sugerir assuntos agora.");
+    return res.status(200).json({ assuntos, memoriaUsada: memoriaUsadaAgora() });
+  } catch (e) {
+    return tratarErro(e, res);
+  }
+}
+
 // O texto exato (Tradução do Novo Mundo) de uma lista de textos bíblicos, para o app exportar um esboço para Word com os acentos certos
 // (as letras em itálico do campo de texto não têm acento). Só com o código do dirigente; sem IA, sem custo.
 async function textosDosVersiculos(res, body) {
@@ -6210,7 +6433,7 @@ async function tratarPedido(req, res) {
   }
 
   // Rodapé dos esboços: o modelo que elaborou e o tempo no servidor (vai na resposta e, com ela, no resultado guardado acima).
-  if (["tesouros", "discurso", "publico", "publico-importar", "outros"].includes(tarefa)) {
+  if (["tesouros", "discurso", "publico", "publico-importar", "outros", "campo"].includes(tarefa)) {
     const inicio = Date.now();
     const enviarComRodape = res.json.bind(res);
     res.json = (dados) => {
@@ -6310,6 +6533,8 @@ async function tratarPedido(req, res) {
   if (tarefa === "publico-importar") return esbocoImportadoDoPublico(res, body, P);
   if (tarefa === "publico-canticos") return canticosDoPublico(res, body, P);
   if (tarefa === "outros") return esbocoDeOutros(res, body, P);
+  if (tarefa === "campo") return esbocoDeCampo(res, body, P); // Considerações para o serviço de campo (código dos esboços)
+  if (tarefa === "campo-assuntos") return sugerirAssuntosCampo(res, body, P);
   if (tarefa === "discurso") return esbocoDoDiscursoCurto(res, body, P);
   if (tarefa === "joias") return responderJoias(res, body, P);
   if (tarefa === "leitura-biblia") return resumirLeituraBiblia(res, body, P);

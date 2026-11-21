@@ -2489,7 +2489,7 @@ const igualTitulo = (a, b) => semAcento(a).replace(/[^a-z0-9]+/g, " ").trim() ==
 
 // O documento do wol de um artigo do Guia (pelo título e, se o código trouxer, o ano): docId ou null.
 export async function docDoArtigoDoGuia(artigo, timeoutMs) {
-  const chave = `${artigo.titulo}|${artigo.ano || ""}`;
+  const chave = `${artigo.titulo}|${artigo.ano || ""}|${artigo.edicao || ""}`;
   const guardado = docsDoGuia.get(chave);
   if (guardado && Date.now() - guardado.quando < VALIDADE_GUIA_MS) return guardado.docId;
   let docId = null;
@@ -2511,8 +2511,10 @@ export async function docDoArtigoDoGuia(artigo, timeoutMs) {
           return { docId: cabeca[1], titulo: textoDe(cabeca[2]).replace(/­/g, ""), ...referenciaDaBusca(ref) };
         })
         .filter(Boolean)
-        .slice(0, 10);
-      const certo = achados.find((r) => igualTitulo(r.titulo, frase) && (!artigo.ano || !r.ano || r.ano === artigo.ano)) || achados.find((r) => igualTitulo(r.titulo, frase));
+        .slice(0, artigo.edicao ? 40 : 10);
+      // Com a edição ("w18 outubro", campo edicao), um título curto e comum ("Ensine a verdade") é achado entre os 40 resultados (6.11.53).
+      const daEdicao = (r) => !artigo.edicao || semAcento(r.codigo || "").startsWith(semAcento(artigo.edicao));
+      const certo = achados.find((r) => igualTitulo(r.titulo, frase) && daEdicao(r) && (!artigo.ano || !r.ano || r.ano === artigo.ano)) || (!artigo.edicao && achados.find((r) => igualTitulo(r.titulo, frase)));
       if (certo) { docId = certo.docId; break; }
     } catch {
       break; // o wol não respondeu: não adianta insistir
@@ -2554,6 +2556,27 @@ export async function faixaDoDocumento(docId, de, ate, timeoutMs, maxCaracteres 
     texto,
     url: `${url}#h=${de}:0-${ate + 1}:0`,
   };
+}
+
+// Todos os parágrafos numerados (data-pnum) de um documento do wol, sem as perguntas (class="qu"): { titulo, url, paragrafos: [{ numero, pid,
+// subtitulo, texto }] }. O subtítulo é o último <h2>/<h3> antes do parágrafo. Usado pelas considerações para o serviço de campo (6.11.53),
+// que citam um artigo pelo número do parágrafo. null = o documento não tem parágrafos numerados.
+export async function paragrafosDoDocumento(docId, timeoutMs) {
+  const url = `${BASE}/pt/wol/d/r5/lp-t/${docId}`;
+  const html = await documentoDaPesquisa(url, timeoutMs);
+  const titulo = textoDe((html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/) || [])[1] || "").replace(/­/g, "");
+  const paragrafos = [];
+  let subtitulo = "";
+  for (const m of html.matchAll(/<(p|h2|h3)\b([^>]*\bdata-pid="(\d+)"[^>]*)>([\s\S]*?)<\/\1>/g)) {
+    const [, marca, atributos, pid, conteudo] = m;
+    if (marca !== "p") { subtitulo = textoDe(conteudo).replace(/­/g, ""); continue; }
+    if (/\bclass="qu\b/.test(atributos)) continue;
+    const numero = Number((conteudo.match(/data-pnum="(\d+)"/) || [])[1]);
+    if (!numero) continue;
+    const texto = textoDe(conteudo.replace(/<a\b[^>]*\bclass="fn"[^>]*>[\s\S]*?<\/a>/g, "")).replace(/­/g, "").replace(new RegExp(`^${numero}\\s+`), "");
+    if (texto) paragrafos.push({ numero, pid: Number(pid), subtitulo, texto });
+  }
+  return paragrafos.length ? { titulo, url, paragrafos } : null;
 }
 
 // "it-2 79, 425, 428" vem em três links ("it-2 79", "425", "428"): cada número solto continua a citação anterior e herda a sigla e o ano.
