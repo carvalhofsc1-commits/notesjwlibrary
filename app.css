@@ -17089,3 +17089,10 @@ body.fam-tela-grande .fam-sessao-cron-linha { display: block; font-size: 1.9em; 
 body.fam-tela-grande .fam-sessao-cron-linha[hidden] { display: none !important; }
 body.fam-tela-grande .fam-sessao-sorteado { font-size: 1.6em; }
 body.fam-tela-grande .fam-sessao-grande-barra { display: flex; position: fixed; right: 12px; bottom: 12px; gap: 8px; z-index: 60; }
+
+/* 6.11.52: REGRA — numa linha de botões, os botões sempre ocupam a largura toda (nada de sobrar espaço vazio ao lado).
+   Na Adoração em Família (e telas da Adoração compartilhada): os botões crescem para preencher cada linha; o botão principal ocupa a
+   linha inteira; a lixeira (só ícone) fica com a largura fixa e o botão ao lado dela cresce. */
+.fam-acoes > :is(button, a) { flex: 1 1 140px; min-width: 0; justify-content: center; text-align: center; }
+.fam-acoes > .fam-principal { flex: 1 1 100%; }
+.fam-acoes > .limpar-btn { flex: 0 0 52px; min-width: 52px; }

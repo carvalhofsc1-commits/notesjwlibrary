@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.52
+
+- Adoração em Família: os botões das linhas de ações passam a **ocupar sempre a largura toda**. No cartão da programação salva, "📂 Abrir esta programação" ocupa a linha inteira e "🔗 Compartilhar" cresce até a lixeira, que fica com a largura fixa. Antes sobrava um espaço vazio ao lado. Vale para todas as linhas `.fam-acoes`, inclusive as da Adoração compartilhada.
+- Regra registrada em `.claude/CLAUDE.md`: numa linha de botões, eles sempre preenchem a largura da página.
+
 ## 6.11.51
 
 - Adoração em Família compartilhada, fase 5 (cronômetro e tela grande):
