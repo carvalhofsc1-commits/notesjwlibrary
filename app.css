@@ -17252,6 +17252,11 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 .fam-sessao-itens { display: grid; gap: 10px; min-width: 0; }
 .fam-sessao-item { display: grid; gap: 6px; min-width: 0; padding: 8px; border: 1px solid var(--line, #cbd5e1); border-radius: 10px; background: var(--inicio-cinza); }
 .fam-sessao-item-nome { margin: 0; font-weight: 600; font-size: .92rem; overflow-wrap: anywhere; }
+/* 6.12.15: o botão da adoração recente em três linhas: nome (bem destacado), código (menos) e a linha do dirigente (pequena). */
+.fam-sessao-recente > span { display: block; }
+.fam-sessao-recente .fam-recente-nome { font-size: 1.15rem; font-weight: 800; line-height: 1.25; }
+.fam-sessao-recente .fam-recente-cod { margin-top: 3px; font-size: .95rem; font-weight: 700; letter-spacing: .04em; }
+.fam-sessao-recente .fam-recente-dirige { margin-top: 3px; font-size: .8rem; font-weight: 400; opacity: .85; }
 .fam-sessao-recente-linha { width: 100%; flex-wrap: nowrap; }
 .fam-sessao-recente-linha > .fam-sessao-recente { flex: 1 1 auto; min-width: 0; white-space: normal; }
 .fam-dirigindo-box[hidden] { display: none; }

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.15
+
+- **Adorações recentes:** cada card agora tem o nome da adoração bem destacado (negrito, maior), embaixo o código (destaque menor) e, por último, o texto "você dirige (toque para reabrir)" pequeno.
+
 ## 6.12.14
 
 - **Nomes de cada sorteio:** no card de sorteio, logo abaixo de cada botão, os nomes que entram naquele sorteio, pequenos e sem destaque, separados por vírgula (quem entrou, para "Sortear entre quem entrou"; os nomes informados, para "Sortear entre os nomes"). A lista se atualiza quando alguém entra.
