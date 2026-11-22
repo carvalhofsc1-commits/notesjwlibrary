@@ -17063,8 +17063,10 @@ body[data-screen="participar"] :is(.screen-inicio, .screen-editor, .screen-forma
 .fam-sessao-sorteio { display: grid; gap: 6px; margin: 6px 0 10px; }
 .fam-sessao-sorteio-botoes { display: flex; flex-wrap: wrap; gap: 6px; }
 /* 6.12.07: as opções de sorteio (opcionais) num card recolhível. */
-.fam-sessao-sorteio-card { border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 10px; padding: 0 10px 10px; background: var(--card); min-width: 0; }
-.fam-sessao-sorteio-card > summary { cursor: pointer; min-height: 40px; display: flex; align-items: center; font-weight: 600; }
+.fam-sessao-sorteio-card { border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 10px; padding: 0 10px; background: var(--card); min-width: 0; }
+.fam-sessao-sorteio-card[open] { padding-bottom: 10px; }
+/* 6.12.12: card mais fino e com o título centralizado na vertical (sem espaço vazio embaixo quando recolhido). */
+.fam-sessao-sorteio-card > summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; font-weight: 600; line-height: 1.2; padding: 0; }
 .fam-sessao-sorteio-card[open] > summary { margin-bottom: 6px; }
 /* 6.12.10: espaço entre os campos do card de sorteio; o nome sorteado (cresce) e a 🗑️ (largura fixa) na mesma linha. */
 .fam-sessao-sorteio-card > .fam-sessao-sorteio-botoes { display: grid; gap: 10px; margin: 0 0 12px; }

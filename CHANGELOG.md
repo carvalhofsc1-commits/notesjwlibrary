@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.13
+
+- **Card de sorteio mais fino:** o título passa a ser "🎲 Sorteio de jogadores (opcional)" enquanto ninguém foi sorteado (com sorteado, mostra "Vez de: nome"). O card ficou mais fino e o título agora está centralizado na vertical (recolhido, tinha uma folga vazia embaixo).
+
 ## 6.12.12
 
 - **Regra dos bichinhos dos jogadores:** nunca macaco (de nenhum tipo) nem veado ou animais parecidos. O 🐒 saiu da lista do placar e do sorteio; a regra está registrada no código, no CLAUDE.md e na memória do projeto.
