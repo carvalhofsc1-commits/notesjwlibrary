@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.31
+
+- **Todas as questões do jogo visíveis:** as questões deixam de aparecer uma de cada vez; todas ficam na tela (cada uma ainda com uma dica por vez, e quem não dirige vê "Aguardando a primeira dica" nas ainda não iniciadas).
+- **🔄 só depois de respondida:** o botão de reiniciar a questão só aparece quando a questão já foi respondida (resposta revelada ou pontuada).
+
 ## 6.12.30
 
 - **Ícone de reiniciar menor:** o 🔄 da questão ficou menor e alinhado à linha "Questão N de M", sem passar para cima da dica.

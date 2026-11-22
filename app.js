@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.30'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.31'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -28386,6 +28386,7 @@ function saveTemplatesToStorage() {
           li.append(...dicasEls, aguarda, resp);
           let btn = null;
           let btnDica = null;
+          let btnReiniciar = null;
           if (participar.dirigente) {
             // 6.12.29: ícone simples (setas opostas) no canto da questão: só o dirigente reinicia a questão (dicas, resposta e pontos voltam ao começo).
             const reiniciar = document.createElement('button');
@@ -28398,7 +28399,9 @@ function saveTemplatesToStorage() {
               if (!(await askConfirm('Reiniciar a questão ' + (k + 1) + '? As dicas dadas voltam ao começo, a resposta fica escondida de novo e os pontos dessa questão são tirados.', 'Reiniciar questão'))) return;
               participarAcao({ acao: 'reiniciar', parte: parteIdx, rodada: k }, reiniciar);
             });
+            reiniciar.hidden = true; // só aparece depois que a questão foi respondida (resposta revelada)
             li.appendChild(reiniciar);
+            btnReiniciar = reiniciar;
           }
           let linhaAcerto = null, sel = null, btnPontuar = null, btnEspiar = null, espiada = null;
           if (participar.dirigente) {
@@ -28450,7 +28453,7 @@ function saveTemplatesToStorage() {
             });
             li.append(btnEspiar, espiada, btn);
           }
-          ref.rodadas.push({ li, linhaAcerto, sel, btnPontuar, btnEspiar, espiada, sig: null, resp, btn, btnDica, dicasEls, aguarda, pontos, total: dicas.length, referencia: r.referencia || '' });
+          ref.rodadas.push({ li, linhaAcerto, sel, btnPontuar, btnEspiar, btnReiniciar, espiada, sig: null, resp, btn, btnDica, dicasEls, aguarda, pontos, total: dicas.length, referencia: r.referencia || '' });
           ol.appendChild(li);
         });
         caixa.appendChild(ol);
@@ -28538,7 +28541,8 @@ function saveTemplatesToStorage() {
         const txt = rev[k];
         const revelada = txt != null && txt !== '';
         const comDicas = r.total > 0;
-        r.li.hidden = comDicas && !anteriorRespondida;
+        r.li.hidden = false; // 6.12.31: todas as questões do jogo ficam visíveis (cada uma continua com uma dica por vez)
+        if (r.btnReiniciar) r.btnReiniciar.hidden = !revelada; // o 🔄 só depois que a questão foi respondida
         const n = Math.min(r.total, Number(dadas[k]) || 0);
         r.dicasEls.forEach((p, d) => { p.hidden = d >= n; });
         r.aguarda.hidden = !(comDicas && n === 0 && !revelada && !participar.dirigente);
