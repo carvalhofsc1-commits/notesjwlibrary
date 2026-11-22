@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.36
+
+- **Família: sem "Anos de casados" para mãe ou pai sozinho:** com "Mãe ou pai sozinho" escolhido, o campo (e o valor guardado) some.
+- **Tela de boas-vindas à adoração (celular e tela grande):** card elaborado com emojis, o tema da adoração, "Quem participa" (quando os nomes foram informados) e o programa com o tempo na frente de cada atividade (e a duração total). Aparece enquanto nenhuma atividade começou; no celular fica no topo, na tela grande ocupa a tela toda.
+- **Tela grande segue pelas orações:** ao avançar (Próxima/Começar), a primeira atividade é a Oração inicial, e as atividades seguem até a Oração final (as orações não são mais puladas). Nelas a tela grande mostra o card da oração grande, no centro.
+
 ## 6.12.35
 
 - **Uma só cor de fundo nas atividades:** saíram as cores diferentes (azul, roxo, laranja, vermelho…) de cada atividade; todas, liberadas ou bloqueadas, ficam com o mesmo azul claro.

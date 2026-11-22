@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.35'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.36'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26176,6 +26176,7 @@ function saveTemplatesToStorage() {
       }
       if (salvo.formacao) familiaFormacaoEl.value = salvo.formacao === 'Família monoparental' ? 'Mãe ou pai sozinho' : salvo.formacao; // o nome antigo da opção
       if (salvo.anosCasados != null) familiaAnosCasadosEl.value = String(salvo.anosCasados);
+      if (typeof familiaAnosAjustar === 'function') familiaAnosAjustar();
       if (typeof salvo.diaAdoracao === 'string') document.getElementById('familiaDiaSemana').value = salvo.diaAdoracao;
       if (typeof salvo.horaAdoracao === 'string') document.getElementById('familiaHorario').value = salvo.horaAdoracao;
       familiaChecksMarcar(document.getElementById('familiaCircunstancias'), salvo.circunstancias);
@@ -27872,7 +27873,8 @@ function saveTemplatesToStorage() {
         lista.appendChild(sec);
         return s;
       });
-      caixa.appendChild(lista);
+      participar.boasVindas = participarBoasVindasMontar(p);
+      caixa.append(participar.boasVindas, lista);
       // A barra da tela grande: sair e, para o dirigente, ir para a próxima parte sem sair da tela grande (o Próxima voltou na 6.11.92).
       const barra = document.createElement('div');
       barra.className = 'fam-sessao-grande-barra';
@@ -27903,6 +27905,68 @@ function saveTemplatesToStorage() {
       sair.addEventListener('click', () => participarTelaGrande(false));
       barra.appendChild(sair);
       caixa.appendChild(barra);
+    }
+
+    // 6.12.36: a tela de boas-vindas à adoração (celular e tela grande): emojis, o tema, quem participa (se os nomes foram informados) e o programa
+    // das atividades, bem resumido, com o tempo na frente. Aparece enquanto nenhuma atividade começou; ao avançar, vai para a primeira (a Oração inicial).
+    function participarBoasVindasMontar(p) {
+      const card = document.createElement('section');
+      card.className = 'fam-boasvindas';
+      const topo = document.createElement('p');
+      topo.className = 'fam-bv-emojis';
+      topo.setAttribute('aria-hidden', 'true');
+      topo.textContent = '✨ 🏠 🙏 🏠 ✨';
+      const ola = document.createElement('p');
+      ola.className = 'fam-bv-ola';
+      ola.textContent = '🌟 Boas-vindas à Adoração em Família 🌟';
+      const tema = document.createElement('h3');
+      tema.className = 'fam-bv-tema';
+      tema.textContent = (p.emoji ? p.emoji + ' ' : '') + (p.titulo || 'Adoração em Família');
+      card.append(topo, ola, tema);
+      if (p.objetivo) {
+        const obj = document.createElement('p');
+        obj.className = 'fam-bv-objetivo';
+        obj.textContent = p.objetivo;
+        card.appendChild(obj);
+      }
+      const nomes = [...new Set((p.nomes || []).filter(Boolean))];
+      if (nomes.length) {
+        const quem = document.createElement('p');
+        quem.className = 'fam-bv-quem';
+        const t = document.createElement('strong');
+        t.textContent = '👥 Quem participa: ';
+        quem.append(t, nomes.join(', '));
+        card.appendChild(quem);
+      }
+      const prog = document.createElement('div');
+      prog.className = 'fam-bv-programa';
+      const pt = document.createElement('p');
+      pt.className = 'fam-bv-programa-titulo';
+      const total = (p.partes || []).reduce((s, x) => s + (Number(x && x.minutos) || 0), 0);
+      pt.textContent = '📋 Programa' + (total ? ' · ⏱️ ' + total + ' min' : '');
+      prog.appendChild(pt);
+      const ol = document.createElement('ol');
+      ol.className = 'fam-bv-lista';
+      (p.partes || []).forEach((x, i) => {
+        const li = document.createElement('li');
+        const min = document.createElement('span');
+        min.className = 'fam-bv-min';
+        min.textContent = x.minutos ? x.minutos + ' min' : '—';
+        const nome = document.createElement('span');
+        nome.className = 'fam-bv-nome';
+        const n = String(x.nome || 'Atividade');
+        let texto;
+        if (x.jogo) texto = '🎲 ' + participarJogoTitulo(x).nome;
+        else if (/^\s*ora[çc][ãa]o inicial/i.test(n)) texto = '🙏 Oração inicial';
+        else if (/^\s*ora[çc][ãa]o final/i.test(n)) texto = '🙏 Oração final';
+        else texto = participarEmojiDaParte(x) + ' ' + n;
+        nome.textContent = (i + 1) + '. ' + texto;
+        li.append(min, nome);
+        ol.appendChild(li);
+      });
+      prog.appendChild(ol);
+      card.appendChild(prog);
+      return card;
     }
 
     // 📺 Tela grande: letra maior, sem as barras do app e só as partes liberadas; tenta a tela cheia quando o aparelho deixa.
@@ -27963,7 +28027,7 @@ function saveTemplatesToStorage() {
         const atual = l && e.atual === i;
         s.sec.classList.toggle('atual', atual);
         s.agora.hidden = !atual;
-        if (l && !antesLib.has(i) && antes) participarSecaoAbrir(i, true); // liberada agora, com a tela já aberta: abre para todos (6.12.07: ao entrar/reabrir, tudo começa recolhido)
+        if (l && !antesLib.has(i) && antes && !participar.oracao.has(i)) participarSecaoAbrir(i, true); // liberada agora, com a tela já aberta: abre para todos (6.12.07: ao entrar/reabrir, tudo começa recolhido)
         else if (!l && s.aberta && (!participar.dirigente || antesLib.has(i))) participarSecaoAbrir(i, false); // bloqueada de novo
         if (s.acao) {
           s.acao.dataset.acao = l ? 'bloquear' : 'liberar';
@@ -27976,6 +28040,7 @@ function saveTemplatesToStorage() {
         if (s) setTimeout(() => s.sec.scrollIntoView({ block: 'start', behavior: 'smooth' }), 120);
       }
       // Tela grande: só a atividade atual aparece (CSS); sem atual, só a linha da Oração inicial. Ao trocar de atividade, volta ao topo.
+      if (participar.boasVindas) participar.boasVindas.hidden = lib.size > 0 || Number.isInteger(e.atual); // as boas-vindas só até a primeira atividade começar
       participarEls.sessao.classList.toggle('fam-sem-atual', !participar.secoes.some((_, i) => lib.has(i) && e.atual === i));
       if (document.body.classList.contains('fam-tela-grande') && antes && e.atual !== antes.atual) window.scrollTo(0, 0);
       participar.jogos.forEach((_, i) => participarJogoPintar(i));
@@ -28137,16 +28202,14 @@ function saveTemplatesToStorage() {
     function participarProximaParte() {
       const n = (participar.programa.partes || []).length;
       const atual = participar.estado && Number.isInteger(participar.estado.atual) ? participar.estado.atual : -1;
-      let prox = atual + 1;
-      while (prox < n && participar.oracao && participar.oracao.has(prox)) prox++;
+      const prox = atual + 1; // 6.12.36: a Oração inicial é a primeira atividade da tela grande (não é mais pulada)
       return prox < n ? prox : null;
     }
 
     // A atividade anterior à atual, pulando a Oração inicial; null se a atual é a primeira (ou ainda não há atual).
     function participarParteAnterior() {
       const atual = participar.estado && Number.isInteger(participar.estado.atual) ? participar.estado.atual : -1;
-      let ant = atual - 1;
-      while (ant >= 0 && participar.oracao && participar.oracao.has(ant)) ant--;
+      const ant = atual - 1;
       return atual >= 0 && ant >= 0 ? ant : null;
     }
 
@@ -29124,6 +29187,17 @@ function saveTemplatesToStorage() {
       atualizar();
     }
     familiaCampoLimpavel(familiaAnosCasadosEl, 'os anos de casados');
+    // 6.12.36: mãe ou pai sozinho não tem "anos de casados": o campo (e o valor guardado) some nessa situação.
+    function familiaAnosAjustar() {
+      const solo = familiaFormacaoEl.value === 'Mãe ou pai sozinho';
+      const rotulo = document.querySelector('label[for="familiaAnosCasados"]');
+      const caixa = familiaAnosCasadosEl.closest('.fam-limpavel') || familiaAnosCasadosEl;
+      if (rotulo) rotulo.hidden = solo;
+      caixa.hidden = solo;
+      if (solo && familiaAnosCasadosEl.value) { familiaAnosCasadosEl.value = ''; familiaAnosCasadosEl.dispatchEvent(new Event('input', { bubbles: true })); }
+    }
+    familiaFormacaoEl.addEventListener('change', familiaAnosAjustar);
+    familiaAnosAjustar();
     familiaCampoLimpavel(familiaOutrasCircEl, 'as outras circunstâncias');
     familiaCampoLimpavel(familiaAssuntoEl, 'o assunto');
     const familiaConvFamiliaEl = document.getElementById('familiaConvidadosFamilia');

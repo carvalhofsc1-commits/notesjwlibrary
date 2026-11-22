@@ -17106,9 +17106,9 @@ body.fam-tela-grande :is(.app-topbar, #appNav) { display: none !important; }
 body.fam-tela-grande #participarCard { font-size: 1.35rem; max-width: none; width: auto; margin: 0; border: 0; box-shadow: none; min-height: 100vh; padding-bottom: 80px; }
 body.fam-tela-grande #participarCard :is(.fam-topo, .fam-sessao-dirigente, .fam-sessao-secao-acoes, .fam-dica, .fam-sessao-grande-btn, .fam-sessao-aviso) { display: none !important; }
 /* 6.11.93: na tela grande, cada atividade é uma página exclusiva: só a atual aparece (as outras, liberadas ou não, ficam escondidas). */
-body.fam-tela-grande .fam-sessao-secao:not(.atual):not(.fam-sessao-oracao) { display: none; }
-body.fam-tela-grande .fam-sessao-oracao { display: none; }
-body.fam-tela-grande .fam-sem-atual .fam-sessao-oracao { display: block; }
+body.fam-tela-grande .fam-sessao-secao:not(.atual) { display: none; } /* 6.12.36: a Oração inicial/final também é uma "página" (só a atual aparece) */
+body.fam-tela-grande .fam-sem-atual .fam-sessao-cabeca { display: none; } /* na tela de boas-vindas, o card já traz o título */
+body.fam-tela-grande .fam-sessao-oracao.atual .fam-sessao-secao-topo { padding: 48px 12px; font-size: 1.6em; }
 body.fam-tela-grande .fam-sessao-cron-linha { display: block; font-size: 1.9em; text-align: center; }
 body.fam-tela-grande .fam-sessao-cron-linha[hidden] { display: none !important; }
 body.fam-tela-grande .fam-sessao-sorteado { font-size: 1.6em; }
@@ -17376,6 +17376,32 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 /* 6.12.26: menos espaço em branco antes e depois da frase do objetivo da atividade. */
 #participarSessao .fam-parte-objetivo { margin: 0; line-height: 1.3; text-align: center; } /* 6.12.28: texto explicativo da atividade centralizado */
 #participarSessao .fam-parte-objetivo + .fam-secao-bloco { margin-top: 0; padding-top: 8px; }
+/* 6.12.36: tela de boas-vindas (celular e tela grande): emojis, tema, quem participa e o programa com o tempo na frente. */
+#participarSessao .fam-boasvindas { margin: 0 0 12px; padding: 14px 12px; border: 1px solid var(--accent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent); border-radius: 14px; background: linear-gradient(180deg, #eaf3ff, #f1eefc); color: var(--text); text-align: center; min-width: 0; }
+#participarSessao .fam-boasvindas[hidden] { display: none; }
+#participarSessao .fam-boasvindas p { margin: 0; }
+#participarSessao .fam-bv-emojis { font-size: 1.6rem; letter-spacing: .15em; }
+#participarSessao .fam-bv-ola { margin-top: 4px; font-size: 1.05rem; font-weight: 700; color: color-mix(in srgb, #7c3aed 70%, var(--text)); }
+#participarSessao .fam-bv-tema { margin: 8px 0 4px; font-size: 1.4rem; font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; }
+#participarSessao .fam-bv-objetivo { font-size: .92rem; opacity: .85; }
+#participarSessao .fam-bv-quem { margin-top: 10px; font-size: .95rem; overflow-wrap: anywhere; }
+#participarSessao .fam-bv-programa { margin-top: 14px; padding: 10px; border: 1px solid color-mix(in srgb, #7c3aed 40%, var(--line)); border-radius: 12px; background: var(--card); text-align: left; }
+#participarSessao .fam-bv-programa-titulo { margin: 0 0 6px; font-weight: 800; text-align: center; }
+#participarSessao .fam-bv-lista { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+#participarSessao .fam-bv-lista li { display: grid; grid-template-columns: 4.2em minmax(0, 1fr); gap: 8px; align-items: baseline; padding: 4px 0; border-bottom: 1px solid var(--line); }
+#participarSessao .fam-bv-lista li:last-child { border-bottom: 0; }
+#participarSessao .fam-bv-min { font-weight: 800; font-variant-numeric: tabular-nums; color: color-mix(in srgb, #7c3aed 75%, var(--text)); }
+#participarSessao .fam-bv-nome { font-weight: 600; overflow-wrap: anywhere; }
+body.fam-tela-grande #participarSessao .fam-boasvindas { min-height: calc(100vh - 130px); display: flex; flex-direction: column; justify-content: center; padding: 28px 24px; }
+body.fam-tela-grande #participarSessao .fam-bv-emojis { font-size: 3rem; }
+body.fam-tela-grande #participarSessao .fam-bv-ola { font-size: 1.5rem; }
+body.fam-tela-grande #participarSessao .fam-bv-tema { font-size: 2.4rem; }
+body.fam-tela-grande #participarSessao .fam-bv-quem, body.fam-tela-grande #participarSessao .fam-bv-objetivo { font-size: 1.2rem; }
+body.fam-tela-grande #participarSessao .fam-bv-programa { max-width: 900px; width: 100%; margin: 18px auto 0; }
+body.fam-tela-grande #participarSessao .fam-bv-lista { font-size: 1.25rem; }
+/* 6.12.36: no celular a Oração inicial/final não têm botão de liberar; "anos de casados" some para mãe ou pai sozinho. */
+.fam-limpavel[hidden] { display: none; }
+label.fam-rotulo[hidden] { display: none; }
 /* 6.12.35: sem as cores de fundo diferentes: todas as atividades, liberadas ou não, com o mesmo azul claro. */
 #participarSessao .fam-sessao-secao:not(.fam-sessao-oracao),
 #participarSessao .fam-sessao-secao:not(.fam-sessao-oracao).bloqueada,
