@@ -17092,7 +17092,8 @@ body.fam-tela-grande .fam-sessao-secao.bloqueada { display: none; }
 body.fam-tela-grande .fam-sessao-cron-linha { display: block; font-size: 1.9em; text-align: center; }
 body.fam-tela-grande .fam-sessao-cron-linha[hidden] { display: none !important; }
 body.fam-tela-grande .fam-sessao-sorteado { font-size: 1.6em; }
-body.fam-tela-grande .fam-sessao-grande-barra { display: flex; position: fixed; right: 12px; bottom: 12px; gap: 8px; z-index: 60; }
+body.fam-tela-grande .fam-sessao-grande-barra { display: flex; position: fixed; left: 12px; right: 12px; bottom: 12px; gap: 8px; z-index: 60; }
+body.fam-tela-grande .fam-sessao-grande-barra > button { flex: 1 1 0; min-width: 0; margin: 0; }
 
 /* 6.11.52: REGRA — numa linha de botões, os botões sempre ocupam a largura toda (nada de sobrar espaço vazio ao lado).
    Na Adoração em Família (e telas da Adoração compartilhada): os botões crescem para preencher cada linha; o botão principal ocupa a

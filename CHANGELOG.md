@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.77
+
+- **Tela grande:** os dois botões de baixo (Próxima e Sair da tela grande) dividem a largura toda da tela, meio a meio, com 12 px de margem de cada lado.
+
 ## 6.11.76
 
 - **Adoração ao vivo:** saiu o texto de resumo da programação que aparecia abaixo do botão Tela grande.
