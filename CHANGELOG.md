@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.27
+
+- **Cabeçalho do placar mais roxo:** a faixa "Participante / Pontos" ficou num roxo ainda mais forte que o fundo do placar (e a cor não é mais sobrescrita por outras regras).
+
 ## 6.12.26
 
 - **Cabeçalho do placar:** a faixa "Participante / Pontos" ficou num roxo mais forte, com os cantos arredondados.

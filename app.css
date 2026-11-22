@@ -17292,7 +17292,7 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 #participarSessao .fam-placar-nome strong { color: color-mix(in srgb, var(--cor-nome) 80%, var(--text)); font-weight: 800; }
 #participarSessao .fam-sessao-placar-tabela { width: 100%; border-collapse: collapse; }
 /* 6.12.26: o cabeçalho Participante/Pontos num roxo mais forte. */
-#participarSessao .fam-sessao-placar-tabela th { background: color-mix(in srgb, #7c3aed 32%, var(--card)); color: var(--text); font-weight: 800; }
+#participarSessao .fam-sessao-placar-tabela th { background: color-mix(in srgb, #7c3aed 42%, var(--card)) !important; color: var(--text) !important; font-weight: 800; } /* 6.12.27: roxo ainda mais forte e garantido */
 #participarSessao .fam-sessao-placar-tabela th:first-child { border-radius: 8px 0 0 8px; }
 #participarSessao .fam-sessao-placar-tabela th:last-child { border-radius: 0 8px 8px 0; }
 #participarSessao .fam-sessao-placar-tabela th,#participarSessao .fam-sessao-placar-tabela td { padding: 5px 8px; border-bottom: 1px solid var(--line); text-align: left; overflow-wrap: anywhere; }
