@@ -7933,7 +7933,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.78'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.79'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26527,13 +26527,25 @@ function saveTemplatesToStorage() {
       };
       // aoVivo (Adoração compartilhada, 6.11.56): { texto(li, t), video(li, v, indice) } acrescentam o áudio dos versículos e o vídeo com a transcrição.
       addLista('📖 Textos', parte.textos, (li, t) => {
+        if (aoVivo && aoVivo.texto) {
+          // Ao vivo: ▶️ áudio do texto (botão fino) na mesma linha, antes do texto; referência em negrito e o texto entre aspas, em itálico.
+          li.append(...aoVivo.texto(t));
+          const ref = document.createElement('strong');
+          ref.textContent = t.referencia || '';
+          li.appendChild(ref);
+          if (t.texto) {
+            const em = document.createElement('em');
+            em.textContent = '“' + String(t.texto).trim().replace(/^[“”"]+|[“”"]+$/g, '') + '”';
+            li.append(' — ', em);
+          }
+          return;
+        }
         li.textContent = t.referencia || '';
         if (t.texto) {
           const span = document.createElement('span');
           span.textContent = ' — ' + t.texto;
           li.appendChild(span);
         }
-        if (aoVivo && aoVivo.texto) aoVivo.texto(li, t);
       });
       addLista('🎬 Vídeos', parte.videos, (li, v, idx) => {
         if (v.link) {
@@ -27499,37 +27511,21 @@ function saveTemplatesToStorage() {
       if (pronto) tocar(pronto);
       else bibliaAudioUrls(t.livro).then(tocar, falhou);
     }
-    // Os botões de cada texto da parte: um 🔊 por trecho citado e o link direto para o áudio.
-    function participarTextoMidia(li, texto) {
+    // O botão fino ▶️ áudio do texto de cada texto da parte (um por trecho citado), que fica na mesma linha, antes do texto. Devolve os botões.
+    function participarTextoMidia(texto) {
       const trechos = participarRefsDoTexto(texto.referencia);
-      if (!trechos.length) return;
-      const linha = document.createElement('div');
-      linha.className = 'fam-audio-linha';
-      trechos.forEach(t => {
+      return trechos.map(t => {
         const botao = document.createElement('button');
         botao.type = 'button';
-        botao.className = 'secondary fam-fino fam-audio-btn';
-        botao.dataset.rotulo = trechos.length > 1 ? '🔊 Ouvir ' + t.rotulo : '🔊 Ouvir os versículos';
+        botao.className = 'secondary fam-audio-btn';
+        botao.dataset.rotulo = trechos.length > 1 ? '▶️ áudio: ' + t.rotulo : '▶️ áudio do texto';
         botao.textContent = botao.dataset.rotulo;
         botao.title = 'Toca só ' + t.rotulo + ' (áudio da jw.org)';
         botao.setAttribute('aria-pressed', 'false');
         botao.addEventListener('click', () => participarAudioTocar(t, botao));
-        const link = document.createElement('a');
-        link.className = 'secondary fam-fino fam-link-botao fam-audio-link';
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        link.textContent = '↗ Áudio no jw.org';
-        link.hidden = true;
-        linha.append(botao, link);
-        // Já deixa o endereço do áudio pronto (também para tocar sem espera) e mostra o link direto, com o trecho marcado (#t=início,fim).
-        bibliaAudioUrls(t.livro).then(mapa => {
-          const d = participarAudioDoTrecho(mapa, t);
-          if (!d) return;
-          link.href = d.url + (d.inteiro ? '' : '#t=' + d.ini.toFixed(1) + (Number.isFinite(d.fim) ? ',' + d.fim.toFixed(1) : ''));
-          link.hidden = false;
-        }, () => { /* sem áudio agora: o botão avisa ao tocar */ });
+        bibliaAudioUrls(t.livro).catch(() => { /* já deixa o endereço do áudio pronto para tocar sem espera; sem áudio agora, o botão avisa ao tocar */ });
+        return botao;
       });
-      li.appendChild(linha);
     }
     async function participarVideoDados(i, k) {
       const chave = participar.cod + '|' + i + '|' + k;
@@ -27614,7 +27610,7 @@ function saveTemplatesToStorage() {
       li.appendChild(caixa);
     }
     // Os dois ganchos que familiaParteMontar usa na tela da adoração, para a parte i.
-    const participarMidia = i => ({ texto: (li, t) => participarTextoMidia(li, t), video: (li, v, k) => participarVideoMidia(li, v, k, i) });
+    const participarMidia = i => ({ texto: t => participarTextoMidia(t), video: (li, v, k) => participarVideoMidia(li, v, k, i) });
 
     // ---- A sessão na tela: cabeçalho, painel do dirigente e uma seção por parte ----
     function participarMontar() {
