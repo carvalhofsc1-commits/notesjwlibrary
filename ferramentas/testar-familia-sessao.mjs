@@ -40,7 +40,7 @@ const programa = {
         rodadas: [
           { pergunta: "Abri o mar Vermelho com a vara.", resposta: RESPOSTAS[0], referencia: "Êxodo 14:21" },
           { pergunta: "Venci o gigante com uma funda.", resposta: RESPOSTAS[1], referencia: "1 Samuel 17:49" },
-          { pergunta: "Jonas ficou três dias no peixe.", resposta: RESPOSTAS[2], referencia: "Jonas 1:17" },
+          { pergunta: "Dica 1: Fiquei três dias no peixe. Dica 2: Fui enviado a Nínive. Dica 3: Sou profeta.", resposta: RESPOSTAS[2], referencia: "Jonas 1:17" },
         ],
         itens: ["Cartão extra sem resposta"],
       },
@@ -148,6 +148,18 @@ try {
   const s4 = JSON.stringify(e4.dados);
   assert.ok(s4.includes("Davi") && !s4.includes("Moisés") && !s4.includes("Verdadeiro")); passo("revelar mostra só a resposta escolhida");
   assert.equal((await chamar({ acao: "revelar", sessao, chave, parte: 2, rodada: 7 })).status, 400); passo("rodada inexistente recusada");
+
+  // Dicas (6.11.96): uma de cada vez, no máximo as que a pergunta tem (3 na rodada 2; a rodada 0 não tem marcadores e vale 1)
+  assert.equal((await chamar({ acao: "dica", sessao, parte: 2, rodada: 2 })).status, 403); passo("dica sem a chave do dirigente recusada");
+  const d1 = await chamar({ acao: "dica", sessao, chave, parte: 2, rodada: 2 });
+  assert.equal(d1.dados.estado.dicas[2][2], 1);
+  await chamar({ acao: "dica", sessao, chave, parte: 2, rodada: 2 });
+  await chamar({ acao: "dica", sessao, chave, parte: 2, rodada: 2 });
+  const d4 = await chamar({ acao: "dica", sessao, chave, parte: 2, rodada: 2 });
+  assert.equal(d4.dados.estado.dicas[2][2], 3); passo("dicas: 1, 2, 3 e para no máximo da pergunta");
+  const d0 = await chamar({ acao: "dica", sessao, chave, parte: 2, rodada: 0 });
+  assert.equal(d0.dados.estado.dicas[2][0], 1);
+  assert.equal((await chamar({ acao: "dica", sessao, chave, parte: 2, rodada: 9 })).status, 400); passo("rodada sem marcadores vale 1 dica; rodada inexistente recusada");
 
   const blo = await chamar({ acao: "bloquear", sessao, chave, parte: 2 });
   assert.deepEqual(blo.dados.estado.liberadas, []); assert.equal(blo.dados.estado.atual, null); passo("voltar a bloquear");

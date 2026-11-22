@@ -7933,7 +7933,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.95'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.96'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -28125,16 +28125,45 @@ function saveTemplatesToStorage() {
           li.className = 'fam-sessao-questao'; // cada questão do jogo num card exclusivo
           const num = document.createElement('p');
           num.className = 'fam-sessao-qnum';
-          num.textContent = 'Questão ' + (k + 1);
+          const numTexto = document.createElement('span');
+          numTexto.textContent = 'Questão ' + (k + 1);
+          const pontos = document.createElement('span');
+          num.append(numTexto, pontos);
+          // Jogo de dicas ("Dica 1: … Dica 2: … Dica 3: …"): uma questão por vez e uma dica por vez, na ordem; vale menos pontos a cada dica dada.
+          const partes = String(r.pergunta || '').split(/\s*Dica\s*\d+\s*:\s*/i);
+          const intro = /Dica\s*1\s*:/i.test(r.pergunta || '') ? partes.shift().trim() : null;
+          const dicas = intro === null ? [] : partes.map(x => x.trim()).filter(Boolean);
           const perg = document.createElement('p');
           perg.className = 'fam-sessao-pergunta';
-          perg.textContent = r.pergunta + (r.referencia ? ' (' + r.referencia + ')' : '');
+          const comDicas = dicas.length > 0;
+          perg.textContent = comDicas ? intro : r.pergunta + (r.referencia ? ' (' + r.referencia + ')' : '');
+          const dicasEls = dicas.map((txt, d) => {
+            const p = document.createElement('p');
+            p.className = 'fam-sessao-dica';
+            p.textContent = '💡 Dica ' + (d + 1) + ': ' + txt;
+            p.hidden = true;
+            return p;
+          });
+          const aguarda = document.createElement('p');
+          aguarda.className = 'fam-sessao-aguarda';
+          aguarda.textContent = '⏳ Aguardando a primeira dica…';
+          aguarda.hidden = true;
           const resp = document.createElement('p');
           resp.className = 'fam-sessao-resposta escondida';
           resp.textContent = '🙈 Resposta escondida';
-          li.append(num, perg, resp);
+          li.append(num);
+          if (perg.textContent) li.appendChild(perg);
+          li.append(...dicasEls, aguarda, resp);
           let btn = null;
+          let btnDica = null;
           if (participar.dirigente) {
+            if (comDicas) {
+              btnDica = document.createElement('button');
+              btnDica.type = 'button';
+              btnDica.className = 'secondary fam-fino fam-sessao-revelar fam-sessao-dar-dica';
+              btnDica.addEventListener('click', () => participarAcao({ acao: 'dica', parte: parteIdx, rodada: k }, btnDica));
+              li.appendChild(btnDica);
+            }
             btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'secondary fam-fino fam-sessao-revelar';
@@ -28142,7 +28171,7 @@ function saveTemplatesToStorage() {
             btn.addEventListener('click', () => participarAcao({ acao: 'revelar', parte: parteIdx, rodada: k }, btn));
             li.appendChild(btn);
           }
-          ref.rodadas.push({ resp, btn });
+          ref.rodadas.push({ li, resp, btn, btnDica, dicasEls, aguarda, pontos, total: dicas.length, referencia: r.referencia || '' });
           ol.appendChild(li);
         });
         caixa.appendChild(ol);
@@ -28170,13 +28199,28 @@ function saveTemplatesToStorage() {
       const e = participar.estado;
       if (!ref || !e) return;
       const rev = (e.reveladas && e.reveladas[i]) || {};
+      const dadas = (e.dicas && e.dicas[i]) || {};
+      let anteriorRespondida = true; // jogo de dicas: a questão seguinte só aparece depois que a anterior foi respondida (resposta revelada)
       ref.rodadas.forEach((r, k) => {
         const txt = rev[k];
         const revelada = txt != null && txt !== '';
+        const comDicas = r.total > 0;
+        r.li.hidden = comDicas && !anteriorRespondida;
+        const n = Math.min(r.total, Number(dadas[k]) || 0);
+        r.dicasEls.forEach((p, d) => { p.hidden = d >= n; });
+        r.aguarda.hidden = !(comDicas && n === 0 && !revelada && !participar.dirigente);
+        const pts = Math.max(1, r.total - n + 1);
+        r.pontos.textContent = comDicas && n > 0 && !revelada ? ' · vale ' + pts + (pts === 1 ? ' ponto' : ' pontos') + ' agora' : '';
+        r.resp.hidden = comDicas && n === 0 && !revelada;
         r.resp.classList.toggle('escondida', !revelada);
         r.resp.classList.toggle('revelada', revelada);
-        r.resp.textContent = revelada ? '💡 Resposta: ' + txt : '🙈 Resposta escondida';
-        if (r.btn) r.btn.hidden = revelada;
+        r.resp.textContent = revelada ? '💡 Resposta: ' + txt + (comDicas && r.referencia ? ' (' + r.referencia + ')' : '') : '🙈 Resposta escondida';
+        if (r.btnDica) {
+          r.btnDica.hidden = revelada || n >= r.total;
+          r.btnDica.textContent = '💡 Dar a ' + (n + 1) + 'ª dica' + (n === 0 ? '' : ' (vale ' + Math.max(1, r.total - n) + ')');
+        }
+        if (r.btn) r.btn.hidden = revelada || (comDicas && n === 0);
+        anteriorRespondida = revelada;
       });
       const s = e.sorteio;
       const vale = s && s.nome && (s.parte == null || s.parte === i);

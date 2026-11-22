@@ -123,6 +123,7 @@ function estadoPublico(e) {
     liberadas: Array.isArray(e.liberadas) ? e.liberadas : [],
     atual: Number.isInteger(e.atual) ? e.atual : null,
     reveladas: e.reveladas && typeof e.reveladas === "object" ? e.reveladas : {},
+    dicas: e.dicas && typeof e.dicas === "object" ? e.dicas : {}, // quantas dicas de cada rodada já foram dadas: { parte: { rodada: n } }
     sorteio: e.sorteio || null,
     cronometro: e.cronometro || null,
   };
@@ -395,7 +396,7 @@ export default async function handler(req, res) {
 
     // ----- Daqui em diante, só o dirigente -----
     if (!(await exigirDirigente())) return;
-    const programa = ["liberar", "bloquear", "revelar", "sortear", "cronometro"].includes(acao) ? await lerJson(caminho(cod, "programa.json")) : null;
+    const programa = ["liberar", "bloquear", "revelar", "dica", "sortear", "cronometro"].includes(acao) ? await lerJson(caminho(cod, "programa.json")) : null;
     const parteValida = (i) => programa && Number.isInteger(i) && i >= 0 && i < programa.partes.length;
 
     if (acao === "liberar" || acao === "bloquear") {
@@ -420,6 +421,22 @@ export default async function handler(req, res) {
       return gravarEstado((e) => {
         e.reveladas = e.reveladas || {};
         e.reveladas[parte] = { ...(e.reveladas[parte] || {}), [rodada]: respostas[rodada] };
+      });
+    }
+
+    // ----- dica (6.11.96): dá a próxima dica da rodada (Dica 1, Dica 2, Dica 3…), uma de cada vez; no máximo as que a pergunta tem -----
+    if (acao === "dica") {
+      const parte = Number(corpo.parte);
+      const rodada = Number(corpo.rodada);
+      if (!parteValida(parte)) return erro(res, 400, "Parte inválida.");
+      const r = programa.partes[parte].jogo && (programa.partes[parte].jogo.rodadas || [])[rodada];
+      if (!Number.isInteger(rodada) || !r) return erro(res, 400, "Rodada inválida.");
+      const total = Math.max(1, (String(r.pergunta).match(/Dica\s*\d+\s*:/gi) || []).length);
+      return gravarEstado((e) => {
+        e.dicas = e.dicas || {};
+        const mapa = e.dicas[parte] || {};
+        const dadas = Number(mapa[rodada]) || 0;
+        if (dadas < total) e.dicas[parte] = { ...mapa, [rodada]: dadas + 1 };
       });
     }
 

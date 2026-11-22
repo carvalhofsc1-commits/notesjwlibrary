@@ -17253,6 +17253,11 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 #participarSessao li.fam-sessao-questao .fam-sessao-resposta { display: block; }
 #participarSessao li.fam-sessao-questao .fam-sessao-revelar { display: block; width: 100%; margin: 6px 0 0; }
 
+/* 6.11.96: jogo de dicas ao vivo — uma questão e uma dica por vez; os pontos caem a cada dica dada. */
+#participarSessao .fam-sessao-dica { margin: 0 0 6px; padding: 6px 10px; border-left: 3px solid color-mix(in srgb, #f59e0b 80%, var(--line)); border-radius: 6px; background: color-mix(in srgb, #f59e0b 10%, var(--card)); font-weight: 600; }
+#participarSessao .fam-sessao-aguarda { margin: 0 0 6px; color: var(--muted); font-style: italic; }
+#participarSessao .fam-sessao-qnum > span:last-child { color: color-mix(in srgb, #f59e0b 70%, var(--text)); }
+
 /* 6.11.91: o objetivo da atividade — negrito e outra cor. */
 .fam-parte-objetivo { margin: 0 0 10px; font-weight: 700; color: color-mix(in srgb, #7c3aed 78%, var(--text)); }
 

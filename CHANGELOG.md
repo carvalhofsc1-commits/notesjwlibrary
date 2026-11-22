@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.96
+
+- **Jogo de dicas ao vivo (Quem sou eu?):** agora uma questão e uma dica por vez. Só a Questão 1 aparece; o dirigente toca em **💡 Dar a 1ª dica**, depois (se precisar) em **Dar a 2ª dica** e **Dar a 3ª dica**, e todos veem as dicas aparecerem na ordem, com a pontuação caindo a cada dica ("vale 3 pontos agora", 2, 1). Ao tocar em **Revelar resposta** (alguém acertou ou desistiram), a resposta aparece com a referência e a **próxima questão** é liberada. Os participantes veem "Aguardando a primeira dica…". Servidor: nova ação `dica` e `dicas` no estado público (3 testes novos; 35 no total). Jogos sem o formato "Dica 1: … Dica 2: …" continuam como antes (todas as questões à vista).
+
 ## 6.11.95
 
 - **Nunca nomes nas atividades (Adoração em Família):** o nome do responsável saiu dos títulos das atividades na tela ao vivo, nas sugestões, na cópia e no Word; o servidor passa a gravar o campo responsável sempre vazio e o prompt manda a IA nunca citar nomes de pessoas nos títulos, descrições, jogos, perguntas e dicas (só as tarefas do dirigente podem citar quem faz o quê). Se o prompt da Adoração em Família foi editado por você em Prompts da IA, a nova regra precisa ser acrescentada lá.
