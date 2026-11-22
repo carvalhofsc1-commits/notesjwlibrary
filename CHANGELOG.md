@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.33
+
+- **Sem o card geral do jogo:** saiu o card com a linha lateral laranja em volta de tudo (regras, placar, sorteio e questões); os cards de dentro continuam.
+- **Sorteio da questão a ser respondida:** no card "Sorteio de jogadores", novo botão 🎯 "Sortear a questão a ser respondida": sorteia entre as questões ainda não respondidas. A questão sorteada aparece no card ("🎯 Questão sorteada: Questão 3 de 7", com 🗑️ para limpar), no título do card recolhido (junto com o "Vez de" quando há) e fica destacada com borda roxa mais grossa, para todos. Novas ações `sortear-questao` e `limpar-sorteio` com `tipo: "questao"` em `api/familia-sessao.mjs`.
+
 ## 6.12.32
 
 - **Regras recolhidas por padrão:** o card "📜 Regras" do jogo agora é recolhível e começa recolhido; basta tocar no título para ler.

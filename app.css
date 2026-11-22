@@ -17279,6 +17279,10 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 #participarSessao li.fam-sessao-questao { margin: 0; padding: 10px 12px; border: 1px solid var(--accent); border-radius: 12px; background: var(--card); color: var(--text); min-width: 0; overflow-wrap: anywhere; }
 /* 6.12.29: 🔄 (reiniciar a questão, só do dirigente) no canto de cima da questão. */
 #participarSessao li.fam-sessao-questao { position: relative; }
+/* 6.12.33: sem o card geral com a linha lateral laranja em volta do jogo; a questão sorteada fica destacada; duas linhas no card de sorteio ficam separadas. */
+#participarSessao .fam-jogo.fam-sessao-jogo { border-left: 0; background: transparent; padding: 0; margin-top: 0; border-radius: 0; }
+#participarSessao li.fam-sessao-questao.fam-sessao-questao-sorteada { border-width: 3px; border-color: #7c3aed; box-shadow: 0 0 0 3px color-mix(in srgb, #7c3aed 22%, transparent); }
+.fam-sessao-sorteio-card > .fam-sessao-vez-linha + .fam-sessao-vez-linha { margin-top: 10px; }
 #participarSessao li.fam-sessao-questao > button.fam-sessao-reiniciar { position: absolute; top: 8px; right: 10px; width: 28px; min-width: 0; min-height: 0; height: 22px; margin: 0; padding: 0; font-size: .78rem; line-height: 1; border-radius: 7px; display: flex; align-items: center; justify-content: center; } /* 6.12.30: menor, na altura da linha "Questão N de M" */
 #participarSessao li.fam-sessao-questao > button.fam-sessao-reiniciar[hidden] { display: none; }
 #participarSessao .fam-sessao-qnum { margin: 0 0 4px; font-weight: 700; font-size: .85em; color: color-mix(in srgb, #7c3aed 78%, var(--text)); }

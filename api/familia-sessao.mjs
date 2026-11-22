@@ -126,6 +126,7 @@ function estadoPublico(e) {
     dicas: e.dicas && typeof e.dicas === "object" ? e.dicas : {}, // quantas dicas de cada rodada já foram dadas: { parte: { rodada: n } }
     acertos: e.acertos && typeof e.acertos === "object" ? e.acertos : {}, // quem acertou cada rodada e quantos pontos ganhou: { parte: { rodada: { nome, pts } } }
     sorteio: e.sorteio || null,
+    sorteioQuestao: e.sorteioQuestao || null, // { parte, rodada, n }: a questão sorteada para ser respondida
     cronometro: e.cronometro || null,
   };
 }
@@ -411,7 +412,7 @@ export default async function handler(req, res) {
 
     // ----- Daqui em diante, só o dirigente -----
     if (!(await exigirDirigente())) return;
-    const programa = ["liberar", "bloquear", "revelar", "dica", "pontuar", "reiniciar", "sortear", "cronometro"].includes(acao) ? await lerJson(caminho(cod, "programa.json")) : null;
+    const programa = ["liberar", "bloquear", "revelar", "dica", "pontuar", "reiniciar", "sortear", "sortear-questao", "limpar-sorteio", "cronometro"].includes(acao) ? await lerJson(caminho(cod, "programa.json")) : null;
     const parteValida = (i) => programa && Number.isInteger(i) && i >= 0 && i < programa.partes.length;
 
     if (acao === "liberar" || acao === "bloquear") {
@@ -518,8 +519,26 @@ export default async function handler(req, res) {
 
     // ----- limpar-sorteio (6.12.10): tira o nome sorteado (sorteio acidental); o card volta a mostrar só as opções de sorteio -----
     if (acao === "limpar-sorteio") {
+      const soQuestao = corpo.tipo === "questao";
       return gravarEstado((e) => {
-        e.sorteio = null;
+        if (soQuestao) e.sorteioQuestao = null;
+        else e.sorteio = null;
+      });
+    }
+
+    // ----- sortear-questao (6.12.33): sorteia, entre as questões do jogo ainda não respondidas, a próxima a ser respondida -----
+    if (acao === "sortear-questao") {
+      const parte = Number(corpo.parte);
+      if (!parteValida(parte)) return erro(res, 400, "Parte inválida.");
+      const rodadas = (programa.partes[parte].jogo && programa.partes[parte].jogo.rodadas) || [];
+      const reveladas = (estado.reveladas || {})[parte] || {};
+      const livres = rodadas.map((_, k) => k).filter((k) => reveladas[k] == null || reveladas[k] === "");
+      if (!livres.length) return erro(res, 400, "Todas as questões já foram respondidas.");
+      const anterior = estado.sorteioQuestao && estado.sorteioQuestao.parte === parte ? estado.sorteioQuestao.rodada : -1;
+      const opcoes = livres.length > 1 ? livres.filter((k) => k !== anterior) : livres;
+      const rodada = opcoes[randomInt(opcoes.length)];
+      return gravarEstado((e) => {
+        e.sorteioQuestao = { parte, rodada, n: ((e.sorteioQuestao && e.sorteioQuestao.n) || 0) + 1 };
       });
     }
 
