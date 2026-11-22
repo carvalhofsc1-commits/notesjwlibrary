@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.94
+
+- **Tela grande:** novo botão **⏮️ Retornar** na barra de baixo (à esquerda de Próxima), que volta à atividade anterior (pulando a Oração inicial). Fica desativado na primeira atividade. Os três botões dividem a largura da barra.
+
 ## 6.11.93
 
 - **Tela grande — uma atividade por vez:** cada atividade é uma página exclusiva, sem continuidade com as outras. Só a atividade atual aparece; ao passar para a próxima, a anterior some, a próxima abre e a tela volta ao topo. Antes de liberar qualquer atividade, aparece só a linha da Oração inicial.
