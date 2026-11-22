@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.51'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.52'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26640,16 +26640,16 @@ function saveTemplatesToStorage() {
         }
         li.textContent = rotulo;
       });
-      addLista('📚 Publicações', parte.publicacoes, (li, pub) => {
+      addLista('📚 Publicações', parte.publicacoes, (li, pub, idx) => {
         const rotulo = [pub.titulo, pub.fonte].filter(Boolean).join(' · ');
-        if (pub.url) {
-          const a = document.createElement('a');
-          a.href = pub.url;
-          a.target = '_blank';
-          a.rel = 'noopener noreferrer';
-          a.textContent = rotulo || pub.url;
-          li.appendChild(a);
-        } else li.textContent = rotulo;
+        // 6.12.52: toda matéria citada tem um link; sem endereço, o link abre a pesquisa dela no wol.jw.org.
+        const a = document.createElement('a');
+        a.href = pub.url || ('https://wol.jw.org/pt/wol/s/r5/lp-t?q=' + encodeURIComponent([pub.titulo, pub.fonte].filter(Boolean).join(' ')) + '&p=par&r=occ');
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.textContent = (rotulo || pub.url || 'Matéria') + (pub.url ? ' ↗' : ' ↗ procurar no wol.jw.org');
+        li.appendChild(a);
+        if (aoVivo && aoVivo.publicacao) aoVivo.publicacao(li, pub, idx); // ao vivo: 📖 Exibir a matéria na tela (recolhido)
       });
       // 6.12.44: ao vivo, atividade com textos bíblicos e sem perguntas (programação feita antes da regra) ganha duas perguntas simples sobre os textos.
       let perguntasDaParte = parte.perguntas;
@@ -27791,7 +27791,50 @@ function saveTemplatesToStorage() {
       li.appendChild(caixa);
     }
     // Os dois ganchos que familiaParteMontar usa na tela da adoração, para a parte i.
-    const participarMidia = i => ({ texto: t => participarTextoMidia(t), video: (li, v, k) => participarVideoMidia(li, v, k, i), cantico: (li, c, k) => participarVideoMidia(li, c, k, i, true) });
+    // 6.12.52: 📖 Exibir a matéria na tela: campo recolhido que busca o texto da publicação citada (no servidor) só quando é aberto.
+    const participarMateriasCache = new Map();
+    function participarMateriaMidia(li, pub, k, i) {
+      const det = document.createElement('details');
+      det.className = 'fam-leitura-trecho fam-materia-tela';
+      const sm = document.createElement('summary');
+      sm.textContent = '📖 Exibir a matéria na tela';
+      const corpo = document.createElement('div');
+      corpo.className = 'fam-materia-corpo';
+      corpo.textContent = 'Abra para carregar a matéria.';
+      det.append(sm, corpo);
+      let carregada = false;
+      det.addEventListener('toggle', async () => {
+        if (!det.open || carregada) return;
+        const chave = participar.cod + '|' + i + '|' + k;
+        corpo.textContent = '⏳ Carregando a matéria…';
+        let dados = participarMateriasCache.get(chave);
+        if (!dados) {
+          const corpoPedido = { acao: 'materia', sessao: participar.cod, parte: i, publicacao: k };
+          if (participar.dirigente) corpoPedido.chave = participar.chave;
+          const r = await familiaSessaoPedir(corpoPedido);
+          dados = r.ok ? r.data : { erro: r.erro || 'Não consegui abrir a matéria agora. Use o link para ler no wol.jw.org.' };
+          if (r.ok) participarMateriasCache.set(chave, dados);
+        }
+        if (dados.erro) { corpo.textContent = dados.erro; return; }
+        carregada = true;
+        corpo.textContent = '';
+        const t = document.createElement('p');
+        t.className = 'fam-leitura-par';
+        t.innerHTML = '';
+        const forte = document.createElement('strong');
+        forte.textContent = dados.titulo || '';
+        t.appendChild(forte);
+        corpo.appendChild(t);
+        String(dados.texto || '').split(/\n+/).filter(Boolean).forEach(par => {
+          const pp = document.createElement('p');
+          pp.className = 'fam-leitura-par';
+          pp.textContent = par;
+          corpo.appendChild(pp);
+        });
+      });
+      li.appendChild(det);
+    }
+    const participarMidia = i => ({ publicacao: (li, pub, k) => participarMateriaMidia(li, pub, k, i), texto: t => participarTextoMidia(t), video: (li, v, k) => participarVideoMidia(li, v, k, i), cantico: (li, c, k) => participarVideoMidia(li, c, k, i, true) });
 
     // ---- A sessão na tela: cabeçalho, painel do dirigente e uma seção por parte ----
     function participarMontar() {

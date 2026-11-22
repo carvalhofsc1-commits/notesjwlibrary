@@ -17415,6 +17415,9 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 .fam-leitura-trecho[open] { padding-bottom: 10px; }
 .fam-leitura-trecho[open] > summary { margin-bottom: 6px; }
 .fam-leitura-trecho > .fam-leitura-par + .fam-leitura-par { margin-top: 8px; }
+.fam-materia-tela { margin-top: 6px; }
+.fam-materia-corpo { display: grid; gap: 8px; font-size: .92rem; min-width: 0; }
+.fam-materia-corpo .fam-leitura-par { margin: 0; }
 .fam-leitura > a { overflow-wrap: anywhere; font-size: .9rem; }
 /* 6.12.38: ao entrar, só as boas-vindas e o programa, com o botão Entrar (fora da tela grande, onde o dirigente avança). */
 body:not(.fam-tela-grande) #participarSessao.fam-so-boasvindas > :not(.fam-boasvindas) { display: none !important; }

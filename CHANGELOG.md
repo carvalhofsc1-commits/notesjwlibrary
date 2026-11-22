@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.52
+
+- **Toda matéria citada tem link:** nas Publicações de cada atividade, a matéria sempre vira um link: o do próprio artigo no wol.jw.org ou, quando a programação só guardou o nome (como "Imite a Sua Fé, capítulo 12"), um link que abre a pesquisa dela no wol. Nas programações novas, o servidor procura o endereço da publicação já ao gerar.
+- **📖 Exibir a matéria na tela (adoração ao vivo):** cada publicação citada ganha um campo recolhido que, ao abrir, mostra o texto da matéria lido pelo servidor (até 6.000 caracteres), para quem não puder abrir o link. Vale também para as programações já criadas, desde que a parte esteja liberada (o dirigente vê sempre). Nova ação `materia` em `api/familia-sessao.mjs`, que só lê o que a programação cita.
+
 ## 6.12.51
 
 - **Matéria sempre específica:** a atividade de leitura de um trecho de matéria agora mostra o tema da matéria, a referência dos parágrafos (e a publicação), um link específico para esse trecho no wol.jw.org e o conteúdo num campo "📖 Trecho para considerar" sempre recolhido, que se abre ao tocar (como a transcrição do vídeo).

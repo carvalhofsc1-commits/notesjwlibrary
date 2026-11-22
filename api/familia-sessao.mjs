@@ -14,7 +14,7 @@ import { createHash, randomBytes, randomInt } from "node:crypto";
 import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { blobConfigurado, del, get, list, put } from "./_blob.mjs";
 import { mensagemSeBloqueado, prepararCodigosPessoais, recursoCodigoValido } from "./_acessoSite.mjs";
-import { lerTextoDoVideo, playerDoVideo, videoDoEndereco } from "./_wol.mjs";
+import { lerArtigoDoWol, lerTextoDoVideo, pesquisarNoWol, playerDoVideo, videoDoEndereco } from "./_wol.mjs";
 import { lerCanticos } from "./_fontes.mjs";
 
 const PASTA = "familia-sessoes/";
@@ -396,6 +396,25 @@ export default async function handler(req, res) {
       const dados = await dadosDoCantico(c.numero);
       if (!dados) return erro(res, 502, "Não consegui abrir o cântico agora. Use o link para assistir no jw.org.");
       return res.status(200).json(dados);
+    }
+
+    // ----- materia (6.12.52): o texto de uma publicação citada na parte (para exibir na tela), nas mesmas condições do vídeo (parte liberada ou dirigente).
+    // Só lê o que a programação cita: o endereço do wol da própria publicação ou o primeiro resultado da pesquisa pelo nome dela. -----
+    if (acao === "materia") {
+      const parte = Number(corpo.parte);
+      const indice = Number(corpo.publicacao);
+      const programa = await lerJson(caminho(cod, "programa.json"));
+      const pub = programa && Number.isInteger(parte) && Number.isInteger(indice) && programa.partes && programa.partes[parte] && (programa.partes[parte].publicacoes || [])[indice];
+      if (!pub) return erro(res, 404, "Essa matéria não está nesta programação.");
+      if (!(estado.liberadas || []).includes(parte) && !(await ehDirigente())) return erro(res, 403, "Esta parte ainda não foi liberada pelo dirigente.");
+      let url = /^https:\/\/wol\.jw\.org\/pt\/wol\/d\/r5\/lp-t\/\d{5,12}/i.test(String(pub.url || "")) ? pub.url.split("#")[0] : "";
+      if (!url) {
+        const achados = await pesquisarNoWol([pub.titulo, pub.fonte].filter(Boolean).join(" ").replace(/[()]/g, " "), 8000, 1).catch(() => []);
+        url = achados[0] && achados[0].url ? achados[0].url : "";
+      }
+      const artigo = url ? await lerArtigoDoWol(url, { timeoutMs: 9000, maxCaracteres: 6000 }).catch(() => null) : null;
+      if (!artigo || !artigo.texto) return erro(res, 502, "Não consegui abrir a matéria agora. Use o link para ler no wol.jw.org.");
+      return res.status(200).json({ titulo: artigo.titulo || pub.titulo, texto: artigo.texto, url: artigo.url || url });
     }
 
     // ----- assumir: troca o código do dirigente (passado por quem dirige) por uma chave nova neste aparelho -----

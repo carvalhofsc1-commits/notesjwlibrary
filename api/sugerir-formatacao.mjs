@@ -3171,6 +3171,16 @@ async function responderAdoracaoFamilia(res, body, P) {
           }
           perguntasDaParte = perguntasDaParte.slice(0, 2);
         } else perguntasDaParte = perguntasDaParte.slice(0, 5);
+        // 6.12.52: toda publicação citada leva um endereço: as que a IA citou só pelo nome ("Imite a Sua Fé, capítulo 12") são procuradas no wol.
+        const publicacoesDaParte = await Promise.all(
+          semRepetir((p.publicacoes || []).map(publicacaoDe), (x) => x.titulo.toLowerCase())
+            .slice(0, 4)
+            .map(async (pub) => {
+              if (pub.url) return pub;
+              const achados = await pesquisarNoWol([pub.titulo, pub.fonte].filter(Boolean).join(" ").replace(/[()]/g, " "), 8000, 1).catch(() => []);
+              return achados[0] && achados[0].url ? { ...pub, url: achados[0].url } : pub;
+            })
+        );
         partes.push({
           nome,
           minutos: Math.min(120, Math.max(1, Math.round(Number(p.minutos) || 0))),
@@ -3179,7 +3189,7 @@ async function responderAdoracaoFamilia(res, body, P) {
           textos: textosDaParte,
           videos: perfil.incluirVideo ? semRepetir((p.videos || []).map(videoDe), (v) => v.link).slice(0, 3) : [],
           canticos: bloquearCantico ? [] : semRepetir((p.canticos || []).map((n) => porNumero.get(Math.round(Number(n)))), (c) => c.numero).slice(0, 3).map((c) => ({ numero: c.numero, titulo: c.titulo })),
-          publicacoes: semRepetir((p.publicacoes || []).map(publicacaoDe), (x) => x.titulo.toLowerCase()).slice(0, 4),
+          publicacoes: publicacoesDaParte,
           perguntas: perguntasDaParte,
           leitura: await leituraDe(p.leitura),
           jogo: jogoDe(p.jogo),
