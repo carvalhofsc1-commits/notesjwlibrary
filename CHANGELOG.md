@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.97
+
+- **Jogo ao vivo — Regras e Placar:** o card do enunciado agora se chama **📜 Regras**. No topo do jogo aparece o **🏆 Placar**, uma tabela com o nome de cada participante (os cadastrados ao compartilhar, quem entrou e quem já pontuou) e os pontos, do maior para o menor, visível para todos. Para pontuar, o dirigente escolhe **Quem acertou?** na questão e toca em **✅ Pontuar: N pontos** (3, 2 ou 1, conforme as dicas já dadas): os pontos entram no placar, a resposta é revelada com "🏆 Nome ganhou N pontos" e a próxima questão aparece. **Revelar resposta** continua para quando ninguém acerta. Servidor: ação `pontuar` e `acertos` no estado (4 testes novos; 39 no total).
+
 ## 6.11.96
 
 - **Jogo de dicas ao vivo (Quem sou eu?):** agora uma questão e uma dica por vez. Só a Questão 1 aparece; o dirigente toca em **💡 Dar a 1ª dica**, depois (se precisar) em **Dar a 2ª dica** e **Dar a 3ª dica**, e todos veem as dicas aparecerem na ordem, com a pontuação caindo a cada dica ("vale 3 pontos agora", 2, 1). Ao tocar em **Revelar resposta** (alguém acertou ou desistiram), a resposta aparece com a referência e a **próxima questão** é liberada. Os participantes veem "Aguardando a primeira dica…". Servidor: nova ação `dica` e `dicas` no estado público (3 testes novos; 35 no total). Jogos sem o formato "Dica 1: … Dica 2: …" continuam como antes (todas as questões à vista).

@@ -7933,7 +7933,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.96'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.97'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -28017,6 +28017,7 @@ function saveTemplatesToStorage() {
 
     function participarDirigentePintar() {
       if (!participar.dirigente || !participar.dir) return;
+      participar.jogos.forEach((_, i) => participarJogoPintar(i)); // quem entrou muda a lista de nomes do jogo
       if (participar.dir.retornar) participar.dir.retornar.disabled = participarParteAnterior() == null;
       const lista = participar.participantes || [];
       participar.dir.quem.textContent = lista.length ? '👥 Entraram (' + lista.length + '): ' + lista.map(p => p.nome).join(', ') : '👥 Ninguém entrou ainda. Passe o código ' + participar.cod + ' aos participantes.';
@@ -28071,7 +28072,7 @@ function saveTemplatesToStorage() {
       enunciado.className = 'fam-jogo-enunciado';
       const t = document.createElement('p');
       t.className = 'fam-secao-titulo';
-      t.textContent = '🎲 Jogo: ' + (j.nome || 'Jogo') + familiaTipoJogo(j);
+      t.textContent = '📜 Regras';
       enunciado.appendChild(t);
       [j.comoJogar, j.material ? '✏️ Material: ' + j.material : ''].filter(Boolean).forEach(txt => {
         const p = document.createElement('p');
@@ -28079,7 +28080,11 @@ function saveTemplatesToStorage() {
         p.textContent = txt;
         enunciado.appendChild(p);
       });
-      caixa.appendChild(enunciado);
+      // O placar (nomes e pontos de cada um) fica no topo do jogo, antes das regras.
+      const placar = document.createElement('div');
+      placar.className = 'fam-sessao-placar';
+      placar.hidden = true;
+      caixa.append(placar, enunciado);
       if (/funplayb/i.test((j.tipo || '') + ' ' + (j.nome || ''))) {
         const a = document.createElement('a');
         a.className = 'secondary fam-fino fam-link-botao';
@@ -28089,7 +28094,7 @@ function saveTemplatesToStorage() {
         a.textContent = '🎮 Abrir o FunPlayB';
         caixa.appendChild(a);
       }
-      const ref = { rodadas: [], sorteio: null, nome: null, ultimoN: null };
+      const ref = { rodadas: [], sorteio: null, nome: null, ultimoN: null, placar };
       // Sorteio: o nome sorteado aparece para todos; os botões, só para o dirigente.
       const sorteio = document.createElement('div');
       sorteio.className = 'fam-sessao-sorteio';
@@ -28156,6 +28161,7 @@ function saveTemplatesToStorage() {
           li.append(...dicasEls, aguarda, resp);
           let btn = null;
           let btnDica = null;
+          let linhaAcerto = null, sel = null, btnPontuar = null;
           if (participar.dirigente) {
             if (comDicas) {
               btnDica = document.createElement('button');
@@ -28163,6 +28169,20 @@ function saveTemplatesToStorage() {
               btnDica.className = 'secondary fam-fino fam-sessao-revelar fam-sessao-dar-dica';
               btnDica.addEventListener('click', () => participarAcao({ acao: 'dica', parte: parteIdx, rodada: k }, btnDica));
               li.appendChild(btnDica);
+              // Quem acertou: escolhe o nome e pontua (os pontos de agora); a resposta é revelada junto.
+              linhaAcerto = document.createElement('div');
+              linhaAcerto.className = 'fam-sessao-acerto';
+              sel = document.createElement('select');
+              sel.setAttribute('aria-label', 'Quem acertou?');
+              btnPontuar = document.createElement('button');
+              btnPontuar.type = 'button';
+              btnPontuar.className = 'secondary fam-fino';
+              btnPontuar.addEventListener('click', () => {
+                if (!sel.value) { participarStatus('Escolha quem acertou.', 'erro'); return; }
+                participarAcao({ acao: 'pontuar', parte: parteIdx, rodada: k, nome: sel.value }, btnPontuar);
+              });
+              linhaAcerto.append(sel, btnPontuar);
+              li.appendChild(linhaAcerto);
             }
             btn = document.createElement('button');
             btn.type = 'button';
@@ -28171,7 +28191,7 @@ function saveTemplatesToStorage() {
             btn.addEventListener('click', () => participarAcao({ acao: 'revelar', parte: parteIdx, rodada: k }, btn));
             li.appendChild(btn);
           }
-          ref.rodadas.push({ li, resp, btn, btnDica, dicasEls, aguarda, pontos, total: dicas.length, referencia: r.referencia || '' });
+          ref.rodadas.push({ li, linhaAcerto, sel, btnPontuar, sig: null, resp, btn, btnDica, dicasEls, aguarda, pontos, total: dicas.length, referencia: r.referencia || '' });
           ol.appendChild(li);
         });
         caixa.appendChild(ol);
@@ -28200,6 +28220,34 @@ function saveTemplatesToStorage() {
       if (!ref || !e) return;
       const rev = (e.reveladas && e.reveladas[i]) || {};
       const dadas = (e.dicas && e.dicas[i]) || {};
+      const acertos = (e.acertos && e.acertos[i]) || {};
+      // Os nomes do jogo: os cadastrados ao compartilhar, quem entrou (visto pelo dirigente) e quem já pontuou.
+      const nomes = [...new Set([...(participar.programa.nomes || []), ...(participar.participantes || []).map(p => p.nome), ...Object.values(acertos).map(a => a.nome)].filter(Boolean))];
+      const total = {};
+      nomes.forEach(n => { total[n] = 0; });
+      Object.values(acertos).forEach(a => { total[a.nome] = (total[a.nome] || 0) + (Number(a.pts) || 0); });
+      // 🏆 Placar: nomes e pontos, do maior para o menor.
+      ref.placar.hidden = !nomes.length;
+      if (nomes.length) {
+        const tabela = document.createElement('table');
+        tabela.className = 'fam-sessao-placar-tabela';
+        const cab = document.createElement('tr');
+        ['Participante', 'Pontos'].forEach(h => { const th = document.createElement('th'); th.textContent = h; cab.appendChild(th); });
+        tabela.appendChild(cab);
+        [...nomes].sort((a, b) => total[b] - total[a] || a.localeCompare(b, 'pt-BR')).forEach(n => {
+          const tr = document.createElement('tr');
+          const td1 = document.createElement('td');
+          td1.textContent = n;
+          const td2 = document.createElement('td');
+          td2.textContent = String(total[n]);
+          tr.append(td1, td2);
+          tabela.appendChild(tr);
+        });
+        const titulo = document.createElement('p');
+        titulo.className = 'fam-secao-titulo';
+        titulo.textContent = '🏆 Placar';
+        ref.placar.replaceChildren(titulo, tabela);
+      }
       let anteriorRespondida = true; // jogo de dicas: a questão seguinte só aparece depois que a anterior foi respondida (resposta revelada)
       ref.rodadas.forEach((r, k) => {
         const txt = rev[k];
@@ -28214,7 +28262,20 @@ function saveTemplatesToStorage() {
         r.resp.hidden = comDicas && n === 0 && !revelada;
         r.resp.classList.toggle('escondida', !revelada);
         r.resp.classList.toggle('revelada', revelada);
-        r.resp.textContent = revelada ? '💡 Resposta: ' + txt + (comDicas && r.referencia ? ' (' + r.referencia + ')' : '') : '🙈 Resposta escondida';
+        const acerto = acertos[k];
+        r.resp.textContent = revelada ? '💡 Resposta: ' + txt + (comDicas && r.referencia ? ' (' + r.referencia + ')' : '') + (acerto ? ' · 🏆 ' + acerto.nome + ' ganhou ' + acerto.pts + (acerto.pts === 1 ? ' ponto' : ' pontos') : '') : '🙈 Resposta escondida';
+        if (r.linhaAcerto) {
+          r.linhaAcerto.hidden = revelada || n === 0;
+          const sig = nomes.join('|');
+          if (r.sig !== sig) { // refaz a lista de nomes só quando ela muda (para não perder a escolha)
+            const atual = r.sel.value;
+            r.sel.replaceChildren(...[['', 'Quem acertou?'], ...nomes.map(x => [x, x])].map(([v, tx]) => { const o = document.createElement('option'); o.value = v; o.textContent = tx; return o; }));
+            if (nomes.includes(atual)) r.sel.value = atual;
+            r.sig = sig;
+          }
+          const pontosAgora = Math.max(1, r.total - n + 1);
+          r.btnPontuar.textContent = '✅ Pontuar: ' + pontosAgora + (pontosAgora === 1 ? ' ponto' : ' pontos');
+        }
         if (r.btnDica) {
           r.btnDica.hidden = revelada || n >= r.total;
           r.btnDica.textContent = '💡 Dar a ' + (n + 1) + 'ª dica' + (n === 0 ? '' : ' (vale ' + Math.max(1, r.total - n) + ')');

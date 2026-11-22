@@ -124,6 +124,7 @@ function estadoPublico(e) {
     atual: Number.isInteger(e.atual) ? e.atual : null,
     reveladas: e.reveladas && typeof e.reveladas === "object" ? e.reveladas : {},
     dicas: e.dicas && typeof e.dicas === "object" ? e.dicas : {}, // quantas dicas de cada rodada já foram dadas: { parte: { rodada: n } }
+    acertos: e.acertos && typeof e.acertos === "object" ? e.acertos : {}, // quem acertou cada rodada e quantos pontos ganhou: { parte: { rodada: { nome, pts } } }
     sorteio: e.sorteio || null,
     cronometro: e.cronometro || null,
   };
@@ -396,7 +397,7 @@ export default async function handler(req, res) {
 
     // ----- Daqui em diante, só o dirigente -----
     if (!(await exigirDirigente())) return;
-    const programa = ["liberar", "bloquear", "revelar", "dica", "sortear", "cronometro"].includes(acao) ? await lerJson(caminho(cod, "programa.json")) : null;
+    const programa = ["liberar", "bloquear", "revelar", "dica", "pontuar", "sortear", "cronometro"].includes(acao) ? await lerJson(caminho(cod, "programa.json")) : null;
     const parteValida = (i) => programa && Number.isInteger(i) && i >= 0 && i < programa.partes.length;
 
     if (acao === "liberar" || acao === "bloquear") {
@@ -437,6 +438,28 @@ export default async function handler(req, res) {
         const mapa = e.dicas[parte] || {};
         const dadas = Number(mapa[rodada]) || 0;
         if (dadas < total) e.dicas[parte] = { ...mapa, [rodada]: dadas + 1 };
+      });
+    }
+
+    // ----- pontuar (6.11.97): quem acertou a rodada ganha os pontos de agora (total de dicas − dicas dadas + 1) e a resposta é revelada -----
+    if (acao === "pontuar") {
+      const parte = Number(corpo.parte);
+      const rodada = Number(corpo.rodada);
+      const nome = nomeLimpo(corpo.nome);
+      if (!parteValida(parte)) return erro(res, 400, "Parte inválida.");
+      const r = programa.partes[parte].jogo && (programa.partes[parte].jogo.rodadas || [])[rodada];
+      const respostas = (segredo.respostas || {})[parte] || [];
+      if (!Number.isInteger(rodada) || !r || rodada >= respostas.length) return erro(res, 400, "Rodada inválida.");
+      if (!nome) return erro(res, 400, "Escolha quem acertou.");
+      const total = Math.max(1, (String(r.pergunta).match(/Dica\s*\d+\s*:/gi) || []).length);
+      const dadas = Math.min(total, Number(((estado.dicas || {})[parte] || {})[rodada]) || 0);
+      if (!dadas) return erro(res, 400, "Dê ao menos a primeira dica antes de pontuar.");
+      const pts = Math.max(1, total - dadas + 1);
+      return gravarEstado((e) => {
+        e.acertos = e.acertos || {};
+        e.acertos[parte] = { ...(e.acertos[parte] || {}), [rodada]: { nome, pts } };
+        e.reveladas = e.reveladas || {};
+        e.reveladas[parte] = { ...(e.reveladas[parte] || {}), [rodada]: respostas[rodada] };
       });
     }
 

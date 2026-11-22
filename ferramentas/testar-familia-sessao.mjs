@@ -161,6 +161,14 @@ try {
   assert.equal(d0.dados.estado.dicas[2][0], 1);
   assert.equal((await chamar({ acao: "dica", sessao, chave, parte: 2, rodada: 9 })).status, 400); passo("rodada sem marcadores vale 1 dica; rodada inexistente recusada");
 
+  // Pontuar (6.11.97): quem acertou ganha total − dicas dadas + 1 e a resposta é revelada
+  assert.equal((await chamar({ acao: "pontuar", sessao, parte: 2, rodada: 2, nome: "Ana" })).status, 403); passo("pontuar sem a chave do dirigente recusado");
+  assert.equal((await chamar({ acao: "pontuar", sessao, chave, parte: 2, rodada: 1, nome: "Ana" })).status, 400); passo("pontuar antes da primeira dica recusado");
+  assert.equal((await chamar({ acao: "pontuar", sessao, chave, parte: 2, rodada: 2, nome: "" })).status, 400); passo("pontuar sem escolher quem acertou recusado");
+  const pt = await chamar({ acao: "pontuar", sessao, chave, parte: 2, rodada: 2, nome: "Ana" });
+  assert.deepEqual(pt.dados.estado.acertos[2][2], { nome: "Ana", pts: 1 });
+  assert.equal(pt.dados.estado.reveladas[2][2], "Verdadeiro"); passo("3 dicas dadas: Ana ganha 1 ponto e a resposta é revelada");
+
   const blo = await chamar({ acao: "bloquear", sessao, chave, parte: 2 });
   assert.deepEqual(blo.dados.estado.liberadas, []); assert.equal(blo.dados.estado.atual, null); passo("voltar a bloquear");
 

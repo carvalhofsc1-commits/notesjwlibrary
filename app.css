@@ -17253,6 +17253,16 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 #participarSessao li.fam-sessao-questao .fam-sessao-resposta { display: block; }
 #participarSessao li.fam-sessao-questao .fam-sessao-revelar { display: block; width: 100%; margin: 6px 0 0; }
 
+/* 6.11.97: placar do jogo (nomes e pontos) no topo e a escolha de quem acertou, na largura toda. */
+#participarSessao .fam-sessao-placar { margin: 0 0 10px; padding: 10px 12px; border: 1px solid color-mix(in srgb, #7c3aed 55%, var(--line)); border-radius: 12px; background: color-mix(in srgb, #7c3aed 9%, var(--card)); color: var(--text); }
+#participarSessao .fam-sessao-placar > p { margin: 0 0 6px; }
+#participarSessao .fam-sessao-placar-tabela { width: 100%; border-collapse: collapse; }
+#participarSessao .fam-sessao-placar-tabela th, #participarSessao .fam-sessao-placar-tabela td { padding: 5px 8px; border-bottom: 1px solid var(--line); text-align: left; overflow-wrap: anywhere; }
+#participarSessao .fam-sessao-placar-tabela th:last-child, #participarSessao .fam-sessao-placar-tabela td:last-child { text-align: right; width: 5.5em; font-variant-numeric: tabular-nums; font-weight: 700; }
+#participarSessao .fam-sessao-placar-tabela tr:last-child td { border-bottom: 0; }
+#participarSessao .fam-sessao-acerto { display: grid; gap: 6px; margin-top: 6px; }
+#participarSessao .fam-sessao-acerto > select, #participarSessao .fam-sessao-acerto > button { width: 100%; min-width: 0; margin: 0; }
+
 /* 6.11.96: jogo de dicas ao vivo — uma questão e uma dica por vez; os pontos caem a cada dica dada. */
 #participarSessao .fam-sessao-dica { margin: 0 0 6px; padding: 6px 10px; border-left: 3px solid color-mix(in srgb, #f59e0b 80%, var(--line)); border-radius: 6px; background: color-mix(in srgb, #f59e0b 10%, var(--card)); font-weight: 600; }
 #participarSessao .fam-sessao-aguarda { margin: 0 0 6px; color: var(--muted); font-style: italic; }
