@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.52'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.53'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -34063,20 +34063,12 @@ function saveTemplatesToStorage() {
         const guardado = historicoSalvar({ tipo: 'nota', titulo, partes: [{ paragrafos: '', texto: textoDoDiscurso() }], ligar: false, anotId, anotModo: modo, anotEvento, anotOrdem: comPrograma() ? parteAtual : null, gravacoes: gravacoesAtuais().slice() });
         if (guardado) piscarBotao(document.getElementById('anotacoesSalvarBtn'), jaExistia ? '✓ Atualizado' : '✓ Salvo');
       });
-      document.getElementById('anotacoesDocxBtn').addEventListener('click', async () => {
+      // Word: primeiro a prévia do documento (a mesma dos outros textos); de lá se exporta ou se compartilha o .docx.
+      document.getElementById('anotacoesDocxBtn').addEventListener('click', event => {
         const bruto = textoDoDiscurso();
-        if (!temConteudoAtual()) return dizer('Não há texto para exportar.', true);
-        dizer('Gerando Word…');
-        try {
-          const titulo = tituloDaAnotacao(80);
-          const blob = await docxGerar(bruto, titulo, null, 1);
-          const limpo = removeUnicodeFormatting(titulo).replace(DOCX_EMOJI, ' ').replace(/[\\/:*?"<>|“”‘’]/g, '').replace(/\s+/g, ' ').trim().slice(0, 80);
-          const nome = (limpo || 'Anotacoes') + '.docx';
-          const msg = await docxEntregar(blob, nome, false);
-          dizer(msg || 'Pronto.');
-        } catch (e) {
-          dizer('Não consegui gerar o Word. Confira a conexão e tente de novo.', true);
-        }
+        if (!temConteudoAtual() || !bruto.trim()) return dizer('Não há texto para exportar.', true);
+        const limpo = removeUnicodeFormatting(tituloDaAnotacao(80)).replace(DOCX_EMOJI, ' ').replace(/[\\/:*?"<>|“”‘’]/g, '').replace(/\s+/g, ' ').trim().slice(0, 80);
+        docxPreviaAbrir(event.currentTarget, bruto, limpo || 'Anotacoes');
       });
       document.getElementById('anotacoesLimparBtn').addEventListener('click', async () => {
         if (comPrograma()) {

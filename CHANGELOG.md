@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.53
+
+- **Anotações da reunião: Word começa pela prévia:** o botão 📄 Word da tela de anotações agora abre primeiro a prévia do documento (a mesma dos outros textos, com A− e A+), e de lá se exporta ou se compartilha o .docx. Antes, o arquivo era gerado direto.
+
 ## 6.12.52
 
 - **Toda matéria citada tem link:** nas Publicações de cada atividade, a matéria sempre vira um link: o do próprio artigo no wol.jw.org ou, quando a programação só guardou o nome (como "Imite a Sua Fé, capítulo 12"), um link que abre a pesquisa dela no wol. Nas programações novas, o servidor procura o endereço da publicação já ao gerar.
