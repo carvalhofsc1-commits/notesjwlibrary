@@ -17408,6 +17408,11 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 #participarSessao .fam-bv-nome { font-weight: 600; overflow-wrap: anywhere; }
 /* 6.12.38: ao entrar, só as boas-vindas e o programa, com o botão Entrar (fora da tela grande, onde o dirigente avança). */
 body:not(.fam-tela-grande) #participarSessao.fam-so-boasvindas > :not(.fam-boasvindas) { display: none !important; }
+/* 6.12.46: as boas-vindas só aparecem ao entrar (celular) ou, na tela grande, antes de a primeira atividade começar; nunca na página das atividades. */
+#participarSessao .fam-boasvindas { display: none; }
+body:not(.fam-tela-grande) #participarSessao.fam-so-boasvindas .fam-boasvindas { display: block; }
+body.fam-tela-grande #participarSessao:not(.fam-iniciada) .fam-boasvindas { display: flex; }
+body.fam-tela-grande #participarSessao.fam-iniciada .fam-boasvindas { display: none; }
 #participarSessao .fam-bv-entrar { display: block; width: 100%; margin: 14px 0 0; }
 body.fam-tela-grande #participarSessao .fam-bv-entrar { display: none; }
 body.fam-tela-grande #participarSessao .fam-boasvindas { min-height: calc(100vh - 130px); display: flex; flex-direction: column; justify-content: center; padding: 28px 24px; }

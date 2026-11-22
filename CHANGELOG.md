@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.46
+
+- **Boas-vindas só ao entrar:** ao tocar em Iniciar a adoração (ou entrar), a tela de boas-vindas abre sempre, mesmo com a adoração já em andamento. Depois de tocar em Entrar, ela não aparece mais na página das atividades (antes ficava no topo até a primeira atividade começar). Na tela grande continua aparecendo antes de a primeira atividade começar. Quem espera nas boas-vindas segue sozinho para as atividades quando o dirigente começa.
+
 ## 6.12.45
 
 - **Questão em andamento em azul claro:** no jogo, a questão que está sendo considerada (já com dica dada e ainda sem resposta) fica com fundo azul claro; ao ser respondida, volta ao fundo branco.
