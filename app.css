@@ -17321,11 +17321,12 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 .fam-sessao-secao[data-cor="5"], .fam-sessao-secao.bloqueada[data-cor="5"] { background: color-mix(in srgb, #ec4899 11%, var(--card)); }
 
 /* 6.11.83: a Oração inicial é só uma linha de texto (sem card, sem descrição, sem botões). */
-.fam-sessao-secao.fam-sessao-oracao, .fam-sessao-secao.fam-sessao-oracao.bloqueada { border: 0; box-shadow: none; background: transparent; overflow: visible; }
+/* 6.12.19: a Oração inicial e a Oração final são um card simples e bem fino (moldura, número e o nome): sem liberar, sem abrir, sem tempo. */
+.fam-sessao-secao.fam-sessao-oracao, .fam-sessao-secao.fam-sessao-oracao.bloqueada, .fam-sessao-secao.fam-sessao-oracao.liberada { border: 1px solid color-mix(in srgb, var(--accent) 50%, var(--line)); box-shadow: none; background: var(--card); overflow: hidden; }
 .fam-sessao-secao.fam-sessao-oracao > :not(.fam-sessao-secao-topo) { display: none !important; }
-.fam-sessao-secao.fam-sessao-oracao .fam-sessao-secao-topo { display: block; min-height: 0; padding: 4px 2px; pointer-events: none; cursor: default; }
+.fam-sessao-secao.fam-sessao-oracao .fam-sessao-secao-topo { display: block; min-height: 0; padding: 6px 10px; pointer-events: none; cursor: default; }
 .fam-sessao-secao.fam-sessao-oracao .fam-sessao-secao-topo > :not(.fam-sessao-secao-nome) { display: none; }
-.fam-sessao-secao.fam-sessao-oracao .fam-sessao-secao-nome { font-weight: 700; }
+.fam-sessao-secao.fam-sessao-oracao .fam-sessao-secao-nome, .fam-sessao-secao.fam-sessao-oracao.bloqueada .fam-sessao-secao-nome { font-weight: 700; color: var(--text); text-align: center; }
 
 /* 6.11.82: todas as seções (partes) com a mesma moldura forte da seção atual. */
 .fam-sessao-secao, .fam-sessao-secao.bloqueada { border-color: var(--accent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent); }

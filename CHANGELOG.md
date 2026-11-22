@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.19
+
+- **Jogo sem a instrução repetida:** a linha "🎯 Jogar o jogo …" (e a descrição) saiu das atividades de jogo, porque as regras já dizem tudo.
+- **Regras logo depois do título do jogo:** na atividade de jogo, a ordem agora é título → 📜 Regras → 🏆 Placar → andamento das perguntas.
+- **Oração inicial e Oração final como cards simples:** as duas são atividades numeradas (a numeração conta todas), mas aparecem só como um card bem fino, com moldura, o número e o nome ("1. 🙏 Oração inicial", "4. 🙏 Oração final"). Não abrem, não têm botão de liberar nem tempo, e o dirigente passa por elas na ordem das atividades.
+
 ## 6.12.18
 
 - **Um só nome para o jogo:** a linha do objetivo ("🎯 Jogar o jogo …") dizia o nome que a IA pôs no campo do jogo ("Parceiros Fiéis no Serviço a Deus"), diferente do nome do título da atividade ("Quem sou eu?"). Agora ela usa o mesmo nome do título: "Jogar o jogo Quem sou eu?". Fica assim: nome do jogo ("Quem sou eu?") e título ("Ministros zelosos da Bíblia"), sem um terceiro nome.

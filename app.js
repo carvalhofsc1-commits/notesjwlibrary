@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.18'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.19'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26493,8 +26493,7 @@ function saveTemplatesToStorage() {
       const textos = tem(parte.textos), videos = tem(parte.videos);
       if (textos) acoes.push('ler juntos os textos');
       if (videos) acoes.push('assistir aos vídeos');
-      // 6.12.18: o nome do jogo é um só e o mesmo do título da atividade ("Quem sou eu?"), não o jogo.nome que a IA às vezes inventa diferente.
-      if (parte.jogo) acoes.push('jogar o jogo ' + participarJogoTitulo(parte).nome);
+      // 6.12.19: no jogo não se repete a instrução "jogar o jogo …": as regras do jogo já dizem tudo.
       if (textos || videos) acoes.push('comentar as lições');
       if (tem(parte.canticos)) acoes.push('cantar juntos');
       if (/ora[çc][ãa]o\s+final/i.test(String(parte.nome || ''))) acoes.push('terminar com uma oração');
@@ -26519,8 +26518,9 @@ function saveTemplatesToStorage() {
         pt.appendChild(min);
       }
       bloco.appendChild(pt); // sem o nome do responsável: nunca nomes nas atividades (6.11.95)
-      const objetivo = aoVivo ? familiaObjetivoDaParte(parte) : '';
-      if (objetivo) {
+      const objetivo = aoVivo && !parte.jogo ? familiaObjetivoDaParte(parte) : '';
+      if (aoVivo && parte.jogo) { /* atividade de jogo ao vivo: sem objetivo nem descrição; valem as regras do jogo */
+      } else if (objetivo) {
         // Ao vivo: o objetivo da atividade, resumido, em negrito e de outra cor (no lugar da descrição longa).
         const o = document.createElement('p');
         o.className = 'fam-parte-objetivo';
@@ -27786,7 +27786,8 @@ function saveTemplatesToStorage() {
       if ((p.partes || []).length > 1) (p.partes || []).forEach((x, i) => {
         const nomeParte = String((x && x.nome) || '');
         const soAbertura = !(x && ((x.textos || []).length || (x.videos || []).length || x.jogo));
-        if (/^\s*ora[çc][ãa]o inicial/i.test(nomeParte) || (soAbertura && /boas[-\s]?vindas/i.test(nomeParte))) participar.oracao.add(i);
+        // 6.12.19: Oração inicial e Oração final são atividades numeradas, mas só um card simples (sem liberar, sem abrir): entram nesta lista.
+        if (/^\s*ora[çc][ãa]o (inicial|final)/i.test(nomeParte) && (soAbertura || /inicial/i.test(nomeParte)) || (soAbertura && /boas[-\s]?vindas/i.test(nomeParte))) participar.oracao.add(i);
       });
       participar.secoes = (p.partes || []).map((parte, i) => {
         const sec = document.createElement('section');
@@ -27818,7 +27819,7 @@ function saveTemplatesToStorage() {
             l2.textContent = jt.titulo;
             nome.appendChild(l2);
           }
-        } else nome.textContent = participar.oracao.has(i) ? (/ora[çc][ãa]o inicial/i.test(String(parte.nome || '')) ? '🙏 Oração inicial' : '👋 Boas-vindas') : participarNum(i) + '. ' + (parte.nome || 'Parte');
+        } else nome.textContent = participar.oracao.has(i) ? participarNum(i) + '. ' + (/ora[çc][ãa]o inicial/i.test(String(parte.nome || '')) ? '🙏 Oração inicial' : /ora[çc][ãa]o final/i.test(String(parte.nome || '')) ? '🙏 Oração final' : '👋 Boas-vindas') : participarNum(i) + '. ' + (parte.nome || 'Parte');
         const lado = document.createElement('span');
         lado.className = 'fam-sessao-secao-lado';
         const agora = document.createElement('span');
@@ -28107,11 +28108,9 @@ function saveTemplatesToStorage() {
       return painel;
     }
 
-    // Número de uma parte na tela: a Oração inicial (só uma linha de texto) não entra na contagem.
+    // Número de uma parte na tela: todas contam, também a Oração inicial e a Oração final (cards simples).
     function participarNum(i) {
-      let n = i + 1;
-      (participar.oracao || new Set()).forEach(o => { if (o < i) n--; });
-      return n;
+      return i + 1;
     }
     // A próxima parte: a seguinte à atual, pulando a Oração inicial (liberar uma parte já liberada só a torna a atual).
     function participarProximaParte() {
@@ -28254,7 +28253,7 @@ function saveTemplatesToStorage() {
       progBarra.appendChild(progPreench);
       progresso.append(progTexto, progBarra);
       progresso.hidden = !(j.rodadas || []).length;
-      caixa.append(placar, progresso, enunciado);
+      caixa.append(enunciado, placar, progresso); // 6.12.19: as regras logo depois do título do jogo, antes do placar
       if (/funplayb/i.test((j.tipo || '') + ' ' + (j.nome || ''))) {
         const a = document.createElement('a');
         a.className = 'secondary fam-fino fam-link-botao';
