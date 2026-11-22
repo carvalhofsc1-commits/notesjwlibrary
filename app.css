@@ -17422,7 +17422,10 @@ label.fam-rotulo[hidden] { display: none; }
 #participarSessao .fam-sessao-secao:not(.fam-sessao-oracao),
 #participarSessao .fam-sessao-secao:not(.fam-sessao-oracao).bloqueada,
 #participarSessao .fam-sessao-secao:not(.fam-sessao-oracao)[data-cor],
-#participarSessao .fam-sessao-secao:not(.fam-sessao-oracao).bloqueada[data-cor] { background: #eaf3ff; }
+#participarSessao .fam-sessao-secao:not(.fam-sessao-oracao).bloqueada[data-cor] { background: var(--card); } /* 6.12.43: corpo das atividades branco */
+/* 6.12.43: o topo (o card recolhido) num azul mais claro, igual aberto ou fechado */
+#participarSessao .fam-sessao-secao:not(.fam-sessao-oracao) > .fam-sessao-secao-topo,
+#participarSessao .fam-sessao-secao:not(.fam-sessao-oracao).aberta > .fam-sessao-secao-topo { background: color-mix(in srgb, #3b82f6 9%, var(--card)); }
 /* 6.12.16: parte de jogo: nome do jogo (com emojis) em destaque, o título do jogo embaixo, fundo um pouco mais forte e linha divisória do resto. */
 /* 6.12.24: o mesmo topo com linha divisória em todas as atividades (menos as orações), não só nos jogos. */
 .fam-sessao-secao:not(.fam-sessao-oracao) > .fam-sessao-secao-topo { background: color-mix(in srgb, var(--accent) 14%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 12px 12px 0 0; }

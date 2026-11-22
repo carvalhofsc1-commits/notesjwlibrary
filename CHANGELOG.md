@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.43
+
+- **Atividades brancas:** o fundo dos cards das atividades voltou a ser branco; só o topo (o card recolhido, com número, nome e tempo) tem um azul bem mais claro, igual com a atividade aberta ou fechada.
+
 ## 6.12.42
 
 - **Controles do dirigente com espaço entre os campos:** a lista de quem entrou, os botões, o código do dirigente e o card "Só para o dirigente" estavam colados; agora há 8 px entre eles.
