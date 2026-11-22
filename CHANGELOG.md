@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.09
+
+- **Sorteio todo dentro do card:** o "Vez de: nome" agora fica dentro do card de sorteio, na parte de baixo. Com o card recolhido, o título mostra só "🎲 Sorteio de jogadores"; depois de um sorteio, o título vira "🎲 Vez de: nome". Quem não dirige só vê o card quando há alguém sorteado (o sorteio é opcional).
+
 ## 6.12.08
 
 - **Placar estilizado (todos os jogos):** o título ficou no centro, com o troféu 🏆 grande e estrelinhas ✨ ao lado, e o nome PLACAR embaixo. Cada participante da tabela ganha um bichinho (águia, cavalo, pássaro, coruja…) e o nome em negrito de uma cor própria. Os bichos e as cores saem do código da adoração mais o nome: são os mesmos em todos os aparelhos, não mudam a cada atualização e não se repetem enquanto houver bichos livres.
