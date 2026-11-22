@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.00
+
+- **Adorações compartilhadas:** mais espaço entre o texto explicativo do card e a adoração listada logo abaixo.
+
 ## 6.11.99
 
 - **Card "Adorações compartilhadas":** o card "Adorações que eu dirijo" mudou de nome, ganhou fundo azul claro e mais espaço em relação ao texto explicativo acima.
