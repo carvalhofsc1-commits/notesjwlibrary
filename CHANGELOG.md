@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.72
+
+- **Adoração em Família:** os botões de cada opção (Copiar, Word e Compartilhar) ficam numa linha só, com rótulos curtos (Copiar esta opção virou Copiar; o texto completo aparece ao segurar). Ajustar com a IA e Salvar, quando aparecem, ocupam a linha seguinte inteira. Medido a 375 px: 3 × 103 px + espaços = largura da linha, sem texto cortado.
+
 ## 6.11.71
 
 - **↩️ Restaurar padrões originais** (Configurar formatação com IA) agora volta ao **padrão do administrador** (o publicado com Salvar para todos, buscado na hora); se ele nunca publicou, volta ao padrão de fábrica do app.

@@ -7933,7 +7933,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.71'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.72'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26661,13 +26661,14 @@ function saveTemplatesToStorage() {
         acoes.className = 'fam-opcao-acoes';
         const copiar = document.createElement('button');
         copiar.type = 'button';
-        copiar.className = 'secondary fam-fino';
-        copiar.textContent = '📋 Copiar esta opção';
+        copiar.className = 'secondary fam-fino fam-acao-curta';
+        copiar.textContent = '📋 Copiar';
+        copiar.title = 'Copiar esta opção';
         copiar.addEventListener('click', async () => {
           try {
             await navigator.clipboard.writeText(familiaTextoDaOpcao(op));
             copiar.textContent = '✅ Copiado';
-            setTimeout(() => { copiar.textContent = '📋 Copiar esta opção'; }, 1600);
+            setTimeout(() => { copiar.textContent = '📋 Copiar'; }, 1600);
           } catch (e) {
             familiaStatus('Não consegui copiar. Selecione o texto e copie manualmente.', 'erro');
           }
@@ -26675,7 +26676,7 @@ function saveTemplatesToStorage() {
         acoes.appendChild(copiar);
         const word = document.createElement('button');
         word.type = 'button';
-        word.className = 'secondary fam-fino';
+        word.className = 'secondary fam-fino fam-acao-curta';
         word.textContent = '📝 Word';
         word.title = 'Ver a prévia no formato do Word e exportar o arquivo';
         word.addEventListener('click', () => familiaAbrirWord(op, word));
@@ -27163,7 +27164,7 @@ function saveTemplatesToStorage() {
     function familiaBotaoCompartilhar(op, onde, chave) {
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'secondary fam-fino fam-compartilhar-btn';
+      b.className = 'secondary fam-fino fam-compartilhar-btn fam-acao-curta';
       b.textContent = '🔗 Compartilhar';
       b.title = 'Compartilhar por código e acompanhar ao vivo com a família';
       b.setAttribute('aria-expanded', 'false');
