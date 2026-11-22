@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.12
+
+- **Regra dos bichinhos dos jogadores:** nunca macaco (de nenhum tipo) nem veado ou animais parecidos. O 🐒 saiu da lista do placar e do sorteio; a regra está registrada no código, no CLAUDE.md e na memória do projeto.
+
 ## 6.12.11
 
 - **Sorteado com a cara do placar:** o nome sorteado ("Vez de: …", no título do card e dentro dele) aparece com o mesmo bichinho e a mesma cor, em negrito, que a pessoa tem no placar.
