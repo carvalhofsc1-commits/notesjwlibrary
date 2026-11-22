@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.95
+
+- **Nunca nomes nas atividades (Adoração em Família):** o nome do responsável saiu dos títulos das atividades na tela ao vivo, nas sugestões, na cópia e no Word; o servidor passa a gravar o campo responsável sempre vazio e o prompt manda a IA nunca citar nomes de pessoas nos títulos, descrições, jogos, perguntas e dicas (só as tarefas do dirigente podem citar quem faz o quê). Se o prompt da Adoração em Família foi editado por você em Prompts da IA, a nova regra precisa ser acrescentada lá.
+- **Jogo na adoração ao vivo:** o enunciado (título, como jogar e material) fica num card próprio; os botões Sortear e Revelar resposta ocupam a largura toda; cada questão fica num card exclusivo, com o rótulo Questão N.
+
 ## 6.11.94
 
 - **Tela grande:** novo botão **⏮️ Retornar** na barra de baixo (à esquerda de Próxima), que volta à atividade anterior (pulando a Oração inicial). Fica desativado na primeira atividade. Os três botões dividem a largura da barra.

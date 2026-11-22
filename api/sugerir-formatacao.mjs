@@ -3137,7 +3137,7 @@ async function responderAdoracaoFamilia(res, body, P) {
         partes.push({
           nome,
           minutos: Math.min(120, Math.max(1, Math.round(Number(p.minutos) || 0))),
-          responsavel: ehOracaoInicial ? "" : linha(p.responsavel, 40),
+          responsavel: "", // nunca nomes nas atividades (6.11.95)
           descricao: limparTextoGerado(p.descricao, 1500),
           textos: await textosDe(p.textos),
           videos: perfil.incluirVideo ? semRepetir((p.videos || []).map(videoDe), (v) => v.link).slice(0, 3) : [],

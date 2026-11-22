@@ -7933,7 +7933,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.94'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.95'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26313,7 +26313,7 @@ function saveTemplatesToStorage() {
       if (op.resumo) linhas.push('', op.resumo);
       if (op.objetivo) linhas.push('', 'Objetivo: ' + op.objetivo);
       (op.partes || []).forEach((p, i) => {
-        linhas.push('', (i + 1) + '. ' + (p.nome || 'Parte') + (p.minutos ? ' (' + p.minutos + ' min)' : '') + (p.responsavel ? ' — ' + p.responsavel : ''));
+        linhas.push('', (i + 1) + '. ' + (p.nome || 'Parte') + (p.minutos ? ' (' + p.minutos + ' min)' : ''));
         if (p.descricao) linhas.push(p.descricao);
         (p.textos || []).forEach(t => {
           linhas.push('📖 ' + (t.referencia || ''));
@@ -26360,7 +26360,7 @@ function saveTemplatesToStorage() {
       if (op.resumo) partes.push(p(espaco(0, 120), runs(op.resumo, '', 22)));
       if (op.objetivo) partes.push(p(espaco(0, 160), runs('Objetivo: ', 'b', 22) + runs(op.objetivo, '', 22)));
       (op.partes || []).forEach((parte, i) => {
-        const cab = (i + 1) + '. ' + (parte.nome || 'Parte') + (parte.minutos ? ' (' + parte.minutos + ' min)' : '') + (parte.responsavel ? ' — ' + parte.responsavel : '');
+        const cab = (i + 1) + '. ' + (parte.nome || 'Parte') + (parte.minutos ? ' (' + parte.minutos + ' min)' : '');
         partes.push(p('<w:keepNext/>' + espaco(240, 80), runs(cab, 'b', 26)));
         if (parte.descricao) partes.push(p(espaco(0, 100), runs(parte.descricao, '', 22)));
         (parte.textos || []).forEach(t => partes.push(item(runs(t.referencia || '', 'b', 22) + (t.texto ? runs(' — ' + t.texto, 'i', 22) : ''))));
@@ -26418,7 +26418,7 @@ function saveTemplatesToStorage() {
       if (op.resumo) html.push('<p class="pq-doc-intro">' + e(op.resumo) + '</p>');
       if (op.objetivo) html.push('<p class="pq-doc-p"><b>Objetivo:</b> ' + e(op.objetivo) + '</p>');
       (op.partes || []).forEach((parte, i) => {
-        html.push('<p class="pq-doc-secao">' + e((i + 1) + '. ' + (parte.nome || 'Parte') + (parte.minutos ? ' (' + parte.minutos + ' min)' : '') + (parte.responsavel ? ' — ' + parte.responsavel : '')) + '</p>');
+        html.push('<p class="pq-doc-secao">' + e((i + 1) + '. ' + (parte.nome || 'Parte') + (parte.minutos ? ' (' + parte.minutos + ' min)' : '')) + '</p>');
         if (parte.descricao) html.push('<p class="pq-doc-p">' + e(parte.descricao) + '</p>');
         const li = t => html.push('<p class="pq-doc-fonte">• ' + t + '</p>');
         (parte.textos || []).forEach(t => li('<b>' + e(t.referencia || '') + '</b>' + (t.texto ? ' — <i>' + e(t.texto) + '</i>' : '')));
@@ -26515,13 +26515,7 @@ function saveTemplatesToStorage() {
         min.textContent = parte.minutos + ' min';
         pt.appendChild(min);
       }
-      if (parte.responsavel) {
-        const resp = document.createElement('p');
-        resp.className = 'fam-parte-resp';
-        resp.textContent = parte.responsavel;
-        pt.appendChild(resp);
-      }
-      bloco.appendChild(pt);
+      bloco.appendChild(pt); // sem o nome do responsável: nunca nomes nas atividades (6.11.95)
       const objetivo = aoVivo ? familiaObjetivoDaParte(parte) : '';
       if (objetivo) {
         // Ao vivo: o objetivo da atividade, resumido, em negrito e de outra cor (no lugar da descrição longa).
@@ -27709,7 +27703,7 @@ function saveTemplatesToStorage() {
         icone.textContent = '🔒';
         const nome = document.createElement('span');
         nome.className = 'fam-sessao-secao-nome';
-        nome.textContent = participar.oracao.has(i) ? '🙏 Oração inicial' : participarNum(i) + '. ' + (parte.nome || 'Parte') + (parte.responsavel ? ' — ' + parte.responsavel : '');
+        nome.textContent = participar.oracao.has(i) ? '🙏 Oração inicial' : participarNum(i) + '. ' + (parte.nome || 'Parte');
         const lado = document.createElement('span');
         lado.className = 'fam-sessao-secao-lado';
         const agora = document.createElement('span');
@@ -28072,16 +28066,20 @@ function saveTemplatesToStorage() {
       const caixa = document.createElement('div');
       caixa.className = 'fam-jogo fam-sessao-jogo';
       caixa.dataset.parte = String(parteIdx);
+      // O enunciado (título, como jogar e material) fica num card próprio.
+      const enunciado = document.createElement('div');
+      enunciado.className = 'fam-jogo-enunciado';
       const t = document.createElement('p');
       t.className = 'fam-secao-titulo';
       t.textContent = '🎲 Jogo: ' + (j.nome || 'Jogo') + familiaTipoJogo(j);
-      caixa.appendChild(t);
+      enunciado.appendChild(t);
       [j.comoJogar, j.material ? '✏️ Material: ' + j.material : ''].filter(Boolean).forEach(txt => {
         const p = document.createElement('p');
         p.className = 'fam-parte-desc';
         p.textContent = txt;
-        caixa.appendChild(p);
+        enunciado.appendChild(p);
       });
+      caixa.appendChild(enunciado);
       if (/funplayb/i.test((j.tipo || '') + ' ' + (j.nome || ''))) {
         const a = document.createElement('a');
         a.className = 'secondary fam-fino fam-link-botao';
@@ -28124,13 +28122,17 @@ function saveTemplatesToStorage() {
         ol.className = 'fam-lista fam-sessao-rodadas';
         rodadas.forEach((r, k) => {
           const li = document.createElement('li');
+          li.className = 'fam-sessao-questao'; // cada questão do jogo num card exclusivo
+          const num = document.createElement('p');
+          num.className = 'fam-sessao-qnum';
+          num.textContent = 'Questão ' + (k + 1);
           const perg = document.createElement('p');
           perg.className = 'fam-sessao-pergunta';
           perg.textContent = r.pergunta + (r.referencia ? ' (' + r.referencia + ')' : '');
           const resp = document.createElement('p');
           resp.className = 'fam-sessao-resposta escondida';
           resp.textContent = '🙈 Resposta escondida';
-          li.append(perg, resp);
+          li.append(num, perg, resp);
           let btn = null;
           if (participar.dirigente) {
             btn = document.createElement('button');
@@ -28361,7 +28363,7 @@ function saveTemplatesToStorage() {
           num.className = 'fam-mescla-num';
           num.hidden = true;
           const texto = document.createElement('span');
-          texto.textContent = (parte.nome || 'Parte') + (parte.minutos ? ' · ' + parte.minutos + ' min' : '') + (parte.responsavel ? ' · ' + parte.responsavel : '');
+          texto.textContent = (parte.nome || 'Parte') + (parte.minutos ? ' · ' + parte.minutos + ' min' : '');
           rotulo.append(cx, num, texto);
           cx.addEventListener('change', () => {
             if (cx.checked) marcadas.push(chave);
