@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.24
+
+- **Linha divisória em todas as atividades:** o topo de cada atividade (número, emoji, nome e tempo) ganhou, como no jogo, um fundo um pouco mais forte e uma linha dividindo o tema do restante do card (mais grossa e mais marcada com o card aberto). As orações, que são só um card fino, ficam como estavam.
+
 ## 6.12.23
 
 - **Borda das orações:** a Oração inicial e a Oração final têm agora a mesma borda azul mais grossa das outras atividades.
