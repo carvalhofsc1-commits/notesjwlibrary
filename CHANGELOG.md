@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.34
+
+- **Regras centralizado e 🔄 mais alto:** o nome do card "📜 Regras" ficou centralizado, e o ícone de reiniciar a questão subiu 4 px.
+
 ## 6.12.33
 
 - **Sem o card geral do jogo:** saiu o card com a linha lateral laranja em volta de tudo (regras, placar, sorteio e questões); os cards de dentro continuam.
