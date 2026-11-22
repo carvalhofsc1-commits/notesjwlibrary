@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.91
+
+- **Adoração ao vivo — objetivo da atividade:** no topo de cada parte aparece sempre o objetivo resumido, em **negrito e cor roxa**, no lugar da descrição longa. Ele é montado pelo que a parte tem: "Ler juntos os textos e comentar as lições", "Assistir aos vídeos e comentar as lições", "Jogar o jogo …", "Cantar juntos e terminar com uma oração" (combinando quando há mais de uma coisa). Se a parte não tem textos, vídeos, jogo nem cânticos, continua a descrição de antes. Só na tela ao vivo.
+
 ## 6.11.90
 
 - **Adoração ao vivo:** a moldura da atividade liberada fica **verde**; a das ainda bloqueadas continua azul.

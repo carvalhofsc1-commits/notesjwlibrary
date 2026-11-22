@@ -17239,6 +17239,9 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 /* 6.11.56: áudio dos versículos e vídeo com transcrição na tela da adoração (dirigente e participantes). */
 .fam-audio-linha { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; min-width: 0; }
 .fam-audio-linha > :is(button, a) { flex: 1 1 140px; min-width: 0; justify-content: center; text-align: center; }
+/* 6.11.91: o objetivo da atividade — negrito e outra cor. */
+.fam-parte-objetivo { margin: 0 0 10px; font-weight: 700; color: color-mix(in srgb, #7c3aed 78%, var(--text)); }
+
 /* 6.11.90: a moldura da atividade liberada fica verde (a bloqueada continua azul). */
 .fam-sessao-secao.liberada, .fam-sessao-secao.liberada.atual { border-color: #22c55e; box-shadow: 0 0 0 1px color-mix(in srgb, #22c55e 45%, transparent); }
 

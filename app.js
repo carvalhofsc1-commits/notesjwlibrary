@@ -7933,7 +7933,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.90'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.91'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26483,6 +26483,23 @@ function saveTemplatesToStorage() {
 
     // Uma parte da programação: nome, tempo, responsável, descrição, textos, vídeos, cânticos, publicações, perguntas, jogo e transição.
     // jogoMontar (opcional): monta a caixa do jogo de outro jeito (a Adoração compartilhada esconde as respostas até o dirigente revelar).
+    // O objetivo resumido da atividade, montado pelo que ela tem (textos, vídeos, jogo, cânticos): "Ler juntos os textos e comentar as lições",
+    // "Assistir aos vídeos e comentar as lições"… Vazio se a parte não tem nada disso (aí vale a descrição).
+    function familiaObjetivoDaParte(parte) {
+      const tem = lista => Array.isArray(lista) && lista.length > 0;
+      const acoes = [];
+      const textos = tem(parte.textos), videos = tem(parte.videos);
+      if (textos) acoes.push('ler juntos os textos');
+      if (videos) acoes.push('assistir aos vídeos');
+      if (parte.jogo) acoes.push('jogar ' + (parte.jogo.nome ? 'o jogo ' + parte.jogo.nome : 'juntos'));
+      if (textos || videos) acoes.push('comentar as lições');
+      if (tem(parte.canticos)) acoes.push('cantar juntos');
+      if (/ora[çc][ãa]o\s+final/i.test(String(parte.nome || ''))) acoes.push('terminar com uma oração');
+      if (!acoes.length) return '';
+      const frase = acoes.length === 1 ? acoes[0] : acoes.slice(0, -1).join(', ') + ' e ' + acoes[acoes.length - 1];
+      return frase.charAt(0).toUpperCase() + frase.slice(1);
+    }
+
     function familiaParteMontar(parte, jogoMontar, aoVivo) {
       const bloco = document.createElement('div');
       bloco.className = 'fam-parte';
@@ -26505,7 +26522,14 @@ function saveTemplatesToStorage() {
         pt.appendChild(resp);
       }
       bloco.appendChild(pt);
-      if (parte.descricao) {
+      const objetivo = aoVivo ? familiaObjetivoDaParte(parte) : '';
+      if (objetivo) {
+        // Ao vivo: o objetivo da atividade, resumido, em negrito e de outra cor (no lugar da descrição longa).
+        const o = document.createElement('p');
+        o.className = 'fam-parte-objetivo';
+        o.textContent = '🎯 ' + objetivo;
+        bloco.appendChild(o);
+      } else if (parte.descricao) {
         const d = document.createElement('p');
         d.className = 'fam-parte-desc';
         d.textContent = parte.descricao;
