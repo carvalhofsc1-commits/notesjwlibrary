@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.21
+
+- **Número antes do ícone:** no topo de cada atividade a ordem agora é número, ícone (🔒 ou 📖), título e tempo. O número tem uma coluna fixa, então todos ficam alinhados uns com os outros. Nas orações (card simples) o número também fica à esquerda, antes do título.
+
 ## 6.12.20
 
 - **Número da atividade à esquerda:** em todas as atividades (inclusive Oração inicial e Oração final e as de jogo), o número fica sempre alinhado à esquerda, numa coluna própria; o título continua centralizado ao lado.
