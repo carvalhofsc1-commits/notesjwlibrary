@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.35
+
+- **Uma só cor de fundo nas atividades:** saíram as cores diferentes (azul, roxo, laranja, vermelho…) de cada atividade; todas, liberadas ou bloqueadas, ficam com o mesmo azul claro.
+
 ## 6.12.34
 
 - **Regras centralizado e 🔄 mais alto:** o nome do card "📜 Regras" ficou centralizado, e o ícone de reiniciar a questão subiu 4 px.
