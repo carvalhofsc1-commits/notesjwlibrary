@@ -17279,6 +17279,8 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 #participarSessao li.fam-sessao-questao { margin: 0; padding: 10px 12px; border: 1px solid var(--accent); border-radius: 12px; background: var(--card); color: var(--text); min-width: 0; overflow-wrap: anywhere; }
 /* 6.12.29: 🔄 (reiniciar a questão, só do dirigente) no canto de cima da questão. */
 #participarSessao li.fam-sessao-questao { position: relative; }
+/* 6.12.45: a questão que está sendo considerada (dicas dadas, ainda sem resposta) com fundo azul claro; respondida, volta ao branco. */
+#participarSessao li.fam-sessao-questao.fam-sessao-questao-andamento { background: #e3efff; }
 /* 6.12.33: sem o card geral com a linha lateral laranja em volta do jogo; a questão sorteada fica destacada; duas linhas no card de sorteio ficam separadas. */
 #participarSessao .fam-jogo.fam-sessao-jogo { border-left: 0; background: transparent; padding: 0; margin-top: 0; border-radius: 0; }
 #participarSessao li.fam-sessao-questao.fam-sessao-questao-sorteada { border-width: 3px; border-color: #7c3aed; box-shadow: 0 0 0 3px color-mix(in srgb, #7c3aed 22%, transparent); }
