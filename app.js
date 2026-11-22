@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.13'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.14'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -28152,8 +28152,8 @@ function saveTemplatesToStorage() {
     // o dirigente sorteia entre quem entrou ou entre os nomes informados; todos veem o nome, com uma animação curta.
     // 6.12.08: cada participante do placar ganha um bichinho e uma cor para o nome. Sai do código da adoração + o nome, então é o mesmo em todos os
     // aparelhos e não muda a cada atualização; quem já pegou um bicho não repete (enquanto houver bichos livres).
-    // REGRA FIXA: nunca macaco (🐒 🐵 🦍 🦧 🙈 🙉 🙊) nem veado ou parecido (🦌 🫎 🐐 etc.) nesta lista; os demais animais podem entrar à vontade.
-    const PLACAR_ANIMAIS = ['🦅', '🐴', '🐦', '🦉', '🐧', '🦆', '🐢', '🐘', '🦒', '🦊', '🐻', '🐼', '🐨', '🦁', '🐯', '🦜', '🐬', '🐙', '🦋', '🐝', '🐞', '🐇', '🦔', '🐿️', '🦦', '🐳', '🦩', '🦢', '🐄', '🐑', '🐓'];
+    // REGRA FIXA: nunca macaco (🐒 🐵 🦍 🦧 🙈 🙉 🙊), veado ou parecido (🦌 🫎 🐐), cavalo (🐴 🐎 🦄 🏇) nem burro/jumento (🫏) nesta lista; os demais animais podem entrar à vontade.
+    const PLACAR_ANIMAIS = ['🦅', '🐦', '🦉', '🐧', '🦆', '🐢', '🐘', '🦒', '🦊', '🐻', '🐼', '🐨', '🦁', '🐯', '🦜', '🐬', '🐙', '🦋', '🐝', '🐞', '🐇', '🦔', '🐿️', '🦦', '🐳', '🦩', '🦢', '🐄', '🐑', '🐓'];
     const PLACAR_CORES = ['#c2410c', '#1d4ed8', '#7e22ce', '#be123c', '#a21caf', '#a16207', '#0369a1', '#854d0e', '#4338ca', '#475569'];
     function participarMascotes(nomes) {
       const hash = txt => { let h = 2166136261; for (const c of String(txt)) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619) >>> 0; } return h; };
@@ -28224,13 +28224,21 @@ function saveTemplatesToStorage() {
       if (participar.dirigente) {
         const botoes = document.createElement('div');
         botoes.className = 'fam-sessao-sorteio-botoes';
+        ref.listas = {}; // fonte → <p> pequeno com os nomes que entram naquele sorteio (atualizado a cada estado)
         const sortear = (fonte, texto) => {
+          const item = document.createElement('div');
+          item.className = 'fam-sessao-sorteio-item';
           const b = document.createElement('button');
           b.type = 'button';
           b.className = 'secondary fam-fino';
           b.textContent = texto;
           b.addEventListener('click', () => participarAcao({ acao: 'sortear', fonte, parte: parteIdx }, b));
-          botoes.appendChild(b);
+          // 6.12.14: os nomes que participam desse sorteio, pequenos e sem destaque, separados por vírgula, logo abaixo do botão.
+          const lista = document.createElement('p');
+          lista.className = 'fam-sessao-sorteio-nomes';
+          ref.listas[fonte] = lista;
+          item.append(b, lista);
+          botoes.appendChild(item);
         };
         sortear('participantes', '🎲 Sortear entre quem entrou');
         if ((participar.programa.nomes || []).length) sortear('nomes', '🎲 Sortear entre os nomes');
@@ -28462,6 +28470,10 @@ function saveTemplatesToStorage() {
         }
         anteriorRespondida = revelada;
       });
+      if (ref.listas) { // os nomes de cada sorteio, logo abaixo do botão
+        const quem = { participantes: [...new Set((participar.participantes || []).map(p => p.nome).filter(Boolean))], nomes: [...new Set((participar.programa.nomes || []).filter(Boolean))] };
+        Object.keys(ref.listas).forEach(f => { ref.listas[f].textContent = quem[f].length ? quem[f].join(', ') : (f === 'participantes' ? 'Ninguém entrou ainda.' : ''); });
+      }
       const s = e.sorteio;
       const vale = s && s.nome && (s.parte == null || s.parte === i);
       ref.nome.hidden = !vale;

@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.14
+
+- **Nomes de cada sorteio:** no card de sorteio, logo abaixo de cada botão, os nomes que entram naquele sorteio, pequenos e sem destaque, separados por vírgula (quem entrou, para "Sortear entre quem entrou"; os nomes informados, para "Sortear entre os nomes"). A lista se atualiza quando alguém entra.
+- **Regra dos bichinhos:** também nunca cavalo nem burro. O 🐴 saiu da lista (não havia 🐎, 🦄 nem 🫏); regra registrada no código, no CLAUDE.md e na memória.
+
 ## 6.12.13
 
 - **Card de sorteio mais fino:** o título passa a ser "🎲 Sorteio de jogadores (opcional)" enquanto ninguém foi sorteado (com sorteado, mostra "Vez de: nome"). O card ficou mais fino e o título agora está centralizado na vertical (recolhido, tinha uma folga vazia embaixo).

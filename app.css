@@ -17069,7 +17069,12 @@ body[data-screen="participar"] :is(.screen-inicio, .screen-editor, .screen-forma
 .fam-sessao-sorteio-card > summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; font-weight: 600; line-height: 1.2; padding: 0; }
 .fam-sessao-sorteio-card[open] > summary { margin-bottom: 6px; }
 /* 6.12.10: espaço entre os campos do card de sorteio; o nome sorteado (cresce) e a 🗑️ (largura fixa) na mesma linha. */
-.fam-sessao-sorteio-card > .fam-sessao-sorteio-botoes { display: grid; gap: 10px; margin: 0 0 12px; }
+.fam-sessao-sorteio-card > .fam-sessao-sorteio-botoes { display: grid; gap: 12px; margin: 0 0 12px; }
+/* 6.12.14: cada botão de sorteio com, logo abaixo, os nomes que entram nele (pequenos, sem destaque). */
+.fam-sessao-sorteio-item { display: grid; gap: 4px; min-width: 0; }
+#participarSessao .fam-sessao-sorteio-item > button { width: 100%; min-width: 0; margin: 0; }
+.fam-sessao-sorteio-nomes { margin: 0; font-size: .78rem; font-weight: 400; line-height: 1.35; color: var(--muted, #64748b); overflow-wrap: anywhere; }
+.fam-sessao-sorteio-nomes:empty { display: none; }
 .fam-sessao-sorteio-card > .fam-sessao-vez-linha { display: flex; gap: 10px; align-items: stretch; margin: 0; }
 .fam-sessao-sorteio-card > .fam-sessao-vez-linha[hidden] { display: none; }
 .fam-sessao-sorteio-card .fam-sessao-vez-linha > .fam-sessao-sorteado { flex: 1 1 0; min-width: 0; margin: 0; }
