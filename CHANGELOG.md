@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.54
+
+- **Anotações: ✨ Resumir o texto do campo:** novo botão, em linha própria na largura toda, logo abaixo de Copiar / Formatar com IA. Depois que a gravação foi transcrita (ou com qualquer texto no campo), ele pede à IA o resumo do que está no campo e o coloca no fim das anotações, sob o título "Resumo do texto"; o texto de antes não muda. Usa a mesma fila e o mesmo código de texto do resumo das gravações; se o resumo falhar, nada é copiado de volta para o campo.
+
 ## 6.12.53
 
 - **Anotações da reunião: Word começa pela prévia:** o botão 📄 Word da tela de anotações agora abre primeiro a prévia do documento (a mesma dos outros textos, com A− e A+), e de lá se exporta ou se compartilha o .docx. Antes, o arquivo era gerado direto.

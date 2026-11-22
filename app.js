@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.53'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.54'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -34403,10 +34403,12 @@ function saveTemplatesToStorage() {
         } catch (e) { return false; }
       }
       // Pede o resumo da transcrição e o entrega na anotação do alvo (título em negrito e itálico, depois uma linha em branco).
-      async function anotacoesResumir(transc, varias, alvo) {
+      // deTexto: o texto vem do próprio campo das anotações (botão Resumir o texto): se o resumo falhar, nada é copiado de volta para o campo.
+      async function anotacoesResumir(transc, varias, alvo, deTexto) {
         const pedido = { acao: 'resumo', modo: 'anotacoes', codigoTexto: codigoTextoSalvo(), texto: transc.slice(0, 60000), contexto: alvo.contexto };
         if (alvo.q) pedido.pergunta = textoDaPergunta(alvo.q);
         const r = await trPost(pedido);
+        if (!r.ok && deTexto) return { ok: true, falhaTexto: trMensagem(r, 'o resumo falhou') };
         if (!r.ok) {
           const ok = entregarNaAnotacao(alvo, '—— Transcrição ——\n' + transc, '');
           return { ok, falhaResumo: trMensagem(r, 'o resumo falhou') };
@@ -34420,13 +34422,14 @@ function saveTemplatesToStorage() {
           resumo = resumo.slice(0, achou.index).replace(/\s+$/, '');
           if (anotacoesOradorRespondeu(transc, alvo.q)) resp = anotacoesResumoFormatar(achou[1].replace(/[*_]{2}/g, '')).trim();
         }
-        const titulo = varias ? '—— Resumo das gravações ——' : '—— Resumo da gravação ——';
+        const titulo = deTexto ? '—— Resumo do texto ——' : varias ? '—— Resumo das gravações ——' : '—— Resumo da gravação ——';
         const ok = entregarNaAnotacao(alvo, bibliaMarcasParaUnicode('**__' + titulo + '__**') + '\n\n' + anotacoesResumoFormatar(resumo), resp);
         return { ok, resposta: Boolean(resp) };
       }
       function mensagemFinal(alvo, res) {
         const nome = '«' + (alvo.titulo || 'Anotações') + '»';
         if (!res.ok) return '⚠️ Não encontrei a anotação de ' + nome + ' para colocar o resumo.';
+        if (res.falhaTexto) return '⚠️ ' + nome + ': ' + res.falhaTexto + '; o texto das anotações ficou como estava.';
         if (res.falhaResumo) return '⚠️ ' + nome + ': ' + res.falhaResumo + '; a transcrição foi colocada nas anotações.';
         return '✅ Resumo de ' + nome + ' colocado nas anotações' + (res.resposta ? ', com a resposta da pergunta de recapitulação' : '') + '.';
       }
@@ -35102,6 +35105,28 @@ function saveTemplatesToStorage() {
         gravResumirTodasBtn.disabled = true;
         await filaAdicionar(pedidoTodasGravacoes(ids, alvoAtual()));
         filaPintar();
+      });
+
+      // Resumir o texto do campo: o resumo do que já está nas anotações (a transcrição colada, por exemplo), entrando no fim do campo.
+      // Vai pela mesma fila e pelo mesmo pedido do resumo das gravações.
+      const resumirTextoBtn = document.getElementById('anotacoesResumirTextoBtn');
+      resumirTextoBtn.addEventListener('click', async () => {
+        const conteudo = texto.value.trim();
+        if (!conteudo) return dizer('Não há texto no campo para resumir.', true);
+        const alvo = alvoAtual();
+        resumirTextoBtn.disabled = true;
+        try {
+          const entrou = await filaAdicionar({
+            alvo, tipo: 'texto',
+            async executar(job) {
+              job.fase = 'Resumindo';
+              return mensagemFinal(alvo, await anotacoesResumir(conteudo, false, alvo, true));
+            }
+          });
+          if (entrou) dizer('Resumo do texto pedido: ele entra no fim das anotações quando ficar pronto.');
+        } finally {
+          resumirTextoBtn.disabled = false;
+        }
       });
 
       // Resumo da gravação pronta: vai para a fila (em segundo plano) e o quadro fecha, liberando para gravar o próximo discurso na hora.
