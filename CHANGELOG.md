@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.22
+
+- **Sem os ícones 🔒/📖 nas atividades:** saíram do topo de cada atividade (o botão Liberar/Voltar a bloquear já mostra o estado). O topo ficou número, título e tempo.
+- **Correção das orações:** o card simples da Oração inicial e da Oração final estava espremido numa coluna estreita (o número sumia e o texto quebrava letra por letra); agora mostra o número à esquerda e o título centralizado.
+
 ## 6.12.21
 
 - **Número antes do ícone:** no topo de cada atividade a ordem agora é número, ícone (🔒 ou 📖), título e tempo. O número tem uma coluna fixa, então todos ficam alinhados uns com os outros. Nas orações (card simples) o número também fica à esquerda, antes do título.

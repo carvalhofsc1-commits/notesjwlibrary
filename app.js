@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.21'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.22'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -27840,7 +27840,7 @@ function saveTemplatesToStorage() {
         cronParte.className = 'fam-sessao-cron';
         cronParte.hidden = true;
         lado.append(min); // sem o selo ▶ Agora (retirado na 6.11.88; o elemento continua existindo fora da tela)
-        topo.append(numEl, icone, nome, lado);
+        topo.append(numEl, nome, lado); // 6.12.22: sem os ícones 🔒/📖 (o botão de liberar já diz o estado); o elemento do ícone segue existindo fora da tela
         const aviso = document.createElement('p');
         aviso.className = 'fam-sessao-aviso';
         aviso.textContent = '🔒 Aguardando o dirigente liberar esta parte.';
