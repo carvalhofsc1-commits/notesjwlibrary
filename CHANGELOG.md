@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.90
+
+- **Adoração ao vivo:** a moldura da atividade liberada fica **verde**; a das ainda bloqueadas continua azul.
+
 ## 6.11.89
 
 - **Adoração ao vivo:** o botão do dirigente em cada parte fica com fundo **vermelho claro** antes de liberar (Liberar para todos) e **verde claro** depois de liberada (Voltar a bloquear). Exceção pedida pelo usuário à regra de não usar verde.

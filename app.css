@@ -17239,6 +17239,9 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 /* 6.11.56: áudio dos versículos e vídeo com transcrição na tela da adoração (dirigente e participantes). */
 .fam-audio-linha { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; min-width: 0; }
 .fam-audio-linha > :is(button, a) { flex: 1 1 140px; min-width: 0; justify-content: center; text-align: center; }
+/* 6.11.90: a moldura da atividade liberada fica verde (a bloqueada continua azul). */
+.fam-sessao-secao.liberada, .fam-sessao-secao.liberada.atual { border-color: #22c55e; box-shadow: 0 0 0 1px color-mix(in srgb, #22c55e 45%, transparent); }
+
 /* 6.11.89: o botão da parte — vermelho claro antes de liberar (Liberar para todos), verde claro depois de liberada (Voltar a bloquear). */
 .fam-sessao-secao-acoes > button[data-acao="liberar"] { background: color-mix(in srgb, #ef4444 16%, var(--card)); border: 1px solid #ef4444; color: var(--text); }
 .fam-sessao-secao-acoes > button[data-acao="bloquear"] { background: color-mix(in srgb, #22c55e 18%, var(--card)); border: 1px solid #22c55e; color: var(--text); }
