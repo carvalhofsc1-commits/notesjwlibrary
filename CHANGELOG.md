@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.88
+
+- **Adoração ao vivo:** saiu o selo **▶ Agora** do título das partes. Os minutos previstos continuam.
+
 ## 6.11.87
 
 - **Tela grande:** saiu o botão Próxima da barra de baixo; ficou só **Sair da tela grande**, na largura toda.
