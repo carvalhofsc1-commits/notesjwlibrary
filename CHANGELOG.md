@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.10
+
+- **Card de sorteio:** espaço entre os campos (botões de sortear e a linha da vez), que estavam colados.
+- **🗑️ Limpar o nome sorteado:** ao lado do "Vez de: nome", dentro do card, o dirigente tira o nome (para sorteio acidental). O card volta a mostrar só "🎲 Sorteio de jogadores" quando recolhido e o nome some para todos. Nova ação `limpar-sorteio` em `api/familia-sessao.mjs` (exige a chave do dirigente).
+
 ## 6.12.09
 
 - **Sorteio todo dentro do card:** o "Vez de: nome" agora fica dentro do card de sorteio, na parte de baixo. Com o card recolhido, o título mostra só "🎲 Sorteio de jogadores"; depois de um sorteio, o título vira "🎲 Vez de: nome". Quem não dirige só vê o card quando há alguém sorteado (o sorteio é opcional).

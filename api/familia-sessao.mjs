@@ -500,6 +500,13 @@ export default async function handler(req, res) {
       });
     }
 
+    // ----- limpar-sorteio (6.12.10): tira o nome sorteado (sorteio acidental); o card volta a mostrar só as opções de sorteio -----
+    if (acao === "limpar-sorteio") {
+      return gravarEstado((e) => {
+        e.sorteio = null;
+      });
+    }
+
     if (acao === "cronometro") {
       // Cronômetro da parte (6.11.51): o servidor guarda só o início e o tempo restante; cada aparelho conta os segundos sozinho,
       // acertando o relógio pela hora do servidor (agora).
