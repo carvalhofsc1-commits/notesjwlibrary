@@ -17291,7 +17291,11 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 #participarSessao .fam-placar-bicho { display: inline-block; width: 1.6em; font-size: 1.15em; }
 #participarSessao .fam-placar-nome strong { color: color-mix(in srgb, var(--cor-nome) 80%, var(--text)); font-weight: 800; }
 #participarSessao .fam-sessao-placar-tabela { width: 100%; border-collapse: collapse; }
-#participarSessao .fam-sessao-placar-tabela th, #participarSessao .fam-sessao-placar-tabela td { padding: 5px 8px; border-bottom: 1px solid var(--line); text-align: left; overflow-wrap: anywhere; }
+/* 6.12.26: o cabeçalho Participante/Pontos num roxo mais forte. */
+#participarSessao .fam-sessao-placar-tabela th { background: color-mix(in srgb, #7c3aed 32%, var(--card)); color: var(--text); font-weight: 800; }
+#participarSessao .fam-sessao-placar-tabela th:first-child { border-radius: 8px 0 0 8px; }
+#participarSessao .fam-sessao-placar-tabela th:last-child { border-radius: 0 8px 8px 0; }
+#participarSessao .fam-sessao-placar-tabela th,#participarSessao .fam-sessao-placar-tabela td { padding: 5px 8px; border-bottom: 1px solid var(--line); text-align: left; overflow-wrap: anywhere; }
 #participarSessao .fam-sessao-placar-tabela th:last-child, #participarSessao .fam-sessao-placar-tabela td:last-child { text-align: right; width: 5.5em; font-variant-numeric: tabular-nums; font-weight: 700; }
 #participarSessao .fam-sessao-placar-tabela tr:last-child td { border-bottom: 0; }
 #participarSessao .fam-sessao-acerto { display: grid; gap: 6px; margin-top: 6px; }
@@ -17358,7 +17362,10 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 /* 6.12.25: linhas finas entre as seções da atividade e mais espaço entre o título (topo) e a descrição/objetivo. */
 #participarSessao .fam-secao-bloco { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
 #participarSessao .fam-secao-bloco > .fam-secao-titulo { margin-top: 0; }
-#participarSessao .fam-sessao-secao .fam-parte { padding-top: 18px; }
+#participarSessao .fam-sessao-secao .fam-parte { padding-top: 10px; }
+/* 6.12.26: menos espaço em branco antes e depois da frase do objetivo da atividade. */
+#participarSessao .fam-parte-objetivo { margin: 0; line-height: 1.3; }
+#participarSessao .fam-parte-objetivo + .fam-secao-bloco { margin-top: 0; padding-top: 8px; }
 /* 6.12.16: parte de jogo: nome do jogo (com emojis) em destaque, o título do jogo embaixo, fundo um pouco mais forte e linha divisória do resto. */
 /* 6.12.24: o mesmo topo com linha divisória em todas as atividades (menos as orações), não só nos jogos. */
 .fam-sessao-secao:not(.fam-sessao-oracao) > .fam-sessao-secao-topo { background: color-mix(in srgb, var(--accent) 14%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 12px 12px 0 0; }

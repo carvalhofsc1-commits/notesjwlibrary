@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.26
+
+- **Cabeçalho do placar:** a faixa "Participante / Pontos" ficou num roxo mais forte, com os cantos arredondados.
+- **Objetivo da atividade:** menos espaço em branco antes e depois da frase 🎯 (topo do card e linha divisória logo abaixo).
+
 ## 6.12.25
 
 - **Linhas finas entre as seções da atividade:** Textos, Vídeos, Cânticos, Publicações e Perguntas ficam em blocos separados por uma linha divisória fina.
