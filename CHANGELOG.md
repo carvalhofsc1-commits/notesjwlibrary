@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.47
+
+- **Jogos removidos da lista:** Show do milhão bíblico, Bingo bíblico e FunPlayB "jogar um tema de perguntas". Fica só o FunPlayB "tema personalizado". Também saíram do prompt da Adoração em Família.
+- **Lista de atividades melhorada:** novas atividades "Leitura de passagens bíblicas", "Leitura de um trecho (alguns parágrafos) de uma matéria (site, A Sentinela, livros, Perspicaz e outras publicações)" e "Leitura de um trecho da Bíblia e um vídeo" (esta também liga o vídeo do jw.org); o prompt explica como montar cada uma.
+- **"Jogos ou adivinhas" virou "Jogos bíblicos".** Quem tinha o nome antigo salvo passa para o novo e ganha as três atividades de leitura marcadas.
+
 ## 6.12.46
 
 - **Boas-vindas só ao entrar:** ao tocar em Iniciar a adoração (ou entrar), a tela de boas-vindas abre sempre, mesmo com a adoração já em andamento. Depois de tocar em Entrar, ela não aparece mais na página das atividades (antes ficava no topo até a primeira atividade começar). Na tela grande continua aparecendo antes de a primeira atividade começar. Quem espera nas boas-vindas segue sozinho para as atividades quando o dirigente começa.

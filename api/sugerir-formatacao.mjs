@@ -2708,7 +2708,6 @@ const SaidaAdoracaoFamilia = z.object({
 // Os tipos de jogo que o usuário pode aceitar (os mesmos textos da tela) e o formato de importação do FunPlayB (CSV com ";").
 const JOGOS_FAMILIA = [
   "Quem sou eu? (personagens bíblicos)",
-  "Show do milhão bíblico (perguntas de múltipla escolha)",
   "Abreviações bíblicas (ex.: Os 12 A de C)",
   "Mímica de personagens e cenas",
   "Verdadeiro ou falso",
@@ -2717,13 +2716,11 @@ const JOGOS_FAMILIA = [
   "Jogo da memória (pares de cartas)",
   "Caça ao tesouro bíblico (pistas pela casa)",
   "Charadas e adivinhas bíblicas",
-  "Bingo bíblico",
   "Complete o versículo",
   "Forca bíblica (papel e lápis)",
   "Palavras cruzadas ou caça-palavras (papel e lápis)",
   "Desenho e adivinhação (Pictionary bíblico)",
   "Torta na cara (perguntas bíblicas, quem erra leva a torta)",
-  "FunPlayB: jogar um tema de perguntas",
   "FunPlayB: tema personalizado (20 perguntas para importar)",
 ];
 const JOGO_FUNPLAYB_PERSONALIZADO = JOGOS_FAMILIA[JOGOS_FAMILIA.length - 1];
