@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.80
+
+- **Adoração ao vivo — perguntas:** cada pergunta fica numa moldura individual (borda fina azul, fundo suave que segue o tema) e em **negrito**, sem os marcadores de lista. Só na tela ao vivo.
+
 ## 6.11.79
 
 - **Adoração ao vivo — textos bíblicos:** saiu o link ↗ Áudio no jw.org. O botão agora se chama **▶️ áudio do texto**, é fino e fica na mesma linha, antes do texto (com mais de um trecho no mesmo texto: ▶️ áudio: Livro cap:vers). A referência aparece em **negrito** e o conteúdo do texto entre aspas e em *itálico*. Só na tela da adoração ao vivo; as sugestões e o Word não mudam.
