@@ -505,7 +505,6 @@
             <details id="maisOpcoes" class="subsection group-box mais-opcoes" hidden>
               <summary>⚙️ Mais opções</summary>
               <div id="maisOpcoesCorpo" class="group-box-body mais-opcoes-corpo">
-                <label id="memoriaUsarLinha" class="memoria-usar" hidden><input type="checkbox" id="memoriaUsar" autocomplete="off"> 🧠 Aprender com esta correção (a IA guarda só a lição, não os textos; piloto, só administrador)</label>
                 <div id="exportarBloco" class="exportar-bloco" hidden>
                   <button id="salvarTextoBtn" class="secondary" type="button" title="Guarda este texto em Pesquisas e respostas salvas (categoria Textos), com o nome que você escolher">💾 Salvar texto</button>
                   <div class="exportar-linha">
@@ -1573,6 +1572,9 @@
 
         <label for="aiInstruction">Instruções fixas, valem para todo pedido (opcional)</label>
         <input autocomplete="off" id="aiInstruction" type="text" maxlength="300" placeholder="Ex.: texto da Escola Pioneiros, estilo discreto">
+
+        <button id="aiRestaurarPadraoBtn" type="button" class="secondary ai-restaurar-btn">↩️ Restaurar padrões originais</button>
+        <p id="aiRestaurarStatus" class="hint" role="status" aria-live="polite" hidden></p>
 
         <div id="aiPadraoBox" class="ai-admin-row" hidden>
           <button id="aiSalvarPadraoBtn" type="button">💾 Salvar para todos</button>

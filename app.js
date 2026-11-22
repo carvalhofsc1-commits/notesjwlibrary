@@ -102,7 +102,7 @@
       const naFormatar = document.body.dataset.screen === 'formatar';
       if (naFormatar) { if (painel.parentNode !== layout) layout.appendChild(painel); }
       else if (painel.parentNode !== corpo) corpo.appendChild(painel);
-      caixa.hidden = naFormatar && exportar.hidden && document.getElementById('memoriaUsarLinha').hidden; // na Formatar sem texto não há nada dentro
+      caixa.hidden = naFormatar && exportar.hidden; // na Formatar sem texto não há nada dentro
     }
 
     function showScreen(name, options) {
@@ -7933,7 +7933,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.69'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.70'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -15023,6 +15023,23 @@ function saveTemplatesToStorage() {
       safeSetItem(AI_OPTIONS_KEY, JSON.stringify(readAiOptions()));
     }
 
+    // ↩️ Restaurar padrões originais (Ajustes → Configurar formatação com IA): volta todas as opções ao que o app traz de fábrica.
+    document.getElementById('aiRestaurarPadraoBtn').addEventListener('click', async () => {
+      const ok = await askConfirm('Todas as opções de formatação com IA (caixas marcadas, tamanho do resumo, categoria, quantidade de sugestões e instruções fixas) voltam aos padrões originais do app. Deseja continuar?', 'Restaurar padrões');
+      if (!ok) return;
+      const original = AI_DEFAULT_OPTIONS;
+      renderAiCategoryOptions('all');
+      aiSummarySize.value = original.resumoTamanho;
+      aiOptionInputs.forEach(el => { el.checked = !!original[el.dataset.aiOpt]; });
+      aiIntensity.value = original.intensidade;
+      aiInstruction.value = '';
+      saveAiOptions();
+      aiOptionsTouched = true;
+      const info = document.getElementById('aiRestaurarStatus');
+      info.hidden = false;
+      info.textContent = '✅ Opções de formatação com IA restauradas para os padrões originais.';
+    });
+
     // ---------- Instruções adicionais para a IA ----------
     // Um campo de texto logo abaixo do botão de cada pedido à IA das reuniões (comentar: A Sentinela, Joias e Estudo Bíblico; dirigir: A Sentinela e
     // Estudo Bíblico; esboços: discurso público, Tesouros e discurso curto; "Outros esboços" já tem os campos dele). O que o usuário escrever vai no
@@ -21035,10 +21052,7 @@ function saveTemplatesToStorage() {
         delete exportarInfo.dataset.texto;
       }
       salvarBtn.disabled = !sujo;
-      const memoriaLinha = document.getElementById('memoriaUsarLinha');
-      memoriaLinha.hidden = !(ligado && sujo && senhaAdminSalva());
       editorOpcoesPosicionar();
-      if (memoriaLinha.hidden) document.getElementById('memoriaUsar').checked = false;
       if (!ligado || sujo) salvarAvisoFim(); // mexeu de novo (ou trocou de texto): o aviso de salvo sai
       salvarInfo.textContent = !ligado ? 'Este texto não é de uma pesquisa salva. Para guardá-lo, use 💾 Salvar texto em ⚙️ Mais opções.' : (sujo
         ? 'Grava o texto do campo em: '
@@ -21077,8 +21091,6 @@ function saveTemplatesToStorage() {
       }
       const texto = input.value;
       const original = (item.partes || []).map(p => p.texto).join('\n\n\n');
-      const guardarMemoria = document.getElementById('memoriaUsar').checked && senhaAdminSalva() && texto !== original;
-      if (guardarMemoria) memoriaGuardar(item, original, texto);
       if (texto === original) {
         delete item.textoEditado;
         delete item.editadoEm;
@@ -21099,27 +21111,6 @@ function saveTemplatesToStorage() {
       copyStatus.textContent = '💾 Alterações salvas. Ao abrir esta pesquisa em Pesquisas e respostas salvas, o texto volta como está agora.';
     }
     salvarBtn.addEventListener('click', historicoSalvarAlteracoes);
-
-    // ---------- Memória de lições das correções (piloto, só administrador) ----------
-    // Ao salvar uma alteração com a caixa 🧠 marcada, o texto da IA e o texto final vão ao servidor só para a IA compará-los (api/_memoria.mjs):
-    // ela devolve a lição (o que mudou, o porquê e uma regra) e os dois textos são descartados. Com a chave geral ligada,
-    // as lições ativas entram no system prompt das respostas de IA (filtradas pela tarefa; ver api/_memoria.mjs).
-    async function memoriaGuardar(item, original, final) {
-      copyStatus.textContent = '🧠 A IA está analisando a correção…';
-      const r = await postConfig({ acao: 'memoria-guardar', codigo: senhaAdminSalva(), tarefa: item.tipo || '', original, final });
-      document.getElementById('memoriaUsar').checked = false;
-      // O resultado aparece também numa barra bem visível (o texto abaixo do botão some quando o campo muda).
-      let aviso;
-      if (!r.ok) {
-        aviso = '🧠 A lição NÃO foi guardada: ' + ((r.data && r.data.erro) || 'sem conexão com o servidor') + '. O texto salvo no aparelho está certo.';
-      } else if (r.data.guardada) {
-        aviso = '🧠 Lição guardada: ' + r.data.licao.regra + (r.data.usadaNasRespostas ? '' : ' (A chave geral está desligada: a IA só passa a usar as lições quando você a ligar em Prompts da IA → Memória de correções.)');
-      } else {
-        aviso = '🧠 Nada guardado: ' + r.data.motivo;
-      }
-      copyStatus.textContent = aviso;
-      mostrarMensagemDoApp(aviso);
-    }
 
     // ---------- Exportar o texto do campo para Word (.docx) ----------
     // O texto do campo (com as alterações do usuário) vira um documento Word, seja ele o que for: resposta, perguntas, esboço ou nota. As letras

@@ -17101,6 +17101,10 @@ body.fam-tela-grande .fam-sessao-grande-barra { display: flex; position: fixed; 
 .fam-acoes > .fam-principal { flex: 1 1 100%; }
 .fam-acoes > .limpar-btn { flex: 0 0 52px; min-width: 52px; }
 
+/* 6.11.70: botão Restaurar padrões originais (Ajustes → Configurar formatação com IA), na largura toda. */
+.ai-restaurar-btn { display: block; width: 100%; margin: 12px 0 0; }
+#aiRestaurarStatus[hidden] { display: none; }
+
 /* 6.11.67: tela principal Adoração em família (duas opções, botões na largura toda). */
 body:not([data-screen="adoracao"]) .screen-adoracao,
 body[data-screen="adoracao"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-ajustes, .screen-leitura, .screen-transcricao, .screen-biblia, .screen-anotacoes, .screen-pesquisa, .screen-salvas, .screen-familia, .screen-participar) { display: none !important; }

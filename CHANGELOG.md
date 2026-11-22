@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.70
+
+- **Saiu a opção 🧠 Aprender com esta correção** de Mais opções (só pesava no código e não era usada). A tela de administração da memória de correções em Prompts da IA não mudou.
+- **Ajustes → Configurar formatação com IA:** novo botão **↩️ Restaurar padrões originais**, na largura toda, que (depois de confirmar) volta todas as opções de formatação com IA ao que o app traz de fábrica.
+
 ## 6.11.69
 
 - **Preparar para comentar:** toda vez que se sai e se entra de novo nas opções de comentários (pelo atalho, pelo menu, pela barra ou voltando de outra tela), todos os cards recolhíveis, inclusive os de dentro de cada ferramenta, voltam recolhidos. Atalhos diretos (A Sentinela, Joias, Estudo Bíblico) continuam abrindo a ferramenta pedida.
