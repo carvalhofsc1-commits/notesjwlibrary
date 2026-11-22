@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.75
+
+- **Adoração ao vivo:** o botão 📺 Tela grande ocupa a largura toda do card.
+
 ## 6.11.74
 
 - **Adoração em Família:** o campo de apelido do painel de compartilhar não corta mais o texto (o aviso agora é Novo apelido, que cabe inteiro; conferido a 375 px: texto de 95 px num espaço de 132 px). Na lista de programações salvas, o botão de compartilhar também passou a se chamar **🔗 Selecionar esta programação**.
