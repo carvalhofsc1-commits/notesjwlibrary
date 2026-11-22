@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.89
+
+- **Adoração ao vivo:** o botão do dirigente em cada parte fica com fundo **vermelho claro** antes de liberar (Liberar para todos) e **verde claro** depois de liberada (Voltar a bloquear). Exceção pedida pelo usuário à regra de não usar verde.
+
 ## 6.11.88
 
 - **Adoração ao vivo:** saiu o selo **▶ Agora** do título das partes. Os minutos previstos continuam.
