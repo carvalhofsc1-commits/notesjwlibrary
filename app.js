@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.06'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.07'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -27923,7 +27923,7 @@ function saveTemplatesToStorage() {
         const atual = l && e.atual === i;
         s.sec.classList.toggle('atual', atual);
         s.agora.hidden = !atual;
-        if (l && !antesLib.has(i)) participarSecaoAbrir(i, true); // liberada agora (ou já liberada ao entrar): abre para todos
+        if (l && !antesLib.has(i) && antes) participarSecaoAbrir(i, true); // liberada agora, com a tela já aberta: abre para todos (6.12.07: ao entrar/reabrir, tudo começa recolhido)
         else if (!l && s.aberta && (!participar.dirigente || antesLib.has(i))) participarSecaoAbrir(i, false); // bloqueada de novo
         if (s.acao) {
           s.acao.dataset.acao = l ? 'bloquear' : 'liberar';
@@ -28204,7 +28204,13 @@ function saveTemplatesToStorage() {
         };
         sortear('participantes', '🎲 Sortear entre quem entrou');
         if ((participar.programa.nomes || []).length) sortear('nomes', '🎲 Sortear entre os nomes');
-        sorteio.appendChild(botoes);
+        // 6.12.07: o sorteio é opcional (os jogadores também podem ir respondendo sem ordem): as opções ficam num card recolhível, sempre fechado ao abrir.
+        const cardSorteio = document.createElement('details');
+        cardSorteio.className = 'fam-sessao-sorteio-card';
+        const resumoSorteio = document.createElement('summary');
+        resumoSorteio.textContent = '🎲 Sorteio de quem responde (opcional)';
+        cardSorteio.append(resumoSorteio, botoes);
+        sorteio.appendChild(cardSorteio);
       }
       caixa.appendChild(sorteio);
       ref.sorteio = sorteio;
@@ -28307,7 +28313,7 @@ function saveTemplatesToStorage() {
       if ((j.itens || []).length) {
         const det = document.createElement('details');
         det.className = 'fam-jogo-itens';
-        det.open = true;
+        det.open = false; // 6.12.07: todos os cards recolhíveis da adoração ao vivo começam fechados
         const sm = document.createElement('summary');
         sm.textContent = 'Material para jogar (' + j.itens.length + ')';
         const ol = document.createElement('ol');

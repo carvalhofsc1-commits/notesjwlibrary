@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.07
+
+- **Adoração ao vivo abre tudo recolhido:** ao entrar ou reabrir a tela compartilhada, nenhuma atividade vem aberta (antes as já liberadas abriam sozinhas); o "Material para jogar" também começa fechado. Depois, quando o dirigente libera uma atividade com a tela aberta, ela continua abrindo para todos.
+- **Sorteio opcional num card recolhível:** as opções de sorteio do jogo (entre quem entrou / entre os nomes) ficam no card "🎲 Sorteio de quem responde (opcional)", fechado ao abrir. O nome sorteado ("Vez de: …") continua aparecendo para todos.
+
 ## 6.12.06
 
 - **Jogo: "Ninguém acertou":** o seletor de quem acertou ganhou a opção 🚫 Ninguém acertou (depois dos nomes). Ela revela a resposta, não dá ponto a ninguém e aparece como "Ninguém acertou" na questão.
