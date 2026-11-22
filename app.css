@@ -17238,6 +17238,8 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 .fam-sessao-recente-linha { width: 100%; flex-wrap: nowrap; }
 .fam-sessao-recente-linha > .fam-sessao-recente { flex: 1 1 auto; min-width: 0; white-space: normal; }
 .fam-dirigindo-box[hidden] { display: none; }
+/* 6.11.99: card "Adorações compartilhadas" com fundo azul claro e mais espaço do texto explicativo acima. */
+.fam-dirigindo-box { background: #eaf3ff; border-color: #93b8ee; margin-top: 22px; }
 
 /* 6.11.56: áudio dos versículos e vídeo com transcrição na tela da adoração (dirigente e participantes). */
 .fam-audio-linha { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; min-width: 0; }

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.99
+
+- **Card "Adorações compartilhadas":** o card "Adorações que eu dirijo" mudou de nome, ganhou fundo azul claro e mais espaço em relação ao texto explicativo acima.
+
 ## 6.11.98
 
 - **Boas-vindas não é mais seção:** na adoração ao vivo, uma parte só de boas-vindas (nome com "boas-vindas", sem textos, vídeos nem jogo) vira, como a Oração inicial, uma linha de texto (👋 Boas-vindas), sem card, sem botão de liberar e fora da numeração. Antes só valia para partes cujo nome começava com "Oração inicial". O prompt da Adoração em Família também manda a IA não criar parte de boas-vindas (a abertura é só a Oração inicial); se você editou esse prompt em Prompts da IA, acrescente a regra lá.
