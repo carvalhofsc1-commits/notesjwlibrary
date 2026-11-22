@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.05'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.06'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -28150,6 +28150,7 @@ function saveTemplatesToStorage() {
     // O jogo na sessão (6.11.50): as perguntas (com a referência) e o material sem resposta. A resposta de cada rodada só chega do
     // servidor depois que o dirigente toca em 👁️ Revelar resposta (nem o aparelho do dirigente a recebe antes). 🎲 Sortear quem responde:
     // o dirigente sorteia entre quem entrou ou entre os nomes informados; todos veem o nome, com uma animação curta.
+    const NINGUEM_ACERTOU = '__ninguem__'; // valor da opção "Ninguém acertou" no seletor de quem acertou
     function participarJogoMontar(j, parteIdx) {
       const caixa = document.createElement('div');
       caixa.className = 'fam-jogo fam-sessao-jogo';
@@ -28248,7 +28249,7 @@ function saveTemplatesToStorage() {
           li.append(...dicasEls, aguarda, resp);
           let btn = null;
           let btnDica = null;
-          let linhaAcerto = null, sel = null, btnPontuar = null;
+          let linhaAcerto = null, sel = null, btnPontuar = null, btnEspiar = null, espiada = null;
           if (participar.dirigente) {
             if (comDicas) {
               btnDica = document.createElement('button');
@@ -28265,9 +28266,11 @@ function saveTemplatesToStorage() {
               btnPontuar.type = 'button';
               btnPontuar.className = 'secondary fam-fino';
               btnPontuar.addEventListener('click', () => {
-                if (!sel.value) { participarStatus('Escolha quem acertou.', 'erro'); return; }
-                participarAcao({ acao: 'pontuar', parte: parteIdx, rodada: k, nome: sel.value }, btnPontuar);
+                if (!sel.value) { participarStatus('Escolha quem acertou (ou Ninguém acertou).', 'erro'); return; }
+                if (sel.value === NINGUEM_ACERTOU) participarAcao({ acao: 'pontuar', parte: parteIdx, rodada: k, ninguem: true }, btnPontuar);
+                else participarAcao({ acao: 'pontuar', parte: parteIdx, rodada: k, nome: sel.value }, btnPontuar);
               });
+              sel.addEventListener('change', () => { if (btnPontuar.dataset.rotulo) btnPontuar.textContent = sel.value === NINGUEM_ACERTOU ? '🚫 Ninguém acertou' : btnPontuar.dataset.rotulo; });
               linhaAcerto.append(sel, btnPontuar);
               li.appendChild(linhaAcerto);
             }
@@ -28276,9 +28279,27 @@ function saveTemplatesToStorage() {
             btn.className = 'secondary fam-fino fam-sessao-revelar';
             btn.innerHTML = ICONE_OLHO + ' Revelar resposta'; // olho só de linhas
             btn.addEventListener('click', () => participarAcao({ acao: 'revelar', parte: parteIdx, rodada: k }, btn));
-            li.appendChild(btn);
+            // 6.12.06: ver a resposta só no aparelho do dirigente (os participantes não veem), para saber se alguém acertou.
+            btnEspiar = document.createElement('button');
+            btnEspiar.type = 'button';
+            btnEspiar.className = 'secondary fam-fino fam-sessao-revelar';
+            btnEspiar.innerHTML = ICONE_OLHO + ' Ver só para mim';
+            espiada = document.createElement('p');
+            espiada.className = 'fam-sessao-espiada';
+            espiada.hidden = true;
+            btnEspiar.addEventListener('click', async () => {
+              if (!espiada.hidden) { espiada.hidden = true; btnEspiar.innerHTML = ICONE_OLHO + ' Ver só para mim'; return; }
+              btnEspiar.disabled = true;
+              const rr = await familiaSessaoPedir({ acao: 'espiar', sessao: participar.cod, chave: participar.chave, parte: parteIdx, rodada: k });
+              btnEspiar.disabled = false;
+              if (!rr.ok) { participarStatus(rr.erro || 'Não consegui buscar a resposta.', 'erro'); return; }
+              espiada.textContent = '🔒 Só você vê: ' + (rr.data.resposta || '') + (comDicas && r.referencia ? ' (' + r.referencia + ')' : '');
+              espiada.hidden = false;
+              btnEspiar.innerHTML = ICONE_OLHO_FECHADO + ' Esconder';
+            });
+            li.append(btnEspiar, espiada, btn);
           }
-          ref.rodadas.push({ li, linhaAcerto, sel, btnPontuar, sig: null, resp, btn, btnDica, dicasEls, aguarda, pontos, total: dicas.length, referencia: r.referencia || '' });
+          ref.rodadas.push({ li, linhaAcerto, sel, btnPontuar, btnEspiar, espiada, sig: null, resp, btn, btnDica, dicasEls, aguarda, pontos, total: dicas.length, referencia: r.referencia || '' });
           ol.appendChild(li);
         });
         caixa.appendChild(ol);
@@ -28312,7 +28333,7 @@ function saveTemplatesToStorage() {
       const nomes = [...new Set([...(participar.programa.nomes || []), ...(participar.participantes || []).map(p => p.nome), ...Object.values(acertos).map(a => a.nome)].filter(Boolean))];
       const total = {};
       nomes.forEach(n => { total[n] = 0; });
-      Object.values(acertos).forEach(a => { total[a.nome] = (total[a.nome] || 0) + (Number(a.pts) || 0); });
+      Object.values(acertos).forEach(a => { if (a.nome) total[a.nome] = (total[a.nome] || 0) + (Number(a.pts) || 0); });
       // 🏆 Placar: nomes e pontos, do maior para o menor.
       ref.placar.hidden = !nomes.length;
       if (nomes.length) {
@@ -28350,25 +28371,30 @@ function saveTemplatesToStorage() {
         r.resp.classList.toggle('escondida', !revelada);
         r.resp.classList.toggle('revelada', revelada);
         const acerto = acertos[k];
-        if (revelada) r.resp.textContent = '💡 Resposta: ' + txt + (comDicas && r.referencia ? ' (' + r.referencia + ')' : '') + (acerto ? ' · 🏆 ' + acerto.nome + ' ganhou ' + acerto.pts + (acerto.pts === 1 ? ' ponto' : ' pontos') : '');
+        if (revelada) r.resp.textContent = '💡 Resposta: ' + txt + (comDicas && r.referencia ? ' (' + r.referencia + ')' : '') + (acerto ? (acerto.ninguem ? ' · 🚫 Ninguém acertou' : ' · 🏆 ' + acerto.nome + ' ganhou ' + acerto.pts + (acerto.pts === 1 ? ' ponto' : ' pontos')) : '');
         else r.resp.innerHTML = ICONE_OLHO_FECHADO + ' Resposta escondida'; // olho só de linhas
         if (r.linhaAcerto) {
           r.linhaAcerto.hidden = Boolean(acerto) || n === 0; // 6.12.04: segue à mostra depois de revelar a resposta, até alguém pontuar
           const sig = nomes.join('|');
           if (r.sig !== sig) { // refaz a lista de nomes só quando ela muda (para não perder a escolha)
             const atual = r.sel.value;
-            r.sel.replaceChildren(...[['', 'Quem acertou?'], ...nomes.map(x => [x, x])].map(([v, tx]) => { const o = document.createElement('option'); o.value = v; o.textContent = tx; return o; }));
-            if (nomes.includes(atual)) r.sel.value = atual;
+            r.sel.replaceChildren(...[['', 'Quem acertou?'], ...nomes.map(x => [x, x]), [NINGUEM_ACERTOU, '🚫 Ninguém acertou']].map(([v, tx]) => { const o = document.createElement('option'); o.value = v; o.textContent = tx; return o; }));
+            if (nomes.includes(atual) || atual === NINGUEM_ACERTOU) r.sel.value = atual;
             r.sig = sig;
           }
           const pontosAgora = Math.max(1, r.total - n + 1);
-          r.btnPontuar.textContent = '✅ Pontuar: ' + pontosAgora + (pontosAgora === 1 ? ' ponto' : ' pontos');
+          r.btnPontuar.dataset.rotulo = '✅ Pontuar: ' + pontosAgora + (pontosAgora === 1 ? ' ponto' : ' pontos');
+          r.btnPontuar.textContent = r.sel.value === NINGUEM_ACERTOU ? '🚫 Ninguém acertou' : r.btnPontuar.dataset.rotulo;
         }
         if (r.btnDica) {
           r.btnDica.hidden = revelada || n >= r.total;
           r.btnDica.textContent = '💡 Dar a ' + (n + 1) + 'ª dica' + (n === 0 ? '' : ' (vale ' + Math.max(1, r.total - n) + ')');
         }
         if (r.btn) r.btn.hidden = revelada || (comDicas && n === 0);
+        if (r.btnEspiar) { // 6.12.06: "Ver só para mim" some quando a resposta já foi revelada a todos
+          r.btnEspiar.hidden = revelada || (comDicas && n === 0);
+          if (revelada) r.espiada.hidden = true;
+        }
         anteriorRespondida = revelada;
       });
       const s = e.sorteio;

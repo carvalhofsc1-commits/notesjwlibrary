@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.06
+
+- **Jogo: "Ninguém acertou":** o seletor de quem acertou ganhou a opção 🚫 Ninguém acertou (depois dos nomes). Ela revela a resposta, não dá ponto a ninguém e aparece como "Ninguém acertou" na questão.
+- **Jogo: ver a resposta só para o dirigente:** novo botão (olho de linhas) "Ver só para mim" em cada questão. A resposta aparece só no aparelho de quem dirige (🔒 Só você vê), sem revelar aos participantes e sem gravar nada no estado; "Esconder" a oculta de novo. Nova ação `espiar` em `api/familia-sessao.mjs`, que exige a chave do dirigente.
+
 ## 6.12.05
 
 - **Olho de linhas:** o botão "Revelar resposta" e o aviso "Resposta escondida" do jogo da adoração ao vivo usam o olho só de linhas (aberto e riscado), no lugar do emoji 👁️ e do 🙈. Regra para todo o app: onde houver ícone de olho, sempre o de linhas.

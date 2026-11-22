@@ -439,6 +439,15 @@ export default async function handler(req, res) {
       });
     }
 
+    // ----- espiar (6.12.06): só o dirigente vê a resposta da rodada, sem revelá-la aos participantes (nada é gravado no estado) -----
+    if (acao === "espiar") {
+      const parte = Number(corpo.parte);
+      const rodada = Number(corpo.rodada);
+      const respostas = (segredo.respostas || {})[parte] || [];
+      if (!Number.isInteger(parte) || !Number.isInteger(rodada) || rodada < 0 || rodada >= respostas.length) return erro(res, 400, "Rodada inválida.");
+      return res.status(200).json({ resposta: String(respostas[rodada] || "") });
+    }
+
     // ----- dica (6.11.96): dá a próxima dica da rodada (Dica 1, Dica 2, Dica 3…), uma de cada vez; no máximo as que a pergunta tem -----
     if (acao === "dica") {
       const parte = Number(corpo.parte);
@@ -459,19 +468,20 @@ export default async function handler(req, res) {
     if (acao === "pontuar") {
       const parte = Number(corpo.parte);
       const rodada = Number(corpo.rodada);
-      const nome = nomeLimpo(corpo.nome);
+      const ninguem = corpo.ninguem === true; // 6.12.06: "Ninguém acertou": revela a resposta sem pontuar ninguém
+      const nome = ninguem ? "" : nomeLimpo(corpo.nome);
       if (!parteValida(parte)) return erro(res, 400, "Parte inválida.");
       const r = programa.partes[parte].jogo && (programa.partes[parte].jogo.rodadas || [])[rodada];
       const respostas = (segredo.respostas || {})[parte] || [];
       if (!Number.isInteger(rodada) || !r || rodada >= respostas.length) return erro(res, 400, "Rodada inválida.");
-      if (!nome) return erro(res, 400, "Escolha quem acertou.");
+      if (!nome && !ninguem) return erro(res, 400, "Escolha quem acertou.");
       const total = Math.max(1, (String(r.pergunta).match(/Dica\s*\d+\s*:/gi) || []).length);
       const dadas = Math.min(total, Number(((estado.dicas || {})[parte] || {})[rodada]) || 0);
-      if (!dadas) return erro(res, 400, "Dê ao menos a primeira dica antes de pontuar.");
-      const pts = Math.max(1, total - dadas + 1);
+      if (!dadas && !ninguem) return erro(res, 400, "Dê ao menos a primeira dica antes de pontuar.");
+      const pts = ninguem ? 0 : Math.max(1, total - dadas + 1);
       return gravarEstado((e) => {
         e.acertos = e.acertos || {};
-        e.acertos[parte] = { ...(e.acertos[parte] || {}), [rodada]: { nome, pts } };
+        e.acertos[parte] = { ...(e.acertos[parte] || {}), [rodada]: ninguem ? { nome: "", pts: 0, ninguem: true } : { nome, pts } };
         e.reveladas = e.reveladas || {};
         e.reveladas[parte] = { ...(e.reveladas[parte] || {}), [rodada]: respostas[rodada] };
       });
