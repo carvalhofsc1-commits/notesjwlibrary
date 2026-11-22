@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.40
+
+- **Textos sempre com perguntas:** o prompt da Adoração em Família agora manda a IA incluir, em toda atividade que tenha textos bíblicos, uma ou duas perguntas sobre esses textos, para fazer antes de passar à próxima atividade. Vale para as programações geradas daqui para a frente; se você editou esse prompt em Prompts da IA, acrescente a regra lá.
+
 ## 6.12.39
 
 - **Tela grande:** a linha "Boas-vindas à Adoração em Família" ficou em letra bem maior.
