@@ -17364,7 +17364,7 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 #participarSessao .fam-secao-bloco > .fam-secao-titulo { margin-top: 0; }
 #participarSessao .fam-sessao-secao .fam-parte { padding-top: 10px; }
 /* 6.12.26: menos espaço em branco antes e depois da frase do objetivo da atividade. */
-#participarSessao .fam-parte-objetivo { margin: 0; line-height: 1.3; }
+#participarSessao .fam-parte-objetivo { margin: 0; line-height: 1.3; text-align: center; } /* 6.12.28: texto explicativo da atividade centralizado */
 #participarSessao .fam-parte-objetivo + .fam-secao-bloco { margin-top: 0; padding-top: 8px; }
 /* 6.12.16: parte de jogo: nome do jogo (com emojis) em destaque, o título do jogo embaixo, fundo um pouco mais forte e linha divisória do resto. */
 /* 6.12.24: o mesmo topo com linha divisória em todas as atividades (menos as orações), não só nos jogos. */

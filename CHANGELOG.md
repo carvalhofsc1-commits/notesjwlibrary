@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.28
+
+- **Objetivo centralizado:** o texto explicativo da atividade ("🎯 Ler juntos os textos, assistir aos vídeos e comentar as lições") fica centralizado.
+
 ## 6.12.27
 
 - **Cabeçalho do placar mais roxo:** a faixa "Participante / Pontos" ficou num roxo ainda mais forte que o fundo do placar (e a cor não é mais sobrescrita por outras regras).
