@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.18
+
+- **Um só nome para o jogo:** a linha do objetivo ("🎯 Jogar o jogo …") dizia o nome que a IA pôs no campo do jogo ("Parceiros Fiéis no Serviço a Deus"), diferente do nome do título da atividade ("Quem sou eu?"). Agora ela usa o mesmo nome do título: "Jogar o jogo Quem sou eu?". Fica assim: nome do jogo ("Quem sou eu?") e título ("Ministros zelosos da Bíblia"), sem um terceiro nome.
+
 ## 6.12.17
 
 - **Títulos centralizados na adoração ao vivo:** o nome da adoração e a linha do código/dirigente, e o nome de cada atividade (inclusive nome e título do jogo), ficam centralizados.
