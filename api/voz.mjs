@@ -14,6 +14,7 @@ import { registrarUsoIa } from "./_estatisticas.mjs";
 import { credenciais, prepararConta, tokenDeAcesso, variaveisDaConta } from "./_googleToken.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
 import { validarCupomVoz } from "./_vozCupom.mjs";
+import { textoDaSessaoParaLer } from "./familia-sessao.mjs";
 import { ALTURAS, MODELOS_VOZ, TONS, VOZES, lerConfigVoz, validarConfigVoz } from "./_vozConfig.mjs";
 
 const URL_TTS = process.env.GOOGLE_TTS_URL || "https://texttospeech.googleapis.com/v1beta1/text:synthesize";
@@ -94,23 +95,30 @@ export default async function handler(req, res) {
 
   const body = req.body && typeof req.body === "object" ? req.body : {};
   await prepararCodigosPessoais();
-  const bloqueioSite = await mensagemSeBloqueado({ aparelhoId: body.aparelhoId, codigoAdmin: body.codigoAdmin });
-  if (bloqueioSite) return erro(res, 403, bloqueioSite);
-  const bloqueioCredito = await mensagemSeSemCredito({ aparelhoId: body.aparelhoId, codigoAdmin: body.codigoAdmin });
-  if (bloqueioCredito) return erro(res, 403, bloqueioCredito);
+  // Uso "familia" (perguntas da adoração compartilhada): quem tem o código da adoração não tem restrição de acesso nem de créditos;
+  // o custo fica para o app (regra desde a 6.12.02). Os demais usos seguem as regras de sempre.
+  const daFamilia = body.uso === "familia";
+  if (!daFamilia) {
+    const bloqueioSite = await mensagemSeBloqueado({ aparelhoId: body.aparelhoId, codigoAdmin: body.codigoAdmin });
+    if (bloqueioSite) return erro(res, 403, bloqueioSite);
+    const bloqueioCredito = await mensagemSeSemCredito({ aparelhoId: body.aparelhoId, codigoAdmin: body.codigoAdmin });
+    if (bloqueioCredito) return erro(res, 403, bloqueioCredito);
+  }
   // Quem pode pedir o quê:
   //  - o exemplo do painel do administrador usa as escolhas ainda não salvas: só com a senha de administrador;
   //  - uso "texto-diario": código de pesquisa + cupom HMAC (origem coberta pelo texto do dia ou pelos comentários);
   //  - uso "leitura" (a tela Leitura em voz alta, com arquivos e textos colados): só quem tem o código de leitura (CODIGO_LEITURA);
   //  - uso "campo" ou omitido (o botão 🔊 do campo de texto da formatação): só o administrador.
   const uso = typeof body.uso === "string" ? body.uso : "";
-  if (uso && uso !== "texto-diario" && uso !== "leitura" && uso !== "campo") {
+  if (uso && uso !== "texto-diario" && uso !== "leitura" && uso !== "campo" && uso !== "familia") {
     return erro(res, 400, "Tipo de leitura em voz alta inválido.");
   }
   const administrador = Boolean(process.env.CODIGO_ADMIN && textosIguais(body.codigoAdmin, process.env.CODIGO_ADMIN));
   const exemplo = Boolean(body.exemplo && administrador);
   if (!exemplo) {
-    if (uso === "texto-diario") {
+    if (uso === "familia") {
+      // Sem código de pesquisa nem de leitura: vale o código da adoração, conferido logo abaixo junto com o texto.
+    } else if (uso === "texto-diario") {
       if (!recursoCodigoValido("pesquisa", body.codigo, body.aparelhoId)) return erro(res, 403, "Código de pesquisa inválido.");
     } else if (uso === "leitura") {
       if (!recursoCodigoValido("leitura", body.codigoLeitura, body.aparelhoId)) {
@@ -125,6 +133,10 @@ export default async function handler(req, res) {
   const texto = typeof body.texto === "string" ? body.texto.replace(/\r\n?/g, "\n").trim() : "";
   if (!texto) return erro(res, 400, "Não há texto para ler.");
   if (texto.length > MAX_CARACTERES) return erro(res, 400, `Trecho grande demais (máximo de ${MAX_CARACTERES} caracteres por parte).`);
+
+  if (!exemplo && uso === "familia" && !(await textoDaSessaoParaLer(body.sessao, texto))) {
+    return erro(res, 403, "Esta leitura vale só para as perguntas de uma adoração em andamento.");
+  }
 
   if (!exemplo && uso === "texto-diario") {
     const data = typeof body.data === "string" ? body.data.trim() : "";
@@ -203,7 +215,7 @@ export default async function handler(req, res) {
   console.log("Voz:", JSON.stringify({ caracteres: texto.length, voz: usada, exemplo, segundos: Math.round((Date.now() - inicio) / 100) / 10 }));
   // Consumo do aparelho (faturamento): os caracteres lidos. O exemplo do painel do administrador não conta. Gravado antes de responder, porque
   // depois a Vercel pode congelar a função.
-  if (!exemplo) {
+  if (!exemplo && !daFamilia) {
     try {
       const usoVoz = { aparelhoId: body.aparelhoId, tarefa: "voz", caracteres: texto.length, consultas: 1 };
       await registrarUsoIa(usoVoz);

@@ -132,6 +132,20 @@ function estadoPublico(e) {
 // O dirigente recebe também a lista de quem entrou; a versão dele inclui a quantidade de participantes (muda quando alguém entra).
 const versaoDe = (e, qtd) => (qtd == null ? String(e.versao || 0) : `${e.versao || 0}.${qtd}`);
 
+// 6.12.02: leitura em voz alta (Google) para quem está numa adoração compartilhada. api/voz.mjs (uso "familia") chama esta função:
+// vale só para a sessão que existe e só para o texto que a própria programação tem (as perguntas) ou a palavra "Pergunta".
+// Quem tem o código da adoração não precisa de código de leitura nem gasta créditos: o custo é do app.
+export async function textoDaSessaoParaLer(codigo, texto) {
+  const cod = codigoLimpo(codigo);
+  if (!cod || !blobConfigurado()) return false;
+  const lido = String(texto || "").trim();
+  if (!lido) return false;
+  if (/^pergunta[.,!]?$/i.test(lido)) return Boolean(await lerEstado(cod));
+  const [estado, programa] = await Promise.all([lerEstado(cod), lerJson(caminho(cod, "programa.json"))]);
+  if (!estado || !programa || !Array.isArray(programa.partes)) return false;
+  return programa.partes.some((p) => p && Array.isArray(p.perguntas) && p.perguntas.some((q) => String(q).trim() === lido));
+}
+
 // ---------- Vídeo da parte: o MP4 para tocar e a transcrição (legenda publicada), guardados 6 h por vídeo ----------
 const videosGuardados = new Map(); // lank -> { quando, dados }
 const VALIDADE_VIDEO_MS = 6 * 60 * 60 * 1000;

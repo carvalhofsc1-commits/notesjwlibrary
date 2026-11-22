@@ -4339,6 +4339,8 @@
         ? { exemplo, codigoAdmin: vozAdminCodigo, texto }
         : uso === 'leitura'
           ? { codigoLeitura: codigoLeituraSalvo(), texto, uso }
+          : uso === 'familia'
+          ? { sessao: participar.cod, texto, uso } // 6.12.02: quem tem o código da adoração lê sem código de leitura e sem gastar créditos (custo do app)
           : uso === 'texto-diario'
           ? {
               codigo: codigoAcessoSalvo(),
@@ -7933,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.01'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.02'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26607,7 +26609,7 @@ function saveTemplatesToStorage() {
       addLista('❓ Perguntas', parte.perguntas, (li, q) => {
         if (!aoVivo) { li.textContent = q; return; }
         li.classList.add('fam-pergunta-moldura'); // ao vivo: cada pergunta numa moldura, em negrito
-        if ('speechSynthesis' in window) li.appendChild(participarPerguntaVozBotao(q)); // 🔊 pequeno no início: lê "Pergunta", pausa e lê a pergunta
+        li.appendChild(participarPerguntaVozBotao(q)); // 🔊 pequeno no início: lê "Pergunta", pausa e lê a pergunta (voz do Google; reserva: voz do aparelho)
         li.appendChild(document.createTextNode(q));
       });
       if (parte.jogo && jogoMontar) bloco.appendChild(jogoMontar(parte.jogo));
@@ -27552,10 +27554,12 @@ function saveTemplatesToStorage() {
       else bibliaAudioUrls(t.livro).then(tocar, falhou);
     }
     // 6.12.01: 🔊 pequeno no início de cada pergunta (adoração ao vivo). Voz do aparelho: diz "Pergunta", faz uma pausa e lê a pergunta.
-    const perguntaVoz = { botao: null, timer: 0 };
+    // 6.12.02: a leitura usa a voz do Google (api/voz.mjs, uso "familia"; sem código de leitura e sem créditos, o custo é do app); a do aparelho é a reserva.
+    const perguntaVoz = { botao: null, timer: 0, el: null };
     function perguntaVozParar() {
       clearTimeout(perguntaVoz.timer);
-      try { window.speechSynthesis.cancel(); } catch (e) { /* sem voz */ }
+      if (perguntaVoz.el) { try { perguntaVoz.el.onended = perguntaVoz.el.onerror = null; perguntaVoz.el.pause(); } catch (e) { /* sem áudio */ } }
+      try { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch (e) { /* sem voz */ }
       if (perguntaVoz.botao) { perguntaVoz.botao.textContent = '🔊'; perguntaVoz.botao.setAttribute('aria-pressed', 'false'); }
       perguntaVoz.botao = null;
     }
@@ -27565,6 +27569,24 @@ function saveTemplatesToStorage() {
       const voz = (window.speechSynthesis.getVoices() || []).find(v => /^pt[-_]BR/i.test(v.lang));
       if (voz) u.voice = voz;
       return u;
+    }
+    // Lê pela voz do Google (api/voz.mjs, uso "familia"): "Pergunta", pausa e a pergunta. Se o Google falhar, cai na voz do aparelho.
+    async function perguntaVozGoogle(botao, pergunta, el) {
+      const [aviso, leitura] = await Promise.all([vozBuscar('Pergunta.', null, 'familia'), vozBuscar(pergunta, null, 'familia')]);
+      const ativo = () => perguntaVoz.botao === botao;
+      if (!ativo()) return;
+      const tocar = entrada => new Promise((ok, falha) => {
+        el.onended = ok;
+        el.onerror = () => falha(new Error('áudio'));
+        el.src = entrada.uri;
+        const p = el.play();
+        if (p && p.catch) p.catch(falha);
+      });
+      await tocar(aviso);
+      if (!ativo()) return;
+      await new Promise(ok => { perguntaVoz.timer = setTimeout(ok, 800); }); // a pausa entre "Pergunta" e o texto
+      if (!ativo()) return;
+      await tocar(leitura);
     }
     function participarPerguntaVozBotao(pergunta) {
       const botao = document.createElement('button');
@@ -27582,14 +27604,25 @@ function saveTemplatesToStorage() {
         perguntaVoz.botao = botao;
         botao.textContent = '⏹️';
         botao.setAttribute('aria-pressed', 'true');
-        const aviso = perguntaVozFalar('Pergunta.');
-        const leitura = perguntaVozFalar(pergunta);
-        aviso.onend = () => { // pausa curta entre a palavra "Pergunta" e o texto
-          perguntaVoz.timer = setTimeout(() => { if (perguntaVoz.botao === botao) window.speechSynthesis.speak(leitura); }, 800);
+        // O iPhone só libera o áudio dentro do toque: o mesmo elemento toca um instante de silêncio agora e as vozes depois.
+        if (!perguntaVoz.el) perguntaVoz.el = new Audio();
+        const el = perguntaVoz.el;
+        el.src = vozSilencio();
+        const p = el.play();
+        if (p && p.catch) p.catch(() => { /* sem permissão: cai na voz do aparelho */ });
+        const reserva = () => { // voz do aparelho
+          if (perguntaVoz.botao !== botao) return;
+          if (!('speechSynthesis' in window)) { perguntaVozParar(); return; }
+          const aviso = perguntaVozFalar('Pergunta.');
+          const leitura = perguntaVozFalar(pergunta);
+          aviso.onend = () => { perguntaVoz.timer = setTimeout(() => { if (perguntaVoz.botao === botao) window.speechSynthesis.speak(leitura); }, 800); };
+          leitura.onend = leitura.onerror = aviso.onerror = () => { if (perguntaVoz.botao === botao) perguntaVozParar(); };
+          window.speechSynthesis.speak(aviso);
         };
-        leitura.onend = leitura.onerror = () => { if (perguntaVoz.botao === botao) perguntaVozParar(); };
-        aviso.onerror = () => { if (perguntaVoz.botao === botao) perguntaVozParar(); };
-        window.speechSynthesis.speak(aviso);
+        perguntaVozGoogle(botao, pergunta, el).then(
+          () => { if (perguntaVoz.botao === botao) perguntaVozParar(); },
+          () => reserva()
+        );
       });
       return botao;
     }

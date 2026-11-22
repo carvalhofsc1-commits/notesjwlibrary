@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.02
+
+- **Regra: quem tem o código da adoração não tem restrição de leitura.** Os recursos de leitura da tela da adoração compartilhada não pedem código de leitura nem código de pesquisa e não gastam créditos de ninguém: o custo fica para o app. Novo uso `familia` em `api/voz.mjs`, que só vale para uma sessão existente e para o texto que a própria programação tem (as perguntas) ou a palavra "Pergunta" (`textoDaSessaoParaLer`, em `api/familia-sessao.mjs`).
+- **Perguntas com a voz do Google:** o 🔊 de cada pergunta agora usa a voz do Google ("Pergunta", pausa e a pergunta). Se o Google falhar ou o envio ao Google não for aceito, lê com a voz do aparelho.
+
 ## 6.12.01
 
 - **Perguntas com voz:** na adoração ao vivo, cada card de pergunta ganhou um 🔊 pequeno no início. Ao tocar, a voz do aparelho diz "Pergunta", faz uma pausa e lê a pergunta; tocar de novo (⏹️) para. Começar o áudio de um texto ou de outra pergunta interrompe a leitura anterior.
