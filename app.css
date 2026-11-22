@@ -17406,6 +17406,10 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 #participarSessao .fam-bv-lista li:last-child { border-bottom: 0; }
 #participarSessao .fam-bv-min { font-weight: 800; font-variant-numeric: tabular-nums; color: color-mix(in srgb, #7c3aed 75%, var(--text)); }
 #participarSessao .fam-bv-nome { font-weight: 600; overflow-wrap: anywhere; }
+/* 6.12.48: leitura de um trecho de uma matéria (parágrafos lidos do wol.jw.org). */
+.fam-leitura { display: grid; gap: 8px; min-width: 0; }
+.fam-leitura-par { margin: 0; line-height: 1.5; overflow-wrap: anywhere; }
+.fam-leitura > a { overflow-wrap: anywhere; font-size: .9rem; }
 /* 6.12.38: ao entrar, só as boas-vindas e o programa, com o botão Entrar (fora da tela grande, onde o dirigente avança). */
 body:not(.fam-tela-grande) #participarSessao.fam-so-boasvindas > :not(.fam-boasvindas) { display: none !important; }
 /* 6.12.46: as boas-vindas só aparecem ao entrar (celular) ou, na tela grande, antes de a primeira atividade começar; nunca na página das atividades. */

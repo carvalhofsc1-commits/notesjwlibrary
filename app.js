@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.47'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.48'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26576,6 +26576,30 @@ function saveTemplatesToStorage() {
           li.appendChild(span);
         }
       });
+      // 6.12.48: a leitura de um trecho de uma matéria (os parágrafos que o servidor leu no wol.jw.org).
+      if (parte.leitura && parte.leitura.texto) {
+        const lei = document.createElement('div');
+        lei.className = 'fam-secao-bloco fam-leitura';
+        const lt = document.createElement('p');
+        lt.className = 'fam-secao-titulo';
+        lt.textContent = '📰 Leitura' + (parte.leitura.paragrafos ? ' (par. ' + parte.leitura.paragrafos + ')' : '') + ': ' + (parte.leitura.titulo || parte.leitura.fonte || 'matéria');
+        lei.appendChild(lt);
+        parte.leitura.texto.split(/\n+/).filter(Boolean).forEach(par => {
+          const pp = document.createElement('p');
+          pp.className = 'fam-leitura-par';
+          pp.textContent = par;
+          lei.appendChild(pp);
+        });
+        if (parte.leitura.url) {
+          const a = document.createElement('a');
+          a.href = parte.leitura.url;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          a.textContent = 'Abrir a matéria no wol.jw.org ↗' + (parte.leitura.fonte ? ' (' + parte.leitura.fonte + ')' : '');
+          lei.appendChild(a);
+        }
+        bloco.appendChild(lei);
+      }
       addLista('🎬 Vídeos', parte.videos, (li, v, idx) => {
         if (aoVivo && aoVivo.video) li.classList.add('fam-video-moldura'); // ao vivo: cada vídeo (link, reproduzir e transcrição) numa moldura roxa clara
         if (v.link) {
@@ -28217,6 +28241,7 @@ function saveTemplatesToStorage() {
     function participarEmojiDaParte(parte) {
       const tem = lista => Array.isArray(lista) && lista.length > 0;
       const textos = tem(parte.textos), videos = tem(parte.videos);
+      if (parte.leitura && parte.leitura.texto) return videos ? '📰🎬' : '📰'; // 6.12.48: leitura de um trecho de matéria
       if (textos && videos) return '📚🎬';
       if (videos) return '🎬';
       if (textos) return '📚';

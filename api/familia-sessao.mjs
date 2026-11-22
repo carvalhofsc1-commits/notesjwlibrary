@@ -203,6 +203,10 @@ function limparPrograma(op) {
       canticos: lista(p.canticos, 6, (c) => (c && Number.isInteger(Number(c.numero)) ? { numero: Number(c.numero), titulo: texto(c.titulo, 150) } : null)),
       publicacoes: lista(p.publicacoes, 8, (u) => (u && typeof u === "object" ? { titulo: texto(u.titulo, 200), fonte: texto(u.fonte, 120), url: /^https:\/\//i.test(String(u.url || "")) ? texto(u.url, 500) : "" } : null)),
       perguntas: lista(p.perguntas, 15, (q) => texto(q, 500)),
+      // 6.12.48: o trecho da matéria que o servidor leu no wol para a leitura da atividade.
+      leitura: p.leitura && typeof p.leitura === "object" && texto(p.leitura.texto, 4000)
+        ? { titulo: texto(p.leitura.titulo, 200), fonte: texto(p.leitura.fonte, 120), paragrafos: texto(p.leitura.paragrafos, 20), texto: texto(p.leitura.texto, 4000), url: /^https:\/\/wol\.jw\.org\//i.test(String(p.leitura.url || "")) ? texto(p.leitura.url, 500) : "" }
+        : null,
       transicao: texto(p.transicao, 600),
       jogo: null,
     };

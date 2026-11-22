@@ -2676,6 +2676,8 @@ const SaidaAdoracaoFamilia = z.object({
           canticos: z.array(z.number()),
           publicacoes: z.array(z.string()),
           perguntas: z.array(z.string()),
+          // 6.12.48: "Leitura de um trecho de uma matéria": a matéria da lista (P1, P2…) e os números dos parágrafos; o servidor lê esses parágrafos no wol.
+          leitura: z.object({ materia: z.string(), paragrafos: z.string() }).nullable(),
           // Jogo da parte, todo PRONTO para jogar (6.11.24): regras, material e o conteúdo (rodadas, perguntas, personagens, abreviações…).
           // 6.11.46: nos jogos de pergunta e resposta, cada rodada vem separada (pergunta, resposta e referência), para a resposta poder ficar
           // escondida até ser revelada; "itens" fica com o conteúdo sem resposta (cartela do bingo, pares da memória, cenas da mímica…).
@@ -3074,6 +3076,21 @@ async function responderAdoracaoFamilia(res, body, P) {
       const vistos = new Set();
       return lista.filter((x) => x && !vistos.has(chave(x)) && vistos.add(chave(x)));
     };
+    // "Leitura de um trecho de uma matéria" (6.12.48): { materia: "P2", paragrafos: "3-6" } -> o servidor lê esses parágrafos (até 8) da matéria no wol
+    // e entrega o texto pronto para ler. Sem matéria da lista, sem parágrafos numerados ou com falha na leitura: sem leitura (a parte continua).
+    const leituraDe = async (l) => {
+      if (!l || typeof l !== "object") return null;
+      const m = String(l.materia || "").match(/P\s*(\d{1,2})/i);
+      const materia = m ? materias[Number(m[1]) - 1] : null;
+      const doc = materia && (String(materia.url || "").match(/lp-t\/(\d{5,12})/) || [])[1];
+      const f = String(l.paragrafos || "").match(/(\d{1,3})(?:\s*[-–a]\s*(\d{1,3}))?/);
+      if (!doc || !f) return null;
+      const de = Number(f[1]);
+      const ate = Math.min(Math.max(de, f[2] ? Number(f[2]) : de), de + 7);
+      const r = await paragrafosPorNumero(doc, de, ate, 8000).catch(() => null);
+      if (!r || !r.texto) return null;
+      return { titulo: limparLinha(r.titulo || materia.titulo, 200), fonte: limparLinha(materia.rotulo, 120), paragrafos: r.paragrafos ? String(r.paragrafos) : de === ate ? String(de) : `${de}-${ate}`, texto: limparTextoGerado(r.texto, 2600), url: r.url };
+    };
     // O jogo da parte: só com tipos aceitos; o texto é limpo e limitado (regras, material e até 25 itens prontos).
     const jogoDe = (j) => {
       if (!perfil.jogos.length || !j || typeof j !== "object") return null;
@@ -3153,6 +3170,7 @@ async function responderAdoracaoFamilia(res, body, P) {
           canticos: bloquearCantico ? [] : semRepetir((p.canticos || []).map((n) => porNumero.get(Math.round(Number(n)))), (c) => c.numero).slice(0, 3).map((c) => ({ numero: c.numero, titulo: c.titulo })),
           publicacoes: semRepetir((p.publicacoes || []).map(publicacaoDe), (x) => x.titulo.toLowerCase()).slice(0, 4),
           perguntas: perguntasDaParte,
+          leitura: await leituraDe(p.leitura),
           jogo: jogoDe(p.jogo),
         });
       }
