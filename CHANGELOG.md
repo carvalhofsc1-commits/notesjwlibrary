@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.04
+
+- **Jogo de dicas, pontuação:** as opções de pontuar (quem acertou + ✅ Pontuar) não somem mais quando a resposta é revelada. Ficam na questão até alguém ser pontuado (ou se a questão for pontuada de novo, o novo nome vale). Os pontos são os da última dica dada.
+
 ## 6.12.03
 
 - **Textos da adoração ao vivo:** uma linha em branco entre um texto bíblico e o seguinte.
