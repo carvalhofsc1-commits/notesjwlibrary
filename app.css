@@ -17355,6 +17355,10 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 #participarSessao .fam-sessao-secao.fam-sessao-oracao .fam-sessao-secao-topo > :not(.fam-sessao-secao-nome):not(.fam-sessao-num) { display: none; }
 #participarSessao .fam-sessao-secao.fam-sessao-oracao .fam-sessao-secao-topo > .fam-sessao-num { display: block; }
 #participarSessao .fam-sessao-secao .fam-sessao-secao-titulo { display: grid; gap: 2px; text-align: center; min-width: 0; overflow-wrap: anywhere; }
+/* 6.12.25: linhas finas entre as seções da atividade e mais espaço entre o título (topo) e a descrição/objetivo. */
+#participarSessao .fam-secao-bloco { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+#participarSessao .fam-secao-bloco > .fam-secao-titulo { margin-top: 0; }
+#participarSessao .fam-sessao-secao .fam-parte { padding-top: 18px; }
 /* 6.12.16: parte de jogo: nome do jogo (com emojis) em destaque, o título do jogo embaixo, fundo um pouco mais forte e linha divisória do resto. */
 /* 6.12.24: o mesmo topo com linha divisória em todas as atividades (menos as orações), não só nos jogos. */
 .fam-sessao-secao:not(.fam-sessao-oracao) > .fam-sessao-secao-topo { background: color-mix(in srgb, var(--accent) 14%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 12px 12px 0 0; }

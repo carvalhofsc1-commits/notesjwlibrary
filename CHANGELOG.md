@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.25
+
+- **Linhas finas entre as seções da atividade:** Textos, Vídeos, Cânticos, Publicações e Perguntas ficam em blocos separados por uma linha divisória fina.
+- **Mais espaço no topo:** o espaço entre o título da atividade e a descrição/objetivo (🎯) aumentou.
+
 ## 6.12.24
 
 - **Linha divisória em todas as atividades:** o topo de cada atividade (número, emoji, nome e tempo) ganhou, como no jogo, um fundo um pouco mais forte e uma linha dividindo o tema do restante do card (mais grossa e mais marcada com o card aberto). As orações, que são só um card fino, ficam como estavam.
