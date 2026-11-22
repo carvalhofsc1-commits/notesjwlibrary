@@ -17088,7 +17088,10 @@ body[data-screen="participar"] :is(.screen-inicio, .screen-editor, .screen-forma
 body.fam-tela-grande :is(.app-topbar, #appNav) { display: none !important; }
 body.fam-tela-grande #participarCard { font-size: 1.35rem; max-width: none; width: auto; margin: 0; border: 0; box-shadow: none; min-height: 100vh; padding-bottom: 80px; }
 body.fam-tela-grande #participarCard :is(.fam-topo, .fam-sessao-dirigente, .fam-sessao-secao-acoes, .fam-dica, .fam-sessao-grande-btn, .fam-sessao-aviso) { display: none !important; }
-body.fam-tela-grande .fam-sessao-secao.bloqueada { display: none; }
+/* 6.11.93: na tela grande, cada atividade é uma página exclusiva: só a atual aparece (as outras, liberadas ou não, ficam escondidas). */
+body.fam-tela-grande .fam-sessao-secao:not(.atual):not(.fam-sessao-oracao) { display: none; }
+body.fam-tela-grande .fam-sessao-oracao { display: none; }
+body.fam-tela-grande .fam-sem-atual .fam-sessao-oracao { display: block; }
 body.fam-tela-grande .fam-sessao-cron-linha { display: block; font-size: 1.9em; text-align: center; }
 body.fam-tela-grande .fam-sessao-cron-linha[hidden] { display: none !important; }
 body.fam-tela-grande .fam-sessao-sorteado { font-size: 1.6em; }

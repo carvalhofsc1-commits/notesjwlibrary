@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.93
+
+- **Tela grande — uma atividade por vez:** cada atividade é uma página exclusiva, sem continuidade com as outras. Só a atividade atual aparece; ao passar para a próxima, a anterior some, a próxima abre e a tela volta ao topo. Antes de liberar qualquer atividade, aparece só a linha da Oração inicial.
+
 ## 6.11.92
 
 - **Tela grande:** o botão **⏭️ Próxima** voltou à barra de baixo (ao lado de Sair da tela grande), para o dirigente avançar de parte sem sair do modo. Ele havia sido tirado por engano na 6.11.87.
