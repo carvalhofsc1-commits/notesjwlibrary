@@ -32,7 +32,7 @@ const programa = {
   titulo: "Coragem nas provas", emoji: "🛡️", resumo: "Uma noite sobre coragem.", objetivo: "Confiar em Jeová.",
   partes: [
     { nome: "Oração inicial", minutos: 2, descricao: "Um da família ora." },
-    { nome: "Leitura", minutos: 10, textos: [{ referencia: "1 Samuel 17:45", texto: "Você vem contra mim…" }], videos: [{ titulo: "Um vídeo", duracao: "3:00", link: "https://www.jw.org/finder?srcid=share&wtlocale=T&lank=pub-jwb-128_7_VIDEO" }] },
+    { nome: "Leitura", minutos: 10, textos: [{ referencia: "1 Samuel 17:45", texto: "Você vem contra mim…" }], videos: [{ titulo: "Um vídeo", duracao: "3:00", link: "https://www.jw.org/finder?srcid=share&wtlocale=T&lank=pub-jwb-128_7_VIDEO" }], canticos: [{ numero: 131, titulo: "O que Jeová uniu" }] },
     {
       nome: "Jogo", minutos: 15, descricao: "Quem sou eu?",
       jogo: {
@@ -133,6 +133,8 @@ try {
   assert.equal((await chamar({ acao: "video", sessao, parte: 1, video: 0 })).status, 403); passo("vídeo de parte ainda bloqueada recusado ao participante");
   assert.equal((await chamar({ acao: "video", sessao, parte: 2, video: 0 })).status, 404); passo("vídeo que não está na programação: 404");
   assert.equal((await chamar({ acao: "video", sessao, parte: 1, video: 5, chave })).status, 404); passo("índice de vídeo inexistente: 404");
+  assert.equal((await chamar({ acao: "cantico", sessao, parte: 1, cantico: 0 })).status, 403); passo("cântico de parte ainda bloqueada recusado ao participante");
+  assert.equal((await chamar({ acao: "cantico", sessao, parte: 1, cantico: 5, chave })).status, 404); passo("índice de cântico inexistente: 404");
 
   const sorteados = [];
   for (let i = 0; i < 6; i++) sorteados.push((await chamar({ acao: "sortear", sessao, chave, fonte: "participantes" })).dados.estado.sorteio.nome);

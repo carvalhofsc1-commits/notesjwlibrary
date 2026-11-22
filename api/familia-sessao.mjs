@@ -15,6 +15,7 @@ import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { blobConfigurado, del, get, list, put } from "./_blob.mjs";
 import { mensagemSeBloqueado, prepararCodigosPessoais, recursoCodigoValido } from "./_acessoSite.mjs";
 import { lerTextoDoVideo, playerDoVideo, videoDoEndereco } from "./_wol.mjs";
+import { lerCanticos } from "./_fontes.mjs";
 
 const PASTA = "familia-sessoes/";
 const ALFABETO = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"; // sem 0/O e 1/I/L, que se confundem
@@ -145,6 +146,27 @@ export async function dadosDoVideo(link) {
   const dados = { titulo: (lido && lido.titulo) || "", mp4: player ? player.mp4 : "", poster: player ? player.poster : "", texto: lido ? lido.texto : "", fonte: lido ? lido.fonte : "" };
   videosGuardados.set(video.lank, { quando: Date.now(), dados });
   if (videosGuardados.size > 60) videosGuardados.delete(videosGuardados.keys().next().value);
+  return dados;
+}
+
+// ---------- Cântico da parte (6.11.84): o vídeo do cântico (Cante de Coração para Jeová, pub sjjm) e a letra (fontes/canticos.json), guardados 6 h ----------
+const canticosGuardadosVivo = new Map(); // número -> { quando, dados }
+export const enderecoDoCantico = (n) => `https://www.jw.org/pt/biblioteca/videos/#pt/mediaitems/VODSJJMeetings/pub-sjjm_${n}_VIDEO`;
+export async function dadosDoCantico(numero) {
+  const n = Number(numero);
+  if (!Number.isInteger(n) || n < 1 || n > 400) return null;
+  const guardado = canticosGuardadosVivo.get(n);
+  if (guardado && Date.now() - guardado.quando < VALIDADE_VIDEO_MS) return guardado.dados;
+  const video = videoDoEndereco(enderecoDoCantico(n));
+  const [player, canticos] = await Promise.all([
+    video ? playerDoVideo(video, { timeoutMs: 12000 }).catch(() => null) : null,
+    lerCanticos().catch(() => null),
+  ]);
+  const c = (canticos || []).find((x) => x.numero === n);
+  if (!player && !(c && c.letra)) return null;
+  const dados = { titulo: c ? c.titulo : "", mp4: player ? player.mp4 : "", poster: player ? player.poster : "", texto: c ? String(c.letra) : "", fonte: c ? "letra do cântico (Cante de Coração para Jeová)" : "" };
+  canticosGuardadosVivo.set(n, { quando: Date.now(), dados });
+  if (canticosGuardadosVivo.size > 60) canticosGuardadosVivo.delete(canticosGuardadosVivo.keys().next().value);
   return dados;
 }
 
@@ -339,6 +361,19 @@ export default async function handler(req, res) {
       if (!(estado.liberadas || []).includes(parte) && !(await ehDirigente())) return erro(res, 403, "Esta parte ainda não foi liberada pelo dirigente.");
       const dados = await dadosDoVideo(v.link);
       if (!dados) return erro(res, 502, "Não consegui abrir o vídeo agora. Use o link para assistir no jw.org.");
+      return res.status(200).json(dados);
+    }
+
+    // ----- cantico (6.11.84): o vídeo e a letra de um cântico da parte, nas mesmas condições do vídeo (parte liberada ou dirigente) -----
+    if (acao === "cantico") {
+      const parte = Number(corpo.parte);
+      const indice = Number(corpo.cantico);
+      const programa = await lerJson(caminho(cod, "programa.json"));
+      const c = programa && Number.isInteger(parte) && Number.isInteger(indice) && programa.partes && programa.partes[parte] && (programa.partes[parte].canticos || [])[indice];
+      if (!c) return erro(res, 404, "Esse cântico não está nesta programação.");
+      if (!(estado.liberadas || []).includes(parte) && !(await ehDirigente())) return erro(res, 403, "Esta parte ainda não foi liberada pelo dirigente.");
+      const dados = await dadosDoCantico(c.numero);
+      if (!dados) return erro(res, 502, "Não consegui abrir o cântico agora. Use o link para assistir no jw.org.");
       return res.status(200).json(dados);
     }
 

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.84
+
+- **Adoração ao vivo — cânticos:** cada cântico da parte ganha, no mesmo padrão dos vídeos, uma moldura roxa clara com o link do vídeo no jw.org (Cante de Coração para Jeová), o botão **▶️ Reproduzir aqui** (o vídeo toca na tela) e o cartão recolhido **📝 Letra do cântico**. O servidor tem a nova ação `cantico` (parte liberada ou dirigente), que busca o vídeo no jw.org e a letra em fontes/canticos.json.
+
 ## 6.11.83
 
 - **Adoração ao vivo — Oração inicial:** deixa de ser uma parte com card: aparece só como a linha de texto **🙏 Oração inicial**, sem moldura, sem a descrição de boas-vindas, sem botão de liberar e sem minutos. O dirigente começa direto na primeira parte de verdade (o botão vira Começar: 1. …), a numeração das partes recomeça em 1 sem a oração (também no cronômetro) e o botão Próxima pula a oração. Vale para a parte cujo nome começa com Oração inicial; a programação salva e o Word não mudam.

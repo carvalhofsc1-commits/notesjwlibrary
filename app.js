@@ -7933,7 +7933,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.83'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.84'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26559,7 +26559,22 @@ function saveTemplatesToStorage() {
         } else li.textContent = v.titulo || 'Vídeo';
         if (aoVivo && aoVivo.video) aoVivo.video(li, v, idx);
       });
-      addLista('🎵 Cânticos', parte.canticos, (li, c) => { li.textContent = 'Cântico ' + c.numero + (c.titulo ? ' — ' + c.titulo : ''); });
+      addLista('🎵 Cânticos', parte.canticos, (li, c, idx) => {
+        const rotulo = 'Cântico ' + c.numero + (c.titulo ? ' — ' + c.titulo : '');
+        if (aoVivo && aoVivo.cantico) {
+          // Ao vivo: cada cântico numa moldura roxa clara, como os vídeos: link do vídeo, Reproduzir aqui e a letra num cartão recolhido.
+          li.classList.add('fam-video-moldura');
+          const a = document.createElement('a');
+          a.href = 'https://www.jw.org/pt/biblioteca/videos/#pt/mediaitems/VODSJJMeetings/pub-sjjm_' + c.numero + '_VIDEO';
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          a.textContent = rotulo + ' ↗ jw.org';
+          li.appendChild(a);
+          aoVivo.cantico(li, { link: a.href }, idx);
+          return;
+        }
+        li.textContent = rotulo;
+      });
       addLista('📚 Publicações', parte.publicacoes, (li, pub) => {
         const rotulo = [pub.titulo, pub.fonte].filter(Boolean).join(' · ');
         if (pub.url) {
@@ -27528,10 +27543,10 @@ function saveTemplatesToStorage() {
         return botao;
       });
     }
-    async function participarVideoDados(i, k) {
-      const chave = participar.cod + '|' + i + '|' + k;
+    async function participarVideoDados(i, k, cantico) {
+      const chave = participar.cod + '|' + i + '|' + k + (cantico ? '|c' : '');
       if (participarVideosCache.has(chave)) return participarVideosCache.get(chave);
-      const corpo = { acao: 'video', sessao: participar.cod, parte: i, video: k };
+      const corpo = cantico ? { acao: 'cantico', sessao: participar.cod, parte: i, cantico: k } : { acao: 'video', sessao: participar.cod, parte: i, video: k };
       if (participar.dirigente) corpo.chave = participar.chave;
       const r = await familiaSessaoPedir(corpo);
       if (!r.ok) return { erro: r.erro || 'Não consegui abrir o vídeo agora.' };
@@ -27539,8 +27554,10 @@ function saveTemplatesToStorage() {
       return r.data;
     }
     // Cada vídeo da parte: ▶️ Reproduzir aqui (o player aparece abaixo) e, logo abaixo, o cartão fino e recolhido da transcrição.
-    function participarVideoMidia(li, v, k, i) {
+    // cantico = true: o vídeo do cântico (a letra no lugar da transcrição).
+    function participarVideoMidia(li, v, k, i, cantico) {
       if (!v.link) return;
+      const dadosDe = () => participarVideoDados(i, k, cantico);
       const caixa = document.createElement('div');
       caixa.className = 'fam-video-vivo';
       const botao = document.createElement('button');
@@ -27553,20 +27570,20 @@ function saveTemplatesToStorage() {
       const transc = document.createElement('details');
       transc.className = 'fam-video-transc';
       const resumo = document.createElement('summary');
-      resumo.textContent = '📝 Transcrição do vídeo';
+      resumo.textContent = cantico ? '📝 Letra do cântico' : '📝 Transcrição do vídeo';
       const texto = document.createElement('div');
       texto.className = 'fam-video-texto';
-      texto.textContent = 'Abra para carregar a transcrição.';
+      texto.textContent = cantico ? 'Abra para carregar a letra.' : 'Abra para carregar a transcrição.';
       transc.append(resumo, texto);
       let carregada = false;
       const preencher = d => {
         carregada = true;
-        texto.textContent = d.erro ? d.erro : (d.texto || 'Este vídeo não tem transcrição publicada.');
+        texto.textContent = d.erro ? d.erro : (d.texto || (cantico ? 'A letra deste cântico não está disponível agora.' : 'Este vídeo não tem transcrição publicada.'));
       };
       const carregarTexto = async () => {
         if (carregada) return;
-        texto.textContent = '⏳ Carregando a transcrição…';
-        preencher(await participarVideoDados(i, k));
+        texto.textContent = cantico ? '⏳ Carregando a letra…' : '⏳ Carregando a transcrição…';
+        preencher(await dadosDe());
       };
       transc.addEventListener('toggle', () => { if (transc.open) carregarTexto(); });
       let tocando = false;
@@ -27581,7 +27598,7 @@ function saveTemplatesToStorage() {
         participarAudioParar();
         botao.disabled = true;
         botao.textContent = '⏳ Abrindo o vídeo…';
-        const d = await participarVideoDados(i, k);
+        const d = await dadosDe();
         botao.disabled = false;
         if (!d || d.erro || !d.mp4) {
           botao.textContent = '▶️ Reproduzir aqui';
@@ -27611,7 +27628,7 @@ function saveTemplatesToStorage() {
       li.appendChild(caixa);
     }
     // Os dois ganchos que familiaParteMontar usa na tela da adoração, para a parte i.
-    const participarMidia = i => ({ texto: t => participarTextoMidia(t), video: (li, v, k) => participarVideoMidia(li, v, k, i) });
+    const participarMidia = i => ({ texto: t => participarTextoMidia(t), video: (li, v, k) => participarVideoMidia(li, v, k, i), cantico: (li, c, k) => participarVideoMidia(li, c, k, i, true) });
 
     // ---- A sessão na tela: cabeçalho, painel do dirigente e uma seção por parte ----
     function participarMontar() {
