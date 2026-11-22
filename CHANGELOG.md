@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.11
+
+- **Sorteado com a cara do placar:** o nome sorteado ("Vez de: …", no título do card e dentro dele) aparece com o mesmo bichinho e a mesma cor, em negrito, que a pessoa tem no placar.
+
 ## 6.12.10
 
 - **Card de sorteio:** espaço entre os campos (botões de sortear e a linha da vez), que estavam colados.

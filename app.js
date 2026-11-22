@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.10'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.11'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -28465,10 +28465,21 @@ function saveTemplatesToStorage() {
       const vale = s && s.nome && (s.parte == null || s.parte === i);
       ref.nome.hidden = !vale;
       ref.linhaVez.hidden = !vale;
-      ref.resumoSorteio.textContent = vale ? '🎲 Vez de: ' + s.nome : '🎲 Sorteio de jogadores'; // com o card recolhido, o título já mostra de quem é a vez
       ref.cardSorteio.hidden = !vale && !participar.dirigente; // quem não dirige só vê o card quando há alguém sorteado
-      if (!vale) return;
-      ref.nome.textContent = '🎲 Vez de: ' + s.nome;
+      if (!vale) { ref.resumoSorteio.textContent = '🎲 Sorteio de jogadores'; return; }
+      // O sorteado aparece como no placar: o mesmo bichinho e a mesma cor, em negrito. Com o card recolhido, o título já mostra de quem é a vez.
+      const mascote = participarMascotes(nomes.includes(s.nome) ? nomes : [...nomes, s.nome])[s.nome];
+      const vezDe = () => {
+        const sp = document.createElement('span');
+        sp.className = 'fam-placar-nome fam-sorteado-nome';
+        sp.style.setProperty('--cor-nome', mascote.cor);
+        const nm = document.createElement('strong');
+        nm.textContent = s.nome;
+        sp.append(mascote.animal + ' ', nm);
+        return sp;
+      };
+      ref.resumoSorteio.replaceChildren('🎲 Vez de: ', vezDe());
+      ref.nome.replaceChildren('🎲 Vez de: ', vezDe());
       if (!montando && ref.ultimoN != null && s.n !== ref.ultimoN) {
         // Animação curta só quando sai um sorteio novo (reinicia a animação).
         ref.nome.classList.remove('novo');
