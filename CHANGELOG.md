@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.86
+
+- **Adoração ao vivo:** saiu o botão Próxima / Começar dos controles do dirigente (cada parte já tem o seu Liberar para todos; a barra da tela grande mantém o Próxima). Cada atividade ganhou uma cor de fundo própria, clara e suave (azul, roxo, laranja, vermelho, azul-turquesa e rosa, repetindo a partir da sétima), que segue o tema claro e escuro.
+
 ## 6.11.85
 
 - **Adoração ao vivo:** sem cronômetros. Saíram o cronômetro do dirigente (Iniciar, Pausar, Zerar e o rótulo da parte), a linha de tempo no topo e o marcador de tempo correndo em cada parte. Os minutos previstos de cada parte continuam aparecendo.
