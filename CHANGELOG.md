@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.92
+
+- **Tela grande:** o botão **⏭️ Próxima** voltou à barra de baixo (ao lado de Sair da tela grande), para o dirigente avançar de parte sem sair do modo. Ele havia sido tirado por engano na 6.11.87.
+
 ## 6.11.91
 
 - **Adoração ao vivo — objetivo da atividade:** no topo de cada parte aparece sempre o objetivo resumido, em **negrito e cor roxa**, no lugar da descrição longa. Ele é montado pelo que a parte tem: "Ler juntos os textos e comentar as lições", "Assistir aos vídeos e comentar as lições", "Jogar o jogo …", "Cantar juntos e terminar com uma oração" (combinando quando há mais de uma coisa). Se a parte não tem textos, vídeos, jogo nem cânticos, continua a descrição de antes. Só na tela ao vivo.
