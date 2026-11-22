@@ -7933,7 +7933,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.82'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.83'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -27649,9 +27649,12 @@ function saveTemplatesToStorage() {
       }
       const lista = document.createElement('div');
       lista.className = 'fam-sessao-secoes';
+      // A Oração inicial não é uma parte para liberar: aparece só como uma linha de texto (sem card, sem descrição) e a numeração das partes segue sem ela.
+      participar.oracao = new Set();
+      if ((p.partes || []).length > 1) (p.partes || []).forEach((x, i) => { if (/^\s*ora[çc][ãa]o inicial/i.test(String((x && x.nome) || ''))) participar.oracao.add(i); });
       participar.secoes = (p.partes || []).map((parte, i) => {
         const sec = document.createElement('section');
-        sec.className = 'fam-sessao-secao bloqueada';
+        sec.className = 'fam-sessao-secao bloqueada' + (participar.oracao.has(i) ? ' fam-sessao-oracao' : '');
         sec.dataset.parte = String(i);
         const topo = document.createElement('button');
         topo.type = 'button';
@@ -27664,7 +27667,7 @@ function saveTemplatesToStorage() {
         icone.textContent = '🔒';
         const nome = document.createElement('span');
         nome.className = 'fam-sessao-secao-nome';
-        nome.textContent = (i + 1) + '. ' + (parte.nome || 'Parte') + (parte.responsavel ? ' — ' + parte.responsavel : '');
+        nome.textContent = participar.oracao.has(i) ? '🙏 Oração inicial' : participarNum(i) + '. ' + (parte.nome || 'Parte') + (parte.responsavel ? ' — ' + parte.responsavel : '');
         const lado = document.createElement('span');
         lado.className = 'fam-sessao-secao-lado';
         const agora = document.createElement('span');
@@ -27822,7 +27825,7 @@ function saveTemplatesToStorage() {
         l.hidden = !c;
         if (c) {
           const parte = partes[c.parte] || {};
-          l.textContent = (esgotado ? '⏰ Tempo esgotado · ' : '⏱️ ') + (c.parte + 1) + '. ' + (parte.nome || 'Parte') + ' · ' + tempo + (c.rodando ? '' : c.restanteMs < c.totalMs ? ' (pausado)' : '');
+          l.textContent = (esgotado ? '⏰ Tempo esgotado · ' : '⏱️ ') + participarNum(c.parte) + '. ' + (parte.nome || 'Parte') + ' · ' + tempo + (c.rodando ? '' : c.restanteMs < c.totalMs ? ' (pausado)' : '');
           l.classList.toggle('esgotado', esgotado);
           l.classList.toggle('pausado', !c.rodando);
         }
@@ -27837,7 +27840,7 @@ function saveTemplatesToStorage() {
       if (d) {
         const atual = Number.isInteger(e.atual) ? e.atual : null;
         const doAtual = Boolean(c) && atual !== null && c.parte === atual;
-        d.rotulo.textContent = atual === null ? '⏱️ Cronômetro: libere uma parte para usar.' : '⏱️ Cronômetro da parte ' + (atual + 1) + ' (' + (Math.round(Number(partes[atual].minutos)) || 5) + ' min)';
+        d.rotulo.textContent = atual === null ? '⏱️ Cronômetro: libere uma parte para usar.' : '⏱️ Cronômetro da parte ' + participarNum(atual) + ' (' + (Math.round(Number(partes[atual].minutos)) || 5) + ' min)';
         d.iniciar.hidden = atual === null || (doAtual && c.rodando);
         d.iniciar.textContent = doAtual && c.restanteMs < c.totalMs ? '▶️ Continuar' : '▶️ Iniciar';
         d.pausar.hidden = !(doAtual && c.rodando);
@@ -27934,11 +27937,19 @@ function saveTemplatesToStorage() {
       return painel;
     }
 
-    // A próxima parte: a seguinte à atual (liberar uma parte já liberada só a torna a atual).
+    // Número de uma parte na tela: a Oração inicial (só uma linha de texto) não entra na contagem.
+    function participarNum(i) {
+      let n = i + 1;
+      (participar.oracao || new Set()).forEach(o => { if (o < i) n--; });
+      return n;
+    }
+    // A próxima parte: a seguinte à atual, pulando a Oração inicial (liberar uma parte já liberada só a torna a atual).
     function participarProximaParte() {
       const n = (participar.programa.partes || []).length;
       const atual = participar.estado && Number.isInteger(participar.estado.atual) ? participar.estado.atual : -1;
-      return atual + 1 < n ? atual + 1 : null;
+      let prox = atual + 1;
+      while (prox < n && participar.oracao && participar.oracao.has(prox)) prox++;
+      return prox < n ? prox : null;
     }
 
     function participarDirigentePintar() {
@@ -27948,7 +27959,7 @@ function saveTemplatesToStorage() {
       const i = participarProximaParte();
       const parte = i != null ? participar.programa.partes[i] : null;
       participar.dir.proxima.disabled = i == null;
-      participar.dir.proxima.textContent = i == null ? '✔ Última parte' : (i === 0 && !participarLiberadas().size ? '▶️ Começar: ' : '⏭️ Próxima: ') + (i + 1) + '. ' + (parte.nome || 'Parte');
+      participar.dir.proxima.textContent = i == null ? '✔ Última parte' : (!participarLiberadas().size ? '▶️ Começar: ' : '⏭️ Próxima: ') + participarNum(i) + '. ' + (parte.nome || 'Parte');
     }
 
     // Preparação, tarefas, dica e o FunPlayB: só no aparelho do dirigente (o servidor só manda os extras com a chave).
