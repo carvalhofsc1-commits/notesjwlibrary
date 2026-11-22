@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.49
+
+- **Estrutura fixa da programação (prompt da Adoração em Família):** toda opção sai com 6 partes: Oração inicial, **quatro atividades sempre** (leitura de um trecho de uma matéria da pesquisa; leitura de um trecho da Bíblia ou versículos; um ou dois vídeos sobre o assunto; um jogo bíblico) e Oração final. Outras atividades aceitas pela família entram dentro dessas quatro. O prompt segue respeitando a tela: se a família desmarcou vídeos ou jogos, ou não há matérias para o assunto, a IA faz a atividade sem inventar a matéria, o vídeo ou o jogo, mantendo as quatro. Quem editou o prompt precisa acrescentar a regra.
+
 ## 6.12.48
 
 - **Leitura de um trecho de uma matéria, com o texto pronto:** quando a IA escolhe essa atividade, ela indica a matéria da lista (P1, P2…) e os números dos parágrafos (de 2 a 6) no novo campo "leitura"; o servidor lê esses parágrafos no wol.jw.org e a atividade mostra "📰 Leitura (par. 3-6): título", o texto dos parágrafos e o link da matéria. Vale na tela da programação e na adoração ao vivo (o texto vai junto no compartilhamento). Sem matéria da lista ou sem parágrafos numerados, a atividade segue sem a leitura. O prompt orienta a IA a não inventar o texto; quem editou o prompt precisa acrescentar a regra.
