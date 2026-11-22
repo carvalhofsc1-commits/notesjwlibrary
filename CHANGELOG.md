@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.17
+
+- **Títulos centralizados na adoração ao vivo:** o nome da adoração e a linha do código/dirigente, e o nome de cada atividade (inclusive nome e título do jogo), ficam centralizados.
+
 ## 6.12.16
 
 - **Título do jogo separado do nome do jogo:** na atividade de jogo, o nome do jogo (ex.: "Quem sou eu?") vem em destaque em cima, com emojis que lembram o jogo (🧑❓ para "Quem sou eu?"; ✅❌, 💡❓, 🎭🤫, 🧠🃏, 🔤❓, ❓❓ ou 🎲🎯 conforme o jogo), e embaixo o título (ex.: "Ministros zelosos da Bíblia"). Isso aparece com o card recolhido. O topo tem fundo um pouco mais forte e uma linha divisória do resto (mais grossa com o card aberto).
