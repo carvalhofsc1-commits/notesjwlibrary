@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.71
+
+- **↩️ Restaurar padrões originais** (Configurar formatação com IA) agora volta ao **padrão do administrador** (o publicado com Salvar para todos, buscado na hora); se ele nunca publicou, volta ao padrão de fábrica do app.
+
 ## 6.11.70
 
 - **Saiu a opção 🧠 Aprender com esta correção** de Mais opções (só pesava no código e não era usada). A tela de administração da memória de correções em Prompts da IA não mudou.

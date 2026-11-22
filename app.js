@@ -7933,7 +7933,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.70'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.71'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -15025,19 +15025,25 @@ function saveTemplatesToStorage() {
 
     // ↩️ Restaurar padrões originais (Ajustes → Configurar formatação com IA): volta todas as opções ao que o app traz de fábrica.
     document.getElementById('aiRestaurarPadraoBtn').addEventListener('click', async () => {
-      const ok = await askConfirm('Todas as opções de formatação com IA (caixas marcadas, tamanho do resumo, categoria, quantidade de sugestões e instruções fixas) voltam aos padrões originais do app. Deseja continuar?', 'Restaurar padrões');
+      const ok = await askConfirm('Todas as opções de formatação com IA (caixas marcadas, tamanho do resumo, categoria, quantidade de sugestões e instruções fixas) voltam ao padrão do administrador (ou ao de fábrica do app, se ele nunca publicou um). Deseja continuar?', 'Restaurar padrões');
       if (!ok) return;
-      const original = AI_DEFAULT_OPTIONS;
-      renderAiCategoryOptions('all');
-      aiSummarySize.value = original.resumoTamanho;
+      let publicado = aiPublishedDefaults;
+      try {
+        cachedOnlineDefaults = null; // o padrão publicado mais recente
+        const data = await fetchOnlineDefaults();
+        if (data && data.preferencias && data.preferencias.ia) publicado = data.preferencias.ia;
+      } catch (e) { /* sem internet: usa o último padrão recebido */ }
+      const original = Object.assign({}, AI_DEFAULT_OPTIONS, publicado);
+      renderAiCategoryOptions(String(original.categoria || 'all'));
+      aiSummarySize.value = ['curto', 'medio', 'detalhado'].includes(original.resumoTamanho) ? original.resumoTamanho : 'medio';
       aiOptionInputs.forEach(el => { el.checked = !!original[el.dataset.aiOpt]; });
-      aiIntensity.value = original.intensidade;
-      aiInstruction.value = '';
+      aiIntensity.value = ['poucas', 'moderada', 'muitas'].includes(original.intensidade) ? original.intensidade : 'moderada';
+      aiInstruction.value = String(original.instrucao || '').slice(0, 300);
       saveAiOptions();
       aiOptionsTouched = true;
       const info = document.getElementById('aiRestaurarStatus');
       info.hidden = false;
-      info.textContent = '✅ Opções de formatação com IA restauradas para os padrões originais.';
+      info.textContent = '✅ Opções de formatação com IA restauradas para o padrão (o do administrador, ou o de fábrica se não houver).';
     });
 
     // ---------- Instruções adicionais para a IA ----------
