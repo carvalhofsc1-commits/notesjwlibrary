@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.69
+
+- **Preparar para comentar:** toda vez que se sai e se entra de novo nas opções de comentários (pelo atalho, pelo menu, pela barra ou voltando de outra tela), todos os cards recolhíveis, inclusive os de dentro de cada ferramenta, voltam recolhidos. Atalhos diretos (A Sentinela, Joias, Estudo Bíblico) continuam abrindo a ferramenta pedida.
+
 ## 6.11.68
 
 - **Preparar para comentar → A Sentinela:** o texto do parágrafo (Ver o texto do parágrafo) agora aparece alinhado à esquerda.
