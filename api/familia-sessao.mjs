@@ -415,6 +415,14 @@ export default async function handler(req, res) {
     const programa = ["liberar", "bloquear", "revelar", "dica", "pontuar", "reiniciar", "sortear", "sortear-questao", "limpar-sorteio", "cronometro"].includes(acao) ? await lerJson(caminho(cod, "programa.json")) : null;
     const parteValida = (i) => programa && Number.isInteger(i) && i >= 0 && i < programa.partes.length;
 
+    // ----- voltar-inicio (6.12.37): volta à tela de boas-vindas: nenhuma parte liberada e nenhuma atual -----
+    if (acao === "voltar-inicio") {
+      return gravarEstado((e) => {
+        e.liberadas = [];
+        e.atual = null;
+      });
+    }
+
     if (acao === "liberar" || acao === "bloquear") {
       const parte = Number(corpo.parte);
       if (!parteValida(parte)) return erro(res, 400, "Parte inválida.");

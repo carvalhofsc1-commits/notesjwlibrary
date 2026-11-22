@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.37
+
+- **Retornar volta às boas-vindas:** na tela grande, o botão ⏮️ Retornar agora também funciona na primeira atividade e leva de volta à tela de boas-vindas (nenhuma parte fica liberada). Nova ação `voltar-inicio` em `api/familia-sessao.mjs` (exige a chave do dirigente).
+
 ## 6.12.36
 
 - **Família: sem "Anos de casados" para mãe ou pai sozinho:** com "Mãe ou pai sozinho" escolhido, o campo (e o valor guardado) some.

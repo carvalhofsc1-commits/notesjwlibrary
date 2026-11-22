@@ -1,6 +1,6 @@
 {
   "name": "notestyle",
-  "version": "6.12.36",
+  "version": "6.12.37",
   "private": true,
   "scripts": {
     "start": "node server.mjs",

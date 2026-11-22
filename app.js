@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.36'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.37'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -27888,6 +27888,7 @@ function saveTemplatesToStorage() {
         ret.addEventListener('click', () => {
           const i = participarParteAnterior();
           if (i != null) participarAcao({ acao: 'liberar', parte: i }, ret);
+          else participarAcao({ acao: 'voltar-inicio' }, ret); // estava na primeira atividade: volta às boas-vindas
         });
         if (participar.dir) participar.dir.retornar = ret;
         barra.appendChild(ret);
@@ -28216,7 +28217,10 @@ function saveTemplatesToStorage() {
     function participarDirigentePintar() {
       if (!participar.dirigente || !participar.dir) return;
       participar.jogos.forEach((_, i) => participarJogoPintar(i)); // quem entrou muda a lista de nomes do jogo
-      if (participar.dir.retornar) participar.dir.retornar.disabled = participarParteAnterior() == null;
+      if (participar.dir.retornar) { // 6.12.37: da primeira atividade, o Retornar volta à tela de boas-vindas
+        const e = participar.estado;
+        participar.dir.retornar.disabled = !(e && (Number.isInteger(e.atual) || (e.liberadas || []).length));
+      }
       const lista = participar.participantes || [];
       participar.dir.quem.textContent = lista.length ? '👥 Entraram (' + lista.length + '): ' + lista.map(p => p.nome).join(', ') : '👥 Ninguém entrou ainda. Passe o código ' + participar.cod + ' aos participantes.';
       const i = participarProximaParte();
