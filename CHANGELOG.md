@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.16
+
+- **Título do jogo separado do nome do jogo:** na atividade de jogo, o nome do jogo (ex.: "Quem sou eu?") vem em destaque em cima, com emojis que lembram o jogo (🧑❓ para "Quem sou eu?"; ✅❌, 💡❓, 🎭🤫, 🧠🃏, 🔤❓, ❓❓ ou 🎲🎯 conforme o jogo), e embaixo o título (ex.: "Ministros zelosos da Bíblia"). Isso aparece com o card recolhido. O topo tem fundo um pouco mais forte e uma linha divisória do resto (mais grossa com o card aberto).
+- **Contagem das perguntas:** cada questão agora diz "Questão 1 de 10" e, logo abaixo do placar, uma barra de andamento mostra "❓ 3 de 10 respondidas · faltam 7" (ou "🏁 Todas as 10 perguntas foram respondidas"). Conta como respondida a pergunta que teve a resposta revelada.
+
 ## 6.12.15
 
 - **Adorações recentes:** cada card agora tem o nome da adoração bem destacado (negrito, maior), embaixo o código (destaque menor) e, por último, o texto "você dirige (toque para reabrir)" pequeno.

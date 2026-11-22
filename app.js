@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.15'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.16'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -27803,7 +27803,21 @@ function saveTemplatesToStorage() {
         icone.textContent = '🔒';
         const nome = document.createElement('span');
         nome.className = 'fam-sessao-secao-nome';
-        nome.textContent = participar.oracao.has(i) ? (/ora[çc][ãa]o inicial/i.test(String(parte.nome || '')) ? '🙏 Oração inicial' : '👋 Boas-vindas') : participarNum(i) + '. ' + (parte.nome || 'Parte');
+        if (parte.jogo && !participar.oracao.has(i)) {
+          // 6.12.16: no jogo, o nome do jogo (com emojis) em destaque em cima e, embaixo, o título do jogo; uma linha divisória separa isso do resto.
+          const jt = participarJogoTitulo(parte);
+          sec.classList.add('fam-sessao-secao-jogo');
+          const l1 = document.createElement('span');
+          l1.className = 'fam-jogo-nome-linha';
+          l1.textContent = participarNum(i) + '. ' + jt.emojis + ' ' + jt.nome;
+          nome.appendChild(l1);
+          if (jt.titulo) {
+            const l2 = document.createElement('span');
+            l2.className = 'fam-jogo-titulo-linha';
+            l2.textContent = jt.titulo;
+            nome.appendChild(l2);
+          }
+        } else nome.textContent = participar.oracao.has(i) ? (/ora[çc][ãa]o inicial/i.test(String(parte.nome || '')) ? '🙏 Oração inicial' : '👋 Boas-vindas') : participarNum(i) + '. ' + (parte.nome || 'Parte');
         const lado = document.createElement('span');
         lado.className = 'fam-sessao-secao-lado';
         const agora = document.createElement('span');
@@ -28185,6 +28199,25 @@ function saveTemplatesToStorage() {
       });
       return saida;
     }
+    // 6.12.16: o título de uma parte de jogo separado em nome do jogo ("Jogo: Quem sou eu? — Ministros zelosos" → nome "Quem sou eu?", título "Ministros zelosos")
+    // e uns emojis que lembram o jogo.
+    function participarJogoTitulo(parte) {
+      const bruto = String(parte.nome || 'Jogo').trim();
+      const m = bruto.match(/^(?:jogo\s*:\s*)?(.+?)\s+[—–-]\s+(.+)$/i);
+      const semPrefixo = bruto.replace(/^jogo\s*:\s*/i, '');
+      const nome = (m ? m[1] : (String((parte.jogo && parte.jogo.tipo) || '').trim() || semPrefixo)).trim();
+      const titulo = m ? m[2].trim() : (nome === semPrefixo ? '' : semPrefixo);
+      const chave = (nome + ' ' + String((parte.jogo && parte.jogo.tipo) || '')).toLowerCase();
+      const emojis = /quem sou eu/.test(chave) ? '🧑❓'
+        : /verdadeiro|falso/.test(chave) ? '✅❌'
+        : /dica/.test(chave) ? '💡❓'
+        : /m[ií]mica|mimica/.test(chave) ? '🎭🤫'
+        : /mem[óo]ria|pares/.test(chave) ? '🧠🃏'
+        : /forca|palavra|cruzad|letra/.test(chave) ? '🔤❓'
+        : /quiz|pergunta|resposta/.test(chave) ? '❓❓'
+        : '🎲🎯';
+      return { nome, titulo, emojis };
+    }
     const NINGUEM_ACERTOU = '__ninguem__'; // valor da opção "Ninguém acertou" no seletor de quem acertou
     function participarJogoMontar(j, parteIdx) {
       const caixa = document.createElement('div');
@@ -28207,7 +28240,20 @@ function saveTemplatesToStorage() {
       const placar = document.createElement('div');
       placar.className = 'fam-sessao-placar';
       placar.hidden = true;
-      caixa.append(placar, enunciado);
+      // 6.12.16: barra de andamento logo abaixo do placar: quantas perguntas já foram respondidas e quantas faltam.
+      const progresso = document.createElement('div');
+      progresso.className = 'fam-sessao-progresso';
+      const progTexto = document.createElement('p');
+      progTexto.className = 'fam-sessao-progresso-texto';
+      const progBarra = document.createElement('div');
+      progBarra.className = 'fam-sessao-progresso-barra';
+      progBarra.setAttribute('role', 'progressbar');
+      const progPreench = document.createElement('div');
+      progPreench.className = 'fam-sessao-progresso-preench';
+      progBarra.appendChild(progPreench);
+      progresso.append(progTexto, progBarra);
+      progresso.hidden = !(j.rodadas || []).length;
+      caixa.append(placar, progresso, enunciado);
       if (/funplayb/i.test((j.tipo || '') + ' ' + (j.nome || ''))) {
         const a = document.createElement('a');
         a.className = 'secondary fam-fino fam-link-botao';
@@ -28217,7 +28263,7 @@ function saveTemplatesToStorage() {
         a.textContent = '🎮 Abrir o FunPlayB';
         caixa.appendChild(a);
       }
-      const ref = { rodadas: [], sorteio: null, nome: null, ultimoN: null, placar };
+      const ref = { rodadas: [], sorteio: null, nome: null, ultimoN: null, placar, progTexto, progBarra, progPreench };
       // Sorteio: o nome sorteado aparece para todos; os botões, só para o dirigente.
       const sorteio = document.createElement('div');
       sorteio.className = 'fam-sessao-sorteio';
@@ -28289,7 +28335,7 @@ function saveTemplatesToStorage() {
           const num = document.createElement('p');
           num.className = 'fam-sessao-qnum';
           const numTexto = document.createElement('span');
-          numTexto.textContent = 'Questão ' + (k + 1);
+          numTexto.textContent = 'Questão ' + (k + 1) + ' de ' + rodadas.length;
           const pontos = document.createElement('span');
           num.append(numTexto, pontos);
           // Jogo de dicas ("Dica 1: … Dica 2: … Dica 3: …"): uma questão por vez e uma dica por vez, na ordem; vale menos pontos a cada dica dada.
@@ -28441,6 +28487,16 @@ function saveTemplatesToStorage() {
         rotulo.textContent = 'Placar';
         titulo.append(trofeu, rotulo);
         ref.placar.replaceChildren(titulo, tabela);
+      }
+      // Andamento: as perguntas já respondidas (resposta revelada) e as que faltam.
+      const totalPerg = ref.rodadas.length;
+      if (totalPerg) {
+        const feitas = ref.rodadas.filter((_, k) => rev[k] != null && rev[k] !== '').length;
+        ref.progTexto.textContent = feitas >= totalPerg ? '🏁 Todas as ' + totalPerg + ' perguntas foram respondidas' : '❓ ' + feitas + ' de ' + totalPerg + ' respondidas · faltam ' + (totalPerg - feitas);
+        ref.progPreench.style.width = Math.round((feitas / totalPerg) * 100) + '%';
+        ref.progBarra.setAttribute('aria-valuemin', '0');
+        ref.progBarra.setAttribute('aria-valuemax', String(totalPerg));
+        ref.progBarra.setAttribute('aria-valuenow', String(feitas));
       }
       let anteriorRespondida = true; // jogo de dicas: a questão seguinte só aparece depois que a anterior foi respondida (resposta revelada)
       ref.rodadas.forEach((r, k) => {
