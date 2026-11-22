@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.22'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.23'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -27818,7 +27818,7 @@ function saveTemplatesToStorage() {
           sec.classList.add('fam-sessao-secao-jogo');
           const l1 = document.createElement('span');
           l1.className = 'fam-jogo-nome-linha';
-          l1.textContent = jt.emojis + ' ' + jt.nome;
+          l1.textContent = '🎲 ' + jt.emojis + ' ' + jt.nome; // o dado antes do nome do jogo
           tituloEl.appendChild(l1);
           if (jt.titulo) {
             const l2 = document.createElement('span');
@@ -27826,7 +27826,7 @@ function saveTemplatesToStorage() {
             l2.textContent = jt.titulo;
             tituloEl.appendChild(l2);
           }
-        } else tituloEl.textContent = participar.oracao.has(i) ? (/ora[çc][ãa]o inicial/i.test(String(parte.nome || '')) ? '🙏 Oração inicial' : /ora[çc][ãa]o final/i.test(String(parte.nome || '')) ? '🙏 Oração final' : '👋 Boas-vindas') : (parte.nome || 'Parte');
+        } else tituloEl.textContent = participar.oracao.has(i) ? (/ora[çc][ãa]o inicial/i.test(String(parte.nome || '')) ? '🙏 Oração inicial' : /ora[çc][ãa]o final/i.test(String(parte.nome || '')) ? '🙏 Oração final' : '👋 Boas-vindas') : participarEmojiDaParte(parte) + ' ' + (parte.nome || 'Parte');
         const lado = document.createElement('span');
         lado.className = 'fam-sessao-secao-lado';
         const agora = document.createElement('span');
@@ -28115,6 +28115,16 @@ function saveTemplatesToStorage() {
       return painel;
     }
 
+    // 6.12.23: o emoji que vem colado antes do nome de cada atividade: 🎬 vídeos, 📚 textos bíblicos (os dois, quando tem ambos), 🎵 cânticos, 💬 as demais.
+    function participarEmojiDaParte(parte) {
+      const tem = lista => Array.isArray(lista) && lista.length > 0;
+      const textos = tem(parte.textos), videos = tem(parte.videos);
+      if (textos && videos) return '📚🎬';
+      if (videos) return '🎬';
+      if (textos) return '📚';
+      if (tem(parte.canticos)) return '🎵';
+      return '💬';
+    }
     // Número de uma parte na tela: todas contam, também a Oração inicial e a Oração final (cards simples).
     function participarNum(i) {
       return i + 1;

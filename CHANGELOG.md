@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.23
+
+- **Borda das orações:** a Oração inicial e a Oração final têm agora a mesma borda azul mais grossa das outras atividades.
+- **Emoji antes do nome de cada atividade:** colado no nome (o número fica separado, à esquerda): 🎬 vídeo, 📚 textos bíblicos (📚🎬 quando tem os dois), 🎵 cânticos, 💬 demais atividades; no jogo, o 🎲 antes do nome do jogo (seguido dos emojis do tipo de jogo). Orações e boas-vindas já tinham o 🙏 e o 👋.
+
 ## 6.12.22
 
 - **Sem os ícones 🔒/📖 nas atividades:** saíram do topo de cada atividade (o botão Liberar/Voltar a bloquear já mostra o estado). O topo ficou número, título e tempo.
