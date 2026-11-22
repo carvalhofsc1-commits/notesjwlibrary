@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.76
+
+- **Adoração ao vivo:** saiu o texto de resumo da programação que aparecia abaixo do botão Tela grande.
+
 ## 6.11.75
 
 - **Adoração ao vivo:** o botão 📺 Tela grande ocupa a largura toda do card.
