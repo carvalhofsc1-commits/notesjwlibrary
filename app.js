@@ -16,7 +16,7 @@
     // É um app só: a tela escolhida (guardada no endereço, ex.: #reunioes) mostra os blocos dela e esconde os outros.
     // Formatar e Reuniões dividem o mesmo campo de texto. O app sempre abre no Início; ao recarregar a página, o endereço
     // mantém a tela em que se estava.
-    const APP_SCREENS = ['inicio', 'formatar', 'reunioes', 'backup', 'ajustes', 'leitura', 'transcricao', 'biblia', 'anotacoes', 'pesquisa', 'salvas', 'familia', 'participar']; // "leitura" = voz alta; "biblia" = leitura diária; "anotacoes" = reunião/assembleia/congresso; "pesquisa" = Assistente de pesquisas; "familia" = Adoração em Família
+    const APP_SCREENS = ['inicio', 'formatar', 'reunioes', 'backup', 'ajustes', 'leitura', 'transcricao', 'biblia', 'anotacoes', 'pesquisa', 'salvas', 'familia', 'participar', 'adoracao']; // "adoracao" = tela principal da Adoração em família (sugestões / participar); "leitura" = voz alta; "biblia" = leitura diária; "anotacoes" = reunião/assembleia/congresso; "pesquisa" = Assistente de pesquisas; "familia" = Adoração em Família
     try { localStorage.removeItem('jwLibraryNoteAplicarScreenV1'); } catch (e) { /* a tela não é mais guardada */ }
 
     function currentScreen() {
@@ -29,13 +29,14 @@
       const tela = currentScreen();
       const historico = tela === 'salvas';
       document.querySelectorAll('#appNav button[data-screen-target]').forEach(btn => {
-        const atual = btn.dataset.screenTarget === tela && !historico;
+        const alvo = btn.dataset.screenTarget;
+        const atual = (alvo === tela || (alvo === 'adoracao' && (tela === 'familia' || tela === 'participar'))) && !historico;
         if (atual) btn.setAttribute('aria-current', 'page');
         else btn.removeAttribute('aria-current');
       });
       // No menu lateral, o item da tela em que se está fica numa "célula" destacada.
       document.querySelectorAll('#appMenu .app-menu-lista button').forEach(btn => {
-        const atual = btn.dataset.menuIr ? btn.dataset.menuIr === tela && !historico : btn.dataset.menuAtalho === 'historico' && historico;
+        const atual = btn.dataset.menuIr ? (btn.dataset.menuIr === tela || (btn.dataset.menuIr === 'adoracao' && (tela === 'familia' || tela === 'participar'))) && !historico : btn.dataset.menuAtalho === 'historico' && historico;
         if (atual) btn.setAttribute('aria-current', 'page');
         else btn.removeAttribute('aria-current');
       });
@@ -7931,7 +7932,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.66'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.67'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -23132,7 +23133,6 @@ function saveTemplatesToStorage() {
       { onde: '.atalhos-grid [data-atalho="leitura"] .atalho-nome', codigo: 'leitura' },
       { onde: '.atalhos-grid [data-atalho="transcricao"] .atalho-nome', codigo: 'texto' },
       { onde: '.atalhos-grid [data-atalho="pesquisa"] .atalho-nome', codigo: 'pesquisa' },
-      { onde: '.atalhos-grid [data-atalho="familia"] .atalho-nome', codigo: 'pesquisa' },
       { onde: '#familiaTitulo', codigo: 'pesquisa' },
       { onde: '#grupoComentarios .reunioes-subtitle', codigo: 'pesquisa' },
       { onde: '#grupoDirigir .reunioes-subtitle', codigo: 'dirigente' },
@@ -23205,16 +23205,21 @@ function saveTemplatesToStorage() {
       travarGrupo('opcoesIaBox', pesquisa ? '' : 'pesquisa');
       travarAtalho('comentarios', pesquisa ? '' : 'pesquisa');
       travarAtalho('pesquisa', pesquisa ? '' : 'pesquisa'); // Assistente de pesquisas: só com o código de pesquisa
-      travarAtalho('familia', pesquisa ? '' : 'pesquisa'); // Adoração em Família: mesmo código de pesquisa
+      // Adoração em família (tela principal) abre sempre: participar não pede código; só as sugestões pedem o código de pesquisa.
+      const sugestoesBtn = document.getElementById('adoracaoSugestoesBtn');
+      if (sugestoesBtn) {
+        sugestoesBtn.disabled = !pesquisa;
+        const sugestoesTrava = document.getElementById('adoracaoSugestoesTrava');
+        sugestoesTrava.hidden = pesquisa;
+        sugestoesTrava.textContent = TRAVAS.pesquisa + ' (Ajustes)';
+      }
       const menuPesquisa = document.querySelector('#appMenu [data-menu-ir="pesquisa"]');
       if (menuPesquisa) menuPesquisa.disabled = !pesquisa;
-      const menuFamilia = document.querySelector('#appMenu [data-menu-ir="familia"]');
-      if (menuFamilia) menuFamilia.disabled = !pesquisa;
-      if (!pesquisa && (currentScreen() === 'pesquisa' || currentScreen() === 'familia')) showScreen('inicio'); // código apagado com a tela aberta: volta ao Início
+      if (!pesquisa && currentScreen() === 'pesquisa') showScreen('inicio'); // código apagado com a tela aberta: volta ao Início
+      if (!pesquisa && currentScreen() === 'familia') showScreen('adoracao');
       travarAtalho('leitura', codigoLeituraSalvo() ? '' : 'leitura');
       travarAtalho('transcricao', codigoTextoSalvo() ? '' : 'texto');
       if (!codigoTextoSalvo() && currentScreen() === 'transcricao') showScreen('inicio'); // código apagado com a tela aberta: volta ao Início
-      document.getElementById('navFamilia').disabled = !pesquisa; // sem o código de pesquisa, o botão da barra fica bloqueado como o atalho do Início
       document.getElementById('navPesquisa').disabled = !pesquisa; // a barra de baixo tem o Assistente de pesquisas (no lugar da Leitura): sem o código de pesquisa, fica bloqueado como o atalho do Início
       if (!codigoLeituraSalvo() && currentScreen() === 'leitura') showScreen('inicio'); // código apagado com a tela aberta: volta ao Início
       travarAtalho('dirigir', motivoDirigir);
@@ -28194,7 +28199,7 @@ function saveTemplatesToStorage() {
     // ---- Eventos da tela ----
     participarEls.voltar.addEventListener('click', () => {
       const destino = participar.voltarPara;
-      showScreen(APP_SCREENS.includes(destino) && destino !== 'participar' && !(destino === 'familia' && !codigoAcessoSalvo()) ? destino : 'inicio');
+      showScreen(APP_SCREENS.includes(destino) && destino !== 'participar' && !(destino === 'familia' && !codigoAcessoSalvo()) ? destino : 'adoracao');
     });
     participarEls.codigo.addEventListener('input', () => {
       const c = participarCodigoLimpo(participarEls.codigo.value).slice(0, 6);
@@ -28228,8 +28233,9 @@ function saveTemplatesToStorage() {
       participarEls.assumirBox.open = false;
       participarEntrar(cod);
     });
-    const familiaParticiparBtn = document.getElementById('familiaParticiparBtn');
-    if (familiaParticiparBtn) familiaParticiparBtn.addEventListener('click', () => participarAbrir(''));
+    document.getElementById('adoracaoParticiparBtn').addEventListener('click', () => participarAbrir(''));
+    document.getElementById('adoracaoSugestoesBtn').addEventListener('click', () => { if (codigoAcessoSalvo()) showScreen('familia'); });
+    document.getElementById('adoracaoVoltar').addEventListener('click', () => showScreen('inicio'));
     // Aberta pelo endereço (#participar ou #participar=CÓDIGO) antes de esta parte do app carregar.
     if (participarInicial) participarAbrir(participarInicial);
     else if (currentScreen() === 'participar') participarAoEntrar();
@@ -28485,7 +28491,7 @@ function saveTemplatesToStorage() {
       }
     }
 
-    document.getElementById('familiaVoltar').addEventListener('click', () => showScreen('inicio'));
+    document.getElementById('familiaVoltar').addEventListener('click', () => showScreen('adoracao'));
     // "Família e definições gerais" (6.11.35): tocar no card abre uma vista exclusiva (só o cadastro, com Voltar); sair devolve a tela como estava.
     // 6.11.36: o mesmo para "Informar convidados". qual = 'perfil' | 'convidados' (abre essa vista) | null (volta à tela normal, com tudo recolhido).
     var familiaPerfilRolagem = 0; // var e função: showScreen chama familiaVista antes destas linhas rodarem

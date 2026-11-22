@@ -56,8 +56,7 @@
       <button type="button" data-menu-ir="reunioes"><span aria-hidden="true">📅</span> Reuniões</button>
       <button type="button" data-menu-ir="transcricao"><span aria-hidden="true">🎙️</span> Áudio em texto</button>
       <button type="button" data-menu-ir="pesquisa"><span aria-hidden="true">🔎</span> Assistente de pesquisas</button>
-      <button type="button" data-menu-ir="familia"><span aria-hidden="true">👨‍👩‍👧</span> Adoração em Família</button>
-      <button type="button" data-menu-ir="participar"><span aria-hidden="true">🔗</span> Participar de uma adoração</button>
+      <button type="button" data-menu-ir="adoracao"><span aria-hidden="true">👨‍👩‍👧</span> Adoração em família</button>
       <button type="button" data-menu-ir="backup"><span aria-hidden="true">📦</span> Backup JW</button>
       <button type="button" data-menu-atalho="historico"><span aria-hidden="true">🗂️</span> Pesquisas salvas</button>
       <button type="button" data-menu-ir="ajustes"><span aria-hidden="true">⚙️</span> Ajustes</button>
@@ -85,7 +84,7 @@
     <button type="button" data-screen-target="anotacoes" title="Anotações de reuniões, assembleias e congressos"><span class="nav-icon" aria-hidden="true">📝</span><span>Anotações</span></button>
     <button id="navPesquisa" type="button" data-screen-target="pesquisa" title="Assistente de pesquisas"><span class="nav-icon" aria-hidden="true">🔎</span><span>Pesquisas</span></button>
     <button type="button" data-screen-target="reunioes"><span class="nav-icon" aria-hidden="true">📅</span><span>Reuniões</span></button>
-    <button id="navFamilia" type="button" data-screen-target="familia" title="Adoração em Família"><span class="nav-icon" aria-hidden="true">👨‍👩‍👧</span><span>Adoração</span></button>
+    <button id="navFamilia" type="button" data-screen-target="adoracao" title="Adoração em família"><span class="nav-icon" aria-hidden="true">👨‍👩‍👧</span><span>Adoração</span></button>
     <button type="button" data-screen-target="biblia" title="Leitura diária da Bíblia"><span class="nav-icon" aria-hidden="true">📚</span><span>Bíblia</span></button>
     <button type="button" id="navMenuBtn" data-menu-abrir title="Menu"><span class="nav-icon" aria-hidden="true">☰</span><span>Menu</span></button>
   </nav>
@@ -153,7 +152,7 @@
           <button type="button" class="atalho" data-atalho="biblia"><span class="atalho-icone" aria-hidden="true">📚</span><span class="atalho-nome">Leitura diária da Bíblia</span><span class="atalho-desc">Programa anual e resumo dos capítulos</span><span class="atalho-barra" id="bibliaAtalhoBarra" aria-hidden="true"><span></span></span></button>
           <button type="button" class="atalho" data-atalho="comentarios"><span class="atalho-icone" aria-hidden="true">✋</span><span class="atalho-nome">Comentários</span><span class="atalho-desc">Ajuda na preparação para comentar</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="dirigir"><span class="atalho-icone" aria-hidden="true">🎤</span><span class="atalho-nome">Dirigentes</span><span class="atalho-desc">Ajuda na preparação para dirigir</span><span class="atalho-trava" hidden></span></button>
-          <button type="button" class="atalho" data-atalho="familia"><span class="atalho-icone" aria-hidden="true">👨‍👩‍👧</span><span class="atalho-nome">Adoração em Família</span><span class="atalho-desc">Sugestões para a noite de adoração em família</span><span class="atalho-trava" hidden></span></button>
+          <button type="button" class="atalho" data-atalho="adoracao"><span class="atalho-icone" aria-hidden="true">👨‍👩‍👧</span><span class="atalho-nome">Adoração em família</span><span class="atalho-desc">Sugestões para a noite de adoração e participar de uma adoração</span></button>
           <button type="button" class="atalho" data-atalho="leitura"><span class="atalho-icone" aria-hidden="true">🔊</span><span class="atalho-nome">Assistente de leitura em voz</span><span class="atalho-desc">Ouvir um PDF, um Word ou um texto colado</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="transcricao"><span class="atalho-icone" aria-hidden="true">🎙️</span><span class="atalho-nome">Áudio em texto</span><span class="atalho-desc">Transcrever um áudio e resumir com a IA</span><span class="atalho-trava" hidden></span></button>
         </div>
@@ -2912,6 +2911,18 @@
       </details>
     </section>
 
+    <!-- 6.11.67: Adoração em família (tela principal): leva às duas opções, sugestões para a noite de adoração e participar de uma adoração. -->
+    <section id="adoracaoCard" class="card fam-card screen-adoracao" aria-labelledby="adoracaoTitulo">
+      <div class="fam-topo">
+        <button id="adoracaoVoltar" class="secondary" type="button">◀ Voltar</button>
+        <h2 id="adoracaoTitulo" class="fam-titulo"><span aria-hidden="true">👨‍👩‍👧</span> Adoração em família</h2>
+      </div>
+      <div class="fam-hub">
+        <button id="adoracaoSugestoesBtn" type="button" class="secondary fam-hub-btn"><span class="fam-hub-icone" aria-hidden="true">💡</span><span class="fam-hub-nome">Sugestões para a noite de adoração em família</span><span class="fam-hub-desc">A IA monta 1 ou 2 opções completas com partes, textos, vídeos e cânticos.</span><span id="adoracaoSugestoesTrava" class="fam-hub-trava" hidden></span></button>
+        <button id="adoracaoParticiparBtn" type="button" class="secondary fam-hub-btn"><span class="fam-hub-icone" aria-hidden="true">🔗</span><span class="fam-hub-nome">Participar de uma adoração em família</span><span class="fam-hub-desc">Entre com o código que o dirigente passou, ou dirija de outro aparelho.</span></button>
+      </div>
+    </section>
+
     <!-- Adoração em Família (6.11.02): 3 opções de programação; liberada pelo código de pesquisa; perfil só neste aparelho. -->
     <section id="familiaCard" class="card fam-card screen-familia" aria-labelledby="familiaTitulo">
       <div class="fam-topo">
@@ -2919,7 +2930,6 @@
         <h2 id="familiaTitulo" class="fam-titulo"><span aria-hidden="true">👨‍👩‍👧</span> Adoração em Família</h2>
       </div>
       <p class="hint"><strong>Peça sugestões para a noite de adoração em família.</strong> A IA leva em conta as informações repassadas sobre a sua família (cadastradas por você) e monta 1 ou 2 opções completas (você escolhe), com partes, textos, vídeos e, se quiser, cânticos.</p>
-      <button id="familiaParticiparBtn" type="button" class="secondary fam-fino fam-participar-btn">🔗 Participar de uma adoração com código</button>
       <!-- 6.11.56: as adorações que este aparelho dirige (com a chave do dirigente): reabrir, copiar o código ou o link e apagar o compartilhamento. -->
       <details id="familiaDirigindoBox" class="fam-jogos-box fam-dirigindo-box" hidden>
         <summary>👑 Adorações que eu dirijo <span id="familiaDirigindoQtd" class="opc"></span></summary>

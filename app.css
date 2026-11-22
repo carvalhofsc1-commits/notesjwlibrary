@@ -17014,7 +17014,6 @@ body:not([data-screen="participar"]) .screen-participar,
 body[data-screen="participar"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-ajustes, .screen-leitura, .screen-transcricao, .screen-biblia, .screen-anotacoes, .screen-pesquisa, .screen-salvas, .screen-familia) { display: none !important; }
 #participarCard [hidden] { display: none !important; }
 #participarCard label { display: block; margin: 10px 0 4px; font-weight: 600; }
-.fam-participar-btn { margin: 4px 0 10px; }
 .fam-sessao-campo-codigo { font-family: ui-monospace, Consolas, monospace; letter-spacing: .18em; text-transform: uppercase; text-align: center; font-size: 1.15em; }
 .fam-sessao-recentes { display: grid; gap: 6px; margin-top: 12px; }
 .fam-sessao-recente { text-align: left; justify-content: flex-start; }
@@ -17096,6 +17095,17 @@ body.fam-tela-grande .fam-sessao-grande-barra { display: flex; position: fixed; 
 .fam-acoes > :is(button, a) { flex: 1 1 108px; min-width: 0; justify-content: center; text-align: center; align-self: stretch; }
 .fam-acoes > .fam-principal { flex: 1 1 100%; }
 .fam-acoes > .limpar-btn { flex: 0 0 52px; min-width: 52px; }
+
+/* 6.11.67: tela principal Adoração em família (duas opções, botões na largura toda). */
+body:not([data-screen="adoracao"]) .screen-adoracao,
+body[data-screen="adoracao"] :is(.screen-inicio, .screen-editor, .screen-formatar, .screen-reunioes, .screen-backup, .screen-ajustes, .screen-leitura, .screen-transcricao, .screen-biblia, .screen-anotacoes, .screen-pesquisa, .screen-salvas, .screen-familia, .screen-participar) { display: none !important; }
+.fam-hub { display: grid; gap: 10px; min-width: 0; margin-top: 10px; }
+.fam-hub-btn { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; row-gap: 2px; align-items: center; width: 100%; min-width: 0; margin: 0; padding: 12px 14px; text-align: left; white-space: normal; }
+.fam-hub-icone { grid-row: 1 / span 3; font-size: 1.8rem; line-height: 1; }
+.fam-hub-nome { font-weight: 700; overflow-wrap: anywhere; }
+.fam-hub-desc { font-size: .85rem; font-weight: 400; color: var(--muted); overflow-wrap: anywhere; }
+.fam-hub-trava { font-size: .78rem; color: var(--muted); overflow-wrap: anywhere; }
+.fam-hub-btn:disabled { opacity: .6; }
 
 /* 6.11.66: tela compartilhada legível no tema escuro (cores seguem o tema) e controles do dirigente sem aperto. */
 .fam-sessao-dirigente { background: color-mix(in srgb, var(--accent) 9%, var(--card)); border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); color: var(--text); }
