@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.01
+
+- **Perguntas com voz:** na adoração ao vivo, cada card de pergunta ganhou um 🔊 pequeno no início. Ao tocar, a voz do aparelho diz "Pergunta", faz uma pausa e lê a pergunta; tocar de novo (⏹️) para. Começar o áudio de um texto ou de outra pergunta interrompe a leitura anterior.
+
 ## 6.12.00
 
 - **Adorações compartilhadas:** mais espaço entre o texto explicativo do card e a adoração listada logo abaixo.
