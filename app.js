@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.37'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.38'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -27874,7 +27874,16 @@ function saveTemplatesToStorage() {
         return s;
       });
       participar.boasVindas = participarBoasVindasMontar(p);
+      // 6.12.38: ao entrar, só a tela de boas-vindas e o programa, com o botão Entrar embaixo, que leva às atividades.
+      const entrar = document.createElement('button');
+      entrar.type = 'button';
+      entrar.className = 'fam-principal fam-bv-entrar';
+      entrar.textContent = '▶️ Entrar';
+      entrar.addEventListener('click', () => { participar.vista = 'atividades'; participarVistaAplicar(); window.scrollTo(0, 0); });
+      participar.boasVindas.appendChild(entrar);
+      participar.vista = 'boasvindas';
       caixa.append(participar.boasVindas, lista);
+      participarVistaAplicar();
       // A barra da tela grande: sair e, para o dirigente, ir para a próxima parte sem sair da tela grande (o Próxima voltou na 6.11.92).
       const barra = document.createElement('div');
       barra.className = 'fam-sessao-grande-barra';
@@ -27910,6 +27919,11 @@ function saveTemplatesToStorage() {
 
     // 6.12.36: a tela de boas-vindas à adoração (celular e tela grande): emojis, o tema, quem participa (se os nomes foram informados) e o programa
     // das atividades, bem resumido, com o tempo na frente. Aparece enquanto nenhuma atividade começou; ao avançar, vai para a primeira (a Oração inicial).
+    // Só as boas-vindas aparecem (o resto da tela se esconde pelo CSS) enquanto a pessoa não tocou em Entrar e nenhuma atividade começou.
+    function participarVistaAplicar() {
+      const so = participar.vista === 'boasvindas' && participar.boasVindas && !participar.boasVindas.hidden;
+      participarEls.sessao.classList.toggle('fam-so-boasvindas', Boolean(so));
+    }
     function participarBoasVindasMontar(p) {
       const card = document.createElement('section');
       card.className = 'fam-boasvindas';
@@ -28041,7 +28055,7 @@ function saveTemplatesToStorage() {
         if (s) setTimeout(() => s.sec.scrollIntoView({ block: 'start', behavior: 'smooth' }), 120);
       }
       // Tela grande: só a atividade atual aparece (CSS); sem atual, só a linha da Oração inicial. Ao trocar de atividade, volta ao topo.
-      if (participar.boasVindas) participar.boasVindas.hidden = lib.size > 0 || Number.isInteger(e.atual); // as boas-vindas só até a primeira atividade começar
+      if (participar.boasVindas) { participar.boasVindas.hidden = lib.size > 0 || Number.isInteger(e.atual); participarVistaAplicar(); } // as boas-vindas só até a primeira atividade começar
       participarEls.sessao.classList.toggle('fam-sem-atual', !participar.secoes.some((_, i) => lib.has(i) && e.atual === i));
       if (document.body.classList.contains('fam-tela-grande') && antes && e.atual !== antes.atual) window.scrollTo(0, 0);
       participar.jogos.forEach((_, i) => participarJogoPintar(i));

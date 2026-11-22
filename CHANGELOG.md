@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.38
+
+- **Ao entrar, só as boas-vindas:** ao entrar ou iniciar a adoração (celular), abre apenas o card de boas-vindas com o programa, e um botão **▶️ Entrar** embaixo leva à página das atividades (cabeçalho, controles do dirigente e atividades). Se alguma atividade já começou, abre direto nas atividades; quando o dirigente libera a primeira, quem estava nas boas-vindas segue para as atividades. Na tela grande o botão não aparece (o dirigente avança pelo Próxima).
+
 ## 6.12.37
 
 - **Retornar volta às boas-vindas:** na tela grande, o botão ⏮️ Retornar agora também funciona na primeira atividade e leva de volta à tela de boas-vindas (nenhuma parte fica liberada). Nova ação `voltar-inicio` em `api/familia-sessao.mjs` (exige a chave do dirigente).

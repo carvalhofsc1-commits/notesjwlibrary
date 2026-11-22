@@ -17392,6 +17392,10 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 #participarSessao .fam-bv-lista li:last-child { border-bottom: 0; }
 #participarSessao .fam-bv-min { font-weight: 800; font-variant-numeric: tabular-nums; color: color-mix(in srgb, #7c3aed 75%, var(--text)); }
 #participarSessao .fam-bv-nome { font-weight: 600; overflow-wrap: anywhere; }
+/* 6.12.38: ao entrar, só as boas-vindas e o programa, com o botão Entrar (fora da tela grande, onde o dirigente avança). */
+body:not(.fam-tela-grande) #participarSessao.fam-so-boasvindas > :not(.fam-boasvindas) { display: none !important; }
+#participarSessao .fam-bv-entrar { display: block; width: 100%; margin: 14px 0 0; }
+body.fam-tela-grande #participarSessao .fam-bv-entrar { display: none; }
 body.fam-tela-grande #participarSessao .fam-boasvindas { min-height: calc(100vh - 130px); display: flex; flex-direction: column; justify-content: center; padding: 28px 24px; }
 body.fam-tela-grande #participarSessao .fam-bv-emojis { font-size: 3rem; }
 body.fam-tela-grande #participarSessao .fam-bv-ola { font-size: 1.5rem; }
