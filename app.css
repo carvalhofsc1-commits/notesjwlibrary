@@ -17239,6 +17239,9 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 /* 6.11.56: áudio dos versículos e vídeo com transcrição na tela da adoração (dirigente e participantes). */
 .fam-audio-linha { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; min-width: 0; }
 .fam-audio-linha > :is(button, a) { flex: 1 1 140px; min-width: 0; justify-content: center; text-align: center; }
+/* 6.11.82: todas as seções (partes) com a mesma moldura forte da seção atual. */
+.fam-sessao-secao, .fam-sessao-secao.bloqueada { border-color: var(--accent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent); }
+
 /* 6.11.81: cada vídeo da adoração ao vivo (link, Reproduzir aqui e Transcrição) numa moldura independente, com fundo roxo claro. */
 #participarSessao ul.fam-lista:has(> li.fam-video-moldura) { list-style: none; padding-left: 0; margin-left: 0; display: grid; gap: 10px; }
 #participarSessao li.fam-video-moldura { margin: 0; padding: 10px 12px; border: 1px solid color-mix(in srgb, #8b5cf6 55%, var(--line)); border-radius: 12px; background: color-mix(in srgb, #8b5cf6 12%, var(--card)); color: var(--text); overflow-wrap: anywhere; min-width: 0; }

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.82
+
+- **Adoração ao vivo:** todas as partes (seções) passam a ter a mesma moldura forte da parte atual (borda azul e contorno fino), inclusive as ainda bloqueadas.
+
 ## 6.11.81
 
 - **Adoração ao vivo — vídeos:** cada vídeo (o link, o botão Reproduzir aqui e o cartão da Transcrição) fica numa moldura independente, com fundo roxo claro e borda roxa fina (cores que seguem o tema claro e escuro). Só na tela ao vivo.
