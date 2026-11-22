@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.29
+
+- **Reiniciar a questão (só dirigente):** ícone 🔄 (setas opostas) no canto de cada questão do jogo. Pede confirmação e volta a questão ao começo: dicas zeradas, resposta escondida de novo e pontos dessa questão tirados do placar. Nova ação `reiniciar` em `api/familia-sessao.mjs` (exige a chave do dirigente).
+
 ## 6.12.28
 
 - **Objetivo centralizado:** o texto explicativo da atividade ("🎯 Ler juntos os textos, assistir aos vídeos e comentar as lições") fica centralizado.

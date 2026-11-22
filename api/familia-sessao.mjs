@@ -411,7 +411,7 @@ export default async function handler(req, res) {
 
     // ----- Daqui em diante, só o dirigente -----
     if (!(await exigirDirigente())) return;
-    const programa = ["liberar", "bloquear", "revelar", "dica", "pontuar", "sortear", "cronometro"].includes(acao) ? await lerJson(caminho(cod, "programa.json")) : null;
+    const programa = ["liberar", "bloquear", "revelar", "dica", "pontuar", "reiniciar", "sortear", "cronometro"].includes(acao) ? await lerJson(caminho(cod, "programa.json")) : null;
     const parteValida = (i) => programa && Number.isInteger(i) && i >= 0 && i < programa.partes.length;
 
     if (acao === "liberar" || acao === "bloquear") {
@@ -484,6 +484,22 @@ export default async function handler(req, res) {
         e.acertos[parte] = { ...(e.acertos[parte] || {}), [rodada]: ninguem ? { nome: "", pts: 0, ninguem: true } : { nome, pts } };
         e.reveladas = e.reveladas || {};
         e.reveladas[parte] = { ...(e.reveladas[parte] || {}), [rodada]: respostas[rodada] };
+      });
+    }
+
+    // ----- reiniciar (6.12.29): volta a questão ao começo: sem dicas dadas, resposta escondida de novo e sem pontos (quem tinha pontuado perde esses pontos) -----
+    if (acao === "reiniciar") {
+      const parte = Number(corpo.parte);
+      const rodada = Number(corpo.rodada);
+      if (!parteValida(parte) || !Number.isInteger(rodada) || rodada < 0) return erro(res, 400, "Rodada inválida.");
+      return gravarEstado((e) => {
+        for (const campo of ["dicas", "reveladas", "acertos"]) {
+          if (e[campo] && e[campo][parte]) {
+            const copia = { ...e[campo][parte] };
+            delete copia[rodada];
+            e[campo] = { ...e[campo], [parte]: copia };
+          }
+        }
       });
     }
 
