@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.32
+
+- **Regras recolhidas por padrão:** o card "📜 Regras" do jogo agora é recolhível e começa recolhido; basta tocar no título para ler.
+
 ## 6.12.31
 
 - **Todas as questões do jogo visíveis:** as questões deixam de aparecer uma de cada vez; todas ficam na tela (cada uma ainda com uma dica por vez, e quem não dirige vê "Aguardando a primeira dica" nas ainda não iniciadas).
