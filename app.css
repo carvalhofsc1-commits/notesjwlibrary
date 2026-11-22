@@ -17277,7 +17277,7 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 #participarSessao li.fam-sessao-questao { margin: 0; padding: 10px 12px; border: 1px solid var(--accent); border-radius: 12px; background: var(--card); color: var(--text); min-width: 0; overflow-wrap: anywhere; }
 /* 6.12.29: 🔄 (reiniciar a questão, só do dirigente) no canto de cima da questão. */
 #participarSessao li.fam-sessao-questao { position: relative; }
-#participarSessao li.fam-sessao-questao > button.fam-sessao-reiniciar { position: absolute; top: 6px; right: 8px; width: 34px; min-width: 0; min-height: 0; height: 30px; margin: 0; padding: 0; font-size: 1rem; line-height: 1; border-radius: 8px; }
+#participarSessao li.fam-sessao-questao > button.fam-sessao-reiniciar { position: absolute; top: 8px; right: 10px; width: 28px; min-width: 0; min-height: 0; height: 22px; margin: 0; padding: 0; font-size: .78rem; line-height: 1; border-radius: 7px; display: flex; align-items: center; justify-content: center; } /* 6.12.30: menor, na altura da linha "Questão N de M" */
 #participarSessao .fam-sessao-qnum { margin: 0 0 4px; font-weight: 700; font-size: .85em; color: color-mix(in srgb, #7c3aed 78%, var(--text)); }
 #participarSessao li.fam-sessao-questao .fam-sessao-resposta { display: block; }
 #participarSessao li.fam-sessao-questao .fam-sessao-revelar { display: block; width: 100%; margin: 6px 0 0; }

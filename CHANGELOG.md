@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.30
+
+- **Ícone de reiniciar menor:** o 🔄 da questão ficou menor e alinhado à linha "Questão N de M", sem passar para cima da dica.
+
 ## 6.12.29
 
 - **Reiniciar a questão (só dirigente):** ícone 🔄 (setas opostas) no canto de cada questão do jogo. Pede confirmação e volta a questão ao começo: dicas zeradas, resposta escondida de novo e pontos dessa questão tirados do placar. Nova ação `reiniciar` em `api/familia-sessao.mjs` (exige a chave do dirigente).
