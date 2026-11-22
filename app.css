@@ -17264,6 +17264,14 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 /* 6.11.97: placar do jogo (nomes e pontos) no topo e a escolha de quem acertou, na largura toda. */
 #participarSessao .fam-sessao-placar { margin: 0 0 10px; padding: 10px 12px; border: 1px solid color-mix(in srgb, #7c3aed 55%, var(--line)); border-radius: 12px; background: color-mix(in srgb, #7c3aed 9%, var(--card)); color: var(--text); }
 #participarSessao .fam-sessao-placar > p { margin: 0 0 6px; }
+/* 6.12.08: título do placar centralizado (troféu grande, estrelinhas e o nome embaixo) e participantes com bichinho e nome colorido em negrito. */
+#participarSessao .fam-placar-titulo { text-align: center; margin: 0 0 8px; }
+#participarSessao .fam-placar-trofeu { display: flex; align-items: center; justify-content: center; gap: 10px; line-height: 1; }
+#participarSessao .fam-placar-copa { font-size: 3.2rem; }
+#participarSessao .fam-placar-estrela { font-size: 1.3rem; }
+#participarSessao .fam-placar-rotulo { margin-top: 2px; font-size: 1.15rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+#participarSessao .fam-placar-bicho { display: inline-block; width: 1.6em; font-size: 1.15em; }
+#participarSessao .fam-placar-nome strong { color: color-mix(in srgb, var(--cor-nome) 80%, var(--text)); font-weight: 800; }
 #participarSessao .fam-sessao-placar-tabela { width: 100%; border-collapse: collapse; }
 #participarSessao .fam-sessao-placar-tabela th, #participarSessao .fam-sessao-placar-tabela td { padding: 5px 8px; border-bottom: 1px solid var(--line); text-align: left; overflow-wrap: anywhere; }
 #participarSessao .fam-sessao-placar-tabela th:last-child, #participarSessao .fam-sessao-placar-tabela td:last-child { text-align: right; width: 5.5em; font-variant-numeric: tabular-nums; font-weight: 700; }

@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.07'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.08'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -28150,6 +28150,27 @@ function saveTemplatesToStorage() {
     // O jogo na sessão (6.11.50): as perguntas (com a referência) e o material sem resposta. A resposta de cada rodada só chega do
     // servidor depois que o dirigente toca em 👁️ Revelar resposta (nem o aparelho do dirigente a recebe antes). 🎲 Sortear quem responde:
     // o dirigente sorteia entre quem entrou ou entre os nomes informados; todos veem o nome, com uma animação curta.
+    // 6.12.08: cada participante do placar ganha um bichinho e uma cor para o nome. Sai do código da adoração + o nome, então é o mesmo em todos os
+    // aparelhos e não muda a cada atualização; quem já pegou um bicho não repete (enquanto houver bichos livres).
+    const PLACAR_ANIMAIS = ['🦅', '🐴', '🐦', '🦉', '🐧', '🦆', '🐢', '🐘', '🦒', '🦊', '🐻', '🐼', '🐨', '🦁', '🐯', '🐒', '🦜', '🐬', '🐙', '🦋', '🐝', '🐞', '🐇', '🦔', '🐿️', '🦦', '🐳', '🦩', '🦢', '🐄', '🐑', '🐓'];
+    const PLACAR_CORES = ['#c2410c', '#1d4ed8', '#7e22ce', '#be123c', '#a21caf', '#a16207', '#0369a1', '#854d0e', '#4338ca', '#475569'];
+    function participarMascotes(nomes) {
+      const hash = txt => { let h = 2166136261; for (const c of String(txt)) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619) >>> 0; } return h; };
+      const usadosA = new Set();
+      const usadasC = new Set();
+      const saida = {};
+      nomes.forEach(n => {
+        const h = hash((participar.cod || '') + '|' + n);
+        let a = h % PLACAR_ANIMAIS.length;
+        for (let t = 0; t < PLACAR_ANIMAIS.length && usadosA.has(a) && usadosA.size < PLACAR_ANIMAIS.length; t++) a = (a + 1) % PLACAR_ANIMAIS.length;
+        usadosA.add(a);
+        let c = (h >>> 8) % PLACAR_CORES.length;
+        for (let t = 0; t < PLACAR_CORES.length && usadasC.has(c) && usadasC.size < PLACAR_CORES.length; t++) c = (c + 1) % PLACAR_CORES.length;
+        usadasC.add(c);
+        saida[n] = { animal: PLACAR_ANIMAIS[a], cor: PLACAR_CORES[c] };
+      });
+      return saida;
+    }
     const NINGUEM_ACERTOU = '__ninguem__'; // valor da opção "Ninguém acertou" no seletor de quem acertou
     function participarJogoMontar(j, parteIdx) {
       const caixa = document.createElement('div');
@@ -28348,18 +28369,34 @@ function saveTemplatesToStorage() {
         const cab = document.createElement('tr');
         ['Participante', 'Pontos'].forEach(h => { const th = document.createElement('th'); th.textContent = h; cab.appendChild(th); });
         tabela.appendChild(cab);
+        const mascotes = participarMascotes(nomes);
         [...nomes].sort((a, b) => total[b] - total[a] || a.localeCompare(b, 'pt-BR')).forEach(n => {
           const tr = document.createElement('tr');
           const td1 = document.createElement('td');
-          td1.textContent = n;
+          td1.className = 'fam-placar-nome';
+          td1.style.setProperty('--cor-nome', mascotes[n].cor);
+          const bicho = document.createElement('span');
+          bicho.className = 'fam-placar-bicho';
+          bicho.setAttribute('aria-hidden', 'true');
+          bicho.textContent = mascotes[n].animal;
+          const nomeEl = document.createElement('strong');
+          nomeEl.textContent = n;
+          td1.append(bicho, nomeEl);
           const td2 = document.createElement('td');
           td2.textContent = String(total[n]);
           tr.append(td1, td2);
           tabela.appendChild(tr);
         });
-        const titulo = document.createElement('p');
-        titulo.className = 'fam-secao-titulo';
-        titulo.textContent = '🏆 Placar';
+        // Título no centro: o troféu grande e o nome Placar embaixo, com estrelinhas ao redor.
+        const titulo = document.createElement('div');
+        titulo.className = 'fam-placar-titulo';
+        const trofeu = document.createElement('div');
+        trofeu.className = 'fam-placar-trofeu';
+        trofeu.innerHTML = '<span class="fam-placar-estrela" aria-hidden="true">✨</span><span class="fam-placar-copa" aria-hidden="true">🏆</span><span class="fam-placar-estrela" aria-hidden="true">✨</span>';
+        const rotulo = document.createElement('div');
+        rotulo.className = 'fam-placar-rotulo';
+        rotulo.textContent = 'Placar';
+        titulo.append(trofeu, rotulo);
         ref.placar.replaceChildren(titulo, tabela);
       }
       let anteriorRespondida = true; // jogo de dicas: a questão seguinte só aparece depois que a anterior foi respondida (resposta revelada)

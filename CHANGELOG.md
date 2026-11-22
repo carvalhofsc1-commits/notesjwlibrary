@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.08
+
+- **Placar estilizado (todos os jogos):** o título ficou no centro, com o troféu 🏆 grande e estrelinhas ✨ ao lado, e o nome PLACAR embaixo. Cada participante da tabela ganha um bichinho (águia, cavalo, pássaro, coruja…) e o nome em negrito de uma cor própria. Os bichos e as cores saem do código da adoração mais o nome: são os mesmos em todos os aparelhos, não mudam a cada atualização e não se repetem enquanto houver bichos livres.
+
 ## 6.12.07
 
 - **Adoração ao vivo abre tudo recolhido:** ao entrar ou reabrir a tela compartilhada, nenhuma atividade vem aberta (antes as já liberadas abriam sozinhas); o "Material para jogar" também começa fechado. Depois, quando o dirigente libera uma atividade com a tela aberta, ela continua abrindo para todos.
