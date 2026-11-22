@@ -7933,7 +7933,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.97'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.98'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -27686,7 +27686,12 @@ function saveTemplatesToStorage() {
       lista.className = 'fam-sessao-secoes';
       // A Oração inicial não é uma parte para liberar: aparece só como uma linha de texto (sem card, sem descrição) e a numeração das partes segue sem ela.
       participar.oracao = new Set();
-      if ((p.partes || []).length > 1) (p.partes || []).forEach((x, i) => { if (/^\s*ora[çc][ãa]o inicial/i.test(String((x && x.nome) || ''))) participar.oracao.add(i); });
+      // Também as partes só de boas-vindas (sem textos, vídeos nem jogo) deixam de ser seção: viram uma linha de texto.
+      if ((p.partes || []).length > 1) (p.partes || []).forEach((x, i) => {
+        const nomeParte = String((x && x.nome) || '');
+        const soAbertura = !(x && ((x.textos || []).length || (x.videos || []).length || x.jogo));
+        if (/^\s*ora[çc][ãa]o inicial/i.test(nomeParte) || (soAbertura && /boas[-\s]?vindas/i.test(nomeParte))) participar.oracao.add(i);
+      });
       participar.secoes = (p.partes || []).map((parte, i) => {
         const sec = document.createElement('section');
         sec.className = 'fam-sessao-secao bloqueada' + (participar.oracao.has(i) ? ' fam-sessao-oracao' : '');
@@ -27703,7 +27708,7 @@ function saveTemplatesToStorage() {
         icone.textContent = '🔒';
         const nome = document.createElement('span');
         nome.className = 'fam-sessao-secao-nome';
-        nome.textContent = participar.oracao.has(i) ? '🙏 Oração inicial' : participarNum(i) + '. ' + (parte.nome || 'Parte');
+        nome.textContent = participar.oracao.has(i) ? (/ora[çc][ãa]o inicial/i.test(String(parte.nome || '')) ? '🙏 Oração inicial' : '👋 Boas-vindas') : participarNum(i) + '. ' + (parte.nome || 'Parte');
         const lado = document.createElement('span');
         lado.className = 'fam-sessao-secao-lado';
         const agora = document.createElement('span');

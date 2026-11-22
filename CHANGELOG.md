@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.98
+
+- **Boas-vindas não é mais seção:** na adoração ao vivo, uma parte só de boas-vindas (nome com "boas-vindas", sem textos, vídeos nem jogo) vira, como a Oração inicial, uma linha de texto (👋 Boas-vindas), sem card, sem botão de liberar e fora da numeração. Antes só valia para partes cujo nome começava com "Oração inicial". O prompt da Adoração em Família também manda a IA não criar parte de boas-vindas (a abertura é só a Oração inicial); se você editou esse prompt em Prompts da IA, acrescente a regra lá.
+
 ## 6.11.97
 
 - **Jogo ao vivo — Regras e Placar:** o card do enunciado agora se chama **📜 Regras**. No topo do jogo aparece o **🏆 Placar**, uma tabela com o nome de cada participante (os cadastrados ao compartilhar, quem entrou e quem já pontuou) e os pontos, do maior para o menor, visível para todos. Para pontuar, o dirigente escolhe **Quem acertou?** na questão e toca em **✅ Pontuar: N pontos** (3, 2 ou 1, conforme as dicas já dadas): os pontos entram no placar, a resposta é revelada com "🏆 Nome ganhou N pontos" e a próxima questão aparece. **Revelar resposta** continua para quando ninguém acerta. Servidor: ação `pontuar` e `acertos` no estado (4 testes novos; 39 no total).
