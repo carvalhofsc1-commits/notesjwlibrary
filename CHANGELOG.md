@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.51
+
+- **Matéria sempre específica:** a atividade de leitura de um trecho de matéria agora mostra o tema da matéria, a referência dos parágrafos (e a publicação), um link específico para esse trecho no wol.jw.org e o conteúdo num campo "📖 Trecho para considerar" sempre recolhido, que se abre ao tocar (como a transcrição do vídeo).
+- **Livros e lições:** a IA pode indicar a publicação pelo nome ("Seja Feliz para Sempre!, lição 22"); o servidor pesquisa no wol, lê os parágrafos indicados (ou o começo da matéria, quando ela não tem parágrafos numerados) e monta o link. O prompt proíbe descrições vagas como "considerar juntos pontos do livro…". Vale para programações geradas daqui em diante; a que você já tem continua como estava (gere de novo). Quem editou o prompt precisa acrescentar a regra.
+
 ## 6.12.50
 
 - **Novas circunstâncias:** "Manutenção do relacionamento da família" e "Dificuldades com relacionamentos (família, amigos, trabalho, irmãos)" na lista de Circunstâncias da família; o prompt as trata como assuntos delicados (com tato e de forma positiva). Quem editou o prompt precisa acrescentá-las lá.

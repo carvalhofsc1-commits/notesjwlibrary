@@ -17409,6 +17409,12 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 /* 6.12.48: leitura de um trecho de uma matéria (parágrafos lidos do wol.jw.org). */
 .fam-leitura { display: grid; gap: 8px; min-width: 0; }
 .fam-leitura-par { margin: 0; line-height: 1.5; overflow-wrap: anywhere; }
+.fam-leitura-ref { margin: 0; font-weight: 700; font-size: .92rem; color: color-mix(in srgb, #7c3aed 70%, var(--text)); }
+.fam-leitura-trecho { border: 1px solid var(--line, #cbd5e1); border-radius: 8px; background: var(--card); padding: 0 10px; min-width: 0; }
+.fam-leitura-trecho > summary { cursor: pointer; min-height: 38px; display: flex; align-items: center; font-weight: 600; font-size: .9rem; }
+.fam-leitura-trecho[open] { padding-bottom: 10px; }
+.fam-leitura-trecho[open] > summary { margin-bottom: 6px; }
+.fam-leitura-trecho > .fam-leitura-par + .fam-leitura-par { margin-top: 8px; }
 .fam-leitura > a { overflow-wrap: anywhere; font-size: .9rem; }
 /* 6.12.38: ao entrar, só as boas-vindas e o programa, com o botão Entrar (fora da tela grande, onde o dirigente avança). */
 body:not(.fam-tela-grande) #participarSessao.fam-so-boasvindas > :not(.fam-boasvindas) { display: none !important; }

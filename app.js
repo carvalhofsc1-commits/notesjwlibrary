@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.50'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.51'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26497,7 +26497,8 @@ function saveTemplatesToStorage() {
       if (textos) acoes.push('ler juntos os textos');
       if (videos) acoes.push('assistir aos vídeos');
       // 6.12.19: no jogo não se repete a instrução "jogar o jogo …": as regras do jogo já dizem tudo.
-      if (textos || videos) acoes.push('comentar as lições');
+      if (parte.leitura && parte.leitura.texto) acoes.push('ler juntos o trecho da matéria' + (parte.leitura.paragrafos ? ' (par. ' + parte.leitura.paragrafos + ')' : ''));
+      if (textos || videos || (parte.leitura && parte.leitura.texto)) acoes.push('comentar as lições');
       if (tem(parte.canticos)) acoes.push('cantar juntos');
       if (/ora[çc][ãa]o\s+final/i.test(String(parte.nome || ''))) acoes.push('terminar com uma oração');
       if (!acoes.length) return '';
@@ -26582,22 +26583,33 @@ function saveTemplatesToStorage() {
         lei.className = 'fam-secao-bloco fam-leitura';
         const lt = document.createElement('p');
         lt.className = 'fam-secao-titulo';
-        lt.textContent = '📰 Leitura' + (parte.leitura.paragrafos ? ' (par. ' + parte.leitura.paragrafos + ')' : '') + ': ' + (parte.leitura.titulo || parte.leitura.fonte || 'matéria');
+        // 6.12.51: o tema da matéria, a referência do trecho (parágrafos e publicação), o link específico do trecho e o conteúdo num campo recolhido (como a transcrição do vídeo).
+        lt.textContent = '📰 ' + (parte.leitura.titulo || parte.leitura.fonte || 'Matéria');
         lei.appendChild(lt);
-        parte.leitura.texto.split(/\n+/).filter(Boolean).forEach(par => {
-          const pp = document.createElement('p');
-          pp.className = 'fam-leitura-par';
-          pp.textContent = par;
-          lei.appendChild(pp);
-        });
+        const ref = document.createElement('p');
+        ref.className = 'fam-leitura-ref';
+        ref.textContent = (parte.leitura.paragrafos ? (/[-–]/.test(parte.leitura.paragrafos) ? 'Parágrafos ' : 'Parágrafo ') + parte.leitura.paragrafos : 'Trecho inicial da matéria') + (parte.leitura.fonte ? ' · ' + parte.leitura.fonte : '');
+        lei.appendChild(ref);
         if (parte.leitura.url) {
           const a = document.createElement('a');
           a.href = parte.leitura.url;
           a.target = '_blank';
           a.rel = 'noopener noreferrer';
-          a.textContent = 'Abrir a matéria no wol.jw.org ↗' + (parte.leitura.fonte ? ' (' + parte.leitura.fonte + ')' : '');
+          a.textContent = 'Abrir este trecho no wol.jw.org ↗';
           lei.appendChild(a);
         }
+        const det = document.createElement('details'); // sempre recolhido ao montar; abre ao tocar
+        det.className = 'fam-leitura-trecho';
+        const sm = document.createElement('summary');
+        sm.textContent = '📖 Trecho para considerar';
+        det.appendChild(sm);
+        parte.leitura.texto.split(/\n+/).filter(Boolean).forEach(par => {
+          const pp = document.createElement('p');
+          pp.className = 'fam-leitura-par';
+          pp.textContent = par;
+          det.appendChild(pp);
+        });
+        lei.appendChild(det);
         bloco.appendChild(lei);
       }
       addLista('🎬 Vídeos', parte.videos, (li, v, idx) => {

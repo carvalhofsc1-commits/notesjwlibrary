@@ -3078,18 +3078,29 @@ async function responderAdoracaoFamilia(res, body, P) {
     };
     // "Leitura de um trecho de uma matéria" (6.12.48): { materia: "P2", paragrafos: "3-6" } -> o servidor lê esses parágrafos (até 8) da matéria no wol
     // e entrega o texto pronto para ler. Sem matéria da lista, sem parágrafos numerados ou com falha na leitura: sem leitura (a parte continua).
+    // 6.12.51: a matéria pode vir como "P2" (da lista) ou pelo nome ("Seja Feliz para Sempre!, lição 22"): neste caso o servidor pesquisa no wol e usa o primeiro resultado.
+    // Sem parágrafos numerados (como nas lições dos livros), vale o começo do texto da matéria. Sempre devolve título, trecho e um link específico (com a faixa de parágrafos).
     const leituraDe = async (l) => {
       if (!l || typeof l !== "object") return null;
-      const m = String(l.materia || "").match(/P\s*(\d{1,2})/i);
-      const materia = m ? materias[Number(m[1]) - 1] : null;
+      const textoMateria = String(l.materia || "").trim();
+      const m = textoMateria.match(/^\[?P\s*(\d{1,2})\]?(?![\p{L}\d])/iu);
+      let materia = m ? materias[Number(m[1]) - 1] : null;
+      if (!materia && textoMateria && !m) {
+        const achados = await pesquisarNoWol(textoMateria.replace(/[()]/g, " "), 8000, 3).catch(() => []);
+        materia = achados[0] || null;
+      }
       const doc = materia && (String(materia.url || "").match(/lp-t\/(\d{5,12})/) || [])[1];
+      if (!doc) return null;
       const f = String(l.paragrafos || "").match(/(\d{1,3})(?:\s*[-–a]\s*(\d{1,3}))?/);
-      if (!doc || !f) return null;
-      const de = Number(f[1]);
-      const ate = Math.min(Math.max(de, f[2] ? Number(f[2]) : de), de + 7);
-      const r = await paragrafosPorNumero(doc, de, ate, 8000).catch(() => null);
-      if (!r || !r.texto) return null;
-      return { titulo: limparLinha(r.titulo || materia.titulo, 200), fonte: limparLinha(materia.rotulo, 120), paragrafos: r.paragrafos ? String(r.paragrafos) : de === ate ? String(de) : `${de}-${ate}`, texto: limparTextoGerado(r.texto, 2600), url: r.url };
+      if (f) {
+        const de = Number(f[1]);
+        const ate = Math.min(Math.max(de, f[2] ? Number(f[2]) : de), de + 7);
+        const r = await paragrafosPorNumero(doc, de, ate, 8000).catch(() => null);
+        if (r && r.texto) return { titulo: limparLinha(r.titulo || materia.titulo, 200), fonte: limparLinha(materia.rotulo, 120), paragrafos: r.paragrafos ? String(r.paragrafos) : de === ate ? String(de) : `${de}-${ate}`, texto: limparTextoGerado(r.texto, 2600), url: r.url };
+      }
+      const artigo = await lerArtigoDoWol(materia.url, { timeoutMs: 8000, maxCaracteres: 2200 }).catch(() => null);
+      if (!artigo || !artigo.texto) return null;
+      return { titulo: limparLinha(artigo.titulo || materia.titulo, 200), fonte: limparLinha(materia.rotulo, 120), paragrafos: "", texto: limparTextoGerado(artigo.texto, 2600), url: artigo.url || materia.url };
     };
     // O jogo da parte: só com tipos aceitos; o texto é limpo e limitado (regras, material e até 25 itens prontos).
     const jogoDe = (j) => {
