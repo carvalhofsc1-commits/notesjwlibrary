@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.85
+
+- **Adoração ao vivo:** sem cronômetros. Saíram o cronômetro do dirigente (Iniciar, Pausar, Zerar e o rótulo da parte), a linha de tempo no topo e o marcador de tempo correndo em cada parte. Os minutos previstos de cada parte continuam aparecendo.
+
 ## 6.11.84
 
 - **Adoração ao vivo — cânticos:** cada cântico da parte ganha, no mesmo padrão dos vídeos, uma moldura roxa clara com o link do vídeo no jw.org (Cante de Coração para Jeová), o botão **▶️ Reproduzir aqui** (o vídeo toca na tela) e o cartão recolhido **📝 Letra do cântico**. O servidor tem a nova ação `cantico` (parte liberada ou dirigente), que busca o vídeo no jw.org e a letra em fontes/canticos.json.

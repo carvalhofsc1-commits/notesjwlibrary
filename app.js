@@ -7933,7 +7933,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.84'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.85'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -27655,7 +27655,7 @@ function saveTemplatesToStorage() {
       grande.title = 'Mostra só as partes liberadas, com letra grande (para a TV ou o notebook)';
       grande.addEventListener('click', () => participarTelaGrande(!document.body.classList.contains('fam-tela-grande')));
       participar.cron = { linha: cron };
-      cab.append(h, meta, cron, grande);
+      cab.append(h, meta, grande);
       caixa.appendChild(cab); // sem o texto de resumo da programação (retirado na 6.11.76)
       if (participar.dirigente) caixa.appendChild(participarDirigenteMontar());
       else {
@@ -27697,7 +27697,7 @@ function saveTemplatesToStorage() {
         const cronParte = document.createElement('span');
         cronParte.className = 'fam-sessao-cron';
         cronParte.hidden = true;
-        lado.append(agora, cronParte, min);
+        lado.append(agora, min);
         topo.append(icone, nome, lado);
         const aviso = document.createElement('p');
         aviso.className = 'fam-sessao-aviso';
@@ -27830,6 +27830,9 @@ function saveTemplatesToStorage() {
     }
     const participarRestante = c => (c.rodando ? c.restanteMs - (Date.now() + participar.offset - c.inicio) : c.restanteMs);
     function participarCronPintar() {
+      // 6.11.85: sem cronômetros na tela da adoração (o servidor ainda aceita a ação, mas nenhum botão ou marcador de tempo aparece).
+      if (participar.cronTimer) { clearInterval(participar.cronTimer); participar.cronTimer = 0; }
+      return;
       const e = participar.estado;
       if (!e || !participar.programa) return;
       const c = e.cronometro && Number.isInteger(e.cronometro.parte) ? e.cronometro : null;
@@ -27947,7 +27950,7 @@ function saveTemplatesToStorage() {
       const pausar = botaoCron('⏸️ Pausar', 'pausar');
       const zerar = botaoCron('↺ Zerar', 'zerar');
       cron.append(rotuloCron, iniciar, pausar, zerar);
-      painel.append(t, quem, acoes, cron, direcao);
+      painel.append(t, quem, acoes, direcao);
       const extras = participarExtrasMontar();
       if (extras) painel.appendChild(extras);
       participar.dir = { quem, proxima, cron: { rotulo: rotuloCron, iniciar, pausar, zerar } };
