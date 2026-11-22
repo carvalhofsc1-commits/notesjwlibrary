@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.50
+
+- **Novas circunstâncias:** "Manutenção do relacionamento da família" e "Dificuldades com relacionamentos (família, amigos, trabalho, irmãos)" na lista de Circunstâncias da família; o prompt as trata como assuntos delicados (com tato e de forma positiva). Quem editou o prompt precisa acrescentá-las lá.
+
 ## 6.12.49
 
 - **Estrutura fixa da programação (prompt da Adoração em Família):** toda opção sai com 6 partes: Oração inicial, **quatro atividades sempre** (leitura de um trecho de uma matéria da pesquisa; leitura de um trecho da Bíblia ou versículos; um ou dois vídeos sobre o assunto; um jogo bíblico) e Oração final. Outras atividades aceitas pela família entram dentro dessas quatro. O prompt segue respeitando a tela: se a família desmarcou vídeos ou jogos, ou não há matérias para o assunto, a IA faz a atividade sem inventar a matéria, o vídeo ou o jogo, mantendo as quatro. Quem editou o prompt precisa acrescentar a regra.
