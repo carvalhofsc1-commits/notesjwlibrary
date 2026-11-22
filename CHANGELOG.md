@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.42
+
+- **Controles do dirigente com espaço entre os campos:** a lista de quem entrou, os botões, o código do dirigente e o card "Só para o dirigente" estavam colados; agora há 8 px entre eles.
+
 ## 6.12.41
 
 - **Controles do dirigente recolhíveis:** o card "👑 Controles do dirigente" agora recolhe e abre pelo título, e começa recolhido.

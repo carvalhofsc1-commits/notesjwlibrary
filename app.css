@@ -17381,7 +17381,8 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 #participarSessao details.fam-sessao-dirigente > summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; margin: 0; }
 #participarSessao details.fam-sessao-dirigente[open] > summary { margin-bottom: 8px; }
 #participarSessao details.fam-sessao-dirigente > :not(summary) { margin-top: 8px; }
-#participarSessao details.fam-sessao-dirigente > :not(summary):first-of-type { margin-top: 0; }
+#participarSessao details.fam-sessao-dirigente > summary + * { margin-top: 0; } /* 6.12.42: só o primeiro item depois do título (o resto mantém o espaço) */
+#participarSessao details.fam-sessao-dirigente > .fam-acoes { gap: 8px; }
 #participarSessao details.fam-sessao-direcao { display: block; padding: 6px 10px 10px; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 10px; background: var(--card); text-align: center; }
 #participarSessao details.fam-sessao-direcao[hidden] { display: none; }
 #participarSessao details.fam-sessao-direcao > summary { cursor: pointer; min-height: 30px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .95rem; }
