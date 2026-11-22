@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.78
+
+- **Adoração em família:** os botões Abrir como dirigente (ao criar o código) e Reabrir como dirigente (em Adorações que eu dirijo) passam a se chamar **▶️ Iniciar a adoração**; os avisos que os citavam foram ajustados.
+
 ## 6.11.77
 
 - **Tela grande:** os dois botões de baixo (Próxima e Sair da tela grande) dividem a largura toda da tela, meio a meio, com 12 px de margem de cada lado.
