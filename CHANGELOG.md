@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.41
+
+- **Controles do dirigente recolhíveis:** o card "👑 Controles do dirigente" agora recolhe e abre pelo título, e começa recolhido.
+- **Código do dirigente recolhível:** ao tocar em "Passar a direção", o código (com Copiar e a explicação) aparece num card "🔑 Código do dirigente (só você vê)" que abre sozinho e pode ser recolhido pelo título.
+
 ## 6.12.40
 
 - **Textos sempre com perguntas:** o prompt da Adoração em Família agora manda a IA incluir, em toda atividade que tenha textos bíblicos, uma ou duas perguntas sobre esses textos, para fazer antes de passar à próxima atividade. Vale para as programações geradas daqui para a frente; se você editou esse prompt em Prompts da IA, acrescente a regra lá.

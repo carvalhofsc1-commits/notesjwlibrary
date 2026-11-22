@@ -17376,6 +17376,17 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 /* 6.12.26: menos espaço em branco antes e depois da frase do objetivo da atividade. */
 #participarSessao .fam-parte-objetivo { margin: 0; line-height: 1.3; text-align: center; } /* 6.12.28: texto explicativo da atividade centralizado */
 #participarSessao .fam-parte-objetivo + .fam-secao-bloco { margin-top: 0; padding-top: 8px; }
+/* 6.12.41: controles do dirigente e código do dirigente em cards recolhíveis (details em bloco; o espaço vem das margens). */
+#participarSessao details.fam-sessao-dirigente { display: block; }
+#participarSessao details.fam-sessao-dirigente > summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; margin: 0; }
+#participarSessao details.fam-sessao-dirigente[open] > summary { margin-bottom: 8px; }
+#participarSessao details.fam-sessao-dirigente > :not(summary) { margin-top: 8px; }
+#participarSessao details.fam-sessao-dirigente > :not(summary):first-of-type { margin-top: 0; }
+#participarSessao details.fam-sessao-direcao { display: block; padding: 6px 10px 10px; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 10px; background: var(--card); text-align: center; }
+#participarSessao details.fam-sessao-direcao[hidden] { display: none; }
+#participarSessao details.fam-sessao-direcao > summary { cursor: pointer; min-height: 30px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .95rem; }
+#participarSessao details.fam-sessao-direcao > :not(summary) { margin: 8px 0 0; }
+#participarSessao details.fam-sessao-direcao > button { width: 100%; }
 /* 6.12.36: tela de boas-vindas (celular e tela grande): emojis, tema, quem participa e o programa com o tempo na frente. */
 #participarSessao .fam-boasvindas { margin: 0 0 12px; padding: 14px 12px; border: 1px solid var(--accent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent); border-radius: 14px; background: linear-gradient(180deg, #eaf3ff, #f1eefc); color: var(--text); text-align: center; min-width: 0; }
 #participarSessao .fam-boasvindas[hidden] { display: none; }
