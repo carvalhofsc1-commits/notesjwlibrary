@@ -17398,7 +17398,7 @@ body:not(.fam-tela-grande) #participarSessao.fam-so-boasvindas > :not(.fam-boasv
 body.fam-tela-grande #participarSessao .fam-bv-entrar { display: none; }
 body.fam-tela-grande #participarSessao .fam-boasvindas { min-height: calc(100vh - 130px); display: flex; flex-direction: column; justify-content: center; padding: 28px 24px; }
 body.fam-tela-grande #participarSessao .fam-bv-emojis { font-size: 3rem; }
-body.fam-tela-grande #participarSessao .fam-bv-ola { font-size: 1.5rem; }
+body.fam-tela-grande #participarSessao .fam-bv-ola { font-size: 2.8rem; line-height: 1.2; } /* 6.12.39: "Boas-vindas" bem maior na tela grande */
 body.fam-tela-grande #participarSessao .fam-bv-tema { font-size: 2.4rem; }
 body.fam-tela-grande #participarSessao .fam-bv-quem, body.fam-tela-grande #participarSessao .fam-bv-objetivo { font-size: 1.2rem; }
 body.fam-tela-grande #participarSessao .fam-bv-programa { max-width: 900px; width: 100%; margin: 18px auto 0; }

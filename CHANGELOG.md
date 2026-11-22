@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.39
+
+- **Tela grande:** a linha "Boas-vindas à Adoração em Família" ficou em letra bem maior.
+
 ## 6.12.38
 
 - **Ao entrar, só as boas-vindas:** ao entrar ou iniciar a adoração (celular), abre apenas o card de boas-vindas com o programa, e um botão **▶️ Entrar** embaixo leva à página das atividades (cabeçalho, controles do dirigente e atividades). Se alguma atividade já começou, abre direto nas atividades; quando o dirigente libera a primeira, quem estava nas boas-vindas segue para as atividades. Na tela grande o botão não aparece (o dirigente avança pelo Próxima).
