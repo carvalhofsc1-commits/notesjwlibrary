@@ -6182,6 +6182,11 @@
       background: var(--card);
       font-size: .92rem;
       line-height: 1.5;
+      text-align: left;
+    }
+
+    .study-texto-corpo p {
+      text-align: left;
     }
 
     .study-texto-corpo[hidden] {

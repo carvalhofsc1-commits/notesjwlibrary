@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.68
+
+- **Preparar para comentar → A Sentinela:** o texto do parágrafo (Ver o texto do parágrafo) agora aparece alinhado à esquerda.
+
 ## 6.11.67
 
 - **Novo atalho principal "Adoração em família"** (Início, menu e barra de baixo) que abre uma tela com as duas opções: **Sugestões para a noite de adoração em família** (continua exigindo o código de pesquisa; sem ele o botão fica cinza com o aviso) e **Participar de uma adoração em família** (sem código de pesquisa). O botão de participar saiu de dentro da tela de sugestões e o item Participar saiu do menu. O Voltar das duas telas leva de volta a essa tela.
