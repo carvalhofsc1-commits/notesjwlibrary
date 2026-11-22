@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.19'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.20'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -27805,21 +27805,28 @@ function saveTemplatesToStorage() {
         icone.textContent = '🔒';
         const nome = document.createElement('span');
         nome.className = 'fam-sessao-secao-nome';
+        // 6.12.20: o número da atividade sempre à esquerda (coluna própria); o título fica centralizado ao lado.
+        const numEl = document.createElement('span');
+        numEl.className = 'fam-sessao-num';
+        numEl.textContent = participarNum(i) + '.';
+        const tituloEl = document.createElement('span');
+        tituloEl.className = 'fam-sessao-secao-titulo';
+        nome.append(numEl, tituloEl);
         if (parte.jogo && !participar.oracao.has(i)) {
           // 6.12.16: no jogo, o nome do jogo (com emojis) em destaque em cima e, embaixo, o título do jogo; uma linha divisória separa isso do resto.
           const jt = participarJogoTitulo(parte);
           sec.classList.add('fam-sessao-secao-jogo');
           const l1 = document.createElement('span');
           l1.className = 'fam-jogo-nome-linha';
-          l1.textContent = participarNum(i) + '. ' + jt.emojis + ' ' + jt.nome;
-          nome.appendChild(l1);
+          l1.textContent = jt.emojis + ' ' + jt.nome;
+          tituloEl.appendChild(l1);
           if (jt.titulo) {
             const l2 = document.createElement('span');
             l2.className = 'fam-jogo-titulo-linha';
             l2.textContent = jt.titulo;
-            nome.appendChild(l2);
+            tituloEl.appendChild(l2);
           }
-        } else nome.textContent = participar.oracao.has(i) ? participarNum(i) + '. ' + (/ora[çc][ãa]o inicial/i.test(String(parte.nome || '')) ? '🙏 Oração inicial' : /ora[çc][ãa]o final/i.test(String(parte.nome || '')) ? '🙏 Oração final' : '👋 Boas-vindas') : participarNum(i) + '. ' + (parte.nome || 'Parte');
+        } else tituloEl.textContent = participar.oracao.has(i) ? (/ora[çc][ãa]o inicial/i.test(String(parte.nome || '')) ? '🙏 Oração inicial' : /ora[çc][ãa]o final/i.test(String(parte.nome || '')) ? '🙏 Oração final' : '👋 Boas-vindas') : (parte.nome || 'Parte');
         const lado = document.createElement('span');
         lado.className = 'fam-sessao-secao-lado';
         const agora = document.createElement('span');

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.20
+
+- **Número da atividade à esquerda:** em todas as atividades (inclusive Oração inicial e Oração final e as de jogo), o número fica sempre alinhado à esquerda, numa coluna própria; o título continua centralizado ao lado.
+
 ## 6.12.19
 
 - **Jogo sem a instrução repetida:** a linha "🎯 Jogar o jogo …" (e a descrição) saiu das atividades de jogo, porque as regras já dizem tudo.

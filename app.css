@@ -17346,6 +17346,11 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 /* 6.12.17: títulos e rótulos centralizados: o nome da adoração com o código/dirigente e o nome de cada atividade. */
 #participarSessao .fam-sessao-cabeca, #participarSessao .fam-sessao-cabeca > :is(h3, p) { text-align: center; }
 #participarSessao .fam-sessao-secao:not(.fam-sessao-oracao) .fam-sessao-secao-nome { text-align: center; }
+/* 6.12.20: o número da atividade sempre alinhado à esquerda (coluna própria) e o título centralizado entre o número e uma coluna vazia do mesmo tamanho. */
+#participarSessao .fam-sessao-secao .fam-sessao-secao-nome { display: grid; grid-template-columns: 2.4em minmax(0, 1fr) 2.4em; align-items: center; column-gap: 0; text-align: center; }
+#participarSessao .fam-sessao-secao .fam-sessao-secao-nome::after { content: ''; }
+#participarSessao .fam-sessao-secao .fam-sessao-num { text-align: left; font-weight: 800; }
+#participarSessao .fam-sessao-secao .fam-sessao-secao-titulo { display: grid; gap: 2px; text-align: center; min-width: 0; overflow-wrap: anywhere; }
 /* 6.12.16: parte de jogo: nome do jogo (com emojis) em destaque, o título do jogo embaixo, fundo um pouco mais forte e linha divisória do resto. */
 .fam-sessao-secao-jogo > .fam-sessao-secao-topo { background: color-mix(in srgb, var(--accent) 14%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 12px 12px 0 0; }
 .fam-sessao-secao-jogo.aberta > .fam-sessao-secao-topo { background: color-mix(in srgb, var(--accent) 22%, transparent); border-bottom: 2px solid var(--accent); }
