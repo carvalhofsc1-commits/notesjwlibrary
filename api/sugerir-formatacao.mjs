@@ -3134,16 +3134,28 @@ async function responderAdoracaoFamilia(res, body, P) {
         const bloquearInicial = !perfil.canticoInicial && idxParte === 0 && !/treino/i.test(nome);
         const bloquearFinal = !perfil.canticoFinal && idxParte === partesBrutas.length - 1 && idxParte > 0 && !/treino/i.test(nome);
         const bloquearCantico = bloquearInicial || bloquearFinal;
+        const textosDaParte = await textosDe(p.textos);
+        // 6.12.44: toda atividade com textos bíblicos sempre traz uma ou duas perguntas sobre eles; se a IA esqueceu, entram perguntas simples sobre os textos.
+        let perguntasDaParte = (p.perguntas || []).map((q) => limparTextoGerado(q, 300)).filter(Boolean);
+        if (textosDaParte.length) {
+          if (!perguntasDaParte.length) {
+            const refs = textosDaParte.map((t) => t.referencia).filter(Boolean);
+            perguntasDaParte = refs.length > 1
+              ? [`O que ${refs.slice(0, 2).join(" e ")} nos ensinam?`, "Como podemos aplicar isso na nossa vida esta semana?"]
+              : [`O que ${refs[0] || "este texto"} nos ensina?`, "Como podemos aplicar isso na nossa vida esta semana?"];
+          }
+          perguntasDaParte = perguntasDaParte.slice(0, 2);
+        } else perguntasDaParte = perguntasDaParte.slice(0, 5);
         partes.push({
           nome,
           minutos: Math.min(120, Math.max(1, Math.round(Number(p.minutos) || 0))),
           responsavel: "", // nunca nomes nas atividades (6.11.95)
           descricao: limparTextoGerado(p.descricao, 1500),
-          textos: await textosDe(p.textos),
+          textos: textosDaParte,
           videos: perfil.incluirVideo ? semRepetir((p.videos || []).map(videoDe), (v) => v.link).slice(0, 3) : [],
           canticos: bloquearCantico ? [] : semRepetir((p.canticos || []).map((n) => porNumero.get(Math.round(Number(n)))), (c) => c.numero).slice(0, 3).map((c) => ({ numero: c.numero, titulo: c.titulo })),
           publicacoes: semRepetir((p.publicacoes || []).map(publicacaoDe), (x) => x.titulo.toLowerCase()).slice(0, 4),
-          perguntas: (p.perguntas || []).map((q) => limparTextoGerado(q, 300)).filter(Boolean).slice(0, 5),
+          perguntas: perguntasDaParte,
           jogo: jogoDe(p.jogo),
         });
       }

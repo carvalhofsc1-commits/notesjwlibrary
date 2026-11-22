@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.44
+
+- **Textos sempre com perguntas (garantido):** além da regra no prompt, o servidor agora garante que toda atividade com textos bíblicos saia com uma ou duas perguntas sobre eles (no máximo duas): se a IA esquecer, entram "O que {texto} nos ensina?" e "Como podemos aplicar isso na nossa vida esta semana?". Na adoração ao vivo, programações já feitas (como a atividade "Jeová cuida de nós nas dificuldades") também ganham essas duas perguntas na tela; nelas a leitura com a voz do Google das perguntas simples cai na voz do aparelho, porque elas não vieram da programação.
+
 ## 6.12.43
 
 - **Atividades brancas:** o fundo dos cards das atividades voltou a ser branco; só o topo (o card recolhido, com número, nome e tempo) tem um azul bem mais claro, igual com a atividade aberta ou fechada.
