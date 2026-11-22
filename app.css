@@ -17102,8 +17102,9 @@ body.fam-tela-grande .fam-sessao-grande-barra { display: flex; position: fixed; 
 .fam-acoes > .limpar-btn { flex: 0 0 52px; min-width: 52px; }
 
 /* 6.11.72: Copiar, Word e Compartilhar de cada opção numa linha só (rótulos curtos); Ajustar e Salvar ocupam a linha inteira. */
-.fam-opcao-acoes > .fam-acao-curta { flex: 1 1 0; min-width: 0; padding-left: 2px; padding-right: 2px; font-size: clamp(.68rem, 3.3vw, .88rem); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; justify-content: center; text-align: center; margin: 0; }
-.fam-opcao-acoes > :not(.fam-acao-curta) { flex: 1 1 100%; margin: 0; }
+/* 6.11.73: Copiar e Word dividem a primeira linha; Selecionar esta programação (compartilhar) ocupa a linha seguinte inteira. */
+.fam-opcao-acoes > .fam-acao-curta { flex: 1 1 0; min-width: 0; padding-left: 4px; padding-right: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; justify-content: center; text-align: center; margin: 0; }
+.fam-opcao-acoes > :not(.fam-acao-curta) { flex: 1 1 100%; margin: 0; white-space: normal; }
 
 /* 6.11.70: botão Restaurar padrões originais (Ajustes → Configurar formatação com IA), na largura toda. */
 .ai-restaurar-btn { display: block; width: 100%; margin: 12px 0 0; }

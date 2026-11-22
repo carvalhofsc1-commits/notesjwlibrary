@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.11.73
+
+- **Adoração em Família:** em cada opção, Copiar e Word dividem a primeira linha (meio a meio, com o rótulo Copiar de volta no tamanho normal) e o botão de compartilhar passa a ser **🔗 Selecionar esta programação**, sozinho na linha seguinte, na largura toda. Na lista de programações salvas o botão continua como Compartilhar.
+
 ## 6.11.72
 
 - **Adoração em Família:** os botões de cada opção (Copiar, Word e Compartilhar) ficam numa linha só, com rótulos curtos (Copiar esta opção virou Copiar; o texto completo aparece ao segurar). Ajustar com a IA e Salvar, quando aparecem, ocupam a linha seguinte inteira. Medido a 375 px: 3 × 103 px + espaços = largura da linha, sem texto cortado.

@@ -7933,7 +7933,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.11.72'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.11.73'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26681,7 +26681,7 @@ function saveTemplatesToStorage() {
         word.title = 'Ver a prévia no formato do Word e exportar o arquivo';
         word.addEventListener('click', () => familiaAbrirWord(op, word));
         acoes.appendChild(word);
-        acoes.appendChild(familiaBotaoCompartilhar(op, card));
+        acoes.appendChild(familiaBotaoCompartilhar(op, card, undefined, '🔗 Selecionar esta programação'));
         if (cfg && cfg.ajustar) {
           // ✨ Ajustar com a IA: a IA só escreve as transições entre as partes escolhidas (e melhora descrições, se precisar).
           const ajustar = document.createElement('button');
@@ -27161,11 +27161,11 @@ function saveTemplatesToStorage() {
       if (chave) familiaPaineisAbertos.set(chave, painel);
       requestAnimationFrame(() => painel.scrollIntoView({ block: 'nearest', behavior: 'smooth' }));
     }
-    function familiaBotaoCompartilhar(op, onde, chave) {
+    function familiaBotaoCompartilhar(op, onde, chave, rotulo) {
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'secondary fam-fino fam-compartilhar-btn fam-acao-curta';
-      b.textContent = '🔗 Compartilhar';
+      b.className = 'secondary fam-fino fam-compartilhar-btn';
+      b.textContent = rotulo || '🔗 Compartilhar';
       b.title = 'Compartilhar por código e acompanhar ao vivo com a família';
       b.setAttribute('aria-expanded', 'false');
       b.addEventListener('click', () => familiaCompartilharAbrir(op, onde, b, chave));
