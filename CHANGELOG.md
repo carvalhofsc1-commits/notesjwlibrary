@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.03
+
+- **Textos da adoração ao vivo:** uma linha em branco entre um texto bíblico e o seguinte.
+
 ## 6.12.02
 
 - **Regra: quem tem o código da adoração não tem restrição de leitura.** Os recursos de leitura da tela da adoração compartilhada não pedem código de leitura nem código de pesquisa e não gastam créditos de ninguém: o custo fica para o app. Novo uso `familia` em `api/voz.mjs`, que só vale para uma sessão existente e para o texto que a própria programação tem (as perguntas) ou a palavra "Pergunta" (`textoDaSessaoParaLer`, em `api/familia-sessao.mjs`).
