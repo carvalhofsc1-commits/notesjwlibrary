@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.57
+
+- **Lista numerada com números em ícones:** nas anotações (e na resposta da pergunta de recapitulação), o botão de lista numerada agora numera as linhas selecionadas com 1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣ 6️⃣ 7️⃣ … em vez de "1.", "2.". Aplicar de novo (ou trocar para a lista com marcadores) não empilha prefixos. O rótulo do botão passou a 1️⃣ Lista.
+
 ## 6.12.56
 
 - **Chave do Formatar com IA mais baixa:** nos botões ✨ Formatar com IA das anotações e da resposta, o ícone 🔑 desceu um pouco, para ficar alinhado com os outros ícones da linha.
