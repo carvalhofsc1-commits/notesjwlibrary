@@ -57,7 +57,7 @@ export const QUADROS_FAMILIA = Object.freeze(
       fontes: { livros: ["principiosBiblicos"], outras: ["principios"] },
       perguntasPadrao: ["Que princípio podemos extrair do(s) texto(s) acima?", "Em que situações práticas esse princípio pode nos orientar?"],
       maxPerguntas: 2,
-      saida: "1 ou 2 princípios do índice; o servidor transcreve o texto literal e os versículos.",
+      saida: "1 princípio do índice; o servidor transcreve o texto literal dele e os versículos.",
     },
     {
       id: "personagem",

@@ -2,6 +2,8 @@
 // Fase 1 (6.12.69): constante única das 10 prioridades de aplicação prática e prioridadesAplicaveis(perfil).
 // Fase 2 (6.12.70): catálogo dos quadros (api/_familiaQuadros.mjs), cópia igual no app.js, migração dos perfis antigos, tela e prompt.
 // Fase 3a (6.12.71): candidatos (princípios e artigos), escolhas da IA, formatos zod, montagem no app, fases no servidor e prompts.
+// Fase 3b (6.12.72): quadros próprios (Vídeo, Criador, Saiba responder, Ame o ministério, Jogo, Cânticos), memória "evitar", repetição,
+// datas do Apêndice B, corte no fim da frase e o item interno da memória no app.
 // Com FONTES_DIR, confere também as fontes reais (principios.json e as referências abreviadas na Bíblia).
 // Uso: node ferramentas/testar-adoracao-quadros.mjs
 import assert from "node:assert/strict";
@@ -330,11 +332,12 @@ teste("escolhas da IA: \"PR3\", \"[A2]\", \"L 1 - título\"; fora do tamanho ou 
   assert.deepEqual(ger.escolhasValidas("PR4", "PR", 5), [3]);
 });
 
-teste("constantes: quadros gerados = os 10 com minutos; especializados da 3a; 4 em paralelo (servidor e app)", () => {
+teste("constantes: quadros gerados = os 10 com minutos; todos especializados (6.12.72); 4 em paralelo (servidor e app)", () => {
   assert.deepEqual([...ger.QUADROS_GERADOS], QUADROS_FAMILIA.filter((q) => q.minutos).map((q) => q.id));
   assert.equal(ger.QUADROS_GERADOS.length, 10);
-  assert.deepEqual([...ger.QUADROS_ESPECIALIZADOS], ["abertura", "principio", "personagem", "jesus"]);
-  for (const id of ger.QUADROS_ESPECIALIZADOS) assert.match(servidorJs, new RegExp(`\\n  async ${id}\\(ctx\\) \\{`), "PREPARAR_QUADRO_FAMILIA." + id);
+  assert.deepEqual([...ger.QUADROS_ESPECIALIZADOS].sort(), [...ger.QUADROS_GERADOS].sort());
+  for (const id of ger.QUADROS_ESPECIALIZADOS) assert.match(servidorJs, new RegExp(`\\r?\\n  async ${id}\\(ctx\\) \\{`), "PREPARAR_QUADRO_FAMILIA." + id);
+  assert.doesNotMatch(servidorJs, /generico|prepararQuadroGenerico|JogoDoQuadroFamilia/);
   assert.equal(ger.MAX_QUADROS_EM_PARALELO, 4);
   assert.match(appJs, /const FAMILIA_QUADROS_EM_PARALELO = 4;/);
 });
@@ -345,10 +348,15 @@ teste("formatos (zod): plano e cada quadro aceitam uma saída de exemplo e recus
   assert.ok(!SaidaPlanoFamilia.safeParse({ ...plano, angulos: undefined }).success);
   const exemplos = {
     abertura: { descricao: "d", escolhas: ["A1"], perguntasLeitura: ["p"], relato: { referencia: "Gên 50:15-21", perguntas: ["q"] } },
-    principio: { descricao: "d", escolhas: ["PR1"] },
+    principio: { descricao: "d", escolha: "PR1" },
     personagem: { nome: "José", referencia: "Gên 45:1-15", descricao: "d", escolha: null, verbete: "José" },
     jesus: { episodio: "O filho pródigo", referencia: "Lu 15:11-32", qualidade: "misericórdia", descricao: "d", escolha: "L1", perguntas: [] },
-    generico: { descricao: "d", textos: ["Jo 3:16"], videos: ["V1"], canticos: [3], publicacoes: [], perguntas: [], jogo: null },
+    video: { descricao: "d", videos: ["V1"], perguntas: ["p"] },
+    criador: { descricao: "d", escolha: "A1", perguntas: ["p"] },
+    saiba: { pergunta: "Deus se importa?", descricao: "d", escolha: "L1", verbete: null, textos: ["1Pe 5:7"] },
+    ministerio: { cenario: "Uma pessoa diz que não tem tempo", descricao: "d", escolha: null, perguntas: ["p"] },
+    jogo: { descricao: "d", nome: "Ordem", comoJogar: "c", rodadas: [], eventos: ["B1", "B2"] },
+    canticos: { numero: 3, descricao: "d" },
   };
   assert.deepEqual(Object.keys(SAIDAS_QUADRO_FAMILIA).sort(), Object.keys(exemplos).sort());
   for (const [id, ex] of Object.entries(exemplos)) {
@@ -404,7 +412,8 @@ teste("servidor: fases plano/quadro, limite 16 partes, limite por hora dos quadr
 });
 
 teste("prompts dos quadros: partes editáveis na categoria, sem \"culto\", sistemas montados com vocabulário, fontes e formato travado", () => {
-  const ids = ["adoracao_q_base", "adoracao_q_plano", "adoracao_q_abertura", "adoracao_q_principio", "adoracao_q_personagem", "adoracao_q_jesus", "adoracao_q_generico"];
+  const ids = ["adoracao_q_base", "adoracao_q_plano", "adoracao_q_abertura", "adoracao_q_principio", "adoracao_q_personagem", "adoracao_q_jesus", "adoracao_q_video", "adoracao_q_criador", "adoracao_q_saiba", "adoracao_q_ministerio", "adoracao_q_jogo", "adoracao_q_canticos"];
+  assert.ok(!prompts.PARTES.some((x) => x.id === "adoracao_q_generico"), "a parte genérica saiu");
   const cat = prompts.CATEGORIAS.find((c) => (c.partes || []).includes("adoracao_familia"));
   assert.ok(cat, "categoria da Adoração");
   for (const id of ids) {
@@ -414,12 +423,13 @@ teste("prompts dos quadros: partes editáveis na categoria, sem \"culto\", siste
     assert.ok(cat.partes.includes(id), id + " fora da categoria");
   }
   const travados = prompts.travadosDe({}).map((t) => t.id);
-  for (const id of ["formato_familia_plano", "formato_familia_quadro_abertura", "formato_familia_quadro_principio", "formato_familia_quadro_personagem", "formato_familia_quadro_jesus", "formato_familia_quadro_generico"]) assert.ok(travados.includes(id), id);
+  for (const id of ["formato_familia_plano", "formato_familia_quadro_abertura", "formato_familia_quadro_principio", "formato_familia_quadro_personagem", "formato_familia_quadro_jesus", "formato_familia_quadro_video", "formato_familia_quadro_criador", "formato_familia_quadro_saiba", "formato_familia_quadro_ministerio", "formato_familia_quadro_jogo", "formato_familia_quadro_canticos"]) assert.ok(travados.includes(id), id);
+  assert.ok(!travados.includes("formato_familia_quadro_generico"));
   const vocab = /VOCABULÁRIO \(regra fixa, vale sempre\)/;
   const fontes = /FONTES: PRIORIDADE E ATUALIDADE/;
   assert.match(montados.sistemaFamiliaPlano, vocab);
   assert.match(montados.sistemaFamiliaPlano, fontes);
-  assert.deepEqual(Object.keys(montados.sistemaFamiliaQuadro).sort(), ["abertura", "generico", "jesus", "personagem", "principio"]);
+  assert.deepEqual(Object.keys(montados.sistemaFamiliaQuadro).sort(), ["abertura", "canticos", "criador", "jesus", "jogo", "ministerio", "personagem", "principio", "saiba", "video"]);
   for (const [id, s] of Object.entries(montados.sistemaFamiliaQuadro)) {
     assert.match(s, vocab, id);
     assert.match(s, fontes, id);
@@ -437,6 +447,227 @@ teste("app: plano e quadros (fase), andamento com Refazer, rótulo da leitura e 
   const gerar = appJs.slice(appJs.indexOf("async function familiaGerar()"), appJs.indexOf("// Relógio do preparo (6.11.12)"));
   assert.doesNotMatch(gerar, /culto/i);
   assert.match(gerar, /historicoSalvar|familiaMostrarESalvar/);
+});
+
+// ---------- Fase 3b (6.12.72): quadros próprios, memória "evitar", repetição e datas do Apêndice B ----------
+const apendiceSintetico = [
+  "=== ÉPOCAS ===",
+  "Depois de 4026 a.C.",
+  "Criação de Adão",
+  "• 1513 a.C. Israelitas saem do Egito",
+  "Babilônia",
+  "607 a.C. Rei Nabucodonosor destrói Jerusalém",
+  "• Derramamento do espírito santo Pentecostes de 33 d.C.",
+  "1077-1038 a.C.",
+  "Reinado de Davi",
+  "Futuro",
+  "Armagedom",
+].join("\n");
+
+teste("cortarNoFimDaFrase: corta no fim da última frase que cabe, sem cortar abreviação; sem frase, no espaço com …", () => {
+  const t = "Primeira frase completa aqui. Segunda frase também completa! Terceira frase que não cabe inteira no limite dado.";
+  assert.equal(ger.cortarNoFimDaFrase(t, 1000), t);
+  assert.equal(ger.cortarNoFimDaFrase(t, 70), "Primeira frase completa aqui. Segunda frase também completa!");
+  const abrev = "Leia o cap. 3 com calma e atenção a cada detalhe do relato. Depois conversem sobre o que aprenderam juntos hoje.";
+  assert.equal(ger.cortarNoFimDaFrase(abrev, 80), "Leia o cap. 3 com calma e atenção a cada detalhe do relato.");
+  const semPonto = "palavra ".repeat(60).trim();
+  const c = ger.cortarNoFimDaFrase(semPonto, 50);
+  assert.ok(c.endsWith("…") && c.length <= 50 && !/\s…$/.test(c), c);
+  assert.match(servidorJs, /const leituraLimpa = \(texto\) => cortarNoFimDaFrase\(limparTextoGerado\(texto, 6000\), 2600\);/);
+});
+
+teste("Apêndice B: acontecimentos (4 formatos), valor das datas, datas permitidas e rodadas com data de fora descartadas", async () => {
+  const ev = ger.eventosDoApendiceB(apendiceSintetico);
+  const datas = ev.map((e) => e.data);
+  assert.deepEqual(datas, ["Depois de 4026 a.C.", "1513 a.C.", "607 a.C.", "33 d.C.", "1077-1038 a.C.", "Futuro"]);
+  assert.equal(ev[0].evento, "Criação de Adão");
+  assert.equal(ev[2].evento, "Babilônia: Rei Nabucodonosor destrói Jerusalém");
+  assert.equal(ev[3].evento, "Derramamento do espírito santo Pentecostes");
+  assert.ok(ger.valorDaData("1513 a.C.") < ger.valorDaData("607 a.C.") && ger.valorDaData("607 a.C.") < ger.valorDaData("33 d.C.") && ger.valorDaData("33 d.C.") < ger.valorDaData("Futuro"));
+  assert.ok(ger.valorDaData("Depois de 4026 a.C.") > ger.valorDaData("4026 a.C."));
+  assert.ok(Number.isNaN(ger.valorDaData("sem data")));
+  const ok = ger.datasPermitidas(apendiceSintetico);
+  for (const d of ["1513 a.C.", "607 a.C.", "33 d.C.", "1077-1038 a.C.", "1077 a.C.", "1038 a.C."]) assert.ok(ok.has(d), d);
+  const rodadas = [{ p: "Quando saíram do Egito? 1513 a.C." }, { p: "Em que ano? 1000 a.C." }, { p: "Quem foi Davi?" }];
+  assert.deepEqual(ger.semDatasForaDoApendice(rodadas, (r) => r.p, ok).map((r) => r.p), ["Quando saíram do Egito? 1513 a.C.", "Quem foi Davi?"]);
+  assert.equal(ger.semDatasForaDoApendice(rodadas, (r) => r.p, null).length, 1, "sem Apêndice, nenhuma data vale");
+  if (comFontes) {
+    const real = (await fontesMod.lerTextoDoLivro("apendiceBBibliaEstudo")) || "";
+    const reais = ger.eventosDoApendiceB(real);
+    console.log(`      Apêndice B real: ${reais.length} acontecimentos com data`);
+    assert.ok(reais.length >= 20, "poucos acontecimentos no Apêndice B real");
+    assert.ok(reais.every((e) => e.data && e.evento.length >= 4 && (/^futuro$/i.test(e.data) || !Number.isNaN(ger.valorDaData(e.data)))));
+  }
+});
+
+teste("memória evitar: categorias conhecidas, até 40 por categoria e 120 caracteres, sem repetir", () => {
+  assert.equal(ger.MAX_EVITAR_POR_CATEGORIA, 40);
+  assert.deepEqual([...ger.CATEGORIAS_EVITAR], ["assuntos", "personagens", "principios", "jesus", "saiba", "ministerio", "criador", "artigos", "canticos", "jogos", "videos"]);
+  const muitos = Array.from({ length: 60 }, (_, i) => "Personagem " + i);
+  const e = ger.normalizarEvitar({ personagens: [...muitos, "personagem 0"], assuntos: ["x".repeat(300)], intruso: ["a"], canticos: [12, "12", { n: 1 }] });
+  assert.equal(e.personagens.length, 40);
+  assert.equal(e.assuntos[0].length, 120);
+  assert.ok(!("intruso" in e));
+  assert.deepEqual(e.canticos, ["12"]);
+  assert.deepEqual(ger.normalizarEvitar(null).videos, []);
+  assert.deepEqual(ger.normalizarEvitar(["a"]).assuntos, []);
+});
+
+teste("repetição: versículos por faixa, personagem, vídeo e cântico (desta noite e das últimas semanas)", () => {
+  assert.deepEqual(ger.chavesDosVersiculos("Lucas 15:11-13"), ["lucas 15:11", "lucas 15:12", "lucas 15:13"]);
+  assert.deepEqual(ger.chavesDosVersiculos("Rom. 5:12, 18"), ["rom 5:12", "rom 5:18"]);
+  assert.equal(ger.lankDoLink("https://www.jw.org/finder?wtlocale=T&lank=pub-mwbv_202401_1_VIDEO&applanguage=T"), "pub-mwbv_202401_1_VIDEO");
+  const parte = { textos: [{ referencia: "Lucas 15:12" }], videos: [{ link: "https://www.jw.org/finder?lank=V9" }], canticos: [{ numero: 12 }] };
+  const usados = ger.usadosDaParte(parte, { personagens: ["Davi"] });
+  assert.deepEqual(usados.versiculos, ["lucas 15:12"]);
+  assert.deepEqual(usados.videos, ["V9"]);
+  assert.deepEqual(usados.canticos, ["12"]);
+  const outra = ger.usadosDaParte({ textos: [{ referencia: "Lucas 15:11-14" }] }, { personagens: ["davi"] });
+  const rep = ger.repeticoesDaParte(usados, outra, { videos: ["V9"], canticos: ["12"] });
+  assert.deepEqual(rep, ["o texto Lucas 15:12 já está em outro quadro", "o personagem Davi já está em outro quadro", "o vídeo foi usado nas últimas semanas", "o cântico 12 foi usado nas últimas semanas"]);
+  assert.deepEqual(ger.repeticoesDaParte(usados, {}, {}), []);
+});
+
+teste("jogo: tipo entre os aceitos, sem os recentes; sem Apêndice B, sem Ordem e data; link de consulta no wol", () => {
+  const todos = ["Quem sou eu? (personagens bíblicos)", "Verdadeiro ou falso", "Ordem e data dos acontecimentos", "Quem disse isso? (frases da Bíblia)", "Complete o versículo", "Abreviações bíblicas (ex.: Os 12 A de C)"];
+  assert.equal(ger.tipoDoJogo(["Verdadeiro ou falso", "Complete o versículo"], todos, { semente: 3, evitar: ["Verdadeiro ou falso"] }), "Complete o versículo");
+  assert.equal(ger.tipoDoJogo(["Ordem e data dos acontecimentos"], todos, { comApendice: true }), "Ordem e data dos acontecimentos");
+  assert.notEqual(ger.tipoDoJogo(["Ordem e data dos acontecimentos"], todos, { comApendice: false }), "Ordem e data dos acontecimentos");
+  for (let s = 1; s < 30; s++) assert.ok(todos.includes(ger.tipoDoJogo([], todos, { semente: s })), "só os 6 tipos");
+  const link = ger.linkDeConsultaWol("“Deus se importa com você.” Essa é uma verdade que consola muita gente hoje.");
+  assert.ok(link.startsWith("https://wol.jw.org/pt/wol/s/r5/lp-t?q="), link);
+  assert.ok(decodeURIComponent(link).includes('"Deus se importa com você. Essa é uma"'), decodeURIComponent(link));
+  assert.equal(ger.linkDeConsultaWol(""), "");
+  assert.doesNotMatch(link, /www\.jw\.org/);
+});
+
+const { montarPedidoQuadroFamilia, montarPedidoPlanoFamilia } = await import("../api/sugerir-formatacao.mjs");
+const corpoFamilia = (extra) =>
+  Object.assign(
+    {
+      formacao: "Casal com filhos",
+      membros: [{ papel: "Pai", idade: 40 }, { papel: "Filho", idade: 12 }],
+      quadros: QUADROS_FAMILIA.map((q) => q.id),
+      canticoInicial: true,
+      canticoFinal: true,
+      assunto: "",
+    },
+    extra
+  );
+
+teste("pedidos ao servidor: EVITAR e ASSUNTOS DAS ÚLTIMAS SEMANAS no plano; JÁ USADOS e quadro fora do tema na mensagem do quadro", async () => {
+  const evitar = { assuntos: ["Paciência na família"], personagens: ["Gideão"], jesus: ["O filho pródigo"], canticos: ["12"] };
+  const plano = await montarPedidoPlanoFamilia(corpoFamilia({ evitar }), montados);
+  assert.ok(!plano.erro, JSON.stringify(plano.erro));
+  assert.match(plano.mensagem, /ASSUNTOS DAS ÚLTIMAS SEMANAS \(evite repetir\): Paciência na família/);
+  assert.match(plano.mensagem, /EVITAR \(personagens usados nas últimas semanas — escolha outros\): Gideão/);
+  assert.match(plano.mensagem, /EVITAR \(episódios da vida de Jesus usados/);
+  const comAssunto = await montarPedidoPlanoFamilia(corpoFamilia({ evitar, assunto: "Perdão" }), montados);
+  assert.doesNotMatch(comAssunto.mensagem, /ASSUNTOS DAS ÚLTIMAS SEMANAS/, "com assunto pedido, a lista não vai");
+  const jaUsados = { referencias: ["Lucas 15:11-14"], versiculos: ["lucas 15:11"], personagens: ["Davi"], canticos: ["3"] };
+  const ministerio = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "ame_ministerio", evitar, jaUsados, assunto: "Perdão", angulo: "x" }), montados);
+  assert.ok(!ministerio.erro, JSON.stringify(ministerio.erro));
+  assert.match(ministerio.mensagem, /JÁ USADOS NOS OUTROS QUADROS DESTA NOITE \(não repita\): textos bíblicos: Lucas 15:11-14 — personagens: Davi — cânticos: 3/);
+  assert.match(ministerio.mensagem, /ÂNGULO DESTE QUADRO: x/);
+  assert.equal(ministerio.sistema, montados.sistemaFamiliaQuadro.ministerio);
+  // O Criador é o único que não segue o assunto da noite.
+  assert.deepEqual(QUADROS_FAMILIA.filter((q) => q.minutos && !q.ligadoAoTema).map((q) => q.id), ["criador"]);
+  const criador = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "criador", evitar, assunto: "Perdão", angulo: "x" }), montados);
+  assert.ok(!criador.erro, JSON.stringify(criador.erro));
+  assert.match(criador.mensagem, /ASSUNTO: este quadro não segue o assunto da noite/);
+  assert.doesNotMatch(criador.mensagem, /ÂNGULO DESTE QUADRO|Perdão/);
+  assert.equal(criador.ctx.tema, "");
+  const personagem = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "personagem", evitar, assunto: "Perdão", angulo: "perdoar irmãos" }), montados);
+  assert.match(personagem.mensagem, /ÂNGULO DESTE QUADRO: perdoar irmãos/);
+  assert.match(personagem.mensagem, /EVITAR \(personagens usados nas últimas semanas — escolha outros\): Gideão/);
+  for (const q of ["criador"]) assert.equal(QUADROS_FAMILIA.find((x) => x.id === q).ligadoAoTema, false, q + " não segue o tema");
+  assert.deepEqual(await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "generico" }), montados), { erro: [400, "Quadro desconhecido."] });
+});
+
+teste("jogo no servidor: tipo da noite na mensagem; Ordem e data com [B#] do Apêndice B e a ordem certa posta pelo servidor (com FONTES_DIR)", async () => {
+  const pedido = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Ordem e data dos acontecimentos"] }), montados);
+  assert.ok(!pedido.erro);
+  assert.match(pedido.mensagem, /TIPO DO JOGO DESTA NOITE \(use só este\): /);
+  if (!comFontes) return console.log("      (sem FONTES_DIR: [B#] pulado)");
+  assert.match(pedido.mensagem, /TIPO DO JOGO DESTA NOITE \(use só este\): Ordem e data dos acontecimentos/);
+  assert.match(pedido.mensagem, /\[B1\] .+ — .+/);
+  const parte = await pedido.prep.montar({ descricao: "Vamos ver [B2] juntos.", nome: "Linha do tempo", comoJogar: "Ponham em ordem.", rodadas: [], eventos: ["B1", "B5", "B9", "B12", "B20"] });
+  assert.equal(parte.descricao, "Vamos ver juntos.", "sem identificadores na descrição");
+  const ordem = parte.jogo.ordem;
+  assert.ok(ordem.length >= 5 && ordem.length <= 8);
+  const valores = ordem.map((e) => ger.valorDaData(e.data));
+  assert.deepEqual(valores, valores.slice().sort((a, b) => a - b), "ordem certa pela data");
+  const textoApendice = await fontesMod.lerTextoDoLivro("apendiceBBibliaEstudo");
+  const doApendice = ger.eventosDoApendiceB(textoApendice);
+  for (const e of ordem) assert.ok(doApendice.some((x) => x.data === e.data && x.evento === e.evento), "fora do Apêndice B: " + e.data);
+  assert.deepEqual(parte.jogo.itens.slice().sort(), ordem.map((e) => e.evento).sort());
+  assert.match(parte.jogo.comoJogar, /Ordem certa \(datas do Apêndice B da Bíblia de Estudo\): 1\. /);
+  assert.deepEqual(parte.memoria, { jogos: ["Ordem e data dos acontecimentos"] });
+});
+
+teste("princípio: uma entrada só (escolha), texto cortado no fim da frase (com FONTES_DIR)", async () => {
+  const pedido = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "principio", assunto: "perdão", evitar: {} }), montados);
+  assert.ok(!pedido.erro);
+  assert.match(montados.sistemaFamiliaQuadro.principio, /"escolha"/);
+  if (!comFontes) return console.log("      (sem FONTES_DIR: pulado)");
+  const parte = await pedido.prep.montar({ descricao: "d", escolha: "PR2" });
+  assert.ok(parte.leitura && parte.leitura.texto.length <= 2600);
+  assert.equal(parte.memoria.principios.length, 1);
+  assert.ok(parte.textos.length >= 1);
+});
+
+// O bloco da memória no app (entre os marcadores), executado com uma lista falsa de pesquisas salvas.
+function evitarDoApp(cache) {
+  const ini = appJs.indexOf("// <evitar-familia>");
+  const fim = appJs.indexOf("// </evitar-familia>");
+  assert.ok(ini > 0 && fim > ini, "marcadores da memória no app.js");
+  const historicoLer = () => structuredClone(cache);
+  const historicoGravar = (lista) => (cache.splice(0, cache.length, ...lista), true);
+  return new Function("historicoCache", "historicoLer", "historicoGravar", appJs.slice(ini, fim) + "\nreturn { familiaEvitarLer, familiaEvitarRegistrar, familiaJaUsados, familiaUsadosCruzam };")(cache, historicoLer, historicoGravar);
+}
+
+teste("app: memória num item interno (fora das listas), novos primeiro, até 40; jaUsados com os cânticos do plano; cruzamento", () => {
+  const cache = [{ id: "1", tipo: "nota", titulo: "x", partes: [] }];
+  const m = evitarDoApp(cache);
+  assert.deepEqual(m.familiaEvitarLer().personagens, []);
+  m.familiaEvitarRegistrar([{ personagens: ["Davi"], canticos: ["12"] }, null, { personagens: ["Rute", "davi"] }]);
+  assert.equal(cache[0].tipo, "familia-evitar");
+  assert.equal(cache.length, 2);
+  assert.deepEqual(m.familiaEvitarLer().personagens, ["Rute", "davi"], "os mais novos primeiro, sem repetir");
+  assert.deepEqual(m.familiaEvitarLer().canticos, ["12"]);
+  for (let i = 0; i < 50; i++) m.familiaEvitarRegistrar([{ assuntos: ["Assunto " + i] }]);
+  const ev = m.familiaEvitarLer();
+  assert.equal(ev.assuntos.length, 40);
+  assert.equal(ev.assuntos[0], "Assunto 49");
+  assert.equal(cache.filter((g) => g.tipo === "familia-evitar").length, 1);
+  const g = {
+    ids: ["abertura", "personagem", "jesus"],
+    estado: { abertura: "ok", personagem: "ok", jesus: "erro" },
+    usados: { abertura: { versiculos: ["lucas 15:11"], personagens: [] }, personagem: { personagens: ["Davi"] }, jesus: { personagens: ["Pedro"] } },
+    plano: { canticoInicial: { numero: 12, titulo: "t" }, canticoFinal: null },
+  };
+  const j = m.familiaJaUsados(g, g.ids);
+  assert.deepEqual(j.versiculos, ["lucas 15:11"]);
+  assert.deepEqual(j.personagens, ["Davi"], "o quadro com erro não entra");
+  assert.deepEqual(j.canticos, ["12"]);
+  assert.ok(m.familiaUsadosCruzam({ personagens: ["davi"] }, j));
+  assert.ok(m.familiaUsadosCruzam({ canticos: ["12"] }, j));
+  assert.ok(!m.familiaUsadosCruzam({ versiculos: ["lucas 15:12"] }, j));
+  // Na lista do app: historicoLer sem os internos; historicoGravar devolve os internos à frente.
+  assert.match(appJs, /const HISTORICO_TIPOS_INTERNOS = new Set\(\['familia-evitar'\]\);/);
+  assert.match(appJs, /const lista = opcoes && opcoes\.internos \? historicoCache : historicoCache\.filter\(g => !historicoInterno\(g\)\);/);
+  assert.match(appJs, /if \(!lista\.some\(historicoInterno\)\) lista = \[\.\.\.historicoCache\.filter\(historicoInterno\), \.\.\.lista\];/);
+});
+
+teste("app: evitar no plano e nos quadros, jaUsados, conferência final com refazerRepetido e avisos no andamento", () => {
+  assert.match(appJs, /fase: 'plano', evitar: ger\.evitar/);
+  assert.match(appJs, /evitar: ger\.evitar,\n\s+jaUsados: familiaJaUsados\(ger, ger\.ids\.filter\(x => x !== id\)\)/);
+  assert.match(appJs, /opcoes\.conferencia \? \{ refazerRepetido: true \} : \{\}/);
+  assert.match(appJs, /await familiaConferirRepeticoes\(ger\);/);
+  assert.match(appJs, /ger\.avisos && ger\.avisos\[id\] \? '⚠️ ' \+ ger\.avisos\[id\]/);
+  assert.match(appJs, /function familiaRegistrarMemoria\(ger\)/);
+  const gerar = appJs.slice(appJs.indexOf("async function familiaGerarQuadros"), appJs.indexOf("// Relógio do preparo (6.11.12)"));
+  assert.doesNotMatch(gerar, /culto/i);
 });
 
 teste("fontes reais (com FONTES_DIR): a Bíblia do servidor entende as referências abreviadas do Princípios Bíblicos", async () => {

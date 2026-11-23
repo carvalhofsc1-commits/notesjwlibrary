@@ -13,8 +13,9 @@ export const MIN_CARACTERES_ARTIGO = 600;
 export const MAX_QUADROS_EM_PARALELO = 4;
 // Os quadros que têm geração própria (as orações não passam pela IA: o app as põe no lugar).
 export const QUADROS_GERADOS = Object.freeze(QUADROS_FAMILIA.filter((q) => q.minutos).map((q) => q.id));
-// Os que já têm chamada especializada (6.12.71); os demais usam a chamada genérica até a 6.12.72.
-export const QUADROS_ESPECIALIZADOS = Object.freeze(["abertura", "principio", "personagem", "jesus"]);
+// Todos os quadros gerados têm chamada especializada (6.12.71: Abertura, Princípio, Personagem e Jesus; 6.12.72: os demais). A chamada
+// genérica saiu na 6.12.72.
+export const QUADROS_ESPECIALIZADOS = Object.freeze(["abertura", "video", "principio", "personagem", "jesus", "criador", "saiba_responder", "ame_ministerio", "jogo", "canticos"]);
 
 // Endereços do catálogo que o wol não tem (404) ou que não trazem texto para ler (vídeos, atividades, figuras, tabelas, "Teve um Projeto?").
 export const URL_SEM_TEXTO_NO_WOL = /\/videos?\/|atividades-com-figuras|cartoes-biblicos|historias-biblicas-ilustradas|exercicios-biblicos|guias-de-estudo|tabelas|teve-um-projeto/i;
@@ -162,4 +163,269 @@ export function escolhasValidas(valores, prefixo, tamanho, max = 2) {
     }
   }
   return saida;
+}
+
+// ---------- Leituras cortadas no fim de uma frase (6.12.72) ----------
+
+// A palavra antes do ponto é abreviação? Com ponto no meio ("a.C", "i.e"), uma letra só ("J"), ou curta antes de um número ("Gên. 3:15",
+// "pág. 10", "cap. 2", "vol. 1").
+function ehAbreviacao(antes, depois) {
+  const palavra = (String(antes).match(/(\S+)$/) || ["", ""])[1].replace(/^["“‘«(]+/, "");
+  if (!palavra) return false;
+  if (/\p{L}\.\p{L}/u.test(palavra)) return true;
+  if (/^\p{Lu}$/u.test(palavra)) return true;
+  if (/^\p{L}{1,5}$/u.test(palavra) && /^\s+\d/.test(depois)) return true;
+  return /^(sr|sra|srta|dr|dra|prof|profa|p|pp|cf|ex|obs|séc)$/i.test(palavra);
+}
+
+// O texto até "max" caracteres, cortado no fim da última frase que coube (ponto, exclamação, interrogação ou reticências seguidos de espaço e
+// de uma letra maiúscula, de aspas ou do fim). Sem frase que caiba (ou só uma muito curta), corta no último espaço e põe "…".
+export function cortarNoFimDaFrase(texto, max) {
+  const t = String(texto || "").trim();
+  if (!(max > 0) || t.length <= max) return t;
+  const re = /[.!?…]["”’»)]*(?=\s+["“‘«(]?[\p{Lu}\d—–]|\s*$)/gu;
+  let corte = -1;
+  let m;
+  while ((m = re.exec(t))) {
+    const fim = m.index + m[0].length;
+    if (fim > max) break;
+    if (m[0][0] === "." && ehAbreviacao(t.slice(0, m.index), t.slice(fim))) continue;
+    corte = fim;
+  }
+  if (corte >= Math.min(200, Math.floor(max * 0.4))) return t.slice(0, corte).trim();
+  const espaco = t.lastIndexOf(" ", max - 1);
+  return (espaco > 0 ? t.slice(0, espaco) : t.slice(0, max - 1)).replace(/[\s,;:—–-]+$/, "") + "…";
+}
+
+// ---------- Memória "evitar" (no aparelho) e o que cada quadro usou (6.12.72) ----------
+// O app guarda, por categoria, o que as últimas programações usaram (uns 40 por categoria, os mais novos primeiro) e manda com o plano e com
+// cada quadro; o servidor tira esses itens das listas (ou os põe por último) e os cita na mensagem como "EVITAR". Nada de dados pessoais:
+// só assuntos escolhidos pela IA, nomes de personagens bíblicos, ids de princípios e artigos, perguntas, situações, números de cânticos,
+// tipos de jogo e códigos de vídeo.
+
+export const MAX_EVITAR_POR_CATEGORIA = 40;
+export const MAX_CARACTERES_EVITAR = 120;
+export const CATEGORIAS_EVITAR = Object.freeze(["assuntos", "personagens", "principios", "jesus", "saiba", "ministerio", "criador", "artigos", "canticos", "jogos", "videos"]);
+
+const listaCurta = (valor, max, maxChars = MAX_CARACTERES_EVITAR) => {
+  const vistos = new Set();
+  return (Array.isArray(valor) ? valor : [])
+    .map((x) => (typeof x === "string" || typeof x === "number" ? String(x) : "").replace(/\s+/g, " ").trim().slice(0, maxChars))
+    .filter((x) => {
+      const k = normalizarTexto(x);
+      return k && !vistos.has(k) && vistos.add(k);
+    })
+    .slice(0, max);
+};
+
+// { categoria: [textos] } conferido: só as categorias conhecidas, até 40 por categoria e 120 caracteres por item, sem repetir.
+export function normalizarEvitar(valor) {
+  const v = valor && typeof valor === "object" && !Array.isArray(valor) ? valor : {};
+  const saida = {};
+  for (const cat of CATEGORIAS_EVITAR) saida[cat] = listaCurta(v[cat], MAX_EVITAR_POR_CATEGORIA);
+  return saida;
+}
+
+// O que já foi usado nos outros quadros da mesma noite (o app junta os "usados" de cada quadro pronto).
+export function normalizarUsados(valor) {
+  const v = valor && typeof valor === "object" && !Array.isArray(valor) ? valor : {};
+  return {
+    referencias: listaCurta(v.referencias, 60),
+    versiculos: listaCurta(v.versiculos, 600, 60),
+    personagens: listaCurta(v.personagens, 30),
+    videos: listaCurta(v.videos, 30),
+    canticos: listaCurta(v.canticos, 30),
+  };
+}
+
+// "Lucas 15:11-14" -> ["lucas 15:11", …, "lucas 15:14"] (até max); "Rom. 5:12, 18" -> 2 chaves; o que não der para separar fica inteiro.
+export function chavesDosVersiculos(ref, max = 40) {
+  const t = String(ref || "").replace(/\s+/g, " ").trim();
+  const m = t.match(/^(.+?)\s+(\d{1,3}):(.+)$/);
+  if (!m) return t ? [normalizarTexto(t)] : [];
+  const livro = normalizarTexto(m[1]);
+  const cap = Number(m[2]);
+  const chaves = [];
+  for (const pedaco of m[3].split(/[,;]/)) {
+    const r = pedaco.trim().match(/^(\d{1,3})(?:\s*[-–]\s*(\d{1,3}))?$/);
+    if (!r) {
+      // "1–2:3" (passa para outro capítulo): fica o primeiro versículo.
+      const so = pedaco.trim().match(/^(\d{1,3})/);
+      if (so && chaves.length < max) chaves.push(`${livro} ${cap}:${Number(so[1])}`);
+      break;
+    }
+    const ini = Number(r[1]);
+    const fim = r[2] ? Math.max(ini, Number(r[2])) : ini;
+    for (let v = ini; v <= fim && chaves.length < max; v++) chaves.push(`${livro} ${cap}:${v}`);
+  }
+  return chaves.length ? chaves : [normalizarTexto(t)];
+}
+
+// O código do vídeo (lank) no link do jw.org.
+export function lankDoLink(link) {
+  const m = String(link || "").match(/[?&]lank=([^&#]+)/);
+  return m ? decodeURIComponent(m[1]) : "";
+}
+
+// O que a parte usou (textos bíblicos, personagem, vídeos e cânticos), para conferir a repetição com os outros quadros.
+export function usadosDaParte(parte, memoria = {}) {
+  const p = parte && typeof parte === "object" ? parte : {};
+  const referencias = (Array.isArray(p.textos) ? p.textos : []).map((t) => String((t && t.referencia) || "").trim()).filter(Boolean);
+  return normalizarUsados({
+    referencias,
+    versiculos: referencias.flatMap((r) => chavesDosVersiculos(r)),
+    personagens: (memoria && memoria.personagens) || [],
+    videos: (Array.isArray(p.videos) ? p.videos : []).map((v) => lankDoLink(v && v.link)).filter(Boolean),
+    canticos: (Array.isArray(p.canticos) ? p.canticos : []).map((c) => String((c && c.numero) ?? "")).filter(Boolean),
+  });
+}
+
+// As repetições, em frases curtas: o mesmo texto bíblico, personagem, vídeo ou cântico de outro quadro da noite (jaUsados), e o personagem,
+// o vídeo ou o cântico das últimas semanas (evitar). [] = nada repetido.
+export function repeticoesDaParte(usados, jaUsados, evitar) {
+  const u = normalizarUsados(usados);
+  const j = normalizarUsados(jaUsados);
+  const e = normalizarEvitar(evitar);
+  const conjunto = (l) => new Set(l.map(normalizarTexto));
+  const saida = [];
+  const versiculosUsados = new Set(j.versiculos);
+  for (const ref of u.referencias) if (chavesDosVersiculos(ref).some((k) => versiculosUsados.has(k))) saida.push(`o texto ${ref} já está em outro quadro`);
+  const [jp, ep] = [conjunto(j.personagens), conjunto(e.personagens)];
+  for (const nome of u.personagens) {
+    const k = normalizarTexto(nome);
+    if (jp.has(k)) saida.push(`o personagem ${nome} já está em outro quadro`);
+    else if (ep.has(k)) saida.push(`o personagem ${nome} foi usado nas últimas semanas`);
+  }
+  const [jv, ev] = [new Set(j.videos), new Set(e.videos)];
+  for (const lank of u.videos) {
+    if (jv.has(lank)) saida.push("o vídeo já está em outro quadro");
+    else if (ev.has(lank)) saida.push("o vídeo foi usado nas últimas semanas");
+  }
+  const [jc, ec] = [new Set(j.canticos), new Set(e.canticos)];
+  for (const n of u.canticos) {
+    if (jc.has(n)) saida.push(`o cântico ${n} já está nesta noite`);
+    else if (ec.has(n)) saida.push(`o cântico ${n} foi usado nas últimas semanas`);
+  }
+  return [...new Set(saida)];
+}
+
+// ---------- Datas do Apêndice B da Bíblia de Estudo (jogo "Ordem e data dos acontecimentos", 6.12.72) ----------
+
+const DATA_AC_DC = String.raw`\d{1,4}(?:\s*[-–]\s*\d{1,4})?\s*(?:a\.\s?C\.|d\.\s?C\.)`;
+const resumirEvento = (texto) => {
+  let s = String(texto || "").replace(/\s+/g, " ").trim();
+  s = s.split(/\s+[—–]\s+/)[0];
+  s = s.replace(/\s*\([^)]*\d+:\d+[^)]*\)[\s\S]*$/, "");
+  const p = s.search(/[.!?](?=\s+["“]?\p{Lu})/u);
+  if (p > 20) s = s.slice(0, p);
+  s = s.replace(/[\s.;,:]+$/, "").trim();
+  return s.length > 160 ? s.slice(0, s.lastIndexOf(" ", 157)) + "…" : s;
+};
+
+// Os acontecimentos com data do Apêndice B: [{ data, evento }], na ordem do arquivo e sem repetir. Formatos: a data sozinha numa linha e o
+// acontecimento na seguinte ("Depois de 4026 a.C.", "1914 d.C. ou um pouco depois", "Futuro"); "• 1513 a.C. Israelitas saem do Egito";
+// "607 a.C. Rei Nabucodonosor destrói Jerusalém" (com o nome da potência do título de antes, quando falta o sujeito); "• Derramamento do
+// espírito santo Pentecostes de 33 d.C." (a data no fim).
+export function eventosDoApendiceB(texto) {
+  const linhas = String(texto || "").split(/\r?\n/).map((l) => l.replace(/\s+/g, " ").trim());
+  const eventos = [];
+  const vistos = new Set();
+  let titulo = "";
+  const incluir = (data, evento) => {
+    const d = String(data || "").replace(/\s+/g, " ").trim();
+    const ev = resumirEvento(evento);
+    if (!d || ev.length < 4) return;
+    const k = normalizarTexto(`${d} ${ev}`);
+    if (vistos.has(k)) return;
+    vistos.add(k);
+    eventos.push({ data: d, evento: ev });
+  };
+  const soData = new RegExp(`^((?:Depois de |Antes de |c\\.\\s*)?${DATA_AC_DC}(?: ou um pouco depois)?|Futuro)$`);
+  const dataNoComeco = new RegExp(`^(•\\s*)?((?:c\\.\\s*)?${DATA_AC_DC})\\s+(.{4,})$`);
+  const dataNoFim = new RegExp(`^•\\s*(.{4,}?)\\s+(?:de\\s+)?((?:c\\.\\s*)?${DATA_AC_DC})\\.?$`);
+  for (let i = 0; i < linhas.length; i++) {
+    const l = linhas[i];
+    if (!l) continue;
+    if (/^=+/.test(l)) {
+      titulo = "";
+      continue;
+    }
+    let m;
+    if ((m = l.match(soData))) {
+      let prox = "";
+      for (let k = i + 1; k < Math.min(linhas.length, i + 8) && !prox; k++) if (linhas[k] && !/^=+/.test(linhas[k])) prox = linhas[k];
+      if (prox && !soData.test(prox)) incluir(m[1], prox);
+      continue;
+    }
+    if ((m = l.match(dataNoComeco))) {
+      const ev = m[3];
+      incluir(m[2], !m[1] && titulo && !normalizarTexto(ev).includes(normalizarTexto(titulo)) ? `${titulo}: ${ev}` : ev);
+      continue;
+    }
+    if ((m = l.match(dataNoFim))) {
+      incluir(m[2], m[1]);
+      continue;
+    }
+    if (l.length <= 40 && !/\d/.test(l) && !l.startsWith("•")) titulo = l;
+  }
+  return eventos;
+}
+
+// Um número para pôr as datas em ordem: a.C. negativo, d.C. positivo; "Depois de" um pouco depois; "Futuro" por último; NaN sem data.
+export function valorDaData(data) {
+  const t = String(data || "").trim();
+  if (/^futuro$/i.test(t)) return 1e6;
+  const m = t.match(/(\d{1,4})(?:\s*[-–]\s*\d{1,4})?\s*(a|d)\.\s?C\./i);
+  if (!m) return NaN;
+  const n = Number(m[1]);
+  return (m[2].toLowerCase() === "a" ? -n : n) + (/depois/i.test(t) ? 0.5 : 0);
+}
+
+// As datas de um texto, normalizadas ("1077-1038 a.C.", "33 d.C.").
+export function datasDoTexto(texto) {
+  return [...String(texto || "").matchAll(/(\d{1,4})(?:\s*[-–]\s*(\d{1,4}))?\s*(a|d)\.\s?C\./gi)].map((m) => `${m[1]}${m[2] ? `-${m[2]}` : ""} ${m[3].toLowerCase()}.C.`);
+}
+
+// As datas aceitas num jogo: as do Apêndice B (as faixas valem inteiras e por cada ponta).
+export function datasPermitidas(textoDoApendice) {
+  const ok = new Set();
+  for (const d of datasDoTexto(textoDoApendice)) {
+    ok.add(d);
+    const m = d.match(/^(\d+)-(\d+) (.\.C\.)$/);
+    if (m) {
+      ok.add(`${m[1]} ${m[3]}`);
+      ok.add(`${m[2]} ${m[3]}`);
+    }
+  }
+  return ok;
+}
+
+// Tira da lista o que traz alguma data fora do Apêndice B (permitidas vazio = nenhuma data aceita).
+export function semDatasForaDoApendice(lista, textoDe, permitidas) {
+  const ok = permitidas instanceof Set ? permitidas : new Set();
+  return (Array.isArray(lista) ? lista : []).filter((item) => datasDoTexto(textoDe(item)).every((d) => ok.has(d)));
+}
+
+// Link para consultar um trecho de livro no wol.jw.org: a busca da frase exata das primeiras palavras (o trecho veio do livro guardado no
+// servidor; o endereço do livro no wol não é conhecido).
+export function linkDeConsultaWol(trecho) {
+  const palavras = String(trecho || "")
+    .replace(/["“”«»]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .slice(0, 8)
+    .join(" ")
+    .replace(/[.,;:!?…—–-]+$/, "");
+  return palavras ? `https://wol.jw.org/pt/wol/s/r5/lp-t?q=${encodeURIComponent(`"${palavras}"`)}&p=par&r=occ&st=a` : "";
+}
+
+// O tipo do jogo da noite: entre os aceitos pela família, de preferência um que não foi usado nas últimas semanas (evitar.jogos); sem as
+// datas do Apêndice B, a "Ordem e data dos acontecimentos" fica de fora (se for o único aceito, vale o primeiro dos outros tipos).
+export function tipoDoJogo(aceitos, todos, { semente = 1, evitar = [], comApendice = true } = {}) {
+  const lista = (Array.isArray(aceitos) && aceitos.length ? aceitos : todos).filter((j) => comApendice || !/^ordem e data/i.test(j));
+  const base = lista.length ? lista : (todos || []).filter((j) => !/^ordem e data/i.test(j));
+  const usados = new Set((Array.isArray(evitar) ? evitar : []).map(normalizarTexto));
+  const novos = base.filter((j) => !usados.has(normalizarTexto(j)));
+  return embaralhar(novos.length ? novos : base, semente)[0] || "";
 }

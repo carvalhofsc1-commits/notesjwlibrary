@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.71'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.72'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -20668,6 +20668,10 @@ function saveTemplatesToStorage() {
     // sozinhas para caber as novas. O app lê de uma cópia em memória (as leituras continuam imediatas) e grava no banco em segundo plano.
     // O localStorage só guarda as pesquisas quando o navegador não tem IndexedDB; um backup restaurado chega por ali e passa para o banco.
     const HISTORICO_MAX = 3000;
+    // Itens internos da lista (6.12.72): guardados com as pesquisas (vão no backup), mas fora das listas e das buscas. Hoje só a memória
+    // "evitar" da Adoração em Família por quadros (o que as últimas programações usaram, para não repetir).
+    const HISTORICO_TIPOS_INTERNOS = new Set(['familia-evitar']);
+    const historicoInterno = item => Boolean(item && HISTORICO_TIPOS_INTERNOS.has(item.tipo));
     const HISTORICO_MAX_CARACTERES = 1500000; // só sem IndexedDB (o limite do localStorage)
     const BANCO_NOME = 'notestyle-dados';
     const BANCO_LOJA = 'kv';
@@ -20986,9 +20990,11 @@ function saveTemplatesToStorage() {
       try { publicoNumerarSalvosEmSilencio(); } catch (e) { /* ainda iniciando */ }
     }
 
-    function historicoLer() {
+    // { internos: true } inclui os itens internos (HISTORICO_TIPOS_INTERNOS); sem isso, só o que aparece nas listas.
+    function historicoLer(opcoes) {
       try {
-        return structuredClone(historicoCache).map(historicoComSemana); // uma cópia: quem altera a lista precisa chamar historicoGravar
+        const lista = opcoes && opcoes.internos ? historicoCache : historicoCache.filter(g => !historicoInterno(g));
+        return structuredClone(lista).map(historicoComSemana); // uma cópia: quem altera a lista precisa chamar historicoGravar
       } catch (e) {
         return [];
       }
@@ -21583,7 +21589,9 @@ function saveTemplatesToStorage() {
     const historicoChave = item => item.ano * 100 + item.numSemana;
     const historicoChaveAtual = () => aiWeekYear * 100 + aiWeekNumber;
 
+    // Quem leu sem os itens internos (historicoLer()) grava sem eles: eles voltam na frente, para não se perderem nem saírem primeiro quando falta espaço.
     function historicoGravar(lista) {
+      if (!lista.some(historicoInterno)) lista = [...historicoCache.filter(historicoInterno), ...lista];
       if (temBanco) {
         try { historicoCache = structuredClone(lista.slice(0, HISTORICO_MAX)); } catch (e) { return false; }
         if (historicoNoBanco) historicoSalvarNoBanco();
@@ -29278,7 +29286,7 @@ function saveTemplatesToStorage() {
       item(ger.plano ? 'ok' : 'gerando', '🗺️ Plano da noite', '', null);
       for (const id of ger.ids || []) {
         const q = QUADROS_FAMILIA.find(x => x.id === id);
-        item(ger.estado[id] || 'fila', (q ? q.emoji + ' ' + q.nome : id), ger.estado[id] === 'erro' ? ger.erros[id] || '' : '', id);
+        item(ger.estado[id] || 'fila', (q ? q.emoji + ' ' + q.nome : id), ger.estado[id] === 'erro' ? ger.erros[id] || '' : ger.avisos && ger.avisos[id] ? '⚠️ ' + ger.avisos[id] : '', id);
       }
       familiaProgressoEl.appendChild(lista);
       familiaProgressoEl.hidden = false;
@@ -29295,45 +29303,180 @@ function saveTemplatesToStorage() {
       familiaEtapa = 'Preparando os quadros (' + feitos + '/' + ger.ids.length + ')…';
     }
 
+    // ---------- Memória "evitar" e repetições (6.12.72) ----------
+    // O que as últimas programações usaram fica no aparelho, num item interno das pesquisas salvas (tipo 'familia-evitar', fora das listas e
+    // dentro do backup): por categoria, os mais novos primeiro, até 40 e 120 caracteres cada. Vai com o plano e com cada quadro; o servidor
+    // evita repetir. Nada de dados pessoais: o servidor só devolve assuntos, nomes bíblicos, ids, perguntas, situações, números e códigos.
+    // <evitar-familia> (o teste ferramentas/testar-adoracao-quadros.mjs executa este bloco à parte)
+    const FAMILIA_EVITAR_TIPO = 'familia-evitar';
+    const FAMILIA_EVITAR_MAX = 40;
+    const FAMILIA_EVITAR_CATEGORIAS = ['assuntos', 'personagens', 'principios', 'jesus', 'saiba', 'ministerio', 'criador', 'artigos', 'canticos', 'jogos', 'videos'];
+    const FAMILIA_USADOS_CHAVES = ['referencias', 'versiculos', 'personagens', 'videos', 'canticos'];
+    const familiaChaveTexto = x => String(x ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+    const familiaSemRepetir = lista => {
+      const vistos = new Set();
+      return lista.filter(x => {
+        const k = familiaChaveTexto(x);
+        if (!k || vistos.has(k)) return false;
+        vistos.add(k);
+        return true;
+      });
+    };
+
+    function familiaEvitarLer() {
+      const item = historicoCache.find(g => g && g.tipo === FAMILIA_EVITAR_TIPO);
+      const e = item && item.evitar && typeof item.evitar === 'object' ? item.evitar : {};
+      const saida = {};
+      for (const cat of FAMILIA_EVITAR_CATEGORIAS) {
+        saida[cat] = (Array.isArray(e[cat]) ? e[cat] : []).filter(x => typeof x === 'string' || typeof x === 'number').map(String).slice(0, FAMILIA_EVITAR_MAX);
+      }
+      return saida;
+    }
+
+    // Junta a memória que o servidor devolveu (plano ou quadro) à guardada: os novos na frente, sem repetir, até 40 por categoria.
+    function familiaEvitarRegistrar(memorias) {
+      const atual = familiaEvitarLer();
+      let mudou = false;
+      for (const memoria of memorias) {
+        if (!memoria || typeof memoria !== 'object') continue;
+        for (const cat of FAMILIA_EVITAR_CATEGORIAS) {
+          const novos = (Array.isArray(memoria[cat]) ? memoria[cat] : [])
+            .filter(x => typeof x === 'string' || typeof x === 'number')
+            .map(x => String(x).replace(/\s+/g, ' ').trim().slice(0, 120))
+            .filter(Boolean);
+          if (!novos.length) continue;
+          atual[cat] = familiaSemRepetir([...novos, ...atual[cat]]).slice(0, FAMILIA_EVITAR_MAX);
+          mudou = true;
+        }
+      }
+      if (!mudou) return false;
+      try {
+        const lista = historicoLer({ internos: true }).filter(g => g.tipo !== FAMILIA_EVITAR_TIPO);
+        return historicoGravar([{ id: FAMILIA_EVITAR_TIPO, tipo: FAMILIA_EVITAR_TIPO, titulo: '', data: new Date().toISOString(), partes: [], evitar: atual }, ...lista]);
+      } catch (e) {
+        return false; // sem memória, a próxima programação só pode repetir mais
+      }
+    }
+
+    const familiaNumeroCantico = c => {
+      const n = c && typeof c === 'object' ? c.numero : c;
+      return Number.isFinite(Number(n)) && Number(n) > 0 ? String(Math.round(Number(n))) : '';
+    };
+
+    // O que os quadros prontos (ids) usaram, mais os cânticos inicial e final do plano: vai como "jaUsados" para o servidor não repetir na mesma noite.
+    function familiaJaUsados(ger, ids) {
+      const u = {};
+      for (const k of FAMILIA_USADOS_CHAVES) u[k] = [];
+      for (const id of ids) {
+        const us = ger.estado[id] === 'ok' && ger.usados[id];
+        if (!us) continue;
+        for (const k of FAMILIA_USADOS_CHAVES) if (Array.isArray(us[k])) u[k].push(...us[k]);
+      }
+      for (const c of [ger.plano && ger.plano.canticoInicial, ger.plano && ger.plano.canticoFinal]) {
+        const n = familiaNumeroCantico(c);
+        if (n) u.canticos.push(n);
+      }
+      for (const k of FAMILIA_USADOS_CHAVES) u[k] = familiaSemRepetir(u[k]);
+      return u;
+    }
+
+    // true se a parte usou um versículo, personagem, vídeo ou cântico que já está em outra (a e b no formato de "usados").
+    function familiaUsadosCruzam(a, b) {
+      if (!a || !b) return false;
+      return ['versiculos', 'personagens', 'videos', 'canticos'].some(k => {
+        const s = new Set((Array.isArray(b[k]) ? b[k] : []).map(familiaChaveTexto));
+        return (Array.isArray(a[k]) ? a[k] : []).some(x => s.has(familiaChaveTexto(x)));
+      });
+    }
+    // </evitar-familia>
+
     // Prepara os quadros pedidos, no máximo FAMILIA_QUADROS_EM_PARALELO ao mesmo tempo. Para se o pedido foi cancelado (familiaPedido mudou).
-    async function familiaGerarQuadros(ger, ids) {
+    // Cada pedido leva a memória "evitar" (a do início da preparação) e o que os quadros já prontos usaram (jaUsados). Na conferência final
+    // (opcoes.conferencia), o pedido leva refazerRepetido (o servidor não refaz de novo, só avisa) e, se falhar, o quadro de antes fica.
+    async function familiaGerarQuadros(ger, ids, opcoes = {}) {
       const fila = ids.slice();
       const um = async id => {
+        const anterior = ger.estado[id] === 'ok' ? ger.partes[id] : null;
         ger.estado[id] = 'gerando';
         familiaProgressoPintar(ger);
+        const falhou = msg => {
+          if (opcoes.conferencia && anterior) {
+            ger.estado[id] = 'ok';
+            ger.avisos[id] = 'repete algo de outro quadro desta noite (não consegui refazer: ' + msg.replace(/\.$/, '') + ').';
+          } else {
+            ger.estado[id] = 'erro';
+            ger.erros[id] = msg;
+          }
+        };
         try {
           const r = await postStudy(Object.assign({}, ger.payload, {
             fase: 'quadro',
             quadro: id,
             angulo: (ger.plano.angulos && ger.plano.angulos[id]) || '',
             plano: { titulo: ger.plano.titulo || '', objetivo: ger.plano.objetivo || '' },
-            assunto: ger.plano.assunto || ger.payload.assunto || ''
-          }), IA_ESPERA_MS);
+            assunto: ger.plano.assunto || ger.payload.assunto || '',
+            evitar: ger.evitar,
+            jaUsados: familiaJaUsados(ger, ger.ids.filter(x => x !== id))
+          }, opcoes.conferencia ? { refazerRepetido: true } : {}), IA_ESPERA_MS);
           if (ger.pedido !== familiaPedido) return;
           if (r.ok && r.data && r.data.parte && typeof r.data.parte === 'object') {
             ger.partes[id] = r.data.parte;
             ger.estado[id] = 'ok';
             delete ger.erros[id];
+            ger.usados[id] = r.data.usados && typeof r.data.usados === 'object' ? r.data.usados : {};
+            ger.memorias[id] = r.data.memoria && typeof r.data.memoria === 'object' ? r.data.memoria : null;
+            ger.registrados.delete(id);
+            if (r.data.aviso) ger.avisos[id] = String(r.data.aviso).replace(/^[^:]{1,80}:\s*/, '').slice(0, 300);
+            else delete ger.avisos[id];
+            // O servidor já refez (ou já avisou): a conferência final não pede de novo.
+            if (r.data.refeito || r.data.aviso || opcoes.conferencia) ger.conferido[id] = true;
           } else {
-            ger.estado[id] = 'erro';
-            ger.erros[id] = (r.data && r.data.erro) || (r.unavailable ? 'Serviço indisponível no momento.' : 'Não ficou pronto.');
+            falhou((r.data && r.data.erro) || (r.unavailable ? 'Serviço indisponível no momento.' : 'Não ficou pronto.'));
           }
         } catch (e) {
           if (ger.pedido !== familiaPedido) return;
-          ger.estado[id] = 'erro';
-          ger.erros[id] = 'Falha na conexão.';
+          falhou('Falha na conexão.');
         }
-        familiaEtapaDosQuadros(ger);
+        if (!opcoes.conferencia) familiaEtapaDosQuadros(ger);
         familiaProgressoPintar(ger);
       };
       const trabalhador = async () => {
         while (fila.length && ger.pedido === familiaPedido) await um(fila.shift());
       };
-      await Promise.all(Array.from({ length: Math.min(FAMILIA_QUADROS_EM_PARALELO, fila.length) }, trabalhador));
+      await Promise.all(Array.from({ length: Math.min(opcoes.conferencia ? 1 : FAMILIA_QUADROS_EM_PARALELO, fila.length) }, trabalhador));
+    }
+
+    // Conferência final: os quadros feitos ao mesmo tempo não se viram. Na ordem do catálogo, o quadro que repete um versículo, personagem,
+    // vídeo ou cântico de um anterior (ou do plano) e que o servidor ainda não refez é pedido de novo, um por vez, uma vez só.
+    async function familiaConferirRepeticoes(ger) {
+      const prontos = ger.ids.filter(id => ger.estado[id] === 'ok');
+      const repetidos = prontos.filter((id, i) => !ger.conferido[id] && familiaUsadosCruzam(ger.usados[id], familiaJaUsados(ger, prontos.slice(0, i))));
+      if (!repetidos.length) return 0;
+      familiaEtapa = 'Conferindo repetições (' + repetidos.length + (repetidos.length === 1 ? ' quadro' : ' quadros') + ')…';
+      familiaRelogioPintar();
+      await familiaGerarQuadros(ger, repetidos, { conferencia: true });
+      return repetidos.length;
+    }
+
+    // Guarda na memória "evitar" o que a programação mostrada usou (o plano e cada quadro pronto; cada memória entra uma vez).
+    function familiaRegistrarMemoria(ger) {
+      const novas = [];
+      if (!ger.registrados.has('plano')) {
+        ger.registrados.add('plano');
+        const canticos = [ger.plano.canticoInicial, ger.plano.canticoFinal].map(familiaNumeroCantico).filter(Boolean);
+        novas.push(Object.assign({}, ger.memoriaPlano || {}, canticos.length ? { canticos } : {}));
+      }
+      for (const id of ger.ids) {
+        if (ger.estado[id] !== 'ok' || ger.registrados.has(id)) continue;
+        ger.registrados.add(id);
+        if (ger.memorias[id]) novas.push(ger.memorias[id]);
+      }
+      if (novas.length) familiaEvitarRegistrar(novas);
     }
 
     // Monta a programação com o que ficou pronto, mostra e salva (a primeira vez cria o item; depois de refazer um quadro, atualiza o mesmo item).
     function familiaMostrarESalvar(ger) {
+      familiaRegistrarMemoria(ger);
       const op = familiaMontarPrograma(ger.plano, ger.partes, ger.perfil.quadros, QUADROS_FAMILIA);
       familiaRenderOpcoes([op]);
       const texto = familiaTextoDaOpcao(op);
@@ -29366,7 +29509,9 @@ function saveTemplatesToStorage() {
 
     function familiaFalhasTexto(ger) {
       const n = ger.ids.filter(id => ger.estado[id] === 'erro').length;
-      return n ? ' · ⚠️ ' + n + (n === 1 ? ' quadro não ficou pronto' : ' quadros não ficaram prontos') + ': toque em “🔄 Refazer este quadro”' : '';
+      const avisos = ger.ids.filter(id => ger.estado[id] === 'ok' && ger.avisos[id]).length;
+      return (n ? ' · ⚠️ ' + n + (n === 1 ? ' quadro não ficou pronto' : ' quadros não ficaram prontos') + ': toque em “🔄 Refazer este quadro”' : '') +
+        (avisos ? ' · ⚠️ ' + (avisos === 1 ? '1 quadro repete' : avisos + ' quadros repetem') + ' algo (veja o andamento)' : '');
     }
 
     async function familiaRefazerQuadro(ger, id) {
@@ -29406,13 +29551,17 @@ function saveTemplatesToStorage() {
       familiaCancelarBtn.hidden = false;
       familiaProgressoLimpar();
       const payload = familiaPayloadDe(perfil);
-      const ger = { pedido, payload, perfil, plano: null, ids: familiaIdsComIa(perfil.quadros), partes: {}, estado: {}, erros: {}, modelo: '', itemId: null, refazendo: false };
+      const ger = {
+        pedido, payload, perfil, plano: null, ids: familiaIdsComIa(perfil.quadros), partes: {}, estado: {}, erros: {}, modelo: '', itemId: null, refazendo: false,
+        // 6.12.72: a memória "evitar" do início (vale para a noite toda), o que cada quadro usou, a memória que cada um devolveu e os avisos de repetição.
+        evitar: familiaEvitarLer(), usados: {}, memorias: {}, memoriaPlano: null, registrados: new Set(), avisos: {}, conferido: {}
+      };
       familiaGeracao = ger;
       familiaEtapa = 'Planejando a programação…';
       familiaRelogioLigar();
       familiaProgressoPintar(ger);
       try {
-        const result = await postStudy(Object.assign({}, payload, { fase: 'plano' }), IA_ESPERA_MS);
+        const result = await postStudy(Object.assign({}, payload, { fase: 'plano', evitar: ger.evitar }), IA_ESPERA_MS);
         if (pedido !== familiaPedido) return;
         if (!result.ok || !result.data || !result.data.plano || typeof result.data.plano !== 'object') {
           familiaProgressoLimpar();
@@ -29420,6 +29569,7 @@ function saveTemplatesToStorage() {
           return;
         }
         ger.plano = result.data.plano;
+        ger.memoriaPlano = result.data.memoria && typeof result.data.memoria === 'object' ? result.data.memoria : null;
         ger.modelo = result.data.modelo || '';
         familiaEtapaDosQuadros(ger);
         familiaRelogioPintar();
@@ -29430,6 +29580,8 @@ function saveTemplatesToStorage() {
           familiaStatus('Nenhum quadro ficou pronto. Confira a conexão e tente de novo.', 'erro');
           return;
         }
+        await familiaConferirRepeticoes(ger);
+        if (pedido !== familiaPedido) return;
         const tempoTotal = familiaRelogioTexto();
         const salvo = familiaMostrarESalvar(ger);
         const falhas = familiaFalhasTexto(ger);

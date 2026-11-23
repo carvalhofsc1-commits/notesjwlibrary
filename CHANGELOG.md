@@ -2,6 +2,23 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.72
+
+- **Adoração em Família por quadros: fase 3b (os demais quadros com instruções próprias).** Agora todos os quadros têm instruções próprias; a instrução genérica saiu.
+  - **Vídeo:** a IA escolhe 1 ou 2 vídeos da lista do catálogo do jw.org (já sem os usados nas últimas semanas e nesta noite) e escreve a descrição e até 3 perguntas. O título e o link são postos pelo servidor.
+  - **Fortaleça sua fé no Criador:** não segue o assunto da noite. A IA escolhe um artigo de ciência do catálogo dos Ensinos Bíblicos (lido no wol.jw.org pelo docId) ou um trecho das brochuras A Vida — Teve um Criador? e A Origem da Vida. O servidor transcreve o texto.
+  - **Saiba responder:** uma pergunta que as pessoas fazem, a base num trecho dos livros do quadro (ou num verbete do Perspicaz) e 1 ou 2 textos bíblicos, com o link de consulta no wol.jw.org.
+  - **Ame o ministério:** uma situação real do ministério, que muda a cada semana, com uma ideia prática e 1 ou 2 perguntas, e o trecho das brochuras do ministério.
+  - **Jogo bíblico:** só os 6 tipos aceitos, em nível de adulto batizado. O servidor sorteia o tipo da noite, de preferência um que não foi usado nas últimas semanas. Na Ordem e data dos acontecimentos, a IA só escolhe acontecimentos do Apêndice B da Bíblia de Estudo; o servidor embaralha e põe as datas, e a ordem certa fica guardada no jogo. As datas que não são do Apêndice B saem dos outros jogos.
+  - **Treino de cânticos:** 1 cântico ligado à noite, sem repetir os da programação nem os das últimas semanas.
+- **Princípio bíblico:** usa só uma entrada do índice, com o texto literal transcrito.
+- **Textos lidos** (trechos de livros e artigos) são cortados no fim de uma frase, não no meio.
+- **Memória do que já foi usado:** guardada no aparelho (IndexedDB), com até 40 itens por categoria: assuntos, personagens, princípios, episódios de Jesus, perguntas do Saiba responder, situações do ministério, exemplos do Criador, artigos, cânticos, jogos e vídeos. Vai junto com o plano e com cada quadro, para não repetir nas semanas seguintes. Ela fica como um item interno das Pesquisas salvas: não aparece na lista, entra no backup e continua lá mesmo quando se apagam as pesquisas.
+- **Conferência de repetição:**
+  - O servidor refaz o quadro uma vez, citando a repetição, quando ele repete um texto bíblico, um personagem, um vídeo ou um cântico de outro quadro da noite. Também refaz se um personagem, vídeo ou cântico já foi usado nas últimas semanas.
+  - Depois que todos ficam prontos, o app confere os quadros entre si. Os que ainda repetem são refeitos uma vez. Se mesmo assim repetir, o quadro fica com um aviso "⚠️" no andamento.
+- **Instruções da IA visíveis:** os novos textos aparecem e podem ser editados na tela de prompts do administrador: "Vídeo", "Fortaleça sua fé no Criador", "Saiba responder", "Ame o ministério", "Jogo bíblico" e "Treino de cânticos". Os formatos são só leitura.
+
 ## 6.12.71
 
 - **Adoração em Família por quadros: fase 3a (preparação em duas fases).** Primeiro vem o **plano da noite**, numa chamada curta: título, objetivo, assunto, o ângulo de cada quadro e os cânticos inicial e final. Depois, **cada quadro marcado é preparado numa chamada própria**, até 4 ao mesmo tempo. O app junta tudo nesta ordem: cântico inicial, oração inicial, os quadros na ordem do catálogo, cântico final e oração final. A programação é salva uma vez só.

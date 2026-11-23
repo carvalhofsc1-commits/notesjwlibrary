@@ -919,6 +919,18 @@ export function precarregarFontes({ biblia: comBiblia, perspicaz: comPerspicaz, 
   if (comLivros) carregarLivros().catch(() => {});
 }
 
+// O texto bruto de uma fonte pela chave de ARQUIVOS (ex.: "apendiceBBibliaEstudo", para as datas do jogo "Ordem e data" da Adoração em
+// Família, 6.12.72). null se a chave não existir ou o arquivo estiver indisponível.
+export async function lerTextoDoLivro(chave) {
+  if (!ARQUIVOS[chave] || !fontesConfiguradas()) return null;
+  try {
+    return await baixar(ARQUIVOS[chave]);
+  } catch (e) {
+    console.error(`Fonte indisponível (${chave})`, e?.message);
+    return null;
+  }
+}
+
 // Os 151 cânticos com a letra (para sugerir o cântico inicial do discurso público). null se o arquivo ainda não foi enviado ao Blob.
 let canticosGuardados = null;
 export async function lerCanticos() {
