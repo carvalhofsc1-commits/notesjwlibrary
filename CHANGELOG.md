@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.64
+
+- **Comentários adicionais do texto diário terminam com uma reflexão:** o prompt "Comentários adicionais sobre o texto diário" agora manda a IA encerrar TODA "aplicacao" com uma frase que leve a pessoa a refletir se está aplicando o ponto ou a lição, alternando entre dois tipos (com 4 comentários, 2 de cada, intercalados): uma **pergunta** de reflexão ("Você está se esforçando para dirigir pelo menos um estudo bíblico?", "Marido, você sempre procura tratar a sua esposa com bondade e respeito?") e uma **admoestação prática** ("Marido, jamais deixe de tratar a sua esposa com bondade e respeito."). A frase é ligada ao assunto do comentário, com carinho (sem bronca nem acusação), e é uma só, curta. O servidor passou a aceitar até 750 caracteres na aplicação (eram 500), para a reflexão não ser cortada. Vale para "Gerar comentários" e "Gerar outros", e a voz lê a reflexão junto.
+
 ## 6.12.63
 
 - **Adoração em Família: card "🧩 Estrutura e atividades":** um card só (substitui os cards de Circunstâncias e de Atividades da 6.12.61), com três blocos: **🧱 Estrutura da programação** (novo), **💛 Circunstâncias** e **🎨 Atividades que a família aceita**. Na estrutura o chefe marca quais atividades ficam entre a Oração inicial e a Oração final, sempre nesta ordem: 📰 trecho de uma matéria, 📖 trecho da Bíblia ou versículos (com perguntas), 🎬 um ou dois vídeos e 🎲 um jogo bíblico (pelo menos uma fica marcada). O servidor manda à IA a linha "ESTRUTURA DA PROGRAMAÇÃO ESCOLHIDA" (de 1 a 4 atividades, nenhuma a mais), sem pesquisar matéria quando ela não está na estrutura; a conferência da 6.12.62 passou a usar o número escolhido. Os "Jogos aceitos" ficaram sob a estrutura (valem quando "Um jogo bíblico" está marcado).

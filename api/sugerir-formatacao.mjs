@@ -6227,7 +6227,7 @@ async function comentariosDoTextoDiario(res, body, P) {
     const comentarios = resposta.parsed_output.comentarios
       .map((c) => {
         const base = limparTextoGerado(c.base || "", 350);
-        const aplicacao = limparTextoGerado(c.aplicacao, 500);
+        const aplicacao = limparTextoGerado(c.aplicacao, 750); // 6.12.64: cabe a frase final de reflexão
         return {
           ponto: limparLinha(limparTrecho(c.ponto), 120),
           emoji: emojiDoComentario(c.emoji),
