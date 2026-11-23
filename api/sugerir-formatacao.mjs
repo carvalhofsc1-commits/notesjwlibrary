@@ -3739,6 +3739,10 @@ export async function montarPedidoQuadroFamilia(body, P) {
   const prep = await PREPARAR_QUADRO_FAMILIA[id](ctx);
   const tituloPlano = textoLivre(plano.titulo, 120);
   const objetivoPlano = textoLivre(plano.objetivo, 400);
+  // 6.12.74: "🔄 Trocar este quadro" (troca: true): o app manda em jaUsados também o que a versão anterior deste quadro usou, e pode mandar uma
+  // instrução curta de quem dirige (opcional, até 300 caracteres, sem a palavra proibida). A instrução é um dado do pedido: vale se não contrariar as regras.
+  const trocaDoQuadro = body.troca === true;
+  const instrucao = semCulto(textoLivre(body.instrucao, 300));
   const mensagem =
     `QUADRO: ${quadro.nome} (${quadro.minutos} minutos) — ${quadro.saida}\n` +
     (tituloPlano || objetivoPlano ? `PLANO DA NOITE: ${[tituloPlano, objetivoPlano && `objetivo: ${objetivoPlano}`].filter(Boolean).join(" — ")}\n` : "") +
@@ -3748,6 +3752,8 @@ export async function montarPedidoQuadroFamilia(body, P) {
     resumoDaFamiliaParaQuadro(perfil) +
     `${prioridadesAplicaveis(perfil).texto}\n` +
     blocoJaUsados(ctx.jaUsados) +
+    (trocaDoQuadro ? `TROCA DESTE QUADRO: quem dirige pediu outro no lugar do anterior; faça um quadro diferente (o que o anterior usou está entre os já usados acima).\n` : "") +
+    (instrucao ? `INSTRUÇÃO DE QUEM DIRIGE PARA ESTE QUADRO (siga se não contrariar as regras): ${instrucao}\n` : "") +
     prep.listas;
   return { ctx, quadro, perfil, prep, mensagem, sistema: P.sistemaFamiliaQuadro[prep.sistema] };
 }

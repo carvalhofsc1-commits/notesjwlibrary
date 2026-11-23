@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.73'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.74'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -22067,7 +22067,7 @@ function saveTemplatesToStorage() {
       if (item.tipo === 'familia') {
         if (!Array.isArray(item.familiaOpcoes) || !item.familiaOpcoes.length) return false;
         const numeroSalvo = (String(item.titulo).match(/ · Opção (\d)$/) || [])[1]; // programação salva de uma opção: mantém o número original
-        familiaRenderOpcoes(item.familiaOpcoes, numeroSalvo && item.familiaOpcoes.length === 1 ? [Number(numeroSalvo)] : undefined);
+        familiaRenderOpcoes(item.familiaOpcoes, numeroSalvo && item.familiaOpcoes.length === 1 ? [Number(numeroSalvo)] : undefined, item.id);
         familiaStatus('Programação salva em ' + new Date(item.data).toLocaleDateString('pt-BR') + '.', 'ok');
         if (!silencioso) {
           showScreen('familia');
@@ -26083,7 +26083,22 @@ function saveTemplatesToStorage() {
     // preparacao, tarefas, dicaParaOChefe }). Ordem: Cântico inicial (se o plano trouxe) → Oração inicial → os quadros na ordem do catálogo (os que
     // não ficaram prontos saem) → Cântico final → Oração final. As orações e os cânticos inicial e final não passam pela IA de quadro. Sem página:
     // o teste ferramentas/testar-adoracao-quadros.mjs executa este bloco.
-    function familiaMontarPrograma(plano, partesPorQuadro, quadros, catalogo) {
+    // 6.12.74: a programação sai com "versao: 2", o ângulo de cada quadro (angulos: { quadro: ângulo }) e o que cada quadro usou (usados, opcional:
+    // { quadro: { referencias, versiculos, personagens, videos, canticos } }). Com isso o "🔄 Trocar este quadro" pede um quadro novo sem repetir.
+    // As programações antigas (sem versao) continuam abrindo como antes, só sem o botão de troca.
+    // A parte que o servidor devolveu para o quadro q, no formato da programação (null se não veio). Vale na montagem e na troca de um quadro.
+    function familiaParteDoQuadro(parte, q) {
+      if (!parte || typeof parte !== 'object' || !q) return null;
+      const lista = v => (Array.isArray(v) ? v : []);
+      return Object.assign({}, parte, {
+        nome: String(parte.nome || q.nome),
+        minutos: Number.isFinite(Number(parte.minutos)) ? Math.max(0, Math.round(Number(parte.minutos))) : q.minutos,
+        responsavel: '',
+        textos: lista(parte.textos), videos: lista(parte.videos), canticos: lista(parte.canticos), publicacoes: lista(parte.publicacoes), perguntas: lista(parte.perguntas),
+        quadro: q.id
+      });
+    }
+    function familiaMontarPrograma(plano, partesPorQuadro, quadros, catalogo, usadosPorQuadro) {
       const p = plano && typeof plano === 'object' ? plano : {};
       const porQuadro = partesPorQuadro && typeof partesPorQuadro === 'object' ? partesPorQuadro : {};
       const marcados = new Set(Array.isArray(quadros) ? quadros : []);
@@ -26096,20 +26111,23 @@ function saveTemplatesToStorage() {
       partes.push(simples('Oração inicial', 'oracao_inicial'));
       for (const q of lista(catalogo)) {
         if (!q.minutos || !marcados.has(q.id)) continue;
-        const parte = porQuadro[q.id];
-        if (!parte || typeof parte !== 'object') continue;
-        partes.push(Object.assign({}, parte, {
-          nome: String(parte.nome || q.nome),
-          minutos: Number.isFinite(Number(parte.minutos)) ? Math.max(0, Math.round(Number(parte.minutos))) : q.minutos,
-          responsavel: '',
-          textos: lista(parte.textos), videos: lista(parte.videos), canticos: lista(parte.canticos), publicacoes: lista(parte.publicacoes), perguntas: lista(parte.perguntas),
-          quadro: q.id
-        }));
+        const parte = familiaParteDoQuadro(porQuadro[q.id], q);
+        if (parte) partes.push(parte);
       }
       const final = cantico(p.canticoFinal, 'Cântico final', 'cantico_final');
       if (final) partes.push(final);
       partes.push(simples('Oração final', 'oracao_final'));
+      const noQuadro = new Set(partes.map(x => x.quadro));
+      const angulos = {};
+      const angulosBrutos = Array.isArray(p.angulos)
+        ? Object.fromEntries(p.angulos.filter(a => a && typeof a === 'object').map(a => [a.quadro, a.angulo]))
+        : (p.angulos && typeof p.angulos === 'object' ? p.angulos : {});
+      for (const [id, a] of Object.entries(angulosBrutos)) if (noQuadro.has(id) && typeof a === 'string' && a.trim()) angulos[id] = a.trim().slice(0, 300);
+      const usados = {};
+      const usadosBrutos = usadosPorQuadro && typeof usadosPorQuadro === 'object' ? usadosPorQuadro : {};
+      for (const [id, u] of Object.entries(usadosBrutos)) if (noQuadro.has(id) && u && typeof u === 'object') usados[id] = u;
       return {
+        versao: 2,
         titulo: String(p.titulo || 'Adoração em Família'),
         emoji: String(p.emoji || ''),
         resumo: String(p.resumo || ''),
@@ -26119,7 +26137,9 @@ function saveTemplatesToStorage() {
         duracaoTotal: partes.reduce((s, x) => s + (x.minutos || 0), 0),
         preparacao: lista(p.preparacao).map(String),
         tarefas: lista(p.tarefas).filter(x => x && typeof x === 'object'),
-        dicaParaOChefe: String(p.dicaParaOChefe || '')
+        dicaParaOChefe: String(p.dicaParaOChefe || ''),
+        angulos,
+        usados
       };
     }
     // </montagem-familia>
@@ -26650,7 +26670,8 @@ function saveTemplatesToStorage() {
     }
 
     // numeros (opcional): o número de cada opção, quando só algumas voltam à tela (ex.: abrir só a opção 2 de uma programação salva).
-    function familiaRenderOpcoes(opcoes, numeros) {
+    // itemId (opcional, 6.12.74): o id da programação salva, para o "🔄 Trocar este quadro" atualizar o item salvo.
+    function familiaRenderOpcoes(opcoes, numeros, itemId) {
       familiaResultadoEl.innerHTML = '';
       familiaOpcoes = opcoes;
       // Com duas opções (programações salvas antigas), o usuário pode montar a própria programação marcando as partes que quiser de cada uma.
@@ -26659,7 +26680,9 @@ function saveTemplatesToStorage() {
       opcoes.forEach((op, idx) => {
         const n = (numeros && numeros[idx]) || idx + 1;
         const rotulo = opcoes.length > 1 || n > 1 ? 'Opção ' + n : 'Programação';
-        familiaResultadoEl.appendChild(familiaMontarCard(op, idx, rotulo + (op.duracaoTotal ? ' · ' + op.duracaoTotal + ' min' : '')));
+        // 6.12.74: a programação por quadros (versao 2), sozinha na tela, ganha o "🔄 Trocar este quadro" em cada quadro.
+        const cfg = opcoes.length === 1 && op && op.versao === 2 ? { trocar: true, itemId: itemId || null } : undefined;
+        familiaResultadoEl.appendChild(familiaMontarCard(op, idx, rotulo + (op.duracaoTotal ? ' · ' + op.duracaoTotal + ' min' : ''), cfg));
       });
       familiaResultadoEl.hidden = !opcoes.length;
       familiaLimparBtn.hidden = !opcoes.length;
@@ -26884,6 +26907,140 @@ function saveTemplatesToStorage() {
       return bloco;
     }
 
+    // ---------- 🔄 Trocar este quadro (6.12.74) ----------
+    // Só nas programações por quadros (versao 2) e nos quadros com IA (as orações e os cânticos inicial e final ficam como estão). Abre um campo
+    // opcional de instrução e pede ao servidor um quadro novo (fase "quadro", troca: true) com o ângulo do plano, a memória "evitar" e, em
+    // jaUsados, o que os outros quadros usaram MAIS o que este quadro usava (para vir outro). A troca atualiza a programação salva e a memória.
+    // Programação já compartilhada: a troca fica bloqueada, com aviso. A sessão guarda uma cópia da programação no servidor (e as respostas do
+    // jogo pela posição da parte), e quem já entrou não recebe a programação de novo; trocar no meio deixaria cada um com uma versão.
+    const FAMILIA_QUADROS_TROCAVEIS = new Set(QUADROS_FAMILIA.filter(q => q.minutos).map(q => q.id));
+    let familiaTrocando = false;
+
+    // A sessão compartilhada desta programação (pelo id da programação salva ou, nas compartilhadas pela tela, pelo título), ou null.
+    function familiaSessaoDoCartao(op, itemId) {
+      const titulo = (op.emoji ? op.emoji + ' ' : '') + (op.titulo || 'Adoração em Família');
+      return familiaSessoesDoDirigente().find(s => (itemId && s.progId === itemId) || (!s.progId && s.titulo === titulo)) || null;
+    }
+
+    function familiaTrocarMontar(op, parte, cfg) {
+      const caixa = document.createElement('div');
+      caixa.className = 'fam-trocar';
+      const abrir = document.createElement('button');
+      abrir.type = 'button';
+      abrir.className = 'secondary fam-fino fam-trocar-btn';
+      abrir.textContent = '🔄 Trocar este quadro';
+      abrir.setAttribute('aria-expanded', 'false');
+      const painel = document.createElement('div');
+      painel.className = 'fam-trocar-painel';
+      painel.hidden = true;
+      const campoId = 'famTrocar-' + parte.quadro;
+      const rotulo = document.createElement('label');
+      rotulo.className = 'fam-trocar-rotulo';
+      rotulo.htmlFor = campoId;
+      rotulo.textContent = 'Instrução para a IA (opcional)';
+      const campo = document.createElement('textarea');
+      campo.id = campoId;
+      campo.className = 'fam-trocar-instrucao';
+      campo.rows = 2;
+      campo.maxLength = 300;
+      campo.placeholder = 'Ex.: outro personagem; perguntas mais simples para as crianças';
+      const acoes = document.createElement('div');
+      acoes.className = 'fam-acoes';
+      const ir = document.createElement('button');
+      ir.type = 'button';
+      ir.className = 'fam-fino fam-principal fam-trocar-ir';
+      ir.textContent = '🔄 Trocar agora';
+      const nota = familiaGerarBtn.getAttribute('data-ia-nota');
+      if (nota) ir.setAttribute('data-ia-nota', nota);
+      acoes.appendChild(ir);
+      painel.append(rotulo, campo, acoes);
+      abrir.addEventListener('click', () => {
+        painel.hidden = !painel.hidden;
+        abrir.setAttribute('aria-expanded', String(!painel.hidden));
+        if (!painel.hidden) campo.focus();
+      });
+      ir.addEventListener('click', () => familiaTrocarQuadro(op, parte.quadro, campo.value, ir, cfg));
+      caixa.append(abrir, painel);
+      return caixa;
+    }
+
+    async function familiaTrocarQuadro(op, id, instrucaoBruta, botao, cfg) {
+      const q = QUADROS_FAMILIA.find(x => x.id === id);
+      if (!q || familiaTrocando) return;
+      if (familiaGerarBtn.disabled) { familiaStatus('Espere a preparação da programação terminar para trocar um quadro.', 'erro'); return; }
+      if (!codigoAcessoSalvo()) { familiaStatus('Salve o código de pesquisa em Ajustes → 🔐 Autorização de acessos.', 'erro'); return; }
+      const sessao = familiaSessaoDoCartao(op, cfg && cfg.itemId);
+      if (sessao) {
+        familiaStatus('Esta programação já está compartilhada (código ' + sessao.cod + '), e quem participa ficaria com o quadro antigo. Para trocar, apague o compartilhamento (🗑️) e crie outro depois da troca.', 'erro');
+        return;
+      }
+      const perfil = familiaPerfilLerTela();
+      if (!perfil.formacao && !perfil.membros.some(m => m.apelido || m.papel)) { familiaStatus('Descreva a família (a formação ou pelo menos um membro) para trocar o quadro.', 'erro'); return; }
+      const payload = familiaPayloadDe(perfil);
+      familiaTrocando = true;
+      botao.disabled = true;
+      botao.textContent = '⏳ Trocando…';
+      familiaStatus('Trocando o quadro ' + q.nome + '…');
+      try {
+        const r = await postStudy(Object.assign({}, payload, {
+          fase: 'quadro',
+          quadro: id,
+          troca: true,
+          angulo: (op.angulos && op.angulos[id]) || '',
+          plano: { titulo: op.titulo || '', objetivo: op.objetivo || '' },
+          assunto: op.assunto || payload.assunto || '',
+          evitar: familiaEvitarLer(),
+          jaUsados: familiaJaUsadosDoPrograma(op),
+          instrucao: String(instrucaoBruta || '').replace(/\s+/g, ' ').trim().slice(0, 300)
+        }), IA_ESPERA_MS);
+        const nova = r.ok && r.data ? familiaParteDoQuadro(r.data.parte, q) : null;
+        const i = (op.partes || []).findIndex(p => p && p.quadro === id);
+        if (!nova || i < 0) {
+          familiaStatus('O quadro ' + q.nome + ' não foi trocado: ' + String((r.data && r.data.erro) || (r.unavailable ? 'serviço indisponível no momento' : 'tente de novo')).replace(/\.$/, '') + '.', 'erro');
+          return;
+        }
+        const usados = r.data.usados && typeof r.data.usados === 'object' ? r.data.usados : {};
+        op.partes[i] = nova;
+        op.usados = Object.assign({}, op.usados, { [id]: usados });
+        op.duracaoTotal = op.partes.reduce((s, x) => s + (x.minutos || 0), 0);
+        if (r.data.memoria && typeof r.data.memoria === 'object') familiaEvitarRegistrar([r.data.memoria]);
+        // A preparação que gerou esta programação (se ainda está na memória) fica igual à tela: um "Refazer" depois não desfaz a troca.
+        const ger = familiaGeracao;
+        if (ger && cfg && cfg.itemId && ger.itemId === cfg.itemId) {
+          ger.partes[id] = r.data.parte;
+          ger.usados[id] = usados;
+          ger.estado[id] = 'ok';
+          ger.registrados.add(id);
+          delete ger.avisos[id];
+        }
+        let salvo = false;
+        if (cfg && cfg.itemId) {
+          try {
+            const lista = historicoLer();
+            const k = lista.findIndex(g => g.id === cfg.itemId);
+            if (k >= 0) {
+              lista[k] = Object.assign({}, lista[k], { familiaOpcoes: [op], partes: [{ paragrafos: 'Programação', texto: familiaTextoDaOpcao(op) }] });
+              historicoGravar(lista);
+              historicoRender();
+              salvo = true;
+            }
+          } catch (e) {
+            salvo = false; // a troca fica na tela; o item salvo continua com o quadro de antes
+          }
+        }
+        familiaRenderOpcoes([op], undefined, cfg && cfg.itemId);
+        const bloco = familiaResultadoEl.querySelector('.fam-parte[data-quadro="' + id + '"]');
+        if (bloco) requestAnimationFrame(() => bloco.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+        const aviso = r.data.aviso ? String(r.data.aviso).replace(/^[^:]{1,80}:\s*/, '').replace(/\.$/, '').slice(0, 300) : '';
+        familiaStatus('Quadro ' + q.nome + ' trocado' + (salvo ? ' · 📂 programação salva atualizada' : '') + (aviso ? ' · ⚠️ ' + aviso : '') + '.', 'ok');
+      } catch (e) {
+        familiaStatus('O quadro ' + q.nome + ' não foi trocado. Confira a conexão e tente de novo.', 'erro');
+      } finally {
+        familiaTrocando = false;
+        if (botao.isConnected) { botao.disabled = false; botao.textContent = '🔄 Trocar agora'; }
+      }
+    }
+
     // O cartão de uma opção (ou da programação montada pelo usuário, com cfg.salvar: ganha o botão de salvar).
     function familiaMontarCard(op, idx, metaTexto, cfg) {
         const card = document.createElement('article');
@@ -26910,7 +27067,12 @@ function saveTemplatesToStorage() {
           p.innerHTML = '<strong>Objetivo:</strong> ' + familiaEscapar(op.objetivo);
           card.appendChild(p);
         }
-        (op.partes || []).forEach(parte => card.appendChild(familiaParteMontar(parte))); // 6.12.70: o tema do FunPlayB das programações antigas (op.funplayb) não aparece mais
+        (op.partes || []).forEach(parte => {
+          const bloco = familiaParteMontar(parte); // 6.12.70: o tema do FunPlayB das programações antigas (op.funplayb) não aparece mais
+          if (parte && parte.quadro) bloco.dataset.quadro = parte.quadro;
+          if (cfg && cfg.trocar && parte && FAMILIA_QUADROS_TROCAVEIS.has(parte.quadro)) bloco.appendChild(familiaTrocarMontar(op, parte, cfg));
+          card.appendChild(bloco);
+        });
         if ((op.preparacao || []).length) {
           const t = document.createElement('p');
           t.className = 'fam-secao-titulo';
@@ -28561,6 +28723,23 @@ function saveTemplatesToStorage() {
         p.textContent = txt;
         enunciado.appendChild(p);
       });
+      // 6.12.74: no "Ordem e data", a ordem certa (com as datas do Apêndice B) só chega a quem dirige (extras.ordens da sessão).
+      const ordemCerta = participar.dirigente && participar.extras && participar.extras.ordens ? participar.extras.ordens[parteIdx] : null;
+      if (Array.isArray(ordemCerta) && ordemCerta.length) {
+        const det = document.createElement('details');
+        det.className = 'fam-jogo-itens fam-jogo-ordem';
+        const sm = document.createElement('summary');
+        sm.textContent = '🔑 Ordem certa (só quem dirige vê)';
+        const ol = document.createElement('ol');
+        ol.className = 'fam-lista';
+        ordemCerta.forEach(o => {
+          const li = document.createElement('li');
+          li.textContent = [o && o.data, o && o.evento].filter(Boolean).join(' — ');
+          ol.appendChild(li);
+        });
+        det.append(sm, ol);
+        enunciado.appendChild(det);
+      }
       // O placar (nomes e pontos de cada um) fica no topo do jogo, antes das regras.
       const placar = document.createElement('div');
       placar.className = 'fam-sessao-placar';
@@ -29232,7 +29411,20 @@ function saveTemplatesToStorage() {
     // 6.12.71: a programação é preparada em duas fases. Primeiro o plano (uma chamada curta: título, objetivo, assunto e o ângulo de cada quadro);
     // depois cada quadro marcado, numa chamada própria, até FAMILIA_QUADROS_EM_PARALELO ao mesmo tempo. O app junta tudo (familiaMontarPrograma),
     // com as orações e os cânticos inicial e final, e salva uma vez. Um quadro que falhar fica de fora, com "🔄 Refazer este quadro" na lista de andamento.
+    // 6.12.74: os quadros saem em duas levas (FAMILIA_LEVAS). A 2ª leva só começa quando a 1ª termina e recebe em "jaUsados" o que a 1ª usou
+    // (ex.: o quadro de Jesus não repete o texto da Abertura). Um quadro marcado que não estiver em nenhuma leva entra na última.
     const FAMILIA_QUADROS_EM_PARALELO = 4;
+    const FAMILIA_LEVAS = Object.freeze([
+      Object.freeze(['abertura', 'video', 'principio', 'personagem']),
+      Object.freeze(['jesus', 'criador', 'saiba_responder', 'ame_ministerio', 'jogo', 'canticos'])
+    ]);
+    // Os ids marcados (ids) divididos nas levas, na ordem do catálogo; levas vazias saem.
+    function familiaLevasDe(ids) {
+      const todos = Array.isArray(ids) ? ids : [];
+      const nasLevas = new Set(FAMILIA_LEVAS.flat());
+      const levas = FAMILIA_LEVAS.map((leva, i) => todos.filter(id => leva.includes(id) || (i === FAMILIA_LEVAS.length - 1 && !nasLevas.has(id))));
+      return levas.filter(l => l.length);
+    }
     const familiaProgressoEl = document.getElementById('familiaProgresso');
     let familiaGeracao = null; // { pedido, payload, perfil, plano, ids, partes, estado, erros, modelo, itemId }
     let familiaEtapa = '';
@@ -29388,6 +29580,27 @@ function saveTemplatesToStorage() {
         return (Array.isArray(a[k]) ? a[k] : []).some(x => s.has(familiaChaveTexto(x)));
       });
     }
+
+    // 6.12.74 (🔄 Trocar este quadro): o "jaUsados" a partir da programação salva: o que TODOS os quadros usaram (op.usados), inclusive o que
+    // vai ser trocado (para o novo não repetir o anterior), mais os números dos cânticos inicial e final.
+    function familiaJaUsadosDoPrograma(op) {
+      const u = {};
+      for (const k of FAMILIA_USADOS_CHAVES) u[k] = [];
+      const porQuadro = op && op.usados && typeof op.usados === 'object' ? op.usados : {};
+      for (const us of Object.values(porQuadro)) {
+        if (!us || typeof us !== 'object') continue;
+        for (const k of FAMILIA_USADOS_CHAVES) if (Array.isArray(us[k])) u[k].push(...us[k].filter(x => typeof x === 'string' || typeof x === 'number').map(String));
+      }
+      for (const parte of (op && Array.isArray(op.partes) ? op.partes : [])) {
+        if (!parte || (parte.quadro !== 'cantico_inicial' && parte.quadro !== 'cantico_final')) continue;
+        for (const c of Array.isArray(parte.canticos) ? parte.canticos : []) {
+          const n = familiaNumeroCantico(c);
+          if (n) u.canticos.push(n);
+        }
+      }
+      for (const k of FAMILIA_USADOS_CHAVES) u[k] = familiaSemRepetir(u[k]);
+      return u;
+    }
     // </evitar-familia>
 
     // Prepara os quadros pedidos, no máximo FAMILIA_QUADROS_EM_PARALELO ao mesmo tempo. Para se o pedido foi cancelado (familiaPedido mudou).
@@ -29474,11 +29687,17 @@ function saveTemplatesToStorage() {
       if (novas.length) familiaEvitarRegistrar(novas);
     }
 
-    // Monta a programação com o que ficou pronto, mostra e salva (a primeira vez cria o item; depois de refazer um quadro, atualiza o mesmo item).
+    // Monta a programação com o que ficou pronto, salva e mostra (a primeira vez cria o item; depois de refazer um quadro, atualiza o mesmo item).
+    // 6.12.74: salva antes de mostrar, para o cartão já saber o id do item salvo (o "🔄 Trocar este quadro" atualiza esse item).
     function familiaMostrarESalvar(ger) {
       familiaRegistrarMemoria(ger);
-      const op = familiaMontarPrograma(ger.plano, ger.partes, ger.perfil.quadros, QUADROS_FAMILIA);
-      familiaRenderOpcoes([op]);
+      const op = familiaMontarPrograma(ger.plano, ger.partes, ger.perfil.quadros, QUADROS_FAMILIA, ger.usados);
+      const salvo = familiaSalvarPrograma(ger, op);
+      familiaRenderOpcoes([op], undefined, ger.itemId);
+      return salvo;
+    }
+
+    function familiaSalvarPrograma(ger, op) {
       const texto = familiaTextoDaOpcao(op);
       try {
         if (ger.itemId) {
@@ -29574,8 +29793,11 @@ function saveTemplatesToStorage() {
         familiaEtapaDosQuadros(ger);
         familiaRelogioPintar();
         familiaProgressoPintar(ger);
-        await familiaGerarQuadros(ger, ger.ids);
-        if (pedido !== familiaPedido) return;
+        // Duas levas: a 2ª recebe em jaUsados o que a 1ª já usou (familiaJaUsados só conta os quadros prontos).
+        for (const leva of familiaLevasDe(ger.ids)) {
+          await familiaGerarQuadros(ger, leva);
+          if (pedido !== familiaPedido) return;
+        }
         if (!ger.ids.some(id => ger.estado[id] === 'ok')) {
           familiaStatus('Nenhum quadro ficou pronto. Confira a conexão e tente de novo.', 'erro');
           return;

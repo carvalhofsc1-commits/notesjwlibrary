@@ -848,6 +848,96 @@ teste("6.12.73: app guarda leituras e relatos na memória", () => {
   assert.deepEqual(m.familiaEvitarLer().relatos, ["Mateus 18:21-35"]);
 });
 
+// ---------- Fase 4 (6.12.74): duas levas, programação versão 2 e 🔄 Trocar este quadro ----------
+
+teste("6.12.74: montagem com versao 2, ângulos (objeto ou lista) e usados só dos quadros presentes", () => {
+  const montar = montagemDoApp();
+  const parte = (id) => ({ nome: "Parte " + id, minutos: 5, descricao: "d" });
+  const quadros = ["abertura", "personagem", "jesus"];
+  const usados = { abertura: { versiculos: ["mateus 18:21"] }, jesus: { personagens: ["Pedro"] }, criador: { referencias: ["Jó 38"] } };
+  const comObjeto = montar({ angulos: { abertura: " perdoar de coração ", jesus: "x".repeat(400), criador: "fora" } }, { abertura: parte("abertura"), jesus: parte("jesus") }, quadros, QUADROS_FAMILIA, usados);
+  assert.equal(comObjeto.versao, 2);
+  assert.deepEqual(Object.keys(comObjeto.angulos).sort(), ["abertura", "jesus"]);
+  assert.equal(comObjeto.angulos.abertura, "perdoar de coração");
+  assert.equal(comObjeto.angulos.jesus.length, 300);
+  assert.deepEqual(Object.keys(comObjeto.usados).sort(), ["abertura", "jesus"], "o Criador não está na programação");
+  const comLista = montar({ angulos: [{ quadro: "abertura", angulo: "a" }, null, { quadro: "personagem", angulo: "b" }] }, { abertura: parte("abertura"), personagem: parte("personagem") }, quadros, QUADROS_FAMILIA);
+  assert.deepEqual(comLista.angulos, { abertura: "a", personagem: "b" });
+  assert.deepEqual(comLista.usados, {});
+});
+
+teste("6.12.74: geração em duas levas (1ª Abertura, Vídeo, Princípio, Personagem; 2ª o resto, com jaUsados da 1ª)", () => {
+  const ini = appJs.indexOf("const FAMILIA_LEVAS");
+  const fim = appJs.indexOf("const familiaProgressoEl");
+  assert.ok(ini > 0 && fim > ini, "FAMILIA_LEVAS e familiaLevasDe no app.js");
+  const levasDe = new Function(appJs.slice(ini, fim) + "\nreturn familiaLevasDe;")();
+  assert.deepEqual(levasDe(IDS_QUADROS.filter((id) => QUADROS_FAMILIA.find((q) => q.id === id).minutos)), [
+    ["abertura", "video", "principio", "personagem"],
+    ["jesus", "criador", "saiba_responder", "ame_ministerio", "jogo", "canticos"],
+  ]);
+  assert.deepEqual(levasDe(["abertura", "jesus", "jogo"]), [["abertura"], ["jesus", "jogo"]]);
+  assert.deepEqual(levasDe(["jesus", "novo_quadro"]), [["jesus", "novo_quadro"]], "leva vazia sai; quadro fora das levas vai para a última");
+  assert.match(appJs, /for \(const leva of familiaLevasDe\(ger\.ids\)\) \{\n\s+await familiaGerarQuadros\(ger, leva\);/);
+  // Cada quadro recebe o que os outros já fizeram (familiaJaUsados com os já prontos), então a 2ª leva recebe o da 1ª.
+  assert.match(appJs, /jaUsados: familiaJaUsados\(ger, ger\.ids\.filter\(x => x !== id\)\)/);
+});
+
+teste("6.12.74: jaUsados da programação salva (troca) junta os usados de todos os quadros e os cânticos inicial e final", () => {
+  const ini = appJs.indexOf("// <evitar-familia>");
+  const fim = appJs.indexOf("// </evitar-familia>");
+  const f = new Function("historicoCache", "historicoLer", "historicoGravar", appJs.slice(ini, fim) + "\nreturn familiaJaUsadosDoPrograma;")([], () => [], () => true);
+  const op = {
+    versao: 2,
+    usados: { abertura: { versiculos: ["mateus 18:21"], referencias: ["Mateus 18:21, 22"] }, personagem: { personagens: ["José"] }, jesus: null },
+    partes: [{ quadro: "cantico_inicial", canticos: [{ numero: 12 }] }, { quadro: "abertura", canticos: [{ numero: 99 }] }, { quadro: "cantico_final", canticos: [{ numero: 3 }] }],
+  };
+  const j = f(op);
+  assert.deepEqual(j.versiculos, ["mateus 18:21"]);
+  assert.deepEqual(j.referencias, ["Mateus 18:21, 22"]);
+  assert.deepEqual(j.personagens, ["José"]);
+  assert.deepEqual(j.canticos.map(String), ["12", "3"], "só os cânticos inicial e final");
+  assert.deepEqual(f({}).personagens, [], "programação sem usados não quebra");
+});
+
+teste("6.12.74: pedido de troca leva TROCA DESTE QUADRO e a instrução (sem \"culto\"); sem troca, nenhuma das duas", async () => {
+  const troca = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "personagem", assunto: "perdão", angulo: "perdoar", evitar: {}, troca: true, instrucao: "use alguém do culto antigo" }), montados);
+  assert.ok(!troca.erro, JSON.stringify(troca.erro));
+  assert.match(troca.mensagem, /TROCA DESTE QUADRO: /);
+  assert.match(troca.mensagem, /INSTRUÇÃO DE QUEM DIRIGE PARA ESTE QUADRO \(siga se não contrariar as regras\): use alguém/);
+  assert.doesNotMatch(troca.mensagem, /culto/i);
+  const normal = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "personagem", assunto: "perdão", angulo: "perdoar", evitar: {}, instrucao: "" }), montados);
+  assert.doesNotMatch(normal.mensagem, /TROCA DESTE QUADRO|INSTRUÇÃO DE QUEM DIRIGE/);
+});
+
+teste("6.12.74: prompts reforçados (Personagem: lição dita ou mostrada na passagem; Jogo: nada que uma criança responderia) e MONTAGEM", async () => {
+  const pers = prompts.PARTES.find((x) => x.id === "adoracao_q_personagem");
+  const jogo = prompts.PARTES.find((x) => x.id === "adoracao_q_jogo");
+  assert.match(pers.padrao, /DITA OU MOSTRADA NA PRÓPRIA PASSAGEM/);
+  assert.match(jogo.padrao, /NENHUMA PERGUNTA QUE UMA CRIANÇA RESPONDERIA/);
+  assert.match(montados.sistemaFamiliaQuadro.personagem, /DITA OU MOSTRADA/);
+  assert.match(montados.sistemaFamiliaQuadro.jogo, /criança responderia/i);
+  for (const t of [pers.padrao, jogo.padrao]) assert.doesNotMatch(t, /culto/i);
+  const promptsJs = await readFile(new URL("api/_prompts.mjs", raiz), "utf8");
+  assert.match(promptsJs, /6\.12\.74: duas levas/);
+  assert.match(promptsJs, /TROCA DESTE QUADRO/);
+});
+
+teste("6.12.74: app com 🔄 Trocar este quadro (troca: true, evitar e jaUsados), bloqueio na sessão; sessão com a ordem só para quem dirige", () => {
+  assert.ok(appJs.includes("🔄 Trocar este quadro"));
+  const trocar = appJs.slice(appJs.indexOf("async function familiaTrocarQuadro"), appJs.indexOf("async function familiaTrocarQuadro") + 6000);
+  assert.match(trocar, /fase: 'quadro'/);
+  assert.match(trocar, /troca: true/);
+  assert.match(trocar, /evitar: familiaEvitarLer\(\)/);
+  assert.match(trocar, /jaUsados: familiaJaUsadosDoPrograma\(op\)/);
+  assert.match(trocar, /familiaSessaoDoCartao\(/);
+  assert.match(trocar, /historicoGravar\(/);
+  assert.doesNotMatch(trocar, /culto/i);
+  assert.match(appJs, /const FAMILIA_QUADROS_TROCAVEIS = /);
+  assert.match(sessaoJs, /const SUFIXO_ORDEM_CERTA = /);
+  assert.match(sessaoJs, /extras\.ordens = ordens/);
+  assert.match(sessaoJs, /if \(op\.versao === 2\) programa\.versao = 2;/);
+});
+
 for (const [nome, fn] of testes) {
   try {
     await fn();

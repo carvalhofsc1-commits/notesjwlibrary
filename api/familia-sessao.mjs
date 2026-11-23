@@ -188,8 +188,14 @@ export async function dadosDoCantico(numero) {
 }
 
 // ---------- A programação recebida: só os campos conhecidos, com limites; as respostas dos jogos saem para respostas.json ----------
+// 6.12.74 (programação por quadros, versao 2): cada parte pode trazer o id do quadro (quadro); a leitura, o rótulo do trecho; e o jogo "Ordem e
+// data", a ordem certa (jogo.ordem: [{ data, evento }]). A ordem é resposta: vai para respostas.json (extras.ordens, só quem dirige recebe) e sai
+// também do fim de "comoJogar", que é público. As programações antigas (sem esses campos) continuam iguais.
+const QUADRO_VALIDO = /^[a-z_]{2,40}$/;
+const SUFIXO_ORDEM_CERTA = /\s*Ordem certa \(datas do Apêndice B[\s\S]*$/;
 function limparPrograma(op) {
   const respostas = {};
+  const ordens = {};
   // Só as partes válidas, antes de numerar: o índice da parte é a chave das respostas dela.
   const brutas = (Array.isArray(op.partes) ? op.partes : []).filter((p) => p && typeof p === "object").slice(0, 30);
   const partes = brutas.map((p, i) => {
@@ -210,14 +216,17 @@ function limparPrograma(op) {
       transicao: texto(p.transicao, 600),
       jogo: null,
     };
+    if (QUADRO_VALIDO.test(String(p.quadro || ""))) parte.quadro = String(p.quadro);
     const j = p.jogo;
     if (j && typeof j === "object") {
       const rodadas = lista(j.rodadas, 60, (r) => (r && typeof r === "object" && texto(r.pergunta, 600) ? { pergunta: texto(r.pergunta, 600), resposta: texto(r.resposta, 600), referencia: texto(r.referencia, 120) } : null));
       if (rodadas.length) respostas[i] = rodadas.map((r) => r.resposta);
+      const ordem = lista(j.ordem, 12, (o) => (o && typeof o === "object" && texto(o.evento, 300) ? { data: texto(o.data, 40), evento: texto(o.evento, 300) } : null));
+      if (ordem.length) ordens[i] = ordem;
       parte.jogo = {
         tipo: texto(j.tipo, 120),
         nome: texto(j.nome, 160),
-        comoJogar: texto(j.comoJogar, 3000),
+        comoJogar: texto(ordem.length ? String(j.comoJogar || "").replace(SUFIXO_ORDEM_CERTA, "") : j.comoJogar, 3000),
         material: texto(j.material, 600),
         rodadas: rodadas.map((r) => ({ pergunta: r.pergunta, referencia: r.referencia })),
         itens: lista(j.itens, 80, (t) => texto(t, 600)),
@@ -232,12 +241,14 @@ function limparPrograma(op) {
     objetivo: texto(op.objetivo, 800),
     partes,
   };
+  if (op.versao === 2) programa.versao = 2;
   const extras = {
     preparacao: lista(op.preparacao, 20, (t) => texto(t, 400)),
     tarefas: lista(op.tarefas, 20, (t) => (t && typeof t === "object" ? { membro: texto(t.membro, 60), tarefa: texto(t.tarefa, 300) } : null)),
     dicaParaOChefe: texto(op.dicaParaOChefe, 800),
     // 6.12.70: o FunPlayB saiu (extras.funplayb não é mais guardado; programações antigas com ele continuam sendo compartilhadas sem esse extra).
   };
+  if (Object.keys(ordens).length) extras.ordens = ordens; // { índice da parte: [{ data, evento }] } (só quem dirige)
   return { programa, respostas, extras };
 }
 

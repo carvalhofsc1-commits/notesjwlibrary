@@ -16913,6 +16913,14 @@ input[type="time"].fam-campo::-webkit-date-and-time-value { text-align: left; mi
 .fam-prog-item.erro { padding: 8px 10px; border: 1px solid var(--danger); border-radius: 8px; }
 .fam-prog-msg { margin: 0; font-size: .88rem; color: var(--danger); overflow-wrap: anywhere; }
 .fam-prog-refazer { display: block; width: 100%; margin: 0; min-height: 40px; box-sizing: border-box; }
+/* 🔄 Trocar este quadro (6.12.74): o botão na largura toda do quadro; o painel com a instrução opcional e o "Trocar agora" (largura toda). */
+.fam-trocar { display: grid; gap: 8px; min-width: 0; margin-top: 8px; }
+.fam-trocar-btn { display: block; width: 100%; margin: 0; min-height: 40px; box-sizing: border-box; }
+.fam-trocar-painel { display: grid; gap: 6px; min-width: 0; padding: 10px; border: 1px solid var(--sv-azul-bd, #bfdbfe); border-radius: 10px; }
+.fam-trocar-painel[hidden] { display: none; }
+.fam-trocar-rotulo { font-size: .88rem; font-weight: 600; }
+.fam-trocar-instrucao { width: 100%; min-width: 0; box-sizing: border-box; resize: vertical; }
+.fam-trocar-painel .fam-acoes > .fam-trocar-ir { flex: 1 1 100%; width: 100%; margin: 0; }
 /* Mensagem de teto de gastos atingido (6.11.07): letras vermelhas, moldura ao redor e sem negrito. */
 :is(#sv#sv, .msg-teto) {
   display: block;

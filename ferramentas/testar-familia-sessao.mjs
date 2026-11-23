@@ -211,6 +211,38 @@ try {
   for (const f of [...(await todos(pasta)), ...(await todos(join(pasta, "participantes")))]) await utimes(f, antigo, antigo);
   assert.equal((await chamar({ acao: "estado", sessao })).status, 404); passo("sessão vencida (48 h sem uso) some ao acessar");
 
+  // Programação por quadros (6.12.74, versao 2): quadro em cada parte, rótulo da leitura e a ordem certa do "Ordem e data" só para quem dirige
+  const DATA_SECRETA = "4026 a.C.";
+  const v2 = {
+    versao: 2, titulo: "Perdoar", emoji: "🤝", resumo: "Uma noite sobre perdão.", objetivo: "Perdoar.",
+    partes: [
+      { quadro: "abertura", nome: "Abertura", minutos: 8, leitura: { titulo: "Um artigo", fonte: "w23.02", texto: "Texto lido no wol.", rotulo: "Parágrafos 3 e 4", url: "https://wol.jw.org/pt/wol/d/r5/lp-t/2023123" } },
+      { quadro: "X Y!", nome: "Quadro com id inválido", minutos: 5, descricao: "Sem quadro." },
+      {
+        quadro: "jogo", nome: "Ordem e data", minutos: 10,
+        jogo: {
+          tipo: "Ordem e data", nome: "Ordem e data", comoJogar: "Coloquem os cartões em ordem. Ordem certa (datas do Apêndice B da Bíblia de Estudo): 1. " + DATA_SECRETA + " — Criação de Adão; 2. 2370 a.C. — Dilúvio.",
+          itens: ["Criação de Adão", "Dilúvio"],
+          ordem: [{ data: DATA_SECRETA, evento: "Criação de Adão" }, { data: "2370 a.C.", evento: "Dilúvio" }],
+        },
+      },
+    ],
+  };
+  const cv2 = (await chamar({ acao: "criar", programa: v2, codigo: "codigo-de-teste" })).dados;
+  const prog2 = JSON.parse(await readFile(join(process.env.DADOS_DIR, "familia-sessoes", cv2.sessao, "programa.json"), "utf8"));
+  assert.equal(prog2.versao, 2);
+  assert.deepEqual(prog2.partes.map((p) => p.quadro), ["abertura", undefined, "jogo"]);
+  assert.equal(prog2.partes[0].leitura.rotulo, "Parágrafos 3 e 4"); passo("versao 2: quadro válido em cada parte (id inválido descartado) e rótulo da leitura guardados");
+  assert.ok(!JSON.stringify(prog2).includes(DATA_SECRETA) && !prog2.partes[2].jogo.comoJogar.includes("Ordem certa"));
+  assert.equal(prog2.partes[2].jogo.comoJogar, "Coloquem os cartões em ordem."); passo("a ordem certa sai do programa.json e do fim de \"comoJogar\" (público)");
+  const part2 = await chamar({ acao: "entrar", sessao: cv2.sessao, nome: "Ana" });
+  assert.ok(!JSON.stringify(part2.dados).includes(DATA_SECRETA) && !("extras" in part2.dados)); passo("participante não recebe a ordem nem as datas");
+  const dir2 = await chamar({ acao: "entrar", sessao: cv2.sessao, chave: cv2.chave });
+  assert.deepEqual(dir2.dados.extras.ordens["2"], v2.partes[2].jogo.ordem); passo("quem dirige recebe a ordem certa em extras.ordens[índice da parte]");
+  const progAntigo = JSON.parse(programaArq);
+  assert.ok(!("versao" in progAntigo) && progAntigo.partes.every((p) => !("quadro" in p)) && !("ordens" in d.dados.extras)); passo("programação antiga continua sem versao, quadro e ordens");
+  await chamar({ acao: "encerrar", sessao: cv2.sessao, chave: cv2.chave });
+
   // Encerrar
   const outra = (await chamar({ acao: "criar", programa, codigo: "codigo-de-teste" })).dados;
   assert.equal((await chamar({ acao: "encerrar", sessao: outra.sessao, chave: outra.chave })).status, 200);

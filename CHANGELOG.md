@@ -2,6 +2,38 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.74
+
+### Geração em duas levas
+
+- **Adoração em Família por quadros: os quadros saem em duas levas.**
+  - **1ª leva:** Abertura, Vídeo, Princípio e Personagem.
+  - **2ª leva:** Jesus, Criador, Saiba responder, Ame o ministério, Jogo e Cânticos.
+  - A 2ª leva só começa quando a 1ª termina. Assim, cada quadro da 2ª leva recebe em "já usados" os textos, personagens e vídeos da 1ª. Exemplo: o quadro de Jesus não repete o texto da Abertura.
+  - Continuam no máximo 4 pedidos ao mesmo tempo.
+- **Instruções da IA:**
+  - **Personagem do dia:** a lição do ângulo tem de estar dita ou mostrada na própria passagem transcrita.
+  - **Jogo bíblico:** nenhuma pergunta que uma criança responderia (por exemplo, os três da fornalha ou as sete congregações).
+  - As duas regras aparecem na tela de prompts (texto editável e formato só leitura).
+
+### Fase 4: programação por quadros e troca de quadro
+
+- **Programação versão 2:**
+  - A programação salva marca "versao: 2".
+  - Cada parte diz de que quadro é.
+  - A programação guarda também o ângulo de cada quadro e o que cada um usou.
+  - As programações antigas abrem como antes, só sem o botão de troca.
+- **🔄 Trocar este quadro:**
+  - O botão fica em cada quadro feito pela IA. As orações e os cânticos inicial e final não têm o botão.
+  - Abre um campo opcional de instrução para a IA (até 300 caracteres) e o botão "🔄 Trocar agora".
+  - O quadro novo vem com o mesmo ângulo e não repete o que os outros quadros usaram, nem o que o quadro trocado usava.
+  - A troca atualiza a programação salva e a memória do que já foi usado.
+  - Uma programação já compartilhada não pode ser trocada, e o app avisa: quem já entrou ficaria com o quadro antigo. Para trocar, apague o compartilhamento e crie outro depois.
+- **Adoração compartilhada:**
+  - A sessão aceita o quadro de cada parte e o rótulo do trecho da leitura.
+  - No jogo "Ordem e data", a ordem certa com as datas fica só com quem dirige ("🔑 Ordem certa (só quem dirige vê)", dentro das regras). Antes, as datas iam no texto público das regras.
+  - As sessões das programações antigas continuam iguais.
+
 ## 6.12.73
 
 - **Adoração em Família por quadros: correções antes da fase 4.**
