@@ -2957,6 +2957,32 @@ async function ajustarProgramaFamilia(res, body, P) {
   }
 }
 
+// 6.12.62: toda opção tem Oração inicial + 4 atividades + Oração final. Se a IA criar uma parte "solta" a mais (só conversa: "Troca de ideias",
+// "Reflexão", "Aplicação"… sem textos, vídeo, jogo, leitura nem publicação), ela sai e os minutos e as perguntas vão para a atividade vizinha.
+// Partes com conteúdo nunca são apagadas. Devolve a lista nova (a mesma, se já estava certa).
+export function enxugarAtividadesFamilia(partes) {
+  const temConteudo = (p) => Boolean((p.textos && p.textos.length) || (p.videos && p.videos.length) || p.jogo || p.leitura || (p.publicacoes && p.publicacoes.length));
+  const ehOracao = (p) => /oraç[aã]o/i.test(p.nome) && !temConteudo(p);
+  const lista = partes.slice();
+  const inicio = lista.length && ehOracao(lista[0]) ? [lista.shift()] : [];
+  const fim = lista.length > 1 && ehOracao(lista[lista.length - 1]) ? [lista.pop()] : [];
+  let tirou = false;
+  while (lista.length > 4) {
+    let i = -1;
+    for (let k = lista.length - 1; k >= 0; k--) if (!temConteudo(lista[k])) { i = k; break; }
+    if (i < 0) break;
+    const [solta] = lista.splice(i, 1);
+    const vizinha = lista[i - 1] || lista[i];
+    if (vizinha) {
+      vizinha.minutos = Math.min(120, vizinha.minutos + solta.minutos);
+      const limite = vizinha.textos && vizinha.textos.length ? 2 : 5;
+      for (const q of solta.perguntas || []) if (vizinha.perguntas.length < limite && !vizinha.perguntas.includes(q)) vizinha.perguntas.push(q);
+    }
+    tirou = true;
+  }
+  return tirou ? [...inicio, ...lista, ...fim] : partes;
+}
+
 async function responderAdoracaoFamilia(res, body, P) {
   if (body.programa) return ajustarProgramaFamilia(res, body, P);
   const perfil = perfilDaFamilia(body);
@@ -3203,6 +3229,7 @@ async function responderAdoracaoFamilia(res, body, P) {
         });
       }
       if (!partes.length) continue;
+      partes.splice(0, partes.length, ...enxugarAtividadesFamilia(partes));
       if (perfil.incluirVideo && videos.length && !partes.some((p) => p.videos.length)) {
         for (const p of partes) {
           const citados = [...String(p.descricao || "").matchAll(/\[?V\s*(\d{1,3})\]?(?![\p{L}\d])/gi)].map((m) => videoDe(m[0]));

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.62
+
+- **Adoração em Família: sem atividade extra de "troca de ideias":** a estrutura fixa (Oração inicial + 4 atividades + Oração final) só era pedida à IA, e o prompt ainda dizia que "a conversa sempre pode entrar", o que levava a uma parte à parte de "Troca de ideias". Agora (1) o prompt diz que a conversa fica DENTRO de cada atividade, nas perguntas, e proíbe partes de troca de ideias, reflexão, aplicação, resumo, revisão ou encerramento; e (2) o servidor confere: se vierem mais de 4 atividades, a parte solta (só conversa, sem textos, vídeo, jogo, leitura nem publicação) sai e os minutos e as perguntas dela vão para a atividade vizinha. Parte com conteúdo nunca é apagada. Vale para as programações geradas daqui em diante.
+
 ## 6.12.61
 
 - **Adoração em Família: Circunstâncias e Atividades em cards próprios:** saíram de dentro de "Família e definições gerais" (que agora tem só os dados da família, o dia e horário e os membros). Cada um virou um card recolhido, na ordem: 👤 Família e definições gerais, 💛 Circunstâncias, 🎨 Atividades que a família aceita (com os Jogos aceitos dentro) e 🤝 Informar convidados. Cada card mostra, embaixo do título, quantas opções estão marcadas, abre numa vista exclusiva com ◀ Voltar (como os outros) e tem o botão ✔ Concluir e voltar. As escolhas continuam guardadas no aparelho como antes.
