@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.56
+
+- **Chave do Formatar com IA mais baixa:** nos botões ✨ Formatar com IA das anotações e da resposta, o ícone 🔑 desceu um pouco, para ficar alinhado com os outros ícones da linha.
+
 ## 6.12.55
 
 - **Anotações: quatro botões numa linha só:** Copiar, ✨ Resumir (rótulo encurtado; o botão que resume o texto do campo), ✨ Formatar com IA e a lixeira ficam todos na mesma linha, preenchendo a largura toda; o Resumir é azul como os outros botões de IA.

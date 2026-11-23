@@ -6286,6 +6286,8 @@
     }
     /* Com o 🔑 (código ainda não informado) o texto do botão da IA não cabe numa linha em celular estreito: quebra em duas linhas em vez de vazar. */
     .screen-anotacoes .anotacoes-acoes-campo .anotacoes-ia { white-space: normal; overflow-wrap: anywhere; }
+    /* 6.12.56: a chave do ✨ Formatar com IA um pouco mais baixa (ficava acima da linha dos outros ícones). */
+    .screen-anotacoes .anotacoes-acoes-campo .anotacoes-ia::before { position: relative; top: .18em; }
 
     /* O botão do JW Library pega a largura toda, logo abaixo dos três. */
     .screen-anotacoes .anotacoes-jwl.anotacoes-jwl-largo {
