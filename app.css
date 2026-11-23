@@ -16668,12 +16668,11 @@ body[data-screen="familia"] :is(.screen-inicio, .screen-editor, .screen-formatar
 .fam-perfil-box[open] > summary { border-bottom: 1px solid var(--line); }
 .fam-perfil-titulo { min-width: 0; overflow-wrap: anywhere; }
 /* 6.11.35: "Família e definições gerais" abre numa vista exclusiva: some tudo da tela, menos a barra Voltar e o corpo do cadastro. */
-#familiaPerfilBox > summary::after, #familiaConvidadosBox > summary::after { content: "›"; font-size: 1.3em; }
-#familiaPerfilBox[open] > summary::after, #familiaConvidadosBox[open] > summary::after { transform: none; }
-/* 6.11.36: o mesmo vale para "Informar convidados"; data-vista no cartão diz qual dos dois está aberto (perfil ou convidados). */
+#familiaPerfilBox > summary::after, #familiaCircBox > summary::after, #familiaAtivBox > summary::after, #familiaConvidadosBox > summary::after { content: "›"; font-size: 1.3em; }
+#familiaPerfilBox[open] > summary::after, #familiaCircBox[open] > summary::after, #familiaAtivBox[open] > summary::after, #familiaConvidadosBox[open] > summary::after { transform: none; }
+/* 6.11.36: o mesmo vale para "Informar convidados"; data-vista no cartão diz qual está aberto. 6.12.61: Circunstâncias e Atividades também têm card próprio. */
 #familiaCard[data-vista] > :not(.fam-perfil-topo):not(.fam-perfil-box) { display: none !important; }
-#familiaCard[data-vista="perfil"] > #familiaConvidadosBox,
-#familiaCard[data-vista="convidados"] > #familiaPerfilBox { display: none !important; }
+#familiaCard[data-vista] > .fam-perfil-box:not([open]) { display: none !important; } /* na vista, só o card aberto aparece */
 #familiaCard[data-vista] > .fam-perfil-box { border: 0; background: transparent; }
 #familiaCard[data-vista] > .fam-perfil-box > summary { display: none; }
 .fam-perfil-topo[hidden] { display: none; }

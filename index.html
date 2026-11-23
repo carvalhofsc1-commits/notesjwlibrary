@@ -2996,8 +2996,23 @@
             <button id="familiaMembroAdd" class="secondary fam-fino" type="button">➕ Adicionar membro</button>
           </div>
 
+          <button id="familiaPerfilConcluir" class="secondary fam-perfil-concluir" type="button">✔ Concluir e voltar</button>
+        </div>
+      </details>
+
+      <!-- 6.12.61: card próprio (vista exclusiva, como a Família e as definições gerais): Circunstâncias. -->
+      <div id="familiaCircTopo" class="fam-topo fam-perfil-topo" hidden>
+        <button id="familiaCircVoltar" class="secondary" type="button">◀ Voltar</button>
+        <h2 class="fam-titulo"><span aria-hidden="true">💛</span> Circunstâncias</h2>
+      </div>
+
+      <details id="familiaCircBox" class="fam-perfil-box">
+        <summary>
+          <span class="fam-perfil-titulo">💛 Circunstâncias <span class="opc">(opcional)</span></span>
+          <span id="familiaCircResumo" class="fam-perfil-resumo"></span>
+        </summary>
+        <div class="fam-perfil-corpo">
           <div class="fam-bloco">
-            <h3 class="fam-bloco-titulo">💛 Circunstâncias <span class="opc">(opcional)</span></h3>
             <div id="familiaCircunstancias" class="fam-checks" role="group" aria-label="Circunstâncias">
               <label class="fam-check"><input type="checkbox" value="Ansiedade ou desânimo"><span>Ansiedade ou desânimo</span></label>
               <label class="fam-check"><input type="checkbox" value="Desânimo espiritual"><span>Desânimo espiritual</span></label>
@@ -3021,8 +3036,23 @@
             <textarea id="familiaOutrasCirc" class="fam-campo" rows="1" maxlength="500" spellcheck="true" placeholder="Ex.: mudança recente, pressão no trabalho…"></textarea>
           </div>
 
+          <button id="familiaCircConcluir" class="secondary fam-perfil-concluir" type="button">✔ Concluir e voltar</button>
+        </div>
+      </details>
+
+      <!-- 6.12.61: card próprio (vista exclusiva, como a Família e as definições gerais): Atividades que a família aceita. -->
+      <div id="familiaAtivTopo" class="fam-topo fam-perfil-topo" hidden>
+        <button id="familiaAtivVoltar" class="secondary" type="button">◀ Voltar</button>
+        <h2 class="fam-titulo"><span aria-hidden="true">🎨</span> Atividades que a família aceita</h2>
+      </div>
+
+      <details id="familiaAtivBox" class="fam-perfil-box">
+        <summary>
+          <span class="fam-perfil-titulo">🎨 Atividades que a família aceita</span>
+          <span id="familiaAtivResumo" class="fam-perfil-resumo"></span>
+        </summary>
+        <div class="fam-perfil-corpo">
           <div class="fam-bloco">
-            <h3 class="fam-bloco-titulo">🎨 Atividades que a família aceita</h3>
             <p class="hint fam-dica">Oração, leitura da Bíblia e conversa sempre podem entrar. Marque o que mais a família gosta.</p>
             <div id="familiaAtividades" class="fam-checks" role="group" aria-label="Atividades">
               <label class="fam-check"><input type="checkbox" value="Dramatização ou encenação" checked><span>Dramatização ou encenação</span></label>
@@ -3070,7 +3100,7 @@
               </div>
             </details>
           </div>
-          <button id="familiaPerfilConcluir" class="secondary fam-perfil-concluir" type="button">✔ Concluir e voltar</button>
+          <button id="familiaAtivConcluir" class="secondary fam-perfil-concluir" type="button">✔ Concluir e voltar</button>
         </div>
       </details>
 

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.61
+
+- **Adoração em Família: Circunstâncias e Atividades em cards próprios:** saíram de dentro de "Família e definições gerais" (que agora tem só os dados da família, o dia e horário e os membros). Cada um virou um card recolhido, na ordem: 👤 Família e definições gerais, 💛 Circunstâncias, 🎨 Atividades que a família aceita (com os Jogos aceitos dentro) e 🤝 Informar convidados. Cada card mostra, embaixo do título, quantas opções estão marcadas, abre numa vista exclusiva com ◀ Voltar (como os outros) e tem o botão ✔ Concluir e voltar. As escolhas continuam guardadas no aparelho como antes.
+
 ## 6.12.60
 
 - **Arquivos do servidor: exportar a lista para Word:** na tabela "📚 Arquivos do servidor e edições" (Ajustes → Prompts de IA → DIVERSOS), novo botão **📄 Exportar Word** ao lado de "🔄 Atualizar a lista" (os dois na mesma linha, ocupando a largura toda, também no celular). Gera uma tabela do Word (A4) com Publicação (e o arquivo embaixo), Edição, No conteúdo, Tamanho e Enviado em, do jeito que a lista está na tela, já com as edições que você acabou de anotar. Em celular que aceita compartilhar arquivos vai para o compartilhamento; senão baixa o arquivo.

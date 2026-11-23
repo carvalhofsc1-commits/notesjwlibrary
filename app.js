@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.60'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.61'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26202,6 +26202,17 @@ function saveTemplatesToStorage() {
       if (nomes.length) partes.push(nomes.length === 1 ? nomes[0] : nomes.length + ' membros');
       if (perfil.diaAdoracao || perfil.horaAdoracao) partes.push([perfil.diaAdoracao.replace('-feira', ''), perfil.horaAdoracao].filter(Boolean).join(' às '));
       resumoEl.textContent = partes.join(' · ');
+      // Circunstâncias e Atividades: quantas estão marcadas (nos próprios cards, que agora são separados da família).
+      const circEl = document.getElementById('familiaCircResumo');
+      if (circEl) {
+        const n = perfil.circunstancias.length + (perfil.outrasCircunstancias ? 1 : 0);
+        circEl.textContent = n ? n + (n === 1 ? ' marcada' : ' marcadas') : '';
+      }
+      const ativEl = document.getElementById('familiaAtivResumo');
+      if (ativEl) {
+        const n = perfil.atividades.length;
+        ativEl.textContent = n ? n + (n === 1 ? ' marcada' : ' marcadas') : 'nenhuma marcada';
+      }
       const convEl = document.getElementById('familiaConvidadosResumo');
       if (convEl) {
         const c = perfil.convidados;
@@ -29257,7 +29268,8 @@ function saveTemplatesToStorage() {
     // "Família e definições gerais" (6.11.35): tocar no card abre uma vista exclusiva (só o cadastro, com Voltar); sair devolve a tela como estava.
     // 6.11.36: o mesmo para "Informar convidados". qual = 'perfil' | 'convidados' (abre essa vista) | null (volta à tela normal, com tudo recolhido).
     var familiaPerfilRolagem = 0; // var e função: showScreen chama familiaVista antes destas linhas rodarem
-    function familiaVistasIds() { return { perfil: ['familiaPerfilBox', 'familiaPerfilTopo'], convidados: ['familiaConvidadosBox', 'familiaConvidadosTopo'] }; }
+    // 6.12.61: Circunstâncias e Atividades ganharam card próprio (vistas 'circ' e 'ativ'), separados dos dados da família.
+    function familiaVistasIds() { return { perfil: ['familiaPerfilBox', 'familiaPerfilTopo'], circ: ['familiaCircBox', 'familiaCircTopo'], ativ: ['familiaAtivBox', 'familiaAtivTopo'], convidados: ['familiaConvidadosBox', 'familiaConvidadosTopo'] }; }
     function familiaVista(qual, opcoes) {
       const card = document.getElementById('familiaCard');
       if (!card) return;
@@ -29276,7 +29288,7 @@ function saveTemplatesToStorage() {
     }
     function familiaPerfilVista(abrir, opcoes) { familiaVista(abrir ? 'perfil' : null, opcoes); } // função (não const): showScreen a chama antes desta linha rodar
     Object.entries(familiaVistasIds()).forEach(([k, ids]) => {
-      const prefixo = k === 'perfil' ? 'familiaPerfil' : 'familiaConvidados';
+      const prefixo = ids[0].replace(/Box$/, ''); // familiaPerfil, familiaCirc, familiaAtiv, familiaConvidados
       document.querySelector('#' + ids[0] + ' > summary').addEventListener('click', ev => { ev.preventDefault(); familiaVista(k); });
       document.getElementById(prefixo + 'Voltar').addEventListener('click', () => familiaVista(null));
       document.getElementById(prefixo + 'Concluir').addEventListener('click', () => familiaVista(null));
@@ -29375,6 +29387,7 @@ function saveTemplatesToStorage() {
     const familiaAjustarAlturas = () => [familiaOutrasCircEl, familiaAssuntoEl, familiaConvNotasEl].forEach(familiaCrescer);
     document.getElementById('familiaPerfilBox').addEventListener('toggle', () => requestAnimationFrame(familiaAjustarAlturas));
     document.getElementById('familiaConvidadosBox').addEventListener('toggle', () => requestAnimationFrame(familiaAjustarAlturas));
+    document.getElementById('familiaCircBox').addEventListener('toggle', () => requestAnimationFrame(familiaAjustarAlturas)); // o campo "Outras circunstâncias" está nele
     window.addEventListener('resize', familiaAjustarAlturas);
     window.addEventListener('hashchange', () => setTimeout(familiaAjustarAlturas, 120));
     setTimeout(familiaAjustarAlturas, 400);
