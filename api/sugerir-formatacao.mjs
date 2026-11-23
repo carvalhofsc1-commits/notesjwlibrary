@@ -39,9 +39,10 @@ import {
   textoDasFontesDoCampo,
   trechosBe,
 } from "./_servicoCampo.mjs";
-import { artigosDoTopicoDoGuia, buscarNosLivros, buscarVerbete, buscarVersiculos, versiculosDoCapitulo, fontesConfiguradas, lerCanticos, precarregarFontes, referenciasNoTexto, textoDeGruposBiblicos } from "./_fontes.mjs";
+import { artigosDoTopicoDoGuia, buscarNosLivros, buscarVerbete, buscarVersiculos, versiculosDoCapitulo, fontesConfiguradas, lerCanticos, lerEnsinosBiblicos, lerPrincipios, nomeDoLivro, precarregarFontes, referenciasNoTexto, textoDeGruposBiblicos } from "./_fontes.mjs";
 import { JOGOS_FAMILIA, QUADROS_FAMILIA, minutosDosQuadros, quadrosDoPedido } from "./_familiaQuadros.mjs";
-import { familiaTemCasal } from "./_prompts.mjs";
+import { MIN_CARACTERES_ARTIGO, QUADROS_GERADOS, candidatosArtigos, candidatosPrincipio, escolhasValidas, fonteDoPrincipio, idDaEscolha, normalizarTexto, referenciasDoPrincipio, urlWolDoDocId } from "./_familiaGeracao.mjs";
+import { familiaTemCasal, prioridadesAplicaveis } from "./_prompts.mjs";
 import { lerEsboco, lerIndice, minutosDoEsboco, publicacoesDaSecao, referenciasDoPublico, s34Configurado, textoDoDiscursoPublico, textoDoEsbocoImportado, textosBiblicosDoPublico, validarEsboco } from "./_s34.mjs";
 import {
   QUADROS_EBC,
@@ -2896,7 +2897,7 @@ async function ajustarProgramaFamilia(res, body, P) {
   const prog = body.programa && typeof body.programa === "object" ? body.programa : {};
   const partes = (Array.isArray(prog.partes) ? prog.partes : [])
     .filter((p) => p && typeof p === "object")
-    .slice(0, 12)
+    .slice(0, 16)
     .map((p) => ({
       nome: textoLivre(p.nome, 120),
       minutos: Number.isFinite(Number(p.minutos)) ? Math.max(0, Math.min(300, Math.round(Number(p.minutos)))) : 0,
@@ -2976,8 +2977,502 @@ export function enxugarAtividadesFamilia(partes, maximo = 4) {
   return tirou ? [...inicio, ...lista, ...fim] : partes;
 }
 
+// ---------- Adoração em Família por quadros (6.12.71) ----------
+// A geração nova tem duas fases, orquestradas pelo app: a fase "plano" (uma chamada curta: título, objetivo, assunto da noite e o ângulo de cada
+// quadro ligado ao tema) e a fase "quadro" (uma chamada por quadro, até 4 ao mesmo tempo, feitas pelo app). As orações e os cânticos inicial e
+// final são postos pelo app, sem IA. A IA só ESCOLHE entre as fontes enviadas (pelo identificador); o servidor transcreve o texto literal delas
+// (artigo do wol pelo docId, trecho do livro, entrada do Princípios Bíblicos, verbete do Perspicaz) e confere os textos bíblicos.
+// Pedidos sem "fase" seguem a chamada única de antes (versões antigas do app). Nada do perfil vai para o log: só contagens e tempos.
+
+const linhaFamilia = (v, max) => limparLinha(semCulto(semGotica(typeof v === "string" ? v : "")), max);
+
+// Referências bíblicas -> [{ referencia, texto }], cada uma conferida na Bíblia do servidor (a que não for achada fica só com a referência).
+async function textosBiblicosFamilia(refs, max = 4) {
+  const comBiblia = fontesConfiguradas();
+  const saida = [];
+  const vistas = new Set();
+  for (const bruta of (Array.isArray(refs) ? refs : [refs]).slice(0, max + 2)) {
+    if (saida.length >= max) break;
+    const ref = linhaFamilia(bruta, 60);
+    if (!ref) continue;
+    const achado = comBiblia ? (await buscarVersiculos([ref], 1).catch(() => []))[0] : null;
+    const referencia = achado ? achado.referencia : ref;
+    if (vistas.has(referencia)) continue;
+    vistas.add(referencia);
+    saida.push({ referencia, texto: achado ? limparLinha(achado.texto, 2500) : "" });
+  }
+  return saida;
+}
+
+// "V3" (ou "[V3]", "V3 - título") -> o vídeo da lista enviada; o resto sai.
+function videoDaLista(videos, codigo) {
+  const m = String(codigo || "").match(/V\s*(\d{1,3})/i);
+  const v = m ? videos[Number(m[1]) - 1] : null;
+  return v ? { titulo: v.titulo, duracao: v.duracao || "", link: `https://www.jw.org/finder?srcid=share&wtlocale=T&lank=${encodeURIComponent(v.lank)}` } : null;
+}
+
+const semRepetirFamilia = (lista, chave) => {
+  const vistos = new Set();
+  return lista.filter((x) => x && !vistos.has(chave(x)) && vistos.add(chave(x)));
+};
+
+// O jogo: só com tipos aceitos; o texto é limpo e limitado (regras e até 25 rodadas ou itens prontos).
+function jogoDaFamilia(jogos, j) {
+  if (!Array.isArray(jogos) || !jogos.length || !j || typeof j !== "object") return null;
+  const nomeJogo = linhaFamilia(j.nome, 80);
+  const comoJogar = limparTextoGerado(j.comoJogar, 1200);
+  let itens = (Array.isArray(j.itens) ? j.itens : []).map((t) => limparTextoGerado(t, 500)).filter(Boolean).slice(0, 25);
+  if (!nomeJogo || !comoJogar) return null;
+  // Rodadas (pergunta, resposta e referência separadas). Se a IA não as separou num jogo de pergunta e resposta, o servidor separa os
+  // itens pelos sinais de sempre ("Resposta:", " = ", "(Verdadeiro — …)", travessão); o que não der para separar continua em "itens".
+  const rodadas = (Array.isArray(j.rodadas) ? j.rodadas : [])
+    .map((r) => (r && typeof r === "object" ? { pergunta: limparTextoGerado(r.pergunta, 400), resposta: limparTextoGerado(r.resposta, 300), referencia: linhaFamilia(r.referencia, 120) } : null))
+    .filter((r) => r && r.pergunta && r.resposta)
+    .slice(0, 25);
+  if (!rodadas.length && JOGOS_COM_RESPOSTA.test(`${j.tipo || ""} ${j.nome || ""}`)) {
+    const sobra = [];
+    for (const t of itens) {
+      const r = separarRodada(t);
+      if (r) rodadas.push(r);
+      else sobra.push(t);
+    }
+    itens = sobra;
+  }
+  // 6.12.70: nada fora do app; o material de papel e lápis não entra mais.
+  return { tipo: linhaFamilia(j.tipo, 80), nome: nomeJogo, comoJogar, material: !/papel|l[aá]pis|caneta/i.test(String(j.material || "")) ? limparTextoGerado(j.material, 300) : "", rodadas, itens };
+}
+
+// O perfil da família como vai na mensagem do plano (e na chamada única de antes): de "FORMAÇÃO DA FAMÍLIA" a "CIRCUNSTÂNCIAS".
+function mensagemDoPerfilFamilia(perfil) {
+  const membros = perfil.membros.map((m) => descricaoDaPessoa(m, "membro da família")).join("\n");
+  const cv = perfil.convidados;
+  const temConvidados = cv.membros.length > 0 || Boolean(cv.formacao) || Boolean(cv.familia) || Boolean(cv.anotacoes);
+  const circunstancias = [...perfil.circunstancias, perfil.outrasCircunstancias].filter(Boolean);
+  return (
+    `FORMAÇÃO DA FAMÍLIA: ${perfil.formacao || "não informada"}\n` +
+    `MEMBROS (apelido, papel, idade, situação espiritual e privilégios):\n${membros || "- não informados"}\n` +
+    (temConvidados
+      ? `CONVIDADOS NA NOITE (visitas: podem participar, mas NÃO lhes designe tarefas; adapte as partes e os jogos à presença deles, às idades e à situação deles):\n` +
+        (cv.membros.length ? `${cv.membros.map((m) => descricaoDaPessoa(m, "convidado")).join("\n")}\n` : "") +
+        (cv.formacao ? `TIPO DA FAMÍLIA CONVIDADA: ${cv.formacao}\n` : "") +
+        (cv.familia ? `INFORMAÇÃO SOBRE A FAMÍLIA CONVIDADA: ${cv.familia}\n` : "") +
+        (cv.anotacoes ? `ANOTAÇÕES DO CHEFE SOBRE OS CONVIDADOS (trate com tato): ${cv.anotacoes}\n` : "")
+      : "") +
+    (perfil.membros.some((m) => m.situacao || m.privilegios.length) || cv.membros.some((m) => m.situacao || m.privilegios.length)
+      ? `USO OPCIONAL DA SITUAÇÃO ESPIRITUAL E DOS PRIVILÉGIOS (dos membros e dos convidados): leve em conta quando ajudar, principalmente havendo CRIANÇAS (por exemplo, quem é batizado ou tem privilégios pode conduzir ou ajudar mais, e os que estão começando, como o publicador não batizado e o estudante da Bíblia, podem ser incentivados com carinho e sem pressão; para as crianças, escolha atividades e exemplos que valorizem o bom exemplo dos mais experientes). "Removido" e "Descrente" pedem muito tato: nunca exponha, cobre ou designe parte que constranja, e não os diferencie dos demais nas tarefas. Nunca escreva a situação espiritual ou os privilégios de ninguém no texto das opções. Se não ajudar, ignore.\n`
+      : "") +
+    (perfil.anosCasados !== null ? `ANOS DE CASADOS: ${perfil.anosCasados}\n` : "") +
+    (circunstancias.length ? `CIRCUNSTÂNCIAS QUE O CHEFE QUIS INFORMAR (trate com tato, nunca exponha ninguém):\n${circunstancias.map((c) => `- ${c}`).join("\n")}\n` : "")
+  );
+}
+
+// A família como vai em cada quadro: sem apelidos (os quadros nunca têm nomes de pessoas) e sem a situação espiritual.
+function resumoDaFamiliaParaQuadro(perfil) {
+  const pessoa = (m, padrao) => `${m.papel || padrao}${m.idade !== null ? `, ${m.idade} ${m.idade === 1 ? "ano" : "anos"}` : ""}`;
+  const cv = perfil.convidados;
+  const circ = [...perfil.circunstancias, perfil.outrasCircunstancias].filter(Boolean);
+  const temConvidados = cv.membros.length > 0 || Boolean(cv.formacao) || Boolean(cv.familia) || Boolean(cv.anotacoes);
+  return (
+    `FAMÍLIA (sem nomes nos quadros): ${perfil.formacao || "formação não informada"}; ${perfil.membros.length ? perfil.membros.map((m) => pessoa(m, "membro")).join("; ") : "membros não informados"}\n` +
+    (temConvidados
+      ? `CONVIDADOS NA NOITE (participam, sem tarefas): ${[cv.membros.map((m) => pessoa(m, "convidado")).join("; "), cv.formacao, cv.familia].filter(Boolean).join(" — ") || "sim"}${cv.anotacoes ? `; anotações do chefe (trate com tato): ${cv.anotacoes}` : ""}\n`
+      : "") +
+    (circ.length ? `CIRCUNSTÂNCIAS (trate com tato, nunca exponha ninguém): ${circ.join("; ")}\n` : "")
+  );
+}
+
+const JogoDoQuadroFamilia = z
+  .object({
+    tipo: z.string(),
+    nome: z.string(),
+    comoJogar: z.string(),
+    material: z.string().nullable(),
+    rodadas: z.array(z.object({ pergunta: z.string(), resposta: z.string(), referencia: z.string() })),
+    itens: z.array(z.string()),
+  })
+  .nullable();
+
+export const SaidaPlanoFamilia = z.object({
+  titulo: z.string(),
+  emoji: z.string().nullable(),
+  resumo: z.string(),
+  objetivo: z.string(),
+  assunto: z.string(),
+  angulos: z.array(z.object({ quadro: z.string(), angulo: z.string() })),
+  preparacao: z.array(z.string()),
+  tarefas: z.array(z.object({ membro: z.string(), tarefa: z.string() })),
+  dicaParaOChefe: z.string().nullable(),
+  canticoInicial: z.number().nullable(),
+  canticoFinal: z.number().nullable(),
+});
+
+export const SAIDAS_QUADRO_FAMILIA = {
+  abertura: z.object({
+    descricao: z.string(),
+    escolhas: z.array(z.string()),
+    perguntasLeitura: z.array(z.string()),
+    relato: z.object({ referencia: z.string(), perguntas: z.array(z.string()) }).nullable(),
+  }),
+  principio: z.object({ descricao: z.string(), escolhas: z.array(z.string()) }),
+  personagem: z.object({ nome: z.string(), referencia: z.string(), descricao: z.string(), escolha: z.string().nullable(), verbete: z.string().nullable() }),
+  jesus: z.object({ episodio: z.string(), referencia: z.string(), qualidade: z.string(), descricao: z.string(), escolha: z.string().nullable(), perguntas: z.array(z.string()) }),
+  generico: z.object({
+    descricao: z.string(),
+    textos: z.array(z.string()),
+    videos: z.array(z.string()),
+    canticos: z.array(z.number()),
+    publicacoes: z.array(z.string()),
+    perguntas: z.array(z.string()),
+    jogo: JogoDoQuadroFamilia,
+  }),
+};
+
+const hojeFamilia = () => new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long", day: "numeric", month: "long", year: "numeric" });
+const perguntasLimpas = (lista, max) => (Array.isArray(lista) ? lista : []).map((q) => limparTextoGerado(q, 300)).filter(Boolean).slice(0, max);
+
+// Fase "plano": título, objetivo, assunto, ângulos, preparação, tarefas, dica e (quando marcados) os cânticos inicial e final.
+async function gerarPlanoFamilia(res, body, P) {
+  const perfil = perfilDaFamilia(body);
+  if (!perfil.formacao && !perfil.membros.length) return erro(res, 400, "Descreva a família: a formação e os membros.");
+  const usaCanticos = perfil.canticoInicial || perfil.canticoFinal;
+  const canticos = usaCanticos ? await lerCanticos().catch(() => null) : null;
+  const marcados = QUADROS_FAMILIA.filter((q) => perfil.quadros.includes(q.id) && q.minutos);
+  const comAngulo = marcados.filter((q) => q.ligadoAoTema);
+  const prioridades = prioridadesAplicaveis(perfil);
+  const quaisCanticos = [perfil.canticoInicial && "o cântico inicial (canticoInicial)", perfil.canticoFinal && "o cântico final (canticoFinal)"].filter(Boolean).join(" e ");
+  const mensagem =
+    `DATA: ${hojeFamilia()}\n` +
+    mensagemDoPerfilFamilia(perfil) +
+    `QUADROS MARCADOS (${perfil.duracao} minutos ao todo, sem as orações):\n${marcados.map((q) => `- ${q.id}: ${q.nome} (${q.minutos} min) — ${q.saida}`).join("\n")}\n` +
+    `ÂNGULOS A DEFINIR (um por quadro, pelo id): ${comAngulo.map((q) => q.id).join(", ") || "nenhum"}\n` +
+    `ASSUNTO PEDIDO PARA ESTA SEMANA: ${perfil.assunto || "nenhum (escolha o assunto que melhor sirva para esta família)"}\n` +
+    `${prioridades.texto}\n` +
+    (!usaCanticos
+      ? `\nCÂNTICOS INICIAL E FINAL: não marcados (canticoInicial e canticoFinal = null).\n`
+      : canticos && canticos.length
+        ? `\nCÂNTICOS DISPONÍVEIS (número. título [assunto]); escolha ${quaisCanticos}, e deixe null o que não foi marcado:\n${canticos.map((c) => `${c.numero}. ${c.titulo}${c.assunto ? ` [${c.assunto}]` : ""}`).join("\n")}\n`
+        : `\nCÂNTICOS: a lista não está disponível agora; deixe canticoInicial e canticoFinal = null.\n`);
+  try {
+    const client = criarClienteIa({ maxRetries: 0, timeout: 120_000 }, P.ia.provedorTarefa);
+    const inicio = Date.now();
+    const resposta = await chamarIa(
+      client,
+      P,
+      { max_tokens: P.ia.provedorTarefa === "gemini" ? 16000 : 4000, system: P.sistemaFamiliaPlano, messages: [{ role: "user", content: mensagem }] },
+      { schema: SaidaPlanoFamilia, tarefa: "adoracao-familia" }
+    );
+    if (resposta.stop_reason === "refusal" || !resposta.parsed_output) return erro(res, 502, "A IA não conseguiu planejar a programação. Tente de novo.");
+    const o = resposta.parsed_output;
+    const porNumero = new Map((canticos || []).map((c) => [c.numero, c]));
+    const cantico = (marcado, n) => {
+      if (!marcado) return null;
+      const c = porNumero.get(Math.round(Number(n)));
+      return c ? { numero: c.numero, titulo: c.titulo } : null;
+    };
+    const angulos = {};
+    for (const a of o.angulos || []) {
+      const id = String(a?.quadro || "").trim();
+      if (!comAngulo.some((q) => q.id === id) || angulos[id]) continue;
+      const t = linhaFamilia(a.angulo, 300);
+      if (t) angulos[id] = t;
+    }
+    const plano = {
+      titulo: linhaFamilia(o.titulo, 120) || "Adoração em Família",
+      emoji: emojiDoComentario(o.emoji),
+      resumo: limparTextoGerado(o.resumo, 600),
+      objetivo: limparTextoGerado(o.objetivo, 400),
+      // O assunto pedido pelo chefe manda; sem ele, vale o que a IA escolheu.
+      assunto: perfil.assunto || linhaFamilia(o.assunto, 300),
+      angulos,
+      preparacao: (o.preparacao || []).map((t) => limparTextoGerado(t, 300)).filter(Boolean).slice(0, 8),
+      tarefas: (o.tarefas || [])
+        .map((t) => ({ membro: linhaFamilia(t.membro, 40), tarefa: limparTextoGerado(t.tarefa, 400) }))
+        .filter((t) => t.tarefa && !/oraç(ão|ões|ao|oes)/i.test(t.tarefa))
+        .slice(0, 10),
+      dicaParaOChefe: o.dicaParaOChefe ? limparTextoGerado(o.dicaParaOChefe, 800) : "",
+      canticoInicial: cantico(perfil.canticoInicial, o.canticoInicial),
+      canticoFinal: cantico(perfil.canticoFinal, o.canticoFinal),
+    };
+    console.log("Adoração em Família (plano):", JSON.stringify({ modelo: P.ia.modelo, membros: perfil.membros.length, assunto: Boolean(perfil.assunto), quadros: perfil.quadros.length, angulos: Object.keys(angulos).length, canticos: canticos ? canticos.length : 0, segundosIa: Math.round((Date.now() - inicio) / 100) / 10, entrada: resposta.usage?.input_tokens || 0, saida: resposta.usage?.output_tokens || 0 }));
+    return res.status(200).json({ plano, quadros: perfil.quadros, duracao: perfil.duracao, assunto: plano.assunto, modelo: nomeDoModelo(P.ia.modelo), data: new Date().toISOString() });
+  } catch (e) {
+    return tratarErro(e, res);
+  }
+}
+
+// Trechos dos livros do quadro (guardados no servidor), para a IA escolher pelo identificador [L#].
+async function trechosDosLivrosDoQuadro(quadro, consulta, { max = 6, maxChars = 1200 } = {}) {
+  const nomes = quadro.fontes.livros.map(nomeDoLivro).filter(Boolean);
+  if (!nomes.length || !consulta || !fontesConfiguradas()) return [];
+  return buscarNosLivros(consulta, { livros: nomes, max, maxChars }).catch(() => []);
+}
+const listaDeTrechos = (livros, titulo = "TRECHOS DE LIVROS (escolha pelo identificador)") =>
+  livros.length ? `\n${titulo}:\n${livros.map((l, i) => `[L${i + 1}] ${l.livro}: ${l.trecho}`).join("\n\n")}\n` : "";
+const leituraDoTrecho = (l) => (l ? { titulo: l.livro, fonte: l.livro, paragrafos: "", texto: limparTextoGerado(l.trecho, 2600), url: "", rotulo: "Trecho do livro" } : null);
+
+// Cada quadro especializado: monta as listas da mensagem e devolve como transformar a saída da IA na parte (com as fontes transcritas).
+const PREPARAR_QUADRO_FAMILIA = {
+  // Abertura: trecho de livro [L#] ou artigo dos Ensinos Bíblicos [A#] (lido no wol pelo docId; só vale com MIN_CARACTERES_ARTIGO ou mais),
+  // até 3 perguntas sobre a leitura e um relato bíblico com até 2 perguntas.
+  async abertura(ctx) {
+    const consulta = ctx.tema || ctx.perfil.formacao || "família";
+    const [livros, catalogo] = await Promise.all([trechosDosLivrosDoQuadro(ctx.quadro, consulta, { max: 6, maxChars: 1200 }), lerEnsinosBiblicos().catch(() => null)]);
+    const artigos = candidatosArtigos(catalogo?.artigos || [], consulta, { max: 10, semente: ctx.semente, evitar: ctx.evitar });
+    const listas =
+      listaDeTrechos(livros) +
+      (artigos.length
+        ? `\nARTIGOS DOS ENSINOS BÍBLICOS (título e seção; o servidor lê o texto do escolhido):\n${artigos
+            .map((a, i) => `[A${i + 1}] "${a.titulo}" (${(Array.isArray(a.caminho) && a.caminho.length ? a.caminho : [a.secao]).filter(Boolean).join(" › ")})${a.trecho ? ` — ${String(a.trecho).replace(/\s+/g, " ").slice(0, 200)}` : ""}`)
+            .join("\n")}\n`
+        : "") +
+      (!livros.length && !artigos.length ? `\nFONTES: nenhuma disponível agora; deixe "escolhas" vazio e proponha o relato bíblico.\n` : "");
+    return {
+      sistema: "abertura",
+      schema: SAIDAS_QUADRO_FAMILIA.abertura,
+      listas,
+      contagens: { livros: livros.length, artigos: artigos.length },
+      async montar(o) {
+        let leitura = null;
+        let artigoLido = 0;
+        for (const esc of (o.escolhas || []).slice(0, 3)) {
+          const ia = idDaEscolha(esc, "A", artigos.length);
+          const il = idDaEscolha(esc, "L", livros.length);
+          if (ia >= 0) {
+            const a = artigos[ia];
+            const url = urlWolDoDocId(a.docId);
+            const lido = await lerArtigoDoWol(url, { timeoutMs: 8000, maxCaracteres: 6000 }).catch(() => null);
+            if (lido && String(lido.texto || "").length >= MIN_CARACTERES_ARTIGO) {
+              artigoLido = 1;
+              leitura = { titulo: limparLinha(lido.titulo || a.titulo, 200), fonte: limparLinha(a.secao || "Ensinos Bíblicos", 120), paragrafos: "", texto: limparTextoGerado(lido.texto, 2600), url: lido.url || url, rotulo: "Trecho do artigo" };
+              break;
+            }
+          } else if (il >= 0) {
+            leitura = leituraDoTrecho(livros[il]);
+            break;
+          }
+        }
+        // O artigo escolhido não abriu (ou a IA não escolheu): vale o trecho de livro mais ligado ao tema.
+        if (!leitura && livros.length) leitura = leituraDoTrecho(livros[0]);
+        const relato = o.relato && typeof o.relato === "object" ? o.relato : null;
+        const textos = relato ? await textosBiblicosFamilia([relato.referencia], 1) : [];
+        const perguntas = [...perguntasLimpas(o.perguntasLeitura, 3), ...(textos.length ? perguntasLimpas(relato.perguntas, 2) : [])];
+        return { descricao: limparTextoGerado(o.descricao, 1500), leitura, textos, perguntas, contagens: { artigoLido } };
+      },
+    };
+  },
+
+  // Princípio bíblico: a IA escolhe uma entrada [PR#] do índice; o servidor transcreve o texto literal e os versículos; perguntas fixas.
+  async principio(ctx) {
+    const dados = await lerPrincipios().catch(() => null);
+    const cands = candidatosPrincipio(dados?.entradas || [], ctx.tema || "família", { max: 25, semente: ctx.semente, evitar: ctx.evitar });
+    const listas = cands.length
+      ? `\nENTRADAS DO PRINCÍPIOS BÍBLICOS PARA A VIDA CRISTÃ (verbete › subverbete — pergunta (versículos)):\n${cands
+          .map((e, i) => `[PR${i + 1}] ${e.verbete}${e.subverbete ? ` › ${e.subverbete}` : ""}${e.pergunta ? ` — ${e.pergunta}` : ""}${referenciasDoPrincipio(e, 4).length ? ` (${referenciasDoPrincipio(e, 4).join("; ")})` : ""}`)
+          .join("\n")}\n`
+      : `\nENTRADAS DO PRINCÍPIOS BÍBLICOS: a lista não está disponível agora; deixe "escolhas" vazio.\n`;
+    return {
+      sistema: "principio",
+      schema: SAIDAS_QUADRO_FAMILIA.principio,
+      listas,
+      contagens: { candidatos: cands.length },
+      async montar(o) {
+        let escolhidas = escolhasValidas(o.escolhas, "PR", cands.length, 2).map((i) => cands[i]);
+        // Sem escolha válida, vale o candidato que mais combina com o tema (é sempre uma entrada real do índice).
+        if (!escolhidas.length && cands.length) escolhidas = [cands[0]];
+        const e = escolhidas[0];
+        const leitura = e
+          ? { titulo: limparLinha(e.pergunta || e.subverbete || e.verbete, 200), fonte: limparLinha(fonteDoPrincipio(e), 200), paragrafos: "", texto: limparTextoGerado(e.texto, 2600), url: "", rotulo: "Princípios Bíblicos para a Vida Cristã" }
+          : null;
+        const textos = await textosBiblicosFamilia(escolhidas.flatMap((x) => referenciasDoPrincipio(x, 4)), 4);
+        return { descricao: limparTextoGerado(o.descricao, 1500), leitura, textos, perguntas: ctx.quadro.perguntasPadrao.slice() };
+      },
+    };
+  },
+
+  // Personagem do dia: a passagem da história (Bíblia do servidor) e o verbete do Perspicaz (ou o trecho do livro escolhido).
+  async personagem(ctx) {
+    const livros = await trechosDosLivrosDoQuadro(ctx.quadro, ctx.tema || "fé coragem", { max: 6, maxChars: 900 });
+    return {
+      sistema: "personagem",
+      schema: SAIDAS_QUADRO_FAMILIA.personagem,
+      listas: listaDeTrechos(livros) || `\nTRECHOS DE LIVROS: nenhum disponível agora ("escolha" = null).\n`,
+      contagens: { livros: livros.length },
+      async montar(o) {
+        const nome = linhaFamilia(o.nome, 80);
+        const textos = await textosBiblicosFamilia([o.referencia], 1);
+        const verbete = fontesConfiguradas() ? await buscarVerbete([o.verbete, nome].map((v) => linhaFamilia(v, 80)).filter(Boolean)).catch(() => null) : null;
+        const il = idDaEscolha(o.escolha, "L", livros.length);
+        const leitura = verbete
+          ? { titulo: limparLinha(verbete.verbete, 120), fonte: `Estudo Perspicaz das Escrituras${verbete.volume ? `, volume ${verbete.volume}` : ""}`, paragrafos: "", texto: limparTextoGerado(verbete.trecho, 2600), url: "", rotulo: "Verbete do Perspicaz" }
+          : leituraDoTrecho(il >= 0 ? livros[il] : null);
+        const pergunta = String(ctx.quadro.perguntasPadrao[0] || "Que lições aprendemos da história de [nome]?").replace("[nome]", nome || "este personagem");
+        return { nome: nome ? `${ctx.quadro.nome}: ${nome}` : ctx.quadro.nome, descricao: limparTextoGerado(o.descricao, 1500), textos, leitura, perguntas: [pergunta] };
+      },
+    };
+  },
+
+  // Lições da vida de Jesus: o episódio (Bíblia do servidor), a qualidade e o trecho do livro escolhido.
+  async jesus(ctx) {
+    const livros = await trechosDosLivrosDoQuadro(ctx.quadro, ctx.tema || "Jesus exemplo", { max: 6, maxChars: 900 });
+    return {
+      sistema: "jesus",
+      schema: SAIDAS_QUADRO_FAMILIA.jesus,
+      listas: listaDeTrechos(livros) || `\nTRECHOS DE LIVROS: nenhum disponível agora ("escolha" = null).\n`,
+      contagens: { livros: livros.length },
+      async montar(o) {
+        const episodio = linhaFamilia(o.episodio, 100);
+        const textos = await textosBiblicosFamilia([o.referencia], 1);
+        const il = idDaEscolha(o.escolha, "L", livros.length);
+        let perguntas = perguntasLimpas(o.perguntas, 2);
+        if (!perguntas.length) perguntas = [`Que lição aprendemos de Jesus em ${textos[0]?.referencia || "este relato"}?`];
+        const qualidade = linhaFamilia(o.qualidade, 80);
+        const descricao = limparTextoGerado(o.descricao, 1500);
+        return {
+          nome: episodio ? `${ctx.quadro.nome}: ${episodio}` : ctx.quadro.nome,
+          descricao: qualidade && !normalizarTexto(descricao).includes(normalizarTexto(qualidade)) ? `${descricao} (Qualidade: ${qualidade}.)`.trim() : descricao,
+          textos,
+          leitura: leituraDoTrecho(il >= 0 ? livros[il] : null),
+          perguntas,
+        };
+      },
+    };
+  },
+};
+
+// Os demais quadros (Vídeo, Criador, Saiba responder, Ame o ministério, Jogo, Cânticos) até a 6.12.72: uma chamada genérica por quadro.
+async function prepararQuadroGenericoFamilia(ctx) {
+  const id = ctx.quadro.id;
+  let videos = [];
+  let canticos = null;
+  let livros = [];
+  if (id === "video") videos = videosParaAFamilia(await catalogoDeVideos(12000).catch(() => []), { ...ctx.perfil, assunto: ctx.tema || ctx.perfil.assunto }).slice(0, 120);
+  if (id === "canticos") canticos = await lerCanticos().catch(() => null);
+  if (["criador", "saiba_responder", "ame_ministerio"].includes(id)) {
+    const consulta = id === "criador" ? ctx.angulo || "a vida teve um criador projeto na natureza ciência" : ctx.tema || (id === "ame_ministerio" ? "ministério pregação" : "pergunta bíblia");
+    livros = await trechosDosLivrosDoQuadro(ctx.quadro, consulta, { max: 6, maxChars: 900 });
+  }
+  const jogos = id === "jogo" ? ctx.perfil.jogos : [];
+  const listas =
+    (id === "video"
+      ? videos.length
+        ? `\nVÍDEOS DO JW.ORG DISPONÍVEIS (cite 1 ou 2 pelo identificador em "videos"):\n${videos.map((v, i) => `[V${i + 1}] "${v.titulo}" (${[v.duracao, v.categoria, (v.publicado || "").slice(0, 4)].filter(Boolean).join("; ")})`).join("\n")}\n`
+        : `\nVÍDEOS: a lista não está disponível agora; deixe "videos" vazio e proponha uma conversa sobre o assunto.\n`
+      : "") +
+    (id === "canticos"
+      ? canticos && canticos.length
+        ? `\nCÂNTICOS DISPONÍVEIS (número. título [assunto]):\n${canticos.map((c) => `${c.numero}. ${c.titulo}${c.assunto ? ` [${c.assunto}]` : ""}`).join("\n")}\n`
+        : `\nCÂNTICOS: a lista não está disponível agora; deixe "canticos" vazio e sugira um cântico à escolha da família.\n`
+      : "") +
+    (id === "jogo" ? `\nJOGOS ACEITOS PELA FAMÍLIA (use SÓ um destes tipos): ${jogos.join("; ")}\n` : "") +
+    listaDeTrechos(livros, "TRECHOS DE LIVROS (base para o quadro; cite em \"publicacoes\" pelo identificador)");
+  const porNumero = new Map((canticos || []).map((c) => [c.numero, c]));
+  return {
+    sistema: "generico",
+    schema: SAIDAS_QUADRO_FAMILIA.generico,
+    listas,
+    contagens: { videos: videos.length, canticos: canticos ? canticos.length : 0, livros: livros.length },
+    async montar(o) {
+      const textos = await textosBiblicosFamilia(o.textos, 4);
+      let videosDaParte = id === "video" ? semRepetirFamilia((o.videos || []).map((c) => videoDaLista(videos, c)), (v) => v.link).slice(0, 2) : [];
+      if (id === "video" && !videosDaParte.length && videos.length) {
+        const citados = [...String(o.descricao || "").matchAll(/\[?V\s*(\d{1,3})\]?(?![\p{L}\d])/giu)].map((m) => videoDaLista(videos, m[0]));
+        videosDaParte = semRepetirFamilia(citados, (v) => v.link).slice(0, 2);
+      }
+      const publicacoes = semRepetirFamilia(
+        (o.publicacoes || []).map((p) => {
+          const i = idDaEscolha(p, "L", livros.length);
+          return i >= 0 ? { titulo: livros[i].livro, fonte: "", url: "" } : null;
+        }),
+        (p) => p.titulo
+      ).slice(0, 3);
+      const max = ctx.quadro.maxPerguntas || 3;
+      let perguntas = perguntasLimpas(o.perguntas, Math.max(1, max));
+      if (textos.length && !perguntas.length) perguntas = [`O que ${textos[0].referencia} nos ensina?`];
+      if (id === "jogo" || id === "canticos") perguntas = perguntas.slice(0, max || 0);
+      return {
+        descricao: limparTextoGerado(o.descricao, 1500),
+        textos,
+        videos: videosDaParte,
+        canticos: id === "canticos" ? semRepetirFamilia((o.canticos || []).map((n) => porNumero.get(Math.round(Number(n)))), (c) => c.numero).slice(0, 2).map((c) => ({ numero: c.numero, titulo: c.titulo })) : [],
+        publicacoes,
+        perguntas,
+        jogo: id === "jogo" ? jogoDaFamilia(jogos, o.jogo) : null,
+      };
+    },
+  };
+}
+
+// Fase "quadro": um quadro só, com o assunto e o ângulo do plano. Devolve { parte } pronta para o app pôr na programação.
+async function gerarQuadroFamilia(res, body, P) {
+  const id = String(body.quadro || "");
+  const quadro = QUADROS_FAMILIA.find((q) => q.id === id);
+  if (!quadro || !QUADROS_GERADOS.includes(id)) return erro(res, 400, "Quadro desconhecido.");
+  const perfil = perfilDaFamilia(body);
+  if (!perfil.formacao && !perfil.membros.length) return erro(res, 400, "Descreva a família: a formação e os membros.");
+  precarregarFontes({ biblia: true, livros: true });
+  const plano = body.plano && typeof body.plano === "object" ? body.plano : {};
+  const assunto = textoLivre(body.assunto, 300) || perfil.assunto;
+  const angulo = textoLivre(body.angulo, 300);
+  const ctx = {
+    perfil,
+    quadro,
+    assunto,
+    angulo,
+    // O Criador não segue o tema da noite (ligadoAoTema: false): só o ângulo, se houver.
+    tema: (quadro.ligadoAoTema ? [assunto, angulo] : [angulo]).filter(Boolean).join(" "),
+    semente: Number.isInteger(body.semente) ? body.semente : Math.floor(Math.random() * 1e9),
+    evitar: [],
+  };
+  const preparar = PREPARAR_QUADRO_FAMILIA[id] || prepararQuadroGenericoFamilia;
+  try {
+    const prep = await preparar(ctx);
+    const tituloPlano = textoLivre(plano.titulo, 120);
+    const objetivoPlano = textoLivre(plano.objetivo, 400);
+    const mensagem =
+      `QUADRO: ${quadro.nome} (${quadro.minutos} minutos) — ${quadro.saida}\n` +
+      (tituloPlano || objetivoPlano ? `PLANO DA NOITE: ${[tituloPlano, objetivoPlano && `objetivo: ${objetivoPlano}`].filter(Boolean).join(" — ")}\n` : "") +
+      `ASSUNTO: ${assunto || "livre (escolha um que sirva para esta família)"}${quadro.ligadoAoTema ? "" : " (este quadro pode fugir do assunto)"}\n` +
+      `ÂNGULO DESTE QUADRO: ${angulo || "livre, dentro do assunto"}\n` +
+      resumoDaFamiliaParaQuadro(perfil) +
+      `${prioridadesAplicaveis(perfil).texto}\n` +
+      prep.listas;
+    const client = criarClienteIa({ maxRetries: 0, timeout: 120_000 }, P.ia.provedorTarefa);
+    const inicio = Date.now();
+    const resposta = await chamarIa(
+      client,
+      P,
+      { max_tokens: P.ia.provedorTarefa === "gemini" ? 16000 : 6000, system: P.sistemaFamiliaQuadro[prep.sistema], messages: [{ role: "user", content: mensagem }] },
+      { schema: prep.schema, tarefa: "adoracao-familia" }
+    );
+    if (resposta.stop_reason === "refusal" || !resposta.parsed_output) return erro(res, 502, `A IA não conseguiu preparar o quadro ${quadro.nome}. Tente de novo.`);
+    const { contagens: contagensDaMontagem, ...montado } = await prep.montar(resposta.parsed_output);
+    const parte = {
+      nome: quadro.nome,
+      minutos: quadro.minutos,
+      responsavel: "", // nunca nomes nas atividades (6.11.95)
+      descricao: "",
+      textos: [],
+      videos: [],
+      canticos: [],
+      publicacoes: [],
+      perguntas: [],
+      leitura: null,
+      jogo: null,
+      ...montado,
+      quadro: id,
+    };
+    console.log("Adoração em Família (quadro):", JSON.stringify({ modelo: P.ia.modelo, quadro: id, ...prep.contagens, ...(contagensDaMontagem || {}), leitura: Boolean(parte.leitura), textos: parte.textos.length, segundosIa: Math.round((Date.now() - inicio) / 100) / 10, entrada: resposta.usage?.input_tokens || 0, saida: resposta.usage?.output_tokens || 0 }));
+    return res.status(200).json({ parte, quadro: id, modelo: nomeDoModelo(P.ia.modelo), data: new Date().toISOString() });
+  } catch (e) {
+    return tratarErro(e, res);
+  }
+}
+
+// Chamada única de antes (versões antigas do app, sem "fase").
 async function responderAdoracaoFamilia(res, body, P) {
   if (body.programa) return ajustarProgramaFamilia(res, body, P);
+  if (body.fase === "plano") return gerarPlanoFamilia(res, body, P);
+  if (body.fase === "quadro") return gerarQuadroFamilia(res, body, P);
   const perfil = perfilDaFamilia(body);
   if (!perfil.formacao && !perfil.membros.length) return erro(res, 400, "Descreva a família: a formação e os membros.");
   precarregarFontes({ biblia: true, livros: true });
@@ -2996,28 +3491,11 @@ async function responderAdoracaoFamilia(res, body, P) {
   ]);
   const videos = videosParaAFamilia(catalogo || [], perfil);
   const hoje = new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long", day: "numeric", month: "long", year: "numeric" });
-  const membros = perfil.membros.map((m) => descricaoDaPessoa(m, "membro da família")).join("\n");
-  const cv = perfil.convidados;
-  const temConvidados = cv.membros.length > 0 || Boolean(cv.formacao) || Boolean(cv.familia) || Boolean(cv.anotacoes);
-  const circunstancias = [...perfil.circunstancias, perfil.outrasCircunstancias].filter(Boolean);
   const quadrosDaNoite = QUADROS_FAMILIA.filter((q) => perfil.quadros.includes(q.id)).map((q) => (q.minutos ? `${q.nome} (${q.minutos} min)` : q.nome));
   const mensagem =
     `DATA: ${hoje}\n` +
     `QUANTIDADE: prepare UMA programação só (o campo "opcoes" com exatamente 1 item).\n` +
-    `FORMAÇÃO DA FAMÍLIA: ${perfil.formacao || "não informada"}\n` +
-    `MEMBROS (apelido, papel, idade, situação espiritual e privilégios):\n${membros || "- não informados"}\n` +
-    (temConvidados
-      ? `CONVIDADOS NA NOITE (visitas: podem participar, mas NÃO lhes designe tarefas; adapte as partes e os jogos à presença deles, às idades e à situação deles):\n` +
-        (cv.membros.length ? `${cv.membros.map((m) => descricaoDaPessoa(m, "convidado")).join("\n")}\n` : "") +
-        (cv.formacao ? `TIPO DA FAMÍLIA CONVIDADA: ${cv.formacao}\n` : "") +
-        (cv.familia ? `INFORMAÇÃO SOBRE A FAMÍLIA CONVIDADA: ${cv.familia}\n` : "") +
-        (cv.anotacoes ? `ANOTAÇÕES DO CHEFE SOBRE OS CONVIDADOS (trate com tato): ${cv.anotacoes}\n` : "")
-      : "") +
-    (perfil.membros.some((m) => m.situacao || m.privilegios.length) || cv.membros.some((m) => m.situacao || m.privilegios.length)
-      ? `USO OPCIONAL DA SITUAÇÃO ESPIRITUAL E DOS PRIVILÉGIOS (dos membros e dos convidados): leve em conta quando ajudar, principalmente havendo CRIANÇAS (por exemplo, quem é batizado ou tem privilégios pode conduzir ou ajudar mais, e os que estão começando, como o publicador não batizado e o estudante da Bíblia, podem ser incentivados com carinho e sem pressão; para as crianças, escolha atividades e exemplos que valorizem o bom exemplo dos mais experientes). "Removido" e "Descrente" pedem muito tato: nunca exponha, cobre ou designe parte que constranja, e não os diferencie dos demais nas tarefas. Nunca escreva a situação espiritual ou os privilégios de ninguém no texto das opções. Se não ajudar, ignore.\n`
-      : "") +
-    (perfil.anosCasados !== null ? `ANOS DE CASADOS: ${perfil.anosCasados}\n` : "") +
-    (circunstancias.length ? `CIRCUNSTÂNCIAS QUE O CHEFE QUIS INFORMAR (trate com tato, nunca exponha ninguém):\n${circunstancias.map((c) => `- ${c}`).join("\n")}\n` : "") +
+    mensagemDoPerfilFamilia(perfil) +
     `QUADROS DA PROGRAMAÇÃO ESCOLHIDOS PELO CHEFE: ${quadrosDaNoite.join("; ")}\n` +
     `ESTRUTURA DA PROGRAMAÇÃO (obrigatória): 1) "Oração inicial"; ` +
     perfil.estrutura.map((k, i) => `${i + 2}) ${ESTRUTURA_FAMILIA_TEXTO[k]}`).join("; ") +
@@ -3067,28 +3545,9 @@ async function responderAdoracaoFamilia(res, body, P) {
     const linha = (v, max) => limparLinha(semCulto(semGotica(typeof v === "string" ? v : "")), max);
     const porNumero = new Map((canticos || []).map((c) => [c.numero, c]));
     // Textos bíblicos: cada referência conferida na Bíblia do servidor (com o texto); a que não for achada fica só com a referência.
-    const comBiblia = fontesConfiguradas();
-    const textosDe = async (refs) => {
-      const saida = [];
-      const vistas = new Set();
-      for (const bruta of (Array.isArray(refs) ? refs : []).slice(0, 6)) {
-        if (saida.length >= 4) break;
-        const ref = linha(bruta, 60);
-        if (!ref) continue;
-        const achado = comBiblia ? (await buscarVersiculos([ref], 1).catch(() => []))[0] : null;
-        const referencia = achado ? achado.referencia : ref;
-        if (vistas.has(referencia)) continue;
-        vistas.add(referencia);
-        saida.push({ referencia, texto: achado ? limparLinha(achado.texto, 2500) : "" });
-      }
-      return saida;
-    };
+    const textosDe = (refs) => textosBiblicosFamilia(refs, 4);
     // "V3" (ou "[V3]", "V3 - título") -> o vídeo da lista enviada; o resto sai.
-    const videoDe = (codigo) => {
-      const m = String(codigo || "").match(/V\s*(\d{1,3})/i);
-      const v = m ? videos[Number(m[1]) - 1] : null;
-      return v ? { titulo: v.titulo, duracao: v.duracao || "", link: `https://www.jw.org/finder?srcid=share&wtlocale=T&lank=${encodeURIComponent(v.lank)}` } : null;
-    };
+    const videoDe = (codigo) => videoDaLista(videos, codigo);
     // "P2" -> a matéria do wol.jw.org enviada (título, publicação e endereço); um nome de publicação escrito pela IA fica como veio, sem endereço.
     const publicacaoDe = (valor) => {
       const texto = linha(valor, 200);
@@ -3128,35 +3587,12 @@ async function responderAdoracaoFamilia(res, body, P) {
       if (!artigo || !artigo.texto) return null;
       return { titulo: limparLinha(artigo.titulo || materia.titulo, 200), fonte: limparLinha(materia.rotulo, 120), paragrafos: "", texto: limparTextoGerado(artigo.texto, 2600), url: artigo.url || materia.url };
     };
-    // O jogo da parte: só com tipos aceitos; o texto é limpo e limitado (regras, material e até 25 itens prontos).
-    const jogoDe = (j) => {
-      if (!perfil.jogos.length || !j || typeof j !== "object") return null;
-      const nomeJogo = linha(j.nome, 80);
-      const comoJogar = limparTextoGerado(j.comoJogar, 1200);
-      let itens = (Array.isArray(j.itens) ? j.itens : []).map((t) => limparTextoGerado(t, 500)).filter(Boolean).slice(0, 25);
-      if (!nomeJogo || !comoJogar) return null;
-      // Rodadas (pergunta, resposta e referência separadas). Se a IA não as separou num jogo de pergunta e resposta, o servidor separa os
-      // itens pelos sinais de sempre ("Resposta:", " = ", "(Verdadeiro — …)", travessão); o que não der para separar continua em "itens".
-      let rodadas = (Array.isArray(j.rodadas) ? j.rodadas : [])
-        .map((r) => (r && typeof r === "object" ? { pergunta: limparTextoGerado(r.pergunta, 400), resposta: limparTextoGerado(r.resposta, 300), referencia: linha(r.referencia, 120) } : null))
-        .filter((r) => r && r.pergunta && r.resposta)
-        .slice(0, 25);
-      if (!rodadas.length && JOGOS_COM_RESPOSTA.test(`${j.tipo || ""} ${j.nome || ""}`)) {
-        const sobra = [];
-        for (const t of itens) {
-          const r = separarRodada(t);
-          if (r) rodadas.push(r);
-          else sobra.push(t);
-        }
-        itens = sobra;
-      }
-      // 6.12.70: nada fora do app; o material de papel e lápis não entra mais.
-      return { tipo: linha(j.tipo, 80), nome: nomeJogo, comoJogar, material: !/papel|l[aá]pis|caneta/i.test(String(j.material || "")) ? limparTextoGerado(j.material, 300) : "", rodadas, itens };
-    };
+    // O jogo da parte: só com tipos aceitos (ver jogoDaFamilia).
+    const jogoDe = (j) => jogoDaFamilia(perfil.jogos, j);
     const opcoes = [];
     for (const o of resposta.parsed_output.opcoes.slice(0, 1)) {
       const partes = [];
-      const partesBrutas = (o.partes || []).slice(0, 10);
+      const partesBrutas = (o.partes || []).slice(0, 16);
       for (let idxParte = 0; idxParte < partesBrutas.length; idxParte++) {
         const p = partesBrutas[idxParte];
         const nome = linha(p.nome, 80);
@@ -6605,7 +7041,9 @@ async function tratarPedido(req, res) {
   // Mais o modelo e o esforço da IA escolhidos pelo administrador (P.ia).
   const P = await carregarPromptsEIa(tarefa);
 
-  if (excedeuLimite(ip, P.limites.limitePorHora)) {
+  // 6.12.71: os pedidos de quadro da Adoração em Família (um por quadro, até 4 ao mesmo tempo) contam à parte, com limite 4x maior.
+  const quadroFamilia = tarefa === "adoracao-familia" && body.fase === "quadro";
+  if (excedeuLimite(quadroFamilia ? ip + "|quadro" : ip, quadroFamilia ? P.limites.limitePorHora * 4 : P.limites.limitePorHora)) {
     return erro(res, 429, "Muitas solicitações. Tente novamente em alguns minutos.");
   }
 

@@ -16899,6 +16899,20 @@ input[type="time"].fam-campo::-webkit-date-and-time-value { text-align: left; mi
 .fam-status { margin: 0; font-size: .92rem; overflow-wrap: anywhere; }
 .fam-status.ok { color: var(--success); }
 .fam-status.erro { color: var(--danger); }
+/* Andamento da preparação por quadros (6.12.71): o plano e cada quadro, com moldura fina e cores suaves; "Refazer este quadro" na linha toda. */
+.fam-progresso { display: grid; gap: 8px; padding: 10px 12px; border: 1px solid var(--line, #cbd5e1); border-radius: 10px; background: var(--card); min-width: 0; box-sizing: border-box; }
+.fam-progresso[hidden] { display: none; }
+.fam-prog-titulo { margin: 0; font-size: .92rem; font-weight: 600; }
+.fam-prog-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; min-width: 0; }
+.fam-prog-item { display: grid; gap: 6px; min-width: 0; font-size: .92rem; }
+.fam-prog-linha { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+.fam-prog-icone { flex: 0 0 1.4em; text-align: center; }
+.fam-prog-nome { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.fam-prog-item.fila .fam-prog-nome { opacity: .65; }
+.fam-prog-item.ok .fam-prog-icone { color: var(--sv-azul-bd, #60a5fa); font-weight: 700; }
+.fam-prog-item.erro { padding: 8px 10px; border: 1px solid var(--danger); border-radius: 8px; }
+.fam-prog-msg { margin: 0; font-size: .88rem; color: var(--danger); overflow-wrap: anywhere; }
+.fam-prog-refazer { display: block; width: 100%; margin: 0; min-height: 40px; box-sizing: border-box; }
 /* Mensagem de teto de gastos atingido (6.11.07): letras vermelhas, moldura ao redor e sem negrito. */
 :is(#sv#sv, .msg-teto) {
   display: block;

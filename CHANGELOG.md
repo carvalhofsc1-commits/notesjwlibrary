@@ -2,6 +2,21 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.71
+
+- **Adoração em Família por quadros: fase 3a (preparação em duas fases).** Primeiro vem o **plano da noite**, numa chamada curta: título, objetivo, assunto, o ângulo de cada quadro e os cânticos inicial e final. Depois, **cada quadro marcado é preparado numa chamada própria**, até 4 ao mesmo tempo. O app junta tudo nesta ordem: cântico inicial, oração inicial, os quadros na ordem do catálogo, cântico final e oração final. A programação é salva uma vez só.
+- **Andamento da preparação:** uma lista mostra o estado de cada quadro: ⏳ preparando, ✓ pronto, ⚠️ não ficou pronto, • na fila. O quadro que falhar fica de fora da programação e ganha o botão "🔄 Refazer este quadro", na largura toda. Quando ele fica pronto, a programação salva é **atualizada** (o mesmo item, não um novo).
+- **Quadros com instruções próprias:**
+  - **Abertura:** uma leitura (trecho de um livro do servidor ou artigo dos Ensinos Bíblicos lido no wol pelo docId) com até 3 perguntas, mais um relato bíblico com até 2 perguntas.
+  - **Princípio bíblico:** a IA escolhe uma entrada do índice "Princípios Bíblicos para a Vida Cristã". O servidor transcreve o texto literal da entrada e os versículos, e as perguntas são as fixas do quadro. Saem as entradas sem versículos nem relatos e as que começam com "Veja".
+  - **Personagem do dia:** a passagem da história (transcrita da Bíblia do servidor) e o verbete do Perspicaz; sem verbete, entra o trecho de livro escolhido.
+  - **Lições da vida de Jesus:** o episódio (transcrito da Bíblia do servidor), a qualidade de Jesus e o trecho de livro escolhido.
+  - Os outros quadros usam, por enquanto, uma instrução genérica (as próprias chegam na fase 3b).
+- **Instruções da IA visíveis:** os novos textos aparecem e podem ser editados na tela de prompts do administrador: "Adoração · base dos quadros", "plano", "abertura", "princípio", "personagem", "Jesus" e "genérico". Os formatos são só leitura.
+- **Leitura de artigos pelo docId do wol:** só vale com pelo menos 600 caracteres. As páginas que existem só no www.jw.org (vídeos, atividades com figuras, cartões bíblicos) ficam de fora. Num teste real, 21 de 30 artigos comuns foram lidos, com média de 5909 caracteres, e 17 de 20 de ciência, com média de 2483.
+- A programação aceita até 16 partes. A leitura de cada parte mostra o rótulo vindo do servidor (por exemplo, "Trecho do livro"). Os quadros têm uma contagem própria no limite de pedidos por hora (4 vezes a da programação).
+- Apps antigos continuam usando a geração numa só chamada.
+
 ## 6.12.70
 
 - **Adoração em Família por quadros — fase 2 (tela e formato):** a programação agora é montada por **quadros**. Em "🧩 Quadros da programação" aparecem os 12 quadros do catálogo (Oração inicial, Abertura, Vídeo, Princípio bíblico, Personagem do dia, Lições da vida de Jesus e Oração final entram sempre, com 🔒; Fortaleça sua fé no Criador, Saiba responder, Ame o ministério, Jogo bíblico e Treino de cânticos são opcionais), com os minutos de cada um e o total ("⏱️ Total: N min + orações · K quadros"). A duração é a soma dos quadros marcados (35 min na 🌙 Noite curta, 65 min na 🌟 Completa). Cântico inicial e cântico final ficam em marcas próprias.

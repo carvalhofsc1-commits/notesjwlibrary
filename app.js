@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.70'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.71'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26070,6 +26070,51 @@ function saveTemplatesToStorage() {
       return { quadros, canticoInicial, canticoFinal, jogos };
     }
     // </quadros-familia>
+    // <montagem-familia>
+    // 6.12.71: junta o plano e as partes dos quadros na programação, no formato de sempre ({ titulo, emoji, resumo, objetivo, partes, duracaoTotal,
+    // preparacao, tarefas, dicaParaOChefe }). Ordem: Cântico inicial (se o plano trouxe) → Oração inicial → os quadros na ordem do catálogo (os que
+    // não ficaram prontos saem) → Cântico final → Oração final. As orações e os cânticos inicial e final não passam pela IA de quadro. Sem página:
+    // o teste ferramentas/testar-adoracao-quadros.mjs executa este bloco.
+    function familiaMontarPrograma(plano, partesPorQuadro, quadros, catalogo) {
+      const p = plano && typeof plano === 'object' ? plano : {};
+      const porQuadro = partesPorQuadro && typeof partesPorQuadro === 'object' ? partesPorQuadro : {};
+      const marcados = new Set(Array.isArray(quadros) ? quadros : []);
+      const lista = v => (Array.isArray(v) ? v : []);
+      const simples = (nome, quadro, extra) => Object.assign({ nome, minutos: 0, responsavel: '', descricao: '', textos: [], videos: [], canticos: [], publicacoes: [], perguntas: [], leitura: null, jogo: null, quadro }, extra || {});
+      const cantico = (c, nome, quadro) => (c && Number.isInteger(c.numero) ? simples(nome, quadro, { canticos: [{ numero: c.numero, titulo: String(c.titulo || '') }] }) : null);
+      const partes = [];
+      const inicial = cantico(p.canticoInicial, 'Cântico inicial', 'cantico_inicial');
+      if (inicial) partes.push(inicial);
+      partes.push(simples('Oração inicial', 'oracao_inicial'));
+      for (const q of lista(catalogo)) {
+        if (!q.minutos || !marcados.has(q.id)) continue;
+        const parte = porQuadro[q.id];
+        if (!parte || typeof parte !== 'object') continue;
+        partes.push(Object.assign({}, parte, {
+          nome: String(parte.nome || q.nome),
+          minutos: Number.isFinite(Number(parte.minutos)) ? Math.max(0, Math.round(Number(parte.minutos))) : q.minutos,
+          responsavel: '',
+          textos: lista(parte.textos), videos: lista(parte.videos), canticos: lista(parte.canticos), publicacoes: lista(parte.publicacoes), perguntas: lista(parte.perguntas),
+          quadro: q.id
+        }));
+      }
+      const final = cantico(p.canticoFinal, 'Cântico final', 'cantico_final');
+      if (final) partes.push(final);
+      partes.push(simples('Oração final', 'oracao_final'));
+      return {
+        titulo: String(p.titulo || 'Adoração em Família'),
+        emoji: String(p.emoji || ''),
+        resumo: String(p.resumo || ''),
+        objetivo: String(p.objetivo || ''),
+        assunto: String(p.assunto || ''),
+        partes,
+        duracaoTotal: partes.reduce((s, x) => s + (x.minutos || 0), 0),
+        preparacao: lista(p.preparacao).map(String),
+        tarefas: lista(p.tarefas).filter(x => x && typeof x === 'object'),
+        dicaParaOChefe: String(p.dicaParaOChefe || '')
+      };
+    }
+    // </montagem-familia>
 
     // A lista dos quadros e a dos jogos, montadas a partir do catálogo: os obrigatórios ficam marcados e travados (🔒).
     const familiaQuadrosEl = document.getElementById('familiaQuadros');
@@ -26714,7 +26759,7 @@ function saveTemplatesToStorage() {
         lei.appendChild(lt);
         const ref = document.createElement('p');
         ref.className = 'fam-leitura-ref';
-        ref.textContent = (parte.leitura.paragrafos ? (/[-–]/.test(parte.leitura.paragrafos) ? 'Parágrafos ' : 'Parágrafo ') + parte.leitura.paragrafos : 'Trecho inicial da matéria') + (parte.leitura.fonte ? ' · ' + parte.leitura.fonte : '');
+        ref.textContent = (parte.leitura.paragrafos ? (/[-–]/.test(parte.leitura.paragrafos) ? 'Parágrafos ' : 'Parágrafo ') + parte.leitura.paragrafos : (parte.leitura.rotulo || 'Trecho inicial da matéria')) + (parte.leitura.fonte ? ' · ' + parte.leitura.fonte : '');
         lei.appendChild(ref);
         if (parte.leitura.url) {
           const a = document.createElement('a');
@@ -29176,6 +29221,175 @@ function saveTemplatesToStorage() {
       return caixa;
     }
 
+    // 6.12.71: a programação é preparada em duas fases. Primeiro o plano (uma chamada curta: título, objetivo, assunto e o ângulo de cada quadro);
+    // depois cada quadro marcado, numa chamada própria, até FAMILIA_QUADROS_EM_PARALELO ao mesmo tempo. O app junta tudo (familiaMontarPrograma),
+    // com as orações e os cânticos inicial e final, e salva uma vez. Um quadro que falhar fica de fora, com "🔄 Refazer este quadro" na lista de andamento.
+    const FAMILIA_QUADROS_EM_PARALELO = 4;
+    const familiaProgressoEl = document.getElementById('familiaProgresso');
+    let familiaGeracao = null; // { pedido, payload, perfil, plano, ids, partes, estado, erros, modelo, itemId }
+    let familiaEtapa = '';
+
+    function familiaProgressoLimpar() {
+      if (!familiaProgressoEl) return;
+      familiaProgressoEl.textContent = '';
+      familiaProgressoEl.hidden = true;
+    }
+
+    // A lista de andamento: o plano e cada quadro (⏳ preparando, ✓ pronto, ⚠️ não ficou pronto, • na fila).
+    function familiaProgressoPintar(ger) {
+      if (!familiaProgressoEl) return;
+      familiaProgressoEl.textContent = '';
+      const titulo = document.createElement('p');
+      titulo.className = 'fam-prog-titulo';
+      titulo.textContent = 'Andamento da preparação';
+      familiaProgressoEl.appendChild(titulo);
+      const lista = document.createElement('ul');
+      lista.className = 'fam-prog-lista';
+      const item = (estado, rotulo, msg, id) => {
+        const li = document.createElement('li');
+        li.className = 'fam-prog-item ' + estado;
+        const linha = document.createElement('div');
+        linha.className = 'fam-prog-linha';
+        const icone = document.createElement('span');
+        icone.className = 'fam-prog-icone';
+        icone.textContent = estado === 'ok' ? '✓' : estado === 'erro' ? '⚠️' : estado === 'gerando' ? '⏳' : '•';
+        const nome = document.createElement('span');
+        nome.className = 'fam-prog-nome';
+        nome.textContent = rotulo;
+        linha.append(icone, nome);
+        li.appendChild(linha);
+        if (msg) {
+          const m = document.createElement('p');
+          m.className = 'fam-prog-msg';
+          m.textContent = msg;
+          li.appendChild(m);
+        }
+        if (id && estado === 'erro' && ger.pedido === familiaPedido) {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'secondary fam-prog-refazer';
+          b.textContent = '🔄 Refazer este quadro';
+          b.disabled = Boolean(ger.refazendo);
+          b.addEventListener('click', () => familiaRefazerQuadro(ger, id));
+          li.appendChild(b);
+        }
+        lista.appendChild(li);
+      };
+      item(ger.plano ? 'ok' : 'gerando', '🗺️ Plano da noite', '', null);
+      for (const id of ger.ids || []) {
+        const q = QUADROS_FAMILIA.find(x => x.id === id);
+        item(ger.estado[id] || 'fila', (q ? q.emoji + ' ' + q.nome : id), ger.estado[id] === 'erro' ? ger.erros[id] || '' : '', id);
+      }
+      familiaProgressoEl.appendChild(lista);
+      familiaProgressoEl.hidden = false;
+    }
+
+    // Os quadros com IA (as orações ficam de fora) na ordem do catálogo.
+    function familiaIdsComIa(quadros) {
+      const marcados = new Set(Array.isArray(quadros) ? quadros : []);
+      return QUADROS_FAMILIA.filter(q => q.minutos && marcados.has(q.id)).map(q => q.id);
+    }
+
+    function familiaEtapaDosQuadros(ger) {
+      const feitos = ger.ids.filter(id => ger.estado[id] === 'ok' || ger.estado[id] === 'erro').length;
+      familiaEtapa = 'Preparando os quadros (' + feitos + '/' + ger.ids.length + ')…';
+    }
+
+    // Prepara os quadros pedidos, no máximo FAMILIA_QUADROS_EM_PARALELO ao mesmo tempo. Para se o pedido foi cancelado (familiaPedido mudou).
+    async function familiaGerarQuadros(ger, ids) {
+      const fila = ids.slice();
+      const um = async id => {
+        ger.estado[id] = 'gerando';
+        familiaProgressoPintar(ger);
+        try {
+          const r = await postStudy(Object.assign({}, ger.payload, {
+            fase: 'quadro',
+            quadro: id,
+            angulo: (ger.plano.angulos && ger.plano.angulos[id]) || '',
+            plano: { titulo: ger.plano.titulo || '', objetivo: ger.plano.objetivo || '' },
+            assunto: ger.plano.assunto || ger.payload.assunto || ''
+          }), IA_ESPERA_MS);
+          if (ger.pedido !== familiaPedido) return;
+          if (r.ok && r.data && r.data.parte && typeof r.data.parte === 'object') {
+            ger.partes[id] = r.data.parte;
+            ger.estado[id] = 'ok';
+            delete ger.erros[id];
+          } else {
+            ger.estado[id] = 'erro';
+            ger.erros[id] = (r.data && r.data.erro) || (r.unavailable ? 'Serviço indisponível no momento.' : 'Não ficou pronto.');
+          }
+        } catch (e) {
+          if (ger.pedido !== familiaPedido) return;
+          ger.estado[id] = 'erro';
+          ger.erros[id] = 'Falha na conexão.';
+        }
+        familiaEtapaDosQuadros(ger);
+        familiaProgressoPintar(ger);
+      };
+      const trabalhador = async () => {
+        while (fila.length && ger.pedido === familiaPedido) await um(fila.shift());
+      };
+      await Promise.all(Array.from({ length: Math.min(FAMILIA_QUADROS_EM_PARALELO, fila.length) }, trabalhador));
+    }
+
+    // Monta a programação com o que ficou pronto, mostra e salva (a primeira vez cria o item; depois de refazer um quadro, atualiza o mesmo item).
+    function familiaMostrarESalvar(ger) {
+      const op = familiaMontarPrograma(ger.plano, ger.partes, ger.perfil.quadros, QUADROS_FAMILIA);
+      familiaRenderOpcoes([op]);
+      const texto = familiaTextoDaOpcao(op);
+      try {
+        if (ger.itemId) {
+          const lista = historicoLer();
+          const i = lista.findIndex(g => g.id === ger.itemId);
+          if (i >= 0) {
+            lista[i] = Object.assign({}, lista[i], { familiaOpcoes: [op], partes: [{ paragrafos: 'Programação', texto }] });
+            historicoGravar(lista);
+            historicoRender();
+            return true;
+          }
+        }
+        const quando = new Date();
+        const assunto = ger.plano.assunto || ger.perfil.assunto || '';
+        const item = historicoSalvar({
+          tipo: 'familia',
+          titulo: 'Adoração em Família · ' + quando.toLocaleDateString('pt-BR') + ' ' + quando.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + (assunto ? ' · ' + assunto.slice(0, 60) : ''),
+          partes: [{ paragrafos: 'Programação', texto }],
+          familiaOpcoes: [op],
+          ligar: false
+        });
+        if (item) ger.itemId = item.id;
+        return Boolean(item);
+      } catch (e) {
+        return false; // o app segue sem salvar
+      }
+    }
+
+    function familiaFalhasTexto(ger) {
+      const n = ger.ids.filter(id => ger.estado[id] === 'erro').length;
+      return n ? ' · ⚠️ ' + n + (n === 1 ? ' quadro não ficou pronto' : ' quadros não ficaram prontos') + ': toque em “🔄 Refazer este quadro”' : '';
+    }
+
+    async function familiaRefazerQuadro(ger, id) {
+      if (ger.refazendo || ger.pedido !== familiaPedido || familiaGeracao !== ger) return;
+      ger.refazendo = true;
+      const q = QUADROS_FAMILIA.find(x => x.id === id);
+      familiaStatus('Refazendo o quadro ' + (q ? q.nome : id) + '…');
+      try {
+        await familiaGerarQuadros(ger, [id]);
+      } finally {
+        ger.refazendo = false;
+      }
+      if (ger.pedido !== familiaPedido) return;
+      familiaProgressoPintar(ger);
+      if (ger.estado[id] !== 'ok') {
+        familiaStatus('O quadro ' + (q ? q.nome : id) + ' ainda não ficou pronto: ' + (ger.erros[id] || 'tente de novo') + '.', 'erro');
+        return;
+      }
+      const salvo = familiaMostrarESalvar(ger);
+      if (!familiaFalhasTexto(ger)) familiaProgressoLimpar();
+      familiaStatus('Quadro ' + (q ? q.nome : id) + ' pronto' + (salvo ? ' · 📂 programação salva atualizada' : '') + familiaFalhasTexto(ger) + '.', 'ok');
+    }
+
     async function familiaGerar() {
       if (!codigoAcessoSalvo()) {
         familiaStatus('Salve o código de pesquisa em Ajustes → 🔐 Autorização de acessos.', 'erro');
@@ -29190,42 +29404,45 @@ function saveTemplatesToStorage() {
       const pedido = ++familiaPedido;
       familiaGerarBtn.disabled = true;
       familiaCancelarBtn.hidden = false;
+      familiaProgressoLimpar();
+      const payload = familiaPayloadDe(perfil);
+      const ger = { pedido, payload, perfil, plano: null, ids: familiaIdsComIa(perfil.quadros), partes: {}, estado: {}, erros: {}, modelo: '', itemId: null, refazendo: false };
+      familiaGeracao = ger;
+      familiaEtapa = 'Planejando a programação…';
       familiaRelogioLigar();
+      familiaProgressoPintar(ger);
       try {
-        const result = await postStudy(familiaPayloadDe(perfil), IA_ESPERA_MS);
+        const result = await postStudy(Object.assign({}, payload, { fase: 'plano' }), IA_ESPERA_MS);
         if (pedido !== familiaPedido) return;
-        if (!result.ok) {
-          familiaStatus((result.data && result.data.erro) || (result.unavailable ? 'Serviço indisponível no momento.' : 'Não consegui preparar a programação. Tente de novo.'), 'erro');
+        if (!result.ok || !result.data || !result.data.plano || typeof result.data.plano !== 'object') {
+          familiaProgressoLimpar();
+          familiaStatus((result.data && result.data.erro) || (result.unavailable ? 'Serviço indisponível no momento.' : 'Não consegui planejar a programação. Tente de novo.'), 'erro');
           return;
         }
-        const opcoes = (Array.isArray(result.data.opcoes) ? result.data.opcoes : []).slice(0, 1); // 6.12.70: uma programação só
-        if (!opcoes.length) {
-          familiaStatus('A IA não devolveu a programação. Tente de novo.', 'erro');
+        ger.plano = result.data.plano;
+        ger.modelo = result.data.modelo || '';
+        familiaEtapaDosQuadros(ger);
+        familiaRelogioPintar();
+        familiaProgressoPintar(ger);
+        await familiaGerarQuadros(ger, ger.ids);
+        if (pedido !== familiaPedido) return;
+        if (!ger.ids.some(id => ger.estado[id] === 'ok')) {
+          familiaStatus('Nenhum quadro ficou pronto. Confira a conexão e tente de novo.', 'erro');
           return;
         }
-        familiaRenderOpcoes(opcoes);
-        const modelo = result.data.modelo ? ' · ' + result.data.modelo : '';
         const tempoTotal = familiaRelogioTexto();
-        // Guarda a programação em Pesquisas e respostas salvas, na categoria Adoração em Família (sem mexer no campo de texto).
-        let salvas = 0;
-        try {
-          const quando = new Date();
-          const base = 'Adoração em Família · ' + quando.toLocaleDateString('pt-BR') + ' ' + quando.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + (perfil.assunto ? ' · ' + perfil.assunto.slice(0, 60) : '');
-          if (historicoSalvar({
-            tipo: 'familia',
-            titulo: base,
-            partes: [{ paragrafos: 'Programação', texto: familiaTextoDaOpcao(opcoes[0]) }],
-            familiaOpcoes: [opcoes[0]],
-            ligar: false
-          })) salvas++;
-        } catch (e) { /* o app segue sem salvar */ }
-        familiaStatus('Pronto: programação preparada' + modelo + ' · ' + tempoTotal + (salvas ? ' · 📂 salva em Programações salvas' : '') + '.', 'ok');
+        const salvo = familiaMostrarESalvar(ger);
+        const falhas = familiaFalhasTexto(ger);
+        if (!falhas) familiaProgressoLimpar();
+        familiaStatus('Pronto: programação preparada' + (ger.modelo ? ' · ' + ger.modelo : '') + ' · ' + tempoTotal + (salvo ? ' · 📂 salva em Programações salvas' : '') + falhas + '.', 'ok');
         familiaResultadoEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
       } catch (e) {
         if (pedido !== familiaPedido) return;
+        familiaProgressoLimpar();
         familiaStatus('Não consegui preparar a programação. Confira a conexão e tente de novo.', 'erro');
       } finally {
         if (pedido === familiaPedido) {
+          familiaEtapa = '';
           familiaRelogioDesligar();
           familiaGerarBtn.disabled = false;
           familiaCancelarBtn.hidden = true;
@@ -29244,7 +29461,7 @@ function saveTemplatesToStorage() {
     function familiaRelogioPintar() {
       const tempo = familiaRelogioTexto();
       familiaGerarBtn.textContent = '⏳ Preparando… ' + tempo;
-      familiaStatus('Preparando a programação… ' + tempo + ' (pode levar um minuto ou mais)');
+      familiaStatus((familiaEtapa || 'Preparando a programação…') + ' ' + tempo + ' (pode levar um minuto ou mais)');
     }
     function familiaRelogioLigar() {
       clearInterval(familiaRelogioTimer);
@@ -29296,7 +29513,9 @@ function saveTemplatesToStorage() {
     familiaGerarBtn.addEventListener('click', familiaGerar);
     familiaCancelarBtn.addEventListener('click', () => {
       familiaPedido++;
+      familiaEtapa = '';
       familiaRelogioDesligar();
+      familiaProgressoLimpar();
       familiaStatus('Cancelado.');
       familiaGerarBtn.disabled = false;
       familiaCancelarBtn.hidden = true;
@@ -29306,6 +29525,7 @@ function saveTemplatesToStorage() {
       familiaResultadoEl.innerHTML = '';
       familiaResultadoEl.hidden = true;
       familiaLimparBtn.hidden = true;
+      familiaProgressoLimpar();
       familiaStatus('');
     });
     [familiaFormacaoEl, familiaAnosCasadosEl, document.getElementById('familiaDiaSemana'), document.getElementById('familiaHorario'), document.getElementById('familiaConvidadosFormacao'), document.getElementById('familiaCanticoInicial'), document.getElementById('familiaCanticoFinal')].forEach(el => el.addEventListener('change', familiaPerfilSalvar));
