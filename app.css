@@ -2840,6 +2840,19 @@
       align-items: center;
     }
 
+    /* 6.12.60: Atualizar a lista + Exportar Word (arquivos do servidor): sempre os dois lado a lado, ocupando a largura toda do card. */
+    .fontes-botoes {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .fontes-botoes button {
+      width: 100%;
+      min-width: 0;
+    }
+
     .option-buttons {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));

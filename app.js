@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.59'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.60'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -12228,6 +12228,58 @@ function saveTemplatesToStorage() {
     }
     document.getElementById('fontesBox').addEventListener('toggle', e => { if (e.target.open) fontesCarregar(); });
     document.getElementById('fontesAtualizarBtn').addEventListener('click', fontesCarregar);
+
+    // 6.12.60: exporta a lista (como está na tela, com as edições que você acabou de anotar) numa tabela do Word: Publicação (com o arquivo embaixo),
+    // Edição, No conteúdo, Tamanho e Enviado em. Em celular que aceita compartilhar arquivos, vai para o compartilhamento; senão, baixa.
+    async function fontesExportarWord() {
+      const linhas = [...fontesCorpo.rows].map(tr => ({
+        nome: (tr.cells[0].querySelector('strong') || {}).textContent || '',
+        arquivo: (tr.cells[0].querySelector('.fontes-arquivo') || {}).textContent || '',
+        edicao: (tr.cells[1].querySelector('input') || {}).value || '',
+        conteudo: tr.cells[2].textContent || '',
+        tamanho: tr.cells[3].textContent || '',
+        enviado: tr.cells[4].textContent || ''
+      }));
+      if (!linhas.length) { fontesStatus.textContent = 'A lista ainda está vazia: abra o card ou toque em Atualizar a lista antes de exportar.'; return; }
+      const botao = document.getElementById('fontesWordBtn');
+      botao.disabled = true;
+      fontesStatus.textContent = 'Gerando o Word…';
+      try {
+        const larguras = [3400, 2500, 2300, 1000, 1572]; // soma 10772 (a largura útil da página A4 com margens de 1 cm)
+        const borda = lado => '<w:' + lado + ' w:val="single" w:sz="4" w:space="0" w:color="9CA3AF"/>';
+        const par = (runs, jc) => '<w:p><w:pPr><w:spacing w:before="20" w:after="20"/>' + (jc ? '<w:jc w:val="' + jc + '"/>' : '') + '</w:pPr>' + runs + '</w:p>';
+        const celula = (i, conteudo, fundo) => '<w:tc><w:tcPr><w:tcW w:w="' + larguras[i] + '" w:type="dxa"/>' + (fundo ? '<w:shd w:val="clear" w:color="auto" w:fill="' + fundo + '"/>' : '') + '</w:tcPr>' + conteudo + '</w:tc>';
+        const texto = (t, f = '', sz = 18, cor = '') => docxRuns(String(t || '—'), f, sz, cor);
+        const cab = ['Publicação', 'Edição', 'No conteúdo', 'Tamanho', 'Enviado em']
+          .map((t, i) => celula(i, par(texto(t, 'b', 18)), 'E5E7EB')).join('');
+        const corpoTabela = linhas.map(l =>
+          '<w:tr><w:trPr><w:cantSplit/></w:trPr>' +
+          celula(0, par(texto(l.nome, 'b', 18)) + par(texto(l.arquivo, '', 14, '6B7280'))) +
+          celula(1, par(texto(l.edicao))) +
+          celula(2, par(texto(l.conteudo))) +
+          celula(3, par(texto(l.tamanho), 'right')) +
+          celula(4, par(texto(l.enviado))) +
+          '</w:tr>').join('');
+        const tabela = '<w:tbl><w:tblPr><w:tblW w:w="10772" w:type="dxa"/><w:tblBorders>' + ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(borda).join('') +
+          '</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="40" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="40" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tblCellMar></w:tblPr>' +
+          '<w:tblGrid>' + larguras.map(w => '<w:gridCol w:w="' + w + '"/>').join('') + '</w:tblGrid>' +
+          '<w:tr><w:trPr><w:cantSplit/><w:tblHeader/></w:trPr>' + cab + '</w:tr>' + corpoTabela + '</w:tbl>';
+        const hoje = new Date();
+        const dataTxt = hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+        const corpo = '<w:p><w:pPr><w:keepNext/><w:spacing w:after="60"/></w:pPr>' + docxRuns('Arquivos do servidor e edições', 'b', 32) + '</w:p>' +
+          '<w:p><w:pPr><w:spacing w:after="160"/></w:pPr>' + docxRuns(linhas.length + (linhas.length === 1 ? ' arquivo' : ' arquivos') + ' · lista de ' + dataTxt, '', 18, '6B7280') + '</w:p>' +
+          tabela + '<w:p/>';
+        const blob = await docxPacote(corpo, 'Arquivos do servidor e edições');
+        const compartilhar = !document.getElementById('exportarCompartilharBtn').hidden;
+        const msg = await docxEntregar(blob, 'Arquivos do servidor - ' + hoje.toISOString().slice(0, 10) + '.docx', compartilhar);
+        fontesStatus.textContent = msg || 'Exportação cancelada.';
+      } catch (e) {
+        fontesStatus.textContent = 'Não consegui gerar o Word: ' + (e && e.message ? e.message : 'erro desconhecido.');
+      } finally {
+        botao.disabled = false;
+      }
+    }
+    document.getElementById('fontesWordBtn').addEventListener('click', fontesExportarWord);
 
     // ---------- Estatísticas de acesso e IA (só administrador) ----------
     const estatisticasStatus = document.getElementById('estatisticasStatus');
