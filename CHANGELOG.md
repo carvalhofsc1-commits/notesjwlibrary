@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.65
+
+- **Texto diário: a reflexão final é sempre uma pergunta:** no prompt dos comentários adicionais, a frase final de cada comentário deixou de alternar entre pergunta e admoestação: agora é SEMPRE uma pergunta de reflexão (terminada em "?"), em todos os comentários, ligada ao assunto, diferente a cada comentário e com tom carinhoso (sem bronca nem acusação). Exemplos no prompt: "Você está se esforçando para dirigir pelo menos um estudo bíblico?", "Marido, você sempre procura tratar a sua esposa com bondade e respeito?".
+
 ## 6.12.64
 
 - **Comentários adicionais do texto diário terminam com uma reflexão:** o prompt "Comentários adicionais sobre o texto diário" agora manda a IA encerrar TODA "aplicacao" com uma frase que leve a pessoa a refletir se está aplicando o ponto ou a lição, alternando entre dois tipos (com 4 comentários, 2 de cada, intercalados): uma **pergunta** de reflexão ("Você está se esforçando para dirigir pelo menos um estudo bíblico?", "Marido, você sempre procura tratar a sua esposa com bondade e respeito?") e uma **admoestação prática** ("Marido, jamais deixe de tratar a sua esposa com bondade e respeito."). A frase é ligada ao assunto do comentário, com carinho (sem bronca nem acusação), e é uma só, curta. O servidor passou a aceitar até 750 caracteres na aplicação (eram 500), para a reflexão não ser cortada. Vale para "Gerar comentários" e "Gerar outros", e a voz lê a reflexão junto.
