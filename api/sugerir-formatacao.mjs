@@ -2961,14 +2961,18 @@ async function responderAdoracaoFamilia(res, body, P) {
   if (body.programa) return ajustarProgramaFamilia(res, body, P);
   const perfil = perfilDaFamilia(body);
   if (!perfil.formacao && !perfil.membros.length) return erro(res, 400, "Descreva a família: a formação e os membros.");
-  precarregarFontes({ biblia: true });
+  precarregarFontes({ biblia: true, livros: true });
   const consulta = perfil.assunto.length >= 8 ? perfil.assunto : perfil.assunto ? perfil.assunto + " família" : "";
   const usaCanticos = perfil.canticoInicial || perfil.canticoFinal || perfil.atividades.some((a) => /c[aâ]ntico/i.test(a));
   const atividadesGerais = perfil.atividades.filter((a) => !/^c[aâ]ntico\s+(inicial|final)$/i.test(a));
-  const [canticos, catalogo, materias] = await Promise.all([
+  // 6.12.58: os livros e brochuras guardados no servidor (Imite a Sua Fé, Jovens Perguntam, Mantenha-se no Amor de Deus…) entram como base de apoio:
+  // a busca usa o assunto e, sem assunto, as circunstâncias e a formação da família.
+  const consultaLivros = [perfil.assunto, ...perfil.circunstancias, perfil.outrasCircunstancias, perfil.assunto ? "" : perfil.formacao].filter(Boolean).join(" ").slice(0, 700);
+  const [canticos, catalogo, materias, livrosApoio] = await Promise.all([
     usaCanticos ? lerCanticos().catch(() => null) : Promise.resolve(null),
     perfil.incluirVideo ? catalogoDeVideos(12000).catch(() => []) : Promise.resolve([]),
     consulta ? pesquisarNoWol(consulta, 8000, 6).catch(() => []) : [],
+    fontesConfiguradas() && consultaLivros ? buscarNosLivros(consultaLivros, { max: 6, maxChars: 900 }).catch(() => []) : [],
   ]);
   const videos = videosParaAFamilia(catalogo || [], perfil);
   const hoje = new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long", day: "numeric", month: "long", year: "numeric" });
@@ -3017,6 +3021,9 @@ async function responderAdoracaoFamilia(res, body, P) {
     `ASSUNTO PEDIDO PARA ESTA SEMANA: ${perfil.assunto || (qtd === 1 ? "nenhum (escolha o assunto que melhor sirva para esta família)" : `nenhum (escolha ${qtd} assuntos bem diferentes, que sirvam para esta família)`)}\n` +
     (materias.length
       ? `\nMATÉRIAS DO WOL.JW.ORG SOBRE O ASSUNTO (cite pelo identificador, ex.: "P2"):\n${materias.map((m, i) => `[P${i + 1}] "${m.titulo}" (${m.rotulo}) — ${m.trecho.slice(0, 300)}`).join("\n")}\n`
+      : "") +
+    (livrosApoio.length
+      ? "\n" + trocar(P.frases.pedidos["Livros de apoio (Adoração em Família)"] || "", { trechos: livrosApoio.map((a, i) => `[L${i + 1}] ${a.livro}: ${a.trecho}`).join("\n\n") }) + "\n"
       : "") +
     (!usaCanticos
       ? `\nCÂNTICOS: o chefe optou por não incluir cânticos. Deixe "canticos" vazio ([]) em todas as partes.\n`

@@ -33,6 +33,18 @@ const ARQUIVOS = {
   // Brochuras do ministério (6.11.53): usadas nas considerações para o serviço de campo (e na busca dos livros).
   ameAsPessoas: "fontes/ame_as_pessoas.txt",
   melhoreLeitura: "fontes/melhore_leitura_ensino.txt",
+  // Livros para a Adoração em Família e as demais consultas (6.12.58). Os de letras/tipo grande trazem o mesmo texto das edições comuns.
+  achegueSeAJeova: "fontes/achegue_se_a_jeova.txt",
+  familiaFeliz: "fontes/familia_feliz.txt",
+  imiteSuaFe: "fontes/imite_sua_fe.txt",
+  jesusOCaminho: "fontes/jesus_o_caminho.txt",
+  historiasDaBiblia: "fontes/historias_da_biblia.txt",
+  mantenhaSeNoAmorDeDeus: "fontes/mantenha_se_no_amor_de_deus.txt",
+  testemunhoCabal: "fontes/testemunho_cabal.txt",
+  venhaSerMeuSeguidor: "fontes/venha_ser_meu_seguidor.txt",
+  andeCorajosamente: "fontes/ande_corajosamente.txt",
+  jovensPerguntamV1: "fontes/jovens_perguntam_v1.txt",
+  jovensPerguntamV2: "fontes/jovens_perguntam_v2.txt",
   // "Cante de Coração Para Jeová" (só letras): [{ numero, titulo, texto, assunto, letra }], gerado por converter_canticos_pdf.py (fora do repositório).
   canticos: "fontes/canticos.json",
 };
@@ -493,6 +505,17 @@ const LIVROS = [
   { chave: "organizados", nome: "Organizados para Fazer a Vontade de Jeová" },
   { chave: "ameAsPessoas", nome: "Ame as Pessoas — Faça Discípulos (lmd)" },
   { chave: "melhoreLeitura", nome: "Melhore Sua Leitura e Seu Ensino (th)" },
+  { chave: "achegueSeAJeova", nome: "Achegue-se a Jeová (cl)" },
+  { chave: "familiaFeliz", nome: "O Segredo de uma Família Feliz (fy)" },
+  { chave: "imiteSuaFe", nome: "Imite a Sua Fé (ia)" },
+  { chave: "jesusOCaminho", nome: "Jesus — o Caminho, a Verdade e a Vida (jy)" },
+  { chave: "historiasDaBiblia", nome: "Aprenda com as Histórias da Bíblia (lfb)" },
+  { chave: "mantenhaSeNoAmorDeDeus", nome: "Mantenha-se no Amor de Deus (lv)" },
+  { chave: "testemunhoCabal", nome: "‘Dê Testemunho Cabal’ sobre o Reino de Deus (bt)" },
+  { chave: "venhaSerMeuSeguidor", nome: "‘Venha Ser Meu Seguidor’ (cf)" },
+  { chave: "andeCorajosamente", nome: "Ande Corajosamente com Deus (wcg)" },
+  { chave: "jovensPerguntamV1", nome: "Os Jovens Perguntam — Respostas Práticas, volume 1 (yp1)" },
+  { chave: "jovensPerguntamV2", nome: "Os Jovens Perguntam — Respostas Práticas, volume 2 (yp2)" },
 ];
 
 // O nome de um livro da busca pela chave (ex.: "beneficieEscola"), para filtrar os resultados de buscarNosLivros.
@@ -768,6 +791,17 @@ const NOMES_DAS_FONTES = {
   organizados: "Organizados para Fazer a Vontade de Jeová (od)",
   ame_as_pessoas: "Ame as Pessoas — Faça Discípulos (lmd)",
   melhore_leitura_ensino: "Melhore Sua Leitura e Seu Ensino (th)",
+  achegue_se_a_jeova: "Achegue-se a Jeová (cl)",
+  familia_feliz: "O Segredo de uma Família Feliz (fy)",
+  imite_sua_fe: "Imite a Sua Fé (ia)",
+  jesus_o_caminho: "Jesus — o Caminho, a Verdade e a Vida (jy)",
+  historias_da_biblia: "Aprenda com as Histórias da Bíblia (lfb)",
+  mantenha_se_no_amor_de_deus: "Mantenha-se no Amor de Deus (lv)",
+  testemunho_cabal: "‘Dê Testemunho Cabal’ sobre o Reino de Deus (bt) — letras grandes",
+  venha_ser_meu_seguidor: "‘Venha Ser Meu Seguidor’ (cf) — tipo grande",
+  ande_corajosamente: "Ande Corajosamente com Deus (wcg) — letras grandes",
+  jovens_perguntam_v1: "Os Jovens Perguntam — Respostas Práticas, volume 1 (yp1)",
+  jovens_perguntam_v2: "Os Jovens Perguntam — Respostas Práticas, volume 2 (yp2)",
   canticos: "Cante de Coração Para Jeová (letras dos cânticos)",
 };
 const MESES_PT = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];

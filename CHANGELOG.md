@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.58
+
+- **11 livros novos como fonte de consulta:** Achegue-se a Jeová (cl), O Segredo de uma Família Feliz (fy), Imite a Sua Fé (ia), Jesus — o Caminho, a Verdade e a Vida (jy), Aprenda com as Histórias da Bíblia (lfb), Mantenha-se no Amor de Deus (lv), ‘Dê Testemunho Cabal’ (bt, letras grandes), ‘Venha Ser Meu Seguidor’ (cf, tipo grande), Ande Corajosamente com Deus (wcg, letras grandes) e Os Jovens Perguntam, volumes 1 e 2 (yp1, yp2). Entram em `ARQUIVOS`, `LIVROS` e `NOMES_DAS_FONTES` de `api/_fontes.mjs` (nome bonito na tabela do admin) e na busca de "Livros de apoio" de todas as pesquisas. Os arquivos foram reconvertidos dos originais (acentos soltos dos PDFs, palavras partidas e emendadas, "No é"/"Jos é" dos EPUBs) e subidos em `fontes/`.
+- **Adoração em Família consulta os livros:** a geração das opções agora busca trechos nos livros do servidor pelo assunto (ou, sem assunto, pelas circunstâncias e a formação da família) e os manda à IA como base de apoio, no novo pedido editável "Livros de apoio (Adoração em Família)" (a IA pode indicar o livro e o capítulo ou a lição em "publicacoes", sem inventar página nem parágrafo). O pedido "Livros de apoio" das demais telas ficou com o texto geral (não cita mais só três livros).
+- Memória do índice dos livros, medida no computador: de cerca de 156 MB para 286 MB de heap (o servidor tem 1 GiB).
+
 ## 6.12.57
 
 - **Lista numerada com números em ícones:** nas anotações (e na resposta da pergunta de recapitulação), o botão de lista numerada agora numera as linhas selecionadas com 1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣ 6️⃣ 7️⃣ … em vez de "1.", "2.". Aplicar de novo (ou trocar para a lista com marcadores) não empilha prefixos. O rótulo do botão passou a 1️⃣ Lista.
