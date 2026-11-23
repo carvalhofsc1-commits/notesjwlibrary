@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.62'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.63'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -9646,7 +9646,7 @@
             familiaOutrasCircEl.value = '';
             familiaAssuntoEl.value = '';
             familiaDuracaoEl.value = '45';
-            document.querySelectorAll('#familiaCircunstancias input[type="checkbox"], #familiaAtividades input[type="checkbox"], #familiaJogos input[type="checkbox"], #familiaJogoPapel').forEach(el => { el.checked = el.defaultChecked; });
+            document.querySelectorAll('#familiaEstrutura input[type="checkbox"], #familiaCircunstancias input[type="checkbox"], #familiaAtividades input[type="checkbox"], #familiaJogos input[type="checkbox"], #familiaJogoPapel').forEach(el => { el.checked = el.defaultChecked; });
             familiaMembrosEl.innerHTML = '';
             familiaConvidadosEl.innerHTML = '';
             document.getElementById('familiaConvidadosFormacao').value = '';
@@ -26177,7 +26177,7 @@ function saveTemplatesToStorage() {
         },
         circunstancias: familiaChecksLidos(document.getElementById('familiaCircunstancias')),
         outrasCircunstancias: (familiaOutrasCircEl.value || '').trim().slice(0, 500),
-        atividades: familiaChecksLidos(document.getElementById('familiaAtividades')),
+        atividades: familiaChecksLidos(document.getElementById('familiaEstrutura')).concat(familiaChecksLidos(document.getElementById('familiaAtividades'))), // 6.12.63: a estrutura vem primeiro
         jogos: familiaChecksLidos(document.getElementById('familiaJogos')),
         jogoPapel: document.getElementById('familiaJogoPapel').checked,
         duracao: Number(familiaDuracaoEl.value) || 45,
@@ -26202,16 +26202,13 @@ function saveTemplatesToStorage() {
       if (nomes.length) partes.push(nomes.length === 1 ? nomes[0] : nomes.length + ' membros');
       if (perfil.diaAdoracao || perfil.horaAdoracao) partes.push([perfil.diaAdoracao.replace('-feira', ''), perfil.horaAdoracao].filter(Boolean).join(' às '));
       resumoEl.textContent = partes.join(' · ');
-      // Circunstâncias e Atividades: quantas estão marcadas (nos próprios cards, que agora são separados da família).
-      const circEl = document.getElementById('familiaCircResumo');
-      if (circEl) {
-        const n = perfil.circunstancias.length + (perfil.outrasCircunstancias ? 1 : 0);
-        circEl.textContent = n ? n + (n === 1 ? ' marcada' : ' marcadas') : '';
-      }
-      const ativEl = document.getElementById('familiaAtivResumo');
-      if (ativEl) {
-        const n = perfil.atividades.length;
-        ativEl.textContent = n ? n + (n === 1 ? ' marcada' : ' marcadas') : 'nenhuma marcada';
+      // Card "Estrutura e atividades": quantas atividades na estrutura, circunstâncias e atividades aceitas marcadas.
+      const progEl = document.getElementById('familiaProgResumo');
+      if (progEl) {
+        const nEstr = familiaChecksLidos(document.getElementById('familiaEstrutura')).length;
+        const nCirc = perfil.circunstancias.length + (perfil.outrasCircunstancias ? 1 : 0);
+        const nAtiv = familiaChecksLidos(document.getElementById('familiaAtividades')).length;
+        progEl.textContent = [nEstr + (nEstr === 1 ? ' atividade na estrutura' : ' atividades na estrutura'), nCirc ? nCirc + (nCirc === 1 ? ' circunstância' : ' circunstâncias') : '', nAtiv ? nAtiv + (nAtiv === 1 ? ' aceita' : ' aceitas') : ''].filter(Boolean).join(' · ');
       }
       const convEl = document.getElementById('familiaConvidadosResumo');
       if (convEl) {
@@ -26248,6 +26245,9 @@ function saveTemplatesToStorage() {
         let ativ = salvo.canticosInicioFim ? salvo.atividades.concat(['Cântico inicial', 'Cântico final']) : salvo.atividades;
         // 6.12.47: "Jogos ou adivinhas" virou "Jogos bíblicos"; quem tinha o nome antigo ganha também as três atividades de leitura novas (marcadas).
         if (ativ.includes('Jogos ou adivinhas')) ativ = ativ.map(a => (a === 'Jogos ou adivinhas' ? 'Jogos bíblicos' : a)).concat(['Leitura de passagens bíblicas', 'Leitura de um trecho de uma matéria (site, A Sentinela, livros, Perspicaz e outras publicações)', 'Leitura de um trecho da Bíblia e um vídeo']);
+        // 6.12.63: "Leitura de um trecho da Bíblia e um vídeo" (atividade antiga) vira as duas da estrutura: leitura da Bíblia e vídeo.
+        if (ativ.includes('Leitura de um trecho da Bíblia e um vídeo')) ativ = ativ.concat(['Leitura de passagens bíblicas', 'Vídeo do jw.org']);
+        familiaChecksMarcar(document.getElementById('familiaEstrutura'), ativ);
         familiaChecksMarcar(document.getElementById('familiaAtividades'), ativ);
       }
       if (Array.isArray(salvo.jogos)) familiaChecksMarcar(document.getElementById('familiaJogos'), salvo.jogos); // sem escolha salva: todos marcados (o padrão)
@@ -29268,8 +29268,8 @@ function saveTemplatesToStorage() {
     // "Família e definições gerais" (6.11.35): tocar no card abre uma vista exclusiva (só o cadastro, com Voltar); sair devolve a tela como estava.
     // 6.11.36: o mesmo para "Informar convidados". qual = 'perfil' | 'convidados' (abre essa vista) | null (volta à tela normal, com tudo recolhido).
     var familiaPerfilRolagem = 0; // var e função: showScreen chama familiaVista antes destas linhas rodarem
-    // 6.12.61: Circunstâncias e Atividades ganharam card próprio (vistas 'circ' e 'ativ'), separados dos dados da família.
-    function familiaVistasIds() { return { perfil: ['familiaPerfilBox', 'familiaPerfilTopo'], circ: ['familiaCircBox', 'familiaCircTopo'], ativ: ['familiaAtivBox', 'familiaAtivTopo'], convidados: ['familiaConvidadosBox', 'familiaConvidadosTopo'] }; }
+    // 6.12.63: Estrutura da programação, Circunstâncias e Atividades aceitas ficam num card só (vista 'prog'), separado dos dados da família.
+    function familiaVistasIds() { return { perfil: ['familiaPerfilBox', 'familiaPerfilTopo'], prog: ['familiaProgBox', 'familiaProgTopo'],convidados: ['familiaConvidadosBox', 'familiaConvidadosTopo'] }; }
     function familiaVista(qual, opcoes) {
       const card = document.getElementById('familiaCard');
       if (!card) return;
@@ -29318,13 +29318,20 @@ function saveTemplatesToStorage() {
     const familiaJogosEl = document.getElementById('familiaJogos');
     const familiaJogosAtualizar = () => {
       const n = familiaJogosEl.querySelectorAll('input:checked').length;
-      const ativo = Array.from(document.querySelectorAll('#familiaAtividades input:checked')).some(el => /^jogos?\b/i.test(el.value));
-      document.getElementById('familiaJogosQtd').textContent = ativo ? '(' + n + ')' : '(desligado: marque “Jogos bíblicos”)';
+      const ativo = Array.from(document.querySelectorAll('#familiaEstrutura input:checked')).some(el => /^jogos?\b/i.test(el.value));
+      document.getElementById('familiaJogosQtd').textContent = ativo ? '(' + n + ')' : '(desligado: marque “Um jogo bíblico” na estrutura)';
       familiaJogosEl.classList.toggle('fam-desligado', !ativo);
     };
     familiaJogosEl.addEventListener('change', () => { familiaJogosAtualizar(); familiaPerfilSalvar(); });
     document.getElementById('familiaJogoPapel').addEventListener('change', familiaPerfilSalvar);
     document.getElementById('familiaAtividades').addEventListener('change', familiaJogosAtualizar);
+    // Estrutura da programação (6.12.63): salva ao marcar e nunca fica sem atividade (a última marcada não desmarca).
+    const familiaEstruturaEl = document.getElementById('familiaEstrutura');
+    familiaEstruturaEl.addEventListener('change', ev => {
+      if (!familiaEstruturaEl.querySelector('input:checked') && ev.target && ev.target.type === 'checkbox') ev.target.checked = true;
+      familiaJogosAtualizar();
+      familiaPerfilSalvar();
+    });
     document.getElementById('familiaJogosTodos').addEventListener('click', () => { familiaJogosEl.querySelectorAll('input').forEach(el => { el.checked = true; }); familiaJogosAtualizar(); familiaPerfilSalvar(); });
     document.getElementById('familiaJogosNenhum').addEventListener('click', () => { familiaJogosEl.querySelectorAll('input').forEach(el => { el.checked = false; }); familiaJogosAtualizar(); familiaPerfilSalvar(); });
     familiaPerfilCarregar();
@@ -29387,7 +29394,7 @@ function saveTemplatesToStorage() {
     const familiaAjustarAlturas = () => [familiaOutrasCircEl, familiaAssuntoEl, familiaConvNotasEl].forEach(familiaCrescer);
     document.getElementById('familiaPerfilBox').addEventListener('toggle', () => requestAnimationFrame(familiaAjustarAlturas));
     document.getElementById('familiaConvidadosBox').addEventListener('toggle', () => requestAnimationFrame(familiaAjustarAlturas));
-    document.getElementById('familiaCircBox').addEventListener('toggle', () => requestAnimationFrame(familiaAjustarAlturas)); // o campo "Outras circunstâncias" está nele
+    document.getElementById('familiaProgBox').addEventListener('toggle', () => requestAnimationFrame(familiaAjustarAlturas)); // o campo "Outras circunstâncias" está nele
     window.addEventListener('resize', familiaAjustarAlturas);
     window.addEventListener('hashchange', () => setTimeout(familiaAjustarAlturas, 120));
     setTimeout(familiaAjustarAlturas, 400);

@@ -3000,19 +3000,55 @@
         </div>
       </details>
 
-      <!-- 6.12.61: card próprio (vista exclusiva, como a Família e as definições gerais): Circunstâncias. -->
-      <div id="familiaCircTopo" class="fam-topo fam-perfil-topo" hidden>
-        <button id="familiaCircVoltar" class="secondary" type="button">◀ Voltar</button>
-        <h2 class="fam-titulo"><span aria-hidden="true">💛</span> Circunstâncias</h2>
+      <!-- 6.12.63: um card só (vista exclusiva, como a Família e as definições gerais) com a estrutura da programação, as circunstâncias e as atividades que a família aceita. -->
+      <div id="familiaProgTopo" class="fam-topo fam-perfil-topo" hidden>
+        <button id="familiaProgVoltar" class="secondary" type="button">◀ Voltar</button>
+        <h2 class="fam-titulo"><span aria-hidden="true">🧩</span> Estrutura e atividades</h2>
       </div>
 
-      <details id="familiaCircBox" class="fam-perfil-box">
+      <details id="familiaProgBox" class="fam-perfil-box">
         <summary>
-          <span class="fam-perfil-titulo">💛 Circunstâncias <span class="opc">(opcional)</span></span>
-          <span id="familiaCircResumo" class="fam-perfil-resumo"></span>
+          <span class="fam-perfil-titulo">🧩 Estrutura e atividades da programação</span>
+          <span id="familiaProgResumo" class="fam-perfil-resumo"></span>
         </summary>
         <div class="fam-perfil-corpo">
           <div class="fam-bloco">
+            <h3 class="fam-bloco-titulo">🧱 Estrutura da programação</h3>
+            <p class="hint fam-dica">Toda opção começa com a <strong>Oração inicial</strong> e termina com a <strong>Oração final</strong>. Marque as atividades que ficam entre as duas, nesta ordem (pelo menos uma). A conversa e as outras ideias entram dentro delas.</p>
+            <div id="familiaEstrutura" class="fam-checks" role="group" aria-label="Estrutura da programação">
+              <label class="fam-check"><input type="checkbox" value="Leitura de um trecho de uma matéria (site, A Sentinela, livros, Perspicaz e outras publicações)" checked><span>📰 Leitura de um trecho (alguns parágrafos) de uma matéria (site, A Sentinela, livros, Perspicaz e outras publicações)</span></label>
+              <label class="fam-check"><input type="checkbox" value="Leitura de passagens bíblicas" checked><span>📖 Leitura de um trecho da Bíblia ou de versículos, com perguntas</span></label>
+              <label class="fam-check"><input type="checkbox" value="Vídeo do jw.org" checked><span>🎬 Um ou dois vídeos do jw.org sobre o assunto</span></label>
+              <label class="fam-check"><input type="checkbox" value="Jogos bíblicos" checked><span>🎲 Um jogo bíblico</span></label>
+            </div>
+            <!-- Jogos aceitos (6.11.24): vale quando "Jogos ou adivinhas" está marcado; a IA entrega o jogo escolhido pronto (regras, material e conteúdo). -->
+            <details id="familiaJogosBox" class="fam-jogos-box">
+              <summary>🎲 Jogos aceitos <span id="familiaJogosQtd" class="opc"></span></summary>
+              <p class="hint fam-dica">Marque os tipos de jogo que a família gosta. A IA escolhe entre eles e já traz o jogo pronto (regras, material e perguntas, personagens ou abreviações). Vale quando “Um jogo bíblico” está marcado na estrutura, logo acima.</p>
+              <div id="familiaJogos" class="fam-checks" role="group" aria-label="Jogos aceitos">
+                <label class="fam-check"><input type="checkbox" value="Quem sou eu? (personagens bíblicos)" checked><span>Quem sou eu? (personagens bíblicos)</span></label>
+                <label class="fam-check"><input type="checkbox" value="Abreviações bíblicas (ex.: Os 12 A de C)" checked><span>Abreviações bíblicas (ex.: Os 12 A de C)</span></label>
+                <label class="fam-check"><input type="checkbox" value="Mímica de personagens e cenas" checked><span>Mímica de personagens e cenas</span></label>
+                <label class="fam-check"><input type="checkbox" value="Verdadeiro ou falso" checked><span>Verdadeiro ou falso</span></label>
+                <label class="fam-check"><input type="checkbox" value="Ordem dos acontecimentos" checked><span>Ordem dos acontecimentos</span></label>
+                <label class="fam-check"><input type="checkbox" value="Quem disse isso? (frases da Bíblia)" checked><span>Quem disse isso? (frases da Bíblia)</span></label>
+                <label class="fam-check"><input type="checkbox" value="Charadas e adivinhas bíblicas" checked><span>Charadas e adivinhas bíblicas</span></label>
+                <label class="fam-check"><input type="checkbox" value="Complete o versículo" checked><span>Complete o versículo</span></label>
+                <label class="fam-check"><input type="checkbox" value="Torta na cara (perguntas bíblicas, quem erra leva a torta)" checked><span>🥧 Torta na cara (perguntas bíblicas, quem erra leva a torta)</span></label>
+                <label class="fam-check"><input type="checkbox" value="FunPlayB: tema personalizado (20 perguntas para importar)" checked><span>🎮 FunPlayB: tema personalizado (20 perguntas para importar)</span></label>
+              </div>
+              <div class="fam-jogos-rodape">
+                <label class="fam-check fam-jogo-papel"><input id="familiaJogoPapel" type="checkbox" checked><span>✏️ Pode usar papel e lápis (ou caneta) nos jogos</span></label>
+                <div class="fam-acoes-dupla">
+                  <button id="familiaJogosTodos" class="secondary fam-fino" type="button">Marcar todos</button>
+                  <button id="familiaJogosNenhum" class="secondary fam-fino" type="button">Desmarcar todos</button>
+                </div>
+              </div>
+            </details>
+          </div>
+
+          <div class="fam-bloco">
+            <h3 class="fam-bloco-titulo">💛 Circunstâncias <span class="opc">(opcional)</span></h3>
             <div id="familiaCircunstancias" class="fam-checks" role="group" aria-label="Circunstâncias">
               <label class="fam-check"><input type="checkbox" value="Ansiedade ou desânimo"><span>Ansiedade ou desânimo</span></label>
               <label class="fam-check"><input type="checkbox" value="Desânimo espiritual"><span>Desânimo espiritual</span></label>
@@ -3036,71 +3072,20 @@
             <textarea id="familiaOutrasCirc" class="fam-campo" rows="1" maxlength="500" spellcheck="true" placeholder="Ex.: mudança recente, pressão no trabalho…"></textarea>
           </div>
 
-          <button id="familiaCircConcluir" class="secondary fam-perfil-concluir" type="button">✔ Concluir e voltar</button>
-        </div>
-      </details>
-
-      <!-- 6.12.61: card próprio (vista exclusiva, como a Família e as definições gerais): Atividades que a família aceita. -->
-      <div id="familiaAtivTopo" class="fam-topo fam-perfil-topo" hidden>
-        <button id="familiaAtivVoltar" class="secondary" type="button">◀ Voltar</button>
-        <h2 class="fam-titulo"><span aria-hidden="true">🎨</span> Atividades que a família aceita</h2>
-      </div>
-
-      <details id="familiaAtivBox" class="fam-perfil-box">
-        <summary>
-          <span class="fam-perfil-titulo">🎨 Atividades que a família aceita</span>
-          <span id="familiaAtivResumo" class="fam-perfil-resumo"></span>
-        </summary>
-        <div class="fam-perfil-corpo">
           <div class="fam-bloco">
-            <p class="hint fam-dica">Oração, leitura da Bíblia e conversa sempre podem entrar. Marque o que mais a família gosta.</p>
+            <h3 class="fam-bloco-titulo">🎨 Atividades que a família aceita</h3>
+            <p class="hint fam-dica">Marque o que mais a família gosta. Essas ideias entram <strong>dentro</strong> das atividades da estrutura acima (por exemplo, no jogo ou na conversa), nunca como atividade a mais.</p>
             <div id="familiaAtividades" class="fam-checks" role="group" aria-label="Atividades">
               <label class="fam-check"><input type="checkbox" value="Dramatização ou encenação" checked><span>Dramatização ou encenação</span></label>
               <label class="fam-check"><input type="checkbox" value="Desenho ou artesanato" checked><span>Desenho ou artesanato</span></label>
-              <label class="fam-check"><input type="checkbox" value="Leitura de passagens bíblicas" checked><span>Leitura de passagens bíblicas</span></label>
-              <label class="fam-check"><input type="checkbox" value="Leitura de um trecho de uma matéria (site, A Sentinela, livros, Perspicaz e outras publicações)" checked><span>Leitura de um trecho (alguns parágrafos) de uma matéria (site, A Sentinela, livros, Perspicaz e outras publicações)</span></label>
-              <label class="fam-check"><input type="checkbox" value="Leitura de um trecho da Bíblia e um vídeo" checked><span>Leitura de um trecho da Bíblia e um vídeo</span></label>
-              <label class="fam-check"><input type="checkbox" value="Jogos bíblicos" checked><span>Jogos bíblicos</span></label>
-              <label class="fam-check"><input type="checkbox" value="Vídeo do jw.org" checked><span>Vídeo do jw.org</span></label>
               <label class="fam-check"><input type="checkbox" value="Estudo pessoal" checked><span>Estudo pessoal</span></label>
               <label class="fam-check"><input type="checkbox" value="Preparação para as reuniões" checked><span>Preparação para as reuniões</span></label>
               <label class="fam-check"><input type="checkbox" value="Treino dos cânticos" checked><span>Treino dos cânticos</span></label>
               <label class="fam-check"><input type="checkbox" value="Cântico inicial"><span>Cântico inicial</span></label>
               <label class="fam-check"><input type="checkbox" value="Cântico final"><span>Cântico final</span></label>
-              <label class="fam-check"><input type="checkbox" value="Caminhada ou atividade ao ar livre"><span>Caminhada ou atividade ao ar livre</span></label>
-              <label class="fam-check"><input type="checkbox" value="Cozinhar juntos"><span>Cozinhar juntos</span></label>
             </div>
-            <!-- Jogos aceitos (6.11.24): vale quando "Jogos ou adivinhas" está marcado; a IA entrega o jogo escolhido pronto (regras, material e conteúdo). -->
-            <details id="familiaJogosBox" class="fam-jogos-box">
-              <summary>🎲 Jogos aceitos <span id="familiaJogosQtd" class="opc"></span></summary>
-              <p class="hint fam-dica">Marque os tipos de jogo que a família gosta. A IA escolhe entre eles e já traz o jogo pronto (regras, material e perguntas, personagens ou abreviações). Vale quando “Jogos bíblicos” está marcado acima.</p>
-              <div id="familiaJogos" class="fam-checks" role="group" aria-label="Jogos aceitos">
-                <label class="fam-check"><input type="checkbox" value="Quem sou eu? (personagens bíblicos)" checked><span>Quem sou eu? (personagens bíblicos)</span></label>
-                <label class="fam-check"><input type="checkbox" value="Abreviações bíblicas (ex.: Os 12 A de C)" checked><span>Abreviações bíblicas (ex.: Os 12 A de C)</span></label>
-                <label class="fam-check"><input type="checkbox" value="Mímica de personagens e cenas" checked><span>Mímica de personagens e cenas</span></label>
-                <label class="fam-check"><input type="checkbox" value="Verdadeiro ou falso" checked><span>Verdadeiro ou falso</span></label>
-                <label class="fam-check"><input type="checkbox" value="Ordem dos acontecimentos" checked><span>Ordem dos acontecimentos</span></label>
-                <label class="fam-check"><input type="checkbox" value="Quem disse isso? (frases da Bíblia)" checked><span>Quem disse isso? (frases da Bíblia)</span></label>
-                <label class="fam-check"><input type="checkbox" value="Jogo da memória (pares de cartas)" checked><span>Jogo da memória (pares de cartas)</span></label>
-                <label class="fam-check"><input type="checkbox" value="Caça ao tesouro bíblico (pistas pela casa)" checked><span>Caça ao tesouro bíblico (pistas pela casa)</span></label>
-                <label class="fam-check"><input type="checkbox" value="Charadas e adivinhas bíblicas" checked><span>Charadas e adivinhas bíblicas</span></label>
-                <label class="fam-check"><input type="checkbox" value="Complete o versículo" checked><span>Complete o versículo</span></label>
-                <label class="fam-check"><input type="checkbox" value="Forca bíblica (papel e lápis)" checked><span>Forca bíblica (papel e lápis)</span></label>
-                <label class="fam-check"><input type="checkbox" value="Palavras cruzadas ou caça-palavras (papel e lápis)" checked><span>Palavras cruzadas ou caça-palavras (papel e lápis)</span></label>
-                <label class="fam-check"><input type="checkbox" value="Desenho e adivinhação (Pictionary bíblico)" checked><span>Desenho e adivinhação (Pictionary bíblico)</span></label>
-                <label class="fam-check"><input type="checkbox" value="Torta na cara (perguntas bíblicas, quem erra leva a torta)" checked><span>🥧 Torta na cara (perguntas bíblicas, quem erra leva a torta)</span></label>
-                <label class="fam-check"><input type="checkbox" value="FunPlayB: tema personalizado (20 perguntas para importar)" checked><span>🎮 FunPlayB: tema personalizado (20 perguntas para importar)</span></label>
-              </div>
-              <div class="fam-jogos-rodape">
-                <label class="fam-check fam-jogo-papel"><input id="familiaJogoPapel" type="checkbox" checked><span>✏️ Pode usar papel e lápis (ou caneta) nos jogos</span></label>
-                <div class="fam-acoes-dupla">
-                  <button id="familiaJogosTodos" class="secondary fam-fino" type="button">Marcar todos</button>
-                  <button id="familiaJogosNenhum" class="secondary fam-fino" type="button">Desmarcar todos</button>
-                </div>
-              </div>
-            </details>
           </div>
-          <button id="familiaAtivConcluir" class="secondary fam-perfil-concluir" type="button">✔ Concluir e voltar</button>
+          <button id="familiaProgConcluir" class="secondary fam-perfil-concluir" type="button">✔ Concluir e voltar</button>
         </div>
       </details>
 

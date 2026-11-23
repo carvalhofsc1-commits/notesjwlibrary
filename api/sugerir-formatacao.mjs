@@ -2715,17 +2715,20 @@ const JOGOS_FAMILIA = [
   "Verdadeiro ou falso",
   "Ordem dos acontecimentos",
   "Quem disse isso? (frases da Bíblia)",
-  "Jogo da memória (pares de cartas)",
-  "Caça ao tesouro bíblico (pistas pela casa)",
   "Charadas e adivinhas bíblicas",
   "Complete o versículo",
-  "Forca bíblica (papel e lápis)",
-  "Palavras cruzadas ou caça-palavras (papel e lápis)",
-  "Desenho e adivinhação (Pictionary bíblico)",
   "Torta na cara (perguntas bíblicas, quem erra leva a torta)",
   "FunPlayB: tema personalizado (20 perguntas para importar)",
 ];
 const JOGO_FUNPLAYB_PERSONALIZADO = JOGOS_FAMILIA[JOGOS_FAMILIA.length - 1];
+
+// As atividades da estrutura da programação (6.12.63), como a mensagem à IA as descreve.
+const ESTRUTURA_FAMILIA_TEXTO = {
+  materia: "LEITURA DE UM TRECHO DE UMA MATÉRIA (campo \"leitura\" e a matéria em \"publicacoes\", mais uma ou duas perguntas)",
+  biblia: "LEITURA DE UM TRECHO DA BÍBLIA OU DE VERSÍCULOS (campo \"textos\", mais uma ou duas perguntas sobre os textos)",
+  video: "UM OU DOIS VÍDEOS sobre o assunto (campo \"videos\", com uma conversa curta depois)",
+  jogo: "UM JOGO BÍBLICO pronto (campo \"jogo\")",
+};
 
 // Jogos de pergunta e resposta (as rodadas podem esconder a resposta); memória, bingo, mímica e desenho não entram.
 // A mesma regra e a mesma separação estão no app (familiaConteudoDoJogo), para as programações salvas antes da 6.11.46.
@@ -2805,7 +2808,7 @@ const descricaoDaPessoa = (m, padrao) =>
   (m.situacao ? `; situação espiritual: ${m.situacao}${m.anoSituacao ? ` (desde ${m.anoSituacao})` : ""}` : "") +
   (m.privilegios.length ? `; privilégios de serviço: ${m.privilegios.join(", ")}` : "");
 
-function perfilDaFamilia(body) {
+export function perfilDaFamilia(body) {
   const membros = (Array.isArray(body.membros) ? body.membros : [])
     .filter((m) => m && typeof m === "object")
     .map(pessoaDaFamilia)
@@ -2831,7 +2834,17 @@ function perfilDaFamilia(body) {
   const incluirVideo = atividades.some((a) => /v[ií]deo/i.test(a));
   // Jogos (6.11.24): com "Jogos ou adivinhas" marcado, só os tipos aceitos (lista da tela); sem nenhum marcado, sem jogos.
   const jogos = atividades.some((a) => /^jogos?\b/i.test(a)) ? (Array.isArray(body.jogos) ? body.jogos : []).filter((j, i, l) => JOGOS_FAMILIA.includes(j) && l.indexOf(j) === i) : [];
+  // Estrutura da programação (6.12.63): quais das 4 atividades ficam entre a Oração inicial e a final, na ordem fixa matéria, Bíblia, vídeo, jogo.
+  // Vem das mesmas marcações das atividades (os textos da tela); sem nenhuma, valem as quatro.
+  let estrutura = [
+    atividades.some((a) => /mat[eé]ria/i.test(a)) && "materia",
+    atividades.some((a) => /passagens b[ií]blicas|trecho da b[ií]blia/i.test(a)) && "biblia",
+    incluirVideo && "video",
+    jogos.length > 0 && "jogo",
+  ].filter(Boolean);
+  if (!estrutura.length) estrutura = ["materia", "biblia", "video", "jogo"];
   return {
+    estrutura,
     jogos,
     jogoPapel: body.jogoPapel !== false,
     formacao: textoLivre(body.formacao, 80),
@@ -2960,14 +2973,14 @@ async function ajustarProgramaFamilia(res, body, P) {
 // 6.12.62: toda opção tem Oração inicial + 4 atividades + Oração final. Se a IA criar uma parte "solta" a mais (só conversa: "Troca de ideias",
 // "Reflexão", "Aplicação"… sem textos, vídeo, jogo, leitura nem publicação), ela sai e os minutos e as perguntas vão para a atividade vizinha.
 // Partes com conteúdo nunca são apagadas. Devolve a lista nova (a mesma, se já estava certa).
-export function enxugarAtividadesFamilia(partes) {
+export function enxugarAtividadesFamilia(partes, maximo = 4) {
   const temConteudo = (p) => Boolean((p.textos && p.textos.length) || (p.videos && p.videos.length) || p.jogo || p.leitura || (p.publicacoes && p.publicacoes.length));
   const ehOracao = (p) => /oraç[aã]o/i.test(p.nome) && !temConteudo(p);
   const lista = partes.slice();
   const inicio = lista.length && ehOracao(lista[0]) ? [lista.shift()] : [];
   const fim = lista.length > 1 && ehOracao(lista[lista.length - 1]) ? [lista.pop()] : [];
   let tirou = false;
-  while (lista.length > 4) {
+  while (lista.length > maximo) {
     let i = -1;
     for (let k = lista.length - 1; k >= 0; k--) if (!temConteudo(lista[k])) { i = k; break; }
     if (i < 0) break;
@@ -2990,14 +3003,15 @@ async function responderAdoracaoFamilia(res, body, P) {
   precarregarFontes({ biblia: true, livros: true });
   const consulta = perfil.assunto.length >= 8 ? perfil.assunto : perfil.assunto ? perfil.assunto + " família" : "";
   const usaCanticos = perfil.canticoInicial || perfil.canticoFinal || perfil.atividades.some((a) => /c[aâ]ntico/i.test(a));
-  const atividadesGerais = perfil.atividades.filter((a) => !/^c[aâ]ntico\s+(inicial|final)$/i.test(a));
+  // As atividades que o chefe aceita, fora as da estrutura (matéria, Bíblia, vídeo e jogo, que têm linha própria) e os cânticos inicial e final.
+  const atividadesGerais = perfil.atividades.filter((a) => !/^c[aâ]ntico\s+(inicial|final)$/i.test(a) && !/mat[eé]ria|passagens b[ií]blicas|trecho da b[ií]blia|v[ií]deo|^jogos?\b/i.test(a));
   // 6.12.58: os livros e brochuras guardados no servidor (Imite a Sua Fé, Jovens Perguntam, Mantenha-se no Amor de Deus…) entram como base de apoio:
   // a busca usa o assunto e, sem assunto, as circunstâncias e a formação da família.
   const consultaLivros = [perfil.assunto, ...perfil.circunstancias, perfil.outrasCircunstancias, perfil.assunto ? "" : perfil.formacao].filter(Boolean).join(" ").slice(0, 700);
   const [canticos, catalogo, materias, livrosApoio] = await Promise.all([
     usaCanticos ? lerCanticos().catch(() => null) : Promise.resolve(null),
     perfil.incluirVideo ? catalogoDeVideos(12000).catch(() => []) : Promise.resolve([]),
-    consulta ? pesquisarNoWol(consulta, 8000, 6).catch(() => []) : [],
+    consulta && perfil.estrutura.includes("materia") ? pesquisarNoWol(consulta, 8000, 6).catch(() => []) : [], // sem atividade de matéria na estrutura, não se pesquisa matéria
     fontesConfiguradas() && consultaLivros ? buscarNosLivros(consultaLivros, { max: 6, maxChars: 900 }).catch(() => []) : [],
   ]);
   const videos = videosParaAFamilia(catalogo || [], perfil);
@@ -3025,7 +3039,10 @@ async function responderAdoracaoFamilia(res, body, P) {
       : "") +
     (perfil.anosCasados !== null ? `ANOS DE CASADOS: ${perfil.anosCasados}\n` : "") +
     (circunstancias.length ? `CIRCUNSTÂNCIAS QUE O CHEFE QUIS INFORMAR (trate com tato, nunca exponha ninguém):\n${circunstancias.map((c) => `- ${c}`).join("\n")}\n` : "") +
-    `ATIVIDADES QUE A FAMÍLIA ACEITA (além de oração, leitura da Bíblia e conversa): ${atividadesGerais.length ? atividadesGerais.join("; ") : "só essas"}\n` +
+    `ESTRUTURA DA PROGRAMAÇÃO ESCOLHIDA PELO CHEFE (obrigatória em TODAS as opções): 1) "Oração inicial"; ` +
+    perfil.estrutura.map((k, i) => `${i + 2}) ${ESTRUTURA_FAMILIA_TEXTO[k]}`).join("; ") +
+    `; ${perfil.estrutura.length + 2}) "Oração final". São EXATAMENTE ${perfil.estrutura.length} ${perfil.estrutura.length === 1 ? "atividade" : "atividades"} entre as orações, nesta ordem, e nenhuma outra (a conversa fica dentro delas).\n` +
+    `OUTRAS ATIVIDADES QUE A FAMÍLIA ACEITA (entram DENTRO das atividades da estrutura, nunca como atividade a mais): ${atividadesGerais.length ? atividadesGerais.join("; ") : "nenhuma além das da estrutura"}\n` +
     `CÂNTICO INICIAL: ${perfil.canticoInicial ? "SIM (inclua cântico na abertura)" : "NÃO (não inclua cântico na abertura)"}\n` +
     `CÂNTICO FINAL: ${perfil.canticoFinal ? "SIM (inclua cântico no encerramento)" : "NÃO (não inclua cântico no encerramento)"}\n` +
     `VÍDEO DO JW.ORG: ${
@@ -3229,7 +3246,7 @@ async function responderAdoracaoFamilia(res, body, P) {
         });
       }
       if (!partes.length) continue;
-      partes.splice(0, partes.length, ...enxugarAtividadesFamilia(partes));
+      partes.splice(0, partes.length, ...enxugarAtividadesFamilia(partes, perfil.estrutura.length));
       if (perfil.incluirVideo && videos.length && !partes.some((p) => p.videos.length)) {
         for (const p of partes) {
           const citados = [...String(p.descricao || "").matchAll(/\[?V\s*(\d{1,3})\]?(?![\p{L}\d])/gi)].map((m) => videoDe(m[0]));
