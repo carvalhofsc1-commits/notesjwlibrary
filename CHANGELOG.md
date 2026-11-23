@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.59
+
+- **3 brochuras novas como fonte de consulta:** Você Pode Ter uma Família Feliz! (hf), A Vida — Teve um Criador? (lc) e A Origem da Vida — Cinco Perguntas Que Merecem Resposta (lf). Convertidas dos EPUBs, subidas em `fontes/` com a edição anotada, e incluídas em `ARQUIVOS`, `LIVROS` e `NOMES_DAS_FONTES` de `api/_fontes.mjs` (busca de "Livros de apoio" e Adoração em Família).
+
 ## 6.12.58
 
 - **11 livros novos como fonte de consulta:** Achegue-se a Jeová (cl), O Segredo de uma Família Feliz (fy), Imite a Sua Fé (ia), Jesus — o Caminho, a Verdade e a Vida (jy), Aprenda com as Histórias da Bíblia (lfb), Mantenha-se no Amor de Deus (lv), ‘Dê Testemunho Cabal’ (bt, letras grandes), ‘Venha Ser Meu Seguidor’ (cf, tipo grande), Ande Corajosamente com Deus (wcg, letras grandes) e Os Jovens Perguntam, volumes 1 e 2 (yp1, yp2). Entram em `ARQUIVOS`, `LIVROS` e `NOMES_DAS_FONTES` de `api/_fontes.mjs` (nome bonito na tabela do admin) e na busca de "Livros de apoio" de todas as pesquisas. Os arquivos foram reconvertidos dos originais (acentos soltos dos PDFs, palavras partidas e emendadas, "No é"/"Jos é" dos EPUBs) e subidos em `fontes/`.

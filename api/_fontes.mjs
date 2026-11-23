@@ -45,6 +45,10 @@ const ARQUIVOS = {
   andeCorajosamente: "fontes/ande_corajosamente.txt",
   jovensPerguntamV1: "fontes/jovens_perguntam_v1.txt",
   jovensPerguntamV2: "fontes/jovens_perguntam_v2.txt",
+  // Brochuras (6.12.59).
+  vocePodeTerFamiliaFeliz: "fontes/voce_pode_ter_familia_feliz.txt",
+  vidaTeveUmCriador: "fontes/vida_teve_um_criador.txt",
+  origemDaVida: "fontes/origem_da_vida.txt",
   // "Cante de Coração Para Jeová" (só letras): [{ numero, titulo, texto, assunto, letra }], gerado por converter_canticos_pdf.py (fora do repositório).
   canticos: "fontes/canticos.json",
 };
@@ -516,6 +520,9 @@ const LIVROS = [
   { chave: "andeCorajosamente", nome: "Ande Corajosamente com Deus (wcg)" },
   { chave: "jovensPerguntamV1", nome: "Os Jovens Perguntam — Respostas Práticas, volume 1 (yp1)" },
   { chave: "jovensPerguntamV2", nome: "Os Jovens Perguntam — Respostas Práticas, volume 2 (yp2)" },
+  { chave: "vocePodeTerFamiliaFeliz", nome: "Você Pode Ter uma Família Feliz! (hf)" },
+  { chave: "vidaTeveUmCriador", nome: "A Vida — Teve um Criador? (lc)" },
+  { chave: "origemDaVida", nome: "A Origem da Vida — Cinco Perguntas Que Merecem Resposta (lf)" },
 ];
 
 // O nome de um livro da busca pela chave (ex.: "beneficieEscola"), para filtrar os resultados de buscarNosLivros.
@@ -802,6 +809,9 @@ const NOMES_DAS_FONTES = {
   ande_corajosamente: "Ande Corajosamente com Deus (wcg) — letras grandes",
   jovens_perguntam_v1: "Os Jovens Perguntam — Respostas Práticas, volume 1 (yp1)",
   jovens_perguntam_v2: "Os Jovens Perguntam — Respostas Práticas, volume 2 (yp2)",
+  voce_pode_ter_familia_feliz: "Você Pode Ter uma Família Feliz! (hf)",
+  vida_teve_um_criador: "A Vida — Teve um Criador? (lc)",
+  origem_da_vida: "A Origem da Vida — Cinco Perguntas Que Merecem Resposta (lf)",
   canticos: "Cante de Coração Para Jeová (letras dos cânticos)",
 };
 const MESES_PT = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
