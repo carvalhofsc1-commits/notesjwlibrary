@@ -69,7 +69,7 @@ export const QUADROS_FAMILIA = Object.freeze(
       fontes: { livros: ["imiteSuaFe", "historiasDaBiblia", "andeCorajosamente"], outras: ["perspicaz"] },
       perguntasPadrao: ["Que lições aprendemos da história de [nome]?"],
       maxPerguntas: 1,
-      saida: "Um personagem de preferência pouco conhecido, com o trecho bíblico da história.",
+      saida: "Um personagem cuja história ilustre o ângulo (pouco conhecido só quando a ligação for clara), com a passagem do episódio inteiro.",
     },
     {
       id: "jesus",

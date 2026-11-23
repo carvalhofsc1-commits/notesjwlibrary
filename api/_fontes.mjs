@@ -212,15 +212,15 @@ function acharLivro(nome, indice) {
 }
 
 // "11, 12" -> [11, 12]; "10-12" -> [10, 11, 12]; "11, 13-15" -> [11, 13, 14, 15].
-function numerosDosVersiculos(texto) {
+function numerosDosVersiculos(texto, maxVersiculos = MAX_VERSICULOS_POR_REFERENCIA) {
   const numeros = [];
   for (const parte of String(texto).split(/[,.]/)) {
     const faixa = parte.match(/(\d{1,3})\s*[-–—]\s*(\d{1,3})/);
     if (faixa) {
-      for (let n = Number(faixa[1]); n <= Number(faixa[2]) && numeros.length < MAX_VERSICULOS_POR_REFERENCIA; n++) numeros.push(n);
+      for (let n = Number(faixa[1]); n <= Number(faixa[2]) && numeros.length < maxVersiculos; n++) numeros.push(n);
     } else {
       const unico = parte.match(/\d{1,3}/);
-      if (unico && numeros.length < MAX_VERSICULOS_POR_REFERENCIA) numeros.push(Number(unico[0]));
+      if (unico && numeros.length < maxVersiculos) numeros.push(Number(unico[0]));
     }
   }
   return [...new Set(numeros)];
@@ -228,7 +228,7 @@ function numerosDosVersiculos(texto) {
 
 // Uma referência pode ter vários trechos do mesmo livro: "Mateus 24:14; 28:19, 20". Devolve a referência com o nome
 // do livro como está na Bíblia e o texto exato dos versículos encontrados (em ordem, separados por espaço).
-function lerReferencia(referencia, indice) {
+function lerReferencia(referencia, indice, { maxVersiculos = MAX_VERSICULOS_POR_REFERENCIA, maxChars = MAX_CHARS_VERSICULOS } = {}) {
   let livro = null;
   const partes = [];
   const trechos = [];
@@ -243,7 +243,7 @@ function lerReferencia(referencia, indice) {
     if (!livro) continue;
     if (s && indice.capitulos.get(livro) !== 1) continue;
     const capitulo = m ? Number(m[2]) : 1;
-    const versos = numerosDosVersiculos(m ? m[3] : s[2]);
+    const versos = numerosDosVersiculos(m ? m[3] : s[2], maxVersiculos);
     const achados = versos.filter((v) => indice.versiculos.has(`${livro}|${capitulo}|${v}`));
     if (!achados.length) continue;
     partes.push({ livro, capitulo, versos: achados });
@@ -257,7 +257,7 @@ function lerReferencia(referencia, indice) {
   let textoNumerado = "";
   let anterior = null;
   for (const t of trechos) {
-    if (texto && (texto + " " + t.texto).length > MAX_CHARS_VERSICULOS) break;
+    if (texto && (texto + " " + t.texto).length > maxChars) break;
     const marca = anterior ? `[${anterior.livro === t.livro && anterior.capitulo === t.capitulo ? t.verso : `${t.capitulo}:${t.verso}`}] ` : "";
     texto = texto ? texto + " " + t.texto : t.texto;
     textoNumerado = textoNumerado ? textoNumerado + " " + marca + t.texto : t.texto;
@@ -294,7 +294,7 @@ export async function versiculosDoCapitulo(nomeLivro, capitulo) {
   return versosDoCapitulo(indice, livro, cap).map((n) => ({ n, texto: indice.versiculos.get(`${livro}|${cap}|${n}`) }));
 }
 
-export async function buscarVersiculos(referencias, max, { numerado = false } = {}) {
+export async function buscarVersiculos(referencias, max, { numerado = false, maxVersiculos, maxChars } = {}) {
   const lista = (Array.isArray(referencias) ? referencias : []).filter((r) => typeof r === "string" && r.trim());
   if (!lista.length) return [];
   const indice = await carregarBiblia();
@@ -302,7 +302,7 @@ export async function buscarVersiculos(referencias, max, { numerado = false } = 
   const vistas = new Set();
   for (const ref of lista) {
     if (resultado.length >= max) break;
-    const achado = lerReferencia(ref, indice);
+    const achado = lerReferencia(ref, indice, { maxVersiculos, maxChars });
     if (!achado || vistas.has(achado.referencia)) continue;
     vistas.add(achado.referencia);
     resultado.push(numerado ? achado : { referencia: achado.referencia, texto: achado.texto });
@@ -488,6 +488,26 @@ export async function buscarVerbete(nomes) {
     return { volume: verbete.volume, verbete: verbete.titulo, trecho };
   }
   return null;
+}
+
+// O verbete INTEIRO (com todos os sentidos e as quebras de linha): { volume, verbete, texto }. Usado pela Adoração em Família
+// para achar o sentido do verbete que cita a passagem do personagem (vários personagens têm o mesmo nome).
+export async function lerVerbeteCompleto(nomes) {
+  const lista = (Array.isArray(nomes) ? nomes : []).filter((n) => typeof n === "string" && n.trim()).slice(0, 3);
+  if (!lista.length) return null;
+  const mapa = await carregarPerspicaz();
+  for (const nome of lista) {
+    const verbete = acharVerbete(nome, mapa);
+    if (verbete) return { volume: verbete.volume, verbete: verbete.titulo, texto: verbete.texto };
+  }
+  return null;
+}
+
+// Função síncrona que reconhece o nome ou a abreviação de um livro da Bíblia ("2Sa", "1 Samuel", "Mt") e devolve o nome do
+// livro como está na Bíblia (ou null). Carrega o índice da Bíblia uma vez.
+export async function resolvedorDeLivros() {
+  const indice = await carregarBiblia();
+  return (nome) => (nome && String(nome).trim() ? acharLivro(String(nome).trim(), indice) : null);
 }
 
 // ---------- Livros (Adoração Pura, Reino de Deus, Princípios Bíblicos) ----------

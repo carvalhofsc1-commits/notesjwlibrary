@@ -205,7 +205,8 @@ export function cortarNoFimDaFrase(texto, max) {
 
 export const MAX_EVITAR_POR_CATEGORIA = 40;
 export const MAX_CARACTERES_EVITAR = 120;
-export const CATEGORIAS_EVITAR = Object.freeze(["assuntos", "personagens", "principios", "jesus", "saiba", "ministerio", "criador", "artigos", "canticos", "jogos", "videos"]);
+// 6.12.73: "leituras" (o trecho de livro lido na Abertura, pela chave "trecho:…") e "relatos" (as referências dos relatos bíblicos da Abertura).
+export const CATEGORIAS_EVITAR = Object.freeze(["assuntos", "personagens", "principios", "jesus", "saiba", "ministerio", "criador", "artigos", "canticos", "jogos", "videos", "leituras", "relatos"]);
 
 const listaCurta = (valor, max, maxChars = MAX_CARACTERES_EVITAR) => {
   const vistos = new Set();
@@ -289,7 +290,13 @@ export function repeticoesDaParte(usados, jaUsados, evitar) {
   const conjunto = (l) => new Set(l.map(normalizarTexto));
   const saida = [];
   const versiculosUsados = new Set(j.versiculos);
-  for (const ref of u.referencias) if (chavesDosVersiculos(ref).some((k) => versiculosUsados.has(k))) saida.push(`o texto ${ref} já está em outro quadro`);
+  // 6.12.73: os relatos bíblicos das últimas semanas (memória "relatos") também contam como repetição.
+  const versiculosRecentes = new Set(e.relatos.flatMap((r) => chavesDosVersiculos(r)));
+  for (const ref of u.referencias) {
+    const chaves = chavesDosVersiculos(ref);
+    if (chaves.some((k) => versiculosUsados.has(k))) saida.push(`o texto ${ref} já está em outro quadro`);
+    else if (chaves.some((k) => versiculosRecentes.has(k))) saida.push(`o texto ${ref} foi usado nas últimas semanas`);
+  }
   const [jp, ep] = [conjunto(j.personagens), conjunto(e.personagens)];
   for (const nome of u.personagens) {
     const k = normalizarTexto(nome);
@@ -408,13 +415,23 @@ export function semDatasForaDoApendice(lista, textoDe, permitidas) {
 
 // Link para consultar um trecho de livro no wol.jw.org: a busca da frase exata das primeiras palavras (o trecho veio do livro guardado no
 // servidor; o endereço do livro no wol não é conhecido).
+// 6.12.73: sem as marcas "##" e "•"; usa a primeira linha com pelo menos 5 palavras (a frase não passa de um item da lista para o outro).
 export function linkDeConsultaWol(trecho) {
-  const palavras = String(trecho || "")
+  // As marcas no meio da linha ("## Título... • Item") separam parágrafos no wol: a frase da busca fica dentro de um só.
+  const linhas = semMarcasDoTexto(String(trecho || "").replace(/(^|\s)#{1,6}\s+|\s+[•▪●◦‣]\s+/g, "\n"))
+    .split(/\n/)
+    .map((l) => l.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+  const linha = linhas.find((l) => l.split(" ").length >= 5) || linhas[0] || "";
+  const todas = linha
     .replace(/["“”«»]/g, "")
     .replace(/\s+/g, " ")
     .trim()
     .split(" ")
-    .slice(0, 8)
+    .slice(0, 8);
+  // Para no fim da primeira frase quando ela já tem 5 palavras (a busca não atravessa para a frase seguinte).
+  const fimDaFrase = todas.findIndex((p, i) => i >= 4 && /[.!?]$/.test(p) && !/\.\.\.$|…$/.test(p));
+  const palavras = (fimDaFrase >= 0 ? todas.slice(0, fimDaFrase + 1) : todas)
     .join(" ")
     .replace(/[.,;:!?…—–-]+$/, "");
   return palavras ? `https://wol.jw.org/pt/wol/s/r5/lp-t?q=${encodeURIComponent(`"${palavras}"`)}&p=par&r=occ&st=a` : "";
@@ -428,4 +445,128 @@ export function tipoDoJogo(aceitos, todos, { semente = 1, evitar = [], comApendi
   const usados = new Set((Array.isArray(evitar) ? evitar : []).map(normalizarTexto));
   const novos = base.filter((j) => !usados.has(normalizarTexto(j)));
   return embaralhar(novos.length ? novos : base, semente)[0] || "";
+}
+
+// ---------- Ajustes da 6.12.73 ----------
+
+// A chave de um trecho de livro na memória "evitar" ("trecho:" + o começo do texto normalizado), para não ler o mesmo trecho de novo.
+export function chaveDoTrecho(trecho) {
+  const t = normalizarTexto(semMarcasDoTexto(typeof trecho === "string" ? trecho : (trecho && trecho.trecho) || ""));
+  // .trim() depois do corte: a memória (listaCurta) tira o espaço do fim, e a chave tem de continuar igual.
+  return t ? `trecho:${t.slice(0, 100).trim()}` : "";
+}
+
+// Tira as marcas de título ("## ") e de lista ("• ", "▪ ") que alguns livros guardados trazem; o texto continua o mesmo.
+export function semMarcasDoTexto(texto) {
+  return String(texto || "")
+    .split(/\r?\n/)
+    .map((l) =>
+      l
+        .replace(/^\s*#{1,6}\s*/, "")
+        .replace(/^\s*[•▪●◦‣]\s*/, "")
+        .replace(/(^|\s)#{1,6}\s+/g, "$1")
+        .replace(/\s+[•▪●◦‣]\s+/g, " ")
+    )
+    .join("\n");
+}
+
+// Tira as marcas de figura das brochuras sobre a criação ("os ribossomos (5)", "(7)"): número de 1 ou 2 algarismos entre parênteses,
+// sozinho, seguido de espaço, pontuação ou do fim. Referências como "(Salmo 139:14)" ficam.
+export function semMarcasDeFigura(texto) {
+  return String(texto || "")
+    .replace(/(^|[ \t])\(\d{1,2}\)(?=[\s.,;:!?)]|$)/gm, "$1")
+    // Os créditos das fotos ("[Créditos das fotos na página 25] …", até o fim da linha) e o quadradinho "◼" das revistas.
+    .replace(/\[Cr[ée]ditos? d[ae]s? (?:fotos?|imagens?|ilustra[çc][õo]es?)[^\]]*\][^\n]*/gi, "")
+    .replace(/[ \t]*[◼■][ \t]*/g, " ")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/[ \t]+([.,;:!?])/g, "$1")
+    .replace(/^[ \t]+|[ \t]+$/gm, "");
+}
+
+// "9:40" -> 580; "1:02:03" -> 3723; "9 min 40 s" -> 580; o que não der para ler -> NaN.
+export function duracaoEmSegundos(duracao) {
+  const t = String(duracao || "").trim();
+  let m = t.match(/^(\d{1,2}):(\d{2}):(\d{2})$/);
+  if (m) return Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]);
+  m = t.match(/^(\d{1,3}):(\d{2})$/);
+  if (m) return Number(m[1]) * 60 + Number(m[2]);
+  m = t.match(/^(?:(\d{1,3})\s*min)?\s*(?:(\d{1,2})\s*s)?$/i);
+  if (m && (m[1] || m[2])) return Number(m[1] || 0) * 60 + Number(m[2] || 0);
+  return NaN;
+}
+
+// Os vídeos do quadro cabem no tempo: com 2 vídeos, a soma das durações pode ir até os minutos do quadro mais a folga (2 minutos); se
+// passar, fica só o primeiro. Duração desconhecida: a lista fica como veio.
+export function videosQueCabem(lista, minutos, folga = 2) {
+  const l = Array.isArray(lista) ? lista.filter(Boolean) : [];
+  if (l.length < 2) return l;
+  const segundos = l.map((v) => duracaoEmSegundos(v.duracao));
+  if (segundos.some((s) => !Number.isFinite(s))) return l;
+  const total = segundos.reduce((a, b) => a + b, 0);
+  return total <= (Number(minutos) + folga) * 60 ? l : l.slice(0, 1);
+}
+
+// Os sentidos de um verbete do Perspicaz: [{ numero, texto }]. Os sentidos começam com "1. ", "2. "… no começo de uma linha ou depois
+// de "]. " ou de um ponto (em sequência: 1, 2, 3…, seguidos de letra maiúscula). Sem "1." o verbete inteiro é um sentido só (numero 0).
+export function sentidosDoVerbete(texto) {
+  const t = String(texto || "").replace(/\r\n?/g, "\n");
+  const marcas = [];
+  let esperado = 1;
+  for (const m of t.matchAll(/(^|\n|[\].)]\s+)(\d{1,2})\.\s+(?=["“]?\p{Lu})/gu)) {
+    if (Number(m[2]) !== esperado) continue;
+    marcas.push({ numero: esperado, inicio: m.index + m[1].length });
+    esperado++;
+  }
+  if (marcas.length < 2) return t.trim() ? [{ numero: 0, texto: t.trim() }] : [];
+  return marcas.map((m, i) => ({ numero: m.numero, texto: t.slice(m.inicio, i + 1 < marcas.length ? marcas[i + 1].inicio : t.length).trim() }));
+}
+
+const VERSOS_CITADOS = String.raw`\d{1,3}(?:\s*[-–]\s*\d{1,3})?(?:\s*,\s*\d{1,3}(?:\s*[-–]\s*\d{1,3})?)*`;
+const versosDaCitacao = (texto) => {
+  const versos = [];
+  for (const pedaco of String(texto || "").split(",")) {
+    const r = pedaco.trim().match(/^(\d{1,3})(?:\s*[-–]\s*(\d{1,3}))?$/);
+    if (!r) continue;
+    const ini = Number(r[1]);
+    const fim = r[2] ? Math.max(ini, Number(r[2])) : ini;
+    for (let v = ini; v <= fim && v - ini < 200; v++) versos.push(v);
+  }
+  return versos;
+};
+
+// As referências bíblicas citadas num texto ("(2Sa 21:8)", "— 2Sa 9.", "(1Sa 25:2, 3; Jos 15:20, 55)", "2 Samuel 9:1-10"):
+// [{ livro, capitulo, versos }] (versos [] quando só o capítulo foi citado). livroDe(token) devolve o nome do livro ou null.
+export function referenciasCitadas(texto, livroDe) {
+  const saida = [];
+  if (typeof livroDe !== "function") return saida;
+  const re = new RegExp(String.raw`((?:[1-3]\s?)?\p{Lu}\p{Ll}{0,14})\.?\s+(\d{1,3})(?![\p{L}\d])(?::(${VERSOS_CITADOS}))?((?:\s*;\s*\d{1,3}(?::${VERSOS_CITADOS})?(?![\p{L}\d:]))*)`, "gu");
+  for (const m of String(texto || "").matchAll(re)) {
+    const livro = livroDe(m[1]);
+    if (!livro) continue;
+    saida.push({ livro, capitulo: Number(m[2]), versos: versosDaCitacao(m[3]) });
+    for (const c of String(m[4] || "").matchAll(new RegExp(String.raw`;\s*(\d{1,3})(?::(${VERSOS_CITADOS}))?`, "g"))) {
+      saida.push({ livro, capitulo: Number(c[1]), versos: versosDaCitacao(c[2]) });
+    }
+  }
+  return saida;
+}
+
+// O sentido do verbete que cita a passagem do personagem (o mesmo livro e capítulo; os versículos em comum valem mais): { numero, texto } ou
+// null (nenhum sentido cita a passagem). Vários personagens têm o mesmo nome (MEFIBOSETE 1 e 2): assim a leitura fala do personagem certo.
+export function sentidoQueCitaAPassagem(textoDoVerbete, referencia, livroDe) {
+  const alvos = referenciasCitadas(referencia, livroDe);
+  if (!alvos.length) return null;
+  let melhor = null;
+  for (const s of sentidosDoVerbete(textoDoVerbete)) {
+    let pontos = 0;
+    for (const c of referenciasCitadas(s.texto, livroDe)) {
+      for (const a of alvos) {
+        if (c.livro !== a.livro || c.capitulo !== a.capitulo) continue;
+        const comuns = c.versos.filter((v) => a.versos.includes(v)).length;
+        pontos += 1 + comuns;
+      }
+    }
+    if (pontos > 0 && (!melhor || pontos > melhor.pontos)) melhor = { numero: s.numero, texto: s.texto, pontos };
+  }
+  return melhor ? { numero: melhor.numero, texto: melhor.texto } : null;
 }

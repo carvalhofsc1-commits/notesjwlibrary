@@ -502,7 +502,7 @@ teste("Apêndice B: acontecimentos (4 formatos), valor das datas, datas permitid
 
 teste("memória evitar: categorias conhecidas, até 40 por categoria e 120 caracteres, sem repetir", () => {
   assert.equal(ger.MAX_EVITAR_POR_CATEGORIA, 40);
-  assert.deepEqual([...ger.CATEGORIAS_EVITAR], ["assuntos", "personagens", "principios", "jesus", "saiba", "ministerio", "criador", "artigos", "canticos", "jogos", "videos"]);
+  assert.deepEqual([...ger.CATEGORIAS_EVITAR], ["assuntos", "personagens", "principios", "jesus", "saiba", "ministerio", "criador", "artigos", "canticos", "jogos", "videos", "leituras", "relatos"]);
   const muitos = Array.from({ length: 60 }, (_, i) => "Personagem " + i);
   const e = ger.normalizarEvitar({ personagens: [...muitos, "personagem 0"], assuntos: ["x".repeat(300)], intruso: ["a"], canticos: [12, "12", { n: 1 }] });
   assert.equal(e.personagens.length, 40);
@@ -536,7 +536,8 @@ teste("jogo: tipo entre os aceitos, sem os recentes; sem Apêndice B, sem Ordem 
   for (let s = 1; s < 30; s++) assert.ok(todos.includes(ger.tipoDoJogo([], todos, { semente: s })), "só os 6 tipos");
   const link = ger.linkDeConsultaWol("“Deus se importa com você.” Essa é uma verdade que consola muita gente hoje.");
   assert.ok(link.startsWith("https://wol.jw.org/pt/wol/s/r5/lp-t?q="), link);
-  assert.ok(decodeURIComponent(link).includes('"Deus se importa com você. Essa é uma"'), decodeURIComponent(link));
+  // 6.12.73: a busca para no fim da primeira frase quando ela já tem 5 palavras.
+  assert.ok(decodeURIComponent(link).includes('q="Deus se importa com você"&'), decodeURIComponent(link));
   assert.equal(ger.linkDeConsultaWol(""), "");
   assert.doesNotMatch(link, /www\.jw\.org/);
 });
@@ -684,6 +685,167 @@ teste("fontes reais (com FONTES_DIR): a Bíblia do servidor entende as referênc
   }
   console.log(`      referências abreviadas achadas na Bíblia: ${achadas} de ${amostra.length}${falhas.length ? " (sem: " + falhas.slice(0, 6).join("; ") + ")" : ""}`);
   assert.ok(amostra.length >= 40 && achadas / amostra.length >= 0.9, `só ${achadas} de ${amostra.length}`);
+});
+
+// ---------- Patch 6.12.73: leituras e relatos na memória, sentido do Perspicaz, passagem inteira, soma dos vídeos, mínimo do jogo, marcas ----------
+
+// Livros de teste para as funções puras (a função real vem de resolvedorDeLivros, com a Bíblia do servidor).
+const LIVROS_TESTE = { "1sa": "1 Samuel", "1 samuel": "1 Samuel", "2sa": "2 Samuel", "2 samuel": "2 Samuel", jos: "Josué", "núm": "Números", "1cr": "1 Crônicas", "gênesis": "Gênesis", mateus: "Mateus" };
+const livroTeste = (t) => LIVROS_TESTE[String(t).trim().toLowerCase().replace(/\s+/g, " ")] || null;
+const MEFIBOSETE =
+  "1. Um dos dois filhos do Rei Saul com Rispa, filha de Aiá. (2Sa 21:8) Estava entre os sete descendentes de Saul. (Veja Núm 25:4.) Davi mandou juntar os ossos deles. — 2Sa 21:1-14.\r\n" +
+  "2. Filho de Jonatã; neto do Rei Saul. Nesta ocasião, ‘ele sofreu uma queda e ficou manco’. (2Sa 4:4) Sem dúvida, lembrando-se do seu pacto com Jonatã (1Sa 20:12-17, 42), Davi quis usar de benevolência. Depois disso, ele morou em Jerusalém. — 2Sa 9.\r\n" +
+  "Quando Davi fugiu de Jerusalém, Ziba foi ao encontro dele. (2Sa 16:1-4)";
+const ABIGAIL =
+  "[(Meu) Pai se Fez Alegre]. 1. Uma das esposas de Davi. Originalmente, a esposa do abastado Nabal. (1Sa 25:2, 3; Jos 15:20, 55) Davi agradeceu a Deus. — 1Sa 25:32-35.\r\n" +
+  "2. Irmã ou meia-irmã de Davi. — 1Cr 2:16, 17.";
+
+teste("6.12.73: sentidos do verbete, referências citadas e o sentido que cita a passagem (Mefibosete 2, Abigail 1)", () => {
+  assert.deepEqual(ger.sentidosDoVerbete(MEFIBOSETE).map((s) => s.numero), [1, 2]);
+  assert.match(ger.sentidosDoVerbete(MEFIBOSETE)[1].texto, /^2\. Filho de Jonatã[\s\S]*Ziba/);
+  assert.deepEqual(ger.sentidosDoVerbete(ABIGAIL).map((s) => s.numero), [1, 2], "o 1. depois de \"]. \"");
+  assert.deepEqual(ger.sentidosDoVerbete("Um só sentido, sem números. (2Sa 9:1)").map((s) => s.numero), [0]);
+  assert.deepEqual(ger.referenciasCitadas("(1Sa 25:2, 3; Jos 15:20, 55) e — 2Sa 9. e (1Sa 26:1; 27:2-4)", livroTeste), [
+    { livro: "1 Samuel", capitulo: 25, versos: [2, 3] },
+    { livro: "Josué", capitulo: 15, versos: [20, 55] },
+    { livro: "2 Samuel", capitulo: 9, versos: [] },
+    { livro: "1 Samuel", capitulo: 26, versos: [1] },
+    { livro: "1 Samuel", capitulo: 27, versos: [2, 3, 4] },
+  ]);
+  assert.deepEqual(ger.referenciasCitadas("Veja 2Sa 4:4", livroTeste), [{ livro: "2 Samuel", capitulo: 4, versos: [4] }], "a palavra antes do número não engole o livro");
+  assert.equal(ger.sentidoQueCitaAPassagem(MEFIBOSETE, "2 Samuel 9:1-13", livroTeste).numero, 2);
+  assert.equal(ger.sentidoQueCitaAPassagem(MEFIBOSETE, "2 Samuel 21:1-14", livroTeste).numero, 1);
+  assert.equal(ger.sentidoQueCitaAPassagem(MEFIBOSETE, "Gênesis 1:1-5", livroTeste), null, "nenhum sentido cita: o verbete sai");
+  assert.equal(ger.sentidoQueCitaAPassagem(ABIGAIL, "1 Samuel 25:14-35", livroTeste).numero, 1);
+});
+
+teste("6.12.73: marcas \"##\" e \"•\" (texto e link do wol), marcas de figura, chave do trecho, soma dos vídeos e relatos repetidos", () => {
+  const saiba = "## Perdoar não significa...\n• Fechar os olhos para o erro do outro ou fingir que nada aconteceu.\n• Esquecer.";
+  const limpo = ger.semMarcasDoTexto(saiba);
+  assert.doesNotMatch(limpo, /##|•/);
+  assert.match(limpo, /^Perdoar não significa\.\.\.\nFechar os olhos/);
+  const link = decodeURIComponent(ger.linkDeConsultaWol(saiba));
+  assert.doesNotMatch(link, /##|•/);
+  assert.ok(link.includes('"Fechar os olhos para o erro do outro"'), link);
+  assert.equal(ger.chaveDoTrecho(saiba), ger.chaveDoTrecho(limpo));
+  assert.ok(ger.chaveDoTrecho(saiba).startsWith("trecho:"));
+  const longo = "palavra ".repeat(30);
+  // Marcas no meio da linha (como vem do livro guardado): a busca fica no item, sem juntar o título.
+  const naLinha = decodeURIComponent(ger.linkDeConsultaWol("## Perdoar não significa... • Fechar os olhos aos erros de outros. Na verdade, a Bíblia condena"));
+  assert.ok(naLinha.includes('q="Fechar os olhos aos erros de outros"'), naLinha);
+  const credito = ger.semMarcasDeFigura("Teve um Projeto? A ventilação do cupinzeiro ◼ Os cupinzeiros são maravilhas.\nÉ evidência de um projeto? [Créditos das fotos na página 25] No alto: Stockbyte/Getty Images");
+  assert.equal(credito, "Teve um Projeto? A ventilação do cupinzeiro Os cupinzeiros são maravilhas.\nÉ evidência de um projeto?");
+  assert.deepEqual(ger.normalizarEvitar({ leituras: [ger.chaveDoTrecho(longo)] }).leituras, [ger.chaveDoTrecho(longo)], "a chave sobrevive à memória (sem espaço no fim)");
+  const figura = ger.semMarcasDeFigura("Os ribossomos (5) fabricam proteínas. O DNA (6), a molécula da vida (7).\n(8)\nVeja Salmo 139:14 (Salmo 139:14) e (12 anos).");
+  assert.doesNotMatch(figura, /\(\d{1,2}\)/);
+  assert.match(figura, /Os ribossomos fabricam proteínas\. O DNA, a molécula da vida\./);
+  assert.match(figura, /\(Salmo 139:14\) e \(12 anos\)/, "referências e outros parênteses ficam");
+  assert.equal(ger.duracaoEmSegundos("9:40"), 580);
+  assert.equal(ger.duracaoEmSegundos("1:02:03"), 3723);
+  assert.equal(ger.duracaoEmSegundos("9 min 40 s"), 580);
+  assert.ok(Number.isNaN(ger.duracaoEmSegundos("")));
+  const v = (d, n) => ({ titulo: n, duracao: d, link: n });
+  assert.equal(ger.videosQueCabem([v("9:40", "a"), v("2:15", "b")], 10).length, 2, "11:55 cabe em 10 + 2");
+  assert.deepEqual(ger.videosQueCabem([v("9:40", "a"), v("5:05", "b")], 10).map((x) => x.titulo), ["a"], "14:45 passa: só o primeiro");
+  assert.equal(ger.videosQueCabem([v("9:40", "a"), v("", "b")], 10).length, 2, "duração desconhecida: fica como veio");
+  const usados = ger.usadosDaParte({ textos: [{ referencia: "Mateus 18:21-30" }] });
+  assert.deepEqual(ger.repeticoesDaParte(usados, {}, { relatos: ["Mateus 18:23-35"] }), ["o texto Mateus 18:21-30 foi usado nas últimas semanas"]);
+  assert.deepEqual(ger.repeticoesDaParte(usados, {}, { relatos: ["Lucas 15:11-32"] }), []);
+  assert.deepEqual(ger.normalizarEvitar({ leituras: ["trecho:x"], relatos: ["Mateus 18:21-35"] }).relatos, ["Mateus 18:21-35"]);
+});
+
+teste("6.12.73: prompts do Personagem (ângulo), do Jogo (8 a 12, sem respostas óbvias), do Ministério (como proceder) e da Abertura (EVITAR)", () => {
+  const s = montados.sistemaFamiliaQuadro;
+  assert.match(s.personagem, /ILUSTRE CLARAMENTE O ÂNGULO/);
+  assert.match(s.personagem, /pouco conhecido SÓ quando a ligação com o ângulo for clara/);
+  assert.match(s.personagem, /EPISÓDIO INTEIRO, do começo ao desfecho/);
+  assert.match(s.jogo, /de 8 a 12 "rodadas" \(no mínimo 8/);
+  assert.match(s.jogo, /SEM RESPOSTAS ÓBVIAS/);
+  assert.match(s.jogo, /de 6 a 8 identificadores \[B#\]/);
+  assert.match(s.ministerio, /SÓ sobre COMO PROCEDER/);
+  assert.match(s.ministerio, /Nunca perguntas sobre sentimentos/);
+  assert.match(s.abertura, /Fuja das leituras e dos relatos bíblicos já usados/);
+  assert.match(s.video, /até 12 minutos/);
+  // As partes editáveis e os formatos não dizem "culto" (o sistema montado traz o VOCABULÁRIO, que cita a palavra para proibi-la).
+  for (const id of ["adoracao_q_personagem", "adoracao_q_jogo", "adoracao_q_ministerio", "adoracao_q_abertura", "adoracao_q_video", "adoracao_q_criador", "adoracao_q_saiba"]) assert.doesNotMatch(prompts.PARTES.find((x) => x.id === id).padrao, /\bcultos?\b/i, id);
+  for (const t of prompts.travadosDe({}).filter((x) => /^formato_familia_quadro_/.test(x.id))) assert.doesNotMatch(String(t.texto || t.padrao || ""), /\bcultos?\b/i, t.id);
+  assert.match(QUADROS_FAMILIA.find((q) => q.id === "personagem").saida, /ilustre o ângulo/);
+});
+
+teste("6.12.73: jogo pede de novo quando faltam rodadas (8) ou acontecimentos (6)", async () => {
+  const pedido = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Verdadeiro ou falso"] }), montados);
+  assert.ok(!pedido.erro);
+  const rodada = (i) => ({ pergunta: `Afirmação ${i}`, resposta: i % 2 ? "Verdadeiro" : "Falso", referencia: "Gênesis 1:1" });
+  const curta = await pedido.prep.montar({ descricao: "d", nome: "V ou F", comoJogar: "Regras.", rodadas: [1, 2, 3].map(rodada), eventos: [] });
+  assert.match(curta.falta, /^vieram 3 rodadas válidas; mande de 8 a 12 rodadas, em nível de adulto batizado/);
+  const cheia = await pedido.prep.montar({ descricao: "d", nome: "V ou F", comoJogar: "Regras.", rodadas: [1, 2, 3, 4, 5, 6, 7, 8].map(rodada), eventos: [] });
+  assert.equal(cheia.falta, "");
+  assert.equal(cheia.contagens.rodadas, 8);
+  if (!comFontes) return console.log("      (sem FONTES_DIR: Ordem e data pulada)");
+  const ordem = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Ordem e data dos acontecimentos"] }), montados);
+  assert.match(ordem.mensagem, /escolha de 6 a 8 em "eventos"/);
+  const parte = await ordem.prep.montar({ descricao: "d", nome: "Linha", comoJogar: "Ordem.", rodadas: [], eventos: ["B1", "B5", "B9"] });
+  assert.match(parte.falta, /^vieram 3 acontecimentos válidos/);
+  assert.ok(parte.jogo.ordem.length >= 6, "completa até 6 com o Apêndice B");
+});
+
+teste("6.12.73: Abertura guarda leitura e relato; o trecho lido sai da lista na outra noite; EVITAR dos relatos (com FONTES_DIR)", async () => {
+  const evitar = { relatos: ["Mateus 18:21-35"] };
+  const pedido = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "abertura", assunto: "perdoar os irmãos", angulo: "perdoar de coração", evitar }), montados);
+  assert.ok(!pedido.erro);
+  assert.match(pedido.mensagem, /EVITAR \(relatos bíblicos usados nas últimas semanas — escolha outros\): Mateus 18:21-35/);
+  if (!comFontes) return console.log("      (sem FONTES_DIR: leitura pulada)");
+  assert.match(pedido.mensagem, /\[L1\] /);
+  const parte = await pedido.prep.montar({ descricao: "d", escolhas: ["L1"], perguntasLeitura: ["?"], relato: { referencia: "Lucas 17:3, 4", perguntas: ["?"] } });
+  assert.ok(parte.memoria.leituras[0].startsWith("trecho:"), JSON.stringify(parte.memoria));
+  assert.deepEqual(parte.memoria.relatos, ["Lucas 17:3, 4"]);
+  const primeiro = pedido.mensagem.match(/\[L1\] [^:]+: ([^\n]{40})/)[1];
+  const outra = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "abertura", assunto: "perdoar os irmãos", angulo: "perdoar de coração", evitar: { leituras: parte.memoria.leituras } }), montados);
+  assert.ok(!outra.mensagem.includes(primeiro), `o trecho lido na noite anterior não volta: ${primeiro}`);
+  assert.equal(outra.prep.contagens.leiturasEvitadas, 1);
+});
+
+teste("6.12.73: Personagem com a passagem inteira e o sentido certo do Perspicaz; sem sentido, o trecho do livro (com FONTES_DIR)", async () => {
+  if (!comFontes) return console.log("      (sem FONTES_DIR: pulado)");
+  assert.equal((await fontesMod.buscarVersiculos(["1 Samuel 25:14-35"], 1))[0].referencia, "1 Samuel 25:14-23", "padrão de antes: 10 versículos");
+  assert.equal((await fontesMod.buscarVersiculos(["1 Samuel 25:14-35"], 1, { maxVersiculos: 30, maxChars: 4500 }))[0].referencia, "1 Samuel 25:14-35");
+  const pedido = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "personagem", assunto: "perdoar os irmãos", angulo: "bondade leal", evitar: {} }), montados);
+  const mefi = await pedido.prep.montar({ nome: "Mefibosete", referencia: "2 Samuel 9:1-13", descricao: "d", escolha: null, verbete: "Mefibosete" });
+  assert.equal(mefi.textos[0].referencia, "2 Samuel 9:1-13", "o episódio inteiro (13 versículos)");
+  assert.match(mefi.leitura.fonte, /\(sentido 2\)$/);
+  assert.match(mefi.leitura.texto, /^Filho de Jonatã/);
+  assert.equal(mefi.contagens.sentido, 2);
+  const abigail = await pedido.prep.montar({ nome: "Abigail", referencia: "1 Samuel 25:14-35", descricao: "d", escolha: null, verbete: "Abigail" });
+  assert.equal(abigail.textos[0].referencia, "1 Samuel 25:14-35");
+  assert.match(abigail.leitura.fonte, /\(sentido 1\)$/);
+  const semSentido = await pedido.prep.montar({ nome: "Mefibosete", referencia: "Gênesis 1:1-5", descricao: "d", escolha: null, verbete: "Mefibosete" });
+  assert.notEqual(semSentido.leitura && semSentido.leitura.rotulo, "Verbete do Perspicaz", "sem sentido que cite a passagem, o verbete sai");
+  assert.equal(semSentido.contagens.sentido, -1);
+});
+
+teste("6.12.73: Criador sem marcas de figura e Saiba responder sem \"##\" e \"•\" (com FONTES_DIR)", async () => {
+  if (!comFontes) return console.log("      (sem FONTES_DIR: pulado)");
+  for (let semente = 1; semente <= 6; semente++) {
+    const c = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "criador", semente, evitar: {} }), montados);
+    if (!c.prep.contagens.livros) continue;
+    const parte = await c.prep.montar({ descricao: "d", escolha: "L1", perguntas: ["?"] });
+    assert.doesNotMatch(parte.leitura.texto, /(^|\s)\(\d{1,2}\)(?=[\s.,;:!?)]|$)/m, "semente " + semente);
+  }
+  const s = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "saiba_responder", assunto: "perdoar os irmãos", angulo: "o que é perdoar", evitar: {} }), montados);
+  if (!s.prep.contagens.livros) return console.log("      (sem trechos para o Saiba responder)");
+  for (let i = 1; i <= s.prep.contagens.livros; i++) {
+    const parte = await s.prep.montar({ pergunta: "Perdoar é esquecer?", descricao: "d", escolha: `L${i}`, verbete: null, textos: ["Colossenses 3:13"] });
+    assert.doesNotMatch(parte.leitura.texto, /(^|\n)\s*(##|•)/);
+    assert.doesNotMatch(decodeURIComponent(parte.publicacoes[0].url), /##|•/);
+  }
+});
+
+teste("6.12.73: app guarda leituras e relatos na memória", () => {
+  const cache = [];
+  const m = evitarDoApp(cache);
+  m.familiaEvitarRegistrar([{ leituras: ["trecho:abc"], relatos: ["Mateus 18:21-35"] }]);
+  assert.deepEqual(m.familiaEvitarLer().leituras, ["trecho:abc"]);
+  assert.deepEqual(m.familiaEvitarLer().relatos, ["Mateus 18:21-35"]);
 });
 
 for (const [nome, fn] of testes) {

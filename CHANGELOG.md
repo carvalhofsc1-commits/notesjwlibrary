@@ -2,6 +2,21 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.73
+
+- **Adoração em Família por quadros: correções antes da fase 4.**
+  - **Abertura:** a memória do que já foi usado agora guarda também a leitura (o trecho de livro ou o artigo) e o relato bíblico. Na noite seguinte, o trecho lido sai da lista, e a IA recebe os relatos das últimas semanas para escolher outros. Se ainda repetir um relato, o servidor refaz o quadro uma vez.
+  - **Personagem do dia:**
+    - A passagem vai até o fim do episódio. O servidor transcreve o intervalo inteiro, até 30 versículos; antes, cortava em 10.
+    - Do verbete do Perspicaz entra só o sentido que cita a passagem, porque vários personagens têm o mesmo nome. Se nenhum sentido a citar, o verbete sai e vale o trecho do livro.
+    - Nas instruções, o personagem tem de ilustrar claramente o ângulo do plano. Um personagem pouco conhecido só entra quando a ligação for clara.
+  - **Saiba responder:** o texto transcrito e o link de consulta no wol.jw.org saem sem as marcas "##" e "•". A frase da busca fica dentro de um só item (não junta o título com o item) e para no fim da primeira frase.
+  - **Vídeo:** com 2 vídeos, a soma das durações vai no máximo até os minutos do quadro mais 2. Se passar, fica só o primeiro.
+  - **Jogo bíblico:** se faltar o mínimo, o servidor pede de novo uma vez. O mínimo é de 8 rodadas, ou 6 acontecimentos na Ordem e data. Na Ordem e data, o servidor completa até 6 com o Apêndice B. As instruções reforçam o nível de adulto batizado, sem respostas óbvias.
+  - **Fortaleça sua fé no Criador:** o texto transcrito sai sem as marcas de figura, como "(5)", sem o quadradinho "◼" e sem os créditos das fotos.
+  - **Ame o ministério:** as perguntas são só sobre como proceder na situação do ministério, nunca sobre sentimentos.
+- **Instruções da IA visíveis:** os textos novos da Abertura, do Personagem, do Vídeo, do Jogo e do Ame o ministério aparecem na tela de prompts do administrador. Os formatos, só leitura, também foram atualizados.
+
 ## 6.12.72
 
 - **Adoração em Família por quadros: fase 3b (os demais quadros com instruções próprias).** Agora todos os quadros têm instruções próprias; a instrução genérica saiu.
