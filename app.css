@@ -6301,15 +6301,11 @@
       margin-top: 0;
     }
 
-    /* 6.12.54: ✨ Resumir o texto do campo: linha própria, na largura toda, logo abaixo de Copiar / Formatar com IA / lixeira. */
-    .screen-anotacoes .anotacoes-resumir-texto {
-      width: 100%;
-      min-height: 32px;
-      margin: 6px 0 0;
-      padding: 3px 10px;
-      font-size: .8rem;
-      font-weight: 600;
+    /* 6.12.55: a linha dos botões do campo de anotações tem quatro: Copiar, ✨ Resumir, ✨ Formatar com IA (o mais largo) e a lixeira (largura fixa); preenchem a linha toda. */
+    .screen-anotacoes .anotacoes-acoes-campo.anotacoes-acoes-4 {
+      grid-template-columns: minmax(0, .85fr) minmax(0, 1fr) minmax(0, 1.25fr) 2.6rem;
     }
+    .screen-anotacoes .anotacoes-acoes-campo .anotacoes-resumir-texto { white-space: normal; overflow-wrap: anywhere; }
 
     /* Salvar e Word do discurso: no final de tudo, numa moldura própria, os dois numa linha só. */
     /* Salvar e Word do discurso inteiro: direto na base do cartão (sem a caixa branca), com a altura dos botões de formatação. */
@@ -16421,10 +16417,10 @@ button:is(#sv#sv, #anotacoesGravarBtn, #undoTopBtn, #undoBtn, .anot-grav-aviso, 
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ia-bg: #1e3a5f; --ia-tx: #dbeafe; --ia-bd: #3b82f6; --rv-bg: #4a2228; --rv-tx: #fee2e2; --rv-bd: #ef4444; } }
 :root[data-theme="dark"] { --ia-bg: #1e3a5f; --ia-tx: #dbeafe; --ia-bd: #3b82f6; --rv-bg: #4a2228; --rv-tx: #fee2e2; --rv-bd: #ef4444; }
 
-:is(#sv#sv#sv, .ai-study-btn, .ai-main-btn, #tdGerarBtn, #tdIaOutrosBtn, #anotacoesIaBtn, #anotacoesRespIa, #anotacoesPerguntasIa, #anotacoesGravResumoBtn,
+:is(#sv#sv#sv, .ai-study-btn, .ai-main-btn, #tdGerarBtn, #tdIaOutrosBtn, #anotacoesIaBtn, #anotacoesRespIa, #anotacoesPerguntasIa, #anotacoesGravResumoBtn, #anotacoesResumirTextoBtn,
   #anotacoesGravResumirTodasBtn, #aiSuggestBtn, #aiSentinelaBtn, #aiAnotherBtn, #aiImproveBtn, #publicoCanticoBtn, #outrosPesquisarBtn, #bibliaResumirBtn,
   #transcricaoNomesSugerirBtn, #transcricaoCorrigirBtn, #transcricaoResumirBtn, #transcricaoIniciarBtn, #pesquisaBtn, #pesquisaEscolhaElaborarBtn),
-:is(#sv#sv#sv, .ai-study-btn, .ai-main-btn, #tdGerarBtn, #tdIaOutrosBtn, #anotacoesIaBtn, #anotacoesRespIa, #anotacoesPerguntasIa, #anotacoesGravResumoBtn,
+:is(#sv#sv#sv, .ai-study-btn, .ai-main-btn, #tdGerarBtn, #tdIaOutrosBtn, #anotacoesIaBtn, #anotacoesRespIa, #anotacoesPerguntasIa, #anotacoesGravResumoBtn, #anotacoesResumirTextoBtn,
   #anotacoesGravResumirTodasBtn, #aiSuggestBtn, #aiSentinelaBtn, #aiAnotherBtn, #aiImproveBtn, #publicoCanticoBtn, #outrosPesquisarBtn, #bibliaResumirBtn,
   #transcricaoNomesSugerirBtn, #transcricaoCorrigirBtn, #transcricaoResumirBtn, #transcricaoIniciarBtn, #pesquisaBtn, #pesquisaEscolhaElaborarBtn):hover:not(:disabled) {
   background: var(--ia-bg); background-image: none; color: var(--ia-tx); border: 1px solid var(--ia-bd);

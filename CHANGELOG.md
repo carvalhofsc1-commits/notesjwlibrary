@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.55
+
+- **Anotações: quatro botões numa linha só:** Copiar, ✨ Resumir (rótulo encurtado; o botão que resume o texto do campo), ✨ Formatar com IA e a lixeira ficam todos na mesma linha, preenchendo a largura toda; o Resumir é azul como os outros botões de IA.
+
 ## 6.12.54
 
 - **Anotações: ✨ Resumir o texto do campo:** novo botão, em linha própria na largura toda, logo abaixo de Copiar / Formatar com IA. Depois que a gravação foi transcrita (ou com qualquer texto no campo), ele pede à IA o resumo do que está no campo e o coloca no fim das anotações, sob o título "Resumo do texto"; o texto de antes não muda. Usa a mesma fila e o mesmo código de texto do resumo das gravações; se o resumo falhar, nada é copiado de volta para o campo.
