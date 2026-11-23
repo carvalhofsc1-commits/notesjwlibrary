@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.66
+
+- **Texto diário: aplicações prioritárias:** o prompt dos comentários adicionais ganhou o bloco "APLICAÇÕES PRIORITÁRIAS": sempre que o assunto do texto permitir (sem forçar), a IA dá preferência a aplicações práticas por meio de perguntas de reflexão sobre estes hábitos: 1) dirigir pelo menos 1 estudo bíblico; 2) sempre fazer revisitas; 3) fazer orações significativas a Jeová; 4) orar todos os dias de forma significativa; 5) ler a Bíblia todos os dias; 6) manter-se ativo no ministério; 7) tratar o cônjuge com amor e respeito; 8) comunicar-se bem com o cônjuge; 9) equilíbrio nas atividades que consomem tempo (redes sociais, séries, aplicativos de vídeo). Cada comentário usa o hábito que mais combina com o texto do dia, hábitos diferentes entre os comentários e nunca o mesmo em dois seguidos; se o texto não tiver ligação natural com nenhum, a aplicação segue o texto (conduta, amizades, sentimentos, decisões). Sem culpar ninguém, no tom carinhoso das perguntas de reflexão.
+
 ## 6.12.65
 
 - **Texto diário: a reflexão final é sempre uma pergunta:** no prompt dos comentários adicionais, a frase final de cada comentário deixou de alternar entre pergunta e admoestação: agora é SEMPRE uma pergunta de reflexão (terminada em "?"), em todos os comentários, ligada ao assunto, diferente a cada comentário e com tom carinhoso (sem bronca nem acusação). Exemplos no prompt: "Você está se esforçando para dirigir pelo menos um estudo bíblico?", "Marido, você sempre procura tratar a sua esposa com bondade e respeito?".

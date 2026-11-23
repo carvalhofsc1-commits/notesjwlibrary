@@ -921,7 +921,7 @@ Como decidir:
   {
     id: "texto_diario",
     titulo: "Comentários adicionais sobre o texto diário (tela Início)",
-    descricao: "Instruções para o botão ✨ Gerar comentários adicionais do texto diário: cada comentário começa citando o ponto do texto de hoje em que se baseia (\"Como vimos no texto de hoje…\"), depois o aplica à vida cristã e termina sempre com uma pergunta de reflexão, para alguém comentar com as próprias palavras.",
+    descricao: "Instruções para o botão ✨ Gerar comentários adicionais do texto diário: cada comentário começa citando o ponto do texto de hoje em que se baseia (\"Como vimos no texto de hoje…\"), depois o aplica à vida cristã e termina sempre com uma pergunta de reflexão (de preferência sobre hábitos práticos: estudo bíblico, revisitas, oração, leitura da Bíblia, ministério, cônjuge, equilíbrio no uso do tempo), para alguém comentar com as próprias palavras.",
     padrao: `Você ajuda um publicador a se preparar para a consideração do texto diário (Examine as Escrituras Diariamente) com a congregação ou com a família. Receberá a data, o texto temático (o versículo com a referência) e o comentário do dia.
 
 Escreva 4 COMENTÁRIOS ADICIONAIS que alguém possa fazer durante a consideração, com APLICAÇÕES PRÁTICAS que vão além do que o comentário já diz:
@@ -936,6 +936,18 @@ Cada comentário tem 4 campos:
 
 REFLEXÃO FINAL (obrigatória em TODOS os comentários): a última frase de cada "aplicacao" leva a pessoa a refletir se ela está colocando em prática o ponto ou a lição do comentário. Essa frase final é SEMPRE uma PERGUNTA de reflexão, direta e gentil, terminada em "?", em TODOS os comentários, sem exceção (nada de admoestação ou frase afirmativa no lugar da pergunta). Exemplos: se o comentário falou de ministério e de dirigir estudos, "Você está se esforçando para dirigir pelo menos um estudo bíblico?"; se falou de como o marido trata a esposa, "Marido, você sempre procura tratar a sua esposa com bondade e respeito?"; se falou de oração, "Você tem separado tempo todos os dias para conversar com Jeová em oração?".
 A pergunta é sempre ligada ao ponto e ao assunto do comentário (ministério, família, oração, estudo pessoal, amizades, entretenimento, trabalho, sentimentos…), na segunda pessoa ("você") ou dirigida ao papel de quem ouve ("Marido", "Esposa", "Pais", "Jovens"), com ânimo e carinho, nunca com tom de bronca nem acusação, sem expor ninguém. É UMA pergunta só, curta, diferente da pergunta de cada outro comentário (varie as palavras e o jeito de perguntar). Ela não repete as frases de aplicação que vieram antes: leva a pessoa a se examinar.
+
+APLICAÇÕES PRIORITÁRIAS (sempre que o assunto do texto de hoje permitir, sem forçar): dê PREFERÊNCIA a aplicações práticas, feitas por meio de perguntas de reflexão, que frisem a importância destes hábitos da vida cristã:
+1. dirigir pelo menos 1 estudo bíblico;
+2. sempre fazer revisitas;
+3. fazer orações significativas a Jeová;
+4. orar a ele todos os dias, de forma significativa;
+5. ler a Bíblia todos os dias;
+6. manter-se ativo no ministério;
+7. tratar o cônjuge com amor e respeito;
+8. comunicar-se bem com o cônjuge;
+9. ter equilíbrio nas atividades que consomem muito tempo: redes sociais, séries, aplicativos de vídeo.
+Escolha, para cada comentário, o hábito da lista que MAIS combina com o ponto do texto e do comentário do dia (por exemplo, texto sobre oração: itens 3 e 4; sobre a Palavra de Deus: item 5; sobre pregação ou ensino: itens 1, 2 e 6; sobre casamento: itens 7 e 8; sobre tempo, distrações ou entretenimento: item 9). Em 4 comentários, use hábitos DIFERENTES entre si, nos que a lista cobrir. Aplicar o texto à vida real vem sempre antes da lista: se o texto de hoje não tiver ligação natural com nenhum desses hábitos, ou se algum comentário seguiria melhor outra aplicação (como a conduta, as amizades, os sentimentos ou as decisões), faça a aplicação e a pergunta de reflexão sobre isso. NUNCA force o texto para encaixar um item, não invente o que o texto diz e não use o mesmo hábito em dois comentários seguidos. A pergunta final continua carinhosa e animadora, como descrito acima, sem culpar ninguém por não estar fazendo (por exemplo, "Você está se esforçando para dirigir pelo menos um estudo bíblico?", "Você tem lido a Bíblia todos os dias?", "Você e o seu cônjuge conversam com franqueza e carinho sobre o que sentem?").
 
 O app mostra "base" e "aplicacao" em sequência, como um texto só, com a "base" em negrito e itálico. Por isso a "aplicacao" começa uma frase nova, não repete a abertura nem o ponto, e a "base" não traz aplicação.
 Exemplo só da estrutura (não do conteúdo): base = "Como vimos no texto de hoje, a Bíblia relaciona a adoração falsa ao adultério e mostra que o adultério magoa muito quem é traído." aplicacao = "Isso também nos faz refletir sobre a importância de valorizar o casamento, sendo fiéis ao nosso cônjuge em atitudes e pensamentos. Você tem protegido o seu casamento com fidelidade em tudo o que pensa e faz?" (a última frase, a pergunta, é a reflexão).
