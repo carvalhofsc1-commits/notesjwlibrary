@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.69
+
+- **Prioridades de aplicação prática numa fonte só, agora com 10:** os hábitos que as aplicações e as perguntas de reflexão procuram reforçar passaram a vir de uma única lista, `PRIORIDADES_APLICACAO` (`api/_prompts.mjs`), usada no prompt dos comentários adicionais do texto diário ("APLICAÇÕES PRIORITÁRIAS") e nos pedidos "Resumo da leitura: aplicações práticas" e "Resumo da leitura: base". Entrou a **10ª prioridade: tratar com amor e respeito os irmãos na congregação e ser perdoador**, com o exemplo "relacionamento com os irmãos, perdão, ofensas ou união na congregação: item 10"; os textos dizem "10 hábitos" (eram 9). O resto do comportamento ficou igual (mesmas palavras dos itens 1 a 9, mesmas regras de escolha e de fidelidade ao texto).
+- **Adoração em Família por quadros — fase 1:** nova função `prioridadesAplicaveis(perfil)`, ainda sem uso (entra na geração por quadros): sem casal na formação ou nos membros, tira as prioridades do cônjuge (7 e 8); com convidados, pede perguntas gerais, sem expor ninguém.
+- Prompts já editados e guardados na tela de prompts continuam com o texto antigo (9 hábitos) até restaurar os padrões; hoje não há nenhum guardado (`config/armazem/prompts_ia.json` está vazio).
+- Novo teste `ferramentas/testar-adoracao-quadros.mjs` (lista, formatos, os três usos montados e `prioridadesAplicaveis`), também no `npm run check`.
+
 ## 6.12.68
 
 - **Adoração em Família por quadros — fase 0 (só dados no servidor, nada muda na tela):**
