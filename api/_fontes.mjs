@@ -51,6 +51,11 @@ const ARQUIVOS = {
   origemDaVida: "fontes/origem_da_vida.txt",
   // "Cante de Coração Para Jeová" (só letras): [{ numero, titulo, texto, assunto, letra }], gerado por converter_canticos_pdf.py (fora do repositório).
   canticos: "fontes/canticos.json",
+  // Princípios Bíblicos para a Vida Cristã (scl) estruturado (6.12.68): verbetes → subverbetes → entradas, com ids estáveis
+  // ("<verbete>.<n>"), versículos, relatos e o texto literal; gerado por scl_estruturado.py (fora do repositório).
+  principiosIndice: "fontes/principios.json",
+  // Catálogo de jw.org/pt/ensinos-biblicos/ (6.12.68): só título, caminho, link e trecho de ~500 caracteres (nunca o texto completo).
+  ensinosBiblicos: "fontes/ensinos_biblicos.json",
 };
 
 const MAX_VERSICULOS_POR_REFERENCIA = 10;
@@ -781,7 +786,9 @@ const NOMES_DAS_FONTES = {
   perspicaz_v2: "Estudo Perspicaz das Escrituras, volume 2 (it-2)",
   adoracao_pura: "A Adoração Pura de Jeová É Restaurada! (rr)",
   reino_de_deus: "O Reino de Deus Já Governa! (kr)",
-  principios_biblicos: "Princípios Bíblicos para a Vida Cristã (lvs)",
+  principios_biblicos: "Princípios Bíblicos para a Vida Cristã (scl)",
+  principios: "Princípios Bíblicos para a Vida Cristã (scl) — estruturado (verbetes e entradas)",
+  ensinos_biblicos: "Ensinos Bíblicos do jw.org — catálogo (títulos, links e trechos)",
   raciocinios: "Raciocínios à Base das Escrituras (rs)",
   glossario_nwt: "Glossário da Tradução do Novo Mundo",
   introducao_biblia_estudo: "Introdução — Bíblia de Estudo (nwtsty)",
@@ -847,6 +854,22 @@ function detectarEdicao(chave, texto) {
   return partes.join(" · ");
 }
 
+// O que um arquivo JSON de fontes/ traz: cânticos (lista), princípios (verbetes/entradas) ou o catálogo dos Ensinos Bíblicos (artigos).
+export function resumoDoJson(conteudo) {
+  try {
+    const j = JSON.parse(conteudo);
+    if (Array.isArray(j)) return `${j.length} cânticos`;
+    const partes = [];
+    if (Array.isArray(j?.entradas)) partes.push(`${j.entradas.length} entradas`, `${(j.verbetes || []).length} verbetes`);
+    if (Array.isArray(j?.artigos)) partes.push(`${j.artigos.length} páginas`, `${j.artigos.filter((a) => a.ciencia).length} de ciência`);
+    if (j?.edicao) partes.push(j.edicao);
+    if (j?.gerado) partes.push("gerado em " + j.gerado);
+    return partes.join(" · ");
+  } catch {
+    return "";
+  }
+}
+
 // [{ caminho, chave, nome, tamanho, enviadoEm, detectado }] de todos os arquivos de fontes/ (mais as que estão no código e ainda não foram enviadas).
 export async function inventarioDasFontes() {
   const { list } = await import("./_blob.mjs");
@@ -871,9 +894,7 @@ export async function inventarioDasFontes() {
       else {
         try {
           const conteudo = await baixar(caminho);
-          detectado = caminho.endsWith(".json")
-            ? (() => { try { const j = JSON.parse(conteudo); return Array.isArray(j) ? `${j.length} cânticos` : ""; } catch { return ""; } })()
-            : detectarEdicao(nomeArquivo, conteudo);
+          detectado = caminho.endsWith(".json") ? resumoDoJson(conteudo) : detectarEdicao(nomeArquivo, conteudo);
         } catch { detectado = ""; }
         detectadoCache.set(caminho, { atualizado, texto: detectado });
       }
@@ -908,6 +929,39 @@ export async function lerCanticos() {
     return canticosGuardados;
   } catch (e) {
     console.error("Cânticos: arquivo indisponível", e?.message);
+    return null;
+  }
+}
+
+// Princípios Bíblicos (scl) estruturado: { publicacao, sigla, edicao, gerado, categorias, verbetes, entradas }, com as entradas
+// filtradas às válidas (id, verbete e texto). null se o arquivo ainda não foi enviado ao armazenamento.
+let principiosGuardados = null;
+export async function lerPrincipios() {
+  if (principiosGuardados) return principiosGuardados;
+  try {
+    const j = JSON.parse(await baixar(ARQUIVOS.principiosIndice));
+    if (!j || !Array.isArray(j.entradas)) throw new Error("formato inesperado");
+    principiosGuardados = { ...j, entradas: j.entradas.filter((e) => e && e.id && e.verbete && e.texto) };
+    return principiosGuardados;
+  } catch (e) {
+    console.error("Princípios: arquivo indisponível", e?.message);
+    return null;
+  }
+}
+
+// Catálogo dos Ensinos Bíblicos do jw.org: { fonte, gerado, total, artigos: [{ id, secao, caminho, titulo, url, trecho, ciencia, tipo
+// ("artigo" | "indice"), video, docId, listadoEm?, externo? }] }. "externo": artigo listado numa seção, mas guardado fora de
+// /pt/ensinos-biblicos/ (ex.: revistas); "listadoEm": ids das páginas-índice que o listam. null se o arquivo ainda não foi enviado.
+let ensinosGuardados = null;
+export async function lerEnsinosBiblicos() {
+  if (ensinosGuardados) return ensinosGuardados;
+  try {
+    const j = JSON.parse(await baixar(ARQUIVOS.ensinosBiblicos));
+    if (!j || !Array.isArray(j.artigos)) throw new Error("formato inesperado");
+    ensinosGuardados = { ...j, artigos: j.artigos.filter((a) => a && a.id && a.titulo && a.url) };
+    return ensinosGuardados;
+  } catch (e) {
+    console.error("Ensinos Bíblicos: arquivo indisponível", e?.message);
     return null;
   }
 }

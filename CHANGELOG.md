@@ -2,6 +2,15 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.68
+
+- **Adoração em Família por quadros — fase 0 (só dados no servidor, nada muda na tela):**
+  - **Princípios Bíblicos para a Vida Cristã (scl) reconvertido** a partir da edição de setembro de 2025 (© 2023; impressão scl-T 250918), lendo as fontes do PDF (negrito, itálico e tamanhos) para separar verbete, entrada, versículos e relatos. A edição aparece no cabeçalho de `fontes/principios_biblicos.txt` e em `config/armazem/fontes-edicoes.json`.
+  - **Novo `fontes/principios.json`:** os 103 verbetes e as 764 entradas em formato estruturado (id `<verbete>.<n>`, verbete, subverbete, pergunta, versículos, "veja também" e relatos), mais as 7 categorias, com 99,9% das referências bíblicas achadas na Bíblia do servidor (as 3 que faltam são trechos que atravessam capítulos, como "He 11:1–12:3").
+  - **Novo `fontes/ensinos_biblicos.json`:** catálogo da seção Ensinos Bíblicos do jw.org e dos artigos que as páginas dela listam (1518 itens: título, endereço, caminho, trecho de até ~500 caracteres e docId; nunca o texto completo). As páginas das seções de ciência (evolução ou criação, teve um projeto, exatidão científica da Bíblia e origem da vida) ficam marcadas com `ciencia`. Lido uma vez, no computador, com 1 s entre os pedidos; o servidor não acessa o jw.org.
+  - **`api/_fontes.mjs`:** registra os dois arquivos novos (`principiosIndice` e `ensinosBiblicos`), ganha os leitores `lerPrincipios()` e `lerEnsinosBiblicos()` (com cache, ainda sem uso) e o inventário das fontes passa a resumir os arquivos .json (entradas, verbetes, páginas). Corrigida a sigla do livro de princípios no inventário: "(lvs)" → "(scl)".
+  - **Novo teste `ferramentas/testar-fontes-adoracao.mjs`** (formato dos dois arquivos, ids únicos, referências achadas, regra de ciência, busca no txt novo) e verificação de sintaxe dele no `npm run check`.
+
 ## 6.12.67
 
 - **Resumo da leitura da Bíblia: aplicações práticas bem mais ricas:** a seção APLICAÇÕES PRÁTICAS do resumo do capítulo (leitura diária) deixou de ser "uma aplicação curta por parágrafo" e agora pede de 6 a 9 aplicações (mais, se o capítulo sustentar), de 2 a 4 frases cada, ligadas ao versículo e à vida real (família, casamento, ministério, trabalho ou escola, amizades, decisões, sentimentos), cada uma terminando com uma **pergunta de reflexão** carinhosa. Recebeu também as mesmas **aplicações prioritárias** do texto diário: sempre que o capítulo permitir (sem forçar), reforçar estes 9 hábitos: dirigir pelo menos 1 estudo bíblico, sempre fazer revisitas, orações significativas, orar todos os dias, ler a Bíblia todos os dias, manter-se ativo no ministério, tratar o cônjuge com amor e respeito, comunicar-se com o cônjuge e ter equilíbrio nas atividades que consomem tempo (redes sociais, séries, aplicativos de vídeo). Hábitos diferentes entre as aplicações, perguntas diferentes, fidelidade ao capítulo em primeiro lugar. Mexe nos pedidos "Resumo da leitura: aplicações práticas" e "Resumo da leitura: base" (telas de prompts).
