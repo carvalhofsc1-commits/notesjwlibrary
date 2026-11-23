@@ -2928,13 +2928,13 @@
       </div>
     </section>
 
-    <!-- Adoração em Família (6.11.02): 3 opções de programação; liberada pelo código de pesquisa; perfil só neste aparelho. -->
+    <!-- Adoração em Família (6.11.02; 6.12.70: uma programação por quadros); liberada pelo código de pesquisa; perfil só neste aparelho. -->
     <section id="familiaCard" class="card fam-card screen-familia" aria-labelledby="familiaTitulo">
       <div class="fam-topo">
         <button id="familiaVoltar" class="secondary" type="button">◀ Voltar</button>
         <h2 id="familiaTitulo" class="fam-titulo"><span aria-hidden="true">👨‍👩‍👧</span> Adoração em Família</h2>
       </div>
-      <p class="hint"><strong>Peça sugestões para a noite de adoração em família.</strong> A IA leva em conta as informações repassadas sobre a sua família (cadastradas por você) e monta 1 ou 2 opções completas (você escolhe), com partes, textos, vídeos e, se quiser, cânticos.</p>
+      <p class="hint"><strong>Peça sugestões para a noite de adoração em família.</strong> A IA leva em conta as informações repassadas sobre a sua família (cadastradas por você) e monta a programação pelos quadros que você marcar, com textos, vídeos, perguntas e, se quiser, jogo e cânticos.</p>
       <!-- 6.11.56: as adorações que este aparelho dirige (com a chave do dirigente): reabrir, copiar o código ou o link e apagar o compartilhamento. -->
       <details id="familiaDirigindoBox" class="fam-jogos-box fam-dirigindo-box" hidden>
         <summary>👑 Adorações compartilhadas <span id="familiaDirigindoQtd" class="opc"></span></summary>
@@ -3000,45 +3000,38 @@
         </div>
       </details>
 
-      <!-- 6.12.63: um card só (vista exclusiva, como a Família e as definições gerais) com a estrutura da programação, as circunstâncias e as atividades que a família aceita. -->
+      <!-- 6.12.70: os quadros da programação (vista exclusiva, como a Família e as definições gerais): a lista dos quadros (os obrigatórios marcados e
+           travados; montada pelo app a partir de QUADROS_FAMILIA), o total ao vivo, os atalhos, os cânticos inicial e final, os 6 jogos aceitos e as circunstâncias. -->
       <div id="familiaProgTopo" class="fam-topo fam-perfil-topo" hidden>
         <button id="familiaProgVoltar" class="secondary" type="button">◀ Voltar</button>
-        <h2 class="fam-titulo"><span aria-hidden="true">🧩</span> Estrutura e atividades</h2>
+        <h2 class="fam-titulo"><span aria-hidden="true">🧩</span> Quadros da programação</h2>
       </div>
 
       <details id="familiaProgBox" class="fam-perfil-box">
         <summary>
-          <span class="fam-perfil-titulo">🧩 Estrutura e atividades da programação</span>
+          <span class="fam-perfil-titulo">🧩 Quadros da programação</span>
           <span id="familiaProgResumo" class="fam-perfil-resumo"></span>
         </summary>
         <div class="fam-perfil-corpo">
           <div class="fam-bloco">
-            <h3 class="fam-bloco-titulo">🧱 Estrutura da programação</h3>
-            <p class="hint fam-dica">Toda opção começa com a <strong>Oração inicial</strong> e termina com a <strong>Oração final</strong>. Marque as atividades que ficam entre as duas, nesta ordem (pelo menos uma). A conversa e as outras ideias entram dentro delas.</p>
-            <div id="familiaEstrutura" class="fam-checks" role="group" aria-label="Estrutura da programação">
-              <label class="fam-check"><input type="checkbox" value="Leitura de um trecho de uma matéria (site, A Sentinela, livros, Perspicaz e outras publicações)" checked><span>📰 Leitura de um trecho (alguns parágrafos) de uma matéria (site, A Sentinela, livros, Perspicaz e outras publicações)</span></label>
-              <label class="fam-check"><input type="checkbox" value="Leitura de passagens bíblicas" checked><span>📖 Leitura de um trecho da Bíblia ou de versículos, com perguntas</span></label>
-              <label class="fam-check"><input type="checkbox" value="Vídeo do jw.org" checked><span>🎬 Um ou dois vídeos do jw.org sobre o assunto</span></label>
-              <label class="fam-check"><input type="checkbox" value="Jogos bíblicos" checked><span>🎲 Um jogo bíblico</span></label>
+            <h3 class="fam-bloco-titulo">🧱 Quadros</h3>
+            <p class="hint fam-dica">A programação começa com a <strong>Oração inicial</strong> e termina com a <strong>Oração final</strong>. Os quadros com 🔒 entram sempre; marque os opcionais que quiser. A duração é a soma dos quadros marcados.</p>
+            <div id="familiaQuadros" class="fam-checks fam-quadros" role="group" aria-label="Quadros da programação"></div>
+            <p id="familiaQuadrosTotal" class="fam-quadros-total" aria-live="polite"></p>
+            <div class="fam-acoes-dupla">
+              <button id="familiaQuadrosCurta" class="secondary fam-fino" type="button">🌙 Noite curta</button>
+              <button id="familiaQuadrosCompleta" class="secondary fam-fino" type="button">🌟 Completa</button>
             </div>
-            <!-- Jogos aceitos (6.11.24): vale quando "Jogos ou adivinhas" está marcado; a IA entrega o jogo escolhido pronto (regras, material e conteúdo). -->
+            <div class="fam-checks fam-canticos-marcas" role="group" aria-label="Cânticos da abertura e do encerramento">
+              <label class="fam-check"><input id="familiaCanticoInicial" type="checkbox"><span>🎵 Cântico inicial</span></label>
+              <label class="fam-check"><input id="familiaCanticoFinal" type="checkbox"><span>🎵 Cântico final</span></label>
+            </div>
+            <!-- Jogos aceitos (6.12.70: os 6 tipos, montados pelo app a partir de FAMILIA_JOGOS): valem quando o quadro Jogo bíblico está marcado. -->
             <details id="familiaJogosBox" class="fam-jogos-box">
               <summary>🎲 Jogos aceitos <span id="familiaJogosQtd" class="opc"></span></summary>
-              <p class="hint fam-dica">Marque os tipos de jogo que a família gosta. A IA escolhe entre eles e já traz o jogo pronto (regras, material e perguntas, personagens ou abreviações). Vale quando “Um jogo bíblico” está marcado na estrutura, logo acima.</p>
-              <div id="familiaJogos" class="fam-checks" role="group" aria-label="Jogos aceitos">
-                <label class="fam-check"><input type="checkbox" value="Quem sou eu? (personagens bíblicos)" checked><span>Quem sou eu? (personagens bíblicos)</span></label>
-                <label class="fam-check"><input type="checkbox" value="Abreviações bíblicas (ex.: Os 12 A de C)" checked><span>Abreviações bíblicas (ex.: Os 12 A de C)</span></label>
-                <label class="fam-check"><input type="checkbox" value="Mímica de personagens e cenas" checked><span>Mímica de personagens e cenas</span></label>
-                <label class="fam-check"><input type="checkbox" value="Verdadeiro ou falso" checked><span>Verdadeiro ou falso</span></label>
-                <label class="fam-check"><input type="checkbox" value="Ordem dos acontecimentos" checked><span>Ordem dos acontecimentos</span></label>
-                <label class="fam-check"><input type="checkbox" value="Quem disse isso? (frases da Bíblia)" checked><span>Quem disse isso? (frases da Bíblia)</span></label>
-                <label class="fam-check"><input type="checkbox" value="Charadas e adivinhas bíblicas" checked><span>Charadas e adivinhas bíblicas</span></label>
-                <label class="fam-check"><input type="checkbox" value="Complete o versículo" checked><span>Complete o versículo</span></label>
-                <label class="fam-check"><input type="checkbox" value="Torta na cara (perguntas bíblicas, quem erra leva a torta)" checked><span>🥧 Torta na cara (perguntas bíblicas, quem erra leva a torta)</span></label>
-                <label class="fam-check"><input type="checkbox" value="FunPlayB: tema personalizado (20 perguntas para importar)" checked><span>🎮 FunPlayB: tema personalizado (20 perguntas para importar)</span></label>
-              </div>
+              <p class="hint fam-dica">Marque os tipos de jogo que a família gosta. A IA escolhe um deles e já traz o jogo pronto, no nível de quem já conhece bem a Bíblia, para jogar no próprio app. Vale quando o quadro “Jogo bíblico” está marcado.</p>
+              <div id="familiaJogos" class="fam-checks" role="group" aria-label="Jogos aceitos"></div>
               <div class="fam-jogos-rodape">
-                <label class="fam-check fam-jogo-papel"><input id="familiaJogoPapel" type="checkbox" checked><span>✏️ Pode usar papel e lápis (ou caneta) nos jogos</span></label>
                 <div class="fam-acoes-dupla">
                   <button id="familiaJogosTodos" class="secondary fam-fino" type="button">Marcar todos</button>
                   <button id="familiaJogosNenhum" class="secondary fam-fino" type="button">Desmarcar todos</button>
@@ -3072,19 +3065,6 @@
             <textarea id="familiaOutrasCirc" class="fam-campo" rows="1" maxlength="500" spellcheck="true" placeholder="Ex.: mudança recente, pressão no trabalho…"></textarea>
           </div>
 
-          <div class="fam-bloco">
-            <h3 class="fam-bloco-titulo">🎨 Atividades que a família aceita</h3>
-            <p class="hint fam-dica">Marque o que mais a família gosta. Essas ideias entram <strong>dentro</strong> das atividades da estrutura acima (por exemplo, no jogo ou na conversa), nunca como atividade a mais.</p>
-            <div id="familiaAtividades" class="fam-checks" role="group" aria-label="Atividades">
-              <label class="fam-check"><input type="checkbox" value="Dramatização ou encenação" checked><span>Dramatização ou encenação</span></label>
-              <label class="fam-check"><input type="checkbox" value="Desenho ou artesanato" checked><span>Desenho ou artesanato</span></label>
-              <label class="fam-check"><input type="checkbox" value="Estudo pessoal" checked><span>Estudo pessoal</span></label>
-              <label class="fam-check"><input type="checkbox" value="Preparação para as reuniões" checked><span>Preparação para as reuniões</span></label>
-              <label class="fam-check"><input type="checkbox" value="Treino dos cânticos" checked><span>Treino dos cânticos</span></label>
-              <label class="fam-check"><input type="checkbox" value="Cântico inicial"><span>Cântico inicial</span></label>
-              <label class="fam-check"><input type="checkbox" value="Cântico final"><span>Cântico final</span></label>
-            </div>
-          </div>
           <button id="familiaProgConcluir" class="secondary fam-perfil-concluir" type="button">✔ Concluir e voltar</button>
         </div>
       </details>
@@ -3124,33 +3104,15 @@
       </details>
 
       <div class="fam-bloco">
-        <h3 class="fam-bloco-titulo">⏱️ Duração e assunto</h3>
-        <div class="fam-linha-dupla">
-          <div class="fam-meia">
-            <label class="fam-rotulo" for="familiaDuracao">Duração total</label>
-            <select id="familiaDuracao" class="fam-campo fam-campo-curto">
-              <option value="30">30 minutos</option>
-              <option value="45" selected>45 minutos</option>
-              <option value="60">60 minutos</option>
-              <option value="90">90 minutos</option>
-            </select>
-          </div>
-          <div class="fam-meia">
-            <label class="fam-rotulo" for="familiaQuantidade">Quantas sugestões</label>
-            <select id="familiaQuantidade" class="fam-campo fam-campo-curto">
-              <option value="1">1 sugestão</option>
-              <option value="2" selected>2 sugestões</option>
-            </select>
-          </div>
-        </div>
-        <label class="fam-rotulo" for="familiaAssunto">Assunto desta semana <span class="opc">(opcional)</span></label>
-        <textarea id="familiaAssunto" class="fam-campo" rows="1" maxlength="300" spellcheck="true" placeholder="Ex.: o perdão; a oração; o relato do filho pródigo. Vazio = assuntos bem diferentes."></textarea>
+        <h3 class="fam-bloco-titulo">📝 Assunto desta semana</h3>
+        <label class="fam-rotulo" for="familiaAssunto">Assunto <span class="opc">(opcional)</span></label>
+        <textarea id="familiaAssunto" class="fam-campo" rows="1" maxlength="300" spellcheck="true" placeholder="Ex.: o perdão; a oração; o relato do filho pródigo. Vazio = a IA escolhe um assunto para a família."></textarea>
       </div>
 
       <div class="fam-acoes">
-        <button id="familiaGerarBtn" data-codigo-ia="pesquisa" class="fam-fino fam-principal" type="button">✨ Preparar 2 opções</button>
+        <button id="familiaGerarBtn" data-codigo-ia="pesquisa" class="fam-fino fam-principal" type="button">✨ Preparar a programação</button>
         <button id="familiaCancelarBtn" class="secondary fam-fino" type="button" hidden>⏹️ Cancelar</button>
-        <button id="familiaLimparBtn" class="secondary fam-fino limpar-btn" type="button" title="Limpar as opções geradas" aria-label="Limpar as opções geradas" hidden>🗑️</button>
+        <button id="familiaLimparBtn" class="secondary fam-fino limpar-btn" type="button" title="Limpar a programação gerada" aria-label="Limpar a programação gerada" hidden>🗑️</button>
       </div>
       <p id="familiaStatus" class="fam-status" role="status" aria-live="polite" hidden></p>
 

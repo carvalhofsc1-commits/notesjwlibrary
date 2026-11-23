@@ -2,6 +2,16 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.70
+
+- **Adoração em Família por quadros — fase 2 (tela e formato):** a programação agora é montada por **quadros**. Em "🧩 Quadros da programação" aparecem os 12 quadros do catálogo (Oração inicial, Abertura, Vídeo, Princípio bíblico, Personagem do dia, Lições da vida de Jesus e Oração final entram sempre, com 🔒; Fortaleça sua fé no Criador, Saiba responder, Ame o ministério, Jogo bíblico e Treino de cânticos são opcionais), com os minutos de cada um e o total ("⏱️ Total: N min + orações · K quadros"). A duração é a soma dos quadros marcados (35 min na 🌙 Noite curta, 65 min na 🌟 Completa). Cântico inicial e cântico final ficam em marcas próprias.
+- **Uma programação por vez:** o botão virou "✨ Preparar a programação" e a IA devolve uma só programação (saem a quantidade de opções, a duração escolhida à parte e a lista de atividades). Programações antigas salvas com 2 opções continuam abrindo (aparecem como "Opção 1" e "Opção 2", e a mescla delas continua funcionando).
+- **Jogos:** ficam só 6 tipos (Quem sou eu?, Verdadeiro ou falso, Ordem e data dos acontecimentos, Quem disse isso?, Complete o versículo e Abreviações bíblicas), todos para jogar no próprio app, no nível de um adulto batizado. Saíram mímica, charadas, torta na cara, jogos de papel e lápis e o FunPlayB (o convite do FunPlayB na tela Formatar continua).
+- **Catálogo dos quadros** em `api/_familiaQuadros.mjs` (quadros, jogos e a conversão dos perfis antigos), com uma cópia no app que o teste confere ser igual à do servidor.
+- **Perfis antigos convertidos:** "Jogos bíblicos" vira o quadro Jogo bíblico, "Treino dos cânticos" vira Treino de cânticos, a marca antiga dos cânticos no início e no fim marca os dois cânticos e "Ordem dos acontecimentos" vira "Ordem e data dos acontecimentos".
+- **Correção das prioridades:** "Mãe ou pai sozinho" e "Quem mora sozinho" nunca têm casal, mesmo com Pai e Mãe criados pelo app; "Casal com filhos" e "Casal sem filhos" sempre têm; "Família com avós ou outros" continua decidida pelos membros (nova `familiaTemCasal`).
+- O prompt "Adoração em Família" e o seu formato (tela de prompts) foram reescritos para os quadros. Prompts já editados e guardados continuam com o texto antigo até restaurar os padrões (hoje não há nenhum guardado). Até a fase 3, a programação ainda é gerada numa só chamada à IA.
+
 ## 6.12.69
 
 - **Prioridades de aplicação prática numa fonte só, agora com 10:** os hábitos que as aplicações e as perguntas de reflexão procuram reforçar passaram a vir de uma única lista, `PRIORIDADES_APLICACAO` (`api/_prompts.mjs`), usada no prompt dos comentários adicionais do texto diário ("APLICAÇÕES PRIORITÁRIAS") e nos pedidos "Resumo da leitura: aplicações práticas" e "Resumo da leitura: base". Entrou a **10ª prioridade: tratar com amor e respeito os irmãos na congregação e ser perdoador**, com o exemplo "relacionamento com os irmãos, perdão, ofensas ou união na congregação: item 10"; os textos dizem "10 hábitos" (eram 9). O resto do comportamento ficou igual (mesmas palavras dos itens 1 a 9, mesmas regras de escolha e de fidelidade ao texto).

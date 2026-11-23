@@ -5,7 +5,7 @@
 // Ações (POST, campo "acao"): criar · entrar · estado · liberar · bloquear · sortear · revelar · passar-direcao · assumir · encerrar.
 // Arquivos em familia-sessoes/<CODIGO>/ (api/_blob.mjs):
 //  - programa.json      a programação SEM as respostas dos jogos (não muda depois de criada);
-//  - respostas.json     só o servidor lê: as respostas, o hash (SHA-256) das chaves do dirigente e os extras dele (preparação, dica, FunPlayB);
+//  - respostas.json     só o servidor lê: as respostas, o hash (SHA-256) das chaves do dirigente e os extras dele (preparação, tarefas, dica);
 //  - estado.json        só as ações do dirigente gravam: partes liberadas, sorteio, respostas reveladas e o número da versão;
 //  - participantes/<id>.json  um arquivo por participante (ninguém grava no arquivo do outro).
 // A chave do dirigente nunca é guardada em texto; a sessão vence depois de 48 horas sem uso e é apagada na próxima vez que alguém
@@ -236,9 +236,7 @@ function limparPrograma(op) {
     preparacao: lista(op.preparacao, 20, (t) => texto(t, 400)),
     tarefas: lista(op.tarefas, 20, (t) => (t && typeof t === "object" ? { membro: texto(t.membro, 60), tarefa: texto(t.tarefa, 300) } : null)),
     dicaParaOChefe: texto(op.dicaParaOChefe, 800),
-    funplayb: op.funplayb && typeof op.funplayb === "object" && typeof op.funplayb.csv === "string"
-      ? { tema: texto(op.funplayb.tema, 200), csv: String(op.funplayb.csv).slice(0, 30000), perguntas: lista(op.funplayb.perguntas, 40, (q) => (q && typeof q === "object" ? Object.fromEntries(Object.entries(q).slice(0, 10).map(([k, v]) => [k, texto(v, 400)])) : null)) }
-      : null,
+    // 6.12.70: o FunPlayB saiu (extras.funplayb não é mais guardado; programações antigas com ele continuam sendo compartilhadas sem esse extra).
   };
   return { programa, respostas, extras };
 }

@@ -40,6 +40,8 @@ import {
   trechosBe,
 } from "./_servicoCampo.mjs";
 import { artigosDoTopicoDoGuia, buscarNosLivros, buscarVerbete, buscarVersiculos, versiculosDoCapitulo, fontesConfiguradas, lerCanticos, precarregarFontes, referenciasNoTexto, textoDeGruposBiblicos } from "./_fontes.mjs";
+import { JOGOS_FAMILIA, QUADROS_FAMILIA, minutosDosQuadros, quadrosDoPedido } from "./_familiaQuadros.mjs";
+import { familiaTemCasal } from "./_prompts.mjs";
 import { lerEsboco, lerIndice, minutosDoEsboco, publicacoesDaSecao, referenciasDoPublico, s34Configurado, textoDoDiscursoPublico, textoDoEsbocoImportado, textosBiblicosDoPublico, validarEsboco } from "./_s34.mjs";
 import {
   QUADROS_EBC,
@@ -2655,9 +2657,9 @@ async function responderPesquisa(res, body, P) {
 
 // ---------- Adoração em Família (6.11.02) ----------
 // A tela Adoração em Família (atalho do Início e menu, liberada pelo código de pesquisa) manda o perfil da família: só apelidos, papéis e
-// idades (calculadas no aparelho), as circunstâncias e as atividades marcadas, a duração e o assunto da semana (opcional). O servidor junta as
-// matérias do wol.jw.org sobre o assunto, os cânticos e os vídeos do jw.org que combinam com a família, e a IA (a mesma da resposta final das
-// pesquisas) prepara 3 opções completas. Nada do perfil fica guardado no servidor nem vai para o log.
+// idades (calculadas no aparelho), as circunstâncias, os quadros marcados (6.12.70; a duração é a soma deles) e o assunto da semana (opcional).
+// O servidor junta as matérias do wol.jw.org sobre o assunto, os cânticos e os vídeos do jw.org que combinam com a família, e a IA (a mesma da
+// resposta final das pesquisas) prepara UMA programação completa. Nada do perfil fica guardado no servidor nem vai para o log.
 const SaidaAdoracaoFamilia = z.object({
   opcoes: z.array(
     z.object({
@@ -2696,31 +2698,12 @@ const SaidaAdoracaoFamilia = z.object({
       preparacao: z.array(z.string()),
       tarefas: z.array(z.object({ membro: z.string(), tarefa: z.string() })),
       dicaParaOChefe: z.string().nullable(),
-      // Tema personalizado do FunPlayB (só quando o jogo "FunPlayB: tema personalizado" for usado): perguntas para importar no jogo.
-      funplayb: z
-        .object({
-          tema: z.string(),
-          perguntas: z.array(z.object({ enunciado: z.string(), opcaoA: z.string(), opcaoB: z.string(), opcaoC: z.string(), opcaoD: z.string(), resposta: z.string(), dificuldade: z.string(), referencia: z.string() })),
-        })
-        .nullable(),
+      // 6.12.70: o campo "funplayb" (tema personalizado do FunPlayB) saiu; programações antigas que o têm continuam abrindo no app.
     })
   ),
 });
 
-// Os tipos de jogo que o usuário pode aceitar (os mesmos textos da tela) e o formato de importação do FunPlayB (CSV com ";").
-const JOGOS_FAMILIA = [
-  "Quem sou eu? (personagens bíblicos)",
-  "Abreviações bíblicas (ex.: Os 12 A de C)",
-  "Mímica de personagens e cenas",
-  "Verdadeiro ou falso",
-  "Ordem dos acontecimentos",
-  "Quem disse isso? (frases da Bíblia)",
-  "Charadas e adivinhas bíblicas",
-  "Complete o versículo",
-  "Torta na cara (perguntas bíblicas, quem erra leva a torta)",
-  "FunPlayB: tema personalizado (20 perguntas para importar)",
-];
-const JOGO_FUNPLAYB_PERSONALIZADO = JOGOS_FAMILIA[JOGOS_FAMILIA.length - 1];
+// Os 6 tipos de jogo aceitos (6.12.70) vêm de _familiaQuadros.mjs (JOGOS_FAMILIA), com o catálogo dos quadros.
 
 // As atividades da estrutura da programação (6.12.63), como a mensagem à IA as descreve.
 const ESTRUTURA_FAMILIA_TEXTO = {
@@ -2757,12 +2740,6 @@ export function separarRodada(texto) {
   resposta = resposta.replace(/[\s—–;,-]+$/, "").trim();
   return pergunta.length >= 2 && resposta ? { pergunta, resposta, referencia } : null;
 }
-const CABECALHO_FUNPLAYB = "tema;enunciado;opcao_a;opcao_b;opcao_c;opcao_d;resposta_correta;dificuldade;referencia";
-const campoCsv = (v) => {
-  const t = String(v == null ? "" : v).replace(/\s+/g, " ").trim();
-  return /[;"]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
-};
-const DURACOES_ADORACAO = [30, 45, 60, 90];
 const MAX_MEMBROS_FAMILIA = 12;
 const SITUACOES_FAMILIA = ["Batizado", "Publicador não batizado", "Removido", "Descrente", "Estudante"];
 const PRIVILEGIOS_FAMILIA = ["Pioneiro regular", "Pioneiro auxiliar", "Pioneiro especial", "Ancião", "Servo ministerial", "Serviço de Betel", "Superintendente viajante", "Voluntário a distância", "Commuter", "Tempo integral especial"];
@@ -2827,26 +2804,20 @@ export function perfilDaFamilia(body) {
       .slice(0, MAX_MEMBROS_FAMILIA),
   };
   const anos = body.anosCasados;
-  const atividades = textosDaLista(body.atividades, 20, 80);
-  const legadoAmbos = Boolean(body.canticosInicioFim);
-  const canticoInicial = Boolean(body.canticoInicial) || legadoAmbos || atividades.some((a) => /^c[aâ]ntico\s+inicial$/i.test(a));
-  const canticoFinal = Boolean(body.canticoFinal) || legadoAmbos || atividades.some((a) => /^c[aâ]ntico\s+final$/i.test(a));
-  const incluirVideo = atividades.some((a) => /v[ií]deo/i.test(a));
-  // Jogos (6.11.24): com "Jogos ou adivinhas" marcado, só os tipos aceitos (lista da tela); sem nenhum marcado, sem jogos.
-  const jogos = atividades.some((a) => /^jogos?\b/i.test(a)) ? (Array.isArray(body.jogos) ? body.jogos : []).filter((j, i, l) => JOGOS_FAMILIA.includes(j) && l.indexOf(j) === i) : [];
-  // Estrutura da programação (6.12.63): quais das 4 atividades ficam entre a Oração inicial e a final, na ordem fixa matéria, Bíblia, vídeo, jogo.
-  // Vem das mesmas marcações das atividades (os textos da tela); sem nenhuma, valem as quatro.
-  let estrutura = [
-    atividades.some((a) => /mat[eé]ria/i.test(a)) && "materia",
-    atividades.some((a) => /passagens b[ií]blicas|trecho da b[ií]blia/i.test(a)) && "biblia",
-    incluirVideo && "video",
-    jogos.length > 0 && "jogo",
-  ].filter(Boolean);
-  if (!estrutura.length) estrutura = ["materia", "biblia", "video", "jogo"];
+  // Quadros da programação (6.12.70): os marcados (com os obrigatórios), os cânticos inicial e final e os jogos aceitos (dos 6), com a migração
+  // dos pedidos antigos (atividades, jogos, canticosInicioFim) em quadrosDoPedido.
+  const { quadros, canticoInicial, canticoFinal, jogos: jogosAceitos } = quadrosDoPedido(body);
+  const temQuadro = (id) => quadros.includes(id);
+  const jogos = temQuadro("jogo") ? jogosAceitos : [];
+  // Ponte até a geração por quadros (Fase 3): a geração ainda é a de antes (uma chamada com a "estrutura" de até 4 atividades). A Abertura vira a
+  // leitura de uma matéria; Princípio, Personagem e Jesus, a leitura da Bíblia; o Vídeo e o Jogo bíblico, as suas atividades; os demais quadros
+  // marcados entram como pedidos DENTRO dessas atividades (QUADROS_DENTRO_DAS_ATIVIDADES).
+  const estrutura = ["materia", "biblia", "video", temQuadro("jogo") && "jogo"].filter(Boolean);
+  const atividades = QUADROS_FAMILIA.filter((q) => temQuadro(q.id) && QUADROS_DENTRO_DAS_ATIVIDADES[q.id]).map((q) => QUADROS_DENTRO_DAS_ATIVIDADES[q.id]);
   return {
+    quadros,
     estrutura,
     jogos,
-    jogoPapel: body.jogoPapel !== false,
     formacao: textoLivre(body.formacao, 80),
     membros,
     convidados,
@@ -2854,15 +2825,25 @@ export function perfilDaFamilia(body) {
     circunstancias: textosDaLista(body.circunstancias, 20, 80),
     outrasCircunstancias: textoLivre(body.outrasCircunstancias, 500),
     atividades,
-    duracao: DURACOES_ADORACAO.includes(Number(body.duracao)) ? Number(body.duracao) : 45,
-    // Quantas sugestões preparar (6.11.15): 1 ou 2; qualquer outro valor vale 2 (o padrão).
-    quantidade: Number(body.quantidade) === 1 ? 1 : 2,
+    // A duração é a soma dos minutos dos quadros marcados (as orações não entram); sempre uma programação por vez.
+    duracao: minutosDosQuadros(quadros),
     assunto: textoLivre(body.assunto, 300),
     canticoInicial,
     canticoFinal,
-    incluirVideo,
+    incluirVideo: temQuadro("video"),
   };
 }
+
+// Os quadros que, até a Fase 3, não têm atividade própria na estrutura: o texto que a mensagem à IA leva em "QUADROS DENTRO DAS ATIVIDADES".
+const QUADROS_DENTRO_DAS_ATIVIDADES = {
+  principio: 'Princípio bíblico: um princípio da Bíblia ligado ao assunto, com o texto e as perguntas "Que princípio podemos extrair do(s) texto(s) acima?" e "Em que situações práticas esse princípio pode nos orientar?"',
+  personagem: 'Personagem do dia: um personagem bíblico, de preferência pouco conhecido, com o trecho da história e a pergunta "Que lições aprendemos da história de [nome]?"',
+  jesus: "Lições da vida de Jesus: um episódio da vida de Jesus com uma lição sobre o assunto",
+  criador: "Fortaleça sua fé no Criador: um ponto em que a ciência concorda com a Bíblia ou mostra que a vida não surgiu por acaso (pode fugir do assunto)",
+  saiba_responder: "Saiba responder: uma pergunta interessante que as pessoas fazem, com a resposta da Bíblia ou de uma publicação",
+  ame_ministerio: "Ame o ministério: uma situação prática do ministério e o que dizer para despertar o interesse",
+  canticos: "Treino dos cânticos: um cântico ligado a um assunto ou personagem da noite",
+};
 
 // Os vídeos que a IA pode sugerir: primeiro os que combinam com o assunto (no catálogo todo) e com as circunstâncias (só nas seções de
 // SECOES_CIRCUNSTANCIAS), com alguma palavra rara no título; depois os das seções da família (os mais novos de cada uma), sem repetir e até
@@ -2870,8 +2851,7 @@ export function perfilDaFamilia(body) {
 function videosParaAFamilia(catalogo, perfil) {
   if (!catalogo.length) return [];
   const idades = [...perfil.membros, ...perfil.convidados.membros].map((m) => m.idade).filter((i) => i !== null); // os convidados também contam (crianças, adolescentes)
-  const papeis = perfil.membros.map((m) => m.papel.toLowerCase());
-  const casal = /casal|casad/i.test(perfil.formacao) || papeis.includes("marido") || papeis.includes("esposa") || (papeis.includes("pai") && papeis.includes("mãe"));
+  const casal = familiaTemCasal(perfil); // 6.12.70: a mesma regra das prioridades aplicáveis (a formação explícita manda; senão, os membros)
   const criancas = idades.some((i) => i <= 12);
   const secoes = [
     ...SECOES_VIDEOS_FAMILIA.sempre,
@@ -3002,9 +2982,9 @@ async function responderAdoracaoFamilia(res, body, P) {
   if (!perfil.formacao && !perfil.membros.length) return erro(res, 400, "Descreva a família: a formação e os membros.");
   precarregarFontes({ biblia: true, livros: true });
   const consulta = perfil.assunto.length >= 8 ? perfil.assunto : perfil.assunto ? perfil.assunto + " família" : "";
-  const usaCanticos = perfil.canticoInicial || perfil.canticoFinal || perfil.atividades.some((a) => /c[aâ]ntico/i.test(a));
-  // As atividades que o chefe aceita, fora as da estrutura (matéria, Bíblia, vídeo e jogo, que têm linha própria) e os cânticos inicial e final.
-  const atividadesGerais = perfil.atividades.filter((a) => !/^c[aâ]ntico\s+(inicial|final)$/i.test(a) && !/mat[eé]ria|passagens b[ií]blicas|trecho da b[ií]blia|v[ií]deo|^jogos?\b/i.test(a));
+  const usaCanticos = perfil.canticoInicial || perfil.canticoFinal || perfil.quadros.includes("canticos");
+  // Os quadros marcados que entram DENTRO das atividades da estrutura (ponte até a geração por quadros da Fase 3).
+  const atividadesGerais = perfil.atividades;
   // 6.12.58: os livros e brochuras guardados no servidor (Imite a Sua Fé, Jovens Perguntam, Mantenha-se no Amor de Deus…) entram como base de apoio:
   // a busca usa o assunto e, sem assunto, as circunstâncias e a formação da família.
   const consultaLivros = [perfil.assunto, ...perfil.circunstancias, perfil.outrasCircunstancias, perfil.assunto ? "" : perfil.formacao].filter(Boolean).join(" ").slice(0, 700);
@@ -3020,11 +3000,10 @@ async function responderAdoracaoFamilia(res, body, P) {
   const cv = perfil.convidados;
   const temConvidados = cv.membros.length > 0 || Boolean(cv.formacao) || Boolean(cv.familia) || Boolean(cv.anotacoes);
   const circunstancias = [...perfil.circunstancias, perfil.outrasCircunstancias].filter(Boolean);
-  const qtd = perfil.quantidade;
-  const todas = qtd === 1 ? "a opção" : `TODAS as ${qtd} opções`;
+  const quadrosDaNoite = QUADROS_FAMILIA.filter((q) => perfil.quadros.includes(q.id)).map((q) => (q.minutos ? `${q.nome} (${q.minutos} min)` : q.nome));
   const mensagem =
     `DATA: ${hoje}\n` +
-    `QUANTIDADE DE OPÇÕES: prepare EXATAMENTE ${qtd} ${qtd === 1 ? "opção" : "opções"} (onde as instruções falarem em 3 opções, vale ${qtd}).\n` +
+    `QUANTIDADE: prepare UMA programação só (o campo "opcoes" com exatamente 1 item).\n` +
     `FORMAÇÃO DA FAMÍLIA: ${perfil.formacao || "não informada"}\n` +
     `MEMBROS (apelido, papel, idade, situação espiritual e privilégios):\n${membros || "- não informados"}\n` +
     (temConvidados
@@ -3039,29 +3018,26 @@ async function responderAdoracaoFamilia(res, body, P) {
       : "") +
     (perfil.anosCasados !== null ? `ANOS DE CASADOS: ${perfil.anosCasados}\n` : "") +
     (circunstancias.length ? `CIRCUNSTÂNCIAS QUE O CHEFE QUIS INFORMAR (trate com tato, nunca exponha ninguém):\n${circunstancias.map((c) => `- ${c}`).join("\n")}\n` : "") +
-    `ESTRUTURA DA PROGRAMAÇÃO ESCOLHIDA PELO CHEFE (obrigatória em TODAS as opções): 1) "Oração inicial"; ` +
+    `QUADROS DA PROGRAMAÇÃO ESCOLHIDOS PELO CHEFE: ${quadrosDaNoite.join("; ")}\n` +
+    `ESTRUTURA DA PROGRAMAÇÃO (obrigatória): 1) "Oração inicial"; ` +
     perfil.estrutura.map((k, i) => `${i + 2}) ${ESTRUTURA_FAMILIA_TEXTO[k]}`).join("; ") +
     `; ${perfil.estrutura.length + 2}) "Oração final". São EXATAMENTE ${perfil.estrutura.length} ${perfil.estrutura.length === 1 ? "atividade" : "atividades"} entre as orações, nesta ordem, e nenhuma outra (a conversa fica dentro delas).\n` +
-    `OUTRAS ATIVIDADES QUE A FAMÍLIA ACEITA (entram DENTRO das atividades da estrutura, nunca como atividade a mais): ${atividadesGerais.length ? atividadesGerais.join("; ") : "nenhuma além das da estrutura"}\n` +
+    `QUADROS DENTRO DAS ATIVIDADES (entram DENTRO das atividades da estrutura, nunca como atividade a mais): ${atividadesGerais.length ? atividadesGerais.join("; ") : "nenhum além das atividades da estrutura"}\n` +
     `CÂNTICO INICIAL: ${perfil.canticoInicial ? "SIM (inclua cântico na abertura)" : "NÃO (não inclua cântico na abertura)"}\n` +
     `CÂNTICO FINAL: ${perfil.canticoFinal ? "SIM (inclua cântico no encerramento)" : "NÃO (não inclua cântico no encerramento)"}\n` +
     `VÍDEO DO JW.ORG: ${
       perfil.incluirVideo
         ? videos.length
-          ? `OBRIGATÓRIO em ${todas} (em CADA opção, inclua obrigatoriamente pelo menos 1 vídeo da lista abaixo no campo "videos" de uma das partes, pelo identificador ex.: "V3", levando a duração dele em conta nos minutos da parte)`
+          ? `OBRIGATÓRIO (inclua obrigatoriamente pelo menos 1 vídeo da lista abaixo no campo "videos" de uma das partes, pelo identificador ex.: "V3", levando a duração dele em conta nos minutos da parte)`
           : 'marcado, mas a lista de vídeos não está disponível agora (deixe "videos" vazio)'
-        : 'NÃO (opção desmarcada; deixe "videos" vazio [] em todas as partes)'
+        : 'NÃO (deixe "videos" vazio [] em todas as partes)'
     }\n` +
     (perfil.jogos.length
       ? `JOGOS ACEITOS PELA FAMÍLIA (use SÓ estes tipos): ${perfil.jogos.join("; ")}\n` +
-        `PAPEL E LÁPIS NOS JOGOS: ${perfil.jogoPapel ? "podem ser usados (opcionalmente)" : "NÃO usar papel nem lápis"}\n` +
-        `JOGO OBRIGATÓRIO: em CADA opção, inclua pelo menos UMA parte com jogo, preenchendo o campo "jogo" TODO PRONTO para jogar (regras curtas, material e o conteúdo completo: nos jogos de pergunta e resposta, cada rodada em "rodadas" com a pergunta SEM a resposta, a resposta e a referência separadas; nos demais, em "itens"). Escolha jogos diferentes entre as opções, ligados ao assunto e adequados às idades. Só dados bem conhecidos, nada difícil demais nem inventado.\n` +
-        (perfil.jogos.includes(JOGO_FUNPLAYB_PERSONALIZADO)
-          ? `FUNPLAYB PERSONALIZADO: se uma opção usar o jogo "${JOGO_FUNPLAYB_PERSONALIZADO}", preencha nessa opção (em UMA só das opções) o campo "funplayb" com o tema e EXATAMENTE 20 perguntas de múltipla escolha sobre o assunto (enunciado até 250 caracteres; cada alternativa até 100; "resposta" a, b, c ou d, variando a posição da certa; "dificuldade" facil, medio ou dificil; "referencia" com o livro, capítulo e versículo da Bíblia ou da publicação e um trecho entre aspas, até 500 caracteres; "tema" até 40 caracteres). Nas outras opções, funplayb = null.\n`
-          : `FUNPLAYB PERSONALIZADO: não usar (funplayb = null em todas as opções).\n`)
-      : `JOGOS: NÃO (nenhum tipo de jogo aceito; deixe "jogo" = null em todas as partes e funplayb = null).\n`) +
-    `DURAÇÃO TOTAL: ${perfil.duracao} minutos\n` +
-    `ASSUNTO PEDIDO PARA ESTA SEMANA: ${perfil.assunto || (qtd === 1 ? "nenhum (escolha o assunto que melhor sirva para esta família)" : `nenhum (escolha ${qtd} assuntos bem diferentes, que sirvam para esta família)`)}\n` +
+        `JOGO OBRIGATÓRIO: inclua UMA parte com jogo, preenchendo o campo "jogo" TODO PRONTO para jogar no próprio app, sem nada fora dele (nada de papel, lápis ou outro material): regras curtas e o conteúdo completo (nos jogos de pergunta e resposta, cada rodada em "rodadas" com a pergunta SEM a resposta, a resposta e a referência separadas; na ordem e data dos acontecimentos, em "itens"). Nível de adulto batizado: nada de pergunta fácil ou óbvia, mas só dados confirmáveis na Bíblia e nas publicações, nada inventado.\n`
+      : `JOGOS: NÃO (o quadro Jogo bíblico não foi marcado; deixe "jogo" = null em todas as partes).\n`) +
+    `DURAÇÃO TOTAL: ${perfil.duracao} minutos (a soma dos quadros, sem contar as orações)\n` +
+    `ASSUNTO PEDIDO PARA ESTA SEMANA: ${perfil.assunto || "nenhum (escolha o assunto que melhor sirva para esta família)"}\n` +
     (materias.length
       ? `\nMATÉRIAS DO WOL.JW.ORG SOBRE O ASSUNTO (cite pelo identificador, ex.: "P2"):\n${materias.map((m, i) => `[P${i + 1}] "${m.titulo}" (${m.rotulo}) — ${m.trecho.slice(0, 300)}`).join("\n")}\n`
       : "") +
@@ -3076,7 +3052,7 @@ async function responderAdoracaoFamilia(res, body, P) {
     (!perfil.incluirVideo
       ? `\nVÍDEOS: a opção de vídeo está desmarcada. Deixe "videos" vazio ([]) em todas as partes.\n`
       : videos.length
-        ? `\nVÍDEOS DO JW.ORG DISPONÍVEIS (OBRIGATÓRIO incluir pelo menos 1 vídeo em CADA opção, citando pelo identificador no campo "videos", ex.: "V3"${qtd > 1 ? "; de preferência escolha vídeos diferentes entre as opções" : ""}):\n${videos.map((v, i) => `[V${i + 1}] "${v.titulo}" (${[v.duracao, v.categoria, (v.publicado || "").slice(0, 4)].filter(Boolean).join("; ")})`).join("\n")}\n`
+        ? `\nVÍDEOS DO JW.ORG DISPONÍVEIS (OBRIGATÓRIO incluir pelo menos 1 vídeo, citando pelo identificador no campo "videos", ex.: "V3"):\n${videos.map((v, i) => `[V${i + 1}] "${v.titulo}" (${[v.duracao, v.categoria, (v.publicado || "").slice(0, 4)].filter(Boolean).join("; ")})`).join("\n")}\n`
         : `\nVÍDEOS: a lista não está disponível agora. Deixe "videos" vazio em todas as partes.\n`);
   try {
     const client = criarClienteIa({ maxRetries: 0, timeout: 240_000 }, P.ia.provedorTarefa);
@@ -3087,7 +3063,7 @@ async function responderAdoracaoFamilia(res, body, P) {
       { max_tokens: P.ia.provedorTarefa === "gemini" ? 32000 : 16000, system: P.sistemaAdoracaoFamilia, messages: [{ role: "user", content: mensagem }] },
       { schema: SaidaAdoracaoFamilia, tarefa: "adoracao-familia" }
     );
-    if (resposta.stop_reason === "refusal" || !resposta.parsed_output) return erro(res, 502, "A IA não conseguiu preparar as opções. Tente de novo.");
+    if (resposta.stop_reason === "refusal" || !resposta.parsed_output) return erro(res, 502, "A IA não conseguiu preparar a programação. Tente de novo.");
     const linha = (v, max) => limparLinha(semCulto(semGotica(typeof v === "string" ? v : "")), max);
     const porNumero = new Map((canticos || []).map((c) => [c.numero, c]));
     // Textos bíblicos: cada referência conferida na Bíblia do servidor (com o texto); a que não for achada fica só com a referência.
@@ -3174,31 +3150,11 @@ async function responderAdoracaoFamilia(res, body, P) {
         }
         itens = sobra;
       }
-      return { tipo: linha(j.tipo, 80), nome: nomeJogo, comoJogar, material: perfil.jogoPapel || !/papel|l[aá]pis|caneta/i.test(String(j.material || "")) ? limparTextoGerado(j.material, 300) : "", rodadas, itens };
-    };
-    // O tema do FunPlayB: cada pergunta confere os limites do módulo de importação (senão sai); o CSV sai pronto para colar.
-    const funplaybDe = (f) => {
-      if (!perfil.jogos.includes(JOGO_FUNPLAYB_PERSONALIZADO) || !f || typeof f !== "object") return null;
-      const tema = linha(f.tema, 40);
-      if (!tema) return null;
-      const letras = ["a", "b", "c", "d"];
-      const perguntas = [];
-      for (const q of Array.isArray(f.perguntas) ? f.perguntas : []) {
-        const enunciado = linha(q.enunciado, 250);
-        const alternativas = [q.opcaoA, q.opcaoB, q.opcaoC, q.opcaoD].map((x) => linha(x, 100));
-        const resp = String(q.resposta || "").trim().toLowerCase().slice(0, 1);
-        const dif = String(q.dificuldade || "").toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
-        const referencia = linha(q.referencia, 500);
-        if (!enunciado || alternativas.some((x) => !x) || !letras.includes(resp) || !referencia) continue;
-        perguntas.push({ enunciado, opcaoA: alternativas[0], opcaoB: alternativas[1], opcaoC: alternativas[2], opcaoD: alternativas[3], resposta: resp, dificuldade: dif.includes("dific") ? "dificil" : dif.includes("medi") ? "medio" : "facil", referencia });
-        if (perguntas.length >= 20) break;
-      }
-      if (perguntas.length < 5) return null;
-      const csv = [CABECALHO_FUNPLAYB, ...perguntas.map((q) => [tema, q.enunciado, q.opcaoA, q.opcaoB, q.opcaoC, q.opcaoD, q.resposta, q.dificuldade, q.referencia].map(campoCsv).join(";"))].join("\n");
-      return { tema, perguntas, csv };
+      // 6.12.70: nada fora do app; o material de papel e lápis não entra mais.
+      return { tipo: linha(j.tipo, 80), nome: nomeJogo, comoJogar, material: !/papel|l[aá]pis|caneta/i.test(String(j.material || "")) ? limparTextoGerado(j.material, 300) : "", rodadas, itens };
     };
     const opcoes = [];
-    for (const o of resposta.parsed_output.opcoes.slice(0, perfil.quantidade)) {
+    for (const o of resposta.parsed_output.opcoes.slice(0, 1)) {
       const partes = [];
       const partesBrutas = (o.partes || []).slice(0, 10);
       for (let idxParte = 0; idxParte < partesBrutas.length; idxParte++) {
@@ -3270,13 +3226,12 @@ async function responderAdoracaoFamilia(res, body, P) {
           .filter((t) => t.tarefa && !/fazer a oraç[aã]o inicial|^oraç[aã]o inicial$/i.test(t.tarefa))
           .slice(0, 10),
         dicaParaOChefe: o.dicaParaOChefe ? limparTextoGerado(o.dicaParaOChefe, 800) : "",
-        funplayb: funplaybDe(o.funplayb),
       });
     }
     // Sem dados pessoais no log: só as contagens.
-    console.log("Adoração em Família:", JSON.stringify({ modelo: P.ia.modelo, membros: perfil.membros.length, assunto: Boolean(perfil.assunto), duracao: perfil.duracao, videos: videos.length, canticos: canticos ? canticos.length : 0, materias: materias.length, opcoes: opcoes.length, segundosIa: Math.round((Date.now() - inicio) / 100) / 10, entrada: resposta.usage?.input_tokens || 0, saida: resposta.usage?.output_tokens || 0 }));
-    if (!opcoes.length) return erro(res, 502, "A IA não conseguiu preparar as opções. Tente de novo.");
-    return res.status(200).json({ opcoes, duracao: perfil.duracao, assunto: perfil.assunto, modelo: nomeDoModelo(P.ia.modelo), data: new Date().toISOString() });
+    console.log("Adoração em Família:", JSON.stringify({ modelo: P.ia.modelo, membros: perfil.membros.length, assunto: Boolean(perfil.assunto), quadros: perfil.quadros.length, duracao: perfil.duracao, videos: videos.length, canticos: canticos ? canticos.length : 0, materias: materias.length, opcoes: opcoes.length, segundosIa: Math.round((Date.now() - inicio) / 100) / 10, entrada: resposta.usage?.input_tokens || 0, saida: resposta.usage?.output_tokens || 0 }));
+    if (!opcoes.length) return erro(res, 502, "A IA não conseguiu preparar a programação. Tente de novo.");
+    return res.status(200).json({ opcoes, quadros: perfil.quadros, duracao: perfil.duracao, assunto: perfil.assunto, modelo: nomeDoModelo(P.ia.modelo), data: new Date().toISOString() });
   } catch (e) {
     return tratarErro(e, res);
   }

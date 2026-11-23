@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.69'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.70'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -9645,8 +9645,7 @@
             document.getElementById('familiaHorario').value = '';
             familiaOutrasCircEl.value = '';
             familiaAssuntoEl.value = '';
-            familiaDuracaoEl.value = '45';
-            document.querySelectorAll('#familiaEstrutura input[type="checkbox"], #familiaCircunstancias input[type="checkbox"], #familiaAtividades input[type="checkbox"], #familiaJogos input[type="checkbox"], #familiaJogoPapel').forEach(el => { el.checked = el.defaultChecked; });
+            document.querySelectorAll('#familiaCircunstancias input[type="checkbox"]').forEach(el => { el.checked = el.defaultChecked; }); // quadros, cânticos e jogos: o padrão volta em familiaPerfilCarregar
             familiaMembrosEl.innerHTML = '';
             familiaConvidadosEl.innerHTML = '';
             document.getElementById('familiaConvidadosFormacao').value = '';
@@ -26013,8 +26012,103 @@ function saveTemplatesToStorage() {
     const familiaFormacaoEl = document.getElementById('familiaFormacao');
     const familiaAnosCasadosEl = document.getElementById('familiaAnosCasados');
     const familiaOutrasCircEl = document.getElementById('familiaOutrasCirc');
-    const familiaDuracaoEl = document.getElementById('familiaDuracao');
-    const familiaQuantidadeEl = document.getElementById('familiaQuantidade'); // quantas sugestões: 1 ou 2 (padrão 2)
+    // <quadros-familia>
+    // 6.12.70: a programação por quadros. Cópia do essencial do catálogo do servidor (api/_familiaQuadros.mjs: id, nome, emoji, minutos, obrigatorio,
+    // ligadoAoTema), dos 6 jogos aceitos e da migração dos perfis antigos (quadrosDoPedido). Este bloco não usa a página (só dados), e o teste
+    // ferramentas/testar-adoracao-quadros.mjs o executa e confere que é igual ao do servidor. Mudou lá, mude aqui.
+    const QUADROS_FAMILIA = Object.freeze([
+      { id: 'oracao_inicial', nome: 'Oração inicial', emoji: '🙏', minutos: null, obrigatorio: true, ligadoAoTema: false },
+      { id: 'abertura', nome: 'Abertura', emoji: '📖', minutos: 10, obrigatorio: true, ligadoAoTema: true },
+      { id: 'video', nome: 'Vídeo', emoji: '🎬', minutos: 10, obrigatorio: true, ligadoAoTema: true },
+      { id: 'principio', nome: 'Princípio bíblico', emoji: '🧭', minutos: 5, obrigatorio: true, ligadoAoTema: true },
+      { id: 'personagem', nome: 'Personagem do dia', emoji: '👤', minutos: 5, obrigatorio: true, ligadoAoTema: true },
+      { id: 'jesus', nome: 'Lições da vida de Jesus', emoji: '✨', minutos: 5, obrigatorio: true, ligadoAoTema: true },
+      { id: 'criador', nome: 'Fortaleça sua fé no Criador', emoji: '🔬', minutos: 5, obrigatorio: false, ligadoAoTema: false },
+      { id: 'saiba_responder', nome: 'Saiba responder', emoji: '❓', minutos: 5, obrigatorio: false, ligadoAoTema: true },
+      { id: 'ame_ministerio', nome: 'Ame o ministério', emoji: '🚪', minutos: 5, obrigatorio: false, ligadoAoTema: true },
+      { id: 'jogo', nome: 'Jogo bíblico', emoji: '🎲', minutos: 10, obrigatorio: false, ligadoAoTema: true },
+      { id: 'canticos', nome: 'Treino de cânticos', emoji: '🎵', minutos: 5, obrigatorio: false, ligadoAoTema: true },
+      { id: 'oracao_final', nome: 'Oração final', emoji: '🙏', minutos: null, obrigatorio: true, ligadoAoTema: false }
+    ].map(q => Object.freeze(q)));
+    const IDS_QUADROS_FAMILIA = Object.freeze(QUADROS_FAMILIA.map(q => q.id));
+    const QUADROS_FAMILIA_OBRIGATORIOS = Object.freeze(QUADROS_FAMILIA.filter(q => q.obrigatorio).map(q => q.id));
+    const FAMILIA_JOGOS = Object.freeze([
+      'Quem sou eu? (personagens bíblicos)',
+      'Verdadeiro ou falso',
+      'Ordem e data dos acontecimentos',
+      'Quem disse isso? (frases da Bíblia)',
+      'Complete o versículo',
+      'Abreviações bíblicas (ex.: Os 12 A de C)'
+    ]);
+    const FAMILIA_NOMES_ANTIGOS_DOS_JOGOS = Object.freeze({ 'Ordem dos acontecimentos': 'Ordem e data dos acontecimentos' });
+    // Os minutos dos quadros marcados (as orações não entram).
+    function familiaMinutosDosQuadros(ids) {
+      const marcados = new Set(Array.isArray(ids) ? ids : []);
+      return QUADROS_FAMILIA.reduce((s, q) => s + (marcados.has(q.id) && q.minutos ? q.minutos : 0), 0);
+    }
+    // O perfil salvo (novo ou antigo) -> { quadros (ids na ordem fixa, com os obrigatórios), canticoInicial, canticoFinal, jogos }: a mesma regra de
+    // quadrosDoPedido no servidor. Perfil antigo (sem "quadros"): os jogos marcados nas atividades viram o quadro Jogo bíblico e o "Treino dos
+    // cânticos" vira o Treino de cânticos; sem nenhuma lista, valem os obrigatórios e o Jogo bíblico. Jogos: só os 6 (nomes antigos renomeados); sem nenhum, os 6.
+    function familiaQuadrosMigrados(salvo) {
+      const b = salvo && typeof salvo === 'object' ? salvo : {};
+      const atividades = (Array.isArray(b.atividades) ? b.atividades : []).map(a => String(a || '').trim()).filter(Boolean);
+      let marcados;
+      if (Array.isArray(b.quadros)) marcados = new Set(b.quadros.filter(id => IDS_QUADROS_FAMILIA.includes(id)));
+      else if (Array.isArray(b.atividades)) {
+        marcados = new Set();
+        if (atividades.some(a => /^jogos?\b/i.test(a))) marcados.add('jogo');
+        if (atividades.some(a => /treino d[oe]s? c[aâ]nticos/i.test(a))) marcados.add('canticos');
+      } else marcados = new Set(['jogo']);
+      for (const id of QUADROS_FAMILIA_OBRIGATORIOS) marcados.add(id);
+      const quadros = IDS_QUADROS_FAMILIA.filter(id => marcados.has(id));
+      const legadoAmbos = Boolean(b.canticosInicioFim);
+      const canticoInicial = Boolean(b.canticoInicial) || legadoAmbos || atividades.some(a => /^c[aâ]ntico\s+inicial$/i.test(a));
+      const canticoFinal = Boolean(b.canticoFinal) || legadoAmbos || atividades.some(a => /^c[aâ]ntico\s+final$/i.test(a));
+      const jogosBrutos = (Array.isArray(b.jogos) ? b.jogos : []).map(j => FAMILIA_NOMES_ANTIGOS_DOS_JOGOS[j] || j);
+      let jogos = FAMILIA_JOGOS.filter(j => jogosBrutos.includes(j));
+      if (!jogos.length) jogos = FAMILIA_JOGOS.slice();
+      return { quadros, canticoInicial, canticoFinal, jogos };
+    }
+    // </quadros-familia>
+
+    // A lista dos quadros e a dos jogos, montadas a partir do catálogo: os obrigatórios ficam marcados e travados (🔒).
+    const familiaQuadrosEl = document.getElementById('familiaQuadros');
+    const familiaJogosEl = document.getElementById('familiaJogos');
+    familiaQuadrosEl.innerHTML = QUADROS_FAMILIA.map(q =>
+      '<label class="fam-check fam-quadro' + (q.obrigatorio ? ' fam-quadro-travado' : '') + '"' + (q.obrigatorio ? ' title="Este quadro entra sempre"' : '') + '>' +
+      '<input type="checkbox" value="' + q.id + '"' + (q.obrigatorio ? ' checked disabled' : '') + '>' +
+      '<span>' + q.emoji + ' ' + familiaEscapar(q.nome) + (q.obrigatorio ? ' <span class="fam-quadro-cadeado" aria-label="obrigatório">🔒</span>' : '') + '</span>' +
+      '<span class="fam-quadro-min">' + (q.minutos ? q.minutos + ' min' : '') + '</span></label>').join('');
+    familiaJogosEl.innerHTML = FAMILIA_JOGOS.map(j => '<label class="fam-check"><input type="checkbox" value="' + familiaEscapar(j) + '" checked><span>' + familiaEscapar(j) + '</span></label>').join('');
+
+    // Os quadros marcados na tela (na ordem fixa, sempre com os obrigatórios).
+    function familiaQuadrosLidos() {
+      const marcados = new Set(Array.from(familiaQuadrosEl.querySelectorAll('input:checked')).map(el => el.value).concat(QUADROS_FAMILIA_OBRIGATORIOS));
+      return IDS_QUADROS_FAMILIA.filter(id => marcados.has(id));
+    }
+    const familiaTotalTexto = ids => familiaMinutosDosQuadros(ids) + ' min + orações';
+    // O total ao vivo (soma dos quadros marcados) e o estado da lista de jogos (só vale com o quadro Jogo bíblico marcado).
+    function familiaQuadrosAtualizar() {
+      const ids = familiaQuadrosLidos();
+      const n = ids.filter(id => QUADROS_FAMILIA.find(q => q.id === id).minutos).length;
+      document.getElementById('familiaQuadrosTotal').textContent = '⏱️ Total: ' + familiaTotalTexto(ids) + ' · ' + n + (n === 1 ? ' quadro' : ' quadros');
+      familiaJogosAtualizar();
+    }
+    function familiaJogosAtualizar() {
+      const n = familiaJogosEl.querySelectorAll('input:checked').length;
+      const ativo = familiaQuadrosLidos().includes('jogo');
+      document.getElementById('familiaJogosQtd').textContent = !ativo ? '(desligado: marque o quadro “Jogo bíblico”)' : n ? '(' + n + ')' : '(nenhum marcado: vale qualquer um dos 6)';
+      familiaJogosEl.classList.toggle('fam-desligado', !ativo);
+    }
+    // Põe na tela os quadros, os cânticos e os jogos ({ quadros, canticoInicial, canticoFinal, jogos }, como familiaQuadrosMigrados devolve).
+    function familiaQuadrosAplicar(q) {
+      const marcados = new Set(q.quadros);
+      familiaQuadrosEl.querySelectorAll('input').forEach(el => { el.checked = el.disabled || marcados.has(el.value); });
+      document.getElementById('familiaCanticoInicial').checked = Boolean(q.canticoInicial);
+      document.getElementById('familiaCanticoFinal').checked = Boolean(q.canticoFinal);
+      familiaChecksMarcar(familiaJogosEl, q.jogos);
+      familiaQuadrosAtualizar();
+    }
     const familiaAssuntoEl = document.getElementById('familiaAssunto');
     const familiaStatusEl = document.getElementById('familiaStatus');
     const familiaResultadoEl = document.getElementById('familiaResultado');
@@ -26177,19 +26271,13 @@ function saveTemplatesToStorage() {
         },
         circunstancias: familiaChecksLidos(document.getElementById('familiaCircunstancias')),
         outrasCircunstancias: (familiaOutrasCircEl.value || '').trim().slice(0, 500),
-        atividades: familiaChecksLidos(document.getElementById('familiaEstrutura')).concat(familiaChecksLidos(document.getElementById('familiaAtividades'))), // 6.12.63: a estrutura vem primeiro
-        jogos: familiaChecksLidos(document.getElementById('familiaJogos')),
-        jogoPapel: document.getElementById('familiaJogoPapel').checked,
-        duracao: Number(familiaDuracaoEl.value) || 45,
-        quantidade: Number(familiaQuantidadeEl.value) === 1 ? 1 : 2,
+        // 6.12.70: os quadros marcados (com os obrigatórios), os cânticos inicial e final e os jogos aceitos. Uma programação só; a duração é a soma.
+        quadros: familiaQuadrosLidos(),
+        canticoInicial: document.getElementById('familiaCanticoInicial').checked,
+        canticoFinal: document.getElementById('familiaCanticoFinal').checked,
+        jogos: familiaChecksLidos(familiaJogosEl),
         assunto: (familiaAssuntoEl.value || '').trim().slice(0, 300)
       };
-    }
-    const familiaOpcoesTexto = n => n + (n === 1 ? ' opção' : ' opções');
-    // O botão diz quantas opções vai preparar (enquanto prepara, o relógio assume o texto e o devolve depois).
-    function familiaBotaoRotuloAtualizar() {
-      if (familiaGerarBtn.dataset.rotulo) return;
-      familiaGerarBtn.textContent = '✨ Preparar ' + familiaOpcoesTexto(Number(familiaQuantidadeEl.value) === 1 ? 1 : 2);
     }
 
     function familiaPerfilResumoPintar() {
@@ -26202,13 +26290,12 @@ function saveTemplatesToStorage() {
       if (nomes.length) partes.push(nomes.length === 1 ? nomes[0] : nomes.length + ' membros');
       if (perfil.diaAdoracao || perfil.horaAdoracao) partes.push([perfil.diaAdoracao.replace('-feira', ''), perfil.horaAdoracao].filter(Boolean).join(' às '));
       resumoEl.textContent = partes.join(' · ');
-      // Card "Estrutura e atividades": quantas atividades na estrutura, circunstâncias e atividades aceitas marcadas.
+      // Card "Quadros da programação" (6.12.70): quantos quadros, o total e as circunstâncias marcadas.
       const progEl = document.getElementById('familiaProgResumo');
       if (progEl) {
-        const nEstr = familiaChecksLidos(document.getElementById('familiaEstrutura')).length;
+        const nQuadros = perfil.quadros.filter(id => QUADROS_FAMILIA.find(q => q.id === id).minutos).length;
         const nCirc = perfil.circunstancias.length + (perfil.outrasCircunstancias ? 1 : 0);
-        const nAtiv = familiaChecksLidos(document.getElementById('familiaAtividades')).length;
-        progEl.textContent = [nEstr + (nEstr === 1 ? ' atividade na estrutura' : ' atividades na estrutura'), nCirc ? nCirc + (nCirc === 1 ? ' circunstância' : ' circunstâncias') : '', nAtiv ? nAtiv + (nAtiv === 1 ? ' aceita' : ' aceitas') : ''].filter(Boolean).join(' · ');
+        progEl.textContent = [nQuadros + (nQuadros === 1 ? ' quadro' : ' quadros'), familiaTotalTexto(perfil.quadros), nCirc ? nCirc + (nCirc === 1 ? ' circunstância' : ' circunstâncias') : ''].filter(Boolean).join(' · ');
       }
       const convEl = document.getElementById('familiaConvidadosResumo');
       if (convEl) {
@@ -26227,7 +26314,7 @@ function saveTemplatesToStorage() {
       let salvo = null;
       try { salvo = JSON.parse(localStorage.getItem(FAMILIA_PERFIL_KEY) || 'null'); } catch (e) { salvo = null; }
       if (!salvo || typeof salvo !== 'object') {
-        familiaQuantidadeEl.value = '2';
+        familiaQuadrosAplicar(familiaQuadrosMigrados({})); // padrão: os obrigatórios e o Jogo bíblico, com os 6 jogos
         familiaMembroAdd({ papel: 'Pai' });
         familiaMembroAdd({ papel: 'Mãe' });
         familiaConvidadoAdd();
@@ -26241,19 +26328,8 @@ function saveTemplatesToStorage() {
       if (typeof salvo.horaAdoracao === 'string') document.getElementById('familiaHorario').value = salvo.horaAdoracao;
       familiaChecksMarcar(document.getElementById('familiaCircunstancias'), salvo.circunstancias);
       if (typeof salvo.outrasCircunstancias === 'string') familiaOutrasCircEl.value = salvo.outrasCircunstancias;
-      if (Array.isArray(salvo.atividades)) {
-        let ativ = salvo.canticosInicioFim ? salvo.atividades.concat(['Cântico inicial', 'Cântico final']) : salvo.atividades;
-        // 6.12.47: "Jogos ou adivinhas" virou "Jogos bíblicos"; quem tinha o nome antigo ganha também as três atividades de leitura novas (marcadas).
-        if (ativ.includes('Jogos ou adivinhas')) ativ = ativ.map(a => (a === 'Jogos ou adivinhas' ? 'Jogos bíblicos' : a)).concat(['Leitura de passagens bíblicas', 'Leitura de um trecho de uma matéria (site, A Sentinela, livros, Perspicaz e outras publicações)', 'Leitura de um trecho da Bíblia e um vídeo']);
-        // 6.12.63: "Leitura de um trecho da Bíblia e um vídeo" (atividade antiga) vira as duas da estrutura: leitura da Bíblia e vídeo.
-        if (ativ.includes('Leitura de um trecho da Bíblia e um vídeo')) ativ = ativ.concat(['Leitura de passagens bíblicas', 'Vídeo do jw.org']);
-        familiaChecksMarcar(document.getElementById('familiaEstrutura'), ativ);
-        familiaChecksMarcar(document.getElementById('familiaAtividades'), ativ);
-      }
-      if (Array.isArray(salvo.jogos)) familiaChecksMarcar(document.getElementById('familiaJogos'), salvo.jogos); // sem escolha salva: todos marcados (o padrão)
-      document.getElementById('familiaJogoPapel').checked = salvo.jogoPapel !== false;
-      if ([30, 45, 60, 90].includes(Number(salvo.duracao))) familiaDuracaoEl.value = String(salvo.duracao);
-      familiaQuantidadeEl.value = Number(salvo.quantidade) === 1 ? '1' : '2'; // sem escolha salva (ou antiga, de 3 opções): 2
+      // 6.12.70: quadros, cânticos e jogos; o perfil antigo (atividades, duracao, quantidade, jogoPapel) é convertido por familiaQuadrosMigrados.
+      familiaQuadrosAplicar(familiaQuadrosMigrados(salvo));
       if (typeof salvo.assunto === 'string') familiaAssuntoEl.value = salvo.assunto;
       familiaMembrosEl.innerHTML = '';
       const membros = Array.isArray(salvo.membros) && salvo.membros.length ? salvo.membros.slice(0, 12) : [{ papel: 'Pai' }, { papel: 'Mãe' }];
@@ -26306,11 +26382,10 @@ function saveTemplatesToStorage() {
         },
         circunstancias: perfil.circunstancias,
         outrasCircunstancias: perfil.outrasCircunstancias,
-        atividades: perfil.atividades,
+        quadros: perfil.quadros,
+        canticoInicial: perfil.canticoInicial,
+        canticoFinal: perfil.canticoFinal,
         jogos: perfil.jogos,
-        jogoPapel: perfil.jogoPapel,
-        duracao: perfil.duracao,
-        quantidade: perfil.quantidade,
         assunto: perfil.assunto
       };
     }
@@ -26371,8 +26446,6 @@ function saveTemplatesToStorage() {
       familiaJogoTextos(j).forEach((t, i) => l.push((i + 1) + ') ' + t));
       return l;
     }
-    const FUNPLAYB_ENDERECO = 'https://jogo-perguntas-app.vercel.app';
-    const familiaTemJogoFunplayb = op => (op.partes || []).some(p => p.jogo && /funplayb/i.test((p.jogo.tipo || '') + ' ' + (p.jogo.nome || '')));
 
     function familiaTextoDaOpcao(op) {
       const linhas = [];
@@ -26394,9 +26467,6 @@ function saveTemplatesToStorage() {
         if (p.jogo) linhas.push('', ...familiaJogoLinhas(p.jogo));
         if (p.transicao) linhas.push('➡️ Transição: ' + p.transicao);
       });
-      if (op.funplayb) {
-        linhas.push('', '🎮 Tema para o FunPlayB: ' + op.funplayb.tema + ' (' + op.funplayb.perguntas.length + ' perguntas). Para jogar: copie o texto abaixo, abra o FunPlayB (' + FUNPLAYB_ENDERECO + ') e cole no módulo de importação de perguntas.', op.funplayb.csv);
-      }
       if ((op.preparacao || []).length) {
         linhas.push('', 'Preparação:');
         op.preparacao.forEach(t => linhas.push('• ' + t));
@@ -26450,7 +26520,7 @@ function saveTemplatesToStorage() {
       if (op.dicaParaOChefe) partes.push(p('<w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="F59E0B"/></w:pBdr><w:ind w:left="240"/>' + espaco(280, 100), runs('💡 ' + op.dicaParaOChefe, 'i', 22)));
       // Material dos jogos: uma parte separada, em página nova, com cada jogo pronto para imprimir ou ler em voz alta.
       const jogos = (op.partes || []).filter(x => x.jogo).map(x => x.jogo);
-      if (jogos.length || op.funplayb) {
+      if (jogos.length) {
         partes.push('<w:p><w:r><w:br w:type="page"/></w:r></w:p>');
         partes.push(p(espaco(0, 160), runs('🎲 Material dos jogos', 'b', 32)));
         jogos.forEach((j, i) => {
@@ -26459,12 +26529,6 @@ function saveTemplatesToStorage() {
           if (j.material) partes.push(p(espaco(0, 80), runs('✏️ Material: ', 'b', 22) + runs(j.material, '', 22)));
           familiaJogoTextos(j).forEach((t, k) => partes.push(p('<w:ind w:left="360" w:hanging="360"/>' + espaco(0, 60), runs((k + 1) + ') ', 'b', 22) + runs(t, '', 22))));
         });
-        if (op.funplayb) {
-          const f = op.funplayb;
-          partes.push(p('<w:keepNext/><w:pBdr><w:bottom w:val="single" w:sz="4" w:space="2" w:color="D1D5DB"/></w:pBdr>' + espaco(300, 80), runs('🎮 Tema para o FunPlayB: ' + f.tema + ' (' + f.perguntas.length + ' perguntas)', 'b', 26)));
-          partes.push(p(espaco(0, 100), runs('Para jogar: copie as perguntas no NoteStyle (botão “Copiar perguntas para o FunPlayB”), abra o FunPlayB (' + FUNPLAYB_ENDERECO + ') e cole no módulo de importação de perguntas.', 'i', 20, cinza)));
-          f.perguntas.forEach((q, k) => partes.push(p('<w:ind w:left="360" w:hanging="360"/>' + espaco(0, 60), runs((k + 1) + ') ' + q.enunciado + ' ', 'b', 20) + runs('A) ' + q.opcaoA + '  B) ' + q.opcaoB + '  C) ' + q.opcaoC + '  D) ' + q.opcaoD + '  → ', '', 20) + runs(q.resposta.toUpperCase(), 'b', 20))));
-        }
       }
       return partes.join('');
     }
@@ -26507,7 +26571,7 @@ function saveTemplatesToStorage() {
       }
       if (op.dicaParaOChefe) html.push('<p class="pq-doc-faixa pq-doc-conclusao">💡 ' + e(op.dicaParaOChefe) + '</p>');
       const jogosDoc = (op.partes || []).filter(x => x.jogo).map(x => x.jogo);
-      if (jogosDoc.length || op.funplayb) {
+      if (jogosDoc.length) {
         html.push('<p class="pq-doc-titulo" style="margin-top:2em">🎲 Material dos jogos <span class="pq-doc-cinza">(página nova no Word)</span></p>');
         jogosDoc.forEach((j, i) => {
           html.push('<p class="pq-doc-secao">' + e((i + 1) + '. ' + j.nome + familiaTipoJogo(j)) + '</p>');
@@ -26515,12 +26579,6 @@ function saveTemplatesToStorage() {
           if (j.material) html.push('<p class="pq-doc-p"><b>✏️ Material:</b> ' + e(j.material) + '</p>');
           familiaJogoTextos(j).forEach((t, k) => html.push('<p class="pq-doc-fonte"><b>' + (k + 1) + ')</b> ' + e(t) + '</p>'));
         });
-        if (op.funplayb) {
-          const f = op.funplayb;
-          html.push('<p class="pq-doc-secao">🎮 Tema para o FunPlayB: ' + e(f.tema) + ' (' + f.perguntas.length + ' perguntas)</p>');
-          html.push('<p class="pq-doc-p"><i>Para jogar: copie as perguntas no NoteStyle, abra o FunPlayB e cole no módulo de importação de perguntas.</i></p>');
-          f.perguntas.forEach((q, k) => html.push('<p class="pq-doc-fonte"><b>' + (k + 1) + ') ' + e(q.enunciado) + '</b> A) ' + e(q.opcaoA) + ' B) ' + e(q.opcaoB) + ' C) ' + e(q.opcaoC) + ' D) ' + e(q.opcaoD) + ' → <b>' + e(q.resposta.toUpperCase()) + '</b></p>'));
-        }
       }
       folha.innerHTML = html.join('');
       raiz.append(dica, folha);
@@ -26542,9 +26600,14 @@ function saveTemplatesToStorage() {
     function familiaRenderOpcoes(opcoes, numeros) {
       familiaResultadoEl.innerHTML = '';
       familiaOpcoes = opcoes;
-      // Com duas opções, o usuário pode montar a própria programação marcando as partes que quiser de cada uma.
+      // Com duas opções (programações salvas antigas), o usuário pode montar a própria programação marcando as partes que quiser de cada uma.
       if (opcoes.length > 1) familiaResultadoEl.appendChild(familiaMesclaMontar(opcoes));
-      opcoes.forEach((op, idx) => familiaResultadoEl.appendChild(familiaMontarCard(op, idx, 'Opção ' + ((numeros && numeros[idx]) || idx + 1) + (op.duracaoTotal ? ' · ' + op.duracaoTotal + ' min' : ''))));
+      // 6.12.70: uma programação só aparece como "Programação"; as antigas, de duas opções, continuam com "Opção N".
+      opcoes.forEach((op, idx) => {
+        const n = (numeros && numeros[idx]) || idx + 1;
+        const rotulo = opcoes.length > 1 || n > 1 ? 'Opção ' + n : 'Programação';
+        familiaResultadoEl.appendChild(familiaMontarCard(op, idx, rotulo + (op.duracaoTotal ? ' · ' + op.duracaoTotal + ' min' : '')));
+      });
       familiaResultadoEl.hidden = !opcoes.length;
       familiaLimparBtn.hidden = !opcoes.length;
     }
@@ -26794,8 +26857,7 @@ function saveTemplatesToStorage() {
           p.innerHTML = '<strong>Objetivo:</strong> ' + familiaEscapar(op.objetivo);
           card.appendChild(p);
         }
-        (op.partes || []).forEach(parte => card.appendChild(familiaParteMontar(parte)));
-        if (op.funplayb) card.appendChild(familiaFunplaybPainel(op.funplayb));
+        (op.partes || []).forEach(parte => card.appendChild(familiaParteMontar(parte))); // 6.12.70: o tema do FunPlayB das programações antigas (op.funplayb) não aparece mais
         if ((op.preparacao || []).length) {
           const t = document.createElement('p');
           t.className = 'fam-secao-titulo';
@@ -26993,54 +27055,6 @@ function saveTemplatesToStorage() {
         art.appendChild(acoes);
         lista.appendChild(art);
       });
-    }
-
-    // O tema personalizado do FunPlayB: copiar as perguntas (CSV pronto para o módulo de importação) e abrir o jogo.
-    function familiaFunplaybPainel(f) {
-      const caixa = document.createElement('div');
-      caixa.className = 'fam-funplayb';
-      const t = document.createElement('p');
-      t.className = 'fam-secao-titulo';
-      t.textContent = '🎮 Tema para o FunPlayB: ' + f.tema + ' (' + f.perguntas.length + ' perguntas)';
-      const d = document.createElement('p');
-      d.className = 'fam-parte-desc';
-      d.textContent = 'Toque em “Copiar perguntas”, abra o FunPlayB e cole no módulo de importação de perguntas. O tema entra pronto para jogar.';
-      const acoes = document.createElement('div');
-      acoes.className = 'fam-acoes';
-      const copiar = document.createElement('button');
-      copiar.type = 'button';
-      copiar.className = 'fam-fino fam-principal';
-      copiar.textContent = '📋 Copiar perguntas para o FunPlayB';
-      copiar.addEventListener('click', async () => {
-        try {
-          await navigator.clipboard.writeText(f.csv);
-          copiar.textContent = '✅ Copiadas';
-          setTimeout(() => { copiar.textContent = '📋 Copiar perguntas para o FunPlayB'; }, 1800);
-        } catch (e) {
-          familiaStatus('Não consegui copiar. Abra a lista abaixo, selecione o texto e copie manualmente.', 'erro');
-        }
-      });
-      const abrir = document.createElement('a');
-      abrir.className = 'secondary fam-fino fam-link-botao';
-      abrir.href = FUNPLAYB_ENDERECO;
-      abrir.target = '_blank';
-      abrir.rel = 'noopener noreferrer';
-      abrir.textContent = '🎮 Abrir o FunPlayB';
-      acoes.append(copiar, abrir);
-      const det = document.createElement('details');
-      det.className = 'fam-jogo-itens';
-      const sm = document.createElement('summary');
-      sm.textContent = 'Ver as perguntas';
-      const ol = document.createElement('ol');
-      ol.className = 'fam-lista';
-      f.perguntas.forEach(q => {
-        const li = document.createElement('li');
-        li.textContent = q.enunciado + ' A) ' + q.opcaoA + ' B) ' + q.opcaoB + ' C) ' + q.opcaoC + ' D) ' + q.opcaoD + ' → ' + q.resposta.toUpperCase();
-        ol.appendChild(li);
-      });
-      det.append(sm, ol);
-      caixa.append(t, d, acoes, det);
-      return caixa;
     }
 
     // ---- Adoração compartilhada (6.11.48): compartilhar a programação por código; os participantes acompanham ao vivo ----
@@ -28400,11 +28414,11 @@ function saveTemplatesToStorage() {
       participar.dir.proxima.textContent = i == null ? '✔ Última parte' : (!participarLiberadas().size ? '▶️ Começar: ' : '⏭️ Próxima: ') + participarNum(i) + '. ' + (parte.nome || 'Parte');
     }
 
-    // Preparação, tarefas, dica e o FunPlayB: só no aparelho do dirigente (o servidor só manda os extras com a chave).
+    // Preparação, tarefas e dica: só no aparelho do dirigente (o servidor só manda os extras com a chave). 6.12.70: sem o FunPlayB.
     function participarExtrasMontar() {
       const x = participar.extras;
       if (!x) return null;
-      const temAlgo = (x.preparacao || []).length || (x.tarefas || []).length || x.dicaParaOChefe || x.funplayb;
+      const temAlgo = (x.preparacao || []).length || (x.tarefas || []).length || x.dicaParaOChefe;
       if (!temAlgo) return null;
       const det = document.createElement('details');
       det.className = 'fam-sessao-extras';
@@ -28429,7 +28443,6 @@ function saveTemplatesToStorage() {
         dica.textContent = '💡 ' + x.dicaParaOChefe;
         det.appendChild(dica);
       }
-      if (x.funplayb && Array.isArray(x.funplayb.perguntas) && x.funplayb.csv) det.appendChild(familiaFunplaybPainel(x.funplayb));
       return det;
     }
 
@@ -28513,15 +28526,6 @@ function saveTemplatesToStorage() {
       progresso.append(progTexto, progBarra);
       progresso.hidden = !(j.rodadas || []).length;
       caixa.append(enunciado, placar, progresso); // 6.12.19: as regras logo depois do título do jogo, antes do placar
-      if (/funplayb/i.test((j.tipo || '') + ' ' + (j.nome || ''))) {
-        const a = document.createElement('a');
-        a.className = 'secondary fam-fino fam-link-botao';
-        a.href = FUNPLAYB_ENDERECO;
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
-        a.textContent = '🎮 Abrir o FunPlayB';
-        caixa.appendChild(a);
-      }
       const ref = { rodadas: [], sorteio: null, nome: null, ultimoN: null, placar, progTexto, progBarra, progPreench };
       // Sorteio: o nome sorteado aparece para todos; os botões, só para o dirigente.
       const sorteio = document.createElement('div');
@@ -29014,10 +29018,11 @@ function saveTemplatesToStorage() {
     else if (currentScreen() === 'participar') participarAoEntrar();
 
     // ---- Montar a minha programação: marca as partes das duas opções; o tempo previsto é somado a cada marcação (6.11.19) ----
+    // 6.12.70: a IA prepara uma programação só; a montagem fica para as programações salvas antigas, que tinham duas opções.
     function familiaMesclaMontar(opcoes) {
       const caixa = document.createElement('div');
       caixa.className = 'fam-mescla';
-      const alvo = Number(opcoes[0] && opcoes[0].duracaoTotal) || Number(familiaDuracaoEl.value) || 45;
+      const alvo = Number(opcoes[0] && opcoes[0].duracaoTotal) || familiaMinutosDosQuadros(familiaQuadrosLidos()) || 45;
       const abrir = document.createElement('button');
       abrir.type = 'button';
       abrir.className = 'secondary fam-fino fam-mescla-abrir';
@@ -29115,9 +29120,7 @@ function saveTemplatesToStorage() {
           partes,
           preparacao: unicos([...usadas].sort().flatMap(i => opcoes[i].preparacao || [])),
           tarefas,
-          dicaParaOChefe: '',
-          // O tema do FunPlayB vai junto quando a programação usa o jogo do FunPlayB de uma opção que o trouxe.
-          funplayb: ([...usadas].sort().map(i => opcoes[i]).find(o => o.funplayb && partes.some(p => (o.partes || []).includes(p)) && familiaTemJogoFunplayb({ partes: partes.filter(p => (o.partes || []).includes(p)) })) || {}).funplayb || null
+          dicaParaOChefe: ''
         };
         mostrarFinal(final, soma);
         resultado.firstChild.scrollIntoView({ block: 'start', behavior: 'smooth' });
@@ -29187,44 +29190,40 @@ function saveTemplatesToStorage() {
       const pedido = ++familiaPedido;
       familiaGerarBtn.disabled = true;
       familiaCancelarBtn.hidden = false;
-      familiaQtdPedida = perfil.quantidade;
       familiaRelogioLigar();
       try {
         const result = await postStudy(familiaPayloadDe(perfil), IA_ESPERA_MS);
         if (pedido !== familiaPedido) return;
         if (!result.ok) {
-          familiaStatus((result.data && result.data.erro) || (result.unavailable ? 'Serviço indisponível no momento.' : 'Não consegui preparar as opções. Tente de novo.'), 'erro');
+          familiaStatus((result.data && result.data.erro) || (result.unavailable ? 'Serviço indisponível no momento.' : 'Não consegui preparar a programação. Tente de novo.'), 'erro');
           return;
         }
-        const opcoes = Array.isArray(result.data.opcoes) ? result.data.opcoes : [];
+        const opcoes = (Array.isArray(result.data.opcoes) ? result.data.opcoes : []).slice(0, 1); // 6.12.70: uma programação só
         if (!opcoes.length) {
-          familiaStatus('A IA não devolveu opções. Tente de novo.', 'erro');
+          familiaStatus('A IA não devolveu a programação. Tente de novo.', 'erro');
           return;
         }
         familiaRenderOpcoes(opcoes);
         const modelo = result.data.modelo ? ' · ' + result.data.modelo : '';
         const tempoTotal = familiaRelogioTexto();
-        // Guarda cada opção como uma programação independente em Pesquisas e respostas salvas, na categoria Adoração em Família (sem mexer no campo
-        // de texto). Da última para a primeira, para a opção 1 ficar acima da 2 na lista.
+        // Guarda a programação em Pesquisas e respostas salvas, na categoria Adoração em Família (sem mexer no campo de texto).
         let salvas = 0;
         try {
           const quando = new Date();
           const base = 'Adoração em Família · ' + quando.toLocaleDateString('pt-BR') + ' ' + quando.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + (perfil.assunto ? ' · ' + perfil.assunto.slice(0, 60) : '');
-          for (let i = opcoes.length - 1; i >= 0; i--) {
-            if (historicoSalvar({
-              tipo: 'familia',
-              titulo: base + (opcoes.length > 1 ? ' · Opção ' + (i + 1) : ''),
-              partes: [{ paragrafos: 'Opção ' + (i + 1), texto: familiaTextoDaOpcao(opcoes[i]) }],
-              familiaOpcoes: [opcoes[i]],
-              ligar: false
-            })) salvas++;
-          }
+          if (historicoSalvar({
+            tipo: 'familia',
+            titulo: base,
+            partes: [{ paragrafos: 'Programação', texto: familiaTextoDaOpcao(opcoes[0]) }],
+            familiaOpcoes: [opcoes[0]],
+            ligar: false
+          })) salvas++;
         } catch (e) { /* o app segue sem salvar */ }
-        familiaStatus('Pronto: ' + familiaOpcoesTexto(opcoes.length) + modelo + ' · ' + tempoTotal + (salvas ? ' · 📂 ' + (salvas === 1 ? 'salva' : salvas + ' programações salvas') + ' em Programações salvas' : '') + '.', 'ok');
+        familiaStatus('Pronto: programação preparada' + modelo + ' · ' + tempoTotal + (salvas ? ' · 📂 salva em Programações salvas' : '') + '.', 'ok');
         familiaResultadoEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
       } catch (e) {
         if (pedido !== familiaPedido) return;
-        familiaStatus('Não consegui preparar as opções. Confira a conexão e tente de novo.', 'erro');
+        familiaStatus('Não consegui preparar a programação. Confira a conexão e tente de novo.', 'erro');
       } finally {
         if (pedido === familiaPedido) {
           familiaRelogioDesligar();
@@ -29235,7 +29234,6 @@ function saveTemplatesToStorage() {
     }
 
     // Relógio do preparo (6.11.12): "⏱️ 0:42" no botão e na mensagem de andamento, contando desde o toque em Preparar.
-    let familiaQtdPedida = 2;
     let familiaRelogioInicio = 0;
     let familiaRelogioTimer = null;
     let familiaBotaoRotulo = '';
@@ -29246,7 +29244,7 @@ function saveTemplatesToStorage() {
     function familiaRelogioPintar() {
       const tempo = familiaRelogioTexto();
       familiaGerarBtn.textContent = '⏳ Preparando… ' + tempo;
-      familiaStatus('Preparando ' + (familiaQtdPedida === 1 ? 'a opção' : 'as ' + familiaQtdPedida + ' opções') + '… ' + tempo + ' (pode levar um minuto ou mais)');
+      familiaStatus('Preparando a programação… ' + tempo + ' (pode levar um minuto ou mais)');
     }
     function familiaRelogioLigar() {
       clearInterval(familiaRelogioTimer);
@@ -29269,6 +29267,7 @@ function saveTemplatesToStorage() {
     // 6.11.36: o mesmo para "Informar convidados". qual = 'perfil' | 'convidados' (abre essa vista) | null (volta à tela normal, com tudo recolhido).
     var familiaPerfilRolagem = 0; // var e função: showScreen chama familiaVista antes destas linhas rodarem
     // 6.12.63: Estrutura da programação, Circunstâncias e Atividades aceitas ficam num card só (vista 'prog'), separado dos dados da família.
+    // 6.12.70: o card 'prog' virou "Quadros da programação" (quadros, cânticos, jogos aceitos e circunstâncias).
     function familiaVistasIds() { return { perfil: ['familiaPerfilBox', 'familiaPerfilTopo'], prog: ['familiaProgBox', 'familiaProgTopo'],convidados: ['familiaConvidadosBox', 'familiaConvidadosTopo'] }; }
     function familiaVista(qual, opcoes) {
       const card = document.getElementById('familiaCard');
@@ -29309,36 +29308,25 @@ function saveTemplatesToStorage() {
       familiaLimparBtn.hidden = true;
       familiaStatus('');
     });
-    [familiaFormacaoEl, familiaAnosCasadosEl, document.getElementById('familiaDiaSemana'), document.getElementById('familiaHorario'), familiaDuracaoEl, familiaQuantidadeEl, document.getElementById('familiaConvidadosFormacao')].forEach(el => el.addEventListener('change', familiaPerfilSalvar));
-    familiaQuantidadeEl.addEventListener('change', familiaBotaoRotuloAtualizar);
+    [familiaFormacaoEl, familiaAnosCasadosEl, document.getElementById('familiaDiaSemana'), document.getElementById('familiaHorario'), document.getElementById('familiaConvidadosFormacao'), document.getElementById('familiaCanticoInicial'), document.getElementById('familiaCanticoFinal')].forEach(el => el.addEventListener('change', familiaPerfilSalvar));
     [familiaOutrasCircEl, familiaAssuntoEl].forEach(el => el.addEventListener('input', () => { clearTimeout(el._t); el._t = setTimeout(familiaPerfilSalvar, 400); }));
     document.getElementById('familiaCircunstancias').addEventListener('change', familiaPerfilSalvar);
-    document.getElementById('familiaAtividades').addEventListener('change', familiaPerfilSalvar);
-    // Jogos aceitos (6.11.24): salva ao marcar; o título mostra quantos estão marcados; a lista só vale com "Jogos ou adivinhas" marcado.
-    const familiaJogosEl = document.getElementById('familiaJogos');
-    const familiaJogosAtualizar = () => {
-      const n = familiaJogosEl.querySelectorAll('input:checked').length;
-      const ativo = Array.from(document.querySelectorAll('#familiaEstrutura input:checked')).some(el => /^jogos?\b/i.test(el.value));
-      document.getElementById('familiaJogosQtd').textContent = ativo ? '(' + n + ')' : '(desligado: marque “Um jogo bíblico” na estrutura)';
-      familiaJogosEl.classList.toggle('fam-desligado', !ativo);
-    };
-    familiaJogosEl.addEventListener('change', () => { familiaJogosAtualizar(); familiaPerfilSalvar(); });
-    document.getElementById('familiaJogoPapel').addEventListener('change', familiaPerfilSalvar);
-    document.getElementById('familiaAtividades').addEventListener('change', familiaJogosAtualizar);
-    // Estrutura da programação (6.12.63): salva ao marcar e nunca fica sem atividade (a última marcada não desmarca).
-    const familiaEstruturaEl = document.getElementById('familiaEstrutura');
-    familiaEstruturaEl.addEventListener('change', ev => {
-      if (!familiaEstruturaEl.querySelector('input:checked') && ev.target && ev.target.type === 'checkbox') ev.target.checked = true;
-      familiaJogosAtualizar();
+    // Quadros (6.12.70): salva ao marcar e atualiza o total; os atalhos marcam só os obrigatórios (noite curta) ou todos (completa).
+    familiaQuadrosEl.addEventListener('change', () => { familiaQuadrosAtualizar(); familiaPerfilSalvar(); });
+    const familiaQuadrosAtalho = todos => {
+      familiaQuadrosEl.querySelectorAll('input').forEach(el => { el.checked = el.disabled || todos; });
+      familiaQuadrosAtualizar();
       familiaPerfilSalvar();
-    });
+    };
+    document.getElementById('familiaQuadrosCurta').addEventListener('click', () => familiaQuadrosAtalho(false));
+    document.getElementById('familiaQuadrosCompleta').addEventListener('click', () => familiaQuadrosAtalho(true));
+    // Jogos aceitos: salva ao marcar; o título mostra quantos estão marcados; a lista só vale com o quadro Jogo bíblico marcado.
+    familiaJogosEl.addEventListener('change', () => { familiaJogosAtualizar(); familiaPerfilSalvar(); });
     document.getElementById('familiaJogosTodos').addEventListener('click', () => { familiaJogosEl.querySelectorAll('input').forEach(el => { el.checked = true; }); familiaJogosAtualizar(); familiaPerfilSalvar(); });
     document.getElementById('familiaJogosNenhum').addEventListener('click', () => { familiaJogosEl.querySelectorAll('input').forEach(el => { el.checked = false; }); familiaJogosAtualizar(); familiaPerfilSalvar(); });
     familiaPerfilCarregar();
     familiaSalvasRender();
     document.getElementById('familiaSalvasBox').addEventListener('toggle', () => { if (document.getElementById('familiaSalvasBox').open) familiaSalvasRender(); });
-    familiaJogosAtualizar();
-    familiaBotaoRotuloAtualizar();
 
     // Campos de texto (apelidos, anos de casados, outras circunstâncias e assunto): ganham o botão 🗑️ para limpar o campo (aparece só com texto)
     // e, nas caixas de texto, a altura acompanha o conteúdo (6.11.15).

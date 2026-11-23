@@ -16848,14 +16848,21 @@ input[type="time"].fam-campo::-webkit-date-and-time-value { text-align: left; mi
 .fam-jogos-box { border: 1px solid var(--line, #cbd5e1); border-radius: 10px; padding: 0 10px 10px; margin-top: 8px; min-width: 0; }
 .fam-jogos-box > summary { cursor: pointer; min-height: 40px; display: flex; align-items: center; gap: 6px; font-weight: 600; }
 .fam-jogos-box .fam-checks.fam-desligado { opacity: .5; }
-/* Rodapé da caixa de jogos alinhado: a opção do papel na largura da lista e os dois botões em duas colunas iguais. */
+/* Rodapé da caixa de jogos alinhado: os dois botões em duas colunas iguais. */
 .fam-jogos-rodape { display: grid; gap: 8px; margin-top: 8px; min-width: 0; width: 100%; box-sizing: border-box; }
-.fam-jogos-rodape .fam-jogo-papel { margin: 0; width: 100%; align-items: center; }
-.fam-jogos-rodape .fam-jogo-papel input[type="checkbox"] { margin: 0; }
 .fam-acoes-dupla { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; min-width: 0; width: 100%; }
 .fam-acoes-dupla > .fam-fino { width: 100%; min-width: 0; margin: 0; }
-.fam-jogo, .fam-funplayb { display: grid; gap: 6px; min-width: 0; margin-top: 8px; padding: 8px 10px; border-left: 3px solid #f59e0b; border-radius: 6px; background: color-mix(in srgb, #f59e0b 8%, transparent); }
-.fam-funplayb { border-left-color: #3b82f6; background: color-mix(in srgb, #3b82f6 8%, transparent); margin-top: 10px; }
+/* Quadros da programação (6.12.70): uma coluna, os minutos à direita; os obrigatórios (marcados e travados) num fundo azul bem claro. */
+.fam-quadros { grid-template-columns: minmax(0, 1fr); }
+.fam-check.fam-quadro { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; }
+.fam-check.fam-quadro input[type="checkbox"] { margin: 0; }
+.fam-check.fam-quadro-travado { cursor: default; background: color-mix(in srgb, #3b82f6 5%, var(--card)); border-color: color-mix(in srgb, #3b82f6 22%, var(--line)); }
+.fam-check.fam-quadro-travado input[type="checkbox"]:disabled { opacity: .75; }
+.fam-quadro-cadeado { font-size: .8em; opacity: .7; }
+.fam-quadro-min { font-size: .82rem; color: var(--muted, #6b7280); white-space: nowrap; }
+.fam-quadros-total { margin: 8px 0; padding: 6px 10px; border: 1px solid color-mix(in srgb, #3b82f6 25%, var(--line)); border-radius: 8px; background: color-mix(in srgb, #3b82f6 6%, transparent); font-weight: 600; font-size: .92rem; }
+.fam-canticos-marcas { margin-top: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.fam-jogo { display: grid; gap: 6px; min-width: 0; margin-top: 8px; padding: 8px 10px; border-left: 3px solid #f59e0b; border-radius: 6px; background: color-mix(in srgb, #f59e0b 8%, transparent); }
 .fam-jogo-itens > summary { cursor: pointer; font-weight: 600; min-height: 36px; display: flex; align-items: center; }
 .fam-jogo-itens .fam-lista { padding-left: 1.4em; }
 .fam-link-botao { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box; }
