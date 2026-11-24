@@ -1722,7 +1722,7 @@ teste("6.12.89: a voz da adoração usa as regras de fala das referências bíbl
   assert.ok(appJs.includes("const falado = textoParaVoz(pedaco, regras);"));
   assert.ok(appJs.includes("{ origem, original: pedaco }"));
   assert.ok(appJs.includes("{ original: pergunta }"));
-  assert.ok(appJs.includes("sm.prepend(aoVivo.leitura(pedacosVoz))"));
+  assert.ok(appJs.includes("ptm.appendChild(aoVivo.leitura(pedacosVoz))"));
   assert.ok(vozJs.includes("textoDaSessaoParaLer(body.sessao, original || texto, body.origem)"));
   assert.ok(vozJs.includes("texto.length > original.length * 2 + 120"));
 });
@@ -1746,6 +1746,23 @@ teste("6.12.90: artigo inteiro (corte só entre seções), títulos e subtítulo
   if (cat) assert.ok(cat.partes.includes("adoracao_q_revisao"));
   assert.ok(prompts.travadosDe({}).some((x) => x.id === "formato_familia_revisao_leitura"));
   assert.ok(appJs.includes("fam-leitura-par fam-leitura-sub fam-leitura-tit"));
+});
+
+teste("6.12.92: fonte, depois título (fora e dentro do campo), 🔊 na linha do título, links em moldura com rótulo padrão e objetivo da Abertura", async () => {
+  const css = await readFile(new URL("app.css", raiz), "utf8");
+  assert.ok(appJs.includes("const ROTULO_LINK_MATERIA = 'Abrir esta matéria na biblioteca wol.jw.org ↗';"));
+  assert.ok(appJs.includes("a.textContent = ROTULO_LINK_MATERIA;"));
+  assert.ok(appJs.includes("sm.textContent = '📖 Exibir e ler esta matéria aqui';"));
+  // a fonte (ref) vem antes do título fora do campo, e o título antes do link
+  const iRef = appJs.indexOf("lei.appendChild(ref);");
+  const iTit = appJs.indexOf("lt.className = 'fam-secao-titulo fam-leitura-titulo-fora';");
+  const iLink = appJs.indexOf("a.textContent = ROTULO_LINK_MATERIA;");
+  assert.ok(iRef > 0 && iRef < iTit && iTit < iLink);
+  assert.ok(appJs.includes("ptm.className = 'fam-leitura-materia';"));
+  assert.ok(appJs.includes("acoes.push('ler juntos a matéria sugerida')"));
+  assert.ok(appJs.includes("materiaPrimeiro ? 'os textos' : 'ler juntos os textos'"));
+  assert.equal((appJs.match(/a.className = 'fam-link-moldura'/g) || []).length >= 4, true, "leitura, vídeo, cântico e publicação");
+  assert.ok(/a.fam-link-moldura {[^}]*text-align: center/.test(css));
 });
 
 for (const [nome, fn] of testes) {

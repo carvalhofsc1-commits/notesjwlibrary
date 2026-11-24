@@ -2,6 +2,15 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.92
+
+### Adoração em Família: título nos dois lugares, links de matéria padronizados e textos ajustados
+
+- **Fonte e depois o título:** abaixo do bloco da matéria aparece primeiro a identificação da fonte (publicação, edição e página) e logo depois o título da matéria, sempre visível. O título também fica dentro do campo recolhido (o que eu havia tirado do alto na 6.12.91 volta).
+- **Campo "📖 Exibir e ler esta matéria aqui"** (antes "Trecho para considerar"): o título dentro do campo tem o mesmo fundo cinza clarinho do link, uma linha separando-o do texto e o 🔊 no começo da linha do título.
+- **Links:** todo link de matéria da Adoração diz "Abrir esta matéria na biblioteca wol.jw.org ↗" (a publicação citada ganha o nome em texto acima do link). Os links dos vídeos e dos cânticos também ganham a moldura fininha. O texto de todos os links fica centralizado dentro da moldura.
+- **Objetivo da Abertura:** "Ler juntos a matéria sugerida, os textos e comentar as lições".
+
 ## 6.12.91
 
 ### Adoração em Família: título da matéria dentro do campo e links em moldura fininha

@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.91'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.92'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26928,10 +26928,13 @@ function saveTemplatesToStorage() {
       const tem = lista => Array.isArray(lista) && lista.length > 0;
       const acoes = [];
       const textos = tem(parte.textos), videos = tem(parte.videos);
-      if (textos) acoes.push('ler juntos os textos');
+      // 6.12.92: na Abertura a matéria vem primeiro: "Ler juntos a matéria sugerida, os textos e comentar as lições".
+      const materiaPrimeiro = Boolean(parte.leitura && parte.leitura.texto && parte.leitura.primeiro);
+      if (materiaPrimeiro) acoes.push('ler juntos a matéria sugerida');
+      if (textos) acoes.push(materiaPrimeiro ? 'os textos' : 'ler juntos os textos');
       if (videos) acoes.push('assistir aos vídeos');
       // 6.12.19: no jogo não se repete a instrução "jogar o jogo …": as regras do jogo já dizem tudo.
-      if (parte.leitura && parte.leitura.texto) acoes.push('ler juntos o trecho da matéria' + (parte.leitura.paragrafos ? ' (par. ' + parte.leitura.paragrafos + ')' : ''));
+      if (!materiaPrimeiro && parte.leitura && parte.leitura.texto) acoes.push('ler juntos o trecho da matéria' + (parte.leitura.paragrafos ? ' (par. ' + parte.leitura.paragrafos + ')' : ''));
       if (textos || videos || (parte.leitura && parte.leitura.texto)) acoes.push('comentar as lições');
       if (tem(parte.canticos)) acoes.push('cantar juntos');
       if (/ora[çc][ãa]o\s+final/i.test(String(parte.nome || ''))) acoes.push('terminar com uma oração');
@@ -26940,6 +26943,7 @@ function saveTemplatesToStorage() {
       return frase.charAt(0).toUpperCase() + frase.slice(1);
     }
 
+    const ROTULO_LINK_MATERIA = 'Abrir esta matéria na biblioteca wol.jw.org ↗'; // 6.12.92: o rótulo de todo link de matéria da Adoração
     function familiaParteMontar(parte, jogoMontar, aoVivo) {
       const bloco = document.createElement('div');
       bloco.className = 'fam-parte';
@@ -27037,13 +27041,18 @@ function saveTemplatesToStorage() {
         ref.className = 'fam-leitura-ref';
         ref.textContent = (parte.leitura.paragrafos ? (/[-–]/.test(parte.leitura.paragrafos) ? 'Parágrafos ' : 'Parágrafo ') + parte.leitura.paragrafos : (parte.leitura.rotulo || 'Trecho inicial da matéria')) + (parte.leitura.fonte ? ' · ' + parte.leitura.fonte : '');
         lei.appendChild(ref);
+        // 6.12.92: primeiro a fonte (a linha acima), depois o título da matéria, sempre visível; o título também fica dentro do campo recolhido.
+        const lt = document.createElement('p');
+        lt.className = 'fam-secao-titulo fam-leitura-titulo-fora';
+        lt.textContent = '📰 ' + tituloMateria;
+        lei.appendChild(lt);
         if (parte.leitura.url) {
           const a = document.createElement('a');
           a.href = parte.leitura.url;
           a.target = '_blank';
           a.rel = 'noopener noreferrer';
           a.className = 'fam-link-moldura'; // 6.12.91: todo link numa moldura fininha, na largura toda
-          a.textContent = 'Abrir este trecho no wol.jw.org ↗';
+          a.textContent = ROTULO_LINK_MATERIA;
           lei.appendChild(a);
         }
         // 6.12.86: botão 🔊 do trecho (adoração ao vivo), fora do campo recolhido, e o texto em parágrafos com os subtítulos ("## ") em negrito.
@@ -27052,11 +27061,12 @@ function saveTemplatesToStorage() {
         const det = document.createElement('details'); // sempre recolhido ao montar; abre ao tocar
         det.className = 'fam-leitura-trecho';
         const sm = document.createElement('summary');
-        sm.textContent = '📖 Trecho para considerar';
-        if (pedacosVoz.length) sm.prepend(aoVivo.leitura(pedacosVoz)); // 6.12.89: o ícone 🔊 dentro da moldura do campo, na mesma linha de "Trecho para considerar"
+        sm.textContent = '📖 Exibir e ler esta matéria aqui';
         det.appendChild(sm);
-        const ptm = document.createElement('p');
-        ptm.className = 'fam-leitura-par fam-leitura-materia';
+        // 6.12.92: o título dentro do campo, com fundo cinza clarinho como o do link, uma linha embaixo e o 🔊 no começo da linha do título.
+        const ptm = document.createElement('div');
+        ptm.className = 'fam-leitura-materia';
+        if (pedacosVoz.length) ptm.appendChild(aoVivo.leitura(pedacosVoz));
         const ftm = document.createElement('strong');
         ftm.textContent = '📰 ' + tituloMateria;
         ptm.appendChild(ftm);
@@ -27084,6 +27094,7 @@ function saveTemplatesToStorage() {
           a.href = v.link;
           a.target = '_blank';
           a.rel = 'noopener noreferrer';
+          a.className = 'fam-link-moldura'; // 6.12.92: também os links dos vídeos, na moldura fininha, com o texto centralizado
           a.textContent = (v.titulo || 'Vídeo') + (v.duracao ? ' (' + v.duracao + ')' : '') + (aoVivo && aoVivo.video ? ' ↗ jw.org' : '');
           li.appendChild(a);
         } else li.textContent = v.titulo || 'Vídeo';
@@ -27098,6 +27109,7 @@ function saveTemplatesToStorage() {
           a.href = 'https://www.jw.org/pt/biblioteca/videos/#pt/mediaitems/VODSJJMeetings/pub-sjjm_' + c.numero + '_VIDEO';
           a.target = '_blank';
           a.rel = 'noopener noreferrer';
+          a.className = 'fam-link-moldura'; // 6.12.92
           a.textContent = rotulo + ' ↗ jw.org';
           li.appendChild(a);
           aoVivo.cantico(li, { link: a.href }, idx);
@@ -27113,7 +27125,14 @@ function saveTemplatesToStorage() {
         a.target = '_blank';
         a.rel = 'noopener noreferrer';
         a.className = 'fam-link-moldura'; // 6.12.91
-        a.textContent = (rotulo || pub.url || 'Matéria') + (pub.url ? ' ↗' : ' ↗ procurar no wol.jw.org');
+        // 6.12.92: o nome da publicação em texto e, embaixo, o link com o rótulo padrão de toda matéria da Adoração.
+        if (rotulo) {
+          const nomePub = document.createElement('p');
+          nomePub.className = 'fam-pub-nome';
+          nomePub.textContent = rotulo;
+          li.appendChild(nomePub);
+        }
+        a.textContent = ROTULO_LINK_MATERIA;
         li.appendChild(a);
         if (aoVivo && aoVivo.publicacao) aoVivo.publicacao(li, pub, idx); // ao vivo: 📖 Exibir a matéria na tela (recolhido)
       });
@@ -28381,7 +28400,7 @@ function saveTemplatesToStorage() {
       const det = document.createElement('details');
       det.className = 'fam-leitura-trecho fam-materia-tela';
       const sm = document.createElement('summary');
-      sm.textContent = '📖 Exibir a matéria na tela';
+      sm.textContent = '📖 Exibir e ler esta matéria aqui';
       const corpo = document.createElement('div');
       corpo.className = 'fam-materia-corpo';
       corpo.textContent = 'Abra para carregar a matéria.';
