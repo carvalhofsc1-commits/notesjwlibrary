@@ -2,6 +2,17 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.28
+
+### Adoração compartilhada: quem vê a resposta não responde mais à questão
+
+- O presidente da reunião que também joga (🎮 Jogar também) e toca em **Ver só para mim** fica fora daquela questão.
+  - Antes, um aviso pergunta se quer ver mesmo assim.
+  - Depois, a área "Sua resposta" fica cinza e travada, com o aviso "Você viu a resposta desta questão e não pode mais responder a ela".
+  - A resposta que ele já tinha mandado continua valendo.
+- O servidor também recusa: o "espiar" com o participante grava o nome em `estado.espiaram` e o "responder" devolve 403 para ele naquela questão.
+- Quem preside sem jogar continua vendo a resposta normalmente; nada é registrado.
+
 ## 6.13.27
 
 ### Adoração compartilhada: resposta e controles do presidente da reunião separados

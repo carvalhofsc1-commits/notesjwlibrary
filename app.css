@@ -17049,6 +17049,9 @@ button.secondary.fam-atalho-ativo { background: color-mix(in srgb, #3b82f6 18%, 
 #participarSessao .fam-sessao-ctrl-box { background: color-mix(in srgb, #8b5cf6 10%, var(--card, #fff)); border: 1.5px solid color-mix(in srgb, #8b5cf6 45%, var(--card, #fff)); }
 #participarSessao .fam-sessao-resp-box[hidden],
 #participarSessao .fam-sessao-ctrl-box[hidden] { display: none; }
+/* 6.13.28: quem viu a resposta (Ver só para mim) não responde mais à questão: a área fica cinza e travada */
+#participarSessao .fam-sessao-resp-box.fam-sessao-resp-bloqueada { background: color-mix(in srgb, #9ca3af 18%, var(--card, #fff)); border-color: #c4c8cf; }
+#participarSessao .fam-sessao-resp-box.fam-sessao-resp-bloqueada .fam-sessao-responder { opacity: .55; pointer-events: none; }
 #participarSessao p.fam-sessao-box-rotulo { margin: 0 0 2px; font-size: .82rem; font-weight: 700; color: var(--muted, #555); }
 #participarSessao .fam-sessao-resp-box > .fam-sessao-responder:first-of-type,
 #participarSessao .fam-sessao-ctrl-box > :nth-child(2) { margin-top: 4px; }

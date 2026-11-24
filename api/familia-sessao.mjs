@@ -138,6 +138,9 @@ function estadoPublico(e) {
     // julgadas erradas ({ parte: { rodada: [{ nome, texto }] } }).
     envios: e.envios && typeof e.envios === "object" ? e.envios : {},
     erradas: e.erradas && typeof e.erradas === "object" ? e.erradas : {},
+    // 6.13.28: quem viu a resposta de uma questão em "Ver só para mim" (o presidente da reunião que também joga) não responde mais a ela
+    // ({ parte: { rodada: [nome] } }).
+    espiaram: e.espiaram && typeof e.espiaram === "object" ? e.espiaram : {},
   };
 }
 // O dirigente recebe também a lista de quem entrou; a versão dele inclui a quantidade de participantes (muda quando alguém entra).
@@ -549,6 +552,8 @@ export default async function handler(req, res) {
       if (((estado.reveladas || {})[parte] || {})[rodada] || ((estado.acertos || {})[parte] || {})[rodada]) return erro(res, 409, "Esta questão já foi respondida.");
       const pendente = ((estado.envios || {})[parte] || {})[rodada];
       if (pendente && pendente.status === "pendente") return erro(res, 409, `${pendente.nome} já respondeu: espere o julgamento.`);
+      // 6.13.28: quem viu a resposta (Ver só para mim) não responde mais a esta questão
+      if ((((estado.espiaram || {})[parte] || {})[rodada] || []).includes(quem.nome)) return erro(res, 403, "Você viu a resposta desta questão (Ver só para mim) e não pode mais responder a ela.");
       const s = estado.sorteio;
       if (s && s.nome && (s.parte == null || s.parte === parte) && s.nome !== quem.nome) return erro(res, 403, `Agora é a vez de ${s.nome}.`);
       const sq = estado.sorteioQuestao;
@@ -635,7 +640,23 @@ export default async function handler(req, res) {
       const rodada = Number(corpo.rodada);
       const respostas = (segredo.respostas || {})[parte] || [];
       if (!Number.isInteger(parte) || !Number.isInteger(rodada) || rodada < 0 || rodada >= respostas.length) return erro(res, 400, "Rodada inválida.");
-      return res.status(200).json({ resposta: String(respostas[rodada] || ""), referencia: referenciaDaRodada(parte, rodada) });
+      const saida = { resposta: String(respostas[rodada] || ""), referencia: referenciaDaRodada(parte, rodada) };
+      // 6.13.28: o presidente da reunião que também joga (participanteId) e viu a resposta fica fora desta questão: o nome dele entra em
+      // estado.espiaram e o "responder" recusa a resposta dele. A resposta que ele já tinha mandado continua valendo.
+      const pid = idLimpo(corpo.participanteId);
+      const quem = pid ? await lerJson(caminho(cod, `participantes/${pid}.json`)) : null;
+      if (quem && quem.nome) {
+        const lista = ((estado.espiaram || {})[parte] || {})[rodada] || [];
+        if (!lista.includes(quem.nome)) {
+          estado.espiaram = estado.espiaram || {};
+          estado.espiaram[parte] = { ...(estado.espiaram[parte] || {}), [rodada]: [...lista, quem.nome].slice(-20) };
+          estado.versao = (Number(estado.versao) || 0) + 1;
+          estado.atualizadoEm = Date.now();
+          await gravarJson(caminho(cod, "estado.json"), estado);
+        }
+        Object.assign(saida, { versao: versaoDe(estado, await contarParticipantes(cod)), estado: estadoPublico(estado), participantes: await lerParticipantes(cod), agora: Date.now() });
+      }
+      return res.status(200).json(saida);
     }
 
     // ----- dica (6.11.96): dá a próxima dica da rodada (Dica 1, Dica 2, Dica 3…), uma de cada vez; no máximo as que a pergunta tem -----

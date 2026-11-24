@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.27'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.28'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -29809,10 +29809,15 @@ function saveTemplatesToStorage() {
             espiada.hidden = true;
             btnEspiar.addEventListener('click', async () => {
               if (!espiada.hidden) { espiada.hidden = true; btnEspiar.innerHTML = ICONE_OLHO + ' Ver só para mim'; return; }
+              // 6.13.28: o presidente da reunião que também joga e ainda pode responder a esta questão fica fora dela ao ver a resposta (avisa antes).
+              const jogando = Boolean(participar.participanteId);
+              const podeResponder = jogando && area && !area.hidden;
+              if (podeResponder && !(await askConfirm('Ao ver a resposta, você não poderá mais responder a esta questão (a resposta que já mandou continua valendo). Ver mesmo assim?', 'Ver só para mim'))) return;
               btnEspiar.disabled = true;
-              const rr = await familiaSessaoPedir({ acao: 'espiar', sessao: participar.cod, chave: participar.chave, parte: parteIdx, rodada: k });
+              const rr = await familiaSessaoPedir(Object.assign({ acao: 'espiar', sessao: participar.cod, chave: participar.chave, parte: parteIdx, rodada: k }, jogando ? { participanteId: participar.participanteId } : {}));
               btnEspiar.disabled = false;
               if (!rr.ok) { participarStatus(rr.erro || 'Não consegui buscar a resposta.', 'erro'); return; }
+              if (rr.data && rr.data.estado) participarAplicar(rr.data); // a área de resposta dele fica travada nesta questão
               // 6.12.76: a referência vem do servidor (respostas.json); as sessões antigas a tinham na programação.
               const refEsp = rr.data.referencia || (comDicas ? r.referencia : '');
               espiada.textContent = '🔒 Só você vê: ' + (rr.data.resposta || '') + (refEsp ? ' (' + refEsp + ')' : '');
@@ -30015,10 +30020,14 @@ function saveTemplatesToStorage() {
           if (r.area) {
             const ndadas = Math.min(r.total, Number(dadas[k]) || 0);
             const aberta = !revK && !ac && !pend && (r.total === 0 || ndadas > 0 || r.temIntro);
-            const bloqueio = sorteadoNome && sorteadoNome !== participar.nome ? 'Agora é a vez de ' + sorteadoNome + '.' : questaoSorteada != null && questaoSorteada !== k ? 'Responda a questão sorteada (questão ' + (questaoSorteada + 1) + ').' : '';
+            // 6.13.28: quem viu a resposta (Ver só para mim) fica fora desta questão: a área aparece cinza e travada
+            const espiou = Boolean(participar.nome) && (((e.espiaram || {})[i] || {})[k] || []).includes(participar.nome);
+            const bloqueio = espiou ? '' : sorteadoNome && sorteadoNome !== participar.nome ? 'Agora é a vez de ' + sorteadoNome + '.' : questaoSorteada != null && questaoSorteada !== k ? 'Responda a questão sorteada (questão ' + (questaoSorteada + 1) + ').' : '';
             r.area.hidden = !aberta || Boolean(bloqueio);
-            r.areaNota.hidden = !aberta || !bloqueio;
-            r.areaNota.textContent = bloqueio ? '🔒 ' + bloqueio : '';
+            r.areaNota.hidden = !aberta || (!bloqueio && !espiou);
+            r.areaNota.textContent = espiou ? '🔒 Você viu a resposta desta questão (Ver só para mim) e não pode mais responder a ela.' : bloqueio ? '🔒 ' + bloqueio : '';
+            r.area.querySelectorAll('input, button').forEach(c => { c.disabled = espiou; });
+            if (r.respBox) r.respBox.classList.toggle('fam-sessao-resp-bloqueada', espiou);
           }
         }
         const txt = rev[k];

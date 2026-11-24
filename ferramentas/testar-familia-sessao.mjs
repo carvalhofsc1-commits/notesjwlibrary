@@ -330,6 +330,17 @@ try {
     await chamar({ acao: "dica", sessao: s4.sessao, chave: s4.chave, parte: 2, rodada: 1 });
     const pt2 = await chamar({ acao: "pontuar", sessao: s4.sessao, chave: s4.chave, parte: 2, rodada: 1, nome: "Ana" });
     assert.equal(pt2.dados.estado.envios["2"]["1"].status, "certa"); passo("pontuar quem tinha a resposta esperando: ela vira certa");
+    // 6.13.28: o presidente da reunião joga também (entra com a chave e um nome) e, se vê a resposta, não responde mais àquela questão
+    const pres = await chamar({ acao: "entrar", sessao: s4.sessao, chave: s4.chave, nome: "Pai" });
+    assert.equal(pres.dados.dirigente, true);
+    assert.ok(pres.dados.participanteId); passo("presidente da reunião entra no jogo com um nome (continua presidente)");
+    const esp0 = await chamar({ acao: "espiar", sessao: s4.sessao, chave: s4.chave, parte: 2, rodada: 2 });
+    assert.ok(esp0.dados.resposta && !esp0.dados.estado, "ver sem jogar não registra nada");
+    const esp = await chamar({ acao: "espiar", sessao: s4.sessao, chave: s4.chave, parte: 2, rodada: 2, participanteId: pres.dados.participanteId });
+    assert.deepEqual(esp.dados.estado.espiaram["2"]["2"], ["Pai"]);
+    const bloq = await chamar({ acao: "responder", sessao: s4.sessao, participanteId: pres.dados.participanteId, parte: 2, rodada: 2, texto: "qualquer" });
+    assert.equal(bloq.status, 403);
+    assert.match(bloq.dados.erro, /Ver só para mim/); passo("presidente que viu a resposta (Ver só para mim) não responde mais àquela questão");
     await chamar({ acao: "encerrar", sessao: s4.sessao, chave: s4.chave });
   }
 
