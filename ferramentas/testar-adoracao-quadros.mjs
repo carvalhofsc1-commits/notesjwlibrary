@@ -1702,7 +1702,7 @@ teste("6.12.86: artigo da Abertura com dados da publicação, parágrafos e subt
   assert.ok(sessaoJs.includes("daLeitura"));
   assert.ok(appJs.includes("leitura: pedacos => participarLeituraVozBotao(pedacos)"));
   assert.ok(appJs.includes("fam-leitura-par fam-leitura-sub"));
-  assert.ok(appJs.includes("aoVivo.leitura(pedacos)"));
+  assert.ok(appJs.includes("aoVivo.leitura(pedacosVoz)"));
 });
 
 teste("6.12.88: perguntas da leitura logo depois dela; 🔊 só ícone nos campos de texto (matéria, transcrição, letra)", async () => {
@@ -1715,6 +1715,16 @@ teste("6.12.88: perguntas da leitura logo depois dela; 🔊 só ícone nos campo
   assert.ok(appJs.includes("tipo: cantico ? 'cantico' : 'video'"));
   const css = await readFile(new URL("app.css", raiz), "utf8");
   assert.ok(!css.includes(".fam-leitura-voz { width: 100%"), "sem botão largo");
+});
+
+teste("6.12.89: a voz da adoração usa as regras de fala das referências bíblicas e o ícone fica dentro da moldura do campo", async () => {
+  const vozJs = await readFile(new URL("api/voz.mjs", raiz), "utf8");
+  assert.ok(appJs.includes("const falado = textoParaVoz(pedaco, regras);"));
+  assert.ok(appJs.includes("{ origem, original: pedaco }"));
+  assert.ok(appJs.includes("{ original: pergunta }"));
+  assert.ok(appJs.includes("sm.prepend(aoVivo.leitura(pedacosVoz))"));
+  assert.ok(vozJs.includes("textoDaSessaoParaLer(body.sessao, original || texto, body.origem)"));
+  assert.ok(vozJs.includes("texto.length > original.length * 2 + 120"));
 });
 
 for (const [nome, fn] of testes) {

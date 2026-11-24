@@ -134,7 +134,13 @@ export default async function handler(req, res) {
   if (!texto) return erro(res, 400, "Não há texto para ler.");
   if (texto.length > MAX_CARACTERES) return erro(res, 400, `Trecho grande demais (máximo de ${MAX_CARACTERES} caracteres por parte).`);
 
-  if (!exemplo && uso === "familia" && !(await textoDaSessaoParaLer(body.sessao, texto, body.origem))) {
+  // 6.12.89: o app manda o texto já preparado para a fala (referências por extenso: "Primeira Pedro cinco sete") em "texto" e o pedaço original da
+  // programação em "original", que é o que se confere. O falado não pode ser bem maior que o original.
+  const original = typeof body.original === "string" ? body.original.replace(/\r\n?/g, "\n").trim() : "";
+  if (!exemplo && uso === "familia" && original && texto.length > original.length * 2 + 120) {
+    return erro(res, 403, "Esta leitura vale só para os textos de uma adoração em andamento.");
+  }
+  if (!exemplo && uso === "familia" && !(await textoDaSessaoParaLer(body.sessao, original || texto, body.origem))) {
     return erro(res, 403, "Esta leitura vale só para os textos de uma adoração em andamento.");
   }
 

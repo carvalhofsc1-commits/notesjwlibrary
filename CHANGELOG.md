@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.89
+
+### Adoração em Família: voz com a regra das referências bíblicas e ícone 🔊 dentro da moldura
+
+- **Referências lidas do jeito certo:** a voz dos campos de texto (e das perguntas) mandava o texto cru ao Google, que lia "1 Pedro 5:7" como "um pedro cinco para sete". Agora o pedaço passa pelas mesmas regras de fala da leitura em voz alta (`textoParaVoz`, as regras do administrador), e sai "Primeira Pedro cinco sete". O servidor passa a receber o pedaço falado em `texto` e o original da programação em `original`, e confere o original (o falado não pode ser bem maior que ele).
+- **Ícone no lugar certo:** o 🔊 do "Trecho para considerar" fica dentro da moldura do campo, na mesma linha de "📖 Trecho para considerar" (tocar no ícone não abre nem fecha o campo).
+
 ## 6.12.88
 
 ### Adoração em Família: perguntas logo depois de cada leitura e 🔊 só ícone em todos os campos de texto

@@ -4340,7 +4340,7 @@
         : uso === 'leitura'
           ? { codigoLeitura: codigoLeituraSalvo(), texto, uso }
           : uso === 'familia'
-          ? { sessao: participar.cod, texto, uso, origem: extras && extras.origem } // 6.12.02: quem tem o código da adoração lê sem código de leitura e sem gastar créditos (custo do app)
+          ? { sessao: participar.cod, texto, uso, origem: extras && extras.origem, original: extras && extras.original } // 6.12.02: quem tem o código da adoração lê sem código de leitura e sem gastar créditos (custo do app)
           : uso === 'texto-diario'
           ? {
               codigo: codigoAcessoSalvo(),
@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.88'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.89'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -27049,14 +27049,12 @@ function saveTemplatesToStorage() {
         }
         // 6.12.86: botão 🔊 do trecho (adoração ao vivo), fora do campo recolhido, e o texto em parágrafos com os subtítulos ("## ") em negrito.
         const linhas = parte.leitura.texto.split(/\n+/).map(x => x.trim()).filter(Boolean);
-        if (aoVivo && aoVivo.leitura) {
-          const pedacos = [parte.leitura.titulo, ...linhas.map(x => x.replace(/^##\s+/, ''))].filter(Boolean);
-          if (pedacos.length) lt.prepend(aoVivo.leitura(pedacos)); // 6.12.88: só o ícone 🔊, no começo do título do campo
-        }
+        const pedacosVoz = aoVivo && aoVivo.leitura ? [parte.leitura.titulo, ...linhas.map(x => x.replace(/^##\s+/, ''))].filter(Boolean) : [];
         const det = document.createElement('details'); // sempre recolhido ao montar; abre ao tocar
         det.className = 'fam-leitura-trecho';
         const sm = document.createElement('summary');
         sm.textContent = '📖 Trecho para considerar';
+        if (pedacosVoz.length) sm.prepend(aoVivo.leitura(pedacosVoz)); // 6.12.89: o ícone 🔊 dentro da moldura do campo, na mesma linha de "Trecho para considerar"
         det.appendChild(sm);
         linhas.forEach(par => {
           const sub = /^##\s+/.test(par);
@@ -28136,7 +28134,9 @@ function saveTemplatesToStorage() {
       botao.title = 'Ouvir este texto';
       botao.setAttribute('aria-label', 'Ouvir este texto');
       botao.setAttribute('aria-pressed', 'false');
-      botao.addEventListener('click', () => {
+      botao.addEventListener('click', ev => {
+        ev.preventDefault(); // dentro do <summary> do campo: tocar no ícone não abre nem fecha o campo
+        ev.stopPropagation();
         if (perguntaVoz.botao === botao) { perguntaVozParar(); return; }
         perguntaVozParar();
         participarAudioParar();
@@ -28165,7 +28165,7 @@ function saveTemplatesToStorage() {
           const falar = k => {
             if (!ativo()) return;
             if (k >= restantes.length) { perguntaVozParar(); return; }
-            const u = perguntaVozFalar(restantes[k]);
+            const u = perguntaVozFalar(textoParaVoz(restantes[k]) || restantes[k]);
             u.onend = () => falar(k + 1);
             u.onerror = () => perguntaVozParar();
             window.speechSynthesis.speak(u);
@@ -28173,14 +28173,19 @@ function saveTemplatesToStorage() {
           falar(0);
         };
         (async () => {
-          const extras = origem ? { origem } : undefined;
-          let proximo = vozBuscar(pedacos[0], null, 'familia', extras);
+          // 6.12.89: o pedaço passa pelas mesmas regras de fala da leitura em voz alta (referências por extenso: "1 Pedro 5:7" -> "Primeira Pedro cinco sete"); o servidor confere o original.
+          const buscar = async pedaco => {
+            const regras = await vozCarregarRegras();
+            const falado = textoParaVoz(pedaco, regras);
+            return falado ? vozBuscar(falado, null, 'familia', { origem, original: pedaco }) : null;
+          };
+          let proximo = buscar(pedacos[0]);
           for (let i = 0; i < pedacos.length; i++) {
             const entrada = await proximo;
             if (!ativo()) return;
-            proximo = i + 1 < pedacos.length ? vozBuscar(pedacos[i + 1], null, 'familia', extras) : null;
+            proximo = i + 1 < pedacos.length ? buscar(pedacos[i + 1]) : null;
             if (proximo) proximo.catch(() => { /* o erro aparece ao esperar por ele */ });
-            await tocar(entrada);
+            if (entrada) await tocar(entrada);
             if (!ativo()) return;
             feitos = i + 1;
           }
@@ -28197,7 +28202,10 @@ function saveTemplatesToStorage() {
     }
     // Lê pela voz do Google (api/voz.mjs, uso "familia"): "Pergunta", pausa e a pergunta. Se o Google falhar, cai na voz do aparelho.
     async function perguntaVozGoogle(botao, pergunta, el) {
-      const [aviso, leitura] = await Promise.all([vozBuscar('Pergunta.', null, 'familia'), vozBuscar(pergunta, null, 'familia')]);
+      // 6.12.89: a pergunta também segue as regras de fala das referências bíblicas ("Primeira Pedro cinco sete"); o servidor confere a original.
+      const regras = await vozCarregarRegras();
+      const falada = textoParaVoz(pergunta, regras) || pergunta;
+      const [aviso, leitura] = await Promise.all([vozBuscar('Pergunta.', null, 'familia'), vozBuscar(falada, null, 'familia', { original: pergunta })]);
       const ativo = () => perguntaVoz.botao === botao;
       if (!ativo()) return;
       const tocar = entrada => new Promise((ok, falha) => {
@@ -28239,7 +28247,7 @@ function saveTemplatesToStorage() {
           if (perguntaVoz.botao !== botao) return;
           if (!('speechSynthesis' in window)) { perguntaVozParar(); return; }
           const aviso = perguntaVozFalar('Pergunta.');
-          const leitura = perguntaVozFalar(pergunta);
+          const leitura = perguntaVozFalar(textoParaVoz(pergunta) || pergunta);
           aviso.onend = () => { perguntaVoz.timer = setTimeout(() => { if (perguntaVoz.botao === botao) window.speechSynthesis.speak(leitura); }, 800); };
           leitura.onend = leitura.onerror = aviso.onerror = () => { if (perguntaVoz.botao === botao) perguntaVozParar(); };
           window.speechSynthesis.speak(aviso);
