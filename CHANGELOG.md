@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.98
+
+### Adoração em Família: o atalho dos quadros mostra o que está marcado
+
+Na seção Quadros da programação, com todos os quadros marcados o botão "🌟 Completa" fica destacado (azul claro, borda azul); com qualquer quadro desmarcado, o destacado é o "🌙 Noite curta". Atualiza ao marcar ou desmarcar um quadro e ao carregar o perfil.
+
 ## 6.12.97
 
 ### Adoração em Família: programações salvas só com o título à vista
