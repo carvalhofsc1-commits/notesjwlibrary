@@ -52,7 +52,7 @@ import {
   candidatosPrincipio,
   chaveDoTrecho,
   chavesDosVersiculos,
-  confereAbreviacao,
+  abreviacaoJogavel,
   cortarNoFimDaFrase,
   datasPermitidas,
   dicaDoLivro,
@@ -3723,7 +3723,8 @@ const PREPARAR_QUADRO_FAMILIA = {
                   .replace(/[?]+$/, "")
                   .trim();
                 const livro = v ? livroDaReferencia(v.referencia) : comBiblia ? "" : livroDaReferencia(r.referencia);
-                if (!sigla || !livro || !confereAbreviacao(sigla, r.resposta) || !novaRodada(normalizarTexto(sigla))) return;
+                // 6.12.81: a sigla tem de ser curta (até 4 iniciais): siglas de frases inteiras de versículos não são jogáveis (abreviacaoJogavel).
+                if (!sigla || !livro || !abreviacaoJogavel(sigla, r.resposta) || !novaRodada(normalizarTexto(sigla))) return;
                 r.pergunta = `O que significa? Dica 1: ${sigla} Dica 2: Está em ${livro}.`;
                 if (v) r.referencia = v.referencia;
               } else if (!novaRodada(normalizarTexto(r.pergunta))) return;
@@ -3758,7 +3759,7 @@ const PREPARAR_QUADRO_FAMILIA = {
             verdadeiro_falso: 'a resposta começando com "Verdadeiro." ou "Falso.", com pelo menos 3 de cada',
             quem_disse: "a referência de um versículo com a fala entre aspas, sem o nome de quem disse na fala, com o NOME de quem fala escrito no texto da referência antes da fala (e antes do nome do ouvinte), a resposta começando por quem fala, e versículos diferentes dos já usados",
             complete_versiculo: "a referência de 1 versículo e, na resposta, uma palavra exata dele (pelo menos 4 letras, uma vez só no versículo; nunca Jeová, Deus, número nem o nome do livro), e versículos diferentes dos já usados",
-            abreviacoes: "a sigla na pergunta conferindo palavra por palavra com a resposta, e a referência do versículo onde está",
+            abreviacoes: "a sigla na pergunta curta (no máximo 4 iniciais), de uma expressão bíblica conhecida (nome, título ou grupo, nunca um pedaço de frase de versículo), conferindo palavra por palavra com a resposta, e a referência do versículo onde está",
           }[idTipo];
           const faltas = [];
           if (validas < limite.min) faltas.push(`vieram ${validas} rodadas válidas; mande ${limite.pedir} rodadas (no mínimo ${limite.min}), em nível de adulto batizado${exigencia ? `, ${exigencia}` : ""}${semData ? ", e sem datas fora do Apêndice B" : ""}${rejeitadasNaBiblia.length ? `; ${textoDasRejeitadas(rejeitadasNaBiblia)}` : ""}`);

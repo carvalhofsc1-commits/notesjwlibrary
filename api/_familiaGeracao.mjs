@@ -733,6 +733,27 @@ export function confereAbreviacao(sigla, resposta) {
   return iniciais > 0;
 }
 
+// 6.12.81: a sigla de um jogo de Abreviações tem de ser curta e jogável: de 1 a MAX_INICIAIS_NA_SIGLA iniciais (maiúscula sozinha; "A.T." vale 2) e
+// até 7 palavras ao todo. Os testes com o Gemini mostraram siglas de frases inteiras de versículos ("T L C O N E D P" para "Tão Longe Como O Nascente É
+// Do Poente"), que não dá para adivinhar nem jogar, e que passavam na conferência palavra por palavra. "Os 12 A de C" (2 iniciais), "O P da P" (2)
+// e "O V U da P" (4) são jogáveis.
+export const MAX_INICIAIS_NA_SIGLA = 4;
+export function siglaCurta(sigla) {
+  const tokens = String(sigla || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean)
+    .flatMap((t) => (/^(?:\p{Lu}\.){2,}$/u.test(t) ? t.split(".").filter(Boolean) : [t.replace(/[,;:!?]+$/, "")]));
+  const iniciais = tokens.filter((t) => /^\p{Lu}\.?$/u.test(t)).length;
+  return iniciais >= 1 && iniciais <= MAX_INICIAIS_NA_SIGLA && tokens.length <= 7;
+}
+
+// A rodada de Abreviações vale se a sigla é curta e confere, palavra por palavra, com a resposta.
+export function abreviacaoJogavel(sigla, resposta) {
+  return siglaCurta(sigla) && confereAbreviacao(sigla, resposta);
+}
+
 // Verdadeiro ou falso: a resposta tem de começar com "Verdadeiro" ou "Falso". Devolve { valor: "V" | "F", texto: "Verdadeiro. …" } ou null.
 export function respostaVF(resposta) {
   const t = String(resposta || "").replace(/\s+/g, " ").trim();

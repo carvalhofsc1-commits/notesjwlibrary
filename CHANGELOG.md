@@ -2,6 +2,15 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.81
+
+### Adoração em Família por quadros: acentuação e siglas curtas (achados no teste com o Gemini)
+
+- **Acentuação:** o Gemini 3.5 Flash escrevia alguns quadros sem acentos ("Sera que perdoar alguem…", "Jeova", "cantico", "nao"). As regras comuns de todos os pedidos (plano e quadros) ganharam a regra "ACENTUAÇÃO": escrever sempre em português do Brasil com acentos e cedilha ("Jeová", "não", "você", "cântico", "perdão", "oração"). Numa amostra de 12 quadros, os acentos ficaram corretos; o que sobrou veio dos assuntos do catálogo de cânticos, gravados sem acento.
+- **Abreviações bíblicas:** o Flash fazia siglas de frases inteiras de versículos ("T L C O N E D P" para "Tão Longe Como O Nascente É Do Poente"), impossíveis de adivinhar e que passavam na conferência palavra por palavra. Agora a instrução pede **expressões bíblicas conhecidas** (nome, título, grupo, objeto ou acontecimento fixo, como "Os 12 A de C", "O P da P", "O C de D") com **no máximo 4 iniciais**, e o servidor tira a rodada de sigla longa (`siglaCurta`, `abreviacaoJogavel`). Se faltarem rodadas, o pedido de novo diz o que fazer. No teste real com o Flash, três jogos de Abreviações voltaram com 9 a 10 rodadas, todas com siglas curtas ("O Fruto do Espírito", "O Ministério da Reconciliação", "As Boas Novas da Paz").
+- Instruções da IA (tela de prompts): as regras comuns, o jogo, o formato do jogo e a descrição da montagem foram atualizados.
+- Testes: `testar-adoracao-quadros.mjs` passou a ter 71 testes (3 novos).
+
 ## 6.12.80
 
 ### Adoração em Família por quadros: tempo limite acompanha o modelo
