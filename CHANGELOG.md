@@ -2,6 +2,20 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.84
+
+### Revisão do módulo Adoração em Família: contraste no tema escuro
+
+Medi o contraste de texto e fundo (estilo calculado, sem capturas) na tela do módulo e na sessão ao vivo (dirigente e participante), nos dois temas. No tema escuro, vários blocos tinham fundo claro fixo e texto na cor do tema (clara), quase invisível. Corrigidos para seguirem o tema:
+
+- **"🔒 Só você vê: …"** (o dirigente espiando a resposta): fundo claro fixo com texto claro.
+- **Questão em andamento** (com dicas dadas): fundo azul claro fixo; a dica, a "Resposta escondida" e o número da questão sumiam.
+- **Link "Abrir este trecho no wol.jw.org ↗"** nas leituras: ficava no azul padrão do navegador (contraste 1,56 no tema escuro).
+- **Card "Adorações compartilhadas"** (fundo azul claro fixo) e o botão de limpar o sorteio (fundo rosa claro fixo).
+- Ajustes finos de cor em "Questão N de M", no valor "vale N pontos agora", nos nomes do placar e no rótulo da leitura (contraste entre 2,9 e 3,2).
+
+Resultado: nenhum texto abaixo do contraste mínimo no tema escuro em todas as telas medidas. No tema claro só sobram emojis (🔑, 🗑️) e um botão desabilitado, que não contam. O cartão de boas-vindas já tinha sido corrigido na 6.12.82.
+
 ## 6.12.83
 
 - **Títulos dos quadros cortados no meio da palavra:** na lista do programa, "Lições da vida de Jesus: …e ainda assim ens" e "Ame o ministério: …interesse na prime" saíam cortados de forma seca (100 e 160 caracteres). Agora o título tem até 70 caracteres, cortado no fim de uma palavra (sem "e", "de"… pendurados) e com "…" (`cortarNaPalavra`). A pergunta inteira do Saiba responder continua em "perguntas", e a situação inteira do Ame o ministério abre a descrição quando o título a encurtou. Vale para as programações novas.

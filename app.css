@@ -17115,7 +17115,7 @@ body[data-screen="participar"] :is(.screen-inicio, .screen-editor, .screen-forma
 .fam-sessao-sorteio-card > .fam-sessao-vez-linha { display: flex; gap: 10px; align-items: stretch; margin: 0; }
 .fam-sessao-sorteio-card > .fam-sessao-vez-linha[hidden] { display: none; }
 .fam-sessao-sorteio-card .fam-sessao-vez-linha > .fam-sessao-sorteado { flex: 1 1 0; min-width: 0; margin: 0; }
-#participarSessao .fam-sessao-sorteio-card .fam-sessao-vez-limpar { flex: 0 0 52px; width: 52px; min-width: 0; margin: 0; padding: 0; border-color: #e0a0a0; background: #fdeaea; }
+#participarSessao .fam-sessao-sorteio-card .fam-sessao-vez-limpar { flex: 0 0 52px; width: 52px; min-width: 0; margin: 0; padding: 0; border-color: color-mix(in srgb, #ef4444 50%, var(--line)); background: color-mix(in srgb, #ef4444 14%, var(--card)); }
 .fam-sessao-sorteado { margin: 0; padding: 8px 12px; border-radius: 10px; background: #fdf6e7; border: 1px solid #f0dfb8; color: #6a4f12; font-weight: 600; font-size: 1.08em; text-align: center; }
 .fam-sessao-sorteado.novo { animation: fam-sorteio .7s ease-out; }
 @keyframes fam-sorteio { 0% { transform: scale(.85); opacity: 0; } 55% { transform: scale(1.06); opacity: 1; } 100% { transform: scale(1); } }
@@ -17298,7 +17298,7 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 .fam-sessao-recente-linha > .fam-sessao-recente { flex: 1 1 auto; min-width: 0; white-space: normal; }
 .fam-dirigindo-box[hidden] { display: none; }
 /* 6.11.99: card "Adorações compartilhadas" com fundo azul claro e mais espaço do texto explicativo acima. */
-.fam-dirigindo-box { background: #eaf3ff; border-color: #93b8ee; margin-top: 22px; }
+.fam-dirigindo-box { background: color-mix(in srgb, #3b82f6 12%, var(--card)); border-color: color-mix(in srgb, #3b82f6 45%, var(--line)); color: var(--text); margin-top: 22px; } /* 6.12.84: segue o tema */
 /* 6.12.00: mais espaço entre o texto explicativo do card e a adoração listada logo abaixo. */
 .fam-dirigindo-box > .fam-dica { margin-bottom: 18px; }
 
@@ -17317,14 +17317,14 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 /* 6.12.29: 🔄 (reiniciar a questão, só do dirigente) no canto de cima da questão. */
 #participarSessao li.fam-sessao-questao { position: relative; }
 /* 6.12.45: a questão que está sendo considerada (dicas dadas, ainda sem resposta) com fundo azul claro; respondida, volta ao branco. */
-#participarSessao li.fam-sessao-questao.fam-sessao-questao-andamento { background: #e3efff; }
+#participarSessao li.fam-sessao-questao.fam-sessao-questao-andamento { background: color-mix(in srgb, #3b82f6 16%, var(--card)); } /* 6.12.84: segue o tema (o azul claro fixo deixava o texto claro ilegível no tema escuro) */
 /* 6.12.33: sem o card geral com a linha lateral laranja em volta do jogo; a questão sorteada fica destacada; duas linhas no card de sorteio ficam separadas. */
 #participarSessao .fam-jogo.fam-sessao-jogo { border-left: 0; background: transparent; padding: 0; margin-top: 0; border-radius: 0; }
 #participarSessao li.fam-sessao-questao.fam-sessao-questao-sorteada { border-width: 3px; border-color: #7c3aed; box-shadow: 0 0 0 3px color-mix(in srgb, #7c3aed 22%, transparent); }
 .fam-sessao-sorteio-card > .fam-sessao-vez-linha + .fam-sessao-vez-linha { margin-top: 10px; }
 #participarSessao li.fam-sessao-questao > button.fam-sessao-reiniciar { position: absolute; top: 4px; right: 10px; width: 28px; min-width: 0; min-height: 0; height: 22px; margin: 0; padding: 0; font-size: .78rem; line-height: 1; border-radius: 7px; display: flex; align-items: center; justify-content: center; } /* 6.12.30: menor, na altura da linha "Questão N de M" */
 #participarSessao li.fam-sessao-questao > button.fam-sessao-reiniciar[hidden] { display: none; }
-#participarSessao .fam-sessao-qnum { margin: 0 0 4px; font-weight: 700; font-size: .85em; color: color-mix(in srgb, #7c3aed 78%, var(--text)); }
+#participarSessao .fam-sessao-qnum { margin: 0 0 4px; font-weight: 700; font-size: .85em; color: color-mix(in srgb, #7c3aed 45%, var(--text)); }
 #participarSessao li.fam-sessao-questao .fam-sessao-resposta { display: block; }
 #participarSessao li.fam-sessao-questao .fam-sessao-revelar { display: block; width: 100%; margin: 6px 0 0; }
 
@@ -17338,7 +17338,7 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 #participarSessao .fam-placar-estrela { font-size: 1.3rem; }
 #participarSessao .fam-placar-rotulo { margin-top: 2px; font-size: 1.15rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 #participarSessao .fam-placar-bicho { display: inline-block; width: 1.6em; font-size: 1.15em; }
-#participarSessao .fam-placar-nome strong { color: color-mix(in srgb, var(--cor-nome) 80%, var(--text)); font-weight: 800; }
+#participarSessao .fam-placar-nome strong { color: color-mix(in srgb, var(--cor-nome) 55%, var(--text)); font-weight: 800; }
 #participarSessao .fam-sessao-placar-tabela { width: 100%; border-collapse: collapse; }
 /* 6.12.26: o cabeçalho Participante/Pontos num roxo mais forte. */
 #participarSessao .fam-sessao-placar-tabela th { background: color-mix(in srgb, #7c3aed 42%, var(--card)) !important; color: var(--text) !important; font-weight: 800; } /* 6.12.27: roxo ainda mais forte e garantido */
@@ -17353,7 +17353,7 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 /* 6.11.96: jogo de dicas ao vivo — uma questão e uma dica por vez; os pontos caem a cada dica dada. */
 #participarSessao .fam-sessao-dica { margin: 0 0 6px; padding: 6px 10px; border-left: 3px solid color-mix(in srgb, #f59e0b 80%, var(--line)); border-radius: 6px; background: color-mix(in srgb, #f59e0b 10%, var(--card)); font-weight: 600; }
 #participarSessao .fam-sessao-aguarda { margin: 0 0 6px; color: var(--muted); font-style: italic; }
-#participarSessao .fam-sessao-qnum > span:last-child { color: color-mix(in srgb, #f59e0b 70%, var(--text)); }
+#participarSessao .fam-sessao-qnum > span:last-child { color: color-mix(in srgb, #f59e0b 35%, var(--text)); }
 
 /* 6.11.91: o objetivo da atividade — negrito e outra cor. */
 .fam-parte-objetivo { margin: 0 0 10px; font-weight: 700; color: color-mix(in srgb, #7c3aed 78%, var(--text)); }
@@ -17446,7 +17446,7 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 /* 6.12.48: leitura de um trecho de uma matéria (parágrafos lidos do wol.jw.org). */
 .fam-leitura { display: grid; gap: 8px; min-width: 0; }
 .fam-leitura-par { margin: 0; line-height: 1.5; overflow-wrap: anywhere; }
-.fam-leitura-ref { margin: 0; font-weight: 700; font-size: .92rem; color: color-mix(in srgb, #7c3aed 70%, var(--text)); }
+.fam-leitura-ref { margin: 0; font-weight: 700; font-size: .92rem; color: color-mix(in srgb, #7c3aed 45%, var(--text)); }
 .fam-leitura-trecho { border: 1px solid var(--line, #cbd5e1); border-radius: 8px; background: var(--card); padding: 0 10px; min-width: 0; }
 .fam-leitura-trecho > summary { cursor: pointer; min-height: 38px; display: flex; align-items: center; font-weight: 600; font-size: .9rem; }
 .fam-leitura-trecho[open] { padding-bottom: 10px; }
@@ -17455,7 +17455,7 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 .fam-materia-tela { margin-top: 6px; }
 .fam-materia-corpo { display: grid; gap: 8px; font-size: .92rem; min-width: 0; }
 .fam-materia-corpo .fam-leitura-par { margin: 0; }
-.fam-leitura > a { overflow-wrap: anywhere; font-size: .9rem; }
+.fam-leitura > a { overflow-wrap: anywhere; font-size: .9rem; color: color-mix(in srgb, var(--accent) 60%, var(--text)); } /* 6.12.84: o azul padrão do navegador não se lia no tema escuro */
 /* 6.12.38: ao entrar, só as boas-vindas e o programa, com o botão Entrar (fora da tela grande, onde o dirigente avança). */
 body:not(.fam-tela-grande) #participarSessao.fam-so-boasvindas > :not(.fam-boasvindas) { display: none !important; }
 /* 6.12.46: as boas-vindas só aparecem ao entrar (celular) ou, na tela grande, antes de a primeira atividade começar; nunca na página das atividades. */
@@ -17498,7 +17498,7 @@ label.fam-rotulo[hidden] { display: none; }
 #participarSessao .fam-sessao-progresso-barra { height: 10px; border-radius: 999px; background: color-mix(in srgb, #7c3aed 14%, var(--card)); overflow: hidden; }
 #participarSessao .fam-sessao-progresso-preench { height: 100%; width: 0; border-radius: 999px; background: #7c3aed; transition: width .4s; }
 /* 6.12.06: a resposta vista só pelo dirigente (nada vai para os participantes). */
-#participarSessao p.fam-sessao-espiada { margin: 0; padding: 8px 10px; border: 1px dashed #7c6bd6; border-radius: 8px; background: #f1eefc; color: var(--text); font-weight: 600; overflow-wrap: anywhere; }
+#participarSessao p.fam-sessao-espiada { margin: 0; padding: 8px 10px; border: 1px dashed #7c6bd6; border-radius: 8px; background: color-mix(in srgb, #7c6bd6 16%, var(--card)); color: var(--text); font-weight: 600; overflow-wrap: anywhere; }
 #participarSessao p.fam-sessao-espiada[hidden] { display: none; }
 /* 6.12.03: uma linha em branco entre um texto bíblico e o seguinte. */
 #participarSessao li.fam-texto-item:not(:last-child) { margin-bottom: 1.4em; }
