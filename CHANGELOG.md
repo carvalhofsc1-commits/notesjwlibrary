@@ -9,7 +9,7 @@ Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 - "Circunstâncias" passou a se chamar **"Assuntos e situações abrangidas"** (também "Outros assuntos ou situações" no campo livre e no pedido à IA).
 - Cada seção é um card recolhível que mostra só o tema e o limite: 🏠 Vida familiar (até 2), 📖 Vida cristã (até 2), 💛 Circunstâncias especiais (até 2), 💎 Qualidades cristãs (só 1) e 👤 Personagens bíblicos (só 1). O título do card mostra quantos itens dele estão marcados; as seções com algo marcado já abrem.
 - **Qualidades cristãs:** "🍇 Fruto do espírito (Gálatas 5:22, 23)" — amor, alegria, paz, paciência, bondade, benignidade, fé, brandura e autodomínio (como na Tradução do Novo Mundo) — e "✨ Demais qualidades" (humildade, modéstia, coragem, lealdade, generosidade, disposição de perdoar, gratidão, honestidade, obediência, zelo, compaixão, misericórdia, sabedoria, discernimento, hospitalidade, contentamento, perseverança, integridade, confiança em Jeová, temor a Deus, razoabilidade e diligência).
-- **Personagens bíblicos:** Antes do Dilúvio, Depois do Dilúvio, Nação de Israel, Profetas e Cristãos (70 personagens conhecidos).
+- **Personagens bíblicos:** Antes do Dilúvio, Depois do Dilúvio, Nação de Israel, Profetas e Cristãos (63 personagens conhecidos).
 - Uma qualidade ou um personagem é sempre item único: ao marcar, todos os outros itens travam. Vão para a IA como "Qualidade cristã: …" e "Personagem bíblico: …".
 
 ## 6.13.06
