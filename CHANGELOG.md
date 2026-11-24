@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.33
+
+### Respostas do estudo: linha separando cada comentário
+
+- No campo das respostas preparadas pela IA, uma linha fina azul separa cada resposta da seguinte. Ela fica no espaço em branco, logo abaixo dos botões "📋 Copiar …" e "📖 JW Library", e ocupa a largura toda do campo.
+- Depois da última resposta não há linha. A linha acompanha a rolagem e o tamanho do campo, como os botões.
+
 ## 6.13.32
 
 ### Adoração compartilhada: painel de participantes em roxo claro

@@ -1506,6 +1506,15 @@
       pointer-events: none;
     }
 
+    /* 6.13.33: a linha que separa uma resposta da seguinte (em cima do campo, no espaço em branco abaixo dos botões) */
+    .answer-separador {
+      position: absolute;
+      height: 0;
+      border-top: 1px solid color-mix(in srgb, #3b82f6 35%, transparent);
+      pointer-events: none;
+    }
+    .answer-separador[hidden] { display: none; }
+
     .answer-copy-btn {
       position: absolute;
       pointer-events: auto;
