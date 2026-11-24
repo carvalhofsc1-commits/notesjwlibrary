@@ -14806,6 +14806,10 @@ a.esboco-info-tema {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
 }
+/* 6.13.21: carregar texto, Word ou PDF — na linha inteira, embaixo dos dois botões de áudio */
+.anotacoes-gravacao .anotacoes-grav-botoes .anotacoes-carregar-texto {
+  grid-column: 1 / -1;
+}
 
 /* "Carregar gravação e resumir": azul médio, do mesmo tamanho do botão de gravar. */
 .screen-anotacoes .anotacoes-gravacao #anotacoesCarregarBtn {

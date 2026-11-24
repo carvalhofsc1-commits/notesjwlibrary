@@ -2,6 +2,15 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.21
+
+### Anotações: carregar texto, Word ou PDF no campo
+
+- Novo botão **📄 Carregar texto, Word ou PDF** no quadro da gravação, na linha inteira, abaixo de "Carregar gravação e resumir".
+- O texto do arquivo (.txt, .md, .docx ou .pdf; anotação ou transcrição pronta) vai para o campo das anotações: no fim, se já houver texto, separado por uma linha em branco. Depois é só usar ✨ Resumir ou ✨ Formatar com IA.
+- A extração é feita no próprio aparelho, com os mesmos leitores da tela de leitura. Não usa código nem IA.
+- Avisos: .doc antigo (pede para salvar como .docx), PDF sem texto (escaneado) e arquivo vazio.
+
 ## 6.13.20
 
 ### Adoração em Família: todas as tentativas aparecem e "Ninguém acertou" também ao revelar

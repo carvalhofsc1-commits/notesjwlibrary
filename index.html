@@ -350,7 +350,9 @@
               <div class="anotacoes-grav-botoes">
                 <button id="anotacoesGravarBtn" data-codigo-ia="texto" type="button" title="Gravar o discurso; depois, o resumo é pedido à parte">🎙️ Gravar o discurso e resumir</button>
                 <button id="anotacoesCarregarBtn" data-codigo-ia="texto" type="button" title="Carregar um arquivo de áudio já gravado, para transcrever e resumir">📁 Carregar gravação e resumir</button>
+                <button id="anotacoesCarregarTextoBtn" class="secondary anotacoes-carregar-texto" type="button" title="Carregar um arquivo de texto, Word ou PDF (uma anotação ou transcrição pronta): o texto vai para o campo das anotações, e depois é só usar Resumir ou Formatar com IA">📄 Carregar texto, Word ou PDF</button>
               </div>
+              <input id="anotacoesCarregarTextoArquivo" type="file" accept=".txt,.md,.docx,.pdf,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
               <input id="anotacoesCarregarArquivo" type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.opus,.webm,.flac,.amr,.3gp,.caf" hidden>
             </div>
             <div id="anotacoesGravAtiva" hidden>

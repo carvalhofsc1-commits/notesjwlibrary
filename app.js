@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.20'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.21'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -36347,6 +36347,65 @@ function saveTemplatesToStorage() {
         } finally {
           carregando = false;
           carregarBtn.disabled = false;
+        }
+      });
+
+      // 6.13.21: Carregar texto, Word ou PDF — uma anotação ou transcrição pronta vai para o campo das anotações (no fim, se já houver texto),
+      // para depois usar Resumir ou Formatar com IA. A extração é feita no próprio aparelho, sem código.
+      const carregarTextoBtn = document.getElementById('anotacoesCarregarTextoBtn');
+      const carregarTextoArq = document.getElementById('anotacoesCarregarTextoArquivo');
+      let carregandoTexto = false;
+      carregarTextoBtn.addEventListener('click', () => {
+        if (carregandoTexto) return;
+        carregarTextoArq.value = '';
+        carregarTextoArq.click();
+      });
+      carregarTextoArq.addEventListener('change', async () => {
+        const arquivo = carregarTextoArq.files && carregarTextoArq.files[0];
+        carregarTextoArq.value = '';
+        if (!arquivo || carregandoTexto) return;
+        const extensao = ((arquivo.name.match(/\.([a-z0-9]+)$/i) || [])[1] || '').toLowerCase();
+        const ehPdf = extensao === 'pdf' || arquivo.type === 'application/pdf';
+        const ehWord = extensao === 'docx';
+        const ehTexto = extensao === 'txt' || extensao === 'md' || /^text\//.test(arquivo.type || '');
+        if (!ehPdf && !ehWord && !ehTexto) {
+          gravarStatus.textContent = extensao === 'doc'
+            ? 'O formato .doc (Word antigo) não é aceito: salve como .docx no Word e carregue de novo.'
+            : 'Escolha um arquivo de texto (.txt), Word (.docx) ou PDF.';
+          return;
+        }
+        carregandoTexto = true;
+        carregarTextoBtn.disabled = true;
+        try {
+          gravarStatus.textContent = 'Lendo o arquivo…';
+          let conteudo = '';
+          if (ehTexto) {
+            conteudo = await arquivo.text();
+          } else {
+            const buffer = await arquivo.arrayBuffer();
+            const r = ehPdf
+              ? await leituraLerPdf(buffer, (n, total) => { gravarStatus.textContent = 'Lendo o PDF… página ' + n + ' de ' + total; })
+              : await leituraLerDocx(buffer);
+            conteudo = (r.paragrafos || []).map(p => String(p).replace(/^# /, '').replace(/\*\*/g, '')).join('\n\n');
+          }
+          conteudo = conteudo.replace(/\r\n?/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+          if (!conteudo) {
+            gravarStatus.textContent = ehPdf
+              ? 'Não achei texto neste PDF (pode ser uma imagem escaneada).'
+              : 'O arquivo está vazio.';
+            return;
+          }
+          const antes = texto.value.replace(/\s+$/, '');
+          texto.value = antes ? antes + '\n\n' + conteudo : conteudo;
+          texto.dispatchEvent(new Event('input', { bubbles: true }));
+          salvarRascunho();
+          texto.scrollTop = texto.scrollHeight;
+          gravarStatus.textContent = '📄 Texto de “' + arquivo.name + '” colocado ' + (antes ? 'no fim das anotações' : 'nas anotações') + '. Agora é só usar ✨ Resumir ou ✨ Formatar com IA.';
+        } catch (e) {
+          gravarStatus.textContent = 'Não foi possível ler o arquivo.';
+        } finally {
+          carregandoTexto = false;
+          carregarTextoBtn.disabled = false;
         }
       });
 
