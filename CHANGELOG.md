@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.27
+
+### Adoração compartilhada: resposta e controles do presidente da reunião separados
+
+- Em cada questão do jogo, o campo de resposta e o "Enviar resposta" ficam num quadro próprio, **✍️ Sua resposta**, com fundo branco e moldura azul.
+- Os controles do jogo ficam noutro quadro, **👑 Controles do presidente da reunião**, com fundo lilás claro: Certa e Errada, dar a dica, quem acertou e pontuar, ver só para mim e revelar.
+- Cada quadro some quando não tem nada à mostra.
+
 ## 6.13.26
 
 ### Adoração em Família: o presidente da reunião também joga, e o título recolhe a programação

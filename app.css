@@ -17042,6 +17042,16 @@ button.secondary.fam-atalho-ativo { background: color-mix(in srgb, #3b82f6 18%, 
 .fam-sessao-jogar-linha { display: flex; gap: 6px; min-width: 0; align-items: stretch; }
 .fam-sessao-jogar-linha > .fam-campo { flex: 1 1 auto; min-width: 0; margin: 0; }
 .fam-sessao-jogar-linha > button { flex: 0 0 auto; margin: 0; }
+/* 6.13.27: na questão do jogo, a resposta (fundo branco, moldura azul) separada dos controles do presidente da reunião (fundo lilás claro) */
+#participarSessao .fam-sessao-resp-box,
+#participarSessao .fam-sessao-ctrl-box { display: grid; gap: 0; min-width: 0; margin: 10px 0 0; padding: 10px; border-radius: 10px; box-sizing: border-box; }
+#participarSessao .fam-sessao-resp-box { background: var(--card, #fff); border: 1.5px solid #93b4f0; }
+#participarSessao .fam-sessao-ctrl-box { background: color-mix(in srgb, #8b5cf6 10%, var(--card, #fff)); border: 1.5px solid color-mix(in srgb, #8b5cf6 45%, var(--card, #fff)); }
+#participarSessao .fam-sessao-resp-box[hidden],
+#participarSessao .fam-sessao-ctrl-box[hidden] { display: none; }
+#participarSessao p.fam-sessao-box-rotulo { margin: 0 0 2px; font-size: .82rem; font-weight: 700; color: var(--muted, #555); }
+#participarSessao .fam-sessao-resp-box > .fam-sessao-responder:first-of-type,
+#participarSessao .fam-sessao-ctrl-box > :nth-child(2) { margin-top: 4px; }
 /* 6.13.26: tocar no título da programação recolhe ou abre a programação inteira */
 .fam-opcao.fam-opcao-recolhivel > .fam-opcao-topo { cursor: pointer; user-select: none; }
 .fam-opcao.fam-opcao-recolhivel > .fam-opcao-topo .fam-opcao-titulo::before { content: "▾ "; color: color-mix(in srgb, #3b82f6 70%, var(--text)); }

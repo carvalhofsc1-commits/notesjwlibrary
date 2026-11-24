@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.26'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.27'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -29668,7 +29668,7 @@ function saveTemplatesToStorage() {
           envioEl.setAttribute('aria-live', 'polite');
           envioEl.hidden = true;
           li.appendChild(envioEl);
-          let area = null, areaNota = null, campoResp = null;
+          let area = null, areaNota = null, campoResp = null, respBox = null, ctrlBox = null;
           if (participar.participanteId) { // 6.13.26: também o presidente da reunião que entrou no jogo com um nome
             area = document.createElement('div');
             area.className = 'fam-sessao-responder';
@@ -29714,7 +29714,23 @@ function saveTemplatesToStorage() {
               campoResp.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); enviar(campoResp.value, b); } });
               area.append(campoResp, b);
             }
-            li.append(areaNota, area);
+            // 6.13.27: a resposta (campo e Enviar) num quadro próprio, com fundo diferente dos controles do presidente da reunião
+            respBox = document.createElement('div');
+            respBox.className = 'fam-sessao-resp-box';
+            const rotResp = document.createElement('p');
+            rotResp.className = 'fam-sessao-box-rotulo';
+            rotResp.textContent = '✍️ Sua resposta';
+            respBox.append(rotResp, areaNota, area);
+            li.appendChild(respBox);
+          }
+          // 6.13.27: os controles do presidente da reunião (julgar, dica, quem acertou, ver e revelar) num quadro só, com outro fundo
+          if (participar.dirigente) {
+            ctrlBox = document.createElement('div');
+            ctrlBox.className = 'fam-sessao-ctrl-box';
+            const rotCtrl = document.createElement('p');
+            rotCtrl.className = 'fam-sessao-box-rotulo';
+            rotCtrl.textContent = '👑 Controles do presidente da reunião';
+            ctrlBox.appendChild(rotCtrl);
           }
           let julgarEl = null;
           if (participar.dirigente) {
@@ -29732,7 +29748,7 @@ function saveTemplatesToStorage() {
             bErrada.textContent = '❌ Errada';
             bErrada.addEventListener('click', () => participarAcao({ acao: 'julgar', parte: parteIdx, rodada: k, certo: false }, bErrada));
             julgarEl.append(bCerta, bErrada);
-            li.appendChild(julgarEl);
+            ctrlBox.appendChild(julgarEl);
           }
           let btn = null;
           let btnDica = null;
@@ -29760,7 +29776,7 @@ function saveTemplatesToStorage() {
               btnDica.type = 'button';
               btnDica.className = 'secondary fam-fino fam-sessao-revelar fam-sessao-dar-dica';
               btnDica.addEventListener('click', () => participarAcao({ acao: 'dica', parte: parteIdx, rodada: k }, btnDica));
-              li.appendChild(btnDica);
+              ctrlBox.appendChild(btnDica);
               // Quem acertou: escolhe o nome e pontua (os pontos de agora); a resposta é revelada junto.
               linhaAcerto = document.createElement('div');
               linhaAcerto.className = 'fam-sessao-acerto';
@@ -29776,7 +29792,7 @@ function saveTemplatesToStorage() {
               });
               sel.addEventListener('change', () => { if (btnPontuar.dataset.rotulo) btnPontuar.textContent = sel.value === NINGUEM_ACERTOU ? '🚫 Ninguém acertou' : btnPontuar.dataset.rotulo; });
               linhaAcerto.append(sel, btnPontuar);
-              li.appendChild(linhaAcerto);
+              ctrlBox.appendChild(linhaAcerto);
             }
             btn = document.createElement('button');
             btn.type = 'button';
@@ -29803,9 +29819,10 @@ function saveTemplatesToStorage() {
               espiada.hidden = false;
               btnEspiar.innerHTML = ICONE_OLHO_FECHADO + ' Esconder';
             });
-            li.append(btnEspiar, espiada, btn);
+            ctrlBox.append(btnEspiar, espiada, btn);
+            li.appendChild(ctrlBox);
           }
-          ref.rodadas.push({ li, linhaAcerto, sel, btnPontuar, btnEspiar, btnReiniciar, espiada, sig: null, resp, btn, btnDica, dicasEls, aguarda, pontos, total: dicas.length, referencia: r.referencia || '', envioEl, area, areaNota, julgarEl, temIntro: Boolean(intro) });
+          ref.rodadas.push({ li, respBox, ctrlBox, linhaAcerto, sel, btnPontuar, btnEspiar, btnReiniciar, espiada, sig: null, resp, btn, btnDica, dicasEls, aguarda, pontos, total: dicas.length, referencia: r.referencia || '', envioEl, area, areaNota, julgarEl, temIntro: Boolean(intro) });
           ol.appendChild(li);
         });
         caixa.appendChild(ol);
@@ -30045,6 +30062,9 @@ function saveTemplatesToStorage() {
           r.btnEspiar.hidden = revelada || (comDicas && n === 0);
           if (revelada) r.espiada.hidden = true;
         }
+        // 6.13.27: os quadros "Sua resposta" e "Controles" somem quando não têm nada à mostra
+        if (r.respBox) r.respBox.hidden = (!r.area || r.area.hidden) && (!r.areaNota || r.areaNota.hidden);
+        if (r.ctrlBox) r.ctrlBox.hidden = [...r.ctrlBox.children].slice(1).every(c => c.hidden);
         anteriorRespondida = revelada;
       });
       if (ref.listas) { // os nomes de cada sorteio, logo abaixo do botão
