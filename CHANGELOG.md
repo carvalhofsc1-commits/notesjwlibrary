@@ -2,6 +2,15 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.30
+
+### Adoração compartilhada: o presidente da reunião é identificado pelo cadastro do aparelho
+
+- Quem abre a adoração como presidente da reunião, num aparelho com cadastro aprovado, já entra no jogo com o primeiro nome do cadastro (ex.: "Fernando"), sem digitar nada.
+  - Ele aparece no placar, na lista de quem acertou e no topo da tela: "👑 Fernando, presidente da reunião".
+- O servidor busca o nome pelo id do aparelho, que o app já mandava, e devolve `nome` no `entrar`. O app guarda o nome com o id do participante.
+- Sem cadastro (ou nos testes locais), continua o "🎮 Jogar também" para escrever o nome.
+
 ## 6.13.29
 
 ### Adoração compartilhada: controles do presidente da reunião antes de "Sua resposta"

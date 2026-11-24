@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.29'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.30'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -28414,10 +28414,11 @@ function saveTemplatesToStorage() {
       participarLimpar();
       Object.assign(participar, {
         cod, chave: d.dirigente ? guardada.chave : '', programa: d.programa, dirigente: Boolean(d.dirigente), participanteId: d.participanteId || '',
-        nome: nomeUsado, participantes: d.participantes || [], extras: d.extras || null
+        // 6.13.30: o presidente da reunião sem nome vem identificado pelo cadastro do aparelho (d.nome, posto pelo servidor)
+        nome: d.nome || nomeUsado, participantes: d.participantes || [], extras: d.extras || null
       });
       const titulo = (d.programa.emoji ? d.programa.emoji + ' ' : '') + (d.programa.titulo || 'Adoração em Família');
-      familiaSessaoGuardar(cod, Object.assign({ titulo }, d.participanteId ? { participanteId: d.participanteId, nome: nomeUsado } : {}));
+      familiaSessaoGuardar(cod, Object.assign({ titulo }, d.participanteId ? { participanteId: d.participanteId, nome: d.nome || nomeUsado } : {}));
       participarStatus('');
       participarMontar();
       participarAplicar(d);
@@ -28874,7 +28875,7 @@ function saveTemplatesToStorage() {
       h.textContent = (p.emoji ? p.emoji + ' ' : '') + (p.titulo || 'Adoração em Família');
       const meta = document.createElement('p');
       meta.className = 'fam-opcao-meta';
-      meta.textContent = 'Código ' + participar.cod + ' · ' + (participar.dirigente ? '👑 Você preside esta adoração' : 'Você entrou como ' + participar.nome);
+      meta.textContent = 'Código ' + participar.cod + ' · ' + (participar.dirigente ? '👑 ' + (participar.nome ? participar.nome + ', presidente da reunião' : 'Você preside esta adoração') : 'Você entrou como ' + participar.nome);
       // ⏱️ O cronômetro da parte (6.11.51), visível para todos, e o 📺 modo tela grande (TV ou notebook).
       const cron = document.createElement('p');
       cron.className = 'fam-sessao-cron-linha';

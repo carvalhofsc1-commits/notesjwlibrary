@@ -14,7 +14,7 @@
 import { createHash, randomBytes, randomInt } from "node:crypto";
 import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { blobConfigurado, del, get, list, put } from "./_blob.mjs";
-import { mensagemSeBloqueado, prepararCodigosPessoais, recursoCodigoValido } from "./_acessoSite.mjs";
+import { estadoAcessoSite, mensagemSeBloqueado, prepararCodigosPessoais, recursoCodigoValido } from "./_acessoSite.mjs";
 import { lerArtigoDoWol, lerTextoDoVideo, pesquisarNoWol, playerDoVideo, videoDoEndereco } from "./_wol.mjs";
 import { lerCanticos } from "./_fontes.mjs";
 import { respostaConfere } from "./_familiaGeracao.mjs";
@@ -443,7 +443,13 @@ export default async function handler(req, res) {
       }
       const programa = await lerJson(caminho(cod, "programa.json"));
       if (!programa) return erro(res, 404, "A programação desta adoração não foi encontrada.");
-      const nome = nomeLimpo(corpo.nome);
+      let nome = nomeLimpo(corpo.nome);
+      // 6.13.30: o presidente da reunião que abre a adoração sem nome é identificado pelo cadastro do aparelho (o primeiro nome) e já entra no
+      // jogo com ele, como qualquer participante. Sem cadastro (ou testes locais), continua sem nome e pode usar o "🎮 Jogar também".
+      if (!nome && dirigente && corpo.aparelhoId) {
+        const ac = await estadoAcessoSite({ aparelhoId: corpo.aparelhoId }).catch(() => null);
+        if (ac && ac.identificado && ac.cadastro) nome = nomeLimpo(String(ac.cadastro.nome || ac.nome || "").trim().split(/\s+/)[0]);
+      }
       let participanteId = "";
       if (nome) {
         participanteId = idLimpo(corpo.participanteId);
@@ -457,7 +463,7 @@ export default async function handler(req, res) {
         // Sem nome: só confere o código e devolve o título e os nomes informados, para a pessoa escolher o dela (não entra ainda).
         return res.status(200).json({ sessao: cod, precisaNome: true, titulo: programa.titulo, emoji: programa.emoji, nomes: programa.nomes || [] });
       }
-      const resposta = { sessao: cod, programa, participanteId, dirigente, agora: Date.now() };
+      const resposta = { sessao: cod, programa, participanteId, dirigente, agora: Date.now(), ...(participanteId ? { nome } : {}) };
       if (dirigente) {
         const qtd = await contarParticipantes(cod);
         Object.assign(resposta, { versao: versaoDe(estado, qtd), estado: estadoPublico(estado), participantes: await lerParticipantes(cod), extras: segredo.extras || null });
