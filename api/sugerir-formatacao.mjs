@@ -42,10 +42,12 @@ import {
 import { artigosDoTopicoDoGuia, buscarNosLivros, buscarVerbete, buscarVersiculos, versiculosDoCapitulo, fontesConfiguradas, lerCanticos, lerEnsinosBiblicos, lerPrincipios, lerTextoDoLivro, lerVerbeteCompleto, nomeDoLivro, precarregarFontes, referenciaPadrao, referenciasNoTexto, resolvedorDeLivros, textoDeGruposBiblicos } from "./_fontes.mjs";
 import { JOGOS_FAMILIA, QUADROS_FAMILIA, minutosDosQuadros, quadrosDoPedido } from "./_familiaQuadros.mjs";
 import {
+  JOGOS_CONFERIDOS_NA_BIBLIA,
   MIN_CARACTERES_ARTIGO,
   MIN_RODADAS_PARA_MANTER_O_TIPO,
   QUADROS_GERADOS,
   RODADAS_DO_JOGO,
+  aplicarConferenciaDoJogo,
   candidatosArtigos,
   candidatosPrincipio,
   chaveDoTrecho,
@@ -66,6 +68,7 @@ import {
   lankDoLink,
   linkDeConsultaWol,
   livroDaReferencia,
+  mensagemDeConferenciaDoJogo,
   nomesDaResposta,
   normalizarEvitar,
   normalizarTexto,
@@ -82,6 +85,7 @@ import {
   semMarcasDeFigura,
   semMarcasDoTexto,
   sentidoQueCitaAPassagem,
+  textoDasRejeitadas,
   tipoDoJogo,
   urlWolDoDocId,
   usadosDaParte,
@@ -3100,6 +3104,12 @@ export const SAIDAS_QUADRO_FAMILIA = {
   canticos: z.object({ numero: z.number().nullable(), descricao: z.string() }),
 };
 
+// 6.12.78: a conferência dos jogos escritos pela IA (Verdadeiro ou falso e Quem sou eu?) com o texto da Bíblia: uma entrada por rodada
+// ("n" a partir de 1). O veredito é texto livre (confere, contradiz ou nao_consta; o servidor normaliza): só "contradiz" tira a rodada.
+export const SaidaConferenciaJogo = z.object({
+  rodadas: z.array(z.object({ n: z.number(), veredito: z.string(), motivo: z.string() })),
+});
+
 const hojeFamilia = () => new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long", day: "numeric", month: "long", year: "numeric" });
 const perguntasLimpas = (lista, max) => (Array.isArray(lista) ? lista : []).map((q) => limparTextoGerado(q, 300)).filter(Boolean).slice(0, max);
 // A descrição sem os identificadores que a IA às vezes cita ("[V3]", "[L1]", "[PR2]"): o servidor já pôs as fontes na parte.
@@ -3618,6 +3628,7 @@ const PREPARAR_QUADRO_FAMILIA = {
         const nome = linhaFamilia(o.nome, 80) || tipo.replace(/\s*\(.*$/, "");
         let jogo = null;
         let tiradas = 0;
+        let contagensDaConferencia = {};
         let falta = "";
         let trocarTipo = "";
         let versiculosDoJogo = [];
@@ -3717,6 +3728,21 @@ const PREPARAR_QUADRO_FAMILIA = {
           const antesDasDatas = conferidas.length;
           conferidas = semDatasForaDoApendice(conferidas, (r) => `${r.pergunta} ${r.resposta}`, permitidas);
           const semData = antesDasDatas - conferidas.length;
+          // 6.12.78: Verdadeiro ou falso e Quem sou eu? são escritos inteiros pela IA; uma segunda chamada (ctx.conferirJogo, posta por
+          // gerarQuadroFamilia) confere cada rodada com o texto da referência na Bíblia, e as que o texto contradiz saem. Se a conferência
+          // falhar (erro, recusa, sem a Bíblia no servidor), as rodadas ficam como estão.
+          let rejeitadasNaBiblia = [];
+          let conferidasNaBiblia = 0;
+          if (ctx.conferirJogo && comBiblia && JOGOS_CONFERIDOS_NA_BIBLIA.includes(idTipo) && conferidas.length) {
+            const itens = await ctx.conferirJogo(idTipo, conferidas).catch(() => null);
+            if (Array.isArray(itens)) {
+              const aplicado = aplicarConferenciaDoJogo(conferidas, itens);
+              conferidas = aplicado.mantidas;
+              rejeitadasNaBiblia = aplicado.rejeitadas;
+              conferidasNaBiblia = 1;
+            }
+          }
+          contagensDaConferencia = { conferenciaNaBiblia: conferidasNaBiblia, rejeitadasNaBiblia: rejeitadasNaBiblia.length };
           jogo = jogoDaFamilia([tipo], { tipo, nome, comoJogar: limparTextoGerado(o.comoJogar, 1200) || REGRAS_PADRAO_JOGO, rodadas: conferidas.slice(0, limite.max), itens: [] });
           if (jogo) jogo.idTipo = idTipo;
           tiradas = brutas.length - conferidas.length;
@@ -3730,7 +3756,7 @@ const PREPARAR_QUADRO_FAMILIA = {
             abreviacoes: "a sigla na pergunta conferindo palavra por palavra com a resposta, e a referência do versículo onde está",
           }[idTipo];
           const faltas = [];
-          if (validas < limite.min) faltas.push(`vieram ${validas} rodadas válidas; mande ${limite.pedir} rodadas (no mínimo ${limite.min}), em nível de adulto batizado${exigencia ? `, ${exigencia}` : ""}${semData ? ", e sem datas fora do Apêndice B" : ""}`);
+          if (validas < limite.min) faltas.push(`vieram ${validas} rodadas válidas; mande ${limite.pedir} rodadas (no mínimo ${limite.min}), em nível de adulto batizado${exigencia ? `, ${exigencia}` : ""}${semData ? ", e sem datas fora do Apêndice B" : ""}${rejeitadasNaBiblia.length ? `; ${textoDasRejeitadas(rejeitadasNaBiblia)}` : ""}`);
           if (idTipo === "verdadeiro_falso" && validas) {
             const verdadeiras = jogo.rodadas.filter((r) => /^Verdadeiro\b/.test(r.resposta)).length;
             if (verdadeiras < 3 || validas - verdadeiras < 3) faltas.push(`vieram ${verdadeiras} verdadeiras e ${validas - verdadeiras} falsas; mande pelo menos 3 verdadeiras e 3 falsas`);
@@ -3746,7 +3772,7 @@ const PREPARAR_QUADRO_FAMILIA = {
           memoria: { jogos: [tipo], ...(versiculosDoJogo.length ? { jogo_versiculos: versiculosDoJogo } : {}) },
           falta,
           trocarTipo,
-          contagens: { tiradas, rodadas: jogo ? (ordem ? jogo.itens.length : jogo.rodadas.length) : 0, idTipo },
+          contagens: { tiradas, rodadas: jogo ? (ordem ? jogo.itens.length : jogo.rodadas.length) : 0, idTipo, ...contagensDaConferencia },
         };
       },
     };
@@ -3838,17 +3864,47 @@ async function gerarQuadroFamilia(res, body, P) {
     const inicio = Date.now();
     let entrada = 0;
     let saida = 0;
+    // 6.12.78: a conferência com a Bíblia dos jogos que a IA escreve sozinha (Verdadeiro ou falso e Quem sou eu?). Para cada rodada, o servidor
+    // transcreve o texto da sua referência e uma segunda chamada, curta, diz se a rodada o contradiz (ver adoracao_q_conferir). Os tokens entram na
+    // conta do quadro. Devolve [{ n, veredito, motivo }] ou null (sem a Bíblia, recusa ou erro: as rodadas ficam como estão).
+    const conferirJogoFamilia = async (idTipo, rodadas) => {
+      try {
+        if (!fontesConfiguradas() || !P.sistemaFamiliaConferir) return null;
+        const textos = await Promise.all(
+          rodadas.map(async (r) => {
+            if (!r.referencia) return "";
+            const v = (await buscarVersiculos([r.referencia], 1, { maxVersiculos: 8, maxChars: 1800 }).catch(() => []))[0];
+            return (v && v.texto) || "";
+          })
+        );
+        const resposta = await chamarIa(
+          client,
+          P,
+          { max_tokens: P.ia.provedorTarefa === "gemini" ? 16000 : 4000, system: P.sistemaFamiliaConferir, messages: [{ role: "user", content: mensagemDeConferenciaDoJogo(idTipo, rodadas, textos) }] },
+          { schema: SaidaConferenciaJogo, tarefa: "adoracao-familia" }
+        );
+        entrada += resposta.usage?.input_tokens || 0;
+        saida += resposta.usage?.output_tokens || 0;
+        if (resposta.stop_reason === "refusal" || !resposta.parsed_output || !Array.isArray(resposta.parsed_output.rodadas)) return null;
+        return resposta.parsed_output.rodadas;
+      } catch (e) {
+        return null;
+      }
+    };
     // pd: o pedido montado (o do quadro, ou o da troca do tipo do jogo, 6.12.76).
     const gerarUma = async (mensagem, pd = pedido) => {
       const resposta = await chamarIa(
         client,
         P,
-        { max_tokens: P.ia.provedorTarefa === "gemini" ? 16000 : 6000, system: pd.sistema, messages: [{ role: "user", content: mensagem }] },
+        // 6.12.78: o jogo (Quem sou eu? com 10 rodadas de 3 dicas, Verdadeiro ou falso com 14) escreve bastante: com 6000 a saída chegou a ser cortada
+        // no meio do JSON; o limite é só um teto (o custo é o que a IA realmente escreve).
+        { max_tokens: P.ia.provedorTarefa === "gemini" ? 16000 : id === "jogo" ? 10000 : 6000, system: pd.sistema, messages: [{ role: "user", content: mensagem }] },
         { schema: pd.prep.schema, tarefa: "adoracao-familia" }
       );
       entrada += resposta.usage?.input_tokens || 0;
       saida += resposta.usage?.output_tokens || 0;
       if (resposta.stop_reason === "refusal" || !resposta.parsed_output) return null;
+      pd.ctx.conferirJogo = conferirJogoFamilia;
       const { contagens, memoria, falta, trocarTipo, ...montado } = await pd.prep.montar(resposta.parsed_output);
       const parte = {
         nome: quadro.nome,

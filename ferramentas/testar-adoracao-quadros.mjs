@@ -416,7 +416,7 @@ teste("servidor: fases plano/quadro, limite 16 partes, limite por hora dos quadr
 });
 
 teste("prompts dos quadros: partes editáveis na categoria, sem \"culto\", sistemas montados com vocabulário, fontes e formato travado", () => {
-  const ids = ["adoracao_q_base", "adoracao_q_plano", "adoracao_q_abertura", "adoracao_q_principio", "adoracao_q_personagem", "adoracao_q_jesus", "adoracao_q_video", "adoracao_q_criador", "adoracao_q_saiba", "adoracao_q_ministerio", "adoracao_q_jogo", "adoracao_q_canticos"];
+  const ids = ["adoracao_q_base", "adoracao_q_plano", "adoracao_q_abertura", "adoracao_q_principio", "adoracao_q_personagem", "adoracao_q_jesus", "adoracao_q_video", "adoracao_q_criador", "adoracao_q_saiba", "adoracao_q_ministerio", "adoracao_q_jogo", "adoracao_q_conferir", "adoracao_q_canticos"];
   assert.ok(!prompts.PARTES.some((x) => x.id === "adoracao_q_generico"), "a parte genérica saiu");
   const cat = prompts.CATEGORIAS.find((c) => (c.partes || []).includes("adoracao_familia"));
   assert.ok(cat, "categoria da Adoração");
@@ -779,10 +779,10 @@ teste("6.12.73: prompts do Personagem (ângulo), do Jogo (8 a 12, sem respostas 
 teste("6.12.73/6.12.76: jogo pede de novo quando faltam rodadas (mínimo do tipo) ou acontecimentos (6)", async () => {
   const pedido = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Verdadeiro ou falso"] }), montados);
   assert.ok(!pedido.erro);
-  assert.match(pedido.mensagem, /QUANTIDADE: mande 12 rodadas \(no mínimo 10; ficam até 12\)\./);
+  assert.match(pedido.mensagem, /QUANTIDADE: mande 14 rodadas \(no mínimo 10; ficam até 12\)\./);
   const rodada = (i) => ({ pergunta: `Afirmação ${i}`, resposta: i % 2 ? "Verdadeiro. Está no relato." : "falso, foi outro", referencia: "Gênesis 1:1" });
   const curta = await pedido.prep.montar({ descricao: "d", nome: "V ou F", comoJogar: "Regras.", rodadas: [1, 2, 3].map(rodada), eventos: [] });
-  assert.match(curta.falta, /^vieram 3 rodadas válidas; mande 12 rodadas \(no mínimo 10\), em nível de adulto batizado/);
+  assert.match(curta.falta, /^vieram 3 rodadas válidas; mande 14 rodadas \(no mínimo 10\), em nível de adulto batizado/);
   const cheia = await pedido.prep.montar({ descricao: "d", nome: "V ou F", comoJogar: "Regras.", rodadas: Array.from({ length: 13 }, (_, i) => rodada(i + 1)), eventos: [] });
   assert.equal(cheia.falta, "");
   assert.equal(cheia.contagens.rodadas, 12, "ficam até 12");
@@ -1100,7 +1100,7 @@ teste("6.12.76: prompts (Jesus traz um episódio; Jogo com QUANTIDADE e o servid
   // jogoFora: o tipo que não deu certo fica fora do sorteio.
   const fora = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Verdadeiro ou falso", "Quem sou eu? (personagens bíblicos)"], jogoFora: "Verdadeiro ou falso" }), montados);
   assert.equal(fora.prep.tipo, "Quem sou eu? (personagens bíblicos)");
-  assert.match(fora.mensagem, /QUANTIDADE: mande 8 rodadas \(no mínimo 6; ficam até 8\)\./);
+  assert.match(fora.mensagem, /QUANTIDADE: mande 10 rodadas \(no mínimo 6; ficam até 8\)\./);
   // Sem a Bíblia no servidor, nada de Complete o versículo nem Quem disse isso?
   const complete = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Complete o versículo"] }), montados);
   if (comFontes) assert.equal(complete.prep.tipo, "Complete o versículo");
@@ -1291,6 +1291,193 @@ teste("6.12.77: telas dos jogos (uma questão por vez, Mostrar resposta, ordem r
   assert.match(bloco, /#participarSessao \.fam-sessao-ordem \.fam-sessao-revelar \{[^}]*width: 100%/);
   assert.ok(!/#(?:22c55e|16a34a|10b981|059669|4ade80)|green/i.test(bloco), "sem verde");
   assert.ok(!/culto/i.test(corpo + bloco));
+});
+
+// ---------- Patch 6.12.78: conferência dos jogos escritos pela IA com o texto da Bíblia ----------
+
+teste("6.12.78: funções puras da conferência (veredito, mensagem, o que sai e o que volta no pedido de novo)", () => {
+  assert.deepEqual([...ger.JOGOS_CONFERIDOS_NA_BIBLIA], ["quem_sou_eu", "verdadeiro_falso"]);
+  assert.equal(ger.vereditoDaConferencia("contradiz"), "contradiz");
+  assert.equal(ger.vereditoDaConferencia("Contradiz"), "contradiz");
+  assert.equal(ger.vereditoDaConferencia("errada"), "contradiz");
+  assert.equal(ger.vereditoDaConferencia("CONFERE"), "confere");
+  assert.equal(ger.vereditoDaConferencia("nao_consta"), "nao_consta");
+  assert.equal(ger.vereditoDaConferencia("não consta"), "nao_consta");
+  assert.equal(ger.vereditoDaConferencia(""), "nao_consta", "vazio nunca tira a rodada");
+  assert.equal(ger.vereditoDaConferencia(undefined), "nao_consta");
+  assert.equal(ger.vereditoDaConferencia("talvez erre"), "nao_consta", "na dúvida, fica");
+
+  // A mensagem: cada rodada com a resposta dada, a referência e o texto da Bíblia; sem texto, o aviso para responder nao_consta.
+  const vf = [
+    { pergunta: "Estêvão pediu a Jeová que não imputasse aquele pecado.", resposta: "Falso. Foi a Jesus.", referencia: "Atos 7:59, 60" },
+    { pergunta: "Outra afirmação.", resposta: "Verdadeiro.", referencia: "" },
+  ];
+  const m1 = ger.mensagemDeConferenciaDoJogo("verdadeiro_falso", vf, ["Atos 7:60 Então, ajoelhando-se,   ele clamou: “Jeová, não os condenes por este pecado.”", ""]);
+  assert.match(m1, /^TIPO DO JOGO: Verdadeiro ou falso\nRODADAS A CONFERIR \(2\)/);
+  assert.match(m1, /\[1\] AFIRMAÇÃO: Estêvão pediu a Jeová que não imputasse aquele pecado\.\nRESPOSTA DADA: Falso\. Foi a Jesus\.\nREFERÊNCIA: Atos 7:59, 60\nTEXTO DA BÍBLIA: Atos 7:60 Então, ajoelhando-se, ele clamou/);
+  assert.match(m1, /\[2\] AFIRMAÇÃO: Outra afirmação\.\nRESPOSTA DADA: Verdadeiro\.\nREFERÊNCIA: \(nenhuma\)\nTEXTO DA BÍBLIA: \(o servidor não achou o texto desta referência: responda nao_consta\)/);
+  const m2 = ger.mensagemDeConferenciaDoJogo("quem_sou_eu", [{ pergunta: "Dica 1: a. Dica 2: b. Dica 3: c.", resposta: "José", referencia: "Gênesis 50:16" }], ["Eles mandaram dizer a José"]);
+  assert.match(m2, /^TIPO DO JOGO: Quem sou eu\?\nRODADAS A CONFERIR \(1\)/);
+  assert.match(m2, /\[1\] DICAS: Dica 1: a\. Dica 2: b\. Dica 3: c\.\nRESPOSTA DADA: José\n/);
+  assert.equal(ger.mensagemDeConferenciaDoJogo("verdadeiro_falso", [], []).includes("RODADAS A CONFERIR (0)"), true);
+
+  // Só "contradiz" tira a rodada; n fora da lista, repetido ou sem veredito válido não tira nada.
+  const rodadas = [1, 2, 3, 4].map((i) => ({ pergunta: `P${i}`, resposta: `R${i}`, referencia: "Gênesis 1:1" }));
+  const r = ger.aplicarConferenciaDoJogo(rodadas, [
+    { n: 2, veredito: "contradiz", motivo: "  O texto diz o\ncontrário. " },
+    { n: 2, veredito: "contradiz", motivo: "repetido" },
+    { n: 3, veredito: "nao_consta", motivo: "" },
+    { n: 4, veredito: "confere", motivo: "" },
+    { n: 9, veredito: "contradiz", motivo: "n fora da lista" },
+    { n: 0, veredito: "contradiz", motivo: "n zero" },
+    { veredito: "contradiz", motivo: "sem n" },
+  ]);
+  assert.deepEqual(r.mantidas.map((x) => x.pergunta), ["P1", "P3", "P4"]);
+  assert.equal(r.rejeitadas.length, 1);
+  assert.equal(r.rejeitadas[0].rodada.pergunta, "P2");
+  assert.equal(r.rejeitadas[0].motivo, "O texto diz o contrário.");
+  for (const ruim of [null, undefined, "contradiz", {}, 5]) {
+    const x = ger.aplicarConferenciaDoJogo(rodadas, ruim);
+    assert.equal(x.mantidas.length, 4, "sem resposta válida da IA, todas ficam");
+    assert.equal(x.rejeitadas.length, 0);
+  }
+  assert.deepEqual(ger.aplicarConferenciaDoJogo(rodadas, []).mantidas, rodadas);
+  assert.notEqual(ger.aplicarConferenciaDoJogo(rodadas, []).mantidas, rodadas, "devolve uma cópia");
+
+  // O que volta no pedido de novo: até 4 rodadas, curtas, com o motivo.
+  assert.equal(ger.textoDasRejeitadas([]), "");
+  assert.equal(ger.textoDasRejeitadas(undefined), "");
+  const cinco = [1, 2, 3, 4, 5].map((i) => ({ rodada: { pergunta: `Afirmação ${i} ${"x".repeat(200)}` }, motivo: i === 1 ? "" : `motivo ${i}` }));
+  const t = ger.textoDasRejeitadas(cinco);
+  assert.match(t, /^a conferência com a Bíblia tirou 5 rodadas por contrariar o texto/);
+  assert.equal((t.match(/"Afirmação /g) || []).length, 4, "só 4 aparecem");
+  assert.match(t, /\(contraria o texto\)/, "sem motivo, o texto padrão");
+  assert.match(t, /…"/, "a afirmação é cortada");
+  assert.match(ger.textoDasRejeitadas([cinco[1]]), /^a conferência com a Bíblia tirou 1 rodada por contrariar/);
+  // As quantidades pedidas deixam folga para o que a conferência tirar.
+  assert.deepEqual({ ...ger.RODADAS_DO_JOGO.verdadeiro_falso }, { pedir: 14, min: 10, max: 12 });
+  assert.deepEqual({ ...ger.RODADAS_DO_JOGO.quem_sou_eu }, { pedir: 10, min: 6, max: 8 });
+});
+
+teste("6.12.78: prompt da conferência (editável), formato travado, sistema montado e o jogo avisa da conferência", () => {
+  const parte = prompts.PARTES.find((x) => x.id === "adoracao_q_conferir");
+  assert.ok(parte && parte.padrao.length > 400 && parte.descricao.length > 80);
+  assert.doesNotMatch(parte.padrao, /\bcultos?\b/i);
+  assert.match(parte.padrao, /ETAPA: CONFERÊNCIA DE UM JOGO BÍBLICO/);
+  assert.match(parte.padrao, /Baseie-se SÓ no texto recebido/);
+  assert.match(parte.padrao, /QUEM fez o quê e A QUEM/);
+  assert.match(parte.padrao, /Na dúvida, use "nao_consta", NUNCA "contradiz"/);
+  assert.match(parte.padrao, /não os condenes por este pecado/, "o caso de Estêvão está no prompt");
+  const cat = prompts.CATEGORIAS.find((c) => (c.partes || []).includes("adoracao_familia"));
+  assert.ok(cat.partes.includes("adoracao_q_conferir"), "a parte aparece na tela de prompts");
+  const travado = prompts.travadosDe({}).find((x) => x.id === "formato_familia_conferir_jogo");
+  assert.ok(travado, "o formato é só leitura na tela de prompts");
+  assert.match(travado.texto, /"veredito": "confere"/);
+  assert.doesNotMatch(travado.texto, /\bcultos?\b/i);
+  // O sistema montado: a parte editável + vocabulário + formato (sem as regras comuns dos quadros).
+  const s = montados.sistemaFamiliaConferir;
+  assert.ok(typeof s === "string" && s.startsWith(parte.padrao));
+  assert.match(s, /VOCABULÁRIO \(regra fixa, vale sempre\)/);
+  assert.match(s, /FORMATO DA CONFERÊNCIA DO JOGO/);
+  assert.ok(!Object.keys(montados.sistemaFamiliaQuadro).includes("conferir"), "não é um quadro");
+  // A parte do jogo avisa a IA da conferência; o formato e a descrição da montagem também.
+  const jogo = prompts.PARTES.find((x) => x.id === "adoracao_q_jogo").padrao;
+  assert.match(jogo, /CONFERÊNCIA COM A BÍBLIA \(Verdadeiro ou falso e Quem sou eu\?\)/);
+  assert.match(jogo, /TODOS os versículos que sustentam/);
+  assert.doesNotMatch(jogo, /\bcultos?\b/i);
+  assert.match(montados.sistemaFamiliaQuadro.jogo, /ainda passam por uma conferência com a Bíblia/);
+  const montagem = prompts.travadosDe({}).find((x) => x.id === "montagem_pedidos").texto;
+  assert.match(montagem, /6\.12\.78: o Verdadeiro ou falso e o Quem sou eu\? passam por uma conferência com a Bíblia/);
+  assert.match(montagem, /Quem sou eu\? 10, no mínimo 6, ficam até 8; Verdadeiro ou falso 14, no mínimo 10, ficam até 12/);
+});
+
+teste("6.12.78: servidor liga a conferência ao jogo (só os 2 tipos, com a Bíblia, tokens contados, falha não tira rodadas)", () => {
+  assert.match(servidorJs, /export const SaidaConferenciaJogo = z\.object\(/);
+  assert.match(servidorJs, /const conferirJogoFamilia = async \(idTipo, rodadas\) => \{/);
+  assert.match(servidorJs, /pd\.ctx\.conferirJogo = conferirJogoFamilia;/);
+  assert.match(servidorJs, /id === "jogo" \? 10000 : 6000, system: pd\.sistema/, "o jogo tem teto de saída maior (a saída chegou a ser cortada com 6000)");
+  assert.match(servidorJs, /ctx\.conferirJogo && comBiblia && JOGOS_CONFERIDOS_NA_BIBLIA\.includes\(idTipo\) && conferidas\.length/);
+  assert.match(servidorJs, /system: P\.sistemaFamiliaConferir/);
+  // Os tokens da conferência entram na conta do quadro (entrada e saída) e uma falha devolve null (as rodadas ficam).
+  const ini = servidorJs.indexOf("const conferirJogoFamilia = async");
+  const fim = servidorJs.indexOf("const gerarUma = async", ini);
+  const corpo = servidorJs.slice(ini, fim);
+  assert.ok(ini > 0 && fim > ini);
+  assert.match(corpo, /entrada \+= resposta\.usage\?\.input_tokens \|\| 0;/);
+  assert.match(corpo, /saida \+= resposta\.usage\?\.output_tokens \|\| 0;/);
+  assert.match(corpo, /catch \(e\) \{\r?\n\s+return null;/);
+  assert.match(corpo, /buscarVersiculos\(\[r\.referencia\], 1, \{ maxVersiculos: 8, maxChars: 1800 \}\)/);
+  // O motivo das rodadas tiradas volta no pedido de novo (FALTOU) e a contagem entra no log.
+  assert.match(servidorJs, /textoDasRejeitadas\(rejeitadasNaBiblia\)/);
+  assert.match(servidorJs, /contagensDaConferencia = \{ conferenciaNaBiblia: conferidasNaBiblia, rejeitadasNaBiblia: rejeitadasNaBiblia\.length \}/);
+  assert.match(servidorJs, /\.\.\.contagensDaConferencia \},/);
+  // Nada do perfil nem do texto das rodadas no log.
+  const logs = servidorJs.split("\n").filter((l) => /console\.log\("Adoração em Família \((plano|quadro)\)/.test(l));
+  for (const l of logs.filter((x) => /\(quadro\)/.test(x))) assert.doesNotMatch(l, /\.pergunta|\.resposta\b|motivo|rejeitadas\b|textos\.map/);
+});
+
+teste("6.12.78: Verdadeiro ou falso e Quem sou eu? com a conferência simulada (com FONTES_DIR): sai só o que o texto contradiz", async () => {
+  const chamadas = [];
+  const vf = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Verdadeiro ou falso"] }), montados);
+  const rodada = (i) => ({ pergunta: `Afirmação ${i}`, resposta: i % 2 ? "Verdadeiro. Está no relato." : "Falso. Foi outro.", referencia: "Gênesis 1:1" });
+  const saida = (o) => ({ descricao: "d", nome: "V ou F", comoJogar: "Regras.", rodadas: Array.from({ length: 14 }, (_, i) => rodada(i + 1)), eventos: [], ...o });
+  // Sem conferirJogo no contexto (como nos testes antigos) nada muda.
+  const semConferencia = await vf.prep.montar(saida());
+  assert.equal(semConferencia.contagens.rodadas, 12);
+  assert.equal(semConferencia.contagens.conferenciaNaBiblia, 0);
+  assert.equal(semConferencia.contagens.rejeitadasNaBiblia, 0);
+  // Com a conferência: a IA (simulada) diz que as rodadas 2 e 9 contradizem o texto.
+  vf.ctx.conferirJogo = async (idTipo, rodadas) => {
+    chamadas.push({ idTipo, n: rodadas.length, referencias: rodadas.map((r) => r.referencia) });
+    return rodadas.map((_, i) => ({ n: i + 1, veredito: i + 1 === 2 || i + 1 === 9 ? "contradiz" : i + 1 === 5 ? "nao_consta" : "confere", motivo: i + 1 === 2 ? "O texto diz o contrário." : "" }));
+  };
+  const comConferencia = await vf.prep.montar(saida());
+  if (!comFontes) {
+    assert.equal(chamadas.length, 0, "sem a Bíblia no servidor, a conferência não roda");
+    assert.equal(comConferencia.contagens.conferenciaNaBiblia, 0);
+    return console.log("      (sem FONTES_DIR: conferência simulada pulada)");
+  }
+  assert.equal(chamadas.length, 1);
+  assert.equal(chamadas[0].idTipo, "verdadeiro_falso");
+  assert.equal(chamadas[0].n, 14, "as 14 rodadas válidas vão à conferência");
+  assert.equal(comConferencia.contagens.conferenciaNaBiblia, 1);
+  assert.equal(comConferencia.contagens.rejeitadasNaBiblia, 2);
+  assert.equal(comConferencia.contagens.rodadas, 12, "14 - 2 = 12 ficam");
+  assert.ok(!comConferencia.jogo.rodadas.some((r) => r.pergunta === "Afirmação 2" || r.pergunta === "Afirmação 9"));
+  assert.ok(comConferencia.jogo.rodadas.some((r) => r.pergunta === "Afirmação 5"), "nao_consta fica");
+  assert.equal(comConferencia.falta, "", "ainda sobram mais que o mínimo");
+  // Com muitas tiradas faltam rodadas: o pedido de novo traz o motivo.
+  vf.ctx.conferirJogo = async (idTipo, rodadas) => rodadas.map((_, i) => ({ n: i + 1, veredito: i < 6 ? "contradiz" : "confere", motivo: i === 0 ? "Quem pediu foi outro." : "" }));
+  const muitas = await vf.prep.montar(saida());
+  assert.match(muitas.falta, /^vieram 8 rodadas válidas; mande 14 rodadas \(no mínimo 10\), em nível de adulto batizado/);
+  assert.match(muitas.falta, /; a conferência com a Bíblia tirou 6 rodadas por contrariar o texto/);
+  assert.match(muitas.falta, /"Afirmação 1" \(Quem pediu foi outro\.\)/);
+  // A conferência falhou (null, erro ou resposta que não é lista): as rodadas ficam como estão.
+  for (const falha of [async () => null, async () => { throw new Error("IA fora do ar"); }, async () => ({ rodadas: [] })]) {
+    vf.ctx.conferirJogo = falha;
+    const f = await vf.prep.montar(saida());
+    assert.equal(f.contagens.rodadas, 12);
+    assert.equal(f.contagens.conferenciaNaBiblia, 0);
+  }
+  // Quem sou eu?: a rodada que o texto contradiz (dica com os papéis trocados) sai.
+  const qse = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Quem sou eu? (personagens bíblicos)"] }), montados);
+  const nomes = ["Josias", "Abigail", "Mefibosete", "Gideão", "Débora", "Onésimo", "Rute", "Jonas"];
+  const rodadasQse = nomes.map((n, i) => ({ pergunta: `Dica 1: a ${i}. Dica 2: b ${i}. Dica 3: c ${i}.`, resposta: n, referencia: "Salmo 23:1" }));
+  qse.ctx.conferirJogo = async (idTipo, rodadas) => {
+    chamadas.push({ idTipo, n: rodadas.length });
+    return rodadas.map((r, i) => ({ n: i + 1, veredito: r.resposta === "Mefibosete" ? "contradiz" : "confere", motivo: "papéis trocados" }));
+  };
+  const q = await qse.prep.montar({ descricao: "d", nome: "Quem sou eu?", comoJogar: "R.", rodadas: rodadasQse, eventos: [] });
+  assert.equal(chamadas[chamadas.length - 1].idTipo, "quem_sou_eu");
+  assert.equal(q.contagens.rejeitadasNaBiblia, 1);
+  assert.ok(!q.jogo.rodadas.some((r) => r.resposta === "Mefibosete"));
+  assert.equal(q.jogo.rodadas.length, 7);
+  // Os outros tipos não passam pela conferência (nascem do texto transcrito ou do servidor).
+  const chamadasAntes = chamadas.length;
+  const ab = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Abreviações bíblicas (ex.: Os 12 A de C)"] }), montados);
+  ab.ctx.conferirJogo = async () => { chamadas.push({ idTipo: "abreviacoes" }); return []; };
+  await ab.prep.montar({ descricao: "d", nome: "Abreviações", comoJogar: "R.", rodadas: [{ pergunta: "P da P", resposta: "Príncipe da Paz", referencia: "Isaías 9:6" }], eventos: [] });
+  assert.equal(chamadas.length, chamadasAntes, "Abreviações não é conferido pela IA");
 });
 
 for (const [nome, fn] of testes) {

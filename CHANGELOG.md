@@ -2,6 +2,19 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.78
+
+### Jogos: conferência com a Bíblia
+
+- **Por que:** o Verdadeiro ou falso e o Quem sou eu? são escritos inteiros pela IA, e o servidor só conferia o formato. Na geração real da 6.12.77 saíram rodadas erradas: uma afirmação verdadeira marcada "Falso" (Estêvão pediu a Jeová que não imputasse o pecado, At 7:60) e dicas com quem fez e quem recebeu trocados (José mandou a mensagem de perdão em Gn 50:16; Simei tratado com desprezo pelo rei em 2 Sm 19).
+- **Conferência:** depois de montar o jogo, o servidor transcreve da Bíblia o texto da referência de cada rodada e uma **segunda chamada, curta**, diz se a rodada "confere", se o texto a "contradiz" ou se "não consta". **Só as rodadas que o texto contradiz saem.** Se a conferência falhar (erro, recusa ou sem a Bíblia no servidor), as rodadas ficam como estão. Os tokens dela entram na conta do quadro. Os outros 4 tipos não passam por ela: nascem do texto transcrito ou de dados do servidor.
+- **Teste real:** a conferência tirou as 3 rodadas erradas da 6.12.77 (Estêvão, José e Simei) e uma errada de propósito, e manteve as 4 certas que foram junto. Custou cerca de 2,7 mil tokens de entrada e 0,7 mil de saída por jogo.
+- **Quando faltam rodadas:** se depois da conferência ficarem menos rodadas que o mínimo do tipo, o jogo é pedido de novo uma vez, e o pedido diz quais rodadas saíram e por quê (citando o motivo), pedindo cuidado com quem fez o quê e a quem e todos os versículos que sustentam a rodada.
+- **Folga nas quantidades:** o Quem sou eu? passa a pedir 10 rodadas (no mínimo 6; ficam até 8) e o Verdadeiro ou falso, 14 (no mínimo 10; ficam até 12), para sobrar o suficiente quando a conferência tirar alguma.
+- **Teto de saída maior no jogo:** o quadro de jogo pode escrever até 10 mil tokens (eram 6 mil, e numa geração a resposta chegou a ser cortada no meio do JSON). É só um teto; o custo é o que a IA escreve.
+- **Instruções da IA (tela de prompts):** nova parte editável "Adoração por quadros: Conferência do jogo com a Bíblia" (`adoracao_q_conferir`) e o formato dela (só leitura); a parte do Jogo avisa a IA da conferência; a descrição de como o pedido é montado foi atualizada.
+- Testes: `testar-adoracao-quadros.mjs` passou a ter 63 testes (4 novos da conferência, com respostas simuladas).
+
 ## 6.12.77
 
 ### Jogos: aspas, quem fala e livros

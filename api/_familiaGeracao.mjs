@@ -619,8 +619,9 @@ export function idDoJogo(nome) {
 // Quantas rodadas cabem nos 10 minutos do quadro: pedir (o que se pede à IA), min (com menos, refaz uma vez) e max (o que fica).
 // Quem sou eu? tem 3 dicas por rodada (mais demorado); Verdadeiro ou falso é rápido; nos montados pelo servidor pede-se folga.
 export const RODADAS_DO_JOGO = Object.freeze({
-  quem_sou_eu: Object.freeze({ pedir: 8, min: 6, max: 8 }),
-  verdadeiro_falso: Object.freeze({ pedir: 12, min: 10, max: 12 }),
+  // 6.12.78: Quem sou eu? e Verdadeiro ou falso passam pela conferência com a Bíblia (que pode tirar rodadas): pede-se mais do que ficam.
+  quem_sou_eu: Object.freeze({ pedir: 10, min: 6, max: 8 }),
+  verdadeiro_falso: Object.freeze({ pedir: 14, min: 10, max: 12 }),
   quem_disse: Object.freeze({ pedir: 12, min: 8, max: 10 }),
   complete_versiculo: Object.freeze({ pedir: 12, min: 8, max: 10 }),
   abreviacoes: Object.freeze({ pedir: 10, min: 8, max: 10 }),
@@ -816,4 +817,63 @@ export function quemFalaConfere(texto, resposta) {
   const quem = onde(nomes[0]);
   if (quem < 0) return false;
   return nomes.slice(1).every((n) => n === nomes[0] || onde(n) < 0 || onde(n) > quem);
+}
+
+// ---------- 6.12.78: conferência com a Bíblia dos jogos que a IA escreve por conta própria ----------
+
+// Verdadeiro ou falso e Quem sou eu? são escritos inteiros pela IA (o servidor só confere o formato), e na geração real da 6.12.77 saíram rodadas
+// erradas (uma afirmação verdadeira marcada "Falso"; dicas com quem fez e quem recebeu trocados). Por isso, depois da montagem, uma segunda
+// chamada curta à IA confere cada rodada com o TEXTO da referência, transcrito da Bíblia do servidor, e o servidor tira as que o texto contradiz.
+// Os outros 4 tipos já nascem do texto transcrito (ou de dados do servidor) e não precisam dela.
+export const JOGOS_CONFERIDOS_NA_BIBLIA = Object.freeze(["quem_sou_eu", "verdadeiro_falso"]);
+export const TIPOS_DE_VEREDITO = Object.freeze(["confere", "contradiz", "nao_consta"]);
+
+// O veredito escrito pela IA vira um dos três (qualquer outra coisa, ou vazio, vale "nao_consta": só "contradiz" tira a rodada).
+export function vereditoDaConferencia(valor) {
+  const t = normalizarTexto(valor).replace(/\s+/g, "_");
+  if (t.startsWith("contradiz") || t === "errada" || t === "errado") return "contradiz";
+  if (t.startsWith("confere")) return "confere";
+  return "nao_consta";
+}
+
+// A mensagem da conferência: cada rodada com o que ela diz, a resposta dada e o texto da Bíblia da sua referência (textos[i], pela ordem).
+export function mensagemDeConferenciaDoJogo(idTipo, rodadas, textos = []) {
+  const vf = idTipo === "verdadeiro_falso";
+  const blocos = (Array.isArray(rodadas) ? rodadas : []).map((r, i) => {
+    const texto = String(textos[i] || "").replace(/\s+/g, " ").trim();
+    return (
+      `[${i + 1}] ${vf ? "AFIRMAÇÃO" : "DICAS"}: ${String(r.pergunta || "").replace(/\s+/g, " ").trim()}\n` +
+      `RESPOSTA DADA: ${String(r.resposta || "").replace(/\s+/g, " ").trim()}\n` +
+      `REFERÊNCIA: ${r.referencia || "(nenhuma)"}\n` +
+      `TEXTO DA BÍBLIA: ${texto || "(o servidor não achou o texto desta referência: responda nao_consta)"}`
+    );
+  });
+  return `TIPO DO JOGO: ${vf ? "Verdadeiro ou falso" : "Quem sou eu?"}\nRODADAS A CONFERIR (${blocos.length}), cada uma com o texto da Bíblia transcrito pelo servidor:\n\n${blocos.join("\n\n")}\n`;
+}
+
+// Aplica o que a conferência devolveu ([{ n, veredito, motivo }], com n a partir de 1): só "contradiz" tira a rodada. Sem resposta válida da
+// IA (itens que não é lista), todas ficam. Devolve { mantidas, rejeitadas: [{ rodada, motivo }] }.
+export function aplicarConferenciaDoJogo(rodadas, itens) {
+  const lista = Array.isArray(rodadas) ? rodadas : [];
+  if (!Array.isArray(itens)) return { mantidas: lista.slice(), rejeitadas: [] };
+  const fora = new Map();
+  for (const it of itens) {
+    const n = Math.round(Number(it && it.n));
+    if (n >= 1 && n <= lista.length && !fora.has(n) && vereditoDaConferencia(it.veredito) === "contradiz") fora.set(n, String(it.motivo || "").replace(/\s+/g, " ").trim().slice(0, 300));
+  }
+  return { mantidas: lista.filter((_, i) => !fora.has(i + 1)), rejeitadas: [...fora].map(([n, motivo]) => ({ rodada: lista[n - 1], motivo })) };
+}
+
+// O que se diz à IA, ao pedir o jogo de novo, sobre as rodadas que a conferência tirou (até 4, curtas).
+export function textoDasRejeitadas(rejeitadas) {
+  const lista = Array.isArray(rejeitadas) ? rejeitadas : [];
+  if (!lista.length) return "";
+  const curto = (t, n) => {
+    const s = String(t || "").replace(/\s+/g, " ").trim();
+    return s.length > n ? `${s.slice(0, n - 1)}…` : s;
+  };
+  return `a conferência com a Bíblia tirou ${lista.length} ${lista.length === 1 ? "rodada" : "rodadas"} por contrariar o texto (confira quem fez o quê e a quem, e use na "referencia" todos os versículos que sustentam a rodada): ${lista
+    .slice(0, 4)
+    .map((x) => `"${curto(x.rodada && x.rodada.pergunta, 110)}" (${curto(x.motivo, 140) || "contraria o texto"})`)
+    .join("; ")}`;
 }
