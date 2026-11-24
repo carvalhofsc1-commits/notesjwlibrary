@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.17'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.18'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -27305,6 +27305,23 @@ function saveTemplatesToStorage() {
       return familiaSessoesDoDirigente().find(s => (itemId && s.progId === itemId) || (!s.progId && s.titulo === titulo)) || null;
     }
 
+    // 6.13.18: a seção da programação vira um card recolhível: só o título (nome e tempo) à vista; tocar nele abre ou fecha o conteúdo.
+    // Seções sem conteúdo (só o título, como a Oração inicial) ficam como estão.
+    function familiaParteRecolhivel(bloco) {
+      const topo = bloco.querySelector(':scope > .fam-parte-topo');
+      if (!topo || bloco.children.length < 2) return;
+      bloco.classList.add('fam-parte-recolhivel', 'fam-recolhida');
+      topo.setAttribute('role', 'button');
+      topo.tabIndex = 0;
+      topo.setAttribute('aria-expanded', 'false');
+      const alternar = () => {
+        const fechada = bloco.classList.toggle('fam-recolhida');
+        topo.setAttribute('aria-expanded', String(!fechada));
+      };
+      topo.addEventListener('click', alternar);
+      topo.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); alternar(); } });
+    }
+
     function familiaTrocarMontar(op, parte, cfg) {
       const caixa = document.createElement('div');
       caixa.className = 'fam-trocar';
@@ -27361,7 +27378,8 @@ function saveTemplatesToStorage() {
         const el = painelDoBotao && painelDoBotao.querySelector('.fam-trocar-aviso');
         if (el) { el.textContent = msg || ''; el.hidden = !msg; el.className = 'fam-trocar-aviso' + (tipo === 'erro' ? ' erro' : tipo === 'ok' ? ' ok' : ''); }
       };
-      if (familiaGerarBtn.disabled) { familiaStatus('Espere a preparação da programação terminar para trocar um quadro.', 'erro'); return; }
+      // 6.13.18: preparando = o botão Cancelar à mostra (o Preparar também fica desativado só por falta de assunto, e isso não é preparação em andamento)
+      if (!familiaCancelarBtn.hidden) { familiaStatus('Espere a preparação da programação terminar para trocar um quadro.', 'erro'); return; }
       if (!codigoAcessoSalvo()) { familiaStatus('Salve o código de pesquisa em Ajustes → 🔐 Autorização de acessos.', 'erro'); return; }
       const sessao = familiaSessaoDoCartao(op, cfg && cfg.itemId);
       if (sessao) {
@@ -27424,7 +27442,12 @@ function saveTemplatesToStorage() {
         }
         familiaRenderOpcoes([op], undefined, cfg && cfg.itemId);
         const bloco = familiaResultadoEl.querySelector('.fam-parte[data-quadro="' + id + '"]');
-        if (bloco) requestAnimationFrame(() => bloco.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+        if (bloco) {
+          bloco.classList.remove('fam-recolhida'); // 6.13.18: a seção trocada já abre
+          const tp = bloco.querySelector(':scope > .fam-parte-topo');
+          if (tp) tp.setAttribute('aria-expanded', 'true');
+          requestAnimationFrame(() => bloco.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+        }
         const aviso = r.data.aviso ? String(r.data.aviso).replace(/^[^:]{1,80}:\s*/, '').replace(/\.$/, '').slice(0, 300) : '';
         familiaStatus('Quadro ' + q.nome + ' trocado' + (salvo ? ' · 📂 programação salva atualizada' : '') + (aviso ? ' · ⚠️ ' + aviso : '') + '.', 'ok');
       } catch (e) {
@@ -27465,6 +27488,7 @@ function saveTemplatesToStorage() {
           const bloco = familiaParteMontar(parte); // 6.12.70: o tema do FunPlayB das programações antigas (op.funplayb) não aparece mais
           if (parte && parte.quadro) bloco.dataset.quadro = parte.quadro;
           if (cfg && cfg.trocar && parte && FAMILIA_QUADROS_TROCAVEIS.has(parte.quadro)) bloco.appendChild(familiaTrocarMontar(op, parte, cfg));
+          familiaParteRecolhivel(bloco); // 6.13.18: cada seção começa recolhida; tocar no título abre e fecha
           card.appendChild(bloco);
         });
         if ((op.preparacao || []).length) {

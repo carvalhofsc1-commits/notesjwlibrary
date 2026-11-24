@@ -17008,6 +17008,11 @@ button.secondary.fam-atalho-ativo { background: color-mix(in srgb, #3b82f6 18%, 
   align-items: baseline;
 }
 .fam-parte-nome { margin: 0; font-size: .98rem; font-weight: 700; }
+/* 6.13.18: seção recolhível da programação: só o título à vista; ▸ fechada, ▾ aberta */
+.fam-parte.fam-parte-recolhivel > .fam-parte-topo { cursor: pointer; user-select: none; }
+.fam-parte.fam-parte-recolhivel > .fam-parte-topo .fam-parte-nome::before { content: "▾ "; color: color-mix(in srgb, #3b82f6 70%, var(--text)); }
+.fam-parte.fam-parte-recolhivel.fam-recolhida > .fam-parte-topo .fam-parte-nome::before { content: "▸ "; }
+.fam-parte.fam-recolhida > :not(.fam-parte-topo) { display: none !important; }
 .fam-parte-min, .fam-parte-resp { margin: 0; font-size: .85rem; color: var(--muted, #666); }
 .fam-parte-desc { margin: 0; font-size: .92rem; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
 .fam-lista { margin: 0; padding-left: 1.2em; font-size: .9rem; line-height: 1.4; overflow-wrap: anywhere; }

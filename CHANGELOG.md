@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.18
+
+### Adoração em Família: "Trocar agora" volta a funcionar e seções da programação recolhidas
+
+- **Trocar este quadro:** dava "Espere a preparação da programação terminar…" sem nenhuma preparação em andamento. A troca olhava se o botão Preparar estava desativado, e desde a 6.13.11 ele também fica desativado só por falta de assunto. Agora a troca só é barrada quando há de fato uma preparação em andamento (o botão Cancelar à mostra).
+- **Seções recolhidas:** ao exibir uma programação (nova ou salva), cada seção mostra só o título e o tempo (▸); tocar no título abre a seção (▾) e tocar de novo fecha. Seções só com título (como a Oração inicial) ficam como estão. Depois de trocar um quadro, a seção trocada já abre. Conferido no navegador: a seção fechada fica só com o título e abre e fecha ao tocar.
+
 ## 6.13.17
 
 ### Adoração em Família: sigla à mostra e respostas pelo próprio app em todos os jogos
