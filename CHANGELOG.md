@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.95
+
+### Adoração em Família: cabeçalho do campo da matéria em cinza e centralizado
+
+- O cabeçalho "📖 Exibir e ler esta matéria aqui" (o que fica visível com o campo recolhido) ganhou o mesmo fundo cinza clarinho dos links, na largura toda do campo, com o texto centralizado.
+- O título da matéria dentro do campo também fica centralizado (o 🔊 continua no começo da linha).
+
 ## 6.12.94
 
 ### Adoração em Família: matéria do Princípios Bíblicos formatada e antes dos textos
