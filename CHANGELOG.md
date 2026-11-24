@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.14
+
+### Adoração em Família: campo Assunto mostra todos os temas escolhidos
+
+O campo Assunto era preenchido com os temas escolhidos enquanto estava escondido (na vista da lista), e não crescia: ficava com uma linha só e cortava o texto. Agora ele cresce ao voltar para a tela (e ao marcar ou desmarcar). Conferido a 375 px com dois temas longos: o campo fica com 82 px e mostra o texto inteiro.
+
 ## 6.13.13
 
 ### Adoração em Família: Princípio bíblico com a subentrada explícita e os textos transcritos junto
