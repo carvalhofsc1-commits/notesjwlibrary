@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.22'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.23'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -27428,21 +27428,7 @@ function saveTemplatesToStorage() {
           ger.registrados.add(id);
           delete ger.avisos[id];
         }
-        let salvo = false;
-        if (cfg && cfg.itemId) {
-          try {
-            const lista = historicoLer();
-            const k = lista.findIndex(g => g.id === cfg.itemId);
-            if (k >= 0) {
-              lista[k] = Object.assign({}, lista[k], { familiaOpcoes: [op], partes: [{ paragrafos: 'Programação', texto: familiaTextoDaOpcao(op) }] });
-              historicoGravar(lista);
-              historicoRender();
-              salvo = true;
-            }
-          } catch (e) {
-            salvo = false; // a troca fica na tela; o item salvo continua com o quadro de antes
-          }
-        }
+        const salvo = familiaProgramaSalvar(op, cfg);
         familiaRenderOpcoes([op], undefined, cfg && cfg.itemId);
         const bloco = familiaResultadoEl.querySelector('.fam-parte[data-quadro="' + id + '"]');
         if (bloco) {
@@ -27458,6 +27444,191 @@ function saveTemplatesToStorage() {
       } finally {
         familiaTrocando = false;
         if (botao.isConnected) { botao.disabled = false; botao.textContent = '🔄 Trocar agora'; }
+      }
+    }
+
+    // A programação mudada na tela (troca, exclusão ou inclusão de um quadro) volta para o item salvo em Pesquisas salvas; true se gravou.
+    function familiaProgramaSalvar(op, cfg) {
+      if (!cfg || !cfg.itemId) return false;
+      try {
+        const lista = historicoLer();
+        const k = lista.findIndex(g => g.id === cfg.itemId);
+        if (k < 0) return false;
+        lista[k] = Object.assign({}, lista[k], { familiaOpcoes: [op], partes: [{ paragrafos: 'Programação', texto: familiaTextoDaOpcao(op) }] });
+        historicoGravar(lista);
+        historicoRender();
+        return true;
+      } catch (e) {
+        return false; // a mudança fica na tela; o item salvo continua como antes
+      }
+    }
+    // 6.13.23: a posição de cada seção na programação (a ordem do catálogo; o cântico inicial antes de tudo e o final antes da oração final).
+    function familiaOrdemDaParte(quadro) {
+      if (quadro === 'cantico_inicial') return -1;
+      if (quadro === 'cantico_final') return IDS_QUADROS_FAMILIA.indexOf('oracao_final') - 0.5;
+      const i = IDS_QUADROS_FAMILIA.indexOf(quadro);
+      return i < 0 ? IDS_QUADROS_FAMILIA.length : i;
+    }
+    // Pode mudar a programação? Não durante a preparação nem depois de compartilhada (quem participa ficaria com a versão antiga).
+    function familiaPodeEditar(op, cfg, avisar) {
+      if (familiaTrocando) { avisar('Espere a mudança em andamento terminar.', 'erro'); return false; }
+      if (!familiaCancelarBtn.hidden) { avisar('Espere a preparação da programação terminar.', 'erro'); return false; }
+      const sessao = familiaSessaoDoCartao(op, cfg && cfg.itemId);
+      if (sessao) {
+        avisar('Esta programação já está compartilhada (código ' + sessao.cod + '), e quem participa ficaria com a versão antiga. Para mudar, apague o compartilhamento (🗑️) e crie outro depois.', 'erro');
+        return false;
+      }
+      return true;
+    }
+    // 6.13.23: 🗑️ no título de cada seção: tira a atividade da programação (e da programação salva).
+    async function familiaRemoverQuadro(op, quadro, cfg) {
+      const i = (op.partes || []).findIndex(p => p && p.quadro === quadro);
+      if (i < 0 || !familiaPodeEditar(op, cfg, familiaStatusGeral)) return;
+      const nome = op.partes[i].nome || 'esta atividade';
+      const comIa = FAMILIA_QUADROS_TROCAVEIS.has(quadro);
+      if (!(await askConfirm('Tirar “' + nome + '” da programação? Depois você pode adicioná-la de novo em “➕ Adicionar atividade”' + (comIa ? ' (a IA prepara outra).' : '.'), 'Tirar atividade'))) return;
+      op.partes.splice(i, 1);
+      if (op.usados) delete op.usados[quadro];
+      op.duracaoTotal = op.partes.reduce((s, x) => s + (x.minutos || 0), 0);
+      const salvo = familiaProgramaSalvar(op, cfg);
+      familiaRenderOpcoes([op], undefined, cfg && cfg.itemId);
+      familiaStatusGeral('“' + nome + '” saiu da programação' + (salvo ? ' · 📂 programação salva atualizada' : '') + '.', 'ok');
+    }
+    // As atividades que não estão na programação e podem entrar: as orações (sem IA) e os quadros preparados pela IA.
+    function familiaQuadrosQueFaltam(op) {
+      const tem = new Set((op.partes || []).map(p => p && p.quadro));
+      return QUADROS_FAMILIA.filter(q => !tem.has(q.id) && (q.id.startsWith('oracao') || FAMILIA_QUADROS_TROCAVEIS.has(q.id)));
+    }
+    // 6.13.23: "➕ Adicionar atividade": escolhe uma que ficou de fora; a IA prepara o quadro (as orações entram direto) na posição dele.
+    function familiaAdicionarMontar(op, cfg) {
+      const faltam = familiaQuadrosQueFaltam(op);
+      if (!faltam.length) return null;
+      const caixa = document.createElement('div');
+      caixa.className = 'fam-trocar fam-adicionar';
+      const abrir = document.createElement('button');
+      abrir.type = 'button';
+      abrir.className = 'secondary fam-fino fam-trocar-btn';
+      abrir.textContent = '➕ Adicionar atividade';
+      abrir.setAttribute('aria-expanded', 'false');
+      const painel = document.createElement('div');
+      painel.className = 'fam-trocar-painel';
+      painel.hidden = true;
+      const selId = 'famAdicionarQuadro';
+      const rotSel = document.createElement('label');
+      rotSel.className = 'fam-trocar-rotulo';
+      rotSel.htmlFor = selId;
+      rotSel.textContent = 'Atividade';
+      const sel = document.createElement('select');
+      sel.id = selId;
+      sel.className = 'fam-adicionar-sel';
+      faltam.forEach(q => {
+        const o = document.createElement('option');
+        o.value = q.id;
+        o.textContent = (q.emoji ? q.emoji + ' ' : '') + q.nome + (q.minutos ? ' (' + q.minutos + ' min)' : '');
+        sel.appendChild(o);
+      });
+      const campoId = 'famAdicionarInstrucao';
+      const rotulo = document.createElement('label');
+      rotulo.className = 'fam-trocar-rotulo';
+      rotulo.htmlFor = campoId;
+      rotulo.textContent = 'Instrução para a IA (opcional)';
+      const campo = document.createElement('textarea');
+      campo.id = campoId;
+      campo.className = 'fam-trocar-instrucao';
+      campo.rows = 2;
+      campo.maxLength = 300;
+      campo.placeholder = 'Ex.: um vídeo curto; perguntas simples para as crianças';
+      const acoes = document.createElement('div');
+      acoes.className = 'fam-acoes';
+      const ir = document.createElement('button');
+      ir.type = 'button';
+      ir.className = 'fam-fino fam-principal fam-trocar-ir';
+      ir.textContent = '➕ Adicionar agora';
+      const nota = familiaGerarBtn.getAttribute('data-ia-nota');
+      if (nota) ir.setAttribute('data-ia-nota', nota);
+      acoes.appendChild(ir);
+      const aviso = document.createElement('p');
+      aviso.className = 'fam-trocar-aviso';
+      aviso.setAttribute('role', 'status');
+      aviso.hidden = true;
+      const semIa = () => sel.value.startsWith('oracao');
+      const pintar = () => { rotulo.hidden = campo.hidden = semIa(); };
+      sel.addEventListener('change', pintar);
+      pintar();
+      painel.append(rotSel, sel, rotulo, campo, acoes, aviso);
+      abrir.addEventListener('click', () => {
+        painel.hidden = !painel.hidden;
+        abrir.setAttribute('aria-expanded', String(!painel.hidden));
+      });
+      ir.addEventListener('click', () => familiaAdicionarQuadro(op, sel.value, campo.value, ir, aviso, cfg));
+      caixa.append(abrir, painel);
+      return caixa;
+    }
+    async function familiaAdicionarQuadro(op, id, instrucaoBruta, botao, avisoEl, cfg) {
+      const q = QUADROS_FAMILIA.find(x => x.id === id);
+      const avisar = (msg, tipo) => {
+        familiaStatusGeral(msg, tipo);
+        avisoEl.textContent = msg || '';
+        avisoEl.hidden = !msg;
+        avisoEl.className = 'fam-trocar-aviso' + (tipo === 'erro' ? ' erro' : tipo === 'ok' ? ' ok' : '');
+      };
+      if (!q || (op.partes || []).some(p => p && p.quadro === id) || !familiaPodeEditar(op, cfg, avisar)) return;
+      const inserir = (parte, usados) => {
+        const ordem = familiaOrdemDaParte(id);
+        const pos = op.partes.findIndex(p => familiaOrdemDaParte(p && p.quadro) > ordem);
+        op.partes.splice(pos < 0 ? op.partes.length : pos, 0, parte);
+        if (usados) op.usados = Object.assign({}, op.usados, { [id]: usados });
+        op.duracaoTotal = op.partes.reduce((s, x) => s + (x.minutos || 0), 0);
+        const salvo = familiaProgramaSalvar(op, cfg);
+        familiaRenderOpcoes([op], undefined, cfg && cfg.itemId);
+        const bloco = familiaResultadoEl.querySelector('.fam-parte[data-quadro="' + id + '"]');
+        if (bloco) {
+          bloco.classList.remove('fam-recolhida'); // a seção nova já abre
+          const tp = bloco.querySelector(':scope > .fam-parte-topo');
+          if (tp) tp.setAttribute('aria-expanded', 'true');
+          requestAnimationFrame(() => bloco.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+        }
+        return salvo;
+      };
+      if (id.startsWith('oracao')) {
+        const salvo = inserir({ nome: q.nome, minutos: 0, responsavel: '', descricao: '', textos: [], videos: [], canticos: [], publicacoes: [], perguntas: [], leitura: null, jogo: null, quadro: id });
+        familiaStatusGeral(q.nome + ' adicionada' + (salvo ? ' · 📂 programação salva atualizada' : '') + '.', 'ok');
+        return;
+      }
+      if (!codigoAcessoSalvo()) { avisar('Salve o código de pesquisa em Ajustes → 🔐 Autorização de acessos.', 'erro'); return; }
+      const perfil = familiaPerfilLerTela();
+      if (!perfil.formacao && !perfil.membros.some(m => m.apelido || m.papel)) { avisar('Descreva a família (a formação ou pelo menos um membro) para adicionar o quadro.', 'erro'); return; }
+      const payload = familiaPayloadDe(perfil);
+      familiaTrocando = true;
+      botao.disabled = true;
+      botao.textContent = '⏳ Preparando…';
+      avisar('Preparando o quadro ' + q.nome + '…');
+      try {
+        const r = await postStudy(Object.assign({}, payload, {
+          fase: 'quadro',
+          quadro: id,
+          angulo: (op.angulos && op.angulos[id]) || '',
+          plano: { titulo: op.titulo || '', objetivo: op.objetivo || '' },
+          assunto: op.assunto || payload.assunto || '',
+          evitar: familiaEvitarLer(),
+          jaUsados: familiaJaUsadosDoPrograma(op),
+          instrucao: String(instrucaoBruta || '').replace(/\s+/g, ' ').trim().slice(0, 300)
+        }), IA_ESPERA_MS);
+        const nova = r.ok && r.data ? familiaParteDoQuadro(r.data.parte, q) : null;
+        if (!nova) {
+          avisar('O quadro ' + q.nome + ' não foi adicionado: ' + String((r.data && r.data.erro) || (r.unavailable ? 'serviço indisponível no momento' : 'tente de novo')).replace(/\.$/, '') + '.', 'erro');
+          return;
+        }
+        if (r.data.memoria && typeof r.data.memoria === 'object') familiaEvitarRegistrar([r.data.memoria]);
+        familiaTrocando = false;
+        const salvo = inserir(nova, r.data.usados && typeof r.data.usados === 'object' ? r.data.usados : {});
+        const avisoIa = r.data.aviso ? String(r.data.aviso).replace(/^[^:]{1,80}:\s*/, '').replace(/\.$/, '').slice(0, 300) : '';
+        familiaStatusGeral('Quadro ' + q.nome + ' adicionado' + (salvo ? ' · 📂 programação salva atualizada' : '') + (avisoIa ? ' · ⚠️ ' + avisoIa : '') + '.', 'ok');
+      } catch (e) {
+        avisar('O quadro ' + q.nome + ' não foi adicionado. Confira a conexão e tente de novo.', 'erro');
+      } finally {
+        familiaTrocando = false;
+        if (botao.isConnected) { botao.disabled = false; botao.textContent = '➕ Adicionar agora'; }
       }
     }
 
@@ -27492,8 +27663,25 @@ function saveTemplatesToStorage() {
           if (parte && parte.quadro) bloco.dataset.quadro = parte.quadro;
           if (cfg && cfg.trocar && parte && FAMILIA_QUADROS_TROCAVEIS.has(parte.quadro)) bloco.appendChild(familiaTrocarMontar(op, parte, cfg));
           familiaParteRecolhivel(bloco); // 6.13.18: cada seção começa recolhida; tocar no título abre e fecha
+          // 6.13.23: 🗑️ no canto do título tira a atividade da programação (sem abrir nem fechar a seção)
+          const topoParte = bloco.querySelector(':scope > .fam-parte-topo');
+          if (cfg && cfg.trocar && parte && parte.quadro && topoParte) {
+            const lixo = document.createElement('button');
+            lixo.type = 'button';
+            lixo.className = 'secondary fam-parte-lixeira';
+            lixo.textContent = '🗑️';
+            lixo.title = 'Tirar esta atividade da programação';
+            lixo.setAttribute('aria-label', 'Tirar ' + (parte.nome || 'esta atividade') + ' da programação');
+            lixo.addEventListener('click', ev => { ev.stopPropagation(); familiaRemoverQuadro(op, parte.quadro, cfg); });
+            lixo.addEventListener('keydown', ev => ev.stopPropagation());
+            topoParte.appendChild(lixo);
+          }
           card.appendChild(bloco);
         });
+        if (cfg && cfg.trocar) {
+          const adicionar = familiaAdicionarMontar(op, cfg);
+          if (adicionar) card.appendChild(adicionar);
+        }
         if ((op.preparacao || []).length) {
           const t = document.createElement('p');
           t.className = 'fam-secao-titulo';

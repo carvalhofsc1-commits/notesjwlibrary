@@ -2,6 +2,17 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.23
+
+### Adoração em Família: tirar e adicionar atividades na programação
+
+- **🗑️ no canto direito do título de cada seção** da programação: tira a atividade, depois de confirmar. Tocar na lixeira não abre nem fecha a seção.
+- **➕ Adicionar atividade**, embaixo das seções:
+  - lista as atividades que ficaram de fora (os quadros com minutos e as orações);
+  - tem um campo opcional de instrução para a IA;
+  - a IA prepara o quadro e ele entra na posição certa, já aberto. As orações entram direto, sem IA.
+- As duas mudanças atualizam a programação salva. Ficam bloqueadas durante a preparação e depois que a programação foi compartilhada, como o "Trocar este quadro".
+
 ## 6.13.22
 
 ### Adoração em Família: banco de siglas e o novo jogo Perfil bíblico

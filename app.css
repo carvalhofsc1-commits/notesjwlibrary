@@ -17014,6 +17014,26 @@ button.secondary.fam-atalho-ativo { background: color-mix(in srgb, #3b82f6 18%, 
 .fam-parte-nome { margin: 0; font-size: .98rem; font-weight: 700; }
 /* 6.13.18: seção recolhível da programação: só o título à vista; ▸ fechada, ▾ aberta */
 .fam-parte.fam-parte-recolhivel > .fam-parte-topo { cursor: pointer; user-select: none; }
+/* 6.13.23: a lixeira no canto direito do título da seção (tira a atividade da programação) */
+.fam-parte-topo:has(> .fam-parte-lixeira) { position: relative; padding-right: 46px; min-height: 36px; align-items: center; }
+.fam-parte-lixeira {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  margin: 0;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  line-height: 1;
+  border-radius: 8px;
+}
+.fam-adicionar-sel { width: 100%; min-width: 0; box-sizing: border-box; }
 .fam-parte.fam-parte-recolhivel > .fam-parte-topo .fam-parte-nome::before { content: "▾ "; color: color-mix(in srgb, #3b82f6 70%, var(--text)); }
 .fam-parte.fam-parte-recolhivel.fam-recolhida > .fam-parte-topo .fam-parte-nome::before { content: "▸ "; }
 .fam-parte.fam-recolhida > :not(.fam-parte-topo) { display: none !important; }
