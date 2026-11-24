@@ -153,7 +153,7 @@ export async function textoDaSessaoParaLer(codigo, texto, origem = null) {
   const daLeitura = (p) => {
     const l = p && p.leitura;
     if (!l || typeof l !== "object") return false;
-    const linhas = String(l.texto || "").split(/\r?\n/).map((x) => x.replace(/^#{1,2}\s+/, "").trim());
+    const linhas = String(l.texto || "").split(/\r?\n/).map((x) => x.replace(/^#{1,2}\s+/, "").replace(/\*\*/g, "").trim());
     return [String(l.titulo || "").trim(), String(l.fonte || "").trim(), ...linhas].includes(lido.replace(/^#{1,2}\s+/, ""));
   };
   if (programa.partes.some((p) => p && ((Array.isArray(p.perguntas) && p.perguntas.some((q) => String(q).trim() === lido)) || daLeitura(p)))) return true;

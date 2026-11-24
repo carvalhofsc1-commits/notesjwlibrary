@@ -3250,6 +3250,25 @@ async function leituraDoArtigoFamilia(a, rotulo = "Trecho do artigo") {
   const fonte = [lido.publicacao, lido.citacao].filter(Boolean).join(" · ") || a.secao || "Ensinos Bíblicos";
   return { titulo: limparLinha(lido.titulo || a.titulo, 200), fonte: limparLinha(fonte, 240), paragrafos: "", texto: leituraEmParagrafos(lido.texto), url: lido.url || url, rotulo };
 }
+// 6.12.94: a matéria do Princípios Bíblicos em linhas: "## Versículos citados" e cada referência em negrito ("**Col 1:9**") numa linha; "## Relatos
+// bíblicos importantes" e, em cada linha, a referência em negrito, o travessão e o resumo. Sem versículos nem relatos estruturados, vale o texto corrido.
+function textoDoPrincipioEmLinhas(e) {
+  const refs = (Array.isArray(e?.versiculos) ? e.versiculos : []).map((r) => limparLinha(String(r || ""), 80)).filter(Boolean);
+  const relatos = (Array.isArray(e?.relatos) ? e.relatos : []).filter((r) => r && r.referencia);
+  if (!refs.length && !relatos.length) return leituraLimpa(e?.texto);
+  const linhas = [];
+  if (refs.length) linhas.push("## Versículos citados", ...refs.map((r) => `**${r}**`));
+  const grupos = [
+    ["Relatos bíblicos importantes", relatos.filter((r) => r.tipo === "importante")],
+    [refs.length || relatos.some((r) => r.tipo === "importante") ? "Outros relatos bíblicos" : "Relatos bíblicos", relatos.filter((r) => r.tipo !== "importante")],
+  ];
+  for (const [titulo, lista] of grupos) {
+    if (!lista.length) continue;
+    linhas.push(`## ${titulo}`);
+    for (const r of lista) linhas.push(`**${limparLinha(String(r.referencia), 80)}**${r.texto ? ` — ${limparLinha(String(r.texto).replace(/[*#]/g, ""), 500)}` : ""}`);
+  }
+  return linhas.join("\n");
+}
 // Mantém um parágrafo por linha, o título de um quadro ou experiência ("# ") e os subtítulos ("## "). 6.12.90: o limite era 2600 e cortava o artigo
 // (e a experiência) no meio; agora o texto vai até 7000 caracteres e, se passar, corta ANTES do último título/subtítulo que ainda cabe (uma seção
 // inteira ou nenhuma), e só no meio de uma seção se a primeira já passar do limite.
@@ -3396,7 +3415,7 @@ const PREPARAR_QUADRO_FAMILIA = {
         const [i] = escolhasValidas([o.escolha], "PR", cands.length, 1);
         const e = i >= 0 ? cands[i] : cands[0];
         const leitura = e
-          ? { titulo: limparLinha(e.pergunta || e.subverbete || e.verbete, 200), fonte: limparLinha(fonteDoPrincipio(e), 200), paragrafos: "", texto: leituraLimpa(e.texto), url: "", rotulo: "Princípios Bíblicos para a Vida Cristã" }
+          ? { titulo: limparLinha(e.pergunta || e.subverbete || e.verbete, 200), fonte: limparLinha(fonteDoPrincipio(e), 200), paragrafos: "", texto: textoDoPrincipioEmLinhas(e), url: "", rotulo: "Princípios Bíblicos para a Vida Cristã", primeiro: true }
           : null;
         const textos = e ? await textosBiblicosFamilia(referenciasDoPrincipio(e, 4), 4) : [];
         // 6.12.76: os versículos achados entram também na memória "relatos" (a próxima noite não os repete na Abertura, no Personagem e em Jesus).

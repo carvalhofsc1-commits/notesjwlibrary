@@ -1765,6 +1765,14 @@ teste("6.12.92: fonte, depois título (fora e dentro do campo), 🔊 na linha do
   assert.ok(/a.fam-link-moldura {[^}]*text-align: center/.test(css));
 });
 
+teste("6.12.94: Princípios Bíblicos em linhas, referência em negrito e a matéria antes dos textos", async () => {
+  assert.ok(servidorJs.includes("function textoDoPrincipioEmLinhas(e)"));
+  assert.ok(servidorJs.includes("texto: textoDoPrincipioEmLinhas(e), url: \"\", rotulo: \"Princípios Bíblicos para a Vida Cristã\", primeiro: true"));
+  assert.ok(servidorJs.includes('"## Versículos citados"'));
+  assert.ok(appJs.includes("par.match(/^\\*\\*(.+?)\\*\\*(.*)$/)"));
+  assert.ok(sessaoJs.includes('.replace(/\\*\\*/g, "")'));
+});
+
 for (const [nome, fn] of testes) {
   try {
     await fn();

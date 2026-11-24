@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.94
+
+### Adoração em Família: matéria do Princípios Bíblicos formatada e antes dos textos
+
+- **Cada texto numa linha:** a matéria do livro saía em um bloco só ("É correto orar…? Col 1:9; Tg 1:5. Relatos bíblicos importantes: 2Cr 1:8-12 — …"). Agora sai em linhas: "Versículos citados" com cada referência em negrito, e "Relatos bíblicos importantes" com a referência em negrito, o travessão e o resumo, uma linha por relato. Vem dos campos estruturados do índice (`versiculos` e `relatos`); sem eles, vale o texto corrido de antes.
+- **Ordem:** primeiro a matéria com o princípio escolhido e as citações, depois a reprodução dos textos citados e depois as perguntas.
+- O 🔊 lê a matéria sem os asteriscos do negrito.
+
 ## 6.12.93
 
 ### Adoração em Família: rótulos dos textos bíblicos e do áudio
