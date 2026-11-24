@@ -3333,6 +3333,45 @@ function textoDoPrincipioEmLinhas(e) {
   }
   return linhas.join("\n");
 }
+// 6.13.13: a matéria do Princípios Bíblicos como o livro a apresenta, com tudo explícito: a pergunta e a subentrada ("Que qualidades os cristãos
+// devem ter? › Perseverar; não desistir"), "Textos relacionados" com cada referência em negrito e a TRANSCRIÇÃO logo embaixo, "Relatos bíblicos
+// importantes" com a referência, o resumo do livro e a transcrição, e "Veja também" com as referências e a transcrição. Sem os versículos e relatos
+// estruturados, vale o texto corrido. Os textos já vêm transcritos aqui; a parte não repete os textos numa seção à parte.
+async function materiaDoPrincipio(e) {
+  const transcrever = async (ref, maxVersiculos) => {
+    if (!fontesConfiguradas()) return "";
+    const achado = (await buscarVersiculos([ref], 1, { maxVersiculos, maxChars: 1600 }).catch(() => []))[0];
+    return achado && achado.texto ? limparLinha(achado.texto, 1700) : "";
+  };
+  const refs = (Array.isArray(e?.versiculos) ? e.versiculos : []).map((r) => limparLinha(String(r || ""), 80)).filter(Boolean);
+  const relatos = (Array.isArray(e?.relatos) ? e.relatos : []).filter((r) => r && r.referencia);
+  const veja = (Array.isArray(e?.vejaTambem?.versiculos) ? e.vejaTambem.versiculos : []).map((r) => limparLinha(String(r || ""), 80)).filter(Boolean);
+  if (!refs.length && !relatos.length) return leituraLimpa(e?.texto);
+  const linhas = [];
+  const comTexto = async (ref, resumo, maxVersiculos) => {
+    linhas.push(`**${ref}**${resumo ? ` — ${resumo}` : ""}`);
+    const txt = await transcrever(ref, maxVersiculos);
+    if (txt) linhas.push(`“${txt.replace(/^[“”"]+|[“”"]+$/g, "")}”`);
+  };
+  if (refs.length) {
+    linhas.push("## Textos relacionados");
+    for (const r of refs) await comTexto(r, "", 6);
+  }
+  const grupos = [
+    ["Relatos bíblicos importantes", relatos.filter((r) => r.tipo === "importante")],
+    [relatos.some((r) => r.tipo === "importante") ? "Outros relatos bíblicos" : "Relatos bíblicos", relatos.filter((r) => r.tipo !== "importante")],
+  ];
+  for (const [titulo, lista] of grupos) {
+    if (!lista.length) continue;
+    linhas.push(`## ${titulo}`);
+    for (const r of lista) await comTexto(limparLinha(String(r.referencia), 80), r.texto ? limparLinha(String(r.texto).replace(/[*#]/g, ""), 500) : "", 10);
+  }
+  if (veja.length) {
+    linhas.push("## Veja também");
+    for (const r of veja.slice(0, 4)) await comTexto(r, "", 4);
+  }
+  return linhas.join("\n");
+}
 // Mantém um parágrafo por linha, o título de um quadro ou experiência ("# ") e os subtítulos ("## "). 6.12.90: o limite era 2600 e cortava o artigo
 // (e a experiência) no meio; agora o texto vai até 7000 caracteres e, se passar, corta ANTES do último título/subtítulo que ainda cabe (uma seção
 // inteira ou nenhuma), e só no meio de uma seção se a primeira já passar do limite.
@@ -3473,7 +3512,7 @@ const PREPARAR_QUADRO_FAMILIA = {
     const cands = candidatosPrincipio(dados?.entradas || [], ctx.tema || "família", { max: 25, semente: ctx.semente, evitar: ctx.evitar.principios });
     const listas = cands.length
       ? `\nENTRADAS DO PRINCÍPIOS BÍBLICOS PARA A VIDA CRISTÃ (verbete › subverbete — pergunta (versículos)):\n${cands
-          .map((e, i) => `[PR${i + 1}] ${e.verbete}${e.subverbete ? ` › ${e.subverbete}` : ""}${e.pergunta ? ` — ${e.pergunta}` : ""}${referenciasDoPrincipio(e, 4).length ? ` (${referenciasDoPrincipio(e, 4).join("; ")})` : ""}`)
+          .map((e, i) => `[PR${i + 1}] ${e.verbete}${e.subverbete ? ` › ${e.subverbete}` : ""}${e.pergunta ? ` — ${e.pergunta}` : ""}${e.topico ? ` › ${e.topico}` : ""}${referenciasDoPrincipio(e, 4).length ? ` (${referenciasDoPrincipio(e, 4).join("; ")})` : ""}`)
           .join("\n")}\n`
       : `\nENTRADAS DO PRINCÍPIOS BÍBLICOS: a lista não está disponível agora; deixe "escolha" = null.\n`;
     return {
@@ -3488,12 +3527,22 @@ const PREPARAR_QUADRO_FAMILIA = {
         const [i] = escolhasValidas([o.escolha], "PR", cands.length, 1);
         const e = i >= 0 ? cands[i] : cands[0];
         const leitura = e
-          ? { titulo: limparLinha(e.pergunta || e.subverbete || e.verbete, 200), fonte: limparLinha(fonteDoPrincipio(e), 200), paragrafos: "", texto: textoDoPrincipioEmLinhas(e), url: "", rotulo: "Princípios Bíblicos para a Vida Cristã", primeiro: true }
+          ? {
+              // 6.13.13: a pergunta e a subentrada, bem explícitas ("Que qualidades os cristãos devem ter? › Perseverar; não desistir")
+              titulo: limparLinha([e.pergunta || e.subverbete || e.verbete, e.topico].filter(Boolean).join(" › "), 240),
+              fonte: limparLinha(fonteDoPrincipio(e), 240),
+              paragrafos: "",
+              texto: await materiaDoPrincipio(e),
+              url: linkDeConsultaWol(String(e.texto || "")),
+              rotulo: "Matéria do livro",
+              primeiro: true,
+            }
           : null;
         const textos = e ? await textosBiblicosFamilia(referenciasDoPrincipio(e, 4), 4) : [];
         // 6.12.76: os versículos achados entram também na memória "relatos" (a próxima noite não os repete na Abertura, no Personagem e em Jesus).
         const relatos = textos.filter((t) => t.texto && t.referencia).map((t) => t.referencia);
-        return { descricao: descricaoFamilia(o.descricao), leitura, textos, perguntas: ctx.quadro.perguntasPadrao.slice(), memoria: e ? { principios: [e.id], ...(relatos.length ? { relatos } : {}) } : {} };
+        // 6.13.13: os textos já vão transcritos dentro da matéria: a parte não os repete em "Textos para considerar" (ficam só na memória).
+        return { descricao: descricaoFamilia(o.descricao), leitura, textos: leitura ? [] : textos, perguntas: ctx.quadro.perguntasPadrao.slice(), memoria: e ? { principios: [e.id], ...(relatos.length ? { relatos } : {}) } : {} };
       },
     };
   },

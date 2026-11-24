@@ -296,7 +296,12 @@ teste("candidatosPrincipio: tema primeiro, evitar vai para o fim, semente reprod
   const e = entradaPr("x", { verbete: "Adoração", subverbete: "a Jeová", pagina: 10, versiculos: ["Êx 34:14", "De 5:8-10", "Êx 34:14"], relatos: [{ referencia: "Mt 4:8-10" }] });
   assert.deepEqual(ger.referenciasDoPrincipio(e, 4), ["Êx 34:14", "De 5:8-10", "Mt 4:8-10"]);
   assert.deepEqual(ger.referenciasDoPrincipio(e, 1), ["Êx 34:14"]);
-  assert.equal(ger.fonteDoPrincipio(e), 'Princípios Bíblicos para a Vida Cristã, verbete "Adoração" · subverbete "a Jeová" · pág. 10');
+  assert.equal(ger.fonteDoPrincipio(e), "Princípios Bíblicos para a Vida Cristã, verbete “Adoração” · “a Jeová” · pág. 10");
+  // 6.13.13: com a pergunta e a subentrada
+  assert.equal(
+    ger.fonteDoPrincipio({ verbete: "Conduta cristã", pergunta: "Que qualidades os cristãos devem ter?", topico: "Perseverar; não desistir", pagina: 31 }),
+    "Princípios Bíblicos para a Vida Cristã, verbete “Conduta cristã” · “Que qualidades os cristãos devem ter?” › “Perseverar; não desistir” · pág. 31"
+  );
 });
 
 teste("artigos do catálogo: só com docId, sem vídeo e fora da lista sem texto no wol; ciência; evitar", () => {
@@ -616,9 +621,15 @@ teste("princípio: uma entrada só (escolha), texto cortado no fim da frase (com
   assert.match(montados.sistemaFamiliaQuadro.principio, /"escolha"/);
   if (!comFontes) return console.log("      (sem FONTES_DIR: pulado)");
   const parte = await pedido.prep.montar({ descricao: "d", escolha: "PR2" });
-  assert.ok(parte.leitura && parte.leitura.texto.length <= 2600);
+  assert.ok(parte.leitura && parte.leitura.texto.length > 0);
   assert.equal(parte.memoria.principios.length, 1);
-  assert.ok(parte.textos.length >= 1);
+  // 6.13.13: cada texto citado vem em negrito com a transcrição logo embaixo (entre aspas); a parte não repete os textos à parte
+  assert.equal(parte.textos.length, 0);
+  const linhas = parte.leitura.texto.split("\n");
+  const iRef = linhas.findIndex((l) => /^\*\*[^*]+\*\*/.test(l));
+  assert.ok(iRef >= 0, "uma referência em negrito");
+  assert.match(linhas[iRef + 1] || "", /^“/, "a transcrição logo depois da referência");
+  assert.match(parte.leitura.fonte, /^Princípios Bíblicos para a Vida Cristã, verbete “[^”]+”/);
 });
 
 // O bloco da memória no app (entre os marcadores), executado com uma lista falsa de pesquisas salvas.
@@ -1132,8 +1143,10 @@ teste("6.12.76: Quem sou eu? e Abreviações conferidos pelo servidor; Princípi
   if (!comFontes) return console.log("      (sem FONTES_DIR: Princípio pulado)");
   const pr = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "principio", assunto: "perdão", evitar: {} }), montados);
   const parte = await pr.prep.montar({ descricao: "d", escolha: "PR1" });
-  assert.deepEqual(parte.memoria.relatos, parte.textos.filter((t) => t.texto).map((t) => t.referencia));
+  // 6.13.13: os textos vão transcritos dentro da matéria (a parte não os repete), mas continuam na memória "relatos"
+  assert.equal(parte.textos.length, 0);
   assert.ok(parte.memoria.relatos.length >= 1);
+  for (const r of parte.memoria.relatos) assert.ok(typeof r === "string" && r.length > 3);
   // Jesus: um episódio narrado (pelo menos 3 versículos); uma frase só faz o servidor refazer com "FALTOU".
   const jp = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jesus", assunto: "perdoar os irmãos", angulo: "perdoar sempre", evitar: {} }), montados);
   const curta = await jp.prep.montar({ episodio: "Perdoar sete vezes", referencia: "Lucas 17:3, 4", qualidade: "paciência", escolha: null, descricao: "d", perguntas: ["?"] });
@@ -1739,7 +1752,7 @@ teste("6.12.90: artigo inteiro (corte só entre seções), títulos e subtítulo
   assert.ok(servidorJs.includes("pd.ctx.perguntarLeitura = perguntarLeituraFamilia;"));
   assert.ok(servidorJs.includes("(await ctx.perguntarLeitura(leitura, [], 3)) || daLeitura"));
   assert.ok(servidorJs.includes("ctx.perguntarLeitura(leitura, [], 2)"));
-  assert.ok(sessaoJs.includes("texto(p.leitura.texto, 8000)"));
+  assert.ok(sessaoJs.includes("texto(p.leitura.texto, 12000)"));
   const parte = prompts.PARTES.find((x) => x.id === "adoracao_q_revisao");
   assert.ok(parte, "a parte existe");
   assert.match(parte.padrao, /EXPERIÊNCIA/);
@@ -1768,7 +1781,7 @@ teste("6.12.92: fonte, depois título (fora e dentro do campo), 🔊 na linha do
 
 teste("6.12.94: Princípios Bíblicos em linhas, referência em negrito e a matéria antes dos textos", async () => {
   assert.ok(servidorJs.includes("function textoDoPrincipioEmLinhas(e)"));
-  assert.ok(servidorJs.includes("texto: textoDoPrincipioEmLinhas(e), url: \"\", rotulo: \"Princípios Bíblicos para a Vida Cristã\", primeiro: true"));
+  assert.ok(servidorJs.includes("texto: await materiaDoPrincipio(e),") && servidorJs.includes("primeiro: true,"));
   assert.ok(servidorJs.includes('"## Versículos citados"'));
   assert.ok(appJs.includes("par.match(/^\\*\\*(.+?)\\*\\*(.*)$/)"));
   assert.ok(sessaoJs.includes('.replace(/\\*\\*/g, "")'));

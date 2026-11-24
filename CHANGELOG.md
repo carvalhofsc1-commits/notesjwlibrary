@@ -2,6 +2,15 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.13
+
+### Adoração em Família: Princípio bíblico com a subentrada explícita e os textos transcritos junto
+
+- **Título e fonte explícitos:** a matéria mostra a pergunta e a subentrada do livro ("Que qualidades os cristãos devem ter? › Perseverar; não desistir"); a fonte diz o verbete, a pergunta, a subentrada e a página ("Princípios Bíblicos para a Vida Cristã, verbete “Conduta cristã” · “Que qualidades os cristãos devem ter?” › “Perseverar; não desistir” · pág. 31"). Antes faltava a subentrada.
+- **Textos transcritos junto:** em "Textos relacionados", cada referência vem em negrito e a transcrição logo embaixo, antes do próximo texto; em "Relatos bíblicos importantes", a referência, o resumo do livro e a transcrição do relato; em "Veja também", as referências e a transcrição. A parte não repete mais os textos numa seção "Textos para considerar" à parte (eles continuam na memória da noite).
+- A lista de entradas que vai para a IA escolher também mostra a subentrada.
+- Conferido com o índice real: "O que vai nos ajudar a perseverar? › Fortalecer nossa fé", verbete "Perseverança", pág. 105, com Ef 6:16, 1Jo 5:4 e Ju 20, 21 transcritos.
+
 ## 6.13.12
 
 ### Adoração em Família: objetivo começando pelo verbo, só em alguns quadros, e um objetivo antes de cada vídeo

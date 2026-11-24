@@ -109,10 +109,14 @@ export function referenciasDoPrincipio(e, max = 4) {
 }
 
 // A fonte da transcrição: "Princípios Bíblicos para a Vida Cristã, verbete "Adoração" · subverbete "…" · pág. 10".
+// 6.13.13: com a pergunta e a subentrada (tópico), para a fonte dizer exatamente de onde é: "… verbete “Conduta cristã” · “Que qualidades os
+// cristãos devem ter?” › “Perseverar; não desistir” · pág. 31".
 export function fonteDoPrincipio(e) {
+  const aspas = (s) => `“${String(s).trim()}”`;
+  const caminho = [e?.subverbete, e?.pergunta, e?.topico].filter((x) => x && String(x).trim()).map(aspas).join(" › ");
   return (
-    `Princípios Bíblicos para a Vida Cristã, verbete "${String(e?.verbete || "").trim()}"` +
-    (e?.subverbete ? ` · subverbete "${String(e.subverbete).trim()}"` : "") +
+    `Princípios Bíblicos para a Vida Cristã, verbete ${aspas(e?.verbete || "")}` +
+    (caminho ? ` · ${caminho}` : "") +
     (Number.isInteger(e?.pagina) ? ` · pág. ${e.pagina}` : "")
   );
 }
