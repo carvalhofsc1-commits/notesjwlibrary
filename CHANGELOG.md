@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.29
+
+### Adoração compartilhada: controles do presidente da reunião antes de "Sua resposta"
+
+- Na questão do jogo, o quadro **👑 Controles do presidente da reunião** vem primeiro e o **✍️ Sua resposta** logo embaixo.
+
 ## 6.13.28
 
 ### Adoração compartilhada: quem vê a resposta não responde mais à questão
