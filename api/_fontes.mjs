@@ -158,7 +158,7 @@ const ABREVIACOES_LIVROS = {
   "1 Timóteo": ["1ti", "1tim", "1tm"],
   "2 Timóteo": ["2ti", "2tim", "2tm"],
   "Tito": ["tit", "tt"],
-  "Filêmon": ["flm", "filêm", "fm"],
+  "Filêmon": ["flm", "filêm", "fm", "filemom"],
   "Hebreus": ["he", "heb", "hb"],
   "Tiago": ["tg", "tia"],
   "1 Pedro": ["1pe", "1ped", "1pd"],
@@ -209,6 +209,44 @@ function carregarBiblia() {
 
 function acharLivro(nome, indice) {
   return indice.comAcento.get(chaveComAcento(nome)) || indice.semAcento.get(chaveSemAcento(nome)) || null;
+}
+
+// 6.12.77: os nomes dos livros como na Bíblia do app, sem carregar o arquivo (para padronizar as referências que a IA escreve e o
+// servidor não transcreve: "Filemon 10-12" e "Filemom 10" -> "Filêmon 10-12"; "Salmo 103:12" -> "Salmos 103:12"; "Rom. 12:18" ->
+// "Romanos 12:18"). A ordem é a mesma do índice da Bíblia: primeiro os nomes completos, depois as abreviações.
+let nomesDosLivros = null;
+function indiceDosNomes() {
+  if (!nomesDosLivros) {
+    const comAcento = new Map();
+    const semAcento = new Map();
+    const registrar = (apelido, livro) => {
+      if (!comAcento.has(chaveComAcento(apelido))) comAcento.set(chaveComAcento(apelido), livro);
+      if (!semAcento.has(chaveSemAcento(apelido))) semAcento.set(chaveSemAcento(apelido), livro);
+    };
+    for (const livro of Object.keys(ABREVIACOES_LIVROS)) registrar(livro, livro);
+    for (const [livro, apelidos] of Object.entries(ABREVIACOES_LIVROS)) apelidos.forEach((a) => registrar(a, livro));
+    nomesDosLivros = { comAcento, semAcento };
+  }
+  return nomesDosLivros;
+}
+
+// O nome do livro como na Bíblia do app, ou "" se não for um livro.
+export function livroPadrao(nome) {
+  return acharLivro(String(nome || ""), indiceDosNomes()) || "";
+}
+
+// A referência com o nome de cada livro escrito como na Bíblia do app (o resto fica como veio). Trecho sem livro conhecido não muda.
+export function referenciaPadrao(ref) {
+  return String(ref || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(/\s*;\s*/)
+    .map((seg) => {
+      const m = seg.match(/^((?:[1-3]\s*)?\p{L}[\p{L}\p{M}.\s]*?)\.?\s*(\d.*)$/u);
+      const livro = m ? livroPadrao(m[1]) : "";
+      return livro ? `${livro} ${m[2]}` : seg;
+    })
+    .join("; ");
 }
 
 // "11, 12" -> [11, 12]; "10-12" -> [10, 11, 12]; "11, 13-15" -> [11, 13, 14, 15].

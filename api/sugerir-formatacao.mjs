@@ -39,7 +39,7 @@ import {
   textoDasFontesDoCampo,
   trechosBe,
 } from "./_servicoCampo.mjs";
-import { artigosDoTopicoDoGuia, buscarNosLivros, buscarVerbete, buscarVersiculos, versiculosDoCapitulo, fontesConfiguradas, lerCanticos, lerEnsinosBiblicos, lerPrincipios, lerTextoDoLivro, lerVerbeteCompleto, nomeDoLivro, precarregarFontes, referenciasNoTexto, resolvedorDeLivros, textoDeGruposBiblicos } from "./_fontes.mjs";
+import { artigosDoTopicoDoGuia, buscarNosLivros, buscarVerbete, buscarVersiculos, versiculosDoCapitulo, fontesConfiguradas, lerCanticos, lerEnsinosBiblicos, lerPrincipios, lerTextoDoLivro, lerVerbeteCompleto, nomeDoLivro, precarregarFontes, referenciaPadrao, referenciasNoTexto, resolvedorDeLivros, textoDeGruposBiblicos } from "./_fontes.mjs";
 import { JOGOS_FAMILIA, QUADROS_FAMILIA, minutosDosQuadros, quadrosDoPedido } from "./_familiaQuadros.mjs";
 import {
   MIN_CARACTERES_ARTIGO,
@@ -73,10 +73,12 @@ import {
   palavrasDoTema,
   pontuarPorTema,
   quemSouEuValida,
+  quemFalaConfere,
   referenciasDoPrincipio,
   repeticoesDaParte,
   respostaVF,
   semDatasForaDoApendice,
+  semAspasSoltas,
   semMarcasDeFigura,
   semMarcasDoTexto,
   sentidoQueCitaAPassagem,
@@ -3658,7 +3660,7 @@ const PREPARAR_QUADRO_FAMILIA = {
           const opcoesDaLeitura = { complete_versiculo: { maxVersiculos: 2, maxChars: 320 }, quem_disse: { maxVersiculos: 3, maxChars: 900 }, abreviacoes: { maxVersiculos: 3, maxChars: 600 } }[idTipo];
           const lidos = await Promise.all(
             brutas.map(async (r) => {
-              const ref = linhaFamilia(r.referencia, 120);
+              const ref = referenciaPadrao(linhaFamilia(r.referencia, 120));
               if (!opcoesDaLeitura || !ref || !comBiblia) return null;
               return (await buscarVersiculos([ref], 1, opcoesDaLeitura).catch(() => []))[0] || null;
             })
@@ -3672,7 +3674,8 @@ const PREPARAR_QUADRO_FAMILIA = {
             if (idTipo === "complete_versiculo") {
               if (!v) return;
               const livro = livroDaReferencia(v.referencia);
-              const lacuna = lacunaNoVersiculo(v.texto, resposta, livro);
+              // 6.12.77: sem as aspas que ficaram sem par (a fala começou no versículo de antes ou continua no seguinte).
+              const lacuna = lacunaNoVersiculo(semAspasSoltas(v.texto), resposta, livro);
               if (!lacuna) return;
               const pergunta = `Complete a palavra que falta. Dica 1: “${aspasSimples(lacuna.texto)}” Dica 2: Está em ${livro}.`;
               if (pergunta.length > 400 || chavesDasRodadas.has(`p:${normalizarTexto(lacuna.resposta)}`) || !versiculoNovo(v.referencia)) return;
@@ -3680,12 +3683,14 @@ const PREPARAR_QUADRO_FAMILIA = {
               conferidas.push({ pergunta, resposta: lacuna.resposta, referencia: v.referencia });
             } else if (idTipo === "quem_disse") {
               if (!v || !resposta) return;
-              const fala = falaEntreAspas(v.texto, 300);
+              const fala = semAspasSoltas(falaEntreAspas(v.texto, 300));
               const dica2 = dicaDoLivro(livroDaReferencia(v.referencia), resposta);
-              if (!fala || !dica2 || !falaSemONome(fala, resposta) || !versiculoNovo(v.referencia)) return;
+              // 6.12.77: só vale se o nome de quem fala está no texto, antes da fala, e o ouvinte não vem antes dele (quemFalaConfere).
+              if (!fala || !dica2 || !quemFalaConfere(v.texto, resposta) || !falaSemONome(fala, resposta) || !versiculoNovo(v.referencia)) return;
               conferidas.push({ pergunta: `Quem disse isso? Dica 1: “${aspasSimples(fala)}” Dica 2: ${dica2}.`, resposta, referencia: v.referencia });
             } else {
-              const r = { pergunta: limparTextoGerado(b.pergunta, 400), resposta, referencia: linhaFamilia(b.referencia, 120) };
+              // 6.12.77: a referência com o nome do livro como na Bíblia do app ("Filemon" -> "Filêmon", "Salmo" -> "Salmos").
+              const r = { pergunta: limparTextoGerado(b.pergunta, 400), resposta, referencia: referenciaPadrao(linhaFamilia(b.referencia, 120)) };
               if (!r.pergunta || !r.resposta) return;
               if (idTipo === "quem_sou_eu") {
                 if (!quemSouEuValida(r) || !novaRodada(nomesDaResposta(r.resposta).join(" "))) return;
@@ -3720,7 +3725,7 @@ const PREPARAR_QUADRO_FAMILIA = {
           const exigencia = {
             quem_sou_eu: "cada rodada com exatamente 3 dicas (Dica 1: … Dica 2: … Dica 3: …) e sem o nome da resposta nas dicas",
             verdadeiro_falso: 'a resposta começando com "Verdadeiro." ou "Falso.", com pelo menos 3 de cada',
-            quem_disse: "a referência de um versículo com a fala entre aspas, sem o nome de quem disse na fala, e versículos diferentes dos já usados",
+            quem_disse: "a referência de um versículo com a fala entre aspas, sem o nome de quem disse na fala, com o NOME de quem fala escrito no texto da referência antes da fala (e antes do nome do ouvinte), a resposta começando por quem fala, e versículos diferentes dos já usados",
             complete_versiculo: "a referência de 1 versículo e, na resposta, uma palavra exata dele (pelo menos 4 letras, uma vez só no versículo; nunca Jeová, Deus, número nem o nome do livro), e versículos diferentes dos já usados",
             abreviacoes: "a sigla na pergunta conferindo palavra por palavra com a resposta, e a referência do versículo onde está",
           }[idTipo];

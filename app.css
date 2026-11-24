@@ -17514,3 +17514,38 @@ label.fam-rotulo[hidden] { display: none; }
 .fam-video-transc > summary { cursor: pointer; min-height: 34px; display: flex; align-items: center; padding: 0 10px; font-size: .85rem; font-weight: 600; }
 .fam-video-texto { padding: 4px 10px 10px; max-height: 260px; overflow-y: auto; white-space: pre-wrap; font-size: .9rem; line-height: 1.5; overflow-wrap: anywhere; }
 body.fam-tela-grande .fam-video-texto { font-size: 1.05em; max-height: 50vh; }
+/* 6.12.77: jogo sem compartilhar: uma questão por vez, resposta escondida e placar local (só na memória da tela). Cores suaves; os botões
+   de cada linha ocupam a largura toda (crescem por igual e quebram a linha quando não cabem). */
+.fam-jogo-local [hidden] { display: none !important; }
+.fam-jogo-questao { display: grid; gap: 8px; min-width: 0; padding: 10px 12px; border: 1px solid color-mix(in srgb, #3b82f6 30%, var(--line, #cbd5e1)); border-radius: 10px; background: var(--card, #fff); box-sizing: border-box; }
+.fam-jogo-questao > p, .fam-jogo-questao-dicas > p { margin: 0; overflow-wrap: anywhere; }
+.fam-jogo-questao-num { font-size: .85rem; font-weight: 700; color: var(--muted, #6b7280); }
+.fam-jogo-questao-pergunta { font-weight: 600; line-height: 1.35; }
+.fam-jogo-questao-dicas { display: grid; gap: 4px; min-width: 0; }
+.fam-jogo-questao-dica-texto { padding: 6px 8px; border-radius: 8px; background: color-mix(in srgb, #f59e0b 10%, transparent); }
+.fam-jogo-questao-resposta { padding: 6px 8px; border: 1px dashed var(--line, #cbd5e1); border-radius: 8px; color: var(--muted, #6b7280); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.fam-jogo-questao-resposta.revelada { border-style: solid; border-color: color-mix(in srgb, #3b82f6 35%, var(--line, #cbd5e1)); background: color-mix(in srgb, #3b82f6 8%, transparent); color: var(--text, inherit); font-weight: 600; }
+.fam-jogo-questao-botoes, .fam-jogo-questao-nav, .fam-jogo-questao-acerto, .fam-jogo-local-jogadores { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
+.fam-jogo-questao-botoes > button, .fam-jogo-questao-nav > button { flex: 1 1 140px; min-width: 0; margin: 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.fam-jogo-questao-acerto > p { flex: 1 1 100%; margin: 0; font-weight: 600; font-size: .92rem; }
+.fam-jogo-questao-acerto > select { flex: 1 1 100%; min-width: 0; margin: 0; }
+.fam-jogo-questao-acerto > button, .fam-jogo-local-jogadores > button { flex: 1 1 120px; min-width: 0; margin: 0; }
+.fam-jogo-questao-acerto > button[aria-pressed="true"], .fam-jogo-local-jogadores > button[aria-pressed="true"] { border-color: color-mix(in srgb, #3b82f6 55%, var(--line, #cbd5e1)); background: color-mix(in srgb, #3b82f6 14%, var(--card, #fff)); font-weight: 700; }
+.fam-jogo-ordem-acerto { padding: 8px 10px; border: 1px solid var(--line, #cbd5e1); border-radius: 10px; background: var(--card, #fff); }
+.fam-jogo-local-placar { display: grid; gap: 8px; min-width: 0; padding: 0 10px 10px; border: 1px solid color-mix(in srgb, #f59e0b 40%, var(--line, #cbd5e1)); border-radius: 10px; background: var(--card, #fff); box-sizing: border-box; }
+.fam-jogo-local-placar > summary { cursor: pointer; min-height: 40px; display: flex; align-items: center; font-weight: 600; }
+.fam-jogo-local-placar[open] > summary { margin-bottom: 4px; }
+.fam-jogo-local-nota { margin: 0 0 8px; font-size: .85rem; color: var(--muted, #6b7280); }
+.fam-jogo-local-add { display: flex; gap: 8px; min-width: 0; margin-top: 8px; }
+.fam-jogo-local-add > input { flex: 1 1 auto; min-width: 0; margin: 0; }
+.fam-jogo-local-add > button { flex: 0 0 auto; margin: 0; }
+.fam-jogo-local-tabela { width: 100%; margin-top: 8px; border-collapse: collapse; }
+.fam-jogo-local-tabela td { padding: 6px 4px; border-top: 1px solid var(--line, #cbd5e1); }
+.fam-jogo-local-pts { width: 3.5em; text-align: right; font-weight: 700; }
+.fam-jogo-local-bicho { margin-right: 6px; }
+/* 6.12.77: "Ordem e data" na Adoração compartilhada: a ordem revelada e os botões de quem dirige na largura toda. */
+#participarSessao .fam-sessao-ordem { display: grid; gap: 6px; margin: 10px 0; padding: 10px 12px; border: 1px solid color-mix(in srgb, #3b82f6 30%, var(--line)); border-radius: 12px; background: var(--card); }
+#participarSessao .fam-sessao-ordem[hidden] { display: none; }
+#participarSessao .fam-sessao-ordem > p { margin: 0; }
+#participarSessao .fam-sessao-ordem .fam-sessao-revelar { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin: 0; }
+#participarSessao .fam-sessao-ordem-resultado { font-weight: 700; }

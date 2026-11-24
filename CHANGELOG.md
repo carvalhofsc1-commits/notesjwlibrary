@@ -2,6 +2,39 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.77
+
+### Jogos: aspas, quem fala e livros
+
+- **Aspas sem par no Complete o versículo:** antes de pôr a lacuna, o servidor tira as aspas que ficam sem par no versículo transcrito (`semAspasSoltas`). Exemplos: o “ do começo de Mateus 5:9 e de Mateus 6:14, e o ” do fim de Mateus 18:35 e de Marcos 11:25. Aspas com par ficam. O ’ entre letras (apóstrofo, como em pé-d’água) também fica. No Quem disse isso?, a fala transcrita passa pela mesma limpeza.
+- **Quem fala, conferido no Quem disse isso?:** a rodada só vale quando o nome de quem fala está no próprio versículo, antes da aspa de abertura, e o nome de quem ouve não vem antes dele (`quemFalaConfere`).
+  - Gênesis 4:9: "Jeová, a Caim" vale; "Caim, a Jeová" sai.
+  - Sai também a rodada que não dá para conferir: o versículo só diz "ele" ou "ela" (Lucas 2:49, Rute 2:10) ou começa já com a aspa (Ester 4:16).
+  - O prompt do jogo pede primeiro quem fala e a referência começando no versículo que diz o nome dele. Por isso podem sobrar menos rodadas; a regra de 6.12.76 continua (refazer uma vez e, se faltar, trocar o tipo).
+- **Grafia dos livros nas referências do jogo:** a referência escrita pela IA fica como na Bíblia do app (`referenciaPadrao` e `livroPadrao`, em `_fontes.mjs`). Exemplos: "Filemon 10" e "Filemom 10" viram "Filêmon 10"; "Salmo 103:12" vira "Salmos 103:12"; "Rom. 12:17" vira "Romanos 12:17". Vale para todos os tipos, e o que não é nome de livro fica como veio.
+- A linha MONTAGEM da tela de prompts diz as três regras.
+
+### Telas dos jogos
+
+- **Sem compartilhar, uma questão por vez:**
+  - "Questão k de N" com o valor da questão, para quem dirige parar quando o tempo acabar.
+  - A 1ª dica já aparece; "💡 Próxima dica" mostra uma dica por toque.
+  - A resposta fica escondida até "Mostrar resposta" (ICONE_OLHO) e aparece com a referência.
+  - "◀ Anterior" e "Próxima questão ▶" guardam o estado de cada questão. Na última aparece "🏁 Última questão".
+  - A lista com todas as respostas saiu da tela, mas o texto copiado e o Word continuam com elas.
+- **Ordem e data sem compartilhar:** a lista embaralhada fica à mostra e a "🔑 Ordem certa (com as datas)" fica recolhida. A ordem sai também do fim de "como jogar". Vem de `jogo.ordem` ou, nas programações sem esse campo, da lista do fim de "como jogar".
+- **Placar local (opcional, recolhido):**
+  - Os jogadores sugeridos são os apelidos (ou papéis) do cadastro da família, e "+ jogador" acrescenta outros. Cada um ganha um bichinho de PLACAR_ANIMAIS.
+  - "Quem acertou?" aparece com a resposta à mostra e dá os pontos de agora (2 e depois 1 nos jogos de 2 dicas). Tocar de novo desfaz.
+  - No Ordem e data, quem dirige escolhe quem acertou a ordem e quantos pontos (de 0 até o número de eventos + 2).
+  - O placar vive só na memória da tela: nada é salvo nem enviado, nem os nomes.
+- **Ordem e data compartilhado:**
+  - Nova ação `revelar-ordem`: quem dirige mostra a todos a ordem certa com as datas. Ela fica em `estado.ordensReveladas`; antes disso, só em `respostas.json`.
+  - `pontuar` com `rodada: "ordem"` grava quem acertou e os pontos escolhidos (0 até eventos + 2) em `acertos[parte].ordem`, e revela a ordem. "Ninguém acertou" também vale.
+  - `reiniciar` com `rodada: "ordem"` esconde a ordem de novo e tira esses pontos.
+  - O placar compartilhado já soma esses pontos. As sessões antigas continuam iguais.
+- Tudo conferido a 375 px, sem capturas de tela: os botões de cada linha ocupam a largura toda do card e crescem por igual, com cores suaves.
+
 ## 6.12.76
 
 ### Jogos conferidos e montados pelo servidor

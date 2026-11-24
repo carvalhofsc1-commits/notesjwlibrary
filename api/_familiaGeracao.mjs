@@ -773,3 +773,47 @@ export function dicaDoLivro(livro, quem = "") {
   if (!nome) return "";
   return nomesDaResposta(quem).includes(nome) ? `Está nas ${parteDasEscrituras(livro)}` : `Está em ${livro}`;
 }
+
+// ---------- Patch 6.12.77: aspas soltas e quem fala ----------
+
+// Tira as aspas que ficaram sem par no versículo transcrito (a fala começou no versículo de antes ou continua no seguinte): “ sem o ”
+// que a fecha, ” sem o “ que a abre, e o mesmo com ‘ ’ (o ’ entre duas letras é apóstrofo e fica). Assim o Complete o versículo não
+// mostra "“‘Pois…" nem termina em "’".
+export function semAspasSoltas(texto) {
+  const t = String(texto || "");
+  const tirar = new Set();
+  const parear = (abre, fecha, ehFecho = () => true) => {
+    const abertas = [];
+    for (let i = 0; i < t.length; i++) {
+      if (t[i] === abre) abertas.push(i);
+      else if (t[i] === fecha && ehFecho(i)) {
+        if (abertas.length) abertas.pop();
+        else tirar.add(i);
+      }
+    }
+    abertas.forEach((i) => tirar.add(i));
+  };
+  parear("“", "”");
+  parear("‘", "’", (i) => !(/\p{L}/u.test(t[i - 1] || "") && /\p{L}/u.test(t[i + 1] || "")));
+  if (!tirar.size) return t;
+  let limpo = "";
+  for (let i = 0; i < t.length; i++) if (!tirar.has(i)) limpo += t[i];
+  return limpo.replace(/\s{2,}/g, " ").trim();
+}
+
+// Quem disse isso?: a rodada só vale se dá para conferir quem fala no próprio texto transcrito. O primeiro nome da resposta (quem fala:
+// "Jeová, a Caim" -> "jeova") tem de estar escrito ANTES da primeira aspa de abertura, e nenhum outro nome da resposta (o ouvinte, ou
+// sobre quem se fala) pode vir antes dele. Sem aspa de abertura (a fala começou no versículo de antes), sem o nome ou com o ouvinte
+// antes, a rodada sai. Ex.: Gênesis 4:9, "Jeová perguntou a Caim: “Onde está Abel…”": "Jeová, a Caim" vale; "Caim, a Jeová" sai.
+export function quemFalaConfere(texto, resposta) {
+  const t = String(texto || "");
+  const abre = t.indexOf("“");
+  if (abre <= 0) return false;
+  const antes = ` ${normalizarTexto(t.slice(0, abre))} `;
+  const nomes = nomesDaResposta(resposta);
+  if (!nomes.length) return false;
+  const onde = (nome) => antes.indexOf(` ${nome} `);
+  const quem = onde(nomes[0]);
+  if (quem < 0) return false;
+  return nomes.slice(1).every((n) => n === nomes[0] || onde(n) < 0 || onde(n) > quem);
+}

@@ -6,6 +6,7 @@
 // datas do Apêndice B, corte no fim da frase e o item interno da memória no app.
 // Patch 6.12.76: jogos conferidos pelo servidor (idTipo, quantidade por tipo, Complete o versículo e Quem disse isso? montados com a Bíblia,
 // troca do tipo, memória jogo_versiculos), Princípio em "relatos" e Jesus com um episódio.
+// Patch 6.12.77: aspas soltas no Complete o versículo, quem fala conferido no Quem disse isso? e a grafia dos livros nas referências.
 // Com FONTES_DIR, confere também as fontes reais (principios.json e as referências abreviadas na Bíblia).
 // Uso: node ferramentas/testar-adoracao-quadros.mjs
 import assert from "node:assert/strict";
@@ -1154,7 +1155,7 @@ teste("6.12.76: Complete o versículo e Quem disse isso? montados pelo servidor 
   assert.equal(c1.trocarTipo, "");
   assert.equal(c1.jogo.idTipo, "complete_versiculo");
   assert.deepEqual(c1.jogo.rodadas[0], { pergunta: "Complete a palavra que falta. Dica 1: “Uma resposta ______ acalma o furor, Mas uma palavra dura atiça a ira.” Dica 2: Está em Provérbios.", resposta: "branda", referencia: "Provérbios 15:1" });
-  assert.match(c1.jogo.rodadas[1].pergunta, /Dica 1: “‘Felizes os ______, porque/, "as aspas do versículo viram aspas simples");
+  assert.match(c1.jogo.rodadas[1].pergunta, /Dica 1: “Felizes os ______, porque/, "6.12.77: a aspa sem par do começo do Sermão sai");
   assert.deepEqual(c1.memoria.jogo_versiculos, boas.map(([r]) => (r === "Salmo 86:5" ? "Salmos 86:5" : r)));
   for (const r of c1.jogo.rodadas) assert.match(r.pergunta, /^Complete a palavra que falta\. Dica 1: “.+” Dica 2: Está em .+\.$/);
   // Versículos das últimas semanas e os já usados nesta noite saem; com menos de 6, o servidor pede a troca do tipo.
@@ -1163,20 +1164,133 @@ teste("6.12.76: Complete o versículo e Quem disse isso? montados pelo servidor 
   assert.equal(c2.contagens.rodadas, 5);
   assert.match(c2.falta, /^vieram 5 rodadas válidas; mande 12 rodadas \(no mínimo 8\)/);
   assert.equal(c2.trocarTipo, "Complete o versículo");
-  // Quem disse isso?: a fala transcrita entre aspas; sem fala entre aspas (ou curta), a rodada sai.
+  // Quem disse isso?: a fala transcrita entre aspas; sem fala entre aspas (ou curta), a rodada sai. 6.12.77: e só quando o nome de quem
+  // fala está no texto antes da aspa (Rute 2:10 "ela", Lucas 2:49 "ele", Jó 1:21 "disse", Ester 4:16 começa com a aspa) e antes do
+  // ouvinte (Gênesis 4:9 "Caim, a Jeová" sai; "Jeová, a Caim" fica).
   const qd = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Quem disse isso? (frases da Bíblia)"] }), montados);
-  const falas = [["Rute 1:16", "Rute, a Noemi"], ["Atos 26:28", "Agripa, a Paulo"], ["Gênesis 50:20", "José, a seus irmãos"], ["Gênesis 45:4", "José, a seus irmãos"], ["Lucas 2:49", "Jesus, a seus pais"], ["Jó 1:21", "Jó"], ["Ester 4:16", "Ester, a Mardoqueu"], ["Mateus 5:9", "Jesus, aos discípulos"], ["Lucas 23:34", "Jesus, ao Pai"], ["Mateus 6:14", "Jesus, no Sermão do Monte"]];
+  const falas = [["Gênesis 4:9", "Caim, a Jeová"], ["Rute 1:16", "Rute, a Noemi"], ["Atos 26:28", "Agripa, a Paulo"], ["Gênesis 50:20", "José, a seus irmãos"], ["Rute 2:10", "Rute, a Boaz"], ["Lucas 2:49", "Jesus, a seus pais"], ["Jó 1:21", "Jó"], ["Ester 4:16", "Ester, a Mardoqueu"], ["Gênesis 4:9", "Jeová, a Caim"], ["Lucas 23:34", "Jesus, ao Pai"], ["Gênesis 13:8", "Abrão, a Ló"], ["Gênesis 33:9", "Esaú, a Jacó"], ["Números 12:13", "Moisés, a Jeová, em favor de Miriã"], ["Mateus 18:21", "Pedro, a Jesus"], ["Atos 9:13", "Ananias, a Jesus"]];
   const q1 = await qd.prep.montar({ descricao: "d", nome: "Quem disse?", comoJogar: "R.", rodadas: falas.map(([referencia, resposta]) => ({ pergunta: "", resposta, referencia })), eventos: [] });
-  assert.equal(q1.contagens.rodadas, 8, JSON.stringify(q1.jogo && q1.jogo.rodadas.map((r) => r.referencia)));
-  assert.equal(q1.contagens.tiradas, 2, "Gênesis 50:20 sem aspas e Gênesis 45:4 com fala curta");
+  assert.equal(q1.contagens.rodadas, 9, JSON.stringify(q1.jogo && q1.jogo.rodadas.map((r) => r.referencia)));
+  assert.equal(q1.contagens.tiradas, 6, "Caim, a Jeová; Gênesis 50:20 sem aspas; Rute 2:10, Lucas 2:49, Jó 1:21 e Ester 4:16 sem o nome antes da fala");
   assert.equal(q1.jogo.idTipo, "quem_disse");
   assert.equal(q1.falta, "");
   assert.match(q1.jogo.rodadas[0].pergunta, /^Quem disse isso\? Dica 1: “Não insista comigo para abandoná-la, .+” Dica 2: Está nas Escrituras Hebraicas\.$/);
   assert.equal(q1.jogo.rodadas[1].pergunta, "Quem disse isso? Dica 1: “Em pouco tempo você me persuadiria a me tornar cristão.” Dica 2: Está em Atos.");
-  assert.match(q1.jogo.rodadas.find((r) => r.referencia === "Jó 1:21").pergunta, /Dica 2: Está nas Escrituras Hebraicas\.$/);
+  const gn49 = q1.jogo.rodadas.find((r) => r.referencia === "Gênesis 4:9");
+  assert.equal(gn49.resposta, "Jeová, a Caim");
+  assert.equal(gn49.pergunta, "Quem disse isso? Dica 1: “Onde está Abel, seu irmão?” Dica 2: Está em Gênesis.");
+  assert.ok(!q1.jogo.rodadas.some((r) => ["Rute 2:10", "Lucas 2:49", "Jó 1:21", "Ester 4:16"].includes(r.referencia)));
   assert.equal(q1.jogo.rodadas[1].referencia, "Atos 26:28");
-  assert.equal(q1.memoria.jogo_versiculos.length, 8);
+  assert.equal(q1.memoria.jogo_versiculos.length, 9);
   for (const r of q1.jogo.rodadas) assert.ok(r.pergunta.length <= 400, r.referencia);
+  // 6.12.77: Complete o versículo sem as aspas soltas (Mateus 6:14 começa com “ e Mateus 18:35 e Marcos 11:25 terminam com ”, sem par).
+  const cp3 = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Complete o versículo"] }), montados);
+  const c3 = await cp3.prep.montar({ descricao: "d", nome: "Complete", comoJogar: "R.", rodadas: [["Mateus 6:14", "celestial"], ["Mateus 18:35", "coração"], ["Marcos 11:25", "orando"]].map(([referencia, resposta]) => ({ pergunta: "", resposta, referencia })), eventos: [] });
+  assert.equal(c3.jogo.rodadas.length, 3);
+  assert.equal(c3.jogo.rodadas[0].pergunta, "Complete a palavra que falta. Dica 1: “Pois, se vocês perdoarem aos homens as falhas deles, o seu Pai ______ também perdoará vocês;” Dica 2: Está em Mateus.");
+  assert.match(c3.jogo.rodadas[1].pergunta, /ao seu irmão\.” Dica 2: Está em Mateus\.$/);
+  assert.match(c3.jogo.rodadas[2].pergunta, /as falhas de vocês\.” Dica 2: Está em Marcos\.$/);
+  for (const r of c3.jogo.rodadas) assert.doesNotMatch(r.pergunta, /[‘’]/, r.referencia);
+  // 6.12.77: a referência escrita pela IA com outra grafia do livro é lida e fica como na Bíblia.
+  const c4 = await cp3.prep.montar({ descricao: "d", nome: "Complete", comoJogar: "R.", rodadas: [{ pergunta: "", resposta: "transgressões", referencia: "Salmo 103:12" }, { pergunta: "", resposta: "prisão", referencia: "Filemom 10" }], eventos: [] });
+  assert.deepEqual(c4.jogo.rodadas.map((r) => r.referencia), ["Salmos 103:12", "Filêmon 10"]);
+});
+
+// ---------- Patch 6.12.77: aspas soltas, quem fala no Quem disse isso? e a grafia dos livros ----------
+
+teste("6.12.77: semAspasSoltas, quemFalaConfere (com Gênesis 4:9) e referenciaPadrao", async () => {
+  // Aspas sem par saem; as que têm par ficam; o ’ entre letras (apóstrofo) fica.
+  assert.equal(ger.semAspasSoltas("“Pois, se vocês perdoarem aos homens as falhas deles;"), "Pois, se vocês perdoarem aos homens as falhas deles;");
+  assert.equal(ger.semAspasSoltas("se cada um de vocês não perdoar de coração ao seu irmão.”"), "se cada um de vocês não perdoar de coração ao seu irmão.");
+  assert.equal(ger.semAspasSoltas("Ele disse: “Venha.” E foi."), "Ele disse: “Venha.” E foi.");
+  assert.equal(ger.semAspasSoltas("o fim da fala.” Então ele disse: “Outra fala"), "o fim da fala. Então ele disse: Outra fala");
+  assert.equal(ger.semAspasSoltas("se ele apenas lhe disse: ‘Lave-se e fique puro.’”"), "se ele apenas lhe disse: ‘Lave-se e fique puro.’");
+  assert.equal(ger.semAspasSoltas("‘Lave-se e fique puro."), "Lave-se e fique puro.");
+  assert.equal(ger.semAspasSoltas("um pé-d’água forte"), "um pé-d’água forte");
+  assert.equal(ger.semAspasSoltas(""), "");
+  // Quem fala: o nome de quem fala antes da 1ª aspa e antes do ouvinte (o caso de Gênesis 4:9).
+  const gn49 = "Mais tarde, Jeová perguntou a Caim: “Onde está Abel, seu irmão?” E Caim respondeu: “Não sei. Será que eu sou guardião do meu irmão?”";
+  assert.equal(ger.quemFalaConfere(gn49, "Jeová, a Caim"), true);
+  assert.equal(ger.quemFalaConfere(gn49, "Caim, a Jeová"), false, "o ouvinte vem antes de quem fala");
+  assert.equal(ger.quemFalaConfere(gn49, "Caim"), true, "o nome está antes da aspa (a regra não lê o sentido)");
+  assert.equal(ger.quemFalaConfere("Mas Agripa disse a Paulo: “Em pouco tempo você me persuadiria.”", "Agripa, a Paulo"), true);
+  assert.equal(ger.quemFalaConfere("Mas Agripa disse a Paulo: “Em pouco tempo você me persuadiria.”", "Paulo, a Agripa"), false);
+  assert.equal(ger.quemFalaConfere("Mas ele lhes disse: “Por que estavam procurando por mim?”", "Jesus, a seus pais"), false, "sem o nome: não dá para conferir");
+  assert.equal(ger.quemFalaConfere("“Vá, reúna todos os judeus que estão em Susã.”", "Ester, a Mardoqueu"), false, "começa com a aspa");
+  assert.equal(ger.quemFalaConfere("o nosso Deus pode nos livrar.” Então o rei se irou.", "Sadraque"), false, "sem aspa de abertura");
+  assert.equal(ger.quemFalaConfere("E Moisés começou a clamar a Jeová: “Ó Deus, por favor! Cura-a, por favor!”", "Moisés, a Jeová, em favor de Miriã"), true, "Miriã não está antes da aspa");
+  assert.equal(ger.quemFalaConfere("Mas Jesus dizia: “Pai, perdoa-lhes.”", "Jesus, ao Pai"), true);
+  assert.equal(ger.quemFalaConfere("Mas Jesus dizia: “Pai, perdoa-lhes.”", ""), false);
+  // Grafia dos livros: como na Bíblia do app; o que não é livro fica como veio.
+  const { referenciaPadrao, livroPadrao } = fontesMod;
+  assert.equal(referenciaPadrao("Filemon 10-12"), "Filêmon 10-12");
+  assert.equal(referenciaPadrao("Filemom 10"), "Filêmon 10");
+  assert.equal(referenciaPadrao("Filêmon 16"), "Filêmon 16");
+  assert.equal(referenciaPadrao("Salmo 103:12"), "Salmos 103:12");
+  assert.equal(referenciaPadrao("Rom. 12:17-19"), "Romanos 12:17-19");
+  assert.equal(referenciaPadrao("1 sam 25:24"), "1 Samuel 25:24");
+  assert.equal(referenciaPadrao("Jo 3:16"), "João 3:16");
+  assert.equal(referenciaPadrao("Jó 42:10"), "Jó 42:10");
+  assert.equal(referenciaPadrao("genesis 4:9; exodo 3:14"), "Gênesis 4:9; Êxodo 3:14");
+  assert.equal(referenciaPadrao("Livro Inventado 3:1"), "Livro Inventado 3:1");
+  assert.equal(referenciaPadrao(""), "");
+  assert.equal(livroPadrao("Cantares"), "Cântico de Salomão");
+  assert.equal(livroPadrao("Mímica"), "");
+  // O servidor usa as três no jogo e o prompt reforça quem fala.
+  assert.match(servidorJs, /lacunaNoVersiculo\(semAspasSoltas\(v\.texto\), resposta, livro\)/);
+  assert.match(servidorJs, /!quemFalaConfere\(v\.texto, resposta\)/);
+  assert.match(servidorJs, /referencia: referenciaPadrao\(linhaFamilia\(b\.referencia, 120\)\)/);
+  const s = montados.sistemaFamiliaQuadro;
+  assert.match(s.jogo, /QUEM FALA CONFERIDO/);
+  assert.match(s.jogo, /"Jeová, a Caim", nunca "Caim, a Jeová"/);
+  const promptsJs = await readFile(new URL("api/_prompts.mjs", raiz), "utf8");
+  assert.match(promptsJs, /6\.12\.77: no Complete o versículo, sem as aspas que ficam sem par/);
+  // Quem sou eu? sem a Bíblia: a referência com outra grafia já sai padronizada.
+  const qse = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Quem sou eu? (personagens bíblicos)"] }), montados);
+  const nomes = ["Josias", "Abigail", "Mefibosete", "Gideão", "Débora", "Onésimo"];
+  const p = await qse.prep.montar({ descricao: "d", nome: "Quem sou eu?", comoJogar: "R.", rodadas: nomes.map((n, i) => ({ pergunta: `Dica 1: a ${i}. Dica 2: b ${i}. Dica 3: c ${i}.`, resposta: n, referencia: n === "Onésimo" ? "Filemon 10-12" : "Salmo 23:1" })), eventos: [] });
+  assert.equal(p.jogo.rodadas.find((r) => r.resposta === "Onésimo").referencia, "Filêmon 10-12");
+  assert.equal(p.jogo.rodadas[0].referencia, "Salmos 23:1");
+});
+
+teste("6.12.77: telas dos jogos (uma questão por vez, Mostrar resposta, ordem recolhida, revelar a ordem e placar local)", async () => {
+  const css = await readFile(new URL("app.css", raiz), "utf8");
+  // Sem compartilhar: o jogo da programação passa por familiaJogoLocalMontar (a lista com as respostas fica só na cópia e no Word).
+  assert.match(appJs, /else if \(parte\.jogo\) bloco\.appendChild\(familiaJogoLocalMontar\(parte\.jogo\)\)/);
+  assert.ok(!appJs.includes("'Material pronto para jogar ('"), "a lista com as respostas saiu da tela");
+  assert.match(appJs, /familiaJogoTextos\(j\)\.forEach\(\(t, i\) => l\.push/, "o texto copiado continua com as respostas");
+  assert.match(appJs, /'Questão ' \+ \(k \+ 1\) \+ ' de ' \+ rod\.length/);
+  assert.match(appJs, /'💡 Próxima dica \(vale '/);
+  assert.match(appJs, /ICONE_OLHO \+ ' Mostrar resposta'/);
+  assert.match(appJs, /'💡 Resposta: ' \+ r\.resposta \+ \(r\.referencia \? ' \(' \+ r\.referencia \+ '\)' : ''\)/, "a referência só aparece com a resposta");
+  assert.match(appJs, /'🔑 Ordem certa \(com as datas\)'/);
+  assert.match(appJs, /'🏆 Placar \(opcional, não é salvo\)'/);
+  assert.match(appJs, /const bicho = nome => PLACAR_ANIMAIS\[/);
+  assert.match(appJs, /'\+ jogador'/);
+  // O placar local não é salvo nem enviado: nada de localStorage, IndexedDB ou servidor dentro de familiaJogoLocalMontar.
+  const ini = appJs.indexOf("function familiaJogoLocalMontar(j)");
+  const fim = appJs.indexOf("\n    }\n", ini);
+  const corpo = appJs.slice(ini, fim);
+  assert.ok(ini > 0 && fim > ini);
+  for (const proibido of ["localStorage", "indexedDB", "historicoGravar", "familiaSessaoPedir", "fetch("]) assert.ok(!corpo.includes(proibido), proibido);
+  // A ordem certa: jogo.ordem ou, nas programações sem ela, a lista do fim de "como jogar".
+  const fonteOrdem = appJs.slice(appJs.indexOf("function familiaOrdemDoJogo(j)"), appJs.indexOf("// A pergunta de uma rodada separada"));
+  const familiaOrdemDoJogo = new Function(fonteOrdem + "; return familiaOrdemDoJogo;")();
+  assert.deepEqual(familiaOrdemDoJogo({ ordem: [{ data: "4026 a.C.", evento: "Criação de Adão" }] }), [{ data: "4026 a.C.", evento: "Criação de Adão" }]);
+  assert.deepEqual(familiaOrdemDoJogo({ comoJogar: "Coloquem em ordem. Ordem certa (datas do Apêndice B da Bíblia de Estudo): 1. 4026 a.C. — Criação de Adão; 2. 2370 a.C. — Dilúvio." }),
+    [{ data: "4026 a.C.", evento: "Criação de Adão" }, { data: "2370 a.C.", evento: "Dilúvio" }]);
+  assert.deepEqual(familiaOrdemDoJogo({ comoJogar: "Sem ordem." }), []);
+  // Compartilhada: revelar a ordem a todos e pontuar de boca (rodada "ordem"), com o estado.ordensReveladas.
+  assert.match(appJs, /participarAcao\(\{ acao: 'revelar-ordem', parte: parteIdx \}/);
+  assert.match(appJs, /rodada: 'ordem', nome: o\.sel\.value, pts: Number\(o\.selPts\.value\)/);
+  assert.match(appJs, /rodada: 'ordem' \}, o\.btnReiniciar\)/);
+  assert.match(appJs, /e\.ordensReveladas \|\| \{\}\)\[i\]/);
+  // CSS: botões na largura toda (crescem e quebram a linha), sem verde.
+  const bloco = css.slice(css.indexOf("6.12.77: jogo sem compartilhar"));
+  assert.match(bloco, /\.fam-jogo-questao-botoes > button, \.fam-jogo-questao-nav > button \{ flex: 1 1 140px/);
+  assert.match(bloco, /#participarSessao \.fam-sessao-ordem \.fam-sessao-revelar \{[^}]*width: 100%/);
+  assert.ok(!/#(?:22c55e|16a34a|10b981|059669|4ade80)|green/i.test(bloco), "sem verde");
+  assert.ok(!/culto/i.test(corpo + bloco));
 });
 
 for (const [nome, fn] of testes) {

@@ -253,6 +253,28 @@ try {
   assert.deepEqual(dir2.dados.extras.ordens["2"], v2.partes[2].jogo.ordem); passo("quem dirige recebe a ordem certa em extras.ordens[índice da parte]");
   const progAntigo = JSON.parse(programaArq);
   assert.ok(!("versao" in progAntigo) && progAntigo.partes.every((p) => !("quadro" in p)) && !("ordens" in d.dados.extras)); passo("programação antiga continua sem versao, quadro e ordens");
+
+  // 6.12.77: "Ordem e data": revelar a ordem a todos, pontuar de boca (quem acertou e quantos pontos) e esconder de novo
+  assert.deepEqual(part2.dados.estado.ordensReveladas, {}); passo("estado público começa com ordensReveladas vazio");
+  assert.equal((await chamar({ acao: "revelar-ordem", sessao: cv2.sessao, parte: 2 })).status, 403); passo("revelar-ordem sem a chave do dirigente recusado");
+  assert.equal((await chamar({ acao: "revelar-ordem", sessao: cv2.sessao, chave: cv2.chave, parte: 0 })).status, 400); passo("revelar-ordem numa parte sem ordem recusado");
+  const ro = await chamar({ acao: "revelar-ordem", sessao: cv2.sessao, chave: cv2.chave, parte: 2 });
+  assert.equal(ro.status, 200);
+  assert.deepEqual(ro.dados.estado.ordensReveladas["2"], v2.partes[2].jogo.ordem); passo("revelar-ordem mostra a todos a ordem certa com as datas");
+  const est2 = await chamar({ acao: "estado", sessao: cv2.sessao });
+  assert.ok(JSON.stringify(est2.dados.estado.ordensReveladas).includes(DATA_SECRETA)); passo("o participante recebe a ordem revelada no estado");
+  assert.equal((await chamar({ acao: "pontuar", sessao: cv2.sessao, chave: cv2.chave, parte: 2, rodada: "ordem", nome: "Ana", pts: 5 })).status, 400); passo("pontuar a ordem com mais pontos que eventos + 2 recusado");
+  assert.equal((await chamar({ acao: "pontuar", sessao: cv2.sessao, chave: cv2.chave, parte: 2, rodada: "ordem", nome: "", pts: 2 })).status, 400); passo("pontuar a ordem sem escolher quem acertou recusado");
+  const po = await chamar({ acao: "pontuar", sessao: cv2.sessao, chave: cv2.chave, parte: 2, rodada: "ordem", nome: "Ana", pts: 4 });
+  assert.equal(po.status, 200);
+  assert.deepEqual(po.dados.estado.acertos["2"].ordem, { nome: "Ana", pts: 4 }); passo("pontuar a ordem grava quem acertou e os pontos escolhidos (acertos[parte].ordem)");
+  const pn = await chamar({ acao: "pontuar", sessao: cv2.sessao, chave: cv2.chave, parte: 2, rodada: "ordem", ninguem: true });
+  assert.deepEqual(pn.dados.estado.acertos["2"].ordem, { nome: "", pts: 0, ninguem: true }); passo("\"Ninguém acertou\" na ordem: sem pontos");
+  const reo = await chamar({ acao: "reiniciar", sessao: cv2.sessao, chave: cv2.chave, parte: 2, rodada: "ordem" });
+  assert.equal(reo.status, 200);
+  assert.ok(!("ordem" in (reo.dados.estado.acertos["2"] || {})) && !("2" in reo.dados.estado.ordensReveladas)); passo("reiniciar a ordem esconde de novo a ordem e tira os pontos");
+  const po2 = await chamar({ acao: "pontuar", sessao: cv2.sessao, chave: cv2.chave, parte: 2, rodada: "ordem", nome: "Ana", pts: 0 });
+  assert.deepEqual(po2.dados.estado.ordensReveladas["2"], v2.partes[2].jogo.ordem); passo("pontuar a ordem (mesmo com 0 ponto) também revela a ordem");
   await chamar({ acao: "encerrar", sessao: cv2.sessao, chave: cv2.chave });
 
   // Encerrar

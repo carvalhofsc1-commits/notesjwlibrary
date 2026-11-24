@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.76'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.77'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26520,6 +26520,240 @@ function saveTemplatesToStorage() {
       return l;
     }
 
+    // ---------- Jogo sem compartilhar (6.12.77) ----------
+    // Uma questão por vez: "Questão k de N" (quem dirige pode parar quando o tempo acabar), uma dica por toque ("💡 Próxima dica"), a resposta
+    // escondida até "Mostrar resposta" (olho), e com ela a referência. No "Ordem e data", a lista embaralhada fica à mostra e a ordem certa, com
+    // as datas, fica recolhida (sai também do fim de "como jogar"). Placar local opcional: os apelidos do cadastro da família e "+ jogador", cada
+    // um com um bichinho de PLACAR_ANIMAIS; vive só na memória da tela (nada é salvo nem enviado). O texto copiado e o Word continuam com as respostas.
+    const FAMILIA_SUFIXO_ORDEM = /\s*Ordem certa \(datas do Apêndice B[\s\S]*$/;
+    // A ordem certa do "Ordem e data": jogo.ordem (6.12.74) ou, se faltar, a lista do fim de "como jogar" ("1. data — evento; 2. …").
+    function familiaOrdemDoJogo(j) {
+      if (Array.isArray(j.ordem) && j.ordem.length) return j.ordem.filter(o => o && o.evento);
+      const m = String(j.comoJogar || '').match(/Ordem certa \(datas do Apêndice B[^)]*\)\s*:\s*([\s\S]+)$/);
+      if (!m) return [];
+      return m[1].replace(/\.\s*$/, '').split(/;\s*(?=\d+\.\s)/).map(t => {
+        const x = t.replace(/^\d+\.\s*/, '').split(/\s+—\s+/);
+        return x.length > 1 ? { data: x[0].trim(), evento: x.slice(1).join(' — ').trim() } : { data: '', evento: x[0].trim() };
+      }).filter(o => o.evento);
+    }
+    // A pergunta de uma rodada separada em introdução e dicas ("Dica 1: … Dica 2: …"); sem dicas, a pergunta inteira.
+    function familiaDicasDaRodada(r) {
+      const p = String(r.pergunta || '');
+      if (!/Dica\s*1\s*:/i.test(p)) return { intro: p, dicas: [] };
+      const partes = p.split(/\s*Dica\s*\d+\s*:\s*/i);
+      const intro = partes.shift().trim();
+      return { intro, dicas: partes.map(x => x.trim()).filter(Boolean) };
+    }
+    // Os jogadores sugeridos para o placar local: o apelido (ou o papel) de cada membro do cadastro, sem repetir.
+    function familiaJogadoresDoPerfil() {
+      let perfil = null;
+      try { perfil = familiaPerfilLerTela(); } catch (e) { return []; }
+      const vistos = new Set();
+      return [...(perfil.membros || []), ...((perfil.convidados && perfil.convidados.membros) || [])]
+        .map(m => String(m.apelido || m.papel || '').trim().slice(0, 40))
+        .filter(n => n && !vistos.has(n.toLowerCase()) && vistos.add(n.toLowerCase()));
+    }
+    function familiaJogoLocalMontar(j) {
+      const el = (tag, cls, txt) => { const x = document.createElement(tag); if (cls) x.className = cls; if (txt != null) x.textContent = txt; return x; };
+      const botao = (cls, html, aoTocar) => { const b = el('button', 'secondary fam-fino ' + cls); b.type = 'button'; b.innerHTML = html; b.addEventListener('click', aoTocar); return b; };
+      const caixa = el('div', 'fam-jogo fam-jogo-local');
+      caixa.appendChild(el('p', 'fam-secao-titulo', '🎲 Jogo: ' + j.nome + familiaTipoJogo(j)));
+      const ordem = familiaOrdemDoJogo(j);
+      const como = ordem.length ? String(j.comoJogar || '').replace(FAMILIA_SUFIXO_ORDEM, '') : String(j.comoJogar || '');
+      if (como) caixa.appendChild(el('p', 'fam-parte-desc', como));
+      if (j.material) caixa.appendChild(el('p', 'fam-parte-desc', '✏️ Material: ' + j.material));
+      const c = familiaConteudoDoJogo(j);
+      const ptsTexto = n => n + (n === 1 ? ' ponto' : ' pontos');
+
+      // Placar local (só na memória desta tela).
+      const placar = { jogadores: [], porQuestao: {} }; // porQuestao: { k: { jogador, pts } | { ninguem: true } }
+      const bicho = nome => PLACAR_ANIMAIS[Math.max(0, placar.jogadores.indexOf(nome)) % PLACAR_ANIMAIS.length];
+      const totais = () => {
+        const t = {};
+        placar.jogadores.forEach(n => { t[n] = 0; });
+        Object.values(placar.porQuestao).forEach(a => { if (a && a.jogador && a.jogador in t) t[a.jogador] += a.pts; });
+        return t;
+      };
+      let pintarQuestao = () => {};
+      let pintarOrdem = () => {};
+      const detPlacar = el('details', 'fam-jogo-local-placar');
+      detPlacar.appendChild(el('summary', '', '🏆 Placar (opcional, não é salvo)'));
+      detPlacar.appendChild(el('p', 'fam-jogo-local-nota', 'Toque em quem vai jogar. Os nomes ficam só nesta tela e somem ao sair.'));
+      const chips = el('div', 'fam-jogo-local-jogadores');
+      const tabela = el('table', 'fam-jogo-local-tabela');
+      const pintarPlacar = () => {
+        const t = totais();
+        tabela.hidden = !placar.jogadores.length;
+        tabela.replaceChildren(...[...placar.jogadores].sort((a, b) => t[b] - t[a] || placar.jogadores.indexOf(a) - placar.jogadores.indexOf(b)).map(n => {
+          const tr = el('tr');
+          const td1 = el('td', 'fam-jogo-local-nome');
+          td1.append(el('span', 'fam-jogo-local-bicho', bicho(n)), el('strong', '', n));
+          tr.append(td1, el('td', 'fam-jogo-local-pts', String(t[n])));
+          return tr;
+        }));
+        chips.querySelectorAll('button[data-jogador]').forEach(b => {
+          const dentro = placar.jogadores.includes(b.dataset.jogador);
+          b.setAttribute('aria-pressed', dentro ? 'true' : 'false');
+          b.textContent = (dentro ? bicho(b.dataset.jogador) + ' ' : '＋ ') + b.dataset.jogador;
+        });
+        pintarQuestao();
+        pintarOrdem();
+      };
+      const alternar = nome => {
+        const i = placar.jogadores.indexOf(nome);
+        if (i >= 0) {
+          placar.jogadores.splice(i, 1);
+          Object.keys(placar.porQuestao).forEach(k => { if (placar.porQuestao[k].jogador === nome) delete placar.porQuestao[k]; });
+        } else placar.jogadores.push(nome);
+        pintarPlacar();
+      };
+      const chip = nome => {
+        if ([...chips.querySelectorAll('button[data-jogador]')].some(b => b.dataset.jogador.toLowerCase() === nome.toLowerCase())) return null;
+        const b = botao('fam-jogo-local-chip', '', () => alternar(nome));
+        b.dataset.jogador = nome;
+        chips.appendChild(b);
+        return b;
+      };
+      familiaJogadoresDoPerfil().forEach(chip);
+      const linhaAdd = el('div', 'fam-jogo-local-add');
+      const campo = el('input');
+      campo.type = 'text';
+      campo.maxLength = 40;
+      campo.placeholder = 'Outro jogador';
+      campo.setAttribute('aria-label', 'Nome ou apelido de outro jogador (não é salvo)');
+      const adicionar = () => {
+        const nome = campo.value.replace(/\s+/g, ' ').trim().slice(0, 40);
+        if (!nome) { campo.focus(); return; }
+        const existente = [...chips.querySelectorAll('button[data-jogador]')].find(b => b.dataset.jogador.toLowerCase() === nome.toLowerCase());
+        if (existente) { if (!placar.jogadores.includes(existente.dataset.jogador)) alternar(existente.dataset.jogador); }
+        else { chip(nome); alternar(nome); }
+        campo.value = '';
+      };
+      campo.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); adicionar(); } });
+      linhaAdd.append(campo, botao('fam-jogo-local-mais', '+ jogador', adicionar));
+      detPlacar.append(chips, linhaAdd, tabela);
+      tabela.hidden = true;
+
+      if (c.rodadas.length) {
+        const rod = c.rodadas.map(r => Object.assign(familiaDicasDaRodada(r), { resposta: String(r.resposta || ''), referencia: String(r.referencia || '') }));
+        const estado = rod.map(r => ({ dadas: r.dicas.length ? 1 : 0, mostrada: false })); // a 1ª dica já aparece; o estado de cada questão fica guardado ao voltar
+        let k = 0;
+        const area = el('div', 'fam-jogo-questao');
+        const num = el('p', 'fam-jogo-questao-num');
+        const perg = el('p', 'fam-jogo-questao-pergunta');
+        const dicasBox = el('div', 'fam-jogo-questao-dicas');
+        const resp = el('p', 'fam-jogo-questao-resposta');
+        const linha = el('div', 'fam-jogo-questao-botoes');
+        const pontosAgora = () => Math.max(1, rod[k].dicas.length - estado[k].dadas + 1);
+        const bDica = botao('fam-jogo-questao-dica', '', () => { if (estado[k].dadas < rod[k].dicas.length) { estado[k].dadas++; pintarQuestao(); } });
+        const bResp = botao('fam-jogo-questao-mostrar', '', () => { estado[k].mostrada = !estado[k].mostrada; pintarQuestao(); });
+        linha.append(bDica, bResp);
+        const acerto = el('div', 'fam-jogo-questao-acerto');
+        const nav = el('div', 'fam-jogo-questao-nav');
+        const bAnt = botao('fam-jogo-questao-anterior', '◀ Anterior', () => { if (k > 0) { k--; pintarQuestao(); } });
+        const bProx = botao('fam-jogo-questao-proxima', 'Próxima questão ▶', () => { if (k < rod.length - 1) { k++; pintarQuestao(); } });
+        nav.append(bAnt, bProx);
+        area.append(num, perg, dicasBox, resp, linha, acerto, nav);
+        caixa.appendChild(area);
+        pintarQuestao = () => {
+          const r = rod[k], s = estado[k], a = placar.porQuestao[k];
+          const comDicas = r.dicas.length > 0;
+          num.textContent = 'Questão ' + (k + 1) + ' de ' + rod.length + (comDicas && !s.mostrada ? ' · vale ' + ptsTexto(pontosAgora()) : '');
+          perg.textContent = r.intro;
+          perg.hidden = !r.intro;
+          dicasBox.replaceChildren(...r.dicas.slice(0, s.dadas).map((txt, d) => el('p', 'fam-jogo-questao-dica-texto', '💡 Dica ' + (d + 1) + ': ' + txt)));
+          if (s.mostrada) resp.textContent = '💡 Resposta: ' + r.resposta + (r.referencia ? ' (' + r.referencia + ')' : '') + (a ? (a.ninguem ? ' · 🚫 Ninguém acertou' : ' · 🏆 ' + a.jogador + ' ganhou ' + ptsTexto(a.pts)) : '');
+          else resp.innerHTML = ICONE_OLHO_FECHADO + ' Resposta escondida';
+          resp.classList.toggle('revelada', s.mostrada);
+          bDica.hidden = s.mostrada || s.dadas >= r.dicas.length;
+          bDica.textContent = '💡 Próxima dica (vale ' + ptsTexto(Math.max(1, pontosAgora() - 1)) + ')';
+          bResp.innerHTML = s.mostrada ? ICONE_OLHO_FECHADO + ' Esconder resposta' : ICONE_OLHO + ' Mostrar resposta';
+          // Quem acertou? Só com jogadores no placar e com a resposta à mostra; tocar de novo no mesmo nome desfaz.
+          acerto.hidden = !(s.mostrada && placar.jogadores.length);
+          if (!acerto.hidden) {
+            const pts = pontosAgora();
+            const marcar = valor => {
+              const atual = placar.porQuestao[k];
+              const igual = atual && (valor === null ? atual.ninguem : atual.jogador === valor);
+              if (igual) delete placar.porQuestao[k];
+              else placar.porQuestao[k] = valor === null ? { ninguem: true } : { jogador: valor, pts };
+              pintarPlacar();
+            };
+            const opcoes = placar.jogadores.map(n => {
+              const b = botao('fam-jogo-questao-quem', '', () => marcar(n));
+              b.textContent = bicho(n) + ' ' + n;
+              b.setAttribute('aria-pressed', a && a.jogador === n ? 'true' : 'false');
+              return b;
+            });
+            const bNinguem = botao('fam-jogo-questao-quem', '🚫 Ninguém', () => marcar(null));
+            bNinguem.setAttribute('aria-pressed', a && a.ninguem ? 'true' : 'false');
+            acerto.replaceChildren(el('p', 'fam-jogo-questao-quem-titulo', 'Quem acertou? (' + ptsTexto(pts) + ')'), ...opcoes, bNinguem);
+          }
+          bAnt.disabled = k === 0;
+          bProx.disabled = k >= rod.length - 1;
+          bProx.textContent = k >= rod.length - 1 ? '🏁 Última questão' : 'Próxima questão ▶';
+        };
+        pintarQuestao();
+      }
+
+      if (ordem.length) {
+        // "Ordem e data": os eventos embaralhados à mostra; a ordem certa, com as datas, recolhida.
+        if (c.itens.length) {
+          caixa.appendChild(el('p', 'fam-secao-titulo', '🔀 Eventos fora de ordem'));
+          const ol = el('ol', 'fam-lista');
+          c.itens.forEach(t => ol.appendChild(el('li', '', t)));
+          caixa.appendChild(ol);
+        }
+        const det = el('details', 'fam-jogo-itens fam-jogo-ordem');
+        det.appendChild(el('summary', '', '🔑 Ordem certa (com as datas)'));
+        const ol = el('ol', 'fam-lista');
+        ordem.forEach(o => ol.appendChild(el('li', '', [o.data, o.evento].filter(Boolean).join(' — '))));
+        det.appendChild(ol);
+        caixa.appendChild(det);
+        // Placar local: quem acertou a ordem e quantos pontos (de 0 até o número de eventos + 2), escolhidos por quem dirige.
+        const acertoOrdem = el('div', 'fam-jogo-questao-acerto fam-jogo-ordem-acerto');
+        const selPts = el('select');
+        selPts.setAttribute('aria-label', 'Pontos pela ordem');
+        for (let p = 0; p <= ordem.length + 2; p++) { const o = el('option', '', ptsTexto(p)); o.value = String(p); selPts.appendChild(o); }
+        selPts.value = String(ordem.length);
+        selPts.addEventListener('change', () => { const a = placar.porQuestao.ordem; if (a && a.jogador) { a.pts = Number(selPts.value) || 0; pintarPlacar(); } });
+        caixa.appendChild(acertoOrdem);
+        pintarOrdem = () => {
+          const a = placar.porQuestao.ordem;
+          acertoOrdem.hidden = !placar.jogadores.length;
+          if (acertoOrdem.hidden) return;
+          const marcar = valor => {
+            const atual = placar.porQuestao.ordem;
+            const igual = atual && (valor === null ? atual.ninguem : atual.jogador === valor);
+            if (igual) delete placar.porQuestao.ordem;
+            else placar.porQuestao.ordem = valor === null ? { ninguem: true } : { jogador: valor, pts: Number(selPts.value) || 0 };
+            pintarPlacar();
+          };
+          const opcoes = placar.jogadores.map(n => {
+            const b = botao('fam-jogo-questao-quem', '', () => marcar(n));
+            b.textContent = bicho(n) + ' ' + n;
+            b.setAttribute('aria-pressed', a && a.jogador === n ? 'true' : 'false');
+            return b;
+          });
+          const bNinguem = botao('fam-jogo-questao-quem', '🚫 Ninguém', () => marcar(null));
+          bNinguem.setAttribute('aria-pressed', a && a.ninguem ? 'true' : 'false');
+          const resultado = a ? el('p', 'fam-jogo-questao-quem-titulo', a.ninguem ? '🚫 Ninguém acertou a ordem' : '🏆 ' + a.jogador + ' ganhou ' + ptsTexto(a.pts)) : null;
+          acertoOrdem.replaceChildren(el('p', 'fam-jogo-questao-quem-titulo', 'Quem acertou a ordem?'), selPts, ...opcoes, bNinguem, ...(resultado ? [resultado] : []));
+        };
+        pintarOrdem();
+      } else if (c.itens.length) {
+        const det = el('details', 'fam-jogo-itens');
+        det.open = true;
+        det.appendChild(el('summary', '', 'Material para jogar (' + c.itens.length + ')'));
+        const ol = el('ol', 'fam-lista');
+        c.itens.forEach(t => ol.appendChild(el('li', '', t)));
+        det.appendChild(ol);
+        caixa.appendChild(det);
+      }
+      if (c.rodadas.length || ordem.length) { caixa.appendChild(detPlacar); pintarPlacar(); }
+      return caixa;
+    }
+
     function familiaTextoDaOpcao(op) {
       const linhas = [];
       linhas.push((op.emoji ? op.emoji + ' ' : '') + (op.titulo || 'Opção'));
@@ -26864,38 +27098,7 @@ function saveTemplatesToStorage() {
         li.appendChild(document.createTextNode(q));
       });
       if (parte.jogo && jogoMontar) bloco.appendChild(jogoMontar(parte.jogo));
-      else if (parte.jogo) {
-        const j = parte.jogo;
-        const caixaJogo = document.createElement('div');
-        caixaJogo.className = 'fam-jogo';
-        const tj = document.createElement('p');
-        tj.className = 'fam-secao-titulo';
-        tj.textContent = '🎲 Jogo: ' + j.nome + familiaTipoJogo(j);
-        const rj = document.createElement('p');
-        rj.className = 'fam-parte-desc';
-        rj.textContent = j.comoJogar;
-        caixaJogo.append(tj, rj);
-        if (j.material) {
-          const mj = document.createElement('p');
-          mj.className = 'fam-parte-desc';
-          mj.textContent = '✏️ Material: ' + j.material;
-          caixaJogo.appendChild(mj);
-        }
-        const textosJogo = familiaJogoTextos(j);
-        if (textosJogo.length) {
-          const det = document.createElement('details');
-          det.className = 'fam-jogo-itens';
-          det.open = true;
-          const sm = document.createElement('summary');
-          sm.textContent = 'Material pronto para jogar (' + textosJogo.length + ')';
-          const ol = document.createElement('ol');
-          ol.className = 'fam-lista';
-          textosJogo.forEach(t => { const li = document.createElement('li'); li.textContent = t; ol.appendChild(li); });
-          det.append(sm, ol);
-          caixaJogo.appendChild(det);
-        }
-        bloco.appendChild(caixaJogo);
-      }
+      else if (parte.jogo) bloco.appendChild(familiaJogoLocalMontar(parte.jogo)); // 6.12.77: uma questão por vez, resposta escondida e placar local
       if (parte.transicao) {
         const tr = document.createElement('p');
         tr.className = 'fam-parte-transicao';
@@ -28949,6 +29152,60 @@ function saveTemplatesToStorage() {
         det.append(sm, ol);
         caixa.appendChild(det);
       }
+      // 6.12.77: "Ordem e data": quem dirige revela a ordem certa (com as datas) a todos e pontua de boca: quem acertou e quantos pontos
+      // (de 0 até o número de eventos + 2). Antes da revelação, a ordem fica só no aparelho de quem dirige (extras.ordens).
+      if (j.idTipo === 'ordem_data' || (Array.isArray(ordemCerta) && ordemCerta.length)) {
+        const card = document.createElement('div');
+        card.className = 'fam-sessao-ordem';
+        const tit = document.createElement('p');
+        tit.className = 'fam-secao-titulo';
+        tit.textContent = '🔑 Ordem certa';
+        const lista = document.createElement('ol');
+        lista.className = 'fam-lista';
+        const aguarda = document.createElement('p');
+        aguarda.className = 'fam-sessao-aguarda';
+        aguarda.textContent = '⏳ Quem dirige vai revelar a ordem certa.';
+        const resultado = document.createElement('p');
+        resultado.className = 'fam-sessao-ordem-resultado';
+        card.append(tit, lista, aguarda, resultado);
+        const o = { card, lista, aguarda, resultado, total: Array.isArray(ordemCerta) ? ordemCerta.length : 0, sig: null };
+        if (participar.dirigente) {
+          o.btnRevelar = document.createElement('button');
+          o.btnRevelar.type = 'button';
+          o.btnRevelar.className = 'secondary fam-fino fam-sessao-revelar';
+          o.btnRevelar.innerHTML = ICONE_OLHO + ' Revelar a ordem a todos';
+          o.btnRevelar.addEventListener('click', () => participarAcao({ acao: 'revelar-ordem', parte: parteIdx }, o.btnRevelar));
+          o.linhaAcerto = document.createElement('div');
+          o.linhaAcerto.className = 'fam-sessao-acerto';
+          o.sel = document.createElement('select');
+          o.sel.setAttribute('aria-label', 'Quem acertou a ordem?');
+          o.selPts = document.createElement('select');
+          o.selPts.setAttribute('aria-label', 'Pontos pela ordem');
+          for (let p = 0; p <= o.total + 2; p++) { const op = document.createElement('option'); op.value = String(p); op.textContent = p + (p === 1 ? ' ponto' : ' pontos'); o.selPts.appendChild(op); }
+          o.selPts.value = String(o.total);
+          o.btnPontuar = document.createElement('button');
+          o.btnPontuar.type = 'button';
+          o.btnPontuar.className = 'secondary fam-fino';
+          o.btnPontuar.textContent = '✅ Pontuar a ordem';
+          o.btnPontuar.addEventListener('click', () => {
+            if (!o.sel.value) { participarStatus('Escolha quem acertou (ou Ninguém acertou).', 'erro'); return; }
+            if (o.sel.value === NINGUEM_ACERTOU) participarAcao({ acao: 'pontuar', parte: parteIdx, rodada: 'ordem', ninguem: true }, o.btnPontuar);
+            else participarAcao({ acao: 'pontuar', parte: parteIdx, rodada: 'ordem', nome: o.sel.value, pts: Number(o.selPts.value) }, o.btnPontuar);
+          });
+          o.linhaAcerto.append(o.sel, o.selPts, o.btnPontuar);
+          o.btnReiniciar = document.createElement('button');
+          o.btnReiniciar.type = 'button';
+          o.btnReiniciar.className = 'secondary fam-fino fam-sessao-revelar';
+          o.btnReiniciar.textContent = '🔄 Esconder a ordem e tirar os pontos';
+          o.btnReiniciar.addEventListener('click', async () => {
+            if (!(await askConfirm('Esconder de novo a ordem certa? Os pontos dados pela ordem são tirados.', 'Esconder a ordem'))) return;
+            participarAcao({ acao: 'reiniciar', parte: parteIdx, rodada: 'ordem' }, o.btnReiniciar);
+          });
+          card.append(o.btnRevelar, o.linhaAcerto, o.btnReiniciar);
+        }
+        caixa.appendChild(card);
+        ref.ordem = o;
+      }
       participar.jogos.set(parteIdx, ref);
       participarJogoPintar(parteIdx, true);
       return caixa;
@@ -29014,6 +29271,30 @@ function saveTemplatesToStorage() {
         ref.progBarra.setAttribute('aria-valuemin', '0');
         ref.progBarra.setAttribute('aria-valuemax', String(totalPerg));
         ref.progBarra.setAttribute('aria-valuenow', String(feitas));
+      }
+      if (ref.ordem) { // 6.12.77: "Ordem e data": a ordem revelada (para todos), quem acertou e os botões de quem dirige
+        const o = ref.ordem;
+        const revelada = ((e.ordensReveladas || {})[i]);
+        const temOrdem = Array.isArray(revelada) && revelada.length > 0;
+        const ac = acertos.ordem;
+        o.lista.hidden = !temOrdem;
+        o.lista.replaceChildren(...(temOrdem ? revelada : []).map(x => { const li = document.createElement('li'); li.textContent = [x && x.data, x && x.evento].filter(Boolean).join(' — '); return li; }));
+        o.aguarda.hidden = temOrdem || participar.dirigente;
+        o.resultado.hidden = !ac;
+        o.resultado.textContent = ac ? (ac.ninguem ? '🚫 Ninguém acertou a ordem' : '🏆 ' + ac.nome + ' ganhou ' + ac.pts + (ac.pts === 1 ? ' ponto' : ' pontos')) : '';
+        o.card.hidden = !participar.dirigente && !temOrdem && !ac;
+        if (participar.dirigente) {
+          o.btnRevelar.hidden = temOrdem;
+          o.linhaAcerto.hidden = Boolean(ac);
+          o.btnReiniciar.hidden = !temOrdem && !ac;
+          const sig = nomes.join('|');
+          if (o.sig !== sig) {
+            const atual = o.sel.value;
+            o.sel.replaceChildren(...[['', 'Quem acertou a ordem?'], ...nomes.map(x => [x, x]), [NINGUEM_ACERTOU, '🚫 Ninguém acertou']].map(([v, tx]) => { const op = document.createElement('option'); op.value = v; op.textContent = tx; return op; }));
+            if (nomes.includes(atual) || atual === NINGUEM_ACERTOU) o.sel.value = atual;
+            o.sig = sig;
+          }
+        }
       }
       let anteriorRespondida = true; // jogo de dicas: a questão seguinte só aparece depois que a anterior foi respondida (resposta revelada)
       ref.rodadas.forEach((r, k) => {

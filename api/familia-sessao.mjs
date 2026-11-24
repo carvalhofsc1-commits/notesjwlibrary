@@ -128,6 +128,8 @@ function estadoPublico(e) {
     referenciasReveladas: e.referenciasReveladas && typeof e.referenciasReveladas === "object" ? e.referenciasReveladas : {},
     dicas: e.dicas && typeof e.dicas === "object" ? e.dicas : {}, // quantas dicas de cada rodada já foram dadas: { parte: { rodada: n } }
     acertos: e.acertos && typeof e.acertos === "object" ? e.acertos : {}, // quem acertou cada rodada e quantos pontos ganhou: { parte: { rodada: { nome, pts } } }
+    // 6.12.77: a ordem certa do "Ordem e data" que quem dirige já revelou ({ parte: [{ data, evento }] }); antes disso ela fica só em respostas.json.
+    ordensReveladas: e.ordensReveladas && typeof e.ordensReveladas === "object" ? e.ordensReveladas : {},
     sorteio: e.sorteio || null,
     sorteioQuestao: e.sorteioQuestao || null, // { parte, rodada, n }: a questão sorteada para ser respondida
     cronometro: e.cronometro || null,
@@ -454,7 +456,7 @@ export default async function handler(req, res) {
 
     // ----- Daqui em diante, só o dirigente -----
     if (!(await exigirDirigente())) return;
-    const programa = ["liberar", "bloquear", "revelar", "dica", "pontuar", "reiniciar", "sortear", "sortear-questao", "limpar-sorteio", "cronometro"].includes(acao) ? await lerJson(caminho(cod, "programa.json")) : null;
+    const programa = ["liberar", "bloquear", "revelar", "revelar-ordem", "dica", "pontuar", "reiniciar", "sortear", "sortear-questao", "limpar-sorteio", "cronometro"].includes(acao) ? await lerJson(caminho(cod, "programa.json")) : null;
     const parteValida = (i) => programa && Number.isInteger(i) && i >= 0 && i < programa.partes.length;
     // 6.12.76: a referência secreta da rodada (respostas.json; sessões antigas não a têm) e a revelação dela junto com a resposta.
     const referenciaDaRodada = (parte, rodada) => String((((segredo && segredo.referencias) || {})[parte] || [])[rodada] || "");
@@ -463,6 +465,14 @@ export default async function handler(req, res) {
       if (!ref) return;
       e.referenciasReveladas = e.referenciasReveladas || {};
       e.referenciasReveladas[parte] = { ...(e.referenciasReveladas[parte] || {}), [rodada]: ref };
+    };
+    // 6.12.77: a ordem certa do "Ordem e data" (respostas.json, extras.ordens) e a revelação dela para todos (estado.ordensReveladas).
+    const ordemDaParte = (parte) => {
+      const o = (((segredo && segredo.extras) || {}).ordens || {})[parte];
+      return Array.isArray(o) && o.length ? o : null;
+    };
+    const revelarOrdem = (e, parte, ordem) => {
+      e.ordensReveladas = { ...(e.ordensReveladas || {}), [parte]: ordem };
     };
 
     // ----- voltar-inicio (6.12.37): volta à tela de boas-vindas: nenhuma parte liberada e nenhuma atual -----
@@ -499,6 +509,15 @@ export default async function handler(req, res) {
       });
     }
 
+    // ----- revelar-ordem (6.12.77): no "Ordem e data", mostra a todos a ordem certa com as datas (sem pontuar ninguém) -----
+    if (acao === "revelar-ordem") {
+      const parte = Number(corpo.parte);
+      if (!parteValida(parte)) return erro(res, 400, "Parte inválida.");
+      const ordem = ordemDaParte(parte);
+      if (!ordem) return erro(res, 400, "Esta parte não tem ordem para revelar.");
+      return gravarEstado((e) => revelarOrdem(e, parte, ordem));
+    }
+
     // ----- espiar (6.12.06): só o dirigente vê a resposta da rodada, sem revelá-la aos participantes (nada é gravado no estado) -----
     // 6.12.76: com a referência da rodada (o texto bíblico que confirma), que também fica escondida dos participantes.
     if (acao === "espiar") {
@@ -532,6 +551,19 @@ export default async function handler(req, res) {
       const ninguem = corpo.ninguem === true; // 6.12.06: "Ninguém acertou": revela a resposta sem pontuar ninguém
       const nome = ninguem ? "" : nomeLimpo(corpo.nome);
       if (!parteValida(parte)) return erro(res, 400, "Parte inválida.");
+      // 6.12.77: no "Ordem e data" (rodada "ordem"), quem dirige escolhe quem acertou e quantos pontos (0 até o número de eventos + 2); a ordem é revelada.
+      if (corpo.rodada === "ordem") {
+        const ordem = ordemDaParte(parte);
+        if (!ordem) return erro(res, 400, "Esta parte não tem ordem para pontuar.");
+        if (!nome && !ninguem) return erro(res, 400, "Escolha quem acertou.");
+        const ptsOrdem = Number(corpo.pts);
+        if (!ninguem && (!Number.isInteger(ptsOrdem) || ptsOrdem < 0 || ptsOrdem > ordem.length + 2)) return erro(res, 400, "Pontos inválidos.");
+        return gravarEstado((e) => {
+          e.acertos = e.acertos || {};
+          e.acertos[parte] = { ...(e.acertos[parte] || {}), ordem: ninguem ? { nome: "", pts: 0, ninguem: true } : { nome, pts: ptsOrdem } };
+          revelarOrdem(e, parte, ordem);
+        });
+      }
       const r = programa.partes[parte].jogo && (programa.partes[parte].jogo.rodadas || [])[rodada];
       const respostas = (segredo.respostas || {})[parte] || [];
       if (!Number.isInteger(rodada) || !r || rodada >= respostas.length) return erro(res, 400, "Rodada inválida.");
@@ -553,6 +585,22 @@ export default async function handler(req, res) {
     if (acao === "reiniciar") {
       const parte = Number(corpo.parte);
       const rodada = Number(corpo.rodada);
+      // 6.12.77: "ordem" esconde de novo a ordem certa do "Ordem e data" e tira os pontos dela.
+      if (corpo.rodada === "ordem") {
+        if (!parteValida(parte)) return erro(res, 400, "Parte inválida.");
+        return gravarEstado((e) => {
+          if (e.acertos && e.acertos[parte]) {
+            const copia = { ...e.acertos[parte] };
+            delete copia.ordem;
+            e.acertos = { ...e.acertos, [parte]: copia };
+          }
+          if (e.ordensReveladas) {
+            const copia = { ...e.ordensReveladas };
+            delete copia[parte];
+            e.ordensReveladas = copia;
+          }
+        });
+      }
       if (!parteValida(parte) || !Number.isInteger(rodada) || rodada < 0) return erro(res, 400, "Rodada inválida.");
       return gravarEstado((e) => {
         for (const campo of ["dicas", "reveladas", "acertos", "referenciasReveladas"]) {
