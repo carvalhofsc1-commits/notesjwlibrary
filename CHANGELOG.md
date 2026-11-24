@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.06
+
+### Adoração em Família: até 2 circunstâncias relacionadas, e assunto ou circunstância obrigatório
+
+- **No máximo 2, relacionadas:** ao marcar uma circunstância, só ficam liberadas as que combinam com ela; as outras ficam esmaecidas e travadas. Com 2 marcadas, todas as outras travam. Luto e Doença na família não liberam nenhuma; Ansiedade combina só com Desânimo espiritual; Dificuldades financeiras só com Equilíbrio no trabalho; Bullying só com os filhos (pequenos ou adolescentes); as do ministério só entre si; as de preparo para o casamento só entre si. Os grupos ficam em `FAMILIA_CIRC_GRUPOS` e `FAMILIA_CIRC_PARES` (app.js). Perfis salvos com mais de 2 (ou sem relação) ficam com 2 que combinam.
+- **Assunto ou circunstância:** para preparar a programação é preciso escrever o assunto desta semana ou marcar pelo menos uma circunstância (ou escrever em "Outras circunstâncias").
+
 ## 6.13.05
 
 ### Adoração em Família: três circunstâncias de preparo para o casamento (rótulo discreto, descrição para a IA)

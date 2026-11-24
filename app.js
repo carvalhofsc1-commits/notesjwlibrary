@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.05'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.06'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -9645,7 +9645,7 @@
             document.getElementById('familiaHorario').value = '';
             familiaOutrasCircEl.value = '';
             familiaAssuntoEl.value = '';
-            document.querySelectorAll('#familiaCircunstancias input[type="checkbox"]').forEach(el => { el.checked = el.defaultChecked; }); // quadros, cânticos e jogos: o padrão volta em familiaPerfilCarregar
+            document.querySelectorAll('#familiaCircunstancias input[type="checkbox"]').forEach(el => { el.checked = el.defaultChecked; el.disabled = false; const r = el.closest('.fam-check'); if (r) r.classList.remove('fam-check-off'); }); // quadros, cânticos e jogos: o padrão volta em familiaPerfilCarregar
             familiaMembrosEl.innerHTML = '';
             familiaConvidadosEl.innerHTML = '';
             document.getElementById('familiaConvidadosFormacao').value = '';
@@ -26330,6 +26330,51 @@ function saveTemplatesToStorage() {
       return Array.from(caixa.querySelectorAll('input[type="checkbox"]:checked')).map(el => el.value);
     }
 
+    // 6.13.06: no máximo 2 circunstâncias, e só as relacionadas entre si. Ao marcar uma, ficam liberadas só as que combinam com ela (as muito
+    // específicas, como Luto e Doença na família, não liberam nenhuma); com 2 marcadas, as outras ficam travadas.
+    const FAMILIA_CIRC_GRUPOS = [
+      ['Comunicação na família', 'Manutenção do relacionamento da família', 'Problemas no casamento', 'Cultivar o respeito e amor no casamento', 'Lidar com familiares descrentes', 'Cultivar bons relacionamentos (família, amigos, trabalho, irmãos)', 'Promover a paz nos nossos relacionamentos'],
+      ['Educação de filhos pequenos', 'Lidar com filhos adolescentes', 'Comunicação na família', 'Equilíbrio em entretenimento', 'Evitar más associações e fazer bons amigos'],
+      ['Preparar-se para formar uma família', 'Apoiar os filhos jovens rumo à vida adulta', 'Namoro e casamento segundo os padrões de Jeová'],
+      ['Falta de ânimo para estudos e revisitas', 'Falta de ânimo para ministério'],
+      ['Desânimo espiritual', 'Luta para fazer o que é certo e fugir de tentações', 'Vencer maus hábitos', 'Evitar más associações e fazer bons amigos', 'Equilíbrio em entretenimento', 'Equilíbrio no trabalho', 'Respeitar a autoridade na congregação'],
+      ['Cultivar bons relacionamentos (família, amigos, trabalho, irmãos)', 'Promover a paz nos nossos relacionamentos', 'Respeitar a autoridade na congregação']
+    ];
+    // Pares soltos (circunstâncias especiais que combinam com uma ou duas outras); Luto e Doença na família não combinam com nenhuma.
+    const FAMILIA_CIRC_PARES = [
+      ['Ansiedade ou desânimo', 'Desânimo espiritual'],
+      ['Dificuldades financeiras', 'Equilíbrio no trabalho'],
+      ['Bullying ou dificuldades na escola', 'Educação de filhos pequenos'],
+      ['Bullying ou dificuldades na escola', 'Lidar com filhos adolescentes']
+    ];
+    function familiaCircCompativeis(valor) {
+      const s = new Set();
+      FAMILIA_CIRC_GRUPOS.forEach(g => { if (g.includes(valor)) g.forEach(x => s.add(x)); });
+      FAMILIA_CIRC_PARES.forEach(([a, b]) => { if (a === valor) s.add(b); if (b === valor) s.add(a); });
+      s.delete(valor);
+      return s;
+    }
+    function familiaCircAplicarLimite(ultimo) {
+      const caixa = document.getElementById('familiaCircunstancias');
+      if (!caixa) return;
+      const inputs = Array.from(caixa.querySelectorAll('input[type="checkbox"]'));
+      let marcados = inputs.filter(i => i.checked);
+      // Perfil salvo antes da regra (mais de 2, ou 2 sem relação): fica a última marcada (ou a primeira) e, se houver, uma que combine com ela.
+      if (marcados.length > 2 || (marcados.length === 2 && !familiaCircCompativeis(marcados[0].value).has(marcados[1].value))) {
+        const base = ultimo && ultimo.checked && inputs.includes(ultimo) ? ultimo : marcados[0];
+        const par = marcados.find(i => i !== base && familiaCircCompativeis(base.value).has(i.value));
+        inputs.forEach(i => { i.checked = i === base || i === par; });
+        marcados = inputs.filter(i => i.checked);
+      }
+      const permitidos = marcados.length === 1 ? familiaCircCompativeis(marcados[0].value) : new Set();
+      inputs.forEach(i => {
+        const livre = marcados.length === 0 || i.checked || (marcados.length === 1 && permitidos.has(i.value));
+        i.disabled = !livre;
+        const rot = i.closest('.fam-check');
+        if (rot) rot.classList.toggle('fam-check-off', !livre);
+      });
+    }
+
     function familiaChecksMarcar(caixa, valores) {
       const set = new Set((valores || []).map(String));
       caixa.querySelectorAll('input[type="checkbox"]').forEach(el => { el.checked = set.has(el.value); });
@@ -26411,6 +26456,7 @@ function saveTemplatesToStorage() {
       // 6.12.99: os nomes antigos das circunstâncias, salvos antes, viram os novos.
       const circNovas = { 'Filho adolescente': 'Lidar com filhos adolescentes', 'Criança pequena': 'Educação de filhos pequenos', 'Parente que não serve a Jeová': 'Lidar com familiares descrentes', 'Dificuldades com relacionamentos (família, amigos, trabalho, irmãos)': 'Cultivar bons relacionamentos (família, amigos, trabalho, irmãos)' };
       familiaChecksMarcar(document.getElementById('familiaCircunstancias'), (salvo.circunstancias || []).map(c => circNovas[c] || c));
+      familiaCircAplicarLimite(null); // 6.13.06: no máximo 2, relacionadas
       if (typeof salvo.outrasCircunstancias === 'string') familiaOutrasCircEl.value = salvo.outrasCircunstancias;
       // 6.12.70: quadros, cânticos e jogos; o perfil antigo (atividades, duracao, quantidade, jogoPapel) é convertido por familiaQuadrosMigrados.
       familiaQuadrosAplicar(familiaQuadrosMigrados(salvo));
@@ -30052,6 +30098,13 @@ function saveTemplatesToStorage() {
         familiaStatus('Descreva a família: a formação ou pelo menos um membro.', 'erro');
         return;
       }
+      // 6.13.06: é preciso um assunto (com pelo menos uma palavra de verdade) ou pelo menos uma circunstância marcada (ou escrita em Outras).
+      const assuntoValido = /\p{L}{3,}/u.test(perfil.assunto);
+      if (!assuntoValido && !perfil.circunstancias.length && !perfil.outrasCircunstancias) {
+        familiaStatus('Escreva o assunto desta semana ou marque pelo menos uma circunstância (em Programação → 💛 Circunstâncias).', 'erro');
+        try { familiaAssuntoEl.focus(); } catch (e) { /* sem foco */ }
+        return;
+      }
       const pedido = ++familiaPedido;
       familiaGerarBtn.disabled = true;
       familiaCancelarBtn.hidden = false;
@@ -30191,7 +30244,7 @@ function saveTemplatesToStorage() {
     });
     [familiaFormacaoEl, familiaAnosCasadosEl, document.getElementById('familiaDiaSemana'), document.getElementById('familiaHorario'), document.getElementById('familiaConvidadosFormacao'), document.getElementById('familiaCanticoInicial'), document.getElementById('familiaCanticoFinal')].forEach(el => el.addEventListener('change', familiaPerfilSalvar));
     [familiaOutrasCircEl, familiaAssuntoEl].forEach(el => el.addEventListener('input', () => { clearTimeout(el._t); el._t = setTimeout(familiaPerfilSalvar, 400); }));
-    document.getElementById('familiaCircunstancias').addEventListener('change', familiaPerfilSalvar);
+    document.getElementById('familiaCircunstancias').addEventListener('change', e => { familiaCircAplicarLimite(e.target); familiaPerfilSalvar(); });
     // Quadros (6.12.70): salva ao marcar e atualiza o total; os atalhos marcam só os obrigatórios (noite curta) ou todos (completa).
     familiaQuadrosEl.addEventListener('change', () => { familiaQuadrosAtualizar(); familiaPerfilSalvar(); });
     const familiaQuadrosAtalho = todos => {

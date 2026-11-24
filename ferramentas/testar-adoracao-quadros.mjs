@@ -1844,6 +1844,24 @@ teste("6.13.05: circunstâncias de preparo para o casamento com rótulo discreto
   assert.ok(servidorJs.includes("circ.map(circunstanciaParaIa).join"));
 });
 
+teste("6.13.06: até 2 circunstâncias relacionadas (Luto sozinha, ministério só com ministério) e assunto ou circunstância obrigatório", async () => {
+  const html = await readFile(new URL("index.html", raiz), "utf8");
+  const bloco = html.slice(html.indexOf('id="familiaCircunstancias"'), html.indexOf('id="familiaOutrasCirc"'));
+  const valores = [...bloco.matchAll(/value="([^"]+)"/g)].map((m) => m[1]);
+  const ini = appJs.indexOf("const FAMILIA_CIRC_GRUPOS");
+  const fim = appJs.indexOf("function familiaCircAplicarLimite");
+  const { familiaCircCompativeis, FAMILIA_CIRC_GRUPOS, FAMILIA_CIRC_PARES } = new Function(appJs.slice(ini, fim) + "; return { familiaCircCompativeis, FAMILIA_CIRC_GRUPOS, FAMILIA_CIRC_PARES };")();
+  for (const c of [...FAMILIA_CIRC_GRUPOS.flat(), ...FAMILIA_CIRC_PARES.flat()]) assert.ok(valores.includes(c), "nome igual ao da tela: " + c);
+  assert.equal(familiaCircCompativeis("Luto").size, 0);
+  assert.equal(familiaCircCompativeis("Doença na família").size, 0);
+  assert.deepEqual([...familiaCircCompativeis("Falta de ânimo para ministério")], ["Falta de ânimo para estudos e revisitas"]);
+  // a relação é de mão dupla
+  for (const a of valores) for (const b of familiaCircCompativeis(a)) assert.ok(familiaCircCompativeis(b).has(a), a + " <-> " + b);
+  assert.ok(appJs.includes("i.disabled = !livre;"));
+  assert.ok(appJs.includes("familiaCircAplicarLimite(e.target); familiaPerfilSalvar();"));
+  assert.ok(appJs.includes("if (!assuntoValido && !perfil.circunstancias.length && !perfil.outrasCircunstancias) {"));
+});
+
 for (const [nome, fn] of testes) {
   try {
     await fn();
