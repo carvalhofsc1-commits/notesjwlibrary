@@ -53,6 +53,7 @@ import {
   chaveDoTrecho,
   chavesDosVersiculos,
   abreviacaoJogavel,
+  cortarNaPalavra,
   cortarNoFimDaFrase,
   datasPermitidas,
   dicaDoLivro,
@@ -3435,7 +3436,7 @@ const PREPARAR_QUADRO_FAMILIA = {
         const versos = textos[0] && textos[0].texto ? chavesDosVersiculos(textos[0].referencia).length : 0;
         const falta = versos && versos < MIN_VERSOS_EPISODIO ? `a passagem ${textos[0].referencia} tem só ${versos} ${versos === 1 ? "versículo" : "versículos"}: escolha um EPISÓDIO narrado da vida de Jesus (o que ele fez ou viveu, do começo ao fim, com pelo menos ${MIN_VERSOS_EPISODIO} versículos), não só um ensino ou uma frase` : "";
         return {
-          nome: episodio ? `${ctx.quadro.nome}: ${episodio}` : ctx.quadro.nome,
+          nome: episodio ? `${ctx.quadro.nome}: ${cortarNaPalavra(episodio)}` : ctx.quadro.nome,
           descricao: qualidade && !normalizarTexto(descricao).includes(normalizarTexto(qualidade)) ? `${descricao} (Qualidade: ${qualidade}.)`.trim() : descricao,
           textos,
           leitura: leituraDoTrecho(il >= 0 ? livros[il] : null),
@@ -3557,7 +3558,7 @@ const PREPARAR_QUADRO_FAMILIA = {
             ? { titulo: limparLinha(verbete.verbete, 120), fonte: `Estudo Perspicaz das Escrituras${verbete.volume ? `, volume ${verbete.volume}` : ""}`, paragrafos: "", texto: leituraLimpa(verbete.trecho), url: "", rotulo: "Verbete do Perspicaz" }
             : null;
         return {
-          nome: pergunta ? `${ctx.quadro.nome}: ${pergunta}` : ctx.quadro.nome,
+          nome: pergunta ? `${ctx.quadro.nome}: ${cortarNaPalavra(pergunta)}` : ctx.quadro.nome, // a pergunta inteira fica em "perguntas"
           descricao: descricaoFamilia(o.descricao),
           textos,
           leitura,
@@ -3584,8 +3585,9 @@ const PREPARAR_QUADRO_FAMILIA = {
         let perguntas = perguntasLimpas(o.perguntas, 2);
         if (!perguntas.length) perguntas = ["Como você agiria nessa situação?"];
         return {
-          nome: cenario ? `${ctx.quadro.nome}: ${cenario}` : ctx.quadro.nome,
-          descricao: descricaoFamilia(o.descricao),
+          nome: cenario ? `${ctx.quadro.nome}: ${cortarNaPalavra(cenario)}` : ctx.quadro.nome,
+          // Se o título cortou o cenário, a situação inteira abre a descrição.
+          descricao: descricaoFamilia(cenario && cortarNaPalavra(cenario) !== cenario ? `Situação: ${cenario.replace(/[.\s]+$/, "")}. ${o.descricao || ""}` : o.descricao),
           leitura: leituraDoTrecho(l),
           publicacoes: publicacaoDoTrecho(l),
           perguntas,

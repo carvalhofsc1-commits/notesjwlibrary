@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.83
+
+- **Títulos dos quadros cortados no meio da palavra:** na lista do programa, "Lições da vida de Jesus: …e ainda assim ens" e "Ame o ministério: …interesse na prime" saíam cortados de forma seca (100 e 160 caracteres). Agora o título tem até 70 caracteres, cortado no fim de uma palavra (sem "e", "de"… pendurados) e com "…" (`cortarNaPalavra`). A pergunta inteira do Saiba responder continua em "perguntas", e a situação inteira do Ame o ministério abre a descrição quando o título a encurtou. Vale para as programações novas.
+- **Novos modelos Gemini na lista do app:** Gemini 4 Neon e Gemini 4 Hydrogen (aparecem no Model Garden da conta da empresa e respondem nos testes simples e estruturado; preços estimados, como os outros Gemini 4). Escolha em Ajustes → Modelos e agentes de IA.
+
 ## 6.12.82
 
 - **Adoração em família ao vivo, tema escuro:** no cartão de boas-vindas (fundo claro nos dois temas), o título da noite, o resumo e "Quem participa" ficavam com texto claro sobre fundo claro, quase invisíveis. O texto do cartão agora é escuro fixo e o quadro "Programa" dentro dele continua seguindo o tema.

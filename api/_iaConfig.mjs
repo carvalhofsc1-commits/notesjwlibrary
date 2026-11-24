@@ -21,6 +21,9 @@ export const MODELOS_IA = [
   { familia: "gemini", id: "gemini-3.8-flash", nome: "Gemini 3.8 Flash: a Flash mais nova", entrada: 1.5, saida: 9, estimado: true },
   { familia: "gemini", id: "gemini-4-argon", nome: "Gemini 4 Argon: muito potente, para tarefas longas", entrada: 2, saida: 12, estimado: true },
   { familia: "gemini", id: "gemini-4-carbon", nome: "Gemini 4 Carbon: a mais potente do Google", entrada: 2, saida: 12, estimado: true },
+  // 6.12.83: aparecem no Model Garden da conta da empresa e respondem (teste simples e estruturado); preços estimados, como os outros Gemini 4.
+  { familia: "gemini", id: "gemini-4-neon", nome: "Gemini 4 Neon: da nova linha 4 do Google", entrada: 2, saida: 12, estimado: true },
+  { familia: "gemini", id: "gemini-4-hydrogen", nome: "Gemini 4 Hydrogen: da nova linha 4 do Google, rápida", entrada: 1.5, saida: 9, estimado: true },
 ];
 const MODELO_PADRAO_GEMINI = "gemini-3.5-flash";
 

@@ -197,6 +197,20 @@ export function cortarNoFimDaFrase(texto, max) {
   return (espaco > 0 ? t.slice(0, espaco) : t.slice(0, max - 1)).replace(/[\s,;:—–-]+$/, "") + "…";
 }
 
+// 6.12.83: o título curto de um quadro ("Lições da vida de Jesus: <episódio>"): o texto até "max" caracteres, cortado no fim de uma palavra (sem
+// deixar "e", "de"… pendurados) e com "…". Antes o corte era seco em 100 ou 160 caracteres e a lista do programa mostrava "…e ainda assim ens".
+export const MAX_TITULO_DO_QUADRO = 70;
+export function cortarNaPalavra(texto, max = MAX_TITULO_DO_QUADRO) {
+  const t = String(texto || "").replace(/\s+/g, " ").trim();
+  if (t.length <= max) return t;
+  const espaco = t.lastIndexOf(" ", max - 1);
+  const base = (espaco > max * 0.5 ? t.slice(0, espaco) : t.slice(0, max - 1))
+    .replace(/[\s,;:—–-]+$/, "")
+    .replace(/\s+(?:e|ou|de|da|do|das|dos|em|na|no|nas|nos|a|o|as|os|que|para|por|com|um|uma|ao|à|se|como|mas)$/i, "")
+    .replace(/[\s,;:—–-]+$/, "");
+  return `${base}…`;
+}
+
 // ---------- Memória "evitar" (no aparelho) e o que cada quadro usou (6.12.72) ----------
 // O app guarda, por categoria, o que as últimas programações usaram (uns 40 por categoria, os mais novos primeiro) e manda com o plano e com
 // cada quadro; o servidor tira esses itens das listas (ou os põe por último) e os cita na mensagem como "EVITAR". Nada de dados pessoais:

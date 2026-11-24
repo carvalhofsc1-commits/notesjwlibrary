@@ -1599,6 +1599,25 @@ teste("6.12.79 (4): prazo total do quadro (270 s): cada chamada com o tempo que 
   assert.match(prompts.travadosDe({}).find((x) => x.id === "montagem_pedidos").texto, /6\.12\.79: a rodada do Verdadeiro ou falso e do Quem sou eu\? sem referência/);
 });
 
+// ---------- Patch 6.12.83: títulos dos quadros curtos e cortados no fim de uma palavra ----------
+
+teste("6.12.83: título do quadro cortado no fim de uma palavra (cortarNaPalavra) e usado em Jesus, Saiba responder e Ame o ministério", () => {
+  const f = ger.cortarNaPalavra;
+  assert.equal(f("Jesus visita Zaqueu"), "Jesus visita Zaqueu", "curto fica igual");
+  const longo = "Jesus convida os apóstolos para descansar após uma intensa viagem de pregação e ainda assim ensina a multidão";
+  const c = f(longo);
+  assert.ok(c.length <= 71 && c.endsWith("…"), c);
+  assert.ok(longo.startsWith(c.slice(0, -1)), "é um começo do texto, sem palavra cortada ao meio");
+  assert.match(longo.slice(c.length - 1), /^[\s,;:]/, "o corte é no fim de uma palavra");
+  assert.equal(f("Fazendo uma revisita rápida a uma pessoa muito ocupada ou com pressa que demonstrou interesse na primeira visita"), "Fazendo uma revisita rápida a uma pessoa muito ocupada ou com pressa…");
+  assert.equal(f("Com a rotina tão corrida hoje em dia, por que vocês ainda tiram tempo toda semana para falar da Bíblia?", 40), "Com a rotina tão corrida hoje em dia…", "sem ' por que' nem vírgula pendurada");
+  assert.ok(!/\s(e|de|da|do|em|que|para|com)…$/i.test(f("a ".repeat(40) + "palavra de Deus e muito mais coisas para falar", 30)), "sem palavrinha pendurada");
+  assert.equal(f("", 10), "");
+  assert.equal(ger.MAX_TITULO_DO_QUADRO, 70);
+  for (const trecho of ["nome: episodio ? `${ctx.quadro.nome}: ${cortarNaPalavra(episodio)}`", "nome: pergunta ? `${ctx.quadro.nome}: ${cortarNaPalavra(pergunta)}`", "nome: cenario ? `${ctx.quadro.nome}: ${cortarNaPalavra(cenario)}`"]) assert.ok(servidorJs.includes(trecho), trecho);
+  assert.match(servidorJs, /`Situação: \$\{cenario\.replace\(\/\[\.\\s\]\+\$\/, ""\)\}\. \$\{o\.descricao \|\| ""\}`/);
+});
+
 // ---------- Patch 6.12.81: acentuação e siglas curtas nas Abreviações (achados no teste com o Gemini) ----------
 
 teste("6.12.81 (1): a regra de acentuação está nas regras comuns e chega ao plano e a todos os quadros", () => {
